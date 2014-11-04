@@ -1,5 +1,5 @@
-type Point is { 
-    (Point,Point) f 
+type Point is {
+    (Point,Point) f
 }
 
 function toString(int p) => Point:

@@ -27,11 +27,11 @@ package wyjc.runtime;
 
 public final class WyException extends RuntimeException {
 	public final Object value;
-	
-	public WyException(Object v) {		
+
+	public WyException(Object v) {
 		this.value = v;
 	}
-	
+
 	public String toString() {
 		return value.toString();
 	}

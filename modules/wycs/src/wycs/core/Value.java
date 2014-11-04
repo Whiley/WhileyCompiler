@@ -32,39 +32,39 @@ import java.util.*;
 import wycc.util.Pair;
 import wyautl.util.BigRational;
 
-public abstract class Value implements Comparable<Value> {	
+public abstract class Value implements Comparable<Value> {
 
 	public abstract SemanticType type();
 
-	public static final Null Null = new Null(); 
-	
+	public static final Null Null = new Null();
+
 	public static Bool Bool(boolean value) {
 		return get(new Bool(value));
 	}
-	
+
 	public static Decimal Decimal(BigDecimal value) {
 		return get(new Decimal(value));
-	}	
+	}
 
 	public static Integer Integer(BigInteger value) {
 		return get(new Integer(value));
 	}
-	
+
 	public static String String(java.lang.String string) {
 		return get(new String(string));
 	}
-	
+
 	public static Set Set(Collection<Value> values) {
 		return get(new Set(values));
 	}
-	
+
 	public static Tuple Tuple(Collection<Value> values) {
 		return get(new Tuple(values));
-	}	
-	
-	public static final class Null extends Value {		
+	}
+
+	public static final class Null extends Value {
 		private Null() {
-		}		
+		}
 		public int hashCode() {
 			return 0;
 		}
@@ -80,18 +80,18 @@ public abstract class Value implements Comparable<Value> {
 		}
 		public java.lang.String toString() {
 			return null;
-		}		
-		
+		}
+
 		public SemanticType type() {
 			return SemanticType.Null;
 		}
 	}
-	
+
 	public static final class Bool extends Value {
 		public final boolean value;
 		private Bool(boolean value) {
 			this.value = value;
-		}		
+		}
 		public int hashCode() {
 			return value ? 1 : 0;
 		}
@@ -109,29 +109,29 @@ public abstract class Value implements Comparable<Value> {
 					return 0;
 				} else if(value) {
 					return 1;
-				} 
+				}
 			} else if(v instanceof Null) {
 				return 1;
 			}
-			return -1;			
+			return -1;
 		}
 		public java.lang.String toString() {
 			if(value) { return "true"; }
 			else {
 				return "false";
 			}
-		}		
-		
+		}
+
 		public SemanticType type() {
 			return SemanticType.Bool;
 		}
 	}
-		
+
 	public static final class Decimal extends Value {
 		public final BigDecimal value;
 		private Decimal(BigDecimal value) {
 			this.value = value;
-		}		
+		}
 		public int hashCode() {
 			return value.hashCode();
 		}
@@ -145,11 +145,11 @@ public abstract class Value implements Comparable<Value> {
 		public int compareTo(Value v) {
 			if(v instanceof Decimal) {
 				Decimal i = (Decimal) v;
-				return value.compareTo(i.value); 
+				return value.compareTo(i.value);
 			} else if(v instanceof Null || v instanceof Bool || v instanceof Integer) {
-				return 1; 
-			} 
-			return -1;			
+				return 1;
+			}
+			return -1;
 		}
 		public java.lang.String toString() {
 			java.lang.String r = value.toString();
@@ -160,7 +160,7 @@ public abstract class Value implements Comparable<Value> {
 				return r;
 			}
 		}
-		
+
 		public Value.Decimal add(Value.Decimal val) {
 			return Value.Decimal(value.add(val.value));
 		}
@@ -176,8 +176,8 @@ public abstract class Value implements Comparable<Value> {
 		public SemanticType type() {
 			return SemanticType.Real;
 		}
-	}		
-		
+	}
+
 	public static final class Integer extends Value {
 		public final BigInteger value;
 		private Integer(BigInteger value) {
@@ -196,16 +196,16 @@ public abstract class Value implements Comparable<Value> {
 		public int compareTo(Value v) {
 			if(v instanceof Integer) {
 				Integer i = (Integer) v;
-				return value.compareTo(i.value); 
+				return value.compareTo(i.value);
 			} else if (v instanceof Null || v instanceof Bool || v instanceof Decimal) {
-				return 1; 
-			} 
-			return -1;			
+				return 1;
+			}
+			return -1;
 		}
 		public java.lang.String toString() {
 			return value.toString();
 		}
-		
+
 		public Value.Integer add(Value.Integer val) {
 			return Value.Integer(value.add(val.value));
 		}
@@ -217,7 +217,7 @@ public abstract class Value implements Comparable<Value> {
 		}
 		public Value.Integer divide(Value.Integer val) {
 			return Value.Integer(value.divide(val.value));
-		}		
+		}
 		public Value.Integer remainder(Value.Integer val) {
 			return Value.Integer(value.remainder(val.value));
 		}
@@ -225,7 +225,7 @@ public abstract class Value implements Comparable<Value> {
 			return SemanticType.Int;
 		}
 	}
-	
+
 	public static final class String extends Value {
 		public final java.lang.String value;
 		private String(java.lang.String value) {
@@ -244,22 +244,22 @@ public abstract class Value implements Comparable<Value> {
 		public int compareTo(Value v) {
 			if(v instanceof String) {
 				String i = (String) v;
-				return value.compareTo(i.value); 
+				return value.compareTo(i.value);
 			} else if (v instanceof Null || v instanceof Bool || v instanceof Decimal
 					|| v instanceof Integer) {
-				return 1; 
-			} 
-			return -1;			
+				return 1;
+			}
+			return -1;
 		}
 		public java.lang.String toString() {
 			return "\"" + value.toString() + "\"";
 		}
-				
+
 		public SemanticType type() {
 			return SemanticType.String;
 		}
 	}
-	
+
 	public static final class Set extends Value {
 		public final HashSet<Value> values;
 		private Set() {
@@ -267,7 +267,7 @@ public abstract class Value implements Comparable<Value> {
 		}
 		private Set(Collection<Value> value) {
 			this.values = new HashSet<Value>(value);
-		}		
+		}
 		public int hashCode() {
 			return values.hashCode();
 		}
@@ -300,7 +300,7 @@ public abstract class Value implements Comparable<Value> {
 					}
 					return 0;
 				}
-			} else if (v instanceof Null 
+			} else if (v instanceof Null
 					|| v instanceof Bool
 					|| v instanceof Decimal
 					|| v instanceof Integer
@@ -308,7 +308,7 @@ public abstract class Value implements Comparable<Value> {
 					|| v instanceof Tuple) {
 				return 1;
 			}
-			return -1;			
+			return -1;
 		}
 		public java.lang.String toString() {
 			java.lang.String r = "{";
@@ -322,44 +322,44 @@ public abstract class Value implements Comparable<Value> {
 			}
 			return r + "}";
 		}
-		
+
 		public Set union(Set rhs) {
 			Value.Set nset = new Value.Set(values);
 			nset.values.addAll(rhs.values);
 			return nset;
-			
+
 		}
-		
+
 		public Set add(Value val) {
 			Value.Set nset = new Value.Set(values);
 			nset.values.add(val);
 			return nset;
-			
+
 		}
-		
+
 		public Set difference(Set rhs) {
 			Value.Set nset = new Value.Set(values);
 			nset.values.removeAll(rhs.values);
 			return nset;
 		}
-		
+
 		public Set remove(Value val) {
 			Value.Set nset = new Value.Set(values);
 			nset.values.remove(val);
 			return nset;
-			
+
 		}
-		
+
 		public Set intersect(Set rhs) {
 			Value.Set nset = new Value.Set();
 			for(Value v : values) {
 				if(rhs.values.contains(v)) {
 					nset.values.add(v);
 				}
-			}			
+			}
 			return nset;
 		}
-		
+
 		public SemanticType type() {
 			if(values.isEmpty()) {
 				return SemanticType.Set(true,SemanticType.Void);
@@ -368,12 +368,12 @@ public abstract class Value implements Comparable<Value> {
 				int i = 0;
 				for(Value v : values) {
 					types[i++] = v.type();
-				}			
+				}
 				return SemanticType.Set(true,SemanticType.Or(types));
 			}
 		}
-	}	
-		
+	}
+
 	public static final class Tuple extends Value {
 		public final ArrayList<Value> values;
 		private Tuple(Collection<Value> values) {
@@ -404,24 +404,24 @@ public abstract class Value implements Comparable<Value> {
 						Value s1 = vs1.get(i);
 						Value s2 = vs2.get(i);
 						int c = s1.compareTo(s2);
-						if(c != 0) { return c; }						
+						if(c != 0) { return c; }
 					}
 					return 0;
 				}
-			} else if (v instanceof Null 
+			} else if (v instanceof Null
 					|| v instanceof Bool
 					|| v instanceof Decimal
 					|| v instanceof Integer
 					|| v instanceof String
 					|| v instanceof Set) {
-				return 1; 
-			} 
-			return -1;			
+				return 1;
+			}
+			return -1;
 		}
-		
+
 		public java.lang.String toString() {
 			java.lang.String r = "(";
-			boolean firstTime=true;			
+			boolean firstTime=true;
 			for(Value v : values) {
 				if(!firstTime) {
 					r += ",";
@@ -431,7 +431,7 @@ public abstract class Value implements Comparable<Value> {
 			}
 			return r + ")";
 		}
-		
+
 		public SemanticType type() {
 			SemanticType[] types = new SemanticType[values.size()];
 			int i = 0;
@@ -441,15 +441,15 @@ public abstract class Value implements Comparable<Value> {
 			return SemanticType.Tuple(types);
 		}
 	}
-	
+
 	private static final ArrayList<Value> values = new ArrayList<Value>();
 	private static final HashMap<Value,java.lang.Integer> cache = new HashMap<Value,java.lang.Integer>();
-	
+
 	private static <T extends Value> T get(T type) {
 		java.lang.Integer idx = cache.get(type);
 		if(idx != null) {
 			return (T) values.get(idx);
-		} else {					
+		} else {
 			cache.put(type, values.size());
 			values.add(type);
 			return type;

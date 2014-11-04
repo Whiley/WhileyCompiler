@@ -34,42 +34,42 @@ import wyil.lang.WyilFile;
  * expressions, to determine types for all intermediate expressions and
  * variables. During this propagation, type checking is performed to ensure
  * types are used soundly. For example:
- * 
+ *
  * <pre>
  * function sum([int] data) => int:
  *     int r = 0      // declared int type for r
  *     for v in data: // infers int type for v, based on type of data
- *         r = r + v  // infers int type for r + v, based on type of operands 
+ *         r = r + v  // infers int type for r + v, based on type of operands
  *     return r       // infers int type for return expression
  * </pre>
- * 
+ *
  * <p>
  * The flow typing algorithm distinguishes between the <i>declared type</i> of a
  * variable and its <i>known type</i>. That is, the known type at any given
  * point is permitted to be more precise than the declared type (but not vice
  * versa). For example:
  * </p>
- * 
+ *
  * <pre>
  * function id(int x) => int:
  *    return x
- *    
+ *
  * function f(int y) => int:
  *    int|null x = y
  *    f(x)
  * </pre>
- * 
+ *
  * <p>
  * The above example is considered type safe because the known type of
  * <code>x</code> at the function call is <code>int</code>, which differs from
  * its declared type (i.e. <code>int|null</code>).
  * </p>
- * 
+ *
  * <p>
  * Loops present an interesting challenge for type propagation. Consider this
  * example:
  * </p>
- * 
+ *
  * <pre>
  * function loopy(int max) => real:
  *     var i = 0
@@ -77,7 +77,7 @@ import wyil.lang.WyilFile;
  *         i = i + 0.5
  *     return i
  * </pre>
- * 
+ *
  * <p>
  * On the first pass through the loop, variable <code>i</code> is inferred to
  * have type <code>int</code> (based on the type of the constant <code>0</code>
@@ -86,7 +86,7 @@ import wyil.lang.WyilFile;
  * <code>i</code> is <code>real</code>. At this point, the loop must be
  * reconsidered taking into account this updated type for <code>i</code>.
  * </p>
- * 
+ *
  * <p>
  * The operation of the flow type checker splits into two stages:
  * </p>
@@ -96,7 +96,7 @@ import wyil.lang.WyilFile;
  * <li><b>Local Propagation.</b> During this stage, types are propagated through
  * statements and expressions (as above).</li>
  * </ul>
- * 
+ *
  * <h3>References</h3>
  * <ul>
  * <li>
@@ -106,9 +106,9 @@ import wyil.lang.WyilFile;
  * </p>
  * </li>
  * </ul>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class FlowTypeChecker {
 
@@ -167,7 +167,7 @@ public class FlowTypeChecker {
 	 * Resolve types for a given type declaration. If an invariant expression is
 	 * given, then we have to propagate and resolve types throughout the
 	 * expression.
-	 * 
+	 *
 	 * @param td
 	 *            Type declaration to check.
 	 * @throws IOException
@@ -199,7 +199,7 @@ public class FlowTypeChecker {
 
 	/**
 	 * Propagate and check types for a given constant declaration.
-	 * 
+	 *
 	 * @param cd
 	 *            Constant declaration to check.
 	 * @throws IOException
@@ -211,7 +211,7 @@ public class FlowTypeChecker {
 
 	/**
 	 * Propagate and check types for a given function or method declaration.
-	 * 
+	 *
 	 * @param fd
 	 *            Function or method declaration to check.
 	 * @throws IOException
@@ -279,7 +279,7 @@ public class FlowTypeChecker {
 	/**
 	 * Propagate type information in a flow-sensitive fashion through a block of
 	 * statements, whilst type checking each statement and expression.
-	 * 
+	 *
 	 * @param block
 	 *            Block of statements to flow sensitively type check
 	 * @param environment
@@ -307,8 +307,8 @@ public class FlowTypeChecker {
 	 * statement, whilst type checking it at the same time. For statements which
 	 * contain other statements (e.g. if, while, etc), then this will
 	 * recursively propagate type information through them as well.
-	 * 
-	 * 
+	 *
+	 *
 	 * @param block
 	 *            Block of statements to flow-sensitively type check
 	 * @param environment
@@ -369,7 +369,7 @@ public class FlowTypeChecker {
 	/**
 	 * Type check an assertion statement. This requires checking that the
 	 * expression being asserted is well-formed and has boolean type.
-	 * 
+	 *
 	 * @param stmt
 	 *            Statement to type check
 	 * @param environment
@@ -386,7 +386,7 @@ public class FlowTypeChecker {
 	/**
 	 * Type check an assume statement. This requires checking that the
 	 * expression being asserted is well-formed and has boolean type.
-	 * 
+	 *
 	 * @param stmt
 	 *            Statement to type check
 	 * @param environment
@@ -408,7 +408,7 @@ public class FlowTypeChecker {
 	 * the type of the initialiser expression. Additionally, when an initialiser
 	 * is given we must check it is well-formed and that it is a subtype of the
 	 * declared type.
-	 * 
+	 *
 	 * @param stmt
 	 *            Statement to type check
 	 * @param environment
@@ -420,7 +420,7 @@ public class FlowTypeChecker {
 			Environment environment) throws IOException, ResolveError {
 		// First, resolve declared type
 		stmt.type = resolveAsType(stmt.pattern.toSyntacticType(), current);
-		
+
 		// Second, resolve type of initialiser. This must be performed before we
 		// update the environment, since this expression is not allowed to refer
 		// to the newly declared variable.
@@ -441,14 +441,14 @@ public class FlowTypeChecker {
 			environment = setCurrentType(stmt.pattern, stmt.expr.result(),
 					environment);
 		}
-		
+
 		// Done.
 		return environment;
 	}
 
 	/**
 	 * Type check an assignment statement.
-	 * 
+	 *
 	 * @param stmt
 	 *            Statement to type check
 	 * @param environment
@@ -571,7 +571,7 @@ public class FlowTypeChecker {
 	 * Type check a break statement. This requires propagating the current
 	 * environment to the block destination, to ensure that the actual types of
 	 * all variables at that point are precise.
-	 * 
+	 *
 	 * @param stmt
 	 *            Statement to type check
 	 * @param environment
@@ -587,7 +587,7 @@ public class FlowTypeChecker {
 	/**
 	 * Type check an assume statement. This requires checking that the
 	 * expression being printed is well-formed and has string type.
-	 * 
+	 *
 	 * @param stmt
 	 *            Statement to type check
 	 * @param environment
@@ -603,7 +603,7 @@ public class FlowTypeChecker {
 
 	/**
 	 * Type check a do-while statement.
-	 * 
+	 *
 	 * @param stmt
 	 *            Statement to type check
 	 * @param environment
@@ -615,7 +615,7 @@ public class FlowTypeChecker {
 
 		// Iterate to a fixed point
 		environment = computeFixedPoint(environment,stmt.body,stmt.condition,true,stmt);
-		
+
 		// Type invariants
 		List<Expr> stmt_invariants = stmt.invariants;
 		for (int i = 0; i != stmt_invariants.size(); ++i) {
@@ -638,7 +638,7 @@ public class FlowTypeChecker {
 
 	/**
 	 * Type check a <code>for</code> statement.
-	 * 
+	 *
 	 * @param stmt
 	 *            Statement to type check
 	 * @param environment
@@ -690,14 +690,14 @@ public class FlowTypeChecker {
 
 		// Iterate to a fixed point
 		environment = computeFixedPoint(environment,stmt.body,null,false,stmt);
-		
+
 		// Remove the loop variables from the environment, since they are only
 		// scoped for the duration of the body but not beyond.
 		for (int i = 0; i != elementTypes.length; ++i) {
 			String var = stmtVariables.get(i);
 			environment = environment.remove(var);
 		}
-		
+
 		// Finally, type the invariant
 		if (stmt.invariant != null) {
 			stmt.invariant = propagate(stmt.invariant, environment, current);
@@ -714,31 +714,31 @@ public class FlowTypeChecker {
 	 * potentially updated environments are then passed through the true and
 	 * false blocks which, in turn, produce updated environments. Finally, these
 	 * two environments are joined back together. The following illustrates:
-	 * 
+	 *
 	 * <pre>
 	 *                    //  Environment
 	 * function f(int|null x) => int:
 	 *                    // {x : int|null}
 	 *    if x is null:
-	 *                    // {x : null} 
+	 *                    // {x : null}
 	 *        x = 0
-	 *                    // {x : int}      
+	 *                    // {x : int}
 	 *    else:
 	 *                    // {x : int}
 	 *        x = x + 1
 	 *                    // {x : int}
 	 *    // --------------------------------------------------
-	 *                    // {x : int} o {x : int} => {x : int} 
+	 *                    // {x : int} o {x : int} => {x : int}
 	 *    return x
 	 * </pre>
-	 * 
+	 *
 	 * Here, we see that the type of <code>x</code> is initially
 	 * <code>int|null</code> before the first statement of the function body. On
 	 * the true branch of the type test this is updated to <code>null</code>,
 	 * whilst on the false branch it is updated to <code>int</code>. Finally,
 	 * the type of <code>x</code> at the end of each block is <code>int</code>
 	 * and, hence, its type after the if-statement is <code>int</code>.
-	 * 
+	 *
 	 * @param stmt
 	 *            Statement to type check
 	 * @param environment
@@ -748,10 +748,10 @@ public class FlowTypeChecker {
 	 */
 
 	private Environment propagate(Stmt.IfElse stmt, Environment environment) {
-		
-		// First, check condition and apply variable retypings.		
+
+		// First, check condition and apply variable retypings.
 		Pair<Expr, Environment> p1, p2;
-		
+
 		p1 = propagateCondition(stmt.condition, true, environment.clone(),
 				current);
 		p2 = propagateCondition(stmt.condition, false, environment.clone(),
@@ -771,7 +771,7 @@ public class FlowTypeChecker {
 			trueEnvironment = environment;
 			falseEnvironment = propagate(stmt.falseBranch, falseEnvironment);
 		}
-		
+
 		// Finally, join results back together
 		return trueEnvironment.merge(environment.keySet(), falseEnvironment);
 	}
@@ -782,7 +782,7 @@ public class FlowTypeChecker {
 	 * the enclosing function or method's declared return type. The environment
 	 * after a return statement is "bottom" because that represents an
 	 * unreachable program point.
-	 * 
+	 *
 	 * @param stmt
 	 *            Statement to type check
 	 * @param environment
@@ -800,7 +800,7 @@ public class FlowTypeChecker {
 		} else if(!(current.resolvedType().ret().raw() instanceof Type.Void)) {
 			// In this case, we have an unusual situation. A return statement
 			// was provided without a return value, but the enclosing method or
-			// function requires a return value. 
+			// function requires a return value.
 			syntaxError("missing return value",filename,stmt);
 		}
 
@@ -811,7 +811,7 @@ public class FlowTypeChecker {
 	/**
 	 * Type check a <code>skip</code> statement, which has no effect on the
 	 * environment.
-	 * 
+	 *
 	 * @param stmt
 	 *            Statement to type check
 	 * @param environment
@@ -830,7 +830,7 @@ public class FlowTypeChecker {
 	 * each block, which produces n potentially different environments and these
 	 * are all joined together to produce the environment which holds after this
 	 * statement. For example:
-	 * 
+	 *
 	 * <pre>
 	 *                    //  Environment
 	 * function f(int x) => int|null:
@@ -838,32 +838,32 @@ public class FlowTypeChecker {
 	 *                    // {x : int, y : void}
 	 *    switch x:
 	 *       case 0:
-	 *                    // {x : int, y : void}                          
-	 *           return 0 
+	 *                    // {x : int, y : void}
+	 *           return 0
 	 *                    // { }
 	 *       case 1,2,3:
-	 *                    // {x : int, y : void}       
+	 *                    // {x : int, y : void}
 	 *           y = x
 	 *                    // {x : int, y : int}
 	 *       default:
-	 *                    // {x : int, y : void}       
+	 *                    // {x : int, y : void}
 	 *           y = null
 	 *                    // {x : int, y : null}
 	 *    // --------------------------------------------------
 	 *                    // {} o
-	 *                    // {x : int, y : int} o 
-	 *                    // {x : int, y : null} 
-	 *                    // => {x : int, y : int|null} 
+	 *                    // {x : int, y : int} o
+	 *                    // {x : int, y : null}
+	 *                    // => {x : int, y : int|null}
 	 *    return y
 	 * </pre>
-	 * 
+	 *
 	 * Here, the environment after the declaration of <code>y</code> has its
 	 * actual type as <code>void</code> since no value has been assigned yet.
 	 * For each of the case blocks, this initial environment is (separately)
 	 * updated to produce three different environments. Finally, each of these
 	 * is joined back together to produce the environment going into the
 	 * <code>return</code> statement.
-	 * 
+	 *
 	 * @param stmt
 	 *            Statement to type check
 	 * @param environment
@@ -913,9 +913,9 @@ public class FlowTypeChecker {
 
 			finalEnv = finalEnv.merge(environment.keySet(), environment);
 		} else {
-			environment.free();		
+			environment.free();
 		}
-	
+
 		return finalEnv;
 	}
 
@@ -923,7 +923,7 @@ public class FlowTypeChecker {
 	 * Type check a <code>throw</code> statement. We must check that the throw
 	 * expression is well-formed. The environment after a throw statement is
 	 * "bottom" because that represents an unreachable program point.
-	 * 
+	 *
 	 * @param stmt
 	 *            Statement to type check
 	 * @param environment
@@ -938,7 +938,7 @@ public class FlowTypeChecker {
 
 	/**
 	 * Type check a try-catch statement.
-	 * 
+	 *
 	 * @param stmt
 	 *            Statement to type check
 	 * @param environment
@@ -975,7 +975,7 @@ public class FlowTypeChecker {
 
 	/**
 	 * Type check a <code>whiley</code> statement.
-	 * 
+	 *
 	 * @param stmt
 	 *            Statement to type check
 	 * @param environment
@@ -987,7 +987,7 @@ public class FlowTypeChecker {
 
 		// Determine typing at beginning of loop
 		environment = computeFixedPoint(environment,stmt.body,stmt.condition,false,stmt);
-		
+
 		// Type loop invariant(s)
 		List<Expr> stmt_invariants = stmt.invariants;
 		for (int i = 0; i != stmt_invariants.size(); ++i) {
@@ -1100,21 +1100,21 @@ public class FlowTypeChecker {
 	/**
 	 * The purpose of this method is to add variable names declared within a
 	 * type pattern to the given environment. For example, as follows:
-	 * 
+	 *
 	 * <pre>
 	 * define tup as {int x, int y} where x < y
 	 * </pre>
-	 * 
+	 *
 	 * In this case, <code>x</code> and <code>y</code> are variable names
 	 * declared as part of the pattern.
-	 * 
+	 *
 	 * <p>
 	 * Note, variables are both declared and initialised with the given type. In
 	 * some cases (e.g. parameters), this makes sense. In other cases (e.g.
 	 * local variable declarations), it does not. In the latter, the variable
 	 * should then be updated with an appropriate type.
 	 * </p>
-	 * 
+	 *
 	 * @param src
 	 * @param t
 	 * @param environment
@@ -1161,9 +1161,9 @@ public class FlowTypeChecker {
 	 * Set the current type of one or more variables in a given type pattern.
 	 * The current type may differ from the declared type at a given program
 	 * point, depending upon what is known at that point.
-	 * 
+	 *
 	 * @param pattern The type pattern containing those variables to update
-	 * @param type The type that the pattern (as a whole) should be updated to 
+	 * @param type The type that the pattern (as a whole) should be updated to
 	 * @param environment The environment which should be updated
 	 * @return
 	 */
@@ -1193,7 +1193,7 @@ public class FlowTypeChecker {
 				TypePattern element = tp.elements.get(i);
 				Nominal elementType = tt.element(i);
 				environment = setCurrentType(element, elementType, environment);
-			}			
+			}
 		} else {
 			TypePattern.Leaf lp = (TypePattern.Leaf) pattern;
 
@@ -1204,7 +1204,7 @@ public class FlowTypeChecker {
 
 		return environment;
 	}
-	
+
 	// =========================================================================
 	// Condition
 	// =========================================================================
@@ -1218,7 +1218,7 @@ public class FlowTypeChecker {
 	 * important to ensure that variables are retyped in e.g. if-statements. For
 	 * example:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * if x is int && x >= 0
 	 *    // x is int
@@ -1236,7 +1236,7 @@ public class FlowTypeChecker {
 	 * This prevents falsely concluding that e.g. "x is int" holds in the false
 	 * branch.
 	 * </p>
-	 * 
+	 *
 	 * @param expr
 	 *            Condition expression to type check and propagate through
 	 * @param sign
@@ -1276,7 +1276,7 @@ public class FlowTypeChecker {
 	 * Propagate type information through a unary expression being used as a
 	 * condition and, in fact, only logical not is syntactically valid here.
 	 * </p>
-	 * 
+	 *
 	 * @param expr
 	 *            Condition expression to type check and propagate through
 	 * @param sign
@@ -1317,7 +1317,7 @@ public class FlowTypeChecker {
 	 * condition. In this case, only logical connectives ("&&", "||", "^") and
 	 * comparators (e.g. "==", "<=", etc) are permitted here.
 	 * </p>
-	 * 
+	 *
 	 * @param expr
 	 *            Condition expression to type check and propagate through
 	 * @param sign
@@ -1365,7 +1365,7 @@ public class FlowTypeChecker {
 	 * Propagate type information through a binary expression being used as a
 	 * logical connective ("&&", "||", "^").
 	 * </p>
-	 * 
+	 *
 	 * @param bop
 	 *            Binary operator for this expression.
 	 * @param sign
@@ -1436,7 +1436,7 @@ public class FlowTypeChecker {
 	 * Propagate type information through a binary expression being used as a
 	 * comparators (e.g. "==", "<=", etc).
 	 * </p>
-	 * 
+	 *
 	 * @param bop
 	 *            Binary operator for this expression.
 	 * @param sign
@@ -1481,11 +1481,11 @@ public class FlowTypeChecker {
 				 * branches respectively. We have to use the negated
 				 * unconstrainedTestType for the false branch because only that
 				 * is guaranteed if the test fails. For example:
-				 * 
+				 *
 				 * <pre>
 				 * define nat as int where $ &gt;= 0
 				 * define listnat as [int]|nat
-				 * 
+				 *
 				 * int f([int]|int x):
 				 *    if x if listnat:
 				 *        x : [int]|int
@@ -1493,7 +1493,7 @@ public class FlowTypeChecker {
 				 *    else:
 				 *        x : int
 				 * </pre>
-				 * 
+				 *
 				 * The unconstrained type of listnat is [int], since nat is a
 				 * constrained type.
 				 */
@@ -1556,7 +1556,7 @@ public class FlowTypeChecker {
 			bop.srcType = rhs.result();
 			break;
 		case SUBSET:
-		case SUBSETEQ:			
+		case SUBSETEQ:
 			checkIsSubtype(Type.T_SET_ANY, rhs, context);
 			checkIsSubtype(lhs.result(), rhs, context);
 			//
@@ -1567,7 +1567,7 @@ public class FlowTypeChecker {
 				return null;
 			} else {
 				bop.srcType = lhs.result();
-			}	
+			}
 			break;
 		case LT:
 		case LTEQ:
@@ -1585,7 +1585,7 @@ public class FlowTypeChecker {
 				return null;
 			} else {
 				bop.srcType = lhs.result();
-			}			
+			}
 			break;
 		case NEQ:
 			// following is a sneaky trick for the special case below
@@ -1642,7 +1642,7 @@ public class FlowTypeChecker {
 	 * Propagate types through a given expression, whilst checking that it is
 	 * well typed. In this case, any use of a runtime type test cannot effect
 	 * callers of this function.
-	 * 
+	 *
 	 * @param expr
 	 *            Expression to propagate types through.
 	 * @param environment
@@ -1892,7 +1892,7 @@ public class FlowTypeChecker {
 					return null;
 				} else {
 					srcType = lhsRawType;
-				} 
+				}
 			}
 		}
 
@@ -2391,7 +2391,7 @@ public class FlowTypeChecker {
 	 * Compute the fixed point of an environment across a body of statements.
 	 * The fixed point is the environment which, starting from the initial
 	 * environment, doesn't change after being put through body. For example:
-	 * 
+	 *
 	 * <pre>
 	 * x = 1
 	 * while i < 10:
@@ -2400,19 +2400,19 @@ public class FlowTypeChecker {
 	 *    i = i + 1
 	 *    // x -> null, i -> int
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, we see the environment before the loop body, along with that after.
 	 * The fixed point for this example, then, is {x -> int|null, i -> int}
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * <b>NOTE:</b> The fixed-point computation is technically not guaranteed to
 	 * terminate (i.e. because the lattice has infinite height). As a simplistic
 	 * step, for now, the computatino just bails out after 10 iterations. In
 	 * principle, one can do better and this is discussed in the following
 	 * paper:
-	 * 
+	 *
 	 * <ul>
 	 * <li>A Calculus for Constraint-Based Flow Typing. David J. Pearce. In
 	 * Proceedings of the Workshop on Formal Techniques for Java-like Languages
@@ -2420,7 +2420,7 @@ public class FlowTypeChecker {
 	 * </ul>
 	 * (Aaaahhh, the irony that I haven't implemented by own paper :)
 	 * </p>
-	 * 
+	 *
 	 * @param environment
 	 *            The initial environment, which is guaranteed not to be changed
 	 *            by this method.
@@ -2449,13 +2449,13 @@ public class FlowTypeChecker {
 		Set<String> variables = original.keySet();
 		// The old environment is used to compare the environment after one
 		// iteration with previous "old" environment to see whether anything has
-		// changed. 
+		// changed.
 		Environment old;
 		// The temporary environment is used simply to hold the environment in
 		// between the condition and the statement body.
 		Environment tmp;
 		do {
-			// First, take a copy of environment so we can later tell whether anything changed. 
+			// First, take a copy of environment so we can later tell whether anything changed.
 			old = environment.clone();
 			// Second, propagate through condition (if applicable). This may
 			// update the environment if one or more type tests are used.
@@ -2467,7 +2467,7 @@ public class FlowTypeChecker {
 				doWhile = false;
 			}
 			// Merge updated environment with original environment to produce
-			// potentially updated environment. 
+			// potentially updated environment.
 			environment = original.merge(variables, propagate(body, tmp));
 			old.free(); // hacky, but safe
 			// Finally, check loop count to force termination
@@ -2475,10 +2475,10 @@ public class FlowTypeChecker {
 				internalFailure("Unable to type loop",filename,element);
 			}
 		} while (!environment.equals(old));
-		
+
 		return environment;
 	}
-	
+
 	// =========================================================================
 	// Resolve as Function or Method
 	// =========================================================================
@@ -2487,7 +2487,7 @@ public class FlowTypeChecker {
 	 * Responsible for determining the true type of a method or function being
 	 * invoked. To do this, it must find the function/method with the most
 	 * precise type that matches the argument types.
-	 * 
+	 *
 	 * @param nid
 	 * @param parameters
 	 * @return
@@ -2515,7 +2515,7 @@ public class FlowTypeChecker {
 	 * invoked. In this case, no argument types are given. This means that any
 	 * match is returned. However, if there are multiple matches, then an
 	 * ambiguity error is reported.
-	 * 
+	 *
 	 * @param name
 	 *            --- function or method name whose type to determine.
 	 * @param context
@@ -2532,7 +2532,7 @@ public class FlowTypeChecker {
 	 * Responsible for determining the true type of a method or function being
 	 * invoked. To do this, it must find the function/method with the most
 	 * precise type that matches the argument types.
-	 * 
+	 *
 	 * @param name
 	 *            --- name of function or method whose type to determine.
 	 * @param parameters
@@ -2726,7 +2726,7 @@ public class FlowTypeChecker {
 	 * type "T" is declared as protected within the same file. The external type
 	 * of "f" will be "(T)=>int"; however, the internal type will be e.g.
 	 * "(int)=>int" if T is defined as int.
-	 * 
+	 *
 	 * @param nid
 	 *            --- Fully qualified name of function being matched
 	 * @param parameters
@@ -2805,15 +2805,15 @@ public class FlowTypeChecker {
 	 * given name/type/constant/function/method appears. That is, what imports
 	 * are active in the enclosing WhileyFile. For example, consider this:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * import whiley.lang.*
-	 * 
+	 *
 	 * type nat is Int.uint
-	 * 
+	 *
 	 * import whiley.ui.*
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * In this example, the statement "<code>import whiley.lang.*</code>" is
 	 * active for the type declaration, whilst the statement "
@@ -2824,7 +2824,7 @@ public class FlowTypeChecker {
 	 * If so, it will then resolve the name <code>Int.uint</code> to
 	 * <code>whiley.lang.Int.uint</code>.
 	 * </p>
-	 * 
+	 *
 	 * @param name
 	 *            A module name without package specifier.
 	 * @param context
@@ -2870,7 +2870,7 @@ public class FlowTypeChecker {
 	 * <code>whiley.lang.Math.max</code> is a valid function name. In contrast,
 	 * <code>["whiley","lang","Math"]</code> does not resolve since
 	 * <code>whiley.lang.Math</code> refers to a module.
-	 * 
+	 *
 	 * @param names
 	 *            A list of components making up the name, which may include the
 	 *            package and enclosing module.
@@ -2927,7 +2927,7 @@ public class FlowTypeChecker {
 	/**
 	 * This method attempts to resolve a name as a module in a given name
 	 * context.
-	 * 
+	 *
 	 * @param name
 	 *            --- name to be resolved
 	 * @param context
@@ -3011,7 +3011,7 @@ public class FlowTypeChecker {
 	 * type, constant, function, etc) which encloses the give type. The context
 	 * determines what import statements are visible to help resolving external
 	 * names.
-	 * 
+	 *
 	 * @param type
 	 *            --- type to be resolved.
 	 * @param context
@@ -3030,7 +3030,7 @@ public class FlowTypeChecker {
 	 * replacing them with nominal types. In this case, any constrained types
 	 * are treated as void. This is critical for properly dealing with type
 	 * tests, which may otherwise assume types are unconstrained.
-	 * 
+	 *
 	 * @param type
 	 *            --- type to be resolved.
 	 * @param context
@@ -3081,14 +3081,14 @@ public class FlowTypeChecker {
 	}
 
 	/**
-	 * The following method resolves a syntactic type in a given context. 
-	 * 
+	 * The following method resolves a syntactic type in a given context.
+	 *
 	 * @param type
 	 *            --- type to be resolved
 	 * @param context
 	 *            --- context in which to resolve the type
 	 * @param states
-	 * @param roots           
+	 * @param roots
 	 * @return
 	 * @throws IOException
 	 */
@@ -3388,7 +3388,7 @@ public class FlowTypeChecker {
 	 * in other compilation units. This function will actually evaluate constant
 	 * expressions (e.g. "1+2") to produce actual constant vales.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * Constant declarations form a global graph spanning multiple compilation
 	 * units. In resolving a given constant, this function must traverse those
@@ -3397,7 +3397,7 @@ public class FlowTypeChecker {
 	 * this function will report an error is such a recursive cycle is detected
 	 * in the constant graph.
 	 * </p>
-	 * 
+	 *
 	 * @param nid
 	 *            Fully qualified name identifier of constant to resolve
 	 * @return Constant value representing named constant
@@ -3415,13 +3415,13 @@ public class FlowTypeChecker {
 	 * may still use operators (e.g. "1+2", or "1+c" where c is a declared
 	 * constant).
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * Constant expressions used in a few places in Whiley. In particular, the
 	 * cases of a <code>switch</code> statement must be defined using constant
 	 * expressions.
 	 * </p>
-	 * 
+	 *
 	 * @param e
 	 * @param context
 	 * @return
@@ -3436,7 +3436,7 @@ public class FlowTypeChecker {
 	 * done by traversing the constant's expression and recursively expanding
 	 * any named constants it contains. Simplification of constants is also
 	 * performed where possible.
-	 * 
+	 *
 	 * @param key
 	 *            --- name of constant we are expanding.
 	 * @param exprs
@@ -3495,7 +3495,7 @@ public class FlowTypeChecker {
 	 * (where possible). If the expression contains, for example, method or
 	 * function declarations then this will certainly fail (producing a syntax
 	 * error).
-	 * 
+	 *
 	 * @param key
 	 *            --- name of constant we are expanding.
 	 * @param context
@@ -3607,12 +3607,12 @@ public class FlowTypeChecker {
 	 * corresponds to checking whether or not the already name exists in the
 	 * given context; or, a public or protected named is imported from another
 	 * file.
-	 * 
+	 *
 	 * @param nid
 	 *            Name to check modifiers of
 	 * @param context
 	 *            Context in which we are trying to access named item
-	 * 
+	 *
 	 * @return True if given context permitted to access name
 	 * @throws IOException
 	 */
@@ -3631,12 +3631,12 @@ public class FlowTypeChecker {
 	 * effectively corresponds to checking whether or not the already type
 	 * exists in the given context; or, a public type is imported from another
 	 * file.
-	 * 
+	 *
 	 * @param nid
 	 *            Name to check modifiers of
 	 * @param context
 	 *            Context in which we are trying to access named item
-	 * 
+	 *
 	 * @return True if given context permitted to access name
 	 * @throws IOException
 	 */
@@ -3653,13 +3653,13 @@ public class FlowTypeChecker {
 	 * Determine whether a named item has a modifier matching one of a given
 	 * list. This is particularly useful for checking visibility (e.g. public,
 	 * private, etc) of named items.
-	 * 
+	 *
 	 * @param nid
 	 *            Name to check modifiers of
 	 * @param context
 	 *            Context in which we are trying to access named item
 	 * @param modifiers
-	 * 
+	 *
 	 * @return True if given context permitted to access name
 	 * @throws IOException
 	 */
@@ -3699,7 +3699,7 @@ public class FlowTypeChecker {
 
 	/**
 	 * Evaluate a given unary operator on a given input value.
-	 * 
+	 *
 	 * @param operator
 	 *            Unary operator to evaluate
 	 * @param operand
@@ -4119,7 +4119,7 @@ public class FlowTypeChecker {
 				return; // OK
 			}
 		}
-		// Construct the message		
+		// Construct the message
 		String msg = "expecting ";
 		boolean firstTime = true;
 		for(Nominal t : types) {
@@ -4145,16 +4145,16 @@ public class FlowTypeChecker {
 	 * environment will change as we move through the statements of a function
 	 * or method.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This class is implemented in a functional style to minimise possible
 	 * problems related to aliasing (which have been a problem in the past). To
 	 * improve performance, reference counting is to ensure that cloning the
 	 * underling map is only performed when actually necessary.
 	 * </p>
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	private static final class Environment {
 
@@ -4162,7 +4162,7 @@ public class FlowTypeChecker {
 		 * The mapping of variables to their declared type.
 		 */
 		private final HashMap<String, Nominal> declaredTypes;
-		
+
 		/**
 		 * The mapping of variables to their current type.
 		 */
@@ -4198,7 +4198,7 @@ public class FlowTypeChecker {
 		/**
 		 * Get the type associated with a given variable at the current program
 		 * point, or null if that variable is not declared.
-		 * 
+		 *
 		 * @param variable
 		 *            Variable to return type for.
 		 * @return
@@ -4210,7 +4210,7 @@ public class FlowTypeChecker {
 		/**
 		 * Get the declared type of a given variable, or null if that variable
 		 * is not declared.
-		 * 
+		 *
 		 * @param variable
 		 *            Variable to return type for.
 		 * @return
@@ -4218,10 +4218,10 @@ public class FlowTypeChecker {
 		public Nominal getDeclaredType(String variable) {
 			return declaredTypes.get(variable);
 		}
-		
+
 		/**
 		 * Check whether a given variable is declared within this environment.
-		 * 
+		 *
 		 * @param variable
 		 * @return
 		 */
@@ -4232,7 +4232,7 @@ public class FlowTypeChecker {
 		/**
 		 * Return the set of declared variables in this environment (a.k.a the
 		 * domain).
-		 * 
+		 *
 		 * @return
 		 */
 		public Set<String> keySet() {
@@ -4245,13 +4245,13 @@ public class FlowTypeChecker {
 		 * performed. Otherwise, a fresh copy of this environment is returned
 		 * with the given variable associated with the given type, whilst this
 		 * environment is unchanged.
-		 * 
+		 *
 		 * @param variable
 		 *            Name of variable to be declared with given type
 		 * @param declared
 		 *            Declared type of the given variable
 		 * @param initial
-		 *            Initial type of given variable		            
+		 *            Initial type of given variable
 		 * @return An updated version of the environment which contains the new
 		 *         association.
 		 */
@@ -4272,7 +4272,7 @@ public class FlowTypeChecker {
 				return nenv;
 			}
 		}
-		
+
 		/**
 		 * Update the current type of a given variable. If that variable already
 		 * had a current type, then this is overwritten. In the case that this
@@ -4280,7 +4280,7 @@ public class FlowTypeChecker {
 		 * performed. Otherwise, a fresh copy of this environment is returned
 		 * with the given variable associated with the given type, whilst this
 		 * environment is unchanged.
-		 * 
+		 *
 		 * @param variable
 		 *            Name of variable to be associated with given type
 		 * @param type
@@ -4303,14 +4303,14 @@ public class FlowTypeChecker {
 				return nenv;
 			}
 		}
-		
+
 		/**
 		 * Remove a variable and any associated type from this environment. In
 		 * the case that this environment has a reference count of 1, then an
 		 * "in place" update is performed. Otherwise, a fresh copy of this
 		 * environment is returned with the given variable and any association
 		 * removed.
-		 * 
+		 *
 		 * @param variable
 		 *            Name of variable to be removed from the environment
 		 * @return An updated version of the environment in which the given
@@ -4336,7 +4336,7 @@ public class FlowTypeChecker {
 		 * are included in the result, and all such variables are required to be
 		 * declared in both environments. The type of each variable included is
 		 * the union of its type in this environment and the other environment.
-		 * 
+		 *
 		 * @param declared
 		 *            The set of declared variables which should be included in
 		 *            the result. The intuition is that these are the variables
@@ -4371,7 +4371,7 @@ public class FlowTypeChecker {
 
 			return result;
 		}
-		
+
 		/**
 		 * Create a fresh copy of this environment. In fact, this operation
 		 * simply increments the reference count of this environment and returns

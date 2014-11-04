@@ -31,7 +31,7 @@ import uint from whiley.lang.Int
 // Generic Writer
 // =================================================================
 
-// A generic writer represents an output stream of data items 
+// A generic writer represents an output stream of data items
 // (e.g. bytes or characters), such as being written a file, socket or
 // console.
 public type Writer is {
@@ -49,7 +49,7 @@ public type Writer is {
 
     // Space for additional operations defined by refinements of
     // InputStream
-    ...        
+    ...
 }
 
 

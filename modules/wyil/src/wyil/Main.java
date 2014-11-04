@@ -10,9 +10,9 @@ import wyil.io.WyilFileReader;
 import wyil.lang.WyilFile;
 
 public class Main {
-	
+
 	public static PrintStream errout;
-	
+
 	/**
 	 * Initialise the error output stream so as to ensure it will display
 	 * unicode characters (when possible). Additionally, extract version
@@ -25,8 +25,8 @@ public class Main {
 			errout = System.err;
 		}
 	}
-	
-	public static void main(String[] args) {	
+
+	public static void main(String[] args) {
 		boolean verbose = true;
 		try {
 			WyilFile wf = new WyilFileReader(args[0]).read();
@@ -46,7 +46,7 @@ public class Main {
 			if (verbose) {
 				e.printStackTrace(errout);
 			}
-		
-		}		
+
+		}
 	}
 }

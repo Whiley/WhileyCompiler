@@ -39,19 +39,19 @@ import wyjc.util.WyjcBuildTask;
  * The main class provides all of the necessary plumbing to process command-line
  * options, construct an appropriate pipeline and then instantiate the Whiley
  * Compiler to generate class files.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class WyjcMain extends WycMain {
 
-	public static final OptArg[] EXTRA_OPTIONS = { 
+	public static final OptArg[] EXTRA_OPTIONS = {
 		new OptArg("classdir", "cd", OptArg.FILEDIR, "Specify where to place generated class files",
 			new File("."))
 	};
-	
+
 	public static OptArg[] DEFAULT_OPTIONS;
-	
+
 	static {
 		// first append options
 		OptArg[] options = new OptArg[WycMain.DEFAULT_OPTIONS.length
@@ -62,7 +62,7 @@ public class WyjcMain extends WycMain {
 				WycMain.DEFAULT_OPTIONS.length, EXTRA_OPTIONS.length);
 		WyjcMain.DEFAULT_OPTIONS = options;
 	}
-	
+
 	public WyjcMain(WyjcBuildTask builder, OptArg[] options) {
 		super(builder, options);
 	}
@@ -76,9 +76,9 @@ public class WyjcMain extends WycMain {
 			((WyjcBuildTask) builder).setClassDir(classDir);
 		}
 	}
-	
+
 	public static void main(String[] args) {
-		
+
 		// now, run wyjc build task
 		System.exit(new WyjcMain(new WyjcBuildTask(), DEFAULT_OPTIONS).run(args));
 	}

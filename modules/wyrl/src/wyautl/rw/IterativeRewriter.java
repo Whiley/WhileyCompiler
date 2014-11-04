@@ -41,7 +41,7 @@ import wyautl.rw.IterativeRewriter.Result;
  * strategy pattern to support different rule selection heuristics.
  * Specifically, it is parameterised by two strategies which (respectively)
  * control the selection of inference rules and reduction rules.
- * 
+ *
  * @author David J. Pearce
  *
  */
@@ -50,7 +50,7 @@ public final class IterativeRewriter implements Rewriter {
 	public enum Result {
 		TRUE,FALSE,TIMEOUT
 	}
-	
+
 	/**
 	 * The schema used by automata being reduced. This is primarily useful for
 	 * debugging purposes.
@@ -130,15 +130,15 @@ public final class IterativeRewriter implements Rewriter {
 	 * unreachable states below the pivot.
 	 */
 	private int[] oneStepUndo;
-		
+
 	private int maxInferenceSteps = 100;
-	
+
 	private int maxReductionSteps = 500;
-	
+
 	/**
 	 * Construct a simple rewriter for a given automaton which uses the given
 	 * strategies for selecting inference and reduction tool.
-	 * 
+	 *
 	 * @param automaton
 	 *            Automaton to be rewritten
 	 * @param inferenceStrategy
@@ -159,7 +159,7 @@ public final class IterativeRewriter implements Rewriter {
 		this.inferenceStrategy = inferenceStrategy;
 		this.reductionStrategy = reductionStrategy;
 	}
-	
+
 	public void setMaxInferenceSteps(int maxInhaleSteps) {
 		this.maxInferenceSteps = maxInhaleSteps;
 	}
@@ -167,7 +167,7 @@ public final class IterativeRewriter implements Rewriter {
 	public void setMaxReductionSteps(int maxExhaleSteps) {
 		this.maxReductionSteps = maxExhaleSteps;
 	}
-	
+
 	@Override
 	public final boolean apply() {
 		// First, make sure the automaton is minimised and compacted.
@@ -182,29 +182,29 @@ public final class IterativeRewriter implements Rewriter {
 		// Now, perform initial reduction to ensure everything is compact as
 		// possible.
 		reduce(Automaton.K_VOID,Automaton.K_VOID,0);
-		
+
 		return infer();
 	}
 
 	private final boolean infer() {
 		Activation activation;
 		int step = 0;
-		
+
 		// Reset the strategy to ensure that we're starting fresh
 		inferenceStrategy.reset();
-		
+
 		// Now, continue applying reductions until no more left.
 		while (step < maxInferenceSteps && (activation = inferenceStrategy.next(reachable)) != null) {
 			// Apply the activation
-			numInferenceActivations++;			
-			
+			numInferenceActivations++;
+
 			int pivot = automaton.nStates();
 			int from = activation.root();
 			int target = activation.apply(automaton);
-						
-			if (target != Automaton.K_VOID && from != target) {	
-			
-//				System.out.println("\nAUTOMATON(BEFORE): ");				
+
+			if (target != Automaton.K_VOID && from != target) {
+
+//				System.out.println("\nAUTOMATON(BEFORE): ");
 				//wyrl.util.Runtime.debug(automaton, schema, "And","Or");
 				// Update reachability status for nodes affected by this
 				// activation. This is because such states could cause
@@ -212,40 +212,40 @@ public final class IterativeRewriter implements Rewriter {
 				// we activate on a state and rewrite it, but then it remains
 				// and so we repeat.
 				reachable = updateReachable(automaton, reachable);
-				
+
 				Result r = reduce(from,target,pivot);
 
 				//System.out.println("\nAUTOMATON(AFTER): " + automaton);
-				
+
 				if(r == Result.TIMEOUT) {
 					// Reduction timeout
 					return false;
 				} else if(r == Result.TRUE) {
-					
+
 //					System.out.println("*** INFERRED: " + activation.rule.name()
 //							+ ", " + activation.rule.getClass().getName() + " :: "
 //							+ activation.root() + " => " + target + " (" + automaton.nStates() + ")");
-					
+
 					//wyrl.util.Runtime.debug(automaton, schema, "And","Or");
 					// Reset the strategy for the next time we use it.
 					inferenceStrategy.reset();
-					numInferenceSuccesses++;					
+					numInferenceSuccesses++;
 				} else {
 					numInferenceFailures++;
 				}
-				
+
 				step = step + 1;
-								
+
 			} else {
 				// In this case, the activation failed so we simply
 				// continue on to try another activation.
-				numInferenceActivations++;	
+				numInferenceActivations++;
 			}
 		}
-								
-		return step != maxInferenceSteps;		
+
+		return step != maxInferenceSteps;
 	}
-	
+
 	/**
 	 * <p>
 	 * Reduce the states of a given automaton as much as possible. The pivot
@@ -257,7 +257,7 @@ public final class IterativeRewriter implements Rewriter {
 	 * have changed (e.g. after an <code>Automaton.rewrite()</code> has been
 	 * applied) and should be reduce. See #382 for more on this process.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This function is used primarily during the application of an inference
 	 * rule. An important aspect of this is that the function must indicate
@@ -269,7 +269,7 @@ public final class IterativeRewriter implements Rewriter {
 	 * happens, the inference rule has not been successfully applied and we
 	 * should continue to search for other rules which can be applied.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * The generally accepted strategy for checking whether the original
 	 * automaton remains is as follows: firstly, reductions are applied to all
@@ -281,7 +281,7 @@ public final class IterativeRewriter implements Rewriter {
 	 * likewise, if after compaction the number of states exceeds the pivot,
 	 * then it was not retained either.
 	 * </p>
-	 * 
+	 *
 	 * @param automaton
 	 *            The automaton to be reduced.
 	 * @param pivot
@@ -295,82 +295,82 @@ public final class IterativeRewriter implements Rewriter {
 	 * @return True if the original automaton was not retained (i.e. if some new
 	 *         information has been generated).
 	 */
-	private final Result reduce(int from, int to, int pivot) {		
-		 
+	private final Result reduce(int from, int to, int pivot) {
+
 		initOneStepUndo();
-		
-		if(from != Automaton.K_VOID) { 
+
+		if(from != Automaton.K_VOID) {
 			oneStepUndo = applyUndo(oneStepUndo,from,to,pivot);
 		}
-		
+
 		Activation activation;
 		int step = 0;
-		
+
 		// Reset the reduction strategy to ensure we're fresh
 		reductionStrategy.reset();
-		
+
 		// Now, continue applying reductions until no more left.
 		while (step < maxReductionSteps && (activation = reductionStrategy.next(reachable)) != null) {
 			// Apply the activation
-			numReductionActivations++;			
-			
+			numReductionActivations++;
+
 			from = activation.root();
 			int target = activation.apply(automaton);
-						
-			if (target != Automaton.K_VOID && from != target) {	
-			
+
+			if (target != Automaton.K_VOID && from != target) {
+
 //				System.out.println("*** REDUCED: " + activation.rule.name()
 //						+ ", " + activation.rule.getClass().getName() + " :: "
-//						+ activation.root() + " => " + target + " (" + automaton.nStates() + ")");			
-				
+//						+ activation.root() + " => " + target + " (" + automaton.nStates() + ")");
+
 				// Update reachability status for nodes affected by this
 				// activation. This is because such states could cause
 				// an infinite loop of re-activations. More specifically, where
 				// we activate on a state and rewrite it, but then it remains
 				// and so we repeat.
 				reachable = updateReachable(automaton, reachable);
-				
+
 				// Revert all states below the pivot which are now unreachable.
 				// This is essential to ensuring that the automaton will return
 				// to its original state iff it is the unchanged. This must be
 				// applied before compaction.
 				oneStepUndo = applyUndo(oneStepUndo,activation.root(), target, pivot);
-			
+
 				// Compact all states above the pivot to eliminate unreachable
 				// states and prevent the automaton from growing continually.
 				// This is possible because automton.rewrite() can introduce
 				// null states into the automaton.
 				compact(automaton, pivot, reachable, oneStepUndo);
-								
+
 				//assertValidOneStepUndo(oneStepUndo,pivot);
-				
+
 				// Reset the strategy for the next time we use it.
 				reductionStrategy.reset();
-				numReductionSuccesses++;				
+				numReductionSuccesses++;
 				step = step + 1;
 			} else {
 				// In this case, the activation failed so we simply
 				// continue on to try another activation.
-				numReductionFailures++;	
-			}	
+				numReductionFailures++;
+			}
 		}
-		
+
 		//printAutomatonStats(automaton);
-		
+
 		if(step == maxReductionSteps) {
 			return Result.TIMEOUT;
 		} else if(completed(oneStepUndo,pivot)) {
 			return Result.FALSE;
 		} else {
 			return Result.TRUE;
-		}			
+		}
 	}
-	
+
 	/**
 	 * Complete the reduction process. This is the most difficult aspect of the
 	 * process because this must efficiently and precisely determine whether or
 	 * not the automaton has changed.
-	 * 
+	 *
 	 * @param pivot
 	 * @return
 	 */
@@ -393,23 +393,23 @@ public final class IterativeRewriter implements Rewriter {
 				countAbove++;
 			}
 		}
-			
+
 		//System.out.println("\n *** ABOVE = " + countAbove + ", BELOW = " + countBelow + ", PIVOT = " + pivot);
-		
+
 		// Finally, determine whether the automaton has actually changed or not.
 		if (countAbove == 0 && countBelow == pivot) {
 			// Indicates no reachable states remain above the pivot and, hence,
 			// the automaton has not changed. We must now eliminate these states
 			// to ensure the automaton remains identical as before.
-			
+
 			automaton.resize(pivot);
-						
+
 			return true;
 		} else {
 			// Otherwise, the automaton has definitely changed. Therefore, we
 			// compact the automaton down by eliminating all unreachable states.
 			compact(automaton, 0, reachable, oneStepUndo);
-								
+
 			return false;
 		}
 	}
@@ -445,7 +445,7 @@ public final class IterativeRewriter implements Rewriter {
 	 * are now unreachable (if any) are reverted to their original state. This
 	 * is import to ensure that the automaton will always return to its original
 	 * state iff it is equivalent.
-	 * 
+	 *
 	 * @param activation
 	 * @param pivot
 	 */
@@ -463,8 +463,8 @@ public final class IterativeRewriter implements Rewriter {
 				tmpUndo[i] = i;
 			}
 			oneStepUndo = tmpUndo;
-		} 
-		
+		}
+
 		// Second, apply the oneStepUndo map to all unreachable vertices
 		boolean changed = false;
 		for (int i = 0; i != pivot; ++i) {
@@ -475,32 +475,32 @@ public final class IterativeRewriter implements Rewriter {
 				}
 			}
 		}
-		
+
 		// Third, minimise automaton (if applicable)
 		if(changed) {
 			// At this point, the automaton is not necessarily minimised and,
 			// hence, we must minimise it.
 			automaton.minimise();
 			reachable = updateReachable(automaton, reachable);
-		} 
+		}
 
 		// Finally, update the oneStepUndo information. This has to be done last
 		// since unreachable states to utilise the previous oneStepUndo
 		// information.  See #382.
 		if (to >= pivot) {
-			if(from < pivot) {				
+			if(from < pivot) {
 				// In this case, we need to initialise the oneStepUndo
 				// information.
 				oneStepUndo[to] = from;
-			} else if (from != oneStepUndo[from]){				
+			} else if (from != oneStepUndo[from]){
 				// In this case, we need to transfer the oneStepUndo
-				// information.	
+				// information.
 				oneStepUndo[to] = oneStepUndo[from];
 				// Reset undo information.
 				oneStepUndo[from] = from;
 			}
-		} 
-		
+		}
+
 		return oneStepUndo;
 	}
 
@@ -521,7 +521,7 @@ public final class IterativeRewriter implements Rewriter {
 		for (int i = 0; i != oneStepUndo.length; ++i) {
 			oneStepUndo[i] = i;
 		}
-		
+
 		return oneStepUndo;
 	}
 
@@ -531,7 +531,7 @@ public final class IterativeRewriter implements Rewriter {
 	 * furthermore, those which are "headers" are additionally identified. A
 	 * header state is one which is the target of a back-edge in the directed
 	 * graph reachable from the start state.
-	 * 
+	 *
 	 * @param automaton
 	 *            --- automaton to traverse.
 	 * @param reachable
@@ -582,7 +582,7 @@ public final class IterativeRewriter implements Rewriter {
 		// the automaton down, whilst updating reachable one oneStepUndo
 		// information accordingly.
 		int j = pivot;
-		
+
 		for (int i = pivot; i < nStates; ++i) {
 			if (reachable[i]) {
 				State ith = automaton.get(i);
@@ -591,9 +591,9 @@ public final class IterativeRewriter implements Rewriter {
 				reachable[j] = true;
 				oneStepUndo[j] = oneStepUndo[i];
 				automaton.set(j++, ith);
-			} 
+			}
 		}
-		
+
 		if (j < nStates) {
 			// Update the oneStepUndo relation to ensure it remains
 			// sound. The invariant it maintains is that all states above the
@@ -601,12 +601,12 @@ public final class IterativeRewriter implements Rewriter {
 			for(int i=j;i<nStates;++i) {
 				oneStepUndo[i] = i;
 			}
-			
+
 			// Ok, some compaction actually occurred; therefore follow through
 			// and update all states accordingly.
 			nStates = j;
 			automaton.resize(nStates); // will nullify all deleted states
-			
+
 			// Update mapping and oneStepUndo for *all* states
 			for (int i = 0; i != nStates; ++i) {
 				Automaton.State state = automaton.get(i);
@@ -625,10 +625,10 @@ public final class IterativeRewriter implements Rewriter {
 			}
 		}
 	}
-	
+
 	public void printAutomatonStats(Automaton automaton) {
 		HashMap<Integer,Integer> data = new HashMap<Integer,Integer>();
-		
+
 		for(int i=0;i!=automaton.nStates();++i) {
 			if(reachable[i]) {
 				Automaton.State state = automaton.get(i);
@@ -641,7 +641,7 @@ public final class IterativeRewriter implements Rewriter {
 				data.put(state.kind,value);
 			}
 		}
-		
+
 		boolean firstTime = true;
 		for (Map.Entry<Integer, Integer> e : data.entrySet()) {
 			if(!firstTime) {
@@ -676,13 +676,13 @@ public final class IterativeRewriter implements Rewriter {
 				case Automaton.K_LIST:
 					key = "list";
 					break;
-					
+
 				}
 				System.out.print(key + " => "
 						+ e.getValue());
 			}
 		}
-		
+
 		System.out.println();
 	}
 
@@ -691,7 +691,7 @@ public final class IterativeRewriter implements Rewriter {
 	 * particular, that the oneStepUndo array maps reachable vertices which are
 	 * above the pivot to vertices below the pivot. All other vertices map to
 	 * themselves.
-	 * 
+	 *
 	 * @param oneStepUndo
 	 */
 	private final void assertValidOneStepUndo(int[] oneStepUndo, int pivot) {
@@ -711,7 +711,7 @@ public final class IterativeRewriter implements Rewriter {
 		}
 	}
 
-	
+
 	@Override
 	public Rewriter.Stats getStats() {
 		int numProbes = inferenceStrategy.numProbes()
@@ -731,14 +731,14 @@ public final class IterativeRewriter implements Rewriter {
 		this.numInferenceFailures = 0;
 		this.numInferenceSuccesses = 0;
 	}
-	
+
 
 	public static abstract class Strategy<T extends RewriteRule> {
 
 		/**
 		 * Get the next activation according to this strategy, or null if none
 		 * available.
-		 * 
+		 *
 		 * @return
 		 */
 		protected abstract Activation next(boolean[] reachable);
@@ -751,7 +751,7 @@ public final class IterativeRewriter implements Rewriter {
 
 		/**
 		 * Return the number of probes performed by this strategy.
-		 * 
+		 *
 		 * @return
 		 */
 		protected abstract int numProbes();

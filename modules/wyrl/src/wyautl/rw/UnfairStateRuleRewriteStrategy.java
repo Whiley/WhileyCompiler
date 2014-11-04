@@ -42,13 +42,13 @@ import wyrl.core.Pattern;
  * maps every automaton state kind to the list of rules which could potentially
  * match that kind.
  * </p>
- * 
+ *
  * <p>
  * <b>NOTE:</b> this is not designed to be used in a concurrent setting.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public final class UnfairStateRuleRewriteStrategy<T extends RewriteRule> extends IterativeRewriter.Strategy<T> {
 
@@ -59,24 +59,24 @@ public final class UnfairStateRuleRewriteStrategy<T extends RewriteRule> extends
 
 	/**
 	 * Temporary list of inference activations used.
-	 */	
+	 */
 	private final ArrayList<Activation> worklist = new ArrayList<Activation>();
-	
+
 	/**
 	 * The automaton being rewritten
 	 */
 	private final Automaton automaton;
-	
+
 	/**
 	 * The current state being explored by this strategy
 	 */
 	private int current;
-	
+
 	/**
 	 * Record the number of probes for statistical reporting purposes
 	 */
 	private int numProbes;
-		
+
 	public UnfairStateRuleRewriteStrategy(Automaton automaton, T[] rules, Schema schema) {
 		this(automaton, rules, schema,new RewriteRule.RankComparator());
 	}
@@ -86,11 +86,11 @@ public final class UnfairStateRuleRewriteStrategy<T extends RewriteRule> extends
 		this.automaton = automaton;
 		this.dispatchTable = constructDispatchTable(rules,schema,comparator);
 	}
-	
+
 	@Override
 	protected Activation next(boolean[] reachable) {
 		int nStates = automaton.nStates();
-		
+
 		while (current < nStates && worklist.size() == 0) {
 			// Check whether state is reachable and that it's a term. This is
 			// because only reachable states should be rewritten; and, only
@@ -108,8 +108,8 @@ public final class UnfairStateRuleRewriteStrategy<T extends RewriteRule> extends
 			}
 			current = current + 1;
 		}
-		
-		if (worklist.size() > 0) {			
+
+		if (worklist.size() > 0) {
 			int lastIndex = worklist.size() - 1;
 			Activation last = worklist.get(lastIndex);
 			worklist.remove(lastIndex);
@@ -124,12 +124,12 @@ public final class UnfairStateRuleRewriteStrategy<T extends RewriteRule> extends
 		worklist.clear();
 		current = 0;
 	}
-	
+
 	@Override
 	public int numProbes() {
 		return numProbes;
 	}
-	
+
 	private static RewriteRule[][] constructDispatchTable(RewriteRule[] rules,
 			Schema schema, Comparator<RewriteRule> comparator) {
 		RewriteRule[][] table = new RewriteRule[schema.size()][];
@@ -148,5 +148,5 @@ public final class UnfairStateRuleRewriteStrategy<T extends RewriteRule> extends
 			table[i] = rs;
 		}
 		return table;
-	}	
+	}
 }

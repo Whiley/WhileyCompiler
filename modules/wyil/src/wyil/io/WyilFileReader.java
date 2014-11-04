@@ -40,75 +40,75 @@ import wyil.lang.*;
 /**
  * Read a binary WYIL file from a byte stream and convert into the corresponding
  * WyilFile object.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public final class WyilFileReader {
 	private static final char[] magic = {'W','Y','I','L','F','I','L','E'};
-	
+
 	private final BinaryInputStream input;
 	private String[] stringPool;
 	private Path.ID[] pathPool;
 	private NameID[] namePool;
 	private Constant[] constantPool;
 	private Type[] typePool;
-	
+
 	public WyilFileReader(String filename) throws IOException {
 		this.input = new BinaryInputStream(new FileInputStream(filename));
 	}
-	
+
 	public WyilFileReader(InputStream input) throws IOException {
 		this.input = new BinaryInputStream(input);
 	}
-	
+
 	public void close() throws IOException {
 		input.close();
 	}
-	
+
 	public WyilFile read() throws IOException {
-				
+
 		for(int i=0;i!=8;++i) {
 			char c = (char) input.read_u8();
 			if(magic[i] != c) {
 				throw new IllegalArgumentException("invalid magic number");
 			}
 		}
-		
+
 		// head blocker
 		int kind = input.read_uv();
 		int size = input.read_uv();
 		input.pad_u8();
-		
+
 		if(kind != WyilFileWriter.BLOCK_Header) {
 			throw new IllegalArgumentException("header block must come first");
 		}
-		
+
 		int majorVersion = input.read_uv();
 		int minorVersion = input.read_uv();
-		
+
 		int stringPoolCount = input.read_uv();
 		int pathPoolCount = input.read_uv();
 		int namePoolCount = input.read_uv();
 		int typePoolCount = input.read_uv();
 		int constantPoolCount = input.read_uv();
-				
+
 		int numBlocks = input.read_uv();
-		
+
 		readStringPool(stringPoolCount);
 		readPathPool(pathPoolCount);
 		readNamePool(namePoolCount);
-		readTypePool(typePoolCount);	
-		readConstantPool(constantPoolCount);	
-		
+		readTypePool(typePoolCount);
+		readConstantPool(constantPoolCount);
+
 		input.pad_u8();
-						
-		return readModule();				
+
+		return readModule();
 	}
-	
-	private void readStringPool(int count) throws IOException {		
+
+	private void readStringPool(int count) throws IOException {
 		final String[] myStringPool = new String[count];
-		
+
 		for(int i=0;i!=count;++i) {
 			int length = input.read_uv();
 			try {
@@ -122,11 +122,11 @@ public final class WyilFileReader {
 		}
 		stringPool = myStringPool;
 	}
-	
+
 	private void readPathPool(int count) throws IOException {
 		final Path.ID[] myPathPool = new Path.ID[count];
 		myPathPool[0] = Trie.ROOT;
-		
+
 		for (int i = 1; i != count; ++i) {
 			int parent = input.read_uv();
 			int stringIndex = input.read_uv();
@@ -140,7 +140,7 @@ public final class WyilFileReader {
 
 	private void readNamePool(int count) throws IOException {
 		final NameID[] myNamePool = new NameID[count];
-		
+
 		for (int i = 0; i != count; ++i) {
 			// int kind = input.read_uv();
 			int pathIndex = input.read_uv();
@@ -149,17 +149,17 @@ public final class WyilFileReader {
 			String name = stringPool[nameIndex];
 			myNamePool[i] = new NameID(id, name);
 		}
-		
+
 		namePool = myNamePool;
 	}
 
-	private void readConstantPool(int count) throws IOException {		
+	private void readConstantPool(int count) throws IOException {
 		final Constant[] myConstantPool = new Constant[count];
-				
+
 		for(int i=0;i!=count;++i) {
 			int code = input.read_uv();
 			Constant constant;
-			
+
 			switch (code) {
 				case WyilFileWriter.CONSTANT_Null :
 					constant = Constant.V_NULL;
@@ -207,7 +207,7 @@ public final class WyilFileReader {
 					int len = input.read_uv();
 					ArrayList<Constant> values = new ArrayList<Constant>();
 					for (int j = 0; j != len; ++j) {
-						int index = input.read_uv();							
+						int index = input.read_uv();
 						values.add(myConstantPool[index]);
 					}
 					constant = Constant.V_LIST(values);
@@ -270,48 +270,48 @@ public final class WyilFileReader {
 				default:
 					throw new RuntimeException(
 							"Unknown constant encountered in WhileyDefine: " + code);
-			}			
+			}
 			myConstantPool[i] = constant;
 		}
-		
+
 		constantPool = myConstantPool;
 	}
 
-	private void readTypePool(int count) throws IOException {		
+	private void readTypePool(int count) throws IOException {
 		final Type[] myTypePool = new Type[count];
 		Type.BinaryReader bin = new Type.BinaryReader(input);
 		for(int i=0;i!=count;++i) {
 			Type t = bin.readType();
-			myTypePool[i] = t;					
+			myTypePool[i] = t;
 		}
-		
+
 		typePool = myTypePool;
 	}
-	
-	private WyilFile readModule() throws IOException {		
+
+	private WyilFile readModule() throws IOException {
 		int kind = input.read_uv(); // block identifier
 		int size = input.read_uv();
 		input.pad_u8();
-		
+
 		int pathIdx = input.read_uv();
 		int modifiers = input.read_uv(); // unused
 		int numBlocks = input.read_uv();
-		
+
 		input.pad_u8();
-		
+
 		List<WyilFile.Block> declarations = new ArrayList<WyilFile.Block>();
-		for(int i=0;i!=numBlocks;++i) {			
+		for(int i=0;i!=numBlocks;++i) {
 			declarations.add(readModuleBlock());
 		}
-		
+
 		return new WyilFile(pathPool[pathIdx],"unknown.whiley",declarations);
 	}
-	
+
 	private WyilFile.Block readModuleBlock() throws IOException {
 		int kind = input.read_uv();
 		int size = input.read_uv();
 		input.pad_u8();
-		
+
 		switch(kind) {
 			case WyilFileWriter.BLOCK_Constant:
 				return readConstantBlock();
@@ -320,33 +320,33 @@ public final class WyilFileReader {
 			case WyilFileWriter.BLOCK_Function:
 				return readFunctionBlock();
 			case WyilFileWriter.BLOCK_Method:
-				return readMethodBlock();				
+				return readMethodBlock();
 			default:
 				throw new RuntimeException("unknown module block encountered (" + kind + ")");
 		}
 	}
-	
-	private WyilFile.ConstantDeclaration readConstantBlock() throws IOException {		
+
+	private WyilFile.ConstantDeclaration readConstantBlock() throws IOException {
 		int nameIdx = input.read_uv();
 		//System.out.println("=== CONSTANT " + stringPool.get(nameIdx));
 		int modifiers = input.read_uv();
 		int constantIdx = input.read_uv();
 		int nBlocks = input.read_uv(); // unused
-		
-		input.pad_u8();				
+
+		input.pad_u8();
 		return new WyilFile.ConstantDeclaration(generateModifiers(modifiers),
 				stringPool[nameIdx], constantPool[constantIdx]);
 	}
-	
-	private WyilFile.TypeDeclaration readTypeBlock() throws IOException {		
+
+	private WyilFile.TypeDeclaration readTypeBlock() throws IOException {
 		int nameIdx = input.read_uv();
 		//System.out.println("=== TYPE " + stringPool.get(nameIdx));
 		int modifiers = input.read_uv();
-		int typeIdx = input.read_uv();		
+		int typeIdx = input.read_uv();
 		int nBlocks = input.read_uv();
-		
+
 		input.pad_u8();
-		
+
 		Code.Block invariant = null;
 		for (int i = 0; i != nBlocks; ++i) {
 			int kind = input.read_uv();
@@ -354,33 +354,33 @@ public final class WyilFileReader {
 			input.pad_u8();
 			switch (kind) {
 			case WyilFileWriter.BLOCK_Constraint:
-				invariant = readCodeBlock(1); 
+				invariant = readCodeBlock(1);
 				break;
 			default:
 				throw new RuntimeException("Unknown type block encountered");
 			}
-		}	
-		
+		}
+
 		return new WyilFile.TypeDeclaration(generateModifiers(modifiers),
 				stringPool[nameIdx], typePool[typeIdx], invariant);
 	}
-	
+
 	private WyilFile.FunctionOrMethodDeclaration readFunctionBlock() throws IOException {
 		int nameIdx = input.read_uv();
 		//System.out.println("=== FUNCTION " + stringPool.get(nameIdx));
 		int modifiers = input.read_uv();
-		int typeIdx = input.read_uv();		
-		int numCases = input.read_uv();		
-		
+		int typeIdx = input.read_uv();
+		int numCases = input.read_uv();
+
 		input.pad_u8();
-		
-		Type.Function type = (Type.Function) typePool[typeIdx];		
+
+		Type.Function type = (Type.Function) typePool[typeIdx];
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for(int i=0;i!=numCases;++i) {
 			int kind = input.read_uv(); // unsued
 			int size = input.read_uv();
 			input.pad_u8();
-			
+
 			switch(kind) {
 				case WyilFileWriter.BLOCK_Case:
 					cases.add(readFunctionOrMethodCase(type));
@@ -393,23 +393,23 @@ public final class WyilFileReader {
 				stringPool[nameIdx], type,
 				cases);
 	}
-	
+
 	private WyilFile.FunctionOrMethodDeclaration readMethodBlock() throws IOException {
 		int nameIdx = input.read_uv();
 		// System.out.println("=== METHOD " + stringPool.get(nameIdx));
 		int modifiers = input.read_uv();
-		int typeIdx = input.read_uv();		
+		int typeIdx = input.read_uv();
 		int numCases = input.read_uv();
-		
+
 		input.pad_u8();
-		
+
 		Type.Method type = (Type.Method) typePool[typeIdx];
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for(int i=0;i!=numCases;++i) {
 			int kind = input.read_uv(); // unsued
 			int size = input.read_uv();
 			input.pad_u8();
-			
+
 			switch(kind) {
 				case WyilFileWriter.BLOCK_Case:
 					cases.add(readFunctionOrMethodCase(type));
@@ -422,7 +422,7 @@ public final class WyilFileReader {
 				stringPool[nameIdx], type,
 				cases);
 	}
-	
+
 	private Collection<Modifier> generateModifiers(int modifiers) {
 		ArrayList<Modifier> mods = new ArrayList<Modifier>();
 
@@ -440,7 +440,7 @@ public final class WyilFileReader {
 			default :
 				throw new RuntimeException("Unknown modifier");
 		}
-		
+
 		// second, mangle modifiers
 		switch (modifiers & WyilFileWriter.MODIFIER_MANGLE_MASK) {
 			case WyilFileWriter.MODIFIER_Native :
@@ -448,16 +448,16 @@ public final class WyilFileReader {
 				break;
 			case WyilFileWriter.MODIFIER_Export :
 				mods.add(Modifier.EXPORT);
-				break;			
+				break;
 		}
 
 		return mods;
 	}
-	
+
 	private WyilFile.Case readFunctionOrMethodCase(Type.FunctionOrMethod type)
 			throws IOException {
 		ArrayList<Code.Block> requires = new ArrayList<Code.Block>();
-		ArrayList<Code.Block> ensures = new ArrayList<Code.Block>();		
+		ArrayList<Code.Block> ensures = new ArrayList<Code.Block>();
 		Code.Block body = null;
 		int numInputs = type.params().size();
 		int nBlocks = input.read_uv();
@@ -487,19 +487,19 @@ public final class WyilFileReader {
 		return new WyilFile.Case(body, requires, ensures,
 				Collections.EMPTY_LIST);
 	}
-	
+
 	private Code.Block readCodeBlock(int numInputs) throws IOException {
 		Code.Block block = new Code.Block(numInputs);
 		int nCodes = input.read_uv();
 		HashMap<Integer,Codes.Label> labels = new HashMap<Integer,Codes.Label>();
-		
+
 		for(int i=0;i!=nCodes;++i) {
 			Code code = readCode(i,labels);
-			block.add(code);		
+			block.add(code);
 		}
-		
+
 		// NOTE: we must go up to nCodes+1 because of the possibility of a label
-		// occurring after the very last bytecode instruction.		
+		// occurring after the very last bytecode instruction.
 		for(int i=0,j=0;i!=nCodes+1;++i,++j) {
 			Codes.Label label = labels.get(i);
 			if(label != null) {
@@ -508,15 +508,15 @@ public final class WyilFileReader {
 		}
 
 		input.pad_u8(); // necessary
-		
+
 		return block;
-	}	
-	
+	}
+
 	private Code readCode(int offset, HashMap<Integer,Codes.Label> labels) throws IOException {
 		int opcode = input.read_u8();
 		boolean wideBase = false;
 		boolean wideRest = false;
-		
+
 		// deal with wide bytecodes first
 		switch(opcode) {
 		case Code.OPCODE_wide:
@@ -533,9 +533,9 @@ public final class WyilFileReader {
 			wideRest = true;
 			break;
 		}
-		
+
 		int fmt = (opcode & Code.FMT_MASK);
-		
+
 		switch (fmt) {
 		case Code.FMT_EMPTY:
 			return readEmpty(opcode,wideBase,wideRest,offset,labels);
@@ -558,9 +558,9 @@ public final class WyilFileReader {
 					+ ")");
 		}
 	}
-	
+
 	private Code readEmpty(int opcode, boolean wideBase, boolean wideRest,
-			int offset, HashMap<Integer, Codes.Label> labels) throws IOException {				
+			int offset, HashMap<Integer, Codes.Label> labels) throws IOException {
 		switch(opcode) {
 		case Code.OPCODE_const: {
 			int target = readBase(wideBase);
@@ -578,19 +578,19 @@ public final class WyilFileReader {
 			}
 		}
 		case Code.OPCODE_goto: {
-			int target = readTarget(wideRest,offset); 
+			int target = readTarget(wideRest,offset);
 			Codes.Label lab = findLabel(target,labels);
 			return Codes.Goto(lab.label);
-		}			
+		}
 		case Code.OPCODE_nop:
 			return Codes.Nop;
 		case Code.OPCODE_returnv:
-			return Codes.Return();		
+			return Codes.Return();
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
 	}
-	
+
 	private Code readUnaryOp(int opcode, boolean wideBase, boolean wideRest,
 			int offset, HashMap<Integer, Codes.Label> labels) throws IOException {
 		int operand = readBase(wideBase);
@@ -598,7 +598,7 @@ public final class WyilFileReader {
 		Type type = typePool[typeIdx];
 		switch(opcode) {
 		case Code.OPCODE_debug:
-			return Codes.Debug(operand);		
+			return Codes.Debug(operand);
 		case Code.OPCODE_ifis: {
 			int resultIdx = readRest(wideRest);
 			Type result = typePool[resultIdx];
@@ -612,26 +612,26 @@ public final class WyilFileReader {
 			return Codes.Return(type, operand);
 		case Code.OPCODE_switch: {
 			ArrayList<Pair<Constant,String>> cases = new ArrayList<Pair<Constant,String>>();
-			int target = readTarget(wideRest,offset); 
+			int target = readTarget(wideRest,offset);
 			Codes.Label defaultLabel = findLabel(target,labels);
 			int nCases = readRest(wideRest);
 			for(int i=0;i!=nCases;++i) {
 				int constIdx = readRest(wideRest);
 				Constant constant = constantPool[constIdx];
-				target = readTarget(wideRest,offset); 
+				target = readTarget(wideRest,offset);
 				Codes.Label l = findLabel(target,labels);
 				cases.add(new Pair<Constant,String>(constant,l.label));
 			}
 			return Codes.Switch(type,operand,defaultLabel.label,cases);
 		}
-		}	
+		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
 	}
-	
+
 	private Code readUnaryAssign(int opcode, boolean wideBase, boolean wideRest) throws IOException {
 		int target = readBase(wideBase);
-		
+
 		int operand = readBase(wideBase);
 		int typeIdx = readRest(wideRest);
 		Type type = typePool[typeIdx];
@@ -640,7 +640,7 @@ public final class WyilFileReader {
 			int i = readRest(wideRest);
 			Type t = typePool[i];
 			return Codes.Convert(type,target,operand,t);
-		}		
+		}
 		case Code.OPCODE_assign:
 			return Codes.Assign(type, target, operand);
 		case Code.OPCODE_dereference: {
@@ -693,12 +693,12 @@ public final class WyilFileReader {
 			int index = readRest(wideRest);
 			return Codes.TupleLoad((Type.Tuple) type, target, operand, index);
 		}
-		
+
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
 	}
-	
+
 	private Code readBinaryOp(int opcode, boolean wideBase, boolean wideRest,
 			int offset, HashMap<Integer, Codes.Label> labels) throws IOException {
 		int leftOperand = readBase(wideBase);
@@ -715,7 +715,7 @@ public final class WyilFileReader {
 		case Code.OPCODE_ifel:
 		case Code.OPCODE_ifss:
 		case Code.OPCODE_ifse: {
-			int target = readTarget(wideRest,offset); 
+			int target = readTarget(wideRest,offset);
 			Codes.Label l = findLabel(target,labels);
 			Codes.Comparator cop = Codes.Comparator.values()[opcode - Code.OPCODE_ifeq];
 			return Codes.If(type, leftOperand, rightOperand, cop, l.label);
@@ -724,7 +724,7 @@ public final class WyilFileReader {
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
 	}
-	
+
 	private Code readBinaryAssign(int opcode, boolean wideBase, boolean wideRest) throws IOException {
 		int target = readBase(wideBase);
 		int leftOperand = readBase(wideBase);
@@ -792,31 +792,31 @@ public final class WyilFileReader {
 			return Codes.SetOperator((Type.EffectiveSet) type, target, leftOperand,
 					rightOperand, kind);
 		}
-			
+
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
 	}
-	
+
 	private Code readNaryOp(int opcode, boolean wideBase, boolean wideRest,
-			int offset, HashMap<Integer, Codes.Label> labels) throws IOException {		
+			int offset, HashMap<Integer, Codes.Label> labels) throws IOException {
 		int nOperands = readBase(wideBase);
-		int[] operands = new int[nOperands];		
+		int[] operands = new int[nOperands];
 		for(int i=0;i!=nOperands;++i) {
-			operands[i] = readBase(wideBase);			
+			operands[i] = readBase(wideBase);
 		}
-		
+
 		if(opcode == Code.OPCODE_loop) {
 			// special case which doesn't have a type.
-			int target = readTarget(wideRest,offset); 
+			int target = readTarget(wideRest,offset);
 			Codes.LoopEnd l = findLoopLabel(target,labels);
 			return Codes.Loop(l.label, operands);
 		}
-		
+
 		int typeIdx = readRest(wideRest);
 		Type type = typePool[typeIdx];
-		
-		switch(opcode) {		
+
+		switch(opcode) {
 			case Code.OPCODE_forall : {
 				if (!(type instanceof Type.EffectiveCollection)) {
 					throw new RuntimeException("expected collection type");
@@ -828,7 +828,7 @@ public final class WyilFileReader {
 				operands = Arrays.copyOfRange(operands, 2, operands.length);
 				return Codes.ForAll((Type.EffectiveCollection) type,
 						sourceOperand, indexOperand, operands, l.label);
-			}			
+			}
 			case Code.OPCODE_indirectinvokefnv :
 			case Code.OPCODE_indirectinvokemdv : {
 				if (!(type instanceof Type.FunctionOrMethod)) {
@@ -853,7 +853,7 @@ public final class WyilFileReader {
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
 	}
-	
+
 	private Code readNaryAssign(int opcode, boolean wideBase, boolean wideRest) throws IOException {
 		int target = readBase(wideBase);
 		int nOperands = readBase(wideBase);
@@ -873,7 +873,7 @@ public final class WyilFileReader {
 			operands = Arrays.copyOfRange(operands, 1, operands.length);
 			return Codes.IndirectInvoke((Type.FunctionOrMethod) type,
 					target, operand, operands);
-		}			
+		}
 		case Code.OPCODE_invokefn:
 		case Code.OPCODE_invokemd: {
 			if(!(type instanceof Type.FunctionOrMethod)) {
@@ -883,7 +883,7 @@ public final class WyilFileReader {
 			NameID nid = namePool[nameIdx];
 			return Codes.Invoke((Type.FunctionOrMethod) type, target, operands,
 					nid);
-		}	
+		}
 		case Code.OPCODE_lambdafn:
 		case Code.OPCODE_lambdamd: {
 			if(!(type instanceof Type.FunctionOrMethod)) {
@@ -897,15 +897,15 @@ public final class WyilFileReader {
 			NameID nid = namePool[nameIdx];
 			return Codes.Lambda((Type.FunctionOrMethod) type, target, operands,
 					nid);
-		}	
+		}
 		case Code.OPCODE_newmap: {
-			if (!(type instanceof Type.Map)) {		
+			if (!(type instanceof Type.Map)) {
 				throw new RuntimeException("expected map type");
 			}
 			return Codes.NewMap((Type.Map) type, target, operands);
 		}
 		case Code.OPCODE_newrecord: {
-			if (!(type instanceof Type.Record)) {		
+			if (!(type instanceof Type.Record)) {
 				throw new RuntimeException("expected record type");
 			}
 			return Codes.NewRecord((Type.Record) type, target, operands);
@@ -927,7 +927,7 @@ public final class WyilFileReader {
 				throw new RuntimeException("expected tuple type");
 			}
 			return Codes.NewTuple((Type.Tuple) type, target, operands);
-		}	
+		}
 		case Code.OPCODE_sublist: {
 			if (!(type instanceof Type.EffectiveList)) {
 				throw new RuntimeException("expected list type");
@@ -944,9 +944,9 @@ public final class WyilFileReader {
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
 	}
-	
+
 	private Code readOther(int opcode, boolean wideBase, boolean wideRest,
-			int offset, HashMap<Integer, Codes.Label> labels) throws IOException {		
+			int offset, HashMap<Integer, Codes.Label> labels) throws IOException {
 		switch (opcode) {
 			case Code.OPCODE_trycatch: {
 				int operand = readBase(wideBase);
@@ -964,7 +964,7 @@ public final class WyilFileReader {
 			}
 			case Code.OPCODE_update: {
 				int target = readBase(wideBase);
-				int nOperands = readBase(wideBase);				
+				int nOperands = readBase(wideBase);
 				int[] operands = new int[nOperands-1];
 				for (int i = 0; i != operands.length; ++i) {
 					operands[i] = readBase(wideBase);
@@ -995,7 +995,7 @@ public final class WyilFileReader {
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
 	}
-	
+
 	private int readBase(boolean wide) throws IOException {
 		if(wide) {
 			return input.read_uv();
@@ -1003,7 +1003,7 @@ public final class WyilFileReader {
 			return input.read_un(4);
 		}
 	}
-	
+
 	private int readRest(boolean wide) throws IOException {
 		if(wide) {
 			return input.read_uv();
@@ -1011,15 +1011,15 @@ public final class WyilFileReader {
 			return input.read_u8();
 		}
 	}
-	
+
 	private int readTarget(boolean wide, int offset) throws IOException {
 		if(wide) {
 			return input.read_uv();
-		} else {			
+		} else {
 			return (input.read_u8() + offset) - 128;
 		}
 	}
-	
+
 	private static int labelCount = 0;
 
 	private static Codes.Label findLabel(int target,
@@ -1031,7 +1031,7 @@ public final class WyilFileReader {
 		}
 		return label;
 	}
-	
+
 	private static Codes.LoopEnd findLoopLabel(int target,
 			HashMap<Integer, Codes.Label> labels) {
 		Codes.Label label = labels.get(target);

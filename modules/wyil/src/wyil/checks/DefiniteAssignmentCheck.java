@@ -43,54 +43,54 @@ import static wyil.util.ErrorMessages.*;
  * The purpose of this class is to check that all variables are defined before
  * being used. For example:
  * </p>
- * 
+ *
  * <pre>
  * int f() {
  * 	int z;
  * 	return z + 1;
  * }
  * </pre>
- * 
+ *
  * <p>
  * In the above example, variable z is used in the return statement before it
  * has been defined any value. This is considered a syntax error in whiley.
  * </p>
  * @author David J. Pearce
- * 
+ *
  */
 public class DefiniteAssignmentCheck extends
 		ForwardFlowAnalysis<HashSet<Integer>> implements Transform<WyilFile> {
-	
+
 	public DefiniteAssignmentCheck(Builder builder) {
-		
+
 	}
-	
+
 	@Override
 	public HashSet<Integer> initialStore() {
 		HashSet<Integer> defined = new HashSet<Integer>();
 		int diff = 0;
-										
+
 		for(int i=0;i!=method.type().params().size();++i) {
 			defined.add(i+diff);
-		}								
-		
+		}
+
 		return defined;
 	}
-	
+
 	@Override
-	public HashSet<Integer> propagate(int idx, Entry entry, HashSet<Integer> in) {						
-		Code code = entry.code;			
+	public HashSet<Integer> propagate(int idx, Entry entry, HashSet<Integer> in) {
+		Code code = entry.code;
 		checkUses(code,entry,in);
-		
+
 		int def = defs(code,entry);
-		if(def >= 0) {			
-			in = new HashSet<Integer>(in);			
-			in.add(def); 
-		} 	
-		
+		if(def >= 0) {
+			in = new HashSet<Integer>(in);
+			in.add(def);
+		}
+
 		return in;
 	}
-		
+
 	@Override
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
 			Codes.If igoto, Entry entry, HashSet<Integer> in) {
@@ -106,15 +106,15 @@ public class DefiniteAssignmentCheck extends
 	@Override
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
 			Codes.IfIs iftype, Entry entry, HashSet<Integer> in) {
-		
+
 		if (!in.contains(iftype.operand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
 					entry);
 		}
-		
+
 		return new Pair(in,in);
 	}
-	
+
 	@Override
 	public List<HashSet<Integer>> propagate(int index, Codes.Switch sw,
 			Entry entry, HashSet<Integer> in) {
@@ -137,18 +137,18 @@ public class DefiniteAssignmentCheck extends
 		in.add(tc.operand);
 		return in;
 	}
-	
+
 	@Override
 	public HashSet<Integer> propagate(int start, int end, Codes.Loop loop,
 			Entry entry, HashSet<Integer> in, List<Codes.TryCatch> handlers) {
-		if (loop instanceof Codes.ForAll) {						
+		if (loop instanceof Codes.ForAll) {
 			Codes.ForAll fall = (Codes.ForAll) loop;
-			
+
 			if (!in.contains(fall.sourceOperand)) {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
 						filename, entry);
 			}
-			
+
 			in = new HashSet<Integer>(in);
 			in.add(fall.indexOperand);
 		}
@@ -156,8 +156,8 @@ public class DefiniteAssignmentCheck extends
 		HashSet<Integer> r = propagate(start + 1, end, in, handlers);
 		return join(in, r);
 	}
-	
-	protected HashSet<Integer> join(HashSet<Integer> s1, HashSet<Integer> s2) {		
+
+	protected HashSet<Integer> join(HashSet<Integer> s1, HashSet<Integer> s2) {
 		HashSet<Integer> r = new HashSet<Integer>();
 		// set intersection
 		for (Integer s : s1) {
@@ -167,7 +167,7 @@ public class DefiniteAssignmentCheck extends
 		}
 		return r;
 	}
-		
+
 	public void checkUses(Code code, Entry entry, HashSet<Integer> in) {
 		if(code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp a = (Code.AbstractUnaryOp) code;
@@ -175,17 +175,17 @@ public class DefiniteAssignmentCheck extends
 				return;
 			}
 		} else if(code instanceof Code.AbstractBinaryOp) {
-			Code.AbstractBinaryOp a = (Code.AbstractBinaryOp) code;			
+			Code.AbstractBinaryOp a = (Code.AbstractBinaryOp) code;
 			if (in.contains(a.leftOperand) && in.contains(a.rightOperand)) {
 				return;
 			}
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable a = (Code.AbstractNaryAssignable) code;
-			for(int operand : a.operands()) {			
+			for(int operand : a.operands()) {
 				if(operand != Codes.NULL_REG && !in.contains(operand)) {
 					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
 	                        filename, entry);
-				}				
+				}
 			}
 			if(code instanceof Codes.Update && !in.contains(a.target())) {
 				// In this case, we are assigning to an index or field.
@@ -202,7 +202,7 @@ public class DefiniteAssignmentCheck extends
 		syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
                 filename, entry);
 	}
-	
+
 	public int defs(Code code, Entry entry) {
 		if (code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;

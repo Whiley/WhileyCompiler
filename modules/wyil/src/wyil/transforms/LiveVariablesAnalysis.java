@@ -63,56 +63,56 @@ import wyil.util.dfa.*;
  * href="http://en.wikipedia.org/wiki/Live_variable_analysis">the Wikipedia
  * page</a>.
  * </p>
- * 
+ *
  * @author David J. Pearce, 2011
- * 
+ *
  */
 public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAnalysis.Env> implements Transform<WyilFile> {
 	private static final HashMap<Integer,Code.Block.Entry> rewrites = new HashMap<Integer,Code.Block.Entry>();
-	
+
 	/**
 	 * Determines whether constant propagation is enabled or not.
 	 */
 	private boolean enabled = getEnable();
-	
+
 	private boolean nops = getNops();
-	
+
 	public LiveVariablesAnalysis(Builder builder) {
-		
-	}	
-	
+
+	}
+
 	@Override
 	public void apply(WyilFile module) {
 		if(enabled) {
 			super.apply(module);
 		}
 	}
-	
+
 
 	public static String describeEnable() {
 		return "Enable/disable live variables analysis";
 	}
-	
+
 	public static boolean getEnable() {
 		return true; // default value
 	}
-	
+
 	public void setEnable(boolean flag) {
 		this.enabled = flag;
 	}
-	
+
 	public static String describeNops() {
 		return "Enable/disable replacement with nops (helpful for debugging)";
 	}
-	
+
 	public static boolean getNops() {
 		return false; // default value
 	}
-	
+
 	public void setNops(boolean flag) {
 		this.nops = flag;
 	}
-	
+
 	@Override
 	public WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {
 		Code.Block invariant = type.invariant();
@@ -123,16 +123,16 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		}
 		return type;
 	}
-	
+
 	/**
 	 * Last store for the live variables analysis is empty, because all
 	 * variables are considered to be dead at the end of a method/function.
-	 * 
+	 *
 	 * @return
 	 */
 	@Override
 	public Env lastStore() { return EMPTY_ENV; }
-	
+
 	@Override
 	public WyilFile.Case propagate(WyilFile.Case mcase) {
 
@@ -148,26 +148,26 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			Code.Block tmp = propagate(ensures.get(i));
 			ensures.set(i, tmp);
 		}
-		Code.Block body = mcase.body();		
+		Code.Block body = mcase.body();
 		if (body != null) {
 			body = propagate(body);
 		}
-				
+
 		return new WyilFile.Case(body, requires, ensures, mcase.attributes());
 	}
-	
-	public Code.Block propagate(Code.Block body) {		
+
+	public Code.Block propagate(Code.Block body) {
 		block = body;
 		stores = new HashMap<String,Env>();
 		rewrites.clear();
-		Env environment = lastStore();		
-		propagate(0,body.size(), environment, Collections.EMPTY_LIST);	
-		
-		// At this point, we apply the inserts	
-		Code.Block nbody = new Code.Block(body.numInputs());		
+		Env environment = lastStore();
+		propagate(0,body.size(), environment, Collections.EMPTY_LIST);
+
+		// At this point, we apply the inserts
+		Code.Block nbody = new Code.Block(body.numInputs());
 		for(int i=0;i!=body.size();++i) {
-			Code.Block.Entry rewrite = rewrites.get(i);			
-			if(rewrite != null) {		
+			Code.Block.Entry rewrite = rewrites.get(i);
+			if(rewrite != null) {
 				if (!(rewrite.code instanceof Codes.Nop) || nops) {
 					nbody.add(rewrite);
 				}
@@ -175,17 +175,17 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 				nbody.add(body.get(i));
 			}
 		}
-		
+
 		return nbody;
 	}
-	
+
 	@Override
-	public Env propagate(int index, Entry entry, Env environment) {		
+	public Env propagate(int index, Entry entry, Env environment) {
 		rewrites.put(index,null);
-		Code code = entry.code;		
+		Code code = entry.code;
 		boolean isLive = true;
 		environment = (Env) environment.clone();
-		
+
 		if (code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
 			if(code instanceof Codes.Update) {
@@ -201,8 +201,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			} else {
 				isLive = environment.remove(aa.target());
 			}
-		} 
-		
+		}
+
 		if(isLive && code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp c = (Code.AbstractUnaryOp) code;
 			if(c.operand != Codes.NULL_REG) {
@@ -220,16 +220,16 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			for(int operand : c.operands()) {
 				environment.add(operand);
 			}
-		} else if(!isLive) {			
+		} else if(!isLive) {
 			entry = new Code.Block.Entry(Codes.Nop, entry.attributes());
 			rewrites.put(index, entry);
 		} else {
 			// const
 		}
-		
+
 		return environment;
 	}
-	
+
 	@Override
 	public Env propagate(int index, Codes.If code, Entry entry, Env trueEnv,
 			Env falseEnv) {
@@ -240,67 +240,67 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 
 		return r;
 	}
-	
+
 	@Override
 	protected Env propagate(Type handler, Env normalEnv, Env exceptionEnv) {
-		
+
 		return join(normalEnv, exceptionEnv);
 	}
-	
+
 	@Override
 	public Env propagate(int index,
 			Codes.IfIs code, Entry entry, Env trueEnv, Env falseEnv) {
 		Env r = join(trueEnv,falseEnv);
-				
-		r.add(code.operand);		
-		
+
+		r.add(code.operand);
+
 		return r;
 	}
-	
+
 	@Override
 	public Env propagate(int index, Codes.Switch code,
 			Entry stmt, List<Env> environments, Env defEnv) {
 		Env environment = defEnv;
-		
+
 		for(int i=0;i!=code.branches.size();++i) {
 			environment = join(environment,environments.get(i));
-		} 		
-		
+		}
+
 		environment.add(code.operand);
-		
+
 		return environment;
 	}
-		
+
 	public Env propagate(int start, int end, Codes.Loop loop,
 			Entry stmt, Env environment, List<Pair<Type,String>> handlers) {
 		rewrites.put(start,null); // to overrule any earlier rewrites
-		 
+
 		Env oldEnv = null;
 		Env newEnv = null;
-		
+
 		if(loop instanceof Codes.ForAll) {
 			Codes.ForAll fall = (Codes.ForAll) loop;
-			environment = new Env(environment);	
+			environment = new Env(environment);
 			environment.add(fall.sourceOperand);
 		} else {
 			environment = EMPTY_ENV;
 		}
-				
-		do {			
+
+		do {
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : environment;
 			newEnv = propagate(start+1,end, oldEnv, handlers);
 			newEnv = join(environment,newEnv);
 		} while (!newEnv.equals(oldEnv));
-		
+
 		environment = newEnv;
-		
+
 		if(loop instanceof Codes.ForAll) {
-			Codes.ForAll fall = (Codes.ForAll) loop; 		
+			Codes.ForAll fall = (Codes.ForAll) loop;
 			// FIXME: is the following really necessary?
 			environment.remove(fall.indexOperand);
-		} 		
-		
+		}
+
 		// Now, check whether any of the modified operands are no longer live.
 		int nInvalidatedOperands = 0;
 		for(int mo : loop.modifiedOperands) {
@@ -309,7 +309,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			}
 		}
 		if(nInvalidatedOperands > 0) {
-			// ok, yes, at least one is not live			
+			// ok, yes, at least one is not live
 			int[] nModifiedOperands = new int[loop.modifiedOperands.length - nInvalidatedOperands];
 			int j = 0;
 			for(int mo : loop.modifiedOperands) {
@@ -327,24 +327,24 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			}
 			rewrites.put(start, stmt);
 		}
-		
-		return environment;		
+
+		return environment;
 	}
-	
-	private Env join(Env env1, Env env2) {		
+
+	private Env join(Env env1, Env env2) {
 		// implements set union
 		Env r = new Env(env1);
 		r.addAll(env2);
 		return r;
 	}
-	
+
 	private static final Env EMPTY_ENV = new Env();
-	
+
 	public static final class Env extends HashSet<Integer> {
 		public Env() {
 			super();
 		}
-		
+
 		public Env(Env env) {
 			super(env);
 		}

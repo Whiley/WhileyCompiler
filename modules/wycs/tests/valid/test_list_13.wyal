@@ -9,4 +9,3 @@ assert:
         then:
             xs[0] >= 0
 
-        

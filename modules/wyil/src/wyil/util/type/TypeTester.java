@@ -36,39 +36,39 @@ import wyfs.io.BinaryInputStream;
 import wyil.lang.Type;
 
 public class TypeTester {
-		
+
 	/**
 	 * In the type interpretation, we must override the default interpretation
 	 * to deal with union, intersection, negation, any, void, list and set
 	 * types.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class TypeInterpretation extends DefaultInterpretation {
-		
+
 		/**
 		 * The purpose of the visited relation is to help ensure termination in
 		 * the presence of contraction. That is, types with a direct recursive
 		 * cycle involving only unions or intersections.
 		 */
 		private BitSet visited;
-		
+
 		public boolean accepts(Automaton automaton, Term value) {
 			visited = new BitSet(automaton.size());
-			return super.accepts(automaton,value); 
+			return super.accepts(automaton,value);
 		}
-		
+
 		public boolean accepts(int index, Automaton automaton, Term value) {
 			Automaton.State state = automaton.states[index];
-			
+
 			if (visited.get(index)) {
 				return false;
 			} else if (state.kind != Type.K_UNION
 					&& state.kind != Type.K_NEGATION) {
 				visited.clear();
 			}
-						
+
 			switch(state.kind) {
 			case Type.K_ANY:
 				return true; // easy
@@ -76,30 +76,30 @@ public class TypeTester {
 				return false; // easy
 			case Type.K_LIST:
 			case Type.K_SET: {
-				if(value.kind != state.kind) { 
+				if(value.kind != state.kind) {
 					return false;
-				}				
+				}
 				int child = automaton.states[index].children[0];
-				Term[] values = value.children;				
-				for(int i=0;i!=values.length;++i) {									
+				Term[] values = value.children;
+				for(int i=0;i!=values.length;++i) {
 					Term vchild = values[i];
 					if(!accepts(child,automaton,vchild)) {
 						return false;
 					}
 				}
 				return true;
-			}			
-			case Type.K_FUNCTION: 
-			case Type.K_METHOD: {				
+			}
+			case Type.K_FUNCTION:
+			case Type.K_METHOD: {
 				int[] schildren = state.children;
 				Term[] vchildren = value.children;
 				if(schildren.length != vchildren.length) {
 					return false;
-				}				
+				}
 				int length = schildren.length;
 				// First, do parameters (which are contravariant).
 				for(int i=2;i<length;++i) {
-					int schild = schildren[i];					
+					int schild = schildren[i];
 					Term vchild = vchildren[i];
 					if(accepts(schild,automaton,vchild)) {
 						return false;
@@ -109,12 +109,12 @@ public class TypeTester {
 				if(!accepts(schildren[2],automaton,vchildren[2])) {
 					return false;
 				}
-				// Third, do return values (which should be contra-variant)				
+				// Third, do return values (which should be contra-variant)
 				return true;
-			}			
+			}
 			case Type.K_NEGATION: {
 				int child = automaton.states[index].children[0];
-				visited.set(index);				
+				visited.set(index);
 				return !accepts(child,automaton,value);
 			}
 			case Type.K_UNION: {
@@ -126,17 +126,17 @@ public class TypeTester {
 					if(accepts(child,automaton,value)) {
 						return true;
 					}
-				}				
+				}
 				copy.clear();
 				return false;
-			}			
+			}
 			}
 			return super.accepts(index,automaton,value);
 		}
 	}
-	
+
 	private static final TypeInterpretation interpretation = new TypeInterpretation();
-	
+
 	public static boolean isModelSubtype(Automaton a1, Automaton a2, ArrayList<Term> model) {
 		for(Term v : model) {
 			if (interpretation.accepts(a2, v) && !interpretation.accepts(a1, v)) {
@@ -145,7 +145,7 @@ public class TypeTester {
 		}
 		return true;
 	}
-	
+
 	public static boolean isModelEmpty(Automaton a1, ArrayList<Term> model) {
 		for(Term v : model) {
 			if (interpretation.accepts(a1, v)) {
@@ -186,9 +186,9 @@ public class TypeTester {
 		System.out.println("}");
 		System.err.println("Wrote " + count + " simplification tests.");
 	}
-	
+
 	public static void generateSubtypeTests(ArrayList<Automaton> types,
-			ArrayList<Term> model) throws IOException {		
+			ArrayList<Term> model) throws IOException {
 		System.out.println("// This file was automatically generated.");
 		System.out.println("package wyil.testing;");
 		System.out.println("import org.junit.*;");
@@ -199,18 +199,18 @@ public class TypeTester {
 		int count = 1;
 		for(int i=0;i!=types.size();++i) {
 			Automaton a1 = types.get(i);
-			Type t1 = Type.construct(types.get(i));			
-			if(t1 == Type.T_VOID) { continue; } 
+			Type t1 = Type.construct(types.get(i));
+			if(t1 == Type.T_VOID) { continue; }
 			for(int j=0;j<types.size();++j) {
 				Automaton a2 = types.get(j);
-				Type t2 = Type.construct(types.get(j));				
-				if(t2 == Type.T_VOID) { continue; }				
+				Type t2 = Type.construct(types.get(j));
+				if(t2 == Type.T_VOID) { continue; }
 				System.out.print("\t@Test public void test_" + count++ + "() { ");
-				if(isModelSubtype(a1,a2,model)) {								
+				if(isModelSubtype(a1,a2,model)) {
 					System.out.println("checkIsSubtype(\"" + t1 + "\",\"" + t2 + "\"); }");
 				} else {
 					System.out.println("checkNotSubtype(\"" + t1 + "\",\"" + t2 + "\"); }");
-				}				
+				}
 			}
 		}
 		System.out.println();
@@ -221,17 +221,17 @@ public class TypeTester {
 		System.out.println("\t}");
 		System.out.println("\tprivate void checkNotSubtype(String from, String to) {");
 		System.out.println("\t\tType ft = Type.fromString(from);");
-		System.out.println("\t\tType tt = Type.fromString(to);");		
+		System.out.println("\t\tType tt = Type.fromString(to);");
 		System.out.println("\t\tassertFalse(Type.isSubtype(ft,tt));");
 		System.out.println("\t}");
-		System.out.println("}");		
+		System.out.println("}");
 		System.err.println("Wrote " + count + " subtype tests.");
 	}
-		
+
 	public static boolean verbose = false;
-	
+
 	public static void main(String[] args) {
-		try {			
+		try {
 			boolean binaryIn = true;
 			int index = 0;
 			String mode = args[index++];
@@ -240,16 +240,16 @@ public class TypeTester {
 							new FileInputStream(args[index]))), verbose);
 			ArrayList<Automaton> types = Tester.readAutomatas(
 					new Type.BinaryReader(new BinaryInputStream(
-							new FileInputStream(args[index+1]))), verbose);	
-			
+							new FileInputStream(args[index+1]))), verbose);
+
 			if(mode.equals("-subtypes")) {
 				generateSubtypeTests(types,model);
 			} else {
 				generateCanonicalisationTests(types);
 			}
-			
+
 		} catch(IOException e) {
-			System.err.println(e.getMessage());			
+			System.err.println(e.getMessage());
 		}
 	}
 }

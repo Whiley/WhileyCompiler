@@ -36,27 +36,27 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
  * This class implements an baseline ant task for compiling wyal files via ant
  * and an appropriate build.xml file. The following illustrates how this task
  * can be used in a build.xml file:
- * 
+ *
  * <pre>
  *   <taskdef name=\"wycs\" classname=\"wycs.util.WycsAntTask\" classpath=\"src/\"/>
  *   <wycs wyaldir=\"stdlib/\" includes=\"*\/**.wycs\"/>
  * </pre>
- *  
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class WycsAntTask extends MatchingTask {
-	
+
 	protected final WycsBuildTask builder;
-	
+
 	public WycsAntTask() {
 		this.builder = new WycsBuildTask();
 	}
-	
+
 	public WycsAntTask(WycsBuildTask builder) {
 		this.builder = builder;
 	}
-	
+
 	public void setWyaldir(File dir) throws IOException {
 		builder.setWyalDir(dir);
 	}
@@ -64,41 +64,41 @@ public class WycsAntTask extends MatchingTask {
     public void setWycsdir (File dir) throws IOException {
     	builder.setWycsDir(dir);
     }
-    
+
     public void setIncludes(String includes) {
     	builder.setIncludes(includes);
     }
-    
+
     public void setExcludes(String excludes) {
-    	builder.setExcludes(excludes);    	
+    	builder.setExcludes(excludes);
     }
-    
+
     public void setWycsPath (org.apache.tools.ant.types.Path path) throws IOException {
-    	ArrayList<File> whileypath = new ArrayList<File>();    	
-    	for(String file : path.list()) {    		
-    		whileypath.add(new File(file));    		
+    	ArrayList<File> whileypath = new ArrayList<File>();
+    	for(String file : path.list()) {
+    		whileypath.add(new File(file));
     	}
     	builder.setWycsPath(whileypath);
     }
-    
+
     public void setBootPath (org.apache.tools.ant.types.Path path) throws IOException {
     	ArrayList<File> bootpath = new ArrayList<File>();
-    	for(String file : path.list()) {    		
-    		bootpath.add(new File(file));    		
+    	for(String file : path.list()) {
+    		bootpath.add(new File(file));
     	}
     	builder.setWycsPath(bootpath);
     }
-    
+
     public void setVerbose(boolean b) {
     	builder.setVerbose(b);
     }
-    
-    public void execute() throws BuildException { 
+
+    public void execute() throws BuildException {
     	try {
-    		int count = builder.buildAll();    		
+    		int count = builder.buildAll();
     		log("Compiled " + count + " source file(s)");
     	} catch(Exception e) {
     		throw new BuildException(e);
     	}
-    }       	
+    }
 }

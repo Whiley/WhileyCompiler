@@ -1,5 +1,5 @@
-<project name="wyrt" default="build">  
-  <import file="../../config.xml"/>  
+<project name="wyrt" default="build">
+  <import file="../../config.xml"/>
 
   <target name="compile-wyrt">
     <taskdef name="wyc" classname="wyc.util.WycAntTask" classpath="../wyc/src/:../wyil/src/:../wycs/src/:../wybs/src/:../wyrl/src/"/>

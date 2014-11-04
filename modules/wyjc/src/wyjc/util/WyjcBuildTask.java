@@ -34,13 +34,13 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 		public ClassFile read(Path.Entry<ClassFile> e, InputStream input)
 				throws IOException {
 			ClassFileReader reader = new ClassFileReader(input);
-			return reader.readClass();	
+			return reader.readClass();
 		}
 
 		public void write(OutputStream output, ClassFile module)
 				throws IOException {
 			ClassFileWriter writer = new ClassFileWriter(output);
-			writer.write(module);	
+			writer.write(module);
 		}
 
 		public String toString() {
@@ -52,18 +52,18 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 	// Registry
 	// =========================================================================
 
-	
+
 	public static class Registry extends wyc.util.WycBuildTask.Registry {
 		public void associate(Path.Entry e) {
 			String suffix = e.suffix();
-			
-			if(suffix.equals("class")) {				
-				e.associate(ContentType, null);				
+
+			if(suffix.equals("class")) {
+				e.associate(ContentType, null);
 			} else {
 				super.associate(e);
 			}
 		}
-		
+
 		public String suffix(Content.Type<?> t) {
 			if(t == ContentType) {
 				return "class";
@@ -72,7 +72,7 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 			}
 		}
 	}
-		
+
 	/**
 	 * The purpose of the class file filter is simply to ensure only binary
 	 * files are loaded in a given directory root. It is not strictly necessary
@@ -85,17 +85,17 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 			return name.endsWith(".class") || f.isDirectory();
 		}
 	};
-	
+
 	/**
 	 * The class directory is the filesystem directory where all generated jvm
 	 * class files are stored.
 	 */
 	protected DirectoryRoot classDir;
-	
+
 	public WyjcBuildTask() {
 		super(new Registry());
 	}
-	
+
 	@Override
 	public void setWhileyDir(File dir) throws IOException {
 		// Note, we don't call super.setWhileyDir here as might be expected.
@@ -108,7 +108,7 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 					registry);
 		}
 	}
-	
+
 	@Override
 	public void setWyilDir(File dir) throws IOException {
 		super.setWyilDir(dir);
@@ -122,15 +122,15 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 		this.classDir = new DirectoryRoot(classdir, classFileFilter,
 				registry);
 	}
-		
+
 	@Override
 	protected void addBuildRules(StdProject project) {
-		// Add default build rule for converting whiley files into wyil files. 
+		// Add default build rule for converting whiley files into wyil files.
 		super.addBuildRules(project);
-		
+
 		// Now, add build rule for converting wyil files into class files using
 		// the Wyil2JavaBuilder.
-		
+
 		Wyil2JavaBuilder jbuilder = new Wyil2JavaBuilder(project);
 
 		if (verbose) {
@@ -140,25 +140,25 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 		project.add(new StdBuildRule(jbuilder, wyilDir, wyilIncludes,
 				wyilExcludes, classDir));
 	}
-	
+
 	@Override
 	protected List<Path.Entry<?>> getModifiedSourceFiles() throws IOException {
 		// First, determine all whiley source files which are out-of-date with
 		// respect to their wyil files.
 		List<Path.Entry<?>> sources = super.getModifiedSourceFiles();
-		
+
 		// Second, determine all wyil source files which are out-of-date with
-		// respect to their class files.				
+		// respect to their class files.
 		sources.addAll(super.getModifiedSourceFiles(wyilDir, wyilIncludes,
 				classDir, ContentType));
 
 		return sources;
 	}
-	
+
 	@Override
 	protected void flush() throws IOException {
 		super.flush();
 		classDir.flush();
 	}
-}		
+}
 

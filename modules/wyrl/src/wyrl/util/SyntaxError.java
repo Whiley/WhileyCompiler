@@ -30,20 +30,20 @@ import java.io.File;
 import wyrl.core.Attribute;
 
 /**
- * This exception is thrown when a syntax error occurs in the parser. 
- * 
+ * This exception is thrown when a syntax error occurs in the parser.
+ *
  * @author djp
- * 
+ *
  */
 public class SyntaxError extends RuntimeException {
 	private String msg;
 	private String filename;
 	private int start;
-	private int end;		
-	
+	private int end;
+
 	/**
 	 * Identify a syntax error at a particular point in a file.
-	 * 
+	 *
 	 * @param msg
 	 *            Message detailing the problem.
 	 * @param filename
@@ -56,13 +56,13 @@ public class SyntaxError extends RuntimeException {
 	public SyntaxError(String msg, String filename, int start, int end) {
 		this.msg = msg;
 		this.filename = filename;
-		this.start=start;		
-		this.end=end;		
-	}	
-	
+		this.start=start;
+		this.end=end;
+	}
+
 	/**
 	 * Identify a syntax error at a particular point in a file.
-	 * 
+	 *
 	 * @param msg
 	 *            Message detailing the problem.
 	 * @param file
@@ -75,13 +75,13 @@ public class SyntaxError extends RuntimeException {
 	public SyntaxError(String msg, File file, int start, int end) {
 		this.msg = msg;
 		this.filename = file.getPath();
-		this.start=start;		
-		this.end=end;		
-	}	
-	
+		this.start=start;
+		this.end=end;
+	}
+
 	/**
 	 * Identify a syntax error at a particular point in a file.
-	 * 
+	 *
 	 * @param msg
 	 *            Message detailing the problem.
 	 * @param filename
@@ -95,10 +95,10 @@ public class SyntaxError extends RuntimeException {
 		super(ex);
 		this.msg = msg;
 		this.filename = filename;
-		this.start=start;		
-		this.end=end;		
+		this.start=start;
+		this.end=end;
 	}
-	
+
 	public String getMessage() {
 		if(msg != null) {
 			return msg;
@@ -106,66 +106,66 @@ public class SyntaxError extends RuntimeException {
 			return "";
 		}
 	}
-	
+
 	/**
 	 * Error message
 	 * @return
 	 */
-	public String msg() { return msg; }	
-	
+	public String msg() { return msg; }
+
 	/**
 	 * Filename for file where the error arose.
 	 * @return
 	 */
-	public String filename() { return filename; }	
-	
+	public String filename() { return filename; }
+
 	/**
 	 * Get index of first character of offending location.
 	 * @return
 	 */
-	public int start() { return start; }	
-	
+	public int start() { return start; }
+
 	/**
 	 * Get index of last character of offending location.
 	 * @return
 	 */
 	public int end() { return end; }
-	
+
 	public static final long serialVersionUID = 1l;
-	
+
 
 	public static void syntaxError(String msg, File file, SyntacticElement elem) {
 		syntaxError(msg,file.getPath(),elem);
 	}
-	
+
 	public static void syntaxError(String msg, File file, SyntacticElement elem, Throwable ex) {
 		syntaxError(msg,file.getPath(),elem,ex);
 	}
-	
+
 	public static void syntaxError(String msg, String filename, SyntacticElement elem) {
 		int start = -1;
 		int end = -1;
-		
+
 		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
 		if(attr != null) {
 			start=attr.start;
-			end=attr.end;			
+			end=attr.end;
 		}
-		
+
 		throw new SyntaxError(msg, filename, start, end);
 	}
 
 	public static void syntaxError(String msg, String filename,
 			SyntacticElement elem, Throwable ex) {
 		int start = -1;
-		int end = -1;		
-		
+		int end = -1;
+
 		Attribute.Source attr = (Attribute.Source) elem.attribute(Attribute.Source.class);
 		if(attr != null) {
 			start=attr.start;
-			end=attr.end;			
+			end=attr.end;
 		}
-		
+
 		throw new SyntaxError(msg, filename, start, end, ex);
 	}
 }

@@ -25,7 +25,7 @@
 
 /**
  * Provides classes for handling reading/writing WYIL modules.
- * 
+ *
  * @author David J. Pearce
  */
 package wyil.io;

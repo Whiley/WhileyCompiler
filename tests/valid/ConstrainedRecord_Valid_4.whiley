@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 type point is {
-    int x, 
+    int x,
     int y
 } where x > 0 && y > 0
 

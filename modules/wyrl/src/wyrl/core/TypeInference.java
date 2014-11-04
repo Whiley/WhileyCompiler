@@ -65,9 +65,9 @@ public class TypeInference {
 			} else if (d instanceof SpecFile.TypeDecl) {
 				SpecFile.TypeDecl td = (SpecFile.TypeDecl) d;
 				macros.put(td.name, td.type);
-			} 
+			}
 		}
-		
+
 		// Second, sanity check all type and function constructors
 		for (SpecFile.Decl d : spec.declarations) {
 			if (d instanceof SpecFile.TermDecl) {
@@ -79,7 +79,7 @@ public class TypeInference {
 				check(td.to,td);
 			}
 		}
-		
+
 		// Third, type check all rewrite declarations
 		for (SpecFile.Decl d : spec.declarations) {
 			if (d instanceof SpecFile.RewriteDecl) {
@@ -89,16 +89,16 @@ public class TypeInference {
 	}
 
 	public void infer(SpecFile.RewriteDecl rd) {
-		
+
 		HashMap<String,Type> environment = new HashMap<String,Type>();
-		
+
 		infer(rd.pattern,environment);
-		
+
 		for(SpecFile.RuleDecl rule : rd.rules) {
 			infer(rule,environment);
 		}
 	}
-	
+
 	public Type.Ref infer(Pattern pattern, HashMap<String,Type> environment) {
 		Type.Ref type;
 		if(pattern instanceof Pattern.Leaf) {
@@ -119,13 +119,13 @@ public class TypeInference {
 			}
 			Type.Ref d = null;
 			if(p.data != null) {
-				d = infer(p.data,environment);								
+				d = infer(p.data,environment);
 			} else if(p.data == null && declared.element() != null) {
 				d = declared.element(); // auto-complete
 			}
 			if(p.variable != null) {
 				environment.put(p.variable, d);
-			}		
+			}
 			type = Type.T_REF(Type.T_TERM(p.name, d));
 		} else {
 			Pattern.Collection p = (Pattern.Collection) pattern;
@@ -136,7 +136,7 @@ public class TypeInference {
 				Pair<Pattern,String> ps = p_elements[i];
 				String var = ps.second();
 				Pattern pat = ps.first();
-				Type t = infer(pat,environment);				
+				Type t = infer(pat,environment);
 				types.add(t);
 				if(var != null) {
 					if(p.unbounded && (i+1) == p_elements.length) {
@@ -147,23 +147,23 @@ public class TypeInference {
 						} else {
 							t = Type.T_SET(true,t);
 						}
-					} 
-					environment.put(var,t);					
+					}
+					environment.put(var,t);
 				}
 			}
 
-			if(p instanceof Pattern.List) { 
+			if(p instanceof Pattern.List) {
 				type = Type.T_REF(Type.T_LIST(p.unbounded, types));
-			} else if(p instanceof Pattern.Bag) { 
+			} else if(p instanceof Pattern.Bag) {
 				type = Type.T_REF(Type.T_BAG(p.unbounded, types));
 			} else {
 				type = Type.T_REF(Type.T_SET(p.unbounded, types));
 			}
-		}	
+		}
 		pattern.attributes().add(new Attribute.Type(type));
 		return type;
 	}
-	
+
 	public void infer(SpecFile.RuleDecl rd, HashMap<String,Type> environment) {
 		 environment = new HashMap<String,Type>(environment);
 		ArrayList<Pair<String,Expr>> rd_lets = rd.lets;
@@ -173,16 +173,16 @@ public class TypeInference {
 			rd.lets.set(i, new Pair(let.first(),p.first()));
 			environment.put(let.first(), p.second());
 		}
-		
+
 		if(rd.condition != null) {
 			Pair<Expr,Type> p = resolve(rd.condition,environment);
 			rd.condition = p.first();
 			checkSubtype(Type.T_BOOL(),p.second(),rd.condition);
 		}
-		
+
 		Pair<Expr,Type> result = resolve(rd.result,environment);
 		rd.result = result.first();
-		
+
 		// TODO: check result is a ref?
 	}
 
@@ -220,7 +220,7 @@ public class TypeInference {
 				return null;
 			}
 			expr.attributes().add(new Attribute.Type(result));
-			return new Pair(expr,result); 
+			return new Pair(expr,result);
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
@@ -251,7 +251,7 @@ public class TypeInference {
 
 	protected Type resolve(Expr.Constructor expr, HashMap<String,Type> environment) {
 		Pair<Type,Type> arrowType = constructors.get(expr.name);
-		
+
 		if (arrowType == null) {
 			syntaxError("function not declared", file, expr);
 		} else if (expr.argument != null && arrowType.first() == null) {
@@ -262,13 +262,13 @@ public class TypeInference {
 			// FIXME: put back when subtyping works properly!
 			//checkSubtype(term.element(), arg_t.second(), expr.argument);
 		}
-		
+
 		expr.external = !terms.containsKey(expr.name);
-		
+
 		return arrowType.second();
 	}
 
-	protected Type resolve(Expr.UnOp uop, HashMap<String,Type> environment) {		
+	protected Type resolve(Expr.UnOp uop, HashMap<String,Type> environment) {
 		if(uop.op == Expr.UOp.NOT) {
 			// We need to clone in this case to guard against potential
 			// retypings inside the expression.
@@ -277,24 +277,24 @@ public class TypeInference {
 		Pair<Expr,Type> p = resolve(uop.mhs,environment);
 		uop.mhs = p.first();
 		Type t = Type.unbox(p.second());
-		
+
 		switch (uop.op) {
 		case LENGTHOF:
 			if(!(t instanceof Type.Collection || t instanceof Type.Strung)) {
 				syntaxError("collection type required",file,uop.mhs);
-			}			
+			}
 			t = Type.T_INT();
 			break;
 		case NEG:
 			if(!(t instanceof Type.Int)) {
-				checkSubtype(Type.T_REAL(), t, uop);										
+				checkSubtype(Type.T_REAL(), t, uop);
 			}
-			
+
 			break;
 		case DENOMINATOR:
 		case NUMERATOR:
-			checkSubtype(Type.T_REAL(), t, uop);										
-			t = Type.T_INT();			
+			checkSubtype(Type.T_REAL(), t, uop);
+			t = Type.T_INT();
 			break;
 		case NOT:
 			checkSubtype(Type.T_BOOL(), t, uop);
@@ -302,18 +302,18 @@ public class TypeInference {
 		default:
 			syntaxError("unknown unary expression encountered", file, uop);
 		}
-		
+
 		return t;
 	}
 
 	protected Type resolve(Expr.BinOp bop, HashMap<String,Type> environment) {
-		
+
 		// First, handle special case for OR
 		Pair<Expr, Type> p1 = null;
 		Pair<Expr, Type> p2 = null;
 		switch (bop.op) {
-		
-		case OR:			
+
+		case OR:
 			// We need to clone the environment because, otherwise, any retyping
 			// which takes place inside may leak out of the disjunction.
 			p1 = resolve(bop.lhs, (HashMap<String,Type>) environment.clone());
@@ -323,15 +323,15 @@ public class TypeInference {
 			p1 = resolve(bop.lhs,environment);
 			p2 = resolve(bop.rhs,environment);
 		}
-		
+
 		// Second, handle remaining cases
-		
+
 		bop.lhs = p1.first();
 		bop.rhs = p2.first();
 		Type lhs_t = p1.second();
 		Type rhs_t = p2.second();
 		Type result;
-				
+
 		// deal with auto-unboxing
 		switch(bop.op) {
 		case EQ:
@@ -344,12 +344,12 @@ public class TypeInference {
 			lhs_t = Type.unbox(lhs_t);
 			rhs_t = Type.unbox(rhs_t);
 		}
-		
+
 		// Second, do the thing for each
-		
+
 		switch (bop.op) {
-		case ADD: 
-		case SUB: 
+		case ADD:
+		case SUB:
 		case DIV:
 		case MUL: {
 			if(lhs_t instanceof Type.Int || rhs_t instanceof Type.Int) {
@@ -359,10 +359,10 @@ public class TypeInference {
 			} else {
 				checkSubtype(Type.T_REAL(), lhs_t, bop);
 				checkSubtype(Type.T_REAL(), rhs_t, bop);
-				result = Type.T_REAL();				
+				result = Type.T_REAL();
 			}
 			break;
-		}		
+		}
 		case EQ:
 		case NEQ: {
 			result = Type.T_BOOL();
@@ -377,14 +377,14 @@ public class TypeInference {
 				checkSubtype(Type.T_INT(), rhs_t, bop);
 			} else if(lhs_t instanceof Type.Real || rhs_t instanceof Type.Real){
 				checkSubtype(Type.T_REAL(), lhs_t, bop);
-				checkSubtype(Type.T_REAL(), rhs_t, bop);			
+				checkSubtype(Type.T_REAL(), rhs_t, bop);
 			} else if(lhs_t instanceof Type.Strung || rhs_t instanceof Type.Strung) {
 				checkSubtype(Type.T_STRING(), lhs_t, bop);
 				checkSubtype(Type.T_STRING(), rhs_t, bop);
 			} else {
 				checkSubtype(Type.T_REAL(), lhs_t, bop);
-				checkSubtype(Type.T_REAL(), rhs_t, bop);			
-			}  		
+				checkSubtype(Type.T_REAL(), rhs_t, bop);
+			}
 			result = Type.T_BOOL();
 			break;
 		}
@@ -420,26 +420,26 @@ public class TypeInference {
 					// FIXME: we need better support for non-uniform appending
 					// (e.g. set ++ bag, bag ++ list, etc).
 				result = Type.T_OR(lhs_t, rhs_t);
-			} else if (rhs_t instanceof Type.List) {				
+			} else if (rhs_t instanceof Type.List) {
 				lhs_t = Type.box(lhs_t);
 				Type.List rhs_tc = (Type.List) rhs_t;
-				// right append				
+				// right append
 				result = Type.T_LIST(rhs_tc.unbounded(),
-						append(lhs_t, rhs_tc.elements()));				
+						append(lhs_t, rhs_tc.elements()));
 			} else if (lhs_t instanceof Type.List){
 				// left append
 				Type.List lhs_tc = (Type.List) lhs_t;
 				rhs_t = Type.box(rhs_t);
 				if (!lhs_tc.unbounded()) {
 					result = Type.T_LIST(lhs_tc.unbounded(),
-							append(lhs_tc.elements(), rhs_t));					
+							append(lhs_tc.elements(), rhs_t));
 				} else {
 					Type[] lhs_elements = lhs_tc.elements();
 					int length = lhs_elements.length;
 					Type[] nelements = Arrays.copyOf(lhs_elements, length);
 					length--;
 					nelements[length] = Type.T_OR(rhs_t, nelements[length]);
-					result = Type.T_LIST(true,nelements);					
+					result = Type.T_LIST(true,nelements);
 				}
 			} else if (lhs_t instanceof Type.Collection) {
 				Type.Collection lhs_tc = (Type.Collection) lhs_t;
@@ -474,7 +474,7 @@ public class TypeInference {
 			if(!(rhs_t instanceof Type.Collection)) {
 				syntaxError("collection type required",file,bop.rhs);
 			}
-			Type.Collection tc = (Type.Collection) rhs_t; 
+			Type.Collection tc = (Type.Collection) rhs_t;
 			checkSubtype(tc.element(), lhs_t, bop);
 			result = Type.T_BOOL();
 			break;
@@ -484,14 +484,14 @@ public class TypeInference {
 			checkSubtype(Type.T_INT(), rhs_t, bop);
 			result = Type.T_LIST(true,Type.T_INT());
 			break;
-		}		
+		}
 		default:
 			syntaxError("unknown binary expression encountered", file, bop);
 			return null; // dead-code
 		}
 		return result;
 	}
-	
+
 	protected Type resolve(Expr.Comprehension expr, HashMap<String, Type> environment) {
 		environment = (HashMap) environment.clone();
 		ArrayList<Pair<Expr.Variable,Expr>> expr_sources = expr.sources;
@@ -513,13 +513,13 @@ public class TypeInference {
 			variable.attributes().add(new Attribute.Type(elementType));
 			environment.put(variable.var, elementType);
 		}
-		
+
 		if(expr.condition != null) {
 			Pair<Expr,Type> p = resolve(expr.condition,environment);
 			expr.condition = p.first();
 			checkSubtype(Type.T_BOOL(),p.second(),expr.condition);
 		}
-		
+
 		switch(expr.cop) {
 			case NONE:
 			case SOME:
@@ -541,18 +541,18 @@ public class TypeInference {
 			}
 			default:
 				throw new IllegalArgumentException("unknown comprehension kind");
-		}		
+		}
 	}
-	
+
 	protected Pair<Expr,Type> resolve(Expr.ListAccess expr, HashMap<String, Type> environment) {
 		Pair<Expr,Type> p2 = resolve(expr.index,environment);
 		expr.index= p2.first();
 		Type idx_t = p2.second();
-		
+
 		// First, a little check for the unusual case that this is, in fact, not
 		// a list access but a constructor with a single element list valued
 		// argument.
-		
+
 		if(expr.src instanceof Expr.Variable) {
 			Expr.Variable v = (Expr.Variable) expr.src;
 			if(!environment.containsKey(v.var) && constructors.containsKey(v.var)) {
@@ -567,17 +567,17 @@ public class TypeInference {
 						.second());
 			}
 		}
-		
+
 		Pair<Expr,Type> p1 = resolve(expr.src,environment);
 		expr.src = p1.first();
 
 		Type src_t = Type.unbox(p1.second());
 		checkSubtype(Type.T_LISTANY(), src_t, expr.src);
 		checkSubtype(Type.T_INT(), idx_t, expr.index);
-		
-		Type.List list_t = (Type.List) src_t; 
+
+		Type.List list_t = (Type.List) src_t;
 		Type[] list_elements = list_t.elements();
-		
+
 		if(expr.index instanceof Expr.Constant) {
 			Expr.Constant idx = (Expr.Constant) expr.index;
 			BigInteger v = (BigInteger) idx.value; // must succeed
@@ -594,13 +594,13 @@ public class TypeInference {
 			return new Pair<Expr, Type>(expr, list_t.element());
 		}
 	}
-	
+
 	protected Type resolve(Expr.ListUpdate expr, HashMap<String, Type> environment) {
-		
+
 		Pair<Expr,Type> p1 = resolve(expr.src,environment);
 		Pair<Expr,Type> p2 = resolve(expr.index,environment);
 		Pair<Expr,Type> p3 = resolve(expr.value,environment);
-		
+
 		expr.src = p1.first();
 		expr.index = p2.first();
 		expr.value = p3.first();
@@ -608,7 +608,7 @@ public class TypeInference {
 		Type src_t = p1.second();
 		Type idx_t = p2.second();
 		Type value_t = p3.second();
-		
+
 		checkSubtype(Type.T_LISTANY(), src_t, expr.src);
 		checkSubtype(Type.T_INT(), idx_t, expr.index);
 		Type.List src_lt = (Type.List) src_t;
@@ -619,22 +619,22 @@ public class TypeInference {
 		}
 		return Type.T_LIST(src_lt.unbounded(),new_elements);
 	}
-	
+
 	protected Type resolve(Expr.Substitute expr, HashMap<String, Type> environment) {
 		Pair<Expr,Type> p1 = resolve(expr.src,environment);
 		Pair<Expr,Type> p2 = resolve(expr.original,environment);
 		Pair<Expr,Type> p3 = resolve(expr.replacement,environment);
-		
+
 		expr.src = p1.first();
 		expr.original= p2.first();
 		expr.replacement= p3.first();
-		
+
 		Type src_t = p1.second();
-		
+
 		// FIXME: need to generate something better here!!
 		return src_t;
 	}
-	
+
 	protected Type resolve(Expr.NaryOp expr, HashMap<String, Type> environment) {
 		ArrayList<Expr> operands = expr.arguments;
 		Type[] types = new Type[operands.size()];
@@ -652,7 +652,7 @@ public class TypeInference {
 			return Type.T_SET(false, types);
 		}
 	}
-	
+
 	protected Type resolve(Expr.Variable code, HashMap<String, Type> environment) {
 		Type result = environment.get(code.var);
 		if (result == null) {
@@ -673,57 +673,57 @@ public class TypeInference {
 	protected Type resolve(Expr.Cast expr, HashMap<String, Type> environment) {
 		Pair<Expr,Type> p = resolve(expr.src,environment);
 		expr.src = p.first();
-		Type type = p.second();		
+		Type type = p.second();
 		type = Type.unbox(type);
 		if(!(type instanceof Type.Int && expr.type instanceof Type.Real)) {
 			syntaxError("cannot cast from " + type + " to " + expr.type, file, expr);
-		} 		
-		return expr.type;		
+		}
+		return expr.type;
 	}
-	
+
 	protected Type resolve(Expr.TermAccess expr, HashMap<String, Type> environment) {
 		Pair<Expr,Type> p = resolve(expr.src,environment);
 		Expr src = p.first();
-		Type type = p.second();		
-		
+		Type type = p.second();
+
 		expr.src = src;
 		type = Type.unbox(type);
 		if(!(type instanceof Type.Term)) {
 			syntaxError("expecting term type, got type " + type, file, expr);
-		} 
+		}
 		type = ((Type.Term) type).element();
 		if(type == null) {
 			return Type.T_VOID();
 		} else {
 			return type;
 		}
-	}	
-	
+	}
+
 	public Type[] append(Type head, Type[] tail) {
 		Type[] r = new Type[tail.length+1];
 		System.arraycopy(tail,0,r,1,tail.length);
 		r[0] = head;
 		return r;
 	}
-	
+
 	public Type[] append(Type[] head, Type tail) {
 		Type[] r = new Type[head.length+1];
 		System.arraycopy(head,0,r,0,head.length);
 		r[head.length] = tail;
 		return r;
-	}	
-	
+	}
+
 	public Type[] append(Type[] head, Type[] tail) {
 		Type[] r = new Type[head.length + tail.length];
 		System.arraycopy(head, 0, r, 0, head.length);
 		System.arraycopy(tail, 0, r, head.length, tail.length);
 		return r;
 	}
-	
+
 	/**
 	 * Check that this type is consistent and that all constructors used within
 	 * it are declared.
-	 * 
+	 *
 	 * @param t
 	 * @param constructors
 	 */
@@ -731,8 +731,8 @@ public class TypeInference {
 		if(type instanceof Type.Atom) {
 			// Do nothing in this case
 		} else if(type instanceof Type.Unary) {
-			Type.Unary t = (Type.Unary) type;			
-			check(t.element(),elem);			
+			Type.Unary t = (Type.Unary) type;
+			check(t.element(),elem);
 		} else if(type instanceof Type.Term) {
 			Type.Term t = (Type.Term) type;
 			if(terms.get(t.name()) == null && macros.get(t.name()) == null) {
@@ -763,10 +763,10 @@ public class TypeInference {
 			syntaxError("invalid type: " + type.getClass().getName(), file, elem);
 		}
 	}
-	
+
 	/**
 	 * Check whether t1 :> t2; that is, whether t2 is a subtype of t1.
-	 * 
+	 *
 	 * @param t1
 	 * @param t2
 	 * @param elem
@@ -774,7 +774,7 @@ public class TypeInference {
 	public void checkSubtype(Type t1, Type t2, SyntacticElement elem) {
 		t1 = Type.unbox(t1);
 		t2 = Type.unbox(t2);
-		
+
 		if (t1.isSubtype(t2)) {
 			return;
 		}

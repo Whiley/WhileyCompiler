@@ -70,7 +70,7 @@ public class ExtendedRuntimeInvalidTests extends TestHarness {
  @Test public void ListLength_Invalid_1_RuntimeFailTest() { runtimeFailTest("ListLength_Invalid_1"); }
  @Test public void ListLength_Invalid_2_RuntimeFailTest() { runtimeFailTest("ListLength_Invalid_2"); }
  @Test public void ListLength_Invalid_3_RuntimeFailTest() { runtimeFailTest("ListLength_Invalid_3"); }
- @Test public void ListSublist_CompileFail_2_RuntimeFailTest() { runtimeFailTest("ListSublist_CompileFail_2"); } 
+ @Test public void ListSublist_CompileFail_2_RuntimeFailTest() { runtimeFailTest("ListSublist_CompileFail_2"); }
  @Ignore("Known Issue") @Test public void Process_Invalid_2_RuntimeFailTest() { runtimeFailTest("Process_Invalid_2"); }
  @Test public void Quantifiers_CompileFail_1_RuntimeFailTest() { runtimeFailTest("Quantifiers_CompileFail_1"); }
  @Test public void Quantifiers_CompileFail_2_RuntimeFailTest() { runtimeFailTest("Quantifiers_CompileFail_2"); }
@@ -126,14 +126,14 @@ public class ExtendedRuntimeInvalidTests extends TestHarness {
  @Test public void TupleAssign_Invalid_1_RuntimeFailTest() { runtimeFailTest("TupleAssign_Invalid_1"); }
  @Test public void TupleAssign_Invalid_2_RuntimeFailTest() { runtimeFailTest("TupleAssign_Invalid_2"); }
  @Test public void TupleAssign_Invalid_3_RuntimeFailTest() { runtimeFailTest("TupleAssign_Invalid_3"); }
- @Test public void TupleDefine_CompileFail_2_RuntimeFailTest() { runtimeFailTest("TupleDefine_CompileFail_2"); } 
+ @Test public void TupleDefine_CompileFail_2_RuntimeFailTest() { runtimeFailTest("TupleDefine_CompileFail_2"); }
  @Test public void TypeEquals_Invalid_3_RuntimeFailTest() { runtimeFailTest("TypeEquals_Invalid_3"); }
  @Ignore("Known Issue") @Test public void TypeEquals_Invalid_4_RuntimeFailTest() { runtimeFailTest("TypeEquals_Invalid_4"); }
  @Test public void UnionType_CompileFail_8_RuntimeFailTest() { runtimeFailTest("UnionType_CompileFail_8"); }
  @Ignore("Known Issue") @Test public void UnionType_Invalid_1_RuntimeFailTest() { runtimeFailTest("UnionType_Invalid_1"); }
  @Test public void UnionType_Invalid_2_RuntimeFailTest() { runtimeFailTest("UnionType_Invalid_2"); }
- @Test public void UnionType_Invalid_3_RuntimeFailTest() { runtimeFailTest("UnionType_Invalid_3"); } 
- @Test public void VarDecl_Invalid_1_RuntimeFailTest() { runtimeFailTest("VarDecl_Invalid_1"); }  
+ @Test public void UnionType_Invalid_3_RuntimeFailTest() { runtimeFailTest("UnionType_Invalid_3"); }
+ @Test public void VarDecl_Invalid_1_RuntimeFailTest() { runtimeFailTest("VarDecl_Invalid_1"); }
  @Test public void While_CompileFail_6_RuntimeFailTest() { runtimeFailTest("While_CompileFail_6"); }
  @Test public void While_Invalid_2_RuntimeFailTest() { runtimeFailTest("While_Invalid_2"); }
  @Test public void While_Invalid_3_RuntimeFailTest() { runtimeFailTest("While_Invalid_3"); }

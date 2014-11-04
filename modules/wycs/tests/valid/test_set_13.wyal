@@ -1,5 +1,5 @@
 define NatSet({int} xs) is:
-  forall (int x): 
+  forall (int x):
     x in xs ==> x >= 0
 
 assert:

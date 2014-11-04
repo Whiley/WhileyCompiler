@@ -41,7 +41,7 @@ import static wyil.lang.CodeUtils.*;
  * Java Virtual Machine, WyIL uses unstructured control-flow. However, unlike
  * the JVM, it also allows variables to be automatically retyped by runtime type
  * tests. The following illustrates:
- * 
+ *
  * <pre>
  * function sum([int] data) => int:
  *    int r = 0
@@ -49,31 +49,31 @@ import static wyil.lang.CodeUtils.*;
  *       r = r + item
  *    return r
  * </pre>
- * 
+ *
  * This function is compiled into the following WyIL bytecode:
- * 
+ *
  * <pre>
  * function sum([int] data) => int:
- * body: 
- *   const %1 = 0          : int                      
- *   assign %2 = %0        : [int]                 
- *   forall %3 in %2 ()    : [int]              
- *       assign %4 = %1    : int                                
- *       add %1 = %4, %3   : int                                     
+ * body:
+ *   const %1 = 0          : int
+ *   assign %2 = %0        : [int]
+ *   forall %3 in %2 ()    : [int]
+ *       assign %4 = %1    : int
+ *       add %1 = %4, %3   : int
  *   return %1             : int
  * </pre>
- * 
+ *
  * <p>
  * Here, we can see that every bytecode is associated with one (or more) types.
  * These types are inferred by the compiler during type propagation.
  * </p>
- * 
+ *
  * <p>
  * Each bytecode has a binary format which identifies the <i>opcode</i>,
  * <i>registers</i> used and <i>pool items</i> used (e.g. names, constants,
  * etc). The generic organisation of a bytecode is as follows:
  * </p>
- * 
+ *
  * <pre>
  * +--------+-----------+------------+
  * | opcode | registers | pool items |
@@ -85,18 +85,18 @@ import static wyil.lang.CodeUtils.*;
  * values from <i>operand</i> registers. Such bytecodes are organised as
  * follows:
  * </p>
- * 
+ *
  * <pre>
  * +--------+--------+----------+------------+
  * | opcode | target | operands | pool items |
  * +--------+--------+----------+------------+
  * </pre>
- * 
- * 
+ *
+ *
  * @author David J. Pearce
  */
 public interface Code {
-	
+
 	// ===============================================================
 	// Abstract Methods
 	// ===============================================================
@@ -105,7 +105,7 @@ public interface Code {
 	 * Determine which registers are used in this bytecode. This can be used,
 	 * for example, to determine the size of the register file required for a
 	 * given method.
-	 * 
+	 *
 	 * @param register
 	 */
 	public void registers(java.util.Set<Integer> register);
@@ -114,7 +114,7 @@ public interface Code {
 	 * Remaps all registers according to a given binding. Registers not
 	 * mentioned in the binding retain their original value. Note, if the
 	 * returned bytecode is unchanged then it must be <code>this</code>.
-	 * 
+	 *
 	 * @param binding
 	 *            --- map from (existing) registers to (new) registers.
 	 * @return
@@ -123,7 +123,7 @@ public interface Code {
 
 	/**
 	 * Relabel all labels according to the given map.
-	 * 
+	 *
 	 * @param labels
 	 * @return
 	 */
@@ -141,44 +141,44 @@ public interface Code {
 
 	/**
 	 * A Unit bytecode is one which does not contain other bytecodes.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static abstract class Unit implements Code {
-		
+
 		@Override
 		public void registers(java.util.Set<Integer> register) {
 			// default implementation does nothing
 		}
-		
+
 		@Override
 		public Code.Unit remap(Map<Integer, Integer> binding) {
 			return this;
 		}
-		
+
 		@Override
 		public Code.Unit relabel(Map<String, String> labels) {
 			return this;
 		}
 	}
-	
+
 	/**
 	 * A code block represents a sequence of zero or more bytecodes. Code blocks
 	 * can represent bytecodes as well (e.g. the loop bytecode).
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static abstract class AbstractBlock extends ArrayList<Code> {
-		
+
 		public void registers(java.util.Set<Integer> register) {
 			for(int i=0;i!=size();++i) {
 				get(i).registers(register);
 			}
 		}
-		
-		
+
+
 		public Code.AbstractBlock remap(Map<Integer, Integer> binding) {
 			Code.AbstractBlock block = clone();
 			for(int i=0;i!=size();++i) {
@@ -187,7 +187,7 @@ public interface Code {
 			}
 			return block;
 		}
-				
+
 		public Code.AbstractBlock relabel(Map<String, String> labels) {
 			Code.AbstractBlock block = clone();
 			for(int i=0;i!=size();++i) {
@@ -196,10 +196,10 @@ public interface Code {
 			}
 			return block;
 		}
-		
+
 		public abstract Code.AbstractBlock clone();
 	}
-	
+
 	/**
 	 * <p>
 	 * Represents a complete sequence of bytecode instructions. For example, every
@@ -208,25 +208,25 @@ public interface Code {
 	 * bytecode it contains. An example attribute is one for holding the location of
 	 * the source code which generated the bytecode.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * Every Block has a number of dedicated input variables, and an arbitrary
 	 * number of additional temporary variables. Each variable is allocated to a
-	 * slot number, starting from zero and with all inputs coming first. 
+	 * slot number, starting from zero and with all inputs coming first.
 	 * </p>
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class Block extends ArrayList<Block.Entry> implements List<Block.Entry> {
 		private final int numInputs;
-				
-		public Block(int numInputs) {		
+
+		public Block(int numInputs) {
 			this.numInputs = numInputs;
 		}
-		
+
 		public Block(int numInputs, Collection<Entry> entries) {
-			super(entries);		
+			super(entries);
 			this.numInputs = numInputs;
 		}
 
@@ -236,19 +236,19 @@ public interface Code {
 
 		/**
 		 * Return the number of input variables for this block.
-		 * 
+		 *
 		 * @return
 		 */
 		public int numInputs() {
 			return numInputs;
 		}
-		
+
 		/**
 		 * Determine the number of slots used in this block.
-		 * 
+		 *
 		 * @return
 		 */
-		public int numSlots() {		
+		public int numSlots() {
 			HashSet<Integer> slots = new HashSet<Integer>();
 			for(Entry s : this) {
 				s.code.registers(slots);
@@ -256,13 +256,13 @@ public interface Code {
 			int r = 0;
 			for(int i : slots) {
 				r = Math.max(r,i+1);
-			}		
+			}
 			return Math.max(numInputs,r);
 		}
 
 		/**
 		 * Determine the exact slots used in this block.
-		 * 
+		 *
 		 * @return
 		 */
 		public Set<Integer> slots() {
@@ -272,15 +272,15 @@ public interface Code {
 			}
 			return slots;
 		}
-						
+
 		// ===================================================================
 		// Append Methods
-		// ===================================================================	
+		// ===================================================================
 
 		/**
 		 * Append a bytecode onto the end of this block. It is assumed that the
 		 * bytecode employs the same environment as this block.
-		 * 
+		 *
 		 * @param code
 		 *            --- bytecode to append
 		 * @param attributes
@@ -293,25 +293,25 @@ public interface Code {
 		/**
 		 * Append a bytecode onto the end of this block. It is assumed that the
 		 * bytecode employs the same environment as this block.
-		 * 
+		 *
 		 * @param code
 		 *            --- bytecode to append
 		 * @param attributes
 		 *            --- attributes associated with bytecode.
 		 */
 		public boolean add(Code code, Collection<Attribute> attributes) {
-			return add(new Entry(code,attributes));		
+			return add(new Entry(code,attributes));
 		}
-		
+
 		// ===================================================================
 		// Insert Methods
 		// ===================================================================
-		
+
 		/**
 		 * <p>Insert a bytecode at a given position in this block. It is assumed that
 		 * the bytecode employs the same environment as this block. The bytecode at
 		 * the given position (and any after it) are shifted one position down.</p>
-		 * 
+		 *
 		 * @param index --- position to insert at.
 		 * @param code --- bytecode to insert at the given position.
 		 * @param attributes
@@ -319,12 +319,12 @@ public interface Code {
 		public void add(int index, Code code, Attribute... attributes) {
 			add(index,new Entry(code,attributes));
 		}
-		
+
 		/**
 		 * <p>Insert a bytecode at a given position in this block. It is assumed that
 		 * the bytecode employs the same environment as this block. The bytecode at
 		 * the given position (and any after it) are shifted one position down.</p>
-		 * 
+		 *
 		 * @param index --- position to insert at.
 		 * @param code --- bytecode to insert at the given position.
 		 * @param attributes
@@ -350,13 +350,13 @@ public interface Code {
 		public void set(int index, Code code, Attribute... attributes) {
 			set(index,new Entry(code,attributes));
 		}
-		
+
 		/**
 		 * <p>
 		 * Replace the bytecode at a given position in this block with another. It
 		 * is assumed that the bytecode employs the same environment as this block.
 		 * </p>
-		 * 
+		 *
 		 * @param index --- position of bytecode to replace.
 		 * @param code --- bytecode to replace with.
 		 * @param attributes
@@ -364,31 +364,31 @@ public interface Code {
 		public void set(int index, Code code, Collection<Attribute> attributes) {
 			set(index, new Entry(code, attributes));
 		}
-		
+
 		// ===================================================================
 		// Miscellaneous
-		// =================================================================== 
+		// ===================================================================
 
 		/**
 		 * Represents an individual bytecode and those attributes currently
 		 * associated with it (if any) in the block.
-		 * 
+		 *
 		 * @author David J. Pearce
-		 * 
+		 *
 		 */
 		public static final class Entry extends SyntacticElement.Impl {
 			public final Code code;
-			
+
 			public Entry(Code code, Attribute... attributes) {
 				super(attributes);
 				this.code = code;
 			}
-			
+
 			public Entry(Code code, Collection<Attribute> attributes) {
 				super(attributes);
 				this.code = code;
 			}
-					
+
 			public String toString() {
 				String r = code.toString();
 				if(attributes().size() > 0) {
@@ -404,9 +404,9 @@ public interface Code {
 				}
 				return r;
 			}
-		}			
+		}
 	}
-	
+
 	// ===============================================================C
 	// Abstract Bytecodes
 	// ===============================================================
@@ -414,9 +414,9 @@ public interface Code {
 	/**
 	 * Represents the set of all bytecodes which assign a result to a single
 	 * target register.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static abstract class AbstractAssignable extends Code.Unit {
 		private final int target;
@@ -424,24 +424,24 @@ public interface Code {
 		/**
 		 * Construct an abstract bytecode which assigns to a given target
 		 * register.
-		 * 
+		 *
 		 * @param target
 		 */
 		public AbstractAssignable(int target) {
 			this.target = target;
 		}
-		
+
 		/**
 		 * Return the type of value assigned to the target register by this
 		 * bytecode.
-		 * 
+		 *
 		 * @return
 		 */
 		public abstract Type assignedType();
 
 		/**
 		 * Return the target register assigned by this bytecode.
-		 * 
+		 *
 		 * @return
 		 */
 		public int target() {
@@ -452,9 +452,9 @@ public interface Code {
 	/**
 	 * Represents the set of all bytcodes which take an arbitrary number of
 	 * register operands and write a result to the target register.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
@@ -496,8 +496,8 @@ public interface Code {
 
 		public Type assignedType() {
 			return (Type) this.type();
-		}		
-		
+		}
+
 		protected abstract Code.Unit clone(int nTarget, int[] nOperands);
 
 		public int hashCode() {
@@ -521,7 +521,7 @@ public interface Code {
 		public int[] operands() {
 			return operands;
 		}
-		
+
 		/**
 		 * Return the ith operand read by this bytecode.
 		 * @param i
@@ -531,13 +531,13 @@ public interface Code {
 			return operands[i];
 		}
 	}
-	
+
 	/**
 	 * Represents the set of all bytcodes which take a single register operand
 	 * and assign a result to the target register.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
@@ -550,15 +550,15 @@ public interface Code {
 				throw new IllegalArgumentException(
 						"AbstractUnOp type argument cannot be null");
 			}
-		}				
+		}
 	}
 
 	/**
 	 * Represents the set of all bytcodes which take a single register operand,
 	 * and do not assign to a target register.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
@@ -607,27 +607,27 @@ public interface Code {
 	/**
 	 * Represents the set of all bytcodes which take two register operands and
 	 * write a result to the target register.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
 	public static abstract class AbstractBinaryAssignable<T> extends
 			AbstractNaryAssignable<T> {
-		
+
 		public AbstractBinaryAssignable(T type, int target, int leftOperand,
 				int rightOperand) {
-			super(type,target,leftOperand,rightOperand);			
+			super(type,target,leftOperand,rightOperand);
 		}
-	}	
-	
+	}
+
 	/**
 	 * Represents the set of all bytcodes which take an arbitrary number of
 	 * register operands and write a result to the target register.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
@@ -635,9 +635,9 @@ public interface Code {
 	/**
 	 * Represents the set of all bytcodes which take two register operands and
 	 * perform a comparison of their values.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
@@ -693,14 +693,14 @@ public interface Code {
 		}
 	}
 
-	
+
 	// =========================================================================
 	// Opcodes
 	// =========================================================================
-		
+
 	public static final int FMT_SHIFT        = 5;
 	public static final int FMT_MASK         = 7 << FMT_SHIFT;
-	
+
 	public static final int FMT_EMPTY        = 0 << FMT_SHIFT;
 	public static final int FMT_UNARYOP      = 1 << FMT_SHIFT;
 	public static final int FMT_UNARYASSIGN  = 2 << FMT_SHIFT;
@@ -709,42 +709,42 @@ public interface Code {
 	public static final int FMT_NARYOP       = 5 << FMT_SHIFT;
 	public static final int FMT_NARYASSIGN   = 6 << FMT_SHIFT;
 	public static final int FMT_OTHER        = 7 << FMT_SHIFT;
-	
+
 	// =========================================================================
 	// Empty Bytecodes
 	// =========================================================================
-	public static final int OPCODE_nop      = 0 + FMT_EMPTY;	
-	public static final int OPCODE_returnv  = 1 + FMT_EMPTY;		
+	public static final int OPCODE_nop      = 0 + FMT_EMPTY;
+	public static final int OPCODE_returnv  = 1 + FMT_EMPTY;
 	public static final int OPCODE_const    = 2 + FMT_EMPTY; // +CONSTIDX
 	public static final int OPCODE_goto     = 3 + FMT_EMPTY; // +INT
 	public static final int OPCODE_fail     = 4 + FMT_EMPTY;
-	
+
 	// =========================================================================
 	// Unary Operators
 	// =========================================================================
 	public static final int OPCODE_debug    = 0 + FMT_UNARYOP;
-	public static final int OPCODE_return   = 1 + FMT_UNARYOP;	 
-	public static final int OPCODE_ifis     = 3 + FMT_UNARYOP; // +TYPEIDX	
+	public static final int OPCODE_return   = 1 + FMT_UNARYOP;
+	public static final int OPCODE_ifis     = 3 + FMT_UNARYOP; // +TYPEIDX
 	public static final int OPCODE_switch   = 4 + FMT_UNARYOP; // +OTHER
 	public static final int OPCODE_throw    = 5 + FMT_UNARYOP;
-	
+
 	// =========================================================================
 	// Unary Assignables
-	// =========================================================================		
+	// =========================================================================
 	public static final int OPCODE_assign      = 0 + FMT_UNARYASSIGN;
 	public static final int OPCODE_dereference = 1 + FMT_UNARYASSIGN;
-	public static final int OPCODE_invert      = 2 + FMT_UNARYASSIGN;	
+	public static final int OPCODE_invert      = 2 + FMT_UNARYASSIGN;
 	public static final int OPCODE_lengthof    = 3 + FMT_UNARYASSIGN;
-	public static final int OPCODE_move        = 4 + FMT_UNARYASSIGN;		
-	public static final int OPCODE_newobject   = 5 + FMT_UNARYASSIGN;	
+	public static final int OPCODE_move        = 4 + FMT_UNARYASSIGN;
+	public static final int OPCODE_newobject   = 5 + FMT_UNARYASSIGN;
 	public static final int OPCODE_neg         = 6 + FMT_UNARYASSIGN;
 	public static final int OPCODE_numerator   = 7 + FMT_UNARYASSIGN;
-	public static final int OPCODE_denominator = 8 + FMT_UNARYASSIGN;	
+	public static final int OPCODE_denominator = 8 + FMT_UNARYASSIGN;
 	public static final int OPCODE_not         = 9 + FMT_UNARYASSIGN;
 	public static final int OPCODE_tupleload   = 10 + FMT_UNARYASSIGN;
 	public static final int OPCODE_fieldload   = 11 + FMT_UNARYASSIGN; // +STRINGIDX
-	public static final int OPCODE_convert     = 12 + FMT_UNARYASSIGN; // +TYPEIDX		
-		
+	public static final int OPCODE_convert     = 12 + FMT_UNARYASSIGN; // +TYPEIDX
+
 	// =========================================================================
 	// Binary Operators
 	// =========================================================================
@@ -756,76 +756,76 @@ public interface Code {
 	public static final int OPCODE_ifge     = 5  + FMT_BINARYOP; // +INT
 	public static final int OPCODE_ifel     = 6  + FMT_BINARYOP; // +INT
 	public static final int OPCODE_ifss     = 7  + FMT_BINARYOP; // +INT
-	public static final int OPCODE_ifse     = 8  + FMT_BINARYOP; // +INT	
-	
+	public static final int OPCODE_ifse     = 8  + FMT_BINARYOP; // +INT
+
 	// =========================================================================
 	// Binary Assignables
 	// =========================================================================
 	public static final int OPCODE_add         = 0  + FMT_BINARYASSIGN;
-	public static final int OPCODE_sub         = 1  + FMT_BINARYASSIGN;  
-	public static final int OPCODE_mul         = 2  + FMT_BINARYASSIGN; 
-	public static final int OPCODE_div         = 3  + FMT_BINARYASSIGN; 
-	public static final int OPCODE_rem         = 4  + FMT_BINARYASSIGN; 
-	public static final int OPCODE_range       = 5  + FMT_BINARYASSIGN; 
-	public static final int OPCODE_bitwiseor   = 6  + FMT_BINARYASSIGN; 
-	public static final int OPCODE_bitwisexor  = 7  + FMT_BINARYASSIGN; 
-	public static final int OPCODE_bitwiseand  = 8  + FMT_BINARYASSIGN; 
-	public static final int OPCODE_lshr        = 9  + FMT_BINARYASSIGN; 
-	public static final int OPCODE_rshr        = 10 + FMT_BINARYASSIGN; 	
-	public static final int OPCODE_indexof     = 11 + FMT_BINARYASSIGN;	
-	public static final int OPCODE_union       = 12 + FMT_BINARYASSIGN;   	
-	public static final int OPCODE_unionl      = 13 + FMT_BINARYASSIGN; 
-	public static final int OPCODE_unionr      = 14 + FMT_BINARYASSIGN; 
-	public static final int OPCODE_intersect   = 15 + FMT_BINARYASSIGN; 
-	public static final int OPCODE_intersectl  = 16 + FMT_BINARYASSIGN; 
-	public static final int OPCODE_intersectr  = 17 + FMT_BINARYASSIGN; 	
-	public static final int OPCODE_difference  = 18 + FMT_BINARYASSIGN; 
-	public static final int OPCODE_differencel = 19 + FMT_BINARYASSIGN; 					
+	public static final int OPCODE_sub         = 1  + FMT_BINARYASSIGN;
+	public static final int OPCODE_mul         = 2  + FMT_BINARYASSIGN;
+	public static final int OPCODE_div         = 3  + FMT_BINARYASSIGN;
+	public static final int OPCODE_rem         = 4  + FMT_BINARYASSIGN;
+	public static final int OPCODE_range       = 5  + FMT_BINARYASSIGN;
+	public static final int OPCODE_bitwiseor   = 6  + FMT_BINARYASSIGN;
+	public static final int OPCODE_bitwisexor  = 7  + FMT_BINARYASSIGN;
+	public static final int OPCODE_bitwiseand  = 8  + FMT_BINARYASSIGN;
+	public static final int OPCODE_lshr        = 9  + FMT_BINARYASSIGN;
+	public static final int OPCODE_rshr        = 10 + FMT_BINARYASSIGN;
+	public static final int OPCODE_indexof     = 11 + FMT_BINARYASSIGN;
+	public static final int OPCODE_union       = 12 + FMT_BINARYASSIGN;
+	public static final int OPCODE_unionl      = 13 + FMT_BINARYASSIGN;
+	public static final int OPCODE_unionr      = 14 + FMT_BINARYASSIGN;
+	public static final int OPCODE_intersect   = 15 + FMT_BINARYASSIGN;
+	public static final int OPCODE_intersectl  = 16 + FMT_BINARYASSIGN;
+	public static final int OPCODE_intersectr  = 17 + FMT_BINARYASSIGN;
+	public static final int OPCODE_difference  = 18 + FMT_BINARYASSIGN;
+	public static final int OPCODE_differencel = 19 + FMT_BINARYASSIGN;
 	public static final int OPCODE_append      = 20 + FMT_BINARYASSIGN;
 	public static final int OPCODE_appendl     = 21 + FMT_BINARYASSIGN;
 	public static final int OPCODE_appendr     = 22 + FMT_BINARYASSIGN;
 	public static final int OPCODE_sappend     = 23 + FMT_BINARYASSIGN;
 	public static final int OPCODE_sappendl    = 24 + FMT_BINARYASSIGN;
 	public static final int OPCODE_sappendr    = 25 + FMT_BINARYASSIGN;
-	
+
 	// =========================================================================
 	// Nary Operators
-	// =========================================================================	
-	public static final int OPCODE_loop              = 0 + FMT_NARYOP;	
-	public static final int OPCODE_forall            = 1 + FMT_NARYOP;	
+	// =========================================================================
+	public static final int OPCODE_loop              = 0 + FMT_NARYOP;
+	public static final int OPCODE_forall            = 1 + FMT_NARYOP;
 	public static final int OPCODE_void              = 2 + FMT_NARYOP;
 	public static final int OPCODE_indirectinvokefnv = 3 + FMT_NARYOP;
 	public static final int OPCODE_indirectinvokemdv = 4 + FMT_NARYOP;
-	public static final int OPCODE_invokefnv         = 5 + FMT_NARYOP; // +NAMEIDX	
-	public static final int OPCODE_invokemdv         = 6 + FMT_NARYOP; // +NAMEIDX	
-		
+	public static final int OPCODE_invokefnv         = 5 + FMT_NARYOP; // +NAMEIDX
+	public static final int OPCODE_invokemdv         = 6 + FMT_NARYOP; // +NAMEIDX
+
 	// =========================================================================
 	// Nary Assignables
-	// =========================================================================		
+	// =========================================================================
 	public static final int OPCODE_newlist          = 0 + FMT_NARYASSIGN;
 	public static final int OPCODE_newset           = 1 + FMT_NARYASSIGN;
 	public static final int OPCODE_newmap           = 2 + FMT_NARYASSIGN;
-	public static final int OPCODE_newtuple         = 3 + FMT_NARYASSIGN;	
+	public static final int OPCODE_newtuple         = 3 + FMT_NARYASSIGN;
 	public static final int OPCODE_indirectinvokefn = 4 + FMT_NARYASSIGN;
 	public static final int OPCODE_indirectinvokemd = 5 + FMT_NARYASSIGN;
 	public static final int OPCODE_sublist          = 6 + FMT_NARYASSIGN;
-	public static final int OPCODE_substring        = 7 + FMT_NARYASSIGN;	
+	public static final int OPCODE_substring        = 7 + FMT_NARYASSIGN;
 	public static final int OPCODE_invokefn         = 8 + FMT_NARYASSIGN; // +NAMEIDX
-	public static final int OPCODE_invokemd         = 9 + FMT_NARYASSIGN; // +NAMEIDX	
+	public static final int OPCODE_invokemd         = 9 + FMT_NARYASSIGN; // +NAMEIDX
 	public static final int OPCODE_lambdafn         = 10 + FMT_NARYASSIGN; // +NAMEIDX
-	public static final int OPCODE_lambdamd         = 11 + FMT_NARYASSIGN; // +NAMEIDX	
+	public static final int OPCODE_lambdamd         = 11 + FMT_NARYASSIGN; // +NAMEIDX
 	public static final int OPCODE_newrecord        = 12 + FMT_NARYASSIGN;// +OTHER
-	
+
 	// =========================================================================
 	// Other
-	// =========================================================================					
-	public static final int OPCODE_trycatch            = 0 + FMT_OTHER;	
+	// =========================================================================
+	public static final int OPCODE_trycatch            = 0 + FMT_OTHER;
 	public static final int OPCODE_update              = 1 + FMT_OTHER;
 	public static final int OPCODE_assertblock         = 2 + FMT_OTHER;
 	public static final int OPCODE_assumeblock         = 3 + FMT_OTHER;
-	
+
 	// this is where I will locate the WIDE and WIDEWIDE Markers
 	public static final int OPCODE_wide                = 29 + FMT_OTHER;
 	public static final int OPCODE_widerest            = 30 + FMT_OTHER;
-	public static final int OPCODE_widewide            = 31 + FMT_OTHER;	
+	public static final int OPCODE_widewide            = 31 + FMT_OTHER;
 }

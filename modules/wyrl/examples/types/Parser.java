@@ -4,18 +4,18 @@ import wyautl.core.Automaton;
 
 public class Parser {
 	private String input;
-	private int index; 
-	
+	private int index;
+
 	public Parser(String input) {
 		this.input = input;
 		this.index = 0;
 	}
-	
+
 	public int parse(Automaton automaton) {
 
-		int lhs = parseAndOr(automaton);		
+		int lhs = parseAndOr(automaton);
 		skipWhiteSpace();
-		
+
 		if (index < input.length() && input.charAt(index) == ',') {
 			ArrayList<Integer> elements = new ArrayList<Integer>();
 			elements.add(lhs);
@@ -30,18 +30,18 @@ public class Parser {
 			}
 			lhs = Types.Tuple(automaton, es);
 		}
-		
+
 		return lhs;
-	}	
-	
+	}
+
 	public int parseAndOr(Automaton automaton) {
 
-		int lhs = parseTerm(automaton);		
+		int lhs = parseTerm(automaton);
 		skipWhiteSpace();
-		
+
 		if(index < input.length()) {
 			char lookahead = input.charAt(index);
-			
+
 			if(lookahead == '&') {
 				match("&");
 				int rhs = parseAndOr(automaton);
@@ -49,22 +49,22 @@ public class Parser {
 			} else if(lookahead == '|') {
 				match("|");
 				int rhs = parseAndOr(automaton);
-				lhs = Types.Union(automaton, lhs, rhs);				
-			} 
+				lhs = Types.Union(automaton, lhs, rhs);
+			}
 		}
-		
+
 		return lhs;
 	}
-	
+
 	public int parseTerm(Automaton automaton) {
 		skipWhiteSpace();
 		char lookahead = input.charAt(index);
-		
+
 		if(lookahead == '(') {
-			return parseBracketed(automaton);			
+			return parseBracketed(automaton);
 		} else if(lookahead == '!') {
 			match("!");
-			return Types.Not(automaton, parseTerm(automaton));	
+			return Types.Not(automaton, parseTerm(automaton));
 		} else {
 			String word = readWord();
 			if(word.equals("int")) {
@@ -76,14 +76,14 @@ public class Parser {
 			}
 		}
 	}
-	
+
 	private int parseBracketed(Automaton automaton) {
 		match("(");
 		int root = parse(automaton);
 		match(")");
 		return root;
 	}
-	
+
 	private String readWord() {
 		int start = index;
 		while (index < input.length()
@@ -100,7 +100,7 @@ public class Parser {
 		}
 		return Integer.parseInt(input.substring(start, index));
 	}
-		
+
 	private void match(String text) {
 		skipWhiteSpace();
 		if(input.startsWith(text,index)) {
@@ -109,18 +109,18 @@ public class Parser {
 			error();
 		}
 	}
-	
-	private void skipWhiteSpace() {		
+
+	private void skipWhiteSpace() {
 		while (index < input.length()
 				&& (input.charAt(index) == ' ' || input.charAt(index) == '\n')) {
 			index = index + 1;
 		}
-	}	
-	
+	}
+
 	private void error() {
 		final String msg = "Cannot parse character '"
 			+ input.charAt(index)
 		    + "' at position " + index + " of input '" + input + "'\n";
-		throw new RuntimeException(msg);		
+		throw new RuntimeException(msg);
 	}
 }

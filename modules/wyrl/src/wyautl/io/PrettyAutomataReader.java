@@ -32,24 +32,24 @@ import java.util.*;
 import wyautl.core.*;
 import wyautl.util.BigRational;
 
-public class PrettyAutomataReader {	
+public class PrettyAutomataReader {
 	private final InputStream input;
-	private final int[] lookaheads;	
+	private final int[] lookaheads;
 	private final Schema schema;
 	private final HashMap<String,Integer> rSchema;
 	private int start,end;
 	private int pos;
-	
+
 	public PrettyAutomataReader(InputStream reader, Schema schema) {
-		this.input = reader;		
+		this.input = reader;
 		this.schema = schema;
 		this.rSchema = new HashMap<String,Integer>();
 		for(int i=0;i!=schema.size();++i) {
 			rSchema.put(schema.get(i).name, i);
 		}
-		this.lookaheads = new int[2];		
+		this.lookaheads = new int[2];
 	}
-	
+
 	public Automaton read() throws IOException,SyntaxError {
 		Automaton automaton = new Automaton();
 		int root = parseState(automaton);
@@ -60,7 +60,7 @@ public class PrettyAutomataReader {
 	protected int parseState(Automaton automaton) throws IOException, SyntaxError {
 		skipWhiteSpace();
 		int lookahead = lookahead();
-		
+
 		switch(lookahead) {
 			case '(':
 				return parseBracketed(automaton);
@@ -83,68 +83,68 @@ public class PrettyAutomataReader {
 			case '\"':
 				return parseString(automaton);
 			default:
-				return parseTermOrBool(automaton);				
-		}		
+				return parseTermOrBool(automaton);
+		}
 	}
-	
+
 	protected int parseTermOrBool(Automaton automaton)
 			throws IOException, SyntaxError {
-			
+
 		// ======== parse identifier ===========
 		StringBuffer sb = new StringBuffer();
 		int lookahead;
 		while ((lookahead = lookahead()) != -1
 				&& Character.isJavaIdentifierPart((char) lookahead)) {
 			sb.append((char) next());
-		}				
+		}
 		String name = sb.toString();
-		
+
 		if(name.equals("true")) {
 			return automaton.add(Automaton.TRUE);
 		} else if(name.equals("false")) {
 			return automaton.add(Automaton.FALSE);
 		}
-		
+
 		Integer kind = rSchema.get(name);
 		if (kind == null) {
 			throw new SyntaxError("unrecognised term encountered (" + name
 					+ ")", pos, pos);
-		} 
+		}
 		Schema.Term type = schema.get(kind);
 		int data = -1;
-		
+
 		if(type.child != null) {
 			data = parseState(automaton);
 		}
-		
+
 		return automaton.add(new Automaton.Term(kind, data));
 	}
-	
+
 	protected int parseBracketed(Automaton automaton) throws IOException, SyntaxError {
 		match('(');
 		int r = parseState(automaton);
 		match(')');
 		return r;
 	}
-	
+
 	protected int parseNumber(Automaton automaton, boolean negative)
-			throws IOException, SyntaxError {		
+			throws IOException, SyntaxError {
 		if(negative) {
 			match('-');
 		}
-		StringBuffer sb = new StringBuffer();		
+		StringBuffer sb = new StringBuffer();
 		int lookahead;
 		while ((lookahead = lookahead()) != -1
 				&& Character.isDigit((char) lookahead)) {
 			sb.append((char) next());
 		}
-		
+
 		if(lookahead == '.') {
 			sb.append((char) next());
 			while ((lookahead = lookahead()) != -1
 					&& Character.isDigit((char) lookahead)) {
 				sb.append((char) next());
-			}	
+			}
 			BigRational val = new BigRational(sb.toString());
 
 			if(negative) {
@@ -163,12 +163,12 @@ public class PrettyAutomataReader {
 			return automaton.add(new Automaton.Int(val));
 		}
 	}
-	
+
 	protected int parseString(Automaton automaton)
-			throws IOException, SyntaxError {		
+			throws IOException, SyntaxError {
 		StringBuffer sb = new StringBuffer();
 		int lookahead = next(); // skip starting '\"'
-		
+
 		while ((lookahead = next()) != -1
 				&& ((char)lookahead) != '\"') {
 			sb.append((char) lookahead);
@@ -176,13 +176,13 @@ public class PrettyAutomataReader {
 
 		return automaton.add(new Automaton.Strung(sb.toString()));
 	}
-	
+
 	protected int parseCompound(Automaton automaton)
 			throws IOException, SyntaxError {
 		int lookahead = next(); // skip opening brace
-		
+
 		int kind;
-		
+
 		switch(lookahead) {
 			case '[':
 				kind = Automaton.K_LIST;
@@ -198,10 +198,10 @@ public class PrettyAutomataReader {
 			default:
 				throw new IllegalArgumentException("invalid compound start");
 		}
-				
+
 		boolean firstTime = true;
 		ArrayList<Integer> children = new ArrayList<Integer>();
-		
+
 		while ((lookahead = lookahead()) != -1 && lookahead != ']'
 				&& lookahead != '|' && lookahead != '}') {
 			if (!firstTime) {
@@ -215,45 +215,45 @@ public class PrettyAutomataReader {
 			children.add(parseState(automaton));
 			skipWhiteSpace();
 		}
-						
+
 		switch(kind) {
 			case Automaton.K_LIST:
-				match(']');	
+				match(']');
 				break;
 			case Automaton.K_BAG:
 				match('|');
 				match('}');
 				break;
 			case Automaton.K_SET:
-				match('}');				
+				match('}');
 				break;
-			default:				
+			default:
 		}
-		
-		if(kind == Automaton.K_LIST) { 
+
+		if(kind == Automaton.K_LIST) {
 			return automaton.add(new Automaton.List(children));
-		} else if(kind == Automaton.K_BAG) { 
+		} else if(kind == Automaton.K_BAG) {
 			return automaton.add(new Automaton.Bag(children));
 		} else {
 			return automaton.add(new Automaton.Set(children));
 		}
 	}
-	
+
 	protected int next() throws IOException {
 		int lookahead;
 		if(start != end) {
 			lookahead = lookaheads[start];
-			start = (start + 1) % lookaheads.length;			
+			start = (start + 1) % lookaheads.length;
 		} else {
 			lookahead = input.read();
 		}
 		return lookahead;
 	}
-	
+
 	protected int lookahead() throws IOException {
 		int lookahead;
 		if(start != end) {
-			lookahead = lookaheads[start];						
+			lookahead = lookaheads[start];
 		} else {
 			lookahead = input.read();
 			lookaheads[end] = lookahead;
@@ -261,7 +261,7 @@ public class PrettyAutomataReader {
 		}
 		return lookahead;
 	}
-	
+
 	protected void match(char c) throws IOException, SyntaxError {
 		int lookahead = next();
 		if (lookahead != c) {
@@ -269,16 +269,16 @@ public class PrettyAutomataReader {
 					+ (char) lookahead + "\'", pos, pos);
 		}
 	}
-	
+
 	protected void skipWhiteSpace() throws IOException {
 		int lookahead;
 		while ((lookahead = lookahead()) != -1
 				&& Character.isWhitespace(lookahead)) {
 			next(); // dummy
 			pos = pos + 1;
-		}		
+		}
 	}
-		
+
 	public static final class SyntaxError extends Exception {
 		public final int start;
 		public final int end;

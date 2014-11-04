@@ -1,8 +1,8 @@
 import whiley.lang.System
 
-type InputStream is {            
-    method read(int) => [byte],  
-    method eof() => bool         
+type InputStream is {
+    method read(int) => [byte],
+    method eof() => bool
 }
 
 type BufferState is &{[byte] bytes, int pos}

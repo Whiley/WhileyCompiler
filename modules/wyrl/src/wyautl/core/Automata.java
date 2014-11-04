@@ -34,16 +34,16 @@ import wyautl.util.BinaryMatrix;
 
 /**
  * Contains various helper functions for working with automata.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class Automata {
 
 	/**
 	 * Extract all states reachable from a given state in an automaton and load
 	 * them onto the states array, whilst retaining their original ordering.
-	 * 
+	 *
 	 * @param automaton
 	 * @param root
 	 * @param states
@@ -76,7 +76,7 @@ public class Automata {
 	 * furthermore, those which are "headers" are additionally identified. A
 	 * header state is one which is the target of a back-edge in the directed
 	 * graph reachable from the start state.
-	 * 
+	 *
 	 * @param automaton
 	 *            --- automaton to traverse.
 	 * @param start
@@ -135,7 +135,7 @@ public class Automata {
 	 * Visit all states reachable from a given starting state in the given
 	 * automaton. This yields an ordering of the visited nodes (which is in
 	 * <i>reverse post-order</i>).
-	 * 
+	 *
 	 * @param automaton
 	 *            --- automaton to traverse.
 	 * @param start
@@ -196,7 +196,7 @@ public class Automata {
 	 * Determine whether the subgraph reachable from a given node in this
 	 * automaton is acyclic or not. It can be useful to know this, since some
 	 * algorithms are more efficient on acyclic automata.
-	 * 
+	 *
 	 * @param automaton
 	 *            --- automaton to traverse.
 	 * @param start
@@ -213,13 +213,13 @@ public class Automata {
 	 * Helper algorithm. This is similar to the well-known algorithm for finding
 	 * strongly connected components. The main difference is that it doesn't
 	 * actually return the components. For reference, see this paper:
-	 * 
+	 *
 	 * <ul>
 	 * <li><b>An Improved Algorithm for Finding the Strongly Connected
 	 * Components of a Directed Graph</b>. David J. Pearce, Technical Report,
 	 * 2005.</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param index
 	 *            --- current node being visited.
 	 * @param onStack
@@ -276,7 +276,7 @@ public class Automata {
 	 * given node. An array of temporary storage is used to record which nodes
 	 * have been previously visited in order to protected against infinite
 	 * recursion in the presence of cyclic automata.
-	 * 
+	 *
 	 * @param start
 	 *            --- index to begin the traversal from.
 	 * @param storage
@@ -319,7 +319,7 @@ public class Automata {
 	/**
 	 * Eliminate any states which are unreachable from a root state between the
 	 * given start and end indices.
-	 * 
+	 *
 	 * @param automaton
 	 * @param tmp
 	 */
@@ -377,7 +377,7 @@ public class Automata {
 	 * Determine which states are equivalent using a binary matrix of size N*N,
 	 * where N is the number of states in the given automaton. This method is
 	 * part of the minimisation process.
-	 * 
+	 *
 	 * @param automaton
 	 *            --- The automaton being minimised.
 	 * @param equivs
@@ -468,7 +468,7 @@ public class Automata {
 	 * Determine whether two list states are equivalent. This is relatively
 	 * straightforward. First, they must have the same number of elements.
 	 * Secondly, respective elements must be equivalent to each other.
-	 * 
+	 *
 	 * @param automaton
 	 *            Automaton in which the two states reside
 	 * @param equivs
@@ -517,7 +517,7 @@ public class Automata {
 	 * than for list states. We need to identify that every state in the first
 	 * set has an equivalent state in the second set; likewise, that every state
 	 * in the second state has an equivalent state in the first.
-	 * 
+	 *
 	 * @param automaton
 	 *            Automaton in which the two states reside
 	 * @param equivs
@@ -586,7 +586,7 @@ public class Automata {
 	 * likewise, that every state in the second state has an equivalent state in
 	 * the first. However, we must also count the occurrences of a particular
 	 * state and its equivalents is the same in both as well.
-	 * 
+	 *
 	 * @param automaton
 	 *            Automaton in which the two states reside
 	 * @param equivs
@@ -651,7 +651,7 @@ public class Automata {
 		// calculation in the reverse direction. This is because the size of two
 		// bags must be identical and, hence, if the above loop passes we have
 		// checked all states in both directions already.
-		
+
 		return true;
 	}
 
@@ -662,7 +662,7 @@ public class Automata {
 	 * will be placed after this. In the case of non-deterministic states, this
 	 * may give rise to a number of equivalent extensions to consider.
 	 * <p>
-	 * 
+	 *
 	 * @param index
 	 *            --- index in morphism to extend. A state must already have
 	 *            been placed at its index, but some or all of its children will
@@ -759,7 +759,7 @@ public class Automata {
 	/**
 	 * The purpose of this method is to prune the candidate list. In otherwords,
 	 * to remove any candidates which are above some other candidate.
-	 * 
+	 *
 	 * @param size
 	 * @param candidates
 	 * @param automaton
@@ -800,7 +800,7 @@ public class Automata {
 	 * compare the states at each index in the morphisms. One state is below
 	 * another if it has a lower kind, fewer children or its transitions are
 	 * "below" those of the other.
-	 * 
+	 *
 	 * @param morph1
 	 *            --- Morphism to test if below or not.
 	 * @param morph2
@@ -966,9 +966,9 @@ public class Automata {
 	/**
 	 * A morphism maintains a mapping form nodes in the canonical form (indices)
 	 * to nodes in the original automaton.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	static final class Morphism {
 		final int[] i2n; // indices to nodes
@@ -1055,7 +1055,7 @@ public class Automata {
 	 * array. For example, if <code>children=[1,2,3]</code>, the returned list
 	 * includes the following permutations:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * [1,2,3]
 	 * [2,1,3]
@@ -1069,7 +1069,7 @@ public class Automata {
 	 * of the input array. Therefore, <i>this can a very expensive
 	 * operation</i>. Use with care!
 	 * </p>
-	 * 
+	 *
 	 * @param children
 	 * @return
 	 */
@@ -1100,7 +1100,7 @@ public class Automata {
 	 * Reorder an automaton according to a given mapping, where nodes are
 	 * relocated to positions given by the mapping. This is effectively an
 	 * inplace map operation.
-	 * 
+	 *
 	 * @param automaton
 	 *            --- automaton, which is modified.
 	 * @param mapping
@@ -1131,7 +1131,7 @@ public class Automata {
 	 * Generate a new automaton from a given automaton which is isomorphic to
 	 * the original, but where nodes in the first have been relocated to
 	 * positions given by a mapping.
-	 * 
+	 *
 	 * @param automaton
 	 *            --- original automaton, which is left unchanged.
 	 * @param mapping

@@ -27,17 +27,17 @@ package wyjc.runtime;
 
 public final class WyObject {
 	private Object state;
-	
+
 	public WyObject(Object c) {
-		state = c;			
+		state = c;
 	}
 
 	public Object state() {
 		return state;
-	}			
-	
+	}
+
 	public WyObject setState(Object nstate) {
 		this.state = nstate;
 		return this;
-	}	
+	}
 }

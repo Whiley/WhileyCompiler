@@ -40,13 +40,13 @@ import wyautl.core.Schema;
  * more activations. This is not efficient because it can result in a very high
  * number of unnecessary probes.
  * </p>
- * 
+ *
  * <p>
  * <b>NOTE:</b> this is not designed to be used in a concurrent setting.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public final class SimpleRewriteStrategy<T extends RewriteRule> extends IterativeRewriter.Strategy<T> {
 
@@ -57,39 +57,39 @@ public final class SimpleRewriteStrategy<T extends RewriteRule> extends Iterativ
 
 	/**
 	 * Temporary list of inference activations used.
-	 */	
+	 */
 	private final ArrayList<Activation> worklist = new ArrayList<Activation>();
-	
+
 	/**
 	 * The automaton being rewritten
 	 */
 	private final Automaton automaton;
-	
+
 	/**
 	 * The current state being explored by this strategy
 	 */
 	private int current;
-	
+
 	/**
 	 * Record the number of probes for statistical reporting purposes
 	 */
 	private int numProbes;
-		
+
 	public SimpleRewriteStrategy(Automaton automaton, T[] rules) {
 		this(automaton, rules, new RewriteRule.RankComparator());
 	}
 
 	public SimpleRewriteStrategy(Automaton automaton, T[] rules,
-			Comparator<RewriteRule> comparator) {		
-		this.automaton = automaton;		
+			Comparator<RewriteRule> comparator) {
+		this.automaton = automaton;
 		this.rules = Arrays.copyOf(rules,rules.length);
 		Arrays.sort(this.rules, comparator);
 	}
-	
+
 	@Override
 	protected Activation next(boolean[] reachable) {
 		int nStates = automaton.nStates();
-		
+
 		while (current < nStates && worklist.size() == 0) {
 			// Check whether state is reachable and that it's a term. This is
 			// because only reachable states should be rewritten; and, only
@@ -104,8 +104,8 @@ public final class SimpleRewriteStrategy<T extends RewriteRule> extends Iterativ
 			}
 			current = current + 1;
 		}
-		
-		if (worklist.size() > 0) {			
+
+		if (worklist.size() > 0) {
 			int lastIndex = worklist.size() - 1;
 			Activation last = worklist.get(lastIndex);
 			worklist.remove(lastIndex);
@@ -120,7 +120,7 @@ public final class SimpleRewriteStrategy<T extends RewriteRule> extends Iterativ
 		worklist.clear();
 		current = 0;
 	}
-	
+
 	@Override
 	public int numProbes() {
 		return numProbes;

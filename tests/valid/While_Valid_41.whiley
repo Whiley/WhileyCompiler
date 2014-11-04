@@ -2,7 +2,7 @@ function zeroOut([int] items) => [int]:
     int i = 0
     [int] oitems = items
     //
-    while i < |items| 
+    while i < |items|
     //
     where i >= 0 && i <= |items| && |items| == |oitems|
     // Elements upto but not including i are zeroed
@@ -18,4 +18,3 @@ method main(System.Console console):
     [int] ls = [1,2,3,4]
     ls = zeroOut(ls)
     console.out.println("ZEROED: " ++ ls)
-    

@@ -7,14 +7,14 @@ import wycs.core.Map
 
 // Define the notion of a list
 define List<V> ({int,V} pairs) is:
-       forall (int i1, V v1, int i2, V v2): 
-          if: 
+       forall (int i1, V v1, int i2, V v2):
+          if:
             (i1,v1) in pairs
             (i2,v2) in pairs
             i1 == i2
           then:
             v1 == v2
-       forall (int i,V v): 
+       forall (int i,V v):
             (i,v) in pairs ==> i >= 0 && i < |pairs|
 
 function Append<V>({int,V} l1, {int,V} l2) => ({int,V} l3)
@@ -45,7 +45,7 @@ ensures:
             i != index
         then:
             (i,v) in rs
-            
+
 function Range(int start, int end) => ({int,int} rs)
 ensures:
     forall (int i1, int i2):

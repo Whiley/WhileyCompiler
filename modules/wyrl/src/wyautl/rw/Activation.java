@@ -35,59 +35,59 @@ import wyautl.core.Automaton;
  * has a dependence set which includes exactly those states upon which this
  * activation depends. Thus, any changes to those states will potentially
  * invalidate this activation.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public final class Activation {
-	
+
 	/**
 	 * The rewrite rule that this activation will apply.
 	 */
 	final RewriteRule rule;
-	
+
 	/**
 	 * The complete set of states upon which this activation depends. This must
 	 * include all those identified in the mapping.
 	 */
 	private final BitSet dependencies;
-	
+
 	/**
 	 * Temporary state used by the rule to control the rewrite. For example,
 	 * this might match rewrite variables with states. In essence, the state is
 	 * a continuation which gives enough information for the rewrite to pick up
 	 * immediately from where it got to during probing.
 	 */
-	private final int[] state;	
-	
+	private final int[] state;
+
 	public Activation(RewriteRule rule, BitSet dependencies, int[] state) {
 		this.rule = rule;
 		this.dependencies = dependencies;
 		this.state = state;
 	}
-	
+
 	public int root() {
 		return state[0];
 	}
-	
+
 	/**
 	 * Returns the complete set of states upon which this activation depends.
 	 * Any changes to those states necessarily invalidates this activation, and
 	 * requires the dirty states be rechecked for potential activations.
-	 * 
+	 *
 	 * @return
 	 */
 	public BitSet dependencies() {
 		return dependencies;
 	}
-	
+
 	/**
 	 * <p>
 	 * Apply this activation to a given automaton. This application may or may
 	 * not actually modify the automaton and this is indicates by the return
 	 * value.
 	 * </p>
-	 * 
+	 *
 	 * @param automaton
 	 *            --- the automaton to be rewritten.
 	 * @param binding
@@ -95,10 +95,10 @@ public final class Activation {
 	 *            after the rewrite. This must at least as big as the automaton.
 	 *            Note, if the activation was unsuccessful, then this is
 	 *            guaranteed to be the identity map.
-	 * 
+	 *
 	 * @return The state that was rewriten to, or K_VOID is no such state.
 	 */
 	public int apply(Automaton automaton) {
 		return rule.apply(automaton, state);
-	}	
+	}
 }

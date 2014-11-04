@@ -40,9 +40,9 @@ import wyil.lang.*;
  * Dead=code is defined as code which is unreachable from the entry point by
  * bytecodes sequentially, and traversing along all branches and exceptional
  * edges as appropriate.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class DeadCodeElimination implements Transform<WyilFile> {
 
@@ -50,56 +50,56 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 	 * Determines whether constant propagation is enabled or not.
 	 */
 	private boolean enabled = getEnable();
-	
+
 
 	public static String describeEnable() {
 		return "Enable/disable constant propagation";
 	}
-	
+
 	public static boolean getEnable() {
 		return true; // default value
 	}
-	
+
 	public void setEnable(boolean flag) {
 		this.enabled = flag;
 	}
-	
+
 	public DeadCodeElimination(Builder builder) {
-		
+
 	}
-	
+
 	public void apply(WyilFile module) throws IOException {
 		if(enabled) {
 			for(WyilFile.TypeDeclaration type : module.types()) {
 				transform(type);
-			}		
+			}
 			for(WyilFile.FunctionOrMethodDeclaration method : module.functionOrMethods()) {
 				transform(method);
 			}
 		}
 	}
-	
+
 	public void transform(WyilFile.TypeDeclaration type) {
 		Code.Block invariant = type.invariant();
-		
+
 		if (invariant != null) {
 			transform(invariant);
 		}
 	}
 
-	public void transform(WyilFile.FunctionOrMethodDeclaration method) {		
+	public void transform(WyilFile.FunctionOrMethodDeclaration method) {
 		for(WyilFile.Case c : method.cases()) {
 			transform(c,method);
 		}
 	}
-	
-	public void transform(WyilFile.Case mcase, WyilFile.FunctionOrMethodDeclaration method) {	
+
+	public void transform(WyilFile.Case mcase, WyilFile.FunctionOrMethodDeclaration method) {
 		Code.Block body = mcase.body();
 		if(body != null) {
 			transform(body);
 		}
 	}
-	
+
 	private void transform(Code.Block block) {
 		HashMap<String,Integer> labelMap = buildLabelMap(block);
 		BitSet visited = new BitSet(block.size());
@@ -108,20 +108,20 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 		visited.set(0);
 		while(!worklist.isEmpty()) {
 			int index = worklist.pop();
-					
+
 			Code code = block.get(index).code;
-			
+
 			if(code instanceof Codes.Goto) {
-				Codes.Goto g = (Codes.Goto) code;				
+				Codes.Goto g = (Codes.Goto) code;
 				addTarget(labelMap.get(g.target),visited,worklist);
-			} else if(code instanceof Codes.If) {								
-				Codes.If ig = (Codes.If) code;				
+			} else if(code instanceof Codes.If) {
+				Codes.If ig = (Codes.If) code;
 				addTarget(index+1,visited,worklist);
-				addTarget(labelMap.get(ig.target),visited,worklist);				
-			} else if(code instanceof Codes.IfIs) {								
-				Codes.IfIs ig = (Codes.IfIs) code;				
+				addTarget(labelMap.get(ig.target),visited,worklist);
+			} else if(code instanceof Codes.IfIs) {
+				Codes.IfIs ig = (Codes.IfIs) code;
 				addTarget(index+1,visited,worklist);
-				addTarget(labelMap.get(ig.target),visited,worklist);				
+				addTarget(labelMap.get(ig.target),visited,worklist);
 			} else if(code instanceof Codes.Switch) {
 				Codes.Switch sw = (Codes.Switch) code;
 				for(Pair<Constant,String> p : sw.branches) {
@@ -137,13 +137,13 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 			} else if(code instanceof Codes.Throw || code instanceof Codes.Return) {
 				// terminating bytecode
 			} else {
-				// sequential bytecode	
+				// sequential bytecode
 				if((index+1) < block.size()) {
 					addTarget(index+1,visited,worklist);
 				}
 			}
 		}
-		
+
 		// Now, remove unvisited blocks!
 		int index=0;
 		int size = block.size();
@@ -155,22 +155,22 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 			}
 		}
 	}
-	
+
 	private static HashMap<String,Integer> buildLabelMap(Code.Block block) {
 		HashMap<String,Integer> map = new HashMap<String,Integer>();
 		for(int i=0;i!=block.size();++i) {
 			Code c = block.get(i).code;
 			if(c instanceof Codes.Label) {
-				Codes.Label l = (Codes.Label) c;				
+				Codes.Label l = (Codes.Label) c;
 				map.put(l.label,i);
 			}
 		}
 		return map;
 	}
-	
+
 	private static void addTarget(int index, BitSet visited, Stack<Integer> worklist) {
 		if(!visited.get(index)) {
-			visited.set(index);			
+			visited.set(index);
 			worklist.push(index);
 		}
 	}

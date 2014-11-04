@@ -5,7 +5,7 @@ define Map<K,V> ({K,V} pairs) is:
       (k2,v2) in pairs
       k1 == k2
     then:
-      v1 == v2 
+      v1 == v2
 
 define List({(int,int)} pairs) is:
   Map<int,int>(pairs)

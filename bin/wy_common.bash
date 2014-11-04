@@ -24,7 +24,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# Copyright 2010, David James Pearce. 
+# Copyright 2010, David James Pearce.
 # modified 2012,	Art Protin <protin2art@gmail.com>
 
 # check for running under cywin
@@ -56,7 +56,7 @@ for lib in $LIBS
 do
     tmp=$(echo $LIBDIR/${lib}-v*.jar)
     JAR=${tmp##* }
-    case "$JAR" in 
+    case "$JAR" in
     *\**)
         echo "Library '$lib' not found"
         exit 2

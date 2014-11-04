@@ -8,7 +8,7 @@ import wyautl.rw.*;
 
 public final class Main {
     public enum RewriteMode { SIMPLE, STATIC_DISPATCH };
-    
+
     private Main() {} // avoid instantiation of this class
 
     public static void main(String[] args) {
@@ -17,8 +17,8 @@ public final class Main {
 
 	try {
 	    RewriteMode rwMode = RewriteMode.STATIC_DISPATCH;
-	    System.out.println("Welcome!\n");			
-	    while(true) {				
+	    System.out.println("Welcome!\n");
+	    while(true) {
 		System.out.print("> ");
 		String text = input.readLine();
 
@@ -43,18 +43,18 @@ public final class Main {
     }
 
     private static void reduce(String text, RewriteMode rwMode) {
-	try {				
+	try {
 	    Parser parser = new Parser(text);
 	    Automaton automaton = new Automaton();
 	    int root = parser.parse(automaton);
 	    automaton.setRoot(0, root);
-			
+
 	    PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,
 								   Closure.SCHEMA, "Or", "And");
 	    System.out.println("------------------------------------");
 	    writer.write(automaton);
 	    writer.flush();
-			
+
 	    StrategyRewriter.Strategy<InferenceRule> inferenceStrategy;
 		StrategyRewriter.Strategy<ReductionRule> reductionStrategy;
 
@@ -82,7 +82,7 @@ public final class Main {
 	    System.out.println("\n\n=> (" + rw.getStats() + ")\n");
 	    writer.write(automaton);
 	    writer.flush();
-	    System.out.println("\n");			
+	    System.out.println("\n");
 	} catch(RuntimeException e) {
 	    // Catching runtime exceptions is actually rather bad style;
 	    // see lecture about Exceptions later in the course!

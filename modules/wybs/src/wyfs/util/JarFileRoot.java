@@ -36,31 +36,31 @@ import wyfs.lang.Content.Type;
 /**
  * Provides an implementation of <code>Path.Root</code> for representing the
  * contents of a jar file.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
-public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implements Path.Root {	
+public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implements Path.Root {
 	private final File dir;
 	private Path.Item[] jfContents;
-	
+
 	public JarFileRoot(String dir, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
 		this.dir = new File(dir);
 		refresh();
 	}
-	
+
 	public JarFileRoot(File dir, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
 		this.dir = dir;
 		refresh();
 	}
-	
+
 	@Override
 	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct) throws IOException {
 		throw new UnsupportedOperationException();
 	}
-	
+
 	@Override
 	public void flush() {
 		// no-op, since jar files are read-only.
@@ -74,13 +74,13 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 		int i = 0;
 		while (entries.hasMoreElements()) {
 			JarEntry e = entries.nextElement();
-			String filename = e.getName();	
+			String filename = e.getName();
 			int lastSlash = filename.lastIndexOf('/');
 			Trie pkg = lastSlash == -1 ? Trie.ROOT : Trie.fromString(filename.substring(0, lastSlash));
-			if(!e.isDirectory()) {				
-				int lastDot = filename.lastIndexOf('.');										
+			if(!e.isDirectory()) {
+				int lastDot = filename.lastIndexOf('.');
 				String name = lastDot >= 0 ? filename.substring(lastSlash + 1, lastDot) : filename;
-				String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;						
+				String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;
 				Trie id = pkg.append(name);
 				Entry pe = new Entry(id, jf, e);
 				contentTypes.associate(pe);
@@ -89,22 +89,22 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 				// folder
 				jfContents[i++] = new Folder(pkg);
 			}
-		}		
+		}
 	}
-	
+
 	@Override
 	protected Folder root() {
 		return new Folder(Trie.ROOT);
 	}
-	
+
 	public String toString() {
 		return dir.getPath();
 	}
-	
-	
+
+
 	/**
 	 * Represents a directory on a physical file system.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -114,17 +114,17 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 		}
 
 		@Override
-		protected Path.Item[] contents() throws IOException {	
+		protected Path.Item[] contents() throws IOException {
 			// This algorithm is straightforward. I use a two loops instead of a
-			// single loop with ArrayList to avoid allocating on the heap. 
+			// single loop with ArrayList to avoid allocating on the heap.
 			int count = 0 ;
 			for(int i=0;i!=jfContents.length;++i) {
-				Path.Item item = jfContents[i];				
+				Path.Item item = jfContents[i];
 				if(item.id().parent() == id) {
 					count++;
 				}
 			}
-			
+
 			Path.Item[] myContents = new Path.Item[count];
 			count=0;
 			for(int i=0;i!=jfContents.length;++i) {
@@ -133,7 +133,7 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 					myContents[count++] = item;
 				}
 			}
-			
+
 			return myContents;
 		}
 
@@ -142,8 +142,8 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 			throw new UnsupportedOperationException();
 		}
 	}
-	
-	private static final class Entry<T> extends AbstractEntry<T> implements Path.Entry<T> {		
+
+	private static final class Entry<T> extends AbstractEntry<T> implements Path.Entry<T> {
 		private final JarFile parent;
 		private final JarEntry entry;
 
@@ -156,20 +156,20 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 		public String location() {
 			return parent.getName();
 		}
-		
+
 		public long lastModified() {
 			return entry.getTime();
 		}
-		
+
 		public boolean isModified() {
 			// cannot modify something in a Jar file.
 			return false;
 		}
-		
+
 		public void touch() {
 			throw new UnsupportedOperationException();
 		}
-		
+
 		public String suffix() {
 			String suffix = "";
 			String filename = entry.getName();
@@ -179,7 +179,7 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 			}
 			return suffix;
 		}
-		
+
 		public InputStream inputStream() throws IOException {
 			return parent.getInputStream(entry);
 		}
@@ -190,6 +190,6 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 
 		public void write(T contents) {
 			throw new UnsupportedOperationException();
-		}		
+		}
 	}
 }

@@ -43,7 +43,7 @@ ensures |result| == size:
     while i < size:
         r = r ++ [element]
         i = i + 1
-    return r 
+    return r
 
 // Create a list of a given size with the given element
 public function create(int size, bool element) => ([bool] result)
@@ -56,14 +56,14 @@ ensures |result| == size:
     while i < size:
         r = r ++ [element]
         i = i + 1
-    return r 
+    return r
 
 public function reverse([bool] list) => [bool]:
-    return list[|list|..0]    
+    return list[|list|..0]
 
 public function reverse([byte] list) => [byte]:
-    return list[|list|..0]    
+    return list[|list|..0]
 
 public function reverse([int] list) => [int]:
-    return list[|list|..0]    
+    return list[|list|..0]
 

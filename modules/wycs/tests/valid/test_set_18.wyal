@@ -1,5 +1,5 @@
 import wycs.core.*
 
 assert:
-  forall ({int} xs): 
+  forall ({int} xs):
     |xs| >= 0

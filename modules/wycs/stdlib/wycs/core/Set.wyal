@@ -4,10 +4,10 @@ package wycs.core
 
 function Union<T> ({T} lhs, {T} rhs) => ({T} rs)
 ensures:
-  forall(T x): 
+  forall(T x):
     (x in lhs || x in rhs) <==> x in rs
 
 function Intersect<T> ({T} lhs, {T} rhs) => ({T} rs)
 ensures:
-  forall(T x): 
+  forall(T x):
     (x in lhs && x in rhs) <==> x in rs

@@ -14,19 +14,19 @@ ensures !result ==> no { i in items | i == item }:
     //
     int lo = 0
     int hi = |items|
-    
-    while lo < hi 
+
+    while lo < hi
         where 0 <= lo && hi <= |items| && lo <= hi
         where no { i in 0 .. lo | items[i] == item }
         where no { i in hi .. |items| | items[i] == item }:
         //
         // Note, the following is safe in Whiley because we have
         // unbounded integers.  If that wasn't the case, then this could
-        // potentially overflow leading to a very subtle bug (like that 
+        // potentially overflow leading to a very subtle bug (like that
         // eventually found in the Java Standard Library).
         //
         int mid = (lo + hi) / 2
-        
+
         if items[mid] < item:
             lo = mid + 1
         else if items[mid] > item:

@@ -27,7 +27,7 @@ package whiley.lang
 
 import * from whiley.lang.Errors
 
-public type normalised is (real x) 
+public type normalised is (real x)
     where 0.0 <= x && x <= 1.0
 
 public function toString(real item) => string:
@@ -66,8 +66,8 @@ public function toDecimal(real x, int ndigits) => string:
     if x < 0.0:
         r = "-"
         x = -x
-    else:  
-        r = ""    
+    else:
+        r = ""
     int n / int d = x
     int digit = n / d
     real rem = x - (real) digit
@@ -80,5 +80,5 @@ public function toDecimal(real x, int ndigits) => string:
         rem = rem - (real) digit
         r = r ++ digit
         i = i + 1
-    // need to support rounding!    
+    // need to support rounding!
     return r

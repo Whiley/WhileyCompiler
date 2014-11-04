@@ -37,7 +37,7 @@ import java.util.*;
  * input if either of its children does; in contrast, and state of "AND" kind
  * might accept an input only if all its children does.
  * </p>
- * 
+ *
  * <p>
  * The organisation of children is done according to two approaches:
  * <i>deterministic</i> and <i>non-deterministic</i>. In the deterministic
@@ -45,14 +45,14 @@ import java.util.*;
  * approach, the ordering of children is not important. A flag is used to
  * indicate whether a state is deterministic or not.
  * </p>
- * 
+ *
  * <p>
  * Aside from having a particular kind, each state may also have supplementary
  * material. This can be used, for example, to effectively provide labelled
  * transitions. Another use of this might be to store a given string which must
  * be matched.
  * </p>
- * 
+ *
  * <p>
  * <b>NOTE:</b> In the internal representation of automata, leaf states may be
  * not be represented as actual nodes. This will occur if the leaf node does not
@@ -60,13 +60,13 @@ import java.util.*;
  * optimisation. In such case, the node is represented as a child node using a
  * negative index.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
-public final class Automaton {	
+public final class Automaton {
 	public State[] states;	// should not be public!
-	
+
 	public Automaton(State... states) {
 		this.states = states;
 	}
@@ -76,20 +76,20 @@ public final class Automaton {
 		this.states = new State[statesSize];
 		for(int i=0;i!=statesSize;++i) {
 			this.states[i] = states.get(i);
-		}		
+		}
 	}
-	
+
 	public Automaton(Automaton automaton) {
 		this.states = new State[automaton.states.length];
 		for(int i=0;i!=states.length;++i) {
 			states[i] = new State(automaton.states[i]);
 		}
 	}
-	
+
 	public int size() {
 		return states.length;
 	}
-	
+
 	/**
 	 * Determine the hashCode of a type.
 	 */
@@ -100,7 +100,7 @@ public final class Automaton {
 		}
 		return r;
 	}
-	
+
 	/**
 	 * This method compares two compound types to test whether they are
 	 * <i>identical</i>. Observe that it does not perform an
@@ -124,7 +124,7 @@ public final class Automaton {
 		}
 		return false;
 	}
-	
+
 	public String toString() {
 		String r = "";
 		for(int i=0;i!=states.length;++i) {
@@ -135,9 +135,9 @@ public final class Automaton {
 			int kind = state.kind;
 			r = r + "#";
 			r = r + i;
-			r = r + "(";						
+			r = r + "(";
 			r = r + kind;
-			
+
 			if(state.data != null) {
 				r = r + "," + state.data;
 			}
@@ -160,16 +160,16 @@ public final class Automaton {
 			} else {
 				r = r + "}";
 			}
-		}		
+		}
 		return r;
 	}
 
 	/**
 	 * Represents a state in an automaton. Each state has a kind, along with zero
 	 * or more children and an (optional) supplementary data item.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class State {
 		public int kind;
@@ -179,17 +179,17 @@ public final class Automaton {
 
 		/**
 		 * Construct a deterministic state with no children and no supplementary data.
-		 * 
+		 *
 		 * @param kind
 		 *            --- State kind (must be positive integer).
 		 */
 		public State(int kind) {
 			this(kind,null,true,NOCHILDREN);
 		}
-		
+
 		/**
 		 * Construct a deterministic state with no supplementary data.
-		 * 
+		 *
 		 * @param kind
 		 *            --- State kind (must be positive integer).
 		 * @param children
@@ -201,7 +201,7 @@ public final class Automaton {
 
 		/**
 		 * Construct a state with no supplementary data.
-		 * 
+		 *
 		 * @param kind
 		 *            --- State kind (must be positive integer).
 		 * @param deterministic
@@ -213,10 +213,10 @@ public final class Automaton {
 		public State(int kind, boolean deterministic, int... children) {
 			this(kind,null,deterministic,children);
 		}
-		
+
 		/**
 		 * Construct a state with children and supplementary data.
-		 * 
+		 *
 		 * @param kind
 		 *            --- State kind (must be positive integer).
 		 * @param data
@@ -233,14 +233,14 @@ public final class Automaton {
 			this.data = data;
 			this.deterministic = deterministic;
 		}
-		
+
 		public State(State state) {
 			kind = state.kind;
 			children = Arrays.copyOf(state.children, state.children.length);
 			data = state.data;
 			deterministic = state.deterministic;
 		}
-		
+
 		public boolean equals(final Object o) {
 			if (o instanceof State) {
 				State c = (State) o;

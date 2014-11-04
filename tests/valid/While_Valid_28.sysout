@@ -11,7 +11,7 @@ where options include:
     -jvm	  is a synonym for the "client" VM  [deprecated]
     -hotspot	  is a synonym for the "client" VM  [deprecated]
                   The default VM is client.
-                  
+
     -cp <class search path of directories and zip/jar files>
     -classpath <class search path of directories and zip/jar files>
                   A : separated list of directories, JAR archives,

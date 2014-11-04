@@ -38,14 +38,14 @@ import wyjc.runtime.WyRecord;
 
 public class File$native {
 	public static WyObject NativeFileReader(String filename) {
-		try {			
+		try {
 			return new WyObject(new FileInputStream(filename));
 		} catch(FileNotFoundException e) {
 			// ARGH
 		}
 		return null;
 	}
-	
+
 	public static WyObject NativeFileWriter(String filename) {
 		try {
 			return new WyObject(new FileOutputStream(filename));
@@ -54,9 +54,9 @@ public class File$native {
 		}
 		return null;
 	}
-	
+
 	public static void close(WyObject p) {
-		Object o = p.state();		
+		Object o = p.state();
 		try {
 			if(o instanceof FileInputStream) {
 				((FileInputStream)o).close();
@@ -67,10 +67,10 @@ public class File$native {
 			// what to do here??
 		}
 	}
-	
 
-	public static void flush(WyObject p) {		
-		Object o = p.state();		
+
+	public static void flush(WyObject p) {
+		Object o = p.state();
 		try {
 			if(o instanceof FileOutputStream) {
 				((FileOutputStream)o).flush();
@@ -79,14 +79,14 @@ public class File$native {
 			// what to do here??
 		}
 	}
-	
-	public static boolean hasMore(WyObject p) {		
-		FileInputStream fin = (FileInputStream) p.state();		
+
+	public static boolean hasMore(WyObject p) {
+		FileInputStream fin = (FileInputStream) p.state();
 		return false; // BROKEN
 	}
-	
-	public static BigInteger available(WyObject p) {		
-		FileInputStream fin = (FileInputStream) p.state();		
+
+	public static BigInteger available(WyObject p) {
+		FileInputStream fin = (FileInputStream) p.state();
 		try {
 			return BigInteger.valueOf(fin.available());
 		} catch (IOException ioe) {
@@ -94,29 +94,29 @@ public class File$native {
 		}
 		return BigInteger.ZERO;
 	}
-	
-	public static WyList read(WyObject p, BigInteger max) {		
+
+	public static WyList read(WyObject p, BigInteger max) {
 		FileInputStream fin = (FileInputStream) p.state();
-		
+
 		WyList r = new WyList();
-		byte[] bytes = new byte[max.intValue()];		
+		byte[] bytes = new byte[max.intValue()];
 		try {
 			int nbytes = fin.read(bytes);
-			for(int i=0;i!=nbytes;++i) {				
+			for(int i=0;i!=nbytes;++i) {
 				r.add(bytes[i]);
 			}
 		} catch (IOException ioe) {
 			// what to do here??
 		}
-		
-		return r;		
+
+		return r;
 	}
-	
+
 	private static final int CHUNK_SIZE = 1024;
-	public static WyList read(WyObject p) {		
+	public static WyList read(WyObject p) {
 		FileInputStream fin = (FileInputStream) p.state();
-		
-		WyList r = new WyList();				
+
+		WyList r = new WyList();
 		try {
 			int nbytes = 0;
 			do {
@@ -125,26 +125,26 @@ public class File$native {
 				for(int i=0;i!=nbytes;++i) {
 					r.add(bytes[i]);
 				}
-			} while(nbytes == CHUNK_SIZE);			
+			} while(nbytes == CHUNK_SIZE);
 		} catch (IOException ioe) {
 			// what to do here??
 		}
-		
-		return r;		
+
+		return r;
 	}
-	
+
 	public static void write(WyObject p, WyList bytes) {
 		FileOutputStream fout = (FileOutputStream) p.state();
-				
-		try {			
+
+		try {
 			byte[] bs = new byte[bytes.size()];
 			for(int i=0;i!=bs.length;++i) {
-				Byte r = (Byte) bytes.get(i); 
+				Byte r = (Byte) bytes.get(i);
 				bs[i] = r.byteValue();
-			}			
-			fout.write(bs);			
+			}
+			fout.write(bs);
 		} catch (IOException ioe) {
 			// what to do here??
-		}		
+		}
 	}
 }

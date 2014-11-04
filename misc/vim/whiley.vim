@@ -21,23 +21,23 @@ endif
 "syn keyword syntaxElementKeyword keyword1 keyword2 nextgroup=syntaxElement2
 "----------------------------------------------------------------------------
 
-syn keyword whileyExternal native 
+syn keyword whileyExternal native
 syn keyword whileyLabel	default
 syn keyword whileyPrimitive real int bool void string char void ref
 syn keyword whileyBooleanLiteral true false
 syn keyword whileyConstant null
 syn keyword whileyStatement return assert
 syn keyword whileyExceptions throw throws catch try
-syn keyword whileyLoop	do while for in 
+syn keyword whileyLoop	do while for in
 syn keyword whileyOperator is as new
 syn keyword whileyScope	public protected private
 syn keyword whileyTypedef this
-syn keyword whileyKeyword export extern is assume from where ensures requires str in no some all 
-syn keyword whileyConditional if else switch break skip 
+syn keyword whileyKeyword export extern is assume from where ensures requires str in no some all
+syn keyword whileyConditional if else switch break skip
 syn keyword whileyTodo contained TODO FIXME XXX
 
 "Not how it's used in the language, but gives visual seperation.
-syn keyword whileyMacro	define 
+syn keyword whileyMacro	define
 
 "---------------------------------------------------
 "Matches
@@ -80,12 +80,12 @@ syn match   whileyCharacter	 "'\\''" contains=SpecialChar
 syn match   whileyCharacter	 "'[^\\]'"
 
 "---------------------------------------------------
-"Regions 
-"syn region syntaxElementRegion start='x' end='y' 
+"Regions
+"syn region syntaxElementRegion start='x' end='y'
 "---------------------------------------------------
 
 syn region  whileyString		start=+"+ end=+"+ end=+$+ contains=specialChar
-syn region 	whileyList			start=+\[+ end=+\]+ end=+$+ 
+syn region 	whileyList			start=+\[+ end=+\]+ end=+$+
 syn region  whileyList   		start="\[" end="\]" contains=whileyNumber, whileyString
 syn region  whileyLabel			matchgroup=javaLabel start="\<case\>" end=":"
 syn region  whileyCharLiteral	start=/'/ end=/'/ end=+$+ contains=whileyCharacter oneline
@@ -96,9 +96,9 @@ syn region  whileyComment			start="/\*"  end="\*/" contains=whileyTodo
 let b:current_syntax = "whiley"
 
 "-----------------------------------------------------------------------------
-"The actual highlighty bit, where we tell vim how to, and what to, highlight. 
-"Syntax of this is: 
-"hi def link syntaxElement vimSyntaxType 
+"The actual highlighty bit, where we tell vim how to, and what to, highlight.
+"Syntax of this is:
+"hi def link syntaxElement vimSyntaxType
 "-----------------------------------------------------------------------------
 
 if exists("whiley_space_error_highlight")

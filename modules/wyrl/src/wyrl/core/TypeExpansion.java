@@ -37,18 +37,18 @@ import static wyrl.core.Types.*;
 import static wyrl.util.SyntaxError.syntaxError;
 
 public class TypeExpansion {
-	
+
 	public void expand(SpecFile spec) {
 		HashMap<String,Type.Term> terms = gatherTerms(spec);
 		HashMap<String,Type> macros = gatherMacros(spec,terms);
 		macros.putAll(terms);
-		
+
 		expandTypeDeclarations(spec,terms,macros);
 		expandTypePatterns(spec,terms,macros);
 		expandTypeTests(spec,terms,macros);
 	}
-	
-	
+
+
 	protected void expandTypeDeclarations(SpecFile spec,
 			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
 		for (SpecFile.Decl d : spec.declarations) {
@@ -61,7 +61,7 @@ public class TypeExpansion {
 			}
 		}
 	}
-	
+
 	protected void expandTypePatterns(SpecFile spec,
 			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
 		for (SpecFile.Decl d : spec.declarations) {
@@ -74,7 +74,7 @@ public class TypeExpansion {
 			}
 		}
 	}
-	
+
 	protected void expandTypeTests(SpecFile spec,
 			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
 		for (SpecFile.Decl d : spec.declarations) {
@@ -89,22 +89,22 @@ public class TypeExpansion {
 			}
 		}
 	}
-	
-	protected void expandTypeTests(SpecFile.RuleDecl rd, SpecFile spec, 
+
+	protected void expandTypeTests(SpecFile.RuleDecl rd, SpecFile spec,
 			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
 		ArrayList<Pair<String,Expr>> rd_lets = rd.lets;
 		for(int i=0;i!=rd_lets.size();++i) {
 			Pair<String,Expr> let = rd_lets.get(i);
 			expandTypeTests(let.second(),spec,macros);
 		}
-		
+
 		if(rd.condition != null) {
 			expandTypeTests(rd.condition,spec,macros);
 		}
-		
+
 		expandTypeTests(rd.result,spec,macros);
 	}
-	
+
 	protected void expandTypeTests(Expr expr, SpecFile spec, HashMap<String, Type> macros) {
 		try {
 			if (expr instanceof Expr.Constant) {
@@ -153,16 +153,16 @@ public class TypeExpansion {
 			HashMap<String, Type> macros) {
 		expandTypeTests(expr.mhs,spec,macros);
 	}
-	
+
 	protected void expandTypeTests(Expr.BinOp expr, SpecFile spec,
 			HashMap<String, Type> macros) {
 		expandTypeTests(expr.lhs,spec,macros);
 		expandTypeTests(expr.rhs,spec,macros);
 	}
-	
+
 	protected void expandTypeTests(Expr.NaryOp expr, SpecFile spec,
 			HashMap<String, Type> macros) {
-		for(Expr arg : expr.arguments) { 
+		for(Expr arg : expr.arguments) {
 			expandTypeTests(arg,spec,macros);
 		}
 	}
@@ -177,7 +177,7 @@ public class TypeExpansion {
 	protected void expandTypeTests(Expr.ListAccess expr, SpecFile spec,
 			HashMap<String, Type> macros) {
 		expandTypeTests(expr.src,spec,macros);
-		expandTypeTests(expr.index,spec,macros);		
+		expandTypeTests(expr.index,spec,macros);
 	}
 
 	protected void expandTypeTests(Expr.Substitute expr, SpecFile spec,
@@ -186,17 +186,17 @@ public class TypeExpansion {
 		expandTypeTests(expr.original,spec,macros);
 		expandTypeTests(expr.replacement,spec,macros);
 	}
-	
+
 	protected void expandTypeTests(Expr.Constructor expr, SpecFile spec,
 			HashMap<String, Type> macros) {
 		expandTypeTests(expr.argument,spec,macros);
 	}
-	
+
 	protected void expandTypeTests(Expr.Variable expr, SpecFile spec,
 			HashMap<String, Type> macros) {
 		// no-op
 	}
-	
+
 	protected void expandTypeTests(Expr.Comprehension expr, SpecFile spec,
 			HashMap<String, Type> macros) {
 		for(Pair<Expr.Variable,Expr> src : expr.sources) {
@@ -209,24 +209,24 @@ public class TypeExpansion {
 			expandTypeTests(expr.value,spec,macros);
 		}
 	}
-	
+
 	protected void expandTypeTests(Expr.Cast expr, SpecFile spec,
 			HashMap<String, Type> macros) {
 		expr.type = expandAsType(expr.type,macros);
 		expandTypeTests(expr.src,spec,macros);
 	}
-	
+
 	protected void expandTypeTests(Expr.TermAccess expr, SpecFile spec,
 			HashMap<String, Type> macros) {
 		expandTypeTests(expr.src,spec,macros);
 	}
-	
+
 	protected HashMap<String,Type.Term> gatherTerms(SpecFile spec) {
 		HashMap<String,Type.Term> map = new HashMap();
 		gatherTerms(spec,map);
 		return map;
 	}
-	
+
 	protected void gatherTerms(SpecFile spec, HashMap<String, Type.Term> terms) {
 		for (SpecFile.Decl d : spec.declarations) {
 			if (d instanceof SpecFile.IncludeDecl) {
@@ -243,21 +243,21 @@ public class TypeExpansion {
 			}
 		}
 	}
-	
+
 	protected HashMap<String,Type> gatherMacros(SpecFile spec, HashMap<String, Type.Term> terms) {
 		HashSet<String> openClasses = new HashSet<String>();
 		HashMap<String,Type> macros = new HashMap<String,Type>();
 		gatherMacros(spec,openClasses,macros,terms);
 		return macros;
 	}
-	
+
 	protected void gatherMacros(SpecFile spec, HashSet<String> openClasses,
-			HashMap<String, Type> macros, HashMap<String, Type.Term> terms) {			
+			HashMap<String, Type> macros, HashMap<String, Type.Term> terms) {
 		// First, we have to inline all the type declarations.
 		for (SpecFile.Decl d : spec.declarations) {
 			if (d instanceof SpecFile.IncludeDecl) {
 				SpecFile.IncludeDecl id = (SpecFile.IncludeDecl) d;
-				gatherMacros(id.file, openClasses, macros, terms);				
+				gatherMacros(id.file, openClasses, macros, terms);
 			} else if (d instanceof SpecFile.TypeDecl) {
 				SpecFile.TypeDecl cd = (SpecFile.TypeDecl) d;
 				Type type = macros.get(cd.name);
@@ -288,7 +288,7 @@ public class TypeExpansion {
 			}
 		}
 	}
-	
+
 	protected Pattern expandAsPattern(Pattern pattern, SpecFile spec,
 			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
 
@@ -301,13 +301,13 @@ public class TypeExpansion {
 			return expandAsPattern((Pattern.Term) pattern, spec, terms, macros);
 		}
 	}
-	
+
 	protected Pattern.Leaf expandAsPattern(Pattern.Leaf pattern, SpecFile spec,
 			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
-		pattern.type = expandAsType(pattern.type, macros);		
+		pattern.type = expandAsType(pattern.type, macros);
 		return pattern;
 	}
-	
+
 	protected Pattern.Collection expandAsPattern(Pattern.Collection pattern,
 			SpecFile spec, HashMap<String, Type.Term> terms,
 			HashMap<String, Type> macros) {
@@ -319,24 +319,24 @@ public class TypeExpansion {
 		}
 		return pattern;
 	}
-	
+
 	protected Pattern.Term expandAsPattern(Pattern.Term pattern, SpecFile spec,
 			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
 		if(!terms.containsKey(pattern.name)) {
 			syntaxError(pattern.name + " is not defined as a term", spec.file,
 					pattern);
-		}		
-		pattern.data = expandAsPattern(pattern.data,spec,terms,macros);		
+		}
+		pattern.data = expandAsPattern(pattern.data,spec,terms,macros);
 		return pattern;
 	}
-	
+
 	/**
 	 * Fully expand the type associated with a given name. The name must be a
 	 * key into the <code>types</code> map. In the case that the name is already
 	 * in the <code>expanded</code> set, then type it currently maps to is
 	 * returned. Otherwise, the type is traversed and all subcomponents
 	 * expanded.
-	 * 
+	 *
 	 * @param name
 	 *            --- name of type to expand.
 	 * @param spec
@@ -349,7 +349,7 @@ public class TypeExpansion {
 			HashMap<String, Type.Term> terms, HashMap<String, Type> macros) {
 		Type.Term type = terms.get(name);
 		type = (Type.Term) expandAsType(type,macros);
-		
+
 		terms.put(name, type);
 
 		return type;
@@ -359,7 +359,7 @@ public class TypeExpansion {
 		Automaton automaton = type.automaton();
 		HashMap<String, Integer> roots = new HashMap<String, Integer>();
 		HashMap<Integer,Integer> visited = new HashMap<Integer,Integer>();
-		
+
 		ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
 		for(int i=0;i!=automaton.nStates();++i) {
 			states.add(automaton.get(i).clone());
@@ -370,7 +370,7 @@ public class TypeExpansion {
 		automaton.setRoot(0, root);
 		return Type.construct(automaton);
 	}
-	
+
 	/**
 	 * <p>
 	 * Traverse the automaton representing a type in the source code, and expand
@@ -378,14 +378,14 @@ public class TypeExpansion {
 	 * recursion in the case of a macro that contains itself (i.e. a recursive
 	 * type).
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * Unfortunately, this function is significantly complicated by the fact
 	 * that the types of the rewrite language are encoded into the language of
 	 * the automaton. It gets complicated because the types being encoded are
 	 * talking about the constructs in which they are encoded.
 	 * </p>
-	 * 
+	 *
 	 * @param node
 	 *            --- Current node being visited.
 	 * @param automaton
@@ -414,13 +414,13 @@ public class TypeExpansion {
 		} else if(visited.containsKey(node)) {
 			return visited.get(node);
 		} else {
-			// we haven't visited this node before, so visit it!			
+			// we haven't visited this node before, so visit it!
 			visited.put(node, node);
-			
+
 			Automaton.State state = states.get(node);
-			
+
 			if (state instanceof Automaton.Constant) {
-				// Constant states 
+				// Constant states
 			} else if (state instanceof Automaton.Collection) {
 				Automaton.Collection ac = (Automaton.Collection) state;
 				int[] nelements = new int[ac.size()];
@@ -446,7 +446,7 @@ public class TypeExpansion {
 							.get(0));
 					String name = s.value;
 					int contents = l.size() > 1 ? l.get(1) : Automaton.K_VOID;
-					
+
 					Type macro = macros.get(name);
 
 					if(contents != Automaton.K_VOID && !(macro instanceof Type.Term)) {
@@ -468,7 +468,7 @@ public class TypeExpansion {
 						// prevent infinite loops in the case of recursive types.
 						return roots.get(name);
 					} else if (macro instanceof Type.Term) {
-						Type.Term mt = (Type.Term) macro; 
+						Type.Term mt = (Type.Term) macro;
 
 						if(mt.element() == null) {
 							// in this case, we have an atom (i.e. a term which does
@@ -482,11 +482,11 @@ public class TypeExpansion {
 							// given. In which case, we simply expand the term
 							// to include its default argument type.
 							Automaton macro_automaton = macro.automaton();
-							int root = Automata.extract(macro_automaton, macro_automaton.getRoot(0), states);							
+							int root = Automata.extract(macro_automaton, macro_automaton.getRoot(0), states);
 							// We store the location of the expanded macro into the
 							// roots cache so that it can be reused if/when we
 							// encounter the same macro again.
-							roots.put(name, root);	
+							roots.put(name, root);
 							visited.put(node, root);
 							return expand(root, states, visited, roots, macros);
 						}
@@ -516,11 +516,11 @@ public class TypeExpansion {
 					// easy case
 					ncontents = expand(ncontents, states, visited, roots,
 							macros);
-				} 
+				}
 
 				states.set(node, new Automaton.Term(t.kind, ncontents));
 			}
 		}
 		return node;
-	}		
+	}
 }

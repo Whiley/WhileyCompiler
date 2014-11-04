@@ -3,7 +3,7 @@ import whiley.lang.System
 type FileReader is &{int position}
 
 type Reader is {
-    FileReader thus, 
+    FileReader thus,
     method read(FileReader, int) => int
 }
 

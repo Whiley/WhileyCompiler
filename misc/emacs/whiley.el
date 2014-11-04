@@ -61,7 +61,7 @@ For detail, see `comment-dwim'."
   (substitute-key-definition 'fill-paragraph 'c-fill-paragraph
 			     c-mode-base-map global-map)
 
-  ;; java-style comments "// ..." and “/* … */” 
+  ;; java-style comments "// ..." and “/* … */”
   (define-key whiley-mode-map [remap comment-dwim] 'whiley-comment-dwim)
   (modify-syntax-entry ?\/ ". 124b" whiley-mode-syntax-table)
   (modify-syntax-entry ?* ". 23" whiley-mode-syntax-table)
@@ -70,7 +70,7 @@ For detail, see `comment-dwim'."
   ;; indentation.  Needs work!
   (setq indent-tabs-mode nil)
   (local-set-key (kbd "TAB") 'tab-to-tab-stop)
-  (setq tab-stop-list (list 4 8 12 16 20 24 28))  
+  (setq tab-stop-list (list 4 8 12 16 20 24 28))
 
   ;; unicode characters
   (local-set-key "\M-u" '(lambda () (interactive) (ucs-insert #x222A)))
@@ -80,6 +80,6 @@ For detail, see `comment-dwim'."
 )
 
 ;; automode
-(setq auto-mode-alist (cons '("\\.whiley\\'" . whiley-mode) auto-mode-alist)) 
+(setq auto-mode-alist (cons '("\\.whiley\\'" . whiley-mode) auto-mode-alist))
 
 (provide 'whiley)

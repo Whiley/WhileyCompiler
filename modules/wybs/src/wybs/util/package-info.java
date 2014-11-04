@@ -24,8 +24,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
- * Provides instantiations of the build system interfaces which cover the common cases. 
- * 
+ * Provides instantiations of the build system interfaces which cover the common cases.
+ *
  * @author David J. Pearce
  */
 package wybs.util;

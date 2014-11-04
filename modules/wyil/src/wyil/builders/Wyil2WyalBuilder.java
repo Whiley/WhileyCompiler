@@ -41,10 +41,10 @@ import wycs.syntax.WyalFile;
 
 /**
  * Responsible for converting a Wyil file into a Wycs file which can then be
- * passed into the Whiley Constraint Solver (Wycs).  
- * 
+ * passed into the Whiley Constraint Solver (Wycs).
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class Wyil2WyalBuilder implements Builder {
 
@@ -61,11 +61,11 @@ public class Wyil2WyalBuilder implements Builder {
 	protected Logger logger = Logger.NULL;
 
 	private String filename;
-	
+
 	public Wyil2WyalBuilder(Build.Project project) {
 		this.project = project;
 	}
-	
+
 	public Build.Project project() {
 		return project;
 	}
@@ -73,14 +73,14 @@ public class Wyil2WyalBuilder implements Builder {
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}
-	
+
 	public Set<Path.Entry<?>> build(
 			Collection<Pair<Path.Entry<?>, Path.Root>> delta)
 			throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
-			
+
 		// ========================================================================
 		// Translate files
 		// ========================================================================
@@ -98,7 +98,7 @@ public class Wyil2WyalBuilder implements Builder {
 			// syntax errors are no longer implemented as exceptions.
 			df.flush();
 		}
-		
+
 		// ========================================================================
 		// Done
 		// ========================================================================
@@ -106,10 +106,10 @@ public class Wyil2WyalBuilder implements Builder {
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Wyil => Wyal: compiled " + delta.size()
 				+ " file(s)", endTime - start, memory - runtime.freeMemory());
-		
+
 		return generatedFiles;
 	}
-		
+
 	protected WyalFile build(WyilFile wyilFile) {
 		this.filename = wyilFile.filename();
 
@@ -168,9 +168,9 @@ public class Wyil2WyalBuilder implements Builder {
 			}
 			VcBranch precond = new VcBranch(method, block);
 
-			AssertOrAssumeScope scope = new AssertOrAssumeScope(false, block.size(), Collections.EMPTY_LIST); 
+			AssertOrAssumeScope scope = new AssertOrAssumeScope(false, block.size(), Collections.EMPTY_LIST);
 			precond.scopes.add(scope);
-			
+
 			// FIXME: following seems like a hack --- there must be a more
 			// elegant way of doing this?
 			for (int i = paramStart; i != fmm.params().size(); ++i) {
@@ -185,5 +185,5 @@ public class Wyil2WyalBuilder implements Builder {
 		}
 
 		master.transform(new VcTransformer(this, wycsFile, filename, false));
-	}		
+	}
 }

@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 type Object is {
-    function fn(Object)=>int, 
+    function fn(Object)=>int,
     ...
 }
 

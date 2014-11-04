@@ -48,20 +48,20 @@ import wyfs.lang.Path;
  * tries. Therefore, the memory consumed is proportional to the total number of
  * distinct tries created throughout the program's life
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public final class Trie implements Path.ID, Path.Filter {
 
 	private static final Trie[] ONE_CHILD = new Trie[1];
-	
+
 	// =========================================================
 	// Public Constants
 	// =========================================================
 
 	public static final Trie ROOT = new Trie(null,"");
-		
+
 	// =========================================================
 	// Private State
 	// =========================================================
@@ -77,7 +77,7 @@ public final class Trie implements Path.ID, Path.Filter {
 	// Public Methods
 	// =========================================================
 
-	
+
 	Trie(final Trie parent, final String component) {
 		this.parent = parent;
 		this.component = component;
@@ -91,15 +91,15 @@ public final class Trie implements Path.ID, Path.Filter {
 		this.isConcrete = (parent == null || parent.isConcrete)
 				&& !component.contains("*");
 	}
-	
+
 	public int size() {
 		return depth + 1;
 	}
-	
+
 	public boolean isConcrete() {
 		return isConcrete;
 	}
-	
+
 	public String get(final int index) {
 		if(index == depth) {
 			return component;
@@ -109,23 +109,23 @@ public final class Trie implements Path.ID, Path.Filter {
 			return parent.get(index);
 		}
 	}
-	
+
 	public boolean matches(Path.ID id) {
-		return match(id, 0, 0, false);		
+		return match(id, 0, 0, false);
 	}
-	
+
 	public boolean matchesSubpath(Path.ID id) {
-		return match(id, 0, 0, true);		
+		return match(id, 0, 0, true);
 	}
-	
+
 	public String last() {
 		return component;
 	}
-	
+
 	public Trie parent() {
 		return parent;
 	}
-	
+
 	public Trie subpath(int start, int end) {
 		Trie id = Trie.ROOT;
 		for(int i=start;i!=end;++i) {
@@ -141,11 +141,11 @@ public final class Trie implements Path.ID, Path.Filter {
 			return parent.parent(depth);
 		}
 	}
-	
+
 	public Iterator<String> iterator() {
 		return new InternalIterator(this);
 	}
-	
+
 	public int compareTo(final Path.ID o) {
 		if(o instanceof Trie) {
 			// We can be efficient here
@@ -176,7 +176,7 @@ public final class Trie implements Path.ID, Path.Filter {
 			throw new IllegalArgumentException("Attempting to compare Trie with some other Path.ID");
 		}
 	}
-	
+
 	public int hashCode() {
 		int hc = component.hashCode();
 		if(parent != null) {
@@ -184,17 +184,17 @@ public final class Trie implements Path.ID, Path.Filter {
 		}
 		return hc;
 	}
-	
+
 	public boolean equals(final Object o) {
 		return this == o;
 	}
-	
+
 	public Trie append(final String component) {
 		int index = binarySearch(children, nchildren, component);
 		if(index >= 0) {
 			return children[index];
-		} 
-		
+		}
+
 		Trie nt = new Trie(this,component);
 		index = -index - 1; // calculate insertion point
 
@@ -203,15 +203,15 @@ public final class Trie implements Path.ID, Path.Filter {
 		} else {
 			Trie[] tmp = new Trie[children.length * 2];
 			System.arraycopy(children, 0, tmp, 0, index);
-			System.arraycopy(children, index, tmp, index+1, nchildren - index);	
+			System.arraycopy(children, index, tmp, index+1, nchildren - index);
 			children = tmp;
 		}
-		
+
 		children[index] = nt;
 		nchildren++;
 		return nt;
 	}
-	
+
 	public String toString() {
 		if(parent == null || parent == ROOT) {
 			return component;
@@ -219,7 +219,7 @@ public final class Trie implements Path.ID, Path.Filter {
 			return parent.toString() + "/" + component;
 		}
 	}
-	
+
 	public String toNativeString() {
 		if(parent == null || parent == ROOT) {
 			return component;
@@ -227,7 +227,7 @@ public final class Trie implements Path.ID, Path.Filter {
 			return parent.toString() + File.separatorChar + component;
 		}
 	}
-	
+
 	/**
 	 * Construct a Trie from a string, where '/' is the separator.
 	 * s
@@ -242,30 +242,30 @@ public final class Trie implements Path.ID, Path.Filter {
 		}
 		return r;
 	}
-	
+
 	/**
 	 * Construct a Trie from a Path ID.
-	 * 
+	 *
 	 * @param str
 	 * @return
 	 */
-	public static Trie fromString(Path.ID id) {	
+	public static Trie fromString(Path.ID id) {
 		if(id instanceof Trie) {
 			return ((Trie)id);
 		}
 		Trie r = ROOT;
 		for(int i=0;i!=id.size();++i) {
 			r = r.append(id.get(i));
-		}		
+		}
 		return r;
 	}
 	/**
 	 * Construct a Trie by appending a string onto a Path ID.
-	 * 
+	 *
 	 * @param str
 	 * @return
 	 */
-	public static Trie fromString(Path.ID id, String str) {	
+	public static Trie fromString(Path.ID id, String str) {
 		if(id instanceof Trie) {
 			return ((Trie)id).append(str);
 		}
@@ -276,11 +276,11 @@ public final class Trie implements Path.ID, Path.Filter {
 		r = r.append(str);
 		return r;
 	}
-	
+
 	// =========================================================
 	// Private Methods
 	// =========================================================
-	
+
 	private boolean match(Path.ID id, int idIndex, int myIndex, boolean submatch) {
 		int mySize = depth + 1;
 		if (myIndex == mySize && idIndex == id.size()) {
@@ -290,7 +290,7 @@ public final class Trie implements Path.ID, Path.Filter {
 		} else if (myIndex == mySize) {
 			return false;
 		}
-		
+
 		String myComponent = get(myIndex);
 		if (myComponent.equals("*")) {
 			return match(id, idIndex + 1, myIndex + 1, submatch);
@@ -307,17 +307,17 @@ public final class Trie implements Path.ID, Path.Filter {
 					&& match(id, idIndex + 1, myIndex + 1, submatch);
 		}
 	}
-	
+
 	private static final int binarySearch(final Trie[] children, final int nchildren, final String key) {
 		int low = 0;
         int high = nchildren-1;
-            
+
         while (low <= high) {
             int mid = (low + high) >> 1;
             int c = children[mid].component.compareTo(key);
-                
+
             if (c < 0) {
-                low = mid + 1; 
+                low = mid + 1;
             } else if (c > 0) {
                 high = mid - 1;
             } else {
@@ -326,29 +326,29 @@ public final class Trie implements Path.ID, Path.Filter {
         }
         return -(low + 1);
 	}
-	
+
 	private static final class InternalIterator implements Iterator<String> {
 		private final Trie id;
 		private int index;
-		
+
 		public InternalIterator(Trie id) {
 			this.id = id;
 			this.index = 0;
 		}
-		
+
 		public boolean hasNext() {
 			return index <= id.depth;
 		}
-		
+
 		public String next() {
 			return id.get(index++);
 		}
-		
+
 		public void remove() {
 			throw new UnsupportedOperationException();
 		}
 	}
-	
+
 	public static void main(String[] args) {
 		Trie t1 = ROOT.append("Hello");
 		Trie t2 = t1.append("*");
@@ -364,7 +364,7 @@ public final class Trie implements Path.ID, Path.Filter {
 		for(Trie id : ids) {
 			System.out.println(id);
 		}
-		
+
 		for(String c : t3) {
 			System.out.println(c);
 		}

@@ -35,9 +35,9 @@ import wyfs.io.BinaryOutputStream;
 
 /**
  * Enables an automaton to be written to a binary output stream.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class BinaryAutomataWriter {
 	protected final BinaryOutputStream output;
@@ -48,23 +48,23 @@ public class BinaryAutomataWriter {
 		this.schema = schema;
 	}
 
-	public void write(Automaton automaton) throws IOException {		
+	public void write(Automaton automaton) throws IOException {
 		int nStates = automaton.nStates();
 		output.write_uv(nStates);
 		for (int i = 0; i != nStates; ++i) {
 			write(automaton.get(i), automaton);
 		}
-		int nMarkers = automaton.nRoots();		
+		int nMarkers = automaton.nRoots();
 		output.write_uv(nMarkers);
 		for (int i = 0; i != nMarkers; ++i) {
-			writeReference(automaton.getRoot(i),automaton);			
+			writeReference(automaton.getRoot(i),automaton);
 		}
 	}
 
 	protected void write(Automaton.State state, Automaton automaton)
 			throws IOException {
-		output.write_uv(state.kind + -Automaton.K_FREE);		
-		if (state instanceof Automaton.Constant) {			
+		output.write_uv(state.kind + -Automaton.K_FREE);
+		if (state instanceof Automaton.Constant) {
 			write((Automaton.Constant) state);
 		} else if (state instanceof Automaton.Term) {
 			write((Automaton.Term) state, automaton);
@@ -75,7 +75,7 @@ public class BinaryAutomataWriter {
 
 	protected void write(Automaton.Constant state) throws IOException {
 		if (state instanceof Automaton.Bool) {
-			Automaton.Bool i = (Automaton.Bool) state;			
+			Automaton.Bool i = (Automaton.Bool) state;
 			output.write_un(i.value == true ? 1 : 0,1);
 		} else if (state instanceof Automaton.Int) {
 			Automaton.Int i = (Automaton.Int) state;
@@ -95,11 +95,11 @@ public class BinaryAutomataWriter {
 		} else if (state instanceof Automaton.Strung) {
 			Automaton.Strung str = (Automaton.Strung) state;
 			try {
-				byte[] bytes = str.value.getBytes("UTF-8");				
+				byte[] bytes = str.value.getBytes("UTF-8");
 				output.write_uv(bytes.length);
 				output.write(bytes);
 			} catch (UnsupportedEncodingException e) {
-				// hmmm, this aint pretty ;)				
+				// hmmm, this aint pretty ;)
 			}
 		} else {
 			throw new IllegalArgumentException("Unknown state encountered (" + state + ")");

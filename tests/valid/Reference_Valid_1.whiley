@@ -11,5 +11,5 @@ method main(System.Console console):
     swap(x,y)
     console.out.println("*x = " ++ *x)
     console.out.println("*y = " ++ *y)
-    
+
 

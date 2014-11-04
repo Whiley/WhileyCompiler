@@ -44,9 +44,9 @@ import wyil.lang.*;
  * Whiley source file. This includes <i>type declarations</i>, <i>method
  * declarations</i>, <i>constant declarations</i>, etc. In essence, a
  * <code>WhileyFile</code> forms the root of the Abstract Syntax Tree.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public final class WhileyFile implements CompilationUnit {
 
@@ -67,7 +67,7 @@ public final class WhileyFile implements CompilationUnit {
 		 * It makes little effort to check whether or not the file is
 		 * syntactically correct. In particular, it does not determine the
 		 * correct type of all declarations, expressions, etc.
-		 * 
+		 *
 		 * @param file
 		 * @return
 		 * @throws IOException
@@ -177,28 +177,28 @@ public final class WhileyFile implements CompilationUnit {
 	// =========================================================================
 
 	public interface Declaration extends SyntacticElement {
-		
+
 	}
-	
+
 	public abstract class NamedDeclaration extends AbstractContext implements
 			Declaration {
 		private final ArrayList<Modifier> modifiers;
 		private final String name;
-		
+
 		public NamedDeclaration(String name, Collection<Modifier> modifiers,Attribute... attributes) {
 			super(attributes);
 			this.modifiers = new ArrayList<Modifier>(modifiers);
 			this.name = name;
 		}
-		
+
 		public String name() {
 			return name;
 		}
-		
+
 		public List<Modifier> modifiers() {
 			return modifiers;
 		}
-		
+
 		public boolean hasModifier(Modifier modifier) {
 			return modifiers.contains(modifier);
 		}
@@ -229,7 +229,7 @@ public final class WhileyFile implements CompilationUnit {
 		 * Construct an appropriate list of import statements for a declaration
 		 * in a given file. Thus, only import statements up to and including the
 		 * given declaration will be included in the returned list.
-		 * 
+		 *
 		 * @param wf
 		 *            --- Whiley File in question to obtain list of import
 		 *            statements.
@@ -264,22 +264,22 @@ public final class WhileyFile implements CompilationUnit {
 	/**
 	 * Represents an import declaration in a Whiley source file, which has the
 	 * form:
-	 * 
+	 *
 	 * <pre>
 	 * ImportDeclaration ::= "import" [Identifier|Star "from"] Identifier ('.' Identifier|'*')*
 	 * </pre>
-	 * 
+	 *
 	 * The following illustrates a simple import statement:
-	 * 
+	 *
 	 * <pre>
 	 * import Console from whiley.lang.System
 	 * </pre>
-	 * 
+	 *
 	 * Here, the package is <code>whiley.lang</code>, the module is
 	 * <code>System</code> and the name is <code>Console</code>.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class Import extends SyntacticElement.Impl implements
 			Declaration {
@@ -296,23 +296,23 @@ public final class WhileyFile implements CompilationUnit {
 	/**
 	 * Represents a constant declaration in a Whiley source file, which has the
 	 * form:
-	 * 
+	 *
 	 * <pre>
 	 * ConstantDeclaration ::= "constant" Identifier "is" Expression
 	 * </pre>
-	 * 
+	 *
 	 * A simple example to illustrate is:
-	 * 
+	 *
 	 * <pre>
 	 * constant PI is 3.141592654
 	 * </pre>
-	 * 
+	 *
 	 * Here, we are defining a constant called <code>PI</code> which represents
 	 * the decimal value "3.141592654". Constant declarations may also have
 	 * modifiers, such as <code>public</code> and <code>private</code>.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public class Constant extends NamedDeclaration {
 		public Expr constant;
@@ -324,32 +324,32 @@ public final class WhileyFile implements CompilationUnit {
 			this.constant = constant;
 		}
 	}
-	
+
 	/**
 	 * Represents a type declaration in a Whiley source file, which has the
 	 * form:
-	 * 
+	 *
 	 * <pre>
 	 * "type" Identifier "is" TypePattern ["where" Expression]
 	 * </pre>
-	 * 
+	 *
 	 * Here, the type pattern specifies a type which may additionally be adorned
 	 * with variable names. The "where" clause is optional and is often referred
 	 * to as the type's "constraint". Variables defined within the type pattern
 	 * may be used within this constraint expressions. A simple example to
 	 * illustrate is:
-	 * 
+	 *
 	 * <pre>
 	 * type nat is (int x) where x >= 0
 	 * </pre>
-	 * 
+	 *
 	 * Here, we are defining a <i>constrained type</i> called <code>nat</code>
 	 * which represents the set of natural numbers (i.e the non-negative
 	 * integers). Type declarations may also have modifiers, such as
 	 * <code>public</code> and <code>private</code>.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public class Type extends NamedDeclaration {
 		public final TypePattern pattern;
@@ -367,19 +367,19 @@ public final class WhileyFile implements CompilationUnit {
 	/**
 	 * Represents a <i>function declaration</i> or <i>method declaration</i> in
 	 * a Whiley source file which have the form:
-	 * 
+	 *
 	 * <pre>
 	 * FunctionDeclaration ::= "function" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
-	 * 
+	 *
 	 * MethodDeclaration ::= "method" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
-	 * 
+	 *
 	 * FunctionMethodClause ::= "throws" Type | "requires" Expression | "ensures" Expression
 	 * </pre>
-	 * 
+	 *
 	 * Here, the first type pattern (i.e. before "=>") is referred to as the
 	 * "parameter", whilst the second is referred to as the "return". There are
 	 * three kinds of option clause:
-	 * 
+	 *
 	 * <ul>
 	 * <li><b>Throws clause</b>. This defines the exceptions which may be thrown
 	 * by this function. Multiple clauses may be given, and these are taken
@@ -400,10 +400,10 @@ public final class WhileyFile implements CompilationUnit {
 	 * conjunction. Furthermore, the convention is to specify the requires
 	 * clause(s) after the others.</li>
 	 * </ul>
-	 * 
+	 *
 	 * <p>The following function declaration provides a small example to
 	 * illustrate:</p>
-	 * 
+	 *
 	 * <pre>
 	 * function max(int x, int y) => (int z)
 	 * // return must be greater than either parameter
@@ -412,11 +412,11 @@ public final class WhileyFile implements CompilationUnit {
 	 * ensures x == z || y == z:
 	 *     ...
 	 * </pre>
-	 * 
+	 *
 	 * <p>Here, we see the specification for the well-known <code>max()</code>
 	 * function which returns the largest of its parameters. This does not throw
 	 * any exceptions, and does not enforce any preconditions on its parameters.</p>
-	 * 
+	 *
 	 * <p>
 	 * Function and method declarations may also have modifiers, such as
 	 * <code>public</code> and <code>private</code>.
@@ -432,7 +432,7 @@ public final class WhileyFile implements CompilationUnit {
 
 		/**
 		 * Construct an object representing a Whiley function.
-		 * 
+		 *
 		 * @param name
 		 *            - The name of the function.
 		 * @param returnType
@@ -452,7 +452,7 @@ public final class WhileyFile implements CompilationUnit {
 				List<Expr> requires, List<Expr> ensures,
 				SyntacticType throwType, List<Stmt> statements,
 				Attribute... attributes) {
-			super(name, modifiers,attributes);			
+			super(name, modifiers,attributes);
 			this.ret = ret;
 			this.parameters = new ArrayList<Parameter>(parameters);
 			this.requires = new ArrayList<Expr>(requires);
@@ -460,7 +460,7 @@ public final class WhileyFile implements CompilationUnit {
 			this.statements = new ArrayList<Stmt>(statements);
 			this.throwType = throwType;
 		}
-		
+
 		public abstract SyntacticType.FunctionOrMethod unresolvedType();
 
 		public abstract Nominal.FunctionOrMethod resolvedType();
@@ -468,37 +468,37 @@ public final class WhileyFile implements CompilationUnit {
 
 	/**
 	 * Represents a function declaration in a Whiley source file. For example:
-	 * 
+	 *
 	 * <pre>
 	 * function f(int x) => (int y)
-	 * // Parameter must be positive 
+	 * // Parameter must be positive
 	 * requires x > 0
-	 * // Return must be negative 
+	 * // Return must be negative
 	 * ensures y < 0:
 	 *    // body
 	 *    return -x
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, a function <code>f</code> is defined which accepts only positive
 	 * integers and returns only negative integers. The special variable
 	 * <code>$</code> is used to refer to the return value. Functions in Whiley
 	 * may not have side-effects (i.e. they are <code>pure functions</code>).
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * Function declarations may also have modifiers, such as
 	 * <code>public</code> and <code>private</code>.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * <b>NOTE</b> see {@link FunctionOrMethod} for more information.
 	 * </p>
-	 * 
+	 *
 	 * @see FunctionOrMethod
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public final class Function extends FunctionOrMethod {
 		public Nominal.Function resolvedType;
@@ -527,7 +527,7 @@ public final class WhileyFile implements CompilationUnit {
 
 	/**
 	 * Represents a method declaration in a Whiley source file. For example:
-	 * 
+	 *
 	 * <pre>
 	 * method m(int x) => (int y)
 	 * // Parameter must be positive
@@ -537,25 +537,25 @@ public final class WhileyFile implements CompilationUnit {
 	 *    // body
 	 *    return -x
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, a method <code>m</code> is defined which accepts only positive
 	 * integers and returns only negative integers. The special variable
 	 * <code>$</code> is used to refer to the return value. Unlike functions,
 	 * methods in Whiley may have side-effects.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * Method declarations may also have modifiers, such as <code>public</code>
 	 * and <code>private</code>.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * <b>NOTE</b> see {@link FunctionOrMethod} for more information.
 	 * </p>
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public final class Method extends FunctionOrMethod {
 		public Nominal.Method resolvedType;
@@ -565,7 +565,7 @@ public final class WhileyFile implements CompilationUnit {
 				List<Expr> requires, List<Expr> ensures,
 				SyntacticType throwType, List<Stmt> statements,
 				Attribute... attributes) {
-			super(modifiers, name, ret, parameters, requires, ensures, 
+			super(modifiers, name, ret, parameters, requires, ensures,
 					throwType, statements, attributes);
 		}
 
@@ -588,9 +588,9 @@ public final class WhileyFile implements CompilationUnit {
 	 * declaration. The primary purpose of this is to retain the source-code
 	 * location of the parameter in case any syntax error needs to be reported
 	 * on it.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public final class Parameter extends AbstractContext {
 		public final SyntacticType type;

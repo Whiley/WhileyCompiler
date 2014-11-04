@@ -46,40 +46,40 @@ import wyfs.io.BinaryOutputStream;
  * children) for a state comes first, and the supplementary data is placed after
  * that.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
-public class BinaryAutomataWriter implements GenericWriter<Automaton> {		
-	protected final BinaryOutputStream writer;	
-	
+public class BinaryAutomataWriter implements GenericWriter<Automaton> {
+	protected final BinaryOutputStream writer;
+
 	public BinaryAutomataWriter(BinaryOutputStream writer) {
-		this.writer = writer;			
+		this.writer = writer;
 	}
-	
+
 	public void write(Automaton automaton) throws IOException {
-		int size = automaton.size();		
+		int size = automaton.size();
 		writer.write_uv(size);
 		for(int i=0;i!=size;++i) {
 			write(automaton.states[i]);
-		}		
+		}
 	}
-	
+
 	protected void write(Automaton.State state) throws IOException {
 		writer.write_uv(state.kind);
 		writer.write_bit(state.deterministic);
-		int[] children = state.children;		
+		int[] children = state.children;
 		writer.write_uv(children.length);
 		for(int i : children) {
 			writer.write_uv(i);
 		}
-	}	
-	
+	}
+
 	public void close() throws IOException {
 		writer.close();
 	}
-	
+
 	public void flush() throws IOException {
 		writer.flush();
 	}
-}	
+}

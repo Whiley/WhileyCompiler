@@ -408,7 +408,7 @@ public abstract class Sort {
 
             String subseteqExpr;
             String subsetExpr;
-            
+
             // There is a bug here, I'm not 100% sure how to properly use the map function
             /*case Z3:
                     // Z3 supports the map function
@@ -421,7 +421,7 @@ public abstract class Sort {
                     subsetExpr = "(and (subseteq first second) (distinct first second))";
 
                     break;*/
-            
+
             subseteqExpr = "(forall ((t " + type
             		+ ")) (=> (contains first t) (contains second t)))";
             subsetExpr = "(and (subseteq first second) (distinct first second))";

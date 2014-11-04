@@ -12,24 +12,24 @@ function sort([int] items) => [int]:
         // original list.
         int l = 0 // left sublist index
         int r = 0 // right sublist index
-        int i = 0 // items index 
+        int i = 0 // items index
         while i < |items| && l < |lhs| && r < |rhs|:
             if lhs[l] <= rhs[r]:
-                items[i] = lhs[l] 
+                items[i] = lhs[l]
                 l=l+1
             else:
-                items[i] = rhs[r] 
+                items[i] = rhs[r]
                 r=r+1
             i=i+1
         // Tidy up remaining items in left sublist
         while l < |lhs|:
             items[i] = lhs[l]
-            i=i+1 
+            i=i+1
             l=l+1
         // Tidy up remaining items in right sublist
         while r < |rhs|:
-            items[i] = rhs[r] 
-            i=i+1 
+            items[i] = rhs[r]
+            i=i+1
             r=r+1
     // Done
     return items

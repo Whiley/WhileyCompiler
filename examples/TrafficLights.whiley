@@ -2,7 +2,7 @@
 type TrafficLights is {
     bool red,
     bool amber,
-    bool green    
+    bool green
 } where (!red && !amber && green) ||
         (!red && amber && !green) || // ignoring flashing
         (red && !amber && !green) ||

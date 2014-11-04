@@ -50,9 +50,9 @@ import static wyrl.core.SpecFile.*;
 
 /**
  * Responsible for translating a <code>SpecFile</code> into Java source code.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class JavaFileWriter {
 	private PrintWriter out;
@@ -249,27 +249,27 @@ public class JavaFileWriter {
 
 		boolean isReduction = decl instanceof ReduceDecl;
 		Type param = decl.pattern.attribute(Attribute.Type.class).type;
-		
+
 		if(decl.name != null) {
 			myOut(1, "// " + decl.name);
 		}
 
-		String className = isReduction ? "Reduction_" + reductionCounter++ : "Inference_" + inferenceCounter++; 
-		
-		if (isReduction) {			
-			myOut(1, "private final static class " + className 
+		String className = isReduction ? "Reduction_" + reductionCounter++ : "Inference_" + inferenceCounter++;
+
+		if (isReduction) {
+			myOut(1, "private final static class " + className
 					+ " extends AbstractRewriteRule implements ReductionRule {");
 		} else {
 			myOut(1, "private final static class " + className
 					+ " extends AbstractRewriteRule implements InferenceRule {");
 		}
-		
+
 		// ===============================================
 		// Constructor
 		// ===============================================
 		myOut();
 		myOut(2,"public " + className + "(Pattern.Term pattern) { super(pattern); }");
-		
+
 		// ===============================================
 		// probe()
 		// ===============================================
@@ -324,9 +324,9 @@ public class JavaFileWriter {
 		myOut(3, "int r" + thus + " = state[0];");
 		translateStateUnpack(3, decl.pattern, thus, environment);
 
-		// second, translate the individual rules		
+		// second, translate the individual rules
 		for (RuleDecl rd : decl.rules) {
-			translate(3, rd, isReduction, environment, file);			
+			translate(3, rd, isReduction, environment, file);
 		}
 
 		myOut(3, "automaton.resize(nStates);");
@@ -336,21 +336,21 @@ public class JavaFileWriter {
 		// ===============================================
 		// name() and rank()
 		// ===============================================
-		
-		myOut(2, "public final String name() { return \"" + decl.name + "\"; }");		
+
+		myOut(2, "public final String name() { return \"" + decl.name + "\"; }");
 		myOut(2, "public final int rank() { return " + decl.rank + "; }");
-		
+
 		// ===============================================
 		// min / max reduction sizes
 		// ===============================================
 
-		myOut();				
+		myOut();
 		//
-		int minComplexity = RewriteComplexity.minimumChange(decl);	
+		int minComplexity = RewriteComplexity.minimumChange(decl);
 		myOut(2, "public final int minimum() { return " + minComplexity + "; }");
 		//myOut(2, "public final int minimum() { return 0; }");
 		myOut(2, "public final int maximum() { return Integer.MAX_VALUE; }");
-		
+
 		myOut(1, "}"); // end class
 	}
 
@@ -358,7 +358,7 @@ public class JavaFileWriter {
 	 * Translate the test to see whether a pattern is accepted or not. A key
 	 * requirement of this translation procedure is that it does not allocate
 	 * *any* memory during the process.
-	 * 
+	 *
 	 * @param pattern
 	 *            The pattern being translated
 	 * @param freeRegister
@@ -455,7 +455,7 @@ public class JavaFileWriter {
 					source, environment);
 		}
 	}
-	
+
 	public int translateBoundedPatternMatch(int level, Pattern.List pattern,
 			Type.List declared, int source, Environment environment) {
 		myOut(level, "Automaton.State s" + source + " = automaton.get(r"
@@ -476,10 +476,10 @@ public class JavaFileWriter {
 			// type being matched does indeed have the right size.
 			myOut(level++, "if(l" + source + ".size() == "
 					+ pattern_elements.length + ") {");
-		} 
+		}
 
 		// ====================================================================
-		// Second, recursively check sub-elements. 
+		// Second, recursively check sub-elements.
 		// ====================================================================
 
 		// Don't visit final element, since this is the unbounded match.
@@ -490,13 +490,13 @@ public class JavaFileWriter {
 					+ ");");
 			level = translatePatternMatch(level, p.first(), declared_elements[j],
 					element, environment);
-			
+
 			// Increment j upto (but not past) the final declared element.
 			j = Math.min(j + 1, declared_elements.length - 1);
 		}
 
 		// Done.
-		
+
 		return level;
 	}
 
@@ -524,7 +524,7 @@ public class JavaFileWriter {
 		}
 
 		// ====================================================================
-		// Second, recursively check sub-elements. 
+		// Second, recursively check sub-elements.
 		// ====================================================================
 
 		// Don't visit final element, since this is the unbounded match.
@@ -535,26 +535,26 @@ public class JavaFileWriter {
 					+ ");");
 			level = translatePatternMatch(level, p.first(), declared_elements[j],
 					element, environment);
-			
+
 			// Increment j upto (but not past) the final declared element.
 			j = Math.min(j + 1, declared_elements.length - 1);
 		}
 
 		// ====================================================================
-		// Third, check all remaining elements against the unbounded match. 
+		// Third, check all remaining elements against the unbounded match.
 		// ====================================================================
 
 		int lastPatternElementIndex = pattern_elements.length-1;
 		Pattern lastPatternElement = pattern_elements[lastPatternElementIndex].first();
 		Type lastDeclaredElement = declared_elements[declared_elements.length-1];
 		int element = environment.allocate(Type.T_VOID());
-		
-		if(!willSkip(lastPatternElement,lastDeclaredElement)) {	
-		
+
+		if(!willSkip(lastPatternElement,lastDeclaredElement)) {
+
 			// Only include the loop if we really need it. In many cases, this
 			// is not necessary because it's just matching against what we
 			// already can guarantee is true.
-			
+
 			String idx = "i" + source;
 			myOut(level, "boolean m" + source + " = true;");
 			myOut(level++, "for(int " + idx + "=" + lastPatternElementIndex
@@ -574,10 +574,10 @@ public class JavaFileWriter {
 			myOut(level++, "if(m" + source + ") {");
 		}
 		// done
-		
+
 		return level;
 	}
-	
+
 	public int translatePatternMatch(int level, Pattern.BagOrSet pattern,
 			Type.Collection declared, int source, Environment environment) {
 		if (pattern.unbounded) {
@@ -588,10 +588,10 @@ public class JavaFileWriter {
 					source, environment);
 		}
 	}
-	
+
 	public int translateBoundedPatternMatch(int level, Pattern.BagOrSet pattern,
 			Type.Collection declared, int source, Environment environment) {
-		
+
 		myOut(level, "Automaton.State s" + source + " = automaton.get(r"
 				+ source + ");");
 		myOut(level, "Automaton.Collection c" + source
@@ -609,10 +609,10 @@ public class JavaFileWriter {
 			// type being matched does indeed have the right size.
 			myOut(level++, "if(c" + source + ".size() == " + elements.length
 					+ ") {");
-		} 
+		}
 
 		// ====================================================================
-		// Second, recursively check sub-elements. 
+		// Second, recursively check sub-elements.
 		// ====================================================================
 
 		// What we do here is construct a series of nested for-loops (one for
@@ -627,7 +627,7 @@ public class JavaFileWriter {
 			int index = environment.allocate(Type.T_ANY());
 			String idx = "r" + index;
 			indices[i] = index;
-			
+
 			// Construct the for-loop for this element
 			myOut(level++, "for(int " + idx + "=0;" + idx + "!=c" + source
 					+ ".size();++" + idx + ") {");
@@ -650,15 +650,15 @@ public class JavaFileWriter {
 			}
 			myOut(level, "int r" + item + " = c" + source + ".get(" + idx
 					+ ");");
-			
+
 			level = translatePatternMatch(level, pat, declared_elements[j], item, environment);
-			
+
 			// Increment j upto (but not past) the final declared element.
 			j = Math.min(j + 1, declared_elements.length - 1);
 		}
 
 		// Done.
-		
+
 		return level;
 	}
 
@@ -675,7 +675,7 @@ public class JavaFileWriter {
 
 		Pair<Pattern, String>[] pattern_elements = pattern.elements;
 		Type[] declared_elements = declared.elements();
-		
+
 		if (pattern_elements.length != declared_elements.length) {
 			// In this case, we have an unbounded list pattern being matched
 			// against an unbounded list type, but the former required more
@@ -686,7 +686,7 @@ public class JavaFileWriter {
 		}
 
 		// ====================================================================
-		// Second, recursively check sub-elements. 
+		// Second, recursively check sub-elements.
 		// ====================================================================
 
 		// What we do here is construct a series of nested for-loops (one for
@@ -700,12 +700,12 @@ public class JavaFileWriter {
 
 		int[] indices = new int[pattern_elements.length];
 		for (int i = 0, j = 0; i != pattern_elements.length - 1; ++i) {
-			Pattern pat = pattern_elements[i].first();			
+			Pattern pat = pattern_elements[i].first();
 			int item = environment.allocate(Type.T_ANY());
 			int index = environment.allocate(Type.T_ANY());
 			String idx = "r" + index;
 			indices[i] = index;
-			
+
 			// Construct the for-loop for this element
 			myOut(level++, "for(int " + idx + "=0;" + idx + "!=c" + source
 					+ ".size();++" + idx + ") {");
@@ -730,25 +730,25 @@ public class JavaFileWriter {
 					+ ");");
 
 			level = translatePatternMatch(level, pat, declared_elements[j], item, environment);
-			
+
 			// Increment j upto (but not past) the final declared element.
 			j = Math.min(j + 1, declared_elements.length - 1);
 		}
 
 		// ====================================================================
-		// Third, check all remaining elements against the unbounded match. 
+		// Third, check all remaining elements against the unbounded match.
 		// ====================================================================
 		int lastPatternElementIndex = pattern_elements.length-1;
 		Pattern lastPatternElement = pattern_elements[lastPatternElementIndex].first();
 		Type lastDeclaredElement = declared_elements[declared_elements.length-1];
 		int item = environment.allocate(Type.T_VOID());
-		
-		if(!willSkip(lastPatternElement,lastDeclaredElement)) {		
-			
+
+		if(!willSkip(lastPatternElement,lastDeclaredElement)) {
+
 			// Only include the loop if we really need it. In many cases, this
 			// is not necessary because it's just matching against what we
 			// already can guarantee is true.
-			
+
 			String idx = "i" + item;
 			myOut(level, "boolean m" + source + "_" + lastPatternElementIndex + " = true;");
 
@@ -792,25 +792,25 @@ public class JavaFileWriter {
 			}
 			myOut(level++, "if(m" + source + "_" + lastPatternElementIndex + ") {");
 		}
-		
+
 		// Done.
 		return level;
 	}
-	
+
 	/**
 	 * The purpose of this method is to determine whether or not the given
 	 * pattern actually needs to be matched in any way.
-	 * 
+	 *
 	 * @param pattern
 	 * @param declared
 	 * @return
 	 */
 	protected boolean willSkip(Pattern pattern, Type declared) {
 		declared = stripNominalsAndRefs(declared);
-		
+
 		if (pattern instanceof Pattern.Leaf) {
 			Pattern.Leaf leaf = (Pattern.Leaf) pattern;
-			Type element = leaf.type().element();			
+			Type element = leaf.type().element();
 
 			if (element == Type.T_ANY() || element.isSubtype(declared)) {
 				// In this very special case, we don't need to do anything since
@@ -844,15 +844,15 @@ public class JavaFileWriter {
 					}
 				}
 				return true;
-			}			
+			}
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Here, we simply read out all of the registers from the state. We also
 	 * assign named variables so they can be used subsequently.
-	 * 
+	 *
 	 * @param level
 	 * @param pattern
 	 * @param environment
@@ -899,7 +899,7 @@ public class JavaFileWriter {
 			Pair<Pattern, String> p = elements[i];
 			String p_name = p.second();
 			int item = environment.allocate(Type.T_ANY(), p_name);
-			if (pattern.unbounded && (i + 1) == elements.length) {				
+			if (pattern.unbounded && (i + 1) == elements.length) {
 				if (p_name != null) {
 					String src = "s" + source;
 					myOut(level, "Automaton.Collection " + src
@@ -985,7 +985,7 @@ public class JavaFileWriter {
 	 * This is necessary in order that we can make sure those types are
 	 * instantiated before the corresponding pattern constructor is called in
 	 * the generated file.
-	 * 
+	 *
 	 * @param p
 	 *            --- Pattern to register.
 	 */
@@ -1019,13 +1019,13 @@ public class JavaFileWriter {
 			myOut(level++, "if(r" + condition + ") {");
 			conditionDone = true;
 		}
-		
+
 		for (Pair<String, Expr> let : decl.lets) {
 			String letVar = let.first();
 			Expr letExpr = let.second();
 			int result = translate(level, letExpr, environment, file);
 			environment.put(result, letVar);
-			// 
+			//
 			if (!conditionDone && decl.condition != null
 					&& allVariablesDefined(decl.condition, environment)) {
 				int condition = translate(level, decl.condition, environment,
@@ -1033,13 +1033,13 @@ public class JavaFileWriter {
 				myOut(level++, "if(r" + condition + ") {");
 				conditionDone = true;
 			}
-		}		
-		
+		}
+
 		if(!conditionDone && decl.condition != null) {
 			// sanity check
 			throw new RuntimeException("internal failure: condition not written, but was required");
 		}
-		
+
 		int result = translate(level, decl.result, environment, file);
 		result = coerceFromValue(level, decl.result, result, environment);
 		int thus = environment.get("this");
@@ -1127,7 +1127,7 @@ public class JavaFileWriter {
 			out.print("})");
 		}
 	}
-	
+
 	public void writeSchema(SpecFile spec) {
 		myOut(1,
 				"// =========================================================================");
@@ -1174,7 +1174,7 @@ public class JavaFileWriter {
 				indent(2);
 				out.print("new Inference_" + inferCounter + "(pattern" + patternCounter + ")");
 				inferCounter++;
-			}			
+			}
 			if(d instanceof RewriteDecl) {
 				patternCounter++;
 			}
@@ -1188,7 +1188,7 @@ public class JavaFileWriter {
 		int reduceCounter = 0;
 		patternCounter = 0;
 		for (Decl d : declarations) {
-			if (d instanceof ReduceDecl) {				
+			if (d instanceof ReduceDecl) {
 				if (reduceCounter != 0) {
 					out.println(",");
 				}
@@ -1228,7 +1228,7 @@ public class JavaFileWriter {
 
 		myOut();
 	}
-	
+
 	private void writeSchema(Type.Term tt) {
 		Automaton automaton = tt.automaton();
 		BitSet visited = new BitSet(automaton.nStates());
@@ -1937,7 +1937,7 @@ public class JavaFileWriter {
 
 	/**
 	 * Convert a Wyrl type into its equivalent Java type.
-	 * 
+	 *
 	 * @param type
 	 * @return
 	 */
@@ -1950,7 +1950,7 @@ public class JavaFileWriter {
 	 * whether primitive types are allowed or not. If not then, for example,
 	 * <code>Type.Int</code> becomes <code>int</code>; otherwise, it becomes
 	 * <code>Integer</code>.
-	 * 
+	 *
 	 * @param type
 	 * @return
 	 */
@@ -2057,11 +2057,11 @@ public class JavaFileWriter {
 			}
 		}
 	}
-	
+
 	/**
 	 * Check whether all variables used in a given expression are defined or
 	 * not.
-	 * 
+	 *
 	 * @param e
 	 * @param enviroment
 	 * @return
@@ -2075,7 +2075,7 @@ public class JavaFileWriter {
 		}
 		return true;
 	}
-	
+
 	protected void myOut() {
 		myOut(0, "");
 	}

@@ -32,40 +32,40 @@ import java.util.*;
 import wyautl.util.BigRational;
 import wyrl.util.*;
 
-public class SpecLexer {	
+public class SpecLexer {
 	private File file;
 	private StringBuffer input;
 	private int pos;
-	
+
 	public SpecLexer(File file) throws IOException {
 		this(new InputStreamReader(new FileInputStream(file),"UTF-8"));
 		this.file = file;
 	}
-	
+
 	public SpecLexer(InputStream instream) throws IOException {
-		this(new InputStreamReader(instream,"UTF-8"));		
+		this(new InputStreamReader(instream,"UTF-8"));
 	}
-	
+
 	public SpecLexer(Reader reader) throws IOException {
 		BufferedReader in = new BufferedReader(reader);
-		
+
 		StringBuffer text = new StringBuffer();
 		String tmp;
 		while ((tmp = in.readLine()) != null) {
 			text.append(tmp);
 			text.append("\n");
 		}
-		
-		input = text;	
+
+		input = text;
 	}
-	
+
 	public List<Token> scan() {
 		ArrayList<Token> tokens = new ArrayList<Token>();
 		pos = 0;
-		
+
 		while(pos < input.length()) {
 			char c = input.charAt(pos);
-			
+
 			if(Character.isDigit(c)) {
 				tokens.add(scanDigits());
 			} else if(c == '"') {
@@ -86,10 +86,10 @@ public class SpecLexer {
 				syntaxError("syntax error");
 			}
 		}
-		
+
 		return tokens;
 	}
-	
+
 	public Token scanComment() {
 		int start = pos;
 		while(pos < input.length() && input.charAt(pos) != '\n') {
@@ -97,14 +97,14 @@ public class SpecLexer {
 		}
 		return new Comment(input.substring(start,pos),start);
 	}
-	
-	public Token scanDigits() {		
+
+	public Token scanDigits() {
 		int start = pos;
 		while (pos < input.length() && Character.isDigit(input.charAt(pos))) {
 			pos = pos + 1;
 		}
 		if(pos < input.length() && input.charAt(pos) == '.') {
-			pos = pos + 1;			
+			pos = pos + 1;
 			if(pos < input.length() && input.charAt(pos) == '.') {
 				// this is case for range e.g. 0..1
 				pos = pos - 1;
@@ -113,15 +113,15 @@ public class SpecLexer {
 			}
 			while (pos < input.length() && Character.isDigit(input.charAt(pos))) {
 				pos = pos + 1;
-			}			
+			}
 			BigRational r = new BigRational(input.substring(start, pos));
 			return new Real(r,input.substring(start,pos),start);
 		} else {
 			BigInteger r = new BigInteger(input.substring(start, pos));
-			return new Int(r,input.substring(start,pos),start);			
-		}		
+			return new Int(r,input.substring(start,pos),start);
+		}
 	}
-	
+
 	public Token scanChar() {
 		char ans = ' ';		// set to keep javac out of trouble.
 		int start = pos;
@@ -177,7 +177,7 @@ public class SpecLexer {
 		}
 		return new Int(BigInteger.valueOf(ans),input.substring(start,pos),start);
 	}
-	
+
 	public Token scanString() {
 		int start = pos;
 		boolean flag = false;
@@ -192,7 +192,7 @@ public class SpecLexer {
 				flag = true;
 				continue;
 			}
-			if (c == '"') {				
+			if (c == '"') {
 				String v = input.substring(start,++pos);
 				return new Strung(parseString(v),v, start);
 			}
@@ -201,8 +201,8 @@ public class SpecLexer {
 		syntaxError("unexpected end-of-string",pos-1);
 		return null;
 	}
-	
-	protected String parseString(String v) {				
+
+	protected String parseString(String v) {
 		/*
          * Parsing a string requires several steps to be taken. First, we need
          * to strip quotes from the ends of the string.
@@ -249,7 +249,7 @@ public class SpecLexer {
 							replace = (char) Integer.parseInt(unicode, 16); // unicode
 							break;
 						default :
-							syntaxError("unknown escape character",start+i);							
+							syntaxError("unknown escape character",start+i);
 					}
 					v = v.substring(0, i) + replace + v.substring(i + len);
 				}
@@ -272,7 +272,7 @@ public class SpecLexer {
 	static final char UC_ELEMENTOF = '\u2208';
 	static final char UC_LOGICALAND = '\u2227';
 	static final char UC_LOGICALOR = '\u2228';
-	
+
 	static final char[] opStarts = { ',', '(', ')', '[', ']', '{', '}', '+', '-',
 			'*', '\\', '/', '!', '?', '=', '<', '>', ':', ';', '&', '|', '#', '.','~',
 			UC_FORALL,
@@ -288,7 +288,7 @@ public class SpecLexer {
 			UC_GREATEREQUALS,
 			UC_ELEMENTOF
 		};
-	
+
 	public boolean isOperatorStart(char c) {
 		for(char o : opStarts) {
 			if(c == o) {
@@ -297,12 +297,12 @@ public class SpecLexer {
 		}
 		return false;
 	}
-	
-	public Token scanOperator() {		
-		
+
+	public Token scanOperator() {
+
 		char c = input.charAt(pos);
 
-		if(c == '.') {			
+		if(c == '.') {
 			pos++;
 			if(pos < input.length() && input.charAt(pos) == '.') {
 				pos++;
@@ -342,7 +342,7 @@ public class SpecLexer {
 			} else {
 				return new LeftCurly(pos-1);
 			}
-		} else if(c == '}') {			
+		} else if(c == '}') {
 			return new RightCurly(pos++);
 		} else if(c == '+') {
 			pos++;
@@ -351,8 +351,8 @@ public class SpecLexer {
 			} else {
 				return new Plus(pos-1);
 			}
-		} else if(c == '-') {			
-			return new Minus(pos++);									
+		} else if(c == '-') {
+			return new Minus(pos++);
 		} else if(c == '#') {
 			return new Hash(pos++);
 		} else if(c == '*') {
@@ -361,7 +361,7 @@ public class SpecLexer {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '&') {
 				pos += 2;
 				return new LogicalAnd("&&",pos-2);
-			} else {				
+			} else {
 				return new BitwiseAnd("&",pos++);
 			}
 		} else if(c == '|') {
@@ -382,15 +382,15 @@ public class SpecLexer {
 			} else {
 				return new RightSlash(pos++);
 			}
-		} else if(c == '!') {			
+		} else if(c == '!') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
 				return new NotEquals("!=",pos-2);
 			} else {
-				return new Shreak(pos++);				
-			}			
-		} else if(c == '?') {						
-			return new Question(pos++);							
+				return new Shreak(pos++);
+			}
+		} else if(c == '?') {
+			return new Question(pos++);
 		} else if(c == '=') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
 				pos += 2;
@@ -399,7 +399,7 @@ public class SpecLexer {
 				pos += 2;
 				return new Arrow("=>",pos-2);
 			} else {
-				return new Equals(pos++);				
+				return new Equals(pos++);
 			}
 		} else if(c == '<') {
 			if((pos+1) < input.length() && input.charAt(pos+1) == '=') {
@@ -439,32 +439,32 @@ public class SpecLexer {
 			return new LogicalOr(""+UC_LOGICALOR,pos++);
 		} else if(c == UC_LOGICALAND) {
 			return new LogicalAnd(""+UC_LOGICALAND,pos++);
-		} 
-				
+		}
+
 		syntaxError("unknown operator encountered: " + c);
 		return null;
 	}
-	
+
 	public boolean isIdentifierStart(char c) {
 		return Character.isJavaIdentifierStart(c);
 	}
-	
-	public static final String[] keywords = {		
+
+	public static final String[] keywords = {
 		"true",
 		"false",
 		"null",
 		"int",
 		"real",
-		"bool",			
+		"bool",
 		"string",
-		"void",			
+		"void",
 		"if",
 		"is",
 		"as",
 		"term",
 		"terms",
 		"define",
-		"reduce",		
+		"reduce",
 		"infer",
 		"function",
 		"let",
@@ -475,22 +475,22 @@ public class SpecLexer {
 		"name",
 		"rank"
 	};
-	
+
 	public Token scanIdentifier() {
-		int start = pos;		
+		int start = pos;
 		while (pos < input.length() &&
 				Character.isJavaIdentifierPart(input.charAt(pos))) {
-			pos++;								
-		}		
+			pos++;
+		}
 		String text = input.substring(start,pos);
-		
+
 		// now, check for keywords
 		for(String keyword : keywords) {
 			if(keyword.equals(text)) {
 				return new Keyword(text,start);
 			}
 		}
-		
+
 		// now, check for text operators
 		if(text.equals("in")) {
 			return new ElemOf(text,start);
@@ -498,12 +498,12 @@ public class SpecLexer {
 			return new None(text,start);
 		} else if(text.equals("some")) {
 			return new Some(text,start);
-		} 		
-	
+		}
+
 		// otherwise, must be identifier
 		return new Identifier(text,start);
 	}
-	
+
 	public Token scanTabs() {
 		int start = pos;
 		int ntabs = 0;
@@ -511,57 +511,57 @@ public class SpecLexer {
 			pos++;
 			ntabs++;
 		}
-		return new Tabs(input.substring(start, pos), ntabs, start);	
+		return new Tabs(input.substring(start, pos), ntabs, start);
 	}
-	
-	public void skipWhitespace(List<Token> tokens) {		
-		int start = pos;		
+
+	public void skipWhitespace(List<Token> tokens) {
+		int start = pos;
 		while (pos < input.length() && input.charAt(pos) != '\n'
-			&& input.charAt(pos) == ' ') {			
-			pos++;		
+			&& input.charAt(pos) == ' ') {
+			pos++;
 		}
 		int ts = (pos - start) / 4;
-		if(ts > 0) {			
+		if(ts > 0) {
 			tokens.add(new Tabs(input.substring(start,pos),ts,start));
 		}
 		while (pos < input.length() && input.charAt(pos) != '\n'
-				&& Character.isWhitespace(input.charAt(pos))) {			
+				&& Character.isWhitespace(input.charAt(pos))) {
 			pos++;
-		}		
+		}
 	}
-	
+
 	private void syntaxError(String msg, int index) {
 		throw new SyntaxError(msg, file, index, index);
 	}
-	
+
 	private void syntaxError(String msg) {
 		throw new SyntaxError(msg, file, pos, pos);
 	}
-	
+
 	public static abstract class Token {
 		public final String text;
-		public final int start;		
-		
+		public final int start;
+
 		public Token(String text, int pos) {
 			this.text = text;
-			this.start = pos;			
+			this.start = pos;
 		}
-			
+
 		public int end() {
 			return start + text.length() - 1;
 		}
 	}
-	
+
 	public static class Real extends Token {
 		public final BigRational value;
-		public Real(BigRational r, String text, int pos) { 
+		public Real(BigRational r, String text, int pos) {
 			super(text,pos);
 			value = r;
 		}
 	}
 	public static class Int extends Token {
 		public final BigInteger value;
-		public Int(BigInteger r, String text, int pos) { 
+		public Int(BigInteger r, String text, int pos) {
 			super(text,pos);
 			value = r;
 		}
@@ -571,23 +571,23 @@ public class SpecLexer {
 	}
 	public static class Strung extends Token {
 		public final String string;
-		public Strung(String string, String text, int pos) { 
+		public Strung(String string, String text, int pos) {
 			super(text,pos);
 			this.string = string;
 		}
-	}	
+	}
 	public static class Keyword extends Token {
 		public Keyword(String text, int pos) { super(text,pos); }
 	}
 	public static class NewLine extends Token {
 		public NewLine(int pos) { super("\n",pos); }
-	}	
+	}
 	public static class Tabs extends Token {
 		public int ntabs;
-		public Tabs(String text, int ntabs, int pos) { 
+		public Tabs(String text, int ntabs, int pos) {
 			super(text,pos);
-			this.ntabs = ntabs; 
-		}		
+			this.ntabs = ntabs;
+		}
 	}
 	public static class Comment extends Token {
 		public Comment(String text, int pos) { super(text,pos);	}
@@ -669,7 +669,7 @@ public class SpecLexer {
 	}
 	public static class Bar extends Token {
 		public Bar(int pos) { super("|",pos);	}
-	}	
+	}
 	public static class Equals extends Token {
 		public Equals(int pos) { super("=",pos);	}
 	}

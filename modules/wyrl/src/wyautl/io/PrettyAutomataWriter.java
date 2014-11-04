@@ -47,25 +47,25 @@ import wyautl.core.*;
  * children) for a state comes first, and the supplementary data is placed after
  * that.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
-public class PrettyAutomataWriter  {	
+public class PrettyAutomataWriter  {
 	private final PrintWriter writer;
 	private final Schema schema;
 	private final HashSet<String> indents;
 	private int level;
-	
+
 	public PrettyAutomataWriter(PrintStream stream, Schema schema, String... indents) {
 		this(new PrintWriter(stream),schema,indents);
 	}
-	
+
 	public PrettyAutomataWriter(OutputStream stream, Schema schema, String... indents) {
-		this(new OutputStreamWriter(stream),schema,indents);		
+		this(new OutputStreamWriter(stream),schema,indents);
 	}
-	
-	public PrettyAutomataWriter(PrintWriter stream, Schema schema, String... indents) {		
+
+	public PrettyAutomataWriter(PrintWriter stream, Schema schema, String... indents) {
 		this.writer = stream;
 		this.schema = schema;
 		this.indents = new HashSet<String>();
@@ -73,16 +73,16 @@ public class PrettyAutomataWriter  {
 			this.indents.add(indent);
 		}
 	}
-	
-	public PrettyAutomataWriter(Writer stream, Schema schema, String... indents) {		
+
+	public PrettyAutomataWriter(Writer stream, Schema schema, String... indents) {
 		this.writer = new PrintWriter(stream);
 		this.schema = schema;
 		this.indents = new HashSet<String>();
 		for(String indent : indents) {
 			this.indents.add(indent);
-		}	
+		}
 	}
-	
+
 	public void write(Automaton automaton) throws IOException {
 		int[] headers = new int[automaton.nStates()];
 		for (int i = 0; i != automaton.nRoots(); ++i) {
@@ -93,19 +93,19 @@ public class PrettyAutomataWriter  {
 		}
 		writer.flush();
 	}
-	
+
 	public void write(int root, Automaton automaton) throws IOException {
 		int[] headers = new int[automaton.nStates()];
 		Arrays.fill(headers, 0);
 		Automata.traverse(automaton, root, headers);
-		write(root, headers, automaton, false);		
+		write(root, headers, automaton, false);
 		writer.flush();
 	}
-	
+
 	protected void write(int index, int[] headers, Automaton automaton,
-			boolean indent) throws IOException {		
+			boolean indent) throws IOException {
 		int header = 0;
-		
+
 		if(index >= 0) {
 			header = headers[index];
 			if(header == 3) {
@@ -115,21 +115,21 @@ public class PrettyAutomataWriter  {
 				return;
 			}
 		}
-		
-		Automaton.State state = automaton.get(index);		
+
+		Automaton.State state = automaton.get(index);
 		if (state instanceof Automaton.Constant) {
 			write((Automaton.Constant) state, headers, automaton, indent);
-		} else if (state instanceof Automaton.Term) {			
+		} else if (state instanceof Automaton.Term) {
 			write((Automaton.Term) state, headers, automaton, indent);
 		} else {
 			write((Automaton.Collection) state, headers, automaton, indent);
 		}
-		
+
 		if(header == 3) {
-			writer.print(">");			
+			writer.print(">");
 		}
 	}
-	
+
 	protected void write(Automaton.Constant item, int[] headers, Automaton automaton, boolean indent) throws IOException {
 		Object payload = item.value;
 		if (payload instanceof String) {
@@ -143,8 +143,8 @@ public class PrettyAutomataWriter  {
 	protected void write(Automaton.Term term, int[] headers, Automaton automaton,
 			boolean indent) throws IOException {
 		String name = schema.get(term.kind).name;
-		indent = indents.contains(name);		
-		writer.print(name);		
+		indent = indents.contains(name);
+		writer.print(name);
 		Schema.State element = schema.get(term.kind).child;
 		if (element != null && element instanceof Schema.Collection) {
 			write(term.contents, headers, automaton, indent);
@@ -154,11 +154,11 @@ public class PrettyAutomataWriter  {
 			writer.print(")");
 		}
 	}
-	
+
 	protected void write(Automaton.Collection state, int[] headers, Automaton automaton, boolean indent) throws IOException {
 		switch(state.kind) {
 			case Automaton.K_LIST:
-				writer.print("[");				
+				writer.print("[");
 				break;
 			case Automaton.K_BAG:
 				writer.print("{|");
@@ -166,25 +166,25 @@ public class PrettyAutomataWriter  {
 			case Automaton.K_SET:
 				writer.print("{");
 				break;
-		}		
+		}
 		if(indent) {
 			level++;
 		}
-		for(int i=0;i!=state.size();++i) {			
+		for(int i=0;i!=state.size();++i) {
 			if(i != 0) {
 				writer.print(",");
-			}						
+			}
 			if(indent) {
 				writer.println();
 				indent();
-			}			
+			}
 			write(state.get(i),headers,automaton,false);
 		}
-		if(indent) {		
+		if(indent) {
 			level--;
 			writer.println();
 			indent();
-		}		
+		}
 		switch(state.kind) {
 			case Automaton.K_LIST:
 				writer.print("]");
@@ -197,18 +197,18 @@ public class PrettyAutomataWriter  {
 				break;
 		}
 	}
-	
+
 	public void close() throws IOException {
 		writer.close();
 	}
-	
+
 	public void flush() throws IOException {
 		writer.flush();
 	}
-	
+
 	private void indent() {
 		for(int i=0;i<level;++i) {
 			writer.print("\t");
-		}		
-	}	
+		}
+	}
 }

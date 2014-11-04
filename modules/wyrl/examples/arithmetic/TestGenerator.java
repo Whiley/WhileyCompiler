@@ -5,52 +5,52 @@ import java.util.Set;
 
 
 public final class TestGenerator {
-	
-	public interface Expr { 
+
+	public interface Expr {
 		public boolean isConstant();
 		public int evaluate(Map<String,Integer> environment);
 	}
-	
+
 	public static final class Variable implements Expr {
 		public final String var;
 
 		public Variable(String var) {
 			this.var = var;
 		}
-		
+
 		public boolean isConstant() {
 			return false;
 		}
-		
+
 		public int evaluate(Map<String,Integer> environment) {
 			return environment.get(var);
 		}
-		
+
 		public String toString() {
 			return var;
 		}
 	}
-	
+
 	public static final class Number implements Expr {
 		public final int value;
 
 		public Number(int value) {
 			this.value = value;
 		}
-		
+
 		public boolean isConstant() {
 			return true;
 		}
-		
+
 		public int evaluate(Map<String,Integer> environment) {
 			return value;
 		}
-		
+
 		public String toString() {
 			return Integer.toString(value);
 		}
 	}
-	
+
 	public enum BinaryOp {
 		ADD{
 			public String toString() { return "+"; }
@@ -63,24 +63,24 @@ public final class TestGenerator {
 		},
 //		DIV{
 //			public String toString() { return "/"; }
-//		}		
+//		}
 	};
-	
+
 	public static final class Binary implements Expr {
 		public final BinaryOp op;
 		public final Expr lhs;
 		public final Expr rhs;
-		
+
 		public Binary(BinaryOp op, Expr lhs, Expr rhs) {
 			this.op = op;
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
-		
+
 		public boolean isConstant() {
 			return lhs.isConstant() && rhs.isConstant();
 		}
-		
+
 		public int evaluate(Map<String, Integer> environment) {
 			int l = lhs.evaluate(environment);
 			int r = rhs.evaluate(environment);
@@ -96,7 +96,7 @@ public final class TestGenerator {
 
 			throw new RuntimeException("Deadcode reached");
 		}
-		
+
 		public String toString() {
 			String l = lhs.toString();
 			String r = rhs.toString();
@@ -108,8 +108,8 @@ public final class TestGenerator {
 			}
 			return l + " " + op + " " + r;
 		}
-	}		
-	
+	}
+
 	public enum CondOp {
 		EQ{
 			public String toString() { return "=="; }
@@ -122,14 +122,14 @@ public final class TestGenerator {
 		},
 		LTEQ{
 			public String toString() { return "<="; }
-		}		
+		}
 	};
-	
+
 	public static final class Condition {
 		public final CondOp op;
 		public final Expr lhs;
 		public final Expr rhs;
-		
+
 		public Condition(CondOp op, Expr lhs, Expr rhs) {
 			this.op = op;
 			this.lhs = lhs;
@@ -154,17 +154,17 @@ public final class TestGenerator {
 			throw new RuntimeException("Deadcode reached");
 		}
 
-		
+
 		public String toString() {
 			String l = lhs.toString();
-			String r = rhs.toString();			
+			String r = rhs.toString();
 			return l + " " + op + " " + r;
 		}
-	}	
-	
+	}
+
 	public static ArrayList<Expr> generateAll(int depth, String[] variables, Integer[] numbers) {
-		if(depth == 0) {			
-			ArrayList<Expr> result = new ArrayList<Expr>();						
+		if(depth == 0) {
+			ArrayList<Expr> result = new ArrayList<Expr>();
 			for(Integer i : numbers) {
 				result.add(new Number(i));
 			}
@@ -183,12 +183,12 @@ public final class TestGenerator {
 //						result.add(new Binary(op,lhs,rhs));
 //					}
 					result.add(new Binary(BinaryOp.ADD,lhs,rhs));
-				}	
+				}
 			}
 			return result;
-		}		
+		}
 	}
-	
+
 	public static ArrayList<Condition> generateAll(ArrayList<Expr> expressions) {
 		Expr zero = new Number(0);
 		ArrayList<Condition> result = new ArrayList<Condition>();
@@ -203,11 +203,11 @@ public final class TestGenerator {
 		}
 		return result;
 	}
-	
+
 	public static void generateClauses(int nTerms,
 			ArrayList<Condition> conditions, ArrayList<Condition[]> clauses, ArrayList<Condition> clause) {
 		if(nTerms == 0) {
-			clauses.add(clause.toArray(new Condition[clause.size()]));			
+			clauses.add(clause.toArray(new Condition[clause.size()]));
 		} else {
 			for(int i=0;i!=conditions.size();++i) {
 				Condition term = conditions.get(i);
@@ -217,9 +217,9 @@ public final class TestGenerator {
 					clause.remove(clause.size()-1);
 				}
 			}
-		}								
+		}
 	}
-	
+
 	public static boolean isSatisfiable(Condition[] clause, int var,
 			Map<String, Integer> model, String[] variables) {
 		if (var == variables.length) {
@@ -239,12 +239,12 @@ public final class TestGenerator {
 			return false;
 		}
 	}
-	
+
 	public static boolean isSatisfiable(Condition[] clause, String[] variables) {
 		return isSatisfiable(clause, 0, new HashMap<String, Integer>(),
 				variables);
 	}
-	
+
 	public static void splitClauses(ArrayList<Condition[]> clauses,
 			ArrayList<Condition[]> sat, ArrayList<Condition[]> unsat,
 			String[] variables) {
@@ -256,7 +256,7 @@ public final class TestGenerator {
 			}
 		}
 	}
-	
+
 	public static String toString(Condition[] clause) {
 		String r = "";
 		for(int i=0;i!=clause.length;++i) {
@@ -267,10 +267,10 @@ public final class TestGenerator {
 		}
 		return r;
 	}
-	
+
 	public static void main(String[] args) {
 		String[] variables = { "x", "y" };
-		Integer[] numbers = { -1, 0, 1 };		
+		Integer[] numbers = { -1, 0, 1 };
 
 		ArrayList<Expr> exprs = generateAll(1, variables, numbers);
 		ArrayList<Condition> conditions = generateAll(exprs);
@@ -279,12 +279,12 @@ public final class TestGenerator {
 		ArrayList<Condition[]> satisfiable = new ArrayList();
 		ArrayList<Condition[]> unsatisfiable = new ArrayList();
 		splitClauses(clauses,satisfiable,unsatisfiable,variables);
-		
+
 		for (int i = 0; i != satisfiable.size(); ++i) {
-			System.out.println("s " + toString(satisfiable.get(i)));			
-		}			
+			System.out.println("s " + toString(satisfiable.get(i)));
+		}
 		for (int i = 0; i != unsatisfiable.size(); ++i) {
-			System.out.println("u " + toString(unsatisfiable.get(i)));			
+			System.out.println("u " + toString(unsatisfiable.get(i)));
 		}
 	}
 }

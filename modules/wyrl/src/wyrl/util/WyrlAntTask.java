@@ -41,44 +41,44 @@ import wyrl.io.SpecParser;
 
 /**
  * The most basic ant task ever for compiling wyrl files.
- * 
+ *
  * @author djp
- * 
+ *
  */
 public class WyrlAntTask extends MatchingTask {
 	private File srcdir;
 	private String sourceFile;
 	private String outputFile;
-	private boolean debug;	
-	
+	private boolean debug;
+
 	public WyrlAntTask() {
 	}
-	
+
 	public void setSrcdir(File dir) throws IOException {
 		this.srcdir = dir;
 	}
-	
+
 	public void setSource(String filename) {
 		this.sourceFile = filename;
 	}
-	
+
 	public void setOutput(String filename) {
 		this.outputFile = filename;
 	}
-	
+
 	public void setDebug(boolean flag) {
 		this.debug = flag;
 	}
-	
+
 	public void execute() throws BuildException {
 		try {
 			long start = System.currentTimeMillis();
-			
+
 			File sfile = new File(srcdir, sourceFile);
 			File ofile = new File(srcdir, outputFile);
 
 			SpecLexer lexer = new SpecLexer(new FileReader(sfile));
-			SpecParser parser = new SpecParser(sfile, lexer.scan());			
+			SpecParser parser = new SpecParser(sfile, lexer.scan());
 			SpecFile sf = parser.parse();
 
 			int delta = 0;
@@ -87,12 +87,12 @@ public class WyrlAntTask extends MatchingTask {
 					delta++;
 				}
 			}
-			
+
 			if(debug) {
 				long end = System.currentTimeMillis();
 				log("Parsed wyrl file ... [" + (end - start) + "ms]");
 			}
-			
+
 			if (delta > 0) {
 				// just try to neaten up the English ...
 				if(delta == 1) {
@@ -102,47 +102,47 @@ public class WyrlAntTask extends MatchingTask {
 					log("Compiling wyrl file (" + delta
 							+ " modified dependencies)");
 				}
-			
+
 				// carry on by performing type expansion
-				
+
 				start = System.currentTimeMillis();
 				new TypeExpansion().expand(sf);
 				if(debug) {
 					long end = System.currentTimeMillis();
 					log("Performed type expansion ... [" + (end - start) + "ms]");
-				}	
-				
+				}
+
 				start = System.currentTimeMillis();
 				new TypeInference().infer(sf);
 				if(debug) {
 					long end = System.currentTimeMillis();
 					log("Performed type inference ... [" + (end - start) + "ms]");
-				}	
-				
+				}
+
 				start = System.currentTimeMillis();
-				BufferedWriter bw = new BufferedWriter(new FileWriter(ofile),65536);				
-				new JavaFileWriter(bw).write(sf);				
+				BufferedWriter bw = new BufferedWriter(new FileWriter(ofile),65536);
+				new JavaFileWriter(bw).write(sf);
 				if(debug) {
 					long end = System.currentTimeMillis();
 					log("Wrote target file ... [" + (end - start) + "ms]");
-				}	
+				}
 			} else {
 				log("Compiling 0 wyrl file(s)");
 			}
 		} catch (Exception e) {
 			throw new BuildException(e);
 		}
-	}      
-    
+	}
+
     protected ArrayList<File> dependencies(SpecFile f) {
     	ArrayList<File> deps = new ArrayList<File>();
     	dependencies(f,deps);
     	return deps;
     }
-    
+
     protected void dependencies(SpecFile f, ArrayList<File> files) {
     	files.add(f.file);
-    	
+
     	for(SpecFile.Decl d : f.declarations) {
     		if(d instanceof SpecFile.IncludeDecl) {
     			SpecFile.IncludeDecl id = (SpecFile.IncludeDecl) d;

@@ -120,11 +120,11 @@ requires exponent > 0:
     for i in 0 .. exponent:
         r = r * base
     return r
-  
+
 /**
- * Return largest integer which is less-than-or-equal to 
+ * Return largest integer which is less-than-or-equal to
  * the given value
- */  
+ */
 public function floor(real x) => (int r)
 // Return is greater-than-or-equal to input
 ensures ((real) r) <= x
@@ -134,16 +134,16 @@ ensures ((real) r + 1) > x:
     int num
     int den
     num/den = x
-    int r = num / den  
-    if x < 0.0 && den != 1: 	 
-        return r - 1 
+    int r = num / den
+    if x < 0.0 && den != 1:
+        return r - 1
     else:
-        return r 
+        return r
 
 /**
- * Return smallest integer which is greater-than-or-equal to 
+ * Return smallest integer which is greater-than-or-equal to
  * the given value
- */  
+ */
 public function ceil(real x) => (int r)
 // Return is greater-than-or-equal to input
 ensures x <= ((real) r)
@@ -153,14 +153,14 @@ ensures ((real) r - 1) < x:
     int num
     int den
     num/den = x
-    int r = num / den  
-    if x > 0.0 && den != 1: 	 
-        return r + 1 
+    int r = num / den
+    if x > 0.0 && den != 1:
+        return r + 1
     else:
-        return r 
+        return r
 
 /**
- * Round an arbitrary number to the nearest integer, 
+ * Round an arbitrary number to the nearest integer,
  * following the "round half away from zero" protocol.
  */
 public function round(real x) => (int r)
@@ -176,13 +176,13 @@ ensures max(x,(real) r) - min(x, (real) r) <= 0.5:
  * The constant PI to 20 decimal places.  Whilst this is clearly an
  * approximation, it should be sufficient for most purposes.
  */
-constant PI is 3.14159265358979323846 
+constant PI is 3.14159265358979323846
 
 constant E is 2.718281828459045
 
 constant ERROR is 0.00000000000000000001
 
-// Based on an excellent article entitled "Integer Square Roots" 
+// Based on an excellent article entitled "Integer Square Roots"
 // by Jack W. Crenshaw, published in the eetimes, 1998.
 public function isqrt(int x) => (int r)
 requires x >= 0

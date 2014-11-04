@@ -1,6 +1,6 @@
-type Link is { 
-    int data, 
-    LinkedList next 
+type Link is {
+    int data,
+    LinkedList next
 }
 
 type LinkedList is null | Link

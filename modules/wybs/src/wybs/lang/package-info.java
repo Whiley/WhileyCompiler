@@ -25,7 +25,7 @@
 
 /**
  * Provides core interfaces for describing content, namespaces, builders and build rules.
- * 
+ *
  * @author David J. Pearce
  */
 package wybs.lang;

@@ -37,7 +37,7 @@ public class Filter {
 	public static void main(String[] args) {
 		boolean binaryIn = false;
 		boolean binaryOut = false;
-		InputStream input = System.in;		
+		InputStream input = System.in;
 		OutputStream output = System.out;
 		int index = 0;
 		boolean reduce = false;
@@ -46,7 +46,7 @@ public class Filter {
 		boolean minimise = false;
 		boolean canonicalise = false;
 		boolean verbose = false;
-		
+
 		try {
 			while(index < args.length) {
 				if(args[index].equals("-b")) {
@@ -77,16 +77,16 @@ public class Filter {
 				}
 				index++;
 			}
-			
+
 			GenericReader<Automaton> reader;
 			GenericWriter<Automaton> writer;
 			if(binaryIn) {
 				BinaryInputStream bis = new BinaryInputStream(input);
-				reader = new BinaryAutomataReader(bis);				
+				reader = new BinaryAutomataReader(bis);
 			} else {
-				reader = null; // TODO				
+				reader = null; // TODO
 			}
-			if(binaryOut) {				
+			if(binaryOut) {
 				BinaryOutputStream bos = new BinaryOutputStream(output);
 				writer = new BinaryAutomataWriter(bos);
 			} else {
@@ -97,39 +97,39 @@ public class Filter {
 			try {
 				HashSet<Automaton> visited = new HashSet<Automaton>();
 				while(true) {
-					Automaton automaton = reader.read();					
+					Automaton automaton = reader.read();
 					nread++;
-					
-					if(extract) {						
+
+					if(extract) {
 						automaton = Automata.extract(automaton,0);
 					}
-					
+
 					if(minimise) {
 						automaton = Automata.minimise(automaton);
 					}
-					
+
 					if(canonicalise) {
 						Automata.canonicalise(automaton,null);
 					}
-					
-					if(!reduce || !visited.contains(automaton)) {					
+
+					if(!reduce || !visited.contains(automaton)) {
 						nwritten++;
 						writer.write(automaton);
 						if(reduce) { visited.add(automaton); }
 					}
-					
+
 					if(verbose) {
 						System.err.print("\rRead " + nread + " automata, wrote " + nwritten+ ".");
 					}
-				}				
+				}
 			} catch(EOFException e) {
-				
+
 			}
 			if(!verbose) {
 				System.err.print("\rRead " + nread + " automata, wrote " + nwritten+ ".");
-			}			
+			}
 		} catch(IOException ex) {
 			System.out.println("Exception: " + ex);
-		}	
+		}
 	}
 }

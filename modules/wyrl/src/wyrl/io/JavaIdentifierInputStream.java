@@ -37,11 +37,11 @@ import java.io.*;
  * Since there are 64 possibilities for each character in a Java identifier,
  * we're basically encoding 8-bit data into a 6-bit stream (with encoding).
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
-public class JavaIdentifierInputStream extends InputStream {	
+public class JavaIdentifierInputStream extends InputStream {
 	private int value;
 	private int count;
 
@@ -59,13 +59,13 @@ public class JavaIdentifierInputStream extends InputStream {
 			if(read_bit()) {
 				value |= mask;
 			}
-			mask = mask << 1;			
+			mask = mask << 1;
 		}
-		return value;			
+		return value;
 	}
-	
+
 	private boolean read_bit() throws IOException {
-		if(count == 0) {			
+		if(count == 0) {
 			value = decode(identifier.charAt(index++));
 			count = 6;
 		}

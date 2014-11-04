@@ -1,6 +1,6 @@
 import whiley.lang.*
 
-type State is {string input, int pos} 
+type State is {string input, int pos}
     where (pos >= 0) && (pos <= |input|)
 
 type Expr is {int num} | {int op, Expr rhs, Expr lhs} | {string err}

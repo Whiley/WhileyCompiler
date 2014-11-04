@@ -44,18 +44,18 @@ import wyrl.core.Pattern;
  * maps every automaton state kind to the list of rules which could potentially
  * match that kind.
  * </p>
- * 
+ *
  * <p>
  * <b>NOTE:</b> this is not designed to be used in a concurrent setting.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public final class RandomisedStateRuleRewriteStrategy<T extends RewriteRule> extends IterativeRewriter.Strategy<T> {
 
 	private static final Random random = new Random(System.currentTimeMillis());
-	
+
 	/**
 	 * The static dispatch table
 	 */
@@ -63,29 +63,29 @@ public final class RandomisedStateRuleRewriteStrategy<T extends RewriteRule> ext
 
 	/**
 	 * Temporary list of inference activations used.
-	 */	
+	 */
 	private final ArrayList<Activation> worklist = new ArrayList<Activation>();
-	
+
 	/**
 	 * The automaton being rewritten
 	 */
 	private final Automaton automaton;
-	
+
 	/**
 	 * The current state being explored by this strategy
 	 */
 	private int current;
-	
+
 	/**
-	 * 
+	 *
 	 */
 	private ArrayList<Integer> order;
-	
+
 	/**
 	 * Record the number of probes for statistical reporting purposes
 	 */
 	private int numProbes;
-		
+
 	public RandomisedStateRuleRewriteStrategy(Automaton automaton, T[] rules, Schema schema) {
 		this(automaton, rules, schema,new RewriteRule.RankComparator());
 	}
@@ -96,11 +96,11 @@ public final class RandomisedStateRuleRewriteStrategy<T extends RewriteRule> ext
 		this.dispatchTable = constructDispatchTable(rules,schema,comparator);
 		this.order = constructRandomOrder();
 	}
-	
+
 	@Override
 	protected Activation next(boolean[] reachable) {
 		int nStates = automaton.nStates();
-		
+
 		while (current < nStates && worklist.size() == 0) {
 			int index = order.get(current);
 			// Check whether state is reachable and that it's a term. This is
@@ -119,8 +119,8 @@ public final class RandomisedStateRuleRewriteStrategy<T extends RewriteRule> ext
 			}
 			current = current + 1;
 		}
-		
-		if (worklist.size() > 0) {			
+
+		if (worklist.size() > 0) {
 			int lastIndex = worklist.size() - 1;
 			Activation last = worklist.get(lastIndex);
 			worklist.remove(lastIndex);
@@ -136,21 +136,21 @@ public final class RandomisedStateRuleRewriteStrategy<T extends RewriteRule> ext
 		worklist.clear();
 		current = 0;
 	}
-	
+
 	@Override
 	public int numProbes() {
 		return numProbes;
 	}
-	
+
 	private ArrayList<Integer> constructRandomOrder() {
 		ArrayList<Integer> r = new ArrayList<Integer>();
 		for(int i=0;i!=automaton.nStates();++i) {
 			r.add(i);
 		}
-		Collections.shuffle(r,random);		
+		Collections.shuffle(r,random);
 		return r;
 	}
-	
+
 	private static RewriteRule[][] constructDispatchTable(RewriteRule[] rules,
 			Schema schema, Comparator<RewriteRule> comparator) {
 		RewriteRule[][] table = new RewriteRule[schema.size()][];
@@ -169,5 +169,5 @@ public final class RandomisedStateRuleRewriteStrategy<T extends RewriteRule> ext
 			table[i] = rs;
 		}
 		return table;
-	}	
+	}
 }

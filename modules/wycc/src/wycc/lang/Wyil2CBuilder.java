@@ -74,9 +74,9 @@ public class Wyil2CBuilder implements Builder {
 	private Logger logger = Logger.NULL;
 	private String optIncludeFile = "";
 	private String manglePrefix = null;
-	private int ourFOMstate;			// index of first external	
+	private int ourFOMstate;			// index of first external
 	private int initor_flg = 1;
-	
+
 	// * these are structures for recording characteristics of the code.
 	private List<String> fileBody;
 	// special handling needed for both record objects and FOM objects.
@@ -91,16 +91,16 @@ public class Wyil2CBuilder implements Builder {
 	private List<Method> mets;			// the collection of our structures for handling FOMs in this source
 	private Set<String> faultCodes;
 	//private String commentsFOM = "";
-	
+
 	public Wyil2CBuilder() {
 		this.wy2cbInit();
 	}
-	
+
 	public Wyil2CBuilder(boolean dflg) {
 		this.wy2cbInit();
 		this.debugFlag = dflg;
 	}
-	
+
 	public Wyil2CBuilder(Map<String, Object> values) {
 		this.wy2cbInit();
 		this.debugFlag = false;
@@ -133,11 +133,11 @@ public class Wyil2CBuilder implements Builder {
 		fomReg = new HashMap<Integer, String>();
 		fomTok = new HashMap<String, Integer>();
 		fomNames = new HashSet<String>();
-		
+
 		faultCodes = new HashSet<String>();
 		faultCodes.add("invoke");
 		faultCodes.add("throw");
-		
+
 		// * initalise the invocation flags and the starting states
 		this.debugFlag = true;
 		this.lineNumFlag = true;
@@ -147,28 +147,28 @@ public class Wyil2CBuilder implements Builder {
 		this.ourFOMstate = -1;	// the initial setting
 
 	}
-	
+
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}
-	
+
 	public Build.Project project() {
 		return null; // TODO: **** this seems like a mistake in Builder ?
 	}
-	
+
 	public Set<Path.Entry<?>> build(
 			Collection<Pair<Path.Entry<?>, Path.Root>> delta)
 			throws IOException {
-		
+
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
-	
+
 		// ========================================================================
 		// Translate files
 		// ========================================================================
 		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
-		
+
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			// System.err.println("Processing .... ");
 			Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
@@ -188,9 +188,9 @@ public class Wyil2CBuilder implements Builder {
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Wyil => C: compiled " + delta.size()
 				+ " file(s)", endTime - start, memory - runtime.freeMemory());
-		
+
 		return generatedFiles;
-	}	
+	}
 
 	// combine the name and type of a FOM and return a token (index in structures) for the pair.
 	public int lookupNumFOMname(String nam, Type typ) {
@@ -198,7 +198,7 @@ public class Wyil2CBuilder implements Builder {
 		String dtyp;
 		String key;
 		Integer tok;
-		
+
 		// **** need to fill in the invocation register
 		dtyp = writeDenseType(typ);
 		//commentsFOM += "// FOM query for " + nam + "  '" + dtyp + "'\n";
@@ -217,7 +217,7 @@ public class Wyil2CBuilder implements Builder {
 		bodyAddLineNL(	"// FOM query #" + ans	);
 		return ans;
 	}
-	
+
 	//mnam = lookupFOMname(nam, cnt, cod.type);
 	public String lookupFOMname(String nam, Type typ) {
 		int alt;
@@ -232,13 +232,13 @@ public class Wyil2CBuilder implements Builder {
 			return getManglePrefix() + nam;
 		}
 	}
-	
+
 	public void bodyAddLine(String lin){
 
 		this.fileBody.add(lin);
 		return;
 	}
-	
+
 	public void bodyAddLineNL(String lin){
 
 		this.fileBody.add(lin + "\n");
@@ -259,7 +259,7 @@ public class Wyil2CBuilder implements Builder {
 		}
 		return ans;
 	}
-	
+
 	public void setManglePrefix(String str) {
 		this.manglePrefix = str;
 	}
@@ -270,30 +270,30 @@ public class Wyil2CBuilder implements Builder {
 		}
 		return this.manglePrefix;
 	}
-	
+
 	/*
 	 * convert contents of a wyil file to contents of a C file
 	 */
-	protected CFile build(WyilFile module) {		
+	protected CFile build(WyilFile module) {
 		int cnt;
-		
+
 		this.fileBody = new ArrayList<String>();
 		this.mets = new ArrayList<Method>();
 		//System.err.println("Got to my code.");
 		this.name = module.id().toString();
 		this.writePreamble(module);
-		
+
 		//System.err.println("milestone 1.");
 		Collection<TypeDeclaration> typCol = module.types();
 		Collection<ConstantDeclaration> conCol = module.constants();
 		Collection<FunctionOrMethodDeclaration> modCol = module.functionOrMethods();
-		
+
 		// * at this point we are thru with the aggregate module; now to process separate collections
 		if (this.debugFlag) {
 			bodyAddLineNL(	"// WYIL module count of types: " + typCol.size()	);
 			bodyAddLineNL(	"// WYIL module count of constants: " + conCol.size()	);
-			bodyAddLineNL(	"// WYIL module count of methods: " + modCol.size()	);	
-			
+			bodyAddLineNL(	"// WYIL module count of methods: " + modCol.size()	);
+
 		}
 
 		cnt = 0;
@@ -335,13 +335,13 @@ public class Wyil2CBuilder implements Builder {
 		bodyAddLineNL(	"// ==========================================="	);	// mark start of postamble
 
 		this.writePostamble();
-		//System.err.println("Got to end of my code.");	
+		//System.err.println("Got to end of my code.");
 		return new CFile(this.bodyRender());
 	}
 
 	// * write generic preamble
 	private void writePreamble(WyilFile module) {
-		
+
 		if (this.lineNumFlag) {
 			bodyAddLineNL(	"#line 0 \"" + module.id() + ".whiley\""	);
 		}
@@ -351,39 +351,39 @@ public class Wyil2CBuilder implements Builder {
 		bodyAddLineNL(	"static wycc_obj *record_reg[];"	);
 		bodyAddLineNL(	"static wycc_obj *fom_handle_reg[];"	);
 		return;
-	} 
+	}
 
 	private void writePostamble() {
-		
+
 		if (this.initor_flg == 0) {
 			return;
 		}
 		bodyAddLineNL("");
-		
+
 		this.writeTypeRegistry();
 		this.writeFOMRegistry();
-		
+
 		bodyAddLineNL(		""													);
 		bodyAddLineNL(		"static void __initor_b() {"						);
 		bodyAddLineNL( 		"	if (wycc_debug_flag != 0)"						);
 		bodyAddLineNL( 		"		wyil_debug_str(\"registering for " + this.name + "\\n\");"	);
 		this.writeTypeRegistryFill();
 		this.writeFOMRegistryFill();
-				
+
 		bodyAddLineNL( 		"	return;"								);
 		bodyAddLineNL( 		"}"											);
-		
+
 		bodyAddLineNL(		""													);
 		bodyAddLineNL(		"static void __initor_d() {"							);
 		bodyAddLineNL(		"	if (wycc_debug_flag != 0)"						);
 		bodyAddLineNL(		"		wyil_debug_str(\"consulting for " + this.name + "\\n\");"	);
-		
+
 		this.writeFOMRegistryQuery();
 
 		bodyAddLineNL(		"	return;"										);
 		bodyAddLineNL(		"}"													);
-		
-		
+
+
 		bodyAddLineNL(		""													);
 		bodyAddLineNL(		"static wycc_initor __initor_c;"					);
 		bodyAddLineNL( 		"__attribute__ ((constructor)) static void __initor_a() {"		);
@@ -402,7 +402,7 @@ public class Wyil2CBuilder implements Builder {
 	private void writeFOMLinkTrigger() {
 		Set<String> nams = new HashSet<String>();
 		String tmp;
-		
+
 		bodyAddLineNL(	"// FOM Link Trigger references go here."	);
 		bodyAddLineNL(	"static void* wyccTriggers[] = {"	);
 		for (String nam : fomNames){
@@ -416,7 +416,7 @@ public class Wyil2CBuilder implements Builder {
 			}
 		}
 		tmp = "";
-		for (String nam : nams){ 
+		for (String nam : nams){
 			//bodyAddLineNL(	"// " + nam	);
 			if (tmp != "") {
 				bodyAddLineNL(	tmp + ","	);
@@ -425,7 +425,7 @@ public class Wyil2CBuilder implements Builder {
 		}
 		bodyAddLineNL(	tmp	);
 		bodyAddLineNL(	"};"	);
-		
+
 	}
 
 	// * given a record type return a token (index) to refer to that type later.
@@ -433,13 +433,13 @@ public class Wyil2CBuilder implements Builder {
 		int ans;
 		String key;
 		Integer tok;
-		
+
 		key = "" + typ;
 		if (recdTok.containsKey(key)){
 			ans = recdTok.get(key);
 			return ans;
 		}
-		
+
 		ans = recdTok.size();
 		tok = ans;
 		recdTok.put(key, tok);
@@ -448,14 +448,14 @@ public class Wyil2CBuilder implements Builder {
 	}
 
 	private void writeTypeRegistry() {
-		
+
 		int cnt = recdTok.size();
 		bodyAddLineNL(	"// type registry array goes here (size " + cnt + ")"	);
 		bodyAddLineNL(	"static wycc_obj *record_reg[" + cnt + "];"	);
 	}
 
 	private void writeFOMRegistry() {
-		
+
 		int cnt = fomTok.size();
 		bodyAddLineNL(	"// FOM handle registry array goes here (size " + cnt + ")"	);
 		bodyAddLineNL(	"static wycc_obj *fom_handle_reg[" + cnt + "];"	);
@@ -484,7 +484,7 @@ public class Wyil2CBuilder implements Builder {
 
 		bodyAddLineNL("// Here goes code to fill the FOM registry");
 		// need a loop over the known FOM.
-		
+
 		for (Method met : mets) {
 			tmp = "	wycc_register_routine(\"" + met.name ;
 			tmp += "\", \"" + met.denseType;
@@ -492,14 +492,14 @@ public class Wyil2CBuilder implements Builder {
 			bodyAddLineNL(	tmp	);
 		}
 	}
-	
+
 	private void writeFOMRegistryQuery() {
 		String key;
 		int idx;
 		String nam;
 		String dty;
 		int cnt = 0;
-		
+
 		//System.err.println("milestone 99a");
 		bodyAddLineNL("// Here goes code to query the FOM registry");
 		//bodyAddLine(commentsFOM);
@@ -513,7 +513,7 @@ public class Wyil2CBuilder implements Builder {
 		}
 
 	}
-	
+
 	public void writeTypeComments(TypeDeclaration typDe, int idx) {
 		String lin;
 		String ans = "";
@@ -553,11 +553,11 @@ public class Wyil2CBuilder implements Builder {
 	// process the file wide Constant declaration in pass 1 comments
 	public void writeConstant(ConstantDeclaration conDe, int idx) {
 		String tmp;
-		
+
 		if (this.debugFlag) {
 			tmp = "// **** Need help with constant declaration #" + idx;
 			bodyAddLineNL(tmp);
-		}		
+		}
 
 		tmp = "// **** Need help with constant declaaration #" + idx;
 		bodyAddLineNL(tmp);
@@ -586,11 +586,11 @@ public class Wyil2CBuilder implements Builder {
 		private Map<Integer, String> declsI;
 		private Set<Integer> declsU;
 		private List<List<String>> bStack;			// a stack of stacks of lines (a context body)
-		private List<String> nStack;		// a stack of names for end-of-s 
+		private List<String> nStack;		// a stack of names for end-of-s
 		private List<String> tStack;		// a try stack (names of end labels)
 		private List<Integer> tvStack;		// a try stack (register number for the exception object)
-		private List<ArrayList<Pair<Type, String>>> tcStack; 
-		
+		private List<ArrayList<Pair<Type, String>>> tcStack;
+
 		private String indent;
 		private String sourceTag;
 		private String error;
@@ -605,7 +605,7 @@ public class Wyil2CBuilder implements Builder {
 		private List<Attribute> atts;
 		private ArrayList<Type> params;
 		private String proto = null;
-		
+
 		public String name;
 		public String altName;
 		public Type retType;
@@ -629,9 +629,9 @@ public class Wyil2CBuilder implements Builder {
 			this.nStack = new ArrayList<String>();
 			this.tcStack = new ArrayList<ArrayList<Pair<Type, String>>>  ();
 			this.tvStack = new ArrayList<Integer>  ();
-			
+
 			Type.FunctionOrMethod rtnTyp;
-			
+
 			error = "";
 			isNative = false;
 			isPrivate = false;
@@ -676,12 +676,12 @@ public class Wyil2CBuilder implements Builder {
 				this.checkCase(ci, cnt);
 			}
 		}
-		
+
 		private void mbodyAddLine(String lin){
 			this.body.add(lin);
 			return;
 		}
-		
+
 		private void mbodyAddLineNL(String lin){
 			this.body.add(lin + "\n");
 			return;
@@ -696,7 +696,7 @@ public class Wyil2CBuilder implements Builder {
 			this.body.add(	indent + lin + "\n"	);
 			return;
 		}
-		
+
 		private void mbodyAddBlock(List<String> lins){
 			this.body.addAll(lins);
 			return;
@@ -714,7 +714,7 @@ public class Wyil2CBuilder implements Builder {
 			int idx = this.bStack.size();
 			String tgt;
 			List<String> blk;
-			
+
 			if (idx != this.nStack.size()){
 				this.error += "name stack out-of-sync with block stack\n";
 			}
@@ -724,9 +724,9 @@ public class Wyil2CBuilder implements Builder {
 				return false;
 			}
 			tgt = this.nStack.remove(idx);
-			
+
 			if (tgt.equals(nam)){
-				
+
 			} else {
 				this.nStack.add(tgt);
 				this.comments += "// target name stack mismatch: " + tgt + "!=" + nam +"\n";
@@ -743,12 +743,12 @@ public class Wyil2CBuilder implements Builder {
 			this.body = blk;
 			return true;
 		}
-		
+
 		private boolean endsWithLabel(){
 			int idx;
 			String tmp;
 			boolean ans;
-			
+
 			idx = this.body.size();
 			while (true) {
 				idx -= 1;
@@ -763,7 +763,7 @@ public class Wyil2CBuilder implements Builder {
 			ans = tmp.endsWith(":\n");
 			return ans;
 		}
-				
+
 		//
 		public void writeComments() {
 
@@ -777,7 +777,7 @@ public class Wyil2CBuilder implements Builder {
 			String ans = "";
 			String argl = "";
 			String sep = "";
-			
+
 			params = typ.params();
 			this.argc = params.size();
 			retType = typ.ret();
@@ -797,7 +797,7 @@ public class Wyil2CBuilder implements Builder {
 			String sep = "";
 			String argl = "";
 			int cnt;
-			
+
 			if (proto != null) {
 				return;
 			}
@@ -818,7 +818,7 @@ public class Wyil2CBuilder implements Builder {
 			proto = ans;
 			return;
 		}
-		
+
 		public void writeProto() {
 			if (isNative) {
 				return;
@@ -827,11 +827,11 @@ public class Wyil2CBuilder implements Builder {
 			bodyAddLineNL(	proto + ";"	);
 			return;
 		}
-		
+
 		//
 		public void write() {
 			int cnt;
-			
+
 			cnt = 0;
 			for (Case ci : cas) {
 				cnt += 1;
@@ -884,7 +884,7 @@ public class Wyil2CBuilder implements Builder {
 			//bodyAddLineNL(ans);
 			//ans = indent + "wycc_obj** Xi = (wycc_obj**)0;";
 			//bodyAddLineNL(ans);
-			
+
 			bodyAddLineNL(	indent + "wycc_obj* Xc = (wycc_obj*)0;"	);;
 			bodyAddLineNL(	indent + "wycc_obj* Xb = (wycc_obj*)0;"	);
 			bodyAddLineNL(	indent + "wycc_obj* Xa = (wycc_obj*)0;"	);
@@ -905,10 +905,10 @@ public class Wyil2CBuilder implements Builder {
 			if (tst1 == null) {
 				declsT.put(tgt, typ);
 			} else if (tst1.equals(typ)){
-				
-			} else {	
+
+			} else {
 				this.error += "multiple type declarations for X" + target + "\n";
-				
+
 			}
 		}
 
@@ -964,7 +964,7 @@ public class Wyil2CBuilder implements Builder {
 				cnt = posc.size();
 				ans += "//           " + " postcondition of size " + cnt + "\n";
 			}
-			this.comments += ans;			
+			this.comments += ans;
 			return;
 		}
 
@@ -986,7 +986,7 @@ public class Wyil2CBuilder implements Builder {
 			cnt = bodIn.size();
 			bodyAddLineNL(	"// block #" + idx + " is of seizes " + cnt	);
 
-			cnt = 0;			
+			cnt = 0;
 			for (Code.Block.Entry be : bodIn) {
 				this.writeBlockEntry(be, cnt);
 				cnt += 1;
@@ -999,7 +999,7 @@ public class Wyil2CBuilder implements Builder {
 			String ans = "";
 			int cnt;
 			int idx;
-			
+
 			List<Attribute> attCol = blkIn.attributes();
 			if (attCol == null) {
 				return "//           " + " no attributes\n";
@@ -1047,7 +1047,7 @@ public class Wyil2CBuilder implements Builder {
 			Code cod = blkIn.code;
 			tmp = this.writeSourceLineID(blkIn);
 			bodyAddLine(tmp);
-			
+
 			String temp = cod.toString();
 			bodyAddLineNL(	"//             Looks like " + safeString2(temp)	);
 
@@ -1088,7 +1088,7 @@ public class Wyil2CBuilder implements Builder {
 				this.writeCodeTryEnd(cod);
 			} else if (cod instanceof Codes.Label) {
 				this.writeCodeLabel(cod);
-	
+
 			} else if (cod instanceof Codes.FieldLoad) {
 				this.writeCodeFieldLoad(cod);
 
@@ -1145,7 +1145,7 @@ public class Wyil2CBuilder implements Builder {
 				this.writeCodeIndirectInvoke(cod);
 			} else if (cod instanceof Codes.Lambda) {
 				this.writeCodeLambda(cod);
-				
+
 			} else if (cod instanceof Codes.Void) {
 				this.writeCodeVoid(cod);
 			} else {
@@ -1156,14 +1156,14 @@ public class Wyil2CBuilder implements Builder {
 			}
 			return;
 		}
-			
+
 		public void writeCodeVoid(Code codIn){
 
 			bodyAddLineNL(	"// HELP! needed for Void"	);
 			Codes.Void cod = (Codes.Void) codIn;
 			return;
 		}
-				
+
 		public void writeCodeLambda(Code codIn){
 			int targ;
 			int cnt;
@@ -1206,26 +1206,26 @@ public class Wyil2CBuilder implements Builder {
 			dtyp = writeDenseType(typ);
 			bodyAddLineNL(	"// HELP! needed in const for FOM dtyp: '" + dtyp + "'"	);
 			//tok = lookupNumFOMname(fom.name.name(), typ);
-			tok = lookupNumFOMname(nam, typ);		
+			tok = lookupNumFOMname(nam, typ);
 			lin = " = wycc_lambda_new(fom_handle_reg[" + tok + "], Xc);"	;
 			writeTargetSwap(lin, targ, foo);
-			
+
 			return;
 		}
-				
+
 		public void writeCodeIndirectInvoke(Code codIn){
 			String tmp;
 			int cnt;
 			int targ;
 			int opr;
 			String var;
-			
+
 			Codes.IndirectInvoke cod = (Codes.IndirectInvoke) codIn;
 			targ = cod.target();
 			cnt = cod.operands().length - 1;
 			opr = cod.operands()[0];
-			
-			var = "Xc";			
+
+			var = "Xc";
 			this.mbodyAddLineTINL(	var + " = wycc_list_new(" + cnt + ");"	);
 			cnt = -1;
 			for (int i=1;i<cod.operands().length;++i) {
@@ -1245,13 +1245,13 @@ public class Wyil2CBuilder implements Builder {
 
 			return;
 		}
-		
+
 		public void writeCodeInvoke(Code codIn){
 			int targ;
 			String sep, mnam;
 			String lin = "";
 			int foo;
-		
+
 			Codes.Invoke cod = (Codes.Invoke) codIn;
 			targ = cod.target();
 			NameID nid = cod.name;
@@ -1279,9 +1279,9 @@ public class Wyil2CBuilder implements Builder {
 
 			return;
 		}
-		
+
 		public void writeCatchCheck(){
-			
+
 			if (1 > this.tcStack.size()) {
 				mbodyAddLineINL(	"if (wycc_exception_check()) goto return0;"	);
 			} else {
@@ -1326,19 +1326,19 @@ public class Wyil2CBuilder implements Builder {
 			this.mbodyAddLineNL(	nam + ":"		);
 			return;
 		}
-		
+
 		public void writeCodeTryCatch(Code codIn){
 			int lhs;
 			Integer reg;
-			
+
 			//bodyAddLineNL(	"// HELP! needed for TryCatch"	);
 			Codes.TryCatch cod = (Codes.TryCatch) codIn;
 			lhs = cod.operand;
 			ArrayList<Pair<Type, String>> foo = cod.catches;
-			
+
 			tcStack.add(foo);
 			this.addDecl(lhs, "wycc_obj*");
-			
+
 			reg = lhs;
 			tvStack.add(reg);
 			this.mbodyAddLineINL(	"wyil_catch(\"" + this.name + "\");"	 );
@@ -1346,7 +1346,7 @@ public class Wyil2CBuilder implements Builder {
 			this.mbodyPush("");
 			return;
 		}
-		
+
 		public void writeCodeThrow(Code codIn){
 			int lhs;
 
@@ -1356,19 +1356,19 @@ public class Wyil2CBuilder implements Builder {
 			this.mbodyAddLineTINL(	"wyil_throw(X" + lhs + ");"	);
 			return;
 		}
-		
+
 		public void writeCodeDereference(Code codIn){
 			String tmp;
 			int targ, lhs;
-			
+
 			bodyAddLineNL(	"// HELP needed for Dereference"		);
 			Codes.Dereference cod = (Codes.Dereference) codIn;
 			targ = cod.target();
 			lhs = cod.operand(0);
-			
+
 			tmp = " = wyil_dereference(X" + lhs  + ");";
 			writeTargetSwap(tmp, targ, lhs);
-			
+
 			return;
 		}
 
@@ -1380,7 +1380,7 @@ public class Wyil2CBuilder implements Builder {
 			Codes.NewObject cod = (Codes.NewObject) codIn;
 			targ = cod.target();
 			lhs = cod.operand(0);
-			
+
 			tmp = " = wycc_box_ref(X" + lhs  + ");";
 			writeTargetSwap(tmp, targ, lhs);
 			return;
@@ -1391,7 +1391,7 @@ public class Wyil2CBuilder implements Builder {
 			String lin;
 			int src, lo, hi;
 			int cnt;
-			
+
 			//bodyAddLineNL(	"// HELP needed for SubString"	);
 			Codes.SubString cod = (Codes.SubString) codIn;
 			targ = cod.target();
@@ -1410,17 +1410,17 @@ public class Wyil2CBuilder implements Builder {
 
 			return;
 		}
-		
+
 		public void writeCodeNewTuple(Code codIn){
 			int targ;
 			int cnt;
 			int idx;
-			
+
 			//bodyAddLineNL(	"// HELP needed for NewTuple"	);
 			Codes.NewTuple cod = (Codes.NewTuple) codIn;
 			targ = cod.target();
 			cnt = cod.operands().length;
-			
+
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
 			this.mbodyAddLineTINL(	"X" + targ + " = wycc_tuple_new(" + cnt + ");"	);
@@ -1433,41 +1433,41 @@ public class Wyil2CBuilder implements Builder {
 			}
 			return;
 		}
-		
+
 		public void writeCodeTupleLoad(Code codIn){
 			int targ, rhs, idx;
-			
+
 			//bodyAddLineNL(	"// HELP needed for TupleLoad"	);
 			Codes.TupleLoad cod = (Codes.TupleLoad) codIn;
 			targ = cod.target();
 			rhs = cod.operand(0);
 			idx = cod.index;
-			
+
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
 			this.mbodyAddLineTINL(	"X" + targ + " = wycc_list_get(X" + rhs + ", " + idx + ");"	);
-			
+
 			return;
 		}
-		
+
 		public void writeCodeInvert(Code codIn){
 			String tmp;
 			int targ, rhs;
-			
+
 			//bodyAddLineNL(	"// HELP! needed for Invert"	);
 			Codes.Invert cod = (Codes.Invert) codIn;
 			targ = cod.target();
 			rhs = cod.operand(0);
-			
+
 			tmp = " = wyil_invert(X" + rhs + ");";
 			writeTargetSwap(tmp, targ, rhs);
-			
+
 			return;
 		}
-		
+
 		public void writeCodeGoto(Code codIn){
 			String target;
-			
+
 			//bodyAddLineNL(	"// HELP needed for Goto"	);
 			Codes.Goto cod = (Codes.Goto) codIn;
 			target = cod.target;
@@ -1476,10 +1476,10 @@ public class Wyil2CBuilder implements Builder {
 
 			return;
 		}
-		
+
 		public void writeCodeLoopEnd(Code codIn){
 			String nam;
-			
+
 			//bodyAddLineNL(	"// HELP needed for LoopEnd"	);
 			Codes.LoopEnd cod = (Codes.LoopEnd) codIn;
 			nam = cod.label;
@@ -1504,7 +1504,7 @@ public class Wyil2CBuilder implements Builder {
 			this.mbodyAddLineNL(	nam + ":"	);
 			return;
 		}
-				
+
 		public void writeCodeIf(Code codIn){
 			int lhs, rhs;
 			String cmp;
@@ -1520,7 +1520,7 @@ public class Wyil2CBuilder implements Builder {
 			if (cmp == null) {
 				error += "Assert operation un-defined\n";
 				bodyAddLineNL(	"// HELP needed for binListOp '" + opr + "'"	);
-				return;				
+				return;
 			}
 			bodyAddLineNL(	"//             comparing X" + lhs + " " + opr + " X" + rhs	);
 			bodyAddLineNL(	"//             going to " + target	);
@@ -1530,7 +1530,7 @@ public class Wyil2CBuilder implements Builder {
 			this.mbodyAddLineINL(	"};"	);
 			return;
 		}
-		
+
 		public void writeCodeIfIs(Code codIn){
 			int lhs;
 			Type rhs;
@@ -1542,12 +1542,12 @@ public class Wyil2CBuilder implements Builder {
 			lhs = cod.operand;
 			rhs = cod.rightOperand;
 			target = cod.target;
-			
+
 			dtyp = writeDenseType(rhs);
 			bodyAddLineNL(	"//             checking if X" + lhs + " is of type " + rhs	);
 			bodyAddLineNL(	"//			or " + dtyp 	);
 			bodyAddLineNL(	"//             going to " + target	);
-						
+
 			this.mbodyAddLineINL(	"if (wycc_type_check(X" + lhs + ", \"" + dtyp + "\")){"	);
 			this.mbodyAddLineINL(	indent + "goto " + target + ";"	);
 			this.mbodyAddLineINL(	"};"	);
@@ -1556,7 +1556,7 @@ public class Wyil2CBuilder implements Builder {
 
 		public void writeCodeLoop(Code codIn){
 			String target;
-	
+
 			//bodyAddLineNL(	"// HELP needed for Loop"	);
 			Codes.Loop cod = (Codes.Loop) codIn;
 			target = cod.target;
@@ -1566,7 +1566,7 @@ public class Wyil2CBuilder implements Builder {
 			this.mbodyPush(target);
 			return;
 		}
-		
+
 		public void writeCodeNewRecord(Code codIn){
 			String tmp;
 			int targ;
@@ -1575,14 +1575,14 @@ public class Wyil2CBuilder implements Builder {
 			int tok;
 			String lin;
 			Type.Record typ;
-	
+
 			//bodyAddLineNL(	"// HELP needed for NewRecord"	);
 			Codes.NewRecord cod = (Codes.NewRecord) codIn;
 			cnt = cod.operands().length;
 			targ = cod.target();
 			typ = (Type.Record) cod.type();
 			tok = registerRecordType(typ);
-			
+
 			bodyAddLineNL(	"//             tok " + tok + " with " + cnt + " fields:"	);
 
 			tmp = writeCommentRecord(typ);
@@ -1593,7 +1593,7 @@ public class Wyil2CBuilder implements Builder {
 				bodyAddLineNL(	"//             operand " + idx + " is " + itm	);
 
 			}
-			
+
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
 			this.mbodyAddLineTINL(	"X" + targ + " = wycc_record_new(record_reg[" + tok + "]);"	);
@@ -1613,7 +1613,7 @@ public class Wyil2CBuilder implements Builder {
 			for (String ke:getFieldNames(typ)){
 				idx += 1;
 				ans += "//             #" + idx + ":" + ke + " " + typ.field(ke)+ "\n";
-			}			
+			}
 			return ans;
 		}
 
@@ -1630,28 +1630,28 @@ public class Wyil2CBuilder implements Builder {
 			fnam = cod.field;
 			rhs = cod.operand(0);
 			bodyAddLineNL(	"//             wanting field '" + fnam + "' out of:"	);
-			
+
 			if (cod.type() instanceof Type.Record) {
 				typ = (Type.Record) cod.type();
 				tmp = writeCommentRecord(typ);
 				bodyAddLine(tmp);
 				cnt = getFieldNames(typ).indexOf(fnam);
 				tmp = " = wycc_record_get_dr(X" + rhs + ", " + cnt + ");";
-				
+
 			} else {
 				tmp = " = wycc_record_get_nam(X" + rhs + ", \"" + fnam + "\");";
 			}
 			writeTargetSwap(tmp, targ, rhs);
-			
+
 			return;
 		}
-				
+
 		public void writeCodeForAll(Code codIn){
 			//String tmp;
 			int opIdx;
 			int opBlk;
 			String target;
-			
+
 			//bodyAddLineNL(	"// HELP needed for ForAll"	);
 			Codes.ForAll cod = (Codes.ForAll) codIn;
 			opIdx = cod.indexOperand;
@@ -1670,7 +1670,7 @@ public class Wyil2CBuilder implements Builder {
 
 			return;
 		}
-		
+
 		public void writeCodeSwitch(Code codIn){
 			String tmp;
 			ArrayList<Pair<Constant, String>> branches;
@@ -1687,7 +1687,7 @@ public class Wyil2CBuilder implements Builder {
 			branches = cod.branches;
 			target = cod.defaultTarget;
 			opr = cod.operand;
-			
+
 			cnt = branches.size();
 			bodyAddLineNL(	"//             checking X" + opr + " with " + cnt + " choices:"	);
 			idx = 0;
@@ -1703,20 +1703,20 @@ public class Wyil2CBuilder implements Builder {
 				if (tmp == null){
 					continue;
 				}
-				this.mbodyAddLine(tmp);				
+				this.mbodyAddLine(tmp);
 				this.mbodyAddLineINL(	"if (wycc_compare(X" + opr + ", XN" + opr + ", Wyil_Relation_Eq)){"	);
 				this.mbodyAddLineINL(	indent + "goto " + alt + ";"	);
 				this.mbodyAddLineINL(	"};"	);
-			}			
+			}
 			this.mbodyAddLineINL(	"goto " + target + ";"	);
 			return;
 		}
-		
+
 		public void writeCodeUnArithOp(Code codIn){
 			String tmp;
 			int targ, rhs;
 			String rtn, lin;
-			
+
 			//bodyAddLine(	"// HELP needed for UnArithOp"	);
 			Codes.UnaryOperator cod = (Codes.UnaryOperator) codIn;
 			Codes.UnaryOperatorKind opr = cod.kind;
@@ -1743,10 +1743,10 @@ public class Wyil2CBuilder implements Builder {
 			}
 			tmp = " = " + rtn + "(X" + rhs + ");";
 			writeTargetSwap(tmp, targ, rhs);
-			
+
 			return;
 		}
-		
+
 		public void writeCodeUpdate(Code codIn){
 			String tmp;
 			int targ, rhs, ofs;
@@ -1770,7 +1770,7 @@ public class Wyil2CBuilder implements Builder {
 			// Xb is the starting value for the next layer down in the composite
 			// Xa gets the value of the unshared (mutable) form of Xb
 			// Here backFix gets the C code to update the (soon to be) previous level
-			// 
+			//
 			// a Reference is not only mutable, but is expected to track the mutations (COWs)
 			// to which it referes.
 			//
@@ -1779,7 +1779,7 @@ public class Wyil2CBuilder implements Builder {
 			targ = cod.target();
 			flds = cod.fields;
 			idx = cod.level();
-			
+
 			tmp = "//             target is " + targ + " and depth is " + idx;
 			bodyAddLineNL(tmp);
 			tmp = "//             field count is " + flds.size();
@@ -1808,7 +1808,7 @@ public class Wyil2CBuilder implements Builder {
 			backFix = tnam1 + " = Xa;";
 			this.mbodyAddLineTINL(	"Xb = " + tnam1 + ";"	);
 			this.mbodyAddLineTINL(	"Xi = &(" + tnam1 + ");"	);
-			
+
 			while (idx > 0) {
 				lv = foo.next();
 				if (lv instanceof Codes.ReferenceLVal) {
@@ -1816,7 +1816,7 @@ public class Wyil2CBuilder implements Builder {
 					tmp = indent + lin + tag;
 					tmp += " /* a */ ";
 					this.mbodyAddLineNL(tmp);
-					
+
 				} else {
 					lin = "Xa = wycc_cow_obj(Xb);";
 					tmp = indent + lin + tag;
@@ -1829,7 +1829,7 @@ public class Wyil2CBuilder implements Builder {
 					this.mbodyAddLineINL(	"};"	);
 					this.mbodyAddLineTINL(	"Xc = Xa;"	);
 				}
-			
+
 				if (lv instanceof Codes.ListLVal) {
 					ofs = cod.operands()[iidx];
 					iidx += 1;
@@ -1842,7 +1842,7 @@ public class Wyil2CBuilder implements Builder {
 					tmp = indent + lin + tag;
 					tmp += " /* c */ ";
 					this.mbodyAddLineNL(tmp);
-					
+
 				} else if (lv instanceof Codes.StringLVal) {
 					ofs = cod.operands()[iidx];
 					iidx += 1;
@@ -1885,7 +1885,7 @@ public class Wyil2CBuilder implements Builder {
 					tmp = indent + lin + tag;
 					tmp += " /* f */ ";
 					this.mbodyAddLineNL(tmp);
-					
+
 				} else if(lv instanceof Codes.RecordLVal) {
 					Codes.RecordLVal l = (Codes.RecordLVal) lv;
 					Type.EffectiveRecord tipe = l.rawType();
@@ -1916,16 +1916,16 @@ public class Wyil2CBuilder implements Builder {
 				} else {
 					error += "ERROR cannot yet do updates for type " + lv + "\n";
 					return;
-				}				
+				}
 				idx -= 1;
 			}
 			return;
 		}
-		
+
 		public void writeCodeSubList(Code codIn){
 			String tmp;
 			int targ, src, lhs, rhs, cnt;
-		
+
 			//bodyAddLineNL(	"// HELP needed for SubList"	);
 			Codes.SubList cod = (Codes.SubList) codIn;
 			targ = cod.target();
@@ -1934,7 +1934,7 @@ public class Wyil2CBuilder implements Builder {
 				error += "SubList operand count is "+ cnt + "\n";
 				bodyAddLineNL(	"// HELP needed for  SubList"	);
 				return;
-				
+
 			};
 			src = cod.operands()[0];
 			lhs = cod.operands()[1];
@@ -1949,7 +1949,7 @@ public class Wyil2CBuilder implements Builder {
 			writeTargetSwap(tmp, targ, cnt);
 			return;
 		}
-		
+
 		public void writeCodeBinSetOp(Code codIn){
 			String tmp;
 			int targ, lhs, rhs, swp;
@@ -1961,7 +1961,7 @@ public class Wyil2CBuilder implements Builder {
 			targ = cod.target();
 			lhs = cod.operand(0);
 			rhs = cod.operand(1);
-			
+
 			if (opr == Codes.SetOperatorKind.DIFFERENCE) {
 				rtn = "wyil_set_diff";
 			} else if (opr == Codes.SetOperatorKind.INTERSECTION){
@@ -2028,29 +2028,29 @@ public class Wyil2CBuilder implements Builder {
 		// do a lookup given a key (in a map) or an int (in a list)
 		public void writeCodeIndexOf(Code codIn){
 			int targ, lhs, rhs;
-			
+
 			Codes.IndexOf cod = (Codes.IndexOf) codIn;
 			targ = cod.target();
 			lhs = cod.operand(0);
 			rhs = cod.operand(1);
-			
+
 			writeClearTarget(targ);
 			this.addDecl(targ, "wycc_obj*");
 			this.mbodyAddLineTINL(	"X" + targ + " = wyil_index_of(X" + lhs + ", X" + rhs + ");"	);
 			return;
 		}
-		
+
 		public void writeCodeLengthOf(Code codIn){
 			int targ, rhs;
 			String lin;
-			
+
 			Codes.LengthOf cod = (Codes.LengthOf) codIn;
 			targ = cod.target();
 			rhs = cod.operand(0);
-			
+
 			lin = " = wyil_length_of(X" + rhs + ");";
 			writeTargetSwap(lin, targ, rhs);
-			
+
 			return;
 		}
 
@@ -2060,7 +2060,7 @@ public class Wyil2CBuilder implements Builder {
 		private void writeTargetSwap(String lin, int targ, int opr){
 			String t2;
 			//String tag = this.sourceTag;
-			
+
 			this.addDecl(targ, "wycc_obj*");
 			if (targ == opr) {
 				if (targ != 0) {
@@ -2079,7 +2079,7 @@ public class Wyil2CBuilder implements Builder {
 			}
 			return;
 		}
-		
+
 		public void writeCodeReturn(Code codIn){
 			String lin;
 			Integer k;
@@ -2088,7 +2088,7 @@ public class Wyil2CBuilder implements Builder {
 			int tgt;
 
 			Codes.Return cod = (Codes.Return) codIn;
-			
+
 			if (returnSeen) {
 				// seems like nothing else is needed here
 			} else {
@@ -2114,7 +2114,7 @@ public class Wyil2CBuilder implements Builder {
 				}
 				this.mbodyAddLineINL(	nam + " = wycc_deref_box(" + nam + ", 1);"	);
 			}
-			
+
 			// **** may need to consider other return types
 			this.mbodyAddLineTINL(	lin	);
 			return;
@@ -2125,7 +2125,7 @@ public class Wyil2CBuilder implements Builder {
 			String lin;
 			boolean flg;
 
-			//bodyAddLine(	"// HELP needed for NewMap"	);		
+			//bodyAddLine(	"// HELP needed for NewMap"	);
 			Codes.NewMap cod = (Codes.NewMap) codIn;
 			targ = cod.target();
 			writeClearTarget(targ);
@@ -2149,11 +2149,11 @@ public class Wyil2CBuilder implements Builder {
 			}
 			return;
 		}
-				
+
 		public void writeCodeNewSet(Code codIn){
 			int targ;
 
-			//bodyAddLineNL(	"// HELP needed for NewSet"	);		
+			//bodyAddLineNL(	"// HELP needed for NewSet"	);
 			Codes.NewSet cod = (Codes.NewSet) codIn;
 			targ = cod.target();
 
@@ -2165,12 +2165,12 @@ public class Wyil2CBuilder implements Builder {
 			}
 			return;
 		}
-		
+
 		public void writeCodeNewList(Code codIn){
 			int cnt;
 			int targ;
 
-			//bodyAddLineNL(	"// HELP needed for NewList"	);		
+			//bodyAddLineNL(	"// HELP needed for NewList"	);
 			Codes.NewList cod = (Codes.NewList) codIn;
 			targ = cod.target();
 			cnt = cod.operands().length;
@@ -2187,7 +2187,7 @@ public class Wyil2CBuilder implements Builder {
 		public void writeCodeBinStringOp(Code codIn){
 			String rtn;
 			int targ, lhs, rhs;
-			
+
 			Codes.StringOperator cods = (Codes.StringOperator) codIn;
 			//Codes.BinStringKind opr = cods.kind;
 
@@ -2198,10 +2198,10 @@ public class Wyil2CBuilder implements Builder {
 			writeClearTarget(targ);
 			this.mbodyAddLineTINL(	"X" + targ + " = " + rtn + "(X" + lhs + ", X" + rhs + ");"	);
 			this.addDecl(targ, "wycc_obj*");
-			
+
 			return;
 		}
-		
+
 		public void writeCodeAssign(Code codIn){
 			int targ, rhs;
 
@@ -2219,7 +2219,7 @@ public class Wyil2CBuilder implements Builder {
 			this.mbodyAddLineTINL(	"WY_OBJ_BUMP(X" + rhs + ");"	);
 			return;
 		}
-			
+
 		public void writeCodeConvert(Code codIn){
 			String tmp;
 			String dtyp;
@@ -2235,7 +2235,7 @@ public class Wyil2CBuilder implements Builder {
 				bodyAddLineNL(	"//            Safely ignoring convert operation to Any"	);
 				return;
 			}
-			
+
 			bodyAddLineNL(	"//**          change X" + opr + " from " + otyp + " to " + ntyp	);
 			dtyp = writeDenseType(ntyp);
 			bodyAddLineNL(	"//**          convert_parse " + dtyp	);
@@ -2243,7 +2243,7 @@ public class Wyil2CBuilder implements Builder {
 			if (ntyp instanceof Type.Union) {
 				if (((Type.Union) ntyp).bounds().contains(otyp)) {
 					bodyAddLineNL(	"//            Safely ignoring convert operation to supertype"	);
-					return;					
+					return;
 				}
 			}
 			if (otyp instanceof Type.Leaf) {
@@ -2255,7 +2255,7 @@ public class Wyil2CBuilder implements Builder {
 			if (tmp != "") {
 				bodyAddLineNL(	"//--          " + tmp + " a leaf type"	);
 			}
-			this.addDecl(tgt, "wycc_obj*");			
+			this.addDecl(tgt, "wycc_obj*");
 			this.mbodyAddLineINL(	 "Xa = wyil_convert(X" + opr + ", \"" + dtyp + "\");"		);
 			writeClearTarget(tgt);
 			this.mbodyAddLineINL(	"X" + tgt + " = Xa;"		);
@@ -2265,7 +2265,7 @@ public class Wyil2CBuilder implements Builder {
 		public void writeCodeBinArithOp(Code codIn){
 			int targ, lhs, rhs;
 			String rtn;
-			
+
 			Codes.BinaryOperator cod = (Codes.BinaryOperator) codIn;
 			Codes.BinaryOperatorKind opr = cod.kind;
 			targ = cod.target();
@@ -2289,7 +2289,7 @@ public class Wyil2CBuilder implements Builder {
 			} else if (opr == Codes.BinaryOperatorKind.BITWISEOR){
 				rtn = "wyil_bit_ior";
 			} else if (opr == Codes.BinaryOperatorKind.BITWISEXOR){
-				rtn = "wyil_bit_xor";				
+				rtn = "wyil_bit_xor";
 			} else if (opr == Codes.BinaryOperatorKind.LEFTSHIFT){
 				rtn = "wyil_shift_up";
 			} else if (opr == Codes.BinaryOperatorKind.RIGHTSHIFT){
@@ -2303,13 +2303,13 @@ public class Wyil2CBuilder implements Builder {
 			this.mbodyAddLineTINL(	"X" + targ + " = " + rtn + "(X" + lhs + ", X" + rhs + ");"	);
 			return;
 		}
-		
+
 		public void writeCodeConstant(Code codIn){
 			String tmp;
 			int targ;
 			Constant val;
 			String nam;
-			
+
 			Codes.Const cod = (Codes.Const) codIn;
 			targ = cod.target();
 			val = cod.constant;
@@ -2321,7 +2321,7 @@ public class Wyil2CBuilder implements Builder {
 				return;
 			}
 			this.addDecl(targ, "wycc_obj*");
-			writeClearTarget(targ);			
+			writeClearTarget(targ);
 			this.mbodyAddLine(tmp);
 			return;
 		}
@@ -2329,7 +2329,7 @@ public class Wyil2CBuilder implements Builder {
 		private String writeMyConstant(Constant val, String nam, int deep){
 			return writeMyConstant(val, nam, this.sourceTag, deep);
 		}
-		
+
 		private String writeMyConstant(Constant val, String nam, String tag, int deep){
 			//final Integer intMax = (Integer) 2147483647;
 			final BigInteger bigIntMax = new BigInteger("2147483647");
@@ -2345,7 +2345,7 @@ public class Wyil2CBuilder implements Builder {
 			int idx;
 			String anam, bnam;
 			String dtyp;
-			
+
 			if ((deep % 2) == 1) {
 				anam = "Xb";
 				bnam = "Xa";
@@ -2355,17 +2355,17 @@ public class Wyil2CBuilder implements Builder {
 			}
 			typ = val.type();
 			rval = val.toString();
-			if (typ instanceof Type.Strung) {	
+			if (typ instanceof Type.Strung) {
 				assn = "wycc_box_cstr(\"" + safeString1(rval) + "\")";
 				Constant.Strung sq = (Constant.Strung) val;
-				
+
 				tmp = sq.value;
 				idx =  tmp.indexOf('\n');
 				bodyAddLineNL(	"//		Constant.Strung index is " + idx		);
 			} else if (typ instanceof Type.Int) {
 				//if (rval.length() > 9) {
 				if (val.compareTo(wyIntMax) >= 0) {
-					assn = "wycc_box_wint(\"" + rval + "\")";					
+					assn = "wycc_box_wint(\"" + rval + "\")";
 				} else {
 					assn = "wycc_box_int(" + rval + ")";
 				}
@@ -2482,7 +2482,7 @@ public class Wyil2CBuilder implements Builder {
 				tmp = indent + "}\n";
 				ans += tmp;
 				return ans;
-				
+
 			} else if (typ instanceof Type.Null) {
 				assn = "wycc_box_null()";
 			} else if (typ instanceof Type.Real) {
@@ -2497,7 +2497,7 @@ public class Wyil2CBuilder implements Builder {
 				dtyp = writeDenseType(typ);
 				bodyAddLineNL(	"// HELP! needed in const for FOM dtyp: '" + dtyp + "'"	);
 				tok = lookupNumFOMname(fom.name.name(), typ);
-				assn = "fom_handle_reg[" + tok + "]";			
+				assn = "fom_handle_reg[" + tok + "]";
 			} else {
 				bodyAddLineNL(	"// HELP! needed in const for value type '" + typ + "'"	);
 				return null;
@@ -2514,12 +2514,12 @@ public class Wyil2CBuilder implements Builder {
 			//}
 			return tmp;
 		}
-		
+
 		private int intFromByte(String txt){
 			int ans = 0;
 			int idx = 0;
 			char chr;
-			
+
 			while (idx<8){
 				chr = txt.charAt(idx);
 				if (chr == 'b') {
@@ -2529,12 +2529,12 @@ public class Wyil2CBuilder implements Builder {
 				if (chr == '1') {
 					ans += 1;
 				}
-				
+
 				idx += 1;
 			}
 			return ans;
 		}
-		
+
 		// A register is about to be clobbered; dereference any object.
 		// negative register numbers are our own constructs, very local, not ref counted.
 		public void writeClearTarget(int target){
@@ -2554,10 +2554,10 @@ public class Wyil2CBuilder implements Builder {
 			return;
 		}
 
-		
+
 		// convert a wyil comparator code to a wycc constant
 		private String mapComparator(Codes.Comparator opr, boolean flg) {
-			
+
 			if (opr == Codes.Comparator.IN) {
 				return "Wyil_Relation_Mo";
 			} else if (opr == Codes.Comparator.EQ){
@@ -2575,19 +2575,19 @@ public class Wyil2CBuilder implements Builder {
 			}
 			if (flg) {
 				return null;
-			} 
+			}
 			if (opr == Codes.Comparator.SUBSET){
 				return "Wyil_Relation_Ss";
 			} else if (opr == Codes.Comparator.SUBSETEQ){
 				return "Wyil_Relation_Se";
 
-			} 
+			}
 			return null;
-		}		
+		}
 	}
-	
+
 	private String writeDenseType(Type ntyp) {
-		
+
 		if (ntyp instanceof Type.Void) {
 			return "v";
 		}
@@ -2630,7 +2630,7 @@ public class Wyil2CBuilder implements Builder {
 		if (ntyp instanceof Type.Null) {
 			return "n";
 		}
-		
+
 		return "&";
 	}
 	private String writeTypeCompound(Automaton automaton) {
@@ -2649,7 +2649,7 @@ public class Wyil2CBuilder implements Builder {
 		}
 		return writeTypeCompound(0, visited, titles, automaton);
 	}
-	
+
 	private void findHeaders(int index, BitSet visited,
 				BitSet onStack, BitSet headers, Automaton automaton) {
 		if(visited.get(index)) {
@@ -2657,14 +2657,14 @@ public class Wyil2CBuilder implements Builder {
 			if(onStack.get(index)) {
 				headers.set(index);
 			}
-			return; 
-		} 		
+			return;
+		}
 		onStack.set(index);
 		visited.set(index);
 		State state = automaton.states[index];
 		for(int child : state.children) {
 			findHeaders(child,visited,onStack,headers,automaton);
-		}	
+		}
 		onStack.set(index,false);
 	}
 	private char[] headers = { 'X','Y','Z','U','V','W','L','M','N','O','P','Q','R','S','T'};
@@ -2676,8 +2676,8 @@ public class Wyil2CBuilder implements Builder {
 		} else {
 			return r;
 		}
-	}	
-	
+	}
+
 	private String writeTypeCompound(int index, BitSet visited,
 			String[] headers, Automaton automaton) {
 		String sep = "";
@@ -2716,7 +2716,7 @@ public class Wyil2CBuilder implements Builder {
 			return "[$]";
 		};
 		int[] children = state.children;
-		
+
 		switch (state.kind) {
 		case Type.K_SET: {
 			middle = "[*";
@@ -2750,7 +2750,7 @@ public class Wyil2CBuilder implements Builder {
 			middle = "[@";
 			// *** need to check that there are exactly 2 children
 			break;
-		}		
+		}
 		case Type.K_UNION: {
 			middle = "[|";
 			break;
@@ -2771,7 +2771,7 @@ public class Wyil2CBuilder implements Builder {
 			middle += writeTypeFieldNames(rs);
 			middle +=  "}";
 			break;
-		}		
+		}
 		case Type.K_METHOD: {
 			middle = "[:";
 			break;
@@ -2779,18 +2779,18 @@ public class Wyil2CBuilder implements Builder {
 		case Type.K_FUNCTION: {
 			middle = "[^";
 			break;
-		}		
-		default: 
+		}
+		default:
 			throw new IllegalArgumentException("Invalid type encountered (kind: " + state.kind +")");
 		}
-		sep = "";		
+		sep = "";
 		for (int i = 0; i != children.length; ++i) {
 			middle+= sep;
 			middle += writeTypeCompound(children[i], visited, headers, automaton);
 			sep = ",";
 		}
-		
-		middle +=  "]";			
+
+		middle +=  "]";
 		// Finally, check whether this is a header node, or not. If it is a
 		// header then we need to insert the recursive type.
 
@@ -2799,11 +2799,11 @@ public class Wyil2CBuilder implements Builder {
 			// a header. Therefore, if we have multiple edges landing on a
 			// header we must update the header string to represent the full
 			// type reachable from the header.
-			//String r = header + "<" + middle + ">"; 
-			String r = "[<" + header + "}" + middle + "]"; 
+			//String r = header + "<" + middle + ">";
+			String r = "[<" + header + "}" + middle + "]";
 			//headers[index] = r;
 			return r;
-		} 
+		}
 		return middle;
 
 	}
@@ -2811,7 +2811,7 @@ public class Wyil2CBuilder implements Builder {
 	private String writeTypeFieldNames(wyil.lang.Type.Record.State fields) {
 		String ans= "";
 		String sep = "";
-		
+
 		for (int i = 0; i != fields.size(); ++i) {
 			ans += sep;
 			ans += fields.get(i);
@@ -2825,11 +2825,11 @@ public class Wyil2CBuilder implements Builder {
 	    Collections.sort(fields);
 	    return fields;
 	}
-	
+
 	public String safeString2(String was){
 		return safeString(was, 0, was.length(), false);
 	}
-	
+
 	public String safeString1(String was){
 		return safeString(was, 1, was.length()-1, true);
 	}
@@ -2837,11 +2837,11 @@ public class Wyil2CBuilder implements Builder {
 	public String safeString(String was){
 		return safeString(was, 0, was.length(), true);
 	}
-	public String safeString(String was, int lo, int hi, boolean flg){	
+	public String safeString(String was, int lo, int hi, boolean flg){
 		String ans = "";
 		int at = lo;
 		char ch;
-		
+
 		while (at < hi) {
 			ch = was.charAt(at);
 			if (ch == '\\') {
@@ -2855,8 +2855,8 @@ public class Wyil2CBuilder implements Builder {
 			}
 			at++;
 		}
-		
+
 		return ans;
 	}
-	
+
 }

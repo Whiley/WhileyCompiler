@@ -32,21 +32,21 @@ import wyc.util.WycAntTask;
  * An AntTask for compiling C files from Whiley source files or Wyil binary
  * files. The following illustrates how this task can be used in a
  * <code>build.xml</code> file:
- * 
+ *
  * <pre>
  *  <taskdef name="wycc" classname="wyjc.util.AntTask" classpath="src/"/>
  * <wyjc verbose="true" wyildir="stdlib" cdir="src\/" includes="whiley\/**\/*.wyil"/>
  * </pre>
- * 
+ *
  * <p>
  * The first line defines the new task, and requires the <code>src/</code>
  * directory (which contains this class) to be on the classpath; The second
  * invokes the task to compile all wyil files rooted in the <code>stdlib/</code>
  * directory which are in the <code>whiley/</code> package.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class WyccAntTask extends WycAntTask {
 	private final WyccBuildTask myBuilder;

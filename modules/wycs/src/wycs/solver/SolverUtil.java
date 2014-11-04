@@ -9,16 +9,16 @@ import wycs.core.SemanticType;
 /**
  * Provides a bunch of utility methods to simplify interfacing with the Solver
  * directly.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class SolverUtil {
-	
+
 	/**
 	 * Construct an automaton node representing the negation of an arithmetic
 	 * expression.
-	 * 
+	 *
 	 * @param automaton
 	 *            --- automaton to create new node in.
 	 * @param lhs
@@ -29,11 +29,11 @@ public class SolverUtil {
 		return Solver.Mul(automaton, automaton.add(new Automaton.Real(-1)),
 				automaton.add(new Automaton.Bag(lhs)));
 	}
-		
+
 	/**
 	 * Construct an automaton node representing the addition of two arithmetic
 	 * expressions.
-	 * 
+	 *
 	 * @param automaton
 	 *            --- automaton to create new node in.
 	 * @param lhs
@@ -47,11 +47,11 @@ public class SolverUtil {
 				automaton.add(new Automaton.Real(0)),
 				automaton.add(new Automaton.Bag(lhs, rhs)));
 	}
-	
+
 	/**
 	 * Construct an automaton node representing the subtraction of two arithmetic
 	 * expressions.
-	 * 
+	 *
 	 * @param automaton
 	 *            --- automaton to create new node in.
 	 * @param lhs
@@ -61,16 +61,16 @@ public class SolverUtil {
 	 * @return the index of the new node.
 	 */
 	static public int Sub(Automaton automaton, int lhs, int rhs) {
-		rhs = Neg(automaton,rhs); 
+		rhs = Neg(automaton,rhs);
 		return Solver.Sum(automaton,
 				automaton.add(new Automaton.Real(0)),
 				automaton.add(new Automaton.Bag(lhs, rhs)));
 	}
-	
+
 	/**
 	 * Construct an automaton node representing the multiplication of two
 	 * arithmetic expressions.
-	 * 
+	 *
 	 * @param automaton
 	 *            --- automaton to create new node in.
 	 * @param lhs
@@ -82,13 +82,13 @@ public class SolverUtil {
 	static public int Mul(Automaton automaton, int lhs, int rhs) {
 		return Solver.Mul(automaton,
 				automaton.add(new Automaton.Real(1)),
-				automaton.add(new Automaton.Bag(lhs, rhs)));	
+				automaton.add(new Automaton.Bag(lhs, rhs)));
 	}
-	
+
 	/**
 	 * Construct an automaton node representing the multiplication of two
 	 * arithmetic expressions.
-	 * 
+	 *
 	 * @param automaton
 	 *            --- automaton to create new node in.
 	 * @param lhs
@@ -98,13 +98,13 @@ public class SolverUtil {
 	 * @return the index of the new node.
 	 */
 	static public int Div(Automaton automaton, int lhs, int rhs) {
-		return Solver.Div(automaton, lhs, rhs);	
+		return Solver.Div(automaton, lhs, rhs);
 	}
-	
+
 	/**
 	 * Construct an automaton node representing the equality of two
 	 * expressions.
-	 * 
+	 *
 	 * @param automaton
 	 *            --- automaton to create new node in.
 	 * @param lhs
@@ -116,13 +116,13 @@ public class SolverUtil {
 	static public int Equals(Automaton automaton, int type, int lhs, int rhs) {
 		return Solver.Equals(automaton,
 				type,
-				automaton.add(new Automaton.Bag(lhs, rhs)));	
+				automaton.add(new Automaton.Bag(lhs, rhs)));
 	}
-	
+
 	/**
 	 * Construct an automaton node representing an inequality comparing
 	 * two arithmetic expressions.
-	 * 
+	 *
 	 * @param automaton
 	 *            --- automaton to create new node in.
 	 * @param lhs
@@ -149,7 +149,7 @@ public class SolverUtil {
 	/**
 	 * Construct an automaton node representing the addition of two arithmetic
 	 * expressions.
-	 * 
+	 *
 	 * @param automaton
 	 *            --- automaton to create new node in.
 	 * @param lhs
@@ -173,5 +173,5 @@ public class SolverUtil {
 			return Solver.Or(automaton, ieq, eq);
 		}
 	}
-	
+
 }

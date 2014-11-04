@@ -42,41 +42,41 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
  * This class implements an baseline ant task for compiling whiley files via ant
  * and an appropriate build.xml file. The following illustrates how this task
  * can be used in a build.xml file:
- * 
+ *
  * <pre>
  * <taskdef name="wyc" classname="wyc.util.AntTask" classpath="lib/wyc.jar"/>
  * <wyc whileydir="stdlib" includes="whiley\/**\/*.whiley" excludes="whiley/io/**"/>
  * </pre>
- * 
+ *
  * <p>
  * The first line defines the new task, and requires <code>wyc.jar</code> (which
  * contains this class) to be on the classpath; The second invokes the task to
  * compile all files rooted in the <code>stdlib/</code> directory which are in
  * the <code>whiley/</code> package, excluding those in <code>whiley/io</code>.
  * </p>
- * 
+ *
  * <p>
  * <b>NOTE:</b> this class is intended to be overriden by the compiler backends
  * which compile Wyil bytecodes to different architectures (e.g. JVM, C,
  * JavaScript, etc).
  * </p>
- * 
- * 
+ *
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class WycAntTask extends MatchingTask {
-	
-	protected final WycBuildTask builder;	
-	
+
+	protected final WycBuildTask builder;
+
 	public WycAntTask() {
 		this.builder = new WycBuildTask();
 	}
-	
+
 	public WycAntTask(WycBuildTask builder) {
 		this.builder = builder;
 	}
-	
+
 	public void setWhileydir(File dir) throws IOException {
 		builder.setWhileyDir(dir);
 	}
@@ -84,40 +84,40 @@ public class WycAntTask extends MatchingTask {
     public void setWyildir (File dir) throws IOException {
     	builder.setWyilDir(dir);
     }
-    
+
     public void setIncludes(String includes) {
     	builder.setIncludes(includes);
     }
-    
+
     public void setExcludes(String excludes) {
-    	builder.setExcludes(excludes);    	
+    	builder.setExcludes(excludes);
     }
-    
+
     public void setWhileyPath (org.apache.tools.ant.types.Path path) throws IOException {
-    	ArrayList<File> whileypath = new ArrayList<File>();    	
-    	for(String file : path.list()) {    		
-    		whileypath.add(new File(file));    		
+    	ArrayList<File> whileypath = new ArrayList<File>();
+    	for(String file : path.list()) {
+    		whileypath.add(new File(file));
     	}
     	builder.setWhileyPath(whileypath);
     }
-    
+
     public void setBootPath (org.apache.tools.ant.types.Path path) throws IOException {
     	ArrayList<File> bootpath = new ArrayList<File>();
-    	for(String file : path.list()) {    		
-    		bootpath.add(new File(file));    		
+    	for(String file : path.list()) {
+    		bootpath.add(new File(file));
     	}
     	builder.setWhileyPath(bootpath);
     }
-    
+
     public void setVerbose(boolean b) {
-    	builder.setVerbose(b);    
+    	builder.setVerbose(b);
     }
-    
+
     public void setVerification(boolean b) {
-    	builder.setVerification(b);    
+    	builder.setVerification(b);
     }
-    
-    public void execute() throws BuildException { 
+
+    public void execute() throws BuildException {
     	try {
     		int count = builder.buildAll();
     		if(builder.getVerification()) {
@@ -128,5 +128,5 @@ public class WycAntTask extends MatchingTask {
     	} catch(Exception e) {
     		throw new BuildException(e);
     	}
-    }       	
+    }
 }

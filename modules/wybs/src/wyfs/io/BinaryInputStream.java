@@ -35,7 +35,7 @@ public class BinaryInputStream extends InputStream {
 	public BinaryInputStream(InputStream input) {
 		this.input = input;
 	}
-	
+
 	public int read() throws IOException {
 		if(count == 0) {
 			return input.read();
@@ -43,51 +43,51 @@ public class BinaryInputStream extends InputStream {
 			return read_un(8);
 		}
 	}
-	
+
 	public int read(byte[] bytes) throws IOException {
 		for (int i = 0; i != bytes.length; ++i) {
 			bytes[i] = (byte) read();
 		}
 		return bytes.length;
 	}
-	
+
 	public int read(byte[] bytes, int offset, int length) throws IOException {
 		for(;offset < length;++offset) {
-			bytes[offset] = (byte) read();			
+			bytes[offset] = (byte) read();
 		}
 		return length;
 	}
-	
+
 	public int read_u8() throws IOException {
 		if(count == 0) {
 			return input.read() & 0xFF;
 		} else {
 			return read_un(8);
 		}
-	}	
-	
+	}
+
 	public int read_u16() throws IOException {
 		return (read_u8() << 8) | read_u8();
 	}
-		
+
 	public long read_u32() throws IOException {
 		// FIXME: this is most definitely broken
 		return (read_u8() << 24) | (read_u8() << 16) | (read_u8() << 8)
 				| read_u8();
 	}
-	
-	public int read_un(int n) throws IOException {		
+
+	public int read_un(int n) throws IOException {
 		int value = 0;
 		int mask = 1;
 		for(int i=0;i!=n;++i) {
 			if(read_bit()) {
 				value |= mask;
 			}
-			mask = mask << 1;			
+			mask = mask << 1;
 		}
-		return value;		
+		return value;
 	}
-	
+
 	public int read_uv() throws IOException {
 		int value = 0;
 		boolean flag = true;
@@ -96,11 +96,11 @@ public class BinaryInputStream extends InputStream {
 			int w = read_un(4);
 			flag = (w&8) != 0;
 			value = ((w&7)<<shift) | value;
-			shift = shift + 3;			
+			shift = shift + 3;
 		}
 		return value;
 	}
-	
+
 	public boolean read_bit() throws IOException {
 		if(count == 0) {
 			value = input.read();
@@ -112,8 +112,8 @@ public class BinaryInputStream extends InputStream {
 		count = count - 1;
 		return r;
 	}
-	
-	public void pad_u8() throws IOException {		
+
+	public void pad_u8() throws IOException {
 		count = 0; // easy!!
 	}
 }

@@ -28,7 +28,7 @@
  * system which underpins the Whiley compiler. The need for such a build system
  * stems from a requirement to integrate the Whiley compiler with different
  * tools (e.g. Ant, Eclipse, etc).
- * 
+ *
  * @author David J. Pearce
  */
 package wybs;

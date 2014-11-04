@@ -37,11 +37,11 @@ import java.io.*;
  * Since there are 64 possibilities for each character in a Java identifier,
  * we're basically encoding 8-bit data into a 6-bit stream (with encoding).
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
-public class JavaIdentifierOutputStream extends OutputStream {	
+public class JavaIdentifierOutputStream extends OutputStream {
 	private int value;
 	private int count;
 
@@ -57,21 +57,21 @@ public class JavaIdentifierOutputStream extends OutputStream {
 			boolean bit = (bits & mask) != 0;
 			writeBit(bit);
 			mask = mask << 1;
-		}	
+		}
 	}
 
 	public void flush() {
 		if(count != 0) {
 			value = value >> (6-count);
 			builder.append(encode(value));
-		}			
+		}
 	}
-	
+
 	public void close() {
 		if(count != 0) {
 			value = value >> (6-count);
 			builder.append(encode(value));
-		}			
+		}
 	}
 
 	public void writeBit(boolean bit) throws IOException {
@@ -81,12 +81,12 @@ public class JavaIdentifierOutputStream extends OutputStream {
 		}
 		count = count + 1;
 		if(count == 6) {
-			count = 0;		
-			builder.append(encode(value));			
+			count = 0;
+			builder.append(encode(value));
 			value = 0;
 		}
 	}
-	
+
 	public static char encode(int b) {
 		if(b == 0) {
 			return '$';
@@ -108,11 +108,11 @@ public class JavaIdentifierOutputStream extends OutputStream {
 			throw new IllegalArgumentException("Invalid byte to encode: " + b);
 		}
 	}
-	
+
 	public String toString() {
 		return builder.toString();
 	}
-	
+
 	public static void main(String[] args) {
 		try {
 		JavaIdentifierOutputStream iout = new JavaIdentifierOutputStream();
@@ -123,9 +123,9 @@ public class JavaIdentifierOutputStream extends OutputStream {
 		JavaIdentifierInputStream iin = new JavaIdentifierInputStream(iout.toString());
 		System.out.println("GOT: " + iin.read());
 		System.out.println("GOT: " + iin.read());
-		System.out.println("GOT: " + iin.read());		
+		System.out.println("GOT: " + iin.read());
 		} catch(IOException e) {
-			
+
 		}
 	}
 }

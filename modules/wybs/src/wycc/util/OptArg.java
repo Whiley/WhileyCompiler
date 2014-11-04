@@ -35,9 +35,9 @@ import static wycc.lang.Pipeline.*;
 /**
  * A small utility for parsing command-line options. It helps to take some of
  * the hassle out of building the front-end of a Whiley compiler.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public final class OptArg {
 	/**
@@ -45,13 +45,13 @@ public final class OptArg {
 	 * "version")
 	 */
 	public final String option;
-	
+
 	/**
 	 * The short form of the option. (e.g. for "-version", the short form might
 	 * be "v" as in "-v")
 	 */
 	public final String shortForm;
-	
+
 	/**
 	 * The kind of argument accepted by this option (if any).
 	 */
@@ -68,10 +68,10 @@ public final class OptArg {
 	 * may be null if there is no default value.
 	 */
 	public final Object defaultValue;
-	
+
 	/**
 	 * Construct an option object which does not accept an argument.
-	 * 
+	 *
 	 * @param option
 	 * @param argument
 	 * @param description
@@ -84,10 +84,10 @@ public final class OptArg {
 		this.description = description;
 		this.defaultValue = null;
 	}
-	
+
 	/**
 	 * Construct an option object with a short form which does not accept an argument.
-	 * 
+	 *
 	 * @param option
 	 * @param shortForm
 	 * @param argument
@@ -101,10 +101,10 @@ public final class OptArg {
 		this.description = description;
 		this.defaultValue = null;
 	}
-	
+
 	/**
 	 * Construct an option object which accepts an argument.
-	 * 
+	 *
 	 * @param option
 	 * @param argument
 	 * @param description
@@ -112,16 +112,16 @@ public final class OptArg {
 	 */
 	public OptArg(String option, Kind argument,
 			String description) {
-		this.option = option;	
+		this.option = option;
 		this.shortForm = null;
 		this.argument = argument;
 		this.description = description;
 		this.defaultValue = null;
 	}
-	
+
 	/**
 	 * Construct an option object with a short form which accepts an argument.
-	 * 
+	 *
 	 * @param option
 	 * @param shortForm
 	 * @param argument
@@ -130,16 +130,16 @@ public final class OptArg {
 	 */
 	public OptArg(String option, String shortForm, Kind argument,
 			String description) {
-		this.option = option;	
+		this.option = option;
 		this.shortForm = shortForm;
 		this.argument = argument;
 		this.description = description;
 		this.defaultValue = null;
 	}
-	
+
 	/**
 	 * Construct an option object which accepts an argument and has a default value.
-	 * 
+	 *
 	 * @param option
 	 * @param argument
 	 * @param description
@@ -153,10 +153,10 @@ public final class OptArg {
 		this.description = description;
 		this.defaultValue = defaultValue;
 	}
-	
+
 	/**
 	 * Construct an option object with a short form which accepts an argument and has a default value.
-	 * 
+	 *
 	 * @param option
 	 * @param argument
 	 * @param description
@@ -170,20 +170,20 @@ public final class OptArg {
 		this.description = description;
 		this.defaultValue = defaultValue;
 	}
-	
+
 	interface Kind {
 		void process(String arg, String option, Map<String,Object> options);
 	}
-	
+
 	public final static STRING STRING = new STRING();
 	public final static INT INT = new INT();
 	public final static FILE FILE = new FILE();
 	public final static FILEDIR FILEDIR = new FILEDIR();
-	public final static FILELIST FILELIST = new FILELIST();		
+	public final static FILELIST FILELIST = new FILELIST();
 	public final static PIPELINEAPPEND PIPELINEAPPEND = new PIPELINEAPPEND();
 	public final static PIPELINECONFIGURE PIPELINECONFIGURE = new PIPELINECONFIGURE();
 	public final static PIPELINEREMOVE PIPELINEREMOVE = new PIPELINEREMOVE();
-	
+
 	private static final class STRING implements Kind {
 		public void process(String arg, String option, Map<String,Object> options) {
 			options.put(arg,option);
@@ -192,7 +192,7 @@ public final class OptArg {
 			return "<string>";
 		}
 	}
-	
+
 	private static final class INT implements Kind {
 		public void process(String arg, String option, Map<String,Object> options) {
 			options.put(arg,Integer.parseInt(option));
@@ -201,7 +201,7 @@ public final class OptArg {
 			return "<int>";
 		}
 	}
-	
+
 	private static final class FILE implements Kind {
 		public void process(String arg, String option,
 				Map<String, Object> options) {
@@ -211,7 +211,7 @@ public final class OptArg {
 			return "<file>";
 		}
 	}
-	
+
 	private static final class FILEDIR implements Kind {
 		public void process(String arg, String option,
 				Map<String, Object> options) {
@@ -225,11 +225,11 @@ public final class OptArg {
 			return "<filedir>";
 		}
 	}
-	
+
 	private static final class FILELIST implements Kind {
 		public void process(String arg, String option, Map<String,Object> options) {
 			ArrayList<File> rs = new ArrayList<File>();
-			for(String r : option.split(File.pathSeparator)) {				 			
+			for(String r : option.split(File.pathSeparator)) {
 				rs.add(new File(r));
 			}
 			options.put(arg, rs);
@@ -238,7 +238,7 @@ public final class OptArg {
 			return "<filelist>";
 		}
 	}
-	
+
 	private static final class PIPELINEAPPEND implements Kind {
 		public void process(String arg, String option, Map<String,Object> options) {
 			String[] name = option.split(":");
@@ -246,21 +246,21 @@ public final class OptArg {
 			if (name.length > 1) {
 				config = splitConfig(name[1]);
 			}
-			Pipeline.Modifier pmod = new Pipeline.Modifier(POP.APPEND, name[0], config); 
+			Pipeline.Modifier pmod = new Pipeline.Modifier(POP.APPEND, name[0], config);
 			Object o = options.get("pipeline");
 			ArrayList<Pipeline.Modifier> val;
 			if(o == null) {
 				val = new ArrayList();
 			} else {
 				val = (ArrayList) o;
-			}			
+			}
 			val.add(pmod);
-			options.put("pipeline",val);	
+			options.put("pipeline",val);
 		}
 		public String toString() {
 			return "stage[:options]";
 		}
-	}	
+	}
 
 	private static final class PIPELINECONFIGURE implements Kind {
 		public void process(String arg, String option, Map<String,Object> options) {
@@ -269,25 +269,25 @@ public final class OptArg {
 			if (name.length > 1) {
 				config = splitConfig(name[1]);
 			}
-			Pipeline.Modifier pmod = new Pipeline.Modifier(POP.REPLACE, name[0], config); 
+			Pipeline.Modifier pmod = new Pipeline.Modifier(POP.REPLACE, name[0], config);
 			Object o = options.get("pipeline");
 			ArrayList<Pipeline.Modifier> val;
 			if(o == null) {
 				val = new ArrayList();
 			} else {
 				val = (ArrayList) o;
-			}			
+			}
 			val.add(pmod);
-			options.put("pipeline",val);	
+			options.put("pipeline",val);
 		}
 		public String toString() {
 			return "stage[:options]";
 		}
-	}	
-	
+	}
+
 	private static final class PIPELINEREMOVE implements Kind {
 		public void process(String arg, String option, Map<String,Object> options) {
-			String[] name = option.split(":");					
+			String[] name = option.split(":");
 			Pipeline.Modifier pmod = new Pipeline.Modifier(POP.REMOVE, name[0],
 					Collections.EMPTY_MAP);
 			Object o = options.get("pipeline");
@@ -298,17 +298,17 @@ public final class OptArg {
 				val = (ArrayList) o;
 			}
 			val.add(pmod);
-			options.put("pipeline", val);	
+			options.put("pipeline", val);
 		}
 		public String toString() {
 			return "stage[:options]";
 		}
 	}
-	
+
 	/**
 	 * Parse options from the list of arguments, removing those which are
 	 * recognised. Anything which is not recognised is left as is.
-	 * 
+	 *
 	 * @param args
 	 *            --- the list of argument strings. This is modified by removing
 	 *            those which are processed.
@@ -320,27 +320,27 @@ public final class OptArg {
 	 */
 	public static Map<String,Object> parseOptions(List<String> args, OptArg... options) {
 		HashMap<String,Object> result = new HashMap<String,Object>();
-		HashMap<String,OptArg> optmap = new HashMap<String,OptArg>();		
-		
+		HashMap<String,OptArg> optmap = new HashMap<String,OptArg>();
+
 		for(OptArg opt : options) {
 			if(opt.defaultValue != null) {
 				result.put(opt.option, opt.defaultValue);
 			}
-			optmap.put(opt.option, opt);			
+			optmap.put(opt.option, opt);
 			optmap.put(opt.shortForm, opt);
 		}
-				
+
 		Iterator<String> iter = args.iterator();
 		while(iter.hasNext()) {
-			String arg = iter.next();			
+			String arg = iter.next();
 			if (arg.startsWith("-")) {
-				arg = arg.substring(1,arg.length());				
+				arg = arg.substring(1,arg.length());
 				OptArg opt = optmap.get(arg);
-				if(opt != null) {					
+				if(opt != null) {
 					// matched
 					iter.remove(); // remove option from args list
 					Kind k = opt.argument;
-					if(k != null) {		
+					if(k != null) {
 						String param = iter.next();
 						iter.remove();
 						k.process(opt.option,param,result);
@@ -350,31 +350,31 @@ public final class OptArg {
 				} else {
 					throw new RuntimeException("unknown command-line option: -" + arg);
 				}
-			} 
+			}
 		}
-		
+
 		return result;
 	}
-	
+
 	public static void usage(PrintStream output, OptArg...options) {
 		// first, work out gap information
-		int gap = 0;		
+		int gap = 0;
 		ArrayList<OptArg> opts = new ArrayList();
 		for (OptArg opt : options) {
 			opts.add(opt);
-			int len = opt.option.length();			
+			int len = opt.option.length();
 			if(opt.argument != null) {
 				len = len + opt.argument.toString().length();
 			}
 			if(opt.shortForm != null) {
 				len = len + opt.shortForm.length();
 				opts.add(new OptArg(opt.shortForm,opt.argument,opt.description + " [short form]"));
-			} 
-			gap = Math.max(gap, len);			
+			}
+			gap = Math.max(gap, len);
 		}
-		
+
 		gap = gap + 1;
-		
+
 		// now, print the information
 		for (OptArg opt : opts) {
 			output.print("  -" + opt.option);
@@ -384,19 +384,19 @@ public final class OptArg {
 				String arg = opt.argument.toString();
 				rest -= arg.length();
 				output.print(arg);
-			}			
+			}
 			for (int i = 0; i < rest; ++i) {
 				output.print(" ");
-			}			
+			}
 			output.println(opt.description);
 		}
 	}
-	
+
 	/**
 	 * This splits strings of the form "x=y,v=w" into distinct components and
 	 * puts them into a map. In the case of a string like "x,y=z" then x is
 	 * loaded with the empty string.
-	 * 
+	 *
 	 * @param str
 	 * @return
 	 */
@@ -413,7 +413,7 @@ public final class OptArg {
 		}
 		return options;
 	}
-	
+
 	private static Object parseValue(String str) {
 		if(str.equals("true")) {
 			return Boolean.TRUE;
@@ -427,6 +427,6 @@ public final class OptArg {
 			}
 		} else  {
 			return str;
-		}		
+		}
 	}
 }

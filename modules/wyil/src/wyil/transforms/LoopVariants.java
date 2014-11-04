@@ -21,11 +21,11 @@ import wyil.lang.WyilFile;
  * important, for example, when generating verification conditions during the
  * verification process.
  * </p>
- * 
+ *
  * <p>
  * For example, consider this Whiley program:
  * </p>
- * 
+ *
  * <pre>
  * int sum(int stride, [int] list):
  *     r = 0
@@ -41,91 +41,91 @@ import wyil.lang.WyilFile;
  * Note, however, that <code>stride</code> is not a loop variant because it
  * remains constant (i.e. invariant) for the duration of the loop.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class LoopVariants implements Transform<WyilFile> {
 	private String filename;
-	
+
 	/**
 	 * Determines whether constant propagation is enabled or not.
 	 */
 	private boolean enabled = getEnable();
 
 	public LoopVariants(Builder builder) {
-		
+
 	}
 
 	public static String describeEnable() {
 		return "Enable/disable loop variant inference";
 	}
-	
+
 	public static boolean getEnable() {
 		return true; // default value
 	}
-	
+
 	public void setEnable(boolean flag) {
 		this.enabled = flag;
 	}
-		
+
 	public void apply(WyilFile module) {
 		if(enabled) {
 			filename = module.filename();
-		
+
 			for(WyilFile.TypeDeclaration type : module.types()) {
 				infer(type);
 			}
-			
+
 			for(WyilFile.FunctionOrMethodDeclaration method : module.functionOrMethods()) {
 				infer(method);
 			}
-			
-			
+
+
 		}
 	}
-	
+
 	public void infer(WyilFile.TypeDeclaration type) {
 		Code.Block invariant = type.invariant();
 		if (invariant != null) {
 			infer(invariant, 0, invariant.size());
 		}
 	}
-	
-	public void infer(WyilFile.FunctionOrMethodDeclaration method) {	
+
+	public void infer(WyilFile.FunctionOrMethodDeclaration method) {
 		for (WyilFile.Case c : method.cases()) {
 			Code.Block body = c.body();
-			if(body != null) {		
+			if(body != null) {
 				infer(body,0,body.size());
 			}
-		}		
+		}
 	}
-	
+
 	/**
 	 * Determine the modified variables for a given block of Wyil bytecodes. In
 	 * doing this, infer the modified operands for any loop bytecodes
 	 * encountered.
-	 * 
+	 *
 	 * @param block
 	 * @param method
 	 * @return
 	 */
 	protected BitSet infer(Code.Block block, int start, int end) {
 		BitSet modified = new BitSet(block.numSlots());
-		int size = block.size();		
+		int size = block.size();
 		for(int i=start;i<end;++i) {
 			Code.Block.Entry entry = block.get(i);
 			Code code = entry.code;
-			
+
 			if (code instanceof Code.AbstractAssignable) {
 				Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
-				if(aa.target() != Codes.NULL_REG) { 
+				if(aa.target() != Codes.NULL_REG) {
 					modified.set(aa.target());
 				}
 			} if(code instanceof Codes.Loop) {
 				Codes.Loop loop = (Codes.Loop) code;
 				int s = i;
-				// Note, I could make this more efficient!					
+				// Note, I could make this more efficient!
 				while (++i < block.size()) {
 					Code.Block.Entry nEntry = block.get(i);
 					if (nEntry.code instanceof Codes.LoopEnd) {
@@ -134,9 +134,9 @@ public class LoopVariants implements Transform<WyilFile> {
 							// end of loop body found
 							break;
 						}
-					}						
+					}
 				}
-				
+
 				BitSet loopModified = infer(block,s+1,i);
 				if (code instanceof Codes.ForAll) {
 					// Unset the modified status of the index operand, it is
@@ -149,14 +149,14 @@ public class LoopVariants implements Transform<WyilFile> {
 				} else {
 					code = Codes.Loop(loop.target, toArray(loopModified));
 				}
-				
+
 				block.set(s, code, entry.attributes());
 				modified.or(loopModified);
 			}
 		}
 		return modified;
 	}
-	
+
 	protected int[] toArray(BitSet bs) {
 		int[] arr = new int[bs.cardinality()];
 		for (int i = bs.nextSetBit(0), j = 0; i >= 0; i = bs.nextSetBit(i + 1), ++j) {

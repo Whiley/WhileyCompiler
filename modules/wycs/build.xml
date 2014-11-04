@@ -1,5 +1,5 @@
 <project name="wycs" default="build">
-  <import file="../../config.xml"/>  
+  <import file="../../config.xml"/>
 
   <target name="compile-wycs">
     <taskdef name="wyrl" classname="wyrl.util.WyrlAntTask" classpath="../wybs/src/:../wyrl/src/"/>
@@ -8,8 +8,8 @@
     <javac memoryMaximumSize="2048m" fork="true" debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wybs/src/:../wyrl/src/">
       <src path="src"/>
       <include name="*/**"/>
-      <exclude name="*/**/package-info.java"/> 
-      <exclude name="wycs/testing/**"/> 
+      <exclude name="*/**/package-info.java"/>
+      <exclude name="wycs/testing/**"/>
     </javac>
     <taskdef name="wycs" classname="wycs.util.WycsAntTask" classpath="src/:../wybs/src/:../wyrl/src/"/>
     <wycs wyaldir="stdlib/" includes="*/**.wycs"/>
@@ -32,7 +32,7 @@
     <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
     <echo message="============================================="/>
   </target>
-  
+
   <target name="dist">
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">

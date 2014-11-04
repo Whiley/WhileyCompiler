@@ -8,7 +8,7 @@ import wyautl.rw.*;
 
 public final class Main {
     public enum RewriteMode { SIMPLE, STATIC_DISPATCH };
-    
+
     private Main() {} // avoid instantiation of this class
 
     public static void main(String[] args) {
@@ -17,8 +17,8 @@ public final class Main {
 
 	try {
 	    RewriteMode rwMode = RewriteMode.STATIC_DISPATCH;
-	    System.out.println("Welcome!\n");			
-	    while(true) {				
+	    System.out.println("Welcome!\n");
+	    while(true) {
 		System.out.print("> ");
 		String text = input.readLine();
 

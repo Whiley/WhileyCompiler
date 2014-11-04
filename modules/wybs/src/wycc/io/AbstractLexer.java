@@ -52,9 +52,9 @@ import java.util.List;
  * This class also provides several standard tokens and rules which are common
  * across the various languages used within the Whiley compiler system.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class AbstractLexer {
 	/**
@@ -71,7 +71,7 @@ public class AbstractLexer {
 	/**
 	 * Construct from an input stream using UTF-8 as the default character
 	 * encoding.
-	 * 
+	 *
 	 * @param instream
 	 * @throws IOException
 	 */
@@ -81,7 +81,7 @@ public class AbstractLexer {
 
 	/**
 	 * Construct from an input stream using a given character set decoder.
-	 * 
+	 *
 	 * @param instream
 	 * @throws IOException
 	 */
@@ -93,7 +93,7 @@ public class AbstractLexer {
 	/**
 	 * Construct from a reader (which already has some notion of character
 	 * enconding included).
-	 * 
+	 *
 	 * @param reader
 	 * @throws IOException
 	 */
@@ -110,10 +110,10 @@ public class AbstractLexer {
 		this.input = text;
 		this.rules = rules;
 	}
-	
+
 	/**
 	 * Scan the given input stream and produce a list of tokens, or an error.
-	 * 
+	 *
 	 * @return
 	 */
 	public List<Token> scan() throws Error {
@@ -143,16 +143,16 @@ public class AbstractLexer {
 	/**
 	 * A lexer rule is responsible for matching a given character sequence and
 	 * turning it into a token.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static abstract class Rule {
 		/**
 		 * Determines the maximum amount of lookahead required by this rule. The
 		 * system will guarantee there is enough lookahead space in the input
 		 * before calling the rule.
-		 * 
+		 *
 		 * @return
 		 */
 		public abstract int lookahead();
@@ -162,23 +162,23 @@ public class AbstractLexer {
 		 * Observe that upon a successful match (i.e. when the returned value is
 		 * not <code>null</code>) the stream will be advanced to
 		 * <code>Token.end + 1</code>.
-		 * 
+		 *
 		 * @param buffer
 		 * @param start
 		 * @return
 		 */
 		public abstract Token match(StringBuffer buffer, int start) throws Error;
 	}
-	
+
 	// ===================================================================
 	// Standard Rules
-	// ===================================================================	
+	// ===================================================================
 
 	/**
 	 * Standard rule for parsing Whitespace.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class WhitespaceRule extends Rule {
 
@@ -190,9 +190,9 @@ public class AbstractLexer {
 		@Override
 		public Token match(StringBuffer input, int pos) {
 			int start = pos;
-			
+
 			if(pos < input.length()) {
-			
+
 				// First, look for new lines
 				if(input.charAt(pos) == '\n') {
 					pos++;
@@ -209,7 +209,7 @@ public class AbstractLexer {
 					}
 					return new Token.Spaces(input.substring(start, pos), start);
 				}
-				
+
 				// Third, look for tabs
 				if(input.charAt(pos) == '\t') {
 					while (pos < input.length()
@@ -217,23 +217,23 @@ public class AbstractLexer {
 						pos++;
 					}
 					return new Token.Tabs(input.substring(start, pos), start);
-				}				
+				}
 			}
-			
+
 			return null;
-		}			
+		}
 	}
-	
+
 	/**
 	 * Standard rule for parsing Operators.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class OperatorRule extends Rule {
 		private final java.lang.String[] operators;
 		private final int minLookahead;
-		
+
 		public OperatorRule(java.lang.String[] operators) {
 			this.operators = operators;
 			int min = Integer.MAX_VALUE;
@@ -242,7 +242,7 @@ public class AbstractLexer {
 			}
 			this.minLookahead = min;
 		}
-		
+
 		@Override
 		public int lookahead() {
 			return minLookahead;
@@ -260,19 +260,19 @@ public class AbstractLexer {
 				}
 			}
 			return null;
-		}	
+		}
 	}
-	
+
 	/**
 	 * Standard rule for parsing keywords.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class KeywordRule extends Rule {
 		private final java.lang.String[] keywords;
 		private final int minLookahead;
-		
+
 		public KeywordRule(java.lang.String[] keywords) {
 			this.keywords = keywords;
 			int min = Integer.MAX_VALUE;
@@ -281,7 +281,7 @@ public class AbstractLexer {
 			}
 			this.minLookahead = min;
 		}
-		
+
 		@Override
 		public int lookahead() {
 			return minLookahead;
@@ -304,14 +304,14 @@ public class AbstractLexer {
 			return null;
 		}
 	}
-	
+
 	/**
 	 * A standard rule for parsing identifiers. Identifiers may not start with a
 	 * numeric character, or an operator. But, they may start with e.g. '$', or
 	 * '_' and, obviously, any alpabetic character.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class IdentifierRule extends Rule {
 
@@ -333,16 +333,16 @@ public class AbstractLexer {
 			}
 			java.lang.String text = input.substring(start, pos);
 			return new Token.Identifier(text, start);
-		}		
+		}
 	}
-	
+
 	/**
 	 * A standard rule for parsing strings which begin with quote marks. For
 	 * example, <code>"Hello World"</code>. This rule correctly handles escape
 	 * sequences, such as "\n", "\t" and "\\", etc.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class StringRule extends Rule {
 
@@ -367,7 +367,7 @@ public class AbstractLexer {
 					flag = true;
 					continue;
 				}
-				if (c == '\"') {		
+				if (c == '\"') {
 					java.lang.String v = input.substring(start,++pos);
 					return new Token.String(scan(v, pos - v.length()),start);
 				}
@@ -375,7 +375,7 @@ public class AbstractLexer {
 			}
 			throw new Error("unexpected end-of-string",pos-1);
 		}
-		
+
 		private java.lang.String scan(java.lang.String v, int start) throws Error {
 			// Second, step through the string and replace escaped characters
 			int end = v.length()-1;
@@ -418,24 +418,24 @@ public class AbstractLexer {
 								replace = (char) Integer.parseInt(unicode, 16); // unicode
 								break;
 							default :
-								throw new Error("unknown escape character",start+i);							
+								throw new Error("unknown escape character",start+i);
 						}
 						v = v.substring(0, i) + replace + v.substring(i + len);
 					}
 				}
-			}			
+			}
 			return v;
 		}
-		
+
 	}
-	
+
 	/**
 	 * A standard rule for parsing characters which begin with single quote
 	 * marks. For example, <code>'H'</code>. This rule correctly handles escape
 	 * sequences, such as '\n', '\t' and '\\', etc.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class CharRule extends Rule {
 
@@ -497,15 +497,15 @@ public class AbstractLexer {
 			}
 			return new Token.Char(ans,input.substring(start,pos),start);
 		}
-		
+
 	}
-	
+
 	/**
 	 * A standard rule for parsing numbers represented in decimal (i.e. base
 	 * 10).
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class DecimalRule extends Rule {
 
@@ -526,11 +526,11 @@ public class AbstractLexer {
 
 			BigInteger beforePoint = new BigInteger(input.substring(start, pos));
 			BigInteger afterPoint = null;
-			
+
 			if (pos < input.length() && input.charAt(pos) == '.') {
 				pos = pos + 1;
 				int dotStart = pos;
-				if (pos < input.length() && Character.isDigit(input.charAt(pos))) {					
+				if (pos < input.length() && Character.isDigit(input.charAt(pos))) {
 					while (pos < input.length()
 							&& Character.isDigit(input.charAt(pos))) {
 						pos = pos + 1;
@@ -541,28 +541,28 @@ public class AbstractLexer {
 					pos = pos - 1;
 				}
 			}
-			return new Token.Number(10,beforePoint,afterPoint,input.substring(start,pos),start);					
+			return new Token.Number(10,beforePoint,afterPoint,input.substring(start,pos),start);
 		}
-		
+
 	}
-	
+
 	/**
 	 * Standard rule for parsing line comments with user-defineable syntax.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class LineCommentRule extends Rule {
 		private java.lang.String syntax;
 		public LineCommentRule(java.lang.String syntax) {
 			this.syntax = syntax;
 		}
-		
+
 		@Override
 		public int lookahead() {
 			return syntax.length();
 		}
-		
+
 		@Override
 		public Token match(StringBuffer input, int pos) throws Error {
 			// first, check whether this rule applies or not.
@@ -577,28 +577,28 @@ public class AbstractLexer {
 			return new Token.LineComment(input.substring(start, pos), start);
 		}
 	}
-	
+
 	/**
 	 * Standard rule for parsing block comments with user-defineable start and
 	 * end syntax.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class BlockCommentRule extends Rule {
 		private java.lang.String startSyntax;
 		private java.lang.String endSyntax;
-		
+
 		public BlockCommentRule(java.lang.String startSyntax, java.lang.String endSyntax) {
 			this.startSyntax = startSyntax;
 			this.endSyntax = endSyntax;
 		}
-		
+
 		@Override
 		public int lookahead() {
 			return startSyntax.length();
 		}
-		
+
 		@Override
 		public Token match(StringBuffer input, int pos) throws Error {
 			// first, check whether this rule applies or not.
@@ -615,13 +615,13 @@ public class AbstractLexer {
 			return new Token.BlockComment(input.substring(start, pos), start);
 		}
 	}
-	
+
 	// ===================================================================
 	// Helper Classes / Methods
-	// ===================================================================	
-	
+	// ===================================================================
+
 	private static boolean matchString(StringBuffer input, int pos,
-			java.lang.String syntax) {		
+			java.lang.String syntax) {
 		int diff = input.length() - pos;
 		if(syntax.length() > diff) {
 			return false;
@@ -634,21 +634,21 @@ public class AbstractLexer {
 			return true;
 		}
 	}
-	
+
 	/**
 	 * Used to report lexing errors.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class Error extends Exception {
 		private final int position;
-		
+
 		public Error(java.lang.String msg, int position) {
 			super(msg);
 			this.position = position;
 		}
-		
+
 		public int getPosition() {
 			return position;
 		}

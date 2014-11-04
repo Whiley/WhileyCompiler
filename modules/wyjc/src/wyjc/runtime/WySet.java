@@ -29,30 +29,30 @@ import java.math.BigInteger;
 import java.util.*;
 
 
-public final class WySet extends java.util.HashSet {	
+public final class WySet extends java.util.HashSet {
 	/**
 	 * The reference count is use to indicate how many variables are currently
 	 * referencing this compound structure. This is useful for making imperative
 	 * updates more efficient. In particular, when the <code>refCount</code> is
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
-	int refCount = 100;  // temporary measure 
+	int refCount = 100;  // temporary measure
 
 	// ================================================================================
 	// Generic Operations
-	// ================================================================================	 	
-		
-	public WySet() {		
-			
+	// ================================================================================
+
+	public WySet() {
+
 	}
-	
+
 	private WySet(java.util.Collection items) {
 		super(items);
 		for(Object o : items) {
 			Util.incRefs(o);
 		}
-	}	
-	
+	}
+
 	public String toString() {
 		String r = "{";
 		boolean firstTime=true;
@@ -67,184 +67,184 @@ public final class WySet extends java.util.HashSet {
 			r = r + whiley.lang.Any$native.toString(o);
 		}
 		return r + "}";
-	} 
+	}
 
 	// ================================================================================
 	// Set Operations
-	// ================================================================================	 	
-	
+	// ================================================================================
+
 	public static boolean subset(WySet lhs, WySet rhs) {
 		return rhs.containsAll(lhs) && rhs.size() > lhs.size();
 	}
-	
+
 	public static boolean subsetEq(WySet lhs, WySet rhs) {
 		return rhs.containsAll(lhs);
 	}
-	
+
 	public static WySet union(WySet lhs, WySet rhs) {
 		Util.countRefs(lhs);
 		Util.countRefs(rhs);
-		
+
 		if(lhs.refCount == 0) {
-			Util.nset_inplace_updates++;						
+			Util.nset_inplace_updates++;
 		} else if(rhs.refCount == 0) {
-			Util.nset_inplace_updates++;						
+			Util.nset_inplace_updates++;
 			WySet tmp = rhs;
 			rhs = lhs;
 			lhs = tmp;
 		} else {
 			Util.countClone(lhs);
 			lhs = new WySet(lhs);
-		}		
+		}
 		lhs.addAll(rhs);
 		for(Object o : rhs) {
 			Util.incRefs(o);
 		}
 		return lhs;
 	}
-	
+
 	public static WySet union(WySet lhs, Object rhs) {
 		Util.countRefs(lhs);
-		
+
 		if(lhs.refCount == 0) {
-			Util.nset_inplace_updates++;						
+			Util.nset_inplace_updates++;
 		} else {
-			Util.countClone(lhs);			
-			lhs = new WySet(lhs);			
+			Util.countClone(lhs);
+			lhs = new WySet(lhs);
 		}
 		lhs.add(rhs);
 		Util.incRefs(rhs);
 		return lhs;
 	}
-	
+
 	public static WySet union(Object lhs, WySet rhs) {
 		Util.countRefs(rhs);
-		
+
 		if(rhs.refCount == 0) {
-			Util.nset_inplace_updates++;						
+			Util.nset_inplace_updates++;
 		} else {
-			Util.countClone(rhs);			
-			rhs = new WySet(rhs);			
-		}		
+			Util.countClone(rhs);
+			rhs = new WySet(rhs);
+		}
 		rhs.add(lhs);
 		Util.incRefs(lhs);
 		return rhs;
 	}
-	
+
 	public static WySet difference(WySet lhs, WySet rhs) {
 		Util.countRefs(lhs);
 		Util.countRefs(rhs);
-		
+
 		if(lhs.refCount == 0) {
-			Util.nset_inplace_updates++;						
+			Util.nset_inplace_updates++;
 		} else {
 			Util.countClone(lhs);
 			lhs = new WySet(lhs);
-		}			
+		}
 		lhs.removeAll(rhs);
 		for(Object o : rhs) {
-			Util.decRefs(o); // because of constructor increment	
+			Util.decRefs(o); // because of constructor increment
 		}
 		return lhs;
 	}
-	
+
 	public static WySet difference(WySet lhs, Object rhs) {
 		Util.countRefs(lhs);
 		if(lhs.refCount == 0) {
-			Util.nset_inplace_updates++;						
+			Util.nset_inplace_updates++;
 		} else {
 			Util.countClone(lhs);
 			lhs = new WySet(lhs);
-		}	
+		}
 		lhs.remove(rhs);
-		Util.decRefs(rhs); // because of constructor increment		
+		Util.decRefs(rhs); // because of constructor increment
 		return lhs;
-	}	
-	
+	}
+
 	public static WySet intersect(WySet lhs, WySet rhs) {
 		Util.countRefs(lhs);
 		Util.countRefs(rhs);
 		if(lhs.refCount == 0) {
-			Util.nset_inplace_updates++;						
+			Util.nset_inplace_updates++;
 		} else if(rhs.refCount == 0) {
-			Util.nset_inplace_updates++;			
+			Util.nset_inplace_updates++;
 			WySet tmp = rhs;
 			rhs = lhs;
 			lhs = tmp;
 		} else {
 			Util.countClone(lhs);
 			lhs = new WySet(lhs);
-		}	
+		}
 		lhs.retainAll(rhs);
 		for(Object o : rhs) {
 			if(!lhs.contains(o)) {
-				Util.decRefs(o);				
+				Util.decRefs(o);
 			}
 		}
 		return lhs;
 	}
-	
+
 	public static WySet intersect(WySet lhs, Object rhs) {
 		Util.countRefs(lhs);
-		
+
 		if(lhs.refCount == 0) {
-			Util.nset_inplace_updates++;						
+			Util.nset_inplace_updates++;
 		} else {
 			Util.countClone(lhs);
 			lhs = new WySet(lhs);
 		}
-		
+
 		for(Object o : lhs) {
 			Util.decRefs(o);
 		}
-		
+
 		lhs.clear();
-		
-		if(lhs.contains(rhs)) {			
+
+		if(lhs.contains(rhs)) {
 			Util.incRefs(rhs);
 			lhs.add(rhs);
-		} 
-				
+		}
+
 		return lhs;
 	}
-	
-	public static WySet intersect(Object lhs, WySet rhs) {		
+
+	public static WySet intersect(Object lhs, WySet rhs) {
 		Util.countRefs(rhs);
-		
+
 		if(rhs.refCount == 0) {
-			Util.nset_inplace_updates++;						
+			Util.nset_inplace_updates++;
 		} else {
 			Util.countClone(rhs);
 			rhs = new WySet(rhs);
 		}
-		
+
 		for(Object o : rhs) {
 			Util.decRefs(o);
 		}
-		
+
 		rhs.clear();
-		
-		if(rhs.contains(lhs)) {			
+
+		if(rhs.contains(lhs)) {
 			Util.incRefs(lhs);
 			rhs.add(lhs);
-		} 
-				
+		}
+
 		return rhs;
-	}	
-	
-	public static BigInteger length(WySet set) {		
+	}
+
+	public static BigInteger length(WySet set) {
 		return BigInteger.valueOf(set.size());
 	}
-	
+
 	/**
 	 * This method is not intended for public consumption. It is used internally
 	 * by the compiler during object construction only.
-	 * 
+	 *
 	 * @param list
 	 * @param item
 	 * @return
 	 */
-	public static WySet internal_add(WySet lhs, Object rhs) {		
+	public static WySet internal_add(WySet lhs, Object rhs) {
 		lhs.add(rhs);
 		return lhs;
 	}

@@ -24,6 +24,6 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
- * Provides various utility classes to help implement and manipulate automata. 
+ * Provides various utility classes to help implement and manipulate automata.
  */
 package wyautl.util;

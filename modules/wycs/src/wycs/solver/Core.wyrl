@@ -77,7 +77,7 @@ rank 0:
     => Num((real) |xs|)
 
 // Two tuples of different sizes are never equal (1); two tuples of
-// the same size are equal iff their subexpressions at matching indices 
+// the same size are equal iff their subexpressions at matching indices
 // are equal.
 reduce Equals[TupleT[Type... ts],{|Tuple[Expr... xs],Tuple[Expr... ys]|}]
 name "EqualsTuple_1"
@@ -148,7 +148,7 @@ rank 1:
 // ====================================================================
 
 // A conjunct is the logical "And" of a a set of zero or more boolean
-// expressions.  
+// expressions.
 term And{BExpr...}
 
 // A conjunct with one term gives that term
@@ -197,7 +197,7 @@ rank 3:
 // ====================================================================
 
 // A disjunct is the logical "Or" of a a set of zero or more boolean
-// expressions.  
+// expressions.
 term Or{BExpr...}
 
 reduce Or{BExpr x}
@@ -237,7 +237,7 @@ term Equals[Type,{|Expr,Expr|}]
 
 // An expression is always equal to itself (1); any two distinct
 // values are never equal (2).  Notice that we cannot conclude False
-// when we have general expressions that aren't equal, because these may 
+// when we have general expressions that aren't equal, because these may
 // eventually reduce to the same value (or not).
 reduce Equals[Type t, {|Expr x, Expr y|}]
 name "Equals_1"
@@ -254,10 +254,10 @@ rank 2:
        in And (eq ++ cs)
 
 // When two variables are equal, substitute one for the other in all
-// expressions.  We need to carefully choose a unique representative 
-// from the two variables in order to prevent a loop where we substitute 
+// expressions.  We need to carefully choose a unique representative
+// from the two variables in order to prevent a loop where we substitute
 // for one variable, and then repeat this for the other, and so on.
-// 
+//
 // NOTE: this must be an inference rule in order to force the two
 // variable expressions to be in a canonical form and, hence, directly
 // comparable.
@@ -284,20 +284,20 @@ function max{|VExpr...|} => VExpr
 // Expressions & Values
 // ====================================================================
 
-// A value is a concrete term which cannot be further reduced.  The 
-// base values are boolean true or false, and a tuple of values.  Other 
+// A value is a concrete term which cannot be further reduced.  The
+// base values are boolean true or false, and a tuple of values.  Other
 // values include integers, rationals and sets of values.
-define Value as Bool | Num | String | Tuple[Value...] | ... 
+define Value as Bool | Num | String | Tuple[Value...] | ...
 
 // Variable Expressions are those which represent variables or
-// sub-components thereof.  Such expressions can in principle 
-// return a value of any kind.  
+// sub-components thereof.  Such expressions can in principle
+// return a value of any kind.
 define VExpr as Var | Fn | Load | ...
 
 // Tuple expressions are either tuple constructors or variables.
 define TExpr as VExpr | Tuple
 
-// Boolean expressions are those which can return a boolean value.  
+// Boolean expressions are those which can return a boolean value.
 // Variable expressions must be included in this, since they can return
 // any kind of value.
 define BExpr as VExpr | Bool | And | Or | Not | Equals | ...

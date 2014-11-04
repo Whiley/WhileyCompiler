@@ -13,4 +13,4 @@ ensures  r == 2*n:
 method main(System.Console console):
     for i in 0 .. 10:
         console.out.println("GOT: " ++ duplicate(i))
-    
+

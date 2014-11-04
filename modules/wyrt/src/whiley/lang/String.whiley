@@ -31,7 +31,7 @@ import u8 from whiley.lang.Int
 import i8 from whiley.lang.Int
 
 // find first index in string which matches character.  If no match,
-// then return null. 
+// then return null.
 public function indexOf(string str, char c) => int|null:
     int i = 0
     while i < |str|:
@@ -50,7 +50,7 @@ public function indexOf(string str, char c, int start) => int|null:
     return null
 
 // find last index in string which matches character.  If no match,
-// then return null. 
+// then return null.
 public function lastIndexOf(string str, char c) => int|null:
     //
     int i = |str|
@@ -60,7 +60,7 @@ public function lastIndexOf(string str, char c) => int|null:
             return i
     return null
 
-// replace all occurrences of "old" with "new" in string "str".  
+// replace all occurrences of "old" with "new" in string "str".
 public function replace(string str, char old, char n) => string:
     //
     int i = 0
@@ -68,7 +68,7 @@ public function replace(string str, char old, char n) => string:
         if str[i] == old:
             str[i] = n
         i = i + 1
-    return str    
+    return str
 
 // Convert a byte stream into a string using the standard ASCII
 // encoding.
@@ -76,7 +76,7 @@ public function fromASCII([byte] data) => string:
     string r = ""
     for b in data:
         r = r ++ Byte.toChar(b)
-    return r    
+    return r
 
 // FIXME: this method is completely broken!
 public function toUTF8(string s) => [byte]:

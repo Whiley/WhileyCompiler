@@ -43,39 +43,39 @@ import wyfs.lang.Path.ID;
  * cannot be considered a concrete entry which can be read and written in the
  * normal manner. Rather, it provides access to entries. In a physical file
  * system, a folder would correspond to a directory.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public abstract class AbstractFolder implements Path.Folder {
 	protected final Path.ID id;
 	private Path.Item[] contents;
 	private int nentries;
-	
+
 	/**
 	 * Construct an Abstract Folder representing a given ID (taken relative to
 	 * the enclosing root).
-	 * 
+	 *
 	 * @param id
 	 */
 	public AbstractFolder(Path.ID id) {
 		this.id = id;
 	}
-	
+
 	@Override
 	public Path.ID id() {
 		return id;
-	}	
-	
+	}
+
 	@Override
 	public boolean contains(Path.Entry<?> e) throws IOException {
-		updateContents();	
+		updateContents();
 		Path.ID eid = e.id();
 		boolean contained;
-		
-		if(id == eid.parent()) {	
+
+		if(id == eid.parent()) {
 			// The requested entry is contained in this folder. Therefore, we
-			// need to search for it. 
+			// need to search for it.
 			contained = true;
 		} else if(id == eid.subpath(0,id.size())) {
 			// This folder is a parent of the requested entry. Therefore, we
@@ -86,8 +86,8 @@ public abstract class AbstractFolder implements Path.Folder {
 		} else {
 			return false;
 		}
-		
-		int idx = binarySearch(contents,nentries,eid);			
+
+		int idx = binarySearch(contents,nentries,eid);
 		if(idx >= 0) {
 			// At this point, we've found a matching index for the given ID.
 			// However, there maybe multiple matching IDs (e.g. with different
@@ -104,24 +104,24 @@ public abstract class AbstractFolder implements Path.Folder {
 			} while (++idx < nentries
 					&& (item = contents[idx]).id().equals(eid));
 		}
-			 					
+
 		// no dice
 		return false;
 	}
-	
+
 	@Override
-	public boolean exists(ID id, Content.Type<?> ct) throws IOException{				
+	public boolean exists(ID id, Content.Type<?> ct) throws IOException{
 		return get(id,ct) != null;
 	}
-	
+
 	@Override
-	public <T> Path.Entry<T> get(ID eid, Content.Type<T> ct) throws IOException{				
-		updateContents();				
-		
-		ID tid = id.append(eid.get(0));		
-	
+	public <T> Path.Entry<T> get(ID eid, Content.Type<T> ct) throws IOException{
+		updateContents();
+
+		ID tid = id.append(eid.get(0));
+
 		int idx = binarySearch(contents,nentries,tid);
-		if(idx >= 0) {			
+		if(idx >= 0) {
 			// At this point, we've found a matching index for the given ID.
 			// However, there maybe multiple matching IDs with different
 			// content types. Therefore, we need to check them all to see if
@@ -143,44 +143,44 @@ public abstract class AbstractFolder implements Path.Folder {
 				}
 			} while (++idx < nentries
 					&& (item = contents[idx]).id().equals(tid));
-		} 
-			
+		}
+
 		// no dice
 		return null;
 	}
-	
+
 	@Override
-	public List<Entry<?>> getAll() throws IOException{			
+	public List<Entry<?>> getAll() throws IOException{
 		ArrayList entries = new ArrayList();
 		updateContents();
-		
+
 		// It would be nice to further optimise this loop. Basically, to avoid
 		// creating so many ArrayList objects. However, it's tricky to get right
 		// given Java's generic type system.
-		
+
 		for(int i=0;i!=nentries;++i) {
 			Path.Item item = contents[i];
 			if(item instanceof Entry) {
 				Entry entry = (Entry) item;
-				entries.add(entry);			
+				entries.add(entry);
 			} else if (item instanceof Path.Folder) {
 				Path.Folder folder = (Path.Folder) item;
 				entries.addAll(folder.getAll());
 			}
 		}
-		
+
 		return entries;
 	}
-	
+
 	@Override
-	public <T> void getAll(Content.Filter<T> filter, List<Entry<T>> entries) throws IOException{			
+	public <T> void getAll(Content.Filter<T> filter, List<Entry<T>> entries) throws IOException{
 		updateContents();
-		
+
 		// It would be nice to further optimise this loop. The key issue is that,
 		// at some point, we might know the filter could never match. In which
 		// case, we want to stop the recursion early, rather than exploring a
 		// potentially largel subtree.
-		
+
 		for(int i=0;i!=nentries;++i) {
 			Path.Item item = contents[i];
 			if(item instanceof Entry) {
@@ -195,16 +195,16 @@ public abstract class AbstractFolder implements Path.Folder {
 			}
 		}
 	}
-	
+
 	@Override
-	public <T> void getAll(Content.Filter<T> filter, Set<Path.ID> entries) throws IOException{			
+	public <T> void getAll(Content.Filter<T> filter, Set<Path.ID> entries) throws IOException{
 		updateContents();
-		
+
 		// It would be nice to further optimise this loop. The key issue is that,
 		// at some point, we might know the filter could never match. In which
 		// case, we want to stop the recursion early, rather than exploring a
 		// potentially largel subtree.
-		
+
 		for(int i=0;i!=nentries;++i) {
 			Path.Item item = contents[i];
 			if (item instanceof Entry) {
@@ -218,13 +218,13 @@ public abstract class AbstractFolder implements Path.Folder {
 				folder.getAll(filter, entries);
 			}
 		}
-	}		
-	
+	}
+
 	@Override
 	public void refresh() {
 		contents = null;
 	}
-	
+
 	@Override
 	public void flush() throws IOException {
 		if(contents != null) {
@@ -233,12 +233,12 @@ public abstract class AbstractFolder implements Path.Folder {
 			}
 		}
 	}
-	
+
 	protected Path.Folder getFolder(String name) throws IOException {
-		updateContents();				
-		
-		ID tid = id.append(name);		
-		
+		updateContents();
+
+		ID tid = id.append(name);
+
 		int idx = binarySearch(contents, nentries, tid);
 		if (idx >= 0) {
 			// At this point, we've found a matching index for the given ID.
@@ -255,15 +255,15 @@ public abstract class AbstractFolder implements Path.Folder {
 			} while (++idx < nentries
 					&& (item = contents[idx]).id().equals(tid));
 		}
-			
+
 		// no dice
 		return null;
 	}
-	
+
 	/**
 	 * Insert a newly created item into this folder. Observe we assume
 	 * <code>entry.id().parent() == id</code>.
-	 * 
+	 *
 	 * @param item
 	 */
 	protected void insert(Path.Item item) throws IOException {
@@ -272,7 +272,7 @@ public abstract class AbstractFolder implements Path.Folder {
 					"Cannot insert with incorrect Path.Item (" + item.id() + ") into AbstractFolder (" + id + ")");
 		}
 		updateContents();
-		
+
 		Path.ID id = item.id();
 		int index = binarySearch(contents, nentries, id);
 
@@ -293,31 +293,31 @@ public abstract class AbstractFolder implements Path.Folder {
 		}
 
 		contents[index] = item;
-		nentries++;		
+		nentries++;
 	}
-	
+
 	private final void updateContents() throws IOException{
 		if(contents == null) {
-			contents = contents();			
+			contents = contents();
 			nentries = contents.length;
 			Arrays.sort(contents,entryComparator);
 		}
 	}
-	
+
 	/**
 	 * Extract all entries from the given folder.
 	 */
 	protected abstract Path.Item[] contents() throws IOException;
-	
+
 	private static final int binarySearch(final Path.Item[] children, int nchildren, final Path.ID key) {
 		int low = 0;
         int high = nchildren-1;
-            
+
         while (low <= high) {
             int mid = (low + high) >> 1;
-            int c = children[mid].id().compareTo(key); 
+            int c = children[mid].id().compareTo(key);
             if (c < 0) {
-                low = mid + 1; 
+                low = mid + 1;
             } else if (c > 0) {
                 high = mid - 1;
             } else {
@@ -325,13 +325,13 @@ public abstract class AbstractFolder implements Path.Folder {
             	mid = mid - 1;
 				while (mid >= 0 && children[mid].id().compareTo(key) == 0) {
 					mid = mid - 1;
-				}				
+				}
 				return mid + 1;
             }
         }
         return -(low + 1);
 	}
-	
+
 	private static final Comparator<Path.Item> entryComparator = new Comparator<Path.Item>() {
 		public int compare(Path.Item e1, Path.Item e2) {
 			return e1.id().compareTo(e2.id());

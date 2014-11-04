@@ -16,9 +16,9 @@ type Square is (int x) where x == BLANK || x == CIRCLE || x == CROSS
 type Board is {
     nat move,
     [Square] pieces // 3 x 3
-} where |pieces| == 9 && move <= 9 && 
+} where |pieces| == 9 && move <= 9 &&
     countOf(pieces,BLANK) == (9 - move) &&
-    (countOf(pieces,CIRCLE) == countOf(pieces,CROSS) ||    
+    (countOf(pieces,CIRCLE) == countOf(pieces,CROSS) ||
      countOf(pieces,CIRCLE) == countOf(pieces,CROSS)+1)
 
 // ==================================================================
@@ -86,6 +86,5 @@ method main(System.Console console):
 
 
 
-    
-    
-    
+
+

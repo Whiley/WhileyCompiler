@@ -39,12 +39,12 @@ import wyautl_old.lang.*;
  * <p>
  * There are several places in the Whiley language where implicit coercions are
  * applied. For example, in the following:
- * 
+ *
  * <pre>
  * real f(int x):
  *     return x
  * </pre>
- * 
+ *
  * The above compiles correctly because, while <code>real :> int</code> does not
  * hold, an <code>int</code> can be implicitly coerced into a <code>real</code>.
  * </p>
@@ -52,24 +52,24 @@ import wyautl_old.lang.*;
  * <b>NOTE:</b> as for the subtype operator, both types must have been
  * normalised beforehand to guarantee correct results from this operator.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class ImplicitCoercionOperator extends SubtypeOperator {
-	
+
 	public ImplicitCoercionOperator(Automaton fromAutomata, Automaton toAutomata) {
 		super(fromAutomata,toAutomata);
 	}
-	
+
 	@Override
 	public boolean isIntersectionInner(int fromIndex, boolean fromSign, int toIndex,
-			boolean toSign) {		
+			boolean toSign) {
 		Automaton.State fromState = from.states[fromIndex];
 		Automaton.State toState = to.states[toIndex];
 		int fromKind = fromState.kind;
 		int toKind = toState.kind;
-		
+
 		if (primitiveSubtype(fromKind,toKind)) {
 			return fromSign == toSign || (fromSign && !toSign);
 		} else if(fromKind == K_SET && toKind == K_LIST) {
@@ -99,23 +99,23 @@ public class ImplicitCoercionOperator extends SubtypeOperator {
 		} else if(fromKind == K_MAP && toKind == K_SET) {
 			if (!fromSign || !toSign) {
 				// TO DO: this is a bug here for cases when the element type is e.g. int|real
-				int toChild = toState.children[0];				
+				int toChild = toState.children[0];
 				int toChildKind = to.states[toChild].kind;
-				if (toChildKind != K_VOID) {					
+				if (toChildKind != K_VOID) {
 					return fromSign != toSign;
-				} 
+				}
 			}
 			return fromSign == toSign;
-		} else if ((fromKind == K_SET || fromKind == K_LIST) && toKind == K_STRING) {			
+		} else if ((fromKind == K_SET || fromKind == K_LIST) && toKind == K_STRING) {
 			if (!fromSign || !toSign) {
 				// TO DO: this is a bug here for cases when the element type is e.g. int|real
-				int fromChild = fromState.children[0];				
+				int fromChild = fromState.children[0];
 				int fromChildKind = from.states[fromChild].kind;
 				if (fromChildKind != K_INT
 						&& fromChildKind != K_RATIONAL
-						&& fromChildKind != K_ANY) {					
+						&& fromChildKind != K_ANY) {
 					return fromSign != toSign;
-				} 
+				}
 			}
 			return fromSign == toSign;
 		} else {
@@ -123,7 +123,7 @@ public class ImplicitCoercionOperator extends SubtypeOperator {
 			return super.isIntersectionInner(fromIndex, fromSign, toIndex, toSign);
 		}
 	}
-	
+
 	private static boolean primitiveSubtype(int fromKind, int toKind) {
 		if (fromKind == K_INT && toKind == K_CHAR) {
 			// chars can flow into ints
@@ -132,7 +132,7 @@ public class ImplicitCoercionOperator extends SubtypeOperator {
 				&& (toKind == K_INT || toKind == K_CHAR)) {
 			// ints or chars can flow into rationals
 			return true;
-		} 
+		}
 		return false;
 	}
 }

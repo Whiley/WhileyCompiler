@@ -61,7 +61,7 @@ For detail, see `comment-dwim'."
   (substitute-key-definition 'fill-paragraph 'c-fill-paragraph
 			     c-mode-base-map global-map)
 
-  ;; java-style comments "// ..." and “/* … */” 
+  ;; java-style comments "// ..." and “/* … */”
   (define-key wyrl-mode-map [remap comment-dwim] 'wyrl-comment-dwim)
   (modify-syntax-entry ?\/ ". 124b" wyrl-mode-syntax-table)
   (modify-syntax-entry ?* ". 23" wyrl-mode-syntax-table)
@@ -70,7 +70,7 @@ For detail, see `comment-dwim'."
   ;; indentation.  Needs work!
   (setq indent-tabs-mode nil)
   (local-set-key (kbd "TAB") 'tab-to-tab-stop)
-  (setq tab-stop-list (list 4 8 12 16 20 24 28))  
+  (setq tab-stop-list (list 4 8 12 16 20 24 28))
 
   ;; unicode characters
   (local-set-key "\M-u" '(lambda () (interactive) (ucs-insert #x222A)))
@@ -79,6 +79,6 @@ For detail, see `comment-dwim'."
 )
 
 ;; automode
-(setq auto-mode-alist (cons '("\\.wyrl\\'" . wyrl-mode) auto-mode-alist)) 
+(setq auto-mode-alist (cons '("\\.wyrl\\'" . wyrl-mode) auto-mode-alist))
 
 (provide 'wyrl)

@@ -10,15 +10,15 @@ import wycc.util.Pair;
 
 /**
  * Provides some simple helper functions used by all test harnesses.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class TestUtils {
 
 	/**
 	 * Run the Whiley Compiler with the given list of arguments.
-	 * 
+	 *
 	 * @param args
 	 *            --- list of command-line arguments to provide to the Whiley
 	 *            Compiler.
@@ -26,20 +26,20 @@ public class TestUtils {
 	 */
 	public static Pair<Integer,String> compile(String... args) {
 		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
-		ByteArrayOutputStream sysout = new ByteArrayOutputStream();		
+		ByteArrayOutputStream sysout = new ByteArrayOutputStream();
 		int exitCode = new WycMain(new WycBuildTask(), WycMain.DEFAULT_OPTIONS, sysout, syserr)
 				.run(args);
 		byte[] errBytes = syserr.toByteArray();
 		byte[] outBytes = sysout.toByteArray();
 		String output = new String(errBytes) + new String(outBytes);
 		return new Pair<Integer,String>(exitCode,output);
-	}	
-	
+	}
+
 	/**
 	 * Execute a given class file using the "java" command, and return all
 	 * output written to stdout. In the case of some kind of failure, write the
 	 * generated stderr stream to this processes stdout.
-	 * 
+	 *
 	 * @param classPath
 	 *            Class path to use when executing Java code. Note, directories
 	 *            can always be safely separated with '/', and path separated
@@ -92,7 +92,7 @@ public class TestUtils {
 	 * Compare the output of executing java on the test case with a reference
 	 * file. If the output differs from the reference output, then the offending
 	 * line is written to the stdout and an exception is thrown.
-	 * 
+	 *
 	 * @param output
 	 *            This provides the output from executing java on the test case.
 	 * @param referenceFile
@@ -146,9 +146,9 @@ public class TestUtils {
 	 * reading from other streams can happen concurrently. For example, we can
 	 * read concurrently from <code>stdin</code> and <code>stderr</code> for
 	 * some process without blocking that process.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	static public class StreamGrabber extends Thread {
 		private InputStream input;

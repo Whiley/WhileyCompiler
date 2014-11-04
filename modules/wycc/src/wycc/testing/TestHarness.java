@@ -51,13 +51,13 @@ public class TestHarness {
 			}
 		}
 	}
-	private String sourcepath;    // path to source files	
+	private String sourcepath;    // path to source files
 	private String outputPath; // path to output files
 	private String outputExtension; // the extension of output files
-	
+
 	/**
 	 * Construct a test harness object.
-	 * 
+	 *
 	 * @param srcPath
 	 *            The path to the source files to be tested
 	 * @param outputPath
@@ -71,14 +71,14 @@ public class TestHarness {
 			String outputExtension) {
 		this.sourcepath = srcPath.replace('/', File.separatorChar);
 		this.outputPath = outputPath.replace('/', File.separatorChar);
-		this.outputExtension = outputExtension;		
+		this.outputExtension = outputExtension;
 	}
-	
+
 	/**
 	 * Compile and execute a test case, whilst comparing its output against the
 	 * sample output. The test fails if either it does not compile, or running
 	 * it does not produce the sample output.
-	 * 
+	 *
 	 * @param name
 	 *            Name of the test to run. This must correspond to an executable
 	 *            Java file in the srcPath of the same name.
@@ -96,9 +96,9 @@ public class TestHarness {
 		//	fail("couldn't compile test!");
 		//} else {
 			String output = run(sourcepath, name, opts);
-			if (optf == 0) { 
+			if (optf == 0) {
 				compare(output, outputPath + File.separatorChar + name + "." + outputExtension);
-			} else { 
+			} else {
 				compare(output, outputPath + File.separatorChar + name + "." + outputExtension + optf);
 			}
 		//}
@@ -110,7 +110,7 @@ public class TestHarness {
 	 * it does not compile, or running it does not produce the sample output.
 	 * Enabling verification means that the verified must pass the given files
 	 * and, hence, this is all about testing the verifier.
-	 * 
+	 *
 	 * @param name
 	 *            Name of the test to run. This must correspond to an executable
 	 *            Java file in the srcPath of the same name.
@@ -127,7 +127,7 @@ public class TestHarness {
 					+ outputExtension);
 		//}
 	}
-	
+
 	/**
 	 * Compile and execute a syntactically invalid test case with verification
 	 * disabled. Since verification is disabled, runtime checks are instead
@@ -135,24 +135,24 @@ public class TestHarness {
 	 * by the verifier). Therefore, the expectation is that it should fail at
 	 * runtime with an assertion failure and, hence, the test fails if it
 	 * doesn't do this.
-	 * 
+	 *
 	 * @param name
 	 *            Name of the test to run. This must correspond to an executable
 	 *            Java file in the srcPath of the same name.
 	 */
-	protected void runtimeFailTest(String name) {				
+	protected void runtimeFailTest(String name) {
 		String fullName = sourcepath + File.separatorChar + name + ".whiley";
-		
-		//if (compile("-wd", sourcepath, "-wp", WYRT_PATH, fullName) != WycMain.SUCCESS) { 
+
+		//if (compile("-wd", sourcepath, "-wp", WYRT_PATH, fullName) != WycMain.SUCCESS) {
 		//	fail("couldn't compile test!");
 		//} else {
-			String output = run(sourcepath,name);				
+			String output = run(sourcepath,name);
 			if(output != null) {
 				fail("test should have failed at runtime!");
 			}
 		//}
 	}
-	
+
 	private static int compile(String... args) {
 		return new WycMain(new WyccBuildTask(), WycMain.DEFAULT_OPTIONS).run(args);
 	}
@@ -169,14 +169,14 @@ public class TestHarness {
 			String tmp =  WYCC_Script + opts + name + ".whiley";
 			// tmp+= "& sleep 1";
 			int cnt = 0;
-			
+
 			//Properties foo = System.getProperties();
 			//System.err.println(foo.getProperty("user.dir"));
-			
-			
+
+
 			StringBuffer syserr = new StringBuffer(4*1024);
 			StringBuffer sysout = new StringBuffer(4*1024);
-			
+
 			// the subprocess is really three threads
 			Process p = Runtime.getRuntime().exec(tmp, null, new File(path));
 			//ProcessBuilder bud = new ProcessBuilder();
@@ -229,7 +229,7 @@ public class TestHarness {
 				System.err.println("============================================================");
 				System.err.println(name + " yielded results of length " + tmp.length());
 				System.err.println("============================================================");
-				
+
 			}
 			return tmp;
 		} catch (Exception ex) {
@@ -239,11 +239,11 @@ public class TestHarness {
 
 		return null;
 	}
-	
+
 	/**
 	 * Compare the output of executing java on the test case with a reference
 	 * file.
-	 * 
+	 *
 	 * @param output
 	 *            This provides the output from executing java on the test case.
 	 * @param referenceFile
@@ -251,15 +251,15 @@ public class TestHarness {
 	 *            appropriate separator char for the host operating system.
 	 */
 	private static void compare(String output, String referenceFile) {
-		try {			
+		try {
 			BufferedReader outReader = new BufferedReader(new StringReader(output));
 			BufferedReader refReader = new BufferedReader(new FileReader(
 					new File(referenceFile)));
-			
+
 			while (refReader.ready() && outReader.ready()) {
 				String a = refReader.readLine();
 				String b = outReader.readLine();
-				
+
 				if (a.equals(b)) {
 					continue;
 				} else {
@@ -268,7 +268,7 @@ public class TestHarness {
 					throw new Error("Output doesn't match reference");
 				}
 			}
-						
+
 			String l1 = outReader.readLine();
 			String l2 = refReader.readLine();
 			if (l1 == null && l2 == null) return;
@@ -280,15 +280,15 @@ public class TestHarness {
 				} else if (l2 != null) {
 					System.err.println(" > " + l2);
 				}
-			} while(l1 != null && l2 != null);			
-			
+			} while(l1 != null && l2 != null);
+
 			fail("Files do not match");
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			fail();
 		}
 	}
-	
+
 	static public class StreamGrabber extends Thread {
 		private InputStream input;
 		//private BufferedReader inb;
@@ -307,7 +307,7 @@ public class TestHarness {
 		public void run() {
 			//String line;
 			int nextChar;
-			
+
 			try {
 				//while (true) {
 				//	line = inb.readLine();
@@ -324,11 +324,11 @@ public class TestHarness {
 				System.err.println("============================================================");
 				System.err.println(ioe);
 				System.err.println("============================================================");
-				
+
 			} finally {
 				done = true;
 			}
 		}
-		
+
 	}
 }

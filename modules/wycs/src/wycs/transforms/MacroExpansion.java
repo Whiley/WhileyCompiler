@@ -14,52 +14,52 @@ import wycs.core.WycsFile;
 /**
  * Responsible for inlining <i>macros</i> (i.e. named expressions or types
  * created with the <code>defined</code> statement). For example:
- * 
+ *
  * <pre>
  * define implies(bool x, bool y) as !x || y
- * 
+ *
  * assert:
  *    implies(true,true)
  * </pre>
- * 
+ *
  * The <code>define</code> statement creates the typed macro
  * <code>implies(bool,bool)->bool</code>. After macro expansion, we are left
  * with the following:
- * 
+ *
  * <pre>
  * define implies(bool x, bool y) as !x || y
- * 
+ *
  * assert:
  *    !true || true
  * </pre>
- * 
+ *
  * Here, we can see that the <code>implies</code> macro has simply been replaced
  * by its definition, with its parameters substituted accordingly for its
  * arguments. The purpose of this transform is simply to implement this
  * expansion procedure.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class MacroExpansion implements Transform<WycsFile> {
-	
+
 	/**
 	 * Determines whether macro inlining is enabled or not.
 	 */
 	private boolean enabled = getEnable();
 
 	private final Wyal2WycsBuilder builder;
-	
+
 	private String filename;
 
 	// ======================================================================
 	// Constructor(s)
 	// ======================================================================
-	
+
 	public MacroExpansion(Builder builder) {
 		this.builder = (Wyal2WycsBuilder) builder;
 	}
-	
+
 	// ======================================================================
 	// Configuration Methods
 	// ======================================================================
@@ -88,7 +88,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 			}
 		}
 	}
-	
+
 	private void transform(WycsFile.Declaration s) {
 		if(s instanceof WycsFile.Function) {
 			WycsFile.Function sf = (WycsFile.Function) s;
@@ -103,21 +103,21 @@ public class MacroExpansion implements Transform<WycsFile> {
 					filename, s);
 		}
 	}
-	
+
 	private void transform(WycsFile.Function s) {
 		if(s.constraint != null) {
 			s.constraint = transform(s.constraint);
 		}
 	}
-	
+
 	private void transform(WycsFile.Macro s) {
 		s.condition = transform(s.condition);
 	}
-	
+
 	private void transform(WycsFile.Assert s) {
 		s.condition = transform(s.condition);
 	}
-		
+
 	private Code transform(Code e) {
 		if (e instanceof Code.Variable || e instanceof Code.Constant) {
 			// do nothing
@@ -140,17 +140,17 @@ public class MacroExpansion implements Transform<WycsFile> {
 			return null; // dead code
 		}
 	}
-	
+
 	private Code transform(Code.Unary e) {
 		return Code.Unary(e.type, e.opcode, transform(e.operands[0]),
-					e.attributes());		
+					e.attributes());
 	}
-	
+
 	private Code transform(Code.Binary e) {
 		return Code.Binary(e.type, e.opcode, transform(e.operands[0]),
-				transform(e.operands[1]), e.attributes());		
+				transform(e.operands[1]), e.attributes());
 	}
-	
+
 	private Code transform(Code.Nary e) {
 		Code[] e_operands = e.operands;
 		Code[] operands = new Code[e_operands.length];
@@ -159,12 +159,12 @@ public class MacroExpansion implements Transform<WycsFile> {
 		}
 		return Code.Nary(e.type, e.opcode, operands, e.attributes());
 	}
-	
-	private Code transform(Code.Load e) {		
+
+	private Code transform(Code.Load e) {
 		return Code.Load(e.type, transform(e.operands[0]), e.index,
 				e.attributes());
 	}
-	
+
 	private Code transform(Code.FunCall e) {
 		Code r = e;
 		try {
@@ -174,7 +174,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 			// during code generation, there is no guarantee that it was
 			// previously resolved. This can cause problems if the standard
 			// library is not on the path as e.g. x[i] is translated into
-			// a call to wycs.core.Map.IndexOf(). 
+			// a call to wycs.core.Map.IndexOf().
 			if(module == null) {
 				internalFailure("cannot resolve as module: " + e.nid.module(), filename, e);
 			}
@@ -198,12 +198,12 @@ public class MacroExpansion implements Transform<WycsFile> {
 			throw ex;
 		} catch(Exception ex) {
 			internalFailure(ex.getMessage(), filename, e, ex);
-		}		
-		
+		}
+
 		transform(e.operands[0]);
-		return r;		
+		return r;
 	}
-	
+
 	private HashMap<String, SemanticType> buildGenericBinding(
 			SemanticType[] from, SemanticType[] to) {
 		HashMap<String, SemanticType> binding = new HashMap<String, SemanticType>();
@@ -213,7 +213,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 		}
 		return binding;
 	}
-	
+
 	private Code transform(Code.Quantifier e) {
 		return Code.Quantifier(e.type, e.opcode,
 				transform(e.operands[0]), e.types, e.attributes());

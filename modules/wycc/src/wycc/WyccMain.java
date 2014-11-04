@@ -37,30 +37,30 @@ import wycc.util.WyccBuildTask;
  * The main class provides all of the necessary plumbing to process command-line
  * options, construct an appropriate pipeline and then instantiate the Whiley
  * Compiler to generate class files.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class WyccMain {
-	
+
 	public static final OptArg[] WYCC_OPTIONS = new OptArg[]{
 		new OptArg("debug", "Include debug information in generated C files."),
 		new OptArg("no_numbers", "Suppress Whiley source line numbers in generated C files."),
 		new OptArg("floats", "Support Whiley rational numbers using C floating point."),
 		new OptArg("no_floats", "Suppress all C floating point."),
 		new OptArg("only_indirect_calls", "Replace Invoke with IndirectInvoke.")
-		
+
 	};
-	
-	public static void main(String[] _args) {	
+
+	public static void main(String[] _args) {
 		ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
 		Map<String, Object> values = OptArg.parseOptions(args, WYCC_OPTIONS);
-		
+
 		boolean debug = values.containsKey("debug");
 		if(debug) {
 			System.out.println("GOT DEBUG!");
 		}
-		
+
 		// FIXME: modify default options to include cdir
 		System.exit(new WycMain(new WyccBuildTask(values), WycMain.DEFAULT_OPTIONS)
 				.run(args.toArray(new String[args.size()])));

@@ -54,64 +54,64 @@ import wyil.io.*;
  * Java ClassFile format, except that it is geared towards Whiley rather than
  * Java.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public final class WyilFile implements CompilationUnit {
 
 	// =========================================================================
 	// Content Type
 	// =========================================================================
-	
+
 	/**
 	 * Responsible for identifying and reading/writing WyilFiles. The normal
 	 * extension is ".wyil" for WyilFiles.
 	 */
 	public static final Content.Type<WyilFile> ContentType = new Content.Type<WyilFile>() {
-		public Path.Entry<WyilFile> accept(Path.Entry<?> e) {			
+		public Path.Entry<WyilFile> accept(Path.Entry<?> e) {
 			if (e.contentType() == this) {
 				return (Path.Entry<WyilFile>) e;
-			} 			
+			}
 			return null;
 		}
 
-		public WyilFile read(Path.Entry<WyilFile> e, InputStream input) throws IOException {			
+		public WyilFile read(Path.Entry<WyilFile> e, InputStream input) throws IOException {
 			WyilFileReader reader = new WyilFileReader(input);
 			WyilFile mi = reader.read();
-			return mi;				
+			return mi;
 		}
-		
+
 		public void write(OutputStream output, WyilFile module) throws IOException {
 			WyilFileWriter writer = new WyilFileWriter(output);
 			writer.write(module);
 		}
-		
+
 		public String toString() {
 			return "Content-Type: wyil";
 		}
-	};	
+	};
 
 	// =========================================================================
 	// State
 	// =========================================================================
-		
+
 	/**
 	 * The fully qualified name of this WyilFile, including both package and
 	 * module name.
 	 */
 	private final Path.ID mid;
-	
+
 	/**
 	 * The originating source filename of this WyilFile.
 	 */
 	private final String filename;
-	
+
 	/**
 	 * The list of blocks in this WyiFile.
 	 */
 	private final ArrayList<Block> blocks;
-	
+
 	// =========================================================================
 	// Constructors
 	// =========================================================================
@@ -119,32 +119,32 @@ public final class WyilFile implements CompilationUnit {
 	/**
 	 * Construct a WyilFile objects with a given identifier, originating
 	 * filename and list of declarations.
-	 * 
+	 *
 	 * @param mid
 	 * @param filename
 	 * @param declarations
 	 */
 	public WyilFile(Path.ID mid,
 			String filename,
-			List<Block> declarations) {		
+			List<Block> declarations) {
 		this.mid = mid;
-		this.filename = filename;		
+		this.filename = filename;
 		this.blocks = new ArrayList<Block>(declarations);
-		
+
 		// second, validate methods and/or functions
 		HashSet<Pair<String,Type.FunctionOrMethod>> methods = new HashSet<Pair<String,Type.FunctionOrMethod>>();
 		HashSet<String> types = new HashSet<String>();
 		HashSet<String> constants = new HashSet<String>();
-		
+
 		for (Block d : declarations) {
 			if(d instanceof FunctionOrMethodDeclaration) {
 				FunctionOrMethodDeclaration m = (FunctionOrMethodDeclaration) d;
-				Pair<String,Type.FunctionOrMethod> p = new Pair<String,Type.FunctionOrMethod>(m.name(),m.type());				
+				Pair<String,Type.FunctionOrMethod> p = new Pair<String,Type.FunctionOrMethod>(m.name(),m.type());
 				if (methods.contains(p)) {
 					throw new IllegalArgumentException(
 							"Multiple function or method definitions (" + p.first() + ") with the same name and type not permitted");
 				}
-				methods.add(p);	
+				methods.add(p);
 			} else if(d instanceof TypeDeclaration) {
 				TypeDeclaration t = (TypeDeclaration) d;
 				if (types.contains(t.name())) {
@@ -153,7 +153,7 @@ public final class WyilFile implements CompilationUnit {
 				}
 				types.add(t.name());
 			} else if (d instanceof ConstantDeclaration) {
-				ConstantDeclaration c = (ConstantDeclaration) d;				
+				ConstantDeclaration c = (ConstantDeclaration) d;
 				if (constants.contains(c.name())) {
 					throw new IllegalArgumentException(
 							"Multiple constant definitions with the same name not permitted");
@@ -162,33 +162,33 @@ public final class WyilFile implements CompilationUnit {
 			}
 		}
 	}
-	
+
 	// =========================================================================
 	// Accessors
 	// =========================================================================
-	
+
 	/**
 	 * Returns the fully qualified name of this WyilFile, including both the
 	 * package and module name.
-	 * 
+	 *
 	 * @return
 	 */
 	public Path.ID id() {
 		return mid;
 	}
-	
+
 	/**
 	 * Returns the originating source file for this WyilFile.
-	 * 
+	 *
 	 * @return
 	 */
 	public String filename() {
 		return filename;
 	}
-	
+
 	/**
 	 * Determines whether a declaration exists with the given name.
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -199,26 +199,26 @@ public final class WyilFile implements CompilationUnit {
 				if(nd.name().equals(name)) {
 					return true;
 				}
-			} 
-		}		
+			}
+		}
 		return false;
 	}
-	
+
 	/**
 	 * Returns all declarations declared in this WyilFile. This list is
 	 * modifiable, and one can add new declarations to this WyilFile by adding
 	 * them to the returned list.
-	 * 
+	 *
 	 * @return
 	 */
 	public List<WyilFile.Block> blocks() {
 		return blocks;
 	}
-		
+
 	/**
 	 * Looks up a type declaration in this WyilFile with the given name; if none
 	 * exists, returns null.
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -228,16 +228,16 @@ public final class WyilFile implements CompilationUnit {
 				TypeDeclaration td = (TypeDeclaration) d;
 				if(td.name().equals(name)) {
 					return td;
-				}					
+				}
 			}
 		}
-		return null;		
+		return null;
 	}
-	
+
 	/**
 	 * Returns all type declarations in this WyilFile. Note that the returned
 	 * list is not modifiable.
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -250,11 +250,11 @@ public final class WyilFile implements CompilationUnit {
 		}
 		return Collections.unmodifiableList(r);
 	}
-	
+
 	/**
 	 * Looks up a constant declaration in this WyilFile with the given name; if none
 	 * exists, returns null.
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -264,16 +264,16 @@ public final class WyilFile implements CompilationUnit {
 				ConstantDeclaration cd = (ConstantDeclaration) d;
 				if(cd.name().equals(name)) {
 					return cd;
-				}					
+				}
 			}
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Returns all constant declarations in this WyilFile. Note that the
 	 * returned list is not modifiable.
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -286,12 +286,12 @@ public final class WyilFile implements CompilationUnit {
 		}
 		return Collections.unmodifiableList(r);
 	}
-	
-	
+
+
 	/**
 	 * Returns all function or method declarations in this WyilFile with the
 	 * given name. Note that the returned list is not modifiable.
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -307,11 +307,11 @@ public final class WyilFile implements CompilationUnit {
 		}
 		return Collections.unmodifiableList(r);
 	}
-	
+
 	/**
 	 * Looks up a function or method declaration in this WyilFile with the given
 	 * name and type; if none exists, returns null.
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -326,11 +326,11 @@ public final class WyilFile implements CompilationUnit {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Returns all function or method declarations in this WyilFile. Note that
 	 * the returned list is not modifiable.
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -343,32 +343,32 @@ public final class WyilFile implements CompilationUnit {
 		}
 		return Collections.unmodifiableList(r);
 	}
-	
+
 	// =========================================================================
 	// Mutators
 	// =========================================================================
-	
+
 	public void replace(WyilFile.Block old, WyilFile.Block nuw) {
 		for(int i=0;i!=blocks.size();++i) {
 			if(blocks.get(i) == old) {
 				blocks.set(i,nuw);
 				return;
-			}			
+			}
 		}
 	}
-		
+
 	// =========================================================================
 	// Types
-	// =========================================================================		
-	
+	// =========================================================================
+
 	/**
 	 * A block is an chunk of information within a WyIL file. For example, it
 	 * might be a declaration for a type, constant, function or method. However,
 	 * other kinds of block are possible, such as for storing documentation,
 	 * debug information, etc.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static abstract class Block extends SyntacticElement.Impl {
 		public Block(Attribute... attributes) {
@@ -378,62 +378,62 @@ public final class WyilFile implements CompilationUnit {
 			super(attributes);
 		}
 	}
-	
+
 	/**
 	 * A declaration is a named entity within a WyIL file, and is either a type,
 	 * constant, function or method declaration.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static abstract class Declaration extends Block {
 		private String name;
-		private List<Modifier> modifiers;	
-		
+		private List<Modifier> modifiers;
+
 		public Declaration(String name, Collection<Modifier> modifiers,
 				Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.modifiers = new ArrayList<Modifier>(modifiers);
 		}
-		
+
 		public Declaration(String name, Collection<Modifier> modifiers,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.name = name;
 			this.modifiers = new ArrayList<Modifier>(modifiers);
 		}
-		
+
 		public String name() {
 			return name;
 		}
-				
+
 		public List<Modifier> modifiers() {
 			return modifiers;
-		}				
+		}
 
 		public boolean hasModifier(Modifier modifier) {
 			return modifiers.contains(modifier);
-		}		
+		}
 	}
-	
+
 	/**
 	 * A type declaration is a top-level block within a WyilFile that associates
 	 * a name with a given type. These names can be used within types,
 	 * constants, functions and methods in other WyIL files. Every type has an
 	 * optional invariant as well, which must hold true for all values of that
 	 * type.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
-	public static final class TypeDeclaration extends Declaration {		
-		private Type type;		
+	public static final class TypeDeclaration extends Declaration {
+		private Type type;
 		private Code.Block invariant;
 
 		public TypeDeclaration(Collection<Modifier> modifiers, String name, Type type,
 				Code.Block invariant, Attribute... attributes) {
-			super(name,modifiers,attributes);			
+			super(name,modifiers,attributes);
 			this.type = type;
 			this.invariant = invariant;
 		}
@@ -449,21 +449,21 @@ public final class WyilFile implements CompilationUnit {
 		public Type type() {
 			return type;
 		}
-		
+
 		public Code.Block invariant() {
 			return invariant;
-		}				
+		}
 	}
-	
+
 	/**
 	 * A constant declaration is a top-level block within a WyilFile that
 	 * associates a name with a given constant value. These names can be used
 	 * within expressions found in constants and functions and methods in other
 	 * WyIL files. Note that constants may not have cyclic dependencies (i.e.
 	 * they're value may not depend on itself).
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class ConstantDeclaration extends Declaration {
 		private Constant constant;
@@ -484,7 +484,7 @@ public final class WyilFile implements CompilationUnit {
 			return constant;
 		}
 	}
-		
+
 	public static final class FunctionOrMethodDeclaration extends
 			Declaration {
 		private Type.FunctionOrMethod type;
@@ -524,16 +524,16 @@ public final class WyilFile implements CompilationUnit {
 			return type instanceof Type.Method;
 		}
 	}
-	
-	public static final class Case extends SyntacticElement.Impl {				
+
+	public static final class Case extends SyntacticElement.Impl {
 		private final ArrayList<Code.Block> precondition;
 		private final ArrayList<Code.Block> postcondition;
 		private final Code.Block body;
-		//private final ArrayList<String> locals;		
-		
+		//private final ArrayList<String> locals;
+
 		public Case(Code.Block body,
 				List<Code.Block> precondition,
-				List<Code.Block> postcondition, 
+				List<Code.Block> postcondition,
 				Attribute... attributes) {
 			super(attributes);
 			this.body = body;
@@ -543,24 +543,24 @@ public final class WyilFile implements CompilationUnit {
 
 		public Case(Code.Block body,
 				List<Code.Block> precondition,
-				List<Code.Block> postcondition,   
+				List<Code.Block> postcondition,
 				Collection<Attribute> attributes) {
-			super(attributes);			
+			super(attributes);
 			this.body = body;
 			this.precondition = new ArrayList<Code.Block>(precondition);
 			this.postcondition = new ArrayList<Code.Block>(postcondition);
 		}
-		
+
 		public Code.Block body() {
 			return body;
 		}
-		
+
 		public List<Code.Block> precondition() {
 			return precondition;
 		}
-		
+
 		public List<Code.Block> postcondition() {
 			return postcondition;
-		}		
+		}
 	}
 }

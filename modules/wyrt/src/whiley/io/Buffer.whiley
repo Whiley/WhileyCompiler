@@ -31,7 +31,7 @@ import whiley.lang.*
 // Byte buffer
 // =================================================================
 
-// A buffer provides an in memory store of data items which can be used 
+// A buffer provides an in memory store of data items which can be used
 // to construct a Reader, Writer or File.
 
 public type State is {

@@ -87,7 +87,7 @@ rank 4:
 reduce And{SubsetEq[SetT[bool b1, Type e1], Set{Expr... xs}, * x],SubsetEq[SetT[bool b2, Type e2], Set{Expr... ys}, SExpr y], BExpr... rest}
 name "Set_SubsetEq_4"
 rank 3:
-    => let zs = (xs ++ ys) 
+    => let zs = (xs ++ ys)
        in And (SubsetEq[SetT[b1 || b2,OrT{e1,e2}],Set(zs),x] ++ rest), if x == y
 
 reduce And{SubsetEq[SetT[bool b1, Type e1], SExpr x, Set{Expr... xs}],SubsetEq[SetT[bool b2, Type e2], SExpr y, Set{Expr... ys}], BExpr... rest}

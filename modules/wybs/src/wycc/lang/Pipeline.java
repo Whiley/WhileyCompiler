@@ -37,9 +37,9 @@ import wybs.lang.Builder;
  * A Pipeline consists of a number of stages which are applied to the
  * intermediate language (wyil). A pipeline is instantiated before being used to
  * create an instance of Compiler.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class Pipeline<T extends CompilationUnit> {
 
@@ -55,15 +55,15 @@ public class Pipeline<T extends CompilationUnit> {
 	 * pipeline is instantiated, these stages are instantiated.
 	 */
 	private final ArrayList<Template<T>> stages;
-	
-	public Pipeline(List<Template<T>> stages) {		
+
+	public Pipeline(List<Template<T>> stages) {
 		this.stages = new ArrayList<Template<T>>(stages);
 	}
 
 	/**
 	 * Set a specific option on a given pipeline stage. The previous value of
 	 * this option is returned, or null if there is none.
-	 * 
+	 *
 	 * @param clazz
 	 * @param name
 	 * @param value
@@ -74,7 +74,7 @@ public class Pipeline<T extends CompilationUnit> {
 		for (Template template : stages) {
 			if (template.clazz == clazz) {
 				Map<String,Object> options = template.options;
-				if(options == Collections.EMPTY_MAP) { 
+				if(options == Collections.EMPTY_MAP) {
 					options = new HashMap<String,Object>();
 					template.options = options;
 				}
@@ -83,16 +83,16 @@ public class Pipeline<T extends CompilationUnit> {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Apply a list of modifiers in the order of appearance. Modifiers may
 	 * remove stages, add new stages or reconfigure existing stages.
-	 * 
+	 *
 	 * @param modifiers
 	 */
 	public void apply(List<Modifier> modifiers) {
 		for (Modifier p : modifiers) {
-			Class<? extends Transform> stage = lookupTransform(p.name);			
+			Class<? extends Transform> stage = lookupTransform(p.name);
 			if(stage == null) {
 				throw new IllegalArgumentException("invalid pipeline stage \"" + p.name + "\"");
 			}
@@ -110,12 +110,12 @@ public class Pipeline<T extends CompilationUnit> {
 			{
 				int index = findTransform(lookupTransform(p.name));
 				stages.remove(index);
-				break;			
+				break;
 			}
-			}			
-		}		
+			}
+		}
 	}
-	
+
 	/**
 	 * <p>The following instantiates a compiler pipeline starting from the default
 	 * pipeline and applying those modifiers requested.</p>
@@ -123,7 +123,7 @@ public class Pipeline<T extends CompilationUnit> {
 	 * instantiated. In some special cases, a transform will want access to
 	 * files in the namespace. For example, to check that a particular method
 	 * exists, etc.</p>
-	 * 
+	 *
 	 * @param builder --- enclosing builder
 	 * @return
 	 */
@@ -138,16 +138,16 @@ public class Pipeline<T extends CompilationUnit> {
 	/**
 	 * A template is an uninstantiated pipeline stage. This contains all of the
 	 * necessary information to instantiate the stage.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 */
-	public static class Template<T extends CompilationUnit> {					
+	public static class Template<T extends CompilationUnit> {
 		public final Class<? extends Transform<T>> clazz;
 		public Map<String,Object> options;
-		
-		public Template(Class<? extends Transform<T>> clazz, 
+
+		public Template(Class<? extends Transform<T>> clazz,
 				Map<String, Object> options) {
-			this.clazz = clazz;			
+			this.clazz = clazz;
 			this.options = options;
 		}
 
@@ -156,18 +156,18 @@ public class Pipeline<T extends CompilationUnit> {
 		 * list. A constructor which accepts a ModuleLoader, and Map<String,String>
 		 * arguments will be called. If such a constructor doesn't exist, an
 		 * exception will be raised.
-		 * 
+		 *
 		 * @return
 		 */
-		public Transform<T> instantiate(Builder builder) {			
+		public Transform<T> instantiate(Builder builder) {
 			Transform<T> stage;
-			
+
 			// first, instantiate the transform
-			try {				
+			try {
 				Constructor<? extends Transform> c = clazz.getConstructor(
 						Builder.class);
 				stage = (Transform) c.newInstance(builder);
-										
+
 			} catch (NoSuchMethodException e) {
 				throw new IllegalArgumentException(
 						"failed to instantiate transform \""
@@ -185,7 +185,7 @@ public class Pipeline<T extends CompilationUnit> {
 						"failed to instantiate transform \""
 								+ clazz.getSimpleName() + "\"",e);
 			}
-			
+
 
 			// second, configure the instance
 			String attribute = "";
@@ -204,7 +204,7 @@ public class Pipeline<T extends CompilationUnit> {
 					} else {
 						// default
 						m = clazz.getDeclaredMethod(name, value.getClass());
-					}					
+					}
 					m.invoke(stage, value);
 				}
 			} catch (NoSuchMethodException e) {
@@ -215,16 +215,16 @@ public class Pipeline<T extends CompilationUnit> {
 				throw new IllegalArgumentException("failed to set attribute \""
 						+ attribute + "\" on transform \""
 						+ clazz.getSimpleName() + "\"",e);
-			} catch(IllegalAccessException e) {					
+			} catch(IllegalAccessException e) {
 				throw new IllegalArgumentException("failed to set attribute \""
 						+ attribute + "\" on transform \""
 						+ clazz.getSimpleName() + "\"",e);
 			}
-			
+
 			return stage;
 		}
 	}
-	
+
 	/**
 	 * Make the first letter of the string a captial.
 	 * @param str
@@ -233,27 +233,27 @@ public class Pipeline<T extends CompilationUnit> {
 	private static String capitalise(String str) {
 		String rest = str.substring(1);
 		char c = Character.toUpperCase(str.charAt(0));
-		return c + rest;		
+		return c + rest;
 	}
 
 	/**
 	 * The pipeline modifier captures a requested adjustment to the compilation
 	 * pipeline.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 */
 	public static class Modifier {
 		public final POP op;
-		public final String name;		
+		public final String name;
 		public final Map<String,Object> options;
-		
+
 		public Modifier(POP pop, String name, Map<String, Object> options) {
 			this.op = pop;
-			this.name = name;			
+			this.name = name;
 			this.options = options;
 		}
 	}
-	
+
 	public enum POP {
 		APPEND,
 		BEFORE,
@@ -264,7 +264,7 @@ public class Pipeline<T extends CompilationUnit> {
 
 	/**
 	 * Search through the pipeline looking form the first matching stage.
-	 * 
+	 *
 	 * @param match
 	 * @return
 	 */
@@ -284,7 +284,7 @@ public class Pipeline<T extends CompilationUnit> {
 	 * Register a transform with the system, in order that it can be used in a
 	 * given Pipeline. This is particularly useful because it allows transforms
 	 * to be referred to by abbreviations in pipeline modifiers.
-	 * 
+	 *
 	 * @param transform
 	 */
 	public static <S extends CompilationUnit> void register(
@@ -295,8 +295,8 @@ public class Pipeline<T extends CompilationUnit> {
 	/**
 	 * Lookup a transform in the list of registered transforms. This matches the
 	 * given name again the class names of registered transforms. The matching
-	 * of names is case-insensitive and will also match a substring.  
-	 * 
+	 * of names is case-insensitive and will also match a substring.
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -304,11 +304,11 @@ public class Pipeline<T extends CompilationUnit> {
 		name = name.toLowerCase();
 		for (Class<? extends Transform> t : transforms) {
 			String tn = t.getSimpleName().toLowerCase();
-			if (tn.startsWith(name)) {				
+			if (tn.startsWith(name)) {
 				return t;
 			}
 		}
 		throw new IllegalArgumentException("no transform matching \"" + name
 				+ "\"");
-	}	
+	}
 }
