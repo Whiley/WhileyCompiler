@@ -16,8 +16,8 @@ public class WyalFileReader {
 
 	public WyalFile read() throws IOException {
 		WyalFileLexer lexer = new WyalFileLexer(filename,input);
-		List<WyalFileLexer.Token> tokens;		
-		tokens = lexer.scan();		
+		List<WyalFileLexer.Token> tokens;
+		tokens = lexer.scan();
 		WyalFileParser parser = new WyalFileParser(filename, tokens);
 		return parser.read();
 	}

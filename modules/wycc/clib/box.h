@@ -8,23 +8,23 @@
  *
  * This file is part of the Whiley Development Kit (WDK).
  *
- * The Whiley Development Kit is free software; you can redistribute 
- * it and/or modify it under the terms of the GNU General Public 
- * License as published by the Free Software Foundation; either 
+ * The Whiley Development Kit is free software; you can redistribute
+ * it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * The Whiley Development Kit is distributed in the hope that it 
- * will be useful, but WITHOUT ANY WARRANTY; without even the 
- * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * The Whiley Development Kit is distributed in the hope that it
+ * will be useful, but WITHOUT ANY WARRANTY; without even the
+ * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
  * PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public 
- * License along with the Whiley Development Kit. If not, see 
+ * You should have received a copy of the GNU General Public
+ * License along with the Whiley Development Kit. If not, see
  * <http://www.gnu.org/licenses/>
  */
 
 /*
- * These are the defines and declarations needed for the 
+ * These are the defines and declarations needed for the
  * boxing of data by this library.
  */
 
@@ -133,7 +133,7 @@
  *
  * ie, what does obj->ptr really point to.
  *
- * Wy_None	
+ * Wy_None
  * Wy_Null
  * Wy_Any	ptr must be void
  * Wy_Char	ptr is char (will become wchar)

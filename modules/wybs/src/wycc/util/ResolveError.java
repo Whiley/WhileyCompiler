@@ -30,9 +30,9 @@ package wycc.util;
  * a given class or package. This generally indicates some kind of compile time
  * error (e.g. trying to import from module that doesn't exist). However, it
  * could also indicate that the WHILEYPATH is not configured correctly.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class ResolveError extends Exception {
 	public ResolveError(String msg) {

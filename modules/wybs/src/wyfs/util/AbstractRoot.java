@@ -41,62 +41,62 @@ import wyfs.lang.Path.Root;
 /**
  * Provides a simple implementation of <code>Path.Root</code>. This maintains a
  * cache all entries contained in the root.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public abstract class AbstractRoot<T extends Folder> implements Root {
 	protected final Content.Registry contentTypes;
 	protected final T root;
-	
+
 	public AbstractRoot(Content.Registry contentTypes) {
 		this.contentTypes = contentTypes;
 		this.root = root();
 	}
-			
+
 	public boolean contains(Path.Entry<?> e) throws IOException {
 		return root.contains(e);
 	}
-	
+
 	public boolean exists(ID id, Content.Type<?> ct) throws IOException{
 		return root.exists(id,ct);
 	}
-	
-	public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws IOException{		
+
+	public <T> Path.Entry<T> get(ID id, Content.Type<T> ct) throws IOException{
 		Path.Entry<T> e = root.get(id,ct);
 		return e;
 	}
-	
-	public <T> List<Entry<T>> get(Content.Filter<T> filter) throws IOException{	
+
+	public <T> List<Entry<T>> get(Content.Filter<T> filter) throws IOException{
 		ArrayList<Entry<T>> entries = new ArrayList<Entry<T>>();
 		root.getAll(filter, entries);
 		return entries;
 	}
-	
-	public <T> Set<Path.ID> match(Content.Filter<T> filter) throws IOException{	
+
+	public <T> Set<Path.ID> match(Content.Filter<T> filter) throws IOException{
 		HashSet<Path.ID> ids = new HashSet<Path.ID>();
 		root.getAll(filter, ids);
 		return ids;
-	}	
-	
+	}
+
 	@Override
 	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct) throws IOException {
-		return root.create(id,ct);	
+		return root.create(id,ct);
 	}
-	
+
 	public void refresh() throws IOException{
 		root.refresh();
 	}
-	
+
 	public void flush() throws IOException{
 		root.flush();
 	}
-	
+
 	/**
 	 * Get the root folder for this abstract root. Note that this should be
 	 * loaded from scratch, and not cached in any way. This ensures that
 	 * invoking AbstractRoot.refresh() does indeed refresh entries.
-	 * 
+	 *
 	 * @return
 	 */
 	protected abstract T root();

@@ -4,10 +4,10 @@ ensures r is int ==> xs[r] == x:
     int i = 0
     int|null last = null
     //
-    while i < |xs| where i >= 0 && (last is int ==> 0 <= last && last < |xs| && xs[last] == x):        
+    while i < |xs| where i >= 0 && (last is int ==> 0 <= last && last < |xs| && xs[last] == x):
         if xs[i] == x:
             last = i
-        i = i + 1        
+        i = i + 1
     //
     return last
 

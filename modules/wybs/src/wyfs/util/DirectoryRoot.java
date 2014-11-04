@@ -39,42 +39,42 @@ import wyfs.lang.Path.ID;
 /**
  * Provides an implementation of <code>Path.Root</code> for representing a file
  * system directory.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
-	
+
 	public final static FileFilter NULL_FILTER = new FileFilter() {
 		public boolean accept(File file) {
 			return true;
 		}
 	};
-	
-	private final FileFilter filter;		
+
+	private final FileFilter filter;
 	private final File dir;
-	
+
 	/**
 	 * Construct a directory root from a filesystem path expressed as a string,
 	 * and an appropriate file filter. In converting the path to a File object,
 	 * an IOException may arise if it is an invalid path.
-	 * 
+	 *
 	 * @param path
 	 *            --- location of directory on filesystem, expressed as a native
 	 *            path (i.e. separated using File.separatorChar, etc)
 	 * @throws IOException
 	 */
 	public DirectoryRoot(String path, Content.Registry contentTypes) throws IOException {
-		super(contentTypes);		
+		super(contentTypes);
 		this.dir = new File(path);
-		this.filter = NULL_FILTER;	 
+		this.filter = NULL_FILTER;
 	}
-	
+
 	/**
 	 * Construct a directory root from a filesystem path expressed as a string,
 	 * and an appropriate file filter. In converting the path to a File object,
 	 * an IOException may arise if it is an invalid path.
-	 * 
+	 *
 	 * @param path
 	 *            --- location of directory on filesystem, expressed as a native
 	 *            path (i.e. separated using File.separatorChar, etc)
@@ -84,15 +84,15 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 	 */
 	public DirectoryRoot(String path, FileFilter filter, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
-		this.dir = new File(path);				
-		this.filter = filter;		
+		this.dir = new File(path);
+		this.filter = filter;
 	}
 
 	/**
 	 * Construct a directory root from a filesystem path expressed as a string,
 	 * and an appropriate file filter. In converting the path to a File object,
 	 * an IOException may arise if it is an invalid path.
-	 * 
+	 *
 	 * @param path
 	 *            --- location of directory on filesystem, expressed as a native
 	 *            path (i.e. separated using File.separatorChar, etc)
@@ -100,15 +100,15 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 	 */
 	public DirectoryRoot(File dir, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
-		this.dir = dir;			
-		this.filter = NULL_FILTER;		
+		this.dir = dir;
+		this.filter = NULL_FILTER;
 	}
-	
+
 	/**
 	 * Construct a directory root from a filesystem path expressed as a string,
 	 * and an appropriate file filter. In converting the path to a File object,
 	 * an IOException may arise if it is an invalid path.
-	 * 
+	 *
 	 * @param path
 	 *            --- location of directory on filesystem, expressed as a native
 	 *            path (i.e. separated using File.separatorChar, etc)
@@ -118,10 +118,10 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 	 */
 	public DirectoryRoot(File dir, FileFilter filter, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
-		this.dir = dir;			
-		this.filter = filter;		
+		this.dir = dir;
+		this.filter = filter;
 	}
-	
+
 	public File location() {
 		return dir;
 	}
@@ -129,17 +129,17 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 	public String toString() {
 		return dir.getPath();
 	}
-	
+
 	@Override
 	protected Folder root() {
 		return new Folder(Trie.ROOT);
 	}
-	
+
 	/**
 	 * Given a list of physical files on the file system, determine their
 	 * corresponding <code>Path.Entry</code> instances in this root (if there
 	 * are any).
-	 * 
+	 *
 	 * @param files
 	 *            --- list of files on the physical file system.
 	 * @param contentType
@@ -154,10 +154,10 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 		ArrayList<Path.Entry<T>> sources = new ArrayList<Path.Entry<T>>();
 		String suffix = "." + contentTypes.suffix(contentType);
 		String location = location().getCanonicalPath();
-				
+
 		for (File file : files) {
 			String filePath = file.getCanonicalPath();
-			if (filePath.startsWith(location)) {			
+			if (filePath.startsWith(location)) {
 				int end = location.length();
 				if (end > 1) {
 					end++;
@@ -167,7 +167,7 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 				if (module.endsWith(suffix)) {
 					module = module.substring(0,
 							module.length() - suffix.length());
-					Path.ID mid = Trie.fromString(module);			
+					Path.ID mid = Trie.fromString(module);
 					Path.Entry<T> entry = this.get(mid, contentType);
 					if (entry != null) {
 						sources.add(entry);
@@ -180,35 +180,35 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 
 		return sources;
 	}
-	
+
 	/**
 	 * An entry is a file on the file system which represents a Whiley module. The
 	 * file may be encoded in a range of different formats. For example, it may be a
 	 * source file and/or a binary wyil file.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
-	public static final class Entry<T> extends AbstractEntry<T> implements Path.Entry<T> {		
+	public static final class Entry<T> extends AbstractEntry<T> implements Path.Entry<T> {
 		private final java.io.File file;
-		
+
 		public Entry(Path.ID id, java.io.File file) {
 			super(id);
-			this.file = file;			
+			this.file = file;
 		}
-		
+
 		public String location() {
 			return file.getPath();
 		}
-		
+
 		public long lastModified() {
 			return file.lastModified();
 		}
-		
+
 		public File file() {
 			return file;
-		}		
-		
+		}
+
 		public String suffix() {
 			String filename = file.getName();
 			String suffix = "";
@@ -218,24 +218,24 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 			}
 			return suffix;
 		}
-		
+
 		public InputStream inputStream() throws IOException {
 			return new FileInputStream(file);
 		}
-		
+
 		public OutputStream outputStream() throws IOException {
 			file.getParentFile().mkdirs();
 			return new FileOutputStream(file);
 		}
-		
-		public String toString() {			
+
+		public String toString() {
 			return file.toString();
 		}
 	}
-	
+
 	/**
 	 * Represents a directory on a physical file system.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -243,11 +243,11 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 		public Folder(Path.ID id) {
 			super(id);
 		}
-		
+
 		@Override
-		protected Path.Item[] contents() throws IOException {			
-			File myDir = new File(dir, id.toString().replace('/', File.separatorChar));		
-			
+		protected Path.Item[] contents() throws IOException {
+			File myDir = new File(dir, id.toString().replace('/', File.separatorChar));
+
 			if (myDir.exists() && myDir.isDirectory()) {
 				File[] files = myDir.listFiles(filter);
 				Path.Item[] items = new Path.Item[files.length];
@@ -268,7 +268,7 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 						}
 					}
 				}
-				
+
 				if(count != items.length) {
 					// trim the end since we didn't use all allocated elements.
 					return Arrays.copyOf(items,count);
@@ -283,7 +283,7 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 
 		@Override
 		public <T> Path.Entry<T> create(ID nid, Content.Type<T> ct)
-				throws IOException {	
+				throws IOException {
 			if (nid.size() == 1) {
 				// attempting to create an entry in this folder
 				Path.Entry<T> e = super.get(nid.subpath(0, 1), ct);
@@ -311,9 +311,9 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 				return folder.create(nid.subpath(1, nid.size()), ct);
 			}
 		}
-		
+
 		public String toString() {
 			return dir + ":" + id;
 		}
-	}		
+	}
 }

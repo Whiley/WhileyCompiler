@@ -31,9 +31,9 @@ import java.math.*;
 /**
  * Provides a general class for representing polynomials. <b>Please note that
  * polynomial division and gcd is experimental and probably contains bugs</b>.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public final class Polynomial implements Iterable<Polynomial.Term>,
 		Comparable<Polynomial> {
@@ -126,7 +126,7 @@ public final class Polynomial implements Iterable<Polynomial.Term>,
 
 	/**
 	 * Assumes that isConstant() holds.
-	 * 
+	 *
 	 * @return
 	 */
 	public BigInteger constant() {
@@ -172,7 +172,7 @@ public final class Polynomial implements Iterable<Polynomial.Term>,
 
 	// ===========================================================
 	// ADDITION
-	// =========================================================== 
+	// ===========================================================
 
 	public Polynomial add(int i) {
 		return add(new Term(i));
@@ -215,7 +215,7 @@ public final class Polynomial implements Iterable<Polynomial.Term>,
 
 	// ===========================================================
 	// SUBTRACTION
-	// =========================================================== 
+	// ===========================================================
 
 	public Polynomial subtract(int i) {
 		return subtract(new Term(i));
@@ -240,7 +240,7 @@ public final class Polynomial implements Iterable<Polynomial.Term>,
 
 	// ===========================================================
 	// MULTIPLICATION
-	// =========================================================== 
+	// ===========================================================
 
 	public Polynomial multiply(int i) {
 		return multiply(new Term(i));
@@ -268,7 +268,7 @@ public final class Polynomial implements Iterable<Polynomial.Term>,
 
 	// ===========================================================
 	// GCD
-	// =========================================================== 
+	// ===========================================================
 
 	/**
 	 * <p>
@@ -276,12 +276,12 @@ public final class Polynomial implements Iterable<Polynomial.Term>,
 	 * the supplied polynomial. That is, the "biggest" polynomial that divides
 	 * evenly into both polynomials. For example:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * gcd(2x,x) = x
 	 * gcd(2x+1,x) = 1
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * In the special case that both polynomials are constants, then it simply
 	 * resolves to the normal gcd operation.
@@ -337,16 +337,16 @@ public final class Polynomial implements Iterable<Polynomial.Term>,
 	/**
 	 * This method divides this polynomial by the term argument using simple
 	 * division. The method produces the pair (quotient,remainder). For example:
-	 * 
+	 *
 	 * <pre>
 	 * (x + 2xy) / x = (1+2y,0)
 	 * (x + 2xy) / y = (2x,x)
-	 * 
+	 *
 	 * &#064;param x
 	 * &#064;return
-	 * 
+	 *
 	 * For more information on polynomial division see: &lt;a href=&quot;http://en.wikipedia.org/wiki/Polynomial_long_division&quot;&gt;wikipedia&lt;/a&gt;
-	 * 
+	 *
 	 */
 	public Pair<Polynomial, Polynomial> divide(Term t1) {
 		Polynomial quotient = new Polynomial(0);
@@ -364,16 +364,16 @@ public final class Polynomial implements Iterable<Polynomial.Term>,
 	/**
 	 * This method divides this polynomial by the polynomial argument using long
 	 * division. The method produces the pair (quotient,remainder). For example:
-	 * 
+	 *
 	 * <pre>
 	 * (x + 2xy) / x = (1+2y,0)
 	 * (x + 2xy) / y = (2x,x)
-	 * 
+	 *
 	 * &#064;param x
 	 * &#064;return
-	 * 
+	 *
 	 * For more information on polynomial long division see: &lt;a href=&quot;http://en.wikipedia.org/wiki/Polynomial_long_division&quot;&gt;wikipedia&lt;/a&gt;
-	 * 
+	 *
 	 */
 	public Pair<Polynomial, Polynomial> divide(Polynomial x) {
 
@@ -414,7 +414,7 @@ public final class Polynomial implements Iterable<Polynomial.Term>,
 
 	// ===========================================================
 	// NEGATION
-	// ===========================================================	
+	// ===========================================================
 
 	public Polynomial negate() {
 		Polynomial r = new Polynomial(0);
@@ -429,22 +429,22 @@ public final class Polynomial implements Iterable<Polynomial.Term>,
 	// ===========================================================
 	/* ======================= FACTORISATION ===================== */
 	// ===========================================================
-	
+
 	/**
 	 * The purpose of this method is to factorise the polynomial for a given
 	 * variable, producing a factor and a remainder. For example:
-	 * 
+	 *
 	 * <pre>
 	 * 2x + xy + 2 ======&gt; (2+y, 2)
 	 * </pre>
-	 * 
+	 *
 	 * Here, <code>2+y</code> is the factor, whilst <code>2</code> is the
 	 * remainder. Thus, <code>x * (2+y) + 2</code> yields the original
 	 * polynomial.
-	 * 
+	 *
 	 * Notice, that in the case where the variable in question is raised to a
 	 * power, then the factor will contain the original variable. For example:
-	 * 
+	 *
 	 * <pre>
 	 * 2x&circ;2 + xy + 2 ======&gt; (2x+y, 2)
 	 * </pre>
@@ -468,7 +468,7 @@ public final class Polynomial implements Iterable<Polynomial.Term>,
 
 	// ===========================================================
 	// OTHER
-	// ===========================================================	
+	// ===========================================================
 
 	public int compareTo(Polynomial p) {
 		Collection<Term> p_terms = p.terms;
@@ -549,7 +549,7 @@ public final class Polynomial implements Iterable<Polynomial.Term>,
 	}
 
 	// ===========================================================
-	// TERM 
+	// TERM
 	// ===========================================================
 
 	public final static class Term implements Comparable<Term> {
@@ -723,5 +723,5 @@ public final class Polynomial implements Iterable<Polynomial.Term>,
 			}
 			return Math.max(max, cur);
 		}
-	}	
+	}
 }

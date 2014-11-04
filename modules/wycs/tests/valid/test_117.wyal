@@ -1,6 +1,6 @@
 assert:
-  forall({int,int} xs): 
+  forall({int,int} xs):
      if:
-       xs ⊆ {(0,1),(1,2)} 
+       xs ⊆ {(0,1),(1,2)}
      then:
        xs ⊆ {(0, 1), (1, 2), (2,3)} ∩ {(0,1), (1,2), (3, 4)}

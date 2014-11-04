@@ -27,7 +27,7 @@ package wyjc.runtime;
 
 import java.util.*;
 
-public final class WyRecord extends HashMap<String,Object> {	
+public final class WyRecord extends HashMap<String,Object> {
 	/**
 	 * The reference count is use to indicate how many variables are currently
 	 * referencing this compound structure. This is useful for making imperative
@@ -35,20 +35,20 @@ public final class WyRecord extends HashMap<String,Object> {
 	 * <code>1</code> we can safely perform an in-place update of the structure.
 	 */
 	int refCount = 100; // temporary measure
-	
+
 	public WyRecord() {}
-	
+
 	WyRecord(HashMap<String,Object> r) {
 		super(r);
 		for(Object item : r.values()) {
 			Util.incRefs(item);
 		}
 	}
-	
+
 	// ================================================================================
 	// Generic Operations
-	// ================================================================================	 	
-		
+	// ================================================================================
+
 	public String toString() {
 		String r = "{";
 		boolean firstTime = true;
@@ -64,22 +64,22 @@ public final class WyRecord extends HashMap<String,Object> {
 		}
 		return r + "}";
 	}
-		
+
 	// ================================================================================
 	// Record Operations
-	// ================================================================================	 	
+	// ================================================================================
 
-	public static Object get(final WyRecord record, final String field) {				
+	public static Object get(final WyRecord record, final String field) {
 		Object item = record.get(field);
 		Util.incRefs(item);
 		return item;
 	}
-	
+
 	public static WyRecord put(WyRecord record, final String field, final Object value) {
 		Util.countRefs(record);
 		if(record.refCount > 0) {
-			Util.countClone(record);			
-			record = new WyRecord(record);			
+			Util.countClone(record);
+			record = new WyRecord(record);
 		} else {
 			Util.nrecord_strong_updates++;
 		}
@@ -88,12 +88,12 @@ public final class WyRecord extends HashMap<String,Object> {
 		Util.incRefs(value);
 		return record;
 	}
-	
+
 	public static Object internal_get(final WyRecord record, final String field) {
 		Object item = record.get(field);
 		if(record.refCount > 0) {
 			Util.incRefs(item);
 		}
-		return item;		
+		return item;
 	}
 }

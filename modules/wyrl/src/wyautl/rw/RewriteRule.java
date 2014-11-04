@@ -32,24 +32,24 @@ import wyautl.core.Automaton;
 import wyrl.core.Pattern;
 
 public interface RewriteRule {
-	
+
 	/**
 	 * Get the name associated with this rule. This has no semantic meaning, but
 	 * is useful for debugging and constructing a proof tree.
-	 * 
+	 *
 	 * @return
 	 */
 	public String name();
-	
+
 	/**
 	 * Return the rank associated with this rewrite rule. This is a measure of
 	 * how this rule should be prioritised during rewriting, with zero being
 	 * the highest priority.
-	 * 
+	 *
 	 * @return
 	 */
 	public int rank();
-	
+
 	/**
 	 * Give a lower bound on the number of automaton states that are guaranteed
 	 * to be eliminated by this rewrite. This number must be zero if the rule is
@@ -76,17 +76,17 @@ public interface RewriteRule {
 	 * More specifically, any state which matches this pattern is guaranteed to
 	 * produce at least one activation from probing. This is useful for creating
 	 * dispatch tables for more efficient probing of automaton states.
-	 * 
+	 *
 	 * @return
 	 */
 	public Pattern.Term pattern();
-	
+
 	/**
 	 * Probe a given root to see whether or not this rule could be applied to
 	 * it. If it can, the corresponding activation record(s) are added to the
 	 * list. Note that, under no circumstances is this function permitted to
 	 * modify the automaton.
-	 * 
+	 *
 	 * @param automaton
 	 *            Automaton to probe.
 	 * @param root
@@ -94,11 +94,11 @@ public interface RewriteRule {
 	 * @param activations
 	 *            List of activations onto which to add any which are discovered
 	 *            during the probe.
-	 * 
+	 *
 	 * @return
 	 */
 	public void probe(Automaton automaton, int root, List<Activation> activations);
-	
+
 	/**
 	 * <p>
 	 * Apply this rule to a given automaton using the given continuation state.
@@ -121,7 +121,7 @@ public interface RewriteRule {
 	 * This means any temporary states added during <code>apply()</code> must be
 	 * removed from the automaton.
 	 * </p>
-	 * 
+	 *
 	 * @param automaton
 	 *            --- The automaton to be rewritten.
 	 * @param state
@@ -130,19 +130,19 @@ public interface RewriteRule {
 	 * @param binding
 	 *            --- Returns a mapping from states before the rewrite to states
 	 *            after the rewrite. This must at least as big as the automaton.
-	 *            
+	 *
 	 * @return The state that was rewritten to. Using this, and state[0], you
 	 *         can determine which state was rewritten from, and which was
 	 *         rewritten to. In the case of an unsuccessful rewrite, then K_Void
 	 *         is returned (-1).
 	 */
-	public int apply(Automaton automaton, int[] state);	
-	
+	public int apply(Automaton automaton, int[] state);
+
 	/**
 	 * A standard comparator for comparing rewrite rules based on their rank.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class RankComparator
 			implements Comparator<RewriteRule> {
@@ -160,7 +160,7 @@ public interface RewriteRule {
 			return 0;
 		}
 	}
-	
+
 	/**
 	 * A standard comparator for comparing rewrite rules. This favours minimum
 	 * guarantees over maximum pay off. That is, a rule with a minimum / maximum

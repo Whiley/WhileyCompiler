@@ -38,44 +38,44 @@ import wycc.lang.SyntacticElement;
  * whose full NameID remains unknown. Unresolved types are <i>resolved</i>
  * during the name resolution> stage of the compiler.
  * </p>
- * 
+ *
  * <p>
  * Each class is an instance of <code>SyntacticElement</code> and, hence, can be
  * adorned with certain information (such as source location, etc).
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public interface SyntacticType extends SyntacticElement {
 
 	/**
 	 * A non-union type represents a type which is not an instance of
 	 * <code>Union</code>.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public interface NonUnion extends SyntacticType {
 		// FIXME: this interface should not exist!
 	}
 	public interface Primitive extends SyntacticType {
-		
+
 	}
-	
+
 	/**
 	 * The type <code>any</code> represents the type whose variables may hold
 	 * any possible value. <b>NOTE:</b> the any type is top in the type lattice.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class Any extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Any(Attribute... attributes) {
 			super(attributes);
-		}		
+		}
 	}
-	
+
 	/**
 	 * A void type represents the type whose variables cannot exist! That is,
 	 * they cannot hold any possible value. Void is used to represent the return
@@ -83,16 +83,16 @@ public interface SyntacticType extends SyntacticElement {
 	 * used to represent the element type of an empty list of set. <b>NOTE:</b>
 	 * the void type is a subtype of everything; that is, it is bottom in the
 	 * type lattice.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class Void extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Void(Attribute... attributes) {
 			super(attributes);
-		}		
+		}
 	}
-	
+
 	/**
 	 * The null type is a special type which should be used to show the absence
 	 * of something. It is distinct from void, since variables can hold the
@@ -102,16 +102,16 @@ public interface SyntacticType extends SyntacticElement {
 	 * seem that this type should be avoided. However, it remains a very useful
 	 * abstraction to have around and, in Whiley, it is treated in a completely
 	 * safe manner (unlike e.g. Java).
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class Null extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Null(Attribute... attributes) {
 			super(attributes);
-		}		
+		}
 	}
-	
+
 	/**
 	 * Represents the set of boolean values (i.e. true and false)
 	 * @author David J. Pearce
@@ -120,58 +120,58 @@ public interface SyntacticType extends SyntacticElement {
 	public static final class Bool extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Bool(Attribute... attributes) {
 			super(attributes);
-		}		
+		}
 	}
-	
+
 	/**
 	 * Represents a sequence of 8 bits. Note that, unlike many languages, there
 	 * is no representation associated with a byte. For example, to extract an
 	 * integer value from a byte, it must be explicitly decoded according to
 	 * some representation (e.g. two's compliment) using an auxillary function
 	 * (e.g. <code>Byte.toInt()</code>).
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class Byte extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Byte(Attribute... attributes) {
 			super(attributes);
-		}		
+		}
 	}
-	
+
 	/**
 	 * Represents a unicode character.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class Char extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Char(Attribute... attributes) {
 			super(attributes);
-		}		
+		}
 	}
-	
+
 	/**
 	 * Represents the set of (unbound) integer values. Since integer types in
 	 * Whiley are unbounded, there is no equivalent to Java's
 	 * <code>MIN_VALUE</code> and <code>MAX_VALUE</code> for <code>int</code>
 	 * types.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class Int extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Int(Attribute... attributes) {
 			super(attributes);
-		}		
+		}
 	}
-	
+
 	/**
 	 * The type <code>real</code> represents the set of (unbound) rational
 	 * numbers.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class Real extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Real(Attribute... attributes) {
@@ -180,66 +180,66 @@ public interface SyntacticType extends SyntacticElement {
 
 		public Real(java.util.List<Attribute> attributes) {
 			super(attributes);
-		}		
+		}
 	}
-	
+
 	/**
-	 * The type <code>string</code> represents a string of characters 
-	 * 
+	 * The type <code>string</code> represents a string of characters
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class Strung extends SyntacticElement.Impl implements NonUnion,Primitive {
 		public Strung(Attribute... attributes) {
 			super(attributes);
-		}		
+		}
 	}
-	
+
 	/**
 	 * Represents a nominal type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * NominalType ::= Identifier ('.' Identifier)*
 	 * </pre>
-	 * 
+	 *
 	 * A nominal type specifies the name of a type defined elsewhere. In some
 	 * cases, this type can be expanded (or "inlined"). However, visibility
 	 * modifiers can prevent this and, thus, give rise to true nominal types.
-	 * 
+	 *
 	 * @return
 	 */
-	public static final class Nominal extends SyntacticElement.Impl implements NonUnion {		
-		public final ArrayList<String> names;		
+	public static final class Nominal extends SyntacticElement.Impl implements NonUnion {
+		public final ArrayList<String> names;
 		public Nominal(Collection<String> names, Attribute... attributes) {
 			super(attributes);
 			this.names = new ArrayList<String>(names);
-		}		
+		}
 	}
-	
+
 	/**
 	 * Represents a list type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * ListType ::= '[' Type ']'
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	public static final class List extends SyntacticElement.Impl implements NonUnion {
 		public final SyntacticType element;
 		public List(SyntacticType element, Attribute... attributes) {
 			super(attributes);
-			this.element = element;			
+			this.element = element;
 		}
 	}
-	
+
 	/**
 	 * Represents a set type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * SetType ::= '{' Type '}'
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	public static final class Set extends SyntacticElement.Impl implements NonUnion {
@@ -249,14 +249,14 @@ public interface SyntacticType extends SyntacticElement {
 			this.element = element;
 		}
 	}
-	
+
 	/**
 	 * Represents a map type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * MapType ::= '{' Type "=>" Type '}'
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	public static final class Map extends SyntacticElement.Impl implements NonUnion {
@@ -268,14 +268,14 @@ public interface SyntacticType extends SyntacticElement {
 			this.value=value;
 		}
 	}
-	
+
 	/**
 	 * Parse a negation type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * ReferenceType ::= '!' Type
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	public static final class Negation extends SyntacticElement.Impl implements NonUnion {
@@ -287,15 +287,15 @@ public interface SyntacticType extends SyntacticElement {
 
 	/**
 	 * Represents a union type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * UnionType ::= IntersectionType ('|' IntersectionType)*
 	 * </pre>
-	 * 
+	 *
 	 * Union types are used to compose types together. For example, the type
 	 * <code>int|null</code> represents the type which is either an
 	 * <code>int</code> or <code>null</code>.
-	 * 
+	 *
 	 * @return
 	 */
 	public static final class Union extends SyntacticElement.Impl implements SyntacticType {
@@ -317,21 +317,21 @@ public interface SyntacticType extends SyntacticElement {
 						"Cannot construct a type union with fewer than two bounds");
 			}
 			this.bounds = new ArrayList<NonUnion>(bounds);
-		}	
+		}
 	}
-	
+
 	/**
 	 * Represents an intersection type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * IntersectionType ::= BaseType ('&' BaseType)*
 	 * </pre>
-	 * 
+	 *
 	 * Intersection types are used to unify types together. For example, the
 	 * type <code>{int x, int y}&MyType</code> represents the type which is both
 	 * an instanceof of <code>{int x, int y}</code> and an instance of
 	 * <code>MyType</code>.
-	 * 
+	 *
 	 * @return
 	 */
 	public static final class Intersection extends SyntacticElement.Impl implements SyntacticType {
@@ -354,16 +354,16 @@ public interface SyntacticType extends SyntacticElement {
 						"Cannot construct a type intersection with fewer than two bounds");
 			}
 			this.bounds = new ArrayList<SyntacticType>(bounds);
-		}	
+		}
 	}
-	
+
 	/**
 	 * Parse a reference type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * ReferenceType ::= '&' Type
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	public static final class Reference extends SyntacticElement.Impl implements NonUnion {
@@ -372,14 +372,14 @@ public interface SyntacticType extends SyntacticElement {
 			this.element = element;
 		}
 	}
-	
+
 	/**
 	 * Represents record type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * RecordType ::= '{' Type Identifier (',' Type Identifier)* [ ',' "..." ] '}'
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	public static final class Record extends SyntacticElement.Impl implements NonUnion {
@@ -397,7 +397,7 @@ public interface SyntacticType extends SyntacticElement {
 			this.isOpen = isOpen;
 			this.types = new HashMap<String,SyntacticType>(types);
 		}
-		
+
 		public Record(boolean isOpen,
 				java.util.Map<String, SyntacticType> types,
 				java.util.List<Attribute> attributes) {
@@ -410,14 +410,14 @@ public interface SyntacticType extends SyntacticElement {
 			this.types = new HashMap<String,SyntacticType>(types);
 		}
 	}
-	
+
 	/**
 	 * Parse a tuple type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * TupleType ::= '(' Type (',' Type)* ')'
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	public static final class Tuple extends SyntacticElement.Impl implements NonUnion {
@@ -439,7 +439,7 @@ public interface SyntacticType extends SyntacticElement {
 			this.types = new ArrayList<SyntacticType>(types);
 		}
 	}
-	
+
 	public abstract static class FunctionOrMethod extends
 			SyntacticElement.Impl implements NonUnion {
 		public final SyntacticType ret;
@@ -469,23 +469,23 @@ public interface SyntacticType extends SyntacticElement {
 		public Function(SyntacticType ret, SyntacticType throwType,
 				Collection<SyntacticType> paramTypes,
 				Attribute... attributes) {
-			super(ret,throwType,paramTypes,attributes);			
+			super(ret,throwType,paramTypes,attributes);
 		}
 		public Function(SyntacticType ret, SyntacticType throwType, Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
-			super(ret,throwType,paramTypes,attributes);			
+			super(ret,throwType,paramTypes,attributes);
 		}
 	}
-	
+
 	public static class Method extends FunctionOrMethod
 	implements NonUnion {
 				public Method(SyntacticType ret, SyntacticType throwType, Collection<SyntacticType> paramTypes,
 				Attribute... attributes) {
-			super(ret,throwType,paramTypes,attributes);			
+			super(ret,throwType,paramTypes,attributes);
 		}
 		public Method(SyntacticType ret, SyntacticType throwType, Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
-			super(ret,throwType,paramTypes,attributes);			
+			super(ret,throwType,paramTypes,attributes);
 		}
 	}
 }

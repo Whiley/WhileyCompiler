@@ -46,17 +46,17 @@ public abstract class ForwardFlowAnalysis<T> {
 	protected WyilFile.Case methodCase;
 	protected Code.Block block;
 	protected HashMap<String,T> stores;
-	
-	public void apply(WyilFile module) {			
+
+	public void apply(WyilFile module) {
 		filename = module.filename();
-		
+
 		for(WyilFile.Block d : module.blocks()) {
 			if(d instanceof WyilFile.ConstantDeclaration) {
-				WyilFile.ConstantDeclaration cd = (WyilFile.ConstantDeclaration) d; 
+				WyilFile.ConstantDeclaration cd = (WyilFile.ConstantDeclaration) d;
 				module.replace(cd,propagate((cd)));
 			} else if(d instanceof WyilFile.TypeDeclaration) {
 				WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
-				module.replace(td,propagate(td));	
+				module.replace(td,propagate(td));
 			} else if(d instanceof WyilFile.FunctionOrMethodDeclaration) {
 				WyilFile.FunctionOrMethodDeclaration md = (WyilFile.FunctionOrMethodDeclaration) d;
 				if (!md.hasModifier(Modifier.NATIVE)) {
@@ -64,17 +64,17 @@ public abstract class ForwardFlowAnalysis<T> {
 					module.replace(md,propagate(md));
 				}
 			}
-		}		
+		}
 	}
-	
+
 	protected WyilFile.ConstantDeclaration propagate(WyilFile.ConstantDeclaration constant) {
 		return constant;
 	}
-	
+
 	protected WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {
 		return type;
 	}
-	
+
 	protected WyilFile.FunctionOrMethodDeclaration propagate(
 			WyilFile.FunctionOrMethodDeclaration method) {
 		this.method = method;
@@ -85,19 +85,19 @@ public abstract class ForwardFlowAnalysis<T> {
 		return new WyilFile.FunctionOrMethodDeclaration(method.modifiers(),
 				method.name(), method.type(), cases);
 	}
-	
+
 	protected WyilFile.Case propagate(WyilFile.Case mcase) {
-		this.methodCase = mcase;		
+		this.methodCase = mcase;
 		this.stores = new HashMap<String,T>();
 		this.block = mcase.body();
-		T init = initialStore();		
-		propagate(0, block.size(), init, Collections.EMPTY_LIST);		
+		T init = initialStore();
+		propagate(0, block.size(), init, Collections.EMPTY_LIST);
 		return mcase;
-	}		
-	
+	}
+
 	protected T propagate(int start, int end, T store,
 			List<Codes.TryCatch> handlers) {
-		
+
 		for (int i = start; i < end; ++i) {
 			Entry entry = block.get(i);
 			try {
@@ -211,8 +211,8 @@ public abstract class ForwardFlowAnalysis<T> {
 
 		return store;
 	}
-	
-	private void merge(String target, T store, Map<String, T> stores) {		
+
+	private void merge(String target, T store, Map<String, T> stores) {
 		T old = stores.get(target);
 		if (old == null) {
 			stores.put(target, store);
@@ -224,23 +224,23 @@ public abstract class ForwardFlowAnalysis<T> {
 	protected void mergeHandlers(int index, Code code, T store, List<Codes.TryCatch> handlers,
 			Map<String, T> stores) {
 		if(code instanceof Codes.Throw) {
-			Codes.Throw t = (Codes.Throw) code;	
+			Codes.Throw t = (Codes.Throw) code;
 			mergeHandler(t.type,store,handlers,stores);
 		} else if(code instanceof Codes.IndirectInvoke) {
-			Codes.IndirectInvoke i = (Codes.IndirectInvoke) code;			
+			Codes.IndirectInvoke i = (Codes.IndirectInvoke) code;
 			mergeHandler(i.type().throwsClause(),store,handlers,stores);
 		} else if(code instanceof Codes.Invoke) {
-			Codes.Invoke i = (Codes.Invoke) code;	
+			Codes.Invoke i = (Codes.Invoke) code;
 			mergeHandler(i.type().throwsClause(),store,handlers,stores);
-		} 
+		}
 	}
-	
+
 	protected void mergeHandler(Type type, T store, List<Codes.TryCatch> handlers,
 			Map<String, T> stores) {
 		for(int i=handlers.size()-1;i>=0;--i) {
 			Codes.TryCatch tc = handlers.get(i);
-			for(Pair<Type,String> p : tc.catches) { 
-				Type handler = p.first();			
+			for(Pair<Type,String> p : tc.catches) {
+				Type handler = p.first();
 
 				if(Type.isSubtype(handler,type)) {
 					T nstore = propagate(handler,tc,store);
@@ -255,7 +255,7 @@ public abstract class ForwardFlowAnalysis<T> {
 			}
 		}
 	}
-	
+
 	/**
 	 * <p>
 	 * Propagate through a conditional branch. This produces two stores for the
@@ -264,7 +264,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 * two indicate that the code was proven definitely false, or definitely
 	 * true (respectively).
 	 * </p>
-	 * 
+	 *
 	 * @param index
 	 *            --- the index of this bytecode in the method's block
 	 * @param ifgoto
@@ -286,7 +286,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 * indicate that the code was proven definitely false, or definitely true
 	 * (respectively).
 	 * </p>
-	 * 
+	 *
 	 * @param index
 	 *            --- the index of this bytecode in the method's block
 	 * @param iftype
@@ -304,9 +304,9 @@ public abstract class ForwardFlowAnalysis<T> {
 	/**
 	 * <p>
 	 * Propagate through a multi-way branch. This produces multiple stores ---
-	 * one for each of the various branches. 
+	 * one for each of the various branches.
 	 * </p>
-	 * 
+	 *
 	 * @param index
 	 *            --- the index of this bytecode in the method's block
 	 * @param sw
@@ -322,7 +322,7 @@ public abstract class ForwardFlowAnalysis<T> {
 
 	/**
 	 * Propagate an exception into a catch handler.
-	 * 
+	 *
 	 * @param handler
 	 *            --- type of handler catching exception
 	 * @param tc
@@ -332,7 +332,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 * @return
 	 */
 	protected abstract T propagate(Type handler, Codes.TryCatch tc, T store);
-	
+
 	/**
 	 * <p>
 	 * Propagate through a loop statement, producing a store which holds true
@@ -342,7 +342,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 * <b>NOTE: the <code>start</code> index holds the loop code, whilst the
 	 * <code>end</code> index holds the end code.
 	 * </p>
-	 * 
+	 *
 	 * @param start
 	 *            --- the start index of loop block
 	 * @param end
@@ -358,7 +358,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(int start, int end, 
+	protected abstract T propagate(int start, int end,
 			Codes.Loop code, Entry entry, T store, List<Codes.TryCatch> handlers);
 
 	/**
@@ -366,7 +366,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 * Propagate through a sequential statement, producing a store which holds
 	 * true immediately after the statement
 	 * </p>
-	 * 
+	 *
 	 * @param index
 	 *            --- the index of this bytecode in the method's block
 	 * @param entry
@@ -377,10 +377,10 @@ public abstract class ForwardFlowAnalysis<T> {
 	 * @return
 	 */
 	protected abstract T propagate(int index, Entry entry, T store);
-	
+
 	/**
 	 * Determine the initial store for the current method case.
-	 * 
+	 *
 	 * @return
 	 */
 	protected abstract T initialStore();
@@ -389,7 +389,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 * Join two abstract stores together producing a new abstract store. Observe
 	 * that this operation must not side-effect the two input stores. This is
 	 * because they may currently be stored in the stores map.
-	 * 
+	 *
 	 * @param store1
 	 * @param store2
 	 * @return

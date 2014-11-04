@@ -35,29 +35,29 @@ import wyautl.core.Automaton;
  * inference rule generates a new fact which is then immediately eliminated via
  * a reduction rule.
  * </p>
- * 
+ *
  * <p>
  * Inference rules are generally less frequently occuring, and should be
  * considered as more expensive from a performance perspective.  The
  * following illustrates a very simple rule system:
  * </p>
- * 
+ *
  * <pre>
  * reduce LessThan[Num(int x), Num(int y)]:
  *   => True, if x < y
  *   => False
- * 
+ *
  * reduce And{Bool b, BExpr... xs}:
  *    => False, if b == False
  *    => True, if |xs| == 0
  *    => And (xs)
- * 
- * infer And{LessThan[Expr e1, Expr e2] l1, 
- *           LessThan[Expr e3, Expr e4] l2, 
+ *
+ * infer And{LessThan[Expr e1, Expr e2] l1,
+ *           LessThan[Expr e3, Expr e4] l2,
  *           BExpr... bs}:
  *    => And (bs ++ LessThan[e1,e4]), if e2 == e3
  * </pre>
- * 
+ *
  * <p>
  * The key challenge with this system is that, unless inference rules are
  * handled with care, an infinite loop can easily occur. For example, the
@@ -71,9 +71,9 @@ import wyautl.core.Automaton;
  * automaton remains in a different state from before the rule was activated.
  * This requires some considerable care to implement correctly.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public interface InferenceRule extends RewriteRule {
 

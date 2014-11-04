@@ -4,4 +4,4 @@ assert:
            x == y - 1
         then:
            x < y
-   
+

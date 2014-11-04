@@ -31,20 +31,20 @@ import wycc.util.Triple;
  * <li><b>Maps.</b></li>
  * <li><b>Strings.</b></li>
  * </ul>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class NormalForms {
-	
+
 	// =============================================================================
 	// Negation Normal Form
 	// =============================================================================
-	
+
 	/**
 	 * Convert a given expression into negation normal form, where all logical
 	 * negations are pushed inwards as far as possible.
-	 * 
+	 *
 	 * @param e
 	 *            --- expression to be converted.
 	 * @return
@@ -52,7 +52,7 @@ public class NormalForms {
 	public static Code negationNormalForm(Code e) {
 		return negationNormalForm(e,false);
 	}
-	
+
 	private static Code negationNormalForm(Code e, boolean negate) {
 		if(e instanceof Code.Variable || e instanceof Code.Constant) {
 			return negate(e,negate);
@@ -72,7 +72,7 @@ public class NormalForms {
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
 	}
-	
+
 	private static Code negationNormalForm(Code.Unary e, boolean negate) {
 		switch (e.opcode) {
 		case LENGTH:
@@ -84,7 +84,7 @@ public class NormalForms {
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
 	}
-	
+
 	private static Code negationNormalForm(Code.Binary e, boolean negate) {
 		switch (e.opcode) {
 		case ADD:
@@ -101,12 +101,12 @@ public class NormalForms {
 		case NEQ:
 			// TODO: there is a potential bug here if the arguments of this
 			// binary expression are boolean expressions.
-			return negate(e,negate);			
+			return negate(e,negate);
 		}
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
 	}
-	
+
 	private static Code negationNormalForm(Code.Nary e, boolean negate) {
 		switch (e.opcode) {
 		case SET:
@@ -132,7 +132,7 @@ public class NormalForms {
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
 	}
-	
+
 	private static Code negationNormalForm(Code.Quantifier e, boolean negate) {
 		Code.Op opcode = e.opcode;
 		if (negate) {
@@ -143,19 +143,19 @@ public class NormalForms {
 				negationNormalForm(e.operands[0], negate), e.types,
 				e.attributes());
 	}
-	
+
 	private static Code negationNormalForm(Code.FunCall e, boolean negate) {
 		// TODO: there is a potential bug here if the arguments of this
 		// binary expression are boolean expressions.
 		return negate(e,negate);
 	}
-	
+
 	private static Code negationNormalForm(Code.Load e, boolean negate) {
 		// TODO: there is a potential bug here if the arguments of this
 		// binary expression are boolean expressions.
 		return negate(e, negate);
 	}
-	
+
 	private static Code negate(Code e, boolean negate) {
 		if (!negate) {
 			return e;
@@ -167,7 +167,7 @@ public class NormalForms {
 			Code lhs = e.operands[0];
 			Code rhs = e.operands[1];
 			Code tmp;
-			Code.Op op;			
+			Code.Op op;
 			switch(be.opcode) {
 			case LT:
 				op = Code.Op.LTEQ;
@@ -176,7 +176,7 @@ public class NormalForms {
 			case LTEQ:
 				op = Code.Op.LT;
 				tmp = lhs; lhs = rhs; rhs = tmp;
-				break;			
+				break;
 			case EQ:
 				op = Code.Op.NEQ;
 				break;
@@ -187,30 +187,30 @@ public class NormalForms {
 				return Code.Unary(SemanticType.Bool, Code.Op.NOT, e, e.attributes());
 			}
 			return Code.Binary(e.type, op, lhs, rhs, e.attributes());
-		} 
-		
+		}
+
 		return Code.Unary(SemanticType.Bool, Code.Op.NOT, e, e.attributes());
-	}	
-	
+	}
+
 	// =============================================================================
 	// Prefix Normal Form
 	// =============================================================================
-	
+
 	/**
 	 * Convert a given expression into Prefix Normal Form, where there at most
 	 * one quantifier which universally quantifies the entire expression. For
 	 * example:
-	 * 
+	 *
 	 * <pre>
 	 * forall(int x)(x > 0 && forall(int y)(y < 0))
 	 * </pre>
-	 * 
+	 *
 	 * would become
-	 * 
+	 *
 	 * <pre>
 	 * forall(int x, int y)(x > 0 && y < 0)
 	 * </pre>
-	 * 
+	 *
 	 * @param e
 	 * @return
 	 */
@@ -220,11 +220,11 @@ public class NormalForms {
 		e = extractUniversals(e);
 		return e;
 	}
-	
+
 	/**
 	 * Traverse the expression rename bound variables to ensure there is no
 	 * potential for variable capture during the conversion to PNF.
-	 * 
+	 *
 	 * @param e
 	 * @return
 	 */
@@ -232,11 +232,11 @@ public class NormalForms {
 		return renameVariables(e, new HashMap<Integer, Integer>(),
 				new HashSet<Integer>());
 	}
-	
+
 	/**
 	 * Traverse the expression rename bound variables to ensure there is no
 	 * potential for variable capture during the conversion to PNF.
-	 * 
+	 *
 	 * @param e
 	 * @param freeVariable
 	 *            --- the first available free variable.
@@ -249,7 +249,7 @@ public class NormalForms {
 		return renameVariables(e, new HashMap<Integer, Integer>(),
 				new HashSet<Integer>(globals));
 	}
-	
+
 	private static Code renameVariables(Code e,
 			HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
 		if(e instanceof Code.Constant) {
@@ -272,7 +272,7 @@ public class NormalForms {
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
 	}
-	
+
 	private static Code renameVariables(Code.Variable e,
 			HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
 		Code[] operands = new Code[e.operands.length];
@@ -282,15 +282,15 @@ public class NormalForms {
 		Integer i = binding.get(e.index);
 		if(i == null) {
 			i = e.index;
-		} 
+		}
 		return Code.Variable(e.type, operands, i, e.attributes());
 	}
-	
+
 	private static Code renameVariables(Code.Unary e,
 			HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
 		return Code.Unary(e.type,e.opcode,renameVariables(e.operands[0],binding,globals),e.attributes());
 	}
-	
+
 	private static Code renameVariables(Code.Binary e,
 			HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
 		return Code.Binary(e.type,e.opcode,
@@ -298,7 +298,7 @@ public class NormalForms {
 				renameVariables(e.operands[1], binding, globals),
 				e.attributes());
 	}
-	
+
 	private static Code renameVariables(Code.Nary e,
 			HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
 		Code[] operands = new Code[e.operands.length];
@@ -307,14 +307,14 @@ public class NormalForms {
 		}
 		return Code.Nary(e.type,e.opcode,operands,e.attributes());
 	}
-	
+
 	private static Code renameVariables(Code.FunCall e,
 			HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
 		return Code.FunCall(e.type,
 				renameVariables(e.operands[0], binding, globals), e.nid,
 				e.attributes());
 	}
-	
+
 	private static Code renameVariables(Code.Quantifier e,
 			HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
 		binding = new HashMap<Integer, Integer>(binding);
@@ -325,7 +325,7 @@ public class NormalForms {
 			int var = p.second();
 			int index = freeVariable++;
 			binding.put(var, index);
-			globals.add(index);			
+			globals.add(index);
 			variables[i] = new Pair<SemanticType,Integer>(p.first(),
 					index);
 		}
@@ -333,14 +333,14 @@ public class NormalForms {
 		return Code.Quantifier(e.type, e.opcode, operand, variables,
 				e.attributes());
 	}
-	
+
 	private static Code renameVariables(Code.Load e,
 			HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
 		return Code.Load(e.type,
 				renameVariables(e.operands[0], binding, globals), e.index,
 				e.attributes());
 	}
-	
+
 	private static int findLargest(Set<Integer> vars) {
 		int max = -1;
 		for(int i : vars) {
@@ -348,11 +348,11 @@ public class NormalForms {
 		}
 		return max;
 	}
-	
+
 	public static Code skolemiseExistentials(Code e) {
 		return skolemiseExistentials(e, new HashMap(), new ArrayList());
 	}
-	
+
 	private static Code skolemiseExistentials(Code e,
 			HashMap<Integer, Code> binding, ArrayList<Code.Variable> captured) {
 		if(e instanceof Code.Constant) {
@@ -375,7 +375,7 @@ public class NormalForms {
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
 	}
-	
+
 	private static Code skolemiseExistentials(Code.Variable e,
 			HashMap<Integer, Code> binding, ArrayList<Code.Variable> captured) {
 		Code sub = binding.get(e.index);
@@ -392,14 +392,14 @@ public class NormalForms {
 				skolemiseExistentials(e.operands[0], binding, captured),
 				e.attributes());
 	}
-	
+
 	private static Code skolemiseExistentials(Code.Binary e,
 			HashMap<Integer, Code> binding, ArrayList<Code.Variable> captured) {
 		Code lhs = skolemiseExistentials(e.operands[0], binding, captured);
 		Code rhs = skolemiseExistentials(e.operands[1], binding, captured);
 		return Code.Binary(e.type, e.opcode, lhs, rhs, e.attributes());
 	}
-	
+
 	private static Code skolemiseExistentials(Code.Nary e,
 			HashMap<Integer, Code> binding, ArrayList<Code.Variable> captured) {
 		Code[] operands = new Code[e.operands.length];
@@ -409,7 +409,7 @@ public class NormalForms {
 		}
 		return Code.Nary(e.type, e.opcode, operands, e.attributes());
 	}
-	
+
 	private static Code skolemiseExistentials(Code.Quantifier e,
 			HashMap<Integer, Code> binding, ArrayList<Code.Variable> captured) {
 		if(e.opcode == Code.Op.FORALL) {
@@ -417,22 +417,22 @@ public class NormalForms {
 			Pair<SemanticType,Integer>[] types = new Pair[e.types.length];
 			for (int i = 0; i != types.length; ++i) {
 				Pair<SemanticType,Integer> p = e.types[i];
-				captured.add(Code.Variable(p.first(), new Code[0], p.second()));							
-				types[i] = p;				
+				captured.add(Code.Variable(p.first(), new Code[0], p.second()));
+				types[i] = p;
 			}
 			Code operand = skolemiseExistentials(e.operands[0], binding,
 					captured);
 			return Code.Quantifier(e.type, e.opcode, operand, types,
 					e.attributes());
 		} else {
-			binding = new HashMap<Integer,Code>(binding);			
+			binding = new HashMap<Integer,Code>(binding);
 			for(Pair<SemanticType,Integer> p : e.types) {
-				skolemiseVariable(p.first(),p.second(),binding,captured);				
+				skolemiseVariable(p.first(),p.second(),binding,captured);
 			}
-			return skolemiseExistentials(e.operands[0],binding,captured);						
+			return skolemiseExistentials(e.operands[0],binding,captured);
 		}
 	}
-	
+
 	private static void skolemiseVariable(SemanticType type, Integer var,
 			HashMap<Integer, Code> binding, ArrayList<Code.Variable> captured) {
 
@@ -449,20 +449,20 @@ public class NormalForms {
 			binding.put(var, skolem);
 		}
 	}
-	
+
 	private static Code skolemiseExistentials(Code.FunCall e,
 			HashMap<Integer, Code> binding, ArrayList<Code.Variable> captured) {
 		Code operand = skolemiseExistentials(e.operands[0], binding, captured);
 		return Code.FunCall(e.type, operand, e.nid, e.attributes());
 	}
-	
+
 	private static Code skolemiseExistentials(Code.Load e,
 			HashMap<Integer, Code> binding, ArrayList<Code.Variable> captured) {
 		Code operand = skolemiseExistentials(e.operands[0], binding, captured);
 		return Code.Load(e.type, operand, e.index, e.attributes());
 	}
 
-	
+
 	public static Code extractUniversals(Code e) {
 		ArrayList<Pair<SemanticType,Integer>> environment = new ArrayList();
 		e = extractUniversals(e, environment);
@@ -475,7 +475,7 @@ public class NormalForms {
 			return e;
 		}
 	}
-	
+
 	private static Code extractUniversals(Code e,
 			ArrayList<Pair<SemanticType, Integer>> environment) {
 		if(e instanceof Code.Constant) {
@@ -498,25 +498,25 @@ public class NormalForms {
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
 	}
-	
+
 	private static Code extractUniversals(Code.Variable e,
 			ArrayList<Pair<SemanticType, Integer>> environment) {
 		return e;
 	}
-	
+
 	private static Code extractUniversals(Code.Unary e,
 			ArrayList<Pair<SemanticType, Integer>> environment) {
 		return Code.Unary(e.type, e.opcode,
 				extractUniversals(e.operands[0], environment), e.attributes());
 	}
-	
+
 	private static Code extractUniversals(Code.Binary e,
 			ArrayList<Pair<SemanticType, Integer>> environment) {
 		Code lhs = extractUniversals(e.operands[0],environment);
 		Code rhs = extractUniversals(e.operands[1],environment);
 		return Code.Binary(e.type,e.opcode,lhs,rhs,e.attributes());
 	}
-	
+
 	private static Code extractUniversals(Code.Nary e,
 			ArrayList<Pair<SemanticType, Integer>> environment) {
 		Code[] operands = new Code[e.operands.length];
@@ -525,23 +525,23 @@ public class NormalForms {
 		}
 		return Code.Nary(e.type,e.opcode,operands,e.attributes());
 	}
-	
+
 	private static Code extractUniversals(Code.FunCall e,
 			ArrayList<Pair<SemanticType, Integer>> environment) {
 		return Code.FunCall(e.type,
 				extractUniversals(e.operands[0], environment), e.nid,
 				e.attributes());
 	}
-	
+
 	private static Code extractUniversals(Code.Load e,
 			ArrayList<Pair<SemanticType, Integer>> environment) {
 		return Code.Load(e.type, extractUniversals(e.operands[0], environment),
 				e.index, e.attributes());
 	}
-	
+
 	private static Code extractUniversals(Code.Quantifier e,
 			ArrayList<Pair<SemanticType, Integer>> environment) {
-		
+
 		if(e.opcode == Code.Op.FORALL) {
 			for(Pair<SemanticType, Integer> p : e.types) {
 				environment.add(p);
@@ -551,7 +551,7 @@ public class NormalForms {
 			throw new IllegalArgumentException(
 					"extenstential encountered: " + e);
 		}
-		
+
 		return extractUniversals(e.operands[0],environment);
 	}
 }

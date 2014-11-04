@@ -5,9 +5,9 @@ import java.util.HashSet;
 import wyrl.util.SyntacticElement;
 
 public class Exprs {
-	
+
 	/**
-	 * Determine the set of variables used in a given expression.  Note that this does not include variables which are captured within the expression (e.g. those that are defined in quantifiers) 
+	 * Determine the set of variables used in a given expression.  Note that this does not include variables which are captured within the expression (e.g. those that are defined in quantifiers)
 	 * @param e
 	 * @return
 	 */
@@ -16,7 +16,7 @@ public class Exprs {
 		uses(e,r);
 		return r;
 	}
-	
+
 	public static void uses(Expr e, HashSet<String> uses) {
 		if(e instanceof Expr.BinOp) {
 			Expr.BinOp bop = (Expr.BinOp) e;

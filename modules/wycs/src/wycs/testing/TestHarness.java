@@ -33,7 +33,7 @@ import wycs.WycsMain;
 import wycs.util.WycsBuildTask;
 
 public class TestHarness {
-	private String sourcepath;    // path to source files	
+	private String sourcepath;    // path to source files
 	private static String WYRT_PATH;
 
 	static {
@@ -48,25 +48,25 @@ public class TestHarness {
 			}
 		}
 	}
-	
+
 	/**
 	 * Construct a test harness object.
-	 * 
+	 *
 	 * @param srcPath
 	 *            The path to the source files to be tested
 	 */
 	public TestHarness(String srcPath) {
 		this.sourcepath = srcPath.replace('/', File.separatorChar);
 	}
-			
+
 	protected void verifyPassTest(String name) {
 		// this will need to turn on verification at some point.
 		name = sourcepath + File.separatorChar + name + ".wyal";
 
 		try {
-			if (compile("-bp", WYRT_PATH, 
-						"-wyaldir", sourcepath, 
-						"-wycsdir", sourcepath,						
+			if (compile("-bp", WYRT_PATH,
+						"-wyaldir", sourcepath,
+						"-wycsdir", sourcepath,
 						name) != WycsMain.SUCCESS) {
 				fail("Test failed to verify!");
 			}
@@ -74,7 +74,7 @@ public class TestHarness {
 			fail("Test threw IOException");
 		}
 	}
-	
+
 	protected void verifyFailTest(String name) {
 		// this will need to turn on verification at some point.
 		name = sourcepath + File.separatorChar + name + ".wyal";
@@ -88,10 +88,10 @@ public class TestHarness {
 			fail("Test threw IOException");
 		}
 	}
-		
-	
+
+
 	private static int compile(String... args) throws IOException {
 		return new WycsMain(new WycsBuildTask(), WycsMain.DEFAULT_OPTIONS)
 				.run(args);
-	}	
+	}
 }

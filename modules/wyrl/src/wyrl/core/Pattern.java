@@ -33,57 +33,57 @@ import static wyrl.core.Type.Collection.*;
 import static wyrl.util.SyntaxError.syntaxError;
 
 public abstract class Pattern extends SyntacticElement.Impl {
-	
+
 	private Pattern(Attribute... attributes) {
 		super(attributes);
 	}
-	
+
 	/**
 	 * Get a list of the variables declared in this pattern, along with their
 	 * declared type.
-	 * 
+	 *
 	 * @return
 	 */
 	public abstract java.util.List<Pair<String,Type>> declarations();
-	
+
 	public abstract Type.Ref type();
-	
+
 	public static final class Leaf extends Pattern {
 		public Type type;
-		
+
 		public Leaf(Type type, Attribute... attributes) {
 			super(attributes);
 			this.type = type;
 		}
-		
+
 		public String toString() {
 			return type.toString();
-		}	
-		
+		}
+
 		@Override
 		public java.util.List<Pair<String,Type>> declarations() {
 			return new ArrayList<Pair<String, Type>>();
 		}
-		
+
 		@Override
 		public Type.Ref type() {
 			return Type.T_REF(type);
 		}
 	}
-	
-	public static final class Term extends Pattern {		
+
+	public static final class Term extends Pattern {
 		public String name;
 		public Pattern data;
 		public String variable;
-		
+
 		public Term(String name, Pattern data, String variable, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
-			this.data = data;					
+			this.data = data;
 			this.variable = variable;
 		}
-		
-		public String toString() {	
+
+		public String toString() {
 			if(data != null) {
 				if(variable != null) {
 					return name + "(" + data + " " + variable + ")";
@@ -94,9 +94,9 @@ public abstract class Pattern extends SyntacticElement.Impl {
 				return name;
 			}
 		}
-	
+
 		public java.util.List<Pair<String, Type>> declarations() {
-			java.util.List<Pair<String, Type>> decls;			
+			java.util.List<Pair<String, Type>> decls;
 			if (data != null) {
 				decls = data.declarations();
 			} else {
@@ -107,36 +107,36 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			}
 			return decls;
 		}
-		
+
 		@Override
 		public Type.Ref type() {
 			Type.Ref d = data != null ? data.type() : null;
 			return Type.T_REF(Type.T_TERM(name, d));
 		}
 	}
-	
+
 	public static abstract class Collection extends Pattern {
 		public final Pair<Pattern,String>[] elements;
 		public final boolean unbounded;
-		
+
 		public Collection(boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
 			super(attributes);
 			this.elements = elements;
 			this.unbounded = unbounded;
 		}
-		
+
 		public Collection(boolean unbounded, java.util.List<Pair<Pattern,String>> elements, Attribute... attributes) {
 			super(attributes);
-			this.elements = elements.toArray(new Pair[elements.size()]);			
+			this.elements = elements.toArray(new Pair[elements.size()]);
 			this.unbounded = unbounded;
-		}		
-	
-		public java.util.List<Pair<String, Type>> declarations() {			
+		}
+
+		public java.util.List<Pair<String, Type>> declarations() {
 			ArrayList<Pair<String, Type>> decls = new ArrayList<Pair<String,Type>>();
 			for(int i=0;i!=elements.length;++i) {
 				Pair<Pattern,String> element = elements[i];
 				Pattern pattern = element.first();
-				String variable = element.second();				
+				String variable = element.second();
 				// First, add all declarations from children of element
 				decls.addAll(element.first().declarations());
 				// Second, add element declaration (if exists)
@@ -153,10 +153,10 @@ public abstract class Pattern extends SyntacticElement.Impl {
 					}
 					decls.add(new Pair<String, Type>(variable, type));
 				}
-			}			
+			}
 			return decls;
 		}
-		
+
 		@Override
 		public Type.Ref type() {
 			Type[] types = new Type[elements.length];
@@ -172,16 +172,16 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			}
 		}
 	}
-	
+
 	public final static class List extends Collection {
 		public List(boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
 			super(unbounded,elements,attributes);
 		}
-		
+
 		public List(boolean unbounded, java.util.List<Pair<Pattern,String>> elements, Attribute... attributes) {
 			super(unbounded,elements,attributes);
-		}	
-		
+		}
+
 		public String toString() {
 			String r = "";
 			for(int i=0;i!=elements.length;++i) {
@@ -195,34 +195,34 @@ public abstract class Pattern extends SyntacticElement.Impl {
 				if(variable != null) {
 					r += " " + variable;
 				}
-				
+
 			}
 			if(unbounded) {
 				r += "...";
-			}			
-			return "[" + r + "]";					
+			}
+			return "[" + r + "]";
 		}
 	}
-	
+
 	public abstract static class BagOrSet extends Collection {
 		public BagOrSet(boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
 			super(unbounded,elements,attributes);
 		}
-		
+
 		public BagOrSet(boolean unbounded, java.util.List<Pair<Pattern,String>> elements, Attribute... attributes) {
 			super(unbounded,elements,attributes);
-		}	
+		}
 	}
-	
+
 	public final static class Set extends BagOrSet {
 		public Set(boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
 			super(unbounded,elements,attributes);
 		}
-		
+
 		public Set(boolean unbounded, java.util.List<Pair<Pattern,String>> elements, Attribute... attributes) {
 			super(unbounded,elements,attributes);
-		}	
-		
+		}
+
 		public String toString() {
 			String r = "";
 			for(int i=0;i!=elements.length;++i) {
@@ -239,20 +239,20 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			}
 			if(unbounded) {
 				r += "...";
-			}			
-			return "{" + r + "}";					
+			}
+			return "{" + r + "}";
 		}
 	}
-	
+
 	public final static class Bag extends BagOrSet {
 		public Bag(boolean unbounded, Pair<Pattern,String>[] elements, Attribute... attributes) {
 			super(unbounded,elements,attributes);
 		}
-		
+
 		public Bag(boolean unbounded, java.util.List<Pair<Pattern,String>> elements, Attribute... attributes) {
 			super(unbounded,elements,attributes);
-		}	
-		
+		}
+
 		public String toString() {
 			String r = "";
 			for(int i=0;i!=elements.length;++i) {
@@ -269,8 +269,8 @@ public abstract class Pattern extends SyntacticElement.Impl {
 			}
 			if(unbounded) {
 				r += "...";
-			}			
-			return "{|" + r + "|}";					
+			}
+			return "{|" + r + "|}";
 		}
 	}
 }

@@ -1,5 +1,5 @@
 <project name="wyrl" default="build">
-  <import file="../../config.xml"/>  
+  <import file="../../config.xml"/>
 
   <target name="compile-wyrl">
     <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wybs/src/">
@@ -11,7 +11,7 @@
     <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wybs/src/">
       <src path="src"/>
       <include name="*/**"/>
-      <exclude name="*/**/package-info.java"/> 
+      <exclude name="*/**/package-info.java"/>
     </javac>
   </target>
 
@@ -31,7 +31,7 @@
     <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
     <echo message="============================================="/>
   </target>
-  
+
   <target name="dist">
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">

@@ -25,7 +25,7 @@
 
 /**
  * Provides the classes responsible for actually translating WhileyFiles into WyilFiles.
- * 
+ *
  * @author David J. Pearce
  */
 package wyc.builder;

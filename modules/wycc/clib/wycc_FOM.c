@@ -7,18 +7,18 @@
  *
  * This file is part of the Whiley Development Kit (WDK).
  *
- * The Whiley Development Kit is free software; you can redistribute 
- * it and/or modify it under the terms of the GNU General Public 
- * License as published by the Free Software Foundation; either 
+ * The Whiley Development Kit is free software; you can redistribute
+ * it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * The Whiley Development Kit is distributed in the hope that it 
- * will be useful, but WITHOUT ANY WARRANTY; without even the 
- * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * The Whiley Development Kit is distributed in the hope that it
+ * will be useful, but WITHOUT ANY WARRANTY; without even the
+ * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
  * PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public 
- * License along with the Whiley Development Kit. If not, see 
+ * You should have received a copy of the GNU General Public
+ * License along with the Whiley Development Kit. If not, see
  * <http://www.gnu.org/licenses/>
  */
 
@@ -149,7 +149,7 @@ static wycc_obj* wycc_box_fom(wycc_obj *nam, wycc_obj *sig, int tok, void* ptr) 
 #if 0
 
 /*
- * 
+ *
  */
 static wycc_obj * wycc_register_argmap_get(int cnt) {
     wycc_obj* ans;

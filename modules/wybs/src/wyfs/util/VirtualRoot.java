@@ -21,88 +21,88 @@ import wyfs.util.DirectoryRoot.Folder;
  * used to hold temporary files that are generated during compilation and which
  * one does not want stored on e.g. the file system.
  * </p>
- * 
+ *
  * <p>
  * As an example, intermediate Wyil files are often stored in virtual root. The
  * build task will typically use a virtual root as the default (meaning wyil
  * files are not written to disk during compilation), but the user can then
  * override this in order to examine them (e.g. for debugging).
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class VirtualRoot extends AbstractRoot<VirtualRoot.Folder> {
 
 	/**
 	 * Construct a virtual root out of nothing.
-	 * 
+	 *
 	 * @param contentTypes
 	 *            --- registry of known content types and their "suffixes"
 	 * @throws IOException
 	 */
 	public VirtualRoot(Content.Registry contentTypes) {
-		super(contentTypes);		
+		super(contentTypes);
 	}
-	
+
 	@Override
 	protected Folder root() {
 		return new Folder(Trie.ROOT);
-	}	
-	
+	}
+
 	/**
 	 * An entry is a file on the file system which represents a Whiley module. The
 	 * file may be encoded in a range of different formats. For example, it may be a
 	 * source file and/or a binary wyil file.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
-	public static final class Entry<T> extends AbstractEntry<T> implements Path.Entry<T> {		
-		
+	public static final class Entry<T> extends AbstractEntry<T> implements Path.Entry<T> {
+
 		/**
 		 * The following is use to determine the appropriate "suffix" of an
 		 * entry.
 		 */
 		private final Content.Registry contentTypes;
-		
+
 		/**
 		 * The raw data representing the contents of this file. Initially, this
 		 * is empty as one would expect.
 		 */
 		private byte[] data;
-		
+
 		/**
 		 * The last modified date. This is a time stamp used to determine when
 		 * the file was last modified in order to calculate which dependents
 		 * need recompilation.
 		 */
 		private long lastModified;
-		
+
 		public Entry(Path.ID id, Content.Registry contentTypes) {
-			super(id);		
+			super(id);
 			this.data = new byte[0];
 			this.contentTypes = contentTypes;
 		}
-		
+
 		public String location() {
 			return "~:" + id.toString();
 		}
-		
+
 		public String suffix() {
 			return contentTypes.suffix(contentType);
 		}
-		
+
 		public long lastModified() {
 			return lastModified;
 		}
-		
+
 		public InputStream inputStream() {
 			return new ByteArrayInputStream(data);
 		}
-		
+
 		public OutputStream outputStream() {
-			lastModified = System.currentTimeMillis();			
+			lastModified = System.currentTimeMillis();
 			data = new byte[0];
 			// create an output stream which will automatically resize the given
 			// array.
@@ -111,21 +111,21 @@ public class VirtualRoot extends AbstractRoot<VirtualRoot.Folder> {
 
 				public void write(int b) {
 					if (pos >= data.length) {
-						data = Arrays.copyOf(data, (data.length + 1) * 2);						
+						data = Arrays.copyOf(data, (data.length + 1) * 2);
 					}
 					data[pos++] = (byte) b;
 				}
 			};
 		}
-		
+
 		public String toString() {
 			return location();
 		}
 	}
-	
+
 	/**
 	 * Represents a directory in the virtual file system.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -133,13 +133,13 @@ public class VirtualRoot extends AbstractRoot<VirtualRoot.Folder> {
 		public Folder(Path.ID id) {
 			super(id);
 		}
-		
+
 		@Override
 		protected Path.Item[] contents() throws IOException {
 			// Initially, a virtual folder is always empty.
 			return new Path.Item[0];
 		}
-		
+
 		@Override
 		public <T> Path.Entry<T> create(ID nid, Content.Type<T> ct) throws IOException {
 			if (nid.size() == 1) {
@@ -164,7 +164,7 @@ public class VirtualRoot extends AbstractRoot<VirtualRoot.Folder> {
 				return folder.create(nid.subpath(1, nid.size()), ct);
 			}
 		}
-		
+
 		public String toString() {
 			return "~:" + id;
 		}

@@ -31,7 +31,7 @@
  * <code>DefinitieAssignmenttCheck</code>), or that there are no ambiguous
  * coercions (<code>CoercionCheck</code>).
  * </p>
- * 
+ *
  * @author David J. Pearce
  */
 package wyil.checks;

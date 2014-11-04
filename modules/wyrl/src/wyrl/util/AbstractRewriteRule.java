@@ -35,12 +35,12 @@ public abstract class AbstractRewriteRule implements RewriteRule {
 	 * The pattern that this rewrite rule will match against.
 	 */
 	private final Pattern.Term pattern;
-	
+
 	public AbstractRewriteRule(Pattern.Term pattern) {
 		this.pattern = pattern;
 	}
-		
+
 	public Pattern.Term pattern() {
 		return pattern;
-	}	
+	}
 }

@@ -4,7 +4,7 @@ type BTree is (null | {
     int item,   // data item
     BTree left, // left subtree
     BTree right // right righttree
-} tree) where 
+} tree) where
     // item in left subtree must be below this item
     (tree != null && tree.left != null ==> tree.left.item < tree.item) &&
     // item in right subtree must be above this item

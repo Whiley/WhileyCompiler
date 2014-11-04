@@ -2,24 +2,24 @@ import wyautl.core.Automaton;
 
 public class Parser {
 	private String input;
-	private int index; 
-	
+	private int index;
+
 	public Parser(String input) {
 		this.input = input;
 		this.index = 0;
 	}
-	
+
 	public int parse(Automaton automaton) {
 		skipWhiteSpace();
 		char lookahead = input.charAt(index);
-		
+
 		int lhs;
-		
+
 		if(lookahead == '(') {
-			lhs = parseBracketed(automaton);			
+			lhs = parseBracketed(automaton);
 		} else if(lookahead == '!') {
 			match("!");
-			return Logic.Not(automaton, parse(automaton));	
+			return Logic.Not(automaton, parse(automaton));
 		} else {
 			String word = readWord();
 			if(word.equals("true")) {
@@ -32,10 +32,10 @@ public class Parser {
 		}
 
 		skipWhiteSpace();
-		
+
 		if(index < input.length()) {
 			lookahead = input.charAt(index);
-			
+
 			if(lookahead == '&') {
 				match("&&");
 				int rhs = parse(automaton);
@@ -43,20 +43,20 @@ public class Parser {
 			} else if(lookahead == '|') {
 				match("||");
 				int rhs = parse(automaton);
-				lhs = Logic.Or(automaton, lhs, rhs);				
-			} 
+				lhs = Logic.Or(automaton, lhs, rhs);
+			}
 		}
-		
+
 		return lhs;
 	}
-	
+
 	private int parseBracketed(Automaton automaton) {
 		match("(");
 		int root = parse(automaton);
 		match(")");
 		return root;
 	}
-	
+
 	private String readWord() {
 		int start = index;
 		while (index < input.length()
@@ -73,7 +73,7 @@ public class Parser {
 		}
 		return Integer.parseInt(input.substring(start, index));
 	}
-		
+
 	private void match(String text) {
 		skipWhiteSpace();
 		if(input.startsWith(text,index)) {
@@ -82,18 +82,18 @@ public class Parser {
 			error();
 		}
 	}
-	
-	private void skipWhiteSpace() {		
+
+	private void skipWhiteSpace() {
 		while (index < input.length()
 				&& (input.charAt(index) == ' ' || input.charAt(index) == '\n')) {
 			index = index + 1;
 		}
-	}	
-	
+	}
+
 	private void error() {
 		final String msg = "Cannot parse character '"
 			+ input.charAt(index)
 		    + "' at position " + index + " of input '" + input + "'\n";
-		throw new RuntimeException(msg);		
+		throw new RuntimeException(msg);
 	}
 }

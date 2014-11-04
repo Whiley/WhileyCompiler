@@ -13,11 +13,11 @@ function match([byte] data, nat offset, nat end) => int:
 
 method main(System.Console sys) => void:
     [byte] xs = [
-        00000000b, 
-        00000101b, 
-        00000000b, 
-        00000110b, 
-        00000000b, 
+        00000000b,
+        00000101b,
+        00000000b,
+        00000110b,
+        00000000b,
         00000101b
     ]
     int x = match(xs, 0, |xs| - 2)

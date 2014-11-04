@@ -36,7 +36,7 @@ function Matrix(nat width, nat height, [[int]] data) => (Matrix r)
 requires |data| == height
 // Elements of input array must match matrix width
 requires no { i in data | |i| != width }
-// 
+//
 ensures r.width == width && r.height == height && r.data == data:
     //
     return {
@@ -45,7 +45,7 @@ ensures r.width == width && r.height == height && r.data == data:
         data: data
     }
 
-function multiply(Matrix A, Matrix B) => (Matrix C) 
+function multiply(Matrix A, Matrix B) => (Matrix C)
 // Must be possible to multiply matrices
 requires A.width == B.height
 // Specify dimensions of result
@@ -103,7 +103,7 @@ throws SyntaxError:
     //
     return Matrix(width,height,rows),pos
 
-function parseLine(int count, int pos, string input) => ([int],int) 
+function parseLine(int count, int pos, string input) => ([int],int)
 throws SyntaxError:
     //
     pos = skipWhiteSpace(pos,input)

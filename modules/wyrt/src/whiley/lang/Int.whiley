@@ -28,59 +28,59 @@ package whiley.lang
 import * from whiley.lang.Errors
 
 /**
- * Represents all signed integers representable in 8bits 
+ * Represents all signed integers representable in 8bits
  * of space in the two's complement representation.
  */
-public type i8 is (int x) 
+public type i8 is (int x)
     where x >=-128 && x <= 127
 
 /**
- * Represents all signed integers representable in 16bits 
+ * Represents all signed integers representable in 16bits
  * of space in the two's complement representation.
  */
-public type i16 is (int x) 
+public type i16 is (int x)
     where x >=-32768 && x <= 32768
 
 /**
- * Represents all signed integers representable in 32bits 
+ * Represents all signed integers representable in 32bits
  * of space in the two's complement representation.
  */
-public type i32 is (int x) 
+public type i32 is (int x)
     where x >=-2147483648 && x <= 2147483647
 
 /**
- * Represents all signed integers representable in 64bits 
+ * Represents all signed integers representable in 64bits
  * of space in the two's complement representation.
  */
-public type i64 is (int x) 
+public type i64 is (int x)
     where x >= -9223372036854775808 && x <= 9223372036854775807
 
 /**
- * Represents all unsigned integers representable in 8bits 
+ * Represents all unsigned integers representable in 8bits
  * of space.
  */
-public type u8 is (int x) 
+public type u8 is (int x)
     where x >=0 && x <= 255
 
 /**
- * Represents all unsigned integers representable in 16bits 
+ * Represents all unsigned integers representable in 16bits
  * of space.
  */
-public type u16 is (int x) 
+public type u16 is (int x)
     where x >= 0 && x <= 65535
 
 /**
- * Represents all unsigned integers representable in 32bits 
+ * Represents all unsigned integers representable in 32bits
  * of space.
  */
-public type u32 is (int x) 
+public type u32 is (int x)
     where x >= 0 && x <= 4294967295
 
 /**
- * Represents all unsigned integers representable in 64bits 
+ * Represents all unsigned integers representable in 64bits
  * of space.
  */
-public type u64 is (int x) 
+public type u64 is (int x)
     where x >= 0 && x <= 18446744073709551615
 
 /**
@@ -99,7 +99,7 @@ public function toString(int item) => string:
     return Any.toString(item)
 
 // Convert an integer into a hex string
-public function toHexString(int item) => string:    
+public function toHexString(int item) => string:
     string r = ""
     while item > 0:
         int v = item / 16
@@ -118,7 +118,7 @@ public function toUnsignedByte(u8 v) => byte:
             r = r | mask
         v = v / 2
         mask = mask << 1
-    return r  
+    return r
 
 // convert an arbitrary sized unsigned integer into a list of bytes in
 // little endian form.
@@ -153,20 +153,20 @@ public function toSignedByte(i8 v) => byte:
     return Int.toUnsignedByte(v)
 
 // parse a string representation of an integer value
-public function parse(string input) => int 
+public function parse(string input) => int
     throws SyntaxError:
     //
     // first, check for negative number
     int start = 0
     bool negative
-    
+
     if input[0] == '-':
         negative = true
         start = start + 1
     else:
         negative = false
     // now, parse remaining digits
-    int r = 0    
+    int r = 0
     for i in start .. |input|:
         char c = input[i]
         r = r * 10

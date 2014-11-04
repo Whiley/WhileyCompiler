@@ -35,9 +35,9 @@ import wyfs.lang.Path;
 
 /**
  * Provides the content-type representing a C file.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class CFile {
 	// =========================================================================
@@ -55,31 +55,31 @@ public class CFile {
 		public CFile read(Path.Entry<CFile> e, InputStream input)
 				throws IOException {
 			// TODO: We'll eventually will want something here I suppose. For
-			// now, we can assume this method is never be called by the system. 
-			return null; 
+			// now, we can assume this method is never be called by the system.
+			return null;
 		}
 
 		public void write(OutputStream output, CFile file)
-				throws IOException {			
+				throws IOException {
 			PrintStream pout = new PrintStream(output);
-			pout.print(file.contents);			
+			pout.print(file.contents);
 		}
 
 		public String toString() {
 			return "Content-Type: c";
 		}
 	};
-	
+
 	// =========================================================================
 	// State
 	// =========================================================================
 
 	private final String contents;
-	
+
 	// =========================================================================
 	// Constructors
 	// =========================================================================
-	
+
 	public CFile(String contents) {
 		this.contents = contents;
 	}

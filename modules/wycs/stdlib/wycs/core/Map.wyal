@@ -29,7 +29,7 @@ function Update<K,V> ({K,V} pairs, K key, V value) => ({K,V} rs)
 ensures:
   (key,value) in rs
 ensures:
-  forall (K k, V v): 
+  forall (K k, V v):
     (k,v) in pairs ==> (k == key || (k,v) in rs)
 ensures:
   forall (K k,V v):

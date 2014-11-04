@@ -87,7 +87,7 @@ private native method NativeFileReader(string filename) => NativeFile
 
 private native method NativeFileWriter(string filename) => NativeFile
 
-// flush native file 
+// flush native file
 private native method flush(NativeFile f)
 
 // close native file
@@ -98,7 +98,7 @@ private native method available(NativeFile f) => uint
 
 // determine whether or not we've reached the end-of-file
 private native method hasMore(NativeFile f) => bool
-    
+
 // read at most max bytes from native file
 private native method read(NativeFile f, int max) => [byte]
 

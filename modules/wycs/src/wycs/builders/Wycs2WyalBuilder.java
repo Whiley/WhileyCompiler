@@ -68,7 +68,7 @@ public class Wycs2WyalBuilder implements Builder {
 		long startMemory = runtime.freeMemory();
 		long tmpTime = startTime;
 		long tmpMem = startMemory;
-		
+
 		// ========================================================================
 		// Parse and register source files
 		// ========================================================================
@@ -86,8 +86,8 @@ public class Wycs2WyalBuilder implements Builder {
 				WycsFile wf = sf.read();
 				// NOTE: following is really a temporary hack
 				new WycsFilePrinter(System.err).write(wf);
-				WyalFile waf = decompile(wf);				
-				df.write(waf);				
+				WyalFile waf = decompile(wf);
+				df.write(waf);
 				count++;
 			}
 		}
@@ -95,11 +95,11 @@ public class Wycs2WyalBuilder implements Builder {
 		// ========================================================================
 		// Done
 		// ========================================================================
-		
+
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Wycs => Wyal: decompiled " + delta.size() + " file(s)",
 				endTime - startTime, startMemory - runtime.freeMemory());
-		
+
 		return generatedFiles;
 	}
 

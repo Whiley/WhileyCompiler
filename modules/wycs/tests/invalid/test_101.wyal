@@ -12,10 +12,10 @@ define List({(int,int)} pairs) is:
     if:
       (i, v) in pairs
     then:
-      i ≥ 0 
+      i ≥ 0
       i < |pairs|
 
-assert: 
+assert:
    forall({int,int} xs):
      Map(xs) ==> List(xs)
 

@@ -30,9 +30,9 @@ import wyfs.util.VirtualRoot;
  * interface with other frameworks (e.g. Ant). This class is designed to be
  * extended by clients which are providing some kind of compiler extension.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class WycsBuildTask {
 
@@ -63,9 +63,9 @@ public class WycsBuildTask {
 	/**
 	 * Default implementation of a content registry. This associates whiley and
 	 * wyil files with their respective content types.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class Registry implements Content.Registry {
 		public void associate(Path.Entry e) {
@@ -315,7 +315,7 @@ public class WycsBuildTask {
 
 	/**
 	 * Building the given source files.
-	 * 
+	 *
 	 * @param _args
 	 */
 	public void build(List<File> files) throws Exception {
@@ -334,7 +334,7 @@ public class WycsBuildTask {
 
 	/**
 	 * Build all source files which have been modified.
-	 * 
+	 *
 	 * @param _args
 	 */
 	public int buildAll() throws Exception {
@@ -348,8 +348,8 @@ public class WycsBuildTask {
 			List<Path.Entry<WyalFile>> delta = getModifiedSourceFiles(wyalDir,
 					wyalIncludes, wycsDir, WycsFile.ContentType);
 			buildEntries(delta);
-			return delta.size();			
-		}		
+			return delta.size();
+		}
 	}
 
 	protected <T> void buildEntries(List<Path.Entry<T>> delta) throws Exception {
@@ -384,7 +384,7 @@ public class WycsBuildTask {
 	// ==========================================================================
 
 	/**
-	 * 
+	 *
 	 * @return
 	 * @throws IOException
 	 */
@@ -406,7 +406,7 @@ public class WycsBuildTask {
 	 * Add all build rules to the project. By default, this adds a standard
 	 * build rule for compiling whiley files to wyil files using the
 	 * <code>Whiley2WyilBuilder</code>.
-	 * 
+	 *
 	 * @param project
 	 */
 	protected void addCompileBuildRules(StdProject project) {
@@ -451,7 +451,7 @@ public class WycsBuildTask {
 	 * Initialise the Wyil pipeline to be used for compiling Whiley files. The
 	 * default implementation just returns <code>Pipeline.defaultPipeline</code>
 	 * .
-	 * 
+	 *
 	 * @return
 	 */
 	protected Pipeline initialisePipeline() {
@@ -462,7 +462,7 @@ public class WycsBuildTask {
 	 * Generate the list of source files whose modification time is after that
 	 * of their binary counterpart. This is useful for determining which source
 	 * files are out-of-date and should be scheduled for recompiliation.
-	 * 
+	 *
 	 * @return
 	 * @throws IOException
 	 */
@@ -490,7 +490,7 @@ public class WycsBuildTask {
 	 * Generate the list of matching path entries corresponding to thegiven
 	 * files on the filesystem. If one match cannot be found, an error is
 	 * thrown.
-	 * 
+	 *
 	 * @return
 	 * @throws IOException
 	 */
@@ -500,17 +500,17 @@ public class WycsBuildTask {
 		List<Path.Entry<T>> matches = dir.find(files, contentType);
 		for (int i = 0; i != matches.size(); ++i) {
 			File file = files.get(i);
-			Path.Entry<T> entry = matches.get(i); 
+			Path.Entry<T> entry = matches.get(i);
 			if (entry == null) {
 				throw new RuntimeException("file not found: " + file);
 			}
 		}
 		return matches;
 	}
-	
+
 	/**
 	 * Flush all built files to disk.
-	 */	
+	 */
 	protected void flush() throws IOException {
 		// NOTE: in principle we want to flush the wyaldir, since in
 		// decompilation mode this results in writing the decompiled file to

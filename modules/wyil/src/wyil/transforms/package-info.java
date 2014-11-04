@@ -32,7 +32,7 @@
  * <code>RuntimeAssertions</code>) or to remove dead-code (
  * <code>DeadCodeElimination</code>).
  * </p>
- * 
+ *
  * @author David J. Pearce
  */
 package wyil.transforms;

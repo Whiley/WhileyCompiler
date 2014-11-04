@@ -38,7 +38,7 @@
  * when running a compiler from within an IDE (e.g. Eclipse) alternative
  * implementations specific to the IDE may be required.
  * </p>
- * 
+ *
  * @author David J. Pearce
  */
 package wyfs;

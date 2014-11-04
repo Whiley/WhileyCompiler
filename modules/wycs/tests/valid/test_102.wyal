@@ -1,6 +1,6 @@
 define Bijection({int,int} pairs) is:
   forall (int i1, int v1, int i2, int v2):
-    if: 
+    if:
       (i1,v1) in pairs
       (i2,v2) in pairs
       (i1,v1) != (i2,v2)

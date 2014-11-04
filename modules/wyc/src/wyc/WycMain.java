@@ -51,9 +51,9 @@ import static wycc.lang.SyntaxError.*;
  * The main class provides all of the necessary plumbing to process command-line
  * options, construct an appropriate pipeline and then instantiate the Whiley
  * Compiler to generate class files.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class WycMain {
 
@@ -102,7 +102,7 @@ public class WycMain {
 	 * information from the enclosing jar file.
 	 */
 	static {
-		
+
 		// determine version numbering from the MANIFEST attributes
 		String versionStr = WycMain.class.getPackage()
 				.getImplementationVersion();
@@ -145,7 +145,7 @@ public class WycMain {
 	 * Stream to which error messages are written
 	 */
 	public PrintStream stderr;
-	
+
 	/**
 	 * Stream to which non-error messages are written
 	 */
@@ -157,7 +157,7 @@ public class WycMain {
 	public WycMain(WycBuildTask builder, OptArg[] options) {
 		this(builder,options,System.out,System.err);
 	}
-	
+
 	public WycMain(WycBuildTask builder, OptArg[] options, OutputStream stdout, OutputStream stderr) {
 		this.options = options;
 		this.builder = builder;
@@ -177,7 +177,7 @@ public class WycMain {
 	public int run(String[] _args) {
 		boolean verbose = false;
 		boolean brief = false;
-		
+
 		try {
 			// =====================================================================
 			// Process Options
@@ -199,19 +199,19 @@ public class WycMain {
 			}
 
 			brief = values.containsKey("brief");
-			
+
 			// =====================================================================
 			// Configure Build Task & Sanity Check
 			// =====================================================================
 			verbose = values.containsKey("verbose");
-			
+
 			configure(values);
-						
+
 			ArrayList<File> delta = new ArrayList<File>();
 			for (String arg : args) {
 				delta.add(new File(arg));
 			}
-			
+
 			// sanity check we've actually compiling things that exist
 			for(File f : delta) {
 				if(!f.exists()) {
@@ -219,7 +219,7 @@ public class WycMain {
 					return INTERNAL_FAILURE;
 				}
 			}
-			
+
 			// =====================================================================
 			// Run Build Task
 			// =====================================================================
@@ -255,7 +255,7 @@ public class WycMain {
 
 	public void configure(Map<String,Object> values) throws IOException {
 		boolean verbose = values.containsKey("verbose");
-				
+
 		builder.setVerbose(verbose);
 		builder.setVerification(values.containsKey("verify"));
 		builder.setSmtVerification(values.containsKey("smt-verify"));
@@ -289,19 +289,19 @@ public class WycMain {
 				.get("whileypath");
 		builder.setWhileyPath(whileypath);
 	}
-	
+
 	protected void version() {
 		stdout.println("Whiley Compiler (wyc) version "
 				+ MAJOR_VERSION + "." + MINOR_VERSION + "."
-				+ MINOR_REVISION + " (build " + BUILD_NUMBER + ")");		
+				+ MINOR_REVISION + " (build " + BUILD_NUMBER + ")");
 	}
-	
+
 	protected void usage() {
 		stdout.println("usage: wyc <options> <source-files>");
 		OptArg.usage(stdout, options);
-		usage(stdout, WycBuildTask.defaultPipeline);		
+		usage(stdout, WycBuildTask.defaultPipeline);
 	}
-	
+
 	/**
 	 * Print out the available list of options for the given pipeline
 	 */

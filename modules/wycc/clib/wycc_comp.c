@@ -7,18 +7,18 @@
  *
  * This file is part of the Whiley Development Kit (WDK).
  *
- * The Whiley Development Kit is free software; you can redistribute 
- * it and/or modify it under the terms of the GNU General Public 
- * License as published by the Free Software Foundation; either 
+ * The Whiley Development Kit is free software; you can redistribute
+ * it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * The Whiley Development Kit is distributed in the hope that it 
- * will be useful, but WITHOUT ANY WARRANTY; without even the 
- * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * The Whiley Development Kit is distributed in the hope that it
+ * will be useful, but WITHOUT ANY WARRANTY; without even the
+ * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
  * PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public 
- * License along with the Whiley Development Kit. If not, see 
+ * You should have received a copy of the GNU General Public
+ * License along with the Whiley Development Kit. If not, see
  * <http://www.gnu.org/licenses/>
  */
 
@@ -115,7 +115,7 @@ static int wycc_comp_str(wycc_obj* lhs, wycc_obj* rhs){
 /*
  * a not quite simple comparison of two small sets
  * a set with fewer elements is always smaller
- * a 
+ * a
  */
 static int wycc_comp_set(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(lhs, "wycc_comp_set lhs");
@@ -129,7 +129,7 @@ static int wycc_comp_set(wycc_obj* lhs, wycc_obj* rhs){
     int end;
 
     wycc_chunk_ptr_fill(lptr, lhs, 0);	/* 0 == this is a set */
-    wycc_chunk_ptr_fill(rptr, rhs, 0); 
+    wycc_chunk_ptr_fill(rptr, rhs, 0);
     wycc_chunk_ptr_inc(lptr);
     wycc_chunk_ptr_inc(rptr);
     while (lptr->key) {
@@ -192,7 +192,7 @@ int wycc_comp_list(wycc_obj* lhs, wycc_obj* rhs){
 /*
  * a not quite simple comparison of two records
  * a record with fewer fields is always smaller
- * a 
+ * a
  */
 static int wycc_comp_record(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(lhs, "wycc_comp_record lhs");
@@ -222,7 +222,7 @@ static int wycc_comp_record(wycc_obj* lhs, wycc_obj* rhs){
 /*
  * a not quite simple comparison of two records
  * a record with fewer fields is always smaller
- * a 
+ * a
  */
 static int wycc_comp_rmeta(wycc_obj* lhs, wycc_obj* rhs){
     WY_OBJ_SANE(lhs, "wycc_comp_record lhs");

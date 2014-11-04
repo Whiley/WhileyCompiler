@@ -12,11 +12,11 @@ public class Quantifiers$native {
 	 * variables. Any such bindings are then used to instantiate the quantified
 	 * expression. For example, consider these expressions:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * in(1) && forall y . !in(y)
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, we want to instantiate the quantifier with the binding
 	 * <code>y=1</code> to produce a contradiction. This function will be called
@@ -43,11 +43,11 @@ public class Quantifiers$native {
 	 * expressions which can be used to bind the quantified variables. To
 	 * understand this, consider a more complex example:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * in(1) && !out(1) && forall x . in(x) ==> out(x)
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Let's assume for this example the concrete expression is
 	 * <code>in(1)</code>. Now, we cannot the quantified expression as a whole
@@ -59,13 +59,13 @@ public class Quantifiers$native {
 	 * it to try and construct an appropriate binding and, if successful,
 	 * instantiate the quantified expression as a whole.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * Finally, it can happen that there are multiple possible bindings for any
 	 * given concrete/quantified expression pairing, and this function should
 	 * return them all. Here is one example:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * in(1,2) && forall x . !in(1,x) ==> !in(x,2)
 	 * </pre>
@@ -75,7 +75,7 @@ public class Quantifiers$native {
 	 * contradiction and, hence, it is critical to explore all possible
 	 * bindings.
 	 * </p>
-	 * 
+	 *
 	 * @param automaton
 	 *            The automaton being operated over.
 	 * @param args
@@ -87,7 +87,7 @@ public class Quantifiers$native {
 	public static Automaton.Set instantiate(Automaton automaton,
 			Automaton.List args) {
 		//wyrl.util.Runtime.debug(automaton,Quantifiers.SCHEMA,"Or","And");
-		
+
 		int concreteExpression = args.get(0);
 		int quantifiedExpression = args.get(2);
 		Automaton.Set quantifiedVarSet = (Automaton.Set) automaton.get(args
@@ -105,7 +105,7 @@ public class Quantifiers$native {
 		// variables from e2 to their concrete counterparts from e1.
 		ArrayList<Binding> bindings = new ArrayList<Binding>();
 		bindings.add(new Binding(quantifiedVariables));
-				
+
 		// Attempt to find as many bindings as possible. This is a
 		// potentially expensive operation when the quantified expression is
 		// large and/or there are a large number of quantified variables.
@@ -125,7 +125,7 @@ public class Quantifiers$native {
 				Binding binding = bindings.get(i);
 				if (binding.numberUnbound == 0) {
 					int result = automaton.substitute(
-							quantifiedExpression, binding.binding);					
+							quantifiedExpression, binding.binding);
 					instances[index++] = result;
 				} else {
 					instances = Arrays.copyOfRange(instances, 0,
@@ -150,7 +150,7 @@ public class Quantifiers$native {
 	 * of bindings. Eitherway, the search continues until all options are
 	 * exhausted.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * <b>NOTE:</b> this is an expensive operation. To mitigate this, we
 	 * minimise the number of potential trigger points by only descending
@@ -158,7 +158,7 @@ public class Quantifiers$native {
 	 * power of quantifier instantiation, but seems a reasonable restriction at
 	 * this stage.
 	 * </p>
-	 * 
+	 *
 	 * @param automaton
 	 *            The automaton we're traversing.
 	 * @param concreteExpression
@@ -222,7 +222,7 @@ public class Quantifiers$native {
 							quantifiedVariables, localBindings);
 					bindings.addAll(localBindings);
 				}
-				
+
 				break;
 			}
 			}
@@ -238,7 +238,7 @@ public class Quantifiers$native {
 	 * quantified variables. This binding can still fail if an attempt is made
 	 * to bind one variable to multiple distinct pieces of the concrete
 	 * expression.
-	 * 
+	 *
 	 * @param automaton
 	 *            The automaton we're traversing.
 	 * @param concreteRef
@@ -377,7 +377,7 @@ public class Quantifiers$native {
 
 		for (int i = 0; i != triggerSize; ++i) {
 			int trigger_child = triggerSet.get(i);
-			
+
 			// Here, we take a copy of the current bindings list. The reason for
 			// this is so we can clear bindings for each concrete item and build
 			// it up again. However, since a failing match in the subsequent
@@ -406,7 +406,7 @@ public class Quantifiers$native {
 	/**
 	 * Create a deep clone of this array list, including the bindings it
 	 * contains.
-	 * 
+	 *
 	 * @param bindings
 	 * @return
 	 */
@@ -418,7 +418,7 @@ public class Quantifiers$native {
 		}
 		return newBindings;
 	}
-	
+
 	/**
 	 * <p>
 	 * Represents a partial (or complete) binding, as may be encountered during
@@ -431,7 +431,7 @@ public class Quantifiers$native {
 	 * we must know when this occurs in order to ensure the remaining variables
 	 * remain quantified afterwards.
 	 * </p>
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -452,7 +452,7 @@ public class Quantifiers$native {
 
 		/**
 		 * Construct a fresh binding from a given set of quantifiedVariables.
-		 * 
+		 *
 		 * @param quantifiedVariables
 		 */
 		public Binding(boolean[] quantifiedVariables) {
@@ -466,7 +466,7 @@ public class Quantifiers$native {
 				}
 			}
 		}
-		
+
 		public Binding(Binding binding) {
 			this.binding = Arrays.copyOf(binding.binding, binding.binding.length);
 			this.numberUnbound = binding.numberUnbound;
@@ -474,7 +474,7 @@ public class Quantifiers$native {
 
 		/**
 		 * Bind a concrete state reference to a quantified state reference.
-		 * 
+		 *
 		 * @param concreteRef
 		 *            Concrete state bound to
 		 * @param quantifiedRef
@@ -499,6 +499,6 @@ public class Quantifiers$native {
 			}
 
 			return true;
-		}		
+		}
 	}
 }

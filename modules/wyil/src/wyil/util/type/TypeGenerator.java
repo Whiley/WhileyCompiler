@@ -39,24 +39,24 @@ import wyautl_old.util.Generator.Config;
 import wyautl_old.util.Generator.Kind;
 
 public class TypeGenerator {
-	
+
 	public static class BinaryTypeWriter extends Type.BinaryWriter {
 		public BinaryTypeWriter(BinaryOutputStream output) {
 			super(output);
 		}
-		
-		public void write(Automaton automaton) throws IOException {						
+
+		public void write(Automaton automaton) throws IOException {
 			Type t = Type.construct(new Automaton(automaton));
 			if (t != Type.T_VOID) {
 				super.write(automaton);
 				count++;
 				if (verbose) {
-					System.err.print("\rWrote " + count + " types.");					
+					System.err.print("\rWrote " + count + " types.");
 				}
-			}						
+			}
 		}
 	}
-	
+
 	public static class TextTypeWriter implements GenericWriter<Automaton> {
 		private PrintStream output;
 
@@ -64,7 +64,7 @@ public class TypeGenerator {
 			this.output = output;
 		}
 
-		public void write(Automaton automaton) throws IOException {						
+		public void write(Automaton automaton) throws IOException {
 			Type t = Type.construct(Automata.extract(automaton,0));
 			if (t != Type.T_VOID) {
 				output.println(t);
@@ -72,7 +72,7 @@ public class TypeGenerator {
 				if (verbose) {
 					System.err.print("\rWrote " + count + " types.");
 				}
-			} 			
+			}
 		}
 
 		public void flush() throws IOException {
@@ -82,9 +82,9 @@ public class TypeGenerator {
 		public void close() throws IOException {
 			output.close();
 		}
-	}	
-	
-	public static boolean isContractive(Automaton automaton) {		
+	}
+
+	public static boolean isContractive(Automaton automaton) {
 		BitSet contractives = new BitSet(automaton.size());
 		// initially all nodes are considered contracive.
 		contractives.set(0,contractives.size(),true);
@@ -106,7 +106,7 @@ public class TypeGenerator {
 
 		return contractive;
 	}
-	
+
 	private static boolean isContractive(int index, BitSet contractives,
 			Automaton automaton) {
 		Automaton.State state = automaton.states[index];
@@ -121,18 +121,18 @@ public class TypeGenerator {
 				}
 			}
 			return false;
-		} else {			
+		} else {
 			boolean r = true;
-			for(int child : children) {				
-				if(child == index) { 
+			for(int child : children) {
+				if(child == index) {
 					return true;
 				}
-				r &= contractives.get(child);									
+				r &= contractives.get(child);
 			}
 			return r;
 		}
 	}
-	
+
 	private static final Generator.Data DATA_GENERATOR = new Generator.Data() {
 		public List<Object> generate(Automaton.State state) {
 			if(state.kind == Type.K_RECORD) {
@@ -142,13 +142,13 @@ public class TypeGenerator {
 			}
 		}
 	};
-	
-	private static final Config config = new Config() {{		
+
+	private static final Config config = new Config() {{
 		RECURSIVE = true;
 		SIZE = 3;
 		KINDS = new Kind[24];
 		//KINDS[Type.K_VOID] = new Kind(true,0,0,null);
-		//KINDS[Type.K_ANY] = new Kind(true,0,0,null);		
+		//KINDS[Type.K_ANY] = new Kind(true,0,0,null);
 		KINDS[Type.K_NULL] = new Kind(true,0,0,null);
 		//KINDS[Type.K_BOOL] = new Kind(true,0,0,null);
 		//KINDS[Type.K_BYTE] = new Kind(true,0,0,null);
@@ -159,7 +159,7 @@ public class TypeGenerator {
 		KINDS[Type.K_TUPLE] = new Kind(true,2,2,null);
 		//KINDS[Type.K_SET] = new Kind(true,1,1,null);
 		//KINDS[Type.K_LIST] = new Kind(true,1,1,null);
-		//KINDS[Type.K_DICTIONARY] = new Kind(true,2,2,null);	
+		//KINDS[Type.K_DICTIONARY] = new Kind(true,2,2,null);
 		//KINDS[Type.K_PROCESS] = new Kind(true,1,1,null);
 		KINDS[Type.K_RECORD] = new Kind(true,1,1,DATA_GENERATOR);
 		KINDS[Type.K_UNION] = new Kind(false,2,2,null);
@@ -169,38 +169,38 @@ public class TypeGenerator {
 		//KINDS[Type.K_HEADLESS] = new Kind(true,1,1,null);
 		//KINDS[Type.K_EXISTENTIAL] = new Kind(true,1,1,null);
 	}};
-	
-	private static final String[] fields = {"f1","f2","f3","f4","f5"};	
-	
-	private static List<Object> recordGenerator(Automaton.State state) {		
+
+	private static final String[] fields = {"f1","f2","f3","f4","f5"};
+
+	private static List<Object> recordGenerator(Automaton.State state) {
 		ArrayList<String> data1 = new ArrayList();
 		ArrayList<String> data2 = new ArrayList();
 		for(int i=0;i!=state.children.length;++i) {
 			data1.add(fields[i]);
 			data2.add(fields[i+1]);
 		}
-		ArrayList<Object> datas = new ArrayList<Object>();		
+		ArrayList<Object> datas = new ArrayList<Object>();
 		datas.add(data1);
-		datas.add(data2);		
+		datas.add(data2);
 		return datas;
-	}		
-	
+	}
+
 	private static void kindUpdate(int k, Kind kind) {
 		if(config.KINDS[k] != null) {
 			config.KINDS[k] = kind;
 		}
 	}
-	
-	private static boolean verbose = false;	
+
+	private static boolean verbose = false;
 	private static int count = 0;
-	
-	public static void main(String[] args) {		
+
+	public static void main(String[] args) {
 		boolean binary = false;
 		GenericWriter<Automaton> writer;
 		PrintStream out = System.out;
 		int minSize = 1;
 		int maxSize = config.SIZE;
-		
+
 		try {
 			int index = 0;
 			while(index < args.length) {
@@ -216,7 +216,7 @@ public class TypeGenerator {
 						minSize = Integer.parseInt(ss[0]);
 						maxSize = Integer.parseInt(ss[1]);
 					} else {
-						maxSize = Integer.parseInt(arg);						
+						maxSize = Integer.parseInt(arg);
 					}
 				} else if(args[index].equals("-v") || args[index].equals("-verbose")) {
 					verbose = true;
@@ -231,22 +231,22 @@ public class TypeGenerator {
 				}
 				index++;
 			}
-			
+
 			if(binary) {
 				BinaryOutputStream bos = new BinaryOutputStream(out);
 				writer = new BinaryTypeWriter(bos);
 			} else {
 				writer = new TextTypeWriter(out);
-			}				
-					
+			}
+
 			for(int i=minSize;i<=maxSize;++i) {
 				config.SIZE = i;
-				Generator.generate(writer,config);				
-			}						
-			System.err.println("\rWrote " + count + " types.");			
-			writer.close();									
+				Generator.generate(writer,config);
+			}
+			System.err.println("\rWrote " + count + " types.");
+			writer.close();
 		} catch(IOException ex) {
 			System.out.println("Exception: " + ex);
-		}		
+		}
 	}
 }

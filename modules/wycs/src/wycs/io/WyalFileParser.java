@@ -36,7 +36,7 @@ public class WyalFileParser {
 	 * Read a <code>WyalFile</code> from the token stream. If the stream is
 	 * invalid in some way (e.g. contains a syntax error, etc) then a
 	 * <code>SyntaxError</code> is thrown.
-	 * 
+	 *
 	 * @return
 	 */
 	public WyalFile read() {
@@ -97,11 +97,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse an import declaration, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * ImportDecl ::= Identifier ["from" ('*' | Identifier)] ( ('.' | '..') ('*' | Identifier) )*
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            WyalFile being constructed
 	 */
@@ -149,17 +149,17 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a <i>function declaration</i> which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * FunctionDeclaration ::= "function" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
-	 * 
+	 *
 	 * FunctionMethodClause ::= "throws" Type | "requires" Expr | "ensures" Expr
 	 * </pre>
-	 * 
+	 *
 	 * Here, the first type pattern (i.e. before "=>") is referred to as the
 	 * "parameter", whilst the second is referred to as the "return". There are
 	 * three kinds of option clause:
-	 * 
+	 *
 	 * <ul>
 	 * <li><b>Throws clause</b>. This defines the exceptions which may be thrown
 	 * by this function. Multiple clauses may be given, and these are taken
@@ -180,12 +180,12 @@ public class WyalFileParser {
 	 * conjunction. Furthermore, the convention is to specify the requires
 	 * clause(s) after the others.</li>
 	 * </ul>
-	 * 
+	 *
 	 * <p>
 	 * The following function declaration provides a small example to
 	 * illustrate:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * function max(int x, int y) => (int z)
 	 * // return must be greater than either parameter
@@ -193,7 +193,7 @@ public class WyalFileParser {
 	 * // return must equal one of the parmaeters
 	 * ensures x == z || y == z
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, we see the specification for the well-known <code>max()</code>
 	 * function which returns the largest of its parameters. This does not throw
@@ -258,7 +258,7 @@ public class WyalFileParser {
 					ensures = condition;
 				} else {
 					ensures = new Expr.Binary(Expr.Binary.Op.AND,ensures,condition);
-				}				
+				}
 				break;
 			}
 			case Throws:
@@ -274,27 +274,27 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a type declaration in a Wyal source file, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * "type" Identifier "is" TypePattern ["where" Expr]
 	 * </pre>
-	 * 
+	 *
 	 * Here, the type pattern specifies a type which may additionally be adorned
 	 * with variable names. The "where" clause is optional and is often referred
 	 * to as the type's "constraint". Variables defined within the type pattern
 	 * may be used within this constraint expressions. A simple example to
 	 * illustrate is:
-	 * 
+	 *
 	 * <pre>
 	 * type nat is (int x) where x >= 0
 	 * </pre>
-	 * 
+	 *
 	 * Here, we are defining a <i>constrained type</i> called <code>nat</code>
 	 * which represents the set of natural numbers (i.e the non-negative
 	 * integers).
-	 * 
+	 *
 	 * @see wycs.syntax.WyalFile.Type
-	 * 
+	 *
 	 * @param wf
 	 *            --- The Wyal file in which this declaration is defined.
 	 */
@@ -334,22 +334,22 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a constant declaration in a Wyal source file, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * DefineDeclaration ::= "macro" Identifier "is" Expr
 	 * </pre>
-	 * 
+	 *
 	 * A simple example to illustrate is:
-	 * 
+	 *
 	 * <pre>
 	 * define PI is 3.141592654
 	 * </pre>
-	 * 
+	 *
 	 * Here, we are defining a constant called <code>PI</code> which represents
 	 * the decimal value "3.141592654".
-	 * 
+	 *
 	 * @see wycs.syntax.WyalFile.Constant
-	 * 
+	 *
 	 * @param wf
 	 *            The WyAL file in which this declaration is defined.
 	 */
@@ -403,7 +403,7 @@ public class WyalFileParser {
 
 	/**
 	 * Parse an <code>assume</code> declaration in a WyAL source file.
-	 * 
+	 *
 	 * @param wf
 	 *            The WyAL file in which this declaration is defined.
 	 */
@@ -432,7 +432,7 @@ public class WyalFileParser {
 
 	/**
 	 * Parse an <code>assert</code> declaration in a WyAL source file.
-	 * 
+	 *
 	 * @param wf
 	 *            The WyAL file in which this declaration is defined.
 	 */
@@ -467,7 +467,7 @@ public class WyalFileParser {
 	 * encountered (assuming their is one). An error occurs if a subsequent
 	 * statement is reached with an indentation level <i>greater</i> than the
 	 * block's indentation level.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed.
 	 * @param parentIndent
@@ -539,7 +539,7 @@ public class WyalFileParser {
 	/**
 	 * Determine the indentation as given by the Indent token at this point (if
 	 * any). If none, then <code>null</code> is returned.
-	 * 
+	 *
 	 * @return
 	 */
 	private Indent getIndent() {
@@ -556,7 +556,7 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a statement expression.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed.
 	 * @param generics
@@ -594,7 +594,7 @@ public class WyalFileParser {
 
 	/**
 	 * Parse an if-then expression.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed.
 	 * @param generics
@@ -620,15 +620,15 @@ public class WyalFileParser {
 				sourceAttr(start, index - 1));
 	}
 
-	
+
 	private Expr parseCaseStatement(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, Indent indent) {
 		int start = index;
-		
+
 		Expr condition = null;
 		Indent nextIndent;
 		Token lookahead;
-		
+
 		do {
 			match(Colon);
 			matchEndLine();
@@ -645,13 +645,13 @@ public class WyalFileParser {
 				lookahead = null;
 			}
 		} while (lookahead != null && lookahead.kind == Case);
-		
+
 		return condition;
 	}
-	
+
 	/**
 	 * Parse a quantifier expression.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed.
 	 * @param generics
@@ -674,7 +674,7 @@ public class WyalFileParser {
 
 		TypePattern pattern = parseTypePattern(generics, environment, true);
 		Expr condition;
-	
+
 		if (tryAndMatch(true, Colon) != null) {
 			matchEndLine();
 			condition = parseBlock(wf, generics, environment, ROOT_INDENT);
@@ -682,7 +682,7 @@ public class WyalFileParser {
 			match(SemiColon);
 			condition = parseLogicalExpression(wf, generics, environment, false);
 		}
-		
+
 		if (lookahead.kind == Exists) {
 			return new Expr.Exists(pattern, condition, sourceAttr(start,
 					index - 1));
@@ -694,15 +694,15 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a tuple expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * TupleExpr::= Expr (',' Expr)*
 	 * </pre>
-	 * 
+	 *
 	 * Tuple expressions are expressions which can return multiple values (i.e.
 	 * tuples). In many situations, tuple expressions are not permitted since
 	 * tuples cannot be used in that context.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed.
 	 * @param generics
@@ -723,7 +723,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseMultiExpression(WyalFile wf, HashSet<String> generics,
@@ -750,17 +750,17 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a unit expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * UnitExpr::= LogicalExpression
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * A unit expression is essentially any expression, except that it is not
 	 * allowed to be a tuple expression. More specifically, it cannot be
 	 * followed by ',' (e.g. because the enclosing context uses ',').
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * As an example consider a record expression, such as
 	 * <code>{x: e1, y: e2}</code>. Here, the sub-expression "e1" must be a
@@ -768,7 +768,7 @@ public class WyalFileParser {
 	 * the next field "y". Of course, e1 can be a tuple expression if we use
 	 * brackets as these help disambiguate the context.
 	 * </p>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -800,11 +800,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a logical expression of the form:
-	 * 
+	 *
 	 * <pre>
 	 * Expr ::= AndOrExpr [ "==>" UnitExpr]
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -827,7 +827,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseLogicalExpression(WyalFile wf, HashSet<String> generics,
@@ -863,11 +863,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a logical expression of the form:
-	 * 
+	 *
 	 * <pre>
 	 * Expr ::= ConditionExpr [ ( "&&" | "||" ) Expr]
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -890,7 +890,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseAndOrExpression(WyalFile wf, HashSet<String> generics,
@@ -941,7 +941,7 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a condition expression.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -964,7 +964,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseConditionExpression(WyalFile wf,
@@ -1020,7 +1020,7 @@ public class WyalFileParser {
 				break;
 			case SupersetEquals:
 				bop = Expr.Binary.Op.SUPSETEQ;
-				break;	
+				break;
 			default:
 				syntaxError("Unknown binary operator: " + lookahead.kind,lookahead); // dead-code
 				return null;
@@ -1036,15 +1036,15 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a quantifier expression, which is of the form:
-	 * 
+	 *
 	 * <pre>
-	 * QuantExpr ::= ("no" | "some" | "all") 
-	 *               '{' 
-	 *                   Identifier "in" Expr (',' Identifier "in" Expr)+ 
+	 * QuantExpr ::= ("no" | "some" | "all")
+	 *               '{'
+	 *                   Identifier "in" Expr (',' Identifier "in" Expr)+
 	 *                   '|' LogicalExpr
 	 *               '}'
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -1067,7 +1067,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @param environment
 	 * @return
 	 */
@@ -1099,11 +1099,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse an append expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * AppendExpr ::= RangeExpr ( "++" RangeExpr)*
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -1126,7 +1126,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseAppendExpression(WyalFile wf, HashSet<String> generics,
@@ -1146,11 +1146,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a range expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * RangeExpr ::= ShiftExpr [ ".." ShiftExpr ]
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -1173,7 +1173,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseRangeExpression(WyalFile wf, HashSet<String> generics,
@@ -1194,7 +1194,7 @@ public class WyalFileParser {
 
 	/**
 	 * Parse an additive expression.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -1217,7 +1217,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseAdditiveExpression(WyalFile wf, HashSet<String> generics,
@@ -1250,7 +1250,7 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a multiplicative expression.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -1273,7 +1273,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseMultiplicativeExpression(WyalFile wf,
@@ -1308,23 +1308,23 @@ public class WyalFileParser {
 
 	/**
 	 * Parse an <i>access expression</i>, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * AccessExpr::= PrimaryExpr
 	 *            | AccessExpr '[' AdditiveExpr ']'
-	 *            | AccessExpr '[' AdditiveExpr ".." AdditiveExpr ']'                   
+	 *            | AccessExpr '[' AdditiveExpr ".." AdditiveExpr ']'
 	 *            | AccessExpr '.' Identifier
 	 *            | AccessExpr '.' Identifier '(' [ Expr (',' Expr)* ] ')'
 	 *            | AccessExpr "=>" Identifier
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Access expressions are challenging for several reasons. First, they are
 	 * <i>left-recursive</i>, making them more difficult to parse correctly.
 	 * Secondly, there are several different forms above and, of these, some
 	 * generate multiple AST nodes as well (see below).
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This parser attempts to construct the most accurate AST possible and this
 	 * requires disambiguating otherwise identical forms. For example, an
@@ -1336,7 +1336,7 @@ public class WyalFileParser {
 	 * on the fact any sequence of field-accesses must begin with a local
 	 * variable.
 	 * </p>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -1359,7 +1359,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseAccessExpression(WyalFile wf, HashSet<String> generics,
@@ -1422,7 +1422,7 @@ public class WyalFileParser {
 							lhs = new Expr.Ternary(Expr.Ternary.Op.SUBLIST,lhs, rhs, end, sourceAttr(
 									start, index - 1));
 						}
-					} else if(tryAndMatch(true, ColonEquals) != null) {						
+					} else if(tryAndMatch(true, ColonEquals) != null) {
 						// Indicates an list of map update expression
 						Expr val = parseRangeExpression(wf, generics, environment,
 								true);
@@ -1478,7 +1478,7 @@ public class WyalFileParser {
 					// Must be a plain old field access.
 					lhs = new Expr.FieldAccess(lhs, name, sourceAttr(start,
 							index - 1));
-				}			
+				}
 			}
 		}
 
@@ -1489,7 +1489,7 @@ public class WyalFileParser {
 	 * Attempt to parse a possible module identifier. This will reflect a true
 	 * module identifier only if the root variable is not in the given
 	 * environment.
-	 * 
+	 *
 	 * @param src
 	 * @param environment
 	 * @return
@@ -1516,7 +1516,7 @@ public class WyalFileParser {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -1539,7 +1539,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseTermExpression(WyalFile wf, HashSet<String> generics,
@@ -1623,12 +1623,12 @@ public class WyalFileParser {
 	/**
 	 * Parse an expression beginning with a left brace. This is either a cast or
 	 * bracketed expression:
-	 * 
+	 *
 	 * <pre>
 	 * BracketedExpr ::= '(' Type ')' Expr
 	 *                      | '(' Expr ')'
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * The challenge here is to disambiguate the two forms (which is similar to
 	 * the problem of disambiguating a variable declaration from e.g. an
@@ -1639,7 +1639,7 @@ public class WyalFileParser {
 	 * that the expression following a cast *must* reside on the same line as
 	 * the cast.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * A cast can be followed by the start of any valid expression. This
 	 * includes: identifiers (e.g. "(T) x"), braces of various kinds (e.g.
@@ -1662,16 +1662,16 @@ public class WyalFileParser {
 	 * Unfortunately, there are two problematic casts: '-' and '('. In Java, the
 	 * problem of '-' is resolved carefully as follows:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * CastExpr::= ( PrimitiveType Dimsopt ) UnaryExpression
 	 *                 | ( ReferenceType ) UnaryExpressionNotPlusMinus
 	 * </pre>
-	 * 
+	 *
 	 * See JLS 15.16 (Cast Expressions). This means that, in cases where we can
 	 * be certain we have a type, then a general expression may follow;
 	 * otherwise, only a restricted expression may follow.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -1694,7 +1694,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseBracketedExpression(WyalFile wf,
@@ -1748,7 +1748,7 @@ public class WyalFileParser {
 			case CharValue:
 			case IntValue:
 			case RealValue:
-			case StringValue:			
+			case StringValue:
 			case LeftCurly:
 
 				// FIXME: there is a bug here when parsing a quantified
@@ -1782,11 +1782,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a list constructor expression, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * ListExpr ::= '[' [ Expr (',' Expr)* ] ']'
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -1809,7 +1809,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseListExpression(WyalFile wf, HashSet<String> generics,
@@ -1839,22 +1839,22 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a record, set or map constructor, which are of the form:
-	 * 
+	 *
 	 * <pre>
 	 * RecordExpr ::= '{' Identifier ':' Expr (',' Identifier ':' Expr)* '}'
 	 * SetExpr   ::= '{' [ Expr (',' Expr)* ] '}'
 	 * MapExpr   ::= '{' Expr "=>" Expr ( ',' Expr "=>" Expr)* '}'
-	 * SetComprehension ::= '{' Expr '|' 
+	 * SetComprehension ::= '{' Expr '|'
 	 * 							Identifier "in" Expr (',' Identifier "in" Expr)*
 	 *                          [',' Expr] '}'
 	 * </pre>
-	 * 
+	 *
 	 * Disambiguating these three forms is relatively straightforward. We parse
 	 * the left curly brace. Then, if what follows is a right curly brace then
 	 * we have a set expression. Otherwise, we parse the first expression, then
 	 * examine what follows. If it's ':', then we have a record expression;
 	 * otherwise, we have a set expression.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -1877,7 +1877,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseRecordOrSetOrMapExpression(WyalFile wf,
@@ -1922,14 +1922,14 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a record constructor, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * RecordExpr ::= '{' Identifier ':' Expr (',' Identifier ':' Expr)* '}'
 	 * </pre>
-	 * 
+	 *
 	 * During parsing, we additionally check that each identifier is unique;
 	 * otherwise, an error is reported.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -1952,7 +1952,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseRecordExpression(WyalFile wf, HashSet<String> generics,
@@ -1992,11 +1992,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a map constructor expression, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * MapExpr::= '{' Expr "=>" Expr (',' Expr "=>" Expr)* } '}'
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -2019,7 +2019,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseMapExpression(WyalFile wf, HashSet<String> generics,
@@ -2066,11 +2066,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a set constructor expression, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * SetExpr::= '{' [ Expr (',' Expr)* } '}'
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -2093,7 +2093,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseSetExpression(WyalFile wf, HashSet<String> generics,
@@ -2124,12 +2124,12 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a length of expression, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * TermExpr::= ...
 	 *                 |  '|' Expr '|'
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -2152,7 +2152,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseLengthOfExpression(WyalFile wf, HashSet<String> generics,
@@ -2173,12 +2173,12 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a negation expression, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * TermExpr::= ...
 	 *                 |  '-' Expr
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -2201,7 +2201,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseNegationExpression(WyalFile wf, HashSet<String> generics,
@@ -2228,14 +2228,14 @@ public class WyalFileParser {
 
 	/**
 	 * Parse an invocation expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * InvokeExpr::= Identifier '(' [ Expr (',' Expr)* ] ')'
 	 * </pre>
-	 * 
+	 *
 	 * Observe that this when this function is called, we're assuming that the
 	 * identifier and opening brace has already been matched.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -2258,7 +2258,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseInvokeExpression(WyalFile wf, HashSet<String> generics,
@@ -2289,7 +2289,7 @@ public class WyalFileParser {
 	 * whether or not a left brace is present as, in this position, we can only
 	 * have an invocation.
 	 * </p>
-	 * 
+	 *
 	 * @return
 	 */
 	private boolean isFunctionCall() {
@@ -2305,7 +2305,7 @@ public class WyalFileParser {
 			// respect the nesting of generic type lists.
 			int count = 1;
 			myIndex = myIndex + 1;
-			
+
 			while (myIndex < tokens.size() && count > 0) {
 				Token token = tokens.get(myIndex);
 				switch(token.kind) {
@@ -2329,21 +2329,21 @@ public class WyalFileParser {
 				return false;
 			}
 		}
-		
+
 		return myIndex < tokens.size() && tokens.get(myIndex).kind == LeftBrace;
 	}
 
 	/**
 	 * Parse a sequence of arguments separated by commas that ends in a
 	 * right-brace:
-	 * 
+	 *
 	 * <pre>
 	 * ArgumentList ::= [ Expr (',' Expr)* ] ')'
 	 * </pre>
-	 * 
+	 *
 	 * Note, when this function is called we're assuming the left brace was
 	 * already parsed.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -2366,7 +2366,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private ArrayList<SyntacticType> parseGenericArguments(WyalFile wf,
@@ -2385,21 +2385,21 @@ public class WyalFileParser {
 				arguments.add(parseUnitType(generics));
 			}
 		}
-		
+
 		return arguments;
 	}
 
 	/**
 	 * Parse a sequence of arguments separated by commas that ends in a
 	 * right-brace:
-	 * 
+	 *
 	 * <pre>
 	 * ArgumentList ::= [ Expr (',' Expr)* ] ')'
 	 * </pre>
-	 * 
+	 *
 	 * Note, when this function is called we're assuming the left brace was
 	 * already parsed.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -2416,9 +2416,9 @@ public class WyalFileParser {
 	private Expr parseInvocationArgument(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment) {
 		int start = index;
-		
+
 		match(LeftBrace);
-		
+
 		boolean firstTime = true;
 		ArrayList<Expr> args = new ArrayList<Expr>();
 		while (eventuallyMatch(RightBrace) == null) {
@@ -2448,12 +2448,12 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a logical not expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * TermExpr::= ...
 	 *       | '!' Expr
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WyalFile being constructed. This is necessary to
 	 *            construct some nested declarations (e.g. parameters for
@@ -2476,7 +2476,7 @@ public class WyalFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseLogicalNotExpression(WyalFile wf,
@@ -2499,7 +2499,7 @@ public class WyalFileParser {
 	 * SyntacticType *only* if what it finds *cannot* be parsed as an
 	 * expression, but can be parsed as a type. Otherwise, the state is left
 	 * unchanged.
-	 * 
+	 *
 	 * @return An instance of SyntacticType or null.
 	 */
 	public SyntacticType parseDefiniteType(HashSet<String> generics) {
@@ -2523,7 +2523,7 @@ public class WyalFileParser {
 	 * expression). However, some types are not also expressions (e.g.
 	 * <code>int</code>, <code>{int f}</code>, <code>&int</code>, etc).
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This function *must* return false if what the given type could not be
 	 * parsed as an expression. However, if what it can be parsed as an
@@ -2532,7 +2532,7 @@ public class WyalFileParser {
 	 * beginning of a statement (i.e. to disambiguate variable declarations), or
 	 * after matching a left brace (i.e. to disambiguate casts).
 	 * </p>
-	 * 
+	 *
 	 * @param index
 	 *            Position in the token stream to begin looking from.
 	 * @return
@@ -2606,7 +2606,7 @@ public class WyalFileParser {
 	 * TypePattern *only* if what it finds *cannot* be parsed as an expression,
 	 * but can be parsed as a type pattern. Otherwise, the state is left
 	 * unchanged.
-	 * 
+	 *
 	 * @param generics
 	 *            Constraints the set of generic type variables declared in the
 	 *            enclosing scope.
@@ -2626,7 +2626,7 @@ public class WyalFileParser {
 	 *            where terminated is true is when parsing a type surrounded in
 	 *            braces. In such case, we know the right-brace will always
 	 *            terminate this type.
-	 * 
+	 *
 	 * @return An instance of TypePattern or null.
 	 */
 	public TypePattern parsePossibleTypePattern(HashSet<String> generics,
@@ -2665,7 +2665,7 @@ public class WyalFileParser {
 	 * valid type and expression). However, some types are not also expressions
 	 * (e.g. <code>int</code>, <code>{int f}</code>, <code>&int</code>, etc).
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This function *must* return false if what the given pattern could not be
 	 * parsed as an expression. However, if what it can be parsed as an
@@ -2674,7 +2674,7 @@ public class WyalFileParser {
 	 * beginning of a statement (i.e. to disambiguate variable declarations), or
 	 * after matching a left brace (i.e. to disambiguate casts).
 	 * </p>
-	 * 
+	 *
 	 * @param index
 	 *            Position in the token stream to begin looking from.
 	 * @return
@@ -2714,13 +2714,13 @@ public class WyalFileParser {
 
 	/**
 	 * Parse top-level type pattern, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * TypePattern ::= Type Ident
 	 *              |  TypePattern [Ident]  ( ',' TypePattern [Ident] )*
 	 *              |  TypePattern [Ident]  '/' TypePattern [Ident]
 	 * </pre>
-	 * 
+	 *
 	 * @param generics
 	 *            Constraints the set of generic type variables declared in the
 	 *            enclosing scope.
@@ -2772,11 +2772,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a uniontype pattern "compound", which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * UnionTypePattern ::= IntersectionTypePattern ('|' IntersectionTypePattern)*
 	 * </pre>
-	 * 
+	 *
 	 * @param generics
 	 *            Constraints the set of generic type variables declared in the
 	 *            enclosing scope.
@@ -2796,7 +2796,7 @@ public class WyalFileParser {
 	 *            where terminated is true is when parsing a type surrounded in
 	 *            braces. In such case, we know the right-brace will always
 	 *            terminate this type.
-	 * 
+	 *
 	 * @return
 	 */
 	public TypePattern parseUnionTypePattern(HashSet<String> generics,
@@ -2823,11 +2823,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse an intersection type pattern, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * IntersectionTypePattern ::= RationalTypePattern ('&' RationalTypePattern)*
 	 * </pre>
-	 * 
+	 *
 	 * @param generics
 	 *            Constraints the set of generic type variables declared in the
 	 *            enclosing scope.
@@ -2873,11 +2873,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a rational type pattern, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * RationalTypePattern ::= TypePatternTerm '/' TypePatternTerm
 	 * </pre>
-	 * 
+	 *
 	 * @param generics
 	 *            Constraints the set of generic type variables declared in the
 	 *            enclosing scope.
@@ -2928,11 +2928,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a type pattern leaf, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * TypePatternTerm ::= Type [Ident]
 	 * </pre>
-	 * 
+	 *
 	 * @param generics
 	 *            Constraints the set of generic type variables declared in the
 	 *            enclosing scope.
@@ -3010,11 +3010,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a top-level type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * TupleType ::= Type (',' Type)*
 	 * </pre>
-	 * 
+	 *
 	 * @see wyc.lang.SyntacticType.Tuple
 	 * @return
 	 */
@@ -3040,7 +3040,7 @@ public class WyalFileParser {
 	 * Parse a unit (i.e. non-tuple type). This method is a place-hold which
 	 * redirects to whatever the appropriate entry point for non-tuple types is.
 	 * Note that tuple types can be parsed, but they must be bracketed.
-	 * 
+	 *
 	 * @return
 	 */
 	private SyntacticType parseUnitType(HashSet<String> generics) {
@@ -3049,11 +3049,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a union type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * UnionType ::= IntersectionType ('|' IntersectionType)*
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	private SyntacticType parseUnionType(HashSet<String> generics) {
@@ -3076,11 +3076,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse an intersection type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * IntersectionType ::= BaseType ('&' BaseType)*
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	private SyntacticType parseIntersectionType(HashSet<String> generics) {
@@ -3143,11 +3143,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a negation type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * NegationType ::= '!' Type
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	private SyntacticType parseNegationType(HashSet<String> generics) {
@@ -3159,11 +3159,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a bracketed type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * BracketedType ::= '(' Type ')'
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	private SyntacticType parseBracketedType(HashSet<String> generics) {
@@ -3176,11 +3176,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a list type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * ListType ::= '[' Type ']'
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	private SyntacticType parseListType(HashSet<String> generics) {
@@ -3193,19 +3193,19 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a set, map or record type, which are of the form:
-	 * 
+	 *
 	 * <pre>
 	 * SetType ::= '{' Type '}'
 	 * MapType ::= '{' Type "=>" Type '}'
 	 * RecordType ::= '{' Type Identifier (',' Type Identifier)* [ ',' "..." ] '}'
 	 * </pre>
-	 * 
+	 *
 	 * Disambiguating these three forms is relatively straightforward as all
 	 * three must be terminated by a right curly brace. Therefore, after parsing
 	 * the first Type, we simply check what follows. One complication is the
 	 * potential for "mixed types" where the field name and type and intertwined
 	 * (e.g. function read()=>[byte]).
-	 * 
+	 *
 	 * @return
 	 */
 	private SyntacticType parseSetOrMapOrRecordType(HashSet<String> generics) {
@@ -3275,11 +3275,11 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a nominal type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * NominalType ::= Identifier ('.' Identifier)*
 	 * </pre>
-	 * 
+	 *
 	 * @see wyc.lang.SyntacticType.Nominal
 	 * @return
 	 */
@@ -3305,13 +3305,13 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a potentially mixed-type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * MixedType ::= Type Identifier
 	 *            |  "function" Type Identifier '(' [Type (',' Type)* ] ')' "=>" Type [ "throws" Type ]
 	 *            |  "method" Type Identifier '(' [Type (',' Type)* ] ')' "=>" Type [ "throws" Type ]
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	private Pair<SyntacticType, Expr.Variable> parseMixedType(
@@ -3396,7 +3396,7 @@ public class WyalFileParser {
 	 * Match a given token kind, whilst moving passed any whitespace encountered
 	 * inbetween. In the case that meet the end of the stream, or we don't match
 	 * the expected token, then an error is thrown.
-	 * 
+	 *
 	 * @param kind
 	 * @return
 	 */
@@ -3414,7 +3414,7 @@ public class WyalFileParser {
 	 * encountered inbetween. In the case that meet the end of the stream, or we
 	 * don't match the expected tokens in the expected order, then an error is
 	 * thrown.
-	 * 
+	 *
 	 * @param operator
 	 * @return
 	 */
@@ -3438,7 +3438,7 @@ public class WyalFileParser {
 	 * because it calls <code>checkNotEof()</code>. Thus, it is guaranteed to
 	 * skip any whitespace encountered in between. This is safe because we know
 	 * there is a terminating token still to come.
-	 * 
+	 *
 	 * @param kind
 	 * @return
 	 */
@@ -3459,7 +3459,7 @@ public class WyalFileParser {
 	 * unchanged. This latter point is important, otherwise we could
 	 * accidentally gobble up some important indentation. If more than one kind
 	 * is provided then this will try to match any of them.
-	 * 
+	 *
 	 * @param terminated
 	 *            Indicates whether or not this function should be concerned
 	 *            with new lines. The terminated flag indicates whether or not
@@ -3468,7 +3468,7 @@ public class WyalFileParser {
 	 *            greedily consume them (i.e. since we'll eventually run into
 	 *            the terminating symbol).
 	 * @param kinds
-	 * 
+	 *
 	 * @return
 	 */
 	private Token tryAndMatch(boolean terminated, Token.Kind... kinds) {
@@ -3494,7 +3494,7 @@ public class WyalFileParser {
 	 * whitespace in between. Note that, in the case it fails to match, then the
 	 * index will be unchanged. This latter point is important, otherwise we
 	 * could accidentally gobble up some important indentation.
-	 * 
+	 *
 	 * @param kind
 	 * @return
 	 */
@@ -3595,7 +3595,7 @@ public class WyalFileParser {
 
 	/**
 	 * Define what is considered to be whitespace.
-	 * 
+	 *
 	 * @param token
 	 * @return
 	 */
@@ -3605,7 +3605,7 @@ public class WyalFileParser {
 
 	/**
 	 * Define what is considered to be linespace.
-	 * 
+	 *
 	 * @param token
 	 * @return
 	 */
@@ -3617,7 +3617,7 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a character from a string of the form 'c' or '\c'.
-	 * 
+	 *
 	 * @param input
 	 * @return
 	 */
@@ -3660,7 +3660,7 @@ public class WyalFileParser {
 
 	/**
 	 * Parse a string whilst interpreting all escape characters.
-	 * 
+	 *
 	 * @param v
 	 * @return
 	 */
@@ -3723,7 +3723,7 @@ public class WyalFileParser {
 	 * Parse a token representing a byte value. Every such token is a sequence
 	 * of one or more binary digits ('0' or '1') followed by 'b'. For example,
 	 * "00110b" is parsed as the byte value 6.
-	 * 
+	 *
 	 * @param input
 	 *            The token representing the byte value.
 	 * @return
@@ -3765,14 +3765,14 @@ public class WyalFileParser {
 		throw new SyntaxError(msg, filename, t.start, t.start + t.text.length()
 				- 1);
 	}
-	
+
 	/**
 	 * Represents a given amount of indentation. Specifically, a count of tabs
 	 * and spaces. Observe that the order in which tabs / spaces occurred is not
 	 * retained.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	private static class Indent extends Token {
 		private final int countOfSpaces;
@@ -3805,7 +3805,7 @@ public class WyalFileParser {
 		 * Test whether this indentation is considered "less than or equivalent"
 		 * to another indentation. For example, an indentation of 2 spaces is
 		 * considered less than an indentation of 3 spaces, etc.
-		 * 
+		 *
 		 * @param other
 		 *            The indent to compare against.
 		 * @return
@@ -3820,7 +3820,7 @@ public class WyalFileParser {
 		 * indentation. For example, an indentation of 3 spaces followed by 1
 		 * tab is considered equivalent to an indentation of 1 tab followed by 3
 		 * spaces, etc.
-		 * 
+		 *
 		 * @param other
 		 *            The indent to compare against.
 		 * @return

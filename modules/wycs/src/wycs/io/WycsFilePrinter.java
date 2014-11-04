@@ -19,15 +19,15 @@ import wycs.core.WycsFile;
 public class WycsFilePrinter {
 	private PrintWriter out;
 	private boolean raw=false;
-	
+
 	public WycsFilePrinter(OutputStream writer) throws UnsupportedEncodingException {
-		this(new OutputStreamWriter(writer,"UTF-8"));		
+		this(new OutputStreamWriter(writer,"UTF-8"));
 	}
-	
+
 	public WycsFilePrinter(Writer writer) {
-		this.out = new PrintWriter(writer);		
+		this.out = new PrintWriter(writer);
 	}
-	
+
 	public void write(WycsFile wf) {
 		for(WycsFile.Declaration d : wf.declarations()) {
 			write(wf, d);
@@ -35,7 +35,7 @@ public class WycsFilePrinter {
 		}
 		out.flush();
 	}
-	
+
 	private void write(WycsFile wf, WycsFile.Declaration s) {
 		if(s instanceof WycsFile.Function) {
 			write(wf,(WycsFile.Function)s);
@@ -49,9 +49,9 @@ public class WycsFilePrinter {
 		}
 		out.println();
 	}
-	
+
 	public void write(WycsFile wf, WycsFile.Function s) {
-		out.print("function ");		
+		out.print("function ");
 		out.print(s.name);
 		SemanticType[] generics = s.type.generics();
 		if(generics.length > 0) {
@@ -66,17 +66,17 @@ public class WycsFilePrinter {
 			}
 			out.print(">");
 		}
-		out.print("(" + s.type.element(0) + ") => " + s.type.element(1));		
+		out.print("(" + s.type.element(0) + ") => " + s.type.element(1));
 		if(s.constraint != null) {
 			out.println(" where:");
 			indent(1);
 			write(wf,s.constraint);
 		}
 	}
-	
+
 	public void write(WycsFile wf, WycsFile.Macro s) {
 		out.print("define ");
-		
+
 		out.print(s.name);
 		SemanticType[] generics = s.type.generics();
 		if(generics.length > 0) {
@@ -97,26 +97,26 @@ public class WycsFilePrinter {
 			write(wf,s.condition);
 		}
 	}
-	
+
 	public void write(WycsFile wf, WycsFile.Assert s) {
 		out.print("assert ");
 		if(s.message != null) {
 			out.print("\"" + s.message + "\"");
 		}
 		out.println(":");
-		write(wf,s.condition);		
+		write(wf,s.condition);
 		out.println();
 	}
-	
+
 	public void write(WycsFile wf, Code<?> code) {
 		if(raw) {
 			writeRaw(wf,code,0);
 		} else {
 			indent(1);
 			writeStructured(wf,code,1);
-		}		
+		}
 	}
-	
+
 	public void writeStructured(WycsFile wf, Code<?> code, int indent) {
 		if(code instanceof Code.Variable) {
 			writeStructured(wf, (Code.Variable) code, indent);
@@ -138,11 +138,11 @@ public class WycsFilePrinter {
 			internalFailure("unknown bytecode encountered", wf.filename(), code);
 		}
 	}
-	
+
 	public void writeStructured(WycsFile wf, Code.Variable code, int indent) {
 		out.print("r" + code.index);
 	}
-	
+
 	public void writeStructured(WycsFile wf, Code.Constant code, int indent) {
 		out.print(code.value);
 	}
@@ -165,9 +165,9 @@ public class WycsFilePrinter {
 			break;
 		default:
 			internalFailure("unknown bytecode encountered", wf.filename(), code);
-		}		
+		}
 	}
-	
+
 	public void writeStructured(WycsFile wf, Code.Binary code, int indent) {
 		String op;
 		switch(code.opcode) {
@@ -210,13 +210,13 @@ public class WycsFilePrinter {
 		default:
 			internalFailure("unknown bytecode encountered", wf.filename(), code);
 			return;
-		}		
-		
+		}
+
 		writeStructured(wf,code.operands[0],indent);
 		out.print(op);
 		writeStructured(wf,code.operands[1],indent);
 	}
-	
+
 	public void writeStructured(WycsFile wf, Code.Nary code, int indent) {
 		switch(code.opcode) {
 		case AND:
@@ -264,18 +264,18 @@ public class WycsFilePrinter {
 			return;
 		}
 	}
-	
+
 	public void writeStructured(WycsFile wf, Code.Load code, int indent) {
 		writeStructured(wf,code.operands[0],indent);
 		out.print("[" + code.index + "]");
 	}
-	
+
 	public void writeStructured(WycsFile wf, Code.FunCall code, int indent) {
 		out.print(code.nid + "(");
 		writeStructured(wf,code.operands[0],indent);
 		out.print(")");
 	}
-	
+
 	public void writeStructured(WycsFile wf, Code.Quantifier code, int indent) {
 		if(code.opcode == Code.Op.FORALL) {
 			out.print("forall(");
@@ -288,13 +288,13 @@ public class WycsFilePrinter {
 				out.print(", ");
 			}
 			firstTime=false;
-			out.print(p.first() + " r" + p.second());			
+			out.print(p.first() + " r" + p.second());
 		}
 		out.println("):");
 		indent(indent+1);
 		writeStructured(wf,code.operands[0],indent+1);
 	}
-	
+
 	public int writeRaw(WycsFile wf, Code<?> code, int index) {
 		int[] operands = new int[code.operands.length];
 		int next = index;
@@ -307,7 +307,7 @@ public class WycsFilePrinter {
 		out.print("#" + next + " = ");
 		out.print(code.opcode.toString());
 		if(operands.length > 0) {
-			out.print("(");		
+			out.print("(");
 			for(int i=0;i!=operands.length;++i) {
 				if(i != 0) {
 					out.print(", ");
@@ -326,7 +326,7 @@ public class WycsFilePrinter {
 		out.println(" : " + code.type);
 		return next;
 	}
-	
+
 	private void indent(int indent) {
 		indent = indent * 4;
 		for(int i=0;i<indent;++i) {

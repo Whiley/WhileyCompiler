@@ -30,7 +30,7 @@ public type Error is { string msg }
 public function Error(string msg) => Error:
     return {msg: msg}
 
-public type SyntaxError is { 
+public type SyntaxError is {
     string msg,  // message
     int start,   // start index
     int end      // last index

@@ -19,7 +19,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_Not, r0));
 	}
 
-	// 
+	//
 	private final static class Reduction_0 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_0(Pattern.Term pattern) { super(pattern); }
@@ -54,7 +54,7 @@ public final class Types {
 		public final int minimum() { return 1; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_1 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_1(Pattern.Term pattern) { super(pattern); }
@@ -89,7 +89,7 @@ public final class Types {
 		public final int minimum() { return 1; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_2 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_2(Pattern.Term pattern) { super(pattern); }
@@ -144,7 +144,7 @@ public final class Types {
 		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_3 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_3(Pattern.Term pattern) { super(pattern); }
@@ -210,7 +210,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_And, r1));
 	}
 
-	// 
+	//
 	private final static class Reduction_4 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_4(Pattern.Term pattern) { super(pattern); }
@@ -250,7 +250,7 @@ public final class Types {
 		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_5 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_5(Pattern.Term pattern) { super(pattern); }
@@ -313,7 +313,7 @@ public final class Types {
 		public final int minimum() { return 3; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_6 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_6(Pattern.Term pattern) { super(pattern); }
@@ -396,7 +396,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_Or, r1));
 	}
 
-	// 
+	//
 	private final static class Reduction_7 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_7(Pattern.Term pattern) { super(pattern); }
@@ -436,7 +436,7 @@ public final class Types {
 		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_8 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_8(Pattern.Term pattern) { super(pattern); }
@@ -523,7 +523,7 @@ public final class Types {
 	public final static int K_String = 8;
 	public final static Automaton.Term String = new Automaton.Term(K_String);
 
-	// 
+	//
 	private final static class Reduction_9 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_9(Pattern.Term pattern) { super(pattern); }
@@ -573,7 +573,7 @@ public final class Types {
 		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_10 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_10(Pattern.Term pattern) { super(pattern); }
@@ -624,7 +624,7 @@ public final class Types {
 		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_11 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_11(Pattern.Term pattern) { super(pattern); }
@@ -692,7 +692,7 @@ public final class Types {
 		public final int minimum() { return 0; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_12 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_12(Pattern.Term pattern) { super(pattern); }
@@ -771,7 +771,7 @@ public final class Types {
 		public final int minimum() { return 0; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_13 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_13(Pattern.Term pattern) { super(pattern); }
@@ -821,7 +821,7 @@ public final class Types {
 		public final int minimum() { return 2; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_14 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_14(Pattern.Term pattern) { super(pattern); }
@@ -878,7 +878,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_Ref, r0));
 	}
 
-	// 
+	//
 	private final static class Reduction_15 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_15(Pattern.Term pattern) { super(pattern); }
@@ -913,7 +913,7 @@ public final class Types {
 		public final int minimum() { return 1; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_16 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_16(Pattern.Term pattern) { super(pattern); }
@@ -986,7 +986,7 @@ public final class Types {
 		public final int minimum() { return 5; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_17 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_17(Pattern.Term pattern) { super(pattern); }
@@ -1054,7 +1054,7 @@ public final class Types {
 		public final int minimum() { return 5; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_18 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_18(Pattern.Term pattern) { super(pattern); }
@@ -1140,7 +1140,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_Meta, r0));
 	}
 
-	// 
+	//
 	private final static class Reduction_19 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_19(Pattern.Term pattern) { super(pattern); }
@@ -1175,7 +1175,7 @@ public final class Types {
 		public final int minimum() { return 1; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_20 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_20(Pattern.Term pattern) { super(pattern); }
@@ -1248,7 +1248,7 @@ public final class Types {
 		public final int minimum() { return 5; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_21 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_21(Pattern.Term pattern) { super(pattern); }
@@ -1316,7 +1316,7 @@ public final class Types {
 		public final int minimum() { return 5; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_22 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_22(Pattern.Term pattern) { super(pattern); }
@@ -1407,7 +1407,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_Term, r1));
 	}
 
-	// 
+	//
 	private final static class Reduction_23 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_23(Pattern.Term pattern) { super(pattern); }
@@ -1515,7 +1515,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_Nominal, r1));
 	}
 
-	// 
+	//
 	private final static class Reduction_24 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_24(Pattern.Term pattern) { super(pattern); }
@@ -1573,7 +1573,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_Set, r1));
 	}
 
-	// 
+	//
 	private final static class Reduction_25 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_25(Pattern.Term pattern) { super(pattern); }
@@ -1642,7 +1642,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_Bag, r1));
 	}
 
-	// 
+	//
 	private final static class Reduction_26 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_26(Pattern.Term pattern) { super(pattern); }
@@ -1711,7 +1711,7 @@ public final class Types {
 		return automaton.add(new Automaton.Term(K_List, r1));
 	}
 
-	// 
+	//
 	private final static class Reduction_27 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_27(Pattern.Term pattern) { super(pattern); }
@@ -1757,7 +1757,7 @@ public final class Types {
 		public final int minimum() { return 0; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_28 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_28(Pattern.Term pattern) { super(pattern); }
@@ -1831,7 +1831,7 @@ public final class Types {
 		public final int minimum() { return 0; }
 		public final int maximum() { return Integer.MAX_VALUE; }
 	}
-	// 
+	//
 	private final static class Reduction_29 extends AbstractRewriteRule implements ReductionRule {
 
 		public Reduction_29(Pattern.Term pattern) { super(pattern); }
@@ -2109,7 +2109,7 @@ public final class Types {
 			new Pair(new Pattern.Term("And",
 				new Pattern.Set(true, new Pair[]{
 					new Pair(new Pattern.Leaf(type2), "xs")}),
-				null),null), 
+				null),null),
 			new Pair(new Pattern.Leaf(type2), "ys")}),
 		null);
 	private final static Pattern.Term pattern6 = new Pattern.Term("And",
@@ -2117,7 +2117,7 @@ public final class Types {
 			new Pair(new Pattern.Term("Or",
 				new Pattern.Set(true, new Pair[]{
 					new Pair(new Pattern.Leaf(type2), "xs")}),
-				null),null), 
+				null),null),
 			new Pair(new Pattern.Leaf(type2), "ys")}),
 		null);
 	private final static Pattern.Term pattern7 = new Pattern.Term("Or",
@@ -2129,41 +2129,41 @@ public final class Types {
 			new Pair(new Pattern.Term("Or",
 				new Pattern.Set(true, new Pair[]{
 					new Pair(new Pattern.Leaf(type2), "xs")}),
-				null),null), 
+				null),null),
 			new Pair(new Pattern.Leaf(type2), "ys")}),
 		null);
 	private final static Pattern.Term pattern9 = new Pattern.Term("And",
 		new Pattern.Set(true, new Pair[]{
-			new Pair(new Pattern.Leaf(type1),null), 
+			new Pair(new Pattern.Leaf(type1),null),
 			new Pair(new Pattern.Leaf(type2), "xs")}),
 		null);
 	private final static Pattern.Term pattern10 = new Pattern.Term("And",
 		new Pattern.Set(true, new Pair[]{
-			new Pair(new Pattern.Leaf(type0),null), 
+			new Pair(new Pattern.Leaf(type0),null),
 			new Pair(new Pattern.Leaf(type2), "xs")}),
 		null);
 	private final static Pattern.Term pattern11 = new Pattern.Term("And",
 		new Pattern.Set(true, new Pair[]{
-			new Pair(new Pattern.Leaf(type3), "a1"), 
-			new Pair(new Pattern.Leaf(type3), "a2"), 
+			new Pair(new Pattern.Leaf(type3), "a1"),
+			new Pair(new Pattern.Leaf(type3), "a2"),
 			new Pair(new Pattern.Leaf(type2), "ts")}),
 		null);
 	private final static Pattern.Term pattern12 = new Pattern.Term("And",
 		new Pattern.Set(true, new Pair[]{
-			new Pair(new Pattern.Leaf(type3), "a1"), 
+			new Pair(new Pattern.Leaf(type3), "a1"),
 			new Pair(new Pattern.Term("Not",
 				new Pattern.Leaf(type3),
-				"a2"),null), 
+				"a2"),null),
 			new Pair(new Pattern.Leaf(type2), "ts")}),
 		null);
 	private final static Pattern.Term pattern13 = new Pattern.Term("Or",
 		new Pattern.Set(true, new Pair[]{
-			new Pair(new Pattern.Leaf(type0),null), 
+			new Pair(new Pattern.Leaf(type0),null),
 			new Pair(new Pattern.Leaf(type2), "xs")}),
 		null);
 	private final static Pattern.Term pattern14 = new Pattern.Term("Or",
 		new Pattern.Set(true, new Pair[]{
-			new Pair(new Pattern.Leaf(type1),null), 
+			new Pair(new Pattern.Leaf(type1),null),
 			new Pair(new Pattern.Leaf(type2), "xs")}),
 		null);
 	private final static Pattern.Term pattern15 = new Pattern.Term("Ref",
@@ -2173,32 +2173,32 @@ public final class Types {
 		new Pattern.Set(true, new Pair[]{
 			new Pair(new Pattern.Term("Ref",
 				new Pattern.Leaf(type2),
-				"t1"),null), 
+				"t1"),null),
 			new Pair(new Pattern.Term("Ref",
 				new Pattern.Leaf(type2),
-				"t2"),null), 
+				"t2"),null),
 			new Pair(new Pattern.Leaf(type2), "ts")}),
 		null);
 	private final static Pattern.Term pattern17 = new Pattern.Term("Or",
 		new Pattern.Set(true, new Pair[]{
 			new Pair(new Pattern.Term("Ref",
 				new Pattern.Leaf(type0),
-				null), "t"), 
+				null), "t"),
 			new Pair(new Pattern.Term("Ref",
 				new Pattern.Leaf(type2),
-				null),null), 
+				null),null),
 			new Pair(new Pattern.Leaf(type2), "ts")}),
 		null);
 	private final static Pattern.Term pattern18 = new Pattern.Term("And",
 		new Pattern.Set(true, new Pair[]{
 			new Pair(new Pattern.Term("Ref",
 				new Pattern.Leaf(type2),
-				"t1"),null), 
+				"t1"),null),
 			new Pair(new Pattern.Term("Not",
 				new Pattern.Term("Ref",
 					new Pattern.Leaf(type2),
 					"t2"),
-				null),null), 
+				null),null),
 			new Pair(new Pattern.Leaf(type2), "ts")}),
 		null);
 	private final static Pattern.Term pattern19 = new Pattern.Term("Meta",
@@ -2208,93 +2208,93 @@ public final class Types {
 		new Pattern.Set(true, new Pair[]{
 			new Pair(new Pattern.Term("Meta",
 				new Pattern.Leaf(type2),
-				"t1"),null), 
+				"t1"),null),
 			new Pair(new Pattern.Term("Meta",
 				new Pattern.Leaf(type2),
-				"t2"),null), 
+				"t2"),null),
 			new Pair(new Pattern.Leaf(type2), "ts")}),
 		null);
 	private final static Pattern.Term pattern21 = new Pattern.Term("Or",
 		new Pattern.Set(true, new Pair[]{
 			new Pair(new Pattern.Term("Meta",
 				new Pattern.Leaf(type0),
-				null), "t"), 
+				null), "t"),
 			new Pair(new Pattern.Term("Meta",
 				new Pattern.Leaf(type2),
-				null),null), 
+				null),null),
 			new Pair(new Pattern.Leaf(type2), "ts")}),
 		null);
 	private final static Pattern.Term pattern22 = new Pattern.Term("And",
 		new Pattern.Set(true, new Pair[]{
 			new Pair(new Pattern.Term("Meta",
 				new Pattern.Leaf(type2),
-				"t1"),null), 
+				"t1"),null),
 			new Pair(new Pattern.Term("Not",
 				new Pattern.Term("Meta",
 					new Pattern.Leaf(type2),
 					"t2"),
-				null),null), 
+				null),null),
 			new Pair(new Pattern.Leaf(type2), "ts")}),
 		null);
 	private final static Pattern.Term pattern23 = new Pattern.Term("And",
 		new Pattern.Set(true, new Pair[]{
 			new Pair(new Pattern.Term("Term",
 				new Pattern.List(false, new Pair[]{
-					new Pair(new Pattern.Leaf(type5), "s1"), 
+					new Pair(new Pattern.Leaf(type5), "s1"),
 					new Pair(new Pattern.Leaf(type2), "t1")}),
-				null),null), 
+				null),null),
 			new Pair(new Pattern.Term("Term",
 				new Pattern.List(false, new Pair[]{
-					new Pair(new Pattern.Leaf(type5), "s2"), 
+					new Pair(new Pattern.Leaf(type5), "s2"),
 					new Pair(new Pattern.Leaf(type2), "t2")}),
-				null),null), 
+				null),null),
 			new Pair(new Pattern.Leaf(type2), "ts")}),
 		null);
 	private final static Pattern.Term pattern24 = new Pattern.Term("Nominal",
 		new Pattern.List(false, new Pair[]{
-			new Pair(new Pattern.Leaf(type5),null), 
+			new Pair(new Pattern.Leaf(type5),null),
 			new Pair(new Pattern.Leaf(type2), "t")}),
 		null);
 	private final static Pattern.Term pattern25 = new Pattern.Term("Set",
 		new Pattern.List(false, new Pair[]{
-			new Pair(new Pattern.Leaf(type2), "t"), 
+			new Pair(new Pattern.Leaf(type2), "t"),
 			new Pair(new Pattern.Bag(true, new Pair[]{
-				new Pair(new Pattern.Leaf(type1),null), 
+				new Pair(new Pattern.Leaf(type1),null),
 				new Pair(new Pattern.Leaf(type2), "ts")}),null)}),
 		null);
 	private final static Pattern.Term pattern26 = new Pattern.Term("Bag",
 		new Pattern.List(false, new Pair[]{
-			new Pair(new Pattern.Leaf(type2), "t"), 
+			new Pair(new Pattern.Leaf(type2), "t"),
 			new Pair(new Pattern.Bag(true, new Pair[]{
-				new Pair(new Pattern.Leaf(type1),null), 
+				new Pair(new Pattern.Leaf(type1),null),
 				new Pair(new Pattern.Leaf(type2), "ts")}),null)}),
 		null);
 	private final static Pattern.Term pattern27 = new Pattern.Term("List",
 		new Pattern.List(false, new Pair[]{
-			new Pair(new Pattern.Leaf(type2), "t"), 
+			new Pair(new Pattern.Leaf(type2), "t"),
 			new Pair(new Pattern.List(true, new Pair[]{
 				new Pair(new Pattern.Leaf(type2), "t1s")}),null)}),
 		null);
 	private final static Pattern.Term pattern28 = new Pattern.Term("And",
 		new Pattern.Set(true, new Pair[]{
-			new Pair(new Pattern.Leaf(type6), "l"), 
-			new Pair(new Pattern.Leaf(type2), "t"), 
+			new Pair(new Pattern.Leaf(type6), "l"),
+			new Pair(new Pattern.Leaf(type2), "t"),
 			new Pair(new Pattern.Leaf(type2), "ts")}),
 		null);
 	private final static Pattern.Term pattern29 = new Pattern.Term("And",
 		new Pattern.Set(true, new Pair[]{
 			new Pair(new Pattern.Term("List",
 				new Pattern.List(false, new Pair[]{
-					new Pair(new Pattern.Leaf(type11), "ub1"), 
+					new Pair(new Pattern.Leaf(type11), "ub1"),
 					new Pair(new Pattern.List(true, new Pair[]{
 						new Pair(new Pattern.Leaf(type2), "t1s")}),null)}),
-				null),null), 
+				null),null),
 			new Pair(new Pattern.Term("List",
 				new Pattern.List(false, new Pair[]{
-					new Pair(new Pattern.Leaf(type11), "ub2"), 
+					new Pair(new Pattern.Leaf(type11), "ub2"),
 					new Pair(new Pattern.List(true, new Pair[]{
 						new Pair(new Pattern.Leaf(type2), "t2s")}),null)}),
-				null),null), 
+				null),null),
 			new Pair(new Pattern.Leaf(type2), "ts")}),
 		null);
 	// =========================================================================
@@ -2360,7 +2360,7 @@ public final class Types {
 			System.err.println(ex.getMessage());
 		}
 	}
-	
+
 	static void print(Automaton automaton) {
 		try {
 			PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA);

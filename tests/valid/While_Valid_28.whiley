@@ -7,7 +7,7 @@ requires |xs| > 0:
     //
     int i = 0
     int r = 0
-    // 
+    //
     assert i >= 0
     r = r + xs[i]
     i = i + 1

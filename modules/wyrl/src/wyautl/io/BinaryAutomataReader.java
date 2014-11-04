@@ -37,32 +37,32 @@ import wyfs.io.BinaryInputStream;
  * Responsible for reading an automaton in a binary format from an input stream.
  * </p>
  * <p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
-public class BinaryAutomataReader {		
-	protected final BinaryInputStream reader;	
+public class BinaryAutomataReader {
+	protected final BinaryInputStream reader;
 	protected final Schema schema;
-	
+
 	public BinaryAutomataReader(BinaryInputStream reader, Schema schema) {
 		this.reader = reader;
 		this.schema = schema;
 	}
-		
+
 	public void close() throws IOException {
 		reader.close();
 	}
-	
+
 	public Automaton read() throws IOException {
-		int nStates = reader.read_uv();		
+		int nStates = reader.read_uv();
 		Automaton.State[] states = new Automaton.State[nStates];
 		for(int i=0;i!=nStates;++i) {
-			states[i] = readState();	
-		}		
+			states[i] = readState();
+		}
 		Automaton automaton = new Automaton(states);
-		int nMarkers = reader.read_uv();				
-		for(int i=0;i!=nMarkers;++i) {			
+		int nMarkers = reader.read_uv();
+		for(int i=0;i!=nMarkers;++i) {
 			automaton.setRoot(i,readReference());
 		}
 		return automaton;
@@ -87,36 +87,36 @@ public class BinaryAutomataReader {
 				return readTerm(kind);
 		}
 	}
-	
+
 	protected Automaton.Bool readBool() throws IOException {
 		int bit = reader.read_un(1);
 		return new Automaton.Bool(bit == 1);
 	}
-	
+
 	protected Automaton.Int readInt() throws IOException {
 		int size = reader.read_uv();
 		byte[] bytes = new byte[size];
 		reader.read(bytes);
 		return new Automaton.Int(new BigInteger(bytes));
 	}
-	
+
 	protected Automaton.Real readReal() throws IOException {
 		int size = reader.read_uv();
 		byte[] numerator = new byte[size];
 		reader.read(numerator);
 		size = reader.read_uv();
 		byte[] denominator = new byte[size];
-		reader.read(denominator);		
+		reader.read(denominator);
 		return new Automaton.Real(new BigRational(new BigInteger(numerator),
 				new BigInteger(denominator)));
 	}
 
 	protected Automaton.Strung readString() throws IOException {
-		int length = reader.read_uv();		
+		int length = reader.read_uv();
 		byte[] data = new byte[length];
 		reader.read(data);
 		String str = new String(data,0,length,"UTF-8");
-		return new Automaton.Strung(str); 
+		return new Automaton.Strung(str);
 	}
 
 	protected Automaton.State readCompound(int kind) throws IOException {
@@ -136,14 +136,14 @@ public class BinaryAutomataReader {
 				throw new IllegalArgumentException("invalid compound kind");
 		}
 	}
-	
+
 	protected Automaton.State readTerm(int kind) throws IOException {
 		int contents = readReference();
 		return new Automaton.Term(kind,contents);
 	}
-	
+
 	protected int readReference() throws IOException {
 		int raw = reader.read_uv();
-		return (raw - schema.size()) + Automaton.K_FREE;		
+		return (raw - schema.size()) + Automaton.K_FREE;
 	}
 }

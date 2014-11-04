@@ -29,7 +29,7 @@ include "Core.wyrl"
 // Multplication
 // ====================================================================
 
-// A multiplication term consists of a constant, and zero or more 
+// A multiplication term consists of a constant, and zero or more
 // variable multipliers.  For example, 2*x*y.
 term Mul[real,{|AExpr...|}]
 
@@ -111,8 +111,8 @@ rank 1:
 // Summation
 // ====================================================================
 
-// A summation consists of a constant, and zero or more 
-// multiplication components.  For example, 2+(1*x)+(1*y) 
+// A summation consists of a constant, and zero or more
+// multiplication components.  For example, 2+(1*x)+(1*y)
 // and also 2+(x*y)+z.
 term Sum[real,{|AExpr...|}]
 
@@ -140,7 +140,7 @@ name "Sum_4"
 rank 1:
     => Sum[x+y,rest]
 
-// Simplify summations with related multication components.  
+// Simplify summations with related multication components.
 // For example, (2*x*y)+(3*x*y)+(2*x) ==> (5*x*y) + (2*x)
 reduce Sum[real n, {|Mul[real x, {|AExpr...|} xs], Mul[real y, {|AExpr...|} ys], AExpr... zs|}]
 name "Sum_5"
@@ -158,10 +158,10 @@ rank 2:
 // ====================================================================
 
 // The "arithmetic types", which are used for equations and inequalities
-define AType as IntT | RealT 
+define AType as IntT | RealT
 
 // An equation should be viewed as equating a given expression with
-// zero.  
+// zero.
 term Equation[AType,AExpr]
 
 reduce Equation[AType,Num(real v)]
@@ -170,7 +170,7 @@ rank 0:
     => False, if v != 0.0
     => True
 
-// Normalise summations.  For example, 2x+2 becomes x+1, etc.  
+// Normalise summations.  For example, 2x+2 becomes x+1, etc.
 // This rule is REALLY expensive, because GCD is REALLY expensive.
 reduce Equation[AType t,Sum[real n, {|Mul... xs|} ms]]
 name "Equation_Gcd_1"
@@ -181,12 +181,12 @@ rank 2:
 
 // For a given equation involving at least one linear term, substitute
 // through all expressions the right-hand side of this equation with
-// respect to a linear term.  For example, in 0 == x - y + 1 && x > y 
+// respect to a linear term.  For example, in 0 == x - y + 1 && x > y
 // we choose to substitute through x (since this is lexiographically
 // least) and rearrange the equation to give x = y - 1; then, we can
 // substitute to get 0 == x - y + 1 && y - 1 > y which reduces to false.
 //
-// NOTE: is an inference rule to ensure all terms are reduced before 
+// NOTE: is an inference rule to ensure all terms are reduced before
 // this is called
 infer And{
       Equation[AType t, Sum[real c, {|Mul[real vc, {|AExpr v|}], Mul... ms|} xs]] eq,
@@ -252,13 +252,13 @@ term Inequality[AType,AExpr]
 
 // Handle comparison against constant values, which always reduce to
 // either true or false.  Care must be taken int the case of a constant
-// which equals zero, since integer inequalities are non-strict whilst 
+// which equals zero, since integer inequalities are non-strict whilst
 // real inequalities are strict.
 reduce Inequality[AType t, Num(real v)]
 name "Inequality_1"
 rank 0:
     => False, if v < 0.0
-    => False, if v == 0.0 && t == RealT    
+    => False, if v == 0.0 && t == RealT
     => True
 
 // Handle case of an negated integer inequality.  In such case, we can
@@ -272,7 +272,7 @@ rank 1:
     => let neg_e = Mul[-1.0,{|e|}]
        in Inequality[t, Sum[-1.0,{|neg_e|}]]
 
-// Normalise summations.  For example, 2x+2 becomes x+1, etc.  
+// Normalise summations.  For example, 2x+2 becomes x+1, etc.
 // This rule is REALLY expensive, because GCD is REALLY expensive.
 reduce Inequality[AType t,Sum[real n, {|Mul... xs|} ms]]
 name "Inequality_Gcd_1"
@@ -304,12 +304,12 @@ reduce And{Inequality[IntT, VExpr v1] ieq1,
 // 0 <= x1 + x2 * v1 + x2 * xs  (1)
 // 0 <= y1 + y2 * v2 + y2 * ys  (2) [where v1 == v2]
 //
-// First, we rearrange (1) so all terms not involving the v1 
+// First, we rearrange (1) so all terms not involving the v1
 // multiplication are on the right-hand side.  Likewise, we rearrnage (2)
-// so all terms not involving v2 are on the left-hand size: 
+// so all terms not involving v2 are on the left-hand size:
 //
-// -x2 * v1 <= x1 + x2 * xs 
-//  y2 * v2 >= -y1 - (y2 * xs) 
+// -x2 * v1 <= x1 + x2 * xs
+//  y2 * v2 >= -y1 - (y2 * xs)
 //
 // Then, we multiply the second by -x2 and the first by y2:
 //
@@ -317,8 +317,8 @@ reduce And{Inequality[IntT, VExpr v1] ieq1,
 // -x2 * y2 * v2 >= -x2 * (-y1 - (y2 * xs))
 //
 // At this point, the left-hand side of both of the above inequalities
-// identical, and we can safely apply transitivity.  Since we've multipled 
-// through by -x2 and y2 we need to check that x2 < 0.0 and y2 > 0.0, 
+// identical, and we can safely apply transitivity.  Since we've multipled
+// through by -x2 and y2 we need to check that x2 < 0.0 and y2 > 0.0,
 // otherwise we would need to reverse the signs and the inference wouldn't succeed.
 //
 infer And{Inequality[AType t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|} xxs] s1] eq1,
@@ -326,7 +326,7 @@ infer And{Inequality[AType t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul...
           BExpr... rest}
 name "Inequality_3"
 rank 1:
-     // neg-pos 
+     // neg-pos
      => let vx = maxMultiplicand(xxs),
             vy = maxMultiplicand(yys),
             s3 = Mul[y2,{|Sum[x1,xs]|}],
@@ -340,7 +340,7 @@ infer And{Inequality[AType t1, Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul...
           BExpr... rest}
 name "Inequality_4"
 rank 1:
-     // neg-pos 
+     // neg-pos
      => let vx = maxMultiplicand(xxs),
             eq3 = Inequality[t1,Sum[x1,xs]]
         in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && t1 == t2 && x2 < 0.0 && vx == v1

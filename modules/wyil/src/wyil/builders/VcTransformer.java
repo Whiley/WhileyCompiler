@@ -49,9 +49,9 @@ import wycs.syntax.*;
 /**
  * Responsible for converting a given Wyil bytecode into an appropriate
  * constraint which encodes its semantics.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class VcTransformer {
 	private final Builder builder;
@@ -82,7 +82,7 @@ public class VcTransformer {
 	}
 
 	private static int indexCount = 0;
-	
+
 	public void end(VcBranch.ForScope scope, VcBranch branch) {
 		// we need to build up a quantified formula here.
 
@@ -91,7 +91,7 @@ public class VcTransformer {
 		SyntacticType type = convert(scope.loop.type.element(), branch.entry());
 		TypePattern var;
 		Expr varExpr;
-		
+
 		if (scope.loop.type instanceof Type.EffectiveList) {
 			// FIXME: hack to work around limitations of whiley for
 			// loops.
@@ -100,25 +100,25 @@ public class VcTransformer {
 					+ scope.index.name);
 			varExpr = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] {idx,tmp});
 			TypePattern tp1 = new TypePattern.Leaf(new SyntacticType.Int(), idx);
-			TypePattern tp2 = new TypePattern.Leaf(type, tmp);			
-			var = new TypePattern.Tuple(new TypePattern[] { tp1, tp2 });			
+			TypePattern tp2 = new TypePattern.Leaf(type, tmp);
+			var = new TypePattern.Tuple(new TypePattern[] { tp1, tp2 });
 		} else {
 			varExpr = new Expr.Variable("_" + scope.index.name);
 			var = new TypePattern.Leaf(type, (Expr.Variable) varExpr);
-		}	
-		
+		}
+
 		// Now, we have to rename the index variable in the soon-to-be
 		// quantified expression. This is necessary to prevent conflicts with
 		// same-named registers used later in the method.
 		HashMap<String,Expr> binding = new HashMap<String,Expr>();
 		binding.put(scope.index.name, new Expr.Variable("_" + scope.index.name));
 		root = root.substitute(binding);
-		
+
 		// since index is used, we need to imply that it is
-		// contained in the source expression.				
+		// contained in the source expression.
 		root = new Expr.Binary(Expr.Binary.Op.IMPLIES, new Expr.Binary(
 				Expr.Binary.Op.IN, varExpr, scope.source), root);
-		
+
 		branch.add(new Expr.ForAll(var, root, branch.entry().attributes()));
 	}
 
@@ -128,7 +128,7 @@ public class VcTransformer {
 		SyntacticType type = convert(scope.loop.type.element(), branch.entry());
 		TypePattern var;
 		Expr varExpr;
-		
+
 		if (scope.loop.type instanceof Type.EffectiveList) {
 			// FIXME: hack to work around limitations of whiley for
 			// loops.
@@ -137,25 +137,25 @@ public class VcTransformer {
 					+ scope.index.name);
 			varExpr = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] {idx,tmp});
 			TypePattern tp1 = new TypePattern.Leaf(new SyntacticType.Int(), idx);
-			TypePattern tp2 = new TypePattern.Leaf(type, tmp);			
+			TypePattern tp2 = new TypePattern.Leaf(type, tmp);
 			var = new TypePattern.Tuple(new TypePattern[] { tp1, tp2 });
 		} else {
 			varExpr = new Expr.Variable("_" + scope.index.name);
 			var = new TypePattern.Leaf(type, (Expr.Variable) varExpr);
-		}		
+		}
 
 		// Now, we have to rename the index variable in the soon-to-be
 		// quantified expression. This is necessary to prevent conflicts with
 		// same-named registers used later in the method.
 		HashMap<String,Expr> binding = new HashMap<String,Expr>();
 		binding.put(scope.index.name, new Expr.Variable("_" + scope.index.name));
-		root = root.substitute(binding);		
-		
+		root = root.substitute(binding);
+
 		// since index is used, we need to imply that it is
-		// contained in the source expression.				
+		// contained in the source expression.
 		root = new Expr.Binary(Expr.Binary.Op.AND, new Expr.Binary(
 				Expr.Binary.Op.IN, varExpr, scope.source), root);
-		
+
 		branch.add(new Expr.Exists(var, root, branch.entry().attributes()));
 	}
 
@@ -168,11 +168,11 @@ public class VcTransformer {
 			VcBranch branch) {
 		branch.addAll(scope.constraints);
 	}
-	
+
 	protected void transform(Codes.AssertOrAssume code, VcBranch branch) {
 		// FIXME: do something here?
 	}
-	
+
 	protected void transform(Codes.Assign code, VcBranch branch) {
 		branch.write(code.target(), branch.read(code.operand(0)), code.assignedType());
 	}
@@ -305,7 +305,7 @@ public class VcTransformer {
 
 	protected void transform(Codes.Convert code, VcBranch branch) {
 		Expr result = branch.read(code.operand(0));
-		// TODO: actually implement some or all coercions?		
+		// TODO: actually implement some or all coercions?
 		branch.write(code.target(), result, code.assignedType());
 	}
 
@@ -326,7 +326,7 @@ public class VcTransformer {
 
 	protected void transform(Codes.Fail code, VcBranch branch) {
 		VcBranch.AssertOrAssumeScope scope = branch.topScope(VcBranch.AssertOrAssumeScope.class);
-		
+
 		if (scope.isAssertion) {
 			Expr assumptions = branch.constraints();
 			Expr implication = new Expr.Binary(Expr.Binary.Op.IMPLIES,
@@ -340,8 +340,8 @@ public class VcTransformer {
 			wycsFile.add(wycsFile.new Assert(code.message.value, assertion,
 					branch.entry().attributes()));
 		} else {
-			// do nothing?			
-		}		
+			// do nothing?
+		}
 	}
 
 	protected void transform(Codes.FieldLoad code, VcBranch branch) {
@@ -375,12 +375,12 @@ public class VcTransformer {
 	}
 
 	protected void transform(Codes.Invoke code, VcBranch branch)
-			throws Exception {		
+			throws Exception {
 		SyntacticElement entry = branch.entry();
 		Collection<Attribute> attributes = entry.attributes();
 		int[] code_operands = code.operands();
 		if (code.target() != Codes.NULL_REG) {
-			// Need to assume the post-condition holds.			
+			// Need to assume the post-condition holds.
 			Expr[] operands = new Expr[code_operands.length];
 			for (int i = 0; i != code_operands.length; ++i) {
 				operands[i] = branch.read(code_operands[i]);
@@ -399,10 +399,10 @@ public class VcTransformer {
 					entry), null, attributes);
 			wycsFile.add(wycsFile.new Function(toIdentifier(code.name),
 					Collections.EMPTY_LIST, from, to, null));
-			
+
 			List<Code.Block> ensures = findPostcondition(code.name, code.type(),
 					branch.entry());
-			
+
 			if (ensures.size() > 0) {
 				// operands = Arrays.copyOf(operands, operands.length);
 				Expr[] arguments = new Expr[operands.length + 1];
@@ -417,7 +417,7 @@ public class VcTransformer {
 				for(Code.Block postcondition : ensures) {
 					Expr constraint = transformExternalBlock(postcondition,
 							arguments, types, branch);
-					// assume the post condition holds				
+					// assume the post condition holds
 					branch.add(constraint);
 				}
 			}
@@ -531,7 +531,7 @@ public class VcTransformer {
 	}
 
 	protected void transform(Codes.Switch code, VcBranch defaultCase,
-			VcBranch... cases) {		
+			VcBranch... cases) {
 		for(int i=0;i!=cases.length;++i) {
 			Constant caseValue = code.branches.get(i).first();
 			VcBranch branch = cases[i];
@@ -539,10 +539,10 @@ public class VcTransformer {
 			Expr src = branch.read(code.operand);
 			Expr constant = new Expr.Constant(convert(caseValue, branch.entry()),attributes);
 			branch.add(new Expr.Binary(Expr.Binary.Op.EQ, src, constant, attributes));
-			defaultCase.add(new Expr.Binary(Expr.Binary.Op.NEQ, src, constant, attributes));			
+			defaultCase.add(new Expr.Binary(Expr.Binary.Op.NEQ, src, constant, attributes));
 		}
 	}
-	
+
 	protected void transform(Codes.Throw code, VcBranch branch) {
 		// TODO
 	}
@@ -586,7 +586,7 @@ public class VcTransformer {
 			Codes.LVal lv = iter.next();
 			if (lv instanceof Codes.RecordLVal) {
 				Codes.RecordLVal rlv = (Codes.RecordLVal) lv;
-				
+
 				// FIXME: following is broken for open records.
 				ArrayList<String> fields = new ArrayList<String>(rlv.rawType()
 						.fields().keySet());
@@ -638,7 +638,7 @@ public class VcTransformer {
 			// FIXME: this is a hack for now
 			return c.precondition();
 		}
-		
+
 		return null;
 	}
 
@@ -667,7 +667,7 @@ public class VcTransformer {
 	/**
 	 * Generate a constraint representing an external block (e.g. a
 	 * pre/post-condition or invariant).
-	 * 
+	 *
 	 * @param externalBlock
 	 *            --- the external block of code being translated.
 	 * @param prefix
@@ -687,9 +687,9 @@ public class VcTransformer {
 		// first, generate a constraint representing the post-condition.
 		VcBranch master = new VcBranch(externalBlock);
 
-		AssertOrAssumeScope scope = new AssertOrAssumeScope(false, externalBlock.size(), Collections.EMPTY_LIST); 
+		AssertOrAssumeScope scope = new AssertOrAssumeScope(false, externalBlock.size(), Collections.EMPTY_LIST);
 		master.scopes.add(scope);
-		
+
 		// second, set initial environment
 		for (int i = 0; i != operands.length; ++i) {
 			master.write(i, operands[i], types[i]);
@@ -697,14 +697,14 @@ public class VcTransformer {
 
 		Expr constraint = master.transform(new VcTransformer(builder, wycsFile,
 				filename, true));
-		
+
 		return constraint;
 	}
 
 	/**
 	 * Recursively descend the scope stack building up appropriate
 	 * parameterisation of the core assertion as we go.
-	 * 
+	 *
 	 * @param index
 	 *            --- current depth into the scope stack.
 	 * @param implication
@@ -717,7 +717,7 @@ public class VcTransformer {
 	 * @return
 	 */
 	protected Expr buildAssertion(int index, Expr implication,
-			HashSet<String> uses, VcBranch branch) {		
+			HashSet<String> uses, VcBranch branch) {
 		if (index == branch.nScopes()) {
 			return implication;
 		} else {
@@ -739,10 +739,10 @@ public class VcTransformer {
 				}
 				// Finally, scope any remaining free variables. Such variables
 				// occur from modified operands of loops which are no longer on
-				// the scope stack. 
+				// the scope stack.
 				for (String v : uses) {
 					SyntacticType t = convert(branch.typeOf(v),branch.entry());
-					vars.add(new TypePattern.Leaf(t, new Expr.Variable(v)));					
+					vars.add(new TypePattern.Leaf(t, new Expr.Variable(v)));
 				}
 			} else if (scope instanceof VcBranch.ForScope) {
 				VcBranch.ForScope ls = (VcBranch.ForScope) scope;
@@ -772,7 +772,7 @@ public class VcTransformer {
 					}
 
 					// since index is used, we need to imply that it is
-					// contained in the source expression.				
+					// contained in the source expression.
 					contents = new Expr.Binary(Expr.Binary.Op.IMPLIES,
 							new Expr.Binary(Expr.Binary.Op.IN, idx, ls.source),
 							contents);
@@ -813,7 +813,7 @@ public class VcTransformer {
 			if (vars.size() == 0) {
 				// we have nothing to parameterise, so ignore it.
 				return contents;
-			} else if(vars.size() == 1){				
+			} else if(vars.size() == 1){
 				return new Expr.ForAll(vars.get(0),contents);
 			} else {
 				return new Expr.ForAll(new TypePattern.Tuple(vars), contents);
@@ -824,7 +824,7 @@ public class VcTransformer {
 	/**
 	 * Generate a formula representing a condition from an Codes.IfCode or
 	 * Codes.Assert bytecodes.
-	 * 
+	 *
 	 * @param op
 	 * @param stack
 	 * @param elem
@@ -875,7 +875,7 @@ public class VcTransformer {
 	/**
 	 * Generate the logically inverted expression corresponding to this
 	 * comparator.
-	 * 
+	 *
 	 * @param cop
 	 * @param leftOperand
 	 * @param rightOperand
@@ -914,7 +914,7 @@ public class VcTransformer {
 			op = Expr.Binary.Op.IN;
 			return new Expr.Unary(Expr.Unary.Op.NOT, new Expr.Binary(test.op,
 					test.leftOperand, test.rightOperand, test.attributes()),
-					test.attributes());											
+					test.attributes());
 		default:
 			internalFailure("unknown comparator (" + test.op + ")", filename,
 					test);
@@ -1021,8 +1021,8 @@ public class VcTransformer {
 		}
 		return new SyntacticType.Tuple(ntypes);
 	}
-	
-	private SyntacticType convert(Type t, SyntacticElement elem) {		
+
+	private SyntacticType convert(Type t, SyntacticElement elem) {
 		// FIXME: this is fundamentally broken in the case of recursive types.
 		// See Issue #298.
 		if (t instanceof Type.Any) {
@@ -1090,9 +1090,9 @@ public class VcTransformer {
 		} else if (t instanceof Type.Union) {
 			Type.Union tu = (Type.Union) t;
 			HashSet<Type> tu_elements = tu.bounds();
-			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();			
+			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();
 			for (Type te : tu_elements) {
-				elements.add(convert(te, elem));				
+				elements.add(convert(te, elem));
 			}
 			return new SyntacticType.Union(elements);
 		} else if (t instanceof Type.Negation) {
@@ -1100,7 +1100,7 @@ public class VcTransformer {
 			SyntacticType element = convert(nt.element(), elem);
 			return new SyntacticType.Negation(element);
 		} else if (t instanceof Type.FunctionOrMethod) {
-			Type.FunctionOrMethod ft = (Type.FunctionOrMethod) t;			
+			Type.FunctionOrMethod ft = (Type.FunctionOrMethod) t;
 			return new SyntacticType.Any();
 		} else {
 			internalFailure("unknown type encountered (" + t.getClass().getName() + ")", filename,
@@ -1108,7 +1108,7 @@ public class VcTransformer {
 			return null;
 		}
 	}
-	
+
 	private Expr and(List<Expr> constraints, Code.Block.Entry entry) {
 		if(constraints.size() == 0) {
 			return new Expr.Constant(Value.Bool(true));
@@ -1121,16 +1121,16 @@ public class VcTransformer {
 					nconstraints = e;
 				} else {
 					nconstraints = new Expr.Binary(Expr.Binary.Op.AND,e,nconstraints,e.attributes());
-				}				
+				}
 			}
 			return nconstraints;
 		}
 	}
-	
+
 	/**
 	 * Convert a wyil NameID into a string that is suitable to be used as a
 	 * function name or variable identifier in WycsFiles.
-	 * 
+	 *
 	 * @param id
 	 * @return
 	 */

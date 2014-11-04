@@ -12,7 +12,7 @@ int myint(byte b):
             r = r + base
         b = b >> 1
         base = base * 2
-    return r    
+    return r
 
 char mychar(byte was):
     return (char) myint(was)

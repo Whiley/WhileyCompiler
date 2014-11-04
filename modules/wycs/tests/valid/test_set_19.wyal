@@ -1,8 +1,8 @@
 assert:
-  forall({(int, int)} xs): 
+  forall({(int, int)} xs):
     if:
-      forall (int i, int v): 
+      forall (int i, int v):
         (i,v) in xs ==> v ≥ 0
     then:
-      !(exists(int i, int v) ; (i,v) in xs && v < 0)	
+      !(exists(int i, int v) ; (i,v) in xs && v < 0)
 

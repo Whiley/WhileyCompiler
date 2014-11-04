@@ -9,7 +9,7 @@ ensures all { i in 0 .. 8 | ret[i] == !bits[i] }:
     int i = 0
     [bool] ret = bits
     //
-    while i < 8 
+    while i < 8
     // i is non-negative, and size of bits unchanged
     where i >= 0 && |ret| == |bits| && i <= |bits|
     // Every bit upto i is inverted now

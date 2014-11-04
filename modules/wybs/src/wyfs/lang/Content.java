@@ -40,34 +40,34 @@ public class Content {
 	 * Provides an abstract mechanism for reading and writing file in
 	 * a given format. Whiley source files (*.whiley) are one example, whilst JVM
 	 * class files (*.class) are another.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 * @param <T>
 	 */
 	public interface Type<T> {
-		
+
 		/**
 		 * Physically read the raw bytes from a given input stream and convert
 		 * into the format described by this content type.
-		 * 
+		 *
 		 * @param input
 		 *            --- input stream representing in the format described by
 		 *            this content type.
 		 * @return
 		 */
 		public T read(Path.Entry<T> e, InputStream input) throws IOException;
-		
+
 		/**
 		 * Convert an object in the format described by this content type into
 		 * an appropriate byte stream and write it to an output stream
-		 * 
+		 *
 		 * @param output
 		 *            --- stream which this value is to be written to.
 		 * @param value
 		 *            --- value to be converted into bytes.
 		 */
-		public void write(OutputStream output, T value) throws IOException;		
+		public void write(OutputStream output, T value) throws IOException;
 	}
 
 	/**
@@ -76,36 +76,36 @@ public class Content {
 	 * includes="whiley/**\/*.whiley" filter on a given root to identify which
 	 * source files should be compiled. This would be implemented using either a
 	 * content or path filter.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 * @param <T>
 	 */
 	public interface Filter<T> {
 
 		/**
 		 * Check whether a given entry is matched by this filter.
-		 * 
+		 *
 		 * @param entry
 		 *            --- entry to test.
 		 * @return --- entry (retyped) if it matches, otherwise null.
 		 */
-		public boolean matches(Path.ID id, Content.Type<T> ct);	
-		
+		public boolean matches(Path.ID id, Content.Type<T> ct);
+
 		/**
 		 * Check whether a given subpath is matched by this filter. A matching
 		 * subpath does not necessarily identify an exact match; rather, it may
 		 * be an enclosing folder.
-		 * 
+		 *
 		 * @param id
 		 * @return
 		 */
-		public boolean matchesSubpath(Path.ID id);		
+		public boolean matchesSubpath(Path.ID id);
 	}
-	
+
 	/**
 	 * Construct a content filter from a path filter and a content type.
-	 * 
+	 *
 	 * @param filter --- path filter
 	 * @param contentType
 	 * @return
@@ -122,11 +122,11 @@ public class Content {
 				return filter.toString();
 			}
 		};
-	}	
-	
+	}
+
 	/**
 	 * Construct a content filter from a string representing a path filter and a content type.
-	 * 
+	 *
 	 * @param filter --- path filter
 	 * @param contentType
 	 * @return
@@ -142,13 +142,13 @@ public class Content {
 			}
 			public String toString() {
 				return filter.toString();
-			}			
+			}
 		};
-	}	
+	}
 	/**
 	 * Combine two filters together produce one filter whose items must be
 	 * matched by at least one of the original filters.
-	 * 
+	 *
 	 * @param f1
 	 * @param f2
 	 * @return
@@ -163,14 +163,14 @@ public class Content {
 			}
 			public String toString() {
 				return f1.toString() + "|" + f2.toString();
-			}			
+			}
 		};
 	}
-	
+
 	/**
 	 * Combine two filters together produce one filter whose items must be
 	 * matched by both of the original filters.
-	 * 
+	 *
 	 * @param f1
 	 * @param f2
 	 * @return
@@ -188,7 +188,7 @@ public class Content {
 			}
 		};
 	}
-	
+
 	/**
 	 * <p>
 	 * Responsible for associating content types to path entries. The simplest
@@ -196,31 +196,31 @@ public class Content {
 	 * in question. A standard implementation (wyc.util.SuffixRegistry) is
 	 * provided for this common case.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * In some situations, it does occur on occasion that suffix alone is not
 	 * enough. For example, a JVM class file may correspond to multiple content
 	 * types if it may come from different source languages. In such cases, a
 	 * probe of the content may be required to fully determine the content type.
 	 * </p>
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public interface Registry {
-		
+
 		/**
 		 * Attempt to associate a content type with this entry.
-		 * 
+		 *
 		 * @param e
 		 *            --- entry to associate with a content type.
 		 * @return
 		 */
 		public void associate(Path.Entry<?> e);
-		
+
 		/**
 		 * Determine an appropriate suffix for a given content type.
-		 * 
+		 *
 		 * @param t
 		 * @return
 		 */

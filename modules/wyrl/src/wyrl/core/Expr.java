@@ -30,12 +30,12 @@ import wyrl.core.*;
 import wyrl.util.*;
 
 public interface Expr extends SyntacticElement {
-	
+
 	public interface LVal extends Expr {}
-	
+
 	public static class Variable extends SyntacticElement.Impl implements Expr, LVal {
 		public final String var;
-		public boolean isConstructor = false; 
+		public boolean isConstructor = false;
 
 		public Variable(String var, Attribute... attributes) {
 			super(attributes);
@@ -46,7 +46,7 @@ public interface Expr extends SyntacticElement {
 			return var;
 		}
 	}
-	
+
 	public static class Constant extends SyntacticElement.Impl implements Expr {
 		public Object value;
 
@@ -54,12 +54,12 @@ public interface Expr extends SyntacticElement {
 			super(attributes);
 			this.value = val;
 		}
-		
+
 		public String toString() {
 			return value.toString();
 		}
 	}
-	
+
 	public static class Cast extends SyntacticElement.Impl implements Expr {
 		public Type type;
 		public Expr src;
@@ -82,7 +82,7 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
-	public enum BOp { 
+	public enum BOp {
 		AND {
 			public String toString() { return "&&"; }
 		},
@@ -100,7 +100,7 @@ public interface Expr extends SyntacticElement {
 		},
 		DIV{
 			public String toString() { return "div"; }
-		},				
+		},
 		EQ{
 			public String toString() { return "eq"; }
 		},
@@ -135,57 +135,57 @@ public interface Expr extends SyntacticElement {
 			public String toString() { return "is"; }
 		}
 	};
-	
+
 	public static class BinOp extends SyntacticElement.Impl implements Expr {
 		public BOp op;
 		public Expr lhs;
 		public Expr rhs;
-		
+
 		public BinOp(BOp op, Expr lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
 			this.op = op;
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
-		
+
 		public BinOp(BOp op, Expr lhs, Expr rhs, Collection<Attribute> attributes) {
 			super(attributes);
 			this.op = op;
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
-		
+
 		public String toString() {
-			
+
 			return lhs + " " + op + " " + rhs;
 		}
 	}
-	
+
 	// A list access is very similar to a BinOp, except that it can be assiged.
 	public static class ListAccess extends SyntacticElement.Impl implements
-			Expr, LVal {		
+			Expr, LVal {
 		public Expr src;
 		public Expr index;
-		
+
 		public ListAccess(Expr src, Expr index, Attribute... attributes) {
 			super(attributes);
 			this.src = src;
 			this.index = index;
 		}
-		
+
 		public ListAccess(Expr src, Expr index, Collection<Attribute> attributes) {
 			super(attributes);
 			this.src = src;
 			this.index = index;
 		}
-					
+
 		public String toString() {
 			return src + "[" + index + "]";
 		}
 	}
 
 	public static class ListUpdate extends SyntacticElement.Impl implements
-	Expr, LVal {		
+	Expr, LVal {
 		public Expr src;
 		public Expr index;
 		public Expr value;
@@ -208,9 +208,9 @@ public interface Expr extends SyntacticElement {
 			return src + "[" + index + " = " + value + "]";
 		}
 	}
-	
+
 	public static class Substitute extends SyntacticElement.Impl implements
-	Expr {		
+	Expr {
 		public Expr src;
 		public Expr original;
 		public Expr replacement;
@@ -234,24 +234,24 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	public static class TermAccess extends SyntacticElement.Impl implements
-			Expr, LVal {		
+			Expr, LVal {
 		public Expr src;
-		
+
 		public TermAccess(Expr src, Attribute... attributes) {
 			super(attributes);
 			this.src = src;
 		}
-		
+
 		public TermAccess(Expr src, int index, Collection<Attribute> attributes) {
 			super(attributes);
 			this.src = src;
 		}
-					
+
 		public String toString() {
 			return "*" + src;
 		}
 	}
-	
+
 	public enum UOp {
 		NOT {
 			public String toString() { return "not"; }
@@ -267,19 +267,19 @@ public interface Expr extends SyntacticElement {
 		},
 		LENGTHOF {
 			public String toString() { return "length"; }
-		}		
-	}	
-	
+		}
+	}
+
 	public static class UnOp extends SyntacticElement.Impl implements Expr {
 		public final UOp op;
-		public Expr mhs;		
-		
+		public Expr mhs;
+
 		public UnOp(UOp op, Expr mhs, Attribute... attributes) {
 			super(attributes);
 			this.op = op;
-			this.mhs = mhs;			
+			this.mhs = mhs;
 		}
-		
+
 		public String toString() {
 			if(op == UOp.NOT) {
 				return "!" + mhs.toString();
@@ -290,13 +290,13 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 	}
-	
+
 	public enum NOp {
 		LISTGEN,
 		SETGEN,
 		BAGGEN
 	}
-		
+
 	public static class NaryOp extends SyntacticElement.Impl implements Expr {
 		public final NOp op;
 		public final ArrayList<Expr> arguments;
@@ -320,7 +320,7 @@ public interface Expr extends SyntacticElement {
 		}
 		public String toString() {
 			switch(op) {
-				 
+
 			case SETGEN:
 			case BAGGEN:
 			case LISTGEN: {
@@ -346,38 +346,38 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 	}
-	
+
 	public static class Constructor extends SyntacticElement.Impl implements Expr {
-		public final String name;		
+		public final String name;
 		public Expr argument;
 		public boolean external;
-		
+
 		public Constructor(String name, Expr argument, boolean external,
 				Attribute... attributes) {
 			super(attributes);
-			this.name = name;			
+			this.name = name;
 			this.argument = argument;
 			this.external = external;
 		}
-		
+
 		public Constructor(String name, Expr argument,
 				Collection<Attribute> attributes) {
 			super(attributes);
-			this.name = name;			
+			this.name = name;
 			this.argument = argument;
 		}
-		
+
 		public String toString() {
-			return name + "(" + argument + ")";			
+			return name + "(" + argument + ")";
 		}
 	}
-	
+
 	public static class Comprehension extends SyntacticElement.Impl implements Expr {
 		public final COp cop;
 		public Expr value;
 		public final ArrayList<Pair<Expr.Variable,Expr>> sources;
 		public Expr condition;
-		
+
 		public Comprehension(COp cop, Expr value,
 				Collection<Pair<Expr.Variable, Expr>> sources, Expr condition,
 				Attribute... attributes) {
@@ -388,12 +388,12 @@ public interface Expr extends SyntacticElement {
 			this.sources = new ArrayList<Pair<Expr.Variable, Expr>>(sources);
 		}
 	}
-	
+
 	public enum COp {
 		SETCOMP,
 		BAGCOMP,
 		LISTCOMP,
-		NONE, // implies value == null					
+		NONE, // implies value == null
 		SOME
-	}				
+	}
 }

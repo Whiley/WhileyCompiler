@@ -25,7 +25,7 @@
 
 package whiley.lang;
 
-public class Any$native {    
+public class Any$native {
 	public static java.lang.String toString(Object o) {
 		if(o == null) {
 			return "null";
@@ -40,7 +40,7 @@ public class Any$native {
 			return o.toString();
 		}
 	}
-	
+
 	private static java.lang.String toString(byte b) {
 		java.lang.String r = "b";
 		byte v = b;
@@ -53,5 +53,5 @@ public class Any$native {
 			v = (byte) (v >>> 1);
 		}
 		return r;
-	} 	  
+	}
 }

@@ -84,12 +84,12 @@ import wycc.util.ResolveError;
  * Every stage of the compiler can be configured by setting various options.
  * Stages can also be bypassed (typically for testing) and new ones can be
  * added.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
-public final class WhileyBuilder implements Builder {	
-	
+public final class WhileyBuilder implements Builder {
+
 	/**
 	 * The master project for identifying all resources available to the
 	 * builder. This includes all modules declared in the project being compiled
@@ -101,9 +101,9 @@ public final class WhileyBuilder implements Builder {
 	 * The list of stages which must be applied to a Wyil file.
 	 */
 	private final List<Transform<WyilFile>> stages;
-	
+
 	private Logger logger;
-	
+
 	/**
 	 * A map of the source files currently being compiled.
 	 */
@@ -115,8 +115,8 @@ public final class WhileyBuilder implements Builder {
 	 * time. For example, the statement <code>import whiley.lang.*</code>
 	 * corresponds to the triple <code>("whiley.lang",*,null)</code>.
 	 */
-	private final HashMap<Trie,ArrayList<Path.ID>> importCache = new HashMap();	
-		
+	private final HashMap<Trie,ArrayList<Path.ID>> importCache = new HashMap();
+
 	public WhileyBuilder(Build.Project namespace, Pipeline<WyilFile> pipeline) {
 		this.stages = pipeline.instantiate(this);
 		this.logger = Logger.NULL;
@@ -126,11 +126,11 @@ public final class WhileyBuilder implements Builder {
 	public Build.Project project() {
 		return project;
 	}
-	
+
 	public void setLogger(Logger logger) {
 		this.logger = logger;
 	}
-	
+
 	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta)
 			throws IOException {
 		Runtime runtime = Runtime.getRuntime();
@@ -142,7 +142,7 @@ public final class WhileyBuilder implements Builder {
 		// ========================================================================
 		// Parse and register source files
 		// ========================================================================
-		
+
 		srcFiles.clear();
 		int count=0;
 		for (Pair<Path.Entry<?>,Path.Root> p : delta) {
@@ -150,7 +150,7 @@ public final class WhileyBuilder implements Builder {
 			if (src.contentType() == WhileyFile.ContentType) {
 				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) src;
 				WhileyFile wf = sf.read();
-				count++;				
+				count++;
 				srcFiles.put(wf.module, sf);
 			}
 		}
@@ -161,37 +161,37 @@ public final class WhileyBuilder implements Builder {
 		// ========================================================================
 		// Flow Type source files
 		// ========================================================================
-		
+
 		runtime = Runtime.getRuntime();
-		tmpTime = System.currentTimeMillis();		
+		tmpTime = System.currentTimeMillis();
 		tmpMemory = runtime.freeMemory();
-		
+
 		ArrayList<WhileyFile> files = new ArrayList<WhileyFile>();
 		for(Pair<Path.Entry<?>,Path.Root> p : delta) {
 			Path.Entry<?> f = p.first();
 			if (f.contentType() == WhileyFile.ContentType) {
-				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) f;			
-				WhileyFile wf = sf.read();								
+				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) f;
+				WhileyFile wf = sf.read();
 				//new FlowTyping(resolver).propagate(wf);
 				files.add(wf);
 			}
-		}		
-		
+		}
+
 		FlowTypeChecker flowChecker = new FlowTypeChecker(this);
 		flowChecker.propagate(files);
-				
+
 		logger.logTimedMessage("Typed " + count + " source file(s).",
 				System.currentTimeMillis() - tmpTime, tmpMemory - runtime.freeMemory());
-		
+
 		// ========================================================================
 		// Code Generation
 		// ========================================================================
-		
-		runtime = Runtime.getRuntime();
-		tmpTime = System.currentTimeMillis();		
-		tmpMemory = runtime.freeMemory();	
 
-		//CodeGenerator generator = new CodeGenerator();	
+		runtime = Runtime.getRuntime();
+		tmpTime = System.currentTimeMillis();
+		tmpMemory = runtime.freeMemory();
+
+		//CodeGenerator generator = new CodeGenerator();
 		CodeGenerator generator = new CodeGenerator(this,flowChecker);
 		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
@@ -207,14 +207,14 @@ public final class WhileyBuilder implements Builder {
 				target.write(wyil);
 			}
 		}
-		
+
 		logger.logTimedMessage("Generated code for " + count + " source file(s).",
 					System.currentTimeMillis() - tmpTime, tmpMemory - runtime.freeMemory());
-		
+
 		// ========================================================================
 		// Pipeline Stages
 		// ========================================================================
-				
+
 		for (Transform stage : stages) {
 			for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 				Path.Entry<?> src = p.first();
@@ -223,23 +223,23 @@ public final class WhileyBuilder implements Builder {
 						WyilFile.ContentType);
 				process(wf.read(), stage);
 			}
-		}	
-	
+		}
+
 		// ========================================================================
 		// Done
 		// ========================================================================
-		
+
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Whiley => Wyil: compiled " + delta.size() + " file(s)",
 				endTime - startTime, startMemory - runtime.freeMemory());
-		
+
 		return generatedFiles;
 	}
-	
+
 	// ======================================================================
 	// Public Accessors
 	// ======================================================================
-	
+
 	public boolean exists(Path.ID id) {
 		try {
 			return project.exists(id, WhileyFile.ContentType)
@@ -248,33 +248,33 @@ public final class WhileyBuilder implements Builder {
 			return false;
 		}
 	}
-	
+
 	/**
 	 * Determine whether a given name exists or not.
-	 * 
+	 *
 	 * @param nid --- Name ID to check
 	 * @return
 	 */
-	public boolean isName(NameID nid) throws IOException {	
+	public boolean isName(NameID nid) throws IOException {
 		Path.ID mid = nid.module();
 		Path.Entry<WhileyFile> wf = srcFiles.get(mid);
 		if(wf != null) {
-			// FIXME: check for the right kind of name			
+			// FIXME: check for the right kind of name
 			return wf.read().hasName(nid.name());
-		} else {			
+		} else {
 			Path.Entry<WyilFile> m = project.get(mid,WyilFile.ContentType);
 			if(m != null) {
 				return m.read().hasName(nid.name());
 			} else {
 				return false;
 			}
-		}		
-	}	
-	
+		}
+	}
+
 	/**
 	 * This method takes a given import declaration, and expands it to find all
 	 * matching modules.
-	 * 
+	 *
 	 * @param imp
 	 * @return
 	 */
@@ -286,10 +286,10 @@ public final class WhileyBuilder implements Builder {
 				return matches;
 			} else {
 				// cache miss
-				matches = new ArrayList<Path.ID>();	
-				
+				matches = new ArrayList<Path.ID>();
+
 				for(Path.Entry<WhileyFile> sf : srcFiles.values()) {
-					if(key.matches(sf.id())) {						
+					if(key.matches(sf.id())) {
 						matches.add(sf.id());
 					}
 				}
@@ -298,32 +298,32 @@ public final class WhileyBuilder implements Builder {
 					// Therefore, it corresponds to exactly one possible item.
 					// It is helpful, from a performance perspective, to use
 					// NameSpace.exists() in such case, as this conveys the fact
-					// that we're only interested in a single item.					
+					// that we're only interested in a single item.
 					if(project.exists(key,WyilFile.ContentType)) {
 						matches.add(key);
-					}					
+					}
 				} else {
 					Content.Filter<?> binFilter = Content.filter(key,
 							WyilFile.ContentType);
-					for (Path.ID mid : project.match(binFilter)) {					
+					for (Path.ID mid : project.match(binFilter)) {
 						matches.add(mid);
 					}
-				}									
+				}
 				importCache.put(key, matches);
 			}
 			return matches;
 		} catch(Exception e) {
 			throw new ResolveError(e.getMessage(),e);
 		}
-	}	
-			
+	}
+
 	/**
 	 * Get the source file associated with a given module identifier. If the
 	 * source file does not exist, null is returned.
-	 * 
+	 *
 	 * @param mid
 	 * @return
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public WhileyFile getSourceFile(Path.ID mid) throws IOException {
 		Path.Entry<WhileyFile> e = srcFiles.get(mid);
@@ -333,11 +333,11 @@ public final class WhileyBuilder implements Builder {
 			return null;
 		}
 	}
-	
+
 	/**
 	 * Get the (compiled) module associated with a given module identifier. If
 	 * the module does not exist, a resolve error is thrown.
-	 * 
+	 *
 	 * @param mid
 	 * @return
 	 * @throws IOException
@@ -345,19 +345,19 @@ public final class WhileyBuilder implements Builder {
 	public WyilFile getModule(Path.ID mid) throws IOException {
 		return project.get(mid, WyilFile.ContentType).read();
 	}
-	
+
 	// ======================================================================
 	// Private Implementation
 	// ======================================================================
 
 	private void process(WyilFile module, Transform stage) throws IOException {
 		Runtime runtime = Runtime.getRuntime();
-		long start = System.currentTimeMillis();		
+		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
-		String name = name(stage.getClass().getSimpleName());		
-		
-		try {						
-			stage.apply(module);			
+		String name = name(stage.getClass().getSimpleName());
+
+		try {
+			stage.apply(module);
 			logger.logTimedMessage("[" + module.filename() + "] applied "
 					+ name, System.currentTimeMillis() - start, memory - runtime.freeMemory());
 			System.gc();
@@ -373,7 +373,7 @@ public final class WhileyBuilder implements Builder {
 			throw ex;
 		}
 	}
-	
+
 	private static String name(String camelCase) {
 		boolean firstTime = true;
 		String r = "";
@@ -381,7 +381,7 @@ public final class WhileyBuilder implements Builder {
 			char c = camelCase.charAt(i);
 			if(!firstTime && Character.isUpperCase(c)) {
 				r += " ";
-			} 
+			}
 			firstTime=false;
 			r += Character.toLowerCase(c);;
 		}

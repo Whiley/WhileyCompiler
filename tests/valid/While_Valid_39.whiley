@@ -15,4 +15,3 @@ method main(System.Console console):
     for l in [3,5,1]:
         bool b = contains(ls,l)
         console.out.println(l ++ " in " ++ ls ++ " : " ++ b)
-    

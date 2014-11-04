@@ -6,18 +6,18 @@
  *
  * This file is part of the Whiley Development Kit (WDK).
  *
- * The Whiley Development Kit is free software; you can redistribute 
- * it and/or modify it under the terms of the GNU General Public 
- * License as published by the Free Software Foundation; either 
+ * The Whiley Development Kit is free software; you can redistribute
+ * it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * The Whiley Development Kit is distributed in the hope that it 
- * will be useful, but WITHOUT ANY WARRANTY; without even the 
- * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * The Whiley Development Kit is distributed in the hope that it
+ * will be useful, but WITHOUT ANY WARRANTY; without even the
+ * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
  * PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public 
- * License along with the Whiley Development Kit. If not, see 
+ * You should have received a copy of the GNU General Public
+ * License along with the Whiley Development Kit. If not, see
  * <http://www.gnu.org/licenses/>
  */
 
@@ -93,13 +93,13 @@ struct type_desc {
 #define Type_Set	 32
 #define Type_Map	 64
 #define Type_Record	128
-#define Type_Tuple	256       
-#define Type_Reference	512       
-#define Type_Method    1024       
-#define Type_Funct     2048       
-#define Type_Chain     4096       
-#define Type_Frac      8192       
-#define Type_Recurs   16384      
+#define Type_Tuple	256
+#define Type_Reference	512
+#define Type_Method    1024
+#define Type_Funct     2048
+#define Type_Chain     4096
+#define Type_Frac      8192
+#define Type_Recurs   16384
 
 static char *Recursive_Type_Letters = "XYZUVWLMNOPQRST";
 static int *Recursive_Type_Tokens = NULL;
@@ -110,7 +110,7 @@ static int Recursive_Type_Token_Max = 0;
  * Leaf:	no down, next
  * List, Set:	no next; down is member type
  * Map:		down is typeof key, next is typeof val
- * Union:	next is chain (continued), down is subtype 
+ * Union:	next is chain (continued), down is subtype
  * Tuple:	next is chain (continued), down is subtype of field
  * Record:	next is tuple (started), down is Record_Record
  * Recurs:	no next; down is subtype
@@ -430,7 +430,7 @@ static int wycc_type_ishomo(wycc_obj *itm) {
 /*
  * here we add the extra overhead of yet another routine,
  * this one to allocate a wycc_obj.
- * **** future performance improvement would be to 
+ * **** future performance improvement would be to
  * ** allocate a bunch at a time.
  * ** stop freeing them and make a free list so we don't have to call malloc.
  * ** switch to C++ and inline this function.
@@ -545,7 +545,7 @@ wycc_obj* wycc_box_long(long x) {
 /*
  * given an long double, box it in a wycc_obj
  * **** performance feature:
- *  ** build up a cache of floats somewhat like the wycc_obj cache. 
+ *  ** build up a cache of floats somewhat like the wycc_obj cache.
  */
 wycc_obj* wycc_box_float(long double x) {
     long double *buf;
@@ -667,7 +667,7 @@ static int wycc_type_comp_loss(int typ, int tok, int force){
     if (flgs & Type_Recurs) {
 	alt = wycc_type_down(tok);
 	return wycc_type_comp_loss(typ, alt, force) ;
-    }; 
+    };
     if (flgs & Type_Union) {
 	while (1) {
 	    alt = wycc_type_down(tok);
@@ -745,7 +745,7 @@ static int wycc_type_comp(int typ, int tok){
     if (flgs & Type_Recurs) {
 	alt = wycc_type_down(tok);
 	return wycc_type_comp(typ, alt) ;
-    }; 
+    };
     if (flgs & Type_Union) {
 	while (1) {
 	    alt = wycc_type_down(tok);
@@ -1095,7 +1095,7 @@ static int wycc_type_subsume_tuples(int itok, int atok) {
     istp = wycc_type_next(itok);
     astp = wycc_type_next(atok);
     return wycc_type_subsume_tokens(istp, astp);
-    
+
 }
 
 /*
@@ -1631,7 +1631,7 @@ wycc_obj* wycc_tuple_new(long siz) {
     ans = wycc_list_new(siz);
     ans->typ = Wy_Tuple;
     p = (void **) ans->ptr;
-    p[0] = (void *) siz; 
+    p[0] = (void *) siz;
     return ans;
 }
 
@@ -1658,7 +1658,7 @@ static void wycc_mbr_promo(long *ptyp, long ntyp, const char *nam) {
 
 /*
  * given a count, setup a list object big enough to accept them.
- * 
+ *
  */
 wycc_obj* wycc_list_new(long siz) {
     long tmp;
@@ -1744,7 +1744,7 @@ void wycc_list_add(wycc_obj* lst, wycc_obj* itm) {
 
 /*
  * given a simple type, setup an empty set object
- * 
+ *
  */
 wycc_obj* wycc_set_new(int typ) {
     long tmp;
@@ -2042,7 +2042,7 @@ void wycc_set_del(wycc_obj* lst, wycc_obj* itm) {
 
 /*
  * given a simple type, setup an empty map object
- * 
+ *
  */
 wycc_obj* wycc_map_new(int typ) {
     long tmp;
@@ -2519,7 +2519,7 @@ static void wycc_dealloc_typ(void* ptr, int typ){
     if ((typ == Wy_List) || (typ == Wy_Tuple)) {
 	siz = (long) p[0];
 	for (idx= 0; idx < siz; idx++) {
-	    itm = (wycc_obj*) p[3+ idx]; 
+	    itm = (wycc_obj*) p[3+ idx];
 	    wycc_deref_box(itm, 0);
 	}
         free(ptr);
@@ -2544,7 +2544,7 @@ static void wycc_dealloc_typ(void* ptr, int typ){
 	};
 	siz = (long) p[0];
 	for (idx= 0; idx < siz; idx++) {
-	    itm = (wycc_obj*) p[3+ idx]; 
+	    itm = (wycc_obj*) p[3+ idx];
 	    wycc_deref_box(itm, 0);
 	}
         free(ptr);
@@ -2573,7 +2573,7 @@ static void wycc_dealloc_typ(void* ptr, int typ){
  * else return arg unchanged
  */
 int wycc_type_dealias(int typ) {
-    
+
     if (typ == Wy_CString) {
 	return Wy_String;
     };
@@ -2873,7 +2873,7 @@ static int wycc_compare_member_of(wycc_obj* itm, wycc_obj* rhs) {
 		, rhs->typ)
     };
     wycc_chunk_ptr_fill(rptr, rhs, flg);
-    
+
     wycc_chunk_ptr_inc(rptr);
     while (1) {
 	if (flg == 2) {
@@ -3633,7 +3633,7 @@ static int wycc_type_parse(const char *nam, int *lo, int hi){
 	desc->down = nxt;
 	desc->next = 0;
 	return ans;
-	
+
     };
     if ((chr == '{') || (chr == '%')) {
 	if (sav3 < 0) {
@@ -3714,7 +3714,7 @@ static int wycc_type_parse(const char *nam, int *lo, int hi){
 	lst = wycc_list_new(1);
 	itm = wycc_box_str(buf);
 	wycc_list_add(lst, itm);
-	
+
 	strt = wycc_type_tok_alloc();
 	desc = &((struct type_desc *)type_parsings)[strt];
 #if Save_Name
@@ -3862,7 +3862,7 @@ int wycc_type_internal(const char *nam){
     //	ans = (int) val->ptr;
     //	val->cnt--;
     val = NULL;
-    if ((type_dict != NULL) 
+    if ((type_dict != NULL)
 	&& (type_dict->typ == Wy_Map)) {
 	p = (void **) type_dict->ptr;
 	tmp = (long) p[1];
@@ -3914,7 +3914,7 @@ static wycc_obj* wyil_convert_iter(wycc_obj* col, int tok, int force){
     wycc_chunk_ptr_fill_as(cptr, col);
 
     /* **** may need key<->val swap **** */
-    
+
     //if (col->typ == Wy_Set) {
     if (flgs & Type_Set) {
 	ans = wycc_set_new(-1);
@@ -4212,7 +4212,7 @@ static wycc_obj* wyil_convert_frac(wycc_obj* lst, int tok, int force){
 	    prt = nxt;
 	};
 	if (prt != nxt) {
-	    wycc_record_put_nam(ans, vu, prt); 
+	    wycc_record_put_nam(ans, vu, prt);
 	}
 	alt = wycc_type_next(alt);
     }
@@ -4271,7 +4271,7 @@ static wycc_obj* wyil_convert_record(wycc_obj* lst, int tok, int force){
 	} else {
 	    prt = nxt;
 	};
-	wycc_record_fill(ans, at, prt); 
+	wycc_record_fill(ans, at, prt);
 	alt = wycc_type_next(alt);
     }
     return ans;
@@ -4304,7 +4304,7 @@ static wycc_obj* wyil_convert_char(wycc_obj* itm){
 	itm->cnt++;
 	return itm;
     };
-    if ((itm->typ == Wy_Byte) || (itm->typ == Wy_Int) 
+    if ((itm->typ == Wy_Byte) || (itm->typ == Wy_Int)
 	|| (itm->typ == Wy_Bool)) {
 	val = (long) itm->ptr;
 	return wycc_box_char(val);
@@ -4326,7 +4326,7 @@ static wycc_obj* wyil_convert_bool(wycc_obj* itm){
 	itm->cnt++;
 	return itm;
     };
-    if ((itm->typ == Wy_Byte) || (itm->typ == Wy_Int) 
+    if ((itm->typ == Wy_Byte) || (itm->typ == Wy_Int)
 	|| (itm->typ == Wy_Bool)) {
 	val = (long) itm->ptr;
 	return wycc_box_bool((val != 0));
@@ -4372,7 +4372,7 @@ static wycc_obj* wyil_convert_tok(wycc_obj* itm, int tok, int force){
 	alt = (wycc_obj *) alt->ptr;
 	alt = wyil_convert_tok(alt, tok, force);
 	return wycc_box_ref(alt);
-    }; 
+    };
     if (wycc_type_is_leaf(tok)) {
 	if (tok == my_type_int) {
 	    return wyil_convert_int(itm);
@@ -4786,7 +4786,7 @@ static wycc_obj *wycc__toString_record(wycc_obj *itm){
     strcpy((buf+at), "}");
     at += 1;
     return wycc_box_str(buf);
-    
+
 }
 
 

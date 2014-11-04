@@ -42,13 +42,13 @@ import wyrl.core.Pattern;
  * maps every automaton state kind to the list of rules which could potentially
  * match that kind.
  * </p>
- * 
+ *
  * <p>
  * <b>NOTE:</b> this is not designed to be used in a concurrent setting.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public final class FairStateRuleRewriteStrategy<T extends RewriteRule> extends IterativeRewriter.Strategy<T> {
 
@@ -59,29 +59,29 @@ public final class FairStateRuleRewriteStrategy<T extends RewriteRule> extends I
 
 	/**
 	 * Temporary list of inference activations used.
-	 */	
+	 */
 	private final ArrayList<Activation> worklist = new ArrayList<Activation>();
-	
+
 	/**
 	 * The automaton being rewritten
 	 */
 	private final Automaton automaton;
-	
+
 	/**
 	 * Starting state on the current round.
 	 */
 	private int startStep;
-	
+
 	/**
 	 * The current state being explored by this strategy
 	 */
 	private int currentStep;
-	
+
 	/**
 	 * Record the number of probes for statistical reporting purposes
 	 */
 	private int numProbes;
-		
+
 	public FairStateRuleRewriteStrategy(Automaton automaton, T[] rules, Schema schema) {
 		this(automaton, rules, schema,new RewriteRule.RankComparator());
 	}
@@ -93,27 +93,27 @@ public final class FairStateRuleRewriteStrategy<T extends RewriteRule> extends I
 		Arrays.sort(this.rules,comparator);
 		this.startStep = Math.max(0,(automaton.nStates() * rules.length) - 1);
 	}
-	
+
 	@Override
 	protected Activation next(boolean[] reachable) {
 		int nStates = automaton.nStates();
 		int maxStep = nStates * rules.length;
-		
+
 		while (currentStep != startStep && worklist.size() == 0) {
 			int stateRef = currentStep / rules.length;
 			int rule = currentStep % rules.length;
-					
+
 			if (reachable[stateRef]) {
 				Automaton.State state = automaton.get(stateRef);
-				if (state instanceof Automaton.Term) {					
+				if (state instanceof Automaton.Term) {
 					rules[rule].probe(automaton, stateRef, worklist);
 					numProbes++;
 				}
-			}			
+			}
 			currentStep = (currentStep + 1) % maxStep;
 		}
-		
-		if (worklist.size() > 0) {			
+
+		if (worklist.size() > 0) {
 			int lastIndex = worklist.size() - 1;
 			Activation last = worklist.get(lastIndex);
 			worklist.remove(lastIndex);
@@ -138,7 +138,7 @@ public final class FairStateRuleRewriteStrategy<T extends RewriteRule> extends I
 			startStep = currentStep - 1;
 		}
 	}
-	
+
 	@Override
 	public int numProbes() {
 		return numProbes;

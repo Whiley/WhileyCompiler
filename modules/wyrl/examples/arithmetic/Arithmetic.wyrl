@@ -107,8 +107,8 @@ reduce Inequality(Num(real v)):
     => False, if v < 0.0
     => True
 
-infer And{Inequality(Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1) eq1, 
-          Inequality(Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2) eq2, 
+infer And{Inequality(Sum[real x1, {|Mul[real x2, {|AExpr v1|}], Mul... xs|}] s1) eq1,
+          Inequality(Sum[real y1, {|Mul[real y2, {|AExpr v2|}], Mul... ys|}] s2) eq2,
 	  BExpr... rest}:
      => let s3 = Mul[y2,{|Sum[x1,xs]|}],
             s4 = Mul[-x2,{|Sum[y1,ys]|}],

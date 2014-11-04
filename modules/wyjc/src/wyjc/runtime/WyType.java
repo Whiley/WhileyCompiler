@@ -52,13 +52,13 @@ import static wyil.lang.Type.K_FUNCTION;
 import static wyil.lang.Type.K_NOMINAL;
 
 public abstract class WyType {
-	
+
 	public final int kind;
-	
+
 	private WyType(int kind) {
 		this.kind = kind;
 	}
-	
+
 	public static final Void VOID = new Void();
 	public static final Any ANY = new Any();
 	public static final Meta META = new Meta();
@@ -69,7 +69,7 @@ public abstract class WyType {
 	public static final Integer INT = new Integer();
 	public static final Rational REAL = new Rational();
 	public static final Strung STRING = new Strung();
-	
+
 	private static final class Void extends WyType { Void() {super(K_VOID);}}
 	private static final class Any extends WyType { Any() {super(K_ANY);}}
 	private static final class Meta extends WyType { Meta() {super(K_META);}}
@@ -83,14 +83,14 @@ public abstract class WyType {
 
 	public static final class Reference extends WyType {
 		public WyType element;
-		
+
 		public Reference(WyType element) {
 			super(K_REFERENCE);
 			this.element = element;
 		}
 	}
 
-	
+
 	public static final class List extends WyType {
 		public WyType element;
 		public final boolean nonEmpty;
@@ -101,29 +101,29 @@ public abstract class WyType {
 			this.nonEmpty = nonEmpty;
 		}
 	}
-	
+
 	public static final class Set extends WyType {
 		public WyType element;
 		public final boolean nonEmpty;
-		
+
 		public Set(WyType element, boolean nonEmpty) {
 			super(K_SET);
 			this.element = element;
 			this.nonEmpty = nonEmpty;
 		}
 	}
-	
+
 	public static final class Dictionary extends WyType {
 		public WyType key;
 		public WyType value;
-		
+
 		public Dictionary(WyType key, WyType value) {
 			super(K_MAP);
 			this.key = key;
 			this.value = value;
 		}
 	}
-	
+
 	public static final class Record extends WyType {
 		public final String[] names;
 		public final WyType[] types;
@@ -135,23 +135,23 @@ public abstract class WyType {
 			this.isOpen = open;
 		}
 	}
-	
-	public static final class Tuple extends WyType {		
+
+	public static final class Tuple extends WyType {
 		public final WyType[] types;
 		public Tuple(WyType[] types) {
-			super(K_TUPLE);			
+			super(K_TUPLE);
 			this.types = types;
 		}
 	}
-	
+
 	public static final class Union extends WyType {
-		public final WyType[] bounds;		
+		public final WyType[] bounds;
 		public Union(WyType... bounds) {
 			super(K_UNION);
 			this.bounds = bounds;
 		}
 	}
-	
+
 	private static final class Nominal extends WyType {
 		public final String name;
 		public Nominal(String name) {
@@ -159,16 +159,16 @@ public abstract class WyType {
 			this.name = name;
 		}
 	}
-	
+
 	public static final class Negation extends WyType {
 		public WyType element;
-		
+
 		public Negation(WyType element) {
 			super(K_NEGATION);
 			this.element = element;
 		}
-	}	
-	
+	}
+
 	public static final class Label extends WyType {
 		public final int label;
 		public Label(int label) {
@@ -176,7 +176,7 @@ public abstract class WyType {
 			this.label = label;
 		}
 	}
-	
+
 	public static WyType valueOf(String str) throws IOException {
 		JavaIdentifierInputStream jin = new JavaIdentifierInputStream(str);
 		BinaryInputStream bin = new BinaryInputStream(jin);
@@ -184,18 +184,18 @@ public abstract class WyType {
 		int size = bin.read_uv();
 		for(int i=0;i!=size;++i) {
 			nodes.add(readNode(bin, nodes));
-		}		
+		}
 		for(int i=0;i!=size;++i) {
 			substitute(nodes.get(i),nodes);
 		}
 		return nodes.get(0);
 	}
-	
+
 	private static WyType readNode(BinaryInputStream reader, ArrayList<WyType> nodes) throws IOException {
 		int kind = reader.read_uv();
 		boolean deterministic = reader.read_bit();
 		int nchildren = reader.read_uv();
-		WyType[] children = new WyType[nchildren];		
+		WyType[] children = new WyType[nchildren];
 		for (int i=0;i!=nchildren;++i) {
 			children[i]=new Label(reader.read_uv());
 		}
@@ -224,17 +224,17 @@ public abstract class WyType {
 			return new Tuple(children);
 		}
 		case K_SET: {
-			boolean nonEmpty = reader.read_bit();							
+			boolean nonEmpty = reader.read_bit();
 			return new Set(children[0],nonEmpty);
 		}
-		case K_LIST: { 
-			boolean nonEmpty = reader.read_bit();				
+		case K_LIST: {
+			boolean nonEmpty = reader.read_bit();
 			return new List(children[0],nonEmpty);
 		}
 		case K_MAP: {
 			return new Dictionary(children[0],children[1]);
 		}
-		case K_REFERENCE: {		
+		case K_REFERENCE: {
 			return new Reference(children[0]);
 		}
 		case K_RECORD: {
@@ -251,17 +251,17 @@ public abstract class WyType {
 		}
 		case K_NEGATION: {
 			return new Negation(children[0]);
-		}		
-		case K_NOMINAL: {				
+		}
+		case K_NOMINAL: {
 			String module = readString(reader);
 			String name = readString(reader);
 			return new WyType.Nominal(module + ":" + name);
-		}		
 		}
-		
+		}
+
 		throw new RuntimeException("unknow type encountered (kind: " + kind + ")");
 	}
-	
+
 
 	private static String readString(BinaryInputStream reader) throws IOException {
 		String r = "";
@@ -272,17 +272,17 @@ public abstract class WyType {
 		}
 		return r;
 	}
-	
+
 	private static void substitute(WyType type, ArrayList<WyType> nodes) {
 		switch(type.kind) {
-		case K_VOID:			
-		case K_ANY:		
+		case K_VOID:
+		case K_ANY:
 		case K_META:
-		case K_NULL:			
-		case K_BOOL:			
-		case K_BYTE:			
-		case K_CHAR:			
-		case K_INT:			
+		case K_NULL:
+		case K_BOOL:
+		case K_BYTE:
+		case K_CHAR:
+		case K_INT:
 		case K_RATIONAL:
 		case K_STRING:
 		case K_NOMINAL:
@@ -297,7 +297,7 @@ public abstract class WyType {
 			t.element = substitute((Label)t.element,nodes);
 			return;
 		}
-		case K_LIST: { 
+		case K_LIST: {
 			List t = (List) type;
 			t.element = substitute((Label)t.element,nodes);
 			return;
@@ -308,7 +308,7 @@ public abstract class WyType {
 			t.value = substitute((Label)t.value,nodes);
 			return;
 		}
-		case K_REFERENCE: { 
+		case K_REFERENCE: {
 			Reference t = (Reference) type;
 			t.element = substitute((Label)t.element,nodes);
 			return;
@@ -323,37 +323,37 @@ public abstract class WyType {
 			substitute(t.bounds,nodes);
 			return;
 		}
-		case K_NEGATION: { 
+		case K_NEGATION: {
 			Negation t = (Negation) type;
 			t.element = substitute((Label)t.element,nodes);
 			return;
-		}			
+		}
 		}
 		throw new RuntimeException("unknow type encountered (kind: " + type.kind + ")");
 	}
-	
+
 	private static void substitute(WyType[] types, ArrayList<WyType> nodes) {
 		for(int i=0;i!=types.length;++i) {
 			Label type = (Label) types[i];
-			types[i] = nodes.get(type.label);			
+			types[i] = nodes.get(type.label);
 		}
 	}
-	
-	private static WyType substitute(Label type, ArrayList<WyType> nodes) {		
-		return nodes.get(type.label);					
+
+	private static WyType substitute(Label type, ArrayList<WyType> nodes) {
+		return nodes.get(type.label);
 	}
-	
+
 	/**
 	 * <p>
 	 * This method connects up recursive links in a given type. In particular,
 	 * it replaces all occurrences of variable <code>var</code> with
 	 * <code>root</code>.
 	 * </p>
-	 * 
+	 *
 	 * <b>NOTE:</b> the resulting type may contain a cycle. For this reason, the
 	 * visited relation is required to ensure termination in the presence of
 	 * such cycles.
-	 * 
+	 *
 	 * @param type
 	 *            - The type currently be explored
 	 * @param label
@@ -373,11 +373,11 @@ public abstract class WyType {
 			visited.add(type);
 		}
 		switch(type.kind) {
-			case K_ANY:				
-			case K_VOID:				
-			case K_NULL:				
-			case K_INT:				
-			case K_RATIONAL:				
+			case K_ANY:
+			case K_VOID:
+			case K_NULL:
+			case K_INT:
+			case K_RATIONAL:
 			case K_STRING:
 				break;
 			case K_NOMINAL:
@@ -387,24 +387,24 @@ public abstract class WyType {
 					return root;
 				} else {
 					return leaf;
-				}				
+				}
 			}
 			case K_LIST:
 			{
 				WyType.List list = (WyType.List) type;
-				list.element = substitute(list.element,label,root,visited); 
+				list.element = substitute(list.element,label,root,visited);
 				break;
 			}
 			case K_SET:
 			{
 				WyType.Set set = (WyType.Set) type;
-				set.element = substitute(set.element,label,root,visited); 
+				set.element = substitute(set.element,label,root,visited);
 				break;
 			}
 			case K_MAP:
 			{
 				WyType.Dictionary dict = (WyType.Dictionary) type;
-				dict.key = substitute(dict.key,label,root,visited); 
+				dict.key = substitute(dict.key,label,root,visited);
 				dict.value = substitute(dict.value,label,root,visited);
 				break;
 			}
@@ -420,7 +420,7 @@ public abstract class WyType {
 			case K_NEGATION:
 			{
 				WyType.Negation not = (WyType.Negation) type;
-				not.element = substitute(not.element,label,root,visited); 
+				not.element = substitute(not.element,label,root,visited);
 				break;
 			}
 			case K_UNION:
@@ -432,7 +432,7 @@ public abstract class WyType {
 				}
 				break;
 			}
-		}			
+		}
 		return type;
-	}	
+	}
 }

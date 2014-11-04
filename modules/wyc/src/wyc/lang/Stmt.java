@@ -37,12 +37,12 @@ import wyil.util.*;
  * Examples include <i>assignments</i>, <i>for-loops</i>, <i>conditions</i>,
  * etc. Each class is an instance of <code>SyntacticElement</code> and, hence,
  * can be adorned with certain information (such as source location, etc).
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public interface Stmt extends SyntacticElement {
-	
+
 	/**
 	 * Represents an assignment statement of the form <code>lhs = rhs</code>.
 	 * Here, the <code>rhs</code> is any expression, whilst the <code>lhs</code>
@@ -101,11 +101,11 @@ public interface Stmt extends SyntacticElement {
 			this.rhs = rhs;
 		}
 	}
-	
+
 	/**
 	 * Represents a assert statement of the form <code>assert e</code>, where
 	 * <code>e</code> is a boolean expression. The following illustrates:
-	 * 
+	 *
 	 * <pre>
 	 * function abs(int x) => int:
 	 *     if x < 0:
@@ -113,15 +113,15 @@ public interface Stmt extends SyntacticElement {
 	 *     assert x >= 0
 	 *     return x
 	 * </pre>
-	 * 
+	 *
 	 * Assertions are either statically checked by the verifier, or turned into
 	 * runtime checks.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class Assert extends SyntacticElement.Impl implements Stmt {
-		public Expr expr;		
+		public Expr expr;
 
 		/**
 		 * Create a given assert statement.
@@ -132,7 +132,7 @@ public interface Stmt extends SyntacticElement {
 		 */
 		public Assert(Expr expr, Attribute... attributes) {
 			super(attributes);
-			this.expr = expr;			
+			this.expr = expr;
 		}
 
 		/**
@@ -151,7 +151,7 @@ public interface Stmt extends SyntacticElement {
 	/**
 	 * Represents an assume statement of the form <code>assume e</code>, where
 	 * <code>e</code> is a boolean expression. The following illustrates:
-	 * 
+	 *
 	 * <pre>
 	 * function abs(int x) => int:
 	 *     if x < 0:
@@ -159,12 +159,12 @@ public interface Stmt extends SyntacticElement {
 	 *     assume x >= 0
 	 *     return x
 	 * </pre>
-	 * 
+	 *
 	 * Assumptions are assumed by the verifier and, since this may be unsound,
 	 * always turned into runtime checks.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class Assume extends SyntacticElement.Impl implements
 			Stmt {
@@ -197,30 +197,30 @@ public interface Stmt extends SyntacticElement {
 
 	/**
 	 * Represents a return statement, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * ReturnStmt ::= "return" [Expression] NewLine
 	 * </pre>
-	 * 
+	 *
 	 * The optional expression is referred to as the <i>return value</i>. Note
 	 * that, the returned expression (if there is one) must begin on the same
 	 * line as the return statement itself.
-	 * 
+	 *
 	 * The following illustrates:
-	 * 
+	 *
 	 * <pre>
 	 * function f(int x) => int:
 	 * 	  return x + 1
 	 * </pre>
-	 * 
+	 *
 	 * Here, we see a simple <code>return</code> statement which returns an
 	 * <code>int</code> value.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
-	 */	
+	 *
+	 */
 	public static final class Return extends SyntacticElement.Impl implements Stmt {
-		public Expr expr;		
+		public Expr expr;
 
 		/**
 		 * Create a given return statement with an optional return value.
@@ -231,7 +231,7 @@ public interface Stmt extends SyntacticElement {
 		 */
 		public Return(Expr expr, Attribute... attributes) {
 			super(attributes);
-			this.expr = expr;			
+			this.expr = expr;
 		}
 
 		/**
@@ -243,9 +243,9 @@ public interface Stmt extends SyntacticElement {
 		 */
 		public Return(Expr expr, Collection<Attribute> attributes) {
 			super(attributes);
-			this.expr = expr;			
+			this.expr = expr;
 		}
-		
+
 		public String toString() {
 			if(expr != null) {
 				return "return " + expr;
@@ -254,16 +254,16 @@ public interface Stmt extends SyntacticElement {
 			}
 		}
 	}
-	
+
 	/**
 	 * Represents a while statement, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * WhileStmt ::= "while" Expression (where Expression)* ':' NewLine Block
 	 * </pre>
-	 * 
+	 *
 	 * As an example:
-	 * 
+	 *
 	 * <pre>
 	 * function sum([int] xs) => int:
 	 *   int r = 0
@@ -273,18 +273,18 @@ public interface Stmt extends SyntacticElement {
 	 *     i = i + 1
 	 *   return r
 	 * </pre>
-	 * 
+	 *
 	 * The optional <code>where</code> clause(s) are commonly referred to as the
 	 * "loop invariant". When multiple clauses are given, these are combined
 	 * using a conjunction. The combined invariant defines a condition which
 	 * must be true on every iteration of the loop.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class While extends SyntacticElement.Impl implements Stmt {
 		public Expr condition;
-		public List<Expr> invariants;	
+		public List<Expr> invariants;
 		public final ArrayList<Stmt> body;
 
 		/**
@@ -327,14 +327,14 @@ public interface Stmt extends SyntacticElement {
 			super(attributes);
 			this.condition = condition;
 			this.invariants = invariants;
-			this.body = new ArrayList<Stmt>(body);				
-		}		
+			this.body = new ArrayList<Stmt>(body);
+		}
 	}
 
 	/**
 	 * Represents a do-while statement whose body is made up from a block of
 	 * statements separated by indentation. As an example:
-	 * 
+	 *
 	 * <pre>
 	 * function sum([int] xs) => int
 	 * requires |xs| > 0:
@@ -346,16 +346,16 @@ public interface Stmt extends SyntacticElement {
 	 *   while i < |xs| where i >= 0
 	 *   return r
 	 * </pre>
-	 * 
+	 *
 	 * Here, the <code>where</code> is optional, and commonly referred to as the
 	 * <i>loop invariant</i>.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class DoWhile extends SyntacticElement.Impl implements Stmt {
 		public Expr condition;
-		public final ArrayList<Expr> invariants;	
+		public final ArrayList<Expr> invariants;
 		public final ArrayList<Stmt> body;
 
 		/**
@@ -382,7 +382,7 @@ public interface Stmt extends SyntacticElement {
 		/**
 		 * Construct a Do-While statement from a given condition and body of
 		 * statements.
-		 * 
+		 *
 		 * @param condition
 		 *            non-null expression.
 		 * @param invariant
@@ -399,16 +399,16 @@ public interface Stmt extends SyntacticElement {
 			this.condition = condition;
 			this.invariants = new ArrayList<Expr>(invariants);
 			this.body = new ArrayList<Stmt>(body);
-		}		
+		}
 	}
-	
+
 	/**
 	 * Represents a for statement, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * ForStmt ::= "for" VariablePattern "in" Expression ("where" Expression)* ':' NewLine Block
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, the variable pattern allows variables to be declared without types.
 	 * The type of such variables is automatically inferred from the source
@@ -417,13 +417,13 @@ public interface Stmt extends SyntacticElement {
 	 * using a conjunction. The combined invariant defines a condition which
 	 * must be true on every iteration of the loop.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * The variables declared by the for statement iterator over all elements of
 	 * the <i>source expression</i> (which must return a collection of some
 	 * sort). The following illustrates:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * function sum([int] xs) => int:
 	 *   int r = 0
@@ -431,25 +431,25 @@ public interface Stmt extends SyntacticElement {
 	 *     r = r + xs[i]
 	 *   return r
 	 * </pre>
-	 * 
+	 *
 	 * Here, the <code>i</code> is the loop index, whilst <code>xs</code> is the
 	 * source expression.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class ForAll extends SyntacticElement.Impl
 			implements Stmt {
 		public final ArrayList<String> variables;
 		public Expr source;
-		public Expr invariant;		
+		public Expr invariant;
 		public final ArrayList<Stmt> body;
 		public Nominal.EffectiveCollection srcType;
 
 		/**
 		 * Construct a for loop from a given index variable, source expression
 		 * and loop body.
-		 * 
+		 *
 		 * @param variables
 		 *            A list of one or more variables, which may not be null
 		 * @param source
@@ -473,7 +473,7 @@ public interface Stmt extends SyntacticElement {
 		/**
 		 * Construct a for loop from a given index variable, source expression
 		 * and loop body.
-		 * 
+		 *
 		 * @param variables
 		 *            A list of one or more variables, which may not be null
 		 * @param source
@@ -495,19 +495,19 @@ public interface Stmt extends SyntacticElement {
 			this.body = new ArrayList<Stmt>(body);
 		}
 	}
-	
+
 	/**
 	 * Represents a classical if-else statement, which is has the form:
-	 * 
+	 *
 	 * <pre>
 	 * "if" Expression ':' NewLine Block ["else" ':' NewLine Block]
 	 * </pre>
-	 * 
+	 *
 	 * The first expression is referred to as the <i>condition</i>, while the
 	 * first block is referred to as the <i>true branch</i>. The optional second
 	 * block is referred to as the <i>false branch</i>. The following
 	 * illustrates:
-	 * 
+	 *
 	 * <pre>
 	 * function max(int x, int y) => int:
 	 *   if(x > y):
@@ -517,15 +517,15 @@ public interface Stmt extends SyntacticElement {
 	 *   else:
 	 *     return y
 	 * </pre>
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class IfElse extends SyntacticElement.Impl implements Stmt {
 		public Expr condition;
 		public final ArrayList<Stmt> trueBranch;
 		public final ArrayList<Stmt> falseBranch;
-		
+
 		/**
 		 * Construct an if-else statement from a condition, true branch and
 		 * optional false branch.
@@ -534,7 +534,7 @@ public interface Stmt extends SyntacticElement {
 		 *            May not be null.
 		 * @param trueBranch
 		 *            A list of zero or more statements to be executed when the
-		 *            condition holds; may not be null.		 
+		 *            condition holds; may not be null.
 		 * @param falseBranch
 		 *            A list of zero of more statements to be executed when the
 		 *            condition does not hold; may not be null.
@@ -544,10 +544,10 @@ public interface Stmt extends SyntacticElement {
 				List<Stmt> falseBranch, Attribute... attributes) {
 			super(attributes);
 			this.condition = condition;
-			this.trueBranch = new ArrayList<Stmt>(trueBranch);			
-			this.falseBranch = new ArrayList<Stmt>(falseBranch);			
+			this.trueBranch = new ArrayList<Stmt>(trueBranch);
+			this.falseBranch = new ArrayList<Stmt>(falseBranch);
 		}
-		
+
 		/**
 		 * Construct an if-else statement from a condition, true branch and
 		 * optional false branch.
@@ -556,7 +556,7 @@ public interface Stmt extends SyntacticElement {
 		 *            May not be null.
 		 * @param trueBranch
 		 *            A list of zero or more statements to be executed when the
-		 *            condition holds; may not be null.		 
+		 *            condition holds; may not be null.
 		 * @param falseBranch
 		 *            A list of zero of more statements to be executed when the
 		 *            condition does not hold; may not be null.
@@ -570,34 +570,34 @@ public interface Stmt extends SyntacticElement {
 			this.falseBranch = new ArrayList<Stmt>(falseBranch);
 		}
 	}
-	
+
 	/**
 	 * Represents a variable declaration which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * Type Identifier ['=' Expression] NewLine
 	 * </pre>
-	 * 
+	 *
 	 * The optional <code>Expression</code> assignment is referred to as an
 	 * <i>initialiser</i>. If an initialiser is given, then this will be
 	 * evaluated and assigned to the variable when the declaration is executed.
 	 * Some example declarations:
-	 * 
+	 *
 	 * <pre>
 	 * int x
 	 * int y = 1
 	 * int z = x + y
 	 * </pre>
-	 * 
+	 *
 	 * Observe that, unlike C and Java, declarations that declare multiple
 	 * variables (separated by commas) are not permitted.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class VariableDeclaration extends SyntacticElement.Impl implements
 			Stmt {
-		public final TypePattern pattern;		
+		public final TypePattern pattern;
 		public Nominal type;
 		public Expr expr;
 
@@ -635,22 +635,22 @@ public interface Stmt extends SyntacticElement {
 			this.expr = expr;
 		}
 	}
-	
+
 	public static final class Case extends SyntacticElement.Impl {
 		public ArrayList<Expr> expr; // needs to be proved all constants
 		public ArrayList<Constant> constants; // needs to be proved all constants
 		public final ArrayList<Stmt> stmts;
-		
+
 		public Case(List<Expr> values, List<Stmt> statements,
 				Attribute... attributes) {
 			super(attributes);
 			this.expr = new ArrayList<Expr>(values);
 			this.stmts = new ArrayList<Stmt>(statements);
 		}
-	}	
-	
+	}
+
 	public static final class Catch extends SyntacticElement.Impl {
-		public SyntacticType unresolvedType; 		
+		public SyntacticType unresolvedType;
 		public final String variable;
 		public final ArrayList<Stmt> stmts;
 		public Nominal type;
@@ -663,21 +663,21 @@ public interface Stmt extends SyntacticElement {
 			this.stmts = new ArrayList<Stmt>(statements);
 		}
 	}
-	
+
 	public static final class Break extends SyntacticElement.Impl implements Stmt {
 		public Break(Attribute... attributes) {
 			super(attributes);
 			// TODO: update to include labelled breaks
 		}
 	}
-	
+
 	public static final class Continue extends SyntacticElement.Impl implements Stmt {
 		public Continue(Attribute... attributes) {
 			super(attributes);
 			// TODO: update to include labelled breaks
 		}
 	}
-	
+
 	public static final class Throw extends SyntacticElement.Impl implements Stmt {
 		public Expr expr;
 		public Throw(Expr expr, Attribute... attributes) {
@@ -685,7 +685,7 @@ public interface Stmt extends SyntacticElement {
 			this.expr = expr;
 		}
 	}
-	
+
 	public static final class TryCatch extends SyntacticElement.Impl implements
 			Stmt {
 		public ArrayList<Stmt> body;
@@ -705,24 +705,24 @@ public interface Stmt extends SyntacticElement {
 			this.catches = new ArrayList<Catch>(catches);
 		}
 	}
-	
-	public static final class Switch extends SyntacticElement.Impl implements Stmt {		
+
+	public static final class Switch extends SyntacticElement.Impl implements Stmt {
 		public Expr expr;
-		public final ArrayList<Case> cases;		
-		
+		public final ArrayList<Case> cases;
+
 		public Switch(Expr condition, List<Case> cases, Attribute... attributes) {
 			super(attributes);
 			this.expr = condition;
-			this.cases = new ArrayList<Case>(cases);								
+			this.cases = new ArrayList<Case>(cases);
 		}
-		
-		public Switch(Expr condition, List<Case> cases, Collection<Attribute> attributes) {			
+
+		public Switch(Expr condition, List<Case> cases, Collection<Attribute> attributes) {
 			super(attributes);
 			this.expr = condition;
-			this.cases = new ArrayList<Case>(cases);								
-		}		
+			this.cases = new ArrayList<Case>(cases);
+		}
 	}
-	
+
 	public static class Skip extends SyntacticElement.Impl implements Stmt {
 		public Skip(Attribute... attributes) {
 			super(attributes);
@@ -732,22 +732,22 @@ public interface Stmt extends SyntacticElement {
 			super(attributes);
 		}
 	}
-	
+
 	public static final class Debug extends Skip {
-		public Expr expr;		
+		public Expr expr;
 
 		public Debug(Expr expr, Attribute... attributes) {
 			super(attributes);
-			this.expr = expr;			
+			this.expr = expr;
 		}
 
 		public Debug(Expr expr, Collection<Attribute> attributes) {
 			super(attributes);
-			this.expr = expr;			
+			this.expr = expr;
 		}
-		
+
 		public String toString() {
-			return "debug " + expr;			
+			return "debug " + expr;
 		}
-	}	
+	}
 }

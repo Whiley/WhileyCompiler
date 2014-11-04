@@ -1,4 +1,4 @@
-<project name="whiley" default="build-all">  
+<project name="whiley" default="build-all">
   <import file="config.xml"/>
 
   <!-- ============================================== -->
@@ -17,9 +17,9 @@
       <fileset dir="modules" includes="wycc/build.xml"/>
     </subant>
   </target>
- 
+
   <!-- ============================================== -->
-  <!-- Documenation --> 
+  <!-- Documenation -->
   <!-- ============================================== -->
 
   <target name="doc">
@@ -114,7 +114,7 @@
       <include name="lib/jasm-v*.jar"/>
     </fileset>
   </copy>
-  <tar destfile="dist/wdk-src-v${version}.tar" longfile="gnu">  
+  <tar destfile="dist/wdk-src-v${version}.tar" longfile="gnu">
     <tarfileset dir="." includes="wdk-v${version}/**/*"/>
     <tarfileset dir="." filemode="755">
       <include name="wdk-v${version}/bin/*"/>

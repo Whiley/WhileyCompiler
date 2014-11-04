@@ -71,24 +71,24 @@ import wyil.lang.Type;
  * Transactions on Programming Languages and Systems</i>,
  * 15:575--631, 1993.</p></li>
  * </ul>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class SubtypeOperator {
-	protected final Automaton from; 
+	protected final Automaton from;
 	protected final Automaton to;
 	private final BitSet assumptions;
-	
+
 	public SubtypeOperator(Automaton from, Automaton to) {
 		this.from = from;
 		this.to = to;
-		// matrix is twice the size to accommodate positive and negative signs 
+		// matrix is twice the size to accommodate positive and negative signs
 		this.assumptions = new BitSet((2*from.size()) * (to.size()*2));
 		//System.out.println("FROM: " + from);
 		//System.out.println("TO:   " + to);
 	}
-	
+
 	/**
 	 * Test whether <code>from</code> :> <code>to</code>
 	 * @param fromIndex
@@ -98,7 +98,7 @@ public class SubtypeOperator {
 	public final boolean isSubtype(int fromIndex, int toIndex) {
 		return !isIntersection(fromIndex,false,toIndex,true);
 	}
-	
+
 	/**
 	 * Test whether <code>from</code> <: <code>to</code>
 	 * @param fromIndex
@@ -107,14 +107,14 @@ public class SubtypeOperator {
 	 */
 	public final boolean isSupertype(int fromIndex, int toIndex) {
 		return !isIntersection(fromIndex,true,toIndex,false);
-	}	
+	}
 
 	/**
 	 * Determine whether there is a non-empty intersection between the state
 	 * rooted at <code>fromIndex</code> and that rooted at <code>toIndex</code>.
 	 * The signs indicate whether or not the state should be taken as its
 	 * <i>inverse</i>.
-	 * 
+	 *
 	 * @param fromIndex
 	 *            --- index of from state
 	 * @param fromSign
@@ -126,12 +126,12 @@ public class SubtypeOperator {
 	 * @return --- true if such an intersection exists, false otherwise.
 	 */
 	protected boolean isIntersection(int fromIndex, boolean fromSign, int toIndex,
-			boolean toSign) {		
-		
+			boolean toSign) {
+
 		//System.out.println("STARTING: " + fromIndex + "(" + fromSign + ") & " + toIndex + "(" + toSign + ")");
-		
+
 		// TODO: can further improve performance using caching
-		
+
 		int index = indexOf(fromIndex,fromSign,toIndex,toSign);
 		if(assumptions.get(index)) {
 			//System.out.println("ASSUMED:  " + fromIndex + "(" + fromSign + ") & " + toIndex + "(" + toSign + ")");
@@ -139,25 +139,25 @@ public class SubtypeOperator {
 		} else {
 			assumptions.set(index,true);
 		}
-		
+
 		boolean r = isIntersectionInner(fromIndex,fromSign,toIndex,toSign);
-		
+
 		assumptions.set(index,false);
-		
+
 		//System.out.println("RESULT:   " + fromIndex + "(" + fromSign + ") & " + toIndex + "(" + toSign + ") = " + r);
-		
+
 		return r;
 	}
-	
+
 	protected boolean isIntersectionInner(int fromIndex, boolean fromSign, int toIndex,
 			boolean toSign) {
-		
+
 		Automaton.State fromState = from.states[fromIndex];
 		Automaton.State toState = to.states[toIndex];
 		int fromKind = fromState.kind;
 		int toKind = toState.kind;
-		
-		if(fromKind == toKind) {			
+
+		if(fromKind == toKind) {
 			switch(fromKind) {
 			case K_VOID:
 				return !fromSign && !toSign;
@@ -166,7 +166,7 @@ public class SubtypeOperator {
 			// === Leaf States First ===
 			case K_NOMINAL: {
 				NameID nid1 = (NameID) fromState.data;
-				NameID nid2 = (NameID) toState.data;	
+				NameID nid2 = (NameID) toState.data;
 				if(fromSign || toSign) {
 					if(nid1.equals(nid2)) {
 						return fromSign && toSign;
@@ -175,25 +175,25 @@ public class SubtypeOperator {
 					}
 				}
 				return true;
-			}			
+			}
 			// === Homogenous Compound States ===
 			case K_SET:
-			case K_LIST:			
+			case K_LIST:
 				// != below not ||. This is because lists and sets can intersect
 				// on the empty list/set.
-				if(fromSign != toSign) {					
+				if(fromSign != toSign) {
 					// nary nodes
 					int fromChild = fromState.children[0];
 					int toChild = toState.children[0];
 					if (!isIntersection(fromChild, fromSign, toChild, toSign)) {
-						return false;					
+						return false;
 					}
 				}
 				return true;
 			case K_REFERENCE:
 			case K_MAP:
-			case K_TUPLE:  {				
-				if(fromSign || toSign) {					
+			case K_TUPLE:  {
+				if(fromSign || toSign) {
 					// nary nodes
 					int[] fromChildren = fromState.children;
 					int[] toChildren = toState.children;
@@ -206,9 +206,9 @@ public class SubtypeOperator {
 						int fromChild = fromChildren[i];
 						int toChild = toChildren[i];
 						boolean v = isIntersection(fromChild, fromSign, toChild,
-								toSign);	
+								toSign);
 						andChildren &= v;
-						orChildren |= v;						
+						orChildren |= v;
 					}
 					if(!fromSign || !toSign) {
 						return orChildren;
@@ -218,16 +218,16 @@ public class SubtypeOperator {
 				}
 				return true;
 			}
-			case K_RECORD: 
-				return intersectRecords(fromIndex,fromSign,toIndex,toSign);			
-			case K_NEGATION: 
-			case K_UNION : 			
+			case K_RECORD:
+				return intersectRecords(fromIndex,fromSign,toIndex,toSign);
+			case K_NEGATION:
+			case K_UNION :
 					// let these cases fall through to if-statements after
 					// switch.
 				break;
 			// === Heterogenous Compound States ===
 			case K_FUNCTION:
-			case K_METHOD:			
+			case K_METHOD:
 				if(fromSign || toSign) {
 					// nary nodes
 					int[] fromChildren = fromState.children;
@@ -235,9 +235,9 @@ public class SubtypeOperator {
 					if(fromChildren.length != toChildren.length){
 						return false;
 					}
-																								
+
 					boolean andChildren = true;
-					boolean orChildren = false;					
+					boolean orChildren = false;
 					for(int i=0;i<fromChildren.length;++i) {
 						boolean v;
 						if(i == 0) {
@@ -248,7 +248,7 @@ public class SubtypeOperator {
 							// throws type is co-variant
 							v = isIntersection(fromChildren[i], fromSign,
 									toChildren[i], toSign);
-						} else {						
+						} else {
 							// parameter type(s) are contra-variant
 							v = isIntersection(fromChildren[i], !fromSign,
 								toChildren[i], !toSign);
@@ -266,59 +266,59 @@ public class SubtypeOperator {
 			default:
 				return fromSign == toSign;
 			}
-		} 
-		
+		}
+
 		if(fromKind == K_NEGATION) {
 			int fromChild = fromState.children[0];
 			return isIntersection(fromChild,!fromSign,toIndex,toSign);
 		} else if(toKind == K_NEGATION) {
 			int toChild = toState.children[0];
-			return isIntersection(fromIndex,fromSign,toChild,!toSign);			
+			return isIntersection(fromIndex,fromSign,toChild,!toSign);
 		}
-		
+
 		// using invert helps reduce the number of cases to consider.
 		fromKind = invert(fromKind,fromSign);
-		toKind = invert(toKind,toSign);		
-				
+		toKind = invert(toKind,toSign);
+
 		if(fromKind == K_VOID || toKind == K_VOID){
 			return false;
-		} else if(fromKind == K_UNION) {			
-			int[] fromChildren = fromState.children;		
-			for(int i : fromChildren) {				
+		} else if(fromKind == K_UNION) {
+			int[] fromChildren = fromState.children;
+			for(int i : fromChildren) {
 				if(isIntersection(i,fromSign,toIndex,toSign)) {
 					return true;
-				}								
+				}
 			}
-			return false;	
+			return false;
 		} else if(toKind == K_UNION) {
-			int[] toChildren = toState.children;		
+			int[] toChildren = toState.children;
 			for(int j : toChildren) {
 				if(isIntersection(fromIndex,fromSign,j,toSign)) {
 					return true;
-				}											
+				}
 			}
-			return false;	
+			return false;
 		} else if(fromKind == K_INTERSECTION) {
-			int[] fromChildren = fromState.children;			
-			for (int i : fromChildren) {				
+			int[] fromChildren = fromState.children;
+			for (int i : fromChildren) {
 				if(!isIntersection(i,fromSign,toIndex,toSign)) {
 					return false;
-				}											
+				}
 			}
-			return true;	
+			return true;
 		} else if(toKind == K_INTERSECTION) {
-			int[] toChildren = toState.children;					
-			for (int j : toChildren) {				
+			int[] toChildren = toState.children;
+			for (int j : toChildren) {
 				if(!isIntersection(fromIndex,fromSign,j,toSign)) {
 					return false;
-				}											
-			}			
-			return true;	
+				}
+			}
+			return true;
 		} else if(fromKind == K_ANY || toKind == K_ANY){
 			return true;
-		}  
-		
-		return !fromSign || !toSign;		
+		}
+
+		return !fromSign || !toSign;
 	}
 
 	/**
@@ -326,7 +326,7 @@ public class SubtypeOperator {
 	 * Check for intersection between two states with kind K_RECORD. The
 	 * distinction between open and closed records adds complexity here.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * Intersection between <b>closed</b> records is the easiest case. The main
 	 * examples are:
@@ -345,13 +345,13 @@ public class SubtypeOperator {
 	 * <li><code>{T1 f, T2 g, ...} & {T3 f, T4 g} = if T1&T3 and T2&T4</code>.</li>
 	 * <li><code>{T1 f, ...} & {T2 f, T3 g} = if T1&T2</code>.</li>
 	 * <li><code>{T1 f, T2 g, ...} & {T3 f, T4 h} = false</code>.</li>
-	 * <li><code>{T1 f, T2 g, ...} & !{T3 f, T4 g} = if T1&!T3 or T2&!T4</code>.</li>	 * 
+	 * <li><code>{T1 f, T2 g, ...} & !{T3 f, T4 g} = if T1&!T3 or T2&!T4</code>.</li>	 *
 	 * <li><code>!{T1 f, T2 g, ...} & {T3 f, T4 g} = if T1&!T3 or T2&!T4</code>.</li>	 *
 	 * <li><code>{T1 f, ...} & !{T2 f, T3 g} = true</code>.</li>
 	 * <li><code>{T1 f, T2 g, ...} & !{T3 f, T4 h} = false</code>.</li>
      * <li><code>!{T1 f,...} & !{T2 f} = true</code>.</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param fromIndex
 	 *            --- index of from state
 	 * @param fromSign
@@ -362,18 +362,18 @@ public class SubtypeOperator {
 	 *            --- sign of from state (true = normal, false = inverted).
 	 * @return --- true if such an intersection exists, false otherwise.
 	 */
-	protected boolean intersectRecords(int fromIndex, boolean fromSign, int toIndex, boolean toSign) {				
+	protected boolean intersectRecords(int fromIndex, boolean fromSign, int toIndex, boolean toSign) {
 		Automaton.State fromState = from.states[fromIndex];
 		Automaton.State toState = to.states[toIndex];
-		if(fromSign || toSign) {					
+		if(fromSign || toSign) {
 			int[] fromChildren = fromState.children;
-			int[] toChildren = toState.children;						
+			int[] toChildren = toState.children;
 			Type.Record.State fromFields = (Type.Record.State) fromState.data;
 			Type.Record.State toFields = (Type.Record.State) toState.data;
-			
+
 			boolean fromOpen = fromFields.isOpen;
 			boolean toOpen = toFields.isOpen;
-			
+
 			if (fromChildren.length < toChildren.length && !fromOpen) {
 				return !fromSign || !toSign;
 			} else if (fromChildren.length > toChildren.length  && !toOpen) {
@@ -383,10 +383,10 @@ public class SubtypeOperator {
 			} else if (!toSign && !toOpen && fromOpen) {
 				return true; // guaranteed true!
 			}
-			
+
 			boolean andChildren = true;
 			boolean orChildren = false;
-						
+
 			int fi=0;
 			int ti=0;
 			while(fi != fromFields.size() && ti != toFields.size()) {
@@ -394,24 +394,24 @@ public class SubtypeOperator {
 				String fn = fromFields.get(fi);
 				String tn = toFields.get(ti);
 				int c = fn.compareTo(tn);
-				if(c == 0) {					
+				if(c == 0) {
 					int fromChild = fromChildren[fi++];
 					int toChild = toChildren[ti++];
 					v = isIntersection(fromChild, fromSign, toChild,
-							toSign);									
+							toSign);
 				} else if(c < 0 && toOpen) {
 					fi++;
-					v = toSign;					
+					v = toSign;
 				} else if(c > 0 && fromOpen) {
 					ti++;
 					v = fromSign;
-				} else {										
-					return !fromSign || !toSign; 
+				} else {
+					return !fromSign || !toSign;
 				}
 				andChildren &= v;
 				orChildren |= v;
 			}
-						
+
 			if(fi < fromFields.size()) {
 				if(toOpen) {
 					// assert fromSign || fromOpen
@@ -428,17 +428,17 @@ public class SubtypeOperator {
 				} else {
 					return !fromSign || !toSign;
 				}
-			} 
-			
+			}
+
 			if(!fromSign || !toSign) {
 				return orChildren;
-			} else {			
+			} else {
 				return andChildren;
 			}
 		}
 		return true;
 	}
-	
+
 	private int indexOf(int fromIndex, boolean fromSign,
 			int toIndex, boolean toSign) {
 		int to_size = to.size();
@@ -450,7 +450,7 @@ public class SubtypeOperator {
 		}
 		return (fromIndex*to_size*2) + toIndex;
 	}
-	
+
 	private static int invert(int kind, boolean sign) {
 		if(sign) {
 			return kind;
@@ -461,10 +461,10 @@ public class SubtypeOperator {
 			case K_VOID:
 				return K_ANY;
 			case K_UNION:
-				return K_INTERSECTION;			
+				return K_INTERSECTION;
 			default:
 				return kind;
-		}		
+		}
 	}
 
 	/**

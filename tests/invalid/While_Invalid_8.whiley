@@ -9,7 +9,7 @@ function extract([int] ls, [int] r) => [int]:
     return r
 
 method main(System.Console sys) => void:
-    [int] rs 
+    [int] rs
     //
     rs = extract([-2, -3, 1, 2, -23, 3, 2345, 4, 5], [1])
     debug Any.toString(rs)

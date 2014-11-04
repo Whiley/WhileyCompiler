@@ -37,26 +37,26 @@ import wyrl.core.*;
  * Provides various algorithms for statically computing the complexity of a
  * given rewrite rule. That is, the lower- and upper-bounds on the reduction
  * caused by a given rewrite. For example, consider this simple rewrite:
- * 
+ *
  * <pre>
  * reduce Not(Not(BExpr e)):
  *     => e
  * </pre>
- * 
+ *
  * This has a reduction complexity of 2 since it is guaranteed to eliminate
  * exactly two nodes.. Now, consider a variant:
- * 
+ *
  * <pre>
  * reduce Not(Bool b):
  *     => False, if b == True
  * </pre>
- * 
+ *
  * This has a reduction complexity of O(1) since it will eliminate one node
  * overall if it applies successfully, but this is not guaranteed because of the
  * conditional.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class RewriteComplexity {
 
@@ -67,7 +67,7 @@ public class RewriteComplexity {
 	 * between the minimum size of the pattern and expression it is rewritten to
 	 * is negative, then the automaton is guaranteed to reduce in size after a
 	 * successful application.
-	 * 
+	 *
 	 * @param rule
 	 *            The rewrite rule we are computing the complexity of.
 	 * @return
@@ -90,7 +90,7 @@ public class RewriteComplexity {
 					bindings);
 			Polynomial result = startSize.subtract(endSize);
 			if (result.isConstant()) {
-				int constant = result.constant().intValue();				
+				int constant = result.constant().intValue();
 				min = Math.min(constant, min);
 			} else {
 				min = 0;
@@ -106,7 +106,7 @@ public class RewriteComplexity {
 	 * between the minimum size of the pattern and expression it is rewritten to
 	 * is negative, then the automaton is guaranteed to reduce in size after a
 	 * successful application.
-	 * 
+	 *
 	 * @param pattern
 	 *            The pattern being examined.
 	 * @param bindings
@@ -137,7 +137,7 @@ public class RewriteComplexity {
 			if (collection.unbounded) {
 				// In the case of an unbounded pattern, then the last element
 				// represents the multi-match. When computing the minimum size
-				// of a pattern we simply assume this is zero.				
+				// of a pattern we simply assume this is zero.
 				minSize = minSize - 1;
 			}
 			Polynomial result = Polynomial.ONE;
@@ -158,7 +158,7 @@ public class RewriteComplexity {
 	 * minimum size of any path through the non-deterministic choice nodes in
 	 * the automaton. Observe that, even in the case of cyclic automata, there
 	 * is guaranteed to be an ayclic path.
-	 * 
+	 *
 	 * @param type
 	 * @return the minimal size, or Integer.MAX_VALUE (to signal infinity ---
 	 *         which *should* be impossible).
@@ -269,7 +269,7 @@ public class RewriteComplexity {
 	 * between the minimum size of the pattern and expression it is rewritten to
 	 * is negative, then the automaton is guaranteed to reduce in size after a
 	 * successful application.
-	 * 
+	 *
 	 * @param Expr
 	 *            The expr being examined.
 	 * @param Environment

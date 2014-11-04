@@ -50,18 +50,18 @@ import wycs.util.WycsBuildTask;
 * The main class provides all of the necessary plumbing to process command-line
 * options, construct an appropriate pipeline and then instantiate the Whiley
 * Compiler to generate class files.
-* 
+*
 * @author David J. Pearce
-* 
+*
 */
 public class WycsMain {
-	
+
 	public static PrintStream errout;
 	public static final int MAJOR_VERSION;
 	public static final int MINOR_VERSION;
 	public static final int MINOR_REVISION;
 	public static final int BUILD_NUMBER;
-	
+
 	public static final int SUCCESS=0;
 	public static final int SYNTAX_ERROR=1;
 	public static final int INTERNAL_FAILURE=2;
@@ -89,7 +89,7 @@ public class WycsMain {
 			new OptArg("R", OptArg.PIPELINEREMOVE,
 					"Remove existing pipeline stage"),
 			new OptArg("wyone", "Debug wyone files") };
-	
+
 	/**
 	 * Initialise the error output stream so as to ensure it will display
 	 * unicode characters (when possible). Additionally, extract version
@@ -101,8 +101,8 @@ public class WycsMain {
 		} catch(Exception e) {
 			errout = System.err;
 			System.err.println("Warning: terminal does not support unicode");
-		}		
-		
+		}
+
 		// determine version numbering from the MANIFEST attributes
 		String versionStr = WycsMain.class.getPackage().getImplementationVersion();
 		if(versionStr != null) {
@@ -112,7 +112,7 @@ public class WycsMain {
 				BUILD_NUMBER=0;
 			} else {
 			BUILD_NUMBER = Integer.parseInt(vb[1]); }
-			
+
 			MAJOR_VERSION = Integer.parseInt(pts[0]);
 			MINOR_VERSION = Integer.parseInt(pts[1]);
 			MINOR_REVISION = Integer.parseInt(pts[2]);
@@ -122,19 +122,19 @@ public class WycsMain {
 			MINOR_VERSION = 0;
 			MINOR_REVISION = 0;
 			BUILD_NUMBER = 0;
-		}		
+		}
 	}
-				
+
 	// =========================================================================
 	// Instance Fields
 	// =========================================================================
-						
+
 	/**
 	 * The command-line options accepted by the main method.
 	 */
 	protected final OptArg[] options;
 
-	
+
 	/**
 	 * The build-task responsible for actually compiling and building files.
 	 */
@@ -152,10 +152,10 @@ public class WycsMain {
     // =========================================================================
 	// Run Method
 	// =========================================================================
-	    
+
 	public int run(String[] _args) {
 		boolean verbose = false;
-		
+
 		try {
 			// =====================================================================
 			// Process Options
@@ -163,7 +163,7 @@ public class WycsMain {
 
 			ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
 			Map<String, Object> values = OptArg.parseOptions(args, options);
-		
+
 			// Second, check if we're printing version
 			if (values.containsKey("version")) {
 				System.out.println("Whiley Constraint Solver (wycs) version "
@@ -178,24 +178,24 @@ public class WycsMain {
 				OptArg.usage(System.out, options);
 				usage(System.out, WycsBuildTask.defaultPipeline);
 				return SUCCESS;
-			} 
-			
+			}
+
 			verbose = values.containsKey("verbose");
-			
+
 			// =====================================================================
 			// Wyone Debug Mode
 			// =====================================================================
-			
+
 			if(values.containsKey("wyone")) {
 				// this is basically a hack to allow reading in wyone files so
 				// we can debug them.
 				try {
 					FileInputStream fin = new FileInputStream(args.get(0));
-					PrettyAutomataReader reader = new PrettyAutomataReader(fin,SCHEMA);				
+					PrettyAutomataReader reader = new PrettyAutomataReader(fin,SCHEMA);
 					Automaton automaton = reader.read();
 
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
-							"Or").write(automaton);					
+							"Or").write(automaton);
 					IterativeRewriter.Strategy<InferenceRule> inferenceStrategy = new UnfairStateRuleRewriteStrategy<InferenceRule>(
 							automaton, Solver.inferences, Solver.SCHEMA);
 					IterativeRewriter.Strategy<ReductionRule> reductionStrategy = new UnfairStateRuleRewriteStrategy<ReductionRule>(
@@ -203,7 +203,7 @@ public class WycsMain {
 					IterativeRewriter rw = new IterativeRewriter(automaton,
 							inferenceStrategy, reductionStrategy, SCHEMA);
 					rw.apply();
-					System.err.println("\n\n=> (" + rw.getStats() + ")\n");						
+					System.err.println("\n\n=> (" + rw.getStats() + ")\n");
 					new PrettyAutomataWriter(System.err, SCHEMA, "And",
 							"Or").write(automaton);
 					System.out.println();
@@ -221,7 +221,7 @@ public class WycsMain {
 			builder.setVerbose(verbose);
 			builder.setDebug(values.containsKey("debug"));
 			builder.setDecompile(values.containsKey("decompile"));
-			
+
 			ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
 					.get("pipeline");
 			if (pipelineModifiers != null) {
@@ -284,15 +284,15 @@ public class WycsMain {
  // =========================================================================
 	// Helper Methods
 	// =========================================================================
-	    
+
 	/**
-	 * Print out the available list of options for the given pipeline 
+	 * Print out the available list of options for the given pipeline
 	 */
 	protected void usage(PrintStream out, List<Pipeline.Template> stages) {
 		out.println("\nPipeline configuration:");
 		for(Pipeline.Template template : stages) {
 			Class<? extends Transform> t = template.clazz;
-			out.println("  -X " + t.getSimpleName().toLowerCase() + ":\t");			
+			out.println("  -X " + t.getSimpleName().toLowerCase() + ":\t");
 			for(Method m : t.getDeclaredMethods()) {
 				String name = m.getName();
 				if(name.startsWith("set")) {
@@ -301,16 +301,16 @@ public class WycsMain {
 					// print default value
 					try {
 						Method getter = t.getDeclaredMethod(name.replace("set", "get"));
-						Object v = getter.invoke(null);						
-						out.print("[default=" + v + "]");						
+						Object v = getter.invoke(null);
+						out.print("[default=" + v + "]");
 					} catch(NoSuchMethodException e) {
 						// just ignore
 					} catch (IllegalArgumentException e) {
 						// just ignore
 					} catch (IllegalAccessException e) {
-						// just ignore						
+						// just ignore
 					} catch (InvocationTargetException e) {
-						// just ignore						
+						// just ignore
 					}
 					// print description
 					try {
@@ -322,16 +322,16 @@ public class WycsMain {
 					} catch (IllegalArgumentException e) {
 						// just ignore
 					} catch (IllegalAccessException e) {
-						// just ignore						
+						// just ignore
 					} catch (InvocationTargetException e) {
-						// just ignore						
+						// just ignore
 					}
 					out.println();
-				}				
-			}			
+				}
+			}
 		}
 	}
-	
+
 	protected static String argValues(Method m) {
 		String r = "";
 		for(Class<?> p : m.getParameterTypes()) {
@@ -344,12 +344,12 @@ public class WycsMain {
 			}
 		}
 		return r;
-	}	
+	}
 
  // =========================================================================
 	// Main Method
 	// =========================================================================
-	    	
+
 	public static void main(String[] args) {
 		System.exit(new WycsMain(new WycsBuildTask(), DEFAULT_OPTIONS).run(args));
 	}

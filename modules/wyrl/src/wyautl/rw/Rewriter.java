@@ -30,98 +30,98 @@ package wyautl.rw;
  * Represents the (abstract) mechanism for controlling the rewriting of a given
  * automaton under a given set of rules. Different implementation of this
  * interface are possible, and will have different performance characteristics.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public interface Rewriter {
-	
+
 	/**
 	 * Apply this rewriter to rewrite its automaton as much as possible within a
 	 * given number of steps. The return value indicates whether or not
 	 * rewriting was completed.
-	 * 
+	 *
 	 * @return --- Indicates whether or not rewriting is complete (true
 	 *         indicates it was completed). This is necessary to distinguish
 	 *         when the maximum number of steps was reached.
 	 */
 	public boolean apply();
-	
-	
+
+
 	/**
 	 * Return the statistics accumulated by this rewrite system so far.
-	 * 
+	 *
 	 * @return
 	 */
 	public Stats getStats();
-	
-	
+
+
 	/**
 	 * Reset the accumulated statistical information to zero.
 	 */
 	public void resetStats();
-	
+
 	/**
 	 * Provides useful statistical information on the number of various
 	 * operations performed. This is helpful for profiling different
 	 * implementations of <code>RewriteSystem</code>.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
-	 */	
+	 *
+	 */
 	public static class Stats {
-		
+
 		/**
 		 * Used to count the number of unsuccessful inferences (i.e. those
 		 * successful inference rule activations which did not result in a
-		 * changed automaton after reduction). 
+		 * changed automaton after reduction).
 		 */
 		private final int numInferenceFailures;
 
 		/**
 		 * Used to count the number of successful inferences (i.e. those
 		 * successful inference rule activations which did result in a
-		 * changed automaton after reduction). 
+		 * changed automaton after reduction).
 		 */
 		private final int numInferenceSuccesses;
-		
+
 		/**
 		 * Used to count the total number of activations made for inference
-		 * rules. 
+		 * rules.
 		 */
 		private final int numInferenceActivations;
 
 		/**
 		 * Used to count the number of unsuccessful reductions (i.e. those
 		 * successful reduction rule activations which did not result in a
-		 * changed automaton after reduction). 
+		 * changed automaton after reduction).
 		 */
 		private final int numReductionFailures;
 
 		/**
 		 * Used to count the number of successful reductions (i.e. those
 		 * successful reduction rule activations which did result in a
-		 * changed automaton after reduction). 
+		 * changed automaton after reduction).
 		 */
 		private final int numReductionSuccesses;
-		
+
 		/**
 		 * Used to count the total number of activations made for reduction
-		 * rules. 
+		 * rules.
 		 */
 		private final int numReductionActivations;
 
-		
+
 		/**
 		 * Counts the total number of activation probes, including those which
 		 * didn't generate activations.
 		 */
 		private final int numProbes;
-		
+
 		/**
 		 * Construct an object providing statistical information about how a
 		 * given rewrite system has performed.
-		 * 
+		 *
 		 * @param numProbes
 		 * @param numActivations
 		 * @param numActivationFailures
@@ -133,7 +133,7 @@ public interface Rewriter {
 				int numInferenceActivations, int numInferenceFailures,
 				int numInferenceSuccesses) {
 			this.numProbes = numProbes;
-			
+
 			this.numReductionActivations = numReductionActivations;
 			this.numReductionFailures = numReductionFailures;
 			this.numReductionSuccesses = numReductionSuccesses;
@@ -141,7 +141,7 @@ public interface Rewriter {
 			this.numInferenceFailures = numInferenceFailures;
 			this.numInferenceSuccesses = numInferenceSuccesses;
 		}
-		
+
 		/**
 		 * Get the total number of activation probes (including those which
 		 * didn't generate activations).
@@ -149,26 +149,26 @@ public interface Rewriter {
 		public int numProbes() {
 			return numProbes;
 		}
-		
+
 		/**
 		 * Get the total number of activations (successful or unsuccessful) made.
 		 */
 		public int numActivations() {
 			return numReductionActivations + numInferenceActivations;
 		}
-		
+
 		/**
 		 * Get the total number of activations (successful or unsuccessful) made
 		 * for a <i>reduction rule</i>.
 		 */
 		public int numReductionActivations() {
 			return numReductionActivations;
-		}		
-		
+		}
+
 		/**
 		 * Used to count the number of unsuccessful reductions (i.e. those
 		 * successful reduction rule activations which did not result in a
-		 * changed automaton after reduction). 
+		 * changed automaton after reduction).
 		 */
 		public int numReductionFailures() {
 			return numInferenceFailures;
@@ -177,12 +177,12 @@ public interface Rewriter {
 		/**
 		 * Used to count the number of successful reductions (i.e. those
 		 * successful reduction rule activations which did result in a
-		 * changed automaton after reduction). 
+		 * changed automaton after reduction).
 		 */
 		public int numReductionSuccesses() {
 			return numReductionSuccesses;
 		}
-		
+
 		/**
 		 * Get the total number of activations (successful or unsuccessful) made
 		 * for an <i>inference rule</i>.
@@ -190,11 +190,11 @@ public interface Rewriter {
 		public int numInferenceActivations() {
 			return numInferenceActivations;
 		}
-				
+
 		/**
 		 * Used to count the number of unsuccessful inferences (i.e. those
 		 * successful inference rule activations which did not result in a
-		 * changed automaton after reduction). 
+		 * changed automaton after reduction).
 		 */
 		public int numInferenceFailures() {
 			return numInferenceFailures;
@@ -203,12 +203,12 @@ public interface Rewriter {
 		/**
 		 * Used to count the number of successful inferences (i.e. those
 		 * successful inference rule activations which did result in a
-		 * changed automaton after reduction). 
+		 * changed automaton after reduction).
 		 */
 		public int numInferenceSuccesses() {
 			return numInferenceSuccesses;
 		}
-		
+
 		/**
 		 * Return a standard overview of the statistics embodied here.
 		 */

@@ -41,12 +41,12 @@ import wyil.lang.*;
  * accesses</i>, etc. Each class is an instance of <code>SyntacticElement</code>
  * and, hence, can be adorned with certain information (such as source location,
  * etc).
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public interface Expr extends SyntacticElement {
-		
+
 	/**
 	 * Get the type that this expression will evaluate to. This type splits into
 	 * a nominal and raw component. The nominal component retains name
@@ -56,22 +56,22 @@ public interface Expr extends SyntacticElement {
 	 * component represents the fully expanded type, and can safely be used for
 	 * type testing. However, it can be rather long and cumbersome to read so
 	 * should not be reported to the user.
-	 * 
+	 *
 	 * @return
 	 */
 	public Nominal result();
-	
+
 	/**
 	 * An LVal is a special form of expression which may appear on the left-hand
 	 * side of an assignment.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public interface LVal extends Expr {}
-	
+
 	public static class AbstractVariable extends SyntacticElement.Impl implements Expr, LVal {
-		public final String var;		
+		public final String var;
 
 		public AbstractVariable(String var, Attribute... attributes) {
 			super(attributes);
@@ -82,48 +82,48 @@ public interface Expr extends SyntacticElement {
 			super(attributes);
 			this.var = var;
 		}
-		
+
 		public Nominal result() {
 			return null;
 		}
-		
+
 		public String toString() {
 			return var;
 		}
 	}
 
-	public static class LocalVariable extends AbstractVariable {		
-		public Nominal type;		
+	public static class LocalVariable extends AbstractVariable {
+		public Nominal type;
 
 		public LocalVariable(String var, Attribute... attributes) {
-			super(var, attributes);			
+			super(var, attributes);
 		}
 
 		public LocalVariable(String var, Collection<Attribute> attributes) {
-			super(var, attributes);			
+			super(var, attributes);
 		}
-		
+
 		public Nominal result() {
 			return type;
-		}		
-		
+		}
+
 		public String toString() {
 			return var;
 		}
 	}
-	
-	public static class AssignedVariable extends LocalVariable {		
+
+	public static class AssignedVariable extends LocalVariable {
 		public Nominal afterType;
 
 		public AssignedVariable(String var, Attribute... attributes) {
-			super(var, attributes);			
+			super(var, attributes);
 		}
-		
+
 		public AssignedVariable(String var, Collection<Attribute> attributes) {
-			super(var, attributes);			
+			super(var, attributes);
 		}
 	}
-	
+
 	public static class Constant extends SyntacticElement.Impl implements Expr {
 		public final wyil.lang.Constant value;
 
@@ -131,11 +131,11 @@ public interface Expr extends SyntacticElement {
 			super(attributes);
 			this.value = val;
 		}
-		
+
 		public Nominal result() {
 			return Nominal.construct(value.type(),value.type());
 		}
-		
+
 		public String toString() {
 			return value.toString();
 		}
@@ -143,64 +143,64 @@ public interface Expr extends SyntacticElement {
 
 	/**
 	 * Represents a cast expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * Term ::= ...
 	 *      | '(' Type ')' Expression
 	 * </pre>
-	 * 
+	 *
 	 * @param start
 	 * @return
 	 */
 	public static class Cast extends SyntacticElement.Impl implements Expr {
 		public final SyntacticType unresolvedType;
-		public Nominal type;					
-		public Expr expr;	
-		
+		public Nominal type;
+		public Expr expr;
+
 		public Cast(SyntacticType type, Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.unresolvedType = type;
 			this.expr = expr;
 		}
-		
+
 		public Nominal result() {
 			return type;
-		}		
-		
+		}
+
 		public String toString() {
 			return "(" + unresolvedType.toString() + ") " + expr;
 		}
 	}
-	
+
 	public static class TypeVal extends SyntacticElement.Impl implements Expr {
 		public final SyntacticType unresolvedType;
-		public Nominal type;		
-		
+		public Nominal type;
+
 		public TypeVal(SyntacticType val, Attribute... attributes) {
 			super(attributes);
 			this.unresolvedType = val;
 		}
-		
+
 		public Nominal result() {
 			return Nominal.T_META;
-		}		
+		}
 	}
-	
+
 	public static class AbstractFunctionOrMethod extends SyntacticElement.Impl implements Expr {
 		public final String name;
 		public final ArrayList<SyntacticType> paramTypes;
-		public Nominal.FunctionOrMethod type;		
-				
+		public Nominal.FunctionOrMethod type;
+
 		public AbstractFunctionOrMethod(String name, Collection<SyntacticType> paramTypes, Attribute... attributes) {
 			super(attributes);
-			this.name = name;			
+			this.name = name;
 			if(paramTypes != null) {
 				this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
 			} else {
 				this.paramTypes = null;
 			}
 		}
-		
+
 		public AbstractFunctionOrMethod(String name,
 				Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
@@ -212,94 +212,94 @@ public interface Expr extends SyntacticElement {
 				this.paramTypes = null;
 			}
 		}
-		
+
 		public Nominal.FunctionOrMethod result() {
 			return type;
-		}		
+		}
 	}
-	
+
 	public static class FunctionOrMethod extends AbstractFunctionOrMethod {
-		public final NameID nid;					
-		
+		public final NameID nid;
+
 		public FunctionOrMethod(NameID nid, Collection<SyntacticType> paramTypes,
 				Attribute... attributes) {
 			super(nid.name(), paramTypes, attributes);
 			this.nid = nid;
 		}
-		
+
 		public FunctionOrMethod(NameID nid, Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
 			super(nid.name(), paramTypes, attributes);
 			this.nid = nid;
 		}
 	}
-	
+
 	public static class Lambda extends SyntacticElement.Impl implements Expr {
 		public final ArrayList<WhileyFile.Parameter> parameters;
 		public Expr body;
 		public Nominal.FunctionOrMethod type;
-		
+
 		public Lambda(Collection<WhileyFile.Parameter> parameters, Expr body,
 				Attribute... attributes) {
 			super(attributes);
 			this.parameters = new ArrayList<WhileyFile.Parameter>(parameters);
 			this.body = body;
 		}
-		
+
 		public Lambda(Collection<WhileyFile.Parameter> parameters, Expr body,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.parameters = new ArrayList<WhileyFile.Parameter>(parameters);
 			this.body = body;
 		}
-		
+
 		public Nominal.FunctionOrMethod result() {
 			return type;
 		}
 	}
-	
+
 	public static class BinOp extends SyntacticElement.Impl implements Expr {
 		public BOp op;
 		public Expr lhs;
 		public Expr rhs;
 		public Nominal srcType;
-		
+
 		public BinOp(BOp op, Expr lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
 			this.op = op;
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
-		
+
 		public BinOp(BOp op, Expr lhs, Expr rhs, Collection<Attribute> attributes) {
-			super(attributes);			
+			super(attributes);
 			this.op = op;
 			this.lhs = lhs;
 			this.rhs = rhs;
 		}
-		
+
 		public Nominal result() {
 			switch(op) {
 			case EQ:
 			case NEQ:
-			case LT:	
+			case LT:
 			case LTEQ:
-			case GT:	
+			case GT:
 			case GTEQ:
 			case ELEMENTOF:
-			case SUBSET:	
+			case SUBSET:
 			case SUBSETEQ:
-			case IS:				
+			case IS:
 				return Nominal.T_BOOL;
 			default:
 				return srcType;
-			}			
+			}
 		}
-		
+
 		public Nominal srcType() {
-			return srcType;		
+			return srcType;
 		}
-		
+
 		public String toString() {
 			return "(" + op + " " + lhs + " " + rhs + ")";
 		}
@@ -307,27 +307,27 @@ public interface Expr extends SyntacticElement {
 
 	// A list access is very similar to a BinOp, except that it can be assiged.
 	public static class IndexOf extends SyntacticElement.Impl implements
-			Expr, LVal {		
+			Expr, LVal {
 		public Expr src;
-		public Expr index;	
+		public Expr index;
 		public Nominal.EffectiveIndexible srcType;
-	
+
 		public IndexOf(Expr src, Expr index, Attribute... attributes) {
 			super(attributes);
 			this.src = src;
 			this.index = index;
 		}
-		
+
 		public IndexOf(Expr src, Expr index, Collection<Attribute> attributes) {
 			super(attributes);
 			this.src = src;
 			this.index = index;
 		}
-				
+
 		public Nominal result() {
 			return srcType.value();
 		}
-				
+
 		public String toString() {
 			return src + "[" + index + "]";
 		}
@@ -338,36 +338,36 @@ public interface Expr extends SyntacticElement {
 		NEG,
 		INVERT
 	}
-	
+
 	public static class UnOp extends SyntacticElement.Impl implements Expr {
 		public final UOp op;
-		public Expr mhs;	
+		public Expr mhs;
 		public Nominal type;
-		
+
 		public UnOp(UOp op, Expr mhs, Attribute... attributes) {
 			super(attributes);
 			this.op = op;
-			this.mhs = mhs;			
+			this.mhs = mhs;
 		}
-		
+
 		public Nominal result() {
 			return type;
-		}		
-		
+		}
+
 		public String toString() {
 			return op + mhs.toString();
 		}
 	}
-	
-	public static class Set extends SyntacticElement.Impl implements Expr {		
+
+	public static class Set extends SyntacticElement.Impl implements Expr {
 		public final ArrayList<Expr> arguments;
-		public Nominal.Set type;		
-		
+		public Nominal.Set type;
+
 		public Set(Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
 			this.arguments = new ArrayList<Expr>(arguments);
 		}
-		
+
 		public Set(Attribute attribute, Expr... arguments) {
 			super(attribute);
 			this.arguments = new ArrayList<Expr>();
@@ -375,30 +375,30 @@ public interface Expr extends SyntacticElement {
 				this.arguments.add(a);
 			}
 		}
-		
+
 		public Nominal.Set result() {
 			return type;
-		}		
+		}
 	}
-	
+
 	/**
 	 * Represents a list constructor expression, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * ListExpression ::= '[' [ Expression (',' Expression)* ] ']'
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
-	public static class List extends SyntacticElement.Impl implements Expr {		
+	public static class List extends SyntacticElement.Impl implements Expr {
 		public final ArrayList<Expr> arguments;
-		public Nominal.List type;		
-		
+		public Nominal.List type;
+
 		public List(Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
 			this.arguments = new ArrayList<Expr>(arguments);
 		}
-		
+
 		public List(Attribute attribute, Expr... arguments) {
 			super(attribute);
 			this.arguments = new ArrayList<Expr>();
@@ -406,68 +406,68 @@ public interface Expr extends SyntacticElement {
 				this.arguments.add(a);
 			}
 		}
-		
+
 		public Nominal.List result() {
 			return type;
-		}		
+		}
 	}
-	
-	public static class SubList extends SyntacticElement.Impl implements Expr {		
+
+	public static class SubList extends SyntacticElement.Impl implements Expr {
 		public Expr src;
 		public Expr start;
-		public Expr end;	
+		public Expr end;
 		public Nominal.EffectiveList type;
-		
+
 		public SubList(Expr src, Expr start, Expr end, Attribute... attributes) {
 			super(attributes);
 			this.src = src;
 			this.start = start;
-			this.end = end;			
+			this.end = end;
 		}
-		
+
 		public SubList(Expr src, Expr start, Expr end, Collection<Attribute> attributes) {
 			super(attributes);
 			this.src = src;
 			this.start = start;
 			this.end = end;
 		}
-		
+
 		public Nominal result() {
 			return (Nominal) type;
-		}		
+		}
 	}
-	
-	public static class SubString extends SyntacticElement.Impl implements Expr {		
+
+	public static class SubString extends SyntacticElement.Impl implements Expr {
 		public Expr src;
 		public Expr start;
-		public Expr end;	
-		
+		public Expr end;
+
 		public SubString(Expr src, Expr start, Expr end, Attribute... attributes) {
 			super(attributes);
 			this.src = src;
 			this.start = start;
-			this.end = end;			
+			this.end = end;
 		}
-		
+
 		public SubString(Expr src, Expr start, Expr end, Collection<Attribute> attributes) {
 			super(attributes);
 			this.src = src;
 			this.start = start;
 			this.end = end;
 		}
-		
+
 		public Nominal result() {
 			return Nominal.T_STRING;
-		}		
+		}
 	}
-	
+
 	public static class Comprehension extends SyntacticElement.Impl implements Expr {
 		public final COp cop;
 		public Expr value;
 		public final ArrayList<Pair<String,Expr>> sources;
 		public Expr condition;
 		public Nominal type;
-		
+
 		public Comprehension(COp cop, Expr value,
 				Collection<Pair<String, Expr>> sources, Expr condition,
 				Attribute... attributes) {
@@ -477,20 +477,20 @@ public interface Expr extends SyntacticElement {
 			this.condition = condition;
 			this.sources = new ArrayList<Pair<String, Expr>>(sources);
 		}
-		
+
 		public Nominal result() {
 			return type;
-		}		
+		}
 	}
-	
+
 	public enum COp {
 		SETCOMP,
 		LISTCOMP,
-		NONE, // implies value == null					
-		SOME, // implies value == null		
+		NONE, // implies value == null
+		SOME, // implies value == null
 		ALL, // implies value == null
 	}
-	
+
 	public static class FieldAccess extends SyntacticElement.Impl
 			implements
 				LVal {
@@ -510,7 +510,7 @@ public interface Expr extends SyntacticElement {
 			this.src = lhs;
 			this.name = name;
 		}
-		
+
 		public Nominal result() {
 			return srcType.field(name);
 		}
@@ -519,7 +519,7 @@ public interface Expr extends SyntacticElement {
 			return src + "." + name;
 		}
 	}
-	
+
 	public static class ConstantAccess extends SyntacticElement.Impl implements Expr {
 		public final String name;
 		public Path.ID qualification;
@@ -538,13 +538,13 @@ public interface Expr extends SyntacticElement {
 			this.name = name;
 			this.qualification = qualification;
 		}
-				
+
 		public Nominal result() {
 			// FIXME: loss of nominal information here, since the type of the
 			// constant in question is always fully expanded.
 			return Nominal.construct(value.type(), value.type());
 		}
-		
+
 		public String toString() {
 			if(qualification == null) {
 				// root
@@ -553,44 +553,44 @@ public interface Expr extends SyntacticElement {
 				return qualification + "." + name;
 			}
 		}
-	}			
-	
+	}
+
 	public static class Dereference extends SyntacticElement.Impl implements LVal {
-		public Expr src;	
+		public Expr src;
 		public Nominal.Reference srcType;
-		
+
 		public Dereference(Expr src, Attribute... attributes) {
 			super(attributes);
-			this.src = src;			
+			this.src = src;
 		}
-		
+
 		public Nominal result() {
 			return srcType.element();
 		}
-		
+
 		public String toString() {
 			return "*" + src.toString();
 		}
 	}
-		
+
 	public static class Map extends SyntacticElement.Impl implements Expr {
-		public final ArrayList<Pair<Expr,Expr>> pairs;		
-		public Nominal.Map type;		
-		
+		public final ArrayList<Pair<Expr,Expr>> pairs;
+		public Nominal.Map type;
+
 		public Map(Collection<Pair<Expr,Expr>> pairs, Attribute... attributes) {
 			super(attributes);
 			this.pairs = new ArrayList<Pair<Expr,Expr>>(pairs);
 		}
-		
+
 		public Nominal.Map result() {
 			return type;
-		}		
+		}
 	}
-	
+
 	public static class Record extends SyntacticElement.Impl implements
 			Expr {
 		public final HashMap<String, Expr> fields;
-		public Nominal.Record type;		
+		public Nominal.Record type;
 
 		public Record(java.util.Map<String, Expr> fields,
 				Attribute... attributes) {
@@ -602,12 +602,12 @@ public interface Expr extends SyntacticElement {
 			return type;
 		}
 	}
-	
+
 	public static class Tuple extends SyntacticElement.Impl implements
 			LVal {
 		public final ArrayList<Expr> fields;
-		public Nominal.Tuple type;		
-		
+		public Nominal.Tuple type;
+
 		public Tuple(Collection<Expr> fields, Attribute... attributes) {
 			super(attributes);
 			this.fields = new ArrayList<Expr>(fields);
@@ -617,109 +617,109 @@ public interface Expr extends SyntacticElement {
 			return type;
 		}
 	}
-		
+
 	public static class AbstractInvoke extends SyntacticElement.Impl implements Expr,
 			Stmt {
 		public final String name;
 		public Path.ID qualification;
-		public final ArrayList<Expr> arguments;				
-		
+		public final ArrayList<Expr> arguments;
+
 		public AbstractInvoke(String name, Path.ID receiver,
 				Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.qualification = receiver;
-			this.arguments = new ArrayList<Expr>(arguments);	
+			this.arguments = new ArrayList<Expr>(arguments);
 		}
-		
+
 		public AbstractInvoke(String name, Path.ID receiver,
-				Collection<Expr> arguments, 
+				Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.name = name;
 			this.qualification = receiver;
 			this.arguments = new ArrayList<Expr>(arguments);
 		}
-		
+
 		public Nominal result() {
 			return null;
 		}
 	}
-	
-	public static class MethodCall extends AbstractInvoke {		
+
+	public static class MethodCall extends AbstractInvoke {
 		public final NameID nid;
 		public Nominal.Method methodType;
-		
+
 		public MethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Attribute... attributes) {
 			super(nid.name(),qualification,arguments,attributes);
 			this.nid = nid;
 		}
-		
+
 		public MethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
 			super(nid.name(),qualification,arguments,attributes);
-			this.nid = nid;			
+			this.nid = nid;
 		}
-		
+
 		public NameID nid() {
 			return nid;
 		}
-		
+
 		public Nominal result() {
 			return methodType.ret();
 		}
 	}
-	
+
 	/**
 	 * Parse a function invocation expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * NameIdentifier '(' [ Expression ( ',' Expression )* ] ')'
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
-	public static class FunctionCall extends AbstractInvoke {		
+	public static class FunctionCall extends AbstractInvoke {
 		public final NameID nid;
 		public Nominal.Function functionType;
-		
+
 		public FunctionCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Attribute... attributes) {
 			super(nid.name(),qualification,arguments,attributes);
 			this.nid = nid;
 		}
-		
+
 		public FunctionCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
 			super(nid.name(),qualification,arguments,attributes);
-			this.nid = nid;			
+			this.nid = nid;
 		}
-		
+
 		public NameID nid() {
 			return nid;
 		}
-		
+
 		public Nominal result() {
 			return functionType.ret();
 		}
 	}
-	
+
 	public static class AbstractIndirectInvoke extends SyntacticElement.Impl implements Expr,
 	Stmt {
-		public Expr src; 
-		public final ArrayList<Expr> arguments;					
+		public Expr src;
+		public final ArrayList<Expr> arguments;
 
 		public AbstractIndirectInvoke(Expr src,
-				Collection<Expr> arguments, 
+				Collection<Expr> arguments,
 				Attribute... attributes) {
 			super(attributes);
 			this.src = src;
-			this.arguments = new ArrayList<Expr>(arguments);	
+			this.arguments = new ArrayList<Expr>(arguments);
 		}
 
 		public AbstractIndirectInvoke(Expr src,
-				Collection<Expr> arguments, 
+				Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.src = src;
@@ -728,79 +728,79 @@ public interface Expr extends SyntacticElement {
 
 		public Nominal result() {
 			return null;
-		}				
+		}
 	}
-	
-	public static class IndirectMethodCall extends AbstractIndirectInvoke {				
+
+	public static class IndirectMethodCall extends AbstractIndirectInvoke {
 		public Nominal.Method methodType;
-		
+
 		public IndirectMethodCall(Expr src, Collection<Expr> arguments,
 				Attribute... attributes) {
 			super(src,arguments,attributes);
 		}
-		
+
 		public IndirectMethodCall(Expr src, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
 			super(src,arguments,attributes);
 		}
-		
+
 		public Nominal result() {
 			return methodType.ret();
 		}
 	}
-	
-	public static class IndirectFunctionCall extends AbstractIndirectInvoke {				
+
+	public static class IndirectFunctionCall extends AbstractIndirectInvoke {
 		public Nominal.Function functionType;
-		
+
 		public IndirectFunctionCall(Expr src, Collection<Expr> arguments,
 				Attribute... attributes) {
 			super(src,arguments,attributes);
 		}
-		
+
 		public IndirectFunctionCall(Expr src, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
 			super(src,arguments,attributes);
 		}
-		
+
 		public Nominal result() {
 			return functionType.ret();
 		}
-	}	
-	
+	}
+
 	public static class LengthOf extends SyntacticElement.Impl implements Expr {
 		public Expr src;
 		public Nominal.EffectiveCollection srcType;
-		
+
 		public LengthOf(Expr mhs, Attribute... attributes) {
 			super(attributes);
-			this.src = mhs;			
+			this.src = mhs;
 		}
-		
+
 		public LengthOf(Expr mhs, Collection<Attribute> attributes) {
 			super(attributes);
-			this.src = mhs;			
+			this.src = mhs;
 		}
-		
+
 		public Nominal result() {
 			return Nominal.T_INT;
-		}				
-		
+		}
+
 		public String toString() {
 			return "|" + src.toString() + "|";
 		}
-	}		
-	
+	}
+
 	public static class New extends SyntacticElement.Impl implements Expr,Stmt {
 		public Expr expr;
 		public Nominal.Reference type;
 
 		public New(Expr expr, Attribute... attributes) {
-			this.expr = expr;						
+			this.expr = expr;
 		}
-		
+
 		public Nominal.Reference result() {
 			return type;
-		}		
+		}
 	}
 
 	public static class RationalLVal extends SyntacticElement.Impl implements
@@ -813,13 +813,13 @@ public interface Expr extends SyntacticElement {
 			this.numerator = num;
 			this.denominator = den;
 		}
-		
+
 		public final Nominal result() {
 			return null; // better be dead-code
 		}
 	}
-	
-	public enum BOp { 
+
+	public enum BOp {
 		AND {
 			public String toString() { return "&&"; }
 		},
@@ -885,7 +885,7 @@ public interface Expr extends SyntacticElement {
 		},
 		ELEMENTOF{
 			public String toString() { return "in"; }
-		},		
+		},
 		RANGE{
 			public String toString() { return ".."; }
 		},

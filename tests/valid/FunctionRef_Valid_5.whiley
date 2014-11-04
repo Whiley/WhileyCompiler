@@ -1,7 +1,7 @@
 import whiley.lang.System
 
-type Func is { 
-    function read(int)=>int 
+type Func is {
+    function read(int)=>int
 }
 
 function id(int x) => int:

@@ -33,9 +33,9 @@ import java.io.IOException;
  * either check that a module is valid (with respect to some particular
  * concern), or apply optimisations to the module. Examples include <i>constant
  * propagation</i> and <i>definite assignment analysis</i>.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public interface Transform<T extends CompilationUnit> {
 
@@ -43,7 +43,7 @@ public interface Transform<T extends CompilationUnit> {
 	 * Apply this transform to the given module. Modifications are made to the
 	 * module in-place. To easy integration with other frameworks (e.g.
 	 * Eclipse), any exception may be thrown.
-	 * 
+	 *
 	 * @param file
 	 *            --- compilation unit to be transformed
 	 * @throws Exception

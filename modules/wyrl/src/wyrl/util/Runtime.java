@@ -42,7 +42,7 @@ public class Runtime {
 
 	/**
 	 * A simple method to help debugging automaton rewrites.
-	 * 
+	 *
 	 * @param automaton
 	 *            The automaton to be printed.
 	 * @param schema
@@ -62,7 +62,7 @@ public class Runtime {
 
 	/**
 	 * A simple method to help debugging automaton rewrites.
-	 * 
+	 *
 	 * @param root
 	 *            The root node to print from.
 	 * @param automaton
@@ -82,10 +82,10 @@ public class Runtime {
 		}
 
 	}
-	
+
 	/**
 	 * A simple method to help debugging automaton rewrites.
-	 * 
+	 *
 	 * @param root
 	 *            The root node to print from.
 	 * @param automaton
@@ -97,12 +97,12 @@ public class Runtime {
 		int index = automaton.add(root);
 		debug(index,automaton,schema);
 	}
-	
+
 	/**
 	 * Construct an <code>Automaton.List</code> representing the consecutive
 	 * list of numbers between <code>start</code> and <code>end</code>
 	 * (exclusive).
-	 * 
+	 *
 	 * @param automaton
 	 *            --- automaton into which to create this List.
 	 * @param start
@@ -127,7 +127,7 @@ public class Runtime {
 	 * Construct a type from a string encoding of it. The string must be a
 	 * binary encoding of the underlying automaton which is itself encoded as a
 	 * Java string using the <code>JavaIdentifierOutputStream</code>.
-	 * 
+	 *
 	 * @param b
 	 * @return
 	 */
@@ -145,39 +145,39 @@ public class Runtime {
 			throw new RuntimeException("runtime failure constructing type", e);
 		}
 	}
-	
+
 	/**
 	 * Determine whether a given automaton is <i>accepted</i> by (i.e. contained
 	 * in) an given type. For example, consider this very simple type:
-	 * 
+	 *
 	 * <pre>
 	 * term True
 	 * term False
 	 * define Bool as True | False
 	 * </pre>
-	 * 
+	 *
 	 * We can then ask the question as to whether or not the type
 	 * <code>Bool</code> accepts the automaton which describes <code>True</code>
 	 * . This function is used during rewriting to determine whether or not a
 	 * given pattern leaf matches, and also for implementing the <code>is</code>
 	 * operator
-	 * 
+	 *
 	 * @param type
 	 *            --- The type being to check for containment.
 	 * @param automaton
 	 *            --- The automaton being checked for inclusion.
 	 * @param root
-	 *            --- Automaton root to start from.  
+	 *            --- Automaton root to start from.
 	 * @param schema
 	 *            -- The schema for the actual automaton which is used to map
-	 *            term names to their kinds.         
+	 *            term names to their kinds.
 	 * @return
 	 */
 	public static boolean accepts(Type type, Automaton automaton, int root,
 			Schema schema) {
 
 		// FIXME: this doesn't yet handle cyclic automata
-		
+
 		Automaton type_automaton = type.automaton();
 		return accepts(type_automaton, type_automaton.getRoot(0), automaton,
 				root, schema);
@@ -186,41 +186,41 @@ public class Runtime {
 	/**
 	 * Determine whether a given automaton is <i>accepted</i> by (i.e. contained
 	 * in) an given type. For example, consider this very simple type:
-	 * 
+	 *
 	 * <pre>
 	 * term True
 	 * term False
 	 * define Bool as True | False
 	 * </pre>
-	 * 
+	 *
 	 * We can then ask the question as to whether or not the type
 	 * <code>Bool</code> accepts the automaton which describes <code>True</code>
 	 * . This function is used during rewriting to determine whether or not a
 	 * given pattern leaf matches, and also for implementing the <code>is</code>
 	 * operator.
-	 * 
+	 *
 	 * @param type
 	 *            --- The type being to check for containment.
 	 * @param actual
 	 *            --- The automaton being checked for inclusion.
 	 * @param aState
 	 *            --- The state in the actual automaton being tested for
-	 *            acceptance.   
+	 *            acceptance.
 	 * @param schema
 	 *            -- The schema for the actual automaton which is used to map
-	 *            term names to their kinds. 
+	 *            term names to their kinds.
 	 * @return
 	 */
 	public static boolean accepts(Type type, Automaton actual,
 			Automaton.State aState, Schema schema) {
 
 		// FIXME: this doesn't yet handle cyclic automata
-		
+
 		Automaton type_automaton = type.automaton();
 		return accepts(type_automaton, type_automaton.getRoot(0), actual,
-				aState, schema);		
-	}	
-	
+				aState, schema);
+	}
+
 	/**
 	 * <p>
 	 * Determine whether a state in the type automaton accepts a state in the
@@ -229,7 +229,7 @@ public class Runtime {
 	 * to reflect this. Assuming it is, this function recursively dispatches to
 	 * a helper function which then examines the actual kind of state involved.
 	 * </p>
-	 * 
+	 *
 	 * @param type
 	 *            --- The type automaton which provides a schema describing a
 	 *            given type.
@@ -268,7 +268,7 @@ public class Runtime {
 	 * the same kind. Otherwise, it returns false indicating there is no
 	 * acceptance.
 	 * </p>
-	 * 
+	 *
 	 * @param type
 	 *            --- The type automaton which provides a schema describing a
 	 *            given type.
@@ -291,7 +291,7 @@ public class Runtime {
 	private static boolean accepts(Automaton type, int tIndex,
 			Automaton automaton, Automaton.State aState, Schema schema) {
 		Automaton.Term tState = (Automaton.Term) type.get(tIndex);
-		
+
 		switch (tState.kind) {
 		case Types.K_Void:
 			return false;
@@ -356,7 +356,7 @@ public class Runtime {
 	 * <code>Term[string,Type...]</code>, where the string identifies the
 	 * term's name and the remainder represents 0 or 1 substates.
 	 * </p>
-	 * 
+	 *
 	 * @param type
 	 *            --- The type automaton which provides a schema describing a
 	 *            given type.
@@ -383,7 +383,7 @@ public class Runtime {
 			return false;
 		} else if (list.size() == 1) {
 			return aTerm.contents == Automaton.K_VOID;
-		} else {			
+		} else {
 			return accepts(type, list.get(1), actual, aTerm.contents, schema);
 		}
 	}
@@ -402,7 +402,7 @@ public class Runtime {
 	 * the unbounded components (if void, then set is bounded) and the second
 	 * element represents the expected matching subcomponents.
 	 * </p>
-	 * 
+	 *
 	 * @param type
 	 *            --- The type automaton which provides a schema describing a
 	 *            given type.
@@ -436,7 +436,7 @@ public class Runtime {
 		// unbounded collection, it is one less since the last element
 		// represents zero or more elements.
 		int minSize = collection.size();
-		
+
 		if (aSetOrBag.size() < minSize
 				|| (!isUnbounded && minSize != aSetOrBag.size())) {
 			// collection is not big enough.
@@ -449,7 +449,7 @@ public class Runtime {
 
 		// FIXME: is there a bug here because of the ordering I go through the
 		// loop means we don't try all combinations?
-		
+
 		for (int i = 0; i != minSize; ++i) {
 			int typeItem = collection.get(i);
 			boolean found = false;
@@ -502,7 +502,7 @@ public class Runtime {
 	 * then list is bounded) and the second element represents the expected
 	 * matching subcomponents.
 	 * </p>
-	 * 
+	 *
 	 * @param type
 	 *            --- The type automaton which provides a schema describing a
 	 *            given type.
@@ -579,7 +579,7 @@ public class Runtime {
 	 * where the first element represents the nominal name and the second
 	 * element gives its body.
 	 * </p>
-	 * 
+	 *
 	 * @param type
 	 *            --- The type automaton which provides a schema describing a
 	 *            given type.
@@ -618,7 +618,7 @@ public class Runtime {
 
 	private static boolean acceptsOr(Automaton type, Automaton.Term tState,
 			Automaton automaton, Automaton.State aState, Schema schema) {
-		
+
 		Automaton.Set set = (Automaton.Set) type.get(tState.contents);
 		for (int i = 0; i != set.size(); ++i) {
 			int element = set.get(i);

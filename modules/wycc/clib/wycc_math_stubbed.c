@@ -4,22 +4,22 @@
  * This is part of a library of support routines for programs written in
  * the Whiley language when translated into C (ala gcc), especailly support
  * for the math operations.  These routines have been stubbed to panic when
- * there is an attempt to do unbounded integer (WInt) operations 
+ * there is an attempt to do unbounded integer (WInt) operations
  *
  * This file is part of the Whiley Development Kit (WDK).
  *
- * The Whiley Development Kit is free software; you can redistribute 
- * it and/or modify it under the terms of the GNU General Public 
- * License as published by the Free Software Foundation; either 
+ * The Whiley Development Kit is free software; you can redistribute
+ * it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * The Whiley Development Kit is distributed in the hope that it 
- * will be useful, but WITHOUT ANY WARRANTY; without even the 
- * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * The Whiley Development Kit is distributed in the hope that it
+ * will be useful, but WITHOUT ANY WARRANTY; without even the
+ * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
  * PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public 
- * License along with the Whiley Development Kit. If not, see 
+ * You should have received a copy of the GNU General Public
+ * License along with the Whiley Development Kit. If not, see
  * <http://www.gnu.org/licenses/>
  */
 
@@ -158,7 +158,7 @@ wycc_obj* wyil_convert_real(wycc_obj* itm){
 	val = (long) itm->ptr;
 	flt = (long double) val;
 	return wycc_box_float(flt);
-    } 
+    }
     WY_PANIC("Help needed in wyil_convert_real w/ %d\n", itm->typ)
 }
 
@@ -237,7 +237,7 @@ wycc_obj* wyil_sub(wycc_obj* lhs, wycc_obj* rhs){
     rc = wycc_wint_size(rhs);
     ac = (lc > rc) ? lc : rc;
     if (ac < 2) {
-	rslt = ((long) lhs->ptr) - ((long)rhs->ptr); 
+	rslt = ((long) lhs->ptr) - ((long)rhs->ptr);
 	return wycc_box_type_match(lhs, rhs, rslt);
     };
     WY_PANIC("Help needed in sub for wide ints (%d)\n", ac)
@@ -259,7 +259,7 @@ wycc_obj* wyil_add(wycc_obj* lhs, wycc_obj* rhs){
     rc = wycc_wint_size(rhs);
     ac = (lc > rc) ? lc : rc;
     if (ac < 2) {
-	rslt = ((long) lhs->ptr) + ((long)rhs->ptr); 
+	rslt = ((long) lhs->ptr) + ((long)rhs->ptr);
 	return wycc_box_type_match(lhs, rhs, rslt);
     };
     WY_PANIC("Help needed in add for wide ints (%d)\n", ac)
@@ -355,7 +355,7 @@ wycc_obj* wyil_bit_ior(wycc_obj* lhs, wycc_obj* rhs){
     rc = wycc_wint_size(rhs);
     ac = (lc > rc) ? lc : rc;
     if (ac < 2) {
-	rslt = ((long) lhs->ptr) | ((long)rhs->ptr); 
+	rslt = ((long) lhs->ptr) | ((long)rhs->ptr);
 	return wycc_box_type_match(lhs, rhs, rslt);
     };
     WY_PANIC("Help needed in bit_or for wide ints (%d)\n", ac)
@@ -375,7 +375,7 @@ wycc_obj* wyil_bit_xor(wycc_obj* lhs, wycc_obj* rhs){
     rc = wycc_wint_size(rhs);
     ac = (lc > rc) ? lc : rc;
     if (ac < 2) {
-	rslt = ((long) lhs->ptr) ^ ((long)rhs->ptr); 
+	rslt = ((long) lhs->ptr) ^ ((long)rhs->ptr);
 	return wycc_box_type_match(lhs, rhs, rslt);
     };
     WY_PANIC("Help needed in bit_xor for wide ints (%d)\n", ac)
@@ -417,7 +417,7 @@ wycc_obj* wyil_div(wycc_obj* lhs, wycc_obj* rhs){
     rc = wycc_wint_size(rhs);
     ac = (lc > rc) ? lc : rc;
     if (ac < 2) {
-	rslt = ((long) lhs->ptr) / ((long)rhs->ptr); 
+	rslt = ((long) lhs->ptr) / ((long)rhs->ptr);
 	return wycc_box_type_match(lhs, rhs, rslt);
     };
     WY_PANIC("Help needed in div for wide ints (%d)\n", ac)
@@ -436,7 +436,7 @@ wycc_obj* wyil_mod(wycc_obj* lhs, wycc_obj* rhs){
     rc = wycc_wint_size(rhs);
     ac = (lc > rc) ? lc : rc;
     if (ac < 2) {
-	rslt = ((long) lhs->ptr) % ((long)rhs->ptr); 
+	rslt = ((long) lhs->ptr) % ((long)rhs->ptr);
 	return wycc_box_type_match(lhs, rhs, rslt);
     };
     WY_PANIC("Help needed in mod for wide ints (%d)\n", ac)
@@ -499,7 +499,7 @@ wycc_obj* wyil_mul(wycc_obj* lhs, wycc_obj* rhs){
     if ((lc + rc) > 31) {
 	WY_PANIC("Help needed in mul for wide ints (2)\n")
     };
-    rslt *= (long)rhs->ptr; 
+    rslt *= (long)rhs->ptr;
     return wycc_box_long(rslt);
 }
 

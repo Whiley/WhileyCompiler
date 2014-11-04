@@ -45,29 +45,29 @@ import wyautl_old.lang.*;
  * children) for a state comes first, and the supplementary data is placed after
  * that.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class TextAutomataWriter implements GenericWriter<Automaton> {
-	private final PrintStream writer;	
-	
+	private final PrintStream writer;
+
 	public TextAutomataWriter(PrintStream stream) {
 		this.writer = stream;
 	}
-	
+
 	public TextAutomataWriter(OutputStream stream) {
 		this.writer = new PrintStream(stream);
 	}
-	
-	public void write(Automaton automaton) throws IOException {	
+
+	public void write(Automaton automaton) throws IOException {
 		writer.println(automaton);
 	}
-	
+
 	public void close() throws IOException {
 		writer.close();
 	}
-	
+
 	public void flush() throws IOException {
 		writer.flush();
 	}

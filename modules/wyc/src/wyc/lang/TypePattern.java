@@ -42,80 +42,80 @@ import wycc.lang.SyntacticElement;
  * tuple pattern where the variables <code>x</code> and <code>y</code> identify
  * the two subcomponents.
  * </p>
- * 
+ *
  * Type patterns are used (amongst other things) for type declarations, and the
  * parameter and return for function/method declarations. For example:
- * 
+ *
  * <pre>
  * type nat is (int x) where x >= 0
  * </pre>
- * 
+ *
  * This illustrates a type declaration which uses a type pattern to declare the
  * variable <code>x</code>, such that it can be subsequently used in the types
  * invariant.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public abstract class TypePattern extends SyntacticElement.Impl {
-	
+
 	private TypePattern(Attribute... attributes) {
 		super(attributes);
 	}
-	
+
 	private TypePattern(List<Attribute> attributes) {
 		super(attributes);
 	}
-	
+
 	public abstract SyntacticType toSyntacticType();
-	
+
 	public abstract void addDeclaredVariables(Collection<String> variables);
-	
+
 	/**
 	 * A type pattern leaf is simply a syntactic type, along with an optional
 	 * variable identifier.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class Leaf extends TypePattern {
 		public final SyntacticType type;
 		public final Expr.LocalVariable var;
-				
+
 		public Leaf(SyntacticType type, Expr.LocalVariable var, Attribute... attributes) {
 			super(attributes);
 			this.type = type;
 			this.var = var;
 		}
-		
+
 		public Leaf(SyntacticType type, Expr.LocalVariable var, List<Attribute> attributes) {
 			super(attributes);
 			this.type = type;
 			this.var = var;
 		}
-				
+
 		public SyntacticType toSyntacticType() {
 			return type;
-		}		
-		
+		}
+
 		public void addDeclaredVariables(Collection<String> variables) {
 			if(var != null) {
 				variables.add(var.var);
 			}
 		}
 	}
-	
+
 	/**
 	 * A rational type pattern is simply a sequence of two type patterns
 	 * seperated by '/' separated by commas.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class Rational extends TypePattern {
 		public final TypePattern numerator;
 		public final TypePattern denominator;
-		
+
 		public Rational(TypePattern numerator, TypePattern denominator,
 				Attribute... attributes) {
 			super(attributes);
@@ -128,24 +128,24 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			super(attributes);
 			this.numerator = numerator;
 			this.denominator = denominator;
-		}		
-		
+		}
+
 		public SyntacticType.Real toSyntacticType() {
 			return new SyntacticType.Real(attributes());
 		}
-		
+
 		public void addDeclaredVariables(Collection<String> variables) {
 			numerator.addDeclaredVariables(variables);
 			denominator.addDeclaredVariables(variables);
 		}
 	}
-	
+
 	/**
 	 * A type pattern tuple is simply a sequence of two or type patterns
 	 * separated by commas.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class Tuple extends TypePattern {
 		public final List<TypePattern> elements;
@@ -161,7 +161,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			super(attributes);
 			this.elements = new ArrayList<TypePattern>(elements);
 		}
-		
+
 		public SyntacticType.Tuple toSyntacticType() {
 			ArrayList<SyntacticType> types = new ArrayList<SyntacticType>();
 			for (int i = 0; i != elements.size(); ++i) {
@@ -169,20 +169,20 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			}
 			return new SyntacticType.Tuple(types, attributes());
 		}
-		
-		public void addDeclaredVariables(Collection<String> variables) {		
+
+		public void addDeclaredVariables(Collection<String> variables) {
 			for(TypePattern p : elements) {
 				p.addDeclaredVariables(variables);
 			}
 		}
 	}
-	
+
 	/**
 	 * A record type pattern is simply a sequence of two or type patterns
 	 * separated by commas enclosed in curly braces.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class Record extends TypePattern {
 		public final List<TypePattern.Leaf> elements;
@@ -200,7 +200,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 								.attributes()));
 			}
 		}
-		
+
 		public Record(List<TypePattern.Leaf> elements, boolean isOpen,
 				Attribute... attributes) {
 			super(attributes);
@@ -223,24 +223,24 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			}
 			return new SyntacticType.Record(isOpen, types, attributes());
 		}
-		
+
 		public void addDeclaredVariables(Collection<String> variables) {
 			for(TypePattern p : elements) {
 				p.addDeclaredVariables(variables);
 			}
 		}
 	}
-	
+
 	/**
 	 * A union type pattern is a sequence of type patterns separated by a
 	 * vertical bar ('|').
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class Union extends TypePattern {
 		public final List<TypePattern> elements;
-		
+
 		public Union(List<TypePattern> elements, Attribute... attributes) {
 			super(attributes);
 			this.elements = new ArrayList<TypePattern>(elements);
@@ -259,23 +259,23 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			}
 			return new SyntacticType.Union(types, attributes());
 		}
-		
+
 		public void addDeclaredVariables(Collection<String> variables) {
 			// TODO: at some point, we can extend this further to look at the
 			// elements type we have and try to extract common variables.
 		}
 	}
-	
+
 	/**
 	 * An intersection type pattern is a sequence of type patterns separated by a
 	 * vertical bar ('&').
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class Intersection extends TypePattern {
 		public final List<TypePattern> elements;
-		
+
 
 		public Intersection(List<TypePattern> elements,
 				Attribute... attributes) {
@@ -297,7 +297,7 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			}
 			return new SyntacticType.Intersection(types, attributes());
 		}
-		
+
 		public void addDeclaredVariables(Collection<String> variables) {
 			// TODO: at some point, we can extend this further to look at the
 			// elements type we have and try to extract common variables.

@@ -30,8 +30,8 @@ package wyrl.core
 // ====================================================================
 //
 // Defines a language of types similar to that found in this paper:
-// 
-// * "Sound and Complete Flow Typing with Unions, Intersections and 
+//
+// * "Sound and Complete Flow Typing with Unions, Intersections and
 //    Negations", David J. Pearce, In Proceedings of VMCAI, 2013.
 
 // ====================================================================
@@ -227,5 +227,5 @@ reduce And{List[bool ub1, [Type... t1s]], List[bool ub2, [Type... t2s]], Type...
 // General Type
 // ====================================================================
 
-define Type as Atom | Or | And | Not | Ref | Meta | Nominal | Term | Set | Bag | List   
+define Type as Atom | Or | And | Not | Ref | Meta | Nominal | Term | Set | Bag | List
 

@@ -1,12 +1,12 @@
 <project name="wyil" default="build">
-  <import file="../../config.xml"/>  
+  <import file="../../config.xml"/>
 
   <target name="compile-wyil">
     <javac memoryMaximumSize="2048m" fork="true" debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true"  classpath="../wycs/src/;../wybs/src/;../wyrl/src">
       <src path="src"/>
       <include name="*/**"/>
-      <exclude name="*/**/package-info.java"/> 
-      <exclude name="wyil/testing/**"/> 
+      <exclude name="*/**/package-info.java"/>
+      <exclude name="wyil/testing/**"/>
     </javac>
   </target>
 
@@ -26,7 +26,7 @@
     <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
     <echo message="============================================="/>
   </target>
-  
+
   <target name="dist">
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">

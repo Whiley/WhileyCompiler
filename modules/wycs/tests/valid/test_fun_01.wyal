@@ -3,7 +3,7 @@ ensures:
    x >= 0 ==> y > 0
 
 assert:
-  forall (int x): 
+  forall (int x):
      x >= 0 ==> abs(x) > 0
 
 

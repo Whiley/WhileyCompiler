@@ -43,39 +43,39 @@ package wyil.lang;
  * overloading. Therefore, a method/function marked with <code>export</code>
  * will generate a function without name mangling.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public interface Modifier {
 	public static final Modifier PUBLIC = new Public();
 	public static final Modifier PROTECTED = new Protected();
 	public static final Modifier PRIVATE = new Private();
 	public static final Modifier NATIVE = new Native();
-	public static final Modifier EXPORT = new Export();		
-	
+	public static final Modifier EXPORT = new Export();
+
 	public static final class Public implements Modifier {
 		private Public() {}
 		public String toString() { return "public"; }
-	}	
-	
+	}
+
 	public static final class Protected implements Modifier {
 		private Protected() {}
 		public String toString() { return "protected"; }
 	}
-	
+
 	public static final class Private implements Modifier {
 		private Private() {}
 		public String toString() { return "private"; }
 	}
-	
+
 	public static final class Native implements Modifier {
 		private Native() {}
 		public String toString() { return "native"; }
 	}
-	
+
 	public static final class Export implements Modifier {
 		private Export() {}
 		public String toString() { return "export"; }
-	}	
+	}
 }

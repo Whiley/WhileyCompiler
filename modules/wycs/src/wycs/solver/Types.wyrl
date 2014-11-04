@@ -28,8 +28,8 @@
 // ====================================================================
 //
 // Defines a language of types similar to that found in this paper:
-// 
-// * "Sound and Complete Flow Typing with Unions, Intersections and 
+//
+// * "Sound and Complete Flow Typing with Unions, Intersections and
 //    Negations", David J. Pearce, In Proceedings of VMCAI, 2013.
 
 // ====================================================================
@@ -116,7 +116,7 @@ term TupleT[Type...]
 reduce TupleT[Type... ts]
 name "TupleType_1"
 rank 0:
-    => VoidT, if VoidT in ts    
+    => VoidT, if VoidT in ts
 
 reduce AndT{TupleT[Type... t1s], TupleT[Type... t2s], Type... ts}
 name "TupleType_2"
@@ -199,7 +199,7 @@ rank 0:
 
 reduce AndT{Proton a1, Proton a2, Type... ts}
 name "AtomType_3"
-rank 1: 
+rank 1:
     => VoidT, if a1 != a2 && !(a2 is AnyT)
 
 // a1 needs to be a quark here, as the rule for tuples is handled

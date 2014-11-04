@@ -39,22 +39,22 @@ import static wyil.lang.Type.*;
  * The Type Parser is used to convert a given string into a type (or a syntax
  * error). This is generally useful for debugging purposes, but it does have
  * other usees as well.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class TypeParser {
 	private int index;
 	private String str;
-	
-	public TypeParser(String str) { 
+
+	public TypeParser(String str) {
 		this.str = str;
 	}
-	
+
 	public Type parse() {
 		return parse(new HashSet<String>());
 	}
-	
+
 	public Type parse(HashSet<String> typeVariables) {
 		Type term = parseFunctionTerm(typeVariables);
 		skipWhiteSpace();
@@ -62,19 +62,19 @@ public class TypeParser {
 				&& (str.charAt(index) == '|')) {
 			// union type
 			match("|");
-			term = Union(term,parse(typeVariables));			
+			term = Union(term,parse(typeVariables));
 			skipWhiteSpace();
 		}
 		return term;
 	}
-	
+
 	public Type parseFunctionTerm(HashSet<String> typeVariables) {
 		Type t = parseNotTerm(typeVariables);
 		if(index >= str.length()) { return t; }
 		char lookahead = str.charAt(index);
 		if(lookahead == '(') {
 			// this is a tuple, not a bracketed type.
-			match("(");		
+			match("(");
 			ArrayList<Type> elems = new ArrayList();
 			elems.add(parse(typeVariables));
 			lookahead = str.charAt(index);
@@ -86,11 +86,11 @@ public class TypeParser {
 			}
 			match(")");
 			skipWhiteSpace();
-			return Function(t,Type.T_VOID,elems);			
+			return Function(t,Type.T_VOID,elems);
 		}
 		return t;
 	}
-	
+
 	public Type parseNotTerm(HashSet<String> typeVariables) {
 		skipWhiteSpace();
 		char lookahead = str.charAt(index);
@@ -178,12 +178,12 @@ public class TypeParser {
 			Type elem = parse(typeVariables);
 			skipWhiteSpace();
 			if(index < str.length() && str.charAt(index) == '-') {
-				// dictionary				
+				// dictionary
 				match("->");
-				Type value = parse(typeVariables);				
+				Type value = parse(typeVariables);
 				match("}");
-				return Map(elem,value);					
-				
+				return Map(elem,value);
+
 			} else if(index < str.length() && str.charAt(index) != '}') {
 				// record
 				HashMap<String,Type> fields = new HashMap<String,Type>();
@@ -202,9 +202,9 @@ public class TypeParser {
 					id = parseIdentifier();
 					fields.put(id, elem);
 					skipWhiteSpace();
-				}								
+				}
 				match("}");
-				return Record(isOpen,fields);					
+				return Record(isOpen,fields);
 			}
 			match("}");
 			return Set(elem,false);
@@ -214,7 +214,7 @@ public class TypeParser {
 			String typeVariable = parseIdentifier();
 			if(typeVariables.contains(typeVariable)) {
 				return Nominal(new NameID(Trie.fromString("$"),
-						typeVariable));				
+						typeVariable));
 			} else {
 				typeVariables = new HashSet<String>(typeVariables);
 				typeVariables.add(typeVariable);
@@ -226,7 +226,7 @@ public class TypeParser {
 				return Recursive(label, t);
 			}
 		}
-			
+
 		}
 	}
 	private String parseIdentifier() {
@@ -243,7 +243,7 @@ public class TypeParser {
 				&& Character.isWhitespace(str.charAt(index))) {
 			index++;
 		}
-	}		
+	}
 	private void match(String match) {
 		skipWhiteSpace();
 		if ((str.length() - index) < match.length()

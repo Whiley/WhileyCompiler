@@ -57,9 +57,9 @@ import wyil.lang.Constant;
  * original source file in question. No effort is made to check whether or not
  * the generated tree is syntactically correct. Subsequent stages of the
  * compiler are responsible for doing this.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class WhileyFileParser {
 	private String filename;
@@ -75,7 +75,7 @@ public class WhileyFileParser {
 	 * Read a <code>WhileyFile</code> from the token stream. If the stream is
 	 * invalid in some way (e.g. contains a syntax error, etc) then a
 	 * <code>SyntaxError</code> is thrown.
-	 * 
+	 *
 	 * @return
 	 */
 	public WhileyFile read() {
@@ -135,11 +135,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse an import declaration, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * ImportDecl ::= Identifier ["from" ('*' | Identifier)] ( ('.' | '..') ('*' | Identifier) )*
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 */
 	private void parseImportDeclaration(WhileyFile wf) {
@@ -225,19 +225,19 @@ public class WhileyFileParser {
 	/**
 	 * Parse a <i>function declaration</i> or <i>method declaration</i>, which
 	 * have the form:
-	 * 
+	 *
 	 * <pre>
 	 * FunctionDeclaration ::= "function" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
-	 * 
+	 *
 	 * MethodDeclaration ::= "method" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
-	 * 
+	 *
 	 * FunctionMethodClause ::= "throws" Type | "requires" Expr | "ensures" Expr
 	 * </pre>
-	 * 
+	 *
 	 * Here, the first type pattern (i.e. before "=>") is referred to as the
 	 * "parameter", whilst the second is referred to as the "return". There are
 	 * three kinds of option clause:
-	 * 
+	 *
 	 * <ul>
 	 * <li><b>Throws clause</b>. This defines the exceptions which may be thrown
 	 * by this function. Multiple clauses may be given, and these are taken
@@ -258,12 +258,12 @@ public class WhileyFileParser {
 	 * conjunction. Furthermore, the convention is to specify the requires
 	 * clause(s) after the others.</li>
 	 * </ul>
-	 * 
+	 *
 	 * <p>
 	 * The following function declaration provides a small example to
 	 * illustrate:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * function max(int x, int y) => (int z)
 	 * // return must be greater than either parameter
@@ -272,7 +272,7 @@ public class WhileyFileParser {
 	 * ensures x == z || y == z:
 	 *     ...
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, we see the specification for the well-known <code>max()</code>
 	 * function which returns the largest of its parameters. This does not throw
@@ -389,28 +389,28 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a type declaration in a Whiley source file, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * "type" Identifier "is" TypePattern ["where" Expr]
 	 * </pre>
-	 * 
+	 *
 	 * Here, the type pattern specifies a type which may additionally be adorned
 	 * with variable names. The "where" clause is optional and is often referred
 	 * to as the type's "constraint". Variables defined within the type pattern
 	 * may be used within this constraint expressions. A simple example to
 	 * illustrate is:
-	 * 
+	 *
 	 * <pre>
 	 * type nat is (int x) where x >= 0
 	 * </pre>
-	 * 
+	 *
 	 * Here, we are defining a <i>constrained type</i> called <code>nat</code>
 	 * which represents the set of natural numbers (i.e the non-negative
 	 * integers). Type declarations may also have modifiers, such as
 	 * <code>public</code> and <code>private</code>.
-	 * 
+	 *
 	 * @see wyc.lang.WhileyFile.Type
-	 * 
+	 *
 	 * @param wf
 	 *            --- The Whiley file in which this declaration is defined.
 	 * @param modifiers
@@ -449,23 +449,23 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a constant declaration in a Whiley source file, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * ConstantDeclaration ::= "constant" Identifier "is"Expr
 	 * </pre>
-	 * 
+	 *
 	 * A simple example to illustrate is:
-	 * 
+	 *
 	 * <pre>
 	 * constant PI is 3.141592654
 	 * </pre>
-	 * 
+	 *
 	 * Here, we are defining a constant called <code>PI</code> which represents
 	 * the decimal value "3.141592654". Constant declarations may also have
 	 * modifiers, such as <code>public</code> and <code>private</code>.
-	 * 
+	 *
 	 * @see wyc.lang.WhileyFile.Constant
-	 * 
+	 *
 	 * @param wf
 	 *            --- The Whiley file in which this declaration is defined.
 	 * @param modifiers
@@ -498,7 +498,7 @@ public class WhileyFileParser {
 	 * (assuming their is one). An error occurs if a subsequent statement is
 	 * reached with an indentation level <i>greater</i> than the block's
 	 * indentation level.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -556,7 +556,7 @@ public class WhileyFileParser {
 	/**
 	 * Determine the indentation as given by the Indent token at this point (if
 	 * any). If none, then <code>null</code> is returned.
-	 * 
+	 *
 	 * @return
 	 */
 	private Indent getIndent() {
@@ -579,22 +579,22 @@ public class WhileyFileParser {
 	 * expression does. Compound statements (e.g. <code>if</code>,
 	 * <code>while</code>, etc) themselves contain blocks of statements and are
 	 * not (generally) terminated by a <code>NewLine</code>.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * 
+	 *
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this statement.
-	 * 
+	 *
 	 * @param indent
 	 *            The indent level for the current statement. This is needed in
 	 *            order to constraint the indent level for any sub-blocks (e.g.
 	 *            for <code>while</code> or <code>if</code> statements).
-	 * 
+	 *
 	 * @return
 	 */
 	private Stmt parseStatement(WhileyFile wf, HashSet<String> environment,
@@ -673,14 +673,14 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a variable declaration statement which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * Type Identifier ['=' Expr] NewLine
 	 * </pre>
-	 * 
+	 *
 	 * The optional <code>Expression</code> assignment is referred to as an
 	 * <i>initialiser</i>.
-	 * 
+	 *
 	 * @param type
 	 *            The declared type for the variable, which will have already
 	 *            been parsed when disambiguating this statement from another.
@@ -692,15 +692,15 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this statement.
-	 * 
+	 *
 	 * @see wyc.lang.Stmt.VariableDeclaration
-	 * 
+	 *
 	 * @return
 	 */
 	private Stmt.VariableDeclaration parseVariableDeclaration(int start,
 			TypePattern pattern, WhileyFile wf, HashSet<String> environment) {
-		HashSet<String> originalEnvironment = (HashSet) environment.clone(); 
-				
+		HashSet<String> originalEnvironment = (HashSet) environment.clone();
+
 		// Ensure at least one variable is defined by this pattern.
 		ArrayList<String> vars = new ArrayList<String>();
 		pattern.addDeclaredVariables(vars);
@@ -733,15 +733,15 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a return statement, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * ReturnStmt ::= "return" [Expr] NewLine
 	 * </pre>
-	 * 
+	 *
 	 * The optional expression is referred to as the <i>return value</i>. Note
 	 * that, the returned expression (if there is one) must begin on the same
 	 * line as the return statement itself.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -750,7 +750,7 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this statement.
-	 * 
+	 *
 	 * @see wyc.lang.Stmt.Return
 	 * @return
 	 */
@@ -781,11 +781,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse an assert statement, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * AssertStmt ::= "assert" Expr
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -794,7 +794,7 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this statement.
-	 * 
+	 *
 	 * @see wyc.lang.Stmt.Debug
 	 * @return
 	 */
@@ -815,11 +815,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse an assume statement, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * AssumeStmt ::= "assume" Expr
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -828,7 +828,7 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this statement.
-	 * 
+	 *
 	 * @see wyc.lang.Stmt.Debug
 	 * @return
 	 */
@@ -849,16 +849,16 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a break statement, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * BreakStmt ::= "break"
 	 * </pre>
-	 * 
+	 *
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this statement.
-	 * 
+	 *
 	 * @see wyc.lang.Stmt.Debug
 	 * @return
 	 */
@@ -874,11 +874,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a debug statement, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * DebugStmt ::= "debug" Expr
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -887,7 +887,7 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this statement.
-	 * 
+	 *
 	 * @see wyc.lang.Stmt.Debug
 	 * @return
 	 */
@@ -908,13 +908,13 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a do-while statement, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * DoWhileStmt ::= "do" ':' NewLine Block "where" Expr ("where" Expr)*
 	 * </pre>
-	 * 
+	 *
 	 * @see wyc.lang.Stmt.DoWhile
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -928,7 +928,7 @@ public class WhileyFileParser {
 	 *            determine permissible indent level of child block(s).
 	 * @return
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	private Stmt parseDoWhileStatement(WhileyFile wf,
 			HashSet<String> environment, Indent indent) {
@@ -954,17 +954,17 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a classical if-else statement, which is has the form:
-	 * 
+	 *
 	 * <pre>
 	 * "if" Expr ':' NewLine Block ["else" ':' NewLine Block]
 	 * </pre>
-	 * 
+	 *
 	 * The first expression is referred to as the <i>condition</i>, while the
 	 * first block is referred to as the <i>true branch</i>. The optional second
 	 * block is referred to as the <i>false branch</i>.
-	 * 
+	 *
 	 * @see wyc.lang.Stmt.IfElse
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1015,13 +1015,13 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a while statement, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * WhileStmt ::= "while" Expr ("where" Expr)* ':' NewLine Block
 	 * </pre>
-	 * 
+	 *
 	 * @see wyc.lang.Stmt.While
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1035,7 +1035,7 @@ public class WhileyFileParser {
 	 *            determine permissible indent level of child block(s).
 	 * @return
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	private Stmt parseWhileStatement(WhileyFile wf,
 			HashSet<String> environment, Indent indent) {
@@ -1059,11 +1059,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a for statement, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * ForStmt ::= "for" VariablePattern "in" Expr ("where" Expr)* ':' NewLine Block
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, the variable pattern allows variables to be declared without types.
 	 * The type of such variables is automatically inferred from the source
@@ -1072,7 +1072,7 @@ public class WhileyFileParser {
 	 * using a conjunction. The combined invariant defines a condition which
 	 * must be true on every iteration of the loop.
 	 * </p>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1127,16 +1127,16 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a skip statement, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * SkipStmt ::= "skip"
 	 * </pre>
-	 * 
+	 *
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this statement.
-	 * 
+	 *
 	 * @see wyc.lang.Stmt.Debug
 	 * @return
 	 */
@@ -1152,15 +1152,15 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a switch statement, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * SwitchStmt ::= "switch" Expr ':' NewLine CaseStmt+
-	 * 
+	 *
 	 * CaseStmt ::= "case" UnitExpr (',' UnitExpr)* ':' NewLine Block
 	 * </pre>
-	 * 
+	 *
 	 * @see wyc.lang.Stmt.Switch
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1174,7 +1174,7 @@ public class WhileyFileParser {
 	 *            determine permissible indent level of child block(s).
 	 * @return
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	private Stmt parseSwitchStatement(WhileyFile wf,
 			HashSet<String> environment, Indent indent) {
@@ -1199,7 +1199,7 @@ public class WhileyFileParser {
 	 * encountered (assuming their is one). An error occurs if a subsequent
 	 * statement is reached with an indentation level <i>greater</i> than the
 	 * block's indentation level.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1256,11 +1256,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a case Statement, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * CaseStmt ::= "case" NonTupleExpr (',' NonTupleExpression)* ':' NewLine Block
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1298,15 +1298,15 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a try-catch statement, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * SwitchStmt ::= "try" ':' Block CatchBlock+
-	 * 
+	 *
 	 * CatchBlock ::= "catch" TypeParameter ':' NewLine Block
 	 * </pre>
-	 * 
+	 *
 	 * @see wyc.lang.Stmt.TryCatch
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1320,7 +1320,7 @@ public class WhileyFileParser {
 	 *            determine permissible indent level of child block(s).
 	 * @return
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	private Stmt parseTryCatchStatement(WhileyFile wf,
 			HashSet<String> environment, Indent indent) {
@@ -1353,16 +1353,16 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a throe statement, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * ThrowStmt ::= "throw" Expr
 	 * </pre>
-	 * 
+	 *
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this statement.
-	 * 
+	 *
 	 * @see wyc.lang.Stmt.Debug
 	 * @return
 	 */
@@ -1383,28 +1383,28 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse an assignment statement, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * AssignStmt ::= LVal '=' Expr
 	 * </pre>
-	 * 
+	 *
 	 * Here the <code>lhs</code> must be an <code>LVal</code> --- that is, an
 	 * expression permitted on the left-side of an assignment. The following
 	 * illustrates different possible assignment statements:
-	 * 
+	 *
 	 * <pre>
 	 * x = y       // variable assignment
 	 * x.f = y     // field assignment
 	 * x[i] = y    // list assignment
 	 * x[i].f = y  // compound assignment
 	 * </pre>
-	 * 
+	 *
 	 * The last assignment here illustrates that the left-hand side of an
 	 * assignment can be arbitrarily complex, involving nested assignments into
 	 * lists and records.
-	 * 
+	 *
 	 * @see wyc.lang.Stmt.Assign
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1413,7 +1413,7 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this block.
-	 * 
+	 *
 	 * @return
 	 */
 	private Stmt parseAssignmentStatement(WhileyFile wf,
@@ -1431,11 +1431,11 @@ public class WhileyFileParser {
 	 * Parse an "lval" expression, which is a subset of the possible expressions
 	 * forms permitted on the left-hand side of an assignment. LVals are of the
 	 * form:
-	 * 
+	 *
 	 * <pre>
 	 * LVal ::= LValTerm (',' LValTerm)* ')'
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1444,7 +1444,7 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr.LVal parseLVal(WhileyFile wf, HashSet<String> environment) {
@@ -1469,11 +1469,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a rational lval, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * RationalLVal ::= TermLVal [ '/' TermLVal ]
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1482,7 +1482,7 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr.LVal parseRationalLVal(WhileyFile wf,
@@ -1500,15 +1500,15 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse an access lval, which is of the form:
-	 * 
+	 *
 	 * <pre>
-	 * AccessLVal ::= TermLVal 
+	 * AccessLVal ::= TermLVal
 	 * 			 | AccessLVal '.' Identifier     // Field assignment
 	 *           | AccessLVal '->' Identifier // dereference field assigmment
-	 *           | '*' AccessLVal  // dereference assigmment 
-	 *           | AccessLVal '[' Expr ']' // index assigmment           
+	 *           | '*' AccessLVal  // dereference assigmment
+	 *           | AccessLVal '[' Expr ']' // index assigmment
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1517,7 +1517,7 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr.LVal parseAccessLVal(WhileyFile wf, HashSet<String> environment) {
@@ -1534,7 +1534,7 @@ public class WhileyFileParser {
 				Expr rhs = parseAdditiveExpression(wf, environment, true);
 				match(RightSquare);
 				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start, index - 1));
-				break;			
+				break;
 			case MinusGreater:
 				lhs = new Expr.Dereference(lhs, sourceAttr(start, index - 1));
 				// Fall Through
@@ -1551,12 +1551,12 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse an lval term, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * TermLVal ::= Identifier             // Variable assignment
 	 *           | '(' LVal ')'            // Bracketed assignment
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1565,7 +1565,7 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr.LVal parseLValTerm(WhileyFile wf, HashSet<String> environment) {
@@ -1597,15 +1597,15 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a tuple expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * TupleExpr::= Expr (',' Expr)*
 	 * </pre>
-	 * 
+	 *
 	 * Tuple expressions are expressions which can return multiple values (i.e.
 	 * tuples). In many situations, tuple expressions are not permitted since
 	 * tuples cannot be used in that context.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1625,7 +1625,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseMultiExpression(WhileyFile wf,
@@ -1650,17 +1650,17 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a unit expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * UnitExpr::= LogicalExpression
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * A unit expression is essentially any expression, except that it is not
 	 * allowed to be a tuple expression. More specifically, it cannot be
 	 * followed by ',' (e.g. because the enclosing context uses ',').
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * As an example consider a record expression, such as
 	 * <code>{x: e1, y: e2}</code>. Here, the sub-expression "e1" must be a
@@ -1668,7 +1668,7 @@ public class WhileyFileParser {
 	 * the next field "y". Of course, e1 can be a tuple expression if we use
 	 * brackets as these help disambiguate the context.
 	 * </p>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1692,16 +1692,16 @@ public class WhileyFileParser {
 	 */
 	private Expr parseUnitExpression(WhileyFile wf,
 			HashSet<String> environment, boolean terminated) {
-		return parseLogicalExpression(wf, environment, terminated);		
+		return parseLogicalExpression(wf, environment, terminated);
 	}
 
 	/**
 	 * Parse a logical expression of the form:
-	 * 
+	 *
 	 * <pre>
 	 * Expr ::= AndOrExpr [ "==>" UnitExpr]
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1721,7 +1721,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseLogicalExpression(WhileyFile wf,
@@ -1773,11 +1773,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a logical expression of the form:
-	 * 
+	 *
 	 * <pre>
 	 * Expr ::= ConditionExpr [ ( "&&" | "||" ) Expr]
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1797,7 +1797,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseAndOrExpression(WhileyFile wf,
@@ -1827,7 +1827,7 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse an bitwise "inclusive or" expression
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1847,7 +1847,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseBitwiseOrExpression(WhileyFile wf,
@@ -1866,7 +1866,7 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse an bitwise "exclusive or" expression
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1886,7 +1886,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseBitwiseXorExpression(WhileyFile wf,
@@ -1905,7 +1905,7 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse an bitwise "and" expression
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1925,7 +1925,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseBitwiseAndExpression(WhileyFile wf,
@@ -1944,7 +1944,7 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a condition expression.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1964,7 +1964,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseConditionExpression(WhileyFile wf,
@@ -2033,15 +2033,15 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a quantifier expression, which is of the form:
-	 * 
+	 *
 	 * <pre>
-	 * QuantExpr ::= ("no" | "some" | "all") 
-	 *               '{' 
-	 *                   Identifier "in" Expr (',' Identifier "in" Expr)+ 
+	 * QuantExpr ::= ("no" | "some" | "all")
+	 *               '{'
+	 *                   Identifier "in" Expr (',' Identifier "in" Expr)+
 	 *                   '|' LogicalExpr
 	 *               '}'
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -2061,7 +2061,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @param environment
 	 * @return
 	 */
@@ -2126,11 +2126,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse an append expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * AppendExpr ::= RangeExpr ( "++" RangeExpr)*
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -2150,7 +2150,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseAppendExpression(WhileyFile wf,
@@ -2169,11 +2169,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a range expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * RangeExpr ::= ShiftExpr [ ".." ShiftExpr ]
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -2193,7 +2193,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseRangeExpression(WhileyFile wf,
@@ -2212,11 +2212,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a shift expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * ShiftExpr ::= AdditiveExpr [ ( "<<" | ">>" ) AdditiveExpr ]
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -2236,7 +2236,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseShiftExpression(WhileyFile wf,
@@ -2265,7 +2265,7 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse an additive expression.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -2285,7 +2285,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseAdditiveExpression(WhileyFile wf,
@@ -2317,7 +2317,7 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a multiplicative expression.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -2337,7 +2337,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseMultiplicativeExpression(WhileyFile wf,
@@ -2370,23 +2370,23 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse an <i>access expression</i>, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * AccessExpr::= PrimaryExpr
 	 *            | AccessExpr '[' AdditiveExpr ']'
-	 *            | AccessExpr '[' AdditiveExpr ".." AdditiveExpr ']'                   
+	 *            | AccessExpr '[' AdditiveExpr ".." AdditiveExpr ']'
 	 *            | AccessExpr '.' Identifier
 	 *            | AccessExpr '.' Identifier '(' [ Expr (',' Expr)* ] ')'
 	 *            | AccessExpr "=>" Identifier
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Access expressions are challenging for several reasons. First, they are
 	 * <i>left-recursive</i>, making them more difficult to parse correctly.
 	 * Secondly, there are several different forms above and, of these, some
 	 * generate multiple AST nodes as well (see below).
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This parser attempts to construct the most accurate AST possible and this
 	 * requires disambiguating otherwise identical forms. For example, an
@@ -2398,7 +2398,7 @@ public class WhileyFileParser {
 	 * on the fact any sequence of field-accesses must begin with a local
 	 * variable.
 	 * </p>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -2418,7 +2418,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseAccessExpression(WhileyFile wf,
@@ -2504,7 +2504,7 @@ public class WhileyFileParser {
 				// invocation requires a sequence of identifiers where the first
 				// is not a declared variable name.
 				Path.ID id = parsePossiblePathID(lhs, environment);
-				
+
 				if (tryAndMatch(terminated, LeftBrace) != null) {
 					// This indicates a direct or indirect invocation. First,
 					// parse arguments to invocation
@@ -2542,7 +2542,7 @@ public class WhileyFileParser {
 	 * Attempt to parse a possible module identifier. This will reflect a true
 	 * module identifier only if the root variable is not in the given
 	 * environment.
-	 * 
+	 *
 	 * @param src
 	 * @param environment
 	 * @return
@@ -2565,11 +2565,11 @@ public class WhileyFileParser {
 			}
 		} else {
 			return null;
-		} 
+		}
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -2589,7 +2589,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseTermExpression(WhileyFile wf,
@@ -2680,12 +2680,12 @@ public class WhileyFileParser {
 	/**
 	 * Parse an expression beginning with a left brace. This is either a cast or
 	 * bracketed expression:
-	 * 
+	 *
 	 * <pre>
 	 * BracketedExpr ::= '(' Type ')' Expr
 	 *                      | '(' Expr ')'
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * The challenge here is to disambiguate the two forms (which is similar to
 	 * the problem of disambiguating a variable declaration from e.g. an
@@ -2696,7 +2696,7 @@ public class WhileyFileParser {
 	 * that the expression following a cast *must* reside on the same line as
 	 * the cast.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * A cast can be followed by the start of any valid expression. This
 	 * includes: identifiers (e.g. "(T) x"), braces of various kinds (e.g.
@@ -2719,16 +2719,16 @@ public class WhileyFileParser {
 	 * Unfortunately, there are two problematic casts: '-' and '('. In Java, the
 	 * problem of '-' is resolved carefully as follows:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * CastExpr::= ( PrimitiveType Dimsopt ) UnaryExpression
 	 *                 | ( ReferenceType ) UnaryExpressionNotPlusMinus
 	 * </pre>
-	 * 
+	 *
 	 * See JLS 15.16 (Cast Expressions). This means that, in cases where we can
 	 * be certain we have a type, then a general expression may follow;
 	 * otherwise, only a restricted expression may follow.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -2748,7 +2748,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseBracketedExpression(WhileyFile wf,
@@ -2779,7 +2779,7 @@ public class WhileyFileParser {
 			}
 		}
 		// We still may have either a cast or a bracketed expression, and we
-		// cannot tell which yet.  
+		// cannot tell which yet.
 		index = start;
 		match(LeftBrace);
 		Expr e = parseMultiExpression(wf, environment, true);
@@ -2788,12 +2788,12 @@ public class WhileyFileParser {
 		// Now check whether this must be an expression, or could still be a
 		// cast.
 		if(!mustParseAsExpr(e)) {
-			
+
 			// At this point, we may still have a cast. Therefore, we now
 			// examine what follows to see whether this is a cast or bracketed
 			// expression. See JavaDoc comments above for more on this. What we
 			// do is first skip any whitespace, and then see what we've got.
-			int next = skipLineSpace(index);		
+			int next = skipLineSpace(index);
 			if (next < tokens.size()) {
 				Token lookahead = tokens.get(next);
 
@@ -2817,14 +2817,14 @@ public class WhileyFileParser {
 					// This is because the trailing vertical bar makes it look
 					// like this is a cast.
 
-				case LeftBrace:			
+				case LeftBrace:
 				case VerticalBar:
 				case Shreak:
 				case Identifier: {
 					// Ok, this must be cast so back tract and reparse
 					// expression as a type.
 					index = start; // backtrack
-					SyntacticType type = parseUnitType();				
+					SyntacticType type = parseUnitType();
 					// Now, parse cast expression
 					e = parseUnitExpression(wf, environment, terminated);
 					return new Expr.Cast(type, e, sourceAttr(start, index - 1));
@@ -2841,11 +2841,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a list constructor expression, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * ListExpr ::= '[' [ Expr (',' Expr)* ] ']'
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -2865,7 +2865,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseListExpression(WhileyFile wf,
@@ -2894,22 +2894,22 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a record, set or map constructor, which are of the form:
-	 * 
+	 *
 	 * <pre>
 	 * RecordExpr ::= '{' Identifier ':' Expr (',' Identifier ':' Expr)* '}'
 	 * SetExpr   ::= '{' [ Expr (',' Expr)* ] '}'
 	 * MapExpr   ::= '{' Expr "=>" Expr ( ',' Expr "=>" Expr)* '}'
-	 * SetComprehension ::= '{' Expr '|' 
+	 * SetComprehension ::= '{' Expr '|'
 	 * 							Identifier "in" Expr (',' Identifier "in" Expr)*
 	 *                          [',' Expr] '}'
 	 * </pre>
-	 * 
+	 *
 	 * Disambiguating these three forms is relatively straightforward. We parse
 	 * the left curly brace. Then, if what follows is a right curly brace then
 	 * we have a set expression. Otherwise, we parse the first expression, then
 	 * examine what follows. If it's ':', then we have a record expression;
 	 * otherwise, we have a set expression.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -2929,7 +2929,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseRecordOrSetOrMapExpression(WhileyFile wf,
@@ -2976,14 +2976,14 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a record constructor, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * RecordExpr ::= '{' Identifier ':' Expr (',' Identifier ':' Expr)* '}'
 	 * </pre>
-	 * 
+	 *
 	 * During parsing, we additionally check that each identifier is unique;
 	 * otherwise, an error is reported.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -3003,7 +3003,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseRecordExpression(WhileyFile wf,
@@ -3043,11 +3043,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a map constructor expression, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * MapExpr::= '{' Expr "=>" Expr (',' Expr "=>" Expr)* } '}'
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -3067,7 +3067,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseMapExpression(WhileyFile wf, HashSet<String> environment,
@@ -3100,11 +3100,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a set constructor expression, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * SetExpr::= '{' [ Expr (',' Expr)* } '}'
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -3124,7 +3124,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseSetExpression(WhileyFile wf, HashSet<String> environment,
@@ -3154,13 +3154,13 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a set comprehension expression, which is of the form:
-	 * 
+	 *
 	 * <pre>
-	 * 	SetComprehension ::= '{' Expr '|' 
+	 * 	SetComprehension ::= '{' Expr '|'
 	 *      					Identifier "in" Expr (',' Identifier "in" Expr)*
 	 *                          [',' Expr] '}'
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -3180,7 +3180,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseSetComprehension(WhileyFile wf,
@@ -3203,8 +3203,8 @@ public class WhileyFileParser {
 		// Clone the environment so that we can include those variables which
 		// are declared by the comprehension.
 		environment = new HashSet<String>(environment);
-		
-		// Match zero or more source expressions separated by commas. 
+
+		// Match zero or more source expressions separated by commas.
 		Expr condition = null;
 		ArrayList<Pair<String, Expr>> srcs = new ArrayList<Pair<String, Expr>>();
 		boolean firstTime = true;
@@ -3220,7 +3220,7 @@ public class WhileyFileParser {
 			// However, expression is guaranteed to be terminated either by '}'
 			// or by ','.
 			Expr e = parseUnitExpression(wf, environment, true);
-			
+
 			if (e instanceof Expr.BinOp
 					&& ((Expr.BinOp) e).op == Expr.BOp.ELEMENTOF
 					&& ((Expr.BinOp) e).lhs instanceof Expr.ConstantAccess) {
@@ -3257,12 +3257,12 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a new expression, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * TermExpr::= ...
 	 *                 |  "new" Expr
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -3282,7 +3282,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseNewExpression(WhileyFile wf, HashSet<String> environment,
@@ -3295,12 +3295,12 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a length of expression, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * TermExpr::= ...
 	 *                 |  '|' Expr '|'
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -3320,7 +3320,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseLengthOfExpression(WhileyFile wf,
@@ -3340,12 +3340,12 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a negation expression, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * TermExpr::= ...
 	 *                 |  '-' Expr
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -3365,7 +3365,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseNegationExpression(WhileyFile wf,
@@ -3392,14 +3392,14 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse an invocation expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * InvokeExpr::= Identifier '(' [ Expr (',' Expr)* ] ')'
 	 * </pre>
-	 * 
+	 *
 	 * Observe that this when this function is called, we're assuming that the
 	 * identifier and opening brace has already been matched.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -3419,7 +3419,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseInvokeExpression(WhileyFile wf,
@@ -3427,7 +3427,7 @@ public class WhileyFileParser {
 			boolean terminated) {
 		// First, parse the arguments to this invocation.
 		ArrayList<Expr> args = parseInvocationArguments(wf, environment);
-		
+
 		// Second, determine what kind of invocation we have. If the name of the
 		// method is a local variable, then it must be an indirect invocation on
 		// this variable.
@@ -3441,20 +3441,20 @@ public class WhileyFileParser {
 			// unqualified direct invocation
 			return new Expr.AbstractInvoke(name.text, null, args, sourceAttr(
 					start, index - 1));
-		}			
+		}
 	}
 
 	/**
 	 * Parse a sequence of arguments separated by commas that ends in a
 	 * right-brace:
-	 * 
+	 *
 	 * <pre>
 	 * ArgumentList ::= [ Expr (',' Expr)* ] ')'
 	 * </pre>
-	 * 
+	 *
 	 * Note, when this function is called we're assuming the left brace was
 	 * already parsed.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -3474,7 +3474,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private ArrayList<Expr> parseInvocationArguments(WhileyFile wf,
@@ -3502,12 +3502,12 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a logical not expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * TermExpr::= ...
 	 *       | '!' Expr
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -3527,7 +3527,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseLogicalNotExpression(WhileyFile wf,
@@ -3544,12 +3544,12 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a dereference expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * TermExpr::= ...
 	 *                 | '*' Expr
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -3558,7 +3558,7 @@ public class WhileyFileParser {
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
 	 *            expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseDereferenceExpression(WhileyFile wf,
@@ -3571,16 +3571,16 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a lambda or address expression, which have the form:
-	 * 
+	 *
 	 * <pre>
 	 * TermExpr::= ...
 	 *                 | '&' '(' [Type Identifier (',' Type Identifier)*] '->' Expr ')'
 	 *                 | '&' Identifier [ '(' Type Identifier (',' Type Identifier)* ')']
 	 * </pre>
-	 * 
+	 *
 	 * Disambiguating these two forms is relatively straightforward, and we just
 	 * look to see what follows the '&'.
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -3600,7 +3600,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseLambdaOrAddressExpression(WhileyFile wf,
@@ -3618,12 +3618,12 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a lambda expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * TermExpr::= ...
 	 *                 |  '&' '(' [Type Identifier (',' Type Identifier)*] '->' Expr ')'
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -3643,7 +3643,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseLambdaExpression(WhileyFile wf,
@@ -3681,12 +3681,12 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse an address expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * TermExpr::= ...
 	 *                 | '&' Identifier [ '(' Type Identifier (',' Type Identifier)* ')']
 	 * </pre>
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -3706,7 +3706,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr parseAddressExpression(WhileyFile wf,
@@ -3743,12 +3743,12 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a bitwise complement expression, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * TermExpr::= ...
 	 *                 | '~' Expr// bitwise complement
 	 * </pre>
-	 * 
+	 *
 	 * @param environment
 	 *            The set of declared variables visible in the enclosing scope.
 	 *            This is necessary to identify local variables within this
@@ -3764,7 +3764,7 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 * 
+	 *
 	 * @return
 	 */
 
@@ -3783,7 +3783,7 @@ public class WhileyFileParser {
 	 * SyntacticType *only* if what it finds *cannot* be parsed as an
 	 * expression, but can be parsed as a type. Otherwise, the state is left
 	 * unchanged.
-	 * 
+	 *
 	 * @return An instance of SyntacticType or null.
 	 */
 	public SyntacticType parseDefiniteType() {
@@ -3807,7 +3807,7 @@ public class WhileyFileParser {
 	 * expression). However, some types are not also expressions (e.g.
 	 * <code>int</code>, <code>{int f}</code>, <code>&int</code>, etc).
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This function *must* return false if what the given type could not be
 	 * parsed as an expression. However, if what it can be parsed as an
@@ -3816,7 +3816,7 @@ public class WhileyFileParser {
 	 * beginning of a statement (i.e. to disambiguate variable declarations), or
 	 * after matching a left brace (i.e. to disambiguate casts).
 	 * </p>
-	 * 
+	 *
 	 * @param index
 	 *            Position in the token stream to begin looking from.
 	 * @return
@@ -3900,7 +3900,7 @@ public class WhileyFileParser {
 	 * <code>(x.y.f)</code> could be a type if e.g. <code>x.y</code> is a fully
 	 * qualified file and <code>f</code> a named item within that.
 	 * </p>
-	 * 
+	 *
 	 * @param e Expression to be checked.
 	 * @return
 	 */
@@ -3970,14 +3970,14 @@ public class WhileyFileParser {
 			return false; // dead-code
 		}
 	}
-	
+
 	/**
 	 * Attempt to parse something which maybe a type pattern, or an expression.
 	 * The semantics of this function dictate that it returns an instanceof
 	 * TypePattern *only* if what it finds *cannot* be parsed as an expression,
 	 * but can be parsed as a type pattern. Otherwise, the state is left
 	 * unchanged.
-	 * 
+	 *
 	 * @param environment
 	 *            Contains the set of variables previously declared in the
 	 *            current type pattern. This is essentially used as a record in
@@ -3994,7 +3994,7 @@ public class WhileyFileParser {
 	 *            where terminated is true is when parsing a type surrounded in
 	 *            braces. In such case, we know the right-brace will always
 	 *            terminate this type.
-	 * 
+	 *
 	 * @return An instance of TypePattern or null.
 	 */
 	public TypePattern parsePossibleTypePattern(HashSet<String> environment,
@@ -4032,7 +4032,7 @@ public class WhileyFileParser {
 	 * valid type and expression). However, some types are not also expressions
 	 * (e.g. <code>int</code>, <code>{int f}</code>, <code>&int</code>, etc).
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * This function *must* return false if what the given pattern could not be
 	 * parsed as an expression. However, if what it can be parsed as an
@@ -4041,7 +4041,7 @@ public class WhileyFileParser {
 	 * beginning of a statement (i.e. to disambiguate variable declarations), or
 	 * after matching a left brace (i.e. to disambiguate casts).
 	 * </p>
-	 * 
+	 *
 	 * @param index
 	 *            Position in the token stream to begin looking from.
 	 * @return
@@ -4081,13 +4081,13 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse top-level type pattern, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * TypePattern ::= Type Ident
 	 *              |  TypePattern [Ident]  ( ',' TypePattern [Ident] )*
 	 *              |  TypePattern [Ident]  '/' TypePattern [Ident]
 	 * </pre>
-	 * 
+	 *
 	 * @param environment
 	 *            Contains the set of variables previously declared in the
 	 *            current type pattern. This is essentially used as a record in
@@ -4112,11 +4112,11 @@ public class WhileyFileParser {
 
 		TypePattern leaf = parseUnionTypePattern(environment, terminated);
 		leaf.addDeclaredVariables(environment);
-		
+
 		if (tryAndMatch(terminated, Comma) != null) {
 			// Ok, this is a tuple type pattern
 			ArrayList<TypePattern> result = new ArrayList<TypePattern>();
-			result.add(leaf);			
+			result.add(leaf);
 			do {
 				leaf = parseUnionTypePattern(environment, terminated);
 				leaf.addDeclaredVariables(environment);
@@ -4135,11 +4135,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a uniontype pattern "compound", which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * UnionTypePattern ::= IntersectionTypePattern ('|' IntersectionTypePattern)*
 	 * </pre>
-	 * 
+	 *
 	 * @param environment
 	 *            Contains the set of variables previously declared in the
 	 *            current type pattern. This is essentially used as a record in
@@ -4156,7 +4156,7 @@ public class WhileyFileParser {
 	 *            where terminated is true is when parsing a type surrounded in
 	 *            braces. In such case, we know the right-brace will always
 	 *            terminate this type.
-	 * 
+	 *
 	 * @return
 	 */
 	public TypePattern parseUnionTypePattern(HashSet<String> environment,
@@ -4181,11 +4181,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse an intersection type pattern, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * IntersectionTypePattern ::= RationalTypePattern ('&' RationalTypePattern)*
 	 * </pre>
-	 * 
+	 *
 	 * @param environment
 	 *            Contains the set of variables previously declared in the
 	 *            current type pattern. This is essentially used as a record in
@@ -4226,11 +4226,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a rational type pattern, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * RationalTypePattern ::= TypePatternTerm '/' TypePatternTerm
 	 * </pre>
-	 * 
+	 *
 	 * @param environment
 	 *            Contains the set of variables previously declared in the
 	 *            current type pattern. This is essentially used as a record in
@@ -4277,11 +4277,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a type pattern leaf, which has the form:
-	 * 
+	 *
 	 * <pre>
 	 * TypePatternTerm ::= Type [Ident]
 	 * </pre>
-	 * 
+	 *
 	 * @param environment
 	 *            Contains the set of variables previously declared in the
 	 *            current type pattern. This is essentially used as a record in
@@ -4356,11 +4356,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a top-level type, which is of the form:
-	 * 
+	 *
 	 * <pre>
-	 * TupleType ::= Type (',' Type)* 
+	 * TupleType ::= Type (',' Type)*
 	 * </pre>
-	 * 
+	 *
 	 * @see wyc.lang.SyntacticType.Tuple
 	 * @return
 	 */
@@ -4381,12 +4381,12 @@ public class WhileyFileParser {
 			return type;
 		}
 	}
-	
+
 	/**
 	 * Parse a unit (i.e. non-tuple type). This method is a place-hold which
 	 * redirects to whatever the appropriate entry point for non-tuple types is.
 	 * Note that tuple types can be parsed, but they must be bracketed.
-	 * 
+	 *
 	 * @return
 	 */
 	private SyntacticType parseUnitType() {
@@ -4394,11 +4394,11 @@ public class WhileyFileParser {
 	}
 	/**
 	 * Parse a union type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * UnionType ::= IntersectionType ('|' IntersectionType)*
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	private SyntacticType parseUnionType() {
@@ -4421,11 +4421,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse an intersection type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * IntersectionType ::= BaseType ('&' BaseType)*
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	private SyntacticType parseIntersectionType() {
@@ -4452,7 +4452,7 @@ public class WhileyFileParser {
 		int start = index;
 		Token token = tokens.get(index);
 		SyntacticType t;
-		
+
 		switch (token.kind) {
 		case Void:
 			return new SyntacticType.Void(sourceAttr(start, index++));
@@ -4496,11 +4496,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a negation type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * NegationType ::= '!' Type
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	private SyntacticType parseNegationType() {
@@ -4512,11 +4512,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a reference type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * ReferenceType ::= '&' Type
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	private SyntacticType parseReferenceType() {
@@ -4530,28 +4530,28 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a bracketed type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * BracketedType ::= '(' Type ')'
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	private SyntacticType parseBracketedType() {
 		int start = index;
 		match(LeftBrace);
 		SyntacticType type = parseType();
-		match(RightBrace);		
+		match(RightBrace);
 		return type;
 	}
 
 	/**
 	 * Parse a list type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * ListType ::= '[' Type ']'
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	private SyntacticType parseListType() {
@@ -4564,19 +4564,19 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a set, map or record type, which are of the form:
-	 * 
+	 *
 	 * <pre>
 	 * SetType ::= '{' Type '}'
 	 * MapType ::= '{' Type "=>" Type '}'
 	 * RecordType ::= '{' Type Identifier (',' Type Identifier)* [ ',' "..." ] '}'
 	 * </pre>
-	 * 
+	 *
 	 * Disambiguating these three forms is relatively straightforward as all
 	 * three must be terminated by a right curly brace. Therefore, after parsing
 	 * the first Type, we simply check what follows. One complication is the
 	 * potential for "mixed types" where the field name and type and intertwined
 	 * (e.g. function read()=>[byte]).
-	 * 
+	 *
 	 * @return
 	 */
 	private SyntacticType parseSetOrMapOrRecordType() {
@@ -4644,11 +4644,11 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a nominal type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * NominalType ::= Identifier ('.' Identifier)*
 	 * </pre>
-	 * 
+	 *
 	 * @see wyc.lang.SyntacticType.Nominal
 	 * @return
 	 */
@@ -4666,17 +4666,17 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a function or method type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * FunctionType ::= "function" [Type (',' Type)* ] "=>" Type [ "throws" Type ]
 	 * MethodType   ::= "method" [Type (',' Type)* ] "=>" Type [ "throws" Type ]
 	 * </pre>
-	 * 
+	 *
 	 * At the moment, it is required that parameters for a function or method
 	 * type are enclosed in braces. In principle, we would like to relax this.
 	 * However, this is difficult to make work because there is not way to
 	 * invoke a function or method without using braces.
-	 * 
+	 *
 	 * @return
 	 */
 	private SyntacticType parseFunctionOrMethodType(boolean isFunction) {
@@ -4740,13 +4740,13 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a potentially mixed-type, which is of the form:
-	 * 
+	 *
 	 * <pre>
 	 * MixedType ::= Type Identifier
 	 *            |  "function" Type Identifier '(' [Type (',' Type)* ] ')' "=>" Type [ "throws" Type ]
 	 *            |  "method" Type Identifier '(' [Type (',' Type)* ] ')' "=>" Type [ "throws" Type ]
 	 * </pre>
-	 * 
+	 *
 	 * @return
 	 */
 	private Pair<SyntacticType, Token> parseMixedType() {
@@ -4792,7 +4792,7 @@ public class WhileyFileParser {
 					// may be part of an enclosing record type and we must
 					// disambiguate
 					// this.
-					ret = parseUnitType();										
+					ret = parseUnitType();
 				} else {
 					// If no return is given, then default to void.
 					ret = new SyntacticType.Void();
@@ -4846,7 +4846,7 @@ public class WhileyFileParser {
 	 * Match a given token kind, whilst moving passed any whitespace encountered
 	 * inbetween. In the case that meet the end of the stream, or we don't match
 	 * the expected token, then an error is thrown.
-	 * 
+	 *
 	 * @param kind
 	 * @return
 	 */
@@ -4864,7 +4864,7 @@ public class WhileyFileParser {
 	 * encountered inbetween. In the case that meet the end of the stream, or we
 	 * don't match the expected tokens in the expected order, then an error is
 	 * thrown.
-	 * 
+	 *
 	 * @param operator
 	 * @return
 	 */
@@ -4888,7 +4888,7 @@ public class WhileyFileParser {
 	 * because it calls <code>checkNotEof()</code>. Thus, it is guaranteed to
 	 * skip any whitespace encountered in between. This is safe because we know
 	 * there is a terminating token still to come.
-	 * 
+	 *
 	 * @param kind
 	 * @return
 	 */
@@ -4909,7 +4909,7 @@ public class WhileyFileParser {
 	 * match, then the index will be unchanged. This latter point is important,
 	 * otherwise we could accidentally gobble up some important indentation. If
 	 * more than one kind is provided then this will try to match any of them.
-	 * 
+	 *
 	 * @param terminated
 	 *            Indicates whether or not this function should be concerned
 	 *            with new lines. The terminated flag indicates whether or not
@@ -4920,7 +4920,7 @@ public class WhileyFileParser {
 	 * @param indent
 	 *            The indentation level to try and match the tokens at.
 	 * @param kinds
-	 * 
+	 *
 	 * @return
 	 */
 	private Token tryAndMatchAtIndent(boolean terminated, Indent indent, Token.Kind... kinds) {
@@ -4931,19 +4931,19 @@ public class WhileyFileParser {
 			if(t != null) {
 				return r;
 			}
-		} 
+		}
 		// backtrack in all failing cases.
 		index = start;
 		return null;
 	}
-	
+
 	/**
 	 * Attempt to match a given token(s), whilst ignoring any whitespace in
 	 * between. Note that, in the case it fails to match, then the index will be
 	 * unchanged. This latter point is important, otherwise we could
 	 * accidentally gobble up some important indentation. If more than one kind
 	 * is provided then this will try to match any of them.
-	 * 
+	 *
 	 * @param terminated
 	 *            Indicates whether or not this function should be concerned
 	 *            with new lines. The terminated flag indicates whether or not
@@ -4952,7 +4952,7 @@ public class WhileyFileParser {
 	 *            greedily consume them (i.e. since we'll eventually run into
 	 *            the terminating symbol).
 	 * @param kinds
-	 * 
+	 *
 	 * @return
 	 */
 	private Token tryAndMatch(boolean terminated, Token.Kind... kinds) {
@@ -4978,7 +4978,7 @@ public class WhileyFileParser {
 	 * whitespace in between. Note that, in the case it fails to match, then the
 	 * index will be unchanged. This latter point is important, otherwise we
 	 * could accidentally gobble up some important indentation.
-	 * 
+	 *
 	 * @param kind
 	 * @return
 	 */
@@ -5025,7 +5025,7 @@ public class WhileyFileParser {
 				syntaxError("unexpected end-of-file",tokens.get(index-1));
 			} else {
 				// I believe this is actually dead-code, since heckNotEof()
-				// won't be called before at least one token is matched. 
+				// won't be called before at least one token is matched.
 				throw new SyntaxError("unexpected end-of-file", filename,
 						0,0);
 			}
@@ -5086,7 +5086,7 @@ public class WhileyFileParser {
 
 	/**
 	 * Define what is considered to be whitespace.
-	 * 
+	 *
 	 * @param token
 	 * @return
 	 */
@@ -5096,7 +5096,7 @@ public class WhileyFileParser {
 
 	/**
 	 * Define what is considered to be linespace.
-	 * 
+	 *
 	 * @param token
 	 * @return
 	 */
@@ -5108,7 +5108,7 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a character from a string of the form 'c' or '\c'.
-	 * 
+	 *
 	 * @param input
 	 * @return
 	 */
@@ -5141,7 +5141,7 @@ public class WhileyFileParser {
 				break;
 			case '\\':
 				c = '\\';
-				break;			
+				break;
 			default:
 				throw new RuntimeException("unrecognised escape character");
 			}
@@ -5151,7 +5151,7 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a string whilst interpreting all escape characters.
-	 * 
+	 *
 	 * @param v
 	 * @return
 	 */
@@ -5214,7 +5214,7 @@ public class WhileyFileParser {
 	 * Parse a token representing a byte value. Every such token is a sequence
 	 * of one or more binary digits ('0' or '1') followed by 'b'. For example,
 	 * "00110b" is parsed as the byte value 6.
-	 * 
+	 *
 	 * @param input
 	 *            The token representing the byte value.
 	 * @return
@@ -5261,9 +5261,9 @@ public class WhileyFileParser {
 	 * Represents a given amount of indentation. Specifically, a count of tabs
 	 * and spaces. Observe that the order in which tabs / spaces occurred is not
 	 * retained.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	private static class Indent extends Token {
 		private final int countOfSpaces;
@@ -5296,7 +5296,7 @@ public class WhileyFileParser {
 		 * Test whether this indentation is considered "less than or equivalent"
 		 * to another indentation. For example, an indentation of 2 spaces is
 		 * considered less than an indentation of 3 spaces, etc.
-		 * 
+		 *
 		 * @param other
 		 *            The indent to compare against.
 		 * @return
@@ -5311,7 +5311,7 @@ public class WhileyFileParser {
 		 * indentation. For example, an indentation of 3 spaces followed by 1
 		 * tab is considered equivalent to an indentation of 1 tab followed by 3
 		 * spaces, etc.
-		 * 
+		 *
 		 * @param other
 		 *            The indent to compare against.
 		 * @return

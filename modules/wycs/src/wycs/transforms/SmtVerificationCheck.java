@@ -993,9 +993,9 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         String solver = getSolver();
         if(solver == null) {
         	throw new InternalError("Environment variable $SMT_SOLVER not set");
-        } 
+        }
         args.add(getSolver());
-        // Add the solvers custom arguments        
+        // Add the solvers custom arguments
         args.add(file.getAbsolutePath());
         ProcessBuilder pb = new ProcessBuilder(args);
         final Process process = pb.start();

@@ -33,16 +33,16 @@ import wyautl.util.BigRational;
 
 /**
  * Implements a lexiographic ordering of variable expressions.
- * 
+ *
  * @author David J. Pearce
  *
  */
 public class Solver$native {
-	
+
 	/**
 	 * Determine the minimum element from a bag of elements according to an
 	 * internal ordering defined here.
-	 * 
+	 *
 	 * @param automaton
 	 *            The automaton being operated over
 	 * @param rBag
@@ -61,11 +61,11 @@ public class Solver$native {
 		}
 		return (Automaton.Term) automaton.get(least);
 	}
-	
+
 	/**
 	 * Determine the maximum element from a bag of elements according to an
 	 * internal ordering defined here.
-	 * 
+	 *
 	 * @param automaton
 	 *            The automaton being operated over
 	 * @param rBag
@@ -86,7 +86,7 @@ public class Solver$native {
 	}
 
 	public static Automaton.Term maxMultiplicand(Automaton automaton, int rBag) {
-		
+
 		Automaton.Bag bag = (Automaton.Bag) automaton.get(rBag);
 		int greatest = -1;
 		for (int i = 0; i != bag.size(); ++i) {
@@ -96,19 +96,19 @@ public class Solver$native {
 			Automaton.Bag mulChildChildren = (Automaton.Bag) automaton
 					.get(mulChildren.get(1));
 			if (mulChildChildren.size() == 1) {
-				int child = mulChildChildren.get(0);								
-				if (greatest == -1 || compare(automaton, child, greatest) > 0) {					
+				int child = mulChildChildren.get(0);
+				if (greatest == -1 || compare(automaton, child, greatest) > 0) {
 					greatest = child;
 				}
 			}
 		}
-		
+
 		return (Automaton.Term) automaton.get(greatest);
 	}
-	
+
 	/**
 	 * Implements the internal ordering of automaton states.
-	 * 
+	 *
 	 * @param automaton
 	 * @param r1
 	 *            Reference to first state to compare
@@ -126,7 +126,7 @@ public class Solver$native {
 		} else if(s1.kind > s2.kind) {
 			return 1;
 		}
-		
+
 		if(s1 instanceof Automaton.Constant) {
 			Automaton.Constant<Comparable> b1 = (Automaton.Constant) s1;
 			Automaton.Constant<Comparable> b2 = (Automaton.Constant) s2;
@@ -152,24 +152,24 @@ public class Solver$native {
 				}
 			}
 			return 0;
-		}		
-	}	
-	
+		}
+	}
+
 	public static Automaton.Real gcd(Automaton automaton, Automaton.List args) {
 		// PRECONDITION: terms.size() > 0
 		Automaton.Real constant = (Automaton.Real) automaton.get(args.get(0));
 		Automaton.Bag terms = (Automaton.Bag) automaton.get(args.get(1));
-		
+
 		// Must use abs() here, otherwise can end up with negative gcd.
 		// This is problematic for inequalities as it necessitate
 		// changing their sign.
 		BigRational gcd = constant.value.abs();
-		
+
 		if(gcd.equals(BigRational.ZERO)) {
 			// Basically, if there is no coefficient, then ignore it.
 			gcd = null;
-		} 
-		
+		}
+
 		// Now, iterate through each term examining its coefficient and
 		// determining the GreatestCommonDivisor of the whole lot.
 		for(int i=0;i!=terms.size();++i) {
@@ -189,7 +189,7 @@ public class Solver$native {
 				gcd = gcd.gcd(val);
 			}
 		}
-		
+
 		if(gcd == null || gcd.equals(BigRational.ZERO)) {
 			// This is basically a sanity check. A zero coefficient is possible,
 			// and can cause the final gcd to be zero. Likewise, it's possible
@@ -201,11 +201,11 @@ public class Solver$native {
 			return new Automaton.Real(gcd);
 		}
 	}
-	
+
 	/**
 	 * Determine whether a given variable v is contained within a given
 	 * expression e.
-	 * 
+	 *
 	 * @param automaton
 	 * @param args
 	 * @return
@@ -215,12 +215,12 @@ public class Solver$native {
 		int v = (int) args.get(1);
 		return contains(automaton,e,v);
 	}
-	
+
 	public static boolean contains(Automaton automaton, int e, int v) {
-		if(e == v) { return true; } 
-		
+		if(e == v) { return true; }
+
 		Automaton.State s1 = automaton.get(e);
-		
+
 		if(s1 instanceof Automaton.Constant) {
 			return false;
 		} else if(s1 instanceof Automaton.Term) {
@@ -240,7 +240,7 @@ public class Solver$native {
 			return false;
 		}
 	}
-	
+
 	/**
 	 * <p>
 	 * Attempt to bind a quantified expression with a concrete expression,
@@ -248,11 +248,11 @@ public class Solver$native {
 	 * variables. Any such bindings are then used to instantiate the quantified
 	 * expression. For example, consider these expressions:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * in(1) && forall y . !in(y)
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, we want to instantiate the quantifier with the binding
 	 * <code>y=1</code> to produce a contradiction. This function will be called
@@ -279,11 +279,11 @@ public class Solver$native {
 	 * expressions which can be used to bind the quantified variables. To
 	 * understand this, consider a more complex example:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * in(1) && !out(1) && forall x . in(x) ==> out(x)
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Let's assume for this example the concrete expression is
 	 * <code>in(1)</code>. Now, we cannot the quantified expression as a whole
@@ -295,13 +295,13 @@ public class Solver$native {
 	 * it to try and construct an appropriate binding and, if successful,
 	 * instantiate the quantified expression as a whole.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * Finally, it can happen that there are multiple possible bindings for any
 	 * given concrete/quantified expression pairing, and this function should
 	 * return them all. Here is one example:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * in(1,2) && forall x . !in(1,x) ==> !in(x,2)
 	 * </pre>
@@ -311,7 +311,7 @@ public class Solver$native {
 	 * contradiction and, hence, it is critical to explore all possible
 	 * bindings.
 	 * </p>
-	 * 
+	 *
 	 * @param automaton
 	 *            The automaton being operated over.
 	 * @param args
@@ -327,7 +327,7 @@ public class Solver$native {
 		int quantifiedExpression = args.get(2);
 		Automaton.Set quantifiedVarSet = (Automaton.Set) automaton.get(args
 				.get(1));
-		
+
 		// Construct a simple way to identified quantified variables
 		boolean[] quantifiedVariables = new boolean[automaton.nStates()];
 		for (int i = 0; i != quantifiedVarSet.size(); ++i) {
@@ -368,7 +368,7 @@ public class Solver$native {
 							instances.length - 1);
 				}
 			}
-			
+
 			return new Automaton.Set(instances);
 		} else {
 			// No bindings found, so just return empty set
@@ -386,7 +386,7 @@ public class Solver$native {
 	 * of bindings. Eitherway, the search continues until all options are
 	 * exhausted.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * <b>NOTE:</b> this is an expensive operation. To mitigate this, we
 	 * minimise the number of potential trigger points by only descending
@@ -394,7 +394,7 @@ public class Solver$native {
 	 * power of quantifier instantiation, but seems a reasonable restriction at
 	 * this stage.
 	 * </p>
-	 * 
+	 *
 	 * @param automaton
 	 *            The automaton we're traversing.
 	 * @param concreteExpression
@@ -474,7 +474,7 @@ public class Solver$native {
 	 * quantified variables. This binding can still fail if an attempt is made
 	 * to bind one variable to multiple distinct pieces of the concrete
 	 * expression.
-	 * 
+	 *
 	 * @param automaton
 	 *            The automaton we're traversing.
 	 * @param concreteRef
@@ -642,7 +642,7 @@ public class Solver$native {
 	/**
 	 * Create a deep clone of this array list, including the bindings it
 	 * contains.
-	 * 
+	 *
 	 * @param bindings
 	 * @return
 	 */
@@ -667,7 +667,7 @@ public class Solver$native {
 	 * we must know when this occurs in order to ensure the remaining variables
 	 * remain quantified afterwards.
 	 * </p>
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -688,7 +688,7 @@ public class Solver$native {
 
 		/**
 		 * Construct a fresh binding from a given set of quantifiedVariables.
-		 * 
+		 *
 		 * @param quantifiedVariables
 		 */
 		public Binding(boolean[] quantifiedVariables) {
@@ -711,7 +711,7 @@ public class Solver$native {
 
 		/**
 		 * Bind a concrete state reference to a quantified state reference.
-		 * 
+		 *
 		 * @param concreteRef
 		 *            Concrete state bound to
 		 * @param quantifiedRef

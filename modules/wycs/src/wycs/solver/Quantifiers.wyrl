@@ -120,10 +120,10 @@ rank 1:
 // Instantiate function
 // ====================================================================
 
-// Attempt to bind a quantified expression (right) with a concrete 
-// expression (left), generating one or more candidate bindings over one 
-// or more quantified variables. These bindings are then used to 
-// instantiate the quantified expression. 
+// Attempt to bind a quantified expression (right) with a concrete
+// expression (left), generating one or more candidate bindings over one
+// or more quantified variables. These bindings are then used to
+// instantiate the quantified expression.
 function instantiate[BExpr, {[Var,Type]...}, BExpr] => {BExpr}
 
 // ====================================================================

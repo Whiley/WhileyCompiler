@@ -26,7 +26,7 @@ function Cash([nat] coins) => Cash
 requires all { c in coins | c < |Value| }:
     Cash cash = [0, 0, 0, 0, 0, 0, 0, 0]
     int i = 0
-    while i < |coins| 
+    while i < |coins|
         where i >= 0 && |cash| == |Value|
         where all { c in cash | c >= 0 }:
         //

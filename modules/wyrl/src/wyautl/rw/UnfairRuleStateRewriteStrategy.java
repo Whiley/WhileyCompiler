@@ -38,13 +38,13 @@ import wyautl.rw.RewriteRule;
  * prioritises rules over states. That is, it attempts a given rule on all
  * states, as opposed to all rules on a given state.
  * </p>
- * 
+ *
  * <p>
  * <b>NOTE:</b> this is not designed to be used in a concurrent setting.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public final class UnfairRuleStateRewriteStrategy<T extends RewriteRule> extends IterativeRewriter.Strategy<T> {
 
@@ -55,24 +55,24 @@ public final class UnfairRuleStateRewriteStrategy<T extends RewriteRule> extends
 
 	/**
 	 * Temporary list of inference activations used.
-	 */	
+	 */
 	private final ArrayList<Activation> worklist = new ArrayList<Activation>();
-	
+
 	/**
 	 * The automaton being rewritten
 	 */
 	private final Automaton automaton;
-	
+
 	/**
 	 * The current rule being explored by this strategy
 	 */
 	private int current;
-	
+
 	/**
 	 * Record the number of probes for statistical reporting purposes
 	 */
 	private int numProbes;
-		
+
 	public UnfairRuleStateRewriteStrategy(Automaton automaton, T[] rules) {
 		this(automaton, rules, new RewriteRule.MinComparator());
 	}
@@ -83,11 +83,11 @@ public final class UnfairRuleStateRewriteStrategy<T extends RewriteRule> extends
 		this.rules = Arrays.copyOf(rules,rules.length);
 		Arrays.sort(this.rules, comparator);
 	}
-	
+
 	@Override
 	protected Activation next(boolean[] reachable) {
 		int nStates = automaton.nStates();
-		
+
 		while (current < rules.length && worklist.size() == 0) {
 			// Check whether state is reachable and that it's a term. This is
 			// because only reachable states should be rewritten; and, only
@@ -97,13 +97,13 @@ public final class UnfairRuleStateRewriteStrategy<T extends RewriteRule> extends
 				if (reachable[i]
 						&& automaton.get(i) instanceof Automaton.Term) {
 					rw.probe(automaton, i, worklist);
-					numProbes++;				
+					numProbes++;
 				}
 			}
 			current = current + 1;
 		}
-		
-		if (worklist.size() > 0) {			
+
+		if (worklist.size() > 0) {
 			int lastIndex = worklist.size() - 1;
 			Activation last = worklist.get(lastIndex);
 			worklist.remove(lastIndex);
@@ -118,7 +118,7 @@ public final class UnfairRuleStateRewriteStrategy<T extends RewriteRule> extends
 		worklist.clear();
 		current = 0;
 	}
-	
+
 	@Override
 	public int numProbes() {
 		return numProbes;

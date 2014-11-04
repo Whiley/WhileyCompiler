@@ -1,11 +1,11 @@
 function Union({int} lhs, {int} rhs) => ({int} r)
-ensures: 
+ensures:
   forall (int e) ; e in lhs ==> e in r
   forall (int e) ; e in rhs ==> e in r
   forall (int e) ; e in r ==> (e in lhs || e in rhs)
 
-assert: 
-  forall {int} xs, {int} ys: 
+assert:
+  forall {int} xs, {int} ys:
     forall (int x):
        if:
          x in xs

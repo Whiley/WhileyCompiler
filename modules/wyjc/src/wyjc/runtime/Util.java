@@ -54,8 +54,8 @@ public class Util {
 	private static final boolean logRefCounts = false;
 	private static final ArrayList<Object[]> refCounts = new ArrayList();
 	private static long startTime;
-	
-	static { 
+
+	static {
 		if(debug) {
 			startTime = System.currentTimeMillis();
 			Runtime.getRuntime().addShutdownHook(new Thread(){
@@ -80,12 +80,12 @@ public class Util {
 					avg = nrecord_elems;
 					avg = avg / nrecord_clones;
 					System.err.println("record clones:     " + nrecord_clones
-							+ " / " + (nrecord_clones + nrecord_strong_updates)+ " (" + avg + ")");		
+							+ " / " + (nrecord_clones + nrecord_strong_updates)+ " (" + avg + ")");
 					long totalClones = nlist_clones + nset_clones + ndict_clones + nrecord_clones;
 					long totalStrongUpdates = nlist_inplace_updates + nset_inplace_updates + ndict_inplace_updates + nrecord_strong_updates;
 					double ratio = totalClones;
 					ratio = 100 * (ratio / (totalClones+totalStrongUpdates));
-					long totalElems = nset_elems + nlist_elems + ndict_elems + nrecord_elems; 
+					long totalElems = nset_elems + nlist_elems + ndict_elems + nrecord_elems;
 					avg = totalElems;
 					avg = (avg / (totalClones));
 					System.err.println("--------------------------------------------------");
@@ -93,7 +93,7 @@ public class Util {
 					System.err.println("Average Clone Size: " + totalElems + " / " + totalClones + " (" + avg + ")");
 					avg = total_ref_count;
 					avg = avg / total_population;
-					System.err.println("Avg Reference Count: " + avg);	
+					System.err.println("Avg Reference Count: " + avg);
 					System.err.println("--------------------------------------------------");
 					if(logRefCounts) {
 						for(Object[] p : refCounts) {
@@ -103,9 +103,9 @@ public class Util {
 				}
 			});
 		}
-	}	
-	
-	private static long total_ref_count = 0;	
+	}
+
+	private static long total_ref_count = 0;
 	private static long total_population = 0; // number of update operations
 	private static int nlist_clones = 0;
 	private static long nlist_elems = 0;
@@ -121,29 +121,29 @@ public class Util {
 	static int nrecord_strong_updates = 0;
 
 	public static void countRefs(WyList l) {
-		total_ref_count += l.refCount;		
+		total_ref_count += l.refCount;
 		total_population++;
 		if(logRefCounts) {
 			refCounts.add(new Object[]{l,l.refCount});
 		}
 	}
-	
+
 	public static void countRefs(WySet l) {
-		total_ref_count += l.refCount;		
+		total_ref_count += l.refCount;
 		total_population++;
 		if(logRefCounts) {
 			refCounts.add(new Object[]{l,l.refCount});
 		}
 	}
-	
+
 	public static void countRefs(WyMap l) {
-		total_ref_count += l.refCount;		
+		total_ref_count += l.refCount;
 		total_population++;
 		if(logRefCounts) {
 			refCounts.add(new Object[]{l,l.refCount});
 		}
 	}
-	
+
 	public static void countRefs(WyRecord l) {
 		total_ref_count += l.refCount;
 		total_population++;
@@ -151,68 +151,68 @@ public class Util {
 			refCounts.add(new Object[]{l,l.refCount});
 		}
 	}
-	
+
 	public static void countClone(WyList l) {
-		nlist_clones ++;		
+		nlist_clones ++;
 		nlist_elems += l.size();
 	}
-	
+
 	public static void countClone(WySet l) {
-		nset_clones ++;		
+		nset_clones ++;
 		nset_elems += l.size();
 	}
-	
+
 	public static void countClone(WyMap l) {
-		ndict_clones ++;		
+		ndict_clones ++;
 		ndict_elems += l.size();
 	}
-	
+
 	public static void countClone(WyRecord l) {
-		nrecord_clones ++;		
+		nrecord_clones ++;
 		nrecord_elems += l.size();
 	}
-		
-	public static String append(final String lhs, final String rhs) {		
+
+	public static String append(final String lhs, final String rhs) {
 		return lhs + rhs;
 	}
-	
-	public static String append(final String lhs, final char rhs) {		
+
+	public static String append(final String lhs, final char rhs) {
 		return lhs + rhs;
 	}
-	
-	public static String append(final char lhs, final String rhs) {		
+
+	public static String append(final char lhs, final String rhs) {
 		return lhs + rhs;
 	}
-	
+
 	public static BigInteger stringlength(final String lhs) {
 		return BigInteger.valueOf(lhs.length());
 	}
-	
+
 	public static String substring(final String lhs, final BigInteger _start, final BigInteger _end) {
 		int start = _start.intValue();
 		int end = _end.intValue();
 		return lhs.substring(start,end);
 	}
-	
+
 	public static String set(final String lhs, BigInteger index, char value) {
-		int idx = index.intValue();		
+		int idx = index.intValue();
 		// hmmm, not exactly efficient!
 		StringBuilder sb = new StringBuilder(lhs);
 		sb.setCharAt(idx, value);
 		return sb.toString();
 	}
-	
-	public static byte leftshift(byte b1, BigInteger b2) {	
-		return (byte) ((b1&0xFF) << b2.intValue());		
+
+	public static byte leftshift(byte b1, BigInteger b2) {
+		return (byte) ((b1&0xFF) << b2.intValue());
 	}
-	
-	public static byte rightshift(byte b1, BigInteger b2) {		
-		return (byte) ((b1&0xFF) >>> b2.intValue());		
+
+	public static byte rightshift(byte b1, BigInteger b2) {
+		return (byte) ((b1&0xFF) >>> b2.intValue());
 	}
-	
+
 	public static WyList range(BigInteger start, BigInteger end) {
 		WyList l = new WyList();
-		
+
 		long st = start.longValue();
 		long en = start.longValue();
 		if (BigInteger.valueOf(st).equals(start)
@@ -221,7 +221,7 @@ public class Util {
 			while(st != en) {
 				l.add(BigInteger.valueOf(st));
 				st = st + dir;
-			}					
+			}
 		} else {
 			BigInteger dir;
 			if(start.compareTo(end) < 0) {
@@ -232,27 +232,27 @@ public class Util {
 			while(!start.equals(end)) {
 				l.add(start);
 				start = start.add(dir);
-			}	
+			}
 		}
-		
+
 		return l;
 	}
-	
+
 	/**
 	 * This method is used to convert the arguments supplied to main (which have
 	 * type <code>String[]</code>) into an appropriate Whiley List.
-	 * 
+	 *
 	 * @param args
 	 * @return
 	 */
-	public static WyList fromStringList(String[] args) {		
+	public static WyList fromStringList(String[] args) {
 		WyList r = new WyList(args.length);
 		for(int i=0;i!=args.length;++i) {
 			r.add(args[i]);
-		}		
+		}
 		return r;
 	}
-	
+
 	/**
 	 * Coerce a string into a Whiley char list.
 	 * @param str
@@ -265,7 +265,7 @@ public class Util {
 		}
 		return r;
 	}
-	
+
 	/**
 	 * Coerce a string into a Whiley int list.
 	 * @param str
@@ -278,7 +278,7 @@ public class Util {
 		}
 		return r;
 	}
-	
+
 	/**
 	 * Coerce a string into a Whiley char set.
 	 * @param str
@@ -291,7 +291,7 @@ public class Util {
 		}
 		return r;
 	}
-	
+
 	/**
 	 * Coerce a string into a Whiley int list.
 	 * @param str
@@ -304,29 +304,29 @@ public class Util {
 		}
 		return r;
 	}
-	
+
 	/**
 	 * This method is used for the special case when the left-hand side of an
 	 * equality operation may be null.
-	 * 
+	 *
 	 * @param o1
 	 * @param o2
 	 * @return
 	 */
 	public static boolean equals(Object o1, Object o2) {
 		return (o1 != null && o1.equals(o2)) || (o1 == o2);
-	}		
-	
+	}
+
 	/**
 	 * The following method is used for printing debug output arising from debug
 	 * statements.
-	 * 
+	 *
 	 * @param list
 	 */
 	public static void debug(String str) {
-		System.out.print(str);			
+		System.out.print(str);
 	}
-		
+
 	/**
 	 * Increment the reference count for an object. In some cases, this may
 	 * have no effect. In other cases, the current reference count will be
@@ -338,46 +338,46 @@ public class Util {
 			WyList list = (WyList) obj;
 			list.refCount++;
 		} else if(obj instanceof WyRecord) {
-			WyRecord rec = (WyRecord) obj;			
-			rec.refCount++;			
+			WyRecord rec = (WyRecord) obj;
+			rec.refCount++;
 		} else if(obj instanceof WySet) {
 			WySet set = (WySet) obj;
-			set.refCount++;			
+			set.refCount++;
 		} else if(obj instanceof WyMap) {
 			WyMap dict = (WyMap) obj;
-			dict.refCount++;						
+			dict.refCount++;
 		} else if(obj instanceof WyTuple) {
 			WyTuple tuple = (WyTuple) obj;
-			tuple.refCount++;			
+			tuple.refCount++;
 		}
 		return obj;
 	}
 
-	public static WyList incRefs(WyList obj) {		
+	public static WyList incRefs(WyList obj) {
 		obj.refCount++;
 		return obj;
 	}
-	
+
 	public static WySet incRefs(WySet obj) {
 		obj.refCount++;
 		return obj;
 	}
-	
+
 	public static WyRecord incRefs(WyRecord obj) {
 		obj.refCount++;
 		return obj;
 	}
-	
+
 	public static WyMap incRefs(WyMap obj) {
 		obj.refCount++;
 		return obj;
 	}
-	
+
 	public static WyTuple incRefs(WyTuple obj) {
 		obj.refCount++;
 		return obj;
 	}
-	
+
 	/**
 	 * Decrement the reference count for this object. In some cases, this may
 	 * have no effect. In other cases, the current reference count will be
@@ -394,16 +394,16 @@ public class Util {
 //				}
 //			}
 //		} else if(obj instanceof Record) {
-//			Record rec = (Record) obj;			
+//			Record rec = (Record) obj;
 //			rec.refCount--;
-//			if(rec.refCount == 0) {				
+//			if(rec.refCount == 0) {
 //				for(Object o : rec.values()) {
 //					decRefs(o);
 //				}
 //			}
 //		} else if(obj instanceof Set) {
 //			Set set = (Set) obj;
-//			set.refCount--;			
+//			set.refCount--;
 //			if(set.refCount == 0) {
 //				for(Object o : set) {
 //					decRefs(o);
@@ -411,8 +411,8 @@ public class Util {
 //			}
 //		} else if(obj instanceof Dictionary) {
 //			Dictionary dict = (Dictionary) obj;
-//			dict.refCount--;	
-//			if(dict.refCount == 0) {				
+//			dict.refCount--;
+//			if(dict.refCount == 0) {
 //				for(Map.Entry e : dict.entrySet()) {
 //					decRefs(e.getKey());
 //					decRefs(e.getValue());
@@ -420,16 +420,16 @@ public class Util {
 //			}
 //		} else if(obj instanceof Tuple) {
 //			Tuple tuple = (Tuple) obj;
-//			tuple.refCount--;			
+//			tuple.refCount--;
 //			if(tuple.refCount == 0) {
 //				for(Object o : tuple) {
 //					decRefs(o);
 //				}
 //			}
-//		} 
+//		}
 	}
 
-	public static void decRefs(WyList list) {		
+	public static void decRefs(WyList list) {
 //		list.refCount--;
 //		if(list.refCount == 0) {
 //			for(Object o : list) {
@@ -437,7 +437,7 @@ public class Util {
 //			}
 //		}
 	}
-	
+
 	public static void decRefs(WySet set) {
 //		set.refCount--;
 //		if(set.refCount == 0) {
@@ -446,27 +446,27 @@ public class Util {
 //			}
 //		}
 	}
-	
+
 	public static void decRefs(WyRecord rec) {
 //		rec.refCount--;
-//		if(rec.refCount == 0) {				
+//		if(rec.refCount == 0) {
 //			for(Object o : rec.values()) {
 //				decRefs(o);
 //			}
-//		}		
+//		}
 	}
-	
+
 	public static void decRefs(WyMap dict) {
 //		dict.refCount--;
-//		if(dict.refCount == 0) {				
+//		if(dict.refCount == 0) {
 //			for(Map.Entry e : dict.entrySet()) {
 //				decRefs(e.getKey());
 //				decRefs(e.getValue());
 //			}
 //		}
 	}
-	
-	public static void decRefs(WyTuple tuple) {		
+
+	public static void decRefs(WyTuple tuple) {
 //		tuple.refCount--;
 //		if(tuple.refCount == 0) {
 //			for(Object o : tuple) {
@@ -474,11 +474,11 @@ public class Util {
 //			}
 //		}
 	}
-	
+
 	/**
-	 * The <code>instanceOf</code> method implements a runtime type test. 
+	 * The <code>instanceOf</code> method implements a runtime type test.
 	 */
-	public static boolean instanceOf(Object obj, WyType t) {			
+	public static boolean instanceOf(Object obj, WyType t) {
 		switch(t.kind) {
 			case K_ANY:
 				return true;
@@ -512,7 +512,7 @@ public class Util {
 					} else if(el.kind == K_VOID) {
 						return ol.isEmpty();
 					} else {
-						for(Object elem : ol) { 
+						for(Object elem : ol) {
 							if(!instanceOf(elem,el)) {
 								return false;
 							}
@@ -533,7 +533,7 @@ public class Util {
 					} else if(el.kind == K_VOID) {
 						return ol.isEmpty();
 					} else {
-						for(Object elem : ol) { 
+						for(Object elem : ol) {
 							if(!instanceOf(elem,el)) {
 								return false;
 							}
@@ -544,19 +544,19 @@ public class Util {
 				break;
 			}
 			case K_TUPLE:
-			{				
+			{
 				if(obj instanceof WyTuple) {
 					WyTuple ol = (WyTuple) obj;
 					WyType.Tuple tl = (WyType.Tuple) t;
 					WyType[] types = tl.types;
-					if(types.length == ol.size()) {						
+					if(types.length == ol.size()) {
 						int i=0;
-						for(Object o : ol) { 
+						for(Object o : ol) {
 							if(!instanceOf(o,types[i++])) {
 								return false;
 							}
-						}						
-						return true;					
+						}
+						return true;
 					}
 				}
 				break;
@@ -568,9 +568,9 @@ public class Util {
 					WyType.Dictionary tl = (WyType.Dictionary) t;
 					WyType key = tl.key;
 					WyType value = tl.value;
-					
+
 					if (key.kind == K_ANY && value.kind == K_ANY) {
-						return true;						
+						return true;
 					} else if(key.kind == K_VOID || value.kind == K_VOID) {
 						return ol.isEmpty();
 					} else {
@@ -592,7 +592,7 @@ public class Util {
 					WyRecord ol = (WyRecord) obj;
 					WyType.Record tl = (WyType.Record) t;
 					String[] names = tl.names;
-					WyType[] types = tl.types;					
+					WyType[] types = tl.types;
 					if(!tl.isOpen && names.length != ol.size()) {
 						return false;
 					}
@@ -600,7 +600,7 @@ public class Util {
 						String name = names[i];
 						if(ol.containsKey(name)) {
 							WyType type = types[i];
-							Object val = ol.get(name);						
+							Object val = ol.get(name);
 							if(!instanceOf(val,type)) {
 								return false;
 							}
@@ -624,10 +624,10 @@ public class Util {
 					if(instanceOf(obj,bound)) {
 						return true;
 					}
-				}		
+				}
 				break;
 			}
-		}		
+		}
 		return false;
 	}
 
@@ -639,7 +639,7 @@ public class Util {
 	 * Likewise, it cannot be e.g. a record, since again the test would already
 	 * have been eliminated. In fact, the type can only be a list or its
 	 * negation.
-	 * 
+	 *
 	 * @param object
 	 *            --- object being tested against.
 	 * @param type
@@ -647,7 +647,7 @@ public class Util {
 	 * @return
 	 */
 	public static boolean instanceOf(WyList object, WyType type) {
-		if(type instanceof WyType.List) {			
+		if(type instanceof WyType.List) {
 			WyType.List tl = (WyType.List) type;
 			WyType el = tl.element;
 			if(el.kind == K_ANY) {
@@ -655,7 +655,7 @@ public class Util {
 			} else if(el.kind == K_VOID) {
 				return object.isEmpty();
 			} else {
-				for(Object elem : object) { 
+				for(Object elem : object) {
 					if(!instanceOf(elem,el)) {
 						return false;
 					}
@@ -666,7 +666,7 @@ public class Util {
 			return instanceOf((Object)object,type);
 		}
 	}
-	
+
 	/**
 	 * This method gets called when we're testing a set object against some
 	 * type. To reduce the number of cases, we can narrow down the possible
@@ -675,7 +675,7 @@ public class Util {
 	 * Likewise, it cannot be e.g. a record, since again the test would already
 	 * have been eliminated. In fact, the type can only be a set or its
 	 * negation.
-	 * 
+	 *
 	 * @param object
 	 *            --- object being tested against.
 	 * @param type
@@ -683,7 +683,7 @@ public class Util {
 	 * @return
 	 */
 	public static boolean instanceOf(WySet object, WyType type) {
-		if(type instanceof WyType.Set) {			
+		if(type instanceof WyType.Set) {
 			WyType.Set tl = (WyType.Set) type;
 			WyType el = tl.element;
 			if(el.kind == K_ANY) {
@@ -691,7 +691,7 @@ public class Util {
 			} else if(el.kind == K_VOID) {
 				return object.isEmpty();
 			} else {
-				for(Object elem : object) { 
+				for(Object elem : object) {
 					if(!instanceOf(elem,el)) {
 						return false;
 					}
@@ -702,7 +702,7 @@ public class Util {
 			return instanceOf((Object)object,type);
 		}
 	}
-	
+
 	/**
 	 * This method gets called when we're testing a dictionary object against some
 	 * type. To reduce the number of cases, we can narrow down the possible
@@ -711,21 +711,21 @@ public class Util {
 	 * Likewise, it cannot be e.g. a record, since again the test would already
 	 * have been eliminated. In fact, the type can only be a dictionary or its
 	 * negation.
-	 * 
+	 *
 	 * @param object
 	 *            --- object being tested against.
 	 * @param type
 	 *            --- type to test against.
 	 * @return
 	 */
-	public static boolean instanceOf(WyMap object, WyType type) {		
-		if(type instanceof WyType.Dictionary) {			
+	public static boolean instanceOf(WyMap object, WyType type) {
+		if(type instanceof WyType.Dictionary) {
 			WyType.Dictionary tl = (WyType.Dictionary) type;
 			WyType key = tl.key;
 			WyType value = tl.value;
 
 			if (key.kind == K_ANY && value.kind == K_ANY) {
-				return true;						
+				return true;
 			} else if(key.kind == K_VOID || value.kind == K_VOID) {
 				return object.isEmpty();
 			} else {
@@ -742,7 +742,7 @@ public class Util {
 			return instanceOf((Object)object,type);
 		}
 	}
-	
+
 	/**
 	 * This method gets called when we're testing a record object against some
 	 * type. To reduce the number of cases, we can narrow down the possible
@@ -751,7 +751,7 @@ public class Util {
 	 * Likewise, it cannot be e.g. a list, since again the test would already
 	 * have been eliminated. In fact, the type can only be a record or its
 	 * negation.
-	 * 
+	 *
 	 * @param object
 	 *            --- object being tested against.
 	 * @param type
@@ -759,7 +759,7 @@ public class Util {
 	 * @return
 	 */
 	public static boolean instanceOf(WyRecord object, WyType type) {
-		if(type instanceof WyType.Record) {			
+		if(type instanceof WyType.Record) {
 			WyType.Record tl = (WyType.Record) type;
 			String[] names = tl.names;
 			WyType[] types = tl.types;
@@ -770,11 +770,11 @@ public class Util {
 				String name = names[i];
 				if(object.containsKey(name)) {
 					WyType fieldType = types[i];
-					Object val = object.get(name);						
+					Object val = object.get(name);
 					if(!instanceOf(val,fieldType)) {
 						return false;
-					} 
-				} else {				
+					}
+				} else {
 					return false;
 				}
 			}
@@ -782,8 +782,8 @@ public class Util {
 		} else {
 			return instanceOf((Object)object,type);
 		}
-	}	
-	
+	}
+
 	/**
 	 * This method gets called when we're testing a tuple object against some
 	 * type. To reduce the number of cases, we can narrow down the possible
@@ -792,37 +792,37 @@ public class Util {
 	 * Likewise, it cannot be e.g. a record, since again the test would already
 	 * have been eliminated. In fact, the type can only be a tuple or its
 	 * negation.
-	 * 
+	 *
 	 * @param object
 	 *            --- object being tested against.
 	 * @param type
 	 *            --- type to test against.
 	 * @return
 	 */
-	public static boolean instanceOf(WyTuple object, WyType type) {				
-		if(type instanceof WyType.Tuple) {			
+	public static boolean instanceOf(WyTuple object, WyType type) {
+		if(type instanceof WyType.Tuple) {
 			WyType.Tuple tl = (WyType.Tuple) type;
 			WyType[] types = tl.types;
-			if(types.length == object.size()) {	
+			if(types.length == object.size()) {
 				int i=0;
-				for(Object o : object) { 
+				for(Object o : object) {
 					if(!instanceOf(o,types[i++])) {
 						return false;
 					}
 				}
-				return true;					
+				return true;
 			}
 			return false;
 		} else {
 			return instanceOf((Object)object,type);
 		}
-	}		
-	
+	}
+
 	public static final Comparator COMPARATOR = new Comparator();
-	
+
 	public static final class Comparator implements java.util.Comparator {
 		private Comparator() {}
-		
+
 		public final int compare(Object o1, Object o2) {
 			return Util.compare(o1,o2);
 		}
@@ -830,12 +830,12 @@ public class Util {
 
 	public static int compare(Object o1, Object o2) {
 		if(o1 == null) {
-			return o2 == null ? 0 : -1;				
+			return o2 == null ? 0 : -1;
 		} else if(o1 instanceof Boolean) {
 			return compare((Boolean)o1,o2);
-		} else if(o1 instanceof Character) {			
+		} else if(o1 instanceof Character) {
 			return compare((Character)o1,o2);
-		} else if(o1 instanceof BigInteger) {			
+		} else if(o1 instanceof BigInteger) {
 			return compare((BigInteger)o1,o2);
 		} else if(o1 instanceof WyRat) {
 			return compare((WyRat)o1,o2);
@@ -875,7 +875,7 @@ public class Util {
 			return -1;
 		}
 	}
-	
+
 	public static int compare(BigInteger o1, Object o2) {
 		if(o2 == null || o2 instanceof Boolean) {
 			return 1;
@@ -1038,11 +1038,11 @@ public class Util {
 			return 0;
 		}
 	}
-	
+
 
 	public static WyRecord systemConsole(String[] args) {
 		WyRecord sysout = new WyRecord();
-		
+
 		sysout.put("print", new WyLambda((Object[]) null) {
 			public Object call(Object[] arguments) {
 				Object argument = arguments[0];
@@ -1050,7 +1050,7 @@ public class Util {
 					System.out.print(argument);
 				} else {
 					System.out.print(argument.toString());
-				}	
+				}
 				return null;
 			}
 		});
@@ -1061,14 +1061,14 @@ public class Util {
 					System.out.println(argument);
 				} else {
 					System.out.println(argument.toString());
-				}	
+				}
 				return null;
 			}
-		});		
+		});
 		WyRecord console = new WyRecord();
-		console.put("out", sysout);		
+		console.put("out", sysout);
 		console.put("args",fromStringList(args));
 		return console;
 	}
-	
+
 }

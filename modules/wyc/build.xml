@@ -1,12 +1,12 @@
-<project name="wyc" default="build">  
-  <import file="../../config.xml"/>  
+<project name="wyc" default="build">
+  <import file="../../config.xml"/>
 
   <target name="compile-wyc">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyil/src:../wybs/src/:../wycs/src:../wyrl/src/"> 
+    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyil/src:../wybs/src/:../wycs/src:../wyrl/src/">
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/>
-      <exclude name="wyc/testing/**"/> 
+      <exclude name="wyc/testing/**"/>
     </javac>
   </target>
 
@@ -26,7 +26,7 @@
     <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
     <echo message="============================================="/>
   </target>
-  
+
   <target name="dist">
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">

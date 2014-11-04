@@ -4,22 +4,22 @@
  * This is part of a library of support routines for programs written in
  * the Whiley language when translated into C (ala gcc), especailly support
  * for the math operations.  These routines rely on gmp (Gnu Muliple precision)
- * when there is an attempt to do unbounded integer (WInt) operations 
+ * when there is an attempt to do unbounded integer (WInt) operations
  *
  * This file is part of the Whiley Development Kit (WDK).
  *
- * The Whiley Development Kit is free software; you can redistribute 
- * it and/or modify it under the terms of the GNU General Public 
- * License as published by the Free Software Foundation; either 
+ * The Whiley Development Kit is free software; you can redistribute
+ * it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
  *
- * The Whiley Development Kit is distributed in the hope that it 
- * will be useful, but WITHOUT ANY WARRANTY; without even the 
- * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+ * The Whiley Development Kit is distributed in the hope that it
+ * will be useful, but WITHOUT ANY WARRANTY; without even the
+ * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
  * PURPOSE.  See the GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public 
- * License along with the Whiley Development Kit. If not, see 
+ * You should have received a copy of the GNU General Public
+ * License along with the Whiley Development Kit. If not, see
  * <http://www.gnu.org/licenses/>
  */
 
@@ -148,7 +148,7 @@ wycc_obj *wycc_box_ratio(const char *txt) {
 	//ptr = buf + cnta;
 	*ptr++ = '/';
 	*ptr++ = '1';
-	for (cntb; cntb > 0; cntb--) { 
+	for (cntb; cntb > 0; cntb--) {
 	    *ptr++ = '0';
 	}
 	*ptr++ = '\0';
@@ -491,7 +491,7 @@ wycc_obj* wyil_sub(wycc_obj* lhs, wycc_obj* rhs){
 	mpz_clear(lw);
 	return wycc_box_new(Wy_WInt, (void *) aiw);
     };
-    rslt = ((long) lhs->ptr) - ((long)rhs->ptr); 
+    rslt = ((long) lhs->ptr) - ((long)rhs->ptr);
     return wycc_box_type_match(lhs, rhs, rslt);
     //WY_PANIC("Help needed in sub for wide ints (%d)\n", ac)
 }
@@ -538,7 +538,7 @@ wycc_obj* wyil_add(wycc_obj* lhs, wycc_obj* rhs){
 	return wycc_box_new(Wy_WInt, (void *) aiw);
     };
 
-    rslt = ((long) lhs->ptr) + ((long)rhs->ptr); 
+    rslt = ((long) lhs->ptr) + ((long)rhs->ptr);
     return wycc_box_type_match(lhs, rhs, rslt);
     //WY_PANIC("Help needed in add for wide ints (%d)\n", ac)
 }
@@ -692,7 +692,7 @@ wycc_obj* wyil_bit_ior(wycc_obj* lhs, wycc_obj* rhs){
 	mpz_clear(lw);
 	return wycc_box_new(Wy_WInt, (void *) aiw);
     };
-    rslt = ((long) lhs->ptr) | ((long)rhs->ptr); 
+    rslt = ((long) lhs->ptr) | ((long)rhs->ptr);
     return wycc_box_type_match(lhs, rhs, rslt);
     //WY_PANIC("Help needed in bit_or for wide ints (%d)\n", ac)
 }
@@ -732,7 +732,7 @@ wycc_obj* wyil_bit_xor(wycc_obj* lhs, wycc_obj* rhs){
 	mpz_clear(lw);
 	return wycc_box_new(Wy_WInt, (void *) aiw);
     };
-    rslt = ((long) lhs->ptr) ^ ((long)rhs->ptr); 
+    rslt = ((long) lhs->ptr) ^ ((long)rhs->ptr);
     return wycc_box_type_match(lhs, rhs, rslt);
     // WY_PANIC("Help needed in bit_xor for wide ints (%d)\n", ac)
 }
@@ -833,7 +833,7 @@ wycc_obj* wyil_div(wycc_obj* lhs, wycc_obj* rhs){
 	return wycc_box_new(Wy_WInt, (void *) aiw);
     };
 
-    rslt = ((long) lhs->ptr) / ((long)rhs->ptr); 
+    rslt = ((long) lhs->ptr) / ((long)rhs->ptr);
     return wycc_box_type_match(lhs, rhs, rslt);
     //WY_PANIC("Help needed in div for wide ints (%d)\n", ac)
 }
@@ -873,7 +873,7 @@ wycc_obj* wyil_mod(wycc_obj* lhs, wycc_obj* rhs){
 	mpz_clear(lw);
 	return wycc_box_new(Wy_WInt, (void *) aiw);
     };
-    rslt = ((long) lhs->ptr) % ((long)rhs->ptr); 
+    rslt = ((long) lhs->ptr) % ((long)rhs->ptr);
     return wycc_box_type_match(lhs, rhs, rslt);
     // WY_PANIC("Help needed in mod for wide ints (%d)\n", ac)
 }
@@ -991,7 +991,7 @@ wycc_obj* wyil_mul(wycc_obj* lhs, wycc_obj* rhs){
     lc = wycc_ilog2(rslt);
     rc = wycc_ilog2((long) rhs->ptr);
     if ((lc + rc) < LONG_SIZE) {
-	rslt *= (long)rhs->ptr; 
+	rslt *= (long)rhs->ptr;
 	return wycc_box_long(rslt);
     };
     aiw = wycc_wint_alloc();

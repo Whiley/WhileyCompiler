@@ -91,9 +91,9 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 
 	@Override
 	public void logTimedMessage(String msg, long time, long memory) {
-		logger.logTimedMessage(msg, time, memory);		
+		logger.logTimedMessage(msg, time, memory);
 	}
-	
+
 	// ======================================================================
 	// Build Method
 	// ======================================================================
@@ -105,7 +105,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		long startMemory = runtime.freeMemory();
 		long tmpTime = startTime;
 		long tmpMem = startMemory;
-		
+
 		// ========================================================================
 		// Parse and register source files
 		// ========================================================================
@@ -125,12 +125,12 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		logger.logTimedMessage("Parsed " + count + " source file(s).",
 				System.currentTimeMillis() - tmpTime,
 				tmpMem - runtime.freeMemory());
-		
+
 		// ========================================================================
 		// Stub Generation
 		// ========================================================================
 		runtime = Runtime.getRuntime();
-		tmpTime = System.currentTimeMillis();		
+		tmpTime = System.currentTimeMillis();
 		tmpMem = runtime.freeMemory();
 		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
 		for(Pair<Path.Entry<?>,Path.Root> p : delta) {
@@ -140,42 +140,42 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				Path.Entry<WyalFile> source = (Path.Entry<WyalFile>) src;
 				Path.Entry<WycsFile> target = (Path.Entry<WycsFile>) dst.create(src.id(),WycsFile.ContentType);
 				generatedFiles.add(target);
-				WyalFile wf = source.read();								
-				WycsFile wycs = getModuleStub(wf);				
+				WyalFile wf = source.read();
+				WycsFile wycs = getModuleStub(wf);
 				target.write(wycs);
 			}
 		}
 		logger.logTimedMessage("Generated stubs for " + count + " source file(s).",
-				System.currentTimeMillis() - tmpTime, tmpMem - runtime.freeMemory());	
-	
+				System.currentTimeMillis() - tmpTime, tmpMem - runtime.freeMemory());
+
 		// ========================================================================
 		// Type source files
-		// ========================================================================		
+		// ========================================================================
 		runtime = Runtime.getRuntime();
-		tmpTime = System.currentTimeMillis();		
+		tmpTime = System.currentTimeMillis();
 		tmpMem = runtime.freeMemory();
-		
+
 		TypePropagation typer = new TypePropagation(this);
 		for(Pair<Path.Entry<?>,Path.Root> p : delta) {
 			Path.Entry<?> f = p.first();
 			if (f.contentType() == WyalFile.ContentType) {
-				Path.Entry<WyalFile> sf = (Path.Entry<WyalFile>) f;			
-				WyalFile wf = sf.read();								
-				typer.apply(wf);						
+				Path.Entry<WyalFile> sf = (Path.Entry<WyalFile>) f;
+				WyalFile wf = sf.read();
+				typer.apply(wf);
 			}
-		}		
-		
+		}
+
 		logger.logTimedMessage("Typed " + count + " source file(s).",
 				System.currentTimeMillis() - tmpTime, tmpMem - runtime.freeMemory());
-		
-		
+
+
 		// ========================================================================
 		// Code Generation
 		// ========================================================================
 		runtime = Runtime.getRuntime();
-		tmpTime = System.currentTimeMillis();		
+		tmpTime = System.currentTimeMillis();
 		tmpMem = runtime.freeMemory();
-		
+
 		CodeGeneration generator = new CodeGeneration(this);
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			Path.Entry<?> src = p.first();
@@ -189,10 +189,10 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				target.write(wycs);
 			}
 		}
-		
+
 		logger.logTimedMessage("Generated code for " + count + " source file(s).",
-					System.currentTimeMillis() - tmpTime, tmpMem - runtime.freeMemory());	
-		
+					System.currentTimeMillis() - tmpTime, tmpMem - runtime.freeMemory());
+
 		// ========================================================================
 		// Pipeline Stages
 		// ========================================================================
@@ -210,7 +210,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 						Rewriter rw = ex.rewriter();
 						PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA,"Or","And");
 						writer.write(ex.original());
-						writer.flush();							
+						writer.flush();
 						System.err.println("\n\n=> (" + rw.getStats() + ")\n");
 						writer.write(ex.reduction());
 						writer.flush();
@@ -223,16 +223,16 @@ public class Wyal2WycsBuilder implements Builder, Logger {
                 }
 			}
 		}
-		
+
 
 		// ========================================================================
 		// Done
 		// ========================================================================
-		
+
 		long endTime = System.currentTimeMillis();
 		logger.logTimedMessage("Wyal => Wycs: compiled " + delta.size() + " file(s)",
 				endTime - startTime, startMemory - runtime.freeMemory());
-		
+
 		return generatedFiles;
 	}
 
@@ -242,7 +242,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 
 	/**
 	 * Check whether or not a given Wycs module exists.
-	 * 
+	 *
 	 * @param mid
 	 *            --- fully qualified name.
 	 * @return
@@ -266,7 +266,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	/**
 	 * Get the Wycs module associated with a given module identifier. If the
 	 * module does not exist, null is returned.
-	 * 
+	 *
 	 * @param mid
 	 * @return
 	 * @throws Exception
@@ -279,13 +279,13 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			return null;
 		}
 	}
-	
+
 	/**
 	 * Resolve a name found at a given context in a source file, and ensure it
 	 * matches an expected type. Essentially, the context will be used to
 	 * determine the active import statements which will be used to search for
 	 * the name.
-	 * 
+	 *
 	 * @param name
 	 *            --- name to look for.
 	 * @param type
@@ -335,11 +335,11 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 					wm.second().type);
 		}
 	}
-	
+
 	/**
 	 * This method takes a given import declaration, and expands it to find all
 	 * matching modules.
-	 * 
+	 *
 	 * @param key
 	 *            --- Path name which potentially contains a wildcard.
 	 * @return
@@ -389,7 +389,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	public SemanticType convert(TypePattern tp, List<String> generics, WyalFile.Context context) {
 		return convert(tp.toSyntacticType(),new HashSet<String>(generics),context);
 	}
-	
+
 	/**
 	 * <p>
 	 * Convert a syntactic type into a semantic type. A syntactic type
@@ -402,8 +402,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	 * In fact, semantically, this type is equivalent to <code>any</code> and,
 	 * for the purposes of subtype testing, needs to be represented as such.
 	 * </p>
-	 * 
-	 * 
+	 *
+	 *
 	 * @param type
 	 *            --- Syntactic type to be converted.
 	 * @param generics
@@ -411,7 +411,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	 * @return
 	 */
 	public SemanticType convert(SyntacticType type, Set<String> generics, WyalFile.Context context) {
-		
+
 		if(type instanceof SyntacticType.Void) {
 			return SemanticType.Void;
 		} else if(type instanceof SyntacticType.Any) {
@@ -431,7 +431,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			if(!generics.contains(p.var)) {
 				internalFailure("undeclared generic variable encountered (" + p + ")",
 						context.file().filename(), type);
-				return null; // deadcode		
+				return null; // deadcode
 			}
 			return SemanticType.Var(p.var);
 		} else if(type instanceof SyntacticType.Negation) {
@@ -485,13 +485,13 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			}
 			return SemanticType.Tuple(types);
 		}
-		
+
 		internalFailure("unknown syntactic type encountered",
 				context.file().filename(), type);
 		return null; // deadcode
 	}
-	
-	
+
+
 	// ======================================================================
 	// Private Implementation
 	// ======================================================================
@@ -523,14 +523,14 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			throw ex;
 		}
 	}
-	
+
 
 	/**
 	 * This converts a WyalFile into a WycsFile stub. A stub differs from a
 	 * complete implementation, in that it only contains type information for
 	 * functions and definitions. These are needed during the type propagation
 	 * phase, and must be calculated before hand.
-	 * 
+	 *
 	 * @param wyalFile
 	 * @return
 	 */
@@ -539,8 +539,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		for (WyalFile.Declaration d : wyalFile.declarations()) {
 			if (d instanceof WyalFile.Macro) {
 				WyalFile.Macro def = (WyalFile.Macro) d;
-				SemanticType from = convert(def.from, def.generics, d);				
-				SemanticType to = SemanticType.Bool;				
+				SemanticType from = convert(def.from, def.generics, d);
+				SemanticType to = SemanticType.Bool;
 				SemanticType.Var[] generics = new SemanticType.Var[def.generics
 						.size()];
 				for (int i = 0; i != generics.length; ++i) {
@@ -565,7 +565,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 						fun.attribute(Attribute.Source.class)));
 			}
 		}
-		
+
 		return new WycsFile(wyalFile.id(), wyalFile.filename(), declarations);
 	}
 

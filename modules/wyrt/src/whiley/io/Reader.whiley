@@ -31,8 +31,8 @@ import uint from whiley.lang.Int
 // Generic Reader
 // =================================================================
 
-// A generic reader represents an input stream of items (e.g. bytes or 
-// characters), such as from a file, network socket, or a memory buffer.  
+// A generic reader represents an input stream of items (e.g. bytes or
+// characters), such as from a file, network socket, or a memory buffer.
 
 public type Reader is {
 
@@ -55,6 +55,6 @@ public type Reader is {
 
     // Space for additional operations defined by refinements of
     // Reader
-    ...        
+    ...
 }
 

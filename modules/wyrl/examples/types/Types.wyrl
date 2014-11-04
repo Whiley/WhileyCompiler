@@ -2,7 +2,7 @@
 // significantly cut-down).
 //
 // In fact, it's the system from this paper:
-// 
+//
 // * "Sound and Complete Flow Typing with Unions, Intersections and
 //    Negations", David J. Pearce.  In Proceedings of the Conference
 //    Verification, Model Checking, and Abstract Interpretation (VMCAI),

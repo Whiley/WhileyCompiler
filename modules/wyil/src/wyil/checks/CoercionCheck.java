@@ -43,28 +43,28 @@ import wyil.util.*;
  * The point of the coercion check is to check that all convert bytecodes make
  * sense, and are not ambiguous. For example, consider the following code:
  * </p>
- * 
+ *
  * <pre>
  * define Rec1 as { real x, int y }
  * define Rec2 as { int x, real y }
  * define uRec1Rec2 as Rec1 | Rec2
- * 
+ *
  * int f(uRec1Rec2 r):
  *  if r is Rec1:
  *      return r.y
  *  else:
  *      return r.x
- * 
+ *
  * int g():
  *  rec = { x: 1, y: 1}
  *  return f(rec)
  * </pre>
- * 
+ *
  * <p>
  * An implicit coercion will be inserted just before the last statement in
  * <code>g()</code>. This will be:
  * </p>
- * 
+ *
  * <pre>
  * convert {int x,int y} => {real x,int y}|{int x,real y}
  * </pre>
@@ -72,7 +72,7 @@ import wyil.util.*;
  * However, this conversion is <i>ambiguous</i> because we could convert the
  * left-hand side to either of the two options in the right-hand side.
  * </p>
- * 
+ *
  * @author David J. Pearce
  */
 public class CoercionCheck implements Transform<WyilFile> {
@@ -81,22 +81,22 @@ public class CoercionCheck implements Transform<WyilFile> {
 	public CoercionCheck(Builder builder) {
 
 	}
-	
+
 	public void apply(WyilFile module) {
 		filename = module.filename();
-		
+
 		for(WyilFile.FunctionOrMethodDeclaration method : module.functionOrMethods()) {
 			check(method);
 		}
 	}
-		
-	public void check(WyilFile.FunctionOrMethodDeclaration method) {				
+
+	public void check(WyilFile.FunctionOrMethodDeclaration method) {
 		for (WyilFile.Case c : method.cases()) {
 			check(c.body(), method);
-		}		
+		}
 	}
-	
-	protected void check(Code.Block block, WyilFile.FunctionOrMethodDeclaration method) {		
+
+	protected void check(Code.Block block, WyilFile.FunctionOrMethodDeclaration method) {
 		for (int i = 0; i != block.size(); ++i) {
 			Code.Block.Entry stmt = block.get(i);
 			Code code = stmt.code;
@@ -104,7 +104,7 @@ public class CoercionCheck implements Transform<WyilFile> {
 				Codes.Convert conv = (Codes.Convert) code;
 				check(conv.type(), conv.result, new HashSet<Pair<Type, Type>>(),
 						stmt);
-			}			
+			}
 		}
 	}
 
@@ -112,7 +112,7 @@ public class CoercionCheck implements Transform<WyilFile> {
 	 * Recursively check that there is no ambiguity in coercing type from into
 	 * type to. The visited set is necessary to ensure this process terminates
 	 * in the presence of recursive types.
-	 * 
+	 *
 	 * @param from
 	 * @param to
 	 * @param visited - the set of pairs already checked.
@@ -133,7 +133,7 @@ public class CoercionCheck implements Transform<WyilFile> {
 		} else if(from instanceof Type.Tuple && to instanceof Type.Tuple) {
 			Type.Tuple t1 = (Type.Tuple) from;
 			Type.Tuple t2 = (Type.Tuple) to;
-			List<Type> t1_elements = t1.elements(); 
+			List<Type> t1_elements = t1.elements();
 			List<Type> t2_elements = t2.elements();
 			for(int i=0;i!=t2.elements().size();++i) {
 				Type e1 = t1_elements.get(i);
@@ -165,70 +165,70 @@ public class CoercionCheck implements Transform<WyilFile> {
 			Type.List t1 = (Type.List) from;
 			Type.List t2 = (Type.List) to;
 			check(t1.element(),t2.element(),visited,elem);
-		} else if(from instanceof Type.Strung && to instanceof Type.List) {			
+		} else if(from instanceof Type.Strung && to instanceof Type.List) {
 			Type.List t2 = (Type.List) to;
 			check(Type.T_CHAR,t2.element(),visited,elem);
 		} else if(from instanceof Type.Record && to instanceof Type.Record) {
 			Type.Record t1 = (Type.Record) from;
 			Type.Record t2 = (Type.Record) to;
-			HashMap<String,Type> t1_elements = t1.fields(); 
+			HashMap<String,Type> t1_elements = t1.fields();
 			HashMap<String,Type> t2_elements = t2.fields();
 			ArrayList<String> fields = new ArrayList<String>(t2.keys());
 			for(String s : fields) {
 				Type e1 = t1_elements.get(s);
 				Type e2 = t2_elements.get(s);
 				check(e1,e2,visited,elem);
-			}			
+			}
 		} else if(from instanceof Type.Function && to instanceof Type.Function) {
 			Type.Function t1 = (Type.Function) from;
 			Type.Function t2 = (Type.Function) to;
-			List<Type> t1_elements = t1.params(); 
-			List<Type> t2_elements = t2.params();			
+			List<Type> t1_elements = t1.params();
+			List<Type> t2_elements = t2.params();
 			for(int i=0;i!=t1_elements.size();++i) {
 				Type e1 = t1_elements.get(i);
 				Type e2 = t2_elements.get(i);
 				check(e1,e2,visited,elem);
-			}			
+			}
 			check(t1.ret(),t2.ret(),visited,elem);
 		} else if(from instanceof Type.Union) {
-			Type.Union t1 = (Type.Union) from; 
+			Type.Union t1 = (Type.Union) from;
 			for(Type b : t1.bounds()) {
 				check(b,to,visited,elem);
 			}
-		} else if(to instanceof Type.Union) {			
-			Type.Union t2 = (Type.Union) to;			
-			
+		} else if(to instanceof Type.Union) {
+			Type.Union t2 = (Type.Union) to;
+
 			// First, check for identical type (i.e. no coercion necessary)
-			
+
 			for(Type b : t2.bounds()) {
 				if(from.equals(b)) {
 					// no problem
 					return;
 				}
 			}
-			
+
 			// Second, check for single non-coercive match
-			Type match = null;			
-			
+			Type match = null;
+
 			for(Type b : t2.bounds()) {
 				if(Type.isSubtype(b,from)) {
 					if(match != null) {
-						// found ambiguity						
+						// found ambiguity
 						syntaxError(errorMessage(AMBIGUOUS_COERCION,from,to), filename, elem);
 					} else {
 						check(from,b,visited,elem);
-						match = b;						
+						match = b;
 					}
 				}
 			}
-			
+
 			if(match != null) {
 				// ok, we have a hit on a non-coercive subtype.
 				return;
 			}
-			
+
 			// Third, test for single coercive match
-			
+
 			for(Type b : t2.bounds()) {
 				if(Type.isExplicitCoerciveSubtype(b,from)) {
 					if(match != null) {
@@ -237,10 +237,10 @@ public class CoercionCheck implements Transform<WyilFile> {
 								+ to, filename, elem);
 					} else {
 						check(from,b,visited,elem);
-						match = b;						
+						match = b;
 					}
 				}
 			}
-		}		
+		}
 	}
 }

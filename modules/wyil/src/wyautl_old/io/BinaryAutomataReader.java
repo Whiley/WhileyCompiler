@@ -45,27 +45,27 @@ import wyfs.io.BinaryInputStream;
  * children) for a state comes first, and the supplementary data is placed after
  * that.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
-public class BinaryAutomataReader implements GenericReader<Automaton> {		
-	protected final BinaryInputStream reader;	
-	
+public class BinaryAutomataReader implements GenericReader<Automaton> {
+	protected final BinaryInputStream reader;
+
 	public BinaryAutomataReader(BinaryInputStream reader) {
-		this.reader = reader;			
+		this.reader = reader;
 	}
-	
+
 	public void close() throws IOException {
 		reader.close();
 	}
-	
-	public Automaton read() throws IOException {		
-		int size = reader.read_uv();		
+
+	public Automaton read() throws IOException {
+		int size = reader.read_uv();
 		Automaton.State[] states = new Automaton.State[size];
 		for(int i=0;i!=size;++i) {
-			states[i] = readState();			
-		}		
+			states[i] = readState();
+		}
 		return new Automaton(states);
 	}
 
@@ -73,10 +73,10 @@ public class BinaryAutomataReader implements GenericReader<Automaton> {
 		int kind = reader.read_uv();
 		boolean deterministic = reader.read_bit();
 		int nchildren = reader.read_uv();
-		int[] children = new int[nchildren];		
+		int[] children = new int[nchildren];
 		for (int i=0;i!=nchildren;++i) {
 			children[i]=reader.read_uv();
 		}
 		return new Automaton.State(kind,deterministic,children);
 	}
-}	
+}

@@ -4,7 +4,7 @@ requires n > 0:
     int i = 0
     [int] oitems = items
     //
-    while i < |items| 
+    while i < |items|
     //
     where i >= 0 && i <= |items| && |items| == |oitems|
     // Elements upto but not including i are zeroed
@@ -20,4 +20,3 @@ method main(System.Console console):
     [int] ls = [1,2,3,4]
     console.out.println("ADD(" ++ 1 ++ ") = " ++ add(ls,1))
     console.out.println("ADD(" ++ 11 ++ ") = " ++ add(ls,11))
-    

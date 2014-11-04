@@ -37,15 +37,15 @@ import wyil.lang.*;
  * implementations of Whiley. For example, on the JVM, we might want an instance
  * which reads module information directly from a JVM classfile.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public interface ModuleReader {
 
 	/**
 	 * Read a given given module from an input stream.
-	 * 
+	 *
 	 * @param module
 	 *            --- the identifier of the module being read.
 	 * @param input

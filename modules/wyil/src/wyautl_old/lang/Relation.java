@@ -31,7 +31,7 @@ package wyautl_old.lang;
  * automata. It provides an interpretation of states in the automata being
  * compared.
  * </p>
- * 
+ *
  * <p>
  * As an example, consider the common case of <i>subsumption</i>. One automata
  * <code>a1</code> subsumes another automata <code>a2</code> if <code>a1</code>
@@ -39,22 +39,22 @@ package wyautl_old.lang;
  * a state of kind "OR" can subsume a state with the same kind as one of its
  * children.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public interface Relation {
-	
+
 	/**
 	 * Get the automaton in the "from" position.
-	 * 
+	 *
 	 * @return
 	 */
 	public Automaton from();
-	
+
 	/**
 	 * Get the automaton in the "to" position.
-	 * 
+	 *
 	 * @return
 	 */
 	public Automaton to();
@@ -62,7 +62,7 @@ public interface Relation {
 	/**
 	 * Check whether a node in the <code>from</code> automaton, and a node in the
 	 * <code>to</code> automaton are related or not.
-	 * 
+	 *
 	 * @param from
 	 *            --- An index into automaton <code>from</code>.
 	 * @param to
@@ -76,7 +76,7 @@ public interface Relation {
 	 * Recalculate the relationship status between a node in the
 	 * <code>from</code> automaton, and a node in the <code>to</code> automaton.
 	 * </p>
-	 * 
+	 *
 	 * @param from
 	 *            --- An index into automaton <code>from</code>.
 	 * @param to

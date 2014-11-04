@@ -12,16 +12,16 @@ constant DIV is 3
 
 // binary operation
 constant BOp is { ADD, SUB, MUL, DIV }
-type BinOp is { BOp op, Expr lhs, Expr rhs } 
+type BinOp is { BOp op, Expr lhs, Expr rhs }
 
 // variables
 type Var is { string id }
 
 // list access
-type ListAccess is { 
-    Expr src, 
+type ListAccess is {
+    Expr src,
     Expr index
-} 
+}
 
 // expression tree
 type Expr is int |  // constant
@@ -93,7 +93,7 @@ throws RuntimeError:
 type State is { string input, int pos }
 
 // Top-level parse method
-function parse(State st) => (Stmt,State) 
+function parse(State st) => (Stmt,State)
 throws SyntaxError:
     //
     Var keyword, Var v
@@ -113,55 +113,55 @@ throws SyntaxError:
         default:
             throw SyntaxError("unknown statement",start,st.pos-1)
 
-function parseAddSubExpr(State st) => (Expr, State) 
-throws SyntaxError:    
+function parseAddSubExpr(State st) => (Expr, State)
+throws SyntaxError:
     //
-    Expr lhs, Expr rhs      
-    // First, pass left-hand side 
+    Expr lhs, Expr rhs
+    // First, pass left-hand side
     lhs,st = parseMulDivExpr(st)
-    
+
     st = parseWhiteSpace(st)
     // Second, see if there is a right-hand side
     if st.pos < |st.input| && st.input[st.pos] == '+':
         // add expression
         st.pos = st.pos + 1
-        rhs,st = parseAddSubExpr(st)        
+        rhs,st = parseAddSubExpr(st)
         return {op: ADD, lhs: lhs, rhs: rhs},st
     else if st.pos < |st.input| && st.input[st.pos] == '-':
         // subtract expression
         st.pos = st.pos + 1
-        (rhs,st) = parseAddSubExpr(st)        
+        (rhs,st) = parseAddSubExpr(st)
         return {op: SUB, lhs: lhs, rhs: rhs},st
-    
+
     // No right-hand side
     return (lhs,st)
 
-function parseMulDivExpr(State st) => (Expr, State) 
-throws SyntaxError:    
+function parseMulDivExpr(State st) => (Expr, State)
+throws SyntaxError:
     Expr lhs, Expr rhs
     // First, pass left-hand side
     (lhs,st) = parseTerm(st)
-    
+
     st = parseWhiteSpace(st)
     // Second, see if there is a right-hand side
     if st.pos < |st.input| && st.input[st.pos] == '*':
         // add expression
         st.pos = st.pos + 1
-        (rhs,st) = parseMulDivExpr(st)                
+        (rhs,st) = parseMulDivExpr(st)
         return {op: MUL, lhs: lhs, rhs: rhs}, st
     else if st.pos < |st.input| && st.input[st.pos] == '/':
         // subtract expression
         st.pos = st.pos + 1
-        (rhs,st) = parseMulDivExpr(st)        
+        (rhs,st) = parseMulDivExpr(st)
         return {op: DIV, lhs: lhs, rhs: rhs}, st
-    
+
     // No right-hand side
     return (lhs,st)
 
-function parseTerm(State st) => (Expr, State) 
+function parseTerm(State st) => (Expr, State)
 throws SyntaxError:
     //
-    st = parseWhiteSpace(st)        
+    st = parseWhiteSpace(st)
     if st.pos < |st.input|:
         if Char.isLetter(st.input[st.pos]):
             return parseIdentifier(st)
@@ -180,16 +180,16 @@ function parseIdentifier(State st) => (Var, State):
         st.pos = st.pos + 1
     return ({id:txt}, st)
 
-function parseNumber(State st) => (Expr, State) 
-throws SyntaxError:    
+function parseNumber(State st) => (Expr, State)
+throws SyntaxError:
     // inch forward until end of identifier reached
     int start = st.pos
     while st.pos < |st.input| && Char.isDigit(st.input[st.pos]):
-        st.pos = st.pos + 1    
+        st.pos = st.pos + 1
     return Int.parse(st.input[start..st.pos]), st
 
-function parseList(State st) => (Expr, State) 
-throws SyntaxError:    
+function parseList(State st) => (Expr, State)
+throws SyntaxError:
     //
     st.pos = st.pos + 1 // skip '['
     st = parseWhiteSpace(st)
@@ -203,12 +203,12 @@ throws SyntaxError:
         firstTime = false
         Expr e
         e,st = parseAddSubExpr(st)
-        // perform annoying error check    
+        // perform annoying error check
         l = l ++ [e]
         st = parseWhiteSpace(st)
     st.pos = st.pos + 1
     return l,st
- 
+
 // Parse all whitespace upto end-of-file
 function parseWhiteSpace(State st) => State:
     while st.pos < |st.input| && Char.isWhiteSpace(st.input[st.pos]):
@@ -225,9 +225,9 @@ public method main(System.Console sys):
     else:
         File.Reader file = File.Reader(sys.args[0])
         string input = String.fromASCII(file.readAll())
-        
+
         try:
-            {string=>Value} env = {"$"=>0} 
+            {string=>Value} env = {"$"=>0}
             State st = {pos: 0, input: input}
             while st.pos < |st.input|:
                 Stmt s

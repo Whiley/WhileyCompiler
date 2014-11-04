@@ -31,7 +31,7 @@ package wyautl_old.lang;
  * particular, it defines an acceptance relation which characterises precisely
  * which values are accepted by the automata.
  * </p>
- * 
+ *
  * <p>
  * The primary use of this interface is for testing purposes. As an example, a
  * common kind of test is to check that a minimised automata accepts the same
@@ -39,18 +39,18 @@ package wyautl_old.lang;
  * is should be the case that all it accepts all of the values accepted by the
  * other.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public interface Interpretation<T> {
 
 	/**
 	 * Returns true iff the given automaton accepts the given value.
-	 * 
+	 *
 	 * @param automaton
 	 * @param value
 	 * @return
 	 */
-	public boolean accepts(Automaton automaton, T value);	
+	public boolean accepts(Automaton automaton, T value);
 }

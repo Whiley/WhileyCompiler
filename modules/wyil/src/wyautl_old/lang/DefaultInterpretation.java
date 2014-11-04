@@ -43,18 +43,18 @@ import java.util.Arrays;
  * <p>
  * <b>NOTE:</b> in the default interpretation, supplementary data is ignored.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class DefaultInterpretation implements Interpretation<DefaultInterpretation.Term> {
 
 	/**
 	 * Represents a term which may be accepted by an automaton under the default
 	 * interpretation.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static final class Term {
 		public final int kind;
@@ -63,7 +63,7 @@ public class DefaultInterpretation implements Interpretation<DefaultInterpretati
 
 		public Term(int kind, Object data, Term... children) {
 			this.kind = kind;
-			this.children = children;		
+			this.children = children;
 			this.data = data;
 		}
 
@@ -76,7 +76,7 @@ public class DefaultInterpretation implements Interpretation<DefaultInterpretati
 					} else {
 						return data.equals(dv.data);
 					}
-				} 
+				}
 			}
 			return false;
 		}
@@ -98,11 +98,11 @@ public class DefaultInterpretation implements Interpretation<DefaultInterpretati
 			return kind + "(" + middle + ")";
 		}
 	}
-	
+
 	/**
 	 * Construct a value from an automata. Will throw an
 	 * IllegalArgumentException if the value is not concrete.
-	 * 
+	 *
 	 * @param automata
 	 * @return
 	 */
@@ -112,22 +112,22 @@ public class DefaultInterpretation implements Interpretation<DefaultInterpretati
 		}
 		return construct(0,automata);
 	}
-	
+
 	private static Term construct(int index, Automaton automata) {
 		Automaton.State state = automata.states[index];
 		Term[] children = new Term[state.children.length];
 		int i = 0;
-		for(int c : state.children) {			
+		for(int c : state.children) {
 			children[i++] = construct(c,automata);
 		}
 		return new Term(state.kind,state.data,children);
 	}
-		
+
 	public boolean accepts(Automaton automata, Term value) {
 		return accepts(0,automata,value);
 	}
-	
-	public boolean accepts(int index, Automaton automata, Term value) {		
+
+	public boolean accepts(int index, Automaton automata, Term value) {
 		Automaton.State state = automata.states[index];
 		if(state.kind == value.kind) {
 			if (state.data == null && value.data != null) {
@@ -140,10 +140,10 @@ public class DefaultInterpretation implements Interpretation<DefaultInterpretati
 				Term[] vchildren = value.children;
 				if(schildren.length != vchildren.length) {
 					return false;
-				}				
+				}
 				int length = schildren.length;
 				for(int i=0;i!=length;++i) {
-					int schild = schildren[i];					
+					int schild = schildren[i];
 					Term vchild = vchildren[i];
 					if(!accepts(schild,automata,vchild)) {
 						return false;
@@ -154,16 +154,16 @@ public class DefaultInterpretation implements Interpretation<DefaultInterpretati
 				// non-deterministic case
 				int[] schildren = state.children;
 				Term[] vchildren = value.children;
-				
+
 				if (vchildren.length == 0 && schildren.length > 0) {
 					return false;
 				}
-				
+
 				for(int i=0;i!=vchildren.length;++i) {
 					Term vchild = vchildren[i];
 					boolean matched = false;
 					for(int j=0;j!=schildren.length;++j) {
-						int schild = schildren[j];							
+						int schild = schildren[j];
 						if(accepts(schild,automata,vchild)) {
 							matched = true;
 							break;

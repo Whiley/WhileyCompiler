@@ -19,14 +19,14 @@ import wyil.lang.*;
  * Responsible for "pretty printing" a Whiley File. This is useful for
  * formatting Whiley Files. Also, it can be used to programatically generate
  * Whiley Files.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class WhileyFilePrinter {
 	private PrintStream out;
-	
-	
+
+
 	public WhileyFilePrinter(OutputStream stream) {
 		try {
 			this.out = new PrintStream(stream, true, "UTF-8");
@@ -34,14 +34,14 @@ public class WhileyFilePrinter {
 			this.out = new PrintStream(stream);
 		}
 	}
-	
+
 	public void print(WhileyFile wf) {
 		for(WhileyFile.Declaration d : wf.declarations) {
 			print(d);
 		}
 		out.flush();
 	}
-	
+
 	public void print(WhileyFile.Declaration decl) {
 		if(decl instanceof WhileyFile.Import) {
 			print((WhileyFile.Import)decl);
@@ -56,22 +56,22 @@ public class WhileyFilePrinter {
 					+ decl.getClass().getName());
 		}
 	}
-	
+
 	public void print(WhileyFile.FunctionOrMethod fm) {
 		out.println();
-		print(fm.modifiers());		
-		
+		print(fm.modifiers());
+
 		int paramStart = 0;
-		
-		if(fm instanceof WhileyFile.Method) {			
+
+		if(fm instanceof WhileyFile.Method) {
 			out.print("method ");
 		} else {
 			out.print("function ");
 		}
-		
+
 		out.print(fm.name());
 		out.print("(");
-		boolean firstTime = true;		
+		boolean firstTime = true;
 		for(int i = paramStart; i < fm.parameters.size();++i) {
 			WhileyFile.Parameter p = fm.parameters.get(i);
 			if(!firstTime) {
@@ -82,15 +82,15 @@ public class WhileyFilePrinter {
 			out.print(" ");
 			out.print(p.name);
 		}
-		out.print(") => ");		
+		out.print(") => ");
 		print(fm.ret);
-		
+
 		if(!(fm.throwType instanceof SyntacticType.Void)) {
-			out.print(" throws ");			
+			out.print(" throws ");
 			print(fm.throwType);
 		}
 
-		for(Expr r : fm.requires) {			
+		for(Expr r : fm.requires) {
 			out.println();
 			out.print("requires ");
 			print(r);
@@ -101,13 +101,13 @@ public class WhileyFilePrinter {
 			out.print("ensures ");
 			print(r);
 		}
-		
+
 		out.println(":");
-				
+
 		print(fm.statements,1);
 	}
-	
-	public void print(WhileyFile.Import decl) {		
+
+	public void print(WhileyFile.Import decl) {
 		out.print("import ");
 		if(decl.name != null) {
 			out.print(decl.name);
@@ -124,7 +124,7 @@ public class WhileyFilePrinter {
 		}
 		out.println();
 	}
-	
+
 	public void print(WhileyFile.Constant decl) {
 		out.println();
 		out.print("constant ");
@@ -133,31 +133,31 @@ public class WhileyFilePrinter {
 		print(decl.constant);
 		out.println();
 	}
-	
+
 	public void print(WhileyFile.Type decl) {
 		out.println();
 		out.print("type ");
 		out.print(decl.name());
 		out.print(" is ");
 		print(decl.pattern);
-		
+
 		if(decl.invariant != null) {
 			out.print(" where ");
 			print(decl.invariant);
 		}
-		
+
 		out.println();
 	}
-	
+
 	public void print(List<Stmt> statements, int indent) {
 		for(Stmt s : statements) {
 			print(s,indent);
 		}
 	}
-	
+
 	public void print(Stmt stmt, int indent) {
 		indent(indent);
-		
+
 		if(stmt instanceof Stmt.Assert) {
 			print((Stmt.Assert) stmt);
 		} else if(stmt instanceof Stmt.Assign) {
@@ -199,7 +199,7 @@ public class WhileyFilePrinter {
 					+ stmt.getClass().getName());
 		}
 	}
-	
+
 	public void print(Stmt.Assert s) {
 		out.print("assert ");
 		print(s.expr);
@@ -217,25 +217,25 @@ public class WhileyFilePrinter {
 		print(s.expr);
 		out.println();
 	}
-	
+
 	public void print(Stmt.Throw s) {
 		out.print("throw ");
 		print(s.expr);
 		out.println();
 	}
-	
+
 	public void print(Stmt.Break s) {
 		out.println("break");
 	}
-	
+
 	public void print(Stmt.Continue s) {
 		out.println("break");
 	}
-	
+
 	public void print(Stmt.Skip s) {
 		out.println("skip");
 	}
-	
+
 	public void print(Stmt.Return s) {
 		out.print("return");
 		if(s.expr != null) {
@@ -244,14 +244,14 @@ public class WhileyFilePrinter {
 		}
 		out.println();
 	}
-	
-	public void print(Stmt.Assign s) {		
+
+	public void print(Stmt.Assign s) {
 		print(s.lhs);
 		out.print(" = ");
 		print(s.rhs);
 		out.println();
 	}
-	
+
 	public void print(Stmt.IfElse s, int indent) {
 		out.print("if ");
 		print(s.condition);
@@ -263,7 +263,7 @@ public class WhileyFilePrinter {
 			print(s.falseBranch, indent+1);
 		}
 	}
-	
+
 	public void print(Stmt.DoWhile s, int indent) {
 		out.println("do:");
 		print(s.body,indent+1);
@@ -273,12 +273,12 @@ public class WhileyFilePrinter {
 		print(s.condition);
 		out.println();
 	}
-	
+
 	public void print(Stmt.While s, int indent) {
 		out.print("while ");
 		print(s.condition);
-		
-		boolean firstTime = true;		
+
+		boolean firstTime = true;
 		for(Expr i : s.invariants) {
 			if(!firstTime) {
 				out.print(",");
@@ -288,12 +288,12 @@ public class WhileyFilePrinter {
 			out.print(" where ");
 			print(i);
 		}
-		
+
 		// TODO: loop invariant
 		out.println(":");
 		print(s.body,indent+1);
 	}
-	
+
 	public void print(Stmt.ForAll s, int indent) {
 		out.print("for ");
 		boolean firstTime = true;
@@ -306,22 +306,22 @@ public class WhileyFilePrinter {
 		}
 		out.print(" in ");
 		print(s.source);
-		
+
 		if(s.invariant != null) {
 			out.print(" where ");
 			print(s.invariant);
 		}
-		
+
 		out.println(":");
 		print(s.body,indent+1);
 	}
-	
+
 	public void print(Stmt.Switch s, int indent) {
 		out.print("switch ");
 		print(s.expr);
 		out.println(":");
 		for(Stmt.Case cas : s.cases) {
-			indent(indent+1);			
+			indent(indent+1);
 			boolean firstTime = true;
 			if(cas.expr.isEmpty()) {
 				out.print("default");
@@ -333,14 +333,14 @@ public class WhileyFilePrinter {
 					}
 					firstTime=false;
 					print(e);
-				}		
+				}
 			}
 
 			out.println(":");
-			print(cas.stmts,indent+2);			
-		}		
+			print(cas.stmts,indent+2);
+		}
 	}
-	
+
 	public void print(Stmt.TryCatch s, int indent) {
 		out.println("try:");
 		print(s.body,indent+1);
@@ -353,7 +353,7 @@ public class WhileyFilePrinter {
 			print(handler.stmts, indent+1);
 		}
 	}
-	
+
 	public void print(Stmt.VariableDeclaration s, int indent) {
 		print(s.pattern);
 		if(s.expr != null) {
@@ -381,7 +381,7 @@ public class WhileyFilePrinter {
 			print(expression);
 		}
 	}
-	
+
 	public void print(Expr expression) {
 		if (expression instanceof Expr.Constant) {
 			print ((Expr.Constant) expression);
@@ -440,15 +440,15 @@ public class WhileyFilePrinter {
 			throw new RuntimeException("Unknown expression kind encountered: " + expression.getClass().getName());
 		}
 	}
-	
+
 	public void print(Expr.Constant c) {
 		out.print(c.value);
 	}
-	
+
 	public void print(Expr.AbstractVariable v) {
 		out.print(v);
 	}
-	
+
 	public void print(Expr.ConstantAccess v) {
 		if(v.qualification != null) {
 			out.print(v.qualification + "." + v.name);
@@ -456,7 +456,7 @@ public class WhileyFilePrinter {
 			out.print(v.name);
 		}
 	}
-	
+
 	public void print(Expr.Set e) {
 		out.print("{");
 		boolean firstTime = true;
@@ -469,7 +469,7 @@ public class WhileyFilePrinter {
 		}
 		out.print("}");
 	}
-	
+
 	public void print(Expr.List e) {
 		out.print("[");
 		boolean firstTime = true;
@@ -482,7 +482,7 @@ public class WhileyFilePrinter {
 		}
 		out.print("]");
 	}
-	
+
 	public void print(Expr.SubList e) {
 		print(e.src);
 		out.print("[");
@@ -491,7 +491,7 @@ public class WhileyFilePrinter {
 		print(e.end);
 		out.print("]");
 	}
-	
+
 	public void print(Expr.SubString e) {
 		print(e.src);
 		out.print("[");
@@ -500,7 +500,7 @@ public class WhileyFilePrinter {
 		print(e.end);
 		out.print("]");
 	}
-	
+
 	public void print(Expr.BinOp e) {
 		printWithBrackets(e.lhs, Expr.BinOp.class, Expr.Cast.class);
 		out.print(" ");
@@ -508,32 +508,32 @@ public class WhileyFilePrinter {
 		out.print(" ");
 		printWithBrackets(e.rhs, Expr.BinOp.class, Expr.Cast.class);
 	}
-	
+
 	public void print(Expr.LengthOf e) {
 		out.print("|");
 		print(e.src);
 		out.print("|");
 	}
-	
+
 	public void print(Expr.Dereference e) {
 		out.print("*");
 		print(e.src);
 	}
-	
+
 	public void print(Expr.Cast e) {
 		out.print("(");
 		print(e.unresolvedType);
 		out.print(") ");
 		printWithBrackets(e.expr,Expr.BinOp.class,Expr.Cast.class);
 	}
-	
+
 	public void print(Expr.IndexOf e) {
 		print(e.src);
 		out.print("[");
 		print(e.index);
 		out.print("]");
 	}
-	
+
 	public void print(Expr.UnOp e) {
 		switch(e.op) {
 		case NEG:
@@ -548,7 +548,7 @@ public class WhileyFilePrinter {
 		}
 		printWithBrackets(e.mhs,Expr.BinOp.class,Expr.Cast.class);
 	}
-	
+
 	public void print(Expr.AbstractInvoke e) {
 		if(e.qualification != null) {
 			out.print(e.qualification.toString());
@@ -566,7 +566,7 @@ public class WhileyFilePrinter {
 		}
 		out.print(")");
 	}
-	
+
 	public void print(Expr.IndirectFunctionCall e) {
 		print(e.src);
 		out.print("(");
@@ -580,7 +580,7 @@ public class WhileyFilePrinter {
 		}
 		out.print(")");
 	}
-	
+
 	public void print(Expr.IndirectMethodCall e) {
 		print(e.src);
 		out.print("(");
@@ -592,9 +592,9 @@ public class WhileyFilePrinter {
 			firstTime=false;
 			print(i);
 		}
-		out.print(")"); 
+		out.print(")");
 	}
-	
+
 	public void print(Expr.Comprehension e) {
 		switch(e.cop) {
 		case NONE:
@@ -607,7 +607,7 @@ public class WhileyFilePrinter {
 			out.print("all ");
 			break;
 		}
-		
+
 		out.print("{ ");
 
 		if(e.value != null) {
@@ -643,7 +643,7 @@ public class WhileyFilePrinter {
 		}
 		out.print(" }");
 	}
-	
+
 	public void print(Expr.FieldAccess e) {
 		if(e.src instanceof Expr.Dereference) {
 			printWithBrackets(((Expr.Dereference)e.src).src,Expr.New.class);
@@ -655,7 +655,7 @@ public class WhileyFilePrinter {
 			out.print(e.name);
 		}
 	}
-	
+
 	public void print(Expr.Record e) {
 		out.print("{");
 		boolean firstTime = true;
@@ -664,13 +664,13 @@ public class WhileyFilePrinter {
 				out.print(", ");
 			}
 			firstTime=false;
-			out.print(i.getKey());			
+			out.print(i.getKey());
 			out.print(": ");
 			print(i.getValue());
 		}
 		out.print("}");
 	}
-	
+
 	public void print(Expr.Tuple e) {
 		out.print("(");
 		boolean firstTime = true;
@@ -683,7 +683,7 @@ public class WhileyFilePrinter {
 		}
 		out.print(")");
 	}
-	
+
 	public void print(Expr.Map e) {
 		out.print("{");
 		if(e.pairs.isEmpty()) {
@@ -702,7 +702,7 @@ public class WhileyFilePrinter {
 		}
 		out.print("}");
 	}
-	
+
 	public void print(Expr.AbstractFunctionOrMethod e) {
 		out.print("&");
 		out.print(e.name);
@@ -714,12 +714,12 @@ public class WhileyFilePrinter {
 					out.print(", ");
 				}
 				firstTime=false;
-				print(t);				
+				print(t);
 			}
 			out.print(")");
 		}
 	}
-	
+
 	public void print(Expr.Lambda e) {
 		out.print("&(");
 		boolean firstTime = true;
@@ -736,29 +736,29 @@ public class WhileyFilePrinter {
 		print(e.body);
 		out.print(")");
 	}
-	
+
 	public void print(Expr.New e) {
 		out.print("new ");
 		print(e.expr);
 	}
-	
-	public void print(Expr.TypeVal e) {		
+
+	public void print(Expr.TypeVal e) {
 		print(e.unresolvedType);
 	}
-	
+
 	public void print(Expr.RationalLVal e) {
 		print(e.numerator);
 		out.print(" / ");
 		print(e.denominator);
 	}
-	
+
 	public void print(List<Modifier> modifiers) {
-		for(Modifier m : modifiers) {							
+		for(Modifier m : modifiers) {
 			out.print(m);
 			out.print(" ");
 		}
 	}
-	
+
 	public void print(TypePattern t) {
 		if (t instanceof TypePattern.Leaf) {
 			TypePattern.Leaf tp = (TypePattern.Leaf) t;
@@ -813,7 +813,7 @@ public class WhileyFilePrinter {
 			out.print(")");
 		}
 	}
-	
+
 	public void print(SyntacticType t) {
 		if(t instanceof SyntacticType.Any) {
 			out.print("any");
@@ -841,7 +841,7 @@ public class WhileyFilePrinter {
 					out.print(".");
 				}
 				firstTime=false;
-				out.print(name);				
+				out.print(name);
 			}
 		} else if(t instanceof SyntacticType.Set) {
 			out.print("{");
@@ -866,14 +866,14 @@ public class WhileyFilePrinter {
 					out.print(", ");
 				}
 				firstTime=false;
-				print(et);				
+				print(et);
 			}
 			out.print(")");
 		} else if(t instanceof SyntacticType.FunctionOrMethod) {
 			SyntacticType.FunctionOrMethod tt = (SyntacticType.FunctionOrMethod) t;
-			
+
 			print(tt.ret);
-			
+
 			if(t instanceof SyntacticType.Method) {
 				out.print(" ::");
 			}
@@ -884,7 +884,7 @@ public class WhileyFilePrinter {
 					out.print(", ");
 				}
 				firstTime=false;
-				print(et);				
+				print(et);
 			}
 			out.print(")");
 		} else if(t instanceof SyntacticType.Record) {
@@ -918,7 +918,7 @@ public class WhileyFilePrinter {
 					out.print(" | ");
 				}
 				firstTime=false;
-				print(et);				
+				print(et);
 			}
 		} else if(t instanceof SyntacticType.Intersection) {
 			SyntacticType.Intersection ut = (SyntacticType.Intersection) t;
@@ -928,14 +928,14 @@ public class WhileyFilePrinter {
 					out.print(" & ");
 				}
 				firstTime=false;
-				print(et);				
+				print(et);
 			}
 		} else {
 			// should be dead-code
 			throw new RuntimeException("Unknown type kind encountered: " + t.getClass().getName());
 		}
 	}
-	
+
 	public void indent(int level) {
 		for(int i=0;i!=level;++i) {
 			out.print("    ");

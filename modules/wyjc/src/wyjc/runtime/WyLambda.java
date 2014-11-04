@@ -27,13 +27,13 @@ package wyjc.runtime;
 
 public abstract class WyLambda {
 	private final Object[] bindings;
-	
+
 	public WyLambda(Object... bindings) {
 		this.bindings = bindings;
 	}
-	
+
 	public abstract Object call(Object[] parameters);
-	
+
 	protected final Object[] bindParameters(Object[] parameters) {
 		if (bindings != null) {
 			Object[] copyOfBindings = bindings.clone();

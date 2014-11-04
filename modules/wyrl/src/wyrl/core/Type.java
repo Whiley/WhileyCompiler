@@ -38,7 +38,7 @@ public abstract class Type {
 	// =============================================================
 	// Public Interface
 	// =============================================================
-	
+
 	private static Any T_ANY = new Any();
 	private static Void T_VOID = new Void();
 	private static Bool T_BOOL = new Bool();
@@ -49,77 +49,77 @@ public abstract class Type {
 	private static Meta T_METAANY = new Meta(T_ANY);
 	private static List T_LISTANY = new List(true,T_ANY);
 	private static Set T_SETANY = new Set(true,T_ANY);
-	
+
 	public static Any T_ANY() {
 		if(T_ANY == null) {
 			T_ANY = new Any();
 		}
 		return T_ANY;
 	}
-	
+
 	public static Void T_VOID() {
 		if(T_VOID == null) {
 			T_VOID = new Void();
 		}
 		return T_VOID;
 	}
-	
+
 	public static Bool T_BOOL() {
 		if(T_BOOL == null) {
 			T_BOOL = new Bool();
 		}
 		return T_BOOL;
 	}
-	
+
 	public static Int T_INT() {
 		if(T_INT == null) {
 			T_INT = new Int();
 		}
 		return T_INT;
 	}
-	
+
 	public static Real T_REAL() {
 		if(T_REAL == null) {
 			T_REAL = new Real();
 		}
 		return T_REAL;
 	}
-	
+
 	public static Strung T_STRING() {
 		if(T_STRING == null) {
 			T_STRING = new Strung();
 		}
 		return T_STRING;
 	}
-	
+
 	public static Ref<Any> T_REFANY() {
 		if(T_REFANY == null) {
 			T_REFANY = new Ref(T_ANY());
 		}
 		return T_REFANY;
 	}
-	
+
 	public static Meta T_METAANY() {
 		if(T_METAANY == null) {
 			T_METAANY = new Meta(T_ANY());
 		}
 		return T_METAANY;
 	}
-	
+
 	public static List T_LISTANY() {
 		if(T_LISTANY == null) {
 			T_LISTANY = new List(true,T_ANY());
 		}
 		return T_LISTANY;
 	}
-	
+
 	public static Set T_SETANY() {
 		if(T_SETANY == null) {
 			T_SETANY = new Set(true,T_ANY());
 		}
 		return T_SETANY;
 	}
-	
+
 	public static Collection T_COMPOUND(Type.Collection template,
 			boolean unbounded, Type... elements) {
 		if (template instanceof List) {
@@ -130,7 +130,7 @@ public abstract class Type {
 			return new Set(unbounded, elements);
 		}
 	}
-	
+
 	public static Collection T_COMPOUND(Type.Collection template,
 			boolean unbounded, java.util.Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
@@ -146,7 +146,7 @@ public abstract class Type {
 			return new Set(unbounded, es);
 		}
 	}
-	
+
 	public static List T_LIST(boolean unbounded, java.util.Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
 		int i = 0;
@@ -155,11 +155,11 @@ public abstract class Type {
 		}
 		return new List(unbounded,es);
 	}
-	
+
 	public static List T_LIST(boolean unbounded, Type... elements) {
 		return new List(unbounded,elements);
 	}
-	
+
 	public static Set T_SET(boolean unbounded, java.util.Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
 		int i =0;
@@ -168,11 +168,11 @@ public abstract class Type {
 		}
 		return new Set(unbounded,es);
 	}
-	
+
 	public static Set T_SET(boolean unbounded, Type... elements) {
 		return new Set(unbounded,elements);
 	}
-	
+
 	public static Bag T_BAG(boolean unbounded, java.util.Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
 		int i =0;
@@ -181,11 +181,11 @@ public abstract class Type {
 		}
 		return new Bag(unbounded,es);
 	}
-	
+
 	public static Bag T_BAG(boolean unbounded, Type... elements) {
 		return new Bag(unbounded,elements);
 	}
-	
+
 	public static Term T_TERM(String name, Type.Ref data) {
 		if(data != null) {
 			return new Term(name,data);
@@ -193,23 +193,23 @@ public abstract class Type {
 			return new Term(name);
 		}
 	}
-	
+
 	public static Ref T_REF(Type element) {
 		return new Ref(element);
 	}
-	
+
 	public static Meta T_META(Type element) {
 		return new Meta(element);
 	}
-	
+
 	public static Not T_NOT(Type element) {
 		return new Not(element);
 	}
-	
+
 	public static And T_AND(Type... elements) {
 		return new And(elements);
 	}
-	
+
 	public static And T_AND(java.util.Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
 		int i = 0;
@@ -218,11 +218,11 @@ public abstract class Type {
 		}
 		return new And(es);
 	}
-	
+
 	public static Or T_OR(Type... elements) {
 		return new Or(elements);
 	}
-	
+
 	public static Or T_OR(java.util.Collection<Type> elements) {
 		Type[] es = new Type[elements.size()];
 		int i =0;
@@ -231,19 +231,19 @@ public abstract class Type {
 		}
 		return new Or(es);
 	}
-	
+
 	public static Fun T_FUN(Type ret, Type param) {
 		return new Fun(ret,param);
 	}
-	
+
 	/**
 	 * Coerce the result of the given expression into a value. In other words,
 	 * if the result of the expression is a reference then dereference it!
-	 * 
+	 *
 	 * @param type
 	 *            --- type to unbox.
 	 */
-	public static Type unbox(Type type) {		
+	public static Type unbox(Type type) {
 		if(type instanceof Type.Ref) {
 			Type.Ref ref = (Type.Ref) type;
 			return ref.element();
@@ -251,12 +251,12 @@ public abstract class Type {
 			return type;
 		}
 	}
-	
+
 	/**
 	 * Coerce the result of the given expression into a reference. In other
 	 * words, if the result of the expression is a value then generate a
 	 * reference to that value!
-	 * 
+	 *
 	 * @param type
 	 *            --- type to box.
 	 */
@@ -267,11 +267,11 @@ public abstract class Type {
 			return Type.T_REF(type);
 		}
 	}
-	
+
 	// ==================================================================
 	// Atoms
 	// ==================================================================
-	
+
 	public static abstract class Atom extends Type {
 		public Atom(int kind) {
 			if (kind != K_Any && kind != K_Void && kind != K_Bool
@@ -282,7 +282,7 @@ public abstract class Type {
 			automaton.setRoot(0,root);
 		}
 	}
-	
+
 	public static final class Any extends Atom {
 		private Any() {
 			super(K_Any);
@@ -294,7 +294,7 @@ public abstract class Type {
 			super(K_Void);
 		}
 	}
-	
+
 	public static final class Bool extends Atom {
 		private Bool() {
 			super(K_Bool);
@@ -312,19 +312,19 @@ public abstract class Type {
 			super(K_Real);
 		}
 	}
-	
+
 	public static final class Strung extends Atom {
 		private Strung() {
 			super(K_String);
 		}
 	}
-	
+
 	// ==================================================================
 	// Unary Terms
 	// ==================================================================
-	
+
 	public static abstract class Unary extends Type {
-		public Unary(int kind, Type element) {		
+		public Unary(int kind, Type element) {
 			if (kind != K_Meta && kind != K_Ref && kind != K_Not) {
 				throw new IllegalArgumentException("Invalid unary kind");
 			}
@@ -370,7 +370,7 @@ public abstract class Type {
 			return (T) super.element();
 		}
 	}
-	
+
 	public static final class Not extends Unary {
 		private Not(Type element) {
 			super(K_Not, element);
@@ -380,11 +380,11 @@ public abstract class Type {
 			super(automaton);
 		}
 	}
-	
+
 	// ==================================================================
 	// Nary Terms
 	// ==================================================================
-	
+
 	public static abstract class Nary extends Type {
 		private Nary(Automaton automaton) {
 			super(automaton);
@@ -442,7 +442,7 @@ public abstract class Type {
 			return elements;
 		}
 	}
-	
+
 	public static final class Term extends Type {
 		private Term(String name) {
 			int stringRoot = automaton.add(new Automaton.Strung(name));
@@ -476,7 +476,7 @@ public abstract class Type {
 			Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));
 			return str.value;
 		}
-		
+
 		public Ref element() {
 			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
@@ -486,9 +486,9 @@ public abstract class Type {
 			} else {
 				return (Ref) extract(list.get(1));
 			}
-		}		
+		}
 	}
-	
+
 	public static final class Nominal extends Type {
 		private Nominal(String name) {
 			int stringRoot = automaton.add(new Automaton.Strung(name));
@@ -522,15 +522,15 @@ public abstract class Type {
 			Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));
 			return str.value;
 		}
-		
+
 		public Type element() {
 			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
-			Automaton.List list = (Automaton.List) automaton.get(term.contents);			
-			return extract(list.get(1));			
-		}		
+			Automaton.List list = (Automaton.List) automaton.get(term.contents);
+			return extract(list.get(1));
+		}
 	}
-	
+
 	public static final class Fun extends Nary {
 		private Fun(Type ret, Type param) {
 			super(K_Fun,K_List,ret,param);
@@ -546,7 +546,7 @@ public abstract class Type {
 			return element(1);
 		}
 	}
-	
+
 	public static final class And extends Nary {
 		private And(Type... bounds) {
 			super(K_And,K_Set,bounds);
@@ -554,23 +554,23 @@ public abstract class Type {
 
 		private And(Automaton automaton) {
 			super(automaton);
-		}		
+		}
 	}
-	
+
 	public static final class Or extends Nary {
 		private Or(Type... bounds) {
 			super(K_Or,K_Set,bounds);
 		}
-		
+
 		private Or(Automaton automaton) {
 			super(automaton);
-		}		
+		}
 	}
-	
+
 	// ==================================================================
 	// Compounds
-	// ==================================================================			
-	
+	// ==================================================================
+
 	public static abstract class Collection extends Type {
 		private Collection(Automaton automaton) {
 			super(automaton);
@@ -584,23 +584,23 @@ public abstract class Type {
 			if (kind != K_Set && kind != K_Bag && kind != K_List) {
 				throw new IllegalArgumentException("Invalid collection kind");
 			}
-			
+
 			int length = unbounded ? elements.length-1 : elements.length;
 			int lastRoot = automaton.add(new Automaton.Term(Types.K_Void));
-					
+
 			int[] children = new int[length];
 			for (int i = 0; i != elements.length; ++i) {
 				Type element = elements[i];
 				Automaton element_automaton = element.automaton;
 				int child = automaton.addAll(element_automaton.getRoot(0),
-						element_automaton);				
+						element_automaton);
 				if(i == length) {
 					lastRoot = child;
 				} else {
 					children[i] = child;
 				}
 			}
-			
+
 			int compoundRoot;
 			switch (kind) {
 			case K_Set:
@@ -614,7 +614,7 @@ public abstract class Type {
 				throw new IllegalArgumentException(
 						"invalid compound type in Nary constructor");
 			}
-			
+
 			int listRoot = automaton.add(new Automaton.List(lastRoot,compoundRoot));
 			int root = automaton.add(new Automaton.Term(kind, listRoot));
 			automaton.setRoot(0,root);
@@ -627,7 +627,7 @@ public abstract class Type {
 			Automaton.Term unbounded = (Automaton.Term) automaton.get(list.get(0));
 			return unbounded.kind != Types.K_Void;
 		}
-				
+
 		public Type[] elements() {
 			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
@@ -636,7 +636,7 @@ public abstract class Type {
 					.get(list.get(1));
 			boolean unbounded = unbounded();
 			int length = unbounded ? collection.size()+1 : collection.size();
-			
+
 			Type[] elements = new Type[length];
 			for(int i=0;i!=collection.size();++i) {
 				elements[i] = extract(collection.get(i));
@@ -644,10 +644,10 @@ public abstract class Type {
 			if(unbounded) {
 				elements[length-1] = extract(list.get(0));
 			}
-				
+
 			return elements;
 		}
-		
+
 		public Type element() {
 			Type[] elements = elements();
 			if(elements.length == 0) {
@@ -656,9 +656,9 @@ public abstract class Type {
 				return elements[0];
 			} else {
 				return T_OR(elements());
-			} 
+			}
 		}
-		
+
 		protected String body() {
 			String r = "";
 			Type[] elements = elements();
@@ -674,7 +674,7 @@ public abstract class Type {
 			return r;
 		}
 	}
-	
+
 	public final static class Set extends Collection {
 		private Set(boolean unbounded, Type... elements) {
 			super(K_Set, unbounded, elements);
@@ -684,7 +684,7 @@ public abstract class Type {
 			super(automaton);
 		}
 	}
-	
+
 	public final static class Bag extends Collection {
 		private Bag(boolean unbounded, Type... elements) {
 			super(K_Bag, unbounded, elements);
@@ -694,7 +694,7 @@ public abstract class Type {
 			super(automaton);
 		}
 	}
-	
+
 	public final static class List extends Collection {
 		private List(boolean unbounded, Type... elements) {
 			super(K_List, unbounded, elements);
@@ -704,25 +704,25 @@ public abstract class Type {
 			super(automaton);
 		}
 	}
-			
+
 	// =============================================================
 	// Private Implementation
 	// =============================================================
 
 	protected final Automaton automaton;
-	
+
 	private Type() {
 		this.automaton = new Automaton();
-	}	
-	
+	}
+
 	private Type(Automaton automaton) {
 		this.automaton = automaton;
 	}
-	
+
 	public Automaton automaton() {
 		return automaton;
 	}
-	
+
 	/**
 	 * <p>
 	 * Return true if argument (<code>t1</code>) is a subtype of this type (
@@ -731,9 +731,9 @@ public abstract class Type {
 	 * If this reduces to type <code>void</code>, then we can be certain that
 	 * <code>t1</code> is entirely closed within <code>t2</code>.
 	 * </p>
-	 * 
-	 * 
-	 * 
+	 *
+	 *
+	 *
 	 * @param t1
 	 *            --- super-type to test for.
 	 * @param t2
@@ -742,24 +742,24 @@ public abstract class Type {
 	 */
 	public boolean isSubtype(Type t) {
 //		Type result = Type.T_AND(Type.T_NOT(this),t);
-//		Types.reduce(result.automaton);		
+//		Types.reduce(result.automaton);
 //		boolean r1 = result.equals(Type.T_VOID());
-//		boolean r2 = isSubtype(this,t,10); 
+//		boolean r2 = isSubtype(this,t,10);
 //		if(!r1 && r2) {
 //			System.err.println("REDUCTION APPROACH FAILED FOR: " + this + " :> " + t + " (" + result + ")");
 //		} else if(r1 && !r2) {
 //			System.err.println("MANUAL APPROACH FAILED FOR: " + this + " :> " + t);
-//		} 
-//		
+//		}
+//
 //		return r1 || r2;
 		return isSubtype(this,t,10);
-	}	
-	
-	
+	}
+
+
 	public int hashCode() {
 		return automaton.hashCode();
 	}
-	
+
 	public boolean equals(Object o) {
 		if (o instanceof Type) {
 			Type r = (Type) o;
@@ -767,16 +767,16 @@ public abstract class Type {
 		}
 		return false;
 	}
-	
+
 	public String toString() {
 		int root = automaton.getRoot(0);
-		int[] headers = new int[automaton.nStates()];		
+		int[] headers = new int[automaton.nStates()];
 		Automata.traverse(automaton,root,headers);
 		return toString(root,headers);
 	}
-	
+
 	public String toString(int root, int[] headers) {
-		String body = "";	
+		String body = "";
 		int header = 0;
 		if(root >= 0) {
 			header = headers[root];
@@ -811,13 +811,13 @@ public abstract class Type {
 			case K_String:
 				body += "string";
 				break;
-			case K_Ref: 
+			case K_Ref:
 				body += "^" + toString(term.contents,headers);
 				break;
-			case K_Meta: 
+			case K_Meta:
 				body += "?" + toString(term.contents,headers);
 				break;
-			case K_Not: 
+			case K_Not:
 				body += "!" + toString(term.contents,headers);
 				break;
 			case K_Or : {
@@ -856,7 +856,7 @@ public abstract class Type {
 						tmp += ",";
 					}
 					tmp += toString(c.get(i),headers);
-				}				
+				}
 				if(unbounded.kind != Types.K_Void) {
 					if(c.size() != 0) {
 						tmp += ",";
@@ -871,12 +871,12 @@ public abstract class Type {
 						body +=  "{|" + tmp + "|}";
 					case K_List:
 						body += "[" + tmp + "]";
-				}			
+				}
 				break;
 			}
 			case K_Nominal: {
 				Automaton.List list = (Automaton.List) automaton.get(term.contents);
-				Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));								
+				Automaton.Strung str = (Automaton.Strung) automaton.get(list.get(0));
 				body += str.value;
 				// IUncomment following line when debugging!
 				body += "<" + toString(list.get(1),headers) + ">";
@@ -895,28 +895,28 @@ public abstract class Type {
 			default:
 				throw new IllegalArgumentException("unknown type encountered (" + SCHEMA.get(term.kind).name + ")");
 		}
-		
+
 		if(header > 2) {
 			body += ">";
 		}
-		
+
 		return body;
-	}	
-	
+	}
+
 	public byte[] toBytes() throws IOException {
 		ByteArrayOutputStream bout = new ByteArrayOutputStream();
 		BinaryOutputStream bos = new BinaryOutputStream(bout);
 		BinaryAutomataWriter bw = new BinaryAutomataWriter(bos, SCHEMA);
-		bw.write(automaton);		
+		bw.write(automaton);
 		bw.flush();
-		return bout.toByteArray();		
+		return bout.toByteArray();
 	}
 
 	/**
 	 * Extract the type described by a given node in the automaton. This is
 	 * primarily used to extract subcomponents of a type (e.g. the element of a
 	 * reference type).
-	 * 
+	 *
 	 * @param child
 	 *            --- child node to be extracted.
 	 * @return
@@ -927,18 +927,18 @@ public abstract class Type {
 		automaton.setRoot(0,root);
 		return construct(automaton);
 	}
-				
+
 	/**
 	 * Construct a given type from an automaton. This is primarily used to
 	 * reconstruct a type after expansion.
-	 * 
+	 *
 	 * @param automaton
 	 * @return
 	 */
 	public static Type construct(Automaton automaton) {
 		automaton.minimise();
 		automaton.compact();
-		
+
 		int root = automaton.getRoot(0);
 		Automaton.State state = automaton.get(root);
 		switch(state.kind) {
@@ -984,15 +984,15 @@ public abstract class Type {
 			throw new IllegalArgumentException("Unknown kind encountered - " + state.kind);
 		}
 	}
-	
+
 	/**
 	 * Following is useful for bootstrapping the whole system.
-	 * 
+	 *
 	 * @param t1
 	 * @param t2
 	 * @return
 	 */
-	private static boolean isSubtype(Type t1, Type t2, int count) {		
+	private static boolean isSubtype(Type t1, Type t2, int count) {
 		if(t1 == null || t2 == null) {
 			throw new IllegalArgumentException("arguments cannot be null");
 		}
@@ -1020,7 +1020,7 @@ public abstract class Type {
 			}
 			int min_len = Math.min(l1_elements.length, l2_elements.length);
 			for (int i = 0; i != min_len; ++i) {
-				if (!isSubtype(l1_elements[i], l2_elements[i], count)) {					
+				if (!isSubtype(l1_elements[i], l2_elements[i], count)) {
 					return false;
 				}
 			}
@@ -1029,9 +1029,9 @@ public abstract class Type {
 				if (!isSubtype(l1_last,l2_elements[i], count)) {
 					return false;
 				}
-			}			
+			}
 			return true;
-		} else if (t1 instanceof Term && t2 instanceof Term) {			
+		} else if (t1 instanceof Term && t2 instanceof Term) {
 			Term n1 = (Term) t1;
 			Term n2 = (Term) t2;
 			if(n1.name().equals(n2.name())) {
@@ -1042,7 +1042,7 @@ public abstract class Type {
 				} else {
 					return isSubtype(n1_element,n2_element,count);
 				}
-			} else {				
+			} else {
 				//System.out.println("STAGE 6");
 				return false;
 			}
@@ -1060,7 +1060,7 @@ public abstract class Type {
 		} else if(t2 instanceof Nominal) {
 			Nominal n2 = (Nominal) t2;
 			return isSubtype(t1,n2.element(),count);
-		} else if (t2 instanceof Or) {	
+		} else if (t2 instanceof Or) {
 			Or o2 = (Or) t2;
 			for(Type b2 : o2.elements()) {
 				if(!isSubtype(t1,b2,count)) {
@@ -1068,7 +1068,7 @@ public abstract class Type {
 				}
 			}
 			return true;
-		} else if (t1 instanceof Or) {			
+		} else if (t1 instanceof Or) {
 			Or o1 = (Or) t1;
 			for(Type b1 : o1.elements()) {
 				if(isSubtype(b1,t2,count)) {
@@ -1091,6 +1091,6 @@ public abstract class Type {
 		}
 		return false;
 	}
-	
+
 }
 

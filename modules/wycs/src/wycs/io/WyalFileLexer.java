@@ -40,9 +40,9 @@ import wycc.lang.SyntaxError;
 /**
  * Split a source file into a list of tokens. These tokens can then be fed into
  * the parser in order to generate an Abstract Syntax Tree (AST).
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class WyalFileLexer {
 
@@ -74,7 +74,7 @@ public class WyalFileLexer {
 	/**
 	 * Scan all characters from the input stream and generate a corresponding
 	 * list of tokens, whilst discarding all whitespace and comments.
-	 * 
+	 *
 	 * @return
 	 */
 	public List<Token> scan() {
@@ -108,7 +108,7 @@ public class WyalFileLexer {
 	 * Scan a numeric constant. That is a sequence of digits which gives either
 	 * an integer constant, or a real constant (if it includes a dot) or a byte
 	 * (if it ends in a 'b').
-	 * 
+	 *
 	 * @return
 	 */
 	public Token scanNumericConstant() {
@@ -140,7 +140,7 @@ public class WyalFileLexer {
 	 * taken to properly handle escape codes. For example, '\n' is a single
 	 * character constant which is made up from two characters in the input
 	 * string.
-	 * 
+	 *
 	 * @return
 	 */
 	public Token scanCharacterConstant() {
@@ -223,7 +223,7 @@ public class WyalFileLexer {
 
 	static final char[] opStarts = { ',', '(', ')', '[', ']', '{', '}', '+',
 			'-', '*', '/', '%', '^', '!', '?', '=', '<', '>', ':', ';', '&', '|',
-			'.', '~', 
+			'.', '~',
 			// Unicode operators
 			UC_FORALL,
 			UC_EXISTS,
@@ -236,7 +236,7 @@ public class WyalFileLexer {
 			UC_SETINTERSECTION,
 			UC_LESSEQUALS,
 			UC_GREATEREQUALS,
-			UC_ELEMENTOF		
+			UC_ELEMENTOF
 	};
 
 	public boolean isOperatorStart(char c) {
@@ -293,14 +293,14 @@ public class WyalFileLexer {
 			return new Token(Token.Kind.LeftCurly, "{", pos++);
 		case '}':
 			return new Token(Token.Kind.RightCurly, "}", pos++);
-		case '+':			
+		case '+':
 			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '+') {
 				pos = pos + 2;
 				return new Token(Token.Kind.PlusPlus, "++", pos);
 			} else {
 				return new Token(Token.Kind.Plus, "+", pos++);
 			}
-		case '-':			
+		case '-':
 			return new Token(Token.Kind.Minus, "-", pos++);
 		case '*':
 			return new Token(Token.Kind.Star, "*", pos++);
@@ -333,21 +333,21 @@ public class WyalFileLexer {
 		case '=':
 			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '=') {
 				pos += 2;
-				if (pos < input.length() && input.charAt(pos) == '>') {			
+				if (pos < input.length() && input.charAt(pos) == '>') {
 					pos++;
 					return new Token(Token.Kind.LogicalImplication, "==>", pos - 3);
-				} else {					
+				} else {
 					return new Token(Token.Kind.EqualsEquals, "==", pos - 2);
 				}
 			} else if ((pos + 1) < input.length() && input.charAt(pos + 1) == '>') {
 				pos += 2;
 				return new Token(Token.Kind.EqualsGreater, "=>", pos - 2);
-			} 
+			}
 			break;
 		case '<':
-			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '=') {				
+			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '=') {
 				pos += 2;
-				if ((pos+1) < input.length() && input.charAt(pos) == '=' && input.charAt(pos+1) == '>') {			
+				if ((pos+1) < input.length() && input.charAt(pos) == '=' && input.charAt(pos+1) == '>') {
 					pos += 2;
 					return new Token(Token.Kind.LogicalIff, "<==>", pos - 4);
 				} else {
@@ -364,15 +364,15 @@ public class WyalFileLexer {
 				return new Token(Token.Kind.RightAngle, ">", pos++);
 			}
 		// =================================================================
-		//			
-		// =================================================================			
+		//
+		// =================================================================
 		case UC_LESSEQUALS:
 			return new Token(Token.Kind.LessEquals, "" + c, pos++);
 		case UC_GREATEREQUALS:
 			return new Token(Token.Kind.GreaterEquals, "" + c, pos++);
 		case UC_SETUNION:
 			return new Token(Token.Kind.SetUnion, "" + c, pos++);
-		case UC_SETINTERSECTION: 
+		case UC_SETINTERSECTION:
 			return new Token(Token.Kind.SetIntersection, "" + c, pos++);
 		case UC_ELEMENTOF:
 			return new Token(Token.Kind.ElementOf, "" + c, pos++);
@@ -438,7 +438,7 @@ public class WyalFileLexer {
 	/**
 	 * Scan one or more spaces or tab characters, combining them to form an
 	 * "indent".
-	 * 
+	 *
 	 * @return
 	 */
 	public Token scanIndent() {
@@ -458,7 +458,7 @@ public class WyalFileLexer {
 		return new Token(Token.Kind.LineComment, input.substring(start, pos),
 				start);
 	}
-	
+
 	public Token scanBlockComment() {
 		int start = pos;
 		while((pos+1) < input.length() && (input.charAt(pos) != '*' || input.charAt(pos+1) != '/')) {
@@ -468,11 +468,11 @@ public class WyalFileLexer {
 		pos++;
 		return new Token(Token.Kind.BlockComment,input.substring(start,pos),start);
 	}
-	
+
 	/**
 	 * Skip over any whitespace at the current index position in the input
 	 * string.
-	 * 
+	 *
 	 * @param tokens
 	 */
 	public void skipWhitespace(List<Token> tokens) {
@@ -484,7 +484,7 @@ public class WyalFileLexer {
 
 	/**
 	 * Raise a syntax error with a given message at given index.
-	 * 
+	 *
 	 * @param msg
 	 *            --- message to raise.
 	 * @param index
@@ -493,7 +493,7 @@ public class WyalFileLexer {
 	private void syntaxError(String msg, int index) {
 		throw new SyntaxError(msg, filename, index, index);
 	}
-	
+
 	/**
 	 * A map from identifier strings to the corresponding token kind.
 	 */
@@ -520,8 +520,8 @@ public class WyalFileLexer {
 			put("forall", Token.Kind.Forall);
 			put("exists", Token.Kind.Exists);
 			put("is", Token.Kind.Is);
-			put("in", Token.Kind.In);			
-			// declarations			
+			put("in", Token.Kind.In);
+			// declarations
 			put("function", Token.Kind.Function);
 			put("import", Token.Kind.Import);
 			put("define", Token.Kind.Define);
@@ -533,15 +533,15 @@ public class WyalFileLexer {
 			put("public", Token.Kind.Public);
 			put("protected", Token.Kind.Protected);
 			put("private", Token.Kind.Private);
-			put("package", Token.Kind.Package);			
+			put("package", Token.Kind.Package);
 		}
 	};
 
 	/**
 	 * The base class for all tokens.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class Token {
 
@@ -558,9 +558,9 @@ public class WyalFileLexer {
 					return "true";
 				}
 			},
-			RealValue, 
-			IntValue, 
-			CharValue, 
+			RealValue,
+			IntValue,
+			CharValue,
 			StringValue,
 			// Types
 			Null {
@@ -618,7 +618,7 @@ public class WyalFileLexer {
 				public String toString() {
 					return "if";
 				}
-			},	
+			},
 			Then {
 				public String toString() {
 					return "then";
@@ -634,7 +634,7 @@ public class WyalFileLexer {
 				public String toString() {
 					return "import";
 				}
-			},			
+			},
 			Public {
 				public String toString() {
 					return "public";
@@ -649,7 +649,7 @@ public class WyalFileLexer {
 				public String toString() {
 					return "protected";
 				}
-			},			
+			},
 			Function {
 				public String toString() {
 					return "function";
@@ -674,12 +674,12 @@ public class WyalFileLexer {
 				public String toString() {
 					return "requires";
 				}
-			},			
+			},
 			Ensures {
 				public String toString() {
 					return "ensures";
 				}
-			},			
+			},
 			Where {
 				public String toString() {
 					return "where";
@@ -700,7 +700,7 @@ public class WyalFileLexer {
 				public String toString() {
 					return "exists";
 				}
-			},					
+			},
 			Is {
 				public String toString() {
 					return "is";

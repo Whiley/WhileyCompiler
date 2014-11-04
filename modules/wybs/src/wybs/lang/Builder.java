@@ -38,15 +38,15 @@ import wyfs.lang.Path;
  * binary files, although other kinds of transformations are possible (e.g.
  * source-to-source translations, etc).
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public interface Builder {
 
 	/**
 	 * Get the project this builder is operating on.
-	 * 
+	 *
 	 * @return
 	 */
 	public Build.Project project();
@@ -57,7 +57,7 @@ public interface Builder {
 	 * file and t is the destination root for all generated files. Each file may
 	 * be associated with a different destination directory, in order to support
 	 * e.g. multiple output directories.
-	 * 
+	 *
 	 * @param delta
 	 *            --- the set of files to be built.
 	 * @return --- the set of files generated or modified.

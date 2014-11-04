@@ -36,9 +36,9 @@ import java.util.Arrays;
 
 /**
  * This exception is thrown when a syntax error occurs in the parser.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class SyntaxError extends RuntimeException {
 	private String msg;
@@ -49,7 +49,7 @@ public class SyntaxError extends RuntimeException {
 
 	/**
 	 * Identify a syntax error at a particular point in a file.
-	 * 
+	 *
 	 * @param msg
 	 *            Message detailing the problem.
 	 * @param filename
@@ -69,7 +69,7 @@ public class SyntaxError extends RuntimeException {
 
 	/**
 	 * Identify a syntax error at a particular point in a file.
-	 * 
+	 *
 	 * @param msg
 	 *            Message detailing the problem.
 	 * @param filename
@@ -99,7 +99,7 @@ public class SyntaxError extends RuntimeException {
 
 	/**
 	 * Error message
-	 * 
+	 *
 	 * @return
 	 */
 	public String msg() {
@@ -108,7 +108,7 @@ public class SyntaxError extends RuntimeException {
 
 	/**
 	 * Filename for file where the error arose.
-	 * 
+	 *
 	 * @return
 	 */
 	public String filename() {
@@ -117,7 +117,7 @@ public class SyntaxError extends RuntimeException {
 
 	/**
 	 * Get index of first character of offending location.
-	 * 
+	 *
 	 * @return
 	 */
 	public int start() {
@@ -126,7 +126,7 @@ public class SyntaxError extends RuntimeException {
 
 	/**
 	 * Get index of last character of offending location.
-	 * 
+	 *
 	 * @return
 	 */
 	public int end() {
@@ -141,7 +141,7 @@ public class SyntaxError extends RuntimeException {
 	public void outputSourceError(PrintStream output) {
 		outputSourceError(output,true);
 	}
-	
+
 	/**
 	 * Output the syntax error to a given output stream in either full or brief
 	 * form. Brief form is intended to be used by 3rd party tools and is easier
@@ -160,10 +160,10 @@ public class SyntaxError extends RuntimeException {
 			} else {
 				printFullError(output,filename,enclosing,getMessage());
 			}
-		}			
+		}
 	}
 
-	private void printBriefError(PrintStream output, String filename, EnclosingLine enclosing, String message) {		
+	private void printBriefError(PrintStream output, String filename, EnclosingLine enclosing, String message) {
 		output.print(filename + ":" + enclosing.lineNumber + ":"
 				+ enclosing.columnStart() + ":"
 				+ enclosing.columnEnd() + ":\""
@@ -181,21 +181,21 @@ public class SyntaxError extends RuntimeException {
 				enclosing = readEnclosingLine(o.filename, o.start, o.end);
 				output.print(filename + ":" + enclosing.lineNumber + ":"
 						+ enclosing.columnStart() + ":"
-						+ enclosing.columnEnd());				
-			}			
+						+ enclosing.columnEnd());
+			}
 		}
-		
+
 		// Done
 		output.println();
 	}
-	
+
 	private void printFullError(PrintStream output, String filename,
-			EnclosingLine enclosing, String message) {		
+			EnclosingLine enclosing, String message) {
 
 		output.println(filename + ":" + enclosing.lineNumber + ": " + message);
 
 		printLineHighlight(output,enclosing);
-				
+
 		// Now print contextual information (if applicable)
 		if(context != null && context.length > 0) {
 			for(Attribute.Origin o : context) {
@@ -206,8 +206,8 @@ public class SyntaxError extends RuntimeException {
 			}
 		}
 	}
-	
-	private void printLineHighlight(PrintStream output, 
+
+	private void printLineHighlight(PrintStream output,
 			EnclosingLine enclosing) {
 		// NOTE: in the following lines I don't print characters
 		// individually. The reason for this is that it messes up the
@@ -235,14 +235,14 @@ public class SyntaxError extends RuntimeException {
 		}
 		output.println(str);
 	}
-			
+
 	private static int parseLine(StringBuilder buf, int index) {
 		while (index < buf.length() && buf.charAt(index) != '\n') {
 			index++;
 		}
 		return index + 1;
 	}
-	
+
 	private static class EnclosingLine {
 		private int lineNumber;
 		private int start;
@@ -250,7 +250,7 @@ public class SyntaxError extends RuntimeException {
 		private int lineStart;
 		private int lineEnd;
 		private String lineText;
-		
+
 		public EnclosingLine(int start, int end, int lineNumber, int lineStart, int lineEnd, String lineText) {
 			this.start = start;
 			this.end = end;
@@ -259,16 +259,16 @@ public class SyntaxError extends RuntimeException {
 			this.lineEnd = lineEnd;
 			this.lineText = lineText;
 		}
-		
+
 		public int columnStart() {
 			return start - lineStart;
 		}
-		
+
 		public int columnEnd() {
 			return Math.min(end, lineEnd) - lineStart;
 		}
 	}
-	
+
 	private static EnclosingLine readEnclosingLine(String filename, int start, int end) {
 		int line = 0;
 		int lineStart = 0;
@@ -294,11 +294,11 @@ public class SyntaxError extends RuntimeException {
 			return null;
 		}
 		lineEnd = Math.min(lineEnd, text.length());
-		
+
 		return new EnclosingLine(start, end, line, lineStart, lineEnd,
 				text.substring(lineStart, lineEnd));
 	}
-	
+
 	public static final long serialVersionUID = 1l;
 
 	public static void syntaxError(String msg, String filename,
@@ -314,7 +314,7 @@ public class SyntaxError extends RuntimeException {
 		}
 
 		Attribute.Origin context = (Attribute.Origin) elem
-				.attribute(Attribute.Origin.class);		
+				.attribute(Attribute.Origin.class);
 		if(context != null) {
 			throw new SyntaxError(msg, filename, start, end, context);
 		} else {
@@ -347,9 +347,9 @@ public class SyntaxError extends RuntimeException {
 	 * something went wrong whilst processing some piece of syntax. In other
 	 * words, is an internal error in the compiler, rather than a mistake in the
 	 * input program.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class InternalFailure extends SyntaxError {
 		public InternalFailure(String msg, String filename, int start, int end) {

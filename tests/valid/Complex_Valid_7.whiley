@@ -31,7 +31,7 @@ method fn(System.Console console, [int] xs):
             i2 = i2 + 1
         //
         i1 = i1 + 1
-    // Done.    
+    // Done.
     console.out.println("Done.")
 
 method main(System.Console console):

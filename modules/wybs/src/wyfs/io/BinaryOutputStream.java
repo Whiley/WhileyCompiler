@@ -27,48 +27,48 @@ package wyfs.io;
 
 import java.io.*;
 
-public class BinaryOutputStream extends OutputStream {	
+public class BinaryOutputStream extends OutputStream {
 	protected OutputStream output;
 	protected int value;
 	protected int count;
-	
+
 	/**
 	 * Write out data in big-endian format.
 	 * @param output
 	 */
-	public BinaryOutputStream(OutputStream output) {		
+	public BinaryOutputStream(OutputStream output) {
 		this.output = output;
 	}
-		
+
 	/**
 	 * Write an unsigned integer value using 8bits using a big-endian encoding.
-	 * 
+	 *
 	 * @param w
 	 * @throws IOException
 	 */
-	public void write(int i) throws IOException {		
+	public void write(int i) throws IOException {
 		if(count == 0) {
 			output.write(i & 0xFF);
 		} else {
 			write_un(i & 0xFF,8);
 		}
-	}		
-	
+	}
+
 	public void write(byte[] bytes) throws IOException {
 		for(byte b : bytes) {
 			write(b);
 		}
 	}
-	
+
 	public void write(byte[] bytes, int offset, int length) throws IOException {
 		for(;offset < length;++offset) {
 			write(bytes[offset]);
 		}
 	}
-	
+
 	/**
 	 * Write an unsigned integer value using 8bits using a big-endian encoding.
-	 * 
+	 *
 	 * @param w
 	 * @throws IOException
 	 */
@@ -77,31 +77,31 @@ public class BinaryOutputStream extends OutputStream {
 			output.write(w & 0xFF);
 		} else {
 			write_un(w & 0xFF,8);
-		}		
+		}
 	}
 
 	/**
 	 * Write an unsigned integer value using 16bits using a big-endian encoding.
-	 * 
+	 *
 	 * @param w
 	 * @throws IOException
 	 */
-	public void write_u16(int w) throws IOException {		
+	public void write_u16(int w) throws IOException {
 		write_u8((w >> 8) & 0xFF);
-		write_u8(w & 0xFF);		
+		write_u8(w & 0xFF);
 	}
 
 	/**
 	 * Write an unsigned integer value using 32bits using a big-endian encoding.
-	 * 
+	 *
 	 * @param w
 	 * @throws IOException
 	 */
-	public void write_u32(int w) throws IOException {		
+	public void write_u32(int w) throws IOException {
 		write_u8((w >> 24) & 0xFF);
 		write_u8((w >> 16) & 0xFF);
 		write_u8((w >> 8) & 0xFF);
-		write_u8(w & 0xFF);		
+		write_u8(w & 0xFF);
 	}
 
 	/**
@@ -110,7 +110,7 @@ public class BinaryOutputStream extends OutputStream {
 	 * chunk is a flag indicating whether there are more chunks. Therefore,
 	 * values between 0 and 7 fit into 4 bits. Similarly, values between 8 and
 	 * 63 fit into 8 bits, etc
-	 * 
+	 *
 	 * @param w
 	 *            --- number to convert (which cannot be negative)
 	 * @throws IOException
@@ -127,24 +127,24 @@ public class BinaryOutputStream extends OutputStream {
 			} else {
 				write_un(t,4);
 			}
-		} while(w != 0);		
-	}	
-	
+		} while(w != 0);
+	}
+
 	/**
 	 * Write an unsigned integer value using n bits using a big-endian encoding.
-	 * 
+	 *
 	 * @param w
 	 * @throws IOException
 	 */
-	public void write_un(int bits, int n) throws IOException {		
+	public void write_un(int bits, int n) throws IOException {
 		int mask = 1;
 		for(int i=0;i<n;++i) {
 			boolean bit = (bits & mask) != 0;
 			write_bit(bit);
 			mask = mask << 1;
-		}		
-	}	
-	
+		}
+	}
+
 	public void write_bit(boolean bit) throws IOException {
 		value = value >> 1;
 		if(bit) {
@@ -152,42 +152,42 @@ public class BinaryOutputStream extends OutputStream {
 		}
 		count = count + 1;
 		if(count == 8) {
-			count = 0;			
-			output.write(value);			
+			count = 0;
+			output.write(value);
 			value = 0;
 		}
 	}
-	
+
 	/**
 	 * Pad out stream to nearest byte boundary
 	 * @throws IOException
 	 */
 	public void pad_u8() throws IOException {
-		if (count > 0) {			
+		if (count > 0) {
 			output.write(value >>> (8-count));
 			value = 0;
 			count = 0;
 		}
 	}
-		
+
 	public void close() throws IOException {
 		flush();
 		output.close();
 	}
-	
+
 	public void flush() throws IOException {
-		if(count != 0) {				
+		if(count != 0) {
 			// In this case, we're closing but we have a number of bits left to
 			// write. This means we have to pad out the remainder of a byte.
 			// Instead of padding with zeros, I pad with ones. The reason for
 			// this is that it forces an EOF when reading back in with read_uv().
 			value = value >>> (8-count);
-			int mask = 0xff & ((~0) << count);						
-			value = value | mask;			
+			int mask = 0xff & ((~0) << count);
+			value = value | mask;
 			output.write(value);
-		}		
+		}
 	}
-	
+
 	public static String bin2str(int v) {
 		if(v == 0) {
 			return "0";
@@ -206,37 +206,37 @@ public class BinaryOutputStream extends OutputStream {
 		}
 		return r;
 	}
-	
+
 	public static void main(String[] argss) {
 		try {
 			ByteArrayOutputStream bout = new ByteArrayOutputStream();
-			BinaryOutputStream binout = new BinaryOutputStream(bout);						
-			
-			binout.write_bit(true);			
-			binout.write_bit(false);
-			binout.write_bit(true);						
-			binout.pad_u8();
-			binout.write_bit(true);			
-			binout.write_bit(false);
-			binout.write_bit(true);			
+			BinaryOutputStream binout = new BinaryOutputStream(bout);
+
 			binout.write_bit(true);
-			
-			binout.close();			
+			binout.write_bit(false);
+			binout.write_bit(true);
+			binout.pad_u8();
+			binout.write_bit(true);
+			binout.write_bit(false);
+			binout.write_bit(true);
+			binout.write_bit(true);
+
+			binout.close();
 			ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
 			BinaryInputStream binin = new BinaryInputStream(bin);
-			
+
 			System.out.println(binin.read_bit());
 			System.out.println(binin.read_bit());
 			System.out.println(binin.read_bit());
-			
+
 			binin.pad_u8();
-			
+
 			System.out.println(binin.read_bit());
 			System.out.println(binin.read_bit());
 			System.out.println(binin.read_bit());
 			System.out.println(binin.read_bit());
 		} catch(IOException e) {
-			
+
 		}
 	}
 }

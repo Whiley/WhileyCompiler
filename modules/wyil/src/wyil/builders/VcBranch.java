@@ -59,7 +59,7 @@ import wyil.lang.*;
  * be joined back together (although this is not always strictly necessary). A
  * diagrammatic view might be:
  * </p>
- * 
+ *
  * <pre>
  *  entry
  *   ||
@@ -67,7 +67,7 @@ import wyil.lang.*;
  *   ##\
  *   ||\\
  *   || \\
- *   || || 
+ *   || ||
  *   || ##\
  *   || ||\\
  *   ||//  \\
@@ -90,9 +90,9 @@ import wyil.lang.*;
  * branches. Finding the LCA can be useful, for example, to identify constraints
  * common to both branches.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class VcBranch {
 	/**
@@ -111,14 +111,14 @@ public class VcBranch {
 	 * Maintains the current assignment of variables to their types.
 	 */
 	private final Type[] types;
-	
+
 	/**
 	 * The stack of currently active scopes (e.g. for-loop). When the branch
 	 * exits a scope, an exit scope event is generated in order that additional
 	 * effects make be applied.
 	 */
 	public final ArrayList<Scope> scopes;
-	
+
 	/**
 	 * The block of Wyil bytecode instructions which this branch is traversing
 	 * (note: <code>parent == null || block == parent.block</code> must hold).
@@ -140,7 +140,7 @@ public class VcBranch {
 	 * Construct the master verification branch for a given code block. The
 	 * master for a block has an origin <code>0</code> and an (initial) PC of
 	 * <code>0</code> (i.e. the branch begins at the entry of the block).
-	 * 
+	 *
 	 * @param automaton
 	 *            --- the automaton to which constraints generated for this
 	 *            block are stored.
@@ -152,17 +152,17 @@ public class VcBranch {
 		this.block = block;
 		this.environment = new Expr[block.numSlots()];
 		this.types = new Type[block.numSlots()];
-		this.scopes = new ArrayList<Scope>();		
+		this.scopes = new ArrayList<Scope>();
 		this.origin = 0;
 		this.pc = 0;
 		scopes.add(new Scope(block.size(), Collections.EMPTY_LIST));
 	}
-	
+
 	/**
 	 * Construct the master verification branch for a given code block. The
 	 * master for a block has an origin <code>0</code> and an (initial) PC of
 	 * <code>0</code> (i.e. the branch begins at the entry of the block).
-	 * 
+	 *
 	 * @param automaton
 	 *            --- the automaton to which constraints generated for this
 	 *            block are stored.
@@ -170,7 +170,7 @@ public class VcBranch {
 	 *            --- the block of code on which this branch is operating.
 	 */
 	public VcBranch(WyilFile.FunctionOrMethodDeclaration decl, Code.Block block) {
-		this.parent = null;				
+		this.parent = null;
 		this.environment = new Expr[block.numSlots()];
 		this.types = new Type[block.numSlots()];
 		this.scopes = new ArrayList<Scope>();
@@ -183,7 +183,7 @@ public class VcBranch {
 
 	/**
 	 * Private constructor used for forking a child-branch from a parent branch.
-	 * 
+	 *
 	 * @param parent
 	 *            --- parent branch being forked from.
 	 */
@@ -204,7 +204,7 @@ public class VcBranch {
 	/**
 	 * Return the current Program Counter (PC) value for this branch. This must
 	 * be a valid index into the code block this branch is operating over.
-	 * 
+	 *
 	 * @return
 	 */
 	public int pc() {
@@ -213,7 +213,7 @@ public class VcBranch {
 
 	/**
 	 * Get the block entry at the current PC position.
-	 * 
+	 *
 	 * @return
 	 */
 	public Code.Block.Entry entry() {
@@ -223,40 +223,40 @@ public class VcBranch {
 	/**
 	 * Get the constraint variable which corresponds to the given Wyil bytecode
 	 * register at this point on this branch.
-	 * 
+	 *
 	 * @param register
 	 * @return
 	 */
-	public Expr read(int register) {		
+	public Expr read(int register) {
 		return environment[register];
 	}
 
 	/**
 	 * Get the type of a given register at this point in the block.
-	 * 
+	 *
 	 * @return
 	 */
 	public Type typeOf(String var) {
 		// FIXME: this is such an *horrific* hack, I can't believe I'm doing it.
 		// But, it does work most of the time:(
 		String[] split = var.split("_");
-		int register = Integer.parseInt(split[0].substring(1));		
+		int register = Integer.parseInt(split[0].substring(1));
 		return types[register];
 	}
-	
+
 	/**
 	 * Get the type of a given register at this point in the block.
-	 * 
+	 *
 	 * @return
 	 */
 	public Type typeOf(int register) {
 		return types[register];
 	}
-	
+
 	/**
 	 * Assign a given expression stored in the automaton to a given Wyil
 	 * bytecode register.
-	 * 
+	 *
 	 * @param register
 	 * @param expr
 	 */
@@ -264,18 +264,18 @@ public class VcBranch {
 		environment[register] = expr;
 		types[register] = type;
 	}
-	
+
 	public int nScopes() {
 		return scopes.size();
 	}
-	
+
 	public Scope scope(int i) {
 		return scopes.get(i);
 	}
-	
+
 	/**
 	 * Get the first scope matching a given scope kind.
-	 * 
+	 *
 	 * @param clazz
 	 * @return
 	 */
@@ -294,7 +294,7 @@ public class VcBranch {
 	 * Terminate the current flow for a given register and begin a new one. In
 	 * terms of static-single assignment, this means simply change the index of
 	 * the register in question.
-	 * 
+	 *
 	 * @param register
 	 *            Register number to invalidate
 	 * @param type
@@ -309,11 +309,11 @@ public class VcBranch {
 		types[register] = type;
 		return var;
 	}
-	
+
 	/**
 	 * Invalidate all registers from <code>start</code> upto (but not including)
 	 * <code>end</code>.
-	 * 
+	 *
 	 * @param start
 	 *            --- first register to invalidate.
 	 * @param end
@@ -324,36 +324,36 @@ public class VcBranch {
 			invalidate(i,type);
 		}
 	}
-	
+
 	/**
 	 * Return a reference into the automaton which represents all of the
 	 * constraints that hold at this position in the branch.
-	 * 
+	 *
 	 * @return
 	 */
-	public Expr constraints() {		
+	public Expr constraints() {
 		ArrayList<Expr> constraints = new ArrayList<Expr>();
 		for (int i = 0; i != scopes.size(); ++i) {
 			Scope scope = scopes.get(i);
 			constraints.addAll(scope.constraints);
 		}
-		return And(constraints);		
+		return And(constraints);
 	}
 
 	/**
 	 * Add a given constraint to the list of constraints which are assumed to
 	 * hold at this point.
-	 * 
+	 *
 	 * @param constraint
 	 */
 	public void add(Expr constraint) {
 		topScope().constraints.add(constraint);
 	}
-	
+
 	/**
 	 * Add a given list of constraints to the list of constraints which are assumed to
 	 * hold at this point.
-	 * 
+	 *
 	 * @param constraints
 	 */
 	public void addAll(List<Expr> constraints) {
@@ -364,17 +364,17 @@ public class VcBranch {
 	 * Transform this branch into a list of constraints representing that which
 	 * is known to hold at the end of the branch. The generated constraint will
 	 * only be in terms of the given parameters and return value for the block.
-	 * 
+	 *
 	 * @param transformer
 	 *            --- responsible for transformining individual bytecodes into
 	 *            constraints capturing their semantics.
 	 * @return
 	 */
-	public Expr transform(VcTransformer transformer) {		
+	public Expr transform(VcTransformer transformer) {
 		ArrayList<VcBranch> children = new ArrayList<VcBranch>();
 		int blockSize = block.size();
 		while (pc < blockSize) {
-									
+
 			// first, check whether we're departing a scope or not.
 			int top = scopes.size() - 1;
 			while (top >= 0 && scopes.get(top).end < pc) {
@@ -383,38 +383,38 @@ public class VcBranch {
 				scopes.remove(top);
 				dispatchExit(topScope, transformer);
 				top = top - 1;
-			}			
-			
+			}
+
 			// second, continue to transform the given bytecode
 			Code.Block.Entry entry = block.get(pc);
 			Code code = entry.code;
-			if(code instanceof Codes.Goto) {				
+			if(code instanceof Codes.Goto) {
 				goTo(((Codes.Goto) code).target);
 			} else if(code instanceof Codes.If) {
 				Codes.If ifc = (Codes.If) code;
-				VcBranch trueBranch = fork();	
+				VcBranch trueBranch = fork();
 				transformer.transform(ifc,this,trueBranch);
-				trueBranch.goTo(ifc.target);				
+				trueBranch.goTo(ifc.target);
 				children.add(trueBranch);
 			} else if(code instanceof Codes.Switch) {
 				Codes.Switch sw = (Codes.Switch) code;
 				VcBranch[] cases = new VcBranch[sw.branches.size()];
-				for(int i=0;i!=cases.length;++i) {					
+				for(int i=0;i!=cases.length;++i) {
 					cases[i] = fork();
 					children.add(cases[i]);
-				}				
+				}
 				transformer.transform(sw,this,cases);
-				for(int i=0;i!=cases.length;++i) {					
-					cases[i].goTo(sw.branches.get(i).second());					
-				}				
+				for(int i=0;i!=cases.length;++i) {
+					cases[i].goTo(sw.branches.get(i).second());
+				}
 				goTo(sw.defaultTarget);
 			} else if(code instanceof Codes.IfIs) {
 				Codes.IfIs ifs = (Codes.IfIs) code;
-				Type type = typeOf(ifs.operand);				
+				Type type = typeOf(ifs.operand);
 				// First, determine the true test
-				Type trueType = Type.intersect(type,ifs.rightOperand);		
+				Type trueType = Type.intersect(type,ifs.rightOperand);
 				Type falseType = Type.intersect(type,Type.Negation(ifs.rightOperand));
-				
+
 				if(trueType.equals(Type.T_VOID)) {
 					// This indicate that the true branch is unreachable and
 					// should not be explored. Observe that this does not mean
@@ -435,7 +435,7 @@ public class VcBranch {
 					this.write(ifs.operand, read(ifs.operand), falseType);
 					trueBranch.write(ifs.operand, trueBranch.read(ifs.operand), trueType);
 					children.add(trueBranch);
-				}				
+				}
 			} else if(code instanceof Codes.ForAll) {
 				Codes.ForAll fall = (Codes.ForAll) code;
 				// FIXME: where should this go?
@@ -443,21 +443,21 @@ public class VcBranch {
 					invalidate(i,types[i]);
 				}
 				Expr.Variable var = invalidate(fall.indexOperand,fall.type.element());
-				
+
 				scopes.add(new ForScope(fall, findLabelIndex(fall.target),
 						Collections.EMPTY_LIST, read(fall.sourceOperand),
 						var));
 				transformer.transform(fall, this);
 			} else if(code instanceof Codes.Loop) {
-				Codes.Loop loop = (Codes.Loop) code; 				
-				// FIXME: where should this go?				
+				Codes.Loop loop = (Codes.Loop) code;
+				// FIXME: where should this go?
 				for (int i : loop.modifiedOperands) {
 					invalidate(i,types[i]);
 				}
-				
+
 				scopes.add(new LoopScope(loop, findLabelIndex(loop.target),
 						Collections.EMPTY_LIST));
-				
+
 				transformer.transform(loop, this);
 			} else if(code instanceof Codes.LoopEnd) {
 				top = scopes.size() - 1;
@@ -469,7 +469,7 @@ public class VcBranch {
 				} else {
 					// normal loop, so the branch ends here
 					transformer.end(ls,this);
-					break; 
+					break;
 				}
 			} else if(code instanceof Codes.TryCatch) {
 				Codes.TryCatch tc = (Codes.TryCatch) code;
@@ -493,36 +493,36 @@ public class VcBranch {
 				transformer.transform((Codes.Fail) code, this);
 				kill();
 				break;
-			} else {				
-				dispatch(transformer);				
+			} else {
+				dispatch(transformer);
 			}
 
 			// move on to next instruction.
 			pc = pc + 1;
 		}
-		
+
 		// Now, transform child branches!!!
 		for(VcBranch child : children) {
 			child.transform(transformer);
 			join(child);
 		}
-		
+
 		return constraints();
 	}
-		
+
 	/**
 	 * <p>
 	 * Fork a child-branch from this branch. The child branch is (initially)
 	 * identical in every way to the parent, however the expectation is that
 	 * they will diverge.
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 *    B1
 	 *    ||
 	 *    ||
 	 *    ##    <- origin
-	 *    | \ 
+	 *    | \
 	 *    ||\\
 	 *    || \\
 	 *    \/  \/
@@ -540,13 +540,13 @@ public class VcBranch {
 	 * identical to that of the parent. As assignments to variables are made on
 	 * either branch, these environments will move apart.
 	 * </p>
-	 * 
+	 *
 	 * @return --- The child branch which is forked off this branch.
 	 */
 	private VcBranch fork() {
 		return new VcBranch(this);
 	}
-	
+
 	/**
 	 * <p>
 	 * Merge descendant (i.e. a child or child-of-child, etc) branch back into
@@ -560,17 +560,17 @@ public class VcBranch {
 	 * and those which hold on the incoming branch. For example, support we
 	 * have:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * 	 y$0 != 0    y$0 != 0
-	 *   && x$1 < 1  && x$2 >= 1   
+	 *   && x$1 < 1  && x$2 >= 1
 	 *        ||      ||
 	 *         \\    //
 	 *          \\  //
 	 *           \\//
 	 *            ##
 	 *   y$0 != 0 &&
-	 * ((x$1 < 1 && x$3 == x$1) || 
+	 * ((x$1 < 1 && x$3 == x$1) ||
 	 *  (x$2 >= 1 && x$3 == x$2))
 	 * </pre>
 	 * <p>
@@ -585,7 +585,7 @@ public class VcBranch {
 	 * sides. Eliminating such constraints from the disjunction reduces the
 	 * overall work of the constraint solver.
 	 * </p>
-	 * 
+	 *
 	 * @param incoming
 	 *            --- The descendant branch which is being merged into this one.
 	 */
@@ -594,22 +594,22 @@ public class VcBranch {
 		ArrayList<Expr> common = new ArrayList<Expr>();
 		ArrayList<Expr> lhsConstraints = new ArrayList<Expr>();
 		ArrayList<Expr> rhsConstraints = new ArrayList<Expr>();
-		
-		splitConstraints(incoming,common,lhsConstraints,rhsConstraints);				
-	
+
+		splitConstraints(incoming,common,lhsConstraints,rhsConstraints);
+
 		// Finally, put it all together
 		Expr l = And(lhsConstraints);
 		Expr r = And(rhsConstraints);
-		
+
 		// can now compute the logical OR of both branches
 		Expr join = Or(l,r);
 
 		// now, clear our sequential constraints since we can only have one
 		// which holds now: namely, the or of the two branches.
 		Scope top = topScope();
-		top.constraints.clear();		
+		top.constraints.clear();
 		top.constraints.addAll(common);
-		top.constraints.add(join);		
+		top.constraints.add(join);
 	}
 
 	/**
@@ -620,18 +620,18 @@ public class VcBranch {
 		// includes all subscopes as well].
 		for(int i=scopes.size();i>0;--i) {
 			VcBranch.Scope s = scope(i-1);
-			s.constraints.clear();				
-		}		
+			s.constraints.clear();
+		}
 		topScope().constraints.add(new Expr.Constant(Value.Bool(false)));
 	}
-	
+
 	/**
 	 * A region of bytecodes which requires special attention when the branch
 	 * exits the scope. For example, when a branch exits the body of a for-loop,
 	 * we must ensure that the appopriate loop-invariants hold, etc.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class Scope implements Cloneable {
 		public final ArrayList<Expr> constraints;
@@ -641,17 +641,17 @@ public class VcBranch {
 			this.end = end;
 			this.constraints = new ArrayList<Expr>(constraints);
 		}
-		
+
 		public Scope clone() {
 			return new Scope(end,constraints);
 		}
 	}
-			
+
 	/**
 	 * Represents the scope of a general loop bytecode.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 * @param <T>
 	 */
 	public static class LoopScope<T extends Codes.Loop> extends
@@ -662,43 +662,43 @@ public class VcBranch {
 			super(end,constraints);
 			this.loop = loop;
 		}
-		
+
 		public LoopScope<T> clone() {
 			return new LoopScope(loop,end,constraints);
 		}
 	}
-	
+
 	/**
 	 * Represents the scope of an assert or assume bytecode.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 * @param <T>
 	 */
 	public static class AssertOrAssumeScope extends
 			VcBranch.Scope {
 		public final boolean isAssertion;
-		
+
 		public AssertOrAssumeScope(boolean isAssertion, int end, List<Expr> constraints) {
 			super(end,constraints);
 			this.isAssertion = isAssertion;
 		}
-		
+
 		public AssertOrAssumeScope clone() {
 			return new AssertOrAssumeScope(isAssertion, end,constraints);
 		}
 	}
-	
+
 	/**
 	 * Represents the scope of a forall bytecode
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public static class ForScope extends LoopScope<Codes.ForAll> {
 		public final Expr source;
 		public final Expr.Variable index;
-		
+
 		public ForScope(Codes.ForAll forall, int end, List<Expr> constraints,
 				Expr source, Expr.Variable index) {
 			super(forall, end, constraints);
@@ -710,31 +710,31 @@ public class VcBranch {
 			return new ForScope(loop, end, constraints, source, index);
 		}
 	}
-	
+
 	/**
 	 * Represents the scope of a general try-catch handler.
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 * @param <T>
 	 */
 	public static class TryScope extends
 			VcBranch.Scope {
-		
+
 		public TryScope(int end, List<Expr> constraints) {
-			super(end,constraints);			
+			super(end,constraints);
 		}
-		
+
 		public TryScope clone() {
 			return new TryScope(end,constraints);
 		}
 	}
-	
+
 	/**
 	 * Represents the scope of a method or function
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 * @param <T>
 	 */
 	public static class EntryScope extends VcBranch.Scope {
@@ -755,11 +755,11 @@ public class VcBranch {
 	 * Dispatch on the given bytecode to the appropriate method in transformer
 	 * for generating an appropriate constraint to capture the bytecodes
 	 * semantics.
-	 * 
+	 *
 	 * @return
 	 */
 	private void dispatch(VcTransformer transformer) {
-		Code code = entry().code;		
+		Code code = entry().code;
 		try {
 			if(code instanceof Codes.BinaryOperator) {
 				transformer.transform((Codes.BinaryOperator)code,this);
@@ -770,7 +770,7 @@ public class VcBranch {
 			} else if(code instanceof Codes.Debug) {
 				transformer.transform((Codes.Debug)code,this);
 			} else if(code instanceof Codes.FieldLoad) {
-				transformer.transform((Codes.FieldLoad)code,this);			
+				transformer.transform((Codes.FieldLoad)code,this);
 			} else if(code instanceof Codes.IndirectInvoke) {
 				transformer.transform((Codes.IndirectInvoke)code,this);
 			} else if(code instanceof Codes.Invoke) {
@@ -778,7 +778,7 @@ public class VcBranch {
 			} else if(code instanceof Codes.Invert) {
 				transformer.transform((Codes.Invert)code,this);
 			} else if(code instanceof Codes.Label) {
-				// skip			
+				// skip
 			} else if(code instanceof Codes.ListOperator) {
 				transformer.transform((Codes.ListOperator)code,this);
 			} else if(code instanceof Codes.LengthOf) {
@@ -821,9 +821,9 @@ public class VcBranch {
 				transformer.transform((Codes.Throw)code,this);
 			} else if(code instanceof Codes.TupleLoad) {
 				transformer.transform((Codes.TupleLoad)code,this);
-			} else {			
+			} else {
 				internalFailure("unknown: " + code.getClass().getName(),
-						transformer.filename(), entry());			
+						transformer.filename(), entry());
 			}
 		} catch(InternalFailure e) {
 			throw e;
@@ -833,10 +833,10 @@ public class VcBranch {
 			internalFailure(e.getMessage(), transformer.filename(), entry(), e);
 		}
 	}
-	
+
 	/**
 	 * Dispatch exit scope events to the transformer.
-	 * 
+	 *
 	 * @param scope
 	 * @param transformer
 	 */
@@ -859,25 +859,25 @@ public class VcBranch {
 	/**
 	 * Reposition the Program Counter (PC) for this branch to a given label in
 	 * the block.
-	 * 
+	 *
 	 * @param label
 	 *            --- label to look for, which is assumed to occupy an index
 	 *            greater than the current PC (this follows the Wyil requirement
 	 *            that branches always go forward).
 	 */
 	private void goTo(String label) {
-		pc = findLabelIndex(label);		
+		pc = findLabelIndex(label);
 	}
-	
+
 	/**
 	 * Find the bytecode index of a given label. If the label doesn't exist an
 	 * exception is thrown.
-	 * 
+	 *
 	 * @param label
 	 * @return
 	 */
 	private int findLabelIndex(String label) {
-		for (int i = pc; i != block.size(); ++i) {			
+		for (int i = pc; i != block.size(); ++i) {
 			Code code = block.get(i).code;
 			if (code instanceof Codes.Label) {
 				Codes.Label l = (Codes.Label) code;
@@ -888,16 +888,16 @@ public class VcBranch {
 		}
 		throw new IllegalArgumentException("unknown label --- " + label);
 	}
-	
+
 	private Scope topScope() {
 		return scopes.get(scopes.size()-1);
 	}
-	
+
 	/**
 	 * Split the constraints for this branch and the incoming branch into three
 	 * sets: those common to both; those unique to this branch; and, those
 	 * unique to the incoming branch.
-	 * 
+	 *
 	 * @param incoming
 	 * @param common
 	 * @param myRemainder
@@ -907,9 +907,9 @@ public class VcBranch {
 			ArrayList<Expr> myRemainder, ArrayList<Expr> incomingRemainder) {
 		ArrayList<Expr> constraints = topScope().constraints;
 		ArrayList<Expr> incomingConstraints = incoming.topScope().constraints;
-		
+
 		int min = 0;
-		
+
 		while (min < constraints.size() && min < incomingConstraints.size()) {
 			Expr is = constraints.get(min);
 			Expr js = incomingConstraints.get(min);
@@ -918,18 +918,18 @@ public class VcBranch {
 			}
 			min = min + 1;
 		}
-		
+
 		for(int k=0;k<min;++k) {
 			common.add(constraints.get(k));
 		}
 		for(int i = min;i < constraints.size();++i) {
-			myRemainder.add(constraints.get(i));			
-		}			
+			myRemainder.add(constraints.get(i));
+		}
 		for(int j = min;j < incomingConstraints.size();++j) {
-			incomingRemainder.add(incomingConstraints.get(j));			
+			incomingRemainder.add(incomingConstraints.get(j));
 		}
 	}
-	
+
 	public Expr And(List<Expr> constraints) {
 		if(constraints.size() == 0) {
 			return new Expr.Constant(Value.Bool(true));
@@ -942,12 +942,12 @@ public class VcBranch {
 					nconstraints = e;
 				} else {
 					nconstraints = new Expr.Binary(Expr.Binary.Op.AND,e,nconstraints,e.attributes());
-				}				
+				}
 			}
 			return nconstraints;
 		}
 	}
-	
+
 	public Expr Or(Expr... constraints) {
 		if (constraints.length == 0) {
 			return new Expr.Constant(Value.Bool(false));

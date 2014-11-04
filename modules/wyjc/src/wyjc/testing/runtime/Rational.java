@@ -12,15 +12,15 @@ import wyjc.runtime.WyRat;
  *
  */
 public class Rational {
-	
+
 	/**
 	 * Test the process of converting to/from a double.
 	 */
 	@Test public void doubleConversion() {
 		for(double v : inputs) {
-			double w = WyRat.valueOf(v).doubleValue(); 
+			double w = WyRat.valueOf(v).doubleValue();
 			if(w != v) {
-				fail("FAILED ON: " + v + " (GOT: " + w + ")");				
+				fail("FAILED ON: " + v + " (GOT: " + w + ")");
 			}
 		}
 	}
@@ -1025,7 +1025,7 @@ public class Rational {
 		-3510323.345955246d,
 		-2.9142371615709085E7d,
 		-7.835533533786178E7d,
-		-4.4783369459754944E7d	
+		-4.4783369459754944E7d
 	};
 
 	private static int[] generateRandomInts(int num) {
@@ -1065,43 +1065,43 @@ public class Rational {
 		// values.
 
 		for(int i : is) {
-			System.out.println("\t" + i + ".0d,");			
+			System.out.println("\t" + i + ".0d,");
 		}
 
 		for(float f : fs) {
-			System.out.println("\t" + f + "d,");			
+			System.out.println("\t" + f + "d,");
 		}
 
 		for(double d : ds) {
-			System.out.println("\t" + d + "d,");			
+			System.out.println("\t" + d + "d,");
 		}
 
 		for(double d : ds) {
-			System.out.println("\t" + (d*100) + "d,");			
+			System.out.println("\t" + (d*100) + "d,");
 		}
 
 		for(double d : ds) {
-			System.out.println("\t" + (d*10000) + "d,");			
+			System.out.println("\t" + (d*10000) + "d,");
 		}
 
 		for(double d : ds) {
-			System.out.println("\t" + (d*100000000) + "d,");			
+			System.out.println("\t" + (d*100000000) + "d,");
 		}
 
 		for(double d : ds) {
-			System.out.println("\t" + -d + "d,");			
+			System.out.println("\t" + -d + "d,");
 		}
 
 		for(double d : ds) {
-			System.out.println("\t" + -(d*100) + "d,");			
+			System.out.println("\t" + -(d*100) + "d,");
 		}
 
 		for(double d : ds) {
-			System.out.println("\t" + -(d*10000) + "d,");			
+			System.out.println("\t" + -(d*10000) + "d,");
 		}
 
 		for(double d : ds) {
-			System.out.println("\t" + -(d*100000000) + "d,");			
+			System.out.println("\t" + -(d*100000000) + "d,");
 		}
 	}
 }

@@ -1,12 +1,12 @@
-<project name="wyjc" default="build">  
-  <import file="../../config.xml"/>  
+<project name="wyjc" default="build">
+  <import file="../../config.xml"/>
 
   <target name="compile-wyjc">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyrl/src:../wyil/src:../wyc/src:../wybs/src/:../../${JASM_JAR}"> 
+    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyrl/src:../wyil/src:../wyc/src:../wybs/src/:../../${JASM_JAR}">
       <src path="src"/>
       <include name="*/**"/>
-      <exclude name="wyjc/testing/**"/> 
-      <exclude name="*/**/package-info.java"/> 
+      <exclude name="wyjc/testing/**"/>
+      <exclude name="*/**/package-info.java"/>
     </javac>
     <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src:../wyrl/src:../wycs/src:../wybs/src/:../../${JASM_JAR}"/>
     <wyjc verbose="false" wyildir="../wyrt/src" classdir="src" includes="whiley/**/*.wyil"/>
@@ -28,7 +28,7 @@
     <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
     <echo message="============================================="/>
   </target>
-  
+
   <target name="dist" depends="build">
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">
