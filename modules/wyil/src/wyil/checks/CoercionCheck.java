@@ -91,9 +91,9 @@ public class CoercionCheck implements Transform<WyilFile> {
 		}
 	}
 
-	protected void check(Code.AttributableBlock block, WyilFile.FunctionOrMethodDeclaration method) {
+	protected void check(AttributedCodeBlock block, WyilFile.FunctionOrMethodDeclaration method) {
 		// Examine all entries in this block looking for a conversion bytecode
-		for (Code.AttributableBlock.Entry stmt : block.allEntries()) {
+		for (AttributedCodeBlock.Entry stmt : block.allEntries()) {
 			Code code = stmt.code;
 			if (code instanceof Codes.Convert) {
 				Codes.Convert conv = (Codes.Convert) code;
@@ -114,7 +114,7 @@ public class CoercionCheck implements Transform<WyilFile> {
 	 * @param entry - enclosing syntactic element.
 	 */
 	protected void check(Type from, Type to, HashSet<Pair<Type, Type>> visited,
-			Code.AttributableBlock.Entry entry) {
+			AttributedCodeBlock.Entry entry) {
 		Pair<Type,Type> p = new Pair<Type,Type>(from,to);
 		if(visited.contains(p)) {
 			return; // already checked this pair

@@ -26,7 +26,7 @@
 package wyil.util;
 
 import wycc.lang.SyntaxError.InternalFailure;
-import wyil.lang.Code;
+import wyil.lang.AttributedCodeBlock;
 import wyil.lang.Type;
 
 /**
@@ -179,7 +179,7 @@ public class ErrorMessages {
 	 *            Code.Entry associated with this syntax error.
 	 */
 	public static void syntaxError(String msg, String filename,
-			Code.AttributableBlock.Entry entry) {
+			AttributedCodeBlock.Entry entry) {
 		syntaxError(msg,filename,entry,null);
 	}
 
@@ -198,7 +198,7 @@ public class ErrorMessages {
 	 *            Exception which caused this internal failure.
 	 */
 	public static void syntaxError(String msg, String filename,
-			Code.AttributableBlock.Entry entry, Throwable ex) {
+			AttributedCodeBlock.Entry entry, Throwable ex) {
 		int start = -1;
 		int end = -1;
 
@@ -226,7 +226,7 @@ public class ErrorMessages {
 	 *            Code.Entry associated with this internal failure.
 	 */
 	public static void internalFailure(String msg, String filename,
-			Code.AttributableBlock.Entry entry) {
+			AttributedCodeBlock.Entry entry) {
 		internalFailure(msg,filename,entry,null);
 	}
 
@@ -245,7 +245,7 @@ public class ErrorMessages {
 	 *            Exception which caused this internal failure.
 	 */
 	public static void internalFailure(String msg, String filename,
-			Code.AttributableBlock.Entry entry, Throwable ex) {
+			AttributedCodeBlock.Entry entry, Throwable ex) {
 		int start = -1;
 		int end = -1;
 

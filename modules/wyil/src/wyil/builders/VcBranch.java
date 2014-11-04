@@ -122,7 +122,7 @@ public class VcBranch {
 	 * The block of Wyil bytecode instructions which this branch is traversing
 	 * (note: <code>parent == null || block == parent.block</code> must hold).
 	 */
-	private final Code.AttributableBlock block;
+	private final AttributedCodeBlock block;
 
 	/**
 	 * The origin determines the bytecode offset in block where this branch was
@@ -148,7 +148,7 @@ public class VcBranch {
 	 * @param numInputs
 	 * 			  --- the number of inputs to the given block.
 	 */
-	public VcBranch(Code.AttributableBlock block, int numInputs) {
+	public VcBranch(AttributedCodeBlock block, int numInputs) {
 		int numSlots = Math.max(numInputs,block.numSlots());
 		this.parent = null;
 		this.block = block;
@@ -171,7 +171,7 @@ public class VcBranch {
 	 * @param block
 	 *            --- the block of code on which this branch is operating.
 	 */
-	public VcBranch(WyilFile.FunctionOrMethodDeclaration decl, Code.AttributableBlock block) {
+	public VcBranch(WyilFile.FunctionOrMethodDeclaration decl, AttributedCodeBlock block) {
 		ArrayList<Type> paramTypes = decl.type().params();
 		int numSlots = Math.max(paramTypes.size(),block.numSlots());
 		this.parent = null;
@@ -219,7 +219,7 @@ public class VcBranch {
 	 *
 	 * @return
 	 */
-	public Code.AttributableBlock.Entry entry() {
+	public AttributedCodeBlock.Entry entry() {
 		return block.getEntry(pc);
 	}
 
@@ -389,7 +389,7 @@ public class VcBranch {
 			}
 
 			// second, continue to transform the given bytecode
-			Code.Block.Entry entry = block.getEntry(pc);
+			CodeBlock.Entry entry = block.getEntry(pc);
 			Code code = entry.code;
 			if(code instanceof Codes.Goto) {
 				goTo(((Codes.Goto) code).target);

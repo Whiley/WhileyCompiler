@@ -35,7 +35,7 @@ import wyil.util.*;
 import wyil.util.dfa.*;
 import wyil.lang.*;
 import static wycc.lang.SyntaxError.*;
-import static wyil.lang.Code.Block.*;
+import static wyil.lang.CodeBlock.*;
 import static wyil.util.ErrorMessages.*;
 
 /**
@@ -97,7 +97,7 @@ public class DefiniteAssignmentCheck extends
 
 		if (!in.contains(igoto.leftOperand) || !in.contains(igoto.rightOperand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
-					block.getEntry(index));
+					rootBlock.getEntry(index));
 		}
 
 		return new Pair(in, in);
@@ -109,7 +109,7 @@ public class DefiniteAssignmentCheck extends
 
 		if (!in.contains(iftype.operand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
-					block.getEntry(index));
+					rootBlock.getEntry(index));
 		}
 
 		return new Pair(in,in);
@@ -121,7 +121,7 @@ public class DefiniteAssignmentCheck extends
 
 		if (!in.contains(sw.operand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
-					block.getEntry(index));
+					rootBlock.getEntry(index));
 		}
 
 		ArrayList<HashSet<Integer>> stores = new ArrayList();
@@ -139,21 +139,22 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public HashSet<Integer> propagate(int start, int end, Codes.Loop loop,
+	public HashSet<Integer> propagate(int[] index, Codes.Loop loop,
 			HashSet<Integer> in, List<Codes.TryCatch> handlers) {
 		if (loop instanceof Codes.ForAll) {
 			Codes.ForAll fall = (Codes.ForAll) loop;
 
 			if (!in.contains(fall.sourceOperand)) {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-						filename, block.getEntry(index));
+						filename, rootBlock.getEntry(index));
 			}
 
 			in = new HashSet<Integer>(in);
 			in.add(fall.indexOperand);
 		}
 
-		HashSet<Integer> r = propagate(start + 1, end, in, handlers);
+		CodeBlock blk = loop;
+		HashSet<Integer> r = propagate(index, blk, in, handlers);
 		return join(in, r);
 	}
 
@@ -184,14 +185,14 @@ public class DefiniteAssignmentCheck extends
 			for(int operand : a.operands()) {
 				if(operand != Codes.NULL_REG && !in.contains(operand)) {
 					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-	                        filename, block.getEntry(index));
+	                        filename, rootBlock.getEntry(index));
 				}
 			}
 			if(code instanceof Codes.Update && !in.contains(a.target())) {
 				// In this case, we are assigning to an index or field.
 				// Therefore, the target register must already be defined.
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-                        filename, block.getEntry(index));
+                        filename, rootBlock.getEntry(index));
 			}
 			return;
 		} else {
@@ -200,7 +201,7 @@ public class DefiniteAssignmentCheck extends
 		}
 
 		syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-                filename, block.getEntry(index));
+                filename, rootBlock.getEntry(index));
 	}
 
 	public int defs(Code code) {

@@ -1660,8 +1660,8 @@ public class FlowTypeChecker {
 				return propagate((Expr.BinOp) expr, environment, context);
 			} else if (expr instanceof Expr.UnOp) {
 				return propagate((Expr.UnOp) expr, environment, context);
-			} else if (expr instanceof Expr.Comprehension) {
-				return propagate((Expr.Comprehension) expr, environment,
+			} else if (expr instanceof Expr.Quantifier) {
+				return propagate((Expr.Quantifier) expr, environment,
 						context);
 			} else if (expr instanceof Expr.Constant) {
 				return propagate((Expr.Constant) expr, environment, context);
@@ -1932,7 +1932,7 @@ public class FlowTypeChecker {
 		return expr;
 	}
 
-	private Expr propagate(Expr.Comprehension expr, Environment environment,
+	private Expr propagate(Expr.Quantifier expr, Environment environment,
 			Context context) throws IOException, ResolveError {
 
 		ArrayList<Pair<String, Expr>> sources = expr.sources;
@@ -1958,13 +1958,8 @@ public class FlowTypeChecker {
 			expr.condition = propagate(expr.condition, local, context);
 		}
 
-		if (expr.cop == Expr.COp.SETCOMP || expr.cop == Expr.COp.LISTCOMP) {
-			expr.value = propagate(expr.value, local, context);
-			expr.type = Nominal.Set(expr.value.result(), false);
-		} else {
-			expr.type = Nominal.T_BOOL;
-		}
-
+		expr.type = Nominal.T_BOOL;
+		
 		local.free();
 
 		return expr;

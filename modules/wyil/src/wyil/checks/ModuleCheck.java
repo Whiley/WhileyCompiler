@@ -55,7 +55,7 @@ import static wyil.util.ErrorMessages.*;
  *
  */
 public class ModuleCheck implements Transform<WyilFile> {
-	private String filename;
+	private String filename;	
 
 	public ModuleCheck(Builder builder) {
 
@@ -80,10 +80,10 @@ public class ModuleCheck implements Transform<WyilFile> {
 
 	protected void checkTryCatchBlocks(WyilFile.Case c,
 			WyilFile.FunctionOrMethodDeclaration m) {
-		HashMap<String, Code.AttributableBlock.Entry> labelMap = new HashMap<String, Code.AttributableBlock.Entry>();
-		Code.AttributableBlock block = c.body();
+		HashMap<String, AttributedCodeBlock.Entry> labelMap = new HashMap<String, AttributedCodeBlock.Entry>();
+		AttributedCodeBlock block = c.body();
 		if (block != null) {
-			for (Code.AttributableBlock.Entry b : block.allEntries()) {
+			for (AttributedCodeBlock.Entry b : block.allEntries()) {
 				if (b.code instanceof Codes.Label) {
 					Label l = (Codes.Label) b.code;
 					labelMap.put(l.label, b);
@@ -91,60 +91,53 @@ public class ModuleCheck implements Transform<WyilFile> {
 			}
 		}
 		Handler rootHandler = new Handler(m.type().throwsClause());
-		checkTryCatchBlocks(0, c.body().size(), c.body(), rootHandler, labelMap);
+		checkTryCatchBlocks(new int[0], block, block, rootHandler, labelMap);
 	}
 
-	protected void checkTryCatchBlocks(int start, int end, Code.AttributableBlock block,
-			Handler handler, HashMap<String, Code.AttributableBlock.Entry> labelMap) {
-		for (int i = start; i < end; ++i) {
-			Code.AttributableBlock.Entry entry = block.getEntry(i);
-
-			// FIXME: this needs to be reworked with new CodeBlock API.
+	protected void checkTryCatchBlocks(int[] index, CodeBlock block,
+			AttributedCodeBlock root, Handler handler,
+			HashMap<String, AttributedCodeBlock.Entry> labelMap) {
+		
+		for (int i = 0; i < block.size(); ++i) {
+			Code code = block.get(i);
+			int[] codeIndex = Arrays.copyOf(index, index.length + 1);
+			codeIndex[index.length] = i;
 
 			try {
-				Code code = entry.code;
-
 				if (code instanceof TryCatch) {
-					TryCatch sw = (TryCatch) code;
-					int s = i;
-					// Note, I could make this more efficient!
-					while (++i < block.size()) {
-						entry = block.getEntry(i);
-						if (entry.code instanceof Codes.Label) {
-							Codes.Label l = (Codes.Label) entry.code;
-							if (l.label.equals(sw.target)) {
-								// end of loop body found
-								break;
-							}
-						}
-					}
+					TryCatch tryCatchCode = (TryCatch) code;
 
-					Handler nhandler = new Handler(sw.catches,handler);
-					checkTryCatchBlocks(s + 1, i, block, nhandler, labelMap);
+					Handler nhandler = new Handler(tryCatchCode.catches,
+							handler);
+					checkTryCatchBlocks(codeIndex, tryCatchCode, root,
+							nhandler, labelMap);
 
 					// now we need to check that every handler is, in fact,
 					// reachable.
-					for(Pair<Type,String> p : sw.catches) {
-						if(!nhandler.active.contains(p.first())) {
+					for (Pair<Type, String> p : tryCatchCode.catches) {
+						if (!nhandler.active.contains(p.first())) {
 							// FIXME: better error message which focuses on the
 							// actual handler is required.
-							syntaxError(
-									errorMessage(UNREACHABLE_CODE),
+							syntaxError(errorMessage(UNREACHABLE_CODE),
 									filename, labelMap.get(p.second()));
 						}
 					}
+				} else if (code instanceof CodeBlock) {
+					checkTryCatchBlocks(codeIndex, (CodeBlock) code, root,
+							handler, labelMap);
 				} else {
 					Type ex = thrownException(code);
 					if (ex != Type.T_VOID && !handler.catchException(ex)) {
 						syntaxError(
 								errorMessage(MUST_DECLARE_THROWN_EXCEPTION),
-								filename, entry);
+								filename, root.getEntry(codeIndex));
 					}
 				}
-			} catch(SyntaxError ex) {
+			} catch (SyntaxError ex) {
 				throw ex;
-			} catch(Throwable ex) {
-				internalFailure(ex.getMessage(),filename,entry,ex);
+			} catch (Throwable ex) {
+				internalFailure(ex.getMessage(), filename,
+						root.getEntry(codeIndex), ex);
 			}
 		}
 	}
@@ -206,9 +199,9 @@ public class ModuleCheck implements Transform<WyilFile> {
 	}
 
 	protected void checkFunctionPure(WyilFile.Case c) {
-		Code.AttributableBlock block = c.body();
+		AttributedCodeBlock block = c.body();
 		for (int i = 0; i != block.size(); ++i) {
-			Code.AttributableBlock.Entry stmt = block.getEntry(i);
+			AttributedCodeBlock.Entry stmt = block.getEntry(i);
 			Code code = stmt.code;
 			if(code instanceof Codes.Invoke && ((Codes.Invoke)code).type() instanceof Type.Method) {
 				// internal message send

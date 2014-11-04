@@ -415,8 +415,8 @@ public class WhileyFilePrinter {
 			print ((Expr.IndirectFunctionCall) expression);
 		} else if (expression instanceof Expr.IndirectMethodCall) {
 			print ((Expr.IndirectMethodCall) expression);
-		} else if (expression instanceof Expr.Comprehension) {
-			print ((Expr.Comprehension) expression);
+		} else if (expression instanceof Expr.Quantifier) {
+			print ((Expr.Quantifier) expression);
 		} else if (expression instanceof Expr.FieldAccess) {
 			print ((Expr.FieldAccess) expression);
 		} else if (expression instanceof Expr.Record) {
@@ -595,7 +595,7 @@ public class WhileyFilePrinter {
 		out.print(")");
 	}
 
-	public void print(Expr.Comprehension e) {
+	public void print(Expr.Quantifier e) {
 		switch(e.cop) {
 		case NONE:
 			out.print("no ");
@@ -610,37 +610,19 @@ public class WhileyFilePrinter {
 
 		out.print("{ ");
 
-		if(e.value != null) {
-			print(e.value);
-			out.print(" | ");
-			boolean firstTime=true;
-			for(Pair<String,Expr> src : e.sources) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				out.print(src.first());
-				out.print(" in ");
-				print(src.second());
-			}
-			if(e.condition != null) {
+		boolean firstTime=true;
+		for(Pair<String,Expr> src : e.sources) {
+			if(!firstTime) {
 				out.print(", ");
-				print(e.condition);
 			}
-		} else {
-			boolean firstTime=true;
-			for(Pair<String,Expr> src : e.sources) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				out.print(src.first());
-				out.print(" in ");
-				print(src.second());
-			}
-			out.print(" | ");
-			print(e.condition);
+			firstTime=false;
+			out.print(src.first());
+			out.print(" in ");
+			print(src.second());
 		}
+		out.print(" | ");
+		print(e.condition);
+		
 		out.print(" }");
 	}
 

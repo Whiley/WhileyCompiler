@@ -33,12 +33,12 @@ import wybs.lang.Builder;
 import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyfs.lang.Path;
-import wyil.lang.Code.Block;
+import wyil.lang.AttributedCodeBlock;
 import wyil.lang.Code;
+import wyil.lang.CodeBlock;
 import wyil.lang.Codes;
 import wyil.lang.WyilFile;
 import wyil.lang.Type;
-import wyil.lang.Code.Block.Entry;
 import wyil.util.dfa.*;
 
 /**
@@ -115,7 +115,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 
 	@Override
 	public WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {
-		Code.AttributableBlock invariant = type.invariant();
+		AttributedCodeBlock invariant = type.invariant();
 		if (invariant != null) {
 			invariant = propagate(invariant);
 			return new WyilFile.TypeDeclaration(type.modifiers(), type.name(),
@@ -136,19 +136,19 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	@Override
 	public WyilFile.Case propagate(WyilFile.Case mcase) {
 
-		ArrayList<Code.AttributableBlock> requires = new ArrayList<Code.AttributableBlock>(
+		ArrayList<AttributedCodeBlock> requires = new ArrayList<AttributedCodeBlock>(
 				mcase.precondition());
 		for (int i = 0; i != requires.size(); ++i) {
-			Code.AttributableBlock tmp = propagate(requires.get(i));
+			AttributedCodeBlock tmp = propagate(requires.get(i));
 			requires.set(i, tmp);
 		}
-		ArrayList<Code.AttributableBlock> ensures = new ArrayList<Code.AttributableBlock>(
+		ArrayList<AttributedCodeBlock> ensures = new ArrayList<AttributedCodeBlock>(
 				mcase.postcondition());
 		for (int i = 0; i != ensures.size(); ++i) {
-			Code.AttributableBlock tmp = propagate(ensures.get(i));
+			AttributedCodeBlock tmp = propagate(ensures.get(i));
 			ensures.set(i, tmp);
 		}
-		Code.AttributableBlock body = mcase.body();
+		AttributedCodeBlock body = mcase.body();
 		if (body != null) {
 			body = propagate(body);
 		}
@@ -156,15 +156,15 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		return new WyilFile.Case(body, requires, ensures, mcase.attributes());
 	}
 
-	public Code.AttributableBlock propagate(Code.AttributableBlock body) {
-		block = body;
+	public AttributedCodeBlock propagate(AttributedCodeBlock body) {
+		rootBlock = body;
 		stores = new HashMap<String,Env>();
 		rewrites.clear();
 		Env environment = lastStore();
-		propagate(0,body.size(), environment, Collections.EMPTY_LIST);
+		propagate(new int[] {}, body, environment, Collections.EMPTY_LIST);
 
 		// At this point, we apply the inserts
-		Code.AttributableBlock nbody = new Code.AttributableBlock();
+		AttributedCodeBlock nbody = new AttributedCodeBlock();
 		for(int i=0;i!=body.size();++i) {
 			Code rewrite = rewrites.get(i);
 			if(rewrite != null) {
@@ -269,9 +269,9 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		return environment;
 	}
 
-	public Env propagate(int start, int end, Codes.Loop loop, Env environment,
+	public Env propagate(int[] index, Codes.Loop loop, Env environment,
 			List<Pair<Type, String>> handlers) {
-		rewrites.put(start,null); // to overrule any earlier rewrites
+		rewrites.put(index,null); // to overrule any earlier rewrites
 
 		Env oldEnv = null;
 		Env newEnv = null;
@@ -283,11 +283,11 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		} else {
 			environment = EMPTY_ENV;
 		}
-
+		CodeBlock block = (CodeBlock) loop;
 		do {
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : environment;
-			newEnv = propagate(start+1,end, oldEnv, handlers);
+			newEnv = propagate(index, block, oldEnv, handlers);
 			newEnv = join(environment,newEnv);
 		} while (!newEnv.equals(oldEnv));
 
@@ -318,12 +318,18 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			Code code;
 			if(loop instanceof Codes.ForAll) {
 				Codes.ForAll fall = (Codes.ForAll) loop;
+
+				// FIXME: the following is surely broken ?
+
 				code = Codes.ForAll(fall.type, fall.sourceOperand,
-						fall.indexOperand, nModifiedOperands, loop.target);
+						fall.indexOperand, nModifiedOperands, loop.bytecodes());
 			} else {
-				code = Codes.Loop(loop.target,nModifiedOperands), stmt.attributes();
+
+				// FIXME: the following is surely broken ?
+
+				code = Codes.Loop(nModifiedOperands,loop.bytecodes());
 			}
-			rewrites.put(start, code);
+			rewrites.put(index, code);
 		}
 
 		return environment;

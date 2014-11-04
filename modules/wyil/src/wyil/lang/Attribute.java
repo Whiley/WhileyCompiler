@@ -41,7 +41,7 @@ public interface Attribute {
 		 *
 		 * @return
 		 */
-		Class<Attribute> type();
+		Class<? extends Attribute> type();
 
 		/**
 		 * Get the meta-data associated with a given bytecode location. Here, a

@@ -33,7 +33,6 @@ import wybs.lang.Builder;
 import wyfs.lang.Path;
 import wyil.builders.VcBranch.AssertOrAssumeScope;
 import wyil.lang.*;
-import wyil.transforms.RuntimeAssertions;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wycs.syntax.Expr;
@@ -141,16 +140,10 @@ public class Wyil2WyalBuilder implements Builder {
 			WyilFile.FunctionOrMethodDeclaration method, WyilFile wyilFile,
 			WyalFile wycsFile) {
 
-		if (!RuntimeAssertions.getEnable()) {
-			// inline constraints if they have not already been done.
-			RuntimeAssertions rac = new RuntimeAssertions(this, filename);
-			methodCase = rac.transform(methodCase, method);
-		}
-
 		Type.FunctionOrMethod fmm = method.type();
 		int paramStart = 0;
 
-		Code.AttributableBlock body = methodCase.body();
+		AttributedCodeBlock body = methodCase.body();
 
 		VcBranch master = new VcBranch(method, body);
 
@@ -159,11 +152,11 @@ public class Wyil2WyalBuilder implements Builder {
 			master.write(i, new Expr.Variable("r" + Integer.toString(i)), paramType);
 		}
 
-		List<Code.AttributableBlock> requires = methodCase.precondition();
+		List<AttributedCodeBlock> requires = methodCase.precondition();
 
 		if (requires.size() > 0) {
-			Code.AttributableBlock block = new Code.AttributableBlock();
-			for(Code.AttributableBlock precondition : requires) {
+			AttributedCodeBlock block = new AttributedCodeBlock();
+			for(AttributedCodeBlock precondition : requires) {
 				block.addAll(precondition);
 			}
 			VcBranch precond = new VcBranch(method, block);

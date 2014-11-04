@@ -143,7 +143,7 @@ public final class WyilFileWriter {
 			case BLOCK_Precondition:
 			case BLOCK_Postcondition:
 			case BLOCK_Constraint:
-				bytes = generateCodeBlock((Code.Block) data);
+				bytes = generateAttributedCodeBlock((AttributedCodeBlock) data);
 				break;
 		}
 
@@ -392,7 +392,7 @@ public final class WyilFileWriter {
 		output.write_uv(stringCache.get(td.name()));
 		output.write_uv(generateModifiers(td.modifiers()));
 		output.write_uv(typeCache.get(td.type()));
-		Code.Block invariant = td.invariant();
+		CodeBlock invariant = td.invariant();
 
 		if(invariant != null) {
 			output.write_uv(1);
@@ -430,10 +430,10 @@ public final class WyilFileWriter {
 		int bodyCount = c.body() == null ? 0 : 1;
 
 		output.write_uv(c.precondition().size() + c.postcondition().size() + bodyCount);
-		for(Code.Block requires : c.precondition()) {
+		for(CodeBlock requires : c.precondition()) {
 			writeBlock(BLOCK_Precondition,requires,output);
 		}
-		for(Code.Block ensures : c.postcondition()) {
+		for(CodeBlock ensures : c.postcondition()) {
 			writeBlock(BLOCK_Postcondition,ensures,output);
 		}
 		if(c.body() != null) {
@@ -445,39 +445,57 @@ public final class WyilFileWriter {
 		return bytes.toByteArray();
 	}
 
-	private byte[] generateCodeBlock(Code.Block block) throws IOException {
+	private byte[] generateAttributedCodeBlock(AttributedCodeBlock block) throws IOException {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 
 		HashMap<String,Integer> labels = new HashMap<String,Integer>();
 
-		int nlabels = 0;
 		int offset = 0;
-		for(Code.Block.Entry e : block.allEntries()) {
+		for(CodeBlock.Entry e : block.allEntries()) {
 			if(e.code instanceof Codes.Label) {
 				Codes.Label l = (Codes.Label) e.code;
 				labels.put(l.label, offset);
-				nlabels++;
 			} else {
 				offset++;
 			}
 		}
 
-		output.write_uv(block.size()-nlabels); // instruction count (not same as block size!)
-		offset = 0;
-		for(Code.Block.Entry e : block.allEntries()) {
-			Code code = e.code;
-			if(code instanceof Codes.Label) {
-
-			} else {
-				writeCode(code, offset++, labels, output);
-			}
-		}
-
+		writeCodeBlock(true,block,0,labels,output);
+		
 		output.close();
 		return bytes.toByteArray();
 	}
 
+	private void writeCodeBlock(boolean wide, CodeBlock block, int offset,
+			HashMap<String, Integer> labels, BinaryOutputStream output)
+			throws IOException {
+		
+		// First, determine how many labels there are in this block (since
+		// labels are not real bytecodes)
+		int nlabels = 0;		
+		for (int i = 0; i != block.size(); ++i) {
+			Code code = block.get(i);
+			if (code instanceof Codes.Label) {
+				nlabels++;
+			} 
+		}
+		
+		// Second, write the count of bytecodes
+		writeRest(wide,block.size() - nlabels,output);
+		
+		// Third, write the actual bytecodes!
+		for (int i = 0; i != block.size(); ++i) {
+			Code code = block.get(i);
+			if (code instanceof Codes.Label) {
+
+			} else {
+				writeCode(code, offset, labels, output);
+				offset += WyilFileReader.sizeof(code);
+			}			
+		}
+	}
+	
 	private void writeCode(Code code, int offset,
 			HashMap<String, Integer> labels, BinaryOutputStream output)
 			throws IOException {
@@ -682,9 +700,8 @@ public final class WyilFileWriter {
 			writeRest(wide,stringCache.get(c.field),output);
 		} else if(code instanceof Codes.ForAll) {
 			Codes.ForAll f = (Codes.ForAll) code;
-			writeRest(wide,typeCache.get(f.type),output);
-			int target = labels.get(f.target);
-			writeTarget(wide,offset,target,output);
+			writeRest(wide,typeCache.get(f.type),output);						
+			writeCodeBlock(wide,f,offset+1,labels,output);
 		} else if(code instanceof Codes.IfIs) {
 			Codes.IfIs c = (Codes.IfIs) code;
 			int target = labels.get(c.target) - offset;
@@ -706,8 +723,7 @@ public final class WyilFileWriter {
 			writeRest(wide,nameCache.get(c.name),output);
 		} else if(code instanceof Codes.Loop) {
 			Codes.Loop l = (Codes.Loop) code;
-			int target = labels.get(l.target);
-			writeTarget(wide,offset,target,output);
+			writeCodeBlock(wide,l,offset+1,labels,output);
 		} else if(code instanceof Codes.Update) {
 			Codes.Update c = (Codes.Update) code;
 			List<String> fields = c.fields;
@@ -729,15 +745,14 @@ public final class WyilFileWriter {
 			}
 		} else if(code instanceof Codes.TryCatch) {
 			Codes.TryCatch tc = (Codes.TryCatch) code;
-			int target = labels.get(tc.target);
-			ArrayList<Pair<Type,String>> catches = tc.catches;
-			writeTarget(wide,offset,target,output);
+			ArrayList<Pair<Type,String>> catches = tc.catches;			
 			writeRest(wide,catches.size(),output);
 			for (int i = 0; i != catches.size(); ++i) {
 				Pair<Type, String> handler = catches.get(i);
 				writeRest(wide, typeCache.get(handler.first()), output);
 				writeTarget(wide, offset, labels.get(handler.second()), output);
 			}
+			writeCodeBlock(wide,tc,offset+1,labels,output);
 		} else if(code instanceof Codes.TupleLoad) {
 			Codes.TupleLoad c = (Codes.TupleLoad) code;
 			writeRest(wide,c.index,output);
@@ -854,7 +869,7 @@ public final class WyilFileWriter {
 				maxBase = Math.max(maxBase, operands[i]);
 			}
 			maxRest = Math.max(maxRest,typeCache.get(f.type));
-			maxRest = Math.max(maxRest,targetWidth(f.target, offset, labels));
+			maxRest = Math.max(maxRest,f.size()); 
 		} else if(code instanceof Codes.IfIs) {
 			Codes.IfIs c = (Codes.IfIs) code;
 			maxRest = Math.max(maxRest,typeCache.get(c.rightOperand));
@@ -871,14 +886,14 @@ public final class WyilFileWriter {
 		} else if(code instanceof Codes.Lambda) {
 			Codes.Lambda c = (Codes.Lambda) code;
 			maxRest = Math.max(maxRest,nameCache.get(c.name));
-		} else if(code instanceof Codes.Loop) {
-			Codes.Loop l = (Codes.Loop) code;
+		} else if(code instanceof Codes.Loop) {			
+			Codes.Loop l = (Codes.Loop) code;			
 			int[] operands = l.modifiedOperands;
 			maxBase = 0;
 			for(int i=0;i!=operands.length;++i) {
 				maxBase = Math.max(maxBase, operands[i]);
 			}
-			maxRest = Math.max(maxRest,targetWidth(l.target, offset, labels));
+			maxRest = Math.max(maxRest,l.size()); 			
 		} else if(code instanceof Codes.Update) {
 			Codes.Update c = (Codes.Update) code;
 			maxRest = Math.max(maxRest,typeCache.get(c.afterType));
@@ -898,9 +913,7 @@ public final class WyilFileWriter {
 			}
 		} else if(code instanceof Codes.TryCatch) {
 			Codes.TryCatch tc = (Codes.TryCatch) code;
-			maxBase = tc.operand;
-			maxRest = Math.max(maxRest,
-					targetWidth(tc.target, offset, labels));
+			maxBase = tc.operand;			
 			ArrayList<Pair<Type,String>> catches = tc.catches;
 			maxRest = Math.max(maxRest,catches.size());
 			for(int i=0;i!=catches.size();++i) {
@@ -909,6 +922,7 @@ public final class WyilFileWriter {
 				maxRest = Math.max(maxRest,
 						targetWidth(handler.second(), offset, labels));
 			}
+			maxRest = Math.max(maxRest,tc.size());
 		} else if(code instanceof Codes.TupleLoad) {
 			Codes.TupleLoad c = (Codes.TupleLoad) code;
 			maxRest = Math.max(maxRest,c.index);
@@ -1015,17 +1029,17 @@ public final class WyilFileWriter {
 		}
 	}
 
-	private void buildPools(List<Code.AttributableBlock> blocks) {
-		for(Code.Block block : blocks) {
+	private void buildPools(List<AttributedCodeBlock> blocks) {
+		for(CodeBlock block : blocks) {
 			buildPools(block);
 		}
 	}
 
-	private void buildPools(Code.Block block) {
+	private void buildPools(CodeBlock block) {
 		if (block == null) {
 			return;
 		}
-		for (Code.Block.Entry e : block.allEntries()) {
+		for (CodeBlock.Entry e : block.allEntries()) {
 			buildPools(e.code);
 		}
 	}

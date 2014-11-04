@@ -37,6 +37,8 @@ import wyfs.lang.Path;
 import wyil.lang.WyilFile;
 import wycc.util.Logger;
 import wycc.util.Pair;
+import wyil.lang.AttributedCodeBlock;
+import wyil.lang.CodeBlock;
 import wyil.lang.Code;
 import wyil.lang.Codes;
 import wyil.lang.Constant.Bool;
@@ -518,7 +520,7 @@ public class Wyil2CBuilder implements Builder {
 		String lin;
 		String ans = "";
 
-		Code.Block strain = typDe.invariant();
+		CodeBlock strain = typDe.invariant();
 		List<Modifier> mods = typDe.modifiers();
 		Type typ = typDe.type();
 		List<?> atts = typDe.attributes();
@@ -943,8 +945,8 @@ public class Wyil2CBuilder implements Builder {
 			int cnt = -1;
 			List<?> attCol = casIn.attributes();
 			//Block bod = casIn.body();
-			List<Code.Block> prec = casIn.precondition();
-			List<Code.Block> posc = casIn.postcondition();
+			List<AttributedCodeBlock> prec = casIn.precondition();
+			List<AttributedCodeBlock> posc = casIn.postcondition();
 
 			if (attCol == null) {
 				ans += "//           " + " no attributes\n";
@@ -970,13 +972,13 @@ public class Wyil2CBuilder implements Builder {
 
 		// write case delegates to write Body
 		public void writeCase(Case casIn, int idx) {
-			Code.Block bod = casIn.body();
+			CodeBlock bod = casIn.body();
 			this.writeBody(bod, idx);
 			return;
 		}
 
 		// generate C code for the wyil sequence, each wyil byte goes to writeBlockEntry
-		public void writeBody(Code.Block bodIn, int idx) {
+		public void writeBody(CodeBlock bodIn, int idx) {
 			int cnt = -1;
 
 			if (bodIn == null) {
@@ -987,7 +989,7 @@ public class Wyil2CBuilder implements Builder {
 			bodyAddLineNL(	"// block #" + idx + " is of seizes " + cnt	);
 
 			cnt = 0;
-			for (Code.Block.Entry be : bodIn) {
+			for (CodeBlock.Entry be : bodIn.allEntries()) {
 				this.writeBlockEntry(be, cnt);
 				cnt += 1;
 			}
@@ -995,35 +997,13 @@ public class Wyil2CBuilder implements Builder {
 		}
 
 		// produce comments and optionally C directives to note the source line numbers
-		public String writeSourceLineID(Code.Block.Entry blkIn){
+		public String writeSourceLineID(CodeBlock.Entry blkIn){
 			String ans = "";
 			int cnt;
 			int idx;
-
-			List<Attribute> attCol = blkIn.attributes();
-			if (attCol == null) {
-				return "//           " + " no attributes\n";
-			}
-			cnt = attCol.size();
-			if (cnt < 1) {
-				return "//           " + "  0 attributes\n";
-			}
-			if (cnt != 1) {
-				ans += "//           " + " with " + cnt + " attributes\n";
-			}
-			idx = 0;
-			while (idx < cnt) {
-				Attribute att = attCol.get(idx);
-				if (att instanceof Attribute.Source) {
-					Attribute.Source attis = (Attribute.Source) att;
-					if (lineNumFlag) {
-						this.mbodyAddLineNL(	"#line " + attis.line	);
-					}
-				} else {
-					ans += "//           " + " [0] is " + att+ "\n";
-				}
-				idx++;
-			}
+			
+			// TODO: fixme !?
+			
 			return ans;
 		}
 
@@ -1036,7 +1016,7 @@ public class Wyil2CBuilder implements Builder {
 		// ! code for variable destruction
 		// * even a subclass for routines
 		//
-		public void writeBlockEntry(Code.Block.Entry blkIn, int idx) {
+		public void writeBlockEntry(CodeBlock.Entry blkIn, int idx) {
 			String tmp;
 			int targ;
 			//String lin;
@@ -1082,8 +1062,6 @@ public class Wyil2CBuilder implements Builder {
 				this.writeCodeLengthOf(cod);
 			} else if (cod instanceof Codes.IndexOf) {
 				this.writeCodeIndexOf(cod);
-			} else if (cod instanceof Codes.LoopEnd) {
-				this.writeCodeLoopEnd(cod);
 			} else if (cod instanceof Codes.TryEnd) {
 				this.writeCodeTryEnd(cod);
 			} else if (cod instanceof Codes.Label) {
@@ -1477,23 +1455,6 @@ public class Wyil2CBuilder implements Builder {
 			return;
 		}
 
-		public void writeCodeLoopEnd(Code codIn){
-			String nam;
-
-			//bodyAddLineNL(	"// HELP needed for LoopEnd"	);
-			Codes.LoopEnd cod = (Codes.LoopEnd) codIn;
-			nam = cod.label;
-			bodyAddLineNL(	"//             called " + nam	);
-			if (this.mbodyPop(nam)) {
-				if (this.endsWithLabel()) {
-					this.mbodyAddLineINL(	indent + ";"	);
-				}
-				this.mbodyAddLineINL(	"};"	);
-			}
-			this.mbodyAddLineNL(	nam + ":"	);
-			return;
-		}
-
 		public void writeCodeLabel(Code codIn){
 			String nam;
 
@@ -1559,7 +1520,7 @@ public class Wyil2CBuilder implements Builder {
 
 			//bodyAddLineNL(	"// HELP needed for Loop"	);
 			Codes.Loop cod = (Codes.Loop) codIn;
-			target = cod.target;
+			target = null; // code.target
 			bodyAddLineNL(	"//             going to " + target	);
 
 			this.mbodyAddLineINL(	"while (1) {"	);
@@ -1656,7 +1617,7 @@ public class Wyil2CBuilder implements Builder {
 			Codes.ForAll cod = (Codes.ForAll) codIn;
 			opIdx = cod.indexOperand;
 			opBlk = cod.sourceOperand;
-			target = cod.target;
+			target = null; // cod.target;
 			bodyAddLineNL(	"//                 stepping over X" + opBlk + " with X" + opIdx	);
 			bodyAddLineNL(	"//                 reaching" + target	);
 			writeClearTarget(opIdx);

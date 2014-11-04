@@ -28,6 +28,7 @@ package wyil.util.dfa;
 import static wyil.util.ErrorMessages.internalFailure;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -38,11 +39,31 @@ import wycc.util.Pair;
 import wyil.lang.*;
 
 public abstract class BackwardFlowAnalysis<T> {
+
+	/**
+	 * The filename of the module currently being propagated through
+	 */
 	protected String filename;
-	protected Code.AttributableBlock block;
+
+	/**
+	 * The function or method currently being propagated through.
+	 */
 	protected WyilFile.FunctionOrMethodDeclaration method;
+
+	/**
+	 * The function or method case currently being propagated through.
+	 */
 	protected WyilFile.Case methodCase;
-	protected HashMap<String,T> stores;
+
+	/**
+	 * The root block currently being propagated through.
+	 */
+	protected AttributedCodeBlock rootBlock;
+
+	/**
+	 * The temporary abstract stores being generated during propagation.
+	 */
+	protected HashMap<String, T> stores;
 
 	public void apply(WyilFile module) {
 		filename = module.filename();
@@ -83,63 +104,48 @@ public abstract class BackwardFlowAnalysis<T> {
 	protected WyilFile.Case propagate(WyilFile.Case mcase) {
 		this.methodCase = mcase;
 		this.stores = new HashMap<String,T>();
-		this.block = mcase.body();
+		this.rootBlock = mcase.body();
 		T last = lastStore();
-		propagate(0, mcase.body().size(), last, Collections.EMPTY_LIST);
+		propagate(new int[]{}, rootBlock, last, Collections.EMPTY_LIST);
 		return mcase;
 	}
 
-	protected T propagate(int start, int end, T store, List<Pair<Type,String>> handlers) {
+	/**
+	 * Propagate a given store backwards through this bytecode block. A list of
+	 * exception handlers that are active is provided.
+	 *
+	 * @param parentIndex
+	 *            The bytecode index of the bytecode containing this block, or
+	 *            the empty index otherwise.
+	 * @param block
+	 *            The bytecode block to be propagated through.
+	 * @param store
+	 *            The store which holds at the end of this block.
+	 * @param handlers
+	 *            The list of active exception handlers
+	 * @return
+	 */
+	protected T propagate(int[] parentIndex, CodeBlock block, T store, List<Pair<Type,String>> handlers) {
 
-		for(int i=end-1;i>=start;--i) {
-			// FIXME: not working yet!
-			Code.AttributableBlock.Entry entry = block.getEntry(i);
-			int[] id = entry.id;
+		for (int i = block.size()-1; i >= 0; --i) {
+			Code code = block.get(i);
+
+			// Construct the bytecode ID
+			int[] id = Arrays.copyOf(parentIndex, parentIndex.length+1);
+			id[parentIndex.length] = i;
 
 			try {
-				Code code = block.get(i);
 				// First, check for a label which may have incoming information.
-				if (code instanceof Codes.LoopEnd) {
-					Codes.Loop loop = null;
-					String label = ((Codes.LoopEnd) code).label;
-					// first, save the store since it might be needed for break
-					// statements.
-					stores.put(label,store);
-					// now, identify the loop body.
-					int loopEnd = i;
-					while (--i >= 0) {
-						code = block.get(i);
-						if (code instanceof Codes.Loop) {
-							loop = (Codes.Loop) code;
-							if (label.equals(loop.target)) {
-								// start of loop body found
-								break;
-							}
-						}
-					}
-
-					store = propagate(i, loopEnd, loop, store, handlers);
+				if (code instanceof Codes.Loop) {
+					Codes.Loop loop = (Codes.Loop) code;
+					store = propagate(id, loop, store, handlers);
 					continue;
-				} else if (code instanceof Codes.TryEnd) {
-					Codes.TryCatch tc = null;
-					String label = ((Codes.TryEnd) code).label;
-					stores.put(label,store);
-					// now, identify the try-catch body.
-					int tcEnd = i;
-					while (--i >= 0) {
-						code = block.get(i);
-						if (code instanceof Codes.TryCatch) {
-							tc = (Codes.TryCatch) code;
-							if (label.equals(tc.target)) {
-								// start of loop body found
-								break;
-							}
-						}
-					}
+				} else if (code instanceof Codes.TryCatch) {
+					Codes.TryCatch tc = (Codes.TryCatch) code;
 					ArrayList<Pair<Type, String>> nhandlers = new ArrayList<Pair<Type, String>>(
 							handlers);
 					nhandlers.addAll(0, tc.catches);
-					store = propagate(i+1, tcEnd, store, nhandlers);
+					store = propagate(id, tc, store, nhandlers);
 					continue;
 				} else if (code instanceof Codes.Label) {
 					Codes.Label l = (Codes.Label) code;
@@ -180,7 +186,7 @@ public abstract class BackwardFlowAnalysis<T> {
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
-				internalFailure("internal failure", filename, entry, ex);
+				internalFailure("internal failure", filename, rootBlock.getEntry(id), ex);
 			}
 		}
 
@@ -301,8 +307,8 @@ public abstract class BackwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(int start, int end, Codes.Loop code,
-			T store, List<Pair<Type,String>> handlers);
+	protected abstract T propagate(int[] index, Codes.Loop code, T store,
+			List<Pair<Type, String>> handlers);
 
 	/**
 	 * <p>

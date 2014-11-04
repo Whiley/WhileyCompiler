@@ -28,6 +28,7 @@ package wyil.util.dfa;
 import static wyil.util.ErrorMessages.internalFailure;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -37,15 +38,34 @@ import wycc.lang.SyntaxError;
 import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyil.lang.*;
-import wyil.lang.Code.AttributableBlock;
 import wyil.util.*;
 
 public abstract class ForwardFlowAnalysis<T> {
+
+	/**
+	 * The filename of the module currently being propagated through
+	 */
 	protected String filename;
+
+	/**
+	 * The function or method currently being propagated through.
+	 */
 	protected WyilFile.FunctionOrMethodDeclaration method;
+
+	/**
+	 * The function or method case currently being propagated through.
+	 */
 	protected WyilFile.Case methodCase;
-	protected Code.AttributableBlock block;
-	protected HashMap<String,T> stores;
+
+	/**
+	 * The root block currently being propagated through.
+	 */
+	protected AttributedCodeBlock rootBlock;
+
+	/**
+	 * The temporary abstract stores being generated during propagation.
+	 */
+	protected HashMap<String, T> stores;
 
 	public void apply(WyilFile module) {
 		filename = module.filename();
@@ -89,22 +109,38 @@ public abstract class ForwardFlowAnalysis<T> {
 	protected WyilFile.Case propagate(WyilFile.Case mcase) {
 		this.methodCase = mcase;
 		this.stores = new HashMap<String,T>();
-		this.block = mcase.body();
+		this.rootBlock = mcase.body();
 		T init = initialStore();
-		propagate(0, block.size(), init, Collections.EMPTY_LIST);
+		propagate(new int[]{}, rootBlock, init, Collections.EMPTY_LIST);
 		return mcase;
 	}
 
-	protected T propagate(int start, int end, T store,
+	/**
+	 * Propagate a given store forwards through this bytecode block. A list of
+	 * exception handlers that are active is provided.
+	 *
+	 * @param parentIndex
+	 *            The bytecode index of the bytecode containing this block, or
+	 *            the empty index otherwise.
+	 * @param block
+	 *            The bytecode block to be propagated through.
+	 * @param store
+	 *            The store which holds at the end of this block.
+	 * @param handlers
+	 *            The list of active exception handlers
+	 * @return
+	 */
+	protected T propagate(int[] parentIndex, CodeBlock block, T store,
 			List<Codes.TryCatch> handlers) {
 
-		for (int i = start; i < end; ++i) {
-			AttributableBlock.Entry entry = block.getEntry(i);
-			int[] id = entry.id;
+		for (int i = 0; i < block.size(); ++i) {
+			Code code = block.get(i);
+
+			// Construct the bytecode ID
+			int[] id = Arrays.copyOf(parentIndex, parentIndex.length+1);
+			id[parentIndex.length] = i;
 
 			try {
-				Code code = entry.code;
-
 				// First, check for a label which may have incoming information.
 				if (code instanceof Codes.Label) {
 					Codes.Label l = (Codes.Label) code;
@@ -123,24 +159,8 @@ public abstract class ForwardFlowAnalysis<T> {
 					continue;
 				} else if (code instanceof Codes.Loop) {
 					Codes.Loop loop = (Codes.Loop) code;
-					Code.AttributableBlock.Entry nEntry = entry;
-					int s = i;
-					// Note, I could make this more efficient!
-					while (++i < block.size()) {
-						nEntry = block.getEntry(i);
-						if (nEntry.code instanceof Codes.Label) {
-							Codes.Label l = (Codes.Label) nEntry.code;
-							if (l.label.equals(loop.target)) {
-								// end of loop body found
-								break;
-							}
-						}
-					}
 					// propagate through the loop body
-					store = propagate(s, i, loop, store, handlers);
-					// following is needed to ensure branches to exit label
-					// (e.g. from break) are properly accounted for.
-					i = i - 1;
+					store = propagate(id, loop, store, handlers);
 					continue;
 				} else if (code instanceof Codes.If) {
 					Codes.If ifgoto = (Codes.If) code;
@@ -158,7 +178,7 @@ public abstract class ForwardFlowAnalysis<T> {
 					List<T> r = propagate(id, sw, store);
 
 					// assert r.second().size() == nsw.branches.size()
-					Codes.Switch nsw = (Codes.Switch) entry.code;
+					Codes.Switch nsw = (Codes.Switch) code;
 					for (int j = 0; j != nsw.branches.size(); ++j) {
 						String target = nsw.branches.get(j).second();
 						T nstore = r.get(j);
@@ -168,36 +188,20 @@ public abstract class ForwardFlowAnalysis<T> {
 					store = null;
 				} else if (code instanceof Codes.TryCatch) {
 					Codes.TryCatch tc = (Codes.TryCatch) code;
-					int s = i;
-
-					// Note, I could make this more efficient!
-					while (++i < block.size()) {
-						entry = block.getEntry(i);
-						if (entry.code instanceof Codes.Label) {
-							Codes.Label l = (Codes.Label) entry.code;
-							if (l.label.equals(tc.target)) {
-								// end of loop body found
-								break;
-							}
-						}
-					}
-
 					ArrayList<Codes.TryCatch> nhandlers = new ArrayList<Codes.TryCatch>(
 							handlers);
 					nhandlers.add(tc);
-					store = propagate(s + 1, i, store, nhandlers);
-					i = i - 1; // this is necessary since last label of
-								// try-catch is first label of catch handler
+					store = propagate(id, tc, store, nhandlers);
 				} else if (code instanceof Codes.Goto) {
-					Codes.Goto gto = (Codes.Goto) entry.code;
+					Codes.Goto gto = (Codes.Goto) code;
 					merge(gto.target, store, stores);
 					store = null;
 				} else {
 					// This indicates a sequential statement was encountered.
 					store = propagate(id, code, store);
-					if (entry.code instanceof Codes.Return
-							|| entry.code instanceof Codes.Throw
-							|| entry.code instanceof Codes.Fail) {
+					if (code instanceof Codes.Return
+							|| code instanceof Codes.Throw
+							|| code instanceof Codes.Fail) {
 						store = null;
 					}
 				}
@@ -207,7 +211,7 @@ public abstract class ForwardFlowAnalysis<T> {
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
-				internalFailure("internal failure", filename, entry, ex);
+				internalFailure("internal failure", filename, this.rootBlock.getEntry(id), ex);
 			}
 		}
 
@@ -338,22 +342,18 @@ public abstract class ForwardFlowAnalysis<T> {
 	 * <code>end</code> index holds the end code.
 	 * </p>
 	 *
-	 * @param start
-	 *            --- the start index of loop block
-	 * @param end
-	 *            --- last index of loop block
-	 * @param end
-	 *            --- instruction block
+	 * @param index
+	 *            --- Index of bytecode in root block
 	 * @param code
-	 *            --- the start code of the block
+	 *            --- The loop bytecode
 	 * @param entry
-	 *            --- the block entry for the loop statement
+	 *            --- The block entry for the loop statement
 	 * @param store
-	 *            --- abstract store which holds true immediately before this
+	 *            --- Abstract store which holds true immediately before this
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(int start, int end, Codes.Loop code, T store,
+	protected abstract T propagate(int[] index, Codes.Loop code, T store,
 			List<Codes.TryCatch> handlers);
 
 	/**

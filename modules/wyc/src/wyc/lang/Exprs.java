@@ -110,15 +110,13 @@ public class Exprs {
 					uses(p, context, uses);
 				}
 
-			} else if (expr instanceof Expr.Comprehension) {
-				Expr.Comprehension e = (Expr.Comprehension) expr;
+			} else if (expr instanceof Expr.Quantifier) {
+				Expr.Quantifier e = (Expr.Quantifier) expr;
 
 				for(Pair<String,Expr> p : e.sources) {
 					uses(p.second(), context, uses);
 				}
-				uses(e.value, context, uses);
 				uses(e.condition, context, uses);
-
 			} else if (expr instanceof Expr.FieldAccess) {
 				Expr.FieldAccess e = (Expr.FieldAccess) expr;
 				uses(e.src, context, uses);
@@ -256,8 +254,8 @@ public class Exprs {
 			} else if (expr instanceof Expr.IndirectMethodCall) {
 				return false;
 
-			} else if (expr instanceof Expr.Comprehension) {
-				Expr.Comprehension e = (Expr.Comprehension) expr;
+			} else if (expr instanceof Expr.Quantifier) {
+				Expr.Quantifier e = (Expr.Quantifier) expr;
 
 				for(Pair<String,Expr> p : e.sources) {
 					if(!isPure(p.second(), context)) {
@@ -265,8 +263,7 @@ public class Exprs {
 					}
 				}
 
-				return (e.value == null || isPure(e.value, context))
-						&& (e.condition == null || isPure(e.condition, context));
+				return (e.condition == null || isPure(e.condition, context));
 
 			} else if (expr instanceof Expr.FieldAccess) {
 				Expr.FieldAccess e = (Expr.FieldAccess) expr;

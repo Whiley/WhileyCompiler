@@ -347,14 +347,14 @@ public final class WyilFileReader {
 
 		input.pad_u8();
 
-		Code.AttributableBlock invariant = null;
+		AttributedCodeBlock invariant = null;
 		for (int i = 0; i != nBlocks; ++i) {
 			int kind = input.read_uv();
 			int size = input.read_uv();
 			input.pad_u8();
 			switch (kind) {
 			case WyilFileWriter.BLOCK_Constraint:
-				invariant = readCodeBlock(1);
+				invariant = readAttributedCodeBlock(1);
 				break;
 			default:
 				throw new RuntimeException("Unknown type block encountered");
@@ -456,9 +456,9 @@ public final class WyilFileReader {
 
 	private WyilFile.Case readFunctionOrMethodCase(Type.FunctionOrMethod type)
 			throws IOException {
-		ArrayList<Code.AttributableBlock> requires = new ArrayList<>();
-		ArrayList<Code.AttributableBlock> ensures = new ArrayList<>();
-		Code.AttributableBlock body = null;
+		ArrayList<AttributedCodeBlock> requires = new ArrayList<>();
+		ArrayList<AttributedCodeBlock> ensures = new ArrayList<>();
+		AttributedCodeBlock body = null;
 		int numInputs = type.params().size();
 		int nBlocks = input.read_uv();
 
@@ -471,13 +471,13 @@ public final class WyilFileReader {
 
 			switch (kind) {
 			case WyilFileWriter.BLOCK_Precondition:
-				requires.add(readCodeBlock(numInputs));
+				requires.add(readAttributedCodeBlock(numInputs));
 				break;
 			case WyilFileWriter.BLOCK_Postcondition:
-				ensures.add(readCodeBlock(numInputs + 1));
+				ensures.add(readAttributedCodeBlock(numInputs + 1));
 				break;
 			case WyilFileWriter.BLOCK_Body:
-				body = readCodeBlock(numInputs);
+				body = readAttributedCodeBlock(numInputs);
 				break;
 			default:
 				throw new RuntimeException("Unknown case block encountered");
@@ -488,31 +488,70 @@ public final class WyilFileReader {
 				Collections.EMPTY_LIST);
 	}
 
-	private Code.AttributableBlock readCodeBlock(int numInputs)
-			throws IOException {
-		Code.AttributableBlock block = new Code.AttributableBlock();
+	private AttributedCodeBlock readAttributedCodeBlock(int numInputs)
+			throws IOException {		
 		int nCodes = input.read_uv();
 		HashMap<Integer, Codes.Label> labels = new HashMap<Integer, Codes.Label>();
-
-		for (int i = 0; i != nCodes; ++i) {
-			Code code = readCode(i, labels);
-			block.add(code);
-		}
-
+		ArrayList<Code> bytecodes = readCodeBlock(0,nCodes,labels);
+				
 		// NOTE: we must go up to nCodes+1 because of the possibility of a label
 		// occurring after the very last bytecode instruction.
 		for (int i = 0, j = 0; i != nCodes + 1; ++i, ++j) {
 			Codes.Label label = labels.get(i);
 			if (label != null) {
-				block.add(j++, label);
+				bytecodes.add(j++, label);
 			}
 		}
-
+		
 		input.pad_u8(); // necessary
 
-		return block;
+		return new AttributedCodeBlock(bytecodes);
 	}
 
+	/**
+	 * Read all bytecodes between two given offsets.
+	 * 
+	 * @param offset
+	 *            Starting offset to read from
+	 * @param count
+	 *            Count of bytecodes to read
+	 * @param labels
+	 * @return
+	 */
+	public ArrayList<Code> readCodeBlock(int offset, int count,
+			HashMap<Integer, Codes.Label> labels) throws IOException {
+		ArrayList<Code> bytecodes = new ArrayList<Code>();
+		for (int i = 0; i < count; ++i) {
+			Code code = readCode(offset, labels);
+			bytecodes.add(code);
+			offset = offset + sizeof(code);
+		}
+		return bytecodes;
+	}
+	
+	/**
+	 * Return the "size" of this bytecode. That is, number of bytecodes in the
+	 * binary format it represents. In most cases, each bytecode in the binary
+	 * format corresponds to exactly one in the object representation. However,
+	 * in the case of compound bytecodes (e.g. loop, forall, etc) then it
+	 * represents one plus the number contained within the block itself.
+	 * 
+	 * @param code
+	 * @return
+	 */
+	public static int sizeof(Code code) {
+		if(code instanceof Code.Unit) {
+			return 1;
+		} else {
+			Code.Compound compound = (Code.Compound) code;
+			int size = 1;
+			for(int i=0;i!=compound.size();++i) {
+				size += sizeof(compound.get(i));
+			}
+			return size;
+		}
+	}
+	
 	private Code readCode(int offset, HashMap<Integer,Codes.Label> labels) throws IOException {
 		int opcode = input.read_u8();
 		boolean wideBase = false;
@@ -808,10 +847,10 @@ public final class WyilFileReader {
 		}
 
 		if(opcode == Code.OPCODE_loop) {
-			// special case which doesn't have a type.
-			int target = readTarget(wideRest,offset);
-			Codes.LoopEnd l = findLoopLabel(target,labels);
-			return Codes.Loop(l.label, operands);
+			// Special case which doesn't have a type.
+			int count = readRest(wideRest);
+			ArrayList<Code> bytecodes = readCodeBlock(offset+1,count,labels);
+			return Codes.Loop(operands,bytecodes);
 		}
 
 		int typeIdx = readRest(wideRest);
@@ -822,13 +861,13 @@ public final class WyilFileReader {
 				if (!(type instanceof Type.EffectiveCollection)) {
 					throw new RuntimeException("expected collection type");
 				}
-				int target = readTarget(wideRest,offset);
-				Codes.LoopEnd l = findLoopLabel(target, labels);
+				int count = readRest(wideRest);
 				int indexOperand = operands[0];
 				int sourceOperand = operands[1];
 				operands = Arrays.copyOfRange(operands, 2, operands.length);
+				ArrayList<Code> bytecodes = readCodeBlock(offset+1,count,labels);
 				return Codes.ForAll((Type.EffectiveCollection) type,
-						sourceOperand, indexOperand, operands, l.label);
+						sourceOperand, indexOperand, operands, bytecodes);
 			}
 			case Code.OPCODE_indirectinvokefnv :
 			case Code.OPCODE_indirectinvokemdv : {
@@ -845,7 +884,7 @@ public final class WyilFileReader {
 				if (!(type instanceof Type.FunctionOrMethod)) {
 					throw new RuntimeException("expected function or method type");
 				}
-				int nameIdx = readRest(wideRest);;
+				int nameIdx = readRest(wideRest);
 				NameID nid = namePool[nameIdx];
 				return Codes.Invoke((Type.FunctionOrMethod) type, Codes.NULL_REG,
 						operands, nid);
@@ -951,8 +990,6 @@ public final class WyilFileReader {
 		switch (opcode) {
 			case Code.OPCODE_trycatch: {
 				int operand = readBase(wideBase);
-				int target = readTarget(wideRest, offset);
-				Codes.Label l = findLabel(target, labels);
 				int nCatches = readRest(wideRest);
 				ArrayList<Pair<Type, String>> catches = new ArrayList<Pair<Type, String>>();
 				for (int i = 0; i != nCatches; ++i) {
@@ -961,7 +998,9 @@ public final class WyilFileReader {
 							labels);
 					catches.add(new Pair<Type, String>(type, handler.label));
 				}
-				return Codes.TryCatch(operand,l.label,catches);
+				int nBytecodes = readRest(wideRest);
+				ArrayList<Code> bytecodes = readCodeBlock(offset+1,nBytecodes,labels);
+				return Codes.TryCatch(operand,catches,bytecodes);
 			}
 			case Code.OPCODE_update: {
 				int target = readBase(wideBase);
@@ -1031,19 +1070,5 @@ public final class WyilFileReader {
 			labels.put(target, label);
 		}
 		return label;
-	}
-
-	private static Codes.LoopEnd findLoopLabel(int target,
-			HashMap<Integer, Codes.Label> labels) {
-		Codes.Label label = labels.get(target);
-		if (label == null) {
-			Codes.LoopEnd end = Codes.LoopEnd("label" + labelCount++);
-			labels.put(target, end);
-			return end;
-		} else {
-			Codes.LoopEnd end = Codes.LoopEnd(label.label);
-			labels.put(target, end);
-			return end;
-		}
 	}
 }

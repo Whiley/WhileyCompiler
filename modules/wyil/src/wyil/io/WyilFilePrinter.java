@@ -157,12 +157,12 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 		out.println("):");
 
-		for(Code.AttributableBlock precondition : mcase.precondition()) {
+		for(AttributedCodeBlock precondition : mcase.precondition()) {
 			out.println("requires:");
 			write(0,precondition,out);
 		}
 
-		for(Code.AttributableBlock postcondition : mcase.postcondition()) {
+		for(AttributedCodeBlock postcondition : mcase.postcondition()) {
 			out.println("ensures:");
 			write(0,postcondition,out);
 		}
@@ -173,58 +173,46 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 	}
 
-	private void write(int indent, Code.AttributableBlock blk, PrintWriter out) {
+	private void write(int indent, CodeBlock blk, PrintWriter out) {
 		if(blk == null) { return; }
-		for(Code.AttributableBlock.Entry s : blk.allEntries()) {
-			if(s.code instanceof Codes.LoopEnd) {
-				--indent;
-			} else if(s.code instanceof Codes.Label) {
-				write(indent-1,s.code,s.attributes,out);
+		for(int i=0;i!=blk.size();++i) {
+			Code code = blk.get(i);
+			if(code instanceof Codes.Label) {
+				write(indent-1,code,out);
 			} else {
-				write(indent,s.code,s.attributes,out);
-			}
-			if(s.code instanceof Codes.Loop) {
-				Codes.Loop loop = (Codes.Loop) s.code;
-				indent++;
-			} else if(s.code instanceof Codes.Loop) {
-				indent++;
-			}
+				write(indent,code,out);
+			}			
 		}
 	}
 
-	private void write(int indent, Code c, Attribute[] attributes, PrintWriter out) {
+	private void write(int indent, Code c, PrintWriter out) {
 		String line = "null";
 		tabIndent(indent+1,out);
 
-		// First, write out code
-		if(c instanceof Codes.LoopEnd) {
-			Codes.LoopEnd cend = (Codes.LoopEnd)c;
-			if(writeLabels) {
-				line = "end " + cend.label;
-			} else {
-				line = "end";
-			}
-		} else {
-			line = c.toString();
-		}
+		// First, write out code		
+		line = c.toString();
 
 		// Second, write attributes
 		while(line.length() < 40) {
 			line += " ";
 		}
 		out.print(line);
-		if (writeAttributes && attributes.length > 0) {
-			out.print(" # ");
-			boolean firstTime = true;
-			for (Attribute a : attributes) {
-				if (!firstTime) {
-					out.print(", ");
-				}
-				firstTime = false;
-				out.print(a);
-			}
-		}
+//		if (writeAttributes && attributes.length > 0) {
+//			out.print(" # ");
+//			boolean firstTime = true;
+//			for (Attribute a : attributes) {
+//				if (!firstTime) {
+//					out.print(", ");
+//				}
+//				firstTime = false;
+//				out.print(a);
+//			}
+//		}
 		out.println();
+		
+		if(c instanceof CodeBlock) {
+			write(indent+1,(CodeBlock)c,out);
+		}
 	}
 
 	private static void writeModifiers(List<Modifier> modifiers, PrintWriter out) {

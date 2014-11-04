@@ -37,7 +37,6 @@ import wycc.util.Pair;
 import wyautl.util.BigRational;
 import wyfs.lang.Path;
 import wyil.lang.*;
-import wyil.lang.Code.AttributableBlock.Entry;
 import wyil.util.*;
 import wyil.util.dfa.ForwardFlowAnalysis;
 
@@ -50,10 +49,10 @@ import wyil.util.dfa.ForwardFlowAnalysis;
  * </p>
  *
  * <pre>
- * const %0 = 1    : int
- * const %1 = 2    : int
- * add %2 = %0, %2 : int
- * assign %3 = %2  : int
+ * const %0 = 1
+ * const %1 = 2
+ * add %2 = %0, %2
+ * assign %3 = %2
  * </pre>
  *
  * <p>
@@ -65,10 +64,10 @@ import wyil.util.dfa.ForwardFlowAnalysis;
  * </p>
  *
  * <pre>
- * const %0 = 1 : int
- * const %1 = 2 : int
- * const %2 = 3 : int
- * const %3 = 3 : int
+ * const %0 = 1
+ * const %1 = 2
+ * const %2 = 3
+ * const %3 = 3
  * </pre>
  *
  * <p>
@@ -116,7 +115,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 
 	@Override
 	public WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {
-		Code.AttributableBlock invariant = type.invariant();
+		AttributedCodeBlock invariant = type.invariant();
 		if (invariant != null) {
 			invariant = propagate(invariant);
 			return new WyilFile.TypeDeclaration(type.modifiers(), type.name(),
@@ -127,7 +126,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 
 	public Env initialStore() {
 		Env environment = new Env();
-		int nvars = block.numSlots();
+		int nvars = rootBlock.numSlots();
 
 		for (int i=0; i != nvars; ++i) {
 			environment.add(null);
@@ -138,20 +137,20 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 
 	@Override
 	public WyilFile.Case propagate(WyilFile.Case mcase) {
-		ArrayList<Code.AttributableBlock> requires = new ArrayList<>(
+		ArrayList<AttributedCodeBlock> requires = new ArrayList<>(
 				mcase.precondition());
 		for (int i = 0; i != requires.size(); ++i) {
-			Code.AttributableBlock tmp = propagate(requires.get(i));
+			AttributedCodeBlock tmp = propagate(requires.get(i));
 			requires.set(i, tmp);
 		}
-		ArrayList<Code.AttributableBlock> ensures = new ArrayList<>(
+		ArrayList<AttributedCodeBlock> ensures = new ArrayList<>(
 				mcase.postcondition());
 		for (int i = 0; i != ensures.size(); ++i) {
-			Code.AttributableBlock tmp = propagate(ensures.get(i));
+			AttributedCodeBlock tmp = propagate(ensures.get(i));
 			ensures.set(i, tmp);
 		}
 
-		Code.AttributableBlock body = mcase.body();
+		AttributedCodeBlock body = mcase.body();
 		if (body != null) {
 			body = propagate(body);
 		}
@@ -159,18 +158,18 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		return new WyilFile.Case(body, requires, ensures, mcase.attributes());
 	}
 
-	public Code.AttributableBlock propagate(Code.AttributableBlock body) {
-		block = body;
+	public AttributedCodeBlock propagate(AttributedCodeBlock body) {
+		rootBlock = body;
 		stores = new HashMap<String,Env>();
 		rewrites.clear();
 
 		// TODO: propagate constants through pre- and post-conditions.
 
 		Env environment = initialStore();
-		propagate(0,body.size(), environment, Collections.EMPTY_LIST);
+		propagate(new int[] { }, body, environment, Collections.EMPTY_LIST);
 
 		// At this point, we apply the inserts
-		Code.AttributableBlock nbody = new Code.AttributableBlock();
+		AttributedCodeBlock nbody = new AttributedCodeBlock();
 		for(int i=0;i!=body.size();++i) {
 			Rewrite rewrite = rewrites.get(i);
 			if(rewrite != null) {
@@ -852,9 +851,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	public List<Env> propagate(int[] index, Codes.Switch code, Env environment) {
 		environment = (Env) environment.clone();
 
-		Constant val = environment.get(code.operand);
-
-		ArrayList<Env> stores = new ArrayList();
+		ArrayList<Env> stores = new ArrayList<>();
 		for (int i = 0; i != code.branches.size(); ++i) {
 			stores.add(environment);
 		}
@@ -871,8 +868,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	}
 
 	@Override
-	public Env propagate(int start, int end, Codes.Loop loop,
-			Env environment, List<Codes.TryCatch> handlers) {
+	public Env propagate(int[] index, Codes.Loop loop, Env environment,
+			List<Codes.TryCatch> handlers) {
 
 		environment = new Env(environment);
 
@@ -893,12 +890,13 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 
 		Env oldEnv = null;
 		Env newEnv = environment;
+		CodeBlock block = (CodeBlock) loop;
 
 		do {
 			// iterate until a fixed point reached
 			oldEnv = newEnv;
-			newEnv = propagate(start+1,end, oldEnv, handlers);
-			newEnv = join(environment,newEnv);
+			newEnv = propagate(index, block, oldEnv, handlers);
+			newEnv = join(environment, newEnv);
 		} while (!newEnv.equals(oldEnv));
 
 		return newEnv;

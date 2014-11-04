@@ -2070,16 +2070,16 @@ public class WhileyFileParser {
 		int start = index - 1;
 
 		// Determine the quantifier operation
-		Expr.COp cop;
+		Expr.QOp cop;
 		switch (lookahead.kind) {
 		case No:
-			cop = Expr.COp.NONE;
+			cop = Expr.QOp.NONE;
 			break;
 		case Some:
-			cop = Expr.COp.SOME;
+			cop = Expr.QOp.SOME;
 			break;
 		case All:
-			cop = Expr.COp.ALL;
+			cop = Expr.QOp.ALL;
 			break;
 		default:
 			cop = null; // deadcode
@@ -2120,8 +2120,8 @@ public class WhileyFileParser {
 		match(RightCurly);
 
 		// Done
-		return new Expr.Comprehension(cop, null, srcs, condition, sourceAttr(
-				start, index - 1));
+		return new Expr.Quantifier(cop, srcs, condition, sourceAttr(start,
+				index - 1));
 	}
 
 	/**
@@ -2963,10 +2963,6 @@ public class WhileyFileParser {
 			// Ok, it's a "=>" so we have a record constructor
 			index = start;
 			return parseMapExpression(wf, environment, terminated);
-		} else if (tryAndMatch(terminated, VerticalBar) != null) {
-			// Ok, it's a "|" so we have a set comprehension
-			index = start;
-			return parseSetComprehension(wf, environment, terminated);
 		} else {
 			// otherwise, assume a set expression
 			index = start;
@@ -3151,110 +3147,7 @@ public class WhileyFileParser {
 		// done
 		return new Expr.Set(exprs, sourceAttr(start, index - 1));
 	}
-
-	/**
-	 * Parse a set comprehension expression, which is of the form:
-	 *
-	 * <pre>
-	 * 	SetComprehension ::= '{' Expr '|'
-	 *      					Identifier "in" Expr (',' Identifier "in" Expr)*
-	 *                          [',' Expr] '}'
-	 * </pre>
-	 *
-	 * @param wf
-	 *            The enclosing WhileyFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseSetComprehension(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
-		int start = index;
-		match(LeftCurly);
-
-		int e_start = index; // marker
-		// We cannot parse a bitwise or expression here, because this would
-		// conflict with the vertical bar that we are expecting. Therefore, we
-		// have to parse something lower in the expression "hierarchy". In this
-		// case, the highest expression which is not a bitwise or is the bitwise
-		// xor. Unfortunately, that also rules out many otherwise sensible
-		// expressions (e.g. logical expressions). However, expression is
-		// guaranteed to be terminated by '|'.
-		Expr value = parseBitwiseXorExpression(wf, environment, true);
-
-		match(VerticalBar);
-
-		// Clone the environment so that we can include those variables which
-		// are declared by the comprehension.
-		environment = new HashSet<String>(environment);
-
-		// Match zero or more source expressions separated by commas.
-		Expr condition = null;
-		ArrayList<Pair<String, Expr>> srcs = new ArrayList<Pair<String, Expr>>();
-		boolean firstTime = true;
-		do {
-			if (!firstTime) {
-				match(Comma);
-			}
-			firstTime = false;
-			// NOTE: we require the following expression be a "non-tuple"
-			// expression. That is, it cannot be composed using ',' unless
-			// braces enclose the entire expression. This is because the outer
-			// set constructor expression is used ',' to distinguish elements.
-			// However, expression is guaranteed to be terminated either by '}'
-			// or by ','.
-			Expr e = parseUnitExpression(wf, environment, true);
-
-			if (e instanceof Expr.BinOp
-					&& ((Expr.BinOp) e).op == Expr.BOp.ELEMENTOF
-					&& ((Expr.BinOp) e).lhs instanceof Expr.ConstantAccess) {
-				Expr.BinOp bop = (Expr.BinOp) e;
-				String var = ((Expr.ConstantAccess) bop.lhs).name;
-				Expr src = bop.rhs;
-				if (environment.contains(var)) {
-					// It is already defined which is a syntax error
-					syntaxError("variable already declared", bop.lhs);
-				}
-				srcs.add(new Pair<String, Expr>(var, src));
-				environment.add(var);
-			} else {
-				condition = e;
-				match(RightCurly);
-				break;
-			}
-		} while (eventuallyMatch(RightCurly) == null);
-
-		// At this point, we do something a little wierd. We backtrack and
-		// reparse the original expression using the updated environment. This
-		// ensures that all variable accesses are correctly noted as local
-		// variable accesses.
-		int end = index; // save
-		index = e_start; // backtrack
-		// Repeat of restrictiveness discussed above. Expression guaranteed to
-		// be terminated by '|' (as before).
-		value = parseBitwiseXorExpression(wf, environment, true);
-		index = end; // restore
-		// done
-		return new Expr.Comprehension(Expr.COp.SETCOMP, value, srcs, condition,
-				sourceAttr(start, index - 1));
-	}
-
+	
 	/**
 	 * Parse a new expression, which is of the form:
 	 *
@@ -3941,7 +3834,7 @@ public class WhileyFileParser {
 			return true;
 		} else if(e instanceof Expr.Constant) {
 			return true;
-		} else if(e instanceof Expr.Comprehension) {
+		} else if(e instanceof Expr.Quantifier) {
 			return true;
 		} else if(e instanceof Expr.IndexOf) {
 			return true;

@@ -400,7 +400,7 @@ public class VcTransformer {
 			wycsFile.add(wycsFile.new Function(toIdentifier(code.name),
 					Collections.EMPTY_LIST, from, to, null));
 
-			List<Code.Block> ensures = findPostcondition(code.name, code.type(),
+			List<CodeBlock> ensures = findPostcondition(code.name, code.type(),
 					branch.entry());
 
 			if (ensures.size() > 0) {
@@ -414,7 +414,7 @@ public class VcTransformer {
 					types[i+1] = paramTypes.get(i);
 				}
 				types[0] = branch.typeOf(code.target());
-				for(Code.Block postcondition : ensures) {
+				for(CodeBlock postcondition : ensures) {
 					Expr constraint = transformExternalBlock(postcondition,
 							arguments, types, branch);
 					// assume the post condition holds
@@ -622,7 +622,7 @@ public class VcTransformer {
 		}
 	}
 
-	protected List<Code.Block> findPrecondition(NameID name, Type.FunctionOrMethod fun,
+	protected List<CodeBlock> findPrecondition(NameID name, Type.FunctionOrMethod fun,
 			SyntacticElement elem) throws Exception {
 		Path.Entry<WyilFile> e = builder.project().get(name.module(),
 				WyilFile.ContentType);
@@ -642,7 +642,7 @@ public class VcTransformer {
 		return null;
 	}
 
-	protected List<Code.Block> findPostcondition(NameID name,
+	protected List<CodeBlock> findPostcondition(NameID name,
 			Type.FunctionOrMethod fun, SyntacticElement elem) throws Exception {
 		Path.Entry<WyilFile> e = builder.project().get(name.module(),
 				WyilFile.ContentType);
@@ -681,7 +681,7 @@ public class VcTransformer {
 	 *            placed.
 	 * @return
 	 */
-	protected Expr transformExternalBlock(Code.Block externalBlock,
+	protected Expr transformExternalBlock(CodeBlock externalBlock,
 			Expr[] operands, Type[] types, VcBranch branch) {
 
 		// first, generate a constraint representing the post-condition.
@@ -1022,7 +1022,7 @@ public class VcTransformer {
 		return new SyntacticType.Tuple(ntypes);
 	}
 
-	private SyntacticType convert(Type t, Code.AttributableBlock.Entry elem) {
+	private SyntacticType convert(Type t, AttributedCodeBlock.Entry elem) {
 		// FIXME: this is fundamentally broken in the case of recursive types.
 		// See Issue #298.
 		if (t instanceof Type.Any) {
@@ -1109,7 +1109,7 @@ public class VcTransformer {
 		}
 	}
 
-	private Expr and(List<Expr> constraints, Code.AttributableBlock.Entry entry) {
+	private Expr and(List<Expr> constraints, AttributedCodeBlock.Entry entry) {
 		if(constraints.size() == 0) {
 			return new Expr.Constant(Value.Bool(true));
 		} else if(constraints.size() == 1) {
@@ -1139,7 +1139,7 @@ public class VcTransformer {
 	}
 
 	private static Collection<wycc.lang.Attribute> attributes(
-			Code.AttributableBlock.Entry entry) {
+			AttributedCodeBlock.Entry entry) {
 		// FIXME: to do!
 		return Collections.EMPTY_LIST;
 	}

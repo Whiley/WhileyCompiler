@@ -133,10 +133,6 @@ public abstract class Codes {
 		return Codes.get(new Debug(operand));
 	}
 
-	public static LoopEnd LoopEnd(String label) {
-		return Codes.get(new LoopEnd(label));
-	}
-
 	/**
 	 * Construct a <code>fail</code> bytecode which halts execution by raising a
 	 * fault.
@@ -239,26 +235,26 @@ public abstract class Codes {
 		return Codes.get(new IndexOf(type, target, leftOperand, rightOperand));
 	}
 
-	public static Loop Loop(String label, Collection<Integer> operands) {
-		return Codes.get(new Loop(label, CodeUtils.toIntArray(operands)));
+	public static Loop Loop(int[] operands, Collection<Code> bytecodes) {
+		return Codes.get(new Loop(operands,bytecodes));
 	}
 
-	public static Loop Loop(String label, int[] modifies) {
-		return Codes.get(new Loop(label, modifies));
+	public static Loop Loop(int[] operands, Code... bytecodes) {
+		return Codes.get(new Loop(operands,bytecodes));
 	}
 
 	public static ForAll ForAll(Type.EffectiveCollection type,
 			int sourceOperand, int indexOperand,
-			Collection<Integer> modifiedOperands, String label) {
+			int[] modifiedOperands, Collection<Code> bytecodes) {
 		return Codes.get(new ForAll(type, sourceOperand, indexOperand,
-				CodeUtils.toIntArray(modifiedOperands), label));
+				modifiedOperands, bytecodes));
 	}
 
 	public static ForAll ForAll(Type.EffectiveCollection type,
 			int sourceOperand, int indexOperand, int[] modifiedOperands,
-			String label) {
+			Code... bytecodes) {
 		return Codes.get(new ForAll(type, sourceOperand, indexOperand,
-				modifiedOperands, label));
+				modifiedOperands, bytecodes));
 	}
 
 	/**
@@ -458,13 +454,9 @@ public abstract class Codes {
 	 *            --- map from types to destination labels.
 	 * @return
 	 */
-	public static TryCatch TryCatch(int operand, String target,
-			Collection<Pair<Type, String>> catches) {
-		return Codes.get(new TryCatch(operand, target, catches));
-	}
-
-	public static TryEnd TryEnd(String label) {
-		return Codes.get(new TryEnd(label));
+	public static TryCatch TryCatch(int operand,
+			Collection<Pair<Type, String>> catches, Collection<Code> bytecodes) {
+		return Codes.get(new TryCatch(operand, catches, bytecodes));
 	}
 
 	public static TupleLoad TupleLoad(Type.EffectiveTuple type, int target,
@@ -938,43 +930,6 @@ public abstract class Codes {
 
 		public String toString() {
 			return "debug %" + operand + " " + " : " + type;
-		}
-	}
-
-	/**
-	 * Marks the end of a loop block.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class LoopEnd extends Label {
-		LoopEnd(String label) {
-			super(label);
-		}
-
-		public LoopEnd relabel(Map<String, String> labels) {
-			String nlabel = labels.get(label);
-			if (nlabel == null) {
-				return this;
-			} else {
-				return LoopEnd(nlabel);
-			}
-		}
-
-		public int hashCode() {
-			return label.hashCode();
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof LoopEnd) {
-				LoopEnd e = (LoopEnd) o;
-				return e.label.equals(label);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "end " + label;
 		}
 	}
 
@@ -2168,12 +2123,16 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Loop extends Code.Unit {
-		public final String target;
+	public static class Loop extends Code.Compound {
 		public final int[] modifiedOperands;
 
-		private Loop(String target, int[] modifies) {
-			this.target = target;
+		private Loop(int[] modifies, Code... codes) {
+			super(codes);
+			this.modifiedOperands = modifies;
+		}
+
+		private Loop(int[] modifies, Collection<Code> codes) {
+			super(codes);
 			this.modifiedOperands = modifies;
 		}
 
@@ -2181,43 +2140,45 @@ public abstract class Codes {
 			return OPCODE_loop;
 		}
 
-		public Loop relabel(Map<String, String> labels) {
-			String nlabel = labels.get(target);
-			if (nlabel == null) {
-				return this;
-			} else {
-				return Loop(nlabel, modifiedOperands);
-			}
-		}
-
 		@Override
-		public void registers(java.util.Set<Integer> registers) {
-			for (int operand : modifiedOperands) {
-				registers.add(operand);
-			}
-		}
-
-		@Override
-		public Code.Unit remap(Map<Integer, Integer> binding) {
+		public Code.Compound remap(Map<Integer, Integer> binding) {
 			int[] nOperands = remapOperands(binding, modifiedOperands);
-			if (nOperands != modifiedOperands) {
-				return Loop(target, nOperands);
+			ArrayList<Code> bytecodes = this.bytecodes;
+
+			for (int i = 0; i != bytecodes.size(); ++i) {
+				Code code = bytecodes.get(i);
+				Code nCode = code.remap(binding);
+				if (code != nCode) {
+					if (bytecodes == this.bytecodes) {
+						bytecodes = new ArrayList<Code>(bytecodes);
+					}
+					bytecodes.set(i, nCode);
+				}
+			}
+
+			if (nOperands != modifiedOperands || bytecodes != this.bytecodes) {
+				return Loop(nOperands, bytecodes);
 			} else {
 				return this;
 			}
 		}
 
 		public int hashCode() {
-			return target.hashCode() + Arrays.hashCode(modifiedOperands);
+			return bytecodes.hashCode() + Arrays.hashCode(modifiedOperands);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Loop) {
 				Loop f = (Loop) o;
-				return target.equals(f.target)
+				return bytecodes.equals(f.bytecodes)
 						&& Arrays.equals(modifiedOperands, f.modifiedOperands);
 			}
 			return false;
+		}
+
+		@Override
+		public Loop clone() {
+			return new Loop(modifiedOperands,bytecodes);
 		}
 
 		public String toString() {
@@ -2239,8 +2200,16 @@ public abstract class Codes {
 		public final Type.EffectiveCollection type;
 
 		private ForAll(Type.EffectiveCollection type, int sourceOperand,
-				int indexOperand, int[] modifies, String target) {
-			super(target, modifies);
+				int indexOperand, int[] modifies, Collection<Code> bytecodes) {
+			super(modifies, bytecodes);
+			this.type = type;
+			this.sourceOperand = sourceOperand;
+			this.indexOperand = indexOperand;
+		}
+
+		private ForAll(Type.EffectiveCollection type, int sourceOperand,
+				int indexOperand, int[] modifies, Code[] bytecodes) {
+			super(modifies, bytecodes);
 			this.type = type;
 			this.sourceOperand = sourceOperand;
 			this.indexOperand = indexOperand;
@@ -2248,16 +2217,6 @@ public abstract class Codes {
 
 		public int opcode() {
 			return OPCODE_forall;
-		}
-
-		public ForAll relabel(Map<String, String> labels) {
-			String nlabel = labels.get(target);
-			if (nlabel == null) {
-				return this;
-			} else {
-				return ForAll(type, sourceOperand, indexOperand,
-						modifiedOperands, nlabel);
-			}
 		}
 
 		@Override
@@ -2268,19 +2227,31 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit remap(Map<Integer, Integer> binding) {
+		public Code.Compound remap(Map<Integer, Integer> binding) {
 			int[] nModifiedOperands = remapOperands(binding, modifiedOperands);
+			ArrayList<Code> bytecodes = this.bytecodes;
+
+			for (int i = 0; i != bytecodes.size(); ++i) {
+				Code code = bytecodes.get(i);
+				Code nCode = code.remap(binding);
+				if (code != nCode) {
+					if (bytecodes == this.bytecodes) {
+						bytecodes = new ArrayList<Code>(bytecodes);
+					}
+					bytecodes.set(i, nCode);
+				}
+			}
 			Integer nIndexOperand = binding.get(indexOperand);
 			Integer nSourceOperand = binding.get(sourceOperand);
 			if (nSourceOperand != null || nIndexOperand != null
-					|| nModifiedOperands != modifiedOperands) {
+					|| nModifiedOperands != modifiedOperands || bytecodes != this.bytecodes) {
 				nSourceOperand = nSourceOperand != null ? nSourceOperand
 						: sourceOperand;
 				nIndexOperand = nIndexOperand != null ? nIndexOperand
 						: indexOperand;
 
 				return ForAll(type, nSourceOperand, nIndexOperand,
-						nModifiedOperands, target);
+						nModifiedOperands, bytecodes);
 			} else {
 				return this;
 			}
@@ -2294,10 +2265,11 @@ public abstract class Codes {
 		public boolean equals(Object o) {
 			if (o instanceof ForAll) {
 				ForAll f = (ForAll) o;
-				return target.equals(f.target) && type.equals(f.type)
+				return type.equals(f.type)
 						&& sourceOperand == f.sourceOperand
 						&& indexOperand == f.indexOperand
-						&& Arrays.equals(modifiedOperands, f.modifiedOperands);
+						&& Arrays.equals(modifiedOperands, f.modifiedOperands)
+						&& bytecodes.equals(f.bytecodes);
 			}
 			return false;
 		}
@@ -3510,16 +3482,14 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class TryCatch extends Code.Unit {
+	public static final class TryCatch extends Code.Compound {
 		public final int operand;
-		public final String target;
 		public final ArrayList<Pair<Type, String>> catches;
 
-		TryCatch(int operand, String label,
-				Collection<Pair<Type, String>> catches) {
+		TryCatch(int operand, Collection<Pair<Type, String>> catches, Collection<Code> bytecodes) {
+			super(bytecodes);
 			this.operand = operand;
 			this.catches = new ArrayList<Pair<Type, String>>(catches);
-			this.target = label;
 		}
 
 		@Override
@@ -3533,44 +3503,43 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit remap(Map<Integer, Integer> binding) {
+		public Code.Compound remap(Map<Integer, Integer> binding) {
 			Integer nOperand = binding.get(operand);
-			if (nOperand != null) {
-				return TryCatch(nOperand, target, catches);
+			ArrayList<Code> bytecodes = this.bytecodes;
+
+			for (int i = 0; i != bytecodes.size(); ++i) {
+				Code code = bytecodes.get(i);
+				Code nCode = code.remap(binding);
+				if (code != nCode) {
+					if (bytecodes == this.bytecodes) {
+						bytecodes = new ArrayList<Code>(bytecodes);
+					}
+					bytecodes.set(i, nCode);
+				}
+			}
+
+			if (nOperand != null || bytecodes != this.bytecodes) {
+				return TryCatch(nOperand, catches, bytecodes);
 			}
 			return this;
 		}
 
-		public TryCatch relabel(Map<String, String> labels) {
-			ArrayList<Pair<Type, String>> nbranches = new ArrayList();
-			for (Pair<Type, String> p : catches) {
-				String nlabel = labels.get(p.second());
-				if (nlabel == null) {
-					nbranches.add(p);
-				} else {
-					nbranches.add(new Pair(p.first(), nlabel));
-				}
-			}
-
-			String ntarget = labels.get(target);
-			if (ntarget != null) {
-				return TryCatch(operand, ntarget, nbranches);
-			} else {
-				return TryCatch(operand, target, nbranches);
-			}
-		}
-
 		public int hashCode() {
-			return operand + target.hashCode() + catches.hashCode();
+			return operand + catches.hashCode() + bytecodes.hashCode();
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof TryCatch) {
 				TryCatch ig = (TryCatch) o;
-				return operand == ig.operand && target.equals(ig.target)
-						&& catches.equals(ig.catches);
+				return operand == ig.operand && catches.equals(ig.catches)
+						&& bytecodes.equals(ig.bytecodes);
 			}
 			return false;
+		}
+
+		@Override
+		public Code.Compound clone() {
+			return TryCatch(operand,catches,bytecodes);
 		}
 
 		public String toString() {
@@ -3584,43 +3553,6 @@ public abstract class Codes {
 				table += p.first() + "->" + p.second();
 			}
 			return "trycatch " + table;
-		}
-	}
-
-	/**
-	 * Marks the end of a try-catch block.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class TryEnd extends Label {
-		TryEnd(String label) {
-			super(label);
-		}
-
-		public TryEnd relabel(Map<String, String> labels) {
-			String nlabel = labels.get(label);
-			if (nlabel == null) {
-				return this;
-			} else {
-				return TryEnd(nlabel);
-			}
-		}
-
-		public int hashCode() {
-			return label.hashCode();
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof TryEnd) {
-				TryEnd e = (TryEnd) o;
-				return e.label.equals(label);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "tryend " + label;
 		}
 	}
 

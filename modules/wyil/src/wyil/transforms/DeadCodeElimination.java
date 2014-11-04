@@ -80,7 +80,7 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 	}
 
 	public void transform(WyilFile.TypeDeclaration type) {
-		Code.Block invariant = type.invariant();
+		CodeBlock invariant = type.invariant();
 
 		if (invariant != null) {
 			transform(invariant);
@@ -94,13 +94,13 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 	}
 
 	public void transform(WyilFile.Case mcase, WyilFile.FunctionOrMethodDeclaration method) {
-		Code.Block body = mcase.body();
+		CodeBlock body = mcase.body();
 		if(body != null) {
 			transform(body);
 		}
 	}
 
-	private void transform(Code.Block block) {
+	private void transform(CodeBlock block) {
 		HashMap<String,Integer> labelMap = buildLabelMap(block);
 		BitSet visited = new BitSet(block.size());
 		Stack<Integer> worklist = new Stack();
@@ -156,7 +156,7 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 		}
 	}
 
-	private static HashMap<String, Integer> buildLabelMap(Code.Block block) {
+	private static HashMap<String, Integer> buildLabelMap(CodeBlock block) {
 		HashMap<String, Integer> map = new HashMap<String, Integer>();
 		for (int i = 0; i != block.size(); ++i) {
 			Code c = block.get(i);

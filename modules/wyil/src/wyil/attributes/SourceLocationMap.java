@@ -48,4 +48,9 @@ import wyil.util.AbstractAttributeMap;
 public class SourceLocationMap extends AbstractAttributeMap<SourceLocation>
 		implements Attribute.Map<SourceLocation> {
 
+	@Override
+	public Class<? extends Attribute> type() {
+		return SourceLocation.class;
+	}
+
 }
