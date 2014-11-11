@@ -649,21 +649,6 @@ public interface Stmt extends SyntacticElement {
 		}
 	}
 
-	public static final class Catch extends SyntacticElement.Impl {
-		public SyntacticType unresolvedType;
-		public final String variable;
-		public final ArrayList<Stmt> stmts;
-		public Nominal type;
-
-		public Catch(SyntacticType type, String variable, List<Stmt> statements,
-				Attribute... attributes) {
-			super(attributes);
-			this.unresolvedType = type;
-			this.variable = variable;
-			this.stmts = new ArrayList<Stmt>(statements);
-		}
-	}
-
 	public static final class Break extends SyntacticElement.Impl implements Stmt {
 		public Break(Attribute... attributes) {
 			super(attributes);
@@ -675,34 +660,6 @@ public interface Stmt extends SyntacticElement {
 		public Continue(Attribute... attributes) {
 			super(attributes);
 			// TODO: update to include labelled breaks
-		}
-	}
-
-	public static final class Throw extends SyntacticElement.Impl implements Stmt {
-		public Expr expr;
-		public Throw(Expr expr, Attribute... attributes) {
-			super(attributes);
-			this.expr = expr;
-		}
-	}
-
-	public static final class TryCatch extends SyntacticElement.Impl implements
-			Stmt {
-		public ArrayList<Stmt> body;
-		public final ArrayList<Catch> catches;
-
-		public TryCatch(Collection<Stmt> body, List<Catch> catches,
-				Attribute... attributes) {
-			super(attributes);
-			this.body = new ArrayList<Stmt>(body);
-			this.catches = new ArrayList<Catch>(catches);
-		}
-
-		public TryCatch(Collection<Stmt> body, List<Catch> catches,
-				Collection<Attribute> attributes) {
-			super(attributes);
-			this.body = new ArrayList<Stmt>(body);
-			this.catches = new ArrayList<Catch>(catches);
 		}
 	}
 

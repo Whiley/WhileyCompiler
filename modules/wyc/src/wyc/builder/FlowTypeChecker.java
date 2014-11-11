@@ -337,10 +337,6 @@ public class FlowTypeChecker {
 				return propagate((Stmt.DoWhile) stmt, environment);
 			} else if (stmt instanceof Stmt.Break) {
 				return propagate((Stmt.Break) stmt, environment);
-			} else if (stmt instanceof Stmt.Throw) {
-				return propagate((Stmt.Throw) stmt, environment);
-			} else if (stmt instanceof Stmt.TryCatch) {
-				return propagate((Stmt.TryCatch) stmt, environment);
 			} else if (stmt instanceof Stmt.Assert) {
 				return propagate((Stmt.Assert) stmt, environment);
 			} else if (stmt instanceof Stmt.Assume) {
@@ -917,60 +913,6 @@ public class FlowTypeChecker {
 		}
 
 		return finalEnv;
-	}
-
-	/**
-	 * Type check a <code>throw</code> statement. We must check that the throw
-	 * expression is well-formed. The environment after a throw statement is
-	 * "bottom" because that represents an unreachable program point.
-	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into
-	 *            this block
-	 * @return
-	 */
-	private Environment propagate(Stmt.Throw stmt, Environment environment) {
-		stmt.expr = propagate(stmt.expr, environment, current);
-		return BOTTOM;
-	}
-
-	/**
-	 * Type check a try-catch statement.
-	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into
-	 *            this block
-	 * @return
-	 */
-	private Environment propagate(Stmt.TryCatch stmt, Environment environment)
-			throws IOException {
-
-		for (Stmt.Catch handler : stmt.catches) {
-
-			// FIXME: need to deal with handler environments properly!
-			try {
-				Nominal type = resolveAsType(handler.unresolvedType, current);
-				handler.type = type;
-				Environment local = environment.clone();
-				local = local.declare(handler.variable, type, type);
-				propagate(handler.stmts, local);
-				local.free();
-			} catch (SyntaxError e) {
-				throw e;
-			} catch (Throwable t) {
-				internalFailure(t.getMessage(), filename, handler, t);
-			}
-		}
-
-		environment = propagate(stmt.body, environment);
-
-		// need to do handlers here
-
-		return environment;
 	}
 
 	/**

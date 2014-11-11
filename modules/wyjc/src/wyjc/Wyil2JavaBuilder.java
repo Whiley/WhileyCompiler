@@ -100,11 +100,6 @@ public class Wyil2JavaBuilder implements Builder {
 	protected ArrayList<ClassFile> lambdas;
 	
 	/**
-	 * List of required exception handlers
-	 */
-	protected ArrayList<UnresolvedHandler> unresolvedHandlers;
-	
-	/**
 	 * List of line number entries for current function / method being compiled.
 	 */
 	protected ArrayList<LineNumberTable.Entry> lineNumbers;
@@ -354,9 +349,8 @@ public class Wyil2JavaBuilder implements Builder {
 		ClassFile.Method cm = new ClassFile.Method(name,ft,modifiers);
 		
 		lineNumbers = new ArrayList<LineNumberTable.Entry>();
-		ArrayList<Handler> handlers = new ArrayList<Handler>();
-		ArrayList<Bytecode> codes = translate(mcase,handlers);
-		jasm.attributes.Code code = new jasm.attributes.Code(codes,handlers,cm);
+		ArrayList<Bytecode> codes = translate(mcase);
+		jasm.attributes.Code code = new jasm.attributes.Code(codes,Collections.EMPTY_LIST,cm);
 		if(!lineNumbers.isEmpty()) {
 			code.attributes().add(new LineNumberTable(lineNumbers));
 		}
@@ -382,10 +376,9 @@ public class Wyil2JavaBuilder implements Builder {
 
 		ClassFile.Method cm = new ClassFile.Method(name,ft,modifiers);
 
-		ArrayList<Handler> handlers = new ArrayList<Handler>();
 		ArrayList<Bytecode> codes;
 		codes = translateNativeOrExport(method);
-		jasm.attributes.Code code = new jasm.attributes.Code(codes,handlers,cm);
+		jasm.attributes.Code code = new jasm.attributes.Code(codes,Collections.EMPTY_LIST,cm);
 
 		cm.attributes().add(code);
 
@@ -424,10 +417,10 @@ public class Wyil2JavaBuilder implements Builder {
 		return bytecodes;
 	}
 
-	private ArrayList<Bytecode> translate(WyilFile.Case mcase, ArrayList<Handler> handlers) {
+	private ArrayList<Bytecode> translate(WyilFile.Case mcase) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		AttributedCodeBlock block = mcase.body();
-		translate(block, block.numSlots(), handlers, bytecodes);
+		translate(block, block.numSlots(), bytecodes);
 		return bytecodes;
 	}
 
@@ -442,33 +435,9 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            --- list to insert bytecodes into *
 	 */
 	private void translate(AttributedCodeBlock blk, int freeSlot,
-			ArrayList<Handler> handlers, ArrayList<Bytecode> bytecodes) {
-
-		unresolvedHandlers = new ArrayList<UnresolvedHandler>();
+			ArrayList<Bytecode> bytecodes) {
 
 		translate(null, blk, freeSlot, bytecodes);
-
-		if (unresolvedHandlers.size() > 0) {
-			HashMap<String, Integer> labels = new HashMap<String, Integer>();
-
-			for (int i = 0; i != bytecodes.size(); ++i) {
-				Bytecode b = bytecodes.get(i);
-				if (b instanceof Bytecode.Label) {
-					Bytecode.Label lab = (Bytecode.Label) b;
-					labels.put(lab.name, i);
-				}
-			}
-
-			for (UnresolvedHandler ur : unresolvedHandlers) {
-				int start = labels.get(ur.start);
-				int end = labels.get(ur.end);
-				Handler handler = new Handler(start, end, ur.target,
-						ur.exception);
-				handlers.add(handler);
-			}
-		}
-
-		// here, we need to resolve the handlers.
 	}
 
 	/**
@@ -597,8 +566,6 @@ public class Wyil2JavaBuilder implements Builder {
 				 translate(index, (Codes.Switch)code,freeSlot,bytecodes);
 			} else if(code instanceof Codes.NewObject) {
 				 translate(index, (Codes.NewObject)code,freeSlot,bytecodes);
-			} else if(code instanceof Codes.Throw) {
-				 translate(index, (Codes.Throw)code,freeSlot,bytecodes);
 			} else if(code instanceof Codes.TupleLoad) {
 				 translate(index, (Codes.TupleLoad)code,freeSlot,bytecodes);
 			} else {
@@ -780,17 +747,6 @@ public class Wyil2JavaBuilder implements Builder {
 			bytecodes.add(new Bytecode.Load(c.operand,jt));
 			bytecodes.add(new Bytecode.Return(jt));
 		}
-	}
-
-	private void translate(CodeBlock.Index index, Codes.Throw c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.New(WHILEYEXCEPTION));
-		bytecodes.add(new Bytecode.Dup(WHILEYEXCEPTION));
-		bytecodes.add(new Bytecode.Load(c.operand,convertType(c.type)));
-		JvmType.Function ftype = new JvmType.Function(T_VOID,JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYEXCEPTION, "<init>", ftype,
-				Bytecode.InvokeMode.SPECIAL));
-		bytecodes.add(new Bytecode.Throw());
 	}
 
 	private void translate(CodeBlock.Index index, Codes.TupleLoad c, int freeSlot,

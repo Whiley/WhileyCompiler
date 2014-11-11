@@ -128,13 +128,7 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 					addTarget(labelMap.get(p.second()),visited,worklist);
 				}
 				addTarget(labelMap.get(sw.defaultTarget),visited,worklist);
-			} else if(code instanceof Codes.TryCatch) {
-				Codes.TryCatch tc = (Codes.TryCatch) code;
-				for(Pair<Type,String> p : tc.catches) {
-					addTarget(labelMap.get(p.second()),visited,worklist);
-				}
-				addTarget(index+1,visited,worklist);
-			} else if(code instanceof Codes.Throw || code instanceof Codes.Return) {
+			} else if(code instanceof Codes.Return) {
 				// terminating bytecode
 			} else {
 				// sequential bytecode

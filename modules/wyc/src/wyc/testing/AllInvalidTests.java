@@ -1322,41 +1322,6 @@ public class AllInvalidTests {
 	}
 
 	@Test
-	public void Throws_Invalid_1() {
-		runTest("Throws_Invalid_1");
-	}
-
-	@Test
-	public void Throws_Invalid_2() {
-		runTest("Throws_Invalid_2");
-	}
-
-	@Test
-	public void TryCatch_Invalid_1() {
-		runTest("TryCatch_Invalid_1");
-	}
-
-	@Test
-	public void TryCatch_Invalid_2() {
-		runTest("TryCatch_Invalid_2");
-	}
-
-	@Test
-	public void TryCatch_Invalid_3() {
-		runTest("TryCatch_Invalid_3");
-	}
-
-	@Test
-	public void TryCatch_Invalid_4() {
-		runTest("TryCatch_Invalid_4");
-	}
-
-	@Test
-	public void TryCatch_Invalid_5() {
-		runTest("TryCatch_Invalid_5");
-	}
-
-	@Test
 	public void TupleAssign_Invalid_1() {
 		runTest("TupleAssign_Invalid_1");
 	}

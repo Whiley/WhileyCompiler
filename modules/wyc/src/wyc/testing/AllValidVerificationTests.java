@@ -2703,26 +2703,6 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
-	public void TryCatch_Valid_1() {
-		runTest("TryCatch_Valid_1");
-	}
-
-	@Test
-	public void TryCatch_Valid_2() {
-		runTest("TryCatch_Valid_2");
-	}
-
-	@Test
-	public void TryCatch_Valid_3() {
-		runTest("TryCatch_Valid_3");
-	}
-
-	@Ignore("#347") @Test
-	public void TryCatch_Valid_4() {
-		runTest("TryCatch_Valid_4");
-	}
-
-	@Test
 	public void TupleType_Valid_1() {
 		runTest("TupleType_Valid_1");
 	}

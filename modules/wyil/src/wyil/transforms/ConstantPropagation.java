@@ -166,7 +166,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		// TODO: propagate constants through pre- and post-conditions.
 
 		Env environment = initialStore();
-		propagate(null, body, environment, Collections.EMPTY_LIST);
+		propagate(null, body, environment);
 
 		// At this point, we apply the inserts
 		AttributedCodeBlock nbody = new AttributedCodeBlock();
@@ -254,8 +254,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			// skip
 		} else if(code instanceof Codes.NewObject) {
 			infer(index,(Codes.NewObject)code,environment);
-		} else if(code instanceof Codes.Throw) {
-			infer(index,(Codes.Throw)code,environment);
 		} else {
 			throw new SyntaxError.InternalFailure("unknown: " + code.getClass().getName(),filename,0,-1);
 		}
@@ -827,10 +825,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		invalidate(code.target(), environment);
 	}
 
-	public void infer(CodeBlock.Index index, Codes.Throw code,
-			Env environment) {
-	}
-
 	public void infer(CodeBlock.Index index, Codes.Dereference code, Env environment) {
 		invalidate(code.target(), environment);
 	}
@@ -860,16 +854,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	}
 
 	@Override
-	public Env propagate(Type handler, Codes.TryCatch tc, Env environment) {
-		Env catchEnvironment = (Env) environment.clone();
-
-		// TODO: implement me!
-		return catchEnvironment;
-	}
-
-	@Override
-	public Env propagate(CodeBlock.Index index, Codes.Loop loop, Env environment,
-			List<Codes.TryCatch> handlers) {
+	public Env propagate(CodeBlock.Index index, Codes.Loop loop, Env environment) {
 
 		environment = new Env(environment);
 
@@ -895,7 +880,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		do {
 			// iterate until a fixed point reached
 			oldEnv = newEnv;
-			newEnv = propagate(index, block, oldEnv, handlers);
+			newEnv = propagate(index, block, oldEnv);
 			newEnv = join(environment, newEnv);
 		} while (!newEnv.equals(oldEnv));
 

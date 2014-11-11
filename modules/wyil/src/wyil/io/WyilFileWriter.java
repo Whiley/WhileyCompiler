@@ -633,10 +633,7 @@ public final class WyilFileWriter {
 			for(int i=0;i!=operands.length;++i) {
 				writeBase(wide,operands[i],output);
 			}
-		} else if(code instanceof Codes.TryCatch) {
-			Codes.TryCatch tc = (Codes.TryCatch) code;
-			writeBase(wide,tc.operand,output);
-		}
+		} 
 	}
 
 	/**
@@ -761,16 +758,6 @@ public final class WyilFileWriter {
 				target = labels.get(b.second());
 				writeTarget(wide,offset,target,output);
 			}
-		} else if(code instanceof Codes.TryCatch) {
-			Codes.TryCatch tc = (Codes.TryCatch) code;
-			ArrayList<Pair<Type,String>> catches = tc.catches;
-			writeRest(wide,catches.size(),output);
-			for (int i = 0; i != catches.size(); ++i) {
-				Pair<Type, String> handler = catches.get(i);
-				writeRest(wide, typeCache.get(handler.first()), output);
-				writeTarget(wide, offset, labels.get(handler.second()), output);
-			}
-			writeCodeBlock(wide,tc,offset+1,labels,output);
 		} else if(code instanceof Codes.TupleLoad) {
 			Codes.TupleLoad c = (Codes.TupleLoad) code;
 			writeRest(wide,c.index,output);
@@ -929,18 +916,6 @@ public final class WyilFileWriter {
 				maxRest = Math.max(maxRest,constantCache.get(b.first()));
 				maxRest = Math.max(maxRest,targetWidth(b.second(), offset, labels));
 			}
-		} else if(code instanceof Codes.TryCatch) {
-			Codes.TryCatch tc = (Codes.TryCatch) code;
-			maxBase = tc.operand;
-			ArrayList<Pair<Type,String>> catches = tc.catches;
-			maxRest = Math.max(maxRest,catches.size());
-			for(int i=0;i!=catches.size();++i) {
-				Pair<Type,String> handler = catches.get(i);
-				maxRest = Math.max(maxRest,typeCache.get(handler.first()));
-				maxRest = Math.max(maxRest,
-						targetWidth(handler.second(), offset, labels));
-			}
-			maxRest = Math.max(maxRest,tc.size());
 		} else if(code instanceof Codes.TupleLoad) {
 			Codes.TupleLoad c = (Codes.TupleLoad) code;
 			maxRest = Math.max(maxRest,c.index);
@@ -1110,14 +1085,7 @@ public final class WyilFileWriter {
 			for(Pair<Constant,String> b : s.branches) {
 				addConstantItem(b.first());
 			}
-		} else if(code instanceof Codes.TryCatch) {
-			Codes.TryCatch tc = (Codes.TryCatch) code;
-			ArrayList<Pair<Type, String>> catches = tc.catches;
-			for (int i = 0; i != catches.size(); ++i) {
-				Pair<Type, String> handler = catches.get(i);
-				addTypeItem(handler.first());
-			}
-		}
+		} 
 
 		// Second, deal with standard cases
 		if(code instanceof Code.AbstractUnaryOp) {

@@ -627,10 +627,6 @@ public class WhileyFileParser {
 			return parseSkipStatement(environment);
 		case Switch:
 			return parseSwitchStatement(wf, environment, indent);
-		case Throw:
-			return parseThrowStatement(wf, environment);
-		case Try:
-			return parseTryCatchStatement(wf, environment, indent);
 		default:
 			// fall through to the more difficult cases
 		}
@@ -1294,91 +1290,6 @@ public class WhileyFileParser {
 		matchEndLine();
 		List<Stmt> stmts = parseBlock(wf, environment, indent);
 		return new Stmt.Case(values, stmts, sourceAttr(start, end - 1));
-	}
-
-	/**
-	 * Parse a try-catch statement, which has the form:
-	 *
-	 * <pre>
-	 * SwitchStmt ::= "try" ':' Block CatchBlock+
-	 *
-	 * CatchBlock ::= "catch" TypeParameter ':' NewLine Block
-	 * </pre>
-	 *
-	 * @see wyc.lang.Stmt.TryCatch
-	 *
-	 * @param wf
-	 *            The enclosing WhileyFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this block.
-	 * @param indent
-	 *            The indent level of this statement, which is needed to
-	 *            determine permissible indent level of child block(s).
-	 * @return
-	 * @author David J. Pearce
-	 *
-	 */
-	private Stmt parseTryCatchStatement(WhileyFile wf,
-			HashSet<String> environment, Indent indent) {
-		int start = index;
-		match(Try);
-		match(Colon);
-		int end = index;
-		matchEndLine();
-		List<Stmt> body = parseBlock(wf, environment, indent);
-		// Match case block
-		List<Stmt.Catch> catches = new ArrayList<Stmt.Catch>();
-		while (tryAndMatch(true, Catch) != null) {
-			match(LeftBrace);
-			SyntacticType type = parseType();
-			Token id = match(Identifier);
-			if (environment.contains(id.text)) {
-				syntaxError("variable already declared", id);
-			}
-			HashSet<String> catchEnvironment = new HashSet<String>(environment);
-			catchEnvironment.add(id.text);
-			match(RightBrace);
-			match(Colon);
-			matchEndLine();
-			List<Stmt> catchBody = parseBlock(wf, catchEnvironment, indent);
-			catches.add(new Stmt.Catch(type, id.text, catchBody));
-		}
-		// Done
-		return new Stmt.TryCatch(body, catches, sourceAttr(start, end - 1));
-	}
-
-	/**
-	 * Parse a throe statement, which is of the form:
-	 *
-	 * <pre>
-	 * ThrowStmt ::= "throw" Expr
-	 * </pre>
-	 *
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this statement.
-	 *
-	 * @see wyc.lang.Stmt.Debug
-	 * @return
-	 */
-	private Stmt.Throw parseThrowStatement(WhileyFile wf,
-			HashSet<String> environment) {
-		int start = index;
-		// Match the break keyword
-		match(Throw);
-		// Parse the expression to be printed
-		Expr e = parseUnitExpression(wf, environment, false);
-		// Finally, at this point we are expecting a new-line to signal the
-		// end-of-statement.
-		int end = index;
-		matchEndLine();
-		// Done.
-		return new Stmt.Throw(e, sourceAttr(start, end - 1));
 	}
 
 	/**

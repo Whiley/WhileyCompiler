@@ -133,21 +133,15 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public HashSet<Integer> propagate(Type handler, Codes.TryCatch tc, HashSet<Integer> in) {
-		in = new HashSet<Integer>(in);
-		in.add(tc.operand);
-		return in;
-	}
-
-	@Override
 	public HashSet<Integer> propagate(CodeBlock.Index index, Codes.Loop loop,
-			HashSet<Integer> in, List<Codes.TryCatch> handlers) {
+			HashSet<Integer> in) {
 		if (loop instanceof Codes.ForAll) {
 			Codes.ForAll fall = (Codes.ForAll) loop;
 
 			if (!in.contains(fall.sourceOperand)) {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-						filename, rootBlock.attribute(index,SourceLocation.class));
+						filename,
+						rootBlock.attribute(index, SourceLocation.class));
 			}
 
 			in = new HashSet<Integer>(in);
@@ -155,7 +149,7 @@ public class DefiniteAssignmentCheck extends
 		}
 
 		CodeBlock blk = loop;
-		HashSet<Integer> r = propagate(index, blk, in, handlers);
+		HashSet<Integer> r = propagate(index, blk, in);
 		return join(in, r);
 	}
 

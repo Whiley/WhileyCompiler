@@ -647,8 +647,6 @@ public final class WyilFileReader {
 			Codes.Label l = findLabel(target,labels);
 			return Codes.IfIs(type, operand, result, l.label);
 		}
-		case Code.OPCODE_throw:
-			return Codes.Throw(type, operand);
 		case Code.OPCODE_return:
 			return Codes.Return(type, operand);
 		case Code.OPCODE_switch: {
@@ -989,20 +987,6 @@ public final class WyilFileReader {
 	private Code readOther(int opcode, boolean wideBase, boolean wideRest,
 			int offset, HashMap<Integer, Codes.Label> labels) throws IOException {
 		switch (opcode) {
-			case Code.OPCODE_trycatch: {
-				int operand = readBase(wideBase);
-				int nCatches = readRest(wideRest);
-				ArrayList<Pair<Type, String>> catches = new ArrayList<Pair<Type, String>>();
-				for (int i = 0; i != nCatches; ++i) {
-					Type type = typePool[readRest(wideRest)];
-					Codes.Label handler = findLabel(readTarget(wideRest, offset),
-							labels);
-					catches.add(new Pair<Type, String>(type, handler.label));
-				}
-				int nBytecodes = readRest(wideRest);
-				ArrayList<Code> bytecodes = readCodeBlock(offset+1,nBytecodes,labels);
-				return Codes.TryCatch(operand,catches,bytecodes);
-			}
 			case Code.OPCODE_update: {
 				int target = readBase(wideBase);
 				int nOperands = readBase(wideBase);

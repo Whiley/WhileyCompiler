@@ -140,13 +140,6 @@ public abstract class BackwardFlowAnalysis<T> {
 					Codes.Loop loop = (Codes.Loop) code;
 					store = propagate(id, loop, store, handlers);
 					continue;
-				} else if (code instanceof Codes.TryCatch) {
-					Codes.TryCatch tc = (Codes.TryCatch) code;
-					ArrayList<Pair<Type, String>> nhandlers = new ArrayList<Pair<Type, String>>(
-							handlers);
-					nhandlers.addAll(0, tc.catches);
-					store = propagate(id, tc, store, nhandlers);
-					continue;
 				} else if (code instanceof Codes.Label) {
 					Codes.Label l = (Codes.Label) code;
 					stores.put(l.label,store);
@@ -175,52 +168,15 @@ public abstract class BackwardFlowAnalysis<T> {
 				} else {
 					// This indicates a sequential statement was encountered.
 					if (code instanceof Codes.Return
-						|| code instanceof Codes.Throw
 						|| code instanceof Codes.Fail) {
 						store = lastStore();
 					}
 					store = propagate(id, code, store);
 				}
-
-				store = mergeHandlers(i,code,store,handlers,stores);
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
 				internalFailure("internal failure", filename, ex, rootBlock.attribute(id,SourceLocation.class));			}
-		}
-
-		return store;
-	}
-
-	protected T mergeHandlers(int index, Code code, T store, List<Pair<Type, String>> handlers,
-			Map<String, T> stores) {
-		if(code instanceof Codes.Throw) {
-			Codes.Throw t = (Codes.Throw) code;
-			return mergeHandler(t.type,store,handlers,stores);
-		} else if(code instanceof Codes.IndirectInvoke) {
-			Codes.IndirectInvoke i = (Codes.IndirectInvoke) code;
-			return mergeHandler(i.type().throwsClause(),store,handlers,stores);
-		} else if(code instanceof Codes.Invoke) {
-			Codes.Invoke i = (Codes.Invoke) code;
-			return mergeHandler(i.type().throwsClause(),store,handlers,stores);
-		}
-		return store;
-	}
-
-	protected T mergeHandler(Type type, T store, List<Pair<Type, String>> handlers,
-			Map<String, T> stores) {
-		for(Pair<Type,String> p : handlers) {
-			Type handler = p.first();
-			T exceptionStore = stores.get(p.second());
-			if(exceptionStore == null) {
-				continue;
-			} else if(Type.isSubtype(handler,type)) {
-				return propagate(handler,store,exceptionStore);
-			} else if(Type.isSubtype(type, handler)) {
-				store = propagate(handler,store,exceptionStore);
-				// not completely subsumed
-				type = Type.intersect(type,Type.Negation(handler));
-			}
 		}
 
 		return store;

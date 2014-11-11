@@ -352,12 +352,8 @@ public final class CodeGenerator {
 				generate((IfElse) stmt, environment, codes, context);
 			} else if (stmt instanceof Switch) {
 				generate((Switch) stmt, environment, codes, context);
-			} else if (stmt instanceof TryCatch) {
-				generate((TryCatch) stmt, environment, codes, context);
 			} else if (stmt instanceof Break) {
 				generate((Break) stmt, environment, codes, context);
-			} else if (stmt instanceof Throw) {
-				generate((Throw) stmt, environment, codes, context);
 			} else if (stmt instanceof While) {
 				generate((While) stmt, environment, codes, context);
 			} else if (stmt instanceof DoWhile) {
@@ -853,43 +849,6 @@ public final class CodeGenerator {
 	}
 
 	/**
-	 * Translate a throw statement into WyIL bytecodes. The throw expression is
-	 * first translated and stored in a temporary register. Consider the
-	 * following throw statement:
-	 *
-	 * <pre>
-	 * throw "Hello World"
-	 * </pre>
-	 *
-	 * This might be translated into the following WyIL bytecodes:
-	 *
-	 * <pre>
-	 * const %2 = "Hello World"
-	 * throw %2
-	 * </pre>
-	 *
-	 * Here, we see that the throw expression is first stored into the temporary
-	 * register 2.
-	 *
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */
-	private void generate(Stmt.Throw s, Environment environment,
-			AttributedCodeBlock codes, Context context) {
-		int operand = generate(s.expr, environment, codes, context);
-		codes.add(Codes.Throw(s.expr.result().raw(), operand), attributes(s));
-	}
-
-	/**
 	 * Translate a break statement into a WyIL unconditional branch bytecode.
 	 * This requires examining the scope stack to determine the correct target
 	 * for the branch. Consider the following use of a break statement:
@@ -1060,95 +1019,6 @@ public final class CodeGenerator {
 
 		codes.add(start, Codes.Switch(s.expr.result().raw(), operand,
 				defaultTarget, cases), attributes(s));
-		codes.add(Codes.Label(exitLab), attributes(s));
-	}
-
-	/**
-	 * Translate a try-catch statement into WyIL bytecodes. Consider the
-	 * following try-catch block:
-	 *
-	 * <pre>
-	 * try:
-	 *     x = f(x+1)
-	 * catch(string err):
-	 *     return err
-	 * ...
-	 * </pre>
-	 *
-	 * This might be translated into the following WyIL bytecodes:
-	 *
-	 * <pre>
-	 *     trycatch string->label4
-	 *         const %4 = 1
-	 *         add %5 = %0, %4
-	 *         invoke %2 = (%5) test:f : function(int) => int throws string
-	 *         goto label5
-	 * .label4
-	 *     const %6 = 0
-	 *     return %6
-	 * .label5
-	 *     ...
-	 * </pre>
-	 *
-	 * Here, we see the trycatch bytecode routes exceptions to the start of
-	 * their catch handlers. Likewise, at the end of the try block control
-	 * branches over the catch handlers to continue on with the remainder of the
-	 * function.
-	 *
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */
-	private void generate(Stmt.TryCatch s, Environment environment,
-			AttributedCodeBlock codes, Context context) throws Exception {
-		int start = codes.size();
-		int exceptionRegister = environment.allocate(Type.T_ANY);
-		String exitLab = CodeUtils.freshLabel();
-
-		// First, construct the trycatch bytecode, including its body. This must
-		// come before the bytecode blocks for the handlers.
-
-		AttributedCodeBlock body = codes.createSubBlock();
-		for (Stmt st : s.body) {
-			generate(st, environment, body, context);
-		}
-
-
-		// Generate the necessary jump target for each exception type which is
-		// needed to construct the trycatch bytecode.
-		ArrayList<Pair<Type, String>> catches = new ArrayList<Pair<Type, String>>();
-		for (Stmt.Catch c : s.catches) {
-			catches.add(new Pair<Type, String>(c.type.raw(), CodeUtils
-					.freshLabel()));
-		}
-
-		codes.add(start,
-				Codes.TryCatch(exceptionRegister, catches, body.bytecodes()),
-				attributes(s));
-		// This covers the default case
-		codes.add(Codes.Goto(exitLab), attributes(s));
-
-		// Second, construct the bytecodes for the handlers.
-		for (int i=0;i!=s.catches.size();++i) {
-			Stmt.Catch handlerStmt = s.catches.get(i);
-			Pair<Type,String> handlerDetails = catches.get(i);
-			Codes.Label lab = Codes.Label(handlerDetails.second());
-			codes.add(lab, attributes(handlerStmt));
-			environment.put(exceptionRegister, handlerStmt.variable);
-			for (Stmt st : handlerStmt.stmts) {
-				generate(st, environment, codes, context);
-			}
-			codes.add(Codes.Goto(exitLab), attributes(handlerStmt));
-		}
-
 		codes.add(Codes.Label(exitLab), attributes(s));
 	}
 

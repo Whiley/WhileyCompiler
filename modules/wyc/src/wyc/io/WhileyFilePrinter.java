@@ -182,10 +182,6 @@ public class WhileyFilePrinter {
 			print((Stmt.Skip) stmt);
 		} else if(stmt instanceof Stmt.Switch) {
 			print((Stmt.Switch) stmt, indent);
-		} else if(stmt instanceof Stmt.Throw) {
-			print((Stmt.Throw) stmt);
-		} else if(stmt instanceof Stmt.TryCatch) {
-			print((Stmt.TryCatch) stmt, indent);
 		} else if(stmt instanceof Stmt.While) {
 			print((Stmt.While) stmt, indent);
 		} else if(stmt instanceof Stmt.VariableDeclaration) {
@@ -214,12 +210,6 @@ public class WhileyFilePrinter {
 
 	public void print(Stmt.Debug s) {
 		out.print("debug ");
-		print(s.expr);
-		out.println();
-	}
-
-	public void print(Stmt.Throw s) {
-		out.print("throw ");
 		print(s.expr);
 		out.println();
 	}
@@ -338,19 +328,6 @@ public class WhileyFilePrinter {
 
 			out.println(":");
 			print(cas.stmts,indent+2);
-		}
-	}
-
-	public void print(Stmt.TryCatch s, int indent) {
-		out.println("try:");
-		print(s.body,indent+1);
-		for(Stmt.Catch handler : s.catches) {
-			indent(indent);
-			out.print("catch(");
-			print(handler.unresolvedType);
-			out.print(" " + handler.variable);
-			out.println("):");
-			print(handler.stmts, indent+1);
 		}
 	}
 
