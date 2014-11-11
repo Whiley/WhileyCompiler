@@ -17,9 +17,9 @@ import java.util.Set;
  * every bytecode it contains. An example attribute is one for holding the
  * location of the source code which generated the bytecode.
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class CodeBlock implements Iterable<Code> {
 	protected ArrayList<Code> bytecodes;
@@ -27,7 +27,7 @@ public class CodeBlock implements Iterable<Code> {
 	public CodeBlock() {
 		bytecodes = new ArrayList<Code>();
 	}
-	
+
 	public CodeBlock(Code... bytecodes) {
 		this.bytecodes = new ArrayList<Code>();
 		Collections.addAll(this.bytecodes,bytecodes);
@@ -86,53 +86,25 @@ public class CodeBlock implements Iterable<Code> {
 	/**
 	 * Get the entry associated with a given bytecode id. This will recurse
 	 * nested code blocks as necessary to locate this bytecode.
-	 * 
+	 *
 	 * @param id
 	 * @return
 	 */
-	public CodeBlock.Entry getEntry(int... id) {
+	public Code get(Index index) {
+		int[] indexArray = index.toArray();
 		CodeBlock iterator = this;
 		int i=0;
-		while (i < id.length - 1) {
-			iterator = (CodeBlock) iterator.get(id[i]);
+		while (i < indexArray.length - 1) {
+			iterator = (CodeBlock) iterator.get(indexArray[i]);
 			i = i + 1;
 		}
-		Code code = iterator.get(id[i]);
-		return new Entry(id,code);
+		return iterator.get(indexArray[i]);
 	}
 
-	/**
-	 * Return all bytecodes contained in this block as entries, but not
-	 * including those recursively contained in sub-blocks. Each entry
-	 * contains the bytecode itself, along with its ID.
-	 *
-	 * @return
-	 */
-	public List<? extends CodeBlock.Entry> entries() {
-		ArrayList<CodeBlock.Entry> entries = new ArrayList<CodeBlock.Entry>();
-		for (int i = 0; i != bytecodes.size(); ++i) {
-			entries.add(new Entry(new int[] { i }, bytecodes.get(i)));
-		}
-		return entries;
-	}
-
-	/**
-	 * Return all bytecodes contained in this block, including those
-	 * recursively contained in sub-blocks. Each entry contains the bytecode
-	 * itself, along with its ID.
-	 *
-	 * @return
-	 */
-	public List<? extends CodeBlock.Entry> allEntries() {
-		ArrayList<CodeBlock.Entry> entries = new ArrayList<CodeBlock.Entry>();
-		addAllEntries(this,entries);
-		return entries;
-	}
-	
 	/**
 	 * Returns a reference to the internal bytecode array. Note that modifying
 	 * this reference will modify the underlying array.
-	 * 
+	 *
 	 * @return
 	 */
 	public List<Code> bytecodes() {
@@ -203,48 +175,121 @@ public class CodeBlock implements Iterable<Code> {
 	}
 
 	/**
-	 * Provides a simple mechanism for accessing all bytecodes within a
-	 * block, including those contained recursively in sub-blocks. An Entry
-	 * includes the full identified for the bytecode, which identifies which
-	 * sub-block the bytecode is contained in.
+	 * Provides a mechanism for identifying bytecodes within arbitrarily nested
+	 * blocks. Specifically, an index is n-dimensional sequence of integer
+	 * indices (e.g. 0.1.3) which uniquely identifies a location within a nested
+	 * block. Bytecode indices are read left-to-right with the leftmost index
+	 * corresponding to the index in the outermost block.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Entry {
-		public final int[] id;
-		public final Code code;
+	public static class Index {
+		private final Index parent; // null only for ROOT index
+		private final int value;
 
-		public Entry(int[] id, Code code) {
-			this.id = id;
-			this.code = code;
+		/**
+		 * Construct an index which is nested within the parent index, and whose
+		 * initial value at the innermost level is 0. For example, "0.1.0" would
+		 * be created from parent "0.1".
+		 *
+		 * @param parent
+		 *            Parent index, which maybe null if there is no parent.
+		 */
+		public Index(Index parent) {
+			this.parent = parent;
+			this.value = 0;
 		}
 
-		public List<? extends CodeBlock.Entry> children() {
-			if(code instanceof CodeBlock) {
-				CodeBlock blk = (CodeBlock) code;
-				ArrayList<CodeBlock.Entry> children = new ArrayList<CodeBlock.Entry>();
-				for(int i=0;i!=blk.size();++i) {
-					int[] nid = Arrays.copyOf(id, id.length+1);
-					nid[id.length] = i;
-					children.add(new Entry(nid,blk.get(i)));
-				}
-				return children;
+		/**
+		 * Construct an index which is nested within the parent index, and whose
+		 * initial value at the innermost level is determined by a given
+		 * parameter. For example, "0.1.3" would be created from parent "0.1"
+		 * and value 3.
+		 *
+		 * @param parent
+		 *            Parent index, which maybe null if there is no parent.
+		 * @param value
+		 *            Value of innermost component
+		 *
+		 */
+		public Index(Index parent, int value) {
+			this.parent = parent;
+			this.value = value;
+		}
+
+		/**
+		 * Return the next index in sequence.
+		 *
+		 * @return
+		 */
+		public Index next() {
+			return new Index(parent, value + 1);
+		}
+
+		/**
+		 * Return the first index nested within this index.
+		 *
+		 * @return
+		 */
+		public Index firstWithin() {
+			return new Index(this);
+		}
+
+		/**
+		 * Return the first index nested within this index.
+		 *
+		 * @return
+		 */
+		public Index nestedWithin(int value) {
+			return new Index(this,value);
+		}
+
+		public int size() {
+			if(parent == null) {
+				return 1;
 			} else {
-				return Collections.EMPTY_LIST;
+				return 1 + parent.size();
 			}
 		}
-	}
 
-	private static void addAllEntries(CodeBlock blk,
-			ArrayList<CodeBlock.Entry> entries, int... baseId) {
-		for (int i = 0; i != blk.size(); ++i) {
-			int[] id = Arrays.copyOf(baseId, baseId.length + 1);
-			id[baseId.length] = i;
-			Code code = blk.get(i);
-			entries.add(new Entry(id, code));
-			if (code instanceof CodeBlock) {
-				addAllEntries((CodeBlock) code, entries, id);
+		public boolean equals(Object o) {
+			if (o instanceof Index) {
+				Index i = (Index) o;
+				if (parent == null) {
+					return value == i.value && i.parent == null;
+				} else {
+					return value == i.value && parent.equals(i.parent);
+				}
+			}
+			return false;
+		}
+
+		public int hashCode() {
+			if(parent == null) {
+				return value;
+			} else {
+				return parent.hashCode() ^ value;
+			}
+		}
+
+		public int[] toArray() {
+			Index iterator = this;
+			int[] r = new int[size()];
+			for(int i = r.length;i > 0;) {
+				i = i - 1;
+				r[i] = iterator.value;
+				iterator = iterator.parent;
+			}
+			return r;
+		}
+		
+		public String toString() {
+			String vstr = Integer.toString(value);
+			if (parent == null) {
+				return vstr;
+			} else {
+				return parent.toString() + "." + vstr;
 			}
 		}
 	}

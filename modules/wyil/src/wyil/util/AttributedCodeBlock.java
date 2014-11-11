@@ -1,4 +1,4 @@
-package wyil.lang;
+package wyil.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,7 +8,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import wyil.lang.CodeBlock.Entry;
+import wyil.lang.Attribute;
+import wyil.lang.Code;
+import wyil.lang.CodeBlock;
+import wyil.lang.CodeBlock.Index;
 
 /**
  * <p>
@@ -79,51 +82,22 @@ public class AttributedCodeBlock extends CodeBlock {
 	// Get Methods
 	// ===================================================================
 
-	public AttributedCodeBlock.Entry getEntry(int... id) {
-		CodeBlock iterator = this;
-		int i=0;
-		while (i < id.length - 1) {
-			iterator = (CodeBlock) iterator.get(id[i]);
-			i = i + 1;
-		}
-		Code code = iterator.get(id[i]);
-		// FIXME: need to include attributes!
-		return new Entry(id,code);
-	}
-
-	public <T extends Attribute> T attribute(int[] id, Class<T> kind) {
+	public <T extends Attribute> T attribute(CodeBlock.Index id, Class<T> kind) {
 		Attribute.Map<T> map = (Attribute.Map<T>) attributes.get(kind);
 		return map.get(id);
 	}
 
-	/**
-	 * Return all bytecodes contained in this block as entries, but not
-	 * including those recursively contained in sub-blocks. Each entry
-	 * contains the bytecode itself, along with its ID.
-	 *
-	 * @return
-	 */
-	public List<? extends AttributedCodeBlock.Entry> entries() {
-		ArrayList<AttributedCodeBlock.Entry> entries = new ArrayList<AttributedCodeBlock.Entry>();
-		for (int i = 0; i != bytecodes.size(); ++i) {
-			entries.add(new Entry(new int[] { i }, bytecodes.get(i)));
+	public List<Attribute> attributes(Index index) {
+		ArrayList<Attribute> results = new ArrayList<Attribute>();
+		for(Attribute.Map<?> map : attributes.values()) {
+			Attribute attr = map.get(index);
+			if(attr != null) {
+				results.add(attr);
+			}
 		}
-		return entries;
+		return results;
 	}
-
-	/**
-	 * Return all bytecodes contained in this block, including those
-	 * recursively contained in sub-blocks. Each entry contains the bytecode
-	 * itself, along with its ID.
-	 *
-	 * @return
-	 */
-	public List<? extends AttributedCodeBlock.Entry> allEntries() {
-		ArrayList<AttributedCodeBlock.Entry> entries = new ArrayList<AttributedCodeBlock.Entry>();
-		addAllEntries(this,entries);
-		return entries;
-	}
-
+	
 	/**
 	 * <p>
 	 * Construct a temporary sub-block for use in creating an attributed
@@ -253,57 +227,5 @@ public class AttributedCodeBlock extends CodeBlock {
 	public void set(int index, Code code, Collection<Attribute> attributes) {
 		// TODO: actually update the attributes
 		set(index,code);
-	}
-
-	public static class Entry extends CodeBlock.Entry {
-		public final Attribute[] attributes;
-
-		public Entry(int[] id, Code code, Attribute... attributes) {
-			super(id, code);
-			this.attributes = Arrays.copyOf(attributes, attributes.length);
-		}
-
-		public Entry(int[] id, Code code, Collection<Attribute> attributes) {
-			super(id, code);
-			this.attributes = attributes.toArray(new Attribute[attributes
-					.size()]);
-		}
-
-		public Collection<Attribute> attributes() {
-			// FIXME: this is a temporary hack?
-			ArrayList<Attribute> r = new ArrayList<Attribute>();
-			Collections.addAll(r,attributes);
-			return r;
-		}
-
-		public List<? extends AttributedCodeBlock.Entry> children() {
-			if (code instanceof CodeBlock) {
-				CodeBlock blk = (CodeBlock) code;
-				ArrayList<AttributedCodeBlock.Entry> children = new ArrayList<AttributedCodeBlock.Entry>();
-				for (int i = 0; i != blk.size(); ++i) {
-					int[] nid = Arrays.copyOf(id, id.length + 1);
-					nid[id.length] = i;
-					// FIXME: include attributes here!
-					children.add(new Entry(nid, blk.get(i)));
-				}
-				return children;
-			} else {
-				return Collections.EMPTY_LIST;
-			}
-		}
-	}
-
-	private static void addAllEntries(CodeBlock blk,
-			ArrayList<AttributedCodeBlock.Entry> entries, int... baseId) {
-		for (int i = 0; i != blk.size(); ++i) {
-			int[] id = Arrays.copyOf(baseId, baseId.length + 1);
-			id[baseId.length] = i;
-			Code code = blk.get(i);
-			// FIXME: include attributes
-			entries.add(new Entry(id, code));
-			if (code instanceof CodeBlock) {
-				addAllEntries((CodeBlock) code, entries, id);
-			}
-		}
 	}
 }

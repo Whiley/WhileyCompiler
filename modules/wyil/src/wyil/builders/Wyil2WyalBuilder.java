@@ -33,6 +33,7 @@ import wybs.lang.Builder;
 import wyfs.lang.Path;
 import wyil.builders.VcBranch.AssertOrAssumeScope;
 import wyil.lang.*;
+import wyil.util.AttributedCodeBlock;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wycs.syntax.Expr;

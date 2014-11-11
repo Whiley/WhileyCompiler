@@ -36,6 +36,7 @@ import wyfs.io.BinaryInputStream;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.*;
+import wyil.util.AttributedCodeBlock;
 
 /**
  * Read a binary WYIL file from a byte stream and convert into the corresponding

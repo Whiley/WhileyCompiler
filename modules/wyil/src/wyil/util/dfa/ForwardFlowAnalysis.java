@@ -25,20 +25,18 @@
 
 package wyil.util.dfa;
 
-import static wyil.util.ErrorMessages.internalFailure;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import wycc.lang.SyntaxError;
-import wycc.lang.Transform;
 import wycc.util.Pair;
+import wyil.attributes.SourceLocation;
 import wyil.lang.*;
 import wyil.util.*;
+import static wyil.util.ErrorMessages.*;
 
 public abstract class ForwardFlowAnalysis<T> {
 
@@ -111,7 +109,7 @@ public abstract class ForwardFlowAnalysis<T> {
 		this.stores = new HashMap<String,T>();
 		this.rootBlock = mcase.body();
 		T init = initialStore();
-		propagate(new int[]{}, rootBlock, init, Collections.EMPTY_LIST);
+		propagate(null, rootBlock, init, Collections.EMPTY_LIST);
 		return mcase;
 	}
 
@@ -130,15 +128,15 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            The list of active exception handlers
 	 * @return
 	 */
-	protected T propagate(int[] parentIndex, CodeBlock block, T store,
+	protected T propagate(CodeBlock.Index parentIndex, CodeBlock block,
+			T store,
 			List<Codes.TryCatch> handlers) {
 
 		for (int i = 0; i < block.size(); ++i) {
 			Code code = block.get(i);
 
 			// Construct the bytecode ID
-			int[] id = Arrays.copyOf(parentIndex, parentIndex.length+1);
-			id[parentIndex.length] = i;
+			CodeBlock.Index id = new CodeBlock.Index(parentIndex,i);
 
 			try {
 				// First, check for a label which may have incoming information.
@@ -211,7 +209,7 @@ public abstract class ForwardFlowAnalysis<T> {
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
-				internalFailure("internal failure", filename, this.rootBlock.getEntry(id), ex);
+				internalFailure("internal failure", filename, ex, rootBlock.attribute(id,SourceLocation.class));
 			}
 		}
 
@@ -280,7 +278,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<T,T> propagate(int[] index, Codes.If ifgoto, T store);
+	protected abstract Pair<T,T> propagate(CodeBlock.Index index, Codes.If ifgoto, T store);
 
 	/**
 	 * <p>
@@ -300,7 +298,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<T, T> propagate(int[] index, Codes.IfIs iftype, T store);
+	protected abstract Pair<T, T> propagate(CodeBlock.Index index, Codes.IfIs iftype, T store);
 
 	/**
 	 * <p>
@@ -317,7 +315,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract List<T> propagate(int[] index, Codes.Switch sw, T store);
+	protected abstract List<T> propagate(CodeBlock.Index index, Codes.Switch sw, T store);
 
 	/**
 	 * Propagate an exception into a catch handler.
@@ -353,7 +351,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(int[] index, Codes.Loop code, T store,
+	protected abstract T propagate(CodeBlock.Index index, Codes.Loop code, T store,
 			List<Codes.TryCatch> handlers);
 
 	/**
@@ -371,7 +369,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(int[] index, Code code, T store);
+	protected abstract T propagate(CodeBlock.Index index, Code code, T store);
 
 	/**
 	 * Determine the initial store for the current method case.

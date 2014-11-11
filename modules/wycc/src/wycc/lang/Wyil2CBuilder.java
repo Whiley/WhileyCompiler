@@ -37,7 +37,6 @@ import wyfs.lang.Path;
 import wyil.lang.WyilFile;
 import wycc.util.Logger;
 import wycc.util.Pair;
-import wyil.lang.AttributedCodeBlock;
 import wyil.lang.CodeBlock;
 import wyil.lang.Code;
 import wyil.lang.Codes;
@@ -52,6 +51,7 @@ import wyil.lang.WyilFile.Case;
 import wyil.lang.WyilFile.ConstantDeclaration;
 import wyil.lang.WyilFile.FunctionOrMethodDeclaration;
 import wyil.lang.WyilFile.TypeDeclaration;
+import wyil.util.AttributedCodeBlock;
 
 public class Wyil2CBuilder implements Builder {
 	// * these are configuration parameters of the translation process

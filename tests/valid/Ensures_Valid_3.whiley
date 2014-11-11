@@ -11,7 +11,10 @@ ensures b ==> no { z in xs | z < 0 }:
 
 function countOver({int} xs, int y) => int
 requires pred(xs):
-    {int} tmp = { x | x in xs, x > y }
+    {int} tmp = {}
+    for x in xs:
+        if x > y:
+            tmp = tmp + {x}
     return |tmp|
 
 method main(System.Console sys) => void:

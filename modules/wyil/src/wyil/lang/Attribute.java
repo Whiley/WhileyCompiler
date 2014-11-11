@@ -53,7 +53,7 @@ public interface Attribute {
 		 * @return The data associated with the given location, or null if no
 		 *         such data exists.
 		 */
-		T get(int[] location);
+		T get(CodeBlock.Index location);
 
 		/**
 		 * Assign or update the meta-data associated with a given bytecode
@@ -65,6 +65,6 @@ public interface Attribute {
 		 * @param data
 		 *            The data to assign to the given location
 		 */
-		void put(int[] location, T data);
+		void put(CodeBlock.Index location, T data);
 	}
 }

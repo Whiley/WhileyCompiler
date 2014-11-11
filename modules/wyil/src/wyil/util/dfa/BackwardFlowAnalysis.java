@@ -25,8 +25,6 @@
 
 package wyil.util.dfa;
 
-import static wyil.util.ErrorMessages.internalFailure;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,7 +34,10 @@ import java.util.Map;
 
 import wycc.lang.SyntaxError;
 import wycc.util.Pair;
+import wyil.attributes.SourceLocation;
 import wyil.lang.*;
+import wyil.util.AttributedCodeBlock;
+import static wyil.util.ErrorMessages.*;
 
 public abstract class BackwardFlowAnalysis<T> {
 
@@ -106,7 +107,7 @@ public abstract class BackwardFlowAnalysis<T> {
 		this.stores = new HashMap<String,T>();
 		this.rootBlock = mcase.body();
 		T last = lastStore();
-		propagate(new int[]{}, rootBlock, last, Collections.EMPTY_LIST);
+		propagate(null, rootBlock, last, Collections.EMPTY_LIST);
 		return mcase;
 	}
 
@@ -125,14 +126,13 @@ public abstract class BackwardFlowAnalysis<T> {
 	 *            The list of active exception handlers
 	 * @return
 	 */
-	protected T propagate(int[] parentIndex, CodeBlock block, T store, List<Pair<Type,String>> handlers) {
+	protected T propagate(CodeBlock.Index parentIndex, CodeBlock block, T store, List<Pair<Type,String>> handlers) {
 
 		for (int i = block.size()-1; i >= 0; --i) {
 			Code code = block.get(i);
 
-			// Construct the bytecode ID
-			int[] id = Arrays.copyOf(parentIndex, parentIndex.length+1);
-			id[parentIndex.length] = i;
+			// Construct the bytecode index
+			CodeBlock.Index id = new CodeBlock.Index(parentIndex,i);
 
 			try {
 				// First, check for a label which may have incoming information.
@@ -186,8 +186,7 @@ public abstract class BackwardFlowAnalysis<T> {
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
-				internalFailure("internal failure", filename, rootBlock.getEntry(id), ex);
-			}
+				internalFailure("internal failure", filename, ex, rootBlock.attribute(id,SourceLocation.class));			}
 		}
 
 		return store;
@@ -247,7 +246,7 @@ public abstract class BackwardFlowAnalysis<T> {
 	 *            statement on the false branch.
 	 * @return
 	 */
-	protected abstract T propagate(int[] index, Codes.If ifgoto,
+	protected abstract T propagate(CodeBlock.Index index, Codes.If ifgoto,
 			T trueStore, T falseStore);
 
 	/**
@@ -269,7 +268,7 @@ public abstract class BackwardFlowAnalysis<T> {
 	 *            statement on the false branch.
 	 * @return
 	 */
-	protected abstract T propagate(int[] index, Codes.IfIs iftype, T trueStore,
+	protected abstract T propagate(CodeBlock.Index index, Codes.IfIs iftype, T trueStore,
 			T falseStore);
 
 	/**
@@ -289,7 +288,7 @@ public abstract class BackwardFlowAnalysis<T> {
 	 *            --- abstract store coming from default branch
 	 * @return
 	 */
-	protected abstract T propagate(int[] index, Codes.Switch sw,
+	protected abstract T propagate(CodeBlock.Index index, Codes.Switch sw,
 			List<T> stores, T defStore);
 
 	/**
@@ -307,7 +306,7 @@ public abstract class BackwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(int[] index, Codes.Loop code, T store,
+	protected abstract T propagate(CodeBlock.Index index, Codes.Loop code, T store,
 			List<Pair<Type, String>> handlers);
 
 	/**
@@ -325,7 +324,7 @@ public abstract class BackwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(int[] index, Code code, T store);
+	protected abstract T propagate(CodeBlock.Index index, Code code, T store);
 
 	/**
 	 * Propagate from an exception handler.

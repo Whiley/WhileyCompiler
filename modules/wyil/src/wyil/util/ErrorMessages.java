@@ -26,7 +26,8 @@
 package wyil.util;
 
 import wycc.lang.SyntaxError.InternalFailure;
-import wyil.lang.AttributedCodeBlock;
+import wyil.attributes.SourceLocation;
+import wyil.lang.Attribute;
 import wyil.lang.Type;
 
 /**
@@ -179,8 +180,15 @@ public class ErrorMessages {
 	 *            Code.Entry associated with this syntax error.
 	 */
 	public static void syntaxError(String msg, String filename,
-			AttributedCodeBlock.Entry entry) {
-		syntaxError(msg,filename,entry,null);
+			Attribute... attributes) {
+		for(Attribute attr : attributes) {
+			if(attr instanceof SourceLocation) {
+				SourceLocation l = (SourceLocation) attr;
+				throw new wycc.lang.SyntaxError(msg,filename,l.start(),l.end());
+			}
+		}
+		// No source information available.
+		throw new wycc.lang.SyntaxError(msg,filename,0,-1);
 	}
 
 	/**
@@ -195,26 +203,22 @@ public class ErrorMessages {
 	 * @param entry
 	 *            Code.Entry associated with this syntax error.
 	 * @param ex
-	 *            Exception which caused this internal failure.
+	 *            Exception which caused this syntax error.
 	 */
 	public static void syntaxError(String msg, String filename,
-			AttributedCodeBlock.Entry entry, Throwable ex) {
-		int start = -1;
-		int end = -1;
-
-// FIXME: need to do something here!!
-//		SourceLocation attr = (SourceLocation) entry
-//				.attribute(SourceLocation.class);
-//		if (attr != null) {
-//			start = attr.start();
-//			end = attr.end();
-//		}
-
-		throw new InternalFailure(msg, filename, start, end, ex);
+			Throwable ex, Attribute... attributes) {
+		for(Attribute attr : attributes) {
+			if(attr instanceof SourceLocation) {
+				SourceLocation l = (SourceLocation) attr;
+				throw new wycc.lang.SyntaxError(msg,filename,l.start(),l.end());
+			}
+		}
+		// No source information available.
+		throw new wycc.lang.SyntaxError(msg,filename,0,-1,ex);
 	}
 
 	/**
-	 * Helper function for emitting internal failures with appropriate source
+	 * Helper function for emitting a internal failure with appropriate source
 	 * information.
 	 *
 	 * @param msg
@@ -226,15 +230,22 @@ public class ErrorMessages {
 	 *            Code.Entry associated with this internal failure.
 	 */
 	public static void internalFailure(String msg, String filename,
-			AttributedCodeBlock.Entry entry) {
-		internalFailure(msg,filename,entry,null);
+			Attribute... attributes) {
+		for(Attribute attr : attributes) {
+			if(attr instanceof SourceLocation) {
+				SourceLocation l = (SourceLocation) attr;
+				throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,l.start(),l.end());
+			}
+		}
+		// No source information available.
+		throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,0,-1);
 	}
 
 	/**
-	 * Helper function for emitting internal failures with appropriate source
+	 * Helper function for emitting a internal failure with appropriate source
 	 * information.
 	 *
-	 *@param msg
+	 * @param msg
 	 *            Message to report with this internal failure.
 	 * @param filename
 	 *            Filename of enclosing file for entry associated with this
@@ -245,18 +256,14 @@ public class ErrorMessages {
 	 *            Exception which caused this internal failure.
 	 */
 	public static void internalFailure(String msg, String filename,
-			AttributedCodeBlock.Entry entry, Throwable ex) {
-		int start = -1;
-		int end = -1;
-
-// FIXME: need to do something here!!
-//		SourceLocation attr = (SourceLocation) entry
-//				.attribute(SourceLocation.class);
-//		if (attr != null) {
-//			start = attr.start();
-//			end = attr.end();
-//		}
-
-		throw new InternalFailure(msg, filename, start, end, ex);
+			Throwable ex, Attribute... attributes) {
+		for(Attribute attr : attributes) {
+			if(attr instanceof SourceLocation) {
+				SourceLocation l = (SourceLocation) attr;
+				throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,l.start(),l.end());
+			}
+		}
+		// No source information available.
+		throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,0,-1,ex);
 	}
 }

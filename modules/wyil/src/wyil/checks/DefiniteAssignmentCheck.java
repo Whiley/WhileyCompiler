@@ -33,6 +33,7 @@ import wycc.util.Pair;
 import wyfs.lang.Path;
 import wyil.util.*;
 import wyil.util.dfa.*;
+import wyil.attributes.SourceLocation;
 import wyil.lang.*;
 import static wycc.lang.SyntaxError.*;
 import static wyil.lang.CodeBlock.*;
@@ -78,7 +79,7 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public HashSet<Integer> propagate(int[] index, Code code,
+	public HashSet<Integer> propagate(CodeBlock.Index index, Code code,
 			HashSet<Integer> in) {
 		checkUses(index, code, in);
 
@@ -92,36 +93,36 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int[] index,
+	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(CodeBlock.Index index,
 			Codes.If igoto, HashSet<Integer> in) {
 
 		if (!in.contains(igoto.leftOperand) || !in.contains(igoto.rightOperand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
-					rootBlock.getEntry(index));
+					rootBlock.attribute(index,SourceLocation.class));
 		}
 
 		return new Pair(in, in);
 	}
 
 	@Override
-	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int[] index,
+	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(CodeBlock.Index index,
 			Codes.IfIs iftype, HashSet<Integer> in) {
 
 		if (!in.contains(iftype.operand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
-					rootBlock.getEntry(index));
+					rootBlock.attribute(index,SourceLocation.class));
 		}
 
 		return new Pair(in,in);
 	}
 
 	@Override
-	public List<HashSet<Integer>> propagate(int[] index, Codes.Switch sw,
+	public List<HashSet<Integer>> propagate(CodeBlock.Index index, Codes.Switch sw,
 			HashSet<Integer> in) {
 
 		if (!in.contains(sw.operand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
-					rootBlock.getEntry(index));
+					rootBlock.attribute(index,SourceLocation.class));
 		}
 
 		ArrayList<HashSet<Integer>> stores = new ArrayList();
@@ -139,14 +140,14 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public HashSet<Integer> propagate(int[] index, Codes.Loop loop,
+	public HashSet<Integer> propagate(CodeBlock.Index index, Codes.Loop loop,
 			HashSet<Integer> in, List<Codes.TryCatch> handlers) {
 		if (loop instanceof Codes.ForAll) {
 			Codes.ForAll fall = (Codes.ForAll) loop;
 
 			if (!in.contains(fall.sourceOperand)) {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-						filename, rootBlock.getEntry(index));
+						filename, rootBlock.attribute(index,SourceLocation.class));
 			}
 
 			in = new HashSet<Integer>(in);
@@ -169,7 +170,7 @@ public class DefiniteAssignmentCheck extends
 		return r;
 	}
 
-	public void checkUses(int[] index, Code code, HashSet<Integer> in) {
+	public void checkUses(CodeBlock.Index index, Code code, HashSet<Integer> in) {
 		if(code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp a = (Code.AbstractUnaryOp) code;
 			if(a.operand == Codes.NULL_REG || in.contains(a.operand)) {
@@ -185,14 +186,14 @@ public class DefiniteAssignmentCheck extends
 			for(int operand : a.operands()) {
 				if(operand != Codes.NULL_REG && !in.contains(operand)) {
 					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-	                        filename, rootBlock.getEntry(index));
+	                        filename, rootBlock.attribute(index,SourceLocation.class));
 				}
 			}
 			if(code instanceof Codes.Update && !in.contains(a.target())) {
 				// In this case, we are assigning to an index or field.
 				// Therefore, the target register must already be defined.
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-                        filename, rootBlock.getEntry(index));
+                        filename, rootBlock.attribute(index,SourceLocation.class));
 			}
 			return;
 		} else {
@@ -201,7 +202,7 @@ public class DefiniteAssignmentCheck extends
 		}
 
 		syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-                filename, rootBlock.getEntry(index));
+                filename, rootBlock.attribute(index,SourceLocation.class));
 	}
 
 	public int defs(Code code) {

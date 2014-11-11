@@ -31,8 +31,11 @@ import wybs.lang.Builder;
 import wycc.lang.SyntaxError;
 import wycc.lang.Transform;
 import wycc.util.Pair;
+import wyil.attributes.SourceLocation;
 import wyil.lang.*;
+import wyil.lang.CodeBlock.Index;
 import wyil.lang.Codes.*;
+import wyil.util.AttributedCodeBlock;
 import static wyil.util.ErrorMessages.*;
 
 /**
@@ -55,7 +58,7 @@ import static wyil.util.ErrorMessages.*;
  *
  */
 public class ModuleCheck implements Transform<WyilFile> {
-	private String filename;	
+	private String filename;
 
 	public ModuleCheck(Builder builder) {
 
@@ -71,90 +74,10 @@ public class ModuleCheck implements Transform<WyilFile> {
 
 	public void check(WyilFile.FunctionOrMethodDeclaration method) {
 		for (WyilFile.Case c : method.cases()) {
-			checkTryCatchBlocks(c, method);
 			if(method.isFunction()) {
 				checkFunctionPure(c);
 			}
 		}
-	}
-
-	protected void checkTryCatchBlocks(WyilFile.Case c,
-			WyilFile.FunctionOrMethodDeclaration m) {
-		HashMap<String, AttributedCodeBlock.Entry> labelMap = new HashMap<String, AttributedCodeBlock.Entry>();
-		AttributedCodeBlock block = c.body();
-		if (block != null) {
-			for (AttributedCodeBlock.Entry b : block.allEntries()) {
-				if (b.code instanceof Codes.Label) {
-					Label l = (Codes.Label) b.code;
-					labelMap.put(l.label, b);
-				}
-			}
-		}
-		Handler rootHandler = new Handler(m.type().throwsClause());
-		checkTryCatchBlocks(new int[0], block, block, rootHandler, labelMap);
-	}
-
-	protected void checkTryCatchBlocks(int[] index, CodeBlock block,
-			AttributedCodeBlock root, Handler handler,
-			HashMap<String, AttributedCodeBlock.Entry> labelMap) {
-		
-		for (int i = 0; i < block.size(); ++i) {
-			Code code = block.get(i);
-			int[] codeIndex = Arrays.copyOf(index, index.length + 1);
-			codeIndex[index.length] = i;
-
-			try {
-				if (code instanceof TryCatch) {
-					TryCatch tryCatchCode = (TryCatch) code;
-
-					Handler nhandler = new Handler(tryCatchCode.catches,
-							handler);
-					checkTryCatchBlocks(codeIndex, tryCatchCode, root,
-							nhandler, labelMap);
-
-					// now we need to check that every handler is, in fact,
-					// reachable.
-					for (Pair<Type, String> p : tryCatchCode.catches) {
-						if (!nhandler.active.contains(p.first())) {
-							// FIXME: better error message which focuses on the
-							// actual handler is required.
-							syntaxError(errorMessage(UNREACHABLE_CODE),
-									filename, labelMap.get(p.second()));
-						}
-					}
-				} else if (code instanceof CodeBlock) {
-					checkTryCatchBlocks(codeIndex, (CodeBlock) code, root,
-							handler, labelMap);
-				} else {
-					Type ex = thrownException(code);
-					if (ex != Type.T_VOID && !handler.catchException(ex)) {
-						syntaxError(
-								errorMessage(MUST_DECLARE_THROWN_EXCEPTION),
-								filename, root.getEntry(codeIndex));
-					}
-				}
-			} catch (SyntaxError ex) {
-				throw ex;
-			} catch (Throwable ex) {
-				internalFailure(ex.getMessage(), filename,
-						root.getEntry(codeIndex), ex);
-			}
-		}
-	}
-
-	private Type thrownException(Code code) {
-		if(code instanceof Codes.Throw) {
-			Codes.Throw t = (Codes.Throw) code;
-			return t.type;
-		} else if(code instanceof Codes.IndirectInvoke) {
-			Codes.IndirectInvoke i = (Codes.IndirectInvoke) code;
-			return i.type().throwsClause();
-		} else if(code instanceof Codes.Invoke) {
-			Codes.Invoke i = (Codes.Invoke) code;
-			return i.type().throwsClause();
-		}
-
-		return Type.T_VOID;
 	}
 
 	private static class Handler {
@@ -198,18 +121,31 @@ public class ModuleCheck implements Transform<WyilFile> {
 		}
 	}
 
+	/**
+	 * Check a given function is pure. That is all invocations within the
+	 * function are to themselves to pure functions, and no heap memory is used.
+	 *
+	 * @param c
+	 */
 	protected void checkFunctionPure(WyilFile.Case c) {
 		AttributedCodeBlock block = c.body();
+		checkFunctionPure(null,block,block);
+	}
+
+	protected void checkFunctionPure(CodeBlock.Index parent, CodeBlock block, AttributedCodeBlock root) {
 		for (int i = 0; i != block.size(); ++i) {
-			AttributedCodeBlock.Entry stmt = block.getEntry(i);
-			Code code = stmt.code;
+			Code code = block.get(i);
+			CodeBlock.Index index = new CodeBlock.Index(parent,i);
 			if(code instanceof Codes.Invoke && ((Codes.Invoke)code).type() instanceof Type.Method) {
 				// internal message send
-				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, stmt);
+				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, root.attribute(index, SourceLocation.class));
 			} else if(code instanceof Codes.NewObject) {
-				syntaxError(errorMessage(SPAWN_NOT_PERMITTED_IN_FUNCTION), filename, stmt);
+				syntaxError(errorMessage(SPAWN_NOT_PERMITTED_IN_FUNCTION), filename, root.attribute(index, SourceLocation.class));
 			} else if(code instanceof Codes.Dereference){
-				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, stmt);
+				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, root.attribute(index, SourceLocation.class));
+			} else if(code instanceof CodeBlock) {
+				// Recursively check the block
+				checkFunctionPure(index,(CodeBlock) code, root);
 			}
 		}
 	}

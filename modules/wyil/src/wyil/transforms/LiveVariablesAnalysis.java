@@ -33,12 +33,12 @@ import wybs.lang.Builder;
 import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyfs.lang.Path;
-import wyil.lang.AttributedCodeBlock;
 import wyil.lang.Code;
 import wyil.lang.CodeBlock;
 import wyil.lang.Codes;
 import wyil.lang.WyilFile;
 import wyil.lang.Type;
+import wyil.util.AttributedCodeBlock;
 import wyil.util.dfa.*;
 
 /**
@@ -68,7 +68,7 @@ import wyil.util.dfa.*;
  *
  */
 public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAnalysis.Env> implements Transform<WyilFile> {
-	private static final HashMap<int[],Code> rewrites = new HashMap<int[],Code>();
+	private static final HashMap<CodeBlock.Index,Code> rewrites = new HashMap<CodeBlock.Index,Code>();
 
 	/**
 	 * Determines whether constant propagation is enabled or not.
@@ -161,7 +161,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		stores = new HashMap<String,Env>();
 		rewrites.clear();
 		Env environment = lastStore();
-		propagate(new int[] {}, body, environment, Collections.EMPTY_LIST);
+		propagate(null, body, environment, Collections.EMPTY_LIST);
 
 		// At this point, we apply the inserts
 		AttributedCodeBlock nbody = new AttributedCodeBlock();
@@ -181,7 +181,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	}
 
 	@Override
-	public Env propagate(int[] index, Code code, Env environment) {
+	public Env propagate(CodeBlock.Index index, Code code, Env environment) {
 		rewrites.put(index,null);
 		boolean isLive = true;
 		environment = (Env) environment.clone();
@@ -230,7 +230,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	}
 
 	@Override
-	public Env propagate(int[] index, Codes.If code, Env trueEnv,
+	public Env propagate(CodeBlock.Index index, Codes.If code, Env trueEnv,
 			Env falseEnv) {
 		Env r = join(trueEnv, falseEnv);
 
@@ -247,7 +247,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	}
 
 	@Override
-	public Env propagate(int[] index, Codes.IfIs code, Env trueEnv, Env falseEnv) {
+	public Env propagate(CodeBlock.Index index, Codes.IfIs code, Env trueEnv, Env falseEnv) {
 		Env r = join(trueEnv,falseEnv);
 
 		r.add(code.operand);
@@ -256,7 +256,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	}
 
 	@Override
-	public Env propagate(int[] index, Codes.Switch code,
+	public Env propagate(CodeBlock.Index index, Codes.Switch code,
 			List<Env> environments, Env defEnv) {
 		Env environment = defEnv;
 
@@ -269,7 +269,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		return environment;
 	}
 
-	public Env propagate(int[] index, Codes.Loop loop, Env environment,
+	public Env propagate(CodeBlock.Index index, Codes.Loop loop, Env environment,
 			List<Pair<Type, String>> handlers) {
 		rewrites.put(index,null); // to overrule any earlier rewrites
 

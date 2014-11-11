@@ -42,6 +42,7 @@ import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataWriter;
 import static wyil.util.ErrorMessages.internalFailure;
 import wyil.lang.*;
+import wyil.util.AttributedCodeBlock;
 
 /**
  * <p>

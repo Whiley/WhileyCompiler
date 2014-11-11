@@ -28,6 +28,7 @@ package wyil.util;
 import java.util.ArrayList;
 
 import wyil.lang.Attribute;
+import wyil.lang.CodeBlock;
 
 /**
  * Provides a generic implementation of <code>Attribute.Map</code> which can be
@@ -50,12 +51,13 @@ public class AbstractAttributeMap<T extends Attribute> {
 	 *            Location to look for attribute. Cannot be an array of size 0.
 	 * @return
 	 */
-	public T get(int[] location) {
+	public T get(CodeBlock.Index location) {
 		Block<T> blk = root;
 		Entry<T> e = null;
-
-		for(int i = 0; i!=location.length;++i) {
-			int loc = location[i];
+		int[] components = location.toArray();
+		
+		for(int i = 0; i!=components.length;++i) {
+			int loc = components[i];
 
 			if(loc >= blk.entries.size()) {
 				throw new IllegalArgumentException("invalid entry identifier");
@@ -87,12 +89,14 @@ public class AbstractAttributeMap<T extends Attribute> {
 	 *            size 0.
 	 * @return
 	 */
-	public void put(int[] location, T data) {
+	public void put(CodeBlock.Index location, T data) {
 		Block<T> blk = root;
 		Entry<T> e = null;
 
-		for(int i = 0; i!=location.length;++i) {
-			int loc = location[i];
+		int[] components = location.toArray();
+		
+		for(int i = 0; i!=components.length;++i) {
+			int loc = components[i];
 
 			// First, make sure there is enough room for this location!
 			blk.ensureSize(loc+1);
@@ -161,16 +165,5 @@ public class AbstractAttributeMap<T extends Attribute> {
 				print(prefix + "." + i,(Block)e);
 			}
 		}
-	}
-
-	public static void main(String[] args) {
-		// Some simple little test code!
-		AbstractAttributeMap<Attribute> m = new AbstractAttributeMap<Attribute>() {};
-		m.put(new int[]{0},new Attribute() {});
-		m.put(new int[]{0,0},new Attribute() {});
-		m.put(new int[]{0,1},new Attribute() {});
-		m.put(new int[]{1,2},new Attribute() {});
-		print(m.root);
-		System.out.println(m.get(new int[]{0}));
 	}
 }

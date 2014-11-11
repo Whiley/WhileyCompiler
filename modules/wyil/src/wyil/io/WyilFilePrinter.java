@@ -33,6 +33,7 @@ import wycc.lang.Transform;
 import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.WyilFile.*;
+import wyil.util.AttributedCodeBlock;
 
 /**
  * Writes WYIL bytecodes in a textual from to a given file.
@@ -145,7 +146,11 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 	private void write(Case mcase, FunctionOrMethodDeclaration method, PrintWriter out) {
 		writeModifiers(method.modifiers(),out);
 		Type.FunctionOrMethod ft = method.type();
-		out.print(ft.ret() + " ");
+		if(ft instanceof Type.Function) {
+			out.print("function ");
+		} else {
+			out.print("method ");
+		}
 		List<Type> pts = ft.params();
 
 		out.print(method.name() + "(");
@@ -155,8 +160,15 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			}
 			out.print(pts.get(i));
 		}
-		out.println("):");
+		out.print(")");
 
+		if(ft.ret() instanceof Type.Void) {
+			out.println(":");
+		} else {
+			out.println(" -> " + ft.ret() + ":");
+		}
+
+		
 		for(AttributedCodeBlock precondition : mcase.precondition()) {
 			out.println("requires:");
 			write(0,precondition,out);
@@ -168,7 +180,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 
 		if(mcase.body() != null) {
-			out.println("code: ");
+			out.println("body: ");
 			write(0,mcase.body(),out);
 		}
 	}
