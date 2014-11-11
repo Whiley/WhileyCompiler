@@ -3,7 +3,10 @@ import whiley.lang.System
 function pred({int} xs) => (bool b)
 ensures b ==> no { z in xs | z < 0 }:
     //
-    {int} zs = { z | z in xs, z < 0 }
+    {int} zs = {}
+    for y in xs:
+        if y < 0:
+            zs = zs + {y}
     return |zs| == 0
 
 function countOver({int} xs, int y) => int

@@ -3,7 +3,11 @@ import whiley.lang.System
 type fr5nat is (int x) where x >= 0
 
 function g({fr5nat} xs) => {fr5nat}:
-    return { y | y in xs, y > 1 }
+    {fr5nat} ys = {}
+    for y in xs:
+        if y > 1:
+            ys = ys + {y}
+    return ys
 
 function f({fr5nat} x) => string:
     return Any.toString(x)
