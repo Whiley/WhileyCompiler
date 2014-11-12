@@ -41,6 +41,7 @@ import wycc.util.Pair;
 import wycc.util.ResolveError;
 import wycc.util.Triple;
 import wyfs.lang.Path;
+import wyil.attributes.SourceLocationMap;
 import wyil.lang.*;
 import wyil.util.AttributedCodeBlock;
 
@@ -194,7 +195,7 @@ public final class CodeGenerator {
 			// to be translated into bytecodes as well.
 			Environment environment = new Environment();
 			int root = environment.allocate(td.resolvedType.raw());
-			invariant = new AttributedCodeBlock();
+			invariant = new AttributedCodeBlock(new SourceLocationMap());
 
 			addDeclaredVariables(root, td.pattern, td.resolvedType.raw(),
 					environment, invariant);
@@ -234,7 +235,7 @@ public final class CodeGenerator {
 		}
 
 		for (Expr condition : fd.requires) {
-			AttributedCodeBlock block = new AttributedCodeBlock();
+			AttributedCodeBlock block = new AttributedCodeBlock(new SourceLocationMap());
 			String endLab = CodeUtils.freshLabel();
 			generateCondition(endLab, condition, environment, block, fd);
 			block.add(Codes.Fail("precondition not satisfied"),
@@ -263,13 +264,10 @@ public final class CodeGenerator {
 				paramIndex++;
 			}
 
-			AttributedCodeBlock template = new AttributedCodeBlock();
-			addDeclaredVariables(root, fd.ret, fd.resolvedType().ret().raw(),
-					postEnv, template);
-
 			for (Expr condition : fd.ensures) {
-				AttributedCodeBlock block = new AttributedCodeBlock(
-						template);
+				AttributedCodeBlock block = new AttributedCodeBlock(new SourceLocationMap());
+				addDeclaredVariables(root, fd.ret, fd.resolvedType().ret().raw(),
+						postEnv, block);
 				String endLab = CodeUtils.freshLabel();
 				generateCondition(endLab, condition, new Environment(postEnv),
 						block, fd);
@@ -284,7 +282,7 @@ public final class CodeGenerator {
 		// Generate body
 		// ==================================================================
 
-		AttributedCodeBlock body = new AttributedCodeBlock();
+		AttributedCodeBlock body = new AttributedCodeBlock(new SourceLocationMap());
 		for (Stmt s : fd.statements) {
 			generate(s, environment, body, fd);
 		}
@@ -1856,7 +1854,7 @@ public final class CodeGenerator {
 		}
 
 		// Generate body based on current environment
-		AttributedCodeBlock body = new AttributedCodeBlock();
+		AttributedCodeBlock body = new AttributedCodeBlock(new SourceLocationMap());
 		if (tfm.ret() != Type.T_VOID) {
 			int target = generate(expr.body, benv, body, context);
 			body.add(Codes.Return(tfm.ret(), target), attributes(expr));
@@ -2388,9 +2386,8 @@ public final class CodeGenerator {
 		ArrayList<wyil.lang.Attribute> attrs = new ArrayList<wyil.lang.Attribute>();
 		Attribute.Source s = elem.attribute(Attribute.Source.class);
 		if (s != null) {
-			// TODO: source location
-			// attrs.add(new wyil.attributes.SourceLocation(sourceFile, start,
-			// end);
+			// TODO: need to identify the file here
+			attrs.add(new wyil.attributes.SourceLocation(0, s.start, s.end));
 		}
 		return attrs;
 	}

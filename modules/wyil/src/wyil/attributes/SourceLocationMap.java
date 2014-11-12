@@ -26,6 +26,7 @@
 package wyil.attributes;
 
 import wyil.lang.Attribute;
+import wyil.lang.CodeBlock;
 import wyil.util.AbstractAttributeMap;
 
 /**
@@ -52,5 +53,4 @@ public class SourceLocationMap extends AbstractAttributeMap<SourceLocation>
 	public Class<? extends Attribute> type() {
 		return SourceLocation.class;
 	}
-
 }

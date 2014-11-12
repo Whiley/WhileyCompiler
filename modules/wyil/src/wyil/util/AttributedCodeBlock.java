@@ -37,54 +37,75 @@ public class AttributedCodeBlock extends CodeBlock {
 	 * The map from attribute kinds to the intances of Attribute.Map responsible
 	 * for storing them.
 	 */
-	private Map<Class<? extends Attribute>,Attribute.Map<? extends Attribute>> attributes;
+	private Map<Class<Attribute>,Attribute.Map<Attribute>> attributes;
 
 	/**
 	 * The ID of this block. For root blocks, this is empty. However, for nested
 	 * blocks, this is the ID of the enclosing bytecode instruction.
 	 */
-	private final int[] ID;
+	private final CodeBlock.Index ID;
 
 	public AttributedCodeBlock(Attribute.Map<? extends Attribute>... attributeMaps) {
-		this.attributes = new HashMap<Class<? extends Attribute>, wyil.lang.Attribute.Map<? extends Attribute>>();
-		for (Attribute.Map<?> map : attributeMaps) {
+		this.attributes = new HashMap<Class<Attribute>, wyil.lang.Attribute.Map<Attribute>>();
+		for (Attribute.Map map : attributeMaps) {
 			this.attributes.put(map.type(), map);
 		}
-		this.ID = new int[0];
+		this.ID = null;
 	}
 
-	public AttributedCodeBlock(Collection<Attribute.Map<? extends Attribute>> attributeMaps) {
-		this.attributes = new HashMap<Class<? extends Attribute>, wyil.lang.Attribute.Map<? extends Attribute>>();
-		for (Attribute.Map<?> map : attributeMaps) {
+	public AttributedCodeBlock(Collection<? extends Attribute.Map<Attribute>> attributeMaps) {
+		this.attributes = new HashMap<Class<Attribute>, wyil.lang.Attribute.Map<Attribute>>();
+		for (Attribute.Map map : attributeMaps) {
 			this.attributes.put(map.type(), map);
 		}
-		this.ID = new int[0];
+		this.ID = null;
 	}
 
 	public AttributedCodeBlock(Collection<Code> bytecodes,
 			Attribute.Map<? extends Attribute>... attributeMaps) {
 		super(bytecodes);
-		this.attributes = new HashMap<Class<? extends Attribute>, wyil.lang.Attribute.Map<? extends Attribute>>();
-		for (Attribute.Map<?> map : attributeMaps) {
+		this.attributes = new HashMap<Class<Attribute>, wyil.lang.Attribute.Map<Attribute>>();
+		for (Attribute.Map map : attributeMaps) {
 			this.attributes.put(map.type(), map);
 		}
-		this.ID = new int[0];
+		this.ID = null;
 	}
-
-	public AttributedCodeBlock(AttributedCodeBlock block) {
+	
+	/**
+	 * This constructor is used when creating a subblock only. They key is that
+	 * updates to the attributes of this block are visible to the enclosing
+	 * block as well.
+	 * 
+	 * @param index
+	 * @param block
+	 */
+	private AttributedCodeBlock(CodeBlock.Index index, AttributedCodeBlock block) {
 		super(block.bytecodes);
-		this.attributes = new HashMap<Class<? extends Attribute>, wyil.lang.Attribute.Map<? extends Attribute>>();
+		this.attributes = new HashMap<Class<Attribute>, wyil.lang.Attribute.Map<Attribute>>();
 		this.attributes.putAll(block.attributes);
-		this.ID = block.ID;
+		this.ID = index;
 	}
 
 	// ===================================================================
 	// Get Methods
 	// ===================================================================
 
+	/**
+	 * Return the attribute of a given kind associated with a bytecode. Such an
+	 * attribute may not exist, in which case null is returned.
+	 * 
+	 * @param id
+	 * @param kind
+	 * @return
+	 */
 	public <T extends Attribute> T attribute(CodeBlock.Index id, Class<T> kind) {
 		Attribute.Map<T> map = (Attribute.Map<T>) attributes.get(kind);
-		return map.get(id);
+		if(map != null) {
+			return map.get(id);
+		} else {
+			// no map of this kind exists.
+			return null;
+		}
 	}
 
 	public List<Attribute> attributes(Index index) {
@@ -114,10 +135,8 @@ public class AttributedCodeBlock extends CodeBlock {
 	 * @return
 	 */
 	public AttributedCodeBlock createSubBlock() {
-		AttributedCodeBlock r = new AttributedCodeBlock(attributes.values());
-		int[] nid = Arrays.copyOf(ID, ID.length+1);
-		nid[ID.length] = bytecodes.size();
-		return r;
+		CodeBlock.Index index = new CodeBlock.Index(ID,0); 
+		return new AttributedCodeBlock(index,this);
 	}
 
 	// ===================================================================
@@ -125,30 +144,32 @@ public class AttributedCodeBlock extends CodeBlock {
 	// ===================================================================
 
 	/**
-	 * Append a bytecode onto the end of this block. It is assumed that the
-	 * bytecode employs the same environment as this block.
-	 *
+	 * Append a bytecode onto the end of this block, along with any attributes
+	 * to be associated with that bytecode.
+	 * 
 	 * @param code
 	 *            --- bytecode to append
 	 * @param attributes
 	 *            --- attributes associated with bytecode.
 	 */
 	public boolean add(Code code, Attribute... attributes) {
-		// TODO: actually add the attributes
+		CodeBlock.Index index = new CodeBlock.Index(ID,size());
+		addAll(index,attributes);
 		return add(code);
 	}
 
 	/**
-	 * Append a bytecode onto the end of this block. It is assumed that the
-	 * bytecode employs the same environment as this block.
-	 *
+	 * Append a bytecode onto the end of this block, along with any attributes
+	 * to be associated with that bytecode.
+	 * 
 	 * @param code
 	 *            --- bytecode to append
 	 * @param attributes
 	 *            --- attributes associated with bytecode.
 	 */
 	public boolean add(Code code, Collection<Attribute> attributes) {
-		// TODO: actually add the attributes
+		CodeBlock.Index index = new CodeBlock.Index(ID, size());
+		addAll(index,attributes);	
 		return add(code);
 	}
 
@@ -227,5 +248,36 @@ public class AttributedCodeBlock extends CodeBlock {
 	public void set(int index, Code code, Collection<Attribute> attributes) {
 		// TODO: actually update the attributes
 		set(index,code);
+	}
+	
+	// ===================================================================
+	// Helper Methods
+	// ===================================================================
+	private void addAll(CodeBlock.Index index, Collection<Attribute> attributes) {
+		// Go through and add each attribute at the given index.
+		for (Attribute attribute : attributes) {
+			Attribute.Map<Attribute> map = this.attributes.get(attribute
+					.getClass());
+			// First, check whether an attribute map for this kind of attribute
+			// exists.
+			if (map != null) {
+				// Yes, so add it.
+				map.put(index, attribute);
+			}
+		}
+	}
+	
+	private void addAll(CodeBlock.Index index, Attribute... attributes) {
+		// Go through and add each attribute at the given index.
+		for (Attribute attribute : attributes) {
+			Attribute.Map<Attribute> map = this.attributes.get(attribute
+					.getClass());
+			// First, check whether an attribute map for this kind of attribute
+			// exists.
+			if (map != null) {
+				// Yes, so add it.
+				map.put(index, attribute);
+			}
+		}
 	}
 }

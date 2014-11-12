@@ -31,6 +31,7 @@ import java.util.*;
 import wybs.lang.Build;
 import wybs.lang.Builder;
 import wyfs.lang.Path;
+import wyil.attributes.SourceLocationMap;
 import wyil.builders.VcBranch.AssertOrAssumeScope;
 import wyil.lang.*;
 import wyil.util.AttributedCodeBlock;
@@ -156,7 +157,7 @@ public class Wyil2WyalBuilder implements Builder {
 		List<AttributedCodeBlock> requires = methodCase.precondition();
 
 		if (requires.size() > 0) {
-			AttributedCodeBlock block = new AttributedCodeBlock();
+			AttributedCodeBlock block = new AttributedCodeBlock(new SourceLocationMap());
 			for(AttributedCodeBlock precondition : requires) {
 				block.addAll(precondition);
 			}
