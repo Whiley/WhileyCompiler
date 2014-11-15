@@ -25,8 +25,6 @@
 
 package whiley.lang
 
-import * from whiley.lang.Errors
-
 import u8 from whiley.lang.Int
 import i8 from whiley.lang.Int
 

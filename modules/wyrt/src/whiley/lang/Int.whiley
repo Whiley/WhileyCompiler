@@ -25,8 +25,6 @@
 
 package whiley.lang
 
-import * from whiley.lang.Errors
-
 /**
  * Represents all signed integers representable in 8bits
  * of space in the two's complement representation.
@@ -153,8 +151,7 @@ public function toSignedByte(i8 v) => byte:
     return Int.toUnsignedByte(v)
 
 // parse a string representation of an integer value
-public function parse(string input) => int
-    throws SyntaxError:
+public function parse(string input) => int|null:
     //
     // first, check for negative number
     int start = 0
@@ -171,7 +168,7 @@ public function parse(string input) => int
         char c = input[i]
         r = r * 10
         if !Char.isDigit(c):
-            throw SyntaxError("invalid number string",i,i)
+            return null
         r = r + ((int) c - '0')
     // done
     if negative:
