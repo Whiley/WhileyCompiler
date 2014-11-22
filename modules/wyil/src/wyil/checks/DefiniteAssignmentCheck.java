@@ -46,10 +46,9 @@ import static wyil.util.ErrorMessages.*;
  * </p>
  *
  * <pre>
- * int f() {
- * 	int z;
- * 	return z + 1;
- * }
+ * function f() => int:
+ * 	int z
+ * 	return z + 1
  * </pre>
  *
  * <p>
