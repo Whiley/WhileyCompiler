@@ -59,8 +59,8 @@ public class AbstractAttributeMap<T extends Attribute> {
 		for(int i = 0; i!=components.length;++i) {
 			int loc = components[i];
 
-			if(loc >= blk.entries.size()) {
-				throw new IllegalArgumentException("invalid entry identifier");
+			if(loc >= blk.entries.size()) {	
+				return null;
 			}
 
 			// Second, examine the entry at the specified location.
@@ -71,7 +71,7 @@ public class AbstractAttributeMap<T extends Attribute> {
 			} else if(e == null) {
 				// This indicate an invalid location identifier because the
 				// location exists, but is not of the right kind.
-				throw new IllegalArgumentException("invalid entry identifier");
+				return null;
 			}
 		}
 
