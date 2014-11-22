@@ -2,7 +2,7 @@
   <import file="../../config.xml"/>
 
   <target name="compile-wyjc">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true" classpath="../wyrl/src:../wyil/src:../wyc/src:../wybs/src/:../../${JASM_JAR}">
+    <javac debug="true" debuglevel="vars,lines,source" source="1.7" includeantruntime="true" classpath="../wyrl/src:../wyil/src:../wyc/src:../wybs/src/:../../${JASM_JAR}">
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="wyjc/testing/**"/>
