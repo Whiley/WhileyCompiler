@@ -210,7 +210,7 @@ public class ErrorMessages {
 		for(Attribute attr : attributes) {
 			if(attr instanceof SourceLocation) {
 				SourceLocation l = (SourceLocation) attr;
-				throw new wycc.lang.SyntaxError(msg,filename,l.start(),l.end());
+				throw new wycc.lang.SyntaxError(msg,filename,l.start(),l.end(),ex);
 			}
 		}
 		// No source information available.
@@ -260,7 +260,7 @@ public class ErrorMessages {
 		for(Attribute attr : attributes) {
 			if(attr instanceof SourceLocation) {
 				SourceLocation l = (SourceLocation) attr;
-				throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,l.start(),l.end());
+				throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,l.start(),l.end(),ex);
 			}
 		}
 		// No source information available.
