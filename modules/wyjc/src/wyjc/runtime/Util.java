@@ -194,20 +194,12 @@ public class Util {
 		return lhs.substring(start,end);
 	}
 
-	public static String set(final String lhs, BigInteger index, char value) {
+	public static String set(final String lhs, BigInteger index, WyChar c) {
 		int idx = index.intValue();
 		// hmmm, not exactly efficient!
 		StringBuilder sb = new StringBuilder(lhs);
-		sb.setCharAt(idx, value);
+		sb.setCharAt(idx, c.value());
 		return sb.toString();
-	}
-
-	public static byte leftshift(byte b1, BigInteger b2) {
-		return (byte) ((b1&0xFF) << b2.intValue());
-	}
-
-	public static byte rightshift(byte b1, BigInteger b2) {
-		return (byte) ((b1&0xFF) >>> b2.intValue());
 	}
 
 	public static WyList range(BigInteger start, BigInteger end) {
@@ -261,7 +253,7 @@ public class Util {
 	public static WyList str2cl(String str) {
 		WyList r = new WyList(str.length());
 		for(int i=0;i!=str.length();++i) {
-			r.add(str.charAt(i));
+			r.add(WyChar.valueOf(str.charAt(i)));
 		}
 		return r;
 	}
@@ -287,7 +279,7 @@ public class Util {
 	public static WySet str2cs(String str) {
 		WySet r = new WySet();
 		for(int i=0;i!=str.length();++i) {
-			r.add(str.charAt(i));
+			r.add(WyChar.valueOf(str.charAt(i)));
 		}
 		return r;
 	}

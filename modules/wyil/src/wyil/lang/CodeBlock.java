@@ -102,13 +102,13 @@ public class CodeBlock implements Iterable<Code> {
 	}
 
 	/**
-	 * Returns a reference to the internal bytecode array. Note that modifying
-	 * this reference will modify the underlying array.
+	 * Returns a reference to the internal bytecode array. Note that this list
+	 * is not intended to be modified.
 	 *
 	 * @return
 	 */
 	public List<Code> bytecodes() {
-		return bytecodes;
+		return Collections.unmodifiableList(bytecodes);
 	}
 
 	// ===================================================================

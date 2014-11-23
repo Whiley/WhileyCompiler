@@ -522,11 +522,12 @@ public final class WyilFileReader {
 	 *            The map of offsets to labels being inserted.
 	 * @return
 	 */
-	private int insertLabels(int offset, List<Code> bytecodes,
+	private int insertLabels(int offset, ArrayList<Code> bytecodes,
 			HashMap<Integer, Codes.Label> labels) {
 		// NOTE: we must go up to nCodes+1 because of the possibility of a label
 		// occurring after the very last bytecode instruction.
 		for (int i = 0; i != bytecodes.size(); ++i) {
+			int j = i; // save insertion point for later
 			Code bytecode = bytecodes.get(i);
 
 			// First, check whether there is a label to insert
@@ -535,12 +536,39 @@ public final class WyilFileReader {
 			
 			// Second, check whether we have a nested block which needs to be
 			// explored.
-			if (bytecode instanceof CodeBlock) {
-				CodeBlock block = (CodeBlock) bytecode;
-				offset = insertLabels(offset, block.bytecodes(), labels);
+			if (bytecode instanceof Code.Compound) {
+				Code.Compound block = (Code.Compound) bytecode;
+				// At this point, we must clone the given bytecode
+				ArrayList<Code> blkBytecodes = new ArrayList<Code>(block.bytecodes());
+				offset = insertLabels(offset, blkBytecodes, labels);
+				bytecodes.set(j,updateBytecodes(block,blkBytecodes));
 			}
 		}
 		return offset;
+	}
+	
+	/**
+	 * This method reconstructs a given compound bytecode with a new list of
+	 * bytecodes representing its body.
+	 * 
+	 * @param compound
+	 *            The compound bytecode being updated.
+	 * @param bytecodes
+	 *            The list of new bytecodes representing its body. This list may
+	 *            be identical to its current body.
+	 * @return
+	 */
+	private Code.Compound updateBytecodes(Code.Compound compound, ArrayList<Code> bytecodes) {
+		if(compound instanceof Codes.Loop) {
+			Codes.Loop l = (Codes.Loop) compound;
+			return Codes.Loop(l.modifiedOperands, bytecodes);
+		} else if(compound instanceof Codes.ForAll) {
+			Codes.ForAll l = (Codes.ForAll) compound;
+			return Codes.ForAll(l.type, l.sourceOperand, l.indexOperand,
+					l.modifiedOperands, bytecodes);
+		} else {
+			throw new IllegalArgumentException("Unknown compound bytecode encountered: " + compound.getClass().getName());
+		}
 	}
 
 	/**
