@@ -176,12 +176,12 @@ public class Util {
 		return lhs + rhs;
 	}
 
-	public static String append(final String lhs, final char rhs) {
-		return lhs + rhs;
+	public static String append(final String lhs, final WyChar rhs) {
+		return lhs + rhs.value();
 	}
 
-	public static String append(final char lhs, final String rhs) {
-		return lhs + rhs;
+	public static String append(final WyChar lhs, final String rhs) {
+		return lhs.value() + rhs;
 	}
 
 	public static BigInteger stringlength(final String lhs) {

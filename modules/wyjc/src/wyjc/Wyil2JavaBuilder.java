@@ -663,10 +663,10 @@ public class Wyil2JavaBuilder implements Builder {
 			Codes.StringLVal l = (Codes.StringLVal) lv;
 			// assert: level must be zero here
 			bytecodes.add(new Bytecode.Load(l.indexOperand, WHILEYINT));
-			bytecodes.add(new Bytecode.Load(code.result(), T_CHAR));
+			bytecodes.add(new Bytecode.Load(code.result(), WHILEYCHAR));
 
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,
-					JAVA_LANG_STRING, WHILEYINT, T_CHAR);
+					JAVA_LANG_STRING, WHILEYINT, WHILEYCHAR);
 			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "set", ftype,
 					Bytecode.InvokeMode.STATIC));
 		} else if(lv instanceof Codes.MapLVal) {
@@ -1359,10 +1359,10 @@ public class Wyil2JavaBuilder implements Builder {
 			break;
 		case LEFT_APPEND:
 			leftType = JAVA_LANG_STRING;
-			rightType = T_CHAR;
+			rightType = WHILEYCHAR;
 			break;
 		case RIGHT_APPEND:
-			leftType = T_CHAR;
+			leftType = WHILEYCHAR;
 			rightType = JAVA_LANG_STRING;
 			break;
 		default:

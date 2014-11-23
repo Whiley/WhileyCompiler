@@ -9,7 +9,7 @@
       <exclude name="*/**/package-info.java"/>
     </javac>
     <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src:../wyrl/src:../wycs/src:../wybs/src/:../../${JASM_JAR}"/>
-    <!-- <wyjc verbose="false" wyildir="../wyrt/src" classdir="src" includes="whiley/**/*.wyil"/> -->
+    <wyjc verbose="false" wyildir="../wyrt/src" classdir="src" includes="whiley/**/*.wyil"/>
   </target>
 
   <target name="build" depends="compile-wyjc">
