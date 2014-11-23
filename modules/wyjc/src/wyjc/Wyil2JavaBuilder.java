@@ -436,7 +436,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 */
 	private void translate(AttributedCodeBlock blk, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-
+		rootBlock = blk;
 		translate(null, blk, freeSlot, bytecodes);
 	}
 
@@ -1049,8 +1049,9 @@ public class Wyil2JavaBuilder implements Builder {
 		// Allocate header label for loop
 		String loopHeader = freshLabel();
 		bytecodes.add(new Bytecode.Label(loopHeader));
-		// Translate body of loop
-		translate(index, c, freeSlot, bytecodes);
+		// Translate body of loop. The cast is required to ensure correct method
+		// is called. 
+		translate(index, (CodeBlock) c, freeSlot, bytecodes);
 		// Terminate loop by branching back to head of loop
 		bytecodes.add(new Bytecode.Goto(loopHeader));
 	}
@@ -1079,8 +1080,9 @@ public class Wyil2JavaBuilder implements Builder {
 				Bytecode.InvokeMode.INTERFACE));
 		addReadConversion(elementType, bytecodes);
 		bytecodes.add(new Bytecode.Store(c.indexOperand, convertType(elementType)));
-		// Translate body of loop
-		translate(index, c, freeSlot + 1, bytecodes);
+		// Translate body of loop. The cast is required to ensure correct method
+		// is called.
+		translate(index, (CodeBlock) c, freeSlot + 1, bytecodes);
 		// Terminate loop by branching back to head of loop
 		bytecodes.add(new Bytecode.Goto(loopHeader));
 		bytecodes.add(new Bytecode.Label(loopExit));

@@ -81,7 +81,9 @@ public class AttributedCodeBlock extends CodeBlock {
 	 * @param block
 	 */
 	private AttributedCodeBlock(CodeBlock.Index index, AttributedCodeBlock block) {
-		super(block.bytecodes);
+		// NOTE: do not call with block.bytecodes since this is *only* used for
+		// creating a subblock.
+		super();
 		this.attributes = new HashMap<Class<Attribute>, wyil.lang.Attribute.Map<Attribute>>();
 		this.attributes.putAll(block.attributes);
 		this.ID = index;
@@ -170,7 +172,6 @@ public class AttributedCodeBlock extends CodeBlock {
 	 */
 	public boolean add(Code code, Collection<Attribute> attributes) {
 		CodeBlock.Index index = new CodeBlock.Index(ID, size());
-		System.out.println("ADDING @ " + index);
 		addAll(index,attributes);	
 		return add(code);
 	}
