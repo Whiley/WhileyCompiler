@@ -825,6 +825,7 @@ public final class CodeGenerator {
 	 */
 	private void generate(Stmt.IfElse s, Environment environment,
 			AttributedCodeBlock codes, Context context) {
+		
 		String falseLab = CodeUtils.freshLabel();
 		String exitLab = s.falseBranch.isEmpty() ? falseLab : CodeUtils
 				.freshLabel();

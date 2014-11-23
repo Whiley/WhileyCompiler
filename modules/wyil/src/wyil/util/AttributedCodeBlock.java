@@ -40,8 +40,9 @@ public class AttributedCodeBlock extends CodeBlock {
 	private Map<Class<Attribute>,Attribute.Map<Attribute>> attributes;
 
 	/**
-	 * The ID of this block. For root blocks, this is empty. However, for nested
-	 * blocks, this is the ID of the enclosing bytecode instruction.
+	 * The ID of this block. For root blocks, this is empty (i.e. null).
+	 * However, for nested blocks, this is the ID of the enclosing bytecode
+	 * instruction.
 	 */
 	private final CodeBlock.Index ID;
 
@@ -135,7 +136,7 @@ public class AttributedCodeBlock extends CodeBlock {
 	 * @return
 	 */
 	public AttributedCodeBlock createSubBlock() {
-		CodeBlock.Index index = new CodeBlock.Index(ID,0); 
+		CodeBlock.Index index = new CodeBlock.Index(ID,size());
 		return new AttributedCodeBlock(index,this);
 	}
 
@@ -169,6 +170,7 @@ public class AttributedCodeBlock extends CodeBlock {
 	 */
 	public boolean add(Code code, Collection<Attribute> attributes) {
 		CodeBlock.Index index = new CodeBlock.Index(ID, size());
+		System.out.println("ADDING @ " + index);
 		addAll(index,attributes);	
 		return add(code);
 	}
@@ -200,6 +202,7 @@ public class AttributedCodeBlock extends CodeBlock {
 	public void add(int index, Code code, Attribute... attributes) {
 		// TODO: actually add the attributes
 		add(index,code);
+		throw new RuntimeException("implement me!");
 	}
 
 	/**
@@ -214,6 +217,7 @@ public class AttributedCodeBlock extends CodeBlock {
 	public void add(int index, Code code, Collection<Attribute> attributes) {
 		// TODO: actually add the attributes
 		add(index,code);
+		throw new RuntimeException("implement me!");
 	}
 
 	// ===================================================================
@@ -233,6 +237,7 @@ public class AttributedCodeBlock extends CodeBlock {
 	public void set(int index, Code code, Attribute... attributes) {
 		// TODO: actually update the attributes
 		set(index,code);
+		throw new RuntimeException("implement me!");
 	}
 
 	/**
@@ -248,6 +253,7 @@ public class AttributedCodeBlock extends CodeBlock {
 	public void set(int index, Code code, Collection<Attribute> attributes) {
 		// TODO: actually update the attributes
 		set(index,code);
+		throw new RuntimeException("implement me!");
 	}
 	
 	// ===================================================================
