@@ -1713,7 +1713,8 @@ public class FlowTypeChecker {
 		Type srcType;
 
 		if (lhs_str || rhs_str) {
-
+			checkIsSubtype(Type.T_STRING, lhs, context);
+			checkIsSubtype(Type.T_STRING, rhs, context);
 			switch (expr.op) {
 			case LISTAPPEND:
 				expr.op = Expr.BOp.STRINGAPPEND;
@@ -1725,7 +1726,7 @@ public class FlowTypeChecker {
 			}
 
 			srcType = Type.T_STRING;
-		} else if (lhs_list && rhs_list) {
+		} else if (lhs_list || rhs_list) {
 			checkIsSubtype(Type.T_LIST_ANY, lhs, context);
 			checkIsSubtype(Type.T_LIST_ANY, rhs, context);
 			Type.EffectiveList lel = (Type.EffectiveList) lhsRawType;

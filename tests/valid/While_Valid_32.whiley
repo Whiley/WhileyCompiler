@@ -18,4 +18,4 @@ function loop2(int p, int q) => (int r)
     return qq
 
 method main(System.Console sys):
-    sys.out.println("p = " ++ loop2(5,10))
+    sys.out.println("p = " ++ Int.toString(loop2(5,10)))

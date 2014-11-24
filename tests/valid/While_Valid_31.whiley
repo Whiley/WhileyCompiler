@@ -11,5 +11,5 @@ ensures r == |items| || items[r] == ch:
 
 method main(System.Console console):
     for c in "hello world":
-        console.out.println("indexOf(\"hello world\",'" ++ c ++ "') = " ++ indexOf("hello world",c))
+        console.out.println("indexOf(\"hello world\",'" ++ Char.toString(c) ++ "') = " ++ Int.toString(indexOf("hello world",c)))
 
