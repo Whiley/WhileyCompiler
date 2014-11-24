@@ -496,7 +496,6 @@ public final class WyilFileReader {
 		int nCodes = input.read_uv();
 		HashMap<Integer, Codes.Label> labels = new HashMap<Integer, Codes.Label>();
 		ArrayList<Code> bytecodes = readCodeBlock(0, nCodes, labels);
-
 		insertLabels(0,bytecodes,labels);
 
 		input.pad_u8(); // necessary
@@ -532,7 +531,7 @@ public final class WyilFileReader {
 
 			// First, check whether there is a label to insert
 			Codes.Label label = labels.get(offset++);
-			if (label != null) { bytecodes.add(i, label); }
+			if (label != null) { bytecodes.add(i++, label); }
 			
 			// Second, check whether we have a nested block which needs to be
 			// explored.

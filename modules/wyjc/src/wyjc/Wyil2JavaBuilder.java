@@ -48,6 +48,7 @@ import jasm.attributes.LineNumberTable;
 import jasm.attributes.SourceFile;
 import jasm.lang.*;
 import jasm.lang.Modifier;
+import jasm.verifier.ClassFileVerifier;
 import wyrl.io.JavaIdentifierOutputStream;
 import static jasm.lang.JvmTypes.*;
 
@@ -143,7 +144,10 @@ public class Wyil2JavaBuilder implements Builder {
 
 			// eliminate any dead code that was introduced.
 			// new DeadCodeElimination().apply(file);
-
+			
+			// Verify the generated file being written
+			new ClassFileVerifier().apply(contents);
+			
 			// Write class file into its destination
 			df.write(contents);
 
