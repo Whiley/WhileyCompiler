@@ -10,4 +10,4 @@ function f(tnat tup) => nat:
 
 public method main(System.Console console) => void:
     (int,int) x = 3, 5
-    console.out.println("GOT: " ++ f(x))
+    console.out.println("GOT: " ++ Int.toString(f(x)))

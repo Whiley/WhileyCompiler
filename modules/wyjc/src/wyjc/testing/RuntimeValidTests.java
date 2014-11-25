@@ -2270,66 +2270,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void SetComprehension_Valid_1() {
-		runTest("SetComprehension_Valid_1");
-	}
-
-	@Test
-	public void SetComprehension_Valid_10() {
-		runTest("SetComprehension_Valid_10");
-	}
-
-	@Test
-	public void SetComprehension_Valid_11() {
-		runTest("SetComprehension_Valid_11");
-	}
-
-	@Test
-	public void SetComprehension_Valid_12() {
-		runTest("SetComprehension_Valid_12");
-	}
-
-	@Test
-	public void SetComprehension_Valid_2() {
-		runTest("SetComprehension_Valid_2");
-	}
-
-	@Test
-	public void SetComprehension_Valid_3() {
-		runTest("SetComprehension_Valid_3");
-	}
-
-	@Test
-	public void SetComprehension_Valid_4() {
-		runTest("SetComprehension_Valid_4");
-	}
-
-	@Test
-	public void SetComprehension_Valid_5() {
-		runTest("SetComprehension_Valid_5");
-	}
-
-	@Test
-	public void SetComprehension_Valid_6() {
-		runTest("SetComprehension_Valid_6");
-	}
-
-	@Test
-	public void SetComprehension_Valid_7() {
-		runTest("SetComprehension_Valid_7");
-	}
-
-	@Test
-	public void SetComprehension_Valid_8() {
-		runTest("SetComprehension_Valid_8");
-	}
-
-	@Test
-	public void SetComprehension_Valid_9() {
-		runTest("SetComprehension_Valid_9");
-	}
-
-	@Test
 	public void SetConversion_Valid_1() {
 		runTest("SetConversion_Valid_1");
 	}
@@ -2732,26 +2672,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void Syntax_Valid_1() {
 		runTest("Syntax_Valid_1");
-	}
-
-	@Test
-	public void TryCatch_Valid_1() {
-		runTest("TryCatch_Valid_1");
-	}
-
-	@Ignore("???") @Test
-	public void TryCatch_Valid_2() {
-		runTest("TryCatch_Valid_2");
-	}
-
-	@Ignore("???") @Test
-	public void TryCatch_Valid_3() {
-		runTest("TryCatch_Valid_3");
-	}
-
-	@Ignore("???") @Test
-	public void TryCatch_Valid_4() {
-		runTest("TryCatch_Valid_4");
 	}
 
 	@Test

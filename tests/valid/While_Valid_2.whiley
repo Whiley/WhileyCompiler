@@ -40,4 +40,4 @@ method main(System.Console console):
     [int] list = [3,5,6,9]
     console.out.println(list)
     for i in 0 .. 10:
-        console.out.println(i ++ " : " ++ binarySearch(list,i))
+        console.out.println(Int.toString(i) ++ " : " ++ Any.toString(binarySearch(list,i)))

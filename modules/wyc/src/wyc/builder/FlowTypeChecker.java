@@ -1713,8 +1713,11 @@ public class FlowTypeChecker {
 		Type srcType;
 
 		if (lhs_str || rhs_str) {
-			checkIsSubtype(Type.T_STRING, lhs, context);
-			checkIsSubtype(Type.T_STRING, rhs, context);
+			if(!lhs_str) {
+				checkIsSubtype(Type.T_CHAR, lhs, context);
+			} else if(!rhs_str) {
+				checkIsSubtype(Type.T_CHAR, rhs, context);
+			}
 			switch (expr.op) {
 			case LISTAPPEND:
 				expr.op = Expr.BOp.STRINGAPPEND;

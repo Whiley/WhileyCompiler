@@ -147,7 +147,7 @@ public class Wyil2JavaBuilder implements Builder {
 			
 			// Verify the generated file being written
 			// FIXME: put back!
-			// new ClassFileVerifier().apply(contents);
+			new ClassFileVerifier().apply(contents);
 			
 			// Write class file into its destination
 			df.write(contents);
@@ -2189,12 +2189,19 @@ public class Wyil2JavaBuilder implements Builder {
 
 	private void buildCoercion(Type.Char fromType, Type toType,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		Type glb = Type.intersect(Type.T_REAL, toType);
-		if(glb == Type.T_REAL) {
-			// coercion required!
-			JvmType.Function ftype = new JvmType.Function(WHILEYRAT,WHILEYINT);
+		if(toType == Type.T_REAL) {
+			// coercion required!			
+			JvmType.Function ftype = new JvmType.Function(T_CHAR);
+			bytecodes.add(new Bytecode.Invoke(WHILEYCHAR,"value",ftype,Bytecode.InvokeMode.STATIC));
+			ftype = new JvmType.Function(WHILEYRAT,T_INT);
 			bytecodes.add(new Bytecode.Invoke(WHILEYRAT,"valueOf",ftype,Bytecode.InvokeMode.STATIC));
-		} 		
+		} else if(toType == Type.T_INT) {
+			// coercion required!
+			JvmType.Function ftype = new JvmType.Function(T_CHAR);
+			bytecodes.add(new Bytecode.Invoke(WHILEYCHAR,"value",ftype,Bytecode.InvokeMode.STATIC));
+			ftype = new JvmType.Function(WHILEYINT,T_INT);
+			bytecodes.add(new Bytecode.Invoke(WHILEYINT,"valueOf",ftype,Bytecode.InvokeMode.STATIC));
+		}
 	}
 
 	private void buildCoercion(Type.Strung fromType, Type.List toType,

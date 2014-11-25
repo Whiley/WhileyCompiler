@@ -483,7 +483,7 @@ public class Util {
 			case K_BYTE:
 				return obj instanceof Byte;
 			case K_CHAR:
-				return obj instanceof Character;
+				return obj instanceof WyChar;
 			case K_INT:
 				return obj instanceof BigInteger;
 			case K_RATIONAL:
@@ -825,8 +825,8 @@ public class Util {
 			return o2 == null ? 0 : -1;
 		} else if(o1 instanceof Boolean) {
 			return compare((Boolean)o1,o2);
-		} else if(o1 instanceof Character) {
-			return compare((Character)o1,o2);
+		} else if(o1 instanceof WyChar) {
+			return compare((WyChar)o1,o2);
 		} else if(o1 instanceof BigInteger) {
 			return compare((BigInteger)o1,o2);
 		} else if(o1 instanceof WyRat) {
@@ -857,11 +857,11 @@ public class Util {
 		}
 	}
 
-	public static int compare(Character o1, Object o2) {
+	public static int compare(WyChar o1, Object o2) {
 		if(o2 == null) {
 			return 1;
-		} else if(o2 instanceof Character) {
-			Character c2 = (Character) o2;
+		} else if(o2 instanceof WyChar) {
+			WyChar c2 = (WyChar) o2;
 			return o1.compareTo(c2);
 		} else {
 			return -1;

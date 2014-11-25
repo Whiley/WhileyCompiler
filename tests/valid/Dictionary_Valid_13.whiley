@@ -10,6 +10,6 @@ function f(int x) => edict:
 
 public method main(System.Console sys) => void:
     edict d = f(-1)
-    sys.out.println("Dictionary=" ++ d[1])
+    sys.out.println("Dictionary=" ++ Any.toString(d[1]))
     d = f(2)
-    sys.out.println("Dictionary=" ++ d[1.0])
+    sys.out.println("Dictionary=" ++ Any.toString(d[1.0]))

@@ -66,7 +66,7 @@ public class WyCollection {
 		} else {
 			String s = (String) col;
 			BigInteger index = (BigInteger) key;
-			return s.charAt(index.intValue());
+			return WyChar.valueOf(s.charAt(index.intValue()));
 		}
 	}
 }

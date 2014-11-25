@@ -477,7 +477,9 @@ public final class WyilFileWriter {
 				Codes.Label l = (Codes.Label) code;
 				labels.put(l.label, offset);
 			} else if (code instanceof CodeBlock) {
-				offset = buildLabelsMap(offset + 1, (CodeBlock) code, labels);
+				// Must add 1 here for the virtual bytecode at the end of the
+				// block.
+				offset = 1 + buildLabelsMap(offset + 1, (CodeBlock) code, labels);
 			} else {
 				offset = offset + 1;
 			}
@@ -498,7 +500,6 @@ public final class WyilFileWriter {
 				nlabels++;
 			}
 		}
-
 		// Second, write the count of bytecodes
 		writeRest(wide,block.size() - nlabels,output);
 
@@ -506,12 +507,13 @@ public final class WyilFileWriter {
 		for (int i = 0; i != block.size(); ++i) {
 			Code code = block.get(i);
 			if (code instanceof Codes.Label) {
-
+				// Skip over labels because these are not written to disk and
+				// have no "offset"
 			} else {
 				writeCode(code, offset, labels, output);
 				offset += WyilFileReader.sizeof(code);
 			}
-		}
+		}				
 	}
 
 	private void writeCode(Code code, int offset,

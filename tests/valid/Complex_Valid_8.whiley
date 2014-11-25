@@ -83,4 +83,4 @@ method main(System.Console console):
     // Second, check containment
     for s in ["hello","blah","hel","dave"]:
         bool r = contains(t,s)
-        console.out.println("CONTAINS: " ++ s ++ " = " ++ r)
+        console.out.println("CONTAINS: " ++ s ++ " = " ++ Any.toString(r))

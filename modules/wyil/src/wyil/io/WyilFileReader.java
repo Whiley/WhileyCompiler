@@ -523,8 +523,6 @@ public final class WyilFileReader {
 	 */
 	private int insertLabels(int offset, ArrayList<Code> bytecodes,
 			HashMap<Integer, Codes.Label> labels) {
-		// NOTE: we must go up to nCodes+1 because of the possibility of a label
-		// occurring after the very last bytecode instruction.
 		for (int i = 0; i != bytecodes.size(); ++i) {
 			int j = i; // save insertion point for later
 			Code bytecode = bytecodes.get(i);
@@ -539,10 +537,17 @@ public final class WyilFileReader {
 				Code.Compound block = (Code.Compound) bytecode;
 				// At this point, we must clone the given bytecode
 				ArrayList<Code> blkBytecodes = new ArrayList<Code>(block.bytecodes());
-				offset = insertLabels(offset, blkBytecodes, labels);
+				offset = 1 + insertLabels(offset, blkBytecodes, labels);
 				bytecodes.set(j,updateBytecodes(block,blkBytecodes));
 			}
 		}
+		
+		// Finally, check whether or not there is a label at the end of this
+		// block.
+		Codes.Label label = labels.get(offset);
+		if (label != null) { bytecodes.add(bytecodes.size(), label); }
+		
+		// Done
 		return offset;
 	}
 	
@@ -558,13 +563,13 @@ public final class WyilFileReader {
 	 * @return
 	 */
 	private Code.Compound updateBytecodes(Code.Compound compound, ArrayList<Code> bytecodes) {
-		if(compound instanceof Codes.Loop) {
-			Codes.Loop l = (Codes.Loop) compound;
-			return Codes.Loop(l.modifiedOperands, bytecodes);
-		} else if(compound instanceof Codes.ForAll) {
+		if(compound instanceof Codes.ForAll) {
 			Codes.ForAll l = (Codes.ForAll) compound;
 			return Codes.ForAll(l.type, l.sourceOperand, l.indexOperand,
 					l.modifiedOperands, bytecodes);
+		} else if(compound instanceof Codes.Loop) {
+			Codes.Loop l = (Codes.Loop) compound;
+			return Codes.Loop(l.modifiedOperands, bytecodes);
 		} else {
 			throw new IllegalArgumentException("Unknown compound bytecode encountered: " + compound.getClass().getName());
 		}
@@ -602,11 +607,18 @@ public final class WyilFileReader {
 	 * @return
 	 */
 	public static int sizeof(Code code) {
-		if (code instanceof Code.Unit) {
+		if(code instanceof Codes.Label) {
+			// Observe, this case is not possible in WyilFileReader, but is
+			// possible in WyilFileWriter (where this function is also called
+			// from).
+			return 0;
+		} else if (code instanceof Code.Unit) {
 			return 1;
 		} else {
 			Code.Compound compound = (Code.Compound) code;
-			int size = 1;
+			// The size of a compound includes 1 for the header bytecode, and 1
+			// for the virtual bytecode appearing at the block end.
+			int size = 2;
 			for (int i = 0; i != compound.size(); ++i) {
 				size += sizeof(compound.get(i));
 			}

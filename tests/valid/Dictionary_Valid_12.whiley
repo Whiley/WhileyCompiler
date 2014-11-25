@@ -14,6 +14,6 @@ function g(int x) => odict:
 
 public method main(System.Console sys) => void:
     odict d = g(-1)
-    sys.out.println("Dictionary=" ++ d)
+    sys.out.println("Dictionary=" ++ Any.toString(d))
     d = g(2)
-    sys.out.println("Dictionary=" ++ d)
+    sys.out.println("Dictionary=" ++ Any.toString(d))
