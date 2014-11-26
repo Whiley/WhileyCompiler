@@ -51,7 +51,7 @@ public class WyCollection {
 		}
 
 		public Object next() {
-			return string.charAt(index++);
+			return WyChar.valueOf(string.charAt(index++));
 		}
 	}
 

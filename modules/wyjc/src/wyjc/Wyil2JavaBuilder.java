@@ -146,7 +146,6 @@ public class Wyil2JavaBuilder implements Builder {
 			// new DeadCodeElimination().apply(file);
 			
 			// Verify the generated file being written
-			// FIXME: put back!
 			new ClassFileVerifier().apply(contents);
 			
 			// Write class file into its destination
@@ -2192,14 +2191,15 @@ public class Wyil2JavaBuilder implements Builder {
 		if(toType == Type.T_REAL) {
 			// coercion required!			
 			JvmType.Function ftype = new JvmType.Function(T_CHAR);
-			bytecodes.add(new Bytecode.Invoke(WHILEYCHAR,"value",ftype,Bytecode.InvokeMode.STATIC));
+			bytecodes.add(new Bytecode.Invoke(WHILEYCHAR,"value",ftype,Bytecode.InvokeMode.VIRTUAL));
 			ftype = new JvmType.Function(WHILEYRAT,T_INT);
 			bytecodes.add(new Bytecode.Invoke(WHILEYRAT,"valueOf",ftype,Bytecode.InvokeMode.STATIC));
 		} else if(toType == Type.T_INT) {
 			// coercion required!
-			JvmType.Function ftype = new JvmType.Function(T_CHAR);
-			bytecodes.add(new Bytecode.Invoke(WHILEYCHAR,"value",ftype,Bytecode.InvokeMode.STATIC));
-			ftype = new JvmType.Function(WHILEYINT,T_INT);
+			JvmType.Function ftype = new JvmType.Function(T_CHAR);			
+			bytecodes.add(new Bytecode.Invoke(WHILEYCHAR,"value",ftype,Bytecode.InvokeMode.VIRTUAL));
+			bytecodes.add(new Bytecode.Conversion(T_INT,T_LONG));
+			ftype = new JvmType.Function(WHILEYINT,T_LONG);
 			bytecodes.add(new Bytecode.Invoke(WHILEYINT,"valueOf",ftype,Bytecode.InvokeMode.STATIC));
 		}
 	}

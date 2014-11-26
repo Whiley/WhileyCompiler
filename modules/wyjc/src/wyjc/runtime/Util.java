@@ -479,9 +479,9 @@ public class Util {
 			case K_NULL:
 				return obj == null;
 			case K_BOOL:
-				return obj instanceof Boolean;
+				return obj instanceof WyBool;
 			case K_BYTE:
-				return obj instanceof Byte;
+				return obj instanceof WyByte;
 			case K_CHAR:
 				return obj instanceof WyChar;
 			case K_INT:
@@ -823,8 +823,6 @@ public class Util {
 	public static int compare(Object o1, Object o2) {
 		if(o1 == null) {
 			return o2 == null ? 0 : -1;
-		} else if(o1 instanceof Boolean) {
-			return compare((Boolean)o1,o2);
 		} else if(o1 instanceof WyChar) {
 			return compare((WyChar)o1,o2);
 		} else if(o1 instanceof BigInteger) {
@@ -843,17 +841,6 @@ public class Util {
 			return compare((WyRecord)o1,o2);
 		} else {
 			throw new IllegalArgumentException("Invalid object passed to comparator: " + o1);
-		}
-	}
-
-	public static int compare(Boolean o1, Object o2) {
-		if(o2 == null) {
-			return 1;
-		} else if(o2 instanceof Boolean) {
-			Boolean b2 = (Boolean) o2;
-			return o1.compareTo(b2);
-		} else {
-			return -1;
 		}
 	}
 
