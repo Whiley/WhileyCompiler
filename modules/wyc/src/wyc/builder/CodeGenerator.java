@@ -1015,7 +1015,7 @@ public final class CodeGenerator {
 						c);
 			}
 		}
-
+		
 		codes.add(start, Codes.Switch(s.expr.result().raw(), operand,
 				defaultTarget, cases), attributes(s));
 		codes.add(Codes.Label(exitLab), attributes(s));

@@ -157,7 +157,7 @@ public class AttributedCodeBlock extends CodeBlock {
 	 */
 	public boolean add(Code code, Attribute... attributes) {
 		CodeBlock.Index index = new CodeBlock.Index(ID,size());
-		addAll(index,attributes);
+		putAll(index,attributes);
 		return add(code);
 	}
 
@@ -172,7 +172,7 @@ public class AttributedCodeBlock extends CodeBlock {
 	 */
 	public boolean add(Code code, Collection<Attribute> attributes) {
 		CodeBlock.Index index = new CodeBlock.Index(ID, size());
-		addAll(index,attributes);	
+		putAll(index,attributes);	
 		return add(code);
 	}
 
@@ -201,9 +201,9 @@ public class AttributedCodeBlock extends CodeBlock {
 	 * @param attributes
 	 */
 	public void add(int index, Code code, Attribute... attributes) {
-		// TODO: actually add the attributes
+		CodeBlock.Index idx = new CodeBlock.Index(ID, index);
+		insertAll(idx,attributes);			
 		add(index,code);
-		throw new RuntimeException("implement me!");
 	}
 
 	/**
@@ -216,9 +216,9 @@ public class AttributedCodeBlock extends CodeBlock {
 	 * @param attributes
 	 */
 	public void add(int index, Code code, Collection<Attribute> attributes) {
-		// TODO: actually add the attributes
-		add(index,code);
-		throw new RuntimeException("implement me!");
+		CodeBlock.Index idx = new CodeBlock.Index(ID, index);
+		insertAll(idx,attributes);			
+		add(index,code);		
 	}
 
 	// ===================================================================
@@ -260,7 +260,21 @@ public class AttributedCodeBlock extends CodeBlock {
 	// ===================================================================
 	// Helper Methods
 	// ===================================================================
-	private void addAll(CodeBlock.Index index, Collection<Attribute> attributes) {
+	private void putAll(CodeBlock.Index index, Collection<Attribute> attributes) {
+		// Go through and add each attribute at the given index.
+		for (Attribute attribute : attributes) {
+			Attribute.Map<Attribute> map = this.attributes.get(attribute
+					.getClass());
+			// First, check whether an attribute map for this kind of attribute
+			// exists.
+			if (map != null) {
+				// Yes, so add it.
+				map.put(index, attribute);				
+			}
+		}
+	}
+	
+	private void putAll(CodeBlock.Index index, Attribute... attributes) {
 		// Go through and add each attribute at the given index.
 		for (Attribute attribute : attributes) {
 			Attribute.Map<Attribute> map = this.attributes.get(attribute
@@ -274,17 +288,21 @@ public class AttributedCodeBlock extends CodeBlock {
 		}
 	}
 	
-	private void addAll(CodeBlock.Index index, Attribute... attributes) {
-		// Go through and add each attribute at the given index.
-		for (Attribute attribute : attributes) {
-			Attribute.Map<Attribute> map = this.attributes.get(attribute
-					.getClass());
-			// First, check whether an attribute map for this kind of attribute
-			// exists.
-			if (map != null) {
-				// Yes, so add it.
-				map.put(index, attribute);
-			}
+	private void insertAll(CodeBlock.Index index, Attribute... attributes) {
+		// first, make space for the given code index
+		for(Attribute.Map<Attribute> map : this.attributes.values()) {
+			map.insert(index,null);
 		}
+		// second, add the attributes at that index
+		putAll(index,attributes);
 	}
+	
+	private void insertAll(CodeBlock.Index index, Collection<Attribute> attributes) {
+		// first, make space for the given code index
+		for(Attribute.Map<Attribute> map : this.attributes.values()) {
+			map.insert(index,null);
+		}
+		// second, add the attributes at that index
+		putAll(index,attributes);
+	}	
 }

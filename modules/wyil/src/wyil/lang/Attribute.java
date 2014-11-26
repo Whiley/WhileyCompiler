@@ -66,5 +66,19 @@ public interface Attribute {
 		 *            The data to assign to the given location
 		 */
 		void put(CodeBlock.Index location, T data);
+		
+		/**
+		 * Insert meta-data associated with a given bytecode a given location.
+		 * Here, a location is a n-dimensional numeric identifier to capture
+		 * bytecodes which may be nested inside other bytecodes. Note that this
+		 * will "shift down" all identifies which logically follow the given
+		 * identify in its block, and those contained.
+		 * 
+		 * @param location
+		 *            The location to be insert
+		 * @param data
+		 *            The data to assign to the given location
+		 */
+		void insert(CodeBlock.Index location, T data);
 	}
 }

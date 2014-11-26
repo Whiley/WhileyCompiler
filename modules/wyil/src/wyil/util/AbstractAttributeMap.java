@@ -120,9 +120,60 @@ public class AbstractAttributeMap<T extends Attribute> {
 		}
 
 		// Finally, set the attribute
-		e.attribute = data;
+		e.attribute = data;		
 	}
+	
+	/**
+	 * Insert meta-data associated with a given bytecode a given location.
+	 * Here, a location is a n-dimensional numeric identifier to capture
+	 * bytecodes which may be nested inside other bytecodes. Note that this
+	 * will "shift down" all identifies which logically follow the given
+	 * identify in its block, and those contained.
+	 * 
+	 * @param location
+	 *            The location to be insert
+	 * @param data
+	 *            The data to assign to the given location
+	 */	
+	public void insert(CodeBlock.Index location, T data) {
+		Block<T> blk = root;		
 
+		int[] components = location.toArray();
+		
+		for(int i = 0; i!=components.length-1;++i) {
+			int loc = components[i];
+
+			// First, make sure there is enough room for this location!
+			blk.ensureSize(loc+1);
+
+			// Second, examine the entry at the specified location.
+			Entry<T> e = blk.entries.get(loc);
+
+			if(e instanceof Block) {
+				blk = (Block<T>) e;
+			} else if(e == null) {
+				// Location doesn't exist, so create it.
+				Block<T> nblk = new Block<T>();
+				blk.entries.set(loc,nblk);
+				blk = nblk;
+				e = blk;
+			} else {
+				// This indicate an invalid location identifier because the
+				// location exists, but is not of the right kind.
+				throw new IllegalArgumentException("invalid entry identifier");
+			}
+		}
+
+		int insertionPoint = components[components.length-1]; 
+		Entry<T> e = new Block<T>();
+		e.attribute = data;
+		blk.entries.add(insertionPoint,e);		
+	}
+	
+	public void print() {
+		print(root);
+	}
+	
 	private static class Entry<T extends Attribute> {
 		public T attribute;
 
