@@ -220,6 +220,7 @@ public class Wyil2JavaBuilder implements Builder {
 	private void buildCoercions(HashMap<JvmConstant,Integer> constants, ClassFile cf) {
 		HashSet<JvmConstant> done = new HashSet<JvmConstant>();
 		HashMap<JvmConstant,Integer> original = constants;
+		
 		// this could be a little more efficient I think!!
 		while(done.size() != constants.size()) {
 			// We have to clone the constants map, since it may be expanded as a
@@ -946,7 +947,7 @@ public class Wyil2JavaBuilder implements Builder {
 		String trueLabel = freshLabel();
 
 		bytecodes.add(new Bytecode.Load(c.operand, convertType(c.type)));
-		translateTypeTest(trueLabel, c.type, c.rightOperand, bytecodes);
+		translateTypeTest(trueLabel, c.type, c.rightOperand, constants, bytecodes);
 
 		Type gdiff = Type.intersect(c.type,Type.Negation(c.rightOperand));
 		bytecodes.add(new Bytecode.Load(c.operand, convertType(c.type)));
@@ -966,8 +967,10 @@ public class Wyil2JavaBuilder implements Builder {
 
 	// The purpose of this method is to translate a type test. We're testing to
 	// see whether what's on the top of the stack (the value) is a subtype of
-	// the type being tested.
+	// the type being tested. Note, constants must be provided as a parameter
+	// since this function may be called from buildCoercion()
 	protected void translateTypeTest(String trueTarget, Type src, Type test,
+			HashMap<JvmConstant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 
 		// First, try for the easy cases
@@ -995,8 +998,7 @@ public class Wyil2JavaBuilder implements Builder {
 			// Fall-back to an external (recursive) check
 			Constant constant = Constant.V_TYPE(test);
 			int id = JvmValue.get(constant,constants);
-			String name = "constant$" + id;
-
+			String name = "constant$" + id;			
 			bytecodes.add(new Bytecode.GetField(owner, name, WHILEYTYPE, Bytecode.FieldMode.STATIC));
 
 			JvmType.Function ftype = new JvmType.Function(T_BOOL,convertType(src),WHILEYTYPE);
@@ -2174,7 +2176,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 
 	private void buildCoercion(Type.Int fromType, Type toType,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
+			int freeSlot, ArrayList<Bytecode> bytecodes) {		
 		if(toType == Type.T_REAL) {
 			// coercion required!
 			JvmType.Function ftype = new JvmType.Function(WHILEYRAT,WHILEYINT);
@@ -2257,7 +2259,7 @@ public class Wyil2JavaBuilder implements Builder {
 
 	protected void buildCoercion(Type from, Type to, int freeSlot,
 			HashMap<JvmConstant, Integer> constants, ArrayList<Bytecode> bytecodes) {
-
+		
 		// Second, case analysis on the various kinds of coercion
 		if(from instanceof Type.Tuple && to instanceof Type.Tuple) {
 			buildCoercion((Type.Tuple) from, (Type.Tuple) to, freeSlot, constants, bytecodes);
@@ -2629,7 +2631,7 @@ public class Wyil2JavaBuilder implements Builder {
 	private void buildCoercion(Type.Union from, Type to,
 			int freeSlot, HashMap<JvmConstant,Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
-
+		
 		String exitLabel = freshLabel();
 		List<Type> bounds = new ArrayList<Type>(from.bounds());
 		ArrayList<String> labels = new ArrayList<String>();
@@ -2646,10 +2648,10 @@ public class Wyil2JavaBuilder implements Builder {
 				String label = freshLabel();
 				labels.add(label);
 				bytecodes.add(new Bytecode.Dup(convertType(from)));
-				translateTypeTest(label,from,bound,bytecodes);
+				translateTypeTest(label,from,bound,constants,bytecodes);
 			}
 		}
-
+		
 		for(int i=0;i<labels.size();++i) {
 			String label = labels.get(i);
 			Type bound = bounds.get(i);
