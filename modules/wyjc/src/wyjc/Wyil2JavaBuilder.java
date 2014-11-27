@@ -1247,7 +1247,7 @@ public class Wyil2JavaBuilder implements Builder {
 			break;
 		case RANGE:
 			ftype = new JvmType.Function(WHILEYLIST,WHILEYINT,WHILEYINT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,
+			bytecodes.add(new Bytecode.Invoke(WHILEYLIST,
 					"range", ftype, Bytecode.InvokeMode.STATIC));
 			break;
 		case BITWISEAND:

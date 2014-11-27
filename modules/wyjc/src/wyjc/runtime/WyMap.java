@@ -29,14 +29,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 public final class WyMap extends java.util.HashMap<Object,Object> {
-	/**
-	 * The reference count is use to indicate how many variables are currently
-	 * referencing this compound structure. This is useful for making imperative
-	 * updates more efficient. In particular, when the <code>refCount</code> is
-	 * <code>1</code> we can safely perform an in-place update of the structure.
-	 */
-	int refCount = 100;  // temporary measure
-
+	
 	// ================================================================================
 	// Generic Operations
 	// ================================================================================
@@ -85,13 +78,9 @@ public final class WyMap extends java.util.HashMap<Object,Object> {
 	}
 
 	public static WyMap put(WyMap dict, Object key, Object value) {
-		Util.countRefs(dict);
-		if(dict.refCount > 0) {
-			Util.countClone(dict);
+		if(dict.refCount > 0) {			
 			dict = new WyMap(dict);
-		} else {
-			Util.ndict_inplace_updates++;
-		}
+		} 
 		Object val = dict.put(key, value);
 		if(val != null) {
 			Util.decRefs(val);

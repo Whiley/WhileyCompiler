@@ -30,13 +30,6 @@ import java.util.Collections;
 import java.util.Map;
 
 public final class WyList extends java.util.ArrayList {
-	/**
-	 * The reference count is use to indicate how many variables are currently
-	 * referencing this compound structure. This is useful for making imperative
-	 * updates more efficient. In particular, when the <code>refCount</code> is
-	 * <code>1</code> we can safely perform an in-place update of the structure.
-	 */
-	int refCount = 100; // temporary measure
 
 	// ================================================================================
 	// Generic Operations
@@ -79,28 +72,26 @@ public final class WyList extends java.util.ArrayList {
 		return Util.incRefs(item);
 	}
 
-	public static WyList set(WyList list, final BigInteger index, final Object value) {
-		Util.countRefs(list);
+	public static WyList set(WyList list, final BigInteger index, final Object value) {		
 		if(list.refCount > 0) {
-			Util.countClone(list);
 			// in this case, we need to clone the list in question
 			list = new WyList(list);
-		} else {
-			Util.nlist_inplace_updates++;
-		}
+		} 
 		Object v = list.set(index.intValue(),value);
 		Util.decRefs(v);
 		Util.incRefs(value);
 		return list;
 	}
 
+	public BigInteger length() {
+		return BigInteger.valueOf(size());
+	}
+	
 	public static WyList sublist(final WyList list, final BigInteger start, final BigInteger end) {
-		Util.countRefs(list);
 		int st = start.intValue();
 		int en = end.intValue();
 
 		if(list.refCount == 0) {
-			Util.nlist_inplace_updates++;
 			if(st <= en) {
 				for(int i=0;i!=st;++i) {
 					Util.decRefs(list.get(i));
@@ -140,22 +131,12 @@ public final class WyList extends java.util.ArrayList {
 					r.add(item);
 				}
 			}
-			Util.countClone(r);
 			return r;
 		}
 	}
 
-	public static BigInteger length(WyList list) {
-		return BigInteger.valueOf(list.size());
-	}
-
-	public static WyList append(WyList lhs, WyList rhs) {
-		Util.countRefs(lhs);
-		Util.countRefs(rhs);
-		if(lhs.refCount == 0) {
-			Util.nlist_inplace_updates++;
-		} else {
-			Util.countClone(lhs);
+	public static WyList append(WyList lhs, WyList rhs) {		
+		if(lhs.refCount > 0) {
 			lhs = new WyList(lhs);
 		}
 
@@ -169,11 +150,7 @@ public final class WyList extends java.util.ArrayList {
 	}
 
 	public static WyList append(WyList list, final Object item) {
-		Util.countRefs(list);
-		if(list.refCount == 0) {
-			Util.nlist_inplace_updates++;
-		} else {
-			Util.countClone(list);
+		if(list.refCount > 0) {			
 			list = new WyList(list);
 		}
 		list.add(item);
@@ -182,11 +159,7 @@ public final class WyList extends java.util.ArrayList {
 	}
 
 	public static WyList append(final Object item, WyList list) {
-		Util.countRefs(list);
-		if(list.refCount == 0) {
-			Util.nlist_inplace_updates++;
-		} else {
-			Util.countClone(list);
+		if(list.refCount > 0) {
 			list = new WyList(list);
 		}
 		list.add(0,item);
@@ -198,6 +171,45 @@ public final class WyList extends java.util.ArrayList {
 		return list.size();
 	}
 
+	/**
+	 * Return a list constructed from the range of two integers.
+	 * 
+	 * @param start
+	 * @param end
+	 * @return
+	 */
+	public static WyList range(BigInteger start, BigInteger end) {
+		WyList l = new WyList();
+
+		long st = start.longValue();
+		long en = start.longValue();
+		if (BigInteger.valueOf(st).equals(start)
+				&& BigInteger.valueOf(en).equals(end)) {
+			int dir = st < en ? 1 : -1;
+			while(st != en) {
+				l.add(BigInteger.valueOf(st));
+				st = st + dir;
+			}
+		} else {
+			BigInteger dir;
+			if(start.compareTo(end) < 0) {
+				dir = BigInteger.ONE;
+			} else {
+				dir = BigInteger.valueOf(-1);
+			}
+			while(!start.equals(end)) {
+				l.add(start);
+				start = start.add(dir);
+			}
+		}
+
+		return l;
+	}
+	
+	// ========================================================
+	// Helpers
+	// ========================================================
+	
 	/**
 	 * This method is not intended for public consumption. It is used internally
 	 * by the compiler during object construction only.

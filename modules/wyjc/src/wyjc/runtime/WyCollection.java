@@ -19,7 +19,7 @@ public class WyCollection {
 		}
 	}
 
-	public static BigInteger length(Object col) {
+	public BigInteger length(Object col) {
 		Util.decRefs(col);
 		if(col instanceof java.util.Collection) {
 			java.util.Collection c = (java.util.Collection) col;

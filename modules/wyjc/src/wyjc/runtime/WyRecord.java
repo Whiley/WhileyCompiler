@@ -28,14 +28,7 @@ package wyjc.runtime;
 import java.util.*;
 
 public final class WyRecord extends HashMap<String,Object> {
-	/**
-	 * The reference count is use to indicate how many variables are currently
-	 * referencing this compound structure. This is useful for making imperative
-	 * updates more efficient. In particular, when the <code>refCount</code> is
-	 * <code>1</code> we can safely perform an in-place update of the structure.
-	 */
-	int refCount = 100; // temporary measure
-
+	
 	public WyRecord() {}
 
 	WyRecord(HashMap<String,Object> r) {
@@ -76,12 +69,8 @@ public final class WyRecord extends HashMap<String,Object> {
 	}
 
 	public static WyRecord put(WyRecord record, final String field, final Object value) {
-		Util.countRefs(record);
 		if(record.refCount > 0) {
-			Util.countClone(record);
 			record = new WyRecord(record);
-		} else {
-			Util.nrecord_strong_updates++;
 		}
 		Object val = record.put(field, value);
 		Util.decRefs(val); // decrement overwritten value

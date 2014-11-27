@@ -1155,7 +1155,7 @@ public final class CodeGenerator {
 		}
 		scopes.pop(); // break
 
-		generateCondition(exit, invert(s.condition), environment, codes,
+		generateCondition(exit, invert(s.condition), environment, body,
 				context);
 
 		codes.add(Codes.Loop(new int[] {}, body.bytecodes()), attributes(s));
