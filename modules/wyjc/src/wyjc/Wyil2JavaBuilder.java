@@ -601,9 +601,6 @@ public class Wyil2JavaBuilder implements Builder {
 			String name = "constant$" + id;
 			bytecodes.add(new Bytecode.GetField(owner, name, jt,
 					Bytecode.FieldMode.STATIC));
-			// the following is necessary to prevent in-place updates of our
-			// constants!
-			addIncRefs(constant.type(), bytecodes);
 		}
 		bytecodes.add(new Bytecode.Store(c.target(), jt));
 	}
@@ -1080,7 +1077,6 @@ public class Wyil2JavaBuilder implements Builder {
 	private void translate(CodeBlock.Index index, Codes.Assign c, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		JvmType jt = convertType(c.type());
 		bytecodes.add(new Bytecode.Load(c.operand(0), jt));
-		addIncRefs(c.type(),bytecodes);
 		bytecodes.add(new Bytecode.Store(c.target(), jt));
 	}
 
@@ -2729,58 +2725,6 @@ public class Wyil2JavaBuilder implements Builder {
 			// pointless to add a cast for object
 			bytecodes.add(new Bytecode.CheckCast(type));
 		}
-	}
-
-	/**
-	 * Return true if this type is, or maybe reference counted.
-	 *
-	 * @param t
-	 * @return
-	 */
-	private static boolean isRefCounted(Type t) {
-		if (t instanceof Type.Union) {
-			Type.Union n = (Type.Union) t;
-			for (Type b : n.bounds()) {
-				if (isRefCounted(b)) {
-					return true;
-				}
-			}
-			return false;
-		} else {
-			// FIXME: what about negations?
-			return t instanceof Type.Any || t instanceof Type.List
-					|| t instanceof Type.Tuple || t instanceof Type.Set
-					|| t instanceof Type.Map || t instanceof Type.Record;
-		}
-	}
-
-	/**
-	 * Add bytecodes for incrementing the reference count.
-	 *
-	 * @param type
-	 * @param bytecodes
-	 */
-	private static void addIncRefs(Type type, ArrayList<Bytecode> bytecodes) {
-		if(isRefCounted(type)){
-			JvmType jtype = convertType(type);
-			JvmType.Function ftype = new JvmType.Function(jtype,jtype);
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"incRefs",ftype,Bytecode.InvokeMode.STATIC));
-		}
-	}
-
-	private static void addIncRefs(Type.List type, ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(WHILEYLIST,WHILEYLIST);
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"incRefs",ftype,Bytecode.InvokeMode.STATIC));
-	}
-
-	private static void addIncRefs(Type.Record type, ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(WHILEYRECORD,WHILEYRECORD);
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"incRefs",ftype,Bytecode.InvokeMode.STATIC));
-	}
-
-	private static void addIncRefs(Type.Map type, ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(WHILEYMAP,WHILEYMAP);
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL,"incRefs",ftype,Bytecode.InvokeMode.STATIC));
 	}
 
 	/**

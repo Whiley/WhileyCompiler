@@ -44,10 +44,7 @@ public final class WyList extends java.util.ArrayList {
 	}
 
 	WyList(java.util.Collection items) {
-		super(items);
-		for(Object o : items) {
-			Util.incRefs(o);
-		}
+		super(items);		
 	}
 
 	public String toString() {
@@ -68,18 +65,13 @@ public final class WyList extends java.util.ArrayList {
 	// ================================================================================
 
 	public static Object get(WyList list, BigInteger index) {
-		Object item = list.get(index.intValue());
-		return Util.incRefs(item);
+		return list.get(index.intValue());
 	}
 
 	public static WyList set(WyList list, final BigInteger index, final Object value) {		
-		if(list.refCount > 0) {
-			// in this case, we need to clone the list in question
-			list = new WyList(list);
-		} 
-		Object v = list.set(index.intValue(),value);
-		Util.decRefs(v);
-		Util.incRefs(value);
+		// Clone the list to be safe.
+		list = new WyList(list);		
+		list.set(index.intValue(),value);
 		return list;
 	}
 
@@ -91,79 +83,38 @@ public final class WyList extends java.util.ArrayList {
 		int st = start.intValue();
 		int en = end.intValue();
 
-		if(list.refCount == 0) {
-			if(st <= en) {
-				for(int i=0;i!=st;++i) {
-					Util.decRefs(list.get(i));
-				}
-				for(int i=en;i!=list.size();++i) {
-					Util.decRefs(list.get(i));
-				}
-				list.removeRange(0,st);
-				list.removeRange(en-st,list.size());
-				return list;
-			} else {
-				for(int i=0;i!=en;++i) {
-					Util.decRefs(list.get(i));
-				}
-				for(int i=st;i!=list.size();++i) {
-					Util.decRefs(list.get(i));
-				}
-				list.removeRange(0,en);
-				list.removeRange(st-en,list.size());
-				Collections.reverse(list);
-				return list;
+		WyList r;
+		if(st <= en) {
+			r = new WyList(en-st);
+			for (int i = st; i != en; ++i) {
+				Object item = list.get(i);
+				r.add(item);
 			}
 		} else {
-			WyList r;
-			if(st <= en) {
-				r = new WyList(en-st);
-				for (int i = st; i != en; ++i) {
-					Object item = list.get(i);
-					Util.incRefs(item);
-					r.add(item);
-				}
-			} else {
-				r = new WyList(st-en);
-				for (int i = (st-1); i >= en; --i) {
-					Object item = list.get(i);
-					Util.incRefs(item);
-					r.add(item);
-				}
+			r = new WyList(st-en);
+			for (int i = (st-1); i >= en; --i) {
+				Object item = list.get(i);
+				r.add(item);
 			}
-			return r;
 		}
+		return r;
 	}
 
-	public static WyList append(WyList lhs, WyList rhs) {		
-		if(lhs.refCount > 0) {
-			lhs = new WyList(lhs);
-		}
-
+	public static WyList append(WyList lhs, WyList rhs) {				
+		lhs = new WyList(lhs);
 		lhs.addAll(rhs);
-
-		for(Object o : rhs) {
-			Util.incRefs(o);
-		}
-
 		return lhs;
 	}
 
-	public static WyList append(WyList list, final Object item) {
-		if(list.refCount > 0) {			
-			list = new WyList(list);
-		}
+	public static WyList append(WyList list, final Object item) {			
+		list = new WyList(list);
 		list.add(item);
-		Util.incRefs(item);
 		return list;
 	}
 
 	public static WyList append(final Object item, WyList list) {
-		if(list.refCount > 0) {
-			list = new WyList(list);
-		}
+		list = new WyList(list);
 		list.add(0,item);
-		Util.incRefs(item);
 		return list;
 	}
 
@@ -232,11 +183,7 @@ public final class WyList extends java.util.ArrayList {
 	 * @return
 	 */
 	public static Object internal_get(WyList list, BigInteger index) {
-		Object item = list.get(index.intValue());
-		if(list.refCount > 0) {
-			Util.incRefs(item);
-		}
-		return item;
+		return list.get(index.intValue());		
 	}
 
 	public static java.util.Iterator iterator(WyList list) {

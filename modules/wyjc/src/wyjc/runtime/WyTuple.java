@@ -43,18 +43,11 @@ public final class WyTuple extends java.util.ArrayList {
 	}
 
 	WyTuple(java.util.Collection items) {
-		super(items);
-		for(Object item : items) {
-			Util.incRefs(item);
-		}
+		super(items);		
 	}
 
 	WyTuple(Object... items) {
 		super();
-		for(Object item : items) {
-			add(item);
-			Util.incRefs(item);
-		}
 	}
 
 	public String toString() {
@@ -75,9 +68,7 @@ public final class WyTuple extends java.util.ArrayList {
 	// ================================================================================
 
 	public static Object get(WyTuple tuple, int index) {
-		Object item = tuple.get(index);
-		Util.incRefs(item);
-		return item;
+		return tuple.get(index);		
 	}
 
 	public static BigInteger length(WyTuple tuple) {

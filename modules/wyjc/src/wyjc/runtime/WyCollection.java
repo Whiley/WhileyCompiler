@@ -6,7 +6,6 @@ import java.util.Map;
 public class WyCollection {
 
 	public static java.util.Iterator iterator(Object col) {
-		Util.decRefs(col);
 		if(col instanceof java.util.Collection) {
 			java.util.Collection c = (java.util.Collection) col;
 			return c.iterator();
@@ -19,8 +18,7 @@ public class WyCollection {
 		}
 	}
 
-	public BigInteger length(Object col) {
-		Util.decRefs(col);
+	public static BigInteger length(Object col) {
 		if(col instanceof java.util.Collection) {
 			java.util.Collection c = (java.util.Collection) col;
 			return BigInteger.valueOf(c.size());

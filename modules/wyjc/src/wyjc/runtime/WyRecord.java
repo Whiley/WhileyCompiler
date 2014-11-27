@@ -32,10 +32,7 @@ public final class WyRecord extends HashMap<String,Object> {
 	public WyRecord() {}
 
 	WyRecord(HashMap<String,Object> r) {
-		super(r);
-		for(Object item : r.values()) {
-			Util.incRefs(item);
-		}
+		super(r);		
 	}
 
 	// ================================================================================
@@ -63,26 +60,16 @@ public final class WyRecord extends HashMap<String,Object> {
 	// ================================================================================
 
 	public static Object get(final WyRecord record, final String field) {
-		Object item = record.get(field);
-		Util.incRefs(item);
-		return item;
+		return record.get(field);
 	}
 
 	public static WyRecord put(WyRecord record, final String field, final Object value) {
-		if(record.refCount > 0) {
-			record = new WyRecord(record);
-		}
-		Object val = record.put(field, value);
-		Util.decRefs(val); // decrement overwritten value
-		Util.incRefs(value);
+		record = new WyRecord(record);
+		record.put(field, value);		
 		return record;
 	}
 
 	public static Object internal_get(final WyRecord record, final String field) {
-		Object item = record.get(field);
-		if(record.refCount > 0) {
-			Util.incRefs(item);
-		}
-		return item;
+		return record.get(field);		
 	}
 }

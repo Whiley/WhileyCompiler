@@ -39,11 +39,7 @@ public final class WyMap extends java.util.HashMap<Object,Object> {
 	}
 
 	WyMap(WyMap dict) {
-		super(dict);
-		for(Map.Entry e : dict.entrySet()) {
-			Util.incRefs(e.getKey());
-			Util.incRefs(e.getValue());
-		}
+		super(dict);		
 	}
 
 	public String toString() {
@@ -73,21 +69,12 @@ public final class WyMap extends java.util.HashMap<Object,Object> {
 
 	public static Object get(WyMap dict, Object key) {
 		Object item = dict.get(key);
-		Util.incRefs(item);
 		return item;
 	}
 
 	public static WyMap put(WyMap dict, Object key, Object value) {
-		if(dict.refCount > 0) {			
-			dict = new WyMap(dict);
-		} 
-		Object val = dict.put(key, value);
-		if(val != null) {
-			Util.decRefs(val);
-		} else {
-			Util.incRefs(key);
-		}
-		Util.incRefs(value);
+		dict = new WyMap(dict); 
+		Object val = dict.put(key, value);		
 		return dict;
 	}
 
@@ -125,10 +112,6 @@ public final class WyMap extends java.util.HashMap<Object,Object> {
 	 * @return
 	 */
 	public static Object internal_get(WyMap dict, Object key) {
-		Object item = dict.get(key);
-		if(dict.refCount > 0) {
-			Util.incRefs(item);
-		}
-		return item;
+		return dict.get(key);
 	}
 }
