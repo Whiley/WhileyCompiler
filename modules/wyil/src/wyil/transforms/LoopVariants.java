@@ -70,25 +70,24 @@ public class LoopVariants implements Transform<WyilFile> {
 	}
 
 	public void apply(WyilFile module) {
-		if(enabled) {
+		if (enabled) {
 			filename = module.filename();
 
-			for(WyilFile.TypeDeclaration type : module.types()) {
+			for (WyilFile.TypeDeclaration type : module.types()) {
 				infer(type);
 			}
 
-			for(WyilFile.FunctionOrMethodDeclaration method : module.functionOrMethods()) {
+			for (WyilFile.FunctionOrMethodDeclaration method : module
+					.functionOrMethods()) {
 				infer(method);
 			}
-
-
 		}
 	}
 
 	public void infer(WyilFile.TypeDeclaration type) {
 		CodeBlock invariant = type.invariant();
 		if (invariant != null) {
-			infer(invariant, 0, invariant.size());
+			infer(invariant);
 		}
 	}
 
@@ -96,7 +95,7 @@ public class LoopVariants implements Transform<WyilFile> {
 		for (WyilFile.Case c : method.cases()) {
 			CodeBlock body = c.body();
 			if(body != null) {
-				infer(body,0,body.size());
+				infer(body);
 			}
 		}
 	}
@@ -110,33 +109,21 @@ public class LoopVariants implements Transform<WyilFile> {
 	 * @param method
 	 * @return
 	 */
-	protected BitSet infer(CodeBlock block, int start, int end) {
+	protected BitSet infer(CodeBlock block) {
 		BitSet modified = new BitSet(block.numSlots());
 		int size = block.size();
-		for(int i=start;i<end;++i) {
+		for(int i=0;i<size;++i) {
 			Code code = block.get(i);
 
 			if (code instanceof Code.AbstractAssignable) {
 				Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
-				if(aa.target() != Codes.NULL_REG) {
+				if (aa.target() != Codes.NULL_REG) {
 					modified.set(aa.target());
 				}
-			} if(code instanceof Codes.Loop) {
-				Codes.Loop loop = (Codes.Loop) code;
-				int s = i;
-				// Note, I could make this more efficient!
-				while (++i < block.size()) {
-					Code nCode = block.get(i);
-					if (nCode instanceof Codes.LoopEnd) {
-						Codes.Label l = (Codes.Label) nCode;
-						if (l.label.equals(loop.target)) {
-							// end of loop body found
-							break;
-						}
-					}
-				}
-
-				BitSet loopModified = infer(block,s+1,i);
+			}
+			if (code instanceof Code.Compound) {
+				Code.Compound body = (Code.Compound) code;
+				BitSet loopModified = infer(body);
 				if (code instanceof Codes.ForAll) {
 					// Unset the modified status of the index operand, it is
 					// already implied that this is modified.
@@ -144,13 +131,14 @@ public class LoopVariants implements Transform<WyilFile> {
 					loopModified.clear(fall.indexOperand);
 					code = Codes.ForAll(fall.type, fall.sourceOperand,
 							fall.indexOperand, toArray(loopModified),
-							fall.target);
-				} else {
-					code = Codes.Loop(loop.target, toArray(loopModified));
+							fall.bytecodes());
+					block.set(i, code);
+				} else if (code instanceof Codes.Loop) {
+					Codes.Loop loop = (Codes.Loop) code;
+					code = Codes.Loop(toArray(loopModified), loop.bytecodes());
+					block.set(i, code);
 				}
-
-				// FIXME: loss of attributes here
-				block.set(s, code);
+				
 				modified.or(loopModified);
 			}
 		}
