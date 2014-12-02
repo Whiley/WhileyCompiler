@@ -122,6 +122,10 @@ public class AttributedCodeBlock extends CodeBlock {
 		return results;
 	}
 	
+	public Collection<Attribute.Map<Attribute>> attributes() {
+		return attributes.values();
+	}
+	
 	/**
 	 * <p>
 	 * Construct a temporary sub-block for use in creating an attributed

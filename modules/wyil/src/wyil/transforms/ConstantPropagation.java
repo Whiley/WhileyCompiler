@@ -168,7 +168,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Env environment = initialStore();
 		propagate(null, body, environment);
 
-		// At this point, we apply the inserts
+		// At this point, we apply the inserts		
 		AttributedCodeBlock nbody = new AttributedCodeBlock();
 		for(int i=0;i!=body.size();++i) {
 			Rewrite rewrite = rewrites.get(i);
@@ -420,26 +420,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				values.addAll(right.values);
 				result = Constant.V_LIST(values);
 			}
-			break;
-		case LEFT_APPEND:
-			if (lhs instanceof Constant.List && isRealConstant(rhs)) {
-				Constant.List left = (Constant.List) lhs;
-				Constant right = (Constant) rhs;
-				ArrayList<Constant> values = new ArrayList<Constant>(
-						left.values);
-				values.add(right);
-				result = Constant.V_LIST(values);
-			}
-			break;
-		case RIGHT_APPEND:
-			if (isRealConstant(lhs) && rhs instanceof Constant.List) {
-				Constant left = (Constant) lhs;
-				Constant.List right = (Constant.List) rhs;
-				ArrayList<Constant> values = new ArrayList<Constant>();
-				values.add(left);
-				values.addAll(right.values);
-				result = Constant.V_LIST(values);
-			}
+			break;		
 		}
 
 		assign(code.target(), result, environment, index);
@@ -665,21 +646,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				Constant.Set rv = (Constant.Set) rhs;
 				result = lv.union(rv);
 			}
-			break;
-		case LEFT_UNION:
-			if(lhs instanceof Constant.Set && isRealConstant(rhs)) {
-				Constant.Set lv = (Constant.Set) lhs;
-				Constant rv = (Constant) rhs;
-				result = lv.add(rv);
-			}
-			break;
-		case RIGHT_UNION:
-			if(isRealConstant(lhs) && rhs instanceof Constant.Set) {
-				Constant lv = (Constant) lhs;
-				Constant.Set rv = (Constant.Set) rhs;
-				result = rv.add(lv);
-			}
-			break;
+			break;		
 		case INTERSECTION:
 			if (lhs instanceof Constant.Set
 					&& rhs instanceof Constant.Set) {
@@ -687,45 +654,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				Constant.Set rv = (Constant.Set) rhs;
 				result = lv.intersect(rv);
 			}
-			break;
-		case LEFT_INTERSECTION:
-			if (lhs instanceof Constant.Set && isRealConstant(rhs)) {
-				Constant.Set lv = (Constant.Set) lhs;
-				Constant rv = (Constant) rhs;
-				if (lv.values.contains(rv)) {
-					HashSet<Constant> nset = new HashSet<Constant>();
-					nset.add(rv);
-					result = Constant.V_SET(nset);
-				} else {
-					result = Constant.V_SET(Collections.EMPTY_SET);
-				}
-			}
-			break;
-		case RIGHT_INTERSECTION:
-			if(isRealConstant(lhs) && rhs instanceof Constant.Set) {
-				Constant lv = (Constant) lhs;
-				Constant.Set rv = (Constant.Set) rhs;
-				if(rv.values.contains(lv)) {
-					HashSet<Constant> nset = new HashSet<Constant>();
-					nset.add(lv);
-					result = Constant.V_SET(nset);
-				} else {
-					result = Constant.V_SET(Collections.EMPTY_SET);
-				}
-			}
-			break;
+			break;		
 		case DIFFERENCE:
 			if (lhs instanceof Constant.Set && rhs instanceof Constant.Set) {
 				Constant.Set lv = (Constant.Set) lhs;
 				Constant.Set rv = (Constant.Set) rhs;
 				result = lv.difference(rv);
-			}
-			break;
-		case LEFT_DIFFERENCE:
-			if(lhs instanceof Constant.Set && isRealConstant(rhs)) {
-				Constant.Set lv = (Constant.Set) lhs;
-				Constant rv = (Constant) rhs;
-				result = lv.remove(rv);
 			}
 			break;
 		}

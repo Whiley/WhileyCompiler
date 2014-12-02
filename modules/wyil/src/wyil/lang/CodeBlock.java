@@ -188,6 +188,8 @@ public class CodeBlock implements Iterable<Code> {
 		private final Index parent; // null only for ROOT index
 		private final int value;
 
+		public static final Index ROOT = null;
+		
 		/**
 		 * Construct an index which is nested within the parent index, and whose
 		 * initial value at the innermost level is 0. For example, "0.1.0" would
@@ -243,6 +245,33 @@ public class CodeBlock implements Iterable<Code> {
 		 */
 		public Index nestedWithin(int value) {
 			return new Index(this,value);
+		}
+		
+		/**
+		 * Check whether this index is contained within a given parent index. In
+		 * otherwords, that the parent index is a prefix of this index.
+		 * 
+		 * @param parent
+		 * @return
+		 */
+		public boolean isWithin(Index parent) {			
+			if(parent == null) { return true; }
+			
+			int[] me = toArray();
+			int[] pnt = parent.toArray();
+						
+			if(me.length < pnt.length) {
+				System.out.println("EXIT 1");
+				return false;
+			} else {
+				for(int i=0;i!=pnt.length;++i) {					
+					if(me[i] != pnt[i]) {
+						System.out.println("EXIT 2 : " + me[i] + " != " + pnt[i]);
+						return false;
+					}
+				}
+				return true;
+			}
 		}
 
 		public int size() {

@@ -141,8 +141,8 @@ public abstract class Codes {
 	 *            --- Message to give on error.
 	 * @return
 	 */
-	public static Fail Fail(String message) {
-		return new Fail(message);
+	public static Fail Fail() {
+		return new Fail();
 	}
 
 	/**
@@ -916,7 +916,6 @@ public abstract class Codes {
 	public static abstract class AssertOrAssume extends Code.Unit {
 		public final String target;
 
-
 		private AssertOrAssume(String target) {
 			this.target = target;
 		}
@@ -972,10 +971,7 @@ public abstract class Codes {
 	 *
 	 */
 	public static final class Fail extends Code.Unit {
-		public final Constant.Strung message;
-
-		private Fail(String message) {
-			this.message = Constant.V_STRING(message);
+		private Fail() {		
 		}
 
 		@Override
@@ -984,11 +980,7 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			if(message == null) {
-				return "fail";
-			} else {
-				return "fail \"" + message + "\"";
-			}
+			return "fail";			
 		}
 	}
 
@@ -1764,16 +1756,6 @@ public abstract class Codes {
 		APPEND(0) {
 			public String toString() {
 				return "append";
-			}
-		},
-		LEFT_APPEND(1) {
-			public String toString() {
-				return "appendl";
-			}
-		},
-		RIGHT_APPEND(2) {
-			public String toString() {
-				return "appendr";
 			}
 		};
 		public final int offset;
@@ -2958,40 +2940,15 @@ public abstract class Codes {
 			public String toString() {
 				return "union";
 			}
-		},
-		LEFT_UNION(1) {
-			public String toString() {
-				return "unionl";
-			}
-		},
-		RIGHT_UNION(2) {
-			public String toString() {
-				return "unionl";
-			}
-		},
-		INTERSECTION(3) {
+		},		
+		INTERSECTION(1) {
 			public String toString() {
 				return "intersect";
 			}
 		},
-		LEFT_INTERSECTION(4) {
-			public String toString() {
-				return "intersectl";
-			}
-		},
-		RIGHT_INTERSECTION(5) {
-			public String toString() {
-				return "intersectr";
-			}
-		},
-		DIFFERENCE(6) {
+		DIFFERENCE(2) {
 			public String toString() {
 				return "diff";
-			}
-		},
-		LEFT_DIFFERENCE(7) {
-			public String toString() {
-				return "diffl";
 			}
 		};
 		public final int offset;

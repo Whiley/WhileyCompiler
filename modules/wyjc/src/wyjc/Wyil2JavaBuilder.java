@@ -1097,21 +1097,7 @@ public class Wyil2JavaBuilder implements Builder {
 			rightType = WHILEYLIST;
 			bytecodes.add(new Bytecode.Load(c.operand(0), leftType));
 			bytecodes.add(new Bytecode.Load(c.operand(1), rightType));
-			break;
-		case LEFT_APPEND:
-			leftType = WHILEYLIST;
-			rightType = JAVA_LANG_OBJECT;
-			bytecodes.add(new Bytecode.Load(c.operand(0), leftType));
-			bytecodes.add(new Bytecode.Load(c.operand(1), convertType(c.type().element())));
-			addWriteConversion(c.type().element(),bytecodes);
-			break;
-		case RIGHT_APPEND:
-			leftType = JAVA_LANG_OBJECT;
-			rightType = WHILEYLIST;
-			bytecodes.add(new Bytecode.Load(c.operand(0), convertType(c.type().element())));
-			addWriteConversion(c.type().element(),bytecodes);
-			bytecodes.add(new Bytecode.Load(c.operand(1), rightType));
-			break;
+			break;		
 		default:
 			internalFailure("unknown list operation", filename,
 					rootBlock.attribute(index, SourceLocation.class));
@@ -1282,59 +1268,21 @@ public class Wyil2JavaBuilder implements Builder {
 	private void translate(CodeBlock.Index index, Codes.SetOperator c,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
 
-		JvmType leftType;
-		JvmType rightType;
-
-		// First, load operands
-		switch(c.kind) {
-			case UNION:
-			case DIFFERENCE:
-			case INTERSECTION:
-				leftType = WHILEYSET;
-				rightType = WHILEYSET;
-				bytecodes.add(new Bytecode.Load(c.operand(0), leftType));
-				bytecodes.add(new Bytecode.Load(c.operand(1), rightType));
-				break;
-			case LEFT_UNION:
-			case LEFT_DIFFERENCE:
-			case LEFT_INTERSECTION:
-				leftType = WHILEYSET;
-				rightType = JAVA_LANG_OBJECT;
-				bytecodes.add(new Bytecode.Load(c.operand(0), leftType));
-				bytecodes.add(new Bytecode.Load(c.operand(1), convertType(c.type().element())));
-				addWriteConversion(c.type().element(),bytecodes);
-				break;
-			case RIGHT_UNION:
-			case RIGHT_INTERSECTION:
-				leftType = JAVA_LANG_OBJECT;
-				rightType = WHILEYSET;
-				bytecodes.add(new Bytecode.Load(c.operand(0), convertType(c.type().element())));
-				addWriteConversion(c.type().element(),bytecodes);
-				bytecodes.add(new Bytecode.Load(c.operand(1), rightType));
-				break;
-			default:
-				internalFailure("Unknown set operation encountered: ", filename,
-						rootBlock.attribute(index, SourceLocation.class));
-				return; // dead-code
-		}
-
-		JvmType.Function ftype= new JvmType.Function(WHILEYSET,leftType,rightType);
+		bytecodes.add(new Bytecode.Load(c.operand(0), WHILEYSET));
+		bytecodes.add(new Bytecode.Load(c.operand(1), WHILEYSET));
+		
+		JvmType.Function ftype= new JvmType.Function(WHILEYSET,WHILEYSET,WHILEYSET);
 
 		// Second, select operation
 		String operation;
 		switch(c.kind) {
 		case UNION:
-		case LEFT_UNION:
-		case RIGHT_UNION:
 			operation = "union";
 			break;
 		case INTERSECTION:
-		case LEFT_INTERSECTION:
-		case RIGHT_INTERSECTION:
 			operation = "intersect";
 			break;
 		case DIFFERENCE:
-		case LEFT_DIFFERENCE:
 			operation = "difference";
 			break;
 		default:

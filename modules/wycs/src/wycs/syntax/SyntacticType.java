@@ -190,6 +190,10 @@ public interface SyntacticType extends SyntacticElement {
 			super(attributes);
 		}
 
+		public Real(Collection<Attribute> attributes) {
+			super(attributes);
+		}
+		
 		public Real(java.util.List<Attribute> attributes) {
 			super(attributes);
 		}

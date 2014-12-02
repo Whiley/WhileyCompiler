@@ -229,19 +229,19 @@ public class WycMain {
 		} catch (InternalFailure e) {
 			e.outputSourceError(stderr,brief);
 			if (verbose) {
-				e.printStackTrace(stderr);
+				printStackTrace(stderr,e);				
 			}
 			return INTERNAL_FAILURE;
 		} catch (SyntaxError e) {
 			e.outputSourceError(stderr,brief);
 			if (verbose) {
-				e.printStackTrace(stderr);
+				printStackTrace(stderr,e);				
 			}
 			return SYNTAX_ERROR;
 		} catch (Throwable e) {
 			stderr.println("internal failure (" + e.getMessage() + ")");
 			if (verbose) {
-				e.printStackTrace(stderr);
+				printStackTrace(stderr,e);				
 			}
 			return INTERNAL_FAILURE;
 		}
@@ -365,6 +365,24 @@ public class WycMain {
 		return r;
 	}
 
+	/**
+	 * Print a complete stack trace. This differs from
+	 * Throwable.printStackTrace() in that it always prints all of the trace.
+	 * 
+	 * @param out
+	 * @param err
+	 */
+	protected static void printStackTrace(PrintStream out, Throwable err) {
+		out.println(err.getClass().getName() + ": " + err.getMessage());
+		for(StackTraceElement ste : err.getStackTrace()) {			
+			out.println("\tat " + ste.toString());
+		}
+		if(err.getCause() != null) {
+			out.print("Caused by: ");
+			printStackTrace(out,err.getCause());
+		}
+	}
+	
 	// =========================================================================
 	// Main Method
 	// =========================================================================

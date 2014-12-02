@@ -25,31 +25,19 @@
 
 package wyil.builders;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Collections;
-import java.util.List;
 
-import wycc.lang.SyntaxError;
-import wycc.lang.SyntaxError.*;
-import wycc.util.Pair;
 import wycs.core.Value;
-import wycs.solver.Solver;
 import wycs.syntax.Expr;
-import static wycs.solver.Solver.*;
-import wyautl.core.Automaton;
-import wyautl.io.PrettyAutomataWriter;
-import static wyil.util.ErrorMessages.internalFailure;
 import wyil.lang.*;
-import wyil.util.AttributedCodeBlock;
 
 /**
  * <p>
  * Represents a path through the body of a Wyil method or function. A branch
  * accumulates the constraints known to hold through that particular execution
  * path. These constraints can then be checked for satisfiability at various
- * critical points in the function.
+ * critical points in the function (i.e. by generating verification conditions).
  * </p>
  * <p>
  * When verifying a given function or method, the verifier starts with a single
@@ -84,23 +72,31 @@ import wyil.util.AttributedCodeBlock;
  * terminates separately.
  * </p>
  * <p>
- * Every branch (except the first) has a <i>parent</i> branch which it was
- * forked from. Given any two branches there is always a <i>Least Common
- * Ancestor (LCA)</i> --- that is, the latest point which is common to both
- * branches. Finding the LCA can be useful, for example, to identify constraints
- * common to both branches.
+ * Every branch (except the first) has one or more <i>parent</i> branches which
+ * it was either forked or joined from. Given any two branches there is always a
+ * <i>Least Common Ancestor (LCA)</i> --- that is, the latest point which is
+ * common to both branches. Finding the LCA can be useful, for example, to
+ * identify constraints common to both branches.
  * </p>
  *
  * @author David J. Pearce
  *
  */
 public class VcBranch {
+
+	public enum State {
+		ACTIVE, // Branch currently progressing through code block
+		INTERNAL, // Branch is internal (i.e. has been forked or joined)
+		TERMINATED, // Branch reached return statement
+		FAILED // Branch reached failed statement
+	}
+
 	/**
 	 * The parent branch which this branch was forked from, or <code>null</code>
 	 * if it is the initial "master" branch for the function or method in
 	 * question.
 	 */
-	private final VcBranch parent;
+	private final VcBranch[] parents;
 
 	/**
 	 * Maintains the current assignment of variables to expressions.
@@ -108,81 +104,65 @@ public class VcBranch {
 	private final Expr[] environment;
 
 	/**
+	 * A fixed list of variable "prefixes". These are the names given to each
+	 * register slot, and which are then appended with their SSA number to form
+	 * an actual register name. Note that the prefixes are fixed for the entire
+	 * branch graph of a function / method.
+	 */
+	private final String[] prefixes;
+	
+	/**
 	 * Maintains the current assignment of variables to their types.
 	 */
 	private final Type[] types;
 
 	/**
-	 * The stack of currently active scopes (e.g. for-loop). When the branch
-	 * exits a scope, an exit scope event is generated in order that additional
-	 * effects make be applied.
+	 * Contains the accumulated constraints in the order they were added.
 	 */
-	public final ArrayList<Scope> scopes;
-
-	/**
-	 * The block of Wyil bytecode instructions which this branch is traversing
-	 * (note: <code>parent == null || block == parent.block</code> must hold).
-	 */
-	private final AttributedCodeBlock block;
-
-	/**
-	 * The origin determines the bytecode offset in block where this branch was
-	 * forked from. For the master branch, this will be <code>0</code>.
-	 */
-	private final int origin;
+	private Expr constraints;
 
 	/**
 	 * The bytecode index into the above block that this branch is currently at.
 	 */
-	private int pc;
+	private CodeBlock.Index pc;
 
 	/**
-	 * Construct the master verification branch for a given code block. The
-	 * master for a block has an origin <code>0</code> and an (initial) PC of
-	 * <code>0</code> (i.e. the branch begins at the entry of the block).
+	 * Indicates the state of this branch. In particular, whether its active,
+	 * terminated or failed. A branch is terminated when a return bytecode is
+	 * reached. Likewise, a branch is failed when a fail statement is bytecode.
+	 * Otherwise, a branch is active.
+	 */
+	private State state;
+
+	/**
+	 * Construct the master verification branch for a given attributed code
+	 * block. The pc for the master branch of a block is the root index (i.e.
+	 * the branch begins at the entry of the block).
 	 *
-	 * @param automaton
-	 *            --- the automaton to which constraints generated for this
-	 *            block are stored.
-	 * @param block
-	 *            --- the block of code on which this branch is operating.
 	 * @param numInputs
-	 * 			  --- the number of inputs to the given block.
+	 *            --- the minimum number of register slots required
+	 * @param prefixes
+	 *            --- Variable names to use as prefixes when generating register
+	 *            names. If null, the default names are used instead.
 	 */
-	public VcBranch(AttributedCodeBlock block, int numInputs) {
-		int numSlots = Math.max(numInputs,block.numSlots());
-		this.parent = null;
-		this.block = block;
+	public VcBranch(int numInputs, String[] prefixes) {
+		int numSlots = numInputs;
+		this.parents = new VcBranch[0];
 		this.environment = new Expr[numSlots];
 		this.types = new Type[numSlots];
-		this.scopes = new ArrayList<Scope>();
-		this.origin = 0;
-		this.pc = 0;
-		scopes.add(new Scope(block.size(), Collections.EMPTY_LIST));
-	}
-
-	/**
-	 * Construct the master verification branch for a given code block. The
-	 * master for a block has an origin <code>0</code> and an (initial) PC of
-	 * <code>0</code> (i.e. the branch begins at the entry of the block).
-	 *
-	 * @param automaton
-	 *            --- the automaton to which constraints generated for this
-	 *            block are stored.
-	 * @param block
-	 *            --- the block of code on which this branch is operating.
-	 */
-	public VcBranch(WyilFile.FunctionOrMethodDeclaration decl, AttributedCodeBlock block) {
-		ArrayList<Type> paramTypes = decl.type().params();
-		int numSlots = Math.max(paramTypes.size(),block.numSlots());
-		this.parent = null;
-		this.environment = new Expr[numSlots];
-		this.types = new Type[numSlots];
-		this.scopes = new ArrayList<Scope>();
-		this.block = block;
-		this.origin = 0;
-		this.pc = 0;
-		scopes.add(new EntryScope(decl, block.size(), Collections.EMPTY_LIST));
+		this.constraints = null;
+		this.pc = new CodeBlock.Index(CodeBlock.Index.ROOT);
+		this.state = State.ACTIVE;
+		
+		if(prefixes == null) {
+			// Construct default variable prefixes if none are given.
+			this.prefixes = new String[numSlots];
+			for(int i=0;i!=numSlots;++i) {
+				this.prefixes[i] = "r" + i;
+			}
+		} else {
+			this.prefixes = prefixes;
+		}
 	}
 
 	/**
@@ -192,17 +172,41 @@ public class VcBranch {
 	 *            --- parent branch being forked from.
 	 */
 	private VcBranch(VcBranch parent) {
-		this.parent = parent;
+		this.parents = new VcBranch[] { parent };
 		this.environment = parent.environment.clone();
-		this.types = Arrays
-				.copyOf(parent.types, environment.length);
-		this.scopes = new ArrayList<Scope>();
-		this.block = parent.block;
-		this.origin = parent.pc;
+		this.types = Arrays.copyOf(parent.types, environment.length);
+		this.constraints = null;
+		this.prefixes = parent.prefixes;
 		this.pc = parent.pc;
-		for(Scope scope : parent.scopes) {
-			this.scopes.add(scope.clone());
-		}
+		this.state = State.ACTIVE;
+	}
+
+	/**
+	 * Private constructor used for joining two or more parent branches.
+	 *
+	 * @param parent
+	 *            --- Parent branches being forked from. There must be at least
+	 *            two of these.
+	 * @param environment
+	 *            --- Environment for this branch which is the converged
+	 *            environments of all branches.
+	 * @param types
+	 *            --- Environment for this branch which is the converged
+	 *            environments of all branches.
+	 * @param state
+	 *            --- State which this branch should be in. This may not be
+	 *            active, for example, if none of the parents were active.
+	 * 
+	 */
+	private VcBranch(VcBranch[] parents, Expr[] environment, Type[] types,
+			State state, String[] prefixes) {
+		this.parents = parents;
+		this.environment = environment;
+		this.types = types;
+		this.constraints = null;
+		this.pc = parents[0].pc;
+		this.state = state;
+		this.prefixes = prefixes;
 	}
 
 	/**
@@ -211,17 +215,69 @@ public class VcBranch {
 	 *
 	 * @return
 	 */
-	public int pc() {
+	public CodeBlock.Index pc() {
 		return pc;
 	}
 
 	/**
-	 * Get the block entry at the current PC position.
-	 *
+	 * Return the parents for this node. Note, the root node has no parents.
+	 * 
 	 * @return
 	 */
-	public AttributedCodeBlock.Entry entry() {
-		return block.getEntry(pc);
+	public VcBranch[] parents() {
+		return parents;
+	}
+
+	/**
+	 * Return the constraints which are known to hold on this branch segment,
+	 * excluding those which hold on ancestor branches.
+	 */
+	public Expr constraints() {
+		if(constraints == null) {
+			return new Expr.Constant(Value.Bool(true));
+		} else {
+			return constraints;
+		}		
+	}
+
+	/**
+	 * Determine the current state of this branch. In particular, whether or not
+	 * it is ACTIVE.
+	 * 
+	 * @return
+	 */
+	public State state() {
+		return state;
+	}
+
+	/**
+	 * Update the state of this branch.
+	 * 
+	 * @param state
+	 */
+	public void setState(State state) {
+		this.state = state;
+	}
+
+	/**
+	 * Update the program counter for this branch. This can, for example, be
+	 * used to move the branch to the next logical instruction. Or, it can be
+	 * used to jump the branch to an entirely different location.
+	 * 
+	 * <p>
+	 * <b>NOTE:</b>The branch must be ACTIVE for this operation to be permitted,
+	 * since it changes the state of the branch.
+	 * </p>
+	 * 
+	 * @param pc
+	 */
+	public void goTo(CodeBlock.Index pc) {
+		if (state != State.ACTIVE) {
+			// Sanity check
+			throw new IllegalArgumentException(
+					"Attempt to modify an inactive branch");
+		}
+		this.pc = pc;
 	}
 
 	/**
@@ -242,7 +298,7 @@ public class VcBranch {
 	 */
 	public Type typeOf(String var) {
 		// FIXME: this is such an *horrific* hack, I can't believe I'm doing it.
-		// But, it does work most of the time:(
+		// But, it does work most of the time :(
 		String[] split = var.split("_");
 		int register = Integer.parseInt(split[0].substring(1));
 		return types[register];
@@ -258,267 +314,94 @@ public class VcBranch {
 	}
 
 	/**
-	 * Assign a given expression stored in the automaton to a given Wyil
-	 * bytecode register.
-	 *
+	 * Assign an expression to a given Wyil bytecode register. This stores the
+	 * assigned expression for recall when the given register is subsequently
+	 * read.
+	 * <p>
+	 * <b>NOTE:</b>The branch must be ACTIVE for this operation to be permitted,
+	 * since it changes the state of the branch.
+	 * </p>
+	 * 
 	 * @param register
+	 *            --- Register being written.
 	 * @param expr
+	 *            --- Expression being assigned.
+	 * @param type
+	 *            --- Type of expression being assigned.
 	 */
 	public void write(int register, Expr expr, Type type) {
+		if (state != State.ACTIVE) {
+			// Sanity check
+			throw new IllegalArgumentException(
+					"Attempt to modify an inactive branch");
+		}
 		environment[register] = expr;
 		types[register] = type;
-	}
-
-	public int nScopes() {
-		return scopes.size();
-	}
-
-	public Scope scope(int i) {
-		return scopes.get(i);
-	}
-
-	/**
-	 * Get the first scope matching a given scope kind.
-	 *
-	 * @param clazz
-	 * @return
-	 */
-	public <T extends Scope> T topScope(Class<T> clazz) {
-		for(int i=scopes.size();i>0;) {
-			i=i-1;
-			Scope scope = scopes.get(i);
-			if(clazz.isInstance(scope)) {
-				return (T) scope;
-			}
-		}
-		return null;
 	}
 
 	/**
 	 * Terminate the current flow for a given register and begin a new one. In
 	 * terms of static-single assignment, this means simply change the index of
-	 * the register in question.
-	 *
+	 * the register in question. This is also known in the verification
+	 * community as "havocing" the variable, or sending the variable to "havoc".
+	 * <p>
+	 * <b>NOTE:</b>The branch must be ACTIVE for this operation to be permitted,
+	 * since it changes the state of the branch.
+	 * </p>
+	 * 
 	 * @param register
 	 *            Register number to invalidate
 	 * @param type
 	 *            Type of register being invalidated
 	 */
 	public Expr.Variable invalidate(int register, Type type) {
+		if (state != State.ACTIVE) {
+			// Sanity check
+			throw new IllegalArgumentException(
+					"Attempt to modify an inactive branch");
+		}
 		// to invalidate a variable, we assign it a "skolem" constant. That is,
 		// a fresh variable which has not been previously encountered in the
 		// branch.
-		Expr.Variable var = new Expr.Variable("r" + Integer.toString(register) + "_" + pc);
+		Expr.Variable var = new Expr.Variable(prefixes[register] + "_" + pc);
 		environment[register] = var;
 		types[register] = type;
 		return var;
 	}
 
 	/**
-	 * Invalidate all registers from <code>start</code> upto (but not including)
-	 * <code>end</code>.
-	 *
-	 * @param start
-	 *            --- first register to invalidate.
-	 * @param end
-	 *            --- first register not to invalidate.
+	 * Assume a given condition holds on this branch.
+	 * 
+	 * <p>
+	 * <b>NOTE:</b>The branch must be ACTIVE for this operation to be permitted,
+	 * since it changes the state of the branch.
+	 * </p>
+	 * 
+	 * @param e
+	 *            The condition to assume
 	 */
-	public void invalidate(int start, int end, Type type) {
-		for (int i = start; i != end; ++i) {
-			invalidate(i,type);
+	public void assume(Expr e) {
+		if (state != State.ACTIVE) {
+			// Sanity check
+			throw new IllegalArgumentException(
+					"Attempt to modify an inactive branch");
 		}
-	}
-
-	/**
-	 * Return a reference into the automaton which represents all of the
-	 * constraints that hold at this position in the branch.
-	 *
-	 * @return
-	 */
-	public Expr constraints() {
-		ArrayList<Expr> constraints = new ArrayList<Expr>();
-		for (int i = 0; i != scopes.size(); ++i) {
-			Scope scope = scopes.get(i);
-			constraints.addAll(scope.constraints);
+		if (constraints == null) {
+			constraints = e;
+		} else {
+			constraints = new Expr.Binary(Expr.Binary.Op.AND, constraints, e);
 		}
-		return And(constraints);
-	}
-
-	/**
-	 * Add a given constraint to the list of constraints which are assumed to
-	 * hold at this point.
-	 *
-	 * @param constraint
-	 */
-	public void add(Expr constraint) {
-		topScope().constraints.add(constraint);
-	}
-
-	/**
-	 * Add a given list of constraints to the list of constraints which are assumed to
-	 * hold at this point.
-	 *
-	 * @param constraints
-	 */
-	public void addAll(List<Expr> constraints) {
-		topScope().constraints.addAll(constraints);
-	}
-
-	/**
-	 * Transform this branch into a list of constraints representing that which
-	 * is known to hold at the end of the branch. The generated constraint will
-	 * only be in terms of the given parameters and return value for the block.
-	 *
-	 * @param transformer
-	 *            --- responsible for transformining individual bytecodes into
-	 *            constraints capturing their semantics.
-	 * @return
-	 */
-	public Expr transform(VcTransformer transformer) {
-		ArrayList<VcBranch> children = new ArrayList<VcBranch>();
-		int blockSize = block.size();
-		while (pc < blockSize) {
-
-			// first, check whether we're departing a scope or not.
-			int top = scopes.size() - 1;
-			while (top >= 0 && scopes.get(top).end < pc) {
-				// yes, we're leaving a scope ... so notify transformer.
-				Scope topScope = scopes.get(top);
-				scopes.remove(top);
-				dispatchExit(topScope, transformer);
-				top = top - 1;
-			}
-
-			// second, continue to transform the given bytecode
-			CodeBlock.Entry entry = block.getEntry(pc);
-			Code code = entry.code;
-			if(code instanceof Codes.Goto) {
-				goTo(((Codes.Goto) code).target);
-			} else if(code instanceof Codes.If) {
-				Codes.If ifc = (Codes.If) code;
-				VcBranch trueBranch = fork();
-				transformer.transform(ifc,this,trueBranch);
-				trueBranch.goTo(ifc.target);
-				children.add(trueBranch);
-			} else if(code instanceof Codes.Switch) {
-				Codes.Switch sw = (Codes.Switch) code;
-				VcBranch[] cases = new VcBranch[sw.branches.size()];
-				for(int i=0;i!=cases.length;++i) {
-					cases[i] = fork();
-					children.add(cases[i]);
-				}
-				transformer.transform(sw,this,cases);
-				for(int i=0;i!=cases.length;++i) {
-					cases[i].goTo(sw.branches.get(i).second());
-				}
-				goTo(sw.defaultTarget);
-			} else if(code instanceof Codes.IfIs) {
-				Codes.IfIs ifs = (Codes.IfIs) code;
-				Type type = typeOf(ifs.operand);
-				// First, determine the true test
-				Type trueType = Type.intersect(type,ifs.rightOperand);
-				Type falseType = Type.intersect(type,Type.Negation(ifs.rightOperand));
-
-				if(trueType.equals(Type.T_VOID)) {
-					// This indicate that the true branch is unreachable and
-					// should not be explored. Observe that this does not mean
-					// the true branch is dead-code. Rather, since we're
-					// preforming a path-sensitive traversal it means we've
-					// uncovered an unreachable path. In this case, this branch
-					// remains as the false branch.
-					this.write(ifs.operand, read(ifs.operand), falseType);
-				} else if(falseType.equals(Type.T_VOID)) {
-					// This indicate that the false branch is unreachable (ditto
-					// as for true branch). In this case, this branch becomes
-					// the true branch.
-					goTo(ifs.target);
-					this.write(ifs.operand, read(ifs.operand), trueType);
-				} else {
-					VcBranch trueBranch = fork();
-					trueBranch.goTo(ifs.target);
-					this.write(ifs.operand, read(ifs.operand), falseType);
-					trueBranch.write(ifs.operand, trueBranch.read(ifs.operand), trueType);
-					children.add(trueBranch);
-				}
-			} else if(code instanceof Codes.ForAll) {
-				Codes.ForAll fall = (Codes.ForAll) code;
-				// FIXME: where should this go?
-				for (int i : fall.modifiedOperands) {
-					invalidate(i,types[i]);
-				}
-				Expr.Variable var = invalidate(fall.indexOperand,fall.type.element());
-
-				scopes.add(new ForScope(fall, findLabelIndex(fall.target),
-						Collections.EMPTY_LIST, read(fall.sourceOperand),
-						var));
-				transformer.transform(fall, this);
-			} else if(code instanceof Codes.Loop) {
-				Codes.Loop loop = (Codes.Loop) code;
-				// FIXME: where should this go?
-				for (int i : loop.modifiedOperands) {
-					invalidate(i,types[i]);
-				}
-
-				scopes.add(new LoopScope(loop, findLabelIndex(loop.target),
-						Collections.EMPTY_LIST));
-
-				transformer.transform(loop, this);
-			} else if(code instanceof Codes.LoopEnd) {
-				top = scopes.size() - 1;
-				LoopScope ls = (LoopScope) scopes.get(top);
-				scopes.remove(top);
-				if(ls instanceof ForScope) {
-					ForScope fs = (ForScope) ls;
-					transformer.end(fs,this);
-				} else {
-					// normal loop, so the branch ends here
-					transformer.end(ls,this);
-					break;
-				}
-			} else if(code instanceof Codes.TryCatch) {
-				Codes.TryCatch tc = (Codes.TryCatch) code;
-				scopes.add(new TryScope(findLabelIndex(tc.target),
-						Collections.EMPTY_LIST));
-				transformer.transform(tc, this);
-			} else if(code instanceof Codes.AssertOrAssume) {
-				Codes.AssertOrAssume ac = (Codes.AssertOrAssume) code;
-				boolean isAssertion = code instanceof Codes.Assert;
-				scopes.add(new AssertOrAssumeScope(isAssertion,
-						findLabelIndex(ac.target), Collections.EMPTY_LIST));
-				transformer.transform(ac, this);
-			} else if(code instanceof Codes.Return) {
-				transformer.transform((Codes.Return) code, this);
-				kill();
-				break; // we're done!!!
-			} else if(code instanceof Codes.Throw) {
-				transformer.transform((Codes.Throw) code, this);
-				break; // we're done!!!
-			} else if(code instanceof Codes.Fail) {
-				transformer.transform((Codes.Fail) code, this);
-				kill();
-				break;
-			} else {
-				dispatch(transformer);
-			}
-
-			// move on to next instruction.
-			pc = pc + 1;
-		}
-
-		// Now, transform child branches!!!
-		for(VcBranch child : children) {
-			child.transform(transformer);
-			join(child);
-		}
-
-		return constraints();
 	}
 
 	/**
 	 * <p>
-	 * Fork a child-branch from this branch. The child branch is (initially)
-	 * identical in every way to the parent, however the expectation is that
-	 * they will diverge.
+	 * Fork this branch into a child branch with this branch as parent. This
+	 * branch enters the INTERNAL state and is now immutable (otherwise, changes
+	 * to this branch would change its children as well). The child branch is
+	 * (initially) identical to this branch in every way. However, the
+	 * expectation is that it will diverge as verification condition generation
+	 * progresses. Finally, multiple children may be forked from the same
+	 * parent.
 	 * </p>
 	 *
 	 * <pre>
@@ -537,437 +420,217 @@ public class VcBranch {
 	 * point. Initially, the <code>PC</code> value for the forked branch is
 	 * identical to that of the parent, however it is expected that a
 	 * <code>goTo</code> will be used immediately after the fork to jump the
-	 * child branch to its logical starting point.
-	 * </p>
-	 * <p>
-	 * A new environment is created for the child branch which, initially, is
-	 * identical to that of the parent. As assignments to variables are made on
-	 * either branch, these environments will move apart.
+	 * child branched to their logical starting point.
 	 * </p>
 	 *
 	 * @return --- The child branch which is forked off this branch.
 	 */
-	private VcBranch fork() {
+	public VcBranch fork() {
+		// Mark this branch as having been forked and, hence, it is now
+		// inactive.
+		this.state = State.INTERNAL;
+		// Construct the two child branch
 		return new VcBranch(this);
 	}
 
 	/**
 	 * <p>
-	 * Merge descendant (i.e. a child or child-of-child, etc) branch back into
-	 * this branch. The constraints for this branch must now correctly capture
-	 * those constraints that hold coming from either branch (i.e. this
-	 * represents a meet-point in the control-flow graph).
+	 * Join two (or more) branches together to form a single active branch with
+	 * two (or more) parents. The parent branches enter the INTERNAL state and,
+	 * hence, become immutable (since, otherwise, changes to them would affect
+	 * their children).
 	 * </p>
-	 * <p>
-	 * To generate the constraints which hold after the meet, we take the
-	 * logical OR of those constraints holding on this branch prior to the meet
-	 * and those which hold on the incoming branch. For example, support we
-	 * have:
-	 * </p>
-	 *
+	 * 
 	 * <pre>
-	 * 	 y$0 != 0    y$0 != 0
-	 *   && x$1 < 1  && x$2 >= 1
+	 *        B1 	  B2
 	 *        ||      ||
 	 *         \\    //
 	 *          \\  //
 	 *           \\//
 	 *            ##
-	 *   y$0 != 0 &&
-	 * ((x$1 < 1 && x$3 == x$1) ||
-	 *  (x$2 >= 1 && x$3 == x$2))
+	 *            B3
 	 * </pre>
 	 * <p>
-	 * Here, we see that <code>y$0 != 0</code> is constant to both branches and
-	 * is ommitted from the disjunction. Furthermore, we've added an assignment
-	 * <code>x$3 == </code> onto both sides of the disjunction to capture the
-	 * flow of variable <code>x</code> from both sides (since it was modified on
-	 * at least one of the branches).
+	 * An important concern is how the environment in the child branch is
+	 * constructed from its parents. The issue being that the environments in
+	 * the parent branches may diverged. HOW TO RESOLVE THIS??
 	 * </p>
+	 * 
+	 * @param parent
+	 *            --- The parent branches which are being joined with this one.
+	 *            These must all have the same PC value as this branch.
+	 */
+	public VcBranch join(VcBranch... parents) {
+		// Quick sanity check that all branches being joined have same pc
+		// location and are in the same state.		
+		State parentState = this.state;
+		for (VcBranch parent : parents) {
+			if (!pc.equals(parent.pc())) {
+				throw new IllegalArgumentException(
+						"Attempt to join parents at different locations");
+			} else if (!state.equals(parent.state())) {
+				throw new IllegalArgumentException(
+						"Attempt to join parents in different states");
+			}
+		}
+		// Mark all branches involved in the join as internal. This
+		// effectively renders them immutable from now on, thereby preventing
+		// changes which could affect the joined branch or its children.  		
+		for (VcBranch parent : parents) {
+			parent.state = State.INTERNAL;
+		}
+		this.state = State.INTERNAL;
+
+		// Construct the array of all branches, including this.
+		VcBranch[] nparents = new VcBranch[parents.length + 1];
+		System.arraycopy(parents, 0, nparents, 1, parents.length);
+		nparents[0] = this;
+
+		// Converge environments to ensure obtain a single environment which
+		// correctly represents the environments of all branches being joined.
+		// In some cases, individual environments may need to be patched to get
+		// them all into identical states. 
+		Expr[] nEnvironment = convergeEnvironments(nparents); 
+		
+		// FIXME: this should be deprecated
+		Type[] nTypes = Arrays.copyOf(types,types.length);
+
+		// Finally, create the new branch representing the join of all branches,
+		// and with those branches as its declared parents.
+		return new VcBranch(nparents, nEnvironment, nTypes, parentState, prefixes);
+	}
+
+	/**
+	 * Convert environments from one or more branches together. The key
+	 * challenge here lies with variables that have diverged between branches.
+	 * For example, consider converging two branch environments:
+	 * 
+	 * <pre>
+	 * Branch 1:   Branch 2:
+	 * 
+	 * |0|1|2|3|   |0|1|2|3|
+	 * =========   =========
+	 * |X|Y|Z|/|   |X|Z|/|/|
+	 * </pre>
+	 * 
 	 * <p>
-	 * One challenge is to determine constraints which are constant to both
-	 * sides. Eliminating such constraints from the disjunction reduces the
-	 * overall work of the constraint solver.
+	 * Here, we see the four main cases to be concerned with. Firstly, register
+	 * 0 has the same value on both branches (namely, X) and, hence, will have
+	 * this same value in the final joined branch. Register 1 has different
+	 * values in both branches and will need to be patched. Register 2 has null
+	 * on one branch signalling it is undefined on that branch and, hence, will
+	 * be undefined in the resulting joined branch. Finally, register 3 is
+	 * undefined on both branches and hence will be undefined in the final
+	 * joined branch as well.
 	 * </p>
-	 *
-	 * @param incoming
-	 *            --- The descendant branch which is being merged into this one.
-	 */
-	private void join(VcBranch incoming) {
-		// First, determine new constraint sequence
-		ArrayList<Expr> common = new ArrayList<Expr>();
-		ArrayList<Expr> lhsConstraints = new ArrayList<Expr>();
-		ArrayList<Expr> rhsConstraints = new ArrayList<Expr>();
-
-		splitConstraints(incoming,common,lhsConstraints,rhsConstraints);
-
-		// Finally, put it all together
-		Expr l = And(lhsConstraints);
-		Expr r = And(rhsConstraints);
-
-		// can now compute the logical OR of both branches
-		Expr join = Or(l,r);
-
-		// now, clear our sequential constraints since we can only have one
-		// which holds now: namely, the or of the two branches.
-		Scope top = topScope();
-		top.constraints.clear();
-		top.constraints.addAll(common);
-		top.constraints.add(join);
-	}
-
-	/**
-	 * Kill this branch. Namely, it does not proceed any further.
-	 */
-	public void kill() {
-		// Because this branch is unreachable, need to kill it properly [that
-		// includes all subscopes as well].
-		for(int i=scopes.size();i>0;--i) {
-			VcBranch.Scope s = scope(i-1);
-			s.constraints.clear();
-		}
-		topScope().constraints.add(new Expr.Constant(Value.Bool(false)));
-	}
-
-	/**
-	 * A region of bytecodes which requires special attention when the branch
-	 * exits the scope. For example, when a branch exits the body of a for-loop,
-	 * we must ensure that the appopriate loop-invariants hold, etc.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Scope implements Cloneable {
-		public final ArrayList<Expr> constraints;
-		public int end;
-
-		public Scope(int end, List<Expr> constraints) {
-			this.end = end;
-			this.constraints = new ArrayList<Expr>(constraints);
-		}
-
-		public Scope clone() {
-			return new Scope(end,constraints);
-		}
-	}
-
-	/**
-	 * Represents the scope of a general loop bytecode.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 */
-	public static class LoopScope<T extends Codes.Loop> extends
-			VcBranch.Scope {
-		public final T loop;
-
-		public LoopScope(T loop, int end, List<Expr> constraints) {
-			super(end,constraints);
-			this.loop = loop;
-		}
-
-		public LoopScope<T> clone() {
-			return new LoopScope(loop,end,constraints);
-		}
-	}
-
-	/**
-	 * Represents the scope of an assert or assume bytecode.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 */
-	public static class AssertOrAssumeScope extends
-			VcBranch.Scope {
-		public final boolean isAssertion;
-
-		public AssertOrAssumeScope(boolean isAssertion, int end, List<Expr> constraints) {
-			super(end,constraints);
-			this.isAssertion = isAssertion;
-		}
-
-		public AssertOrAssumeScope clone() {
-			return new AssertOrAssumeScope(isAssertion, end,constraints);
-		}
-	}
-
-	/**
-	 * Represents the scope of a forall bytecode
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class ForScope extends LoopScope<Codes.ForAll> {
-		public final Expr source;
-		public final Expr.Variable index;
-
-		public ForScope(Codes.ForAll forall, int end, List<Expr> constraints,
-				Expr source, Expr.Variable index) {
-			super(forall, end, constraints);
-			this.index = index;
-			this.source = source;
-		}
-
-		public ForScope clone() {
-			return new ForScope(loop, end, constraints, source, index);
-		}
-	}
-
-	/**
-	 * Represents the scope of a general try-catch handler.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 */
-	public static class TryScope extends
-			VcBranch.Scope {
-
-		public TryScope(int end, List<Expr> constraints) {
-			super(end,constraints);
-		}
-
-		public TryScope clone() {
-			return new TryScope(end,constraints);
-		}
-	}
-
-	/**
-	 * Represents the scope of a method or function
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 */
-	public static class EntryScope extends VcBranch.Scope {
-		public final WyilFile.FunctionOrMethodDeclaration declaration;
-
-		public EntryScope(WyilFile.FunctionOrMethodDeclaration decl, int end,
-				List<Expr> constraints) {
-			super(end, constraints);
-			this.declaration = decl;
-		}
-
-		public EntryScope clone() {
-			return new EntryScope(declaration, end, constraints);
-		}
-	}
-
-	/**
-	 * Dispatch on the given bytecode to the appropriate method in transformer
-	 * for generating an appropriate constraint to capture the bytecodes
-	 * semantics.
-	 *
+	 * 
+	 * <p>
+	 * Before joining the above two branches they need to be patched to ensure
+	 * register 1 has the same value on both branches. This is done by creating
+	 * a new variable to store the value from each branch. The following
+	 * illustrates the two patched environments (which are children of the two
+	 * above):
+	 * </p>
+	 * 
+	 * <pre>
+	 * Branch 3:   Branch 4:
+	 * parent: 1   parent: 2
+	 * 
+	 * |0|1|2|3|   |0|1|2|3|
+	 * =========   =========
+	 * |X|W|Z|/|   |X|W|/|/|
+	 * 
+	 * (W == Y)    (W == Z)
+	 * </pre>
+	 * 
+	 * <p>
+	 * Below the patched branches we can see the constraints which have been
+	 * assumed to ensure information from both branches is correctly retained.
+	 * The finaly joined branch is thus:
+	 * </p>
+	 * 
+	 * <pre>
+	 * Branch 5:
+	 * parents: 3,4
+	 * 
+	 * |0|1|2|3|
+	 * =========
+	 * |X|W|/|/|
+	 * </pre>
+	 * 
+	 * Finally, it is worth noting that in the special case that no variables
+	 * need to be patched, then no patch environments need to be created.
+	 * 
+	 * @param branches
+	 *            --- Branches whose environments are to be converged.
+	 * 
 	 * @return
 	 */
-	private void dispatch(VcTransformer transformer) {
-		Code code = entry().code;
-		try {
-			if(code instanceof Codes.BinaryOperator) {
-				transformer.transform((Codes.BinaryOperator)code,this);
-			} else if(code instanceof Codes.Convert) {
-				transformer.transform((Codes.Convert)code,this);
-			} else if(code instanceof Codes.Const) {
-				transformer.transform((Codes.Const)code,this);
-			} else if(code instanceof Codes.Debug) {
-				transformer.transform((Codes.Debug)code,this);
-			} else if(code instanceof Codes.FieldLoad) {
-				transformer.transform((Codes.FieldLoad)code,this);
-			} else if(code instanceof Codes.IndirectInvoke) {
-				transformer.transform((Codes.IndirectInvoke)code,this);
-			} else if(code instanceof Codes.Invoke) {
-				transformer.transform((Codes.Invoke)code,this);
-			} else if(code instanceof Codes.Invert) {
-				transformer.transform((Codes.Invert)code,this);
-			} else if(code instanceof Codes.Label) {
-				// skip
-			} else if(code instanceof Codes.ListOperator) {
-				transformer.transform((Codes.ListOperator)code,this);
-			} else if(code instanceof Codes.LengthOf) {
-				transformer.transform((Codes.LengthOf)code,this);
-			} else if(code instanceof Codes.SubList) {
-				transformer.transform((Codes.SubList)code,this);
-			} else if(code instanceof Codes.IndexOf) {
-				transformer.transform((Codes.IndexOf)code,this);
-			} else if(code instanceof Codes.Move) {
-				transformer.transform((Codes.Move)code,this);
-			} else if(code instanceof Codes.Assign) {
-				transformer.transform((Codes.Assign)code,this);
-			} else if(code instanceof Codes.Update) {
-				transformer.transform((Codes.Update)code,this);
-			} else if(code instanceof Codes.NewMap) {
-				transformer.transform((Codes.NewMap)code,this);
-			} else if(code instanceof Codes.NewList) {
-				transformer.transform((Codes.NewList)code,this);
-			} else if(code instanceof Codes.NewRecord) {
-				transformer.transform((Codes.NewRecord)code,this);
-			} else if(code instanceof Codes.NewSet) {
-				transformer.transform((Codes.NewSet)code,this);
-			} else if(code instanceof Codes.NewTuple) {
-				transformer.transform((Codes.NewTuple)code,this);
-			} else if(code instanceof Codes.UnaryOperator) {
-				transformer.transform((Codes.UnaryOperator)code,this);
-			} else if(code instanceof Codes.Dereference) {
-				transformer.transform((Codes.Dereference)code,this);
-			} else if(code instanceof Codes.Nop) {
-				transformer.transform((Codes.Nop)code,this);
-			} else if(code instanceof Codes.SetOperator) {
-				transformer.transform((Codes.SetOperator)code,this);
-			} else if(code instanceof Codes.StringOperator) {
-				transformer.transform((Codes.StringOperator)code,this);
-			} else if(code instanceof Codes.SubString) {
-				transformer.transform((Codes.SubString)code,this);
-			} else if(code instanceof Codes.NewObject) {
-				transformer.transform((Codes.NewObject)code,this);
-			} else if(code instanceof Codes.Throw) {
-				transformer.transform((Codes.Throw)code,this);
-			} else if(code instanceof Codes.TupleLoad) {
-				transformer.transform((Codes.TupleLoad)code,this);
-			} else {
-				internalFailure("unknown: " + code.getClass().getName(),
-						transformer.filename(), entry());
-			}
-		} catch(InternalFailure e) {
-			throw e;
-		} catch(SyntaxError e) {
-			throw e;
-		} catch(Throwable e) {
-			internalFailure(e.getMessage(), transformer.filename(), entry(), e);
-		}
-	}
-
-	/**
-	 * Dispatch exit scope events to the transformer.
-	 *
-	 * @param scope
-	 * @param transformer
-	 */
-	private void dispatchExit(Scope scope, VcTransformer transformer) {
-		if (scope instanceof ForScope) {
-			ForScope fs = (ForScope) scope;
-			transformer.exit(fs, this);
-		} else if (scope instanceof LoopScope) {
-			LoopScope ls = (LoopScope) scope;
-			transformer.exit(ls, this);
-		} else if (scope instanceof TryScope) {
-			TryScope ls = (TryScope) scope;
-			transformer.exit(ls, this);
+	private Expr[] convergeEnvironments(VcBranch[] branches) {
+		Expr[] newEnvironment = Arrays.copyOf(environment, environment.length);
+		// First, go through and find all registers whose values differ between
+		// parents. These registers will need to be patched.
+		BitSet toPatch = determinePatchVariables(newEnvironment, branches);
+		// Second, patch any registers which were marked in previous phase. Such
+		// registers are given new names which are common to all branches, and
+		// appropriate assumptions are added to connect the old register names
+		// with the new.
+		if(toPatch.isEmpty()) {
+			// This is the special case where there are no variables needing to
+			// be patched.
+			return newEnvironment;
 		} else {
-			AssertOrAssumeScope ls = (AssertOrAssumeScope) scope;
-			transformer.exit(ls, this);
+			// In this case, there is at least one varaible which needs to be
+			// patched. First, we go through and fork all branches to create the
+			// patch branches.
+			for (int j = 0; j != branches.length; ++j) {
+				branches[j] = branches[j].fork();
+			}
+			// Now, patch each variable which is marked for patching.
+			for (int i = 0; i != newEnvironment.length; ++i) {
+				if (toPatch.get(i)) {
+					// This register needs to be patched
+					Expr.Variable var = new Expr.Variable(prefixes[i] + "_" + pc); // FIXME: pc
+					for (int j = 0; j != branches.length; ++j) {
+						branches[j].assume(new Expr.Binary(Expr.Binary.Op.EQ,
+								var, branches[j].read(i)));
+					}
+					newEnvironment[i] = var;
+				}
+			}
+			// Done
+			return newEnvironment;
 		}
 	}
-
+	
 	/**
-	 * Reposition the Program Counter (PC) for this branch to a given label in
-	 * the block.
-	 *
-	 * @param label
-	 *            --- label to look for, which is assumed to occupy an index
-	 *            greater than the current PC (this follows the Wyil requirement
-	 *            that branches always go forward).
-	 */
-	private void goTo(String label) {
-		pc = findLabelIndex(label);
-	}
-
-	/**
-	 * Find the bytecode index of a given label. If the label doesn't exist an
-	 * exception is thrown.
-	 *
-	 * @param label
+	 * Determine which variables differ between two or more branches. Such
+	 * variables need to be "patched".
+	 * 
+	 * @param environment
+	 * @param parents
 	 * @return
 	 */
-	private int findLabelIndex(String label) {
-		for (int i = pc; i != block.size(); ++i) {
-			Code code = block.get(i);
-			if (code instanceof Codes.Label) {
-				Codes.Label l = (Codes.Label) code;
-				if (l.label.equals(label)) {
-					return i;
+	private static BitSet determinePatchVariables(Expr[] environment,
+			VcBranch[] parents) {
+		BitSet toPatch = new BitSet(environment.length);
+		for (int i = 0; i != environment.length; ++i) {
+			environment[i] = parents[0].environment[i];
+			for (int j = 0; j != parents.length; ++j) {
+				VcBranch parent = parents[j];
+				if (environment[i] == null || parent.environment[i] == null) {
+					// In this case, the variable is undefined on one or both
+					// parents. This means it cannot be used after this point
+					// and, hence, can be safey ignored.
+				} else if (parent.environment[i] != environment[i]) {
+					// In this case, there is a difference between this parent's
+					// environment and at least one others. In such case, the
+					// variable in question needs to be patched.
+					toPatch.set(i);
 				}
 			}
 		}
-		throw new IllegalArgumentException("unknown label --- " + label);
+		return toPatch;
 	}
 
-	private Scope topScope() {
-		return scopes.get(scopes.size()-1);
-	}
-
-	/**
-	 * Split the constraints for this branch and the incoming branch into three
-	 * sets: those common to both; those unique to this branch; and, those
-	 * unique to the incoming branch.
-	 *
-	 * @param incoming
-	 * @param common
-	 * @param myRemainder
-	 * @param incomingRemainder
-	 */
-	private void splitConstraints(VcBranch incoming, ArrayList<Expr> common,
-			ArrayList<Expr> myRemainder, ArrayList<Expr> incomingRemainder) {
-		ArrayList<Expr> constraints = topScope().constraints;
-		ArrayList<Expr> incomingConstraints = incoming.topScope().constraints;
-
-		int min = 0;
-
-		while (min < constraints.size() && min < incomingConstraints.size()) {
-			Expr is = constraints.get(min);
-			Expr js = incomingConstraints.get(min);
-			if (is != js) {
-				break;
-			}
-			min = min + 1;
-		}
-
-		for(int k=0;k<min;++k) {
-			common.add(constraints.get(k));
-		}
-		for(int i = min;i < constraints.size();++i) {
-			myRemainder.add(constraints.get(i));
-		}
-		for(int j = min;j < incomingConstraints.size();++j) {
-			incomingRemainder.add(incomingConstraints.get(j));
-		}
-	}
-
-	public Expr And(List<Expr> constraints) {
-		if(constraints.size() == 0) {
-			return new Expr.Constant(Value.Bool(true));
-		} else if(constraints.size() == 1) {
-			return constraints.get(0);
-		} else {
-			Expr nconstraints = null;
-			for (Expr e : constraints) {
-				if(nconstraints == null) {
-					nconstraints = e;
-				} else {
-					nconstraints = new Expr.Binary(Expr.Binary.Op.AND,e,nconstraints,e.attributes());
-				}
-			}
-			return nconstraints;
-		}
-	}
-
-	public Expr Or(Expr... constraints) {
-		if (constraints.length == 0) {
-			return new Expr.Constant(Value.Bool(false));
-		} else if (constraints.length == 1) {
-			return constraints[0];
-		} else {
-			Expr nconstraints = null;
-			for (Expr e : constraints) {
-				if (nconstraints == null) {
-					nconstraints = e;
-				} else {
-					nconstraints = new Expr.Binary(Expr.Binary.Op.OR, e,
-							nconstraints, e.attributes());
-				}
-			}
-			return nconstraints;
-		}
-	}
 }

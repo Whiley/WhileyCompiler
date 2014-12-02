@@ -201,8 +201,9 @@ public final class CodeGenerator {
 					environment, invariant);
 			String lab = CodeUtils.freshLabel();
 			generateCondition(lab, td.invariant, environment, invariant, td);
-			invariant.add(Codes.Fail("constraint not satisfied"));
+			invariant.add(Codes.Fail());
 			invariant.add(Codes.Label(lab));
+			invariant.add(Codes.Return());
 		}
 
 		return new WyilFile.TypeDeclaration(td.modifiers(), td.name(),
@@ -235,13 +236,13 @@ public final class CodeGenerator {
 		}
 
 		for (Expr condition : fd.requires) {
-			AttributedCodeBlock block = new AttributedCodeBlock(new SourceLocationMap());
+			AttributedCodeBlock precondition = new AttributedCodeBlock(new SourceLocationMap());
 			String endLab = CodeUtils.freshLabel();
-			generateCondition(endLab, condition, environment, block, fd);
-			block.add(Codes.Fail("precondition not satisfied"),
-					attributes(condition));
-			block.add(Codes.Label(endLab));
-			requires.add(block);
+			generateCondition(endLab, condition, environment, precondition, fd);
+			precondition.add(Codes.Fail(),attributes(condition));
+			precondition.add(Codes.Label(endLab));
+			precondition.add(Codes.Return());
+			requires.add(precondition);
 		}
 
 		// ==================================================================
@@ -265,16 +266,16 @@ public final class CodeGenerator {
 			}
 
 			for (Expr condition : fd.ensures) {
-				AttributedCodeBlock block = new AttributedCodeBlock(new SourceLocationMap());
+				AttributedCodeBlock postcondition = new AttributedCodeBlock(new SourceLocationMap());
 				addDeclaredVariables(root, fd.ret, fd.resolvedType().ret().raw(),
-						postEnv, block);
+						postEnv, postcondition);
 				String endLab = CodeUtils.freshLabel();
 				generateCondition(endLab, condition, new Environment(postEnv),
-						block, fd);
-				block.add(Codes.Fail("postcondition not satisfied"),
-						attributes(condition));
-				block.add(Codes.Label(endLab));
-				ensures.add(block);
+						postcondition, fd);
+				postcondition.add(Codes.Fail(), attributes(condition));
+				postcondition.add(Codes.Label(endLab));
+				postcondition.add(Codes.Return());
+				ensures.add(postcondition);
 			}
 		}
 
@@ -640,7 +641,7 @@ public final class CodeGenerator {
 		String endLab = CodeUtils.freshLabel();
 		codes.add(Codes.Assert(endLab), attributes(s));
 		generateCondition(endLab, s.expr, environment, codes, context);
-		codes.add(Codes.Fail("assertion failed"), attributes(s.expr));
+		codes.add(Codes.Fail(), attributes(s.expr));
 		codes.add(Codes.Label(endLab));
 	}
 
@@ -664,7 +665,7 @@ public final class CodeGenerator {
 		String endLab = CodeUtils.freshLabel();
 		codes.add(Codes.Assume(endLab), attributes(s));
 		generateCondition(endLab, s.expr, environment, codes, context);
-		codes.add(Codes.Fail("assumption failed"), attributes(s.expr));
+		codes.add(Codes.Fail(), attributes(s.expr));
 		codes.add(Codes.Label(endLab));
 	}
 
@@ -715,6 +716,7 @@ public final class CodeGenerator {
 			Type ret = ((WhileyFile.FunctionOrMethod) context).resolvedType()
 					.raw().ret();
 
+			System.out.println("ADDING ATTRIBUTES: " + attributes(s));
 			codes.add(Codes.Return(ret, operand), attributes(s));
 		} else {
 			codes.add(Codes.Return(), attributes(s));

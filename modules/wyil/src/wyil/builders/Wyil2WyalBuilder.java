@@ -32,7 +32,6 @@ import wybs.lang.Build;
 import wybs.lang.Builder;
 import wyfs.lang.Path;
 import wyil.attributes.SourceLocationMap;
-import wyil.builders.VcBranch.AssertOrAssumeScope;
 import wyil.lang.*;
 import wyil.util.AttributedCodeBlock;
 import wycc.util.Logger;
@@ -82,6 +81,8 @@ public class Wyil2WyalBuilder implements Builder {
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
 
+		VcGenerator vcg = new VcGenerator(this);
+		
 		// ========================================================================
 		// Translate files
 		// ========================================================================
@@ -91,7 +92,7 @@ public class Wyil2WyalBuilder implements Builder {
 			Path.Root dst = p.second();
 			Path.Entry<WyalFile> df = (Path.Entry<WyalFile>) dst.create(sf.id(), WyalFile.ContentType);
 			generatedFiles.add(df);
-			WyalFile contents = build(sf.read());
+			WyalFile contents = vcg.transform(sf.read());
 			// Write the file into its destination
 			df.write(contents);
 			// Then, flush contents to disk in case we generate an assertion
@@ -111,74 +112,5 @@ public class Wyil2WyalBuilder implements Builder {
 		return generatedFiles;
 	}
 
-	protected WyalFile build(WyilFile wyilFile) {
-		this.filename = wyilFile.filename();
-
-		// TODO: definitely need a better module ID here.
-		final WyalFile wyalFile = new WyalFile(wyilFile.id(), filename);
-
-		for (WyilFile.TypeDeclaration type : wyilFile.types()) {
-			transform(type);
-		}
-		for (WyilFile.FunctionOrMethodDeclaration method : wyilFile.functionOrMethods()) {
-			transform(method, wyilFile, wyalFile);
-		}
-
-		return wyalFile;
-	}
-
-	protected void transform(WyilFile.TypeDeclaration def) {
-
-	}
-
-	protected void transform(WyilFile.FunctionOrMethodDeclaration method,
-			WyilFile wyilFile, WyalFile wycsFile) {
-		for (WyilFile.Case c : method.cases()) {
-			transform(c, method, wyilFile, wycsFile);
-		}
-	}
-
-	protected void transform(WyilFile.Case methodCase,
-			WyilFile.FunctionOrMethodDeclaration method, WyilFile wyilFile,
-			WyalFile wycsFile) {
-
-		Type.FunctionOrMethod fmm = method.type();
-		int paramStart = 0;
-
-		AttributedCodeBlock body = methodCase.body();
-
-		VcBranch master = new VcBranch(method, body);
-
-		for (int i = paramStart; i != fmm.params().size(); ++i) {
-			Type paramType = fmm.params().get(i);
-			master.write(i, new Expr.Variable("r" + Integer.toString(i)), paramType);
-		}
-
-		List<AttributedCodeBlock> requires = methodCase.precondition();
-
-		if (requires.size() > 0) {
-			AttributedCodeBlock block = new AttributedCodeBlock(new SourceLocationMap());
-			for(AttributedCodeBlock precondition : requires) {
-				block.addAll(precondition);
-			}
-			VcBranch precond = new VcBranch(method, block);
-
-			AssertOrAssumeScope scope = new AssertOrAssumeScope(false, block.size(), Collections.EMPTY_LIST);
-			precond.scopes.add(scope);
-
-			// FIXME: following seems like a hack --- there must be a more
-			// elegant way of doing this?
-			for (int i = paramStart; i != fmm.params().size(); ++i) {
-				precond.write(i, master.read(i), master.typeOf(i));
-			}
-
-			Expr constraint = precond.transform(new VcTransformer(this,
-					wycsFile, filename, true));
-
-			precond.scopes.remove(precond.scopes.size()-1);
-			master.add(constraint);
-		}
-
-		master.transform(new VcTransformer(this, wycsFile, filename, false));
-	}
+	
 }

@@ -93,9 +93,10 @@ public class WyalFilePrinter {
 			}
 			out.print(">");
 		}
-		out.print(s.from);
-		if(s.body != null) {
+		writeWithBraces(wf,s.from);		
+		if(s.body != null) {		
 			out.println(" as:");
+			indent(1);
 			writeWithoutBraces(wf,s.body,1);
 		}
 	}
@@ -120,6 +121,20 @@ public class WyalFilePrinter {
 	 * @param indent
 	 */
 	public void writeWithBraces(WyalFile wf, Expr e, int indent) {
+		out.print("(");
+		writeWithoutBraces(wf,e,indent);
+		out.print(")");		
+	}
+	
+	/**
+	 * This function is called to print an expression which should be written
+	 * with braces if it is not a single atomic entity.
+	 *
+	 * @param wf
+	 * @param e
+	 * @param indent
+	 */
+	public void writeWithOptionalBraces(WyalFile wf, Expr e, int indent) {
 		boolean needsBraces = needsBraces(e);
 		if(needsBraces) {
 			out.print("(");
@@ -167,7 +182,7 @@ public class WyalFilePrinter {
 			out.print("|");
 			return;
 		}
-		writeWithBraces(wf,e.operand,indent);
+		writeWithOptionalBraces(wf,e.operand,indent);
 	}
 
 	private void write(WyalFile wf, Expr.Binary e, int indent) {
@@ -199,9 +214,9 @@ public class WyalFilePrinter {
 			writeWithoutBraces(wf,e.rightOperand,indent+1);
 			break;
 		default:
-			writeWithBraces(wf,e.leftOperand,indent);
+			writeWithOptionalBraces(wf,e.leftOperand,indent);
 			out.print(" " + e.op + " ");
-			writeWithBraces(wf,e.rightOperand,indent);
+			writeWithOptionalBraces(wf,e.rightOperand,indent);
 		}
 	}
 
@@ -233,7 +248,6 @@ public class WyalFilePrinter {
 		case TUPLE:
 		{
 			boolean firstTime=true;
-			out.print("(");
 			for(Expr operand : e.operands) {
 				if(!firstTime) {
 					out.print(", ");
@@ -242,7 +256,6 @@ public class WyalFilePrinter {
 				}
 				writeWithoutBraces(wf,operand,indent);
 			}
-			out.print(")");
 			return;
 		}
 		case SET: {
@@ -254,7 +267,7 @@ public class WyalFilePrinter {
 				} else {
 					firstTime = false;
 				}
-				writeWithBraces(wf,operand,indent);
+				writeWithOptionalBraces(wf,operand,indent);
 			}
 			out.print("}");
 			return;
@@ -268,9 +281,9 @@ public class WyalFilePrinter {
 				} else {
 					firstTime = false;
 				}
-				writeWithBraces(wf,e.operands.get(i),indent);
+				writeWithOptionalBraces(wf,e.operands.get(i),indent);
 				out.print(" => ");
-				writeWithBraces(wf,e.operands.get(i+1),indent);
+				writeWithOptionalBraces(wf,e.operands.get(i+1),indent);
 			}
 			out.print("}");
 			return;
@@ -284,7 +297,7 @@ public class WyalFilePrinter {
 				} else {
 					firstTime = false;
 				}
-				writeWithBraces(wf,operand,indent);
+				writeWithOptionalBraces(wf,operand,indent);
 			}
 			out.print("]");
 			return;
@@ -300,7 +313,7 @@ public class WyalFilePrinter {
 			out.print("exists ");
 		}
 
-		writeWithoutBraces(wf, e.pattern);
+		writeWithBraces(wf, e.pattern);
 		out.println(":");
 		indent(indent+1);
 		writeWithoutBraces(wf,e.operand,indent+1);
@@ -312,7 +325,7 @@ public class WyalFilePrinter {
 	}
 
 	private void write(WyalFile wf, Expr.IndexOf e, int indent) {
-		writeWithBraces(wf,e.operand,indent);
+		writeWithOptionalBraces(wf,e.operand,indent);
 		out.print("[");
 		out.print(e.index);
 		out.print("]");
@@ -338,6 +351,25 @@ public class WyalFilePrinter {
 		}
 	}
 
+	protected void writeWithBraces(WyalFile wf, TypePattern p) {
+		out.print("(");
+		if(p instanceof TypePattern.Tuple) {
+			TypePattern.Tuple t = (TypePattern.Tuple) p;
+			for(int i=0;i!=t.elements.size();++i) {
+				if(i!=0) {
+					out.print(", ");
+				}
+				writeWithoutBraces(wf,t.elements.get(i));
+			}
+		} else {
+			TypePattern.Leaf l = (TypePattern.Leaf) p;
+			out.print(l.type);
+			if(l.var != null) {
+				out.print(" " + l.var.name);
+			}
+		}
+		out.print(")");
+	}
 
 	private static boolean needsBraces(Expr e) {
 		 if(e instanceof Expr.Binary) {

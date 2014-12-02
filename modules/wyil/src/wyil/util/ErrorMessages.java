@@ -25,6 +25,8 @@
 
 package wyil.util;
 
+import java.util.Collection;
+
 import wycc.lang.SyntaxError.InternalFailure;
 import wyil.attributes.SourceLocation;
 import wyil.lang.Attribute;
@@ -202,6 +204,30 @@ public class ErrorMessages {
 	 *            syntax error.
 	 * @param entry
 	 *            Code.Entry associated with this syntax error.
+	 */
+	public static void syntaxError(String msg, String filename,
+			Collection<Attribute> attributes) {
+		for(Attribute attr : attributes) {
+			if(attr instanceof SourceLocation) {
+				SourceLocation l = (SourceLocation) attr;
+				throw new wycc.lang.SyntaxError(msg,filename,l.start(),l.end());
+			}
+		}
+		// No source information available.
+		throw new wycc.lang.SyntaxError(msg,filename,0,-1);
+	}
+	
+	/**
+	 * Helper function for emitting a syntax error with appropriate source
+	 * information.
+	 *
+	 * @param msg
+	 *            Message to report with this syntax error.
+	 * @param filename
+	 *            Filename of enclosing file for entry associated with this
+	 *            syntax error.
+	 * @param entry
+	 *            Code.Entry associated with this syntax error.
 	 * @param ex
 	 *            Exception which caused this syntax error.
 	 */
@@ -252,11 +278,61 @@ public class ErrorMessages {
 	 *            internal failure.
 	 * @param entry
 	 *            Code.Entry associated with this internal failure.
+	 */
+	public static void internalFailure(String msg, String filename,
+			Collection<Attribute> attributes) {
+		for(Attribute attr : attributes) {
+			if(attr instanceof SourceLocation) {
+				SourceLocation l = (SourceLocation) attr;
+				throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,l.start(),l.end());
+			}
+		}
+		// No source information available.
+		throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,0,-1);
+	}
+	
+	/**
+	 * Helper function for emitting a internal failure with appropriate source
+	 * information.
+	 *
+	 * @param msg
+	 *            Message to report with this internal failure.
+	 * @param filename
+	 *            Filename of enclosing file for entry associated with this
+	 *            internal failure.
+	 * @param entry
+	 *            Code.Entry associated with this internal failure.
 	 * @param ex
 	 *            Exception which caused this internal failure.
 	 */
 	public static void internalFailure(String msg, String filename,
 			Throwable ex, Attribute... attributes) {
+		for(Attribute attr : attributes) {
+			if(attr instanceof SourceLocation) {
+				SourceLocation l = (SourceLocation) attr;
+				throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,l.start(),l.end(),ex);
+			}
+		}
+		// No source information available.
+		throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,0,-1,ex);
+	}
+	
+	/**
+	 * Helper function for emitting a internal failure with appropriate source
+	 * information.
+	 *
+	 * @param msg
+	 *            Message to report with this internal failure.
+	 * @param filename
+	 *            Filename of enclosing file for entry associated with this
+	 *            internal failure.
+	 * @param entry
+	 *            Code.Entry associated with this internal failure.
+	 * @param ex
+	 *            Exception which caused this internal failure.
+	 */
+	public static void internalFailure(String msg, String filename,
+			Throwable ex, Collection<Attribute> attributes) {
 		for(Attribute attr : attributes) {
 			if(attr instanceof SourceLocation) {
 				SourceLocation l = (SourceLocation) attr;

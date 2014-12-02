@@ -1,0 +1,1886 @@
+// Copyright (c) 2012, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+package wyil.builders;
+
+import wycc.lang.SyntaxError.InternalFailure;
+import wycc.lang.SyntaxError;
+import static wyil.util.ErrorMessages.*;
+
+import java.math.BigInteger;
+import java.util.*;
+
+import wybs.lang.*;
+import wyfs.lang.Path;
+import wyil.lang.*;
+import wyil.util.AttributedCodeBlock;
+import wyil.util.ErrorMessages;
+import wycc.lang.Attribute;
+import wycc.lang.NameID;
+import wycs.core.Value;
+import wycs.syntax.*;
+import wycs.syntax.TypePattern.Tuple;
+
+/**
+ * Responsible for converting a given Wyil bytecode into an appropriate
+ * constraint which encodes its semantics.
+ *
+ * @author David J. Pearce
+ *
+ */
+public class VcGenerator {
+	private final Builder builder;
+	private String filename;
+	private WyalFile wycsFile;
+
+	public VcGenerator(Builder builder) {
+		this.builder = builder;
+	}
+
+	// ===============================================================================
+	// Top-Level Controller
+	// ===============================================================================
+
+	protected WyalFile transform(WyilFile wyilFile) {
+		filename = wyilFile.filename();
+		wycsFile = new WyalFile(wyilFile.id(), filename);
+
+		// FIXME: shouldn't we check other invariants as well? At least to
+		// ensure they are habitable?
+		for (WyilFile.TypeDeclaration type : wyilFile.types()) {
+			transform(type, wyilFile);
+		}
+
+		for (WyilFile.FunctionOrMethodDeclaration method : wyilFile
+				.functionOrMethods()) {
+			for (WyilFile.Case c : method.cases()) {
+				transform(c, method, wyilFile);
+			}
+		}
+
+		return wycsFile;
+	}
+
+	/**
+	 * Transform a type declaration into verification conditions as necessary.
+	 * In particular, the type should be "inhabitable". This means, for example,
+	 * that the invariant does not contradict itself.
+	 * 
+	 * @param type
+	 * @param wyilFile
+	 */
+	protected void transform(WyilFile.TypeDeclaration type, WyilFile wyilFile) {
+		AttributedCodeBlock body = type.invariant();
+		VcBranch master = new VcBranch(Math.max(body.numSlots(), 1),null);
+		master.write(Codes.REG_0, new Expr.Variable("r0"), type.type());
+
+		// Transform invariant body.
+		List<VcBranch> branches = transform(master, type.invariant());
+
+		// Examine all exit branches, discarding those which are failed. In this
+		// case, we are guaranteed exactly one terminated path exists as there
+		// is only ever one way to exit an invariant.
+		for (VcBranch exitBranch : branches) {
+			if (exitBranch.state() == VcBranch.State.TERMINATED) {
+				// This is a terminating state, so we need to check that this
+				// path is reachable.
+
+				// FIXME: add the uninhabitable check here.
+			}
+		}
+	}
+
+	protected void transform(WyilFile.Case methodCase,
+			WyilFile.FunctionOrMethodDeclaration method, WyilFile wyilFile) {
+
+		Type.FunctionOrMethod fmm = method.type();
+		AttributedCodeBlock body = methodCase.body();
+		List<AttributedCodeBlock> precondition = methodCase.precondition();
+		List<AttributedCodeBlock> postcondition = methodCase.postcondition();
+
+		// First, translate pre- and post-conditions into macro blocks. These
+		// can then be used in various places to assume or enforce pre /
+		// post-conditions. For example, when ensure a pre-condition is met at
+		// an invocation site, we can call this macro directly.
+		String prefix = method.name() + "_requires_";
+		for (int i = 0; i != precondition.size(); ++i) {
+			buildMacroBlock(prefix + i, precondition.get(i), fmm.params());
+		}
+		prefix = method.name() + "_ensures_";
+		for (int i = 0; i != postcondition.size(); ++i) {
+			List<Type> types = prepend(fmm.ret(), fmm.params());
+			buildMacroBlock(prefix + i, postcondition.get(i), types);
+		}
+
+		// Construct the master branch and initialise all parameters with their
+		// declared types in the master branch. The master branch needs to have
+		// at least as many slots as there are parameters, though may require
+		// more if the body uses them.
+		VcBranch master = new VcBranch(Math.max(body.numSlots(), fmm.params()
+				.size()),null);
+
+		Expr[] arguments = new Expr[fmm.params().size()];
+		for (int i = 0; i != fmm.params().size(); ++i) {
+			Expr.Variable v = new Expr.Variable("r" + Integer.toString(i));
+			Type t = fmm.params().get(i);
+			master.write(i, v, t);
+			arguments[i] = v;
+		}
+
+		// Second, assume all preconditions. To do this, we simply invoke the
+		// precondition macro for each one.
+		prefix = method.name() + "_requires_";
+		for (int i = 0; i != precondition.size(); ++i) {
+			Expr arg = arguments.length == 1 ? arguments[0] : new Expr.Nary(
+					Expr.Nary.Op.TUPLE, arguments);
+			Expr.Invoke macro = new Expr.Invoke(prefix + i, wyilFile.id(),
+					Collections.EMPTY_LIST, arg);
+			master.assume(macro);
+		}
+
+		// Traverse the function or method's body. This can produce potentially
+		// many terminated and failed branches, though none should still be
+		// active. Terminated branches are those which have reached a return
+		// statement, whilst failed branches are those which have reached a fail
+		// statement.
+		List<VcBranch> exitBranches = transform(master, body);
+
+		// Examine all branches produced from the body. Each should be in one of
+		// two states: terminated or failed. Failed states indicate some
+		// internal assertion was not met (for example, a loop invariant was not
+		// restored, etc). In contrast, terminated states indicate those which
+		// have successfully reached the end of the function. For these cases,
+		// we need to then check the post-condition.
+		for (VcBranch branch : exitBranches) {
+			switch (branch.state()) {
+			case FAILED: {
+				// This is a failed branch state. In this case, we construct a
+				// verification condition which enforces that the constraints
+				// leading up to this position cannot hold. In other words, that
+				// this is an unreachable path.
+				Expr vc = buildVerificationCondition(
+						new Expr.Constant(Value.Bool(false)), branch, body);
+				wycsFile.add(wycsFile.new Assert("assertion failure", vc,
+						toWycsAttributes(body.attributes(branch.pc()))));
+				break;
+			}
+			case TERMINATED: {
+				// First, construct arguments for the macro invocation. Only the
+				// returned value is read from the branch at the current pc. The
+				// other arguments correspond to the parameters which held on
+				// entry to this function.
+				Codes.Return ret = (Codes.Return) body.get(branch.pc());
+				arguments = new Expr[fmm.params().size() + 1];
+				for (int i = 0; i != fmm.params().size(); ++i) {
+					arguments[i + 1] = new Expr.Variable("r" + i);
+				}
+				arguments[0] = branch.read(ret.operand);
+				// Second, for each postcondition generate a separate
+				// verification condition. Doing this allows us to gather more
+				// detailed context information in the case of a failure about
+				// which post-condition is failing.
+				prefix = method.name() + "_ensures_";
+				for (int i = 0; i != postcondition.size(); ++i) {
+					Expr arg = arguments.length == 1 ? arguments[0]
+							: new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
+					Expr.Invoke macro = new Expr.Invoke(prefix + i,
+							wyilFile.id(), Collections.EMPTY_LIST, arg);
+					Expr vc = buildVerificationCondition(macro, branch, body);
+					// FIXME: add contextual information here
+					wycsFile.add(wycsFile.new Assert(
+							"postcondition not satisfied", vc,
+							toWycsAttributes(body.attributes(branch.pc()))));
+				}
+			}
+			}
+		}
+	}
+
+	// ===============================================================================
+	// Block controller
+	// ===============================================================================
+
+	/**
+	 * Transform a branch through a given outermost block, producing the
+	 * constraints which hold at the end. In the case of a function or method
+	 * body, every branch will be terminated with a return statement and, in
+	 * this case only, this will return null.
+	 * 
+	 * @param branch
+	 *            Branch state going into the block
+	 * @param block
+	 *            Block being transformed over
+	 * @return List of branches which reach the end of the block.
+	 */
+	public List<VcBranch> transform(VcBranch branch, AttributedCodeBlock block) {
+		// Construct the label map which is needed for conditional branches
+		Map<String, CodeBlock.Index> labels = buildLabelMap(block);
+		return transform(CodeBlock.Index.ROOT, branch, labels, block);
+	}
+
+	/**
+	 * Construct a mapping from labels to their block indices within a root
+	 * block. This is useful so they can easily be resolved during the
+	 * subsequent traversal of the block.
+	 * 
+	 * @param block
+	 * @return
+	 */
+	private Map<String, CodeBlock.Index> buildLabelMap(AttributedCodeBlock block) {
+		HashMap<String, CodeBlock.Index> labels = new HashMap<String, CodeBlock.Index>();
+		buildLabelMap(new CodeBlock.Index(null), null, labels, block);
+		return labels;
+	}
+
+	/**
+	 * Helper function for buildLabelMap
+	 * 
+	 * @param index
+	 *            Current block index being traversed.
+	 * @param labels
+	 *            Labels map being constructed
+	 * @param block
+	 *            Root block
+	 */
+	private void buildLabelMap(CodeBlock.Index index, CodeBlock.Index parent,
+			Map<String, CodeBlock.Index> labels, CodeBlock block) {
+		//
+		for (int i = 0; i != block.size(); ++i) {
+			Code code = block.get(i);
+			if (code instanceof Codes.Label) {
+				// Found a label, so register it in the labels map
+				Codes.Label label = (Codes.Label) code;
+				labels.put(label.label, index);
+			} else if (code instanceof CodeBlock) {
+				// Found a subblock, so traverse that
+				CodeBlock subblock = (CodeBlock) code;
+				buildLabelMap(index.firstWithin(), index, labels, subblock);
+			}
+			index = index.next();
+		}
+	}
+
+	/**
+	 * <p>
+	 * Transform a given vc branch over a block of zero or more statements. In
+	 * the case of a straight-line sequence, this is guaranteed to produce at
+	 * most one outgoing branch (zero is possible if sequence includes a
+	 * return). For an instruction sequence with one or more conditional
+	 * branches, multiple branches may be produced representing the different
+	 * possible traversals.
+	 * </p>
+	 * <p>
+	 * This function symbolically executes each branch it is maintaining until
+	 * it either terminates (e.g. returns), or leaves the block. Furthermore,
+	 * branches which terminate at the same pc are joined together. This ensures
+	 * that, for example, only one branch is returned in the case of blocks with
+	 * single exit paths.
+	 * </p>
+	 * 
+	 * @param index
+	 *            The index in the root block of the given block being iterated
+	 *            over.
+	 * @param entryState
+	 *            the initial state on entry to the block. This is assumed to be
+	 *            located at the first instruction of the block.
+	 * @param labels
+	 *            The map from labels to their block locations
+	 * @param block
+	 *            The block being transformed over.
+	 * 
+	 */
+	protected List<VcBranch> transform(CodeBlock.Index parent,
+			VcBranch entryState, Map<String, CodeBlock.Index> labels,
+			AttributedCodeBlock block) {
+		ArrayList<VcBranch> branches = new ArrayList<VcBranch>();
+		branches.add(entryState);
+
+		for (int i = 0; i != branches.size(); ++i) {
+			VcBranch branch = branches.get(i);
+
+			// The program counter represents the current position of the branch
+			// being explored.
+			CodeBlock.Index pc = branch.pc();
+
+			// Execute this branch provided it is still within the parent block.
+			// If it is outside of this block, then that means it has branched
+			// to an enclosing block.
+			while (branch.state() == VcBranch.State.ACTIVE
+					&& pc.isWithin(parent)) {
+				Code code = block.get(pc);
+				// Now, dispatch statements. Control statements are treated
+				// specially from unit statements.
+				if (code instanceof Codes.Goto) {
+					transform((Codes.Goto) code, i, branches, labels, block);
+				} else if (code instanceof Codes.If) {
+					transform((Codes.If) code, i, branches, labels, block);
+				} else if (code instanceof Codes.IfIs) {
+					transform((Codes.IfIs) code, i, branches, labels, block);
+				} else if (code instanceof Codes.Switch) {
+					transform((Codes.Switch) code, i, branches, labels, block);
+				} else if (code instanceof Codes.ForAll) {
+					transform((Codes.ForAll) code, i, branches, labels, block);
+				} else if (code instanceof Codes.Loop) {
+					transform((Codes.Loop) code, i, branches, labels, block);
+				} else if (code instanceof Codes.AssertOrAssume) {
+					transform((Codes.AssertOrAssume) code, i, branches, labels,
+							block);
+				} else if (code instanceof Codes.Return) {
+					transform((Codes.Return) code, i, branches);
+					break; // this branch does not continue
+				} else if (code instanceof Codes.Fail) {
+					transform((Codes.Fail) code, i, branches, block);
+					break; // this branch does not continue
+				} else {
+					// Unit statement
+					transform(code, block, branch);
+					branch.goTo(pc.next());
+				}
+				branch = branches.get(i);
+				pc = branch.pc();
+			}
+		}
+
+		joinAll(branches);
+
+		return branches;
+	}
+
+	/**
+	 * Join all branches with matching PC locations. Branches are joined by
+	 * taking the disjunction of those paths which differ, whilst still
+	 * including those common to both as a conjunction.
+	 * 
+	 * @param branches
+	 */
+	private void joinAll(ArrayList<VcBranch> branches) {
+		// First, go through and join all branches with the same pc using the
+		// lower numbered branch as the "master". Once a branch has been joined,
+		// simply null it out.
+		for (int i = 0; i < branches.size(); ++i) {
+			VcBranch i_branch = branches.get(i);
+			if (i_branch != null) {
+				CodeBlock.Index i_pc = i_branch.pc();
+				// Now, the goal is to identify all remaining branches which are
+				// at the same location. These can then be all joined together
+				// in one go. First, we count how many their are
+				int count = 0;
+				for (int j = i + 1; j < branches.size(); ++j) {
+					VcBranch j_branch = branches.get(j);
+					if (j_branch != null && i_pc.equals(j_branch.pc())) {
+						count = count + 1;
+					}
+				}
+				// Second, we store them up into the array and remove them from
+				// the branches array.
+				VcBranch[] matches = new VcBranch[count];
+				count = 0;
+				for (int j = i + 1; j < branches.size(); ++j) {
+					VcBranch j_branch = branches.get(j);
+					if (j_branch != null && i_pc.equals(j_branch.pc())) {
+						matches[count++] = j_branch;
+						branches.set(j, null);
+					}
+				}
+				// Finally, if there are matching branches, we them all together
+				// producing an updated branch which lives on.
+
+				if (matches.length > 0) {
+					VcBranch nBranch = i_branch.join(matches);
+					branches.set(i, nBranch);
+				}
+			}
+		}
+		// At this stage, the branches array may contain null entries as a
+		// result of the joining process. We now go through and compact all the
+		// remaining branches to the lower indices, and the null entries to the
+		// upper indices.
+		int j = 0;
+		for (int i = 0; i != branches.size(); ++i) {
+			VcBranch b = branches.get(i);
+			if (b != null) {
+				branches.set(j++, b);
+			}
+		}
+		// Finally, remove all null entries at the top of the branches array.
+		while (branches.size() != j) {
+			branches.remove(j);
+		}
+		// Done.
+	}
+
+	// ===============================================================================
+	// Control Bytecodes
+	// ===============================================================================
+
+	/**
+	 * <p>
+	 * Transform a branch through a loop bytecode. This is done by splitting the
+	 * entry branch into the case for the loop body, and the case for the loop
+	 * after. First, modified variables are invalidated to disconnect them from
+	 * information which held before the loop. Second, the loop invariant is
+	 * assumed as this provides the only information known about modified
+	 * variables.
+	 * </p>
+	 * 
+	 * <p>
+	 * For the case of the loop body, there are several scenarios. For branches
+	 * which make it to the end of the body, the loop invariant must be
+	 * reestablished. For branches which exit the loop, these are then folded
+	 * into enclosing scope.
+	 * </p>
+	 * 
+	 * @param code
+	 *            The bytecode being transformed.
+	 * @param branchIndex
+	 *            The index of the branch (in branches) which holds on entry to
+	 *            the bytecode.
+	 * @param branches
+	 *            The list of branches currently being managed.
+	 * @param labels
+	 *            The map from labels to their block locations
+	 * @param block
+	 *            The block being transformed over.
+	 */
+	protected void transform(Codes.Loop code, int branchIndex,
+			List<VcBranch> branches, Map<String, CodeBlock.Index> labels,
+			AttributedCodeBlock block) {
+		VcBranch branch = branches.get(branchIndex);
+
+		// First, havoc all variables which are modified in the loop.
+		for (int i : code.modifiedOperands) {
+			branch.invalidate(i, branch.typeOf(i));
+		}
+
+		// Find and import loop invariant
+		// Assert loop invariant on entry
+		// Fork, and assume loop invariant then transform and assert
+		// Fork, and assume loop invariant for ongoing branch
+	}
+
+	/**
+	 * <p>
+	 * Transform a branch through a loop bytecode. This is done by splitting the
+	 * entry branch into the case for the loop body, and the case for the loop
+	 * after. First, modified variables are invalidated to disconnect them from
+	 * information which held before the loop. Second, the loop invariant is
+	 * assumed as this provides the only information known about modified
+	 * variables.
+	 * </p>
+	 * 
+	 * <p>
+	 * For the case of the loop body, there are several scenarios. For branches
+	 * which make it to the end of the body, the loop invariant must be
+	 * reestablished. For branches which exit the loop, these are then folded
+	 * into enclosing scope.
+	 * </p>
+	 * 
+	 * @param code
+	 *            The bytecode being transformed.
+	 * @param branchIndex
+	 *            The index of the branch (in branches) which holds on entry to
+	 *            the bytecode.
+	 * @param branches
+	 *            The list of branches currently being managed.
+	 * @param labels
+	 *            The map from labels to their block locations
+	 * @param block
+	 *            The block being transformed over.
+	 */
+	protected void transform(Codes.ForAll code, int branchIndex,
+			List<VcBranch> branches, Map<String, CodeBlock.Index> labels,
+			AttributedCodeBlock block) {
+		VcBranch branch = branches.get(branchIndex);
+
+		// First, havoc all variables which are modified in the loop.
+		for (int i : code.modifiedOperands) {
+			branch.invalidate(i, branch.typeOf(i));
+		}
+
+		Expr.Variable var = branch.invalidate(code.indexOperand,
+				code.type.element());
+
+	}
+
+	/**
+	 * <p>
+	 * Transform a branch through a conditional bytecode. This is done by
+	 * splitting the entry branch into the case for the true branch and the case
+	 * for the false branch. Control then continues down each branch.
+	 * </p>
+	 * <p>
+	 * On the true branch, the condition is assumed to hold. In contrast, the
+	 * condition's inverse is assumed to hold on the false branch.
+	 * </p>
+	 * 
+	 * @param code
+	 *            The bytecode being transformed.
+	 * @param branchIndex
+	 *            The index of the branch (in branches) which holds on entry to
+	 *            the bytecode.
+	 * @param branches
+	 *            The list of branches currently being managed.
+	 */
+	protected void transform(Codes.If code, int branchIndex,
+			List<VcBranch> branches, Map<String, CodeBlock.Index> labels,
+			AttributedCodeBlock block) {
+		VcBranch branch = branches.get(branchIndex);
+		// First, clone and register the true branch
+		VcBranch trueBranch = branch.fork();
+		VcBranch falseBranch = branch.fork();
+		branches.add(trueBranch);
+		branches.set(branchIndex, falseBranch);
+		// Second assume the condition on each branch
+		Expr.Binary trueTest = buildTest(code.op, code.leftOperand,
+				code.rightOperand, code.type, block, trueBranch);
+		trueBranch.assume(trueTest);
+		falseBranch.assume(invert(trueTest));
+		// Finally dispacth the branches
+		falseBranch.goTo(branch.pc().next());
+		trueBranch.goTo(labels.get(code.target));
+	}
+
+	/**
+	 * <p>
+	 * Transform a branch through a conditional bytecode. This is done by
+	 * splitting the entry branch into the case for the true branch and the case
+	 * for the false branch. Control then continues down each branch.
+	 * </p>
+	 * <p>
+	 * On the true branch, the condition is assumed to hold. In contrast, the
+	 * condition's inverse is assumed to hold on the false branch.
+	 * </p>
+	 * 
+	 * @param code
+	 *            The bytecode being transformed.
+	 * @param branchIndex
+	 *            The index of the branch (in branches) which holds on entry to
+	 *            the bytecode.
+	 * @param branches
+	 *            The list of branches currently being managed.
+	 */
+	protected void transform(Codes.IfIs code, int branchIndex,
+			List<VcBranch> branches, Map<String, CodeBlock.Index> labels,
+			AttributedCodeBlock block) {
+		VcBranch branch = branches.get(branchIndex);
+		Type type = branch.typeOf(code.operand);
+		// First, determine the true test
+		Type trueType = Type.intersect(type, code.rightOperand);
+		Type falseType = Type.intersect(type, Type.Negation(code.rightOperand));
+
+		if (trueType.equals(Type.T_VOID)) {
+			// This indicate that the true branch is unreachable and
+			// should not be explored. Observe that this does not mean
+			// the true branch is dead-code. Rather, since we're
+			// preforming a path-sensitive traversal it means we've
+			// uncovered an unreachable path. In this case, this branch
+			// remains as the false branch.
+			branch.write(code.operand, branch.read(code.operand), falseType);
+			branch.goTo(branch.pc().next());
+		} else if (falseType.equals(Type.T_VOID)) {
+			// This indicate that the false branch is unreachable (ditto
+			// as for true branch). In this case, this branch becomes
+			// the true branch.
+			branch.write(code.operand, branch.read(code.operand), trueType);
+			branch.goTo(labels.get(code.target));
+		} else {
+			// In this case, both branches are reachable.
+			// First, clone and register the branch
+			VcBranch falseBranch = branch.fork();
+			VcBranch trueBranch = branch.fork();
+			branches.add(trueBranch);
+			branches.set(branchIndex, falseBranch);
+			// Second retype variables on each branch
+			falseBranch.write(code.operand, branch.read(code.operand),
+					falseType);
+			trueBranch.write(code.operand, branch.read(code.operand), trueType);
+			// Finally dispatch the branches
+			falseBranch.goTo(branch.pc().next());
+			trueBranch.goTo(labels.get(code.target));
+		}
+	}
+
+	/**
+	 * <p>
+	 * Transform a branch through a switch bytecode. This is done by splitting
+	 * the entry branch into separate branches for each case. The entry branch
+	 * then follows the default branch.
+	 * </p>
+	 * 
+	 * @param code
+	 *            The bytecode being transformed.
+	 * @param branchIndex
+	 *            The index of the branch (in branches) which holds on entry to
+	 *            the bytecode.
+	 * @param branches
+	 *            The list of branches currently being managed.
+	 */
+	protected void transform(Codes.Switch code, int branchIndex,
+			List<VcBranch> branches, Map<String, CodeBlock.Index> labels,
+			AttributedCodeBlock block) {
+		VcBranch branch = branches.get(branchIndex);
+		// First, for each case fork a new branch to traverse it.
+		VcBranch[] cases = new VcBranch[code.branches.size()];
+		for (int i = 0; i != cases.length; ++i) {
+			cases[i] = branch.fork();
+			branches.add(cases[i]);
+		}
+
+		// Second, for each case, assume that the variable switched on matches
+		// the give case value. Likewise, assume that the default branch does
+		// *not* equal this value.
+		for (int i = 0; i != cases.length; ++i) {
+			Constant caseValue = code.branches.get(i).first();
+			// Second, on the new branch we need assume that the variable being
+			// switched on matches the given value.
+			Expr src = branch.read(code.operand);
+			Expr constant = new Expr.Constant(
+					convert(caseValue, block, branch), toWycsAttributes(block.attributes(branch.pc())));
+			cases[i].assume(new Expr.Binary(Expr.Binary.Op.EQ, src, constant,
+					toWycsAttributes(block.attributes(branch.pc()))));
+			// Third, on the default branch we can assume that the variable
+			// being switched is *not* the given value.
+			branch.assume(new Expr.Binary(Expr.Binary.Op.NEQ, src, constant,
+					toWycsAttributes(block.attributes(branch.pc()))));
+		}
+
+		// Finally, the original entry branch now represents the default branch.
+		// Therefore, dispatch this to the default target.
+		VcBranch defaultBranch = branch.fork();
+		branches.set(branchIndex, defaultBranch);
+		defaultBranch.goTo(labels.get(code.defaultTarget));
+	}
+
+	/**
+	 * <p>
+	 * Transform a branch through an unconditional branching bytecode. This is
+	 * pretty straightforward, and the branch is just directed to the given
+	 * location.
+	 * </p>
+	 * 
+	 * @param code
+	 *            The bytecode being transformed.
+	 * @param branchIndex
+	 *            The index of the branch (in branches) which holds on entry to
+	 *            the bytecode.
+	 * @param branches
+	 *            The list of branches currently being managed.
+	 */
+	protected void transform(Codes.Goto code, int branchIndex,
+			List<VcBranch> branches, Map<String, CodeBlock.Index> labels,
+			AttributedCodeBlock block) {
+		VcBranch branch = branches.get(branchIndex);
+		branch.goTo(labels.get(code.target));
+	}
+
+	/**
+	 * <p>
+	 * Transform a branch through the special fail bytecode. In the normal case,
+	 * we must establish this branch is unreachable. However, in the case that
+	 * we are within an enclosing assume statement, then we can simply discard
+	 * this branch.
+	 * </p>
+	 * 
+	 * @param code
+	 *            The bytecode being transformed.
+	 * @param branchIndex
+	 *            The index of the branch (in branches) which holds on entry to
+	 *            the bytecode.
+	 * @param branches
+	 *            The list of branches currently being managed.
+	 */
+	protected void transform(Codes.Fail code, int branchIndex,
+			List<VcBranch> branches, AttributedCodeBlock block) {
+		VcBranch branch = branches.get(branchIndex);
+		// Update status of this branch
+		branch.setState(VcBranch.State.FAILED);
+	}
+
+	/**
+	 * <p>
+	 * Transform a branch through a return bytecode. In this case, we need to
+	 * ensure that the postcondition holds. After that, we can drop the branch
+	 * since it is completed.
+	 * </p>
+	 * 
+	 * @param code
+	 *            The bytecode being transformed.
+	 * @param branchIndex
+	 *            The index of the branch (in branches) which holds on entry to
+	 *            the bytecode.
+	 * @param branches
+	 *            The list of branches currently being managed.
+	 */
+	protected void transform(Codes.Return code, int branchIndex,
+			List<VcBranch> branches) {
+		VcBranch branch = branches.get(branchIndex);
+		// Marking the branch as terminated indicates that it is no longer
+		// active. Thus, the original callers of this block transformation can
+		// subsequently extract the constraints which hold at the point of the
+		// return.
+		branch.setState(VcBranch.State.TERMINATED);
+	}
+
+	/**
+	 * <p>
+	 * Transform an assert or assume bytecode block.
+	 * </p>
+	 * 
+	 * @param code
+	 *            The bytecode being transformed.
+	 * @param branchIndex
+	 *            The index of the branch (in branches) which holds on entry to
+	 *            the bytecode.
+	 * @param branches
+	 *            The list of branches currently being managed.
+	 * @param labels
+	 *            The map from labels to their block locations
+	 * @param block
+	 *            The block being transformed over.
+	 */
+	protected void transform(Codes.AssertOrAssume code, int branchIndex,
+			List<VcBranch> branches, Map<String, CodeBlock.Index> labels,
+			AttributedCodeBlock block) {
+		VcBranch branch = branches.get(branchIndex);
+
+		// FIXME: need to implement this properly.
+		branch.goTo(branch.pc().next());
+	}
+
+	// ===============================================================================
+	// Unit Bytecodes
+	// ===============================================================================
+
+	/**
+	 * Dispatch transform over unit bytecodes. Each unit bytecode is guaranteed
+	 * to continue afterwards, and not to fork any new branches.
+	 * 
+	 * @param code
+	 *            The bytecode being transformed over.
+	 * @param block
+	 *            The root block being iterated over.
+	 * @param branch
+	 *            The branch on entry to the bytecode.
+	 */
+	protected void transform(Code code, AttributedCodeBlock block,
+			VcBranch branch) {
+		try {
+			if (code instanceof Codes.LengthOf) {
+				transformUnary(Expr.Unary.Op.LENGTHOF, (Codes.LengthOf) code,
+						branch, block);
+			} else if (code instanceof Codes.BinaryOperator) {
+				Codes.BinaryOperator bc = (Codes.BinaryOperator) code;
+				transformBinary(binaryOperatorMap[bc.kind.ordinal()], bc,
+						branch, block);
+			} else if (code instanceof Codes.ListOperator) {
+				Codes.ListOperator bc = (Codes.ListOperator) code;
+				transformBinary(Expr.Binary.Op.LISTAPPEND, bc, branch, block);
+			} else if (code instanceof Codes.SetOperator) {
+				Codes.SetOperator bc = (Codes.SetOperator) code;
+				transformBinary(setOperatorMap[bc.kind.ordinal()], bc, branch, block);
+			} else if (code instanceof Codes.NewList) {
+				transformNary(Expr.Nary.Op.LIST, (Codes.NewList) code, branch, block);
+			} else if (code instanceof Codes.NewRecord) {
+				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewTuple) code, branch, block);
+			} else if (code instanceof Codes.NewSet) {
+				transformNary(Expr.Nary.Op.SET, (Codes.NewSet) code, branch, block);
+			} else if (code instanceof Codes.NewTuple) {
+				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewTuple) code, branch, block);
+			} else if (code instanceof Codes.Convert) {
+				transform((Codes.Convert) code, block, branch);
+			} else if (code instanceof Codes.Const) {
+				transform((Codes.Const) code, block, branch);
+			} else if (code instanceof Codes.Debug) {
+				// skip
+			} else if (code instanceof Codes.FieldLoad) {
+				transform((Codes.FieldLoad) code, block, branch);
+			} else if (code instanceof Codes.IndirectInvoke) {
+				transform((Codes.IndirectInvoke) code, block, branch);
+			} else if (code instanceof Codes.Invoke) {
+				transform((Codes.Invoke) code, block, branch);
+			} else if (code instanceof Codes.Invert) {
+				transform((Codes.Invert) code, block, branch);
+			} else if (code instanceof Codes.Label) {
+				// skip
+			} else if (code instanceof Codes.SubList) {
+				transform((Codes.SubList) code, block, branch);
+			} else if (code instanceof Codes.IndexOf) {
+				transform((Codes.IndexOf) code, block, branch);
+			} else if (code instanceof Codes.Move) {
+				transform((Codes.Move) code, block, branch);
+			} else if (code instanceof Codes.Assign) {
+				transform((Codes.Assign) code, block, branch);
+			} else if (code instanceof Codes.Update) {
+				transform((Codes.Update) code, block, branch);
+			} else if (code instanceof Codes.NewMap) {
+				transform((Codes.NewMap) code, block, branch);
+			} else if (code instanceof Codes.UnaryOperator) {
+				transform((Codes.UnaryOperator) code, block, branch);
+			} else if (code instanceof Codes.Dereference) {
+				transform((Codes.Dereference) code, block, branch);
+			} else if (code instanceof Codes.Nop) {
+				// skip
+			} else if (code instanceof Codes.StringOperator) {
+				transform((Codes.StringOperator) code, block, branch);
+			} else if (code instanceof Codes.SubString) {
+				transform((Codes.SubString) code, block, branch);
+			} else if (code instanceof Codes.NewObject) {
+				transform((Codes.NewObject) code, block, branch);
+			} else if (code instanceof Codes.TupleLoad) {
+				transform((Codes.TupleLoad) code, block, branch);
+			} else {
+				internalFailure("unknown: " + code.getClass().getName(),
+						filename, block.attributes(branch.pc()));
+			}
+		} catch (InternalFailure e) {
+			throw e;
+		} catch (SyntaxError e) {
+			throw e;
+		} catch (Throwable e) {
+			internalFailure(e.getMessage(), filename, e,
+					block.attributes(branch.pc()));
+		}
+	}
+
+	protected void transform(Codes.Assign code, AttributedCodeBlock block,
+			VcBranch branch) {
+		branch.write(code.target(), branch.read(code.operand(0)),
+				code.assignedType());
+	}
+
+	/**
+	 * Maps binary bytecodes into expression opcodes.
+	 */
+	private static Expr.Binary.Op[] binaryOperatorMap = { Expr.Binary.Op.ADD,
+			Expr.Binary.Op.SUB, Expr.Binary.Op.MUL, Expr.Binary.Op.DIV,
+			Expr.Binary.Op.RANGE };
+
+	/**
+	 * Maps binary bytecodes into expression opcodes.
+	 */
+	private static Expr.Binary.Op[] setOperatorMap = { Expr.Binary.Op.SETUNION,
+			Expr.Binary.Op.SETINTERSECTION, Expr.Binary.Op.SETDIFFERENCE };
+
+	protected void transform(Codes.StringOperator code,
+			AttributedCodeBlock block, VcBranch branch) {
+		Collection<Attribute> attributes = toWycsAttributes(block.attributes(branch.pc()));
+		Expr lhs = branch.read(code.operand(0));
+		Expr rhs = branch.read(code.operand(1));
+
+		switch (code.kind) {
+		case APPEND:
+			// do nothing
+			break;
+		case LEFT_APPEND:
+			rhs = new Expr.Nary(Expr.Nary.Op.LIST, new Expr[] { rhs },
+					attributes);
+			break;
+		case RIGHT_APPEND:
+			lhs = new Expr.Nary(Expr.Nary.Op.LIST, new Expr[] { lhs },
+					attributes);
+			break;
+		default:
+			internalFailure("unknown binary operator", filename,
+					block.attributes(branch.pc()));
+			return;
+		}
+
+		// TODO: after removing left append we can simplify this case.
+
+		branch.write(code.target(), new Expr.Binary(Expr.Binary.Op.LISTAPPEND,
+				lhs, rhs, toWycsAttributes(block.attributes(branch.pc()))), code.assignedType());
+	}
+
+	protected void transform(Codes.Convert code, AttributedCodeBlock block,
+			VcBranch branch) {
+		Expr result = branch.read(code.operand(0));
+		branch.write(code.target(), result, code.assignedType());
+	}
+
+	protected void transform(Codes.Const code, AttributedCodeBlock block,
+			VcBranch branch) {
+		Value val = convert(code.constant, block, branch);
+		branch.write(code.target(), new Expr.Constant(val,
+				toWycsAttributes(block.attributes(branch.pc()))), code.assignedType());
+	}
+
+	protected void transform(Codes.Debug code, AttributedCodeBlock block,
+			VcBranch branch) {
+		// do nout
+	}
+
+	protected void transform(Codes.Dereference code, AttributedCodeBlock block,
+			VcBranch branch) {
+		branch.invalidate(code.target(), code.type());
+	}
+
+	protected void transform(Codes.FieldLoad code, AttributedCodeBlock block,
+			VcBranch branch) {
+		ArrayList<String> fields = new ArrayList<String>(code.type().fields()
+				.keySet());
+		Collections.sort(fields);
+		Expr src = branch.read(code.operand(0));
+		Expr index = new Expr.Constant(Value.Integer(BigInteger.valueOf(fields
+				.indexOf(code.field))));
+		Expr result = new Expr.IndexOf(src, index, toWycsAttributes(block.attributes(branch.pc())));
+		branch.write(code.target(), result, code.assignedType());
+	}
+
+	protected void transform(Codes.IndirectInvoke code,
+			AttributedCodeBlock block, VcBranch branch) {
+		if (code.target() != Codes.NULL_REG) {
+			branch.invalidate(code.target(), code.type().ret());
+		}
+	}
+
+	protected void transform(Codes.Invoke code, AttributedCodeBlock block,
+			VcBranch branch) throws Exception {
+		Collection<Attribute> attributes = toWycsAttributes(block.attributes(branch.pc()));
+		int[] code_operands = code.operands();
+		if (code.target() != Codes.NULL_REG) {
+			// Need to assume the post-condition holds.
+			Expr[] operands = new Expr[code_operands.length];
+			for (int i = 0; i != code_operands.length; ++i) {
+				operands[i] = branch.read(code_operands[i]);
+			}
+			Expr argument = new Expr.Nary(Expr.Nary.Op.TUPLE, operands,
+					attributes);
+			branch.write(code.target(), new Expr.Invoke(
+					toIdentifier(code.name), code.name.module(),
+					Collections.EMPTY_LIST, argument, attributes), code
+					.assignedType());
+
+			// Here, we must add a WycsFile Function to represent the function
+			// being called, and to prototype it.
+			TypePattern from = new TypePattern.Leaf(convert(code.type()
+					.params(), block, branch), null, attributes);
+			TypePattern to = new TypePattern.Leaf(convert(code.type().ret(),
+					block.attributes(branch.pc())), null, attributes);
+			wycsFile.add(wycsFile.new Function(toIdentifier(code.name),
+					Collections.EMPTY_LIST, from, to, null));
+
+			List<AttributedCodeBlock> ensures = findPostcondition(code.name,
+					code.type(), block, branch);
+
+			if (ensures.size() > 0) {
+				// To assume the post-condition holds after the method, we
+				// simply called the corresponding post-condition macros.
+				Expr[] arguments = new Expr[operands.length + 1];
+				System.arraycopy(operands, 0, arguments, 1, operands.length);
+				arguments[0] = branch.read(code.target());
+				String prefix = code.name.name() + "_ensures_";
+				for (int i = 0; i != ensures.size(); ++i) {
+					Expr.Invoke macro = new Expr.Invoke(prefix + i,
+							code.name.module(), Collections.EMPTY_LIST,
+							new Expr.Nary(Expr.Nary.Op.TUPLE, arguments));
+					branch.assume(macro);
+				}
+			}
+		}
+	}
+
+	protected void transform(Codes.Invert code, AttributedCodeBlock block,
+			VcBranch branch) {
+		branch.invalidate(code.target(), code.type());
+	}
+
+	protected void transform(Codes.IndexOf code, AttributedCodeBlock block,
+			VcBranch branch) {
+		Expr src = branch.read(code.operand(0));
+		Expr idx = branch.read(code.operand(1));
+		branch.write(code.target(), new Expr.IndexOf(src, idx,
+				toWycsAttributes(block.attributes(branch.pc()))), code.assignedType());
+	}
+
+	protected void transform(Codes.Move code, VcBranch branch) {
+		branch.write(code.target(), branch.read(code.operand(0)),
+				code.assignedType());
+	}
+
+	protected void transform(Codes.NewMap code, AttributedCodeBlock block,
+			VcBranch branch) {
+		branch.invalidate(code.target(), code.type());
+	}
+
+	protected void transform(Codes.NewObject code, AttributedCodeBlock block,
+			VcBranch branch) {
+		branch.invalidate(code.target(), code.type());
+	}
+
+	protected void transform(Codes.Nop code, AttributedCodeBlock block,
+			VcBranch branch) {
+		// do nout
+	}
+
+	protected void transform(Codes.SubString code, AttributedCodeBlock block,
+			VcBranch branch) {
+		transformTernary(Expr.Ternary.Op.SUBLIST, code, branch, block);
+	}
+
+	protected void transform(Codes.SubList code, AttributedCodeBlock block,
+			VcBranch branch) {
+		transformTernary(Expr.Ternary.Op.SUBLIST, code, branch, block);
+	}
+
+	protected void transform(Codes.TupleLoad code, AttributedCodeBlock block,
+			VcBranch branch) {
+		Expr src = branch.read(code.operand(0));
+		Expr index = new Expr.Constant(Value.Integer(BigInteger
+				.valueOf(code.index)));
+		Expr result = new Expr.IndexOf(src, index, toWycsAttributes(block.attributes(branch.pc())));
+		branch.write(code.target(), result, code.assignedType());
+	}
+
+	protected void transform(Codes.UnaryOperator code,
+			AttributedCodeBlock block, VcBranch branch) {
+		if (code.kind == Codes.UnaryOperatorKind.NEG) {
+			transformUnary(Expr.Unary.Op.NEG, code, branch, block);
+		} else {
+			branch.invalidate(code.target(), code.type());
+		}
+	}
+
+	protected void transform(Codes.Update code, AttributedCodeBlock block,
+			VcBranch branch) {
+		Expr result = branch.read(code.result());
+		Expr source = branch.read(code.target());
+		branch.write(code.target(),
+				updateHelper(code.iterator(), source, result, branch, block),
+				code.assignedType());
+	}
+
+	protected Expr updateHelper(Iterator<Codes.LVal> iter, Expr source,
+			Expr result, VcBranch branch, AttributedCodeBlock block) {
+		if (!iter.hasNext()) {
+			return result;
+		} else {
+			Collection<Attribute> attributes = toWycsAttributes(block.attributes(branch.pc()));
+			Codes.LVal lv = iter.next();
+			if (lv instanceof Codes.RecordLVal) {
+				Codes.RecordLVal rlv = (Codes.RecordLVal) lv;
+
+				// FIXME: following is broken for open records.
+				ArrayList<String> fields = new ArrayList<String>(rlv.rawType()
+						.fields().keySet());
+				Collections.sort(fields);
+				int index = fields.indexOf(rlv.field);
+				Expr[] operands = new Expr[fields.size()];
+				for (int i = 0; i != fields.size(); ++i) {
+					Expr _i = new Expr.Constant(Value.Integer(BigInteger
+							.valueOf(i)));
+					if (i != index) {
+						operands[i] = new Expr.IndexOf(source, _i, attributes);
+					} else {
+						operands[i] = updateHelper(iter, new Expr.IndexOf(
+								source, _i, attributes), result, branch, block);
+					}
+				}
+				return new Expr.Nary(Expr.Nary.Op.TUPLE, operands, attributes);
+			} else if (lv instanceof Codes.ListLVal) {
+				Codes.ListLVal rlv = (Codes.ListLVal) lv;
+				Expr index = branch.read(rlv.indexOperand);
+				result = updateHelper(iter, new Expr.IndexOf(source, index,
+						attributes), result, branch, block);
+				return new Expr.Ternary(Expr.Ternary.Op.UPDATE, source, index,
+						result, toWycsAttributes(block.attributes(branch.pc())));
+			} else if (lv instanceof Codes.MapLVal) {
+				return source; // TODO
+			} else if (lv instanceof Codes.StringLVal) {
+				return source; // TODO
+			} else {
+				return source; // TODO
+			}
+		}
+	}
+
+	/**
+	 * Transform an assignable unary bytecode using a given target operator.
+	 * This must read the operand and then create the appropriate target
+	 * expression. Finally, the result of the bytecode must be written back to
+	 * the enclosing branch.
+	 * 
+	 * @param operator
+	 *            --- The target operator
+	 * @param code
+	 *            --- The bytecode being translated
+	 * @param branch
+	 *            --- The enclosing branch
+	 */
+	protected void transformUnary(Expr.Unary.Op operator,
+			Code.AbstractUnaryAssignable code, VcBranch branch, AttributedCodeBlock block) {
+		Expr lhs = branch.read(code.operand(0));
+
+		branch.write(code.target(), new Expr.Unary(operator, lhs,
+				toWycsAttributes(block.attributes(branch.pc()))), code.assignedType());
+	}
+
+	/**
+	 * Transform an assignable binary bytecode using a given target operator.
+	 * This must read both operands and then create the appropriate target
+	 * expression. Finally, the result of the bytecode must be written back to
+	 * the enclosing branch.
+	 * 
+	 * @param operator
+	 *            --- The target operator
+	 * @param code
+	 *            --- The bytecode being translated
+	 * @param branch
+	 *            --- The enclosing branch
+	 */
+	protected void transformBinary(Expr.Binary.Op operator,
+			Code.AbstractBinaryAssignable code, VcBranch branch, AttributedCodeBlock block) {
+		Expr lhs = branch.read(code.operand(0));
+		Expr rhs = branch.read(code.operand(1));
+
+		branch.write(code.target(), new Expr.Binary(operator, lhs, rhs,
+				toWycsAttributes(block.attributes(branch.pc()))), code.assignedType());
+	}
+
+	/**
+	 * Transform an assignable ternary bytecode using a given target operator.
+	 * This must read all operands and then create the appropriate target
+	 * expression. Finally, the result of the bytecode must be written back to
+	 * the enclosing branch.
+	 * 
+	 * @param operator
+	 *            --- The target operator
+	 * @param code
+	 *            --- The bytecode being translated
+	 * @param branch
+	 *            --- The enclosing branch
+	 */
+	protected void transformTernary(Expr.Ternary.Op operator,
+			Code.AbstractNaryAssignable code, VcBranch branch, AttributedCodeBlock block) {
+		Expr one = branch.read(code.operand(0));
+		Expr two = branch.read(code.operand(1));
+		Expr three = branch.read(code.operand(2));
+		branch.write(code.target(), new Expr.Ternary(operator, one, two, three,
+				toWycsAttributes(block.attributes(branch.pc()))), code.assignedType());
+	}
+
+	/**
+	 * Transform an assignable nary bytecode using a given target operator. This
+	 * must read all operands and then create the appropriate target expression.
+	 * Finally, the result of the bytecode must be written back to the enclosing
+	 * branch.
+	 * 
+	 * @param operator
+	 *            --- The target operator
+	 * @param code
+	 *            --- The bytecode being translated
+	 * @param branch
+	 *            --- The enclosing branch
+	 */
+	protected void transformNary(Expr.Nary.Op operator,
+			Code.AbstractNaryAssignable code, VcBranch branch, AttributedCodeBlock block) {
+		int[] code_operands = code.operands();
+		Expr[] vals = new Expr[code_operands.length];
+		for (int i = 0; i != vals.length; ++i) {
+			vals[i] = branch.read(code_operands[i]);
+		}
+		branch.write(code.target(), new Expr.Nary(operator, vals,
+				toWycsAttributes(block.attributes(branch.pc()))), code.assignedType());
+	}
+
+	/**
+	 * Find the precondition associated with a given function or method. This
+	 * maybe contained in the same file, or in a different file. This may
+	 * require loading that file in memory to access this information.
+	 * 
+	 * @param name
+	 *            --- Fully qualified name of function
+	 * @param fun
+	 *            --- Type of fucntion.
+	 * @param block
+	 *            --- Enclosing block (for debugging purposes).
+	 * @param branch
+	 *            --- Enclosing branch (for debugging purposes).
+	 * @return
+	 * @throws Exception
+	 */
+	protected List<AttributedCodeBlock> findPrecondition(NameID name,
+			Type.FunctionOrMethod fun, AttributedCodeBlock block,
+			VcBranch branch) throws Exception {
+		Path.Entry<WyilFile> e = builder.project().get(name.module(),
+				WyilFile.ContentType);
+		if (e == null) {
+			syntaxError(
+					errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module()
+							.toString()), filename, block.attributes(branch
+							.pc()));
+		}
+		WyilFile m = e.read();
+		WyilFile.FunctionOrMethodDeclaration method = m.functionOrMethod(
+				name.name(), fun);
+
+		for (WyilFile.Case c : method.cases()) {
+			// FIXME: this is a hack for now
+			return c.precondition();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Find the postcondition associated with a given function or method. This
+	 * maybe contained in the same file, or in a different file. This may
+	 * require loading that file in memory to access this information.
+	 * 
+	 * @param name
+	 *            --- Fully qualified name of function
+	 * @param fun
+	 *            --- Type of fucntion.
+	 * @param block
+	 *            --- Enclosing block (for debugging purposes).
+	 * @param branch
+	 *            --- Enclosing branch (for debugging purposes).
+	 * @return
+	 * @throws Exception
+	 */
+	protected List<AttributedCodeBlock> findPostcondition(NameID name,
+			Type.FunctionOrMethod fun, AttributedCodeBlock block,
+			VcBranch branch) throws Exception {
+		Path.Entry<WyilFile> e = builder.project().get(name.module(),
+				WyilFile.ContentType);
+		if (e == null) {
+			syntaxError(
+					errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module()
+							.toString()), filename, block.attributes(branch
+							.pc()));
+		}
+		WyilFile m = e.read();
+		WyilFile.FunctionOrMethodDeclaration method = m.functionOrMethod(
+				name.name(), fun);
+
+		for (WyilFile.Case c : method.cases()) {
+			// FIXME: this is a hack for now
+			if (c.postcondition() != null && c.postcondition().size() > 0) {
+				return c.postcondition();
+			}
+		}
+		return Collections.EMPTY_LIST;
+	}
+
+	/**
+	 * Construct a macro with a given name representing a block of code. The
+	 * macro can then be called elsewhere as a predicate. For example, a macro
+	 * can be construct to represent the precondition of a function. This can
+	 * then be assumed at the start of the function's block. Or, it can ensured
+	 * at the point of an invocation.
+	 *
+	 * @param name
+	 *            --- the nameto give to the generated macro.
+	 * @param block
+	 *            --- the block of code being translated.
+	 * @param types
+	 *            --- operand register in containing branch which should map to
+	 *            the inputs of the block being translated.
+	 * @return
+	 */
+	protected void buildMacroBlock(String name, AttributedCodeBlock block,
+			List<Type> types) {
+
+		// first, generate a branch for traversing the external block.
+		VcBranch master = new VcBranch(Math.max(block.numSlots(), types.size()),null);
+
+		TypePattern.Leaf[] declarations = new TypePattern.Leaf[types.size()];
+		// second, set initial environment
+		for (int i = 0; i != types.size(); ++i) {
+			Expr.Variable v = new Expr.Variable("r" + i);
+			master.write(i, v, types.get(i));
+			// FIXME: what attributes to pass into convert?
+			declarations[i] = new TypePattern.Leaf(convert(types.get(i),
+					Collections.EMPTY_LIST), v);
+		}
+
+		// Construct the type declaration for the new block macro
+		TypePattern type;
+
+		if (declarations.length == 1) {
+			type = declarations[0];
+		} else {
+			type = new TypePattern.Tuple(declarations);
+		}
+
+		// At this point, we are guaranteed exactly one branch because there
+		// is only ever one exit point from a pre-/post-condition.
+		List<VcBranch> exitBranches = transform(master, block);
+		for (VcBranch exitBranch : exitBranches) {			
+			if (exitBranch.state() == VcBranch.State.TERMINATED) {
+				Expr body = generateAssumptions(exitBranch);
+				wycsFile.add(wycsFile.new Macro(name, Collections.EMPTY_LIST,
+						type, body));
+				return;
+			}
+		}
+
+		// It should be impossible to reach here.
+		internalFailure("unreachable code", filename);
+	}
+
+	/**
+	 * Construct a verification condition which asserts a given expression on
+	 * the current branch. Thus, all relevant assumptions are taken from the
+	 * current branch (and its ancestors) to form the verification condition.
+	 * This function must additional type each variable used within the
+	 * verification condition.
+	 * 
+	 * @param assertion
+	 *            --- The assertion which is to be ensured by the verification
+	 *            condition, assuming the assumptions held.
+	 * @param branch
+	 *            --- The branch from which the verification condition is being
+	 *            generated.
+	 * @param block
+	 *            --- The enclosing attributed block for this assertion.
+	 * @return
+	 */
+	protected Expr buildVerificationCondition(Expr assertion, VcBranch branch,
+			AttributedCodeBlock block) {
+		// First construct the assertion which forms the basis of the
+		// verification condition. The assertion must be shown to hold assuming
+		// the assumptions did. Therefore, we construct an implication to
+		// establish this.
+		Expr assumptions = generateAssumptions(branch);
+
+		assertion = new Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
+				assertion, toWycsAttributes(block.attributes(branch.pc())));
+
+		// Next, we determine the set of used variables within the assertion.
+		// This is done to minimise the number of variables present in the final
+		// verification condition as otherwise this can, potentially, make life
+		// harder for the verifier.
+		HashSet<String> uses = new HashSet<String>();
+		assertion.freeVariables(uses);
+
+		// Now, we determine the correct type for all used variables.
+
+		// FIXME: this does not actually always find the correct type of a
+		// variable. That's because it always uses the current type of a
+		// variable, rather than the type which held at a given position. This
+		// should be resolved by removing type tracking altogether and replacing
+		// it with the use of type tests (see #316).
+
+		ArrayList<TypePattern> vars = new ArrayList<TypePattern>();
+		for (String var : uses) {
+			Type type = branch.typeOf(var);
+			SyntacticType t = convert(type, block.attributes(branch.pc()));
+			Expr.Variable v = new Expr.Variable(var);
+			vars.add(new TypePattern.Leaf(t, v));
+		}
+
+		// Finally, we construct the verification condition. This is done by
+		// universally quantifying each variable used in the assertion with its
+		// corresponding type.
+		if (vars.size() == 0) {
+			// we have nothing to parameterise, so ignore it and just return the
+			// assertion without any quantification.
+			return assertion;
+		} else if (vars.size() == 1) {
+			return new Expr.ForAll(vars.get(0), assertion);
+		} else {
+			return new Expr.ForAll(new TypePattern.Tuple(vars), assertion);
+		}
+	}
+
+	/**
+	 * <p>
+	 * Generate all constraints from a given branch. Those are the set of
+	 * complete constraints which are known to hold in this branch and any of
+	 * its ancestors. To do this, we need to traverse the branch graph and then
+	 * recombine everything in the correct order. For example, consider this
+	 * graph:
+	 * </p>
+	 * 
+	 * <pre>
+	 *      #1: y>=0
+	 *    //  \\
+	 *   //    \\
+	 *  //      \\
+	 * ||        ||   
+	 * #2: x>=y  #3: x<y
+	 * ||        ||
+	 * ||        #4: z = 0
+	 *  \\      //
+	 *   \\    //
+	 *    \\  //
+	 *      #5:
+	 * </pre>
+	 * <p>
+	 * Here, the assumptions are being generated from branch #5. To do this, we
+	 * traverse backwards from #5. Constraints from the left-branch are
+	 * disjuncted with those from the right branch, whilst those common to both
+	 * are conjuncted with all. Thus, the resulting expressions would be:
+	 * </p>
+	 * 
+	 * <pre>
+	 * y &gt;= 0 &amp;&amp; (x &gt;= y || (x &lt; y || z == 0))
+	 * </pre>
+	 */		
+	private Expr generateAssumptions(VcBranch b) {
+		
+		// FIXME: this method is not efficient and does not generate an optimal
+		// decomposition of the branch graph. 
+		
+		// First, compute disjunction of parent constraints.
+		VcBranch[] b_parents = b.parents();
+		Expr parents = null;
+		for (int i = 0; i != b_parents.length; ++i) {
+			VcBranch parent = b_parents[i];
+			Expr parent_constraints = generateAssumptions(parent);
+			if (i == 0) {
+				parents = parent_constraints;
+			} else {
+				parents = new Expr.Binary(Expr.Binary.Op.OR, parents,
+						parent_constraints);
+			}
+		}
+		
+		// Second, include constraints from this node.
+		if(parents == null) {
+			return b.constraints(); 
+		} else {
+			return new Expr.Binary(Expr.Binary.Op.AND,parents,b.constraints());
+		}		
+	}
+	
+	
+//	private Expr generateAssumptions(VcBranch branch) {
+//		// First, flattern the branch graph into a topological ordering
+//		List<VcBranch> branches = flattern(branch);
+//		
+//		// Second, initialise the node data
+//		HashMap<VcBranch, Node> data = new HashMap<VcBranch, Node>();
+//		for (int i = 0; i != branches.size(); ++i) {
+//			VcBranch b = branches.get(i);
+//			data.put(b, new Node());
+//		}
+//		
+//		// Third, initialise parent counts
+//		for (int i = 0; i != branches.size(); ++i) {
+//			VcBranch b = branches.get(i);
+//			for(VcBranch parent : b.parents()) {
+//				data.get(parent).count = 0;
+//			}			
+//		}
+//	}
+//	
+//	private class Node {
+//		public Expr constraint;
+//		public int count;
+//	}
+//
+//	private List<VcBranch> flattern(VcBranch root) {
+//		HashSet<VcBranch> visited = new HashSet<VcBranch>();
+//		ArrayList<VcBranch> branches = new ArrayList<VcBranch>();
+//		// Now, perform a depth-first search of the branch graph adding branches
+//		// in reverse topological order.
+//		flattern(root,visited,branches);
+//		// The depth-first search we just conducted loaded all branches into the
+//		// list in reverse topological order. For sanity, we just put them
+//		// around the right way here. Technically we don't need to do this, but
+//		// it just simplifies the remainder of the algorithm.
+//		Collections.reverse(branches);
+//		return branches;
+//	}
+//	
+//	/**
+//	 * Perform depth-first traversal of the branch graph, storing visited nodes
+//	 * in reverse topological order.
+//	 * 
+//	 * @param b
+//	 *            --- Branch currently being visited.
+//	 * @param visited
+//	 *            --- Set of previously visited branches.
+//	 * @param branches
+//	 *            --- reverse topogolical order being constructed.
+//	 */
+//	private void flattern(VcBranch b, HashSet<VcBranch> visited,
+//			List<VcBranch> branches) {
+//		if (!visited.contains(b)) {
+//			// this branch has not already been visited.
+//			visited.add(b);
+//			for (VcBranch parent : b.parents()) {
+//				flattern(parent, visited, branches);
+//			}
+//			branches.add(b);
+//		}
+//	}
+
+	/**
+	 * Generate a formula representing a condition from an conditional bytecode.
+	 *
+	 * @param op
+	 * @param stack
+	 * @param elem
+	 * @return
+	 */
+	private Expr.Binary buildTest(Codes.Comparator cop, int leftOperand,
+			int rightOperand, Type type, AttributedCodeBlock block,
+			VcBranch branch) {
+		Expr lhs = branch.read(leftOperand);
+		Expr rhs = branch.read(rightOperand);
+		Expr.Binary.Op op;
+		switch (cop) {
+		case EQ:
+			op = Expr.Binary.Op.EQ;
+			break;
+		case NEQ:
+			op = Expr.Binary.Op.NEQ;
+			break;
+		case GTEQ:
+			op = Expr.Binary.Op.GTEQ;
+			break;
+		case GT:
+			op = Expr.Binary.Op.GT;
+			break;
+		case LTEQ:
+			op = Expr.Binary.Op.LTEQ;
+			break;
+		case LT:
+			op = Expr.Binary.Op.LT;
+			break;
+		case SUBSET:
+			op = Expr.Binary.Op.SUBSET;
+			break;
+		case SUBSETEQ:
+			op = Expr.Binary.Op.SUBSETEQ;
+			break;
+		case IN:
+			op = Expr.Binary.Op.IN;
+			break;
+		default:
+			internalFailure("unknown comparator (" + cop + ")", filename,
+					block.attributes(branch.pc()));
+			return null;
+		}
+
+		return new Expr.Binary(op, lhs, rhs, toWycsAttributes(block.attributes(branch.pc())));
+	}
+
+	/**
+	 * Generate the logically inverted expression corresponding to a given
+	 * comparator. For example, inverting "<=" gives ">", inverting "==" gives
+	 * "!=", etc.
+	 *
+	 * @param test
+	 *            --- the binary comparator being inverted.
+	 * @return
+	 */
+	private Expr invert(Expr.Binary test) {
+		Expr.Binary.Op op;
+		switch (test.op) {
+		case EQ:
+			op = Expr.Binary.Op.NEQ;
+			break;
+		case NEQ:
+			op = Expr.Binary.Op.EQ;
+			break;
+		case GTEQ:
+			op = Expr.Binary.Op.LT;
+			break;
+		case GT:
+			op = Expr.Binary.Op.LTEQ;
+			break;
+		case LTEQ:
+			op = Expr.Binary.Op.GT;
+			break;
+		case LT:
+			op = Expr.Binary.Op.GTEQ;
+			break;
+		case SUBSET:
+		case SUBSETEQ:
+		case SUPSET:
+		case SUPSETEQ:
+		case IN:
+			// NOTE: it's tempting to think that inverting x SUBSET y should
+			// give x SUPSETEQ y, but this is not correct. See #423.
+			op = Expr.Binary.Op.IN;
+			return new Expr.Unary(Expr.Unary.Op.NOT, new Expr.Binary(test.op,
+					test.leftOperand, test.rightOperand, test.attributes()),
+					test.attributes());
+		default:
+			wycc.lang.SyntaxError.internalFailure("unknown comparator ("
+					+ test.op + ")", filename, test);
+			return null;
+		}
+
+		return new Expr.Binary(op, test.leftOperand, test.rightOperand,
+				test.attributes());
+	}
+
+	/**
+	 * Convert a WyIL constant into its equivalent WyCS constant. In some cases,
+	 * this is a direct translation. In other cases, WyIL constants are encoded
+	 * using more primitive WyCS values.
+	 * 
+	 * @param c
+	 *            --- The WyIL constant to be converted.
+	 * @param block
+	 *            --- The block within which this conversion is taking place
+	 *            (for debugging purposes)
+	 * @param branch
+	 *            --- The branch within which this conversion is taking place
+	 *            (for debugging purposes)
+	 * @return
+	 */
+	public Value convert(Constant c, AttributedCodeBlock block, VcBranch branch) {
+		if (c instanceof Constant.Null) {
+			return wycs.core.Value.Null;
+		} else if (c instanceof Constant.Bool) {
+			Constant.Bool cb = (Constant.Bool) c;
+			return wycs.core.Value.Bool(cb.value);
+		} else if (c instanceof Constant.Byte) {
+			Constant.Byte cb = (Constant.Byte) c;
+			return wycs.core.Value.Integer(BigInteger.valueOf(cb.value));
+		} else if (c instanceof Constant.Char) {
+			Constant.Char cb = (Constant.Char) c;
+			return wycs.core.Value.Integer(BigInteger.valueOf(cb.value));
+		} else if (c instanceof Constant.Integer) {
+			Constant.Integer cb = (Constant.Integer) c;
+			return wycs.core.Value.Integer(cb.value);
+		} else if (c instanceof Constant.Decimal) {
+			Constant.Decimal cb = (Constant.Decimal) c;
+			return wycs.core.Value.Decimal(cb.value);
+		} else if (c instanceof Constant.Strung) {
+			Constant.Strung cb = (Constant.Strung) c;
+			String str = cb.value;
+			ArrayList<Value> pairs = new ArrayList<Value>();
+			for (int i = 0; i != str.length(); ++i) {
+				ArrayList<Value> pair = new ArrayList<Value>();
+				pair.add(Value.Integer(BigInteger.valueOf(i)));
+				pair.add(Value.Integer(BigInteger.valueOf(str.charAt(i))));
+				pairs.add(Value.Tuple(pair));
+			}
+			return Value.Set(pairs);
+		} else if (c instanceof Constant.List) {
+			Constant.List cb = (Constant.List) c;
+			List<Constant> cb_values = cb.values;
+			ArrayList<Value> pairs = new ArrayList<Value>();
+			for (int i = 0; i != cb_values.size(); ++i) {
+				ArrayList<Value> pair = new ArrayList<Value>();
+				pair.add(Value.Integer(BigInteger.valueOf(i)));
+				pair.add(convert(cb_values.get(i), block, branch));
+				pairs.add(Value.Tuple(pair));
+			}
+			return Value.Set(pairs);
+		} else if (c instanceof Constant.Map) {
+			Constant.Map cb = (Constant.Map) c;
+			ArrayList<Value> pairs = new ArrayList<Value>();
+			for (Map.Entry<Constant, Constant> e : cb.values.entrySet()) {
+				ArrayList<Value> pair = new ArrayList<Value>();
+				pair.add(convert(e.getKey(), block, branch));
+				pair.add(convert(e.getValue(), block, branch));
+				pairs.add(Value.Tuple(pair));
+			}
+			return Value.Set(pairs);
+		} else if (c instanceof Constant.Set) {
+			Constant.Set cb = (Constant.Set) c;
+			ArrayList<Value> values = new ArrayList<Value>();
+			for (Constant v : cb.values) {
+				values.add(convert(v, block, branch));
+			}
+			return wycs.core.Value.Set(values);
+		} else if (c instanceof Constant.Tuple) {
+			Constant.Tuple cb = (Constant.Tuple) c;
+			ArrayList<Value> values = new ArrayList<Value>();
+			for (Constant v : cb.values) {
+				values.add(convert(v, block, branch));
+			}
+			return wycs.core.Value.Tuple(values);
+		} else if (c instanceof Constant.Record) {
+			Constant.Record rb = (Constant.Record) c;
+
+			// NOTE:: records are currently translated into WyCS as tuples,
+			// where
+			// each field is allocated a slot based on an alphabetical sorting
+			// of field names. It's unclear at this stage whether or not that is
+			// a general solution. In particular, it would seem to be brokwn for
+			// type testing.
+
+			ArrayList<String> fields = new ArrayList<String>(rb.values.keySet());
+			Collections.sort(fields);
+			ArrayList<Value> values = new ArrayList<Value>();
+			for (String field : fields) {
+				values.add(convert(rb.values.get(field), block, branch));
+			}
+			return wycs.core.Value.Tuple(values);
+		} else {
+			internalFailure("unknown constant encountered (" + c + ")",
+					filename, block.attributes(branch.pc()));
+			return null;
+		}
+	}
+
+	private SyntacticType convert(List<Type> types, AttributedCodeBlock block,
+			VcBranch branch) {
+		ArrayList<SyntacticType> ntypes = new ArrayList<SyntacticType>();
+		for (int i = 0; i != types.size(); ++i) {
+			ntypes.add(convert(types.get(i), block.attributes(branch.pc())));
+		}
+		return new SyntacticType.Tuple(ntypes);
+	}
+
+	/**
+	 * Convert a WyIL type into its equivalent WyCS type. In some cases, this is
+	 * a direct translation. In other cases, WyIL constants are encoded using
+	 * more primitive WyCS types.
+	 * 
+	 * @param t
+	 *            --- The WyIL type to be converted.
+	 * @param attributes
+	 *            --- The attributes associated with the point of this
+	 *            conversion. These are used for debugging purposes to associate
+	 *            any errors generated with a source line.
+	 * @return
+	 */
+	private SyntacticType convert(Type t, List<wyil.lang.Attribute> attributes) {
+		// FIXME: this is fundamentally broken in the case of recursive types.
+		// See Issue #298.
+		if (t instanceof Type.Any) {
+			return new SyntacticType.Any(toWycsAttributes(attributes));
+		} else if (t instanceof Type.Void) {
+			return new SyntacticType.Void(toWycsAttributes(attributes));
+		} else if (t instanceof Type.Null) {
+			return new SyntacticType.Null(toWycsAttributes(attributes));
+		} else if (t instanceof Type.Bool) {
+			return new SyntacticType.Bool(toWycsAttributes(attributes));
+		} else if (t instanceof Type.Char) {
+			// FIXME: implement SyntacticType.Char
+			// return new SyntacticType.Char(attributes(branch));
+			return new SyntacticType.Int(toWycsAttributes(attributes));
+		} else if (t instanceof Type.Byte) {
+			// FIXME: implement SyntacticType.Byte
+			// return new SyntacticType.Byte(attributes(branch));
+			return new SyntacticType.Int(toWycsAttributes(attributes));
+		} else if (t instanceof Type.Int) {
+			return new SyntacticType.Int(toWycsAttributes(attributes));
+		} else if (t instanceof Type.Real) {
+			return new SyntacticType.Real(toWycsAttributes(attributes));
+		} else if (t instanceof Type.Strung) {
+			// FIXME: implement SyntacticType.Strung
+			// return new SyntacticType.Strung(attributes(branch));
+			return new SyntacticType.List(new SyntacticType.Int(
+					toWycsAttributes(attributes)));
+		} else if (t instanceof Type.Set) {
+			Type.Set st = (Type.Set) t;
+			SyntacticType element = convert(st.element(), attributes);
+			return new SyntacticType.Set(element);
+		} else if (t instanceof Type.Map) {
+			Type.Map lt = (Type.Map) t;
+			SyntacticType from = convert(lt.key(), attributes);
+			SyntacticType to = convert(lt.value(), attributes);
+			// ugly.
+			return new SyntacticType.Map(from, to);
+		} else if (t instanceof Type.List) {
+			Type.List lt = (Type.List) t;
+			SyntacticType element = convert(lt.element(), attributes);
+			// ugly.
+			return new SyntacticType.List(element);
+		} else if (t instanceof Type.Tuple) {
+			Type.Tuple tt = (Type.Tuple) t;
+			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();
+			for (int i = 0; i != tt.size(); ++i) {
+				elements.add(convert(tt.element(i), attributes));
+			}
+			return new SyntacticType.Tuple(elements);
+		} else if (t instanceof Type.Record) {
+			Type.Record rt = (Type.Record) t;
+			HashMap<String, Type> fields = rt.fields();
+			ArrayList<String> names = new ArrayList<String>(fields.keySet());
+			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();
+			Collections.sort(names);
+			for (int i = 0; i != names.size(); ++i) {
+				String field = names.get(i);
+				elements.add(convert(fields.get(field), attributes));
+			}
+			return new SyntacticType.Tuple(elements);
+		} else if (t instanceof Type.Reference) {
+			// FIXME: how to translate this??
+			return new SyntacticType.Any();
+		} else if (t instanceof Type.Union) {
+			Type.Union tu = (Type.Union) t;
+			HashSet<Type> tu_elements = tu.bounds();
+			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();
+			for (Type te : tu_elements) {
+				elements.add(convert(te, attributes));
+			}
+			return new SyntacticType.Union(elements);
+		} else if (t instanceof Type.Negation) {
+			Type.Negation nt = (Type.Negation) t;
+			SyntacticType element = convert(nt.element(), attributes);
+			return new SyntacticType.Negation(element);
+		} else if (t instanceof Type.FunctionOrMethod) {
+			Type.FunctionOrMethod ft = (Type.FunctionOrMethod) t;
+			return new SyntacticType.Any();
+		} else {
+			internalFailure("unknown type encountered ("
+					+ t.getClass().getName() + ")", filename, attributes);
+			return null;
+		}
+	}
+
+	/**
+	 * Convert a wyil NameID into a string that is suitable to be used as a
+	 * function name or variable identifier in WycsFiles.
+	 *
+	 * @param id
+	 * @return
+	 */
+	private String toIdentifier(NameID id) {
+		return id.toString().replace(":", "_").replace("/", "_");
+	}
+
+	private static <T> List<T> prepend(T x, List<T> xs) {
+		ArrayList<T> rs = new ArrayList<T>();
+		rs.add(x);
+		rs.addAll(xs);
+		return rs;
+	}
+
+	/**
+	 * Convert a list of WyIL attributes into a corresponding list of
+	 * WycsAttributes. Note that, in some cases, no conversion is possible and
+	 * such attributes are silently dropped.
+	 * 
+	 * @param branch
+	 * @return
+	 */
+	private static Collection<wycc.lang.Attribute> toWycsAttributes(
+			Collection<wyil.lang.Attribute> wyilAttributes) {
+		System.out.println("ATTRIBUTES: " + wyilAttributes);
+		ArrayList<wycc.lang.Attribute> wycsAttributes = new ArrayList<wycc.lang.Attribute>();
+		// iterate each attribute and convert those which can be convered.
+		for (wyil.lang.Attribute attr : wyilAttributes) {
+			if (attr instanceof wyil.attributes.SourceLocation) {
+				wyil.attributes.SourceLocation l = (wyil.attributes.SourceLocation) attr;
+				System.out.println("ADDING ATTRIBUTE: " + l.start());
+				wycsAttributes.add(new wycc.lang.Attribute.Source(l.start(), l
+						.end(), 0));
+			}
+		}
+		return wycsAttributes;
+	}
+}
