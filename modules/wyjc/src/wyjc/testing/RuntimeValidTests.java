@@ -952,6 +952,11 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
+	public void DoWhile_Valid_6() {
+		runTest("DoWhile_Valid_6");
+	}
+	
+	@Test
 	public void EffectiveList_Valid_1() {
 		runTest("EffectiveList_Valid_1");
 	}

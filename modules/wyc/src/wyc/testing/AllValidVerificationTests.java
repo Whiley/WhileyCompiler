@@ -897,6 +897,11 @@ public class AllValidVerificationTests {
 	public void DoWhile_Valid_5() {
 		runTest("DoWhile_Valid_5");
 	}
+	
+	@Test
+	public void DoWhile_Valid_6() {
+		runTest("DoWhile_Valid_6");
+	}
 
 	@Test
 	public void EffectiveList_Valid_1() {
