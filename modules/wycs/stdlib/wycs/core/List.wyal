@@ -17,7 +17,7 @@ define List<V> ({int,V} pairs) is:
        forall (int i,V v):
             (i,v) in pairs ==> i >= 0 && i < |pairs|
 
-function Append<V>({int,V} l1, {int,V} l2) => ({int,V} l3)
+function Append<V>({int,V} l1, {int,V} l2) -> ({int,V} l3)
 ensures:
     l1 ⊆ l3
     forall (int i, V v):
@@ -34,7 +34,7 @@ ensures:
     |l2| >= 0
     |l3| == |l1| + |l2|
 
-function ListUpdate<V> ({int,V} pairs, int index, V value) => ({int,V} rs)
+function ListUpdate<V> ({int,V} pairs, int index, V value) -> ({int,V} rs)
 ensures:
     (index,value) in rs
     |rs| == |pairs|
@@ -46,7 +46,7 @@ ensures:
         then:
             (i,v) in rs
 
-function Range(int start, int end) => ({int,int} rs)
+function Range(int start, int end) -> ({int,int} rs)
 ensures:
     forall (int i1, int i2):
         if:
@@ -58,7 +58,7 @@ ensures:
 ensures:
     |rs| == end - start
 
-function Sublist<V>({int,V} pairs, int start, int end) => ({int,V} rs)
+function Sublist<V>({int,V} pairs, int start, int end) -> ({int,V} rs)
 ensures:
     forall (int i1, V v1):
         if:

@@ -2,15 +2,15 @@ import whiley.lang.System
 
 type MyProc is &{int position}
 
-type MyMeth is method(MyProc, int) => int
+type MyMeth is method(MyProc, int) -> int
 
-method read(MyProc this, int x) => int:
+method read(MyProc this, int x) -> int:
     return x + 123
 
-method test(MyMeth m, MyProc proc) => int:
+method test(MyMeth m, MyProc proc) -> int:
     return m(proc,1)
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     MyProc p = new {position: 0}
     int r = test(&read, p)
     sys.out.println(Any.toString(r))

@@ -151,12 +151,12 @@ public class WyalFileParser {
 	 * Parse a <i>function declaration</i> which has the form:
 	 *
 	 * <pre>
-	 * FunctionDeclaration ::= "function" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
+	 * FunctionDeclaration ::= "function" TypePattern "->" TypePattern (FunctionMethodClause)* ':' NewLine Block
 	 *
 	 * FunctionMethodClause ::= "throws" Type | "requires" Expr | "ensures" Expr
 	 * </pre>
 	 *
-	 * Here, the first type pattern (i.e. before "=>") is referred to as the
+	 * Here, the first type pattern (i.e. before "->") is referred to as the
 	 * "parameter", whilst the second is referred to as the "return". There are
 	 * three kinds of option clause:
 	 *
@@ -187,7 +187,7 @@ public class WyalFileParser {
 	 * </p>
 	 *
 	 * <pre>
-	 * function max(int x, int y) => (int z)
+	 * function max(int x, int y) -> (int z)
 	 * // return must be greater than either parameter
 	 * ensures x <= z && y <= z
 	 * // return must equal one of the parmaeters
@@ -211,7 +211,7 @@ public class WyalFileParser {
 		// Parse function or method parameters
 		HashSet<String> environment = new HashSet<String>();
 		TypePattern from = parseTypePattern(genericSet, environment, true);
-		match(EqualsGreater);
+		match(MinusGreater);
 		// Explicit return type is given, so parse it! We first clone the
 		// environent and create a special one only for use within ensures
 		// clauses, since these are the only expressions which may refer to
@@ -1315,7 +1315,7 @@ public class WyalFileParser {
 	 *            | AccessExpr '[' AdditiveExpr ".." AdditiveExpr ']'
 	 *            | AccessExpr '.' Identifier
 	 *            | AccessExpr '.' Identifier '(' [ Expr (',' Expr)* ] ')'
-	 *            | AccessExpr "=>" Identifier
+	 *            | AccessExpr "->" Identifier
 	 * </pre>
 	 *
 	 * <p>
@@ -3204,7 +3204,7 @@ public class WyalFileParser {
 	 * three must be terminated by a right curly brace. Therefore, after parsing
 	 * the first Type, we simply check what follows. One complication is the
 	 * potential for "mixed types" where the field name and type and intertwined
-	 * (e.g. function read()=>[byte]).
+	 * (e.g. function read()->[byte]).
 	 *
 	 * @return
 	 */
@@ -3214,7 +3214,7 @@ public class WyalFileParser {
 
 		// First, we need to disambiguate between a set, map or record type. The
 		// complication is the potential for mixed types. For example, when
-		// parsing "{ function f(int)=>int }", the first element is not a type.
+		// parsing "{ function f(int)->int }", the first element is not a type.
 		// Therefore, we have to first decide whether or not we have a mixed
 		// type, or a normal type.
 
@@ -3308,8 +3308,8 @@ public class WyalFileParser {
 	 *
 	 * <pre>
 	 * MixedType ::= Type Identifier
-	 *            |  "function" Type Identifier '(' [Type (',' Type)* ] ')' "=>" Type [ "throws" Type ]
-	 *            |  "method" Type Identifier '(' [Type (',' Type)* ] ')' "=>" Type [ "throws" Type ]
+	 *            |  "function" Type Identifier '(' [Type (',' Type)* ] ')' "->" Type [ "throws" Type ]
+	 *            |  "method" Type Identifier '(' [Type (',' Type)* ] ')' "->" Type [ "throws" Type ]
 	 * </pre>
 	 *
 	 * @return
@@ -3345,7 +3345,7 @@ public class WyalFileParser {
 
 				// Functions require a return type (since otherwise they are
 				// just nops)
-				match(EqualsGreater);
+				match(MinusGreater);
 				// Third, parse the return type
 				ret = parseUnitType(generics);
 

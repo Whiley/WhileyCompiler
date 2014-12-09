@@ -9,13 +9,13 @@ type Matrix is {
 } where |data| == height &&
         no { i in data | |i| != width }
 
-function Matrix(nat width, nat height, [[int]] data) => (Matrix result)
+function Matrix(nat width, nat height, [[int]] data) -> (Matrix result)
 requires (|data| == height) && no { i in data | |i| != width }
 ensures result.width == width && result.height == height && result.data == data:
     //
     return {height: height, width: width, data: data}
 
-function run(Matrix A, Matrix B) => (Matrix C)
+function run(Matrix A, Matrix B) -> (Matrix C)
 requires A.width == B.height
 ensures (C.width == B.width) && (C.height == A.height):
     //
@@ -30,7 +30,7 @@ ensures (C.width == B.width) && (C.height == A.height):
         C_data = C_data ++ [row]
     return Matrix(B.width, A.height, C_data)
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     Matrix m1 = Matrix(2, 2, [[1, 0], [-3, 2]])
     Matrix m2 = Matrix(2, 2, [[-1, 4], [3, 5]])
     Matrix m3 = run(m1, m2)

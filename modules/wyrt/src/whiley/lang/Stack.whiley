@@ -28,7 +28,7 @@ package whiley.lang
 /**
  * Return the top element of the "stack".
  */
-public function top([int] list) => int
+public function top([int] list) -> int
 // Input list cannot be empty
 requires |list| > 0:
     //
@@ -38,7 +38,7 @@ requires |list| > 0:
 /**
  * Push an element onto the "stack".
  */
-public function push([int] list, int element) => ([int] r)
+public function push([int] list, int element) -> ([int] r)
 // Length of stack increases by one
 ensures |r| == |list| + 1:
     //
@@ -47,7 +47,7 @@ ensures |r| == |list| + 1:
 /**
  * Pop an element off the "stack".
  */
-public function pop([int] list) => ([int] r)
+public function pop([int] list) -> ([int] r)
 // Input list cannot be empty
 requires |list| > 0
 // Length of list decreases by one

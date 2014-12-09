@@ -9,9 +9,9 @@ constant DIV is 4
 
 type bop is {int op, int rhs, int lhs} where op in {ADD, SUB, MUL, DIV}
 
-function f(bop b) => bop:
+function f(bop b) -> bop:
     return b
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     bop b = {op: 0, rhs: 2, lhs: 1}
     debug Any.toString(f(b))

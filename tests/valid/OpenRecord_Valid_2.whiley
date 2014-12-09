@@ -20,12 +20,12 @@ type Attribute is {string name, ...}
 
 type CodeAttribute is {string name, [Bytecode] data}
 
-function codeLength(Attribute a) => null | int:
+function codeLength(Attribute a) -> null | int:
     if a is CodeAttribute:
         return |a.data|
     return null
 
-public method main(System.Console sys) => void:
+public method main(System.Console sys) -> void:
     Attribute attr = {name: "Code", data: [{op: 2, offset: 1}]}
     sys.out.println(codeLength(attr))
     attr = {name: "Blah"}

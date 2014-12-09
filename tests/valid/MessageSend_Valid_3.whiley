@@ -2,12 +2,12 @@ import whiley.lang.System
 
 type Proc is &{int state}
 
-method get(Proc this) => int:
+method get(Proc this) -> int:
     return this->state
 
-method f(Proc x) => [int]:
+method f(Proc x) -> [int]:
     return [1, 2, 3, get(x)]
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     Proc proc = new {state: 1}
     sys.out.println(Any.toString(f(proc)))

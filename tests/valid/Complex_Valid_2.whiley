@@ -68,7 +68,7 @@ constant D3 is {col: 3, row: 2}
 
 constant H1 is {col: 8, row: 1}
 
-function move2str(Move m) => string:
+function move2str(Move m) -> string:
     if m is SingleTake:
         return (((piece2str(m.piece) ++ pos2str(m.from)) ++ "x") ++ piece2str(m.taken)) ++ pos2str(m.to)
     else:
@@ -86,16 +86,16 @@ function move2str(Move m) => string:
                 else:
                     return ""
 
-function piece2str(Piece p) => string:
+function piece2str(Piece p) -> string:
     if p.kind == PAWN:
         return ""
     else:
         return "" ++ PIECE_CHARS[p.kind]
 
-function pos2str(Pos p) => string:
+function pos2str(Pos p) -> string:
     return "" ++ ('a' + (char) p.col) ++ ('1' + (char) p.row)
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     Move m = {to: A1, from: A2, piece: WHITE_PAWN}
     sys.out.println(move2str(m))
     m = {to: A1, from: A2, piece: WHITE_KNIGHT}

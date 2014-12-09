@@ -1,8 +1,8 @@
 import whiley.lang.System
 
-function f(int x) => {int}:
+function f(int x) -> {int}:
     return {x}
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     {int} bytes = f(0)
     sys.out.println(Any.toString(bytes))

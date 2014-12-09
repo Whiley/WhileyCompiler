@@ -22,12 +22,12 @@ constant BLACK_PAWN is {colour: false, kind: PAWN}
 
 type Board is {bool flag, [Piece] rows}
 
-function f(Board board) => Board
+function f(Board board) -> Board
 requires |board.rows| > 0:
     //
     board.rows[0] = BLACK_PAWN
     return board
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     Board r1 = {flag: false, rows: [WHITE_PAWN]}
     sys.out.println(Any.toString(f(r1)))

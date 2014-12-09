@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     {int} xs = {1, 2, 3, 4}
     {int} ys = {1, 2}
     {int} zs = { x + y | x in xs, y in ys }

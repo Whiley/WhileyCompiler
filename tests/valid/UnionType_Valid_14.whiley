@@ -16,7 +16,7 @@ type ListAccess is {Expr index, Expr src}
 
 type Expr is int | BinOp | [Expr] | ListAccess
 
-function f(Expr e) => int:
+function f(Expr e) -> int:
     if e is int:
         return e
     else:
@@ -25,7 +25,7 @@ function f(Expr e) => int:
         else:
             return 1
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     sys.out.println(f(1))
     sys.out.println(f([1, 2, 3]))
     sys.out.println(f({op: ADD, rhs: 2, lhs: 1}))

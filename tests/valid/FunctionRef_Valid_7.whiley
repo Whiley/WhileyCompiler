@@ -2,13 +2,13 @@ import whiley.lang.System
 
 type Proc is &{int data}
 
-method read(Proc this, int x) => int:
+method read(Proc this, int x) -> int:
     return x + 1
 
-method test(Proc p, int arg) => int:
+method test(Proc p, int arg) -> int:
     return read(p,arg)
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     Proc p = new {data: 1}
     int x = test(p, 123)
     sys.out.println("GOT: " ++ Any.toString(x))

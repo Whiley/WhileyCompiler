@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [bool] ls = [true, false, true]
     sys.out.println(Any.toString(ls))
     bool x = ls[0]

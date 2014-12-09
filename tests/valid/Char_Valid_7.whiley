@@ -1,9 +1,9 @@
 import whiley.lang.System
 
-function f(char c) => bool:
+function f(char c) -> bool:
     return c <= '9'
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     bool x = f('0')
     sys.out.println(Any.toString(x))
     x = f('1')

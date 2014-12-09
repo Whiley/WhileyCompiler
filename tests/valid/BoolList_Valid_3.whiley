@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type Board is [[bool]]
 
-function update(Board board) => Board:
+function update(Board board) -> Board:
     [[bool]] nboard = board
     for i in 0 .. 3:
         for j in 0 .. 3:
@@ -14,7 +14,7 @@ function update(Board board) => Board:
                     case 2, 3:
     return nboard
 
-function countLiving(Board board, int row, int col) => int:
+function countLiving(Board board, int row, int col) -> int:
     int count = isAlive(board, row - 1, col - 1)
     count = count + isAlive(board, row - 1, col)
     count = count + isAlive(board, row - 1, col + 1)
@@ -25,7 +25,7 @@ function countLiving(Board board, int row, int col) => int:
     count = count + isAlive(board, row + 1, col + 1)
     return count
 
-function isAlive(Board board, int row, int col) => int:
+function isAlive(Board board, int row, int col) -> int:
     int nrows = |board|
     if (row < 0) || (row >= nrows):
         return 0
@@ -37,7 +37,7 @@ function isAlive(Board board, int row, int col) => int:
     else:
         return 0
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [[bool]] board = [[false, true, false], [false, true, false], [false, true, false]]
     [[bool]] nboard = update(board)
     sys.out.println(board)

@@ -6,7 +6,7 @@ type listint is [int]
 
 type setint is {int}
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     setint si = {1, 2, 3}
     listint li = [1, 2, 3]
     point p = {y: 2, x: 1}

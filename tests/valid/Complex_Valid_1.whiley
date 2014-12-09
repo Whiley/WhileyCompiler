@@ -56,13 +56,13 @@ constant startingChessRows is [[WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QU
 
 constant startingChessBoard is {blackCastleKingSide: true, whiteCastleQueenSide: true, blackCastleQueenSide: true, rows: startingChessRows, whiteCastleKingSide: true}
 
-function sign(int x, int y) => int:
+function sign(int x, int y) -> int:
     if x < y:
         return 1
     else:
         return -1
 
-function clearRowExcept(Pos from, Pos to, Board board) => bool:
+function clearRowExcept(Pos from, Pos to, Board board) -> bool:
     if (from.row != to.row) || (from.col == to.col):
         return false
     int inc = sign(from.col, to.col)
@@ -85,7 +85,7 @@ constant A3 is {col: 1, row: 3}
 
 constant D3 is {col: 4, row: 3}
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     bool r = clearRowExcept(A1, H1, startingChessBoard)
     sys.out.println("GOT: " ++ Any.toString(r))
     r = clearRowExcept(A3, D3, startingChessBoard)

@@ -17,12 +17,12 @@ type Trie is {
 constant EmptyTrie is { transitions: [] }
 
 // Add a complete string into a Trie starting from the root node.
-function add(Trie trie, string str) => Trie:
+function add(Trie trie, string str) -> Trie:
     return add(trie,0,str)
 
 // Add a string into a Trie from a given state, producing an
 // updated Trie.
-function add(Trie trie, int state, string str) => Trie
+function add(Trie trie, int state, string str) -> Trie
 requires state >= 0:
     //
     if |str| == 0:
@@ -49,12 +49,12 @@ requires state >= 0:
 
 // Check whether a given string is contained in the trie,
 // starting from the root state.
-function contains(Trie trie, string str) => bool:
+function contains(Trie trie, string str) -> bool:
     return contains(trie,0,str)
 
 // Check whether a given string is contained in the trie,
 // starting from a given state.
-function contains(Trie trie, int state, string str) => bool
+function contains(Trie trie, int state, string str) -> bool
 requires state >= 0:
     //
     if |str| == 0:

@@ -1,4 +1,4 @@
-function add([int] items, int n) => [int]
+function add([int] items, int n) -> [int]
 requires n > 0:
     //
     int i = 0

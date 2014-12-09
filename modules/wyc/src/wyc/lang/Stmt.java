@@ -107,7 +107,7 @@ public interface Stmt extends SyntacticElement {
 	 * <code>e</code> is a boolean expression. The following illustrates:
 	 *
 	 * <pre>
-	 * function abs(int x) => int:
+	 * function abs(int x) -> int:
 	 *     if x < 0:
 	 *         x = -x
 	 *     assert x >= 0
@@ -153,7 +153,7 @@ public interface Stmt extends SyntacticElement {
 	 * <code>e</code> is a boolean expression. The following illustrates:
 	 *
 	 * <pre>
-	 * function abs(int x) => int:
+	 * function abs(int x) -> int:
 	 *     if x < 0:
 	 *         x = -x
 	 *     assume x >= 0
@@ -209,7 +209,7 @@ public interface Stmt extends SyntacticElement {
 	 * The following illustrates:
 	 *
 	 * <pre>
-	 * function f(int x) => int:
+	 * function f(int x) -> int:
 	 * 	  return x + 1
 	 * </pre>
 	 *
@@ -265,7 +265,7 @@ public interface Stmt extends SyntacticElement {
 	 * As an example:
 	 *
 	 * <pre>
-	 * function sum([int] xs) => int:
+	 * function sum([int] xs) -> int:
 	 *   int r = 0
 	 *   int i = 0
 	 *   while i < |xs| where i >= 0:
@@ -336,7 +336,7 @@ public interface Stmt extends SyntacticElement {
 	 * statements separated by indentation. As an example:
 	 *
 	 * <pre>
-	 * function sum([int] xs) => int
+	 * function sum([int] xs) -> int
 	 * requires |xs| > 0:
 	 *   int r = 0
 	 *   int i = 0
@@ -425,7 +425,7 @@ public interface Stmt extends SyntacticElement {
 	 * </p>
 	 *
 	 * <pre>
-	 * function sum([int] xs) => int:
+	 * function sum([int] xs) -> int:
 	 *   int r = 0
 	 *   for i in xs where i >= 0:
 	 *     r = r + xs[i]
@@ -509,7 +509,7 @@ public interface Stmt extends SyntacticElement {
 	 * illustrates:
 	 *
 	 * <pre>
-	 * function max(int x, int y) => int:
+	 * function max(int x, int y) -> int:
 	 *   if(x > y):
 	 *     return x
 	 *   else if(x == y):

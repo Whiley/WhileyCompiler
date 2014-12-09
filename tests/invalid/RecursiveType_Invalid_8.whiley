@@ -15,9 +15,9 @@ type expr is int | binop
 
 type asexpr is int | asbinop
 
-function f(asexpr e) => asexpr:
+function f(asexpr e) -> asexpr:
     return e
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     e1 = {op: MUL, left: 1, right: 2}
     f(e1)

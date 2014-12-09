@@ -1,4 +1,4 @@
-function contains([int] items, int item) => (bool r)
+function contains([int] items, int item) -> (bool r)
 ensures r ==> some { i in 0 .. |items| | item == items[i] }:
     //
     int i = 0

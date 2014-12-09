@@ -2,7 +2,7 @@ import * from whiley.lang.*
 
 type OpenRecord is {int x, ...}
 
-function getField(OpenRecord r) => string:
+function getField(OpenRecord r) -> string:
     if r is {int x}:
         return "(1 field): " ++ r.x
     else:
@@ -11,7 +11,7 @@ function getField(OpenRecord r) => string:
         else:
             return ("(? fields): " ++ r.x) ++ ", ..."
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     r = {x: 1}
     sys.out.println(getField(r))
     r = {y: "hello", x: 2}

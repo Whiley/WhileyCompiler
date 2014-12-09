@@ -2,10 +2,10 @@ import whiley.lang.System
 
 type intlist is int | [int]
 
-function f([intlist] l) => string:
+function f([intlist] l) -> string:
     return Any.toString(l)
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [int|[int]] x
 
     if |sys.args| == 0:

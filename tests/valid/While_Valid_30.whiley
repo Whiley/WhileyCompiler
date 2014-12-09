@@ -1,5 +1,5 @@
 
-function duplicate(int n) => (int r)
+function duplicate(int n) -> (int r)
 requires n >= 0
 ensures  r == 2*n:
     //

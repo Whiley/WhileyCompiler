@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [int] arr = [1, 2, 3]
     assert arr[0] < |arr|
     assert arr[1] < |arr|

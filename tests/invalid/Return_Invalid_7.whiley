@@ -1,4 +1,4 @@
 import * from whiley.lang.*
 
-function f(bool y) => int:
+function f(bool y) -> int:
     return !y

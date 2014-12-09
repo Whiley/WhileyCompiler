@@ -28,7 +28,7 @@ package whiley.lang
 /**
  * Return absolute value of integer variable.
  */
-public function abs(int x) => (int r)
+public function abs(int x) -> (int r)
 // if input positive, then result equals input
 ensures x >= 0 ==> r == x
 // if input negative, then result equals negated input
@@ -42,7 +42,7 @@ ensures x < 0 ==> r == -x:
 /**
  * Return absolute value of real variable.
  */
-public function abs(real x) => (real r)
+public function abs(real x) -> (real r)
 // if input positive, then result equals input
 ensures x >= 0.0 ==> r == x
 // if input negative, then result equals negated input
@@ -56,7 +56,7 @@ ensures x < 0.0 ==> r == -x:
 /**
  * Return maximum of two integer variables
  */
-public function max(int a, int b) => (int r)
+public function max(int a, int b) -> (int r)
 // Return cannot be smaller than either parameter
 ensures r >= a && r >= b
 // Return value must equal one parameter
@@ -70,7 +70,7 @@ ensures r == a || r == b:
 /**
  * Return maximum of two real variables
  */
-public function max(real a, real b) => (real r)
+public function max(real a, real b) -> (real r)
 // Return cannot be smaller than either parameter
 ensures r >= a && r >= b
 // Return value must equal one parameter
@@ -84,7 +84,7 @@ ensures r == a || r == b:
 /**
  * Return minimum of two integer variables
  */
-public function min(int a, int b) => (int r)
+public function min(int a, int b) -> (int r)
 // Return cannot be greater than either parameter
 ensures r <= a && r <= b
 // Return value must equal one parameter
@@ -98,7 +98,7 @@ ensures r == a || r == b:
 /**
  * Return minimum of two real variables
  */
-public function min(real a, real b) => (real r)
+public function min(real a, real b) -> (real r)
 // Return cannot be greater than either parameter
 ensures r <= a && r <= b
 // Return value must equal one parameter
@@ -112,7 +112,7 @@ ensures r == a || r == b:
 /**
  * Return integer value raised to a given power.
  */
-public function pow(int base, int exponent) => int
+public function pow(int base, int exponent) -> int
 // Exponent cannot be negative
 requires exponent > 0:
     //
@@ -125,7 +125,7 @@ requires exponent > 0:
  * Return largest integer which is less-than-or-equal to
  * the given value
  */
-public function floor(real x) => (int r)
+public function floor(real x) -> (int r)
 // Return is greater-than-or-equal to input
 ensures ((real) r) <= x
 // Input value is between return and return plus one
@@ -144,7 +144,7 @@ ensures ((real) r + 1) > x:
  * Return smallest integer which is greater-than-or-equal to
  * the given value
  */
-public function ceil(real x) => (int r)
+public function ceil(real x) -> (int r)
 // Return is greater-than-or-equal to input
 ensures x <= ((real) r)
 // Input value is between return and return less one
@@ -163,7 +163,7 @@ ensures ((real) r - 1) < x:
  * Round an arbitrary number to the nearest integer,
  * following the "round half away from zero" protocol.
  */
-public function round(real x) => (int r)
+public function round(real x) -> (int r)
 // Difference between input and return is 0.5 or less
 ensures max(x,(real) r) - min(x, (real) r) <= 0.5:
     //
@@ -184,7 +184,7 @@ constant ERROR is 0.00000000000000000001
 
 // Based on an excellent article entitled "Integer Square Roots"
 // by Jack W. Crenshaw, published in the eetimes, 1998.
-public function isqrt(int x) => (int r)
+public function isqrt(int x) -> (int r)
 requires x >= 0
 ensures r >= 0:
     //
@@ -197,11 +197,11 @@ ensures r >= 0:
 
 // The following is a first approximation at this.  It computes the
 // square root of a number to within a given error threshold.
-public native function sqrt(int x, real error) => (real r)
+public native function sqrt(int x, real error) -> (real r)
     requires x >= 0
     ensures r >= 0.0
 
-public function sqrt(real x, real error) => (real r)
+public function sqrt(real x, real error) -> (real r)
 requires x >= 0.0
 ensures r >= 0.0:
     //

@@ -26,4 +26,4 @@
 package whiley.lang
 
 // Return the current time in seconds
-public native method current() => real
+public native method current() -> real

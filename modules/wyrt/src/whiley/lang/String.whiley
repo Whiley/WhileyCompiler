@@ -32,7 +32,7 @@ import i8 from whiley.lang.Int
 
 // find first index in string which matches character.  If no match,
 // then return null.
-public function indexOf(string str, char c) => int|null:
+public function indexOf(string str, char c) -> int|null:
     int i = 0
     while i < |str|:
         if str[i] == c:
@@ -40,7 +40,7 @@ public function indexOf(string str, char c) => int|null:
         i = i + 1
     return null
 
-public function indexOf(string str, char c, int start) => int|null:
+public function indexOf(string str, char c, int start) -> int|null:
     //
     int i = start
     while i < |str|:
@@ -51,7 +51,7 @@ public function indexOf(string str, char c, int start) => int|null:
 
 // find last index in string which matches character.  If no match,
 // then return null.
-public function lastIndexOf(string str, char c) => int|null:
+public function lastIndexOf(string str, char c) -> int|null:
     //
     int i = |str|
     while i > 0:
@@ -61,7 +61,7 @@ public function lastIndexOf(string str, char c) => int|null:
     return null
 
 // replace all occurrences of "old" with "new" in string "str".
-public function replace(string str, char old, char n) => string:
+public function replace(string str, char old, char n) -> string:
     //
     int i = 0
     while i < |str|:
@@ -72,14 +72,14 @@ public function replace(string str, char old, char n) => string:
 
 // Convert a byte stream into a string using the standard ASCII
 // encoding.
-public function fromASCII([byte] data) => string:
+public function fromASCII([byte] data) -> string:
     string r = ""
     for b in data:
         r = r ++ Byte.toChar(b)
     return r
 
 // FIXME: this method is completely broken!
-public function toUTF8(string s) => [byte]:
+public function toUTF8(string s) -> [byte]:
     [byte] r = []
     for c in s:
         // the following line is fatally flawed!

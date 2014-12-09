@@ -227,14 +227,14 @@ public class WhileyFileParser {
 	 * have the form:
 	 *
 	 * <pre>
-	 * FunctionDeclaration ::= "function" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
+	 * FunctionDeclaration ::= "function" TypePattern "->" TypePattern (FunctionMethodClause)* ':' NewLine Block
 	 *
-	 * MethodDeclaration ::= "method" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
+	 * MethodDeclaration ::= "method" TypePattern "->" TypePattern (FunctionMethodClause)* ':' NewLine Block
 	 *
 	 * FunctionMethodClause ::= "throws" Type | "requires" Expr | "ensures" Expr
 	 * </pre>
 	 *
-	 * Here, the first type pattern (i.e. before "=>") is referred to as the
+	 * Here, the first type pattern (i.e. before "->") is referred to as the
 	 * "parameter", whilst the second is referred to as the "return". There are
 	 * three kinds of option clause:
 	 *
@@ -265,7 +265,7 @@ public class WhileyFileParser {
 	 * </p>
 	 *
 	 * <pre>
-	 * function max(int x, int y) => (int z)
+	 * function max(int x, int y) -> (int z)
 	 * // return must be greater than either parameter
 	 * ensures x <= z && y <= z
 	 * // return must equal one of the parmaeters
@@ -318,7 +318,7 @@ public class WhileyFileParser {
 		TypePattern ret;
 		HashSet<String> ensuresEnvironment = environment;
 
-		if (tryAndMatch(true, EqualsGreater) != null) {
+		if (tryAndMatch(true, MinusGreater) != null) {
 			// Explicit return type is given, so parse it! We first clone the
 			// environent and create a special one only for use within ensures
 			// clauses, since these are the only expressions which may refer to
@@ -2377,7 +2377,7 @@ public class WhileyFileParser {
 	 *            | AccessExpr '[' AdditiveExpr ".." AdditiveExpr ']'
 	 *            | AccessExpr '.' Identifier
 	 *            | AccessExpr '.' Identifier '(' [ Expr (',' Expr)* ] ')'
-	 *            | AccessExpr "=>" Identifier
+	 *            | AccessExpr "->" Identifier
 	 * </pre>
 	 *
 	 * <p>
@@ -3656,7 +3656,7 @@ public class WhileyFileParser {
 		// parameters.
 		environment = new HashSet<String>(environment);
 		boolean firstTime = true;
-		while (eventuallyMatch(EqualsGreater) == null) {
+		while (eventuallyMatch(MinusGreater) == null) {
 			int p_start = index;
 			if (!firstTime) {
 				match(Comma);
@@ -3722,7 +3722,7 @@ public class WhileyFileParser {
 			match(LeftBrace);
 			ArrayList<SyntacticType> parameters = new ArrayList<SyntacticType>();
 			boolean firstTime = true;
-			while (eventuallyMatch(EqualsGreater) == null) {
+			while (eventuallyMatch(MinusGreater) == null) {
 				int p_start = index;
 				if (!firstTime) {
 					match(Comma);
@@ -4575,7 +4575,7 @@ public class WhileyFileParser {
 	 * three must be terminated by a right curly brace. Therefore, after parsing
 	 * the first Type, we simply check what follows. One complication is the
 	 * potential for "mixed types" where the field name and type and intertwined
-	 * (e.g. function read()=>[byte]).
+	 * (e.g. function read()->[byte]).
 	 *
 	 * @return
 	 */
@@ -4585,7 +4585,7 @@ public class WhileyFileParser {
 
 		// First, we need to disambiguate between a set, map or record type. The
 		// complication is the potential for mixed types. For example, when
-		// parsing "{ function f(int)=>int }", the first element is not a type.
+		// parsing "{ function f(int)->int }", the first element is not a type.
 		// Therefore, we have to first decide whether or not we have a mixed
 		// type, or a normal type.
 
@@ -4668,8 +4668,8 @@ public class WhileyFileParser {
 	 * Parse a function or method type, which is of the form:
 	 *
 	 * <pre>
-	 * FunctionType ::= "function" [Type (',' Type)* ] "=>" Type [ "throws" Type ]
-	 * MethodType   ::= "method" [Type (',' Type)* ] "=>" Type [ "throws" Type ]
+	 * FunctionType ::= "function" [Type (',' Type)* ] "->" Type [ "throws" Type ]
+	 * MethodType   ::= "method" [Type (',' Type)* ] "->" Type [ "throws" Type ]
 	 * </pre>
 	 *
 	 * At the moment, it is required that parameters for a function or method
@@ -4707,13 +4707,13 @@ public class WhileyFileParser {
 		if (isFunction) {
 			// Functions require a return type (since otherwise they are just
 			// nops)
-			match(EqualsGreater);
+			match(MinusGreater);
 			// Third, parse the return type. Observe that this is forced to be a
 			// unit type. This means that any tuple return types must be in
 			// braces. The reason for this is that a trailing comma may be part
 			// of an enclosing record type and we must disambiguate this.
 			ret = parseUnitType();
-		} else if (tryAndMatch(true, EqualsGreater) != null) {
+		} else if (tryAndMatch(true, MinusGreater) != null) {
 			// Methods have an optional return type
 			// Third, parse the return type
 			ret = parseType();
@@ -4743,8 +4743,8 @@ public class WhileyFileParser {
 	 *
 	 * <pre>
 	 * MixedType ::= Type Identifier
-	 *            |  "function" Type Identifier '(' [Type (',' Type)* ] ')' "=>" Type [ "throws" Type ]
-	 *            |  "method" Type Identifier '(' [Type (',' Type)* ] ')' "=>" Type [ "throws" Type ]
+	 *            |  "function" Type Identifier '(' [Type (',' Type)* ] ')' "->" Type [ "throws" Type ]
+	 *            |  "method" Type Identifier '(' [Type (',' Type)* ] ')' "->" Type [ "throws" Type ]
 	 * </pre>
 	 *
 	 * @return
@@ -4780,11 +4780,11 @@ public class WhileyFileParser {
 				if (lookahead.kind == Function) {
 					// Functions require a return type (since otherwise they are
 					// just nops)
-					match(EqualsGreater);
+					match(MinusGreater);
 					// Third, parse the return type
 					ret = parseUnitType();
 
-				} else if (tryAndMatch(true, EqualsGreater) != null) {
+				} else if (tryAndMatch(true, MinusGreater) != null) {
 					// Third, parse the (optional) return type. Observe that
 					// this is forced to be a
 					// unit type. This means that any tuple return types must be

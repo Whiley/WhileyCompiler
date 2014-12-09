@@ -1,15 +1,15 @@
 import * from whiley.lang.*
 
-function f(int x) => int throws string:
+function f(int x) -> int throws string:
     if x >= 0:
         return 1
     else:
         throw "error"
 
-function g(int x) => int:
+function g(int x) -> int:
     return x
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     int|real x = 1
     //
     try:

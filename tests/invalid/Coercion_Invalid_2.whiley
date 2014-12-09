@@ -8,10 +8,10 @@ type List3 is {null | List3 next, null data}
 
 type List4 is List3 | List2
 
-function f(List1 r) => List4:
+function f(List1 r) -> List4:
     return r
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     list = {next: null, data: 1}
     list = {next: list, data: null}
     ans = f(list)

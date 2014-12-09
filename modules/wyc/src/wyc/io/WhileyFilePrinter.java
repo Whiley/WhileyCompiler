@@ -82,7 +82,7 @@ public class WhileyFilePrinter {
 			out.print(" ");
 			out.print(p.name);
 		}
-		out.print(") => ");
+		out.print(") -> ");
 		print(fm.ret);
 
 		if(!(fm.throwType instanceof SyntacticType.Void)) {

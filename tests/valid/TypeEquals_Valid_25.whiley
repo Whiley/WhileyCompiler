@@ -21,7 +21,7 @@ type Expr is int | BinOp | [Expr] | ListAccess
 
 type Value is int | [Value]
 
-function evaluate(Expr e) => Value:
+function evaluate(Expr e) -> Value:
     if e is int:
         return e
     else:
@@ -41,7 +41,7 @@ function evaluate(Expr e) => Value:
                 else:
                     return 0
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     Expr e = {op: ADD, rhs: 1, lhs: 123}
     Value v = evaluate(e)
     sys.out.println("RESULT: " ++ v)

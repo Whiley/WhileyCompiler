@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function add([int] v1, [int] v2) => ([int] vr)
+function add([int] v1, [int] v2) -> ([int] vr)
 // Input vectors must have same length
 requires |v1| == |v2|
 // Returned vector must have same length as inputs
@@ -12,7 +12,7 @@ ensures |vr| == |v1|:
         i = i + 1
     return v1
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     sys.out.println(Any.toString(add([1, 2, 3], [4, 5, 6])))
     sys.out.println(Any.toString(add([1], [4])))
     sys.out.println(Any.toString(add([], [])))

@@ -5,7 +5,7 @@ type Link is {
 
 type LinkedList is null | Link
 
-function length(LinkedList ls) => (int r)
+function length(LinkedList ls) -> (int r)
 // Return is non-negative
 ensures r >= 0
 // Return is positive then ls non-empty
@@ -16,7 +16,7 @@ ensures r > 0 <==> ls is Link:
     else:
         return 1 + length(ls.next)
 
-function get(Link ls, int i) => int
+function get(Link ls, int i) -> int
 // Index i is within bounds
 requires i >= 0 && i < length(ls):
     //

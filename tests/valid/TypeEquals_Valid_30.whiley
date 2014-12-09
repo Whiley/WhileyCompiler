@@ -16,7 +16,7 @@ type ListAccess is {Expr index, Expr src}
 
 type Expr is int | BinOp | [Expr] | ListAccess
 
-function evaluate(Expr e) => int:
+function evaluate(Expr e) -> int:
     if e is int:
         return e
     else:
@@ -33,7 +33,7 @@ function evaluate(Expr e) => int:
                 else:
                     return -1
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     Expr e = 1
     sys.out.println(evaluate(e))
     e = {op: ADD, rhs: e, lhs: e}

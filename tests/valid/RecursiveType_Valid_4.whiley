@@ -6,7 +6,7 @@ type ListAccess is {Expr index, Expr src}
 
 type Value is int | real | [Value]
 
-function evaluate(Expr e) => null | Value:
+function evaluate(Expr e) -> null | Value:
     if (e is real) || (e is int):
         return e
     else:
@@ -27,7 +27,7 @@ function evaluate(Expr e) => null | Value:
             else:
                 return null
 
-public method main(System.Console sys) => void:
+public method main(System.Console sys) -> void:
     sys.out.println(Any.toString(evaluate(123)))
     sys.out.println(Any.toString(evaluate({index: 0, src: [112, 212332, 342]})))
     sys.out.println(Any.toString(evaluate({index: 2, src: [112312, -289712, 312242]})))

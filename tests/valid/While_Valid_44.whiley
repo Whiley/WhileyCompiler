@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function reverse([int] ls) => ([int] result)
+function reverse([int] ls) -> ([int] result)
 ensures |result| == |ls|:
     int i = |ls|
     [int] r = []
@@ -9,6 +9,6 @@ ensures |result| == |ls|:
         r = r ++ [ls[i]]
     return r
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [int] rs = reverse([1, 2, 3, 4, 5])
     sys.out.println(Any.toString(rs))

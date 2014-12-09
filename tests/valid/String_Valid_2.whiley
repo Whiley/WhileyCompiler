@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-public function has(char c, string str) => bool:
+public function has(char c, string str) -> bool:
     int i = 0
     while i < |str| where i >= 0:
         if str[i] == c:
@@ -8,7 +8,7 @@ public function has(char c, string str) => bool:
         i = i + 1
     return false
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     string s = "Hello World"
     sys.out.println(Any.toString(has('l', s)))
     sys.out.println(Any.toString(has('e', s)))

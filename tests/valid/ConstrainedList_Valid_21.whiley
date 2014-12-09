@@ -22,14 +22,14 @@ constant Value is [1, 5, 10, 20, 50, 100, 500, 1000]
 
 type Cash is ([nat] coins) where |coins| == |Value|
 
-function Cash([nat] coins) => Cash
+function Cash([nat] coins) -> Cash
 requires no { c in coins | c >= |Value| }:
     [int] cash = [0, 0, 0, 0, 0, 0, 0, 0]
     for i in coins where (|cash| == |Value|) && no { c in cash | c < 0 }:
         cash[i] = cash[i] + 1
     return cash
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     Cash cash = Cash([ONE_DOLLAR, FIVE_CENTS])
     sys.out.println(Any.toString(cash))
     cash = Cash([FIVE_DOLLARS, TEN_CENTS, FIFTY_CENTS])

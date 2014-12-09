@@ -1,12 +1,12 @@
 import * from whiley.lang.*
 
-function f(real x) => int throws string:
+function f(real x) -> int throws string:
     if x >= 0.0:
         return 1
     else:
         throw "error"
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     int x
     //
     if |sys.args| > 0:

@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type nat is (int x) where x >= 0
 
-function sum({nat} xs) => (int result)
+function sum({nat} xs) -> (int result)
 ensures result >= 0:
     //
     int r = 0
@@ -10,6 +10,6 @@ ensures result >= 0:
         r = r + x
     return r
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     int z = sum({1, 2, 3, 4, 5})
     sys.out.println(Any.toString(z))

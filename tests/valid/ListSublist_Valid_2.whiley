@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type posintlist is [int]
 
-function sum(posintlist ls) => int:
+function sum(posintlist ls) -> int:
     if |ls| == 0:
         return 0
     else:

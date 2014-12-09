@@ -2,15 +2,15 @@ import whiley.lang.*
 
 type nat is (int x) where x >= 0
 
-function abs(int item) => nat:
+function abs(int item) -> nat:
     return Math.abs(item)
 
-function nop(nat item) => (nat r)
+function nop(nat item) -> (nat r)
 ensures item == r:
     //
     return Math.abs(item)
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     nat xs = abs(-123)
     sys.out.println(Any.toString(xs))
     xs = nop(1)

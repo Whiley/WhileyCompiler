@@ -2,10 +2,10 @@ import * from whiley.lang.*
 
 type IntReal is int | real
 
-function f(int y) => void:
+function f(int y) -> void:
     debug Any.toString(y)
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     int x
     //
     x = 123

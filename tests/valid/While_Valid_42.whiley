@@ -1,4 +1,4 @@
-function reverse([int] xs) => ([int] ys)
+function reverse([int] xs) -> ([int] ys)
 // size of lists are the same
 ensures |xs| == |ys|
 // Every element in returned list is in opposite position

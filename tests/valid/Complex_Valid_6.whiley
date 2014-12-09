@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type nat is (int x) where x >= 0
 
-function max(int a, int b) => (int r)
+function max(int a, int b) -> (int r)
 ensures (r == a) || (r == b)
 ensures (a <= r) && (b <= r):
     //
@@ -11,7 +11,7 @@ ensures (a <= r) && (b <= r):
     else:
         return a
 
-function diff(int a, int b) => (nat r)
+function diff(int a, int b) -> (nat r)
 ensures r == max(a - b, b - a):
     int diff
     //
@@ -22,7 +22,7 @@ ensures r == max(a - b, b - a):
     //
     return diff
 
-method main(System.Console console) => void:
+method main(System.Console console) -> void:
     [int] list = -10 .. 10
     for i in list:
         for j in list:

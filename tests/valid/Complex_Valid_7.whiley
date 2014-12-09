@@ -1,4 +1,4 @@
-function max3(int x, int y, int z) => (int r)
+function max3(int x, int y, int z) -> (int r)
 // Return value must be as large as each parameter
 ensures r >= x && r >= y && r >= z
 // Return value must match at least one parameter

@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function count(int width, int height) => int
+function count(int width, int height) -> int
 requires width >= 0 && height >= 0:
     //
     int i = 0

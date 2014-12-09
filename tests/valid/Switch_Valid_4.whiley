@@ -8,7 +8,7 @@ constant Green is 3
 
 constant RGB is {Red, Blue, Green}
 
-function f(RGB c) => int:
+function f(RGB c) -> int:
     switch c:
         case Red:
             return 123
@@ -17,7 +17,7 @@ function f(RGB c) => int:
         default:
             return 456
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     sys.out.println("NUM: " ++ f(Red))
     sys.out.println("NUM: " ++ f(Green))
     sys.out.println("NUM: " ++ f(Blue))

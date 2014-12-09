@@ -5,7 +5,7 @@ type Matrix is ([[int]] rows)
         i in 0 .. |rows|, j in 0 .. |rows| | |rows[i]| != |rows[j]|
     }
 
-function run(Matrix A, Matrix B) => Matrix
+function run(Matrix A, Matrix B) -> Matrix
 requires (|A| > 0) && ((|B| > 0) && (|B| == |A[0]|)):
     [[int]] C = []
     for i in 0 .. |A|:
@@ -18,7 +18,7 @@ requires (|A| > 0) && ((|B| > 0) && (|B| == |A[0]|)):
         C = C ++ [row]
     return C
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     Matrix m1 = [[1, 2], [3, 4]]
     Matrix m2 = [[5, 6], [7, 8]]
     Matrix m3 = run(m1, m2)

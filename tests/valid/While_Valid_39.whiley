@@ -1,4 +1,4 @@
-function contains([int] xs, int x) => (bool r)
+function contains([int] xs, int x) -> (bool r)
 ensures r ==> x in xs:
     //
     int i = 0

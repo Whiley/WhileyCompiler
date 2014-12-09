@@ -1,12 +1,12 @@
 import whiley.lang.System
 
-function f({(int, any)} xs) => int:
+function f({(int, any)} xs) -> int:
     if xs is {(int, string)}:
         return 1
     else:
         return -1
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     {(int,any)} s1 = {(1, "Hello")}
     {(int,any)} s2 = {(1, "Hello"), (1, "World")}
     {(int,any)} s3 = {(1, "Hello"), (2, "Hello")}

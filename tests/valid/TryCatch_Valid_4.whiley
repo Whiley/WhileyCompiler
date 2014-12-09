@@ -52,7 +52,7 @@ constant POS is {col: 0, row: 0}
 
 type InvalidMove is {Board board, Move move}
 
-public function InvalidMove(Move m) => InvalidMove:
+public function InvalidMove(Move m) -> InvalidMove:
     return {board: startingChessBoard, move: m}
 
 type FilePos is {int col}
@@ -63,7 +63,7 @@ type ShortMove is {Pos to, bool isTake, ShortPos from, Piece piece}
 
 type InvalidShortMove is {Board board, ShortMove move}
 
-public function InvalidShortMove(ShortMove m) => InvalidShortMove:
+public function InvalidShortMove(ShortMove m) -> InvalidShortMove:
     return {board: startingChessBoard, move: m}
 
 type Square is Piece | null
@@ -74,7 +74,7 @@ type Board is [Row]
 
 constant startingChessBoard is [[WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN, WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK], [WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN], [null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null], [BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN], [BLACK_ROOK, BLACK_KNIGHT, BLACK_BISHOP, BLACK_QUEEN, BLACK_KING, BLACK_BISHOP, BLACK_KNIGHT, BLACK_ROOK]]
 
-function f(int x) => int throws InvalidMove | InvalidShortMove:
+function f(int x) -> int throws InvalidMove | InvalidShortMove:
     if x > 0:
         return 1
     else:
@@ -83,7 +83,7 @@ function f(int x) => int throws InvalidMove | InvalidShortMove:
         else:
             throw InvalidMove({to: POS, from: POS, piece: WHITE_ROOK})
 
-method g(System.Console sys, int x) => void:
+method g(System.Console sys, int x) -> void:
     try:
         f(x)
     catch(InvalidMove e):
@@ -91,7 +91,7 @@ method g(System.Console sys, int x) => void:
     catch(InvalidShortMove e):
         sys.out.println("CAUGHT EXCEPTION (InvalidShortMove)")
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     g(sys, 1)
     g(sys, 0)
     g(sys, -1)

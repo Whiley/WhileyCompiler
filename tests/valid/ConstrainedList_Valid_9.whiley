@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type posintlist is ([int] list) where no { x in list | x < 0 }
 
-function sum(posintlist ls, int i) => (int r)
+function sum(posintlist ls, int i) -> (int r)
 // Input i must be valid index in list, or one past
 requires i >= 0 && i <= |ls|
 // Return cannot be negative
@@ -13,11 +13,11 @@ ensures r >= 0:
     else:
         return ls[i] + sum(ls, i + 1)
 
-function sum(posintlist ls) => (int r)
+function sum(posintlist ls) -> (int r)
 ensures r >= 0:
     //
     return sum(ls, 0)
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     int c = sum([1, 2, 3, 4, 5, 6, 7])
     sys.out.println(Any.toString(c))

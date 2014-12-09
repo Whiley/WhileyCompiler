@@ -1,6 +1,6 @@
 type Record is { int flag }
 
-function getFlag(Record d) => int:
+function getFlag(Record d) -> int:
     if d.flag >= 0:
         int r = 1
         if d.flag > 0:

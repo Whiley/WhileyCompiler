@@ -1,5 +1,5 @@
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [int] arr
     //
     if |sys.args| > 0:

@@ -2,12 +2,12 @@ type Trie is {
    {char=>Trie} children
 }
 
-function Trie() => Trie:
+function Trie() -> Trie:
     return {
         children: {=>} // no children
     }
 
-function add(Trie t, string s) => Trie:
+function add(Trie t, string s) -> Trie:
     //
     if(|s| == 0):
         return t
@@ -23,7 +23,7 @@ function add(Trie t, string s) => Trie:
         t.children[c] = add(Trie(),s[1..])
         return t
 
-function contains(Trie t, string s) => bool:
+function contains(Trie t, string s) -> bool:
     if |s| == 0:
         return true
     else:

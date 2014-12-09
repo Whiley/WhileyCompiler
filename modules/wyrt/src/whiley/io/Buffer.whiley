@@ -41,16 +41,16 @@ public type State is {
 
 public type Buffer is &State
 
-public method Buffer() => Buffer:
+public method Buffer() -> Buffer:
     return new { pos: 0, data: [] }
 
-public method Buffer([byte] data) => Buffer:
+public method Buffer([byte] data) -> Buffer:
     return new { pos: 0, data: data }
 
-public method Buffer([byte] data, int pos) => Buffer:
+public method Buffer([byte] data, int pos) -> Buffer:
     return new { pos: pos, data: data }
 
-public method read(Buffer this, int amount) => [byte]:
+public method read(Buffer this, int amount) -> [byte]:
     int start = this->pos
     // first, calculate how much can be read
     int end = start + Math.min(amount,|this->data| - start)
@@ -59,15 +59,15 @@ public method read(Buffer this, int amount) => [byte]:
     // third, return bytes read
     return this->data[start .. end]
 
-public method write(Buffer this, [byte] bytes) => int:
+public method write(Buffer this, [byte] bytes) -> int:
     // FIXME: handle position correctly?
     this->data = this->data ++ bytes
     return |bytes|
 
-public method hasMore(Buffer this) => bool:
+public method hasMore(Buffer this) -> bool:
     return this->pos < |this->data|
 
-public method available(Buffer this) => int:
+public method available(Buffer this) -> int:
     return |this->data| - this->pos
 
 public method close(Buffer this):
@@ -81,23 +81,23 @@ public method flush(Buffer this):
 // =================================================================
 
 // Create an Reader from a list of bytes.
-public method toReader(Buffer this) => Reader:
+public method toReader(Buffer this) -> Reader:
     return {
-        read: &(int x => read(this,x)),
-        hasMore: &( => hasMore(this)),
-        close: &( => close(this)),
-        available: &( => available(this))
+        read: &(int x -> read(this,x)),
+        hasMore: &( -> hasMore(this)),
+        close: &( -> close(this)),
+        available: &( -> available(this))
     }
 
 // =================================================================
 // Buffer Writer
 // =================================================================
 
-public method toWriter(Buffer this) => Writer:
+public method toWriter(Buffer this) -> Writer:
     return {
-        write: &([byte] x => write(this,x)),
-        flush: &( => flush(this)),
-        close: &( => close(this))
+        write: &([byte] x -> write(this,x)),
+        flush: &( -> flush(this)),
+        close: &( -> close(this))
     }
 
 // =================================================================

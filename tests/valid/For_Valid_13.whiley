@@ -2,13 +2,13 @@ import whiley.lang.System
 
 type listsetdict is [int] | {int} | {int=>int}
 
-function f(listsetdict ls) => int:
+function f(listsetdict ls) -> int:
     int r = 0
     for l in ls:
         r = r + 1
     return r
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     {int} ls = {1, 2, 3, 4, 5}
     sys.out.println(f(ls))
     [int] xs = [1, 2, 3, 4, 5, 6, 7, 8]

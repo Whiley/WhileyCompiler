@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f(int x) => int throws string | int:
+function f(int x) -> int throws string | int:
     if x >= 0:
         return 1
     else:
@@ -9,13 +9,13 @@ function f(int x) => int throws string | int:
         else:
             throw x
 
-method missed(System.Console sys, int x) => void throws string:
+method missed(System.Console sys, int x) -> void throws string:
     try:
         f(x)
     catch(int e):
         sys.out.println("CAUGHT EXCEPTION (int): " ++ Any.toString(e))
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     try:
         missed(sys, 1)
         missed(sys, -2)

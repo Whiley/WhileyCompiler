@@ -1,6 +1,6 @@
 type nat is (int x) where x >= 0
 
-function abs(int x) => (int|null r)
+function abs(int x) -> (int|null r)
 // if we return an int, it cannot be negative
 ensures r is int ==> r >= 0:
     //
