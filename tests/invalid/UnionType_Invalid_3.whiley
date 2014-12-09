@@ -2,10 +2,10 @@ import * from whiley.lang.*
 
 type IntList is int | [int]
 
-function f([int] xs) => int:
+function f([int] xs) -> int:
     return |xs|
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     int x
     int y
     //

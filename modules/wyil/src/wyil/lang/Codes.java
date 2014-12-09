@@ -595,14 +595,14 @@ public abstract class Codes {
 	 * For example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int x, int y) => int:
+	 * function f(int x, int y) -> int:
 	 *     return ((x * y) + 1) / 2
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int x, int y) => int:
+	 * function f(int x, int y) -> int:
 	 * body:
 	 *     mul %2 = %0, %1   : int
 	 *     const %3 = 1      : int
@@ -674,14 +674,14 @@ public abstract class Codes {
 	 * following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int x) => real:
+	 * function f(int x) -> real:
 	 *     return x + 1
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int x) => real:
+	 * function f(int x) -> real:
 	 * body:
 	 *     const %2 = 1           : int
 	 *     add %1 = %0, %2        : int
@@ -747,7 +747,7 @@ public abstract class Codes {
 	 * <i>maps</i>, etc. For example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int x) => int:
+	 * function f(int x) -> int:
 	 *     xs = {1,2.12}
 	 *     return |xs| + 1
 	 * </pre>
@@ -755,7 +755,7 @@ public abstract class Codes {
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int x) => int:
+	 * function f(int x) -> int:
 	 * body:
 	 *     var xs
 	 *     const %2 = 1               : int
@@ -830,7 +830,7 @@ public abstract class Codes {
 	 * register. For example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int x) => int:
+	 * function f(int x) -> int:
 	 *     x = x + 1
 	 *     return x
 	 * </pre>
@@ -838,7 +838,7 @@ public abstract class Codes {
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int x) => int:
+	 * function f(int x) -> int:
 	 * body:
 	 *     assign %1 = %0      : int
 	 *     const %2 = 1        : int
@@ -1072,14 +1072,14 @@ public abstract class Codes {
 	 * <pre>
 	 * type Point is {int x, int y}
 	 *
-	 * function f(Point p) => int:
+	 * function f(Point p) -> int:
 	 *     return p.x + p.y
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f({int x,int y} p) => int:
+	 * function f({int x,int y} p) -> int:
 	 * body:
 	 *     fieldload %2 = %0 x    : {int x,int y}
 	 *     fieldload %3 = %0 y    : {int x,int y}
@@ -1144,7 +1144,7 @@ public abstract class Codes {
 	 * if/else statements. For example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int x) => int:
+	 * function f(int x) -> int:
 	 *     if x >= 0:
 	 *         x = 1
 	 *     else:
@@ -1155,7 +1155,7 @@ public abstract class Codes {
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int x) => int:
+	 * function f(int x) -> int:
 	 * body:
 	 *     const %1 = 0             : int
 	 *     iflt %0, %1 goto blklab0 : int
@@ -1236,7 +1236,7 @@ public abstract class Codes {
 	 * For example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int x, int y) => int:
+	 * function f(int x, int y) -> int:
 	 *     if x < y:
 	 *         return -1
 	 *     else if x > y:
@@ -1248,7 +1248,7 @@ public abstract class Codes {
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int x, int y) => int:
+	 * function f(int x, int y) -> int:
 	 * body:
 	 *     ifge %0, %1 goto blklab0 : int
 	 *     const %2 = -1 : int
@@ -1399,7 +1399,7 @@ public abstract class Codes {
 	 * type test. For example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int|[int] x) => int:
+	 * function f(int|[int] x) -> int:
 	 *     if x is [int]:
 	 *         return |x|
 	 *     else:
@@ -1409,7 +1409,7 @@ public abstract class Codes {
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int|[int] x) => int:
+	 * function f(int|[int] x) -> int:
 	 * body:
 	 *     ifis %0, [int] goto lab    : int|[int]
 	 *     return %0                  : int
@@ -1493,7 +1493,7 @@ public abstract class Codes {
 	 * following:
 	 *
 	 * <pre>
-	 * function fun(function (int)=>int f, int x) => int:
+	 * function fun(function (int)->int f, int x) -> int:
 	 *    return f(x)
 	 * </pre>
 	 *
@@ -1596,14 +1596,14 @@ public abstract class Codes {
 	 * result to the target register. For example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(bool x) => bool:
+	 * function f(bool x) -> bool:
 	 *     return !x
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL:
 	 *
 	 * <pre>
-	 * function f(bool x) => bool:
+	 * function f(bool x) -> bool:
 	 * body:
 	 *     not %0 = %0     : int
 	 *     return %0       : int
@@ -1654,10 +1654,10 @@ public abstract class Codes {
 	 * Whiley code:
 	 *
 	 * <pre>
-	 * function g(int x, int y, int z) => int:
+	 * function g(int x, int y, int z) -> int:
 	 *     return x * y * z
 	 *
-	 * function f(int x, int y) => int:
+	 * function f(int x, int y) -> int:
 	 *     r = g(x,y,3)
 	 *     return r + 1
 	 * </pre>
@@ -1665,13 +1665,13 @@ public abstract class Codes {
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function g(int x, int y, int z) => int:
+	 * function g(int x, int y, int z) -> int:
 	 * body:
 	 *     mul %3 = %0, %1   : int
 	 *     mul %3 = %3, %2   : int
 	 *     return %3         : int
 	 *
-	 * function f(int x, int y) => int:
+	 * function f(int x, int y) -> int:
 	 * body:
 	 *     const %2 = 3                    : int
 	 *     invoke %2 = (%0, %1, %2) test:g   : int(int,int,int)
@@ -1861,14 +1861,14 @@ public abstract class Codes {
 	 * register. For example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f([int] xs, [int] ys) => [int]:
+	 * function f([int] xs, [int] ys) -> [int]:
 	 *    return xs ++ ys
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f([int] xs, [int] ys) => [int]:
+	 * function f([int] xs, [int] ys) -> [int]:
 	 * body:
 	 *    append %2 = %0, %1   : [int]
 	 *    return %2            : [int]
@@ -1928,14 +1928,14 @@ public abstract class Codes {
 	 * example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f([int] ls) => int:
+	 * function f([int] ls) -> int:
 	 *     return |ls|
 	 * </pre>
 	 *
 	 * translates to the following WyIL code:
 	 *
 	 * <pre>
-	 * function f([int] ls) => int:
+	 * function f([int] ls) -> int:
 	 * body:
 	 *     lengthof %0 = %0   : [int]
 	 *     return %0          : int
@@ -2015,14 +2015,14 @@ public abstract class Codes {
 	 * is raised. For example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f({int=>string} map, int key) => string:
+	 * function f({int=>string} map, int key) -> string:
 	 *     return map[key]
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f({int->string} map, int key) => string:
+	 * function f({int->string} map, int key) -> string:
 	 * body:
 	 *     assertky %1, %0 "invalid key"       : {int->string}
 	 *     indexof %2 = %0, %1                 : {int->string}
@@ -2077,7 +2077,7 @@ public abstract class Codes {
 	 * following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int x, int y) => int:
+	 * function f(int x, int y) -> int:
 	 *     x = x + 1
 	 *     return x
 	 * </pre>
@@ -2085,7 +2085,7 @@ public abstract class Codes {
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int x, int y) => int:
+	 * function f(int x, int y) -> int:
 	 * body:
 	 *     ifge %0, %1 goto blklab0  : int
 	 *     move %0 = %1              : int
@@ -2132,7 +2132,7 @@ public abstract class Codes {
 	 * conditional branch is taken out of the block. For example:
 	 *
 	 * <pre>
-	 * function f() => int:
+	 * function f() -> int:
 	 *     r = 0
 	 *     while r < 10:
 	 *         r = r + 1
@@ -2142,7 +2142,7 @@ public abstract class Codes {
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f() => int:
+	 * function f() -> int:
 	 * body:
 	 *     const %0 = 0             : int
 	 *     loop (%0)
@@ -2652,14 +2652,14 @@ public abstract class Codes {
 	 * For example, consider the following Whiley function <code>f()</code>:
 	 *
 	 * <pre>
-	 * function f() => {int=>string}:
+	 * function f() -> {int=>string}:
 	 *     return {1=>"Hello",2=>"World"}
 	 * </pre>
 	 *
 	 * This could be compiled into the following WyIL code using this bytecode:
 	 *
 	 * <pre>
-	 * function f() => {int->string}:
+	 * function f() -> {int->string}:
 	 * body:
 	 *   const %1 = 1                   : int
 	 *   const %2 = "Hello"             : string
@@ -2709,14 +2709,14 @@ public abstract class Codes {
 	 * <pre>
 	 * type Point is {real x, real y}
 	 *
-	 * function f(real x, real y) => Point:
+	 * function f(real x, real y) -> Point:
 	 *     return {x: x, y: x}
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL:
 	 *
 	 * <pre>
-	 * function f(real x, real y) => Point:
+	 * function f(real x, real y) -> Point:
 	 * body:
 	 *     assign %3 = %0         : real
 	 *     assign %4 = %0         : real
@@ -2760,14 +2760,14 @@ public abstract class Codes {
 	 * register. For example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int x, int y) => (int,int):
+	 * function f(int x, int y) -> (int,int):
 	 *     return x,y
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int x, int y) => (int,int):
+	 * function f(int x, int y) -> (int,int):
 	 * body:
 	 *     assign %3 = %0          : int
 	 *     assign %4 = %1          : int
@@ -2815,14 +2815,14 @@ public abstract class Codes {
 	 * example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int x, int y, int z) => {int}:
+	 * function f(int x, int y, int z) -> {int}:
 	 *     return {x,y,z}
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int x, int y, int z) => {int}:
+	 * function f(int x, int y, int z) -> {int}:
 	 * body:
 	 *    assign %4 = %0             : int
 	 *    assign %5 = %1             : int
@@ -2870,14 +2870,14 @@ public abstract class Codes {
 	 * example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int x, int y, int z) => [int]:
+	 * function f(int x, int y, int z) -> [int]:
 	 *     return [x,y,z]
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int x, int y, int z) => [int]:
+	 * function f(int x, int y, int z) -> [int]:
 	 * body:
 	 *    assign %4 = %0             : int
 	 *    assign %5 = %1             : int
@@ -2945,14 +2945,14 @@ public abstract class Codes {
 	 * value. For example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int x, int y) => int:
+	 * function f(int x, int y) -> int:
 	 *     return x + y
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL:
 	 *
 	 * <pre>
-	 * function f(int x, int y) => int:
+	 * function f(int x, int y) -> int:
 	 * body:
 	 *     assign %3 = %0    : int
 	 *     assign %4 = %1    : int
@@ -3075,30 +3075,30 @@ public abstract class Codes {
 	 * For example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f({int} xs, {int} ys) => {int}:
+	 * function f({int} xs, {int} ys) -> {int}:
 	 *     return xs + ys // set union
 	 *
-	 * function g(int x, {int} ys) => {int}:
+	 * function g(int x, {int} ys) -> {int}:
 	 *     return {x} & ys // set intersection
 	 *
-	 * function h({int} xs, int y) => {int}:
+	 * function h({int} xs, int y) -> {int}:
 	 *     return xs - {y} // set difference
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f({int} xs, {int} ys) => {int}:
+	 * function f({int} xs, {int} ys) -> {int}:
 	 * body:
 	 *     union %2 = %0, %1  : {int}
 	 *     return %2          : {int}
 	 *
-	 * function g({int} xs, {int} ys) => {int}:
+	 * function g({int} xs, {int} ys) -> {int}:
 	 * body:
 	 *     rintersect %2 = %0, %1  : {int}
 	 *     return %2               : {int}
 	 *
-	 * function h({int} xs, {int} ys) => {int}:
+	 * function h({int} xs, {int} ys) -> {int}:
 	 * body:
 	 *     ldiff %2 = %0, %1    : {int}
 	 *     return %2            : {int}
@@ -3193,22 +3193,22 @@ public abstract class Codes {
 	 * For example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(string xs, string ys) => string:
+	 * function f(string xs, string ys) -> string:
 	 *     return xs ++ ys
 	 *
-	 * function g(string xs, char y) => string:
+	 * function g(string xs, char y) -> string:
 	 *     return xs ++ y
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(string xs, string ys) => string:
+	 * function f(string xs, string ys) -> string:
 	 * body:
 	 *     strappend %2 = %0, %2    : string
 	 *     return %2                : string
 	 *
-	 * function g(string xs, char y) => string:
+	 * function g(string xs, char y) -> string:
 	 * body:
 	 *     strappend_l %2 = %0, %1  : string
 	 *     return %2                : string
@@ -3298,7 +3298,7 @@ public abstract class Codes {
 	 * Whiley code:
 	 *
 	 * <pre>
-	 * function f(int x) => string:
+	 * function f(int x) -> string:
 	 *     switch x:
 	 *         case 1:
 	 *             return "ONE"
@@ -3311,7 +3311,7 @@ public abstract class Codes {
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int x) => string:
+	 * function f(int x) -> string:
 	 * body:
 	 *     switch %0 1->blklab1, 2->blklab2, *->blklab3
 	 * .blklab1
@@ -3410,7 +3410,7 @@ public abstract class Codes {
 	 * For example, the following Whiley Code:
 	 *
 	 * <pre>
-	 * function f(int x) => int
+	 * function f(int x) -> int
 	 * throws string:
 	 *     if x < 0:
 	 *         throw "ERROR"
@@ -3421,7 +3421,7 @@ public abstract class Codes {
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int x) => int
+	 * function f(int x) -> int
 	 * throws:
 	 * 	   string
 	 * body:
@@ -3473,11 +3473,11 @@ public abstract class Codes {
 	 * code:
 	 *
 	 * <pre>
-	 * function f(int x) => int
+	 * function f(int x) -> int
 	 * throws Error:
 	 *     ...
 	 *
-	 * function g(int x) => int:
+	 * function g(int x) -> int:
 	 *     try:
 	 *         x = f(x)
 	 *     catch(Error e):
@@ -3487,13 +3487,13 @@ public abstract class Codes {
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int x) => int:
+	 * function f(int x) -> int:
 	 * throws:
 	 *     Error
 	 * body:
 	 *     ...
 	 *
-	 * function g(int x) => int:
+	 * function g(int x) -> int:
 	 * body:
 	 *     trycatch Error -> lab2
 	 *        assign %3 = %0           : int
@@ -3630,14 +3630,14 @@ public abstract class Codes {
 	 * resgister. For example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(byte x) => byte:
+	 * function f(byte x) -> byte:
 	 *    return ~x
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(byte x) => byte:
+	 * function f(byte x) -> byte:
 	 * body:
 	 *     invert %0 = %0   : byte
 	 *     return %0        : byte
@@ -3684,14 +3684,14 @@ public abstract class Codes {
 	 * <pre>
 	 * type PointObj as &{real x, real y}
 	 *
-	 * method f(real x, real y) => PointObj:
+	 * method f(real x, real y) -> PointObj:
 	 *     return new {x: x, y: y}
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * method f(int x, int y) => &{real x,real y}:
+	 * method f(int x, int y) -> &{real x,real y}:
 	 * body:
 	 *     newrecord %2 = (%0, %1)  : {real x,real y}
 	 *     newobject %2 = %2        : ref {real x,real y}
@@ -3739,14 +3739,14 @@ public abstract class Codes {
 	 * example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int,int tup) => int:
+	 * function f(int,int tup) -> int:
 	 *     return tup[0]
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int,int tup) => int:
+	 * function f(int,int tup) -> int:
 	 * body:
 	 *     tupleload %0 = %0 0  : int,int
 	 *     return %0            : int
@@ -3865,14 +3865,14 @@ public abstract class Codes {
 	 * target register. For example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int x) => int:
+	 * function f(int x) -> int:
 	 *     return -x
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL:
 	 *
 	 * <pre>
-	 * function f(int x) => int:
+	 * function f(int x) -> int:
 	 * body:
 	 *     neg %0 = %0     : int
 	 *     return %0       : int

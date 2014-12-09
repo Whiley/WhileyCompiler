@@ -1,9 +1,9 @@
 import whiley.lang.System
 
-function get({string=>int} env) => int:
+function get({string=>int} env) -> int:
     return env["x"]
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     if |sys.args| == 10:
         sys.out.println("GOT HERE")
     else:

@@ -26,13 +26,13 @@
 package whiley.lang
 
 // Increase up to a given size
-public function enlarge([int] list, int size, int element) => [int]:
+public function enlarge([int] list, int size, int element) -> [int]:
     while |list| <= size:
         list = list ++ [element]
     return list
 
 // Create a list of a given size with the given element
-public function create(int size, int element) => ([int] result)
+public function create(int size, int element) -> ([int] result)
 // Size of list to create cannot be negative!
 requires size >= 0
 // Size of returned list must match requested size
@@ -46,7 +46,7 @@ ensures |result| == size:
     return r
 
 // Create a list of a given size with the given element
-public function create(int size, bool element) => ([bool] result)
+public function create(int size, bool element) -> ([bool] result)
 // Size of list to create cannot be negative!
 requires size >= 0
 // Size of returned list must match requested size
@@ -58,12 +58,12 @@ ensures |result| == size:
         i = i + 1
     return r
 
-public function reverse([bool] list) => [bool]:
+public function reverse([bool] list) -> [bool]:
     return list[|list|..0]
 
-public function reverse([byte] list) => [byte]:
+public function reverse([byte] list) -> [byte]:
     return list[|list|..0]
 
-public function reverse([int] list) => [int]:
+public function reverse([int] list) -> [int]:
     return list[|list|..0]
 

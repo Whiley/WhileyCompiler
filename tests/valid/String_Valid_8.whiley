@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     string x = "abcdefghjkl"
     string y = x[0..2]
     sys.out.println(y)

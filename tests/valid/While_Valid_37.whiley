@@ -1,4 +1,4 @@
-function invertByte([bool] bits) => ([bool] ret)
+function invertByte([bool] bits) -> ([bool] ret)
 // Precondition: 8 bits in a byte
 requires |bits| == 8
 // Postcondition: return a byte as well

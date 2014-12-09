@@ -14,10 +14,10 @@ type Board is {[piece] pieces, nat move} where (move <= 9) && (|pieces| == 9)
 
 type EmptyBoard is (Board b) where no { x in b.pieces | x != BLANK }
 
-function EmptyBoard() => EmptyBoard:
+function EmptyBoard() -> EmptyBoard:
     return {pieces: [BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK], move: 0}
 
-method main(System.Console console) => void:
+method main(System.Console console) -> void:
     Board b = EmptyBoard()
     assert b.pieces[0] == BLANK
     assert b.pieces[1] == BLANK

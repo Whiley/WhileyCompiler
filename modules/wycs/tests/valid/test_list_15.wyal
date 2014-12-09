@@ -1,4 +1,4 @@
-function test_sum([int], int) => int
+function test_sum([int], int) -> int
 
 assert:
     forall ([int] xs, int x):

@@ -1,9 +1,9 @@
 
-function f({int} xs) => void
+function f({int} xs) -> void
 requires |xs| > 4:
     debug Any.toString(xs)
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     {int} ys
     {int} zs
     //

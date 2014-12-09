@@ -30,11 +30,11 @@ import * from whiley.lang.Errors
 public type normalised is (real x)
     where 0.0 <= x && x <= 1.0
 
-public function toString(real item) => string:
+public function toString(real item) -> string:
     return Any.toString(item)
 
 // Convert a string into an integer
-public function parse(string input) => real
+public function parse(string input) -> real
 throws SyntaxError:
     //
     int r = 0
@@ -57,11 +57,11 @@ throws SyntaxError:
         return rr
 
 // print real number to 10dp
-public function toDecimal(real x) => string:
+public function toDecimal(real x) -> string:
     return toDecimal(x,10)
 
 // the following is a convenience method.
-public function toDecimal(real x, int ndigits) => string:
+public function toDecimal(real x, int ndigits) -> string:
     string r
     if x < 0.0:
         r = "-"

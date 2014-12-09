@@ -2,10 +2,10 @@ import whiley.lang.System
 
 type BTree is null | {int item, BTree left, BTree right}
 
-public function BTree() => BTree:
+public function BTree() -> BTree:
     return null
 
-public function add(BTree tree, int item) => BTree:
+public function add(BTree tree, int item) -> BTree:
     if tree == null:
         tree = {item: item, left: null, right: null}
     else:
@@ -15,7 +15,7 @@ public function add(BTree tree, int item) => BTree:
             tree.right = add(tree.right, item)
     return tree
 
-function contains(BTree tree, int item) => bool:
+function contains(BTree tree, int item) -> bool:
     if tree == null:
         return false
     else:
@@ -29,7 +29,7 @@ function contains(BTree tree, int item) => bool:
 
 constant items is [5, 4, 6, 3, 7, 2, 8, 1, 9]
 
-public method main(System.Console console) => void:
+public method main(System.Console console) -> void:
     BTree tree = BTree()
     for item in items:
         tree = add(tree, item)

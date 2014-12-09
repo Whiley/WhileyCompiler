@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f(int x, int y) => (int r)
+function f(int x, int y) -> (int r)
 requires (x >= 0) && (y >= 0)
 ensures r > 0:
     //
@@ -10,7 +10,7 @@ ensures r > 0:
     else:
         return x + y
 
-function g(int x, int y) => (int r)
+function g(int x, int y) -> (int r)
 requires (x >= 0) && (y >= 0)
 ensures r > 0:
     //
@@ -20,7 +20,7 @@ ensures r > 0:
     else:
         return 1
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     sys.out.println(Any.toString(f(1, 1)))
     sys.out.println(Any.toString(f(0, 0)))
     sys.out.println(Any.toString(f(4, 345)))

@@ -14,15 +14,15 @@ type Board is {[Piece] pieces, nat move} where (move <= 9) && (|pieces| == 9)
 
 type EmptyBoard is (Board b) where no { x in b.pieces | x != BLANK }
 
-function EmptyBoard() => EmptyBoard:
+function EmptyBoard() -> EmptyBoard:
     return {pieces: [BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK], move: 0}
 
-function play(Board b, Piece p, nat pos) => Board
+function play(Board b, Piece p, nat pos) -> Board
 requires pos < 9:
     b.pieces[pos] = p
     return b
 
-method main(System.Console console) => void:
+method main(System.Console console) -> void:
     Board b = EmptyBoard()
     b = play(b, CIRCLE, 0)
     console.out.println("BOARD: " ++ b)

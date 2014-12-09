@@ -1,9 +1,9 @@
 
-function f([int] xs) => int
+function f([int] xs) -> int
 requires no { x in xs | x < 0 }:
     return |xs|
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [int] left
     [int] right = [-1, 0, 1]
     //

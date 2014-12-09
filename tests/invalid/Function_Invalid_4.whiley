@@ -1,7 +1,7 @@
 import * from whiley.lang.*
 
-function f(int x) => int:
+function f(int x) -> int:
     sys.out.println(Any.toString(x))
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     f(1)

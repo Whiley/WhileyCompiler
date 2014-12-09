@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     real x = 1.20
     real y = 2.40
     sys.out.println(x + y)

@@ -2,7 +2,7 @@
 /**
  * Perform a merge sort of integer items.
  */
-function loop2(int p, int q) => (int r)
+function loop2(int p, int q) -> (int r)
     requires p > 0 && q > 0
     ensures r == q*p:
     int qq = 0

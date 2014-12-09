@@ -1,4 +1,4 @@
-function abs (int x) => (int y)
+function abs (int x) -> (int y)
 ensures:
    x >= 0 ==> y > 0
 

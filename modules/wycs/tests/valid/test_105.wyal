@@ -1,4 +1,4 @@
-function Union({int} lhs, {int} rhs) => ({int} r)
+function Union({int} lhs, {int} rhs) -> ({int} r)
 ensures:
   forall (int e) ; e in lhs ==> e in r
   forall (int e) ; e in rhs ==> e in r

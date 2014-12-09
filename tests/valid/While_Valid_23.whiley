@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f([int] xs) => (int result)
+function f([int] xs) -> (int result)
 // Input list cannot be empty
 requires |xs| > 0
 // Return must match some element from input list
@@ -13,5 +13,5 @@ ensures some { i in 0 .. |xs| | result == xs[i] }:
         i = i + 1
     return r
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     sys.out.println(f([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))

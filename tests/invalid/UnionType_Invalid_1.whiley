@@ -2,10 +2,10 @@ import * from whiley.lang.*
 
 type IntReal is int | real
 
-function f(int x) => int:
+function f(int x) -> int:
     return x
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     int x
     //
     if |sys.args| > 0:

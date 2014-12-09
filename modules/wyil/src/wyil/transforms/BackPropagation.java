@@ -50,7 +50,7 @@ import wyil.util.dfa.BackwardFlowAnalysis;
  * </p>
  *
  * <pre>
- * function f(int x) => real:
+ * function f(int x) -> real:
  *    return x
  * </pre>
  * <p>
@@ -60,7 +60,7 @@ import wyil.util.dfa.BackwardFlowAnalysis;
  * </p>
  *
  * <pre>
- * function f(int x) => real:
+ * function f(int x) -> real:
  *     load x : int
  *     return : real
  * </pre>
@@ -73,7 +73,7 @@ import wyil.util.dfa.BackwardFlowAnalysis;
  * </p>
  *
  * <pre>
- * function f(int x) => real:
+ * function f(int x) -> real:
  *     load x : int
  *     convert int to real
  *     return : real

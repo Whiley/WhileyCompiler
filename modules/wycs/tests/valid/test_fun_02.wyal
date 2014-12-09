@@ -1,4 +1,4 @@
-function indexOf({int,int} src, int x) => (int r)
+function indexOf({int,int} src, int x) -> (int r)
 ensures:
   (x,r) in src
 

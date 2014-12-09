@@ -69,7 +69,7 @@ public class WyalFilePrinter {
 			}
 			out.print("> ");
 		}
-		out.print(s.from + " => " + s.to);
+		out.print(s.from + " -> " + s.to);
 		if(s.constraint != null) {
 			out.println(" where:");
 			indent(1);

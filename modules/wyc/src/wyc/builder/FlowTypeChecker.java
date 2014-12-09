@@ -36,7 +36,7 @@ import wyil.lang.WyilFile;
  * types are used soundly. For example:
  *
  * <pre>
- * function sum([int] data) => int:
+ * function sum([int] data) -> int:
  *     int r = 0      // declared int type for r
  *     for v in data: // infers int type for v, based on type of data
  *         r = r + v  // infers int type for r + v, based on type of operands
@@ -51,10 +51,10 @@ import wyil.lang.WyilFile;
  * </p>
  *
  * <pre>
- * function id(int x) => int:
+ * function id(int x) -> int:
  *    return x
  *
- * function f(int y) => int:
+ * function f(int y) -> int:
  *    int|null x = y
  *    f(x)
  * </pre>
@@ -71,7 +71,7 @@ import wyil.lang.WyilFile;
  * </p>
  *
  * <pre>
- * function loopy(int max) => real:
+ * function loopy(int max) -> real:
  *     var i = 0
  *     while i < max:
  *         i = i + 0.5
@@ -717,7 +717,7 @@ public class FlowTypeChecker {
 	 *
 	 * <pre>
 	 *                    //  Environment
-	 * function f(int|null x) => int:
+	 * function f(int|null x) -> int:
 	 *                    // {x : int|null}
 	 *    if x is null:
 	 *                    // {x : null}
@@ -833,7 +833,7 @@ public class FlowTypeChecker {
 	 *
 	 * <pre>
 	 *                    //  Environment
-	 * function f(int x) => int|null:
+	 * function f(int x) -> int|null:
 	 *    int|null y
 	 *                    // {x : int, y : void}
 	 *    switch x:

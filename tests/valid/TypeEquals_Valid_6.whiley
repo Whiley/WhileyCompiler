@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type SyntaxError is {string msg}
 
-function f(int x) => string:
+function f(int x) -> string:
     SyntaxError|{string input} nst
     //
     if x > 0:
@@ -15,9 +15,9 @@ function f(int x) => string:
     else:
         return nst.input
 
-function syntaxError(string errorMessage) => SyntaxError:
+function syntaxError(string errorMessage) -> SyntaxError:
     return {msg: errorMessage}
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     sys.out.println(f(0))
     sys.out.println(f(1))

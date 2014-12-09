@@ -27,7 +27,7 @@ package whiley.lang
 
 public type Error is { string msg }
 
-public function Error(string msg) => Error:
+public function Error(string msg) -> Error:
     return {msg: msg}
 
 public type SyntaxError is {
@@ -36,7 +36,7 @@ public type SyntaxError is {
     int end      // last index
 }
 
-public function SyntaxError(string msg, int start, int end) => SyntaxError:
+public function SyntaxError(string msg, int start, int end) -> SyntaxError:
     return {
         msg: msg,
         start: start,

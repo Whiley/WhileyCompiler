@@ -17,7 +17,7 @@ import wyil.lang.Type;
  * type neg is (int x) where x < 0
  * type posneg is pos | neg
  *
- * function isPosNeg(any v) => bool:
+ * function isPosNeg(any v) -> bool:
  *     if v is posneg:
  *         return true
  *     else:
@@ -29,7 +29,7 @@ import wyil.lang.Type;
  * not work in general (although it's OK for this particular case):
  *
  * <pre>
- * function isPosNeg(any v) => bool:
+ * function isPosNeg(any v) -> bool:
  *     // expand pos
  *     if v is int:
  *         if v > 0:
@@ -46,7 +46,7 @@ import wyil.lang.Type;
  * That is, to expand our example like so:
  *
  * <pre>
- * function isPosNeg(any v) => bool:
+ * function isPosNeg(any v) -> bool:
  *     if v is int:
  *         if v > 0:
  *             return true
@@ -64,7 +64,7 @@ import wyil.lang.Type;
  * type r3 is {int x, int y} where x < y
  * type recs as r1 | r2 | r3
  *
- * function isRecs(any v) => bool:
+ * function isRecs(any v) -> bool:
  *     if v is recs:
  *         return true
  *     else:
@@ -75,7 +75,7 @@ import wyil.lang.Type;
  * succession of tests before checking the constraints.
  *
  * <pre>
- * function isRecs(any v) => bool:
+ * function isRecs(any v) -> bool:
  *     if v is {int x, any y}:
  *         if v.x > 0:
  *             return true

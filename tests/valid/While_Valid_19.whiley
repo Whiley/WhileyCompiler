@@ -2,7 +2,7 @@ import whiley.lang.System
 
 constant SIZE is 5
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [{int}] components = []
     while |components| < SIZE:
         components = components ++ [{}]

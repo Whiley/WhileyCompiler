@@ -405,7 +405,7 @@ public final class WhileyFile implements CompilationUnit {
 	 * illustrate:</p>
 	 *
 	 * <pre>
-	 * function max(int x, int y) => (int z)
+	 * function max(int x, int y) -> (int z)
 	 * // return must be greater than either parameter
 	 * ensures x <= z && y <= z
 	 * // return must equal one of the parmaeters
@@ -470,7 +470,7 @@ public final class WhileyFile implements CompilationUnit {
 	 * Represents a function declaration in a Whiley source file. For example:
 	 *
 	 * <pre>
-	 * function f(int x) => (int y)
+	 * function f(int x) -> (int y)
 	 * // Parameter must be positive
 	 * requires x > 0
 	 * // Return must be negative
@@ -529,7 +529,7 @@ public final class WhileyFile implements CompilationUnit {
 	 * Represents a method declaration in a Whiley source file. For example:
 	 *
 	 * <pre>
-	 * method m(int x) => (int y)
+	 * method m(int x) -> (int y)
 	 * // Parameter must be positive
 	 * requires x > 0
 	 * // Return must be negative

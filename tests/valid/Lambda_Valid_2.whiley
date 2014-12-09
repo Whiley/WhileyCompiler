@@ -1,11 +1,11 @@
 import whiley.lang.System
 
-type func is function(int) => int
+type func is function(int) -> int
 
-function g(int y) => func:
-    return &(int x => x + y)
+function g(int y) -> func:
+    return &(int x -> x + y)
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     func f = g(3)
     sys.out.println(f(1))
     sys.out.println(f(2))

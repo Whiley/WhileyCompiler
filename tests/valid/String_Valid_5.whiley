@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function indexOf(char c1, string str) => int | null:
+function indexOf(char c1, string str) -> int | null:
     int i = 0
     for c2 in str:
         if c1 == c2:
@@ -8,7 +8,7 @@ function indexOf(char c1, string str) => int | null:
         i = i + 1
     return null
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     sys.out.println(Any.toString(indexOf('H', "Hello World")))
     sys.out.println(Any.toString(indexOf('e', "Hello World")))
     sys.out.println(Any.toString(indexOf('l', "Hello World")))

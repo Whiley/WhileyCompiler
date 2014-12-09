@@ -1,5 +1,5 @@
 
-function extract([int] ls, [int] rs) => [int]:
+function extract([int] ls, [int] rs) -> [int]:
     int i = 0
     int r = [1]
     //
@@ -9,7 +9,7 @@ function extract([int] ls, [int] rs) => [int]:
     //
     return r
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [int] rs
     //
     rs = extract([-2, -3, 1, 2, -23, 3, 2345, 4, 5], [])

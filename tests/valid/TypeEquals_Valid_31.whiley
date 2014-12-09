@@ -8,10 +8,10 @@ type rec2 is {int f1, int f2}
 
 type rec12 is rec1 | rec2
 
-function f(rec12 x) => int:
+function f(rec12 x) -> int:
     return 1
 
-public method main(System.Console console) => void:
+public method main(System.Console console) -> void:
     rec1 r1 = {f1: "hello", f2: 2}
     rec2 r2 = {f1: 1, f2: 0}
     console.out.println(f(r1))

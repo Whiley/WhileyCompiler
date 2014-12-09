@@ -2,10 +2,10 @@ import whiley.lang.System
 
 type liststr is [int] | string
 
-function index(liststr l, int index) => any:
+function index(liststr l, int index) -> any:
     return l[index]
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [int] l = [1, 2, 3]
     sys.out.println(index(l, 1))
     sys.out.println(index(l, 2))

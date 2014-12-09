@@ -95,11 +95,11 @@ constant digits is [
     'a','b','c','d','e','f','g','h'
 ]
 
-public function toString(int item) => string:
+public function toString(int item) -> string:
     return Any.toString(item)
 
 // Convert an integer into a hex string
-public function toHexString(int item) => string:
+public function toHexString(int item) -> string:
     string r = ""
     while item > 0:
         int v = item / 16
@@ -109,7 +109,7 @@ public function toHexString(int item) => string:
     return r
 
 // convert an integer into an unsigned byte
-public function toUnsignedByte(u8 v) => byte:
+public function toUnsignedByte(u8 v) -> byte:
     //
     byte mask = 00000001b
     byte r = 0b
@@ -122,7 +122,7 @@ public function toUnsignedByte(u8 v) => byte:
 
 // convert an arbitrary sized unsigned integer into a list of bytes in
 // little endian form.
-public function toUnsignedBytes(uint v) => [byte]:
+public function toUnsignedBytes(uint v) -> [byte]:
     //
     [byte] bytes = []
     // do-while is needed here
@@ -146,14 +146,14 @@ public function toUnsignedBytes(uint v) => [byte]:
     return bytes
 
 // Convert a signed integer into a single byte
-public function toSignedByte(i8 v) => byte:
+public function toSignedByte(i8 v) -> byte:
     //
     if v < 0:
         v = v + 256
     return Int.toUnsignedByte(v)
 
 // parse a string representation of an integer value
-public function parse(string input) => int
+public function parse(string input) -> int
     throws SyntaxError:
     //
     // first, check for negative number

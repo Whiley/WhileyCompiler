@@ -40,15 +40,15 @@ public type State is  {
 
 public type Channel is &State
 
-public method write(Channel this, [byte] data) => int:
+public method write(Channel this, [byte] data) -> int:
     // TODO:
     return 0
 
-public method read(Channel this) => [byte]:
+public method read(Channel this) -> [byte]:
     // TODO:
     return []
 
-public method available(Channel this) => int:
+public method available(Channel this) -> int:
     int rp = this->readPos
     int wp = this->writePos
     if rp < wp:

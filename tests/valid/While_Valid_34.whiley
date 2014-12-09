@@ -1,4 +1,4 @@
-function lastIndexOf([int] xs, int x) => (int|null r)
+function lastIndexOf([int] xs, int x) -> (int|null r)
 ensures r is int ==> xs[r] == x:
     //
     int i = 0

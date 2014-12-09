@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f(int x, int y) => int:
+function f(int x, int y) -> int:
     bool a = true
     if x < y:
         a = false
@@ -9,5 +9,5 @@ function f(int x, int y) => int:
     else:
         return 123
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     sys.out.println(Any.toString(1))

@@ -1,19 +1,19 @@
 import whiley.lang.System
 
 type Proc is &{
-    function func(int) => int
+    function func(int) -> int
 }
 
-method func(Proc this, int x) => int:
+method func(Proc this, int x) -> int:
     return x + 1
 
-method test(Proc this, int arg) => int:
+method test(Proc this, int arg) -> int:
     return (*this).func(arg)
 
-function id(int x) => int:
+function id(int x) -> int:
     return x
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     Proc p = new {func: &id}
     int x = test(p, 123)
     sys.out.println("GOT: " ++ Any.toString(x))

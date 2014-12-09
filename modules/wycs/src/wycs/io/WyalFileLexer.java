@@ -301,7 +301,12 @@ public class WyalFileLexer {
 				return new Token(Token.Kind.Plus, "+", pos++);
 			}
 		case '-':
-			return new Token(Token.Kind.Minus, "-", pos++);
+			if ((pos + 1) < input.length() && input.charAt(pos + 1) == '>') {
+				pos += 2;
+				return new Token(Token.Kind.MinusGreater, "->", pos - 2);
+			} else {
+				return new Token(Token.Kind.Minus, "-", pos++);
+			}
 		case '*':
 			return new Token(Token.Kind.Star, "*", pos++);
 		case '&':
@@ -864,6 +869,11 @@ public class WyalFileLexer {
 			EqualsGreater {
 				public String toString() {
 					return "=>";
+				}
+			},
+			MinusGreater {
+				public String toString() {
+					return "->";
 				}
 			},
 			LogicalAnd {

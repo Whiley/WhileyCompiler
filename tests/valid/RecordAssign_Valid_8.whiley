@@ -2,10 +2,10 @@ import whiley.lang.System
 
 type bytes is {int b1, int b2}
 
-function f(int b) => bytes:
+function f(int b) -> bytes:
     return {b1: b, b2: 2}
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     int b = 1
     bytes bs = f(b)
     sys.out.println(Any.toString(bs))

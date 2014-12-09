@@ -1,5 +1,5 @@
 ../../tests/invalid/ConstrainedInt_Invalid_11.whiley:11: unable to resolve name (f(int) is ambiguous
-	found: ConstrainedInt_Invalid_11:f : function(int) => void
-	found: ConstrainedInt_Invalid_11:f : function(ConstrainedInt_Invalid_11:frf1nat) => void)
+	found: ConstrainedInt_Invalid_11:f : function(int) -> void
+	found: ConstrainedInt_Invalid_11:f : function(ConstrainedInt_Invalid_11:frf1nat) -> void)
     f(-1)
     ^^^^^

@@ -1,4 +1,4 @@
-function List([int] items, int item) => bool:
+function List([int] items, int item) -> bool:
     for i in items:
         if item == i:
             return true

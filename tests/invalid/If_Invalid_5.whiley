@@ -1,4 +1,4 @@
-function greater(int x,int y) => (int z)
+function greater(int x,int y) -> (int z)
 requires x != y
 ensures z == x || z == y:
     if (x > y):

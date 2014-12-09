@@ -1,12 +1,12 @@
 import whiley.lang.System
 
-function f(int x) => {int=>int}:
+function f(int x) -> {int=>int}:
     return {1=>x, 3=>2}
 
-function get(int i, {int=>int} map) => int:
+function get(int i, {int=>int} map) -> int:
     return map[i]
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     {int=>int} m1 = f(1)
     {int=>int} m2 = f(2)
     {int=>int} m3 = f(3)

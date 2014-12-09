@@ -1,5 +1,5 @@
 
-function f([int] x, int i) => void
+function f([int] x, int i) -> void
 requires |x| > 0:
     if (i < 0) || (i >= |x|):
         i = 1
@@ -9,7 +9,7 @@ requires |x| > 0:
     debug Any.toString(y)
     debug Any.toString(z)
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [int] arr = [1, 2, 3]
     f(arr, 1)
     debug Any.toString(arr)

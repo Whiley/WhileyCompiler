@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type nat is (int x) where x >= 0
 
-function create(nat count, int value) => ([int] result)
+function create(nat count, int value) -> ([int] result)
 // Returned list must have count elements
 ensures |result| == count:
     //
@@ -13,7 +13,7 @@ ensures |result| == count:
         i = i + 1
     return r
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     sys.out.println(Any.toString(create(3, 3)))
     sys.out.println(Any.toString(create(2, 2)))
     sys.out.println(Any.toString(create(2, 1)))

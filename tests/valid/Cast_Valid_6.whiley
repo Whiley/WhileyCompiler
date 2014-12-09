@@ -1,4 +1,4 @@
-function divide(real lhs, int rhs) => real
+function divide(real lhs, int rhs) -> real
 requires rhs > 0:
     //
     real tmp = (real) rhs

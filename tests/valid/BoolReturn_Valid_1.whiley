@@ -1,7 +1,7 @@
 import whiley.lang.System
 
-function pred() => bool:
+function pred() -> bool:
     return false
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     sys.out.println(pred())

@@ -1,10 +1,10 @@
 import whiley.lang.System
 
-function g(int x) => real:
+function g(int x) -> real:
     return (real) (x / 3)
 
-function f(int x, int y) => string:
+function f(int x, int y) -> string:
     return Any.toString(g(x))
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     sys.out.println(f(1, 2))

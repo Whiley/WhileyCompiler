@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [[int]] a1 = [[1, 2, 3], [0]]
     [[int]] a2 = a1
     a2[0] = [3, 4, 5]

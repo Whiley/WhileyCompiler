@@ -43,7 +43,7 @@ import static wyil.lang.CodeUtils.*;
  * tests. The following illustrates:
  *
  * <pre>
- * function sum([int] data) => int:
+ * function sum([int] data) -> int:
  *    int r = 0
  *    for item in data:
  *       r = r + item
@@ -53,7 +53,7 @@ import static wyil.lang.CodeUtils.*;
  * This function is compiled into the following WyIL bytecode:
  *
  * <pre>
- * function sum([int] data) => int:
+ * function sum([int] data) -> int:
  * body:
  *   const %1 = 0          : int
  *   assign %2 = %0        : [int]

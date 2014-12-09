@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     int x = 200
     sys.out.println(x)
     x = 1

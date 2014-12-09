@@ -1,3 +1,3 @@
 
-method main(System.Console c) => void:
+method main(System.Console c) -> void:
     debug "HELLO"

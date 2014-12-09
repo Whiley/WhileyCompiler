@@ -1,2 +1,2 @@
-function f(int $) => int:
+function f(int $) -> int:
     return 1

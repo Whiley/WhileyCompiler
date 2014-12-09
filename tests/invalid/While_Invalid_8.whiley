@@ -1,5 +1,5 @@
 
-function extract([int] ls, [int] r) => [int]:
+function extract([int] ls, [int] r) -> [int]:
     int i = 0
     //
     while i < |ls| where |r| > 0:
@@ -8,7 +8,7 @@ function extract([int] ls, [int] r) => [int]:
     //
     return r
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [int] rs
     //
     rs = extract([-2, -3, 1, 2, -23, 3, 2345, 4, 5], [1])

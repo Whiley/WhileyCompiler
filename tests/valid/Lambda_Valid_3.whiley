@@ -1,25 +1,25 @@
 import whiley.lang.System
 
-type t_Reader is method(int) => [byte]
+type t_Reader is method(int) -> [byte]
 
 type InputStream is { t_Reader read }
 
 type BufferState is &{[byte] bytes, int pos}
 
-method read(BufferState state, int amount) => [byte]:
+method read(BufferState state, int amount) -> [byte]:
     int start = state->pos
     int end = start + Math.min(amount, |state->bytes| - start)
     state->pos = end
     return state->bytes[start..end]
 
-method eof(BufferState state) => bool:
+method eof(BufferState state) -> bool:
     return state->pos >= |state->bytes|
 
-public method BufferInputStream([byte] buffer) => InputStream:
+public method BufferInputStream([byte] buffer) -> InputStream:
     BufferState this = new {bytes: buffer, pos: 0}
-    return {read: &(int x => read(this, x))}
+    return {read: &(int x -> read(this, x))}
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [string] strings = ["hello", "cruel cruel", "world"]
     for s in strings:
         InputStream bis = BufferInputStream(String.toUTF8(s))

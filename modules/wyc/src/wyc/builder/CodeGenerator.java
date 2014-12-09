@@ -52,7 +52,7 @@ import wyil.lang.*;
  * <pre>
  * type nat is (int x) where x >= 0
  *
- * function f(nat x) => int:
+ * function f(nat x) -> int:
  *    return x-1
  * </pre>
  *
@@ -1320,7 +1320,7 @@ public final class CodeGenerator {
 	 *     trycatch string->label4
 	 *         const %4 = 1
 	 *         add %5 = %0, %4
-	 *         invoke %2 = (%5) test:f : function(int) => int throws string
+	 *         invoke %2 = (%5) test:f : function(int) -> int throws string
 	 *         goto label5
 	 * .label4
 	 *     const %6 = 0

@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type rec is {int y, int x}
 
-function f([int] xs) => [bool | null]:
+function f([int] xs) -> [bool | null]:
     [bool|null] r = []
     for x in xs:
         if x < 0:
@@ -11,7 +11,7 @@ function f([int] xs) => [bool | null]:
             r = r ++ [null]
     return r
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [int] e = []
     sys.out.println(f(e))
     e = [1, 2, 3, 4]

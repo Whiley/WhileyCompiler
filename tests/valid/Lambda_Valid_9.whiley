@@ -1,17 +1,17 @@
 type Point is {
     int x,
     int y,
-    function toString(Point) => string,
-    function getX(Point) => int
+    function toString(Point) -> string,
+    function getX(Point) -> int
 }
 
-function toString(Point p) => string:
+function toString(Point p) -> string:
     return "(" ++ p.x ++ "," ++ p.y ++ ")"
 
-function getX(Point p) => int:
+function getX(Point p) -> int:
     return p.x
 
-function Point(int x, int y) => Point:
+function Point(int x, int y) -> Point:
     return {
         x: x,
         y: y,

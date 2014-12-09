@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f([int] x) => int
+function f([int] x) -> int
 // Input list cannot be empty
 requires |x| > 0:
     //
@@ -9,6 +9,6 @@ requires |x| > 0:
     debug Any.toString(x[z - 1]) ++ "\n"
     return z
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [int] arr = [1, 2, 3]
     sys.out.println(f(arr))

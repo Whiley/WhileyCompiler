@@ -2,10 +2,10 @@ import whiley.lang.System
 
 type listdict is [int] | {int=>string}
 
-function index(listdict l, int index) => any:
+function index(listdict l, int index) -> any:
     return l[index]
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [int] l = [1, 2, 3]
     sys.out.println(index(l, 1))
     sys.out.println(index(l, 2))

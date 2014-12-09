@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function run(int n, int x) => bool:
+function run(int n, int x) -> bool:
     bool solution = true
     for i in 0 .. n:
         if i == x:
@@ -8,7 +8,7 @@ function run(int n, int x) => bool:
             break
     return solution
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     bool b1 = run(10, 4)
     sys.out.println("b1=" ++ Any.toString(b1))
     bool b2 = run(10, -1)

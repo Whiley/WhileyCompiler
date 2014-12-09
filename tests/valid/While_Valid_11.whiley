@@ -1,7 +1,7 @@
 import whiley.lang.System
 import * from whiley.lang.Int
 
-function extract([int] ls) => [nat]:
+function extract([int] ls) -> [nat]:
     int i = 0
     [int] r = []
     while i < |ls| where (i >= 0) && no { x in r | x < 0 }:
@@ -12,7 +12,7 @@ function extract([int] ls) => [nat]:
         i = i + 1
     return r
 
-method main(System.Console sys) => void:
+method main(System.Console sys) -> void:
     [int] rs = extract([-1, 2, 3, -4, 5, 6, 7, 23987, -23897, 0, -1, 1, -2389])
     sys.out.println(Any.toString(rs))
     rs = extract([])
