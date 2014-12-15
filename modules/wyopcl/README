@@ -1,0 +1,18 @@
+======================================================================
+Package Summary
+======================================================================
+src/wyopcl						--- The main entry point.
+
+src/wyopcl/util 				--- The interpreter reads the Whiley
+				     				Intermediate Language (WyIL) code and
+				     				dispatches each byte-code to an individual
+				     				interpreter in accordance with byte-code
+				     				type. 
+				     			
+src/wyopcl/util/interpreter 	--- The WyIL bytecode interpreter reads one
+									kind of bytecode, execute the contents
+									and output the results to register table
+									or console.
+								
+test/wyopcl/testing/interpreter --- The unit tests for interpreter.
+												     
