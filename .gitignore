@@ -9,3 +9,5 @@
 *.o
 *.jar
 *.smt2
+/report/
+/build/
