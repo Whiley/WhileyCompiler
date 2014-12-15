@@ -64,14 +64,14 @@ public class InvokeInterpreter extends Interpreter {
 		} 
 
 		if (toType instanceof Type.Bool){
-			return Constant.V_BOOL((boolean)obj);
+			return Constant.V_BOOL((Boolean)obj);
 		}
 
 		if (toType instanceof Type.Byte) {			
 			if(obj instanceof WyList){
-				return Constant.V_BYTE(new Byte((byte) ((WyList) obj).get(0)));
+				return Constant.V_BYTE(new Byte((Byte) ((WyList) obj).get(0)));
 			}			
-			return Constant.V_BYTE(new Byte((byte) obj));
+			return Constant.V_BYTE(new Byte((Byte) obj));
 		}
 
 		if (toType instanceof Type.List){
