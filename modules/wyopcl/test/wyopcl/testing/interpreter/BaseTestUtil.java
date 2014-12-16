@@ -12,26 +12,27 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import wyc.testing.TestUtils;
 import junit.framework.AssertionFailedError;
 import static org.junit.Assert.*;
 
 public final class BaseTestUtil {
 	private final String version = "v0.3.31";
 	// user.dir is the current directory.
-	private final String workspace_path = System.getProperty("user.dir")+ File.separator;
-	private final String lib_path = workspace_path + "lib"+ File.separator;
+	private final String WHILEY_BASE_DIR = "../../".replace("/",File.separator);
+	private final String WHILEY_LIB_DIR = WHILEY_BASE_DIR + "lib"+ File.separator;
 	
-	private final String classpath = lib_path + "wyjc-"	+ version + ".jar" + File.pathSeparator 
-			+ lib_path + "wyopcl-" + version + ".jar" + File.pathSeparator 
-			+ lib_path + "wyrl-" + version + ".jar" + File.pathSeparator
-			+ lib_path + "wycs-" + version + ".jar"	+ File.pathSeparator
-			+ lib_path + "wybs-"+ version + ".jar" + File.pathSeparator 
-			+ lib_path + "wyil-" + version + ".jar" + File.pathSeparator
-			+ lib_path + "wyc-" + version + ".jar" + File.pathSeparator;
-	final String runtime = lib_path + "wyrt-" + version + ".jar";
+	private final String classpath = WHILEY_LIB_DIR + "wyjc-"	+ version + ".jar" + File.pathSeparator 
+			+ WHILEY_LIB_DIR + "wyopcl-" + version + ".jar" + File.pathSeparator 
+			+ WHILEY_LIB_DIR + "wyrl-" + version + ".jar" + File.pathSeparator
+			+ WHILEY_LIB_DIR + "wycs-" + version + ".jar"	+ File.pathSeparator
+			+ WHILEY_LIB_DIR + "wybs-"+ version + ".jar" + File.pathSeparator 
+			+ WHILEY_LIB_DIR + "wyil-" + version + ".jar" + File.pathSeparator
+			+ WHILEY_LIB_DIR + "wyc-" + version + ".jar" + File.pathSeparator;
+	final String runtime = WHILEY_LIB_DIR + "wyrt-" + version + ".jar";
 	
-	final String valid_path = workspace_path + "tests" + File.separator + "valid" + File.separator;
-	final String invalid_path = workspace_path + "tests" + File.separator + "invalid" + File.separator;
+	final String valid_path = WHILEY_BASE_DIR + "tests" + File.separator + "valid" + File.separator;
+	final String invalid_path = WHILEY_BASE_DIR + "tests" + File.separator + "invalid" + File.separator;
 
 	private ProcessBuilder pb;
 	private Process p;
@@ -58,27 +59,15 @@ public final class BaseTestUtil {
 			pb = new ProcessBuilder("java", "-cp", classpath, "wyopcl.WyopclMain", "-bp", runtime, path_whiley);
 			pb.directory(new File(valid_path));
 
-			// System.out.println("" + pb.directory());
-			p = pb.start();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream(),
-					Charset.forName("UTF-8")));
+			String output = TestUtils.exec(classpath,valid_path,"wyopcl.WyopclMain", "-bp", runtime, path_whiley);
+			
+			// The name of the file which contains the output for this test
+			String sampleOutputFile = valid_path + File.separatorChar
+					+ file_name + ".sysout";
 
-			// Load the output file (*.sysout).
-			String path_sysout = valid_path + file_name + ".sysout";
-
-			Iterator<String> iterator = Files.readAllLines(Paths.get(path_sysout), Charset.defaultCharset()).iterator();
-			String output = null;
-			while ((output = reader.readLine()) != null) {
-				String expected = iterator.next();
-				//System.out.println(output);
-				assertEquals(expected, output);
-			}
-
-			// Ensure no records is left in the list.
-			if (iterator.hasNext()) {
-				throw new Exception("Test file: " + file_name);
-			}
-
+			// Third, compare the output!
+			TestUtils.compare(output,sampleOutputFile);
+		
 		} catch (Exception e) {
 			terminate();
 			throw new RuntimeException("Test file: " + file_name, e);
