@@ -524,7 +524,6 @@ public final class WyilFileReader {
 	private int insertLabels(int offset, ArrayList<Code> bytecodes,
 			HashMap<Integer, Codes.Label> labels) {
 		for (int i = 0; i != bytecodes.size(); ++i) {
-			int j = i; // save insertion point for later
 			Code bytecode = bytecodes.get(i);
 
 			// First, check whether there is a label to insert
@@ -538,7 +537,7 @@ public final class WyilFileReader {
 				// At this point, we must clone the given bytecode
 				ArrayList<Code> blkBytecodes = new ArrayList<Code>(block.bytecodes());
 				offset = 1 + insertLabels(offset, blkBytecodes, labels);
-				bytecodes.set(j,updateBytecodes(block,blkBytecodes));
+				bytecodes.set(i,updateBytecodes(block,blkBytecodes));
 			}
 		}
 		
@@ -570,6 +569,10 @@ public final class WyilFileReader {
 		} else if(compound instanceof Codes.Loop) {
 			Codes.Loop l = (Codes.Loop) compound;
 			return Codes.Loop(l.modifiedOperands, bytecodes);
+		} else if(compound instanceof Codes.Assert) {
+			return Codes.Assert(bytecodes);
+		} else if(compound instanceof Codes.Assume) {
+			return Codes.Assume(bytecodes);
 		} else {
 			throw new IllegalArgumentException("Unknown compound bytecode encountered: " + compound.getClass().getName());
 		}
@@ -1091,14 +1094,14 @@ public final class WyilFileReader {
 					afterType, fields);
 		}
 		case Code.OPCODE_assertblock: {
-			int target = readTarget(wideRest, offset);
-			Codes.Label l = findLabel(target, labels);
-			return Codes.Assert(l.label);
+			int count = readRest(wideRest);
+			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);			
+			return Codes.Assert(bytecodes);
 		}
 		case Code.OPCODE_assumeblock: {
-			int target = readTarget(wideRest, offset);
-			Codes.Label l = findLabel(target, labels);
-			return Codes.Assume(l.label);
+			int count = readRest(wideRest);
+			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);			
+			return Codes.Assume(bytecodes);
 		}
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode

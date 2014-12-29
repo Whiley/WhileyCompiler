@@ -75,8 +75,8 @@ public abstract class Codes {
 	 *            --- message to report upon failure.
 	 * @return
 	 */
-	public static Assert Assert(String target) {
-		return new Assert(target);
+	public static Assert Assert(Collection<Code> bytecodes) {
+		return new Assert(bytecodes);
 	}
 
 	/**
@@ -87,8 +87,8 @@ public abstract class Codes {
 	 *            --- message to report upon failure.
 	 * @return
 	 */
-	public static Assume Assume(String target) {
-		return new Assume(target);
+	public static Assume Assume(Collection<Code> bytecodes) {
+		return new Assume(bytecodes);
 	}
 
 	public static BinaryOperator BinaryOperator(Type type, int target, int leftOperand,
@@ -913,11 +913,9 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static abstract class AssertOrAssume extends Code.Unit {
-		public final String target;
-
-		private AssertOrAssume(String target) {
-			this.target = target;
+	public static abstract class AssertOrAssume extends Code.Compound {
+		private AssertOrAssume(Collection<Code> bytecodes) {
+			super(bytecodes);
 		}
 	}
 	/**
@@ -928,8 +926,8 @@ public abstract class Codes {
 	 */
 	public static final class Assert extends AssertOrAssume {
 
-		private Assert(String target) {
-			super(target);
+		private Assert(Collection<Code> bytecodes) {
+			super(bytecodes);
 		}
 
 		public int opcode() {
@@ -937,7 +935,24 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "assert " + target;
+			return "assert";
+		}
+
+		public int hashCode() {
+			return bytecodes.hashCode();
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof Assume) {
+				Assume f = (Assume) o;
+				return bytecodes.equals(f.bytecodes);
+			}
+			return false;
+		}
+
+		@Override
+		public Assume clone() {
+			return new Assume(bytecodes);
 		}
 	}
 
@@ -949,8 +964,8 @@ public abstract class Codes {
 	 */
 	public static final class Assume extends AssertOrAssume {
 
-		private Assume(String target) {
-			super(target);
+		private Assume(Collection<Code> bytecodes) {
+			super(bytecodes);
 		}
 
 		public int opcode() {
@@ -958,7 +973,24 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "assume " + target;
+			return "assume ";
+		}
+		
+		public int hashCode() {
+			return bytecodes.hashCode();
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof Assume) {
+				Assume f = (Assume) o;
+				return bytecodes.equals(f.bytecodes);
+			}
+			return false;
+		}
+
+		@Override
+		public Assume clone() {
+			return new Assume(bytecodes);
 		}
 	}
 

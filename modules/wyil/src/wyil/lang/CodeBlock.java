@@ -82,7 +82,7 @@ public class CodeBlock implements Iterable<Code> {
 	public Code get(int index) {
 		return bytecodes.get(index);
 	}
-
+	
 	/**
 	 * Get the entry associated with a given bytecode id. This will recurse
 	 * nested code blocks as necessary to locate this bytecode.
@@ -101,6 +101,27 @@ public class CodeBlock implements Iterable<Code> {
 		return iterator.get(indexArray[i]);
 	}
 
+	/**
+	 * Check whether a given index is contained within this block. That is,
+	 * whether or not a bytecode exists at the given index.
+	 * 
+	 * @param parent
+	 * @return
+	 */
+	public boolean contains(Index index) {
+		int[] indexArray = index.toArray();
+		CodeBlock iterator = this;
+		int i = 0;
+		while (i < indexArray.length - 1) {
+			int j = indexArray[i];
+			if(j >= iterator.size()) {
+				return false;
+			}
+			iterator = (CodeBlock) iterator.get(j);
+			i = i + 1;
+		}
+		return indexArray[i] < iterator.size();
+	}
 	/**
 	 * Returns a reference to the internal bytecode array. Note that this list
 	 * is not intended to be modified.
@@ -261,12 +282,10 @@ public class CodeBlock implements Iterable<Code> {
 			int[] pnt = parent.toArray();
 						
 			if(me.length < pnt.length) {
-				System.out.println("EXIT 1");
 				return false;
 			} else {
 				for(int i=0;i!=pnt.length;++i) {					
 					if(me[i] != pnt[i]) {
-						System.out.println("EXIT 2 : " + me[i] + " != " + pnt[i]);
 						return false;
 					}
 				}

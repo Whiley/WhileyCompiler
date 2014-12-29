@@ -697,8 +697,7 @@ public final class WyilFileWriter {
 		// First, deal with special cases
 		if(code instanceof Codes.AssertOrAssume) {
 			Codes.AssertOrAssume l = (Codes.AssertOrAssume) code;
-			int target = labels.get(l.target);
-			writeTarget(wide,offset,target,output);
+			writeCodeBlock(wide,l,offset+1,labels,output);
 		} else if(code instanceof Codes.Const) {
 			Codes.Const c = (Codes.Const) code;
 			writeRest(wide,constantCache.get(c.constant),output);
@@ -850,8 +849,8 @@ public final class WyilFileWriter {
 
 		// now, deal with non-uniform opcodes
 		if(code instanceof Codes.AssertOrAssume) {
-			Codes.AssertOrAssume aoa = (Codes.AssertOrAssume) code;
-			maxRest = targetWidth(aoa.target, offset, labels);
+			Codes.AssertOrAssume aa = (Codes.AssertOrAssume) code;
+			maxRest = aa.size();
 		} else if(code instanceof Codes.Const) {
 			Codes.Const c = (Codes.Const) code;
 			maxRest = Math.max(maxRest,constantCache.get(c.constant));

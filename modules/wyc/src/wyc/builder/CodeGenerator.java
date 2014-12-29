@@ -638,11 +638,16 @@ public final class CodeGenerator {
 	 */
 	private void generate(Stmt.Assert s, Environment environment,
 			AttributedCodeBlock codes, Context context) {
+		
+		// First, create assert block body
+		AttributedCodeBlock body = codes.createSubBlock();
 		String endLab = CodeUtils.freshLabel();
-		codes.add(Codes.Assert(endLab), attributes(s));
-		generateCondition(endLab, s.expr, environment, codes, context);
-		codes.add(Codes.Fail(), attributes(s.expr));
-		codes.add(Codes.Label(endLab));
+		generateCondition(endLab, s.expr, environment, body, context);
+		body.add(Codes.Fail(), attributes(s.expr));
+		body.add(Codes.Label(endLab));
+		// Second, create assert bytecode
+		codes.add(Codes.Assert(body.bytecodes()), attributes(s));
+
 	}
 
 	/**
@@ -662,11 +667,14 @@ public final class CodeGenerator {
 	 */
 	private void generate(Stmt.Assume s, Environment environment,
 			AttributedCodeBlock codes, Context context) {
+		// First, create assume block body
+		AttributedCodeBlock body = codes.createSubBlock();
 		String endLab = CodeUtils.freshLabel();
-		codes.add(Codes.Assume(endLab), attributes(s));
-		generateCondition(endLab, s.expr, environment, codes, context);
-		codes.add(Codes.Fail(), attributes(s.expr));
-		codes.add(Codes.Label(endLab));
+		generateCondition(endLab, s.expr, environment, body, context);
+		body.add(Codes.Fail(), attributes(s.expr));
+		body.add(Codes.Label(endLab));
+		// Second, create assume bytecode
+		codes.add(Codes.Assume(body.bytecodes()), attributes(s));
 	}
 
 	/**
@@ -716,7 +724,6 @@ public final class CodeGenerator {
 			Type ret = ((WhileyFile.FunctionOrMethod) context).resolvedType()
 					.raw().ret();
 
-			System.out.println("ADDING ATTRIBUTES: " + attributes(s));
 			codes.add(Codes.Return(ret, operand), attributes(s));
 		} else {
 			codes.add(Codes.Return(), attributes(s));

@@ -350,11 +350,11 @@ public class VcBranch {
 	 * </p>
 	 * 
 	 * @param register
-	 *            Register number to invalidate
+	 *            Register number to havoc
 	 * @param type
-	 *            Type of register being invalidated
+	 *            Type of register being havoced
 	 */
-	public Expr.Variable invalidate(int register, Type type) {
+	public Expr.Variable havoc(int register, Type type) {
 		if (state != State.ACTIVE) {
 			// Sanity check
 			throw new IllegalArgumentException(
