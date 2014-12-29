@@ -29,9 +29,11 @@ import wycc.lang.SyntaxError.InternalFailure;
 import wycc.lang.SyntaxError;
 import static wyil.util.ErrorMessages.*;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
+import wyautl.util.BigRational;
 import wybs.lang.*;
 import wyfs.lang.Path;
 import wyil.lang.*;
@@ -42,7 +44,6 @@ import wycc.lang.Attribute;
 import wycc.lang.NameID;
 import wycs.core.Value;
 import wycs.syntax.*;
-import wycs.syntax.TypePattern.Tuple;
 
 /**
  * Responsible for converting a given Wyil bytecode into an appropriate
@@ -94,21 +95,26 @@ public class VcGenerator {
 	 */
 	protected void transform(WyilFile.TypeDeclaration type, WyilFile wyilFile) {
 		AttributedCodeBlock body = type.invariant();
-		VcBranch master = new VcBranch(Math.max(body.numSlots(), 1),null);
-		master.write(Codes.REG_0, new Expr.Variable("r0"), type.type());
+		if (body != null) {
+			VcBranch master = new VcBranch(Math.max(body.numSlots(), 1), null);
+			master.write(Codes.REG_0, new Expr.Variable("r0"), type.type());
 
-		// Transform invariant body.
-		List<VcBranch> branches = transform(master, type.invariant());
+			// Transform invariant body.
+			List<VcBranch> branches = transform(master, type.invariant());
 
-		// Examine all exit branches, discarding those which are failed. In this
-		// case, we are guaranteed exactly one terminated path exists as there
-		// is only ever one way to exit an invariant.
-		for (VcBranch exitBranch : branches) {
-			if (exitBranch.state() == VcBranch.State.TERMINATED) {
-				// This is a terminating state, so we need to check that this
-				// path is reachable.
+			// Examine all exit branches, discarding those which are failed. In
+			// this
+			// case, we are guaranteed exactly one terminated path exists as
+			// there
+			// is only ever one way to exit an invariant.
+			for (VcBranch exitBranch : branches) {
+				if (exitBranch.state() == VcBranch.State.TERMINATED) {
+					// This is a terminating state, so we need to check that
+					// this
+					// path is reachable.
 
-				// FIXME: add the uninhabitable check here.
+					// FIXME: add the uninhabitable check here.
+				}
 			}
 		}
 	}
@@ -116,6 +122,7 @@ public class VcGenerator {
 	protected void transform(WyilFile.Case methodCase,
 			WyilFile.FunctionOrMethodDeclaration method, WyilFile wyilFile) {
 
+		NameID name = new NameID(wyilFile.id(),method.name());
 		Type.FunctionOrMethod fmm = method.type();
 		AttributedCodeBlock body = methodCase.body();
 		List<AttributedCodeBlock> precondition = methodCase.precondition();
@@ -125,11 +132,11 @@ public class VcGenerator {
 		// can then be used in various places to assume or enforce pre /
 		// post-conditions. For example, when ensure a pre-condition is met at
 		// an invocation site, we can call this macro directly.
-		String prefix = method.name() + "_requires_";
+		String prefix = toIdentifier(name) + "_requires_";
 		for (int i = 0; i != precondition.size(); ++i) {
 			buildMacroBlock(prefix + i, precondition.get(i), fmm.params());
 		}
-		prefix = method.name() + "_ensures_";
+		prefix = toIdentifier(name) + "_ensures_";
 		for (int i = 0; i != postcondition.size(); ++i) {
 			List<Type> types = prepend(fmm.ret(), fmm.params());
 			buildMacroBlock(prefix + i, postcondition.get(i), types);
@@ -152,7 +159,7 @@ public class VcGenerator {
 
 		// Second, assume all preconditions. To do this, we simply invoke the
 		// precondition macro for each one.
-		prefix = method.name() + "_requires_";
+		prefix = toIdentifier(name) + "_requires_";
 		for (int i = 0; i != precondition.size(); ++i) {
 			Expr arg = arguments.length == 1 ? arguments[0] : new Expr.Nary(
 					Expr.Nary.Op.TUPLE, arguments);
@@ -202,7 +209,7 @@ public class VcGenerator {
 				// verification condition. Doing this allows us to gather more
 				// detailed context information in the case of a failure about
 				// which post-condition is failing.
-				prefix = method.name() + "_ensures_";
+				prefix = toIdentifier(name) + "_ensures_";
 				for (int i = 0; i != postcondition.size(); ++i) {
 					Expr arg = arguments.length == 1 ? arguments[0]
 							: new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
@@ -388,8 +395,29 @@ public class VcGenerator {
 					transform((Codes.Fail) code, branch, block);
 					exitBranches.add(branch);
 				} else {
-					// Unit statement
-					transform(code, block, branch);
+					// Unit statement. First, check whether or not there are any
+					// preconditions for this statement and, if so, add
+					// appropriate verification conditions to enforce them.
+					Code.Unit unit = (Code.Unit) code;
+					Expr[] preconditions = getPreconditions(unit, branch, block);
+					if(preconditions.length > 0) {
+						// This bytecode has one or more preconditions which
+						// need to be asserted. Therefore, for each, create a
+						// failed branch to ensure the precondition is met.
+						for(int i=0;i!=preconditions.length;++i) {
+							Expr precond = preconditions[i];
+							VcBranch fb = branch.fork();
+							fb.assume(new Expr.Unary(Expr.Unary.Op.NOT,precond));
+							fb.setState(VcBranch.State.FAILED);
+							exitBranches.add(fb);
+						}
+						// We need to fork the branch here, because it must have
+						// INTERNAL state by now (i.e. because of the forks
+						// above).  
+						branch = branch.fork(); 
+					}
+					// 
+					transform(unit, block, branch);
 					branch.goTo(pc.next());
 					activeBranches.push(branch);
 				}							
@@ -464,6 +492,198 @@ public class VcGenerator {
 		// Done.
 	}
 
+	/**
+	 * Generate verification conditions to enforce the necessary preconditions
+	 * for a given bytecode. For example, to protect against division by zero or
+	 * an out-of-bounds access.
+	 * 
+	 * @param code
+	 * @param branch
+	 * @param branches
+	 * @param block
+	 */
+	public Expr[] getPreconditions(Code.Unit code, VcBranch branch,
+			AttributedCodeBlock block) {
+		//
+		try {
+			switch (code.opcode()) {
+			case Code.OPCODE_div:
+			case Code.OPCODE_rem:
+				return divideByZeroCheck((Codes.BinaryOperator) code, branch);
+			case Code.OPCODE_indexof:
+				return indexOutOfBoundsChecks((Codes.IndexOf) code, branch);
+			case Code.OPCODE_update:
+				return updateChecks((Codes.Update) code, branch);
+			case Code.OPCODE_invokefn:
+			case Code.OPCODE_invokefnv:
+			case Code.OPCODE_invokemd:
+			case Code.OPCODE_invokemdv:
+				return preconditionCheck((Codes.Invoke) code, branch, block);
+			}
+			return new Expr[0];
+		} catch (Exception e) {
+			internalFailure(e.getMessage(), filename, e);
+			return null; // deadcode
+		}
+	}
+	
+	/**
+	 * Generate preconditions to protected against a possible divide by zero.
+	 * This essentially boils down to ensureing the divisor is non-zero.
+	 * 
+	 * @param binOp
+	 *            --- The division or remainder bytecode
+	 * @param branch
+	 *            --- The branch the division is on.
+	 * @return
+	 */
+	public Expr[] divideByZeroCheck(Codes.BinaryOperator binOp,
+			VcBranch branch) {
+		Expr rhs = branch.read(binOp.operand(1));
+		Value zero;
+		if (binOp.type() instanceof Type.Int) {
+			zero = Value.Integer(BigInteger.ZERO);
+		} else {
+			zero = Value.Decimal(BigDecimal.ZERO);
+		}
+		Expr.Constant constant = new Expr.Constant(zero, rhs.attributes());
+		return new Expr[] { new Expr.Binary(Expr.Binary.Op.NEQ, rhs, constant,
+				rhs.attributes()) };
+	}
+	
+	/**
+	 * Generate preconditions necessary to protect against an out-of-bounds
+	 * access. For lists, this means ensuring the index is non-negative and less
+	 * than the list length.
+	 * 
+	 * @param code
+	 *            --- The indexOf bytecode
+	 * @param branch
+	 *            --- The branch the bytecode is on.
+	 * @return
+	 */
+	public Expr[] indexOutOfBoundsChecks(Codes.IndexOf code, VcBranch branch) {
+		if(code.type() instanceof Type.EffectiveList) {
+			Expr src = branch.read(code.operand(0));
+			Expr idx = branch.read(code.operand(1));
+			Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),idx.attributes());
+			Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF,src,idx.attributes());
+			return new Expr[] {
+				new Expr.Binary(Expr.Binary.Op.GTEQ,idx,zero,idx.attributes()),
+				new Expr.Binary(Expr.Binary.Op.LT,idx,length,idx.attributes()),
+			};
+		} else {
+			// FIXME: should do something here! At a minimum, generate a warning
+			// that this has not been implemented yet.
+			return new Expr[0];
+		}
+	}
+	
+	/**
+	 * Generate preconditions necessary to ensure the preconditions for a method
+	 * or method invocation are met.
+	 * 
+	 * @param code
+	 *            --- The invoke bytecode
+	 * @param branch
+	 *            --- The branch on which the invocation is on.
+	 * @param block
+	 *            --- The containing block of code.
+	 * @return
+	 * @throws Exception
+	 */
+	public Expr[] preconditionCheck(Codes.Invoke code, VcBranch branch,
+			AttributedCodeBlock block) throws Exception {
+		//
+		List<AttributedCodeBlock> requires = findPrecondition(code.name,
+				code.type(), block, branch);
+		//
+		if (requires.size() > 0) {
+			// First, read out the operands from the branch
+			int[] code_operands = code.operands();
+			Expr[] operands = new Expr[code_operands.length];
+			for (int i = 0; i != code_operands.length; ++i) {
+				operands[i] = branch.read(code_operands[i]);
+			}
+			// To check the pre-condition holds after the method, we
+			// simply called the corresponding pre-condition macros.
+			String prefix = toIdentifier(code.name) + "_requires_";
+			Expr[] preconditions = new Expr[requires.size()];
+			Expr argument = operands.length == 1 ? operands[0] : new Expr.Nary(
+					Expr.Nary.Op.TUPLE, operands);
+			for (int i = 0; i != requires.size(); ++i) {
+				preconditions[i] = new Expr.Invoke(prefix + i,
+						code.name.module(), Collections.EMPTY_LIST,argument);
+
+			}
+			return preconditions;
+		} else {
+			return new Expr[0];
+		}
+	}
+	
+	
+	/**
+	 * Ensure all preconditions for an update bytecode are met. For example,
+	 * that any list updates are within bounds, etc.
+	 * 
+	 * @param code
+	 *            --- The update bytecode.
+	 * @param branch
+	 *            --- The branch containing the update bytecode.
+	 * @return
+	 */
+	public Expr[] updateChecks(Codes.Update code, VcBranch branch) {
+		ArrayList<Expr> preconditions = new ArrayList<Expr>();
+
+		Expr src = branch.read(code.target());
+
+		for (Codes.LVal lval : code) {
+			if (lval instanceof Codes.ListLVal) {
+				Codes.ListLVal lv = (Codes.ListLVal) lval;
+				Expr idx = branch.read(lv.indexOperand);
+				Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
+						idx.attributes());
+				Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
+						idx.attributes());
+				preconditions.add(new Expr.Binary(Expr.Binary.Op.GTEQ, idx,
+						zero, idx.attributes()));
+				preconditions.add(new Expr.Binary(Expr.Binary.Op.LT, idx,
+						length, idx.attributes()));
+				src = new Expr.IndexOf(src, idx);
+			} else if (lval instanceof Codes.StringLVal) {
+				Codes.StringLVal lv = (Codes.StringLVal) lval;
+				Expr idx = branch.read(lv.indexOperand);
+				Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
+						idx.attributes());
+				Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
+						idx.attributes());
+				preconditions.add(new Expr.Binary(Expr.Binary.Op.GTEQ, idx,
+						zero, idx.attributes()));
+				preconditions.add(new Expr.Binary(Expr.Binary.Op.LT, idx,
+						length, idx.attributes()));
+				src = new Expr.IndexOf(src, idx);
+			} else if (lval instanceof Codes.MapLVal) {
+				// FIXME: need to implement some actual checks here!
+				Codes.MapLVal lv = (Codes.MapLVal) lval;
+				Expr idx = branch.read(lv.keyOperand);
+				src = new Expr.IndexOf(src, idx);
+			} else if (lval instanceof Codes.RecordLVal) {
+				Codes.RecordLVal lv = (Codes.RecordLVal) lval;
+				ArrayList<String> fields = new ArrayList<String>(lv.rawType()
+						.fields().keySet());
+				Collections.sort(fields);
+				Expr index = new Expr.Constant(Value.Integer(BigInteger
+						.valueOf(fields.indexOf(lv.field))));
+				src = new Expr.IndexOf(src, index);
+			} else {
+				// FIXME: need to implement dereference operations.
+			}
+		}
+
+		return preconditions.toArray(new Expr[preconditions.size()]);
+	}
+	
 	// ===============================================================================
 	// Control Bytecodes
 	// ===============================================================================
@@ -834,7 +1054,7 @@ public class VcGenerator {
 	 * @param branch
 	 *            The branch on entry to the bytecode.
 	 */
-	protected void transform(Code code, AttributedCodeBlock block,
+	protected void transform(Code.Unit code, AttributedCodeBlock block,
 			VcBranch branch) {
 		try {
 			if (code instanceof Codes.LengthOf) {
@@ -1040,7 +1260,7 @@ public class VcGenerator {
 				Expr[] arguments = new Expr[operands.length + 1];
 				System.arraycopy(operands, 0, arguments, 1, operands.length);
 				arguments[0] = branch.read(code.target());
-				String prefix = code.name.name() + "_ensures_";
+				String prefix = toIdentifier(code.name) + "_ensures_";
 				for (int i = 0; i != ensures.size(); ++i) {
 					Expr.Invoke macro = new Expr.Invoke(prefix + i,
 							code.name.module(), Collections.EMPTY_LIST,
@@ -1253,7 +1473,7 @@ public class VcGenerator {
 		branch.write(code.target(), new Expr.Nary(operator, vals,
 				toWycsAttributes(block.attributes(branch.pc()))), code.assignedType());
 	}
-
+	
 	/**
 	 * Find the precondition associated with a given function or method. This
 	 * maybe contained in the same file, or in a different file. This may
