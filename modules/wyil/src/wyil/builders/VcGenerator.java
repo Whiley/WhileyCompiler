@@ -103,15 +103,13 @@ public class VcGenerator {
 			List<VcBranch> branches = transform(master, type.invariant());
 
 			// Examine all exit branches, discarding those which are failed. In
-			// this
-			// case, we are guaranteed exactly one terminated path exists as
-			// there
-			// is only ever one way to exit an invariant.
+			// this case, we are guaranteed exactly one terminated path exists
+			// as
+			// there is only ever one way to exit an invariant.
 			for (VcBranch exitBranch : branches) {
 				if (exitBranch.state() == VcBranch.State.TERMINATED) {
 					// This is a terminating state, so we need to check that
-					// this
-					// path is reachable.
+					// this path is reachable.
 
 					// FIXME: add the uninhabitable check here.
 				}
@@ -122,7 +120,7 @@ public class VcGenerator {
 	protected void transform(WyilFile.Case methodCase,
 			WyilFile.FunctionOrMethodDeclaration method, WyilFile wyilFile) {
 
-		NameID name = new NameID(wyilFile.id(),method.name());
+		NameID name = new NameID(wyilFile.id(), method.name());
 		Type.FunctionOrMethod fmm = method.type();
 		AttributedCodeBlock body = methodCase.body();
 		List<AttributedCodeBlock> precondition = methodCase.precondition();
@@ -147,7 +145,7 @@ public class VcGenerator {
 		// at least as many slots as there are parameters, though may require
 		// more if the body uses them.
 		VcBranch master = new VcBranch(Math.max(body.numSlots(), fmm.params()
-				.size()),null);
+				.size()), null);
 
 		Expr[] arguments = new Expr[fmm.params().size()];
 		for (int i = 0; i != fmm.params().size(); ++i) {
@@ -195,31 +193,37 @@ public class VcGenerator {
 				break;
 			}
 			case TERMINATED: {
-				// First, construct arguments for the macro invocation. Only the
-				// returned value is read from the branch at the current pc. The
-				// other arguments correspond to the parameters which held on
-				// entry to this function.
-				Codes.Return ret = (Codes.Return) body.get(branch.pc());
-				arguments = new Expr[fmm.params().size() + 1];
-				for (int i = 0; i != fmm.params().size(); ++i) {
-					arguments[i + 1] = new Expr.Variable("r" + i);
-				}
-				arguments[0] = branch.read(ret.operand);
-				// Second, for each postcondition generate a separate
-				// verification condition. Doing this allows us to gather more
-				// detailed context information in the case of a failure about
-				// which post-condition is failing.
-				prefix = toIdentifier(name) + "_ensures_";
-				for (int i = 0; i != postcondition.size(); ++i) {
-					Expr arg = arguments.length == 1 ? arguments[0]
-							: new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
-					Expr.Invoke macro = new Expr.Invoke(prefix + i,
-							wyilFile.id(), Collections.EMPTY_LIST, arg);
-					Expr vc = buildVerificationCondition(macro, branch, body);
-					// FIXME: add contextual information here
-					wycsFile.add(wycsFile.new Assert(
-							"postcondition not satisfied", vc,
-							toWycsAttributes(body.attributes(branch.pc()))));
+				if (fmm.ret() instanceof Type.Void) {
+					// In this case, there is not return value and, hence, there
+					// is no need to ensure the postcondition holds.
+				} else {
+					// First, construct arguments for the macro invocation. Only
+					// the returned value is read from the branch at the current
+					// pc. The other arguments correspond to the parameters
+					// which held on entry to this function.
+					Codes.Return ret = (Codes.Return) body.get(branch.pc());
+					arguments = new Expr[fmm.params().size() + 1];
+					for (int i = 0; i != fmm.params().size(); ++i) {
+						arguments[i + 1] = new Expr.Variable("r" + i);
+					}
+					arguments[0] = branch.read(ret.operand);
+					// Second, for each postcondition generate a separate
+					// verification condition. Doing this allows us to gather
+					// more detailed context information in the case of a
+					// failure about which post-condition is failing.
+					prefix = toIdentifier(name) + "_ensures_";
+					for (int i = 0; i != postcondition.size(); ++i) {
+						Expr arg = arguments.length == 1 ? arguments[0]
+								: new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
+						Expr.Invoke macro = new Expr.Invoke(prefix + i,
+								wyilFile.id(), Collections.EMPTY_LIST, arg);
+						Expr vc = buildVerificationCondition(macro, branch,
+								body);
+						// FIXME: add contextual information here
+						wycsFile.add(wycsFile.new Assert(
+								"postcondition not satisfied", vc,
+								toWycsAttributes(body.attributes(branch.pc()))));
+					}
 				}
 				break;
 			}
@@ -327,33 +331,31 @@ public class VcGenerator {
 			VcBranch entryState, Map<String, CodeBlock.Index> labels,
 			AttributedCodeBlock block) {
 		// Move entry branch to first bytecode in the block.
-		entryState.goTo(new CodeBlock.Index(parent));	
-				
+		entryState.goTo(new CodeBlock.Index(parent));
+
 		// Construct list of branches being processed.
 		Stack<VcBranch> activeBranches = new Stack<VcBranch>();
-		ArrayList<VcBranch> exitBranches = new ArrayList<VcBranch>();	
+		ArrayList<VcBranch> exitBranches = new ArrayList<VcBranch>();
 		activeBranches.push(entryState);
 		// Process all branches until completion.
-		while(activeBranches.size() > 0) {
+		while (activeBranches.size() > 0) {
 			VcBranch branch = activeBranches.pop();
-			
+
 			// The program counter represents the current position of the branch
 			// being explored.
 			CodeBlock.Index pc = branch.pc();
 
 			// Determine whether to continue executing this branch, or whether
 			// it has completed within this scope.
-			if(!pc.isWithin(parent) || branch.state() != VcBranch.State.ACTIVE) {
+			if (!pc.isWithin(parent) || branch.state() != VcBranch.State.ACTIVE) {
 				// This indicates the given branch has either exited this block
 				// via a non-local branch, or terminated in some fashion.
-				// Therefore, this branch is moved into the list of exit branches.
+				// Therefore, this branch is moved into the list of exit
+				// branches.
 				exitBranches.add(branch);
-			} else if(!block.contains(pc)) {
+			} else if (!block.contains(pc)) {
 				// This indicates the given branch has exited this block by
-				// falling through. Therefore, move its position to the next
-				// position in the parent (if applicable) and then move into the
-				// list of exit branches.
-				if(parent != null) { branch.goTo(parent.next()); }
+				// falling through. 
 				exitBranches.add(branch);
 			} else {
 				// Continue executing this branch as it is still within the
@@ -361,8 +363,7 @@ public class VcGenerator {
 				Code code = block.get(pc);
 				// Now, dispatch statements. Control statements are treated
 				// specially from unit statements.
-				if (code instanceof Code.Compound 
-						|| code instanceof Codes.If
+				if (code instanceof Code.Compound || code instanceof Codes.If
 						|| code instanceof Codes.IfIs
 						|| code instanceof Codes.Switch) {
 					// These bytecodes may generate multiple exit branches which
@@ -400,27 +401,27 @@ public class VcGenerator {
 					// appropriate verification conditions to enforce them.
 					Code.Unit unit = (Code.Unit) code;
 					Expr[] preconditions = getPreconditions(unit, branch, block);
-					if(preconditions.length > 0) {
+					if (preconditions.length > 0) {
 						// This bytecode has one or more preconditions which
 						// need to be asserted. Therefore, for each, create a
 						// failed branch to ensure the precondition is met.
-						for(int i=0;i!=preconditions.length;++i) {
+						for (int i = 0; i != preconditions.length; ++i) {
 							Expr precond = preconditions[i];
 							VcBranch fb = branch.fork();
-							fb.assume(new Expr.Unary(Expr.Unary.Op.NOT,precond));
+							fb.assume(new Expr.Unary(Expr.Unary.Op.NOT, precond));
 							fb.setState(VcBranch.State.FAILED);
 							exitBranches.add(fb);
 						}
 						// We need to fork the branch here, because it must have
 						// INTERNAL state by now (i.e. because of the forks
-						// above).  
-						branch = branch.fork(); 
+						// above).
+						branch = branch.fork();
 					}
-					// 
+					//
 					transform(unit, block, branch);
 					branch.goTo(pc.next());
 					activeBranches.push(branch);
-				}							
+				}
 			}
 		}
 
@@ -526,7 +527,7 @@ public class VcGenerator {
 			return null; // deadcode
 		}
 	}
-	
+
 	/**
 	 * Generate preconditions to protected against a possible divide by zero.
 	 * This essentially boils down to ensureing the divisor is non-zero.
@@ -537,8 +538,7 @@ public class VcGenerator {
 	 *            --- The branch the division is on.
 	 * @return
 	 */
-	public Expr[] divideByZeroCheck(Codes.BinaryOperator binOp,
-			VcBranch branch) {
+	public Expr[] divideByZeroCheck(Codes.BinaryOperator binOp, VcBranch branch) {
 		Expr rhs = branch.read(binOp.operand(1));
 		Value zero;
 		if (binOp.type() instanceof Type.Int) {
@@ -550,7 +550,7 @@ public class VcGenerator {
 		return new Expr[] { new Expr.Binary(Expr.Binary.Op.NEQ, rhs, constant,
 				rhs.attributes()) };
 	}
-	
+
 	/**
 	 * Generate preconditions necessary to protect against an out-of-bounds
 	 * access. For lists, this means ensuring the index is non-negative and less
@@ -563,22 +563,25 @@ public class VcGenerator {
 	 * @return
 	 */
 	public Expr[] indexOutOfBoundsChecks(Codes.IndexOf code, VcBranch branch) {
-		if(code.type() instanceof Type.EffectiveList) {
+		if (code.type() instanceof Type.EffectiveList) {
 			Expr src = branch.read(code.operand(0));
 			Expr idx = branch.read(code.operand(1));
-			Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),idx.attributes());
-			Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF,src,idx.attributes());
+			Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
+					idx.attributes());
+			Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
+					idx.attributes());
 			return new Expr[] {
-				new Expr.Binary(Expr.Binary.Op.GTEQ,idx,zero,idx.attributes()),
-				new Expr.Binary(Expr.Binary.Op.LT,idx,length,idx.attributes()),
-			};
+					new Expr.Binary(Expr.Binary.Op.GTEQ, idx, zero,
+							idx.attributes()),
+					new Expr.Binary(Expr.Binary.Op.LT, idx, length,
+							idx.attributes()), };
 		} else {
 			// FIXME: should do something here! At a minimum, generate a warning
 			// that this has not been implemented yet.
 			return new Expr[0];
 		}
 	}
-	
+
 	/**
 	 * Generate preconditions necessary to ensure the preconditions for a method
 	 * or method invocation are met.
@@ -613,7 +616,7 @@ public class VcGenerator {
 					Expr.Nary.Op.TUPLE, operands);
 			for (int i = 0; i != requires.size(); ++i) {
 				preconditions[i] = new Expr.Invoke(prefix + i,
-						code.name.module(), Collections.EMPTY_LIST,argument);
+						code.name.module(), Collections.EMPTY_LIST, argument);
 
 			}
 			return preconditions;
@@ -621,8 +624,7 @@ public class VcGenerator {
 			return new Expr[0];
 		}
 	}
-	
-	
+
 	/**
 	 * Ensure all preconditions for an update bytecode are met. For example,
 	 * that any list updates are within bounds, etc.
@@ -683,7 +685,7 @@ public class VcGenerator {
 
 		return preconditions.toArray(new Expr[preconditions.size()]);
 	}
-	
+
 	// ===============================================================================
 	// Control Bytecodes
 	// ===============================================================================
@@ -714,20 +716,44 @@ public class VcGenerator {
 	 * @param block
 	 *            The block being transformed over.
 	 */
-	protected List<VcBranch> transform(Codes.Loop code, VcBranch branch, Map<String, CodeBlock.Index> labels,
-			AttributedCodeBlock block) {
+	protected List<VcBranch> transform(Codes.Loop code, VcBranch branch,
+			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
 
 		// First, havoc all variables which are modified in the loop.
 		for (int i : code.modifiedOperands) {
 			branch.havoc(i, branch.typeOf(i));
 		}
 
-		// Find and import loop invariant (?)
-		
-		// Fork branch, assume loop invariant (?) and run through loop body.
-		CodeBlock.Index pc = branch.pc();
-		List<VcBranch> exitBranches = transform(pc,branch,labels,block); 
+		// Find and assume loop invariant (?)
 
+		// Now, run through loop body. This will produce several kinds of
+		// branch. Those which have terminated or branched out of the loop body,
+		// and those which have reached the end of the loop body. All branches
+		// in the former case go straight onto the list of returned branches.
+		// For those in the latter case (if any) we need to ensure the loop
+		// invariant still holds.
+		CodeBlock.Index pc = branch.pc();
+		List<VcBranch> branches = transform(pc, branch, labels, block);
+		ArrayList<VcBranch> exitBranches = new ArrayList<VcBranch>();
+		for (int i = 0; i != branches.size(); ++i) {
+			VcBranch b = branches.get(i);
+			switch(b.state()) {
+			case ACTIVE:
+				// This branch has either reached the end of the body or
+				// branched out prematuvely, and we need to first decide which
+				// it is.
+				if(b.pc().isWithin(pc)) {
+					// This is still within the loop body.
+					System.out.println("FOUND BRANCH WITHIN");
+					break;
+				} else {
+					// This isn't within the loop body, so ignore and fall
+					// through to the default case.
+				}
+			default:
+				exitBranches.add(b);
+			}
+		}
 		// Done
 		return exitBranches;
 	}
@@ -758,18 +784,51 @@ public class VcGenerator {
 	 * @param block
 	 *            The block being transformed over.
 	 */
-	protected List<VcBranch> transform(Codes.ForAll code, VcBranch branch, Map<String, CodeBlock.Index> labels,
-			AttributedCodeBlock block) {
+	protected List<VcBranch> transform(Codes.ForAll code, VcBranch branch,
+			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
 
 		// First, havoc all variables which are modified in the loop.
 		for (int i : code.modifiedOperands) {
 			branch.havoc(i, branch.typeOf(i));
 		}
 
-		Expr.Variable var = branch.havoc(code.indexOperand,
-				code.type.element());
+		// Second, havoc the index variable.
+		Expr.Variable var = branch
+				.havoc(code.indexOperand, code.type.element());
 
-		return null;
+		// Find and assume loop invariant (?)
+
+		// Now, run through loop body. The key here is that all constraints
+		// which hold within the loop body need to be quantified appropriately
+		// over the index variable. The kind of quantification depends on how
+		// the branch exits the loop. In the case of branches which reach the
+		// end of the loop, we must universally quantifier over them and,
+		// additionally, assert the loop invariant. In the case of branches
+		// which exit the loop prematurely, then we need to existentially
+		// quantify over them.
+		CodeBlock.Index pc = branch.pc();
+		List<VcBranch> branches = transform(pc, branch, labels, block);
+		ArrayList<VcBranch> exitBranches = new ArrayList<VcBranch>();
+		for (int i = 0; i != branches.size(); ++i) {
+			VcBranch b = branches.get(i);
+			switch(b.state()) {
+			case ACTIVE:
+				// This branch has either reached the end of the body or
+				// branched out prematuvely, and we need to first decide which
+				// it is.
+				if(b.pc().isWithin(pc)) {
+					// This is still within the loop body.
+					b.goTo(pc.next());
+				} else {
+					// This isn't within the loop body, so ignore and fall
+					// through to the default case.
+				}
+			default:
+				exitBranches.add(b);
+			}
+		}
+		// Done
+		return exitBranches;
 	}
 
 	/**
@@ -790,8 +849,8 @@ public class VcGenerator {
 	 * @param branches
 	 *            The list of branches currently being managed.
 	 */
-	protected List<VcBranch> transform(Codes.If code, VcBranch branch, Map<String, CodeBlock.Index> labels,
-			AttributedCodeBlock block) {
+	protected List<VcBranch> transform(Codes.If code, VcBranch branch,
+			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
 		// First, clone and register the true branch
 		VcBranch trueBranch = branch.fork();
 		VcBranch falseBranch = branch.fork();
@@ -829,13 +888,12 @@ public class VcGenerator {
 	 *            The list of branches currently being managed.
 	 */
 	protected List<VcBranch> transform(Codes.IfIs code, VcBranch branch,
-			Map<String, CodeBlock.Index> labels,
-			AttributedCodeBlock block) {
+			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
 		Type type = branch.typeOf(code.operand);
 		// First, determine the true test
 		Type trueType = Type.intersect(type, code.rightOperand);
 		Type falseType = Type.intersect(type, Type.Negation(code.rightOperand));
-		
+
 		ArrayList<VcBranch> exitBranches = new ArrayList<VcBranch>();
 		if (trueType.equals(Type.T_VOID)) {
 			// This indicate that the true branch is unreachable and
@@ -868,9 +926,9 @@ public class VcGenerator {
 			trueBranch.goTo(labels.get(code.target));
 			//
 			exitBranches.add(trueBranch);
-			exitBranches.add(falseBranch);		
+			exitBranches.add(falseBranch);
 		}
-		
+
 		return exitBranches;
 	}
 
@@ -888,16 +946,16 @@ public class VcGenerator {
 	 * @param branches
 	 *            The list of branches currently being managed.
 	 */
-	protected List<VcBranch> transform(Codes.Switch code, VcBranch branch, Map<String, CodeBlock.Index> labels,
-			AttributedCodeBlock block) {
+	protected List<VcBranch> transform(Codes.Switch code, VcBranch branch,
+			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
 		ArrayList<VcBranch> exitBranches = new ArrayList<VcBranch>();
 		VcBranch defaultBranch = branch.fork();
-		
+
 		// Process each case individually, whilst also updating the default
 		// branch.
 		for (int i = 0; i != code.branches.size(); ++i) {
 			// First, for each case fork a new branch to traverse it.
-			VcBranch caseBranch = branch.fork(); 
+			VcBranch caseBranch = branch.fork();
 			// Second, for each case, assume that the variable switched on
 			// matches the give case value. Likewise, assume that the default
 			// branch does *not* equal this value.
@@ -916,16 +974,16 @@ public class VcGenerator {
 					constant, toWycsAttributes(block.attributes(branch.pc()))));
 			// Finally, dispatch branch
 			caseBranch.goTo(labels.get(code.branches.get(i).second()));
-			exitBranches.add(caseBranch);			
+			exitBranches.add(caseBranch);
 		}
 
 		// Finally, the dispatch the default branch to the default target.
 		defaultBranch.goTo(labels.get(code.defaultTarget));
 		exitBranches.add(defaultBranch);
-		
+
 		// TODO: here is where we can add a coverage check. Specifically, that
 		// all cases of the input variable have been covered or not. This would
-		// be in the case that there is no explicit default branch target.		
+		// be in the case that there is no explicit default branch target.
 		return exitBranches;
 	}
 
@@ -950,14 +1008,14 @@ public class VcGenerator {
 	 */
 	protected List<VcBranch> transform(Codes.AssertOrAssume code,
 			VcBranch branch, Map<String, CodeBlock.Index> labels,
-			AttributedCodeBlock block) {	
+			AttributedCodeBlock block) {
 		// First, transform the given branch through the assert or assume block.
 		// This will produce one or more exit branches, some of which may have
 		// reached failed states and need to be turned into verification
 		// conditions (for asserts only).
 		CodeBlock.Index pc = branch.pc();
-		List<VcBranch> exitBranches = transform(pc,branch,labels,block); 
-		
+		List<VcBranch> exitBranches = transform(pc, branch, labels, block);
+
 		// Second, examine the list of exit branches and decide what to do with
 		// them. In the case of a failing branch then we need to generate an
 		// appropriate verification condition.
@@ -970,12 +1028,16 @@ public class VcGenerator {
 				// happen. Therefore, we silently remove them from the list of
 				// exit branches.
 				exitBranches.remove(i--);
+			} else if(b.state() == VcBranch.State.ACTIVE) {
+				// This is an active branch which has fallen through to the end
+				// of the assert / assume body. Therefore, we need to advance it
+				// to the next instruction in the outer block.
+				b.goTo(pc.next());
 			}
 		}
 		// Done
 		return exitBranches;
 	}
-
 
 	/**
 	 * <p>
@@ -993,7 +1055,7 @@ public class VcGenerator {
 	 */
 	protected void transform(Codes.Goto code, final VcBranch branch,
 			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
-		branch.goTo(labels.get(code.target));		
+		branch.goTo(labels.get(code.target));
 	}
 
 	/**
@@ -1012,9 +1074,12 @@ public class VcGenerator {
 	 * @param branches
 	 *            The list of branches currently being managed.
 	 */
-	protected void transform(Codes.Fail code, VcBranch branch, AttributedCodeBlock block) {
-		// Update status of this branch
-		branch.setState(VcBranch.State.FAILED);		
+	protected void transform(Codes.Fail code, VcBranch branch,
+			AttributedCodeBlock block) {
+		// Update status of this branch to failed. This simply indicates that
+		// this branch's location should be unreachable and, hence, we need a
+		// verification condition to enforce this.
+		branch.setState(VcBranch.State.FAILED);
 	}
 
 	/**
@@ -1036,7 +1101,7 @@ public class VcGenerator {
 		// active. Thus, the original callers of this block transformation can
 		// subsequently extract the constraints which hold at the point of the
 		// return.
-		branch.setState(VcBranch.State.TERMINATED);		
+		branch.setState(VcBranch.State.TERMINATED);
 	}
 
 	// ===============================================================================
@@ -1069,15 +1134,20 @@ public class VcGenerator {
 				transformBinary(Expr.Binary.Op.LISTAPPEND, bc, branch, block);
 			} else if (code instanceof Codes.SetOperator) {
 				Codes.SetOperator bc = (Codes.SetOperator) code;
-				transformBinary(setOperatorMap[bc.kind.ordinal()], bc, branch, block);
+				transformBinary(setOperatorMap[bc.kind.ordinal()], bc, branch,
+						block);
 			} else if (code instanceof Codes.NewList) {
-				transformNary(Expr.Nary.Op.LIST, (Codes.NewList) code, branch, block);
+				transformNary(Expr.Nary.Op.LIST, (Codes.NewList) code, branch,
+						block);
 			} else if (code instanceof Codes.NewRecord) {
-				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewTuple) code, branch, block);
+				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewRecord) code,
+						branch, block);
 			} else if (code instanceof Codes.NewSet) {
-				transformNary(Expr.Nary.Op.SET, (Codes.NewSet) code, branch, block);
+				transformNary(Expr.Nary.Op.SET, (Codes.NewSet) code, branch,
+						block);
 			} else if (code instanceof Codes.NewTuple) {
-				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewTuple) code, branch, block);
+				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewTuple) code,
+						branch, block);
 			} else if (code instanceof Codes.Convert) {
 				transform((Codes.Convert) code, block, branch);
 			} else if (code instanceof Codes.Const) {
@@ -1155,7 +1225,8 @@ public class VcGenerator {
 
 	protected void transform(Codes.StringOperator code,
 			AttributedCodeBlock block, VcBranch branch) {
-		Collection<Attribute> attributes = toWycsAttributes(block.attributes(branch.pc()));
+		Collection<Attribute> attributes = toWycsAttributes(block
+				.attributes(branch.pc()));
 		Expr lhs = branch.read(code.operand(0));
 		Expr rhs = branch.read(code.operand(1));
 
@@ -1180,7 +1251,8 @@ public class VcGenerator {
 		// TODO: after removing left append we can simplify this case.
 
 		branch.write(code.target(), new Expr.Binary(Expr.Binary.Op.LISTAPPEND,
-				lhs, rhs, toWycsAttributes(block.attributes(branch.pc()))), code.assignedType());
+				lhs, rhs, toWycsAttributes(block.attributes(branch.pc()))),
+				code.assignedType());
 	}
 
 	protected void transform(Codes.Convert code, AttributedCodeBlock block,
@@ -1193,7 +1265,8 @@ public class VcGenerator {
 			VcBranch branch) {
 		Value val = convert(code.constant, block, branch);
 		branch.write(code.target(), new Expr.Constant(val,
-				toWycsAttributes(block.attributes(branch.pc()))), code.assignedType());
+				toWycsAttributes(block.attributes(branch.pc()))), code
+				.assignedType());
 	}
 
 	protected void transform(Codes.Debug code, AttributedCodeBlock block,
@@ -1214,7 +1287,8 @@ public class VcGenerator {
 		Expr src = branch.read(code.operand(0));
 		Expr index = new Expr.Constant(Value.Integer(BigInteger.valueOf(fields
 				.indexOf(code.field))));
-		Expr result = new Expr.IndexOf(src, index, toWycsAttributes(block.attributes(branch.pc())));
+		Expr result = new Expr.IndexOf(src, index,
+				toWycsAttributes(block.attributes(branch.pc())));
 		branch.write(code.target(), result, code.assignedType());
 	}
 
@@ -1227,7 +1301,8 @@ public class VcGenerator {
 
 	protected void transform(Codes.Invoke code, AttributedCodeBlock block,
 			VcBranch branch) throws Exception {
-		Collection<Attribute> attributes = toWycsAttributes(block.attributes(branch.pc()));
+		Collection<Attribute> attributes = toWycsAttributes(block
+				.attributes(branch.pc()));
 		int[] code_operands = code.operands();
 		if (code.target() != Codes.NULL_REG) {
 			// Need to assume the post-condition holds.
@@ -1281,7 +1356,8 @@ public class VcGenerator {
 		Expr src = branch.read(code.operand(0));
 		Expr idx = branch.read(code.operand(1));
 		branch.write(code.target(), new Expr.IndexOf(src, idx,
-				toWycsAttributes(block.attributes(branch.pc()))), code.assignedType());
+				toWycsAttributes(block.attributes(branch.pc()))), code
+				.assignedType());
 	}
 
 	protected void transform(Codes.Move code, VcBranch branch) {
@@ -1319,7 +1395,8 @@ public class VcGenerator {
 		Expr src = branch.read(code.operand(0));
 		Expr index = new Expr.Constant(Value.Integer(BigInteger
 				.valueOf(code.index)));
-		Expr result = new Expr.IndexOf(src, index, toWycsAttributes(block.attributes(branch.pc())));
+		Expr result = new Expr.IndexOf(src, index,
+				toWycsAttributes(block.attributes(branch.pc())));
 		branch.write(code.target(), result, code.assignedType());
 	}
 
@@ -1346,7 +1423,8 @@ public class VcGenerator {
 		if (!iter.hasNext()) {
 			return result;
 		} else {
-			Collection<Attribute> attributes = toWycsAttributes(block.attributes(branch.pc()));
+			Collection<Attribute> attributes = toWycsAttributes(block
+					.attributes(branch.pc()));
 			Codes.LVal lv = iter.next();
 			if (lv instanceof Codes.RecordLVal) {
 				Codes.RecordLVal rlv = (Codes.RecordLVal) lv;
@@ -1399,11 +1477,13 @@ public class VcGenerator {
 	 *            --- The enclosing branch
 	 */
 	protected void transformUnary(Expr.Unary.Op operator,
-			Code.AbstractUnaryAssignable code, VcBranch branch, AttributedCodeBlock block) {
+			Code.AbstractUnaryAssignable code, VcBranch branch,
+			AttributedCodeBlock block) {
 		Expr lhs = branch.read(code.operand(0));
 
 		branch.write(code.target(), new Expr.Unary(operator, lhs,
-				toWycsAttributes(block.attributes(branch.pc()))), code.assignedType());
+				toWycsAttributes(block.attributes(branch.pc()))), code
+				.assignedType());
 	}
 
 	/**
@@ -1420,12 +1500,14 @@ public class VcGenerator {
 	 *            --- The enclosing branch
 	 */
 	protected void transformBinary(Expr.Binary.Op operator,
-			Code.AbstractBinaryAssignable code, VcBranch branch, AttributedCodeBlock block) {
+			Code.AbstractBinaryAssignable code, VcBranch branch,
+			AttributedCodeBlock block) {
 		Expr lhs = branch.read(code.operand(0));
 		Expr rhs = branch.read(code.operand(1));
 
 		branch.write(code.target(), new Expr.Binary(operator, lhs, rhs,
-				toWycsAttributes(block.attributes(branch.pc()))), code.assignedType());
+				toWycsAttributes(block.attributes(branch.pc()))), code
+				.assignedType());
 	}
 
 	/**
@@ -1442,12 +1524,14 @@ public class VcGenerator {
 	 *            --- The enclosing branch
 	 */
 	protected void transformTernary(Expr.Ternary.Op operator,
-			Code.AbstractNaryAssignable code, VcBranch branch, AttributedCodeBlock block) {
+			Code.AbstractNaryAssignable code, VcBranch branch,
+			AttributedCodeBlock block) {
 		Expr one = branch.read(code.operand(0));
 		Expr two = branch.read(code.operand(1));
 		Expr three = branch.read(code.operand(2));
 		branch.write(code.target(), new Expr.Ternary(operator, one, two, three,
-				toWycsAttributes(block.attributes(branch.pc()))), code.assignedType());
+				toWycsAttributes(block.attributes(branch.pc()))), code
+				.assignedType());
 	}
 
 	/**
@@ -1464,16 +1548,18 @@ public class VcGenerator {
 	 *            --- The enclosing branch
 	 */
 	protected void transformNary(Expr.Nary.Op operator,
-			Code.AbstractNaryAssignable code, VcBranch branch, AttributedCodeBlock block) {
+			Code.AbstractNaryAssignable code, VcBranch branch,
+			AttributedCodeBlock block) {
 		int[] code_operands = code.operands();
 		Expr[] vals = new Expr[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
 		branch.write(code.target(), new Expr.Nary(operator, vals,
-				toWycsAttributes(block.attributes(branch.pc()))), code.assignedType());
+				toWycsAttributes(block.attributes(branch.pc()))), code
+				.assignedType());
 	}
-	
+
 	/**
 	 * Find the precondition associated with a given function or method. This
 	 * maybe contained in the same file, or in a different file. This may
@@ -1573,7 +1659,8 @@ public class VcGenerator {
 			List<Type> types) {
 
 		// first, generate a branch for traversing the external block.
-		VcBranch master = new VcBranch(Math.max(block.numSlots(), types.size()),null);
+		VcBranch master = new VcBranch(
+				Math.max(block.numSlots(), types.size()), null);
 
 		TypePattern.Leaf[] declarations = new TypePattern.Leaf[types.size()];
 		// second, set initial environment
@@ -1597,7 +1684,7 @@ public class VcGenerator {
 		// At this point, we are guaranteed exactly one branch because there
 		// is only ever one exit point from a pre-/post-condition.
 		List<VcBranch> exitBranches = transform(master, block);
-		for (VcBranch exitBranch : exitBranches) {			
+		for (VcBranch exitBranch : exitBranches) {
 			if (exitBranch.state() == VcBranch.State.TERMINATED) {
 				Expr body = generateAssumptions(exitBranch);
 				wycsFile.add(wycsFile.new Macro(name, Collections.EMPTY_LIST,
@@ -1708,12 +1795,12 @@ public class VcGenerator {
 	 * <pre>
 	 * y &gt;= 0 &amp;&amp; (x &gt;= y || (x &lt; y || z == 0))
 	 * </pre>
-	 */		
+	 */
 	private Expr generateAssumptions(VcBranch b) {
-		
+
 		// FIXME: this method is not efficient and does not generate an optimal
-		// decomposition of the branch graph. 
-		
+		// decomposition of the branch graph.
+
 		// First, compute disjunction of parent constraints.
 		VcBranch[] b_parents = b.parents();
 		Expr parents = null;
@@ -1727,77 +1814,77 @@ public class VcGenerator {
 						parent_constraints);
 			}
 		}
-		
+
 		// Second, include constraints from this node.
-		if(parents == null) {
-			return b.constraints(); 
+		if (parents == null) {
+			return b.constraints();
 		} else {
-			return new Expr.Binary(Expr.Binary.Op.AND,parents,b.constraints());
-		}		
+			return new Expr.Binary(Expr.Binary.Op.AND, parents, b.constraints());
+		}
 	}
-	
-	
-//	private Expr generateAssumptions(VcBranch branch) {
-//		// First, flattern the branch graph into a topological ordering
-//		List<VcBranch> branches = flattern(branch);
-//		
-//		// Second, initialise the node data
-//		HashMap<VcBranch, Node> data = new HashMap<VcBranch, Node>();
-//		for (int i = 0; i != branches.size(); ++i) {
-//			VcBranch b = branches.get(i);
-//			data.put(b, new Node());
-//		}
-//		
-//		// Third, initialise parent counts
-//		for (int i = 0; i != branches.size(); ++i) {
-//			VcBranch b = branches.get(i);
-//			for(VcBranch parent : b.parents()) {
-//				data.get(parent).count = 0;
-//			}			
-//		}
-//	}
-//	
-//	private class Node {
-//		public Expr constraint;
-//		public int count;
-//	}
-//
-//	private List<VcBranch> flattern(VcBranch root) {
-//		HashSet<VcBranch> visited = new HashSet<VcBranch>();
-//		ArrayList<VcBranch> branches = new ArrayList<VcBranch>();
-//		// Now, perform a depth-first search of the branch graph adding branches
-//		// in reverse topological order.
-//		flattern(root,visited,branches);
-//		// The depth-first search we just conducted loaded all branches into the
-//		// list in reverse topological order. For sanity, we just put them
-//		// around the right way here. Technically we don't need to do this, but
-//		// it just simplifies the remainder of the algorithm.
-//		Collections.reverse(branches);
-//		return branches;
-//	}
-//	
-//	/**
-//	 * Perform depth-first traversal of the branch graph, storing visited nodes
-//	 * in reverse topological order.
-//	 * 
-//	 * @param b
-//	 *            --- Branch currently being visited.
-//	 * @param visited
-//	 *            --- Set of previously visited branches.
-//	 * @param branches
-//	 *            --- reverse topogolical order being constructed.
-//	 */
-//	private void flattern(VcBranch b, HashSet<VcBranch> visited,
-//			List<VcBranch> branches) {
-//		if (!visited.contains(b)) {
-//			// this branch has not already been visited.
-//			visited.add(b);
-//			for (VcBranch parent : b.parents()) {
-//				flattern(parent, visited, branches);
-//			}
-//			branches.add(b);
-//		}
-//	}
+
+	// private Expr generateAssumptions(VcBranch branch) {
+	// // First, flattern the branch graph into a topological ordering
+	// List<VcBranch> branches = flattern(branch);
+	//
+	// // Second, initialise the node data
+	// HashMap<VcBranch, Node> data = new HashMap<VcBranch, Node>();
+	// for (int i = 0; i != branches.size(); ++i) {
+	// VcBranch b = branches.get(i);
+	// data.put(b, new Node());
+	// }
+	//
+	// // Third, initialise parent counts
+	// for (int i = 0; i != branches.size(); ++i) {
+	// VcBranch b = branches.get(i);
+	// for(VcBranch parent : b.parents()) {
+	// data.get(parent).count = 0;
+	// }
+	// }
+	// }
+	//
+	// private class Node {
+	// public Expr constraint;
+	// public int count;
+	// }
+	//
+	// private List<VcBranch> flattern(VcBranch root) {
+	// HashSet<VcBranch> visited = new HashSet<VcBranch>();
+	// ArrayList<VcBranch> branches = new ArrayList<VcBranch>();
+	// // Now, perform a depth-first search of the branch graph adding branches
+	// // in reverse topological order.
+	// flattern(root,visited,branches);
+	// // The depth-first search we just conducted loaded all branches into the
+	// // list in reverse topological order. For sanity, we just put them
+	// // around the right way here. Technically we don't need to do this, but
+	// // it just simplifies the remainder of the algorithm.
+	// Collections.reverse(branches);
+	// return branches;
+	// }
+	//
+	// /**
+	// * Perform depth-first traversal of the branch graph, storing visited
+	// nodes
+	// * in reverse topological order.
+	// *
+	// * @param b
+	// * --- Branch currently being visited.
+	// * @param visited
+	// * --- Set of previously visited branches.
+	// * @param branches
+	// * --- reverse topogolical order being constructed.
+	// */
+	// private void flattern(VcBranch b, HashSet<VcBranch> visited,
+	// List<VcBranch> branches) {
+	// if (!visited.contains(b)) {
+	// // this branch has not already been visited.
+	// visited.add(b);
+	// for (VcBranch parent : b.parents()) {
+	// flattern(parent, visited, branches);
+	// }
+	// branches.add(b);
+	// }
+	// }
 
 	/**
 	 * Generate a formula representing a condition from an conditional bytecode.
@@ -1847,7 +1934,8 @@ public class VcGenerator {
 			return null;
 		}
 
-		return new Expr.Binary(op, lhs, rhs, toWycsAttributes(block.attributes(branch.pc())));
+		return new Expr.Binary(op, lhs, rhs,
+				toWycsAttributes(block.attributes(branch.pc())));
 	}
 
 	/**
