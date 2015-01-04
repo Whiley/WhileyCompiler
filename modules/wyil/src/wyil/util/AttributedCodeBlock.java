@@ -21,15 +21,15 @@ import wyil.lang.CodeBlock.Index;
  * that these maps are maintained in the presence of insertions, deletions and
  * updates.
  * </p>
- *
+ * 
  * <p>
  * NOTE: an attributed block should never be used as part of an actual bytecode.
  * This is because it does not (indeed, cannot) implement the necessary equality
  * functions.
  * </p>
- *
+ * 
  * @author David J. Pearce
- *
+ * 
  */
 public class AttributedCodeBlock extends CodeBlock {
 
@@ -37,7 +37,7 @@ public class AttributedCodeBlock extends CodeBlock {
 	 * The map from attribute kinds to the intances of Attribute.Map responsible
 	 * for storing them.
 	 */
-	private Map<Class<Attribute>,Attribute.Map<Attribute>> attributes;
+	private Map<Class<Attribute>, Attribute.Map<Attribute>> attributes;
 
 	/**
 	 * The ID of this block. For root blocks, this is empty (i.e. null).
@@ -46,7 +46,8 @@ public class AttributedCodeBlock extends CodeBlock {
 	 */
 	private final CodeBlock.Index ID;
 
-	public AttributedCodeBlock(Attribute.Map<? extends Attribute>... attributeMaps) {
+	public AttributedCodeBlock(
+			Attribute.Map<? extends Attribute>... attributeMaps) {
 		this.attributes = new HashMap<Class<Attribute>, wyil.lang.Attribute.Map<Attribute>>();
 		for (Attribute.Map map : attributeMaps) {
 			this.attributes.put(map.type(), map);
@@ -54,7 +55,8 @@ public class AttributedCodeBlock extends CodeBlock {
 		this.ID = null;
 	}
 
-	public AttributedCodeBlock(Collection<? extends Attribute.Map<Attribute>> attributeMaps) {
+	public AttributedCodeBlock(
+			Collection<? extends Attribute.Map<Attribute>> attributeMaps) {
 		this.attributes = new HashMap<Class<Attribute>, wyil.lang.Attribute.Map<Attribute>>();
 		for (Attribute.Map map : attributeMaps) {
 			this.attributes.put(map.type(), map);
@@ -71,7 +73,7 @@ public class AttributedCodeBlock extends CodeBlock {
 		}
 		this.ID = null;
 	}
-	
+
 	/**
 	 * This constructor is used when creating a subblock only. They key is that
 	 * updates to the attributes of this block are visible to the enclosing
@@ -103,7 +105,7 @@ public class AttributedCodeBlock extends CodeBlock {
 	 */
 	public <T extends Attribute> T attribute(CodeBlock.Index id, Class<T> kind) {
 		Attribute.Map<T> map = (Attribute.Map<T>) attributes.get(kind);
-		if(map != null) {
+		if (map != null) {
 			return map.get(id);
 		} else {
 			// no map of this kind exists.
@@ -113,19 +115,47 @@ public class AttributedCodeBlock extends CodeBlock {
 
 	public List<Attribute> attributes(Index index) {
 		ArrayList<Attribute> results = new ArrayList<Attribute>();
-		for(Attribute.Map<?> map : attributes.values()) {
+		for (Attribute.Map<?> map : attributes.values()) {
 			Attribute attr = map.get(index);
-			if(attr != null) {
+			if (attr != null) {
 				results.add(attr);
 			}
 		}
 		return results;
 	}
-	
+
 	public Collection<Attribute.Map<Attribute>> attributes() {
 		return attributes.values();
 	}
-	
+
+	/**
+	 * Return the list of all valid bytecode indexes in this block in order of
+	 * appearance.
+	 * 
+	 * @return
+	 */
+	public List<CodeBlock.Index> indices() {
+		ArrayList<CodeBlock.Index> indices = new ArrayList<CodeBlock.Index>();
+		indices(ID,this,indices);
+		return indices;
+	}
+
+	private void indices(CodeBlock.Index parent, CodeBlock block,
+			ArrayList<CodeBlock.Index> indices) {
+		CodeBlock.Index id = new CodeBlock.Index(parent);
+		for (int i = 0; i != block.size(); ++i) {
+			indices.add(id);
+			// Now, check whether bytecode at the given location is itself a
+			// block or not.
+			Code code = block.get(i);
+			if (code instanceof CodeBlock) {
+				// Yes, this bytecode is itself a block.
+				indices(id, (CodeBlock) code, indices);
+			}
+			id = id.next();
+		}
+	}
+
 	/**
 	 * <p>
 	 * Construct a temporary sub-block for use in creating an attributed
@@ -138,12 +168,12 @@ public class AttributedCodeBlock extends CodeBlock {
 	 * (i.e. the outer) AttributedCodeBlock. If other bytecodes are added
 	 * inbetween, then attributes may not be correctly associated.
 	 * </p>
-	 *
+	 * 
 	 * @return
 	 */
 	public AttributedCodeBlock createSubBlock() {
-		CodeBlock.Index index = new CodeBlock.Index(ID,size());
-		return new AttributedCodeBlock(index,this);
+		CodeBlock.Index index = new CodeBlock.Index(ID, size());
+		return new AttributedCodeBlock(index, this);
 	}
 
 	// ===================================================================
@@ -160,8 +190,8 @@ public class AttributedCodeBlock extends CodeBlock {
 	 *            --- attributes associated with bytecode.
 	 */
 	public boolean add(Code code, Attribute... attributes) {
-		CodeBlock.Index index = new CodeBlock.Index(ID,size());
-		putAll(index,attributes);
+		CodeBlock.Index index = new CodeBlock.Index(ID, size());
+		putAll(index, attributes);
 		return add(code);
 	}
 
@@ -176,14 +206,14 @@ public class AttributedCodeBlock extends CodeBlock {
 	 */
 	public boolean add(Code code, Collection<Attribute> attributes) {
 		CodeBlock.Index index = new CodeBlock.Index(ID, size());
-		putAll(index,attributes);	
+		putAll(index, attributes);
 		return add(code);
 	}
 
 	/**
 	 * Add all bytecodes to this block from another include all attributes
 	 * associated with each bytecode.
-	 *
+	 * 
 	 * @param block
 	 */
 	public void addAll(AttributedCodeBlock block) {
@@ -196,33 +226,41 @@ public class AttributedCodeBlock extends CodeBlock {
 	// ===================================================================
 
 	/**
-	 * <p>Insert a bytecode at a given position in this block. It is assumed that
+	 * <p>
+	 * Insert a bytecode at a given position in this block. It is assumed that
 	 * the bytecode employs the same environment as this block. The bytecode at
-	 * the given position (and any after it) are shifted one position down.</p>
-	 *
-	 * @param index --- position to insert at.
-	 * @param code --- bytecode to insert at the given position.
+	 * the given position (and any after it) are shifted one position down.
+	 * </p>
+	 * 
+	 * @param index
+	 *            --- position to insert at.
+	 * @param code
+	 *            --- bytecode to insert at the given position.
 	 * @param attributes
 	 */
 	public void add(int index, Code code, Attribute... attributes) {
 		CodeBlock.Index idx = new CodeBlock.Index(ID, index);
-		insertAll(idx,attributes);			
-		add(index,code);
+		insertAll(idx, attributes);
+		add(index, code);
 	}
 
 	/**
-	 * <p>Insert a bytecode at a given position in this block. It is assumed that
+	 * <p>
+	 * Insert a bytecode at a given position in this block. It is assumed that
 	 * the bytecode employs the same environment as this block. The bytecode at
-	 * the given position (and any after it) are shifted one position down.</p>
-	 *
-	 * @param index --- position to insert at.
-	 * @param code --- bytecode to insert at the given position.
+	 * the given position (and any after it) are shifted one position down.
+	 * </p>
+	 * 
+	 * @param index
+	 *            --- position to insert at.
+	 * @param code
+	 *            --- bytecode to insert at the given position.
 	 * @param attributes
 	 */
 	public void add(int index, Code code, Collection<Attribute> attributes) {
 		CodeBlock.Index idx = new CodeBlock.Index(ID, index);
-		insertAll(idx,attributes);			
-		add(index,code);		
+		insertAll(idx, attributes);
+		add(index, code);
 	}
 
 	// ===================================================================
@@ -234,14 +272,16 @@ public class AttributedCodeBlock extends CodeBlock {
 	 * Replace the bytecode at a given position in this block with another. It
 	 * is assumed that the bytecode employs the same environment as this block.
 	 * </p>
-	 *
-	 * @param index --- position of bytecode to replace.
-	 * @param code --- bytecode to replace with.
+	 * 
+	 * @param index
+	 *            --- position of bytecode to replace.
+	 * @param code
+	 *            --- bytecode to replace with.
 	 * @param attributes
 	 */
 	public void set(int index, Code code, Attribute... attributes) {
 		// TODO: actually update the attributes
-		set(index,code);
+		set(index, code);
 		throw new RuntimeException("implement me!");
 	}
 
@@ -250,17 +290,19 @@ public class AttributedCodeBlock extends CodeBlock {
 	 * Replace the bytecode at a given position in this block with another. It
 	 * is assumed that the bytecode employs the same environment as this block.
 	 * </p>
-	 *
-	 * @param index --- position of bytecode to replace.
-	 * @param code --- bytecode to replace with.
+	 * 
+	 * @param index
+	 *            --- position of bytecode to replace.
+	 * @param code
+	 *            --- bytecode to replace with.
 	 * @param attributes
 	 */
 	public void set(int index, Code code, Collection<Attribute> attributes) {
 		// TODO: actually update the attributes
-		set(index,code);
+		set(index, code);
 		throw new RuntimeException("implement me!");
 	}
-	
+
 	// ===================================================================
 	// Helper Methods
 	// ===================================================================
@@ -273,11 +315,11 @@ public class AttributedCodeBlock extends CodeBlock {
 			// exists.
 			if (map != null) {
 				// Yes, so add it.
-				map.put(index, attribute);				
+				map.put(index, attribute);
 			}
 		}
 	}
-	
+
 	private void putAll(CodeBlock.Index index, Attribute... attributes) {
 		// Go through and add each attribute at the given index.
 		for (Attribute attribute : attributes) {
@@ -291,22 +333,23 @@ public class AttributedCodeBlock extends CodeBlock {
 			}
 		}
 	}
-	
+
 	private void insertAll(CodeBlock.Index index, Attribute... attributes) {
 		// first, make space for the given code index
-		for(Attribute.Map<Attribute> map : this.attributes.values()) {
-			map.insert(index,null);
+		for (Attribute.Map<Attribute> map : this.attributes.values()) {
+			map.insert(index, null);
 		}
 		// second, add the attributes at that index
-		putAll(index,attributes);
+		putAll(index, attributes);
 	}
-	
-	private void insertAll(CodeBlock.Index index, Collection<Attribute> attributes) {
+
+	private void insertAll(CodeBlock.Index index,
+			Collection<Attribute> attributes) {
 		// first, make space for the given code index
-		for(Attribute.Map<Attribute> map : this.attributes.values()) {
-			map.insert(index,null);
+		for (Attribute.Map<Attribute> map : this.attributes.values()) {
+			map.insert(index, null);
 		}
 		// second, add the attributes at that index
-		putAll(index,attributes);
-	}	
+		putAll(index, attributes);
+	}
 }

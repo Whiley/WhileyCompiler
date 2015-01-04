@@ -37,9 +37,26 @@ import wyil.util.AttributedCodeBlock;
 /**
  * <p>
  * Removes dead-code from method and function bodies, preconditions,
- * postconditions and type invariants. Dead=code is defined as code which is
+ * postconditions and type invariants. Dead-code is defined as code which is
  * unreachable through the corresponding control-flow graph starting from the
- * entry point.
+ * entry point. For example, consider:
+ * </p>
+ * 
+ * <pre>
+ *   const %1 = 0                 
+ *   ifge %0, %1 goto label0           
+ *   neg %2 = %0                       
+ *   assign %0 = %2
+ *   goto label0
+ *   const %1 = 0   // unreachable            
+ * .label0                                 
+ *   return %0                         
+ *   return         // unreachable
+ * </pre>
+ * <p>
+ * Here, we can see two bytecodes which are unreachable by any path through the
+ * control-flow graph starting from the entry point. Both of these, therefore,
+ * are considered dead-code and can safely be removed.
  * </p>
  * <p>
  * The algorithm traverses a given code block using (roughly speaking) a
@@ -49,9 +66,9 @@ import wyil.util.AttributedCodeBlock;
  * remain if their unreachable status depends on more than just reachability
  * (i.e. an unrealisable path).
  * </p>
- *
+ * 
  * @author David J. Pearce
- *
+ * 
  */
 public class DeadCodeElimination implements Transform<WyilFile> {
 
@@ -155,6 +172,7 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 	 * @param block
 	 */
 	private void transform(AttributedCodeBlock block) {
+		CodeBlock.Index entry = new CodeBlock.Index(CodeBlock.Index.ROOT); 
 		// Construct the label map which will label labels to their bytecode
 		// indices.  This allows is to correctly handle branching instructions. 
 		HashMap<String,CodeBlock.Index> labelMap = new HashMap<String,CodeBlock.Index>();
@@ -164,12 +182,12 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 		// with the root index. An invariant of the worklist is that all entries
 		// on the worklist have already been added to the visited set.
 		Stack<CodeBlock.Index> worklist = new Stack();
-		worklist.push(new CodeBlock.Index(CodeBlock.Index.ROOT));
+		worklist.push(entry);
 		// Initialise the visited set, which contains the set of bytecodes which
 		// have been explored. When the search is completed, this will tell us
 		// which bytecodes are dead-code (i.e. because they weren't explored).
 		HashSet<CodeBlock.Index> visited = new HashSet<CodeBlock.Index>();
-		
+		visited.add(entry);
 		// Now, iterate until all branches of exploration have been explored and
 		// the worklist is empty.
 		while(!worklist.isEmpty()) {
@@ -209,11 +227,13 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 			}
 		}
 
-		// Now, remove unvisited blocks!
-
-		// FIXME: need to actually remove unused bytecodes!
-		
+		// Now, remove all visited indices from the set of all indices within
+		// the block to determine which ones are dead code.
+		List<CodeBlock.Index> indices = block.indices();
+		indices.removeAll(visited);
+		// FIXME: need to actually remove unused bytecodes!		
 		System.out.println("FIXME --- DeadCodeElimination");
+		// block.removeAll(indices);
 	}
 
 	private static void buildLabelMap(CodeBlock.Index parent, CodeBlock block,
