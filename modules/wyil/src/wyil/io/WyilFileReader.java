@@ -573,6 +573,8 @@ public final class WyilFileReader {
 			return Codes.Assert(bytecodes);
 		} else if(compound instanceof Codes.Assume) {
 			return Codes.Assume(bytecodes);
+		} else if(compound instanceof Codes.Invariant) {
+			return Codes.Invariant(bytecodes);
 		} else {
 			throw new IllegalArgumentException("Unknown compound bytecode encountered: " + compound.getClass().getName());
 		}
@@ -1102,6 +1104,11 @@ public final class WyilFileReader {
 			int count = readRest(wideRest);
 			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);			
 			return Codes.Assume(bytecodes);
+		}
+		case Code.OPCODE_invariantblock: {
+			int count = readRest(wideRest);
+			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);			
+			return Codes.Invariant(bytecodes);
 		}
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode

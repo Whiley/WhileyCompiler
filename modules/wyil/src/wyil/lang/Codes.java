@@ -181,6 +181,19 @@ public abstract class Codes {
 			int[] operands, NameID name) {
 		return new Invoke(fun, target, operands, name);
 	}
+	
+	/**
+	 * Construct an <code>invariant</code> bytecode which represents a user-defined
+	 * loop invariant.
+	 *
+	 * @param message
+	 *            --- message to report upon failure.
+	 * @return
+	 */
+	public static Invariant Invariant(Collection<Code> bytecodes) {
+		return new Invariant(bytecodes);
+	}
+
 
 	public static Lambda Lambda(Type.FunctionOrMethod fun, int target,
 			Collection<Integer> operands, NameID name) {
@@ -924,7 +937,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Assert extends AssertOrAssume {
+	public static class Assert extends AssertOrAssume {
 
 		private Assert(Collection<Code> bytecodes) {
 			super(bytecodes);
@@ -943,16 +956,16 @@ public abstract class Codes {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof Assume) {
-				Assume f = (Assume) o;
+			if (o instanceof Assert) {
+				Assert f = (Assert) o;
 				return bytecodes.equals(f.bytecodes);
 			}
 			return false;
 		}
 
 		@Override
-		public Assume clone() {
-			return new Assume(bytecodes);
+		public Assert clone() {
+			return new Assert(bytecodes);
 		}
 	}
 
@@ -1540,6 +1553,44 @@ public abstract class Codes {
 				return "indirectinvoke %" + reference() + " "
 						+ arrayToString(parameters()) + " : " + type();
 			}
+		}
+	}
+	
+	/**
+	 * Represents a block of bytecode instructions representing an assertion.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Invariant extends Assert {
+
+		private Invariant(Collection<Code> bytecodes) {
+			super(bytecodes);
+		}
+
+		public int opcode() {
+			return OPCODE_invariantblock;
+		}
+
+		public String toString() {
+			return "invariant";
+		}
+
+		public int hashCode() {
+			return bytecodes.hashCode();
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof Invariant) {
+				Invariant f = (Invariant) o;
+				return bytecodes.equals(f.bytecodes);
+			}
+			return false;
+		}
+
+		@Override
+		public Invariant clone() {
+			return new Invariant(bytecodes);
 		}
 	}
 

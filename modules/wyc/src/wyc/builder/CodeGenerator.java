@@ -1075,17 +1075,26 @@ public final class CodeGenerator {
 			AttributedCodeBlock codes, Context context) {
 		String exit = CodeUtils.freshLabel();
 
-//		for (Expr invariant : s.invariants) {
-//			// FIXME: this should be added to RuntimeAssertions
-//			String endLab = CodeUtils.freshLabel();
-//			codes.add(Codes.Assume(endLab), attributes(invariant));
-//			generateCondition(endLab, invariant, environment, codes, context);
-//			codes.add(Codes.Fail(""), attributes(invariant));
-//			codes.add(Codes.Label(endLab));
-//		}
-
 		AttributedCodeBlock body = codes.createSubBlock();
+		
+		if(s.invariants.size() > 0) {
+			// Ok, there is at least one invariant expression. Therefore, create
+			// an invariant bytecode.
+			AttributedCodeBlock invariant = body.createSubBlock();
 
+			for (Expr e : s.invariants) {
+				String nextLab = CodeUtils.freshLabel();
+				generateCondition(nextLab, e, environment, codes, context);
+				invariant.add(Codes.Fail(), attributes(e));
+				invariant.add(Codes.Label(nextLab));
+			}
+			
+			// FIXME: should we be creating multiple invariant bytecodes,
+			// instead of one monolithic one?
+			
+			body.add(Codes.Invariant(invariant.bytecodes()), attributes(s));
+		}
+		
 		generateCondition(exit, invert(s.condition), environment, body,
 				context);
 
