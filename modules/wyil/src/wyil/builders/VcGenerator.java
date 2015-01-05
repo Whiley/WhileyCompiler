@@ -88,32 +88,24 @@ public class VcGenerator {
 	/**
 	 * Transform a type declaration into verification conditions as necessary.
 	 * In particular, the type should be "inhabitable". This means, for example,
-	 * that the invariant does not contradict itself.
+	 * that the invariant does not contradict itself. Furthermore, we need to
+	 * transform the type invariant into a macro block.
 	 * 
 	 * @param type
 	 * @param wyilFile
 	 */
 	protected void transform(WyilFile.TypeDeclaration type, WyilFile wyilFile) {
 		AttributedCodeBlock body = type.invariant();
+		
 		if (body != null) {
-			VcBranch master = new VcBranch(Math.max(body.numSlots(), 1), null);
-			master.write(Codes.REG_0, new Expr.Variable("r0"), type.type());
+			NameID name = new NameID(wyilFile.id(), type.name());
+			String prefix = toIdentifier(name) + "_invariant";
+			ArrayList<Type> types = new ArrayList<Type>();
+			types.add(type.type());
+			buildMacroBlock(prefix, body, types);
 
-			// Transform invariant body.
-			List<VcBranch> branches = transform(master, type.invariant());
-
-			// Examine all exit branches, discarding those which are failed. In
-			// this case, we are guaranteed exactly one terminated path exists
-			// as
-			// there is only ever one way to exit an invariant.
-			for (VcBranch exitBranch : branches) {
-				if (exitBranch.state() == VcBranch.State.TERMINATED) {
-					// This is a terminating state, so we need to check that
-					// this path is reachable.
-
-					// FIXME: add the uninhabitable check here.
-				}
-			}
+			// FIXME: Need to add the inhabitable check here. This has to be an
+			// existential quantifier.
 		}
 	}
 
@@ -735,12 +727,13 @@ public class VcGenerator {
 		CodeBlock.Index pc = branch.pc();
 		List<VcBranch> branches = transform(pc, branch, labels, block);
 		ArrayList<VcBranch> exitBranches = new ArrayList<VcBranch>();
+		
 		for (int i = 0; i != branches.size(); ++i) {
 			VcBranch b = branches.get(i);
 			switch(b.state()) {
 			case ACTIVE:
 				// This branch has either reached the end of the body or
-				// branched out prematuvely, and we need to first decide which
+				// branched out prematurely, and we need to first decide which
 				// it is.
 				if(b.pc().isWithin(pc)) {
 					// This is still within the loop body.
@@ -989,12 +982,12 @@ public class VcGenerator {
 
 	/**
 	 * <p>
-	 * Transform an assert or assume bytecode. This is done by transforming the
-	 * contained bytecode block and processing the resulting branches depending
-	 * on whether or not this is an assert or assume bytecode. In the former
-	 * case, all failing branches give rise to corresponding verification
-	 * conditions. In the latter case, all failing branches are simply ignored
-	 * as we're assuming they don't happen.
+	 * Transform an assert, assume or invariant bytecode. This is done by
+	 * transforming the contained bytecode block and processing the resulting
+	 * branches depending on whether or not this is an assert or assume
+	 * bytecode. In the former case, all failing branches give rise to
+	 * corresponding verification conditions. In the latter case, all failing
+	 * branches are simply ignored as we're assuming they don't happen.
 	 * </p>
 	 * 
 	 * @param code

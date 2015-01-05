@@ -1084,7 +1084,7 @@ public final class CodeGenerator {
 
 			for (Expr e : s.invariants) {
 				String nextLab = CodeUtils.freshLabel();
-				generateCondition(nextLab, e, environment, codes, context);
+				generateCondition(nextLab, e, environment, invariant, context);
 				invariant.add(Codes.Fail(), attributes(e));
 				invariant.add(Codes.Label(nextLab));
 			}
@@ -1155,15 +1155,6 @@ public final class CodeGenerator {
 			AttributedCodeBlock codes, Context context) {
 		String exit = CodeUtils.freshLabel();
 
-//		for (Expr invariant : s.invariants) {
-//			// FIXME: this should be added to RuntimeAssertions
-//			String endLab = CodeUtils.freshLabel();
-//			codes.add(Codes.Assume(endLab), attributes(invariant));
-//			generateCondition(endLab, invariant, environment, codes, context);
-//			codes.add(Codes.Fail(""), attributes(invariant));
-//			codes.add(Codes.Label(endLab));
-//		}
-
 		AttributedCodeBlock body = codes.createSubBlock();
 
 		// FIXME: add a continue scope
@@ -1173,6 +1164,24 @@ public final class CodeGenerator {
 		}
 		scopes.pop(); // break
 
+		if(s.invariants.size() > 0) {
+			// Ok, there is at least one invariant expression. Therefore, create
+			// an invariant bytecode.
+			AttributedCodeBlock invariant = body.createSubBlock();
+
+			for (Expr e : s.invariants) {
+				String nextLab = CodeUtils.freshLabel();
+				generateCondition(nextLab, e, environment, invariant, context);
+				invariant.add(Codes.Fail(), attributes(e));
+				invariant.add(Codes.Label(nextLab));
+			}
+			
+			// FIXME: should we be creating multiple invariant bytecodes,
+			// instead of one monolithic one?
+			
+			body.add(Codes.Invariant(invariant.bytecodes()), attributes(s));
+		}
+		
 		generateCondition(exit, invert(s.condition), environment, body,
 				context);
 
@@ -1206,16 +1215,22 @@ public final class CodeGenerator {
 		int indexRegister = environment.allocate(rawSrcType.element(),
 				s.variables.get(0));
 
-//		if (s.invariant != null) {
-//			// FIXME: this should be added to RuntimeAssertions
-//			String endLab = CodeUtils.freshLabel();
-//			codes.add(Codes.Assume(endLab), attributes(s.invariant));
-//			generateCondition(endLab, s.invariant, environment, codes, context);
-//			codes.add(Codes.Fail(""), attributes(s.invariant));
-//			codes.add(Codes.Label(endLab));
-//		}
-
 		AttributedCodeBlock body = codes.createSubBlock();
+
+		if (s.invariant != null) {
+			// Ok, there is at least one invariant expression. Therefore, create
+			// an invariant bytecode.
+			AttributedCodeBlock invariant = body.createSubBlock();
+			String nextLab = CodeUtils.freshLabel();
+			generateCondition(nextLab, s.invariant, environment, invariant, context);
+			invariant.add(Codes.Fail(), attributes(s.invariant));
+			invariant.add(Codes.Label(nextLab));
+
+			// FIXME: should we be creating multiple invariant bytecodes,
+			// instead of one monolithic one?
+
+			body.add(Codes.Invariant(invariant.bytecodes()), attributes(s));
+		}
 
 		// FIXME: add a continue scope
 		scopes.push(new LoopScope(exit));
