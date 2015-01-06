@@ -521,6 +521,11 @@ public class AllValidTests {
 	}
 
 	@Test
+	public void ConstrainedInt_Valid_24() {
+		runTest("ConstrainedInt_Valid_24");
+	}
+	
+	@Test
 	public void ConstrainedInt_Valid_3() {
 		runTest("ConstrainedInt_Valid_3");
 	}
