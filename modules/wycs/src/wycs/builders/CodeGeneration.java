@@ -55,6 +55,8 @@ public class CodeGeneration {
 			return generate((WyalFile.Macro)declaration);
 		} else if(declaration instanceof WyalFile.Function) {
 			return generate((WyalFile.Function)declaration);
+		} else if(declaration instanceof WyalFile.Type) {
+			return generate((WyalFile.Type)declaration);
 		} else if(declaration instanceof WyalFile.Assert) {
 			return generate((WyalFile.Assert)declaration);
 		} else {
@@ -64,51 +66,91 @@ public class CodeGeneration {
 	}
 
 	protected WycsFile.Declaration generate(WyalFile.Macro d) {
-		// First, determine function type
-		SemanticType from = builder.convert(d.from, d.generics, d);
-		SemanticType to = SemanticType.Bool;
-		SemanticType.Var[] generics = new SemanticType.Var[d.generics.size()];
-		for (int i = 0; i != generics.length; ++i) {
-			generics[i] = SemanticType.Var(d.generics.get(i));
+		try {
+			// First, determine function type
+			SemanticType from = builder.convert(d.from, d.generics, d);
+			SemanticType to = SemanticType.Bool;
+			SemanticType.Var[] generics = new SemanticType.Var[d.generics.size()];
+			for (int i = 0; i != generics.length; ++i) {
+				generics[i] = SemanticType.Var(d.generics.get(i));
+			}
+			SemanticType.Function type = SemanticType.Function(from, to, generics);
+			// Second, generate macro body
+			HashMap<String,Code> environment = new HashMap<String,Code>();
+			Code parameter = Code.Variable(from, new Code[0], 0,
+					attributes(d.from));
+			addDeclaredVariables(parameter,d.from,environment);
+			Code condition = generate(d.body, environment, d);
+			// Third, create declaration
+			return new WycsFile.Macro(d.name, type, condition,
+					attributes(d));
+		} catch (ResolveError re) {
+			// should be unreachable if type propagation is already succeeded.
+			syntaxError("cannot resolve as function or definition call",
+					filename, d, re);
+			return null;
 		}
-		SemanticType.Function type = SemanticType.Function(from, to, generics);
-		// Second, generate macro body
-		HashMap<String,Code> environment = new HashMap<String,Code>();
-		Code parameter = Code.Variable(from, new Code[0], 0,
-				attributes(d.from));
-		addDeclaredVariables(parameter,d.from,environment);
-		Code condition = generate(d.body, environment, d);
-		// Third, create declaration
-		return new WycsFile.Macro(d.name, type, condition,
-				attributes(d));
 	}
 
 	protected WycsFile.Declaration generate(WyalFile.Function d) {
-		// First, determine function type
-		SemanticType from = builder.convert(d.from, d.generics, d);
-		SemanticType to = builder.convert(d.to, d.generics, d);
-		SemanticType.Var[] generics = new SemanticType.Var[d.generics.size()];
-		for (int i = 0; i != generics.length; ++i) {
-			generics[i] = SemanticType.Var(d.generics.get(i));
+		try {
+			// First, determine function type
+			SemanticType from = builder.convert(d.from, d.generics, d);
+			SemanticType to = builder.convert(d.to, d.generics, d);
+			SemanticType.Var[] generics = new SemanticType.Var[d.generics.size()];
+			for (int i = 0; i != generics.length; ++i) {
+				generics[i] = SemanticType.Var(d.generics.get(i));
+			}
+			SemanticType.Function type = SemanticType.Function(from, to, generics);
+			// Second, generate function condition (if applicable)
+			Code condition = null;
+			if (d.constraint != null) {
+				HashMap<String,Code> environment = new HashMap<String,Code>();
+				Code ret = Code.Variable(to, new Code[0], 0,
+						attributes(d.to));
+				Code parameter = Code.Variable(from, new Code[0], 1,
+						attributes(d.from));
+				addDeclaredVariables(parameter,d.from,environment);
+				addDeclaredVariables(ret,d.to,environment);
+				condition = generate(d.constraint, environment, d);
+			}
+			// Third, create declaration
+			return new WycsFile.Function(d.name, type, condition,
+					attributes(d));
+		} catch (ResolveError re) {
+			// should be unreachable if type propagation is already succeeded.
+			syntaxError("cannot resolve as function or definition call",
+					filename, d, re);
+			return null;
 		}
-		SemanticType.Function type = SemanticType.Function(from, to, generics);
-		// Second, generate function condition (if applicable)
-		Code condition = null;
-		if (d.constraint != null) {
-			HashMap<String,Code> environment = new HashMap<String,Code>();
-			Code ret = Code.Variable(to, new Code[0], 0,
-					attributes(d.to));
-			Code parameter = Code.Variable(from, new Code[0], 1,
-					attributes(d.from));
-			addDeclaredVariables(parameter,d.from,environment);
-			addDeclaredVariables(ret,d.to,environment);
-			condition = generate(d.constraint, environment, d);
-		}
-		// Third, create declaration
-		return new WycsFile.Function(d.name, type, condition,
-				attributes(d));
 	}
 
+	protected WycsFile.Declaration generate(WyalFile.Type d) {
+		try {
+			SemanticType from = builder.convert(d.type, d.generics, d);		
+			SemanticType.Var[] generics = new SemanticType.Var[d.generics.size()];
+			for (int i = 0; i != generics.length; ++i) {
+				generics[i] = SemanticType.Var(d.generics.get(i));
+			}		
+			// Second, generate type invariant (if applicable)
+			Code invariant = null;
+			if (d.invariant != null) {
+				HashMap<String,Code> environment = new HashMap<String,Code>();
+				Code parameter = Code.Variable(from, new Code[0], 1,
+						attributes(d.type));
+				addDeclaredVariables(parameter,d.type,environment);			
+				invariant = generate(d.invariant, environment, d);
+			}
+			// 
+			return new WycsFile.Type(d.name, from, invariant, attributes(d));
+		} catch (ResolveError re) {
+			// should be unreachable if type propagation is already succeeded.
+			syntaxError("cannot resolve as function or definition call",
+					filename, d, re);
+			return null;
+		}
+	}
+	
 	protected void addDeclaredVariables(Code root, TypePattern t,
 			HashMap<String, Code> environment) {
 

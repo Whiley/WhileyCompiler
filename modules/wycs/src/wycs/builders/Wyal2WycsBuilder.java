@@ -386,8 +386,10 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		}
 	}
 
-	public SemanticType convert(TypePattern tp, List<String> generics, WyalFile.Context context) {
-		return convert(tp.toSyntacticType(),new HashSet<String>(generics),context);
+	public SemanticType convert(TypePattern tp, List<String> generics,
+			WyalFile.Context context) throws ResolveError {
+		return convert(tp.toSyntacticType(), new HashSet<String>(generics),
+				context);
 	}
 
 	/**
@@ -410,7 +412,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	 *            --- Set of declared generic variables.
 	 * @return
 	 */
-	public SemanticType convert(SyntacticType type, Set<String> generics, WyalFile.Context context) {
+	public SemanticType convert(SyntacticType type, Set<String> generics, WyalFile.Context context) throws ResolveError {
 
 		if(type instanceof SyntacticType.Void) {
 			return SemanticType.Void;
@@ -484,6 +486,14 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				types[i] = convert(t.elements.get(i),generics,context);
 			}
 			return SemanticType.Tuple(types);
+		} else if(type instanceof SyntacticType.Nominal) {
+			SyntacticType.Nominal n = (SyntacticType.Nominal) type;
+			// FIXME: need to support fully qualified names
+			if(n.names.size() > 1) {
+				throw new RuntimeException("Need to support fully qualified type names");
+			}
+			Pair<NameID,WycsFile.Type>  p = resolveAs(n.names.get(0),WycsFile.Type.class,context);
+			return p.second().type;
 		}
 
 		internalFailure("unknown syntactic type encountered",
@@ -537,32 +547,51 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	private WycsFile getModuleStub(WyalFile wyalFile) {
 		ArrayList<WycsFile.Declaration> declarations = new ArrayList<WycsFile.Declaration>();
 		for (WyalFile.Declaration d : wyalFile.declarations()) {
-			if (d instanceof WyalFile.Macro) {
-				WyalFile.Macro def = (WyalFile.Macro) d;
-				SemanticType from = convert(def.from, def.generics, d);
-				SemanticType to = SemanticType.Bool;
-				SemanticType.Var[] generics = new SemanticType.Var[def.generics
-						.size()];
-				for (int i = 0; i != generics.length; ++i) {
-					generics[i] = SemanticType.Var(def.generics.get(i));
+			try {
+				if (d instanceof WyalFile.Macro) {
+					WyalFile.Macro def = (WyalFile.Macro) d;
+					SemanticType from = convert(def.from, def.generics, d);
+					SemanticType to = SemanticType.Bool;
+					SemanticType.Var[] generics = new SemanticType.Var[def.generics
+					                                                   .size()];
+					for (int i = 0; i != generics.length; ++i) {
+						generics[i] = SemanticType.Var(def.generics.get(i));
+					}
+					SemanticType.Function type = SemanticType.Function(from, to,
+							generics);
+					declarations.add(new WycsFile.Macro(def.name, type, null, def
+							.attribute(Attribute.Source.class)));
+				} else if (d instanceof WyalFile.Function) {
+					WyalFile.Function fun = (WyalFile.Function) d;
+					SemanticType from = convert(fun.from, fun.generics, d);
+					SemanticType to = convert(fun.to, fun.generics, d);
+					SemanticType.Var[] generics = new SemanticType.Var[fun.generics
+					                                                   .size()];
+					for (int i = 0; i != generics.length; ++i) {
+						generics[i] = SemanticType.Var(fun.generics.get(i));
+					}
+					SemanticType.Function type = SemanticType.Function(from, to,
+							generics);
+					declarations.add(new WycsFile.Function(fun.name, type, null,
+							fun.attribute(Attribute.Source.class)));
+				} else if (d instanceof WyalFile.Type) {
+					WyalFile.Type t = (WyalFile.Type) d;
+					SemanticType type = convert(t.type, t.generics, d);
+					SemanticType.Var[] generics = new SemanticType.Var[t.generics
+							.size()];
+					for (int i = 0; i != generics.length; ++i) {
+						generics[i] = SemanticType.Var(t.generics.get(i));
+					}
+					// FIXME: in the case of recursive type definitions, this is
+					// broken.
+					declarations.add(new WycsFile.Type(t.name, type, null, t
+							.attribute(Attribute.Source.class)));
 				}
-				SemanticType.Function type = SemanticType.Function(from, to,
-						generics);
-				declarations.add(new WycsFile.Macro(def.name, type, null, def
-						.attribute(Attribute.Source.class)));
-			} else if (d instanceof WyalFile.Function) {
-				WyalFile.Function fun = (WyalFile.Function) d;
-				SemanticType from = convert(fun.from, fun.generics, d);
-				SemanticType to = convert(fun.to, fun.generics, d);
-				SemanticType.Var[] generics = new SemanticType.Var[fun.generics
-						.size()];
-				for (int i = 0; i != generics.length; ++i) {
-					generics[i] = SemanticType.Var(fun.generics.get(i));
-				}
-				SemanticType.Function type = SemanticType.Function(from, to,
-						generics);
-				declarations.add(new WycsFile.Function(fun.name, type, null,
-						fun.attribute(Attribute.Source.class)));
+			} catch (ResolveError re) {
+				// should be unreachable if type propagation is already succeeded.
+				syntaxError("cannot resolve as function or definition call",
+						wyalFile.filename(), d, re);
+				return null;
 			}
 		}
 

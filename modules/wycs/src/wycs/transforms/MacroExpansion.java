@@ -96,6 +96,8 @@ public class MacroExpansion implements Transform<WycsFile> {
 		} else if(s instanceof WycsFile.Macro) {
 			WycsFile.Macro sf = (WycsFile.Macro) s;
 			transform(sf);
+		} else if(s instanceof WycsFile.Type) {
+			transform((WycsFile.Type)s);
 		} else if(s instanceof WycsFile.Assert) {
 			transform((WycsFile.Assert)s);
 		} else {
@@ -118,6 +120,10 @@ public class MacroExpansion implements Transform<WycsFile> {
 		s.condition = transform(s.condition);
 	}
 
+	private void transform(WycsFile.Type s) {
+		s.invariant = transform(s.invariant);
+	}
+	
 	private Code transform(Code e) {
 		if (e instanceof Code.Variable || e instanceof Code.Constant) {
 			// do nothing

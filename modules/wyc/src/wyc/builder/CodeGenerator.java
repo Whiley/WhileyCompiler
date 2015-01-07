@@ -301,11 +301,11 @@ public final class CodeGenerator {
 		if (fd instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
 			declarations.add(new WyilFile.FunctionOrMethodDeclaration(fd
-					.modifiers(), fd.name(), f.resolvedType.raw(), ncases));
+					.modifiers(), fd.name(), f.resolvedType.nominal(), ncases));
 		} else {
 			WhileyFile.Method md = (WhileyFile.Method) fd;
 			declarations.add(new WyilFile.FunctionOrMethodDeclaration(fd
-					.modifiers(), fd.name(), md.resolvedType.raw(), ncases));
+					.modifiers(), fd.name(), md.resolvedType.nominal(), ncases));
 		}
 
 		return declarations;

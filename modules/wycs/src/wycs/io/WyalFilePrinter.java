@@ -33,6 +33,8 @@ public class WyalFilePrinter {
 			write(wf,(WyalFile.Function)s);
 		} else if(s instanceof WyalFile.Macro) {
 			write(wf,(WyalFile.Macro)s);
+		} else if(s instanceof WyalFile.Type) {
+			write(wf,(WyalFile.Type)s);
 		} else if(s instanceof WyalFile.Assert) {
 			write(wf,(WyalFile.Assert)s);
 		} else if(s instanceof WyalFile.Import) {
@@ -76,7 +78,7 @@ public class WyalFilePrinter {
 			writeWithoutBraces(wf,s.constraint,1);
 		}
 	}
-
+	
 	public void write(WyalFile wf, WyalFile.Macro s) {
 		out.print("define ");
 
@@ -101,6 +103,30 @@ public class WyalFilePrinter {
 		}
 	}
 
+	public void write(WyalFile wf, WyalFile.Type s) {
+		out.print("type ");
+		out.print(s.name);
+		if(s.generics.size() > 0) {
+			out.print("<");
+			boolean firstTime=true;
+			for(String g : s.generics) {
+				if(!firstTime) {
+					out.print(", ");
+				}
+				firstTime=false;
+				out.print(g);
+			}
+			out.print(">");
+		}
+		out.print(" is ");
+		writeWithBraces(wf,s.type);		
+		if(s.invariant != null) {
+			out.println(" where:");			
+			indent(1);
+			writeWithoutBraces(wf,s.invariant,1);
+		}
+	}
+	
 	public void write(WyalFile wf, WyalFile.Assert s) {
 		out.print("assert ");
 		if(s.message != null) {

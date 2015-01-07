@@ -183,4 +183,29 @@ public class WycsFile implements CompilationUnit {
 			return ""; // anonymous
 		}
 	}
+	
+	public static class Type extends SyntacticElement.Impl implements Declaration {
+		public final String name;
+		public final SemanticType type;
+		public Code<?> invariant;
+		
+		public Type(String name, SemanticType type, Code<?> invariant, Attribute... attributes) {
+			super(attributes);
+			this.name = name;
+			this.type = type;
+			this.invariant = invariant;		
+		}
+		
+		public Type(String name, SemanticType type, Code<?> invariant, Collection<Attribute> attributes) {
+			super(attributes);
+			this.name = name;
+			this.type = type;
+			this.invariant = invariant;		
+		}
+
+		@Override
+		public String name() {
+			return name;
+		}
+	}
 }

@@ -91,22 +91,39 @@ public class VcGenerator {
 	 * that the invariant does not contradict itself. Furthermore, we need to
 	 * transform the type invariant into a macro block.
 	 * 
-	 * @param type
+	 * @param typeDecl
 	 * @param wyilFile
 	 */
-	protected void transform(WyilFile.TypeDeclaration type, WyilFile wyilFile) {
-		AttributedCodeBlock body = type.invariant();
-		
+	protected void transform(WyilFile.TypeDeclaration typeDecl,
+			WyilFile wyilFile) {
+		AttributedCodeBlock body = typeDecl.invariant();
+		NameID name = new NameID(wyilFile.id(), typeDecl.name());
+		Expr invariant = null;
+		Expr.Variable var = new Expr.Variable("r0");
 		if (body != null) {
-			NameID name = new NameID(wyilFile.id(), type.name());
-			String prefix = toIdentifier(name) + "_invariant";
-			ArrayList<Type> types = new ArrayList<Type>();
-			types.add(type.type());
-			buildMacroBlock(prefix, body, types);
+			VcBranch master = new VcBranch(Math.max(1, body.numSlots()), null);
+			master.write(0, var, typeDecl.type());
+			// At this point, we are guaranteed exactly one branch because there
+			// is only ever one exit point from a pre-/post-condition.
+			List<VcBranch> exitBranches = transform(master, body);
+
+			for (VcBranch exitBranch : exitBranches) {
+				if (exitBranch.state() == VcBranch.State.TERMINATED) {
+					invariant = generateAssumptions(exitBranch);
+					break;
+				}
+			}
 
 			// FIXME: Need to add the inhabitable check here. This has to be an
 			// existential quantifier.
 		}
+
+		TypePattern.Leaf pattern = new TypePattern.Leaf(convert(
+				typeDecl.type(), Collections.EMPTY_LIST), var);
+
+		wycsFile.add(wycsFile.new Type(toIdentifier(name),
+				Collections.EMPTY_LIST, pattern, invariant,
+				toWycsAttributes(typeDecl.attributes())));
 	}
 
 	protected void transform(WyilFile.Case methodCase,
@@ -2186,6 +2203,12 @@ public class VcGenerator {
 		} else if (t instanceof Type.FunctionOrMethod) {
 			Type.FunctionOrMethod ft = (Type.FunctionOrMethod) t;
 			return new SyntacticType.Any();
+		} else if(t instanceof Type.Nominal) {
+			Type.Nominal nt = (Type.Nominal) t;		
+			ArrayList<String> names = new ArrayList<String>();
+			names.add(toIdentifier(nt.name()));
+			return new SyntacticType.Nominal(names,
+					toWycsAttributes(attributes));
 		} else {
 			internalFailure("unknown type encountered ("
 					+ t.getClass().getName() + ")", filename, attributes);

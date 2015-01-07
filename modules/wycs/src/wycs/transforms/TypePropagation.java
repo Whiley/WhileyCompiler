@@ -68,6 +68,8 @@ public class TypePropagation implements Transform<WyalFile> {
 			propagate((WyalFile.Function)s);
 		} else if(s instanceof WyalFile.Macro) {
 			propagate((WyalFile.Macro)s);
+		} else if(s instanceof WyalFile.Type) {
+			propagate((WyalFile.Type)s);
 		} else if(s instanceof WyalFile.Assert) {
 			propagate((WyalFile.Assert)s);
 		} else if(s instanceof WyalFile.Import) {
@@ -97,6 +99,16 @@ public class TypePropagation implements Transform<WyalFile> {
 		checkIsSubtype(SemanticType.Bool,r,s.body);
 	}
 
+	private void propagate(WyalFile.Type s) {
+		if(s.invariant != null) {
+			HashSet<String> generics = new HashSet<String>(s.generics);
+			HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
+			addDeclaredVariables(s.type, environment,generics,s);			
+			SemanticType r = propagate(s.invariant,environment,generics,s);
+			checkIsSubtype(SemanticType.Bool,r,s.invariant);
+		}
+	}
+		
 	/**
 	 * The purpose of this method is to add variable names declared within a
 	 * type pattern to the given environment. For example, as follows:
@@ -150,9 +162,16 @@ public class TypePropagation implements Transform<WyalFile> {
 			TypePattern.Leaf lp = (TypePattern.Leaf) pattern;
 
 			if (lp.var != null) {
-				SemanticType type = builder.convert(pattern.toSyntacticType(),
-						generics, context);
-				environment.put(lp.var.name, type);
+				try {
+					SemanticType type = builder.convert(
+							pattern.toSyntacticType(), generics, context);
+					environment.put(lp.var.name, type);
+				} catch (ResolveError re) {
+					syntaxError(
+							"cannot resolve as function or definition call",
+							filename, pattern, re);
+					return null;
+				}
 			}
 		}
 
@@ -442,20 +461,27 @@ public class TypePropagation implements Transform<WyalFile> {
 	private void propagate(TypePattern pattern,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
-		SemanticType type = builder.convert(pattern.toSyntacticType(),
-				generics, context);
+		
+		try {
+			SemanticType type = builder.convert(pattern.toSyntacticType(),
+					generics, context);
 
-		if (pattern instanceof TypePattern.Tuple) {
-			TypePattern.Tuple tt = (TypePattern.Tuple) pattern;
-			for (TypePattern p : tt.elements) {
-				propagate(p, environment, generics, context);
+			if (pattern instanceof TypePattern.Tuple) {
+				TypePattern.Tuple tt = (TypePattern.Tuple) pattern;
+				for (TypePattern p : tt.elements) {
+					propagate(p, environment, generics, context);
+				}
+			} else if(pattern instanceof TypePattern.Leaf) {
+				TypePattern.Leaf l = (TypePattern.Leaf) pattern;
+				environment.put(l.var.name, type);
 			}
-		} else if(pattern instanceof TypePattern.Leaf) {
-			TypePattern.Leaf l = (TypePattern.Leaf) pattern;
-			environment.put(l.var.name, type);
-		}
 
-		pattern.attributes().add(new TypeAttribute(type));
+			pattern.attributes().add(new TypeAttribute(type));
+		} catch (ResolveError re) {
+			syntaxError(
+					"cannot resolve as function or definition call",
+					filename, pattern, re);
+		}
 	}
 
 	private SemanticType propagate(Expr.Invoke e,
@@ -485,17 +511,21 @@ public class TypePropagation implements Transform<WyalFile> {
 
 		SemanticType argument = propagate(e.operand, environment, generics,
 				context);
-		HashMap<String, SemanticType> binding = new HashMap<String, SemanticType>();
-
+		HashMap<String, SemanticType> binding = new HashMap<String, SemanticType>();		
 		for (int i = 0; i != e.generics.size(); ++i) {
-			SemanticType.Var gv = (SemanticType.Var) fn_generics[i];
-			binding.put(gv.name(),
-					builder.convert(e.generics.get(i), generics, context));
+			SyntacticType gt = e.generics.get(i);
+			try {
+				SemanticType.Var gv = (SemanticType.Var) fn_generics[i];
+				binding.put(gv.name(), builder.convert(gt, generics, context));
+			} catch (ResolveError re) {
+				syntaxError("cannot resolve as function or definition call",
+						filename, gt, re);
+			}
 		}
 
-		fnType = (SemanticType.Function) fnType.substitute(binding);
-		checkIsSubtype(fnType.from(), argument, e.operand);
-		return fnType;
+			fnType = (SemanticType.Function) fnType.substitute(binding);
+			checkIsSubtype(fnType.from(), argument, e.operand);
+			return fnType;		
 	}
 
 	/**
