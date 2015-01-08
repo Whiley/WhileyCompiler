@@ -224,4 +224,29 @@ public class MacroExpansion implements Transform<WycsFile> {
 		return Code.Quantifier(e.type, e.opcode,
 				transform(e.operands[0]), e.types, e.attributes());
 	}
+		
+	/**
+	 * Expand a given type into a predicate which must be true for variables of
+	 * that type. In many cases, this is just "true". However, for type
+	 * invariants, this yields the invariant. For example:
+	 * 
+	 * <pre>
+	 * type nat is (int x) where:
+	 *    x >= 0
+	 * </pre>
+	 * 
+	 * For variables of type <code>nat</code> the return predicate will be
+	 * <code>x >= 0</code>
+	 * 
+	 * @param root
+	 *            --- The root expression (e.g. the variable being constrained).
+	 * @param type
+	 *            --- the type being expanded
+	 * @return
+	 */
+	private Code expand(Code root, SemanticType type) {
+		if(type instanceof SemanticType.Atom) {
+			return null;
+		}				
+	}
 }
