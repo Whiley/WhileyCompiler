@@ -2,10 +2,12 @@ package wycs.transforms;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import static wycc.lang.SyntaxError.*;
 import wybs.lang.Builder;
 import wycc.lang.Transform;
+import wycc.util.Pair;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.Code;
 import wycs.core.SemanticType;
@@ -17,7 +19,7 @@ import wycs.core.WycsFile;
  *
  * <pre>
  * define implies(bool x, bool y) as !x || y
- *
+ * 
  * assert:
  *    implies(true,true)
  * </pre>
@@ -28,7 +30,7 @@ import wycs.core.WycsFile;
  *
  * <pre>
  * define implies(bool x, bool y) as !x || y
- *
+ * 
  * assert:
  *    !true || true
  * </pre>
@@ -81,25 +83,25 @@ public class MacroExpansion implements Transform<WycsFile> {
 	// ======================================================================
 
 	public void apply(WycsFile wf) {
-		if(enabled) {
+		if (enabled) {
 			this.filename = wf.filename();
-			for(WycsFile.Declaration s : wf.declarations()) {
+			for (WycsFile.Declaration s : wf.declarations()) {
 				transform(s);
 			}
 		}
 	}
 
 	private void transform(WycsFile.Declaration s) {
-		if(s instanceof WycsFile.Function) {
+		if (s instanceof WycsFile.Function) {
 			WycsFile.Function sf = (WycsFile.Function) s;
 			transform(sf);
-		} else if(s instanceof WycsFile.Macro) {
+		} else if (s instanceof WycsFile.Macro) {
 			WycsFile.Macro sf = (WycsFile.Macro) s;
 			transform(sf);
-		} else if(s instanceof WycsFile.Type) {
-			transform((WycsFile.Type)s);
-		} else if(s instanceof WycsFile.Assert) {
-			transform((WycsFile.Assert)s);
+		} else if (s instanceof WycsFile.Type) {
+			transform((WycsFile.Type) s);
+		} else if (s instanceof WycsFile.Assert) {
+			transform((WycsFile.Assert) s);
 		} else {
 			internalFailure("unknown declaration encountered (" + s + ")",
 					filename, s);
@@ -107,7 +109,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 	}
 
 	private void transform(WycsFile.Function s) {
-		if(s.constraint != null) {
+		if (s.constraint != null) {
 			s.constraint = transform(s.constraint);
 		}
 	}
@@ -123,8 +125,8 @@ public class MacroExpansion implements Transform<WycsFile> {
 	private void transform(WycsFile.Type s) {
 		s.invariant = transform(s.invariant);
 	}
-	
-	private Code transform(Code e) {
+
+	private Code<?> transform(Code<?> e) {
 		if (e instanceof Code.Variable || e instanceof Code.Constant) {
 			// do nothing
 			return e;
@@ -147,32 +149,32 @@ public class MacroExpansion implements Transform<WycsFile> {
 		}
 	}
 
-	private Code transform(Code.Unary e) {
+	private Code<?> transform(Code.Unary e) {
 		return Code.Unary(e.type, e.opcode, transform(e.operands[0]),
-					e.attributes());
+				e.attributes());
 	}
 
-	private Code transform(Code.Binary e) {
+	private Code<?> transform(Code.Binary e) {
 		return Code.Binary(e.type, e.opcode, transform(e.operands[0]),
 				transform(e.operands[1]), e.attributes());
 	}
 
-	private Code transform(Code.Nary e) {
-		Code[] e_operands = e.operands;
-		Code[] operands = new Code[e_operands.length];
+	private Code<?> transform(Code.Nary e) {
+		Code<?>[] e_operands = e.operands;
+		Code<?>[] operands = new Code[e_operands.length];
 		for (int i = 0; i != e_operands.length; ++i) {
 			operands[i] = transform(e_operands[i]);
 		}
 		return Code.Nary(e.type, e.opcode, operands, e.attributes());
 	}
 
-	private Code transform(Code.Load e) {
+	private Code<?> transform(Code.Load e) {
 		return Code.Load(e.type, transform(e.operands[0]), e.index,
 				e.attributes());
 	}
 
-	private Code transform(Code.FunCall e) {
-		Code r = e;
+	private Code<?> transform(Code.FunCall e) {
+		Code<?> r = e;
 		try {
 			WycsFile module = builder.getModule(e.nid.module());
 			// In principle, module should not be null if TypePropagation has
@@ -181,11 +183,12 @@ public class MacroExpansion implements Transform<WycsFile> {
 			// previously resolved. This can cause problems if the standard
 			// library is not on the path as e.g. x[i] is translated into
 			// a call to wycs.core.Map.IndexOf().
-			if(module == null) {
-				internalFailure("cannot resolve as module: " + e.nid.module(), filename, e);
+			if (module == null) {
+				internalFailure("cannot resolve as module: " + e.nid.module(),
+						filename, e);
 			}
 			Object d = module.declaration(e.nid.name());
-			if(d instanceof WycsFile.Function) {
+			if (d instanceof WycsFile.Function) {
 				// Do nothing, since functions are not expanded like macros.
 				// Instead, their axioms may be instantiated later either before
 				// or during rewriting.
@@ -200,9 +203,9 @@ public class MacroExpansion implements Transform<WycsFile> {
 				internalFailure("cannot resolve as function or macro call",
 						filename, e);
 			}
-		} catch(InternalFailure ex) {
+		} catch (InternalFailure ex) {
 			throw ex;
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			internalFailure(ex.getMessage(), filename, e, ex);
 		}
 
@@ -220,11 +223,27 @@ public class MacroExpansion implements Transform<WycsFile> {
 		return binding;
 	}
 
-	private Code transform(Code.Quantifier e) {
-		return Code.Quantifier(e.type, e.opcode,
-				transform(e.operands[0]), e.types, e.attributes());
+	private Code<?> transform(Code.Quantifier e) {
+		// Need to expand type constraints
+		Pair<SemanticType, Integer>[] e_types = e.types;
+		Code<?> invariant = null;
+		for (int i = 0; i != e_types.length; ++i) {
+			Pair<SemanticType, Integer> p = e_types[i];
+			// FIXME: probably need the expanded type here, rather than the
+			// potentially nominal type?
+			Code.Variable var = Code.Variable(p.first(), p.second());
+			Code<?> ei = expand(var, p.first(), 0);
+			if (ei != null) {
+				invariant = invariant == null ? ei : and(invariant, ei);
+			}
+		}
+		Code<?> body = transform(e.operands[0]);
+		if (invariant != null) {
+			body = implies(invariant, body);
+		}
+		return Code.Quantifier(e.type, e.opcode, body, e.types, e.attributes());
 	}
-		
+
 	/**
 	 * Expand a given type into a predicate which must be true for variables of
 	 * that type. In many cases, this is just "true". However, for type
@@ -236,17 +255,112 @@ public class MacroExpansion implements Transform<WycsFile> {
 	 * </pre>
 	 * 
 	 * For variables of type <code>nat</code> the return predicate will be
-	 * <code>x >= 0</code>
+	 * <code>x >= 0</code>. In the case of no invariant being given, this method
+	 * will return null. This is a simplification to avoid unnecessary checks
+	 * being written into the bytecode further upstream.
 	 * 
 	 * @param root
 	 *            --- The root expression (e.g. the variable being constrained).
 	 * @param type
 	 *            --- the type being expanded
-	 * @return
+	 * @param freeVar
+	 *            --- the next available free variable            
+	 * @return An expression representing the expanded invariant of this type,
+	 *         or null if no such invariant exists.
 	 */
-	private Code expand(Code root, SemanticType type) {
-		if(type instanceof SemanticType.Atom) {
+	private Code<?> expand(Code<?> root, SemanticType type, int freeVar) {
+		if (type instanceof SemanticType.Atom) {
 			return null;
-		}				
+		} else if (type instanceof SemanticType.Tuple) {
+			return expand(root, (SemanticType.Tuple) type, freeVar);
+		} else if (type instanceof SemanticType.Set) {
+			return expand(root, (SemanticType.Set) type, freeVar);
+		}
+		// else if(type instanceof SemanticType.Not) {
+		//
+		// } else if(type instanceof SemanticType.And) {
+		//
+		// } else if(type instanceof SemanticType.Or) {
+		//
+		// }
+		else {
+			internalFailure("deadcode reached", filename, root);
+			return null; // dead-code
+		}
+	}
+
+	/**
+	 * Expand a given tuple type into an invariant or null (if none exists).
+	 * 
+	 * @param root
+	 *            --- The root expression (e.g. the variable being constrained).
+	 * @param type
+	 *            --- the type being expanded
+	 * @param freeVar
+	 *            --- the next available free variable
+	 * @return An expression representing the expanded invariant of this type,
+	 *         or null if no such invariant exists.
+	 */
+	private Code<?> expand(Code<?> root, SemanticType.Tuple type, int freeVar) {
+		SemanticType[] elements = type.elements();
+		Code<?> invariant = null;
+		// Go through each type element expanding its invariants. In the end, if
+		// no elements expand to an invariant then we stick with null.
+		// Otherwise, we have some invariant at the end.
+		for (int i = 0; i != elements.length; ++i) {
+			Code<?> ri = Code.Load(type, root, i);
+			Code<?> ei = expand(ri, elements[i], freeVar);
+			if (ei != null) {
+				// This element has yielded an actual invariant. Now, decide
+				// whether this it the first one, or just another one.
+				if (invariant != null) {
+					// Yes, it's the first element which has given an invariant,
+					// therefore it is the current overall invariant.
+					invariant = ei;
+				} else {
+					// No, this is just another element which has given an
+					// invariant, therefore just and them together.
+					invariant = and(invariant, ei);
+				}
+			}
+		}
+		return invariant;
+	}
+	
+	/**
+	 * Expand a given set type into an invariant or null (if none exists). If an
+	 * invariant is generated from the element, this will be generalised to all
+	 * elements of the set using a universal quantifier.
+	 * 
+	 * @param root
+	 *            --- The root expression (e.g. the variable being constrained).
+	 * @param type
+	 *            --- the type being expanded
+	 * @param freeVar
+	 *            --- the next available free variable
+	 * @return An expression representing the expanded invariant of this type,
+	 *         or null if no such invariant exists.
+	 */
+	private Code<?> expand(Code<?> root, SemanticType.Set type, int freeVar) {
+		Code.Variable variable = Code.Variable(type.element(), freeVar);
+		Code<?> invariant = expand(variable, type.element(), freeVar++);
+		if (invariant != null) {
+			Code<?> elemOf = Code.Binary(type, Code.Binary.Op.IN, variable,
+					root);
+			invariant = implies(elemOf, invariant);
+			invariant = Code.Quantifier(SemanticType.Bool, Code.Op.FORALL,
+					invariant, new Pair[] { new Pair<SemanticType, Integer>(
+							type.element(), variable.index) });
+		}
+		return invariant;
+	}
+	
+	private static Code<?> implies(Code<?> lhs, Code<?> rhs) {
+		lhs = Code.Unary(SemanticType.Bool, Code.Unary.Op.NOT, lhs);
+		return Code.Nary(SemanticType.Bool, Code.Op.OR, new Code[] { lhs, rhs });
+	}
+	
+	private static Code<?> and(Code<?> lhs, Code<?> rhs) {
+		return Code.Nary(SemanticType.Bool, Code.Op.AND, new Code[] { lhs, rhs });
 	}
 }

@@ -34,6 +34,10 @@ public abstract class SemanticType {
 		return new Var(name);
 	}
 
+	public static Nominal Nominal(java.lang.String name) {
+		return new Nominal(name);
+	}
+	
 	public static Tuple Tuple(SemanticType... elements) {
 		for (SemanticType t : elements) {
 			if (t instanceof SemanticType.Void) {
@@ -185,7 +189,26 @@ public abstract class SemanticType {
 		}
 	}
 
-
+	public static class Nominal extends SemanticType {
+		public Nominal(java.lang.String name) {
+			int root = Types.NominalT(automaton, name);
+			automaton.setRoot(0,root);
+		}
+		private Nominal(Automaton automaton) {
+			super(automaton);
+			int kind = automaton.get(automaton.getRoot(0)).kind;
+			if (kind != K_NominalT) {
+				throw new IllegalArgumentException("Invalid variable kind");
+			}
+		}
+		public java.lang.String name() {
+			int root = automaton.getRoot(0);
+			Automaton.Term term = (Automaton.Term) automaton.get(root);
+			Automaton.Strung str = (Automaton.Strung) automaton.get(term.contents);
+			return str.value;
+		}
+	}
+	
 	// ==================================================================
 	// Unary Terms
 	// ==================================================================

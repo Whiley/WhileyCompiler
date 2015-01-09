@@ -182,8 +182,9 @@ term IntT
 term RealT
 term StringT
 term VarT(string)
+term NominalT(string)
 
-define Quark as AnyT | NullT | VoidT | BoolT | IntT | RealT | StringT | VarT(string)
+define Quark as AnyT | NullT | VoidT | BoolT | IntT | RealT | StringT | VarT(string) | NominalT(string)
 define Proton as Quark | TupleT[Proton...]
 define Atom as Proton | NotT(Proton)
 

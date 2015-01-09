@@ -488,12 +488,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			return SemanticType.Tuple(types);
 		} else if(type instanceof SyntacticType.Nominal) {
 			SyntacticType.Nominal n = (SyntacticType.Nominal) type;
-			// FIXME: need to support fully qualified names
-			if(n.names.size() > 1) {
-				throw new RuntimeException("Need to support fully qualified type names");
-			}
-			Pair<NameID,WycsFile.Type>  p = resolveAs(n.names.get(0),WycsFile.Type.class,context);
-			return p.second().type;
+			// FIXME: need to handle fully quantified names
+			return SemanticType.Nominal(n.names.get(0));
 		}
 
 		internalFailure("unknown syntactic type encountered",
