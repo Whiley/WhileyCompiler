@@ -279,7 +279,66 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			return null;
 		}
 	}
-
+	
+	/**
+	 * Resolve a name found at a given context in a source file to determine its
+	 * fully qualified name. Essentially, the context will be used to determine
+	 * the active import statements which will be used to search for the name.
+	 *
+	 * @param name
+	 *            --- name to look for.
+	 * @param context
+	 *            --- context where name occurred.
+	 * @return
+	 * @throws ResolveError
+	 */
+	public NameID resolveAsName(String name, WyalFile.Context context)
+			throws ResolveError {
+		
+		// First, we need to check whether or not the name is in the enclosing file.  If it is, then is what it must resolve to.  Otherwise, we need to look further afield.
+		WyalFile enclosingFile = context.file();
+		if(enclosingFile.declaration(name) != null) {
+			// Ok, yes, there is a declaration of the given name in this file.
+			return new NameID(enclosingFile.id(),name);
+		} 
+		
+		// Otherwise, the name is defined in an external file.		
+		for (WyalFile.Import imp : context.imports()) {
+			for (Path.ID id : imports(imp.filter)) {
+				try {
+					// First, look to see whether this is a file that is
+					// currently being compoiled.
+					Path.Entry<WyalFile> srcFile = srcFiles.get(id);
+					if(srcFile != null) {
+						// Ok, yes this is one of the files currently being
+						// compiled. Therefore, let's see whether or not it
+						// contains a declaration with the given name.
+						WyalFile wf = srcFile.read();
+						if(wf.declaration(name) != null) {
+							return new NameID(id,name);
+						}
+					} else {
+						// Ok, this is not one of the files being currently
+						// compiled. Therefore, let's load the binary form of
+						// this file and see whether or not it contains the
+						// given name.
+						WycsFile wf = getModule(id);
+						if(wf == null) { continue; }						
+						if(wf.declaration(name) != null) {
+							return new NameID(id,name);
+						}
+					}
+				} catch(SyntaxError e) {
+					throw e;
+				} catch (Exception e) {
+					internalFailure(e.getMessage(), context.file().filename(),
+							context, e);
+				}
+			}
+		}
+		
+		throw new ResolveError("cannot resolve name: " + name);
+	}
 	/**
 	 * Resolve a name found at a given context in a source file, and ensure it
 	 * matches an expected type. Essentially, the context will be used to
@@ -412,7 +471,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	 *            --- Set of declared generic variables.
 	 * @return
 	 */
-	public SemanticType convert(SyntacticType type, Set<String> generics, WyalFile.Context context) throws ResolveError {
+	public SemanticType convert(SyntacticType type, Set<String> generics,
+			WyalFile.Context context) throws ResolveError {
 
 		if(type instanceof SyntacticType.Void) {
 			return SemanticType.Void;
@@ -489,7 +549,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		} else if(type instanceof SyntacticType.Nominal) {
 			SyntacticType.Nominal n = (SyntacticType.Nominal) type;
 			// FIXME: need to handle fully quantified names
-			return SemanticType.Nominal(n.names.get(0));
+			NameID nid = resolveAsName(n.names.get(0), context);
+			return SemanticType.Nominal(nid);
 		}
 
 		internalFailure("unknown syntactic type encountered",
@@ -497,6 +558,125 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		return null; // deadcode
 	}
 
+	/**
+	 * <p>
+	 * Expand a semantic type by expanding all nominal types it contains with
+	 * their underlying type. For example:
+	 * </p>
+	 * 
+	 * <pre>
+	 * type nat is int where:
+	 *    x >= 0
+	 *    
+	 * assert:
+	 *    forall(nat x):
+	 *       x >= 0
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the expanded version of type <code>nat</code> is <code>int</code>.
+	 * </p>
+	 *
+	 *
+	 * @param type
+	 *            --- Syntactic type to be converted.
+	 * @return
+	 */
+	public SemanticType expand(SemanticType type, WyalFile.Context context) {
+		try {
+			if (type instanceof SemanticType.Atom) {
+				return type;
+			} else if (type instanceof SemanticType.Var) {
+				return type;
+			} else if (type instanceof SemanticType.Tuple) {
+				SemanticType.Tuple tt = (SemanticType.Tuple) type;
+				SemanticType[] elements = tt.elements();
+				boolean modified = false;
+				for (int i = 0; i != elements.length; ++i) {
+					SemanticType elem = elements[i];
+					elements[i] = expand(elem, context);
+					modified |= elements[i] != elem;
+				}
+				if (modified) {
+					return SemanticType.Tuple(elements);
+				} else {
+					return type;
+				}
+			} else if (type instanceof SemanticType.Function) {
+				SemanticType.Function ft = (SemanticType.Function) type;
+				SemanticType from = expand(ft.from(), context);
+				SemanticType to = expand(ft.to(), context);
+				SemanticType[] generics = ft.generics();
+				boolean modified = from != ft.from() || to != ft.to();
+				for (int i = 0; i != generics.length; ++i) {
+					SemanticType elem = generics[i];
+					generics[i] = expand(elem, context);
+					modified |= generics[i] != elem;
+				}
+				if (modified) {
+					return SemanticType.Function(from, to, generics);
+				} else {
+					return type;
+				}
+			} else if (type instanceof SemanticType.Set) {
+				SemanticType.Set st = (SemanticType.Set) type;
+				SemanticType element = expand(st.element(), context);
+				if (element != st.element()) {
+					return SemanticType.Set(st.flag(), element);
+				} else {
+					return type;
+				}
+			} else if (type instanceof SemanticType.Not) {
+				SemanticType.Not nt = (SemanticType.Not) type;
+				SemanticType element = expand(nt.element(), context);
+				if (element != nt.element()) {
+					return SemanticType.Not(element);
+				} else {
+					return type;
+				}
+			} else if (type instanceof SemanticType.And) {
+				SemanticType.And at = (SemanticType.And) type;
+				SemanticType[] elements = at.elements();
+				boolean modified = false;
+				for (int i = 0; i != elements.length; ++i) {
+					SemanticType elem = elements[i];
+					elements[i] = expand(elem, context);
+					modified |= elements[i] != elem;
+				}
+				if (modified) {
+					return SemanticType.And(elements);
+				} else {
+					return type;
+				}
+			} else if (type instanceof SemanticType.Or) {
+				SemanticType.Or at = (SemanticType.Or) type;
+				SemanticType[] elements = at.elements();
+				boolean modified = false;
+				for (int i = 0; i != elements.length; ++i) {
+					SemanticType elem = elements[i];
+					elements[i] = expand(elem, context);
+					modified |= elements[i] != elem;
+				}
+				if (modified) {
+					return SemanticType.Or(elements);
+				} else {
+					return type;
+				}
+			} else if (type instanceof SemanticType.Nominal) {
+				SemanticType.Nominal nt = (SemanticType.Nominal) type;
+				WycsFile wf = getModule(nt.name().module());
+				WycsFile.Type td = wf.declaration(nt.name().name(),
+						WycsFile.Type.class);
+				// FIXME: obviously, this doesn't work for recursive types!
+				return expand(td.type, context);
+			}
+		} catch (Exception e) {
+			internalFailure(e.getMessage(), context.file().filename(), context);
+		}
+		internalFailure("unknown type encountered", context.file().filename(),
+				context);
+		return null;
+	}
 
 	// ======================================================================
 	// Private Implementation

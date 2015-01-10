@@ -11,6 +11,8 @@ import wyautl.rw.InferenceRule;
 import wyautl.rw.ReductionRule;
 import wyautl.rw.SimpleRewriteStrategy;
 import wyautl.rw.UnfairStateRuleRewriteStrategy;
+import wycc.lang.NameID;
+import wyfs.lang.Path;
 import static wycs.core.Types.*;
 
 public abstract class SemanticType {
@@ -34,7 +36,7 @@ public abstract class SemanticType {
 		return new Var(name);
 	}
 
-	public static Nominal Nominal(java.lang.String name) {
+	public static Nominal Nominal(NameID name) {
 		return new Nominal(name);
 	}
 	
@@ -190,8 +192,8 @@ public abstract class SemanticType {
 	}
 
 	public static class Nominal extends SemanticType {
-		public Nominal(java.lang.String name) {
-			int root = Types.NominalT(automaton, name);
+		public Nominal(NameID nid) {
+			int root = Types.NominalT(automaton, nid.toString());
 			automaton.setRoot(0,root);
 		}
 		private Nominal(Automaton automaton) {
@@ -201,11 +203,11 @@ public abstract class SemanticType {
 				throw new IllegalArgumentException("Invalid variable kind");
 			}
 		}
-		public java.lang.String name() {
+		public NameID name() {
 			int root = automaton.getRoot(0);
 			Automaton.Term term = (Automaton.Term) automaton.get(root);
 			Automaton.Strung str = (Automaton.Strung) automaton.get(term.contents);
-			return str.value;
+			return NameID.fromString(str.value);
 		}
 	}
 	
@@ -619,10 +621,16 @@ public abstract class SemanticType {
 			case K_StringT:
 				body += "string";
 				break;
-			case K_VarT:
+			case K_VarT: {
 				Automaton.Strung s = (Automaton.Strung) automaton.get(term.contents);
 				body += s.value;
 				break;
+			}
+			case K_NominalT: {
+				Automaton.Strung s = (Automaton.Strung) automaton.get(term.contents);
+				body += s.value;
+				break;
+			}
 			case K_NotT:
 				body += "!" + toString(term.contents,headers);
 				break;

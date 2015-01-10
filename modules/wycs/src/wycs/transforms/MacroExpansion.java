@@ -123,7 +123,9 @@ public class MacroExpansion implements Transform<WycsFile> {
 	}
 
 	private void transform(WycsFile.Type s) {
-		s.invariant = transform(s.invariant);
+		if(s.invariant != null) {
+			s.invariant = transform(s.invariant);
+		}
 	}
 
 	private Code<?> transform(Code<?> e) {
@@ -275,6 +277,8 @@ public class MacroExpansion implements Transform<WycsFile> {
 			return expand(root, (SemanticType.Tuple) type, freeVar);
 		} else if (type instanceof SemanticType.Set) {
 			return expand(root, (SemanticType.Set) type, freeVar);
+		} else if (type instanceof SemanticType.Nominal) {
+			return expand(root, (SemanticType.Nominal) type, freeVar);			
 		}
 		// else if(type instanceof SemanticType.Not) {
 		//
@@ -353,6 +357,38 @@ public class MacroExpansion implements Transform<WycsFile> {
 							type.element(), variable.index) });
 		}
 		return invariant;
+	}
+	
+	/**
+	 * Expand a given nominal type into an invariant or null (if none exists). 
+	 * 
+	 * @param root
+	 *            --- The root expression (e.g. the variable being constrained).
+	 * @param type
+	 *            --- the type being expanded
+	 * @param freeVar
+	 *            --- the next available free variable
+	 * @return An expression representing the expanded invariant of this type,
+	 *         or null if no such invariant exists.
+	 */
+	private Code<?> expand(Code<?> root, SemanticType.Nominal type, int freeVar) {
+		try {
+			WycsFile wf = builder.getModule(type.name().module());
+			WycsFile.Type td = wf.declaration(type.name().name(),
+					WycsFile.Type.class);
+			Code<?> invariant = expand(root, td.type, freeVar);
+			if (td.invariant != null) {
+				if (invariant == null) {
+					invariant = td.invariant;
+				} else {
+					invariant = and(invariant, td.invariant);
+				}
+			}
+			return invariant;
+		} catch (Exception e) {
+			internalFailure(e.getMessage(), filename, root, e);
+			return null; // deadcode
+		}
 	}
 	
 	private static Code<?> implies(Code<?> lhs, Code<?> rhs) {

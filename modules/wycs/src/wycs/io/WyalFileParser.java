@@ -46,7 +46,7 @@ public class WyalFileParser {
 		// FIXME: this is a hack!
 		String name = filename.substring(
 				filename.lastIndexOf(File.separatorChar) + 1,
-				filename.length() - 7);
+				filename.length() - 5);
 		WyalFile wf = new WyalFile(pkg.append(name), filename);
 
 		skipWhiteSpace();

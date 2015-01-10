@@ -463,7 +463,10 @@ public class TypePropagation implements Transform<WyalFile> {
 			HashSet<String> generics, WyalFile.Context context) {
 		
 		try {
-			SemanticType type = builder.convert(pattern.toSyntacticType(),
+			// First, convert the syntactic type into a semantic type. This may
+			// still contain nominal types, however, and we need to get rid of
+			// them for type checking purposes.
+			SemanticType nominalType = builder.convert(pattern.toSyntacticType(),
 					generics, context);
 
 			if (pattern instanceof TypePattern.Tuple) {
@@ -471,12 +474,15 @@ public class TypePropagation implements Transform<WyalFile> {
 				for (TypePattern p : tt.elements) {
 					propagate(p, environment, generics, context);
 				}
-			} else if(pattern instanceof TypePattern.Leaf) {
-				TypePattern.Leaf l = (TypePattern.Leaf) pattern;
-				environment.put(l.var.name, type);
+			} else if(pattern instanceof TypePattern.Leaf) {				
+				TypePattern.Leaf l = (TypePattern.Leaf) pattern;				
+				// Get rid of any nominal types that may exist.
+				SemanticType rawType = builder.expand(nominalType, context);
+				// Add the raw type to the environment.
+				environment.put(l.var.name, rawType);
 			}
 
-			pattern.attributes().add(new TypeAttribute(type));
+			pattern.attributes().add(new TypeAttribute(nominalType));
 		} catch (ResolveError re) {
 			syntaxError(
 					"cannot resolve as function or definition call",
