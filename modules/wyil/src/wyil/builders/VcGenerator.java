@@ -69,22 +69,40 @@ public class VcGenerator {
 		filename = wyilFile.filename();
 		wycsFile = new WyalFile(wyilFile.id(), filename);
 
-		// FIXME: shouldn't we check other invariants as well? At least to
-		// ensure they are habitable?
-		for (WyilFile.TypeDeclaration type : wyilFile.types()) {
-			transform(type, wyilFile);
-		}
-
-		for (WyilFile.FunctionOrMethodDeclaration method : wyilFile
-				.functionOrMethods()) {
-			for (WyilFile.Case c : method.cases()) {
-				transform(c, method, wyilFile);
+		for (WyilFile.Block b : wyilFile.blocks()) {
+			if(b instanceof WyilFile.ConstantDeclaration) {
+				transform((WyilFile.ConstantDeclaration) b, wyilFile);
+			} else if(b instanceof WyilFile.TypeDeclaration) {
+				transform((WyilFile.TypeDeclaration) b, wyilFile);	
+			} else if(b instanceof WyilFile.FunctionOrMethodDeclaration) {
+				WyilFile.FunctionOrMethodDeclaration method = (WyilFile.FunctionOrMethodDeclaration) b;
+				for (WyilFile.Case c : method.cases()) {
+					transform(c, method, wyilFile);
+				}
 			}
 		}
 
 		return wycsFile;
 	}
 
+	protected void transform(WyilFile.ConstantDeclaration decl,
+			WyilFile wyilFile) {
+		NameID name = new NameID(wyilFile.id(), decl.name());
+		
+		// FIXME: This is a bit of a hack because enumerations basically don't
+		// work at the moment. It really needs to be removed!
+		if (decl.constant().type() instanceof Type.Set) {
+			Type.Set st = (Type.Set) decl.constant().type();
+			Expr.Variable var = new Expr.Variable("r0");
+			TypePattern.Leaf pattern = new TypePattern.Leaf(convert(
+					st.element(), Collections.EMPTY_LIST), var);
+
+			wycsFile.add(wycsFile.new Type(toIdentifier(name),
+					Collections.EMPTY_LIST, pattern, null,
+					toWycsAttributes(decl.attributes())));
+		}
+	}
+	
 	/**
 	 * Transform a type declaration into verification conditions as necessary.
 	 * In particular, the type should be "inhabitable". This means, for example,

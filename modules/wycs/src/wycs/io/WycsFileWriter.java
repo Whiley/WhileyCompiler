@@ -486,7 +486,9 @@ public class WycsFileWriter {
 	private void buildPools(WycsFile.Type declaration) {
 		addStringItem(declaration.name());
 		addTypeItem(declaration.type);
-		buildPools(declaration.invariant);
+		if(declaration.invariant != null) {
+			buildPools(declaration.invariant);
+		}
 	}
 
 	private void buildPools(WycsFile.Function declaration) {

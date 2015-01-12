@@ -228,13 +228,16 @@ public class MacroExpansion implements Transform<WycsFile> {
 	private Code<?> transform(Code.Quantifier e) {
 		// Need to expand type constraints
 		Pair<SemanticType, Integer>[] e_types = e.types;
+		Pair<SemanticType, Integer>[] n_types = new Pair[e_types.length];
 		Code<?> invariant = null;
 		for (int i = 0; i != e_types.length; ++i) {
-			Pair<SemanticType, Integer> p = e_types[i];
+			Pair<SemanticType, Integer> p1 = e_types[i];
 			// FIXME: probably need the expanded type here, rather than the
 			// potentially nominal type?
-			Code.Variable var = Code.Variable(p.first(), p.second());
-			Code<?> ei = expand(var, p.first(), 0);
+			Code.Variable var = Code.Variable(p1.first(), p1.second());
+			Pair<SemanticType,Code<?>> p2 = expand(var, p1.first(), 0);
+			n_types[i] = new Pair<SemanticType,Integer>(p2.first(),p1.second());
+			Code<?> ei = p2.second();
 			if (ei != null) {
 				invariant = invariant == null ? ei : and(invariant, ei);
 			}
@@ -249,7 +252,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 				body = implies(invariant, body);
 			}
 		}
-		return Code.Quantifier(e.type, e.opcode, body, e.types, e.attributes());
+		return Code.Quantifier(e.type, e.opcode, body, n_types, e.attributes());
 	}
 
 	/**
@@ -276,9 +279,9 @@ public class MacroExpansion implements Transform<WycsFile> {
 	 * @return An expression representing the expanded invariant of this type,
 	 *         or null if no such invariant exists.
 	 */
-	private Code<?> expand(Code<?> root, SemanticType type, int freeVar) {
+	private Pair<SemanticType,Code<?>> expand(Code<?> root, SemanticType type, int freeVar) {
 		if (type instanceof SemanticType.Atom || type instanceof SemanticType.Var) {
-			return null;
+			return new Pair<SemanticType,Code<?>>(type,null);
 		} else if (type instanceof SemanticType.Tuple) {
 			return expand(root, (SemanticType.Tuple) type, freeVar);
 		} else if (type instanceof SemanticType.Set) {
@@ -309,15 +312,18 @@ public class MacroExpansion implements Transform<WycsFile> {
 	 * @return An expression representing the expanded invariant of this type,
 	 *         or null if no such invariant exists.
 	 */
-	private Code<?> expand(Code<?> root, SemanticType.Tuple type, int freeVar) {
+	private Pair<SemanticType,Code<?>> expand(Code<?> root, SemanticType.Tuple type, int freeVar) {
 		SemanticType[] elements = type.elements();
+		SemanticType[] nelements = new SemanticType[elements.length];
 		Code<?> invariant = null;
 		// Go through each type element expanding its invariants. In the end, if
 		// no elements expand to an invariant then we stick with null.
 		// Otherwise, we have some invariant at the end.
 		for (int i = 0; i != elements.length; ++i) {
 			Code<?> ri = Code.Load(type, root, i);
-			Code<?> ei = expand(ri, elements[i], freeVar);
+			Pair<SemanticType,Code<?>> p = expand(ri, elements[i], freeVar);
+			Code<?> ei = p.second();
+			nelements[i] = p.first();
 			if (ei != null) {
 				// This element has yielded an actual invariant. Now, decide
 				// whether this it the first one, or just another one.
@@ -332,7 +338,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 				}
 			}
 		}
-		return invariant;
+		return new Pair<SemanticType,Code<?>>(SemanticType.Tuple(nelements),invariant);
 	}
 	
 	/**
@@ -349,19 +355,23 @@ public class MacroExpansion implements Transform<WycsFile> {
 	 * @return An expression representing the expanded invariant of this type,
 	 *         or null if no such invariant exists.
 	 */
-	private Code<?> expand(Code<?> root, SemanticType.Set type, int freeVar) {
-		// FIXME: we need to get the raw type here I think
-		Code.Variable variable = Code.Variable(type.element(), freeVar);		
-		Code<?> invariant = expand(variable, type.element(), ++freeVar);
+	private Pair<SemanticType, Code<?>> expand(Code<?> root,
+			SemanticType.Set type, int freeVar) {
+		Code.Variable variable = Code.Variable(type.element(), freeVar);
+		Pair<SemanticType, Code<?>> p = expand(variable, type.element(),
+				++freeVar);
+		Code<?> invariant = p.second();
 		if (invariant != null) {
 			Code<?> elemOf = Code.Binary(type, Code.Binary.Op.IN, variable,
 					root);
 			invariant = implies(elemOf, invariant);
 			invariant = Code.Quantifier(SemanticType.Bool, Code.Op.FORALL,
-					invariant, new Pair[] { new Pair<SemanticType, Integer>(
-							type.element(), variable.index) });
+					invariant,
+					new Pair[] { new Pair<SemanticType, Integer>(p.first(),
+							variable.index) });
 		}
-		return invariant;
+		return new Pair<SemanticType, Code<?>>(SemanticType.Set(type.flag(),
+				p.first()), invariant);
 	}
 	
 	/**
@@ -376,12 +386,13 @@ public class MacroExpansion implements Transform<WycsFile> {
 	 * @return An expression representing the expanded invariant of this type,
 	 *         or null if no such invariant exists.
 	 */
-	private Code<?> expand(Code<?> root, SemanticType.Nominal type, int freeVar) {
+	private Pair<SemanticType,Code<?>> expand(Code<?> root, SemanticType.Nominal type, int freeVar) {
 		try {
 			WycsFile wf = builder.getModule(type.name().module());
 			WycsFile.Type td = wf.declaration(type.name().name(),
 					WycsFile.Type.class);
-			Code<?> invariant = expand(root, td.type, freeVar);
+			Pair<SemanticType,Code<?>> p = expand(root, td.type, freeVar);
+			Code<?> invariant = p.second();
 			Code<?> td_invariant = td.invariant;
 			if (td_invariant != null) {
 				// An explicit invariant is given. We now need to map the given
@@ -398,7 +409,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 					invariant = and(invariant, td_invariant);
 				}
 			}
-			return invariant;
+			return new Pair<SemanticType,Code<?>>(p.first(),invariant);
 		} catch (Exception e) {
 			internalFailure(e.getMessage(), filename, root, e);
 			return null; // deadcode
@@ -419,13 +430,14 @@ public class MacroExpansion implements Transform<WycsFile> {
 	 * @return An expression representing the expanded invariant of this type,
 	 *         or null if no such invariant exists.
 	 */
-	private Code<?> expand(Code<?> root, SemanticType.Not type, int freeVar) {
+	private Pair<SemanticType,Code<?>> expand(Code<?> root, SemanticType.Not type, int freeVar) {
 		Code.Variable variable = Code.Variable(type.element(), freeVar);
-		Code<?> invariant = expand(variable, type.element(), freeVar++);
+		Pair<SemanticType,Code<?>> p = expand(variable, type.element(), freeVar++);
+		Code<?> invariant = p.second();
 		if (invariant != null) {
 			invariant = Code.Unary(SemanticType.Bool, Code.Unary.Op.NOT, invariant);			
 		}
-		return invariant;
+		return new Pair<SemanticType,Code<?>>(SemanticType.Not(p.first()),invariant);
 	}
 	
 	/**
@@ -440,14 +452,17 @@ public class MacroExpansion implements Transform<WycsFile> {
 	 * @return An expression representing the expanded invariant of this type,
 	 *         or null if no such invariant exists.
 	 */
-	private Code<?> expand(Code<?> root, SemanticType.And type, int freeVar) {
+	private Pair<SemanticType,Code<?>> expand(Code<?> root, SemanticType.And type, int freeVar) {
 		SemanticType[] elements = type.elements();
+		SemanticType[] nelements = new SemanticType[elements.length];
 		Code<?> invariant = null;
 		// Go through each type element expanding its invariants. In the end, if
 		// no elements expand to an invariant then we stick with null.
 		// Otherwise, we have some invariant at the end.
 		for (int i = 0; i != elements.length; ++i) {
-			Code<?> ei = expand(root, elements[i], freeVar);
+			Pair<SemanticType,Code<?>> p = expand(root, elements[i], freeVar);
+			nelements[i] = p.first();
+			Code<?> ei = p.second();
 			if (ei != null) {
 				// This element has yielded an actual invariant. Now, decide
 				// whether this it the first one, or just another one.
@@ -462,7 +477,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 				}
 			}
 		}
-		return invariant;
+		return new Pair<SemanticType,Code<?>>(SemanticType.And(nelements),invariant);
 	}
 	
 	/**
@@ -477,14 +492,17 @@ public class MacroExpansion implements Transform<WycsFile> {
 	 * @return An expression representing the expanded invariant of this type,
 	 *         or null if no such invariant exists.
 	 */
-	private Code<?> expand(Code<?> root, SemanticType.Or type, int freeVar) {
+	private Pair<SemanticType,Code<?>> expand(Code<?> root, SemanticType.Or type, int freeVar) {
 		SemanticType[] elements = type.elements();
+		SemanticType[] nelements = new SemanticType[elements.length];
 		Code<?> invariant = null;
 		// Go through each type element expanding its invariants. In the end, if
 		// no elements expand to an invariant then we stick with null.
 		// Otherwise, we have some invariant at the end.
 		for (int i = 0; i != elements.length; ++i) {
-			Code<?> ei = expand(root, elements[i], freeVar);
+			Pair<SemanticType,Code<?>> p = expand(root, elements[i], freeVar);
+			nelements[i] = p.first();
+			Code<?> ei = p.second();
 			if (ei != null) {
 				// This element has yielded an actual invariant. Now, decide
 				// whether this it the first one, or just another one.
@@ -499,7 +517,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 				}
 			}
 		}
-		return invariant;
+		return new Pair<SemanticType,Code<?>>(SemanticType.Or(nelements),invariant);
 	}
 	
 	private static Code<?> implies(Code<?> lhs, Code<?> rhs) {
