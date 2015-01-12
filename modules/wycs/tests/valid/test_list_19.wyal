@@ -1,0 +1,11 @@
+type nat is (int r0) where:
+    r0 >= 0
+
+assert "postcondition not satisfied":
+    forall ([nat] items, int i):
+        if:
+            i >= 0
+            i < |items|
+        then:
+            items[i] >= 0
+

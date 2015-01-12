@@ -241,7 +241,13 @@ public class MacroExpansion implements Transform<WycsFile> {
 		}
 		Code<?> body = transform(e.operands[0]);
 		if (invariant != null) {
-			body = implies(invariant, body);
+			// We need to treat universal and existential quantifiers
+			// differently.
+			if(e.opcode == Code.Op.EXISTS) {
+				body = and(invariant, body);
+			} else {
+				body = implies(invariant, body);
+			}
 		}
 		return Code.Quantifier(e.type, e.opcode, body, e.types, e.attributes());
 	}
@@ -344,8 +350,9 @@ public class MacroExpansion implements Transform<WycsFile> {
 	 *         or null if no such invariant exists.
 	 */
 	private Code<?> expand(Code<?> root, SemanticType.Set type, int freeVar) {
-		Code.Variable variable = Code.Variable(type.element(), freeVar);
-		Code<?> invariant = expand(variable, type.element(), freeVar++);
+		// FIXME: we need to get the raw type here I think
+		Code.Variable variable = Code.Variable(type.element(), freeVar);		
+		Code<?> invariant = expand(variable, type.element(), ++freeVar);
 		if (invariant != null) {
 			Code<?> elemOf = Code.Binary(type, Code.Binary.Op.IN, variable,
 					root);
@@ -375,11 +382,20 @@ public class MacroExpansion implements Transform<WycsFile> {
 			WycsFile.Type td = wf.declaration(type.name().name(),
 					WycsFile.Type.class);
 			Code<?> invariant = expand(root, td.type, freeVar);
-			if (td.invariant != null) {
+			Code<?> td_invariant = td.invariant;
+			if (td_invariant != null) {
+				// An explicit invariant is given. We now need to map the given
+				// root to the parameter of the invariant (which is always at
+				// index 0).
+				HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
+				binding.put(0,root);
+				td_invariant = td_invariant.substitute(binding);
+				// Finally, decide whether to use as is or append to the
+				// invariant generated from the element type.
 				if (invariant == null) {
-					invariant = td.invariant;
+					invariant = td_invariant;
 				} else {
-					invariant = and(invariant, td.invariant);
+					invariant = and(invariant, td_invariant);
 				}
 			}
 			return invariant;

@@ -136,7 +136,7 @@ public class CodeGeneration {
 			Code invariant = null;
 			if (d.invariant != null) {
 				HashMap<String,Code> environment = new HashMap<String,Code>();
-				Code parameter = Code.Variable(from, new Code[0], 1,
+				Code parameter = Code.Variable(from, new Code[0], 0,
 						attributes(d.type));
 				addDeclaredVariables(parameter,d.type,environment);			
 				invariant = generate(d.invariant, environment, d);

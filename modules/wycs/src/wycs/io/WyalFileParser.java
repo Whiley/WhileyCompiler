@@ -320,14 +320,17 @@ public class WyalFileParser {
 			// of declared variables in the current scope.
 			HashSet<String> environment = new HashSet<String>();
 			pattern.addDeclaredVariables(environment);
-			invariant = parseLogicalExpression(wf, genericSet, environment,
-					false);
+			if (tryAndMatch(true, Colon) != null) {
+				matchEndLine();
+				invariant = parseBlock(wf, genericSet, environment, ROOT_INDENT);
+			} else {
+				invariant = parseLogicalExpression(wf, genericSet, environment,
+						false);
+			}
 		}
-		int end = index;
-		matchEndLine();
 
 		WyalFile.Declaration declaration = wf.new Type(name, generics, pattern,
-				invariant, sourceAttr(start, end - 1));
+				invariant, sourceAttr(start, index - 1));
 		wf.add(declaration);
 		return;
 	}

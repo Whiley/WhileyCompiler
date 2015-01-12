@@ -237,6 +237,9 @@ public class WycsFileReader {
 		case WycsFileWriter.BLOCK_Macro:
 			block = readMacroBlockBody();
 			break;
+		case WycsFileWriter.BLOCK_Type:
+			block = readTypeBlockBody();
+			break;
 		case WycsFileWriter.BLOCK_Function:
 			block = readFunctionBlockBody();
 			break;
@@ -275,6 +278,16 @@ public class WycsFileReader {
 				(SemanticType.Function) typePool[typeIdx], code);
 	}
 
+	private WycsFile.Declaration readTypeBlockBody() throws IOException {
+		int nameIdx = input.read_uv();
+		int typeIdx = input.read_uv();
+		int nBlocks = input.read_uv();
+		Code<?> code = readBlock(Code.class);
+
+		return new WycsFile.Type(stringPool[nameIdx],
+				(SemanticType) typePool[typeIdx], code);
+	}
+	
 	private WycsFile.Declaration readFunctionBlockBody() throws IOException {
 		int nameIdx = input.read_uv();
 		int typeIdx = input.read_uv();

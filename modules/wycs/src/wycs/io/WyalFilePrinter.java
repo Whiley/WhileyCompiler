@@ -97,7 +97,7 @@ public class WyalFilePrinter {
 		}
 		writeWithBraces(wf,s.from);		
 		if(s.body != null) {		
-			out.println(" as:");
+			out.println(" is:");
 			indent(1);
 			writeWithoutBraces(wf,s.body,1);
 		}
