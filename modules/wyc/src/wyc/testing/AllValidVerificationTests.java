@@ -102,7 +102,7 @@ public class AllValidVerificationTests {
 				name);                      // name of test to compile
 
 		int r = p.first();
-		System.out.println(p.second());
+		System.out.print(p.second());
 
 		if (r != WycMain.SUCCESS) {
 			fail("Test failed to compile!");
@@ -2244,68 +2244,6 @@ public class AllValidVerificationTests {
 	@Test
 	public void SetAssign_Valid_3() {
 		runTest("SetAssign_Valid_3");
-	}
-
-	@Test
-	public void SetComprehension_Valid_1() {
-		runTest("SetComprehension_Valid_1");
-	}
-
-
-	@Ignore("#234") @Test
-	public void SetComprehension_Valid_10() {
-		runTest("SetComprehension_Valid_10");
-	}
-
-	@Test
-	public void SetComprehension_Valid_11() {
-		runTest("SetComprehension_Valid_11");
-	}
-
-
-	@Ignore("#234") @Test
-	public void SetComprehension_Valid_12() {
-		runTest("SetComprehension_Valid_12");
-	}
-
-	@Test
-	public void SetComprehension_Valid_2() {
-		runTest("SetComprehension_Valid_2");
-	}
-
-	@Test
-	public void SetComprehension_Valid_3() {
-		runTest("SetComprehension_Valid_3");
-	}
-
-	@Test
-	public void SetComprehension_Valid_4() {
-		runTest("SetComprehension_Valid_4");
-	}
-
-	@Test
-	public void SetComprehension_Valid_5() {
-		runTest("SetComprehension_Valid_5");
-	}
-
-	@Test
-	public void SetComprehension_Valid_6() {
-		runTest("SetComprehension_Valid_6");
-	}
-
-	@Test
-	public void SetComprehension_Valid_7() {
-		runTest("SetComprehension_Valid_7");
-	}
-
-	@Test
-	public void SetComprehension_Valid_8() {
-		runTest("SetComprehension_Valid_8");
-	}
-
-	@Test
-	public void SetComprehension_Valid_9() {
-		runTest("SetComprehension_Valid_9");
 	}
 
 	@Test

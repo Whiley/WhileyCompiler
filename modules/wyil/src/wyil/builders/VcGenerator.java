@@ -1242,8 +1242,8 @@ public class VcGenerator {
 	 * Maps binary bytecodes into expression opcodes.
 	 */
 	private static Expr.Binary.Op[] binaryOperatorMap = { Expr.Binary.Op.ADD,
-			Expr.Binary.Op.SUB, Expr.Binary.Op.MUL, Expr.Binary.Op.DIV,
-			Expr.Binary.Op.RANGE };
+			Expr.Binary.Op.SUB, Expr.Binary.Op.MUL, Expr.Binary.Op.DIV, Expr.Binary.Op.REM,
+			Expr.Binary.Op.RANGE,  };
 
 	/**
 	 * Maps binary bytecodes into expression opcodes.
