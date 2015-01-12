@@ -753,6 +753,8 @@ public abstract class SemanticType {
 			return Real;
 		case K_VarT:
 			return new SemanticType.Var(automaton);
+		case K_NominalT:
+			return new SemanticType.Nominal(automaton);
 		case K_StringT:
 			return String;
 		// connectives
@@ -776,7 +778,11 @@ public abstract class SemanticType {
 		case K_FunctionT:
 			return new SemanticType.Function(automaton);
 		default:
-			throw new IllegalArgumentException("Unknown kind encountered - " + state.kind);
+			int kind = state.kind;
+			if(kind < 0) {
+				kind = -kind + Automaton.K_FREE;
+			}
+			throw new IllegalArgumentException("Unknown kind encountered - " + SCHEMA.get(kind).name);
 		}
 	}
 

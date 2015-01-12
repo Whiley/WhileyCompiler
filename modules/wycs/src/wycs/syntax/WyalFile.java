@@ -28,7 +28,6 @@ public class WyalFile implements CompilationUnit {
 		}
 
 		public WyalFile read(Path.Entry<WyalFile> e, InputStream input) throws IOException {
-			//System.out.println("SCANNING: " + e.id());
 			WyalFileReader reader = new WyalFileReader(e.location().toString(),input);
 			return reader.read();
 		}

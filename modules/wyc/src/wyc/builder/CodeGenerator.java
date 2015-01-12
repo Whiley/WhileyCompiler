@@ -1792,7 +1792,7 @@ public final class CodeGenerator {
 			Context context) throws ResolveError {
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		codes.add(
-				Codes.Invoke(expr.methodType.raw(), target, operands,
+				Codes.Invoke(expr.methodType.nominal(), target, operands,
 						expr.nid()), attributes(expr));
 	}
 
@@ -1808,7 +1808,7 @@ public final class CodeGenerator {
 			Context context) throws ResolveError {
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		codes.add(
-				Codes.Invoke(expr.functionType.raw(), target, operands,
+				Codes.Invoke(expr.functionType.nominal(), target, operands,
 						expr.nid()), attributes(expr));
 	}
 

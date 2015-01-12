@@ -271,7 +271,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 	 *         or null if no such invariant exists.
 	 */
 	private Code<?> expand(Code<?> root, SemanticType type, int freeVar) {
-		if (type instanceof SemanticType.Atom) {
+		if (type instanceof SemanticType.Atom || type instanceof SemanticType.Var) {
 			return null;
 		} else if (type instanceof SemanticType.Tuple) {
 			return expand(root, (SemanticType.Tuple) type, freeVar);
@@ -279,16 +279,14 @@ public class MacroExpansion implements Transform<WycsFile> {
 			return expand(root, (SemanticType.Set) type, freeVar);
 		} else if (type instanceof SemanticType.Nominal) {
 			return expand(root, (SemanticType.Nominal) type, freeVar);			
-		}
-		// else if(type instanceof SemanticType.Not) {
-		//
-		// } else if(type instanceof SemanticType.And) {
-		//
-		// } else if(type instanceof SemanticType.Or) {
-		//
-		// }
-		else {
-			internalFailure("deadcode reached", filename, root);
+		} else if(type instanceof SemanticType.Not) {
+			return expand(root, (SemanticType.Not) type, freeVar);
+		} else if(type instanceof SemanticType.And) {
+			return expand(root, (SemanticType.And) type, freeVar);
+		} else if(type instanceof SemanticType.Or) {
+			return expand(root, (SemanticType.Or) type, freeVar);
+		} else {
+			internalFailure("deadcode reached (" + type.getClass().getName() + ")", filename, root);
 			return null; // dead-code
 		}
 	}
@@ -317,7 +315,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 			if (ei != null) {
 				// This element has yielded an actual invariant. Now, decide
 				// whether this it the first one, or just another one.
-				if (invariant != null) {
+				if (invariant == null) {
 					// Yes, it's the first element which has given an invariant,
 					// therefore it is the current overall invariant.
 					invariant = ei;
@@ -391,6 +389,103 @@ public class MacroExpansion implements Transform<WycsFile> {
 		}
 	}
 	
+	/**
+	 * Expand a given negation type into an invariant or null (if none exists).
+	 * If an invariant is generated from the element, this will be required to
+	 * fail (i.e. rather than suceeding).
+	 * 
+	 * @param root
+	 *            --- The root expression (e.g. the variable being constrained).
+	 * @param type
+	 *            --- the type being expanded
+	 * @param freeVar
+	 *            --- the next available free variable
+	 * @return An expression representing the expanded invariant of this type,
+	 *         or null if no such invariant exists.
+	 */
+	private Code<?> expand(Code<?> root, SemanticType.Not type, int freeVar) {
+		Code.Variable variable = Code.Variable(type.element(), freeVar);
+		Code<?> invariant = expand(variable, type.element(), freeVar++);
+		if (invariant != null) {
+			invariant = Code.Unary(SemanticType.Bool, Code.Unary.Op.NOT, invariant);			
+		}
+		return invariant;
+	}
+	
+	/**
+	 * Expand a given intersection type into an invariant or null (if none exists).
+	 * 
+	 * @param root
+	 *            --- The root expression (e.g. the variable being constrained).
+	 * @param type
+	 *            --- the type being expanded
+	 * @param freeVar
+	 *            --- the next available free variable
+	 * @return An expression representing the expanded invariant of this type,
+	 *         or null if no such invariant exists.
+	 */
+	private Code<?> expand(Code<?> root, SemanticType.And type, int freeVar) {
+		SemanticType[] elements = type.elements();
+		Code<?> invariant = null;
+		// Go through each type element expanding its invariants. In the end, if
+		// no elements expand to an invariant then we stick with null.
+		// Otherwise, we have some invariant at the end.
+		for (int i = 0; i != elements.length; ++i) {
+			Code<?> ei = expand(root, elements[i], freeVar);
+			if (ei != null) {
+				// This element has yielded an actual invariant. Now, decide
+				// whether this it the first one, or just another one.
+				if (invariant == null) {
+					// Yes, it's the first element which has given an invariant,
+					// therefore it is the current overall invariant.
+					invariant = ei;
+				} else {
+					// No, this is just another element which has given an
+					// invariant, therefore just and them together.
+					invariant = and(invariant, ei);
+				}
+			}
+		}
+		return invariant;
+	}
+	
+	/**
+	 * Expand a given union type into an invariant or null (if none exists).
+	 * 
+	 * @param root
+	 *            --- The root expression (e.g. the variable being constrained).
+	 * @param type
+	 *            --- the type being expanded
+	 * @param freeVar
+	 *            --- the next available free variable
+	 * @return An expression representing the expanded invariant of this type,
+	 *         or null if no such invariant exists.
+	 */
+	private Code<?> expand(Code<?> root, SemanticType.Or type, int freeVar) {
+		SemanticType[] elements = type.elements();
+		Code<?> invariant = null;
+		// Go through each type element expanding its invariants. In the end, if
+		// no elements expand to an invariant then we stick with null.
+		// Otherwise, we have some invariant at the end.
+		for (int i = 0; i != elements.length; ++i) {
+			Code<?> ei = expand(root, elements[i], freeVar);
+			if (ei != null) {
+				// This element has yielded an actual invariant. Now, decide
+				// whether this it the first one, or just another one.
+				if (invariant == null) {
+					// Yes, it's the first element which has given an invariant,
+					// therefore it is the current overall invariant.
+					invariant = ei;
+				} else {
+					// No, this is just another element which has given an
+					// invariant, therefore just and them together.
+					invariant = or(invariant, ei);
+				}
+			}
+		}
+		return invariant;
+	}
+	
 	private static Code<?> implies(Code<?> lhs, Code<?> rhs) {
 		lhs = Code.Unary(SemanticType.Bool, Code.Unary.Op.NOT, lhs);
 		return Code.Nary(SemanticType.Bool, Code.Op.OR, new Code[] { lhs, rhs });
@@ -398,5 +493,9 @@ public class MacroExpansion implements Transform<WycsFile> {
 	
 	private static Code<?> and(Code<?> lhs, Code<?> rhs) {
 		return Code.Nary(SemanticType.Bool, Code.Op.AND, new Code[] { lhs, rhs });
+	}
+	
+	private static Code<?> or(Code<?> lhs, Code<?> rhs) {
+		return Code.Nary(SemanticType.Bool, Code.Op.OR, new Code[] { lhs, rhs });
 	}
 }

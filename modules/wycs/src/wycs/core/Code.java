@@ -149,6 +149,25 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	 * @return
 	 */
 	public abstract SemanticType returnType();
+	
+	public String toString() {
+		String r = opcode.toString();
+		if(operands.length > 0) {
+			r = r + "(";
+			for(int i=0;i!=operands.length;++i) {
+				if(i != 0) {
+					r = r + ", ";
+				}
+				if(operands[i] != null) {
+					r = r + operands[i].toString();
+				} else {
+					r = r + "null";
+				}
+			}
+			r = r + ")";
+		}
+		return r;
+	}
 
 	// ==================================================================
 	// Constructors

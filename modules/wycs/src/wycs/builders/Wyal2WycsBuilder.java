@@ -671,7 +671,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				return expand(td.type, context);
 			}
 		} catch (Exception e) {
-			internalFailure(e.getMessage(), context.file().filename(), context);
+			internalFailure(e.getMessage(), context.file().filename(), context, e);
 		}
 		internalFailure("unknown type encountered", context.file().filename(),
 				context);
