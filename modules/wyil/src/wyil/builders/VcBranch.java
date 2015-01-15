@@ -110,7 +110,14 @@ public class VcBranch {
 	 * branch graph of a function / method.
 	 */
 	private final String[] prefixes;
-	
+
+	/**
+	 * For each variable we maintain the current "subscript" value. This is an
+	 * integer value which is used to determine the appropriate SSA number for a
+	 * given variable.
+	 */
+	private final int[] subscripts;
+
 	/**
 	 * Maintains the current assignment of variables to their types.
 	 */
@@ -149,15 +156,16 @@ public class VcBranch {
 		int numSlots = numInputs;
 		this.parents = new VcBranch[0];
 		this.environment = new Expr[numSlots];
+		this.subscripts = new int[numSlots];
 		this.types = new Type[numSlots];
 		this.constraints = null;
 		this.pc = new CodeBlock.Index(CodeBlock.Index.ROOT);
 		this.state = State.ACTIVE;
-		
-		if(prefixes == null) {
+
+		if (prefixes == null) {
 			// Construct default variable prefixes if none are given.
 			this.prefixes = new String[numSlots];
-			for(int i=0;i!=numSlots;++i) {
+			for (int i = 0; i != numSlots; ++i) {
 				this.prefixes[i] = "r" + i;
 			}
 		} else {
@@ -174,6 +182,8 @@ public class VcBranch {
 	private VcBranch(VcBranch parent) {
 		this.parents = new VcBranch[] { parent };
 		this.environment = parent.environment.clone();
+		this.subscripts = Arrays.copyOf(parent.subscripts,
+				parent.subscripts.length);
 		this.types = Arrays.copyOf(parent.types, environment.length);
 		this.constraints = null;
 		this.prefixes = parent.prefixes;
@@ -199,9 +209,10 @@ public class VcBranch {
 	 * 
 	 */
 	private VcBranch(VcBranch[] parents, Expr[] environment, Type[] types,
-			State state, String[] prefixes) {
+			int[] subscripts, State state, String[] prefixes) {
 		this.parents = parents;
 		this.environment = environment;
+		this.subscripts = subscripts;
 		this.types = types;
 		this.constraints = null;
 		this.pc = parents[0].pc;
@@ -233,11 +244,11 @@ public class VcBranch {
 	 * excluding those which hold on ancestor branches.
 	 */
 	public Expr constraints() {
-		if(constraints == null) {
+		if (constraints == null) {
 			return new Expr.Constant(Value.Bool(true));
 		} else {
 			return constraints;
-		}		
+		}
 	}
 
 	/**
@@ -363,9 +374,11 @@ public class VcBranch {
 		// to invalidate a variable, we assign it a "skolem" constant. That is,
 		// a fresh variable which has not been previously encountered in the
 		// branch.
-		Expr.Variable var = new Expr.Variable(prefixes[register] + "_" + pc);
+		Expr.Variable var = new Expr.Variable(prefixes[register] + "_"
+				+ subscripts[register]);
 		environment[register] = var;
 		types[register] = type;
+		subscripts[register]++;
 		return var;
 	}
 
@@ -462,7 +475,7 @@ public class VcBranch {
 	 */
 	public VcBranch join(VcBranch... parents) {
 		// Quick sanity check that all branches being joined have same pc
-		// location and are in the same state.		
+		// location and are in the same state.
 		State parentState = this.state;
 		for (VcBranch parent : parents) {
 			if (!pc.equals(parent.pc())) {
@@ -475,7 +488,7 @@ public class VcBranch {
 		}
 		// Mark all branches involved in the join as internal. This
 		// effectively renders them immutable from now on, thereby preventing
-		// changes which could affect the joined branch or its children.  		
+		// changes which could affect the joined branch or its children.
 		for (VcBranch parent : parents) {
 			parent.state = State.INTERNAL;
 		}
@@ -486,18 +499,64 @@ public class VcBranch {
 		System.arraycopy(parents, 0, nparents, 1, parents.length);
 		nparents[0] = this;
 
+		// Converge subscripts between the different parents. This is done
+		// simply by calculating the max subscript for each variable across all
+		// environments.
+		int[] nSubscripts = convergeSubscripts(nparents);
+
 		// Converge environments to ensure obtain a single environment which
 		// correctly represents the environments of all branches being joined.
 		// In some cases, individual environments may need to be patched to get
-		// them all into identical states. 
-		Expr[] nEnvironment = convergeEnvironments(nparents); 
-		
+		// them all into identical states.
+		Expr[] nEnvironment = convergeEnvironments(nparents, nSubscripts);
+
 		// FIXME: this should be deprecated
-		Type[] nTypes = Arrays.copyOf(types,types.length);
+		Type[] nTypes = Arrays.copyOf(types, types.length);
 
 		// Finally, create the new branch representing the join of all branches,
 		// and with those branches as its declared parents.
-		return new VcBranch(nparents, nEnvironment, nTypes, parentState, prefixes);
+		return new VcBranch(nparents, nEnvironment, nTypes, nSubscripts,
+				parentState, prefixes);
+	}
+
+	/**
+	 * Converge the subscripts across all parent branches. This is done by
+	 * calculating the max subscript for each variable across all environments.
+	 * For example:
+	 * 
+	 * <pre>
+	 * Branch 1:   Branch 2:
+	 * 
+	 * |0|1|2|3|   |0|1|2|3|
+	 * =========   =========
+	 * |2|2|3|2|   |2|1|4|2|
+	 * </pre>
+	 * 
+	 * Here, the register slot number if given on top, and then subscript is
+	 * given below. The converged subscripts array would then be:
+	 * 
+	 * <pre>
+	 * |0|1|2|3|
+	 * =========
+	 * |2|2|4|2|
+	 * </pre>
+	 * 
+	 * Here, for example, slot 0 retains subscript 2 as this is true for both
+	 * branches. However, slot 2 is given subscript 4 as this is the maximum
+	 * subscript for that slot across both branches.
+	 * 
+	 * @param parents
+	 * @return
+	 */
+	private int[] convergeSubscripts(VcBranch[] parents) {
+		int[] nSubscripts = new int[subscripts.length];
+		for (int i = 0; i != parents.length; ++i) {
+			int[] pSubscripts = parents[i].subscripts;
+			for (int j = 0; j != nSubscripts.length; ++j) {
+				nSubscripts[j] = Math.max(nSubscripts[j], pSubscripts[j]);
+			}
+		}
+		return nSubscripts;
 	}
 
 	/**
@@ -563,10 +622,12 @@ public class VcBranch {
 	 * 
 	 * @param branches
 	 *            --- Branches whose environments are to be converged.
+	 * @param subscripts
+	 *            --- the converged set of subscripts
 	 * 
 	 * @return
 	 */
-	private Expr[] convergeEnvironments(VcBranch[] branches) {
+	private Expr[] convergeEnvironments(VcBranch[] branches, int[] subscripts) {
 		Expr[] newEnvironment = Arrays.copyOf(environment, environment.length);
 		// First, go through and find all registers whose values differ between
 		// parents. These registers will need to be patched.
@@ -575,7 +636,7 @@ public class VcBranch {
 		// registers are given new names which are common to all branches, and
 		// appropriate assumptions are added to connect the old register names
 		// with the new.
-		if(toPatch.isEmpty()) {
+		if (toPatch.isEmpty()) {
 			// This is the special case where there are no variables needing to
 			// be patched.
 			return newEnvironment;
@@ -590,7 +651,8 @@ public class VcBranch {
 			for (int i = 0; i != newEnvironment.length; ++i) {
 				if (toPatch.get(i)) {
 					// This register needs to be patched
-					Expr.Variable var = new Expr.Variable(prefixes[i] + "_" + pc); // FIXME: pc
+					Expr.Variable var = new Expr.Variable(prefixes[i] + "_"
+							+ pc); // FIXME: pc
 					for (int j = 0; j != branches.length; ++j) {
 						branches[j].assume(new Expr.Binary(Expr.Binary.Op.EQ,
 								var, branches[j].read(i)));
@@ -602,7 +664,7 @@ public class VcBranch {
 			return newEnvironment;
 		}
 	}
-	
+
 	/**
 	 * Determine which variables differ between two or more branches. Such
 	 * variables need to be "patched".
