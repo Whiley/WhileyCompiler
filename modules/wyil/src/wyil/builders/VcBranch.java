@@ -651,8 +651,7 @@ public class VcBranch {
 			for (int i = 0; i != newEnvironment.length; ++i) {
 				if (toPatch.get(i)) {
 					// This register needs to be patched
-					Expr.Variable var = new Expr.Variable(prefixes[i] + "_"
-							+ pc); // FIXME: pc
+					Expr.Variable var = new Expr.Variable(prefixes[i] + "_" + subscripts[i]);
 					for (int j = 0; j != branches.length; ++j) {
 						branches[j].assume(new Expr.Binary(Expr.Binary.Op.EQ,
 								var, branches[j].read(i)));
