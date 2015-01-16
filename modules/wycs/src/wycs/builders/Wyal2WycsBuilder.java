@@ -274,8 +274,11 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	public WycsFile getModule(Path.ID mid) throws Exception {
 		Path.Entry<WycsFile> wyf = project.get(mid, WycsFile.ContentType);
 		if(wyf != null) {
+			// In this case, we have found an appropriate WycsFile which matches
+			// the given path.
 			return wyf.read();
 		} else {
+			// Found nothing.
 			return null;
 		}
 	}
@@ -295,15 +298,19 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	public NameID resolveAsName(String name, WyalFile.Context context)
 			throws ResolveError {
 		
-		// First, we need to check whether or not the name is in the enclosing file.  If it is, then is what it must resolve to.  Otherwise, we need to look further afield.
+		// First, we need to check whether or not the name is in the enclosing
+		// file. If it is, then is what it must resolve to. Otherwise, we need
+		// to look further afield.
 		WyalFile enclosingFile = context.file();
 		if(enclosingFile.declaration(name) != null) {
 			// Ok, yes, there is a declaration of the given name in this file.
 			return new NameID(enclosingFile.id(),name);
 		} 
 		
-		// Otherwise, the name is defined in an external file.		
+		// Otherwise, the name is defined in an external file and we need to
+		// search the imports list to find it.		
 		for (WyalFile.Import imp : context.imports()) {
+			System.out.println("LOOKING FOR IMPORT: " + imp.filter + " " + imp.name);
 			for (Path.ID id : imports(imp.filter)) {
 				try {
 					// First, look to see whether this is a file that is
@@ -323,8 +330,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 						// this file and see whether or not it contains the
 						// given name.
 						WycsFile wf = getModule(id);
-						if(wf == null) { continue; }						
-						if(wf.declaration(name) != null) {
+						if(wf != null && wf.declaration(name) != null) {
 							return new NameID(id,name);
 						}
 					}
@@ -337,7 +343,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			}
 		}
 		
-		throw new ResolveError("cannot resolve name: " + name);
+		throw new ResolveError("name not found: " + name);
 	}
 	/**
 	 * Resolve a name found at a given context in a source file, and ensure it
@@ -548,8 +554,29 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			return SemanticType.Tuple(types);
 		} else if(type instanceof SyntacticType.Nominal) {
 			SyntacticType.Nominal n = (SyntacticType.Nominal) type;
-			// FIXME: need to handle fully quantified names
-			NameID nid = resolveAsName(n.names.get(0), context);
+			List<String> n_names = n.names;
+			NameID nid;
+			// First, check whether or not we have an unqualified or fully
+			// qualified name. Currently, there is no support for partially
+			// qualified names which makes life easier at this point.
+			if(n_names.size() == 1) {
+				// This is an unqualified name and, hence, we need to qualify
+				// it. This means determining what file this name is defined it.
+				nid = resolveAsName(n_names.get(0), context);
+			} else {
+				// This is a fully qualified name. In this case, we don't need
+				// to determine what file it is defined in as this is given. All
+				// entries upto but not including the last name component
+				// correspond to the package identified, whilst the last
+				// component is the actual name.
+				Trie pkg = Trie.ROOT;
+				for (int i = 1; i != n_names.size(); ++i) {
+					pkg = pkg.append(n_names.get(i-1));
+				}
+				String name = n_names.get(n_names.size()-1);
+				nid = new NameID(pkg,name);
+			}
+			//
 			return SemanticType.Nominal(nid);
 		}
 
@@ -720,7 +747,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	 * @param wyalFile
 	 * @return
 	 */
-	private WycsFile getModuleStub(WyalFile wyalFile) {
+	public WycsFile getModuleStub(WyalFile wyalFile) {
 		ArrayList<WycsFile.Declaration> declarations = new ArrayList<WycsFile.Declaration>();
 		for (WyalFile.Declaration d : wyalFile.declarations()) {
 			try {
@@ -765,7 +792,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				}
 			} catch (ResolveError re) {
 				// should be unreachable if type propagation is already succeeded.
-				syntaxError("cannot resolve as function or definition call",
+				syntaxError(re.getMessage(),
 						wyalFile.filename(), d, re);
 				return null;
 			}

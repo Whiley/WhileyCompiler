@@ -207,7 +207,7 @@ public final class CodeGenerator {
 		}
 
 		return new WyilFile.TypeDeclaration(td.modifiers(), td.name(),
-				td.resolvedType.raw(), invariant);
+				td.resolvedType.nominal(), invariant);
 	}
 
 	// =========================================================================

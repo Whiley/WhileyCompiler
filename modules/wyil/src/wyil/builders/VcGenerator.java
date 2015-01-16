@@ -115,7 +115,6 @@ public class VcGenerator {
 	protected void transform(WyilFile.TypeDeclaration typeDecl,
 			WyilFile wyilFile) {
 		AttributedCodeBlock body = typeDecl.invariant();
-		NameID name = new NameID(wyilFile.id(), typeDecl.name());
 		Expr invariant = null;
 		Expr.Variable var = new Expr.Variable("r0");
 		if (body != null) {
@@ -139,7 +138,7 @@ public class VcGenerator {
 		TypePattern.Leaf pattern = new TypePattern.Leaf(convert(
 				typeDecl.type(), Collections.EMPTY_LIST), var);
 
-		wycsFile.add(wycsFile.new Type(toIdentifier(name),
+		wycsFile.add(wycsFile.new Type(typeDecl.name(),
 				Collections.EMPTY_LIST, pattern, invariant,
 				toWycsAttributes(typeDecl.attributes())));
 	}
@@ -1341,19 +1340,12 @@ public class VcGenerator {
 			Expr argument = new Expr.Nary(Expr.Nary.Op.TUPLE, operands,
 					attributes);
 			branch.write(code.target(), new Expr.Invoke(
-					toIdentifier(code.name), code.name.module(),
+					code.name.name(), code.name.module(),
 					Collections.EMPTY_LIST, argument, attributes), code
 					.assignedType());
 
-			// Here, we must add a WycsFile Function to represent the function
-			// being called, and to prototype it.
-			TypePattern from = new TypePattern.Leaf(convert(code.type()
-					.params(), block, branch), null, attributes);
-			TypePattern to = new TypePattern.Leaf(convert(code.type().ret(),
-					block.attributes(branch.pc())), null, attributes);
-			wycsFile.add(wycsFile.new Function(toIdentifier(code.name),
-					Collections.EMPTY_LIST, from, to, null));
-
+			// Here, we must find the name of the corresponding postcondition so
+			// that we can assume it.			
 			List<AttributedCodeBlock> ensures = findPostcondition(code.name,
 					code.type(), block, branch);
 
@@ -1363,7 +1355,7 @@ public class VcGenerator {
 				Expr[] arguments = new Expr[operands.length + 1];
 				System.arraycopy(operands, 0, arguments, 1, operands.length);
 				arguments[0] = branch.read(code.target());
-				String prefix = toIdentifier(code.name) + "_ensures_";
+				String prefix = code.name.name() + "_ensures_";
 				for (int i = 0; i != ensures.size(); ++i) {
 					Expr.Invoke macro = new Expr.Invoke(prefix + i,
 							code.name.module(), Collections.EMPTY_LIST,
@@ -2221,8 +2213,8 @@ public class VcGenerator {
 		} else if (t instanceof Type.FunctionOrMethod) {
 			Type.FunctionOrMethod ft = (Type.FunctionOrMethod) t;
 			return new SyntacticType.Any();
-		} else if(t instanceof Type.Nominal) {
-			Type.Nominal nt = (Type.Nominal) t;		
+		} else if(t instanceof Type.Nominal) {			
+			Type.Nominal nt = (Type.Nominal) t;
 			ArrayList<String> names = new ArrayList<String>();
 			names.add(toIdentifier(nt.name()));
 			return new SyntacticType.Nominal(names,
@@ -2242,7 +2234,7 @@ public class VcGenerator {
 	 * @return
 	 */
 	private String toIdentifier(NameID id) {
-		return id.toString().replace(":", "_").replace("/", "_");
+		return id.toString().replace(":", ".").replace("/", ".");
 	}
 
 	private static <T> List<T> prepend(T x, List<T> xs) {

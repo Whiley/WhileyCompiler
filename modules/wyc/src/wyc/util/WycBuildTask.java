@@ -6,7 +6,11 @@ import java.util.*;
 import wybs.lang.*;
 import wybs.util.*;
 import wyfs.lang.Content;
+import wyfs.lang.Content.Filter;
+import wyfs.lang.Content.Type;
 import wyfs.lang.Path;
+import wyfs.lang.Path.Entry;
+import wyfs.lang.Path.ID;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.JarFileRoot;
 import wyfs.util.VirtualRoot;
@@ -17,6 +21,7 @@ import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
 import wycc.lang.Pipeline;
 import wycc.util.Logger;
+import wycc.util.Pair;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;
@@ -612,7 +617,7 @@ public class WycBuildTask {
 
 				wycsPipeline.setOption(VerificationCheck.class,"enable",verification);
 				wycsPipeline.setOption(SmtVerificationCheck.class,"enable",smtVerification);
-				Wyal2WycsBuilder wycsBuilder = new Wyal2WycsBuilder(project,wycsPipeline);
+				Wyal2WycsBuilder wycsBuilder = new Wyal2WycsBuilder(new WycsProject(project),wycsPipeline);
 
 				if(verbose) {
 					wycsBuilder.setLogger(new Logger.Default(System.err));
@@ -661,5 +666,92 @@ public class WycBuildTask {
 		wyilDir.flush();
 		wyalDir.flush();
 		wycsDir.flush();
+	}
+	
+	/**
+	 * The WyCS Project is needed to load WyCS modules on demand from WyIL
+	 * files. This is because we currently assume that such modules are not
+	 * available in binary form. This could be resolved, for example, by
+	 * requiring that all wyil files are store along with their corresponding
+	 * wycs files.  However, this does seem a little unnecessary.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	protected class WycsProject implements Build.Project {
+		protected Build.Project project;
+		
+		WycsProject(Build.Project project) {
+			this.project = project;
+		}
+		
+		@Override
+		public boolean contains(Entry<?> entry) throws IOException {
+			return project.contains(entry);			
+		}
+
+		@Override
+		public boolean exists(ID id, Type<?> ct) throws IOException {
+			boolean r = project.exists(id,ct);
+			if (!r && ct == WycsFile.ContentType) {
+				// We're looking for a WycsFile that doesn't exist, but for
+				// which a WyIL file may exist.
+				System.out.println("EXISTS PASS THROUGH");
+				return project.exists(id, WyilFile.ContentType);
+			} else {
+				return r;
+			}
+		}
+
+		@Override
+		public <T> Entry<T> get(ID id, Type<T> ct) throws IOException {
+			Entry<T> r = project.get(id,ct);
+			if (r == null && ct == WycsFile.ContentType) {
+				System.out.println("*** GET CALLED");
+				// We're looking for a WycsFile that doesn't exist, but for
+				// which a WyIL file may exist.
+				Entry<WyilFile> wf = project.get(id,WyilFile.ContentType);
+				if(wf != null) {
+					// In this case, we have a WyIL file for which a WycsFile
+					// does not yet exist. Therefore, we construct a stub for
+					// this file on demand.
+					return (Entry<T>) convertWyilFile(wf);
+				}
+			} 
+			return r;
+		}
+
+		@Override
+		public <T> List<Entry<T>> get(Filter<T> ct) throws IOException {
+			return project.get(ct);			
+		}
+
+		@Override
+		public <T> Set<ID> match(Filter<T> filter) throws IOException {
+			return project.match(filter);
+		}
+		
+		private Path.Entry<WycsFile> convertWyilFile(Path.Entry<WyilFile> wf) throws IOException {
+			// This will generate a WyalFile, which in turn will generate a WyCS
+			// file. This is rather clunky and could be done better, but for now
+			// it will work OK.
+			System.out.println("*** STAGE 1: " + wf.location());
+			Wyil2WyalBuilder builder = new Wyil2WyalBuilder(this);
+			ArrayList<Pair<Path.Entry<?>,Path.Root>> wyilDelta = new ArrayList<Pair<Path.Entry<?>,Path.Root>>();
+			wyilDelta.add(new Pair<Path.Entry<?>,Path.Root>(wf,wycsDir));
+			Set<Path.Entry<?>> wafs = builder.build(wyilDelta);
+			System.out.println("*** STAGE 2");
+			Path.Entry<WyalFile> waf = (Path.Entry<WyalFile>) wafs.iterator().next();
+			System.out.println("*** STAGE 3");
+			// Having generated the corresponding WyalFiles, we now need to
+			// generate the appropriate WyCS files.
+			Wyal2WycsBuilder builder2 = new Wyal2WycsBuilder(this,null);
+			WycsFile wcf = builder2.getModuleStub(waf.read());
+			
+			Path.Entry<WycsFile> r = wycsDir.create(wf.id(),WycsFile.ContentType);
+			r.write(wcf);
+			System.out.println("*** FINSIHED LOADING STUB ON DEMAND ***");
+			return r;
+		}
 	}
 }
