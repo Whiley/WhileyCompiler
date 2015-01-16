@@ -310,7 +310,6 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		// Otherwise, the name is defined in an external file and we need to
 		// search the imports list to find it.		
 		for (WyalFile.Import imp : context.imports()) {
-			System.out.println("LOOKING FOR IMPORT: " + imp.filter + " " + imp.name);
 			for (Path.ID id : imports(imp.filter)) {
 				try {
 					// First, look to see whether this is a file that is

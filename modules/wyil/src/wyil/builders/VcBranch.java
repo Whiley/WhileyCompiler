@@ -28,6 +28,7 @@ package wyil.builders;
 import java.util.Arrays;
 import java.util.BitSet;
 
+import wycc.util.Pair;
 import wycs.core.Value;
 import wycs.syntax.Expr;
 import wyil.lang.*;
@@ -631,7 +632,9 @@ public class VcBranch {
 		Expr[] newEnvironment = Arrays.copyOf(environment, environment.length);
 		// First, go through and find all registers whose values differ between
 		// parents. These registers will need to be patched.
-		BitSet toPatch = determinePatchVariables(newEnvironment, branches);
+		Pair<BitSet,BitSet> pvs = determinePatchVariables(newEnvironment, branches);
+		BitSet toPatch = pvs.first();
+		BitSet toNull = pvs.second();
 		// Second, patch any registers which were marked in previous phase. Such
 		// registers are given new names which are common to all branches, and
 		// appropriate assumptions are added to connect the old register names
@@ -649,7 +652,14 @@ public class VcBranch {
 			}
 			// Now, patch each variable which is marked for patching.
 			for (int i = 0; i != newEnvironment.length; ++i) {
-				if (toPatch.get(i)) {
+				if(toNull.get(i)) {
+					// This register needs to be nulled since it was undefined
+					// in one or more of the source branches. This check needs
+					// to come before the patch check, because a variable can be
+					// marked as both toNull and toPatch. In such case, it
+					// should be nulled.
+					newEnvironment[i] = null;
+				} else if (toPatch.get(i)) {
 					// This register needs to be patched
 					Expr.Variable var = new Expr.Variable(prefixes[i] + "_" + subscripts[i]);
 					for (int j = 0; j != branches.length; ++j) {
@@ -657,7 +667,7 @@ public class VcBranch {
 								var, branches[j].read(i)));
 					}
 					newEnvironment[i] = var;
-				}
+				}  
 			}
 			// Done
 			return newEnvironment;
@@ -666,15 +676,16 @@ public class VcBranch {
 
 	/**
 	 * Determine which variables differ between two or more branches. Such
-	 * variables need to be "patched".
+	 * variables need to be "patched" or "nulled".
 	 * 
 	 * @param environment
 	 * @param parents
 	 * @return
 	 */
-	private static BitSet determinePatchVariables(Expr[] environment,
+	private static Pair<BitSet,BitSet> determinePatchVariables(Expr[] environment,
 			VcBranch[] parents) {
 		BitSet toPatch = new BitSet(environment.length);
+		BitSet toNull = new BitSet(environment.length);
 		for (int i = 0; i != environment.length; ++i) {
 			environment[i] = parents[0].environment[i];
 			for (int j = 0; j != parents.length; ++j) {
@@ -683,6 +694,7 @@ public class VcBranch {
 					// In this case, the variable is undefined on one or both
 					// parents. This means it cannot be used after this point
 					// and, hence, can be safey ignored.
+					toNull.set(i);
 				} else if (parent.environment[i] != environment[i]) {
 					// In this case, there is a difference between this parent's
 					// environment and at least one others. In such case, the
@@ -691,7 +703,7 @@ public class VcBranch {
 				}
 			}
 		}
-		return toPatch;
+		return new Pair<BitSet,BitSet>(toPatch,toNull);
 	}
 
 }

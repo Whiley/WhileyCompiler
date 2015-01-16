@@ -78,7 +78,7 @@ public class VcGenerator {
 				WyilFile.FunctionOrMethodDeclaration method = (WyilFile.FunctionOrMethodDeclaration) b;
 				for (WyilFile.Case c : method.cases()) {
 					transform(c, method, wyilFile);
-				}
+				}			
 			}
 		}
 
@@ -148,7 +148,7 @@ public class VcGenerator {
 
 		NameID name = new NameID(wyilFile.id(), method.name());
 		Type.FunctionOrMethod fmm = method.type();
-		AttributedCodeBlock body = methodCase.body();
+		AttributedCodeBlock body = methodCase.body();				
 		List<AttributedCodeBlock> precondition = methodCase.precondition();
 		List<AttributedCodeBlock> postcondition = methodCase.postcondition();
 
@@ -165,6 +165,14 @@ public class VcGenerator {
 			List<Type> types = prepend(fmm.ret(), fmm.params());
 			buildMacroBlock(prefix + i, postcondition.get(i), types);
 		}
+		
+		if(method.hasModifier(Modifier.NATIVE)) {
+			// We don't consider native methods because they have empty bodies,
+			// and attempting to pass these through to the verification
+			// condition generator will cause problems.
+			return;
+		}
+		
 
 		// Construct the master branch and initialise all parameters with their
 		// declared types in the master branch. The master branch needs to have
@@ -1240,9 +1248,19 @@ public class VcGenerator {
 	/**
 	 * Maps binary bytecodes into expression opcodes.
 	 */
-	private static Expr.Binary.Op[] binaryOperatorMap = { Expr.Binary.Op.ADD,
-			Expr.Binary.Op.SUB, Expr.Binary.Op.MUL, Expr.Binary.Op.DIV, Expr.Binary.Op.REM,
-			Expr.Binary.Op.RANGE,  };
+	private static Expr.Binary.Op[] binaryOperatorMap = { 
+		Expr.Binary.Op.ADD,
+			Expr.Binary.Op.SUB, 
+			Expr.Binary.Op.MUL, 
+			Expr.Binary.Op.DIV, 
+			Expr.Binary.Op.REM,
+			Expr.Binary.Op.RANGE,  
+			null, // bitwise or
+			null, // bitwise xor
+			null, // bitwise and
+			null, // left shift
+			null  // right shift			
+	};
 
 	/**
 	 * Maps binary bytecodes into expression opcodes.
@@ -1525,9 +1543,16 @@ public class VcGenerator {
 		Expr lhs = branch.read(code.operand(0));
 		Expr rhs = branch.read(code.operand(1));
 
-		branch.write(code.target(), new Expr.Binary(operator, lhs, rhs,
-				toWycsAttributes(block.attributes(branch.pc()))), code
-				.assignedType());
+		if(operator != null) {
+			branch.write(code.target(), new Expr.Binary(operator, lhs, rhs,
+					toWycsAttributes(block.attributes(branch.pc()))), code
+					.assignedType());
+		} else {
+			// In this case, we have a binary operator which we don't know how
+			// to translate into WyCS. Therefore, we need to invalidate the
+			// target register to signal this.
+			branch.havoc(code.target(), code.assignedType());
+		}
 	}
 
 	/**

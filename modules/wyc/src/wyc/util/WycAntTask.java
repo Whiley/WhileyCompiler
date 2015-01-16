@@ -85,6 +85,14 @@ public class WycAntTask extends MatchingTask {
     	builder.setWyilDir(dir);
     }
 
+    public void setWyaldir (File dir) throws IOException {
+    	builder.setWyalDir(dir);
+    }
+    
+    public void setWycsdir (File dir) throws IOException {
+    	builder.setWycsDir(dir);
+    }
+    
     public void setIncludes(String includes) {
     	builder.setIncludes(includes);
     }
