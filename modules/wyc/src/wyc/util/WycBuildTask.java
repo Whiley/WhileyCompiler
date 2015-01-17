@@ -291,6 +291,14 @@ public class WycBuildTask {
 	protected boolean verification = false;
 
 	/**
+	 * Indicates whether or not the compiler should generate the intermediate
+	 * verification conditions. If verification is true, then this is done
+	 * automatically. Otherwise, you can force it with this flag without
+	 * actually performing verification.
+	 */
+	protected boolean verificationConditions = false;
+	
+	/**
 	 * Indicates whether or not the compiler should enable detailed verification
 	 * checking of pre- and post-conditions using an external SMT solver.
 	 */
@@ -327,6 +335,10 @@ public class WycBuildTask {
 		this.verification = verification;
 	}
 
+	public void setVerificationConditions(boolean flag) {
+		this.verificationConditions = flag;
+	}
+	
 	public void setSmtVerification(boolean verification) {
 		this.smtVerification = verification;
 	}
@@ -335,6 +347,10 @@ public class WycBuildTask {
 		return verification;
 	}
 
+	public boolean getVerificationConditions() {
+		return verificationConditions;
+	}
+	
 	public void setPipelineModifiers(List<Pipeline.Modifier> modifiers) {
 		this.pipelineModifiers = new ArrayList<Pipeline.Modifier>(modifiers);
 	}
@@ -598,7 +614,7 @@ public class WycBuildTask {
 			// Wyil => Wycs Compilation Rule
 			// ========================================================
 
-			if(verification || smtVerification) {
+			if(verification || smtVerification || verificationConditions) {
 
 				// First, handle the conversion of wyil to wyal
 

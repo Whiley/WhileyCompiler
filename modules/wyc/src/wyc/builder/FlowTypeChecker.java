@@ -179,12 +179,12 @@ public class FlowTypeChecker {
 		td.resolvedType = resolveAsType(td.pattern.toSyntacticType(), td);
 
 		if(Type.isSubtype(Type.T_VOID, td.resolvedType.raw())) {
-			// A contractive type is one which cannot accept a finite values.
+			// A non-contractive type is one which cannot accept a finite values.
 			// For example, the following is a contractive type:
 			//
-			// type Contractive is { Contractive x }
+			// type NonContractive is { NonContractive x }
 			//
-			syntaxError("contractive type defined",filename,td);
+			syntaxError("type is not contractive",filename,td);
 		} else if (td.invariant != null) {
 			// Second, an invariant expression is given, so propagate through
 			// that.

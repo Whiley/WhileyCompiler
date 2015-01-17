@@ -125,6 +125,10 @@ public class WycAntTask extends MatchingTask {
     	builder.setVerification(b);
     }
 
+    public void setVerificationConditions(boolean b) {
+    	builder.setVerificationConditions(b);
+    }
+    
     public void execute() throws BuildException {
     	try {
     		int count = builder.buildAll();

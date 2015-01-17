@@ -33,11 +33,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
-import wyautl.util.BigRational;
 import wybs.lang.*;
 import wyfs.lang.Path;
 import wyil.lang.*;
-import wyil.lang.CodeBlock.Index;
 import wyil.util.AttributedCodeBlock;
 import wyil.util.ErrorMessages;
 import wycc.lang.Attribute;
@@ -97,7 +95,7 @@ public class VcGenerator {
 			TypePattern.Leaf pattern = new TypePattern.Leaf(convert(
 					st.element(), Collections.EMPTY_LIST), var);
 
-			wycsFile.add(wycsFile.new Type(toIdentifier(name),
+			wycsFile.add(wycsFile.new Type(name.name(),
 					Collections.EMPTY_LIST, pattern, null,
 					toWycsAttributes(decl.attributes())));
 		}
@@ -156,11 +154,11 @@ public class VcGenerator {
 		// can then be used in various places to assume or enforce pre /
 		// post-conditions. For example, when ensure a pre-condition is met at
 		// an invocation site, we can call this macro directly.
-		String prefix = toIdentifier(name) + "_requires_";
+		String prefix = name.name() + "_requires_";
 		for (int i = 0; i != precondition.size(); ++i) {
 			buildMacroBlock(prefix + i, precondition.get(i), fmm.params());
 		}
-		prefix = toIdentifier(name) + "_ensures_";
+		prefix = name.name() + "_ensures_";
 		for (int i = 0; i != postcondition.size(); ++i) {
 			List<Type> types = prepend(fmm.ret(), fmm.params());
 			buildMacroBlock(prefix + i, postcondition.get(i), types);
@@ -191,7 +189,7 @@ public class VcGenerator {
 
 		// Second, assume all preconditions. To do this, we simply invoke the
 		// precondition macro for each one.
-		prefix = toIdentifier(name) + "_requires_";
+		prefix = name.name() + "_requires_";
 		for (int i = 0; i != precondition.size(); ++i) {
 			Expr arg = arguments.length == 1 ? arguments[0] : new Expr.Nary(
 					Expr.Nary.Op.TUPLE, arguments);
@@ -245,7 +243,7 @@ public class VcGenerator {
 					// verification condition. Doing this allows us to gather
 					// more detailed context information in the case of a
 					// failure about which post-condition is failing.
-					prefix = toIdentifier(name) + "_ensures_";
+					prefix = name.name() + "_ensures_";
 					for (int i = 0; i != postcondition.size(); ++i) {
 						Expr arg = arguments.length == 1 ? arguments[0]
 								: new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
@@ -644,7 +642,7 @@ public class VcGenerator {
 			}
 			// To check the pre-condition holds after the method, we
 			// simply called the corresponding pre-condition macros.
-			String prefix = toIdentifier(code.name) + "_requires_";
+			String prefix = code.name.name() + "_requires_";
 			Expr[] preconditions = new Expr[requires.size()];
 			Expr argument = operands.length == 1 ? operands[0] : new Expr.Nary(
 					Expr.Nary.Op.TUPLE, operands);
@@ -755,7 +753,13 @@ public class VcGenerator {
 
 		// First, havoc all variables which are modified in the loop.
 		for (int i : code.modifiedOperands) {
-			branch.havoc(i, branch.typeOf(i));
+			Type type = branch.typeOf(i);
+			if(type != null) {
+				// We only havoc variables that have already been defined. This
+				// is possibly a workaround for a bug, where the loop modified
+				// variables can contain variables local to the loop.
+				branch.havoc(i, type);
+			}
 		}
 
 		// Find and assume loop invariant (?)
@@ -779,11 +783,12 @@ public class VcGenerator {
 				// it is.
 				if(b.pc().isWithin(pc)) {
 					// This is still within the loop body.
-					System.out.println("FOUND BRANCH WITHIN");
 					break;
 				} else {
 					// This isn't within the loop body, so ignore and fall
 					// through to the default case.
+					exitBranches.add(b);
+					break;
 				}
 			default:
 				exitBranches.add(b);
@@ -824,7 +829,13 @@ public class VcGenerator {
 
 		// First, havoc all variables which are modified in the loop.
 		for (int i : code.modifiedOperands) {
-			branch.havoc(i, branch.typeOf(i));
+			Type type = branch.typeOf(i);
+			if(type != null) {
+				// We only havoc variables that have already been defined. This
+				// is possibly a workaround for a bug, where the loop modified
+				// variables can contain variables local to the loop.
+				branch.havoc(i, type);	
+			}
 		}
 
 		// Second, havoc the index variable.
@@ -1225,6 +1236,8 @@ public class VcGenerator {
 				transform((Codes.NewObject) code, block, branch);
 			} else if (code instanceof Codes.TupleLoad) {
 				transform((Codes.TupleLoad) code, block, branch);
+			} else if (code instanceof Codes.Lambda) {
+				transform((Codes.Lambda) code, block, branch);
 			} else {
 				internalFailure("unknown: " + code.getClass().getName(),
 						filename, block.attributes(branch.pc()));
@@ -1397,6 +1410,14 @@ public class VcGenerator {
 				toWycsAttributes(block.attributes(branch.pc()))), code
 				.assignedType());
 	}
+	
+
+	protected void transform(Codes.Lambda code, AttributedCodeBlock block,
+			VcBranch branch) {
+		// TODO: implement lambdas somehow?
+		branch.havoc(code.target(), code.assignedType());
+	}
+	
 
 	protected void transform(Codes.Move code, VcBranch branch) {
 		branch.write(code.target(), branch.read(code.operand(0)),
@@ -1776,7 +1797,7 @@ public class VcGenerator {
 		// harder for the verifier.
 		HashSet<String> uses = new HashSet<String>();
 		assertion.freeVariables(uses);
-
+		
 		// Now, we determine the correct type for all used variables.
 
 		// FIXME: this does not actually always find the correct type of a
@@ -2238,10 +2259,14 @@ public class VcGenerator {
 		} else if (t instanceof Type.FunctionOrMethod) {
 			Type.FunctionOrMethod ft = (Type.FunctionOrMethod) t;
 			return new SyntacticType.Any();
-		} else if(t instanceof Type.Nominal) {			
+		} else if (t instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) t;
+			NameID nid = nt.name();
 			ArrayList<String> names = new ArrayList<String>();
-			names.add(toIdentifier(nt.name()));
+			for (String pc : nid.module()) {
+				names.add(pc);
+			}
+			names.add(nid.name());
 			return new SyntacticType.Nominal(names,
 					toWycsAttributes(attributes));
 		} else {
@@ -2249,17 +2274,6 @@ public class VcGenerator {
 					+ t.getClass().getName() + ")", filename, attributes);
 			return null;
 		}
-	}
-
-	/**
-	 * Convert a wyil NameID into a string that is suitable to be used as a
-	 * function name or variable identifier in WycsFiles.
-	 *
-	 * @param id
-	 * @return
-	 */
-	private String toIdentifier(NameID id) {
-		return id.toString().replace(":", ".").replace("/", ".");
 	}
 
 	private static <T> List<T> prepend(T x, List<T> xs) {

@@ -122,7 +122,7 @@ public class VcBranch {
 	/**
 	 * Maintains the current assignment of variables to their types.
 	 */
-	private final Type[] types;
+	public final Type[] types;
 
 	/**
 	 * Contains the accumulated constraints in the order they were added.
@@ -639,9 +639,9 @@ public class VcBranch {
 		// registers are given new names which are common to all branches, and
 		// appropriate assumptions are added to connect the old register names
 		// with the new.
-		if (toPatch.isEmpty()) {
+		if (toPatch.isEmpty() && toNull.isEmpty()) {
 			// This is the special case where there are no variables needing to
-			// be patched.
+			// be patched or nulled.
 			return newEnvironment;
 		} else {
 			// In this case, there is at least one varaible which needs to be
