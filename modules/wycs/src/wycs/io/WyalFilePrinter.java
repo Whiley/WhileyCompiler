@@ -176,6 +176,8 @@ public class WyalFilePrinter {
 			out.print(e);
 		} else if(e instanceof Expr.Unary) {
 			write(wf, (Expr.Unary)e,indent);
+		} else if(e instanceof Expr.Cast) {
+			write(wf, (Expr.Cast)e,indent);
 		} else if(e instanceof Expr.Binary) {
 			write(wf, (Expr.Binary)e,indent);
 		} else if(e instanceof Expr.Ternary) {
@@ -194,6 +196,10 @@ public class WyalFilePrinter {
 		}
 	}
 
+	private void write(WyalFile wf, Expr.Cast e, int indent) {
+		out.print("(" + e.type + ")" + e.operand);
+	}
+	
 	private void write(WyalFile wf, Expr.Unary e, int indent) {
 		switch(e.op) {
 		case NOT:

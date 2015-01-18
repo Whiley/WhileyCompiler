@@ -200,6 +200,8 @@ public class TypePropagation implements Transform<WyalFile> {
 		SemanticType t;
 		if(e instanceof Expr.Variable) {
 			t = propagate((Expr.Variable)e, environment, generics, context);
+		} else if(e instanceof Expr.Cast) {
+			t = propagate((Expr.Cast)e, environment, generics, context);
 		} else if(e instanceof Expr.Constant) {
 			t = propagate((Expr.Constant)e, environment, generics, context);
 		} else if(e instanceof Expr.Unary) {
@@ -242,6 +244,21 @@ public class TypePropagation implements Transform<WyalFile> {
 		return e.value.type();
 	}
 
+	private SemanticType propagate(Expr.Cast e,
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WyalFile.Context context) {
+		try {
+			SemanticType op_type = propagate(e.operand,environment,generics,context);
+			SemanticType targetType = builder.convert(e.type, generics, context);
+			
+			checkIsSubtype(op_type,targetType,e);
+			return targetType;
+		} catch (ResolveError re) {
+			syntaxError(re.getMessage(), filename, e, re);
+			return null;
+		}
+	}
+	
 	private SemanticType propagate(Expr.Unary e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
@@ -546,6 +563,10 @@ public class TypePropagation implements Transform<WyalFile> {
 		if (e instanceof Expr.Variable || e instanceof Expr.Constant
 				|| e instanceof Expr.Quantifier) {
 			return type;
+		} else if(e instanceof Expr.Cast) {
+			Expr.Cast ec = (Expr.Cast) e;
+			// FIXME: ?
+			return builder.convert(ec.type,e);
 		} else if(e instanceof Expr.Unary) {
 			Expr.Unary ue = (Expr.Unary) e;
 			switch(ue.op) {

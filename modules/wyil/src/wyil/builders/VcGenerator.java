@@ -144,7 +144,6 @@ public class VcGenerator {
 	protected void transform(WyilFile.Case methodCase,
 			WyilFile.FunctionOrMethodDeclaration method, WyilFile wyilFile) {
 
-		NameID name = new NameID(wyilFile.id(), method.name());
 		Type.FunctionOrMethod fmm = method.type();
 		AttributedCodeBlock body = methodCase.body();				
 		List<AttributedCodeBlock> precondition = methodCase.precondition();
@@ -154,15 +153,18 @@ public class VcGenerator {
 		// can then be used in various places to assume or enforce pre /
 		// post-conditions. For example, when ensure a pre-condition is met at
 		// an invocation site, we can call this macro directly.
-		String prefix = name.name() + "_requires_";
+		String prefix = method.name() + "_requires_";
 		for (int i = 0; i != precondition.size(); ++i) {
 			buildMacroBlock(prefix + i, precondition.get(i), fmm.params());
 		}
-		prefix = name.name() + "_ensures_";
+		prefix = method.name() + "_ensures_";
 		for (int i = 0; i != postcondition.size(); ++i) {
 			List<Type> types = prepend(fmm.ret(), fmm.params());
 			buildMacroBlock(prefix + i, postcondition.get(i), types);
 		}
+		
+		// Finally, add a function representing this function or method.
+		buildFunctionBlock(method.name(),fmm.params(),fmm.ret());
 		
 		if(method.hasModifier(Modifier.NATIVE)) {
 			// We don't consider native methods because they have empty bodies,
@@ -171,7 +173,6 @@ public class VcGenerator {
 			return;
 		}
 		
-
 		// Construct the master branch and initialise all parameters with their
 		// declared types in the master branch. The master branch needs to have
 		// at least as many slots as there are parameters, though may require
@@ -189,7 +190,7 @@ public class VcGenerator {
 
 		// Second, assume all preconditions. To do this, we simply invoke the
 		// precondition macro for each one.
-		prefix = name.name() + "_requires_";
+		prefix = method.name() + "_requires_";
 		for (int i = 0; i != precondition.size(); ++i) {
 			Expr arg = arguments.length == 1 ? arguments[0] : new Expr.Nary(
 					Expr.Nary.Op.TUPLE, arguments);
@@ -243,7 +244,7 @@ public class VcGenerator {
 					// verification condition. Doing this allows us to gather
 					// more detailed context information in the case of a
 					// failure about which post-condition is failing.
-					prefix = name.name() + "_ensures_";
+					prefix = method.name() + "_ensures_";
 					for (int i = 0; i != postcondition.size(); ++i) {
 						Expr arg = arguments.length == 1 ? arguments[0]
 								: new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
@@ -1315,8 +1316,12 @@ public class VcGenerator {
 
 	protected void transform(Codes.Convert code, AttributedCodeBlock block,
 			VcBranch branch) {
+		Collection<Attribute> attributes = toWycsAttributes(block
+				.attributes(branch.pc()));
 		Expr result = branch.read(code.operand(0));
-		branch.write(code.target(), result, code.assignedType());
+		SyntacticType type = convert(code.type(), block.attributes(branch.pc()));
+		branch.write(code.target(), new Expr.Cast(type, result, attributes),
+				code.assignedType());
 	}
 
 	protected void transform(Codes.Const code, AttributedCodeBlock block,
@@ -1764,6 +1769,38 @@ public class VcGenerator {
 	}
 
 	/**
+	 * Construct a function with a given name representing a block of code. The
+	 * function can then be called elsewhere as an uninterpreted function.
+	 *
+	 * @param name
+	 *            --- the nameto give to the generated macro.
+	 * @param params
+	 *            --- parameter types to use.
+	 * @param ret
+	 *            --- return type to use
+	 * @return
+	 */
+	protected void buildFunctionBlock(String name, List<Type> params, Type ret) {
+
+		TypePattern.Leaf[] declarations = new TypePattern.Leaf[params.size()];
+		// second, set initial environment
+		for (int i = 0; i != params.size(); ++i) {
+			Expr.Variable v = new Expr.Variable("r" + i);
+			// FIXME: what attributes to pass into convert?
+			declarations[i] = new TypePattern.Leaf(convert(params.get(i),
+					Collections.EMPTY_LIST), v);
+		}
+
+		// Construct the type declaration for the new block macro
+		TypePattern from = new TypePattern.Tuple(declarations);		
+		TypePattern to = new TypePattern.Leaf(convert(ret,
+				Collections.EMPTY_LIST), null);
+
+		wycsFile.add(wycsFile.new Function(name, Collections.EMPTY_LIST, from,
+				to, null));
+	}
+	
+	/**
 	 * Construct a verification condition which asserts a given expression on
 	 * the current branch. Thus, all relevant assumptions are taken from the
 	 * current branch (and its ancestors) to form the verification condition.
@@ -2180,7 +2217,7 @@ public class VcGenerator {
 	 *            any errors generated with a source line.
 	 * @return
 	 */
-	private SyntacticType convert(Type t, List<wyil.lang.Attribute> attributes) {
+	private SyntacticType convert(Type t, Collection<wyil.lang.Attribute> attributes) {
 		// FIXME: this is fundamentally broken in the case of recursive types.
 		// See Issue #298.
 		if (t instanceof Type.Any) {

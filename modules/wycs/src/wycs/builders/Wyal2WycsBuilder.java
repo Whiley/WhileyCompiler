@@ -287,6 +287,9 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	 * Resolve a name found at a given context in a source file to determine its
 	 * fully qualified name. Essentially, the context will be used to determine
 	 * the active import statements which will be used to search for the name.
+	 * In this case, we are assuming that module stubs have not yet been
+	 * generated for all source files and, hence, we must consider source files
+	 * as well.
 	 *
 	 * @param name
 	 *            --- name to look for.
@@ -344,11 +347,13 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		
 		throw new ResolveError("name not found: " + name);
 	}
+	
 	/**
 	 * Resolve a name found at a given context in a source file, and ensure it
 	 * matches an expected type. Essentially, the context will be used to
 	 * determine the active import statements which will be used to search for
-	 * the name.
+	 * the name. In this case, we are assuming that module stubs have been
+	 * generated for all srcfiles and, hence, we do not need to consider them.
 	 *
 	 * @param name
 	 *            --- name to look for.
@@ -366,13 +371,13 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		for (WyalFile.Import imp : context.imports()) {
 			for (Path.ID id : imports(imp.filter)) {
 				try {
-					WycsFile wf = getModule(id);
-					if(wf == null) { continue; }
-					T d = wf.declaration(name, type);
-					if (d != null) {
-						return new Pair<NameID, T>(new NameID(id, name), d);
+					WycsFile wf = getModule(id);				
+					WycsFile.Declaration d = wf.declaration(name);
+					if (wf != null && type.isInstance(d)) {
+						NameID nid = new NameID(id, name);
+						return new Pair<NameID,T>(nid,(T) d);
 					}
-				} catch(SyntaxError e) {
+				} catch (SyntaxError e) {
 					throw e;
 				} catch (Exception e) {
 					internalFailure(e.getMessage(), context.file().filename(),
@@ -381,7 +386,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			}
 		}
 
-		throw new ResolveError("cannot resolve name as function: " + name);
+		throw new ResolveError("name not found: " + name);
 	}
 
 	public Pair<NameID, SemanticType.Function> resolveAsFunctionType(
