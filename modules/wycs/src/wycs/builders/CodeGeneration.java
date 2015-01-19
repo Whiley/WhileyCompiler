@@ -189,6 +189,8 @@ public class CodeGeneration {
 			return generate((Expr.Variable) e, environment, context);
 		} else if (e instanceof Expr.Constant) {
 			return generate((Expr.Constant) e, environment, context);
+		} else if (e instanceof Expr.Cast) {
+			return generate((Expr.Cast) e, environment, context);
 		} else if (e instanceof Expr.Unary) {
 			return generate((Expr.Unary) e, environment, context);
 		} else if (e instanceof Expr.Binary) {
@@ -220,6 +222,12 @@ public class CodeGeneration {
 				attributes(v));
 	}
 
+	protected Code generate(Expr.Cast e, HashMap<String,Code> environment, WyalFile.Context context) {
+		SemanticType type = e.attribute(TypeAttribute.class).type;
+		Code operand = generate(e.operand,environment, context);
+		return Code.Cast(type,operand,attributes(e));
+	}
+	
 	protected Code generate(Expr.Unary e, HashMap<String,Code> environment, WyalFile.Context context) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
 		Code operand = generate(e.operand,environment, context);

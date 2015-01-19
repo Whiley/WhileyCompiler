@@ -1319,7 +1319,7 @@ public class VcGenerator {
 		Collection<Attribute> attributes = toWycsAttributes(block
 				.attributes(branch.pc()));
 		Expr result = branch.read(code.operand(0));
-		SyntacticType type = convert(code.type(), block.attributes(branch.pc()));
+		SyntacticType type = convert(code.result, block.attributes(branch.pc()));
 		branch.write(code.target(), new Expr.Cast(type, result, attributes),
 				code.assignedType());
 	}

@@ -198,6 +198,14 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		return new Constant(value,attributes);
 	}
 
+	public static Cast Cast(SemanticType type, Code<?> operand, Attribute... attributes) {
+		return new Cast(type,operand,attributes);
+	}
+
+	public static Cast Cast(SemanticType type, Code<?> operand, Collection<Attribute> attributes) {
+		return new Cast(type,operand,attributes);
+	}
+	
 	public static Unary Unary(SemanticType type, Op opcode, Code<?> operand,
 			Attribute... attributes) {
 		return new Unary(type,opcode,operand,attributes);
@@ -268,29 +276,30 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		NULL(0),
 		VAR(1),
 		CONST(2),
-		NOT(3),
-		NEG(4),
-		LENGTH(5),
-		ADD(6),
-		SUB(7),
-		MUL(8),
-		DIV(9),
-		REM(10),
-		EQ(11),
-		NEQ(12),
-		LT(13),
-		LTEQ(14),
-		IN(15),
-		SUBSET(16),
-		SUBSETEQ(17),
-		AND(18),
-		OR(19),
-		TUPLE(20),
-		SET(21),
-		LOAD(22),
-		EXISTS(23),
-		FORALL(24),
-		FUNCALL(25);
+		CAST(3),
+		NOT(4),
+		NEG(5),
+		LENGTH(6),
+		ADD(7),
+		SUB(8),
+		MUL(9),
+		DIV(10),
+		REM(11),
+		EQ(12),
+		NEQ(13),
+		LT(14),
+		LTEQ(15),
+		IN(16),
+		SUBSET(17),
+		SUBSETEQ(18),
+		AND(19),
+		OR(20),
+		TUPLE(21),
+		SET(22),
+		LOAD(23),
+		EXISTS(24),
+		FORALL(25),
+		FUNCALL(26);
 
 		public int offset;
 
@@ -366,6 +375,31 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 	}
 
+	public final static class Cast extends Code<SemanticType> {
+		public final SemanticType type;
+
+		private Cast(SemanticType type, Code<?> operand, Attribute... attributes) {
+			super(type,Op.CAST,new Code[] { operand },attributes);
+			this.type = type;
+		}
+
+		private Cast(SemanticType type, Code<?> operand, Collection<Attribute> attributes) {
+			super(type,Op.CAST,new Code[] { operand },attributes);
+			this.type = type;
+		}
+
+		@Override
+		public SemanticType returnType() {
+			return type;
+		}
+
+		@Override
+		public Code<?> clone(SemanticType type, Op opcode, Code<?>[] operands) {
+			return Cast(type,operands[0],attributes());
+		}
+	}
+
+	
 	public final static class Unary extends Code<SemanticType> {
 		private Unary(SemanticType type, Op opcode, Code<?> operand,
 				Attribute... attributes) {

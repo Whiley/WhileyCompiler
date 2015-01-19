@@ -250,8 +250,7 @@ public class TypePropagation implements Transform<WyalFile> {
 		try {
 			SemanticType op_type = propagate(e.operand,environment,generics,context);
 			SemanticType targetType = builder.convert(e.type, generics, context);
-			
-			checkIsSubtype(op_type,targetType,e);
+			// TODO: check cast is permitted.
 			return targetType;
 		} catch (ResolveError re) {
 			syntaxError(re.getMessage(), filename, e, re);
@@ -561,12 +560,8 @@ public class TypePropagation implements Transform<WyalFile> {
 	public static SemanticType returnType(Expr e) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
 		if (e instanceof Expr.Variable || e instanceof Expr.Constant
-				|| e instanceof Expr.Quantifier) {
+				|| e instanceof Expr.Quantifier || e instanceof Expr.Cast) {
 			return type;
-		} else if(e instanceof Expr.Cast) {
-			Expr.Cast ec = (Expr.Cast) e;
-			// FIXME: ?
-			return builder.convert(ec.type,e);
 		} else if(e instanceof Expr.Unary) {
 			Expr.Unary ue = (Expr.Unary) e;
 			switch(ue.op) {

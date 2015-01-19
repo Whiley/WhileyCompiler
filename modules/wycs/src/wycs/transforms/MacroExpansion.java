@@ -132,7 +132,9 @@ public class MacroExpansion implements Transform<WycsFile> {
 		if (e instanceof Code.Variable || e instanceof Code.Constant) {
 			// do nothing
 			return e;
-		} else if (e instanceof Code.Unary) {
+		} else if (e instanceof Code.Cast) {
+			return transform((Code.Cast) e);
+		}  else if (e instanceof Code.Unary) {
 			return transform((Code.Unary) e);
 		} else if (e instanceof Code.Binary) {
 			return transform((Code.Binary) e);
@@ -151,6 +153,10 @@ public class MacroExpansion implements Transform<WycsFile> {
 		}
 	}
 
+	private Code<?> transform(Code.Cast e) {
+		return Code.Cast(e.type, transform(e.operands[0]), e.attributes());
+	}
+	
 	private Code<?> transform(Code.Unary e) {
 		return Code.Unary(e.type, e.opcode, transform(e.operands[0]),
 				e.attributes());

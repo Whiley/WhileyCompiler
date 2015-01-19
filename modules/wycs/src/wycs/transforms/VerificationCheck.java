@@ -243,6 +243,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 		int r;
 		if(expr instanceof Code.Constant) {
 			r = translate((Code.Constant) expr,automaton,environment);
+		} else if(expr instanceof Code.Cast) {
+			r = translate((Code.Cast) expr,automaton,environment);
 		} else if(expr instanceof Code.Variable) {
 			r = translate((Code.Variable) expr,automaton,environment);
 		} else if(expr instanceof Code.Binary) {
@@ -271,6 +273,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 		return convert(expr.value,expr,automaton);
 	}
 
+	private int translate(Code.Cast expr, Automaton automaton, HashMap<String,Integer> environment) {
+		int e = translate(expr.operands[0],automaton,environment);
+		// FIXME: implement cast expressions!
+		return e;
+	}
+	
 	private int translate(Code.Variable code, Automaton automaton, HashMap<String,Integer> environment) {
 		if(code.operands.length > 0) {
 			throw new RuntimeException("need to add support for variables with sub-components");
@@ -668,6 +676,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 	private void instantiateFromExpression(Code expression, ArrayList<Code> axioms, int freeVariable) {
 		if (expression instanceof Code.Variable || expression instanceof Code.Constant) {
 			// do nothing
+		} else if (expression instanceof Code.Cast) {
+			instantiateFromExpression((Code.Cast)expression,axioms, freeVariable);
 		} else if (expression instanceof Code.Unary) {
 			instantiateFromExpression((Code.Unary)expression,axioms, freeVariable);
 		} else if (expression instanceof Code.Binary) {
@@ -684,6 +694,10 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 
+	private void instantiateFromExpression(Code.Cast expression, ArrayList<Code> axioms, int freeVariable) {
+		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
+	}
+	
 	private void instantiateFromExpression(Code.Unary expression, ArrayList<Code> axioms, int freeVariable) {
 		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
 
