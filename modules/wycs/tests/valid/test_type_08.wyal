@@ -1,0 +1,9 @@
+type nat is (int x) where:
+    x >= 0
+
+assert:
+    forall({nat} xs, int x):
+        if:
+            x in xs
+        then:
+            x >= 0
