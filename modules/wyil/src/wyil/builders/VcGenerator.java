@@ -287,7 +287,7 @@ public class VcGenerator {
 	public List<VcBranch> transform(VcBranch branch, AttributedCodeBlock block) {
 		// Construct the label map which is needed for conditional branches
 		Map<String, CodeBlock.Index> labels = buildLabelMap(block);
-		return transform(CodeBlock.Index.ROOT, branch, labels, block);
+		return transform(CodeBlock.Index.ROOT, branch, false, labels, block);
 	}
 
 	/**
@@ -352,8 +352,13 @@ public class VcGenerator {
 	 *            The index in the root block of the given block being iterated
 	 *            over.
 	 * @param entryState
-	 *            the initial state on entry to the block. This is assumed to be
+	 *            The initial state on entry to the block. This is assumed to be
 	 *            located at the first instruction of the block.
+	 * @param breakOnInvariant
+	 *            With this flag enabled, the transformer will continue looping
+	 *            around the block until an invariant bytecode is found, at
+	 *            which point it will break. If no invariant is found, this will
+	 *            loop forever.
 	 * @param labels
 	 *            The map from labels to their block locations
 	 * @param block
@@ -361,10 +366,12 @@ public class VcGenerator {
 	 * 
 	 */
 	protected List<VcBranch> transform(CodeBlock.Index parent,
-			VcBranch entryState, Map<String, CodeBlock.Index> labels,
-			AttributedCodeBlock block) {
+			VcBranch entryState, boolean breakOnInvariant,
+			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
+		
 		// Move entry branch to first bytecode in the block.
-		entryState.goTo(new CodeBlock.Index(parent));
+		CodeBlock.Index start = new CodeBlock.Index(parent);
+		entryState.goTo(start);
 
 		// Construct list of branches being processed.
 		Stack<VcBranch> activeBranches = new Stack<VcBranch>();
@@ -388,8 +395,15 @@ public class VcGenerator {
 				exitBranches.add(branch);
 			} else if (!block.contains(pc)) {
 				// This indicates the given branch has exited this block by
-				// falling through. 
-				exitBranches.add(branch);
+				// falling through.  We now need to check for breakOnInvariant.
+				if(breakOnInvariant) {
+					// Break On Invariant is enabled, therefore continue going
+					// around.
+					branch.goTo(start);
+				} else {
+					// No reset, allow to exit branch as normal.
+					exitBranches.add(branch);
+				}
 			} else {
 				// Continue executing this branch as it is still within the
 				// scope of this block.
@@ -414,6 +428,15 @@ public class VcGenerator {
 								block);
 					} else if (code instanceof Codes.Loop) {
 						bs = transform((Codes.Loop) code, branch, labels, block);
+					} else if (breakOnInvariant
+							&& code instanceof Codes.Invariant) {
+						// In this special case, we have reached the invariant
+						// bytecode and, hence, we break out of this loop. This
+						// is needed for handling loop invariants where we need
+						// to do special things when the invariant is
+						// encountered.
+						exitBranches.add(branch);
+						break;
 					} else {
 						bs = transform((Codes.AssertOrAssume) code, branch,
 								labels, block);
@@ -752,6 +775,16 @@ public class VcGenerator {
 	protected List<VcBranch> transform(Codes.Loop code, VcBranch branch,
 			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
 
+		// First thing we need to do is determine whether or not this loop has a
+		// loop invariant, as this affects how we will approach it.
+		
+		if(!hasLoopInvariant(code)) {
+			// This is the easy case, as there is no loop invariant. Therefore,
+			// we just havoc variables and allow branches to exit the loop as
+			// normal.
+			
+		}
+		
 		// First, havoc all variables which are modified in the loop.
 		for (int i : code.modifiedOperands) {
 			Type type = branch.typeOf(i);
