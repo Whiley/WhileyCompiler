@@ -439,8 +439,9 @@ public class VcGenerator {
 						exitBranches.add(branch);
 						break;
 					} else {
-						bs = transform((Codes.AssertOrAssume) code, branch,
-								labels, block);
+						boolean isAssert = code instanceof Codes.Assert;
+						bs = transform((Codes.AssertOrAssume) code, isAssert,
+								branch, labels, block);
 					}
 					activeBranches.addAll(bs);
 				} else if (code instanceof Codes.Goto) {
@@ -776,7 +777,7 @@ public class VcGenerator {
 	protected List<VcBranch> transform(Codes.Loop code, VcBranch branch,
 			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
 		CodeBlock.Index loopStart = branch.pc();
-		int invariantOffset = getInvariantOffset(code);
+		int invariantOffset = getInvariantOffset(code);		
 		
 		// First thing we need to do is determine whether or not this loop has a
 		// loop invariant, as this affects how we will approach it.		
@@ -811,36 +812,29 @@ public class VcGenerator {
 			// the loop represents a true execution path. Any branch which has
 			// failed corresponds to ensuring the loop invariant on entry.
 			// Active branches which reach the invariant need special processing.
-			List<VcBranch> activeBranches = findActiveBranchesWithinBlock(loopStart,exitBranches);
-			exitBranches.removeAll(activeBranches);
-			
+			VcBranch activeBranch = findActiveBranchWithinBlock(loopStart,exitBranches,block);
+			exitBranches.remove(activeBranch);			
 			// Process all active branches which have reached the loop
 			// invariant. This is done first by asserting that the loop
 			// invariant holds (base case). Then, all modified variables are
 			// havoced and the loop invariant is assumed for the inductive case.
-			for(VcBranch activeBranch : activeBranches) {
-				// Assert loop invariant
-				System.out.println("NEED TO ASSERT INVARIANT ON ENTRY");
-				// Havoc modified variables
-				havocVariables(code.modifiedOperands,activeBranch);
-				// Assume loop invariant
-				System.out.println("NEED TO ASSUME INVARIANT FOR INDUCTIVE CASE");
-				// Process inductive case for this branch by allowing it to
-				// execute around the loop until the invariant is found again.
-				exitBranches.addAll(transform(invariantPc, branch, true, labels, block));				
-			}
-			
-			activeBranches = findActiveBranchesWithinBlock(loopStart,exitBranches);
-			exitBranches.removeAll(activeBranches);
-			
-			// Finally, process all active branches which have reached the loop
-			// invariant by asserting that the invariant still holds. At this
-			// point, they can be discarded.
-			for(VcBranch activeBranch : activeBranches) {
-				// Assert loop invariant.
-				System.out.println("NEED TO ASSERT INVARIANT FOR INDUCTIVE CASE");
-			}
-			
+			Codes.Invariant invariant = (Codes.Invariant) code.get(invariantOffset);
+			// Assert loop invariant
+			activeBranch = assertLoopInvariant(invariant,activeBranch,exitBranches,labels,block);
+			// Havoc modified variables
+			havocVariables(code.modifiedOperands,activeBranch);
+			// Assume loop invariant
+			activeBranch.goTo(invariantPc); // reset to start of invariant
+			activeBranch = assumeLoopInvariant(invariant,activeBranch,labels,block);				
+			// Process inductive case for this branch by allowing it to
+			// execute around the loop until the invariant is found again.
+			List<VcBranch> branches = transform(invariantPc, activeBranch, true, labels, block);
+			VcBranch active = findActiveBranchWithinBlock(loopStart,branches,block);
+			branches.remove(active);
+			exitBranches.addAll(branches);
+			// Finally, assert the loop invariant holds	again	
+			assertLoopInvariant(invariant,active,exitBranches,labels,block);
+			// Done!
 			return exitBranches;			
 		}
 	}
@@ -904,6 +898,130 @@ public class VcGenerator {
 		}
 		
 		return activeBranches;
+	}
+	
+	public VcBranch findActiveBranchWithinBlock(CodeBlock.Index pc,
+			List<VcBranch> branches, AttributedCodeBlock block) {
+		VcBranch result = null;
+		for (int i = 0; i != branches.size(); ++i) {
+			VcBranch b = branches.get(i);
+			switch (b.state()) {
+			case ACTIVE:
+				// This branch has either reached the end of the block or
+				// branched out prematurely, and we need to first decide which
+				// it is.
+				if (b.pc().isWithin(pc)) {
+					// This is still within the block.
+					if (result != null) {
+						internalFailure("incorrect number of branches",
+								filename, block.attributes(pc));
+					}
+					result = b;
+					break;
+				} else {
+					// This isn't within the block, so ignore.
+				}
+			}
+		}
+		// Perform another sanity check
+		if (result == null) {
+			internalFailure("incorrect number of branches", filename,
+					block.attributes(pc));
+		}
+		// Done
+		return result;
+	}
+	
+	/**
+	 * Assert a given loop invariant in the current branch, potentially
+	 * producing an updated branch and one or more failed branches. The failed
+	 * branches are added to the list being accumulated, whilst the updated
+	 * branch is returned.
+	 * 
+	 * @param invariant
+	 *            The invariant to assume
+	 * @param branch
+	 *            The branch in which to assert the invariant.
+	 * @param failBranches
+	 *            The current list of fail branches being accumulated. Every
+	 *            fail branch represents a potential assertion failure, and
+	 *            these are passed to the theorem prover to check this. All fail
+	 *            branches generated from asserting the loop invariant are
+	 *            placed into this list.
+	 * @param labels
+	 *            The map from labels to their block locations
+	 * @param block
+	 *            The block being transformed over.@param labels *
+	 * @return
+	 */
+	public VcBranch assertLoopInvariant(Codes.Invariant invariant,
+			VcBranch branch, List<VcBranch> failBranches,
+			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
+		// Reuse existing code for handling assert and assume statements.
+		List<VcBranch> branches = transform(invariant, false, branch,
+				labels, block);
+		//
+		VcBranch result = null;
+		//
+		// At this point, it should always be the case that there exists exactly
+		// one active branch which leaves the block, and potential zero or more
+		// fail branches. 
+		for (int i = 0; i != branches.size(); ++i) {
+			VcBranch b = branches.get(i);
+			switch(b.state()) {
+			case ACTIVE:
+				// Perform a quick sanity check
+				if(result != null) {
+					internalFailure("incorrect number of branches", filename,
+							block.attributes(branch.pc()));
+				}
+				result = b;
+				break;
+			default:
+				failBranches.add(b);
+			}
+		}
+		// Perform another sanity check
+		if(result == null) {
+			internalFailure("incorrect number of branches", filename,
+					block.attributes(branch.pc()));
+		}
+		// Done
+		return result;
+	}
+	
+	/**
+	 * Assume a given loop invariant in the current branch, potentially
+	 * producing an updated branch.
+	 * 
+	 * @param invariant
+	 *            The invariant to assume
+	 * @param branch
+	 *            The branch in which to assume the invariant
+	 * @param labels
+	 *            The map from labels to their block locations
+	 * @param block
+	 *            The block being transformed over.@param labels *
+	 * @return
+	 */
+	public VcBranch assumeLoopInvariant(Codes.Invariant invariant,
+			VcBranch branch, Map<String, CodeBlock.Index> labels,
+			AttributedCodeBlock block) {
+		// Reuse existing code for handling assert and assume statements.
+		List<VcBranch> branches = transform(invariant, false, branch,
+				labels, block);
+		// At this point, it should always be the case that there exists exactly
+		// one branch which leaves the block. We perform a quick sanity check
+		// here to be sure.  
+		if (branches.size() != 1) {
+			for(VcBranch b : branches) {
+				System.out.println("STATE: " + b.state() + ", PC: " + b.pc());
+			}
+			internalFailure("incorrect number of branches (" + branches.size()
+					+ ")", filename, block.attributes(branch.pc()));
+		}
+		// Done
+		return branches.get(0);
 	}
 	
 	/**
@@ -1161,14 +1279,14 @@ public class VcGenerator {
 	 *            The block being transformed over.
 	 */
 	protected List<VcBranch> transform(Codes.AssertOrAssume code,
-			VcBranch branch, Map<String, CodeBlock.Index> labels,
-			AttributedCodeBlock block) {
+			boolean isAssert, VcBranch branch,
+			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
 		// First, transform the given branch through the assert or assume block.
 		// This will produce one or more exit branches, some of which may have
 		// reached failed states and need to be turned into verification
 		// conditions (for asserts only).
 		CodeBlock.Index pc = branch.pc();
-		List<VcBranch> exitBranches = transform(pc, branch, labels, block);
+		List<VcBranch> exitBranches = transform(pc, branch, false, labels, block);
 
 		// Second, examine the list of exit branches and decide what to do with
 		// them. In the case of a failing branch then we need to generate an
@@ -1176,7 +1294,7 @@ public class VcGenerator {
 		for (int i = 0; i != exitBranches.size(); ++i) {
 			VcBranch b = exitBranches.get(i);
 			if (b.state() == VcBranch.State.FAILED
-					&& code instanceof Codes.Assume) {
+					&& !isAssert) {
 				// In the case of an assume state, we just ignore all
 				// failing branches as we are simply "assuming" they don't
 				// happen. Therefore, we silently remove them from the list of
