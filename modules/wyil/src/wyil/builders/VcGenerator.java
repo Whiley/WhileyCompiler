@@ -40,6 +40,7 @@ import wyil.util.AttributedCodeBlock;
 import wyil.util.ErrorMessages;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;
+import wycc.util.Pair;
 import wycs.core.Value;
 import wycs.syntax.*;
 
@@ -774,64 +775,137 @@ public class VcGenerator {
 	 */
 	protected List<VcBranch> transform(Codes.Loop code, VcBranch branch,
 			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
-
+		CodeBlock.Index loopStart = branch.pc();
+		int invariantOffset = getInvariantOffset(code);
+		
 		// First thing we need to do is determine whether or not this loop has a
-		// loop invariant, as this affects how we will approach it.
-		
-		if(!hasLoopInvariant(code)) {
+		// loop invariant, as this affects how we will approach it.		
+		if(invariantOffset == -1) {
 			// This is the easy case, as there is no loop invariant. Therefore,
-			// we just havoc variables and allow branches to exit the loop as
-			// normal.
+			// we just havoc modified variables at the beginning and then allow
+			// branches to exit the loop as normal. Branches which reach the end
+			// of the loop body can be discarded as they represent correct
+			// execution through the loop.
+			havocVariables(code.modifiedOperands,branch);
 			
+			// Now, run through loop body. This will produce several kinds of
+			// branch. Those which have terminated or branched out of the loop body,
+			// and those which have reached the end of the loop body. All branches
+			// in the former case go straight onto the list of returned branches.
+			// Those in the latter case are discarded (as discussed above).
+			List<VcBranch> exitBranches = transform(loopStart, branch, false, labels, block);
+			exitBranches.removeAll(findActiveBranchesWithinBlock(loopStart,exitBranches));
+			System.out.println("FOUND(1): " + exitBranches.size() + " EXIT BRANCHES");
+			return exitBranches;
+		} else {
+			CodeBlock.Index invariantPc = loopStart.next(invariantOffset);
+			
+			// This is the harder case as we must account for the loop invariant
+			// properly. To do this, we allow the loop to execute upto the loop
+			// invariant using the current branch state. At this point, we havoc
+			// modified variables and then assume the loop invariant, before
+			// running through the loop until the invariant is reached again.			
+			List<VcBranch> exitBranches = transform(loopStart, branch, true, labels, block);
+			
+			// At this point, any branch which has terminated or branched out of
+			// the loop represents a true execution path. Any branch which has
+			// failed corresponds to ensuring the loop invariant on entry.
+			// Active branches which reach the invariant need special processing.
+			List<VcBranch> activeBranches = findActiveBranchesWithinBlock(loopStart,exitBranches);
+			exitBranches.removeAll(activeBranches);
+			
+			// Process all active branches which have reached the loop
+			// invariant. This is done first by asserting that the loop
+			// invariant holds (base case). Then, all modified variables are
+			// havoced and the loop invariant is assumed for the inductive case.
+			for(VcBranch activeBranch : activeBranches) {
+				// Assert loop invariant
+				System.out.println("NEED TO ASSERT INVARIANT ON ENTRY");
+				// Havoc modified variables
+				havocVariables(code.modifiedOperands,activeBranch);
+				// Assume loop invariant
+				System.out.println("NEED TO ASSUME INVARIANT FOR INDUCTIVE CASE");
+				// Process inductive case for this branch by allowing it to
+				// execute around the loop until the invariant is found again.
+				exitBranches.addAll(transform(invariantPc, branch, true, labels, block));				
+			}
+			
+			activeBranches = findActiveBranchesWithinBlock(loopStart,exitBranches);
+			exitBranches.removeAll(activeBranches);
+			
+			// Finally, process all active branches which have reached the loop
+			// invariant by asserting that the invariant still holds. At this
+			// point, they can be discarded.
+			for(VcBranch activeBranch : activeBranches) {
+				// Assert loop invariant.
+				System.out.println("NEED TO ASSERT INVARIANT FOR INDUCTIVE CASE");
+			}
+			
+			return exitBranches;			
 		}
-		
-		// First, havoc all variables which are modified in the loop.
-		for (int i : code.modifiedOperands) {
-			Type type = branch.typeOf(i);
-			if(type != null) {
-				// We only havoc variables that have already been defined. This
-				// is possibly a workaround for a bug, where the loop modified
-				// variables can contain variables local to the loop.
-				branch.havoc(i, type);
+	}
+
+	/**
+	 * Check whether a given loop bytecode contains an invariant, or not.
+	 * 
+	 * @param branch
+	 * @return
+	 */
+	private int getInvariantOffset(Codes.Loop loop) {
+		for(int i=0;i!=loop.size();++i) {
+			if(loop.get(i) instanceof Codes.Invariant) {
+				return i;
 			}
 		}
-
-		// Find and assume loop invariant (?)
-
-		// Now, run through loop body. This will produce several kinds of
-		// branch. Those which have terminated or branched out of the loop body,
-		// and those which have reached the end of the loop body. All branches
-		// in the former case go straight onto the list of returned branches.
-		// For those in the latter case (if any) we need to ensure the loop
-		// invariant still holds.
-		CodeBlock.Index pc = branch.pc();
-		List<VcBranch> branches = transform(pc, branch, labels, block);
-		ArrayList<VcBranch> exitBranches = new ArrayList<VcBranch>();
-		
+		return -1;
+	}
+	
+	/**
+	 * Send a given set of variables to havoc. This means that any knowledge of
+	 * the current variables' state is discarded. In the context of a loop, this
+	 * is necessary to account for the fact that variables modified in the loop
+	 * have a range of unknown values.
+	 * 
+	 * @param variables
+	 *            The set of variables to be sent to havoc.
+	 * @param branch
+	 *            The branch in which to havoc the variables.
+	 */
+	public void havocVariables(int[] variables, VcBranch branch) {
+		for (int j = 0; j != variables.length; ++j) {
+			Type type = branch.typeOf(j);
+			if (type != null) {
+				// We only havoc variables that have already been defined.
+				// This is possibly a workaround for a bug, where the loop
+				// modified variables can contain variables local to the 
+				// loop.
+				branch.havoc(j, type);
+			}
+		}
+	}
+	
+	public List<VcBranch> findActiveBranchesWithinBlock(CodeBlock.Index pc, List<VcBranch> branches) {
+		ArrayList<VcBranch> activeBranches = new ArrayList<VcBranch>();
 		for (int i = 0; i != branches.size(); ++i) {
 			VcBranch b = branches.get(i);
 			switch(b.state()) {
 			case ACTIVE:
-				// This branch has either reached the end of the body or
+				// This branch has either reached the end of the block or
 				// branched out prematurely, and we need to first decide which
 				// it is.
 				if(b.pc().isWithin(pc)) {
-					// This is still within the loop body.
+					// This is still within the block.
+					activeBranches.add(b);
 					break;
 				} else {
-					// This isn't within the loop body, so ignore and fall
-					// through to the default case.
-					exitBranches.add(b);
-					break;
-				}
-			default:
-				exitBranches.add(b);
+					// This isn't within the block, so ignore.
+				}				
 			}
 		}
-		// Done
-		return exitBranches;
+		
+		return activeBranches;
 	}
-
+	
 	/**
 	 * <p>
 	 * Transform a branch through a loop bytecode. This is done by splitting the
