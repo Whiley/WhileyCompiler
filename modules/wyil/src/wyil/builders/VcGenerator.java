@@ -372,6 +372,7 @@ public class VcGenerator {
 		
 		// Move entry branch to first bytecode in the block.
 		CodeBlock.Index start = new CodeBlock.Index(parent);
+		System.out.println("BLOCK START: " + start);
 		entryState.goTo(start);
 
 		// Construct list of branches being processed.
@@ -386,6 +387,8 @@ public class VcGenerator {
 			// being explored.
 			CodeBlock.Index pc = branch.pc();
 
+			System.out.println("PC: " + pc);
+			
 			// Determine whether to continue executing this branch, or whether
 			// it has completed within this scope.
 			if (!pc.isWithin(parent) || branch.state() != VcBranch.State.ACTIVE) {
@@ -402,7 +405,10 @@ public class VcGenerator {
 					// around.
 					branch.goTo(start);
 				} else {
-					// No reset, allow to exit branch as normal.
+					// No reset, allow to exit branch as normal. First, set
+					// branch location to the next instruction following the
+					// parent instruction containing this block.
+					branch.goTo(parent.next());
 					exitBranches.add(branch);
 				}
 			} else {
@@ -776,7 +782,8 @@ public class VcGenerator {
 	 */
 	protected List<VcBranch> transform(Codes.Loop code, VcBranch branch,
 			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
-		CodeBlock.Index loopStart = branch.pc();
+		// The loopPc gives the block index of the loop bytecode.
+		CodeBlock.Index loopPc = branch.pc();
 		int invariantOffset = getInvariantOffset(code);		
 		
 		// First thing we need to do is determine whether or not this loop has a
@@ -794,25 +801,25 @@ public class VcGenerator {
 			// and those which have reached the end of the loop body. All branches
 			// in the former case go straight onto the list of returned branches.
 			// Those in the latter case are discarded (as discussed above).
-			List<VcBranch> exitBranches = transform(loopStart, branch, false, labels, block);
-			exitBranches.removeAll(findActiveBranchesWithinBlock(loopStart,exitBranches));
-			System.out.println("FOUND(1): " + exitBranches.size() + " EXIT BRANCHES");
+			List<VcBranch> exitBranches = transform(loopPc, branch, false, labels, block);
+			exitBranches.remove(findActiveBranchWithinBlock(loopPc,exitBranches,block));
 			return exitBranches;
 		} else {
-			CodeBlock.Index invariantPc = loopStart.next(invariantOffset);
-			
+			CodeBlock.Index invariantPc = loopPc.firstWithin().next(invariantOffset);
+			System.out.println("INVARIANT PC: " + invariantPc);
 			// This is the harder case as we must account for the loop invariant
 			// properly. To do this, we allow the loop to execute upto the loop
 			// invariant using the current branch state. At this point, we havoc
 			// modified variables and then assume the loop invariant, before
-			// running through the loop until the invariant is reached again.			
-			List<VcBranch> exitBranches = transform(loopStart, branch, true, labels, block);
+			// running through the loop until the invariant is reached again.	
+			System.out.println("*** BASE CASE ***");
+			List<VcBranch> exitBranches = transform(loopPc, branch, true, labels, block);
 			
 			// At this point, any branch which has terminated or branched out of
 			// the loop represents a true execution path. Any branch which has
 			// failed corresponds to ensuring the loop invariant on entry.
 			// Active branches which reach the invariant need special processing.
-			VcBranch activeBranch = findActiveBranchWithinBlock(loopStart,exitBranches,block);
+			VcBranch activeBranch = findActiveBranchWithinBlock(loopPc,exitBranches,block);
 			exitBranches.remove(activeBranch);			
 			// Process all active branches which have reached the loop
 			// invariant. This is done first by asserting that the loop
@@ -820,19 +827,22 @@ public class VcGenerator {
 			// havoced and the loop invariant is assumed for the inductive case.
 			Codes.Invariant invariant = (Codes.Invariant) code.get(invariantOffset);
 			// Assert loop invariant
+			System.out.println("*** ASSERT(BASE) ***");
 			activeBranch = assertLoopInvariant(invariant,activeBranch,exitBranches,labels,block);
 			// Havoc modified variables
 			havocVariables(code.modifiedOperands,activeBranch);
 			// Assume loop invariant
 			activeBranch.goTo(invariantPc); // reset to start of invariant
+			System.out.println("*** ASSUME(INDUCTIVE)***");
 			activeBranch = assumeLoopInvariant(invariant,activeBranch,labels,block);				
 			// Process inductive case for this branch by allowing it to
 			// execute around the loop until the invariant is found again.
-			List<VcBranch> branches = transform(invariantPc, activeBranch, true, labels, block);
-			VcBranch active = findActiveBranchWithinBlock(loopStart,branches,block);
+			List<VcBranch> branches = transform(loopPc, activeBranch, true, labels, block);
+			VcBranch active = findActiveBranchWithinBlock(loopPc,branches,block);
 			branches.remove(active);
 			exitBranches.addAll(branches);
 			// Finally, assert the loop invariant holds	again	
+			System.out.println("*** ASSERT(INDUCTIVE) ***");
 			assertLoopInvariant(invariant,active,exitBranches,labels,block);
 			// Done!
 			return exitBranches;			
@@ -958,7 +968,7 @@ public class VcGenerator {
 			VcBranch branch, List<VcBranch> failBranches,
 			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
 		// Reuse existing code for handling assert and assume statements.
-		List<VcBranch> branches = transform(invariant, false, branch,
+		List<VcBranch> branches = transform(invariant, true, branch,
 				labels, block);
 		//
 		VcBranch result = null;
@@ -1014,9 +1024,6 @@ public class VcGenerator {
 		// one branch which leaves the block. We perform a quick sanity check
 		// here to be sure.  
 		if (branches.size() != 1) {
-			for(VcBranch b : branches) {
-				System.out.println("STATE: " + b.state() + ", PC: " + b.pc());
-			}
 			internalFailure("incorrect number of branches (" + branches.size()
 					+ ")", filename, block.attributes(branch.pc()));
 		}
