@@ -259,6 +259,10 @@ public class CodeBlock implements Iterable<Code> {
 			return new Index(parent, value + n);
 		}
 		
+		public Index parent() {
+			return parent;
+		}
+		
 		/**
 		 * Return the first index nested within this index.
 		 *
