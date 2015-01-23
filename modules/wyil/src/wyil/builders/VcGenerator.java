@@ -811,7 +811,47 @@ public class VcGenerator {
 	 * @param block
 	 *            The block being transformed over.
 	 */
-	protected List<VcBranch> transform(Codes.Loop code,
+	protected List<VcBranch> transform(Codes.Loop code, VcBranch branch,
+			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
+		return transformHelper(code, branch, labels, block).second();
+	}
+
+
+	/**
+	 * <p>
+	 * Transform a branch through a loop bytecode. This is done by splitting the
+	 * entry branch into the case for the loop body, and the case for the loop
+	 * after. First, modified variables are invalidated to disconnect them from
+	 * information which held before the loop. Second, the loop invariant is
+	 * assumed as this provides the only information known about modified
+	 * variables.
+	 * </p>
+	 * 
+	 * <p>
+	 * For the case of the loop body, there are several scenarios. For branches
+	 * which make it to the end of the body, the loop invariant must be
+	 * reestablished. For branches which exit the loop, these are then folded
+	 * into enclosing scope.
+	 * </p>
+	 * 
+	 * @param code
+	 *            The bytecode being transformed.
+	 * @param branch
+	 *            The current branch being transformed
+	 * @param labels
+	 *            The map from labels to their block locations
+	 * @param block
+	 *            The block being transformed over.
+	 */
+	protected List<VcBranch> transform(Codes.ForAll code,
+			VcBranch branch, Map<String, CodeBlock.Index> labels,
+			AttributedCodeBlock block) {
+		Pair<VcBranch,List<VcBranch>> p = transformHelper(code, branch, labels, block);
+		List<VcBranch> exitBranches = p.second();
+		exitBranches.add(p.first());
+		return exitBranches;
+	}
+	protected Pair<VcBranch,List<VcBranch>> transformHelper(Codes.Loop code,
 			VcBranch branch, Map<String, CodeBlock.Index> labels,
 			AttributedCodeBlock block) {
 		// The loopPc gives the block index of the loop bytecode.
@@ -827,14 +867,16 @@ public class VcGenerator {
 			// of the loop body can be discarded as they represent correct
 			// execution through the loop.
 			havocVariables(code.modifiedOperands,branch);
-			
+			VcBranch fallThru = branch.fork();
+			VcBranch activeBranch = branch.fork();
 			// Now, run through loop body. This will produce several kinds of
 			// branch. Those which have terminated or branched out of the loop body,
 			// and those which have reached the end of the loop body. All branches
 			// in the former case go straight onto the list of returned branches.
 			// Those in the latter case are discarded (as discussed above).
-			Pair<VcBranch,List<VcBranch>> p = transform(loopPc, 0, branch, false, labels, block);
-			return p.second();
+			Pair<VcBranch,List<VcBranch>> p = transform(loopPc, 0, activeBranch, false, labels, block);
+			fallThru.goTo(loopPc.next());
+			return new Pair<VcBranch,List<VcBranch>>(fallThru,p.second());
 		} else {
 			CodeBlock.Index invariantPc = new CodeBlock.Index(loopPc,invariantOffset);
 			// This is the harder case as we must account for the loop invariant
@@ -864,6 +906,10 @@ public class VcGenerator {
 			// Assume loop invariant
 			activeBranch.goTo(invariantPc); // reset to start of invariant
 			activeBranch = transform(invariant, false, activeBranch, labels, block).first();
+			// Save fall through branch
+			VcBranch fallThru = activeBranch.fork();
+			fallThru.goTo(loopPc.next());			
+			activeBranch = activeBranch.fork();
 			// Process inductive case for this branch by allowing it to
 			// execute around the loop until the invariant is found again.	
 			p = transform(loopPc, invariantOffset + 1, activeBranch, true, labels, block);
@@ -874,7 +920,7 @@ public class VcGenerator {
 			activeBranch = p.first();
 			exitBranches.addAll(p.second());
 			//
-			return exitBranches;			
+			return new Pair<VcBranch,List<VcBranch>>(fallThru,exitBranches);			
 		}
 	}
 
@@ -915,140 +961,6 @@ public class VcGenerator {
 				branch.havoc(j, type);
 			}
 		}
-	}
-	
-	public List<VcBranch> findActiveBranchesWithinBlock(CodeBlock.Index pc, List<VcBranch> branches) {
-		ArrayList<VcBranch> activeBranches = new ArrayList<VcBranch>();
-		for (int i = 0; i != branches.size(); ++i) {
-			VcBranch b = branches.get(i);
-			switch(b.state()) {
-			case ACTIVE:
-				// This branch has either reached the end of the block or
-				// branched out prematurely, and we need to first decide which
-				// it is.
-				if(b.pc().isWithin(pc)) {
-					// This is still within the block.
-					activeBranches.add(b);
-					break;
-				} else {
-					// This isn't within the block, so ignore.
-				}				
-			}
-		}
-		
-		return activeBranches;
-	}
-	
-	public VcBranch findActiveBranchWithinBlock(CodeBlock.Index pc,
-			List<VcBranch> branches, AttributedCodeBlock block) {
-		VcBranch result = null;
-		for (int i = 0; i != branches.size(); ++i) {
-			VcBranch b = branches.get(i);
-			switch (b.state()) {
-			case ACTIVE:
-				// This branch has either reached the end of the block or
-				// branched out prematurely, and we need to first decide which
-				// it is.
-				if (b.pc().isWithin(pc)) {
-					// This is still within the block.
-					if (result != null) {
-						internalFailure("incorrect number of branches",
-								filename, block.attributes(pc));
-					}
-					result = b;
-					break;
-				} else {
-					// This isn't within the block, so ignore.
-				}
-			}
-		}
-		// Perform another sanity check
-		if (result == null) {
-			internalFailure("incorrect number of branches", filename,
-					block.attributes(pc));
-		}
-		// Done
-		return result;
-	}
-		
-	/**
-	 * <p>
-	 * Transform a branch through a loop bytecode. This is done by splitting the
-	 * entry branch into the case for the loop body, and the case for the loop
-	 * after. First, modified variables are invalidated to disconnect them from
-	 * information which held before the loop. Second, the loop invariant is
-	 * assumed as this provides the only information known about modified
-	 * variables.
-	 * </p>
-	 * 
-	 * <p>
-	 * For the case of the loop body, there are several scenarios. For branches
-	 * which make it to the end of the body, the loop invariant must be
-	 * reestablished. For branches which exit the loop, these are then folded
-	 * into enclosing scope.
-	 * </p>
-	 * 
-	 * @param code
-	 *            The bytecode being transformed.
-	 * @param branch
-	 *            The current branch being transformed
-	 * @param labels
-	 *            The map from labels to their block locations
-	 * @param block
-	 *            The block being transformed over.
-	 */
-	protected List<VcBranch> transform(Codes.ForAll code,
-			VcBranch branch, Map<String, CodeBlock.Index> labels,
-			AttributedCodeBlock block) {
-
-		// First, havoc all variables which are modified in the loop.
-		for (int i : code.modifiedOperands) {
-			Type type = branch.typeOf(i);
-			if(type != null) {
-				// We only havoc variables that have already been defined. This
-				// is possibly a workaround for a bug, where the loop modified
-				// variables can contain variables local to the loop.
-				branch.havoc(i, type);	
-			}
-		}
-
-		// Second, havoc the index variable.
-		Expr.Variable var = branch
-				.havoc(code.indexOperand, code.type.element());
-
-		// Find and assume loop invariant (?)
-
-		// Now, run through loop body. The key here is that all constraints
-		// which hold within the loop body need to be quantified appropriately
-		// over the index variable. The kind of quantification depends on how
-		// the branch exits the loop. In the case of branches which reach the
-		// end of the loop, we must universally quantifier over them and,
-		// additionally, assert the loop invariant. In the case of branches
-		// which exit the loop prematurely, then we need to existentially
-		// quantify over them.
-		CodeBlock.Index pc = branch.pc();
-		List<VcBranch> branches = transform(pc, branch, labels, block);
-		ArrayList<VcBranch> exitBranches = new ArrayList<VcBranch>();
-		for (int i = 0; i != branches.size(); ++i) {
-			VcBranch b = branches.get(i);
-			switch(b.state()) {
-			case ACTIVE:
-				// This branch has either reached the end of the body or
-				// branched out prematuvely, and we need to first decide which
-				// it is.
-				if(b.pc().isWithin(pc)) {
-					// This is still within the loop body.
-					b.goTo(pc.next());
-				} else {
-					// This isn't within the loop body, so ignore and fall
-					// through to the default case.
-				}
-			default:
-				exitBranches.add(b);
-			}
-		}
-		// Done
-		return exitBranches;
 	}
 
 	/**
@@ -1240,7 +1152,6 @@ public class VcGenerator {
 		CodeBlock.Index pc = branch.pc();
 		Pair<VcBranch,List<VcBranch>> p = transform(pc, 0, branch, false, labels, block);
 		List<VcBranch> exitBranches = p.second();
-		VcBranch activeBranch = p.first();
 		// Second, examine the list of exit branches and decide what to do with
 		// them. In the case of a failing branch then we need to generate an
 		// appropriate verification condition.
