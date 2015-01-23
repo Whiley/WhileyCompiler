@@ -405,8 +405,6 @@ public class VcGenerator {
 			// being explored.
 			CodeBlock.Index pc = branch.pc();
 
-			System.out.println("PC: " + pc + ", STATE: " + branch.state());
-			
 			// Determine whether to continue executing this branch, or whether
 			// it has completed within this scope.
 			if (!pc.isWithin(parent) || branch.state() != VcBranch.State.ACTIVE) {
@@ -421,14 +419,11 @@ public class VcGenerator {
 				if(breakOnInvariant) {
 					// Break On Invariant is enabled, therefore continue going
 					// around.
-					System.out.println("BREAK ON INVARIANT : " + start);
 					branch.goTo(start);
 				} else if(parent != null) {
 					// No reset, allow to exit branch as normal. First, set
 					// branch location to the next instruction following the
 					// parent instruction containing this block.
-					System.out.println("FALL THROUGH: " + parent.next());
-					System.out.println("WORKLIST: " + worklist);
 					branch.goTo(parent.next());
 				} else {
 					internalFailure("unreachable code reached!",filename,block.attributes(pc));					
@@ -440,40 +435,39 @@ public class VcGenerator {
 				Code code = block.get(pc);
 				// Now, dispatch statements. Control statements are treated
 				// specially from unit statements.
-				if (code instanceof Code.Compound) {					
-					Pair<VcBranch,List<VcBranch>> p;
-					if (code instanceof Codes.ForAll) {
-						p = transform((Codes.ForAll) code, branch, labels,
-								block);
-					} else if (code instanceof Codes.Loop) {
-						p = transform((Codes.Loop) code, branch, labels, block);
-					} else if (breakOnInvariant
-							&& code instanceof Codes.Invariant) {
+				if (code instanceof Codes.AssertOrAssume) {
+					if (breakOnInvariant && code instanceof Codes.Invariant) {
 						// In this special case, we have reached the invariant
 						// bytecode and, hence, we break out of this loop. This
 						// is needed for handling loop invariants where we need
 						// to do special things when the invariant is
 						// encountered.
 						fallThruBranches.add(branch);
-						continue;
 					} else {
 						boolean isAssert = code instanceof Codes.Assert;
-						p = transform((Codes.AssertOrAssume) code, isAssert,
-								branch, labels, block);							
+						Pair<VcBranch, List<VcBranch>> p = transform(
+								(Codes.AssertOrAssume) code, isAssert, branch,
+								labels, block);
+						worklist.add(p.first());
+						worklist.addAll(p.second());
 					}
-					worklist.add(p.first());
-					worklist.addAll(p.second());
 				} else if(code instanceof Codes.If
 						|| code instanceof Codes.IfIs
-						|| code instanceof Codes.Switch) {
+						|| code instanceof Codes.Switch
+						|| code instanceof Code.Compound) {
 					List<VcBranch> bs;
 					if (code instanceof Codes.If) {
 						bs = transform((Codes.If) code, branch, labels, block);
 					} else if (code instanceof Codes.IfIs) {
 						bs = transform((Codes.IfIs) code, branch, labels, block);
-					} else {
+					} else if(code instanceof Codes.Switch) {
 						bs = transform((Codes.Switch) code, branch, labels,
 								block);
+					} else if (code instanceof Codes.ForAll) {
+						bs = transform((Codes.ForAll) code, branch, labels,
+								block);
+					} else {
+						bs = transform((Codes.Loop) code, branch, labels, block);
 					} 
 					worklist.addAll(bs);
 
@@ -518,12 +512,10 @@ public class VcGenerator {
 
 		joinAll(exitBranches);
 		joinAll(fallThruBranches);
-		System.out.println("FALL THRU BRANCHES: " + fallThruBranches.size());		
 		VcBranch fallThru = null;
 		// Select the fall through branch
 		if(fallThruBranches.size() == 1) {
 			fallThru = fallThruBranches.get(0);
-			System.out.println("FALL THRU: " + fallThru.pc() + ", STATE: " + fallThru.state());
 		} else if (fallThruBranches.size() > 1) {
 			// Should be unreachable. Sanity check for now.
 			internalFailure("unreacahble code reached", filename,
@@ -819,7 +811,7 @@ public class VcGenerator {
 	 * @param block
 	 *            The block being transformed over.
 	 */
-	protected Pair<VcBranch, List<VcBranch>> transform(Codes.Loop code,
+	protected List<VcBranch> transform(Codes.Loop code,
 			VcBranch branch, Map<String, CodeBlock.Index> labels,
 			AttributedCodeBlock block) {
 		// The loopPc gives the block index of the loop bytecode.
@@ -842,7 +834,7 @@ public class VcGenerator {
 			// in the former case go straight onto the list of returned branches.
 			// Those in the latter case are discarded (as discussed above).
 			Pair<VcBranch,List<VcBranch>> p = transform(loopPc, 0, branch, false, labels, block);
-			return p;
+			return p.second();
 		} else {
 			CodeBlock.Index invariantPc = new CodeBlock.Index(loopPc,invariantOffset);
 			// This is the harder case as we must account for the loop invariant
@@ -850,11 +842,8 @@ public class VcGenerator {
 			// invariant using the current branch state. At this point, we havoc
 			// modified variables and then assume the loop invariant, before
 			// running through the loop until the invariant is reached again.	
-			System.out.println("*** BASE CASE ***");
 			Pair<VcBranch,List<VcBranch>> p = transform(loopPc, 0, branch, true, labels, block);
-			if(p.first() == null) {
-				internalFailure("eh?",filename,block.attributes(loopPc));
-			}
+			
 			// At this point, any branch which has terminated or branched out of
 			// the loop represents a true execution path. Any branch which has
 			// failed corresponds to ensuring the loop invariant on entry.
@@ -867,7 +856,6 @@ public class VcGenerator {
 			// havoced and the loop invariant is assumed for the inductive case.
 			Codes.Invariant invariant = (Codes.Invariant) code.get(invariantOffset);
 			// Assert loop invariant
-			System.out.println("*** ASSERT(BASE) ***");
 			p = transform(invariant, true, activeBranch, labels, block);
 			activeBranch = p.first();
 			exitBranches.addAll(p.second());
@@ -875,23 +863,18 @@ public class VcGenerator {
 			havocVariables(code.modifiedOperands,activeBranch);
 			// Assume loop invariant
 			activeBranch.goTo(invariantPc); // reset to start of invariant
-			System.out.println("*** ASSUME(INDUCTIVE)***");
 			activeBranch = transform(invariant, false, activeBranch, labels, block).first();
 			// Process inductive case for this branch by allowing it to
 			// execute around the loop until the invariant is found again.	
-			System.out.println("*** TRANSFORM BODY *** " + invariantOffset);
 			p = transform(loopPc, invariantOffset + 1, activeBranch, true, labels, block);
 			activeBranch = p.first();
 			exitBranches.addAll(p.second());
 			// Finally, assert the loop invariant holds	again	
-			System.out.println("ACTIVE: " + activeBranch);
-			System.out.println("*** ASSERT(INDUCTIVE) ***");
 			p = transform(invariant, true, activeBranch, labels, block);
 			activeBranch = p.first();
 			exitBranches.addAll(p.second());
-			activeBranch.goTo(loopPc.next()); // yuk
 			//
-			return new Pair<VcBranch,List<VcBranch>>(activeBranch,exitBranches);			
+			return exitBranches;			
 		}
 	}
 
@@ -1014,7 +997,7 @@ public class VcGenerator {
 	 * @param block
 	 *            The block being transformed over.
 	 */
-	protected Pair<VcBranch, List<VcBranch>> transform(Codes.ForAll code,
+	protected List<VcBranch> transform(Codes.ForAll code,
 			VcBranch branch, Map<String, CodeBlock.Index> labels,
 			AttributedCodeBlock block) {
 
@@ -1258,9 +1241,6 @@ public class VcGenerator {
 		Pair<VcBranch,List<VcBranch>> p = transform(pc, 0, branch, false, labels, block);
 		List<VcBranch> exitBranches = p.second();
 		VcBranch activeBranch = p.first();
-		System.out.println("*** FINISHED ASSUME / ASSERT ***");
-		System.out.println("ACTIVE: " + activeBranch.pc() + ", STATE: " + activeBranch.state());
-		System.out.println("EXIT BRANCHES: " + exitBranches);
 		// Second, examine the list of exit branches and decide what to do with
 		// them. In the case of a failing branch then we need to generate an
 		// appropriate verification condition.
@@ -1273,13 +1253,7 @@ public class VcGenerator {
 				// happen. Therefore, we silently remove them from the list of
 				// exit branches.
 				exitBranches.remove(i--);
-			} else if(b.state() == VcBranch.State.ACTIVE) {
-				// This is an active branch which has fallen through to the end
-				// of the assert / assume body. Therefore, we need to advance it
-				// to the next instruction in the outer block.
-				System.out.println("NOT REACHED");
-				b.goTo(pc.next());
-			}
+			} 
 		}
 		// Done
 		return p;

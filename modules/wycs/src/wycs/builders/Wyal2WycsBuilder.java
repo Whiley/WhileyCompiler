@@ -371,7 +371,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		for (WyalFile.Import imp : context.imports()) {
 			for (Path.ID id : imports(imp.filter)) {
 				try {
-					WycsFile wf = getModule(id);				
+					WycsFile wf = getModule(id);
 					WycsFile.Declaration d = wf.declaration(name);
 					if (wf != null && type.isInstance(d)) {
 						NameID nid = new NameID(id, name);

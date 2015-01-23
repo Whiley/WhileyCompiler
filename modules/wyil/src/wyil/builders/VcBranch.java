@@ -117,7 +117,7 @@ public class VcBranch {
 	 * integer value which is used to determine the appropriate SSA number for a
 	 * given variable.
 	 */
-	private final int[] subscripts;
+	final int[] subscripts;
 
 	/**
 	 * Maintains the current assignment of variables to their types.
@@ -374,12 +374,12 @@ public class VcBranch {
 		}
 		// to invalidate a variable, we assign it a "skolem" constant. That is,
 		// a fresh variable which has not been previously encountered in the
-		// branch.
+		// branch.			
+		subscripts[register] = subscripts[register] + 1;
 		Expr.Variable var = new Expr.Variable(prefixes[register] + "_"
 				+ subscripts[register]);
 		environment[register] = var;
-		types[register] = type;
-		subscripts[register]++;
+		types[register] = type;		
 		return var;
 	}
 
