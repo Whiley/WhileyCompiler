@@ -71,7 +71,9 @@ public class WyalFilePrinter {
 			}
 			out.print("> ");
 		}
-		out.print(s.from + " => " + s.to);
+		writeWithBraces(wf,s.from);	
+		out.print(" => ");
+		writeWithBraces(wf,s.to);			
 		if(s.constraint != null) {
 			out.println(" where:");
 			indent(1);
@@ -197,7 +199,8 @@ public class WyalFilePrinter {
 	}
 
 	private void write(WyalFile wf, Expr.Cast e, int indent) {
-		out.print("(" + e.type + ")" + e.operand);
+		out.print("(" + e.type + ") ");
+		writeWithOptionalBraces(wf,e.operand,indent);		
 	}
 	
 	private void write(WyalFile wf, Expr.Unary e, int indent) {
@@ -404,8 +407,7 @@ public class WyalFilePrinter {
 	}
 
 	private static boolean needsBraces(Expr e) {
-		 if(e instanceof Expr.Binary) {
-			 Expr.Binary be = (Expr.Binary) e;
+		 if(e instanceof Expr.Binary || e instanceof Expr.Cast) {			 
 			 return true;
 		 }
 		 return false;

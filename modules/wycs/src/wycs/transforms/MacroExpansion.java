@@ -195,7 +195,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 				internalFailure("cannot resolve as module: " + e.nid.module(),
 						filename, e);
 			}
-			Object d = module.declaration(e.nid.name());
+			Object d = module.declaration(e.nid.name(),e.type);			
 			if (d instanceof WycsFile.Function) {
 				// Do nothing, since functions are not expanded like macros.
 				// Instead, their axioms may be instantiated later either before

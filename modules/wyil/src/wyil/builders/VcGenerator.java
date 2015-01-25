@@ -1550,9 +1550,15 @@ public class VcGenerator {
 
 	protected void transform(Codes.UnaryOperator code,
 			AttributedCodeBlock block, VcBranch branch) {
-		if (code.kind == Codes.UnaryOperatorKind.NEG) {
+		switch(code.kind) {		
+		case NEG:
 			transformUnary(Expr.Unary.Op.NEG, code, branch, block);
-		} else {
+			break;
+		case NUMERATOR:
+		case DENOMINATOR:
+			branch.havoc(code.target(), Type.T_INT);
+			break;
+		default:		
 			branch.havoc(code.target(), code.type());
 		}
 	}

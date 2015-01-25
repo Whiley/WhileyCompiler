@@ -99,6 +99,19 @@ public class WycsFile implements CompilationUnit {
 		return null;
 	}
 
+	public Declaration declaration(String name, SemanticType type) {
+		for (Declaration d : declarations) {
+			if (d.name().equals(name)) {
+				if (d instanceof Function && ((Function) d).type.equals(type)) {
+					return d;
+				} else if (d instanceof Macro && ((Macro) d).type.equals(type)) {
+					return d;
+				}
+			}
+		}
+		return null;
+	}
+	
 	public <T extends Declaration> T declaration(String name, Class<T> type) {
 		for (Declaration d : declarations) {
 			if (d.name().equals(name) && type.isInstance(d)) {

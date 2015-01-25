@@ -9,6 +9,7 @@ import wycc.lang.SyntacticElement;
 import wycc.lang.Transform;
 import wycc.util.Pair;
 import wycc.util.ResolveError;
+import wycc.util.Triple;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.SemanticType;
 import wycs.core.Value;
@@ -510,44 +511,43 @@ public class TypePropagation implements Transform<WyalFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
 
-		SemanticType.Function fnType;
-
+		SemanticType argument = propagate(e.operand, environment, generics,
+				context);
+		// Construct concrete types for generic substitution
+		ArrayList<SemanticType> ivkGenerics = new ArrayList<SemanticType>();
+		for (int i = 0; i != e.generics.size(); ++i) {
+			SyntacticType gt = e.generics.get(i);
+			try {
+				SemanticType t = builder.convert(gt, generics, context); 
+				ivkGenerics.add(t);
+				gt.attributes().add(new TypeAttribute(t));
+			} catch (ResolveError re) {
+				syntaxError(re.getMessage(), filename, gt, re);
+			}
+		}
+		// Now, attempt to resolve the function
 		try {
-			Pair<NameID,SemanticType.Function> p = builder.resolveAsFunctionType(e.name,context);
-			fnType = p.second();
+			Triple<NameID,SemanticType.Function,Map<String,SemanticType>> p = builder.resolveAsFunctionType(e.name,argument,ivkGenerics,context);
+			SemanticType.Function fnType = p.second();
+			Map<String,SemanticType> binding = p.third();
+			SemanticType[] fn_generics = fnType.generics();
+
+			if (fn_generics.length != e.generics.size()) {
+				// could resolve this with inference in the future.
+				syntaxError(
+						"incorrect number of generic arguments provided (got "
+								+ e.generics.size() + ", required "
+								+ fn_generics.length + ")", context.file()
+								.filename(), e);
+			}
+
+			fnType = (SemanticType.Function) fnType.substitute(binding);
+			checkIsSubtype(fnType.from(), argument, e.operand);
+			return fnType;
 		} catch(ResolveError re) {
 			syntaxError("cannot resolve as function or definition call", context.file().filename(), e, re);
 			return null;
 		}
-
-		SemanticType[] fn_generics = fnType.generics();
-
-		if (fn_generics.length != e.generics.size()) {
-			// could resolve this with inference in the future.
-			syntaxError(
-					"incorrect number of generic arguments provided (got "
-							+ e.generics.size() + ", required "
-							+ fn_generics.length + ")", context.file()
-							.filename(), e);
-		}
-
-		SemanticType argument = propagate(e.operand, environment, generics,
-				context);
-		HashMap<String, SemanticType> binding = new HashMap<String, SemanticType>();		
-		for (int i = 0; i != e.generics.size(); ++i) {
-			SyntacticType gt = e.generics.get(i);
-			try {
-				SemanticType.Var gv = (SemanticType.Var) fn_generics[i];
-				binding.put(gv.name(), builder.convert(gt, generics, context));
-			} catch (ResolveError re) {
-				syntaxError("cannot resolve as function or definition call",
-						filename, gt, re);
-			}
-		}
-
-			fnType = (SemanticType.Function) fnType.substitute(binding);
-			checkIsSubtype(fnType.from(), argument, e.operand);
-			return fnType;		
 	}
 
 	/**

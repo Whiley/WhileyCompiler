@@ -401,7 +401,7 @@ public class WycBuildTask {
 			try {
 				if (root.getName().endsWith(".jar")) {
 					bootpath.add(new JarFileRoot(root, registry));
-				} else {
+				} else {					
 					bootpath.add(new DirectoryRoot(root, wyilOrWycsFileFilter, registry));
 				}
 			} catch (IOException e) {
@@ -627,8 +627,7 @@ public class WycBuildTask {
 				project.add(new StdBuildRule(wyalBuilder, wyilDir,
 						wyilIncludes, wyilExcludes, wyalDir));
 
-				// Second, handle the conversion of wyal to wycs
-
+				// Second, handle the conversion of wyal to wycs				
 				Pipeline<WycsFile> wycsPipeline = new Pipeline(WycsBuildTask.defaultPipeline);
 
 				wycsPipeline.setOption(VerificationCheck.class,"enable",verification);
@@ -640,8 +639,7 @@ public class WycBuildTask {
 				}
 
 				project.add(new StdBuildRule(wycsBuilder, wyalDir,
-						wyalIncludes, wyalExcludes, wycsDir));
-
+						wyalIncludes, wyalExcludes, wycsDir));				
 			}
 		}
 	}

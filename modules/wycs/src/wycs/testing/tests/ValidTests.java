@@ -48,6 +48,7 @@ public class ValidTests extends TestHarness {
 
 	@Test public void Test_Macro_1() { verifyPassTest("test_macro_01"); }
 	@Test public void Test_Macro_2() { verifyPassTest("test_macro_02"); }
+	@Test public void Test_Macro_3() { verifyPassTest("test_macro_03"); }
 
 	@Test public void Test_Bool_1() { verifyPassTest("test_bool_01"); }
 

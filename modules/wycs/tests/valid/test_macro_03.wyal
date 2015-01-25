@@ -1,0 +1,20 @@
+define f(int x) is:
+    x >= 0
+
+define f(real x) is:
+    x >= 0.0
+
+assert:
+    forall(int x):
+        if:
+            x >= 0
+        then:
+            f(x)
+
+assert:
+    forall(real x):
+        if:
+            x >= 0.0
+        then:
+            f(x)
+

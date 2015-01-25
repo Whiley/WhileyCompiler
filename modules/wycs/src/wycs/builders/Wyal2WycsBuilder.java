@@ -23,6 +23,7 @@ import wycc.lang.Transform;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wycc.util.ResolveError;
+import wycc.util.Triple;
 import wycs.core.SemanticType;
 import wycs.core.WycsFile;
 import wycs.io.WyalFilePrinter;
@@ -347,64 +348,124 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		
 		throw new ResolveError("name not found: " + name);
 	}
-	
+
 	/**
-	 * Resolve a name found at a given context in a source file, and ensure it
-	 * matches an expected type. Essentially, the context will be used to
-	 * determine the active import statements which will be used to search for
-	 * the name. In this case, we are assuming that module stubs have been
-	 * generated for all srcfiles and, hence, we do not need to consider them.
-	 *
+	 * This function must be called after stubs are created.
 	 * @param name
-	 *            --- name to look for.
-	 * @param type
-	 *            --- type it is expected to be.
+	 * @param parameter
 	 * @param context
-	 *            --- context where name occurred.
 	 * @return
 	 * @throws ResolveError
 	 */
-	public <T extends WycsFile.Declaration> Pair<NameID, T> resolveAs(
-			String name, Class<T> type, WyalFile.Context context)
+	public Triple<NameID, SemanticType.Function, Map<String, SemanticType>> resolveAsFunctionType(
+			String name, SemanticType parameter, List<SemanticType> generics,
+			WyalFile.Context context) throws ResolveError {
+		// First, attempt to resolve the name of the function. This tells us the
+		// scope in which it is defined.
+		NameID nid = resolveAsName(name, context);
+		// Second, find the best matching function.
+		Pair<SemanticType.Function, Map<String, SemanticType>> match = resolveAsFunctionType(
+				nid, parameter, generics, context);
+		return new Triple<NameID, SemanticType.Function, Map<String, SemanticType>>(
+				nid, match.first(), match.second());
+	}
+	
+	/**
+	 * This function must be called after stubs are created.
+	 * @param name
+	 * @param parameter
+	 * @param context
+	 * @return
+	 * @throws ResolveError
+	 */
+	public Pair<SemanticType.Function, Map<String, SemanticType>> resolveAsFunctionType(
+			NameID nid, SemanticType parameter, List<SemanticType> generics,
+			WyalFile.Context context)
 			throws ResolveError {
+		// Collect the types of all matching functions and macros. This
+		// so that we can then choose the best fit.
+		try {
+			WycsFile wf = getModule(nid.module());
 
-		for (WyalFile.Import imp : context.imports()) {
-			for (Path.ID id : imports(imp.filter)) {
-				try {
-					WycsFile wf = getModule(id);
-					WycsFile.Declaration d = wf.declaration(name);
-					if (wf != null && type.isInstance(d)) {
-						NameID nid = new NameID(id, name);
-						return new Pair<NameID,T>(nid,(T) d);
+			ArrayList<SemanticType.Function> fnTypes = new ArrayList<SemanticType.Function>();
+			for (WycsFile.Declaration d : wf.declarations()) {
+				if (d.name().equals(nid.name())) {
+					if (d instanceof WycsFile.Function) {
+						WycsFile.Function f = (WycsFile.Function) d;
+						fnTypes.add(f.type);
+					} else if (d instanceof WycsFile.Macro) {
+						WycsFile.Macro f = (WycsFile.Macro) d;
+						fnTypes.add(f.type);
+					} else {
+						// Ignore this, as it's not a function or macro
 					}
-				} catch (SyntaxError e) {
-					throw e;
-				} catch (Exception e) {
-					internalFailure(e.getMessage(), context.file().filename(),
-							context, e);
+				}
+			}
+			// At this stage, we need to choose the best fit. In some cases a best
+			// fit may not exist, in which case we have ambiguity.
+			Pair<SemanticType.Function, Map<String, SemanticType>> candidate = selectCandidateFunctionOrMacro(
+					parameter, generics, fnTypes);
+			// Done
+			return new Pair<SemanticType.Function, Map<String,SemanticType>>(candidate.first(), candidate.second());		
+		} catch(ResolveError e) {
+			throw e;
+		} catch(Exception e) {		
+			internalFailure(e.getMessage(),context.file().filename(),context);
+			return null;
+		}
+	}
+
+	public Pair<SemanticType.Function,Map<String,SemanticType>> selectCandidateFunctionOrMacro(
+			SemanticType parameter, List<SemanticType> generics, List<SemanticType.Function> candidates)
+			throws ResolveError {
+		
+		SemanticType.Function candidateFn = null;	
+		HashMap<String,SemanticType> candidateBinding = null;
+		
+		
+		for (int i = 0; i != candidates.size(); ++i) {
+			// f is the original function or macro type
+			SemanticType.Function f = candidates.get(i);
+			// Construct the binding of generic variables to concrete variables.
+			HashMap<String,SemanticType> binding = new HashMap<String,SemanticType>();
+			SemanticType[] f_generics = f.generics();
+			for (int j = 0; j != Math.min(f_generics.length, generics.size()); ++j) {
+				SemanticType.Var v = (SemanticType.Var) f_generics[i];
+				binding.put(v.name(), generics.get(i));
+			}
+			// cf is the instantiated function or macro type
+			SemanticType.Function cf = (SemanticType.Function) f.substitute(binding);
+			
+			// Now, see whether this a match and, if so, whether or not it is
+			// the current *best* match.
+			if (SemanticType.isSubtype(cf.from(), parameter)) {
+				// The selection function is a potential candidate. However, we
+				// need to decide whether or not it is more precise than the
+				// current candidate.
+				if (candidateFn == null) {
+					candidateFn = f;
+					candidateBinding = binding;
+				} else if (SemanticType.isSubtype(candidateFn.from(), cf.from())) {					
+					// This means is strictly more precise.
+					candidateFn = f;
+					candidateBinding = binding;
+				} else if (SemanticType.isSubtype(cf.from(), candidateFn.from())) {					
+					// This means is strictly less precise.
+				} else {
+					// This means they in some sense have "equivalent" precision
+					// and, hence, we have some ambiguity.
+					throw new ResolveError("ambiguous function or macro");
 				}
 			}
 		}
-
-		throw new ResolveError("name not found: " + name);
-	}
-
-	public Pair<NameID, SemanticType.Function> resolveAsFunctionType(
-			String name, WyalFile.Context context) throws ResolveError {
-		// TODO: update the following line
-		try {
-			Pair<NameID, WycsFile.Function> wf = resolveAs(name,
-					WycsFile.Function.class, context);
-			return new Pair<NameID, SemanticType.Function>(wf.first(),
-					wf.second().type);
-		} catch (ResolveError e) {
-			Pair<NameID, WycsFile.Macro> wm = resolveAs(name,
-					WycsFile.Macro.class, context);
-			return new Pair<NameID, SemanticType.Function>(wm.first(),
-					wm.second().type);
+		if (candidateFn == null) {
+			throw new ResolveError("no suitable match for function or macro");
+		} else {
+			return new Pair<SemanticType.Function, Map<String, SemanticType>>(
+					candidateFn, candidateBinding);
 		}
 	}
-
+	
 	/**
 	 * This method takes a given import declaration, and expands it to find all
 	 * matching modules.

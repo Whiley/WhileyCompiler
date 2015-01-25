@@ -114,7 +114,7 @@ public class WycAntTask extends MatchingTask {
     	for(String file : path.list()) {
     		bootpath.add(new File(file));
     	}
-    	builder.setWhileyPath(bootpath);
+    	builder.setBootPath(bootpath);
     }
 
     public void setVerbose(boolean b) {

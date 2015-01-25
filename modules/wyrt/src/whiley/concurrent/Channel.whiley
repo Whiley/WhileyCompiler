@@ -25,8 +25,6 @@
 
 package whiley.concurrent
 
-import nat from whiley.lang.Int
-
 // A channel provides a way for two tasks to communicate.  A
 // predefined number of slots are allocated to throttle writing.
 // Thus, when the number of items stored in the channel is exceeded the
@@ -34,9 +32,10 @@ import nat from whiley.lang.Int
 
 public type State is  {
     [byte] data,
-    nat readPos,
-    nat writePos
-} where readPos < |data| && writePos < |data|
+    int readPos,
+    int writePos
+} where readPos >= 0 && readPos < |data| &&
+        writePos >= 0 && writePos < |data|
 
 public type Channel is &State
 

@@ -11,6 +11,7 @@ import wycc.util.ResolveError;
 import wycc.util.Triple;
 import wycs.core.*;
 import wycs.syntax.*;
+import wyfs.lang.Path;
 import wyfs.util.Trie;
 import static wycc.lang.SyntaxError.*;
 import static wycs.transforms.TypePropagation.returnType;
@@ -365,25 +366,16 @@ public class CodeGeneration {
 					attributes(e));
 		}
 		case LISTAPPEND: {
-			NameID nid = new NameID(WYCS_CORE_LIST,"Append");
-			SemanticType.Tuple argType = SemanticType.Tuple(type,type);
-			SemanticType[] generics = bindGenerics(nid,argType,e);
-			SemanticType.Function funType = SemanticType.Function(argType,
-					type,generics);
-			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
-					lhs,rhs });
-			return Code.FunCall(funType, argument, nid,
-					attributes(e));
+			SemanticType.Tuple argType = SemanticType.Tuple(type, type);
+			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] { lhs,
+					rhs });
+			return invokeInternal(WYCS_CORE_LIST, "Append", argument, context);			
 		}
 		case RANGE: {
-			NameID nid = new NameID(WYCS_CORE_LIST,"Range");
 			SemanticType.Tuple argType = SemanticType.Tuple(SemanticType.Int,SemanticType.Int);
-			SemanticType.Function funType = SemanticType.Function(argType,
-					type);
 			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
 					lhs,rhs });
-			return Code.FunCall(funType, argument, nid,
-					attributes(e));
+			return invokeInternal(WYCS_CORE_LIST, "Range", argument, context);			
 		}
 		default:
 			internalFailure("unknown binary opcode encountered (" + e + ")",
@@ -404,28 +396,24 @@ public class CodeGeneration {
 		Code second = generate(e.secondOperand, environment, context);
 		Code third = generate(e.thirdOperand, environment, context);
 		SemanticType argType;
-		NameID nid;
+		String name;
 		switch (e.op) {
 		case UPDATE:
-			nid = new NameID(WYCS_CORE_LIST, "ListUpdate");
+			name = "ListUpdate";
 			argType = SemanticType.Tuple(type,SemanticType.Int, element.tupleElement(1));
 			break;
 		case SUBLIST:
-			nid = new NameID(WYCS_CORE_LIST, "Sublist");
+			name = "Sublist";
 			argType = SemanticType.Tuple(type,SemanticType.Int,SemanticType.Int);
 			break;
 		default:
 			internalFailure("unknown ternary opcode encountered (" + e + ")",
 					filename, e);
 			return null;
-		}
-		SemanticType[] generics = bindGenerics(nid,argType,e);
+		}		
 		Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] { first,
 				second, third });
-		SemanticType.Function funType = SemanticType.Function(argType, type,
-				generics);
-		return Code.FunCall(funType, argument, nid,
-				attributes(e));
+		return invokeInternal(WYCS_CORE_LIST,name,argument,context);		
 	}
 
 	protected Code generate(Expr.Nary e, HashMap<String,Code> environment, WyalFile.Context context) {
@@ -533,14 +521,20 @@ public class CodeGeneration {
 
 	protected Code generate(Expr.Invoke e, HashMap<String, Code> environment,
 			WyalFile.Context context) {
-		SemanticType.Function type = (SemanticType.Function) e
-				.attribute(TypeAttribute.class).type;
 		Code operand = generate(e.operand, environment, context);
 		try {
+			ArrayList<SemanticType> generics = new ArrayList<SemanticType>();
+			List<SyntacticType> e_generics = e.generics;
+			for (int i = 0; i != e_generics.size(); ++i) {
+				SyntacticType gt = e_generics.get(i);
+				generics.add(gt.attribute(TypeAttribute.class).type);
+
+			}
 			Pair<NameID, SemanticType.Function> p = builder
-					.resolveAsFunctionType(e.name, context);
-			return Code.FunCall(type, operand, p.first(),
-					attributes(e));
+					.resolveAsFunctionType(e.name, operand.returnType(),
+							generics, context);
+			// FIXME: we seem to be losing generic information here?			
+			return Code.FunCall(p.second(), operand, p.first(), attributes(e));
 		} catch (ResolveError re) {
 			// should be unreachable if type propagation is already succeeded.
 			syntaxError("cannot resolve as function or definition call",
@@ -564,14 +558,10 @@ public class CodeGeneration {
 			SemanticType.EffectiveTuple element = (SemanticType.EffectiveTuple) type.element();
 			SemanticType.Tuple argType = SemanticType.Tuple(type,
 					element.tupleElement(0));
-			SemanticType.Function funType = SemanticType.Function(argType,
-					element.tupleElement(1),element.tupleElement(0),element.tupleElement(1));
-			Code index = generate(e.index, environment, context);
-			NameID nid = new NameID(WYCS_CORE_MAP, "IndexOf");
+			Code index = generate(e.index, environment, context);			
 			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
 					source, index });
-			return Code.FunCall(funType, argument, nid,
-					attributes(e));
+			return invokeInternal(WYCS_CORE_MAP, "IndexOf", argument, context);						
 		}
 	}
 
@@ -588,47 +578,58 @@ public class CodeGeneration {
 	 *            --- the supplied argument type
 	 * @return
 	 */
-	protected SemanticType[] bindGenerics(NameID nid, SemanticType argumentType,
+	protected Pair<SemanticType.Function,List<SemanticType>> bindGenerics(NameID nid, SemanticType argumentType,
 			SyntacticElement elem) {
 		try {
 			WycsFile module = builder.getModule(nid.module());
 			// module should not be null if TypePropagation has already passed.
 			Object d = module.declaration(nid.name());
 			SemanticType[] generics;
-			SemanticType parameterType;
+			SemanticType.Function funType;
 			if(d instanceof WycsFile.Function) {
 				WycsFile.Function fn = (WycsFile.Function) d;
 				generics = fn.type.generics();
-				parameterType = fn.type.from();
+				funType = fn.type;
 			} else if(d instanceof WycsFile.Macro) {
 				WycsFile.Macro fn = (WycsFile.Macro) d;
 				generics = fn.type.generics();
-				parameterType = fn.type.from();
+				funType = fn.type;
 			} else {
 				internalFailure("cannot resolve as function or macro call",
 						filename, elem);
 				return null; // dead-code
 			}
 			HashMap<String,SemanticType> binding = new HashMap<String,SemanticType>();
-			if (!SemanticType.bind(parameterType, argumentType, binding)) {
+			if (!SemanticType.bind(funType.from(), argumentType, binding)) {
 				internalFailure("cannot bind function or macro call", filename,
 						elem);
 			}
-			SemanticType[] result = new SemanticType[generics.length];
-			for(int i=0;i!=result.length;++i) {
+			ArrayList<SemanticType> result = new ArrayList<SemanticType>();
+			for(int i=0;i!=generics.length;++i) {
 				SemanticType.Var v = (SemanticType.Var) generics[i];
 				SemanticType type = binding.get(v.name());
 				if(type == null) {
 					internalFailure("cannot bind function or macro call",
 							filename, elem);
 				}
-				result[i] = type;
+				result.add(type);
 			}
-			return result;
+			
+			return new Pair<SemanticType.Function,List<SemanticType>>(funType,result);
 		} catch (Exception ex) {
 			internalFailure(ex.getMessage(), filename, elem, ex);
 			return null; // dead-code
 		}
+	}
+	
+	protected Code.FunCall invokeInternal(Path.ID module, String name,
+			Code argument, WyalFile.Context context) {
+		SemanticType argType = argument.returnType();
+		NameID nid = new NameID(module, name);
+		Pair<SemanticType.Function, List<SemanticType>> p = bindGenerics(nid,
+				argType, context);
+		// FIXME: Missing generic type information
+		return Code.FunCall(p.first(), argument, nid, attributes(context));
 	}
 
 	protected static Attribute[] attributes(SyntacticElement d) {

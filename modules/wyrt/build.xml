@@ -3,12 +3,13 @@
 
   <target name="compile-wyrt">
     <taskdef name="wyc" classname="wyc.util.WycAntTask" classpath="../wyc/src/:../wyil/src/:../wycs/src/:../wybs/src/:../wyrl/src/"/>
-    <wyc verbose="false" verificationConditions="true" whileydir="src" wycsdir="src" includes="whiley/**/*.whiley"/>
+    <wyc verbose="false" verificationConditions="true" bootpath="../wycs/stdlib/" whileydir="src" wycsdir="src" includes="whiley/**/*.whiley"/>
   </target>
 
   <target name="build" depends="compile-wyrt">
     <jar destfile="../../lib/wyrt-v${version}.jar">
       <fileset dir="src" includes="*/**/*.wyil"/>
+      <fileset dir="src" includes="*/**/*.wycs"/>
       <fileset dir="../wycs/stdlib" includes="*/**/*.wycs"/>
     </jar>
     <echo message="============================================="/>
