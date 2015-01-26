@@ -82,7 +82,7 @@ public class AttributedCodeBlock extends CodeBlock {
 	 * @param index
 	 * @param block
 	 */
-	private AttributedCodeBlock(CodeBlock.Index index, AttributedCodeBlock block) {
+	public AttributedCodeBlock(CodeBlock.Index index, AttributedCodeBlock block) {
 		// NOTE: do not call with block.bytecodes since this is *only* used for
 		// creating a subblock.
 		super();
@@ -156,6 +156,11 @@ public class AttributedCodeBlock extends CodeBlock {
 		}
 	}
 
+	public Code get(CodeBlock.Index index) {		
+		CodeBlock.Index idx = index.prepend(ID);
+		return super.get(idx);
+	}
+	
 	/**
 	 * <p>
 	 * Construct a temporary sub-block for use in creating an attributed
@@ -307,6 +312,7 @@ public class AttributedCodeBlock extends CodeBlock {
 	// Helper Methods
 	// ===================================================================
 	private void putAll(CodeBlock.Index index, Collection<Attribute> attributes) {
+		CodeBlock.Index idx = index.prepend(ID);
 		// Go through and add each attribute at the given index.
 		for (Attribute attribute : attributes) {
 			Attribute.Map<Attribute> map = this.attributes.get(attribute
@@ -315,12 +321,13 @@ public class AttributedCodeBlock extends CodeBlock {
 			// exists.
 			if (map != null) {
 				// Yes, so add it.
-				map.put(index, attribute);
+				map.put(idx, attribute);
 			}
 		}
 	}
 
 	private void putAll(CodeBlock.Index index, Attribute... attributes) {
+		CodeBlock.Index idx = index.prepend(ID);
 		// Go through and add each attribute at the given index.
 		for (Attribute attribute : attributes) {
 			Attribute.Map<Attribute> map = this.attributes.get(attribute
@@ -329,27 +336,29 @@ public class AttributedCodeBlock extends CodeBlock {
 			// exists.
 			if (map != null) {
 				// Yes, so add it.
-				map.put(index, attribute);
+				map.put(idx, attribute);
 			}
 		}
 	}
 
 	private void insertAll(CodeBlock.Index index, Attribute... attributes) {
+		CodeBlock.Index idx = index.prepend(ID);
 		// first, make space for the given code index
 		for (Attribute.Map<Attribute> map : this.attributes.values()) {
-			map.insert(index, null);
+			map.insert(idx, null);
 		}
 		// second, add the attributes at that index
-		putAll(index, attributes);
+		putAll(idx, attributes);
 	}
 
 	private void insertAll(CodeBlock.Index index,
 			Collection<Attribute> attributes) {
+		CodeBlock.Index idx = index.prepend(ID);
 		// first, make space for the given code index
 		for (Attribute.Map<Attribute> map : this.attributes.values()) {
-			map.insert(index, null);
+			map.insert(idx, null);
 		}
 		// second, add the attributes at that index
-		putAll(index, attributes);
+		putAll(idx, attributes);
 	}
 }

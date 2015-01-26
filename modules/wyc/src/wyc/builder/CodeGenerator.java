@@ -1088,10 +1088,11 @@ public final class CodeGenerator {
 				invariant.add(Codes.Fail(), attributes(e));
 				invariant.add(Codes.Label(nextLab));
 			}
+			// Terminate invariant block
+			invariant.add(Codes.Return());
 			
 			// FIXME: should we be creating multiple invariant bytecodes,
-			// instead of one monolithic one?
-			
+			// instead of one monolithic one?						
 			body.add(Codes.Invariant(invariant.bytecodes()), attributes(s));
 		}
 		

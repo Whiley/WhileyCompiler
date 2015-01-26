@@ -252,6 +252,10 @@ public class VcBranch {
 		}
 	}
 
+	public int numSlots() {
+		return environment.length;
+	}
+	
 	/**
 	 * Determine the current state of this branch. In particular, whether or not
 	 * it is ACTIVE.

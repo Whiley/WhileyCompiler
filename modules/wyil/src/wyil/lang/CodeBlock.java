@@ -264,6 +264,42 @@ public class CodeBlock implements Iterable<Code> {
 		}
 		
 		/**
+		 * Prepend a given index onto the front of this index;
+		 * 
+		 * @param index
+		 *            Index to be prepended. May be null, in which case this
+		 *            operation has no effect.
+		 * @return
+		 */
+		public Index prepend(CodeBlock.Index index) {
+			if(index == null) {
+				return this;
+			} else {
+				int[] indices = toArray();
+				for(int i=0;i!=indices.length;++i) {
+					index = new Index(index,indices[i]);
+				}
+				return index;
+			}
+		}
+		
+		/**
+		 * Append a given index onto the end of this index;
+		 * 
+		 * @param index
+		 *            Index to be appended. Must not be null
+		 * @return
+		 */
+		public Index append(CodeBlock.Index index) {
+			int[] indices = index.toArray();
+			CodeBlock.Index nIndex = this;
+			for(int i=0;i!=indices.length;++i) {
+				nIndex = new Index(nIndex,indices[i]);
+			}
+			return nIndex;
+		}
+		
+		/**
 		 * Return the first index nested within this index.
 		 *
 		 * @return
