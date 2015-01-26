@@ -999,7 +999,17 @@ public class AllValidTests {
 	public void For_Valid_18() {
 		runTest("For_Valid_18");
 	}
+	
+	@Test
+	public void For_Valid_19() {
+		runTest("For_Valid_19");
+	}
 
+	@Test
+	public void For_Valid_20() {
+		runTest("For_Valid_20");
+	}
+	
 	@Test
 	public void For_Valid_2() {
 		runTest("For_Valid_2");

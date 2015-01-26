@@ -1644,7 +1644,8 @@ public final class CodeGenerator {
 
 			// Second, recursively generate remaining parts
 			AttributedCodeBlock block = codes.createSubBlock();
-
+			generate(srcIterator,trueLabel,falseLabel,e,environment,block,context);
+			
 			// Finally, create the forall loop bytecode
 			codes.add(Codes.ForAll(srcType.raw(), srcSlot, varSlot, new int[0],
 					block.bytecodes()), attributes(e));

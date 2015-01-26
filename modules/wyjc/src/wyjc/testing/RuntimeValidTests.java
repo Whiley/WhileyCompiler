@@ -1057,6 +1057,16 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
+	public void For_Valid_20() {
+		runTest("For_Valid_20");
+	}
+
+	@Test
+	public void For_Valid_19() {
+		runTest("For_Valid_19");
+	}
+
+	@Test
 	public void For_Valid_2() {
 		runTest("For_Valid_2");
 	}

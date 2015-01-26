@@ -45,6 +45,7 @@ import wycc.lang.NameID;
 import wycc.util.Pair;
 import wycs.core.Value;
 import wycs.syntax.*;
+import wycs.syntax.TypePattern.Tuple;
 
 /**
  * Responsible for converting a given Wyil bytecode into an appropriate
@@ -129,7 +130,7 @@ public class VcGenerator {
 			// there is only ever one exit point from an invariant.
 			for (VcBranch exitBranch : exitBranches) {
 				if (exitBranch.state() == VcBranch.State.TERMINATED) {
-					invariant = generateAssumptions(exitBranch);
+					invariant = generateAssumptions(exitBranch,null);
 					break;
 				}
 			}
@@ -813,7 +814,7 @@ public class VcGenerator {
 	 */
 	protected List<VcBranch> transform(Codes.Loop code, VcBranch branch,
 			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
-		return transformHelper(code, branch, labels, block).second();
+		return transformLoopHelper(code, branch, labels, block).second();
 	}
 
 
@@ -846,12 +847,117 @@ public class VcGenerator {
 	protected List<VcBranch> transform(Codes.ForAll code,
 			VcBranch branch, Map<String, CodeBlock.Index> labels,
 			AttributedCodeBlock block) {
-		Pair<VcBranch,List<VcBranch>> p = transformHelper(code, branch, labels, block);
-		List<VcBranch> exitBranches = p.second();
-		exitBranches.add(p.first());
-		return exitBranches;
+		// FIXME: need to implement this as a special bytecode
+		boolean isQuantifier = true;
+		// Write an arbitrary value to the index operand. This is necessary to
+		// ensure that there is something there if it is used within the loop
+		// body.
+		branch.havoc(code.indexOperand, code.type.element());
+		//
+		VcBranch original = branch.fork();
+		branch = branch.fork();	
+		if (isQuantifier) {
+			// This represents a quantifier looop
+			Pair<VcBranch, List<VcBranch>> p = transformQuantifierHelper(code,
+					branch, labels, block);
+			return extractQuantifiers(code, original, p.first(), p.second());
+		} else {
+			Expr index = branch.read(code.indexOperand);
+			if (code.type instanceof Type.List) {
+				// FIXME: This case is needed to handle the discrepancy between
+				// lists and maps. Eventually, I plan to eliminate this discrepancy.
+				// FIXME: This probably doesn't work because the special
+				// variable created won't be quantified when generating the
+				// verification condition.
+				Expr.Variable i = new Expr.Variable("_"
+						+ ((Expr.Variable) index).name);
+				index = new Expr.Nary(Expr.Nary.Op.TUPLE,
+						new Expr[] { i, index });
+			}
+			branch.assume(new Expr.Binary(Expr.Binary.Op.IN, index, branch
+					.read(code.sourceOperand)));
+			// This is the case for a normal forall loop.
+			Pair<VcBranch, List<VcBranch>> p = transformLoopHelper(code,
+					branch, labels, block);
+			//
+			List<VcBranch> exitBranches = p.second();
+			exitBranches.add(p.first());
+			return exitBranches;
+		}
 	}
-	protected Pair<VcBranch,List<VcBranch>> transformHelper(Codes.Loop code,
+	
+	/**
+	 * This extracts quantifiers from exit branches of a forall loop. There are
+	 * two kinds of quantifiers which will be generated. A universal quantifier
+	 * is created for the fall thru branch, whilst existential quantifiers are
+	 * created for exit branches which are either still active (i.e. still
+	 * progressing) or have terminated or failed.
+	 * 
+	 * @param code
+	 * @param root
+	 * @param fallThru
+	 * @param exitBranches
+	 * @return
+	 */
+	protected List<VcBranch> extractQuantifiers(Codes.ForAll code,
+			VcBranch root, VcBranch fallThru, List<VcBranch> exitBranches) {
+		// First, setup some helper variables for use in the remainder.
+		SyntacticType elementType = convert(code.type.element(),Collections.EMPTY_LIST);
+		Expr index = root.read(code.indexOperand);
+		TypePattern pattern = new TypePattern.Leaf(elementType,  (Expr.Variable) index);
+		if (code.type instanceof Type.List) {
+			// FIXME: This case is needed to handle the discrepancy between lists and
+			// maps.  Eventually, I plan to eliminate this discrepancy.
+			Expr.Variable i = new Expr.Variable("_" +  ((Expr.Variable)index).name);
+			index = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { i, index });
+			pattern = new TypePattern.Tuple(new TypePattern[] {
+					new TypePattern.Leaf(new SyntacticType.Int(), i), pattern });
+		}
+		Expr elementOf = new Expr.Binary(Expr.Binary.Op.IN,
+				index, root.read(code.sourceOperand));
+		ArrayList<VcBranch> qBranches = new ArrayList<VcBranch>();			
+		// Second, deal with the universally quantified fall-thru branch. We
+		// fork the root for this in order not to disturb it. We also must
+		// include the elementOf which implies for the forall body.		
+		Expr forallBody = generateAssumptions(fallThru,root);
+		fallThru = root.fork();
+		fallThru.assume(new Expr.ForAll(pattern,
+				new Expr.Binary(Expr.Binary.Op.IMPLIES, elementOf, forallBody)));
+		fallThru.goTo(fallThru.pc().next());
+		qBranches.add(fallThru);
+		// Finally, deal with existential branches next. We must fork the root
+		// again for this, since it will now be immutable.
+		for (int i = 0; i != exitBranches.size(); ++i) {
+			VcBranch b = exitBranches.get(i);
+			Expr body = generateAssumptions(b, root);
+			body = new Expr.Binary(Expr.Binary.Op.AND, elementOf, body);
+			CodeBlock.Index target = b.pc();
+			b = root.fork();
+			b.assume(new Expr.Exists(pattern, body));
+			b.goTo(target);
+			qBranches.add(b);
+		}
+		return qBranches;
+	}
+	
+	protected Pair<VcBranch,List<VcBranch>> transformQuantifierHelper(Codes.Loop code,
+			VcBranch branch, Map<String, CodeBlock.Index> labels,
+			AttributedCodeBlock block) {
+		// The loopPc gives the block index of the loop bytecode.
+		CodeBlock.Index loopPc = branch.pc();
+		// This is the easy case, as there is no loop invariant. Therefore,
+		// we just havoc modified variables at the beginning and then allow
+		// branches to exit the loop as normal. Branches which reach the end
+		// of the loop body are returned to be universally quantified
+		havocVariables(code.modifiedOperands,branch);
+		VcBranch activeBranch = branch.fork();
+		// Now, run through loop body. This will produce several kinds of
+		// branch. Those which have terminated or branched out of the loop body,
+		// and those which have reached the end of the loop body. ).
+		return transform(loopPc, 0, activeBranch, false, labels, block);
+	}
+	
+	protected Pair<VcBranch,List<VcBranch>> transformLoopHelper(Codes.Loop code,
 			VcBranch branch, Map<String, CodeBlock.Index> labels,
 			AttributedCodeBlock block) {
 		// The loopPc gives the block index of the loop bytecode.
@@ -1847,7 +1953,7 @@ public class VcGenerator {
 		List<VcBranch> exitBranches = transform(master, block);
 		for (VcBranch exitBranch : exitBranches) {
 			if (exitBranch.state() == VcBranch.State.TERMINATED) {
-				Expr body = generateAssumptions(exitBranch);
+				Expr body = generateAssumptions(exitBranch,null);
 				wycsFile.add(wycsFile.new Macro(name, Collections.EMPTY_LIST,
 						type, body));
 				return;
@@ -1913,7 +2019,7 @@ public class VcGenerator {
 		// verification condition. The assertion must be shown to hold assuming
 		// the assumptions did. Therefore, we construct an implication to
 		// establish this.
-		Expr assumptions = generateAssumptions(branch);
+		Expr assumptions = generateAssumptions(branch,null);
 
 		assertion = new Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
 				assertion, toWycsAttributes(block.attributes(branch.pc())));
@@ -1989,30 +2095,37 @@ public class VcGenerator {
 	 * y &gt;= 0 &amp;&amp; (x &gt;= y || (x &lt; y || z == 0))
 	 * </pre>
 	 */
-	private Expr generateAssumptions(VcBranch b) {
+	private Expr generateAssumptions(VcBranch b, VcBranch end) {
 
-		// FIXME: this method is not efficient and does not generate an optimal
-		// decomposition of the branch graph.
-
-		// First, compute disjunction of parent constraints.
-		VcBranch[] b_parents = b.parents();
-		Expr parents = null;
-		for (int i = 0; i != b_parents.length; ++i) {
-			VcBranch parent = b_parents[i];
-			Expr parent_constraints = generateAssumptions(parent);
-			if (i == 0) {
-				parents = parent_constraints;
-			} else {
-				parents = new Expr.Binary(Expr.Binary.Op.OR, parents,
-						parent_constraints);
-			}
-		}
-
-		// Second, include constraints from this node.
-		if (parents == null) {
-			return b.constraints();
+		if(b == end) {
+			// The termination condition is reached.
+			return new Expr.Constant(Value.Bool(true));
 		} else {
-			return new Expr.Binary(Expr.Binary.Op.AND, parents, b.constraints());
+			// FIXME: this method is not efficient and does not generate an
+			// optimal
+			// decomposition of the branch graph.
+
+			// First, compute disjunction of parent constraints.
+			VcBranch[] b_parents = b.parents();
+			Expr parents = null;
+			for (int i = 0; i != b_parents.length; ++i) {
+				VcBranch parent = b_parents[i];
+				Expr parent_constraints = generateAssumptions(parent,end);
+				if (i == 0) {
+					parents = parent_constraints;
+				} else {
+					parents = new Expr.Binary(Expr.Binary.Op.OR, parents,
+							parent_constraints);
+				}
+			}
+
+			// Second, include constraints from this node.
+			if (parents == null) {
+				return b.constraints();
+			} else {
+				return new Expr.Binary(Expr.Binary.Op.AND, parents,
+						b.constraints());
+			}
 		}
 	}
 
