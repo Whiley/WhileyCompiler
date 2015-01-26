@@ -1,0 +1,8 @@
+type nat is (int x) where x >= 0
+
+type pos is (nat x) where x != 1
+
+assert:
+    forall(pos p):
+        p >= 0
+        p != 1
