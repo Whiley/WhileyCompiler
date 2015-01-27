@@ -743,7 +743,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             if (function.constraint != null) {
                 // Create a binding that replaces the named return variable with the function call
                 Map<Integer, Code> binding = new HashMap();
-                binding.put(0, Code.FunCall(type, Code.Variable(type.from(), 1), code.nid));
+                binding.put(0, Code.FunCall(type, Code.Variable(type.from(), 1), code.nid, code.binding));
 
                 // Substitute and instantiate to get the new operand for the assertion
                 Code operand = function.constraint.substitute(binding).instantiate(generics);

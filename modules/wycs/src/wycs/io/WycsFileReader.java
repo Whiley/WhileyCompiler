@@ -394,7 +394,13 @@ public class WycsFileReader {
 							"invalid funcall bytecode encountered");
 				}
 				int nid = input.read_uv();
-				return Code.FunCall((SemanticType.Function) type, operands[0], namePool[nid]);
+				int length = input.read_uv();
+				SemanticType[] binding = new SemanticType[length];
+				for (int i = 0; i != length; ++i) {
+					int pTypeIdx = input.read_uv();
+					binding[i] = typePool[pTypeIdx];					
+				}
+				return Code.FunCall((SemanticType.Function) type, operands[0], namePool[nid], binding);
 			}
 			}
 

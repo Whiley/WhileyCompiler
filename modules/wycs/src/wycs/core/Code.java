@@ -1,7 +1,9 @@
 package wycs.core;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import wycc.lang.Attribute;
@@ -258,14 +260,14 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		return new Quantifier(type, opcode, operand, types, attributes);
 	}
 
-	public static FunCall FunCall(SemanticType.Function type, Code<?> operand, NameID nid,
-			Attribute... attributes) {
-		return new FunCall(type,operand,nid,attributes);
+	public static FunCall FunCall(SemanticType.Function type, Code<?> operand,
+			NameID nid, SemanticType[] binding, Attribute... attributes) {
+		return new FunCall(type,binding,operand,nid,attributes);
 	}
 
-	public static FunCall FunCall(SemanticType.Function type, Code<?> operand, NameID nid,
-			Collection<Attribute> attributes) {
-		return new FunCall(type,operand,nid,attributes);
+	public static FunCall FunCall(SemanticType.Function type, Code<?> operand,
+			NameID nid, SemanticType[] binding, Collection<Attribute> attributes) {
+		return new FunCall(type,binding,operand,nid,attributes);
 	}
 
 	// ==================================================================
@@ -635,17 +637,20 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 
 	public final static class FunCall extends Code<SemanticType.Function> {
 		public final NameID nid;
+		public final SemanticType[] binding;
 
-		private FunCall(SemanticType.Function type, Code<?> operand, NameID nid,
+		private FunCall(SemanticType.Function type, SemanticType[] binding, Code<?> operand, NameID nid,
 				Attribute... attributes) {
 			super(type, Op.FUNCALL, new Code[] { operand }, attributes);
 			this.nid = nid;
+			this.binding = Arrays.copyOf(binding, binding.length);
 		}
 
-		private FunCall(SemanticType.Function type, Code<?> operand, NameID nid,
+		private FunCall(SemanticType.Function type, SemanticType[] binding, Code<?> operand, NameID nid,
 				Collection<Attribute> attributes) {
 			super(type, Op.FUNCALL, new Code[] { operand }, attributes);
 			this.nid = nid;
+			this.binding = Arrays.copyOf(binding, binding.length);
 		}
 
 		@Override
@@ -656,7 +661,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		@Override
 		public Code<?> clone(SemanticType.Function type, Code.Op opcode,
 				Code<?>[] operands) {
-			return new FunCall(type, operands[0], nid, attributes());
+			return new FunCall(type, binding, operands[0], nid, attributes());
 		}
 	}
 }

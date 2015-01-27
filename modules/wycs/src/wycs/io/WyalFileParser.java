@@ -982,7 +982,7 @@ public class WyalFileParser {
 					environment, terminated);
 		}
 
-		Expr lhs = parseAppendExpression(wf, generics, environment, terminated);
+		Expr lhs = parseUnionExpression(wf, generics, environment, terminated);
 
 		lookahead = tryAndMatch(terminated, LessEquals, LeftAngle,
 				GreaterEquals, RightAngle, EqualsEquals, NotEquals, In, Is,
@@ -1029,7 +1029,7 @@ public class WyalFileParser {
 				return null;
 			}
 
-			Expr rhs = parseAppendExpression(wf, generics, environment,
+			Expr rhs = parseUnionExpression(wf, generics, environment,
 					terminated);
 			return new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
@@ -1100,6 +1100,100 @@ public class WyalFileParser {
 		}
 	}
 
+	/**
+	 * Parse a set union expression, which is of the form:
+	 * <pre>
+	 * UnionExpr ::= IntersectExpr ( "∪" IntersectExpr )*
+	 * </pre>
+	 *
+	 * @param lookahead
+	 * @param wf
+	 *            The enclosing WyalFile being constructed. This is necessary to
+	 *            construct some nested declarations (e.g. parameters for
+	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 * @return
+	 */
+	private Expr parseUnionExpression(WyalFile wf,
+			HashSet<String> generics, HashSet<String> environment,
+			boolean terminated) {
+		int start = index;
+		Expr lhs = parseIntersectExpression(wf, generics, environment, terminated);
+
+		while (tryAndMatch(terminated, SetUnion) != null) {
+			Expr rhs = parseIntersectExpression(wf, generics, environment,
+					terminated);
+			lhs = new Expr.Binary(Expr.Binary.Op.SETUNION, lhs, rhs,
+					sourceAttr(start, index - 1));
+		}
+
+		return lhs;
+	}
+	
+	/**
+	 * Parse a set intersection expression, which is of the form:
+	 * <pre>
+	 * AppendExpr ::= AppendExpr ( "∩" AppendExpr )*
+	 * </pre>
+	 *
+	 * @param lookahead
+	 * @param wf
+	 *            The enclosing WyalFile being constructed. This is necessary to
+	 *            construct some nested declarations (e.g. parameters for
+	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 * @return
+	 */
+	private Expr parseIntersectExpression(WyalFile wf,
+			HashSet<String> generics, HashSet<String> environment,
+			boolean terminated) {
+		int start = index;
+		Expr lhs = parseAppendExpression(wf, generics, environment, terminated);
+
+		while (tryAndMatch(terminated, SetIntersection) != null) {
+			Expr rhs = parseAppendExpression(wf, generics, environment,
+					terminated);
+			lhs = new Expr.Binary(Expr.Binary.Op.SETINTERSECTION, lhs, rhs,
+					sourceAttr(start, index - 1));
+		}
+
+		return lhs;
+	}
+	
 	/**
 	 * Parse an append expression, which has the form:
 	 *
@@ -2168,7 +2262,7 @@ public class WyalFileParser {
 		// collections. Furthermore, the bitwise or expression could lead to
 		// ambiguity and, hence, we bypass that an consider append expressions
 		// only. However, the expression is guaranteed to be terminated by '|'.
-		Expr e = parseAppendExpression(wf, generics, environment, true);
+		Expr e = parseUnionExpression(wf, generics, environment, true);
 		match(VerticalBar);
 		return new Expr.Unary(Expr.Unary.Op.LENGTHOF, e, sourceAttr(start,
 				index - 1));

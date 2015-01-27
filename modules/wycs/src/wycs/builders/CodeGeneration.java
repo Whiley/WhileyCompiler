@@ -354,16 +354,13 @@ public class CodeGeneration {
 				fn = "Difference";
 				break;
 			default:
+				internalFailure("deadcode reached", filename, e);
 				fn = ""; // deadcode
 			}
-			NameID nid = new NameID(WYCS_CORE_SET,fn);
 			SemanticType.Tuple argType = SemanticType.Tuple(type, type);
-			SemanticType.Function funType = SemanticType.Function(argType,
-					type, ((SemanticType.Set)type).element());
 			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
-					lhs,rhs });
-			return Code.FunCall(funType, argument, nid,
-					attributes(e));
+					lhs,rhs });			
+			return invokeInternal(WYCS_CORE_SET, fn, argument, context);
 		}
 		case LISTAPPEND: {
 			SemanticType.Tuple argType = SemanticType.Tuple(type, type);
@@ -533,8 +530,10 @@ public class CodeGeneration {
 			Pair<NameID, SemanticType.Function> p = builder
 					.resolveAsFunctionType(e.name, operand.returnType(),
 							generics, context);
-			// FIXME: we seem to be losing generic information here?			
-			return Code.FunCall(p.second(), operand, p.first(), attributes(e));
+			//
+			return Code.FunCall(p.second(), operand, p.first(),
+					generics.toArray(new SemanticType[generics.size()]),
+					attributes(e));
 		} catch (ResolveError re) {
 			// should be unreachable if type propagation is already succeeded.
 			syntaxError("cannot resolve as function or definition call",
@@ -578,7 +577,7 @@ public class CodeGeneration {
 	 *            --- the supplied argument type
 	 * @return
 	 */
-	protected Pair<SemanticType.Function,List<SemanticType>> bindGenerics(NameID nid, SemanticType argumentType,
+	protected Pair<SemanticType.Function,SemanticType[]> bindGenerics(NameID nid, SemanticType argumentType,
 			SyntacticElement elem) {
 		try {
 			WycsFile module = builder.getModule(nid.module());
@@ -604,7 +603,7 @@ public class CodeGeneration {
 				internalFailure("cannot bind function or macro call", filename,
 						elem);
 			}
-			ArrayList<SemanticType> result = new ArrayList<SemanticType>();
+			SemanticType[] result = new SemanticType[generics.length];
 			for(int i=0;i!=generics.length;++i) {
 				SemanticType.Var v = (SemanticType.Var) generics[i];
 				SemanticType type = binding.get(v.name());
@@ -612,10 +611,10 @@ public class CodeGeneration {
 					internalFailure("cannot bind function or macro call",
 							filename, elem);
 				}
-				result.add(type);
+				result[i] = type;
 			}
 			
-			return new Pair<SemanticType.Function,List<SemanticType>>(funType,result);
+			return new Pair<SemanticType.Function,SemanticType[]>(funType,result);
 		} catch (Exception ex) {
 			internalFailure(ex.getMessage(), filename, elem, ex);
 			return null; // dead-code
@@ -626,10 +625,9 @@ public class CodeGeneration {
 			Code argument, WyalFile.Context context) {
 		SemanticType argType = argument.returnType();
 		NameID nid = new NameID(module, name);
-		Pair<SemanticType.Function, List<SemanticType>> p = bindGenerics(nid,
-				argType, context);
-		// FIXME: Missing generic type information
-		return Code.FunCall(p.first(), argument, nid, attributes(context));
+		Pair<SemanticType.Function, SemanticType[]> p = bindGenerics(nid,
+				argType, context);			
+		return Code.FunCall(p.first(), argument, nid, p.second(), attributes(context));
 	}
 
 	protected static Attribute[] attributes(SyntacticElement d) {

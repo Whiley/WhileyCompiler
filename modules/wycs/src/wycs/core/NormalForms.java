@@ -312,7 +312,7 @@ public class NormalForms {
 			HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
 		return Code.FunCall(e.type,
 				renameVariables(e.operands[0], binding, globals), e.nid,
-				e.attributes());
+				e.binding, e.attributes());
 	}
 
 	private static Code renameVariables(Code.Quantifier e,
@@ -453,7 +453,7 @@ public class NormalForms {
 	private static Code skolemiseExistentials(Code.FunCall e,
 			HashMap<Integer, Code> binding, ArrayList<Code.Variable> captured) {
 		Code operand = skolemiseExistentials(e.operands[0], binding, captured);
-		return Code.FunCall(e.type, operand, e.nid, e.attributes());
+		return Code.FunCall(e.type, operand, e.nid, e.binding, e.attributes());
 	}
 
 	private static Code skolemiseExistentials(Code.Load e,
@@ -530,7 +530,7 @@ public class NormalForms {
 			ArrayList<Pair<SemanticType, Integer>> environment) {
 		return Code.FunCall(e.type,
 				extractUniversals(e.operands[0], environment), e.nid,
-				e.attributes());
+				e.binding, e.attributes());
 	}
 
 	private static Code extractUniversals(Code.Load e,

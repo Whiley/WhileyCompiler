@@ -634,7 +634,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 				if(fn.constraint != null) {
 					// There are some axioms we can instantiate. First, we need to
 					// construct the generic binding for this function.
-					HashMap<String,SemanticType> generics = buildGenericBinding(fn.type.generics(),condition.type.generics());
+					HashMap<String,SemanticType> generics = buildGenericBinding(fn.type.generics(),condition.binding);
 					Code axiom = renameToAvoidCapture(fn.constraint,freeVariable);
 					HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
 					binding.put(1, condition.operands[0]);
@@ -736,7 +736,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 				// There are some axioms we can instantiate. First, we need to
 				// construct the generic binding for this function.
 				HashMap<String, SemanticType> generics = buildGenericBinding(
-						fn.type.generics(), expression.type.generics());
+						fn.type.generics(), expression.binding);
 				Code axiom = renameToAvoidCapture(fn.constraint,freeVariable);
 				HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
 				binding.put(1, expression.operands[0]);

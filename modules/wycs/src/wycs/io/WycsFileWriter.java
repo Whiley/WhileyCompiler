@@ -428,6 +428,10 @@ public class WycsFileWriter {
 			case FUNCALL: {
 				Code.FunCall c = (Code.FunCall) code;
 				output.write_uv(nameCache.get(c.nid));
+				output.write_uv(c.binding.length);
+				for (SemanticType t : c.binding) {
+					output.write_uv(typeCache.get(t));					
+				}				
 			}
 			}
 		}
@@ -518,6 +522,9 @@ public class WycsFileWriter {
 		} else if(code instanceof Code.FunCall) {
 			Code.FunCall c = (Code.FunCall) code;
 			addNameItem(c.nid);
+			for(SemanticType t : c.binding) {
+				addTypeItem(t);
+			}
 		}
 
 		// Second, deal with standard cases
