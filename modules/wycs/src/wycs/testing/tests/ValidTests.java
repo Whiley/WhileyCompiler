@@ -88,6 +88,9 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Set_30() { verifyPassTest("test_set_30"); }
 	@Test public void Test_Set_31() { verifyPassTest("test_set_31"); }
 	@Test public void Test_Set_32() { verifyPassTest("test_set_32"); }
+	@Test public void Test_Set_33() { verifyPassTest("test_set_33"); }
+	@Test public void Test_Set_34() { verifyPassTest("test_set_34"); }
+	@Test public void Test_Set_35() { verifyPassTest("test_set_35"); }
 
 	@Ignore("Known Issue") @Test public void Test_List_1() { verifyPassTest("test_list_01"); }
 	@Ignore("Known Issue") @Test public void Test_List_2() { verifyPassTest("test_list_02"); }
