@@ -974,68 +974,63 @@ public class VcGenerator {
 			return transformLoopWithoutInvariant(code,branch,labels,block);		
 		} else {			
 			CodeBlock.Index invariantPc = new CodeBlock.Index(loopPc,invariantOffset);
+			String invariantMacroName = method.name() + "_loopinvariant_" + invariantPc.toString().replace(".","_");;
 			buildInvariantMacro(branch,invariantPc,block);
 			// This is the harder case as we must account for the loop invariant
 			// properly. To do this, we allow the loop to execute upto the loop
 			// invariant using the current branch state. At this point, we havoc
 			// modified variables and then assume the loop invariant, before
 			// running through the loop until the invariant is reached again.	
-			Pair<VcBranch,List<VcBranch>> p = transform(loopPc, 0, branch, true, labels, block);
-			
+			Pair<VcBranch,List<VcBranch>> p = transform(loopPc, 0, branch, true, labels, block);			
 			// At this point, any branch which has terminated or branched out of
 			// the loop represents a true execution path. Any branch which has
 			// failed corresponds to ensuring the loop invariant on entry.
 			// Active branches which reach the invariant need special processing.
 			VcBranch activeBranch = p.first();
-			List<VcBranch> exitBranches = p.second();			
-			
-			List<Expr> arguments = new ArrayList<Expr>();
-			for(int i=0;i!=activeBranch.numSlots();++i) {
-				Expr e = activeBranch.read(i);
-				if(e != null) {
-					arguments.add(e);
+			List<VcBranch> exitBranches = p.second();					
+			// FIXME: this is a hack to determine which variables should be
+			// passed into the loop invariant macro. However, it really is a
+			// hack.
+			boolean[] variables = new boolean[activeBranch.numSlots()];
+			for(int i=0;i!=variables.length;++i) {
+				if(activeBranch.typeOf(i) != null) {
+					variables[i] = true;
 				}
 			}
-			Expr argument = arguments.size() == 1 ? arguments.get(1) : new Expr.Nary(Expr.Nary.Op.TUPLE,arguments);
-			String pc = invariantPc.toString().replace(".","_");
-			Expr.Invoke macro = new Expr.Invoke(method.name() + "_loopinvariant_" + pc, wycsFile.id(),
-					Collections.EMPTY_LIST, argument);
-			
-			Expr vc = buildVerificationCondition(macro, activeBranch, block);
+			// *** END ***
+			// Enforce invariant on entry. To do this, we generate a
+			// verification condition that asserts the invariant macro given the
+			// current branch state.
+			Expr.Invoke invariant = buildInvariantCall(activeBranch,invariantMacroName,variables);			
+			Expr vc = buildVerificationCondition(invariant, activeBranch, block);
 			wycsFile.add(wycsFile.new Assert(
 					"loop invariant does not hold on entry", vc,
 					toWycsAttributes(block.attributes(branch.pc()))));
-			
-//			// Process all active branches which have reached the loop
-//			// invariant. This is done first by asserting that the loop
-//			// invariant holds (base case). Then, all modified variables are
-//			// havoced and the loop invariant is assumed for the inductive case.
-//			Codes.Invariant invariant = (Codes.Invariant) code.get(invariantOffset);
-//			// Assert loop invariant
-//			p = transform(invariant, true, activeBranch, labels, block);
-//			activeBranch = p.first();
-//			exitBranches.addAll(p.second());
-//			// Havoc modified variables
-//			havocVariables(code.modifiedOperands,activeBranch);
-//			// Assume loop invariant
-//			//activeBranch.goTo(invariantPc); // reset to start of invariant
-//			//activeBranch = transform(invariant, false, activeBranch, labels, block).first();
-//			// Save fall through branch
-//			VcBranch fallThru = activeBranch.fork();
-//			fallThru.goTo(loopPc.next());			
-//			activeBranch = activeBranch.fork();
-//			// Process inductive case for this branch by allowing it to
-//			// execute around the loop until the invariant is found again.	
-//			p = transform(loopPc, invariantOffset + 1, activeBranch, true, labels, block);
-//			activeBranch = p.first();
-//			exitBranches.addAll(p.second());
-//			// Finally, assert the loop invariant holds	again	
-//			p = transform(invariant, true, activeBranch, labels, block);
-//			activeBranch = p.first();
-//			exitBranches.addAll(p.second());
-			//
-//			return new Pair<VcBranch,List<VcBranch>>(fallThru,exitBranches);			
-			return new Pair<VcBranch,List<VcBranch>>(activeBranch,exitBranches);			
+			// Assume invariant holds for inductive case. To this, we first
+			// havoc all modified variables to ensure that information about
+			// them is not carried forward from before the loop. Then, we assume
+			// the invariant macro holds in the current branch state. 
+			havocVariables(code.modifiedOperands,activeBranch);
+			invariant = buildInvariantCall(activeBranch,invariantMacroName,variables);			
+			activeBranch.assume(invariant);
+			// Process inductive case for this branch by allowing it to
+			// execute around the loop until the invariant is found again.
+			// Branches which prematurely exit the loop are passed into the list
+			// of exit branches. These are valid as they only have information
+			// from the loop invariant. 
+			p = transform(loopPc, invariantOffset + 1, activeBranch, true, labels, block);
+			activeBranch = p.first();
+			exitBranches.addAll(p.second());
+			// Reestablish loop invariant. To do this, we generate a
+			// verification condition that asserts the invariant macro given the
+			// current branch state.
+			invariant = buildInvariantCall(activeBranch,invariantMacroName,variables);
+			vc = buildVerificationCondition(invariant, activeBranch, block);
+			wycsFile.add(wycsFile.new Assert(
+					"loop invariant not restored", vc,
+					toWycsAttributes(block.attributes(branch.pc()))));
+			// Done.
+			return new Pair<VcBranch,List<VcBranch>>(activeBranch,exitBranches);						
 		}
 	}
 	
@@ -1078,6 +1073,38 @@ public class VcGenerator {
 		buildMacroBlock(method.name() + "_loopinvariant_" + pc, invariantPC, block, types);
 	}
 
+	/**
+	 * Construct invocation of loop invariant macro. This is used both for
+	 * asserting and assuming the invariant holds at different positions
+	 * throughout the process.
+	 * 
+	 * @param branch
+	 *            The branch in which the call is being constructed. This is
+	 *            needed to access the current state of relevant varibles.
+	 * @param name
+	 *            The name of the loop invariant macro. This is determined using
+	 *            the current method name and pc location.
+	 * @param variables
+	 *            the list of variables which are passed into the macro.
+	 *            Essentially, this is the list of variables which existed
+	 *            before the loop (i.e. rather than those local to the loop).
+	 * @return
+	 */
+	protected Expr.Invoke buildInvariantCall(VcBranch branch, String name,
+			boolean[] variables) {
+		List<Expr> arguments = new ArrayList<Expr>();
+		for (int i = 0; i != variables.length; ++i) {
+			if (variables[i]) {
+				arguments.add(branch.read(i));
+			}
+		}
+		Expr argument = arguments.size() == 1 ? arguments.get(1)
+				: new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
+		return new Expr.Invoke(name, wycsFile.id(), Collections.EMPTY_LIST,
+				argument);
+	}
+	
+	
 	/**
 	 * Check whether a given loop bytecode contains an invariant, or not.
 	 * 
