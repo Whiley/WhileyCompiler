@@ -544,8 +544,8 @@ public class TypePropagation implements Transform<WyalFile> {
 			}
 
 			fnType = (SemanticType.Function) fnType.substitute(binding);
-			checkIsSubtype(fnType.from(), argument, e.operand);
-			return fnType;
+			checkIsSubtype(fnType.from(), argument, e.operand);						
+			return builder.expand(fnType,context);
 		} catch(ResolveError re) {
 			syntaxError("cannot resolve as function or definition call", context.file().filename(), e, re);
 			return null;

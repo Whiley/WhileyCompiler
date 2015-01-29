@@ -379,7 +379,7 @@ public class VcBranch {
 			// Sanity check
 			throw new IllegalArgumentException(
 					"Attempt to modify an inactive branch");
-		}
+		}		
 		// to invalidate a variable, we assign it a "skolem" constant. That is,
 		// a fresh variable which has not been previously encountered in the
 		// branch.			

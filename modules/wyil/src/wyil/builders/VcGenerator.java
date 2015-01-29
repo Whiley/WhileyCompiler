@@ -498,6 +498,7 @@ public class VcGenerator {
 						// This bytecode has one or more preconditions which
 						// need to be asserted. Therefore, for each, create a
 						// failed branch to ensure the precondition is met.
+						// FIXME: should use buildVerificationCondition here?
 						for (int i = 0; i != preconditions.length; ++i) {
 							Expr precond = preconditions[i];
 							VcBranch fb = branch.fork();
@@ -1168,14 +1169,15 @@ public class VcGenerator {
 	 *            The branch in which to havoc the variables.
 	 */
 	public void havocVariables(int[] variables, VcBranch branch) {
-		for (int j = 0; j != variables.length; ++j) {
-			Type type = branch.typeOf(j);
+		for (int i = 0; i != variables.length; ++i) {
+			int var = variables[i];
+			Type type = branch.typeOf(var);
 			if (type != null) {
 				// We only havoc variables that have already been defined.
 				// This is possibly a workaround for a bug, where the loop
 				// modified variables can contain variables local to the 
 				// loop.
-				branch.havoc(j, type);
+				branch.havoc(var, type);
 			}
 		}
 	}
