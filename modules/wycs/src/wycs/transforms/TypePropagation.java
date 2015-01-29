@@ -166,6 +166,7 @@ public class TypePropagation implements Transform<WyalFile> {
 				try {
 					SemanticType type = builder.convert(
 							pattern.toSyntacticType(), generics, context);
+					type = builder.expand(type, context);
 					environment.put(lp.var.name, type);
 				} catch (ResolveError re) {
 					syntaxError(
@@ -467,7 +468,6 @@ public class TypePropagation implements Transform<WyalFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
 		environment = new HashMap<String,SemanticType>(environment);
-
 		propagate(e.pattern,environment,generics,context);
 		SemanticType r = propagate(e.operand,environment,generics,context);
 		checkIsSubtype(SemanticType.Bool,r,e.operand);
@@ -478,7 +478,7 @@ public class TypePropagation implements Transform<WyalFile> {
 	private void propagate(TypePattern pattern,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
-		
+				
 		try {
 			// First, convert the syntactic type into a semantic type. This may
 			// still contain nominal types, however, and we need to get rid of
