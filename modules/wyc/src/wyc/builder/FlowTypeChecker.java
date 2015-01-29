@@ -2654,7 +2654,7 @@ public class FlowTypeChecker {
 			} else {
 				WyilFile m = builder.getModule(candidateID.module());
 				WyilFile.FunctionOrMethodDeclaration d = m.functionOrMethod(
-						candidateID.name(), candidateType.raw());
+						candidateID.name(), candidateType.nominal());
 				if (!d.hasModifier(Modifier.PUBLIC)
 						&& !d.hasModifier(Modifier.PROTECTED)) {
 					String msg = candidateID.module() + "." + name
@@ -2695,7 +2695,7 @@ public class FlowTypeChecker {
 	private void addCandidateFunctionsAndMethods(NameID nid,
 			List<?> parameters,
 			Collection<Pair<NameID, Nominal.FunctionOrMethod>> candidates,
-			Context context) throws IOException {
+			Context context) throws IOException,ResolveError {
 		Path.ID mid = nid.module();
 
 		int nparams = parameters != null ? parameters.size() : -1;
@@ -2718,18 +2718,16 @@ public class FlowTypeChecker {
 				if ((mm.isFunction() || mm.isMethod())
 						&& mm.name().equals(nid.name())
 						&& (nparams == -1 || mm.type().params().size() == nparams)) {
-					// FIXME: loss of nominal information
-
 					// FIXME: loss of visibility information (e.g if this
 					// function is declared in terms of a protected type)
 					Type.FunctionOrMethod t = (Type.FunctionOrMethod) mm.type();
-					Nominal.FunctionOrMethod fom;
+					Nominal.FunctionOrMethod fom;					
 					if (t instanceof Type.Function) {
-						Type.Function ft = (Type.Function) t;
-						fom = new Nominal.Function(ft, ft);
+						Type.Function ft = (Type.Function) t;						
+						fom = new Nominal.Function(ft, (Type.Function) expand(ft));
 					} else {
 						Type.Method mt = (Type.Method) t;
-						fom = new Nominal.Method(mt, mt);
+						fom = new Nominal.Method(mt, (Type.Method) expand(mt));
 					}
 					candidates.add(new Pair<NameID, Nominal.FunctionOrMethod>(
 							nid, fom));
