@@ -1648,7 +1648,7 @@ public final class CodeGenerator {
 			generate(srcIterator,trueLabel,falseLabel,e,environment,block,context);
 			
 			// Finally, create the forall loop bytecode
-			codes.add(Codes.ForAll(srcType.raw(), srcSlot, varSlot, new int[0],
+			codes.add(Codes.Quantify(srcType.raw(), srcSlot, varSlot, new int[0],
 					block.bytecodes()), attributes(e));
 		} else {
 			// This is the base case (i.e. the innermost loop)

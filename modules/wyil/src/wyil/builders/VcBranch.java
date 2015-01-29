@@ -315,6 +315,10 @@ public class VcBranch {
 	public Type typeOf(String var) {
 		// FIXME: this is such an *horrific* hack, I can't believe I'm doing it.
 		// But, it does work most of the time :(
+		if(var.startsWith("_")) {
+			return Type.T_INT;
+		}
+		// And, so is this such an horrific hack :(
 		String[] split = var.split("_");
 		int register = Integer.parseInt(split[0].substring(1));
 		return types[register];

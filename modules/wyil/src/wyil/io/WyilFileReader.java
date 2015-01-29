@@ -562,7 +562,11 @@ public final class WyilFileReader {
 	 * @return
 	 */
 	private Code.Compound updateBytecodes(Code.Compound compound, ArrayList<Code> bytecodes) {
-		if(compound instanceof Codes.ForAll) {
+		if (compound instanceof Codes.Quantify) {
+			Codes.Quantify l = (Codes.Quantify) compound;
+			return Codes.Quantify(l.type, l.sourceOperand, l.indexOperand,
+					l.modifiedOperands, bytecodes);
+		} else if(compound instanceof Codes.ForAll) {
 			Codes.ForAll l = (Codes.ForAll) compound;
 			return Codes.ForAll(l.type, l.sourceOperand, l.indexOperand,
 					l.modifiedOperands, bytecodes);
@@ -941,6 +945,7 @@ public final class WyilFileReader {
 		Type type = typePool[typeIdx];
 
 		switch (opcode) {
+		case Code.OPCODE_quantify:
 		case Code.OPCODE_forall: {
 			if (!(type instanceof Type.EffectiveCollection)) {
 				throw new RuntimeException("expected collection type");
@@ -950,8 +955,13 @@ public final class WyilFileReader {
 			int sourceOperand = operands[1];
 			operands = Arrays.copyOfRange(operands, 2, operands.length);
 			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);
-			return Codes.ForAll((Type.EffectiveCollection) type, sourceOperand,
-					indexOperand, operands, bytecodes);
+			if (opcode == Code.OPCODE_forall) {
+				return Codes.ForAll((Type.EffectiveCollection) type,
+						sourceOperand, indexOperand, operands, bytecodes);
+			} else {
+				return Codes.Quantify((Type.EffectiveCollection) type,
+						sourceOperand, indexOperand, operands, bytecodes);
+			}
 		}
 		case Code.OPCODE_indirectinvokefnv:
 		case Code.OPCODE_indirectinvokemdv: {

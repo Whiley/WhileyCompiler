@@ -620,6 +620,7 @@ public final class WyilFileWriter {
 			Code.AbstractAssignable c = (Code.AbstractAssignable) code;
 			writeBase(wide,c.target(),output);
 		} else if(code instanceof Codes.ForAll) {
+			// Covers Codes.Quantifier as well
 			Codes.ForAll l = (Codes.ForAll) code;
 			int[] operands = l.modifiedOperands;
 			writeBase(wide,operands.length + 2,output);

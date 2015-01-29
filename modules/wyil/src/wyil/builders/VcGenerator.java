@@ -468,6 +468,9 @@ public class VcGenerator {
 					} else if(code instanceof Codes.Switch) {
 						bs = transform((Codes.Switch) code, branch, labels,
 								block);
+					} else if (code instanceof Codes.Quantify) {
+						bs = transform((Codes.Quantify) code, branch, labels,
+								block);
 					} else if (code instanceof Codes.ForAll) {
 						bs = transform((Codes.ForAll) code, branch, labels,
 								block);
@@ -851,8 +854,65 @@ public class VcGenerator {
 	protected List<VcBranch> transform(Codes.ForAll code,
 			VcBranch branch, Map<String, CodeBlock.Index> labels,
 			AttributedCodeBlock block) {
-		// FIXME: need to implement this as a special bytecode
-		boolean isQuantifier = true;
+		
+		// Write an arbitrary value to the index operand. This is necessary to
+		// ensure that there is something there if it is used within the loop
+		// body.
+		branch.havoc(code.indexOperand, code.type.element());
+		//		
+		Expr index = branch.read(code.indexOperand);
+		if (code.type instanceof Type.List) {
+			// FIXME: This case is needed to handle the discrepancy between
+			// lists and maps. Eventually, I plan to eliminate this discrepancy.
+			// FIXME: This probably doesn't work because the special
+			// variable created won't be quantified when generating the
+			// verification condition.
+			Expr.Variable i = new Expr.Variable("_"
+					+ ((Expr.Variable) index).name);
+			index = new Expr.Nary(Expr.Nary.Op.TUPLE,
+					new Expr[] { i, index });
+		}
+		branch.assume(new Expr.Binary(Expr.Binary.Op.IN, index, branch
+				.read(code.sourceOperand)));
+		// This is the case for a normal forall loop.
+		Pair<VcBranch, List<VcBranch>> p = transformLoopHelper(code,
+				branch, labels, block);
+		//
+		List<VcBranch> exitBranches = p.second();
+		exitBranches.add(p.first());
+		return exitBranches;
+	}
+
+	
+	/**
+	 * <p>
+	 * Transform a branch through a loop bytecode. This is done by splitting the
+	 * entry branch into the case for the loop body, and the case for the loop
+	 * after. First, modified variables are invalidated to disconnect them from
+	 * information which held before the loop. Second, the loop invariant is
+	 * assumed as this provides the only information known about modified
+	 * variables.
+	 * </p>
+	 * 
+	 * <p>
+	 * For the case of the loop body, there are several scenarios. For branches
+	 * which make it to the end of the body, the loop invariant must be
+	 * reestablished. For branches which exit the loop, these are then folded
+	 * into enclosing scope.
+	 * </p>
+	 * 
+	 * @param code
+	 *            The bytecode being transformed.
+	 * @param branch
+	 *            The current branch being transformed
+	 * @param labels
+	 *            The map from labels to their block locations
+	 * @param block
+	 *            The block being transformed over.
+	 */
+	protected List<VcBranch> transform(Codes.Quantify code,
+			VcBranch branch, Map<String, CodeBlock.Index> labels,
+			AttributedCodeBlock block) {
 		// Write an arbitrary value to the index operand. This is necessary to
 		// ensure that there is something there if it is used within the loop
 		// body.
@@ -860,34 +920,10 @@ public class VcGenerator {
 		//
 		VcBranch original = branch.fork();
 		branch = branch.fork();	
-		if (isQuantifier) {
-			// This represents a quantifier looop
-			Pair<VcBranch, List<VcBranch>> p = transformQuantifierHelper(code,
-					branch, labels, block);
-			return extractQuantifiers(code, original, p.first(), p.second());
-		} else {
-			Expr index = branch.read(code.indexOperand);
-			if (code.type instanceof Type.List) {
-				// FIXME: This case is needed to handle the discrepancy between
-				// lists and maps. Eventually, I plan to eliminate this discrepancy.
-				// FIXME: This probably doesn't work because the special
-				// variable created won't be quantified when generating the
-				// verification condition.
-				Expr.Variable i = new Expr.Variable("_"
-						+ ((Expr.Variable) index).name);
-				index = new Expr.Nary(Expr.Nary.Op.TUPLE,
-						new Expr[] { i, index });
-			}
-			branch.assume(new Expr.Binary(Expr.Binary.Op.IN, index, branch
-					.read(code.sourceOperand)));
-			// This is the case for a normal forall loop.
-			Pair<VcBranch, List<VcBranch>> p = transformLoopHelper(code,
-					branch, labels, block);
-			//
-			List<VcBranch> exitBranches = p.second();
-			exitBranches.add(p.first());
-			return exitBranches;
-		}
+		// This represents a quantifier looop
+		Pair<VcBranch, List<VcBranch>> p = transformQuantifierHelper(code,
+				branch, labels, block);
+		return extractQuantifiers(code, original, p.first(), p.second());
 	}
 	
 	/**

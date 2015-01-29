@@ -574,11 +574,12 @@ public interface Code {
 	// =========================================================================
 	public static final int OPCODE_loop              = 0 + FMT_NARYOP;
 	public static final int OPCODE_forall            = 1 + FMT_NARYOP;
-	public static final int OPCODE_void              = 2 + FMT_NARYOP;
+	public static final int OPCODE_quantify          = 2 + FMT_NARYOP;	
 	public static final int OPCODE_indirectinvokefnv = 3 + FMT_NARYOP;
 	public static final int OPCODE_indirectinvokemdv = 4 + FMT_NARYOP;
 	public static final int OPCODE_invokefnv         = 5 + FMT_NARYOP; // +NAMEIDX
 	public static final int OPCODE_invokemdv         = 6 + FMT_NARYOP; // +NAMEIDX
+	public static final int OPCODE_void              = 7 + FMT_NARYOP;	
 
 	// =========================================================================
 	// Nary Assignables

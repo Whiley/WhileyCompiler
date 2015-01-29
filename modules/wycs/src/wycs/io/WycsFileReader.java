@@ -255,7 +255,7 @@ public class WycsFileReader {
 		}
 
 		input.pad_u8(); // pad out to next byte boundary
-
+		
 		if (expected.isInstance(block)) {
 			return (T) block;
 		} else {
@@ -282,7 +282,10 @@ public class WycsFileReader {
 		int nameIdx = input.read_uv();
 		int typeIdx = input.read_uv();
 		int nBlocks = input.read_uv();
-		Code<?> code = readBlock(Code.class);
+		Code<?> code = null;
+		if(nBlocks > 0) {
+			code = readBlock(Code.class);
+		}
 
 		return new WycsFile.Type(stringPool[nameIdx],
 				(SemanticType) typePool[typeIdx], code);

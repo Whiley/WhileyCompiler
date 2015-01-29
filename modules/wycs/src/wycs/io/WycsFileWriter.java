@@ -292,8 +292,12 @@ public class WycsFileWriter {
 
 		output.write_uv(stringCache.get(md.name()));
 		output.write_uv(typeCache.get(md.type));
-		output.write_uv(1);
-		writeBlock(BLOCK_Code,md.invariant,output);
+		if(md.invariant == null) {
+			output.write_uv(0);			
+		} else {
+			output.write_uv(1);
+			writeBlock(BLOCK_Code,md.invariant,output);
+		}
 
 		output.close();
 		return bytes.toByteArray();

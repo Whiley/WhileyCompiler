@@ -460,6 +460,22 @@ public abstract class Codes {
 		return new Dereference(type, target, operand);
 	}
 
+
+	public static Quantify Quantify(Type.EffectiveCollection type,
+			int sourceOperand, int indexOperand,
+			int[] modifiedOperands, Collection<Code> bytecodes) {
+		return new Quantify(type, sourceOperand, indexOperand,
+				modifiedOperands, bytecodes);
+	}
+
+	public static Quantify Quantify(Type.EffectiveCollection type,
+			int sourceOperand, int indexOperand, int[] modifiedOperands,
+			Code... bytecodes) {
+		return new Quantify(type, sourceOperand, indexOperand,
+				modifiedOperands, bytecodes);
+	}
+
+	
 	public static Update Update(Type beforeType, int target,
 			Collection<Integer> operands, int operand, Type afterType,
 			Collection<String> fields) {
@@ -2232,7 +2248,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class ForAll extends Loop {
+	public static class ForAll extends Loop {
 		public final int sourceOperand;
 		public final int indexOperand;
 		public final Type.EffectiveCollection type;
@@ -2318,6 +2334,63 @@ public abstract class Codes {
 		}
 	}
 
+	public static final class Quantify extends ForAll {
+		
+		private Quantify(Type.EffectiveCollection type, int sourceOperand,
+				int indexOperand, int[] modifies, Collection<Code> bytecodes) {
+			super(type,sourceOperand,indexOperand, modifies, bytecodes);
+		}
+		
+		private Quantify(Type.EffectiveCollection type, int sourceOperand,
+				int indexOperand, int[] modifies, Code... bytecodes) {
+			super(type,sourceOperand,indexOperand, modifies, bytecodes);
+		}
+		
+		public int opcode() {
+			return OPCODE_quantify;
+		}
+		
+		@Override
+		public Code.Compound remap(Map<Integer, Integer> binding) {
+			int[] nModifiedOperands = remapOperands(binding, modifiedOperands);
+			ArrayList<Code> bytecodes = this.bytecodes;
+
+			for (int i = 0; i != bytecodes.size(); ++i) {
+				Code code = bytecodes.get(i);
+				Code nCode = code.remap(binding);
+				if (code != nCode) {
+					if (bytecodes == this.bytecodes) {
+						bytecodes = new ArrayList<Code>(bytecodes);
+					}
+					bytecodes.set(i, nCode);
+				}
+			}
+			Integer nIndexOperand = binding.get(indexOperand);
+			Integer nSourceOperand = binding.get(sourceOperand);
+			if (nSourceOperand != null || nIndexOperand != null
+					|| nModifiedOperands != modifiedOperands || bytecodes != this.bytecodes) {
+				nSourceOperand = nSourceOperand != null ? nSourceOperand
+						: sourceOperand;
+				nIndexOperand = nIndexOperand != null ? nIndexOperand
+						: indexOperand;
+
+				return Quantify(type, nSourceOperand, nIndexOperand,
+						nModifiedOperands, bytecodes);
+			} else {
+				return this;
+			}
+		}
+		
+		public boolean equals(Object o) {
+			return super.equals(o) && o instanceof Quantify;
+		}
+		
+		public String toString() {
+			return "quantify %" + indexOperand + " in %" + sourceOperand + " "
+					+ arrayToString(modifiedOperands) + " : " + type;
+		}
+	}
+	
 	/**
 	 * Represents a type which may appear on the left of an assignment
 	 * expression. Lists, Dictionaries, Strings, Records and References are the
