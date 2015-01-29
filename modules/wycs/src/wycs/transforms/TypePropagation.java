@@ -252,6 +252,8 @@ public class TypePropagation implements Transform<WyalFile> {
 		try {
 			SemanticType op_type = propagate(e.operand,environment,generics,context);
 			SemanticType targetType = builder.convert(e.type, generics, context);
+			// FIXME: what to do with constraints?
+			targetType = builder.expand(targetType, context);
 			// TODO: check cast is permitted.
 			return targetType;
 		} catch (ResolveError re) {
