@@ -1547,7 +1547,7 @@ public class WyalFileParser {
 				// is not a declared variable name.
 				Path.ID id = parsePossiblePathID(lhs, environment);
 
-				if (tryAndMatch(terminated, LeftBrace) != null) {
+				if (canMatch(terminated, LeftBrace) != null) {
 					// This indicates a direct or indirect invocation. First,
 					// parse arguments to invocation
 					Expr argument = parseInvocationArgument(wf, generics,
@@ -1597,8 +1597,12 @@ public class WyalFileParser {
 			// a module identifier.
 			return null;
 		} else if (src instanceof Expr.ConstantAccess) {
-			Expr.ConstantAccess ca = (Expr.ConstantAccess) src;
-			return Trie.ROOT.append(ca.name);
+			Expr.ConstantAccess ca = (Expr.ConstantAccess) src;	
+			if(ca.qualification == null) {
+				return Trie.ROOT.append(ca.name);
+			} else {
+				return ca.qualification.append(ca.name);
+			}
 		} else if (src instanceof Expr.FieldAccess) {
 			Expr.FieldAccess ada = (Expr.FieldAccess) src;
 			Path.ID id = parsePossiblePathID(ada.operand, environment);
@@ -3579,6 +3583,40 @@ public class WyalFileParser {
 			for (int i = 0; i != kinds.length; ++i) {
 				if (t.kind == kinds[i]) {
 					index = next + 1;
+					return t;
+				}
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * Check whether a given token(s) could be matched, whilst ignoring any
+	 * whitespace in between. Note that, in either case, the index will be
+	 * unchanged. If more than one kind is provided then this will check for
+	 * matching any of them.
+	 *
+	 * @param terminated
+	 *            Indicates whether or not this function should be concerned
+	 *            with new lines. The terminated flag indicates whether or not
+	 *            the current construct being parsed is known to be terminated.
+	 *            If so, then we don't need to worry about newlines and can
+	 *            greedily consume them (i.e. since we'll eventually run into
+	 *            the terminating symbol).
+	 * @param kinds
+	 *
+	 * @return
+	 */
+	private Token canMatch(boolean terminated, Token.Kind... kinds) {
+		// If the construct being parsed is know to be terminated, then we can
+		// skip all whitespace. Otherwise, we can't skip newlines as these are
+		// significant.
+		int next = terminated ? skipWhiteSpace(index) : skipLineSpace(index);
+
+		if (next < tokens.size()) {
+			Token t = tokens.get(next);
+			for (int i = 0; i != kinds.length; ++i) {
+				if (t.kind == kinds[i]) {
 					return t;
 				}
 			}

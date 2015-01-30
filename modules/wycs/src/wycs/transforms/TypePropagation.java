@@ -529,11 +529,33 @@ public class TypePropagation implements Transform<WyalFile> {
 		}
 		// Now, attempt to resolve the function
 		try {
-			Triple<NameID,SemanticType.Function,Map<String,SemanticType>> p = builder.resolveAsFunctionType(e.name,argument,ivkGenerics,context);
-			SemanticType.Function fnType = p.second();
-			Map<String,SemanticType> binding = p.third();
+			SemanticType.Function fnType;
+			Map<String,SemanticType> binding;
+						
+			if(e.qualification == null) {
+				// In this case, no package qualification is given. Hence, we
+				// need to resolve the name based on the active important
+				// statements and declarations within the current file.
+				Triple<NameID, SemanticType.Function, Map<String, SemanticType>> p = builder
+						.resolveAsFunctionType(e.name, argument, ivkGenerics,
+								context);
+				fnType = p.second();
+				binding = p.third();	
+			} else {
+				// In this case, a package qualification has been given. Hence,
+				// we know the fully name identifier for this function and we
+				// need only to check it exists and access the relevant
+				// information.
+				NameID nid = new NameID(e.qualification,e.name);
+				Pair<SemanticType.Function, Map<String, SemanticType>> p = builder
+						.resolveAsFunctionType(nid, argument, ivkGenerics,
+								context);
+				fnType = p.first();
+				binding = p.second();	
+			}
+			
 			SemanticType[] fn_generics = fnType.generics();
-
+			
 			if (fn_generics.length != e.generics.size()) {
 				// could resolve this with inference in the future.
 				syntaxError(
