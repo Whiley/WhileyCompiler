@@ -455,7 +455,12 @@ public class VcGenerator {
 								labels, block);
 						worklist.add(p.first());
 						worklist.addAll(p.second());
-					}
+						// FIXME: there is a bug here as invariant bytecodes
+						// don't have a fall-through option. The easiest
+						// solution might be to require the same for assert
+						// bytecodes.
+						System.out.println("WORKLIST: " + p.first());						
+					}					
 				} else if(code instanceof Codes.If
 						|| code instanceof Codes.IfIs
 						|| code instanceof Codes.Switch
@@ -477,18 +482,18 @@ public class VcGenerator {
 					} else {						
 						bs = transform((Codes.Loop) code, branch, labels, block);
 					} 
-					worklist.addAll(bs);
+					worklist.addAll(bs);					
 
 				} else if (code instanceof Codes.Goto) {
 					transform((Codes.Goto) code, branch, labels, block);
-					worklist.push(branch);
+					worklist.push(branch);					
 				} else if (code instanceof Codes.Return) {
 					transform((Codes.Return) code, branch);
-					exitBranches.add(branch);
+					exitBranches.add(branch);					
 				} else if (code instanceof Codes.Fail) {
 					transform((Codes.Fail) code, branch, block);
 					exitBranches.add(branch);
-				} else {
+				} else {					
 					// Unit statement. First, check whether or not there are any
 					// preconditions for this statement and, if so, add
 					// appropriate verification conditions to enforce them.
