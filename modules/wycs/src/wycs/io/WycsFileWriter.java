@@ -409,6 +409,11 @@ public class WycsFileWriter {
 				output.write_uv(v.index);
 				break;
 			}
+			case CAST: {
+				Code.Cast c = (Code.Cast) code;
+				output.write_uv(typeCache.get(c.type));
+				break;
+			}
 			case CONST: {
 				Code.Constant c = (Code.Constant) code;
 				output.write_uv(constantCache.get(c.value));
@@ -518,6 +523,9 @@ public class WycsFileWriter {
 		if(code instanceof Code.Constant) {
 			Code.Constant c = (Code.Constant) code;
 			addConstantItem(c.value);
+		} else if(code instanceof Code.Cast) {
+			Code.Cast c = (Code.Cast) code;
+			addTypeItem(c.type);
 		} else if(code instanceof Code.Quantifier) {
 			Code.Quantifier c = (Code.Quantifier) code;
 			for(Pair<SemanticType,Integer> p : c.types) {

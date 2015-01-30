@@ -527,11 +527,24 @@ public class CodeGeneration {
 				generics.add(gt.attribute(TypeAttribute.class).type);
 
 			}
-			Pair<NameID, SemanticType.Function> p = builder
-					.resolveAsFunctionType(e.name, operand.returnType(),
-							generics, context);
+			NameID nid;
+			SemanticType.Function fnType;
+			
+			if(e.qualification == null) {
+				Pair<NameID, SemanticType.Function> p = builder
+						.resolveAsFunctionType(e.name, operand.returnType(),
+								generics, context);
+				nid = p.first();
+				fnType = p.second();
+			} else {
+				nid = new NameID(e.qualification, e.name);
+				Pair<SemanticType.Function, Map<String, SemanticType>> p = builder
+						.resolveAsFunctionType(nid, operand.returnType(),
+								generics, context);
+				fnType = p.first();
+			}
 			//
-			return Code.FunCall(p.second(), operand, p.first(),
+			return Code.FunCall(fnType, operand, nid,
 					generics.toArray(new SemanticType[generics.size()]),
 					attributes(e));
 		} catch (ResolveError re) {

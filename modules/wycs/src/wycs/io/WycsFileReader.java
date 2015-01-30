@@ -330,6 +330,14 @@ public class WycsFileReader {
 				int varIdx = input.read_uv();
 				return Code.Variable(type, operands, varIdx);
 			}
+			case CAST: {
+				int targetTypeIdx = input.read_uv();
+				if (operands.length != 1) {
+					throw new RuntimeException(
+							"invalid cast bytecode encountered");
+				}
+				return Code.Cast(typePool[targetTypeIdx],operands[0]);
+			}
 			case CONST: {
 				int constIdx = input.read_uv();
 				if (operands.length != 0) {

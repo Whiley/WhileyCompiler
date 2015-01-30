@@ -404,28 +404,27 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			// At this stage, we need to choose the best fit. In some cases a best
 			// fit may not exist, in which case we have ambiguity.
 			Pair<SemanticType.Function, Map<String, SemanticType>> candidate = selectCandidateFunctionOrMacro(
-					parameter, generics, fnTypes);
+					parameter, generics, fnTypes, context);
 			// Done
 			return new Pair<SemanticType.Function, Map<String,SemanticType>>(candidate.first(), candidate.second());		
 		} catch(ResolveError e) {
 			throw e;
 		} catch(Exception e) {		
-			internalFailure(e.getMessage(),context.file().filename(),context);
+			internalFailure(e.getMessage(),context.file().filename(),context,e);
 			return null;
 		}
 	}
 
 	public Pair<SemanticType.Function,Map<String,SemanticType>> selectCandidateFunctionOrMacro(
-			SemanticType parameter, List<SemanticType> generics, List<SemanticType.Function> candidates)
-			throws ResolveError {
+			SemanticType parameter, List<SemanticType> generics,
+			List<SemanticType.Function> candidates, WyalFile.Context context) throws ResolveError {
 		
 		SemanticType.Function candidateFn = null;	
 		HashMap<String,SemanticType> candidateBinding = null;
 		
-		
 		for (int i = 0; i != candidates.size(); ++i) {
 			// f is the original function or macro type
-			SemanticType.Function f = candidates.get(i);
+			SemanticType.Function f = candidates.get(i);			
 			// Construct the binding of generic variables to concrete variables.
 			HashMap<String,SemanticType> binding = new HashMap<String,SemanticType>();
 			SemanticType[] f_generics = f.generics();
@@ -435,10 +434,12 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			}
 			// cf is the instantiated function or macro type
 			SemanticType.Function cf = (SemanticType.Function) f.substitute(binding);
-			
+			// rf is the raw expanded form of the type. We need to expand it
+			// here, as otherwise the subtype operator won't work correctly.
+			SemanticType.Function rf = (SemanticType.Function) expand(cf, context);
 			// Now, see whether this a match and, if so, whether or not it is
 			// the current *best* match.
-			if (SemanticType.isSubtype(cf.from(), parameter)) {
+			if (SemanticType.isSubtype(rf.from(), parameter)) {
 				// The selection function is a potential candidate. However, we
 				// need to decide whether or not it is more precise than the
 				// current candidate.

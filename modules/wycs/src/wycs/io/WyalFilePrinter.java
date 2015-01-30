@@ -355,6 +355,11 @@ public class WyalFilePrinter {
 	}
 
 	private void write(WyalFile wf, Expr.Invoke e, int indent) {
+		if(e.qualification != null) {
+			String qualification = e.qualification.toString().replace('/', '.'); 
+			out.print(qualification);
+			out.print(".");
+		}
 		out.print(e.name);
 		writeWithBraces(wf,e.operand,indent);
 	}
