@@ -1012,7 +1012,17 @@ public class VcGenerator {
 		} else {			
 			CodeBlock.Index invariantPc = new CodeBlock.Index(loopPc,invariantOffset);
 			String invariantMacroName = method.name() + "_loopinvariant_" + invariantPc.toString().replace(".","_");;
-			buildInvariantMacro(branch,invariantPc,block);
+			// FIXME: this is a hack to determine which variables should be
+			// passed into the loop invariant macro. However, it really is a
+			// hack.
+			boolean[] variables = new boolean[branch.numSlots()];
+			for(int i=0;i!=variables.length;++i) {
+				if(branch.typeOf(i) != null) {
+					variables[i] = true;
+				}
+			}
+			// *** END ***
+			buildInvariantMacro(branch,invariantPc,block);			
 			// This is the harder case as we must account for the loop invariant
 			// properly. To do this, we allow the loop to execute upto the loop
 			// invariant using the current branch state. At this point, we havoc
@@ -1025,16 +1035,6 @@ public class VcGenerator {
 			// Active branches which reach the invariant need special processing.
 			VcBranch activeBranch = p.first();
 			List<VcBranch> exitBranches = p.second();					
-			// FIXME: this is a hack to determine which variables should be
-			// passed into the loop invariant macro. However, it really is a
-			// hack.
-			boolean[] variables = new boolean[activeBranch.numSlots()];
-			for(int i=0;i!=variables.length;++i) {
-				if(activeBranch.typeOf(i) != null) {
-					variables[i] = true;
-				}
-			}
-			// *** END ***
 			// Enforce invariant on entry. To do this, we generate a
 			// verification condition that asserts the invariant macro given the
 			// current branch state.

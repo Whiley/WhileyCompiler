@@ -1176,6 +1176,8 @@ public final class CodeGenerator {
 				invariant.add(Codes.Fail(), attributes(e));
 				invariant.add(Codes.Label(nextLab));
 			}
+			// Terminate invariant block
+			invariant.add(Codes.Return());
 			
 			// FIXME: should we be creating multiple invariant bytecodes,
 			// instead of one monolithic one?
@@ -1226,6 +1228,8 @@ public final class CodeGenerator {
 			generateCondition(nextLab, s.invariant, environment, invariant, context);
 			invariant.add(Codes.Fail(), attributes(s.invariant));
 			invariant.add(Codes.Label(nextLab));
+			// Terminate invariant block
+			invariant.add(Codes.Return());
 
 			// FIXME: should we be creating multiple invariant bytecodes,
 			// instead of one monolithic one?
