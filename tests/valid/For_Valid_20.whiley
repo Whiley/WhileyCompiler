@@ -1,5 +1,5 @@
 
-function find([int] items, int item) => (int result)
+function find([int] items, int item) -> (int result)
 ensures result == -1 || result in items:
     //
     int r = 0 

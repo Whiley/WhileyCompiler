@@ -53,13 +53,8 @@ import wyil.lang.WyilFile;
  * <pre>
  * function id(int x) -> int:
  *    return x
-<<<<<<< HEAD
  *
  * function f(int y) -> int:
-=======
- * 
- * function f(int y) => int:
->>>>>>> 940eea50d62d8413d520e4b4251db82728903ac4
  *    int|null x = y
  *    f(x)
  * </pre>

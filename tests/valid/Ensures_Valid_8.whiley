@@ -1,4 +1,4 @@
-function abs(int x) => (int r)
+function abs(int x) -> (int r)
 ensures r >= 0:
     //
     if x < 0:

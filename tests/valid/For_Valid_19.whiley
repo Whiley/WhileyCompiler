@@ -1,5 +1,5 @@
 
-function sum([int] items) => (int result)
+function sum([int] items) -> (int result)
 requires |items| > 0
 ensures result >= 0:
     //

@@ -1,4 +1,4 @@
-function buildNatSet(int n) => ({int} m):
+function buildNatSet(int n) -> ({int} m):
     //
     int i = 0
     {int} rs = {}
