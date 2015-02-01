@@ -129,9 +129,15 @@ public class LoopVariants implements Transform<WyilFile> {
 					// already implied that this is modified.
 					Codes.ForAll fall = (Codes.ForAll) code;
 					loopModified.clear(fall.indexOperand);
-					code = Codes.ForAll(fall.type, fall.sourceOperand,
-							fall.indexOperand, toArray(loopModified),
-							fall.bytecodes());
+					if(code instanceof Codes.Quantify) {
+						code = Codes.Quantify(fall.type, fall.sourceOperand,
+								fall.indexOperand, toArray(loopModified),
+								fall.bytecodes());
+					} else {
+						code = Codes.ForAll(fall.type, fall.sourceOperand,
+								fall.indexOperand, toArray(loopModified),
+								fall.bytecodes());
+					}
 					block.set(i, code);
 				} else if (code instanceof Codes.Loop) {
 					Codes.Loop loop = (Codes.Loop) code;

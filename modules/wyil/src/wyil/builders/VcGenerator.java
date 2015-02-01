@@ -454,12 +454,7 @@ public class VcGenerator {
 								(Codes.AssertOrAssume) code, isAssert, branch,
 								labels, block);
 						worklist.add(p.first());
-						worklist.addAll(p.second());
-						// FIXME: there is a bug here as invariant bytecodes
-						// don't have a fall-through option. The easiest
-						// solution might be to require the same for assert
-						// bytecodes.
-						System.out.println("WORKLIST: " + p.first());						
+						worklist.addAll(p.second());					
 					}					
 				} else if(code instanceof Codes.If
 						|| code instanceof Codes.IfIs
@@ -1071,6 +1066,8 @@ public class VcGenerator {
 			wycsFile.add(wycsFile.new Assert(
 					"loop invariant not restored", vc,
 					toWycsAttributes(block.attributes(branch.pc()))));
+			// Reposition fall-through
+			activeBranch.goTo(loopPc.next());
 			// Done.
 			return new Pair<VcBranch,List<VcBranch>>(activeBranch,exitBranches);						
 		}
