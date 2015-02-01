@@ -1,7 +1,9 @@
 package wycs.core;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import wycc.lang.Attribute;
@@ -69,6 +71,19 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	}
 
 	/**
+	 * Determine the complete set of used variables, including both bound and
+	 * unbound variables. A variable is unbound if it is not captured by a
+	 * quantifier.
+	 * 
+	 * @param variables
+	 */
+	public void getUsedVariables(java.util.Set<Integer> variables) {
+		for(int i=0;i!=operands.length;++i) {
+			operands[i].getUsedVariables(variables);
+		}
+	}
+	
+	/**
 	 * Substitute variables for bytecodes throughout this bytecode as determined
 	 * by a given map. Variables which are not keys of the <code>binding</code>
 	 * map are untouched. Note that variable capture is not prevented by this
@@ -79,11 +94,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	 *            replace them.
 	 * @return
 	 */
-	public Code substitute(Map<Integer,Code> binding) {
+	public Code<?> substitute(Map<Integer,Code> binding) {
 		Code<?>[] nOperands = operands;
 		for(int i=0;i!=nOperands.length;++i) {
-			Code o = nOperands[i];
-			Code c = o.substitute(binding);
+			Code<?> o = nOperands[i];
+			Code<?> c = o.substitute(binding);
 			if(c != o && operands == nOperands) {
 				nOperands = Arrays.copyOf(operands, operands.length);
 			}
@@ -105,7 +120,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	 *            replace them.
 	 * @return
 	 */
-	public Code instantiate(Map<String,SemanticType> binding) {
+	public Code<?> instantiate(Map<String,SemanticType> binding) {
 		// First, attempt to instantiate our type
 		T nType = (T) type.substitute(binding);
 
@@ -113,8 +128,8 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		// operands
 		Code<?>[] nOperands = operands;
 		for(int i=0;i!=nOperands.length;++i) {
-			Code o = nOperands[i];
-			Code c = o.instantiate(binding);
+			Code<?> o = nOperands[i];
+			Code<?> c = o.instantiate(binding);
 			if(c != o && operands == nOperands) {
 				nOperands = Arrays.copyOf(operands, operands.length);
 			}
@@ -127,7 +142,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		return this;
 	}
 
-	public abstract Code clone(T type, Op opcode, Code<?>[] operands);
+	public abstract Code<?> clone(T type, Op opcode, Code<?>[] operands);
 
 	/**
 	 * Determine the most precise type capturing any value that this bytecode
@@ -136,6 +151,25 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	 * @return
 	 */
 	public abstract SemanticType returnType();
+	
+	public String toString() {
+		String r = opcode.toString();
+		if(operands.length > 0) {
+			r = r + "(";
+			for(int i=0;i!=operands.length;++i) {
+				if(i != 0) {
+					r = r + ", ";
+				}
+				if(operands[i] != null) {
+					r = r + operands[i].toString();
+				} else {
+					r = r + "null";
+				}
+			}
+			r = r + ")";
+		}
+		return r;
+	}
 
 	// ==================================================================
 	// Constructors
@@ -166,6 +200,14 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		return new Constant(value,attributes);
 	}
 
+	public static Cast Cast(SemanticType type, Code<?> operand, Attribute... attributes) {
+		return new Cast(type,operand,attributes);
+	}
+
+	public static Cast Cast(SemanticType type, Code<?> operand, Collection<Attribute> attributes) {
+		return new Cast(type,operand,attributes);
+	}
+	
 	public static Unary Unary(SemanticType type, Op opcode, Code<?> operand,
 			Attribute... attributes) {
 		return new Unary(type,opcode,operand,attributes);
@@ -218,14 +260,14 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		return new Quantifier(type, opcode, operand, types, attributes);
 	}
 
-	public static FunCall FunCall(SemanticType.Function type, Code operand, NameID nid,
-			Attribute... attributes) {
-		return new FunCall(type,operand,nid,attributes);
+	public static FunCall FunCall(SemanticType.Function type, Code<?> operand,
+			NameID nid, SemanticType[] binding, Attribute... attributes) {
+		return new FunCall(type,binding,operand,nid,attributes);
 	}
 
-	public static FunCall FunCall(SemanticType.Function type, Code operand, NameID nid,
-			Collection<Attribute> attributes) {
-		return new FunCall(type,operand,nid,attributes);
+	public static FunCall FunCall(SemanticType.Function type, Code<?> operand,
+			NameID nid, SemanticType[] binding, Collection<Attribute> attributes) {
+		return new FunCall(type,binding,operand,nid,attributes);
 	}
 
 	// ==================================================================
@@ -236,29 +278,30 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		NULL(0),
 		VAR(1),
 		CONST(2),
-		NOT(3),
-		NEG(4),
-		LENGTH(5),
-		ADD(6),
-		SUB(7),
-		MUL(8),
-		DIV(9),
-		REM(10),
-		EQ(11),
-		NEQ(12),
-		LT(13),
-		LTEQ(14),
-		IN(15),
-		SUBSET(16),
-		SUBSETEQ(17),
-		AND(18),
-		OR(19),
-		TUPLE(20),
-		SET(21),
-		LOAD(22),
-		EXISTS(23),
-		FORALL(24),
-		FUNCALL(25);
+		CAST(3),
+		NOT(4),
+		NEG(5),
+		LENGTH(6),
+		ADD(7),
+		SUB(8),
+		MUL(9),
+		DIV(10),
+		REM(11),
+		EQ(12),
+		NEQ(13),
+		LT(14),
+		LTEQ(15),
+		IN(16),
+		SUBSET(17),
+		SUBSETEQ(18),
+		AND(19),
+		OR(20),
+		TUPLE(21),
+		SET(22),
+		LOAD(23),
+		EXISTS(24),
+		FORALL(25),
+		FUNCALL(26);
 
 		public int offset;
 
@@ -267,7 +310,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 	}
 
-	private static Code[] NO_OPERANDS = new Code[0];
+	private static Code<?>[] NO_OPERANDS = new Code[0];
 
 	public final static class Variable extends Code<SemanticType> {
 		public final int index;
@@ -285,8 +328,13 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 
 		@Override
-		public Code substitute(Map<Integer,Code> binding) {
-			Code r = binding.get(index);
+		public void getUsedVariables(java.util.Set<Integer> variables) {
+			variables.add(index);
+		}
+		
+		@Override
+		public Code<?> substitute(Map<Integer,Code> binding) {
+			Code<?> r = binding.get(index);
 			if(r != null) {
 				return r;
 			} else{
@@ -300,7 +348,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 
 		@Override
-		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
+		public Code<?> clone(SemanticType type, Op opcode, Code<?>[] operands) {
 			return Variable(type,operands,index,attributes());
 		}
 	}
@@ -324,11 +372,36 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 
 		@Override
-		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
+		public Code<?> clone(SemanticType type, Op opcode, Code<?>[] operands) {
 			return this;
 		}
 	}
 
+	public final static class Cast extends Code<SemanticType> {
+		public final SemanticType type;
+
+		private Cast(SemanticType type, Code<?> operand, Attribute... attributes) {
+			super(type,Op.CAST,new Code[] { operand },attributes);
+			this.type = type;
+		}
+
+		private Cast(SemanticType type, Code<?> operand, Collection<Attribute> attributes) {
+			super(type,Op.CAST,new Code[] { operand },attributes);
+			this.type = type;
+		}
+
+		@Override
+		public SemanticType returnType() {
+			return type;
+		}
+
+		@Override
+		public Code<?> clone(SemanticType type, Op opcode, Code<?>[] operands) {
+			return Cast(type,operands[0],attributes());
+		}
+	}
+
+	
 	public final static class Unary extends Code<SemanticType> {
 		private Unary(SemanticType type, Op opcode, Code<?> operand,
 				Attribute... attributes) {
@@ -363,7 +436,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 
 		@Override
-		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
+		public Code<?> clone(SemanticType type, Op opcode, Code<?>[] operands) {
 			return Unary(type,opcode,operands[0],attributes());
 		}
 	}
@@ -413,7 +486,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 
 		@Override
-		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
+		public Code<?> clone(SemanticType type, Op opcode, Code<?>[] operands) {
 			return Binary(type,opcode,operands[0],operands[1],attributes());
 		}
 	}
@@ -452,7 +525,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 
 		@Override
-		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
+		public Code<?> clone(SemanticType type, Op opcode, Code<?>[] operands) {
 			return Nary(type,opcode,operands,attributes());
 		}
 	}
@@ -478,7 +551,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 
 		@Override
-		public Code clone(SemanticType.Tuple type, Op opcode, Code<?>[] operands) {
+		public Code<?> clone(SemanticType.Tuple type, Op opcode, Code<?>[] operands) {
 			return Load(type,operands[0],index,attributes());
 		}
 	}
@@ -512,13 +585,22 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 
 		@Override
-		public Code clone(SemanticType type, Op opcode, Code<?>[] operands) {
+		public void getUsedVariables(java.util.Set<Integer> variables) {
+			super.getUsedVariables(variables);
+			for (Pair<SemanticType, Integer> p : types) {
+				variables.add(p.second());
+			}
+		}
+		
+		@Override
+		public Code<?> clone(SemanticType type, Op opcode, Code<?>[] operands) {
 			return Quantifier(type,opcode,operands[0],types,attributes());
 		}
 
 		@Override
-		public Code substitute(Map<Integer, Code> binding) {
-			Code operand = operands[0].substitute(binding);
+		public Code<?> substitute(Map<Integer, Code> binding) {
+			// FIXME: is this safe in the context of variable capture.
+			Code<?> operand = operands[0].substitute(binding);
 			if (operand != operands[0]) {
 				return new Quantifier(this.type, this.opcode, operand, types,
 						attributes());
@@ -528,7 +610,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 
 		@Override
-		public Code instantiate(Map<String,SemanticType> binding) {
+		public Code<?> instantiate(Map<String,SemanticType> binding) {
 			Pair<SemanticType, Integer>[] nTypes = types;
 			for (int i = 0; i != types.length; ++i) {
 				Pair<SemanticType, Integer> p = nTypes[i];
@@ -555,17 +637,20 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 
 	public final static class FunCall extends Code<SemanticType.Function> {
 		public final NameID nid;
+		public final SemanticType[] binding;
 
-		private FunCall(SemanticType.Function type, Code operand, NameID nid,
+		private FunCall(SemanticType.Function type, SemanticType[] binding, Code<?> operand, NameID nid,
 				Attribute... attributes) {
 			super(type, Op.FUNCALL, new Code[] { operand }, attributes);
 			this.nid = nid;
+			this.binding = Arrays.copyOf(binding, binding.length);
 		}
 
-		private FunCall(SemanticType.Function type, Code operand, NameID nid,
+		private FunCall(SemanticType.Function type, SemanticType[] binding, Code<?> operand, NameID nid,
 				Collection<Attribute> attributes) {
 			super(type, Op.FUNCALL, new Code[] { operand }, attributes);
 			this.nid = nid;
+			this.binding = Arrays.copyOf(binding, binding.length);
 		}
 
 		@Override
@@ -574,9 +659,9 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 
 		@Override
-		public Code clone(SemanticType.Function type, Code.Op opcode,
+		public Code<?> clone(SemanticType.Function type, Code.Op opcode,
 				Code<?>[] operands) {
-			return new FunCall(type, operands[0], nid, attributes());
+			return new FunCall(type, binding, operands[0], nid, attributes());
 		}
 	}
 }

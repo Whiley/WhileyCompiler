@@ -41,6 +41,8 @@ public class WycsFilePrinter {
 			write(wf,(WycsFile.Function)s);
 		} else if(s instanceof WycsFile.Macro) {
 			write(wf,(WycsFile.Macro)s);
+		} else if(s instanceof WycsFile.Type) {
+			write(wf,(WycsFile.Type)s);
 		} else if(s instanceof WycsFile.Assert) {
 			write(wf,(WycsFile.Assert)s);
 		} else {
@@ -98,6 +100,17 @@ public class WycsFilePrinter {
 		}
 	}
 
+	public void write(WycsFile wf, WycsFile.Type s) {
+		out.print("type ");
+
+		out.print(s.name);
+		out.print(" is " + s.type);
+		if(s.invariant != null) {
+			out.println(" where:");
+			write(wf,s.invariant);
+		}
+	}
+	
 	public void write(WycsFile wf, WycsFile.Assert s) {
 		out.print("assert ");
 		if(s.message != null) {

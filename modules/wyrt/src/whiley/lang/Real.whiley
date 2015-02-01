@@ -25,8 +25,6 @@
 
 package whiley.lang
 
-import * from whiley.lang.Errors
-
 public type normalised is (real x)
     where 0.0 <= x && x <= 1.0
 
@@ -34,8 +32,7 @@ public function toString(real item) -> string:
     return Any.toString(item)
 
 // Convert a string into an integer
-public function parse(string input) -> real
-throws SyntaxError:
+public function parse(string input) -> real|null:
     //
     int r = 0
     int dps = 0
@@ -44,7 +41,7 @@ throws SyntaxError:
         if c == '.' && dps == 0:
             dps = 1
         else if !Char.isDigit(c):
-            throw SyntaxError("invalid number string",i,i)
+            return null
         else:
             r = r * 10
             r = r + (int) (c - '0')
@@ -69,14 +66,14 @@ public function toDecimal(real x, int ndigits) -> string:
     else:
         r = ""
     int n / int d = x
-    int digit = n / d
+    char digit = (char) n / d
     real rem = x - (real) digit
     r = r ++ digit ++ "."
     int i = 1
     while i < ndigits && rem != 0.0:
         rem = rem * 10.0
         n / d = rem
-        digit = n / d
+        digit = (char) n / d
         rem = rem - (real) digit
         r = r ++ digit
         i = i + 1

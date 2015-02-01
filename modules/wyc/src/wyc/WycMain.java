@@ -73,9 +73,10 @@ public class WycMain {
 					"Print detailed information on what the compiler is doing"),
 			new OptArg("brief", "Enable brief reporting of error messages"),
 			new OptArg("verify",
-					"Enable detailed verification checking"),
+					"Enable detailed verification checking"),					
 			new OptArg("smt-verify",
 					"Enable detailed verification checking using an external SMT solver"),
+			new OptArg("vcs", "Enable generation of verification conditions"),
 			new OptArg("whileypath", "wp", OptArg.FILELIST,
 					"Specify where to find whiley (binary) files",
 					new ArrayList<String>()),
@@ -229,19 +230,19 @@ public class WycMain {
 		} catch (InternalFailure e) {
 			e.outputSourceError(stderr,brief);
 			if (verbose) {
-				e.printStackTrace(stderr);
+				printStackTrace(stderr,e);				
 			}
 			return INTERNAL_FAILURE;
 		} catch (SyntaxError e) {
 			e.outputSourceError(stderr,brief);
 			if (verbose) {
-				e.printStackTrace(stderr);
+				printStackTrace(stderr,e);				
 			}
 			return SYNTAX_ERROR;
 		} catch (Throwable e) {
 			stderr.println("internal failure (" + e.getMessage() + ")");
 			if (verbose) {
-				e.printStackTrace(stderr);
+				printStackTrace(stderr,e);				
 			}
 			return INTERNAL_FAILURE;
 		}
@@ -259,6 +260,7 @@ public class WycMain {
 		builder.setVerbose(verbose);
 		builder.setVerification(values.containsKey("verify"));
 		builder.setSmtVerification(values.containsKey("smt-verify"));
+		builder.setVerificationConditions(values.containsKey("vcs"));
 
 		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
 				.get("pipeline");
@@ -365,6 +367,24 @@ public class WycMain {
 		return r;
 	}
 
+	/**
+	 * Print a complete stack trace. This differs from
+	 * Throwable.printStackTrace() in that it always prints all of the trace.
+	 * 
+	 * @param out
+	 * @param err
+	 */
+	protected static void printStackTrace(PrintStream out, Throwable err) {
+		out.println(err.getClass().getName() + ": " + err.getMessage());
+		for(StackTraceElement ste : err.getStackTrace()) {			
+			out.println("\tat " + ste.toString());
+		}
+		if(err.getCause() != null) {
+			out.print("Caused by: ");
+			printStackTrace(out,err.getCause());
+		}
+	}
+	
 	// =========================================================================
 	// Main Method
 	// =========================================================================

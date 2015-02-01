@@ -1,4 +1,4 @@
-// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+	// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -1319,41 +1319,6 @@ public class AllInvalidTests {
 	@Test
 	public void Switch_Invalid_7() {
 		runTest("Switch_Invalid_7");
-	}
-
-	@Test
-	public void Throws_Invalid_1() {
-		runTest("Throws_Invalid_1");
-	}
-
-	@Test
-	public void Throws_Invalid_2() {
-		runTest("Throws_Invalid_2");
-	}
-
-	@Test
-	public void TryCatch_Invalid_1() {
-		runTest("TryCatch_Invalid_1");
-	}
-
-	@Test
-	public void TryCatch_Invalid_2() {
-		runTest("TryCatch_Invalid_2");
-	}
-
-	@Test
-	public void TryCatch_Invalid_3() {
-		runTest("TryCatch_Invalid_3");
-	}
-
-	@Test
-	public void TryCatch_Invalid_4() {
-		runTest("TryCatch_Invalid_4");
-	}
-
-	@Test
-	public void TryCatch_Invalid_5() {
-		runTest("TryCatch_Invalid_5");
 	}
 
 	@Test

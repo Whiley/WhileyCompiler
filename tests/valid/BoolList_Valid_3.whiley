@@ -40,5 +40,5 @@ function isAlive(Board board, int row, int col) -> int:
 method main(System.Console sys) -> void:
     [[bool]] board = [[false, true, false], [false, true, false], [false, true, false]]
     [[bool]] nboard = update(board)
-    sys.out.println(board)
-    sys.out.println(nboard)
+    sys.out.println(Any.toString(board))
+    sys.out.println(Any.toString(nboard))

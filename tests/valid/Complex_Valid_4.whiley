@@ -35,6 +35,6 @@ public method main(System.Console console) -> void:
         tree = add(tree, item)
     for item in items:
         if contains(tree, item):
-            console.out.println("TREE CONTAINS: " ++ item)
+            console.out.println("TREE CONTAINS: " ++ Any.toString(item))
         else:
-            console.out.println("TREE DOES NOT CONTAIN: " ++ item)
+            console.out.println("TREE DOES NOT CONTAIN: " ++ Any.toString(item))

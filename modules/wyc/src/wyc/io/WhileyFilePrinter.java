@@ -182,10 +182,6 @@ public class WhileyFilePrinter {
 			print((Stmt.Skip) stmt);
 		} else if(stmt instanceof Stmt.Switch) {
 			print((Stmt.Switch) stmt, indent);
-		} else if(stmt instanceof Stmt.Throw) {
-			print((Stmt.Throw) stmt);
-		} else if(stmt instanceof Stmt.TryCatch) {
-			print((Stmt.TryCatch) stmt, indent);
 		} else if(stmt instanceof Stmt.While) {
 			print((Stmt.While) stmt, indent);
 		} else if(stmt instanceof Stmt.VariableDeclaration) {
@@ -214,12 +210,6 @@ public class WhileyFilePrinter {
 
 	public void print(Stmt.Debug s) {
 		out.print("debug ");
-		print(s.expr);
-		out.println();
-	}
-
-	public void print(Stmt.Throw s) {
-		out.print("throw ");
 		print(s.expr);
 		out.println();
 	}
@@ -341,19 +331,6 @@ public class WhileyFilePrinter {
 		}
 	}
 
-	public void print(Stmt.TryCatch s, int indent) {
-		out.println("try:");
-		print(s.body,indent+1);
-		for(Stmt.Catch handler : s.catches) {
-			indent(indent);
-			out.print("catch(");
-			print(handler.unresolvedType);
-			out.print(" " + handler.variable);
-			out.println("):");
-			print(handler.stmts, indent+1);
-		}
-	}
-
 	public void print(Stmt.VariableDeclaration s, int indent) {
 		print(s.pattern);
 		if(s.expr != null) {
@@ -415,8 +392,8 @@ public class WhileyFilePrinter {
 			print ((Expr.IndirectFunctionCall) expression);
 		} else if (expression instanceof Expr.IndirectMethodCall) {
 			print ((Expr.IndirectMethodCall) expression);
-		} else if (expression instanceof Expr.Comprehension) {
-			print ((Expr.Comprehension) expression);
+		} else if (expression instanceof Expr.Quantifier) {
+			print ((Expr.Quantifier) expression);
 		} else if (expression instanceof Expr.FieldAccess) {
 			print ((Expr.FieldAccess) expression);
 		} else if (expression instanceof Expr.Record) {
@@ -595,7 +572,7 @@ public class WhileyFilePrinter {
 		out.print(")");
 	}
 
-	public void print(Expr.Comprehension e) {
+	public void print(Expr.Quantifier e) {
 		switch(e.cop) {
 		case NONE:
 			out.print("no ");
@@ -610,37 +587,19 @@ public class WhileyFilePrinter {
 
 		out.print("{ ");
 
-		if(e.value != null) {
-			print(e.value);
-			out.print(" | ");
-			boolean firstTime=true;
-			for(Pair<String,Expr> src : e.sources) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				out.print(src.first());
-				out.print(" in ");
-				print(src.second());
-			}
-			if(e.condition != null) {
+		boolean firstTime=true;
+		for(Pair<String,Expr> src : e.sources) {
+			if(!firstTime) {
 				out.print(", ");
-				print(e.condition);
 			}
-		} else {
-			boolean firstTime=true;
-			for(Pair<String,Expr> src : e.sources) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				out.print(src.first());
-				out.print(" in ");
-				print(src.second());
-			}
-			out.print(" | ");
-			print(e.condition);
+			firstTime=false;
+			out.print(src.first());
+			out.print(" in ");
+			print(src.second());
 		}
+		out.print(" | ");
+		print(e.condition);
+		
 		out.print(" }");
 	}
 

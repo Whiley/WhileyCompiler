@@ -461,19 +461,17 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
-	public static class Comprehension extends SyntacticElement.Impl implements Expr {
-		public final COp cop;
-		public Expr value;
+	public static class Quantifier extends SyntacticElement.Impl implements Expr {
+		public final QOp cop;
 		public final ArrayList<Pair<String,Expr>> sources;
 		public Expr condition;
 		public Nominal type;
 
-		public Comprehension(COp cop, Expr value,
+		public Quantifier(QOp cop, 
 				Collection<Pair<String, Expr>> sources, Expr condition,
 				Attribute... attributes) {
 			super(attributes);
 			this.cop = cop;
-			this.value = value;
 			this.condition = condition;
 			this.sources = new ArrayList<Pair<String, Expr>>(sources);
 		}
@@ -483,9 +481,7 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
-	public enum COp {
-		SETCOMP,
-		LISTCOMP,
+	public enum QOp {
 		NONE, // implies value == null
 		SOME, // implies value == null
 		ALL, // implies value == null

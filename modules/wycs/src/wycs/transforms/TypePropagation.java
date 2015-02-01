@@ -9,6 +9,7 @@ import wycc.lang.SyntacticElement;
 import wycc.lang.Transform;
 import wycc.util.Pair;
 import wycc.util.ResolveError;
+import wycc.util.Triple;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.SemanticType;
 import wycs.core.Value;
@@ -68,6 +69,8 @@ public class TypePropagation implements Transform<WyalFile> {
 			propagate((WyalFile.Function)s);
 		} else if(s instanceof WyalFile.Macro) {
 			propagate((WyalFile.Macro)s);
+		} else if(s instanceof WyalFile.Type) {
+			propagate((WyalFile.Type)s);
 		} else if(s instanceof WyalFile.Assert) {
 			propagate((WyalFile.Assert)s);
 		} else if(s instanceof WyalFile.Import) {
@@ -97,6 +100,16 @@ public class TypePropagation implements Transform<WyalFile> {
 		checkIsSubtype(SemanticType.Bool,r,s.body);
 	}
 
+	private void propagate(WyalFile.Type s) {
+		if(s.invariant != null) {
+			HashSet<String> generics = new HashSet<String>(s.generics);
+			HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
+			addDeclaredVariables(s.type, environment,generics,s);			
+			SemanticType r = propagate(s.invariant,environment,generics,s);
+			checkIsSubtype(SemanticType.Bool,r,s.invariant);
+		}
+	}
+		
 	/**
 	 * The purpose of this method is to add variable names declared within a
 	 * type pattern to the given environment. For example, as follows:
@@ -150,9 +163,17 @@ public class TypePropagation implements Transform<WyalFile> {
 			TypePattern.Leaf lp = (TypePattern.Leaf) pattern;
 
 			if (lp.var != null) {
-				SemanticType type = builder.convert(pattern.toSyntacticType(),
-						generics, context);
-				environment.put(lp.var.name, type);
+				try {
+					SemanticType type = builder.convert(
+							pattern.toSyntacticType(), generics, context);
+					type = builder.expand(type, context);
+					environment.put(lp.var.name, type);
+				} catch (ResolveError re) {
+					syntaxError(
+							"cannot resolve as function or definition call",
+							filename, pattern, re);
+					return null;
+				}
 			}
 		}
 
@@ -181,6 +202,8 @@ public class TypePropagation implements Transform<WyalFile> {
 		SemanticType t;
 		if(e instanceof Expr.Variable) {
 			t = propagate((Expr.Variable)e, environment, generics, context);
+		} else if(e instanceof Expr.Cast) {
+			t = propagate((Expr.Cast)e, environment, generics, context);
 		} else if(e instanceof Expr.Constant) {
 			t = propagate((Expr.Constant)e, environment, generics, context);
 		} else if(e instanceof Expr.Unary) {
@@ -223,6 +246,22 @@ public class TypePropagation implements Transform<WyalFile> {
 		return e.value.type();
 	}
 
+	private SemanticType propagate(Expr.Cast e,
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WyalFile.Context context) {
+		try {
+			SemanticType op_type = propagate(e.operand,environment,generics,context);
+			SemanticType targetType = builder.convert(e.type, generics, context);
+			// FIXME: what to do with constraints?
+			targetType = builder.expand(targetType, context);
+			// TODO: check cast is permitted.
+			return targetType;
+		} catch (ResolveError re) {
+			syntaxError(re.getMessage(), filename, e, re);
+			return null;
+		}
+	}
+	
 	private SemanticType propagate(Expr.Unary e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
@@ -431,7 +470,6 @@ public class TypePropagation implements Transform<WyalFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
 		environment = new HashMap<String,SemanticType>(environment);
-
 		propagate(e.pattern,environment,generics,context);
 		SemanticType r = propagate(e.operand,environment,generics,context);
 		checkIsSubtype(SemanticType.Bool,r,e.operand);
@@ -442,60 +480,97 @@ public class TypePropagation implements Transform<WyalFile> {
 	private void propagate(TypePattern pattern,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
-		SemanticType type = builder.convert(pattern.toSyntacticType(),
-				generics, context);
+				
+		try {
+			// First, convert the syntactic type into a semantic type. This may
+			// still contain nominal types, however, and we need to get rid of
+			// them for type checking purposes.
+			SemanticType nominalType = builder.convert(pattern.toSyntacticType(),
+					generics, context);
 
-		if (pattern instanceof TypePattern.Tuple) {
-			TypePattern.Tuple tt = (TypePattern.Tuple) pattern;
-			for (TypePattern p : tt.elements) {
-				propagate(p, environment, generics, context);
+			if (pattern instanceof TypePattern.Tuple) {
+				TypePattern.Tuple tt = (TypePattern.Tuple) pattern;
+				for (TypePattern p : tt.elements) {
+					propagate(p, environment, generics, context);
+				}
+			} else if(pattern instanceof TypePattern.Leaf) {				
+				TypePattern.Leaf l = (TypePattern.Leaf) pattern;				
+				// Get rid of any nominal types that may exist.
+				SemanticType rawType = builder.expand(nominalType, context);
+				// Add the raw type to the environment.
+				environment.put(l.var.name, rawType);
 			}
-		} else if(pattern instanceof TypePattern.Leaf) {
-			TypePattern.Leaf l = (TypePattern.Leaf) pattern;
-			environment.put(l.var.name, type);
-		}
 
-		pattern.attributes().add(new TypeAttribute(type));
+			pattern.attributes().add(new TypeAttribute(nominalType));
+		} catch (ResolveError re) {
+			syntaxError(
+					"cannot resolve as function or definition call",
+					filename, pattern, re);
+		}
 	}
 
 	private SemanticType propagate(Expr.Invoke e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
 
-		SemanticType.Function fnType;
-
+		SemanticType argument = propagate(e.operand, environment, generics,
+				context);
+		// Construct concrete types for generic substitution
+		ArrayList<SemanticType> ivkGenerics = new ArrayList<SemanticType>();
+		for (int i = 0; i != e.generics.size(); ++i) {
+			SyntacticType gt = e.generics.get(i);
+			try {
+				SemanticType t = builder.convert(gt, generics, context); 
+				ivkGenerics.add(t);
+				gt.attributes().add(new TypeAttribute(t));
+			} catch (ResolveError re) {
+				syntaxError(re.getMessage(), filename, gt, re);
+			}
+		}
+		// Now, attempt to resolve the function
 		try {
-			Pair<NameID,SemanticType.Function> p = builder.resolveAsFunctionType(e.name,context);
-			fnType = p.second();
+			SemanticType.Function fnType;
+			Map<String,SemanticType> binding;
+						
+			if(e.qualification == null) {
+				// In this case, no package qualification is given. Hence, we
+				// need to resolve the name based on the active important
+				// statements and declarations within the current file.
+				Triple<NameID, SemanticType.Function, Map<String, SemanticType>> p = builder
+						.resolveAsFunctionType(e.name, argument, ivkGenerics,
+								context);
+				fnType = p.second();
+				binding = p.third();	
+			} else {
+				// In this case, a package qualification has been given. Hence,
+				// we know the fully name identifier for this function and we
+				// need only to check it exists and access the relevant
+				// information.
+				NameID nid = new NameID(e.qualification,e.name);
+				Pair<SemanticType.Function, Map<String, SemanticType>> p = builder
+						.resolveAsFunctionType(nid, argument, ivkGenerics,
+								context);
+				fnType = p.first();
+				binding = p.second();	
+			}
+			
+			SemanticType[] fn_generics = fnType.generics();
+			
+			if (fn_generics.length != e.generics.size()) {
+				// could resolve this with inference in the future.
+				syntaxError(
+						"incorrect number of generic arguments provided (got "
+								+ e.generics.size() + ", required "
+								+ fn_generics.length + ")", context.file()
+								.filename(), e);
+			}
+
+			fnType = (SemanticType.Function) fnType.substitute(binding);
+			return builder.expand(fnType,context);
 		} catch(ResolveError re) {
 			syntaxError("cannot resolve as function or definition call", context.file().filename(), e, re);
 			return null;
 		}
-
-		SemanticType[] fn_generics = fnType.generics();
-
-		if (fn_generics.length != e.generics.size()) {
-			// could resolve this with inference in the future.
-			syntaxError(
-					"incorrect number of generic arguments provided (got "
-							+ e.generics.size() + ", required "
-							+ fn_generics.length + ")", context.file()
-							.filename(), e);
-		}
-
-		SemanticType argument = propagate(e.operand, environment, generics,
-				context);
-		HashMap<String, SemanticType> binding = new HashMap<String, SemanticType>();
-
-		for (int i = 0; i != e.generics.size(); ++i) {
-			SemanticType.Var gv = (SemanticType.Var) fn_generics[i];
-			binding.put(gv.name(),
-					builder.convert(e.generics.get(i), generics, context));
-		}
-
-		fnType = (SemanticType.Function) fnType.substitute(binding);
-		checkIsSubtype(fnType.from(), argument, e.operand);
-		return fnType;
 	}
 
 	/**
@@ -508,7 +583,7 @@ public class TypePropagation implements Transform<WyalFile> {
 	public static SemanticType returnType(Expr e) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
 		if (e instanceof Expr.Variable || e instanceof Expr.Constant
-				|| e instanceof Expr.Quantifier) {
+				|| e instanceof Expr.Quantifier || e instanceof Expr.Cast) {
 			return type;
 		} else if(e instanceof Expr.Unary) {
 			Expr.Unary ue = (Expr.Unary) e;

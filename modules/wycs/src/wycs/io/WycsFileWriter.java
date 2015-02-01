@@ -80,6 +80,9 @@ public class WycsFileWriter {
 			case BLOCK_Function:
 				bytes = generateFunctionBlock((WycsFile.Function) data);
 				break;
+			case BLOCK_Type:
+				bytes = generateTypeBlock((WycsFile.Type) data);
+				break;			
 			case BLOCK_Assert:
 				bytes = generateAssertBlock((WycsFile.Assert) data);
 				break;
@@ -261,6 +264,8 @@ public class WycsFileWriter {
 			BinaryOutputStream output) throws IOException {
 		if(d instanceof WycsFile.Macro) {
 			writeBlock(BLOCK_Macro, d ,output);
+		} else if(d instanceof WycsFile.Type) {
+			writeBlock(BLOCK_Type, d ,output);
 		} else if(d instanceof WycsFile.Function) {
 			writeBlock(BLOCK_Function, d, output);
 		} else if(d instanceof WycsFile.Assert) {
@@ -281,6 +286,23 @@ public class WycsFileWriter {
 		return bytes.toByteArray();
 	}
 
+	private byte[] generateTypeBlock(WycsFile.Type md) throws IOException {
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		BinaryOutputStream output = new BinaryOutputStream(bytes);
+
+		output.write_uv(stringCache.get(md.name()));
+		output.write_uv(typeCache.get(md.type));
+		if(md.invariant == null) {
+			output.write_uv(0);			
+		} else {
+			output.write_uv(1);
+			writeBlock(BLOCK_Code,md.invariant,output);
+		}
+
+		output.close();
+		return bytes.toByteArray();
+	}
+	
 	private byte[] generateFunctionBlock(WycsFile.Function fd) throws IOException {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
@@ -387,6 +409,11 @@ public class WycsFileWriter {
 				output.write_uv(v.index);
 				break;
 			}
+			case CAST: {
+				Code.Cast c = (Code.Cast) code;
+				output.write_uv(typeCache.get(c.type));
+				break;
+			}
 			case CONST: {
 				Code.Constant c = (Code.Constant) code;
 				output.write_uv(constantCache.get(c.value));
@@ -410,6 +437,10 @@ public class WycsFileWriter {
 			case FUNCALL: {
 				Code.FunCall c = (Code.FunCall) code;
 				output.write_uv(nameCache.get(c.nid));
+				output.write_uv(c.binding.length);
+				for (SemanticType t : c.binding) {
+					output.write_uv(typeCache.get(t));					
+				}				
 			}
 			}
 		}
@@ -450,6 +481,8 @@ public class WycsFileWriter {
 	private void buildPools(WycsFile.Declaration declaration) {
 		if(declaration instanceof WycsFile.Macro) {
 			buildPools((WycsFile.Macro)declaration);
+		} else if(declaration instanceof WycsFile.Type) {
+			buildPools((WycsFile.Type)declaration);
 		} else if(declaration instanceof WycsFile.Function) {
 			buildPools((WycsFile.Function)declaration);
 		} else if(declaration instanceof WycsFile.Assert) {
@@ -461,6 +494,14 @@ public class WycsFileWriter {
 		addStringItem(declaration.name());
 		addTypeItem(declaration.type);
 		buildPools(declaration.condition);
+	}
+
+	private void buildPools(WycsFile.Type declaration) {
+		addStringItem(declaration.name());
+		addTypeItem(declaration.type);
+		if(declaration.invariant != null) {
+			buildPools(declaration.invariant);
+		}
 	}
 
 	private void buildPools(WycsFile.Function declaration) {
@@ -482,6 +523,9 @@ public class WycsFileWriter {
 		if(code instanceof Code.Constant) {
 			Code.Constant c = (Code.Constant) code;
 			addConstantItem(c.value);
+		} else if(code instanceof Code.Cast) {
+			Code.Cast c = (Code.Cast) code;
+			addTypeItem(c.type);
 		} else if(code instanceof Code.Quantifier) {
 			Code.Quantifier c = (Code.Quantifier) code;
 			for(Pair<SemanticType,Integer> p : c.types) {
@@ -490,6 +534,9 @@ public class WycsFileWriter {
 		} else if(code instanceof Code.FunCall) {
 			Code.FunCall c = (Code.FunCall) code;
 			addNameItem(c.nid);
+			for(SemanticType t : c.binding) {
+				addTypeItem(t);
+			}
 		}
 
 		// Second, deal with standard cases
@@ -676,6 +723,7 @@ public class WycsFileWriter {
 	public final static int BLOCK_Macro = 11;
 	public final static int BLOCK_Function = 12;
 	public final static int BLOCK_Assert = 13;
+	public final static int BLOCK_Type = 14;
 	// ... (anticipating some others here)
 
 	// =========================================================================

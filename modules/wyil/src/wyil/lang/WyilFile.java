@@ -30,13 +30,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
 
-import wycc.lang.Attribute;
 import wycc.lang.CompilationUnit;
-import wycc.lang.SyntacticElement;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyil.io.*;
+import wyil.util.AttributedCodeBlock;
 
 /**
  * <p>
@@ -362,20 +361,35 @@ public final class WyilFile implements CompilationUnit {
 	// =========================================================================
 
 	/**
+	 * <p>
 	 * A block is an chunk of information within a WyIL file. For example, it
 	 * might be a declaration for a type, constant, function or method. However,
 	 * other kinds of block are possible, such as for storing documentation,
 	 * debug information, etc.
+	 * </p>
+	 * <p>
+	 * A block may have zero or more "attributes" associated with it. Attributes
+	 * provide meta-information about the block which, although not strictly
+	 * necessary for execution, are typically helpful. Such information includes
+	 * additional type information, variable naming information, etc.
+	 * </p>
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static abstract class Block extends SyntacticElement.Impl {
-		public Block(Attribute... attributes) {
-			super(attributes);
-		}
+	public static abstract class Block {
+		private final List<Attribute> attributes;
+
 		public Block(Collection<Attribute> attributes) {
-			super(attributes);
+			this.attributes = new ArrayList<Attribute>(attributes);
+		}
+
+		public Block(Attribute[] attributes) {
+			this.attributes = new ArrayList<Attribute>(Arrays.asList(attributes));
+		}
+
+		public List<Attribute> attributes() {
+			return attributes;
 		}
 	}
 
@@ -429,17 +443,17 @@ public final class WyilFile implements CompilationUnit {
 	 */
 	public static final class TypeDeclaration extends Declaration {
 		private Type type;
-		private Code.Block invariant;
+		private AttributedCodeBlock invariant;
 
 		public TypeDeclaration(Collection<Modifier> modifiers, String name, Type type,
-				Code.Block invariant, Attribute... attributes) {
+				AttributedCodeBlock invariant, Attribute... attributes) {
 			super(name,modifiers,attributes);
 			this.type = type;
 			this.invariant = invariant;
 		}
 
 		public TypeDeclaration(Collection<Modifier> modifiers, String name,
-				Type type, Code.Block invariant,
+				Type type, AttributedCodeBlock invariant,
 				Collection<Attribute> attributes) {
 			super(name, modifiers, attributes);
 			this.type = type;
@@ -450,7 +464,7 @@ public final class WyilFile implements CompilationUnit {
 			return type;
 		}
 
-		public Code.Block invariant() {
+		public AttributedCodeBlock invariant() {
 			return invariant;
 		}
 	}
@@ -525,41 +539,41 @@ public final class WyilFile implements CompilationUnit {
 		}
 	}
 
-	public static final class Case extends SyntacticElement.Impl {
-		private final ArrayList<Code.Block> precondition;
-		private final ArrayList<Code.Block> postcondition;
-		private final Code.Block body;
+	public static final class Case extends Block {
+		private final ArrayList<AttributedCodeBlock> precondition;
+		private final ArrayList<AttributedCodeBlock> postcondition;
+		private final AttributedCodeBlock body;
 		//private final ArrayList<String> locals;
 
-		public Case(Code.Block body,
-				List<Code.Block> precondition,
-				List<Code.Block> postcondition,
+		public Case(AttributedCodeBlock body,
+				List<AttributedCodeBlock> precondition,
+				List<AttributedCodeBlock> postcondition,
 				Attribute... attributes) {
 			super(attributes);
 			this.body = body;
-			this.precondition = new ArrayList<Code.Block>(precondition);
-			this.postcondition = new ArrayList<Code.Block>(postcondition);
+			this.precondition = new ArrayList<AttributedCodeBlock>(precondition);
+			this.postcondition = new ArrayList<AttributedCodeBlock>(postcondition);
 		}
 
-		public Case(Code.Block body,
-				List<Code.Block> precondition,
-				List<Code.Block> postcondition,
+		public Case(AttributedCodeBlock body,
+				List<AttributedCodeBlock> precondition,
+				List<AttributedCodeBlock> postcondition,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.body = body;
-			this.precondition = new ArrayList<Code.Block>(precondition);
-			this.postcondition = new ArrayList<Code.Block>(postcondition);
+			this.precondition = new ArrayList<AttributedCodeBlock>(precondition);
+			this.postcondition = new ArrayList<AttributedCodeBlock>(postcondition);
 		}
 
-		public Code.Block body() {
+		public AttributedCodeBlock body() {
 			return body;
 		}
 
-		public List<Code.Block> precondition() {
+		public List<AttributedCodeBlock> precondition() {
 			return precondition;
 		}
 
-		public List<Code.Block> postcondition() {
+		public List<AttributedCodeBlock> postcondition() {
 			return postcondition;
 		}
 	}

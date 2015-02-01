@@ -3,12 +3,18 @@ import whiley.lang.System
 function pred({int} xs) -> (bool b)
 ensures b ==> no { z in xs | z < 0 }:
     //
-    {int} zs = { z | z in xs, z < 0 }
+    {int} zs = {}
+    for y in xs:
+        if y < 0:
+            zs = zs + {y}
     return |zs| == 0
 
 function countOver({int} xs, int y) -> int
 requires pred(xs):
-    {int} tmp = { x | x in xs, x > y }
+    {int} tmp = {}
+    for x in xs:
+        if x > y:
+            tmp = tmp + {x}
     return |tmp|
 
 method main(System.Console sys) -> void:

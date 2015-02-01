@@ -26,6 +26,7 @@
 package wycc.lang;
 
 import wyfs.lang.Path;
+import wyfs.util.Trie;
 
 
 /**
@@ -67,5 +68,19 @@ public final class NameID {
 			return u.module.equals(module) && u.name.equals(name);
 		}
 		return false;
+	}
+	
+	/**
+	 * Create a NameID from a string representation. This is of the form
+	 * "module/id:name".
+	 * 
+	 * @param str
+	 * @return
+	 */
+	public static NameID fromString(String str) {
+		int index = str.indexOf(':');
+		String module = str.substring(0, index);
+		String name = str.substring(index + 1);
+		return new NameID(Trie.fromString(module), name);
 	}
 }

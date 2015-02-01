@@ -33,9 +33,10 @@ import wycc.util.Pair;
 import wyfs.lang.Path;
 import wyil.util.*;
 import wyil.util.dfa.*;
+import wyil.attributes.SourceLocation;
 import wyil.lang.*;
 import static wycc.lang.SyntaxError.*;
-import static wyil.lang.Code.Block.*;
+import static wyil.lang.CodeBlock.*;
 import static wyil.util.ErrorMessages.*;
 
 /**
@@ -45,10 +46,9 @@ import static wyil.util.ErrorMessages.*;
  * </p>
  *
  * <pre>
- * int f() {
- * 	int z;
- * 	return z + 1;
- * }
+ * function f() => int:
+ * 	int z
+ * 	return z + 1
  * </pre>
  *
  * <p>
@@ -78,12 +78,12 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public HashSet<Integer> propagate(int idx, Entry entry, HashSet<Integer> in) {
-		Code code = entry.code;
-		checkUses(code,entry,in);
+	public HashSet<Integer> propagate(CodeBlock.Index index, Code code,
+			HashSet<Integer> in) {
+		checkUses(index, code, in);
 
-		int def = defs(code,entry);
-		if(def >= 0) {
+		int def = defs(code);
+		if (def >= 0) {
 			in = new HashSet<Integer>(in);
 			in.add(def);
 		}
@@ -92,36 +92,36 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
-			Codes.If igoto, Entry entry, HashSet<Integer> in) {
+	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(CodeBlock.Index index,
+			Codes.If igoto, HashSet<Integer> in) {
 
 		if (!in.contains(igoto.leftOperand) || !in.contains(igoto.rightOperand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
-					entry);
+					rootBlock.attribute(index,SourceLocation.class));
 		}
 
 		return new Pair(in, in);
 	}
 
 	@Override
-	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(int index,
-			Codes.IfIs iftype, Entry entry, HashSet<Integer> in) {
+	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(CodeBlock.Index index,
+			Codes.IfIs iftype, HashSet<Integer> in) {
 
 		if (!in.contains(iftype.operand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
-					entry);
+					rootBlock.attribute(index,SourceLocation.class));
 		}
 
 		return new Pair(in,in);
 	}
 
 	@Override
-	public List<HashSet<Integer>> propagate(int index, Codes.Switch sw,
-			Entry entry, HashSet<Integer> in) {
+	public List<HashSet<Integer>> propagate(CodeBlock.Index index, Codes.Switch sw,
+			HashSet<Integer> in) {
 
 		if (!in.contains(sw.operand)) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
-					entry);
+					rootBlock.attribute(index,SourceLocation.class));
 		}
 
 		ArrayList<HashSet<Integer>> stores = new ArrayList();
@@ -132,28 +132,23 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public HashSet<Integer> propagate(Type handler, Codes.TryCatch tc, HashSet<Integer> in) {
-		in = new HashSet<Integer>(in);
-		in.add(tc.operand);
-		return in;
-	}
-
-	@Override
-	public HashSet<Integer> propagate(int start, int end, Codes.Loop loop,
-			Entry entry, HashSet<Integer> in, List<Codes.TryCatch> handlers) {
+	public HashSet<Integer> propagate(CodeBlock.Index index, Codes.Loop loop,
+			HashSet<Integer> in) {
 		if (loop instanceof Codes.ForAll) {
 			Codes.ForAll fall = (Codes.ForAll) loop;
 
 			if (!in.contains(fall.sourceOperand)) {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-						filename, entry);
+						filename,
+						rootBlock.attribute(index, SourceLocation.class));
 			}
 
 			in = new HashSet<Integer>(in);
 			in.add(fall.indexOperand);
 		}
 
-		HashSet<Integer> r = propagate(start + 1, end, in, handlers);
+		CodeBlock blk = loop;
+		HashSet<Integer> r = propagate(index, blk, in);
 		return join(in, r);
 	}
 
@@ -168,7 +163,7 @@ public class DefiniteAssignmentCheck extends
 		return r;
 	}
 
-	public void checkUses(Code code, Entry entry, HashSet<Integer> in) {
+	public void checkUses(CodeBlock.Index index, Code code, HashSet<Integer> in) {
 		if(code instanceof Code.AbstractUnaryOp) {
 			Code.AbstractUnaryOp a = (Code.AbstractUnaryOp) code;
 			if(a.operand == Codes.NULL_REG || in.contains(a.operand)) {
@@ -184,14 +179,14 @@ public class DefiniteAssignmentCheck extends
 			for(int operand : a.operands()) {
 				if(operand != Codes.NULL_REG && !in.contains(operand)) {
 					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-	                        filename, entry);
+	                        filename, rootBlock.attribute(index,SourceLocation.class));
 				}
 			}
 			if(code instanceof Codes.Update && !in.contains(a.target())) {
 				// In this case, we are assigning to an index or field.
 				// Therefore, the target register must already be defined.
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-                        filename, entry);
+                        filename, rootBlock.attribute(index,SourceLocation.class));
 			}
 			return;
 		} else {
@@ -200,10 +195,10 @@ public class DefiniteAssignmentCheck extends
 		}
 
 		syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-                filename, entry);
+                filename, rootBlock.attribute(index,SourceLocation.class));
 	}
 
-	public int defs(Code code, Entry entry) {
+	public int defs(Code code) {
 		if (code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
 			return aa.target();

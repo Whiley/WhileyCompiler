@@ -48,6 +48,7 @@ public class ValidTests extends TestHarness {
 
 	@Test public void Test_Macro_1() { verifyPassTest("test_macro_01"); }
 	@Test public void Test_Macro_2() { verifyPassTest("test_macro_02"); }
+	@Test public void Test_Macro_3() { verifyPassTest("test_macro_03"); }
 
 	@Test public void Test_Bool_1() { verifyPassTest("test_bool_01"); }
 
@@ -87,6 +88,14 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Set_30() { verifyPassTest("test_set_30"); }
 	@Test public void Test_Set_31() { verifyPassTest("test_set_31"); }
 	@Test public void Test_Set_32() { verifyPassTest("test_set_32"); }
+	@Ignore("Known Issue") @Test public void Test_Set_33() { verifyPassTest("test_set_33"); }
+	@Ignore("Known Issue") @Test public void Test_Set_34() { verifyPassTest("test_set_34"); }
+	@Ignore("Known Issue") @Test public void Test_Set_35() { verifyPassTest("test_set_35"); }
+	@Ignore("Known Issue") @Test public void Test_Set_36() { verifyPassTest("test_set_36"); }
+	@Ignore("Known Issue") @Test public void Test_Set_37() { verifyPassTest("test_set_37"); }
+	@Ignore("Known Issue") @Test public void Test_Set_38() { verifyPassTest("test_set_38"); }
+	@Ignore("Known Issue") @Test public void Test_Set_39() { verifyPassTest("test_set_39"); }
+@Test public void Test_Set_40() { verifyPassTest("test_set_40"); }
 
 	@Ignore("Known Issue") @Test public void Test_List_1() { verifyPassTest("test_list_01"); }
 	@Ignore("Known Issue") @Test public void Test_List_2() { verifyPassTest("test_list_02"); }
@@ -106,7 +115,19 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_List_16() { verifyPassTest("test_list_16"); }
 	@Test public void Test_List_17() { verifyPassTest("test_list_17"); }
 	@Test public void Test_List_18() { verifyPassTest("test_list_18"); }
-
+	@Test public void Test_List_19() { verifyPassTest("test_list_19"); }
+	
+	@Test public void Test_Type_01() { verifyPassTest("test_type_01"); }
+	@Test public void Test_Type_02() { verifyPassTest("test_type_02"); }
+	@Test public void Test_Type_03() { verifyPassTest("test_type_03"); }
+	@Test public void Test_Type_04() { verifyPassTest("test_type_04"); }
+	@Test public void Test_Type_05() { verifyPassTest("test_type_05"); }
+	@Test public void Test_Type_06() { verifyPassTest("test_type_06"); }
+	@Test public void Test_Type_07() { verifyPassTest("test_type_07"); }
+	@Test public void Test_Type_08() { verifyPassTest("test_type_08"); }
+	@Test public void Test_Type_09() { verifyPassTest("test_type_09"); }
+	@Test public void Test_Type_10() { verifyPassTest("test_type_10"); }
+	
 	@Test public void Test_Tuple_1() { verifyPassTest("test_tuple_01"); }
 
 	@Test public void Test_Valid_100() { verifyPassTest("test_100"); }

@@ -6,7 +6,6 @@ import java.util.Map;
 public class WyCollection {
 
 	public static java.util.Iterator iterator(Object col) {
-		Util.decRefs(col);
 		if(col instanceof java.util.Collection) {
 			java.util.Collection c = (java.util.Collection) col;
 			return c.iterator();
@@ -20,7 +19,6 @@ public class WyCollection {
 	}
 
 	public static BigInteger length(Object col) {
-		Util.decRefs(col);
 		if(col instanceof java.util.Collection) {
 			java.util.Collection c = (java.util.Collection) col;
 			return BigInteger.valueOf(c.size());
@@ -51,7 +49,7 @@ public class WyCollection {
 		}
 
 		public Object next() {
-			return string.charAt(index++);
+			return WyChar.valueOf(string.charAt(index++));
 		}
 	}
 
@@ -66,7 +64,7 @@ public class WyCollection {
 		} else {
 			String s = (String) col;
 			BigInteger index = (BigInteger) key;
-			return s.charAt(index.intValue());
+			return WyChar.valueOf(s.charAt(index.intValue()));
 		}
 	}
 }

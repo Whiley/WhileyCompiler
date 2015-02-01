@@ -85,6 +85,14 @@ public class WycAntTask extends MatchingTask {
     	builder.setWyilDir(dir);
     }
 
+    public void setWyaldir (File dir) throws IOException {
+    	builder.setWyalDir(dir);
+    }
+    
+    public void setWycsdir (File dir) throws IOException {
+    	builder.setWycsDir(dir);
+    }
+    
     public void setIncludes(String includes) {
     	builder.setIncludes(includes);
     }
@@ -106,7 +114,7 @@ public class WycAntTask extends MatchingTask {
     	for(String file : path.list()) {
     		bootpath.add(new File(file));
     	}
-    	builder.setWhileyPath(bootpath);
+    	builder.setBootPath(bootpath);
     }
 
     public void setVerbose(boolean b) {
@@ -117,6 +125,10 @@ public class WycAntTask extends MatchingTask {
     	builder.setVerification(b);
     }
 
+    public void setVerificationConditions(boolean b) {
+    	builder.setVerificationConditions(b);
+    }
+    
     public void execute() throws BuildException {
     	try {
     		int count = builder.buildAll();

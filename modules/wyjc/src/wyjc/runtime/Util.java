@@ -50,138 +50,17 @@ import static wyil.lang.Type.K_NEGATION;
 
 public class Util {
 
-	private static final boolean debug = false;
-	private static final boolean logRefCounts = false;
-	private static final ArrayList<Object[]> refCounts = new ArrayList();
-	private static long startTime;
-
-	static {
-		if(debug) {
-			startTime = System.currentTimeMillis();
-			Runtime.getRuntime().addShutdownHook(new Thread(){
-				public void run() {
-					long totalTime = System.currentTimeMillis() - startTime;
-					System.err.println("==================================================");
-					System.err.println("STATS");
-					System.err.println("==================================================");
-					System.err.println("Time: " + totalTime + "ms");
-					double avg = nset_elems;
-					avg = avg / nset_clones;
-					System.err.println("set clones:        " + nset_clones + " / "
-							+ (nset_clones + nset_inplace_updates) + " (" + avg + ")");
-					avg = nlist_elems;
-					avg = avg / nlist_clones;
-					System.err.println("list clones:       " + nlist_clones + " / "
-							+ (nlist_clones + nlist_inplace_updates)+ " (" + avg + ")");
-					avg = ndict_elems;
-					avg = avg / ndict_clones;
-					System.err.println("dictionary clones: " + ndict_clones
-							+ " / " + (ndict_clones + ndict_inplace_updates)+ " (" + avg + ")");
-					avg = nrecord_elems;
-					avg = avg / nrecord_clones;
-					System.err.println("record clones:     " + nrecord_clones
-							+ " / " + (nrecord_clones + nrecord_strong_updates)+ " (" + avg + ")");
-					long totalClones = nlist_clones + nset_clones + ndict_clones + nrecord_clones;
-					long totalStrongUpdates = nlist_inplace_updates + nset_inplace_updates + ndict_inplace_updates + nrecord_strong_updates;
-					double ratio = totalClones;
-					ratio = 100 * (ratio / (totalClones+totalStrongUpdates));
-					long totalElems = nset_elems + nlist_elems + ndict_elems + nrecord_elems;
-					avg = totalElems;
-					avg = (avg / (totalClones));
-					System.err.println("--------------------------------------------------");
-					System.err.println("Total clones: " + totalClones + " / " + (totalClones+totalStrongUpdates) + " (" + ratio + "%)");
-					System.err.println("Average Clone Size: " + totalElems + " / " + totalClones + " (" + avg + ")");
-					avg = total_ref_count;
-					avg = avg / total_population;
-					System.err.println("Avg Reference Count: " + avg);
-					System.err.println("--------------------------------------------------");
-					if(logRefCounts) {
-						for(Object[] p : refCounts) {
-							System.out.println(System.identityHashCode(p[0]) + " : " + p[1]);
-						}
-					}
-				}
-			});
-		}
-	}
-
-	private static long total_ref_count = 0;
-	private static long total_population = 0; // number of update operations
-	private static int nlist_clones = 0;
-	private static long nlist_elems = 0;
-	static int nlist_inplace_updates = 0;
-	private static int nset_clones = 0;
-	private static long nset_elems = 0;
-	static int nset_inplace_updates = 0;
-	private static int ndict_clones = 0;
-	private static long ndict_elems = 0;
-	static int ndict_inplace_updates = 0;
-	private static int nrecord_clones = 0;
-	private static long nrecord_elems = 0;
-	static int nrecord_strong_updates = 0;
-
-	public static void countRefs(WyList l) {
-		total_ref_count += l.refCount;
-		total_population++;
-		if(logRefCounts) {
-			refCounts.add(new Object[]{l,l.refCount});
-		}
-	}
-
-	public static void countRefs(WySet l) {
-		total_ref_count += l.refCount;
-		total_population++;
-		if(logRefCounts) {
-			refCounts.add(new Object[]{l,l.refCount});
-		}
-	}
-
-	public static void countRefs(WyMap l) {
-		total_ref_count += l.refCount;
-		total_population++;
-		if(logRefCounts) {
-			refCounts.add(new Object[]{l,l.refCount});
-		}
-	}
-
-	public static void countRefs(WyRecord l) {
-		total_ref_count += l.refCount;
-		total_population++;
-		if(logRefCounts) {
-			refCounts.add(new Object[]{l,l.refCount});
-		}
-	}
-
-	public static void countClone(WyList l) {
-		nlist_clones ++;
-		nlist_elems += l.size();
-	}
-
-	public static void countClone(WySet l) {
-		nset_clones ++;
-		nset_elems += l.size();
-	}
-
-	public static void countClone(WyMap l) {
-		ndict_clones ++;
-		ndict_elems += l.size();
-	}
-
-	public static void countClone(WyRecord l) {
-		nrecord_clones ++;
-		nrecord_elems += l.size();
-	}
 
 	public static String append(final String lhs, final String rhs) {
 		return lhs + rhs;
 	}
 
-	public static String append(final String lhs, final char rhs) {
-		return lhs + rhs;
+	public static String append(final String lhs, final WyChar rhs) {
+		return lhs + rhs.value();
 	}
 
-	public static String append(final char lhs, final String rhs) {
-		return lhs + rhs;
+	public static String append(final WyChar lhs, final String rhs) {
+		return lhs.value() + rhs;
 	}
 
 	public static BigInteger stringlength(final String lhs) {
@@ -194,50 +73,14 @@ public class Util {
 		return lhs.substring(start,end);
 	}
 
-	public static String set(final String lhs, BigInteger index, char value) {
+	public static String set(final String lhs, BigInteger index, WyChar c) {
 		int idx = index.intValue();
 		// hmmm, not exactly efficient!
 		StringBuilder sb = new StringBuilder(lhs);
-		sb.setCharAt(idx, value);
+		sb.setCharAt(idx, c.value());
 		return sb.toString();
 	}
-
-	public static byte leftshift(byte b1, BigInteger b2) {
-		return (byte) ((b1&0xFF) << b2.intValue());
-	}
-
-	public static byte rightshift(byte b1, BigInteger b2) {
-		return (byte) ((b1&0xFF) >>> b2.intValue());
-	}
-
-	public static WyList range(BigInteger start, BigInteger end) {
-		WyList l = new WyList();
-
-		long st = start.longValue();
-		long en = start.longValue();
-		if (BigInteger.valueOf(st).equals(start)
-				&& BigInteger.valueOf(en).equals(end)) {
-			int dir = st < en ? 1 : -1;
-			while(st != en) {
-				l.add(BigInteger.valueOf(st));
-				st = st + dir;
-			}
-		} else {
-			BigInteger dir;
-			if(start.compareTo(end) < 0) {
-				dir = BigInteger.ONE;
-			} else {
-				dir = BigInteger.valueOf(-1);
-			}
-			while(!start.equals(end)) {
-				l.add(start);
-				start = start.add(dir);
-			}
-		}
-
-		return l;
-	}
-
+	
 	/**
 	 * This method is used to convert the arguments supplied to main (which have
 	 * type <code>String[]</code>) into an appropriate Whiley List.
@@ -261,7 +104,7 @@ public class Util {
 	public static WyList str2cl(String str) {
 		WyList r = new WyList(str.length());
 		for(int i=0;i!=str.length();++i) {
-			r.add(str.charAt(i));
+			r.add(WyChar.valueOf(str.charAt(i)));
 		}
 		return r;
 	}
@@ -287,7 +130,7 @@ public class Util {
 	public static WySet str2cs(String str) {
 		WySet r = new WySet();
 		for(int i=0;i!=str.length();++i) {
-			r.add(str.charAt(i));
+			r.add(WyChar.valueOf(str.charAt(i)));
 		}
 		return r;
 	}
@@ -328,154 +171,6 @@ public class Util {
 	}
 
 	/**
-	 * Increment the reference count for an object. In some cases, this may
-	 * have no effect. In other cases, the current reference count will be
-	 * maintained and in-place updates can only occur when the reference count is
-	 * one.
-	 */
-	public static Object incRefs(Object obj) {
-		if(obj instanceof WyList) {
-			WyList list = (WyList) obj;
-			list.refCount++;
-		} else if(obj instanceof WyRecord) {
-			WyRecord rec = (WyRecord) obj;
-			rec.refCount++;
-		} else if(obj instanceof WySet) {
-			WySet set = (WySet) obj;
-			set.refCount++;
-		} else if(obj instanceof WyMap) {
-			WyMap dict = (WyMap) obj;
-			dict.refCount++;
-		} else if(obj instanceof WyTuple) {
-			WyTuple tuple = (WyTuple) obj;
-			tuple.refCount++;
-		}
-		return obj;
-	}
-
-	public static WyList incRefs(WyList obj) {
-		obj.refCount++;
-		return obj;
-	}
-
-	public static WySet incRefs(WySet obj) {
-		obj.refCount++;
-		return obj;
-	}
-
-	public static WyRecord incRefs(WyRecord obj) {
-		obj.refCount++;
-		return obj;
-	}
-
-	public static WyMap incRefs(WyMap obj) {
-		obj.refCount++;
-		return obj;
-	}
-
-	public static WyTuple incRefs(WyTuple obj) {
-		obj.refCount++;
-		return obj;
-	}
-
-	/**
-	 * Decrement the reference count for this object. In some cases, this may
-	 * have no effect. In other cases, the current reference count will be
-	 * maintained and in-place updates can only occur when the reference count is
-	 * one.
-	 */
-	public static void decRefs(Object obj) {
-//		if(obj instanceof List) {
-//			List list = (List) obj;
-//			list.refCount--;
-//			if(list.refCount == 0) {
-//				for(Object o : list) {
-//					decRefs(o);
-//				}
-//			}
-//		} else if(obj instanceof Record) {
-//			Record rec = (Record) obj;
-//			rec.refCount--;
-//			if(rec.refCount == 0) {
-//				for(Object o : rec.values()) {
-//					decRefs(o);
-//				}
-//			}
-//		} else if(obj instanceof Set) {
-//			Set set = (Set) obj;
-//			set.refCount--;
-//			if(set.refCount == 0) {
-//				for(Object o : set) {
-//					decRefs(o);
-//				}
-//			}
-//		} else if(obj instanceof Dictionary) {
-//			Dictionary dict = (Dictionary) obj;
-//			dict.refCount--;
-//			if(dict.refCount == 0) {
-//				for(Map.Entry e : dict.entrySet()) {
-//					decRefs(e.getKey());
-//					decRefs(e.getValue());
-//				}
-//			}
-//		} else if(obj instanceof Tuple) {
-//			Tuple tuple = (Tuple) obj;
-//			tuple.refCount--;
-//			if(tuple.refCount == 0) {
-//				for(Object o : tuple) {
-//					decRefs(o);
-//				}
-//			}
-//		}
-	}
-
-	public static void decRefs(WyList list) {
-//		list.refCount--;
-//		if(list.refCount == 0) {
-//			for(Object o : list) {
-//				decRefs(o);
-//			}
-//		}
-	}
-
-	public static void decRefs(WySet set) {
-//		set.refCount--;
-//		if(set.refCount == 0) {
-//			for(Object o : set) {
-//				decRefs(o);
-//			}
-//		}
-	}
-
-	public static void decRefs(WyRecord rec) {
-//		rec.refCount--;
-//		if(rec.refCount == 0) {
-//			for(Object o : rec.values()) {
-//				decRefs(o);
-//			}
-//		}
-	}
-
-	public static void decRefs(WyMap dict) {
-//		dict.refCount--;
-//		if(dict.refCount == 0) {
-//			for(Map.Entry e : dict.entrySet()) {
-//				decRefs(e.getKey());
-//				decRefs(e.getValue());
-//			}
-//		}
-	}
-
-	public static void decRefs(WyTuple tuple) {
-//		tuple.refCount--;
-//		if(tuple.refCount == 0) {
-//			for(Object o : tuple) {
-//				decRefs(o);
-//			}
-//		}
-	}
-
-	/**
 	 * The <code>instanceOf</code> method implements a runtime type test.
 	 */
 	public static boolean instanceOf(Object obj, WyType t) {
@@ -487,11 +182,11 @@ public class Util {
 			case K_NULL:
 				return obj == null;
 			case K_BOOL:
-				return obj instanceof Boolean;
+				return obj instanceof WyBool;
 			case K_BYTE:
-				return obj instanceof Byte;
+				return obj instanceof WyByte;
 			case K_CHAR:
-				return obj instanceof Character;
+				return obj instanceof WyChar;
 			case K_INT:
 				return obj instanceof BigInteger;
 			case K_RATIONAL:
@@ -831,10 +526,8 @@ public class Util {
 	public static int compare(Object o1, Object o2) {
 		if(o1 == null) {
 			return o2 == null ? 0 : -1;
-		} else if(o1 instanceof Boolean) {
-			return compare((Boolean)o1,o2);
-		} else if(o1 instanceof Character) {
-			return compare((Character)o1,o2);
+		} else if(o1 instanceof WyChar) {
+			return compare((WyChar)o1,o2);
 		} else if(o1 instanceof BigInteger) {
 			return compare((BigInteger)o1,o2);
 		} else if(o1 instanceof WyRat) {
@@ -854,22 +547,11 @@ public class Util {
 		}
 	}
 
-	public static int compare(Boolean o1, Object o2) {
+	public static int compare(WyChar o1, Object o2) {
 		if(o2 == null) {
 			return 1;
-		} else if(o2 instanceof Boolean) {
-			Boolean b2 = (Boolean) o2;
-			return o1.compareTo(b2);
-		} else {
-			return -1;
-		}
-	}
-
-	public static int compare(Character o1, Object o2) {
-		if(o2 == null) {
-			return 1;
-		} else if(o2 instanceof Character) {
-			Character c2 = (Character) o2;
+		} else if(o2 instanceof WyChar) {
+			WyChar c2 = (WyChar) o2;
 			return o1.compareTo(c2);
 		} else {
 			return -1;

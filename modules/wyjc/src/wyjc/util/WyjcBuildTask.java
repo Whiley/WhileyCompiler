@@ -14,6 +14,7 @@ import wyil.lang.WyilFile;
 import wyjc.Wyil2JavaBuilder;
 import jasm.io.ClassFileReader;
 import jasm.io.ClassFileWriter;
+import jasm.io.JasmFileWriter;
 import jasm.lang.ClassFile;
 import jasm.io.ClassFileWriter;
 
@@ -39,7 +40,7 @@ public class WyjcBuildTask extends wyc.util.WycBuildTask {
 
 		public void write(OutputStream output, ClassFile module)
 				throws IOException {
-			ClassFileWriter writer = new ClassFileWriter(output);
+			ClassFileWriter writer = new ClassFileWriter(output);	
 			writer.write(module);
 		}
 

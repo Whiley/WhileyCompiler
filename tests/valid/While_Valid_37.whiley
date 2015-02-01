@@ -21,5 +21,5 @@ ensures all { i in 0 .. 8 | ret[i] == !bits[i] }:
     return ret
 
 method main(System.Console console):
-    console.out.println("BITS = " ++ invertByte([true,false,true,false,true,false,true,false]))
-    console.out.println("BITS = " ++ invertByte([true,true,true,true,false,false,false,false]))
+    console.out.println("BITS = " ++ Any.toString(invertByte([true,false,true,false,true,false,true,false])))
+    console.out.println("BITS = " ++ Any.toString(invertByte([true,true,true,true,false,false,false,false])))

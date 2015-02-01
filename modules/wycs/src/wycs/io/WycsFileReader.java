@@ -237,6 +237,9 @@ public class WycsFileReader {
 		case WycsFileWriter.BLOCK_Macro:
 			block = readMacroBlockBody();
 			break;
+		case WycsFileWriter.BLOCK_Type:
+			block = readTypeBlockBody();
+			break;
 		case WycsFileWriter.BLOCK_Function:
 			block = readFunctionBlockBody();
 			break;
@@ -252,7 +255,7 @@ public class WycsFileReader {
 		}
 
 		input.pad_u8(); // pad out to next byte boundary
-
+		
 		if (expected.isInstance(block)) {
 			return (T) block;
 		} else {
@@ -275,6 +278,19 @@ public class WycsFileReader {
 				(SemanticType.Function) typePool[typeIdx], code);
 	}
 
+	private WycsFile.Declaration readTypeBlockBody() throws IOException {
+		int nameIdx = input.read_uv();
+		int typeIdx = input.read_uv();
+		int nBlocks = input.read_uv();
+		Code<?> code = null;
+		if(nBlocks > 0) {
+			code = readBlock(Code.class);
+		}
+
+		return new WycsFile.Type(stringPool[nameIdx],
+				(SemanticType) typePool[typeIdx], code);
+	}
+	
 	private WycsFile.Declaration readFunctionBlockBody() throws IOException {
 		int nameIdx = input.read_uv();
 		int typeIdx = input.read_uv();
@@ -313,6 +329,14 @@ public class WycsFileReader {
 			case VAR: {
 				int varIdx = input.read_uv();
 				return Code.Variable(type, operands, varIdx);
+			}
+			case CAST: {
+				int targetTypeIdx = input.read_uv();
+				if (operands.length != 1) {
+					throw new RuntimeException(
+							"invalid cast bytecode encountered");
+				}
+				return Code.Cast(typePool[targetTypeIdx],operands[0]);
 			}
 			case CONST: {
 				int constIdx = input.read_uv();
@@ -381,7 +405,13 @@ public class WycsFileReader {
 							"invalid funcall bytecode encountered");
 				}
 				int nid = input.read_uv();
-				return Code.FunCall((SemanticType.Function) type, operands[0], namePool[nid]);
+				int length = input.read_uv();
+				SemanticType[] binding = new SemanticType[length];
+				for (int i = 0; i != length; ++i) {
+					int pTypeIdx = input.read_uv();
+					binding[i] = typePool[pTypeIdx];					
+				}
+				return Code.FunCall((SemanticType.Function) type, operands[0], namePool[nid], binding);
 			}
 			}
 

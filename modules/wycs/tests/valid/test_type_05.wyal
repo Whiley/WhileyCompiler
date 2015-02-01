@@ -1,0 +1,12 @@
+type nat is (int x) where:
+    x >= 0
+
+type pos is (int x) where:
+    x > 0
+
+assert:
+    forall(pos x, nat y):
+        if:
+           y > x
+        then:
+           y > 1

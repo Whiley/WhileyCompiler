@@ -102,7 +102,7 @@ public class AllValidVerificationTests {
 				name);                      // name of test to compile
 
 		int r = p.first();
-		System.out.println(p.second());
+		System.out.print(p.second());
 
 		if (r != WycMain.SUCCESS) {
 			fail("Test failed to compile!");
@@ -519,6 +519,11 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
+	public void ConstrainedInt_Valid_24() {
+		runTest("ConstrainedInt_Valid_24");
+	}
+	
+	@Test
 	public void ConstrainedInt_Valid_3() {
 		runTest("ConstrainedInt_Valid_3");
 	}
@@ -897,6 +902,11 @@ public class AllValidVerificationTests {
 	public void DoWhile_Valid_5() {
 		runTest("DoWhile_Valid_5");
 	}
+	
+	@Test
+	public void DoWhile_Valid_6() {
+		runTest("DoWhile_Valid_6");
+	}
 
 	@Test
 	public void EffectiveList_Valid_1() {
@@ -940,6 +950,11 @@ public class AllValidVerificationTests {
 		runTest("Ensures_Valid_7");
 	}
 
+	@Test
+	public void Ensures_Valid_8() {
+		runTest("Ensures_Valid_8");
+	}
+	
 	@Test
 	public void For_Valid_1() {
 		runTest("For_Valid_1");
@@ -989,6 +1004,16 @@ public class AllValidVerificationTests {
 	@Test
 	public void For_Valid_18() {
 		runTest("For_Valid_18");
+	}
+	
+	@Test
+	public void For_Valid_19() {
+		runTest("For_Valid_19");
+	}
+
+	@Test
+	public void For_Valid_20() {
+		runTest("For_Valid_20");
 	}
 
 	@Test
@@ -2232,68 +2257,6 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
-	public void SetComprehension_Valid_1() {
-		runTest("SetComprehension_Valid_1");
-	}
-
-
-	@Ignore("#234") @Test
-	public void SetComprehension_Valid_10() {
-		runTest("SetComprehension_Valid_10");
-	}
-
-	@Test
-	public void SetComprehension_Valid_11() {
-		runTest("SetComprehension_Valid_11");
-	}
-
-
-	@Ignore("#234") @Test
-	public void SetComprehension_Valid_12() {
-		runTest("SetComprehension_Valid_12");
-	}
-
-	@Test
-	public void SetComprehension_Valid_2() {
-		runTest("SetComprehension_Valid_2");
-	}
-
-	@Test
-	public void SetComprehension_Valid_3() {
-		runTest("SetComprehension_Valid_3");
-	}
-
-	@Test
-	public void SetComprehension_Valid_4() {
-		runTest("SetComprehension_Valid_4");
-	}
-
-	@Test
-	public void SetComprehension_Valid_5() {
-		runTest("SetComprehension_Valid_5");
-	}
-
-	@Test
-	public void SetComprehension_Valid_6() {
-		runTest("SetComprehension_Valid_6");
-	}
-
-	@Test
-	public void SetComprehension_Valid_7() {
-		runTest("SetComprehension_Valid_7");
-	}
-
-	@Test
-	public void SetComprehension_Valid_8() {
-		runTest("SetComprehension_Valid_8");
-	}
-
-	@Test
-	public void SetComprehension_Valid_9() {
-		runTest("SetComprehension_Valid_9");
-	}
-
-	@Test
 	public void SetConversion_Valid_1() {
 		runTest("SetConversion_Valid_1");
 	}
@@ -2700,26 +2663,6 @@ public class AllValidVerificationTests {
 	@Test
 	public void Syntax_Valid_1() {
 		runTest("Syntax_Valid_1");
-	}
-
-	@Test
-	public void TryCatch_Valid_1() {
-		runTest("TryCatch_Valid_1");
-	}
-
-	@Test
-	public void TryCatch_Valid_2() {
-		runTest("TryCatch_Valid_2");
-	}
-
-	@Test
-	public void TryCatch_Valid_3() {
-		runTest("TryCatch_Valid_3");
-	}
-
-	@Ignore("#347") @Test
-	public void TryCatch_Valid_4() {
-		runTest("TryCatch_Valid_4");
 	}
 
 	@Test
@@ -3315,6 +3258,16 @@ public class AllValidVerificationTests {
 	@Ignore("#231") @Test
 	public void While_Valid_44() {
 		runTest("While_Valid_44");
+	}	
+	
+	@Test
+	public void While_Valid_45() {
+		runTest("While_Valid_45");
+	}
+
+	@Test
+	public void While_Valid_46() {
+		runTest("While_Valid_46");
 	}
 	
 	@Test

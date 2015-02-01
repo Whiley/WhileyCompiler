@@ -31,18 +31,44 @@ import java.util.*;
 import wybs.lang.Builder;
 import wycc.lang.Transform;
 import wycc.util.Pair;
-import wyfs.lang.Path;
-import wyil.*;
 import wyil.lang.*;
+import wyil.util.AttributedCodeBlock;
 
 /**
- * Removes dead-code from method and function bodies in a given bytecode.
- * Dead=code is defined as code which is unreachable from the entry point by
- * bytecodes sequentially, and traversing along all branches and exceptional
- * edges as appropriate.
- *
+ * <p>
+ * Removes dead-code from method and function bodies, preconditions,
+ * postconditions and type invariants. Dead-code is defined as code which is
+ * unreachable through the corresponding control-flow graph starting from the
+ * entry point. For example, consider:
+ * </p>
+ * 
+ * <pre>
+ *   const %1 = 0                 
+ *   ifge %0, %1 goto label0           
+ *   neg %2 = %0                       
+ *   assign %0 = %2
+ *   goto label0
+ *   const %1 = 0   // unreachable            
+ * .label0                                 
+ *   return %0                         
+ *   return         // unreachable
+ * </pre>
+ * <p>
+ * Here, we can see two bytecodes which are unreachable by any path through the
+ * control-flow graph starting from the entry point. Both of these, therefore,
+ * are considered dead-code and can safely be removed.
+ * </p>
+ * <p>
+ * The algorithm traverses a given code block using (roughly speaking) a
+ * depth-first search of the corresponding control-flow graph. Bytecodes which
+ * are not visited during this traversal are guaranteed to be unreachable and,
+ * hence, are removed. Observe that, however, some unreachable bytecodes may
+ * remain if their unreachable status depends on more than just reachability
+ * (i.e. an unrealisable path).
+ * </p>
+ * 
  * @author David J. Pearce
- *
+ * 
  */
 public class DeadCodeElimination implements Transform<WyilFile> {
 
@@ -68,6 +94,10 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 
 	}
 
+	/**
+	 * Apply this transformation to all type, function and method declarations
+	 * of a given module.
+	 */
 	public void apply(WyilFile module) throws IOException {
 		if(enabled) {
 			for(WyilFile.TypeDeclaration type : module.types()) {
@@ -79,98 +109,168 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 		}
 	}
 
+	/**
+	 * Transform the invariant block for a given type declaration (if one
+	 * exists).
+	 * 
+	 * @param type
+	 */
 	public void transform(WyilFile.TypeDeclaration type) {
-		Code.Block invariant = type.invariant();
+		AttributedCodeBlock invariant = type.invariant();
 
 		if (invariant != null) {
 			transform(invariant);
 		}
 	}
 
+	/**
+	 * Transform all code blocks found within a given function or method
+	 * declaration.
+	 * 
+	 * @param method
+	 */
 	public void transform(WyilFile.FunctionOrMethodDeclaration method) {
 		for(WyilFile.Case c : method.cases()) {
 			transform(c,method);
 		}
 	}
 
-	public void transform(WyilFile.Case mcase, WyilFile.FunctionOrMethodDeclaration method) {
-		Code.Block body = mcase.body();
+	/**
+	 * Transform any precondition and postconditions block within a given
+	 * function or method, along with its body (if it exists).
+	 * 
+	 * @param mcase
+	 * @param method
+	 */
+	public void transform(WyilFile.Case mcase, WyilFile.FunctionOrMethodDeclaration method) {		
+		// First, process any preconditions.		
+		for(AttributedCodeBlock precondition : mcase.precondition()) {
+			transform(precondition);
+		}
+		
+		// Second, process the method's body (if there is one).
+		AttributedCodeBlock body = mcase.body();
 		if(body != null) {
 			transform(body);
 		}
+		
+		// Finally, process any postconditions.
+		for(AttributedCodeBlock postcondition : mcase.postcondition()) {
+			transform(postcondition);
+		}
 	}
-
-	private void transform(Code.Block block) {
-		HashMap<String,Integer> labelMap = buildLabelMap(block);
-		BitSet visited = new BitSet(block.size());
-		Stack<Integer> worklist = new Stack();
-		worklist.push(0);
-		visited.set(0);
+	
+	/**
+	 * Traverse all reachable bytecodes in the given block, starting from the
+	 * entry point. The traversal corresponds (roughly speaking) to a
+	 * depth-first search of the control-flow graph. Bytecodes which are not
+	 * visited during this traversal are guaranteed to be unreachable and,
+	 * hence, are removed. Observe that, however, some unreachable bytecodes may
+	 * remain if their unreachable status depends on more than just reachability
+	 * (i.e. an unrealisable path).
+	 * 
+	 * @param block
+	 */
+	private void transform(AttributedCodeBlock block) {
+		CodeBlock.Index entry = new CodeBlock.Index(CodeBlock.Index.ROOT); 
+		// Construct the label map which will label labels to their bytecode
+		// indices.  This allows is to correctly handle branching instructions. 
+		HashMap<String,CodeBlock.Index> labelMap = new HashMap<String,CodeBlock.Index>();
+		buildLabelMap(CodeBlock.Index.ROOT,block,labelMap);
+		// Initialise the worklist which will contain the set of bytecode
+		// addresses remaining to be explored. Initially, this is populated just
+		// with the root index. An invariant of the worklist is that all entries
+		// on the worklist have already been added to the visited set.
+		Stack<CodeBlock.Index> worklist = new Stack();
+		worklist.push(entry);
+		// Initialise the visited set, which contains the set of bytecodes which
+		// have been explored. When the search is completed, this will tell us
+		// which bytecodes are dead-code (i.e. because they weren't explored).
+		HashSet<CodeBlock.Index> visited = new HashSet<CodeBlock.Index>();
+		visited.add(entry);
+		// Now, iterate until all branches of exploration have been explored and
+		// the worklist is empty.
 		while(!worklist.isEmpty()) {
-			int index = worklist.pop();
-
-			Code code = block.get(index).code;
+			CodeBlock.Index index = worklist.pop();
+			Code code = block.get(index);
 
 			if(code instanceof Codes.Goto) {
 				Codes.Goto g = (Codes.Goto) code;
-				addTarget(labelMap.get(g.target),visited,worklist);
+				addTarget(labelMap.get(g.target),visited,worklist,block);
 			} else if(code instanceof Codes.If) {
 				Codes.If ig = (Codes.If) code;
-				addTarget(index+1,visited,worklist);
-				addTarget(labelMap.get(ig.target),visited,worklist);
+				addTarget(index.next(),visited,worklist,block);
+				addTarget(labelMap.get(ig.target),visited,worklist,block);
 			} else if(code instanceof Codes.IfIs) {
 				Codes.IfIs ig = (Codes.IfIs) code;
-				addTarget(index+1,visited,worklist);
-				addTarget(labelMap.get(ig.target),visited,worklist);
+				addTarget(index.next(),visited,worklist,block);
+				addTarget(labelMap.get(ig.target),visited,worklist,block);
 			} else if(code instanceof Codes.Switch) {
 				Codes.Switch sw = (Codes.Switch) code;
 				for(Pair<Constant,String> p : sw.branches) {
-					addTarget(labelMap.get(p.second()),visited,worklist);
+					addTarget(labelMap.get(p.second()),visited,worklist,block);
 				}
-				addTarget(labelMap.get(sw.defaultTarget),visited,worklist);
-			} else if(code instanceof Codes.TryCatch) {
-				Codes.TryCatch tc = (Codes.TryCatch) code;
-				for(Pair<Type,String> p : tc.catches) {
-					addTarget(labelMap.get(p.second()),visited,worklist);
-				}
-				addTarget(index+1,visited,worklist);
-			} else if(code instanceof Codes.Throw || code instanceof Codes.Return) {
-				// terminating bytecode
+				addTarget(labelMap.get(sw.defaultTarget),visited,worklist,block);
+			} else if(code instanceof Codes.Return || code instanceof Codes.Fail) {
+				// Terminating bytecodes
+			} else if(code instanceof CodeBlock) {
+				// This is a block which contains other bytecodes and/or blocks.
+				// Therefore, we need to explore the block as well. In all
+				// cases, we want to also continue onto the following statement
+				// as well.
+				addTarget(index.next(),visited,worklist,block);
+				addTarget(index.firstWithin(),visited,worklist,block);
 			} else {
-				// sequential bytecode
-				if((index+1) < block.size()) {
-					addTarget(index+1,visited,worklist);
-				}
+				// Sequential bytecode, so fall through to next index (if it
+				// exists).
+				addTarget(index.next(),visited,worklist,block);
 			}
 		}
 
-		// Now, remove unvisited blocks!
-		int index=0;
-		int size = block.size();
-		for(int i=0;i!=size;++i) {
-			if(!visited.get(i)) {
-				block.remove(index);
-			} else {
-				index = index + 1;
-			}
-		}
+		// Now, remove all visited indices from the set of all indices within
+		// the block to determine which ones are dead code.
+		List<CodeBlock.Index> indices = block.indices();
+		indices.removeAll(visited);
+		// FIXME: need to actually remove unused bytecodes!		
+		System.out.println("FIXME --- DeadCodeElimination");
+		// block.removeAll(indices);
 	}
 
-	private static HashMap<String,Integer> buildLabelMap(Code.Block block) {
-		HashMap<String,Integer> map = new HashMap<String,Integer>();
-		for(int i=0;i!=block.size();++i) {
-			Code c = block.get(i).code;
-			if(c instanceof Codes.Label) {
+	private static void buildLabelMap(CodeBlock.Index parent, CodeBlock block,
+			HashMap<String, CodeBlock.Index> map) {
+		for (int i = 0; i != block.size(); ++i) {
+			Code c = block.get(i);
+			if (c instanceof Codes.Label) {
 				Codes.Label l = (Codes.Label) c;
-				map.put(l.label,i);
+				map.put(l.label, new CodeBlock.Index(parent, i));
+			} else if (c instanceof CodeBlock) {
+				buildLabelMap(new CodeBlock.Index(parent, i), (CodeBlock) c,
+						map);
 			}
 		}
-		return map;
 	}
 
-	private static void addTarget(int index, BitSet visited, Stack<Integer> worklist) {
-		if(!visited.get(index)) {
-			visited.set(index);
+	/**
+	 * Added a given bytecode to the list of bytecodes which have been explored.
+	 * Furthermore, in the case that the bytecode has not previously been
+	 * explored, it is added to the worklist.
+	 * 
+	 * @param index
+	 *            --- The index of the bytecode in question.
+	 * @param visited
+	 *            --- The list of bytecodes which have been previously explored.
+	 * @param worklist
+	 *            --- The list of bytecodes which remain to be explored.
+	 */
+	private static void addTarget(CodeBlock.Index index,
+			HashSet<CodeBlock.Index> visited, Stack<CodeBlock.Index> worklist,
+			AttributedCodeBlock block) {
+		// First, check whether or not this bytecode exists, which is necessary
+		// as it won't exist if we've run over the end of a block (for
+		// example). Second, check whether or not this bytecode has been visited
+		// already as, if so, we don't need to visit it again.
+		if(block.contains(index) && !visited.contains(index)) {
+			visited.add(index);
 			worklist.push(index);
 		}
 	}

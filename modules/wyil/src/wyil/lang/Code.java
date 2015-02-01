@@ -27,7 +27,6 @@ package wyil.lang;
 
 import java.util.*;
 
-import wycc.lang.Attribute;
 import wycc.lang.SyntacticElement;
 import static wyil.lang.CodeUtils.*;
 
@@ -122,14 +121,6 @@ public interface Code {
 	public Code remap(Map<Integer, Integer> binding);
 
 	/**
-	 * Relabel all labels according to the given map.
-	 *
-	 * @param labels
-	 * @return
-	 */
-	public Code relabel(Map<String, String> labels);
-
-	/**
 	 * Return the opcode value of this bytecode.
 	 * @return
 	 */
@@ -156,31 +147,35 @@ public interface Code {
 		public Code.Unit remap(Map<Integer, Integer> binding) {
 			return this;
 		}
-
-		@Override
-		public Code.Unit relabel(Map<String, String> labels) {
-			return this;
-		}
 	}
 
 	/**
-	 * A code block represents a sequence of zero or more bytecodes. Code blocks
-	 * can represent bytecodes as well (e.g. the loop bytecode).
+	 * A compound bytecode represents a bytecode that contains sequence of zero
+	 * or more bytecodes. For example, the loop bytecode contains its loop body.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static abstract class AbstractBlock extends ArrayList<Code> {
+	public static abstract class Compound extends CodeBlock implements Code {
 
+		public Compound(Code... bytecodes) {
+			super(bytecodes);
+		}
+
+		public Compound(Collection<Code> bytecodes) {
+			super(bytecodes);
+		}
+
+		@Override
 		public void registers(java.util.Set<Integer> register) {
 			for(int i=0;i!=size();++i) {
 				get(i).registers(register);
 			}
 		}
 
-
-		public Code.AbstractBlock remap(Map<Integer, Integer> binding) {
-			Code.AbstractBlock block = clone();
+		@Override
+		public Code.Compound remap(Map<Integer, Integer> binding) {
+			Code.Compound block = clone();
 			for(int i=0;i!=size();++i) {
 				Code code = get(i);
 				block.set(i,code.remap(binding));
@@ -188,224 +183,10 @@ public interface Code {
 			return block;
 		}
 
-		public Code.AbstractBlock relabel(Map<String, String> labels) {
-			Code.AbstractBlock block = clone();
-			for(int i=0;i!=size();++i) {
-				Code code = get(i);
-				block.set(i,code.relabel(labels));
-			}
-			return block;
-		}
-
-		public abstract Code.AbstractBlock clone();
+		public abstract Code.Compound clone();
 	}
 
-	/**
-	 * <p>
-	 * Represents a complete sequence of bytecode instructions. For example, every
-	 * function or method body is a single Block. Likewise, the invariant for a give
-	 * type is a Block. Finally, a Block permits attributes to be attached to every
-	 * bytecode it contains. An example attribute is one for holding the location of
-	 * the source code which generated the bytecode.
-	 * </p>
-	 *
-	 * <p>
-	 * Every Block has a number of dedicated input variables, and an arbitrary
-	 * number of additional temporary variables. Each variable is allocated to a
-	 * slot number, starting from zero and with all inputs coming first.
-	 * </p>
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Block extends ArrayList<Block.Entry> implements List<Block.Entry> {
-		private final int numInputs;
 
-		public Block(int numInputs) {
-			this.numInputs = numInputs;
-		}
-
-		public Block(int numInputs, Collection<Entry> entries) {
-			super(entries);
-			this.numInputs = numInputs;
-		}
-
-		// ===================================================================
-		// Accessor Methods
-		// ===================================================================
-
-		/**
-		 * Return the number of input variables for this block.
-		 *
-		 * @return
-		 */
-		public int numInputs() {
-			return numInputs;
-		}
-
-		/**
-		 * Determine the number of slots used in this block.
-		 *
-		 * @return
-		 */
-		public int numSlots() {
-			HashSet<Integer> slots = new HashSet<Integer>();
-			for(Entry s : this) {
-				s.code.registers(slots);
-			}
-			int r = 0;
-			for(int i : slots) {
-				r = Math.max(r,i+1);
-			}
-			return Math.max(numInputs,r);
-		}
-
-		/**
-		 * Determine the exact slots used in this block.
-		 *
-		 * @return
-		 */
-		public Set<Integer> slots() {
-			HashSet<Integer> slots = new HashSet<Integer>();
-			for(Entry s : this) {
-				s.code.registers(slots);
-			}
-			return slots;
-		}
-
-		// ===================================================================
-		// Append Methods
-		// ===================================================================
-
-		/**
-		 * Append a bytecode onto the end of this block. It is assumed that the
-		 * bytecode employs the same environment as this block.
-		 *
-		 * @param code
-		 *            --- bytecode to append
-		 * @param attributes
-		 *            --- attributes associated with bytecode.
-		 */
-		public boolean add(Code code, Attribute... attributes) {
-			return add(new Entry(code,attributes));
-		}
-
-		/**
-		 * Append a bytecode onto the end of this block. It is assumed that the
-		 * bytecode employs the same environment as this block.
-		 *
-		 * @param code
-		 *            --- bytecode to append
-		 * @param attributes
-		 *            --- attributes associated with bytecode.
-		 */
-		public boolean add(Code code, Collection<Attribute> attributes) {
-			return add(new Entry(code,attributes));
-		}
-
-		// ===================================================================
-		// Insert Methods
-		// ===================================================================
-
-		/**
-		 * <p>Insert a bytecode at a given position in this block. It is assumed that
-		 * the bytecode employs the same environment as this block. The bytecode at
-		 * the given position (and any after it) are shifted one position down.</p>
-		 *
-		 * @param index --- position to insert at.
-		 * @param code --- bytecode to insert at the given position.
-		 * @param attributes
-		 */
-		public void add(int index, Code code, Attribute... attributes) {
-			add(index,new Entry(code,attributes));
-		}
-
-		/**
-		 * <p>Insert a bytecode at a given position in this block. It is assumed that
-		 * the bytecode employs the same environment as this block. The bytecode at
-		 * the given position (and any after it) are shifted one position down.</p>
-		 *
-		 * @param index --- position to insert at.
-		 * @param code --- bytecode to insert at the given position.
-		 * @param attributes
-		 */
-		public void add(int index, Code code, Collection<Attribute> attributes) {
-			add(index,new Entry(code,attributes));
-		}
-
-		// ===================================================================
-		// Replace and Remove Methods
-		// ===================================================================
-
-		/**
-		 * <p>
-		 * Replace the bytecode at a given position in this block with another. It
-		 * is assumed that the bytecode employs the same environment as this block.
-		 * </p>
-		 *
-		 * @param index --- position of bytecode to replace.
-		 * @param code --- bytecode to replace with.
-		 * @param attributes
-		 */
-		public void set(int index, Code code, Attribute... attributes) {
-			set(index,new Entry(code,attributes));
-		}
-
-		/**
-		 * <p>
-		 * Replace the bytecode at a given position in this block with another. It
-		 * is assumed that the bytecode employs the same environment as this block.
-		 * </p>
-		 *
-		 * @param index --- position of bytecode to replace.
-		 * @param code --- bytecode to replace with.
-		 * @param attributes
-		 */
-		public void set(int index, Code code, Collection<Attribute> attributes) {
-			set(index, new Entry(code, attributes));
-		}
-
-		// ===================================================================
-		// Miscellaneous
-		// ===================================================================
-
-		/**
-		 * Represents an individual bytecode and those attributes currently
-		 * associated with it (if any) in the block.
-		 *
-		 * @author David J. Pearce
-		 *
-		 */
-		public static final class Entry extends SyntacticElement.Impl {
-			public final Code code;
-
-			public Entry(Code code, Attribute... attributes) {
-				super(attributes);
-				this.code = code;
-			}
-
-			public Entry(Code code, Collection<Attribute> attributes) {
-				super(attributes);
-				this.code = code;
-			}
-
-			public String toString() {
-				String r = code.toString();
-				if(attributes().size() > 0) {
-					r += " # ";
-					boolean firstTime=true;
-					for(Attribute a : attributes()) {
-						if(!firstTime) {
-							r += ", ";
-						}
-						firstTime=false;
-						r += a;
-					}
-				}
-				return r;
-			}
-		}
-	}
 
 	// ===============================================================C
 	// Abstract Bytecodes
@@ -793,11 +574,12 @@ public interface Code {
 	// =========================================================================
 	public static final int OPCODE_loop              = 0 + FMT_NARYOP;
 	public static final int OPCODE_forall            = 1 + FMT_NARYOP;
-	public static final int OPCODE_void              = 2 + FMT_NARYOP;
+	public static final int OPCODE_quantify          = 2 + FMT_NARYOP;	
 	public static final int OPCODE_indirectinvokefnv = 3 + FMT_NARYOP;
 	public static final int OPCODE_indirectinvokemdv = 4 + FMT_NARYOP;
 	public static final int OPCODE_invokefnv         = 5 + FMT_NARYOP; // +NAMEIDX
 	public static final int OPCODE_invokemdv         = 6 + FMT_NARYOP; // +NAMEIDX
+	public static final int OPCODE_void              = 7 + FMT_NARYOP;	
 
 	// =========================================================================
 	// Nary Assignables
@@ -823,6 +605,7 @@ public interface Code {
 	public static final int OPCODE_update              = 1 + FMT_OTHER;
 	public static final int OPCODE_assertblock         = 2 + FMT_OTHER;
 	public static final int OPCODE_assumeblock         = 3 + FMT_OTHER;
+	public static final int OPCODE_invariantblock      = 4 + FMT_OTHER;
 
 	// this is where I will locate the WIDE and WIDEWIDE Markers
 	public static final int OPCODE_wide                = 29 + FMT_OTHER;

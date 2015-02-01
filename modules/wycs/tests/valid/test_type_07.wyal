@@ -1,0 +1,6 @@
+type lessThan is (int x, int y) where:
+    x < y
+
+assert:
+    forall(lessThan xs):
+        xs[0] < xs[1]

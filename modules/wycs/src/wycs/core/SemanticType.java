@@ -11,6 +11,8 @@ import wyautl.rw.InferenceRule;
 import wyautl.rw.ReductionRule;
 import wyautl.rw.SimpleRewriteStrategy;
 import wyautl.rw.UnfairStateRuleRewriteStrategy;
+import wycc.lang.NameID;
+import wyfs.lang.Path;
 import static wycs.core.Types.*;
 
 public abstract class SemanticType {
@@ -34,6 +36,10 @@ public abstract class SemanticType {
 		return new Var(name);
 	}
 
+	public static Nominal Nominal(NameID name) {
+		return new Nominal(name);
+	}
+	
 	public static Tuple Tuple(SemanticType... elements) {
 		for (SemanticType t : elements) {
 			if (t instanceof SemanticType.Void) {
@@ -185,7 +191,26 @@ public abstract class SemanticType {
 		}
 	}
 
-
+	public static class Nominal extends SemanticType {
+		public Nominal(NameID nid) {
+			int root = Types.NominalT(automaton, nid.toString());
+			automaton.setRoot(0,root);
+		}
+		private Nominal(Automaton automaton) {
+			super(automaton);
+			int kind = automaton.get(automaton.getRoot(0)).kind;
+			if (kind != K_NominalT) {
+				throw new IllegalArgumentException("Invalid variable kind");
+			}
+		}
+		public NameID name() {
+			int root = automaton.getRoot(0);
+			Automaton.Term term = (Automaton.Term) automaton.get(root);
+			Automaton.Strung str = (Automaton.Strung) automaton.get(term.contents);
+			return NameID.fromString(str.value);
+		}
+	}
+	
 	// ==================================================================
 	// Unary Terms
 	// ==================================================================
@@ -596,10 +621,16 @@ public abstract class SemanticType {
 			case K_StringT:
 				body += "string";
 				break;
-			case K_VarT:
+			case K_VarT: {
 				Automaton.Strung s = (Automaton.Strung) automaton.get(term.contents);
 				body += s.value;
 				break;
+			}
+			case K_NominalT: {
+				Automaton.Strung s = (Automaton.Strung) automaton.get(term.contents);
+				body += s.value;
+				break;
+			}
 			case K_NotT:
 				body += "!" + toString(term.contents,headers);
 				break;
@@ -722,6 +753,8 @@ public abstract class SemanticType {
 			return Real;
 		case K_VarT:
 			return new SemanticType.Var(automaton);
+		case K_NominalT:
+			return new SemanticType.Nominal(automaton);
 		case K_StringT:
 			return String;
 		// connectives
@@ -745,7 +778,11 @@ public abstract class SemanticType {
 		case K_FunctionT:
 			return new SemanticType.Function(automaton);
 		default:
-			throw new IllegalArgumentException("Unknown kind encountered - " + state.kind);
+			int kind = state.kind;
+			if(kind < 0) {
+				kind = -kind + Automaton.K_FREE;
+			}
+			throw new IllegalArgumentException("Unknown kind encountered - " + SCHEMA.get(kind).name);
 		}
 	}
 

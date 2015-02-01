@@ -28,7 +28,6 @@ public class WyalFile implements CompilationUnit {
 		}
 
 		public WyalFile read(Path.Entry<WyalFile> e, InputStream input) throws IOException {
-			//System.out.println("SCANNING: " + e.id());
 			WyalFileReader reader = new WyalFileReader(e.location().toString(),input);
 			return reader.read();
 		}
@@ -217,7 +216,7 @@ public class WyalFile implements CompilationUnit {
 	public class Type extends AbstractContext implements Declaration {
 		public final String name;
 		public final ArrayList<String> generics;
-		public final TypePattern from;
+		public final TypePattern type;
 		public Expr invariant;
 
 		public Type(String name, List<String> generics, TypePattern parameter,
@@ -228,7 +227,19 @@ public class WyalFile implements CompilationUnit {
 			}
 			this.name = name;
 			this.generics = new ArrayList<String>(generics);
-			this.from = parameter;
+			this.type = parameter;
+			this.invariant = body;
+		}
+		
+		public Type(String name, List<String> generics, TypePattern parameter,
+				Expr body, Collection<Attribute> attributes) {
+			super(attributes);
+			if(!Expr.isValidIdentifier(name)) {
+				throw new IllegalArgumentException("illegal identifier: " + name);
+			}
+			this.name = name;
+			this.generics = new ArrayList<String>(generics);
+			this.type = parameter;
 			this.invariant = body;
 		}
 

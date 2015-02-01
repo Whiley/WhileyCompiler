@@ -29,14 +29,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 public final class WyMap extends java.util.HashMap<Object,Object> {
-	/**
-	 * The reference count is use to indicate how many variables are currently
-	 * referencing this compound structure. This is useful for making imperative
-	 * updates more efficient. In particular, when the <code>refCount</code> is
-	 * <code>1</code> we can safely perform an in-place update of the structure.
-	 */
-	int refCount = 100;  // temporary measure
-
+	
 	// ================================================================================
 	// Generic Operations
 	// ================================================================================
@@ -46,11 +39,7 @@ public final class WyMap extends java.util.HashMap<Object,Object> {
 	}
 
 	WyMap(WyMap dict) {
-		super(dict);
-		for(Map.Entry e : dict.entrySet()) {
-			Util.incRefs(e.getKey());
-			Util.incRefs(e.getValue());
-		}
+		super(dict);		
 	}
 
 	public String toString() {
@@ -80,25 +69,12 @@ public final class WyMap extends java.util.HashMap<Object,Object> {
 
 	public static Object get(WyMap dict, Object key) {
 		Object item = dict.get(key);
-		Util.incRefs(item);
 		return item;
 	}
 
 	public static WyMap put(WyMap dict, Object key, Object value) {
-		Util.countRefs(dict);
-		if(dict.refCount > 0) {
-			Util.countClone(dict);
-			dict = new WyMap(dict);
-		} else {
-			Util.ndict_inplace_updates++;
-		}
-		Object val = dict.put(key, value);
-		if(val != null) {
-			Util.decRefs(val);
-		} else {
-			Util.incRefs(key);
-		}
-		Util.incRefs(value);
+		dict = new WyMap(dict); 
+		Object val = dict.put(key, value);		
 		return dict;
 	}
 
@@ -136,10 +112,6 @@ public final class WyMap extends java.util.HashMap<Object,Object> {
 	 * @return
 	 */
 	public static Object internal_get(WyMap dict, Object key) {
-		Object item = dict.get(key);
-		if(dict.refCount > 0) {
-			Util.incRefs(item);
-		}
-		return item;
+		return dict.get(key);
 	}
 }

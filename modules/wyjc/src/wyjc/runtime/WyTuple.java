@@ -29,14 +29,7 @@ import java.math.BigInteger;
 
 
 public final class WyTuple extends java.util.ArrayList {
-	/**
-	 * The reference count is use to indicate how many variables are currently
-	 * referencing this compound structure. This is useful for making imperative
-	 * updates more efficient. In particular, when the <code>refCount</code> is
-	 * <code>1</code> we can safely perform an in-place update of the structure.
-	 */
-	int refCount = 100; // temporary measure
-
+	
 	// ================================================================================
 	// Generic Operations
 	// ================================================================================
@@ -50,18 +43,11 @@ public final class WyTuple extends java.util.ArrayList {
 	}
 
 	WyTuple(java.util.Collection items) {
-		super(items);
-		for(Object item : items) {
-			Util.incRefs(item);
-		}
+		super(items);		
 	}
 
 	WyTuple(Object... items) {
 		super();
-		for(Object item : items) {
-			add(item);
-			Util.incRefs(item);
-		}
 	}
 
 	public String toString() {
@@ -82,9 +68,7 @@ public final class WyTuple extends java.util.ArrayList {
 	// ================================================================================
 
 	public static Object get(WyTuple tuple, int index) {
-		Object item = tuple.get(index);
-		Util.incRefs(item);
-		return item;
+		return tuple.get(index);		
 	}
 
 	public static BigInteger length(WyTuple tuple) {

@@ -6,7 +6,7 @@ type Point is {
 }
 
 function toString(Point p) -> string:
-    return "(" ++ p.x ++ "," ++ p.y ++ ")"
+    return "(" ++ Int.toString(p.x) ++ "," ++ Int.toString(p.y) ++ ")"
 
 function getX(Point p) -> int:
     return p.x
@@ -21,5 +21,5 @@ function Point(int x, int y) -> Point:
 
 method main(System.Console console):
     Point p = Point(1,2)
-    console.out.println("getX() = " ++ p.getX(p))
+    console.out.println("getX() = " ++ Int.toString(p.getX(p)))
     console.out.println("toString() = " ++ p.toString(p))

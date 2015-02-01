@@ -6,7 +6,11 @@ import java.util.*;
 import wybs.lang.*;
 import wybs.util.*;
 import wyfs.lang.Content;
+import wyfs.lang.Content.Filter;
+import wyfs.lang.Content.Type;
 import wyfs.lang.Path;
+import wyfs.lang.Path.Entry;
+import wyfs.lang.Path.ID;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.JarFileRoot;
 import wyfs.util.VirtualRoot;
@@ -17,6 +21,7 @@ import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
 import wycc.lang.Pipeline;
 import wycc.util.Logger;
+import wycc.util.Pair;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;
@@ -141,25 +146,24 @@ public class WycBuildTask {
 	public static final List<Pipeline.Template> defaultPipeline = Collections
 			.unmodifiableList(new ArrayList<Pipeline.Template>() {
 				{
-//					add(new Pipeline.Template(WyilFilePrinter.class,
-//					Collections.EMPTY_MAP));
+					// add(new Pipeline.Template(WyilFilePrinter.class,
+					// Collections.EMPTY_MAP));
 					add(new Pipeline.Template(DefiniteAssignmentCheck.class,
 							Collections.EMPTY_MAP));
-					add(new Pipeline.Template(ModuleCheck.class, Collections.EMPTY_MAP));
-					add(new Pipeline.Template(RuntimeAssertions.class,
+					add(new Pipeline.Template(ModuleCheck.class,
 							Collections.EMPTY_MAP));
-					add(new Pipeline.Template(BackPropagation.class,
+					add(new Pipeline.Template(LoopVariants.class,
 							Collections.EMPTY_MAP));
-					add(new Pipeline.Template(LoopVariants.class, Collections.EMPTY_MAP));
-					add(new Pipeline.Template(ConstantPropagation.class,
-							Collections.EMPTY_MAP));
-					add(new Pipeline.Template(CoercionCheck.class, Collections.EMPTY_MAP));
-					add(new Pipeline.Template(DeadCodeElimination.class,
-							Collections.EMPTY_MAP));
-					add(new Pipeline.Template(LiveVariablesAnalysis.class,
-							Collections.EMPTY_MAP));
-//					add(new Pipeline.Template(WyilFilePrinter.class,
+//					add(new Pipeline.Template(ConstantPropagation.class,
 //							Collections.EMPTY_MAP));
+					add(new Pipeline.Template(CoercionCheck.class,
+							Collections.EMPTY_MAP));
+//					add(new Pipeline.Template(DeadCodeElimination.class,
+//							Collections.EMPTY_MAP));
+//					add(new Pipeline.Template(LiveVariablesAnalysis.class,
+//							Collections.EMPTY_MAP));
+					// add(new Pipeline.Template(WyilFilePrinter.class,
+					// Collections.EMPTY_MAP));
 				}
 			});
 
@@ -169,12 +173,10 @@ public class WycBuildTask {
 	 * names.
 	 */
 	static {
-		Pipeline.register(BackPropagation.class);
 		Pipeline.register(DefiniteAssignmentCheck.class);
 		Pipeline.register(LoopVariants.class);
 		Pipeline.register(ConstantPropagation.class);
 		Pipeline.register(ModuleCheck.class);
-		Pipeline.register(RuntimeAssertions.class);
 		Pipeline.register(CoercionCheck.class);
 		Pipeline.register(WyilFilePrinter.class);
 		Pipeline.register(DeadCodeElimination.class);
@@ -289,6 +291,14 @@ public class WycBuildTask {
 	protected boolean verification = false;
 
 	/**
+	 * Indicates whether or not the compiler should generate the intermediate
+	 * verification conditions. If verification is true, then this is done
+	 * automatically. Otherwise, you can force it with this flag without
+	 * actually performing verification.
+	 */
+	protected boolean verificationConditions = false;
+	
+	/**
 	 * Indicates whether or not the compiler should enable detailed verification
 	 * checking of pre- and post-conditions using an external SMT solver.
 	 */
@@ -325,6 +335,10 @@ public class WycBuildTask {
 		this.verification = verification;
 	}
 
+	public void setVerificationConditions(boolean flag) {
+		this.verificationConditions = flag;
+	}
+	
 	public void setSmtVerification(boolean verification) {
 		this.smtVerification = verification;
 	}
@@ -333,6 +347,10 @@ public class WycBuildTask {
 		return verification;
 	}
 
+	public boolean getVerificationConditions() {
+		return verificationConditions;
+	}
+	
 	public void setPipelineModifiers(List<Pipeline.Modifier> modifiers) {
 		this.pipelineModifiers = new ArrayList<Pipeline.Modifier>(modifiers);
 	}
@@ -383,7 +401,7 @@ public class WycBuildTask {
 			try {
 				if (root.getName().endsWith(".jar")) {
 					bootpath.add(new JarFileRoot(root, registry));
-				} else {
+				} else {					
 					bootpath.add(new DirectoryRoot(root, wyilOrWycsFileFilter, registry));
 				}
 			} catch (IOException e) {
@@ -596,7 +614,7 @@ public class WycBuildTask {
 			// Wyil => Wycs Compilation Rule
 			// ========================================================
 
-			if(verification || smtVerification) {
+			if(verification || smtVerification || verificationConditions) {
 
 				// First, handle the conversion of wyil to wyal
 
@@ -609,8 +627,7 @@ public class WycBuildTask {
 				project.add(new StdBuildRule(wyalBuilder, wyilDir,
 						wyilIncludes, wyilExcludes, wyalDir));
 
-				// Second, handle the conversion of wyal to wycs
-
+				// Second, handle the conversion of wyal to wycs				
 				Pipeline<WycsFile> wycsPipeline = new Pipeline(WycsBuildTask.defaultPipeline);
 
 				wycsPipeline.setOption(VerificationCheck.class,"enable",verification);
@@ -622,8 +639,7 @@ public class WycBuildTask {
 				}
 
 				project.add(new StdBuildRule(wycsBuilder, wyalDir,
-						wyalIncludes, wyalExcludes, wycsDir));
-
+						wyalIncludes, wyalExcludes, wycsDir));				
 			}
 		}
 	}
@@ -664,5 +680,5 @@ public class WycBuildTask {
 		wyilDir.flush();
 		wyalDir.flush();
 		wycsDir.flush();
-	}
+	}		
 }

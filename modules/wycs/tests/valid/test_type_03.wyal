@@ -1,0 +1,6 @@
+type nat is (int x) where:
+    x >= 0
+
+assert:
+    forall(nat x, nat y):
+        x + y >= 0

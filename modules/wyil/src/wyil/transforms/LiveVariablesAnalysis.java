@@ -33,12 +33,12 @@ import wybs.lang.Builder;
 import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyfs.lang.Path;
-import wyil.lang.Code.Block;
 import wyil.lang.Code;
+import wyil.lang.CodeBlock;
 import wyil.lang.Codes;
 import wyil.lang.WyilFile;
 import wyil.lang.Type;
-import wyil.lang.Code.Block.Entry;
+import wyil.util.AttributedCodeBlock;
 import wyil.util.dfa.*;
 
 /**
@@ -68,7 +68,7 @@ import wyil.util.dfa.*;
  *
  */
 public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAnalysis.Env> implements Transform<WyilFile> {
-	private static final HashMap<Integer,Code.Block.Entry> rewrites = new HashMap<Integer,Code.Block.Entry>();
+	private static final HashMap<CodeBlock.Index,Code> rewrites = new HashMap<CodeBlock.Index,Code>();
 
 	/**
 	 * Determines whether constant propagation is enabled or not.
@@ -115,7 +115,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 
 	@Override
 	public WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {
-		Code.Block invariant = type.invariant();
+		AttributedCodeBlock invariant = type.invariant();
 		if (invariant != null) {
 			invariant = propagate(invariant);
 			return new WyilFile.TypeDeclaration(type.modifiers(), type.name(),
@@ -136,19 +136,19 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	@Override
 	public WyilFile.Case propagate(WyilFile.Case mcase) {
 
-		ArrayList<Code.Block> requires = new ArrayList<Code.Block>(
+		ArrayList<AttributedCodeBlock> requires = new ArrayList<AttributedCodeBlock>(
 				mcase.precondition());
 		for (int i = 0; i != requires.size(); ++i) {
-			Code.Block tmp = propagate(requires.get(i));
+			AttributedCodeBlock tmp = propagate(requires.get(i));
 			requires.set(i, tmp);
 		}
-		ArrayList<Code.Block> ensures = new ArrayList<Code.Block>(
+		ArrayList<AttributedCodeBlock> ensures = new ArrayList<AttributedCodeBlock>(
 				mcase.postcondition());
 		for (int i = 0; i != ensures.size(); ++i) {
-			Code.Block tmp = propagate(ensures.get(i));
+			AttributedCodeBlock tmp = propagate(ensures.get(i));
 			ensures.set(i, tmp);
 		}
-		Code.Block body = mcase.body();
+		AttributedCodeBlock body = mcase.body();
 		if (body != null) {
 			body = propagate(body);
 		}
@@ -156,19 +156,20 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		return new WyilFile.Case(body, requires, ensures, mcase.attributes());
 	}
 
-	public Code.Block propagate(Code.Block body) {
-		block = body;
+	public AttributedCodeBlock propagate(AttributedCodeBlock body) {
+		rootBlock = body;
 		stores = new HashMap<String,Env>();
 		rewrites.clear();
 		Env environment = lastStore();
-		propagate(0,body.size(), environment, Collections.EMPTY_LIST);
+		propagate(null, body, environment, Collections.EMPTY_LIST);
 
 		// At this point, we apply the inserts
-		Code.Block nbody = new Code.Block(body.numInputs());
+		AttributedCodeBlock nbody = new AttributedCodeBlock();
 		for(int i=0;i!=body.size();++i) {
-			Code.Block.Entry rewrite = rewrites.get(i);
+			Code rewrite = rewrites.get(i);
 			if(rewrite != null) {
-				if (!(rewrite.code instanceof Codes.Nop) || nops) {
+				if (!(rewrite instanceof Codes.Nop) || nops) {
+					// FIXME: missing attributes !?
 					nbody.add(rewrite);
 				}
 			} else {
@@ -180,9 +181,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	}
 
 	@Override
-	public Env propagate(int index, Entry entry, Env environment) {
+	public Env propagate(CodeBlock.Index index, Code code, Env environment) {
 		rewrites.put(index,null);
-		Code code = entry.code;
 		boolean isLive = true;
 		environment = (Env) environment.clone();
 
@@ -221,8 +221,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 				environment.add(operand);
 			}
 		} else if(!isLive) {
-			entry = new Code.Block.Entry(Codes.Nop, entry.attributes());
-			rewrites.put(index, entry);
+			rewrites.put(index, Codes.Nop);
 		} else {
 			// const
 		}
@@ -231,7 +230,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	}
 
 	@Override
-	public Env propagate(int index, Codes.If code, Entry entry, Env trueEnv,
+	public Env propagate(CodeBlock.Index index, Codes.If code, Env trueEnv,
 			Env falseEnv) {
 		Env r = join(trueEnv, falseEnv);
 
@@ -248,8 +247,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	}
 
 	@Override
-	public Env propagate(int index,
-			Codes.IfIs code, Entry entry, Env trueEnv, Env falseEnv) {
+	public Env propagate(CodeBlock.Index index, Codes.IfIs code, Env trueEnv, Env falseEnv) {
 		Env r = join(trueEnv,falseEnv);
 
 		r.add(code.operand);
@@ -258,8 +256,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	}
 
 	@Override
-	public Env propagate(int index, Codes.Switch code,
-			Entry stmt, List<Env> environments, Env defEnv) {
+	public Env propagate(CodeBlock.Index index, Codes.Switch code,
+			List<Env> environments, Env defEnv) {
 		Env environment = defEnv;
 
 		for(int i=0;i!=code.branches.size();++i) {
@@ -271,9 +269,9 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		return environment;
 	}
 
-	public Env propagate(int start, int end, Codes.Loop loop,
-			Entry stmt, Env environment, List<Pair<Type,String>> handlers) {
-		rewrites.put(start,null); // to overrule any earlier rewrites
+	public Env propagate(CodeBlock.Index index, Codes.Loop loop, Env environment,
+			List<Pair<Type, String>> handlers) {
+		rewrites.put(index,null); // to overrule any earlier rewrites
 
 		Env oldEnv = null;
 		Env newEnv = null;
@@ -285,11 +283,11 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		} else {
 			environment = EMPTY_ENV;
 		}
-
+		CodeBlock block = (CodeBlock) loop;
 		do {
 			// iterate until a fixed point reached
 			oldEnv = newEnv != null ? newEnv : environment;
-			newEnv = propagate(start+1,end, oldEnv, handlers);
+			newEnv = propagate(index, block, oldEnv, handlers);
 			newEnv = join(environment,newEnv);
 		} while (!newEnv.equals(oldEnv));
 
@@ -317,15 +315,21 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 					nModifiedOperands[j++] = mo;
 				}
 			}
+			Code code;
 			if(loop instanceof Codes.ForAll) {
 				Codes.ForAll fall = (Codes.ForAll) loop;
-				stmt = new Code.Block.Entry(Codes.ForAll(fall.type,
-						fall.sourceOperand, fall.indexOperand,
-						nModifiedOperands, loop.target), stmt.attributes());
+
+				// FIXME: the following is surely broken ?
+
+				code = Codes.ForAll(fall.type, fall.sourceOperand,
+						fall.indexOperand, nModifiedOperands, loop.bytecodes());
 			} else {
-				stmt = new Code.Block.Entry(Codes.Loop(loop.target,nModifiedOperands), stmt.attributes());
+
+				// FIXME: the following is surely broken ?
+
+				code = Codes.Loop(nModifiedOperands,loop.bytecodes());
 			}
-			rewrites.put(start, stmt);
+			rewrites.put(index, code);
 		}
 
 		return environment;

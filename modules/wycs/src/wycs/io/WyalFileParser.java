@@ -46,7 +46,7 @@ public class WyalFileParser {
 		// FIXME: this is a hack!
 		String name = filename.substring(
 				filename.lastIndexOf(File.separatorChar) + 1,
-				filename.length() - 7);
+				filename.length() - 5);
 		WyalFile wf = new WyalFile(pkg.append(name), filename);
 
 		skipWhiteSpace();
@@ -320,14 +320,17 @@ public class WyalFileParser {
 			// of declared variables in the current scope.
 			HashSet<String> environment = new HashSet<String>();
 			pattern.addDeclaredVariables(environment);
-			invariant = parseLogicalExpression(wf, genericSet, environment,
-					false);
+			if (tryAndMatch(true, Colon) != null) {
+				matchEndLine();
+				invariant = parseBlock(wf, genericSet, environment, ROOT_INDENT);
+			} else {
+				invariant = parseLogicalExpression(wf, genericSet, environment,
+						false);
+			}
 		}
-		int end = index;
-		matchEndLine();
 
 		WyalFile.Declaration declaration = wf.new Type(name, generics, pattern,
-				invariant, sourceAttr(start, end - 1));
+				invariant, sourceAttr(start, index - 1));
 		wf.add(declaration);
 		return;
 	}
@@ -979,7 +982,7 @@ public class WyalFileParser {
 					environment, terminated);
 		}
 
-		Expr lhs = parseAppendExpression(wf, generics, environment, terminated);
+		Expr lhs = parseUnionExpression(wf, generics, environment, terminated);
 
 		lookahead = tryAndMatch(terminated, LessEquals, LeftAngle,
 				GreaterEquals, RightAngle, EqualsEquals, NotEquals, In, Is,
@@ -1026,7 +1029,7 @@ public class WyalFileParser {
 				return null;
 			}
 
-			Expr rhs = parseAppendExpression(wf, generics, environment,
+			Expr rhs = parseUnionExpression(wf, generics, environment,
 					terminated);
 			return new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
@@ -1097,6 +1100,100 @@ public class WyalFileParser {
 		}
 	}
 
+	/**
+	 * Parse a set union expression, which is of the form:
+	 * <pre>
+	 * UnionExpr ::= IntersectExpr ( "∪" IntersectExpr )*
+	 * </pre>
+	 *
+	 * @param lookahead
+	 * @param wf
+	 *            The enclosing WyalFile being constructed. This is necessary to
+	 *            construct some nested declarations (e.g. parameters for
+	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 * @return
+	 */
+	private Expr parseUnionExpression(WyalFile wf,
+			HashSet<String> generics, HashSet<String> environment,
+			boolean terminated) {
+		int start = index;
+		Expr lhs = parseIntersectExpression(wf, generics, environment, terminated);
+
+		while (tryAndMatch(terminated, SetUnion) != null) {
+			Expr rhs = parseIntersectExpression(wf, generics, environment,
+					terminated);
+			lhs = new Expr.Binary(Expr.Binary.Op.SETUNION, lhs, rhs,
+					sourceAttr(start, index - 1));
+		}
+
+		return lhs;
+	}
+	
+	/**
+	 * Parse a set intersection expression, which is of the form:
+	 * <pre>
+	 * AppendExpr ::= AppendExpr ( "∩" AppendExpr )*
+	 * </pre>
+	 *
+	 * @param lookahead
+	 * @param wf
+	 *            The enclosing WyalFile being constructed. This is necessary to
+	 *            construct some nested declarations (e.g. parameters for
+	 *            lambdas)
+	 * @param generics
+	 *            Constraints the set of generic type variables declared in the
+	 *            enclosing scope.
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 * @return
+	 */
+	private Expr parseIntersectExpression(WyalFile wf,
+			HashSet<String> generics, HashSet<String> environment,
+			boolean terminated) {
+		int start = index;
+		Expr lhs = parseAppendExpression(wf, generics, environment, terminated);
+
+		while (tryAndMatch(terminated, SetIntersection) != null) {
+			Expr rhs = parseAppendExpression(wf, generics, environment,
+					terminated);
+			lhs = new Expr.Binary(Expr.Binary.Op.SETINTERSECTION, lhs, rhs,
+					sourceAttr(start, index - 1));
+		}
+
+		return lhs;
+	}
+	
 	/**
 	 * Parse an append expression, which has the form:
 	 *
@@ -1450,7 +1547,7 @@ public class WyalFileParser {
 				// is not a declared variable name.
 				Path.ID id = parsePossiblePathID(lhs, environment);
 
-				if (tryAndMatch(terminated, LeftBrace) != null) {
+				if (canMatch(terminated, LeftBrace) != null) {
 					// This indicates a direct or indirect invocation. First,
 					// parse arguments to invocation
 					Expr argument = parseInvocationArgument(wf, generics,
@@ -1500,8 +1597,12 @@ public class WyalFileParser {
 			// a module identifier.
 			return null;
 		} else if (src instanceof Expr.ConstantAccess) {
-			Expr.ConstantAccess ca = (Expr.ConstantAccess) src;
-			return Trie.ROOT.append(ca.name);
+			Expr.ConstantAccess ca = (Expr.ConstantAccess) src;	
+			if(ca.qualification == null) {
+				return Trie.ROOT.append(ca.name);
+			} else {
+				return ca.qualification.append(ca.name);
+			}
 		} else if (src instanceof Expr.FieldAccess) {
 			Expr.FieldAccess ada = (Expr.FieldAccess) src;
 			Path.ID id = parsePossiblePathID(ada.operand, environment);
@@ -2165,7 +2266,7 @@ public class WyalFileParser {
 		// collections. Furthermore, the bitwise or expression could lead to
 		// ambiguity and, hence, we bypass that an consider append expressions
 		// only. However, the expression is guaranteed to be terminated by '|'.
-		Expr e = parseAppendExpression(wf, generics, environment, true);
+		Expr e = parseUnionExpression(wf, generics, environment, true);
 		match(VerticalBar);
 		return new Expr.Unary(Expr.Unary.Op.LENGTHOF, e, sourceAttr(start,
 				index - 1));
@@ -3482,6 +3583,40 @@ public class WyalFileParser {
 			for (int i = 0; i != kinds.length; ++i) {
 				if (t.kind == kinds[i]) {
 					index = next + 1;
+					return t;
+				}
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * Check whether a given token(s) could be matched, whilst ignoring any
+	 * whitespace in between. Note that, in either case, the index will be
+	 * unchanged. If more than one kind is provided then this will check for
+	 * matching any of them.
+	 *
+	 * @param terminated
+	 *            Indicates whether or not this function should be concerned
+	 *            with new lines. The terminated flag indicates whether or not
+	 *            the current construct being parsed is known to be terminated.
+	 *            If so, then we don't need to worry about newlines and can
+	 *            greedily consume them (i.e. since we'll eventually run into
+	 *            the terminating symbol).
+	 * @param kinds
+	 *
+	 * @return
+	 */
+	private Token canMatch(boolean terminated, Token.Kind... kinds) {
+		// If the construct being parsed is know to be terminated, then we can
+		// skip all whitespace. Otherwise, we can't skip newlines as these are
+		// significant.
+		int next = terminated ? skipWhiteSpace(index) : skipLineSpace(index);
+
+		if (next < tokens.size()) {
+			Token t = tokens.get(next);
+			for (int i = 0; i != kinds.length; ++i) {
+				if (t.kind == kinds[i]) {
 					return t;
 				}
 			}
