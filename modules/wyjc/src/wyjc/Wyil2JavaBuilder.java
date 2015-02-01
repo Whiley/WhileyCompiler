@@ -1154,7 +1154,7 @@ public class Wyil2JavaBuilder implements Builder {
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.New(JAVA_LANG_RUNTIMEEXCEPTION));
 		bytecodes.add(new Bytecode.Dup(JAVA_LANG_RUNTIMEEXCEPTION));
-		bytecodes.add(new Bytecode.LoadConst(c.message.value));
+		bytecodes.add(new Bytecode.LoadConst("runtime fault encountered"));
 		JvmType.Function ftype = new JvmType.Function(T_VOID, JAVA_LANG_STRING);
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_RUNTIMEEXCEPTION, "<init>",
 				ftype, Bytecode.InvokeMode.SPECIAL));

@@ -13,10 +13,9 @@
       <fileset dir="modules" includes="wyil/build.xml"/>
       <fileset dir="modules" includes="wyc/build.xml"/>
       <fileset dir="modules" includes="wyrt/build.xml"/>
-      <fileset dir="modules" includes="wyjc/build.xml"/>
-      <fileset dir="modules" includes="wycc/build.xml"/>
+      <!-- <fileset dir="modules" includes="wyjc/build.xml"/> -->
       <!--wyopcl-->
-      <fileset dir="modules" includes="wyopcl/build.xml" />
+      <!-- <fileset dir="modules" includes="wyopcl/build.xml" /> -->
     </subant>
   </target>
 
@@ -75,7 +74,7 @@
       <group title="Whiley Constraint Solver (WYCS)" packages="wycs:wycs.*"/>
       <group title="Whiley Rewrite Language (WYRL)" packages="wyrl:wyrl.*:wyautl.*"/>
       <!-- wyopcl -->
-      <group title="Whiley-2-OpenCL (WyOpCL)" packages="wyopcl:wyopcl.*" />
+      <!-- <group title="Whiley-2-OpenCL (WyOpCL)" packages="wyopcl:wyopcl.*" /> -->
       </javadoc>
   </target>
 
@@ -85,7 +84,16 @@
 
   <target name="distjars" depends="build-all">
     <subant failonerror="false" target="dist">
-      <fileset dir="modules" includes="*/build.xml"/>
+      <fileset dir="modules" includes="wybs/build.xml"/>
+      <fileset dir="modules" includes="wyrl/build.xml"/>
+      <fileset dir="modules" includes="wycs/build.xml"/>
+      <fileset dir="modules" includes="wyil/build.xml"/>
+      <fileset dir="modules" includes="wyc/build.xml"/>
+      <fileset dir="modules" includes="wyrt/build.xml"/>
+      <!-- <fileset dir="modules" includes="wyjc/build.xml"/> -->
+      <!--wyopcl-->
+      <!-- <fileset dir="modules" includes="wyopcl/build.xml" /> -->
+
     </subant>
   </target>
 
@@ -117,7 +125,7 @@
       <include name="lib/*-v${version}.jar"/>
       <include name="lib/jasm-v*.jar"/>
       <!-- wyopcl -->
-      <include name="bin/wyopcl" />
+      <!-- <include name="bin/wyopcl" /> -->
     </fileset>
   </copy>
   <tar destfile="dist/wdk-src-v${version}.tar" longfile="gnu">
@@ -154,82 +162,6 @@
 		<include name="**/*.wyil"/>
 		<include name="**/*.o"/>
       </fileset>
-      <!--wyopcl-->
-      <fileset dir="build" />
-      <fileset dir="report" />
     </delete>
   </target>
-	<!---JUnit testing for Wyopecl -->
-	<property name="build.dir" value="build"/>
-	<path id="master-classpath">
-	<fileset dir="lib">
-		<include name="*.jar" />
-	</fileset>
-	<pathelement path="${build.dir}" />
-	</path>
-	<path id="junit-classpath">
-		<fileset dir="lib">
-			<include name="*hamcrest*.jar" />
-			<include name="*junit*.jar" />
-		</fileset>
-		<pathelement path="${build.dir}" />
-	</path>	
-
-	<target name="compile-java" depends="clean, build-all">
-	<mkdir dir="build" />
-	<javac destdir="build" includeantruntime="false">
-		<classpath refid="master-classpath"/>
-		<src path="modules/wybs/src" />
-		<src path="modules/wyc/src" />
-		<src path="modules/wycc/src" />
-		<src path="modules/wycs/src" />
-		<src path="modules/wyil/src" />
-		<src path="modules/wyjc/src" />
-		<src path="modules/wyrl/src" />
-		<src path="modules/wyopcl/src" />
-		<src path="modules/wyopcl/test" />
-	</javac>
-	</target>
-	<!-- Define the path for the generated junit testing report  -->
-	<property name="valid.dir" value="report/interpreter/valid"/>
-	<property name="invalid.dir" value="report/interpreter/invalid"/>
-	<!-- Interpreting the test cases in valid folder -->	
-	<target name="test-interpreter-valid" depends="compile-java">
-	<mkdir dir="${valid.dir}" />
-	<junit fork="yes">
-		<formatter type="plain" usefile="false" />
-		<classpath refid="junit-classpath"/>	
-		<formatter type="xml" />
-		<batchtest todir="${valid.dir}">
-			<fileset dir="modules/wyopcl/test/">
-				<include name="**/*AllValidTestCase*" />
-			</fileset>
-		</batchtest>
-	</junit>
-	</target>
-	<!-- Interpreting the test cases in invalid folder -->		
-	<target name="test-interpreter-invalid" depends="compile-java">
-	<mkdir dir="${invalid.dir}"/>
-	<junit fork="yes">
-		<formatter type="plain" usefile="false" />
-		<classpath refid="junit-classpath"/>
-		<formatter type="xml" />
-		<batchtest todir="${invalid.dir}">
-			<fileset dir="modules/wyopcl/test/">
-				<include name="**/*AllInvalidTestCase*" />
-			</fileset>
-		</batchtest>
-	</junit>
-	</target>
-		<target name="interpreter" depends="test-interpreter-valid, test-interpreter-invalid">	
-		<junitreport todir="report">
-			<fileset dir="${valid.dir}">
-				<include name="TEST-*.xml" />
-			</fileset>
-			<fileset dir="${invalid.dir}">
-				<include name="TEST-*.xml" />
-			</fileset>
-			<report todir="report/interpreter" />
-		</junitreport>
-	</target>	
 </project>
