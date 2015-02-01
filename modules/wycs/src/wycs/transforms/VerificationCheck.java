@@ -206,7 +206,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		int maxVar = findLargestVariable(nnf);
 
 		Code vc = instantiateAxioms(nnf, maxVar + 1);
-
+			
 		//debug(vc,filename);
 
 		int assertion = translate(vc,automaton,new HashMap<String,Integer>());
