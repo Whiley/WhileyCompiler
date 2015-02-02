@@ -38,6 +38,8 @@
     <jar destfile="../../dist/wyc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="../wybs/src">
 	<include name="wybs/**/*.class"/>
+	<include name="wycc/**/*.class"/>
+	<include name="wyfs/**/*.class"/>
       </fileset>
       <fileset dir="../wycs/src">
 	<include name="wycs/**/*.class"/>
