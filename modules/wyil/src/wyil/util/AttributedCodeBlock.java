@@ -195,7 +195,7 @@ public class AttributedCodeBlock extends CodeBlock {
 	 *            --- attributes associated with bytecode.
 	 */
 	public boolean add(Code code, Attribute... attributes) {
-		CodeBlock.Index index = new CodeBlock.Index(ID, size());
+		CodeBlock.Index index = new CodeBlock.Index(CodeBlock.Index.ROOT,size());
 		putAll(index, attributes);
 		return add(code);
 	}
@@ -210,7 +210,7 @@ public class AttributedCodeBlock extends CodeBlock {
 	 *            --- attributes associated with bytecode.
 	 */
 	public boolean add(Code code, Collection<Attribute> attributes) {
-		CodeBlock.Index index = new CodeBlock.Index(ID, size());
+		CodeBlock.Index index = new CodeBlock.Index(CodeBlock.Index.ROOT,size());
 		putAll(index, attributes);
 		return add(code);
 	}
@@ -348,7 +348,7 @@ public class AttributedCodeBlock extends CodeBlock {
 			map.insert(idx, null);
 		}
 		// second, add the attributes at that index
-		putAll(idx, attributes);
+		putAll(index, attributes);
 	}
 
 	private void insertAll(CodeBlock.Index index,
@@ -359,6 +359,6 @@ public class AttributedCodeBlock extends CodeBlock {
 			map.insert(idx, null);
 		}
 		// second, add the attributes at that index
-		putAll(idx, attributes);
+		putAll(index, attributes);
 	}
 }

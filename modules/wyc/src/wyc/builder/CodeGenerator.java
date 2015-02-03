@@ -1093,7 +1093,7 @@ public final class CodeGenerator {
 			
 			// FIXME: should we be creating multiple invariant bytecodes,
 			// instead of one monolithic one?						
-			body.add(Codes.Invariant(invariant.bytecodes()), attributes(s));
+			body.add(Codes.Invariant(invariant.bytecodes()), attributes(s));			
 		}
 		
 		generateCondition(exit, invert(s.condition), environment, body,
@@ -1107,6 +1107,7 @@ public final class CodeGenerator {
 		scopes.pop(); // break
 
 		codes.add(Codes.Loop(new int[] {}, body.bytecodes()), attributes(s));
+
 		codes.add(Codes.Label(exit), attributes(s));
 	}
 

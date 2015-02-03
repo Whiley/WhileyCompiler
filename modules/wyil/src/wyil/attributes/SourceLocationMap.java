@@ -53,4 +53,14 @@ public class SourceLocationMap extends AbstractAttributeMap<SourceLocation>
 	public Class<? extends Attribute> type() {
 		return SourceLocation.class;
 	}
+	
+	@Override
+	public void put(CodeBlock.Index location, SourceLocation data) {
+		super.put(location, data);
+	}
+	
+	public SourceLocation get(CodeBlock.Index location) {
+		SourceLocation l = super.get(location);
+		return l;
+	}
 }
