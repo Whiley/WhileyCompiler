@@ -391,6 +391,15 @@ public final class WyilFile implements CompilationUnit {
 		public List<Attribute> attributes() {
 			return attributes;
 		}
+		
+		public <T extends Attribute> T attribute(Class<T> type) {
+			for (Attribute a : attributes) {
+				if (type.isInstance(a)) {
+					return (T) a;
+				}
+			}
+			return null;
+		}
 	}
 
 	/**

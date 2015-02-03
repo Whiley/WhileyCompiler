@@ -25,6 +25,7 @@
 
 package wyil.attributes;
 
+import wyil.lang.Attribute;
 import wyil.lang.Type;
 
 /**
@@ -81,10 +82,10 @@ import wyil.lang.Type;
  * @author David J. Pearce
  *
  */
-public class RegisterDeclarations {
+public class RegisterDeclarations implements Attribute {
 	private Declaration[] declarations;
 
-	private RegisterDeclarations(Declaration... declarations) {
+	public RegisterDeclarations(Declaration... declarations) {
 		this.declarations = declarations;
 	}
 
@@ -96,6 +97,10 @@ public class RegisterDeclarations {
 		declarations[register] = declaration;
 	}
 
+	public int size() {
+		return declarations.length;
+	}
+	
 	/**
 	 * Represents the declaration information associated with a given register.
 	 *

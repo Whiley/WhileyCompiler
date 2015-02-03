@@ -41,6 +41,7 @@ import wycc.util.Pair;
 import wycc.util.ResolveError;
 import wycc.util.Triple;
 import wyfs.lang.Path;
+import wyil.attributes.RegisterDeclarations;
 import wyil.attributes.SourceLocationMap;
 import wyil.lang.*;
 import wyil.util.AttributedCodeBlock;
@@ -138,7 +139,7 @@ public final class CodeGenerator {
 					declarations.add(generate((WhileyFile.Constant) d));
 				} else if (d instanceof WhileyFile.FunctionOrMethod) {
 					declarations
-							.addAll(generate((WhileyFile.FunctionOrMethod) d));
+							.add(generate((WhileyFile.FunctionOrMethod) d));
 				}
 			} catch (SyntaxError se) {
 				throw se;
@@ -214,7 +215,7 @@ public final class CodeGenerator {
 	// Function / Method Declarations
 	// =========================================================================
 
-	private List<WyilFile.FunctionOrMethodDeclaration> generate(
+	private WyilFile.FunctionOrMethodDeclaration generate(
 			WhileyFile.FunctionOrMethod fd) throws Exception {
 		Type.FunctionOrMethod ftype = fd.resolvedType().raw();
 
@@ -276,7 +277,7 @@ public final class CodeGenerator {
 				postcondition.add(Codes.Label(endLab));
 				postcondition.add(Codes.Return());
 				ensures.add(postcondition);
-			}
+			}			
 		}
 
 		// ==================================================================
@@ -296,19 +297,27 @@ public final class CodeGenerator {
 		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();
 
 		ncases.add(new WyilFile.Case(body, requires, ensures));
-		ArrayList<WyilFile.FunctionOrMethodDeclaration> declarations = new ArrayList<WyilFile.FunctionOrMethodDeclaration>();
-
+		WyilFile.FunctionOrMethodDeclaration declaration;
+		
 		if (fd instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
-			declarations.add(new WyilFile.FunctionOrMethodDeclaration(fd
-					.modifiers(), fd.name(), f.resolvedType.nominal(), ncases));
+			declaration = new WyilFile.FunctionOrMethodDeclaration(fd
+					.modifiers(), fd.name(), f.resolvedType.nominal(), ncases);
 		} else {
 			WhileyFile.Method md = (WhileyFile.Method) fd;
-			declarations.add(new WyilFile.FunctionOrMethodDeclaration(fd
-					.modifiers(), fd.name(), md.resolvedType.nominal(), ncases));
+			declaration = new WyilFile.FunctionOrMethodDeclaration(fd
+					.modifiers(), fd.name(), md.resolvedType.nominal(), ncases);
 		}
 
-		return declarations;
+		// Construct register declarations for this function or method. The
+		// register declarations stores information about the names and declared
+		// types of all registers. Technically speaking, this information is not
+		// necessary to compile and run a Whiley program. However, it is very
+		// useful for debugging and performing verification.
+		declaration.attributes().add(environment.toRegisterDeclarations());
+		
+		// Done.
+		return declaration;
 	}
 
 	// =========================================================================
@@ -1092,12 +1101,12 @@ public final class CodeGenerator {
 			invariant.add(Codes.Return());
 			
 			// FIXME: should we be creating multiple invariant bytecodes,
-			// instead of one monolithic one?						
-			body.add(Codes.Invariant(invariant.bytecodes()), attributes(s));			
+			// instead of one monolithic one? Yes, as this will give much better
+			// error reporting as well!
+			body.add(Codes.Invariant(invariant.bytecodes()), attributes(s));
 		}
-		
-		generateCondition(exit, invert(s.condition), environment, body,
-				context);
+
+		generateCondition(exit, invert(s.condition), environment, body, context);
 
 		// FIXME: add a continue scope
 		scopes.push(new LoopScope(exit));
@@ -1166,7 +1175,7 @@ public final class CodeGenerator {
 		}
 		scopes.pop(); // break
 
-		if(s.invariants.size() > 0) {
+		if (s.invariants.size() > 0) {
 			// Ok, there is at least one invariant expression. Therefore, create
 			// an invariant bytecode.
 			AttributedCodeBlock invariant = body.createSubBlock();
@@ -1179,15 +1188,14 @@ public final class CodeGenerator {
 			}
 			// Terminate invariant block
 			invariant.add(Codes.Return());
-			
+
 			// FIXME: should we be creating multiple invariant bytecodes,
 			// instead of one monolithic one?
-			
+
 			body.add(Codes.Invariant(invariant.bytecodes()), attributes(s));
 		}
-		
-		generateCondition(exit, invert(s.condition), environment, body,
-				context);
+
+		generateCondition(exit, invert(s.condition), environment, body, context);
 
 		codes.add(Codes.Loop(new int[] {}, body.bytecodes()), attributes(s));
 		codes.add(Codes.Label(exit), attributes(s));
@@ -1226,7 +1234,8 @@ public final class CodeGenerator {
 			// an invariant bytecode.
 			AttributedCodeBlock invariant = body.createSubBlock();
 			String nextLab = CodeUtils.freshLabel();
-			generateCondition(nextLab, s.invariant, environment, invariant, context);
+			generateCondition(nextLab, s.invariant, environment, invariant,
+					context);
 			invariant.add(Codes.Fail(), attributes(s.invariant));
 			invariant.add(Codes.Label(nextLab));
 			// Terminate invariant block
@@ -1307,8 +1316,7 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	public void generateCondition(String target, Expr condition,
-			Environment environment, AttributedCodeBlock codes,
-			Context context) {
+			Environment environment, AttributedCodeBlock codes, Context context) {
 		try {
 
 			// First, we see whether or not we can employ a special handler for
@@ -1387,8 +1395,7 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generateCondition(String target, Expr.Constant c,
-			Environment environment, AttributedCodeBlock codes,
-			Context context) {
+			Environment environment, AttributedCodeBlock codes, Context context) {
 		Constant.Bool b = (Constant.Bool) c.value;
 		if (b.value) {
 			codes.add(Codes.Goto(target));
@@ -1418,8 +1425,8 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generateCondition(String target, Expr.BinOp v,
-			Environment environment, AttributedCodeBlock codes,
-			Context context) throws Exception {
+			Environment environment, AttributedCodeBlock codes, Context context)
+			throws Exception {
 
 		Expr.BOp bop = v.op;
 
@@ -1503,8 +1510,8 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generateTypeCondition(String target, Expr.BinOp condition,
-			Environment environment, AttributedCodeBlock codes,
-			Context context) throws Exception {
+			Environment environment, AttributedCodeBlock codes, Context context)
+			throws Exception {
 		int leftOperand;
 
 		if (condition.lhs instanceof Expr.LocalVariable) {
@@ -1558,8 +1565,7 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generateCondition(String target, Expr.UnOp v,
-			Environment environment, AttributedCodeBlock codes,
-			Context context) {
+			Environment environment, AttributedCodeBlock codes, Context context) {
 		Expr.UOp uop = v.op;
 		switch (uop) {
 		case NOT:
@@ -1600,13 +1606,13 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generateCondition(String target, Expr.Quantifier e,
-			Environment environment, AttributedCodeBlock codes,
-			Context context) {
+			Environment environment, AttributedCodeBlock codes, Context context) {
 
 		String exit = CodeUtils.freshLabel();
-		generate(e.sources.iterator(),target,exit,e,environment,codes,context);
+		generate(e.sources.iterator(), target, exit, e, environment, codes,
+				context);
 
-		switch(e.cop) {
+		switch (e.cop) {
 		case NONE:
 			codes.add(Codes.Goto(target));
 			codes.add(Codes.Label(exit));
@@ -1620,16 +1626,13 @@ public final class CodeGenerator {
 		}
 	}
 
-	private void generate(
-			Iterator<Pair<String,Expr>> srcIterator,
-			String trueLabel,
-			String falseLabel,
-			Expr.Quantifier e, Environment environment,
-			AttributedCodeBlock codes, Context context) {
+	private void generate(Iterator<Pair<String, Expr>> srcIterator,
+			String trueLabel, String falseLabel, Expr.Quantifier e,
+			Environment environment, AttributedCodeBlock codes, Context context) {
 
-		if(srcIterator.hasNext()) {
+		if (srcIterator.hasNext()) {
 			// This is the inductive case (i.e. an outer loop)
-			Pair<String,Expr> src = srcIterator.next();
+			Pair<String, Expr> src = srcIterator.next();
 
 			// First, determine the src slot.
 			Nominal.EffectiveCollection srcType = (Nominal.EffectiveCollection) src
@@ -1650,11 +1653,12 @@ public final class CodeGenerator {
 
 			// Second, recursively generate remaining parts
 			AttributedCodeBlock block = codes.createSubBlock();
-			generate(srcIterator,trueLabel,falseLabel,e,environment,block,context);
-			
+			generate(srcIterator, trueLabel, falseLabel, e, environment, block,
+					context);
+
 			// Finally, create the forall loop bytecode
-			codes.add(Codes.Quantify(srcType.raw(), srcSlot, varSlot, new int[0],
-					block.bytecodes()), attributes(e));
+			codes.add(Codes.Quantify(srcType.raw(), srcSlot, varSlot,
+					new int[0], block.bytecodes()), attributes(e));
 		} else {
 			// This is the base case (i.e. the innermost loop)
 			switch (e.cop) {
@@ -1795,8 +1799,8 @@ public final class CodeGenerator {
 	}
 
 	public void generate(Expr.MethodCall expr, int target,
-			Environment environment, AttributedCodeBlock codes,
-			Context context) throws ResolveError {
+			Environment environment, AttributedCodeBlock codes, Context context)
+			throws ResolveError {
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		codes.add(
 				Codes.Invoke(expr.methodType.nominal(), target, operands,
@@ -1811,25 +1815,24 @@ public final class CodeGenerator {
 	}
 
 	public void generate(Expr.FunctionCall expr, int target,
-			Environment environment, AttributedCodeBlock codes,
-			Context context) throws ResolveError {
+			Environment environment, AttributedCodeBlock codes, Context context)
+			throws ResolveError {
 		int[] operands = generate(expr.arguments, environment, codes, context);
-		codes.add(
-				Codes.Invoke(expr.functionType.nominal(), target, operands,
-						expr.nid()), attributes(expr));
+		codes.add(Codes.Invoke(expr.functionType.nominal(), target, operands,
+				expr.nid()), attributes(expr));
 	}
 
 	public int generate(Expr.IndirectFunctionCall expr,
-			Environment environment, AttributedCodeBlock codes,
-			Context context) throws ResolveError {
+			Environment environment, AttributedCodeBlock codes, Context context)
+			throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
 		generate(expr, target, environment, codes, context);
 		return target;
 	}
 
 	public void generate(Expr.IndirectFunctionCall expr, int target,
-			Environment environment, AttributedCodeBlock codes,
-			Context context) throws ResolveError {
+			Environment environment, AttributedCodeBlock codes, Context context)
+			throws ResolveError {
 		int operand = generate(expr.src, environment, codes, context);
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		codes.add(Codes.IndirectInvoke(expr.functionType.raw(), target,
@@ -1844,8 +1847,8 @@ public final class CodeGenerator {
 	}
 
 	public void generate(Expr.IndirectMethodCall expr, int target,
-			Environment environment, AttributedCodeBlock codes,
-			Context context) throws ResolveError {
+			Environment environment, AttributedCodeBlock codes, Context context)
+			throws ResolveError {
 		int operand = generate(expr.src, environment, codes, context);
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		codes.add(Codes.IndirectInvoke(expr.methodType.raw(), target, operand,
@@ -1895,7 +1898,8 @@ public final class CodeGenerator {
 		}
 
 		// Generate body based on current environment
-		AttributedCodeBlock body = new AttributedCodeBlock(new SourceLocationMap());
+		AttributedCodeBlock body = new AttributedCodeBlock(
+				new SourceLocationMap());
 		if (tfm.ret() != Type.T_VOID) {
 			int target = generate(expr.body, benv, body, context);
 			body.add(Codes.Return(tfm.ret(), target), attributes(expr));
@@ -2490,6 +2494,20 @@ public final class CodeGenerator {
 
 		public ArrayList<Type> asList() {
 			return idx2type;
+		}
+		
+		public RegisterDeclarations toRegisterDeclarations() {
+			String[] names = new String[idx2type.size()];
+			for (Map.Entry<String, Integer> e : var2idx.entrySet()) {
+				names[e.getValue()] = e.getKey();
+			}
+			
+			RegisterDeclarations.Declaration[] declarations = new RegisterDeclarations.Declaration[idx2type.size()];
+			
+			for(int i=0;i!=idx2type.size();++i) {
+				declarations[i] = new RegisterDeclarations.Declaration(idx2type.get(i),names[i]);
+			}
+			return new RegisterDeclarations(declarations);
 		}
 
 		public String toString() {

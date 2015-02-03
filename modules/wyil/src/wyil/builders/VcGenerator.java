@@ -35,6 +35,7 @@ import java.util.*;
 
 import wybs.lang.*;
 import wyfs.lang.Path;
+import wyil.attributes.RegisterDeclarations;
 import wyil.builders.VcBranch.State;
 import wyil.lang.*;
 import wyil.lang.CodeBlock.Index;
@@ -157,7 +158,8 @@ public class VcGenerator {
 		AttributedCodeBlock body = methodCase.body();				
 		List<AttributedCodeBlock> precondition = methodCase.precondition();
 		List<AttributedCodeBlock> postcondition = methodCase.postcondition();
-
+		RegisterDeclarations rds = method.attribute(RegisterDeclarations.class); 
+		
 		// First, translate pre- and post-conditions into macro blocks. These
 		// can then be used in various places to assume or enforce pre /
 		// post-conditions. For example, when ensure a pre-condition is met at
@@ -187,7 +189,7 @@ public class VcGenerator {
 		// at least as many slots as there are parameters, though may require
 		// more if the body uses them.
 		VcBranch master = new VcBranch(Math.max(body.numSlots(), fmm.params()
-				.size()), null);
+				.size()), toRegisterPrefixes(rds));
 
 		Expr[] arguments = new Expr[fmm.params().size()];
 		for (int i = 0; i != fmm.params().size(); ++i) {
@@ -2663,5 +2665,26 @@ public class VcGenerator {
 			}
 		}
 		return wycsAttributes;
+	}
+	
+	/**
+	 * Returns the prefix array which gives the names of all registers declared
+	 * in a given block.
+	 * 
+	 * @param d
+	 * @return
+	 */
+	private static String[] toRegisterPrefixes(RegisterDeclarations rds) {
+		System.out.println("GOT REGISTER PREFIXES: " + rds);
+		if(rds != null) {
+			String[] prefixes = new String[rds.size()];
+			for(int i=0;i!=prefixes.length;++i) {
+				RegisterDeclarations.Declaration d = rds.get(i);
+				prefixes[i] = d.name();
+			}
+			return prefixes;
+		} else {
+			return null;
+		}
 	}
 }
