@@ -73,25 +73,25 @@ public class LoopVariants implements Transform<WyilFile> {
 		if (enabled) {
 			filename = module.filename();
 
-			for (WyilFile.TypeDeclaration type : module.types()) {
+			for (WyilFile.Type type : module.types()) {
 				infer(type);
 			}
 
-			for (WyilFile.FunctionOrMethodDeclaration method : module
+			for (WyilFile.FunctionOrMethod method : module
 					.functionOrMethods()) {
 				infer(method);
 			}
 		}
 	}
 
-	public void infer(WyilFile.TypeDeclaration type) {
+	public void infer(WyilFile.Type type) {
 		CodeBlock invariant = type.invariant();
 		if (invariant != null) {
 			infer(invariant);
 		}
 	}
 
-	public void infer(WyilFile.FunctionOrMethodDeclaration method) {
+	public void infer(WyilFile.FunctionOrMethod method) {
 		for (WyilFile.Case c : method.cases()) {
 			CodeBlock body = c.body();
 			if(body != null) {

@@ -100,10 +100,10 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 	 */
 	public void apply(WyilFile module) throws IOException {
 		if(enabled) {
-			for(WyilFile.TypeDeclaration type : module.types()) {
+			for(WyilFile.Type type : module.types()) {
 				transform(type);
 			}
-			for(WyilFile.FunctionOrMethodDeclaration method : module.functionOrMethods()) {
+			for(WyilFile.FunctionOrMethod method : module.functionOrMethods()) {
 				transform(method);
 			}
 		}
@@ -115,7 +115,7 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 	 * 
 	 * @param type
 	 */
-	public void transform(WyilFile.TypeDeclaration type) {
+	public void transform(WyilFile.Type type) {
 		AttributedCodeBlock invariant = type.invariant();
 
 		if (invariant != null) {
@@ -129,7 +129,7 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 	 * 
 	 * @param method
 	 */
-	public void transform(WyilFile.FunctionOrMethodDeclaration method) {
+	public void transform(WyilFile.FunctionOrMethod method) {
 		for(WyilFile.Case c : method.cases()) {
 			transform(c,method);
 		}
@@ -142,7 +142,7 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 	 * @param mcase
 	 * @param method
 	 */
-	public void transform(WyilFile.Case mcase, WyilFile.FunctionOrMethodDeclaration method) {		
+	public void transform(WyilFile.Case mcase, WyilFile.FunctionOrMethod method) {		
 		// First, process any preconditions.		
 		for(AttributedCodeBlock precondition : mcase.precondition()) {
 			transform(precondition);

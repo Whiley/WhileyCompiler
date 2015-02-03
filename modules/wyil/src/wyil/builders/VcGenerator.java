@@ -59,7 +59,7 @@ public class VcGenerator {
 	private final Builder builder;
 	private String filename;
 	private WyalFile wycsFile;
-	WyilFile.FunctionOrMethodDeclaration method;
+	WyilFile.FunctionOrMethod method;
 
 	public VcGenerator(Builder builder) {
 		this.builder = builder;
@@ -74,12 +74,12 @@ public class VcGenerator {
 		wycsFile = new WyalFile(wyilFile.id(), filename);
 
 		for (WyilFile.Block b : wyilFile.blocks()) {
-			if(b instanceof WyilFile.ConstantDeclaration) {
-				transform((WyilFile.ConstantDeclaration) b, wyilFile);
-			} else if(b instanceof WyilFile.TypeDeclaration) {
-				transform((WyilFile.TypeDeclaration) b, wyilFile);	
-			} else if(b instanceof WyilFile.FunctionOrMethodDeclaration) {
-				WyilFile.FunctionOrMethodDeclaration method = (WyilFile.FunctionOrMethodDeclaration) b;
+			if(b instanceof WyilFile.Constant) {
+				transform((WyilFile.Constant) b, wyilFile);
+			} else if(b instanceof WyilFile.Type) {
+				transform((WyilFile.Type) b, wyilFile);	
+			} else if(b instanceof WyilFile.FunctionOrMethod) {
+				WyilFile.FunctionOrMethod method = (WyilFile.FunctionOrMethod) b;
 				for (WyilFile.Case c : method.cases()) {
 					transform(c, method, wyilFile);
 				}			
@@ -89,7 +89,7 @@ public class VcGenerator {
 		return wycsFile;
 	}
 
-	protected void transform(WyilFile.ConstantDeclaration decl,
+	protected void transform(WyilFile.Constant decl,
 			WyilFile wyilFile) {
 		NameID name = new NameID(wyilFile.id(), decl.name());
 		
@@ -116,7 +116,7 @@ public class VcGenerator {
 	 * @param typeDecl
 	 * @param wyilFile
 	 */
-	protected void transform(WyilFile.TypeDeclaration typeDecl,
+	protected void transform(WyilFile.Type typeDecl,
 			WyilFile wyilFile) {
 		AttributedCodeBlock body = typeDecl.invariant();
 		Expr invariant = null;
@@ -153,7 +153,7 @@ public class VcGenerator {
 	}
 
 	protected void transform(WyilFile.Case methodCase,
-			WyilFile.FunctionOrMethodDeclaration method, WyilFile wyilFile) {
+			WyilFile.FunctionOrMethod method, WyilFile wyilFile) {
 
 		this.method = method;
 		
@@ -2025,7 +2025,7 @@ public class VcGenerator {
 							.pc()));
 		}
 		WyilFile m = e.read();
-		WyilFile.FunctionOrMethodDeclaration method = m.functionOrMethod(
+		WyilFile.FunctionOrMethod method = m.functionOrMethod(
 				name.name(), fun);
 
 		for (WyilFile.Case c : method.cases()) {
@@ -2064,7 +2064,7 @@ public class VcGenerator {
 							.pc()));
 		}
 		WyilFile m = e.read();
-		WyilFile.FunctionOrMethodDeclaration method = m.functionOrMethod(
+		WyilFile.FunctionOrMethod method = m.functionOrMethod(
 				name.name(), fun);
 
 		for (WyilFile.Case c : method.cases()) {

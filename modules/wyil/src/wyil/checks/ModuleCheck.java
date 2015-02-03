@@ -67,12 +67,12 @@ public class ModuleCheck implements Transform<WyilFile> {
 	public void apply(WyilFile module) {
 		filename = module.filename();
 
-		for(WyilFile.FunctionOrMethodDeclaration method : module.functionOrMethods()) {
+		for(WyilFile.FunctionOrMethod method : module.functionOrMethods()) {
 			check(method);
 		}
 	}
 
-	public void check(WyilFile.FunctionOrMethodDeclaration method) {
+	public void check(WyilFile.FunctionOrMethod method) {
 		for (WyilFile.Case c : method.cases()) {
 			if(method.isFunction()) {
 				checkFunctionPure(c);

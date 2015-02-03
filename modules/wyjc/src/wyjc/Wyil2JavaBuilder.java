@@ -194,7 +194,7 @@ public class Wyil2JavaBuilder implements Builder {
 		boolean addMainLauncher = false;
 
 		constants = new HashMap<JvmConstant, Integer>();
-		for (WyilFile.FunctionOrMethodDeclaration method : module
+		for (WyilFile.FunctionOrMethod method : module
 				.functionOrMethods()) {
 			if (method.name().equals("main")) {
 				addMainLauncher = true;
@@ -317,7 +317,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 
 	private List<ClassFile.Method> build(
-			WyilFile.FunctionOrMethodDeclaration method) {
+			WyilFile.FunctionOrMethod method) {
 		ArrayList<ClassFile.Method> methods = new ArrayList<ClassFile.Method>();
 		int num = 1;
 		for (WyilFile.Case c : method.cases()) {
@@ -334,7 +334,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 
 	private ClassFile.Method build(int caseNum, WyilFile.Case mcase,
-			WyilFile.FunctionOrMethodDeclaration method) {
+			WyilFile.FunctionOrMethod method) {
 
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if(method.hasModifier(wyil.lang.Modifier.PUBLIC)) {
@@ -365,7 +365,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 
 	private ClassFile.Method buildNativeOrExport(WyilFile.Case mcase,
-			WyilFile.FunctionOrMethodDeclaration method, HashMap<JvmConstant,Integer> constants) {
+			WyilFile.FunctionOrMethod method, HashMap<JvmConstant,Integer> constants) {
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if (method.hasModifier(wyil.lang.Modifier.PUBLIC)
 				|| method.hasModifier(wyil.lang.Modifier.PUBLIC)) {
@@ -390,7 +390,7 @@ public class Wyil2JavaBuilder implements Builder {
 		return cm;
 	}
 
-	private ArrayList<Bytecode> translateNativeOrExport(WyilFile.FunctionOrMethodDeclaration method) {
+	private ArrayList<Bytecode> translateNativeOrExport(WyilFile.FunctionOrMethod method) {
 
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		Type.FunctionOrMethod ft = method.type();

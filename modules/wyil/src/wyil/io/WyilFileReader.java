@@ -329,7 +329,7 @@ public final class WyilFileReader {
 		}
 	}
 
-	private WyilFile.ConstantDeclaration readConstantBlock() throws IOException {
+	private WyilFile.Constant readConstantBlock() throws IOException {
 		int nameIdx = input.read_uv();
 		// System.out.println("=== CONSTANT " + stringPool.get(nameIdx));
 		int modifiers = input.read_uv();
@@ -337,11 +337,11 @@ public final class WyilFileReader {
 		int nBlocks = input.read_uv(); // unused
 
 		input.pad_u8();
-		return new WyilFile.ConstantDeclaration(generateModifiers(modifiers),
+		return new WyilFile.Constant(generateModifiers(modifiers),
 				stringPool[nameIdx], constantPool[constantIdx]);
 	}
 
-	private WyilFile.TypeDeclaration readTypeBlock() throws IOException {
+	private WyilFile.Type readTypeBlock() throws IOException {
 		int nameIdx = input.read_uv();
 		// System.out.println("=== TYPE " + stringPool.get(nameIdx));
 		int modifiers = input.read_uv();
@@ -364,11 +364,11 @@ public final class WyilFileReader {
 			}
 		}
 
-		return new WyilFile.TypeDeclaration(generateModifiers(modifiers),
+		return new WyilFile.Type(generateModifiers(modifiers),
 				stringPool[nameIdx], typePool[typeIdx], invariant);
 	}
 
-	private WyilFile.FunctionOrMethodDeclaration readFunctionBlock()
+	private WyilFile.FunctionOrMethod readFunctionBlock()
 			throws IOException {
 		int nameIdx = input.read_uv();
 		// System.out.println("=== FUNCTION " + stringPool.get(nameIdx));
@@ -393,11 +393,11 @@ public final class WyilFileReader {
 				throw new RuntimeException("Unknown function block encountered");
 			}
 		}
-		return new WyilFile.FunctionOrMethodDeclaration(
+		return new WyilFile.FunctionOrMethod(
 				generateModifiers(modifiers), stringPool[nameIdx], type, cases);
 	}
 
-	private WyilFile.FunctionOrMethodDeclaration readMethodBlock()
+	private WyilFile.FunctionOrMethod readMethodBlock()
 			throws IOException {
 		int nameIdx = input.read_uv();
 		// System.out.println("=== METHOD " + stringPool.get(nameIdx));
@@ -422,7 +422,7 @@ public final class WyilFileReader {
 				throw new RuntimeException("Unknown method block encountered");
 			}
 		}
-		return new WyilFile.FunctionOrMethodDeclaration(
+		return new WyilFile.FunctionOrMethod(
 				generateModifiers(modifiers), stringPool[nameIdx], type, cases);
 	}
 

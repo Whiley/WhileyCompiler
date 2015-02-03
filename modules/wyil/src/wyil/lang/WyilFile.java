@@ -131,28 +131,28 @@ public final class WyilFile implements CompilationUnit {
 		this.blocks = new ArrayList<Block>(declarations);
 
 		// second, validate methods and/or functions
-		HashSet<Pair<String,Type.FunctionOrMethod>> methods = new HashSet<Pair<String,Type.FunctionOrMethod>>();
+		HashSet<Pair<String,wyil.lang.Type.FunctionOrMethod>> methods = new HashSet<Pair<String,wyil.lang.Type.FunctionOrMethod>>();
 		HashSet<String> types = new HashSet<String>();
 		HashSet<String> constants = new HashSet<String>();
 
 		for (Block d : declarations) {
-			if(d instanceof FunctionOrMethodDeclaration) {
-				FunctionOrMethodDeclaration m = (FunctionOrMethodDeclaration) d;
-				Pair<String,Type.FunctionOrMethod> p = new Pair<String,Type.FunctionOrMethod>(m.name(),m.type());
+			if(d instanceof FunctionOrMethod) {
+				FunctionOrMethod m = (FunctionOrMethod) d;
+				Pair<String,wyil.lang.Type.FunctionOrMethod> p = new Pair<String,wyil.lang.Type.FunctionOrMethod>(m.name(),m.type());
 				if (methods.contains(p)) {
 					throw new IllegalArgumentException(
 							"Multiple function or method definitions (" + p.first() + ") with the same name and type not permitted");
 				}
 				methods.add(p);
-			} else if(d instanceof TypeDeclaration) {
-				TypeDeclaration t = (TypeDeclaration) d;
+			} else if(d instanceof Type) {
+				Type t = (Type) d;
 				if (types.contains(t.name())) {
 					throw new IllegalArgumentException(
 							"Multiple type definitions with the same name not permitted");
 				}
 				types.add(t.name());
-			} else if (d instanceof ConstantDeclaration) {
-				ConstantDeclaration c = (ConstantDeclaration) d;
+			} else if (d instanceof Constant) {
+				Constant c = (Constant) d;
 				if (constants.contains(c.name())) {
 					throw new IllegalArgumentException(
 							"Multiple constant definitions with the same name not permitted");
@@ -221,10 +221,10 @@ public final class WyilFile implements CompilationUnit {
 	 * @param name
 	 * @return
 	 */
-	public TypeDeclaration type(String name) {
+	public Type type(String name) {
 		for (Block d : blocks) {
-			if(d instanceof TypeDeclaration) {
-				TypeDeclaration td = (TypeDeclaration) d;
+			if(d instanceof Type) {
+				Type td = (Type) d;
 				if(td.name().equals(name)) {
 					return td;
 				}
@@ -240,11 +240,11 @@ public final class WyilFile implements CompilationUnit {
 	 * @param name
 	 * @return
 	 */
-	public Collection<WyilFile.TypeDeclaration> types() {
-		ArrayList<TypeDeclaration> r = new ArrayList<TypeDeclaration>();
+	public Collection<WyilFile.Type> types() {
+		ArrayList<Type> r = new ArrayList<Type>();
 		for (Block d : blocks) {
-			if(d instanceof TypeDeclaration) {
-				r.add((TypeDeclaration)d);
+			if(d instanceof Type) {
+				r.add((Type)d);
 			}
 		}
 		return Collections.unmodifiableList(r);
@@ -257,10 +257,10 @@ public final class WyilFile implements CompilationUnit {
 	 * @param name
 	 * @return
 	 */
-	public ConstantDeclaration constant(String name) {
+	public Constant constant(String name) {
 		for (Block d : blocks) {
-			if(d instanceof ConstantDeclaration) {
-				ConstantDeclaration cd = (ConstantDeclaration) d;
+			if(d instanceof Constant) {
+				Constant cd = (Constant) d;
 				if(cd.name().equals(name)) {
 					return cd;
 				}
@@ -276,11 +276,11 @@ public final class WyilFile implements CompilationUnit {
 	 * @param name
 	 * @return
 	 */
-	public Collection<WyilFile.ConstantDeclaration> constants() {
-		ArrayList<ConstantDeclaration> r = new ArrayList<ConstantDeclaration>();
+	public Collection<WyilFile.Constant> constants() {
+		ArrayList<Constant> r = new ArrayList<Constant>();
 		for (Block d : blocks) {
-			if(d instanceof ConstantDeclaration) {
-				r.add((ConstantDeclaration)d);
+			if(d instanceof Constant) {
+				r.add((Constant)d);
 			}
 		}
 		return Collections.unmodifiableList(r);
@@ -294,11 +294,11 @@ public final class WyilFile implements CompilationUnit {
 	 * @param name
 	 * @return
 	 */
-	public List<FunctionOrMethodDeclaration> functionOrMethod(String name) {
-		ArrayList<FunctionOrMethodDeclaration> r = new ArrayList<FunctionOrMethodDeclaration>();
+	public List<FunctionOrMethod> functionOrMethod(String name) {
+		ArrayList<FunctionOrMethod> r = new ArrayList<FunctionOrMethod>();
 		for (Block d : blocks) {
-			if (d instanceof FunctionOrMethodDeclaration) {
-				FunctionOrMethodDeclaration m = (FunctionOrMethodDeclaration) d;
+			if (d instanceof FunctionOrMethod) {
+				FunctionOrMethod m = (FunctionOrMethod) d;
 				if (m.name().equals(name)) {
 					r.add(m);
 				}
@@ -314,10 +314,10 @@ public final class WyilFile implements CompilationUnit {
 	 * @param name
 	 * @return
 	 */
-	public FunctionOrMethodDeclaration functionOrMethod(String name, Type.FunctionOrMethod ft) {
+	public FunctionOrMethod functionOrMethod(String name, wyil.lang.Type.FunctionOrMethod ft) {
 		for (Block d : blocks) {
-			if (d instanceof FunctionOrMethodDeclaration) {
-				FunctionOrMethodDeclaration md = (FunctionOrMethodDeclaration) d;
+			if (d instanceof FunctionOrMethod) {
+				FunctionOrMethod md = (FunctionOrMethod) d;
 				if (md.name().equals(name) && md.type().equals(ft)) {
 					return md;
 				}
@@ -333,11 +333,11 @@ public final class WyilFile implements CompilationUnit {
 	 * @param name
 	 * @return
 	 */
-	public Collection<WyilFile.FunctionOrMethodDeclaration> functionOrMethods() {
-		ArrayList<FunctionOrMethodDeclaration> r = new ArrayList<FunctionOrMethodDeclaration>();
+	public Collection<WyilFile.FunctionOrMethod> functionOrMethods() {
+		ArrayList<FunctionOrMethod> r = new ArrayList<FunctionOrMethod>();
 		for (Block d : blocks) {
-			if(d instanceof FunctionOrMethodDeclaration) {
-				r.add((FunctionOrMethodDeclaration)d);
+			if(d instanceof FunctionOrMethod) {
+				r.add((FunctionOrMethod)d);
 			}
 		}
 		return Collections.unmodifiableList(r);
@@ -450,26 +450,26 @@ public final class WyilFile implements CompilationUnit {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class TypeDeclaration extends Declaration {
-		private Type type;
+	public static final class Type extends Declaration {
+		private wyil.lang.Type type;
 		private AttributedCodeBlock invariant;
 
-		public TypeDeclaration(Collection<Modifier> modifiers, String name, Type type,
+		public Type(Collection<Modifier> modifiers, String name, wyil.lang.Type type,
 				AttributedCodeBlock invariant, Attribute... attributes) {
 			super(name,modifiers,attributes);
 			this.type = type;
 			this.invariant = invariant;
 		}
 
-		public TypeDeclaration(Collection<Modifier> modifiers, String name,
-				Type type, AttributedCodeBlock invariant,
+		public Type(Collection<Modifier> modifiers, String name,
+				wyil.lang.Type type, AttributedCodeBlock invariant,
 				Collection<Attribute> attributes) {
 			super(name, modifiers, attributes);
 			this.type = type;
 			this.invariant = invariant;
 		}
 
-		public Type type() {
+		public wyil.lang.Type type() {
 			return type;
 		}
 
@@ -488,33 +488,33 @@ public final class WyilFile implements CompilationUnit {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class ConstantDeclaration extends Declaration {
-		private Constant constant;
+	public static final class Constant extends Declaration {
+		private wyil.lang.Constant constant;
 
-		public ConstantDeclaration(Collection<Modifier> modifiers, String name,
-				Constant constant, Attribute... attributes) {
+		public Constant(Collection<Modifier> modifiers, String name,
+				wyil.lang.Constant constant, Attribute... attributes) {
 			super(name, modifiers, attributes);
 			this.constant = constant;
 		}
 
-		public ConstantDeclaration(Collection<Modifier> modifiers, String name,
-				Constant constant, Collection<Attribute> attributes) {
+		public Constant(Collection<Modifier> modifiers, String name,
+				wyil.lang.Constant constant, Collection<Attribute> attributes) {
 			super(name, modifiers, attributes);
 			this.constant = constant;
 		}
 
-		public Constant constant() {
+		public wyil.lang.Constant constant() {
 			return constant;
 		}
 	}
 
-	public static final class FunctionOrMethodDeclaration extends
+	public static final class FunctionOrMethod extends
 			Declaration {
-		private Type.FunctionOrMethod type;
+		private wyil.lang.Type.FunctionOrMethod type;
 		private List<Case> cases;
 
-		public FunctionOrMethodDeclaration(Collection<Modifier> modifiers,
-				String name, Type.FunctionOrMethod type,
+		public FunctionOrMethod(Collection<Modifier> modifiers,
+				String name, wyil.lang.Type.FunctionOrMethod type,
 				Collection<Case> cases, Attribute... attributes) {
 			super(name, modifiers, attributes);
 			this.type = type;
@@ -522,8 +522,8 @@ public final class WyilFile implements CompilationUnit {
 					.unmodifiableList(new ArrayList<Case>(cases));
 		}
 
-		public FunctionOrMethodDeclaration(Collection<Modifier> modifiers,
-				String name, Type.FunctionOrMethod type,
+		public FunctionOrMethod(Collection<Modifier> modifiers,
+				String name, wyil.lang.Type.FunctionOrMethod type,
 				Collection<Case> cases, Collection<Attribute> attributes) {
 			super(name, modifiers, attributes);
 			this.type = type;
@@ -531,7 +531,7 @@ public final class WyilFile implements CompilationUnit {
 					.unmodifiableList(new ArrayList<Case>(cases));
 		}
 
-		public Type.FunctionOrMethod type() {
+		public wyil.lang.Type.FunctionOrMethod type() {
 			return type;
 		}
 
@@ -540,11 +540,11 @@ public final class WyilFile implements CompilationUnit {
 		}
 
 		public boolean isFunction() {
-			return type instanceof Type.Function;
+			return type instanceof wyil.lang.Type.Function;
 		}
 
 		public boolean isMethod() {
-			return type instanceof Type.Method;
+			return type instanceof wyil.lang.Type.Method;
 		}
 	}
 

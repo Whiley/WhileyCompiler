@@ -114,11 +114,11 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 	}
 
 	@Override
-	public WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {
+	public WyilFile.Type propagate(WyilFile.Type type) {
 		AttributedCodeBlock invariant = type.invariant();
 		if (invariant != null) {
 			invariant = propagate(invariant);
-			return new WyilFile.TypeDeclaration(type.modifiers(), type.name(),
+			return new WyilFile.Type(type.modifiers(), type.name(),
 					type.type(), invariant, type.attributes());
 		}
 		return type;

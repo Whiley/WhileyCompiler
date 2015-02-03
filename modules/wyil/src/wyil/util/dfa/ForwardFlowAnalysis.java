@@ -48,7 +48,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	/**
 	 * The function or method currently being propagated through.
 	 */
-	protected WyilFile.FunctionOrMethodDeclaration method;
+	protected WyilFile.FunctionOrMethod method;
 
 	/**
 	 * The function or method case currently being propagated through.
@@ -69,14 +69,14 @@ public abstract class ForwardFlowAnalysis<T> {
 		filename = module.filename();
 
 		for(WyilFile.Block d : module.blocks()) {
-			if(d instanceof WyilFile.ConstantDeclaration) {
-				WyilFile.ConstantDeclaration cd = (WyilFile.ConstantDeclaration) d;
+			if(d instanceof WyilFile.Constant) {
+				WyilFile.Constant cd = (WyilFile.Constant) d;
 				module.replace(cd,propagate((cd)));
-			} else if(d instanceof WyilFile.TypeDeclaration) {
-				WyilFile.TypeDeclaration td = (WyilFile.TypeDeclaration) d;
+			} else if(d instanceof WyilFile.Type) {
+				WyilFile.Type td = (WyilFile.Type) d;
 				module.replace(td,propagate(td));
-			} else if(d instanceof WyilFile.FunctionOrMethodDeclaration) {
-				WyilFile.FunctionOrMethodDeclaration md = (WyilFile.FunctionOrMethodDeclaration) d;
+			} else if(d instanceof WyilFile.FunctionOrMethod) {
+				WyilFile.FunctionOrMethod md = (WyilFile.FunctionOrMethod) d;
 				if (!md.hasModifier(Modifier.NATIVE)) {
 					// native functions/methods don't have bodies
 					module.replace(md,propagate(md));
@@ -85,22 +85,22 @@ public abstract class ForwardFlowAnalysis<T> {
 		}
 	}
 
-	protected WyilFile.ConstantDeclaration propagate(WyilFile.ConstantDeclaration constant) {
+	protected WyilFile.Constant propagate(WyilFile.Constant constant) {
 		return constant;
 	}
 
-	protected WyilFile.TypeDeclaration propagate(WyilFile.TypeDeclaration type) {
+	protected WyilFile.Type propagate(WyilFile.Type type) {
 		return type;
 	}
 
-	protected WyilFile.FunctionOrMethodDeclaration propagate(
-			WyilFile.FunctionOrMethodDeclaration method) {
+	protected WyilFile.FunctionOrMethod propagate(
+			WyilFile.FunctionOrMethod method) {
 		this.method = method;
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for (WyilFile.Case c : method.cases()) {
 			cases.add(propagate(c));
 		}
-		return new WyilFile.FunctionOrMethodDeclaration(method.modifiers(),
+		return new WyilFile.FunctionOrMethod(method.modifiers(),
 				method.name(), method.type(), cases, method.attributes());
 	}
 

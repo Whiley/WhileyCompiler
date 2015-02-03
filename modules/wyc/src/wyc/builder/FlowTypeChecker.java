@@ -2653,7 +2653,7 @@ public class FlowTypeChecker {
 				}
 			} else {
 				WyilFile m = builder.getModule(candidateID.module());
-				WyilFile.FunctionOrMethodDeclaration d = m.functionOrMethod(
+				WyilFile.FunctionOrMethod d = m.functionOrMethod(
 						candidateID.name(), candidateType.nominal());
 				if (!d.hasModifier(Modifier.PUBLIC)
 						&& !d.hasModifier(Modifier.PROTECTED)) {
@@ -2713,7 +2713,7 @@ public class FlowTypeChecker {
 			}
 		} else {
 			WyilFile m = builder.getModule(mid);
-			for (WyilFile.FunctionOrMethodDeclaration mm : m
+			for (WyilFile.FunctionOrMethod mm : m
 					.functionOrMethods()) {
 				if ((mm.isFunction() || mm.isMethod())
 						&& mm.name().equals(nid.name())
@@ -3220,7 +3220,7 @@ public class FlowTypeChecker {
 		if (wf == null) {
 			// indicates a non-local key which we can resolve immediately
 			WyilFile mi = builder.getModule(key.module());
-			WyilFile.TypeDeclaration td = mi.type(key.name());
+			WyilFile.Type td = mi.type(key.name());
 			// FIXME: this is a hack to temporarily deal with the situation
 			// where a type loaded from a WyIL file is not expanded. In the
 			// future, this will be the norm and we'll need to handle this is a
@@ -3434,7 +3434,7 @@ public class FlowTypeChecker {
 			}
 		} else {
 			WyilFile module = builder.getModule(key.module());
-			WyilFile.ConstantDeclaration cd = module.constant(key.name());
+			WyilFile.Constant cd = module.constant(key.name());
 			if (cd != null) {
 				result = cd.constant();
 			} else {
@@ -3985,7 +3985,7 @@ public class FlowTypeChecker {
 				}
 			} else {
 				WyilFile m = builder.getModule(mid);
-				WyilFile.TypeDeclaration td = m.type(nid.name());
+				WyilFile.Type td = m.type(nid.name());
 				if (td != null) {
 					r = td.type();
 				}
@@ -4082,7 +4082,7 @@ public class FlowTypeChecker {
 			} else {
 				// At this point, need to find the corresponding declatation.
 				WyilFile mi = builder.getModule(nid.module());
-				WyilFile.TypeDeclaration td = mi.type(nid.name());
+				WyilFile.Type td = mi.type(nid.name());
 				// Now, store the root of this expansion so that it can be used
 				// subsequently to form a recursive cycle.
 				roots.put(nid, states.size());

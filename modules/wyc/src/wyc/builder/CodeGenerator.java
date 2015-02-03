@@ -90,7 +90,7 @@ public final class CodeGenerator {
 	 * expressions in the source file. These are compiled into anonymised WyIL
 	 * functions, since WyIL does not have an internal notion of a lambda.
 	 */
-	private final ArrayList<WyilFile.FunctionOrMethodDeclaration> lambdas = new ArrayList<WyilFile.FunctionOrMethodDeclaration>();
+	private final ArrayList<WyilFile.FunctionOrMethod> lambdas = new ArrayList<WyilFile.FunctionOrMethod>();
 
 	/**
 	 * The scopes stack is used for determining the correct scoping for continue
@@ -168,9 +168,9 @@ public final class CodeGenerator {
 	 * constant value. If this cannot be done, then a syntax error is raised to
 	 * indicate an invalid constant declaration was encountered.
 	 */
-	private WyilFile.ConstantDeclaration generate(WhileyFile.Constant cd) {
+	private WyilFile.Constant generate(WhileyFile.Constant cd) {
 		// TODO: this the point where were should run an evaluator ?
-		return new WyilFile.ConstantDeclaration(cd.modifiers(), cd.name(),
+		return new WyilFile.Constant(cd.modifiers(), cd.name(),
 				cd.resolvedValue);
 	}
 
@@ -187,7 +187,7 @@ public final class CodeGenerator {
 	 * @return
 	 * @throws Exception
 	 */
-	private WyilFile.TypeDeclaration generate(WhileyFile.Type td)
+	private WyilFile.Type generate(WhileyFile.Type td)
 			throws Exception {
 		AttributedCodeBlock invariant = null;
 
@@ -207,7 +207,7 @@ public final class CodeGenerator {
 			invariant.add(Codes.Return());
 		}
 
-		return new WyilFile.TypeDeclaration(td.modifiers(), td.name(),
+		return new WyilFile.Type(td.modifiers(), td.name(),
 				td.resolvedType.nominal(), invariant);
 	}
 
@@ -215,7 +215,7 @@ public final class CodeGenerator {
 	// Function / Method Declarations
 	// =========================================================================
 
-	private WyilFile.FunctionOrMethodDeclaration generate(
+	private WyilFile.FunctionOrMethod generate(
 			WhileyFile.FunctionOrMethod fd) throws Exception {
 		Type.FunctionOrMethod ftype = fd.resolvedType().raw();
 
@@ -297,15 +297,15 @@ public final class CodeGenerator {
 		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();
 
 		ncases.add(new WyilFile.Case(body, requires, ensures));
-		WyilFile.FunctionOrMethodDeclaration declaration;
+		WyilFile.FunctionOrMethod declaration;
 		
 		if (fd instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
-			declaration = new WyilFile.FunctionOrMethodDeclaration(fd
+			declaration = new WyilFile.FunctionOrMethod(fd
 					.modifiers(), fd.name(), f.resolvedType.nominal(), ncases);
 		} else {
 			WhileyFile.Method md = (WhileyFile.Method) fd;
-			declaration = new WyilFile.FunctionOrMethodDeclaration(fd
+			declaration = new WyilFile.FunctionOrMethod(fd
 					.modifiers(), fd.name(), md.resolvedType.nominal(), ncases);
 		}
 
@@ -1923,7 +1923,7 @@ public final class CodeGenerator {
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		cases.add(new WyilFile.Case(body, Collections.EMPTY_LIST,
 				Collections.EMPTY_LIST, attributes(expr)));
-		WyilFile.FunctionOrMethodDeclaration lambda = new WyilFile.FunctionOrMethodDeclaration(
+		WyilFile.FunctionOrMethod lambda = new WyilFile.FunctionOrMethod(
 				modifiers, name, cfm, cases, attributes(expr));
 		lambdas.add(lambda);
 		Path.ID mid = context.file().module;

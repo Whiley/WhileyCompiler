@@ -32,6 +32,7 @@ import wybs.lang.Builder;
 import wycc.lang.Transform;
 import wyfs.lang.Path;
 import wyil.lang.*;
+import wyil.lang.Type;
 import wyil.lang.WyilFile.*;
 import wyil.util.AttributedCodeBlock;
 
@@ -112,14 +113,14 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		//out.println("module: " + module.id());
 		out.println("source-file: " + module.filename());
 		out.println();
-		for(ConstantDeclaration cd : module.constants()) {
+		for(WyilFile.Constant cd : module.constants()) {
 			writeModifiers(cd.modifiers(),out);
 			out.println("constant " + cd.name() + " = " + cd.constant());
 		}
 		if(!module.constants().isEmpty()) {
 			out.println();
 		}
-		for(TypeDeclaration td : module.types()) {
+		for(WyilFile.Type td : module.types()) {
 			Type t = td.type();
 			String t_str;
 			t_str = t.toString();
@@ -130,20 +131,20 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			out.println();
 		}
 
-		for(FunctionOrMethodDeclaration md : module.functionOrMethods()) {
+		for(FunctionOrMethod md : module.functionOrMethods()) {
 			write(md,out);
 			out.println();
 		}
 		out.flush();
 	}
 
-	private void write(FunctionOrMethodDeclaration method, PrintWriter out) {
+	private void write(FunctionOrMethod method, PrintWriter out) {
 		for (Case c : method.cases()) {
 			write(c, method, out);
 		}
 	}
 
-	private void write(Case mcase, FunctionOrMethodDeclaration method, PrintWriter out) {
+	private void write(Case mcase, FunctionOrMethod method, PrintWriter out) {
 		writeModifiers(method.modifiers(),out);
 		Type.FunctionOrMethod ft = method.type();
 		if(ft instanceof Type.Function) {
