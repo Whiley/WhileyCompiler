@@ -101,7 +101,7 @@ public abstract class ForwardFlowAnalysis<T> {
 			cases.add(propagate(c));
 		}
 		return new WyilFile.FunctionOrMethodDeclaration(method.modifiers(),
-				method.name(), method.type(), cases);
+				method.name(), method.type(), cases, method.attributes());
 	}
 
 	protected WyilFile.Case propagate(WyilFile.Case mcase) {

@@ -113,16 +113,11 @@ public class VcBranch {
 	private final String[] prefixes;
 
 	/**
-	 * For each variable we maintain the current "subscript" value. This is an
-	 * integer value which is used to determine the appropriate SSA number for a
-	 * given variable.
+	 * For each variable we maintain the current "version". This is an integer
+	 * value which is used to determine the appropriate SSA number for a given
+	 * variable.
 	 */
-	final int[] subscripts;
-
-	/**
-	 * Maintains the current assignment of variables to their types.
-	 */
-	public final Type[] types;
+	final int[] versions;
 
 	/**
 	 * Contains the accumulated constraints in the order they were added.
@@ -157,8 +152,7 @@ public class VcBranch {
 		int numSlots = numInputs;
 		this.parents = new VcBranch[0];
 		this.environment = new Expr[numSlots];
-		this.subscripts = new int[numSlots];
-		this.types = new Type[numSlots];
+		this.versions = new int[numSlots];
 		this.constraints = null;
 		this.pc = new CodeBlock.Index(CodeBlock.Index.ROOT);
 		this.state = State.ACTIVE;
@@ -183,9 +177,8 @@ public class VcBranch {
 	private VcBranch(VcBranch parent) {
 		this.parents = new VcBranch[] { parent };
 		this.environment = parent.environment.clone();
-		this.subscripts = Arrays.copyOf(parent.subscripts,
-				parent.subscripts.length);
-		this.types = Arrays.copyOf(parent.types, environment.length);
+		this.versions = Arrays.copyOf(parent.versions,
+				parent.versions.length);
 		this.constraints = null;
 		this.prefixes = parent.prefixes;
 		this.pc = parent.pc;
@@ -201,20 +194,16 @@ public class VcBranch {
 	 * @param environment
 	 *            --- Environment for this branch which is the converged
 	 *            environments of all branches.
-	 * @param types
-	 *            --- Environment for this branch which is the converged
-	 *            environments of all branches.
 	 * @param state
 	 *            --- State which this branch should be in. This may not be
 	 *            active, for example, if none of the parents were active.
 	 * 
 	 */
-	private VcBranch(VcBranch[] parents, Expr[] environment, Type[] types,
-			int[] subscripts, State state, String[] prefixes) {
+	private VcBranch(VcBranch[] parents, Expr[] environment, 
+			int[] versions, State state, String[] prefixes) {
 		this.parents = parents;
 		this.environment = environment;
-		this.subscripts = subscripts;
-		this.types = types;
+		this.versions = versions;		
 		this.constraints = null;
 		this.pc = parents[0].pc;
 		this.state = state;
@@ -276,6 +265,15 @@ public class VcBranch {
 	}
 
 	/**
+	 * Get the static list of prefixes
+	 * 
+	 * @return
+	 */
+	public String[] prefixes() {
+		return prefixes;
+	}
+	
+	/**
 	 * Update the program counter for this branch. This can, for example, be
 	 * used to move the branch to the next logical instruction. Or, it can be
 	 * used to jump the branch to an entirely different location.
@@ -308,32 +306,6 @@ public class VcBranch {
 	}
 
 	/**
-	 * Get the type of a given register at this point in the block.
-	 *
-	 * @return
-	 */
-	public Type typeOf(String var) {
-		// FIXME: this is such an *horrific* hack, I can't believe I'm doing it.
-		// But, it does work most of the time :(
-		if(var.startsWith("_")) {
-			return Type.T_INT;
-		}
-		// And, so is this such an horrific hack :(
-		String[] split = var.split("_");
-		int register = Integer.parseInt(split[0].substring(1));
-		return types[register];
-	}
-
-	/**
-	 * Get the type of a given register at this point in the block.
-	 *
-	 * @return
-	 */
-	public Type typeOf(int register) {
-		return types[register];
-	}
-
-	/**
 	 * Assign an expression to a given Wyil bytecode register. This stores the
 	 * assigned expression for recall when the given register is subsequently
 	 * read.
@@ -346,17 +318,14 @@ public class VcBranch {
 	 *            --- Register being written.
 	 * @param expr
 	 *            --- Expression being assigned.
-	 * @param type
-	 *            --- Type of expression being assigned.
 	 */
-	public void write(int register, Expr expr, Type type) {
+	public void write(int register, Expr expr) {
 		if (state != State.ACTIVE) {
 			// Sanity check
 			throw new IllegalArgumentException(
 					"Attempt to modify an inactive branch");
 		}
 		environment[register] = expr;
-		types[register] = type;
 	}
 
 	/**
@@ -374,7 +343,7 @@ public class VcBranch {
 	 * @param type
 	 *            Type of register being havoced
 	 */
-	public Expr.Variable havoc(int register, Type type) {
+	public Expr.Variable havoc(int register) {
 		if (state != State.ACTIVE) {
 			// Sanity check
 			throw new IllegalArgumentException(
@@ -383,11 +352,10 @@ public class VcBranch {
 		// to invalidate a variable, we assign it a "skolem" constant. That is,
 		// a fresh variable which has not been previously encountered in the
 		// branch.			
-		subscripts[register] = subscripts[register] + 1;
-		Expr.Variable var = new Expr.Variable(prefixes[register] + "_"
-				+ subscripts[register]);
-		environment[register] = var;
-		types[register] = type;		
+		versions[register] = versions[register] + 1;
+		Expr.Variable var = new Expr.Variable(prefixes[register] + "$"
+				+ versions[register]);
+		environment[register] = var;	
 		return var;
 	}
 
@@ -508,28 +476,25 @@ public class VcBranch {
 		System.arraycopy(parents, 0, nparents, 1, parents.length);
 		nparents[0] = this;
 
-		// Converge subscripts between the different parents. This is done
+		// Converge versions between the different parents. This is done
 		// simply by calculating the max subscript for each variable across all
 		// environments.
-		int[] nSubscripts = convergeSubscripts(nparents);
+		int[] nVersions = convergeVersions(nparents);
 
 		// Converge environments to ensure obtain a single environment which
 		// correctly represents the environments of all branches being joined.
 		// In some cases, individual environments may need to be patched to get
 		// them all into identical states.
-		Expr[] nEnvironment = convergeEnvironments(nparents, nSubscripts);
-
-		// FIXME: this should be deprecated
-		Type[] nTypes = Arrays.copyOf(types, types.length);
+		Expr[] nEnvironment = convergeEnvironments(nparents, nVersions);
 
 		// Finally, create the new branch representing the join of all branches,
 		// and with those branches as its declared parents.
-		return new VcBranch(nparents, nEnvironment, nTypes, nSubscripts,
-				parentState, prefixes);
+		return new VcBranch(nparents, nEnvironment, nVersions, parentState,
+				prefixes);
 	}
 
 	/**
-	 * Converge the subscripts across all parent branches. This is done by
+	 * Converge the versions across all parent branches. This is done by
 	 * calculating the max subscript for each variable across all environments.
 	 * For example:
 	 * 
@@ -557,15 +522,15 @@ public class VcBranch {
 	 * @param parents
 	 * @return
 	 */
-	private int[] convergeSubscripts(VcBranch[] parents) {
-		int[] nSubscripts = new int[subscripts.length];
+	private int[] convergeVersions(VcBranch[] parents) {
+		int[] nVersions = new int[versions.length];
 		for (int i = 0; i != parents.length; ++i) {
-			int[] pSubscripts = parents[i].subscripts;
-			for (int j = 0; j != nSubscripts.length; ++j) {
-				nSubscripts[j] = Math.max(nSubscripts[j], pSubscripts[j]);
+			int[] pSubscripts = parents[i].versions;
+			for (int j = 0; j != nVersions.length; ++j) {
+				nVersions[j] = Math.max(nVersions[j], pSubscripts[j]);
 			}
 		}
-		return nSubscripts;
+		return nVersions;
 	}
 
 	/**
@@ -669,7 +634,7 @@ public class VcBranch {
 					newEnvironment[i] = null;
 				} else if (toPatch.get(i)) {
 					// This register needs to be patched
-					Expr.Variable var = new Expr.Variable(prefixes[i] + "_" + subscripts[i]);
+					Expr.Variable var = new Expr.Variable(prefixes[i] + "$" + subscripts[i]);
 					for (int j = 0; j != branches.length; ++j) {
 						branches[j].assume(new Expr.Binary(Expr.Binary.Op.EQ,
 								var, branches[j].read(i)));

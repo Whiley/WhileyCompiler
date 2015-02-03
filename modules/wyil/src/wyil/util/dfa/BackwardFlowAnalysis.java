@@ -93,13 +93,15 @@ public abstract class BackwardFlowAnalysis<T> {
 		return type;
 	}
 
-	protected WyilFile.FunctionOrMethodDeclaration propagate(WyilFile.FunctionOrMethodDeclaration method) {
+	protected WyilFile.FunctionOrMethodDeclaration propagate(
+			WyilFile.FunctionOrMethodDeclaration method) {
 		this.method = method;
 		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
 		for (WyilFile.Case c : method.cases()) {
 			cases.add(propagate(c));
 		}
-		return new WyilFile.FunctionOrMethodDeclaration(method.modifiers(), method.name(), method.type(), cases);
+		return new WyilFile.FunctionOrMethodDeclaration(method.modifiers(),
+				method.name(), method.type(), cases, method.attributes());
 	}
 
 	protected WyilFile.Case propagate(WyilFile.Case mcase) {
