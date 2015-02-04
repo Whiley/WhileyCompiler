@@ -314,6 +314,9 @@ public final class IterativeRewriter implements Rewriter {
 			// Apply the activation
 			numReductionActivations++;
 
+//			System.out.println("\nAUTOMATON(BEFORE): ");
+//			wyrl.util.Runtime.debug(automaton, schema, "And","Or");
+
 			from = activation.root();
 			int target = activation.apply(automaton);
 

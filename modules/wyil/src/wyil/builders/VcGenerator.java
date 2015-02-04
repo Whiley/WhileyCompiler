@@ -44,6 +44,7 @@ import wyil.util.ErrorMessages;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;
 import wycc.util.Pair;
+import wycs.core.SemanticType;
 import wycs.core.Value;
 import wycs.syntax.*;
 import wycs.syntax.TypePattern.Tuple;
@@ -2170,10 +2171,10 @@ public class VcGenerator {
 		}
 
 		// Construct the type declaration for the new block macro
-		TypePattern from = new TypePattern.Tuple(declarations);		
+		TypePattern from = new TypePattern.Tuple(declarations);
 		TypePattern to = new TypePattern.Leaf(convert(ret,
 				Collections.EMPTY_LIST), null);
-
+		
 		wycsFile.add(wycsFile.new Function(name, Collections.EMPTY_LIST, from,
 				to, null));
 	}

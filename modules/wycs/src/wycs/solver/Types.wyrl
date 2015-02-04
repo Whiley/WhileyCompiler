@@ -118,6 +118,16 @@ name "TupleType_1"
 rank 0:
     => VoidT, if VoidT in ts
 
+reduce TupleT[Type... ts]
+name "TupleType_1b"
+rank 0:
+    => VoidT, if |ts| == 0
+
+reduce TupleT[Type t]
+name "TupleType_1c"
+rank 0:
+    => t
+
 reduce AndT{TupleT[Type... t1s], TupleT[Type... t2s], Type... ts}
 name "TupleType_2"
 rank 2:
