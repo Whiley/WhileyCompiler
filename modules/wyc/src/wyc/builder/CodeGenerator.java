@@ -227,7 +227,7 @@ public final class CodeGenerator {
 		int paramIndex = 0;
 
 		// ==================================================================
-		// Generate pre-condition
+		// Construct environments
 		// ==================================================================
 
 		ArrayList<AttributedCodeBlock> requires = new ArrayList<AttributedCodeBlock>();
@@ -240,10 +240,18 @@ public final class CodeGenerator {
 					.nominal(), p.name()));
 		}
 
+		// Allocate all declared variables now. This ensures that all declared
+		// variables occur before any temporary variables. 
+		buildVariableDeclarations(fd.statements, declarations, environment, fd);
+		
+		// ==================================================================
+		// Generate pre-condition
+		// ==================================================================
+
 		for (Expr condition : fd.requires) {
 			AttributedCodeBlock precondition = new AttributedCodeBlock(new SourceLocationMap());
 			String endLab = CodeUtils.freshLabel();
-			generateCondition(endLab, condition, environment, precondition, fd);
+			generateCondition(endLab, condition, new Environment(environment), precondition, fd);
 			precondition.add(Codes.Fail(),attributes(condition));
 			precondition.add(Codes.Label(endLab));
 			precondition.add(Codes.Return());
@@ -288,8 +296,7 @@ public final class CodeGenerator {
 		// ==================================================================
 		// Generate body
 		// ==================================================================
-
-		buildVariableDeclarations(fd.statements, declarations, environment, fd);	
+		
 		AttributedCodeBlock body = new AttributedCodeBlock(new SourceLocationMap());
 		for (Stmt s : fd.statements) {
 			generate(s, environment, body, fd);
@@ -1902,6 +1909,7 @@ public final class CodeGenerator {
 				benv.allocate(type, v.second());
 				paramTypes.add(type);
 				operands.add(environment.get(v.second()));
+				declarations.add(new VariableDeclarations.Declaration(type,v.second()));
 			}
 		}
 

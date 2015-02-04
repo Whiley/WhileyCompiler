@@ -195,7 +195,7 @@ public class VcGenerator {
 		// more if the body uses them.
 		VcBranch master = new VcBranch(Math.max(body.numSlots(), fmm.params()
 				.size()), prefixes);
-
+		
 		Expr[] arguments = new Expr[fmm.params().size()];
 		for (int i = 0; i != fmm.params().size(); ++i) {
 			Expr.Variable v = new Expr.Variable(prefixes[i]);
@@ -1073,7 +1073,7 @@ public class VcGenerator {
 			// FIXME: this is a hack to determine which variables should be
 			// passed into the loop invariant macro. However, it really is a
 			// hack.
-			boolean[] variables = new boolean[branch.numSlots()];
+			boolean[] variables = new boolean[environment.length];
 			for(int i=0;i!=variables.length;++i) {
 				if(branch.read(i) != null) {
 					variables[i] = true;
@@ -1187,14 +1187,14 @@ public class VcGenerator {
 	 * @param environment
 	 *            The mapping of registers to their declared types.
 	 * @param block
-	 *            The encolosing code block
+	 *            The enclosing code block
 	 */
 	private void buildInvariantMacro(CodeBlock.Index invariantPC,
 			boolean[] variables, Type[] environment, AttributedCodeBlock block) {
 		// FIXME: we don't need to include all variables, only those which are
 		// "active".
 		ArrayList<Type> types = new ArrayList<Type>();
-		for(int i=0;i!=environment.length;++i) {
+		for(int i=0;i!=variables.length;++i) {
 			if(variables[i]) {
 				types.add(environment[i]);
 			} else {
