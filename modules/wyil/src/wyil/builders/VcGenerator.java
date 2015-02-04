@@ -35,7 +35,7 @@ import java.util.*;
 
 import wybs.lang.*;
 import wyfs.lang.Path;
-import wyil.attributes.RegisterDeclarations;
+import wyil.attributes.VariableDeclarations;
 import wyil.builders.VcBranch.State;
 import wyil.lang.*;
 import wyil.lang.CodeBlock.Index;
@@ -161,7 +161,7 @@ public class VcGenerator {
 		AttributedCodeBlock body = methodCase.body();				
 		List<AttributedCodeBlock> precondition = methodCase.precondition();
 		List<AttributedCodeBlock> postcondition = methodCase.postcondition();
-		RegisterDeclarations rds = method.attribute(RegisterDeclarations.class); 		
+		VariableDeclarations rds = method.attribute(VariableDeclarations.class); 		
 		// First, translate pre- and post-conditions into macro blocks. These
 		// can then be used in various places to assume or enforce pre /
 		// post-conditions. For example, when ensure a pre-condition is met at
@@ -171,7 +171,6 @@ public class VcGenerator {
 			buildMacroBlock(prefix + i, CodeBlock.Index.ROOT, precondition.get(i), fmm.params());
 		}
 		prefix = method.name() + "_ensures_";
-		// FIXME: the postEnvironment won't work ultimately
 		List<Type> postEnvironment = prepend(fmm.ret(), fmm.params());
 		for (int i = 0; i != postcondition.size(); ++i) {			
 			buildMacroBlock(prefix + i, CodeBlock.Index.ROOT, postcondition.get(i), postEnvironment);
@@ -188,16 +187,18 @@ public class VcGenerator {
 		}
 		
 		Pair<String[],Type[]> registerInfo = parseRegisterDeclarations(rds);
+		String[] prefixes = registerInfo.first();
+		Type[] bodyEnvironment = registerInfo.second();
 		// Construct the master branch and initialise all parameters with their
 		// declared types in the master branch. The master branch needs to have
 		// at least as many slots as there are parameters, though may require
 		// more if the body uses them.
 		VcBranch master = new VcBranch(Math.max(body.numSlots(), fmm.params()
-				.size()), registerInfo.first());
+				.size()), prefixes);
 
 		Expr[] arguments = new Expr[fmm.params().size()];
 		for (int i = 0; i != fmm.params().size(); ++i) {
-			Expr.Variable v = new Expr.Variable("r" + Integer.toString(i));
+			Expr.Variable v = new Expr.Variable(prefixes[i]);
 			master.write(i, v);
 			arguments[i] = v;
 		}
@@ -219,7 +220,7 @@ public class VcGenerator {
 		// statement, whilst failed branches are those which have reached a fail
 		// statement.
 		List<VcBranch> exitBranches = transform(master, CodeBlock.Index.ROOT,
-				registerInfo.second(), body);
+				bodyEnvironment, body);
 
 		// Examine all branches produced from the body. Each should be in one of
 		// two states: terminated or failed. Failed states indicate some
@@ -236,7 +237,7 @@ public class VcGenerator {
 				// this is an unreachable path.
 				Expr vc = buildVerificationCondition(
 						new Expr.Constant(Value.Bool(false)), branch,
-						toArray(postEnvironment), body);
+						bodyEnvironment, body);
 				wycsFile.add(wycsFile.new Assert("assertion failure", vc,
 						toWycsAttributes(body.attributes(branch.pc()))));
 				break;
@@ -253,21 +254,21 @@ public class VcGenerator {
 					Codes.Return ret = (Codes.Return) body.get(branch.pc());
 					arguments = new Expr[fmm.params().size() + 1];
 					for (int i = 0; i != fmm.params().size(); ++i) {
-						arguments[i + 1] = new Expr.Variable("r" + i);
+						arguments[i + 1] = new Expr.Variable(prefixes[i]);
 					}
 					arguments[0] = branch.read(ret.operand);
 					// Second, for each postcondition generate a separate
 					// verification condition. Doing this allows us to gather
 					// more detailed context information in the case of a
 					// failure about which post-condition is failing.
-					prefix = method.name() + "_ensures_";
+					prefix = method.name() + "_ensures_";					
 					for (int i = 0; i != postcondition.size(); ++i) {
 						Expr arg = arguments.length == 1 ? arguments[0]
 								: new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
 						Expr.Invoke macro = new Expr.Invoke(prefix + i,
 								wyilFile.id(), Collections.EMPTY_LIST, arg);
 						Expr vc = buildVerificationCondition(macro, branch,
-								toArray(postEnvironment),body);
+								bodyEnvironment,body);
 						// FIXME: add contextual information here
 						wycsFile.add(wycsFile.new Assert(
 								"postcondition not satisfied", vc,
@@ -1079,7 +1080,7 @@ public class VcGenerator {
 				}
 			}
 			// *** END ***
-			buildInvariantMacro(invariantPc,environment,block);			
+			buildInvariantMacro(invariantPc,variables,environment,block);			
 			// This is the harder case as we must account for the loop invariant
 			// properly. To do this, we allow the loop to execute upto the loop
 			// invariant using the current branch state. At this point, we havoc
@@ -1189,12 +1190,16 @@ public class VcGenerator {
 	 *            The encolosing code block
 	 */
 	private void buildInvariantMacro(CodeBlock.Index invariantPC,
-			Type[] environment, AttributedCodeBlock block) {
+			boolean[] variables, Type[] environment, AttributedCodeBlock block) {
 		// FIXME: we don't need to include all variables, only those which are
 		// "active".
 		ArrayList<Type> types = new ArrayList<Type>();
 		for(int i=0;i!=environment.length;++i) {
-			types.add(environment[i]);
+			if(variables[i]) {
+				types.add(environment[i]);
+			} else {
+				types.add(null);
+			}
 		}
 		String pc = invariantPC.toString().replace(".", "_");
 		buildMacroBlock(method.name() + "_loopinvariant_" + pc, invariantPC,
@@ -1938,7 +1943,7 @@ public class VcGenerator {
 		Expr lhs = branch.read(code.operand(0));
 		Expr rhs = branch.read(code.operand(1));
 
-		if(operator != null) {
+		if(operator != null) {			
 			branch.write(code.target(), new Expr.Binary(operator, lhs, rhs,
 					toWycsAttributes(block.attributes(branch.pc()))));
 		} else {
@@ -2218,8 +2223,21 @@ public class VcGenerator {
 
 		ArrayList<TypePattern> vars = new ArrayList<TypePattern>();
 		for (String var : uses) {
-			int reg = determineRegister(var, branch.prefixes());
-			Type type = environment[reg];
+			Type type;
+			if(var.startsWith("_")) {
+				// FIXME: this is a hack to handle the fact that forall index
+				// variables are not explicit. However, we know that they are
+				// always integers.
+				type = Type.T_INT;
+			} else if(var.startsWith("null$")) {
+				// FIXME: this is also something of a hack to deal with
+				// expressions which currently have no sensible translation into
+				// WyAL.
+				type = Type.T_ANY;
+			} else {
+				int reg = determineRegister(var, branch.prefixes());
+				type = environment[reg];
+			}
 			SyntacticType t = convert(type, block.attributes(branch.pc()));
 			Expr.Variable v = new Expr.Variable(var);
 			vars.add(new TypePattern.Leaf(t, v));
@@ -2266,7 +2284,7 @@ public class VcGenerator {
 			}
 		}
 		// Should be impossible to get here.
-		throw new RuntimeException("Unreachable code reached");
+		throw new RuntimeException("Unreachable code reached whilst looking for: " + variable);		
 	}
 	
 	/**
@@ -2768,12 +2786,12 @@ public class VcGenerator {
 	 * @param d
 	 * @return
 	 */
-	private static Pair<String[],Type[]> parseRegisterDeclarations(RegisterDeclarations rds) {		
+	private static Pair<String[],Type[]> parseRegisterDeclarations(VariableDeclarations rds) {		
 		if(rds != null) {
 			String[] prefixes = new String[rds.size()];
 			Type[] types = new Type[rds.size()];
 			for(int i=0;i!=prefixes.length;++i) {
-				RegisterDeclarations.Declaration d = rds.get(i);
+				VariableDeclarations.Declaration d = rds.get(i);
 				prefixes[i] = d.name();
 				types[i] = d.type();
 			}

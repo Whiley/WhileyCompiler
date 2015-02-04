@@ -443,7 +443,11 @@ public class TypePropagation implements Transform<WyalFile> {
 
 		switch(e.op) {
 		case TUPLE:
-			return SemanticType.Tuple(op_types);
+			if(op_types.length == 0) {
+				return SemanticType.Void;
+			} else {
+				return SemanticType.Tuple(op_types);
+			}
 		case SET:
 			if (op_types.length == 0) {
 				return SemanticType.Set(true, SemanticType.Void);
@@ -515,6 +519,7 @@ public class TypePropagation implements Transform<WyalFile> {
 
 		SemanticType argument = propagate(e.operand, environment, generics,
 				context);
+						
 		// Construct concrete types for generic substitution
 		ArrayList<SemanticType> ivkGenerics = new ArrayList<SemanticType>();
 		for (int i = 0; i != e.generics.size(); ++i) {

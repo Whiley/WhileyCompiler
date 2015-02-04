@@ -79,7 +79,7 @@ public abstract class Value implements Comparable<Value> {
 			}
 		}
 		public java.lang.String toString() {
-			return null;
+			return "null";
 		}
 
 		public SemanticType type() {

@@ -404,8 +404,8 @@ public class WyalFileLexer {
 	public Token scanIdentifier() {
 		int start = pos;
 		while (pos < input.length()
-				&& (input.charAt(pos) == '_' || Character.isLetterOrDigit(input
-						.charAt(pos)))) {
+				&& (input.charAt(pos) == '_' || input.charAt(pos) == '$' || Character
+						.isLetterOrDigit(input.charAt(pos)))) {
 			pos++;
 		}
 		String text = input.substring(start, pos);

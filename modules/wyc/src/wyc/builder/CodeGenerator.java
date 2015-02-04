@@ -41,7 +41,7 @@ import wycc.util.Pair;
 import wycc.util.ResolveError;
 import wycc.util.Triple;
 import wyfs.lang.Path;
-import wyil.attributes.RegisterDeclarations;
+import wyil.attributes.VariableDeclarations;
 import wyil.attributes.SourceLocationMap;
 import wyil.lang.*;
 import wyil.util.AttributedCodeBlock;
@@ -217,7 +217,7 @@ public final class CodeGenerator {
 
 	private WyilFile.FunctionOrMethod generate(
 			WhileyFile.FunctionOrMethod fd) throws Exception {
-		Type.FunctionOrMethod ftype = fd.resolvedType().raw();
+		Nominal.FunctionOrMethod ftype = fd.resolvedType();
 
 		// The environment maintains the mapping from source-level variables to
 		// the registers in WyIL block(s).
@@ -231,9 +231,13 @@ public final class CodeGenerator {
 		// ==================================================================
 
 		ArrayList<AttributedCodeBlock> requires = new ArrayList<AttributedCodeBlock>();
+		List<VariableDeclarations.Declaration> declarations = new ArrayList<>();
 		for (WhileyFile.Parameter p : fd.parameters) {
 			// allocate parameter to register in the current block
-			environment.allocate(ftype.params().get(paramIndex++), p.name());
+			Nominal paramType = ftype.params().get(paramIndex++);
+			environment.allocate(paramType.raw(), p.name());
+			declarations.add(new VariableDeclarations.Declaration(paramType
+					.nominal(), p.name()));
 		}
 
 		for (Expr condition : fd.requires) {
@@ -262,7 +266,8 @@ public final class CodeGenerator {
 
 			paramIndex = 0;
 			for (WhileyFile.Parameter p : fd.parameters) {
-				postEnv.allocate(ftype.params().get(paramIndex), p.name());
+				Nominal paramType = ftype.params().get(paramIndex);
+				postEnv.allocate(paramType.raw(), p.name());
 				paramIndex++;
 			}
 
@@ -284,6 +289,7 @@ public final class CodeGenerator {
 		// Generate body
 		// ==================================================================
 
+		buildVariableDeclarations(fd.statements, declarations, environment, fd);	
 		AttributedCodeBlock body = new AttributedCodeBlock(new SourceLocationMap());
 		for (Stmt s : fd.statements) {
 			generate(s, environment, body, fd);
@@ -314,7 +320,7 @@ public final class CodeGenerator {
 		// types of all registers. Technically speaking, this information is not
 		// necessary to compile and run a Whiley program. However, it is very
 		// useful for debugging and performing verification.
-		declaration.attributes().add(environment.toRegisterDeclarations());
+		declaration.attributes().add(new VariableDeclarations(declarations));
 		
 		// Done.
 		return declaration;
@@ -1224,8 +1230,7 @@ public final class CodeGenerator {
 
 		// FIXME: need to handle destructuring syntax properly.
 		Type.EffectiveCollection rawSrcType = s.srcType.raw();
-		int indexRegister = environment.allocate(rawSrcType.element(),
-				s.variables.get(0));
+		int indexRegister = environment.get(s.variables.get(0));
 
 		AttributedCodeBlock body = codes.createSubBlock();
 
@@ -1881,12 +1886,15 @@ public final class CodeGenerator {
 		// Create environment for the lambda body.
 		ArrayList<Integer> operands = new ArrayList<Integer>();
 		ArrayList<Type> paramTypes = new ArrayList<Type>();
+		ArrayList<VariableDeclarations.Declaration> declarations = new ArrayList<VariableDeclarations.Declaration>();	
 		Environment benv = new Environment();
 		for (int i = 0; i != tfm_params.size(); ++i) {
 			Type type = tfm_params.get(i);
-			benv.allocate(type, expr_params.get(i).name);
+			String name = expr_params.get(i).name;
+			benv.allocate(type, name);
 			paramTypes.add(type);
 			operands.add(Codes.NULL_REG);
+			declarations.add(new VariableDeclarations.Declaration(type,name));
 		}
 		for (Pair<Type, String> v : Exprs.uses(expr.body, context)) {
 			if (benv.get(v.second()) == null) {
@@ -1925,6 +1933,7 @@ public final class CodeGenerator {
 				Collections.EMPTY_LIST, attributes(expr)));
 		WyilFile.FunctionOrMethod lambda = new WyilFile.FunctionOrMethod(
 				modifiers, name, cfm, cases, attributes(expr));
+		lambda.attributes().add(new VariableDeclarations(declarations));
 		lambdas.add(lambda);
 		Path.ID mid = context.file().module;
 		NameID nid = new NameID(mid, name);
@@ -2358,7 +2367,12 @@ public final class CodeGenerator {
 			// do nothing for leaf
 			TypePattern.Leaf lp = (TypePattern.Leaf) pattern;
 			if (lp.var != null) {
-				environment.put(root, lp.var.var);
+				Integer index = environment.get(lp.var.var);				
+				if(index != null) {
+					blk.add(Codes.Assign(type, index, root));
+				} else {
+					environment.put(root,lp.var.var);
+				}
 			}
 		}
 	}
@@ -2419,6 +2433,102 @@ public final class CodeGenerator {
 		return r;
 	}
 
+	/**
+	 * Construct the set of variable declarations for a given list of variables.
+	 * 
+	 * @param block
+	 * @param declarations
+	 */
+	public void buildVariableDeclarations(List<Stmt> block,
+			List<VariableDeclarations.Declaration> declarations,
+			Environment environment, WhileyFile.Context context) {
+		//
+		for (int i = 0; i != block.size(); ++i) {
+			buildVariableDeclarations(block.get(i), declarations, environment,
+					context);
+		}
+	}
+	
+	public void buildVariableDeclarations(Stmt stmt,
+			List<VariableDeclarations.Declaration> declarations, Environment environment,
+			WhileyFile.Context context) {	
+		if (stmt instanceof Assign || stmt instanceof Assert
+				|| stmt instanceof Assume || stmt instanceof Return
+				|| stmt instanceof Debug || stmt instanceof Break
+				|| stmt instanceof Expr.MethodCall
+				|| stmt instanceof Expr.IndirectMethodCall
+				|| stmt instanceof Expr.FunctionCall
+				|| stmt instanceof Expr.IndirectFunctionCall
+				|| stmt instanceof Expr.New || stmt instanceof Skip) {
+			// Don't need to do anything in these cases.
+			return;
+		} else if (stmt instanceof VariableDeclaration) {
+			VariableDeclaration d = (VariableDeclaration) stmt;
+			addDeclaredVariables(d.pattern,d.type,declarations,environment);
+		} else if (stmt instanceof IfElse) {
+			IfElse s = (IfElse) stmt;
+			buildVariableDeclarations(s.trueBranch, declarations, environment, context);
+			buildVariableDeclarations(s.falseBranch, declarations, environment, context);
+		} else if (stmt instanceof Switch) {
+			Switch s = (Switch) stmt;
+			for(Stmt.Case c : s.cases) {
+				buildVariableDeclarations(c.stmts,declarations, environment, context);
+			}			
+		} else if (stmt instanceof While) {
+			While s = (While) stmt;
+			buildVariableDeclarations(s.body,declarations, environment, context);
+		} else if (stmt instanceof DoWhile) {
+			DoWhile s = (DoWhile) stmt;
+			buildVariableDeclarations(s.body,declarations, environment, context);
+		} else if (stmt instanceof ForAll) {
+			ForAll s = (ForAll) stmt;
+			Nominal type = s.srcType.element();
+			String name = s.variables.get(0);
+			declarations.add(new VariableDeclarations.Declaration(type.nominal(),name));
+			environment.allocate(type.raw(), name);
+			buildVariableDeclarations(s.body,declarations, environment, context);
+		} else {
+			// should be dead-code
+			WhileyFile.internalFailure("unknown statement: "
+					+ stmt.getClass().getName(), context, stmt);
+		}
+	}
+		
+	public static void addDeclaredVariables(TypePattern pattern, Nominal type,
+			List<VariableDeclarations.Declaration> declarations,
+			Environment environment) {
+
+		if (pattern instanceof TypePattern.Record) {
+			TypePattern.Record tp = (TypePattern.Record) pattern;
+			Nominal.Record tt = (Nominal.Record) type;
+			for (TypePattern.Leaf element : tp.elements) {
+				String fieldName = element.var.var;
+				Nominal fieldType = tt.field(fieldName);
+				addDeclaredVariables(pattern, fieldType, declarations, environment);
+			}
+		} else if (pattern instanceof TypePattern.Tuple) {
+			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
+			Nominal.Tuple tt = (Nominal.Tuple) type;
+			for (int i = 0; i != tp.elements.size(); ++i) {
+				TypePattern element = tp.elements.get(i);
+				Nominal elemType = tt.element(i);
+				addDeclaredVariables(element,elemType,declarations, environment);
+			}
+		} else if (pattern instanceof TypePattern.Rational) {
+			TypePattern.Rational tp = (TypePattern.Rational) pattern;
+			addDeclaredVariables(tp.numerator, Nominal.T_INT, declarations, environment);
+			addDeclaredVariables(tp.denominator, Nominal.T_INT, declarations, environment);
+		} else {
+			// do nothing for leaf
+			TypePattern.Leaf lp = (TypePattern.Leaf) pattern;
+			if (lp.var != null) {
+				declarations.add(new VariableDeclarations.Declaration(type.nominal(),lp.var.var));
+				environment.allocate(type.raw(),lp.var.var);
+			}
+		}
+	}
+
+	
 	/**
 	 * The attributes method extracts those attributes of relevance to WyIL, and
 	 * discards those which are only used for the wyc front end.
@@ -2496,20 +2606,6 @@ public final class CodeGenerator {
 			return idx2type;
 		}
 		
-		public RegisterDeclarations toRegisterDeclarations() {
-			String[] names = new String[idx2type.size()];
-			for (Map.Entry<String, Integer> e : var2idx.entrySet()) {
-				names[e.getValue()] = e.getKey();
-			}
-			
-			RegisterDeclarations.Declaration[] declarations = new RegisterDeclarations.Declaration[idx2type.size()];
-			
-			for(int i=0;i!=idx2type.size();++i) {
-				declarations[i] = new RegisterDeclarations.Declaration(idx2type.get(i),names[i]);
-			}
-			return new RegisterDeclarations(declarations);
-		}
-
 		public String toString() {
 			return idx2type.toString() + "," + var2idx.toString();
 		}

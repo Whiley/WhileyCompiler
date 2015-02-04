@@ -352,8 +352,15 @@ public class VcBranch {
 		// to invalidate a variable, we assign it a "skolem" constant. That is,
 		// a fresh variable which has not been previously encountered in the
 		// branch.			
-		versions[register] = versions[register] + 1;
-		Expr.Variable var = new Expr.Variable(prefixes[register] + "$"
+		versions[register] = versions[register] + 1;	
+		if(register > prefixes.length) {
+			// FIXME: this is a hack to deal with havocing temporary variables.
+			// The need for this only arises because some operations in Wyil are
+			// not currently translated into WyAL and, instead, target registers
+			// are havoced.
+		}
+		String prefix = register < prefixes.length ? prefixes[register] : "null";		
+		Expr.Variable var = new Expr.Variable(prefix + "$"
 				+ versions[register]);
 		environment[register] = var;	
 		return var;
@@ -596,12 +603,12 @@ public class VcBranch {
 	 * 
 	 * @param branches
 	 *            --- Branches whose environments are to be converged.
-	 * @param subscripts
+	 * @param versions
 	 *            --- the converged set of subscripts
 	 * 
 	 * @return
 	 */
-	private Expr[] convergeEnvironments(VcBranch[] branches, int[] subscripts) {
+	private Expr[] convergeEnvironments(VcBranch[] branches, int[] versions) {
 		Expr[] newEnvironment = Arrays.copyOf(environment, environment.length);
 		// First, go through and find all registers whose values differ between
 		// parents. These registers will need to be patched.
@@ -632,15 +639,17 @@ public class VcBranch {
 					// marked as both toNull and toPatch. In such case, it
 					// should be nulled.
 					newEnvironment[i] = null;
-				} else if (toPatch.get(i)) {
-					// This register needs to be patched
-					Expr.Variable var = new Expr.Variable(prefixes[i] + "$" + subscripts[i]);
+				} else if (toPatch.get(i) && i < prefixes.length) {
+					// This register needs to be patched. Note that we don't
+					// patch registers which have no prefix, as these are
+					// temporary registers which we can safely ignore.					
+					Expr.Variable var = new Expr.Variable(prefixes[i] + "$" + versions[i]);
 					for (int j = 0; j != branches.length; ++j) {
 						branches[j].assume(new Expr.Binary(Expr.Binary.Op.EQ,
 								var, branches[j].read(i)));
 					}
 					newEnvironment[i] = var;
-				}  
+				} 
 			}
 			// Done
 			return newEnvironment;

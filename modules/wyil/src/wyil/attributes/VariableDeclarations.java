@@ -25,6 +25,9 @@
 
 package wyil.attributes;
 
+import java.util.List;
+
+import wyil.attributes.VariableDeclarations.Declaration;
 import wyil.lang.Attribute;
 import wyil.lang.Type;
 
@@ -82,11 +85,15 @@ import wyil.lang.Type;
  * @author David J. Pearce
  *
  */
-public class RegisterDeclarations implements Attribute {
+public class VariableDeclarations implements Attribute {
 	private Declaration[] declarations;
 
-	public RegisterDeclarations(Declaration... declarations) {
+	public VariableDeclarations(Declaration... declarations) {
 		this.declarations = declarations;
+	}
+
+	public VariableDeclarations(List<Declaration> declarations) {
+		this.declarations = declarations.toArray(new Declaration[declarations.size()]);
 	}
 
 	public Declaration get(int register) {
@@ -123,6 +130,10 @@ public class RegisterDeclarations implements Attribute {
 
 		public String name() {
 			return name;
+		}
+		
+		public String toString() {
+			return type + " " + name;
 		}
 	}
 }

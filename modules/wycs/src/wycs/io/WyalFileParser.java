@@ -3062,14 +3062,21 @@ public class WyalFileParser {
 
 		if (tryAndMatch(terminated, LeftBrace) != null) {
 			// Bracketed type pattern
-			result = parseTypePattern(generics, environment, true);
-			match(RightBrace);
-			Expr.Variable name = parseTypePatternVar(terminated);
-			if (name != null) {
-				return new TypePattern.Leaf(result.toSyntacticType(), name,
-						sourceAttr(start, index - 1));
+			if(tryAndMatch(terminated,RightBrace) != null) {
+				// This indicates no type is provided. This is a short-hand
+				// notation for the void type.				
+				return new TypePattern.Leaf(new SyntacticType.Void(sourceAttr(
+						start, index - 1)), null, sourceAttr(start, index - 1));
 			} else {
-				return result;
+				result = parseTypePattern(generics, environment, true);
+				match(RightBrace);
+				Expr.Variable name = parseTypePatternVar(terminated);
+				if (name != null) {
+					return new TypePattern.Leaf(result.toSyntacticType(), name,
+							sourceAttr(start, index - 1));
+				} else {
+					return result;
+				}
 			}
 		} else if (tryAndMatch(terminated, LeftCurly) != null) {
 			// Record, Set or Map type pattern

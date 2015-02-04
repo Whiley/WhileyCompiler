@@ -20,8 +20,7 @@ ensures r >= 0:
     int i = 0
     //
     while str[i] != 0 
-        where i >= 0 && i < |str|
-        where str[i] != 0 ==> (i+1) < |str|:
+        where i >= 0 && i < |str|:
         //
         i = i + 1
     //
