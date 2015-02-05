@@ -353,14 +353,8 @@ public class VcBranch {
 		// to invalidate a variable, we assign it a "skolem" constant. That is,
 		// a fresh variable which has not been previously encountered in the
 		// branch.			
-		versions[register] = versions[register] + 1;	
-		if(register > prefixes.length) {
-			// FIXME: this is a hack to deal with havocing temporary variables.
-			// The need for this only arises because some operations in Wyil are
-			// not currently translated into WyAL and, instead, target registers
-			// are havoced.
-		}
-		String prefix = register < prefixes.length ? prefixes[register] : "null";		
+		versions[register] = versions[register] + 1;			
+		String prefix = prefixes[register] == null ? "r%" + register : prefixes[register];		
 		Expr.Variable var = new Expr.Variable(prefix + "$"
 				+ versions[register]);
 		environment[register] = var;	
@@ -643,7 +637,7 @@ public class VcBranch {
 				} else if (toPatch.get(i)) {
 					// This register needs to be patched. First, check whether
 					// this register has a prefix or not.
-					String prefix = prefixes[i] == null ? "%" + i : prefixes[i];
+					String prefix = prefixes[i] == null ? "r%" + i : prefixes[i];
 					Expr.Variable var = new Expr.Variable(prefix + "$" + versions[i]);
 					for (int j = 0; j != branches.length; ++j) {
 						branches[j].assume(new Expr.Binary(Expr.Binary.Op.EQ,

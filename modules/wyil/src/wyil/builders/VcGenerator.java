@@ -2295,10 +2295,10 @@ public class VcGenerator {
 		}
 		// Now, check whether this is a raw register identifier, or a named
 		// variable identifier.
-		if(prefix.startsWith("%")) {
+		if(prefix.startsWith("r%")) {
 			// This is a raw register identifier. Therefore, we can extract the
 			// register number directly.
-			return Integer.parseInt(prefix.substring(1));
+			return Integer.parseInt(prefix.substring(2));
 		} else {
 			// This is a named varaible identifier. Therefore, we need to look
 			// through the known list of named variable prefixes to see whether
