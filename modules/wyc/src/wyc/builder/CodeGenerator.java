@@ -217,7 +217,8 @@ public final class CodeGenerator {
 
 	private WyilFile.FunctionOrMethod generate(
 			WhileyFile.FunctionOrMethod fd) throws Exception {
-		Nominal.FunctionOrMethod ftype = fd.resolvedType();
+		Type.FunctionOrMethod rawFnType = fd.resolvedType().raw();
+		Type.FunctionOrMethod nominalFnType = fd.resolvedType().nominal();
 
 		// The environment maintains the mapping from source-level variables to
 		// the registers in WyIL block(s).
@@ -234,10 +235,10 @@ public final class CodeGenerator {
 		List<VariableDeclarations.Declaration> declarations = new ArrayList<>();
 		for (WhileyFile.Parameter p : fd.parameters) {
 			// allocate parameter to register in the current block
-			Nominal paramType = ftype.params().get(paramIndex++);
-			environment.allocate(paramType.raw(), p.name());
-			declarations.add(new VariableDeclarations.Declaration(paramType
-					.nominal(), p.name()));
+			environment.allocate(rawFnType.params().get(paramIndex), p.name());
+			declarations.add(new VariableDeclarations.Declaration(nominalFnType
+					.params().get(paramIndex), p.name()));
+			paramIndex = paramIndex + 1;
 		}
 
 		// Allocate all declared variables now. This ensures that all declared
@@ -274,8 +275,7 @@ public final class CodeGenerator {
 
 			paramIndex = 0;
 			for (WhileyFile.Parameter p : fd.parameters) {
-				Nominal paramType = ftype.params().get(paramIndex);
-				postEnv.allocate(paramType.raw(), p.name());
+				postEnv.allocate(rawFnType.params().get(paramIndex), p.name());
 				paramIndex++;
 			}
 

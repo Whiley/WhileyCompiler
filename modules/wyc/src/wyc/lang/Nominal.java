@@ -922,6 +922,8 @@ public abstract class Nominal {
 
 		abstract public Nominal ret();
 
+		abstract public Nominal param(int i);
+		
 		abstract public java.util.List<Nominal> params();
 	}
 
@@ -945,7 +947,15 @@ public abstract class Nominal {
 		public Nominal ret() {
 			return construct(nominal.ret(),raw.ret());
 		}
-
+		
+		public Nominal param(int i) {
+			java.util.List<Type> rawElements = raw.params();
+			java.util.List<Type> nominalElements = nominal.params();
+			Type nominalElement = nominalElements.get(i);
+			Type rawElement = rawElements.get(i);
+			return construct(nominalElement,rawElement);
+		}
+		
 		public java.util.List<Nominal> params() {
 			ArrayList<Nominal> r = new ArrayList<Nominal>();
 			java.util.List<Type> rawElements = raw.params();
@@ -992,6 +1002,14 @@ public abstract class Nominal {
 			return construct(nominal.ret(),raw.ret());
 		}
 
+		public Nominal param(int i) {
+			java.util.List<Type> rawElements = raw.params();
+			java.util.List<Type> nominalElements = nominal.params();
+			Type nominalElement = nominalElements.get(i);
+			Type rawElement = rawElements.get(i);
+			return construct(nominalElement,rawElement);
+		}
+		
 		public java.util.List<Nominal> params() {
 			ArrayList<Nominal> r = new ArrayList<Nominal>();
 			java.util.List<Type> rawElements = raw.params();
