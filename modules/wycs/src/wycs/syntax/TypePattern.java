@@ -10,6 +10,8 @@ import wycc.lang.Attribute;
 import wycc.lang.SyntacticElement;
 import wycc.util.Pair;
 import wycs.core.SemanticType;
+import wycs.syntax.SyntacticType.Tuple;
+import wycs.syntax.SyntacticType.Util;
 
 /**
  * Represents a type pattern which is used for pattern matching.
@@ -37,6 +39,8 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 
 	public abstract void addDeclaredVariables(Collection<String> variables);
 
+	public abstract boolean equivalent(TypePattern p);
+	
 	/**
 	 * A type pattern leaf is simply a syntactic type, along with an optional
 	 * variable identifier.
@@ -75,7 +79,17 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			return new TypePattern.Leaf(type.instantiate(binding), var,
 					attributes());
 		}
-
+		
+		@Override
+		public boolean equivalent(TypePattern t) {
+			if (t instanceof Leaf) {
+				Leaf tt = (Leaf) t;
+				return type.equivalent(tt.type)
+						&& (var == tt.var || (var != null && var
+								.equivalent(tt.var)));
+			}
+			return false;
+		}
 		public String toString() {
 			if(var != null) {
 				return type + " " + var.name;
@@ -119,6 +133,16 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			denominator.addDeclaredVariables(variables);
 		}
 
+		@Override
+		public boolean equivalent(TypePattern t) {
+			if (t instanceof Rational) {
+				Rational tt = (Rational) t;
+				return numerator.equivalent(tt.numerator)
+						&& denominator.equivalent(tt.denominator);
+			}
+			return false;
+		}
+		
 		@Override
 		public TypePattern instantiate(Map<String, SyntacticType> binding) {
 			// TODO Auto-generated method stub
@@ -189,6 +213,15 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			return new TypePattern.Tuple(types,attributes());
 		}
 
+		@Override
+		public boolean equivalent(TypePattern t) {
+			if (t instanceof Tuple) {
+				Tuple tt = (Tuple) t;
+				return equivalent(elements,tt.elements);
+			}
+			return false;
+		}
+		
 		public String toString() {
 			String r = "";
 			boolean firstTime = true;
@@ -259,7 +292,18 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 				TypePattern.Leaf tp = elements.get(i);
 				types.add(tp.instantiate(binding));
 			}
-			return new TypePattern.Record(types, isOpen, attributes());		}
+			return new TypePattern.Record(types, isOpen, attributes());		
+		}
+		
+		@Override
+		public boolean equivalent(TypePattern t) {
+			if (t instanceof Record) {
+				Record tt = (Record) t;
+				return equivalent(elements,tt.elements) && isOpen == tt.isOpen;
+			}
+			return false;
+		}
+		
 	}
 
 	/**
@@ -304,6 +348,15 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 				types.add(tp.instantiate(binding));
 			}
 			return new TypePattern.Union(types, attributes());
+		}
+		
+		@Override
+		public boolean equivalent(TypePattern t) {
+			if (t instanceof Union) {
+				Union tt = (Union) t;
+				return equivalent(elements,tt.elements);
+			}
+			return false;
 		}
 	}
 
@@ -351,6 +404,29 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 				types.add(tp.instantiate(binding));
 			}
 			return new TypePattern.Intersection(types, attributes());
+		}
+		
+		@Override
+		public boolean equivalent(TypePattern t) {
+			if (t instanceof Intersection) {
+				Intersection tt = (Intersection) t;
+				return equivalent(elements,tt.elements);
+			}
+			return false;
+		}
+	}
+	
+	public static boolean equivalent(java.util.List<? extends TypePattern> l1,
+			java.util.List<? extends TypePattern> l2) {
+		if (l1.size() != l2.size()) {
+			return false;
+		} else {
+			for (int i = 0; i != l1.size(); ++i) {
+				if (!l1.get(i).equivalent(l2.get(i))) {
+					return false;
+				}
+			}
+			return true;
 		}
 	}
 }

@@ -15,6 +15,8 @@ public interface SyntacticType extends SyntacticElement {
 
 	public abstract SyntacticType instantiate(java.util.Map<String,SyntacticType> binding);
 
+	public abstract boolean equivalent(SyntacticType t);
+	
 	public static abstract class Primitive extends SyntacticElement.Impl
 			implements SyntacticType {
 
@@ -47,9 +49,13 @@ public interface SyntacticType extends SyntacticElement {
 		public Any(Collection<Attribute> attributes) {
 			super(attributes);
 		}
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			return t instanceof Any;
+		}
 		public String toString() {
 			return "any";
-		}
+		}		
 	}
 
 	/**
@@ -69,6 +75,10 @@ public interface SyntacticType extends SyntacticElement {
 		}
 		public Void(Collection<Attribute> attributes) {
 			super(attributes);
+		}
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			return t instanceof Void;
 		}
 		public String toString() {
 			return "void";
@@ -95,6 +105,11 @@ public interface SyntacticType extends SyntacticElement {
 		public Null(Collection<Attribute> attributes) {
 			super(attributes);
 		}
+
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			return t instanceof Null;
+		}
 		public String toString() {
 			return "null";
 		}
@@ -109,9 +124,16 @@ public interface SyntacticType extends SyntacticElement {
 		public Bool(Attribute... attributes) {
 			super(attributes);
 		}
+
 		public Bool(Collection<Attribute> attributes) {
 			super(attributes);
 		}
+
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			return t instanceof Bool;
+		}
+
 		public String toString() {
 			return "bool";
 		}
@@ -131,9 +153,16 @@ public interface SyntacticType extends SyntacticElement {
 		public Byte(Attribute... attributes) {
 			super(attributes);
 		}
+
 		public Byte(Collection<Attribute> attributes) {
 			super(attributes);
 		}
+
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			return t instanceof Byte;
+		}
+
 		public String toString() {
 			return "byte";
 		}
@@ -149,9 +178,16 @@ public interface SyntacticType extends SyntacticElement {
 		public Char(Attribute... attributes) {
 			super(attributes);
 		}
+
 		public Char(Collection<Attribute> attributes) {
 			super(attributes);
 		}
+
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			return t instanceof Char;
+		}
+
 		public String toString() {
 			return "char";
 		}
@@ -170,9 +206,16 @@ public interface SyntacticType extends SyntacticElement {
 		public Int(Attribute... attributes) {
 			super(attributes);
 		}
+
 		public Int(Collection<Attribute> attributes) {
 			super(attributes);
 		}
+
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			return t instanceof Int;
+		}
+
 		public String toString() {
 			return "int";
 		}
@@ -193,10 +236,16 @@ public interface SyntacticType extends SyntacticElement {
 		public Real(Collection<Attribute> attributes) {
 			super(attributes);
 		}
-		
+
 		public Real(java.util.List<Attribute> attributes) {
 			super(attributes);
 		}
+
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			return t instanceof Real;
+		}
+
 		public String toString() {
 			return "real";
 		}
@@ -212,15 +261,23 @@ public interface SyntacticType extends SyntacticElement {
 		public Strung(Attribute... attributes) {
 			super(attributes);
 		}
+
 		public Strung(Collection<Attribute> attributes) {
 			super(attributes);
 		}
+
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			return t instanceof Strung;
+		}
+
 		public String toString() {
 			return "string";
 		}
 	}
 
-	public static class Variable extends SyntacticElement.Impl implements SyntacticType {
+	public static class Variable extends SyntacticElement.Impl implements
+			SyntacticType {
 		public final String var;
 
 		public Variable(String var, Attribute... attributes) {
@@ -233,13 +290,23 @@ public interface SyntacticType extends SyntacticElement {
 		}
 
 		@Override
-		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(
+				java.util.Map<String, SyntacticType> binding) {
 			SyntacticType t = binding.get(var);
-			if(var != null) {
+			if (var != null) {
 				return t;
 			} else {
 				return this;
 			}
+		}
+
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			if (t instanceof Variable) {
+				Variable tt = (Variable) t;
+				return var.equals(tt.var);
+			}
+			return false;
 		}
 	}
 
@@ -252,7 +319,8 @@ public interface SyntacticType extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public static class Negation extends SyntacticElement.Impl implements SyntacticType {
+	public static class Negation extends SyntacticElement.Impl implements
+			SyntacticType {
 		public final SyntacticType element;
 
 		public Negation(SyntacticType element, Attribute... attributes) {
@@ -270,13 +338,23 @@ public interface SyntacticType extends SyntacticElement {
 		}
 
 		@Override
-		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(
+				java.util.Map<String, SyntacticType> binding) {
 			SyntacticType t = element.instantiate(binding);
-			if(t != element) {
-				return new Negation(t,attributes());
+			if (t != element) {
+				return new Negation(t, attributes());
 			} else {
 				return this;
 			}
+		}
+
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			if (t instanceof Negation) {
+				Negation tt = (Negation) t;
+				return element.equivalent(tt.element);
+			}
+			return false;
 		}
 	}
 
@@ -289,7 +367,8 @@ public interface SyntacticType extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public static class Reference extends SyntacticElement.Impl implements SyntacticType {
+	public static class Reference extends SyntacticElement.Impl implements
+			SyntacticType {
 		public final SyntacticType element;
 
 		public Reference(SyntacticType element, Attribute... attributes) {
@@ -307,13 +386,23 @@ public interface SyntacticType extends SyntacticElement {
 		}
 
 		@Override
-		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(
+				java.util.Map<String, SyntacticType> binding) {
 			SyntacticType t = element.instantiate(binding);
-			if(t != element) {
-				return new Reference(t,attributes());
+			if (t != element) {
+				return new Reference(t, attributes());
 			} else {
 				return this;
 			}
+		}
+
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			if (t instanceof Reference) {
+				Reference tt = (Reference) t;
+				return element.equivalent(tt.element);
+			}
+			return false;
 		}
 	}
 
@@ -326,7 +415,8 @@ public interface SyntacticType extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public static class Nominal extends SyntacticElement.Impl implements SyntacticType {
+	public static class Nominal extends SyntacticElement.Impl implements
+			SyntacticType {
 		public final ArrayList<String> names;
 
 		public Nominal(Collection<String> names, Attribute... attributes) {
@@ -334,15 +424,16 @@ public interface SyntacticType extends SyntacticElement {
 			this.names = new ArrayList<String>(names);
 		}
 
-		public Nominal(Collection<String> names, Collection<Attribute> attributes) {
+		public Nominal(Collection<String> names,
+				Collection<Attribute> attributes) {
 			super(attributes);
 			this.names = new ArrayList<String>(names);
 		}
 
 		public String toString() {
 			String r = "";
-			for(int i=0;i!=names.size();++i) {
-				if(i != 0) {
+			for (int i = 0; i != names.size(); ++i) {
+				if (i != 0) {
 					r += ".";
 				}
 				r += names.get(i);
@@ -351,8 +442,18 @@ public interface SyntacticType extends SyntacticElement {
 		}
 
 		@Override
-		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(
+				java.util.Map<String, SyntacticType> binding) {
 			return this;
+		}
+
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			if (t instanceof Nominal) {
+				Nominal tt = (Nominal) t;
+				return names.equals(tt.names);
+			}
+			return false;
 		}
 	}
 
@@ -369,7 +470,8 @@ public interface SyntacticType extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public static class Union extends SyntacticElement.Impl implements SyntacticType {
+	public static class Union extends SyntacticElement.Impl implements
+			SyntacticType {
 		public java.util.List<SyntacticType> elements;
 
 		public Union(Collection<SyntacticType> types, Attribute... attributes) {
@@ -377,35 +479,48 @@ public interface SyntacticType extends SyntacticElement {
 			this.elements = new ArrayList<SyntacticType>(types);
 		}
 
-		public Union(Collection<SyntacticType> types, Collection<Attribute> attributes) {
+		public Union(Collection<SyntacticType> types,
+				Collection<Attribute> attributes) {
 			super(attributes);
 			this.elements = new ArrayList<SyntacticType>(types);
 		}
 
 		@Override
-		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(
+				java.util.Map<String, SyntacticType> binding) {
 			java.util.List<SyntacticType> nElements = elements;
-			for(int i=0;i!=nElements.size();++i) {
+			for (int i = 0; i != nElements.size(); ++i) {
 				SyntacticType e = nElements.get(i);
 				SyntacticType t = e.instantiate(binding);
-				if(nElements != elements) {
-					nElements.set(i,t);
-				} else if(e != t) {
+				if (nElements != elements) {
+					nElements.set(i, t);
+				} else if (e != t) {
 					nElements = new ArrayList<SyntacticType>(elements);
-					nElements.set(i,t);
+					nElements.set(i, t);
 				}
 			}
-			if(nElements != elements) {
-				return new Union(nElements,attributes());
+			if (nElements != elements) {
+				return new Union(nElements, attributes());
 			} else {
 				return this;
 			}
 		}
 
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			if (t instanceof Union) {
+				Union tt = (Union) t;
+				return Util.equivalent(elements, tt.elements);
+			}
+			return false;
+		}
+
 		public String toString() {
 			String s = "";
-			for(int i=0;i!=elements.size();++i) {
-				if(i != 0) { s += " | "; }
+			for (int i = 0; i != elements.size(); ++i) {
+				if (i != 0) {
+					s += " | ";
+				}
 				s += elements.get(i);
 			}
 			return s;
@@ -426,43 +541,58 @@ public interface SyntacticType extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public static class Intersection extends SyntacticElement.Impl implements SyntacticType {
+	public static class Intersection extends SyntacticElement.Impl implements
+			SyntacticType {
 		public java.util.List<SyntacticType> elements;
 
-		public Intersection(Collection<SyntacticType> elements, Attribute... attributes) {
+		public Intersection(Collection<SyntacticType> elements,
+				Attribute... attributes) {
 			super(attributes);
 			this.elements = new ArrayList<SyntacticType>(elements);
 		}
 
-		public Intersection(Collection<SyntacticType> elements, Collection<Attribute> attributes) {
+		public Intersection(Collection<SyntacticType> elements,
+				Collection<Attribute> attributes) {
 			super(attributes);
 			this.elements = new ArrayList<SyntacticType>(elements);
 		}
 
 		@Override
-		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(
+				java.util.Map<String, SyntacticType> binding) {
 			java.util.List<SyntacticType> nElements = elements;
-			for(int i=0;i!=nElements.size();++i) {
+			for (int i = 0; i != nElements.size(); ++i) {
 				SyntacticType e = nElements.get(i);
 				SyntacticType t = e.instantiate(binding);
-				if(nElements != elements) {
-					nElements.set(i,t);
-				} else if(e != t) {
+				if (nElements != elements) {
+					nElements.set(i, t);
+				} else if (e != t) {
 					nElements = new ArrayList<SyntacticType>(elements);
-					nElements.set(i,t);
+					nElements.set(i, t);
 				}
 			}
-			if(nElements != elements) {
-				return new Intersection(nElements,attributes());
+			if (nElements != elements) {
+				return new Intersection(nElements, attributes());
 			} else {
 				return this;
 			}
 		}
 
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			if (t instanceof Intersection) {
+				Intersection tt = (Intersection) t;
+				return Util.equivalent(elements, tt.elements);
+			}
+			return false;
+		}
+
 		public String toString() {
 			String s = "";
-			for(int i=0;i!=elements.size();++i) {
-				if(i != 0) { s += " & "; }
+			for (int i = 0; i != elements.size(); ++i) {
+				if (i != 0) {
+					s += " & ";
+				}
 				s += elements.get(i);
 			}
 			return s;
@@ -478,7 +608,8 @@ public interface SyntacticType extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public static class Set extends SyntacticElement.Impl implements SyntacticType {
+	public static class Set extends SyntacticElement.Impl implements
+			SyntacticType {
 		public final SyntacticType element;
 
 		public Set(SyntacticType element, Attribute... attributes) {
@@ -492,13 +623,23 @@ public interface SyntacticType extends SyntacticElement {
 		}
 
 		@Override
-		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(
+				java.util.Map<String, SyntacticType> binding) {
 			SyntacticType t = element.instantiate(binding);
-			if(t != element) {
-				return new Set(t,attributes());
+			if (t != element) {
+				return new Set(t, attributes());
 			} else {
 				return this;
 			}
+		}
+
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			if (t instanceof Set) {
+				Set tt = (Set) t;
+				return element.equivalent(tt.element);
+			}
+			return false;
 		}
 
 		public String toString() {
@@ -515,35 +656,48 @@ public interface SyntacticType extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public static class Map extends SyntacticElement.Impl implements SyntacticType {
+	public static class Map extends SyntacticElement.Impl implements
+			SyntacticType {
 		public final SyntacticType key;
 		public final SyntacticType value;
 
-		public Map(SyntacticType key, SyntacticType value, Attribute... attributes) {
+		public Map(SyntacticType key, SyntacticType value,
+				Attribute... attributes) {
 			super(attributes);
 			this.key = key;
 			this.value = value;
 		}
 
-		public Map(SyntacticType key, SyntacticType value, Collection<Attribute> attributes) {
+		public Map(SyntacticType key, SyntacticType value,
+				Collection<Attribute> attributes) {
 			super(attributes);
 			this.key = key;
 			this.value = value;
 		}
 
 		@Override
-		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(
+				java.util.Map<String, SyntacticType> binding) {
 			SyntacticType f = key.instantiate(binding);
 			SyntacticType t = value.instantiate(binding);
-			if(f != key || t != value) {
-				return new Map(f,t,attributes());
+			if (f != key || t != value) {
+				return new Map(f, t, attributes());
 			} else {
 				return this;
 			}
 		}
 
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			if (t instanceof Map) {
+				Map tt = (Map) t;
+				return key.equivalent(tt.key) && value.equivalent(tt.value);
+			}
+			return false;
+		}
+
 		public String toString() {
-			return "{" + key +"=>" + value + "}";
+			return "{" + key + "=>" + value + "}";
 		}
 	}
 
@@ -556,7 +710,8 @@ public interface SyntacticType extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public static class List extends SyntacticElement.Impl implements SyntacticType {
+	public static class List extends SyntacticElement.Impl implements
+			SyntacticType {
 		public final SyntacticType element;
 
 		public List(SyntacticType element, Attribute... attributes) {
@@ -570,13 +725,23 @@ public interface SyntacticType extends SyntacticElement {
 		}
 
 		@Override
-		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(
+				java.util.Map<String, SyntacticType> binding) {
 			SyntacticType t = element.instantiate(binding);
-			if(t != element) {
-				return new List(t,attributes());
+			if (t != element) {
+				return new List(t, attributes());
 			} else {
 				return this;
 			}
+		}
+
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			if (t instanceof List) {
+				List tt = (List) t;
+				return element.equivalent(tt.element);
+			}
+			return false;
 		}
 
 		public String toString() {
@@ -593,43 +758,58 @@ public interface SyntacticType extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public static class Tuple extends SyntacticElement.Impl implements SyntacticType {
+	public static class Tuple extends SyntacticElement.Impl implements
+			SyntacticType {
 		public final java.util.List<SyntacticType> elements;
 
-		public Tuple(Collection<SyntacticType> elements, Attribute... attributes) {
+		public Tuple(Collection<SyntacticType> elements,
+				Attribute... attributes) {
 			super(attributes);
 			this.elements = new ArrayList<SyntacticType>(elements);
 		}
 
-		public Tuple(Collection<SyntacticType> elements, Collection<Attribute> attributes) {
+		public Tuple(Collection<SyntacticType> elements,
+				Collection<Attribute> attributes) {
 			super(attributes);
 			this.elements = new ArrayList<SyntacticType>(elements);
 		}
 
 		@Override
-		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(
+				java.util.Map<String, SyntacticType> binding) {
 			java.util.List<SyntacticType> nElements = elements;
-			for(int i=0;i!=nElements.size();++i) {
+			for (int i = 0; i != nElements.size(); ++i) {
 				SyntacticType e = nElements.get(i);
 				SyntacticType t = e.instantiate(binding);
-				if(nElements != elements) {
-					nElements.set(i,t);
-				} else if(e != t) {
+				if (nElements != elements) {
+					nElements.set(i, t);
+				} else if (e != t) {
 					nElements = new ArrayList<SyntacticType>(elements);
-					nElements.set(i,t);
+					nElements.set(i, t);
 				}
 			}
-			if(nElements != elements) {
-				return new Tuple(nElements,attributes());
+			if (nElements != elements) {
+				return new Tuple(nElements, attributes());
 			} else {
 				return this;
 			}
 		}
 
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			if (t instanceof Tuple) {
+				Tuple tt = (Tuple) t;
+				return Util.equivalent(elements, tt.elements);
+			}
+			return false;
+		}
+
 		public String toString() {
 			String s = "";
-			for(int i=0;i!=elements.size();++i) {
-				if(i != 0) { s += ", "; }
+			for (int i = 0; i != elements.size(); ++i) {
+				if (i != 0) {
+					s += ", ";
+				}
 				s += elements.get(i);
 			}
 			return "(" + s + ")";
@@ -645,11 +825,13 @@ public interface SyntacticType extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public static class Record extends SyntacticElement.Impl implements SyntacticType {
+	public static class Record extends SyntacticElement.Impl implements
+			SyntacticType {
 		public final java.util.List<Pair<SyntacticType, Expr.Variable>> elements;
 		public final boolean isOpen;
 
-		public Record(boolean isOpen, Collection<Pair<SyntacticType, Expr.Variable>> elements,
+		public Record(boolean isOpen,
+				Collection<Pair<SyntacticType, Expr.Variable>> elements,
 				Attribute... attributes) {
 			super(attributes);
 			this.isOpen = isOpen;
@@ -657,7 +839,8 @@ public interface SyntacticType extends SyntacticElement {
 					elements);
 		}
 
-		public Record(boolean isOpen, Collection<Pair<SyntacticType, Expr.Variable>> elements,
+		public Record(boolean isOpen,
+				Collection<Pair<SyntacticType, Expr.Variable>> elements,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.isOpen = isOpen;
@@ -666,38 +849,63 @@ public interface SyntacticType extends SyntacticElement {
 		}
 
 		@Override
-		public SyntacticType instantiate(java.util.Map<String,SyntacticType> binding) {
+		public SyntacticType instantiate(
+				java.util.Map<String, SyntacticType> binding) {
 			java.util.List<Pair<SyntacticType, Expr.Variable>> nElements = elements;
-			for(int i=0;i!=nElements.size();++i) {
+			for (int i = 0; i != nElements.size(); ++i) {
 				Pair<SyntacticType, Expr.Variable> e = nElements.get(i);
 				SyntacticType t = e.first().instantiate(binding);
-				if(nElements != elements) {
-					nElements.set(i,new Pair<SyntacticType, Expr.Variable>(t, e.second()));
-				} else if(e.second() != t) {
-					nElements = new ArrayList<Pair<SyntacticType, Expr.Variable>>(elements);
-					nElements.set(i,new Pair<SyntacticType, Expr.Variable>(t, e.second()));
+				if (nElements != elements) {
+					nElements.set(i, new Pair<SyntacticType, Expr.Variable>(t,
+							e.second()));
+				} else if (e.second() != t) {
+					nElements = new ArrayList<Pair<SyntacticType, Expr.Variable>>(
+							elements);
+					nElements.set(i, new Pair<SyntacticType, Expr.Variable>(t,
+							e.second()));
 				}
 			}
-			if(nElements != elements) {
-				return new Record(isOpen,nElements,attributes());
+			if (nElements != elements) {
+				return new Record(isOpen, nElements, attributes());
 			} else {
 				return this;
 			}
 		}
 
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			if (t instanceof Record) {
+				Record tt = (Record) t;
+				if (elements.size() != tt.elements.size()) {
+					return false;
+				}
+				for (int i = 0; i != elements.size(); ++i) {
+					Pair<SyntacticType, Expr.Variable> p1 = elements.get(i);
+					Pair<SyntacticType, Expr.Variable> p2 = tt.elements.get(i);
+					if (!p1.first().equivalent(p2.first())
+							|| !p1.second().equivalent(p2.second())) {
+						return false;
+					}
+				}
+				return isOpen == tt.isOpen;
+			}
+			return false;
+		}
+
 		public String toString() {
 			String s = "";
-			for(int i=0;i!=elements.size();++i) {
-				if(i != 0) { s += ", "; }
+			for (int i = 0; i != elements.size(); ++i) {
+				if (i != 0) {
+					s += ", ";
+				}
 				s += elements.get(i);
 			}
 			return "(" + s + ")";
 		}
 	}
 
-
-	public static class Function extends
-			SyntacticElement.Impl implements SyntacticType {
+	public static class Function extends SyntacticElement.Impl implements
+			SyntacticType {
 		public final SyntacticType ret;
 		public final SyntacticType throwType;
 		public final ArrayList<SyntacticType> paramTypes;
@@ -727,20 +935,47 @@ public interface SyntacticType extends SyntacticElement {
 			SyntacticType nRet = ret.instantiate(binding);
 			SyntacticType nThrow = throwType.instantiate(binding);
 
-			for(int i=0;i!=nParamTypes.size();++i) {
+			for (int i = 0; i != nParamTypes.size(); ++i) {
 				SyntacticType e = nParamTypes.get(i);
 				SyntacticType t = e.instantiate(binding);
-				if(nParamTypes != paramTypes) {
-					nParamTypes.set(i,t);
-				} else if(e != t) {
+				if (nParamTypes != paramTypes) {
+					nParamTypes.set(i, t);
+				} else if (e != t) {
 					nParamTypes = new ArrayList<SyntacticType>(paramTypes);
-					nParamTypes.set(i,t);
+					nParamTypes.set(i, t);
 				}
 			}
-			if(nParamTypes != paramTypes || nRet != ret || nThrow != throwType) {
-				return new Function(nRet,nThrow,nParamTypes,attributes());
+			if (nParamTypes != paramTypes || nRet != ret || nThrow != throwType) {
+				return new Function(nRet, nThrow, nParamTypes, attributes());
 			} else {
 				return this;
+			}
+		}
+
+		@Override
+		public boolean equivalent(SyntacticType t) {
+			if (t instanceof Function) {
+				Function tt = (Function) t;
+				return ret.equivalent(tt.ret)
+						&& throwType.equivalent(tt.throwType)
+						&& Util.equivalent(paramTypes, tt.paramTypes);
+			}
+			return false;
+		}
+	}
+
+	class Util {
+		public static boolean equivalent(java.util.List<SyntacticType> l1,
+				java.util.List<SyntacticType> l2) {
+			if (l1.size() != l2.size()) {
+				return false;
+			} else {
+				for (int i = 0; i != l1.size(); ++i) {
+					if (!l1.get(i).equivalent(l2.get(i))) {
+						return false;
+					}
+				}
+				return true;
 			}
 		}
 	}

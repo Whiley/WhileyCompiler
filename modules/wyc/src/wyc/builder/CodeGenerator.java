@@ -327,6 +327,15 @@ public final class CodeGenerator {
 		// types of all registers. Technically speaking, this information is not
 		// necessary to compile and run a Whiley program. However, it is very
 		// useful for debugging and performing verification.
+		//
+		// First, add type information for all temporary registers allocated
+		// during code generation. This complements the existing information
+		// about declared variables. 
+		for(int i=declarations.size();i!=environment.size();i=i+1) {
+			Type t = environment.type(i);
+			declarations.add(new VariableDeclarations.Declaration(t,null));
+		}
+		// Second, add the corresponding attribute to the enclosing method.
 		declaration.attributes().add(new VariableDeclarations(declarations));
 		
 		// Done.
@@ -2606,6 +2615,10 @@ public final class CodeGenerator {
 			return null;
 		}
 
+		public Type type(int idx) {
+			return idx2type.get(idx);
+		}
+		
 		public void put(int idx, String v) {
 			var2idx.put(v, idx);
 		}

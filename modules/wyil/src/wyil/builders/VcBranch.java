@@ -325,6 +325,7 @@ public class VcBranch {
 			throw new IllegalArgumentException(
 					"Attempt to modify an inactive branch");
 		}
+		versions[register]++;
 		environment[register] = expr;
 	}
 
@@ -485,9 +486,9 @@ public class VcBranch {
 
 		// Converge versions between the different parents. This is done
 		// simply by calculating the max subscript for each variable across all
-		// environments.
+		// environments.		
 		int[] nVersions = convergeVersions(nparents);
-
+		
 		// Converge environments to ensure obtain a single environment which
 		// correctly represents the environments of all branches being joined.
 		// In some cases, individual environments may need to be patched to get
@@ -639,11 +640,11 @@ public class VcBranch {
 					// marked as both toNull and toPatch. In such case, it
 					// should be nulled.
 					newEnvironment[i] = null;
-				} else if (toPatch.get(i) && i < prefixes.length) {
-					// This register needs to be patched. Note that we don't
-					// patch registers which have no prefix, as these are
-					// temporary registers which we can safely ignore.					
-					Expr.Variable var = new Expr.Variable(prefixes[i] + "$" + versions[i]);
+				} else if (toPatch.get(i)) {
+					// This register needs to be patched. First, check whether
+					// this register has a prefix or not.
+					String prefix = prefixes[i] == null ? "%" + i : prefixes[i];
+					Expr.Variable var = new Expr.Variable(prefix + "$" + versions[i]);
 					for (int j = 0; j != branches.length; ++j) {
 						branches[j].assume(new Expr.Binary(Expr.Binary.Op.EQ,
 								var, branches[j].read(i)));
@@ -677,8 +678,8 @@ public class VcBranch {
 					// parents. This means it cannot be used after this point
 					// and, hence, can be safey ignored.
 					toNull.set(i);
-				} else if (parent.environment[i] != environment[i]) {
-					// In this case, there is a difference between this parent's
+				} else if (!parent.environment[i].equivalent(environment[i])) {
+					// In this case, there is some difference between this parent's
 					// environment and at least one others. In such case, the
 					// variable in question needs to be patched.
 					toPatch.set(i);

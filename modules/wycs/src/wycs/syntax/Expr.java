@@ -26,6 +26,8 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 
 	public abstract Expr substitute(Map<String,Expr> binding);
 
+	public abstract boolean equivalent(Expr e);
+	
 	// ==================================================================
 	// Classes
 	// ==================================================================
@@ -66,6 +68,16 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				return this;
 			}
 		}
+		
+		@Override
+		public boolean equivalent(Expr e) {
+			if (e instanceof Variable) {
+				Variable v = (Variable) e;
+				return name.equals(v.name);
+			} else {
+				return false;
+			}
+		}
 
 		public String toString() {
 			return name;
@@ -96,6 +108,16 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			return this;
 		}
 
+		@Override
+		public boolean equivalent(Expr e) {
+			if (e instanceof Constant) {
+				Constant c = (Constant) e;
+				return value.equals(c.value);
+			} else {
+				return false;
+			}
+		}
+		
 		public String toString() {
 			return value.toString();
 		}
@@ -128,6 +150,16 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			return this;
 		}
 
+		@Override
+		public boolean equivalent(Expr e) {
+			if (e instanceof ConstantAccess) {
+				ConstantAccess c = (ConstantAccess) e;
+				return name.equals(c.name);
+			} else {
+				return false;
+			}
+		}
+		
 		public String toString() {
 			return name;
 		}
@@ -180,6 +212,16 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				return this;
 			} else {
 				return new Expr.Unary(op, expr, attributes());
+			}
+		}
+		
+		@Override
+		public boolean equivalent(Expr e) {
+			if (e instanceof Unary) {
+				Unary v = (Unary) e;
+				return op == v.op && operand.equivalent(v.operand);
+			} else {
+				return false;
 			}
 		}
 
@@ -238,6 +280,16 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 		}
 
+		@Override
+		public boolean equivalent(Expr e) {
+			if (e instanceof Cast) {
+				Cast v = (Cast) e;
+				return type.equivalent(v.type) && operand.equivalent(v.operand);
+			} else {
+				return false;
+			}
+		}
+		
 		public String toString() {
 			return "(" + type + ") " + operand;
 		}
@@ -432,6 +484,17 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				return new Expr.Binary(op, lhs, rhs, attributes());
 			}
 		}
+		
+		@Override
+		public boolean equivalent(Expr e) {
+			if (e instanceof Binary) {
+				Binary v = (Binary) e;
+				return op == v.op && leftOperand.equivalent(v.leftOperand)
+						&& rightOperand.equivalent(v.rightOperand);
+			} else {
+				return false;
+			}
+		}
 
 		public String toString() {
 			String lhs = leftOperand.toString();
@@ -507,6 +570,17 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 		}
 
+		@Override
+		public boolean equivalent(Expr e) {
+			if (e instanceof Ternary) {
+				Ternary v = (Ternary) e;
+				return op == v.op && firstOperand.equivalent(v.firstOperand)
+						&& secondOperand.equivalent(v.secondOperand)
+						&& thirdOperand.equivalent(v.thirdOperand);
+			} else {
+				return false;
+			}
+		}
 		public String toString() {
 			switch(op) {
 			case UPDATE:
@@ -605,6 +679,25 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 		}
 
+		@Override
+		public boolean equivalent(Expr e) {
+			if (e instanceof Nary) {
+				Nary v = (Nary) e;
+				if (operands.size() != v.operands.size()) {
+					return false;
+				}
+				for (int i = 0; i != operands.size(); ++i) {
+					if (!operands.get(i).equivalent(v.operands.get(i))) {
+						return false;
+					}
+				}
+				return op == v.op;
+			} else {
+				return false;
+			}
+		}
+
+		
 		public String toString() {
 			String beg;
 			String end;
@@ -685,6 +778,26 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 		}
 
+		@Override
+		public boolean equivalent(Expr e) {
+			if (e instanceof Record) {
+				Record v = (Record) e;
+				if (operands.size() != v.operands.size()) {
+					return false;
+				}
+				for (int i = 0; i != operands.size(); ++i) {
+					Pair<String, Expr> operand = operands.get(i);
+					Pair<String, Expr> v_operand = v.operands.get(i);
+					if (!operand.first().equals(v_operand.first())
+							|| !operand.second().equivalent(v_operand.second())) {
+						return false;
+					}
+				}
+				return true;
+			} else {
+				return false;
+			}
+		}
 		public Expr instantiate(Map<String,SyntacticType> binding) {
 			// TODO
 			return null;
@@ -736,6 +849,17 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				return new Expr.IndexOf(nOperand, nIndex, attributes());
 			}
 		}
+		
+		@Override
+		public boolean equivalent(Expr e) {
+			if (e instanceof IndexOf) {
+				IndexOf v = (IndexOf) e;
+				return operand.equivalent(v.operand)
+						&& index.equivalent(v.index);
+			} else {
+				return false;
+			}
+		}
 
 		public String toString() {
 			return operand + "[" + index + "]";
@@ -780,6 +904,18 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 		}
 
+
+		@Override
+		public boolean equivalent(Expr e) {
+			if (e instanceof FieldAccess) {
+				FieldAccess v = (FieldAccess) e;
+				return operand.equivalent(v.operand) && name.equals(v.name);
+			} else {
+				return false;
+			}
+		}
+
+		
 		public String toString() {
 			return operand + "." + name;
 		}
@@ -841,6 +977,30 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 		}
 
+		@Override
+		public boolean equivalent(Expr e) {
+			if (e instanceof Invoke) {
+				Invoke v = (Invoke) e;
+				if (qualification == v.qualification) {
+					// if null then don't need to do anything
+				} else if (qualification != null) {
+					// In this case, both are non-null;
+					if (!qualification.equals(v.qualification)) {
+						return false;
+					}
+				} else {
+					// in this case, qualification == null and v.qualification
+					// != null
+					return false;
+				}
+				// Qualitications are identical.
+				return name.equals(v.name) && equivalent(generics, v.generics)
+						&& operand.equivalent(v.operand);
+			} else {
+				return false;
+			}
+		}
+		
 		public String toString() {
 			String r = name;
 			if(generics.size() > 0) {
@@ -905,6 +1065,18 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 		}
 
+		@Override
+		public boolean equivalent(Expr e) {
+			if (e instanceof IndirectInvoke) {
+				IndirectInvoke v = (IndirectInvoke) e;
+				// Qualitications are identical.
+				return equivalent(generics, v.generics)
+						&& source.equivalent(v.source)
+						&& operand.equivalent(v.operand);
+			} else {
+				return false;
+			}
+		}
 		public String toString() {
 			String r = source.toString();
 			if(generics.size() > 0) {
@@ -970,6 +1142,18 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 		}
 
+		@Override
+		public boolean equivalent(Expr e) {
+			if (getClass() == e.getClass()) {
+				Quantifier v = (Quantifier) e;
+				// Qualitications are identical.
+				return pattern.equivalent(v.pattern)
+						&& operand.equivalent(v.operand);
+			} else {
+				return false;
+			}
+		}
+		
 		public String toString() {
 			String r = "[ ";
 			boolean firstTime = true;
@@ -991,7 +1175,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 
 		public String toString() {
 			return "all " + super.toString();
-		}
+		}				
 	}
 
 	public static class Exists extends Quantifier {
@@ -1023,14 +1207,35 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		if (x.length() == 0) {
 			return false;
 		}
-		if (!Character.isJavaIdentifierStart(x.charAt(0))) {
+		if (!isValidIdentifierStart(x.charAt(0))) {
 			return false;
 		}
 		for (int i = 1; i != x.length(); ++i) {
-			if (!Character.isJavaIdentifierPart(x.charAt(i))) {
+			if (!isValidIdentifierPart(x.charAt(i))) {
 				return false;
 			}
 		}
 		return true;
+	}
+	
+	public static boolean isValidIdentifierStart(char c) {
+		return Character.isJavaIdentifierStart(c) || c == '$' || c == '%';
+	}
+	
+	public static boolean isValidIdentifierPart(char c) {
+		return Character.isJavaIdentifierPart(c) || c == '$' || c == '%';
+	}
+	
+	public static boolean equivalent(List<SyntacticType> l1, List<SyntacticType> l2) {
+		if(l1.size() != l2.size()) {
+			return false;
+		} else {
+			for(int i=0;i!=l1.size();++i) {
+				if(!l1.get(i).equivalent(l2.get(i))) {
+					return false;
+				}
+			}
+			return true;
+		}
 	}
 }
