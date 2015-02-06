@@ -206,6 +206,8 @@ public class CodeGeneration {
 			return generate((Expr.Invoke) e, environment, context);
 		} else if (e instanceof Expr.IndexOf) {
 			return generate((Expr.IndexOf) e, environment, context);
+		} else if (e instanceof Expr.Is) {
+			return generate((Expr.Is) e, environment, context);
 		} else {
 			internalFailure("unknown expression encountered (" + e + ")",
 					filename, e);
@@ -577,6 +579,12 @@ public class CodeGeneration {
 		}
 	}
 
+	protected Code generate(Expr.Is e, HashMap<String,Code> environment, WyalFile.Context context) {
+		SemanticType type = e.rightOperand.attribute(TypeAttribute.class).type;
+		Code source = generate(e.leftOperand, environment, context);
+		return Code.Is(type, source, attributes(e));
+	}
+	
 	/**
 	 * This function attempts to find an appropriate binding for the generic
 	 * types accepted by a given function, and the supplied argument type. For

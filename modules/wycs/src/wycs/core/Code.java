@@ -248,6 +248,15 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		return new Load(type,source,index,attributes);
 	}
 
+	public static Is Is(SemanticType type, Code<?> operand, Attribute... attributes) {
+		return new Is(type,operand,attributes);
+	}
+
+	public static Is Is(SemanticType type, Code<?> operand, Collection<Attribute> attributes) {
+		return new Is(type,operand,attributes);
+	}
+	
+	
 	public static Quantifier Quantifier(SemanticType type, Op opcode,
 			Code<?> operand, Pair<SemanticType,Integer>[] types,
 			Attribute... attributes) {
@@ -282,26 +291,27 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		NOT(4),
 		NEG(5),
 		LENGTH(6),
-		ADD(7),
-		SUB(8),
-		MUL(9),
-		DIV(10),
-		REM(11),
-		EQ(12),
-		NEQ(13),
-		LT(14),
-		LTEQ(15),
-		IN(16),
-		SUBSET(17),
-		SUBSETEQ(18),
-		AND(19),
-		OR(20),
-		TUPLE(21),
-		SET(22),
-		LOAD(23),
-		EXISTS(24),
-		FORALL(25),
-		FUNCALL(26);
+		IS(7),
+		ADD(8),
+		SUB(9),
+		MUL(10),
+		DIV(11),
+		REM(12),
+		EQ(13),
+		NEQ(14),
+		LT(15),
+		LTEQ(16),
+		IN(17),
+		SUBSET(18),
+		SUBSETEQ(19),
+		AND(20),
+		OR(21),
+		TUPLE(22),
+		SET(23),
+		LOAD(24),
+		EXISTS(25),
+		FORALL(26),
+		FUNCALL(27);
 
 		public int offset;
 
@@ -401,6 +411,29 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 	}
 
+	public final static class Is extends Code<SemanticType> {
+		public final SemanticType type;
+
+		private Is(SemanticType type, Code<?> operand, Attribute... attributes) {
+			super(type,Op.IS,new Code[] { operand },attributes);
+			this.type = type;
+		}
+
+		private Is(SemanticType type, Code<?> operand, Collection<Attribute> attributes) {
+			super(type,Op.IS,new Code[] { operand },attributes);
+			this.type = type;
+		}
+
+		@Override
+		public SemanticType returnType() {
+			return SemanticType.Bool;
+		}
+
+		@Override
+		public Code<?> clone(SemanticType type, Op opcode, Code<?>[] operands) {
+			return Is(type,operands[0],attributes());
+		}
+	}
 	
 	public final static class Unary extends Code<SemanticType> {
 		private Unary(SemanticType type, Op opcode, Code<?> operand,

@@ -48,14 +48,19 @@ name "Not_2"
 rank 0:
     => AnyT
 
-reduce NotT(OrT{Type... es})
+reduce NotT(NotT(Type t))
 name "Not_3"
+rank 0:
+    => t
+
+reduce NotT(OrT{Type... es})
+name "Not_4"
 rank 1:
     => let ns = { NotT(e) | e in es }
        in AndT(ns)
 
 reduce NotT(AndT{Type... es})
-name "Not_4"
+name "Not_5"
 rank 2:
     => let ns = { NotT(e) | e in es }
        in OrT(ns)

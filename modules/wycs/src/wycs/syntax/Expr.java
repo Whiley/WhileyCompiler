@@ -28,6 +28,8 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 
 	public abstract boolean equivalent(Expr e);
 	
+	public abstract Expr copy();
+	
 	// ==================================================================
 	// Classes
 	// ==================================================================
@@ -79,6 +81,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 		}
 
+		@Override
+		public Expr.Variable copy() {
+			return new Expr.Variable(name,attributes());
+		}
+		
 		public String toString() {
 			return name;
 		}
@@ -116,6 +123,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			} else {
 				return false;
 			}
+		}
+		
+		@Override
+		public Expr.Constant copy() {
+			return new Expr.Constant(value,attributes());
 		}
 		
 		public String toString() {
@@ -158,6 +170,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			} else {
 				return false;
 			}
+		}
+		
+		@Override
+		public Expr.ConstantAccess copy() {
+			return new Expr.ConstantAccess(name,qualification,attributes());
 		}
 		
 		public String toString() {
@@ -224,6 +241,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				return false;
 			}
 		}
+		
+		@Override
+		public Expr.Unary copy() {
+			return new Expr.Unary(op,operand.copy(),attributes());
+		}
 
 		public String toString() {
 			String o = operand.toString();
@@ -288,6 +310,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			} else {
 				return false;
 			}
+		}
+		
+		@Override
+		public Expr.Cast copy() {
+			return new Expr.Cast(type.copy(),operand.copy(),attributes());
 		}
 		
 		public String toString() {
@@ -495,6 +522,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				return false;
 			}
 		}
+		
+		@Override
+		public Expr.Binary copy() {
+			return new Expr.Binary(op,leftOperand.copy(),rightOperand.copy(),attributes());
+		}
 
 		public String toString() {
 			String lhs = leftOperand.toString();
@@ -581,6 +613,13 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				return false;
 			}
 		}
+		
+		@Override
+		public Expr.Ternary copy() {
+			return new Expr.Ternary(op, firstOperand.copy(),
+					secondOperand.copy(), thirdOperand.copy(), attributes());
+		}
+		
 		public String toString() {
 			switch(op) {
 			case UPDATE:
@@ -697,6 +736,10 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 		}
 
+		@Override
+		public Expr.Nary copy() {
+			return new Expr.Nary(op, clone(operands), attributes());
+		}
 		
 		public String toString() {
 			String beg;
@@ -798,6 +841,18 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				return false;
 			}
 		}
+		
+		@Override
+		public Expr.Record copy() {
+			ArrayList<Pair<String,Expr>> nOperands = new ArrayList<>();
+			for (int i = 0; i != operands.size(); ++i) {
+				Pair<String, Expr> operand = operands.get(i);
+				nOperands.add(new Pair<>(operand.first(), operand.second()
+						.copy()));
+			}
+			return new Expr.Record(nOperands, attributes());
+		}
+		
 		public Expr instantiate(Map<String,SyntacticType> binding) {
 			// TODO
 			return null;
@@ -805,7 +860,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 
 		public Expr substitute(Map<String,Expr> binding) {
 			// TODO
-						return null;
+			return null;
 		}
 	}
 
@@ -861,6 +916,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 		}
 
+		@Override
+		public Expr.IndexOf copy() {
+			return new Expr.IndexOf(operand.copy(), index.copy(),
+					attributes());
+		}
+		
 		public String toString() {
 			return operand + "[" + index + "]";
 		}
@@ -915,6 +976,10 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 		}
 
+		@Override
+		public Expr.FieldAccess copy() {
+			return new Expr.FieldAccess(operand.copy(), name, attributes());
+		}
 		
 		public String toString() {
 			return operand + "." + name;
@@ -1001,6 +1066,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 		}
 		
+		@Override
+		public Expr.Invoke copy() {
+			return new Expr.Invoke(name, qualification, cloneTypes(generics),
+					operand.copy(), attributes());
+		}
+		
 		public String toString() {
 			String r = name;
 			if(generics.size() > 0) {
@@ -1077,6 +1148,13 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				return false;
 			}
 		}
+		
+		@Override
+		public Expr.IndirectInvoke copy() {
+			return new Expr.IndirectInvoke(source.copy(),
+					cloneTypes(generics), operand.copy(), attributes());
+		}
+		
 		public String toString() {
 			String r = source.toString();
 			if(generics.size() > 0) {
@@ -1091,6 +1169,77 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 	}
 
+	public static class Is extends Expr {
+		
+		public Expr leftOperand;
+		public SyntacticType rightOperand;
+
+		public Is(Expr lhs, SyntacticType rhs, Attribute... attributes) {
+			super(attributes);
+			if(lhs == null || rhs == null) {
+				throw new IllegalArgumentException("invalid left or right operand");
+			}
+			this.leftOperand = lhs;
+			this.rightOperand = rhs;
+		}
+
+		public Is(Expr lhs, SyntacticType rhs, Collection<Attribute> attributes) {
+			super(attributes);
+			if(lhs == null || rhs == null) {
+				throw new IllegalArgumentException("invalid left or right operand");
+			}
+			this.leftOperand = lhs;
+			this.rightOperand = rhs;
+		}
+
+		public void freeVariables(Set<String> matches) {
+			leftOperand.freeVariables(matches);
+		}
+
+		public Expr instantiate(Map<String,SyntacticType> binding) {
+			Expr lhs = leftOperand.instantiate(binding);
+			if(lhs == leftOperand) {
+				return this;
+			} else {
+				return new Expr.Is(lhs, rightOperand, attributes());
+			}
+		}
+
+		public Expr substitute(Map<String,Expr> binding) {
+			Expr lhs = leftOperand.substitute(binding);
+			if(lhs == leftOperand) {
+				return this;
+			} else {
+				return new Expr.Is(lhs, rightOperand, attributes());
+			}
+		}
+		
+		@Override
+		public boolean equivalent(Expr e) {
+			if (e instanceof Is) {
+				Is v = (Is) e;
+				return leftOperand.equivalent(v.leftOperand)
+						&& rightOperand.equivalent(v.rightOperand);
+			} else {
+				return false;
+			}
+		}
+
+		@Override
+		public Expr.Is copy() {
+			return new Expr.Is(leftOperand.copy(), rightOperand.copy(),
+					attributes());
+		}
+		
+		public String toString() {
+			String lhs = leftOperand.toString();
+			String rhs = rightOperand.toString();
+			if(needsBraces(leftOperand)) {
+				lhs = "(" + lhs + ")";
+			}			
+			return lhs + " is " + rhs;
+		}
+	}
 	public static abstract class Quantifier extends Expr {
 		public TypePattern pattern;
 		public Expr operand;
@@ -1173,6 +1322,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			super(variable, expr, attributes);
 		}
 
+		@Override
+		public Expr.ForAll copy() {
+			return new Expr.ForAll(pattern.copy(),
+					operand.copy(), attributes());
+		}
+		
 		public String toString() {
 			return "all " + super.toString();
 		}				
@@ -1189,6 +1344,12 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			super(variable, expr, attributes);
 		}
 
+		@Override
+		public Expr.Exists copy() {
+			return new Expr.Exists(pattern.copy(),
+					operand.copy(), attributes());
+		}
+		
 		public String toString() {
 			return "exists " + super.toString();
 		}
@@ -1237,5 +1398,33 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			}
 			return true;
 		}
+	}
+	
+	/**
+	 * Clone all expressions in a list.
+	 * 
+	 * @param expressions
+	 * @return
+	 */
+	public static List<Expr> clone(List<Expr> expressions) {
+		ArrayList<Expr> result = new ArrayList<Expr>();
+		for(int i=0;i!=expressions.size();++i) {
+			result.add(expressions.get(i).copy());
+		}
+		return result;
+	}
+	
+	/**
+	 * Clone all types in a list.
+	 * 
+	 * @param expressions
+	 * @return
+	 */
+	public static List<SyntacticType> cloneTypes(List<SyntacticType> expressions) {
+		ArrayList<SyntacticType> result = new ArrayList<SyntacticType>();
+		for(int i=0;i!=expressions.size();++i) {
+			result.add(expressions.get(i).copy());
+		}
+		return result;
 	}
 }

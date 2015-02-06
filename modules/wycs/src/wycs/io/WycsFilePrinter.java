@@ -143,6 +143,10 @@ public class WycsFilePrinter {
 			writeStructured(wf, (Code.Nary) code, indent);
 		} else if(code instanceof Code.Load) {
 			writeStructured(wf, (Code.Load) code, indent);
+		} else if(code instanceof Code.Is) {
+			writeStructured(wf, (Code.Is) code, indent);
+		} else if(code instanceof Code.Cast) {
+			writeStructured(wf, (Code.Cast) code, indent);
 		} else if(code instanceof Code.FunCall) {
 			writeStructured(wf, (Code.FunCall) code, indent);
 		} else if(code instanceof Code.Quantifier) {
@@ -283,6 +287,16 @@ public class WycsFilePrinter {
 		out.print("[" + code.index + "]");
 	}
 
+	public void writeStructured(WycsFile wf, Code.Is code, int indent) {
+		writeStructured(wf,code.operands[0],indent);
+		out.print(" is " + code.type);
+	}
+	
+	public void writeStructured(WycsFile wf, Code.Cast code, int indent) {
+		out.print("(" + code.type + ")");
+		writeStructured(wf,code.operands[0],indent);		
+	}
+	
 	public void writeStructured(WycsFile wf, Code.FunCall code, int indent) {
 		out.print(code.nid + "(");
 		writeStructured(wf,code.operands[0],indent);

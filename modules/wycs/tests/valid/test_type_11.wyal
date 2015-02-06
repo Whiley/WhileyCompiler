@@ -1,0 +1,12 @@
+define f_ensures_0(int r0, null | int r1) is:
+    r0 >= 0
+
+assert "postcondition not satisfied":
+    forall (null | int v):
+        if:
+            v is int
+            v >= 0
+        then:
+            test.f_ensures_0(v + 1, v)
+
+

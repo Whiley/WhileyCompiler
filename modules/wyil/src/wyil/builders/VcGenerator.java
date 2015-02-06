@@ -1362,9 +1362,15 @@ public class VcGenerator {
 		VcBranch falseBranch = branch.fork();
 		VcBranch trueBranch = branch.fork();
 		// Second add appropriate runtime type tests
-
-		// FIXME: do that
-
+		List<wyil.lang.Attribute> attributes = block.attributes(branch.pc());
+		Collection<wycc.lang.Attribute> wycsAttributes = toWycsAttributes(attributes); 
+		SyntacticType trueType = convert(code.rightOperand, attributes);
+		SyntacticType falseType = new SyntacticType.Negation(convert(code.rightOperand,
+				attributes), wycsAttributes);
+		trueBranch.assume(new Expr.Is(branch.read(code.operand), trueType,
+				wycsAttributes));
+		falseBranch.assume(new Expr.Is(branch.read(code.operand), falseType,
+				wycsAttributes));
 		// Finally dispatch the branches
 		falseBranch.goTo(branch.pc().next());
 		trueBranch.goTo(labels.get(code.target));
@@ -2349,23 +2355,39 @@ public class VcGenerator {
 	 * </pre>
 	 */
 	private Expr generateAssumptions(VcBranch b, VcBranch end) {
+		// We need to clone the return expression here to ensure there is no
+		// aliasing between generated verification conditions as this can lead
+		// to problems later on.
+		return generateAssumptionsHelper(b,end).copy();
+	}
+	
+	private Expr generateAssumptionsHelper(VcBranch b, VcBranch end) {
 
 		if (b == end) {
 			// The termination condition is reached.
 			return new Expr.Constant(Value.Bool(true));
 		} else {
 			// FIXME: this method is not efficient and does not generate an
-			// optimal
-			// decomposition of the branch graph.
+			// optimal decomposition of the branch graph.
 
 			// First, compute disjunction of parent constraints.
 			VcBranch[] b_parents = b.parents();
 			Expr parents = null;
 			for (int i = 0; i != b_parents.length; ++i) {
 				VcBranch parent = b_parents[i];
-				Expr parent_constraints = generateAssumptions(parent, end);
+				Expr parent_constraints = generateAssumptionsHelper(parent, end);
 				if (i == 0) {
 					parents = parent_constraints;
+				} else if(parent_constraints instanceof Expr.Constant) {
+					Expr.Constant c = (Expr.Constant) parent_constraints;
+					Value.Bool v = (Value.Bool) c.value;					
+					if(v.value) {
+						// can short-circuit this
+						parents = c;
+						break;
+					} else {
+						// ignore false						
+					}
 				} else {
 					parents = new Expr.Binary(Expr.Binary.Op.OR, parents,
 							parent_constraints);
@@ -2373,11 +2395,20 @@ public class VcGenerator {
 			}
 
 			// Second, include constraints from this node.
+			Expr b_constraints = b.constraints();			
 			if (parents == null) {
 				return b.constraints();
+			} else if(parents instanceof Expr.Constant) {
+				Expr.Constant c = (Expr.Constant) parents;
+				Value.Bool v = (Value.Bool) c.value;					
+				if(v.value) {
+					return b_constraints;
+				} else {
+					return c;
+				}
 			} else {
 				return new Expr.Binary(Expr.Binary.Op.AND, parents,
-						b.constraints());
+						b_constraints);
 			}
 		}
 	}

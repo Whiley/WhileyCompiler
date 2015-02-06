@@ -186,6 +186,8 @@ public class WyalFilePrinter {
 			write(wf, (Expr.Ternary)e,indent);
 		} else if(e instanceof Expr.Nary) {
 			write(wf, (Expr.Nary)e,indent);
+		} else if(e instanceof Expr.Is) {
+			write(wf, (Expr.Is)e,indent);
 		} else if(e instanceof Expr.Quantifier) {
 			write(wf, (Expr.Quantifier)e,indent);
 		} else if(e instanceof Expr.Invoke) {
@@ -341,6 +343,13 @@ public class WyalFilePrinter {
 		internalFailure("unknown expression encountered \"" + e + "\" (" + e.getClass().getName() + ")", wf.filename(), e);
 	}
 
+
+	private void write(WyalFile wf, Expr.Is e, int indent) {
+		writeWithOptionalBraces(wf,e.leftOperand,indent);
+		out.print(" is ");
+		out.print(e.rightOperand);
+	}
+	
 	private void write(WyalFile wf, Expr.Quantifier e, int indent) {
 		if(e instanceof Expr.ForAll) {
 			out.print("forall ");

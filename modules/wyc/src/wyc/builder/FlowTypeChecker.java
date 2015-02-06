@@ -1,3 +1,28 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package wyc.builder;
 
 import static wyc.lang.WhileyFile.internalFailure;
@@ -27,6 +52,7 @@ import wyil.lang.Constant;
 import wyil.lang.Modifier;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
+import wyil.util.TypeExpander;
 
 /**
  * Propagates type information in a <i>flow-sensitive</i> fashion from declared
@@ -112,7 +138,8 @@ import wyil.lang.WyilFile;
  */
 public class FlowTypeChecker {
 
-	private WhileyBuilder builder;
+	private final WhileyBuilder builder;
+	private final TypeExpander expander;
 	private String filename;
 	private WhileyFile.FunctionOrMethod current;
 
@@ -124,6 +151,7 @@ public class FlowTypeChecker {
 
 	public FlowTypeChecker(WhileyBuilder builder) {
 		this.builder = builder;
+		this.expander = new TypeExpander(builder.project());
 	}
 
 	// =========================================================================
@@ -2724,10 +2752,10 @@ public class FlowTypeChecker {
 					Nominal.FunctionOrMethod fom;					
 					if (t instanceof Type.Function) {
 						Type.Function ft = (Type.Function) t;						
-						fom = new Nominal.Function(ft, (Type.Function) expand(ft));
+						fom = new Nominal.Function(ft, (Type.Function) expander.getUnderlyingType(ft));
 					} else {
 						Type.Method mt = (Type.Method) t;
-						fom = new Nominal.Method(mt, (Type.Method) expand(mt));
+						fom = new Nominal.Method(mt, (Type.Method) expander.getUnderlyingType(mt));
 					}
 					candidates.add(new Pair<NameID, Nominal.FunctionOrMethod>(
 							nid, fom));
@@ -3225,7 +3253,7 @@ public class FlowTypeChecker {
 			// where a type loaded from a WyIL file is not expanded. In the
 			// future, this will be the norm and we'll need to handle this is a
 			// better fashion.
-			return expand(td.type(),states,roots);
+			return expander.getTypeHelper(td.type(),false,states,roots);
 		}
 
 		WhileyFile.Type td = wf.typeDecl(key.name());
@@ -4009,173 +4037,6 @@ public class FlowTypeChecker {
 			}
 			return Type.Union(bounds);
 		}
-	}
-
-	/**
-	 * Expand a given type by inlining all visible nominal information. For
-	 * example:
-	 * 
-	 * <pre>
-	 * type nat is (int x) where x >= 0
-	 * type listnat is [nat]
-	 * </pre>
-	 * 
-	 * Expanding the type <code>[nat]</code> will result in the type
-	 * <code>[int]</code>. The key challenge here lies in handling nominal types
-	 * when they are encountered. We need to determine where the type is
-	 * located, and then incorporate the (expanded) body of that type into this
-	 * type. In some cases, we're not permitted to inline the body because it's
-	 * not visible to this file (e.g. it is marked as private).
-	 * 
-	 * @param type
-	 * @return
-	 */
-	public Type expand(Type type) throws IOException, ResolveError {
-		ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
-		HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
-		expand(type, states, roots);
-		return Type.construct(new Automaton(states));
-	}
-
-	/**
-	 * <p>
-	 * Expand the given type by loading it's contents into the list of states.
-	 * The location of nominal types, when encountered, are cached as "roots" in
-	 * order to prevent infinite expansion and, instead, to construct a
-	 * recursive cycle.
-	 * </p>
-	 * 
-	 * <p>
-	 * Expansion proceeds by exploring every compound type until either a leaf
-	 * or nominal type is encountered. In the case of a leaf type being
-	 * encoutered, we can just add this directly as it cannot be further
-	 * expanded. In the case of a nominal type, we then try to inline its body
-	 * if permitted. Thus, for a type which contains no nominal types, this
-	 * function will return an identical type.
-	 * </p>
-	 * 
-	 * @param type
-	 *            The type currently being expanded.
-	 * @param states
-	 *            The list of states being accumulated which will eventually
-	 *            form the original type being exapnded.
-	 * @param roots
-	 *            The cache of previously inline nominal types which is
-	 *            necessary to break recursive cycles.
-	 * @return
-	 * @throws IOException 
-	 */
-	private int expand(Type type, ArrayList<Automaton.State> states,
-			HashMap<NameID, Integer> roots) throws IOException, ResolveError {
-		
-		// First, handle nominals (which are challenging) and primitive types
-		// (which are simple).		
-		if(type instanceof Type.Nominal) {
-			Type.Nominal tt = (Type.Nominal) type;
-			NameID nid = tt.name();
-			// First, check whether or not we have already expanded this type.
-			// If so, then we form a recursive cycle.
-			if(roots.containsKey(nid)) {
-				// Yes. we have already expanded it. Therefore we simply need to
-				// return the cached index to form the recursive cycle.
-				return roots.get(nid);
-			} else {
-				// At this point, need to find the corresponding declatation.
-				WyilFile mi = builder.getModule(nid.module());
-				WyilFile.Type td = mi.type(nid.name());
-				// Now, store the root of this expansion so that it can be used
-				// subsequently to form a recursive cycle.
-				roots.put(nid, states.size());
-				return expand(td.type(),states,roots);
-			}
-		} else if(type instanceof Type.Leaf) {
-			// In ther case of a leaf node we simply copy over its states into
-			// the list of states being accumulated.
-			return append(type,states);
-		}  
-			
-		// Now handle all non-primitive types which need to be expanded in some
-		// way,		
-		int myIndex = states.size();
-		int myKind;
-		int[] myChildren;
-		Object myData = null;
-		boolean myDeterministic = true;
-		
-		states.add(null); // reserve space for me!
-		
-		if (type instanceof Type.Set) {			
-			Type.Set tt = (Type.Set) type;
-			myChildren = new int[1];
-			myChildren[0] = expand(tt.element(),states,roots);
-			myKind = Type.K_SET;			
-			myData = tt.nonEmpty();
-		} else if (type instanceof Type.List) {			
-			Type.List tt = (Type.List) type;
-			myChildren = new int[1];
-			myChildren[0] = expand(tt.element(),states,roots);
-			myKind = Type.K_LIST;			
-			myData = tt.nonEmpty();
-		} else if (type instanceof Type.Map) {			
-			Type.Map tt = (Type.Map) type;
-			myChildren = new int[2];
-			myChildren[0] = expand(tt.key(),states,roots);
-			myChildren[1] = expand(tt.value(),states,roots);
-			myKind = Type.K_MAP;			
-		} else if(type instanceof Type.Tuple) {
-			Type.Tuple tt = (Type.Tuple) type;
-			myChildren = new int[tt.size()];
-			for(int i=0;i!=tt.size();++i) {
-				myChildren[i] = expand(tt.element(i),states,roots);
-			}
-			myKind = Type.K_TUPLE;			
-		} else if(type instanceof Type.Record) {
-			Type.Record tt = (Type.Record) type;
-			HashMap<String, Type> ttTypes = tt.fields();
-			Type.Record.State fields = new Type.Record.State(tt.isOpen(),
-					ttTypes.keySet());
-			Collections.sort(fields);
-			myKind = Type.K_RECORD;
-			myChildren = new int[fields.size()];
-			for (int i = 0; i != myChildren.length; ++i) {
-				String field = fields.get(i);
-				myChildren[i] = expand(ttTypes.get(field), states, roots);
-			}
-			myData = fields;
-		} else if(type instanceof Type.Negation) {
-			Type.Negation tt = (Type.Negation) type;
-			myChildren = new int[1];
-			myChildren[0] = expand(tt.element(),states,roots);
-			myKind = Type.K_NEGATION;
-		} else if(type instanceof Type.Union) {
-			Type.Union tt = (Type.Union) type;
-			Set<Type> bounds = tt.bounds();
-			myChildren = new int[bounds.size()];
-			int i = 0;
-			for(Type b : bounds) {
-				myChildren[i++] = expand(b,states,roots);
-			}
-			myKind = Type.K_UNION;	
-		} else if(type instanceof Type.FunctionOrMethod) {
-			Type.FunctionOrMethod tt = (Type.FunctionOrMethod) type;
-			List<Type> tt_params = tt.params();
-			myChildren = new int[2 + tt_params.size()];
-			myChildren[0] = expand(tt.ret(),states,roots);
-			myChildren[1] = expand(tt.throwsClause(),states,roots);
-			for(int i=0;i!=tt_params.size();++i) {
-				myChildren[i+2] = expand(tt_params.get(i),states,roots);
-			}
-			myKind = tt instanceof Type.Function ? Type.K_FUNCTION
-					: Type.K_METHOD;			
-		}else {
-			// FIXME: Probably need to handle function and method types here
-			throw new ResolveError("unknown type encountered: " + type);
-		}
-		
-		states.set(myIndex, new Automaton.State(myKind, myData,
-				myDeterministic, myChildren));
-		
-		return myIndex;
 	}
 
 	// =========================================================================

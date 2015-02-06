@@ -190,7 +190,10 @@ public class WycsFileWriter {
 		// System.out.println("Writing " + constantPool.size() + " constant item(s).");
 
 		for (Value val : constantPool) {
-			 if(val instanceof Value.Bool) {
+			if(val instanceof Value.Null) {
+				Value.Null b = (Value.Null) val;
+				output.write_uv(CONSTANT_Null);
+			} else if(val instanceof Value.Bool) {
 				Value.Bool b = (Value.Bool) val;
 				output.write_uv(b.value ? CONSTANT_True : CONSTANT_False);
 			} else if(val instanceof Value.Integer) {

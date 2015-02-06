@@ -1,0 +1,2 @@
+assert:
+    (1,true) is (int,bool)

@@ -26,6 +26,12 @@
 include "Types.wyrl"
 
 // ====================================================================
+// Null
+// ====================================================================
+
+term Null
+
+// ====================================================================
 // Bool
 // ====================================================================
 
@@ -109,6 +115,73 @@ term Fn[string,Expr...]
 // ====================================================================
 
 term String(string)
+
+// ====================================================================
+// TypeOf
+// ====================================================================
+
+term TypeOf(Value)
+
+reduce TypeOf(Null)
+name "TypeOf_1":
+    => NullT
+
+reduce TypeOf(Bool)
+name "TypeOf_2":
+    => BoolT
+
+reduce TypeOf(Num)
+name "TypeOf_3":
+    => IntT // bug?
+
+reduce TypeOf(String)
+name "TypeOf_3":
+    => StringT
+
+// ====================================================================
+// Inhabited
+// ====================================================================
+
+term Inhabited(Type)
+
+reduce Inhabited(Atom t)
+name "Inhabited_1":
+    => False, if (t == VoidT) || (t == NotT(AnyT))
+    => True
+
+// Technically, we need to cover complex types which are fully reduced
+// (e.g. int|null).  The problem is knowing that they are fully 
+// reduced.  The following is really a hack to get around this in a
+// limited number of useful cases.
+
+reduce Inhabited(AndT{NotT(Proton)... ts})
+name "Inhabited_2":
+    => let zs = { Inhabited(t) | t in ts }
+       in And(zs)
+
+// ====================================================================
+// Is
+// ====================================================================
+
+term Is[Expr,Type]
+
+// No expression can yield the VoidT
+reduce Is[Expr e, VoidT]
+name "Is_1":
+    => False
+
+// Invert an instanceof test gives an instanceof test
+reduce Not(Is[Expr e, Type t])
+name "Is_2":
+    => Is([e,NotT(t)])
+
+reduce And{Is[Expr e1, Type t1], Is[Expr e2, Type t2], BExpr... bs}
+name "Is_3":
+    => And({Is[e1,AndT{t1,t2}]} ++ bs), if e1 == e2
+
+reduce Is[Value v, Type t]
+name "Is_4":
+    => Not(Inhabited(AndT{TypeOf(v),NotT(t)}))
 
 // ====================================================================
 // Logical Not
@@ -287,7 +360,7 @@ function max{|VExpr...|} => VExpr
 // A value is a concrete term which cannot be further reduced.  The
 // base values are boolean true or false, and a tuple of values.  Other
 // values include integers, rationals and sets of values.
-define Value as Bool | Num | String | Tuple[Value...] | ...
+define Value as Null | Bool | Num | String | Tuple[Value...] | ...
 
 // Variable Expressions are those which represent variables or
 // sub-components thereof.  Such expressions can in principle

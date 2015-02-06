@@ -1559,7 +1559,7 @@ public final class CodeGenerator {
 		Expr.TypeVal rhs = (Expr.TypeVal) condition.rhs;
 
 		codes.add(Codes.IfIs(condition.srcType.raw(), leftOperand,
-				rhs.type.raw(), target), attributes(condition));
+				rhs.type.nominal(), target), attributes(condition));
 	}
 
 	/**
@@ -1886,9 +1886,10 @@ public final class CodeGenerator {
 
 	private int generate(Expr.FunctionOrMethod expr, Environment environment,
 			AttributedCodeBlock codes, Context context) {
-		Type.FunctionOrMethod type = expr.type.raw();
-		int target = environment.allocate(type);
-		codes.add(Codes.Lambda(type, target, Collections.EMPTY_LIST, expr.nid),
+		Type.FunctionOrMethod rawType = expr.type.raw();
+		Type.FunctionOrMethod nominalType = expr.type.nominal();
+		int target = environment.allocate(rawType);
+		codes.add(Codes.Lambda(nominalType, target, Collections.EMPTY_LIST, expr.nid),
 				attributes(expr));
 		return target;
 	}

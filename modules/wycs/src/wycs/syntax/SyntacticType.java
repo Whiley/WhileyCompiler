@@ -17,6 +17,8 @@ public interface SyntacticType extends SyntacticElement {
 
 	public abstract boolean equivalent(SyntacticType t);
 	
+	public abstract SyntacticType copy();
+	
 	public static abstract class Primitive extends SyntacticElement.Impl
 			implements SyntacticType {
 
@@ -31,7 +33,7 @@ public interface SyntacticType extends SyntacticElement {
 		public SyntacticType instantiate(
 				java.util.Map<String, SyntacticType> binding) {
 			return this;
-		}
+		}		
 	}
 
 	/**
@@ -52,6 +54,10 @@ public interface SyntacticType extends SyntacticElement {
 		@Override
 		public boolean equivalent(SyntacticType t) {
 			return t instanceof Any;
+		}
+		@Override
+		public SyntacticType.Any copy() {
+			return new SyntacticType.Any(attributes());
 		}
 		public String toString() {
 			return "any";
@@ -79,6 +85,10 @@ public interface SyntacticType extends SyntacticElement {
 		@Override
 		public boolean equivalent(SyntacticType t) {
 			return t instanceof Void;
+		}
+		@Override
+		public SyntacticType.Void copy() {
+			return new SyntacticType.Void(attributes());
 		}
 		public String toString() {
 			return "void";
@@ -110,6 +120,10 @@ public interface SyntacticType extends SyntacticElement {
 		public boolean equivalent(SyntacticType t) {
 			return t instanceof Null;
 		}
+		@Override
+		public SyntacticType.Null copy() {
+			return new SyntacticType.Null(attributes());
+		}
 		public String toString() {
 			return "null";
 		}
@@ -133,7 +147,10 @@ public interface SyntacticType extends SyntacticElement {
 		public boolean equivalent(SyntacticType t) {
 			return t instanceof Bool;
 		}
-
+		@Override
+		public SyntacticType.Bool copy() {
+			return new SyntacticType.Bool(attributes());
+		}
 		public String toString() {
 			return "bool";
 		}
@@ -162,7 +179,10 @@ public interface SyntacticType extends SyntacticElement {
 		public boolean equivalent(SyntacticType t) {
 			return t instanceof Byte;
 		}
-
+		@Override
+		public SyntacticType.Byte copy() {
+			return new SyntacticType.Byte(attributes());
+		}
 		public String toString() {
 			return "byte";
 		}
@@ -187,7 +207,10 @@ public interface SyntacticType extends SyntacticElement {
 		public boolean equivalent(SyntacticType t) {
 			return t instanceof Char;
 		}
-
+		@Override
+		public SyntacticType.Char copy() {
+			return new SyntacticType.Char(attributes());
+		}
 		public String toString() {
 			return "char";
 		}
@@ -215,7 +238,10 @@ public interface SyntacticType extends SyntacticElement {
 		public boolean equivalent(SyntacticType t) {
 			return t instanceof Int;
 		}
-
+		@Override
+		public SyntacticType.Int copy() {
+			return new SyntacticType.Int(attributes());
+		}
 		public String toString() {
 			return "int";
 		}
@@ -245,7 +271,10 @@ public interface SyntacticType extends SyntacticElement {
 		public boolean equivalent(SyntacticType t) {
 			return t instanceof Real;
 		}
-
+		@Override
+		public SyntacticType.Real copy() {
+			return new SyntacticType.Real(attributes());
+		}
 		public String toString() {
 			return "real";
 		}
@@ -270,7 +299,10 @@ public interface SyntacticType extends SyntacticElement {
 		public boolean equivalent(SyntacticType t) {
 			return t instanceof Strung;
 		}
-
+		@Override
+		public SyntacticType.Strung copy() {
+			return new SyntacticType.Strung(attributes());
+		}
 		public String toString() {
 			return "string";
 		}
@@ -285,6 +317,11 @@ public interface SyntacticType extends SyntacticElement {
 			this.var = var;
 		}
 
+		public Variable(String var, Collection<Attribute> attributes) {
+			super(attributes);
+			this.var = var;
+		}
+		
 		public String toString() {
 			return var;
 		}
@@ -307,6 +344,11 @@ public interface SyntacticType extends SyntacticElement {
 				return var.equals(tt.var);
 			}
 			return false;
+		}
+		
+		@Override
+		public SyntacticType.Variable copy() {
+			return new SyntacticType.Variable(var,attributes());
 		}
 	}
 
@@ -334,7 +376,7 @@ public interface SyntacticType extends SyntacticElement {
 		}
 
 		public String toString() {
-			return "!" + element;
+			return "!(" + element + ")";
 		}
 
 		@Override
@@ -355,6 +397,11 @@ public interface SyntacticType extends SyntacticElement {
 				return element.equivalent(tt.element);
 			}
 			return false;
+		}
+		
+		@Override
+		public SyntacticType.Negation copy() {
+			return new SyntacticType.Negation(element.copy(),attributes());
 		}
 	}
 
@@ -403,6 +450,11 @@ public interface SyntacticType extends SyntacticElement {
 				return element.equivalent(tt.element);
 			}
 			return false;
+		}
+		
+		@Override
+		public SyntacticType.Reference copy() {
+			return new SyntacticType.Reference(element.copy(),attributes());
 		}
 	}
 
@@ -454,6 +506,11 @@ public interface SyntacticType extends SyntacticElement {
 				return names.equals(tt.names);
 			}
 			return false;
+		}
+		
+		@Override
+		public SyntacticType.Nominal copy() {
+			return new SyntacticType.Nominal((ArrayList<String>) names.clone(),attributes());
 		}
 	}
 
@@ -515,6 +572,11 @@ public interface SyntacticType extends SyntacticElement {
 			return false;
 		}
 
+		@Override
+		public SyntacticType.Union copy() {
+			return new SyntacticType.Union(Util.clone(elements),attributes());
+		}
+		
 		public String toString() {
 			String s = "";
 			for (int i = 0; i != elements.size(); ++i) {
@@ -587,6 +649,11 @@ public interface SyntacticType extends SyntacticElement {
 			return false;
 		}
 
+		@Override
+		public SyntacticType.Intersection copy() {
+			return new SyntacticType.Intersection(Util.clone(elements),attributes());
+		}
+		
 		public String toString() {
 			String s = "";
 			for (int i = 0; i != elements.size(); ++i) {
@@ -642,6 +709,11 @@ public interface SyntacticType extends SyntacticElement {
 			return false;
 		}
 
+		@Override
+		public SyntacticType.Set copy() {
+			return new SyntacticType.Set(element.copy(),attributes());
+		}
+		
 		public String toString() {
 			return "{" + element + "}";
 		}
@@ -696,6 +768,11 @@ public interface SyntacticType extends SyntacticElement {
 			return false;
 		}
 
+		@Override
+		public SyntacticType.Map copy() {
+			return new SyntacticType.Map(key.copy(),value.copy(),attributes());
+		}
+		
 		public String toString() {
 			return "{" + key + "=>" + value + "}";
 		}
@@ -744,6 +821,11 @@ public interface SyntacticType extends SyntacticElement {
 			return false;
 		}
 
+		@Override
+		public SyntacticType.List copy() {
+			return new SyntacticType.List(element.copy(),attributes());
+		}
+		
 		public String toString() {
 			return "[" + element + "]";
 		}
@@ -804,6 +886,11 @@ public interface SyntacticType extends SyntacticElement {
 			return false;
 		}
 
+		@Override
+		public SyntacticType.Tuple copy() {
+			return new SyntacticType.Tuple(Util.clone(elements),attributes());
+		}
+		
 		public String toString() {
 			String s = "";
 			for (int i = 0; i != elements.size(); ++i) {
@@ -892,6 +979,16 @@ public interface SyntacticType extends SyntacticElement {
 			return false;
 		}
 
+		@Override
+		public SyntacticType.Record copy() {
+			ArrayList<Pair<SyntacticType, Expr.Variable>> nElements = new ArrayList<>();
+			for (int i = 0; i != elements.size(); ++i) {
+				Pair<SyntacticType, Expr.Variable> e = elements.get(i);
+				nElements.add(new Pair<>(e.first().copy(),e.second().copy()));
+			}
+			return new SyntacticType.Record(isOpen,nElements,attributes());
+		}
+		
 		public String toString() {
 			String s = "";
 			for (int i = 0; i != elements.size(); ++i) {
@@ -962,6 +1059,12 @@ public interface SyntacticType extends SyntacticElement {
 			}
 			return false;
 		}
+		
+		@Override
+		public SyntacticType.Function copy() {
+			return new SyntacticType.Function(ret.copy(), throwType.copy(),
+					Util.clone(paramTypes), attributes());
+		}
 	}
 
 	class Util {
@@ -977,6 +1080,20 @@ public interface SyntacticType extends SyntacticElement {
 				}
 				return true;
 			}
+		}
+		
+		/**
+		 * Clone a list of syntactic types.
+		 * 
+		 * @param types
+		 * @return
+		 */
+		public static java.util.List<SyntacticType> clone(java.util.List<SyntacticType> types) {
+			ArrayList<SyntacticType> nTypes = new ArrayList<SyntacticType>();
+			for(int i=0;i!=types.size();++i) {
+				nTypes.add(types.get(i).copy());
+			}
+			return nTypes;
 		}
 	}
 }

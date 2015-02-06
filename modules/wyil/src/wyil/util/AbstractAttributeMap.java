@@ -167,6 +167,7 @@ public class AbstractAttributeMap<T extends Attribute> {
 		int insertionPoint = components[components.length-1]; 
 		Entry<T> e = new Block<T>();
 		e.attribute = data;
+		blk.ensureSize(insertionPoint); // ensure there is enough space
 		blk.entries.add(insertionPoint,e);		
 	}
 	

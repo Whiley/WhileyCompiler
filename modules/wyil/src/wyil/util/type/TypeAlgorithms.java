@@ -225,7 +225,8 @@ public final class TypeAlgorithms {
 		boolean changed = true;
 		while(changed) {
 			changed = false;
-			changed |= simplifyContractives(automaton);
+			// NOTE: the following is commented out because it's broken.
+			// changed |= simplifyContractives(automaton);
 			for(int i=0;i!=automaton.size();++i) {
 				changed |= simplify(i,automaton);
 			}

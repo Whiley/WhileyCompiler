@@ -142,6 +142,8 @@ public class MacroExpansion implements Transform<WycsFile> {
 			return transform((Code.Nary) e);
 		} else if (e instanceof Code.Load) {
 			return transform((Code.Load) e);
+		} else if (e instanceof Code.Is) {
+			return transform((Code.Is) e);
 		} else if (e instanceof Code.FunCall) {
 			return transform((Code.FunCall) e);
 		} else if (e instanceof Code.Quantifier) {
@@ -167,6 +169,11 @@ public class MacroExpansion implements Transform<WycsFile> {
 				transform(e.operands[1]), e.attributes());
 	}
 
+	private Code<?> transform(Code.Is e) {
+		// FIXME: should expand the type here somehow.
+		return Code.Is(e.type, transform(e.operands[0]), e.attributes());
+	}
+	
 	private Code<?> transform(Code.Nary e) {
 		Code<?>[] e_operands = e.operands;
 		Code<?>[] operands = new Code[e_operands.length];
