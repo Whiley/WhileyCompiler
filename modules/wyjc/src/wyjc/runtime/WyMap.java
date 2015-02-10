@@ -28,7 +28,7 @@ package wyjc.runtime;
 import java.math.BigInteger;
 import java.util.*;
 
-public final class WyMap extends java.util.HashMap<Object,Object> {
+public final class WyMap extends java.util.HashMap<Object,Object> implements Iterable {
 	
 	// ================================================================================
 	// Generic Operations

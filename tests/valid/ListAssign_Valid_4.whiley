@@ -12,7 +12,7 @@ constant QUEEN is 4
 
 constant KING is 5
 
-constant PieceKind is {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING}
+type PieceKind is (int x) where x in {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING}
 
 type Piece is {bool colour, PieceKind kind}
 

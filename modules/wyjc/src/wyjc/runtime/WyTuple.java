@@ -48,6 +48,9 @@ public final class WyTuple extends java.util.ArrayList {
 
 	WyTuple(Object... items) {
 		super();
+		for(Object o : items) {
+			add(o);
+		}
 	}
 
 	public String toString() {

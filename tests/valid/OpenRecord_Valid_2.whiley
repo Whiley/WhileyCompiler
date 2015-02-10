@@ -4,7 +4,7 @@ constant Short is 3
 
 constant Int is 4
 
-constant Primitive is {Short, Int}
+type Primitive is (int x) where x in {Short, Int}
 
 type Class is {[string] classes, string pkg}
 

@@ -1,15 +1,17 @@
 import whiley.lang.System
 
-constant num is {1, 2, 3, 4}
+constant c_num is {1,2,3,4}
 
-constant bignum is {1, 2, 3, 4, 5, 6, 7}
+type num is (int x) where x in c_num
+
+type bignum is (int x) where x in {1, 2, 3, 4, 5, 6, 7}
 
 function f(num x) -> string:
     int y = x
     return Any.toString(y)
 
 function g({bignum} zs, int z) -> string:
-    if (z in zs) && (z in num):
+    if (z in zs) && (z in c_num):
         return f(z)
     else:
         return "MISS"

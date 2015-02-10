@@ -154,12 +154,7 @@ public class TypeExpander {
 				// At this point, need to find the corresponding declatation.
 				WyilFile mi = project.get(nid.module(),WyilFile.ContentType).read();
 				WyilFile.Type td = mi.type(nid.name());
-				if(td == null) {
-					// FIXME: this is really a hack to handle enumerations.  See #315
-					WyilFile.Constant cd = mi.constant(nid.name());
-					Type.Set ts = (Type.Set) cd.constant().type();
-					return getTypeHelper(ts.element(),maximallyConsumed,states,roots);
-				} else if(maximallyConsumed && td.invariant() != null) {
+				if(maximallyConsumed && td.invariant() != null) {
 					// In this specially case, we have a constrained type
 					// and we are attempting to compute the maximally
 					// consumed type. This type is not fully consumed as it

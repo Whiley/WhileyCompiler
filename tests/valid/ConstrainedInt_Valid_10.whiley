@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type nat is (int x) where x > 0
 
-constant num is {1, 2, 3, 4}
+type num is (int x) where x in {1, 2, 3, 4}
 
 function f(num x) -> string:
     int y = x

@@ -14,7 +14,7 @@ constant KING is 5
 
 constant PIECE_CHARS is ['P', 'N', 'B', 'R', 'Q', 'K']
 
-constant PieceKind is {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING}
+type PieceKind is (int x) where x in {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING}
 
 type Piece is {bool colour, PieceKind kind}
 

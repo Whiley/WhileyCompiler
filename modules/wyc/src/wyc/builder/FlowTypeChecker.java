@@ -553,7 +553,7 @@ public class FlowTypeChecker {
 			throws IOException, ResolveError {
 		Nominal afterType = rhs.result();
 		// Expand after type as an effective tuple
-		Nominal.EffectiveTuple rhsType = expandAsEffectiveTuple(afterType);
+		Nominal.Tuple rhsType = expandAsEffectiveTuple(afterType);
 		// Construct list of assigned variables
 		ArrayList<Expr.AssignedVariable> rs = new ArrayList<Expr.AssignedVariable>();
 		for (int i = 0; i != rhsType.elements().size(); ++i) {
@@ -586,7 +586,7 @@ public class FlowTypeChecker {
 			return inferAfterType((Expr.LVal) la.src, afterType);
 		} else if (lv instanceof Expr.FieldAccess) {
 			Expr.FieldAccess la = (Expr.FieldAccess) lv;
-			Nominal.EffectiveRecord srcType = la.srcType;
+			Nominal.Record srcType = la.srcType;
 			// I know I can modify this hash map, since it's created fresh
 			// in Nominal.Record.fields().
 			afterType = (Nominal) srcType.update(la.name, afterType);
@@ -696,8 +696,8 @@ public class FlowTypeChecker {
 		// is permitted in some cases.
 
 		Nominal[] elementTypes = new Nominal[stmt.variables.size()];
-		if (elementTypes.length == 2 && srcType instanceof Nominal.EffectiveMap) {
-			Nominal.EffectiveMap dt = (Nominal.EffectiveMap) srcType;
+		if (elementTypes.length == 2 && srcType instanceof Nominal.Map) {
+			Nominal.Map dt = (Nominal.Map) srcType;
 			elementTypes[0] = dt.key();
 			elementTypes[1] = dt.value();
 		} else {
@@ -1037,7 +1037,7 @@ public class FlowTypeChecker {
 				Expr.LVal src = propagate((Expr.LVal) ad.src, environment);
 				Expr.FieldAccess ra = new Expr.FieldAccess(src, ad.name,
 						ad.attributes());
-				Nominal.EffectiveRecord srcType = expandAsEffectiveRecord(src
+				Nominal.Record srcType = expandAsEffectiveRecord(src
 						.result());
 				if (srcType == null) {
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),
@@ -1167,14 +1167,14 @@ public class FlowTypeChecker {
 					environment);
 		} else if (pattern instanceof TypePattern.Record) {
 			TypePattern.Record tp = (TypePattern.Record) pattern;
-			Nominal.EffectiveRecord tt = expandAsEffectiveRecord(type);
+			Nominal.Record tt = expandAsEffectiveRecord(type);
 			for (TypePattern.Leaf element : tp.elements) {
 				Nominal elementType = tt.field(element.var.var);
 				environment = setCurrentType(element, elementType, environment);
 			}
 		} else if (pattern instanceof TypePattern.Tuple) {
 			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
-			Nominal.EffectiveTuple tt = expandAsEffectiveTuple(type);
+			Nominal.Tuple tt = expandAsEffectiveTuple(type);
 			for (int i = 0; i != tp.elements.size(); ++i) {
 				TypePattern element = tp.elements.get(i);
 				Nominal elementType = tt.element(i);
@@ -2039,12 +2039,11 @@ public class FlowTypeChecker {
 			ResolveError {
 
 		expr.src = propagate(expr.src, environment, context);
-		Nominal type = expr.src.result();
-		if (!(type instanceof Nominal.FunctionOrMethod)) {
+		Nominal.FunctionOrMethod funType = expandAsFunctionOrMethod(expr.src.result());
+		if (funType == null) {
 			syntaxError("function or method type expected", context, expr.src);
 		}
 
-		Nominal.FunctionOrMethod funType = (Nominal.FunctionOrMethod) type;
 		List<Nominal> paramTypes = funType.params();
 		ArrayList<Expr> exprArgs = expr.arguments;
 
@@ -2302,7 +2301,7 @@ public class FlowTypeChecker {
 			Context context) throws IOException, ResolveError {
 		ra.src = propagate(ra.src, environment, context);
 		Nominal srcType = ra.src.result();
-		Nominal.EffectiveRecord recType = expandAsEffectiveRecord(srcType);
+		Nominal.Record recType = expandAsEffectiveRecord(srcType);
 		if (recType == null) {
 			syntaxError(errorMessage(RECORD_TYPE_REQUIRED, srcType.raw()),
 					context, ra);
@@ -2359,7 +2358,7 @@ public class FlowTypeChecker {
 
 	private Expr propagate(Expr.TypeVal expr, Environment environment,
 			Context context) throws IOException {
-		expr.type = resolveAsType(expr.unresolvedType, context);
+		expr.type = resolveAsType(expr.unresolvedType, context);		
 		return expr;
 	}
 
@@ -3149,7 +3148,6 @@ public class FlowTypeChecker {
 				// Determine the full qualified name of this nominal type. This
 				// will additionally ensure that the name is visible
 				nid = resolveAsName(dt.names, context);
-
 				if (nominal || !isTypeVisible(nid, context)) {
 					myKind = Type.K_NOMINAL;
 					myData = nid;
@@ -3257,29 +3255,8 @@ public class FlowTypeChecker {
 		}
 
 		WhileyFile.Type td = wf.typeDecl(key.name());
-		if (td == null) {
-
-			// FIXME: the following allows (in certain cases) constants to be
-			// interpreted as types. This should not be allowed and needs to be
-			// removed in the future. However, to do this requires some kind of
-			// unit/constant/enum type. See #315
-
-			Type t = resolveAsConstant(key).type();
-			if (t instanceof Type.Set) {
-				if (unconstrained) {
-					// crikey this is ugly
-					int myIndex = states.size();
-					int kind = Type.leafKind(Type.T_VOID);
-					Object data = null;
-					states.add(new Automaton.State(kind, data, true,
-							Automaton.NOCHILDREN));
-					return myIndex;
-				}
-				Type.Set ts = (Type.Set) t;
-				return append(ts.element(), states);
-			} else {
-				throw new ResolveError("type not found: " + key);
-			}
+		if (td == null) {			
+			throw new ResolveError("type not found: " + key);
 		}
 
 		// following is needed to terminate any recursion
@@ -3860,7 +3837,7 @@ public class FlowTypeChecker {
 	// expandAsType
 	// =========================================================================
 
-	public Nominal.EffectiveSet expandAsEffectiveSet(Nominal lhs)
+	public Nominal.Set expandAsEffectiveSet(Nominal lhs)
 			throws IOException, ResolveError {
 		Type raw = lhs.raw();
 		if (raw instanceof Type.EffectiveSet) {
@@ -3868,13 +3845,13 @@ public class FlowTypeChecker {
 			if (!(nominal instanceof Type.EffectiveSet)) {
 				nominal = raw; // discard nominal information
 			}
-			return (Nominal.EffectiveSet) Nominal.construct(nominal, raw);
+			return (Nominal.Set) Nominal.construct(nominal, raw);
 		} else {
 			return null;
 		}
 	}
 
-	public Nominal.EffectiveList expandAsEffectiveList(Nominal lhs)
+	public Nominal.List expandAsEffectiveList(Nominal lhs)
 			throws IOException, ResolveError {
 		Type raw = lhs.raw();
 		if (raw instanceof Type.EffectiveList) {
@@ -3882,7 +3859,7 @@ public class FlowTypeChecker {
 			if (!(nominal instanceof Type.EffectiveList)) {
 				nominal = raw; // discard nominal information
 			}
-			return (Nominal.EffectiveList) Nominal.construct(nominal, raw);
+			return (Nominal.List) Nominal.construct(nominal, raw);
 		} else {
 			return null;
 		}
@@ -3917,7 +3894,7 @@ public class FlowTypeChecker {
 		}
 	}
 
-	public Nominal.EffectiveMap expandAsEffectiveDictionary(Nominal lhs)
+	public Nominal.Map expandAsEffectiveDictionary(Nominal lhs)
 			throws IOException, ResolveError {
 		Type raw = lhs.raw();
 		if (raw instanceof Type.EffectiveMap) {
@@ -3925,13 +3902,13 @@ public class FlowTypeChecker {
 			if (!(nominal instanceof Type.EffectiveMap)) {
 				nominal = raw; // discard nominal information
 			}
-			return (Nominal.EffectiveMap) Nominal.construct(nominal, raw);
+			return (Nominal.Map) Nominal.construct(nominal, raw);
 		} else {
 			return null;
 		}
 	}
 
-	public Nominal.EffectiveRecord expandAsEffectiveRecord(Nominal lhs)
+	public Nominal.Record expandAsEffectiveRecord(Nominal lhs)
 			throws IOException, ResolveError {
 		Type raw = lhs.raw();
 
@@ -3946,14 +3923,14 @@ public class FlowTypeChecker {
 			if (!(nominal instanceof Type.UnionOfRecords)) {
 				nominal = (Type) raw; // discard nominal information
 			}
-			return (Nominal.UnionOfRecords) Nominal.construct(nominal, raw);
+			return (Nominal.Record) Nominal.construct(nominal, raw);
 		}
 		{
 			return null;
 		}
 	}
 
-	public Nominal.EffectiveTuple expandAsEffectiveTuple(Nominal lhs)
+	public Nominal.Tuple expandAsEffectiveTuple(Nominal lhs)
 			throws IOException, ResolveError {
 		Type raw = lhs.raw();
 		if (raw instanceof Type.EffectiveTuple) {
@@ -3961,7 +3938,7 @@ public class FlowTypeChecker {
 			if (!(nominal instanceof Type.EffectiveTuple)) {
 				nominal = raw; // discard nominal information
 			}
-			return (Nominal.EffectiveTuple) Nominal.construct(nominal, raw);
+			return (Nominal.Tuple) Nominal.construct(nominal, raw);
 		} else {
 			return null;
 		}

@@ -59,6 +59,10 @@ public final class WyRecord extends HashMap<String,Object> {
 	// Record Operations
 	// ================================================================================
 
+	public Object get(final String field) {
+		return super.get(field);
+	}
+	
 	public static Object get(final WyRecord record, final String field) {
 		return record.get(field);
 	}

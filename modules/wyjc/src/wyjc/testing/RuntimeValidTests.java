@@ -502,6 +502,11 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
+	public void ConstrainedDictionary_Valid_2() {
+		runTest("ConstrainedDictionary_Valid_2");
+	}
+	
+	@Test
 	public void ConstrainedInt_Valid_1() {
 		runTest("ConstrainedInt_Valid_1");
 	}
@@ -606,6 +611,11 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ConstrainedInt_Valid_8");
 	}
 
+	@Ignore("Not implemented") @Test
+	public void ConstrainedIntersection_Valid_1() {
+		runTest("ConstrainedIntersection_Valid_1");
+	}
+	
 	@Test
 	public void ConstrainedList_Valid_1() {
 		runTest("ConstrainedList_Valid_1");
@@ -692,6 +702,11 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
+	public void ConstrainedList_Valid_27() {
+		runTest("ConstrainedList_Valid_27");
+	}
+	
+	@Test
 	public void ConstrainedList_Valid_3() {
 		runTest("ConstrainedList_Valid_3");
 	}
@@ -726,9 +741,14 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ConstrainedList_Valid_9");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Ignore("#342")@Test
 	public void ConstrainedNegation_Valid_1() {
 		runTest("ConstrainedNegation_Valid_1");
+	}
+
+	@Ignore("#342")@Test
+	public void ConstrainedNegation_Valid_2() {
+		runTest("ConstrainedNegation_Valid_2");
 	}
 
 	@Test
@@ -772,6 +792,16 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
+	public void ConstrainedRecord_Valid_10() {
+		runTest("ConstrainedRecord_Valid_10");
+	}
+	
+	@Test
+	public void ConstrainedReference_Valid_1() {
+		runTest("ConstrainedReference_Valid_1");
+	}
+	
+	@Test
 	public void ConstrainedSet_Valid_1() {
 		runTest("ConstrainedSet_Valid_1");
 	}
@@ -812,10 +842,25 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
+	public void ConstrainedSet_Valid_9() {
+		runTest("ConstrainedSet_Valid_9");
+	}
+	
+	@Test
 	public void ConstrainedTuple_Valid_1() {
 		runTest("ConstrainedTuple_Valid_1");
 	}
 
+	@Test
+	public void ConstrainedTuple_Valid_2() {
+		runTest("ConstrainedTuple_Valid_2");
+	}
+	
+	@Test
+	public void ConstrainedUnion_Valid_1() {
+		runTest("ConstrainedUnion_Valid_1");
+	}
+	
 	@Ignore("Issue ???") @Test
 	public void Contractive_Valid_1() {
 		runTest("Contractive_Valid_1");

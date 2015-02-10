@@ -18,7 +18,7 @@ constant T_INT is 10
 
 constant T_LONG is 11
 
-constant primitive_t is {T_BOOLEAN, T_CHAR, T_FLOAT, T_DOUBLE, T_BYTE, T_SHORT, T_INT, T_LONG}
+type primitive_t is (int x) where x in {T_BOOLEAN, T_CHAR, T_FLOAT, T_DOUBLE, T_BYTE, T_SHORT, T_INT, T_LONG}
 
 type array_t is {jvm_t element}
 

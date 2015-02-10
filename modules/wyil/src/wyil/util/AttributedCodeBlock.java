@@ -65,7 +65,7 @@ public class AttributedCodeBlock extends CodeBlock {
 	}
 
 	public AttributedCodeBlock(Collection<Code> bytecodes,
-			Attribute.Map<? extends Attribute>... attributeMaps) {
+			Attribute.Map<Attribute>... attributeMaps) {
 		super(bytecodes);
 		this.attributes = new HashMap<Class<Attribute>, wyil.lang.Attribute.Map<Attribute>>();
 		for (Attribute.Map map : attributeMaps) {
@@ -74,6 +74,16 @@ public class AttributedCodeBlock extends CodeBlock {
 		this.ID = null;
 	}
 
+	public AttributedCodeBlock(Collection<Code> bytecodes,
+			Collection<Attribute.Map<Attribute>> attributeMaps) {
+		super(bytecodes);
+		this.attributes = new HashMap<Class<Attribute>, wyil.lang.Attribute.Map<Attribute>>();
+		for (Attribute.Map map : attributeMaps) {
+			this.attributes.put(map.type(), map);
+		}
+		this.ID = null;
+	}
+	
 	/**
 	 * This constructor is used when creating a subblock only. They key is that
 	 * updates to the attributes of this block are visible to the enclosing
@@ -307,7 +317,7 @@ public class AttributedCodeBlock extends CodeBlock {
 		set(index, code);
 		throw new RuntimeException("implement me!");
 	}
-
+	
 	// ===================================================================
 	// Helper Methods
 	// ===================================================================
