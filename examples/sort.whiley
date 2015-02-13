@@ -1,7 +1,7 @@
 /**
  * Perform a merge sort of integer items.
  */
-function sort([int] items) => [int]:
+function sort([int] items) -> [int]:
     //
     if |items| > 1:
         // First, sort left and right sub-lists
