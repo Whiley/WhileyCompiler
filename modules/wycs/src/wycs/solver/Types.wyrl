@@ -184,6 +184,7 @@ reduce OrT{SetT[bool b1,Type t1] s1, SetT[bool b2,Type t2] s2, Type... ts}
 name "SetType_5"
 rank 2:
     => OrT({s1}++ts), if t1 == t2 && b1 && !b2
+    => OrT({SetT[b1||b2,t1]}++ts), if t2 == VoidT && b2
 
 // ====================================================================
 // Atoms
@@ -200,7 +201,7 @@ term VarT(string)
 term NominalT(string)
 
 define Quark as AnyT | NullT | VoidT | BoolT | IntT | RealT | StringT | VarT(string) | NominalT(string)
-define Proton as Quark | TupleT[Proton...]
+define Proton as Quark | TupleT[Proton...] | SetT[bool,Proton]
 define Atom as Proton | NotT(Proton)
 
 reduce AndT{VoidT, Type... xs}
@@ -213,10 +214,12 @@ name "AtomType_2"
 rank 0:
     => AndT(xs)
 
-reduce AndT{Proton a1, Proton a2, Type... ts}
+// a1 needs to be a quark here, as the rule for tuples is handled
+// above.
+reduce AndT{Quark a1, Proton a2, Type... ts}
 name "AtomType_3"
 rank 1:
-    => VoidT, if a1 != a2 && !(a2 is AnyT)
+    => VoidT, if a1 != a2 && a1 != AnyT && a2 != AnyT
 
 // a1 needs to be a quark here, as the rule for tuples is handled
 // above.

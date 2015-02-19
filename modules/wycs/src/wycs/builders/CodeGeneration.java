@@ -578,10 +578,11 @@ public class CodeGeneration {
 		}
 	}
 
-	protected Code generate(Expr.Is e, HashMap<String,Code> environment, WyalFile.Context context) {
-		SemanticType type = e.rightOperand.attribute(TypeAttribute.class).type;
+	protected Code generate(Expr.Is e, HashMap<String, Code> environment,
+			WyalFile.Context context) {
+		SemanticType test = e.rightOperand.attribute(TypeAttribute.class).type;
 		Code source = generate(e.leftOperand, environment, context);
-		return Code.Is(type, source, attributes(e));
+		return Code.Is(source.returnType(), source, test, attributes(e));
 	}
 	
 	/**

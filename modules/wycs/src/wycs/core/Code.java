@@ -249,12 +249,14 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		return new Load(type,source,index,attributes);
 	}
 
-	public static Is Is(SemanticType type, Code<?> operand, Attribute... attributes) {
-		return new Is(type,operand,attributes);
+	public static Is Is(SemanticType type, Code<?> operand, SemanticType test,
+			Attribute... attributes) {
+		return new Is(type, operand, test, attributes);
 	}
 
-	public static Is Is(SemanticType type, Code<?> operand, Collection<Attribute> attributes) {
-		return new Is(type,operand,attributes);
+	public static Is Is(SemanticType type, Code<?> operand, SemanticType test,
+			Collection<Attribute> attributes) {
+		return new Is(type, operand, test, attributes);
 	}
 	
 	
@@ -413,16 +415,16 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	}
 
 	public final static class Is extends Code<SemanticType> {
-		public final SemanticType type;
+		public final SemanticType test;
 
-		private Is(SemanticType type, Code<?> operand, Attribute... attributes) {
+		private Is(SemanticType type, Code<?> operand, SemanticType test, Attribute... attributes) {
 			super(type,Op.IS,new Code[] { operand },attributes);
-			this.type = type;
+			this.test = test;
 		}
 
-		private Is(SemanticType type, Code<?> operand, Collection<Attribute> attributes) {
+		private Is(SemanticType type, Code<?> operand, SemanticType test, Collection<Attribute> attributes) {
 			super(type,Op.IS,new Code[] { operand },attributes);
-			this.type = type;
+			this.test = test;
 		}
 
 		@Override
@@ -432,7 +434,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 
 		@Override
 		public Code<?> clone(SemanticType type, Op opcode, Code<?>[] operands) {
-			return Is(type,operands[0],attributes());
+			return Is(type,operands[0],test,attributes());
 		}
 	}
 	

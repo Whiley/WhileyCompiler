@@ -566,11 +566,14 @@ public class JavaFileWriter {
 					lastDeclaredElement, element, environment.clone());
 			if (myLevel != level) {
 				myOut(level, "continue;");
-				myOut(--level, "} else { m" + source + "=false; break; }");
-			}
-			while (level >= myLevel) {
-				myOut(--level, "}");
-			}
+				myOut(--level, "}");				
+				while (level > myLevel) {
+					myOut(--level, "}");
+				}
+				myOut(level,"m" + source + " = false;");
+				myOut(level,"break;");
+				myOut(--level,"}");
+			} 			
 			myOut(level++, "if(m" + source + ") {");
 		}
 		// done
@@ -755,7 +758,7 @@ public class JavaFileWriter {
 			// Construct the for-loop for this element
 			myOut(level++, "for(int " + idx + "=0;" + idx + "!=c" + source
 					+ ".size();++" + idx + ") {");
-
+			
 			// Check that the current element from the source collection is not
 			// already matched. If this is the first pattern element (i.e. i ==
 			// 0), then we don't need to do anything since nothing could have
@@ -784,12 +787,15 @@ public class JavaFileWriter {
 			// exits early.
 			if (myLevel != level) {
 				myOut(level, "continue;");
-				myOut(--level, "} else { m" + source + "_"
-						+ lastPatternElementIndex + "=false; break; }");
-			}
-			while (level >= myLevel) {
-				myOut(--level, "}");
-			}
+				myOut(--level, "}");				
+				while (level > myLevel) {
+					myOut(--level, "}");
+				}
+				myOut(level,"m" + source + "_" + lastPatternElementIndex + " = false;");
+				myOut(level,"break;");
+				myOut(--level,"}");
+			} 
+			
 			myOut(level++, "if(m" + source + "_" + lastPatternElementIndex + ") {");
 		}
 

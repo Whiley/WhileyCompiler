@@ -1251,7 +1251,7 @@ public class AllInvalidTests {
 		runTest("Subtype_Invalid_8");
 	}
 
-	@Test
+	@Ignore("timeout") @Test
 	public void Subtype_Invalid_9() {
 		runTest("Subtype_Invalid_9");
 	}

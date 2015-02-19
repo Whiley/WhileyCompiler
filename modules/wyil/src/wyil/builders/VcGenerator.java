@@ -1,4 +1,3 @@
-// Copyright (c) 2012, David J. Pearce (djp@ecs.vuw.ac.nz)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,6 +28,7 @@ import wycc.lang.SyntaxError.InternalFailure;
 import wycc.lang.SyntaxError;
 import static wyil.util.ErrorMessages.*;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -41,12 +41,15 @@ import wyil.lang.*;
 import wyil.lang.CodeBlock.Index;
 import wyil.util.AttributedCodeBlock;
 import wyil.util.ErrorMessages;
+import wyil.util.TypeExpander;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;
 import wycc.util.Pair;
+import wycc.util.ResolveError;
 import wycs.core.SemanticType;
 import wycs.core.Value;
 import wycs.syntax.*;
+import wycs.syntax.Expr.Is;
 import wycs.syntax.TypePattern.Tuple;
 
 /**
@@ -58,12 +61,14 @@ import wycs.syntax.TypePattern.Tuple;
  */
 public class VcGenerator {
 	private final Builder builder;
+	private final TypeExpander expander;
 	private String filename;
 	private WyalFile wycsFile;
 	WyilFile.FunctionOrMethod method;
 
 	public VcGenerator(Builder builder) {
 		this.builder = builder;
+		this.expander = new TypeExpander(builder.project()); 
 	}
 
 	// ===============================================================================
@@ -246,17 +251,40 @@ public class VcGenerator {
 					// In this case, there is not return value and, hence, there
 					// is no need to ensure the postcondition holds.
 				} else {
-					// First, construct arguments for the macro invocation. Only
+					List<wyil.lang.Attribute> attributes = body.attributes(branch.pc());
+					Collection<wycc.lang.Attribute> wycsAttributes = toWycsAttributes(attributes);
+					// Find the return statement in question
+					Codes.Return ret = (Codes.Return) body.get(branch.pc());
+					// Construct verification check to ensure that return
+					// type invariant holds
+					Expr returnedOperand = branch.read(ret.operand);
+					Type rawType = expand(bodyEnvironment[ret.operand],attributes);
+					Expr rawTest = new Expr.Is(returnedOperand,
+							convert(rawType, attributes));
+					if (containsNominal(fmm.ret(),attributes)) {
+						// FIXME: we need the raw test here, because the
+						// verifier can't work out the type of the expression
+						// otherwise.						
+						Expr nominalTest = new Expr.Is(returnedOperand,
+								convert(fmm.ret(), attributes));									
+						Expr vc = buildVerificationCondition(nominalTest,
+								branch, bodyEnvironment, body, rawTest);
+						// FIXME: add contextual information here
+						wycsFile.add(wycsFile.new Assert(
+								"return type invariant not satisfied", vc,
+								wycsAttributes));
+					}
+					// Construct arguments for the macro invocation. Only
 					// the returned value is read from the branch at the current
 					// pc. The other arguments correspond to the parameters
 					// which held on entry to this function.
-					Codes.Return ret = (Codes.Return) body.get(branch.pc());
 					arguments = new Expr[fmm.params().size() + 1];
 					for (int i = 0; i != fmm.params().size(); ++i) {
 						arguments[i + 1] = new Expr.Variable(prefixes[i]);
 					}
-					arguments[0] = branch.read(ret.operand);
-					// Second, for each postcondition generate a separate
+					
+					arguments[0] = returnedOperand;
+					// For each postcondition generate a separate
 					// verification condition. Doing this allows us to gather
 					// more detailed context information in the case of a
 					// failure about which post-condition is failing.
@@ -267,7 +295,7 @@ public class VcGenerator {
 						Expr.Invoke macro = new Expr.Invoke(prefix + i,
 								wyilFile.id(), Collections.EMPTY_LIST, arg);
 						Expr vc = buildVerificationCondition(macro, branch,
-								bodyEnvironment, body);
+								bodyEnvironment, body, rawTest);
 						// FIXME: add contextual information here
 						wycsFile.add(wycsFile.new Assert(
 								"postcondition not satisfied", vc,
@@ -298,6 +326,7 @@ public class VcGenerator {
 	 *            Branch state going into the block
 	 * @param block
 	 *            Block being transformed over
+	 * 
 	 * @return List of branches which reach the end of the block.
 	 */
 	public List<VcBranch> transform(VcBranch branch, CodeBlock.Index root,
@@ -358,8 +387,7 @@ public class VcGenerator {
 	 */
 	protected Pair<VcBranch, List<VcBranch>> transform(CodeBlock.Index parent,
 			int offset, VcBranch entryState, boolean breakOnInvariant,
-			Type[] environment, Map<String, CodeBlock.Index> labels,
-			AttributedCodeBlock block) {
+			Type[] environment, Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
 		// Move state to correct location
 		CodeBlock.Index start = new CodeBlock.Index(parent);
 		entryState.goTo(new CodeBlock.Index(parent, offset));
@@ -462,7 +490,7 @@ public class VcGenerator {
 					// preconditions for this statement and, if so, add
 					// appropriate verification conditions to enforce them.
 					Code.Unit unit = (Code.Unit) code;
-					Pair<String,Expr>[] preconditions = getPreconditions(unit, branch, block);
+					Pair<String,Expr>[] preconditions = getPreconditions(unit, branch, environment, block);
 					if (preconditions.length > 0) {
 						// This bytecode has one or more preconditions which
 						// need to be asserted. Therefore, for each, create a
@@ -577,7 +605,7 @@ public class VcGenerator {
 	 * @param block
 	 */
 	public Pair<String,Expr>[] getPreconditions(Code.Unit code, VcBranch branch,
-			AttributedCodeBlock block) {
+			Type[] environment, AttributedCodeBlock block) {
 		//
 		try {
 			switch (code.opcode()) {
@@ -592,7 +620,7 @@ public class VcGenerator {
 			case Code.OPCODE_invokefnv:
 			case Code.OPCODE_invokemd:
 			case Code.OPCODE_invokemdv:
-				return preconditionCheck((Codes.Invoke) code, branch, block);
+				return preconditionCheck((Codes.Invoke) code, branch, environment, block);
 			}
 			return new Pair[0];
 		} catch (Exception e) {
@@ -670,14 +698,35 @@ public class VcGenerator {
 	 * @throws Exception
 	 */
 	public Pair<String,Expr>[] preconditionCheck(Codes.Invoke code, VcBranch branch,
-			AttributedCodeBlock block) throws Exception {
+			Type[] environment, AttributedCodeBlock block) throws Exception {
+		ArrayList<Pair<String,Expr>> preconditions = new ArrayList<>();
+		//
+		// First, check for any potentially constrained types.    
+		//
+		List<wyil.lang.Attribute> attributes = block.attributes(branch.pc());
+		List<Type> code_type_params = code.type().params();		
+		int[] code_operands = code.operands();
+		for (int i = 0; i != code_operands.length; ++i) {
+			Type t = code_type_params.get(i);
+			if (containsNominal(t, attributes)) {
+				int operand = code_operands[i];
+				Type rawType = expand(environment[operand],attributes);
+				Expr rawTest = new Expr.Is(branch.read(operand), convert(
+						rawType, attributes));
+				Expr nominalTest = new Expr.Is(branch.read(operand), convert(t,
+						attributes));
+				preconditions.add(new Pair(
+						"type invariant not satisfied (argument " + i + ")",
+						new Expr.Binary(Expr.Binary.Op.IMPLIES, rawTest,
+								nominalTest)));
+			}
+		}
 		//
 		List<AttributedCodeBlock> requires = findPrecondition(code.name,
 				code.type(), block, branch);
 		//
 		if (requires.size() > 0) {
 			// First, read out the operands from the branch
-			int[] code_operands = code.operands();
 			Expr[] operands = new Expr[code_operands.length];
 			for (int i = 0; i != code_operands.length; ++i) {
 				operands[i] = branch.read(code_operands[i]);
@@ -685,19 +734,17 @@ public class VcGenerator {
 			// To check the pre-condition holds after the method, we
 			// simply called the corresponding pre-condition macros.
 			String prefix = code.name.name() + "_requires_";
-			Pair<String,Expr>[] preconditions = new Pair[requires.size()];
+
 			Expr argument = operands.length == 1 ? operands[0] : new Expr.Nary(
 					Expr.Nary.Op.TUPLE, operands);
 			for (int i = 0; i != requires.size(); ++i) {
 				Expr precondition = new Expr.Invoke(prefix + i,
 						code.name.module(), Collections.EMPTY_LIST, argument);
-				preconditions[i] = new Pair<String,Expr>("precondition not satisfied",precondition);
+				preconditions.add(new Pair<String,Expr>("precondition not satisfied",precondition));
 
 			}
-			return preconditions;
-		} else {
-			return new Pair[0];
 		}
+		return preconditions.toArray(new Pair[preconditions.size()]);
 	}
 
 	/**
@@ -1431,6 +1478,7 @@ public class VcGenerator {
 			Codes.AssertOrAssume code, boolean isAssert, VcBranch branch,
 			Type[] environment, Map<String, CodeBlock.Index> labels,
 			AttributedCodeBlock block) {
+		int start = wycsFile.declarations().size();
 		// First, transform the given branch through the assert or assume block.
 		// This will produce one or more exit branches, some of which may have
 		// reached failed states and need to be turned into verification
@@ -1452,6 +1500,18 @@ public class VcGenerator {
 				exitBranches.remove(i--);
 			}
 		}
+		// Third, in the case of an assumption, we need to remove any
+		// verification conditions that were generated when processing this
+		// block.
+		if(!isAssert) {
+			// FIXME: this is something of a hack for now. A better solution would
+			// be to pass a variable recursively down through the call stack which
+			// signaled that no verification conditions should be generated.
+			while(wycsFile.declarations().size() > start) {
+				wycsFile.declarations().remove(wycsFile.declarations().size()-1);
+			}
+		}
+		
 		// Done
 		return p;
 	}
@@ -2084,7 +2144,8 @@ public class VcGenerator {
 	 */
 	protected void buildMacroBlock(String name, CodeBlock.Index root,
 			AttributedCodeBlock block, List<Type> types) {
-
+		int start = wycsFile.declarations().size();
+		
 		// first, generate a branch for traversing the external block.
 		VcBranch master = new VcBranch(
 				Math.max(block.numSlots(), types.size()), null);
@@ -2114,11 +2175,20 @@ public class VcGenerator {
 					declarations.toArray(new TypePattern.Leaf[declarations
 							.size()]));
 		}
-
+	
 		// At this point, we are guaranteed exactly one branch because there
 		// is only ever one exit point from a pre-/post-condition.
 		List<VcBranch> exitBranches = transform(master, root, environment,
 				block);
+		// Remove any verification conditions that were generated when
+		// processing this block.  		
+		// FIXME: this is something of a hack for now. A better solution would
+		// be for the verification conditions to be returned so that they
+		// can be discussed.
+		while(wycsFile.declarations().size() > start) {
+			wycsFile.declarations().remove(wycsFile.declarations().size()-1);
+		}
+		//
 		for (VcBranch exitBranch : exitBranches) {
 			if (exitBranch.state() == VcBranch.State.TERMINATED) {
 				Expr body = generateAssumptions(exitBranch, null);
@@ -2126,8 +2196,8 @@ public class VcGenerator {
 						type, body));
 				return;
 			}
-		}
-
+		}		
+		
 		// It should be impossible to reach here.
 		internalFailure("unreachable code", filename);
 	}
@@ -2179,16 +2249,22 @@ public class VcGenerator {
 	 *            generated.
 	 * @param block
 	 *            --- The enclosing attributed block for this assertion.
+	 * @param assumptions
+	 *            --- Additional assumptions to take into consideration.
 	 * @return
 	 */
 	protected Expr buildVerificationCondition(Expr assertion, VcBranch branch,
-			Type[] environment, AttributedCodeBlock block) {
+			Type[] environment, AttributedCodeBlock block, Expr... extraAssumptions) {
 		// First construct the assertion which forms the basis of the
 		// verification condition. The assertion must be shown to hold assuming
 		// the assumptions did. Therefore, we construct an implication to
 		// establish this.
 		Expr assumptions = generateAssumptions(branch, null);
-
+		
+		for(Expr ea : extraAssumptions) {
+			assumptions = new Expr.Binary(Expr.Binary.Op.AND, assumptions, ea);
+		}
+		
 		assertion = new Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
 				assertion, toWycsAttributes(block.attributes(branch.pc())));
 
@@ -2768,6 +2844,94 @@ public class VcGenerator {
 		}
 	}
 
+	/**
+	 * Make an objective assessment as to whether a type may include an
+	 * invariant or not. The purpose here is reduce the number of verification
+	 * conditions generated with respect to constrained types. The algorithm is
+	 * currently very simple. It essentially looks to see whether or not the
+	 * type contains a nominal component. If so, the answer is "yes", otherwise
+	 * the answer is "no".
+	 * 
+	 * @return
+	 */
+	private boolean containsNominal(Type t,
+			Collection<wyil.lang.Attribute> attributes) {
+		// FIXME: this is fundamentally broken in the case of recursive types.
+		// See Issue #298.
+		if (t instanceof Type.Any || t instanceof Type.Void
+				|| t instanceof Type.Null || t instanceof Type.Bool
+				|| t instanceof Type.Char || t instanceof Type.Byte
+				|| t instanceof Type.Int || t instanceof Type.Real
+				|| t instanceof Type.Strung) {
+			return false;
+		} else if (t instanceof Type.Set) {
+			Type.Set st = (Type.Set) t;
+			return containsNominal(st.element(), attributes);
+		} else if (t instanceof Type.Map) {
+			Type.Map lt = (Type.Map) t;
+			return containsNominal(lt.key(), attributes)
+					|| containsNominal(lt.value(), attributes);
+		} else if (t instanceof Type.List) {
+			Type.List lt = (Type.List) t;
+			return containsNominal(lt.element(), attributes);
+		} else if (t instanceof Type.Tuple) {
+			Type.Tuple tt = (Type.Tuple) t;
+			for (int i = 0; i != tt.size(); ++i) {
+				if (containsNominal(tt.element(i), attributes)) {
+					return true;
+				}
+			}
+			return false;
+		} else if (t instanceof Type.Record) {
+			Type.Record rt = (Type.Record) t;
+			for (Type field : rt.fields().values()) {
+				if (containsNominal(field, attributes)) {
+					return true;
+				}
+			}
+			return false;
+		} else if (t instanceof Type.Reference) {
+			Type.Reference lt = (Type.Reference) t;
+			return containsNominal(lt.element(), attributes);
+		} else if (t instanceof Type.Union) {
+			Type.Union tu = (Type.Union) t;
+			for (Type te : tu.bounds()) {
+				if (containsNominal(te, attributes)) {
+					return true;
+				}
+			}
+			return false;
+		} else if (t instanceof Type.Negation) {
+			Type.Negation nt = (Type.Negation) t;
+			return containsNominal(nt.element(), attributes);
+		} else if (t instanceof Type.FunctionOrMethod) {
+			Type.FunctionOrMethod ft = (Type.FunctionOrMethod) t;
+			for (Type pt : ft.params()) {
+				if (containsNominal(pt, attributes)) {
+					return true;
+				}
+			}
+			return containsNominal(ft.ret(), attributes);
+		} else if (t instanceof Type.Nominal) {
+			return true;
+		} else {
+			internalFailure("unknown type encountered ("
+					+ t.getClass().getName() + ")", filename, attributes);
+			return false;
+		}
+	}
+	
+	private Type expand(Type t, Collection<wyil.lang.Attribute> attributes) {
+		try {
+			return expander.getUnderlyingType(t);
+		} catch (ResolveError re) {
+			internalFailure(re.getMessage(), filename, attributes);
+		} catch (IOException re) {
+			internalFailure(re.getMessage(), filename, attributes);
+		}
+		return null; // dead-code
+	}
+	
 	private static <T> List<T> prepend(T x, List<T> xs) {
 		ArrayList<T> rs = new ArrayList<T>();
 		rs.add(x);

@@ -381,7 +381,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 
 	private int translate(Code.Is code, Automaton automaton, HashMap<String,Integer> environment) {
 		int e = translate(code.operands[0],automaton,environment);
-		int t = convert(automaton,code.type);
+		int t = convert(automaton,code.test);
 		return Solver.Is(automaton,e,t);
 	}
 	
@@ -399,24 +399,31 @@ public class VerificationCheck implements Transform<WycsFile> {
 		HashMap<String,Integer> nEnvironment = new HashMap<String,Integer>(environment);
 		Pair<SemanticType,Integer>[] variables = code.types;
 		int[] vars = new int[variables.length];
+		
+		//int[] typeTests = new int[variables.length];
 		for (int i = 0; i != variables.length; ++i) {
 			Pair<SemanticType,Integer> p = variables[i];
+			// First, construct variable pairs
 			SemanticType type = p.first();
 			String var = "r" + p.second();
 			int varIdx = Var(automaton, var);
 			nEnvironment.put(var, varIdx);
-			int srcIdx;
-			// FIXME: generate actual type of variable here
-			srcIdx = automaton.add(AnyT);
-			vars[i] = automaton.add(new Automaton.List(varIdx, srcIdx));
+			int typeIdx = convert(automaton,type);
+			vars[i] = automaton.add(new Automaton.List(varIdx, typeIdx));
+			// Second, construct the appropriate type test for each variable
+			//typeTests[i] = Solver.Is(automaton,varIdx,convert(automaton,type));
 		}
 
 		int avars = automaton.add(new Automaton.Set(vars));
-
+		//int typeTest = And(automaton,typeTests);
+		int quantifiedExpression = translate(code.operands[0], automaton, nEnvironment);
+				
 		if(code.opcode == Code.Op.FORALL) {
-			return ForAll(automaton, avars, translate(code.operands[0], automaton, nEnvironment));
+			//return ForAll(automaton, avars, SolverUtil.Implies(automaton,typeTest, quantifiedExpression));
+			return ForAll(automaton, avars, quantifiedExpression);
 		} else {
-			return Exists(automaton, avars, translate(code.operands[0], automaton, nEnvironment));
+			//return Exists(automaton, avars, And(automaton,typeTest, quantifiedExpression));
+			return Exists(automaton, avars, quantifiedExpression);
 		}
 	}
 

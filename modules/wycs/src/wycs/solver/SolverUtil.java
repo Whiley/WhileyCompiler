@@ -174,4 +174,20 @@ public class SolverUtil {
 		}
 	}
 
+	/**
+	 * Construct an automaton node representing the logical implication between
+	 * two nodes
+	 *
+	 * @param automaton
+	 *            --- automaton to create new node in.
+	 * @param lhs
+	 *            --- left expression.
+	 * @param rhs
+	 *            --- right expression.
+	 * @return the index of the new node.
+	 */
+	static public int Implies(Automaton automaton, int lhs, int rhs) {
+		lhs = Solver.Not(automaton, lhs);
+		return Solver.Or(automaton, new int[]{lhs,rhs});
+	}
 }

@@ -138,8 +138,8 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Type_19() { verifyPassTest("test_type_19"); }
 	@Test public void Test_Type_20() { verifyPassTest("test_type_20"); }
 	@Test public void Test_Type_21() { verifyPassTest("test_type_21"); }
-	
-	
+	@Test public void Test_Type_22() { verifyPassTest("test_type_22"); }
+		
 	@Test public void Test_Tuple_1() { verifyPassTest("test_tuple_01"); }
 
 	@Test public void Test_Valid_100() { verifyPassTest("test_100"); }

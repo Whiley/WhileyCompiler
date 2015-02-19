@@ -24,7 +24,9 @@ import wycc.util.Logger;
 import wycc.util.Pair;
 import wycc.util.ResolveError;
 import wycc.util.Triple;
+import wycs.core.Code;
 import wycs.core.SemanticType;
+import wycs.core.Value;
 import wycs.core.WycsFile;
 import wycs.io.WyalFilePrinter;
 import wycs.io.WycsFilePrinter;
@@ -437,7 +439,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			SemanticType.Function cf = (SemanticType.Function) f.substitute(binding);
 			// rf is the raw expanded form of the type. We need to expand it
 			// here, as otherwise the subtype operator won't work correctly.
-			SemanticType.Function rf = (SemanticType.Function) expand(cf, context);
+			SemanticType.Function rf = (SemanticType.Function) expand(cf, false, context);
 			// Now, see whether this a match and, if so, whether or not it is
 			// the current *best* match.
 			if (SemanticType.isSubtype(rf.from(), parameter)) {
@@ -680,9 +682,12 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	 *
 	 * @param type
 	 *            --- Syntactic type to be converted.
+	 * @param maximallyConsumed
+	 *            Flag indicating whether to calculate maximally consumed type
+	 *            or not.
 	 * @return
 	 */
-	public SemanticType expand(SemanticType type, WyalFile.Context context) {
+	public SemanticType expand(SemanticType type, boolean maximallyConsumed, WyalFile.Context context) {
 		try {
 			if (type instanceof SemanticType.Atom) {
 				return type;
@@ -694,7 +699,11 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				boolean modified = false;
 				for (int i = 0; i != elements.length; ++i) {
 					SemanticType elem = elements[i];
-					elements[i] = expand(elem, context);
+					elements[i] = expand(elem, maximallyConsumed, context);
+					if(elements[i] instanceof SemanticType.Void) {
+						// FIXME: this is something of a cludge.
+						return SemanticType.Void;
+					}
 					modified |= elements[i] != elem;
 				}
 				if (modified) {
@@ -704,13 +713,13 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				}
 			} else if (type instanceof SemanticType.Function) {
 				SemanticType.Function ft = (SemanticType.Function) type;
-				SemanticType from = expand(ft.from(), context);
-				SemanticType to = expand(ft.to(), context);
+				SemanticType from = expand(ft.from(), maximallyConsumed, context);
+				SemanticType to = expand(ft.to(), maximallyConsumed, context);
 				SemanticType[] generics = ft.generics();
 				boolean modified = from != ft.from() || to != ft.to();
 				for (int i = 0; i != generics.length; ++i) {
 					SemanticType elem = generics[i];
-					generics[i] = expand(elem, context);
+					generics[i] = expand(elem, maximallyConsumed, context);
 					modified |= generics[i] != elem;
 				}
 				if (modified) {
@@ -720,7 +729,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				}
 			} else if (type instanceof SemanticType.Set) {
 				SemanticType.Set st = (SemanticType.Set) type;
-				SemanticType element = expand(st.element(), context);
+				SemanticType element = expand(st.element(), maximallyConsumed, context);
 				if (element != st.element()) {
 					return SemanticType.Set(st.flag(), element);
 				} else {
@@ -728,7 +737,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				}
 			} else if (type instanceof SemanticType.Not) {
 				SemanticType.Not nt = (SemanticType.Not) type;
-				SemanticType element = expand(nt.element(), context);
+				SemanticType element = expand(nt.element(), maximallyConsumed, context);
 				if (element != nt.element()) {
 					return SemanticType.Not(element);
 				} else {
@@ -740,7 +749,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				boolean modified = false;
 				for (int i = 0; i != elements.length; ++i) {
 					SemanticType elem = elements[i];
-					elements[i] = expand(elem, context);
+					elements[i] = expand(elem, maximallyConsumed, context);
 					modified |= elements[i] != elem;
 				}
 				if (modified) {
@@ -754,7 +763,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				boolean modified = false;
 				for (int i = 0; i != elements.length; ++i) {
 					SemanticType elem = elements[i];
-					elements[i] = expand(elem, context);
+					elements[i] = expand(elem, maximallyConsumed, context);
 					modified |= elements[i] != elem;
 				}
 				if (modified) {
@@ -766,9 +775,13 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				SemanticType.Nominal nt = (SemanticType.Nominal) type;
 				WycsFile wf = getModule(nt.name().module());
 				WycsFile.Type td = wf.declaration(nt.name().name(),
-						WycsFile.Type.class);
-				// FIXME: obviously, this doesn't work for recursive types!
-				return expand(td.type, context);
+						WycsFile.Type.class);				
+				if(maximallyConsumed && td.invariant != null) {
+					return SemanticType.Void;
+				} else {
+					// FIXME: obviously, this doesn't work for recursive types!
+					return expand(td.type, maximallyConsumed, context);
+				}
 			}
 		} catch (Exception e) {
 			internalFailure(e.getMessage(), context.file().filename(), context, e);
@@ -858,9 +871,17 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 					for (int i = 0; i != generics.length; ++i) {
 						generics[i] = SemanticType.Var(t.generics.get(i));
 					}
+					// The following is necessary in order to correctly handle
+					// type testing and the computation of the maximallyConsumed
+					// type. Specifically, in computing the maximallyConsumed
+					// type we check whether or not an invariant is given
+					// (though we do not care what the invariant says).
+					// Therefore, we include here a dummy invariant to trigger
+					// this when appropriate.
+					Code invariant = t.invariant == null ? null : Code.Constant(Value.Bool(true));
 					// FIXME: in the case of recursive type definitions, this is
 					// broken.
-					declarations.add(new WycsFile.Type(t.name, type, null, t
+					declarations.add(new WycsFile.Type(t.name, type, invariant, t
 							.attribute(Attribute.Source.class)));
 				}
 			} catch (ResolveError re) {
