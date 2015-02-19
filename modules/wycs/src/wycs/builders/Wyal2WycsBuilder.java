@@ -404,7 +404,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			// At this stage, we need to choose the best fit. In some cases a best
 			// fit may not exist, in which case we have ambiguity.
 			Pair<SemanticType.Function, Map<String, SemanticType>> candidate = selectCandidateFunctionOrMacro(
-					parameter, generics, fnTypes, context);
+					nid, parameter, generics, fnTypes, context);
 			// Done
 			return new Pair<SemanticType.Function, Map<String,SemanticType>>(candidate.first(), candidate.second());		
 		} catch(ResolveError e) {
@@ -415,9 +415,10 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		}
 	}
 
-	public Pair<SemanticType.Function,Map<String,SemanticType>> selectCandidateFunctionOrMacro(
-			SemanticType parameter, List<SemanticType> generics,
-			List<SemanticType.Function> candidates, WyalFile.Context context) throws ResolveError {
+	public Pair<SemanticType.Function, Map<String, SemanticType>> selectCandidateFunctionOrMacro(
+			NameID name, SemanticType parameter, List<SemanticType> generics,
+			List<SemanticType.Function> candidates, WyalFile.Context context)
+			throws ResolveError {
 		
 		SemanticType.Function candidateFn = null;	
 		HashMap<String,SemanticType> candidateBinding = null;
@@ -460,7 +461,13 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			}
 		}
 		if (candidateFn == null) {
-			throw new ResolveError("no suitable match for function or macro");
+			String msg = "no match for " + name + "(" + parameter + ")";
+
+			for (SemanticType.Function p : candidates) {
+				msg += "\n\tfound: " + name + " : " + p;
+			}
+
+			throw new ResolveError(msg);
 		} else {
 			return new Pair<SemanticType.Function, Map<String, SemanticType>>(
 					candidateFn, candidateBinding);

@@ -237,7 +237,7 @@ public class VcGenerator {
 				Expr vc = buildVerificationCondition(
 						new Expr.Constant(Value.Bool(false)), branch,
 						bodyEnvironment, body);
-				wycsFile.add(wycsFile.new Assert("assertion failure", vc,
+				wycsFile.add(wycsFile.new Assert("assertion failed", vc,
 						toWycsAttributes(body.attributes(branch.pc()))));
 				break;
 			}
@@ -303,53 +303,11 @@ public class VcGenerator {
 	public List<VcBranch> transform(VcBranch branch, CodeBlock.Index root,
 			Type[] environment, AttributedCodeBlock block) {
 		// Construct the label map which is needed for conditional branches
-		Map<String, CodeBlock.Index> labels = buildLabelMap(block);
+		Map<String, CodeBlock.Index> labels = CodeUtils.buildLabelMap(block);
 		Pair<VcBranch, List<VcBranch>> p = transform(root, 0, branch, false,
 				environment, labels, block);
 		// Ok, return list of exit branches
 		return p.second();
-	}
-
-	/**
-	 * Construct a mapping from labels to their block indices within a root
-	 * block. This is useful so they can easily be resolved during the
-	 * subsequent traversal of the block.
-	 * 
-	 * @param block
-	 * @return
-	 */
-	private Map<String, CodeBlock.Index> buildLabelMap(AttributedCodeBlock block) {
-		HashMap<String, CodeBlock.Index> labels = new HashMap<String, CodeBlock.Index>();
-		buildLabelMap(new CodeBlock.Index(null), null, labels, block);
-		return labels;
-	}
-
-	/**
-	 * Helper function for buildLabelMap
-	 * 
-	 * @param index
-	 *            Current block index being traversed.
-	 * @param labels
-	 *            Labels map being constructed
-	 * @param block
-	 *            Root block
-	 */
-	private void buildLabelMap(CodeBlock.Index index, CodeBlock.Index parent,
-			Map<String, CodeBlock.Index> labels, CodeBlock block) {
-		//
-		for (int i = 0; i != block.size(); ++i) {
-			Code code = block.get(i);
-			if (code instanceof Codes.Label) {
-				// Found a label, so register it in the labels map
-				Codes.Label label = (Codes.Label) code;
-				labels.put(label.label, index);
-			} else if (code instanceof CodeBlock) {
-				// Found a subblock, so traverse that
-				CodeBlock subblock = (CodeBlock) code;
-				buildLabelMap(index.firstWithin(), index, labels, subblock);
-			}
-			index = index.next();
-		}
 	}
 
 	/**
@@ -504,18 +462,18 @@ public class VcGenerator {
 					// preconditions for this statement and, if so, add
 					// appropriate verification conditions to enforce them.
 					Code.Unit unit = (Code.Unit) code;
-					Expr[] preconditions = getPreconditions(unit, branch, block);
+					Pair<String,Expr>[] preconditions = getPreconditions(unit, branch, block);
 					if (preconditions.length > 0) {
 						// This bytecode has one or more preconditions which
 						// need to be asserted. Therefore, for each, create a
 						// failed branch to ensure the precondition is met.
-						// FIXME: should use buildVerificationCondition here?
 						for (int i = 0; i != preconditions.length; ++i) {
-							Expr precond = preconditions[i];
-							VcBranch fb = branch.fork();
-							fb.assume(new Expr.Unary(Expr.Unary.Op.NOT, precond));
-							fb.setState(VcBranch.State.FAILED);
-							exitBranches.add(fb);
+							Pair<String,Expr> p = preconditions[i];							
+							Expr vc = buildVerificationCondition(p.second(),
+									branch, environment, block);
+							wycsFile.add(wycsFile.new Assert(p.first(), vc,
+									toWycsAttributes(block.attributes(branch
+											.pc()))));
 						}
 						// We need to fork the branch here, because it must have
 						// INTERNAL state by now (i.e. because of the forks
@@ -618,7 +576,7 @@ public class VcGenerator {
 	 * @param branches
 	 * @param block
 	 */
-	public Expr[] getPreconditions(Code.Unit code, VcBranch branch,
+	public Pair<String,Expr>[] getPreconditions(Code.Unit code, VcBranch branch,
 			AttributedCodeBlock block) {
 		//
 		try {
@@ -636,7 +594,7 @@ public class VcGenerator {
 			case Code.OPCODE_invokemdv:
 				return preconditionCheck((Codes.Invoke) code, branch, block);
 			}
-			return new Expr[0];
+			return new Pair[0];
 		} catch (Exception e) {
 			internalFailure(e.getMessage(), filename, e);
 			return null; // deadcode
@@ -653,7 +611,7 @@ public class VcGenerator {
 	 *            --- The branch the division is on.
 	 * @return
 	 */
-	public Expr[] divideByZeroCheck(Codes.BinaryOperator binOp, VcBranch branch) {
+	public Pair<String,Expr>[] divideByZeroCheck(Codes.BinaryOperator binOp, VcBranch branch) {
 		Expr rhs = branch.read(binOp.operand(1));
 		Value zero;
 		if (binOp.type() instanceof Type.Int) {
@@ -662,8 +620,8 @@ public class VcGenerator {
 			zero = Value.Decimal(BigDecimal.ZERO);
 		}
 		Expr.Constant constant = new Expr.Constant(zero, rhs.attributes());
-		return new Expr[] { new Expr.Binary(Expr.Binary.Op.NEQ, rhs, constant,
-				rhs.attributes()) };
+		return new Pair[] { new Pair("division by zero", new Expr.Binary(
+				Expr.Binary.Op.NEQ, rhs, constant, rhs.attributes())) };
 	}
 
 	/**
@@ -677,7 +635,7 @@ public class VcGenerator {
 	 *            --- The branch the bytecode is on.
 	 * @return
 	 */
-	public Expr[] indexOutOfBoundsChecks(Codes.IndexOf code, VcBranch branch) {
+	public Pair<String,Expr>[] indexOutOfBoundsChecks(Codes.IndexOf code, VcBranch branch) {
 		if (code.type() instanceof Type.EffectiveList) {
 			Expr src = branch.read(code.operand(0));
 			Expr idx = branch.read(code.operand(1));
@@ -685,15 +643,16 @@ public class VcGenerator {
 					idx.attributes());
 			Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
 					idx.attributes());
-			return new Expr[] {
-					new Expr.Binary(Expr.Binary.Op.GTEQ, idx, zero,
-							idx.attributes()),
-					new Expr.Binary(Expr.Binary.Op.LT, idx, length,
-							idx.attributes()), };
+			return new Pair[] {
+					new Pair("index out of bounds (negative)", new Expr.Binary(
+							Expr.Binary.Op.GTEQ, idx, zero, idx.attributes())),
+					new Pair("index out of bounds (not less than length)",
+							new Expr.Binary(Expr.Binary.Op.LT, idx, length,
+									idx.attributes())), };			
 		} else {
 			// FIXME: should do something here! At a minimum, generate a warning
 			// that this has not been implemented yet.
-			return new Expr[0];
+			return new Pair[0];
 		}
 	}
 
@@ -710,7 +669,7 @@ public class VcGenerator {
 	 * @return
 	 * @throws Exception
 	 */
-	public Expr[] preconditionCheck(Codes.Invoke code, VcBranch branch,
+	public Pair<String,Expr>[] preconditionCheck(Codes.Invoke code, VcBranch branch,
 			AttributedCodeBlock block) throws Exception {
 		//
 		List<AttributedCodeBlock> requires = findPrecondition(code.name,
@@ -726,17 +685,18 @@ public class VcGenerator {
 			// To check the pre-condition holds after the method, we
 			// simply called the corresponding pre-condition macros.
 			String prefix = code.name.name() + "_requires_";
-			Expr[] preconditions = new Expr[requires.size()];
+			Pair<String,Expr>[] preconditions = new Pair[requires.size()];
 			Expr argument = operands.length == 1 ? operands[0] : new Expr.Nary(
 					Expr.Nary.Op.TUPLE, operands);
 			for (int i = 0; i != requires.size(); ++i) {
-				preconditions[i] = new Expr.Invoke(prefix + i,
+				Expr precondition = new Expr.Invoke(prefix + i,
 						code.name.module(), Collections.EMPTY_LIST, argument);
+				preconditions[i] = new Pair<String,Expr>("precondition not satisfied",precondition);
 
 			}
 			return preconditions;
 		} else {
-			return new Expr[0];
+			return new Pair[0];
 		}
 	}
 
@@ -750,8 +710,8 @@ public class VcGenerator {
 	 *            --- The branch containing the update bytecode.
 	 * @return
 	 */
-	public Expr[] updateChecks(Codes.Update code, VcBranch branch) {
-		ArrayList<Expr> preconditions = new ArrayList<Expr>();
+	public Pair<String,Expr>[] updateChecks(Codes.Update code, VcBranch branch) {
+		ArrayList<Pair<String,Expr>> preconditions = new ArrayList<Pair<String,Expr>>();
 
 		Expr src = branch.read(code.target());
 
@@ -763,10 +723,13 @@ public class VcGenerator {
 						idx.attributes());
 				Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
 						idx.attributes());
-				preconditions.add(new Expr.Binary(Expr.Binary.Op.GTEQ, idx,
-						zero, idx.attributes()));
-				preconditions.add(new Expr.Binary(Expr.Binary.Op.LT, idx,
-						length, idx.attributes()));
+				preconditions.add(new Pair("index out of bounds (negative)",
+						new Expr.Binary(Expr.Binary.Op.GTEQ, idx, zero, idx
+								.attributes())));
+				preconditions.add(new Pair(
+						"index out of bounds (not less than length)",
+						new Expr.Binary(Expr.Binary.Op.LT, idx, length, idx
+								.attributes())));
 				src = new Expr.IndexOf(src, idx);
 			} else if (lval instanceof Codes.StringLVal) {
 				Codes.StringLVal lv = (Codes.StringLVal) lval;
@@ -775,10 +738,13 @@ public class VcGenerator {
 						idx.attributes());
 				Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
 						idx.attributes());
-				preconditions.add(new Expr.Binary(Expr.Binary.Op.GTEQ, idx,
-						zero, idx.attributes()));
-				preconditions.add(new Expr.Binary(Expr.Binary.Op.LT, idx,
-						length, idx.attributes()));
+				preconditions.add(new Pair("index out of bounds (negative)",
+						new Expr.Binary(Expr.Binary.Op.GTEQ, idx, zero, idx
+								.attributes())));
+				preconditions.add(new Pair(
+						"index out of bounds (not less than length)",
+						new Expr.Binary(Expr.Binary.Op.LT, idx, length, idx
+								.attributes())));
 				src = new Expr.IndexOf(src, idx);
 			} else if (lval instanceof Codes.MapLVal) {
 				// FIXME: need to implement some actual checks here!
@@ -798,7 +764,7 @@ public class VcGenerator {
 			}
 		}
 
-		return preconditions.toArray(new Expr[preconditions.size()]);
+		return preconditions.toArray(new Pair[preconditions.size()]);
 	}
 
 	// ===============================================================================
@@ -1762,6 +1728,7 @@ public class VcGenerator {
 		Collection<Attribute> attributes = toWycsAttributes(block
 				.attributes(branch.pc()));
 		int[] code_operands = code.operands();
+		
 		if (code.target() != Codes.NULL_REG) {
 			// Need to assume the post-condition holds.
 			Expr[] operands = new Expr[code_operands.length];

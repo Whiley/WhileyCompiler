@@ -640,7 +640,7 @@ public class AllInvalidTests {
 		runTest("ListLength_Invalid_1");
 	}
 
-	@Test
+	@Ignore("Timeout") @Test
 	public void ListLength_Invalid_2() {
 		runTest("ListLength_Invalid_2");
 	}
@@ -1074,36 +1074,6 @@ public class AllInvalidTests {
 	@Test
 	public void SetAssign_Invalid_1() {
 		runTest("SetAssign_Invalid_1");
-	}
-
-	@Test
-	public void SetComprehension_Invalid_1() {
-		runTest("SetComprehension_Invalid_1");
-	}
-
-	@Test
-	public void SetComprehension_Invalid_2() {
-		runTest("SetComprehension_Invalid_2");
-	}
-
-	@Test
-	public void SetComprehension_Invalid_3() {
-		runTest("SetComprehension_Invalid_3");
-	}
-
-	@Test
-	public void SetComprehension_Invalid_4() {
-		runTest("SetComprehension_Invalid_4");
-	}
-
-	@Test
-	public void SetComprehension_Invalid_5() {
-		runTest("SetComprehension_Invalid_5");
-	}
-
-	@Test
-	public void SetComprehension_Invalid_6() {
-		runTest("SetComprehension_Invalid_6");
 	}
 
 	@Test

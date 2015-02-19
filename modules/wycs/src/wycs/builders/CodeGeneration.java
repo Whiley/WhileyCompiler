@@ -551,8 +551,7 @@ public class CodeGeneration {
 					attributes(e));
 		} catch (ResolveError re) {
 			// should be unreachable if type propagation is already succeeded.
-			syntaxError("cannot resolve as function or definition call",
-					filename, e, re);
+			syntaxError(re.getMessage(), filename, e, re);
 			return null;
 		}
 	}

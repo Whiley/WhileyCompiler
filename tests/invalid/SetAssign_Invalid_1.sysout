@@ -1,7 +1,3 @@
 ../../tests/invalid/SetAssign_Invalid_1.whiley:15: precondition not satisfied
     f(zs)
     ^^^^^
-
-../../tests/invalid/SetAssign_Invalid_1.whiley:3 (context)
-requires |xs| > 4:
-         ^^^^^^^^

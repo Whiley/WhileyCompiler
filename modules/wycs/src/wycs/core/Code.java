@@ -3,6 +3,7 @@ package wycs.core;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -688,7 +689,14 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 
 		@Override
 		public SemanticType returnType() {
-			return type.to();
+			HashMap<String, SemanticType> binding = new HashMap<String, SemanticType>();
+			SemanticType[] type_generics = type.generics();
+			for (int j = 0; j != Math.min(type_generics.length,
+					this.binding.length); ++j) {
+				SemanticType.Var v = (SemanticType.Var) type_generics[j];
+				binding.put(v.name(), this.binding[j]);
+			}
+			return type.to().substitute(binding);
 		}
 
 		@Override
