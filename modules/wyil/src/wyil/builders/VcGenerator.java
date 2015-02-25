@@ -257,7 +257,7 @@ public class VcGenerator {
 					Codes.Return ret = (Codes.Return) body.get(branch.pc());
 					// Construct verification check to ensure that return
 					// type invariant holds
-					Expr returnedOperand = branch.read(ret.operand);
+					Expr returnedOperand = branch.read(ret.operand);					
 					Type rawType = expand(bodyEnvironment[ret.operand],attributes);
 					Expr rawTest = new Expr.Is(returnedOperand,
 							convert(rawType, attributes));

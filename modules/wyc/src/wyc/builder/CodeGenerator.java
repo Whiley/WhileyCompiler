@@ -1932,6 +1932,14 @@ public final class CodeGenerator {
 		} else {
 			body.add(Codes.Return(), attributes(expr));
 		}
+		
+		// Add type information for all temporary registers allocated
+		// during code generation. This complements the existing information
+		// about declared variables. 
+		for(int i=declarations.size();i!=benv.size();i=i+1) {
+			Type t = benv.type(i);
+			declarations.add(new VariableDeclarations.Declaration(t,null));
+		}
 
 		// Create concrete type for private lambda function
 		Type.FunctionOrMethod cfm;
