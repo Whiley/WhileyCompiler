@@ -1,0 +1,21 @@
+assert:
+    forall(null|bool x):
+        if:
+            x == null
+        then:
+            !(x is bool)
+
+assert:
+    forall(int|bool x):
+        if:
+            x == 1
+        then:
+            !(x is bool)
+
+assert:
+    forall(any x):
+        if:
+            x == (1,1)
+        then:
+            !(x is bool)
+

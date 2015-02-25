@@ -1114,11 +1114,7 @@ public abstract class Type {
 		}
 
 		public EffectiveIndexible update(Type key, Type value) {
-			if(key == T_INT) {
-				return Type.List(Type.Union(value, element()), nonEmpty());
-			} else {
-				return Type.Map(Type.Union(T_INT,key),Type.Union(value, element()));
-			}
+			return Type.List(Type.Union(value, element()), nonEmpty());
 		}
 	}
 

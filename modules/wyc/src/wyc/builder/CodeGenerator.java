@@ -1245,7 +1245,7 @@ public final class CodeGenerator {
 		int sourceRegister = generate(s.source, environment, codes, context);
 
 		// FIXME: need to handle destructuring syntax properly.
-		Type.EffectiveCollection rawSrcType = s.srcType.raw();
+		Type.EffectiveCollection rawSrcType = (Type.EffectiveCollection) s.srcType.raw();
 		int indexRegister = environment.get(s.variables.get(0));
 
 		AttributedCodeBlock body = codes.createSubBlock();
@@ -1559,7 +1559,7 @@ public final class CodeGenerator {
 		Expr.TypeVal rhs = (Expr.TypeVal) condition.rhs;
 
 		codes.add(Codes.IfIs(condition.srcType.raw(), leftOperand,
-				rhs.type.raw(), target), attributes(condition));
+				rhs.type.nominal(), target), attributes(condition));
 	}
 
 	/**
@@ -1658,9 +1658,9 @@ public final class CodeGenerator {
 			// First, determine the src slot.
 			Nominal.EffectiveCollection srcType = (Nominal.EffectiveCollection) src
 					.second().result();
-
+			Type.EffectiveCollection rawSrcType = (Type.EffectiveCollection) srcType.raw();
 			int srcSlot;
-			int varSlot = environment.allocate(srcType.raw().element(),
+			int varSlot = environment.allocate(rawSrcType.element(),
 					src.first());
 
 			if (src.second() instanceof Expr.LocalVariable) {
@@ -1678,7 +1678,7 @@ public final class CodeGenerator {
 					context);
 
 			// Finally, create the forall loop bytecode
-			codes.add(Codes.Quantify(srcType.raw(), srcSlot, varSlot,
+			codes.add(Codes.Quantify(rawSrcType, srcSlot, varSlot,
 					new int[0], block.bytecodes()), attributes(e));
 		} else {
 			// This is the base case (i.e. the innermost loop)
@@ -1886,9 +1886,10 @@ public final class CodeGenerator {
 
 	private int generate(Expr.FunctionOrMethod expr, Environment environment,
 			AttributedCodeBlock codes, Context context) {
-		Type.FunctionOrMethod type = expr.type.raw();
-		int target = environment.allocate(type);
-		codes.add(Codes.Lambda(type, target, Collections.EMPTY_LIST, expr.nid),
+		Type.FunctionOrMethod rawType = expr.type.raw();
+		Type.FunctionOrMethod nominalType = expr.type.nominal();
+		int target = environment.allocate(rawType);
+		codes.add(Codes.Lambda(nominalType, target, Collections.EMPTY_LIST, expr.nid),
 				attributes(expr));
 		return target;
 	}
@@ -2020,8 +2021,8 @@ public final class CodeGenerator {
 			AttributedCodeBlock codes, Context context) {
 		int operand = generate(expr.src, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.LengthOf(expr.srcType.raw(), target, operand),
-				attributes(expr));
+		codes.add(Codes.LengthOf((Type.EffectiveCollection) expr.srcType.raw(),
+				target, operand), attributes(expr));
 		return target;
 	}
 
@@ -2039,7 +2040,7 @@ public final class CodeGenerator {
 		int srcOperand = generate(expr.src, environment, codes, context);
 		int idxOperand = generate(expr.index, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.IndexOf(expr.srcType.raw(), target, srcOperand,
+		codes.add(Codes.IndexOf((Type.EffectiveIndexible) expr.srcType.raw(), target, srcOperand,
 				idxOperand), attributes(expr));
 		return target;
 	}
@@ -2144,7 +2145,7 @@ public final class CodeGenerator {
 			AttributedCodeBlock codes, Context context) {
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.NewSet(expr.type.raw(), target, operands),
+		codes.add(Codes.NewSet((Type.Set) expr.type.raw(), target, operands),
 				attributes(expr));
 		return target;
 	}
@@ -2153,7 +2154,7 @@ public final class CodeGenerator {
 			AttributedCodeBlock codes, Context context) {
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.NewList(expr.type.raw(), target, operands),
+		codes.add(Codes.NewList((Type.List) expr.type.raw(), target, operands),
 				attributes(expr));
 		return target;
 	}
@@ -2164,8 +2165,8 @@ public final class CodeGenerator {
 		int startOperand = generate(expr.start, environment, codes, context);
 		int endOperand = generate(expr.end, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.SubList(expr.type.raw(), target, srcOperand,
-				startOperand, endOperand), attributes(expr));
+		codes.add(Codes.SubList((Type.EffectiveList) expr.type.raw(), target,
+				srcOperand, startOperand, endOperand), attributes(expr));
 		return target;
 	}
 
@@ -2206,8 +2207,8 @@ public final class CodeGenerator {
 			operands[i] = generate(arg, environment, codes, context);
 		}
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.NewRecord(expr.result().raw(), target, operands),
-				attributes(expr));
+		codes.add(Codes.NewRecord((Type.Record) expr.result().raw(), target,
+				operands), attributes(expr));
 		return target;
 	}
 
@@ -2215,7 +2216,7 @@ public final class CodeGenerator {
 			AttributedCodeBlock codes, Context context) {
 		int[] operands = generate(expr.fields, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.NewTuple(expr.result().raw(), target, operands),
+		codes.add(Codes.NewTuple((Type.Tuple) expr.result().raw(), target, operands),
 				attributes(expr));
 		return target;
 	}
@@ -2230,7 +2231,7 @@ public final class CodeGenerator {
 					context);
 		}
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.NewMap(expr.result().raw(), target, operands),
+		codes.add(Codes.NewMap((Type.Map) expr.result().raw(), target, operands),
 				attributes(expr));
 		return target;
 	}
@@ -2239,9 +2240,8 @@ public final class CodeGenerator {
 			AttributedCodeBlock codes, Context context) {
 		int operand = generate(expr.src, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(
-				Codes.FieldLoad(expr.srcType.raw(), target, operand, expr.name),
-				attributes(expr));
+		codes.add(Codes.FieldLoad((Type.EffectiveRecord) expr.srcType.raw(),
+				target, operand, expr.name), attributes(expr));
 		return target;
 	}
 

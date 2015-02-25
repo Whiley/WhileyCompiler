@@ -41,6 +41,8 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 
 	public abstract boolean equivalent(TypePattern p);
 	
+	public abstract TypePattern copy();
+	
 	/**
 	 * A type pattern leaf is simply a syntactic type, along with an optional
 	 * variable identifier.
@@ -90,6 +92,13 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			}
 			return false;
 		}
+		
+		@Override
+		public TypePattern.Leaf copy() {
+			Expr.Variable v = var != null ? var.copy() : null;
+			return new TypePattern.Leaf(type.copy(),v,attributes());
+		}
+		
 		public String toString() {
 			if(var != null) {
 				return type + " " + var.name;
@@ -141,6 +150,12 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 						&& denominator.equivalent(tt.denominator);
 			}
 			return false;
+		}
+		
+		@Override
+		public TypePattern.Rational copy() {
+			return new TypePattern.Rational(numerator.copy(),
+					denominator.copy(), attributes());
 		}
 		
 		@Override
@@ -220,6 +235,15 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 				return equivalent(elements,tt.elements);
 			}
 			return false;
+		}
+		
+		@Override
+		public TypePattern.Tuple copy() {
+			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
+			for (int i = 0; i != elements.size(); ++i) {
+				types.add(elements.get(i).copy());
+			}
+			return new TypePattern.Tuple(types,attributes());
 		}
 		
 		public String toString() {
@@ -304,6 +328,14 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 			return false;
 		}
 		
+		@Override
+		public TypePattern.Record copy() {
+			ArrayList<TypePattern.Leaf> types = new ArrayList<TypePattern.Leaf>();
+			for (int i = 0; i != elements.size(); ++i) {
+				types.add(elements.get(i).copy());
+			}
+			return new TypePattern.Record(types,isOpen,attributes());
+		}
 	}
 
 	/**
@@ -357,6 +389,15 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 				return equivalent(elements,tt.elements);
 			}
 			return false;
+		}
+		
+		@Override
+		public TypePattern.Union copy() {
+			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
+			for (int i = 0; i != elements.size(); ++i) {
+				types.add(elements.get(i).copy());
+			}
+			return new TypePattern.Union(types,attributes());
 		}
 	}
 
@@ -413,6 +454,15 @@ public abstract class TypePattern extends SyntacticElement.Impl {
 				return equivalent(elements,tt.elements);
 			}
 			return false;
+		}
+		
+		@Override
+		public TypePattern.Intersection copy() {
+			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
+			for (int i = 0; i != elements.size(); ++i) {
+				types.add(elements.get(i).copy());
+			}
+			return new TypePattern.Intersection(types,attributes());
 		}
 	}
 	

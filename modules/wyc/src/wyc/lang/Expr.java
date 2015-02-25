@@ -416,7 +416,7 @@ public interface Expr extends SyntacticElement {
 		public Expr src;
 		public Expr start;
 		public Expr end;
-		public Nominal.EffectiveList type;
+		public Nominal.List type;
 
 		public SubList(Expr src, Expr start, Expr end, Attribute... attributes) {
 			super(attributes);
@@ -492,7 +492,7 @@ public interface Expr extends SyntacticElement {
 				LVal {
 		public Expr src;
 		public final String name;
-		public Nominal.EffectiveRecord srcType;
+		public Nominal.Record srcType;
 
 		public FieldAccess(Expr lhs, String name, Attribute... attributes) {
 			super(attributes);

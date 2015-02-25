@@ -201,8 +201,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// The following conversion is potentially very expensive, but is
 		// currently necessary for the instantiate axioms phase.
 		Code nnf = NormalForms.negationNormalForm(neg);
-
-		///debug(nnf,filename);
+		
+		//debug(nnf,filename);
 		int maxVar = findLargestVariable(nnf);
 
 		Code vc = instantiateAxioms(nnf, maxVar + 1);
@@ -255,6 +255,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			r = translate((Code.Nary) expr,automaton,environment);
 		} else if(expr instanceof Code.Load) {
 			r = translate((Code.Load) expr,automaton,environment);
+		} else if(expr instanceof Code.Is) {
+			r = translate((Code.Is) expr,automaton,environment);
 		} else if(expr instanceof Code.Quantifier) {
 			r = translate((Code.Quantifier) expr,automaton,environment);
 		} else if(expr instanceof Code.FunCall) {
@@ -377,6 +379,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 		return Solver.Load(automaton,e,i);
 	}
 
+	private int translate(Code.Is code, Automaton automaton, HashMap<String,Integer> environment) {
+		int e = translate(code.operands[0],automaton,environment);
+		int t = convert(automaton,code.test);
+		return Solver.Is(automaton,e,t);
+	}
+	
 	private int translate(Code.FunCall code, Automaton automaton,
 			HashMap<String, Integer> environment) {
 		// uninterpreted function call
@@ -391,24 +399,31 @@ public class VerificationCheck implements Transform<WycsFile> {
 		HashMap<String,Integer> nEnvironment = new HashMap<String,Integer>(environment);
 		Pair<SemanticType,Integer>[] variables = code.types;
 		int[] vars = new int[variables.length];
+		
+		//int[] typeTests = new int[variables.length];
 		for (int i = 0; i != variables.length; ++i) {
 			Pair<SemanticType,Integer> p = variables[i];
+			// First, construct variable pairs
 			SemanticType type = p.first();
 			String var = "r" + p.second();
 			int varIdx = Var(automaton, var);
 			nEnvironment.put(var, varIdx);
-			int srcIdx;
-			// FIXME: generate actual type of variable here
-			srcIdx = automaton.add(AnyT);
-			vars[i] = automaton.add(new Automaton.List(varIdx, srcIdx));
+			int typeIdx = convert(automaton,type);
+			vars[i] = automaton.add(new Automaton.List(varIdx, typeIdx));
+			// Second, construct the appropriate type test for each variable
+			//typeTests[i] = Solver.Is(automaton,varIdx,convert(automaton,type));
 		}
 
 		int avars = automaton.add(new Automaton.Set(vars));
-
+		//int typeTest = And(automaton,typeTests);
+		int quantifiedExpression = translate(code.operands[0], automaton, nEnvironment);
+				
 		if(code.opcode == Code.Op.FORALL) {
-			return ForAll(automaton, avars, translate(code.operands[0], automaton, nEnvironment));
+			//return ForAll(automaton, avars, SolverUtil.Implies(automaton,typeTest, quantifiedExpression));
+			return ForAll(automaton, avars, quantifiedExpression);
 		} else {
-			return Exists(automaton, avars, translate(code.operands[0], automaton, nEnvironment));
+			//return Exists(automaton, avars, And(automaton,typeTest, quantifiedExpression));
+			return Exists(automaton, avars, quantifiedExpression);
 		}
 	}
 
@@ -421,7 +436,10 @@ public class VerificationCheck implements Transform<WycsFile> {
 	 */
 	private int convert(Value value, SyntacticElement element, Automaton automaton) {
 
-		if (value instanceof Value.Bool) {
+		if (value instanceof Value.Null) {
+			Value.Null b = (Value.Null) value;
+			return automaton.add(Null);
+		} else if (value instanceof Value.Bool) {
 			Value.Bool b = (Value.Bool) value;
 			return b.value ? automaton.add(True) : automaton.add(False);
 		} else if (value instanceof Value.Integer) {
@@ -562,6 +580,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			return instantiateAxioms((Code.FunCall)condition, freeVariable);
 		} else if (condition instanceof Code.Load) {
 			return instantiateAxioms((Code.Load)condition, freeVariable);
+		} else if (condition instanceof Code.Is) {
+			return instantiateAxioms((Code.Is)condition, freeVariable);
 		} else {
 			internalFailure("invalid boolean expression encountered (" + condition
 					+ ")", filename, condition);
@@ -618,6 +638,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 
+	private Code instantiateAxioms(Code.Is condition, int freeVariable) {
+		ArrayList<Code> axioms = new ArrayList<Code>();
+		instantiateFromExpression(condition.operands[0], axioms, freeVariable);
+		return and(axioms,condition);
+	}
+	
 	private Code instantiateAxioms(Code.Quantifier condition, int freeVariable) {
 		return Code.Quantifier(condition.type, condition.opcode,
 				instantiateAxioms(condition.operands[0], freeVariable), condition.types, condition.attributes());
@@ -686,6 +712,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			instantiateFromExpression((Code.Nary)expression,axioms, freeVariable);
 		} else if (expression instanceof Code.Load) {
 			instantiateFromExpression((Code.Load)expression,axioms, freeVariable);
+		} else if (expression instanceof Code.Is) {
+			instantiateFromExpression((Code.Is)expression,axioms, freeVariable);
 		} else if (expression instanceof Code.FunCall) {
 			instantiateFromExpression((Code.FunCall)expression,axioms, freeVariable);
 		} else {
@@ -724,6 +752,10 @@ public class VerificationCheck implements Transform<WycsFile> {
 		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
 	}
 
+	private void instantiateFromExpression(Code.Is expression, ArrayList<Code> axioms, int freeVariable) {
+		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
+	}
+	
 	private void instantiateFromExpression(Code.FunCall expression, ArrayList<Code> axioms, int freeVariable) {
 		instantiateFromExpression(expression.operands[0], axioms, freeVariable);
 

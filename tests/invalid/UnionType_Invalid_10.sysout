@@ -1,3 +1,3 @@
-../../tests/invalid/UnionType_Invalid_10.whiley:9: constraint not satisfied
+../../tests/invalid/UnionType_Invalid_10.whiley:9: return type invariant not satisfied
     return y
     ^^^^^^^^

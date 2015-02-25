@@ -1,8 +1,6 @@
 import whiley.lang.System
 
-constant fcode is {1, 2, 3, 4}
-
-constant tcode is {1, 2}
+type fcode is (int x) where x in {1, 2, 3, 4}
 
 function g(fcode f) -> string:
     return Any.toString(f)

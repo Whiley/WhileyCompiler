@@ -26,6 +26,12 @@
 include "Types.wyrl"
 
 // ====================================================================
+// Null
+// ====================================================================
+
+term Null
+
+// ====================================================================
 // Bool
 // ====================================================================
 
@@ -287,7 +293,7 @@ function max{|VExpr...|} => VExpr
 // A value is a concrete term which cannot be further reduced.  The
 // base values are boolean true or false, and a tuple of values.  Other
 // values include integers, rationals and sets of values.
-define Value as Bool | Num | String | Tuple[Value...] | ...
+define Value as Null | Bool | Num | String | Tuple[Value...] | ...
 
 // Variable Expressions are those which represent variables or
 // sub-components thereof.  Such expressions can in principle

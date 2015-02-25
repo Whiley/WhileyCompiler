@@ -1,7 +1,5 @@
 import whiley.lang.System
-
 type nat is (int x) where x >= 0
-
 type neg is !nat
 
 function f(neg x) -> (int y)

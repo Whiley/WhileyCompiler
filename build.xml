@@ -13,7 +13,7 @@
       <fileset dir="modules" includes="wyil/build.xml"/>
       <fileset dir="modules" includes="wyc/build.xml"/>
       <fileset dir="modules" includes="wyrt/build.xml"/>
-      <!-- <fileset dir="modules" includes="wyjc/build.xml"/> -->
+      <fileset dir="modules" includes="wyjc/build.xml"/>
       <!--wyopcl-->
       <!-- <fileset dir="modules" includes="wyopcl/build.xml" /> -->
     </subant>
@@ -90,7 +90,7 @@
       <fileset dir="modules" includes="wyil/build.xml"/>
       <fileset dir="modules" includes="wyc/build.xml"/>
       <fileset dir="modules" includes="wyrt/build.xml"/>
-      <!-- <fileset dir="modules" includes="wyjc/build.xml"/> -->
+      <fileset dir="modules" includes="wyjc/build.xml"/>
       <!--wyopcl-->
       <!-- <fileset dir="modules" includes="wyopcl/build.xml" /> -->
 

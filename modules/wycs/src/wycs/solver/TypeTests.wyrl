@@ -1,0 +1,47 @@
+
+// ====================================================================
+// Inhabited
+// ====================================================================
+
+// The inhabited constructor is essentially a function which returns
+// true or false as to whether ot not a given type reduces to Void.  In
+// essence, this is about controlling the reduction process more precisely.
+
+term Inhabited(Type)
+
+reduce Inhabited(Atom t)
+name "Inhabited_1":
+    => False, if (t == VoidT) || (t == NotT(AnyT))
+    => True
+
+// A conjunct in this normal form can be reduced to true in the
+// general case
+reduce Inhabited(AndT{NotT(Proton)... ts})
+name "Inhabited_2":
+    => True, if no { t in ts | t == AnyT }
+
+reduce Inhabited(SetT[bool b1, Type t])
+name "Inhabited_3":
+    => Inhabited(t), if !b1
+    => True
+
+// ====================================================================
+// Is
+// ====================================================================
+
+term Is[Expr,Type]
+
+// No expression can yield the VoidT
+reduce Is[Expr e, VoidT]
+name "Is_1":
+    => False
+
+// Inverting a type test gives a type test
+reduce Not(Is[Expr e, Type t])
+name "Is_2":
+    => Is([e,NotT(t)])
+
+// Transitivity of type tests
+reduce And{Is[Expr e1, Type t1], Is[Expr e2, Type t2], BExpr... bs}
+name "Is_3":
+    => And({Is[e1,AndT{t1,t2}]} ++ bs), if e1 == e2

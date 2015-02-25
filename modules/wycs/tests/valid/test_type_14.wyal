@@ -1,0 +1,9 @@
+assert:
+    1 is int
+
+assert:
+    -1 is int
+
+assert:
+    12345 is int
+

@@ -8,14 +8,14 @@ type TrafficLights is {
         (red && !amber && !green) ||
         (red && amber && !green)
 
-function TrafficLights() => TrafficLights:
+function TrafficLights() -> TrafficLights:
     return {
         red: true,
         amber: false,
         green: false
     }
 
-function change(TrafficLights ls) => TrafficLights:
+function change(TrafficLights ls) -> TrafficLights:
     if ls.green:
         // -> !red && !amber && green
         return { red: false, amber: true, green: false }
@@ -30,7 +30,7 @@ function change(TrafficLights ls) => TrafficLights:
         // -> !red && amber && !green
         return { red: true, amber: false, green: false }
 
-function toString(TrafficLights ls) => string:
+function toString(TrafficLights ls) -> string:
     string r
     //
     if ls.red:

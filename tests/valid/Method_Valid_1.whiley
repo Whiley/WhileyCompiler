@@ -5,7 +5,7 @@ constant CROSS is 1
 
 constant CIRCLE is 2
 
-constant Piece is {BLANK, CROSS, CIRCLE}
+type Piece is (int x) where x in {BLANK, CROSS, CIRCLE}
 
 type Board is ([Piece] pieces) where |pieces| == 9
 

@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-constant codeOp is {1, 2, 3, 4}
+type codeOp is (int x) where x in {1, 2, 3, 4}
 
 type code is {codeOp op, [int] payload}
 

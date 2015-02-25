@@ -132,6 +132,9 @@ public class WycsFileReader {
 			int code = input.read_uv();
 			Value constant;
 			switch (code) {
+			case WycsFileWriter.CONSTANT_Null:
+				constant = Value.Null;
+				break;
 			case WycsFileWriter.CONSTANT_False:
 				constant = Value.Bool(false);
 				break;

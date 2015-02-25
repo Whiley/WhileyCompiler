@@ -55,7 +55,7 @@ public class TypePropagation implements Transform<WyalFile> {
 	// ======================================================================
 
 	public void apply(WyalFile wf) {
-		if(enabled) {
+		if (enabled) {
 			this.filename = wf.filename();
 
 			for (WyalFile.Declaration s : wf.declarations()) {
@@ -65,15 +65,15 @@ public class TypePropagation implements Transform<WyalFile> {
 	}
 
 	private void propagate(WyalFile.Declaration s) {
-		if(s instanceof WyalFile.Function) {
-			propagate((WyalFile.Function)s);
-		} else if(s instanceof WyalFile.Macro) {
-			propagate((WyalFile.Macro)s);
-		} else if(s instanceof WyalFile.Type) {
-			propagate((WyalFile.Type)s);
-		} else if(s instanceof WyalFile.Assert) {
-			propagate((WyalFile.Assert)s);
-		} else if(s instanceof WyalFile.Import) {
+		if (s instanceof WyalFile.Function) {
+			propagate((WyalFile.Function) s);
+		} else if (s instanceof WyalFile.Macro) {
+			propagate((WyalFile.Macro) s);
+		} else if (s instanceof WyalFile.Type) {
+			propagate((WyalFile.Type) s);
+		} else if (s instanceof WyalFile.Assert) {
+			propagate((WyalFile.Assert) s);
+		} else if (s instanceof WyalFile.Import) {
 
 		} else {
 			internalFailure("unknown statement encountered (" + s + ")",
@@ -82,34 +82,34 @@ public class TypePropagation implements Transform<WyalFile> {
 	}
 
 	private void propagate(WyalFile.Function s) {
-		if(s.constraint != null) {
+		if (s.constraint != null) {
 			HashSet<String> generics = new HashSet<String>(s.generics);
-			HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
-			addDeclaredVariables(s.from, environment,generics,s);
-			addDeclaredVariables(s.to, environment,generics,s);
-			SemanticType r = propagate(s.constraint,environment,generics,s);
-			checkIsSubtype(SemanticType.Bool,r,s.constraint);
+			HashMap<String, SemanticType> environment = new HashMap<String, SemanticType>();
+			addDeclaredVariables(s.from, environment, generics, s);
+			addDeclaredVariables(s.to, environment, generics, s);
+			SemanticType r = propagate(s.constraint, environment, generics, s);
+			checkIsSubtype(SemanticType.Bool, r, s.constraint, s);
 		}
 	}
 
 	private void propagate(WyalFile.Macro s) {
 		HashSet<String> generics = new HashSet<String>(s.generics);
-		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
-		addDeclaredVariables(s.from, environment,generics,s);
-		SemanticType r = propagate(s.body,environment,generics,s);
-		checkIsSubtype(SemanticType.Bool,r,s.body);
+		HashMap<String, SemanticType> environment = new HashMap<String, SemanticType>();
+		addDeclaredVariables(s.from, environment, generics, s);
+		SemanticType r = propagate(s.body, environment, generics, s);
+		checkIsSubtype(SemanticType.Bool, r, s.body, s);
 	}
 
 	private void propagate(WyalFile.Type s) {
-		if(s.invariant != null) {
+		if (s.invariant != null) {
 			HashSet<String> generics = new HashSet<String>(s.generics);
-			HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
-			addDeclaredVariables(s.type, environment,generics,s);			
-			SemanticType r = propagate(s.invariant,environment,generics,s);
-			checkIsSubtype(SemanticType.Bool,r,s.invariant);
+			HashMap<String, SemanticType> environment = new HashMap<String, SemanticType>();
+			addDeclaredVariables(s.type, environment, generics, s);
+			SemanticType r = propagate(s.invariant, environment, generics, s);
+			checkIsSubtype(SemanticType.Bool, r, s.invariant, s);
 		}
 	}
-		
+
 	/**
 	 * The purpose of this method is to add variable names declared within a
 	 * type pattern to the given environment. For example, as follows:
@@ -166,7 +166,7 @@ public class TypePropagation implements Transform<WyalFile> {
 				try {
 					SemanticType type = builder.convert(
 							pattern.toSyntacticType(), generics, context);
-					type = builder.expand(type, context);
+					type = builder.expand(type, false, context);
 					environment.put(lp.var.name, type);
 				} catch (ResolveError re) {
 					syntaxError(
@@ -181,9 +181,10 @@ public class TypePropagation implements Transform<WyalFile> {
 	}
 
 	private void propagate(WyalFile.Assert s) {
-		HashMap<String,SemanticType> environment = new HashMap<String,SemanticType>();
-		SemanticType t = propagate(s.expr, environment, new HashSet<String>(), s);
-		checkIsSubtype(SemanticType.Bool,t, s.expr);
+		HashMap<String, SemanticType> environment = new HashMap<String, SemanticType>();
+		SemanticType t = propagate(s.expr, environment, new HashSet<String>(),
+				s);
+		checkIsSubtype(SemanticType.Bool, t, s.expr, s);
 	}
 
 	/**
@@ -200,26 +201,29 @@ public class TypePropagation implements Transform<WyalFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
 		SemanticType t;
-		if(e instanceof Expr.Variable) {
-			t = propagate((Expr.Variable)e, environment, generics, context);
-		} else if(e instanceof Expr.Cast) {
-			t = propagate((Expr.Cast)e, environment, generics, context);
-		} else if(e instanceof Expr.Constant) {
-			t = propagate((Expr.Constant)e, environment, generics, context);
-		} else if(e instanceof Expr.Unary) {
-			t = propagate((Expr.Unary)e, environment, generics, context);
-		} else if(e instanceof Expr.Binary) {
-			t = propagate((Expr.Binary)e, environment, generics, context);
-		} else if(e instanceof Expr.Ternary) {
-			t = propagate((Expr.Ternary)e, environment, generics, context);
-		} else if(e instanceof Expr.Nary) {
-			t = propagate((Expr.Nary)e, environment, generics, context);
-		} else if(e instanceof Expr.Quantifier) {
-			t = propagate((Expr.Quantifier)e, environment, generics, context);
-		} else if(e instanceof Expr.Invoke) {
-			t = propagate((Expr.Invoke)e, environment, generics, context);
-		} else if(e instanceof Expr.IndexOf) {
-			t = propagate((Expr.IndexOf)e, environment, generics, context);
+		//		
+		if (e instanceof Expr.Variable) {
+			t = propagate((Expr.Variable) e, environment, generics, context);
+		} else if (e instanceof Expr.Cast) {
+			t = propagate((Expr.Cast) e, environment, generics, context);
+		} else if (e instanceof Expr.Constant) {
+			t = propagate((Expr.Constant) e, environment, generics, context);
+		} else if (e instanceof Expr.Unary) {
+			t = propagate((Expr.Unary) e, environment, generics, context);
+		} else if (e instanceof Expr.Binary) {
+			t = propagate((Expr.Binary) e, environment, generics, context);
+		} else if (e instanceof Expr.Ternary) {
+			t = propagate((Expr.Ternary) e, environment, generics, context);
+		} else if (e instanceof Expr.Nary) {
+			t = propagate((Expr.Nary) e, environment, generics, context);
+		} else if (e instanceof Expr.Is) {
+			t = propagate((Expr.Is) e, environment, generics, context);
+		} else if (e instanceof Expr.Quantifier) {
+			t = propagate((Expr.Quantifier) e, environment, generics, context);
+		} else if (e instanceof Expr.Invoke) {
+			t = propagate((Expr.Invoke) e, environment, generics, context);
+		} else if (e instanceof Expr.IndexOf) {
+			t = propagate((Expr.IndexOf) e, environment, generics, context);
 		} else {
 			internalFailure("unknown expression encountered (" + e + ")",
 					filename, e);
@@ -233,7 +237,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
 		SemanticType t = environment.get(e.name);
-		if(t == null) {
+		if (t == null) {
 			internalFailure("undeclared variable encountered (" + e + ")",
 					filename, e);
 		}
@@ -250,10 +254,12 @@ public class TypePropagation implements Transform<WyalFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
 		try {
-			SemanticType op_type = propagate(e.operand,environment,generics,context);
-			SemanticType targetType = builder.convert(e.type, generics, context);
+			SemanticType op_type = propagate(e.operand, environment, generics,
+					context);
+			SemanticType targetType = builder
+					.convert(e.type, generics, context);
 			// FIXME: what to do with constraints?
-			targetType = builder.expand(targetType, context);
+			targetType = builder.expand(targetType, false, context);
 			// TODO: check cast is permitted.
 			return targetType;
 		} catch (ResolveError re) {
@@ -261,21 +267,27 @@ public class TypePropagation implements Transform<WyalFile> {
 			return null;
 		}
 	}
-	
+
 	private SemanticType propagate(Expr.Unary e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
-		SemanticType op_type = propagate(e.operand,environment,generics,context);
-
-		switch(e.op) {
+		// First, clone the environment. This is necessary to ensure that any
+		// retyping caused within the left or right expressions does not
+		// propagate out of this condition.
+		environment = (HashMap<String, SemanticType>) environment.clone();
+		//
+		SemanticType op_type = propagate(e.operand, environment, generics,
+				context);
+		//
+		switch (e.op) {
 		case NOT:
-			checkIsSubtype(SemanticType.Bool,op_type,e);
+			checkIsSubtype(SemanticType.Bool, op_type, e, context);
 			break;
 		case NEG:
-			checkIsSubtype(SemanticType.IntOrReal,op_type,e);
+			checkIsSubtype(SemanticType.IntOrReal, op_type, e, context);
 			break;
 		case LENGTHOF:
-			checkIsSubtype(SemanticType.SetAny,op_type,e);
+			checkIsSubtype(SemanticType.SetAny, op_type, e, context);
 		}
 		return op_type;
 	}
@@ -287,20 +299,21 @@ public class TypePropagation implements Transform<WyalFile> {
 				context);
 		SemanticType index_type = propagate(e.index, environment, generics,
 				context);
-		if(src_type instanceof SemanticType.EffectiveTuple) {
+		if (src_type instanceof SemanticType.EffectiveTuple) {
 			SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) src_type;
-			checkIsSubtype(SemanticType.Int, index_type, e.operand);
+			checkIsSubtype(SemanticType.Int, index_type, e.operand, context);
 			if (!(e.index instanceof Expr.Constant)) {
 				syntaxError("constant index required for tuple load", filename,
 						e.index);
 			}
 		} else {
-			checkIsSubtype(SemanticType.SetTupleAnyAny, src_type, e.operand);
+			checkIsSubtype(SemanticType.SetTupleAnyAny, src_type, e.operand, context);
 			// FIXME: handle case for effective set (i.e. union of sets)
 			SemanticType.Set st = (SemanticType.Set) src_type;
-			SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) st.element();
+			SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) st
+					.element();
 			// FIXME: handle case for effective tuple of wrong size
-			checkIsSubtype(tt.tupleElement(0), index_type, e.index);
+			checkIsSubtype(tt.tupleElement(0), index_type, e.index, context);
 		}
 
 		return src_type;
@@ -309,9 +322,32 @@ public class TypePropagation implements Transform<WyalFile> {
 	private SemanticType propagate(Expr.Binary e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
-		SemanticType lhs_type = propagate(e.leftOperand,environment,generics,context);
-		SemanticType rhs_type = propagate(e.rightOperand,environment,generics,context);
-
+		HashMap<String, SemanticType> leftEnvironment = environment;
+		HashMap<String, SemanticType> rightEnvironment = environment;;
+		// First, clone the environment if appropriate. This is necessary to
+		// ensure that any retyping caused within the left or right expressions
+		// propagates out of this condition only when this makes sense.
+		switch(e.op) {		
+		case AND:
+			// don't do anything.
+			break;
+		case OR:
+			// protect any retypings from propagating out
+			leftEnvironment = (HashMap<String, SemanticType>) environment.clone();
+			rightEnvironment = (HashMap<String, SemanticType>) environment.clone();
+			break;
+		case IFF:					
+		case IMPLIES:
+			leftEnvironment = (HashMap<String, SemanticType>) environment.clone();
+			rightEnvironment = leftEnvironment;
+			break;
+		}
+		//
+		SemanticType lhs_type = propagate(e.leftOperand, leftEnvironment, generics,
+				context);
+		SemanticType rhs_type = propagate(e.rightOperand, rightEnvironment,
+				generics, context);
+		
 		if (e.op != Expr.Binary.Op.IN
 				&& SemanticType.And(lhs_type, rhs_type) instanceof SemanticType.Void) {
 			// This is useful to sanity check that the operands make sense. For
@@ -324,34 +360,34 @@ public class TypePropagation implements Transform<WyalFile> {
 					+ " vs " + rhs_type + ")", context.file().filename(), e);
 		}
 
-		switch(e.op) {
+		switch (e.op) {
 		case ADD:
 		case SUB:
 		case MUL:
 		case DIV:
 		case REM:
-			checkIsSubtype(SemanticType.IntOrReal,lhs_type,e.leftOperand);
-			checkIsSubtype(SemanticType.IntOrReal,rhs_type,e.rightOperand);
-			return SemanticType.Or(lhs_type,rhs_type);
+			checkIsSubtype(SemanticType.IntOrReal, lhs_type, e.leftOperand, context);
+			checkIsSubtype(SemanticType.IntOrReal, rhs_type, e.rightOperand, context);
+			return SemanticType.Or(lhs_type, rhs_type);
 		case EQ:
 		case NEQ:
-			return SemanticType.Or(lhs_type,rhs_type);
+			return SemanticType.Or(lhs_type, rhs_type);
 		case AND:
 		case OR:
 		case IMPLIES:
 		case IFF:
-			checkIsSubtype(SemanticType.Bool,lhs_type,e.leftOperand);
-			checkIsSubtype(SemanticType.Bool,rhs_type,e.rightOperand);
+			checkIsSubtype(SemanticType.Bool, lhs_type, e.leftOperand, context);
+			checkIsSubtype(SemanticType.Bool, rhs_type, e.rightOperand, context);
 			return SemanticType.Bool;
 		case LT:
 		case LTEQ:
 		case GT:
 		case GTEQ:
-			checkIsSubtype(SemanticType.IntOrReal,lhs_type,e.leftOperand);
-			checkIsSubtype(SemanticType.IntOrReal,rhs_type,e.rightOperand);
-			return SemanticType.Or(lhs_type,rhs_type);
+			checkIsSubtype(SemanticType.IntOrReal, lhs_type, e.leftOperand, context);
+			checkIsSubtype(SemanticType.IntOrReal, rhs_type, e.rightOperand, context);
+			return SemanticType.Or(lhs_type, rhs_type);
 		case IN: {
-			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
+			checkIsSubtype(SemanticType.SetAny, rhs_type, e.rightOperand, context);
 			SemanticType.Set s = (SemanticType.Set) rhs_type;
 			return s;
 		}
@@ -359,42 +395,44 @@ public class TypePropagation implements Transform<WyalFile> {
 		case SUBSETEQ:
 		case SUPSET:
 		case SUPSETEQ: {
-			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
-			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
+			checkIsSubtype(SemanticType.SetAny, lhs_type, e.leftOperand, context);
+			checkIsSubtype(SemanticType.SetAny, rhs_type, e.rightOperand, context);
 			// following can cause some problems
 			// checkIsSubtype(lhs_type,rhs_type,e);
-			return SemanticType.Or(lhs_type,rhs_type);
+			return SemanticType.Or(lhs_type, rhs_type);
 		}
 		case SETUNION: {
-			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
-			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
+			checkIsSubtype(SemanticType.SetAny, lhs_type, e.leftOperand, context);
+			checkIsSubtype(SemanticType.SetAny, rhs_type, e.rightOperand, context);
 			SemanticType.Set l = (SemanticType.Set) lhs_type;
 			SemanticType.Set r = (SemanticType.Set) rhs_type;
-			return SemanticType.Set(true,SemanticType.Or(l.element(),r.element()));
+			return SemanticType.Set(true,
+					SemanticType.Or(l.element(), r.element()));
 		}
 		case SETINTERSECTION: {
-			checkIsSubtype(SemanticType.SetAny,lhs_type,e.leftOperand);
-			checkIsSubtype(SemanticType.SetAny,rhs_type,e.rightOperand);
+			checkIsSubtype(SemanticType.SetAny, lhs_type, e.leftOperand, context);
+			checkIsSubtype(SemanticType.SetAny, rhs_type, e.rightOperand, context);
 			// TODO: the following gives a more accurate type, but there are
 			// some outstanding issues related to the type system reduction
 			// rules.
-			//return SemanticType.And(lhs_type,rhs_type);
+			// return SemanticType.And(lhs_type,rhs_type);
 			SemanticType.Set l = (SemanticType.Set) lhs_type;
 			SemanticType.Set r = (SemanticType.Set) rhs_type;
-			return SemanticType.Set(true,SemanticType.Or(l.element(),r.element()));
+			return SemanticType.Set(true,
+					SemanticType.Or(l.element(), r.element()));
 		}
 		case LISTAPPEND: {
-			checkIsSubtype(SemanticType.SetTupleAnyAny, lhs_type, e.leftOperand);
+			checkIsSubtype(SemanticType.SetTupleAnyAny, lhs_type, e.leftOperand, context);
 			checkIsSubtype(SemanticType.SetTupleAnyAny, rhs_type,
-					e.rightOperand);
+					e.rightOperand, context);
 			SemanticType.Set l = (SemanticType.Set) lhs_type;
 			SemanticType.Set r = (SemanticType.Set) rhs_type;
 			return SemanticType.Set(true,
 					SemanticType.Or(l.element(), r.element()));
 		}
 		case RANGE: {
-			checkIsSubtype(SemanticType.Int, lhs_type, e.leftOperand);
-			checkIsSubtype(SemanticType.Int, rhs_type, e.rightOperand);
+			checkIsSubtype(SemanticType.Int, lhs_type, e.leftOperand, context);
+			checkIsSubtype(SemanticType.Int, rhs_type, e.rightOperand, context);
 			return SemanticType.Set(true,
 					SemanticType.Tuple(SemanticType.Int, SemanticType.Int));
 		}
@@ -408,22 +446,28 @@ public class TypePropagation implements Transform<WyalFile> {
 	private SemanticType propagate(Expr.Ternary e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
-		SemanticType firstType = propagate(e.firstOperand,environment,generics,context);
-		SemanticType secondType = propagate(e.secondOperand,environment,generics,context);
-		SemanticType thirdType = propagate(e.thirdOperand,environment,generics,context);
-		switch(e.op) {
+		SemanticType firstType = propagate(e.firstOperand, environment,
+				generics, context);
+		SemanticType secondType = propagate(e.secondOperand, environment,
+				generics, context);
+		SemanticType thirdType = propagate(e.thirdOperand, environment,
+				generics, context);
+		switch (e.op) {
 		case UPDATE:
-			checkIsSubtype(SemanticType.SetTupleAnyAny,firstType,e.firstOperand);
+			checkIsSubtype(SemanticType.SetTupleAnyAny, firstType,
+					e.firstOperand, context);
 			// FIXME: should this handle map updates?
-			checkIsSubtype(SemanticType.Int, secondType, e.secondOperand);
+			checkIsSubtype(SemanticType.Int, secondType, e.secondOperand, context);
 			SemanticType.Set l = (SemanticType.Set) firstType;
-			SemanticType.Tuple elementType = SemanticType.Tuple(SemanticType.Int,thirdType);
-			checkIsSubtype(l.element(),elementType,e.thirdOperand);
+			SemanticType.Tuple elementType = SemanticType.Tuple(
+					SemanticType.Int, thirdType);
+			checkIsSubtype(l.element(), elementType, e.thirdOperand, context);
 			return firstType;
 		case SUBLIST:
-			checkIsSubtype(SemanticType.SetTupleAnyAny,firstType,e.firstOperand);
-			checkIsSubtype(SemanticType.Int, secondType, e.secondOperand);
-			checkIsSubtype(SemanticType.Int, thirdType, e.thirdOperand);
+			checkIsSubtype(SemanticType.SetTupleAnyAny, firstType,
+					e.firstOperand, context);
+			checkIsSubtype(SemanticType.Int, secondType, e.secondOperand, context);
+			checkIsSubtype(SemanticType.Int, thirdType, e.thirdOperand, context);
 			return firstType;
 		}
 		internalFailure("unknown ternary expression encountered (" + e + ")",
@@ -437,13 +481,14 @@ public class TypePropagation implements Transform<WyalFile> {
 		List<Expr> e_operands = e.operands;
 		SemanticType[] op_types = new SemanticType[e_operands.size()];
 
-		for(int i=0;i!=e_operands.size();++i) {
-			op_types[i] = propagate(e_operands.get(i),environment,generics,context);
+		for (int i = 0; i != e_operands.size(); ++i) {
+			op_types[i] = propagate(e_operands.get(i), environment, generics,
+					context);
 		}
 
-		switch(e.op) {
+		switch (e.op) {
 		case TUPLE:
-			if(op_types.length == 0) {
+			if (op_types.length == 0) {
 				return SemanticType.Void;
 			} else {
 				return SemanticType.Tuple(op_types);
@@ -470,13 +515,45 @@ public class TypePropagation implements Transform<WyalFile> {
 		return null; // deadcode
 	}
 
+	private SemanticType propagate(Expr.Is e,
+			HashMap<String, SemanticType> environment,
+			HashSet<String> generics, WyalFile.Context context) {
+		//
+		try {
+			SemanticType lhs = propagate(e.leftOperand, environment, generics,
+					context);			
+			SemanticType rhs = builder.convert(e.rightOperand,
+					Collections.EMPTY_SET, context);			 	
+			lhs = builder.expand(lhs,false,context);
+			e.rightOperand.attributes().add(new TypeAttribute(rhs));				
+			// The following is rather strange, but appears to work.
+			// Essentially, it represents the greatest amount of knowledge we
+			// know about the given type.
+			rhs = SemanticType.Or(builder.expand(rhs,true,context),builder.expand(rhs,false,context));			
+			retypeExpression(e.leftOperand, rhs, environment, context);			
+			SemanticType intersection = SemanticType.And(lhs, rhs);
+//			if (intersection instanceof SemanticType.Void) {
+//				// These types have no intersection, hence this expression does
+//				// not make sense.
+//				syntaxError("incomparable operands", filename, e);
+//			} else {
+//				// Otherwise, we're all good.
+//				return SemanticType.Bool;
+//			}
+			return SemanticType.Bool;
+		} catch (ResolveError ex) {
+			syntaxError("cannot resolve as type call", filename, e, ex);
+		}
+		return null; // dead-code
+	}
+
 	private SemanticType propagate(Expr.Quantifier e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
-		environment = new HashMap<String,SemanticType>(environment);
-		propagate(e.pattern,environment,generics,context);
-		SemanticType r = propagate(e.operand,environment,generics,context);
-		checkIsSubtype(SemanticType.Bool,r,e.operand);
+		environment = new HashMap<String, SemanticType>(environment);
+		propagate(e.pattern, environment, generics, context);
+		SemanticType r = propagate(e.operand, environment, generics, context);
+		checkIsSubtype(SemanticType.Bool, r, e.operand, context);
 
 		return SemanticType.Bool;
 	}
@@ -484,31 +561,30 @@ public class TypePropagation implements Transform<WyalFile> {
 	private void propagate(TypePattern pattern,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
-				
+
 		try {
 			// First, convert the syntactic type into a semantic type. This may
 			// still contain nominal types, however, and we need to get rid of
 			// them for type checking purposes.
-			SemanticType nominalType = builder.convert(pattern.toSyntacticType(),
-					generics, context);
+			SemanticType nominalType = builder.convert(
+					pattern.toSyntacticType(), generics, context);
 
 			if (pattern instanceof TypePattern.Tuple) {
 				TypePattern.Tuple tt = (TypePattern.Tuple) pattern;
 				for (TypePattern p : tt.elements) {
 					propagate(p, environment, generics, context);
 				}
-			} else if(pattern instanceof TypePattern.Leaf) {				
-				TypePattern.Leaf l = (TypePattern.Leaf) pattern;				
+			} else if (pattern instanceof TypePattern.Leaf) {
+				TypePattern.Leaf l = (TypePattern.Leaf) pattern;
 				// Get rid of any nominal types that may exist.
-				SemanticType rawType = builder.expand(nominalType, context);
+				SemanticType rawType = builder.expand(nominalType, false, context);
 				// Add the raw type to the environment.
 				environment.put(l.var.name, rawType);
 			}
 
 			pattern.attributes().add(new TypeAttribute(nominalType));
 		} catch (ResolveError re) {
-			syntaxError(
-					"cannot resolve as function or definition call",
+			syntaxError("cannot resolve as function or definition call",
 					filename, pattern, re);
 		}
 	}
@@ -519,13 +595,13 @@ public class TypePropagation implements Transform<WyalFile> {
 
 		SemanticType argument = propagate(e.operand, environment, generics,
 				context);
-						
+
 		// Construct concrete types for generic substitution
 		ArrayList<SemanticType> ivkGenerics = new ArrayList<SemanticType>();
 		for (int i = 0; i != e.generics.size(); ++i) {
 			SyntacticType gt = e.generics.get(i);
 			try {
-				SemanticType t = builder.convert(gt, generics, context); 
+				SemanticType t = builder.convert(gt, generics, context);
 				ivkGenerics.add(t);
 				gt.attributes().add(new TypeAttribute(t));
 			} catch (ResolveError re) {
@@ -535,9 +611,9 @@ public class TypePropagation implements Transform<WyalFile> {
 		// Now, attempt to resolve the function
 		try {
 			SemanticType.Function fnType;
-			Map<String,SemanticType> binding;
-						
-			if(e.qualification == null) {
+			Map<String, SemanticType> binding;
+
+			if (e.qualification == null) {
 				// In this case, no package qualification is given. Hence, we
 				// need to resolve the name based on the active important
 				// statements and declarations within the current file.
@@ -545,22 +621,22 @@ public class TypePropagation implements Transform<WyalFile> {
 						.resolveAsFunctionType(e.name, argument, ivkGenerics,
 								context);
 				fnType = p.second();
-				binding = p.third();	
+				binding = p.third();
 			} else {
 				// In this case, a package qualification has been given. Hence,
 				// we know the fully name identifier for this function and we
 				// need only to check it exists and access the relevant
 				// information.
-				NameID nid = new NameID(e.qualification,e.name);
+				NameID nid = new NameID(e.qualification, e.name);
 				Pair<SemanticType.Function, Map<String, SemanticType>> p = builder
 						.resolveAsFunctionType(nid, argument, ivkGenerics,
 								context);
 				fnType = p.first();
-				binding = p.second();	
+				binding = p.second();
 			}
-			
+
 			SemanticType[] fn_generics = fnType.generics();
-			
+
 			if (fn_generics.length != e.generics.size()) {
 				// could resolve this with inference in the future.
 				syntaxError(
@@ -571,9 +647,10 @@ public class TypePropagation implements Transform<WyalFile> {
 			}
 
 			fnType = (SemanticType.Function) fnType.substitute(binding);
-			return builder.expand(fnType,context);
-		} catch(ResolveError re) {
-			syntaxError("cannot resolve as function or definition call", context.file().filename(), e, re);
+			return builder.expand(fnType, false, context);
+		} catch (ResolveError re) {
+			syntaxError("cannot resolve as function or definition call",
+					context.file().filename(), e, re);
 			return null;
 		}
 	}
@@ -588,11 +665,12 @@ public class TypePropagation implements Transform<WyalFile> {
 	public static SemanticType returnType(Expr e) {
 		SemanticType type = e.attribute(TypeAttribute.class).type;
 		if (e instanceof Expr.Variable || e instanceof Expr.Constant
-				|| e instanceof Expr.Quantifier || e instanceof Expr.Cast) {
+				|| e instanceof Expr.Quantifier || e instanceof Expr.Cast
+				|| e instanceof Expr.Is) {
 			return type;
-		} else if(e instanceof Expr.Unary) {
+		} else if (e instanceof Expr.Unary) {
 			Expr.Unary ue = (Expr.Unary) e;
-			switch(ue.op) {
+			switch (ue.op) {
 			case NOT:
 				return SemanticType.Bool;
 			case NEG:
@@ -600,9 +678,9 @@ public class TypePropagation implements Transform<WyalFile> {
 			case LENGTHOF:
 				return SemanticType.Int;
 			}
-		} else if(e instanceof Expr.Binary) {
+		} else if (e instanceof Expr.Binary) {
 			Expr.Binary ue = (Expr.Binary) e;
-			switch(ue.op) {
+			switch (ue.op) {
 			case ADD:
 			case SUB:
 			case MUL:
@@ -630,30 +708,31 @@ public class TypePropagation implements Transform<WyalFile> {
 			case SUPSETEQ:
 				return SemanticType.Bool;
 			}
-		} else if(e instanceof Expr.Ternary) {
+		} else if (e instanceof Expr.Ternary) {
 			Expr.Ternary ue = (Expr.Ternary) e;
-			switch(ue.op) {
+			switch (ue.op) {
 			case UPDATE:
 			case SUBLIST:
 				return type;
 			}
-		} else if(e instanceof Expr.Nary) {
+		} else if (e instanceof Expr.Nary) {
 			Expr.Nary ue = (Expr.Nary) e;
-			switch(ue.op) {
+			switch (ue.op) {
 			case TUPLE:
 			case SET:
 			case LIST:
 				return type;
 			}
-		} else if(e instanceof Expr.IndexOf) {
+		} else if (e instanceof Expr.IndexOf) {
 			Expr.IndexOf ue = (Expr.IndexOf) e;
-			if(type instanceof SemanticType.EffectiveTuple) {
+			if (type instanceof SemanticType.EffectiveTuple) {
 				SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) type;
 				Value.Integer idx = (Value.Integer) ((Expr.Constant) ue.index).value;
 				return tt.tupleElement(idx.value.intValue());
 			} else {
 				SemanticType.Set st = (SemanticType.Set) type;
-				SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) st.element();
+				SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) st
+						.element();
 				return tt.tupleElement(1);
 			}
 		} else {
@@ -662,6 +741,41 @@ public class TypePropagation implements Transform<WyalFile> {
 		}
 		// should be deadcode.
 		throw new IllegalArgumentException("Invalid opcode for expression");
+	}
+
+	/**
+	 * Apply constraints imposed by fixing a given expression to be a given
+	 * type. For example, support we have:
+	 * 
+	 * <pre>
+	 * assert:
+	 *    forall(int|null x, null y):
+	 *        if:
+	 *           (x+1) is int
+	 *        then:
+	 *           x != y
+	 * </pre>
+	 * 
+	 * This assertion is true because retyping "x+1" implies that x is an int
+	 * 
+	 * @param e
+	 * @param type
+	 * @param environment
+	 * @param context
+	 */
+	public void retypeExpression(Expr e, SemanticType type,
+			HashMap<String, SemanticType> environment, WyalFile.Context context) {
+		if (e instanceof Expr.Variable) {
+			Expr.Variable v = (Expr.Variable) e;
+			// The new type is the intersection of the existing type and the
+			// asserted type.
+			SemanticType newType = SemanticType.And(environment.get(v.name),
+					type);
+			//
+			environment.put(v.name, newType);
+		} else {
+			// FIXME: implement other cases
+		}
 	}
 
 	/**
@@ -675,12 +789,19 @@ public class TypePropagation implements Transform<WyalFile> {
 	 * @param t2
 	 *            --- Semantic type that shold be contained by <code>t1/code>.
 	 * @param element
-	 *            --- Syntax error is reported against this element if
-	 *            <code>t1</code> does not contain <code>t2</code>.
+	 *            --- Syntax error is reported against this element if <code>t1
+	 *            </code> does not contain <code>t2</code>.
 	 */
-	private void checkIsSubtype(SemanticType t1, SemanticType t2, SyntacticElement element) {
-		if(!SemanticType.isSubtype(t1,t2)) {
-			syntaxError("expected type " + t1 + ", got type " + t2,filename,element);
+	private void checkIsSubtype(SemanticType t1, SemanticType t2,
+			SyntacticElement element, WyalFile.Context context) {
+		// First, we must eliminate all nominal information as much as possible
+		// before we can perform this test.
+		t1 = builder.expand(t1, false, context);
+		t2 = builder.expand(t2, false, context);
+		// Second, perform the subtype test.
+		if (!SemanticType.isSubtype(t1, t2)) {
+			syntaxError("expected type " + t1 + ", got type " + t2, filename,
+					element);
 		}
 	}
 }

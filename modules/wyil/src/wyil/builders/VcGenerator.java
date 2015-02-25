@@ -1,4 +1,3 @@
-// Copyright (c) 2012, David J. Pearce (djp@ecs.vuw.ac.nz)
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,6 +28,7 @@ import wycc.lang.SyntaxError.InternalFailure;
 import wycc.lang.SyntaxError;
 import static wyil.util.ErrorMessages.*;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -41,12 +41,15 @@ import wyil.lang.*;
 import wyil.lang.CodeBlock.Index;
 import wyil.util.AttributedCodeBlock;
 import wyil.util.ErrorMessages;
+import wyil.util.TypeExpander;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;
 import wycc.util.Pair;
+import wycc.util.ResolveError;
 import wycs.core.SemanticType;
 import wycs.core.Value;
 import wycs.syntax.*;
+import wycs.syntax.Expr.Is;
 import wycs.syntax.TypePattern.Tuple;
 
 /**
@@ -58,12 +61,14 @@ import wycs.syntax.TypePattern.Tuple;
  */
 public class VcGenerator {
 	private final Builder builder;
+	private final TypeExpander expander;
 	private String filename;
 	private WyalFile wycsFile;
 	WyilFile.FunctionOrMethod method;
 
 	public VcGenerator(Builder builder) {
 		this.builder = builder;
+		this.expander = new TypeExpander(builder.project()); 
 	}
 
 	// ===============================================================================
@@ -237,7 +242,7 @@ public class VcGenerator {
 				Expr vc = buildVerificationCondition(
 						new Expr.Constant(Value.Bool(false)), branch,
 						bodyEnvironment, body);
-				wycsFile.add(wycsFile.new Assert("assertion failure", vc,
+				wycsFile.add(wycsFile.new Assert("assertion failed", vc,
 						toWycsAttributes(body.attributes(branch.pc()))));
 				break;
 			}
@@ -246,17 +251,40 @@ public class VcGenerator {
 					// In this case, there is not return value and, hence, there
 					// is no need to ensure the postcondition holds.
 				} else {
-					// First, construct arguments for the macro invocation. Only
+					List<wyil.lang.Attribute> attributes = body.attributes(branch.pc());
+					Collection<wycc.lang.Attribute> wycsAttributes = toWycsAttributes(attributes);
+					// Find the return statement in question
+					Codes.Return ret = (Codes.Return) body.get(branch.pc());
+					// Construct verification check to ensure that return
+					// type invariant holds
+					Expr returnedOperand = branch.read(ret.operand);
+					Type rawType = expand(bodyEnvironment[ret.operand],attributes);
+					Expr rawTest = new Expr.Is(returnedOperand,
+							convert(rawType, attributes));
+					if (containsNominal(fmm.ret(),attributes)) {
+						// FIXME: we need the raw test here, because the
+						// verifier can't work out the type of the expression
+						// otherwise.						
+						Expr nominalTest = new Expr.Is(returnedOperand,
+								convert(fmm.ret(), attributes));									
+						Expr vc = buildVerificationCondition(nominalTest,
+								branch, bodyEnvironment, body, rawTest);
+						// FIXME: add contextual information here
+						wycsFile.add(wycsFile.new Assert(
+								"return type invariant not satisfied", vc,
+								wycsAttributes));
+					}
+					// Construct arguments for the macro invocation. Only
 					// the returned value is read from the branch at the current
 					// pc. The other arguments correspond to the parameters
 					// which held on entry to this function.
-					Codes.Return ret = (Codes.Return) body.get(branch.pc());
 					arguments = new Expr[fmm.params().size() + 1];
 					for (int i = 0; i != fmm.params().size(); ++i) {
 						arguments[i + 1] = new Expr.Variable(prefixes[i]);
 					}
-					arguments[0] = branch.read(ret.operand);
-					// Second, for each postcondition generate a separate
+					
+					arguments[0] = returnedOperand;
+					// For each postcondition generate a separate
 					// verification condition. Doing this allows us to gather
 					// more detailed context information in the case of a
 					// failure about which post-condition is failing.
@@ -267,7 +295,7 @@ public class VcGenerator {
 						Expr.Invoke macro = new Expr.Invoke(prefix + i,
 								wyilFile.id(), Collections.EMPTY_LIST, arg);
 						Expr vc = buildVerificationCondition(macro, branch,
-								bodyEnvironment, body);
+								bodyEnvironment, body, rawTest);
 						// FIXME: add contextual information here
 						wycsFile.add(wycsFile.new Assert(
 								"postcondition not satisfied", vc,
@@ -298,58 +326,17 @@ public class VcGenerator {
 	 *            Branch state going into the block
 	 * @param block
 	 *            Block being transformed over
+	 * 
 	 * @return List of branches which reach the end of the block.
 	 */
 	public List<VcBranch> transform(VcBranch branch, CodeBlock.Index root,
 			Type[] environment, AttributedCodeBlock block) {
 		// Construct the label map which is needed for conditional branches
-		Map<String, CodeBlock.Index> labels = buildLabelMap(block);
+		Map<String, CodeBlock.Index> labels = CodeUtils.buildLabelMap(block);
 		Pair<VcBranch, List<VcBranch>> p = transform(root, 0, branch, false,
 				environment, labels, block);
 		// Ok, return list of exit branches
 		return p.second();
-	}
-
-	/**
-	 * Construct a mapping from labels to their block indices within a root
-	 * block. This is useful so they can easily be resolved during the
-	 * subsequent traversal of the block.
-	 * 
-	 * @param block
-	 * @return
-	 */
-	private Map<String, CodeBlock.Index> buildLabelMap(AttributedCodeBlock block) {
-		HashMap<String, CodeBlock.Index> labels = new HashMap<String, CodeBlock.Index>();
-		buildLabelMap(new CodeBlock.Index(null), null, labels, block);
-		return labels;
-	}
-
-	/**
-	 * Helper function for buildLabelMap
-	 * 
-	 * @param index
-	 *            Current block index being traversed.
-	 * @param labels
-	 *            Labels map being constructed
-	 * @param block
-	 *            Root block
-	 */
-	private void buildLabelMap(CodeBlock.Index index, CodeBlock.Index parent,
-			Map<String, CodeBlock.Index> labels, CodeBlock block) {
-		//
-		for (int i = 0; i != block.size(); ++i) {
-			Code code = block.get(i);
-			if (code instanceof Codes.Label) {
-				// Found a label, so register it in the labels map
-				Codes.Label label = (Codes.Label) code;
-				labels.put(label.label, index);
-			} else if (code instanceof CodeBlock) {
-				// Found a subblock, so traverse that
-				CodeBlock subblock = (CodeBlock) code;
-				buildLabelMap(index.firstWithin(), index, labels, subblock);
-			}
-			index = index.next();
-		}
 	}
 
 	/**
@@ -400,8 +387,7 @@ public class VcGenerator {
 	 */
 	protected Pair<VcBranch, List<VcBranch>> transform(CodeBlock.Index parent,
 			int offset, VcBranch entryState, boolean breakOnInvariant,
-			Type[] environment, Map<String, CodeBlock.Index> labels,
-			AttributedCodeBlock block) {
+			Type[] environment, Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
 		// Move state to correct location
 		CodeBlock.Index start = new CodeBlock.Index(parent);
 		entryState.goTo(new CodeBlock.Index(parent, offset));
@@ -504,18 +490,18 @@ public class VcGenerator {
 					// preconditions for this statement and, if so, add
 					// appropriate verification conditions to enforce them.
 					Code.Unit unit = (Code.Unit) code;
-					Expr[] preconditions = getPreconditions(unit, branch, block);
+					Pair<String,Expr>[] preconditions = getPreconditions(unit, branch, environment, block);
 					if (preconditions.length > 0) {
 						// This bytecode has one or more preconditions which
 						// need to be asserted. Therefore, for each, create a
 						// failed branch to ensure the precondition is met.
-						// FIXME: should use buildVerificationCondition here?
 						for (int i = 0; i != preconditions.length; ++i) {
-							Expr precond = preconditions[i];
-							VcBranch fb = branch.fork();
-							fb.assume(new Expr.Unary(Expr.Unary.Op.NOT, precond));
-							fb.setState(VcBranch.State.FAILED);
-							exitBranches.add(fb);
+							Pair<String,Expr> p = preconditions[i];							
+							Expr vc = buildVerificationCondition(p.second(),
+									branch, environment, block);
+							wycsFile.add(wycsFile.new Assert(p.first(), vc,
+									toWycsAttributes(block.attributes(branch
+											.pc()))));
 						}
 						// We need to fork the branch here, because it must have
 						// INTERNAL state by now (i.e. because of the forks
@@ -618,8 +604,8 @@ public class VcGenerator {
 	 * @param branches
 	 * @param block
 	 */
-	public Expr[] getPreconditions(Code.Unit code, VcBranch branch,
-			AttributedCodeBlock block) {
+	public Pair<String,Expr>[] getPreconditions(Code.Unit code, VcBranch branch,
+			Type[] environment, AttributedCodeBlock block) {
 		//
 		try {
 			switch (code.opcode()) {
@@ -634,9 +620,9 @@ public class VcGenerator {
 			case Code.OPCODE_invokefnv:
 			case Code.OPCODE_invokemd:
 			case Code.OPCODE_invokemdv:
-				return preconditionCheck((Codes.Invoke) code, branch, block);
+				return preconditionCheck((Codes.Invoke) code, branch, environment, block);
 			}
-			return new Expr[0];
+			return new Pair[0];
 		} catch (Exception e) {
 			internalFailure(e.getMessage(), filename, e);
 			return null; // deadcode
@@ -653,7 +639,7 @@ public class VcGenerator {
 	 *            --- The branch the division is on.
 	 * @return
 	 */
-	public Expr[] divideByZeroCheck(Codes.BinaryOperator binOp, VcBranch branch) {
+	public Pair<String,Expr>[] divideByZeroCheck(Codes.BinaryOperator binOp, VcBranch branch) {
 		Expr rhs = branch.read(binOp.operand(1));
 		Value zero;
 		if (binOp.type() instanceof Type.Int) {
@@ -662,8 +648,8 @@ public class VcGenerator {
 			zero = Value.Decimal(BigDecimal.ZERO);
 		}
 		Expr.Constant constant = new Expr.Constant(zero, rhs.attributes());
-		return new Expr[] { new Expr.Binary(Expr.Binary.Op.NEQ, rhs, constant,
-				rhs.attributes()) };
+		return new Pair[] { new Pair("division by zero", new Expr.Binary(
+				Expr.Binary.Op.NEQ, rhs, constant, rhs.attributes())) };
 	}
 
 	/**
@@ -677,7 +663,7 @@ public class VcGenerator {
 	 *            --- The branch the bytecode is on.
 	 * @return
 	 */
-	public Expr[] indexOutOfBoundsChecks(Codes.IndexOf code, VcBranch branch) {
+	public Pair<String,Expr>[] indexOutOfBoundsChecks(Codes.IndexOf code, VcBranch branch) {
 		if (code.type() instanceof Type.EffectiveList) {
 			Expr src = branch.read(code.operand(0));
 			Expr idx = branch.read(code.operand(1));
@@ -685,15 +671,16 @@ public class VcGenerator {
 					idx.attributes());
 			Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
 					idx.attributes());
-			return new Expr[] {
-					new Expr.Binary(Expr.Binary.Op.GTEQ, idx, zero,
-							idx.attributes()),
-					new Expr.Binary(Expr.Binary.Op.LT, idx, length,
-							idx.attributes()), };
+			return new Pair[] {
+					new Pair("index out of bounds (negative)", new Expr.Binary(
+							Expr.Binary.Op.GTEQ, idx, zero, idx.attributes())),
+					new Pair("index out of bounds (not less than length)",
+							new Expr.Binary(Expr.Binary.Op.LT, idx, length,
+									idx.attributes())), };			
 		} else {
 			// FIXME: should do something here! At a minimum, generate a warning
 			// that this has not been implemented yet.
-			return new Expr[0];
+			return new Pair[0];
 		}
 	}
 
@@ -710,15 +697,36 @@ public class VcGenerator {
 	 * @return
 	 * @throws Exception
 	 */
-	public Expr[] preconditionCheck(Codes.Invoke code, VcBranch branch,
-			AttributedCodeBlock block) throws Exception {
+	public Pair<String,Expr>[] preconditionCheck(Codes.Invoke code, VcBranch branch,
+			Type[] environment, AttributedCodeBlock block) throws Exception {
+		ArrayList<Pair<String,Expr>> preconditions = new ArrayList<>();
+		//
+		// First, check for any potentially constrained types.    
+		//
+		List<wyil.lang.Attribute> attributes = block.attributes(branch.pc());
+		List<Type> code_type_params = code.type().params();		
+		int[] code_operands = code.operands();
+		for (int i = 0; i != code_operands.length; ++i) {
+			Type t = code_type_params.get(i);
+			if (containsNominal(t, attributes)) {
+				int operand = code_operands[i];
+				Type rawType = expand(environment[operand],attributes);
+				Expr rawTest = new Expr.Is(branch.read(operand), convert(
+						rawType, attributes));
+				Expr nominalTest = new Expr.Is(branch.read(operand), convert(t,
+						attributes));
+				preconditions.add(new Pair(
+						"type invariant not satisfied (argument " + i + ")",
+						new Expr.Binary(Expr.Binary.Op.IMPLIES, rawTest,
+								nominalTest)));
+			}
+		}
 		//
 		List<AttributedCodeBlock> requires = findPrecondition(code.name,
 				code.type(), block, branch);
 		//
 		if (requires.size() > 0) {
 			// First, read out the operands from the branch
-			int[] code_operands = code.operands();
 			Expr[] operands = new Expr[code_operands.length];
 			for (int i = 0; i != code_operands.length; ++i) {
 				operands[i] = branch.read(code_operands[i]);
@@ -726,18 +734,17 @@ public class VcGenerator {
 			// To check the pre-condition holds after the method, we
 			// simply called the corresponding pre-condition macros.
 			String prefix = code.name.name() + "_requires_";
-			Expr[] preconditions = new Expr[requires.size()];
+
 			Expr argument = operands.length == 1 ? operands[0] : new Expr.Nary(
 					Expr.Nary.Op.TUPLE, operands);
 			for (int i = 0; i != requires.size(); ++i) {
-				preconditions[i] = new Expr.Invoke(prefix + i,
+				Expr precondition = new Expr.Invoke(prefix + i,
 						code.name.module(), Collections.EMPTY_LIST, argument);
+				preconditions.add(new Pair<String,Expr>("precondition not satisfied",precondition));
 
 			}
-			return preconditions;
-		} else {
-			return new Expr[0];
 		}
+		return preconditions.toArray(new Pair[preconditions.size()]);
 	}
 
 	/**
@@ -750,8 +757,8 @@ public class VcGenerator {
 	 *            --- The branch containing the update bytecode.
 	 * @return
 	 */
-	public Expr[] updateChecks(Codes.Update code, VcBranch branch) {
-		ArrayList<Expr> preconditions = new ArrayList<Expr>();
+	public Pair<String,Expr>[] updateChecks(Codes.Update code, VcBranch branch) {
+		ArrayList<Pair<String,Expr>> preconditions = new ArrayList<Pair<String,Expr>>();
 
 		Expr src = branch.read(code.target());
 
@@ -763,10 +770,13 @@ public class VcGenerator {
 						idx.attributes());
 				Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
 						idx.attributes());
-				preconditions.add(new Expr.Binary(Expr.Binary.Op.GTEQ, idx,
-						zero, idx.attributes()));
-				preconditions.add(new Expr.Binary(Expr.Binary.Op.LT, idx,
-						length, idx.attributes()));
+				preconditions.add(new Pair("index out of bounds (negative)",
+						new Expr.Binary(Expr.Binary.Op.GTEQ, idx, zero, idx
+								.attributes())));
+				preconditions.add(new Pair(
+						"index out of bounds (not less than length)",
+						new Expr.Binary(Expr.Binary.Op.LT, idx, length, idx
+								.attributes())));
 				src = new Expr.IndexOf(src, idx);
 			} else if (lval instanceof Codes.StringLVal) {
 				Codes.StringLVal lv = (Codes.StringLVal) lval;
@@ -775,10 +785,13 @@ public class VcGenerator {
 						idx.attributes());
 				Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
 						idx.attributes());
-				preconditions.add(new Expr.Binary(Expr.Binary.Op.GTEQ, idx,
-						zero, idx.attributes()));
-				preconditions.add(new Expr.Binary(Expr.Binary.Op.LT, idx,
-						length, idx.attributes()));
+				preconditions.add(new Pair("index out of bounds (negative)",
+						new Expr.Binary(Expr.Binary.Op.GTEQ, idx, zero, idx
+								.attributes())));
+				preconditions.add(new Pair(
+						"index out of bounds (not less than length)",
+						new Expr.Binary(Expr.Binary.Op.LT, idx, length, idx
+								.attributes())));
 				src = new Expr.IndexOf(src, idx);
 			} else if (lval instanceof Codes.MapLVal) {
 				// FIXME: need to implement some actual checks here!
@@ -798,7 +811,7 @@ public class VcGenerator {
 			}
 		}
 
-		return preconditions.toArray(new Expr[preconditions.size()]);
+		return preconditions.toArray(new Pair[preconditions.size()]);
 	}
 
 	// ===============================================================================
@@ -1362,9 +1375,15 @@ public class VcGenerator {
 		VcBranch falseBranch = branch.fork();
 		VcBranch trueBranch = branch.fork();
 		// Second add appropriate runtime type tests
-
-		// FIXME: do that
-
+		List<wyil.lang.Attribute> attributes = block.attributes(branch.pc());
+		Collection<wycc.lang.Attribute> wycsAttributes = toWycsAttributes(attributes); 
+		SyntacticType trueType = convert(code.rightOperand, attributes);
+		SyntacticType falseType = new SyntacticType.Negation(convert(code.rightOperand,
+				attributes), wycsAttributes);
+		trueBranch.assume(new Expr.Is(branch.read(code.operand), trueType,
+				wycsAttributes));
+		falseBranch.assume(new Expr.Is(branch.read(code.operand), falseType,
+				wycsAttributes));
 		// Finally dispatch the branches
 		falseBranch.goTo(branch.pc().next());
 		trueBranch.goTo(labels.get(code.target));
@@ -1459,6 +1478,7 @@ public class VcGenerator {
 			Codes.AssertOrAssume code, boolean isAssert, VcBranch branch,
 			Type[] environment, Map<String, CodeBlock.Index> labels,
 			AttributedCodeBlock block) {
+		int start = wycsFile.declarations().size();
 		// First, transform the given branch through the assert or assume block.
 		// This will produce one or more exit branches, some of which may have
 		// reached failed states and need to be turned into verification
@@ -1480,6 +1500,18 @@ public class VcGenerator {
 				exitBranches.remove(i--);
 			}
 		}
+		// Third, in the case of an assumption, we need to remove any
+		// verification conditions that were generated when processing this
+		// block.
+		if(!isAssert) {
+			// FIXME: this is something of a hack for now. A better solution would
+			// be to pass a variable recursively down through the call stack which
+			// signaled that no verification conditions should be generated.
+			while(wycsFile.declarations().size() > start) {
+				wycsFile.declarations().remove(wycsFile.declarations().size()-1);
+			}
+		}
+		
 		// Done
 		return p;
 	}
@@ -1756,6 +1788,7 @@ public class VcGenerator {
 		Collection<Attribute> attributes = toWycsAttributes(block
 				.attributes(branch.pc()));
 		int[] code_operands = code.operands();
+		
 		if (code.target() != Codes.NULL_REG) {
 			// Need to assume the post-condition holds.
 			Expr[] operands = new Expr[code_operands.length];
@@ -2111,7 +2144,8 @@ public class VcGenerator {
 	 */
 	protected void buildMacroBlock(String name, CodeBlock.Index root,
 			AttributedCodeBlock block, List<Type> types) {
-
+		int start = wycsFile.declarations().size();
+		
 		// first, generate a branch for traversing the external block.
 		VcBranch master = new VcBranch(
 				Math.max(block.numSlots(), types.size()), null);
@@ -2141,11 +2175,20 @@ public class VcGenerator {
 					declarations.toArray(new TypePattern.Leaf[declarations
 							.size()]));
 		}
-
+	
 		// At this point, we are guaranteed exactly one branch because there
 		// is only ever one exit point from a pre-/post-condition.
 		List<VcBranch> exitBranches = transform(master, root, environment,
 				block);
+		// Remove any verification conditions that were generated when
+		// processing this block.  		
+		// FIXME: this is something of a hack for now. A better solution would
+		// be for the verification conditions to be returned so that they
+		// can be discussed.
+		while(wycsFile.declarations().size() > start) {
+			wycsFile.declarations().remove(wycsFile.declarations().size()-1);
+		}
+		//
 		for (VcBranch exitBranch : exitBranches) {
 			if (exitBranch.state() == VcBranch.State.TERMINATED) {
 				Expr body = generateAssumptions(exitBranch, null);
@@ -2153,8 +2196,8 @@ public class VcGenerator {
 						type, body));
 				return;
 			}
-		}
-
+		}		
+		
 		// It should be impossible to reach here.
 		internalFailure("unreachable code", filename);
 	}
@@ -2206,16 +2249,22 @@ public class VcGenerator {
 	 *            generated.
 	 * @param block
 	 *            --- The enclosing attributed block for this assertion.
+	 * @param assumptions
+	 *            --- Additional assumptions to take into consideration.
 	 * @return
 	 */
 	protected Expr buildVerificationCondition(Expr assertion, VcBranch branch,
-			Type[] environment, AttributedCodeBlock block) {
+			Type[] environment, AttributedCodeBlock block, Expr... extraAssumptions) {
 		// First construct the assertion which forms the basis of the
 		// verification condition. The assertion must be shown to hold assuming
 		// the assumptions did. Therefore, we construct an implication to
 		// establish this.
 		Expr assumptions = generateAssumptions(branch, null);
-
+		
+		for(Expr ea : extraAssumptions) {
+			assumptions = new Expr.Binary(Expr.Binary.Op.AND, assumptions, ea);
+		}
+		
 		assertion = new Expr.Binary(Expr.Binary.Op.IMPLIES, assumptions,
 				assertion, toWycsAttributes(block.attributes(branch.pc())));
 
@@ -2349,23 +2398,39 @@ public class VcGenerator {
 	 * </pre>
 	 */
 	private Expr generateAssumptions(VcBranch b, VcBranch end) {
+		// We need to clone the return expression here to ensure there is no
+		// aliasing between generated verification conditions as this can lead
+		// to problems later on.
+		return generateAssumptionsHelper(b,end).copy();
+	}
+	
+	private Expr generateAssumptionsHelper(VcBranch b, VcBranch end) {
 
 		if (b == end) {
 			// The termination condition is reached.
 			return new Expr.Constant(Value.Bool(true));
 		} else {
 			// FIXME: this method is not efficient and does not generate an
-			// optimal
-			// decomposition of the branch graph.
+			// optimal decomposition of the branch graph.
 
 			// First, compute disjunction of parent constraints.
 			VcBranch[] b_parents = b.parents();
 			Expr parents = null;
 			for (int i = 0; i != b_parents.length; ++i) {
 				VcBranch parent = b_parents[i];
-				Expr parent_constraints = generateAssumptions(parent, end);
+				Expr parent_constraints = generateAssumptionsHelper(parent, end);
 				if (i == 0) {
 					parents = parent_constraints;
+				} else if(parent_constraints instanceof Expr.Constant) {
+					Expr.Constant c = (Expr.Constant) parent_constraints;
+					Value.Bool v = (Value.Bool) c.value;					
+					if(v.value) {
+						// can short-circuit this
+						parents = c;
+						break;
+					} else {
+						// ignore false						
+					}
 				} else {
 					parents = new Expr.Binary(Expr.Binary.Op.OR, parents,
 							parent_constraints);
@@ -2373,11 +2438,20 @@ public class VcGenerator {
 			}
 
 			// Second, include constraints from this node.
+			Expr b_constraints = b.constraints();			
 			if (parents == null) {
 				return b.constraints();
+			} else if(parents instanceof Expr.Constant) {
+				Expr.Constant c = (Expr.Constant) parents;
+				Value.Bool v = (Value.Bool) c.value;					
+				if(v.value) {
+					return b_constraints;
+				} else {
+					return c;
+				}
 			} else {
 				return new Expr.Binary(Expr.Binary.Op.AND, parents,
-						b.constraints());
+						b_constraints);
 			}
 		}
 	}
@@ -2770,6 +2844,94 @@ public class VcGenerator {
 		}
 	}
 
+	/**
+	 * Make an objective assessment as to whether a type may include an
+	 * invariant or not. The purpose here is reduce the number of verification
+	 * conditions generated with respect to constrained types. The algorithm is
+	 * currently very simple. It essentially looks to see whether or not the
+	 * type contains a nominal component. If so, the answer is "yes", otherwise
+	 * the answer is "no".
+	 * 
+	 * @return
+	 */
+	private boolean containsNominal(Type t,
+			Collection<wyil.lang.Attribute> attributes) {
+		// FIXME: this is fundamentally broken in the case of recursive types.
+		// See Issue #298.
+		if (t instanceof Type.Any || t instanceof Type.Void
+				|| t instanceof Type.Null || t instanceof Type.Bool
+				|| t instanceof Type.Char || t instanceof Type.Byte
+				|| t instanceof Type.Int || t instanceof Type.Real
+				|| t instanceof Type.Strung) {
+			return false;
+		} else if (t instanceof Type.Set) {
+			Type.Set st = (Type.Set) t;
+			return containsNominal(st.element(), attributes);
+		} else if (t instanceof Type.Map) {
+			Type.Map lt = (Type.Map) t;
+			return containsNominal(lt.key(), attributes)
+					|| containsNominal(lt.value(), attributes);
+		} else if (t instanceof Type.List) {
+			Type.List lt = (Type.List) t;
+			return containsNominal(lt.element(), attributes);
+		} else if (t instanceof Type.Tuple) {
+			Type.Tuple tt = (Type.Tuple) t;
+			for (int i = 0; i != tt.size(); ++i) {
+				if (containsNominal(tt.element(i), attributes)) {
+					return true;
+				}
+			}
+			return false;
+		} else if (t instanceof Type.Record) {
+			Type.Record rt = (Type.Record) t;
+			for (Type field : rt.fields().values()) {
+				if (containsNominal(field, attributes)) {
+					return true;
+				}
+			}
+			return false;
+		} else if (t instanceof Type.Reference) {
+			Type.Reference lt = (Type.Reference) t;
+			return containsNominal(lt.element(), attributes);
+		} else if (t instanceof Type.Union) {
+			Type.Union tu = (Type.Union) t;
+			for (Type te : tu.bounds()) {
+				if (containsNominal(te, attributes)) {
+					return true;
+				}
+			}
+			return false;
+		} else if (t instanceof Type.Negation) {
+			Type.Negation nt = (Type.Negation) t;
+			return containsNominal(nt.element(), attributes);
+		} else if (t instanceof Type.FunctionOrMethod) {
+			Type.FunctionOrMethod ft = (Type.FunctionOrMethod) t;
+			for (Type pt : ft.params()) {
+				if (containsNominal(pt, attributes)) {
+					return true;
+				}
+			}
+			return containsNominal(ft.ret(), attributes);
+		} else if (t instanceof Type.Nominal) {
+			return true;
+		} else {
+			internalFailure("unknown type encountered ("
+					+ t.getClass().getName() + ")", filename, attributes);
+			return false;
+		}
+	}
+	
+	private Type expand(Type t, Collection<wyil.lang.Attribute> attributes) {
+		try {
+			return expander.getUnderlyingType(t);
+		} catch (ResolveError re) {
+			internalFailure(re.getMessage(), filename, attributes);
+		} catch (IOException re) {
+			internalFailure(re.getMessage(), filename, attributes);
+		}
+		return null; // dead-code
+	}
+	
 	private static <T> List<T> prepend(T x, List<T> xs) {
 		ArrayList<T> rs = new ArrayList<T>();
 		rs.add(x);

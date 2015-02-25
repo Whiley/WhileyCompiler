@@ -142,6 +142,8 @@ public class MacroExpansion implements Transform<WycsFile> {
 			return transform((Code.Nary) e);
 		} else if (e instanceof Code.Load) {
 			return transform((Code.Load) e);
+		} else if (e instanceof Code.Is) {
+			return transform((Code.Is) e);
 		} else if (e instanceof Code.FunCall) {
 			return transform((Code.FunCall) e);
 		} else if (e instanceof Code.Quantifier) {
@@ -167,6 +169,24 @@ public class MacroExpansion implements Transform<WycsFile> {
 				transform(e.operands[1]), e.attributes());
 	}
 
+	private Code<?> transform(Code.Is e) {
+		Code operand = transform(e.operands[0]);
+		// Expand the type to extract any constraints associated with nominal
+		// contained within. These will produce null if there are no such
+		// constraints. 
+		Pair<SemanticType, Code<?>> p1 = expand(operand, e.type, 0);
+		Pair<SemanticType, Code<?>> p2 = expand(operand, e.test, 0);
+		// Check whether any constraints were produced and, if so, include them.
+		Code result = Code.Is(p1.first(), operand, p2.first(), e.attributes());
+		if (p2.second() != null) {
+			// Yes, there were some constraints included in the nominal type.
+			return and(result, p2.second());
+		} else {
+			// No, there were no constraints included.
+			return result;
+		}
+	}
+	
 	private Code<?> transform(Code.Nary e) {
 		Code<?>[] e_operands = e.operands;
 		Code<?>[] operands = new Code[e_operands.length];
@@ -238,12 +258,10 @@ public class MacroExpansion implements Transform<WycsFile> {
 		Code<?> invariant = null;
 		for (int i = 0; i != e_types.length; ++i) {
 			Pair<SemanticType, Integer> p1 = e_types[i];
-			// FIXME: probably need the expanded type here, rather than the
-			// potentially nominal type?
 			Code.Variable var = Code.Variable(p1.first(), p1.second());
 			Pair<SemanticType,Code<?>> p2 = expand(var, p1.first(), 0);
 			n_types[i] = new Pair<SemanticType,Integer>(p2.first(),p1.second());
-			Code<?> ei = p2.second();
+			Code<?> ei = p2.second();			
 			if (ei != null) {
 				invariant = invariant == null ? ei : and(invariant, ei);
 			}
@@ -366,9 +384,11 @@ public class MacroExpansion implements Transform<WycsFile> {
 		Code.Variable variable = Code.Variable(type.element(), freeVar);
 		Pair<SemanticType, Code<?>> p = expand(variable, type.element(),
 				++freeVar);
+		SemanticType.Set nType = SemanticType.Set(type.flag(),
+				p.first());
 		Code<?> invariant = p.second();
 		if (invariant != null) {
-			Code<?> elemOf = Code.Binary(type, Code.Binary.Op.IN, variable,
+			Code<?> elemOf = Code.Binary(nType, Code.Binary.Op.IN, variable,
 					root);
 			invariant = implies(elemOf, invariant);
 			invariant = Code.Quantifier(SemanticType.Bool, Code.Op.FORALL,
@@ -376,8 +396,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 					new Pair[] { new Pair<SemanticType, Integer>(p.first(),
 							variable.index) });
 		}
-		return new Pair<SemanticType, Code<?>>(SemanticType.Set(type.flag(),
-				p.first()), invariant);
+		return new Pair<SemanticType, Code<?>>(nType, invariant);
 	}
 	
 	/**
@@ -506,12 +525,15 @@ public class MacroExpansion implements Transform<WycsFile> {
 		// no elements expand to an invariant then we stick with null.
 		// Otherwise, we have some invariant at the end.
 		for (int i = 0; i != elements.length; ++i) {
-			Pair<SemanticType,Code<?>> p = expand(root, elements[i], freeVar);
+			Pair<SemanticType, Code<?>> p = expand(root, elements[i], freeVar);
 			nelements[i] = p.first();
 			Code<?> ei = p.second();
 			if (ei != null) {
-				// This element has yielded an actual invariant. Now, decide
-				// whether this it the first one, or just another one.
+				// This element has yielded an actual invariant. The first thing
+				// is to add the test that this is the given type.
+				ei = implies(Code.Is(type, root, p.first()),ei);
+				// Now, decide whether this it the first one, or just another
+				// one.
 				if (invariant == null) {
 					// Yes, it's the first element which has given an invariant,
 					// therefore it is the current overall invariant.

@@ -15,6 +15,7 @@ import static wycs.io.WyalFileLexer.Token.Kind.*;
 import wycs.core.Value;
 import wycs.io.WyalFileLexer.Token;
 import wycs.syntax.*;
+import wycs.syntax.Expr.Is;
 import wycc.lang.SyntaxError;
 import wycc.lang.SyntacticElement;
 import wycc.lang.Attribute;
@@ -1011,7 +1012,7 @@ public class WyalFileParser {
 				break;
 			case In:
 				bop = Expr.Binary.Op.IN;
-				break;
+				break;			
 			case Subset:
 				bop = Expr.Binary.Op.SUBSET;
 				break;
@@ -1024,6 +1025,11 @@ public class WyalFileParser {
 			case SupersetEquals:
 				bop = Expr.Binary.Op.SUPSETEQ;
 				break;
+			case Is:
+				// We handle this one slightly differently because the
+				// right-hand side is not an expression.
+				SyntacticType rhs = parseType(generics);
+				return new Expr.Is(lhs,rhs,sourceAttr(start,index-1));	
 			default:
 				syntaxError("Unknown binary operator: " + lookahead.kind,lookahead); // dead-code
 				return null;

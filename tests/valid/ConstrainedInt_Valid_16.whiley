@@ -1,10 +1,12 @@
 import whiley.lang.System
 
-constant odd is {1, 3, 5}
+constant odd is {1,3,5}
 
-constant even is {2, 4, 6}
+type odd is (int x) where x in odd
 
-constant oddeven is odd + even
+type even is (int x) where x in {2, 4, 6}
+
+type oddeven is odd|even
 
 function f(oddeven x) -> even:
     if x in odd:

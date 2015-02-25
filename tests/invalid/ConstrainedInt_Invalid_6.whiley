@@ -1,5 +1,5 @@
 
-constant c3num is {1, 2, 3, 4}
+type c3num is (int x) where 1 <= x && x <= 4
 
 function f(c3num x) -> void:
     int y = x

@@ -31,22 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 
-import static wyil.lang.Type.K_VOID;
-import static wyil.lang.Type.K_ANY;
-import static wyil.lang.Type.K_NULL;
-import static wyil.lang.Type.K_BOOL;
-import static wyil.lang.Type.K_BYTE;
-import static wyil.lang.Type.K_CHAR;
-import static wyil.lang.Type.K_INT;
-import static wyil.lang.Type.K_RATIONAL;
-import static wyil.lang.Type.K_STRING;
-import static wyil.lang.Type.K_TUPLE;
-import static wyil.lang.Type.K_SET;
-import static wyil.lang.Type.K_LIST;
-import static wyil.lang.Type.K_MAP;
-import static wyil.lang.Type.K_RECORD;
-import static wyil.lang.Type.K_UNION;
-import static wyil.lang.Type.K_NEGATION;
+import static wyil.lang.Type.*;
 
 public class Util {
 
@@ -193,6 +178,15 @@ public class Util {
 				return obj instanceof WyRat;
 			case K_STRING:
 				return obj instanceof String;
+			case K_REFERENCE: {
+				if(obj instanceof WyObject) {
+					WyObject ol = (WyObject) obj;
+					WyType.Reference ref = (WyType.Reference) t;
+					Object element = ol.state();
+					return instanceOf(element,ref.element);
+				}
+				break;
+			}				
 			case K_LIST:
 			{
 				if(obj instanceof WyList) {

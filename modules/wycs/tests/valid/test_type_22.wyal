@@ -1,0 +1,10 @@
+type nat is (int r0) where:
+    r0 >= 0
+
+assert "postcondition not satisfied":
+    forall (int x):
+        if:
+            x is nat
+        then:
+            x >= 0
+

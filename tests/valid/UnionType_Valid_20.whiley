@@ -1,12 +1,12 @@
 import whiley.lang.System
 
-constant immStoreCode is {0, 1, 2}
+type immStoreCode is (int x) where x in {0, 1, 2}
 
-constant storeCode is {3, 4, 5} + immStoreCode
+type storeCode is (int x) where x in {0, 1, 2, 3, 4, 5}
 
 type STORE is {int index, storeCode op}
 
-constant branchCode is {6, 7, 8}
+type branchCode is (int x) where x in {6, 7, 8}
 
 type BRANCH is {branchCode op, Int.i16 offset}
 

@@ -8,7 +8,7 @@ constant MUL is 2
 
 constant DIV is 3
 
-constant BOp is {ADD, SUB, MUL, DIV}
+type BOp is (int x) where x in {ADD, SUB, MUL, DIV}
 
 type BinOp is {BOp op, Expr rhs, Expr lhs}
 

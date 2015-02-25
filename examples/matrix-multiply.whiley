@@ -31,7 +31,7 @@ type Matrix is {
     [[int]] data
 } where |data| == height && no { i in data | |i| != width }
 
-function Matrix(nat width, nat height, [[int]] data) => (Matrix r)
+function Matrix(nat width, nat height, [[int]] data) -> (Matrix r)
 // Input array must match matrix height
 requires |data| == height
 // Elements of input array must match matrix width
@@ -45,7 +45,7 @@ ensures r.width == width && r.height == height && r.data == data:
         data: data
     }
 
-function multiply(Matrix A, Matrix B) => (Matrix C)
+function multiply(Matrix A, Matrix B) -> (Matrix C)
 // Must be possible to multiply matrices
 requires A.width == B.height
 // Specify dimensions of result
@@ -78,50 +78,60 @@ ensures C.width == B.width && C.height == A.height:
 // Parser Code
 // ========================================================
 
-function parseFile(string input) => (Matrix,Matrix)
-throws SyntaxError:
-    Matrix A // 1st result
-    Matrix B // 2nd result
-    [int] data, int pos = parseLine(2,0,input)
-    int nrows = data[0]
-    int ncols = data[1]
-    pos = skipBreak(pos,input)
-    A,pos = parseMatrix(nrows,ncols,pos,input)
-    pos = skipBreak(pos,input)
-    B,pos = parseMatrix(nrows,ncols,pos,input)
-    return A,B
+function parseFile(string input) -> (Matrix,Matrix) | null:
+    Matrix|null A // 1st result
+    Matrix|null B // 2nd result
+    [int]|null data, int pos = parseLine(2,0,input)
+    // santity check    
+    if data != null:
+        int nrows = data[0]
+        int ncols = data[1]
+        pos = skipBreak(pos,input)
+        A,pos = parseMatrix(nrows,ncols,pos,input)
+        // sanity check
+        if A != null:
+            pos = skipBreak(pos,input)
+            B,pos = parseMatrix(nrows,ncols,pos,input)
+            // sanity check
+            if B != null:
+                return A,B
+    //
+    return null
 
-function parseMatrix(nat height, nat width, int pos, string input) => (Matrix,int)
-throws SyntaxError:
+function parseMatrix(nat height, nat width, int pos, string input) -> (Matrix|null,int):
     //
     [[int]] rows = []
-    [int] row
+    [int]|null row
     //
     for i in 0 .. height:
         row,pos = parseLine(width,pos,input)
-        rows = rows ++ [row]
+        if row == null:
+            return null,pos
+        else:
+            rows = rows ++ [row]
     //
     return Matrix(width,height,rows),pos
 
-function parseLine(int count, int pos, string input) => ([int],int)
-throws SyntaxError:
+function parseLine(int count, int pos, string input) -> ([int]|null,int):
     //
     pos = skipWhiteSpace(pos,input)
     [int] ints = []
-    int i
+    int|null i
     //
     while pos < |input| && |ints| != count:
         i,pos = parseInt(pos,input)
-        ints = ints ++ [i]
-        pos = skipWhiteSpace(pos,input)
+        if i != null:
+            ints = ints ++ [i]
+            pos = skipWhiteSpace(pos,input)
+        else:
+            return null,pos
     //
     if |ints| != count:
-        throw SyntaxError("invalid input file",pos,pos)
-    //
-    return ints,pos
+        return null,pos
+    else:
+        return ints,pos
 
-function parseInt(int pos, string input) => (int,int)
-throws SyntaxError:
+function parseInt(int pos, string input) -> (int|null,int):
     //
     int start = pos
     // check for negative input
@@ -132,23 +142,23 @@ throws SyntaxError:
         pos = pos + 1
     // check for error
     if pos == start:
-        throw SyntaxError("Missing number",start,pos)
-    // done
-    return Int.parse(input[start..pos]),pos
+        return null,pos
+    else:
+        return Int.parse(input[start..pos]),pos
 
-function skipBreak(int index, string input) => int:
+function skipBreak(int index, string input) -> int:
     while index < |input| && input[index] == '-':
         index = index + 1
     //
     return skipWhiteSpace(index,input)
 
-function skipWhiteSpace(int index, string input) => int:
+function skipWhiteSpace(int index, string input) -> int:
     while index < |input| && isWhiteSpace(input[index]):
         index = index + 1
     //
     return index
 
-function isWhiteSpace(char c) => bool:
+function isWhiteSpace(char c) -> bool:
     return c == ' ' || c == '\t' || c == '\r' || c == '\n'
 
 // ========================================================
@@ -169,13 +179,17 @@ method main(System.Console sys):
         File.Reader file = File.Reader(sys.args[0])
         // first, read data
         string input = String.fromASCII(file.readAll())
-        try:
-            // second, build the matrices
-            Matrix A, Matrix B = parseFile(input)
-            // third, run the benchmark
+        // second, build the matrices
+        null|(Matrix, Matrix) AxB = parseFile(input)
+        // third, sanity check we succeeded
+        if AxB is null:
+            sys.out.println("error parsing input")
+        else:
+            //
+            Matrix A, Matrix B = AxB
+            // fourth, run the benchmark
             Matrix C = multiply(A,B)
             // finally, print the result!
             printMat(sys,C)
-        catch(SyntaxError e):
-            sys.out.println("error - " ++ e.msg)
+
 

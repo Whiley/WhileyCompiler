@@ -68,6 +68,8 @@ public class NormalForms {
 			return negationNormalForm((Code.FunCall)e,negate);
 		} else if(e instanceof Code.Load) {
 			return negationNormalForm((Code.Load)e,negate);
+		} else if(e instanceof Code.Is) {
+			return negationNormalForm((Code.Is)e,negate);
 		}
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
@@ -156,6 +158,10 @@ public class NormalForms {
 		return negate(e, negate);
 	}
 
+	private static Code negationNormalForm(Code.Is e, boolean negate) {
+		return negate(e, negate);
+	}
+	
 	private static Code negate(Code e, boolean negate) {
 		if (!negate) {
 			return e;
