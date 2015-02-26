@@ -52,11 +52,6 @@ public abstract class BackwardFlowAnalysis<T> {
 	protected WyilFile.FunctionOrMethod method;
 
 	/**
-	 * The function or method case currently being propagated through.
-	 */
-	protected WyilFile.Case methodCase;
-
-	/**
 	 * The root block currently being propagated through.
 	 */
 	protected AttributedCodeBlock rootBlock;
@@ -96,21 +91,16 @@ public abstract class BackwardFlowAnalysis<T> {
 	protected WyilFile.FunctionOrMethod propagate(
 			WyilFile.FunctionOrMethod method) {
 		this.method = method;
-		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
-		for (WyilFile.Case c : method.cases()) {
-			cases.add(propagate(c));
-		}
-		return new WyilFile.FunctionOrMethod(method.modifiers(),
-				method.name(), method.type(), cases, method.attributes());
-	}
-
-	protected WyilFile.Case propagate(WyilFile.Case mcase) {
-		this.methodCase = mcase;
 		this.stores = new HashMap<String,T>();
-		this.rootBlock = mcase.body();
+		this.rootBlock = method.body();
 		T last = lastStore();
 		propagate(null, rootBlock, last, Collections.EMPTY_LIST);
-		return mcase;
+		
+		// FIXME: should we propagate through the precondition and postconditions !?
+		
+		return new WyilFile.FunctionOrMethod(method.modifiers(), method.name(),
+				method.type(), method.body(), method.precondition(),
+				method.postcondition(), method.attributes());
 	}
 
 	/**

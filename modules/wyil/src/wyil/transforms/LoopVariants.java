@@ -91,13 +91,11 @@ public class LoopVariants implements Transform<WyilFile> {
 		}
 	}
 
-	public void infer(WyilFile.FunctionOrMethod method) {
-		for (WyilFile.Case c : method.cases()) {
-			CodeBlock body = c.body();
-			if(body != null) {
-				infer(body);
-			}
-		}
+	public void infer(WyilFile.FunctionOrMethod method) {		
+		CodeBlock body = method.body();
+		if(body != null) {
+			infer(body);
+		}		
 	}
 
 	/**

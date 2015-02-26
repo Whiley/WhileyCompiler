@@ -136,10 +136,7 @@ public final class WyilFileWriter {
 				break;
 			case BLOCK_Method:
 				bytes = generateFunctionOrMethodBlock((WyilFile.FunctionOrMethod) data);
-				break;
-			case BLOCK_Case:
-				bytes = generateFunctionOrMethodCaseBlock((WyilFile.Case) data);
-				break;
+				break;			
 			case BLOCK_Body:
 			case BLOCK_Precondition:
 			case BLOCK_Postcondition:
@@ -413,35 +410,24 @@ public final class WyilFileWriter {
 		output.write_uv(stringCache.get(md.name()));
 		output.write_uv(generateModifiers(md.modifiers()));
 		output.write_uv(typeCache.get(md.type()));
-		output.write_uv(md.cases().size());
+		
+		output.pad_u8(); // pad out to next byte boundary
+		
+		int bodyCount = md.body() == null ? 0 : 1;
 
-		for(WyilFile.Case c : md.cases()) {
-			writeBlock(BLOCK_Case,c,output);
-		}
-
-		// TODO: write annotations
-		output.close();
-		return bytes.toByteArray();
-	}
-
-	private byte[] generateFunctionOrMethodCaseBlock(WyilFile.Case c) throws IOException {
-		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-		BinaryOutputStream output = new BinaryOutputStream(bytes);
-
-		int bodyCount = c.body() == null ? 0 : 1;
-
-		output.write_uv(c.precondition().size() + c.postcondition().size() + bodyCount);
-		for(CodeBlock requires : c.precondition()) {
+		output.write_uv(md.precondition().size() + md.postcondition().size() + bodyCount);
+		
+		for(CodeBlock requires : md.precondition()) {
 			writeBlock(BLOCK_Precondition,requires,output);
 		}
-		for(CodeBlock ensures : c.postcondition()) {
+		for(CodeBlock ensures : md.postcondition()) {
 			writeBlock(BLOCK_Postcondition,ensures,output);
 		}
-		if(c.body() != null) {
-			writeBlock(BLOCK_Body,c.body(),output);
+		if(md.body() != null) {
+			writeBlock(BLOCK_Body,md.body(),output);
 		}
 		// TODO: write annotations
-
+		
 		output.close();
 		return bytes.toByteArray();
 	}
@@ -1010,11 +996,9 @@ public final class WyilFileWriter {
 	private void buildPools(WyilFile.FunctionOrMethod declaration) {
 		addStringItem(declaration.name());
 		addTypeItem(declaration.type());
-		for(WyilFile.Case c : declaration.cases()) {
-			buildPools(c.precondition());
-			buildPools(c.body());
-			buildPools(c.postcondition());
-		}
+		buildPools(declaration.precondition());
+		buildPools(declaration.body());
+		buildPools(declaration.postcondition());
 	}
 
 	private void buildPools(List<AttributedCodeBlock> blocks) {
@@ -1295,7 +1279,6 @@ public final class WyilFileWriter {
 	public final static int BLOCK_Constant = 11;
 	public final static int BLOCK_Function = 12;
 	public final static int BLOCK_Method = 13;
-	public final static int BLOCK_Case = 14;
 	// ... (anticipating some others here)
 	public final static int BLOCK_Body = 20;
 	public final static int BLOCK_Precondition = 21;

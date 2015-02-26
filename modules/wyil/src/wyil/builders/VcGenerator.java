@@ -85,10 +85,8 @@ public class VcGenerator {
 			} else if (b instanceof WyilFile.Type) {
 				transform((WyilFile.Type) b, wyilFile);
 			} else if (b instanceof WyilFile.FunctionOrMethod) {
-				WyilFile.FunctionOrMethod method = (WyilFile.FunctionOrMethod) b;
-				for (WyilFile.Case c : method.cases()) {
-					transform(c, method, wyilFile);
-				}
+				WyilFile.FunctionOrMethod method = (WyilFile.FunctionOrMethod) b;				
+				transform(method, wyilFile);				
 			}
 		}
 
@@ -154,15 +152,14 @@ public class VcGenerator {
 				pattern, invariant, toWycsAttributes(typeDecl.attributes())));
 	}
 
-	protected void transform(WyilFile.Case methodCase,
-			WyilFile.FunctionOrMethod method, WyilFile wyilFile) {
+	protected void transform(WyilFile.FunctionOrMethod method, WyilFile wyilFile) {
 
 		this.method = method;
 
 		Type.FunctionOrMethod fmm = method.type();
-		AttributedCodeBlock body = methodCase.body();
-		List<AttributedCodeBlock> precondition = methodCase.precondition();
-		List<AttributedCodeBlock> postcondition = methodCase.postcondition();
+		AttributedCodeBlock body = method.body();
+		List<AttributedCodeBlock> precondition = method.precondition();
+		List<AttributedCodeBlock> postcondition = method.postcondition();
 		VariableDeclarations rds = method.attribute(VariableDeclarations.class);
 		// First, translate pre- and post-conditions into macro blocks. These
 		// can then be used in various places to assume or enforce pre /
@@ -2078,13 +2075,8 @@ public class VcGenerator {
 		}
 		WyilFile m = e.read();
 		WyilFile.FunctionOrMethod method = m.functionOrMethod(name.name(), fun);
-
-		for (WyilFile.Case c : method.cases()) {
-			// FIXME: this is a hack for now
-			return c.precondition();
-		}
-
-		return null;
+	
+		return method.precondition();
 	}
 
 	/**
@@ -2116,14 +2108,7 @@ public class VcGenerator {
 		}
 		WyilFile m = e.read();
 		WyilFile.FunctionOrMethod method = m.functionOrMethod(name.name(), fun);
-
-		for (WyilFile.Case c : method.cases()) {
-			// FIXME: this is a hack for now
-			if (c.postcondition() != null && c.postcondition().size() > 0) {
-				return c.postcondition();
-			}
-		}
-		return Collections.EMPTY_LIST;
+		return method.postcondition();
 	}
 
 	/**
