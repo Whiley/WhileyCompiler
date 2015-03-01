@@ -67,17 +67,15 @@ public class ModuleCheck implements Transform<WyilFile> {
 	public void apply(WyilFile module) {
 		filename = module.filename();
 
-		for(WyilFile.FunctionOrMethod method : module.functionOrMethods()) {
+		for (WyilFile.FunctionOrMethod method : module.functionOrMethods()) {
 			check(method);
 		}
 	}
 
-	public void check(WyilFile.FunctionOrMethod method) {
-		for (WyilFile.Case c : method.cases()) {
-			if(method.isFunction()) {
-				checkFunctionPure(c);
-			}
-		}
+	public void check(WyilFile.FunctionOrMethod method) {		
+		if(method.isFunction()) {
+			checkFunctionPure(method);
+		}		
 	}
 
 	private static class Handler {
@@ -127,7 +125,7 @@ public class ModuleCheck implements Transform<WyilFile> {
 	 *
 	 * @param c
 	 */
-	protected void checkFunctionPure(WyilFile.Case c) {
+	protected void checkFunctionPure(WyilFile.FunctionOrMethod c) {
 		AttributedCodeBlock block = c.body();
 		checkFunctionPure(null,block,block);
 	}

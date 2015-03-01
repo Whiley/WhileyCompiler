@@ -88,9 +88,7 @@ public class CoercionCheck implements Transform<WyilFile> {
 	}
 
 	public void check(WyilFile.FunctionOrMethod method) {
-		for (WyilFile.Case c : method.cases()) {
-			check(null, c.body(), c.body(), method);
-		}
+		check(null, method.body(), method.body(), method);
 	}
 
 	protected void check(CodeBlock.Index index, CodeBlock block, AttributedCodeBlock root, WyilFile.FunctionOrMethod method) {

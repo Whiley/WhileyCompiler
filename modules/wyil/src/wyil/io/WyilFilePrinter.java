@@ -139,15 +139,9 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 	}
 
 	private void write(FunctionOrMethod method, PrintWriter out) {
-		for (Case c : method.cases()) {
-			write(c, method, out);
-		}
-	}
-
-	private void write(Case mcase, FunctionOrMethod method, PrintWriter out) {
-		writeModifiers(method.modifiers(),out);
+		writeModifiers(method.modifiers(), out);
 		Type.FunctionOrMethod ft = method.type();
-		if(ft instanceof Type.Function) {
+		if (ft instanceof Type.Function) {
 			out.print("function ");
 		} else {
 			out.print("method ");
@@ -155,34 +149,33 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		List<Type> pts = ft.params();
 
 		out.print(method.name() + "(");
-		for(int i=0;i!=ft.params().size();++i) {
-			if(i!=0) {
+		for (int i = 0; i != ft.params().size(); ++i) {
+			if (i != 0) {
 				out.print(", ");
 			}
 			out.print(pts.get(i));
 		}
 		out.print(")");
 
-		if(ft.ret() instanceof Type.Void) {
+		if (ft.ret() instanceof Type.Void) {
 			out.println(":");
 		} else {
 			out.println(" -> " + ft.ret() + ":");
 		}
 
-		
-		for(AttributedCodeBlock precondition : mcase.precondition()) {
+		for (AttributedCodeBlock precondition : method.precondition()) {
 			out.println("requires:");
-			write(0,precondition,out);
+			write(0, precondition, out);
 		}
 
-		for(AttributedCodeBlock postcondition : mcase.postcondition()) {
+		for (AttributedCodeBlock postcondition : method.postcondition()) {
 			out.println("ensures:");
-			write(0,postcondition,out);
+			write(0, postcondition, out);
 		}
 
-		if(mcase.body() != null) {
+		if (method.body() != null) {
 			out.println("body: ");
-			write(0,mcase.body(),out);
+			write(0, method.body(), out);
 		}
 	}
 

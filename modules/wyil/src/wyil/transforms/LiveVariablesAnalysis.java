@@ -134,7 +134,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	public Env lastStore() { return EMPTY_ENV; }
 
 	@Override
-	public WyilFile.Case propagate(WyilFile.Case mcase) {
+	public WyilFile.FunctionOrMethod propagate(WyilFile.FunctionOrMethod mcase) {
 
 		ArrayList<AttributedCodeBlock> requires = new ArrayList<AttributedCodeBlock>(
 				mcase.precondition());
@@ -153,7 +153,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			body = propagate(body);
 		}
 
-		return new WyilFile.Case(body, requires, ensures, mcase.attributes());
+		return new WyilFile.FunctionOrMethod(method.modifiers(), method.name(),
+				method.type(), body, requires, ensures, mcase.attributes());
 	}
 
 	public AttributedCodeBlock propagate(AttributedCodeBlock body) {

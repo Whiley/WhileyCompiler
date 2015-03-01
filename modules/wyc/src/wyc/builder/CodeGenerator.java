@@ -306,20 +306,17 @@ public final class CodeGenerator {
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
 		body.add(Codes.Return(), attributes(fd));
-
-		List<WyilFile.Case> ncases = new ArrayList<WyilFile.Case>();
-
-		ncases.add(new WyilFile.Case(body, requires, ensures));
+				
 		WyilFile.FunctionOrMethod declaration;
 		
 		if (fd instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
 			declaration = new WyilFile.FunctionOrMethod(fd
-					.modifiers(), fd.name(), f.resolvedType.nominal(), ncases);
+					.modifiers(), fd.name(), f.resolvedType.nominal(), body, requires, ensures);
 		} else {
 			WhileyFile.Method md = (WhileyFile.Method) fd;
 			declaration = new WyilFile.FunctionOrMethod(fd
-					.modifiers(), fd.name(), md.resolvedType.nominal(), ncases);
+					.modifiers(), fd.name(), md.resolvedType.nominal(), body, requires, ensures);
 		}
 
 		// Construct register declarations for this function or method. The
@@ -1954,11 +1951,9 @@ public final class CodeGenerator {
 		String name = "$lambda" + id;
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.PRIVATE);
-		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
-		cases.add(new WyilFile.Case(body, Collections.EMPTY_LIST,
-				Collections.EMPTY_LIST, attributes(expr)));
 		WyilFile.FunctionOrMethod lambda = new WyilFile.FunctionOrMethod(
-				modifiers, name, cfm, cases, attributes(expr));
+				modifiers, name, cfm, body, Collections.EMPTY_LIST,
+				Collections.EMPTY_LIST, attributes(expr));
 		lambda.attributes().add(new VariableDeclarations(declarations));
 		lambdas.add(lambda);
 		Path.ID mid = context.file().module;

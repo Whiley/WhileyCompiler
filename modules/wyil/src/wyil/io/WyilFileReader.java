@@ -32,6 +32,7 @@ import java.util.*;
 
 import wycc.lang.NameID;
 import wycc.util.Pair;
+import wycc.util.Triple;
 import wyfs.io.BinaryInputStream;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -370,60 +371,36 @@ public final class WyilFileReader {
 
 	private WyilFile.FunctionOrMethod readFunctionBlock()
 			throws IOException {
-		int nameIdx = input.read_uv();
-		// System.out.println("=== FUNCTION " + stringPool.get(nameIdx));
+		int nameIdx = input.read_uv();		
 		int modifiers = input.read_uv();
 		int typeIdx = input.read_uv();
-		int numCases = input.read_uv();
 
 		input.pad_u8();
 
 		Type.Function type = (Type.Function) typePool[typeIdx];
-		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
-		for (int i = 0; i != numCases; ++i) {
-			int kind = input.read_uv(); // unsued
-			int size = input.read_uv();
-			input.pad_u8();
 
-			switch (kind) {
-			case WyilFileWriter.BLOCK_Case:
-				cases.add(readFunctionOrMethodCase(type));
-				break;
-			default:
-				throw new RuntimeException("Unknown function block encountered");
-			}
-		}
-		return new WyilFile.FunctionOrMethod(
-				generateModifiers(modifiers), stringPool[nameIdx], type, cases);
+		Triple<List<AttributedCodeBlock>, List<AttributedCodeBlock>, AttributedCodeBlock> bodies = readFunctionOrMethodBlocks(type);
+
+		return new WyilFile.FunctionOrMethod(generateModifiers(modifiers),
+				stringPool[nameIdx], type, bodies.third(), bodies.first(),
+				bodies.second());
 	}
 
-	private WyilFile.FunctionOrMethod readMethodBlock()
-			throws IOException {
+	private WyilFile.FunctionOrMethod readMethodBlock() throws IOException {		
 		int nameIdx = input.read_uv();
-		// System.out.println("=== METHOD " + stringPool.get(nameIdx));
+		// System.out.println("=== METHOD " + stringPool[nameIdx]);
 		int modifiers = input.read_uv();
 		int typeIdx = input.read_uv();
-		int numCases = input.read_uv();
 
 		input.pad_u8();
 
 		Type.Method type = (Type.Method) typePool[typeIdx];
-		ArrayList<WyilFile.Case> cases = new ArrayList<WyilFile.Case>();
-		for (int i = 0; i != numCases; ++i) {
-			int kind = input.read_uv(); // unsued
-			int size = input.read_uv();
-			input.pad_u8();
 
-			switch (kind) {
-			case WyilFileWriter.BLOCK_Case:
-				cases.add(readFunctionOrMethodCase(type));
-				break;
-			default:
-				throw new RuntimeException("Unknown method block encountered");
-			}
-		}
-		return new WyilFile.FunctionOrMethod(
-				generateModifiers(modifiers), stringPool[nameIdx], type, cases);
+		Triple<List<AttributedCodeBlock>, List<AttributedCodeBlock>, AttributedCodeBlock> bodies = readFunctionOrMethodBlocks(type);
+
+		return new WyilFile.FunctionOrMethod(generateModifiers(modifiers),
+				stringPool[nameIdx], type, bodies.third(), bodies.first(),
+				bodies.second());
 	}
 
 	private Collection<Modifier> generateModifiers(int modifiers) {
@@ -457,8 +434,8 @@ public final class WyilFileReader {
 		return mods;
 	}
 
-	private WyilFile.Case readFunctionOrMethodCase(Type.FunctionOrMethod type)
-			throws IOException {
+	private Triple<List<AttributedCodeBlock>, List<AttributedCodeBlock>, AttributedCodeBlock> readFunctionOrMethodBlocks(
+			Type.FunctionOrMethod type) throws IOException {
 		ArrayList<AttributedCodeBlock> requires = new ArrayList<>();
 		ArrayList<AttributedCodeBlock> ensures = new ArrayList<>();
 		AttributedCodeBlock body = null;
@@ -487,8 +464,7 @@ public final class WyilFileReader {
 			}
 		}
 
-		return new WyilFile.Case(body, requires, ensures,
-				Collections.EMPTY_LIST);
+		return new Triple(requires, ensures, body);
 	}
 
 	private AttributedCodeBlock readAttributedCodeBlock(int numInputs)

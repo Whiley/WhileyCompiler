@@ -511,32 +511,36 @@ public final class WyilFile implements CompilationUnit {
 	public static final class FunctionOrMethod extends
 			Declaration {
 		private wyil.lang.Type.FunctionOrMethod type;
-		private List<Case> cases;
-
-		public FunctionOrMethod(Collection<Modifier> modifiers,
-				String name, wyil.lang.Type.FunctionOrMethod type,
-				Collection<Case> cases, Attribute... attributes) {
+		private final ArrayList<AttributedCodeBlock> precondition;
+		private final ArrayList<AttributedCodeBlock> postcondition;
+		private final AttributedCodeBlock body;
+		
+		public FunctionOrMethod(Collection<Modifier> modifiers, String name,
+				wyil.lang.Type.FunctionOrMethod type, AttributedCodeBlock body,
+				List<AttributedCodeBlock> precondition,
+				List<AttributedCodeBlock> postcondition,
+				Attribute... attributes) {
 			super(name, modifiers, attributes);
 			this.type = type;
-			this.cases = Collections
-					.unmodifiableList(new ArrayList<Case>(cases));
+			this.body = body;
+			this.precondition = new ArrayList<AttributedCodeBlock>(precondition);
+			this.postcondition = new ArrayList<AttributedCodeBlock>(postcondition);
 		}
 
-		public FunctionOrMethod(Collection<Modifier> modifiers,
-				String name, wyil.lang.Type.FunctionOrMethod type,
-				Collection<Case> cases, Collection<Attribute> attributes) {
+		public FunctionOrMethod(Collection<Modifier> modifiers, String name,
+				wyil.lang.Type.FunctionOrMethod type, AttributedCodeBlock body,
+				List<AttributedCodeBlock> precondition,
+				List<AttributedCodeBlock> postcondition,
+				Collection<Attribute> attributes) {
 			super(name, modifiers, attributes);
 			this.type = type;
-			this.cases = Collections
-					.unmodifiableList(new ArrayList<Case>(cases));
+			this.body = body;
+			this.precondition = new ArrayList<AttributedCodeBlock>(precondition);
+			this.postcondition = new ArrayList<AttributedCodeBlock>(postcondition);
 		}
 
 		public wyil.lang.Type.FunctionOrMethod type() {
 			return type;
-		}
-
-		public List<Case> cases() {
-			return cases;
 		}
 
 		public boolean isFunction() {
@@ -546,34 +550,7 @@ public final class WyilFile implements CompilationUnit {
 		public boolean isMethod() {
 			return type instanceof wyil.lang.Type.Method;
 		}
-	}
-
-	public static final class Case extends Block {
-		private final ArrayList<AttributedCodeBlock> precondition;
-		private final ArrayList<AttributedCodeBlock> postcondition;
-		private final AttributedCodeBlock body;
-		//private final ArrayList<String> locals;
-
-		public Case(AttributedCodeBlock body,
-				List<AttributedCodeBlock> precondition,
-				List<AttributedCodeBlock> postcondition,
-				Attribute... attributes) {
-			super(attributes);
-			this.body = body;
-			this.precondition = new ArrayList<AttributedCodeBlock>(precondition);
-			this.postcondition = new ArrayList<AttributedCodeBlock>(postcondition);
-		}
-
-		public Case(AttributedCodeBlock body,
-				List<AttributedCodeBlock> precondition,
-				List<AttributedCodeBlock> postcondition,
-				Collection<Attribute> attributes) {
-			super(attributes);
-			this.body = body;
-			this.precondition = new ArrayList<AttributedCodeBlock>(precondition);
-			this.postcondition = new ArrayList<AttributedCodeBlock>(postcondition);
-		}
-
+		
 		public AttributedCodeBlock body() {
 			return body;
 		}

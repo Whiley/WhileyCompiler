@@ -419,53 +419,29 @@ public class Wyil2JavaBuilder implements Builder {
 
 	private List<ClassFile.Method> build(WyilFile.FunctionOrMethod method) {
 		ArrayList<ClassFile.Method> methods = new ArrayList<ClassFile.Method>();
-		int num = 1;
-		for (WyilFile.Case c : method.cases()) {
-			if (method.hasModifier(wyil.lang.Modifier.NATIVE)) {
-				methods.add(buildNativeOrExport(c, method, constants));
-			} else {
-				if (method.hasModifier(wyil.lang.Modifier.EXPORT)) {
-					methods.add(buildNativeOrExport(c, method, constants));
-				}
-				methods.add(build(num++, c, method));
+		
+		// Firstly, check to see whether or not this is a native method. Native
+		// methods are treated specially and redirect to the same-named methods,
+		// but with "$native" appended. 
+		if (method.hasModifier(wyil.lang.Modifier.NATIVE)) {
+			methods.add(buildNativeOrExport(method, constants));
+		} else {
+			// Secondly, check to whether or not this is an exported method.
+			// Exported methods generate a single stub without name mangling
+			// that redirects to the actual method. This means that the actual
+			// method can be called as usual from within Whiley code, whilst
+			// external calls are correctly redirected.
+			if (method.hasModifier(wyil.lang.Modifier.EXPORT)) {
+				methods.add(buildNativeOrExport(method, constants));
 			}
+			// Finally, translate the method and its body.
+			methods.add(translate(method));
 		}
+		
 		return methods;
 	}
 
-	private ClassFile.Method build(int caseNum, WyilFile.Case mcase,
-			WyilFile.FunctionOrMethod method) {
-
-		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
-		if (method.hasModifier(wyil.lang.Modifier.PUBLIC)) {
-			modifiers.add(Modifier.ACC_PUBLIC);
-		}
-		modifiers.add(Modifier.ACC_STATIC);
-		JvmType.Function ft = convertFunType(method.type());
-
-		String name = nameMangle(method.name(), method.type());
-
-		/*
-		 * need to put this back somehow? if(method.cases().size() > 1) { name =
-		 * name + "$" + caseNum; }
-		 */
-
-		ClassFile.Method cm = new ClassFile.Method(name, ft, modifiers);
-
-		lineNumbers = new ArrayList<LineNumberTable.Entry>();
-		ArrayList<Bytecode> codes = translate(mcase);
-		jasm.attributes.Code code = new jasm.attributes.Code(codes,
-				Collections.EMPTY_LIST, cm);
-		if (!lineNumbers.isEmpty()) {
-			code.attributes().add(new LineNumberTable(lineNumbers));
-		}
-		cm.attributes().add(code);
-
-		return cm;
-	}
-
-	private ClassFile.Method buildNativeOrExport(WyilFile.Case mcase,
-			WyilFile.FunctionOrMethod method,
+	private ClassFile.Method buildNativeOrExport(WyilFile.FunctionOrMethod method,
 			HashMap<JvmConstant, Integer> constants) {
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		if (method.hasModifier(wyil.lang.Modifier.PUBLIC)
@@ -526,11 +502,31 @@ public class Wyil2JavaBuilder implements Builder {
 		return bytecodes;
 	}
 
-	private ArrayList<Bytecode> translate(WyilFile.Case mcase) {
+	private ClassFile.Method translate(WyilFile.FunctionOrMethod method) {
+
+		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
+		if (method.hasModifier(wyil.lang.Modifier.PUBLIC)) {
+			modifiers.add(Modifier.ACC_PUBLIC);
+		}
+		modifiers.add(Modifier.ACC_STATIC);
+		JvmType.Function ft = convertFunType(method.type());
+
+		String name = nameMangle(method.name(), method.type());
+		
+		ClassFile.Method cm = new ClassFile.Method(name, ft, modifiers);
+
+		lineNumbers = new ArrayList<LineNumberTable.Entry>();
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
-		AttributedCodeBlock block = mcase.body();
+		AttributedCodeBlock block = method.body();
 		translate(block, block.numSlots(), bytecodes);
-		return bytecodes;
+		jasm.attributes.Code code = new jasm.attributes.Code(bytecodes,
+				Collections.EMPTY_LIST, cm);
+		if (!lineNumbers.isEmpty()) {
+			code.attributes().add(new LineNumberTable(lineNumbers));
+		}
+		cm.attributes().add(code);
+
+		return cm;
 	}
 
 	/**

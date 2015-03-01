@@ -129,33 +129,21 @@ public class DeadCodeElimination implements Transform<WyilFile> {
 	 * 
 	 * @param method
 	 */
-	public void transform(WyilFile.FunctionOrMethod method) {
-		for(WyilFile.Case c : method.cases()) {
-			transform(c,method);
-		}
-	}
-
-	/**
-	 * Transform any precondition and postconditions block within a given
-	 * function or method, along with its body (if it exists).
-	 * 
-	 * @param mcase
-	 * @param method
-	 */
-	public void transform(WyilFile.Case mcase, WyilFile.FunctionOrMethod method) {		
+	public void transform(WyilFile.FunctionOrMethod method) {		
+				
 		// First, process any preconditions.		
-		for(AttributedCodeBlock precondition : mcase.precondition()) {
+		for(AttributedCodeBlock precondition : method.precondition()) {
 			transform(precondition);
 		}
 		
 		// Second, process the method's body (if there is one).
-		AttributedCodeBlock body = mcase.body();
+		AttributedCodeBlock body = method.body();
 		if(body != null) {
 			transform(body);
 		}
 		
 		// Finally, process any postconditions.
-		for(AttributedCodeBlock postcondition : mcase.postcondition()) {
+		for(AttributedCodeBlock postcondition : method.postcondition()) {
 			transform(postcondition);
 		}
 	}
