@@ -35,37 +35,6 @@ import static wyil.lang.Type.*;
 
 public class Util {
 
-
-	public static String append(final String lhs, final String rhs) {
-		return lhs + rhs;
-	}
-
-	public static String append(final String lhs, final WyChar rhs) {
-		return lhs + rhs.value();
-	}
-
-	public static String append(final WyChar lhs, final String rhs) {
-		return lhs.value() + rhs;
-	}
-
-	public static BigInteger stringlength(final String lhs) {
-		return BigInteger.valueOf(lhs.length());
-	}
-
-	public static String substring(final String lhs, final BigInteger _start, final BigInteger _end) {
-		int start = _start.intValue();
-		int end = _end.intValue();
-		return lhs.substring(start,end);
-	}
-
-	public static String set(final String lhs, BigInteger index, WyChar c) {
-		int idx = index.intValue();
-		// hmmm, not exactly efficient!
-		StringBuilder sb = new StringBuilder(lhs);
-		sb.setCharAt(idx, c.value());
-		return sb.toString();
-	}
-	
 	/**
 	 * This method is used to convert the arguments supplied to main (which have
 	 * type <code>String[]</code>) into an appropriate Whiley List.
@@ -76,20 +45,7 @@ public class Util {
 	public static WyList fromStringList(String[] args) {
 		WyList r = new WyList(args.length);
 		for(int i=0;i!=args.length;++i) {
-			r.add(args[i]);
-		}
-		return r;
-	}
-
-	/**
-	 * Coerce a string into a Whiley char list.
-	 * @param str
-	 * @return
-	 */
-	public static WyList str2cl(String str) {
-		WyList r = new WyList(str.length());
-		for(int i=0;i!=str.length();++i) {
-			r.add(WyChar.valueOf(str.charAt(i)));
+			r.add(str2il(args[i]));
 		}
 		return r;
 	}
@@ -101,32 +57,6 @@ public class Util {
 	 */
 	public static WyList str2il(String str) {
 		WyList r = new WyList(str.length());
-		for(int i=0;i!=str.length();++i) {
-			r.add(BigInteger.valueOf(str.charAt(i)));
-		}
-		return r;
-	}
-
-	/**
-	 * Coerce a string into a Whiley char set.
-	 * @param str
-	 * @return
-	 */
-	public static WySet str2cs(String str) {
-		WySet r = new WySet();
-		for(int i=0;i!=str.length();++i) {
-			r.add(WyChar.valueOf(str.charAt(i)));
-		}
-		return r;
-	}
-
-	/**
-	 * Coerce a string into a Whiley int list.
-	 * @param str
-	 * @return
-	 */
-	public static WySet str2is(String str) {
-		WySet r = new WySet();
 		for(int i=0;i!=str.length();++i) {
 			r.add(BigInteger.valueOf(str.charAt(i)));
 		}
@@ -170,8 +100,6 @@ public class Util {
 				return obj instanceof WyBool;
 			case K_BYTE:
 				return obj instanceof WyByte;
-			case K_CHAR:
-				return obj instanceof WyChar;
 			case K_INT:
 				return obj instanceof BigInteger;
 			case K_RATIONAL:
@@ -520,8 +448,6 @@ public class Util {
 	public static int compare(Object o1, Object o2) {
 		if(o1 == null) {
 			return o2 == null ? 0 : -1;
-		} else if(o1 instanceof WyChar) {
-			return compare((WyChar)o1,o2);
 		} else if(o1 instanceof BigInteger) {
 			return compare((BigInteger)o1,o2);
 		} else if(o1 instanceof WyRat) {
@@ -538,17 +464,6 @@ public class Util {
 			return compare((WyRecord)o1,o2);
 		} else {
 			throw new IllegalArgumentException("Invalid object passed to comparator: " + o1);
-		}
-	}
-
-	public static int compare(WyChar o1, Object o2) {
-		if(o2 == null) {
-			return 1;
-		} else if(o2 instanceof WyChar) {
-			WyChar c2 = (WyChar) o2;
-			return o1.compareTo(c2);
-		} else {
-			return -1;
 		}
 	}
 

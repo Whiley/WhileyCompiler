@@ -1736,9 +1736,6 @@ public final class CodeGenerator {
 			} else if (expression instanceof Expr.SubList) {
 				return generate((Expr.SubList) expression, environment, codes,
 						context);
-			} else if (expression instanceof Expr.SubString) {
-				return generate((Expr.SubString) expression, environment,
-						codes, context);
 			} else if (expression instanceof Expr.BinOp) {
 				return generate((Expr.BinOp) expression, environment, codes,
 						context);
@@ -2111,30 +2108,7 @@ public final class CodeGenerator {
 				codes.add(Codes.ListOperator((Type.EffectiveList) result,
 						target, leftOperand, rightOperand,
 						Codes.ListOperatorKind.APPEND), attributes(v));
-				break;
-
-			case STRINGAPPEND:
-				Type lhs = v.lhs.result().raw();
-				Type rhs = v.rhs.result().raw();
-				Codes.StringOperatorKind op;
-				if (lhs == Type.T_STRING && rhs == Type.T_STRING) {
-					op = Codes.StringOperatorKind.APPEND;
-				} else if (lhs == Type.T_STRING
-						&& Type.isSubtype(Type.T_CHAR, rhs)) {
-					op = Codes.StringOperatorKind.LEFT_APPEND;
-				} else if (rhs == Type.T_STRING
-						&& Type.isSubtype(Type.T_CHAR, lhs)) {
-					op = Codes.StringOperatorKind.RIGHT_APPEND;
-				} else {
-					// this indicates that one operand must be explicitly
-					// converted
-					// into a string.
-					op = Codes.StringOperatorKind.APPEND;
-				}
-				codes.add(Codes.StringOperator(target, leftOperand,
-						rightOperand, op), attributes(v));
-				break;
-
+				break;			
 			default:
 				codes.add(Codes.BinaryOperator(result, target, leftOperand,
 						rightOperand, OP2BOP(bop, v, context)), attributes(v));
@@ -2170,18 +2144,6 @@ public final class CodeGenerator {
 		int target = environment.allocate(expr.result().raw());
 		codes.add(Codes.SubList((Type.EffectiveList) expr.type.raw(), target,
 				srcOperand, startOperand, endOperand), attributes(expr));
-		return target;
-	}
-
-	private int generate(Expr.SubString v, Environment environment,
-			AttributedCodeBlock codes, Context context) {
-		int srcOperand = generate(v.src, environment, codes, context);
-		int startOperand = generate(v.start, environment, codes, context);
-		int endOperand = generate(v.end, environment, codes, context);
-		int target = environment.allocate(v.result().raw());
-		codes.add(
-				Codes.SubString(target, srcOperand, startOperand, endOperand),
-				attributes(v));
 		return target;
 	}
 

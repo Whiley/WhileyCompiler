@@ -77,10 +77,6 @@ public function toInt(byte b) -> int:
     else:
         return r
 
-// Convert a byte into a unicode character.
-public function toChar(byte b) -> char:
-    return (char) toUnsignedInt(b)
-
 // Convert a byte array into a signed int assuming a little endian
 // form for both individual bytes, and the array as a whole
 public function toInt([byte] bytes) -> int:

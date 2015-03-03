@@ -140,18 +140,6 @@ public interface SyntacticType extends SyntacticElement {
 	}
 
 	/**
-	 * Represents a unicode character.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Char extends SyntacticElement.Impl implements NonUnion,Primitive {
-		public Char(Attribute... attributes) {
-			super(attributes);
-		}
-	}
-
-	/**
 	 * Represents the set of (unbound) integer values. Since integer types in
 	 * Whiley are unbounded, there is no equivalent to Java's
 	 * <code>MIN_VALUE</code> and <code>MAX_VALUE</code> for <code>int</code>
@@ -179,18 +167,6 @@ public interface SyntacticType extends SyntacticElement {
 		}
 
 		public Real(java.util.List<Attribute> attributes) {
-			super(attributes);
-		}
-	}
-
-	/**
-	 * The type <code>string</code> represents a string of characters
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Strung extends SyntacticElement.Impl implements NonUnion,Primitive {
-		public Strung(Attribute... attributes) {
 			super(attributes);
 		}
 	}

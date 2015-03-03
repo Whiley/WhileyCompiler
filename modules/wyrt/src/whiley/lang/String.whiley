@@ -25,62 +25,31 @@
 
 package whiley.lang
 
-import u8 from whiley.lang.Int
-import i8 from whiley.lang.Int
+// Define the notion of an ASCII character and an ASCII string
+type ASCII_char is (int x) where 0 <= x && x <= 255
+type ASCII_string is [ASCII_char]
 
-// find first index in string which matches character.  If no match,
-// then return null.
-public function indexOf(string str, char c) -> int|null:
-    int i = 0
-    while i < |str|:
-        if str[i] == c:
-            return i
-        i = i + 1
-    return null
+public function isUpperCase(ASCII_char c) -> bool:
+    return 'A' <= c && c <= 'Z'
 
-public function indexOf(string str, char c, int start) -> int|null:
-    //
-    int i = start
-    while i < |str|:
-        if str[i] == c:
-            return i
-        i = i + 1
-    return null
+public function isLowerCase(ASCII_char c) -> bool:
+    return 'a' <= c && c <= 'z'
 
-// find last index in string which matches character.  If no match,
-// then return null.
-public function lastIndexOf(string str, char c) -> int|null:
-    //
-    int i = |str|
-    while i > 0:
-        i = i - 1
-        if str[i] == c:
-            return i
-    return null
+public function isLetter(ASCII_char c) -> bool:
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
 
-// replace all occurrences of "old" with "new" in string "str".
-public function replace(string str, char old, char n) -> string:
-    //
-    int i = 0
-    while i < |str|:
-        if str[i] == old:
-            str[i] = n
-        i = i + 1
-    return str
+public function isDigit(ASCII_char c) -> bool:
+    return '0' <= c && c <= '9'
+
+public function isWhiteSpace(ASCII_char c) -> bool:
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r'
 
 // Convert a byte stream into a string using the standard ASCII
 // encoding.
-public function fromASCII([byte] data) -> string:
+public function fromASCII([byte] data) -> ASCII_string:
     string r = ""
     for b in data:
-        r = r ++ Byte.toChar(b)
+        r = r ++ [Byte.toInt(b)]
     return r
 
-// FIXME: this method is completely broken!
-public function toUTF8(string s) -> [byte]:
-    [byte] r = []
-    for c in s:
-        // the following line is fatally flawed!
-        r = r ++ [Int.toUnsignedByte((int) c)]
-    return r
 

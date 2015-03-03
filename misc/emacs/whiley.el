@@ -38,7 +38,7 @@ For detail, see `comment-dwim'."
     "Whiley keywords.")
 
 (defvar whiley-types
-  '("real" "int" "bool" "void" "string" "char" "void" "ref")
+  '("real" "int" "bool" "void" "void" "ref")
   "Whiley types.")
 
 (defvar whiley-keywords-regexp (regexp-opt whiley-keywords 'words))

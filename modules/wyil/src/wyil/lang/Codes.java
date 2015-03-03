@@ -412,22 +412,6 @@ public abstract class Codes {
 				operation);
 	}
 
-	public static StringOperator StringOperator(int target, int leftOperand,
-			int rightOperand, StringOperatorKind operation) {
-		return new StringOperator(target, leftOperand, rightOperand,
-				operation);
-	}
-
-	public static SubString SubString(int target, int sourceOperand,
-			int leftOperand, int rightOperand) {
-		int[] operands = new int[] { sourceOperand, leftOperand, rightOperand };
-		return new SubString(target, operands);
-	}
-
-	private static SubString SubString(int target, int[] operands) {
-		return new SubString(target, operands);
-	}
-
 	/**
 	 * Construct a <code>switch</code> bytecode which pops a value off the
 	 * stack, and switches to a given label based on it.
@@ -911,10 +895,10 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Debug extends AbstractUnaryOp<Type.Strung> {
+	public static final class Debug extends AbstractUnaryOp<Type> {
 
 		private Debug(int operand) {
-			super(Type.T_STRING, operand);
+			super(Type.List(Type.T_INT,false), operand);
 		}
 
 		public int opcode() {
@@ -2454,21 +2438,6 @@ public abstract class Codes {
 	}
 
 	/**
-	 * An LVal with string type.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class StringLVal extends LVal<Type.EffectiveIndexible> {
-		public final int indexOperand;
-
-		public StringLVal(int indexOperand) {
-			super(Type.T_STRING);
-			this.indexOperand = indexOperand;
-		}
-	}
-
-	/**
 	 * An LVal with record type.
 	 *
 	 * @author David J. Pearce
@@ -2505,10 +2474,7 @@ public abstract class Codes {
 		public LVal next() {
 			Type raw = iter;
 			index--;
-			if (Type.isSubtype(Type.T_STRING, iter)) {
-				iter = Type.T_CHAR;
-				return new StringLVal(operands[operandIndex++]);
-			} else if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
+			if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
 				Type.Reference proc = Type.effectiveReference(iter);
 				iter = proc.element();
 				return new ReferenceLVal(proc);
@@ -2665,9 +2631,7 @@ public abstract class Codes {
 
 			int fieldIndex = 0;
 			for (int i = 0; i != level(); ++i) {
-				if (Type.isSubtype(Type.T_STRING, iter)) {
-					iter = Type.T_CHAR;
-				} else if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
+				if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
 					Type.Reference proc = Type.effectiveReference(iter);
 					iter = proc.element();
 				} else if (iter instanceof Type.EffectiveList) {
@@ -2709,9 +2673,6 @@ public abstract class Codes {
 			for (LVal lv : this) {
 				if (lv instanceof ListLVal) {
 					ListLVal l = (ListLVal) lv;
-					r = r + "[%" + l.indexOperand + "]";
-				} else if (lv instanceof StringLVal) {
-					StringLVal l = (StringLVal) lv;
 					r = r + "[%" + l.indexOperand + "]";
 				} else if (lv instanceof MapLVal) {
 					MapLVal l = (MapLVal) lv;
@@ -3234,121 +3195,7 @@ public abstract class Codes {
 			this.offset = offset;
 		}
 	}
-
-	/**
-	 * <p>
-	 * A binary operation which reads two string values from the operand
-	 * registers, performs an operation (append) on them and writes the result
-	 * to the target register. The binary set operators are:
-	 * </p>
-	 * <ul>
-	 * <li><i>append</i>. Both operands must be have string type.</li>
-	 * <li><i>left append</i>. The left operand must have string type, whilst
-	 * the right operand has char type.</li>
-	 * <li><i>right append</i>. The right operand must have string type, whilst
-	 * the left operand has char type.</li>
-	 * </ul>
-	 * For example, the following Whiley code:
-	 *
-	 * <pre>
-	 * function f(string xs, string ys) -> string:
-	 *     return xs ++ ys
-	 *
-	 * function g(string xs, char y) -> string:
-	 *     return xs ++ y
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f(string xs, string ys) -> string:
-	 * body:
-	 *     strappend %2 = %0, %2    : string
-	 *     return %2                : string
-	 *
-	 * function g(string xs, char y) -> string:
-	 * body:
-	 *     strappend_l %2 = %0, %1  : string
-	 *     return %2                : string
-	 * </pre>
-	 *
-	 * Here, we see that the purpose of the <i>left-</i> and <i>right-</i>
-	 * operations is to avoid creating a temporary string in the common case of
-	 * a single char being appended.
-	 *
-	 * @author David J. Pearce
-	 */
-	public static final class StringOperator extends
-			AbstractBinaryAssignable<Type.Strung> {
-		public final StringOperatorKind kind;
-
-		private StringOperator(int target, int leftOperand, int rightOperand,
-				StringOperatorKind operation) {
-			super(Type.T_STRING, target, leftOperand, rightOperand);
-			if (operation == null) {
-				throw new IllegalArgumentException(
-						"StringBinOp operation cannot be null");
-			}
-			this.kind = operation;
-		}
-
-		@Override
-		public int opcode() {
-			return OPCODE_sappend + kind.offset;
-		}
-
-		protected Code.Unit clone(int nTarget, int[] nOperands) {
-			return StringOperator(nTarget, nOperands[0], nOperands[1], kind);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof StringOperator) {
-				StringOperator setop = (StringOperator) o;
-				return kind.equals(setop.kind) && super.equals(o);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return kind + " %" + target() + " = %" + operand(0) + ", %"
-					+ operand(1) + " : " + type();
-		}
-	}
-
-	/**
-	 * Reads the string value from a source operand register, and the integer
-	 * values from two index operand registers, computes the substring and
-	 * writes the result back to a target register.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class SubString extends AbstractNaryAssignable {
-
-		private SubString(int target, int[] operands) {
-			super(Type.T_STRING, target, operands);
-		}
-
-		@Override
-		public int opcode() {
-			return OPCODE_substring;
-		}
-
-		@Override
-		public final Code.Unit clone(int nTarget, int[] nOperands) {
-			return SubString(nTarget, nOperands);
-		}
-
-		public boolean equals(Object o) {
-			return o instanceof SubString && super.equals(o);
-		}
-
-		public String toString() {
-			return "substr %" + target() + " = %" + operands()[0] + ", %"
-					+ operands()[1] + ", %" + operands()[2] + " : " + type();
-		}
-	}
-
+	
 	/**
 	 * Performs a multi-way branch based on the value contained in the operand
 	 * register. A <i>dispatch table</i> is provided which maps individual

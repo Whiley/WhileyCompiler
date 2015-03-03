@@ -67,3 +67,44 @@ public function reverse([byte] list) -> [byte]:
 public function reverse([int] list) -> [int]:
     return list[|list|..0]
 
+// find first index in list which matches character.  If no match,
+// then return null.
+public function indexOf([int] items, int c) -> int|null:
+    int i = 0
+    while i < |str|:
+        if items[i] == c:
+            return i
+        i = i + 1
+    return null
+
+public function indexOf([int] items, int c, int start) -> int|null:
+    //
+    int i = start
+    while i < |str|:
+        if items[i] == c:
+            return i
+        i = i + 1
+    return null
+
+// find last index in list which matches character.  If no match,
+// then return null.
+public function lastIndexOf([int] items, int c) -> int|null:
+    //
+    int i = |str|
+    while i > 0:
+        i = i - 1
+        if items[i] == c:
+            return i
+    return null
+
+// replace all occurrences of "old" with "new" in list "items".
+public function replace([int] items, int old, int n) -> [int]:
+    //
+    int i = 0
+    while i < |str|:
+        if items[i] == old:
+            items[i] = n
+        i = i + 1
+    return items
+
+
