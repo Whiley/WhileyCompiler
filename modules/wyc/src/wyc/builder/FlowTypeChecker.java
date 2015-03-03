@@ -2668,8 +2668,7 @@ public class FlowTypeChecker {
 							WhileyFile.FunctionOrMethod.class,
 							candidateID.name())) {
 						if (d.parameters.equals(candidateType.params())) {
-							if (!d.hasModifier(Modifier.PUBLIC)
-									&& !d.hasModifier(Modifier.PROTECTED)) {
+							if (!d.hasModifier(Modifier.PUBLIC)) {
 								String msg = candidateID.module() + "." + name
 										+ parameterString(parameters)
 										+ " is not visible";
@@ -2682,8 +2681,7 @@ public class FlowTypeChecker {
 				WyilFile m = builder.getModule(candidateID.module());
 				WyilFile.FunctionOrMethod d = m.functionOrMethod(
 						candidateID.name(), candidateType.nominal());
-				if (!d.hasModifier(Modifier.PUBLIC)
-						&& !d.hasModifier(Modifier.PROTECTED)) {
+				if (!d.hasModifier(Modifier.PUBLIC)) {
 					String msg = candidateID.module() + "." + name
 							+ parameterString(parameters) + " is not visible";
 					throw new ResolveError(msg);
@@ -3585,8 +3583,7 @@ public class FlowTypeChecker {
 		if (nid.module().equals(context.file().module)) {
 			return true;
 		} else {
-			return hasModifier(nid, context, Modifier.PUBLIC)
-					|| hasModifier(nid, context, Modifier.PROTECTED);
+			return hasModifier(nid, context, Modifier.PUBLIC);
 		}
 	}
 

@@ -411,9 +411,6 @@ public final class WyilFileReader {
 		case WyilFileWriter.MODIFIER_Public:
 			mods.add(Modifier.PUBLIC);
 			break;
-		case WyilFileWriter.MODIFIER_Protected:
-			mods.add(Modifier.PROTECTED);
-			break;
 		case WyilFileWriter.MODIFIER_Private:
 			mods.add(Modifier.PRIVATE);
 			break;

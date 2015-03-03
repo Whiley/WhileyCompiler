@@ -559,7 +559,6 @@ public class WhileyFileLexer {
 			put("function", Token.Kind.Function);
 			put("import", Token.Kind.Import);
 			put("public", Token.Kind.Public);
-			put("protected", Token.Kind.Protected);
 			put("private", Token.Kind.Private);
 			put("native", Token.Kind.Native);
 			put("export", Token.Kind.Export);
@@ -771,12 +770,7 @@ public class WhileyFileLexer {
 				public String toString() {
 					return "private";
 				}
-			},
-			Protected {
-				public String toString() {
-					return "protected";
-				}
-			},
+			},			
 			Native {
 				public String toString() {
 					return "native";

@@ -934,8 +934,6 @@ public final class WyilFileWriter {
 		for(Modifier m : modifiers) {
 			if(m == Modifier.PUBLIC) {
 				mods |= MODIFIER_Public;
-			} else if(m == Modifier.PROTECTED) {
-				mods |= MODIFIER_Protected;
 			} else if(m == Modifier.PRIVATE) {
 				mods |= MODIFIER_Private;
 			} else if(m == Modifier.NATIVE) {
@@ -1312,9 +1310,8 @@ public final class WyilFileWriter {
 
 	public final static int MODIFIER_PROTECTION_MASK = 3;
 	public final static int MODIFIER_Private = 0;
-	public final static int MODIFIER_Protected = 1;
-	public final static int MODIFIER_Public = 2;
-
+	public final static int MODIFIER_Public = 1;
+	// public final static int MODIFIER_Protected = 2; // for later 	
 	// public final static int MODIFIER_Package = 3;
 	// public final static int MODIFIER_Module = 4;
 
