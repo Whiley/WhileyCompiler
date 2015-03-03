@@ -188,11 +188,10 @@ public class WhileyFileParser {
 		ArrayList<Modifier> mods = new ArrayList<Modifier>();
 		Token lookahead;
 		boolean visible = false;
-		while ((lookahead = tryAndMatch(true, Public, Protected, Private,
+		while ((lookahead = tryAndMatch(true, Public, Private,
 				Native, Export)) != null) {
 			switch(lookahead.kind) {
 			case Public:
-			case Protected:
 			case Private:
 				if(visible) {
 					syntaxError("visibility modifier already given",lookahead);
@@ -201,10 +200,6 @@ public class WhileyFileParser {
 			switch (lookahead.kind) {
 			case Public:
 				mods.add(Modifier.PUBLIC);
-				visible = true;
-				break;
-			case Protected:
-				mods.add(Modifier.PROTECTED);
 				visible = true;
 				break;
 			case Private:
