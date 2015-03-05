@@ -61,7 +61,7 @@ public final class WyTuple extends java.util.ArrayList {
 				r += ",";
 			}
 			firstTime=false;
-			r += whiley.lang.Any$native.toString(o);
+			r += whiley.lang.Any$native.toRealString(o);
 		}
 		return r + ")";
 	}

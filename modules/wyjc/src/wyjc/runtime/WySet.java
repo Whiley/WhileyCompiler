@@ -54,7 +54,7 @@ public final class WySet extends java.util.HashSet {
 				r = r + ", ";
 			}
 			firstTime=false;
-			r = r + whiley.lang.Any$native.toString(o);
+			r = r + whiley.lang.Any$native.toRealString(o);
 		}
 		return r + "}";
 	}

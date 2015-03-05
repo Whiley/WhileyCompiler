@@ -30,17 +30,23 @@ import wyjc.runtime.WyList;
 
 public class Any$native {
 	public static WyList toString(Object o) {
+		return Util.str2il(toRealString(o));
+	}
+	public static WyList toString(byte b) {
+		return Util.str2il(toRealString(b));
+	}
+	public static java.lang.String toRealString(Object o) {
 		if(o == null) {
-			return Util.str2il("null");
+			return "null";
 		} else if(o instanceof java.lang.Byte) {
 			java.lang.Byte b = (java.lang.Byte) o;
-			return toString((byte)b);
+			return toRealString((byte)b);
 		} else {
-			return Util.str2il(o.toString());
+			return o.toString();
 		}
 	}
 
-	private static WyList toString(byte b) {
+	private static java.lang.String toRealString(byte b) {
 		java.lang.String r = "b";
 		byte v = b;
 		for(int i=0;i!=8;++i) {
@@ -51,6 +57,6 @@ public class Any$native {
 			}
 			v = (byte) (v >>> 1);
 		}
-		return Util.str2il(r);
+		return r;
 	}
 }
