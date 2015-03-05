@@ -6,7 +6,7 @@ type neg is int
 
 type expr is pos | neg | [int]
 
-function f(expr e) -> string:
+function f(expr e) -> ASCII.string:
     if (e is pos) && (e > 0.0):
         return "POSITIVE: " ++ Any.toString(e)
     else:

@@ -3,7 +3,7 @@ import SyntaxError from whiley.lang.Errors
 
 type nat is (int x) where x >= 0
 
-function f(nat pos, string input) -> bool|null throws SyntaxError:
+function f(nat pos, ASCII.string input) -> bool|null:
     if pos >= |input|:
         return null
     else:

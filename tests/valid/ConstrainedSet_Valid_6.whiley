@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type posints is {int}
 
-function f(posints x) -> string:
+function f(posints x) -> ASCII.string:
     return Any.toString(x)
 
 method main(System.Console sys) -> void:

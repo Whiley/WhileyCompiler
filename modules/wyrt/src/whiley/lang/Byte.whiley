@@ -25,6 +25,7 @@
 
 package whiley.lang
 
+import string from whiley.lang.ASCII
 import uint from whiley.lang.Int
 
 // convert a byte into a string

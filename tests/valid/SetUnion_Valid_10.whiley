@@ -1,15 +1,15 @@
 import whiley.lang.System
 
-function f({int} xs, {int} ys, {int} zs) -> string:
+function f({int} xs, {int} ys, {int} zs) -> ASCII.string:
     if zs == (xs + ys):
         return Any.toString(xs)
     else:
         return "FAILED"
 
-function g({int} ys) -> string:
+function g({int} ys) -> ASCII.string:
     return f(ys, ys, ys)
 
-function h({int} ys, {int} zs) -> string:
+function h({int} ys, {int} zs) -> ASCII.string:
     return f(ys, zs, ys + zs)
 
 method main(System.Console sys) -> void:

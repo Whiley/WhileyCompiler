@@ -1,9 +1,9 @@
 import whiley.lang.System
 
-function g(int z) -> string:
+function g(int z) -> ASCII.string:
     return Any.toString(z)
 
-function f(int x) -> string:
+function f(int x) -> ASCII.string:
     int y = x + 1
     return g(y)
 

@@ -1,12 +1,12 @@
 import whiley.lang.System
 
-function f({int} xs, {int} ys) -> string:
+function f({int} xs, {int} ys) -> ASCII.string:
     if xs ⊆ ys:
         return "XS IS A SUBSET"
     else:
         return "FAILED"
 
-function g({int} xs, {int} ys) -> string:
+function g({int} xs, {int} ys) -> ASCII.string:
     return f(xs, ys)
 
 method main(System.Console sys) -> void:

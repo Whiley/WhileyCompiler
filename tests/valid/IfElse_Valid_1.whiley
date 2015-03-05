@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f(int x) -> string:
+function f(int x) -> ASCII.string:
     if x < 10:
         return "LESS THAN"
     else:

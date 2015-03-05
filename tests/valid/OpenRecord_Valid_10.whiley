@@ -1,8 +1,8 @@
 import whiley.lang.System
 
-type Attribute is {string name, ...}
+type Attribute is {ASCII.string name, ...}
 
-type CodeAttr is {int maxLocals, int maxStack, string name, [byte] data}
+type CodeAttr is {int maxLocals, int maxStack, ASCII.string name, [byte] data}
 
 function match(Attribute attr) -> bool:
     if attr is CodeAttr:

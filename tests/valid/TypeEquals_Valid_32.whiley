@@ -5,7 +5,7 @@ type expr is {int} | bool
 function g({int} input) -> {int}:
     return input + {-1}
 
-function f(expr e) -> string:
+function f(expr e) -> ASCII.string:
     if e is {int}:
         {int} t = g(e)
         return "GOT: " ++ Any.toString(t)

@@ -1,5 +1,8 @@
 import whiley.lang.System
 
+import string from whiley.lang.ASCII
+import char from whiley.lang.ASCII
+
 public function repl(char old, char n, string str) -> string:
     int i = 0
     while i < |str| where i >= 0:

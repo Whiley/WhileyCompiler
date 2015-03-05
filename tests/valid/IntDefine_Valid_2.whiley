@@ -4,7 +4,7 @@ type ir1nat is int
 
 type pir1nat is ir1nat
 
-function f(int x) -> string:
+function f(int x) -> ASCII.string:
     if x > 2:
         int y = x
         return Any.toString(y)

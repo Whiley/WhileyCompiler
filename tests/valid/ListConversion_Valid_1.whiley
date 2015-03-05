@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f([real] ls) -> string:
+function f([real] ls) -> ASCII.string:
     return Any.toString(ls)
 
 method main(System.Console sys) -> void:

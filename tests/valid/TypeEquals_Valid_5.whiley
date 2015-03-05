@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f(int | null x) -> string:
+function f(int | null x) -> ASCII.string:
     if x is null:
         return "GOT NULL"
     else:

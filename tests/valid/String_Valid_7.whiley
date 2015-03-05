@@ -1,10 +1,10 @@
 import whiley.lang.System
 
-function f(string str, int end) -> string:
+function f(ASCII.string str, int end) -> ASCII.string:
     return str[0..end]
 
 method main(System.Console sys) -> void:
-    string str = "Hello Cruel World"
+    ASCII.string str = "Hello Cruel World"
     sys.out.println(f(str, 0))
     sys.out.println(f(str, 1))
     sys.out.println(f(str, 5))

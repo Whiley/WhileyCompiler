@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type IntReal is int | real
 
-function f(IntReal y) -> string:
+function f(IntReal y) -> ASCII.string:
     return Any.toString(y)
 
 method main(System.Console sys) -> void:

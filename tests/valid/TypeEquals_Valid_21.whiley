@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type expr is {int} | bool
 
-function f(expr e) -> string:
+function f(expr e) -> ASCII.string:
     if e is {int}:
         return "GOT {INT}"
     else:

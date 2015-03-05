@@ -4,7 +4,7 @@ type test is {int x} | {int y}
 
 type src is test | int
 
-function f(src e) -> string:
+function f(src e) -> ASCII.string:
     if e is test:
         return "{int x} | {int y}"
     else:

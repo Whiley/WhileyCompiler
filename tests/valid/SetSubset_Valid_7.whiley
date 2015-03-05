@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f({int} xs, {int} ys) -> string
+function f({int} xs, {int} ys) -> ASCII.string
 requires |xs| <= |ys|:
     if xs ⊂ ys:
         return "XS IS A SUBSET"

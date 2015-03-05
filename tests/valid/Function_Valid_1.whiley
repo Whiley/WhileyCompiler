@@ -1,9 +1,9 @@
 import whiley.lang.System
 
-function f(real x) -> string:
+function f(real x) -> ASCII.string:
     return "GOT REAL"
 
-function f(int x) -> string:
+function f(int x) -> ASCII.string:
     return "GOT INT"
 
 method main(System.Console sys) -> void:

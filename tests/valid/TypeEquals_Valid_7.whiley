@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type intreal is real | int
 
-function f(intreal e) -> string:
+function f(intreal e) -> ASCII.string:
     if e is int:
         return "int"
     else:

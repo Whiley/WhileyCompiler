@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type IntList is {int op, [real] rest} | {int op, int mode}
 
-function f(IntList y) -> string:
+function f(IntList y) -> ASCII.string:
     return Any.toString(y)
 
 method main(System.Console sys) -> void:

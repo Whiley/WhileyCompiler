@@ -21,9 +21,9 @@ public method BufferInputStream([byte] buffer) -> InputStream:
     return {read: &(int x -> read(this, x)), eof: &( -> eof(this))}
 
 method main(System.Console sys) -> void:
-    [string] strings = ["hello", "cruel cruel", "world"]
+    [ASCII.string] strings = ["hello", "cruel cruel", "world"]
     for s in strings:
-        InputStream bis = BufferInputStream(String.toUTF8(s))
+        InputStream bis = BufferInputStream(ASCII.toBytes(s))
         while !bis.eof():
             [byte] bytes = bis.read(3)
-            sys.out.println("READ: " ++ String.fromASCII(bytes))
+            sys.out.println("READ: " ++ ASCII.fromBytes(bytes))

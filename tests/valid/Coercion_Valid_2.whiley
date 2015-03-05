@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f(string x) -> [int]:
+function f(ASCII.string x) -> [int]:
     return ([int]) x
 
 method main(System.Console sys) -> void:

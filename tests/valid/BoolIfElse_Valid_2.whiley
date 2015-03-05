@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f(bool b) -> string:
+function f(bool b) -> ASCII.string:
     if b:
         return "TRUE"
     else:

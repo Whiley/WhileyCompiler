@@ -4,7 +4,7 @@ type codeOp is (int x) where x in {1, 2, 3, 4}
 
 type code is {codeOp op, [int] payload}
 
-function f(codeOp x) -> string:
+function f(codeOp x) -> ASCII.string:
     code y = {op: x, payload: []}
     return Any.toString(y)
 

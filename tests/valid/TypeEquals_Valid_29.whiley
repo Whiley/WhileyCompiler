@@ -10,18 +10,18 @@ type FilePos is {int col}
 
 type ShortPos is Pos | RankPos | FilePos | null
 
-function pos2str(Pos p) -> string:
-    return "" ++ ('a' + (char) p.col) ++ ('1' + (char) p.row)
+function pos2str(Pos p) -> ASCII.string:
+    return ['a' + p.col, '1' + p.row]
 
-function shortPos2str(ShortPos p) -> string:
+function shortPos2str(ShortPos p) -> ASCII.string:
     if p is null:
         return ""
     else:
         if p is RankPos:
-            return "" ++ ('1' + (char) p.row)
+            return ['1' + p.row]
         else:
             if p is FilePos:
-                return "" ++ ('a' + (char) p.col)
+                return ['a' + p.col]
             else:
                 return pos2str(p)
 

@@ -4,7 +4,7 @@ type Expr is real | {int data, Expr lhs} | [Expr]
 
 type SubExpr is real | {int data, SubExpr lhs}
 
-function toString(Expr e) -> string:
+function toString(Expr e) -> ASCII.string:
     if e is SubExpr:
         if e is real:
             return Any.toString(e)

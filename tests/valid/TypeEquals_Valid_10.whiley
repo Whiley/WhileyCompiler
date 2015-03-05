@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type Rtypes is {int y, int x} | {int z, int x}
 
-function f(Rtypes e) -> string:
+function f(Rtypes e) -> ASCII.string:
     if e is {int y, int x}:
         return "GOT IT"
     else:

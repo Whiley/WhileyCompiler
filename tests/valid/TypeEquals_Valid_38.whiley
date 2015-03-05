@@ -4,7 +4,7 @@ type expr is [int] | int
 
 type tup is {int p, expr lhs}
 
-function f(tup t) -> string:
+function f(tup t) -> ASCII.string:
     if (t.lhs is [int]) && ((|t.lhs| > 0) && (t.lhs[0] == 0)):
         return "MATCH" ++ Any.toString(t.lhs)
     else:

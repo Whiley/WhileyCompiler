@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f(int x, real y) -> string:
+function f(int x, real y) -> ASCII.string:
     if ((real) x) == y:
         return "EQUAL"
     else:

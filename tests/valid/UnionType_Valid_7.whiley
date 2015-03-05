@@ -6,7 +6,7 @@ type msgType2 is {int op, [int] rest, int header} where op == 2
 
 type msgType is msgType1 | msgType2
 
-function f(msgType msg) -> string:
+function f(msgType msg) -> ASCII.string:
     return Any.toString(msg.op)
 
 method main(System.Console sys) -> void:

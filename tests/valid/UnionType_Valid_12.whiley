@@ -2,10 +2,10 @@ import whiley.lang.System
 
 type IntList is {int op, [real] rest} | {int op, int mode}
 
-function f(IntList y) -> string:
+function f(IntList y) -> ASCII.string:
     return Any.toString(y)
 
-function g({int op, int mode} z) -> string:
+function g({int op, int mode} z) -> ASCII.string:
     return Any.toString(z)
 
 method main(System.Console sys) -> void:

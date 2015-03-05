@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f([bool] x) -> string
+function f([bool] x) -> ASCII.string
 requires (|x| > 0) && x[0]:
     return Any.toString(x)
 

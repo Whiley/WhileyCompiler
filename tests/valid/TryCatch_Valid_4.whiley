@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-type Error is {string msg}
+type Error is {ASCII.string msg}
 
 constant PAWN is 0
 

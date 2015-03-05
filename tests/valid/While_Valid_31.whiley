@@ -1,4 +1,4 @@
-function indexOf(string items, char ch) -> (int r)
+function indexOf(ASCII.string items, ASCII.char ch) -> (int r)
 ensures r == |items| || items[r] == ch:
     //
     int i = 0
@@ -11,5 +11,5 @@ ensures r == |items| || items[r] == ch:
 
 method main(System.Console console):
     for c in "hello world":
-        console.out.println("indexOf(\"hello world\",'" ++ c ++ "') = " ++ Int.toString(indexOf("hello world",c)))
+        console.out.println("indexOf(\"hello world\",'" ++ [c] ++ "') = " ++ Any.toString(indexOf("hello world",c)))
 

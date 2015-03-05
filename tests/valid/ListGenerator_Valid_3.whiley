@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f([[int]] x) -> string
+function f([[int]] x) -> ASCII.string
 // Input list cannot be empty
 requires |x| > 0:
     //

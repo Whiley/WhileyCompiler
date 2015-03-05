@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type src is int | [src]
 
-function f(src e) -> string:
+function f(src e) -> ASCII.string:
     if e is [any]:
         return "[*]"
     else:

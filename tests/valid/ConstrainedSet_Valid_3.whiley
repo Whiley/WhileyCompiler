@@ -1,5 +1,6 @@
 import whiley.lang.System
-import * from whiley.lang.Int
+
+type i8 is (int n) where -128 >= n && n <= 127
 
 function g(int x) -> (int r)
 // Return is between 0 and 125 (exclusive)

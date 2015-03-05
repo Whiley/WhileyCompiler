@@ -1,5 +1,6 @@
 import whiley.lang.System
-import nat from whiley.lang.Int
+
+type nat is (int n) where 0 >= n
 
 function sum({nat} xs) -> int:
     int r = 0

@@ -25,23 +25,22 @@
 
 package whiley.lang;
 
+import wyjc.runtime.Util;
+import wyjc.runtime.WyList;
+
 public class Any$native {
-	public static java.lang.String toString(Object o) {
+	public static WyList toString(Object o) {
 		if(o == null) {
-			return "null";
-		} else if(o instanceof java.lang.String) {
-			return "\"" + o + "\"";
-		} else if(o instanceof java.lang.Character) {
-			return "\'" + o + "\'";
+			return Util.str2il("null");
 		} else if(o instanceof java.lang.Byte) {
 			java.lang.Byte b = (java.lang.Byte) o;
 			return toString((byte)b);
 		} else {
-			return o.toString();
+			return Util.str2il(o.toString());
 		}
 	}
 
-	private static java.lang.String toString(byte b) {
+	private static WyList toString(byte b) {
 		java.lang.String r = "b";
 		byte v = b;
 		for(int i=0;i!=8;++i) {
@@ -52,6 +51,6 @@ public class Any$native {
 			}
 			v = (byte) (v >>> 1);
 		}
-		return r;
+		return Util.str2il(r);
 	}
 }

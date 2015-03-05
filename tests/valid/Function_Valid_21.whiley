@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type fr2nat is int
 
-function f(fr2nat x) -> string:
+function f(fr2nat x) -> ASCII.string:
     return Any.toString(x)
 
 method main(System.Console sys) -> void:

@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-type Expr is {int num} | {int op, Expr rhs, Expr lhs} | {string err}
+type Expr is {int num} | {int op, Expr rhs, Expr lhs} | {ASCII.string err}
 
 function parseTerm() -> Expr:
     return parseIdentifier()

@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type intlist is int | [int]
 
-function f([intlist] l) -> string:
+function f([intlist] l) -> ASCII.string:
     return Any.toString(l)
 
 method main(System.Console sys) -> void:

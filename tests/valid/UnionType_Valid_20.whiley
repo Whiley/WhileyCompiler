@@ -12,7 +12,7 @@ type BRANCH is {branchCode op, Int.i16 offset}
 
 type byteCode is STORE | BRANCH
 
-function f(byteCode b) -> string:
+function f(byteCode b) -> ASCII.string:
     return Any.toString(b)
 
 method main(System.Console sys) -> void:

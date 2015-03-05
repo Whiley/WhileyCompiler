@@ -8,7 +8,7 @@ type msg2 is {int index}
 
 type msgType is msg1 | msg2
 
-function f(msgType m) -> string:
+function f(msgType m) -> ASCII.string:
     return Any.toString(m)
 
 method main(System.Console sys) -> void:

@@ -4,10 +4,10 @@ type msg1 is {int op, int s} where op == 1
 
 type msg2 is {int op, int s} where op == 2
 
-function f(msg1 m) -> string:
+function f(msg1 m) -> ASCII.string:
     return "MSG1"
 
-function f(msg2 m) -> string:
+function f(msg2 m) -> ASCII.string:
     return "MSG2"
 
 method main(System.Console sys) -> void:

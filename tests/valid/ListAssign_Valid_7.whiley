@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f(int i) -> string:
+function f(int i) -> ASCII.string:
     [int] arr1 = [1, 2, 64]
     [int] arr2 = arr1
     if i != |arr1|:

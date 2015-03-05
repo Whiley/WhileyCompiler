@@ -1,12 +1,12 @@
 import whiley.lang.System
 
-function reverse(string input) -> {char=>int}:
-    {char=>int} rs = {=>}
+function reverse(ASCII.string input) -> {ASCII.char=>int}:
+    {ASCII.char=>int} rs = {=>}
     for i in 0 .. |input|:
-        char c = input[i]
+        ASCII.char c = input[i]
         rs[c] = i
     return rs
 
 method main(System.Console sys) -> void:
-    {char=>int} xs = reverse("abcdefghijklmnopqrstuvwxyz")
+    {ASCII.char=>int} xs = reverse("abcdefghijklmnopqrstuvwxyz")
     sys.out.println(Any.toString(xs))

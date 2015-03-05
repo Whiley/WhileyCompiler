@@ -1,10 +1,10 @@
 import whiley.lang.System
 
-function f({int} xs, {int} ys) -> string
+function f({int} xs, {int} ys) -> ASCII.string
 requires xs ⊆ ys:
     return "XS IS A SUBSET"
 
-function g({int} xs, {int} ys) -> string
+function g({int} xs, {int} ys) -> ASCII.string
 requires xs ⊂ ys:
     return f(xs, ys)
 

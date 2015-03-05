@@ -1,21 +1,21 @@
 import whiley.lang.System
 
-type SyntaxError is {string msg}
+type SyntaxError is {ASCII.string msg}
 
-function f(int x) -> string:
-    SyntaxError|{string input} nst
+function f(int x) -> ASCII.string:
+    SyntaxError|{ASCII.string input} nst
     //
     if x > 0:
         nst = {input: "Hello World"}
     else:
         nst = syntaxError("problem")
     //
-    if nst is {string msg}:
+    if nst is {ASCII.string msg}:
         return "error"
     else:
         return nst.input
 
-function syntaxError(string errorMessage) -> SyntaxError:
+function syntaxError(ASCII.string errorMessage) -> SyntaxError:
     return {msg: errorMessage}
 
 method main(System.Console sys) -> void:

@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type realtup is {real op}
 
-function f(realtup t) -> string:
+function f(realtup t) -> ASCII.string:
     real x = t.op
     return Any.toString(t)
 

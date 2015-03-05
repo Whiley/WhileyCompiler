@@ -12,4 +12,4 @@ ensures r == |items| || items[r] == item:
 
 method main(System.Console console):
     int i = indexOf([1,2,3,4],3)
-    console.out.println("indexOf = " ++ Int.toString(i))
+    console.out.println("indexOf = " ++ Any.toString(i))

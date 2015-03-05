@@ -1,15 +1,15 @@
 import whiley.lang.System
 
-function f(int x) -> string:
+function f(int x) -> ASCII.string:
     return "F(INT)"
 
-function f(real y) -> string:
+function f(real y) -> ASCII.string:
     return "F(REAL)"
 
-function f([int] xs) -> string:
+function f([int] xs) -> ASCII.string:
     return "F([int])"
 
-function f({int} xs) -> string:
+function f({int} xs) -> ASCII.string:
     return "F({int})"
 
 method main(System.Console sys) -> void:

@@ -4,9 +4,9 @@ type Expr is real | Var | BinOp
 
 type BinOp is {Expr rhs, Expr lhs}
 
-type Var is {string id}
+type Var is {ASCII.string id}
 
-type SyntaxError is {string err}
+type SyntaxError is {ASCII.string err}
 
 type SExpr is SyntaxError | Expr
 

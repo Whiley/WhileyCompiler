@@ -4,10 +4,10 @@ type fr8nat is (int x) where x > 0
 
 type fr8neg is (int x) where x < 0
 
-function f(fr8nat y) -> string:
+function f(fr8nat y) -> ASCII.string:
     return "F(NAT)"
 
-function f(fr8neg x) -> string:
+function f(fr8neg x) -> ASCII.string:
     return "F(NEG)"
 
 method main(System.Console sys) -> void:

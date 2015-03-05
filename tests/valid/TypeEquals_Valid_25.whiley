@@ -13,7 +13,7 @@ type BOp is (int x) where x in {ADD, SUB, MUL, DIV}
 
 type BinOp is {BOp op, Expr rhs, Expr lhs}
 
-type Var is {string id}
+type Var is {ASCII.string id}
 
 type ListAccess is {Expr index, Expr src}
 

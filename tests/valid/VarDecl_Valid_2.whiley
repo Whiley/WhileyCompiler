@@ -1,10 +1,10 @@
 import whiley.lang.System
 
-function g(int z) -> string
+function g(int z) -> ASCII.string
 requires z > 1:
     return Any.toString(z)
 
-function f(int x) -> string
+function f(int x) -> ASCII.string
 requires x > 0:
     int y = x + 1
     return g(y)

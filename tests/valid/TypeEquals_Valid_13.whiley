@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type iset is {int} | int
 
-function f(iset e) -> string:
+function f(iset e) -> ASCII.string:
     if e is {int}:
         return "{int}"
     else:

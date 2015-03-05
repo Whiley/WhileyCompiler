@@ -1,9 +1,9 @@
 import whiley.lang.System
 
-function f({int} xs) -> string:
+function f({int} xs) -> ASCII.string:
     return Any.toString(xs)
 
-function g({int} ys) -> string:
+function g({int} ys) -> ASCII.string:
     return f(ys & {1, 2, 3})
 
 method main(System.Console sys) -> void:

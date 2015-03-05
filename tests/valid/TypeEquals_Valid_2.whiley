@@ -1,9 +1,9 @@
 import whiley.lang.System
 
-type expr is {int op, expr lhs} | {string err}
+type expr is {int op, expr lhs} | {ASCII.string err}
 
 function f(expr e) -> int:
-    if e is {string err}:
+    if e is {ASCII.string err}:
         return |e.err|
     else:
         return -1

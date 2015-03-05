@@ -25,8 +25,6 @@
 
 package whiley.lang
 
-import ASCII_string from String
-
 public type PrintWriter is {
     method print(any),
     method println(any)
@@ -34,5 +32,5 @@ public type PrintWriter is {
 
 public type Console is {
     PrintWriter out,
-    [ASCII_string] args
+    [ASCII.string] args
 }

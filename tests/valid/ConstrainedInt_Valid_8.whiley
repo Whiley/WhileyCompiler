@@ -6,11 +6,11 @@ type num is (int x) where x in c_num
 
 type bignum is (int x) where x in {1, 2, 3, 4, 5, 6, 7}
 
-function f(num x) -> string:
+function f(num x) -> ASCII.string:
     int y = x
     return Any.toString(y)
 
-function g({bignum} zs, int z) -> string:
+function g({bignum} zs, int z) -> ASCII.string:
     if (z in zs) && (z in c_num):
         return f(z)
     else:

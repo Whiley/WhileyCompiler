@@ -9,7 +9,7 @@ function g({fr5nat} xs) -> {fr5nat}:
             ys = ys + {y}
     return ys
 
-function f({fr5nat} x) -> string:
+function f({fr5nat} x) -> ASCII.string:
     return Any.toString(x)
 
 method main(System.Console sys) -> void:

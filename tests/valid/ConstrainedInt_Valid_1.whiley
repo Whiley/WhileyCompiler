@@ -2,7 +2,7 @@ import whiley.lang.System
 
 type cr1nat is (int x) where x < 10
 
-function f(cr1nat x) -> string:
+function f(cr1nat x) -> ASCII.string:
     int y = x
     return Any.toString(y)
 

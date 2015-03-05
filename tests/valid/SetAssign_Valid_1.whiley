@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f({int} xs) -> string
+function f({int} xs) -> ASCII.string
 requires |xs| > 0:
     return Any.toString(xs)
 

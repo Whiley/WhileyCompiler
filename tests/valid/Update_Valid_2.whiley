@@ -1,8 +1,8 @@
 import whiley.lang.System
 
-type liststr is [char] | string
+type liststr is [ASCII.char] | ASCII.string
 
-function update(liststr l, int index, char value) -> liststr:
+function update(liststr l, int index, ASCII.char value) -> liststr:
     l[index] = value
     return l
 

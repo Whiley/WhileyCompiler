@@ -6,7 +6,7 @@ type msg2 is {int op, [{int dum}] data}
 
 type msgType is msg1 | msg2
 
-function f(msgType m) -> string:
+function f(msgType m) -> ASCII.string:
     return Any.toString(m)
 
 method main(System.Console sys) -> void:
