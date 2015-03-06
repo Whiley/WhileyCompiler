@@ -26,8 +26,10 @@
 package whiley.lang
 
 public type PrintWriter is {
-    method print(any),
-    method println(any)
+    method print_i(int),
+    method println_i(int),
+    method print(ASCII.string),
+    method println(ASCII.string)
 }
 
 public type Console is {

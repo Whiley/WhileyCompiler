@@ -29,4 +29,4 @@ ensures r >= 0:
 // Print out hello world!
 public method main(System.Console console):
     C_string hw = ([int]) ['H','e','l','l','o','W','o','r','l','d',0]
-    console.out.println(strlen(hw))
+    console.out.println_i(strlen(hw))

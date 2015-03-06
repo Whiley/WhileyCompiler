@@ -630,32 +630,46 @@ public class Util {
 		}
 	}
 
+	public static void print(WyList argument) {
+		for(int i=0;i!=argument.size();++i) {
+			BigInteger c = (BigInteger) argument.get(i);
+			System.out.print((char) c.intValue());
+		}
+	}
+	
+	public static void println(WyList argument) {
+		print(argument);
+		System.out.println();
+	}
 
 	public static WyRecord systemConsole(String[] args) {
 		WyRecord sysout = new WyRecord();
 
 		sysout.put("print", new WyLambda((Object[]) null) {
 			public Object call(Object[] arguments) {
-				Object argument = arguments[0];
-				if(argument == null || argument instanceof String) {
-					System.out.print(argument);
-				} else {
-					System.out.print(argument.toString());
-				}
+				print((WyList) arguments[0]);						
 				return null;
 			}
 		});
 		sysout.put("println", new WyLambda((Object[]) null) {
 			public Object call(Object[] arguments) {
-				Object argument = arguments[0];
-				if(argument == null || argument instanceof String) {
-					System.out.println(argument);
-				} else {
-					System.out.println(argument.toString());
-				}
+				println((WyList) arguments[0]);								
 				return null;
 			}
 		});
+		sysout.put("print_i", new WyLambda((Object[]) null) {
+			public Object call(Object[] arguments) {
+				System.out.print(arguments[0]);					
+				return null;
+			}
+		});
+		sysout.put("println_i", new WyLambda((Object[]) null) {
+			public Object call(Object[] arguments) {
+				System.out.println(arguments[0]);								
+				return null;
+			}
+		});
+		
 		WyRecord console = new WyRecord();
 		console.put("out", sysout);
 		console.put("args",fromStringList(args));
