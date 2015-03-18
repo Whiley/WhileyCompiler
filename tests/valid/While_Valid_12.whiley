@@ -13,6 +13,6 @@ ensures |vr| == |v1|:
     return v1
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(add([1, 2, 3], [4, 5, 6])))
-    sys.out.println(Any.toString(add([1], [4])))
-    sys.out.println(Any.toString(add([], [])))
+    sys.out.println(add([1, 2, 3], [4, 5, 6]))
+    sys.out.println(add([1], [4]))
+    sys.out.println(add([], []))

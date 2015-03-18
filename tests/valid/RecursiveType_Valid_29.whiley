@@ -44,5 +44,5 @@ method main(System.Console console):
     // Second print out trie
     for w in ["Pat","Hat","Cat"]:
         bool f = contains(t,w)
-        console.out.println("CONTAINS(" ++ w ++ ") = " ++ Any.toString(f))
+        console.out.println_s("CONTAINS(" ++ w ++ ") = " ++ Any.toString(f))
 

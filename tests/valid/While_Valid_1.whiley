@@ -10,4 +10,4 @@ function reverse([int] ls) -> [int]:
 
 method main(System.Console sys) -> void:
     [int] rs = reverse([1, 2, 3, 4, 5])
-    sys.out.println(Any.toString(rs))
+    sys.out.println(rs)

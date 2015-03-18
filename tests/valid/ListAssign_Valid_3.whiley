@@ -16,5 +16,5 @@ method main(System.Console sys) -> void:
     [[int]] nls
     [[int]] ls = [[1, 2, 3, 4]]
     (ls, nls) = f(ls)
-    sys.out.println(Any.toString(ls))
-    sys.out.println(Any.toString(nls))
+    sys.out.println(ls)
+    sys.out.println(nls)

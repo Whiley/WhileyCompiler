@@ -8,6 +8,6 @@ function f({(int, real)} xs, int m) -> real:
 
 method main(System.Console sys) -> void:
     x = f({(1, 2.2), (5, 3.3)}, 5)
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)
     x = f({(1, 2.2), (5, 3.3)}, 2)
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)

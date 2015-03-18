@@ -13,10 +13,10 @@ function getField(OpenRecord r) -> ASCII.string:
 
 method main(System.Console sys) -> void:
     OpenRecord r = {x: 1}
-    sys.out.println(getField(r))
+    sys.out.println_s(getField(r))
     r = {y: "hello", x: 2}
-    sys.out.println(getField(r))
+    sys.out.println_s(getField(r))
     r = {y: 1, x: 3}
-    sys.out.println(getField(r))
+    sys.out.println_s(getField(r))
     r = {z: 1, y: 1, x: 3}
-    sys.out.println(getField(r))
+    sys.out.println_s(getField(r))

@@ -26,4 +26,4 @@ method main(System.Console sys) -> void:
         InputStream bis = BufferInputStream(ASCII.toBytes(s))
         while !bis.eof():
             [byte] bytes = bis.read(3)
-            sys.out.println("READ: " ++ ASCII.fromBytes(bytes))
+            sys.out.println_s("READ: " ++ ASCII.fromBytes(bytes))

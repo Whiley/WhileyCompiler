@@ -15,4 +15,4 @@ function parseTerm(state st) -> state:
 method main(System.Console sys) -> void:
     state st = {input: "  Hello", pos: 0}
     st = parseTerm(st)
-    sys.out.println(Any.toString(st))
+    sys.out.println(st)

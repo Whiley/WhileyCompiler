@@ -21,5 +21,5 @@ function Point(int x, int y) -> Point:
 
 method main(System.Console console):
     Point p = Point(1,2)
-    console.out.println("getX() = " ++ Any.toString(p.getX(p)))
-    console.out.println("toString() = " ++ p.toString(p))
+    console.out.println_s("getX() = " ++ Any.toString(p.getX(p)))
+    console.out.println_s("toString() = " ++ p.toString(p))

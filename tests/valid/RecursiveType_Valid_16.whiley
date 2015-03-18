@@ -10,4 +10,4 @@ function parseIdentifier() -> Expr:
 
 method main(System.Console sys) -> void:
     Expr e = parseTerm()
-    sys.out.println(Any.toString(e))
+    sys.out.println(e)

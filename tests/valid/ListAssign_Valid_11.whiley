@@ -9,6 +9,6 @@ requires |a| > 0:
 
 method main(System.Console sys) -> void:
     [int] b = [1, 2, 3]
-    sys.out.println(Any.toString(b))
-    sys.out.println(f(b))
-    sys.out.println(Any.toString(b))
+    sys.out.println(b)
+    sys.out.println_s(f(b))
+    sys.out.println(b)

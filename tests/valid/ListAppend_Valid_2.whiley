@@ -8,4 +8,4 @@ function append(ASCII.string input) -> [ASCII.char]:
 
 method main(System.Console sys) -> void:
     [ASCII.char] xs = append("abcdefghijklmnopqrstuvwxyz")
-    sys.out.println(Any.toString(xs))
+    sys.out.println_s(Any.toString(xs))

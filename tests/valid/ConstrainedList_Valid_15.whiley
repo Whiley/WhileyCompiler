@@ -4,4 +4,4 @@ function f() -> ASCII.string:
     return ""
 
 method main(System.Console sys) -> void:
-    sys.out.println(f())
+    sys.out.println_s(f())

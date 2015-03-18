@@ -5,6 +5,6 @@ function f(bool b) -> ASCII.string:
 
 method main(System.Console sys) -> void:
     bool x = true
-    sys.out.println(f(x))
+    sys.out.println_s(f(x))
     x = false
-    sys.out.println(f(x))
+    sys.out.println_s(f(x))

@@ -37,8 +37,8 @@ requires all { c in coins | c < |Value| }:
 
 method main(System.Console sys) -> void:
     Cash cash = Cash([ONE_DOLLAR, FIVE_CENTS])
-    sys.out.println(Any.toString(cash))
+    sys.out.println(cash)
     cash = Cash([FIVE_DOLLARS, TEN_CENTS, FIFTY_CENTS])
-    sys.out.println(Any.toString(cash))
+    sys.out.println(cash)
     cash = Cash([ONE_DOLLAR, ONE_DOLLAR, TWENTY_CENTS])
-    sys.out.println(Any.toString(cash))
+    sys.out.println(cash)

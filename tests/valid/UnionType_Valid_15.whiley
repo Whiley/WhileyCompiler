@@ -13,4 +13,4 @@ method main(System.Console sys) -> void:
     msg1 x = {op: 1, data: [1, 2, 3]}
     sys.out.println(f(x))
     [int] list = x.data
-    sys.out.println(Any.toString(list))
+    sys.out.println(list)

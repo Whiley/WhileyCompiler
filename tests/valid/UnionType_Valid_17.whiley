@@ -3,10 +3,10 @@ import whiley.lang.System
 type IntList is int | [int]
 
 method f(System.Console sys, int y) -> void:
-    sys.out.println(Any.toString(y))
+    sys.out.println(y)
 
 method g(System.Console sys, [int] z) -> void:
-    sys.out.println(Any.toString(z))
+    sys.out.println(z)
 
 method main(System.Console sys) -> void:
     IntList x = 123

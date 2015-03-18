@@ -11,5 +11,5 @@ function f(tupper y) -> int:
 
 method main(System.Console sys) -> void:
     tupper x = {op: 1, il: 1}
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)
     f(x)

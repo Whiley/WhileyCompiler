@@ -1,7 +1,7 @@
 import whiley.lang.System
 
-function f([int] x) -> ASCII.string:
-    return Any.toString(|x|)
+function f([int] x) -> int:
+    return |x|
 
 method main(System.Console sys) -> void:
     [[int]] arr = [[1, 2, 3]]

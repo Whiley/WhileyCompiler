@@ -13,4 +13,4 @@ ensures r >= 0:
     return r
 
 method main(System.Console console):
-    console.out.println("SUM = " ++ Any.toString(sum([1,2,3])))
+    console.out.println_s("SUM = " ++ Any.toString(sum([1,2,3])))

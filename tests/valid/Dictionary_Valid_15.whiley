@@ -11,7 +11,7 @@ function f(int x) -> {real=>real}:
 public method main(System.Console sys) -> void:
     {real=>real} d = ({real=>real}) f(-1)
     d[3.0] = 4.0
-    sys.out.println("Dictionary=" ++ Any.toString(d))
+    sys.out.println_s("Dictionary=" ++ Any.toString(d))
     d = f(2)
     d[3.0] = 4.0
-    sys.out.println("Dictionary=" ++ Any.toString(d))
+    sys.out.println_s("Dictionary=" ++ Any.toString(d))

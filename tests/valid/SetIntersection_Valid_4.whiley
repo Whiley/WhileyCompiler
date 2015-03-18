@@ -1,12 +1,12 @@
 import whiley.lang.System
 
-function f({int} xs, {int} ys, {int} zs) -> ASCII.string:
-    return Any.toString(xs)
+function f({int} xs, {int} ys, {int} zs) -> {int}:
+    return xs
 
-function g({int} ys) -> ASCII.string:
+function g({int} ys) -> {int}:
     return f(ys, ys, ys)
 
-function h({int} ys, {int} zs) -> ASCII.string:
+function h({int} ys, {int} zs) -> {int}:
     return f(ys, zs, ys & zs)
 
 method main(System.Console sys) -> void:

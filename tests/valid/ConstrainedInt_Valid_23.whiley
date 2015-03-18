@@ -7,4 +7,4 @@ function f(cr2num x) -> ASCII.string:
     return Any.toString(y)
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(3))
+    sys.out.println_s(f(3))

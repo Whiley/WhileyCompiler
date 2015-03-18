@@ -7,4 +7,4 @@ requires |xs| > 0:
 method main(System.Console sys) -> void:
     {int} ys = {1, 2, 3}
     {int} zs = ys
-    sys.out.println(f(zs))
+    sys.out.println_s(f(zs))

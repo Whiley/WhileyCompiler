@@ -7,6 +7,6 @@ function f({int} xs, {int} ys) -> ASCII.string:
         return "FAILED"
 
 method main(System.Console sys) -> void:
-    sys.out.println(f({1, 2, 3}, {1, 2, 3}))
-    sys.out.println(f({1, 2}, {1, 2, 3}))
-    sys.out.println(f({1}, {1, 2, 3}))
+    sys.out.println_s(f({1, 2, 3}, {1, 2, 3}))
+    sys.out.println_s(f({1, 2}, {1, 2, 3}))
+    sys.out.println_s(f({1}, {1, 2, 3}))

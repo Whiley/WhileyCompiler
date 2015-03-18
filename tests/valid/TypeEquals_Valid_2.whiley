@@ -10,6 +10,6 @@ function f(expr e) -> int:
 
 method main(System.Console sys) -> void:
     int x = f({err: "Hello World"})
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)
     x = f({op: 1, lhs: {err: "Gotcha"}})
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)

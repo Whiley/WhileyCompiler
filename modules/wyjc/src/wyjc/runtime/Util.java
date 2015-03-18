@@ -645,25 +645,25 @@ public class Util {
 	public static WyRecord systemConsole(String[] args) {
 		WyRecord sysout = new WyRecord();
 
-		sysout.put("print", new WyLambda((Object[]) null) {
+		sysout.put("print_s", new WyLambda((Object[]) null) {
 			public Object call(Object[] arguments) {
 				print((WyList) arguments[0]);						
 				return null;
 			}
 		});
-		sysout.put("println", new WyLambda((Object[]) null) {
+		sysout.put("println_s", new WyLambda((Object[]) null) {
 			public Object call(Object[] arguments) {
 				println((WyList) arguments[0]);								
 				return null;
 			}
 		});
-		sysout.put("print_i", new WyLambda((Object[]) null) {
+		sysout.put("print", new WyLambda((Object[]) null) {
 			public Object call(Object[] arguments) {
 				System.out.print(arguments[0]);					
 				return null;
 			}
 		});
-		sysout.put("println_i", new WyLambda((Object[]) null) {
+		sysout.put("println", new WyLambda((Object[]) null) {
 			public Object call(Object[] arguments) {
 				System.out.println(arguments[0]);								
 				return null;

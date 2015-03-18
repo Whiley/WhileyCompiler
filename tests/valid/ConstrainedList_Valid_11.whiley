@@ -13,4 +13,4 @@ function f(state st) -> ASCII.char:
 
 method main(System.Console sys) -> void:
     ASCII.char c = f({input: "hello", pos: 0})
-    sys.out.println(Any.toString(c))
+    sys.out.println(c)

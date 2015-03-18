@@ -10,5 +10,5 @@ function g({int} ys) -> ASCII.string:
     return f(ys + {1})
 
 method main(System.Console sys) -> void:
-    sys.out.println(g({}))
-    sys.out.println(g({2}))
+    sys.out.println_s(g({}))
+    sys.out.println_s(g({2}))

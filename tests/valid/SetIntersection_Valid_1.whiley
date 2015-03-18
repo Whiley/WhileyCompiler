@@ -1,10 +1,10 @@
 import whiley.lang.System
 
-function f({int} xs) -> ASCII.string
+function f({int} xs) -> {int}
 requires xs ⊆ {1, 2, 3}:
-    return Any.toString(xs)
+    return xs
 
-function g({int} ys) -> ASCII.string:
+function g({int} ys) -> {int}:
     return f(ys & {1, 2, 3})
 
 method main(System.Console sys) -> void:

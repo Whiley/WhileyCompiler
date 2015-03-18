@@ -9,4 +9,4 @@ function sum2(BigLink l) -> int:
 
 method main(System.Console console):
     BigLink l = {data: 1, code: 'c'}
-    console.out.println_i(sum2(l))
+    console.out.println(sum2(l))

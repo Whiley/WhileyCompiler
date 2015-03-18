@@ -9,4 +9,4 @@ function f(code x) -> ASCII.string:
     return Any.toString(y)
 
 method main(System.Console sys) -> void:
-    sys.out.println(f({op: 1, payload: [1]}))
+    sys.out.println_s(f({op: 1, payload: [1]}))

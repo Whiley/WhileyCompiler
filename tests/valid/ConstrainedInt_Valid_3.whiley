@@ -7,4 +7,4 @@ function f(cr3nat x) -> cr3nat:
 
 method main(System.Console sys) -> void:
     int y = f(9)
-    sys.out.println(Any.toString(y))
+    sys.out.println(y)

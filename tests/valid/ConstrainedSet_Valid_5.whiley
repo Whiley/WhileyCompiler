@@ -2,8 +2,8 @@ import whiley.lang.System
 
 type posints is ({int} xs) where no { x in xs | x < 0 }
 
-function f(posints x) -> ASCII.string:
-    return Any.toString(x)
+function f(posints x) -> {int}:
+    return x
 
 method main(System.Console sys) -> void:
     posints xs = {1, 2, 3}

@@ -17,4 +17,4 @@ function g({bignum} zs, int z) -> ASCII.string:
         return "MISS"
 
 method main(System.Console sys) -> void:
-    sys.out.println(g({1, 2, 3, 5}, 3))
+    sys.out.println_s(g({1, 2, 3, 5}, 3))

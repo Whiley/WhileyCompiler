@@ -11,5 +11,5 @@ function f(int i) -> ASCII.string:
     return Any.toString(arr1) ++ Any.toString(arr2)
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(2))
-    sys.out.println(f(3))
+    sys.out.println_s(f(2))
+    sys.out.println_s(f(3))

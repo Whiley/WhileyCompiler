@@ -23,10 +23,10 @@ function parseNumber(State st) -> (Expr, State):
 
 method main(System.Console sys) -> void:
     SExpr e, State s = parseTerm({input: "123", pos: 0})
-    sys.out.println(Any.toString(e))
+    sys.out.println(e)
     e, s = parseTerm({input: "abc", pos: 0})
     //
     if e is SyntaxError:
         sys.out.println(e.err)
     else:
-        sys.out.println(Any.toString(e))
+        sys.out.println(e)

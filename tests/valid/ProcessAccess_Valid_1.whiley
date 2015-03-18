@@ -11,8 +11,8 @@ method get(Ptype this) -> (int, ASCII.string):
 
 method main(System.Console sys) -> void:
     Ptype p = new {rest: 2, mode: 1}
-    sys.out.println(Any.toString(*p))
+    sys.out.println(*p)
     int x, ASCII.string s = get(p)
-    sys.out.println(s)
-    sys.out.println(Any.toString(*p))
-    sys.out.println(Any.toString(x))
+    sys.out.println_s(s)
+    sys.out.println(*p)
+    sys.out.println(x)

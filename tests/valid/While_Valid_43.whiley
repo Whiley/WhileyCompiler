@@ -18,5 +18,5 @@ requires n > 0:
 
 method main(System.Console console):
     [int] ls = [1,2,3,4]
-    console.out.println("ADD(1) = " ++ Any.toString(add(ls,1)))
-    console.out.println("ADD(11) = " ++ Any.toString(add(ls,11)))
+    console.out.println_s("ADD(1) = " ++ Any.toString(add(ls,1)))
+    console.out.println_s("ADD(11) = " ++ Any.toString(add(ls,11)))

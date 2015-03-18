@@ -15,4 +15,4 @@ method main(System.Console console):
     [int] ls = [1,2,3,4]
     for l in [3,5,1]:
         bool b = contains(ls,l)
-        console.out.println(Any.toString(l) ++ " in " ++ Any.toString(ls) ++ " : " ++ Any.toString(b))
+        console.out.println(l ++ " in " ++ Any.toString(ls) ++ " : " ++ Any.toString(b))

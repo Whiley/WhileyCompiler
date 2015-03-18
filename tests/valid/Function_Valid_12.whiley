@@ -12,5 +12,5 @@ function f([real] ls) -> ASCII.string:
     return Any.toString(ls)
 
 method main(System.Console sys) -> void:
-    sys.out.println(f([1, 2, 3]))
-    sys.out.println(f([1.2, 2.2, 3.3]))
+    sys.out.println_s(f([1, 2, 3]))
+    sys.out.println_s(f([1.2, 2.2, 3.3]))

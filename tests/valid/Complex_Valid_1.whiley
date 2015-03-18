@@ -87,6 +87,6 @@ constant D3 is {col: 4, row: 3}
 
 method main(System.Console sys) -> void:
     bool r = clearRowExcept(A1, H1, startingChessBoard)
-    sys.out.println("GOT: " ++ Any.toString(r))
+    sys.out.println_s("GOT: " ++ Any.toString(r))
     r = clearRowExcept(A3, D3, startingChessBoard)
-    sys.out.println("GOT: " ++ Any.toString(r))
+    sys.out.println_s("GOT: " ++ Any.toString(r))

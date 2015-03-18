@@ -8,4 +8,4 @@ function f(realtup t) -> ASCII.string:
 
 method main(System.Console sys) -> void:
     {int op} t = {op: 1}
-    sys.out.println(f((realtup) t))
+    sys.out.println_s(f((realtup) t))

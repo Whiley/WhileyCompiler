@@ -30,4 +30,4 @@ requires |board.rows| > 0:
 
 method main(System.Console sys) -> void:
     Board r1 = {flag: false, rows: [WHITE_PAWN]}
-    sys.out.println(Any.toString(f(r1)))
+    sys.out.println(f(r1))

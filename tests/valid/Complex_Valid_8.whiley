@@ -78,9 +78,9 @@ method main(System.Console console):
     Trie t = EmptyTrie
     // First, initialise trie
     for s in ["hello","world","help"]:
-        console.out.println("ADDING: " ++ s)
+        console.out.println_s("ADDING: " ++ s)
         t = add(t,s)
     // Second, check containment
     for s in ["hello","blah","hel","dave"]:
         bool r = contains(t,s)
-        console.out.println("CONTAINS: " ++ s ++ " = " ++ Any.toString(r))
+        console.out.println_s("CONTAINS: " ++ s ++ " = " ++ Any.toString(r))

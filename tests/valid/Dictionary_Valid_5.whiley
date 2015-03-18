@@ -9,4 +9,4 @@ function reverse(ASCII.string input) -> {ASCII.char=>int}:
 
 method main(System.Console sys) -> void:
     {ASCII.char=>int} xs = reverse("abcdefghijklmnopqrstuvwxyz")
-    sys.out.println(Any.toString(xs))
+    sys.out.println(xs)

@@ -38,8 +38,8 @@ public method main(System.Console sys) -> void:
     while i < 10:
         SExpr e = sbuild(i)
         if e is {ASCII.string err}:
-            sys.out.println("syntax error: " ++ e.err)
+            sys.out.println_s("syntax error: " ++ e.err)
         else:
             e = evaluate(e)
-            sys.out.println(Any.toString(e))
+            sys.out.println(e)
         i = i + 1

@@ -12,5 +12,5 @@ function g(func_t func) -> int:
     return func(1234)
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(g(&f1)))
-    sys.out.println(Any.toString(g(&f2)))
+    sys.out.println(g(&f1))
+    sys.out.println(g(&f2))

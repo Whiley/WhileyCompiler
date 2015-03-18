@@ -8,4 +8,4 @@ requires (x >= 0) && (y > 0):
     return Any.toString(g(x))
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(1, 2))
+    sys.out.println_s(f(1, 2))

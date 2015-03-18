@@ -5,4 +5,4 @@ function f({real} ls) -> ASCII.string:
 
 method main(System.Console sys) -> void:
     {int} ss = {1,2,3}
-    sys.out.println(f(({real}) ss))
+    sys.out.println_s(f(({real}) ss))

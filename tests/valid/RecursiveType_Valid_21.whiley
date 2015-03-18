@@ -14,6 +14,6 @@ method main(System.Console sys) -> void:
     LinkedList l1 = {next: null, data: 1}
     LinkedList l2 = {next: l1, data: 2}
     LinkedList l3 = {next: l2, data: 3}
-    sys.out.println(Any.toString(sum(l1)))
-    sys.out.println(Any.toString(sum(l2)))
-    sys.out.println(Any.toString(sum(l3)))
+    sys.out.println(sum(l1))
+    sys.out.println(sum(l2))
+    sys.out.println(sum(l3))

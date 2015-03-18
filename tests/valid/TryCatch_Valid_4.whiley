@@ -87,9 +87,9 @@ method g(System.Console sys, int x) -> void:
     try:
         f(x)
     catch(InvalidMove e):
-        sys.out.println("CAUGHT EXCEPTION (InvalidMove)")
+        sys.out.println_s("CAUGHT EXCEPTION (InvalidMove)")
     catch(InvalidShortMove e):
-        sys.out.println("CAUGHT EXCEPTION (InvalidShortMove)")
+        sys.out.println_s("CAUGHT EXCEPTION (InvalidShortMove)")
 
 method main(System.Console sys) -> void:
     g(sys, 1)

@@ -13,4 +13,4 @@ ensures r > 0:
         return 123
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(1))
+    sys.out.println(1)

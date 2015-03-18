@@ -11,4 +11,4 @@ function f(int x) -> [i8]:
 
 method main(System.Console sys) -> void:
     [int] bytes = f(0)
-    sys.out.println(Any.toString(bytes))
+    sys.out.println(bytes)

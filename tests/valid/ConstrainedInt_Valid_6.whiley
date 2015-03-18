@@ -11,4 +11,4 @@ requires ((x == 1) || (x == 2)) && (z in {1, 2, 3, x}):
     return f(z)
 
 method main(System.Console sys) -> void:
-    sys.out.println(g(1, 2))
+    sys.out.println_s(g(1, 2))

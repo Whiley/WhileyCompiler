@@ -8,6 +8,6 @@ function f(int b) -> bytes:
 method main(System.Console sys) -> void:
     int b = 1
     bytes bs = f(b)
-    sys.out.println(Any.toString(bs))
+    sys.out.println(bs)
     bs = {b1: b, b2: b}
-    sys.out.println(Any.toString(bs))
+    sys.out.println(bs)

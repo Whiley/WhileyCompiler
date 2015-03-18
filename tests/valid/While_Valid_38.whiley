@@ -18,8 +18,8 @@ ensures r ==> all { j in 1 .. |items| | items[j-1] < items[j] }:
 
 method main(System.Console console):
     [int] l1 = [1,2,3,4]
-    console.out.println(Any.toString(l1) ++ " is sorted? " ++ Any.toString(isSorted(l1)))
+    console.out.println(l1 ++ " is sorted? " ++ Any.toString(isSorted(l1)))
     [int] l2 = [1,2,4,3]
-    console.out.println(Any.toString(l2) ++ " is sorted? " ++ Any.toString(isSorted(l2)))
+    console.out.println(l2) ++ " is sorted? " ++ Any.toString(isSorted(l2))
     [int] l3 = [4,2,3,5]
-    console.out.println(Any.toString(l3) ++ " is sorted? " ++ Any.toString(isSorted(l3)))
+    console.out.println(l3) ++ " is sorted? " ++ Any.toString(isSorted(l3))

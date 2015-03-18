@@ -14,6 +14,6 @@ function extract([int] ls) -> [nat]:
 
 method main(System.Console sys) -> void:
     [int] rs = extract([-1, 2, 3, -4, 5, 6, 7, 23987, -23897, 0, -1, 1, -2389])
-    sys.out.println(Any.toString(rs))
+    sys.out.println(rs)
     rs = extract([])
-    sys.out.println(Any.toString(rs))
+    sys.out.println(rs)

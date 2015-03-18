@@ -13,6 +13,6 @@ function Point(int i, int j) -> Point:
 
 method main(System.Console sys) -> void:
     Point rs = Point(1, 1)
-    sys.out.println(Any.toString(rs))
+    sys.out.println(rs)
     rs = Point(1, 2)
-    sys.out.println(Any.toString(rs))
+    sys.out.println(rs)

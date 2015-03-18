@@ -10,4 +10,4 @@ ensures r > 0:
         return x + y
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(1))
+    sys.out.println(1)

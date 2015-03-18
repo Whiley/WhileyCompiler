@@ -7,5 +7,5 @@ function f(int x) -> ASCII.string:
     return "GOT INT"
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(1))
-    sys.out.println(f(1.23))
+    sys.out.println_s(f(1))
+    sys.out.println_s(f(1.23))

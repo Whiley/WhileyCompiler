@@ -97,8 +97,8 @@ function pos2str(Pos p) -> ASCII.string:
 
 method main(System.Console sys) -> void:
     Move m = {to: A1, from: A2, piece: WHITE_PAWN}
-    sys.out.println(move2str(m))
+    sys.out.println_s(move2str(m))
     m = {to: A1, from: A2, piece: WHITE_KNIGHT}
-    sys.out.println(move2str(m))
+    sys.out.println_s(move2str(m))
     m = {to: A1, taken: BLACK_KING, from: A2, piece: WHITE_QUEEN}
-    sys.out.println(move2str(m))
+    sys.out.println_s(move2str(m))

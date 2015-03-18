@@ -32,4 +32,4 @@ function toChar(byte b) -> ASCII.char:
 method main(System.Console sys) -> void:
     for i in 32 .. 127:
         ASCII.char c = toChar(Int.toUnsignedByte(i))
-        sys.out.println("CHARACTER: " ++ [c])
+        sys.out.println_s("CHARACTER: " ++ [c])

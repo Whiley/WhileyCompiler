@@ -69,6 +69,6 @@ constant bytecodeStrings is ["nop", "aconst_null", "iconst_m1", "iconst_0", "ico
 
 method main(System.Console sys) -> void:
     ASCII.string s1 = code2toString(Unit(0, 1))
-    sys.out.println(s1)
+    sys.out.println_s(s1)
     ASCII.string s2 = code2toString(FieldIndex(0, 180, {classes: ["Object"], pkg: "java.lang"}, "field", T_INT))
-    sys.out.println(s2)
+    sys.out.println_s(s2)

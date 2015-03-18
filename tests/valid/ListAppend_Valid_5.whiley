@@ -11,6 +11,6 @@ method main(System.Console sys) -> void:
     [nat] left = [1, 2, 3]
     [nat] right = [5, 6, 7]
     nat r = f(left, right, 1)
-    sys.out.println(Any.toString(r))
+    sys.out.println(r)
     r = f(left, right, 4)
-    sys.out.println(Any.toString(r))
+    sys.out.println(r)

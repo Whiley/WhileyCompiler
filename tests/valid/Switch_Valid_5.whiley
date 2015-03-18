@@ -28,8 +28,8 @@ public function f(int type) -> int:
             return 6
 
 public method main(System.Console sys) -> void:
-    sys.out.println("GOT: " ++ Any.toString(f(IHDR_TYPE)))
-    sys.out.println("GOT: " ++ Any.toString(f(IEND_TYPE)))
-    sys.out.println("GOT: " ++ Any.toString(f(PLTE_TYPE)))
-    sys.out.println("GOT: " ++ Any.toString(f(PHYS_TYPE)))
-    sys.out.println("GOT: " ++ Any.toString(f(TIME_TYPE)))
+    sys.out.println_s("GOT: " ++ Any.toString(f(IHDR_TYPE)))
+    sys.out.println_s("GOT: " ++ Any.toString(f(IEND_TYPE)))
+    sys.out.println_s("GOT: " ++ Any.toString(f(PLTE_TYPE)))
+    sys.out.println_s("GOT: " ++ Any.toString(f(PHYS_TYPE)))
+    sys.out.println_s("GOT: " ++ Any.toString(f(TIME_TYPE)))

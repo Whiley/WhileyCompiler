@@ -10,4 +10,4 @@ method test(MyMeth m) -> int:
 
 method main(System.Console sys) -> void:
     int r = test(&read)
-    sys.out.println(Any.toString(r))
+    sys.out.println(r)

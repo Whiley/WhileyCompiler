@@ -9,8 +9,8 @@ function f(int key, dict d) -> nat:
 
 public method main(System.Console sys) -> void:
     {int=>int} d = {-2=>20, -1=>10, 0=>0, 1=>10, 2=>20}
-    sys.out.println(Int.toString(f(-2, d)))
-    sys.out.println(Int.toString(f(-1, d)))
-    sys.out.println(Int.toString(f(-0, d)))
-    sys.out.println(Int.toString(f(1, d)))
-    sys.out.println(Int.toString(f(2, d)))
+    sys.out.println(f(-2, d))
+    sys.out.println(f(-1, d))
+    sys.out.println(f(-0, d))
+    sys.out.println(f(1, d))
+    sys.out.println(f(2, d))

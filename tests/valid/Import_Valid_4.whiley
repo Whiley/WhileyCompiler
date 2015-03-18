@@ -10,5 +10,5 @@ function g(real x) -> ASCII.string:
     return toString(x)
 
 public method main(System.Console sys) -> void:
-    sys.out.println("FIRST: " ++ f(1))
-    sys.out.println("SECOND: " ++ g(1.2344))
+    sys.out.println_s("FIRST: " ++ f(1))
+    sys.out.println_s("SECOND: " ++ g(1.2344))

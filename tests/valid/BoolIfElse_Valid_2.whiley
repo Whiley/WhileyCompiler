@@ -7,5 +7,5 @@ function f(bool b) -> ASCII.string:
         return "FALSE"
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(true))
-    sys.out.println(f(false))
+    sys.out.println_s(f(true))
+    sys.out.println_s(f(false))

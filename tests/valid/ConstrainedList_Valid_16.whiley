@@ -8,4 +8,4 @@ requires |xs| == 0:
 
 method main(System.Console sys) -> void:
     [nat] rs = f([])
-    sys.out.println(Any.toString(rs))
+    sys.out.println(rs)

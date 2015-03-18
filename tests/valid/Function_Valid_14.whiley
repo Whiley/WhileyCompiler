@@ -13,7 +13,7 @@ function f({int} xs) -> ASCII.string:
     return "F({int})"
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(1.234))
-    sys.out.println(f(1))
-    sys.out.println(f([1, 2, 3]))
-    sys.out.println(f({1, 2, 3}))
+    sys.out.println_s(f(1.234))
+    sys.out.println_s(f(1))
+    sys.out.println_s(f([1, 2, 3]))
+    sys.out.println_s(f({1, 2, 3}))
