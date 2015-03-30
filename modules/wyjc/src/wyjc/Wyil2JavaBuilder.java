@@ -687,6 +687,17 @@ public class Wyil2JavaBuilder implements Builder {
 
 		return freeSlot;
 	}
+	
+
+	private void translate(CodeBlock.Index index, Codes.AssertOrAssume c,
+			int freeSlot, ArrayList<Bytecode> bytecodes) {
+		if(c instanceof Codes.Assert) { 
+			Codes.Assert ca = (Codes.Assert) c;
+			translate(index, (CodeBlock) c, freeSlot, bytecodes);
+		} else {
+			// essentially a no-op for now
+		}
+	}
 
 	private void translate(CodeBlock.Index index, Codes.Const c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
@@ -1340,11 +1351,6 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Load(c.operand, JAVA_LANG_STRING));
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "debug", ftype,
 				Bytecode.InvokeMode.STATIC));
-	}
-
-	private void translate(CodeBlock.Index index, Codes.AssertOrAssume c,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		// essentially a no-op for now
 	}
 
 	private void translate(CodeBlock.Index index, Codes.Assign c, int freeSlot,
