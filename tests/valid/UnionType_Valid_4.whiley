@@ -2,8 +2,8 @@ import whiley.lang.System
 
 type IntReal is int | real
 
-function f(IntReal y) -> ASCII.string:
-    return Any.toString(y)
+function f(IntReal y) -> IntReal:
+    return y
 
 method main(System.Console sys) -> void:
     IntReal x = 123

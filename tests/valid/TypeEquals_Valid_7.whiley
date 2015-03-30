@@ -2,11 +2,11 @@ import whiley.lang.System
 
 type intreal is real | int
 
-function f(intreal e) -> ASCII.string:
+function f(intreal e) -> bool:
     if e is int:
-        return "int"
+        return true
     else:
-        return "real"
+        return false
 
 method main(System.Console sys) -> void:
     sys.out.println(f(1))

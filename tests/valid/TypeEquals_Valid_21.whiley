@@ -2,11 +2,11 @@ import whiley.lang.System
 
 type expr is {int} | bool
 
-function f(expr e) -> ASCII.string:
+function f(expr e) -> bool:
     if e is {int}:
-        return "GOT {INT}"
+        return true
     else:
-        return "GOT BOOL"
+        return false
 
 method main(System.Console sys) -> void:
     expr e = true

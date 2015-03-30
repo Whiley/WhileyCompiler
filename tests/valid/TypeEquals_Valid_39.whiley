@@ -6,13 +6,14 @@ type neg is (int n) where n < 0
 
 type expr is pos | neg
 
-function f(expr e) -> ASCII.string:
+function f(expr e) -> bool:
     if e is pos:
-        return "POSITIVE: " ++ Any.toString(e)
+        return true
     else:
-        return "NEGATIVE: " ++ Any.toString(e)
+        return false
 
 method main(System.Console sys) -> void:
     sys.out.println(f(-1))
     sys.out.println(f(1.0))
     sys.out.println(f(1234.0))
+    sys.out.println(f(-1.0))

@@ -6,4 +6,3 @@ method f(System.Console sys, int x) -> void:
 
 method main(System.Console sys) -> void:
     f(sys, 1)
-    sys.out.print("")

@@ -14,4 +14,4 @@ public function repl(char old, char n, string str) -> string:
 method main(System.Console sys) -> void:
     string s = "Hello World"
     s = repl('l', '1', s)
-    sys.out.println(s)
+    sys.out.println_s(s)

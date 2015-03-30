@@ -2,13 +2,13 @@ import whiley.lang.System
 
 type num is (int x) where x in {1, 2, 3, 4}
 
-function f(num x) -> ASCII.string:
+function f(num x) -> int:
     int y = x
-    return Any.toString(y)
+    return y
 
-function g(int x, int z) -> ASCII.string
+function g(int x, int z) -> int
 requires ((x == 1) || (x == 2)) && (z in {1, 2, 3, x}):
     return f(z)
 
 method main(System.Console sys) -> void:
-    sys.out.println_s(g(1, 2))
+    sys.out.println(g(1, 2))

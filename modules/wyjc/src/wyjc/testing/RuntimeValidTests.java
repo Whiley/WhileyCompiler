@@ -1301,11 +1301,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void Import_Valid_7() {
-		runTest("Import_Valid_7");
-	}
-
-	@Test
 	public void IntConst_Valid_1() {
 		runTest("IntConst_Valid_1");
 	}

@@ -1,10 +1,10 @@
 import whiley.lang.System
 
-function f(int | null x) -> ASCII.string:
+function f(int | null x) -> bool:
     if x is null:
-        return "GOT NULL"
+        return true
     else:
-        return "GOT INT"
+        return false
 
 method main(System.Console sys) -> void:
     int|null x = null

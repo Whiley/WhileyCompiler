@@ -1,15 +1,5 @@
-{1, 4}
-{1.0, 4.0}
-EQUAL
-{1, 4}
-{1.0, 4.0}
-EQUAL
-{1, 4}
-{1.0, 4.2}
-NOT EQUAL
-{1, 4}
-{1.0, 4.2}
-NOT EQUAL
-{}
-{}
-EQUAL
+true
+true
+false
+false
+true

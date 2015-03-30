@@ -6,8 +6,8 @@ type tur4nat is int
 
 type wur4nat is ur4nat | tur4nat
 
-function f(wur4nat x) -> ASCII.string:
-    return Any.toString(x)
+function f(wur4nat x) -> any:
+    return x
 
 method main(System.Console sys) -> void:
     sys.out.println(f(1))

@@ -1,8 +1,11 @@
 import whiley.lang.System
 
-function f({real} ls) -> ASCII.string:
-    return Any.toString(ls)
+function f({real} ls) -> real:
+    real r = 0.0
+    for x in ls:
+        r = r + x
+    return r
 
 method main(System.Console sys) -> void:
     {int} ss = {1,2,3}
-    sys.out.println_s(f(({real}) ss))
+    sys.out.println(f(({real}) ss))

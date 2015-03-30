@@ -1,17 +1,17 @@
 import whiley.lang.System
 
-function f(int x) -> ASCII.string:
+function f(int x) -> int:
     if x < 10:
-        return "LESS THAN"
+        return -1
     else:
         if x > 10:
-            return "GREATER THAN"
+            return 1
         else:
-            return "EQUALS"
+            return 0
 
 method main(System.Console sys) -> void:
-    sys.out.println_s(f(1))
-    sys.out.println_s(f(10))
-    sys.out.println_s(f(11))
-    sys.out.println_s(f(1212))
-    sys.out.println_s(f(-1212))
+    sys.out.println(f(1))
+    sys.out.println(f(10))
+    sys.out.println(f(11))
+    sys.out.println(f(1212))
+    sys.out.println(f(-1212))

@@ -2,11 +2,11 @@ import whiley.lang.System
 
 type src is int | [int] | [[int]]
 
-function f(src e) -> ASCII.string:
+function f(src e) -> bool:
     if e is [any]:
-        return "[*]"
+        return true
     else:
-        return "int"
+        return false
 
 method main(System.Console sys) -> void:
     sys.out.println(f([1, 2, 3]))

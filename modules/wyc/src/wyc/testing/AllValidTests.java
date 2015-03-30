@@ -505,7 +505,7 @@ public class AllValidTests {
 		runTest("ConstrainedInt_Valid_8");
 	}
 
-	@Test
+	@Ignore("unknown") @Test
 	public void ConstrainedIntersection_Valid_1() {
 		runTest("ConstrainedIntersection_Valid_1");
 	}
@@ -885,7 +885,7 @@ public class AllValidTests {
 		runTest("DoWhile_Valid_3");
 	}
 
-	@Test
+	@Ignore("unknown") @Test
 	public void DoWhile_Valid_4() {
 		runTest("DoWhile_Valid_4");
 	}
@@ -1230,7 +1230,7 @@ public class AllValidTests {
 		runTest("Import_Valid_3");
 	}
 
-	@Test
+	@Ignore("unknown") @Test
 	public void Import_Valid_4() {
 		runTest("Import_Valid_4");
 	}
@@ -3069,7 +3069,7 @@ public class AllValidTests {
 		runTest("While_Valid_14");
 	}
 
-	@Test
+	@Ignore("unknown") @Test
 	public void While_Valid_15() {
 		runTest("While_Valid_15");
 	}

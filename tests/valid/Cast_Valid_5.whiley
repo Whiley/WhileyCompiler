@@ -26,10 +26,7 @@ public function toUnsignedByte(u8 v) -> byte:
         mask = mask << 1
     return r
 
-function toChar(byte b) -> ASCII.char:
-    return (ASCII.char) Byte.toUnsignedInt(b)
-
 method main(System.Console sys) -> void:
     for i in 32 .. 127:
-        ASCII.char c = toChar(Int.toUnsignedByte(i))
-        sys.out.println_s("CHARACTER: " ++ [c])
+        int c = toUnsignedInt(toUnsignedByte(i))
+        sys.out.println_s([c])

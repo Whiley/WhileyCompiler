@@ -1,5 +1,7 @@
 import whiley.lang.System
 
+type string is [int]
+
 constant PAWN is 0
 
 constant KNIGHT is 1
@@ -68,7 +70,7 @@ constant D3 is {col: 3, row: 2}
 
 constant H1 is {col: 8, row: 1}
 
-function move2str(Move m) -> ASCII.string:
+function move2str(Move m) -> string:
     if m is SingleTake:
         return (((piece2str(m.piece) ++ pos2str(m.from)) ++ "x") ++ piece2str(m.taken)) ++ pos2str(m.to)
     else:
@@ -86,13 +88,13 @@ function move2str(Move m) -> ASCII.string:
                 else:
                     return ""
 
-function piece2str(Piece p) -> ASCII.string:
+function piece2str(Piece p) -> string:
     if p.kind == PAWN:
         return ""
     else:
         return [PIECE_CHARS[p.kind]]
 
-function pos2str(Pos p) -> ASCII.string:
+function pos2str(Pos p) -> string:
     return ['a' + p.col,'1' + p.row]
 
 method main(System.Console sys) -> void:

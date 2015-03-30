@@ -4,11 +4,11 @@ type test is {int x} | {int y}
 
 type src is test | int
 
-function f(src e) -> ASCII.string:
+function f(src e) -> bool:
     if e is test:
-        return "{int x} | {int y}"
+        return true
     else:
-        return "int"
+        return false
 
 method main(System.Console sys) -> void:
     sys.out.println(f({x: 1}))

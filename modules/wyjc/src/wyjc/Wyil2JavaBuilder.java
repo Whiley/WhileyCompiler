@@ -2353,17 +2353,10 @@ public class Wyil2JavaBuilder implements Builder {
 
 	private void buildCoercion(Type.Int fromType, Type toType, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		if (toType == Type.T_REAL) {
-			// coercion required!
-			JvmType.Function ftype = new JvmType.Function(WHILEYRAT, WHILEYINT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "valueOf", ftype,
-					Bytecode.InvokeMode.STATIC));
-		} else {
-			// coercion required!
-			JvmType.Function ftype = new JvmType.Function(WHILEYCHAR, WHILEYINT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYCHAR, "valueOf", ftype,
-					Bytecode.InvokeMode.STATIC));
-		}
+		// coercion required!
+		JvmType.Function ftype = new JvmType.Function(WHILEYRAT, WHILEYINT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "valueOf", ftype,
+				Bytecode.InvokeMode.STATIC));
 	}
 
 	/**
@@ -2992,8 +2985,6 @@ public class Wyil2JavaBuilder implements Builder {
 			"wyjc.runtime", "WyBool");
 	private final static JvmType.Clazz WHILEYBYTE = new JvmType.Clazz(
 			"wyjc.runtime", "WyByte");
-	private final static JvmType.Clazz WHILEYCHAR = new JvmType.Clazz(
-			"wyjc.runtime", "WyChar");
 	private final static JvmType.Clazz WHILEYINT = new JvmType.Clazz(
 			"java.math", "BigInteger");
 	private final static JvmType.Clazz WHILEYRAT = new JvmType.Clazz(

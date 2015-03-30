@@ -1,21 +1,21 @@
 import whiley.lang.System
 
-function f({int} xs, {int} ys, {int} zs) -> ASCII.string:
+function f({int} xs, {int} ys, {int} zs) -> bool:
     if zs == (xs + ys):
-        return Any.toString(xs)
+        return true
     else:
-        return "FAILED"
+        return false
 
-function g({int} ys) -> ASCII.string:
+function g({int} ys) -> bool:
     return f(ys, ys, ys)
 
-function h({int} ys, {int} zs) -> ASCII.string:
+function h({int} ys, {int} zs) -> bool:
     return f(ys, zs, ys + zs)
 
 method main(System.Console sys) -> void:
-    sys.out.println_s(g({}))
-    sys.out.println_s(g({2}))
-    sys.out.println_s(g({1, 2, 3}))
-    sys.out.println_s(h({}, {}))
-    sys.out.println_s(h({1}, {2}))
-    sys.out.println_s(h({1, 2, 3}, {3, 4, 5}))
+    sys.out.println(g({}))
+    sys.out.println(g({2}))
+    sys.out.println(g({1, 2, 3}))
+    sys.out.println(h({}, {}))
+    sys.out.println(h({1}, {2}))
+    sys.out.println(h({1, 2, 3}, {3, 4, 5}))

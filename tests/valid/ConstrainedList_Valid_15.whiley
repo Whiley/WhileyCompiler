@@ -1,7 +1,7 @@
 import whiley.lang.System
 
-function f() -> ASCII.string:
+function f() -> [int]:
     return ""
 
 method main(System.Console sys) -> void:
-    sys.out.println_s(f())
+    sys.out.println(f())

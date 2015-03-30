@@ -1,15 +1,15 @@
 import whiley.lang.System
 
-function f({int} xs, {int} ys) -> ASCII.string:
+function f({int} xs, {int} ys) -> bool:
     if xs ⊆ ys:
-        return "XS IS A SUBSET"
+        return true
     else:
-        return "FAILED"
+        return false
 
-function g({int} xs, {int} ys) -> ASCII.string:
+function g({int} xs, {int} ys) -> bool:
     return f(xs, ys)
 
 method main(System.Console sys) -> void:
-    sys.out.println_s(g({1, 2, 3}, {1, 2, 3}))
-    sys.out.println_s(g({1, 2}, {1, 2, 3}))
-    sys.out.println_s(g({1}, {1, 2, 3}))
+    sys.out.println(g({1, 2, 3}, {1, 2, 3}))
+    sys.out.println(g({1, 2}, {1, 2, 3}))
+    sys.out.println(g({1}, {1, 2, 3}))

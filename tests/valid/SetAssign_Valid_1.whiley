@@ -1,10 +1,13 @@
 import whiley.lang.System
 
-function f({int} xs) -> ASCII.string
+function f({int} xs) -> int
 requires |xs| > 0:
-    return Any.toString(xs)
+    int r = 0
+    for x in xs:
+        r = r + x
+    return r
 
 method main(System.Console sys) -> void:
     {int} ys = {1, 2, 3}
     {int} zs = ys
-    sys.out.println_s(f(zs))
+    sys.out.println(f(zs))

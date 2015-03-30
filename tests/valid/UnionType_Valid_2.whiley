@@ -27,6 +27,6 @@ method main(System.Console sys) -> void:
     e, s = parseTerm({input: "abc", pos: 0})
     //
     if e is SyntaxError:
-        sys.out.println(e.err)
+        sys.out.println_s(e.err)
     else:
         sys.out.println(e)

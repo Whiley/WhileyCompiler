@@ -1,10 +1,10 @@
 import whiley.lang.System
 
-function f([bool] x) -> ASCII.string
+function f([bool] x) -> [bool]
 requires (|x| > 0) && x[0]:
-    return Any.toString(x)
+    return x
 
 method main(System.Console sys) -> void:
-    sys.out.println_s(f([true]))
-    sys.out.println_s(f([true, false]))
-    sys.out.println_s(f([true, false, true]))
+    sys.out.println(f([true]))
+    sys.out.println(f([true, false]))
+    sys.out.println(f([true, false, true]))
