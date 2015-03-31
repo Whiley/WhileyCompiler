@@ -76,16 +76,6 @@ public class Util {
 	}
 
 	/**
-	 * The following method is used for printing debug output arising from debug
-	 * statements.
-	 *
-	 * @param list
-	 */
-	public static void debug(String str) {
-		System.out.print(str);
-	}
-
-	/**
 	 * The <code>instanceOf</code> method implements a runtime type test.
 	 */
 	public static boolean instanceOf(Object obj, WyType t) {

@@ -1349,9 +1349,9 @@ public class Wyil2JavaBuilder implements Builder {
 
 	private void translate(CodeBlock.Index index, Codes.Debug c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(T_VOID, JAVA_LANG_STRING);
-		bytecodes.add(new Bytecode.Load(c.operand, JAVA_LANG_STRING));
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "debug", ftype,
+		JvmType.Function ftype = new JvmType.Function(T_VOID, WHILEYLIST);
+		bytecodes.add(new Bytecode.Load(c.operand, WHILEYLIST));
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "print", ftype,
 				Bytecode.InvokeMode.STATIC));
 	}
 

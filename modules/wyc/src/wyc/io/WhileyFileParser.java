@@ -4994,11 +4994,13 @@ public class WhileyFileParser {
 						// including "slash u"
 						String unicode = v.substring(i + 2, i + 6);
 						replace = (char) Integer.parseInt(unicode, 16); // unicode
+						i = i + 5;
 						break;
 					default:
 						throw new RuntimeException("unknown escape character");
 					}
 					result.add(Constant.V_INTEGER(BigInteger.valueOf(replace)));
+					i = i + 1;
 				}
 			} else {
 				result.add(Constant.V_INTEGER(BigInteger.valueOf(v.charAt(i))));
