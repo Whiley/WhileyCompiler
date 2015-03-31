@@ -4,13 +4,13 @@ type ilist is int | [int]
 
 type rlist is real | [int]
 
-function f(rlist e) -> string:
+function f(rlist e) -> bool:
     if e is [int]:
-        return "[int]"
+        return true
     else:
-        return "real"
+        return false
 
-function g(ilist e) -> string:
+function g(ilist e) -> bool:
     return f((rlist) e)
 
 method main(System.Console sys) -> void:

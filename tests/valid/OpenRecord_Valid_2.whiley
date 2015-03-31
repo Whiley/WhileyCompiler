@@ -6,19 +6,19 @@ constant Int is 4
 
 type Primitive is (int x) where x in {Short, Int}
 
-type Class is {[string] classes, string pkg}
+type Class is {[ASCII.string] classes, ASCII.string pkg}
 
 type Any is Primitive | Class
 
 type Unit is {int op, int offset}
 
-type FieldIndex is {int op, string name, Class owner, int offset, Any type}
+type FieldIndex is {int op, ASCII.string name, Class owner, int offset, Any type}
 
 type Bytecode is Unit | FieldIndex
 
-type Attribute is {string name, ...}
+type Attribute is {ASCII.string name, ...}
 
-type CodeAttribute is {string name, [Bytecode] data}
+type CodeAttribute is {ASCII.string name, [Bytecode] data}
 
 function codeLength(Attribute a) -> null | int:
     if a is CodeAttribute:

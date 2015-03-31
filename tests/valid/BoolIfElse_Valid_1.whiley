@@ -1,10 +1,10 @@
 import whiley.lang.System
 
-function f(bool b) -> string:
+function f(bool b) -> bool:
     if b:
-        return "TRUE"
+        return true
     else:
-        return "FALSE"
+        return false
 
 method main(System.Console sys) -> void:
     sys.out.println(f(true))

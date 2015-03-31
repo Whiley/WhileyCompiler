@@ -10,8 +10,8 @@ function run(int n, int x) -> bool:
 
 method main(System.Console sys) -> void:
     bool b1 = run(10, 4)
-    sys.out.println("b1=" ++ Any.toString(b1))
+    sys.out.println_s("b1=" ++ Any.toString(b1))
     bool b2 = run(10, -1)
-    sys.out.println("b2=" ++ Any.toString(b2))
+    sys.out.println_s("b2=" ++ Any.toString(b2))
     bool b3 = run(10, 11)
-    sys.out.println("b3=" ++ Any.toString(b3))
+    sys.out.println_s("b3=" ++ Any.toString(b3))

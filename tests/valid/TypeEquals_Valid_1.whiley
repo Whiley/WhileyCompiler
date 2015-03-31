@@ -4,11 +4,11 @@ type bop is {int y, int x} where x > 0
 
 type expr is int | bop
 
-function f(expr e) -> string:
+function f(expr e) -> bool:
     if e is int:
-        return "GOT INT"
+        return true
     else:
-        return "GOT BOB"
+        return false
 
 method main(System.Console sys) -> void:
     expr e = 1

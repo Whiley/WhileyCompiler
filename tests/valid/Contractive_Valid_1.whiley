@@ -7,4 +7,4 @@ function f(Contractive x) -> Contractive:
 
 method main(System.Console sys) -> void:
     x = f(null)
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)

@@ -11,10 +11,10 @@ function sum(LinkedList l) -> int:
 
 method main(System.Console sys) -> void:
     LinkedList list = null
-    sys.out.println("SUM: " ++ Int.toString(sum(list)))
+    sys.out.println_s("SUM: " ++ Any.toString(sum(list)))
     list = {next: list, data: 1}
-    sys.out.println("SUM: " ++ Int.toString(sum(list)))
+    sys.out.println_s("SUM: " ++ Any.toString(sum(list)))
     list = {next: list, data: 2324}
-    sys.out.println("SUM: " ++ Int.toString(sum(list)))
+    sys.out.println_s("SUM: " ++ Any.toString(sum(list)))
     list = {next: list, data: 2}
-    sys.out.println("SUM: " ++ Int.toString(sum(list)))
+    sys.out.println_s("SUM: " ++ Any.toString(sum(list)))

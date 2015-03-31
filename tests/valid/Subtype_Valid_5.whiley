@@ -9,4 +9,4 @@ type sr9arr is ([sr9tup] xs) where some { z in xs | z.f == 1 }
 method main(System.Console sys) -> void:
     sr9arr x = [{f: 1, g: 2}, {f: 1, g: 8}]
     x[0].f = 2
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)

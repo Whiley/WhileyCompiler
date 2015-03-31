@@ -1,7 +1,7 @@
 import whiley.lang.System
 
-function f(string x) -> !null & !int:
+function f(ASCII.string x) -> !null & !int:
     return x
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(f("Hello World")))
+    sys.out.println(f("Hello World"))

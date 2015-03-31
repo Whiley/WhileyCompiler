@@ -8,4 +8,4 @@ method inc(MyProc this, int i) -> void:
 method main(System.Console sys) -> void:
     MyProc mproc = new {x: 1}
     inc(mproc, 10)
-    sys.out.println(Any.toString(mproc->x))
+    sys.out.println(mproc->x)

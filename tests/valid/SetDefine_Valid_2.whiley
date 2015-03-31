@@ -4,4 +4,4 @@ type pintset is {int}
 
 method main(System.Console sys) -> void:
     {int} p = {1, 2}
-    sys.out.println(Any.toString(p))
+    sys.out.println(p)

@@ -54,7 +54,7 @@ public final class WyMap extends java.util.HashMap<Object,Object> implements Ite
 			}
 			firstTime=false;
 			Object val = get(key);
-			r = r + whiley.lang.Any$native.toString(key) + "=>" + val;
+			r = r + whiley.lang.Any$native.toRealString(key) + "=>" + val;
 		}
 		return r + "}";
 	}

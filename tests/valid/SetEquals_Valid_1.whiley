@@ -1,19 +1,14 @@
 import whiley.lang.System
 
-function f({int} xs, {real} ys) -> string:
+function f({int} xs, {real} ys) -> bool:
     if (({real}) xs) == ys:
-        return "EQUAL"
+        return true
     else:
-        return "NOT EQUAL"
-
-method g(System.Console sys, {int} xs, {real} ys) -> void:
-    sys.out.println(Any.toString(xs))
-    sys.out.println(Any.toString(ys))
-    sys.out.println(f(xs, ys))
+        return false
 
 method main(System.Console sys) -> void:
-    g(sys, {1, 4}, {1.0, 4.0})
-    g(sys, {1, 4, 4}, {1.0, 4.0})
-    g(sys, {1, 4}, {1.0, 4.2})
-    g(sys, {1, 4}, {1.0, 4.2})
-    g(sys, {}, {})
+    sys.out.println(f({1, 4}, {1.0, 4.0}))
+    sys.out.println(f({1, 4, 4}, {1.0, 4.0}))
+    sys.out.println(f({1, 4}, {1.0, 4.2}))
+    sys.out.println(f({1, 4}, {1.0, 4.2}))
+    sys.out.println(f({}, {}))

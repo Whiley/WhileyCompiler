@@ -3,7 +3,7 @@ import SyntaxError from whiley.lang.Errors
 
 type nat is (int x) where x >= 0
 
-function f(nat pos, string input) -> bool|null throws SyntaxError:
+function f(nat pos, ASCII.string input) -> bool|null:
     if pos >= |input|:
         return null
     else:
@@ -11,6 +11,6 @@ function f(nat pos, string input) -> bool|null throws SyntaxError:
         return flag
 
 method main(System.Console console):
-    console.out.println(Any.toString(f(0, "Ox")))
-    console.out.println(Any.toString(f(0, "1x")))
-    console.out.println(Any.toString(f(1, "O")))
+    console.out.println(f(0, "Ox"))
+    console.out.println(f(0, "1x"))
+    console.out.println(f(1, "O"))

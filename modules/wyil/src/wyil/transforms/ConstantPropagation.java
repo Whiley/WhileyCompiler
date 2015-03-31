@@ -247,10 +247,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index, (Codes.Return)code,environment);
 		} else if(code instanceof Codes.SetOperator) {
 			infer(index,(Codes.SetOperator)code,environment);
-		} else if(code instanceof Codes.StringOperator) {
-			infer(index,(Codes.StringOperator)code,environment);
-		} else if(code instanceof Codes.SubString) {
-			infer(index,(Codes.SubString)code,environment);
 		} else if(code instanceof Codes.Nop) {
 			// skip
 		} else if(code instanceof Codes.NewObject) {
@@ -493,17 +489,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 					result = list.values.get(i);
 				}
 			}
-		} else if (src instanceof Constant.Strung
-				&& idx instanceof Constant.Decimal) {
-			Constant.Strung str = (Constant.Strung) src;
-			Constant.Decimal num = (Constant.Decimal) idx;
-			if (num.value.scale() <= 0) {
-				int i = num.value.intValue();
-				if (i >= 0 && i < str.value.length()) {
-					// TO DO: need to actually push a character here
-				}
-			}
-		}
+		} 
 
 		assign(code.target(),result,environment,index);
 	}
@@ -663,62 +649,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 				result = lv.difference(rv);
 			}
 			break;
-		}
-
-		assign(code.target(),result,environment,index);
-	}
-
-	public void infer(CodeBlock.Index index, Codes.StringOperator code,
-			Env environment) {
-		Constant lhs = environment.get(code.operand(0));
-		Constant rhs = environment.get(code.operand(1));
-		Constant result = null;
-		switch(code.kind) {
-		case APPEND:
-			if(lhs instanceof Constant.Strung && rhs instanceof Constant.Strung) {
-				Constant.Strung left = (Constant.Strung) lhs;
-				Constant.Strung right = (Constant.Strung) rhs;
-				result = Constant.V_STRING(left.value + right.value);
-			}
-			break;
-		case LEFT_APPEND:
-			// TODO: need to add Value.Char
-			break;
-		case RIGHT_APPEND:
-			// TODO: need to add Value.Char
-			break;
-		}
-
-		assign(code.target(),result,environment,index);
-	}
-
-	public void infer(CodeBlock.Index index, Codes.SubString code,
-			Env environment) {
-
-		Constant src = environment.get(code.operands()[0]);
-		Constant start = environment.get(code.operands()[1]);
-		Constant end = environment.get(code.operands()[2]);
-
-		Constant result = null;
-		if (src instanceof Constant.Strung && start instanceof Constant.Decimal
-				&& end instanceof Constant.Decimal) {
-			Constant.Decimal en = (Constant.Decimal) end;
-			Constant.Decimal st = (Constant.Decimal) start;
-			if (en.value.scale() <= 0 && st.value.scale() <= 0) {
-				Constant.Strung str = (Constant.Strung) src;
-				int eni = en.value.intValue();
-				int sti = st.value.intValue();
-				if (BigRational.valueOf(eni).equals(en.value)
-						&& eni >= 0 && eni <= str.value.length()
-						&& BigRational.valueOf(sti).equals(st.value)
-						&& sti >= 0 && sti <= str.value.length()) {
-					String nval = "";
-					for (int i = sti; i < eni; ++i) {
-						nval += str.value.charAt(i);
-					}
-					result = Constant.V_STRING(nval);
-				}
-			}
 		}
 
 		assign(code.target(),result,environment,index);

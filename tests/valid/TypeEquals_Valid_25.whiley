@@ -13,7 +13,7 @@ type BOp is (int x) where x in {ADD, SUB, MUL, DIV}
 
 type BinOp is {BOp op, Expr rhs, Expr lhs}
 
-type Var is {string id}
+type Var is {ASCII.string id}
 
 type ListAccess is {Expr index, Expr src}
 
@@ -44,7 +44,7 @@ function evaluate(Expr e) -> Value:
 method main(System.Console sys) -> void:
     Expr e = {op: ADD, rhs: 1, lhs: 123}
     Value v = evaluate(e)
-    sys.out.println("RESULT: " ++ Any.toString(v))
+    sys.out.println_s("RESULT: " ++ Any.toString(v))
     e = [1]
     v = evaluate(e)
-    sys.out.println("RESULT: " ++ Any.toString(v))
+    sys.out.println_s("RESULT: " ++ Any.toString(v))

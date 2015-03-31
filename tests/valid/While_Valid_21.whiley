@@ -14,8 +14,8 @@ ensures |result| == count:
     return r
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(create(3, 3)))
-    sys.out.println(Any.toString(create(2, 2)))
-    sys.out.println(Any.toString(create(2, 1)))
-    sys.out.println(Any.toString(create(1, 1)))
-    sys.out.println(Any.toString(create(0, 0)))
+    sys.out.println(create(3, 3))
+    sys.out.println(create(2, 2))
+    sys.out.println(create(2, 1))
+    sys.out.println(create(1, 1))
+    sys.out.println(create(0, 0))

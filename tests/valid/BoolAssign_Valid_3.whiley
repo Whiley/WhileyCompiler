@@ -21,9 +21,9 @@ ensures r > 0:
         return 1
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(f(1, 1)))
-    sys.out.println(Any.toString(f(0, 0)))
-    sys.out.println(Any.toString(f(4, 345)))
-    sys.out.println(Any.toString(g(1, 1)))
-    sys.out.println(Any.toString(g(0, 0)))
-    sys.out.println(Any.toString(g(4, 345)))
+    sys.out.println(f(1, 1))
+    sys.out.println(f(0, 0))
+    sys.out.println(f(4, 345))
+    sys.out.println(g(1, 1))
+    sys.out.println(g(0, 0))
+    sys.out.println(g(4, 345))

@@ -1,10 +1,10 @@
 import whiley.lang.System
 
-function f(int x, real y) -> string:
+function f(int x, real y) -> bool:
     if ((real) x) == y:
-        return "EQUAL"
+        return true
     else:
-        return "NOT EQUAL"
+        return false
 
 method main(System.Console sys) -> void:
     sys.out.println(f(1, 4.0))

@@ -1,10 +1,10 @@
 import whiley.lang.System
 
-function f({int} xs, {int} ys) -> string:
+function f({int} xs, {int} ys) -> bool:
     if xs ⊂ ys:
-        return "XS IS A SUBSET"
+        return true
     else:
-        return "XS IS NOT A SUBSET"
+        return false
 
 method main(System.Console sys) -> void:
     sys.out.println(f({1, 2}, {1, 2, 3}))

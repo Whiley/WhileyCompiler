@@ -7,4 +7,4 @@ method main(System.Console sys) -> void:
     int r = 0
     for x in xs:
         r = r + x
-    sys.out.println(Any.toString(r))
+    sys.out.println(r)

@@ -8,6 +8,6 @@ function test([real] xs, [int] ys) -> bool:
 
 method main(System.Console sys) -> void:
     bool s = test([1.2, 2.3, 3.4], [1, 2, 3, 4, 5, 6, 7, 8])
-    sys.out.println(Any.toString(s))
+    sys.out.println(s)
     s = test([1.2, 2.3, 3.4], [])
-    sys.out.println(Any.toString(s))
+    sys.out.println(s)

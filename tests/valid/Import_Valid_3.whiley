@@ -9,5 +9,4 @@ function toInt([int] ls) -> int:
 
 public method main(System.Console sys) -> void:
     [int] ls = [1, 2, 3, 4]
-    string s = Any.toString(toInt(ls))
-    sys.out.println(s)
+    sys.out.println(toInt(ls))

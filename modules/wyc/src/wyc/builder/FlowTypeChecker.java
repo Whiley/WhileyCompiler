@@ -628,7 +628,7 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.Debug stmt, Environment environment) {
 		stmt.expr = propagate(stmt.expr, environment, current);
-		checkIsSubtype(Type.T_STRING, stmt.expr);
+		checkIsSubtype(Type.List(Type.T_INT,false), stmt.expr);
 		return environment;
 	}
 
@@ -1557,10 +1557,8 @@ public class FlowTypeChecker {
 		case LTEQ:
 		case GTEQ:
 		case GT:
-			checkSuptypes(lhs, context, Nominal.T_INT, Nominal.T_REAL,
-					Nominal.T_CHAR);
-			checkSuptypes(rhs, context, Nominal.T_INT, Nominal.T_REAL,
-					Nominal.T_CHAR);
+			checkSuptypes(lhs, context, Nominal.T_INT, Nominal.T_REAL);
+			checkSuptypes(rhs, context, Nominal.T_INT, Nominal.T_REAL);
 			//
 			if (!lhsRawType.equals(rhsRawType)) {
 				syntaxError(
@@ -1680,8 +1678,6 @@ public class FlowTypeChecker {
 				return propagate((Expr.Set) expr, environment, context);
 			} else if (expr instanceof Expr.SubList) {
 				return propagate((Expr.SubList) expr, environment, context);
-			} else if (expr instanceof Expr.SubString) {
-				return propagate((Expr.SubString) expr, environment, context);
 			} else if (expr instanceof Expr.Dereference) {
 				return propagate((Expr.Dereference) expr, environment, context);
 			} else if (expr instanceof Expr.Record) {
@@ -1743,29 +1739,10 @@ public class FlowTypeChecker {
 		boolean rhs_set = Type.isSubtype(Type.T_SET_ANY, rhsRawType);
 		boolean lhs_list = Type.isSubtype(Type.T_LIST_ANY, lhsRawType);
 		boolean rhs_list = Type.isSubtype(Type.T_LIST_ANY, rhsRawType);
-		boolean lhs_str = Type.isSubtype(Type.T_STRING, lhsRawType);
-		boolean rhs_str = Type.isSubtype(Type.T_STRING, rhsRawType);
 
 		Type srcType;
 
-		if (lhs_str || rhs_str) {
-			if (!lhs_str) {
-				checkIsSubtype(Type.T_CHAR, lhs, context);
-			} else if (!rhs_str) {
-				checkIsSubtype(Type.T_CHAR, rhs, context);
-			}
-			switch (expr.op) {
-			case LISTAPPEND:
-				expr.op = Expr.BOp.STRINGAPPEND;
-			case STRINGAPPEND:
-				break;
-			default:
-				syntaxError("Invalid string operation: " + expr.op, context,
-						expr);
-			}
-
-			srcType = Type.T_STRING;
-		} else if (lhs_list || rhs_list) {
+		if (lhs_list || rhs_list) {
 			checkIsSubtype(Type.T_LIST_ANY, lhs, context);
 			checkIsSubtype(Type.T_LIST_ANY, rhs, context);
 			Type.EffectiveList lel = (Type.EffectiveList) lhsRawType;
@@ -1862,10 +1839,8 @@ public class FlowTypeChecker {
 				break;
 			default:
 				// all other operations go through here
-				checkSuptypes(lhs, context, Nominal.T_INT, Nominal.T_REAL,
-						Nominal.T_CHAR);
-				checkSuptypes(rhs, context, Nominal.T_INT, Nominal.T_REAL,
-						Nominal.T_CHAR);
+				checkSuptypes(lhs, context, Nominal.T_INT, Nominal.T_REAL);
+				checkSuptypes(rhs, context, Nominal.T_INT, Nominal.T_REAL);
 				//
 				if (!lhsRawType.equals(rhsRawType)) {
 					syntaxError(
@@ -2139,25 +2114,17 @@ public class FlowTypeChecker {
 	private Expr propagate(Expr.LengthOf expr, Environment environment,
 			Context context) throws IOException, ResolveError {
 		expr.src = propagate(expr.src, environment, context);
-		Nominal srcType = expr.src.result();
-		Type rawSrcType = srcType.raw();
 
-		// First, check whether this is still only an abstract access and, in
-		// such case, upgrade it to the appropriate access expression.
+		Nominal.EffectiveCollection srcType = expandAsEffectiveCollection(expr.src
+				.result());
 
-		if (rawSrcType instanceof Type.EffectiveCollection) {
-			expr.srcType = expandAsEffectiveCollection(srcType);
-			return expr;
-		} else {
+		if (srcType == null) {
 			syntaxError("found " + expr.src.result().nominal()
 					+ ", expected string, set, list or dictionary.", context,
 					expr.src);
+		} else {
+			expr.srcType = srcType;
 		}
-
-		// Second, determine the expanded src type for this access expression
-		// and check the key value.
-
-		checkIsSubtype(Type.T_STRING, expr.src, context);
 
 		return expr;
 	}
@@ -2269,31 +2236,12 @@ public class FlowTypeChecker {
 		expr.start = propagate(expr.start, environment, context);
 		expr.end = propagate(expr.end, environment, context);
 
-		checkSuptypes(expr.src, context, Nominal.T_LIST_ANY, Nominal.T_STRING);
+		checkSuptypes(expr.src, context, Nominal.T_LIST_ANY);
 		checkIsSubtype(Type.T_INT, expr.start, context);
 		checkIsSubtype(Type.T_INT, expr.end, context);
 
 		expr.type = expandAsEffectiveList(expr.src.result());
-		if (expr.type == null) {
-			// must be a substring
-			return new Expr.SubString(expr.src, expr.start, expr.end,
-					expr.attributes());
-		}
-
-		return expr;
-	}
-
-	private Expr propagate(Expr.SubString expr, Environment environment,
-			Context context) throws IOException {
-
-		expr.src = propagate(expr.src, environment, context);
-		expr.start = propagate(expr.start, environment, context);
-		expr.end = propagate(expr.end, environment, context);
-
-		checkIsSubtype(Type.T_STRING, expr.src, context);
-		checkIsSubtype(Type.T_INT, expr.start, context);
-		checkIsSubtype(Type.T_INT, expr.end, context);
-
+		
 		return expr;
 	}
 
@@ -3038,14 +2986,10 @@ public class FlowTypeChecker {
 				return Type.T_BOOL;
 			} else if (t instanceof SyntacticType.Byte) {
 				return Type.T_BYTE;
-			} else if (t instanceof SyntacticType.Char) {
-				return Type.T_CHAR;
 			} else if (t instanceof SyntacticType.Int) {
 				return Type.T_INT;
 			} else if (t instanceof SyntacticType.Real) {
 				return Type.T_REAL;
-			} else if (t instanceof SyntacticType.Strung) {
-				return Type.T_STRING;
 			} else {
 				internalFailure("unrecognised type encountered ("
 						+ t.getClass().getName() + ")", context, t);
@@ -3306,14 +3250,10 @@ public class FlowTypeChecker {
 			kind = Type.K_BOOL;
 		} else if (t instanceof SyntacticType.Byte) {
 			kind = Type.K_BYTE;
-		} else if (t instanceof SyntacticType.Char) {
-			kind = Type.K_CHAR;
 		} else if (t instanceof SyntacticType.Int) {
 			kind = Type.K_INT;
 		} else if (t instanceof SyntacticType.Real) {
 			kind = Type.K_RATIONAL;
-		} else if (t instanceof SyntacticType.Strung) {
-			kind = Type.K_STRING;
 		} else {
 			internalFailure("unrecognised type encountered ("
 					+ t.getClass().getName() + ")", context, t);

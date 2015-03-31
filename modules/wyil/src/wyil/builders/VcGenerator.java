@@ -775,21 +775,6 @@ public class VcGenerator {
 						new Expr.Binary(Expr.Binary.Op.LT, idx, length, idx
 								.attributes())));
 				src = new Expr.IndexOf(src, idx);
-			} else if (lval instanceof Codes.StringLVal) {
-				Codes.StringLVal lv = (Codes.StringLVal) lval;
-				Expr idx = branch.read(lv.indexOperand);
-				Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
-						idx.attributes());
-				Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
-						idx.attributes());
-				preconditions.add(new Pair("index out of bounds (negative)",
-						new Expr.Binary(Expr.Binary.Op.GTEQ, idx, zero, idx
-								.attributes())));
-				preconditions.add(new Pair(
-						"index out of bounds (not less than length)",
-						new Expr.Binary(Expr.Binary.Op.LT, idx, length, idx
-								.attributes())));
-				src = new Expr.IndexOf(src, idx);
 			} else if (lval instanceof Codes.MapLVal) {
 				// FIXME: need to implement some actual checks here!
 				Codes.MapLVal lv = (Codes.MapLVal) lval;
@@ -1656,10 +1641,6 @@ public class VcGenerator {
 				transform((Codes.Dereference) code, block, branch);
 			} else if (code instanceof Codes.Nop) {
 				// skip
-			} else if (code instanceof Codes.StringOperator) {
-				transform((Codes.StringOperator) code, block, branch);
-			} else if (code instanceof Codes.SubString) {
-				transform((Codes.SubString) code, block, branch);
 			} else if (code instanceof Codes.NewObject) {
 				transform((Codes.NewObject) code, block, branch);
 			} else if (code instanceof Codes.TupleLoad) {
@@ -1702,37 +1683,6 @@ public class VcGenerator {
 	 */
 	private static Expr.Binary.Op[] setOperatorMap = { Expr.Binary.Op.SETUNION,
 			Expr.Binary.Op.SETINTERSECTION, Expr.Binary.Op.SETDIFFERENCE };
-
-	protected void transform(Codes.StringOperator code,
-			AttributedCodeBlock block, VcBranch branch) {
-		Collection<Attribute> attributes = toWycsAttributes(block
-				.attributes(branch.pc()));
-		Expr lhs = branch.read(code.operand(0));
-		Expr rhs = branch.read(code.operand(1));
-
-		switch (code.kind) {
-		case APPEND:
-			// do nothing
-			break;
-		case LEFT_APPEND:
-			rhs = new Expr.Nary(Expr.Nary.Op.LIST, new Expr[] { rhs },
-					attributes);
-			break;
-		case RIGHT_APPEND:
-			lhs = new Expr.Nary(Expr.Nary.Op.LIST, new Expr[] { lhs },
-					attributes);
-			break;
-		default:
-			internalFailure("unknown binary operator", filename,
-					block.attributes(branch.pc()));
-			return;
-		}
-
-		// TODO: after removing left append we can simplify this case.
-
-		branch.write(code.target(), new Expr.Binary(Expr.Binary.Op.LISTAPPEND,
-				lhs, rhs, toWycsAttributes(block.attributes(branch.pc()))));
-	}
 
 	protected void transform(Codes.Convert code, AttributedCodeBlock block,
 			VcBranch branch) {
@@ -1858,11 +1808,6 @@ public class VcGenerator {
 		// do nout
 	}
 
-	protected void transform(Codes.SubString code, AttributedCodeBlock block,
-			VcBranch branch) {
-		transformTernary(Expr.Ternary.Op.SUBLIST, code, branch, block);
-	}
-
 	protected void transform(Codes.SubList code, AttributedCodeBlock block,
 			VcBranch branch) {
 		transformTernary(Expr.Ternary.Op.SUBLIST, code, branch, block);
@@ -1937,8 +1882,6 @@ public class VcGenerator {
 				return new Expr.Ternary(Expr.Ternary.Op.UPDATE, source, index,
 						result, toWycsAttributes(block.attributes(branch.pc())));
 			} else if (lv instanceof Codes.MapLVal) {
-				return source; // TODO
-			} else if (lv instanceof Codes.StringLVal) {
 				return source; // TODO
 			} else {
 				return source; // TODO
@@ -2631,26 +2574,12 @@ public class VcGenerator {
 		} else if (c instanceof Constant.Byte) {
 			Constant.Byte cb = (Constant.Byte) c;
 			return wycs.core.Value.Integer(BigInteger.valueOf(cb.value));
-		} else if (c instanceof Constant.Char) {
-			Constant.Char cb = (Constant.Char) c;
-			return wycs.core.Value.Integer(BigInteger.valueOf(cb.value));
 		} else if (c instanceof Constant.Integer) {
 			Constant.Integer cb = (Constant.Integer) c;
 			return wycs.core.Value.Integer(cb.value);
 		} else if (c instanceof Constant.Decimal) {
 			Constant.Decimal cb = (Constant.Decimal) c;
 			return wycs.core.Value.Decimal(cb.value);
-		} else if (c instanceof Constant.Strung) {
-			Constant.Strung cb = (Constant.Strung) c;
-			String str = cb.value;
-			ArrayList<Value> pairs = new ArrayList<Value>();
-			for (int i = 0; i != str.length(); ++i) {
-				ArrayList<Value> pair = new ArrayList<Value>();
-				pair.add(Value.Integer(BigInteger.valueOf(i)));
-				pair.add(Value.Integer(BigInteger.valueOf(str.charAt(i))));
-				pairs.add(Value.Tuple(pair));
-			}
-			return Value.Set(pairs);
 		} else if (c instanceof Constant.List) {
 			Constant.List cb = (Constant.List) c;
 			List<Constant> cb_values = cb.values;
@@ -2744,10 +2673,6 @@ public class VcGenerator {
 			return new SyntacticType.Null(toWycsAttributes(attributes));
 		} else if (t instanceof Type.Bool) {
 			return new SyntacticType.Bool(toWycsAttributes(attributes));
-		} else if (t instanceof Type.Char) {
-			// FIXME: implement SyntacticType.Char
-			// return new SyntacticType.Char(attributes(branch));
-			return new SyntacticType.Int(toWycsAttributes(attributes));
 		} else if (t instanceof Type.Byte) {
 			// FIXME: implement SyntacticType.Byte
 			// return new SyntacticType.Byte(attributes(branch));
@@ -2756,11 +2681,6 @@ public class VcGenerator {
 			return new SyntacticType.Int(toWycsAttributes(attributes));
 		} else if (t instanceof Type.Real) {
 			return new SyntacticType.Real(toWycsAttributes(attributes));
-		} else if (t instanceof Type.Strung) {
-			// FIXME: implement SyntacticType.Strung
-			// return new SyntacticType.Strung(attributes(branch));
-			return new SyntacticType.List(new SyntacticType.Int(
-					toWycsAttributes(attributes)));
 		} else if (t instanceof Type.Set) {
 			Type.Set st = (Type.Set) t;
 			SyntacticType element = convert(st.element(), attributes);
@@ -2845,9 +2765,8 @@ public class VcGenerator {
 		// See Issue #298.
 		if (t instanceof Type.Any || t instanceof Type.Void
 				|| t instanceof Type.Null || t instanceof Type.Bool
-				|| t instanceof Type.Char || t instanceof Type.Byte
-				|| t instanceof Type.Int || t instanceof Type.Real
-				|| t instanceof Type.Strung) {
+				|| t instanceof Type.Byte || t instanceof Type.Int
+				|| t instanceof Type.Real) {
 			return false;
 		} else if (t instanceof Type.Set) {
 			Type.Set st = (Type.Set) t;

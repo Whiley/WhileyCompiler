@@ -20,8 +20,8 @@ public method BufferInputStream([byte] buffer) -> InputStream:
     return {read: &(int x -> read(this, x))}
 
 method main(System.Console sys) -> void:
-    [string] strings = ["hello", "cruel cruel", "world"]
+    [ASCII.string] strings = ["hello", "cruel cruel", "world"]
     for s in strings:
-        InputStream bis = BufferInputStream(String.toUTF8(s))
+        InputStream bis = BufferInputStream(ASCII.toBytes(s))
         [byte] bytes = bis.read(7)
-        sys.out.println("READ: " ++ String.fromASCII(bytes))
+        sys.out.println(bytes)

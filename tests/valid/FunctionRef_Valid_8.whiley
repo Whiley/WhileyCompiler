@@ -11,8 +11,8 @@ function test(function (int)->int read, int arg) -> int:
 
 method main(System.Console sys) -> void:
     int x = test(&id, 1)
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)
     x = test(&id, 123)
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)
     x = test(&id, 223)
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)

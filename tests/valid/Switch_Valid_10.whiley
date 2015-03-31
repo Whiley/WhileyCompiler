@@ -9,7 +9,7 @@ function f(real x) -> int:
     return 10
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(f(1.23)))
-    sys.out.println(Any.toString(f(2.01)))
-    sys.out.println(Any.toString(f(3.0)))
-    sys.out.println(Any.toString(f(-1.0)))
+    sys.out.println(f(1.23))
+    sys.out.println(f(2.01))
+    sys.out.println(f(3.0))
+    sys.out.println(f(-1.0))

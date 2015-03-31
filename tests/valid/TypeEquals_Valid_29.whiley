@@ -10,23 +10,23 @@ type FilePos is {int col}
 
 type ShortPos is Pos | RankPos | FilePos | null
 
-function pos2str(Pos p) -> string:
-    return "" ++ ('a' + (char) p.col) ++ ('1' + (char) p.row)
+function pos2str(Pos p) -> [int]:
+    return ['a' + p.col, '1' + p.row]
 
-function shortPos2str(ShortPos p) -> string:
+function shortPos2str(ShortPos p) -> [int]:
     if p is null:
         return ""
     else:
         if p is RankPos:
-            return "" ++ ('1' + (char) p.row)
+            return ['1' + p.row]
         else:
             if p is FilePos:
-                return "" ++ ('a' + (char) p.col)
+                return ['a' + p.col]
             else:
                 return pos2str(p)
 
 public method main(System.Console sys) -> void:
-    sys.out.println(shortPos2str(null))
-    sys.out.println(shortPos2str({row: 1}))
-    sys.out.println(shortPos2str({col: 1}))
-    sys.out.println(shortPos2str({col: 2, row: 1}))
+    sys.out.println_s(shortPos2str(null))
+    sys.out.println_s(shortPos2str({row: 1}))
+    sys.out.println_s(shortPos2str({col: 1}))
+    sys.out.println_s(shortPos2str({col: 2, row: 1}))

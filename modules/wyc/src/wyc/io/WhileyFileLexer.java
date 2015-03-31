@@ -518,10 +518,8 @@ public class WhileyFileLexer {
 			put("null", Token.Kind.Null);
 			put("bool", Token.Kind.Bool);
 			put("byte", Token.Kind.Byte);
-			put("char", Token.Kind.Char);
 			put("int", Token.Kind.Int);
 			put("real", Token.Kind.Real);
-			put("string", Token.Kind.String);
 			// constants
 			put("true", Token.Kind.True);
 			put("false", Token.Kind.False);

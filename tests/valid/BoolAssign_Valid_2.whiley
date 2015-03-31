@@ -5,8 +5,8 @@ method main(System.Console sys) -> void:
     bool y = false
     sys.out.println(x)
     sys.out.println(y)
-    sys.out.println("AND")
+    sys.out.println_s("AND")
     x = x && y
     sys.out.println(x)
-    sys.out.println("NOT")
+    sys.out.println_s("NOT")
     sys.out.println(!x)

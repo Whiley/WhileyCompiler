@@ -240,11 +240,6 @@ public final class WyilFileWriter {
 				output.write_uv(CONSTANT_Byte);
 				output.write_u8(b.value);
 
-			} else if(val instanceof Constant.Char) {
-				Constant.Char c = (Constant.Char) val;
-				output.write_uv(CONSTANT_Char);
-				output.write_uv(c.value);
-
 			} else if(val instanceof Constant.Integer) {
 				Constant.Integer i = (Constant.Integer) val;
 				BigInteger num = i.value;
@@ -252,13 +247,6 @@ public final class WyilFileWriter {
 				output.write_uv(CONSTANT_Int);
 				output.write_uv(numbytes.length);
 				output.write(numbytes);
-
-			} else if(val instanceof Constant.Strung) {
-				Constant.Strung s = (Constant.Strung) val;
-				output.write_uv(CONSTANT_String);
-				String value = s.value;
-				output.write_uv(stringCache.get(value));
-
 			} else if(val instanceof Constant.Decimal) {
 				Constant.Decimal r = (Constant.Decimal) val;
 				output.write_uv(CONSTANT_Real);
@@ -1154,10 +1142,7 @@ public final class WyilFileWriter {
 	}
 
 	private void addConstantSubitems(Constant v) {
-		if(v instanceof Constant.Strung) {
-			Constant.Strung s = (Constant.Strung) v;
-			addStringItem(s.value);
-		} else if(v instanceof Constant.List) {
+		if(v instanceof Constant.List) {
 			Constant.List l = (Constant.List) v;
 			for (Constant e : l.values) {
 				addConstantItem(e);
@@ -1292,11 +1277,9 @@ public final class WyilFileWriter {
 	public final static int CONSTANT_True = 1;
 	public final static int CONSTANT_False = 2;
 	public final static int CONSTANT_Byte = 3;
-	public final static int CONSTANT_Char = 4;
 	public final static int CONSTANT_Int = 5;
 	public final static int CONSTANT_Real = 6;
 	public final static int CONSTANT_Set = 7;
-	public final static int CONSTANT_String = 8;
 	public final static int CONSTANT_List = 9;
 	public final static int CONSTANT_Record = 10;
 	public final static int CONSTANT_Tuple = 11;

@@ -14,5 +14,5 @@ function f(R1 x) -> R4:
 method main(System.Console sys) -> void:
     z1 = f({x: 1})
     z2 = f({x: null})
-    sys.out.println(Any.toString(z1))
-    sys.out.println(Any.toString(z2))
+    sys.out.println(z1)
+    sys.out.println(z2)

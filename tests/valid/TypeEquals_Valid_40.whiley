@@ -6,14 +6,14 @@ type neg is int
 
 type expr is pos | neg | [int]
 
-function f(expr e) -> string:
+function f(expr e) -> int:
     if (e is pos) && (e > 0.0):
-        return "POSITIVE: " ++ Any.toString(e)
+        return 0
     else:
         if e is neg:
-            return "NEGATIVE: " ++ Any.toString(e)
+            return 1
         else:
-            return "OTHER"
+            return 2
 
 method main(System.Console sys) -> void:
     sys.out.println(f(-1))

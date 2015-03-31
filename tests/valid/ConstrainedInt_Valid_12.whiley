@@ -2,9 +2,9 @@ import whiley.lang.System
 
 type cr1nat is int
 
-function f(cr1nat x) -> string:
+function f(cr1nat x) -> int:
     int y = x
-    return Any.toString(y)
+    return y
 
 method main(System.Console sys) -> void:
     sys.out.println(f(9))

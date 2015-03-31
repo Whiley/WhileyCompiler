@@ -31,16 +31,12 @@ public abstract class Nominal {
 	public static final Nominal T_META = new Base(Type.T_META,Type.T_META);
 	public static final Nominal T_BOOL = new Base(Type.T_BOOL,Type.T_BOOL);
 	public static final Nominal T_BYTE = new Base(Type.T_BYTE,Type.T_BYTE);
-	public static final Nominal T_CHAR = new Base(Type.T_CHAR,Type.T_CHAR);
 	public static final Nominal T_INT = new Base(Type.T_INT,Type.T_INT);
 	public static final Nominal T_REAL = new Base(Type.T_REAL,Type.T_REAL);
-	public static final Nominal T_STRING = new Strung(Type.T_STRING,Type.T_STRING);
 	public static final Nominal T_LIST_ANY = new List(Type.T_LIST_ANY,Type.T_LIST_ANY);
 
 	public static Nominal construct(Type nominal, Type raw) {
-		if(nominal instanceof Type.Strung && raw instanceof Type.Strung) {			
-			return new Strung((Type.Strung)nominal,(Type.Strung)raw);
-		} else if(nominal instanceof Type.Reference && raw instanceof Type.Reference) {
+		if(nominal instanceof Type.Reference && raw instanceof Type.Reference) {
 			return new Reference((Type.Reference)nominal,(Type.Reference)raw);
 		} else if(nominal instanceof Type.EffectiveTuple && raw instanceof Type.EffectiveTuple) {
 			return new Tuple((Type.EffectiveTuple)nominal,(Type.EffectiveTuple)raw);
@@ -167,50 +163,6 @@ public abstract class Nominal {
 		public boolean equals(Object o) {
 			if (o instanceof Base) {
 				Base b = (Base) o;
-				return nominal.equals(b.nominal()) && raw.equals(b.raw());
-			}
-			return false;
-		}
-
-		public int hashCode() {
-			return raw.hashCode();
-		}
-	}
-
-	public static final class Strung extends Nominal implements EffectiveIndexible {
-		private final Type.Strung raw;
-		private final Type.Strung nominal;
-
-		Strung(Type.Strung nominal, Type.Strung raw) {
-			this.nominal = nominal;
-			this.raw = raw;
-		}
-		public Nominal key() {
-			return Nominal.T_INT;
-		}
-		public Nominal value() {
-			return Nominal.T_CHAR;
-		}
-		public Nominal element() {
-			return Nominal.T_CHAR;
-		}
-		public Type.Strung nominal() {
-			return Type.T_STRING;
-		}
-
-		public Type.Strung raw() {
-			return Type.T_STRING;
-		}
-
-		public EffectiveIndexible update(Nominal key, Nominal value) {
-			return (EffectiveIndexible) construct(
-					(Type) nominal.update(key.nominal(), value.nominal()),
-					(Type) raw.update(key.raw(), value.raw()));
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Strung) {
-				Strung b = (Strung) o;
 				return nominal.equals(b.nominal()) && raw.equals(b.raw());
 			}
 			return false;

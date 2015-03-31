@@ -26,4 +26,4 @@ method main(System.Console console) -> void:
     [int] list = -10 .. 10
     for i in list:
         for j in list:
-            console.out.println("DIFF(" ++ Int.toString(i) ++ "," ++ Int.toString(j) ++ ") = " ++ Int.toString(diff(i, j)))
+            console.out.println_s("DIFF(" ++ Any.toString(i) ++ "," ++ Any.toString(j) ++ ") = " ++ Any.toString(diff(i, j)))

@@ -77,10 +77,8 @@ public abstract class Type {
 	public static final Null T_NULL = new Null();
 	public static final Bool T_BOOL = new Bool();
 	public static final Byte T_BYTE = new Byte();
-	public static final Char T_CHAR = new Char();
 	public static final Int T_INT = new Int();
 	public static final Real T_REAL = new Real();
-	public static final Strung T_STRING = new Strung();
 	public static final Meta T_META = new Meta();
 
 	// the following are strictly unnecessary, but since they occur very
@@ -726,26 +724,7 @@ public abstract class Type {
 			return "bool";
 		}
 	}
-
-	/**
-	 * Represents a unicode character.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Char extends Leaf {
-		private Char() {}
-		public boolean equals(Object o) {
-			return o == T_CHAR;
-		}
-		public int hashCode() {
-			return 4;
-		}
-		public String toString() {
-			return "char";
-		}
-	}
-
+	
 	/**
 	 * Represents a sequence of 8 bits. Note that, unlike many languages, there
 	 * is no representation associated with a byte. For example, to extract an
@@ -810,49 +789,7 @@ public abstract class Type {
 			return "real";
 		}
 	}
-
-	/**
-	 * Represents a string of characters
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Strung extends Leaf implements EffectiveIndexible {
-		private Strung() {}
-		public boolean equals(Object o) {
-			return o == T_STRING;
-		}
-
-		public Type key() {
-			return T_INT;
-		}
-
-		public Type value() {
-			return T_CHAR;
-		}
-
-		public Type element() {
-			return T_CHAR;
-		}
-
-		public int hashCode() {
-			return 6;
-		}
-
-		public String toString() {
-			return "string";
-		}
-
-		public EffectiveIndexible update(Type key, Type value) {
-			if(key == T_INT && value == T_CHAR) {
-				return this;
-			} else {
-				return Map(Type.Union(key,T_INT),Type.Union(value,T_CHAR));
-			}
-		}
-	}
-
-
+	
 	/**
 	 * The existential type represents the an unknown type, defined at a given
 	 * position.
@@ -2021,14 +1958,10 @@ public abstract class Type {
 			return K_BOOL;
 		} else if(leaf instanceof Type.Byte) {
 			return K_BYTE;
-		} else if(leaf instanceof Type.Char) {
-			return K_CHAR;
 		} else if(leaf instanceof Type.Int) {
 			return K_INT;
 		} else if(leaf instanceof Type.Real) {
 			return K_RATIONAL;
-		} else if(leaf instanceof Type.Strung) {
-			return K_STRING;
 		} else if(leaf instanceof Type.Meta) {
 			return K_META;
 		} else if(leaf instanceof Type.Nominal) {
@@ -2082,18 +2015,12 @@ public abstract class Type {
 			break;
 		case K_BYTE:
 			type = T_BYTE;
-			break;
-		case K_CHAR:
-			type = T_CHAR;
-			break;
+			break;		
 		case K_INT:
 			type = T_INT;
 			break;
 		case K_RATIONAL:
 			type = T_REAL;
-			break;
-		case K_STRING:
-			type = T_STRING;
 			break;
 		case K_NOMINAL:
 			type = new Nominal((NameID) root.data);
@@ -2128,14 +2055,13 @@ public abstract class Type {
 			for(Type bound : union.bounds()) {
 				boolean isSet = bound instanceof Set;
 				boolean isList = bound instanceof List;
-				boolean isString = bound instanceof Strung;
 				boolean isMap = bound instanceof Map;
 				allRecords &= bound instanceof Record;
 				allSets &= isSet;
 				allLists &= isList;
 				allDictionaries &= isMap;
-				allMaps &= isList || isMap || isString;
-				allCollections &= isSet || isList || isMap || isString;
+				allMaps &= isList || isMap;
+				allCollections &= isSet || isList || isMap;
 				allTuples &= bound instanceof Tuple;
 			}
 			if(allSets) {

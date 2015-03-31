@@ -1,8 +1,8 @@
 import whiley.lang.System
 
-function f({int} xs) -> string
+function f({int} xs) -> {int}
 requires no { w in xs | w < 0 }:
-    return Any.toString(xs)
+    return xs
 
 method main(System.Console sys) -> void:
     {int} ys = {1, 2, 3}

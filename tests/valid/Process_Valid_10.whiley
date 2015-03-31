@@ -20,7 +20,7 @@ method main(System.Console sys) -> void:
     // put items into queue
     for item in items:
         put(q,item)
-        sys.out.println("PUT: " ++ Any.toString(item))
+        sys.out.println_s("PUT: " ++ Any.toString(item))
     // get items out of queue
     while !isEmpty(q):
-        sys.out.println("GET: " ++ Any.toString(get(q)))
+        sys.out.println_s("GET: " ++ Any.toString(get(q)))

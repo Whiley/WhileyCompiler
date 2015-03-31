@@ -4,9 +4,9 @@ type Expr is real | Var | BinOp
 
 type BinOp is {Expr rhs, Expr lhs}
 
-type Var is {string id}
+type Var is {ASCII.string id}
 
-type SyntaxError is {string err}
+type SyntaxError is {ASCII.string err}
 
 type SExpr is SyntaxError | Expr
 
@@ -30,7 +30,7 @@ public method main(System.Console sys) -> void:
     while i < 10:
         SExpr e = sbuild(i)
         if e is SyntaxError:
-            sys.out.println("syntax error: " ++ e.err)
+            sys.out.println_s("syntax error: " ++ e.err)
         else:
-            sys.out.println(Any.toString(e))
+            sys.out.println(e)
         i = i + 1

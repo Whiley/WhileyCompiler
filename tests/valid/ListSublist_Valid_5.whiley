@@ -11,4 +11,4 @@ function sum(posintlist ls) -> int:
 
 method main(System.Console sys) -> void:
     int c = sum([-12987987234, -1, 2, 409234, 2398729879])
-    sys.out.println(Any.toString(c))
+    sys.out.println(c)

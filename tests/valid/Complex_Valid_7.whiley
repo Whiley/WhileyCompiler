@@ -25,14 +25,14 @@ method fn(System.Console console, [int] xs):
             int i3 = 0
             while i3 < |xs| where i3 >= 0:
                 int v3 = xs[i3]
-                console.out.println("MAX(" ++ Int.toString(v1) ++ "," ++ Int.toString(v2) ++ "," ++ Int.toString(v2) ++ ")=" ++ Int.toString(max3(v1,v2,v3)))
+                console.out.println_s("MAX(" ++ Any.toString(v1) ++ "," ++ Any.toString(v2) ++ "," ++ Any.toString(v2) ++ ")=" ++ Any.toString(max3(v1,v2,v3)))
                 i3 = i3 + 1
             //
             i2 = i2 + 1
         //
         i1 = i1 + 1
     // Done.
-    console.out.println("Done.")
+    console.out.println_s("Done.")
 
 method main(System.Console console):
     fn(console,[1,2,3,4,5,6,7,8])

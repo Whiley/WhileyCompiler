@@ -178,11 +178,6 @@ public final class WyilFileReader {
 				constant = Constant.V_BYTE(val);
 				break;
 			}
-			case WyilFileWriter.CONSTANT_Char: {
-				char val = (char) input.read_uv();
-				constant = Constant.V_CHAR(val);
-				break;
-			}
 			case WyilFileWriter.CONSTANT_Int: {
 				int len = input.read_uv();
 				byte[] bytes = new byte[len];
@@ -199,11 +194,6 @@ public final class WyilFileReader {
 				int exponent = input.read_uv();
 				constant = Constant
 						.V_DECIMAL(new BigDecimal(mantissa, exponent));
-				break;
-			}
-			case WyilFileWriter.CONSTANT_String: {
-				int index = input.read_uv();
-				constant = Constant.V_STRING(stringPool[index]);
 				break;
 			}
 			case WyilFileWriter.CONSTANT_List: {
@@ -841,18 +831,7 @@ public final class WyilFileReader {
 					- Code.OPCODE_append];
 			return Codes.ListOperator((Type.EffectiveList) type, target,
 					leftOperand, rightOperand, kind);
-		}
-		case Code.OPCODE_sappend:
-		case Code.OPCODE_sappendl:
-		case Code.OPCODE_sappendr: {
-			if (!(type instanceof Type.Strung)) {
-				throw new RuntimeException("expecting string type");
-			}
-			Codes.StringOperatorKind kind = Codes.StringOperatorKind.values()[opcode
-					- Code.OPCODE_sappend];
-			return Codes
-					.StringOperator(target, leftOperand, rightOperand, kind);
-		}
+		}		
 		case Code.OPCODE_indexof: {
 			if (!(type instanceof Type.EffectiveIndexible)) {
 				throw new RuntimeException("expecting indexible type");
@@ -1042,14 +1021,7 @@ public final class WyilFileReader {
 			}
 			return Codes.SubList((Type.EffectiveList) type, target,
 					operands[0], operands[1], operands[2]);
-		}
-		case Code.OPCODE_substring: {
-			if (!(type instanceof Type.Strung)) {
-				throw new RuntimeException("expected string type");
-			}
-			return Codes.SubString(target, operands[0], operands[1],
-					operands[2]);
-		}
+		}		
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");

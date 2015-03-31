@@ -47,20 +47,12 @@ public abstract class Constant implements Comparable<Constant> {
 		return get(new Byte(value));
 	}
 
-	public static Char V_CHAR(char value) {
-		return get(new Char(value));
-	}
-
 	public static Decimal V_DECIMAL(BigDecimal value) {
 		return get(new Decimal(value));
 	}
 
 	public static Integer V_INTEGER(BigInteger value) {
 		return get(new Integer(value));
-	}
-
-	public static Strung V_STRING(String value) {
-		return get(new Strung(value));
 	}
 
 	public static Set V_SET(Collection<Constant> values) {
@@ -205,46 +197,7 @@ public abstract class Constant implements Comparable<Constant> {
 			return r;
 		}
 	}
-
-	public static final class Char extends Constant {
-		public final char value;
-		private Char(char value) {
-			this.value = value;
-		}
-		public wyil.lang.Type type() {
-			return wyil.lang.Type.T_CHAR;
-		}
-		public int hashCode() {
-			return value;
-		}
-		public boolean equals(Object o) {
-			if(o instanceof Char) {
-				Char i = (Char) o;
-				return value == i.value;
-			}
-			return false;
-		}
-		public int compareTo(Constant v) {
-			if(v instanceof Char) {
-				Char i = (Char) v;
-				if(value < i.value) {
-					return -1;
-				} else if(value > i.value) {
-					return 1;
-				} else {
-					return 0;
-				}
-			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Byte) {
-				return 1;
-			}
-			return -1;
-		}
-		public String toString() {
-			return "'" + value + "'";
-		}
-	}
-
+	
 	public static final class Integer extends Constant {
 		public final BigInteger value;
 		private Integer(BigInteger value) {
@@ -267,7 +220,7 @@ public abstract class Constant implements Comparable<Constant> {
 			if(v instanceof Integer) {
 				Integer i = (Integer) v;
 				return value.compareTo(i.value);
-			} else if(v instanceof Null || v instanceof Byte || v instanceof Char || v instanceof Bool) {
+			} else if(v instanceof Null || v instanceof Byte || v instanceof Bool) {
 				return 1;
 			}
 			return -1;
@@ -321,8 +274,7 @@ public abstract class Constant implements Comparable<Constant> {
 				Decimal i = (Decimal) v;
 				return value.compareTo(i.value);
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Byte || v instanceof Char
-					|| v instanceof Integer) {
+					|| v instanceof Byte || v instanceof Integer) {
 				return 1;
 			}
 			return -1;
@@ -354,39 +306,7 @@ public abstract class Constant implements Comparable<Constant> {
 			return Constant.V_DECIMAL(value.divide(val.value));
 		}
 	}
-
-	public static final class Strung extends Constant {
-		public final String value;
-		private Strung(String value) {
-			this.value = value;
-		}
-		public wyil.lang.Type type() {
-			return wyil.lang.Type.T_STRING;
-		}
-		public int hashCode() {
-			return value.hashCode();
-		}
-		public boolean equals(Object o) {
-			if(o instanceof Strung) {
-				Strung i = (Strung) o;
-				return value.equals(i.value);
-			}
-			return false;
-		}
-		public int compareTo(Constant v) {
-			if(v instanceof Strung) {
-				Strung i = (Strung) v;
-				return value.compareTo(i.value);
-			} else if(v instanceof Null || v instanceof Bool || v instanceof Decimal || v instanceof Byte || v instanceof Char || v instanceof Integer) {
-				return 1;
-			}
-			return -1;
-		}
-		public String toString() {
-			return "\"" + value.toString() + "\"";
-		}
-	}
-
+	
 	public static final class List extends Constant {
 		public final ArrayList<Constant> values;
 		private List(Collection<Constant> value) {
@@ -426,7 +346,7 @@ public abstract class Constant implements Comparable<Constant> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Decimal || v instanceof Byte || v instanceof Char || v instanceof Integer || v instanceof Strung) {
+					|| v instanceof Decimal || v instanceof Byte || v instanceof Integer) {
 				return 1;
 			}
 			return -1;
@@ -493,8 +413,9 @@ public abstract class Constant implements Comparable<Constant> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Decimal || v instanceof Byte || v instanceof Char || v instanceof Integer || v instanceof Strung
-					|| v instanceof List || v instanceof Tuple) {
+					|| v instanceof Decimal || v instanceof Byte
+					|| v instanceof Integer || v instanceof List
+					|| v instanceof Tuple) {
 				return 1;
 			}
 			return -1;
@@ -598,8 +519,9 @@ public abstract class Constant implements Comparable<Constant> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Decimal || v instanceof Byte || v instanceof Char || v instanceof Integer || v instanceof Strung
-					|| v instanceof Set || v instanceof List || v instanceof Tuple) {
+					|| v instanceof Decimal || v instanceof Byte
+					|| v instanceof Integer || v instanceof Set
+					|| v instanceof List || v instanceof Tuple) {
 				return 1;
 			}
 			return -1;
@@ -675,8 +597,9 @@ public abstract class Constant implements Comparable<Constant> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Decimal || v instanceof Byte || v instanceof Char || v instanceof Integer || v instanceof Strung
-					|| v instanceof Set || v instanceof List || v instanceof Tuple
+					|| v instanceof Decimal || v instanceof Byte
+					|| v instanceof Integer || v instanceof Set
+					|| v instanceof List || v instanceof Tuple
 					|| v instanceof Record) {
 				return 1;
 			}
@@ -829,8 +752,9 @@ public abstract class Constant implements Comparable<Constant> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Decimal || v instanceof Byte || v instanceof Char || v instanceof Integer || v instanceof Strung
-					|| v instanceof Set || v instanceof List) {
+					|| v instanceof Decimal || v instanceof Byte
+					|| v instanceof Integer || v instanceof Set
+					|| v instanceof List) {
 				return 1;
 			}
 			return -1;

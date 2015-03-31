@@ -14,4 +14,4 @@ function f(posExpr e1) -> expr:
 
 method main(System.Console sys) -> void:
     expr e = f({rhs: 1, lhs: {rhs: 2, lhs: 1}})
-    sys.out.println(Any.toString(e))
+    sys.out.println(e)

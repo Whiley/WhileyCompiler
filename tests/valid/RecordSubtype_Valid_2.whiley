@@ -15,4 +15,4 @@ method main(System.Console sys) -> void:
     list = {next: null, data: 1}
     list = {next: list, data: null}
     ans = f(list)
-    sys.out.println(Any.toString(ans))
+    sys.out.println(ans)

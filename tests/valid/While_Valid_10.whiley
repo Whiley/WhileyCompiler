@@ -10,6 +10,6 @@ function extract([int] ls) -> [int]:
 
 method main(System.Console sys) -> void:
     [int] rs = extract([1, 2, 3, 4, 5, 6, 7])
-    sys.out.println(Any.toString(rs))
+    sys.out.println(rs)
     rs = extract([])
-    sys.out.println(Any.toString(rs))
+    sys.out.println(rs)

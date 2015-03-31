@@ -7,4 +7,4 @@ function f(Point x) -> Point:
 
 method main(System.Console sys) -> void:
     Point p = f({y: 1, x: 1})
-    sys.out.println(Any.toString(p))
+    sys.out.println(p)

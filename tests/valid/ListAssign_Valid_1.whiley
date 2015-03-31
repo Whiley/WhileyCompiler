@@ -5,5 +5,5 @@ method main(System.Console sys) -> void:
     [int] arr2 = arr1
     arr2[2] = 2
     assert arr2[2] != |arr1|
-    sys.out.println(Any.toString(arr1))
-    sys.out.println(Any.toString(arr2))
+    sys.out.println(arr1)
+    sys.out.println(arr2)

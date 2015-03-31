@@ -10,6 +10,6 @@ function init() -> Value:
 method main(System.Console sys) -> void:
     Value v = init()
     if v is [Expr]:
-        sys.out.println("GOT LIST")
+        sys.out.println_s("GOT LIST")
     else:
-        sys.out.println(Any.toString(v))
+        sys.out.println(v)

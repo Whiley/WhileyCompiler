@@ -2542,8 +2542,8 @@ public class WhileyFileParser {
 					sourceAttr(start, index++));
 		}
 		case CharValue: {
-			char c = parseCharacter(token.text);
-			return new Expr.Constant(wyil.lang.Constant.V_CHAR(c), sourceAttr(
+			BigInteger c = parseCharacter(token.text);
+			return new Expr.Constant(wyil.lang.Constant.V_INTEGER(c), sourceAttr(
 					start, index++));
 		}
 		case IntValue: {
@@ -2557,8 +2557,8 @@ public class WhileyFileParser {
 					sourceAttr(start, index++));
 		}
 		case StringValue: {
-			String str = parseString(token.text);
-			return new Expr.Constant(wyil.lang.Constant.V_STRING(str),
+			List<Constant> str = parseString(token.text);
+			return new Expr.Constant(wyil.lang.Constant.V_LIST(str),
 					sourceAttr(start, index++));
 		}
 		case Minus:
@@ -3760,8 +3760,6 @@ public class WhileyFileParser {
 			return true;
 		} else if(e instanceof Expr.SubList) {
 			return true;
-		} else if(e instanceof Expr.SubString) {
-			return true;
 		} else if(e instanceof Expr.Tuple) {
 			return true;
 		} else {
@@ -4263,14 +4261,10 @@ public class WhileyFileParser {
 			return new SyntacticType.Bool(sourceAttr(start, index++));
 		case Byte:
 			return new SyntacticType.Byte(sourceAttr(start, index++));
-		case Char:
-			return new SyntacticType.Char(sourceAttr(start, index++));
 		case Int:
 			return new SyntacticType.Int(sourceAttr(start, index++));
 		case Real:
 			return new SyntacticType.Real(sourceAttr(start, index++));
-		case String:
-			return new SyntacticType.Strung(sourceAttr(start, index++));
 		case LeftBrace:
 			return parseBracketedType();
 		case LeftCurly:
@@ -4911,7 +4905,7 @@ public class WhileyFileParser {
 	 * @param input
 	 * @return
 	 */
-	private char parseCharacter(String input) {
+	private BigInteger parseCharacter(String input) {
 		int pos = 1;
 		char c = input.charAt(pos++);
 		if (c == '\\') {
@@ -4945,21 +4939,23 @@ public class WhileyFileParser {
 				throw new RuntimeException("unrecognised escape character");
 			}
 		}
-		return c;
+		return BigInteger.valueOf(c);
 	}
 
 	/**
-	 * Parse a string whilst interpreting all escape characters.
-	 *
+	 * Parse a string constant whilst interpreting all escape characters.
+	 * 
 	 * @param v
 	 * @return
 	 */
-	protected String parseString(String v) {
+	protected List<Constant> parseString(String v) {
 		/*
 		 * Parsing a string requires several steps to be taken. First, we need
 		 * to strip quotes from the ends of the string.
 		 */
 		v = v.substring(1, v.length() - 1);
+
+		ArrayList<Constant> result = new ArrayList<Constant>();
 		// Second, step through the string and replace escaped characters
 		for (int i = 0; i < v.length(); i++) {
 			if (v.charAt(i) == '\\') {
@@ -4998,15 +4994,19 @@ public class WhileyFileParser {
 						// including "slash u"
 						String unicode = v.substring(i + 2, i + 6);
 						replace = (char) Integer.parseInt(unicode, 16); // unicode
+						i = i + 5;
 						break;
 					default:
 						throw new RuntimeException("unknown escape character");
 					}
-					v = v.substring(0, i) + replace + v.substring(i + len);
+					result.add(Constant.V_INTEGER(BigInteger.valueOf(replace)));
+					i = i + 1;
 				}
+			} else {
+				result.add(Constant.V_INTEGER(BigInteger.valueOf(v.charAt(i))));
 			}
 		}
-		return v;
+		return result;
 	}
 
 	/**

@@ -1,12 +1,12 @@
 type Point is {
     int x,
     int y,
-    function toString(Point) -> string,
+    function toString(Point) -> int,
     function getX(Point) -> int
 }
 
-function toString(Point p) -> string:
-    return "(" ++ Int.toString(p.x) ++ "," ++ Int.toString(p.y) ++ ")"
+function toString(Point p) -> int:
+    return p.x + p.y
 
 function getX(Point p) -> int:
     return p.x
@@ -21,5 +21,5 @@ function Point(int x, int y) -> Point:
 
 method main(System.Console console):
     Point p = Point(1,2)
-    console.out.println("getX() = " ++ Int.toString(p.getX(p)))
-    console.out.println("toString() = " ++ p.toString(p))
+    console.out.println(p.getX(p))
+    console.out.println(p.toString(p))

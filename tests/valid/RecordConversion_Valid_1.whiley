@@ -2,9 +2,9 @@ import whiley.lang.System
 
 type realtup is {real op}
 
-function f(realtup t) -> string:
+function f(realtup t) -> real:
     real x = t.op
-    return Any.toString(t)
+    return x
 
 method main(System.Console sys) -> void:
     {int op} t = {op: 1}

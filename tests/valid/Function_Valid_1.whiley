@@ -1,10 +1,10 @@
 import whiley.lang.System
 
-function f(real x) -> string:
-    return "GOT REAL"
+function f(real x) -> int:
+    return 1
 
-function f(int x) -> string:
-    return "GOT INT"
+function f(int x) -> int:
+    return 2
 
 method main(System.Console sys) -> void:
     sys.out.println(f(1))

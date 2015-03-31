@@ -12,6 +12,6 @@ function inc([nat] xs) -> [nat]:
     return xs
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(inc([0])))
-    sys.out.println(Any.toString(inc([1, 2, 3])))
-    sys.out.println(Any.toString(inc([10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0])))
+    sys.out.println(inc([0]))
+    sys.out.println(inc([1, 2, 3]))
+    sys.out.println(inc([10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]))

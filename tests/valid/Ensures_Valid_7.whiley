@@ -14,6 +14,6 @@ ensures r >= 0:
 
 
 method main(System.Console console):
-    console.out.println("abs(1) = " ++ Int.toString(abs(1)))
-    console.out.println("abs(-1) = " ++ Int.toString(abs(-1)))
-    console.out.println("abs(null) = " ++ Int.toString(abs(null)))
+    console.out.println_s("abs(1) = " ++ Any.toString(abs(1)))
+    console.out.println_s("abs(-1) = " ++ Any.toString(abs(-1)))
+    console.out.println_s("abs(null) = " ++ Any.toString(abs(null)))

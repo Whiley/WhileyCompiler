@@ -12,11 +12,11 @@ requires |x| > 0:
 method main(System.Console sys) -> void:
     [int] arr = [1, 2, 3]
     f(arr, 1)
-    sys.out.println(Any.toString(arr))
+    sys.out.println(arr)
     f(arr, 2)
-    sys.out.println(Any.toString(arr))
+    sys.out.println(arr)
     f(arr, 3)
-    sys.out.println(Any.toString(arr))
+    sys.out.println(arr)
     f(arr, -1)
-    sys.out.println(Any.toString(arr))
+    sys.out.println(arr)
     f(arr, 4)
