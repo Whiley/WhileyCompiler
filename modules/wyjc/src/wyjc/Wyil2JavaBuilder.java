@@ -691,7 +691,9 @@ public class Wyil2JavaBuilder implements Builder {
 
 	private void translate(CodeBlock.Index index, Codes.AssertOrAssume c,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		if(c instanceof Codes.Assert) { 
+		if(c instanceof Codes.Invariant) {
+			// essentially a no-op for now			
+		} else if(c instanceof Codes.Assert) { 
 			Codes.Assert ca = (Codes.Assert) c;
 			translate(index, (CodeBlock) c, freeSlot, bytecodes);
 		} else {
