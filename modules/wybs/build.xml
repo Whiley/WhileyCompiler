@@ -2,7 +2,7 @@
   <import file="../../config.xml"/>
 
   <target name="compile-wybs">
-    <javac memoryMaximumSize="2048m" fork="true" debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true">
+    <javac memoryMaximumSize="2048m" fork="true" debug="true" debuglevel="vars,lines,source" source="1.7" includeantruntime="true">
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/>
