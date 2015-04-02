@@ -339,7 +339,7 @@ public class WycsFileReader {
 					throw new RuntimeException(
 							"invalid cast bytecode encountered");
 				}
-				return Code.Cast(typePool[targetTypeIdx],operands[0]);
+				return Code.Cast(type,operands[0],typePool[targetTypeIdx]);
 			}
 			case CONST: {
 				int constIdx = input.read_uv();
@@ -373,6 +373,13 @@ public class WycsFileReader {
 							"invalid binary bytecode encountered");
 				}
 				return Code.Binary(type, op, operands[0], operands[1]);
+			case IS:
+				if (operands.length != 1) {
+					throw new RuntimeException(
+							"invalid is bytecode encountered");
+				}
+				int testIdx = input.read_uv();
+				return Code.Is(type, operands[0], typePool[testIdx]);
 			case AND:
 			case OR:
 			case TUPLE:

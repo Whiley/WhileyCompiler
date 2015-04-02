@@ -254,11 +254,11 @@ public class TypePropagation implements Transform<WyalFile> {
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
 		try {
-			SemanticType op_type = propagate(e.operand, environment, generics,
+			SemanticType operandType = propagate(e.operand, environment, generics,
 					context);
-			SemanticType targetType = builder
-					.convert(e.type, generics, context);
+			SemanticType targetType = builder.convert(e.type, generics, context);
 			// FIXME: what to do with constraints?
+			operandType = builder.expand(operandType, false, context);
 			targetType = builder.expand(targetType, false, context);
 			// TODO: check cast is permitted.
 			return targetType;

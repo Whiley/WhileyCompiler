@@ -201,12 +201,12 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		return new Constant(value,attributes);
 	}
 
-	public static Cast Cast(SemanticType type, Code<?> operand, Attribute... attributes) {
-		return new Cast(type,operand,attributes);
+	public static Cast Cast(SemanticType type, Code<?> operand, SemanticType target, Attribute... attributes) {
+		return new Cast(type,operand,target,attributes);
 	}
 
-	public static Cast Cast(SemanticType type, Code<?> operand, Collection<Attribute> attributes) {
-		return new Cast(type,operand,attributes);
+	public static Cast Cast(SemanticType type, Code<?> operand, SemanticType target, Collection<Attribute> attributes) {
+		return new Cast(type,operand,target,attributes);
 	}
 	
 	public static Unary Unary(SemanticType type, Op opcode, Code<?> operand,
@@ -391,26 +391,26 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	}
 
 	public final static class Cast extends Code<SemanticType> {
-		public final SemanticType type;
+		public final SemanticType target;
 
-		private Cast(SemanticType type, Code<?> operand, Attribute... attributes) {
+		private Cast(SemanticType type, Code<?> operand, SemanticType target, Attribute... attributes) {
 			super(type,Op.CAST,new Code[] { operand },attributes);
-			this.type = type;
+			this.target = target;
 		}
 
-		private Cast(SemanticType type, Code<?> operand, Collection<Attribute> attributes) {
-			super(type,Op.CAST,new Code[] { operand },attributes);
-			this.type = type;
+		private Cast(SemanticType type, Code<?> operand, SemanticType target, Collection<Attribute> attributes) {
+			super(type,Op.CAST,new Code[] { operand },attributes);			
+			this.target = target;
 		}
 
 		@Override
 		public SemanticType returnType() {
-			return type;
+			return target;
 		}
 
 		@Override
 		public Code<?> clone(SemanticType type, Op opcode, Code<?>[] operands) {
-			return Cast(type,operands[0],attributes());
+			return Cast(type,operands[0],target,attributes());
 		}
 	}
 
