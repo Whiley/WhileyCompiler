@@ -32,13 +32,16 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.HashMap;
 
+import wyjc.runtime.Util;
+import wyjc.runtime.WyByte;
 import wyjc.runtime.WyObject;
 import wyjc.runtime.WyList;
 import wyjc.runtime.WyRecord;
 
 public class File$native {
-	public static WyObject NativeFileReader(String filename) {
+	public static WyObject NativeFileReader(WyList _filename) {
 		try {
+			String filename = Util.il2str(_filename);
 			return new WyObject(new FileInputStream(filename));
 		} catch(FileNotFoundException e) {
 			// ARGH
@@ -46,8 +49,9 @@ public class File$native {
 		return null;
 	}
 
-	public static WyObject NativeFileWriter(String filename) {
+	public static WyObject NativeFileWriter(WyList _filename) {
 		try {
+			String filename = Util.il2str(_filename);
 			return new WyObject(new FileOutputStream(filename));
 		} catch(FileNotFoundException e) {
 			// ARGH
@@ -103,7 +107,7 @@ public class File$native {
 		try {
 			int nbytes = fin.read(bytes);
 			for(int i=0;i!=nbytes;++i) {
-				r.add(bytes[i]);
+				r.add(WyByte.valueOf(bytes[i]));
 			}
 		} catch (IOException ioe) {
 			// what to do here??
@@ -123,7 +127,7 @@ public class File$native {
 				byte[] bytes = new byte[CHUNK_SIZE];
 				nbytes = fin.read(bytes);
 				for(int i=0;i!=nbytes;++i) {
-					r.add(bytes[i]);
+					r.add(WyByte.valueOf(bytes[i]));
 				}
 			} while(nbytes == CHUNK_SIZE);
 		} catch (IOException ioe) {
@@ -139,8 +143,8 @@ public class File$native {
 		try {
 			byte[] bs = new byte[bytes.size()];
 			for(int i=0;i!=bs.length;++i) {
-				Byte r = (Byte) bytes.get(i);
-				bs[i] = r.byteValue();
+				WyByte r = (WyByte) bytes.get(i);
+				bs[i] = r.value();
 			}
 			fout.write(bs);
 		} catch (IOException ioe) {

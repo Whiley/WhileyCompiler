@@ -63,6 +63,15 @@ public class Util {
 		return r;
 	}
 
+	public static String il2str(WyList argument) {
+		String r = "";
+		for(int i=0;i!=argument.size();++i) {
+			BigInteger c = (BigInteger) argument.get(i);
+			r = r + ((char) c.intValue());
+		}
+		return r;
+	}
+	
 	/**
 	 * This method is used for the special case when the left-hand side of an
 	 * equality operation may be null.
