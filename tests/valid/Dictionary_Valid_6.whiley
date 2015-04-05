@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function get({ASCII.string=>int} env) -> int:
+function get({[int]=>int} env) -> int:
     return env["x"]
 
 method main(System.Console sys) -> void:

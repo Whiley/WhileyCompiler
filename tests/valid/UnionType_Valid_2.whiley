@@ -1,10 +1,10 @@
 import whiley.lang.System
 
-type State is {ASCII.string input, int pos} where pos >= 0
+type State is {[int] input, int pos} where pos >= 0
 
-type Expr is real | {ASCII.string id}
+type Expr is real | {[int] id}
 
-type SyntaxError is {ASCII.string err}
+type SyntaxError is {[int] err}
 
 type SExpr is SyntaxError | Expr
 

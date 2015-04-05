@@ -1,7 +1,7 @@
 import whiley.lang.System
 
 function f({(int, any)} xs) -> int:
-    if xs is {(int, ASCII.string)}:
+    if xs is {(int, [int])}:
         return 1
     else:
         return -1

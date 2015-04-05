@@ -1,10 +1,10 @@
 import whiley.lang.System
 
-type State is {ASCII.string input, int pos}
+type State is {[int] input, int pos}
 
-type Expr is {int num} | {int op, Expr rhs, Expr lhs} | {ASCII.string err}
+type Expr is {int num} | {int op, Expr rhs, Expr lhs} | {[int] err}
 
-function parse(ASCII.string input) -> Expr:
+function parse([int] input) -> Expr:
     {Expr e, State st} r = parseAddSubExpr({input: input, pos: 0})
     return r.e
 

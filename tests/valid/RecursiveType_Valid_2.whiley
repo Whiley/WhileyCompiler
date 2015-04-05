@@ -4,9 +4,9 @@ type Expr is real | Var | BinOp
 
 type BinOp is {Expr rhs, Expr lhs}
 
-type Var is {ASCII.string id}
+type Var is {[int] id}
 
-type SyntaxError is {ASCII.string err}
+type SyntaxError is {[int] err}
 
 type SExpr is SyntaxError | Expr
 
@@ -28,7 +28,7 @@ function sbuild(int i) -> SExpr:
 function evaluate(Expr e) -> real:
     if e is real:
         return e
-    if e is {ASCII.string id}:
+    if e is {[int] id}:
         return (real) |e.id|
     else:
         return evaluate(e.lhs) + evaluate(e.rhs)
@@ -37,7 +37,7 @@ public method main(System.Console sys) -> void:
     int i = -5
     while i < 10:
         SExpr e = sbuild(i)
-        if e is {ASCII.string err}:
+        if e is {[int] err}:
             sys.out.println_s("syntax error: " ++ e.err)
         else:
             e = evaluate(e)

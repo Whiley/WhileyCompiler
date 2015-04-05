@@ -1,11 +1,11 @@
 import whiley.lang.System
 
-function append(ASCII.string input) -> [ASCII.char]:
-    [ASCII.char] rs = []
+function append([int] input) -> [int]:
+    [int] rs = []
     for i in 0 .. |input|:
         rs = [input[i]] ++ rs
     return rs
 
 method main(System.Console sys) -> void:
-    [ASCII.char] xs = append("abcdefghijklmnopqrstuvwxyz")
+    [int] xs = append("abcdefghijklmnopqrstuvwxyz")
     sys.out.println(xs)

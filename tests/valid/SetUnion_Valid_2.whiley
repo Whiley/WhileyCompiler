@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function append(ASCII.string input) -> {int}:
+function append([int] input) -> {int}:
     {int} rs = {}
     for i in 0 .. |input|:
         rs = {(int) input[i]} + rs

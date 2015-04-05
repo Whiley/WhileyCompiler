@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function f(ASCII.string str) -> [int]:
+function f([int] str) -> [int]:
     [int]|null r = []
     for i in str:
         if r == null:

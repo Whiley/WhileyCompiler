@@ -1,5 +1,7 @@
 import whiley.lang.System
 
+type string is [int]
+
 type InputStream is {
     method read(int) -> [byte],
     method eof() -> bool
@@ -21,7 +23,7 @@ public method BufferInputStream([byte] buffer) -> InputStream:
     return {read: &(int x -> read(this, x)), eof: &( -> eof(this))}
 
 method main(System.Console sys) -> void:
-    [ASCII.string] strings = ["hello", "cruel cruel", "world"]
+    [string] strings = ["hello", "cruel cruel", "world"]
     for s in strings:
         InputStream bis = BufferInputStream(ASCII.toBytes(s))
         while !bis.eof():

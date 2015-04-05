@@ -1,9 +1,8 @@
 import whiley.lang.System
-import SyntaxError from whiley.lang.Errors
 
 type nat is (int x) where x >= 0
 
-function f(nat pos, ASCII.string input) -> bool|null:
+function f(nat pos, [int] input) -> bool|null:
     if pos >= |input|:
         return null
     else:

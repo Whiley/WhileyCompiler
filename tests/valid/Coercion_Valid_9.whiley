@@ -1,5 +1,5 @@
 type Link is {int data}
-type BigLink is {int data, ASCII.char code}
+type BigLink is {int data, int code}
 
 function sum(Link l) -> int:
     return l.data

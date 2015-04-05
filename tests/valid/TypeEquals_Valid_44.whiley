@@ -1,9 +1,9 @@
 import whiley.lang.System
 
-type imsg is int | {int op} | {ASCII.string msg}
+type imsg is int | {int op} | {[int] msg}
 
 function getMessage(imsg m) -> any:
-    if m is {ASCII.string msg}:
+    if m is {[int] msg}:
         return m.msg
     else:
         if m is {int op}:

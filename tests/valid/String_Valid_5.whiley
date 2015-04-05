@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-function indexOf(ASCII.char c1, ASCII.string str) -> int | null:
+function indexOf(int c1, [int] str) -> int | null:
     int i = 0
     for c2 in str:
         if c1 == c2:

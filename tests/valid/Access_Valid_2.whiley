@@ -1,6 +1,6 @@
 import whiley.lang.System
 
-type liststr is [int] | ASCII.string
+type liststr is [int] | [int]
 
 function index(liststr l, int index) -> any:
     return l[index]
@@ -9,6 +9,6 @@ method main(System.Console sys) -> void:
     [int] l = [1, 2, 3]
     sys.out.println(index(l, 1))
     sys.out.println(index(l, 2))
-    ASCII.string s = "Hello World"
+    [int] s = "Hello World"
     sys.out.println(index(s, 0))
     sys.out.println(index(s, 2))
