@@ -61,10 +61,34 @@ import static wyil.util.ErrorMessages.*;
 public class DefiniteAssignmentCheck extends
 		ForwardFlowAnalysis<HashSet<Integer>> implements Transform<WyilFile> {
 
+	/**
+	 * Determines whether constant propagation is enabled or not.
+	 */
+	private boolean enabled = getEnable();
+	
 	public DefiniteAssignmentCheck(Builder builder) {
 
 	}
 
+	public static String describeEnable() {
+		return "Enable/disable constant propagation";
+	}
+
+	public static boolean getEnable() {
+		return true; // default value
+	}
+
+	public void setEnable(boolean flag) {
+		this.enabled = flag;
+	}
+	
+	@Override
+	public void apply(WyilFile module) {
+		if(enabled) {
+			super.apply(module);
+		}
+	}
+	
 	@Override
 	public HashSet<Integer> initialStore() {
 		HashSet<Integer> defined = new HashSet<Integer>();

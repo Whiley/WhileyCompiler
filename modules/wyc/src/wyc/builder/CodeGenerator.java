@@ -1108,21 +1108,18 @@ public final class CodeGenerator {
 		if(s.invariants.size() > 0) {
 			// Ok, there is at least one invariant expression. Therefore, create
 			// an invariant bytecode.
-			AttributedCodeBlock invariant = body.createSubBlock();
-
+			
 			for (Expr e : s.invariants) {
 				String nextLab = CodeUtils.freshLabel();
+				AttributedCodeBlock invariant = body.createSubBlock();
 				generateCondition(nextLab, e, environment, invariant, context);
 				invariant.add(Codes.Fail(), attributes(e));
 				invariant.add(Codes.Label(nextLab));
-			}
-			// Terminate invariant block
-			invariant.add(Codes.Return());
-			
-			// FIXME: should we be creating multiple invariant bytecodes,
-			// instead of one monolithic one? Yes, as this will give much better
-			// error reporting as well!
-			body.add(Codes.Invariant(invariant.bytecodes()), attributes(s));
+				// Terminate invariant block --- see #480
+				invariant.add(Codes.Return());
+				// Create the invariant block
+				body.add(Codes.Invariant(invariant.bytecodes()), attributes(e));
+			}			
 		}
 
 		generateCondition(exit, invert(s.condition), environment, body, context);
@@ -1197,21 +1194,16 @@ public final class CodeGenerator {
 		if (s.invariants.size() > 0) {
 			// Ok, there is at least one invariant expression. Therefore, create
 			// an invariant bytecode.
-			AttributedCodeBlock invariant = body.createSubBlock();
-
 			for (Expr e : s.invariants) {
 				String nextLab = CodeUtils.freshLabel();
+				AttributedCodeBlock invariant = body.createSubBlock();				
 				generateCondition(nextLab, e, environment, invariant, context);
 				invariant.add(Codes.Fail(), attributes(e));
 				invariant.add(Codes.Label(nextLab));
+				// Terminate invariant block
+				invariant.add(Codes.Return());
+				body.add(Codes.Invariant(invariant.bytecodes()), attributes(e));				
 			}
-			// Terminate invariant block
-			invariant.add(Codes.Return());
-
-			// FIXME: should we be creating multiple invariant bytecodes,
-			// instead of one monolithic one?
-
-			body.add(Codes.Invariant(invariant.bytecodes()), attributes(s));
 		}
 
 		generateCondition(exit, invert(s.condition), environment, body, context);
@@ -1258,11 +1250,8 @@ public final class CodeGenerator {
 			invariant.add(Codes.Label(nextLab));
 			// Terminate invariant block
 			invariant.add(Codes.Return());
-
-			// FIXME: should we be creating multiple invariant bytecodes,
-			// instead of one monolithic one?
-
-			body.add(Codes.Invariant(invariant.bytecodes()), attributes(s));
+			body.add(Codes.Invariant(invariant.bytecodes()),
+					attributes(s.invariant));
 		}
 
 		// FIXME: add a continue scope
@@ -1974,8 +1963,9 @@ public final class CodeGenerator {
 			AttributedCodeBlock codes, Context context) throws ResolveError {
 
 		if (environment.get(expr.var) != null) {
+			int target = environment.get(expr.var); 
 			Type type = expr.result().raw();
-			return environment.get(expr.var);
+			return target;
 		} else {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), context,
 					expr);
