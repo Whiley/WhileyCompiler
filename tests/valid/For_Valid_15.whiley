@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type nat is (int x) where x >= 0
 
@@ -7,4 +7,4 @@ method main(System.Console sys) -> void:
     int r = 0
     for x in xs where r >= 0:
         r = r + x
-    sys.out.println(Any.toString(r))
+    sys.out.println(r)

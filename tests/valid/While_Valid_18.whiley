@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type nat is (int x) where x >= 0
 
@@ -21,4 +21,4 @@ method main(System.Console sys) -> void:
         00000101b
     ]
     int x = match(xs, 0, |xs| - 2)
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type Tup1 is (int, int)
 
@@ -9,4 +9,4 @@ function f(Tup1 x) -> Tup2:
 
 method main(System.Console sys) -> void:
     Tup2 x = f((1, 2))
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)

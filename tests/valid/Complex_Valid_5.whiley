@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 constant BLANK is 0
 
@@ -25,4 +25,4 @@ requires pos < 9:
 method main(System.Console console) -> void:
     Board b = EmptyBoard()
     b = play(b, CIRCLE, 0)
-    console.out.println("BOARD: " ++ Any.toString(b))
+    console.out.println_s("BOARD: " ++ Any.toString(b))

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function g(int x) -> int:
     if (x <= 0) || (x >= 125):
@@ -11,4 +11,4 @@ function f(int x) -> [int]:
 
 method main(System.Console sys) -> void:
     [int] bytes = f(0)
-    sys.out.println(Any.toString(bytes))
+    sys.out.println(bytes)

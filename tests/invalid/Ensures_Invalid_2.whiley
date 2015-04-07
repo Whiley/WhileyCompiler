@@ -2,9 +2,9 @@
 method g(int x) -> int:
     return x + 1
 
-method f(int x) -> void
+method f(int x) -> int
 requires x > g(x):
-    debug Any.toString(x)
+    return x
 
-method main(System.Console sys) -> void:
-    f(1)
+method main() -> int:
+    return f(1)

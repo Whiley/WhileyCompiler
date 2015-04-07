@@ -25,5 +25,5 @@
 
 package whiley.lang
 
-public native function toString(any item) -> string
+public native function toString(any item) -> ASCII.string
 

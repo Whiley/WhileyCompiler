@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type etup is (int, int) | (real, real)
 
@@ -10,6 +10,6 @@ function f(int x) -> etup:
 
 public method main(System.Console sys) -> void:
     (int|real x,int|real y) = f(-1)
-    sys.out.println("X=" ++ Any.toString(x) ++ ",Y=" ++ Any.toString(y))
+    sys.out.println_s("X=" ++ Any.toString(x) ++ ",Y=" ++ Any.toString(y))
     (x, y) = f(2)
-    sys.out.println("X=" ++ Any.toString(x) ++ ",Y=" ++ Any.toString(y))
+    sys.out.println_s("X=" ++ Any.toString(x) ++ ",Y=" ++ Any.toString(y))

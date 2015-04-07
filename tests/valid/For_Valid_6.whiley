@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function select({int} xs) -> (int r)
 // Input list cannot be empty

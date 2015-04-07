@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type plistv6 is [int]
 
@@ -10,4 +10,4 @@ function g(plistv6 left, plistv6 right) -> int:
 
 method main(System.Console sys) -> void:
     int r = g([1, 2, 3], [6, 7, 8])
-    sys.out.println(Any.toString(r))
+    sys.out.println(r)

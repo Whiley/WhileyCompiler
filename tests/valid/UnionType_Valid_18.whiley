@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type utr12nat is (int x) where x >= 0
 
@@ -13,5 +13,5 @@ ensures result >= 0:
 
 method main(System.Console sys) -> void:
     tupper x = {op: 1, il: 1}
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)
     f(x)

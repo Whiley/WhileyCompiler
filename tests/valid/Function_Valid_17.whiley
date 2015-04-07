@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f(int x) -> int:
     return x + 1
@@ -12,4 +12,4 @@ method main(System.Console sys) -> void:
     if |sys.args| == 0:
         a = f(b)
     int x = g(a, b)
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)

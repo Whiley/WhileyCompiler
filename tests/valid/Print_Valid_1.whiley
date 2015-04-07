@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(1))
+    sys.out.println(1)

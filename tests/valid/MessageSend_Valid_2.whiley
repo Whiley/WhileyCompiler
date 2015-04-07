@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type Proc is &{int state}
 
@@ -10,4 +10,4 @@ method f(Proc x) -> int:
 
 method main(System.Console sys) -> void:
     Proc proc = new {state: 123}
-    sys.out.println(Any.toString(f(proc)))
+    sys.out.println(f(proc))

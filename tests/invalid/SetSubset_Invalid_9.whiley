@@ -6,6 +6,6 @@ requires xs ⊂ ys:
 function g({int} xs, {int} ys) -> void:
     f(xs, ys)
 
-method main(System.Console sys) -> void:
+method main() -> void:
     g({1}, {1, 2, 3})
     g({1, 4}, {1, 2, 3})

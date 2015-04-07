@@ -215,11 +215,6 @@ public class AllInvalidTests {
 	}
 
 	@Test
-	public void Char_Invalid_1() {
-		runTest("Char_Invalid_1");
-	}
-
-	@Test
 	public void Coercion_Invalid_1() {
 		runTest("Coercion_Invalid_1");
 	}
@@ -1204,11 +1199,6 @@ public class AllInvalidTests {
 	@Test
 	public void SetUnion_Invalid_4() {
 		runTest("SetUnion_Invalid_4");
-	}
-
-	@Test
-	public void String_Invalid_3() {
-		runTest("String_Invalid_3");
 	}
 
 	@Test

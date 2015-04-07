@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 constant ADD is 1
 
@@ -19,5 +19,5 @@ method main(System.Console sys) -> void:
     Expr bop2 = bop1
     Expr e1 = bop1
     Expr e2 = {op: SUB, left: bop1, right: 2}
-    sys.out.println(Any.toString(e1))
-    sys.out.println(Any.toString(e2))
+    sys.out.println(e1)
+    sys.out.println(e2)

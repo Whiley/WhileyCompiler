@@ -668,11 +668,6 @@ public class Wyil2JavaBuilder implements Builder {
 				// do nothing
 			} else if (code instanceof Codes.SetOperator) {
 				translate(index, (Codes.SetOperator) code, freeSlot, bytecodes);
-			} else if (code instanceof Codes.StringOperator) {
-				translate(index, (Codes.StringOperator) code, freeSlot,
-						bytecodes);
-			} else if (code instanceof Codes.SubString) {
-				translate(index, (Codes.SubString) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.Switch) {
 				translate(index, (Codes.Switch) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.NewObject) {
@@ -691,6 +686,19 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 
 		return freeSlot;
+	}
+	
+
+	private void translate(CodeBlock.Index index, Codes.AssertOrAssume c,
+			int freeSlot, ArrayList<Bytecode> bytecodes) {
+		if(c instanceof Codes.Invariant) {
+			// essentially a no-op for now			
+		} else if(c instanceof Codes.Assert) { 
+			Codes.Assert ca = (Codes.Assert) c;
+			translate(index, (CodeBlock) c, freeSlot, bytecodes);
+		} else {
+			// essentially a no-op for now
+		}
 	}
 
 	private void translate(CodeBlock.Index index, Codes.Const c, int freeSlot,
@@ -771,16 +779,6 @@ public class Wyil2JavaBuilder implements Builder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "set", ftype,
 					Bytecode.InvokeMode.STATIC));
 
-		} else if (lv instanceof Codes.StringLVal) {
-			Codes.StringLVal l = (Codes.StringLVal) lv;
-			// assert: level must be zero here
-			bytecodes.add(new Bytecode.Load(l.indexOperand, WHILEYINT));
-			bytecodes.add(new Bytecode.Load(code.result(), WHILEYCHAR));
-
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,
-					JAVA_LANG_STRING, WHILEYINT, WHILEYCHAR);
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "set", ftype,
-					Bytecode.InvokeMode.STATIC));
 		} else if (lv instanceof Codes.MapLVal) {
 			Codes.MapLVal l = (Codes.MapLVal) lv;
 			JvmType keyType = convertUnderlyingType(l.rawType().key());
@@ -1141,19 +1139,12 @@ public class Wyil2JavaBuilder implements Builder {
 		} else if (test instanceof Type.Bool) {
 			bytecodes.add(new Bytecode.InstanceOf(WHILEYBOOL));
 			bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, falseTarget));
-		} else if (test instanceof Type.Char) {
-			bytecodes.add(new Bytecode.InstanceOf(WHILEYCHAR));
-			bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, falseTarget));
 		} else if (test instanceof Type.Int) {
 			bytecodes.add(new Bytecode.InstanceOf(WHILEYINT));
 			bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, falseTarget));
 		} else if (test instanceof Type.Real) {
 			bytecodes.add(new Bytecode.InstanceOf(WHILEYRAT));
 			bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, falseTarget));
-		} else if (test instanceof Type.Strung) {
-			bytecodes.add(new Bytecode.InstanceOf(JAVA_LANG_STRING));
-			bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, falseTarget));
-
 		} else {
 			// Fall-back to an external (recursive) check
 			Constant constant = Constant.V_TYPE(test);
@@ -1358,15 +1349,10 @@ public class Wyil2JavaBuilder implements Builder {
 
 	private void translate(CodeBlock.Index index, Codes.Debug c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(T_VOID, JAVA_LANG_STRING);
-		bytecodes.add(new Bytecode.Load(c.operand, JAVA_LANG_STRING));
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "debug", ftype,
+		JvmType.Function ftype = new JvmType.Function(T_VOID, WHILEYLIST);
+		bytecodes.add(new Bytecode.Load(c.operand, WHILEYLIST));
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "print", ftype,
 				Bytecode.InvokeMode.STATIC));
-	}
-
-	private void translate(CodeBlock.Index index, Codes.AssertOrAssume c,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		// essentially a no-op for now
 	}
 
 	private void translate(CodeBlock.Index index, Codes.Assign c, int freeSlot,
@@ -1598,56 +1584,6 @@ public class Wyil2JavaBuilder implements Builder {
 				Bytecode.InvokeMode.STATIC));
 
 		bytecodes.add(new Bytecode.Store(c.target(), WHILEYSET));
-	}
-
-	private void translate(CodeBlock.Index index, Codes.StringOperator c,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		JvmType leftType;
-		JvmType rightType;
-
-		switch (c.kind) {
-		case APPEND:
-			leftType = JAVA_LANG_STRING;
-			rightType = JAVA_LANG_STRING;
-			break;
-		case LEFT_APPEND:
-			leftType = JAVA_LANG_STRING;
-			rightType = WHILEYCHAR;
-			break;
-		case RIGHT_APPEND:
-			leftType = WHILEYCHAR;
-			rightType = JAVA_LANG_STRING;
-			break;
-		default:
-			internalFailure("Unknown string operation encountered: ", filename,
-					rootBlock.attribute(index, SourceLocation.class));
-			return; // dead-code
-		}
-
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,
-				leftType, rightType);
-		bytecodes.add(new Bytecode.Load(c.operand(0), leftType));
-		bytecodes.add(new Bytecode.Load(c.operand(1), rightType));
-
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "append", ftype,
-				Bytecode.InvokeMode.STATIC));
-
-		bytecodes.add(new Bytecode.Store(c.target(), JAVA_LANG_STRING));
-	}
-
-	private void translate(CodeBlock.Index index, Codes.SubString c,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Load(c.operands()[0], JAVA_LANG_STRING));
-		bytecodes.add(new Bytecode.Load(c.operands()[1], WHILEYINT));
-		bytecodes.add(new Bytecode.Load(c.operands()[2], WHILEYINT));
-
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_STRING,
-				JAVA_LANG_STRING, WHILEYINT, WHILEYINT);
-
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "substring", ftype,
-				Bytecode.InvokeMode.STATIC));
-
-		bytecodes.add(new Bytecode.Store(c.target(), JAVA_LANG_STRING));
 	}
 
 	private void translate(CodeBlock.Index index, Codes.Invert c, int freeSlot,
@@ -1967,16 +1903,12 @@ public class Wyil2JavaBuilder implements Builder {
 			translate((Constant.Bool) v, freeSlot, bytecodes);
 		} else if (v instanceof Constant.Byte) {
 			translate((Constant.Byte) v, freeSlot, bytecodes);
-		} else if (v instanceof Constant.Char) {
-			translate((Constant.Char) v, freeSlot, bytecodes);
 		} else if (v instanceof Constant.Integer) {
 			translate((Constant.Integer) v, freeSlot, bytecodes);
 		} else if (v instanceof Constant.Type) {
 			translate((Constant.Type) v, freeSlot, bytecodes);
 		} else if (v instanceof Constant.Decimal) {
 			translate((Constant.Decimal) v, freeSlot, bytecodes);
-		} else if (v instanceof Constant.Strung) {
-			translate((Constant.Strung) v, freeSlot, bytecodes);
 		} else if (v instanceof Constant.Set) {
 			translate((Constant.Set) v, freeSlot, lambdas, bytecodes);
 		} else if (v instanceof Constant.List) {
@@ -2035,14 +1967,6 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.LoadConst(e.value));
 		JvmType.Function ftype = new JvmType.Function(WHILEYBYTE, T_BYTE);
 		bytecodes.add(new Bytecode.Invoke(WHILEYBYTE, "valueOf", ftype,
-				Bytecode.InvokeMode.STATIC));
-	}
-
-	protected void translate(Constant.Char e, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.LoadConst(e.value));
-		JvmType.Function ftype = new JvmType.Function(WHILEYCHAR, T_CHAR);
-		bytecodes.add(new Bytecode.Invoke(WHILEYCHAR, "valueOf", ftype,
 				Bytecode.InvokeMode.STATIC));
 	}
 
@@ -2169,11 +2093,6 @@ public class Wyil2JavaBuilder implements Builder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "<init>", ftype,
 					Bytecode.InvokeMode.SPECIAL));
 		}
-	}
-
-	protected void translate(Constant.Strung e, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.LoadConst(e.value));
 	}
 
 	protected void translate(Constant.Set lv, int freeSlot,
@@ -2410,20 +2329,12 @@ public class Wyil2JavaBuilder implements Builder {
 			buildCoercion((Type.Bool) from, to, freeSlot, bytecodes);
 		} else if (from == Type.T_BYTE) {
 			buildCoercion((Type.Byte) from, to, freeSlot, bytecodes);
-		} else if (from == Type.T_CHAR) {
-			buildCoercion((Type.Char) from, to, freeSlot, bytecodes);
 		} else if (Type.intersect(from, to).equals(from)) {
 			// do nothing!
 			// (note, need to check this after primitive types to avoid risk of
 			// missing coercion to any)
 		} else if (from == Type.T_INT) {
 			buildCoercion((Type.Int) from, to, freeSlot, bytecodes);
-		} else if (from == Type.T_STRING && to instanceof Type.List) {
-			buildCoercion((Type.Strung) from, (Type.List) to, freeSlot,
-					bytecodes);
-		} else if (from == Type.T_STRING && to instanceof Type.Set) {
-			buildCoercion((Type.Strung) from, (Type.Set) to, freeSlot,
-					bytecodes);
 		} else {
 			// ok, it's a harder case so we use an explicit coercion function
 			int id = JvmCoercion.get(from, to, constants);
@@ -2450,67 +2361,10 @@ public class Wyil2JavaBuilder implements Builder {
 
 	private void buildCoercion(Type.Int fromType, Type toType, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		if (toType == Type.T_REAL) {
-			// coercion required!
-			JvmType.Function ftype = new JvmType.Function(WHILEYRAT, WHILEYINT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "valueOf", ftype,
-					Bytecode.InvokeMode.STATIC));
-		} else {
-			// coercion required!
-			JvmType.Function ftype = new JvmType.Function(WHILEYCHAR, WHILEYINT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYCHAR, "valueOf", ftype,
-					Bytecode.InvokeMode.STATIC));
-		}
-	}
-
-	private void buildCoercion(Type.Char fromType, Type toType, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		if (toType == Type.T_REAL) {
-			// coercion required!
-			JvmType.Function ftype = new JvmType.Function(T_CHAR);
-			bytecodes.add(new Bytecode.Invoke(WHILEYCHAR, "value", ftype,
-					Bytecode.InvokeMode.VIRTUAL));
-			ftype = new JvmType.Function(WHILEYRAT, T_INT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "valueOf", ftype,
-					Bytecode.InvokeMode.STATIC));
-		} else if (toType == Type.T_INT) {
-			// coercion required!
-			JvmType.Function ftype = new JvmType.Function(T_CHAR);
-			bytecodes.add(new Bytecode.Invoke(WHILEYCHAR, "value", ftype,
-					Bytecode.InvokeMode.VIRTUAL));
-			bytecodes.add(new Bytecode.Conversion(T_INT, T_LONG));
-			ftype = new JvmType.Function(WHILEYINT, T_LONG);
-			bytecodes.add(new Bytecode.Invoke(WHILEYINT, "valueOf", ftype,
-					Bytecode.InvokeMode.STATIC));
-		}
-	}
-
-	private void buildCoercion(Type.Strung fromType, Type.List toType,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(WHILEYLIST,
-				JAVA_LANG_STRING);
-
-		if (toType.element() == Type.T_CHAR) {
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "str2cl", ftype,
-					Bytecode.InvokeMode.STATIC));
-		} else {
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "str2il", ftype,
-					Bytecode.InvokeMode.STATIC));
-		}
-	}
-
-	private void buildCoercion(Type.Strung fromType, Type.Set toType,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(WHILEYSET,
-				JAVA_LANG_STRING);
-
-		if (toType.element() == Type.T_CHAR) {
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "str2cs", ftype,
-					Bytecode.InvokeMode.STATIC));
-		} else {
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "str2is", ftype,
-					Bytecode.InvokeMode.STATIC));
-		}
+		// coercion required!
+		JvmType.Function ftype = new JvmType.Function(WHILEYRAT, WHILEYINT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "valueOf", ftype,
+				Bytecode.InvokeMode.STATIC));
 	}
 
 	/**
@@ -3139,8 +2993,6 @@ public class Wyil2JavaBuilder implements Builder {
 			"wyjc.runtime", "WyBool");
 	private final static JvmType.Clazz WHILEYBYTE = new JvmType.Clazz(
 			"wyjc.runtime", "WyByte");
-	private final static JvmType.Clazz WHILEYCHAR = new JvmType.Clazz(
-			"wyjc.runtime", "WyChar");
 	private final static JvmType.Clazz WHILEYINT = new JvmType.Clazz(
 			"java.math", "BigInteger");
 	private final static JvmType.Clazz WHILEYRAT = new JvmType.Clazz(
@@ -3199,16 +3051,12 @@ public class Wyil2JavaBuilder implements Builder {
 			return WHILEYBOOL;
 		} else if (t instanceof Type.Byte) {
 			return WHILEYBYTE;
-		} else if (t instanceof Type.Char) {
-			return WHILEYCHAR;
 		} else if (t instanceof Type.Int) {
 			return WHILEYINT;
 		} else if (t instanceof Type.Real) {
 			return WHILEYRAT;
 		} else if (t instanceof Type.Meta) {
 			return WHILEYTYPE;
-		} else if (t instanceof Type.Strung) {
-			return JAVA_LANG_STRING;
 		} else if (t instanceof Type.EffectiveList) {
 			return WHILEYLIST;
 		} else if (t instanceof Type.EffectiveSet) {

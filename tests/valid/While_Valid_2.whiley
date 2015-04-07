@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 // The classic binary search which runs in O(log n) time by halving
 // the search space on each iteration until either the item is found, or
@@ -40,4 +40,4 @@ method main(System.Console console):
     [int] list = [3,5,6,9]
     console.out.println(list)
     for i in 0 .. 10:
-        console.out.println(Int.toString(i) ++ " : " ++ Any.toString(binarySearch(list,i)))
+        console.out.println(binarySearch(list,i))

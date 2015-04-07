@@ -1,7 +1,10 @@
-import whiley.lang.System
+import whiley.lang.*
 
-function f({int} xs) -> string:
-    return Any.toString(xs)
+function f({int} xs) -> int:
+    int r = 0
+    for x in xs:
+        r = r + x
+    return r
 
 method main(System.Console sys) -> void:
     {int} ys = {1, 2, 3, 4, 5, 6, 7, 8, 9}

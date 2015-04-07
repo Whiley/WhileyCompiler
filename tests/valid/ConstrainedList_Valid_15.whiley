@@ -1,6 +1,6 @@
-import whiley.lang.System
+import whiley.lang.*
 
-function f() -> string:
+function f() -> [int]:
     return ""
 
 method main(System.Console sys) -> void:

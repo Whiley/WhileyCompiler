@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f(int x, int y) -> int:
     bool a = true
@@ -10,4 +10,4 @@ function f(int x, int y) -> int:
         return 123
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(1))
+    sys.out.println(1)

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type point is {int y, int x}
 
@@ -11,6 +11,6 @@ method main(System.Console sys) -> void:
     listint li = [1, 2, 3]
     point p = {y: 2, x: 1}
     int x = p.x
-    sys.out.println(Any.toString(x))
-    sys.out.println(Any.toString(|si|))
-    sys.out.println(Any.toString(li[0]))
+    sys.out.println(x)
+    sys.out.println(|si|)
+    sys.out.println(li[0])

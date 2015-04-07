@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type rec is {int y, int x}
 

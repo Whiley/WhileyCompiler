@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function extract([int] ls) -> ([int] rs)
 // Returned list cannot be empty
@@ -13,4 +13,4 @@ ensures |rs| > 0:
 
 method main(System.Console sys) -> void:
     [int] rs = extract([-2, -3, 1, 2, -23, 3, 2345, 4, 5])
-    sys.out.println(Any.toString(rs))
+    sys.out.println(rs)

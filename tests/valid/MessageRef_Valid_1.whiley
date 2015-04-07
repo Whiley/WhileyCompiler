@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type MyProc is &{int position}
 
@@ -13,4 +13,4 @@ method test(MyMeth m, MyProc proc) -> int:
 method main(System.Console sys) -> void:
     MyProc p = new {position: 0}
     int r = test(&read, p)
-    sys.out.println(Any.toString(r))
+    sys.out.println(r)

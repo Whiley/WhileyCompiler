@@ -1,3 +1,5 @@
+import whiley.lang.System
+
 function find([int] items, int item) -> (int r)
 // Return value is within bounds of items or one past
 ensures 0 <= r && r <= |items|

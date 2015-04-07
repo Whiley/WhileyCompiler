@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type nat is (int n) where n >= 0
 
@@ -15,6 +15,6 @@ ensures r == 0 || r == 1:
             return 0
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(f(2)))
-    sys.out.println(Any.toString(f(1)))
-    sys.out.println(Any.toString(f(0)))
+    sys.out.println(f(2))
+    sys.out.println(f(1))
+    sys.out.println(f(0))

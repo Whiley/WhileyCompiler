@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 function abs(int|null x) -> (int r)
 // if we return an int, it cannot be negative
 ensures x is int ==> (r == x || r == -x)
@@ -14,6 +16,6 @@ ensures r >= 0:
 
 
 method main(System.Console console):
-    console.out.println("abs(1) = " ++ Int.toString(abs(1)))
-    console.out.println("abs(-1) = " ++ Int.toString(abs(-1)))
-    console.out.println("abs(null) = " ++ Int.toString(abs(null)))
+    console.out.println_s("abs(1) = " ++ Any.toString(abs(1)))
+    console.out.println_s("abs(-1) = " ++ Any.toString(abs(-1)))
+    console.out.println_s("abs(null) = " ++ Any.toString(abs(null)))

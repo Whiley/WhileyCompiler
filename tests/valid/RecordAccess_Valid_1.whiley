@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type etype is {int mode, ...}
 
@@ -9,4 +9,4 @@ method get(Ptype this) -> int:
     return this->mode
 
 method main(System.Console sys) -> void:
-    sys.out.println("OK")
+    sys.out.println_s("OK")

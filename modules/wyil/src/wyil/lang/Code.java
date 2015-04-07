@@ -565,9 +565,6 @@ public interface Code {
 	public static final int OPCODE_append      = 20 + FMT_BINARYASSIGN;
 	public static final int OPCODE_appendl     = 21 + FMT_BINARYASSIGN;
 	public static final int OPCODE_appendr     = 22 + FMT_BINARYASSIGN;
-	public static final int OPCODE_sappend     = 23 + FMT_BINARYASSIGN;
-	public static final int OPCODE_sappendl    = 24 + FMT_BINARYASSIGN;
-	public static final int OPCODE_sappendr    = 25 + FMT_BINARYASSIGN;
 
 	// =========================================================================
 	// Nary Operators
@@ -591,7 +588,6 @@ public interface Code {
 	public static final int OPCODE_indirectinvokefn = 4 + FMT_NARYASSIGN;
 	public static final int OPCODE_indirectinvokemd = 5 + FMT_NARYASSIGN;
 	public static final int OPCODE_sublist          = 6 + FMT_NARYASSIGN;
-	public static final int OPCODE_substring        = 7 + FMT_NARYASSIGN;
 	public static final int OPCODE_invokefn         = 8 + FMT_NARYASSIGN; // +NAMEIDX
 	public static final int OPCODE_invokemd         = 9 + FMT_NARYASSIGN; // +NAMEIDX
 	public static final int OPCODE_lambdafn         = 10 + FMT_NARYASSIGN; // +NAMEIDX

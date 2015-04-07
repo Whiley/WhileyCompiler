@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type fr5nat is (int x) where x >= 0
 
@@ -9,8 +9,8 @@ function g({fr5nat} xs) -> {fr5nat}:
             ys = ys + {y}
     return ys
 
-function f({fr5nat} x) -> string:
-    return Any.toString(x)
+function f({fr5nat} x) -> {int}:
+    return x
 
 method main(System.Console sys) -> void:
     {int} ys = {1, 2, 3}

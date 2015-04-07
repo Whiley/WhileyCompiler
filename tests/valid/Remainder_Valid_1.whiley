@@ -1,22 +1,22 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f(int x, int y) -> int:
     return x % y
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(f(10, 5)))
-    sys.out.println(Any.toString(f(10, 4)))
-    sys.out.println(Any.toString(f(1, 4)))
-    sys.out.println(Any.toString(f(103, 2)))
-    sys.out.println(Any.toString(f(-10, 5)))
-    sys.out.println(Any.toString(f(-10, 4)))
-    sys.out.println(Any.toString(f(-1, 4)))
-    sys.out.println(Any.toString(f(-103, 2)))
-    sys.out.println(Any.toString(f(-10, -5)))
-    sys.out.println(Any.toString(f(-10, -4)))
-    sys.out.println(Any.toString(f(-1, -4)))
-    sys.out.println(Any.toString(f(-103, -2)))
-    sys.out.println(Any.toString(f(10, -5)))
-    sys.out.println(Any.toString(f(10, -4)))
-    sys.out.println(Any.toString(f(1, -4)))
-    sys.out.println(Any.toString(f(103, -2)))
+    sys.out.println(f(10, 5))
+    sys.out.println(f(10, 4))
+    sys.out.println(f(1, 4))
+    sys.out.println(f(103, 2))
+    sys.out.println(f(-10, 5))
+    sys.out.println(f(-10, 4))
+    sys.out.println(f(-1, 4))
+    sys.out.println(f(-103, 2))
+    sys.out.println(f(-10, -5))
+    sys.out.println(f(-10, -4))
+    sys.out.println(f(-1, -4))
+    sys.out.println(f(-103, -2))
+    sys.out.println(f(10, -5))
+    sys.out.println(f(10, -4))
+    sys.out.println(f(1, -4))
+    sys.out.println(f(103, -2))

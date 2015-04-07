@@ -1,3 +1,4 @@
+import whiley.lang.System
 
 function find([int] items, int item) -> (int result)
 ensures result == -1 || result in items:

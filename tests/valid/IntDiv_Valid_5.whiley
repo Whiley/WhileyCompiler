@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f(int x, int y) -> (int, int)
 requires x == (2 * y):

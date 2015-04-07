@@ -1,3 +1,4 @@
+import whiley.lang.*
 
 function duplicate(int n) -> (int r)
 requires n >= 0
@@ -12,5 +13,5 @@ ensures  r == 2*n:
 
 method main(System.Console console):
     for i in 0 .. 10:
-        console.out.println("GOT: " ++ Int.toString(duplicate(i)))
+        console.out.println_s("GOT: " ++ Any.toString(duplicate(i)))
 

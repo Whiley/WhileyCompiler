@@ -1,10 +1,10 @@
-import whiley.lang.System
+import whiley.lang.*
 
-function f({int} xs, {int} ys) -> string
+function f({int} xs, {int} ys) -> bool
 requires xs ⊆ ys:
-    return "XS IS A SUBSET"
+    return true
 
-function g({int} xs, {int} ys) -> string
+function g({int} xs, {int} ys) -> bool
 requires xs ⊆ ys:
     return f(xs, ys)
 

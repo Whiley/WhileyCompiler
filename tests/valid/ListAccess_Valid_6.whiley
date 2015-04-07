@@ -1,6 +1,6 @@
-import whiley.lang.System
+import whiley.lang.*
 
-function f(string str) -> [int]:
+function f([int] str) -> [int]:
     [int]|null r = null
     for i in str:
         if r == null:

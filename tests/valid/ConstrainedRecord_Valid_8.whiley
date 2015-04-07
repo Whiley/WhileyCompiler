@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 constant BLANK is 0
 
@@ -22,4 +22,4 @@ method main(System.Console console) -> void:
     assert b.pieces[0] == BLANK
     assert b.pieces[1] == BLANK
     assert b.pieces[8] == BLANK
-    console.out.println("BOARD: " ++ Any.toString(b))
+    console.out.println_s("BOARD: " ++ Any.toString(b))

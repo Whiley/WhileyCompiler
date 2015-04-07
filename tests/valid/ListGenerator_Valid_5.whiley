@@ -1,7 +1,7 @@
-import whiley.lang.System
+import whiley.lang.*
 
-function f([int] x) -> string:
-    return Any.toString(|x|)
+function f([int] x) -> int:
+    return |x|
 
 method main(System.Console sys) -> void:
     [int] arr = []

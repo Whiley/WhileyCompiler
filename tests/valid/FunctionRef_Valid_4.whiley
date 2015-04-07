@@ -1,5 +1,4 @@
-import whiley.lang.System
-import whiley.io.*
+import whiley.lang.*
 
 constant table is [&f1, &f2]
 
@@ -16,5 +15,5 @@ function g(int d) -> int:
     return y(123)
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(g(0)))
-    sys.out.println(Any.toString(g(1)))
+    sys.out.println(g(0))
+    sys.out.println(g(1))

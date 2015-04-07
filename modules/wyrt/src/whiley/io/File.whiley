@@ -26,6 +26,7 @@ package whiley.io
 
 import whiley.io.Reader
 import uint from whiley.lang.Int
+import string from whiley.lang.ASCII
 
 // ====================================================
 // File Reader

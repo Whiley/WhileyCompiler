@@ -50,7 +50,7 @@ public final class WyRecord extends HashMap<String,Object> {
 				r = r + ",";
 			}
 			firstTime = false;
-			r = r + s + ":" + whiley.lang.Any$native.toString(get(s));
+			r = r + s + ":" + whiley.lang.Any$native.toRealString(get(s));
 		}
 		return r + "}";
 	}

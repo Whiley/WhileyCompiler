@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 import nat from whiley.lang.Int
 
 type nlist is int | [nat]
@@ -11,4 +11,4 @@ function f(int i, [nlist] xs) -> nlist:
 
 method main(System.Console sys) -> void:
     nlist x = f(2, [2, 3, 4])
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)

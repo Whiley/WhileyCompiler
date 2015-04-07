@@ -1,8 +1,8 @@
-import whiley.lang.System
+import whiley.lang.*
 
 method main(System.Console sys) -> void:
-    {int|char} x = {1, 2, 3}
-    {int|char} y = {1, 2}
+    {int} x = {1, 2, 3}
+    {int} y = {1, 2}
     sys.out.println(x - y)
     x = {'a', 'b', 'c'}
     y = {'b', 'c'}

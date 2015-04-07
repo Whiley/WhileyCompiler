@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function indexOf([int] xs, int x) -> (int|null result)
 // Either result is null, or gives the index of x in xs

@@ -226,9 +226,10 @@ public class CodeGeneration {
 	}
 
 	protected Code generate(Expr.Cast e, HashMap<String,Code> environment, WyalFile.Context context) {
-		SemanticType type = e.attribute(TypeAttribute.class).type;
+		SemanticType type = e.operand.attribute(TypeAttribute.class).type;
+		SemanticType target = e.attribute(TypeAttribute.class).type;
 		Code operand = generate(e.operand,environment, context);
-		return Code.Cast(type,operand,attributes(e));
+		return Code.Cast(type,operand,target,attributes(e));
 	}
 	
 	protected Code generate(Expr.Unary e, HashMap<String,Code> environment, WyalFile.Context context) {

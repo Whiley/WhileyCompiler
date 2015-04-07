@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f(int x) -> (int r)
 // Return cannot be 1
@@ -12,6 +12,6 @@ ensures r != 1:
     return x
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(f(2)))
-    sys.out.println(Any.toString(f(1)))
-    sys.out.println(Any.toString(f(0)))
+    sys.out.println(f(2))
+    sys.out.println(f(1))
+    sys.out.println(f(0))

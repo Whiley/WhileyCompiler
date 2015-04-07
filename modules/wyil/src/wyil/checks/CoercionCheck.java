@@ -165,9 +165,6 @@ public class CoercionCheck implements Transform<WyilFile> {
 			Type.List t1 = (Type.List) from;
 			Type.List t2 = (Type.List) to;
 			check(t1.element(),t2.element(),visited,location);
-		} else if(from instanceof Type.Strung && to instanceof Type.List) {
-			Type.List t2 = (Type.List) to;
-			check(Type.T_CHAR,t2.element(),visited,location);
 		} else if(from instanceof Type.Record && to instanceof Type.Record) {
 			Type.Record t1 = (Type.Record) from;
 			Type.Record t2 = (Type.Record) to;

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type a_nat is int
 
@@ -13,4 +13,4 @@ function f(a_nat x) -> b_nat:
 method main(System.Console sys) -> void:
     int x = |sys.args|
     x = f(x)
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type nat is (int x) where x >= 0
 
@@ -11,6 +11,6 @@ function sum([nat] ls) -> nat:
     return sum
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(sum([])))
-    sys.out.println(Any.toString(sum([1, 2, 3])))
-    sys.out.println(Any.toString(sum([12387, 98123, 12398, 12309, 0])))
+    sys.out.println(sum([]))
+    sys.out.println(sum([1, 2, 3]))
+    sys.out.println(sum([12387, 98123, 12398, 12309, 0]))

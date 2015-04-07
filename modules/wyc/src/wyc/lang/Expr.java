@@ -437,30 +437,6 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
-	public static class SubString extends SyntacticElement.Impl implements Expr {
-		public Expr src;
-		public Expr start;
-		public Expr end;
-
-		public SubString(Expr src, Expr start, Expr end, Attribute... attributes) {
-			super(attributes);
-			this.src = src;
-			this.start = start;
-			this.end = end;
-		}
-
-		public SubString(Expr src, Expr start, Expr end, Collection<Attribute> attributes) {
-			super(attributes);
-			this.src = src;
-			this.start = start;
-			this.end = end;
-		}
-
-		public Nominal result() {
-			return Nominal.T_STRING;
-		}
-	}
-
 	public static class Quantifier extends SyntacticElement.Impl implements Expr {
 		public final QOp cop;
 		public final ArrayList<Pair<String,Expr>> sources;
@@ -850,9 +826,6 @@ public interface Expr extends SyntacticElement {
 			public String toString() { return "-"; }
 		},
 		LISTAPPEND{
-			public String toString() { return "++"; }
-		},
-		STRINGAPPEND{
 			public String toString() { return "++"; }
 		},
 		EQ{

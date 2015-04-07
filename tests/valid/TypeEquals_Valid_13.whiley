@@ -1,12 +1,12 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type iset is {int} | int
 
-function f(iset e) -> string:
+function f(iset e) -> bool:
     if e is {int}:
-        return "{int}"
+        return true
     else:
-        return "int"
+        return false
 
 method main(System.Console sys) -> void:
     sys.out.println(f({1, 2, 3}))

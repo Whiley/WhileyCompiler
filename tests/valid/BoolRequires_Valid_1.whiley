@@ -1,8 +1,8 @@
-import whiley.lang.System
+import whiley.lang.*
 
-function f([bool] x) -> string
+function f([bool] x) -> [bool]
 requires (|x| > 0) && x[0]:
-    return Any.toString(x)
+    return x
 
 method main(System.Console sys) -> void:
     sys.out.println(f([true]))

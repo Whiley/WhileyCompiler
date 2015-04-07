@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type wierd is ([int] xs) where some { x in xs | x > 0 }
 
@@ -9,4 +9,4 @@ requires |xs| > 0:
 
 method main(System.Console sys) -> void:
     [int] rs = f([-1, -2])
-    sys.out.println(Any.toString(rs))
+    sys.out.println(rs)

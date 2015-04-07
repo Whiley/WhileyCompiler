@@ -1,7 +1,7 @@
-import whiley.lang.System
+import whiley.lang.*
 
-function f(bool b) -> string:
-    return Any.toString(b)
+function f(bool b) -> bool:
+    return b
 
 method main(System.Console sys) -> void:
     bool x = true

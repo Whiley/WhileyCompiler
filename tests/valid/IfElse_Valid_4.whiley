@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type Link is {LinkedList next, int data}
 
@@ -26,6 +26,6 @@ method main(System.Console sys) -> void:
     LinkedList ls = {next: null, data: 1}
     ls = {next: ls, data: 2}
     ls = {next: ls, data: 3}
-    sys.out.println(Any.toString(sum_1(ls)))
-    sys.out.println(Any.toString(sum_2(ls)))
-    sys.out.println(Any.toString(sum_3(ls)))
+    sys.out.println(sum_1(ls))
+    sys.out.println(sum_2(ls))
+    sys.out.println(sum_3(ls))

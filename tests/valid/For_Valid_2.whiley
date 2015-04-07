@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type nat is (int x) where x >= 0
 
@@ -11,4 +11,4 @@ requires |ls| > 0:
 
 method main(System.Console sys) -> void:
     nat rs = extract([-2, -3, 1, 2, -23, 3, 2345, 4, 5])
-    sys.out.println(Any.toString(rs))
+    sys.out.println(rs)

@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 type Record is { int flag }
 
 function getFlag(Record d) -> int:
@@ -13,8 +15,8 @@ function getFlag(Record d) -> int:
 
 method main(System.Console console):
     Record r = {flag: 1}
-    console.out.println("GOT FLAG: " ++ Int.toString(getFlag(r)))
+    console.out.println_s("GOT FLAG: " ++ Any.toString(getFlag(r)))
     r = {flag: 0}
-    console.out.println("GOT FLAG: " ++ Int.toString(getFlag(r)))
+    console.out.println_s("GOT FLAG: " ++ Any.toString(getFlag(r)))
     r = {flag: -1}
-    console.out.println("GOT FLAG: " ++ Int.toString(getFlag(r)))
+    console.out.println_s("GOT FLAG: " ++ Any.toString(getFlag(r)))

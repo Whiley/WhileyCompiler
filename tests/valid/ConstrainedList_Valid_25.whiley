@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function indexOf([int] list, int index) -> int
 requires all { l in list | l >= 0 } && ((index >= 0) && (index < |list|)):

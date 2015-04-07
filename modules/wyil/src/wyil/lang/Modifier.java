@@ -49,7 +49,6 @@ package wyil.lang;
  */
 public interface Modifier {
 	public static final Modifier PUBLIC = new Public();
-	public static final Modifier PROTECTED = new Protected();
 	public static final Modifier PRIVATE = new Private();
 	public static final Modifier NATIVE = new Native();
 	public static final Modifier EXPORT = new Export();
@@ -57,11 +56,6 @@ public interface Modifier {
 	public static final class Public implements Modifier {
 		private Public() {}
 		public String toString() { return "public"; }
-	}
-
-	public static final class Protected implements Modifier {
-		private Protected() {}
-		public String toString() { return "protected"; }
 	}
 
 	public static final class Private implements Modifier {

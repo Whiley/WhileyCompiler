@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type wmcr6tup is {int y, int x}
 
@@ -9,4 +9,4 @@ method f(int y) -> wmcr6tup:
     return {y: get(), x: y}
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(f(1)))
+    sys.out.println(f(1))

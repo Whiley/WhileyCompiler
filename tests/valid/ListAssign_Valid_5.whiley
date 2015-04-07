@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type nint is null | int
 
@@ -16,4 +16,4 @@ requires to + 1 < |list[to]|:
 method main(System.Console sys) -> void:
     [[nint]] ls = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
     ls = move(0, 1, ls)
-    sys.out.println(Any.toString(ls))
+    sys.out.println(ls)

@@ -1,8 +1,8 @@
 
-function f([int] xs) -> void
+function f([int] xs) -> bool
 requires xs != []:
-    debug Any.toString(xs)
+    return true
 
-method main(System.Console sys) -> void:
+method main() -> void:
     f([1, 4])
     f([])

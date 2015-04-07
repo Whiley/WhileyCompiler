@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type nat is (int x) where x >= 0
 
@@ -12,4 +12,4 @@ ensures result >= 0:
 
 method main(System.Console sys) -> void:
     int z = sum({1, 2, 3, 4, 5})
-    sys.out.println(Any.toString(z))
+    sys.out.println(z)

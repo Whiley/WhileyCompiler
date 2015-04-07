@@ -1,7 +1,7 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type pintset is {int}
 
 method main(System.Console sys) -> void:
-    {char} p = {'b', 'c'}
-    sys.out.println(Any.toString(p))
+    {int} p = {'b', 'c'}
+    sys.out.println(p)

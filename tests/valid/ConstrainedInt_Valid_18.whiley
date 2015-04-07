@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type anat is int
 
@@ -12,5 +12,5 @@ function btoa(bnat x) -> anat:
 
 method main(System.Console sys) -> void:
     int x = 1
-    sys.out.println(Any.toString(atob(x)))
-    sys.out.println(Any.toString(btoa(x)))
+    sys.out.println(atob(x))
+    sys.out.println(btoa(x))

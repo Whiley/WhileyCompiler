@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type nat is (int x) where x >= 0
 
@@ -10,4 +10,4 @@ function f([nat] xs) -> [nat]:
 
 method main(System.Console sys) -> void:
     [nat] rs = f([1, 2, 3])
-    sys.out.println(Any.toString(rs))
+    sys.out.println(rs)

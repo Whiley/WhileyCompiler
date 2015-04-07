@@ -26,6 +26,8 @@
 package whiley.io
 
 import uint from whiley.lang.Int
+import string from whiley.lang.ASCII
+
 
 // =================================================================
 // Generic Reader

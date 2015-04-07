@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f({int} xs, int lb, int ub) -> {int}
 requires no { x in xs | (x < lb) || (x >= ub) } && (|xs| == (ub - lb)):

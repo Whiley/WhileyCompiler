@@ -1,8 +1,7 @@
+import whiley.lang.*
 
 constant BLANK is 0
-
 constant CROSS is 1
-
 constant CIRCLE is 2
 
 type Piece is (int x) where x in {BLANK, CROSS, CIRCLE}

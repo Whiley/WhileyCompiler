@@ -1,7 +1,7 @@
 
-function f([int] ls) -> void
+function f([int] ls) -> bool
 requires no { i in {0, 1, 2, 3, 4} | (i >= 0) && ((i < |ls|) && (ls[i] < 0)) }:
-    debug Any.toString(ls)
+    return true
 
-method main(System.Console sys) -> void:
+method main() -> void:
     f([-1, 0, 1, 2, 3])

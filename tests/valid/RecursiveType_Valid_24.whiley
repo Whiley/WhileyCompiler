@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type Link is null | [Link]
 
@@ -18,7 +18,7 @@ method main(System.Console sys) -> void:
     Link l2 = [l1]
     Link l3 = [l2]
     Link l4 = [l3]
-    sys.out.println(Any.toString(maxDepth(l1)))
-    sys.out.println(Any.toString(maxDepth(l2)))
-    sys.out.println(Any.toString(maxDepth(l3)))
-    sys.out.println(Any.toString(maxDepth(l4)))
+    sys.out.println(maxDepth(l1))
+    sys.out.println(maxDepth(l2))
+    sys.out.println(maxDepth(l3))
+    sys.out.println(maxDepth(l4))

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type nat is (int x) where x >= 0
 
@@ -13,4 +13,4 @@ requires y > 0:
 
 method main(System.Console sys) -> void:
     int x = f(10, 2)
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)

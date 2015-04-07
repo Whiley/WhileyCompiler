@@ -156,7 +156,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 	}
 
 	private Code<?> transform(Code.Cast e) {
-		return Code.Cast(e.type, transform(e.operands[0]), e.attributes());
+		return Code.Cast(e.type, transform(e.operands[0]), e.target, e.attributes());
 	}
 	
 	private Code<?> transform(Code.Unary e) {

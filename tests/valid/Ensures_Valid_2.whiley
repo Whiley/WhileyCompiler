@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f(int x) -> (int y)
 ensures y > x:
@@ -7,4 +7,4 @@ ensures y > x:
 
 method main(System.Console sys) -> void:
     int y = f(1)
-    sys.out.println(Any.toString(y))
+    sys.out.println(y)

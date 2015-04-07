@@ -25,6 +25,9 @@
 
 package whiley.lang
 
+import string from whiley.lang.ASCII
+import char from whiley.lang.ASCII
+
 /**
  * Represents all signed integers representable in 8bits
  * of space in the two's complement representation.
@@ -102,7 +105,7 @@ public function toHexString(int item) -> string:
     while item > 0:
         int v = item / 16
         int w = item % 16
-        r = digits[w] ++ r
+        r = [digits[w]] ++ r
         item = v
     return r
 
@@ -167,7 +170,7 @@ public function parse(string input) -> int|null:
     for i in start .. |input|:
         char c = input[i]
         r = r * 10
-        if !Char.isDigit(c):
+        if !ASCII.isDigit(c):
             return null
         r = r + ((int) c - '0')
     // done

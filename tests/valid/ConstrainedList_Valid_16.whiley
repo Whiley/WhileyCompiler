@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type nat is (int x) where x >= 0
 
@@ -8,4 +8,4 @@ requires |xs| == 0:
 
 method main(System.Console sys) -> void:
     [nat] rs = f([])
-    sys.out.println(Any.toString(rs))
+    sys.out.println(rs)

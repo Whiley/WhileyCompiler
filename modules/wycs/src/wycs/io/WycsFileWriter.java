@@ -414,12 +414,17 @@ public class WycsFileWriter {
 			}
 			case CAST: {
 				Code.Cast c = (Code.Cast) code;
-				output.write_uv(typeCache.get(c.type));
+				output.write_uv(typeCache.get(c.target));
 				break;
 			}
 			case CONST: {
 				Code.Constant c = (Code.Constant) code;
 				output.write_uv(constantCache.get(c.value));
+				break;
+			}
+			case IS: {
+				Code.Is is = (Code.Is) code; 
+				output.write_uv(typeCache.get(is.test));
 				break;
 			}
 			case LOAD: {
@@ -528,7 +533,7 @@ public class WycsFileWriter {
 			addConstantItem(c.value);
 		} else if(code instanceof Code.Cast) {
 			Code.Cast c = (Code.Cast) code;
-			addTypeItem(c.type);
+			addTypeItem(c.target);			
 		} else if(code instanceof Code.Quantifier) {
 			Code.Quantifier c = (Code.Quantifier) code;
 			for(Pair<SemanticType,Integer> p : c.types) {
@@ -540,7 +545,10 @@ public class WycsFileWriter {
 			for(SemanticType t : c.binding) {
 				addTypeItem(t);
 			}
-		}
+		} else if(code instanceof Code.Is) {
+			Code.Is c = (Code.Is) code;
+			addTypeItem(c.test);
+		} 
 
 		// Second, deal with standard cases
 		addTypeItem(code.type);

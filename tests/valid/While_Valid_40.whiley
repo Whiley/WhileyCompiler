@@ -1,3 +1,5 @@
+import whiley.lang.System
+
 function contains([int] items, int item) -> (bool r)
 ensures r ==> some { i in 0 .. |items| | item == items[i] }:
     //
@@ -14,5 +16,4 @@ ensures r ==> some { i in 0 .. |items| | item == items[i] }:
 method main(System.Console console):
     [int] ls = [1,2,3,4]
     for l in [3,5,1]:
-        bool b = contains(ls,l)
-        console.out.println(Any.toString(l) ++ " in " ++ Any.toString(ls) ++ " : " ++ Any.toString(b))
+        console.out.println(contains(ls,l))

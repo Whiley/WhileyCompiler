@@ -1,12 +1,8 @@
-
 type c3num is (int x) where 1 <= x && x <= 4
 
-function f(c3num x) -> void:
+function f(c3num x) -> int:
     int y = x
-    debug Any.toString(y)
+    return y
 
-function g(int z) -> void:
-    f(z)
-
-method main(System.Console sys) -> void:
-    g(5)
+function g(int z) -> int:
+    return f(z)

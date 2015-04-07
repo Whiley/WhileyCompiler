@@ -1,14 +1,14 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type ir1nat is int
 
 type pir1nat is ir1nat
 
-function f(int x) -> string:
+function f(int x) -> int:
     if x > 2:
         int y = x
-        return Any.toString(y)
-    return ""
+        return y
+    return 0
 
 method main(System.Console sys) -> void:
     sys.out.println(f(1))

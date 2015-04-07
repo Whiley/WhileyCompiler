@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type bop is {int y, int x}
 
@@ -12,6 +12,6 @@ function f(expr e) -> int:
 
 method main(System.Console sys) -> void:
     int x = f(1)
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)
     x = f({y: 10, x: 4})
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)

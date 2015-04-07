@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type EmptyList is [int] & [real]
 
@@ -7,4 +7,4 @@ function size(EmptyList l) -> int:
 
 method main(System.Console sys) -> void:
     list = []
-    sys.out.println(Any.toString(size(list)))
+    sys.out.println(size(list))

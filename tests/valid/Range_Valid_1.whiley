@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type nat is (int x) where x >= 0
 
@@ -9,5 +9,5 @@ function sum(int start, int end) -> nat:
     return r
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(sum(0, 10)))
-    sys.out.println(Any.toString(sum(10, 13)))
+    sys.out.println(sum(0, 10))
+    sys.out.println(sum(10, 13))

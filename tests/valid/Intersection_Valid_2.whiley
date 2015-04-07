@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type LinkedList is null | {LinkedList next, int data}
 
@@ -12,4 +12,4 @@ function f(InterList l) -> int:
 method main(System.Console sys) -> void:
     list = {next: null, data: 1234}
     d = f(list)
-    sys.out.println("GOT: " ++ Any.toString(d))
+    sys.out.println_s("GOT: " ++ Any.toString(d))

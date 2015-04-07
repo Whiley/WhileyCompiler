@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type Expr is int | real | [Expr] | ListAccess
 
@@ -28,7 +28,7 @@ function evaluate(Expr e) -> null | Value:
                 return null
 
 public method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(evaluate(123)))
-    sys.out.println(Any.toString(evaluate({index: 0, src: [112, 212332, 342]})))
-    sys.out.println(Any.toString(evaluate({index: 2, src: [112312, -289712, 312242]})))
-    sys.out.println(Any.toString(evaluate([123, 223, 323])))
+    sys.out.println(evaluate(123))
+    sys.out.println(evaluate({index: 0, src: [112, 212332, 342]}))
+    sys.out.println(evaluate({index: 2, src: [112312, -289712, 312242]}))
+    sys.out.println(evaluate([123, 223, 323]))

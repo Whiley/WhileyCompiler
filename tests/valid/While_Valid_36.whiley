@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 function lastIndexOf([int] xs, int x) -> (int r)
 // Return value is either -1 or a valid index in xs.
 // Here, -1 indicates element was not found in list
@@ -24,4 +26,4 @@ method main(System.Console console):
     [int] list = [1,2,1,3,1,2]
     for i in 0 .. 3:
         int|null li = lastIndexOf(list,i)
-        console.out.println("lastIndexOf(" ++ Any.toString(list) ++ "," ++ Int.toString(i) ++ ") = " ++ Any.toString(li))
+        console.out.println_s("lastIndexOf(" ++ Any.toString(list) ++ "," ++ Any.toString(i) ++ ") = " ++ Any.toString(li))

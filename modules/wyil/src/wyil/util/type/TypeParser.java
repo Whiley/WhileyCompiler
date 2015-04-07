@@ -152,19 +152,13 @@ public class TypeParser {
 			} else {
 				match("byte");
 				return T_BYTE;
-			}
-		case 'c':
-			match("char");
-			return T_CHAR;
+			}		
 		case 'i':
 			match("int");
 			return T_INT;
 		case 'r':
 			match("real");
-			return T_REAL;
-		case 's':
-			match("string");
-			return T_STRING;
+			return T_REAL;		
 		case '[':
 		{
 			match("[");

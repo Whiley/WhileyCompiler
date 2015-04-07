@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 function indexOf([int] items, int item) -> (int r)
 ensures r == |items| || items[r] == item:
     //
@@ -12,4 +14,4 @@ ensures r == |items| || items[r] == item:
 
 method main(System.Console console):
     int i = indexOf([1,2,3,4],3)
-    console.out.println("indexOf = " ++ Int.toString(i))
+    console.out.println_s("indexOf = " ++ Any.toString(i))

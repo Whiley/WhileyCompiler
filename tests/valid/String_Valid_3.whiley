@@ -1,15 +1,15 @@
-import whiley.lang.System
+import whiley.lang.*
 
-public function has(char c1, string str) -> bool:
+public function has(int c1, [int] str) -> bool:
     for c2 in str:
         if c1 == c2:
             return true
     return false
 
 method main(System.Console sys) -> void:
-    string s = "Hello World"
-    sys.out.println(Any.toString(has('l', s)))
-    sys.out.println(Any.toString(has('e', s)))
-    sys.out.println(Any.toString(has('h', s)))
-    sys.out.println(Any.toString(has('z', s)))
-    sys.out.println(Any.toString(has('H', s)))
+    [int] s = "Hello World"
+    sys.out.println(has('l', s))
+    sys.out.println(has('e', s))
+    sys.out.println(has('h', s))
+    sys.out.println(has('z', s))
+    sys.out.println(has('H', s))

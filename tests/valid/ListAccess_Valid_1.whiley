@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f([int] x) -> void
 requires |x| > 0:
@@ -9,4 +9,4 @@ requires |x| > 0:
 method main(System.Console sys) -> void:
     [int] arr = [1, 2, 3]
     f(arr)
-    sys.out.println(Any.toString(arr[0]))
+    sys.out.println(arr[0])

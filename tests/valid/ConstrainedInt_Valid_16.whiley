@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 constant odd is {1,3,5}
 
@@ -16,4 +16,4 @@ function f(oddeven x) -> even:
 method main(System.Console sys) -> void:
     int y = 1
     y = f(1)
-    sys.out.println(Any.toString(y))
+    sys.out.println(y)

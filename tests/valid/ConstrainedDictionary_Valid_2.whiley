@@ -1,3 +1,5 @@
+import whiley.lang.System
+
 type nat is (int x) where x >= 0
 
 function f({int=>int} v) -> (int r)

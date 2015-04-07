@@ -25,6 +25,7 @@
 
 package whiley.lang
 
+import string from whiley.lang.ASCII
 import uint from whiley.lang.Int
 
 // convert a byte into a string
@@ -76,10 +77,6 @@ public function toInt(byte b) -> int:
         return -(256-r)
     else:
         return r
-
-// Convert a byte into a unicode character.
-public function toChar(byte b) -> char:
-    return (char) toUnsignedInt(b)
 
 // Convert a byte array into a signed int assuming a little endian
 // form for both individual bytes, and the array as a whole

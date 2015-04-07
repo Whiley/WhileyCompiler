@@ -1,3 +1,5 @@
+import whiley.lang.System
+
 type Recursive is {Recursive}
 
 function append(Recursive r1, Recursive r2) -> Recursive:

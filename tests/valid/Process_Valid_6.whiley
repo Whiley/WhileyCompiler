@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type Actor is {int data}
 
@@ -22,4 +22,4 @@ method main(System.Console sys) -> void:
     for i in 0 .. |actors|:
         r = r + get(actors[i])
     //
-    sys.out.println(Any.toString(r))
+    sys.out.println(r)

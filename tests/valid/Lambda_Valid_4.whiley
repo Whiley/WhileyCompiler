@@ -1,4 +1,6 @@
-import whiley.lang.System
+import whiley.lang.*
+
+type string is [int]
 
 type InputStream is {
     method read(int) -> [byte],
@@ -23,7 +25,7 @@ public method BufferInputStream([byte] buffer) -> InputStream:
 method main(System.Console sys) -> void:
     [string] strings = ["hello", "cruel cruel", "world"]
     for s in strings:
-        InputStream bis = BufferInputStream(String.toUTF8(s))
+        InputStream bis = BufferInputStream(ASCII.toBytes(s))
         while !bis.eof():
             [byte] bytes = bis.read(3)
-            sys.out.println("READ: " ++ String.fromASCII(bytes))
+            sys.out.println_s("READ: " ++ ASCII.fromBytes(bytes))

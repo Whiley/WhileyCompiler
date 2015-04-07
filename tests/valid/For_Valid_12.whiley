@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type setdict is {int} | {int=>int}
 

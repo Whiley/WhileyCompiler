@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 constant Days is ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -9,7 +9,7 @@ function inc(item i) -> item:
 
 method print(System.Console console, item day, int count) -> void:
     if count > 0:
-        console.out.println(Days[day])
+        console.out.println_s(Days[day])
         print(console, inc(day), count - 1)
 
 public method main(System.Console console) -> void:

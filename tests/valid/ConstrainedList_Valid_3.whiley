@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type nat is (int x) where x >= 0
 
@@ -15,4 +15,4 @@ ensures (|result| == length) && all { i in result | i == value }:
 
 method main(System.Console sys) -> void:
     for i in 0 .. 10:
-        sys.out.println(Any.toString(init(i, i)))
+        sys.out.println(init(i, i))

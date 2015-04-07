@@ -372,8 +372,6 @@ public class WhileyFilePrinter {
 			print ((Expr.List) expression);
 		} else if (expression instanceof Expr.SubList) {
 			print ((Expr.SubList) expression);
-		} else if (expression instanceof Expr.SubString) {
-			print ((Expr.SubString) expression);
 		} else if (expression instanceof Expr.BinOp) {
 			print ((Expr.BinOp) expression);
 		} else if (expression instanceof Expr.LengthOf) {
@@ -461,15 +459,6 @@ public class WhileyFilePrinter {
 	}
 
 	public void print(Expr.SubList e) {
-		print(e.src);
-		out.print("[");
-		print(e.start);
-		out.print("..");
-		print(e.end);
-		out.print("]");
-	}
-
-	public void print(Expr.SubString e) {
 		print(e.src);
 		out.print("[");
 		print(e.start);
@@ -780,14 +769,10 @@ public class WhileyFilePrinter {
 			out.print("bool");
 		} else if(t instanceof SyntacticType.Byte) {
 			out.print("byte");
-		} else if(t instanceof SyntacticType.Char) {
-			out.print("char");
 		} else if(t instanceof SyntacticType.Int) {
 			out.print("int");
 		} else if(t instanceof SyntacticType.Null) {
 			out.print("null");
-		} else if(t instanceof SyntacticType.Strung) {
-			out.print("string");
 		} else if(t instanceof SyntacticType.Real) {
 			out.print("real");
 		} else if(t instanceof SyntacticType.Void) {

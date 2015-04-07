@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 constant RET is 169
 
@@ -13,4 +13,4 @@ function f(UNIT x) -> int:
 
 method main(System.Console sys) -> void:
     int bytes = f({op: NOP})
-    sys.out.println(Any.toString(bytes))
+    sys.out.println(bytes)

@@ -25,6 +25,9 @@
 
 package whiley.lang
 
+import string from whiley.lang.ASCII
+import char from whiley.lang.ASCII
+
 public type normalised is (real x)
     where 0.0 <= x && x <= 1.0
 
@@ -40,7 +43,7 @@ public function parse(string input) -> real|null:
         char c = input[i]
         if c == '.' && dps == 0:
             dps = 1
-        else if !Char.isDigit(c):
+        else if !ASCII.isDigit(c):
             return null
         else:
             r = r * 10
@@ -68,14 +71,14 @@ public function toDecimal(real x, int ndigits) -> string:
     int n / int d = x
     char digit = (char) n / d
     real rem = x - (real) digit
-    r = r ++ digit ++ "."
+    r = r ++ [digit] ++ "."
     int i = 1
     while i < ndigits && rem != 0.0:
         rem = rem * 10.0
         n / d = rem
         digit = (char) n / d
         rem = rem - (real) digit
-        r = r ++ digit
+        r = r ++ [digit]
         i = i + 1
     // need to support rounding!
     return r

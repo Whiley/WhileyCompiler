@@ -1,9 +1,9 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type IntList is {int op, [real] rest} | {int op, int mode}
 
-function f(IntList y) -> string:
-    return Any.toString(y)
+function f(IntList y) -> IntList:
+    return y
 
 method main(System.Console sys) -> void:
     {int|real op, [real] rest} x = {op: 1, rest: [1.23]}

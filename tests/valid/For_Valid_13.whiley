@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type listsetdict is [int] | {int} | {int=>int}
 

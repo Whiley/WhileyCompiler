@@ -1,6 +1,6 @@
-import whiley.lang.System
+import whiley.lang.*
 
-type Expr is {int num} | {int op, Expr rhs, Expr lhs} | {string err}
+type Expr is {int num} | {int op, Expr rhs, Expr lhs} | {[int] err}
 
 function parseTerm() -> Expr:
     return parseIdentifier()
@@ -10,4 +10,4 @@ function parseIdentifier() -> Expr:
 
 method main(System.Console sys) -> void:
     Expr e = parseTerm()
-    sys.out.println(Any.toString(e))
+    sys.out.println(e)

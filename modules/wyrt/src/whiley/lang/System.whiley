@@ -27,10 +27,12 @@ package whiley.lang
 
 public type PrintWriter is {
     method print(any),
-    method println(any)
+    method println(any),
+    method print_s(ASCII.string),
+    method println_s(ASCII.string)
 }
 
 public type Console is {
     PrintWriter out,
-    [string] args
+    [ASCII.string] args
 }

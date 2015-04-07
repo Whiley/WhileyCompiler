@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 constant Red is 1
 
@@ -18,6 +18,6 @@ function f(RGB c) -> int:
             return 456
 
 method main(System.Console sys) -> void:
-    sys.out.println("NUM: " ++ Int.toString(f(Red)))
-    sys.out.println("NUM: " ++ Int.toString(f(Green)))
-    sys.out.println("NUM: " ++ Int.toString(f(Blue)))
+    sys.out.println_s("NUM: " ++ Any.toString(f(Red)))
+    sys.out.println_s("NUM: " ++ Any.toString(f(Green)))
+    sys.out.println_s("NUM: " ++ Any.toString(f(Blue)))

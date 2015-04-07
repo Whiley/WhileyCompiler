@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type Reader is {
   method read(int) -> int
@@ -13,4 +13,4 @@ method m(Reader r, int x) -> int:
 method main(System.Console sys) -> void:
     Reader reader = {read: &f}
     int data = m(reader, 1)
-    sys.out.println(Any.toString(data))
+    sys.out.println(data)

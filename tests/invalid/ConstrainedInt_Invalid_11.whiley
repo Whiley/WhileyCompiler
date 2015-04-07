@@ -7,6 +7,6 @@ function f(frf1nat y) -> void:
 function f(int x) -> void:
     debug "F(INT)"
 
-method main(System.Console sys) -> void:
+method main() -> void:
     f(-1)
     f(1)

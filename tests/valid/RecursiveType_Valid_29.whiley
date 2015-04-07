@@ -1,5 +1,7 @@
+import whiley.lang.*
+
 type Trie is {
-   {char=>Trie} children
+   {int=>Trie} children
 }
 
 function Trie() -> Trie:
@@ -7,27 +9,27 @@ function Trie() -> Trie:
         children: {=>} // no children
     }
 
-function add(Trie t, string s) -> Trie:
+function add(Trie t, [int] s) -> Trie:
     //
     if(|s| == 0):
         return t
     else:
-        char c = s[0]
+        int c = s[0]
         //
         for ch,subtrie in t.children:
             if ch == c:
-                // Node for char c already exists
+                // Node for c already exists
                 t.children[c] = add(subtrie,s[1..])
                 return t
-        // Node for char c does not exist
+        // Node for c does not exist
         t.children[c] = add(Trie(),s[1..])
         return t
 
-function contains(Trie t, string s) -> bool:
+function contains(Trie t, [int] s) -> bool:
     if |s| == 0:
         return true
     else:
-        char c = s[0]
+        int c = s[0]
         //
         for ch,subtrie in t.children:
             if ch == c:
@@ -36,7 +38,7 @@ function contains(Trie t, string s) -> bool:
         return false
 
 method main(System.Console console):
-    [string] words = ["Hat","Cat","Mat","Heat","Hot"]
+    [[int]] words = ["Hat","Cat","Mat","Heat","Hot"]
     // First, initialise trie to include words
     Trie t = Trie()
     for w in words:
@@ -44,5 +46,5 @@ method main(System.Console console):
     // Second print out trie
     for w in ["Pat","Hat","Cat"]:
         bool f = contains(t,w)
-        console.out.println("CONTAINS(" ++ w ++ ") = " ++ Any.toString(f))
+        console.out.println_s("CONTAINS(" ++ w ++ ") = " ++ Any.toString(f))
 

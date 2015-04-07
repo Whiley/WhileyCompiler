@@ -775,21 +775,6 @@ public class VcGenerator {
 						new Expr.Binary(Expr.Binary.Op.LT, idx, length, idx
 								.attributes())));
 				src = new Expr.IndexOf(src, idx);
-			} else if (lval instanceof Codes.StringLVal) {
-				Codes.StringLVal lv = (Codes.StringLVal) lval;
-				Expr idx = branch.read(lv.indexOperand);
-				Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
-						idx.attributes());
-				Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
-						idx.attributes());
-				preconditions.add(new Pair("index out of bounds (negative)",
-						new Expr.Binary(Expr.Binary.Op.GTEQ, idx, zero, idx
-								.attributes())));
-				preconditions.add(new Pair(
-						"index out of bounds (not less than length)",
-						new Expr.Binary(Expr.Binary.Op.LT, idx, length, idx
-								.attributes())));
-				src = new Expr.IndexOf(src, idx);
 			} else if (lval instanceof Codes.MapLVal) {
 				// FIXME: need to implement some actual checks here!
 				Codes.MapLVal lv = (Codes.MapLVal) lval;
@@ -1083,11 +1068,19 @@ public class VcGenerator {
 			return transformLoopWithoutInvariant(code, branch, environment,
 					labels, block);
 		} else {
-			CodeBlock.Index invariantPc = new CodeBlock.Index(loopPc,
-					invariantOffset);
-			String invariantMacroName = method.name() + "_loopinvariant_"
-					+ invariantPc.toString().replace(".", "_");
-			;
+			// Determine how many invariant blocks there are, as there might be
+			// more than one. In the case that there is more than one, they are
+			// assumed to be arranged consecutively one after the other.
+			int numberOfInvariants = 0;
+			for (int i = invariantOffset; i < code.size()
+					&& code.get(i) instanceof Codes.Invariant; ++i) {
+				numberOfInvariants = numberOfInvariants+1;
+			}
+			//
+			CodeBlock.Index firstInvariantPc = new CodeBlock.Index(loopPc,
+					invariantOffset);			
+			String invariantMacroPrefix = method.name() + "_loopinvariant_";
+			
 			// FIXME: this is a hack to determine which variables should be
 			// passed into the loop invariant macro. However, it really is a
 			// hack. Firstly, we use the prefixes to ensure that only named
@@ -1102,7 +1095,9 @@ public class VcGenerator {
 				}
 			}
 			// *** END ***
-			buildInvariantMacro(invariantPc, variables, environment, block);
+			for(int i=0;i!=numberOfInvariants;++i) {
+				buildInvariantMacro(firstInvariantPc.next(i), variables, environment, block);
+			}
 			// This is the harder case as we must account for the loop invariant
 			// properly. To do this, we allow the loop to execute upto the loop
 			// invariant using the current branch state. At this point, we havoc
@@ -1117,42 +1112,57 @@ public class VcGenerator {
 			// processing.
 			VcBranch activeBranch = p.first();
 			List<VcBranch> exitBranches = p.second();
-			// Enforce invariant on entry. To do this, we generate a
-			// verification condition that asserts the invariant macro given the
+			// Enforce invariants on entry. To do this, we generate a
+			// verification condition that asserts each invariant macro given the
 			// current branch state.
-			Expr.Invoke invariant = buildInvariantCall(activeBranch,
-					invariantMacroName, variables);
-			Expr vc = buildVerificationCondition(invariant, activeBranch,
-					environment, block);
-			wycsFile.add(wycsFile.new Assert(
-					"loop invariant does not hold on entry", vc,
-					toWycsAttributes(block.attributes(branch.pc()))));
+			for (int i = 0; i != numberOfInvariants; ++i) {
+				CodeBlock.Index invariantPc = firstInvariantPc.next(i);
+				String invariantMacroName = invariantMacroPrefix
+						+ invariantPc.toString().replace(".", "_");
+				Expr.Invoke invariant = buildInvariantCall(activeBranch,
+						invariantMacroName, variables);
+				Expr vc = buildVerificationCondition(invariant, activeBranch,
+						environment, block);
+				wycsFile.add(wycsFile.new Assert(
+						"loop invariant does not hold on entry", vc,
+						toWycsAttributes(block.attributes(invariantPc))));
+			}
 			// Assume invariant holds for inductive case. To this, we first
 			// havoc all modified variables to ensure that information about
 			// them is not carried forward from before the loop. Then, we assume
 			// the invariant macro holds in the current branch state.
 			havocVariables(code.modifiedOperands, activeBranch);
-			invariant = buildInvariantCall(activeBranch, invariantMacroName,
-					variables);
-			activeBranch.assume(invariant);
+			for (int i = 0; i != numberOfInvariants; ++i) {
+				CodeBlock.Index invariantPc = firstInvariantPc.next(i);
+				String invariantMacroName = invariantMacroPrefix
+						+ invariantPc.toString().replace(".", "_");
+				Expr.Invoke invariant = buildInvariantCall(activeBranch, invariantMacroName,
+						variables);
+				activeBranch.assume(invariant);
+			}
 			// Process inductive case for this branch by allowing it to
 			// execute around the loop until the invariant is found again.
 			// Branches which prematurely exit the loop are passed into the list
 			// of exit branches. These are valid as they only have information
 			// from the loop invariant.
-			p = transform(loopPc, invariantOffset + 1, activeBranch, true,
+			p = transform(loopPc, invariantOffset + numberOfInvariants, activeBranch, true,
 					environment, labels, block);
 			activeBranch = p.first();
 			exitBranches.addAll(p.second());
 			// Reestablish loop invariant. To do this, we generate a
 			// verification condition that asserts the invariant macro given the
 			// current branch state.
-			invariant = buildInvariantCall(activeBranch, invariantMacroName,
-					variables);
-			vc = buildVerificationCondition(invariant, activeBranch,
-					environment, block);
-			wycsFile.add(wycsFile.new Assert("loop invariant not restored", vc,
-					toWycsAttributes(block.attributes(branch.pc()))));
+			for (int i = 0; i != numberOfInvariants; ++i) {
+				CodeBlock.Index invariantPc = firstInvariantPc.next(i);
+				String invariantMacroName = invariantMacroPrefix
+						+ invariantPc.toString().replace(".", "_");
+				Expr.Invoke invariant = buildInvariantCall(activeBranch,
+						invariantMacroName, variables);
+				Expr vc = buildVerificationCondition(invariant, activeBranch,
+						environment, block);
+				wycsFile.add(wycsFile.new Assert("loop invariant not restored",
+						vc, toWycsAttributes(block.attributes(invariantPc))));
+			}
 			// Reposition fall-through
 			activeBranch.goTo(loopPc.next());
 			// Done.
@@ -1656,10 +1666,6 @@ public class VcGenerator {
 				transform((Codes.Dereference) code, block, branch);
 			} else if (code instanceof Codes.Nop) {
 				// skip
-			} else if (code instanceof Codes.StringOperator) {
-				transform((Codes.StringOperator) code, block, branch);
-			} else if (code instanceof Codes.SubString) {
-				transform((Codes.SubString) code, block, branch);
 			} else if (code instanceof Codes.NewObject) {
 				transform((Codes.NewObject) code, block, branch);
 			} else if (code instanceof Codes.TupleLoad) {
@@ -1702,37 +1708,6 @@ public class VcGenerator {
 	 */
 	private static Expr.Binary.Op[] setOperatorMap = { Expr.Binary.Op.SETUNION,
 			Expr.Binary.Op.SETINTERSECTION, Expr.Binary.Op.SETDIFFERENCE };
-
-	protected void transform(Codes.StringOperator code,
-			AttributedCodeBlock block, VcBranch branch) {
-		Collection<Attribute> attributes = toWycsAttributes(block
-				.attributes(branch.pc()));
-		Expr lhs = branch.read(code.operand(0));
-		Expr rhs = branch.read(code.operand(1));
-
-		switch (code.kind) {
-		case APPEND:
-			// do nothing
-			break;
-		case LEFT_APPEND:
-			rhs = new Expr.Nary(Expr.Nary.Op.LIST, new Expr[] { rhs },
-					attributes);
-			break;
-		case RIGHT_APPEND:
-			lhs = new Expr.Nary(Expr.Nary.Op.LIST, new Expr[] { lhs },
-					attributes);
-			break;
-		default:
-			internalFailure("unknown binary operator", filename,
-					block.attributes(branch.pc()));
-			return;
-		}
-
-		// TODO: after removing left append we can simplify this case.
-
-		branch.write(code.target(), new Expr.Binary(Expr.Binary.Op.LISTAPPEND,
-				lhs, rhs, toWycsAttributes(block.attributes(branch.pc()))));
-	}
 
 	protected void transform(Codes.Convert code, AttributedCodeBlock block,
 			VcBranch branch) {
@@ -1858,11 +1833,6 @@ public class VcGenerator {
 		// do nout
 	}
 
-	protected void transform(Codes.SubString code, AttributedCodeBlock block,
-			VcBranch branch) {
-		transformTernary(Expr.Ternary.Op.SUBLIST, code, branch, block);
-	}
-
 	protected void transform(Codes.SubList code, AttributedCodeBlock block,
 			VcBranch branch) {
 		transformTernary(Expr.Ternary.Op.SUBLIST, code, branch, block);
@@ -1937,8 +1907,6 @@ public class VcGenerator {
 				return new Expr.Ternary(Expr.Ternary.Op.UPDATE, source, index,
 						result, toWycsAttributes(block.attributes(branch.pc())));
 			} else if (lv instanceof Codes.MapLVal) {
-				return source; // TODO
-			} else if (lv instanceof Codes.StringLVal) {
 				return source; // TODO
 			} else {
 				return source; // TODO
@@ -2631,26 +2599,12 @@ public class VcGenerator {
 		} else if (c instanceof Constant.Byte) {
 			Constant.Byte cb = (Constant.Byte) c;
 			return wycs.core.Value.Integer(BigInteger.valueOf(cb.value));
-		} else if (c instanceof Constant.Char) {
-			Constant.Char cb = (Constant.Char) c;
-			return wycs.core.Value.Integer(BigInteger.valueOf(cb.value));
 		} else if (c instanceof Constant.Integer) {
 			Constant.Integer cb = (Constant.Integer) c;
 			return wycs.core.Value.Integer(cb.value);
 		} else if (c instanceof Constant.Decimal) {
 			Constant.Decimal cb = (Constant.Decimal) c;
 			return wycs.core.Value.Decimal(cb.value);
-		} else if (c instanceof Constant.Strung) {
-			Constant.Strung cb = (Constant.Strung) c;
-			String str = cb.value;
-			ArrayList<Value> pairs = new ArrayList<Value>();
-			for (int i = 0; i != str.length(); ++i) {
-				ArrayList<Value> pair = new ArrayList<Value>();
-				pair.add(Value.Integer(BigInteger.valueOf(i)));
-				pair.add(Value.Integer(BigInteger.valueOf(str.charAt(i))));
-				pairs.add(Value.Tuple(pair));
-			}
-			return Value.Set(pairs);
 		} else if (c instanceof Constant.List) {
 			Constant.List cb = (Constant.List) c;
 			List<Constant> cb_values = cb.values;
@@ -2744,10 +2698,6 @@ public class VcGenerator {
 			return new SyntacticType.Null(toWycsAttributes(attributes));
 		} else if (t instanceof Type.Bool) {
 			return new SyntacticType.Bool(toWycsAttributes(attributes));
-		} else if (t instanceof Type.Char) {
-			// FIXME: implement SyntacticType.Char
-			// return new SyntacticType.Char(attributes(branch));
-			return new SyntacticType.Int(toWycsAttributes(attributes));
 		} else if (t instanceof Type.Byte) {
 			// FIXME: implement SyntacticType.Byte
 			// return new SyntacticType.Byte(attributes(branch));
@@ -2756,11 +2706,6 @@ public class VcGenerator {
 			return new SyntacticType.Int(toWycsAttributes(attributes));
 		} else if (t instanceof Type.Real) {
 			return new SyntacticType.Real(toWycsAttributes(attributes));
-		} else if (t instanceof Type.Strung) {
-			// FIXME: implement SyntacticType.Strung
-			// return new SyntacticType.Strung(attributes(branch));
-			return new SyntacticType.List(new SyntacticType.Int(
-					toWycsAttributes(attributes)));
 		} else if (t instanceof Type.Set) {
 			Type.Set st = (Type.Set) t;
 			SyntacticType element = convert(st.element(), attributes);
@@ -2845,9 +2790,8 @@ public class VcGenerator {
 		// See Issue #298.
 		if (t instanceof Type.Any || t instanceof Type.Void
 				|| t instanceof Type.Null || t instanceof Type.Bool
-				|| t instanceof Type.Char || t instanceof Type.Byte
-				|| t instanceof Type.Int || t instanceof Type.Real
-				|| t instanceof Type.Strung) {
+				|| t instanceof Type.Byte || t instanceof Type.Int
+				|| t instanceof Type.Real) {
 			return false;
 		} else if (t instanceof Type.Set) {
 			Type.Set st = (Type.Set) t;

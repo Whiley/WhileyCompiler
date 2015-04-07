@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type point is {
     int x,
@@ -7,4 +7,4 @@ type point is {
 
 method main(System.Console sys) -> void:
     point p = {y: 1, x: 1}
-    sys.out.println(Any.toString(p))
+    sys.out.println(p)

@@ -1,10 +1,9 @@
 
-function f(int x) -> void
+function f(int x) -> int
 requires x >= 0:
     int y = 10 / x
-    debug Any.toString(x)
-    debug Any.toString(y)
+    return y
 
-method main(System.Console sys) -> void:
+method main() -> void:
     f(10)
     f(0)

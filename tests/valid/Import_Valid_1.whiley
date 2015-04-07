@@ -1,10 +1,10 @@
-import whiley.lang.System
+import whiley.lang.*
 
-function f(int x) -> Int.nat:
+function f(int x) -> int:
     if x < 0:
         return 0
     else:
         return x
 
 public method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(f(1)))
+    sys.out.println(f(1))

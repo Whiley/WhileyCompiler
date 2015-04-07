@@ -1,9 +1,9 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type fcode is (int x) where x in {1, 2, 3, 4}
 
-function g(fcode f) -> string:
-    return Any.toString(f)
+function g(fcode f) -> int:
+    return f
 
 method main(System.Console sys) -> void:
     int x = 1

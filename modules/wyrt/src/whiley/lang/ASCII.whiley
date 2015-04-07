@@ -25,5 +25,56 @@
 
 package whiley.lang
 
-// Return the current time in seconds
-public native method current() -> real
+// Define the 8bit ASCII character
+public type char is (int x) where 0 <= x && x <= 255
+
+// Define string as sequence of ASCII characters
+public type string is [char]
+
+// Convert an ASCII character into a byte.
+public function toByte(char v) -> byte:
+    //
+    byte mask = 00000001b
+    byte r = 0b
+    for i in 0..8:
+        if (v % 2) == 1:
+            r = r | mask
+        v = v / 2
+        mask = mask << 1
+    return r
+
+// Convert an ASCII string into a list of bytes
+public function toBytes(string s) -> [byte]:
+    [byte] r = []
+    int i = 0
+    while i < |s|:
+        r = r ++ [toByte(s[i])]
+        i = i + 1
+    return r
+
+// Convert a list of bytes into an ASCII string
+public function fromBytes([byte] data) -> string:
+    string r = ""
+    int i = 0
+    while i < |data|:
+        r = r ++ [Byte.toInt(data[i])]
+        i = i + 1
+    return r
+
+public function isUpperCase(char c) -> bool:
+    return 'A' <= c && c <= 'Z'
+
+public function isLowerCase(char c) -> bool:
+    return 'a' <= c && c <= 'z'
+
+public function isLetter(char c) -> bool:
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
+
+public function isDigit(char c) -> bool:
+    return '0' <= c && c <= '9'
+
+public function isWhiteSpace(char c) -> bool:
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r'
+
+
+

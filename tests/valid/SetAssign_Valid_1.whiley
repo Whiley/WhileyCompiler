@@ -1,8 +1,11 @@
-import whiley.lang.System
+import whiley.lang.*
 
-function f({int} xs) -> string
+function f({int} xs) -> int
 requires |xs| > 0:
-    return Any.toString(xs)
+    int r = 0
+    for x in xs:
+        r = r + x
+    return r
 
 method main(System.Console sys) -> void:
     {int} ys = {1, 2, 3}

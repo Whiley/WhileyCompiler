@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 function zeroOut([int] items) -> [int]:
     int i = 0
     [int] oitems = items
@@ -17,4 +19,4 @@ function zeroOut([int] items) -> [int]:
 method main(System.Console console):
     [int] ls = [1,2,3,4]
     ls = zeroOut(ls)
-    console.out.println("ZEROED: " ++ Any.toString(ls))
+    console.out.println_s("ZEROED: " ++ Any.toString(ls))

@@ -1,8 +1,10 @@
-import whiley.lang.System
+import whiley.lang.*
 
 constant Short is 3
-
 constant Int is 4
+
+type string is [int]
+type char is int
 
 type Primitive is (int x) where x in {Short, Int}
 

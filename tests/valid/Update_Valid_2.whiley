@@ -1,8 +1,8 @@
-import whiley.lang.System
+import whiley.lang.*
 
-type liststr is [char] | string
+type list is [int]
 
-function update(liststr l, int index, char value) -> liststr:
+function update(list l, int index, int value) -> list:
     l[index] = value
     return l
 

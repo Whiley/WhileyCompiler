@@ -1108,21 +1108,18 @@ public final class CodeGenerator {
 		if(s.invariants.size() > 0) {
 			// Ok, there is at least one invariant expression. Therefore, create
 			// an invariant bytecode.
-			AttributedCodeBlock invariant = body.createSubBlock();
-
+			
 			for (Expr e : s.invariants) {
 				String nextLab = CodeUtils.freshLabel();
+				AttributedCodeBlock invariant = body.createSubBlock();
 				generateCondition(nextLab, e, environment, invariant, context);
 				invariant.add(Codes.Fail(), attributes(e));
 				invariant.add(Codes.Label(nextLab));
-			}
-			// Terminate invariant block
-			invariant.add(Codes.Return());
-			
-			// FIXME: should we be creating multiple invariant bytecodes,
-			// instead of one monolithic one? Yes, as this will give much better
-			// error reporting as well!
-			body.add(Codes.Invariant(invariant.bytecodes()), attributes(s));
+				// Terminate invariant block --- see #480
+				invariant.add(Codes.Return());
+				// Create the invariant block
+				body.add(Codes.Invariant(invariant.bytecodes()), attributes(e));
+			}			
 		}
 
 		generateCondition(exit, invert(s.condition), environment, body, context);
@@ -1197,21 +1194,16 @@ public final class CodeGenerator {
 		if (s.invariants.size() > 0) {
 			// Ok, there is at least one invariant expression. Therefore, create
 			// an invariant bytecode.
-			AttributedCodeBlock invariant = body.createSubBlock();
-
 			for (Expr e : s.invariants) {
 				String nextLab = CodeUtils.freshLabel();
+				AttributedCodeBlock invariant = body.createSubBlock();				
 				generateCondition(nextLab, e, environment, invariant, context);
 				invariant.add(Codes.Fail(), attributes(e));
 				invariant.add(Codes.Label(nextLab));
+				// Terminate invariant block
+				invariant.add(Codes.Return());
+				body.add(Codes.Invariant(invariant.bytecodes()), attributes(e));				
 			}
-			// Terminate invariant block
-			invariant.add(Codes.Return());
-
-			// FIXME: should we be creating multiple invariant bytecodes,
-			// instead of one monolithic one?
-
-			body.add(Codes.Invariant(invariant.bytecodes()), attributes(s));
 		}
 
 		generateCondition(exit, invert(s.condition), environment, body, context);
@@ -1258,11 +1250,8 @@ public final class CodeGenerator {
 			invariant.add(Codes.Label(nextLab));
 			// Terminate invariant block
 			invariant.add(Codes.Return());
-
-			// FIXME: should we be creating multiple invariant bytecodes,
-			// instead of one monolithic one?
-
-			body.add(Codes.Invariant(invariant.bytecodes()), attributes(s));
+			body.add(Codes.Invariant(invariant.bytecodes()),
+					attributes(s.invariant));
 		}
 
 		// FIXME: add a continue scope
@@ -1736,9 +1725,6 @@ public final class CodeGenerator {
 			} else if (expression instanceof Expr.SubList) {
 				return generate((Expr.SubList) expression, environment, codes,
 						context);
-			} else if (expression instanceof Expr.SubString) {
-				return generate((Expr.SubString) expression, environment,
-						codes, context);
 			} else if (expression instanceof Expr.BinOp) {
 				return generate((Expr.BinOp) expression, environment, codes,
 						context);
@@ -1977,8 +1963,9 @@ public final class CodeGenerator {
 			AttributedCodeBlock codes, Context context) throws ResolveError {
 
 		if (environment.get(expr.var) != null) {
+			int target = environment.get(expr.var); 
 			Type type = expr.result().raw();
-			return environment.get(expr.var);
+			return target;
 		} else {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), context,
 					expr);
@@ -2111,30 +2098,7 @@ public final class CodeGenerator {
 				codes.add(Codes.ListOperator((Type.EffectiveList) result,
 						target, leftOperand, rightOperand,
 						Codes.ListOperatorKind.APPEND), attributes(v));
-				break;
-
-			case STRINGAPPEND:
-				Type lhs = v.lhs.result().raw();
-				Type rhs = v.rhs.result().raw();
-				Codes.StringOperatorKind op;
-				if (lhs == Type.T_STRING && rhs == Type.T_STRING) {
-					op = Codes.StringOperatorKind.APPEND;
-				} else if (lhs == Type.T_STRING
-						&& Type.isSubtype(Type.T_CHAR, rhs)) {
-					op = Codes.StringOperatorKind.LEFT_APPEND;
-				} else if (rhs == Type.T_STRING
-						&& Type.isSubtype(Type.T_CHAR, lhs)) {
-					op = Codes.StringOperatorKind.RIGHT_APPEND;
-				} else {
-					// this indicates that one operand must be explicitly
-					// converted
-					// into a string.
-					op = Codes.StringOperatorKind.APPEND;
-				}
-				codes.add(Codes.StringOperator(target, leftOperand,
-						rightOperand, op), attributes(v));
-				break;
-
+				break;			
 			default:
 				codes.add(Codes.BinaryOperator(result, target, leftOperand,
 						rightOperand, OP2BOP(bop, v, context)), attributes(v));
@@ -2170,18 +2134,6 @@ public final class CodeGenerator {
 		int target = environment.allocate(expr.result().raw());
 		codes.add(Codes.SubList((Type.EffectiveList) expr.type.raw(), target,
 				srcOperand, startOperand, endOperand), attributes(expr));
-		return target;
-	}
-
-	private int generate(Expr.SubString v, Environment environment,
-			AttributedCodeBlock codes, Context context) {
-		int srcOperand = generate(v.src, environment, codes, context);
-		int startOperand = generate(v.start, environment, codes, context);
-		int endOperand = generate(v.end, environment, codes, context);
-		int target = environment.allocate(v.result().raw());
-		codes.add(
-				Codes.SubString(target, srcOperand, startOperand, endOperand),
-				attributes(v));
 		return target;
 	}
 

@@ -1,12 +1,12 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type expr is {int} | bool
 
-function f(expr e) -> string:
+function f(expr e) -> bool:
     if e is {int}:
-        return "GOT {INT}"
+        return true
     else:
-        return "GOT BOOL"
+        return false
 
 method main(System.Console sys) -> void:
     expr e = true

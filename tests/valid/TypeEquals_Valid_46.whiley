@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type pos is int
 
@@ -13,6 +13,6 @@ function f(intlist x) -> int:
 
 method main(System.Console sys) -> void:
     int x = f([1, 2, 3])
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)
     x = f(123)
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 import whiley.io.*
 
 method main(System.Console sys) -> void:

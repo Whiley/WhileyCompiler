@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type nat is (int x) where x >= 0
 
@@ -14,4 +14,4 @@ ensures r >= 0:
 method main(System.Console sys) -> void:
     [int] xs = [1, 3, 5, 7, 9, 11]
     int c = get(xs, 0)
-    sys.out.println(Any.toString(c))
+    sys.out.println(c)

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type BTree is null | {int item, BTree left, BTree right}
 
@@ -35,6 +35,6 @@ public method main(System.Console console) -> void:
         tree = add(tree, item)
     for item in items:
         if contains(tree, item):
-            console.out.println("TREE CONTAINS: " ++ Any.toString(item))
+            console.out.println_s("TREE CONTAINS: " ++ Any.toString(item))
         else:
-            console.out.println("TREE DOES NOT CONTAIN: " ++ Any.toString(item))
+            console.out.println_s("TREE DOES NOT CONTAIN: " ++ Any.toString(item))

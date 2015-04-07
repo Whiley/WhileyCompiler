@@ -12,6 +12,6 @@ ensures item == r:
 
 method main(System.Console sys) -> void:
     nat xs = abs(-123)
-    sys.out.println(Any.toString(xs))
+    sys.out.println(xs)
     xs = nop(1)
-    sys.out.println(Any.toString(xs))
+    sys.out.println(xs)

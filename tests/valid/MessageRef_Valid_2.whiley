@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type FileReader is &{int position}
 
@@ -19,4 +19,4 @@ method main(System.Console sys) -> void:
     Reader reader = openReader()
     FileReader target = reader.thus
     int data = reader.read(target, 1)
-    sys.out.println(Any.toString(data))
+    sys.out.println(data)

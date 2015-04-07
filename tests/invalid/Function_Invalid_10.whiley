@@ -9,5 +9,5 @@ function f(anat x) -> int:
 function f(bnat x) -> int:
     return x
 
-method main(System.Console sys) -> void:
-    debug Any.toString(f(1))
+method main():
+    f(1)

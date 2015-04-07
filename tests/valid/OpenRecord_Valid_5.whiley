@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type Point is {int y, int x, ...}
 

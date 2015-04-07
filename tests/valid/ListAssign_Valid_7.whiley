@@ -1,6 +1,6 @@
-import whiley.lang.System
+import whiley.lang.*
 
-function f(int i) -> string:
+function f(int i) -> [int]:
     [int] arr1 = [1, 2, 64]
     [int] arr2 = arr1
     if i != |arr1|:
@@ -8,7 +8,7 @@ function f(int i) -> string:
     else:
         arr2[2] = i
     assert arr2[2] == |arr1|
-    return Any.toString(arr1) ++ Any.toString(arr2)
+    return arr1 ++ arr2
 
 method main(System.Console sys) -> void:
     sys.out.println(f(2))

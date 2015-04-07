@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type C1 is null | any
 
@@ -20,4 +20,4 @@ method i(C3 x) -> C2:
 
 method main(System.Console sys) -> void:
     C3 x = f(null)
-    sys.out.println(Any.toString(x))
+    sys.out.println(x)

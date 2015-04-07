@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type edict is {int=>int} | {real=>real}
 type odict is {int|real=>int|real}
@@ -14,6 +14,6 @@ function g(int x) -> odict:
 
 public method main(System.Console sys) -> void:
     odict d = g(-1)
-    sys.out.println("Dictionary=" ++ Any.toString(d))
+    sys.out.println_s("Dictionary=" ++ Any.toString(d))
     d = g(2)
-    sys.out.println("Dictionary=" ++ Any.toString(d))
+    sys.out.println_s("Dictionary=" ++ Any.toString(d))

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type tenup is int
 
@@ -8,8 +8,8 @@ type msg2 is {int index}
 
 type msgType is msg1 | msg2
 
-function f(msgType m) -> string:
-    return Any.toString(m)
+function f(msgType m) -> msgType:
+    return m
 
 method main(System.Console sys) -> void:
     msg1 m1 = {op: 11, data: []}

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f(int x) -> int:
     if x < 10:
@@ -9,8 +9,8 @@ function f(int x) -> int:
     return 0
 
 method main(System.Console sys) -> void:
-    sys.out.println(Any.toString(f(1)))
-    sys.out.println(Any.toString(f(10)))
-    sys.out.println(Any.toString(f(11)))
-    sys.out.println(Any.toString(f(1212)))
-    sys.out.println(Any.toString(f(-1212)))
+    sys.out.println(f(1))
+    sys.out.println(f(10))
+    sys.out.println(f(11))
+    sys.out.println(f(1212))
+    sys.out.println(f(-1212))
