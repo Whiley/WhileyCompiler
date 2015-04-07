@@ -294,56 +294,6 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
-	public void Char_Valid_1() {
-		runTest("Char_Valid_1");
-	}
-
-	@Test
-	public void Char_Valid_2() {
-		runTest("Char_Valid_2");
-	}
-
-	@Test
-	public void Char_Valid_3() {
-		runTest("Char_Valid_3");
-	}
-
-	@Test
-	public void Char_Valid_4() {
-		runTest("Char_Valid_4");
-	}
-
-	@Test
-	public void Char_Valid_5() {
-		runTest("Char_Valid_5");
-	}
-
-	@Ignore("#337") @Test
-	public void Char_Valid_6() {
-		runTest("Char_Valid_6");
-	}
-
-	@Test
-	public void Char_Valid_7() {
-		runTest("Char_Valid_7");
-	}
-
-	@Test
-	public void Char_Valid_8() {
-		runTest("Char_Valid_8");
-	}
-
-	@Ignore("#437") @Test
-	public void Char_Valid_9() {
-		runTest("Char_Valid_9");
-	}
-
-	@Ignore("#438") @Test
-	public void Char_Valid_10() {
-		runTest("Char_Valid_10");
-	}
-
-	@Test
 	public void Coercion_Valid_1() {
 		runTest("Coercion_Valid_1");
 	}
@@ -3040,7 +2990,7 @@ public class AllValidVerificationTests {
 		runTest("UnionType_Valid_2");
 	}
 
-	@Test
+	@Ignore("Issue ???") @Test
 	public void UnionType_Valid_20() {
 		runTest("UnionType_Valid_20");
 	}

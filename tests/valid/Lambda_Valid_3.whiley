@@ -5,7 +5,7 @@ type t_Reader is method(int) -> [byte]
 
 type InputStream is { t_Reader read }
 
-type BufferState is &{[byte] bytes, int pos}
+type BufferState is &{[byte] bytes, int 1pos}
 
 method read(BufferState state, int amount) -> [byte]:
     int start = state->pos
