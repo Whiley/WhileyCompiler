@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function add([int] v1, [int] v2) -> ([int] vr)
 // Input vectors must have same length

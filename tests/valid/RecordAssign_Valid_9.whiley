@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 import * from whiley.lang.Int
 
 type bytes is {i8 b1, i8 b2}

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type C1 is null | any
 

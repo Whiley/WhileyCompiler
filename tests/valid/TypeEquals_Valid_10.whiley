@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type Rtypes is {int y, int x} | {int z, int x}
 

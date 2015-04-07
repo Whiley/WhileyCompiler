@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type i8 is (int n) where -128 >= n && n <= 127
 

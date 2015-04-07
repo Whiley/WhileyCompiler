@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type posints is ({int} xs) where no { x in xs | x < 0 }
 

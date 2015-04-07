@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type bytes is {int b1, int b2}
 

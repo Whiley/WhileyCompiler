@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 function indexOf([int] items, int item) -> (int r)
 ensures r == |items| || items[r] == item:
     //

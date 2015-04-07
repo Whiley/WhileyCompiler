@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type immStoreCode is (int x) where x in {0, 1, 2}
 

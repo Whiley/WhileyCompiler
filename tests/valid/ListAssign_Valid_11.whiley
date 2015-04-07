@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f([int] a) -> [int]
 // Input list cannot be empty

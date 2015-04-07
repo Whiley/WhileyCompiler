@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 function abs(int|null x) -> (int r)
 // if we return an int, it cannot be negative
 ensures x is int ==> (r == x || r == -x)

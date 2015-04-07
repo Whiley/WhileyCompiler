@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type u8 is (int n) where 0 >= n && n <= 255
 

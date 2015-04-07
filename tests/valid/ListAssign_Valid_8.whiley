@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 method main(System.Console sys) -> void:
     [[int]] a1 = [[1, 2, 3], [0]]

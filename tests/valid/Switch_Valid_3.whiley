@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f([int] input) -> int
 requires |input| > 0:

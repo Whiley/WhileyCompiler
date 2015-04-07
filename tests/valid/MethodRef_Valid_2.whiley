@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type Reader is {
   method read(int) -> int

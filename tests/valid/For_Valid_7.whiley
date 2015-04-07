@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type R1 is {int x}
 

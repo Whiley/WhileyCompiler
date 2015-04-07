@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f([int] str, int end) -> [int]:
     return str[0..end]

@@ -1,3 +1,5 @@
+import whiley.lang.System
+
 function contains([int] xs, int x) -> (bool r)
 ensures r ==> x in xs:
     //

@@ -1,3 +1,5 @@
+import whiley.lang.System
+
 type Point is {
     int x,
     int y,

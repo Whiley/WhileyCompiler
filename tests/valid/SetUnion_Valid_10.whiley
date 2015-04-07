@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f({int} xs, {int} ys, {int} zs) -> bool:
     if zs == (xs + ys):

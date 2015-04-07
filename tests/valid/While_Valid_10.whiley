@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function extract([int] ls) -> [int]:
     int i = 0

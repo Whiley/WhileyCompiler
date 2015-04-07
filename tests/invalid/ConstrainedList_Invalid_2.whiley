@@ -11,7 +11,3 @@ ensures (r > 0) && (r <= 256):
 
 function f(int x) -> [i8]:
     return [g(x)]
-
-method main(System.Console sys) -> void:
-    [i8] bytes = f(256)
-    debug Any.toString(bytes)

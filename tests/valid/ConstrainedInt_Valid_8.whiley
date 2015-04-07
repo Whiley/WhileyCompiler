@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 constant c_num is {1,2,3,4}
 

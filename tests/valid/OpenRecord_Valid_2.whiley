@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 constant Short is 3
 constant Int is 4

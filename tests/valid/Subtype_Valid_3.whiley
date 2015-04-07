@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type sr8nat is (int n) where n > 0
 

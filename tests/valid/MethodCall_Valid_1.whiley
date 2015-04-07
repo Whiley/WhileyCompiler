@@ -1,5 +1,5 @@
-import whiley.lang.System
-import print from whiley.lang.System
+import whiley.lang.*
+import print from whiley.lang.*
 
 method f(System.Console sys, int x) -> void:
     sys.out.println(x)

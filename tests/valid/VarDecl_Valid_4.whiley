@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function constantPool() -> int:
     return 12478623847120981

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 import * from whiley.lang.Int
 
 function extract([int] ls) -> [nat]:

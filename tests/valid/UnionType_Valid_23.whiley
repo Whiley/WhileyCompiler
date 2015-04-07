@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type IntList is {int op, [real] rest} | {int op, int mode}
 

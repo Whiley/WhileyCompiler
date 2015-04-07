@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type string is [int]
 type t_Reader is method(int) -> [byte]

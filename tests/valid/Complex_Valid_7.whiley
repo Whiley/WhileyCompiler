@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 function max3(int x, int y, int z) -> (int r)
 // Return value must be as large as each parameter
 ensures r >= x && r >= y && r >= z

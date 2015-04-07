@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f([int] x) -> void
 requires |x| > 0:

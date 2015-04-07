@@ -1,3 +1,5 @@
+import whiley.lang.System
+
 function sum([int] xs) -> int
 requires |xs| > 0:
     //

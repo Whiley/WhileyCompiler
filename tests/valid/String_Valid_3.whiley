@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 public function has(int c1, [int] str) -> bool:
     for c2 in str:

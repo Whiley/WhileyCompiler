@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 constant Red is 1
 

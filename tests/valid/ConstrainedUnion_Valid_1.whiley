@@ -1,3 +1,5 @@
+import whiley.lang.System
+
 type nat is (int x) where x >= 0
 
 method f(bool|int v) -> (int r)

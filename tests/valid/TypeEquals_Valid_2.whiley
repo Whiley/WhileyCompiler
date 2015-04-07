@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type expr is {int op, expr lhs} | {[int] err}
 

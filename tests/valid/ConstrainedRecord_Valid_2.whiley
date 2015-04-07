@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 constant RET is 169
 

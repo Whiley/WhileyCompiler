@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f(int i) -> [int]:
     [int] arr1 = [1, 2, 64]

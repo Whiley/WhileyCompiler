@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function append([int] input) -> {int}:
     {int} rs = {}

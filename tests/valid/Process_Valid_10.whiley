@@ -1,5 +1,5 @@
-import whiley.lang.System
-import whiley.lang.System
+import whiley.lang.*
+import whiley.lang.*
 
 type Queue is {[int] items}
 

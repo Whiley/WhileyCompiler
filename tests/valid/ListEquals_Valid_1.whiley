@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f([int] xs, [real] ys) -> bool:
     if (([real]) xs) == ys:

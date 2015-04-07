@@ -1,3 +1,4 @@
+import whiley.lang.*
 
 /**
  * Perform a merge sort of integer items.

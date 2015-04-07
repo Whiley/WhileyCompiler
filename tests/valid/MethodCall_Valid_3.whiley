@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type wmcr6tup is {int y, int x}
 

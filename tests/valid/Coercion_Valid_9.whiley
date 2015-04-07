@@ -1,3 +1,5 @@
+import whiley.lang.System
+
 type Link is {int data}
 type BigLink is {int data, int code}
 

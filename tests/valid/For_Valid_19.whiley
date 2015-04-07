@@ -1,3 +1,4 @@
+import whiley.lang.System
 
 function sum([int] items) -> (int result)
 requires |items| > 0

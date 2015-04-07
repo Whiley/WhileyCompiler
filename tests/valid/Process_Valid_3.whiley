@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 constant out is 123.456
 

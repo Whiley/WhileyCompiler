@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function max([int] xs) -> (int result)
 // Input list cannot be empty

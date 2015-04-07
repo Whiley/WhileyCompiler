@@ -1,10 +1,10 @@
 import * from whiley.lang.*
 
-method main(System.Console sys) -> void:
+method main() -> int:
     int i = 0
     int r
     //
-    while i < |sys.args|:
-        r = r + |sys.args[i]|
+    while i < 10:
+        r = r + i
     //
-    debug Any.toString(r)
+    return r

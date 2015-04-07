@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type msg1 is {int op, int s} where op == 1
 

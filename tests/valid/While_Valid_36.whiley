@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 function lastIndexOf([int] xs, int x) -> (int r)
 // Return value is either -1 or a valid index in xs.
 // Here, -1 indicates element was not found in list

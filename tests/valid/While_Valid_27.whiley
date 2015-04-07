@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function count(int width, int height) -> int
 requires width >= 0 && height >= 0:

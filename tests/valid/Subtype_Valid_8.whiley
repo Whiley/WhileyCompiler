@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type sr4set is ({int} xs) where |xs| > 0
 

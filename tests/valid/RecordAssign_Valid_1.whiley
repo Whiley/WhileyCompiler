@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type tac1tup is {int f1, int f2} where f1 < f2
 

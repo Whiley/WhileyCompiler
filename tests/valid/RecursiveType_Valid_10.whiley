@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type expr is int | {int op, expr left, expr right}
 

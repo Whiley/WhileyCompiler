@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type ir1nat is (int x) where x > 0
 

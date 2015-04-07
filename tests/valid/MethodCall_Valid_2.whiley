@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 method get() -> int:
     return 1

@@ -1,6 +1,6 @@
 import whiley.lang.*
-import whiley.lang.System
-import whiley.lang.System
+import whiley.lang.*
+import whiley.lang.*
 
 method main(System.Console sys) -> void:
     int i = 0

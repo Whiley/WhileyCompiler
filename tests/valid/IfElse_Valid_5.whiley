@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 type Record is { int flag }
 
 function getFlag(Record d) -> int:

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 constant Days is ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 

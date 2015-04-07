@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type tac2ta is {int f1, int f2}
 

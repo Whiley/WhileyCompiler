@@ -1,3 +1,5 @@
+import whiley.lang.System
+
 function contains([int] items, int item) -> (bool r)
 ensures r ==> some { i in 0 .. |items| | item == items[i] }:
     //

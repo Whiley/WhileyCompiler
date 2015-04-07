@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 constant SIZE is 5
 

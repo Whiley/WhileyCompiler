@@ -1,4 +1,3 @@
-
 type c4nat is int x where x < 10
 
 function h() -> (int r)
@@ -8,6 +7,3 @@ ensures r <= 5:
 
 function f() -> c4nat:
     return h() * 2
-
-method main(System.Console sys) -> void:
-    debug Any.toString(f())

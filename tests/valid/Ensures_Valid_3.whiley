@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function pred({int} xs) -> (bool b)
 ensures b ==> no { z in xs | z < 0 }:

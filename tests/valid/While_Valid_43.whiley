@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 function add([int] items, int n) -> [int]
 requires n > 0:
     //

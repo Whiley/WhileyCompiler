@@ -8,5 +8,5 @@ type nlt is nat | natlist
 function g(int y) -> nlt:
     return y
 
-method main(System.Console sys) -> void:
+method main() -> void:
     g(-1)

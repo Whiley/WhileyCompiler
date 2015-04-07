@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 function zeroOut([int] items) -> [int]:
     int i = 0
     [int] oitems = items

@@ -1,3 +1,5 @@
+import whiley.lang.System
+
 function lastIndexOf([int] items, int item) -> (int r)
 requires |items| > 0
 ensures r == -1 || items[r] == item:

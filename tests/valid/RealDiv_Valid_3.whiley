@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function g(int x) -> real:
     return ((real) x) / 3.0

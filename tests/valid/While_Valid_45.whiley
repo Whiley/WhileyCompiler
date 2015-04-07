@@ -1,3 +1,5 @@
+import whiley.lang.System
+
 function buildNatSet(int n) -> ({int} m):
     //
     int i = 0

@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 function lastIndexOf([int] xs, int x) -> (int|null r)
 ensures r is int ==> xs[r] == x:
     //

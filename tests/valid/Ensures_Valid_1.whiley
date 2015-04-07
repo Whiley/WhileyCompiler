@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function add(int x, int y) -> (int r)
 requires x >= 0 && y >= 0

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function reverse([int] ls) -> ([int] result)
 ensures |result| == |ls|:

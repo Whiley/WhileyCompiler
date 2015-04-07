@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 constant odd is {1,3,5}
 

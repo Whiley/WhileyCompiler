@@ -1,3 +1,5 @@
+import whiley.lang.System
+
 //
 // This example represents the expansion of a do-while loop
 //

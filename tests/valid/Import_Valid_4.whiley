@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 import toString from whiley.lang.Int
 
 function f(int x) -> [int]:

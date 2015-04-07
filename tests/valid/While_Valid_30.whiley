@@ -1,3 +1,4 @@
+import whiley.lang.*
 
 function duplicate(int n) -> (int r)
 requires n >= 0

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function reverse([int] input) -> {int=>int}:
     {int=>int} rs = {=>}

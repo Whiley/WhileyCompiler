@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type plist is ([int] xs) where |xs| > 0 && xs[0] == 0
 

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 import nat from whiley.lang.Int
 
 type nlist is nat | [int]

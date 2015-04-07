@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type pos is (real r) where r > 0.0
 

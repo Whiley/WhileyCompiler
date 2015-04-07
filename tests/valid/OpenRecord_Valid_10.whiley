@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type string is [int]
 type Attribute is {string name, ...}

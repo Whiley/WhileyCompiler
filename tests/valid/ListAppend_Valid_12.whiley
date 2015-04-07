@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type plistv6 is ([int] xs) where no { x in xs | x < 0 }
 

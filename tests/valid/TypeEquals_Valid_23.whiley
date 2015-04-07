@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type bop is {int y, int x} where x > 0
 

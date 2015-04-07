@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f({int} xs) -> bool:
     if |xs| == 1:

@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 function invertByte([bool] bits) -> ([bool] ret)
 // Precondition: 8 bits in a byte
 requires |bits| == 8

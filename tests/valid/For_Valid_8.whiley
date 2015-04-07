@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function run(int n, int x) -> bool:
     bool solution = true

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f([bool] x) -> [bool]
 requires (|x| > 0) && x[0]:

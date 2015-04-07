@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f() -> ([int] rs)
 // Returned list must have at least two elements

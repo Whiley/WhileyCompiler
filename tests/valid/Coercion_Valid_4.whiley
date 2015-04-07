@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f([real] x) -> {int=>real}:
     return ({int=>real}) x

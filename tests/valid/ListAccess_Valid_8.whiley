@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 public function meth([byte] bytes) -> [int]:
     [int] data = []

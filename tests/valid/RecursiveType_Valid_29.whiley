@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 type Trie is {
    {int=>Trie} children
 }

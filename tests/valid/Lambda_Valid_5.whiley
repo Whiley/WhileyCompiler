@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 method f(int x) -> int:
     return x + 1

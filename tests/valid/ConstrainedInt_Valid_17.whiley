@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type anat is (int x) where x >= 0
 

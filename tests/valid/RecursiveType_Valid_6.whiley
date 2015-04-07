@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type binop is {int op, expr left, expr right}
 

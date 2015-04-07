@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function indexOf(int c1, [int] str) -> int | null:
     int i = 0

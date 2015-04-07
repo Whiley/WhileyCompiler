@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function g(real x) -> (real y)
 requires x <= 0.5

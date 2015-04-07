@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 public function has(int c, [int] str) -> bool:
     int i = 0

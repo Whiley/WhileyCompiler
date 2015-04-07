@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type wierd is ([int] xs) where some { x in xs | x > 0 }
 

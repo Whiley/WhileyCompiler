@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type fcode is (int x) where x in {1, 2, 3, 4}
 

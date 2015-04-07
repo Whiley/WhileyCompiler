@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 // The classic binary search which runs in O(log n) time by halving
 // the search space on each iteration until either the item is found, or

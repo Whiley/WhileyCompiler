@@ -1,5 +1,5 @@
-import whiley.lang.System
-import SyntaxError from whiley.lang.System
+import whiley.lang.*
+import SyntaxError from whiley.lang.*
 
 constant ADD is 0
 

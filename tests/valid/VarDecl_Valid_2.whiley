@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function g(int z) -> int
 requires z > 1:

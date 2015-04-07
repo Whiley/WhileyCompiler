@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 method f(System.Console sys, [int] args) -> void
 requires |args| >= 2:

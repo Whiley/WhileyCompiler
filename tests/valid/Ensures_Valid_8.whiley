@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 function abs(int x) -> (int r)
 ensures r >= 0:
     //

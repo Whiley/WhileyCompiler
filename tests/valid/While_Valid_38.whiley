@@ -1,3 +1,5 @@
+import whiley.lang.System
+
 // Determine whether a given list of integers
 // is sorted from smallest to largest.
 function isSorted([int] items) -> (bool r)

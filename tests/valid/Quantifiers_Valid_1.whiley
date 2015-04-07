@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f({int} xs) -> {int}
 requires no { w in xs | w < 0 }:

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type SortedList is null | SortedListNode
 

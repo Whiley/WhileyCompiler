@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 function divide(real lhs, int rhs) -> real
 requires rhs > 0:
     //

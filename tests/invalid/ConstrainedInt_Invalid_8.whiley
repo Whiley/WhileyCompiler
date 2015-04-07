@@ -1,4 +1,3 @@
-
 type nat is (int x) where 1 <= x && x <= 8
 
 function h() -> (int x)
@@ -8,6 +7,3 @@ ensures x <= 3:
 
 function f() -> nat:
     return h()
-
-method main(System.Console sys) -> void:
-    debug Any.toString(f())

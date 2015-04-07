@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function read(int a) -> int:
     return -a

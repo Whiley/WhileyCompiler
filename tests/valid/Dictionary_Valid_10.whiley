@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 public method main(System.Console sys) -> void:
     {int=>int} l = {1=>2, 2=>3}

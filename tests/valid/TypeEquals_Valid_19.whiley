@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f([[real | int]] e) -> [int]:
     if e is [[int]] && |e| > 0:

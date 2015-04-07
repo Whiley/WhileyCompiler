@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function diver(real x, real y, real z) -> real
 requires y != 0.0 && z != 0.0:

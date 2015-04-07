@@ -8,7 +8,3 @@ function sumOver([int] ls) -> int:
         i = i + 1
     //
     return sum
-
-method main(System.Console sys) -> void:
-    int rs = sumOver([-2, -3, 1, 2, -23, 3, 2345, 4, 5])
-    debug Any.toString(rs)

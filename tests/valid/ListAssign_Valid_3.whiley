@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function update([[int]] ls) -> [[int]]
 requires |ls| > 0 && |ls[0]| > 0:

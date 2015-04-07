@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f({int=>any} xs) -> int:
     if xs is {int=>[int]}:

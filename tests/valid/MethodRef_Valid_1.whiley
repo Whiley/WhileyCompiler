@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type MyMeth is method(int) -> int
 

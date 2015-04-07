@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 method main(System.Console sys) -> void:
     real x = 12376523476123.98712345

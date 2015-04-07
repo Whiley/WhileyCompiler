@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 function f(real z) -> (int, int):
     int x / int y = z

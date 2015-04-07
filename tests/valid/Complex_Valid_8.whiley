@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 type char is int
 type string is [int]
 

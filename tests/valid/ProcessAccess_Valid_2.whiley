@@ -1,4 +1,4 @@
-import * from whiley.lang.System
+import * from whiley.lang.*
 
 type state is {int y, int x, System.Console console}
 

@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type List1 is {null | List1 next, int | null data}
 

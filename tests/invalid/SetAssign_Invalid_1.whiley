@@ -1,13 +1,13 @@
 
-function f({int} xs) -> void
+function f({int} xs) -> bool
 requires |xs| > 4:
-    debug Any.toString(xs)
+    return true
 
-method main(System.Console sys) -> void:
+method main(int x) -> void:
     {int} ys
     {int} zs
     //
-    if |sys.args| > 1:
+    if x > 1:
         ys = {1, 2, 3}
     else:
         ys = {1, 2}

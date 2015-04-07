@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 method main(System.Console sys) -> void:
     [int] arr1 = [1, 2, 4]

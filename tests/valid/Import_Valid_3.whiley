@@ -1,5 +1,5 @@
-import whiley.lang.System
-import whiley.lang.System
+import whiley.lang.*
+import whiley.lang.*
 
 function toInt([int] ls) -> int:
     int r = 0

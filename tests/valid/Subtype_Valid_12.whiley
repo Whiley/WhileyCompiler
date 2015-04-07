@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type sr6nat is (int n) where n > 0
 

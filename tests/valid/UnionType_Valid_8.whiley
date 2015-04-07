@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type msgType1 is {int op, [int] payload}
 

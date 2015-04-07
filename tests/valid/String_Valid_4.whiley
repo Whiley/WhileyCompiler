@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 public function repl(int old, int n, [int] str) -> [int]:
     int i = 0

@@ -1,3 +1,5 @@
+import whiley.lang.System
+
 //
 // This little example is showing off an almost complete encoding
 // of C ASCII.strings as constrained lists of ints in Whiley.  The key 

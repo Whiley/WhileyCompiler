@@ -1,4 +1,4 @@
-import whiley.lang.System
+import whiley.lang.*
 
 type etype is {int rest, int mode}
 
