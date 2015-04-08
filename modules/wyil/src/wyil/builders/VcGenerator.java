@@ -1768,8 +1768,8 @@ public class VcGenerator {
 			for (int i = 0; i != code_operands.length; ++i) {
 				operands[i] = branch.read(code_operands[i]);
 			}
-			Expr argument = new Expr.Nary(Expr.Nary.Op.TUPLE, operands,
-					wyccAttributes);
+			Expr argument = operands.length == 1 ? operands[0] : new Expr.Nary(
+					Expr.Nary.Op.TUPLE, operands,wyccAttributes);
 			branch.write(code.target(), new Expr.Invoke(code.name.name(),
 					code.name.module(), Collections.EMPTY_LIST, argument,
 					wyccAttributes));
