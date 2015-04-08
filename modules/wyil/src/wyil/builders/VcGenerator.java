@@ -263,7 +263,7 @@ public class VcGenerator {
 						// verifier can't work out the type of the expression
 						// otherwise.						
 						Expr nominalTest = new Expr.Is(returnedOperand,
-								convert(fmm.ret(), attributes));									
+								convert(fmm.ret(), attributes));
 						Expr vc = buildVerificationCondition(nominalTest,
 								branch, bodyEnvironment, body, rawTest);
 						// FIXME: add contextual information here
@@ -1757,8 +1757,9 @@ public class VcGenerator {
 
 	protected void transform(Codes.Invoke code, AttributedCodeBlock block,
 			VcBranch branch) throws Exception {
-		Collection<Attribute> attributes = toWycsAttributes(block
-				.attributes(branch.pc()));
+		Collection<wyil.lang.Attribute> attributes =  block
+				.attributes(branch.pc());
+		Collection<Attribute> wyccAttributes = toWycsAttributes(attributes);
 		int[] code_operands = code.operands();
 		
 		if (code.target() != Codes.NULL_REG) {
@@ -1768,11 +1769,20 @@ public class VcGenerator {
 				operands[i] = branch.read(code_operands[i]);
 			}
 			Expr argument = new Expr.Nary(Expr.Nary.Op.TUPLE, operands,
-					attributes);
+					wyccAttributes);
 			branch.write(code.target(), new Expr.Invoke(code.name.name(),
 					code.name.module(), Collections.EMPTY_LIST, argument,
-					attributes));
+					wyccAttributes));
 
+			// This is a potential fix for #488, although it doesn't work
+			if(containsNominal(code.type().ret(),attributes)) {
+				// This is required to handle the implicit constraints implied
+				// by a nominal type. See #488.
+				Expr nominalTest = new Expr.Is(branch.read(code.target()),
+						convert(code.type().ret(), attributes));
+				branch.assume(nominalTest);
+			}
+			
 			// Here, we must find the name of the corresponding postcondition so
 			// that we can assume it.
 			List<AttributedCodeBlock> ensures = findPostcondition(code.name,
