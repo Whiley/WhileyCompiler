@@ -127,15 +127,11 @@ import wyjc.util.WyjcBuildTask;
 		String CLASSPATH = CLASSPATH(WHILEY_SRC_DIR, WYJC_CLASS_DIR,
 				WYRL_CLASS_DIR, WYBS_CLASS_DIR);
 
- 		// Second, execute the generated JavaScript Program.
+ 		// Second, execute the generated Java Program.
  		String output = TestUtils.exec(CLASSPATH,WHILEY_SRC_DIR,name);
-
-		// The name of the file which contains the output for this test
-		String sampleOutputFile = WHILEY_SRC_DIR + File.separatorChar + name
-				+ ".sysout";
-
- 		// Third, compare the output!
- 		TestUtils.compare(output,sampleOutputFile);
+ 		if(!output.equals("")) {
+ 			fail("unexpected output!");
+ 		}
  	}
 
  	/**
