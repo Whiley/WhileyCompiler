@@ -10,4 +10,4 @@ method f(Proc x) -> int:
 
 method main(System.Console sys) -> void:
     Proc proc = new {state: 123}
-    sys.out.println(f(proc))
+    assume f(proc) == 123

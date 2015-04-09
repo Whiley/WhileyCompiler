@@ -17,4 +17,4 @@ function g({bignum} zs, int z) -> int:
         return -1
 
 method main(System.Console sys) -> void:
-    sys.out.println(g({1, 2, 3, 5}, 3))
+    assume g({1, 2, 3, 5}, 3) == 3

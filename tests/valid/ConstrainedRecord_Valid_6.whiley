@@ -14,5 +14,4 @@ function parseTerm(state st) -> state:
 
 method main(System.Console sys) -> void:
     state st = {input: "  Hello", pos: 0}
-    st = parseTerm(st)
-    sys.out.println(st)
+    assume parseTerm(st) == {input:[32, 32, 72, 101, 108, 108, 111],pos:2}

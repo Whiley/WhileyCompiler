@@ -9,4 +9,4 @@ function f(int n) -> int:
     return x + y
 
 method main(System.Console console) -> void:
-    console.out.println(f(10))
+    assume f(10) == 30

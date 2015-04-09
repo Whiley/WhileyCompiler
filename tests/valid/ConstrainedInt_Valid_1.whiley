@@ -7,4 +7,4 @@ function f(cr1nat x) -> int:
     return y
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(9))
+    assume f(9) == 9

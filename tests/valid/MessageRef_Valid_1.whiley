@@ -13,4 +13,4 @@ method test(MyMeth m, MyProc proc) -> int:
 method main(System.Console sys) -> void:
     MyProc p = new {position: 0}
     int r = test(&read, p)
-    sys.out.println(r)
+    assume r == 124

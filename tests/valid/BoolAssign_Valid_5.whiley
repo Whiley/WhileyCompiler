@@ -13,4 +13,6 @@ ensures r > 0:
         return 123
 
 method main(System.Console sys) -> void:
-    sys.out.println(1)
+    assume f(1,1) == 123
+    assume f(2,1) == 123
+    assume f(1,2) == 3

@@ -12,8 +12,8 @@ function f(tup t) -> int:
 
 public method main(System.Console console) -> void:
     (int,int) x = 3, 5
-    console.out.println(f(x))
+    assume f(x) == 8
     x = -3, 5
-    console.out.println(f(x))
+    assume f(x) == 0
     x = 3, -5
-    console.out.println(f(x))
+    assume f(x) == 0

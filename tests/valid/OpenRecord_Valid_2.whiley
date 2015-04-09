@@ -29,6 +29,6 @@ function codeLength(Attribute a) -> null | int:
 
 public method main(System.Console sys) -> void:
     Attribute attr = {name: "Code", data: [{op: 2, offset: 1}]}
-    sys.out.println(codeLength(attr))
+    assume codeLength(attr) == 1
     attr = {name: "Blah"}
-    sys.out.println(codeLength(attr))
+    assume codeLength(attr) == null

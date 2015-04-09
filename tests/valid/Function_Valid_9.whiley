@@ -14,4 +14,5 @@ function f({int} x) -> {int}:
 
 method main(System.Console sys) -> void:
     {int} ys = {-12309812, 1, 2, 2987, 2349872, 234987234987, 234987234987234}
-    sys.out.println(f(g(ys)))
+    assume f(g(ys)) == {2, 2987, 2349872, 234987234987, 234987234987234}
+

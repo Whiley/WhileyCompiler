@@ -6,4 +6,4 @@ function f() -> nat:
     return 1
 
 method main(System.Console sys) -> void:
-    sys.out.println(f())
+    assume f() == 1

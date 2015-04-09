@@ -10,4 +10,4 @@ ensures some { x in rs | x >= 0 }:
 
 method main(System.Console sys) -> void:
     [int] rs = f([1, 2, 3])
-    sys.out.println(rs)
+    assume rs == [1,2,3]

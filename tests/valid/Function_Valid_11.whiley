@@ -11,5 +11,7 @@ function f(fr8neg x) -> bool:
     return false
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(1))
-    sys.out.println(f(-1))    
+    fr8nat x = 1
+    assume f(x) == true
+    fr8neg y = -1
+    assume f(y) == false

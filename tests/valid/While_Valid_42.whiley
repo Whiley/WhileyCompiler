@@ -23,14 +23,7 @@ ensures all { i in 0 .. |xs| | ys[i] == xs[|xs| - (i+1)] }:
 
 
 method main(System.Console console):
-    [int] before = [1,2,3,4,5,6]
-    [int] after = reverse(before)
-    console.out.println_s("REVERSE(" ++ Any.toString(before) ++ ") = " ++ Any.toString(after))
-
-    before = [1,2,3]
-    after = reverse(before)
-    console.out.println_s("REVERSE(" ++ Any.toString(before) ++ ") = " ++ Any.toString(after))
-
-    before = []
-    after = reverse(before)
-    console.out.println_s("REVERSE(" ++ Any.toString(before) ++ ") = " ++ Any.toString(after))
+    assume reverse([]) == []
+    assume reverse([1]) == [1]
+    assume reverse([1,2,3]) == [3,2,1]
+    assume reverse([1,2,3,4,5,6]) == [6,5,4,3,2,1]

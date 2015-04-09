@@ -20,5 +20,5 @@ requires n > 0:
 
 method main(System.Console console):
     [int] ls = [1,2,3,4]
-    console.out.println_s("ADD(1) = " ++ Any.toString(add(ls,1)))
-    console.out.println_s("ADD(11) = " ++ Any.toString(add(ls,11)))
+    assume add(ls,1) == [2, 3, 4, 5]
+    assume add(ls,11) == [12, 13, 14, 15]

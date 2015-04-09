@@ -17,4 +17,4 @@ function f(byteCode b) -> byteCode:
 
 method main(System.Console sys) -> void:
     STORE b = {index: 1, op: 0}
-    sys.out.println(f(b))
+    assume f(b) == {index: 1, op: 0}

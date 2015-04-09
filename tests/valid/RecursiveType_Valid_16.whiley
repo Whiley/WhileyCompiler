@@ -10,4 +10,4 @@ function parseIdentifier() -> Expr:
 
 method main(System.Console sys) -> void:
     Expr e = parseTerm()
-    sys.out.println(e)
+    assume e == {err: "err"}

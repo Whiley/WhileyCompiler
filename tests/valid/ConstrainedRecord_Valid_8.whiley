@@ -22,4 +22,3 @@ method main(System.Console console) -> void:
     assert b.pieces[0] == BLANK
     assert b.pieces[1] == BLANK
     assert b.pieces[8] == BLANK
-    console.out.println_s("BOARD: " ++ Any.toString(b))

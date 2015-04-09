@@ -12,5 +12,5 @@ function g(func_t func) -> int:
     return func(1234)
 
 method main(System.Console sys) -> void:
-    sys.out.println(g(&f1))
-    sys.out.println(g(&f2))
+    assume g(&f1) == 1235
+    assume g(&f2) == 2468

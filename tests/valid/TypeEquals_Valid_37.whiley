@@ -13,6 +13,6 @@ function f(tup t) -> bool:
         return false
 
 method main(System.Console sys) -> void:
-    sys.out.println(f({p: 0, lhs: [0]}))
-    sys.out.println(f({p: 0, lhs: [0, 1]}))
-    sys.out.println(f({p: 0, lhs: [1, 1]}))
+    assume f({p: 0, lhs: [0]}) == true
+    assume f({p: 0, lhs: [0, 1]}) == true
+    assume f({p: 0, lhs: [1, 1]}) == false

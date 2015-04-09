@@ -10,5 +10,4 @@ function f(rec2 r) -> rec2:
 
 method main(System.Console console) -> void:
     rec2 r = {current: {x: 0}}
-    console.out.println_s("BEFORE: " ++ Any.toString(r))
-    console.out.println_s("AFTER: " ++ Any.toString(f(r)))
+    assume f(r) == {current: {x: 1}}

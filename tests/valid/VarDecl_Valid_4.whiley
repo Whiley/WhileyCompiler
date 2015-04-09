@@ -5,4 +5,4 @@ function constantPool() -> int:
 
 method main(System.Console sys) -> void:
     int pool = constantPool()
-    sys.out.println_s("GOT: " ++ Any.toString(pool))
+    assume pool == 12478623847120981

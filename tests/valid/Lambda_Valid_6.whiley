@@ -11,4 +11,4 @@ method g(int p) -> int:
 
 method main(System.Console sys) -> void:
     int x = g(5)
-    sys.out.println(x)
+    assume x == 7

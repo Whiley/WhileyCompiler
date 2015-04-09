@@ -10,5 +10,4 @@ public function repl(int old, int n, [int] str) -> [int]:
 
 method main(System.Console sys) -> void:
     [int] s = "Hello World"
-    s = repl('l', '1', s)
-    sys.out.println_s(s)
+    assume repl('l', '1', s) == "He11o Wor1d"

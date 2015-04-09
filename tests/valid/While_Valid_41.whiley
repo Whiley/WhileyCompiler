@@ -17,6 +17,8 @@ function zeroOut([int] items) -> [int]:
 
 
 method main(System.Console console):
-    [int] ls = [1,2,3,4]
-    ls = zeroOut(ls)
-    console.out.println_s("ZEROED: " ++ Any.toString(ls))
+    assume zeroOut([]) == []
+    assume zeroOut([1]) == [0]
+    assume zeroOut([1,2]) == [0,0]
+    assume zeroOut([1,2,3]) == [0,0,0]
+    assume zeroOut([1,2,3,4]) == [0,0,0,0]

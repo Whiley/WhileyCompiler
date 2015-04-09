@@ -9,4 +9,4 @@ function f(Tup1 x) -> Tup2:
 
 method main(System.Console sys) -> void:
     Tup2 x = f((1, 2))
-    sys.out.println(x)
+    assume x == (1.0,2.0)

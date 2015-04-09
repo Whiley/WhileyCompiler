@@ -11,4 +11,4 @@ ensures r in xs:
     return 0
 
 method main(System.Console sys) -> void:
-    sys.out.println(select({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}))
+    assume select({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) == 1

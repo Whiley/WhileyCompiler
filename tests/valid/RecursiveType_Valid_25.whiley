@@ -10,6 +10,6 @@ function init() -> Value:
 method main(System.Console sys) -> void:
     Value v = init()
     if v is [Expr]:
-        sys.out.println_s("GOT LIST")
+        assume false
     else:
-        sys.out.println(v)
+        assume v == 0.0123

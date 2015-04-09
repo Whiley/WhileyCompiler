@@ -8,4 +8,4 @@ method g(method func(int) -> int, int p) -> int:
 
 method main(System.Console sys) -> void:
     int y = g(&(int x -> f(x + 1)), 5)
-    sys.out.println(y)
+    assume y == 7

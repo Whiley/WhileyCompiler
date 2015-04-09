@@ -11,4 +11,4 @@ requires |ls[0]| > 0:
 method main(System.Console sys) -> void:
     DL x = {0=>[1.0, 2.0, 3.0], 1=>[3.4]}
     x = update(x)
-    sys.out.println(x)
+    assume x == {0=>[1.234, 2.0, 3.0], 1=>[3.4]}

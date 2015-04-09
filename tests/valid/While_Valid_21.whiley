@@ -14,8 +14,8 @@ ensures |result| == count:
     return r
 
 method main(System.Console sys) -> void:
-    sys.out.println(create(3, 3))
-    sys.out.println(create(2, 2))
-    sys.out.println(create(2, 1))
-    sys.out.println(create(1, 1))
-    sys.out.println(create(0, 0))
+    assume create(3, 3) == [3,3,3]
+    assume create(2, 2) == [2,2]
+    assume create(2, 1) == [1,1]
+    assume create(1, 1) == [1]
+    assume create(0, 0) == []

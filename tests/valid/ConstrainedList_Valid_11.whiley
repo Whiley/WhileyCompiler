@@ -12,5 +12,4 @@ function f(state st) -> int:
     return ' '
 
 method main(System.Console sys) -> void:
-    int c = f({input: "hello", pos: 0})
-    sys.out.println(c)
+    assume f({input: "hello", pos: 0}) == 104

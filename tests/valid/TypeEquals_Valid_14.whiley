@@ -11,6 +11,6 @@ function f(src e) -> bool:
         return false
 
 method main(System.Console sys) -> void:
-    sys.out.println(f({x: 1}))
-    sys.out.println(f({y: 2}))
-    sys.out.println(f(1))
+    assume f({x: 1}) == true
+    assume f({y: 2}) == true
+    assume f(1) == false

@@ -13,11 +13,11 @@ function getField(OpenRecord r) -> int:
 
 method main(System.Console sys) -> void:
     OpenRecord r = {x: 1}
-    sys.out.println(getField(r))
+    assume getField(r) == 1
     r = {y: 1, x: 3}
-    sys.out.println(getField(r))
+    assume getField(r) == 4
     r = {z: 1, y: 1, x: 3}
-    sys.out.println(getField(r))
+    assume getField(r) == -3
     r = {y: "hello", x: 2}
-    sys.out.println(getField(r))
+    assume getField(r) == -2
     

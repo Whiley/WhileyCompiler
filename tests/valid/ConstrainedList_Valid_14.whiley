@@ -8,5 +8,4 @@ requires |xs| > 0:
     return xs
 
 method main(System.Console sys) -> void:
-    [int] rs = f([-1, -2])
-    sys.out.println(rs)
+    assume f([-1, -2]) == [1,-2]

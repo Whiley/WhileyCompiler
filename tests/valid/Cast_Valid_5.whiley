@@ -1,5 +1,4 @@
 import whiley.lang.*
-import whiley.lang.*
 
 type u8 is (int n) where 0 >= n && n <= 255
 
@@ -27,6 +26,9 @@ public function toUnsignedByte(u8 v) -> byte:
     return r
 
 method main(System.Console sys) -> void:
-    for i in 32 .. 127:
+    int i = 32
+    while i < 127:
         int c = toUnsignedInt(toUnsignedByte(i))
-        sys.out.println_s([c])
+        assume c == i
+        i = i + 1
+    //

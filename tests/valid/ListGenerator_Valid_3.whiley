@@ -11,4 +11,4 @@ requires |x| > 0:
 
 method main(System.Console sys) -> void:
     [[int]] arr = [[1, 2, 3], [1]]
-    sys.out.println(f(arr))
+    assume f(arr) == 2

@@ -14,4 +14,4 @@ ensures some { i in 0 .. |xs| | result == xs[i] }:
     return r
 
 method main(System.Console sys) -> void:
-    sys.out.println(f([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))
+    assume f([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) == 10

@@ -9,6 +9,6 @@ function f(rlist l) -> int:
         return |l|
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(123.0))
-    sys.out.println(f(1.23))
-    sys.out.println(f([1, 2, 3]))
+    assume f(123.0) == 0
+    assume f(1.23) == 0
+    assume f([1, 2, 3]) == 3

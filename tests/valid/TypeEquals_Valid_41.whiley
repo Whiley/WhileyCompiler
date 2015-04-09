@@ -12,6 +12,6 @@ function f(expr e) -> int:
 
 method main(System.Console sys) -> void:
     x = f(1)
-    sys.out.println(x)
+    assume x == 1
     x = f({y: 10, x: 4})
-    sys.out.println(x)
+    assume x == 14

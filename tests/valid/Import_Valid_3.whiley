@@ -9,4 +9,4 @@ function toInt([int] ls) -> int:
 
 public method main(System.Console sys) -> void:
     [int] ls = [1, 2, 3, 4]
-    sys.out.println(toInt(ls))
+    assume toInt(ls) == 10

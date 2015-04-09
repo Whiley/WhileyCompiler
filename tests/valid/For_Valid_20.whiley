@@ -10,7 +10,7 @@ ensures result == -1 || result in items:
     return -1
 
 public method main(System.Console console):
-    console.out.println(find([1,2,3],1))
-    console.out.println(find([1,2,3],2))
-    console.out.println(find([1,2,3],3))
-    console.out.println(find([1,2,3],4))
+    assume find([1,2,3],1) == 1
+    assume find([1,2,3],2) == 2
+    assume find([1,2,3],3) == 3
+    assume find([1,2,3],4) == -1

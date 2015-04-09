@@ -14,5 +14,5 @@ function f(expr e) -> {int}:
 
 method main(System.Console sys) -> void:
     {int} e = {1, 2, 3, 4}
-    sys.out.println(f(e))
-    sys.out.println(f(false))
+    assume f(e) == {-1, 1, 2, 3, 4}
+    assume f(false) == {}

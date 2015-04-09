@@ -8,4 +8,4 @@ function f(realtup t) -> real:
 
 method main(System.Console sys) -> void:
     {int op} t = {op: 1}
-    sys.out.println(f((realtup) t))
+    assume f((realtup) t) == 1.0

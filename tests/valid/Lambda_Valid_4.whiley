@@ -22,10 +22,15 @@ public method BufferInputStream([byte] buffer) -> InputStream:
     BufferState this = new {bytes: buffer, pos: 0}
     return {read: &(int x -> read(this, x)), eof: &( -> eof(this))}
 
+method read(string s) -> [byte]:
+    [byte] bytes = []
+    InputStream bis = BufferInputStream(ASCII.toBytes(s))
+    //
+    while !bis.eof():
+        bytes = bis.read(3)
+    //
+    return bytes
+        
 method main(System.Console sys) -> void:
-    [string] strings = ["hello", "cruel cruel", "world"]
-    for s in strings:
-        InputStream bis = BufferInputStream(ASCII.toBytes(s))
-        while !bis.eof():
-            [byte] bytes = bis.read(3)
-            sys.out.println_s("READ: " ++ ASCII.fromBytes(bytes))
+    assume read("hello") == [01101100b, 01101111b]
+    

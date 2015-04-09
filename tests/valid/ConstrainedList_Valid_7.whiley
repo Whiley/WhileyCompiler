@@ -11,6 +11,6 @@ requires x[0] == 0:
     return x
 
 method main(System.Console console) -> void:
-    console.out.println(f([0, 1, 2]))
-    console.out.println(g([0]))
-    console.out.println(g([0, 1, 2]))
+    assume f([0, 1, 2]) == [0,1,2]
+    assume g([0]) == [0]
+    assume g([0, 1, 2]) == [0,1,2]

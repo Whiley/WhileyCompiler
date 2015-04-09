@@ -5,10 +5,8 @@ function f([int] x) -> int
 requires |x| > 0:
     //
     int z = |x|
-    debug Any.toString(z) ++ "\n"
-    debug Any.toString(x[z - 1]) ++ "\n"
-    return z
+    return x[z-1]
 
 method main(System.Console sys) -> void:
     [int] arr = [1, 2, 3]
-    sys.out.println(f(arr))
+    assume f(arr) == 3

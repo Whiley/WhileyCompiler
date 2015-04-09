@@ -8,4 +8,4 @@ requires x == (2 * y):
     return (x, y)
 
 public method main(System.Console console) -> void:
-    console.out.println(f(2, 1))
+    assume f(2, 1) == (4,2)

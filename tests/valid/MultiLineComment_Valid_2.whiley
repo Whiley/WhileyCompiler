@@ -1,4 +1,4 @@
 import whiley.lang.*
 
 method main(System.Console sys) -> void:
-    sys.out.println(5)
+    assert 5 == 5 /* a comment */

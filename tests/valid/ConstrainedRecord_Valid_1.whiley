@@ -13,4 +13,4 @@ function f(UNIT x) -> [int]:
 
 method main(System.Console sys) -> void:
     [int] bytes = f({op: NOP})
-    sys.out.println(bytes)
+    assume bytes == [NOP]

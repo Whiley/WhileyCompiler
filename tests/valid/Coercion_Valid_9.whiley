@@ -11,4 +11,4 @@ function sum2(BigLink l) -> int:
 
 method main(System.Console console):
     BigLink l = {data: 1, code: 'c'}
-    console.out.println(sum2(l))
+    assume sum2(l) == 1

@@ -8,4 +8,4 @@ function f({real} ls) -> real:
 
 method main(System.Console sys) -> void:
     {int} ss = {1,2,3}
-    sys.out.println(f(({real}) ss))
+    assume f(({real}) ss) == 6.0

@@ -36,9 +36,6 @@ requires all { c in coins | c < |Value| }:
     return cash
 
 method main(System.Console sys) -> void:
-    Cash cash = Cash([ONE_DOLLAR, FIVE_CENTS])
-    sys.out.println(cash)
-    cash = Cash([FIVE_DOLLARS, TEN_CENTS, FIFTY_CENTS])
-    sys.out.println(cash)
-    cash = Cash([ONE_DOLLAR, ONE_DOLLAR, TWENTY_CENTS])
-    sys.out.println(cash)
+    assume Cash([ONE_DOLLAR, FIVE_CENTS]) == [0, 1, 0, 0, 0, 1, 0, 0]
+    assume Cash([FIVE_DOLLARS, TEN_CENTS, FIFTY_CENTS]) == [0, 0, 1, 0, 1, 0, 1, 0]
+    assume Cash([ONE_DOLLAR, ONE_DOLLAR, TWENTY_CENTS]) == [0, 0, 0, 1, 0, 2, 0, 0]

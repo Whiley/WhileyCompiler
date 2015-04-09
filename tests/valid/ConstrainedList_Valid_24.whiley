@@ -17,4 +17,5 @@ method main(System.Console sys) -> void:
     g = addEdge(g, 1, 2)
     g = addEdge(g, 2, 3)
     g = addEdge(g, 3, 1)
-    sys.out.println(g)
+    assume g == [{}, {2}, {3}, {1}]
+

@@ -8,4 +8,4 @@ requires |xs| > 0:
 
 method main(System.Console sys) -> void:
     [nat] rs = f([[1, 2, 3], [4, 5, 6]])
-    sys.out.println(rs)
+    assume rs == [1,2,3]

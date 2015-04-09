@@ -10,6 +10,6 @@ function f(list ls) -> int:
 
 method main(System.Console sys) -> void:
     [int] ls = [1, 2, 3, 4, 5, 6, 7, 8]
-    sys.out.println(f(ls))
+    assume f(ls) == 36
     [int] xs = "Hello World"
-    sys.out.println(f(xs))
+    assume f(xs) == 1052

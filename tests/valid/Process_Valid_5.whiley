@@ -2,12 +2,14 @@ import whiley.lang.*
 
 type MyProc is &{bool flag}
 
-method run(MyProc this, System.Console sys) -> void:
+method run(MyProc this) -> bool:
     if this->flag:
-        sys.out.println_s("TRUE")
+        return true
     else:
-        sys.out.println_s("FALSE")
+        return false
 
 method main(System.Console sys) -> void:
     MyProc mproc = new {flag: false}
-    run(mproc, sys)
+    assert run(mproc) == false
+    mproc = new {flag: true}
+    assert run(mproc) == true

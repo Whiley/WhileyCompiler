@@ -9,7 +9,7 @@ ensures r >= 0:
     return v+1
 
 method main(System.Console console):
-    console.out.println(f(1))
-    console.out.println(f(9))
-    console.out.println(f(-1))
-    console.out.println(f(-3))
+    assume f(1) == 2
+    assume f(9) == 10
+    assume f(-1) == 0
+    assume f(-3) == 0

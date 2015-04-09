@@ -7,6 +7,6 @@ function len(list l) -> int:
 
 method main(System.Console sys) -> void:
     [int] l = [1, 2]
-    sys.out.println(len(l))
+    assume len(l) == 2
     [int] s = "Hello World"
-    sys.out.println(len(s))
+    assume len(s) == 11

@@ -14,4 +14,5 @@ function f(posExpr e1) -> expr:
 
 method main(System.Console sys) -> void:
     expr e = f({rhs: 1, lhs: {rhs: 2, lhs: 1}})
-    sys.out.println(e)
+    assume e == {lhs:{lhs:1,rhs:2},rhs:1}
+

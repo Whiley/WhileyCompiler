@@ -9,5 +9,5 @@ ensures r >= 0:
     return x
 
 method main(System.Console console):
-    console.out.println_s("abs(1) = " ++ Any.toString(abs(1)))
-    console.out.println_s("abs(-1) = " ++ Any.toString(abs(-1)))
+    assume abs(1) == 1
+    assume abs(-1) == 1

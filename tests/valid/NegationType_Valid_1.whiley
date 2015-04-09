@@ -7,5 +7,5 @@ function f(any x) -> !null:
         return x
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(1))
-    sys.out.println(f([1, 2, 3]))
+    assume f(1) == 1
+    assume f([1, 2, 3]) == [1,2,3]

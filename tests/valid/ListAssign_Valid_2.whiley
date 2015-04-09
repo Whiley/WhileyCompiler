@@ -13,4 +13,5 @@ method main(System.Console sys) -> void:
     else:
         x = [[1], [2, 3], [5]]
     x[0] = 1
-    sys.out.println(f(x))
+    //
+    assume f(x) == [1,2,3]

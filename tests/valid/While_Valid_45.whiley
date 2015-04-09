@@ -29,6 +29,11 @@ function buildNatSet(int n) -> ({int} m):
 
 method main(System.Console console):
     //
-    {int} nset = buildNatSet(10)
-    console.out.println(nset)
+    assume buildNatSet(-1) == {}
+    assume buildNatSet(0) == {}
+    assume buildNatSet(1) == {0}
+    assume buildNatSet(2) == {0,1}
+    assume buildNatSet(3) == {0,1,2}
+    assume buildNatSet(4) == {0,1,2,3}
+    assume buildNatSet(10) == {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
     

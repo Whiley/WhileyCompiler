@@ -27,4 +27,4 @@ method update(System.Console console, Board b) -> Board:
 method main(System.Console console) -> void:
     Board b = EmptyBoard()
     b = update(console, b)
-    debug "" ++ Any.toString(b)
+    assume b == [2, 1, 0, 0, 0, 0, 0, 0, 0]

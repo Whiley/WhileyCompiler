@@ -9,7 +9,7 @@ function f(src e) -> bool:
         return false
 
 method main(System.Console sys) -> void:
-    sys.out.println(f([1]))
-    sys.out.println(f([[1]]))
-    sys.out.println(f([[[1]]]))
-    sys.out.println(f(1))
+    assume f([1]) == true
+    assume f([[1]]) == true
+    assume f([[[1]]]) == true
+    assume f(1) == false

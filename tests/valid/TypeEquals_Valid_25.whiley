@@ -44,7 +44,6 @@ function evaluate(Expr e) -> Value:
 method main(System.Console sys) -> void:
     Expr e = {op: ADD, rhs: 1, lhs: 123}
     Value v = evaluate(e)
-    sys.out.println_s("RESULT: " ++ Any.toString(v))
+    assume v == 123
     e = [1]
-    v = evaluate(e)
-    sys.out.println_s("RESULT: " ++ Any.toString(v))
+    assume evaluate(e) == []

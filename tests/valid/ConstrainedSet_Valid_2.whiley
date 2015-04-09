@@ -5,4 +5,4 @@ function f(int x) -> {int}:
 
 method main(System.Console sys) -> void:
     {int} bytes = f(0)
-    sys.out.println(bytes)
+    assume bytes == {0}

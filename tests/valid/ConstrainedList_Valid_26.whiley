@@ -10,5 +10,5 @@ ensures r == []:
 
 method main(System.Console sys) -> void:
     [int] items = [5, 4, 6, 3, 7, 2, 8, 1]
-    sys.out.println(f(items))
-    sys.out.println(f([]))
+    assume f(items) == []
+    assume f([]) == []

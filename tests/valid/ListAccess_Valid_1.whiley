@@ -9,4 +9,4 @@ requires |x| > 0:
 method main(System.Console sys) -> void:
     [int] arr = [1, 2, 3]
     f(arr)
-    sys.out.println(arr[0])
+    assert arr[0] == 1

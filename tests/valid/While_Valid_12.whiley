@@ -13,6 +13,6 @@ ensures |vr| == |v1|:
     return v1
 
 method main(System.Console sys) -> void:
-    sys.out.println(add([1, 2, 3], [4, 5, 6]))
-    sys.out.println(add([1], [4]))
-    sys.out.println(add([], []))
+    assume add([1, 2, 3], [4, 5, 6]) == [5,7,9]
+    assume add([1], [4]) == [5]
+    assume add([], []) == []

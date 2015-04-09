@@ -8,6 +8,6 @@ function f(int b) -> bytes:
 method main(System.Console sys) -> void:
     int b = 1
     bytes bs = f(b)
-    sys.out.println(bs)
+    assume bs == {b1: 1, b2: 2}
     bs = {b1: b, b2: b}
-    sys.out.println(bs)
+    assume bs == {b1: 1, b2: 1}

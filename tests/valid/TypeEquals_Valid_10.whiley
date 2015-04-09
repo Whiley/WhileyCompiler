@@ -9,5 +9,5 @@ function f(Rtypes e) -> bool:
         return false
 
 method main(System.Console sys) -> void:
-    sys.out.println(f({y: 1, x: 1}))
-    sys.out.println(f({z: 1, x: 1}))
+    assume f({y: 1, x: 3}) == true
+    assume f({z: 1, x: 3}) == false

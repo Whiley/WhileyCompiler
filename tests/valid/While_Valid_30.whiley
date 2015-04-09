@@ -12,6 +12,14 @@ ensures  r == 2*n:
     return r
 
 method main(System.Console console):
-    for i in 0 .. 10:
-        console.out.println_s("GOT: " ++ Any.toString(duplicate(i)))
+    assume duplicate(0) == 0
+    assume duplicate(1) == 2
+    assume duplicate(2) == 4
+    assume duplicate(3) == 6
+    assume duplicate(4) == 8
+    assume duplicate(5) == 10
+    assume duplicate(6) == 12
+    assume duplicate(7) == 14
+    assume duplicate(8) == 16
+    assume duplicate(9) == 18
 

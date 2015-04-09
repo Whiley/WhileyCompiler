@@ -17,4 +17,4 @@ requires (index <= |items|) && all { i in 0 .. index | items[i] >= 0 }:
 method main(System.Console sys) -> void:
     [nat] xs = [1, -3, -5, 7, -9, 11]
     xs = abs(xs)
-    sys.out.println(xs)
+    assume xs == [1,3,5,7,9,11]

@@ -17,6 +17,12 @@ function isAlive(int i, [bool] board) -> bool:
 
 method main(System.Console console) -> void:
     [bool] xs = [true, true, true, true, true, true, true]
-    for i in 0 .. 5:
-        console.out.println(xs)
-        xs = play(xs)
+    assume xs == [true, true, true, true, true, true, true]
+    xs = play(xs)
+    assume xs == [false, true, true, true, true, true, false]
+    xs = play(xs)
+    assume xs == [false, false, true, true, true, false, false]
+    xs = play(xs)
+    assume xs == [false, false, false, true, false, false, false]
+    xs = play(xs)
+    assume xs == [false, false, false, false, false, false, false]

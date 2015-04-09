@@ -16,4 +16,4 @@ function f(oddeven x) -> even:
 method main(System.Console sys) -> void:
     int y = 1
     y = f(1)
-    sys.out.println(y)
+    assume y == 2

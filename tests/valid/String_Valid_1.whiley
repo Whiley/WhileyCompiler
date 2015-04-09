@@ -10,6 +10,6 @@ function f(nat pos, [int] input) -> bool|null:
         return flag
 
 method main(System.Console console):
-    console.out.println(f(0, "Ox"))
-    console.out.println(f(0, "1x"))
-    console.out.println(f(1, "O"))
+    assume f(0, "Ox") == true
+    assume f(0, "1x") == false
+    assume f(1, "O") == null

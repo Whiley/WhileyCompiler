@@ -16,7 +16,7 @@ ensures r != |items| ==> items[r] == item:
     return i
 
 public method main(System.Console console):
-    console.out.println(find([1,2,3],1))
-    console.out.println(find([1,2,3],2))
-    console.out.println(find([1,2,3],3))
-    console.out.println(find([1,2,3],-1))
+    assume find([1,2,3],1) == 0
+    assume find([1,2,3],2) == 1
+    assume find([1,2,3],3) == 2
+    assume find([1,2,3],-1) == 3

@@ -10,4 +10,4 @@ method main(System.Console sys) -> void:
     if |sys.args| == 10:
         x = {op: 1.23, rest: [1.0]}
     x.op = 123
-    sys.out.println(f(x))
+    assume f(x) == {op: 123, rest: [1.23]}

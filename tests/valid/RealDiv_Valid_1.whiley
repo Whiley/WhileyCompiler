@@ -8,4 +8,4 @@ requires (x >= 0) && (y > 0):
     return g(x)
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(1, 2))
+    assume f(1, 2) == (1.0/3.0)

@@ -1,4 +1,7 @@
 import whiley.lang.*
 
+/**
+ * This is a multiline comment
+ */
 method main(System.Console sys) -> void:
-    sys.out.println(5)
+    assert true == true

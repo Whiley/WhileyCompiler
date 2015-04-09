@@ -10,8 +10,8 @@ public function has(int c, [int] str) -> bool:
 
 method main(System.Console sys) -> void:
     [int] s = "Hello World"
-    sys.out.println(has('l', s))
-    sys.out.println(has('e', s))
-    sys.out.println(has('h', s))
-    sys.out.println(has('z', s))
-    sys.out.println(has('H', s))
+    assume has('l', s) == true
+    assume has('e', s) == true
+    assume has('h', s) == false
+    assume has('z', s) == false
+    assume has('H', s) == true

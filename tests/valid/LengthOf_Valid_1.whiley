@@ -7,6 +7,6 @@ function len(listset l) -> int:
 
 method main(System.Console sys) -> void:
     [int] l = [1, 2, 3]
-    sys.out.println(len(l))
+    assume len(l) == 3
     {int} s = {1, 2, 3, 4, 5, 6}
-    sys.out.println(len(s))
+    assume len(s) == 6

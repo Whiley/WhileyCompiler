@@ -19,9 +19,7 @@ ensures r ==> all { j in 1 .. |items| | items[j-1] < items[j] }:
     return true
 
 method main(System.Console console):
-    [int] l1 = [1,2,3,4]
-    console.out.println(isSorted(l1))
-    [int] l2 = [1,2,4,3]
-    console.out.println(isSorted(l2))
-    [int] l3 = [4,2,3,5]
-    console.out.println(isSorted(l3))
+    assume isSorted([1,2,3,4])
+    assume !isSorted([1,2,4,3])
+    assume !isSorted([4,2,3,5])
+    assume isSorted([])

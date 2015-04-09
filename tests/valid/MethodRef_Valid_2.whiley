@@ -13,4 +13,4 @@ method m(Reader r, int x) -> int:
 method main(System.Console sys) -> void:
     Reader reader = {read: &f}
     int data = m(reader, 1)
-    sys.out.println(data)
+    assume data == 1

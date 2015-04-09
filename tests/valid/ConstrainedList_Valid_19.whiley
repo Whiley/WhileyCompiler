@@ -10,4 +10,4 @@ function f([nat] xs) -> [nat]:
 
 method main(System.Console sys) -> void:
     [nat] rs = f([1, 2, 3])
-    sys.out.println(rs)
+    assume rs == [1,2,3]

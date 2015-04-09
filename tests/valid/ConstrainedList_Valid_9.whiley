@@ -19,5 +19,4 @@ ensures r >= 0:
     return sum(ls, 0)
 
 method main(System.Console sys) -> void:
-    int c = sum([1, 2, 3, 4, 5, 6, 7])
-    sys.out.println(c)
+    assume sum([1, 2, 3, 4, 5, 6, 7]) == 28

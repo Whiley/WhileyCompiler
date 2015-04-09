@@ -9,7 +9,7 @@ function f(tac2ta x) -> tac2tb:
 
 method main(System.Console sys) -> void:
     tac2ta x = {f1: 2, f2: 3}
-    sys.out.println(x)
+    assume x == {f1: 2, f2: 3}
     x.f1 = 1
     tac2tb y = f(x)
-    sys.out.println(y)
+    assume y == {f1: 0, f2: 3}

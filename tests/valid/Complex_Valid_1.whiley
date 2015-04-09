@@ -86,7 +86,5 @@ constant A3 is {col: 1, row: 3}
 constant D3 is {col: 4, row: 3}
 
 method main(System.Console sys) -> void:
-    bool r = clearRowExcept(A1, H1, startingChessBoard)
-    sys.out.println_s("GOT: " ++ Any.toString(r))
-    r = clearRowExcept(A3, D3, startingChessBoard)
-    sys.out.println_s("GOT: " ++ Any.toString(r))
+    assume clearRowExcept(A1, H1, startingChessBoard) == false
+    assume clearRowExcept(A3, D3, startingChessBoard) == true

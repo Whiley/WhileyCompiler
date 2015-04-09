@@ -21,4 +21,4 @@ method main(System.Console sys) -> void:
         00000101b
     ]
     int x = match(xs, 0, |xs| - 2)
-    sys.out.println(x)
+    assume x == 2

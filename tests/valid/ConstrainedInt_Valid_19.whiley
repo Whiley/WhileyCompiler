@@ -13,4 +13,4 @@ function f(a_nat x) -> b_nat:
 method main(System.Console sys) -> void:
     int x = |sys.args|
     x = f(x)
-    sys.out.println(x)
+    assume x == 1

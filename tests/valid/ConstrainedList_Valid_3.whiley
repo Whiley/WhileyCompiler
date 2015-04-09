@@ -14,5 +14,10 @@ ensures (|result| == length) && all { i in result | i == value }:
     return data
 
 method main(System.Console sys) -> void:
-    for i in 0 .. 10:
-        sys.out.println(init(i, i))
+    assume init(0,0) == []
+    assume init(1,1) == [1]
+    assume init(2,2) == [2,2]
+    assume init(3,3) == [3,3,3]
+    assume init(4,4) == [4,4,4,4]
+    assume init(5,5) == [5,5,5,5,5]
+    assume init(6,6) == [6,6,6,6,6,6]

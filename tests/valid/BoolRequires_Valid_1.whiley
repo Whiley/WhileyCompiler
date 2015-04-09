@@ -5,6 +5,6 @@ requires (|x| > 0) && x[0]:
     return x
 
 method main(System.Console sys) -> void:
-    sys.out.println(f([true]))
-    sys.out.println(f([true, false]))
-    sys.out.println(f([true, false, true]))
+    assume f([true]) == [true]
+    assume f([true, false]) == [true, false]
+    assume f([true, false, true]) == [true, false, true]

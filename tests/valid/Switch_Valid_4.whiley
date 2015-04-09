@@ -18,6 +18,6 @@ function f(RGB c) -> int:
             return 456
 
 method main(System.Console sys) -> void:
-    sys.out.println_s("NUM: " ++ Any.toString(f(Red)))
-    sys.out.println_s("NUM: " ++ Any.toString(f(Green)))
-    sys.out.println_s("NUM: " ++ Any.toString(f(Blue)))
+    assume f(Red) == 123
+    assume f(Green) == 456
+    assume f(Blue) == 234

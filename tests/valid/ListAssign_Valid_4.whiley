@@ -30,4 +30,4 @@ requires |board.rows| > 0:
 
 method main(System.Console sys) -> void:
     Board r1 = {flag: false, rows: [WHITE_PAWN]}
-    sys.out.println(f(r1))
+    assume f(r1) == {flag:false,rows:[{colour:false,kind:0}]}

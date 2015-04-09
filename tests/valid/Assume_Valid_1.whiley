@@ -11,4 +11,4 @@ function sum([nat] list) -> nat:
 
 method main(System.Console sys) -> void:
     nat rs = sum([0, 1, 2, 3])
-    sys.out.println(rs)
+    assert rs == 6

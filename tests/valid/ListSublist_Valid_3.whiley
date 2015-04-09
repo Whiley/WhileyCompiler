@@ -11,5 +11,5 @@ requires all { i in 1 .. |ls| | ls[i] >= 0 }:
     return ls[1..|ls|]
 
 method main(System.Console sys) -> void:
-    sys.out.println(tail([1, 2, 3, 4]))
-    sys.out.println(tail([1]))
+    assume tail([1, 2, 3, 4]) == [2,3,4]
+    assume tail([1]) == []

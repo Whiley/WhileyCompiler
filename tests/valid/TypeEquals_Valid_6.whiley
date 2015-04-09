@@ -19,5 +19,5 @@ function syntaxError([int] errorMessage) -> SyntaxError:
     return {msg: errorMessage}
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(0))
-    sys.out.println(f(1))
+    assume f(0) == true
+    assume f(1) == false

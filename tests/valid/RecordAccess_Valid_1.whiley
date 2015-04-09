@@ -9,4 +9,5 @@ method get(Ptype this) -> int:
     return this->mode
 
 method main(System.Console sys) -> void:
-    sys.out.println_s("OK")
+    assume get(new {mode:2}) == 1
+    assume get(new {mode:3,x:1}) == 1

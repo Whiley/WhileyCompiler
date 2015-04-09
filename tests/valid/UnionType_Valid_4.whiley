@@ -7,6 +7,6 @@ function f(IntReal y) -> IntReal:
 
 method main(System.Console sys) -> void:
     IntReal x = 123
-    sys.out.println(f(x))
+    assume f(x) == 123
     x = 1.234
-    sys.out.println(f(x))
+    assume f(x) == 1.234

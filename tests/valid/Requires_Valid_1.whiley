@@ -10,5 +10,5 @@ requires y == f(x):
 
 method main(System.Console sys) -> void:
     int x, int y = g(1, f(1))
-    sys.out.println(x)
-    sys.out.println(y)
+    assume x == 1
+    assume y == 2

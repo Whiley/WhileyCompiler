@@ -12,4 +12,4 @@ method main(System.Console sys) -> void:
     if |sys.args| == 0:
         a = f(b)
     int x = g(a, b)
-    sys.out.println(x)
+    assume x == 3

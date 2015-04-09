@@ -17,4 +17,4 @@ ensures no { x in 0 .. |src| | result[x] <= 0 }:
 method main(System.Console sys) -> void:
     [nat] xs = [1, 3, 5, 7, 9, 11]
     xs = inc(xs)
-    sys.out.println(xs)
+    assume xs == [2, 4, 6, 8, 10, 12]

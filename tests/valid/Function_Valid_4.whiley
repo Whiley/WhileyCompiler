@@ -10,4 +10,4 @@ function f(fr4nat x) -> int:
 
 method main(System.Console sys) -> void:
     int y = 1
-    sys.out.println(f(g(y)))
+    assume f(g(y)) == 2

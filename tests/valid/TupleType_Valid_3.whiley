@@ -5,5 +5,5 @@ function f(int x) -> (int, int):
 
 method main(System.Console sys) -> void:
     int x, int y = f(1)
-    sys.out.println(x)
-    sys.out.println(y)
+    assume x == 1
+    assume y == 3

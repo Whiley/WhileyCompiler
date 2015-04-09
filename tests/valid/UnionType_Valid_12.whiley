@@ -10,6 +10,6 @@ function g({int op, int mode} z) -> IntList:
 
 method main(System.Console sys) -> void:
     IntList x = {op: 1, rest: [1.23]}
-    sys.out.println(f(x))
+    assume f(x) == {op: 1, rest: [1.23]}
     x = {op: 123, mode: 0}
-    sys.out.println(g(x))
+    assume g(x) == {op: 123, mode: 0}

@@ -12,6 +12,6 @@ function f(expr e) -> bool:
 
 method main(System.Console sys) -> void:
     expr e = 1
-    sys.out.println(f(e))
+    assume f(e) == true
     e = {y: 2, x: 1}
-    sys.out.println(f(e))
+    assume f(e) == false

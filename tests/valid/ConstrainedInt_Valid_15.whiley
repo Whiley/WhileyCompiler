@@ -13,6 +13,6 @@ function isPosNeg(any v) -> bool:
         return false
 
 method main(System.Console sys) -> void:
-    sys.out.println(isPosNeg(1))
-    sys.out.println(isPosNeg(0))
-    sys.out.println(isPosNeg(-1))
+    assume isPosNeg(1)
+    assume !isPosNeg(0)
+    assume isPosNeg(-1)

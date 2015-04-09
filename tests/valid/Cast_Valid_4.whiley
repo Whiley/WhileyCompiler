@@ -10,4 +10,4 @@ function f(R3 i) -> R1 | R2:
     return (R1) i
 
 method main(System.Console sys) -> void:
-    sys.out.println(f({y: 123, x: 123542}))
+    assume f({y: 123, x: 123542}) == {y: 123, x: 123542.0}

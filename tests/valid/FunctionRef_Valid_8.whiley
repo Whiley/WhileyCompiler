@@ -11,8 +11,8 @@ function test(function (int)->int read, int arg) -> int:
 
 method main(System.Console sys) -> void:
     int x = test(&id, 1)
-    sys.out.println(x)
+    assume x == 1
     x = test(&id, 123)
-    sys.out.println(x)
+    assume x == 123
     x = test(&id, 223)
-    sys.out.println(x)
+    assume x == 223

@@ -9,4 +9,4 @@ function f(code x) -> int:
     return y
 
 method main(System.Console sys) -> void:
-    sys.out.println(f({op: 1, payload: [1]}))
+    assume f({op: 1, payload: [1]}) == 1

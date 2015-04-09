@@ -12,6 +12,6 @@ ensures r >= 0 && r <= 2:
     return 2
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(2))
-    sys.out.println(f(1))
-    sys.out.println(f(0))
+    assume f(2) == 1
+    assume f(1) == 0
+    assume f(0) == 2

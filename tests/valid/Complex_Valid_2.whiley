@@ -99,8 +99,9 @@ function pos2str(Pos p) -> string:
 
 method main(System.Console sys) -> void:
     Move m = {to: A1, from: A2, piece: WHITE_PAWN}
-    sys.out.println_s(move2str(m))
+    assume move2str(m) == "a2-a1"
     m = {to: A1, from: A2, piece: WHITE_KNIGHT}
-    sys.out.println_s(move2str(m))
+    assume move2str(m) == "Na2-a1"
     m = {to: A1, taken: BLACK_KING, from: A2, piece: WHITE_QUEEN}
-    sys.out.println_s(move2str(m))
+    assume move2str(m) == "Qa2xKa1"
+

@@ -8,4 +8,4 @@ method f() -> [int]:
 
 method main(System.Console sys) -> void:
     &{int state} proc = new {state: 1}
-    sys.out.println(f())
+    assume f() == [1,2,3,1]

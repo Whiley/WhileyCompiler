@@ -7,4 +7,4 @@ ensures y < -0.2:
     return 0.0 - x
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(1.234))
+    assume f(1.234) == -1.234

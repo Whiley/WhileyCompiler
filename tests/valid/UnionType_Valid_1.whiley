@@ -8,4 +8,4 @@ method main(System.Console sys) -> void:
     else:
         x = [1, 2, 3]
     //
-    sys.out.println(x)
+    assume x == [1,2,3]

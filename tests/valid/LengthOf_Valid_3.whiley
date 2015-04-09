@@ -7,6 +7,6 @@ function len(setdict l) -> int:
 
 method main(System.Console sys) -> void:
     {int} l = {1, 2, 3}
-    sys.out.println(len(l))
+    assume len(l) == 3
     {int=>int} m = {1=>2, 3=>4, 5=>6, 7=>8}
-    sys.out.println(len(m))
+    assume len(m) == 4

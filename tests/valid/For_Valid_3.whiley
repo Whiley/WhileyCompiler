@@ -13,5 +13,5 @@ method main(System.Console sys) -> void:
     int v
     {int=>int} dict = {1=>2, 3=>4, 4=>5}
     (k, v) = f(dict)
-    sys.out.println(k)
-    sys.out.println(v)
+    assume k == 8
+    assume v == 11

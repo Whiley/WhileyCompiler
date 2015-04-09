@@ -26,6 +26,6 @@ method main(System.Console sys) -> void:
     LinkedList ls = {next: null, data: 1}
     ls = {next: ls, data: 2}
     ls = {next: ls, data: 3}
-    sys.out.println(sum_1(ls))
-    sys.out.println(sum_2(ls))
-    sys.out.println(sum_3(ls))
+    assume sum_1(ls) == 6
+    assume sum_2(ls) == 6
+    assume sum_3(ls) == 6

@@ -10,6 +10,5 @@ function f(int x) -> edict:
 
 public method main(System.Console sys) -> void:
     edict d = f(-1)
-    sys.out.println_s("Dictionary=" ++ Any.toString(|d|))
-    d = f(2)
-    sys.out.println_s("Dictionary=" ++ Any.toString(|d|))
+    assume |d| == 2
+    assume |f(2)| == 2

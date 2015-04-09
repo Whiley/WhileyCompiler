@@ -13,6 +13,6 @@ function f([int] xs) -> [bool | null]:
 
 method main(System.Console sys) -> void:
     [int] e = []
-    sys.out.println(f(e))
+    assume f(e) == []
     e = [1, 2, 3, 4]
-    sys.out.println(f(e))
+    assume f(e) == [null,null,null,null]

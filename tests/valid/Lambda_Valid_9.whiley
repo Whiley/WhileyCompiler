@@ -23,5 +23,5 @@ function Point(int x, int y) -> Point:
 
 method main(System.Console console):
     Point p = Point(1,2)
-    console.out.println(p.getX(p))
-    console.out.println(p.toString(p))
+    assume p.getX(p) == 1
+    assume p.toString(p) == 3

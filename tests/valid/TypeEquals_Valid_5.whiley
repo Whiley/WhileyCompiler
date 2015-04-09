@@ -8,5 +8,5 @@ function f(int | null x) -> bool:
 
 method main(System.Console sys) -> void:
     int|null x = null
-    sys.out.println(f(x))
-    sys.out.println(f(1))
+    assume f(x) == true
+    assume f(1) == false

@@ -26,6 +26,6 @@ method main(System.Console sys) -> void:
     list = SortedList(3, list)
     list = SortedList(1, list)
     list = SortedList(0, list)
-    sys.out.println(contains(2, list))
-    sys.out.println(contains(3, list))
-    sys.out.println(contains(10, list))
+    assume contains(2, list) == false
+    assume contains(3, list) == true
+    assume contains(10, list) == true

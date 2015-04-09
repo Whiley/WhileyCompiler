@@ -15,5 +15,9 @@ ensures r ==> some { i in 0 .. |items| | item == items[i] }:
 
 method main(System.Console console):
     [int] ls = [1,2,3,4]
-    for l in [3,5,1]:
-        console.out.println(contains(ls,l))
+    assume contains(ls,0) == false
+    assume contains(ls,1) == true
+    assume contains(ls,2) == true
+    assume contains(ls,3) == true
+    assume contains(ls,4) == true
+    assume contains(ls,5) == false

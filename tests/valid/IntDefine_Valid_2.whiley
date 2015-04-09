@@ -11,6 +11,6 @@ function f(int x) -> int:
     return 0
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(1))
-    sys.out.println(f(2))
-    sys.out.println(f(3))
+    assume f(1) == 0
+    assume f(2) == 0
+    assume f(3) == 3

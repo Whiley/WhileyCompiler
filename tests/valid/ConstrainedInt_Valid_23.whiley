@@ -7,4 +7,4 @@ function f(cr2num x) -> int:
     return y
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(3))
+    assume f(3) == 3

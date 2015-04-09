@@ -13,5 +13,4 @@ ensures result >= 0:
 
 method main(System.Console sys) -> void:
     tupper x = {op: 1, il: 1}
-    sys.out.println(x)
-    f(x)
+    assume f(x) == 1

@@ -8,4 +8,4 @@ function f(R2 i) -> R1:
     return (R1) i
 
 method main(System.Console sys) -> void:
-    sys.out.println(f({x: 123542}))
+    assume f({x: 123542}) == {x: 123542.0}

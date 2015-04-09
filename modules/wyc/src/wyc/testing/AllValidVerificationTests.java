@@ -373,16 +373,6 @@ public class AllValidVerificationTests {
 		runTest("Complex_Valid_8");
 	}
 
-	@Ignore("#311") @Test
-	public void Constant_Valid_1() {
-		runTest("Constant_Valid_1");
-	}
-
-	@Ignore("#311") @Test
-	public void Constant_Valid_2() {
-		runTest("Constant_Valid_2");
-	}
-
 	@Test
 	public void Constant_Valid_3() {
 		runTest("Constant_Valid_3");

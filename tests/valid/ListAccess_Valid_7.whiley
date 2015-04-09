@@ -13,5 +13,4 @@ function f([int] str) -> [int]:
     return r
 
 public method main(System.Console sys) -> void:
-    r = f("Hello")
-    sys.out.println(r)
+    assume f("Hello") == [0,0,0,0,0]

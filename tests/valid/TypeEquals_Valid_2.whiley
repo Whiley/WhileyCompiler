@@ -10,6 +10,6 @@ function f(expr e) -> int:
 
 method main(System.Console sys) -> void:
     int x = f({err: "Hello World"})
-    sys.out.println(x)
+    assume x == 11
     x = f({op: 1, lhs: {err: "Gotcha"}})
-    sys.out.println(x)
+    assume x == -1

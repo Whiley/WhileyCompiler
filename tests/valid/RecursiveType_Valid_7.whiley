@@ -71,6 +71,6 @@ constant bytecodeStrings is ["nop", "aconst_null", "iconst_m1", "iconst_0", "ico
 
 method main(System.Console sys) -> void:
     [int] s1 = code2toString(Unit(0, 1))
-    sys.out.println_s(s1)
+    assume s1 == "aconst_null"
     [int] s2 = code2toString(FieldIndex(0, 180, {classes: ["Object"], pkg: "java.lang"}, "field", T_INT))
-    sys.out.println_s(s2)
+    assume s2 == "getfield"

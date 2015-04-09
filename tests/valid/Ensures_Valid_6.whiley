@@ -12,5 +12,5 @@ ensures r is int ==> r >= 0:
         return null
 
 method main(System.Console console):
-    console.out.println_s("abs(1) = " ++ Any.toString(abs(1)))
-    console.out.println_s("abs(-1) = " ++ Any.toString(abs(-1)))
+    assume abs(1) == 1
+    assume abs(-1) == null

@@ -14,8 +14,8 @@ method test(Points t) -> bool:
 
 method main(System.Console sys) -> void:
     Point3D p3d = {z: 3, y: 2, x: 1}
-    sys.out.println(test(p3d))
+    assume test(p3d) == true
     Point p2d = {y: 2, x: 1}
-    sys.out.println(test(p2d))
+    assume test(p2d) == false
     p2d = {w: 3, y: 2, x: 1}
-    sys.out.println(test(p2d))
+    assume test(p2d) == false

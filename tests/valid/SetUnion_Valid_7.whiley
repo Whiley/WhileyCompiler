@@ -8,5 +8,5 @@ function g({int} ys) -> {int}:
     return f(ys + {1})
 
 method main(System.Console sys) -> void:
-    sys.out.println(g({}))
-    sys.out.println(g({2}))
+    assume g({}) == {1}
+    assume g({2}) == {1,2}

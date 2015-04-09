@@ -11,5 +11,5 @@ ensures r >= 0:
     return 0
 
 method main(System.Console console):
-    console.out.println(f(new 1))
-    console.out.println(f(new -1))
+    assume f(new 1) == 2
+    assume f(new -1) == 0

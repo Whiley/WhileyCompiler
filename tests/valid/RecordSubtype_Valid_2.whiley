@@ -12,7 +12,7 @@ function f(List1 r) -> List4:
     return r
 
 method main(System.Console sys) -> void:
-    list = {next: null, data: 1}
-    list = {next: list, data: null}
-    ans = f(list)
-    sys.out.println(ans)
+    List1 list = {next: null, data: 1}
+    List1 list = {next: list, data: null}
+    List4 ans = f(list)
+    assumt ans == {next: {next: null, data:1}, data: null}

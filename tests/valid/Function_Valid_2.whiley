@@ -7,4 +7,4 @@ function f(int x) -> int:
 
 method main(System.Console sys) -> void:
     int y = 1
-    sys.out.println(f(y))
+    assume f(y) == 1

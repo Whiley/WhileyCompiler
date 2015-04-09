@@ -13,6 +13,6 @@ function Point(int i, int j) -> Point:
 
 method main(System.Console sys) -> void:
     Point rs = Point(1, 1)
-    sys.out.println(rs)
+    assume rs == {x:1,y:-1}
     rs = Point(1, 2)
-    sys.out.println(rs)
+    assume rs == {x:1,y:2}

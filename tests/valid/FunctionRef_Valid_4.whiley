@@ -15,5 +15,5 @@ function g(int d) -> int:
     return y(123)
 
 method main(System.Console sys) -> void:
-    sys.out.println(g(0))
-    sys.out.println(g(1))
+    assume g(0) == 123
+    assume g(1) == -123

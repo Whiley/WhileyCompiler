@@ -9,4 +9,4 @@ function f(codeOp x) -> code:
     return y
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(1))
+    assume f(1) == {op:1, payload: []}

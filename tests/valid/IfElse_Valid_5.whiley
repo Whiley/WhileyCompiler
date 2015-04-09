@@ -15,8 +15,8 @@ function getFlag(Record d) -> int:
 
 method main(System.Console console):
     Record r = {flag: 1}
-    console.out.println_s("GOT FLAG: " ++ Any.toString(getFlag(r)))
+    assume getFlag(r) == 1
     r = {flag: 0}
-    console.out.println_s("GOT FLAG: " ++ Any.toString(getFlag(r)))
+    assume getFlag(r) == -1
     r = {flag: -1}
-    console.out.println_s("GOT FLAG: " ++ Any.toString(getFlag(r)))
+    assume getFlag(r) == 0  

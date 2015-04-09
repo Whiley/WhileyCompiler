@@ -22,4 +22,4 @@ method main(System.Console sys) -> void:
     for i in 0 .. |actors|:
         r = r + get(actors[i])
     //
-    sys.out.println(r)
+    assume r == 45

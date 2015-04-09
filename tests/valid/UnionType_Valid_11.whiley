@@ -14,5 +14,5 @@ function f(msgType m) -> msgType:
 method main(System.Console sys) -> void:
     msg1 m1 = {op: 11, data: []}
     msg2 m2 = {index: 1}
-    sys.out.println(f(m1))
-    sys.out.println(f(m2))
+    assume f(m1) == {op: 11, data: []}
+    assume f(m2) == {index: 1}

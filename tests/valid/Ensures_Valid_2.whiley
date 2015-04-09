@@ -7,4 +7,4 @@ ensures y > x:
 
 method main(System.Console sys) -> void:
     int y = f(1)
-    sys.out.println(y)
+    assume y == 2

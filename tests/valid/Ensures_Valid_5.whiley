@@ -7,5 +7,4 @@ ensures r > x:
     return x
 
 method main(System.Console sys) -> void:
-    int y = f(1)
-    sys.out.println(y)
+    assume f(1) == 2

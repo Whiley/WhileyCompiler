@@ -9,4 +9,4 @@ method main(System.Console sys) -> void:
             break
         i = i + 1
     while i < 5
-    sys.out.println(i)
+    assume i == 2

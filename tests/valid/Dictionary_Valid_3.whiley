@@ -12,8 +12,8 @@ method main(System.Console sys) -> void:
     {int=>int} m3 = f(3)
     m1[2] = 4
     m2[1] = 23498
-    sys.out.println(get(1, m1))
-    sys.out.println(get(2, m1))
-    sys.out.println(get(1, m2))
-    sys.out.println(get(1, m3))
-    sys.out.println(get(3, m3))
+    assume get(1, m1) == 1
+    assume get(2, m1) == 4  
+    assume get(1, m2) == 23498
+    assume get(1, m3) == 3
+    assume get(3, m3) == 2

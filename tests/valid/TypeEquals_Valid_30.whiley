@@ -35,10 +35,10 @@ function evaluate(Expr e) -> int:
 
 method main(System.Console sys) -> void:
     Expr e = 1
-    sys.out.println(evaluate(e))
+    assume evaluate(e) == 1
     e = {op: ADD, rhs: e, lhs: e}
-    sys.out.println(evaluate(e))
+    assume evaluate(e) == 2
     e = [e]
-    sys.out.println(evaluate(e))
+    assume evaluate(e) == 3
     e = {index: 1, src: e}
-    sys.out.println(evaluate(e))
+    assume evaluate(e) == 4

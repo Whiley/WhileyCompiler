@@ -7,4 +7,4 @@ function g(fcode f) -> int:
 
 method main(System.Console sys) -> void:
     int x = 1
-    sys.out.println(g(x))
+    assume g(x) == 1

@@ -13,4 +13,5 @@ function parseAddSubExpr(State st) -> {Expr e, State st}:
 
 method main(System.Console sys) -> void:
     Expr e = parse("Hello")
-    sys.out.println(e)
+    assume e == {num:1}
+

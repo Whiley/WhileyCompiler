@@ -10,6 +10,7 @@ function f(int x) -> edict:
 
 public method main(System.Console sys) -> void:
     edict d = f(-1)
-    sys.out.println_s("Dictionary=" ++ Any.toString(d))
+    assume d == {1=>2, 2=>3}
     d = f(2)
-    sys.out.println_s("Dictionary=" ++ Any.toString(d))
+    assume d == {1.0=>1.5, 2.0=>2.5}
+

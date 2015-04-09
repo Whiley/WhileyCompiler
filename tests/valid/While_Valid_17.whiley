@@ -8,4 +8,4 @@ method main(System.Console sys) -> void:
         if i == 3:
             break
         i = i + 1
-    sys.out.println(i)
+    assume i == 3

@@ -13,4 +13,4 @@ requires p >= 0:
 
 method main(System.Console sys) -> void:
     int x = g(5)
-    sys.out.println(x)
+    assume x == 7

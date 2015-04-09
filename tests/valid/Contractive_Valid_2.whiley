@@ -20,4 +20,4 @@ method i(C3 x) -> C2:
 
 method main(System.Console sys) -> void:
     C3 x = f(null)
-    sys.out.println(x)
+    assume x == null

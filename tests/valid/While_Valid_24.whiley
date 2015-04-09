@@ -12,5 +12,5 @@ ensures result is null || xs[result] == x:
     return null
 
 method main(System.Console console) -> void:
-    console.out.println(indexOf([1, 2, 3], 1))
-    console.out.println(indexOf([1, 2, 3], 0))
+    assume indexOf([1, 2, 3], 1) == 0
+    assume indexOf([1, 2, 3], 0) == null

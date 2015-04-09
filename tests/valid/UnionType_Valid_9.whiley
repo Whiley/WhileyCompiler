@@ -13,4 +13,4 @@ function f(msgType m) -> any:
 
 method main(System.Console sys) -> void:
     msg1 x = {op: 11, data: []}
-    sys.out.println(f(x))
+    assume f(x) == {op: 11, data: []}

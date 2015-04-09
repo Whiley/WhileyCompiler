@@ -20,5 +20,5 @@ requires pred(xs):
 method main(System.Console sys) -> void:
     int c1 = countOver({1, 2, 3, 4}, 1)
     int c2 = countOver({1, 2, 3, 4}, 3)
-    sys.out.println(c1)
-    sys.out.println(c2)
+    assume c1 == 3
+    assume c2 == 1

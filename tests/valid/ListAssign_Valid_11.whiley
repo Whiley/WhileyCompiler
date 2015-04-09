@@ -9,4 +9,5 @@ requires |a| > 0:
 
 method main(System.Console sys) -> void:
     [int] b = [1, 2, 3]
-    sys.out.println(f(b))
+    assume f(b) == [5,2,3]
+

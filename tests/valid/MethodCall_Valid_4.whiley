@@ -33,6 +33,6 @@ method sum(pst m, [int] data) -> int:
 method main(System.Console sys) -> void:
     [int] data = [1, 3, 5, 7, 3, 198, 1, 4, 6]
     int s1 = sum(&parSum, data)
-    sys.out.println_s("SUM: " ++ Any.toString(s1))
+    assume s1 == 123
     int s2 = sum(&seqSum, data)
-    sys.out.println_s("SUM: " ++ Any.toString(s2))
+    assume s1 == 123

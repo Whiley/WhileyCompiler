@@ -9,4 +9,4 @@ method f(int y) -> wmcr6tup:
     return {y: get(), x: y}
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(1))
+    assume f(2) == {y: 1, x: 2}

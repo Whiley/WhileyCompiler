@@ -13,6 +13,7 @@ method main(System.Console sys) -> void:
     Tree l2 = Tree(3, null, null)
     Tree l3 = Tree(5, null, null)
     Tree t1 = Tree(2, l1, l2)
-    sys.out.println(t1)
+    assume t1 == {data:2,lhs:{data:1,lhs:null,rhs:null},rhs:{data:3,lhs:null,rhs:null}}
     Tree t2 = Tree(4, t1, l3)
-    sys.out.println(t2)
+    assume t2 == {data:4,lhs:{data:2,lhs:{data:1,lhs:null,rhs:null},rhs:{data:3,lhs:null,rhs:null}},rhs:{data:5,lhs:null,rhs:null}}
+

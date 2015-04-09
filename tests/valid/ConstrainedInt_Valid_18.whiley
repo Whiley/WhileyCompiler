@@ -12,5 +12,5 @@ function btoa(bnat x) -> anat:
 
 method main(System.Console sys) -> void:
     int x = 1
-    sys.out.println(atob(x))
-    sys.out.println(btoa(x))
+    assume atob(x) == 1
+    assume btoa(x) == 1

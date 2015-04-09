@@ -7,4 +7,4 @@ function f(int x, int y) -> real:
     return g(x)
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(1, 2))
+    assume f(1, 2) == 0.0

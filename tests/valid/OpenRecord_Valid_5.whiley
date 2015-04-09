@@ -15,6 +15,6 @@ function sum(VecPoint vp) -> int:
 
 method main(System.Console sys) -> void:
     VecPoint vp = {y: 2, x: 1}
-    sys.out.println(sum(vp))
-    vp = [{y: 2, x: 1}, {y: 2, x: 1}]
-    sys.out.println(sum(vp))
+    assume sum(vp) == 3
+    vp = [{y: 2, x: 1}, {y: 4, x: -1}]
+    assume sum(vp) == 6

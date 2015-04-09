@@ -11,5 +11,5 @@ function f(int i) -> [int]:
     return arr1 ++ arr2
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(2))
-    sys.out.println(f(3))
+    assume f(2) == [1, 2, 64, 1, 2, 3]
+    assume f(3) == [1, 2, 64, 1, 2, 3]

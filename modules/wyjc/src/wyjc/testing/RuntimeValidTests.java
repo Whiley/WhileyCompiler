@@ -427,16 +427,6 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Complex_Valid_8");
 	}
 
-	@Ignore("#311") @Test
-	public void Constant_Valid_1() {
-		runTest("Constant_Valid_1");
-	}
-
-	@Ignore("#311") @Test
-	public void Constant_Valid_2() {
-		runTest("Constant_Valid_2");
-	}
-
 	@Test
 	public void Constant_Valid_3() {
 		runTest("Constant_Valid_3");
@@ -1811,11 +1801,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void Print_Valid_1() {
-		runTest("Print_Valid_1");
-	}
-
-	@Test
 	public void ProcessAccess_Valid_1() {
 		runTest("ProcessAccess_Valid_1");
 	}
@@ -1843,16 +1828,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void Process_Valid_12() {
 		runTest("Process_Valid_12");
-	}
-
-	@Test
-	public void Process_Valid_13() {
-		runTest("Process_Valid_13");
-	}
-
-	@Test
-	public void Process_Valid_14() {
-		runTest("Process_Valid_14");
 	}
 
 	@Test

@@ -11,6 +11,6 @@ ensures result >= 0:
     return r
 
 public method main(System.Console console):
-    console.out.println(sum([1,2,3]))
-    console.out.println(sum([1,-1,2,3]))
-    console.out.println(sum([1,-1,2,-2,3]))
+    assume sum([1,2,3]) == 6
+    assume sum([1,-1,2,3]) == 6
+    assume sum([1,-1,2,-2,3]) == 6

@@ -12,7 +12,7 @@ requires width >= 0 && height >= 0:
     return i
 
 method main(System.Console console):
-    console.out.println(count(0,0))
-    console.out.println(count(1,1))
-    console.out.println(count(5,5))
+    assume count(0,0) == 0
+    assume count(1,1) == 1
+    assume count(5,5) == 25
 

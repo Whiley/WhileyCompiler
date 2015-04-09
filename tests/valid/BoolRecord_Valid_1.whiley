@@ -2,6 +2,6 @@ import whiley.lang.*
 
 method main(System.Console sys) -> void:
     {bool flag, int code} x = {flag: true, code: 0}
-    sys.out.println(x)
+    assert x == {flag: true, code: 0}
     x.flag = false
-    sys.out.println(x)
+    assert x == {flag: false, code: 0}    

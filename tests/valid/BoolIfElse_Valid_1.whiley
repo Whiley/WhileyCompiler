@@ -7,5 +7,5 @@ function f(bool b) -> bool:
         return false
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(true))
-    sys.out.println(f(false))
+    assume f(true)
+    assume !f(false)

@@ -7,7 +7,7 @@ function get(int i, {int=>int} map) -> int:
     return map[i]
 
 method main(System.Console sys) -> void:
-    sys.out.println(get(1, f(1)))
-    sys.out.println(get(1, f(2)))
-    sys.out.println(get(1, f(3)))
-    sys.out.println(get(3, f(3)))
+    assume get(1, f(1)) == 1
+    assume get(1, f(2)) == 2
+    assume get(1, f(3)) == 3
+    assume get(3, f(3)) == 2

@@ -7,8 +7,8 @@ function getField(OpenRecord r) -> int:
 
 method main(System.Console sys) -> void:
     OpenRecord r = {field: 1}
-    sys.out.println(getField(r))
+    assume getField(r) == 1
     r = {field: 2, x: "hello"}
-    sys.out.println(getField(r))
+    assume getField(r) == 2
     r = {field: 3, y: 2, x: 1}
-    sys.out.println(getField(r))
+    assume getField(r) == 3

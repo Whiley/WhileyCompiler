@@ -19,5 +19,6 @@ method main(System.Console sys) -> void:
     Expr bop2 = bop1
     Expr e1 = bop1
     Expr e2 = {op: SUB, left: bop1, right: 2}
-    sys.out.println(e1)
-    sys.out.println(e2)
+    assume e1 == {left:1,op:1,right:2}
+    assume e2 == {left:{left:1,op:1,right:2},op:2,right:2}
+

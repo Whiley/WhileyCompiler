@@ -5,4 +5,4 @@ function f([int] x) -> int:
 
 method main(System.Console sys) -> void:
     [[int]] arr = [[1, 2, 3]]
-    sys.out.println(f(arr[0]))
+    assume f(arr[0]) == 3

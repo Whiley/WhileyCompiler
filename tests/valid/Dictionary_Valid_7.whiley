@@ -12,4 +12,5 @@ function update(DL1 ls) -> DL2:
 method main(System.Console sys) -> void:
     DL1 x = {0=>1, 1=>2}
     DL2 y = update(x)
-    sys.out.println(y)
+    assume y == {0=>1.234, 1=>2.0}
+

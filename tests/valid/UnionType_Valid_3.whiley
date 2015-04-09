@@ -11,5 +11,5 @@ function f([TYPE] xs, TYPE p) -> int:
     return -1
 
 method main(System.Console sys) -> void:
-    sys.out.println(f([null, 1, 2], null))
-    sys.out.println(f([1, 2, null, 10], 10))
+    assume f([null, 1, 2], null) == 0
+    assume f([1, 2, null, 10], 10) == 3

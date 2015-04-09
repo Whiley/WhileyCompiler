@@ -10,4 +10,4 @@ requires x > 0:
     return g(y)
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(1))
+    assume f(1) == 2

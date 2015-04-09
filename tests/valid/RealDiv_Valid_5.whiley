@@ -7,4 +7,4 @@ ensures y <= 0.166666666666668:
     return x / 3.0
 
 method main(System.Console sys) -> void:
-    sys.out.println(g(0.234))
+    assume g(0.234) == (0.234/3.0)

@@ -13,4 +13,5 @@ method main(System.Console console) -> void:
     xs = update(xs, 1, 3)
     xs = update(xs, 2, 4)
     xs = update(xs, 3, 5)
-    console.out.println(xs)
+    assume xs == [2, 3, 4, 5]
+

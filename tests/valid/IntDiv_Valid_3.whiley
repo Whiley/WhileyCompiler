@@ -12,5 +12,5 @@ requires y > 0:
     return z
 
 method main(System.Console sys) -> void:
-    int x = f(10, 2)
-    sys.out.println(x)
+    assume f(10, 2) == 5
+

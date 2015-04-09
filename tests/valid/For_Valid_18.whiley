@@ -10,4 +10,4 @@ function sum({nat} xs) -> int:
 
 method main(System.Console sys) -> void:
     int z = sum({1, 2, 3, 4, 5})
-    sys.out.println(z)
+    assume z == 15

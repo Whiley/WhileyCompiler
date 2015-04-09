@@ -13,6 +13,6 @@ function match(Attribute attr) -> bool:
 
 method main(System.Console sys) -> void:
     Attribute r = {name: "Hello"}
-    sys.out.println_s("MATCHED: " ++ Any.toString(match(r)))
+    assume match(r) == false
     r = {maxLocals: 0, maxStack: 0, name: "Code", data: []}
-    sys.out.println_s("MATCHED: " ++ Any.toString(match(r)))
+    assume match(r) == true

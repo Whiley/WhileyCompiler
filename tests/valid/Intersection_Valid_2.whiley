@@ -11,5 +11,4 @@ function f(InterList l) -> int:
 
 method main(System.Console sys) -> void:
     list = {next: null, data: 1234}
-    d = f(list)
-    sys.out.println_s("GOT: " ++ Any.toString(d))
+    assume f(list) == 1234

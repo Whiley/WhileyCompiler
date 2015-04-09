@@ -7,6 +7,6 @@ function f([int] xs, [real] ys) -> bool:
         return false
 
 method main(System.Console sys) -> void:
-    sys.out.println(f([1, 4], [1.0, 4.0]))
-    sys.out.println(f([1, 4], [1.0, 4.2]))
-    sys.out.println(f([], []))
+    assume f([1, 4], [1.0, 4.0]) == true
+    assume f([1, 4], [1.0, 4.2]) == false
+    assume f([], []) == true

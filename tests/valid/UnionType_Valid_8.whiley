@@ -10,4 +10,4 @@ function f(msgType msg) -> any:
     return msg.op
 
 method main(System.Console sys) -> void:
-    sys.out.println(f({op: 1, payload: [1, 2, 3]}))
+    assume f({op: 1, payload: [1, 2, 3]}) == 1

@@ -10,4 +10,5 @@ ensures r > 0:
         return x + y
 
 method main(System.Console sys) -> void:
-    sys.out.println(1)
+    assume add(1,2) == 3
+    assume add(1,1) == 1

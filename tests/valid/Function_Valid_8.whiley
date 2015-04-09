@@ -14,4 +14,5 @@ function f({int} x) -> {int}:
 
 method main(System.Console sys) -> void:
     {int} ys = {1, 2, 3}
-    sys.out.println(f(g(ys)))
+    assume f(g(ys)) == {2, 3}
+

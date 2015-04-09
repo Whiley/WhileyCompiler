@@ -11,4 +11,4 @@ function f(int x) -> nlist:
 
 method main(System.Console sys) -> void:
     nlist x = f(2)
-    sys.out.println(x)
+    assume x == 0

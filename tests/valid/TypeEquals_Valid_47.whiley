@@ -11,6 +11,6 @@ function f(T x) -> int:
         return x
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(1))
-    sys.out.println(f(-1))
-    sys.out.println(f([1, 2, 3]))
+    assume f(1) == 0
+    assume f(-1) == -1
+    assume f([1, 2, 3]) == 0

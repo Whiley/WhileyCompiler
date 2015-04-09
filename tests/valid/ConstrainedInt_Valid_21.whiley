@@ -7,4 +7,4 @@ ensures r != 1:
     return x + 1
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(9))
+    assume f(9) == 10

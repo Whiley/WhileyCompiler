@@ -12,6 +12,6 @@ function getMessage(imsg m) -> any:
             return m
 
 method main(System.Console sys) -> void:
-    sys.out.println(getMessage({msg: "HELLO WORLD"}))
-    sys.out.println(getMessage(1))
-    sys.out.println(getMessage({op: 123}))
+    assume getMessage({msg: "HELLO WORLD"}) == "HELLO WORLD"
+    assume getMessage(1) == 1
+    assume getMessage({op: 123}) == 123

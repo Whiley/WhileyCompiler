@@ -10,6 +10,6 @@ function f(expr e) -> bool:
 
 method main(System.Console sys) -> void:
     expr e = true
-    sys.out.println(f(e))
+    assume f(e) == false
     e = {1, 2, 3, 4}
-    sys.out.println(f(e))
+    assume f(e) == true

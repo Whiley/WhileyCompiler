@@ -13,9 +13,9 @@ function h({int} ys, {int} zs) -> bool:
     return f(ys, zs, ys + zs)
 
 method main(System.Console sys) -> void:
-    sys.out.println(g({}))
-    sys.out.println(g({2}))
-    sys.out.println(g({1, 2, 3}))
-    sys.out.println(h({}, {}))
-    sys.out.println(h({1}, {2}))
-    sys.out.println(h({1, 2, 3}, {3, 4, 5}))
+    assume g({}) == true
+    assume g({2}) == true
+    assume g({1, 2, 3}) == true
+    assume h({}, {}) == true
+    assume h({1}, {2}) == true
+    assume h({1, 2, 3}, {3, 4, 5}) == true

@@ -5,6 +5,6 @@ function f(bool b) -> bool:
 
 method main(System.Console sys) -> void:
     bool x = true
-    sys.out.println(f(x))
+    assume f(x)
     x = false
-    sys.out.println(f(x))
+    assume !f(x)

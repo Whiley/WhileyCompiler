@@ -10,5 +10,10 @@ ensures |result| == |ls|:
     return r
 
 method main(System.Console sys) -> void:
-    [int] rs = reverse([1, 2, 3, 4, 5])
-    sys.out.println(rs)
+    assume reverse([]) == []
+    assume reverse([1]) == [1]
+    assume reverse([1,2]) == [2,1]
+    assume reverse([1,2,3]) == [3,2,1]
+    assume reverse([1,2,3,4]) == [4,3,2,1]
+    assume reverse([1, 2, 3, 4, 5]) == [5,4,3,2,1]
+

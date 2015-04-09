@@ -7,10 +7,10 @@ function g(int y) -> func:
 
 method main(System.Console sys) -> void:
     func f = g(3)
-    sys.out.println(f(1))
-    sys.out.println(f(2))
-    sys.out.println(f(3))
+    assume f(1) == 4
+    assume f(2) == 5
+    assume f(3) == 6
     f = g(19)
-    sys.out.println(f(1))
-    sys.out.println(f(2))
-    sys.out.println(f(3))
+    assume f(1) == 20
+    assume f(2) == 21
+    assume f(3) == 22

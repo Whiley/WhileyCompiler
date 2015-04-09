@@ -10,4 +10,4 @@ method test(MyMeth m) -> int:
 
 method main(System.Console sys) -> void:
     int r = test(&read)
-    sys.out.println(r)
+    assume r == 124

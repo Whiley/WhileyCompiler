@@ -9,7 +9,7 @@ function f(real x) -> int:
     return 10
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(1.23))
-    sys.out.println(f(2.01))
-    sys.out.println(f(3.0))
-    sys.out.println(f(-1.0))
+    assume f(1.23) == 0
+    assume f(2.01) == -1
+    assume f(3.0) == 10
+    assume f(-1.0) == 10

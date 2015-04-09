@@ -15,9 +15,9 @@ function g(int x, int y) -> int:
         return 1
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(1, 1))
-    sys.out.println(f(0, 0))
-    sys.out.println(f(4, 345))
-    sys.out.println(g(1, 1))
-    sys.out.println(g(0, 0))
-    sys.out.println(g(4, 345))
+    assume f(1, 1) == 1
+    assume f(0, 0) == 1
+    assume f(4, 345) == 349
+    assume g(1, 1) == 1
+    assume g(0, 0) == 1
+    assume g(4, 345) == 349

@@ -12,4 +12,4 @@ requires |ls| > 1:
 
 method main(System.Console sys) -> void:
     pos rs = extract([-1, -2, 0, 1, 2, 3])
-    sys.out.println(rs)
+    assume rs == 1

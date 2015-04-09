@@ -5,5 +5,7 @@ requires y != 0:
     return x / y
 
 method main(System.Console sys) -> void:
-    int x = f(10, 2)
-    sys.out.println(x)
+    assume f(10, 2) == 5
+    assume f(9, 3) == 3
+    assume f(10, 3) == 3
+

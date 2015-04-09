@@ -8,5 +8,5 @@ function f(int x) -> int:
     return x
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(1))
-    sys.out.println(f(-10))
+    assume f(1) == 1
+    assume f(-10) == -1

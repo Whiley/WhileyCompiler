@@ -14,3 +14,8 @@ ensures r >= 0:
    return r
 
 type nat is (int x) where x >= 0
+
+method main(System.Console console):
+    assume asum([]) == 0
+    assume asum([1]) == 1
+    assume asum([1,2]) == 3

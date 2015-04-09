@@ -19,4 +19,4 @@ function loop2(int p, int q) -> (int r)
     return qq
 
 method main(System.Console sys):
-    sys.out.println_s("p = " ++ Any.toString(loop2(5,10)))
+    assume loop2(5,10) == 50

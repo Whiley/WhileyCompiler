@@ -5,4 +5,4 @@ function f(int x) -> (int, int):
 
 method main(System.Console sys) -> void:
     (int,int) x = f(1)
-    sys.out.println(x)
+    assume x == (1,3)

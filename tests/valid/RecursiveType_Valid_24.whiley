@@ -18,7 +18,7 @@ method main(System.Console sys) -> void:
     Link l2 = [l1]
     Link l3 = [l2]
     Link l4 = [l3]
-    sys.out.println(maxDepth(l1))
-    sys.out.println(maxDepth(l2))
-    sys.out.println(maxDepth(l3))
-    sys.out.println(maxDepth(l4))
+    assume maxDepth(l1) == 0
+    assume maxDepth(l2) == 1
+    assume maxDepth(l3) == 2
+    assume maxDepth(l4) == 3

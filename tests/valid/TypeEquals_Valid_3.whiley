@@ -11,6 +11,6 @@ function create(nat size, nat value) -> [nat]:
     return r
 
 method main(System.Console sys) -> void:
-    sys.out.println(create(10, 10))
-    sys.out.println(create(5, 0))
-    sys.out.println(create(0, 0))
+    assume create(10, 10) == [10,10,10,10,10, 10,10,10,10,10]
+    assume create(5, 0) == [0,0,0,0,0]
+    assume create(0, 0) == []

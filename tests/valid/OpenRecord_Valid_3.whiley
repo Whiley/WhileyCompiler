@@ -13,4 +13,4 @@ public function get(Object o) -> int:
 
 public method main(System.Console sys) -> void:
     Object o = {fn: &myFn}
-    sys.out.println(get(o))
+    assume get(o) == 123

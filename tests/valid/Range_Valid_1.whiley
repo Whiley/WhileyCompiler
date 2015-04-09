@@ -9,5 +9,5 @@ function sum(int start, int end) -> nat:
     return r
 
 method main(System.Console sys) -> void:
-    sys.out.println(sum(0, 10))
-    sys.out.println(sum(10, 13))
+    assume sum(0, 10) == 10
+    assume sum(10, 13) == 3

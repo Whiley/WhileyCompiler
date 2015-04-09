@@ -11,4 +11,4 @@ function f(int i, [nlist] xs) -> nlist:
 
 method main(System.Console sys) -> void:
     nlist x = f(2, [2, 3, 4])
-    sys.out.println(x)
+    assume x == 4

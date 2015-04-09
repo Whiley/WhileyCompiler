@@ -7,8 +7,8 @@ function len(listsetdict l) -> int:
 
 method main(System.Console sys) -> void:
     {int} s = {1, 2, 3}
-    sys.out.println(len(s))
+    assume len(s) == 3
     [int] l = [1, 2]
-    sys.out.println(len(l))
+    assume len(l) == 2
     {int=>int} m = {1=>2, 3=>4, 5=>6, 7=>8}
-    sys.out.println(len(m))
+    assume len(m) == 4

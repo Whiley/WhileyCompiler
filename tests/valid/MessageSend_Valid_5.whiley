@@ -18,5 +18,4 @@ method main(System.Console sys) -> void:
     [int] data = [1, 3, 5, 7, 3, 198, 1, 4, 6]
     Sum sum = create(data)
     start(sum)
-    int r = get(sum)
-    sys.out.println_s("SUM: " ++ Any.toString(r))
+    assume get(sum) == 228

@@ -6,4 +6,4 @@ ensures r >= 0 && x >= 0:
     return x
 
 method main(System.Console sys) -> void:
-    sys.out.println(f(10))
+    assume f(10) == 10

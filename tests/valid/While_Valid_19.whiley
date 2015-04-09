@@ -6,4 +6,4 @@ method main(System.Console sys) -> void:
     [{int}] components = []
     while |components| < SIZE:
         components = components ++ [{}]
-    sys.out.println(components)
+    assume components == [{},{},{},{},{}]

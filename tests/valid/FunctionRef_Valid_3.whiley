@@ -7,4 +7,4 @@ function g(function(int)->real func) -> real:
     return func(1)
 
 method main(System.Console sys) -> void:
-    sys.out.println(g((function(int)->real) &f))
+    assume g((function(int)->real) &f) == 12.0
