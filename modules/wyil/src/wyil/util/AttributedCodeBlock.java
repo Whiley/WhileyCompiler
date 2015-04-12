@@ -138,6 +138,10 @@ public class AttributedCodeBlock extends CodeBlock {
 		return attributes.values();
 	}
 
+	public void addAttributes(Attribute.Map<Attribute> map) {
+		attributes.put((Class<Attribute>) map.type(), map);
+	}
+	
 	/**
 	 * Return the list of all valid bytecode indexes in this block in order of
 	 * appearance.
