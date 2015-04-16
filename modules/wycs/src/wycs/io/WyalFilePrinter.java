@@ -6,6 +6,8 @@ import static wycc.lang.SyntaxError.*;
 import wycc.lang.Attribute;
 import wycc.lang.SyntacticElement;
 import wycs.syntax.*;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 
 public class WyalFilePrinter {
 	public static final String INDENT = "  ";
@@ -21,10 +23,18 @@ public class WyalFilePrinter {
 	}
 
 	public void write(WyalFile wf) {
+		// First, write package information
+		Path.ID pkg = wf.id().parent();		
+		if(pkg != Trie.ROOT) {
+			out.println("package " + pkg.toString());
+			out.println();
+		}
+		// Second, write declarations.
 		for(WyalFile.Declaration d : wf.declarations()) {
 			write(wf, d);
 			out.println();
 		}
+		// Done.
 		out.flush();
 	}
 

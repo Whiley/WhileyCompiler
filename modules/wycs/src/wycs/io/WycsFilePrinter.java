@@ -15,6 +15,8 @@ import wycc.util.Triple;
 import wycs.core.Code;
 import wycs.core.SemanticType;
 import wycs.core.WycsFile;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 
 public class WycsFilePrinter {
 	private PrintWriter out;
@@ -29,6 +31,13 @@ public class WycsFilePrinter {
 	}
 
 	public void write(WycsFile wf) {
+		// First, write package information
+		Path.ID pkg = wf.id().parent();
+		if(pkg != Trie.ROOT) {
+			out.println("package " + pkg.toString());
+			out.println();
+		}
+		// Second, write all declarations
 		for(WycsFile.Declaration d : wf.declarations()) {
 			write(wf, d);
 			out.println();

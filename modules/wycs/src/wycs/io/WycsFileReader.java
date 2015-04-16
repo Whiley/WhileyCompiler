@@ -222,8 +222,10 @@ public class WycsFileReader {
 		for (int i = 0; i != numBlocks; ++i) {
 			declarations.add(readBlock(WycsFile.Declaration.class));
 		}
-
-		return new WycsFile(pathPool[pathIdx], null, declarations);
+		
+		Path.ID id = pathPool[pathIdx];
+		
+		return new WycsFile(id, null, declarations);
 	}
 
 	private <T> T readBlock(Class<T> expected) throws IOException {
