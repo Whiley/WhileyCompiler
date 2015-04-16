@@ -595,7 +595,7 @@ public class TypePropagation implements Transform<WyalFile> {
 
 		SemanticType argument = propagate(e.operand, environment, generics,
 				context);
-
+		
 		// Construct concrete types for generic substitution
 		ArrayList<SemanticType> ivkGenerics = new ArrayList<SemanticType>();
 		for (int i = 0; i != e.generics.size(); ++i) {
