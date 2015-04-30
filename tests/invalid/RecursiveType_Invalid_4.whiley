@@ -14,6 +14,6 @@ type expr is int | binop
 function f(expr e) -> expr:
     return e
 
-method main(System.Console sys) -> void:
-    e1 = {op: 0, left: {op: MUL, left: 2, right: 2}, right: 2}
-    debug Any.toString(f(e1))
+method main() -> expr:
+    expr e1 = {op: 0, left: {op: MUL, left: 2, right: 2}, right: 2}
+    return f(e1)

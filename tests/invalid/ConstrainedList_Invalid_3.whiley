@@ -1,12 +1,9 @@
+type char is (int x) where x >= 0 && x <= 255
+type string is [char]
 
 public function update(string str) -> [char]:
-    return [(char) -1]
+    return [-1]
 
-public function f(char c) -> void:
-    debug "" ++ c
-
-public method main(System.Console sys) -> void:
-    s1 = "Hello World"
-    s1 = update(s1)
-    if |s1| > 0:
-        f(s1[0])
+public method main() -> string:
+    string s1 = "Hello World"
+    return update(s1)

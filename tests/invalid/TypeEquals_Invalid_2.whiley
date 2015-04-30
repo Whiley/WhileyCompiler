@@ -1,8 +1,4 @@
-import * from whiley.lang.*
-
-type ilist is real | [int]
-
-function f(real e) -> string:
+function f(real e) -> [int]:
     if e is real:
         return "real"
     else:
@@ -10,6 +6,3 @@ function f(real e) -> string:
             return "int"
         else:
             return "[int]"
-
-method main(System.Console sys) -> void:
-    sys.out.println(f(1))

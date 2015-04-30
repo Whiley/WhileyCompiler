@@ -1,7 +1,5 @@
-import * from whiley.lang.*
+method f(int x, int y) -> int:
+    return x + y
 
-method f(System.Console sys, int x) -> void:
-    sys.out.println(Any.toString(x))
-
-method main(System.Console sys) -> void:
-    f(1)
+method g() -> int:
+    return f(1)

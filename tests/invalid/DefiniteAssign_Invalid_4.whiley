@@ -1,8 +1,5 @@
-import * from whiley.lang.*
-
-method f(any this, string a) -> void:
+method f(any this) -> void:
     debug a
 
-method main(System.Console sys) -> void:
-    sys.out.println("HELLO")
-    f(x,"WORLD")
+method g() -> void:
+    f(x)
