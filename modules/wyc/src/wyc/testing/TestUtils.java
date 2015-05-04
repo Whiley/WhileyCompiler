@@ -3,10 +3,25 @@ package wyc.testing;
 import static org.junit.Assert.fail;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Collections;
 
+import wybs.lang.Build;
+import wybs.util.StdProject;
 import wyc.WycMain;
 import wyc.util.WycBuildTask;
+import wycc.lang.NameID;
 import wycc.util.Pair;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.DirectoryRoot;
+import wyfs.util.Trie;
+import wyil.Main.Registry;
+import wyil.io.WyilFilePrinter;
+import wyil.io.WyilFileReader;
+import wyil.lang.Type;
+import wyil.lang.WyilFile;
+import wyil.util.Interpreter;
 
 /**
  * Provides some simple helper functions used by all test harnesses.
@@ -36,6 +51,30 @@ public class TestUtils {
 	}
 
 	/**
+	 * Execute a given WyIL file using the default interpreter.
+	 * 
+	 * @param wyilDir
+	 *            The root directory to look for the WyIL file.
+	 * @param id
+	 *            The name of the WyIL file
+	 * @throws IOException
+	 */
+	public static void execWyil(String wyilDir, Path.ID id) throws IOException {
+		Type.Method sig = Type.Method(Type.T_VOID, Type.T_VOID, Collections.EMPTY_LIST);
+		NameID name = new NameID(id,"test");
+		Build.Project project = initialiseProject(wyilDir);
+		new Interpreter(project,null).execute(name,sig);
+	}
+
+	private static Build.Project initialiseProject(String wyilDir) throws IOException {
+		Content.Registry registry = new Registry();
+		DirectoryRoot wyilRoot = new DirectoryRoot(wyilDir,registry);
+		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
+		roots.add(wyilRoot);
+		return new StdProject(roots);
+	}
+
+	/**
 	 * Execute a given class file using the "java" command, and return all
 	 * output written to stdout. In the case of some kind of failure, write the
 	 * generated stderr stream to this processes stdout.
@@ -53,7 +92,7 @@ public class TestUtils {
 	 *            Arguments to supply on the command-line.
 	 * @return All output generated from the class that was written to stdout.
 	 */
-	public static String exec(String classPath, String srcDir, String className, String... args) {
+	public static String execClass(String classPath, String srcDir, String className, String... args) {
 		try {
 			classPath = classPath.replace('/', File.separatorChar);
 			classPath = classPath.replace(':', File.pathSeparatorChar);

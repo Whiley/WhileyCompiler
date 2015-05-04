@@ -244,6 +244,9 @@ public abstract class Constant implements Comparable<Constant> {
 		public Constant.Integer remainder(Constant.Integer val) {
 			return Constant.V_INTEGER(value.remainder(val.value));
 		}
+		public Constant.Integer negate() {
+			return Constant.V_INTEGER(value.negate());
+		}
 	}
 
 	public static final class Decimal extends Constant {
@@ -304,6 +307,10 @@ public abstract class Constant implements Comparable<Constant> {
 
 		public Constant.Decimal divide(Constant.Decimal val) {
 			return Constant.V_DECIMAL(value.divide(val.value));
+		}
+		
+		public Constant.Decimal negate() {
+			return Constant.V_DECIMAL(value.negate());
 		}
 	}
 	

@@ -536,12 +536,12 @@ public final class WyilFileReader {
 		} else if(compound instanceof Codes.Loop) {
 			Codes.Loop l = (Codes.Loop) compound;
 			return Codes.Loop(l.modifiedOperands, bytecodes);
+		} else if(compound instanceof Codes.Invariant) {
+			return Codes.Invariant(bytecodes);
 		} else if(compound instanceof Codes.Assert) {
 			return Codes.Assert(bytecodes);
 		} else if(compound instanceof Codes.Assume) {
 			return Codes.Assume(bytecodes);
-		} else if(compound instanceof Codes.Invariant) {
-			return Codes.Invariant(bytecodes);
 		} else {
 			throw new IllegalArgumentException("Unknown compound bytecode encountered: " + compound.getClass().getName());
 		}

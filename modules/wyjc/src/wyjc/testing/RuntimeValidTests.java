@@ -127,7 +127,7 @@ import wyjc.util.WyjcBuildTask;
 				WYRL_CLASS_DIR, WYBS_CLASS_DIR);
 
  		// Second, execute the generated Java Program.
- 		String output = TestUtils.exec(CLASSPATH,WHILEY_SRC_DIR,"wyjc.testing.RuntimeValidTests",name);
+ 		String output = TestUtils.execClass(CLASSPATH,WHILEY_SRC_DIR,"wyjc.testing.RuntimeValidTests",name);
  		if(!output.equals("")) {
  			System.out.println(output);
  			fail("unexpected output!");
