@@ -10,5 +10,5 @@ function min(natpair p) -> int:
         return x
 
 method main() -> int:
-    (int,int) p = (0, -1)
+    (int,int) p = (-1, 0)
     return min(p)

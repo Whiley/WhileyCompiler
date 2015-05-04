@@ -1,3 +1,3 @@
-../../tests/invalid/OpenRecord_Invalid_7.whiley:8: expected type OpenRecord_Invalid_7:OpenRecord2, found OpenRecord_Invalid_7:OpenRecord1
+../../tests/invalid/OpenRecord_Invalid_7.whiley:6: expected type OpenRecord_Invalid_7:OpenRecord2, found OpenRecord_Invalid_7:OpenRecord1
     return r
            ^

@@ -1,3 +1,4 @@
-../../tests/invalid/UnionType_Invalid_3.whiley:16: expected type int, found [int]
-        x = [1, 2, 3]
-        ^
+../../tests/invalid/UnionType_Invalid_3.whiley:7: unable to resolve name (no match for f(UnionType_Invalid_3:IntList)
+	found: UnionType_Invalid_3:f : function([int]) -> int)
+    return f(xs)
+           ^^^^^

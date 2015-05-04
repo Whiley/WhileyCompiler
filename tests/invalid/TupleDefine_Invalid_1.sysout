@@ -1,4 +1,4 @@
-../../tests/invalid/TupleDefine_Invalid_1.whiley:10: unable to resolve name (no match for f(real)
+../../tests/invalid/TupleDefine_Invalid_1.whiley:8: unable to resolve name (no match for f(real)
 	found: TupleDefine_Invalid_1:f : function(int) -> int)
-    int x = f(p.y)
-            ^^^^^^
+    return f(p.y)
+           ^^^^^^
