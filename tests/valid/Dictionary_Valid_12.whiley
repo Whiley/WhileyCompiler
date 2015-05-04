@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type edict is {int=>int} | {real=>real}
 type odict is {int|real=>int|real}
@@ -12,7 +12,7 @@ function f(int x) -> edict:
 function g(int x) -> odict:
     return (odict) f(x)
 
-public method main(System.Console sys) -> void:
+public export method test() -> void:
     odict d = g(-1)
     assume d == {1=>2, 2=>3}
     d = g(2)

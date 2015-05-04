@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -13,7 +13,7 @@ ensures (|result| == length) && all { i in result | i == value }:
     //
     return data
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume init(0,0) == []
     assume init(1,1) == [1]
     assume init(2,2) == [2,2]

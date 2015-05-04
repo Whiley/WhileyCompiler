@@ -9,7 +9,7 @@ ensures r >= 0:
     //
     return 0
 
-method main(System.Console console):
+public export method test():
     assume f(1) == 1
     assume f(9) == 1
     assume f(10) == 0

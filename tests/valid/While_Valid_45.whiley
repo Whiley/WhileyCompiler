@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 function buildNatSet(int n) -> ({int} m):
     //
@@ -27,7 +27,7 @@ function buildNatSet(int n) -> ({int} m):
     //
     return rs
 
-method main(System.Console console):
+public export method test():
     //
     assume buildNatSet(-1) == {}
     assume buildNatSet(0) == {}

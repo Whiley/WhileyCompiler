@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 method f([int] args) -> int
 requires |args| >= 2:
@@ -12,7 +12,7 @@ requires |args| >= 2:
     //
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f([1, 2, 3]) == 3
     assume f([1, 2]) == 1
     assume f([1, 2, 3, 4, 5, 6]) == 15

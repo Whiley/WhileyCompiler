@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Queue is {[int] items}
 
@@ -13,7 +13,7 @@ method put(&Queue this, int item) -> void:
 method isEmpty(&Queue this) -> bool:
     return |this->items| == 0
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] items = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     &Queue q = new {items: []}
     // Put items into the queue

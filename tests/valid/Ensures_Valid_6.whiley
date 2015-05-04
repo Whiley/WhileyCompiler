@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -11,6 +11,6 @@ ensures r is int ==> r >= 0:
     else:
         return null
 
-method main(System.Console console):
+public export method test():
     assume abs(1) == 1
     assume abs(-1) == null

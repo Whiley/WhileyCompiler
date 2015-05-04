@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(int x) -> int:
     if x < 10:
@@ -9,7 +9,7 @@ function f(int x) -> int:
         else:
             return 0
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f(1) == -1
     assume f(10) == 0
     assume f(11) == 1

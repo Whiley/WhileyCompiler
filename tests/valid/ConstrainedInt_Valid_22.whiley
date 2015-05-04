@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 constant Days is ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -13,7 +13,7 @@ method get(item day, int count) -> [int]:
     else:
         return Days[day]
 
-public method main(System.Console console) -> void:
+public export method test() -> void:
     assume get(0, 0) == "Monday"
     assume get(0, 1) == "Tuesday"
     assume get(0, 2) == "Wednesday"

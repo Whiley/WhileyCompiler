@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 constant IHDR_TYPE is 1380206665
 
@@ -27,7 +27,7 @@ public function f(int type) -> int:
         default:
             return 6
 
-public method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f(IHDR_TYPE) == 1
     assume f(IEND_TYPE) == 2
     assume f(PLTE_TYPE) == 3

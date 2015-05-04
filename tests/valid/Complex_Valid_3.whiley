@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type BTree is (null | {
     int item,   // data item
@@ -35,7 +35,7 @@ function contains(BTree tree, int item) -> bool:
             else:
                 return contains(tree.right, item)
 
-public method main(System.Console console) -> void:
+public export method test() -> void:
     BTree tree = BTree()
     tree = add(tree, 1)
     tree = add(tree, 2)

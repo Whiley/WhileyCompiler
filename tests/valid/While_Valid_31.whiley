@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 function indexOf([int] items, int ch) -> (int r)
 ensures r == |items| || items[r] == ch:
@@ -11,7 +11,7 @@ ensures r == |items| || items[r] == ch:
     //
     return i
 
-method main(System.Console console):
+public export method test():
     assume indexOf("hello world",'h') == 0
     assume indexOf("hello world",'e') == 1
     assume indexOf("hello world",'l') == 2

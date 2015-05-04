@@ -1,6 +1,6 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+public export method test() -> void:
     real x = 5.0
     assert x == 5.0
     x = 3.234

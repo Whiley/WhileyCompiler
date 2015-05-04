@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 constant Red is 1
 
@@ -17,7 +17,7 @@ function f(RGB c) -> int:
         default:
             return 456
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f(Red) == 123
     assume f(Green) == 456
     assume f(Blue) == 234

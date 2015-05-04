@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type rec is {int y, int x}
 
@@ -11,7 +11,7 @@ function f([int] xs) -> [bool | null]:
             r = r ++ [null]
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] e = []
     assume f(e) == []
     e = [1, 2, 3, 4]

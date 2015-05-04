@@ -1,6 +1,6 @@
-import whiley.lang.*
 
-public method main(System.Console sys) -> void:
+
+public export method test() -> void:
     {int=>int} l = {1=>2, 2=>3}
     assume l == {1=>2,2=>3}
     assume |l| == 2

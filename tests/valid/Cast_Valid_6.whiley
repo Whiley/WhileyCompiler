@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function divide(real lhs, int rhs) -> real
 requires rhs > 0:
@@ -7,6 +7,6 @@ requires rhs > 0:
     //
     return lhs / tmp
 
-method main(System.Console console):
+public export method test():
     assume divide(10.0,2) == 5.0
     assume divide(10.0,3) == (5.0 / 1.5)

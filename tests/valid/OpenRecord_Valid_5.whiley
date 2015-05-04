@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Point is {int y, int x, ...}
 
@@ -13,7 +13,7 @@ function sum(VecPoint vp) -> int:
             r = r + sum(p)
         return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     VecPoint vp = {y: 2, x: 1}
     assume sum(vp) == 3
     vp = [{y: 2, x: 1}, {y: 4, x: -1}]

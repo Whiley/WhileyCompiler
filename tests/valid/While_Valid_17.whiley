@@ -1,8 +1,8 @@
-import whiley.lang.*
-import whiley.lang.*
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+
+
+public export method test() -> void:
     int i = 0
     while i < 5:
         if i == 3:

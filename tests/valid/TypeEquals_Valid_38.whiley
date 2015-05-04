@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type expr is [int] | int
 
@@ -10,7 +10,7 @@ function f(tup t) -> bool:
     else:
         return false
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f({p: 0, lhs: [0]}) == true
     assume f({p: 0, lhs: [1]}) == false
     assume f({p: 0, lhs: []}) == false

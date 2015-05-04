@@ -1,6 +1,6 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+public export method test() -> void:
     {int} x = {1, 2, 3}
     {int} y = {1, 2}
     assume x - y == {3}

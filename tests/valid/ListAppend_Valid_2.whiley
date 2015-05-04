@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function append([int] input) -> [int]:
     [int] rs = []
@@ -6,7 +6,7 @@ function append([int] input) -> [int]:
         rs = rs ++ [input[i]]
     return rs
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] xs = append("abcdefghijklmnopqrstuvwxyz")
     assume xs == [
             'a',

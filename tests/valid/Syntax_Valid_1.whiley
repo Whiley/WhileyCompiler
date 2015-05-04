@@ -1,4 +1,4 @@
-import whiley.lang.System
 
-method main(System.Console c) -> void:
+
+public export method test() -> void:
     debug ""

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f([int] x, int i) -> void
 requires |x| > 0:
@@ -9,7 +9,7 @@ requires |x| > 0:
     int z = x[i]
     assert y == z
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] arr = [1, 2, 3]
     f(arr, 1)
     assume arr == [1,2,3]

@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 type nat is (int x) where x >= 0
 
@@ -10,6 +10,6 @@ ensures r >= 0:
     //
     return 0
 
-method main(System.Console console):
+public export method test():
     assume f({f:1}) == 1
     assume f({f:-1}) == 0

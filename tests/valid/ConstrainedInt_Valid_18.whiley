@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type anat is int
 
@@ -10,7 +10,7 @@ function atob(anat x) -> bnat:
 function btoa(bnat x) -> anat:
     return x
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int x = 1
     assume atob(x) == 1
     assume btoa(x) == 1

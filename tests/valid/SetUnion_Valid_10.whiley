@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f({int} xs, {int} ys, {int} zs) -> bool:
     if zs == (xs + ys):
@@ -12,7 +12,7 @@ function g({int} ys) -> bool:
 function h({int} ys, {int} zs) -> bool:
     return f(ys, zs, ys + zs)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume g({}) == true
     assume g({2}) == true
     assume g({1, 2, 3}) == true

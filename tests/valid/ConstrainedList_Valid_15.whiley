@@ -1,7 +1,7 @@
-import whiley.lang.*
+
 
 function f() -> [int]:
     return ""
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f() == ""

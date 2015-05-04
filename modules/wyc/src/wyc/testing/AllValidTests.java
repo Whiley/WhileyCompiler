@@ -1220,12 +1220,12 @@ public class AllValidTests {
 		runTest("Import_Valid_3");
 	}
 
-	@Ignore("unknown") @Test
+	@Ignore("#492") @Test
 	public void Import_Valid_4() {
 		runTest("Import_Valid_4");
 	}
 
-	@Test
+	@Ignore("#492") @Test
 	public void Import_Valid_5() {
 		runTest("Import_Valid_5");
 	}

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function max3(int x, int y, int z) -> (int r)
 // Return value must be as large as each parameter
@@ -37,5 +37,5 @@ method fn([int] xs):
         i1 = i1 + 1
     // Done.
 
-method main(System.Console console):
+public export method test():
     fn([1,2,3,4,5,6,7,8])

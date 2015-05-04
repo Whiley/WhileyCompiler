@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 constant PAWN is 0
 
@@ -85,6 +85,6 @@ constant A3 is {col: 1, row: 3}
 
 constant D3 is {col: 4, row: 3}
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume clearRowExcept(A1, H1, startingChessBoard) == false
     assume clearRowExcept(A3, D3, startingChessBoard) == true

@@ -1,6 +1,6 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+public export method test() -> void:
     int x = 112233445566778899
     assert x == 112233445566778899
     x = x + 1

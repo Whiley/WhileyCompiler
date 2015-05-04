@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Expr is real | {int data, Expr lhs} | [Expr]
 
@@ -13,7 +13,7 @@ function toString(Expr e) -> int:
     else:
         return -1
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     SubExpr se1 = 0.1234
     SubExpr se2 = {data: 1, lhs: se1}
     SubExpr se3 = {data: 45, lhs: se2}

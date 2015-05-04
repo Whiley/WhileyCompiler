@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 function contains([int] items, int item) -> (bool r)
 ensures r ==> some { i in 0 .. |items| | item == items[i] }:
@@ -13,7 +13,7 @@ ensures r ==> some { i in 0 .. |items| | item == items[i] }:
     return false
 
 
-method main(System.Console console):
+public export method test():
     [int] ls = [1,2,3,4]
     assume contains(ls,0) == false
     assume contains(ls,1) == true

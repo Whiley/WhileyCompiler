@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 constant ADD is 0
 
@@ -33,7 +33,7 @@ function evaluate(Expr e) -> int:
                 else:
                     return -1
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Expr e = 1
     assume evaluate(e) == 1
     e = {op: ADD, rhs: e, lhs: e}

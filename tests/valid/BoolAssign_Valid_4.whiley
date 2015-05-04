@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(int x, int y) -> int:
     bool a = x == y
@@ -14,7 +14,7 @@ function g(int x, int y) -> int:
     else:
         return 1
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f(1, 1) == 1
     assume f(0, 0) == 1
     assume f(4, 345) == 349

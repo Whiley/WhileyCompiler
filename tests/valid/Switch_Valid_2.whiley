@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(int x) -> int:
     int y
@@ -11,7 +11,7 @@ function f(int x) -> int:
             y = 0
     return y
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f(1) == -1
     assume f(2) == -2
     assume f(3) == 0

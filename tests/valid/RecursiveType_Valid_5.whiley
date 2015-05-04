@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Link is {[int] items, null | Link next}
 

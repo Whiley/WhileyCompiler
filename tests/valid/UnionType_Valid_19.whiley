@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type utr12nat is int
 
@@ -9,6 +9,6 @@ type tupper is {int op, intList il}
 function f(tupper y) -> int:
     return y.op
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     tupper x = {op: 1, il: 1}
     assume f(x) == 1

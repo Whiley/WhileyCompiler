@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Func is {
     function (int)->int read
@@ -10,7 +10,7 @@ function id(int x) -> int:
 function test(Func f, int arg) -> int:
     return f.read(arg)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int x = test({read: &id}, 123)
     assume x == 123
     x = test({read: &id}, 12545)

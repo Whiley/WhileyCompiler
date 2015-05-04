@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type pos is (int n) where n > 0
 
@@ -11,7 +11,7 @@ function f(intlist x) -> int:
         return x
     return 1
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int x = f([1, 2, 3])
     assume x == 1
     x = f(123)

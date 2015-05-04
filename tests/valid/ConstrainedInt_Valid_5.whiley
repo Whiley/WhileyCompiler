@@ -1,9 +1,9 @@
-import whiley.lang.*
+
 
 type nat is int
 
 function f() -> nat:
     return 1
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f() == 1

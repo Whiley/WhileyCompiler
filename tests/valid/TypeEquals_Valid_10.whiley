@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Rtypes is {int y, int x} | {int z, int x}
 
@@ -8,6 +8,6 @@ function f(Rtypes e) -> bool:
     else:
         return false
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f({y: 1, x: 3}) == true
     assume f({z: 1, x: 3}) == false

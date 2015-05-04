@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type RowCol is int
 
@@ -25,7 +25,7 @@ function shortPos2str(ShortPos p) -> [int]:
             else:
                 return pos2str(p)
 
-public method main(System.Console sys) -> void:
+public export method test() -> void:
     assume shortPos2str(null) == ""
     assume shortPos2str({row: 1}) == "2"
     assume shortPos2str({col: 1}) == "b"

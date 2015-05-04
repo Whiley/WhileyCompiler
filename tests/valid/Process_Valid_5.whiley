@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type MyProc is &{bool flag}
 
@@ -8,7 +8,7 @@ method run(MyProc this) -> bool:
     else:
         return false
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     MyProc mproc = new {flag: false}
     assert run(mproc) == false
     mproc = new {flag: true}

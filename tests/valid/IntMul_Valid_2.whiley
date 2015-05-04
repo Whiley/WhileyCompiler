@@ -1,6 +1,6 @@
-import whiley.lang.*
 
-method main(System.Console console):
+
+public export method test():
     int x = 8
     int y = 1
     int z = x * x - y

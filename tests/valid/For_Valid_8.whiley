@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function run(int n, int x) -> bool:
     bool solution = true
@@ -8,7 +8,7 @@ function run(int n, int x) -> bool:
             break
     return solution
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     bool b1 = run(10, 4)
     assume b1 == false
     bool b2 = run(10, -1)

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type edict is {int=>int} | {real=>real}
 
@@ -8,7 +8,7 @@ function f(int x) -> {real=>real}:
     else:
         return {1.0=>1.5, 2.0=>2.5}
 
-public method main(System.Console sys) -> void:
+public export method test() -> void:
     {real=>real} d = ({real=>real}) f(-1)
     d[3.0] = 4.0
     assume d == {1.0=>2.0, 2.0=>3.0, 3.0=>4.0}

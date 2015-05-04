@@ -1,11 +1,11 @@
-import whiley.lang.*
+
 
 type listsetdict is [int] | {int} | {int=>int}
 
 function len(listsetdict l) -> int:
     return |l|
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     {int} s = {1, 2, 3}
     assume len(s) == 3
     [int] l = [1, 2]

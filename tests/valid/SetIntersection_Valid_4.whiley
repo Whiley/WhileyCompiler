@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f({int} xs, {int} ys, {int} zs) -> {int}:
     return xs
@@ -9,7 +9,7 @@ function g({int} ys) -> {int}:
 function h({int} ys, {int} zs) -> {int}:
     return f(ys, zs, ys & zs)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume g({}) == {}
     assume g({2}) == {2}
     assume g({1, 2, 3}) == {1,2,3}

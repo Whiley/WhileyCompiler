@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Expr is real | Var | BinOp
 
@@ -27,7 +27,7 @@ function evaluate(Expr e) -> real:
     else:
         return evaluate(e.lhs) + evaluate(e.rhs)
 
-public method main(System.Console sys) -> void:
+public export method test() -> void:
     assume evaluate(build(-5)) == 46.0
     assume evaluate(build(-4)) == 41.0
     assume evaluate(build(-3)) == 35.0

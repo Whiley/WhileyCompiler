@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Record is { int flag }
 
@@ -13,7 +13,7 @@ function getFlag(Record d) -> int:
     //
     return -1
 
-method main(System.Console console):
+public export method test():
     Record r = {flag: 1}
     assume getFlag(r) == 1
     r = {flag: 0}

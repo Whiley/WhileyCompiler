@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -21,7 +21,7 @@ ensures (result == null) ==> no { i in items | i == item }:
     //
     return null
 
-method main(System.Console console):
+public export method test():
     [int] list = [3,5,6,9]
     assume search(list,0) == null
     assume search(list,1) == null

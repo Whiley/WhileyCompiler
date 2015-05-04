@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type SortedList is null | SortedListNode
 
@@ -20,7 +20,7 @@ function contains(int item, SortedList list) -> bool:
             else:
                 return contains(item, list.next)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     SortedList list = SortedList(10, null)
     list = SortedList(5, list)
     list = SortedList(3, list)

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type src is int | [src]
 
@@ -8,7 +8,7 @@ function f(src e) -> bool:
     else:
         return false
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f([1]) == true
     assume f([[1]]) == true
     assume f([[[1]]]) == true

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Trie is {
    {int=>Trie} children
@@ -37,7 +37,7 @@ function contains(Trie t, [int] s) -> bool:
         //
         return false
 
-method main(System.Console console):
+public export method test():
     [[int]] words = ["Hat","Cat","Mat","Heat","Hot"]
     // First, initialise trie to include words
     Trie t = Trie()

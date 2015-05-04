@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Sum is &{int result, [int] items}
 
@@ -14,7 +14,7 @@ method get(Sum this) -> int:
 method create([int] items) -> Sum:
     return new {result: 0, items: items}
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] data = [1, 3, 5, 7, 3, 198, 1, 4, 6]
     Sum sum = create(data)
     start(sum)

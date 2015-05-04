@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type OpenRecord is {int x, ...}
 
@@ -11,7 +11,7 @@ function getField(OpenRecord r) -> int:
         else:
             return -r.x
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     OpenRecord r = {x: 1}
     assume getField(r) == 1
     r = {y: 1, x: 3}

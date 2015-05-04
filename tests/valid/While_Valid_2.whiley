@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 // The classic binary search which runs in O(log n) time by halving
 // the search space on each iteration until either the item is found, or
@@ -36,7 +36,7 @@ ensures !result ==> no { i in items | i == item }:
     //
     return false
 
-method main(System.Console console):
+public export method test():
     [int] list = [3,5,6,9]
     assume binarySearch(list,0) == false
     assume binarySearch(list,1) == false

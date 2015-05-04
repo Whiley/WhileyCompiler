@@ -1,11 +1,11 @@
-import whiley.lang.*
+
 
 type func is function(int) -> int
 
 function g(int y) -> func:
     return &(int x -> x + y)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     func f = g(3)
     assume f(1) == 4
     assume f(2) == 5

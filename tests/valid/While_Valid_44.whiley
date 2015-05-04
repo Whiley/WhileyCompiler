@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function reverse([int] ls) -> ([int] result)
 ensures |result| == |ls|:
@@ -9,7 +9,7 @@ ensures |result| == |ls|:
         r = r ++ [ls[i]]
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume reverse([]) == []
     assume reverse([1]) == [1]
     assume reverse([1,2]) == [2,1]

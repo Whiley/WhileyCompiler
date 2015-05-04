@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 constant ADD is 1
 
@@ -14,7 +14,7 @@ type asbinop is {int op, Expr left, Expr right} where op in {ADD, SUB}
 
 type Expr is int | binop
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Expr bop1 = {op: ADD, left: 1, right: 2}
     Expr bop2 = bop1
     Expr e1 = bop1

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 public function has(int c1, [int] str) -> bool:
     for c2 in str:
@@ -6,7 +6,7 @@ public function has(int c1, [int] str) -> bool:
             return true
     return false
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] s = "Hello World"
     assume has('l', s) == true
     assume has('e', s) == true

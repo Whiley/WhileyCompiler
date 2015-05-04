@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type LinkedList is null | {LinkedList next, int data}
 
@@ -9,7 +9,7 @@ function sum(LinkedList l) -> int:
         l = l.next
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     LinkedList list = null
     assume sum(list) == 0
     list = {next: list, data: 1}

@@ -1,8 +1,8 @@
-import whiley.lang.*
+
 
 type IntList is {int | [int] op}
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     IntList x = {op: 2}
     x.op = 1
     IntList y = x

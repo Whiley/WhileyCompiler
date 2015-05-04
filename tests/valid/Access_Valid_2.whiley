@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type liststr is [int] | [int]
 
@@ -7,7 +7,7 @@ function index(liststr l, int index) -> any
     //
     return l[index]
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] l = [1, 2, 3]
     assume index(l, 0) == 1
     assume index(l, 1) == 2

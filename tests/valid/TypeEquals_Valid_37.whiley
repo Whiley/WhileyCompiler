@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type plist is [int]
 
@@ -12,7 +12,7 @@ function f(tup t) -> bool:
     else:
         return false
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f({p: 0, lhs: [0]}) == true
     assume f({p: 0, lhs: [0, 1]}) == true
     assume f({p: 0, lhs: [1, 1]}) == false

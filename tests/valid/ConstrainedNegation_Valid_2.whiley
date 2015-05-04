@@ -8,7 +8,7 @@ ensures r >= 0:
     //
     return v+1
 
-method main(System.Console console):
+public export method test():
     assume f(1) == 2
     assume f(9) == 10
     assume f(-1) == 0

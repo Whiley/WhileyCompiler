@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 // Determine whether a given list of integers
 // is sorted from smallest to largest.
@@ -18,7 +18,7 @@ ensures r ==> all { j in 1 .. |items| | items[j-1] < items[j] }:
 
     return true
 
-method main(System.Console console):
+public export method test():
     assume isSorted([1,2,3,4])
     assume !isSorted([1,2,4,3])
     assume !isSorted([4,2,3,5])

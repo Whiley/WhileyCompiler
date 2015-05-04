@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(int x) -> {int=>int}:
     return {1=>x, 3=>2}
@@ -6,7 +6,7 @@ function f(int x) -> {int=>int}:
 function get(int i, {int=>int} map) -> int:
     return map[i]
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume get(1, f(1)) == 1
     assume get(1, f(2)) == 2
     assume get(1, f(3)) == 3

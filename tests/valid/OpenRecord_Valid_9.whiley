@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type PointAny is {int y, int x, ...}
 
@@ -17,7 +17,7 @@ function sum(Point vp) -> real:
         else:
             return (real) (vp.x + vp.y)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Point vp = {y: 2, x: 1}
     assume sum(vp) == 3.0
     vp = {z: 2, y: 2, x: 1}

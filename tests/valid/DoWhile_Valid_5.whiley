@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 function sum([int] xs) -> int
 requires |xs| > 0:
@@ -12,7 +12,7 @@ requires |xs| > 0:
     //
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume sum([1]) == 1
     assume sum([1, 2]) == 3
     assume sum([1, 2, 3]) == 6

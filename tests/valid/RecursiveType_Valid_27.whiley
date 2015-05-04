@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Expr is real | Var | BinOp
 
@@ -25,7 +25,7 @@ function sbuild(int i) -> SExpr:
     else:
         return build(i)
 
-public method main(System.Console sys) -> void:
+public export method test() -> void:
     assume sbuild(-5) == {lhs:5.0,rhs:{lhs:6.0,rhs:{lhs:7.0,rhs:{lhs:8.0,rhs:{lhs:9.0,rhs:{lhs:10.0,rhs:1.0}}}}}}
     assume sbuild(-4) == {lhs:6.0,rhs:{lhs:7.0,rhs:{lhs:8.0,rhs:{lhs:9.0,rhs:{lhs:10.0,rhs:1.0}}}}}
     assume sbuild(-3) == {lhs:7.0,rhs:{lhs:8.0,rhs:{lhs:9.0,rhs:{lhs:10.0,rhs:1.0}}}}

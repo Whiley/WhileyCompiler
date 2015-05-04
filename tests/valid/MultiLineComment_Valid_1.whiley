@@ -1,7 +1,7 @@
-import whiley.lang.*
+
 
 /**
  * This is a multiline comment
  */
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assert true == true

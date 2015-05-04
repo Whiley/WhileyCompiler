@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type list is [int]
 
@@ -6,7 +6,7 @@ function update(list l, int index, int value) -> list:
     l[index] = value
     return l
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     l = ['1', '2', '3']
     assume update(l, 1, 0) == ['1',0,'3']
     assume update(l, 2, 0) == ['1','2',0]

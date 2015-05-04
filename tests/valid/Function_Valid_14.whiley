@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(int x) -> int:
     return 1
@@ -12,7 +12,7 @@ function f([int] xs) -> int:
 function f({int} xs) -> int:
     return 4
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f(1) == 1
     assume f(1.234) == 2
     assume f([1, 2, 3]) == 3

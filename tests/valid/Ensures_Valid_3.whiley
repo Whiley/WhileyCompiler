@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function pred({int} xs) -> (bool b)
 ensures b ==> no { z in xs | z < 0 }:
@@ -17,7 +17,7 @@ requires pred(xs):
             tmp = tmp + {x}
     return |tmp|
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int c1 = countOver({1, 2, 3, 4}, 1)
     int c2 = countOver({1, 2, 3, 4}, 3)
     assume c1 == 3

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -30,7 +30,7 @@ ensures (C.width == B.width) && (C.height == A.height):
         C_data = C_data ++ [row]
     return Matrix(B.width, A.height, C_data)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Matrix m1 = Matrix(2, 2, [[1, 0], [-3, 2]])
     Matrix m2 = Matrix(2, 2, [[-1, 4], [3, 5]])
     Matrix m3 = run(m1, m2)

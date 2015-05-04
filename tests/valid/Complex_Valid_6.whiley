@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -22,7 +22,7 @@ ensures r == max(a - b, b - a):
     //
     return diff
 
-method main(System.Console console) -> void:
+public export method test() -> void:
     int i = 0
     while i < 20:
         int j = 0

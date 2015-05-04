@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type ilist is int | [int]
 
@@ -13,7 +13,7 @@ function f(rlist e) -> bool:
 function g(ilist e) -> bool:
     return f((rlist) e)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f(1.0) == false
     assume f([1]) == true
     assume f([]) == true

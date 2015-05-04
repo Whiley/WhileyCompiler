@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 function find([int] items, int item) -> (int r)
 // Return value is within bounds of items or one past
@@ -15,7 +15,7 @@ ensures r != |items| ==> items[r] == item:
     // done
     return i
 
-public method main(System.Console console):
+public export method test():
     assume find([1,2,3],1) == 0
     assume find([1,2,3],2) == 1
     assume find([1,2,3],3) == 2

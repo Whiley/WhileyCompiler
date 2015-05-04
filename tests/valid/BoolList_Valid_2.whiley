@@ -1,5 +1,3 @@
-import * from whiley.lang.*
-
 function play([bool] board) -> [bool]:
     [bool] nboard = board
     for i in 0 .. |board|:
@@ -15,7 +13,7 @@ function isAlive(int i, [bool] board) -> bool:
     else:
         return false
 
-method main(System.Console console) -> void:
+public export method test() -> void:
     [bool] xs = [true, true, true, true, true, true, true]
     assume xs == [true, true, true, true, true, true, true]
     xs = play(xs)

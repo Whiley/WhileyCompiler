@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f({int=>any} xs) -> int:
     if xs is {int=>[int]}:
@@ -6,7 +6,7 @@ function f({int=>any} xs) -> int:
     else:
         return -1
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     {int=>any} s1 = {0=>"Hello"}
     {int=>any} s2 = {1=>"Hello"}
     {int=>any} s3 = {0=>"Hello", 1=>"Hello"}

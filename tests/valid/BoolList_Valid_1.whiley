@@ -1,6 +1,6 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+public export method test() -> void:
     [bool] ls = [true, false, true]
     assert ls == [true, false, true]
     assert ls[0] == true

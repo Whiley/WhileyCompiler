@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function duplicate(int n) -> (int r)
 requires n >= 0
@@ -11,7 +11,7 @@ ensures  r == 2*n:
         i = i + 1
     return r
 
-method main(System.Console console):
+public export method test():
     assume duplicate(0) == 0
     assume duplicate(1) == 2
     assume duplicate(2) == 4

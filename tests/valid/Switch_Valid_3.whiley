@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f([int] input) -> int
 requires |input| > 0:
@@ -21,7 +21,7 @@ requires |input| > 0:
     //
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f("N") == 1
     assume f("B") == 2
     assume f("R") == 3

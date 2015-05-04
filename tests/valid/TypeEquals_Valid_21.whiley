@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type expr is {int} | bool
 
@@ -8,7 +8,7 @@ function f(expr e) -> bool:
     else:
         return false
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     expr e = true
     assume f(e) == false
     e = {1, 2, 3, 4}

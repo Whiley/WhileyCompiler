@@ -1,14 +1,14 @@
-import whiley.lang.*
+
 
 type intlist is int | [int]
 
 function f([intlist] l) -> any:
     return l
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int|[int]] x
 
-    if |sys.args| == 0:
+    if 0 == 0:
         x = [1, 2, 3]
     else:
         x = [[1], [2, 3], [5]]

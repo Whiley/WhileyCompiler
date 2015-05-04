@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type pos is (real r) where r > 0.0
 
@@ -12,7 +12,7 @@ function f(expr e) -> bool:
     else:
         return false
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f(-1) == false
     assume f(1.0) == true
     assume f(1234.0) == true

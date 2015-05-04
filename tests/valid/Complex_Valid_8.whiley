@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type char is int
 type string is [int]
@@ -79,7 +79,7 @@ requires state >= 0:
         //
         return false
 
-method main(System.Console console):
+public export method test():
     Trie t = EmptyTrie
     // First, initialise trie
     t = add(t,"hello")

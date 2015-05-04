@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type etup is (int, int) | (real, real)
 
@@ -11,7 +11,7 @@ function f(int x) -> etup:
 function g(int x) -> (int | real, int | real):
     return f(x)
 
-public method main(System.Console sys) -> void:
+public export method test() -> void:
     (int|real x, int|real y) = g(-1)
     assume x == 1 && y == 2
     (x, y) = g(2)

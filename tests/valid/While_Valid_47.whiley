@@ -15,7 +15,7 @@ ensures r >= 0:
 
 type nat is (int x) where x >= 0
 
-method main(System.Console console):
-    assume asum([]) == 0
-    assume asum([1]) == 1
-    assume asum([1,2]) == 3
+public export method test():
+    assume sum([]) == 0
+    assume sum([1]) == 1
+    assume sum([1,2]) == 3

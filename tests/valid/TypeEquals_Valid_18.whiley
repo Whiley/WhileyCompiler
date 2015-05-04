@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f([int | real] e) -> [int]:
     if e is [int]:
@@ -6,7 +6,7 @@ function f([int | real] e) -> [int]:
     else:
         return [1, 2, 3]
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f([1, 2, 3, 4, 5, 6, 7]) == [1, 2, 3, 4, 5, 6, 7]
     assume f([]) == []
     assume f([1, 2, 2.01]) == [1,2,3]

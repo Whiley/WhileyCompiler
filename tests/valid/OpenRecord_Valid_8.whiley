@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type IntPoint is {int y, int x, ...}
 
@@ -10,7 +10,7 @@ function sum(Point vp) -> real:
     RealPoint rp = (RealPoint) vp
     return rp.x + rp.y
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Point vp = {y: 2, x: 1}
     assume sum(vp) == 3.0
     vp = {y: 2.34, x: 1.23}

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Leaf is int
 
@@ -16,7 +16,7 @@ function dist(Link list) -> Leaf:
     //
     return iter + distance
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     LinkedList list = 123
     list = {next: list}
     list = {next: list}

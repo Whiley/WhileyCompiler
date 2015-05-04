@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function reverse([int] xs) -> ([int] ys)
 // size of lists are the same
@@ -22,7 +22,7 @@ ensures all { i in 0 .. |xs| | ys[i] == xs[|xs| - (i+1)] }:
     return xs
 
 
-method main(System.Console console):
+public export method test():
     assume reverse([]) == []
     assume reverse([1]) == [1]
     assume reverse([1,2,3]) == [3,2,1]

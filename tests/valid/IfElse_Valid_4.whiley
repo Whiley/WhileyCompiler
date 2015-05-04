@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Link is {LinkedList next, int data}
 
@@ -22,7 +22,7 @@ function sum_3(LinkedList ls) -> int:
     else:
         return 0
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     LinkedList ls = {next: null, data: 1}
     ls = {next: ls, data: 2}
     ls = {next: ls, data: 3}

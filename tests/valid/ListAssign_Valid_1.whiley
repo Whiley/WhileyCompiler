@@ -1,6 +1,6 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+public export method test() -> void:
     [int] arr1 = [1, 2, 3]
     [int] arr2 = arr1
     arr2[2] = 2

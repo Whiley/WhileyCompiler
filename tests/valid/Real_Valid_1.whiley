@@ -1,6 +1,6 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+public export method test() -> void:
     real x = 1.20
     real y = 2.40
     assume x + y == 3.6

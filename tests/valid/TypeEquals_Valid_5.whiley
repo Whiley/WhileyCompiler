@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(int | null x) -> bool:
     if x is null:
@@ -6,7 +6,7 @@ function f(int | null x) -> bool:
     else:
         return false
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int|null x = null
     assume f(x) == true
     assume f(1) == false

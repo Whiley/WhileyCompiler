@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Link is null | [Link]
 
@@ -13,7 +13,7 @@ function maxDepth(Link l) -> int:
     else:
         return 0
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Link l1 = null
     Link l2 = [l1]
     Link l3 = [l2]

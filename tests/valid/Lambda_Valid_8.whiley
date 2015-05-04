@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function g(int x, int y) -> int:
     return x + y
@@ -13,7 +13,7 @@ function f2(int y) -> function(int) -> int:
 
 type func is function(int) -> int
 
-public method main(System.Console console) -> void:
+public export method test() -> void:
     func fx = f1(10)
     func fy = f2(20)
     assume fx(1) == 11

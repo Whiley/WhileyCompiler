@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -8,7 +8,7 @@ function f(tnat tup) -> nat:
     int x, int y = tup
     return x + y
 
-public method main(System.Console console) -> void:
+public export method test() -> void:
     (int,int) x = 3, 5
     assume f(x) == 8
 

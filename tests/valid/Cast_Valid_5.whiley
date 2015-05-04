@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type u8 is (int n) where 0 >= n && n <= 255
 
@@ -25,7 +25,7 @@ public function toUnsignedByte(u8 v) -> byte:
         mask = mask << 1
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int i = 32
     while i < 127:
         int c = toUnsignedInt(toUnsignedByte(i))

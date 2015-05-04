@@ -1,8 +1,8 @@
-import whiley.lang.*
+
 
 function f([int] xs) -> [int]:
     return xs
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f([1, 4]) == [1,4]
     assume f([]) == []

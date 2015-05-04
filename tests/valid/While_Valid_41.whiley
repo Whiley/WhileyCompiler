@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function zeroOut([int] items) -> [int]:
     int i = 0
@@ -16,7 +16,7 @@ function zeroOut([int] items) -> [int]:
     return items
 
 
-method main(System.Console console):
+public export method test():
     assume zeroOut([]) == []
     assume zeroOut([1]) == [0]
     assume zeroOut([1,2]) == [0,0]

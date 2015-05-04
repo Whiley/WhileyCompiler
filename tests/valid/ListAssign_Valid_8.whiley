@@ -1,6 +1,6 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+public export method test() -> void:
     [[int]] a1 = [[1, 2, 3], [0]]
     [[int]] a2 = a1
     a2[0] = [3, 4, 5]

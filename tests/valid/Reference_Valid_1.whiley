@@ -1,11 +1,11 @@
-import whiley.lang.*
+
 
 method swap(&int x_ptr, &int y_ptr):
     int tmp = *x_ptr
     *x_ptr = *y_ptr
     *y_ptr = tmp
 
-method main(System.Console console):
+public export method test():
     &int x = new 1
     &int y = new 2
     assume (*x) == 1

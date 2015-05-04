@@ -1,11 +1,11 @@
-import whiley.lang.*
 
-type MyObject is &{System.Console sys}
+
+type MyObject is &{int field}
 
 method f(MyObject this, int x) -> void:
     assume x == 1
 
-method main(System.Console sys) -> void:
-    MyObject m = new {sys: sys}
+public export method test() -> void:
+    MyObject m = new {field: 1}
     f(m,1)
     

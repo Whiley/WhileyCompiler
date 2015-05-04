@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type pos is real
 
@@ -15,7 +15,7 @@ function f(expr e) -> int:
         else:
             return 2
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume f(-1) == 1
     assume f(1.0) == 0
     assume f(1.234) == 0

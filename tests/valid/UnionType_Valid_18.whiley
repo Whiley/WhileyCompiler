@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type utr12nat is (int x) where x >= 0
 
@@ -11,6 +11,6 @@ ensures result >= 0:
     //
     return y.op
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     tupper x = {op: 1, il: 1}
     assume f(x) == 1

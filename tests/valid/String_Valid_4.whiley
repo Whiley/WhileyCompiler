@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 public function repl(int old, int n, [int] str) -> [int]:
     int i = 0
@@ -8,6 +8,6 @@ public function repl(int old, int n, [int] str) -> [int]:
         i = i + 1
     return str
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] s = "Hello World"
     assume repl('l', '1', s) == "He11o Wor1d"

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -13,7 +13,7 @@ ensures |result| == count:
         i = i + 1
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume create(3, 3) == [3,3,3]
     assume create(2, 2) == [2,2]
     assume create(2, 1) == [1,1]

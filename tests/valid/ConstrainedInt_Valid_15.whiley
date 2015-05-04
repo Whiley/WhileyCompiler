@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type pos is (int x) where x > 0
 
@@ -12,7 +12,7 @@ function isPosNeg(any v) -> bool:
     else:
         return false
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     assume isPosNeg(1)
     assume !isPosNeg(0)
     assume isPosNeg(-1)

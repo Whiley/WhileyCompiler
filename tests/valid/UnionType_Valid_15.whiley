@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type msg1 is {int op, [int] data}
 
@@ -9,7 +9,7 @@ type msgType is msg1 | msg2
 function f(msgType m) -> msgType:
     return m
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     msg1 x = {op: 1, data: [1, 2, 3]}
     assume f(x) == {op: 1, data: [1, 2, 3]}
     [int] list = x.data

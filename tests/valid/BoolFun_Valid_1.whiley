@@ -1,9 +1,9 @@
-import whiley.lang.*
+
 
 function f(bool b) -> bool:
     return b
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     bool x = true
     assume f(x)
     x = false

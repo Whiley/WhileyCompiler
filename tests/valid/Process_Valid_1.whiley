@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type state is {int y, int x}
 
@@ -9,6 +9,6 @@ method send(pState this, int x) -> void:
     assert this->x == x
     assume (*this) == {x: 3, y: 2}
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     pState ps = new {y: 2, x: 1}
     send(ps, 3)

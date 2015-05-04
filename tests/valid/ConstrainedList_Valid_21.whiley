@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -29,7 +29,7 @@ requires no { c in coins | c >= |Value| }:
         cash[i] = cash[i] + 1
     return cash
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Cash cash = Cash([ONE_DOLLAR, FIVE_CENTS])
     assume cash == [0, 1, 0, 0, 0, 1, 0, 0]
     cash = Cash([FIVE_DOLLARS, TEN_CENTS, FIFTY_CENTS])
