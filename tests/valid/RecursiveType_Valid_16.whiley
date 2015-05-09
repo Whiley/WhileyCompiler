@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Expr is {int num} | {int op, Expr rhs, Expr lhs} | {[int] err}
 
@@ -8,6 +8,6 @@ function parseTerm() -> Expr:
 function parseIdentifier() -> Expr:
     return {err: "err"}
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Expr e = parseTerm()
-    sys.out.println(e)
+    assume e == {err: "err"}

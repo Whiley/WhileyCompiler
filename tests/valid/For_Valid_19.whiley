@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 function sum([int] items) -> (int result)
 requires |items| > 0
@@ -10,7 +10,7 @@ ensures result >= 0:
             r = r + x
     return r
 
-public method main(System.Console console):
-    console.out.println(sum([1,2,3]))
-    console.out.println(sum([1,-1,2,3]))
-    console.out.println(sum([1,-1,2,-2,3]))
+public export method test():
+    assume sum([1,2,3]) == 6
+    assume sum([1,-1,2,3]) == 6
+    assume sum([1,-1,2,-2,3]) == 6

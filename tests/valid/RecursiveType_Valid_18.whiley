@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type State is {[int] input, int pos}
 
@@ -11,6 +11,7 @@ function parse([int] input) -> Expr:
 function parseAddSubExpr(State st) -> {Expr e, State st}:
     return {e: {num: 1}, st: st}
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Expr e = parse("Hello")
-    sys.out.println(e)
+    assume e == {num:1}
+

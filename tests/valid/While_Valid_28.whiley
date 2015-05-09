@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 //
 // This example represents the expansion of a do-while loop
@@ -19,10 +19,10 @@ requires |xs| > 0:
     //
     return r
 
-method main(System.Console sys) -> void:
-    sys.out.println(sum([1]))
-    sys.out.println(sum([1, 2]))
-    sys.out.println(sum([1, 2, 3]))
+public export method test() -> void:
+    assume sum([1]) == 1
+    assume sum([1, 2]) == 3
+    assume sum([1, 2, 3]) == 6
 
 
 

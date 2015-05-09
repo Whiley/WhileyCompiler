@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Reader is {
   method read(int) -> int
@@ -10,7 +10,7 @@ method f(int amount) -> int:
 method m(Reader r, int x) -> int:
     return r.read(x)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Reader reader = {read: &f}
     int data = m(reader, 1)
-    sys.out.println(data)
+    assume data == 1

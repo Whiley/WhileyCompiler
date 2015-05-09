@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type bop is {int y, int x} where x > 0
 
@@ -10,8 +10,8 @@ function f(expr e) -> bool:
     else:
         return false
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     expr e = 1
-    sys.out.println(f(e))
+    assume f(e) == true
     e = {y: 2, x: 1}
-    sys.out.println(f(e))
+    assume f(e) == false

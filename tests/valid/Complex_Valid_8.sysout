@@ -1,7 +1,0 @@
-ADDING: hello
-ADDING: world
-ADDING: help
-CONTAINS: hello = true
-CONTAINS: blah = false
-CONTAINS: hel = true
-CONTAINS: dave = false

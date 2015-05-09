@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 type Link is {int data}
 type BigLink is {int data, int code}
@@ -9,6 +9,6 @@ function sum(Link l) -> int:
 function sum2(BigLink l) -> int:
   return sum((Link) l)
 
-method main(System.Console console):
+public export method test():
     BigLink l = {data: 1, code: 'c'}
-    console.out.println(sum2(l))
+    assume sum2(l) == 1

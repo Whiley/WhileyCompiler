@@ -1,13 +1,13 @@
-import whiley.lang.*
+
 
 type IntList is {int op, [real] rest} | {int op, int mode}
 
 function f(IntList y) -> IntList:
     return y
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     {int|real op, [real] rest} x = {op: 1, rest: [1.23]}
-    if |sys.args| == 10:
+    if 0 == 10:
         x = {op: 1.23, rest: [1.0]}
     x.op = 123
-    sys.out.println(f(x))
+    assume f(x) == {op: 123, rest: [1.23]}

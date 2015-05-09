@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -30,16 +30,16 @@ ensures (C.width == B.width) && (C.height == A.height):
         C_data = C_data ++ [row]
     return Matrix(B.width, A.height, C_data)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Matrix m1 = Matrix(2, 2, [[1, 0], [-3, 2]])
     Matrix m2 = Matrix(2, 2, [[-1, 4], [3, 5]])
     Matrix m3 = run(m1, m2)
-    sys.out.println(m3)
+    assume m3 == {data:[[-1, 4], [9, -2]],height:2,width:2}
     m1 = Matrix(3, 2, [[1, 2, 3], [4, 5, 6]])
     m2 = Matrix(2, 3, [[1, 2], [3, 4], [5, 6]])
     m3 = run(m1, m2)
-    sys.out.println(m3)
+    assume m3 == {data:[[22, 28], [49, 64]],height:2,width:2}
     m1 = Matrix(3, 2, [[1, 2, 3], [4, 5, 6]])
     m2 = Matrix(4, 3, [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
     m3 = run(m1, m2)
-    sys.out.println(m3)
+    assume m3 == {data:[[38, 44, 50, 56], [83, 98, 113, 128]],height:2,width:4}

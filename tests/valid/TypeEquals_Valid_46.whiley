@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type pos is int
 
@@ -11,8 +11,8 @@ function f(intlist x) -> int:
         return x
     return 1
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int x = f([1, 2, 3])
-    sys.out.println(x)
+    assume x == 1
     x = f(123)
-    sys.out.println(x)
+    assume x == 123

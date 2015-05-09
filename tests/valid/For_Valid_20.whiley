@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 function find([int] items, int item) -> (int result)
 ensures result == -1 || result in items:
@@ -9,8 +9,8 @@ ensures result == -1 || result in items:
             return x
     return -1
 
-public method main(System.Console console):
-    console.out.println(find([1,2,3],1))
-    console.out.println(find([1,2,3],2))
-    console.out.println(find([1,2,3],3))
-    console.out.println(find([1,2,3],4))
+public export method test():
+    assume find([1,2,3],1) == 1
+    assume find([1,2,3],2) == 2
+    assume find([1,2,3],3) == 3
+    assume find([1,2,3],4) == -1

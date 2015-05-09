@@ -1,7 +1,7 @@
-import whiley.lang.*
 
-method main(System.Console console):
+
+public export method test():
     &int c = new 5
     *c = 4
-    console.out.println( *c )
+    assume (*c) == 4
 

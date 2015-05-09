@@ -1,4 +1,3 @@
-
 function f([byte] data, int pos) -> int:
     method = data[pos]
     pos = pos + 1

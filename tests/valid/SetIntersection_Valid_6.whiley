@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f({int} xs) -> {int}:
     return xs
@@ -6,7 +6,7 @@ function f({int} xs) -> {int}:
 function g({int} ys) -> {int}:
     return f(ys & {1, 2})
 
-method main(System.Console sys) -> void:
-    sys.out.println(g({}))
-    sys.out.println(g({2, 3, 4, 5, 6}))
-    sys.out.println(g({2, 6}))
+public export method test() -> void:
+    assume g({}) == {}
+    assume g({2, 3, 4, 5, 6}) == {2}
+    assume g({2, 6}) == {2}

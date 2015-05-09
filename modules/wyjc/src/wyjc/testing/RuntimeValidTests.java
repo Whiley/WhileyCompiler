@@ -28,14 +28,13 @@ package wyjc.testing;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import org.junit.*;
 
 import wyc.WycMain;
 import wyc.testing.TestUtils;
-import wyc.util.WycBuildTask;
 import wyjc.WyjcMain;
 import wyjc.util.WyjcBuildTask;
 
@@ -127,17 +126,40 @@ import wyjc.util.WyjcBuildTask;
 		String CLASSPATH = CLASSPATH(WHILEY_SRC_DIR, WYJC_CLASS_DIR,
 				WYRL_CLASS_DIR, WYBS_CLASS_DIR);
 
- 		// Second, execute the generated JavaScript Program.
- 		String output = TestUtils.exec(CLASSPATH,WHILEY_SRC_DIR,name);
-
-		// The name of the file which contains the output for this test
-		String sampleOutputFile = WHILEY_SRC_DIR + File.separatorChar + name
-				+ ".sysout";
-
- 		// Third, compare the output!
- 		TestUtils.compare(output,sampleOutputFile);
+ 		// Second, execute the generated Java Program.
+ 		String output = TestUtils.exec(CLASSPATH,WHILEY_SRC_DIR,"wyjc.testing.RuntimeValidTests",name);
+ 		if(!output.equals("")) {
+ 			System.out.println(output);
+ 			fail("unexpected output!");
+ 		}
  	}
 
+ 	/**
+	 * This is the entry point for each test. The argument provided is the name
+	 * of the test class. The special method "test" is then invoked on this
+	 * class with no arguments provided. The method should execute without
+	 * producing output (success), or report some kind of runtime fault
+	 * (failure).
+	 * 
+	 * @param args
+	 */
+ 	public static void main(String[] args) {
+ 		String testClassName = args[0]; 		
+ 		try {
+ 			Class testClass = Class.forName(testClassName);
+ 			Method testMethod = testClass.getMethod("test");
+ 			testMethod.invoke(null);
+ 		} catch(ClassNotFoundException e) {
+ 			e.printStackTrace(System.out);
+ 		} catch(NoSuchMethodException e) {
+ 			e.printStackTrace(System.out);
+ 		} catch(InvocationTargetException e) {
+ 			e.printStackTrace(System.out);
+ 		} catch (IllegalAccessException e) {
+			e.printStackTrace(System.out);
+		} 
+ 	}
+ 	
  	/**
 	 * Run the Whiley Compiler with the given list of arguments.
 	 *
@@ -429,16 +451,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void Complex_Valid_8() {
 		runTest("Complex_Valid_8");
-	}
-
-	@Ignore("#311") @Test
-	public void Constant_Valid_1() {
-		runTest("Constant_Valid_1");
-	}
-
-	@Ignore("#311") @Test
-	public void Constant_Valid_2() {
-		runTest("Constant_Valid_2");
 	}
 
 	@Test
@@ -1285,12 +1297,12 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Import_Valid_3");
 	}
 
-	@Test
+	@Ignore("#492") @Test
 	public void Import_Valid_4() {
 		runTest("Import_Valid_4");
 	}
 
-	@Test
+	@Ignore("#492") @Test
 	public void Import_Valid_5() {
 		runTest("Import_Valid_5");
 	}
@@ -1815,11 +1827,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void Print_Valid_1() {
-		runTest("Print_Valid_1");
-	}
-
-	@Test
 	public void ProcessAccess_Valid_1() {
 		runTest("ProcessAccess_Valid_1");
 	}
@@ -1847,16 +1854,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void Process_Valid_12() {
 		runTest("Process_Valid_12");
-	}
-
-	@Test
-	public void Process_Valid_13() {
-		runTest("Process_Valid_13");
-	}
-
-	@Test
-	public void Process_Valid_14() {
-		runTest("Process_Valid_14");
 	}
 
 	@Test

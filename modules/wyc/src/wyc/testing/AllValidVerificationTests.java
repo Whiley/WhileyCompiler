@@ -363,7 +363,7 @@ public class AllValidVerificationTests {
 		runTest("Complex_Valid_6");
 	}
 
-	@Test
+	@Ignore("timeout") @Test
 	public void Complex_Valid_7() {
 		runTest("Complex_Valid_7");
 	}
@@ -371,16 +371,6 @@ public class AllValidVerificationTests {
 	@Ignore("???") @Test
 	public void Complex_Valid_8() {
 		runTest("Complex_Valid_8");
-	}
-
-	@Ignore("#311") @Test
-	public void Constant_Valid_1() {
-		runTest("Constant_Valid_1");
-	}
-
-	@Ignore("#311") @Test
-	public void Constant_Valid_2() {
-		runTest("Constant_Valid_2");
 	}
 
 	@Test
@@ -1240,12 +1230,12 @@ public class AllValidVerificationTests {
 		runTest("Import_Valid_3");
 	}
 
-	@Test
+	@Ignore("#492") @Test
 	public void Import_Valid_4() {
 		runTest("Import_Valid_4");
 	}
 
-	@Test
+	@Ignore("#492") @Test
 	public void Import_Valid_5() {
 		runTest("Import_Valid_5");
 	}
@@ -1817,16 +1807,6 @@ public class AllValidVerificationTests {
 	@Ignore("#291") @Test
 	public void Process_Valid_12() {
 		runTest("Process_Valid_12");
-	}
-
-	@Test
-	public void Process_Valid_13() {
-		runTest("Process_Valid_13");
-	}
-
-	@Test
-	public void Process_Valid_14() {
-		runTest("Process_Valid_14");
 	}
 
 	@Test
@@ -2695,7 +2675,7 @@ public class AllValidVerificationTests {
 		runTest("TupleType_Valid_7");
 	}
 
-	@Test
+	@Ignore("timeout") @Test
 	public void TupleType_Valid_8() {
 		runTest("TupleType_Valid_8");
 	}

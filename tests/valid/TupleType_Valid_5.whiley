@@ -1,24 +1,24 @@
-import whiley.lang.*
-
 type Pos is (int, int)
+
+function abs(int x) -> int:
+    if x >= 0:
+        return x
+    else:
+        return -x
 
 function conflict(Pos p, int row, int col) -> bool:
     int r, int c = p
     if (r == row) || (c == col):
         return true
-    int colDiff = Math.abs(c - col)
-    int rowDiff = Math.abs(r - row)
+    int colDiff = abs(c - col)
+    int rowDiff = abs(r - row)
     return colDiff == rowDiff
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     (int,int) p = (1, 2)
-    bool c = conflict(p, 1, 2)
-    sys.out.println(c)
-    c = conflict(p, 3, 4)
-    sys.out.println(c)
-    c = conflict(p, 1, 4)
-    sys.out.println(c)
-    c = conflict(p, 3, 2)
-    sys.out.println(c)
-    c = conflict(p, 3, 3)
-    sys.out.println(c)
+    assume conflict(p, 1, 2)
+    assume conflict(p, 3, 4)
+    assume conflict(p, 1, 4)
+    assume conflict(p, 3, 2)
+    assume !conflict(p, 3, 3)
+

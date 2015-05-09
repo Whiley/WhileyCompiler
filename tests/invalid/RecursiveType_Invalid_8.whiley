@@ -18,6 +18,6 @@ type asexpr is int | asbinop
 function f(asexpr e) -> asexpr:
     return e
 
-method main(System.Console sys) -> void:
-    e1 = {op: MUL, left: 1, right: 2}
-    f(e1)
+method main() -> expr:
+    expr e1 = {op: MUL, left: 1, right: 2}
+    return f(e1)

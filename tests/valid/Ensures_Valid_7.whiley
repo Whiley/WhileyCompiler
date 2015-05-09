@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function abs(int|null x) -> (int r)
 // if we return an int, it cannot be negative
@@ -15,7 +15,7 @@ ensures r >= 0:
         return 0
 
 
-method main(System.Console console):
-    console.out.println_s("abs(1) = " ++ Any.toString(abs(1)))
-    console.out.println_s("abs(-1) = " ++ Any.toString(abs(-1)))
-    console.out.println_s("abs(null) = " ++ Any.toString(abs(null)))
+public export method test():
+    assume abs(1) == 1
+    assume abs(-1) == 1
+    assume abs(null) == 0

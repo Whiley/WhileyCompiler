@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type DL is {int=>[real]}
 
@@ -8,7 +8,7 @@ requires |ls[0]| > 0:
     ls[0][0] = 1.234
     return ls
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     DL x = {0=>[1.0, 2.0, 3.0], 1=>[3.4]}
     x = update(x)
-    sys.out.println(x)
+    assume x == {0=>[1.234, 2.0, 3.0], 1=>[3.4]}

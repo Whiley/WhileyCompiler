@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 type Point is {
     int x,
@@ -21,7 +21,7 @@ function Point(int x, int y) -> Point:
         getX: &getX
     }
 
-method main(System.Console console):
+public export method test():
     Point p = Point(1,2)
-    console.out.println(p.getX(p))
-    console.out.println(p.toString(p))
+    assume p.getX(p) == 1
+    assume p.toString(p) == 3

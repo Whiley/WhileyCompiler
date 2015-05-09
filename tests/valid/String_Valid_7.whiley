@@ -1,11 +1,11 @@
-import whiley.lang.*
+
 
 function f([int] str, int end) -> [int]:
     return str[0..end]
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] str = "Hello Cruel World"
-    sys.out.println_s(f(str, 0))
-    sys.out.println_s(f(str, 1))
-    sys.out.println_s(f(str, 5))
-    sys.out.println_s(f(str, 10))
+    assume f(str, 0) == ""
+    assume f(str, 1) == "H"
+    assume f(str, 5) == "Hello"
+    assume f(str, 10) == "Hello Crue"

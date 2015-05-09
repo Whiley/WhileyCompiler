@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f({int} xs) -> bool:
     if |xs| == 1:
@@ -9,6 +9,6 @@ function f({int} xs) -> bool:
 function g({int} ys) -> bool:
     return f(ys + {1})
 
-method main(System.Console sys) -> void:
-    sys.out.println(g({}))
-    sys.out.println(g({2}))
+public export method test() -> void:
+    assume g({}) == true
+    assume g({2}) == false

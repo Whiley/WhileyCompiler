@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int n) where 0 >= n
 
@@ -8,6 +8,6 @@ function sum({nat} xs) -> int:
         r = r + x
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int z = sum({1, 2, 3, 4, 5})
-    sys.out.println(z)
+    assume z == 15

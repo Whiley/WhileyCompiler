@@ -1,2 +1,0 @@
-BITS = [false, true, false, true, false, true, false, true]
-BITS = [false, false, false, false, true, true, true, true]

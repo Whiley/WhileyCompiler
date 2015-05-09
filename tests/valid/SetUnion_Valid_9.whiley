@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f({int} xs, {int} ys, {int} zs) -> {int}
 requires zs == (xs + ys):
@@ -10,10 +10,10 @@ function g({int} ys) -> {int}:
 function h({int} ys, {int} zs) -> {int}:
     return f(ys, zs, ys + zs)
 
-method main(System.Console sys) -> void:
-    sys.out.println(g({}))
-    sys.out.println(g({2}))
-    sys.out.println(g({1, 2, 3}))
-    sys.out.println(h({}, {}))
-    sys.out.println(h({1}, {2}))
-    sys.out.println(h({1, 2, 3}, {3, 4, 5}))
+public export method test() -> void:
+    assume g({}) == {}
+    assume g({2}) == {2}
+    assume g({1, 2, 3}) == {1,2,3}
+    assume h({}, {}) == {}
+    assume h({1}, {2}) == {1}
+    assume h({1, 2, 3}, {3, 4, 5}) == {1,2,3}

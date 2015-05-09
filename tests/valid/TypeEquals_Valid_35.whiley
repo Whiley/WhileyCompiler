@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type pos is int
 
@@ -13,7 +13,7 @@ function f(expr e) -> int:
     else:
         return 0
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(-1) == 0)
-    sys.out.println(f(1) == 2)
-    sys.out.println(f(1234) == 1235)
+public export method test() -> void:
+    assume f(-1) == 0
+    assume f(1) == 2
+    assume f(1234) == 1235

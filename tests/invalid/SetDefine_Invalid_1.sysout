@@ -1,3 +1,3 @@
-../../tests/invalid/SetDefine_Invalid_1.whiley:8: invalid set or list expression
-    sys.out.println(il[0])
-                    ^^
+../../tests/invalid/SetDefine_Invalid_1.whiley:5: invalid set or list expression
+    return il[0]
+           ^^

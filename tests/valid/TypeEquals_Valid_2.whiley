@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type expr is {int op, expr lhs} | {[int] err}
 
@@ -8,8 +8,8 @@ function f(expr e) -> int:
     else:
         return -1
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int x = f({err: "Hello World"})
-    sys.out.println(x)
+    assume x == 11
     x = f({op: 1, lhs: {err: "Gotcha"}})
-    sys.out.println(x)
+    assume x == -1

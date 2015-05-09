@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(int x, int y) -> int:
     bool a = true
@@ -9,5 +9,7 @@ function f(int x, int y) -> int:
     else:
         return 123
 
-method main(System.Console sys) -> void:
-    sys.out.println(1)
+public export method test() -> void:
+    assume f(1,1) == 123
+    assume f(2,1) == 123
+    assume f(1,2) == 3

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type anat is (int x) where x >= 0
 
@@ -10,7 +10,7 @@ function atob(anat x) -> bnat:
 function btoa(bnat x) -> anat:
     return x
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int x = 1
-    sys.out.println(atob(x))
-    sys.out.println(btoa(x))
+    assume atob(x) == 1
+    assume btoa(x) == 1

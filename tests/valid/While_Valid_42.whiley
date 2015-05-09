@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function reverse([int] xs) -> ([int] ys)
 // size of lists are the same
@@ -22,15 +22,8 @@ ensures all { i in 0 .. |xs| | ys[i] == xs[|xs| - (i+1)] }:
     return xs
 
 
-method main(System.Console console):
-    [int] before = [1,2,3,4,5,6]
-    [int] after = reverse(before)
-    console.out.println_s("REVERSE(" ++ Any.toString(before) ++ ") = " ++ Any.toString(after))
-
-    before = [1,2,3]
-    after = reverse(before)
-    console.out.println_s("REVERSE(" ++ Any.toString(before) ++ ") = " ++ Any.toString(after))
-
-    before = []
-    after = reverse(before)
-    console.out.println_s("REVERSE(" ++ Any.toString(before) ++ ") = " ++ Any.toString(after))
+public export method test():
+    assume reverse([]) == []
+    assume reverse([1]) == [1]
+    assume reverse([1,2,3]) == [3,2,1]
+    assume reverse([1,2,3,4,5,6]) == [6,5,4,3,2,1]

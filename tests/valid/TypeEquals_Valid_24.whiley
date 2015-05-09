@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type T is [int] | int
 
@@ -8,6 +8,6 @@ function f(T x) -> int:
     else:
         return x
 
-public method main(System.Console sys) -> void:
-    sys.out.println_s("RESULT: " ++ Any.toString(f([1, 2, 3, 4])))
-    sys.out.println_s("RESULT: " ++ Any.toString(f(123)))
+public export method test() -> void:
+    assume f([1, 2, 3, 4]) == 4
+    assume f(123) == 123

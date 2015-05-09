@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 constant c_num is {1,2,3,4}
 
@@ -16,5 +16,5 @@ function g({bignum} zs, int z) -> int:
     else:
         return -1
 
-method main(System.Console sys) -> void:
-    sys.out.println(g({1, 2, 3, 5}, 3))
+public export method test() -> void:
+    assume g({1, 2, 3, 5}, 3) == 3

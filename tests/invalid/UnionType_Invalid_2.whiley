@@ -1,12 +1,10 @@
-import * from whiley.lang.*
-
 type IntReal is int | real
 
-function f(int y) -> void:
-    debug Any.toString(y)
+function f(int y) -> int:
+    return y
 
-method main(System.Console sys) -> void:
-    int x
+method main():
+    IntReal x
     //
     x = 123
     f(x)

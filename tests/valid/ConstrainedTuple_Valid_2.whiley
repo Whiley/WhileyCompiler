@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 type nat is (int x) where x >= 0
 
 type tup is (int, int)
@@ -10,10 +10,10 @@ function f(tup t) -> int:
     //
     return 0
 
-public method main(System.Console console) -> void:
+public export method test() -> void:
     (int,int) x = 3, 5
-    console.out.println(f(x))
+    assume f(x) == 8
     x = -3, 5
-    console.out.println(f(x))
+    assume f(x) == 0
     x = 3, -5
-    console.out.println(f(x))
+    assume f(x) == 0

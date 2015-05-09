@@ -1,16 +1,14 @@
-import * from whiley.lang.System
-
 type nat is (int n) where n >= 0
 
 type natpair is (nat, nat)
 
 function min(natpair p) -> int:
-    (x, y) = p
+    int x, int y = p
     if x > y:
         return y
     else:
         return x
 
-method main(System.Console sys) -> void:
-    p = (-1, 0)
-    x = min(p)
+method main() -> int:
+    (int,int) p = (-1, 0)
+    return min(p)

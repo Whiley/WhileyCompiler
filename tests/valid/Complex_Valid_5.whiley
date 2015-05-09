@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 constant BLANK is 0
 
@@ -22,7 +22,7 @@ requires pos < 9:
     b.pieces[pos] = p
     return b
 
-method main(System.Console console) -> void:
+public export method test() -> void:
     Board b = EmptyBoard()
     b = play(b, CIRCLE, 0)
-    console.out.println_s("BOARD: " ++ Any.toString(b))
+    assume b == {move:0,pieces:[1, 0, 0, 0, 0, 0, 0, 0, 0]}

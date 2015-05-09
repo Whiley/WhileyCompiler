@@ -1,10 +1,10 @@
-import whiley.lang.*
+
 
 function f(bool b) -> bool:
     return b
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     bool x = true
-    sys.out.println(f(x))
+    assume f(x)
     x = false
-    sys.out.println(f(x))
+    assume !f(x)

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(int x) -> int:
     return x + 1
@@ -6,10 +6,10 @@ function f(int x) -> int:
 function g(int x, int y) -> int:
     return x + y
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int a = 2
     int b = 1
-    if |sys.args| == 0:
+    if a < b:
         a = f(b)
     int x = g(a, b)
-    sys.out.println(x)
+    assume x == 3

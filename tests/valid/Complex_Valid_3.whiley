@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type BTree is (null | {
     int item,   // data item
@@ -35,14 +35,21 @@ function contains(BTree tree, int item) -> bool:
             else:
                 return contains(tree.right, item)
 
-constant items is [5, 4, 6, 3, 7, 2, 8, 1, 9]
-
-public method main(System.Console console) -> void:
-    tree = BTree()
-    for item in items:
-        tree = add(tree, item)
-    for item in items:
-        if contains(tree, item):
-            console.out.println_s("TREE CONTAINS: " ++ item)
-        else:
-            console.out.println_s("TREE DOES NOT CONTAIN: " ++ item)
+public export method test() -> void:
+    BTree tree = BTree()
+    tree = add(tree, 1)
+    tree = add(tree, 2)
+    tree = add(tree, 3)
+    tree = add(tree, 4)
+    tree = add(tree, 5)
+    tree = add(tree, 6)
+    //
+    assume contains(tree,5) == true
+    assume contains(tree,4) == true
+    assume contains(tree,6) == true
+    assume contains(tree,3) == true
+    assume contains(tree,7) == false
+    assume contains(tree,2) == true
+    assume contains(tree,8) == false
+    assume contains(tree,1) == true
+    assume contains(tree,9) == false

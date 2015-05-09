@@ -1,4 +1,7 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
-    sys.out.println(5)
+
+/**
+ * This is a multiline comment
+ */
+public export method test() -> void:
+    assert true == true

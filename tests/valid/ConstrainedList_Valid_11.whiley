@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type state is {[int] input, int pos} where (pos >= 0) && (pos <= |input|)
 
@@ -11,6 +11,5 @@ function f(state st) -> int:
             return st.input[st.pos]
     return ' '
 
-method main(System.Console sys) -> void:
-    int c = f({input: "hello", pos: 0})
-    sys.out.println(c)
+public export method test() -> void:
+    assume f({input: "hello", pos: 0}) == 104

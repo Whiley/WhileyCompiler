@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type RowCol is int
 
@@ -25,8 +25,8 @@ function shortPos2str(ShortPos p) -> [int]:
             else:
                 return pos2str(p)
 
-public method main(System.Console sys) -> void:
-    sys.out.println_s(shortPos2str(null))
-    sys.out.println_s(shortPos2str({row: 1}))
-    sys.out.println_s(shortPos2str({col: 1}))
-    sys.out.println_s(shortPos2str({col: 2, row: 1}))
+public export method test() -> void:
+    assume shortPos2str(null) == ""
+    assume shortPos2str({row: 1}) == "2"
+    assume shortPos2str({col: 1}) == "b"
+    assume shortPos2str({col: 2, row: 1}) == "c2"

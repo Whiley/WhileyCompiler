@@ -375,16 +375,6 @@ public class AllValidTests {
 		runTest("Complex_Valid_8");
 	}
 
-	@Ignore("#311") @Test
-	public void Constant_Valid_1() {
-		runTest("Constant_Valid_1");
-	}
-
-	@Ignore("#311") @Test
-	public void Constant_Valid_2() {
-		runTest("Constant_Valid_2");
-	}
-
 	@Test
 	public void Constant_Valid_3() {
 		runTest("Constant_Valid_3");
@@ -399,7 +389,7 @@ public class AllValidTests {
 	public void ConstrainedDictionary_Valid_2() {
 		runTest("ConstrainedDictionary_Valid_2");
 	}
-	
+
 	@Test
 	public void ConstrainedInt_Valid_1() {
 		runTest("ConstrainedInt_Valid_1");
@@ -479,7 +469,7 @@ public class AllValidTests {
 	public void ConstrainedInt_Valid_24() {
 		runTest("ConstrainedInt_Valid_24");
 	}
-	
+
 	@Test
 	public void ConstrainedInt_Valid_3() {
 		runTest("ConstrainedInt_Valid_3");
@@ -509,7 +499,7 @@ public class AllValidTests {
 	public void ConstrainedIntersection_Valid_1() {
 		runTest("ConstrainedIntersection_Valid_1");
 	}
-	
+
 	@Test
 	public void ConstrainedList_Valid_1() {
 		runTest("ConstrainedList_Valid_1");
@@ -599,7 +589,7 @@ public class AllValidTests {
 	public void ConstrainedList_Valid_27() {
 		runTest("ConstrainedList_Valid_27");
 	}
-	
+
 	@Test
 	public void ConstrainedList_Valid_3() {
 		runTest("ConstrainedList_Valid_3");
@@ -684,7 +674,7 @@ public class AllValidTests {
 	public void ConstrainedRecord_Valid_9() {
 		runTest("ConstrainedRecord_Valid_9");
 	}
-	
+
 	@Test
 	public void ConstrainedRecord_Valid_10() {
 		runTest("ConstrainedRecord_Valid_10");
@@ -694,7 +684,7 @@ public class AllValidTests {
 	public void ConstrainedReference_Valid_1() {
 		runTest("ConstrainedReference_Valid_1");
 	}
-	
+
 	@Test
 	public void ConstrainedSet_Valid_1() {
 		runTest("ConstrainedSet_Valid_1");
@@ -739,12 +729,12 @@ public class AllValidTests {
 	public void ConstrainedSet_Valid_9() {
 		runTest("ConstrainedSet_Valid_9");
 	}
-	
+
 	@Test
 	public void ConstrainedUnion_Valid_1() {
 		runTest("ConstrainedUnion_Valid_1");
 	}
-	
+
 	@Test
 	public void ConstrainedTuple_Valid_1() {
 		runTest("ConstrainedTuple_Valid_1");
@@ -754,7 +744,7 @@ public class AllValidTests {
 	public void ConstrainedTuple_Valid_2() {
 		runTest("ConstrainedTuple_Valid_2");
 	}
-	
+
 	@Ignore("Issue ???") @Test
 	public void Contractive_Valid_1() {
 		runTest("Contractive_Valid_1");
@@ -899,7 +889,7 @@ public class AllValidTests {
 	public void DoWhile_Valid_6() {
 		runTest("DoWhile_Valid_6");
 	}
-	
+
 	@Test
 	public void EffectiveList_Valid_1() {
 		runTest("EffectiveList_Valid_1");
@@ -944,7 +934,7 @@ public class AllValidTests {
 	public void Ensures_Valid_8() {
 		runTest("Ensures_Valid_8");
 	}
-	
+
 	@Test
 	public void For_Valid_1() {
 		runTest("For_Valid_1");
@@ -994,7 +984,7 @@ public class AllValidTests {
 	public void For_Valid_18() {
 		runTest("For_Valid_18");
 	}
-	
+
 	@Test
 	public void For_Valid_19() {
 		runTest("For_Valid_19");
@@ -1004,7 +994,7 @@ public class AllValidTests {
 	public void For_Valid_20() {
 		runTest("For_Valid_20");
 	}
-	
+
 	@Test
 	public void For_Valid_2() {
 		runTest("For_Valid_2");
@@ -1230,12 +1220,12 @@ public class AllValidTests {
 		runTest("Import_Valid_3");
 	}
 
-	@Ignore("unknown") @Test
+	@Ignore("#492") @Test
 	public void Import_Valid_4() {
 		runTest("Import_Valid_4");
 	}
 
-	@Test
+	@Ignore("#492") @Test
 	public void Import_Valid_5() {
 		runTest("Import_Valid_5");
 	}
@@ -1760,11 +1750,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void Print_Valid_1() {
-		runTest("Print_Valid_1");
-	}
-
-	@Test
 	public void ProcessAccess_Valid_1() {
 		runTest("ProcessAccess_Valid_1");
 	}
@@ -1792,16 +1777,6 @@ public class AllValidTests {
 	@Test
 	public void Process_Valid_12() {
 		runTest("Process_Valid_12");
-	}
-
-	@Test
-	public void Process_Valid_13() {
-		runTest("Process_Valid_13");
-	}
-
-	@Test
-	public void Process_Valid_14() {
-		runTest("Process_Valid_14");
 	}
 
 	@Test
@@ -3223,7 +3198,7 @@ public class AllValidTests {
 	public void While_Valid_44() {
 		runTest("While_Valid_44");
 	}
-	
+
 	@Test
 	public void While_Valid_45() {
 		runTest("While_Valid_45");
@@ -3233,7 +3208,7 @@ public class AllValidTests {
 	public void While_Valid_46() {
 		runTest("While_Valid_46");
 	}
-	
+
 	@Test
 	public void While_Valid_3() {
 		runTest("While_Valid_3");

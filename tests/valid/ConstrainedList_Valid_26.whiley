@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f([int] ls) -> ([int] r)
 ensures r == []:
@@ -8,7 +8,7 @@ ensures r == []:
     else:
         return []
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] items = [5, 4, 6, 3, 7, 2, 8, 1]
-    sys.out.println(f(items))
-    sys.out.println(f([]))
+    assume f(items) == []
+    assume f([]) == []

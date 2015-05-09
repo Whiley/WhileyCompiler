@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type rlist is real | [int]
 
@@ -8,7 +8,7 @@ function f(rlist l) -> int:
     else:
         return |l|
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(123.0))
-    sys.out.println(f(1.23))
-    sys.out.println(f([1, 2, 3]))
+public export method test() -> void:
+    assume f(123.0) == 0
+    assume f(1.23) == 0
+    assume f([1, 2, 3]) == 3

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function lastIndexOf([int] xs, int x) -> (int|null r)
 ensures r is int ==> xs[r] == x:
@@ -13,8 +13,9 @@ ensures r is int ==> xs[r] == x:
     //
     return last
 
-method main(System.Console console):
+public export method test():
     [int] list = [1,2,1,3,1,2]
-    for i in 0 .. 3:
-        int|null li = lastIndexOf(list,i)
-        console.out.println_s("lastIndexOf(" ++ Any.toString(list) ++ "," ++ Any.toString(i) ++ ") = " ++ Any.toString(li))
+    assume lastIndexOf(list,0) == null
+    assume lastIndexOf(list,1) == 4
+    assume lastIndexOf(list,2) == 5
+    assume lastIndexOf(list,3) == 3

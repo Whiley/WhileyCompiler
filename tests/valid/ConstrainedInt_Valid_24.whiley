@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 //
 // This little example is showing off an almost complete encoding
@@ -29,6 +29,6 @@ ensures r >= 0:
     return i
 
 // Print out hello world!
-public method main(System.Console console):
+public export method test():
     C_string hw = ([int]) ['H','e','l','l','o','W','o','r','l','d',0]
-    console.out.println(strlen(hw))
+    assume strlen(hw) == 10

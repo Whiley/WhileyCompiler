@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type ir1nat is int
 
@@ -10,7 +10,7 @@ function f(int x) -> int:
         return y
     return 0
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(1))
-    sys.out.println(f(2))
-    sys.out.println(f(3))
+public export method test() -> void:
+    assume f(1) == 0
+    assume f(2) == 0
+    assume f(3) == 3

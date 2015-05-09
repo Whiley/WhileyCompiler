@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 constant BLANK is 0
 constant CROSS is 1
@@ -18,13 +18,13 @@ public function numPieces(Board board, Piece piece) -> int:
             count = count + 1
     return count
 
-method update(System.Console console, Board b) -> Board:
+method update(Board b) -> Board:
     b[0] = CIRCLE
     b[1] = CROSS
     b[0] = CIRCLE
     return b
 
-method main(System.Console console) -> void:
+public export method test() -> void:
     Board b = EmptyBoard()
-    b = update(console, b)
-    debug "" ++ Any.toString(b)
+    b = update(b)
+    assume b == [2, 1, 0, 0, 0, 0, 0, 0, 0]

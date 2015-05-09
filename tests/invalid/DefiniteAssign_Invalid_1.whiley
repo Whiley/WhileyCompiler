@@ -1,5 +1,3 @@
-import * from whiley.lang.*
-
 function g(int x) -> void:
     return
 

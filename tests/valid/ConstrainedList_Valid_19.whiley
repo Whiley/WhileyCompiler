@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -8,6 +8,6 @@ function g([nat] xs) -> [nat]:
 function f([nat] xs) -> [nat]:
     return g(xs)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [nat] rs = f([1, 2, 3])
-    sys.out.println(rs)
+    assume rs == [1,2,3]

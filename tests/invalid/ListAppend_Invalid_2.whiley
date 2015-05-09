@@ -1,10 +1,7 @@
-import * from whiley.lang.*
-
-function f([string] args) -> [string]:
+function f([real] args) -> [real]:
     return args
 
-method main(System.Console sys) -> void:
+method g([real] args) -> [real]:
     [int] l = [1, 2, 3]
-    [string|int] r = sys.args ++ l
-    f(r)
-    sys.out.println(Any.toString(r))
+    [real|int] r = args ++ l
+    return f(r)

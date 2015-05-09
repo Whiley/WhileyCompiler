@@ -1,4 +1,2 @@
-import * from whiley.lang.*
-
-method main(System.Console sys) -> void:
+method main():
     int a = Constants[5]

@@ -1,3 +1,3 @@
-../../tests/invalid/Function_Invalid_3.whiley:7: unable to resolve name (no match for f(int))
-    f(1)
-    ^^^^
+../../tests/invalid/Function_Invalid_3.whiley:5: unable to resolve name (no match for f(int))
+    return f(1)
+           ^^^^

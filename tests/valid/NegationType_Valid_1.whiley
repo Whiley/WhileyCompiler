@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(any x) -> !null:
     if x is null:
@@ -6,6 +6,6 @@ function f(any x) -> !null:
     else:
         return x
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(1))
-    sys.out.println(f([1, 2, 3]))
+public export method test() -> void:
+    assume f(1) == 1
+    assume f([1, 2, 3]) == [1,2,3]

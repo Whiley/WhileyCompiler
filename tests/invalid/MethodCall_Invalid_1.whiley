@@ -1,7 +1,5 @@
-import * from whiley.lang.*
+method f(int x) -> int:
+    return 1
 
-function f(int x) -> void:
-    debug Any.toString(x)
-
-method main(System.Console sys) -> void:
-    f(sys, 1)
+method main(&int this):
+    f(this, 1)

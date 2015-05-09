@@ -1,3 +1,3 @@
-../../tests/invalid/Coercion_Invalid_1.whiley:17: ambiguous coercion ({int x,int y} => {int x,real y}|{real x,int y}
-    int ans = f( (uRec1Rec2) rec)
-                 ^^^^^^^^^^^^^^^
+../../tests/invalid/Coercion_Invalid_1.whiley:15: ambiguous coercion ({int x,int y} => {int x,real y}|{real x,int y}
+    return f( (uRec1Rec2) rec)
+              ^^^^^^^^^^^^^^^

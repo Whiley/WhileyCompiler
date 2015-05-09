@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 type Recursive is [Recursive]
 
@@ -9,10 +9,10 @@ function append(Recursive r1, Recursive r2) -> Recursive:
         r1[0] = append(r1[0],r2)
         return r1
 
-method main(System.Console console):
+public export method test():
     Recursive r1 = []
     Recursive r2 = append(r1,[[]])
     Recursive r3 = append(r2,[[]])
-    console.out.println(r1)
-    console.out.println(r2)
-    console.out.println(r3)
+    assume r1 == []
+    assume r2 == [[]]
+    assume r3 == [[[]]]

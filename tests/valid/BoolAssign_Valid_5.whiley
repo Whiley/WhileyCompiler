@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(int x, int y) -> (int r)
 requires (x >= 0) && (y >= 0)
@@ -12,5 +12,7 @@ ensures r > 0:
     else:
         return 123
 
-method main(System.Console sys) -> void:
-    sys.out.println(1)
+public export method test() -> void:
+    assume f(1,1) == 123
+    assume f(2,1) == 123
+    assume f(1,2) == 3

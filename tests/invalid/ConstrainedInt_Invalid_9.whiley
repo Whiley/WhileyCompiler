@@ -1,13 +1,10 @@
 
 type num is (int x) where x in {1, 2, 3, 4}
 
-function f(num x) -> void:
+function f(num x) -> int:
     num y = x
-    debug Any.toString(y)
+    return y
 
-function g(int x, int z) -> void
+function g(int x, int z) -> int
 requires ((x == 0) || (x == 1)) && (z in {1, 2, 3, x}):
-    f(z)
-
-method main(System.Console sys) -> void:
-    g(0, 0)
+    return f(z)

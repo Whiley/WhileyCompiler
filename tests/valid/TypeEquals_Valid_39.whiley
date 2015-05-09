@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type pos is (real r) where r > 0.0
 
@@ -12,8 +12,8 @@ function f(expr e) -> bool:
     else:
         return false
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(-1))
-    sys.out.println(f(1.0))
-    sys.out.println(f(1234.0))
-    sys.out.println(f(-1.0))
+public export method test() -> void:
+    assume f(-1) == false
+    assume f(1.0) == true
+    assume f(1234.0) == true
+    assume f(-1.0) == false

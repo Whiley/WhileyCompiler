@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type imsg is int | {[int] msg}
 
@@ -8,6 +8,6 @@ function getMessage(imsg m) -> any:
     else:
         return m
 
-method main(System.Console sys) -> void:
-    sys.out.println(getMessage({msg: "HELLO WORLD"}))
-    sys.out.println(getMessage(1))
+public export method test() -> void:
+    assume getMessage({msg: "HELLO WORLD"}) == "HELLO WORLD"
+    assume getMessage(1) == 1

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type etype is {int mode, ...}
 
@@ -8,5 +8,6 @@ method get(Ptype this) -> int:
     this->mode = 1
     return this->mode
 
-method main(System.Console sys) -> void:
-    sys.out.println_s("OK")
+public export method test() -> void:
+    assume get(new {mode:2}) == 1
+    assume get(new {mode:3,x:1}) == 1

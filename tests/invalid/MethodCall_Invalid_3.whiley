@@ -1,4 +1,2 @@
-import * from whiley.lang.*
-
-method main(System.Console sys, [string] this) -> void:
+method main([int] this) -> void:
     this.f(1)

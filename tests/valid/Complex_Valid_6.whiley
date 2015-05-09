@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -22,8 +22,14 @@ ensures r == max(a - b, b - a):
     //
     return diff
 
-method main(System.Console console) -> void:
-    [int] list = -10 .. 10
-    for i in list:
-        for j in list:
-            console.out.println_s("DIFF(" ++ Any.toString(i) ++ "," ++ Any.toString(j) ++ ") = " ++ Any.toString(diff(i, j)))
+public export method test() -> void:
+    int i = 0
+    while i < 20:
+        int j = 0
+        while j < 20:
+            assume i < j || diff(i-10,j-10) == (i - j)
+            assume i > j || diff(i-10,j-10) == (j - i)
+            j = j + 1
+        //
+        i = i + 1
+    //

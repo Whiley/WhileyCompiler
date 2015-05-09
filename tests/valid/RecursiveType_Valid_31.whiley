@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 type Recursive is {Recursive}
 
@@ -11,10 +11,10 @@ function append(Recursive r1, Recursive r2) -> Recursive:
             result = result + append(r,r2)
         return result
 
-method main(System.Console console):
+public export method test():
     Recursive r1 = {}
     Recursive r2 = append(r1,{{}})
     Recursive r3 = append(r2,{{}})
-    console.out.println(r1)
-    console.out.println(r2)
-    console.out.println(r3)
+    assume r1 == {}
+    assume r2 == {{}}
+    assume r3 == {{}}   

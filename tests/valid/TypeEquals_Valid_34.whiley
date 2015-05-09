@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type bop is {int y, int x}
 
@@ -10,8 +10,8 @@ function f(expr e) -> int:
     else:
         return e + 1
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int x = f(1)
-    sys.out.println(x)
+    assume x == 2
     x = f({y: 10, x: 4})
-    sys.out.println(x)
+    assume x == 14

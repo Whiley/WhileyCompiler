@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function append([int] input) -> [int]:
     [int] rs = []
@@ -6,6 +6,33 @@ function append([int] input) -> [int]:
         rs = [input[i]] ++ rs
     return rs
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] xs = append("abcdefghijklmnopqrstuvwxyz")
-    sys.out.println(xs)
+    assume xs == [
+        'z',
+        'y',
+        'x',
+        'w',
+        'v',
+        'u',
+        't',
+        's',
+        'r',
+        'q',
+        'p',
+        'o',
+        'n',
+        'm',
+        'l',
+        'k',
+        'j',
+        'i',
+        'h',
+        'g',
+        'f',
+        'e',
+        'd',
+        'c',
+        'b',
+        'a'
+    ]

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -11,6 +11,6 @@ requires y > 0:
         z = y / x
     return z
 
-method main(System.Console sys) -> void:
-    int x = f(10, 2)
-    sys.out.println(x)
+public export method test() -> void:
+    assume f(10, 2) == 5
+

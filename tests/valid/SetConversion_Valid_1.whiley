@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f({real} ls) -> real:
     real r = 0.0
@@ -6,6 +6,6 @@ function f({real} ls) -> real:
         r = r + x
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     {int} ss = {1,2,3}
-    sys.out.println(f(({real}) ss))
+    assume f(({real}) ss) == 6.0

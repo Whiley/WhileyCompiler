@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type BinOp is {Expr rhs, Expr lhs}
 
@@ -10,8 +10,8 @@ function f(Expr e) -> int:
     else:
         return 0
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int v = f([1.0, 2.0, 3.0])
-    sys.out.println(v)
+    assume v == 3
     v = f(1.234)
-    sys.out.println(v)
+    assume v == 0

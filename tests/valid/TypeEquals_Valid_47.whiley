@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int n) where n >= 0
 
@@ -10,7 +10,7 @@ function f(T x) -> int:
     else:
         return x
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(1))
-    sys.out.println(f(-1))
-    sys.out.println(f([1, 2, 3]))
+public export method test() -> void:
+    assume f(1) == 0
+    assume f(-1) == -1
+    assume f([1, 2, 3]) == 0

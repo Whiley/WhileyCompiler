@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Board is [[bool]]
 
@@ -37,8 +37,8 @@ function isAlive(Board board, int row, int col) -> int:
     else:
         return 0
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [[bool]] board = [[false, true, false], [false, true, false], [false, true, false]]
     [[bool]] nboard = update(board)
-    sys.out.println(board)
-    sys.out.println(nboard)
+    assume board == [[false, true, false], [false, true, false], [false, true, false]]
+    assume nboard == [[false, false, false], [false, true, false], [false, false, false]]

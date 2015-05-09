@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -10,7 +10,8 @@ function sum([nat] ls) -> nat:
         i = i + 1
     return sum
 
-method main(System.Console sys) -> void:
-    sys.out.println(sum([]))
-    sys.out.println(sum([1, 2, 3]))
-    sys.out.println(sum([12387, 98123, 12398, 12309, 0]))
+public export method test() -> void:
+    assume sum([]) == 0
+    assume sum([1, 2, 3]) == 6
+    assume sum([12387, 98123, 12398, 12309, 0]) == 135217
+

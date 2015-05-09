@@ -1,3 +1,3 @@
-../../tests/invalid/FunctionRef_Invalid_7.whiley:11: record required, got: &{function(real) -> real func}
-    return this.func(arg)
-           ^^^^^^^^^^^^^^
+../../tests/invalid/FunctionRef_Invalid_7.whiley:6: insufficient arguments for function or method invocation
+    return this->func(arg)
+           ^^^^^^^^^^^^^^^

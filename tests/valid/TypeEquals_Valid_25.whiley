@@ -1,12 +1,6 @@
-import whiley.lang.*
-import SyntaxError from whiley.lang.*
-
 constant ADD is 0
-
 constant SUB is 1
-
 constant MUL is 2
-
 constant DIV is 3
 
 type BOp is (int x) where x in {ADD, SUB, MUL, DIV}
@@ -41,10 +35,9 @@ function evaluate(Expr e) -> Value:
                 else:
                     return 0
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Expr e = {op: ADD, rhs: 1, lhs: 123}
     Value v = evaluate(e)
-    sys.out.println_s("RESULT: " ++ Any.toString(v))
+    assume v == 123
     e = [1]
-    v = evaluate(e)
-    sys.out.println_s("RESULT: " ++ Any.toString(v))
+    assume evaluate(e) == []

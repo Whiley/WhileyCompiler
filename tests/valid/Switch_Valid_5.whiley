@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 constant IHDR_TYPE is 1380206665
 
@@ -27,9 +27,9 @@ public function f(int type) -> int:
         default:
             return 6
 
-public method main(System.Console sys) -> void:
-    sys.out.println_s("GOT: " ++ Any.toString(f(IHDR_TYPE)))
-    sys.out.println_s("GOT: " ++ Any.toString(f(IEND_TYPE)))
-    sys.out.println_s("GOT: " ++ Any.toString(f(PLTE_TYPE)))
-    sys.out.println_s("GOT: " ++ Any.toString(f(PHYS_TYPE)))
-    sys.out.println_s("GOT: " ++ Any.toString(f(TIME_TYPE)))
+public export method test() -> void:
+    assume f(IHDR_TYPE) == 1
+    assume f(IEND_TYPE) == 2
+    assume f(PLTE_TYPE) == 3
+    assume f(PHYS_TYPE) == 4
+    assume f(TIME_TYPE) == 5

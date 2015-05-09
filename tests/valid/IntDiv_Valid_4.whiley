@@ -1,7 +1,7 @@
-import whiley.lang.*
+
 
 function f(int x) -> int:
     return x / 3
 
-public method main(System.Console sys) -> void:
-    sys.out.println(f(10))
+public export method test() -> void:
+    assume f(10) == 3

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -21,16 +21,16 @@ ensures (result == null) ==> no { i in items | i == item }:
     //
     return null
 
-method main(System.Console console):
+public export method test():
     [int] list = [3,5,6,9]
-    console.out.println(search(list,0))
-    console.out.println(search(list,1))
-    console.out.println(search(list,2))
-    console.out.println(search(list,3))
-    console.out.println(search(list,4))
-    console.out.println(search(list,5))
-    console.out.println(search(list,6))
-    console.out.println(search(list,7))
-    console.out.println(search(list,8))
-    console.out.println(search(list,9))
-    console.out.println(search(list,10))
+    assume search(list,0) == null
+    assume search(list,1) == null
+    assume search(list,2) == null
+    assume search(list,3) == 0
+    assume search(list,4) == null
+    assume search(list,5) == 1
+    assume search(list,6) == 2
+    assume search(list,7) == null
+    assume search(list,8) == null
+    assume search(list,9) == 3
+    assume search(list,10) == null

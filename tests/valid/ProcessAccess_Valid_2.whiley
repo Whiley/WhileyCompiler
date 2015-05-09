@@ -1,14 +1,12 @@
-import * from whiley.lang.*
-
-type state is {int y, int x, System.Console console}
+type state is {int y, int x}
 
 type pState is &state
 
 method send(pState this, int z) -> void:
-    this->console.out.println(this->x)
-    this->console.out.println(this->y)
-    this->console.out.println(z)
+    assume this->x == 1
+    assume this->y == 2
+    assume z == 1
 
-method main(System.Console sys) -> void:
-    pState ps = new {y: 2, x: 1, console: sys}
+public export method test() -> void:
+    pState ps = new {y: 2, x: 1}
     send(ps,1)

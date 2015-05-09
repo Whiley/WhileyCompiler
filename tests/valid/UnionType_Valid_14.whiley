@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 constant ADD is 0
 
@@ -25,7 +25,7 @@ function f(Expr e) -> int:
         else:
             return 1
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(1))
-    sys.out.println(f([1, 2, 3]))
-    sys.out.println(f({op: ADD, rhs: 2, lhs: 1}))
+public export method test() -> void:
+    assume f(1) == 1
+    assume f([1, 2, 3]) == 3
+    assume f({op: ADD, rhs: 2, lhs: 1}) == 1

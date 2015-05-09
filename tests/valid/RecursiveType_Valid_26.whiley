@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Expr is real | {int data, Expr lhs} | [Expr]
 
@@ -13,14 +13,14 @@ function toString(Expr e) -> int:
     else:
         return -1
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     SubExpr se1 = 0.1234
     SubExpr se2 = {data: 1, lhs: se1}
     SubExpr se3 = {data: 45, lhs: se2}
     Expr e1 = [se1]
     Expr e2 = [e1, se1, se2]
-    sys.out.println(toString(se1))
-    sys.out.println(toString(se2))
-    sys.out.println(toString(se3))
-    sys.out.println(toString(e1))
-    sys.out.println(toString(e2))
+    assume toString(se1) == 0
+    assume toString(se2) == 1
+    assume toString(se3) == 1
+    assume toString(e1) == -1
+    assume toString(e2) == -1

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function update([[int]] ls) -> [[int]]
 requires |ls| > 0 && |ls[0]| > 0:
@@ -12,9 +12,9 @@ requires |ls| > 0 && |ls[0]| > 0:
     [[int]] nls = update(ls)
     return (ls, nls)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [[int]] nls
     [[int]] ls = [[1, 2, 3, 4]]
     (ls, nls) = f(ls)
-    sys.out.println(ls)
-    sys.out.println(nls)
+    assume ls == [[1,2,3,4]]
+    assume nls == [[10,2,3,4]]    

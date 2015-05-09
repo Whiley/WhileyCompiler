@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f({int=>int} dict) -> (int, int):
     int k = 0
@@ -8,10 +8,10 @@ function f({int=>int} dict) -> (int, int):
         v = v + y
     return (k, v)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int k
     int v
     {int=>int} dict = {1=>2, 3=>4, 4=>5}
     (k, v) = f(dict)
-    sys.out.println(k)
-    sys.out.println(v)
+    assume k == 8
+    assume v == 11

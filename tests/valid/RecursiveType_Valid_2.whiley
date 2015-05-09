@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Expr is real | Var | BinOp
 
@@ -19,12 +19,6 @@ function build(int i) -> Expr:
         else:
             return {rhs: build(i + 1), lhs: build(i + 10)}
 
-function sbuild(int i) -> SExpr:
-    if i > 20:
-        return {err: "error"}
-    else:
-        return build(i)
-
 function evaluate(Expr e) -> real:
     if e is real:
         return e
@@ -33,13 +27,19 @@ function evaluate(Expr e) -> real:
     else:
         return evaluate(e.lhs) + evaluate(e.rhs)
 
-public method main(System.Console sys) -> void:
-    int i = -5
-    while i < 10:
-        SExpr e = sbuild(i)
-        if e is {[int] err}:
-            sys.out.println_s("syntax error: " ++ e.err)
-        else:
-            e = evaluate(e)
-            sys.out.println(e)
-        i = i + 1
+public export method test() -> void:
+    assume evaluate(build(-5)) == 46.0
+    assume evaluate(build(-4)) == 41.0
+    assume evaluate(build(-3)) == 35.0
+    assume evaluate(build(-2)) == 28.0
+    assume evaluate(build(-1)) == 20.0
+    assume evaluate(build(0)) == 11.0
+    assume evaluate(build(1)) == 1.0
+    assume evaluate(build(2)) == 2.0
+    assume evaluate(build(3)) == 3.0
+    assume evaluate(build(4)) == 4.0
+    assume evaluate(build(5)) == 5.0
+    assume evaluate(build(6)) == 6.0
+    assume evaluate(build(7)) == 7.0
+    assume evaluate(build(8)) == 8.0
+    assume evaluate(build(9)) == 9.0

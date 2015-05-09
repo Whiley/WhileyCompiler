@@ -1,12 +1,12 @@
-import whiley.lang.*
+
 
 type list is [int]
 
 function len(list l) -> int:
     return |l|
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] l = [1, 2]
-    sys.out.println(len(l))
+    assume len(l) == 2
     [int] s = "Hello World"
-    sys.out.println(len(s))
+    assume len(s) == 11

@@ -1,12 +1,12 @@
-import whiley.lang.*
+
 
 type IntReal is int | real
 
 function f(IntReal y) -> IntReal:
     return y
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     IntReal x = 123
-    sys.out.println(f(x))
+    assume f(x) == 123
     x = 1.234
-    sys.out.println(f(x))
+    assume f(x) == 1.234

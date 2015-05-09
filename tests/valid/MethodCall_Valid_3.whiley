@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type wmcr6tup is {int y, int x}
 
@@ -8,5 +8,5 @@ method get() -> int:
 method f(int y) -> wmcr6tup:
     return {y: get(), x: y}
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(1))
+public export method test() -> void:
+    assume f(2) == {y: 1, x: 2}

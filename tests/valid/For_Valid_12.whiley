@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type setdict is {int} | {int=>int}
 
@@ -8,8 +8,8 @@ function f(setdict ls) -> int:
         r = r + 1
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     {int} ls = {1, 2, 3, 4, 5}
-    sys.out.println(f(ls))
+    assume f(ls) == 5
     {int=>int} ms = {10=>20, 30=>40}
-    sys.out.println(f(ms))
+    assume f(ms) == 2

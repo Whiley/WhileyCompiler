@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 type nat is (int x) where x >= 0
 
@@ -10,7 +10,7 @@ ensures r >= 0:
     //
     return 0
 
-method main(System.Console console):
-    console.out.println(f(1))
-    console.out.println(f(true))
-    console.out.println(f(-1))
+public export method test():
+    assume f(1) == 1
+    assume f(true) == 1
+    assume f(-1) == 0

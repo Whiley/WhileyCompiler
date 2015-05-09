@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type posintlist is ([int] xs) where no { x in xs | x < 0 }
 
@@ -11,6 +11,6 @@ ensures result >= 0:
         [int] rest = ls[1..|ls|]
         return ls[0] + sum(rest)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int c = sum([1, 2, 3, 4, 5, 6, 7])
-    sys.out.println(c)
+    assume c == 28

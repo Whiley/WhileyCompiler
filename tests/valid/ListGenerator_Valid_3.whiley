@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f([[int]] x) -> int
 // Input list cannot be empty
@@ -9,6 +9,6 @@ requires |x| > 0:
     else:
         return 0
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [[int]] arr = [[1, 2, 3], [1]]
-    sys.out.println(f(arr))
+    assume f(arr) == 2

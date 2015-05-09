@@ -1,8 +1,8 @@
-import whiley.lang.*
+
 
 function f([int] x) -> int:
     return |x|
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] arr = []
-    sys.out.println(f(arr))
+    assume f(arr) == 0

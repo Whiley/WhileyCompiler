@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type SyntaxError is {[int] msg}
 
@@ -18,6 +18,6 @@ function f(int x) -> bool:
 function syntaxError([int] errorMessage) -> SyntaxError:
     return {msg: errorMessage}
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(0))
-    sys.out.println(f(1))
+public export method test() -> void:
+    assume f(0) == true
+    assume f(1) == false

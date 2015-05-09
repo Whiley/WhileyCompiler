@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function run(int n, int x) -> bool:
     bool solution = true
@@ -8,10 +8,10 @@ function run(int n, int x) -> bool:
             break
     return solution
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     bool b1 = run(10, 4)
-    sys.out.println_s("b1=" ++ Any.toString(b1))
+    assume b1 == false
     bool b2 = run(10, -1)
-    sys.out.println_s("b2=" ++ Any.toString(b2))
+    assume b2 == true
     bool b3 = run(10, 11)
-    sys.out.println_s("b3=" ++ Any.toString(b3))
+    assume b3 == true

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Trie is {
    {int=>Trie} children
@@ -37,14 +37,17 @@ function contains(Trie t, [int] s) -> bool:
         //
         return false
 
-method main(System.Console console):
+public export method test():
     [[int]] words = ["Hat","Cat","Mat","Heat","Hot"]
     // First, initialise trie to include words
     Trie t = Trie()
-    for w in words:
-        t = add(t,w)
-    // Second print out trie
-    for w in ["Pat","Hat","Cat"]:
-        bool f = contains(t,w)
-        console.out.println_s("CONTAINS(" ++ w ++ ") = " ++ Any.toString(f))
+    t = add(t,"hat")
+    t = add(t,"Cat")
+    t = add(t,"Mat")
+    t = add(t,"Heat")
+    t = add(t,"Hat")
+    // Second check tries
+    assume !contains(t,"Pat")
+    assume contains(t,"Hat")
+    assume contains(t,"Cat")
 

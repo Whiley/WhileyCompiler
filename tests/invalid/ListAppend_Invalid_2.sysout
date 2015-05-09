@@ -1,4 +1,4 @@
-../../tests/invalid/ListAppend_Invalid_2.whiley:9: unable to resolve name (no match for f([int|[int]])
-	found: ListAppend_Invalid_2:f : function([whiley/lang/ASCII:string]) -> [whiley/lang/ASCII:string])
-    f(r)
-    ^^^^
+../../tests/invalid/ListAppend_Invalid_2.whiley:7: unable to resolve name (no match for f([int|real])
+	found: ListAppend_Invalid_2:f : function([real]) -> [real])
+    return f(r)
+           ^^^^

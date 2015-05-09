@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type codeOp is (int x) where x in {1, 2, 3, 4}
 
@@ -8,5 +8,5 @@ function f(codeOp x) -> code:
     code y = {op: x, payload: []}
     return y
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(1))
+public export method test() -> void:
+    assume f(1) == {op:1, payload: []}

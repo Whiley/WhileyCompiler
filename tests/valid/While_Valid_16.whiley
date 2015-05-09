@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -14,7 +14,7 @@ ensures no { x in 0 .. |src| | result[x] <= 0 }:
         i = i + 1
     return src
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [nat] xs = [1, 3, 5, 7, 9, 11]
     xs = inc(xs)
-    sys.out.println(xs)
+    assume xs == [2, 4, 6, 8, 10, 12]

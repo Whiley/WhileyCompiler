@@ -1,9 +1,12 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+public export method test() -> void:
     [bool] ls = [true, false, true]
-    sys.out.println(ls)
-    bool x = ls[0]
-    sys.out.println(x)
+    assert ls == [true, false, true]
+    assert ls[0] == true
+    assert ls[1] == false
+    assert ls[2] == true    
     ls[0] = false
-    sys.out.println(ls)
+    assert ls[0] == false
+    assert ls[1] == false
+    assert ls[2] == true    

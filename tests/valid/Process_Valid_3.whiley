@@ -1,6 +1,6 @@
-import whiley.lang.*
+
 
 constant out is 123.456
 
-method main(System.Console sys) -> void:
-    sys.out.println_s("Hello World")
+public export method test() -> void:
+    assume out == 123.456

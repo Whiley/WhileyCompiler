@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function indexOf(int c1, [int] str) -> int | null:
     int i = 0
@@ -8,14 +8,14 @@ function indexOf(int c1, [int] str) -> int | null:
         i = i + 1
     return null
 
-method main(System.Console sys) -> void:
-    sys.out.println(indexOf('H', "Hello World"))
-    sys.out.println(indexOf('e', "Hello World"))
-    sys.out.println(indexOf('l', "Hello World"))
-    sys.out.println(indexOf('o', "Hello World"))
-    sys.out.println(indexOf(' ', "Hello World"))
-    sys.out.println(indexOf('W', "Hello World"))
-    sys.out.println(indexOf('r', "Hello World"))
-    sys.out.println(indexOf('d', "Hello World"))
-    sys.out.println(indexOf('z', "Hello World"))
-    sys.out.println(indexOf('1', "Hello World"))
+public export method test() -> void:
+    assume indexOf('H', "Hello World") == 0
+    assume indexOf('e', "Hello World") == 1
+    assume indexOf('l', "Hello World") == 2
+    assume indexOf('o', "Hello World") == 4
+    assume indexOf(' ', "Hello World") == 5
+    assume indexOf('W', "Hello World") == 6
+    assume indexOf('r', "Hello World") == 8
+    assume indexOf('d', "Hello World") == 10
+    assume indexOf('z', "Hello World") == null
+    assume indexOf('1', "Hello World") == null

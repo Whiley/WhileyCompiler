@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function select({int} xs) -> (int r)
 // Input list cannot be empty
@@ -10,5 +10,5 @@ ensures r in xs:
         return x
     return 0
 
-method main(System.Console sys) -> void:
-    sys.out.println(select({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}))
+public export method test() -> void:
+    assume select({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}) == 1
