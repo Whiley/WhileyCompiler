@@ -96,9 +96,9 @@ public class Interpreter {
 			ArrayList<Type> sig_params = sig.params();
 			for (int i = 0; i != sig_params.size(); ++i) {
 				frame[i] = args[i];
-			}		
+			}
 			// Finally, let's do it!
-			Map<String,CodeBlock.Index> labels = CodeUtils.buildLabelMap(body);			
+			Map<String,CodeBlock.Index> labels = CodeUtils.buildLabelMap(body);
 			return (Constant) executeAllWithin(null, frame, body, labels);
 		} catch(IOException e) {
 			throw new RuntimeException(e.getMessage(),e);
@@ -245,7 +245,7 @@ public class Interpreter {
 			Constant[] frame, AttributedCodeBlock block,
 			Map<String, CodeBlock.Index> labels) {
 		//
-		Object r = executeAllWithin(pc, frame, block, labels);		
+		Object r = executeAllWithin(pc, frame, block, labels);
 		//
 		if(r == null) {
 			// Body of assert fell through to next
@@ -474,16 +474,16 @@ public class Interpreter {
 			break;
 			// Handle arithmetic cases
 		case LT:
-			result = compare(op1,op2,true, pc, block);
+			result = lessThan(op1,op2,true, pc, block);
 			break;
 		case LTEQ:
-			result = compare(op1,op2,false, pc, block);
+			result = lessThan(op1,op2,false, pc, block);
 			break;
 		case GT:
-			result = compare(op2,op1,true, pc, block);
+			result = lessThan(op2,op1,true, pc, block);
 			break;
 		case GTEQ:
-			result = compare(op2,op1,false, pc, block);
+			result = lessThan(op2,op1,false, pc, block);
 			break;
 		default:
 		// TODO: handle other cases
@@ -501,7 +501,7 @@ public class Interpreter {
 
 	}
 
-	private boolean compare(Constant lhs, Constant rhs, boolean isStrict, Index pc, AttributedCodeBlock block) {
+	private boolean lessThan(Constant lhs, Constant rhs, boolean isStrict, Index pc, AttributedCodeBlock block) {
 		checkType(lhs,pc,block,Constant.Integer.class,Constant.Decimal.class);
 		checkType(rhs,pc,block,lhs.getClass());
 		int result;
@@ -616,7 +616,7 @@ public class Interpreter {
 		// FIXME: currently implemented as a NOP because of #480
 		return pc.next();
 	}
-	
+
 	/**
 	 * Execute an Invert bytecode instruction at a given point in the function
 	 * or method body. This checks the operand is a byte value.
@@ -703,13 +703,13 @@ public class Interpreter {
 		checkType(_source,pc,block,Constant.List.class,Constant.Map.class,Constant.Set.class);
 		BigInteger length;
 		if(_source instanceof Constant.List) {
-			Constant.List list = (Constant.List) _source;			
+			Constant.List list = (Constant.List) _source;
 			length = BigInteger.valueOf(list.values.size());
 		} else if(_source instanceof Constant.Map) {
-			Constant.Map list = (Constant.Map) _source;			
+			Constant.Map list = (Constant.Map) _source;
 			length = BigInteger.valueOf(list.values.size());
 		} else {
-			Constant.Set list = (Constant.Set) _source;			
+			Constant.Set list = (Constant.Set) _source;
 			length = BigInteger.valueOf(list.values.size());
 		}
 		frame[bytecode.target()] = Constant.V_INTEGER(length);
@@ -751,7 +751,7 @@ public class Interpreter {
 	private Object execute(Codes.Loop bytecode, Index parent, Constant[] frame,
 			AttributedCodeBlock block, Map<String, CodeBlock.Index> labels) {
 		Object r;
-		do {			
+		do {
 			// Keep executing the loop body until we exit it somehow.
 			r = executeAllWithin(parent, frame, block, labels);
 		} while (r == null);
@@ -965,10 +965,10 @@ public class Interpreter {
 		Constant.List source = (Constant.List) _source;
 		Constant.Integer fromIndex = (Constant.Integer) _fromIndex;
 		Constant.Integer toIndex = (Constant.Integer) _toIndex;
-		
+
 		frame[bytecode.target()] = Constant.V_LIST(source.values.subList(
 				fromIndex.value.intValue(), toIndex.value.intValue()));
-		
+
 		return pc.next();
 	}
 
@@ -1027,7 +1027,7 @@ public class Interpreter {
 			break;
 		}
 		default:
-			return deadCode(pc,block); 
+			return deadCode(pc,block);
 		}
 		// Assign result to target register
 		frame[bytecode.target()] = result;
