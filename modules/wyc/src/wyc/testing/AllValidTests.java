@@ -1724,7 +1724,7 @@ public class AllValidTests {
 		runTest("OpenRecord_Valid_2");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void OpenRecord_Valid_3() throws IOException {
 		runTest("OpenRecord_Valid_3");
 	}
@@ -2764,7 +2764,7 @@ public class AllValidTests {
 		runTest("TypeEquals_Valid_29");
 	}
 
-	@Ignore("issue ???") @Test
+	@Test
 	public void TypeEquals_Valid_3() throws IOException {
 		runTest("TypeEquals_Valid_3");
 	}
@@ -2924,7 +2924,7 @@ public class AllValidTests {
 		runTest("UnionType_Valid_16");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void UnionType_Valid_17() throws IOException {
 		runTest("UnionType_Valid_17");
 	}
@@ -3004,7 +3004,7 @@ public class AllValidTests {
 		runTest("Update_Valid_1");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void Update_Valid_2() throws IOException {
 		runTest("Update_Valid_2");
 	}

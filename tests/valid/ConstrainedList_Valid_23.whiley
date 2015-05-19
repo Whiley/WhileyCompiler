@@ -22,4 +22,4 @@ public export method test() -> void:
     Matrix m1 = [[1, 2], [3, 4]]
     Matrix m2 = [[5, 6], [7, 8]]
     Matrix m3 = run(m1, m2)
-    assume m3 == [[19, 43], [22, 50]]
+    assume m3 == [[19, 22], [43, 50]]

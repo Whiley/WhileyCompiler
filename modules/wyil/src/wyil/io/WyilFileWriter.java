@@ -719,7 +719,7 @@ public final class WyilFileWriter {
 		} else if(code instanceof Codes.Switch) {
 			Codes.Switch c = (Codes.Switch) code;
 			List<Pair<Constant,String>> branches = c.branches;
-			int target = labels.get(c.defaultTarget) - offset;
+			int target = labels.get(c.defaultTarget);
 			writeTarget(wide,offset,target,output);
 			writeRest(wide,branches.size(),output);
 			for(Pair<Constant,String> b : branches) {
