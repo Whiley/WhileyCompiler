@@ -127,7 +127,7 @@ import wyjc.util.WyjcBuildTask;
 				WYRL_CLASS_DIR, WYBS_CLASS_DIR);
 
  		// Second, execute the generated Java Program.
- 		String output = TestUtils.exec(CLASSPATH,WHILEY_SRC_DIR,"wyjc.testing.RuntimeValidTests",name);
+ 		String output = TestUtils.execClass(CLASSPATH,WHILEY_SRC_DIR,"wyjc.testing.RuntimeValidTests",name);
  		if(!output.equals("")) {
  			System.out.println(output);
  			fail("unexpected output!");
@@ -493,7 +493,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ConstrainedInt_Valid_14");
 	}
 
-	@Ignore("???") @Test
+	@Test
 	public void ConstrainedInt_Valid_15() {
 		runTest("ConstrainedInt_Valid_15");
 	}
@@ -643,7 +643,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("ConstrainedList_Valid_22");
 	}
 
-	@Ignore("???") @Test
+	@Test
 	public void ConstrainedList_Valid_23() {
 		runTest("ConstrainedList_Valid_23");
 	}
@@ -1681,7 +1681,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("MessageRef_Valid_1");
 	}
 
-	@Ignore("???") @Test
+	@Test
 	public void MessageRef_Valid_2() {
 		runTest("MessageRef_Valid_2");
 	}
@@ -1726,7 +1726,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("MethodCall_Valid_3");
 	}
 
-	@Ignore("???") @Test
+	@Test
 	public void MethodCall_Valid_4() {
 		runTest("MethodCall_Valid_4");
 	}
@@ -2086,7 +2086,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_11");
 	}
 
-	@Ignore("???") @Test
+	@Test
 	public void RecursiveType_Valid_12() {
 		runTest("RecursiveType_Valid_12");
 	}
@@ -2141,7 +2141,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_21");
 	}
 
-	@Ignore("???") @Test
+	@Test
 	public void RecursiveType_Valid_22() {
 		runTest("RecursiveType_Valid_22");
 	}
@@ -2366,7 +2366,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("SetIntersection_Valid_6");
 	}
 
-	@Ignore("???") @Test
+	@Test
 	public void SetIntersection_Valid_7() {
 		runTest("SetIntersection_Valid_7");
 	}
@@ -2836,7 +2836,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("TypeEquals_Valid_29");
 	}
 
-	@Ignore("issue ???") @Test
+	@Test
 	public void TypeEquals_Valid_3() {
 		runTest("TypeEquals_Valid_3");
 	}
@@ -3076,7 +3076,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Update_Valid_1");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void Update_Valid_2() {
 		runTest("Update_Valid_2");
 	}
@@ -3196,7 +3196,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("While_Valid_27");
 	}
 
-	@Ignore("???") @Test
+	@Test
 	public void While_Valid_28() {
 		runTest("While_Valid_28");
 	}

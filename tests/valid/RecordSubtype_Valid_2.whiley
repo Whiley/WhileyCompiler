@@ -13,6 +13,6 @@ function f(List1 r) -> List4:
 
 public export method test() -> void:
     List1 list = {next: null, data: 1}
-    List1 list = {next: list, data: null}
+    list = {next: list, data: null}
     List4 ans = f(list)
-    assumt ans == {next: {next: null, data:1}, data: null}
+    assume ans == {next: {next: null, data:1}, data: null}

@@ -14,8 +14,6 @@
       <fileset dir="modules" includes="wyc/build.xml"/>
       <fileset dir="modules" includes="wyrt/build.xml"/>
       <fileset dir="modules" includes="wyjc/build.xml"/>
-      <!--wyopcl-->
-      <!-- <fileset dir="modules" includes="wyopcl/build.xml" /> -->
     </subant>
   </target>
 
@@ -73,8 +71,6 @@
       <!--<group title="Whiley-2-C Compiler (WYCC)" packages="wycc:wycc.*"/>-->
       <group title="Whiley Constraint Solver (WYCS)" packages="wycs:wycs.*"/>
       <group title="Whiley Rewrite Language (WYRL)" packages="wyrl:wyrl.*:wyautl.*"/>
-      <!-- wyopcl -->
-      <!-- <group title="Whiley-2-OpenCL (WyOpCL)" packages="wyopcl:wyopcl.*" /> -->
       </javadoc>
   </target>
 
@@ -91,8 +87,6 @@
       <fileset dir="modules" includes="wyc/build.xml"/>
       <fileset dir="modules" includes="wyrt/build.xml"/>
       <fileset dir="modules" includes="wyjc/build.xml"/>
-      <!--wyopcl-->
-      <!-- <fileset dir="modules" includes="wyopcl/build.xml" /> -->
 
     </subant>
   </target>
@@ -124,8 +118,6 @@
       <include name="bin/wy_common.bash"/>
       <include name="lib/*-v${version}.jar"/>
       <include name="lib/jasm-v*.jar"/>
-      <!-- wyopcl -->
-      <!-- <include name="bin/wyopcl" /> -->
     </fileset>
   </copy>
   <tar destfile="dist/wdk-src-v${version}.tar" longfile="gnu">
