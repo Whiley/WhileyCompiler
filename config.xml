@@ -1,4 +1,4 @@
 <project name="BuildConfig">
-  <property name="version" value="0.3.33"/>
+  <property name="version" value="0.3.34"/>
   <property name="JASM_JAR" value="lib/jasm-v0.1.7.jar"/>
 </project>
