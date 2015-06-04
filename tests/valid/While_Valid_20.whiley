@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type LinkedList is null | {LinkedList next, int data}
 
@@ -9,12 +9,12 @@ function sum(LinkedList l) -> int:
         l = l.next
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     LinkedList list = null
-    sys.out.println_s("SUM: " ++ Any.toString(sum(list)))
+    assume sum(list) == 0
     list = {next: list, data: 1}
-    sys.out.println_s("SUM: " ++ Any.toString(sum(list)))
+    assume sum(list) == 1
     list = {next: list, data: 2324}
-    sys.out.println_s("SUM: " ++ Any.toString(sum(list)))
+    assume sum(list) == 2325
     list = {next: list, data: 2}
-    sys.out.println_s("SUM: " ++ Any.toString(sum(list)))
+    assume sum(list) == 2327

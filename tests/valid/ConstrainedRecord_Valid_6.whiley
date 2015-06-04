@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type state is {[int] input, int pos} where (pos >= 0) && (pos <= |input|)
 
@@ -12,7 +12,6 @@ function parseTerm(state st) -> state:
     st = parseWhiteSpace(st)
     return st
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     state st = {input: "  Hello", pos: 0}
-    st = parseTerm(st)
-    sys.out.println(st)
+    assume parseTerm(st) == {input:[32, 32, 72, 101, 108, 108, 111],pos:2}

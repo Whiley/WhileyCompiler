@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type liststr is [int] | [int]
 
@@ -7,10 +7,12 @@ function index(liststr l, int index) -> any
     //
     return l[index]
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] l = [1, 2, 3]
-    sys.out.println(index(l, 1))
-    sys.out.println(index(l, 2))
+    assume index(l, 0) == 1
+    assume index(l, 1) == 2
+    assume index(l, 2) == 3
     [int] s = "Hello World"
-    sys.out.println(index(s, 0))
-    sys.out.println(index(s, 2))
+    assume index(s, 0) == 'H'
+    assume index(s, 1) == 'e'    
+    assume index(s, 2) == 'l'

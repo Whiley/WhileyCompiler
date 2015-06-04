@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 constant PAWN is 0
 
@@ -28,6 +28,6 @@ requires |board.rows| > 0:
     board.rows[0] = BLACK_PAWN
     return board
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Board r1 = {flag: false, rows: [WHITE_PAWN]}
-    sys.out.println(f(r1))
+    assume f(r1) == {flag:false,rows:[{colour:false,kind:0}]}

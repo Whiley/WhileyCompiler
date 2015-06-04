@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -9,6 +9,6 @@ requires |ls| > 0:
             return 0
     return ls[0]
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     nat rs = extract([-2, -3, 1, 2, -23, 3, 2345, 4, 5])
-    sys.out.println(rs)
+    assume rs == 0

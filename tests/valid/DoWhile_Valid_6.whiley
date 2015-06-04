@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 function lastIndexOf([int] items, int item) -> (int r)
 requires |items| > 0
@@ -12,9 +12,9 @@ ensures r == -1 || items[r] == item:
     //
     return i
 
-method main(System.Console c):
-    c.out.println(lastIndexOf([1,2,3,4,5,4,3,2,1],1))
-    c.out.println(lastIndexOf([1,2,3,4,5,4,3,2,1],2))
-    c.out.println(lastIndexOf([1,2,3,4,5,4,3,2,1],3))
-    c.out.println(lastIndexOf([1,2,3,4,5,4,3,2,1],4))
-    c.out.println(lastIndexOf([1,2,3,4,5,4,3,2,1],5))            
+public export method test():
+    assume lastIndexOf([1,2,3,4,5,4,3,2,1],1) == 8
+    assume lastIndexOf([1,2,3,4,5,4,3,2,1],2) == 7
+    assume lastIndexOf([1,2,3,4,5,4,3,2,1],3) == 6
+    assume lastIndexOf([1,2,3,4,5,4,3,2,1],4) == 5
+    assume lastIndexOf([1,2,3,4,5,4,3,2,1],5) == 4         

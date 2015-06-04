@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type R1 is {null | int x}
 
@@ -11,8 +11,8 @@ type R4 is R2 | R3
 function f(R1 x) -> R4:
     return x
 
-method main(System.Console sys) -> void:
-    z1 = f({x: 1})
-    z2 = f({x: null})
-    sys.out.println(z1)
-    sys.out.println(z2)
+public export method test() -> void:
+    R4 z1 = f({x: 1})
+    R4 z2 = f({x: null})
+    assume z1 == {x: 1}
+    assume z2 == {x: null}

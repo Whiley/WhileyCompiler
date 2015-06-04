@@ -1,10 +1,10 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+public export method test() -> void:
     [int] x = "abcdefghjkl"
     [int] y = x[0..2]
-    sys.out.println_s(y)
+    assert y == "ab"
     y = x[1..3]
-    sys.out.println_s(y)
+    assert y == "bc" 
     y = x[2..|x|]
-    sys.out.println_s(y)
+    assert y == "cdefghjkl"

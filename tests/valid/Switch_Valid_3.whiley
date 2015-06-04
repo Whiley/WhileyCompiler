@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f([int] input) -> int
 requires |input| > 0:
@@ -21,11 +21,11 @@ requires |input| > 0:
     //
     return r
 
-method main(System.Console sys) -> void:
-    sys.out.println(f("N"))
-    sys.out.println(f("B"))
-    sys.out.println(f("R"))    
-    sys.out.println(f("Q"))
-    sys.out.println(f("K"))
-    sys.out.println(f("e"))
-    sys.out.println(f("1"))
+public export method test() -> void:
+    assume f("N") == 1
+    assume f("B") == 2
+    assume f("R") == 3
+    assume f("Q") == 4
+    assume f("K") == 5
+    assume f("e") == 6
+    assume f("1") == 6

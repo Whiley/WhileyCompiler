@@ -1,7 +1,4 @@
-import * from whiley.lang.System
-import Error from whiley.lang.Errors
-
-function f(int x) -> int throws Error:
+function f(int x) -> int:
     switch x:
         case 0:
         case 1:
@@ -9,12 +6,4 @@ function f(int x) -> int throws Error:
         case 2:
             return x + 12
         default:
-            throw Error("INVALID VALUE FOR X")
-
-public method main(System.Console sys) -> void:
-    try:
-        sys.out.println(f(1))
-        sys.out.println(f(2))
-        sys.out.println(f(3))
-    catch(Error e):
-        sys.out.println(e.msg)
+    //

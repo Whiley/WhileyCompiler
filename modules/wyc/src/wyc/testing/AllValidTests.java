@@ -28,12 +28,21 @@ package wyc.testing;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 
 import org.junit.*;
 
+import wybs.lang.Build;
+import wybs.util.StdProject;
 import wyc.WycMain;
 import wyc.util.WycBuildTask;
 import wycc.util.Pair;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.DirectoryRoot;
+import wyfs.util.Trie;
+import wyil.Main.Registry;
 
 /**
  * Run through all valid test cases with verification enabled. Since every test
@@ -92,15 +101,16 @@ public class AllValidTests {
 	 *            Name of the test to run. This must correspond to a whiley
 	 *            source file in the <code>WHILEY_SRC_DIR</code> directory.
 	 */
-	protected void runTest(String name) {
+	protected void runTest(String testName) throws IOException {
 		// this will need to turn on verification at some point.
-		name = WHILEY_SRC_DIR + File.separatorChar + name + ".whiley";
+		String whileyFilename = WHILEY_SRC_DIR + File.separatorChar + testName
+				+ ".whiley";
 
 		Pair<Integer,String> p = TestUtils.compile(
 				"-wd", WHILEY_SRC_DIR,      // location of source directory
 				"-wp", WYRT_PATH,           // add wyrt to whileypath
 				//"-verify",                  // enable verification
-				name);                      // name of test to compile
+				whileyFilename);                      // name of test to compile
 
 		int r = p.first();
 
@@ -111,9 +121,9 @@ public class AllValidTests {
 		} else if (r == WycMain.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
 		}
-
-		// TODO: we should actually execute the compiled file here using the
-		// WyIL Interpreter (when that exists).
+		
+		// Execute the compile WyIL file
+		TestUtils.execWyil(WHILEY_SRC_DIR, Trie.fromString(testName));
 	}
 
 	// ======================================================================
@@ -121,3134 +131,3109 @@ public class AllValidTests {
 	// ======================================================================
 
 	@Test
-	public void Access_Valid_1() {
+	public void Access_Valid_1() throws IOException {
 		runTest("Access_Valid_1");
 	}
 
 	@Test
-	public void Access_Valid_2() {
+	public void Access_Valid_2() throws IOException {
 		runTest("Access_Valid_2");
 	}
 
 	@Test
-	public void Assume_Valid_1() {
+	public void Assume_Valid_1() throws IOException {
 		runTest("Assume_Valid_1");
 	}
 
 	@Test
-	public void Assume_Valid_2() {
+	public void Assume_Valid_2() throws IOException {
 		runTest("Assume_Valid_2");
 	}
 
 	@Test
-	public void BoolAssign_Valid_1() {
+	public void BoolAssign_Valid_1() throws IOException {
 		runTest("BoolAssign_Valid_1");
 	}
 
 	@Test
-	public void BoolAssign_Valid_2() {
+	public void BoolAssign_Valid_2() throws IOException {
 		runTest("BoolAssign_Valid_2");
 	}
 
 	@Test
-	public void BoolAssign_Valid_3() {
+	public void BoolAssign_Valid_3() throws IOException {
 		runTest("BoolAssign_Valid_3");
 	}
 
 	@Test
-	public void BoolAssign_Valid_4() {
+	public void BoolAssign_Valid_4() throws IOException {
 		runTest("BoolAssign_Valid_4");
 	}
 
 	@Test
-	public void BoolAssign_Valid_5() {
+	public void BoolAssign_Valid_5() throws IOException {
 		runTest("BoolAssign_Valid_5");
 	}
 
 	@Test
-	public void BoolAssign_Valid_6() {
+	public void BoolAssign_Valid_6() throws IOException {
 		runTest("BoolAssign_Valid_6");
 	}
 
 	@Test
-	public void BoolFun_Valid_1() {
+	public void BoolFun_Valid_1() throws IOException {
 		runTest("BoolFun_Valid_1");
 	}
 
 	@Test
-	public void BoolIfElse_Valid_1() {
+	public void BoolIfElse_Valid_1() throws IOException {
 		runTest("BoolIfElse_Valid_1");
 	}
 
 	@Test
-	public void BoolIfElse_Valid_2() {
+	public void BoolIfElse_Valid_2() throws IOException {
 		runTest("BoolIfElse_Valid_2");
 	}
 
 	@Test
-	public void BoolList_Valid_1() {
+	public void BoolList_Valid_1() throws IOException {
 		runTest("BoolList_Valid_1");
 	}
 
 	@Test
-	public void BoolList_Valid_2() {
+	public void BoolList_Valid_2() throws IOException {
 		runTest("BoolList_Valid_2");
 	}
 
 	@Test
-	public void BoolList_Valid_3() {
+	public void BoolList_Valid_3() throws IOException {
 		runTest("BoolList_Valid_3");
 	}
 
 	@Test
-	public void BoolRecord_Valid_1() {
+	public void BoolRecord_Valid_1() throws IOException {
 		runTest("BoolRecord_Valid_1");
 	}
 
 	@Test
-	public void BoolRecord_Valid_2() {
+	public void BoolRecord_Valid_2() throws IOException {
 		runTest("BoolRecord_Valid_2");
 	}
 
 	@Test
-	public void BoolRequires_Valid_1() {
+	public void BoolRequires_Valid_1() throws IOException {
 		runTest("BoolRequires_Valid_1");
 	}
 
 	@Test
-	public void BoolReturn_Valid_1() {
+	public void BoolReturn_Valid_1() throws IOException {
 		runTest("BoolReturn_Valid_1");
 	}
 
 	@Test
-	public void Byte_Valid_1() {
+	public void Byte_Valid_1() throws IOException {
 		runTest("Byte_Valid_1");
 	}
 
 	@Test
-	public void Byte_Valid_2() {
+	public void Byte_Valid_2() throws IOException {
 		runTest("Byte_Valid_2");
 	}
 
 	@Test
-	public void Byte_Valid_3() {
+	public void Byte_Valid_3() throws IOException {
 		runTest("Byte_Valid_3");
 	}
 
 	@Test
-	public void Byte_Valid_4() {
+	public void Byte_Valid_4() throws IOException {
 		runTest("Byte_Valid_4");
 	}
 
 	@Test
-	public void Byte_Valid_5() {
+	public void Byte_Valid_5() throws IOException {
 		runTest("Byte_Valid_5");
 	}
 
 	@Test
-	public void Byte_Valid_6() {
+	public void Byte_Valid_6() throws IOException {
 		runTest("Byte_Valid_6");
 	}
 
 	@Test
-	public void Byte_Valid_7() {
+	public void Byte_Valid_7() throws IOException {
 		runTest("Byte_Valid_7");
 	}
 
 	@Test
-	public void Byte_Valid_8() {
+	public void Byte_Valid_8() throws IOException {
 		runTest("Byte_Valid_8");
 	}
 
 	@Test
-	public void Byte_Valid_9() {
+	public void Byte_Valid_9() throws IOException {
 		runTest("Byte_Valid_9");
 	}
 
 	@Test
-	public void Cast_Valid_1() {
+	public void Cast_Valid_1() throws IOException {
 		runTest("Cast_Valid_1");
 	}
 
 	@Test
-	public void Cast_Valid_2() {
+	public void Cast_Valid_2() throws IOException {
 		runTest("Cast_Valid_2");
 	}
 
 	@Test
-	public void Cast_Valid_3() {
+	public void Cast_Valid_3() throws IOException {
 		runTest("Cast_Valid_3");
 	}
 
 	@Test
-	public void Cast_Valid_4() {
+	public void Cast_Valid_4() throws IOException {
 		runTest("Cast_Valid_4");
 	}
 
 	@Test
-	public void Cast_Valid_5() {
+	public void Cast_Valid_5() throws IOException {
 		runTest("Cast_Valid_5");
 	}
 
 	@Test
-	public void Cast_Valid_6() {
+	public void Cast_Valid_6() throws IOException {
 		runTest("Cast_Valid_6");
 	}
 
 	@Test
-	public void Coercion_Valid_1() {
+	public void Coercion_Valid_1() throws IOException {
 		runTest("Coercion_Valid_1");
 	}
 
 	@Test
-	public void Coercion_Valid_2() {
+	public void Coercion_Valid_2() throws IOException {
 		runTest("Coercion_Valid_2");
 	}
 
 	@Test
-	public void Coercion_Valid_3() {
+	public void Coercion_Valid_3() throws IOException {
 		runTest("Coercion_Valid_3");
 	}
 
 	@Test
-	public void Coercion_Valid_4() {
+	public void Coercion_Valid_4() throws IOException {
 		runTest("Coercion_Valid_4");
 	}
 
 	@Test
-	public void Coercion_Valid_6() {
+	public void Coercion_Valid_6() throws IOException {
 		runTest("Coercion_Valid_6");
 	}
 
 	@Test
-	public void Coercion_Valid_7() {
+	public void Coercion_Valid_7() throws IOException {
 		runTest("Coercion_Valid_7");
 	}
 
 	@Ignore("#406") @Test
-	public void Coercion_Valid_8() {
+	public void Coercion_Valid_8() throws IOException {
 		runTest("Coercion_Valid_8");
 	}
 
 	@Test
-	public void Coercion_Valid_9() {
+	public void Coercion_Valid_9() throws IOException {
 		runTest("Coercion_Valid_9");
 	}
 
 	@Test
-	public void Complex_Valid_1() {
+	public void Complex_Valid_1() throws IOException {
 		runTest("Complex_Valid_1");
 	}
 
 	@Test
-	public void Complex_Valid_2() {
+	public void Complex_Valid_2() throws IOException {
 		runTest("Complex_Valid_2");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void Complex_Valid_3() {
+	public void Complex_Valid_3() throws IOException {
 		runTest("Complex_Valid_3");
 	}
 
 	@Test
-	public void Complex_Valid_4() {
+	public void Complex_Valid_4() throws IOException {
 		runTest("Complex_Valid_4");
 	}
 
 	@Test
-	public void Complex_Valid_5() {
+	public void Complex_Valid_5() throws IOException {
 		runTest("Complex_Valid_5");
 	}
 
 	@Test
-	public void Complex_Valid_6() {
+	public void Complex_Valid_6() throws IOException {
 		runTest("Complex_Valid_6");
 	}
 
 	@Test
-	public void Complex_Valid_7() {
+	public void Complex_Valid_7() throws IOException {
 		runTest("Complex_Valid_7");
 	}
 
 	@Test
-	public void Complex_Valid_8() {
+	public void Complex_Valid_8() throws IOException {
 		runTest("Complex_Valid_8");
 	}
 
-	@Ignore("#311") @Test
-	public void Constant_Valid_1() {
-		runTest("Constant_Valid_1");
-	}
-
-	@Ignore("#311") @Test
-	public void Constant_Valid_2() {
-		runTest("Constant_Valid_2");
-	}
-
 	@Test
-	public void Constant_Valid_3() {
+	public void Constant_Valid_3() throws IOException {
 		runTest("Constant_Valid_3");
 	}
 
 	@Test
-	public void ConstrainedDictionary_Valid_1() {
+	public void ConstrainedDictionary_Valid_1() throws IOException {
 		runTest("ConstrainedDictionary_Valid_1");
 	}
 
 	@Test
-	public void ConstrainedDictionary_Valid_2() {
+	public void ConstrainedDictionary_Valid_2() throws IOException {
 		runTest("ConstrainedDictionary_Valid_2");
 	}
-	
+
 	@Test
-	public void ConstrainedInt_Valid_1() {
+	public void ConstrainedInt_Valid_1() throws IOException {
 		runTest("ConstrainedInt_Valid_1");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_10() {
+	public void ConstrainedInt_Valid_10() throws IOException {
 		runTest("ConstrainedInt_Valid_10");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_12() {
+	public void ConstrainedInt_Valid_12() throws IOException {
 		runTest("ConstrainedInt_Valid_12");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_13() {
+	public void ConstrainedInt_Valid_13() throws IOException {
 		runTest("ConstrainedInt_Valid_13");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_14() {
+	public void ConstrainedInt_Valid_14() throws IOException {
 		runTest("ConstrainedInt_Valid_14");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_15() {
+	public void ConstrainedInt_Valid_15() throws IOException {
 		runTest("ConstrainedInt_Valid_15");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_16() {
+	public void ConstrainedInt_Valid_16() throws IOException {
 		runTest("ConstrainedInt_Valid_16");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_17() {
+	public void ConstrainedInt_Valid_17() throws IOException {
 		runTest("ConstrainedInt_Valid_17");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_18() {
+	public void ConstrainedInt_Valid_18() throws IOException {
 		runTest("ConstrainedInt_Valid_18");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_19() {
+	public void ConstrainedInt_Valid_19() throws IOException {
 		runTest("ConstrainedInt_Valid_19");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_2() {
+	public void ConstrainedInt_Valid_2() throws IOException {
 		runTest("ConstrainedInt_Valid_2");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_20() {
+	public void ConstrainedInt_Valid_20() throws IOException {
 		runTest("ConstrainedInt_Valid_20");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_21() {
+	public void ConstrainedInt_Valid_21() throws IOException {
 		runTest("ConstrainedInt_Valid_21");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_22() {
+	public void ConstrainedInt_Valid_22() throws IOException {
 		runTest("ConstrainedInt_Valid_22");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_23() {
+	public void ConstrainedInt_Valid_23() throws IOException {
 		runTest("ConstrainedInt_Valid_23");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_24() {
+	public void ConstrainedInt_Valid_24() throws IOException {
 		runTest("ConstrainedInt_Valid_24");
 	}
-	
+
 	@Test
-	public void ConstrainedInt_Valid_3() {
+	public void ConstrainedInt_Valid_3() throws IOException {
 		runTest("ConstrainedInt_Valid_3");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_4() {
+	public void ConstrainedInt_Valid_4() throws IOException {
 		runTest("ConstrainedInt_Valid_4");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_5() {
+	public void ConstrainedInt_Valid_5() throws IOException {
 		runTest("ConstrainedInt_Valid_5");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_6() {
+	public void ConstrainedInt_Valid_6() throws IOException {
 		runTest("ConstrainedInt_Valid_6");
 	}
 
 	@Test
-	public void ConstrainedInt_Valid_8() {
+	public void ConstrainedInt_Valid_8() throws IOException {
 		runTest("ConstrainedInt_Valid_8");
 	}
 
 	@Ignore("unknown") @Test
-	public void ConstrainedIntersection_Valid_1() {
+	public void ConstrainedIntersection_Valid_1() throws IOException {
 		runTest("ConstrainedIntersection_Valid_1");
 	}
-	
+
 	@Test
-	public void ConstrainedList_Valid_1() {
+	public void ConstrainedList_Valid_1() throws IOException {
 		runTest("ConstrainedList_Valid_1");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_11() {
+	public void ConstrainedList_Valid_11() throws IOException {
 		runTest("ConstrainedList_Valid_11");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_12() {
+	public void ConstrainedList_Valid_12() throws IOException {
 		runTest("ConstrainedList_Valid_12");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_14() {
+	public void ConstrainedList_Valid_14() throws IOException {
 		runTest("ConstrainedList_Valid_14");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_15() {
+	public void ConstrainedList_Valid_15() throws IOException {
 		runTest("ConstrainedList_Valid_15");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_16() {
+	public void ConstrainedList_Valid_16() throws IOException {
 		runTest("ConstrainedList_Valid_16");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_17() {
+	public void ConstrainedList_Valid_17() throws IOException {
 		runTest("ConstrainedList_Valid_17");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_18() {
+	public void ConstrainedList_Valid_18() throws IOException {
 		runTest("ConstrainedList_Valid_18");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_19() {
+	public void ConstrainedList_Valid_19() throws IOException {
 		runTest("ConstrainedList_Valid_19");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_2() {
+	public void ConstrainedList_Valid_2() throws IOException {
 		runTest("ConstrainedList_Valid_2");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_20() {
+	public void ConstrainedList_Valid_20() throws IOException {
 		runTest("ConstrainedList_Valid_20");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_21() {
+	public void ConstrainedList_Valid_21() throws IOException {
 		runTest("ConstrainedList_Valid_21");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_22() {
+	public void ConstrainedList_Valid_22() throws IOException {
 		runTest("ConstrainedList_Valid_22");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_23() {
+	public void ConstrainedList_Valid_23() throws IOException {
 		runTest("ConstrainedList_Valid_23");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_24() {
+	public void ConstrainedList_Valid_24() throws IOException {
 		runTest("ConstrainedList_Valid_24");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_25() {
+	public void ConstrainedList_Valid_25() throws IOException {
 		runTest("ConstrainedList_Valid_25");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_26() {
+	public void ConstrainedList_Valid_26() throws IOException {
 		runTest("ConstrainedList_Valid_26");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_27() {
+	public void ConstrainedList_Valid_27() throws IOException {
 		runTest("ConstrainedList_Valid_27");
 	}
-	
+
 	@Test
-	public void ConstrainedList_Valid_3() {
+	public void ConstrainedList_Valid_3() throws IOException {
 		runTest("ConstrainedList_Valid_3");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_4() {
+	public void ConstrainedList_Valid_4() throws IOException {
 		runTest("ConstrainedList_Valid_4");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_5() {
+	public void ConstrainedList_Valid_5() throws IOException {
 		runTest("ConstrainedList_Valid_5");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_6() {
+	public void ConstrainedList_Valid_6() throws IOException {
 		runTest("ConstrainedList_Valid_6");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_7() {
+	public void ConstrainedList_Valid_7() throws IOException {
 		runTest("ConstrainedList_Valid_7");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_8() {
+	public void ConstrainedList_Valid_8() throws IOException {
 		runTest("ConstrainedList_Valid_8");
 	}
 
 	@Test
-	public void ConstrainedList_Valid_9() {
+	public void ConstrainedList_Valid_9() throws IOException {
 		runTest("ConstrainedList_Valid_9");
 	}
 
 	@Ignore("#342") @Test
-	public void ConstrainedNegation_Valid_1() {
+	public void ConstrainedNegation_Valid_1() throws IOException {
 		runTest("ConstrainedNegation_Valid_1");
 	}
 
 	@Ignore("#342") @Test
-	public void ConstrainedNegation_Valid_2() {
+	public void ConstrainedNegation_Valid_2() throws IOException {
 		runTest("ConstrainedNegation_Valid_2");
 	}
 
 	@Test
-	public void ConstrainedRecord_Valid_1() {
+	public void ConstrainedRecord_Valid_1() throws IOException {
 		runTest("ConstrainedRecord_Valid_1");
 	}
 
 	@Test
-	public void ConstrainedRecord_Valid_2() {
+	public void ConstrainedRecord_Valid_2() throws IOException {
 		runTest("ConstrainedRecord_Valid_2");
 	}
 
 	@Test
-	public void ConstrainedRecord_Valid_3() {
+	public void ConstrainedRecord_Valid_3() throws IOException {
 		runTest("ConstrainedRecord_Valid_3");
 	}
 
 	@Test
-	public void ConstrainedRecord_Valid_4() {
+	public void ConstrainedRecord_Valid_4() throws IOException {
 		runTest("ConstrainedRecord_Valid_4");
 	}
 
 	@Test
-	public void ConstrainedRecord_Valid_5() {
+	public void ConstrainedRecord_Valid_5() throws IOException {
 		runTest("ConstrainedRecord_Valid_5");
 	}
 
 	@Test
-	public void ConstrainedRecord_Valid_6() {
+	public void ConstrainedRecord_Valid_6() throws IOException {
 		runTest("ConstrainedRecord_Valid_6");
 	}
 
 	@Test
-	public void ConstrainedRecord_Valid_8() {
+	public void ConstrainedRecord_Valid_8() throws IOException {
 		runTest("ConstrainedRecord_Valid_8");
 	}
 
 	@Test
-	public void ConstrainedRecord_Valid_9() {
+	public void ConstrainedRecord_Valid_9() throws IOException {
 		runTest("ConstrainedRecord_Valid_9");
 	}
-	
+
 	@Test
-	public void ConstrainedRecord_Valid_10() {
+	public void ConstrainedRecord_Valid_10() throws IOException {
 		runTest("ConstrainedRecord_Valid_10");
 	}
 
 	@Test
-	public void ConstrainedReference_Valid_1() {
+	public void ConstrainedReference_Valid_1() throws IOException {
 		runTest("ConstrainedReference_Valid_1");
 	}
-	
+
 	@Test
-	public void ConstrainedSet_Valid_1() {
+	public void ConstrainedSet_Valid_1() throws IOException {
 		runTest("ConstrainedSet_Valid_1");
 	}
 
 	@Test
-	public void ConstrainedSet_Valid_2() {
+	public void ConstrainedSet_Valid_2() throws IOException {
 		runTest("ConstrainedSet_Valid_2");
 	}
 
 	@Test
-	public void ConstrainedSet_Valid_3() {
+	public void ConstrainedSet_Valid_3() throws IOException {
 		runTest("ConstrainedSet_Valid_3");
 	}
 
 	@Test
-	public void ConstrainedSet_Valid_4() {
+	public void ConstrainedSet_Valid_4() throws IOException {
 		runTest("ConstrainedSet_Valid_4");
 	}
 
 	@Test
-	public void ConstrainedSet_Valid_5() {
+	public void ConstrainedSet_Valid_5() throws IOException {
 		runTest("ConstrainedSet_Valid_5");
 	}
 
 	@Test
-	public void ConstrainedSet_Valid_6() {
+	public void ConstrainedSet_Valid_6() throws IOException {
 		runTest("ConstrainedSet_Valid_6");
 	}
 
 	@Test
-	public void ConstrainedSet_Valid_7() {
+	public void ConstrainedSet_Valid_7() throws IOException {
 		runTest("ConstrainedSet_Valid_7");
 	}
 
 	@Test
-	public void ConstrainedSet_Valid_8() {
+	public void ConstrainedSet_Valid_8() throws IOException {
 		runTest("ConstrainedSet_Valid_8");
 	}
 
 	@Test
-	public void ConstrainedSet_Valid_9() {
+	public void ConstrainedSet_Valid_9() throws IOException {
 		runTest("ConstrainedSet_Valid_9");
 	}
-	
+
 	@Test
-	public void ConstrainedUnion_Valid_1() {
+	public void ConstrainedUnion_Valid_1() throws IOException {
 		runTest("ConstrainedUnion_Valid_1");
 	}
-	
+
 	@Test
-	public void ConstrainedTuple_Valid_1() {
+	public void ConstrainedTuple_Valid_1() throws IOException {
 		runTest("ConstrainedTuple_Valid_1");
 	}
 
 	@Test
-	public void ConstrainedTuple_Valid_2() {
+	public void ConstrainedTuple_Valid_2() throws IOException {
 		runTest("ConstrainedTuple_Valid_2");
 	}
-	
+
 	@Ignore("Issue ???") @Test
-	public void Contractive_Valid_1() {
+	public void Contractive_Valid_1() throws IOException {
 		runTest("Contractive_Valid_1");
 	}
 
 	@Test
-	public void Contractive_Valid_2() {
+	public void Contractive_Valid_2() throws IOException {
 		runTest("Contractive_Valid_2");
 	}
 
 	@Test
-	public void DecimalAssignment_Valid_1() {
+	public void DecimalAssignment_Valid_1() throws IOException {
 		runTest("DecimalAssignment_Valid_1");
 	}
 
 	@Test
-	public void Define_Valid_1() {
+	public void Define_Valid_1() throws IOException {
 		runTest("Define_Valid_1");
 	}
 
 	@Test
-	public void Define_Valid_2() {
+	public void Define_Valid_2() throws IOException {
 		runTest("Define_Valid_2");
 	}
 
 	@Test
-	public void Define_Valid_3() {
+	public void Define_Valid_3() throws IOException {
 		runTest("Define_Valid_3");
 	}
 
 	@Test
-	public void Define_Valid_4() {
+	public void Define_Valid_4() throws IOException {
 		runTest("Define_Valid_4");
 	}
 
 	@Test
-	public void Dictionary_Valid_1() {
+	public void Dictionary_Valid_1() throws IOException {
 		runTest("Dictionary_Valid_1");
 	}
 
 	@Test
-	public void Dictionary_Valid_10() {
+	public void Dictionary_Valid_10() throws IOException {
 		runTest("Dictionary_Valid_10");
 	}
 
 	@Test
-	public void Dictionary_Valid_11() {
+	public void Dictionary_Valid_11() throws IOException {
 		runTest("Dictionary_Valid_11");
 	}
 
 	@Test
-	public void Dictionary_Valid_12() {
+	public void Dictionary_Valid_12() throws IOException {
 		runTest("Dictionary_Valid_12");
 	}
 
 	@Test
-	public void Dictionary_Valid_13() {
+	public void Dictionary_Valid_13() throws IOException {
 		runTest("Dictionary_Valid_13");
 	}
 
 	@Test
-	public void Dictionary_Valid_14() {
+	public void Dictionary_Valid_14() throws IOException {
 		runTest("Dictionary_Valid_14");
 	}
 
 	@Test
-	public void Dictionary_Valid_15() {
+	public void Dictionary_Valid_15() throws IOException {
 		runTest("Dictionary_Valid_15");
 	}
 
 	@Test
-	public void Dictionary_Valid_16() {
+	public void Dictionary_Valid_16() throws IOException {
 		runTest("Dictionary_Valid_16");
 	}
 
 	@Test
-	public void Dictionary_Valid_2() {
+	public void Dictionary_Valid_2() throws IOException {
 		runTest("Dictionary_Valid_2");
 	}
 
 	@Test
-	public void Dictionary_Valid_3() {
+	public void Dictionary_Valid_3() throws IOException {
 		runTest("Dictionary_Valid_3");
 	}
 
 	@Test
-	public void Dictionary_Valid_4() {
+	public void Dictionary_Valid_4() throws IOException {
 		runTest("Dictionary_Valid_4");
 	}
 
 	@Test
-	public void Dictionary_Valid_5() {
+	public void Dictionary_Valid_5() throws IOException {
 		runTest("Dictionary_Valid_5");
 	}
 
 	@Test
-	public void Dictionary_Valid_6() {
+	public void Dictionary_Valid_6() throws IOException {
 		runTest("Dictionary_Valid_6");
 	}
 
 	@Test
-	public void Dictionary_Valid_7() {
+	public void Dictionary_Valid_7() throws IOException {
 		runTest("Dictionary_Valid_7");
 	}
 
 	@Test
-	public void Dictionary_Valid_8() {
+	public void Dictionary_Valid_8() throws IOException {
 		runTest("Dictionary_Valid_8");
 	}
 
 	@Test
-	public void Dictionary_Valid_9() {
+	public void Dictionary_Valid_9() throws IOException {
 		runTest("Dictionary_Valid_9");
 	}
 
 	@Test
-	public void DoWhile_Valid_1() {
+	public void DoWhile_Valid_1() throws IOException {
 		runTest("DoWhile_Valid_1");
 	}
 
 	@Test
-	public void DoWhile_Valid_2() {
+	public void DoWhile_Valid_2() throws IOException {
 		runTest("DoWhile_Valid_2");
 	}
 
 	@Test
-	public void DoWhile_Valid_3() {
+	public void DoWhile_Valid_3() throws IOException {
 		runTest("DoWhile_Valid_3");
 	}
 
 	@Ignore("unknown") @Test
-	public void DoWhile_Valid_4() {
+	public void DoWhile_Valid_4() throws IOException {
 		runTest("DoWhile_Valid_4");
 	}
 
 	@Test
-	public void DoWhile_Valid_5() {
+	public void DoWhile_Valid_5() throws IOException {
 		runTest("DoWhile_Valid_5");
 	}
 
 	@Test
-	public void DoWhile_Valid_6() {
+	public void DoWhile_Valid_6() throws IOException {
 		runTest("DoWhile_Valid_6");
 	}
-	
+
 	@Test
-	public void EffectiveList_Valid_1() {
+	public void EffectiveList_Valid_1() throws IOException {
 		runTest("EffectiveList_Valid_1");
 	}
 
 	@Test
-	public void Ensures_Valid_1() {
+	public void Ensures_Valid_1() throws IOException {
 		runTest("Ensures_Valid_1");
 	}
 
 	@Test
-	public void Ensures_Valid_2() {
+	public void Ensures_Valid_2() throws IOException {
 		runTest("Ensures_Valid_2");
 	}
 
 	@Test
-	public void Ensures_Valid_3() {
+	public void Ensures_Valid_3() throws IOException {
 		runTest("Ensures_Valid_3");
 	}
 
 	@Test
-	public void Ensures_Valid_4() {
+	public void Ensures_Valid_4() throws IOException {
 		runTest("Ensures_Valid_4");
 	}
 
 	@Test
-	public void Ensures_Valid_5() {
+	public void Ensures_Valid_5() throws IOException {
 		runTest("Ensures_Valid_5");
 	}
 
 	@Test
-	public void Ensures_Valid_6() {
+	public void Ensures_Valid_6() throws IOException {
 		runTest("Ensures_Valid_6");
 	}
 
 	@Test
-	public void Ensures_Valid_7() {
+	public void Ensures_Valid_7() throws IOException {
 		runTest("Ensures_Valid_7");
 	}
 
 	@Test
-	public void Ensures_Valid_8() {
+	public void Ensures_Valid_8() throws IOException {
 		runTest("Ensures_Valid_8");
 	}
-	
+
 	@Test
-	public void For_Valid_1() {
+	public void For_Valid_1() throws IOException {
 		runTest("For_Valid_1");
 	}
 
 	@Test
-	public void For_Valid_10() {
+	public void For_Valid_10() throws IOException {
 		runTest("For_Valid_10");
 	}
 
 	@Test
-	public void For_Valid_11() {
+	public void For_Valid_11() throws IOException {
 		runTest("For_Valid_11");
 	}
 
 	@Test
-	public void For_Valid_12() {
+	public void For_Valid_12() throws IOException {
 		runTest("For_Valid_12");
 	}
 
 	@Test
-	public void For_Valid_13() {
+	public void For_Valid_13() throws IOException {
 		runTest("For_Valid_13");
 	}
 
 	@Test
-	public void For_Valid_14() {
+	public void For_Valid_14() throws IOException {
 		runTest("For_Valid_14");
 	}
 
 	@Test
-	public void For_Valid_15() {
+	public void For_Valid_15() throws IOException {
 		runTest("For_Valid_15");
 	}
 
 	@Test
-	public void For_Valid_16() {
+	public void For_Valid_16() throws IOException {
 		runTest("For_Valid_16");
 	}
 
 	@Test
-	public void For_Valid_17() {
+	public void For_Valid_17() throws IOException {
 		runTest("For_Valid_17");
 	}
 
 	@Test
-	public void For_Valid_18() {
+	public void For_Valid_18() throws IOException {
 		runTest("For_Valid_18");
 	}
-	
+
 	@Test
-	public void For_Valid_19() {
+	public void For_Valid_19() throws IOException {
 		runTest("For_Valid_19");
 	}
 
 	@Test
-	public void For_Valid_20() {
+	public void For_Valid_20() throws IOException {
 		runTest("For_Valid_20");
 	}
-	
+
 	@Test
-	public void For_Valid_2() {
+	public void For_Valid_2() throws IOException {
 		runTest("For_Valid_2");
 	}
 
 	@Test
-	public void For_Valid_3() {
+	public void For_Valid_3() throws IOException {
 		runTest("For_Valid_3");
 	}
 
 	@Test
-	public void For_Valid_4() {
+	public void For_Valid_4() throws IOException {
 		runTest("For_Valid_4");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void For_Valid_5() {
+	public void For_Valid_5() throws IOException {
 		runTest("For_Valid_5");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void For_Valid_6() {
+	public void For_Valid_6() throws IOException {
 		runTest("For_Valid_6");
 	}
 
 	@Test
-	public void For_Valid_7() {
+	public void For_Valid_7() throws IOException {
 		runTest("For_Valid_7");
 	}
 
 	@Test
-	public void For_Valid_8() {
+	public void For_Valid_8() throws IOException {
 		runTest("For_Valid_8");
 	}
 
 	@Test
-	public void For_Valid_9() {
+	public void For_Valid_9() throws IOException {
 		runTest("For_Valid_9");
 	}
 
 	@Test
-	public void FunctionRef_Valid_1() {
+	public void FunctionRef_Valid_1() throws IOException {
 		runTest("FunctionRef_Valid_1");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void FunctionRef_Valid_2() {
+	public void FunctionRef_Valid_2() throws IOException {
 		runTest("FunctionRef_Valid_2");
 	}
 
 	@Test
-	public void FunctionRef_Valid_3() {
+	public void FunctionRef_Valid_3() throws IOException {
 		runTest("FunctionRef_Valid_3");
 	}
 
 	@Test
-	public void FunctionRef_Valid_4() {
+	public void FunctionRef_Valid_4() throws IOException {
 		runTest("FunctionRef_Valid_4");
 	}
 
 	@Test
-	public void FunctionRef_Valid_5() {
+	public void FunctionRef_Valid_5() throws IOException {
 		runTest("FunctionRef_Valid_5");
 	}
 
 	@Test
-	public void FunctionRef_Valid_6() {
+	public void FunctionRef_Valid_6() throws IOException {
 		runTest("FunctionRef_Valid_6");
 	}
 
 	@Test
-	public void FunctionRef_Valid_7() {
+	public void FunctionRef_Valid_7() throws IOException {
 		runTest("FunctionRef_Valid_7");
 	}
 
 	@Test
-	public void FunctionRef_Valid_8() {
+	public void FunctionRef_Valid_8() throws IOException {
 		runTest("FunctionRef_Valid_8");
 	}
 
 	@Test
-	public void FunctionRef_Valid_9() {
+	public void FunctionRef_Valid_9() throws IOException {
 		runTest("FunctionRef_Valid_9");
 	}
 
 	@Test
-	public void Function_Valid_1() {
+	public void Function_Valid_1() throws IOException {
 		runTest("Function_Valid_1");
 	}
 
 	@Test
-	public void Function_Valid_10() {
+	public void Function_Valid_10() throws IOException {
 		runTest("Function_Valid_10");
 	}
 
 	@Test
-	public void Function_Valid_12() {
+	public void Function_Valid_12() throws IOException {
 		runTest("Function_Valid_12");
 	}
 
 	@Test
-	public void Function_Valid_13() {
+	public void Function_Valid_13() throws IOException {
 		runTest("Function_Valid_13");
 	}
 
 	@Test
-	public void Function_Valid_14() {
+	public void Function_Valid_14() throws IOException {
 		runTest("Function_Valid_14");
 	}
 
 	@Test
-	public void Function_Valid_16() {
+	public void Function_Valid_16() throws IOException {
 		runTest("Function_Valid_16");
 	}
 
 	@Test
-	public void Function_Valid_17() {
+	public void Function_Valid_17() throws IOException {
 		runTest("Function_Valid_17");
 	}
 
 	@Test
-	public void Function_Valid_18() {
+	public void Function_Valid_18() throws IOException {
 		runTest("Function_Valid_18");
 	}
 
 	@Test
-	public void Function_Valid_19() {
+	public void Function_Valid_19() throws IOException {
 		runTest("Function_Valid_19");
 	}
 
 	@Test
-	public void Function_Valid_2() {
+	public void Function_Valid_2() throws IOException {
 		runTest("Function_Valid_2");
 	}
 
 	@Test
-	public void Function_Valid_20() {
+	public void Function_Valid_20() throws IOException {
 		runTest("Function_Valid_20");
 	}
 
 	@Test
-	public void Function_Valid_21() {
+	public void Function_Valid_21() throws IOException {
 		runTest("Function_Valid_21");
 	}
 
 	@Test
-	public void Function_Valid_3() {
+	public void Function_Valid_3() throws IOException {
 		runTest("Function_Valid_3");
 	}
 
 	@Test
-	public void Function_Valid_4() {
+	public void Function_Valid_4() throws IOException {
 		runTest("Function_Valid_4");
 	}
 
 	@Test
-	public void Function_Valid_5() {
+	public void Function_Valid_5() throws IOException {
 		runTest("Function_Valid_5");
 	}
 
 	@Test
-	public void Function_Valid_6() {
+	public void Function_Valid_6() throws IOException {
 		runTest("Function_Valid_6");
 	}
 
 	@Test
-	public void Function_Valid_7() {
+	public void Function_Valid_7() throws IOException {
 		runTest("Function_Valid_7");
 	}
 
 	@Test
-	public void Function_Valid_8() {
+	public void Function_Valid_8() throws IOException {
 		runTest("Function_Valid_8");
 	}
 
 	@Test
-	public void Function_Valid_9() {
+	public void Function_Valid_9() throws IOException {
 		runTest("Function_Valid_9");
 	}
 
 	@Test
-	public void HexAssign_Valid_1() {
+	public void HexAssign_Valid_1() throws IOException {
 		runTest("HexAssign_Valid_1");
 	}
 
 	@Test
-	public void IfElse_Valid_1() {
+	public void IfElse_Valid_1() throws IOException {
 		runTest("IfElse_Valid_1");
 	}
 
 	@Test
-	public void IfElse_Valid_2() {
+	public void IfElse_Valid_2() throws IOException {
 		runTest("IfElse_Valid_2");
 	}
 
 	@Test
-	public void IfElse_Valid_3() {
+	public void IfElse_Valid_3() throws IOException {
 		runTest("IfElse_Valid_3");
 	}
 
 	@Test
-	public void IfElse_Valid_4() {
+	public void IfElse_Valid_4() throws IOException {
 		runTest("IfElse_Valid_4");
 	}
 
 	@Test
-	public void IfElse_Valid_5() {
+	public void IfElse_Valid_5() throws IOException {
 		runTest("IfElse_Valid_5");
 	}
 
 	@Test
-	public void Import_Valid_1() {
+	public void Import_Valid_1() throws IOException {
 		runTest("Import_Valid_1");
 	}
 
 	@Test
-	public void Import_Valid_2() {
+	public void Import_Valid_2() throws IOException {
 		runTest("Import_Valid_2");
 	}
 
 	@Test
-	public void Import_Valid_3() {
+	public void Import_Valid_3() throws IOException {
 		runTest("Import_Valid_3");
 	}
 
-	@Ignore("unknown") @Test
-	public void Import_Valid_4() {
+	@Ignore("#492") @Test
+	public void Import_Valid_4() throws IOException {
 		runTest("Import_Valid_4");
 	}
 
-	@Test
-	public void Import_Valid_5() {
+	@Ignore("#492") @Test
+	public void Import_Valid_5() throws IOException {
 		runTest("Import_Valid_5");
 	}
 
 	@Test
-	public void Import_Valid_6() {
+	public void Import_Valid_6() throws IOException {
 		runTest("Import_Valid_6");
 	}
 
 	@Test
-	public void IntConst_Valid_1() {
+	public void IntConst_Valid_1() throws IOException {
 		runTest("IntConst_Valid_1");
 	}
 
 	@Test
-	public void IntDefine_Valid_1() {
+	public void IntDefine_Valid_1() throws IOException {
 		runTest("IntDefine_Valid_1");
 	}
 
 	@Test
-	public void IntDefine_Valid_2() {
+	public void IntDefine_Valid_2() throws IOException {
 		runTest("IntDefine_Valid_2");
 	}
 
 	@Test
-	public void IntDiv_Valid_1() {
+	public void IntDiv_Valid_1() throws IOException {
 		runTest("IntDiv_Valid_1");
 	}
 
 	@Test
-	public void IntDiv_Valid_3() {
+	public void IntDiv_Valid_3() throws IOException {
 		runTest("IntDiv_Valid_3");
 	}
 
 	@Test
-	public void IntDiv_Valid_4() {
+	public void IntDiv_Valid_4() throws IOException {
 		runTest("IntDiv_Valid_4");
 	}
 
 	@Test
-	public void IntDiv_Valid_5() {
+	public void IntDiv_Valid_5() throws IOException {
 		runTest("IntDiv_Valid_5");
 	}
 
 	@Test
-	public void IntEquals_Valid_1() {
+	public void IntEquals_Valid_1() throws IOException {
 		runTest("IntEquals_Valid_1");
 	}
 
 	@Test
-	public void IntMul_Valid_1() {
+	public void IntMul_Valid_1() throws IOException {
 		runTest("IntMul_Valid_1");
 	}
 	@Test
-	public void IntMul_Valid_2() {
+	public void IntMul_Valid_2() throws IOException {
 		runTest("IntMul_Valid_2");
 	}
 
 	@Test
-	public void IntOp_Valid_1() {
+	public void IntOp_Valid_1() throws IOException {
 		runTest("IntOp_Valid_1");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void Intersection_Valid_1() {
+	public void Intersection_Valid_1() throws IOException {
 		runTest("Intersection_Valid_1");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void Intersection_Valid_2() {
+	public void Intersection_Valid_2() throws IOException {
 		runTest("Intersection_Valid_2");
 	}
 
 	@Test
-	public void Lambda_Valid_1() {
+	public void Lambda_Valid_1() throws IOException {
 		runTest("Lambda_Valid_1");
 	}
 
 	@Test
-	public void Lambda_Valid_2() {
+	public void Lambda_Valid_2() throws IOException {
 		runTest("Lambda_Valid_2");
 	}
 
 	@Test
-	public void Lambda_Valid_3() {
+	public void Lambda_Valid_3() throws IOException {
 		runTest("Lambda_Valid_3");
 	}
 
 	@Test
-	public void Lambda_Valid_4() {
+	public void Lambda_Valid_4() throws IOException {
 		runTest("Lambda_Valid_4");
 	}
 
 	@Test
-	public void Lambda_Valid_5() {
+	public void Lambda_Valid_5() throws IOException {
 		runTest("Lambda_Valid_5");
 	}
 
 	@Test
-	public void Lambda_Valid_6() {
+	public void Lambda_Valid_6() throws IOException {
 		runTest("Lambda_Valid_6");
 	}
 
 	@Test
-	public void Lambda_Valid_7() {
+	public void Lambda_Valid_7() throws IOException {
 		runTest("Lambda_Valid_7");
 	}
 
 	@Test
-	public void Lambda_Valid_8() {
+	public void Lambda_Valid_8() throws IOException {
 		runTest("Lambda_Valid_8");
 	}
 
 	@Test
-	public void Lambda_Valid_9() {
+	public void Lambda_Valid_9() throws IOException {
 		runTest("Lambda_Valid_9");
 	}
 
 	@Test
-	public void LengthOf_Valid_1() {
+	public void LengthOf_Valid_1() throws IOException {
 		runTest("LengthOf_Valid_1");
 	}
 
 	@Test
-	public void LengthOf_Valid_2() {
+	public void LengthOf_Valid_2() throws IOException {
 		runTest("LengthOf_Valid_2");
 	}
 
 	@Test
-	public void LengthOf_Valid_3() {
+	public void LengthOf_Valid_3() throws IOException {
 		runTest("LengthOf_Valid_3");
 	}
 
 	@Test
-	public void LengthOf_Valid_4() {
+	public void LengthOf_Valid_4() throws IOException {
 		runTest("LengthOf_Valid_4");
 	}
 
 	@Test
-	public void LengthOf_Valid_5() {
+	public void LengthOf_Valid_5() throws IOException {
 		runTest("LengthOf_Valid_5");
 	}
 
 	@Test
-	public void ListAccess_Valid_1() {
+	public void ListAccess_Valid_1() throws IOException {
 		runTest("ListAccess_Valid_1");
 	}
 
 	@Test
-	public void ListAccess_Valid_3() {
+	public void ListAccess_Valid_3() throws IOException {
 		runTest("ListAccess_Valid_3");
 	}
 
 	@Test
-	public void ListAccess_Valid_5() {
+	public void ListAccess_Valid_5() throws IOException {
 		runTest("ListAccess_Valid_5");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void ListAccess_Valid_6() {
+	public void ListAccess_Valid_6() throws IOException {
 		runTest("ListAccess_Valid_6");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void ListAccess_Valid_7() {
+	public void ListAccess_Valid_7() throws IOException {
 		runTest("ListAccess_Valid_7");
 	}
 
 	@Test
-	public void ListAccess_Valid_8() {
+	public void ListAccess_Valid_8() throws IOException {
 		runTest("ListAccess_Valid_8");
 	}
 
 	@Test
-	public void ListAccess_Valid_9() {
+	public void ListAccess_Valid_9() throws IOException {
 		runTest("ListAccess_Valid_9");
 	}
 
 	@Test
-	public void ListAppend_Valid_1() {
+	public void ListAppend_Valid_1() throws IOException {
 		runTest("ListAppend_Valid_1");
 	}
 
 	@Test
-	public void ListAppend_Valid_11() {
+	public void ListAppend_Valid_11() throws IOException {
 		runTest("ListAppend_Valid_11");
 	}
 
 	@Test
-	public void ListAppend_Valid_13() {
+	public void ListAppend_Valid_13() throws IOException {
 		runTest("ListAppend_Valid_13");
 	}
 
 	@Test
-	public void ListAppend_Valid_14() {
+	public void ListAppend_Valid_14() throws IOException {
 		runTest("ListAppend_Valid_14");
 	}
 
 	@Test
-	public void ListAppend_Valid_2() {
+	public void ListAppend_Valid_2() throws IOException {
 		runTest("ListAppend_Valid_2");
 	}
 
 	@Test
-	public void ListAppend_Valid_3() {
+	public void ListAppend_Valid_3() throws IOException {
 		runTest("ListAppend_Valid_3");
 	}
 
 	@Test
-	public void ListAppend_Valid_4() {
+	public void ListAppend_Valid_4() throws IOException {
 		runTest("ListAppend_Valid_4");
 	}
 
 	@Test
-	public void ListAppend_Valid_5() {
+	public void ListAppend_Valid_5() throws IOException {
 		runTest("ListAppend_Valid_5");
 	}
 
 	@Test
-	public void ListAppend_Valid_6() {
+	public void ListAppend_Valid_6() throws IOException {
 		runTest("ListAppend_Valid_6");
 	}
 
 	@Test
-	public void ListAppend_Valid_7() {
+	public void ListAppend_Valid_7() throws IOException {
 		runTest("ListAppend_Valid_7");
 	}
 
 	@Test
-	public void ListAppend_Valid_8() {
+	public void ListAppend_Valid_8() throws IOException {
 		runTest("ListAppend_Valid_8");
 	}
 
 	@Test
-	public void ListAppend_Valid_9() {
+	public void ListAppend_Valid_9() throws IOException {
 		runTest("ListAppend_Valid_9");
 	}
 
 	@Test
-	public void ListAssign_Valid_1() {
+	public void ListAssign_Valid_1() throws IOException {
 		runTest("ListAssign_Valid_1");
 	}
 
 	@Test
-	public void ListAssign_Valid_11() {
+	public void ListAssign_Valid_11() throws IOException {
 		runTest("ListAssign_Valid_11");
 	}
 
 	@Test
-	public void ListAssign_Valid_2() {
+	public void ListAssign_Valid_2() throws IOException {
 		runTest("ListAssign_Valid_2");
 	}
 
 	@Test
-	public void ListAssign_Valid_3() {
+	public void ListAssign_Valid_3() throws IOException {
 		runTest("ListAssign_Valid_3");
 	}
 
 	@Test
-	public void ListAssign_Valid_4() {
+	public void ListAssign_Valid_4() throws IOException {
 		runTest("ListAssign_Valid_4");
 	}
 
 	@Test
-	public void ListAssign_Valid_5() {
+	public void ListAssign_Valid_5() throws IOException {
 		runTest("ListAssign_Valid_5");
 	}
 
 	@Test
-	public void ListAssign_Valid_6() {
+	public void ListAssign_Valid_6() throws IOException {
 		runTest("ListAssign_Valid_6");
 	}
 
 	@Test
-	public void ListAssign_Valid_7() {
+	public void ListAssign_Valid_7() throws IOException {
 		runTest("ListAssign_Valid_7");
 	}
 
 	@Test
-	public void ListAssign_Valid_8() {
+	public void ListAssign_Valid_8() throws IOException {
 		runTest("ListAssign_Valid_8");
 	}
 
 	@Test
-	public void ListAssign_Valid_9() {
+	public void ListAssign_Valid_9() throws IOException {
 		runTest("ListAssign_Valid_9");
 	}
 
 	@Test
-	public void ListConversion_Valid_1() {
+	public void ListConversion_Valid_1() throws IOException {
 		runTest("ListConversion_Valid_1");
 	}
 
 	@Test
-	public void ListElemOf_Valid_1() {
+	public void ListElemOf_Valid_1() throws IOException {
 		runTest("ListElemOf_Valid_1");
 	}
 
 	@Test
-	public void ListEmpty_Valid_1() {
+	public void ListEmpty_Valid_1() throws IOException {
 		runTest("ListEmpty_Valid_1");
 	}
 
 	@Test
-	public void ListEquals_Valid_1() {
+	public void ListEquals_Valid_1() throws IOException {
 		runTest("ListEquals_Valid_1");
 	}
 
 	@Test
-	public void ListGenerator_Valid_1() {
+	public void ListGenerator_Valid_1() throws IOException {
 		runTest("ListGenerator_Valid_1");
 	}
 
 	@Test
-	public void ListGenerator_Valid_2() {
+	public void ListGenerator_Valid_2() throws IOException {
 		runTest("ListGenerator_Valid_2");
 	}
 
 	@Test
-	public void ListGenerator_Valid_3() {
+	public void ListGenerator_Valid_3() throws IOException {
 		runTest("ListGenerator_Valid_3");
 	}
 
 	@Test
-	public void ListGenerator_Valid_5() {
+	public void ListGenerator_Valid_5() throws IOException {
 		runTest("ListGenerator_Valid_5");
 	}
 
 	@Test
-	public void ListLength_Valid_1() {
+	public void ListLength_Valid_1() throws IOException {
 		runTest("ListLength_Valid_1");
 	}
 
 	@Test
-	public void ListLength_Valid_2() {
+	public void ListLength_Valid_2() throws IOException {
 		runTest("ListLength_Valid_2");
 	}
 
 	@Test
-	public void ListLength_Valid_3() {
+	public void ListLength_Valid_3() throws IOException {
 		runTest("ListLength_Valid_3");
 	}
 
 	@Test
-	public void ListRange_Valid_1() {
+	public void ListRange_Valid_1() throws IOException {
 		runTest("ListRange_Valid_1");
 	}
 
 	@Test
-	public void ListSublist_Valid_1() {
+	public void ListSublist_Valid_1() throws IOException {
 		runTest("ListSublist_Valid_1");
 	}
 
 	@Test
-	public void ListSublist_Valid_2() {
+	public void ListSublist_Valid_2() throws IOException {
 		runTest("ListSublist_Valid_2");
 	}
 
 	@Test
-	public void ListSublist_Valid_3() {
+	public void ListSublist_Valid_3() throws IOException {
 		runTest("ListSublist_Valid_3");
 	}
 
 	@Test
-	public void ListSublist_Valid_4() {
+	public void ListSublist_Valid_4() throws IOException {
 		runTest("ListSublist_Valid_4");
 	}
 
 	@Test
-	public void ListSublist_Valid_5() {
+	public void ListSublist_Valid_5() throws IOException {
 		runTest("ListSublist_Valid_5");
 	}
 
 	@Test
-	public void MessageRef_Valid_1() {
+	public void MessageRef_Valid_1() throws IOException {
 		runTest("MessageRef_Valid_1");
 	}
 
 	@Test
-	public void MessageRef_Valid_2() {
+	public void MessageRef_Valid_2() throws IOException {
 		runTest("MessageRef_Valid_2");
 	}
 
 	@Test
-	public void MessageSend_Valid_1() {
+	public void MessageSend_Valid_1() throws IOException {
 		runTest("MessageSend_Valid_1");
 	}
 
 	@Test
-	public void MessageSend_Valid_2() {
+	public void MessageSend_Valid_2() throws IOException {
 		runTest("MessageSend_Valid_2");
 	}
 
 	@Test
-	public void MessageSend_Valid_3() {
+	public void MessageSend_Valid_3() throws IOException {
 		runTest("MessageSend_Valid_3");
 	}
 
 	@Test
-	public void MessageSend_Valid_4() {
+	public void MessageSend_Valid_4() throws IOException {
 		runTest("MessageSend_Valid_4");
 	}
 
 	@Test
-	public void MessageSend_Valid_5() {
+	public void MessageSend_Valid_5() throws IOException {
 		runTest("MessageSend_Valid_5");
 	}
 
 	@Test
-	public void MethodCall_Valid_1() {
+	public void MethodCall_Valid_1() throws IOException {
 		runTest("MethodCall_Valid_1");
 	}
 
 	@Test
-	public void MethodCall_Valid_2() {
+	public void MethodCall_Valid_2() throws IOException {
 		runTest("MethodCall_Valid_2");
 	}
 
 	@Test
-	public void MethodCall_Valid_3() {
+	public void MethodCall_Valid_3() throws IOException {
 		runTest("MethodCall_Valid_3");
 	}
 
 	@Test
-	public void MethodCall_Valid_4() {
+	public void MethodCall_Valid_4() throws IOException {
 		runTest("MethodCall_Valid_4");
 	}
 
 	@Test
-	public void MethodRef_Valid_1() {
+	public void MethodRef_Valid_1() throws IOException {
 		runTest("MethodRef_Valid_1");
 	}
 
 	@Test
-	public void MethodRef_Valid_2() {
+	public void MethodRef_Valid_2() throws IOException {
 		runTest("MethodRef_Valid_2");
 	}
 
 	@Test
-	public void Method_Valid_1() {
+	public void Method_Valid_1() throws IOException {
 		runTest("Method_Valid_1");
 	}
 
 	@Test
-	public void MultiLineComment_Valid_1() {
+	public void MultiLineComment_Valid_1() throws IOException {
 		runTest("MultiLineComment_Valid_1");
 	}
 
 	@Test
-	public void MultiLineComment_Valid_2() {
+	public void MultiLineComment_Valid_2() throws IOException {
 		runTest("MultiLineComment_Valid_2");
 	}
 
 	@Test
-	public void NegationType_Valid_1() {
+	public void NegationType_Valid_1() throws IOException {
 		runTest("NegationType_Valid_1");
 	}
 
 	@Test
-	public void NegationType_Valid_2() {
+	public void NegationType_Valid_2() throws IOException {
 		runTest("NegationType_Valid_2");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void NegationType_Valid_3() {
+	public void NegationType_Valid_3() throws IOException {
 		runTest("NegationType_Valid_3");
 	}
 
 	@Test
-	public void NegationType_Valid_4() {
+	public void NegationType_Valid_4() throws IOException {
 		runTest("NegationType_Valid_4");
 	}
 
 	@Test
-	public void OpenRecord_Valid_1() {
+	public void OpenRecord_Valid_1() throws IOException {
 		runTest("OpenRecord_Valid_1");
 	}
 
 	@Test
-	public void OpenRecord_Valid_10() {
+	public void OpenRecord_Valid_10() throws IOException {
 		runTest("OpenRecord_Valid_10");
 	}
 
 	@Test
-	public void OpenRecord_Valid_2() {
+	public void OpenRecord_Valid_2() throws IOException {
 		runTest("OpenRecord_Valid_2");
 	}
 
-	@Ignore("Issue ???") @Test
-	public void OpenRecord_Valid_3() {
+	@Test
+	public void OpenRecord_Valid_3() throws IOException {
 		runTest("OpenRecord_Valid_3");
 	}
 
 	@Test
-	public void OpenRecord_Valid_4() {
+	public void OpenRecord_Valid_4() throws IOException {
 		runTest("OpenRecord_Valid_4");
 	}
 
 	@Test
-	public void OpenRecord_Valid_5() {
+	public void OpenRecord_Valid_5() throws IOException {
 		runTest("OpenRecord_Valid_5");
 	}
 
 	@Test
-	public void OpenRecord_Valid_6() {
+	public void OpenRecord_Valid_6() throws IOException {
 		runTest("OpenRecord_Valid_6");
 	}
 
 	@Test
-	public void OpenRecord_Valid_7() {
+	public void OpenRecord_Valid_7() throws IOException {
 		runTest("OpenRecord_Valid_7");
 	}
 
 	@Test
-	public void OpenRecord_Valid_8() {
+	public void OpenRecord_Valid_8() throws IOException {
 		runTest("OpenRecord_Valid_8");
 	}
 
 	@Test
-	public void OpenRecord_Valid_9() {
+	public void OpenRecord_Valid_9() throws IOException {
 		runTest("OpenRecord_Valid_9");
 	}
 
 	@Test
-	public void Print_Valid_1() {
-		runTest("Print_Valid_1");
-	}
-
-	@Test
-	public void ProcessAccess_Valid_1() {
+	public void ProcessAccess_Valid_1() throws IOException {
 		runTest("ProcessAccess_Valid_1");
 	}
 
 	@Test
-	public void ProcessAccess_Valid_2() {
+	public void ProcessAccess_Valid_2() throws IOException {
 		runTest("ProcessAccess_Valid_2");
 	}
 
 	@Test
-	public void Process_Valid_1() {
+	public void Process_Valid_1() throws IOException {
 		runTest("Process_Valid_1");
 	}
 
 	@Test
-	public void Process_Valid_10() {
+	public void Process_Valid_10() throws IOException {
 		runTest("Process_Valid_10");
 	}
 
 	@Test
-	public void Process_Valid_11() {
+	public void Process_Valid_11() throws IOException {
 		runTest("Process_Valid_11");
 	}
 
 	@Test
-	public void Process_Valid_12() {
+	public void Process_Valid_12() throws IOException {
 		runTest("Process_Valid_12");
 	}
 
 	@Test
-	public void Process_Valid_13() {
-		runTest("Process_Valid_13");
-	}
-
-	@Test
-	public void Process_Valid_14() {
-		runTest("Process_Valid_14");
-	}
-
-	@Test
-	public void Process_Valid_2() {
+	public void Process_Valid_2() throws IOException {
 		runTest("Process_Valid_2");
 	}
 
 	@Test
-	public void Process_Valid_3() {
+	public void Process_Valid_3() throws IOException {
 		runTest("Process_Valid_3");
 	}
 
 	@Test
-	public void Process_Valid_4() {
+	public void Process_Valid_4() throws IOException {
 		runTest("Process_Valid_4");
 	}
 
 	@Test
-	public void Process_Valid_5() {
+	public void Process_Valid_5() throws IOException {
 		runTest("Process_Valid_5");
 	}
 
 	@Test
-	public void Process_Valid_6() {
+	public void Process_Valid_6() throws IOException {
 		runTest("Process_Valid_6");
 	}
 
 	@Test
-	public void Process_Valid_7() {
+	public void Process_Valid_7() throws IOException {
 		runTest("Process_Valid_7");
 	}
 
 	@Test
-	public void Process_Valid_8() {
+	public void Process_Valid_8() throws IOException {
 		runTest("Process_Valid_8");
 	}
 
 	@Test
-	public void Process_Valid_9() {
+	public void Process_Valid_9() throws IOException {
 		runTest("Process_Valid_9");
 	}
 
 	@Test
-	public void Quantifiers_Valid_1() {
+	public void Quantifiers_Valid_1() throws IOException {
 		runTest("Quantifiers_Valid_1");
 	}
 
 	@Test
-	public void Range_Valid_1() {
+	public void Range_Valid_1() throws IOException {
 		runTest("Range_Valid_1");
 	}
 
 	@Test
-	public void RealConst_Valid_1() {
+	public void RealConst_Valid_1() throws IOException {
 		runTest("RealConst_Valid_1");
 	}
 
 	@Test
-	public void RealDiv_Valid_1() {
+	public void RealDiv_Valid_1() throws IOException {
 		runTest("RealDiv_Valid_1");
 	}
 
 	@Test
-	public void RealDiv_Valid_2() {
+	public void RealDiv_Valid_2() throws IOException {
 		runTest("RealDiv_Valid_2");
 	}
 
 	@Test
-	public void RealDiv_Valid_3() {
+	public void RealDiv_Valid_3() throws IOException {
 		runTest("RealDiv_Valid_3");
 	}
 
 	@Test
-	public void RealDiv_Valid_4() {
+	public void RealDiv_Valid_4() throws IOException {
 		runTest("RealDiv_Valid_4");
 	}
 
 	@Test
-	public void RealDiv_Valid_5() {
+	public void RealDiv_Valid_5() throws IOException {
 		runTest("RealDiv_Valid_5");
 	}
 
 	@Test
-	public void RealDiv_Valid_6() {
+	public void RealDiv_Valid_6() throws IOException {
 		runTest("RealDiv_Valid_6");
 	}
 
 	@Test
-	public void RealDiv_Valid_7() {
+	public void RealDiv_Valid_7() throws IOException {
 		runTest("RealDiv_Valid_7");
 	}
 
 	@Test
-	public void RealNeg_Valid_1() {
+	public void RealNeg_Valid_1() throws IOException {
 		runTest("RealNeg_Valid_1");
 	}
 
 	@Test
-	public void RealNeg_Valid_2() {
+	public void RealNeg_Valid_2() throws IOException {
 		runTest("RealNeg_Valid_2");
 	}
 
 	@Test
-	public void RealSplit_Valid_1() {
+	public void RealSplit_Valid_1() throws IOException {
 		runTest("RealSplit_Valid_1");
 	}
 
 	@Test
-	public void RealSub_Valid_1() {
+	public void RealSub_Valid_1() throws IOException {
 		runTest("RealSub_Valid_1");
 	}
 
 	@Test
-	public void RealSub_Valid_2() {
+	public void RealSub_Valid_2() throws IOException {
 		runTest("RealSub_Valid_2");
 	}
 
 	@Test
-	public void RealSub_Valid_3() {
+	public void RealSub_Valid_3() throws IOException {
 		runTest("RealSub_Valid_3");
 	}
 
 	@Test
-	public void Real_Valid_1() {
+	public void Real_Valid_1() throws IOException {
 		runTest("Real_Valid_1");
 	}
 
 	@Test
-	public void RecordAccess_Valid_1() {
+	public void RecordAccess_Valid_1() throws IOException {
 		runTest("RecordAccess_Valid_1");
 	}
 
 	@Test
-	public void RecordAccess_Valid_2() {
+	public void RecordAccess_Valid_2() throws IOException {
 		runTest("RecordAccess_Valid_2");
 	}
 
 	@Test
-	public void RecordAssign_Valid_1() {
+	public void RecordAssign_Valid_1() throws IOException {
 		runTest("RecordAssign_Valid_1");
 	}
 
 	@Test
-	public void RecordAssign_Valid_10() {
+	public void RecordAssign_Valid_10() throws IOException {
 		runTest("RecordAssign_Valid_10");
 	}
 
 	@Test
-	public void RecordAssign_Valid_2() {
+	public void RecordAssign_Valid_2() throws IOException {
 		runTest("RecordAssign_Valid_2");
 	}
 
 	@Test
-	public void RecordAssign_Valid_3() {
+	public void RecordAssign_Valid_3() throws IOException {
 		runTest("RecordAssign_Valid_3");
 	}
 
 	@Test
-	public void RecordAssign_Valid_4() {
+	public void RecordAssign_Valid_4() throws IOException {
 		runTest("RecordAssign_Valid_4");
 	}
 
 	@Test
-	public void RecordAssign_Valid_5() {
+	public void RecordAssign_Valid_5() throws IOException {
 		runTest("RecordAssign_Valid_5");
 	}
 
 	@Test
-	public void RecordAssign_Valid_6() {
+	public void RecordAssign_Valid_6() throws IOException {
 		runTest("RecordAssign_Valid_6");
 	}
 
 	@Test
-	public void RecordAssign_Valid_7() {
+	public void RecordAssign_Valid_7() throws IOException {
 		runTest("RecordAssign_Valid_7");
 	}
 
 	@Test
-	public void RecordAssign_Valid_8() {
+	public void RecordAssign_Valid_8() throws IOException {
 		runTest("RecordAssign_Valid_8");
 	}
 
 	@Test
-	public void RecordAssign_Valid_9() {
+	public void RecordAssign_Valid_9() throws IOException {
 		runTest("RecordAssign_Valid_9");
 	}
 
 	@Test
-	public void RecordCoercion_Valid_1() {
+	public void RecordCoercion_Valid_1() throws IOException {
 		runTest("RecordCoercion_Valid_1");
 	}
 
 	@Test
-	public void RecordConversion_Valid_1() {
+	public void RecordConversion_Valid_1() throws IOException {
 		runTest("RecordConversion_Valid_1");
 	}
 
 	@Test
-	public void RecordDefine_Valid_1() {
+	public void RecordDefine_Valid_1() throws IOException {
 		runTest("RecordDefine_Valid_1");
 	}
 
 	@Test
-	public void RecordDefine_Valid_2() {
+	public void RecordDefine_Valid_2() throws IOException {
 		runTest("RecordDefine_Valid_2");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void RecordSubtype_Valid_1() {
+	public void RecordSubtype_Valid_1() throws IOException {
 		runTest("RecordSubtype_Valid_1");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void RecordSubtype_Valid_2() {
+	public void RecordSubtype_Valid_2() throws IOException {
 		runTest("RecordSubtype_Valid_2");
 	}
 
 	@Test
-	public void RecursiveType_Valid_1() {
+	public void RecursiveType_Valid_1() throws IOException {
 		runTest("RecursiveType_Valid_1");
 	}
 
 	@Test
-	public void RecursiveType_Valid_10() {
+	public void RecursiveType_Valid_10() throws IOException {
 		runTest("RecursiveType_Valid_10");
 	}
 
 	@Test
-	public void RecursiveType_Valid_11() {
+	public void RecursiveType_Valid_11() throws IOException {
 		runTest("RecursiveType_Valid_11");
 	}
 
 	@Test
-	public void RecursiveType_Valid_12() {
+	public void RecursiveType_Valid_12() throws IOException {
 		runTest("RecursiveType_Valid_12");
 	}
 
 	@Test
-	public void RecursiveType_Valid_13() {
+	public void RecursiveType_Valid_13() throws IOException {
 		runTest("RecursiveType_Valid_13");
 	}
 
 	@Test
-	public void RecursiveType_Valid_14() {
+	public void RecursiveType_Valid_14() throws IOException {
 		runTest("RecursiveType_Valid_14");
 	}
 
 	@Test
-	public void RecursiveType_Valid_15() {
+	public void RecursiveType_Valid_15() throws IOException {
 		runTest("RecursiveType_Valid_15");
 	}
 
 	@Test
-	public void RecursiveType_Valid_16() {
+	public void RecursiveType_Valid_16() throws IOException {
 		runTest("RecursiveType_Valid_16");
 	}
 
 	@Test
-	public void RecursiveType_Valid_17() {
+	public void RecursiveType_Valid_17() throws IOException {
 		runTest("RecursiveType_Valid_17");
 	}
 
 	@Test
-	public void RecursiveType_Valid_18() {
+	public void RecursiveType_Valid_18() throws IOException {
 		runTest("RecursiveType_Valid_18");
 	}
 
 	@Test
-	public void RecursiveType_Valid_19() {
+	public void RecursiveType_Valid_19() throws IOException {
 		runTest("RecursiveType_Valid_19");
 	}
 
 	@Test
-	public void RecursiveType_Valid_2() {
+	public void RecursiveType_Valid_2() throws IOException {
 		runTest("RecursiveType_Valid_2");
 	}
 
 	@Test
-	public void RecursiveType_Valid_20() {
+	public void RecursiveType_Valid_20() throws IOException {
 		runTest("RecursiveType_Valid_20");
 	}
 
 	@Test
-	public void RecursiveType_Valid_21() {
+	public void RecursiveType_Valid_21() throws IOException {
 		runTest("RecursiveType_Valid_21");
 	}
 
 	@Test
-	public void RecursiveType_Valid_22() {
+	public void RecursiveType_Valid_22() throws IOException {
 		runTest("RecursiveType_Valid_22");
 	}
 
 	@Test
-	public void RecursiveType_Valid_23() {
+	public void RecursiveType_Valid_23() throws IOException {
 		runTest("RecursiveType_Valid_23");
 	}
 
 	@Test
-	public void RecursiveType_Valid_24() {
+	public void RecursiveType_Valid_24() throws IOException {
 		runTest("RecursiveType_Valid_24");
 	}
 
 	@Test
-	public void RecursiveType_Valid_25() {
+	public void RecursiveType_Valid_25() throws IOException {
 		runTest("RecursiveType_Valid_25");
 	}
 
 	@Test
-	public void RecursiveType_Valid_26() {
+	public void RecursiveType_Valid_26() throws IOException {
 		runTest("RecursiveType_Valid_26");
 	}
 
 	@Test
-	public void RecursiveType_Valid_27() {
+	public void RecursiveType_Valid_27() throws IOException {
 		runTest("RecursiveType_Valid_27");
 	}
 
 	@Ignore("#364") @Test
-	public void RecursiveType_Valid_28() {
+	public void RecursiveType_Valid_28() throws IOException {
 		runTest("RecursiveType_Valid_28");
 	}
 
 	@Test
-	public void RecursiveType_Valid_29() {
+	public void RecursiveType_Valid_29() throws IOException {
 		runTest("RecursiveType_Valid_29");
 	}
 
 	@Ignore("#406") @Test
-	public void RecursiveType_Valid_3() {
+	public void RecursiveType_Valid_3() throws IOException {
 		runTest("RecursiveType_Valid_3");
 	}
 
 	@Test
-	public void RecursiveType_Valid_30() {
+	public void RecursiveType_Valid_30() throws IOException {
 		runTest("RecursiveType_Valid_30");
 	}
 
 	@Test
-	public void RecursiveType_Valid_31() {
+	public void RecursiveType_Valid_31() throws IOException {
 		runTest("RecursiveType_Valid_31");
 	}
 
 	@Ignore("#406") @Test
-	public void RecursiveType_Valid_4() {
+	public void RecursiveType_Valid_4() throws IOException {
 		runTest("RecursiveType_Valid_4");
 	}
 
 	@Ignore("#18") @Test
-	public void RecursiveType_Valid_5() {
+	public void RecursiveType_Valid_5() throws IOException {
 		runTest("RecursiveType_Valid_5");
 	}
 
 	@Test
-	public void RecursiveType_Valid_6() {
+	public void RecursiveType_Valid_6() throws IOException {
 		runTest("RecursiveType_Valid_6");
 	}
 
 	@Test
-	public void RecursiveType_Valid_7() {
+	public void RecursiveType_Valid_7() throws IOException {
 		runTest("RecursiveType_Valid_7");
 	}
 
 	@Test
-	public void RecursiveType_Valid_8() {
+	public void RecursiveType_Valid_8() throws IOException {
 		runTest("RecursiveType_Valid_8");
 	}
 
 	@Test
-	public void RecursiveType_Valid_9() {
+	public void RecursiveType_Valid_9() throws IOException {
 		runTest("RecursiveType_Valid_9");
 	}
 
 	@Test
-	public void Reference_Valid_1() {
+	public void Reference_Valid_1() throws IOException {
 		runTest("Reference_Valid_1");
 	}
 
 	@Test
-	public void Reference_Valid_2() {
+	public void Reference_Valid_2() throws IOException {
 		runTest("Reference_Valid_2");
 	}
 
 	@Test
-	public void Reference_Valid_3() {
+	public void Reference_Valid_3() throws IOException {
 		runTest("Reference_Valid_3");
 	}
 
 	@Test
-	public void Reference_Valid_4() {
+	public void Reference_Valid_4() throws IOException {
 		runTest("Reference_Valid_4");
 	}
 
 	@Test
-	public void Reference_Valid_5() {
+	public void Reference_Valid_5() throws IOException {
 		runTest("Reference_Valid_5");
 	}
 
 	@Test
-	public void Remainder_Valid_1() {
+	public void Remainder_Valid_1() throws IOException {
 		runTest("Remainder_Valid_1");
 	}
 
 	@Test
-	public void Requires_Valid_1() {
+	public void Requires_Valid_1() throws IOException {
 		runTest("Requires_Valid_1");
 	}
 
 	@Test
-	public void Resolution_Valid_1() {
+	public void Resolution_Valid_1() throws IOException {
 		runTest("Resolution_Valid_1");
 	}
 
 	@Test
-	public void SetAssign_Valid_1() {
+	public void SetAssign_Valid_1() throws IOException {
 		runTest("SetAssign_Valid_1");
 	}
 
 	@Test
-	public void SetAssign_Valid_2() {
+	public void SetAssign_Valid_2() throws IOException {
 		runTest("SetAssign_Valid_2");
 	}
 
 	@Test
-	public void SetAssign_Valid_3() {
+	public void SetAssign_Valid_3() throws IOException {
 		runTest("SetAssign_Valid_3");
 	}
 
 	@Test
-	public void SetDefine_Valid_1() {
+	public void SetDefine_Valid_1() throws IOException {
 		runTest("SetDefine_Valid_1");
 	}
 
 	@Test
-	public void SetDefine_Valid_2() {
+	public void SetDefine_Valid_2() throws IOException {
 		runTest("SetDefine_Valid_2");
 	}
 
 	@Test
-	public void SetDefine_Valid_3() {
+	public void SetDefine_Valid_3() throws IOException {
 		runTest("SetDefine_Valid_3");
 	}
 
 	@Test
-	public void SetDifference_Valid_1() {
+	public void SetDifference_Valid_1() throws IOException {
 		runTest("SetDifference_Valid_1");
 	}
 
 	@Test
-	public void SetElemOf_Valid_1() {
+	public void SetElemOf_Valid_1() throws IOException {
 		runTest("SetElemOf_Valid_1");
 	}
 
 	@Test
-	public void SetEmpty_Valid_1() {
+	public void SetEmpty_Valid_1() throws IOException {
 		runTest("SetEmpty_Valid_1");
 	}
 
 	@Test
-	public void SetEquals_Valid_1() {
+	public void SetEquals_Valid_1() throws IOException {
 		runTest("SetEquals_Valid_1");
 	}
 
 	@Test
-	public void SetGenerator_Valid_1() {
+	public void SetGenerator_Valid_1() throws IOException {
 		runTest("SetGenerator_Valid_1");
 	}
 
 	@Test
-	public void SetIntersect_Valid_1() {
+	public void SetIntersect_Valid_1() throws IOException {
 		runTest("SetIntersect_Valid_1");
 	}
 
 	@Test
-	public void SetIntersect_Valid_2() {
+	public void SetIntersect_Valid_2() throws IOException {
 		runTest("SetIntersect_Valid_2");
 	}
 
 	@Test
-	public void SetIntersection_Valid_1() {
+	public void SetIntersection_Valid_1() throws IOException {
 		runTest("SetIntersection_Valid_1");
 	}
 
 	@Test
-	public void SetIntersection_Valid_2() {
+	public void SetIntersection_Valid_2() throws IOException {
 		runTest("SetIntersection_Valid_2");
 	}
 
 	@Test
-	public void SetIntersection_Valid_3() {
+	public void SetIntersection_Valid_3() throws IOException {
 		runTest("SetIntersection_Valid_3");
 	}
 
 	@Test
-	public void SetIntersection_Valid_4() {
+	public void SetIntersection_Valid_4() throws IOException {
 		runTest("SetIntersection_Valid_4");
 	}
 
 	@Test
-	public void SetIntersection_Valid_5() {
+	public void SetIntersection_Valid_5() throws IOException {
 		runTest("SetIntersection_Valid_5");
 	}
 
 	@Test
-	public void SetIntersection_Valid_6() {
+	public void SetIntersection_Valid_6() throws IOException {
 		runTest("SetIntersection_Valid_6");
 	}
 
 	@Test
-	public void SetIntersection_Valid_7() {
+	public void SetIntersection_Valid_7() throws IOException {
 		runTest("SetIntersection_Valid_7");
 	}
 
 	@Test
-	public void SetLength_Valid_1() {
+	public void SetLength_Valid_1() throws IOException {
 		runTest("SetLength_Valid_1");
 	}
 
 	@Test
-	public void SetNull_Valid_1() {
+	public void SetNull_Valid_1() throws IOException {
 		runTest("SetNull_Valid_1");
 	}
 
 	@Test
-	public void SetSubset_Valid_1() {
+	public void SetSubset_Valid_1() throws IOException {
 		runTest("SetSubset_Valid_1");
 	}
 
 	@Test
-	public void SetSubset_Valid_10() {
+	public void SetSubset_Valid_10() throws IOException {
 		runTest("SetSubset_Valid_10");
 	}
 
 	@Test
-	public void SetSubset_Valid_11() {
+	public void SetSubset_Valid_11() throws IOException {
 		runTest("SetSubset_Valid_11");
 	}
 
 	@Test
-	public void SetSubset_Valid_12() {
+	public void SetSubset_Valid_12() throws IOException {
 		runTest("SetSubset_Valid_12");
 	}
 
 	@Test
-	public void SetSubset_Valid_2() {
+	public void SetSubset_Valid_2() throws IOException {
 		runTest("SetSubset_Valid_2");
 	}
 
 	@Test
-	public void SetSubset_Valid_3() {
+	public void SetSubset_Valid_3() throws IOException {
 		runTest("SetSubset_Valid_3");
 	}
 
 	@Test
-	public void SetSubset_Valid_4() {
+	public void SetSubset_Valid_4() throws IOException {
 		runTest("SetSubset_Valid_4");
 	}
 
 	@Test
-	public void SetSubset_Valid_5() {
+	public void SetSubset_Valid_5() throws IOException {
 		runTest("SetSubset_Valid_5");
 	}
 
 	@Test
-	public void SetSubset_Valid_6() {
+	public void SetSubset_Valid_6() throws IOException {
 		runTest("SetSubset_Valid_6");
 	}
 
 	@Test
-	public void SetSubset_Valid_7() {
+	public void SetSubset_Valid_7() throws IOException {
 		runTest("SetSubset_Valid_7");
 	}
 
 	@Test
-	public void SetSubset_Valid_8() {
+	public void SetSubset_Valid_8() throws IOException {
 		runTest("SetSubset_Valid_8");
 	}
 
 	@Test
-	public void SetSubset_Valid_9() {
+	public void SetSubset_Valid_9() throws IOException {
 		runTest("SetSubset_Valid_9");
 	}
 
 	@Test
-	public void SetUnion_Valid_1() {
+	public void SetUnion_Valid_1() throws IOException {
 		runTest("SetUnion_Valid_1");
 	}
 
 	@Test
-	public void SetUnion_Valid_10() {
+	public void SetUnion_Valid_10() throws IOException {
 		runTest("SetUnion_Valid_10");
 	}
 
 	@Test
-	public void SetUnion_Valid_11() {
+	public void SetUnion_Valid_11() throws IOException {
 		runTest("SetUnion_Valid_11");
 	}
 
 	@Test
-	public void SetUnion_Valid_2() {
+	public void SetUnion_Valid_2() throws IOException {
 		runTest("SetUnion_Valid_2");
 	}
 
 	@Test
-	public void SetUnion_Valid_3() {
+	public void SetUnion_Valid_3() throws IOException {
 		runTest("SetUnion_Valid_3");
 	}
 
 	@Test
-	public void SetUnion_Valid_4() {
+	public void SetUnion_Valid_4() throws IOException {
 		runTest("SetUnion_Valid_4");
 	}
 
 	@Test
-	public void SetUnion_Valid_5() {
+	public void SetUnion_Valid_5() throws IOException {
 		runTest("SetUnion_Valid_5");
 	}
 
 	@Test
-	public void SetUnion_Valid_6() {
+	public void SetUnion_Valid_6() throws IOException {
 		runTest("SetUnion_Valid_6");
 	}
 
 	@Test
-	public void SetUnion_Valid_7() {
+	public void SetUnion_Valid_7() throws IOException {
 		runTest("SetUnion_Valid_7");
 	}
 
 	@Test
-	public void SetUnion_Valid_8() {
+	public void SetUnion_Valid_8() throws IOException {
 		runTest("SetUnion_Valid_8");
 	}
 
 	@Test
-	public void SetUnion_Valid_9() {
+	public void SetUnion_Valid_9() throws IOException {
 		runTest("SetUnion_Valid_9");
 	}
 
 	@Test
-	public void SingleLineComment_Valid_1() {
+	public void SingleLineComment_Valid_1() throws IOException {
 		runTest("SingleLineComment_Valid_1");
 	}
 
 	@Test
-	public void Skip_Valid_1() {
+	public void Skip_Valid_1() throws IOException {
 		runTest("Skip_Valid_1");
 	}
 
 	@Test
-	public void String_Valid_1() {
+	public void String_Valid_1() throws IOException {
 		runTest("String_Valid_1");
 	}
 
 	@Test
-	public void String_Valid_2() {
+	public void String_Valid_2() throws IOException {
 		runTest("String_Valid_2");
 	}
 
 	@Test
-	public void String_Valid_3() {
+	public void String_Valid_3() throws IOException {
 		runTest("String_Valid_3");
 	}
 
 	@Test
-	public void String_Valid_4() {
+	public void String_Valid_4() throws IOException {
 		runTest("String_Valid_4");
 	}
 
 	@Test
-	public void String_Valid_5() {
+	public void String_Valid_5() throws IOException {
 		runTest("String_Valid_5");
 	}
 
 	@Test
-	public void String_Valid_6() {
+	public void String_Valid_6() throws IOException {
 		runTest("String_Valid_6");
 	}
 
 	@Test
-	public void String_Valid_7() {
+	public void String_Valid_7() throws IOException {
 		runTest("String_Valid_7");
 	}
 
 	@Test
-	public void String_Valid_8() {
+	public void String_Valid_8() throws IOException {
 		runTest("String_Valid_8");
 	}
 
 	@Test
-	public void Subtype_Valid_1() {
+	public void Subtype_Valid_1() throws IOException {
 		runTest("Subtype_Valid_1");
 	}
 
 	@Test
-	public void Subtype_Valid_10() {
+	public void Subtype_Valid_10() throws IOException {
 		runTest("Subtype_Valid_10");
 	}
 
 	@Test
-	public void Subtype_Valid_11() {
+	public void Subtype_Valid_11() throws IOException {
 		runTest("Subtype_Valid_11");
 	}
 
 	@Test
-	public void Subtype_Valid_12() {
+	public void Subtype_Valid_12() throws IOException {
 		runTest("Subtype_Valid_12");
 	}
 
 	@Test
-	public void Subtype_Valid_13() {
+	public void Subtype_Valid_13() throws IOException {
 		runTest("Subtype_Valid_13");
 	}
 
 	@Test
-	public void Subtype_Valid_14() {
+	public void Subtype_Valid_14() throws IOException {
 		runTest("Subtype_Valid_14");
 	}
 
 	@Test
-	public void Subtype_Valid_2() {
+	public void Subtype_Valid_2() throws IOException {
 		runTest("Subtype_Valid_2");
 	}
 
 	@Test
-	public void Subtype_Valid_3() {
+	public void Subtype_Valid_3() throws IOException {
 		runTest("Subtype_Valid_3");
 	}
 
 	@Test
-	public void Subtype_Valid_4() {
+	public void Subtype_Valid_4() throws IOException {
 		runTest("Subtype_Valid_4");
 	}
 
 	@Test
-	public void Subtype_Valid_5() {
+	public void Subtype_Valid_5() throws IOException {
 		runTest("Subtype_Valid_5");
 	}
 
 	@Test
-	public void Subtype_Valid_6() {
+	public void Subtype_Valid_6() throws IOException {
 		runTest("Subtype_Valid_6");
 	}
 
 	@Test
-	public void Subtype_Valid_7() {
+	public void Subtype_Valid_7() throws IOException {
 		runTest("Subtype_Valid_7");
 	}
 
 	@Test
-	public void Subtype_Valid_8() {
+	public void Subtype_Valid_8() throws IOException {
 		runTest("Subtype_Valid_8");
 	}
 
 	@Test
-	public void Subtype_Valid_9() {
+	public void Subtype_Valid_9() throws IOException {
 		runTest("Subtype_Valid_9");
 	}
 
 	@Test
-	public void Switch_Valid_1() {
+	public void Switch_Valid_1() throws IOException {
 		runTest("Switch_Valid_1");
 	}
 
 	@Test
-	public void Switch_Valid_10() {
+	public void Switch_Valid_10() throws IOException {
 		runTest("Switch_Valid_10");
 	}
 
 	@Test
-	public void Switch_Valid_11() {
+	public void Switch_Valid_11() throws IOException {
 		runTest("Switch_Valid_11");
 	}
 
 	@Test
-	public void Switch_Valid_12() {
+	public void Switch_Valid_12() throws IOException {
 		runTest("Switch_Valid_12");
 	}
 
 	@Test
-	public void Switch_Valid_13() {
+	public void Switch_Valid_13() throws IOException {
 		runTest("Switch_Valid_13");
 	}
 
 	@Test
-	public void Switch_Valid_2() {
+	public void Switch_Valid_2() throws IOException {
 		runTest("Switch_Valid_2");
 	}
 
 	@Test
-	public void Switch_Valid_3() {
+	public void Switch_Valid_3() throws IOException {
 		runTest("Switch_Valid_3");
 	}
 
 	@Test
-	public void Switch_Valid_4() {
+	public void Switch_Valid_4() throws IOException {
 		runTest("Switch_Valid_4");
 	}
 
 	@Test
-	public void Switch_Valid_5() {
+	public void Switch_Valid_5() throws IOException {
 		runTest("Switch_Valid_5");
 	}
 
 	@Test
-	public void Switch_Valid_6() {
+	public void Switch_Valid_6() throws IOException {
 		runTest("Switch_Valid_6");
 	}
 
 	@Test
-	public void Switch_Valid_7() {
+	public void Switch_Valid_7() throws IOException {
 		runTest("Switch_Valid_7");
 	}
 
 	@Test
-	public void Switch_Valid_8() {
+	public void Switch_Valid_8() throws IOException {
 		runTest("Switch_Valid_8");
 	}
 
 	@Test
-	public void Switch_Valid_9() {
+	public void Switch_Valid_9() throws IOException {
 		runTest("Switch_Valid_9");
 	}
 
 	@Test
-	public void Syntax_Valid_1() {
+	public void Syntax_Valid_1() throws IOException {
 		runTest("Syntax_Valid_1");
 	}
 
 	@Test
-	public void TupleType_Valid_1() {
+	public void TupleType_Valid_1() throws IOException {
 		runTest("TupleType_Valid_1");
 	}
 
 	@Test
-	public void TupleType_Valid_2() {
+	public void TupleType_Valid_2() throws IOException {
 		runTest("TupleType_Valid_2");
 	}
 
 	@Test
-	public void TupleType_Valid_3() {
+	public void TupleType_Valid_3() throws IOException {
 		runTest("TupleType_Valid_3");
 	}
 
 	@Test
-	public void TupleType_Valid_4() {
+	public void TupleType_Valid_4() throws IOException {
 		runTest("TupleType_Valid_4");
 	}
 
 	@Test
-	public void TupleType_Valid_5() {
+	public void TupleType_Valid_5() throws IOException {
 		runTest("TupleType_Valid_5");
 	}
 
 	@Test
-	public void TupleType_Valid_6() {
+	public void TupleType_Valid_6() throws IOException {
 		runTest("TupleType_Valid_6");
 	}
 
 	@Test
-	public void TupleType_Valid_7() {
+	public void TupleType_Valid_7() throws IOException {
 		runTest("TupleType_Valid_7");
 	}
 
 	@Test
-	public void TupleType_Valid_8() {
+	public void TupleType_Valid_8() throws IOException {
 		runTest("TupleType_Valid_8");
 	}
 
 	@Test
-	public void TypeEquals_Valid_1() {
+	public void TypeEquals_Valid_1() throws IOException {
 		runTest("TypeEquals_Valid_1");
 	}
 
 	@Test
-	public void TypeEquals_Valid_10() {
+	public void TypeEquals_Valid_10() throws IOException {
 		runTest("TypeEquals_Valid_10");
 	}
 
 	@Test
-	public void TypeEquals_Valid_11() {
+	public void TypeEquals_Valid_11() throws IOException {
 		runTest("TypeEquals_Valid_11");
 	}
 
 	@Test
-	public void TypeEquals_Valid_12() {
+	public void TypeEquals_Valid_12() throws IOException {
 		runTest("TypeEquals_Valid_12");
 	}
 
 	@Test
-	public void TypeEquals_Valid_13() {
+	public void TypeEquals_Valid_13() throws IOException {
 		runTest("TypeEquals_Valid_13");
 	}
 
 	@Test
-	public void TypeEquals_Valid_14() {
+	public void TypeEquals_Valid_14() throws IOException {
 		runTest("TypeEquals_Valid_14");
 	}
 
 	@Test
-	public void TypeEquals_Valid_15() {
+	public void TypeEquals_Valid_15() throws IOException {
 		runTest("TypeEquals_Valid_15");
 	}
 
 	@Test
-	public void TypeEquals_Valid_16() {
+	public void TypeEquals_Valid_16() throws IOException {
 		runTest("TypeEquals_Valid_16");
 	}
 
 	@Test
-	public void TypeEquals_Valid_17() {
+	public void TypeEquals_Valid_17() throws IOException {
 		runTest("TypeEquals_Valid_17");
 	}
 
 	@Test
-	public void TypeEquals_Valid_18() {
+	public void TypeEquals_Valid_18() throws IOException {
 		runTest("TypeEquals_Valid_18");
 	}
 
 	@Test
-	public void TypeEquals_Valid_19() {
+	public void TypeEquals_Valid_19() throws IOException {
 		runTest("TypeEquals_Valid_19");
 	}
 
 	@Test
-	public void TypeEquals_Valid_2() {
+	public void TypeEquals_Valid_2() throws IOException {
 		runTest("TypeEquals_Valid_2");
 	}
 
 	@Test
-	public void TypeEquals_Valid_20() {
+	public void TypeEquals_Valid_20() throws IOException {
 		runTest("TypeEquals_Valid_20");
 	}
 
 	@Test
-	public void TypeEquals_Valid_21() {
+	public void TypeEquals_Valid_21() throws IOException {
 		runTest("TypeEquals_Valid_21");
 	}
 
 	@Test
-	public void TypeEquals_Valid_22() {
+	public void TypeEquals_Valid_22() throws IOException {
 		runTest("TypeEquals_Valid_22");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void TypeEquals_Valid_23() {
+	public void TypeEquals_Valid_23() throws IOException {
 		runTest("TypeEquals_Valid_23");
 	}
 
 	@Test
-	public void TypeEquals_Valid_24() {
+	public void TypeEquals_Valid_24() throws IOException {
 		runTest("TypeEquals_Valid_24");
 	}
 
 	@Test
-	public void TypeEquals_Valid_25() {
+	public void TypeEquals_Valid_25() throws IOException {
 		runTest("TypeEquals_Valid_25");
 	}
 
 	@Test
-	public void TypeEquals_Valid_26() {
+	public void TypeEquals_Valid_26() throws IOException {
 		runTest("TypeEquals_Valid_26");
 	}
 
 	@Test
-	public void TypeEquals_Valid_27() {
+	public void TypeEquals_Valid_27() throws IOException {
 		runTest("TypeEquals_Valid_27");
 	}
 
 	@Test
-	public void TypeEquals_Valid_28() {
+	public void TypeEquals_Valid_28() throws IOException {
 		runTest("TypeEquals_Valid_28");
 	}
 
 	@Test
-	public void TypeEquals_Valid_29() {
+	public void TypeEquals_Valid_29() throws IOException {
 		runTest("TypeEquals_Valid_29");
 	}
 
-	@Ignore("issue ???") @Test
-	public void TypeEquals_Valid_3() {
+	@Test
+	public void TypeEquals_Valid_3() throws IOException {
 		runTest("TypeEquals_Valid_3");
 	}
 
 	@Test
-	public void TypeEquals_Valid_30() {
+	public void TypeEquals_Valid_30() throws IOException {
 		runTest("TypeEquals_Valid_30");
 	}
 
 	@Test
-	public void TypeEquals_Valid_31() {
+	public void TypeEquals_Valid_31() throws IOException {
 		runTest("TypeEquals_Valid_31");
 	}
 
 	@Test
-	public void TypeEquals_Valid_32() {
+	public void TypeEquals_Valid_32() throws IOException {
 		runTest("TypeEquals_Valid_32");
 	}
 
 	@Test
-	public void TypeEquals_Valid_33() {
+	public void TypeEquals_Valid_33() throws IOException {
 		runTest("TypeEquals_Valid_33");
 	}
 
 	@Test
-	public void TypeEquals_Valid_34() {
+	public void TypeEquals_Valid_34() throws IOException {
 		runTest("TypeEquals_Valid_34");
 	}
 
 	@Test
-	public void TypeEquals_Valid_35() {
+	public void TypeEquals_Valid_35() throws IOException {
 		runTest("TypeEquals_Valid_35");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void TypeEquals_Valid_36() {
+	public void TypeEquals_Valid_36() throws IOException {
 		runTest("TypeEquals_Valid_36");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void TypeEquals_Valid_37() {
+	public void TypeEquals_Valid_37() throws IOException {
 		runTest("TypeEquals_Valid_37");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void TypeEquals_Valid_38() {
+	public void TypeEquals_Valid_38() throws IOException {
 		runTest("TypeEquals_Valid_38");
 	}
 
 	@Test
-	public void TypeEquals_Valid_39() {
+	public void TypeEquals_Valid_39() throws IOException {
 		runTest("TypeEquals_Valid_39");
 	}
 
 	@Test
-	public void TypeEquals_Valid_40() {
+	public void TypeEquals_Valid_40() throws IOException {
 		runTest("TypeEquals_Valid_40");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void TypeEquals_Valid_41() {
+	public void TypeEquals_Valid_41() throws IOException {
 		runTest("TypeEquals_Valid_41");
 	}
 
 	@Test
-	public void TypeEquals_Valid_42() {
+	public void TypeEquals_Valid_42() throws IOException {
 		runTest("TypeEquals_Valid_42");
 	}
 
 	@Test
-	public void TypeEquals_Valid_43() {
+	public void TypeEquals_Valid_43() throws IOException {
 		runTest("TypeEquals_Valid_43");
 	}
 
 	@Test
-	public void TypeEquals_Valid_44() {
+	public void TypeEquals_Valid_44() throws IOException {
 		runTest("TypeEquals_Valid_44");
 	}
 
 	@Test
-	public void TypeEquals_Valid_45() {
+	public void TypeEquals_Valid_45() throws IOException {
 		runTest("TypeEquals_Valid_45");
 	}
 
 	@Test
-	public void TypeEquals_Valid_46() {
+	public void TypeEquals_Valid_46() throws IOException {
 		runTest("TypeEquals_Valid_46");
 	}
 
 	@Test
-	public void TypeEquals_Valid_47() {
+	public void TypeEquals_Valid_47() throws IOException {
 		runTest("TypeEquals_Valid_47");
 	}
 
 	@Test
-	public void TypeEquals_Valid_5() {
+	public void TypeEquals_Valid_5() throws IOException {
 		runTest("TypeEquals_Valid_5");
 	}
 
 	@Test
-	public void TypeEquals_Valid_6() {
+	public void TypeEquals_Valid_6() throws IOException {
 		runTest("TypeEquals_Valid_6");
 	}
 
 	@Test
-	public void TypeEquals_Valid_7() {
+	public void TypeEquals_Valid_7() throws IOException {
 		runTest("TypeEquals_Valid_7");
 	}
 
 	@Test
-	public void TypeEquals_Valid_8() {
+	public void TypeEquals_Valid_8() throws IOException {
 		runTest("TypeEquals_Valid_8");
 	}
 
 	@Test
-	public void TypeEquals_Valid_9() {
+	public void TypeEquals_Valid_9() throws IOException {
 		runTest("TypeEquals_Valid_9");
 	}
 
 	@Test
-	public void UnionType_Valid_1() {
+	public void UnionType_Valid_1() throws IOException {
 		runTest("UnionType_Valid_1");
 	}
 
 	@Test
-	public void UnionType_Valid_10() {
+	public void UnionType_Valid_10() throws IOException {
 		runTest("UnionType_Valid_10");
 	}
 
 	@Test
-	public void UnionType_Valid_11() {
+	public void UnionType_Valid_11() throws IOException {
 		runTest("UnionType_Valid_11");
 	}
 
 	@Test
-	public void UnionType_Valid_12() {
+	public void UnionType_Valid_12() throws IOException {
 		runTest("UnionType_Valid_12");
 	}
 
 	@Test
-	public void UnionType_Valid_13() {
+	public void UnionType_Valid_13() throws IOException {
 		runTest("UnionType_Valid_13");
 	}
 
 	@Test
-	public void UnionType_Valid_14() {
+	public void UnionType_Valid_14() throws IOException {
 		runTest("UnionType_Valid_14");
 	}
 
 	@Test
-	public void UnionType_Valid_15() {
+	public void UnionType_Valid_15() throws IOException {
 		runTest("UnionType_Valid_15");
 	}
 
 	@Test
-	public void UnionType_Valid_16() {
+	public void UnionType_Valid_16() throws IOException {
 		runTest("UnionType_Valid_16");
 	}
 
-	@Ignore("Issue ???") @Test
-	public void UnionType_Valid_17() {
+	@Test
+	public void UnionType_Valid_17() throws IOException {
 		runTest("UnionType_Valid_17");
 	}
 
 	@Test
-	public void UnionType_Valid_18() {
+	public void UnionType_Valid_18() throws IOException {
 		runTest("UnionType_Valid_18");
 	}
 
 	@Test
-	public void UnionType_Valid_19() {
+	public void UnionType_Valid_19() throws IOException {
 		runTest("UnionType_Valid_19");
 	}
 
 	@Test
-	public void UnionType_Valid_2() {
+	public void UnionType_Valid_2() throws IOException {
 		runTest("UnionType_Valid_2");
 	}
 
 	@Test
-	public void UnionType_Valid_20() {
+	public void UnionType_Valid_20() throws IOException {
 		runTest("UnionType_Valid_20");
 	}
 
 	@Test
-	public void UnionType_Valid_21() {
+	public void UnionType_Valid_21() throws IOException {
 		runTest("UnionType_Valid_21");
 	}
 
 	@Test
-	public void UnionType_Valid_22() {
+	public void UnionType_Valid_22() throws IOException {
 		runTest("UnionType_Valid_22");
 	}
 
 	@Test
-	public void UnionType_Valid_23() {
+	public void UnionType_Valid_23() throws IOException {
 		runTest("UnionType_Valid_23");
 	}
 
 	@Test
-	public void UnionType_Valid_3() {
+	public void UnionType_Valid_3() throws IOException {
 		runTest("UnionType_Valid_3");
 	}
 
 	@Test
-	public void UnionType_Valid_4() {
+	public void UnionType_Valid_4() throws IOException {
 		runTest("UnionType_Valid_4");
 	}
 
 	@Test
-	public void UnionType_Valid_5() {
+	public void UnionType_Valid_5() throws IOException {
 		runTest("UnionType_Valid_5");
 	}
 
 	@Test
-	public void UnionType_Valid_6() {
+	public void UnionType_Valid_6() throws IOException {
 		runTest("UnionType_Valid_6");
 	}
 
 	@Test
-	public void UnionType_Valid_7() {
+	public void UnionType_Valid_7() throws IOException {
 		runTest("UnionType_Valid_7");
 	}
 
 	@Test
-	public void UnionType_Valid_8() {
+	public void UnionType_Valid_8() throws IOException {
 		runTest("UnionType_Valid_8");
 	}
 
 	@Test
-	public void UnionType_Valid_9() {
+	public void UnionType_Valid_9() throws IOException {
 		runTest("UnionType_Valid_9");
 	}
 
 	@Ignore("Issue ???") @Test
-	public void Update_Valid_1() {
+	public void Update_Valid_1() throws IOException {
 		runTest("Update_Valid_1");
 	}
 
-	@Ignore("Issue ???") @Test
-	public void Update_Valid_2() {
+	@Test
+	public void Update_Valid_2() throws IOException {
 		runTest("Update_Valid_2");
 	}
 
 	@Test
-	public void VarDecl_Valid_1() {
+	public void VarDecl_Valid_1() throws IOException {
 		runTest("VarDecl_Valid_1");
 	}
 
 	@Test
-	public void VarDecl_Valid_2() {
+	public void VarDecl_Valid_2() throws IOException {
 		runTest("VarDecl_Valid_2");
 	}
 
 	@Test
-	public void VarDecl_Valid_3() {
+	public void VarDecl_Valid_3() throws IOException {
 		runTest("VarDecl_Valid_3");
 	}
 
 	@Test
-	public void VarDecl_Valid_4() {
+	public void VarDecl_Valid_4() throws IOException {
 		runTest("VarDecl_Valid_4");
 	}
 
 	@Test
-	public void While_Valid_1() {
+	public void While_Valid_1() throws IOException {
 		runTest("While_Valid_1");
 	}
 
 	@Test
-	public void While_Valid_10() {
+	public void While_Valid_10() throws IOException {
 		runTest("While_Valid_10");
 	}
 
 	@Test
-	public void While_Valid_11() {
+	public void While_Valid_11() throws IOException {
 		runTest("While_Valid_11");
 	}
 
 	@Test
-	public void While_Valid_12() {
+	public void While_Valid_12() throws IOException {
 		runTest("While_Valid_12");
 	}
 
 	@Test
-	public void While_Valid_14() {
+	public void While_Valid_14() throws IOException {
 		runTest("While_Valid_14");
 	}
 
 	@Ignore("unknown") @Test
-	public void While_Valid_15() {
+	public void While_Valid_15() throws IOException {
 		runTest("While_Valid_15");
 	}
 
 	@Test
-	public void While_Valid_16() {
+	public void While_Valid_16() throws IOException {
 		runTest("While_Valid_16");
 	}
 
 	@Test
-	public void While_Valid_17() {
+	public void While_Valid_17() throws IOException {
 		runTest("While_Valid_17");
 	}
 
 	@Test
-	public void While_Valid_18() {
+	public void While_Valid_18() throws IOException {
 		runTest("While_Valid_18");
 	}
 
 	@Test
-	public void While_Valid_19() {
+	public void While_Valid_19() throws IOException {
 		runTest("While_Valid_19");
 	}
 
 	@Test
-	public void While_Valid_2() {
+	public void While_Valid_2() throws IOException {
 		runTest("While_Valid_2");
 	}
 
 	@Test
-	public void While_Valid_20() {
+	public void While_Valid_20() throws IOException {
 		runTest("While_Valid_20");
 	}
 
 	@Test
-	public void While_Valid_21() {
+	public void While_Valid_21() throws IOException {
 		runTest("While_Valid_21");
 	}
 
 	@Test
-	public void While_Valid_22() {
+	public void While_Valid_22() throws IOException {
 		runTest("While_Valid_22");
 	}
 
 	@Test
-	public void While_Valid_23() {
+	public void While_Valid_23() throws IOException {
 		runTest("While_Valid_23");
 	}
 
 	@Test
-	public void While_Valid_24() {
+	public void While_Valid_24() throws IOException {
 		runTest("While_Valid_24");
 	}
 
 	@Test
-	public void While_Valid_25() {
+	public void While_Valid_25() throws IOException {
 		runTest("While_Valid_25");
 	}
 
 	@Test
-	public void While_Valid_26() {
+	public void While_Valid_26() throws IOException {
 		runTest("While_Valid_26");
 	}
 
 	@Test
-	public void While_Valid_27() {
+	public void While_Valid_27() throws IOException {
 		runTest("While_Valid_27");
 	}
 
 	@Test
-	public void While_Valid_28() {
+	public void While_Valid_28() throws IOException {
 		runTest("While_Valid_28");
 	}
 
 	@Test
-	public void While_Valid_29() {
+	public void While_Valid_29() throws IOException {
 		runTest("While_Valid_29");
 	}
 
 	@Test
-	public void While_Valid_30() {
+	public void While_Valid_30() throws IOException {
 		runTest("While_Valid_30");
 	}
 
 	@Test
-	public void While_Valid_31() {
+	public void While_Valid_31() throws IOException {
 		runTest("While_Valid_31");
 	}
 
 	@Test
-	public void While_Valid_32() {
+	public void While_Valid_32() throws IOException {
 		runTest("While_Valid_32");
 	}
 
 	@Test
-	public void While_Valid_33() {
+	public void While_Valid_33() throws IOException {
 		runTest("While_Valid_33");
 	}
 
 	@Test
-	public void While_Valid_34() {
+	public void While_Valid_34() throws IOException {
 		runTest("While_Valid_34");
 	}
 
 	@Test
-	public void While_Valid_35() {
+	public void While_Valid_35() throws IOException {
 		runTest("While_Valid_35");
 	}
 
 	@Test
-	public void While_Valid_36() {
+	public void While_Valid_36() throws IOException {
 		runTest("While_Valid_36");
 	}
 
 	@Test
-	public void While_Valid_37() {
+	public void While_Valid_37() throws IOException {
 		runTest("While_Valid_37");
 	}
 
 	@Test
-	public void While_Valid_38() {
+	public void While_Valid_38() throws IOException {
 		runTest("While_Valid_38");
 	}
 
 	@Test
-	public void While_Valid_39() {
+	public void While_Valid_39() throws IOException {
 		runTest("While_Valid_39");
 	}
 
 	@Test
-	public void While_Valid_40() {
+	public void While_Valid_40() throws IOException {
 		runTest("While_Valid_40");
 	}
 
 	@Test
-	public void While_Valid_41() {
+	public void While_Valid_41() throws IOException {
 		runTest("While_Valid_41");
 	}
 
 	@Test
-	public void While_Valid_42() {
+	public void While_Valid_42() throws IOException {
 		runTest("While_Valid_42");
 	}
 
 	@Test
-	public void While_Valid_43() {
+	public void While_Valid_43() throws IOException {
 		runTest("While_Valid_43");
 	}
 
 	@Test
-	public void While_Valid_44() {
+	public void While_Valid_44() throws IOException {
 		runTest("While_Valid_44");
 	}
-	
+
 	@Test
-	public void While_Valid_45() {
+	public void While_Valid_45() throws IOException {
 		runTest("While_Valid_45");
 	}
 
 	@Test
-	public void While_Valid_46() {
+	public void While_Valid_46() throws IOException {
 		runTest("While_Valid_46");
 	}
-	
+
 	@Test
-	public void While_Valid_3() {
+	public void While_Valid_3() throws IOException {
 		runTest("While_Valid_3");
 	}
 
-	public void While_Valid_5() {
+	public void While_Valid_5() throws IOException {
 		runTest("While_Valid_5");
 	}
 
-	public void While_Valid_7() {
+	public void While_Valid_7() throws IOException {
 		runTest("While_Valid_7");
 	}
 
 	@Test
-	public void While_Valid_9() {
+	public void While_Valid_9() throws IOException {
 		runTest("While_Valid_9");
 	}
 }

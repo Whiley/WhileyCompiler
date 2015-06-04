@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(int x) -> int
 requires x > 0:
@@ -11,6 +11,6 @@ requires p >= 0:
     func_t func = &(int x -> f(x + 1))
     return func(p)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int x = g(5)
-    sys.out.println(x)
+    assume x == 7

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type char is int
 type string is [int]
@@ -79,13 +79,14 @@ requires state >= 0:
         //
         return false
 
-method main(System.Console console):
+public export method test():
     Trie t = EmptyTrie
     // First, initialise trie
-    for s in ["hello","world","help"]:
-        console.out.println_s("ADDING: " ++ s)
-        t = add(t,s)
+    t = add(t,"hello")
+    t = add(t,"world")
+    t = add(t,"help")
     // Second, check containment
-    for s in ["hello","blah","hel","dave"]:
-        bool r = contains(t,s)
-        console.out.println_s("CONTAINS: " ++ s ++ " = " ++ Any.toString(r))
+    assume contains(t,"hello")
+    assume !contains(t,"blah")
+    assume contains(t,"hel")
+    assume !contains(t,"dave")

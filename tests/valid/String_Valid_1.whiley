@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -9,7 +9,7 @@ function f(nat pos, [int] input) -> bool|null:
         bool flag = input[pos] == 'O'
         return flag
 
-method main(System.Console console):
-    console.out.println(f(0, "Ox"))
-    console.out.println(f(0, "1x"))
-    console.out.println(f(1, "O"))
+public export method test():
+    assume f(0, "Ox") == true
+    assume f(0, "1x") == false
+    assume f(1, "O") == null

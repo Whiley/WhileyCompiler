@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Proc is &{int state}
 
@@ -8,6 +8,6 @@ method get(Proc this) -> int:
 method f(Proc x) -> int:
     return get(x)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Proc proc = new {state: 123}
-    sys.out.println(f(proc))
+    assume f(proc) == 123

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 constant Short is 3
 constant Int is 4
@@ -27,8 +27,8 @@ function codeLength(Attribute a) -> null | int:
         return |a.data|
     return null
 
-public method main(System.Console sys) -> void:
+public export method test() -> void:
     Attribute attr = {name: "Code", data: [{op: 2, offset: 1}]}
-    sys.out.println(codeLength(attr))
+    assume codeLength(attr) == 1
     attr = {name: "Blah"}
-    sys.out.println(codeLength(attr))
+    assume codeLength(attr) == null

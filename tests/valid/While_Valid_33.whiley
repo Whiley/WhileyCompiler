@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function sum([int] items) -> (int r)
 // Every element of items must be non-negative
@@ -14,5 +14,8 @@ ensures r >= 0:
     //
     return r
 
-method main(System.Console console):
-    console.out.println_s("SUM = " ++ Any.toString(sum([1,2,3])))
+public export method test():
+    assume sum([]) == 0
+    assume sum([0]) == 0
+    assume sum([1]) == 1
+    assume sum([1,2,3]) == 6

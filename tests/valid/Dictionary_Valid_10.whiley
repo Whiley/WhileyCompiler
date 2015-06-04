@@ -1,9 +1,9 @@
-import whiley.lang.*
 
-public method main(System.Console sys) -> void:
+
+public export method test() -> void:
     {int=>int} l = {1=>2, 2=>3}
-    sys.out.println_s("Dictionary: " ++ Any.toString(l))
-    sys.out.println_s("Length: " ++ Any.toString(|l|))
+    assume l == {1=>2,2=>3}
+    assume |l| == 2
     l[3] = 123
-    sys.out.println_s("Dictionary: " ++ Any.toString(l))
-    sys.out.println_s("Length: " ++ Any.toString(|l|))
+    assume l == {1=>2,2=>3,3=>123}
+    assume |l| == 3

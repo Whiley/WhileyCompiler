@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type etup is (int, int) | (real, real)
 
@@ -8,8 +8,8 @@ function f(int x) -> etup:
     else:
         return (1.2, 2.3)
 
-public method main(System.Console sys) -> void:
+public export method test() -> void:
     (int|real x,int|real y) = f(-1)
-    sys.out.println_s("X=" ++ Any.toString(x) ++ ",Y=" ++ Any.toString(y))
+    assume x == 1 && y == 2
     (x, y) = f(2)
-    sys.out.println_s("X=" ++ Any.toString(x) ++ ",Y=" ++ Any.toString(y))
+    assume x == 1.2 && y == 2.3

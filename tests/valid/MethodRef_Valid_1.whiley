@@ -1,13 +1,13 @@
-import whiley.lang.*
+
 
 type MyMeth is method(int) -> int
 
 method read(int x) -> int:
     return x + 123
 
-method test(MyMeth m) -> int:
+public export method test(MyMeth m) -> int:
     return m(1)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int r = test(&read)
-    sys.out.println(r)
+    assume r == 124

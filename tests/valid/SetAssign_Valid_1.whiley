@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f({int} xs) -> int
 requires |xs| > 0:
@@ -7,7 +7,7 @@ requires |xs| > 0:
         r = r + x
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     {int} ys = {1, 2, 3}
     {int} zs = ys
-    sys.out.println(f(zs))
+    assume f(zs) == 6

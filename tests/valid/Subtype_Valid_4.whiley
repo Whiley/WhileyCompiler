@@ -1,10 +1,10 @@
-import whiley.lang.*
+
 
 type sr8nat is int
 
 type sr8tup is {sr8nat f, int g}
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [sr8tup] x = [{f: 1, g: 3}, {f: 4, g: 8}]
     x[0].f = 2
-    sys.out.println(x)
+    assume x == [{f: 2, g: 3}, {f: 4, g: 8}]

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Rec1 is {int x}
 
@@ -8,9 +8,8 @@ function f(Rec2 rec) -> int:
     int x / int y = rec.x
     return x
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Rec1 rec = {x: 1}
-    sys.out.println(rec)
     int num = f((Rec2) rec)
-    sys.out.println(rec)
-    sys.out.println(num)
+    assume num == 1
+    assert rec == {x:1}

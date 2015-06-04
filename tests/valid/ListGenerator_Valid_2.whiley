@@ -1,10 +1,9 @@
-import whiley.lang.*
 
-method f(System.Console sys, [int] x) -> void:
+
+method f([int] x) -> void:
     int z = |x|
-    sys.out.println(z)
-    sys.out.println(x[z - 1])
+    assume x[z - 1] == 3
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] arr = [1, 2, 3]
-    f(sys, arr)
+    f(arr)

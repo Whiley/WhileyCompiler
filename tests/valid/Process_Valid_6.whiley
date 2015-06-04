@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Actor is {int data}
 
@@ -15,11 +15,11 @@ method createActors(int n) -> [&Actor]:
         row = row ++ [m]
     return row
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [&Actor] actors = createActors(10)
     int r = 0
     //
     for i in 0 .. |actors|:
         r = r + get(actors[i])
     //
-    sys.out.println(r)
+    assume r == 45

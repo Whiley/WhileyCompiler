@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function indexOf([int] xs, int x) -> (int|null result)
 // Either result is null, or gives the index of x in xs
@@ -11,6 +11,6 @@ ensures result is null || xs[result] == x:
         i = i + 1
     return null
 
-method main(System.Console console) -> void:
-    console.out.println(indexOf([1, 2, 3], 1))
-    console.out.println(indexOf([1, 2, 3], 0))
+public export method test() -> void:
+    assume indexOf([1, 2, 3], 1) == 0
+    assume indexOf([1, 2, 3], 0) == null

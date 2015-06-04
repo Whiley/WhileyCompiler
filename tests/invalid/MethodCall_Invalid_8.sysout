@@ -1,3 +1,3 @@
 ../../tests/invalid/MethodCall_Invalid_8.whiley:1: object creation not permitted in function
-import * from whiley.lang.*
+function f() -> int:
 

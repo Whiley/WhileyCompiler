@@ -1,5 +1,3 @@
-import * from whiley.lang.*
-
 type Rec1 is {int y, real x}
 
 type Rec2 is {real y, int x}
@@ -12,7 +10,6 @@ function f(uRec1Rec2 r) -> int:
     else:
         return r.x
 
-method main(System.Console sys) -> void:
+function g() -> int:
     {int x, int y} rec = {y: 1, x: 1}
-    int ans = f( (uRec1Rec2) rec)
-    sys.out.println(Any.toString(ans))
+    return f( (uRec1Rec2) rec)

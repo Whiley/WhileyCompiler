@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type a_nat is int
 
@@ -10,7 +10,7 @@ function f(a_nat x) -> b_nat:
     else:
         return f(x - 1)
 
-method main(System.Console sys) -> void:
-    int x = |sys.args|
+public export method test() -> void:
+    int x = 0
     x = f(x)
-    sys.out.println(x)
+    assume x == 1

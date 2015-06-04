@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type R1 is {int x}
 
@@ -14,8 +14,8 @@ function f(bool flag, [int] list) -> int:
             r = r - pos
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int r1 = f(true, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     int r2 = f(false, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    sys.out.println(r1)
-    sys.out.println(r2)
+    assume r1 == 55
+    assume r2 == -55

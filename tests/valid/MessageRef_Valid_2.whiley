@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type FileReader is &{int position}
 
@@ -15,8 +15,8 @@ method openReader() -> Reader:
     FileReader proc = new {position: 123}
     return {thus: proc, read: &read}
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Reader reader = openReader()
     FileReader target = reader.thus
     int data = reader.read(target, 1)
-    sys.out.println(data)
+    assume data == 124

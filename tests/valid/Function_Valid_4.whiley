@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type fr4nat is (int x) where x >= 0
 
@@ -8,6 +8,6 @@ function g(fr4nat x) -> fr4nat:
 function f(fr4nat x) -> int:
     return x
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int y = 1
-    sys.out.println(f(g(y)))
+    assume f(g(y)) == 2

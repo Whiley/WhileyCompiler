@@ -1,5 +1,3 @@
-import * from whiley.lang.*
-
 method main() -> int:
     int j = 0
     int i

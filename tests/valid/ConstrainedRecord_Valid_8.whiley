@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 constant BLANK is 0
 
@@ -17,9 +17,8 @@ type EmptyBoard is (Board b) where no { x in b.pieces | x != BLANK }
 function EmptyBoard() -> EmptyBoard:
     return {pieces: [BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK], move: 0}
 
-method main(System.Console console) -> void:
+public export method test() -> void:
     Board b = EmptyBoard()
     assert b.pieces[0] == BLANK
     assert b.pieces[1] == BLANK
     assert b.pieces[8] == BLANK
-    console.out.println_s("BOARD: " ++ Any.toString(b))

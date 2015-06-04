@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(int x) -> int:
     if x < 10:
@@ -8,9 +8,9 @@ function f(int x) -> int:
             return 2
     return 0
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(1))
-    sys.out.println(f(10))
-    sys.out.println(f(11))
-    sys.out.println(f(1212))
-    sys.out.println(f(-1212))
+public export method test() -> void:
+    assume f(1) == 1
+    assume f(10) == 0
+    assume f(11) == 2
+    assume f(1212) == 2
+    assume f(-1212) == 1

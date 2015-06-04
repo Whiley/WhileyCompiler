@@ -1,10 +1,10 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+public export method test() -> void:
     [[int]] a1 = [[1, 2, 3], [0]]
     [[int]] a2 = a1
     a2[0] = [3, 4, 5]
-    sys.out.println(a1[0])
-    sys.out.println(a1[1])
-    sys.out.println(a2[0])
-    sys.out.println(a2[1])
+    assert a1[0] == [1,2,3]
+    assert a1[1] == [0]    
+    assert a2[0] == [3,4,5]
+    assert a2[1] == [0]    

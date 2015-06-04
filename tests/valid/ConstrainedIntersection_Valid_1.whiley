@@ -9,8 +9,8 @@ ensures r >= 0:
     //
     return 0
 
-method main(System.Console console):
-    console.out.println(f(1))
-    console.out.println(f(9))
-    console.out.println(f(10))
-    console.out.println(f(-1))
+public export method test():
+    assume f(1) == 1
+    assume f(9) == 1
+    assume f(10) == 0
+    assume f(-1) == 0

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type src is int | [int] | [[int]]
 
@@ -8,7 +8,7 @@ function f(src e) -> bool:
     else:
         return false
 
-method main(System.Console sys) -> void:
-    sys.out.println(f([1, 2, 3]))
-    sys.out.println(f([[1], [2]]))
-    sys.out.println(f(1))
+public export method test() -> void:
+    assume f([1, 2, 3]) == true
+    assume f([[1], [2]]) == true
+    assume f(1) == false

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function invertByte([bool] bits) -> ([bool] ret)
 // Precondition: 8 bits in a byte
@@ -22,6 +22,6 @@ ensures all { i in 0 .. 8 | ret[i] == !bits[i] }:
     //
     return ret
 
-method main(System.Console console):
-    console.out.println_s("BITS = " ++ Any.toString(invertByte([true,false,true,false,true,false,true,false])))
-    console.out.println_s("BITS = " ++ Any.toString(invertByte([true,true,true,true,false,false,false,false])))
+public export method test():
+    assume invertByte([true,false,true,false,true,false,true,false]) == [false, true, false, true, false, true, false, true]
+    assume invertByte([true,true,true,true,false,false,false,false]) == [false, false, false, false, true, true, true, true]

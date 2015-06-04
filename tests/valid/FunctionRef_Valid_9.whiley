@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Proc is &{
     function func(int) -> int
@@ -7,17 +7,17 @@ type Proc is &{
 method func(Proc this, int x) -> int:
     return x + 1
 
-method test(Proc this, int arg) -> int:
+public export method test(Proc this, int arg) -> int:
     return (*this).func(arg)
 
 function id(int x) -> int:
     return x
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Proc p = new {func: &id}
     int x = test(p, 123)
-    sys.out.println_s("GOT: " ++ Any.toString(x))
+    assume x == 123
     x = test(p, 12545)
-    sys.out.println_s("GOT: " ++ Any.toString(x))
+    assume x == 12545
     x = test(p,-11)
-    sys.out.println_s("GOT: " ++ Any.toString(x))
+    assume x == -11

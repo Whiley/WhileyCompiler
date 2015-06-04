@@ -1,7 +1,7 @@
-import whiley.lang.*
+
 
 type pintset is ({int} xs) where |xs| > 1
 
-method main(System.Console sys) -> void:
-    {int} p = {1, 2}
-    sys.out.println(p)
+public export method test() -> void:
+    pintset p = {1, 2}
+    assume p == {1,2}

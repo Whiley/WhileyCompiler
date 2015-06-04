@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type plist is ([int] xs) where |xs| > 0 && xs[0] == 0
 
@@ -12,7 +12,7 @@ function f(tup t) -> bool:
     else:
         return false
 
-method main(System.Console sys) -> void:
-    sys.out.println(f({p: 0, lhs: [0]}))
-    sys.out.println(f({p: 0, lhs: [0, 1]}))
-    sys.out.println(f({p: 0, lhs: [1, 1]}))
+public export method test() -> void:
+    assume f({p: 0, lhs: [0]}) == true
+    assume f({p: 0, lhs: [0, 1]}) == true
+    assume f({p: 0, lhs: [1, 1]}) == false

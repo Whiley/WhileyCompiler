@@ -51,6 +51,10 @@ public abstract class Constant implements Comparable<Constant> {
 		return get(new Decimal(value));
 	}
 
+	public static Rational V_RATIONAL(BigRational value) {
+		return get(new Rational(value));
+	}
+	
 	public static Integer V_INTEGER(BigInteger value) {
 		return get(new Integer(value));
 	}
@@ -85,10 +89,11 @@ public abstract class Constant implements Comparable<Constant> {
 	}
 
 	public static Lambda V_LAMBDA(NameID name,
-			wyil.lang.Type.FunctionOrMethod type) {
-		return get(new Lambda(name, type));
+			wyil.lang.Type.FunctionOrMethod type, Constant... arguments) {
+		return get(new Lambda(name, type, arguments));
 	}
 
+	
 	public static final class Null extends Constant {
 		public wyil.lang.Type type() {
 			return wyil.lang.Type.T_NULL;
@@ -197,7 +202,7 @@ public abstract class Constant implements Comparable<Constant> {
 			return r;
 		}
 	}
-	
+
 	public static final class Integer extends Constant {
 		public final BigInteger value;
 		private Integer(BigInteger value) {
@@ -243,6 +248,9 @@ public abstract class Constant implements Comparable<Constant> {
 		}
 		public Constant.Integer remainder(Constant.Integer val) {
 			return Constant.V_INTEGER(value.remainder(val.value));
+		}
+		public Constant.Integer negate() {
+			return Constant.V_INTEGER(value.negate());
 		}
 	}
 
@@ -305,6 +313,70 @@ public abstract class Constant implements Comparable<Constant> {
 		public Constant.Decimal divide(Constant.Decimal val) {
 			return Constant.V_DECIMAL(value.divide(val.value));
 		}
+
+		public Constant.Decimal negate() {
+			return Constant.V_DECIMAL(value.negate());
+		}
+	}
+
+	public static final class Rational extends Constant {
+		public final BigRational value;
+
+		private Rational(BigRational value) {
+			this.value = value;
+		}
+
+		public wyil.lang.Type type() {
+			return wyil.lang.Type.T_REAL;
+		}
+
+		public int hashCode() {
+			return value.hashCode();
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof Rational) {
+				Rational i = (Rational) o;
+				return value.equals(i.value);
+			}
+			return false;
+		}
+
+		public int compareTo(Constant v) {
+			if (v instanceof Rational) {
+				Rational i = (Rational) v;
+				return value.compareTo(i.value);
+			} else if (v instanceof Null || v instanceof Bool
+					|| v instanceof Byte || v instanceof Integer
+					|| v instanceof Decimal) {
+				return 1;
+			}
+			return -1;
+		}
+
+		public String toString() {
+			return value.toString();
+		}
+
+		public Constant.Rational add(Constant.Rational val) {
+			return Constant.V_RATIONAL(value.add(val.value));
+		}
+
+		public Constant.Rational subtract(Constant.Rational val) {
+			return Constant.V_RATIONAL(value.subtract(val.value));
+		}
+
+		public Constant.Rational multiply(Constant.Rational val) {
+			return Constant.V_RATIONAL(value.multiply(val.value));
+		}
+
+		public Constant.Rational divide(Constant.Rational val) {
+			return Constant.V_RATIONAL(value.divide(val.value));
+		}
+
+		public Constant.Rational negate() {
+			return Constant.V_RATIONAL(value.negate());
+		}
 	}
 	
 	public static final class List extends Constant {
@@ -346,7 +418,8 @@ public abstract class Constant implements Comparable<Constant> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Decimal || v instanceof Byte || v instanceof Integer) {
+					|| v instanceof Byte || v instanceof Integer
+					|| v instanceof Decimal || v instanceof Rational) {
 				return 1;
 			}
 			return -1;
@@ -413,9 +486,9 @@ public abstract class Constant implements Comparable<Constant> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Decimal || v instanceof Byte
-					|| v instanceof Integer || v instanceof List
-					|| v instanceof Tuple) {
+					|| v instanceof Decimal || v instanceof Rational
+					|| v instanceof Byte || v instanceof Integer
+					|| v instanceof List || v instanceof Tuple) {
 				return 1;
 			}
 			return -1;
@@ -519,9 +592,10 @@ public abstract class Constant implements Comparable<Constant> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Decimal || v instanceof Byte
-					|| v instanceof Integer || v instanceof Set
-					|| v instanceof List || v instanceof Tuple) {
+					|| v instanceof Decimal || v instanceof Rational
+					|| v instanceof Byte || v instanceof Integer
+					|| v instanceof Set || v instanceof List
+					|| v instanceof Tuple) {
 				return 1;
 			}
 			return -1;
@@ -597,10 +671,10 @@ public abstract class Constant implements Comparable<Constant> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Decimal || v instanceof Byte
-					|| v instanceof Integer || v instanceof Set
-					|| v instanceof List || v instanceof Tuple
-					|| v instanceof Record) {
+					|| v instanceof Decimal || v instanceof Rational
+					|| v instanceof Byte || v instanceof Integer
+					|| v instanceof Set || v instanceof List
+					|| v instanceof Tuple || v instanceof Record) {
 				return 1;
 			}
 			return -1;
@@ -666,12 +740,23 @@ public abstract class Constant implements Comparable<Constant> {
 	public static final class Lambda extends Constant {
 		public final NameID name;
 		public final wyil.lang.Type.FunctionOrMethod type;
-
-		private Lambda(NameID name, wyil.lang.Type.FunctionOrMethod type) {
+		public final ArrayList<Constant> arguments;
+		
+		private Lambda(NameID name, wyil.lang.Type.FunctionOrMethod type, Constant... arguments) {
 			this.name = name;
 			this.type = type;
+			this.arguments = new ArrayList<Constant>();
+			for(int i=0;i!=arguments.length;++i) {
+				this.arguments.add(arguments[i]);
+			}
 		}
 
+		private Lambda(NameID name, wyil.lang.Type.FunctionOrMethod type, Collection<Constant> arguments) {
+			this.name = name;
+			this.type = type;
+			this.arguments = new ArrayList<Constant>(arguments);
+		}
+		
 		public wyil.lang.Type.FunctionOrMethod type() {
 			if (type == null) {
 				return wyil.lang.Type.Function(wyil.lang.Type.T_ANY,
@@ -682,7 +767,7 @@ public abstract class Constant implements Comparable<Constant> {
 		}
 		public int hashCode() {
 			if(type != null) {
-				return type.hashCode() + name.hashCode();
+				return type.hashCode() + name.hashCode() + arguments.hashCode();
 			} else {
 				return name.hashCode();
 			}
@@ -692,7 +777,7 @@ public abstract class Constant implements Comparable<Constant> {
 				Lambda i = (Lambda) o;
 				return name.equals(i.name)
 						&& (type == i.type || (type != null && type
-								.equals(i.type)));
+								.equals(i.type))) && arguments.equals(i.arguments);
 			}
 			return false;
 		}
@@ -705,8 +790,22 @@ public abstract class Constant implements Comparable<Constant> {
 				return 1; // everything is above a type constant
 			}
 		}
-		public String toString() {
-			return "&" + name.toString() + ":" + type.toString();
+		public String toString() {			
+			String args = "";
+			boolean firstTime=true;
+			for(Constant arg : arguments) {
+				if(!firstTime) {
+					args += ",";
+				}
+				firstTime=false;
+				if(arg == null) {
+					args += "_";
+				} else {
+					args += arg.toString();
+				}
+				
+			}
+			return "&" + name.toString() + "(" + args + "):" + type.toString();
 		}
 	}
 
@@ -752,9 +851,9 @@ public abstract class Constant implements Comparable<Constant> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Decimal || v instanceof Byte
-					|| v instanceof Integer || v instanceof Set
-					|| v instanceof List) {
+					|| v instanceof Decimal || v instanceof Rational
+					|| v instanceof Byte || v instanceof Integer
+					|| v instanceof Set || v instanceof List) {
 				return 1;
 			}
 			return -1;

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Expr is real | Var | BinOp
 
@@ -25,12 +25,19 @@ function sbuild(int i) -> SExpr:
     else:
         return build(i)
 
-public method main(System.Console sys) -> void:
-    int i = -5
-    while i < 10:
-        SExpr e = sbuild(i)
-        if e is SyntaxError:
-            sys.out.println_s("syntax error: " ++ e.err)
-        else:
-            sys.out.println(e)
-        i = i + 1
+public export method test() -> void:
+    assume sbuild(-5) == {lhs:5.0,rhs:{lhs:6.0,rhs:{lhs:7.0,rhs:{lhs:8.0,rhs:{lhs:9.0,rhs:{lhs:10.0,rhs:1.0}}}}}}
+    assume sbuild(-4) == {lhs:6.0,rhs:{lhs:7.0,rhs:{lhs:8.0,rhs:{lhs:9.0,rhs:{lhs:10.0,rhs:1.0}}}}}
+    assume sbuild(-3) == {lhs:7.0,rhs:{lhs:8.0,rhs:{lhs:9.0,rhs:{lhs:10.0,rhs:1.0}}}}
+    assume sbuild(-2) == {lhs:8.0,rhs:{lhs:9.0,rhs:{lhs:10.0,rhs:1.0}}}
+    assume sbuild(-1) == {lhs:9.0,rhs:{lhs:10.0,rhs:1.0}}
+    assume sbuild(0) == {lhs:10.0,rhs:1.0}
+    assume sbuild(1) == 1.0
+    assume sbuild(2) == 2.0
+    assume sbuild(3) == 3.0
+    assume sbuild(4) == 4.0
+    assume sbuild(5) == 5.0
+    assume sbuild(6) == 6.0
+    assume sbuild(7) == 7.0
+    assume sbuild(8) == 8.0
+    assume sbuild(9) == 9.0

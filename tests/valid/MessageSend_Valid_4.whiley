@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type wmcr6tup is {int y, int x}
 
@@ -10,6 +10,6 @@ method get(Proc this) -> int:
 method f(Proc x, int y) -> wmcr6tup:
     return {y: get(x), x: y}
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Proc proc = new {state: 1}
-    sys.out.println(f(proc, 1))
+    assume f(proc, 2) == {y: 1, x: 2}

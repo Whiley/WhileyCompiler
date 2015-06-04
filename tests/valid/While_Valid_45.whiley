@@ -1,4 +1,4 @@
-import whiley.lang.System
+
 
 function buildNatSet(int n) -> ({int} m):
     //
@@ -27,8 +27,13 @@ function buildNatSet(int n) -> ({int} m):
     //
     return rs
 
-method main(System.Console console):
+public export method test():
     //
-    {int} nset = buildNatSet(10)
-    console.out.println(nset)
+    assume buildNatSet(-1) == {}
+    assume buildNatSet(0) == {}
+    assume buildNatSet(1) == {0}
+    assume buildNatSet(2) == {0,1}
+    assume buildNatSet(3) == {0,1,2}
+    assume buildNatSet(4) == {0,1,2,3}
+    assume buildNatSet(10) == {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
     

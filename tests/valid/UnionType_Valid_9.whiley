@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type tenup is (int x) where x > 10
 
@@ -11,6 +11,6 @@ type msgType is msg1 | msg2
 function f(msgType m) -> any:
     return m
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     msg1 x = {op: 11, data: []}
-    sys.out.println(f(x))
+    assume f(x) == {op: 11, data: []}

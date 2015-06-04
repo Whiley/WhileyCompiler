@@ -1,4 +1,4 @@
-../../tests/invalid/UnionType_Invalid_6.whiley:12: unable to resolve name (no match for f({[int] op})
+../../tests/invalid/UnionType_Invalid_6.whiley:10: unable to resolve name (no match for f({[int] op})
 	found: UnionType_Invalid_6:f : function({int op}) -> int)
     f(x)
     ^^^^

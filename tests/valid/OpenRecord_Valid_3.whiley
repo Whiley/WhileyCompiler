@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Object is {
     function fn(Object)->int,
@@ -11,6 +11,6 @@ public function myFn(Object o) -> int:
 public function get(Object o) -> int:
     return o.fn(o)
 
-public method main(System.Console sys) -> void:
+public export method test() -> void:
     Object o = {fn: &myFn}
-    sys.out.println(get(o))
+    assume get(o) == 123

@@ -6,7 +6,3 @@ function f(plistv6 xs) -> int:
 
 function g(plistv6 left, [int] right) -> int:
     return f(left ++ right)
-
-method main(System.Console sys) -> void:
-    int r = g([1, 2, 3], [-1, 7, 8])
-    debug Any.toString(r)

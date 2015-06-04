@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -11,7 +11,7 @@ function inc([nat] xs) -> [nat]:
     assert no { x in xs | x < 0 }
     return xs
 
-method main(System.Console sys) -> void:
-    sys.out.println(inc([0]))
-    sys.out.println(inc([1, 2, 3]))
-    sys.out.println(inc([10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]))
+public export method test() -> void:
+    assume inc([0]) == [1]
+    assume inc([1, 2, 3]) == [2,3,4]
+    assume inc([10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]) == [11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]

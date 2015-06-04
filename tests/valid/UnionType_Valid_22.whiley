@@ -1,6 +1,4 @@
-import whiley.lang.*
-import nat from whiley.lang.Int
-
+type nat is (int x) where x >= 0
 type nlist is int | [nat]
 
 function f(int i, [nlist] xs) -> nlist:
@@ -9,6 +7,6 @@ function f(int i, [nlist] xs) -> nlist:
     else:
         return xs[i]
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     nlist x = f(2, [2, 3, 4])
-    sys.out.println(x)
+    assume x == 4

@@ -1,3 +1,3 @@
-../../tests/invalid/RecursiveType_Invalid_3.whiley:9: expected type RecursiveType_Invalid_3:expr, found {[int+] left,int op,int right}
+../../tests/invalid/RecursiveType_Invalid_3.whiley:7: expected type RecursiveType_Invalid_3:expr, found {[int+] left,int op,int right}
     expr e = {op: 1, left: "HELLO", right: 2}
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

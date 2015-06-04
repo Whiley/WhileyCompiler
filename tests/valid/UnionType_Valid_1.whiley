@@ -1,11 +1,11 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+public export method test() -> void:
     int|[int] x
     //
-    if |sys.args| == 1:
+    if 0 == 1:
         x = 1
     else:
         x = [1, 2, 3]
     //
-    sys.out.println(x)
+    assume x == [1,2,3]

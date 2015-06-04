@@ -1,5 +1,5 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+public export method test() -> void:
     int x = (2 * 3) + 1
-    sys.out.println(x)
+    assert x == 7

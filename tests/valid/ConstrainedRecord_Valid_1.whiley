@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 constant RET is 169
 
@@ -11,6 +11,6 @@ type UNIT is {unitCode op}
 function f(UNIT x) -> [int]:
     return [x.op]
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] bytes = f({op: NOP})
-    sys.out.println(bytes)
+    assume bytes == [NOP]

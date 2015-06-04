@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function extract([int] ls) -> [int]:
     int i = 0
@@ -8,8 +8,8 @@ function extract([int] ls) -> [int]:
         i = i + 1
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] rs = extract([1, 2, 3, 4, 5, 6, 7])
-    sys.out.println(rs)
+    assume rs == [1, 1, 1, 1, 1, 1, 1, 1]
     rs = extract([])
-    sys.out.println(rs)
+    assume rs == [1]

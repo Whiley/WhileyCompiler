@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function abs(int x) -> (int r)
 ensures r >= 0:
@@ -8,6 +8,6 @@ ensures r >= 0:
     //
     return x
 
-method main(System.Console console):
-    console.out.println_s("abs(1) = " ++ Any.toString(abs(1)))
-    console.out.println_s("abs(-1) = " ++ Any.toString(abs(-1)))
+public export method test():
+    assume abs(1) == 1
+    assume abs(-1) == 1

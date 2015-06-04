@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 constant odd is {1,3,5}
 
@@ -13,7 +13,7 @@ function f(oddeven x) -> even:
         return 2
     return x
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int y = 1
     y = f(1)
-    sys.out.println(y)
+    assume y == 2

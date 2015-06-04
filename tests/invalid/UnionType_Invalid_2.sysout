@@ -1,3 +1,4 @@
-../../tests/invalid/UnionType_Invalid_2.whiley:13: expected type int, found real
-    x = 1.234
-    ^
+../../tests/invalid/UnionType_Invalid_2.whiley:12: unable to resolve name (no match for f(real)
+	found: UnionType_Invalid_2:f : function(int) -> int)
+    f(x)
+    ^^^^

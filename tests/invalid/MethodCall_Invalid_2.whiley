@@ -1,9 +1,7 @@
-import * from whiley.lang.*
-
 type dummy is &{int x}
 
-method f(dummy this, int x) -> void:
-    debug Any.toString(x)
+method f(dummy this, int x) -> int:
+    return 1
 
-method main(System.Console sys) -> void:
-    f(sys, 1)
+method main(&int this) -> void:
+    f(this, 1)

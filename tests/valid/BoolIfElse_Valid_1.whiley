@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(bool b) -> bool:
     if b:
@@ -6,6 +6,6 @@ function f(bool b) -> bool:
     else:
         return false
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(true))
-    sys.out.println(f(false))
+public export method test() -> void:
+    assume f(true)
+    assume !f(false)

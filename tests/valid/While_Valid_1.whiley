@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function reverse([int] ls) -> [int]:
     int i = |ls|
@@ -8,6 +8,6 @@ function reverse([int] ls) -> [int]:
         r = r ++ [ls[i]]
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] rs = reverse([1, 2, 3, 4, 5])
-    sys.out.println(rs)
+    assume rs == [5,4,3,2,1]

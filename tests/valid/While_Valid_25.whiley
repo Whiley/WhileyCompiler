@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(int n) -> int:
     int x = 0
@@ -8,5 +8,5 @@ function f(int n) -> int:
         y = y + 2
     return x + y
 
-method main(System.Console console) -> void:
-    console.out.println(f(10))
+public export method test() -> void:
+    assume f(10) == 30

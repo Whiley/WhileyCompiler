@@ -1,17 +1,18 @@
-import whiley.lang.*
-
 type nat is (int x) where x >= 0
 
-function abs(int item) -> nat:
-    return Math.abs(item)
+function abs(int x) -> nat:
+    if x >= 0:
+        return x
+    else:
+        return -x
 
 function nop(nat item) -> (nat r)
 ensures item == r:
     //
-    return Math.abs(item)
+    return abs(item)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     nat xs = abs(-123)
-    sys.out.println(xs)
+    assume xs == 123
     xs = nop(1)
-    sys.out.println(xs)
+    assume xs == 1

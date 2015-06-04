@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type iset is {int} | int
 
@@ -8,6 +8,6 @@ function f(iset e) -> bool:
     else:
         return false
 
-method main(System.Console sys) -> void:
-    sys.out.println(f({1, 2, 3}))
-    sys.out.println(f(1))
+public export method test() -> void:
+    assume f({1, 2, 3}) == true
+    assume f(1) == false

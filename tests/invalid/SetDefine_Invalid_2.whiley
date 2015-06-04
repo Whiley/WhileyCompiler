@@ -1,5 +1,3 @@
-import * from whiley.lang.*
-
 constant THIRTYTWO is 32
 
 constant TWELVE is 12

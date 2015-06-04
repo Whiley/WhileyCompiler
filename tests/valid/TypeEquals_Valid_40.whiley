@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type pos is real
 
@@ -15,8 +15,8 @@ function f(expr e) -> int:
         else:
             return 2
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(-1))
-    sys.out.println(f(1.0))
-    sys.out.println(f(1.234))
-    sys.out.println(f([1, 2, 3]))
+public export method test() -> void:
+    assume f(-1) == 1
+    assume f(1.0) == 0
+    assume f(1.234) == 0
+    assume f([1, 2, 3]) == 2

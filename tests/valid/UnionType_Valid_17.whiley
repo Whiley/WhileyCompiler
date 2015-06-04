@@ -1,15 +1,15 @@
-import whiley.lang.*
+
 
 type IntList is int | [int]
 
-method f(System.Console sys, int y) -> void:
-    sys.out.println(y)
+method f(int y) -> int:
+    return y
 
-method g(System.Console sys, [int] z) -> void:
-    sys.out.println(z)
+method g([int] z) -> [int]:
+    return z
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     IntList x = 123
-    f(sys, x)
+    assume f(x) == 123
     x = [1, 2, 3]
-    g(sys, x)
+    assume g(x) == [1,2,3]

@@ -1,8 +1,8 @@
-import whiley.lang.*
+
 
 type sr7nat is (int n) where n > 0
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     {sr7nat f} x = {f: 1}
     x.f = x.f + 1
-    sys.out.println(x)
+    assert x == {f: 2}

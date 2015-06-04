@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type pos is (int x) where x > 0
 
@@ -10,6 +10,6 @@ requires |ls| > 1:
             return 1
     return ls[0] + ls[1]
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     pos rs = extract([-1, -2, 0, 1, 2, 3])
-    sys.out.println(rs)
+    assume rs == 1

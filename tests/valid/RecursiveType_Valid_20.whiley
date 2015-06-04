@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is int
 
@@ -12,6 +12,7 @@ function f(posExpr e1) -> expr:
     expr e2 = e1
     return e2
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     expr e = f({rhs: 1, lhs: {rhs: 2, lhs: 1}})
-    sys.out.println(e)
+    assume e == {lhs:{lhs:1,rhs:2},rhs:1}
+

@@ -1,13 +1,13 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+public export method test() -> void:
     int x = 112233445566778899
-    sys.out.println(x)
+    assert x == 112233445566778899
     x = x + 1
-    sys.out.println(x)
+    assert x == 112233445566778900
     x = x - 556
-    sys.out.println(x)
+    assert x == 112233445566778344
     x = x * 123
-    sys.out.println(x)
+    assert x == 13804713804713736312
     x = x / 2
-    sys.out.println(x)
+    assert x == 6902356902356868156

@@ -1,4 +1,4 @@
-../../tests/invalid/MethodCall_Invalid_2.whiley:9: unable to resolve name (no match for f(whiley/lang/System:Console,int)
-	found: MethodCall_Invalid_2:f : method(MethodCall_Invalid_2:dummy,int) -> void)
-    f(sys, 1)
-    ^^^^^^^^^
+../../tests/invalid/MethodCall_Invalid_2.whiley:7: unable to resolve name (no match for f(&int,int)
+	found: MethodCall_Invalid_2:f : method(MethodCall_Invalid_2:dummy,int) -> int)
+    f(this, 1)
+    ^^^^^^^^^^

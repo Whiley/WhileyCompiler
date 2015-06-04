@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 /**
  * Perform a merge sort of integer items.
@@ -18,5 +18,5 @@ function loop2(int p, int q) -> (int r)
     assert qq == q*p
     return qq
 
-method main(System.Console sys):
-    sys.out.println_s("p = " ++ Any.toString(loop2(5,10)))
+public export method test():
+    assume loop2(5,10) == 50

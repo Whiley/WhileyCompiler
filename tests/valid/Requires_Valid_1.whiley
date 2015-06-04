@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(int x) -> int:
     return x + 1
@@ -8,7 +8,7 @@ requires y == f(x):
     //
     return x,y
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int x, int y = g(1, f(1))
-    sys.out.println(x)
-    sys.out.println(y)
+    assume x == 1
+    assume y == 2

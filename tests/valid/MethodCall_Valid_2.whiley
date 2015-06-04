@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 method get() -> int:
     return 1
@@ -6,6 +6,6 @@ method get() -> int:
 method f() -> [int]:
     return [1, 2, 3, get()]
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     &{int state} proc = new {state: 1}
-    sys.out.println(f())
+    assume f() == [1,2,3,1]

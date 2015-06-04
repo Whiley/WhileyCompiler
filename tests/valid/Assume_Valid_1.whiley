@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -9,6 +9,6 @@ function sum([nat] list) -> nat:
         r = r + l
     return r
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     nat rs = sum([0, 1, 2, 3])
-    sys.out.println(rs)
+    assert rs == 6

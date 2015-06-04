@@ -1,9 +1,9 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+public export method test() -> void:
     {int} x = {1, 2, 3}
     {int} y = {1, 2}
-    sys.out.println(x - y)
+    assume x - y == {3}
     x = {'a', 'b', 'c'}
     y = {'b', 'c'}
-    sys.out.println(x - y)
+    assume x - y == {'a'}

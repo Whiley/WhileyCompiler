@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type C1 is null | any
 
@@ -18,6 +18,6 @@ method h(C3 x) -> C1:
 method i(C3 x) -> C2:
     return x
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     C3 x = f(null)
-    sys.out.println(x)
+    assume x == null

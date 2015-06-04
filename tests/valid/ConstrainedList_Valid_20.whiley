@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type nat is (int x) where x >= 0
 
@@ -11,7 +11,11 @@ ensures r >= 0:
     else:
         return ls[i]
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     [int] xs = [1, 3, 5, 7, 9, 11]
-    int c = get(xs, 0)
-    sys.out.println(c)
+    assume get(xs, 0) == 1
+    assume get(xs, 1) == 3
+    assume get(xs, 2) == 5
+    assume get(xs, 3) == 7
+    assume get(xs, 4) == 9
+    assume get(xs, 5) == 11

@@ -1,8 +1,6 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+public export method test() -> void:
     {int} xs = {1, 2, 3}
-    if 1 in xs:
-        sys.out.println(1)
-    if 5 in xs:
-        sys.out.println(5)
+    assert 1 in xs
+    assert !(5 in xs)

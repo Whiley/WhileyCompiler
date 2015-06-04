@@ -1,5 +1,5 @@
 
-method main(System.Console sys) -> void:
+method main() -> void:
     [int] arr
     //
     if |sys.args| > 0:
@@ -9,4 +9,3 @@ method main(System.Console sys) -> void:
     assert arr[0] < |arr|
     assert arr[1] < |arr|
     assert arr[2] != |arr|
-    debug Any.toString(arr[0])

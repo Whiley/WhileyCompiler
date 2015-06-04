@@ -1,3 +1,0 @@
-../../tests/invalid/TryCatch_Invalid_5.whiley:16: exception may be thrown which is not declared
-        sys.out.println(Any.toString(f(1)))
-                                     ^^^^

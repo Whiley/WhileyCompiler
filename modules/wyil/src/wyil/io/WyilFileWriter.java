@@ -136,7 +136,7 @@ public final class WyilFileWriter {
 				break;
 			case BLOCK_Method:
 				bytes = generateFunctionOrMethodBlock((WyilFile.FunctionOrMethod) data);
-				break;			
+				break;
 			case BLOCK_Body:
 			case BLOCK_Precondition:
 			case BLOCK_Postcondition:
@@ -398,13 +398,13 @@ public final class WyilFileWriter {
 		output.write_uv(stringCache.get(md.name()));
 		output.write_uv(generateModifiers(md.modifiers()));
 		output.write_uv(typeCache.get(md.type()));
-		
+
 		output.pad_u8(); // pad out to next byte boundary
-		
+
 		int bodyCount = md.body() == null ? 0 : 1;
 
 		output.write_uv(md.precondition().size() + md.postcondition().size() + bodyCount);
-		
+
 		for(CodeBlock requires : md.precondition()) {
 			writeBlock(BLOCK_Precondition,requires,output);
 		}
@@ -415,7 +415,7 @@ public final class WyilFileWriter {
 			writeBlock(BLOCK_Body,md.body(),output);
 		}
 		// TODO: write annotations
-		
+
 		output.close();
 		return bytes.toByteArray();
 	}
@@ -487,7 +487,7 @@ public final class WyilFileWriter {
 				writeCode(code, offset, labels, output);
 				offset += WyilFileReader.sizeof(code);
 			}
-		}				
+		}
 	}
 
 	private void writeCode(Code code, int offset,
@@ -610,7 +610,7 @@ public final class WyilFileWriter {
 			for(int i=0;i!=operands.length;++i) {
 				writeBase(wide,operands[i],output);
 			}
-		} 
+		}
 	}
 
 	/**
@@ -688,7 +688,7 @@ public final class WyilFileWriter {
 			writeCodeBlock(wide,f,offset+1,labels,output);
 		} else if(code instanceof Codes.IfIs) {
 			Codes.IfIs c = (Codes.IfIs) code;
-			int target = labels.get(c.target) - offset;
+			int target = labels.get(c.target);
 			writeRest(wide,typeCache.get(c.rightOperand),output);
 			writeTarget(wide,offset,target,output);
 		} else if(code instanceof Codes.If) {
@@ -719,7 +719,7 @@ public final class WyilFileWriter {
 		} else if(code instanceof Codes.Switch) {
 			Codes.Switch c = (Codes.Switch) code;
 			List<Pair<Constant,String>> branches = c.branches;
-			int target = labels.get(c.defaultTarget) - offset;
+			int target = labels.get(c.defaultTarget);
 			writeTarget(wide,offset,target,output);
 			writeRest(wide,branches.size(),output);
 			for(Pair<Constant,String> b : branches) {
@@ -1047,7 +1047,7 @@ public final class WyilFileWriter {
 			for(Pair<Constant,String> b : s.branches) {
 				addConstantItem(b.first());
 			}
-		} 
+		}
 
 		// Second, deal with standard cases
 		if(code instanceof Code.AbstractUnaryOp) {
@@ -1294,7 +1294,7 @@ public final class WyilFileWriter {
 	public final static int MODIFIER_PROTECTION_MASK = 3;
 	public final static int MODIFIER_Private = 0;
 	public final static int MODIFIER_Public = 1;
-	// public final static int MODIFIER_Protected = 2; // for later 	
+	// public final static int MODIFIER_Protected = 2; // for later
 	// public final static int MODIFIER_Package = 3;
 	// public final static int MODIFIER_Module = 4;
 

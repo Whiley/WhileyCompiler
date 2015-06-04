@@ -421,9 +421,10 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			NameID name, SemanticType parameter, List<SemanticType> generics,
 			List<SemanticType.Function> candidates, WyalFile.Context context)
 			throws ResolveError {
-		
+		SemanticType expandedParameter = expand(parameter,false,context);
 		SemanticType.Function candidateFn = null;	
 		HashMap<String,SemanticType> candidateBinding = null;
+		
 		
 		for (int i = 0; i != candidates.size(); ++i) {
 			// f is the original function or macro type
@@ -442,7 +443,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			SemanticType.Function rf = (SemanticType.Function) expand(cf, false, context);
 			// Now, see whether this a match and, if so, whether or not it is
 			// the current *best* match.
-			if (SemanticType.isSubtype(rf.from(), parameter)) {
+			if (SemanticType.isSubtype(rf.from(), expandedParameter)) {
 				// The selection function is a potential candidate. However, we
 				// need to decide whether or not it is more precise than the
 				// current candidate.

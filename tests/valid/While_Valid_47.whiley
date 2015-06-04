@@ -14,3 +14,8 @@ ensures r >= 0:
    return r
 
 type nat is (int x) where x >= 0
+
+public export method test():
+    assume sum([]) == 0
+    assume sum([1]) == 1
+    assume sum([1,2]) == 3

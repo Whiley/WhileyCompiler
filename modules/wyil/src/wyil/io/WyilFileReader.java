@@ -361,7 +361,7 @@ public final class WyilFileReader {
 
 	private WyilFile.FunctionOrMethod readFunctionBlock()
 			throws IOException {
-		int nameIdx = input.read_uv();		
+		int nameIdx = input.read_uv();
 		int modifiers = input.read_uv();
 		int typeIdx = input.read_uv();
 
@@ -376,7 +376,7 @@ public final class WyilFileReader {
 				bodies.second());
 	}
 
-	private WyilFile.FunctionOrMethod readMethodBlock() throws IOException {		
+	private WyilFile.FunctionOrMethod readMethodBlock() throws IOException {
 		int nameIdx = input.read_uv();
 		// System.out.println("=== METHOD " + stringPool[nameIdx]);
 		int modifiers = input.read_uv();
@@ -475,7 +475,7 @@ public final class WyilFileReader {
 	 * nested bytecodes (e.g. loop bytecode). Therefore, we need to track the
 	 * offset within the flat bytecode array against that of the now nested
 	 * bytecode structure.
-	 * 
+	 *
 	 * @param offset
 	 *            The current offset within the flat bytecode array.
 	 * @param bytecodes
@@ -492,7 +492,7 @@ public final class WyilFileReader {
 			// First, check whether there is a label to insert
 			Codes.Label label = labels.get(offset++);
 			if (label != null) { bytecodes.add(i++, label); }
-			
+
 			// Second, check whether we have a nested block which needs to be
 			// explored.
 			if (bytecode instanceof Code.Compound) {
@@ -503,20 +503,20 @@ public final class WyilFileReader {
 				bytecodes.set(i,updateBytecodes(block,blkBytecodes));
 			}
 		}
-		
+
 		// Finally, check whether or not there is a label at the end of this
 		// block.
 		Codes.Label label = labels.get(offset);
 		if (label != null) { bytecodes.add(bytecodes.size(), label); }
-		
+
 		// Done
 		return offset;
 	}
-	
+
 	/**
 	 * This method reconstructs a given compound bytecode with a new list of
 	 * bytecodes representing its body.
-	 * 
+	 *
 	 * @param compound
 	 *            The compound bytecode being updated.
 	 * @param bytecodes
@@ -536,12 +536,12 @@ public final class WyilFileReader {
 		} else if(compound instanceof Codes.Loop) {
 			Codes.Loop l = (Codes.Loop) compound;
 			return Codes.Loop(l.modifiedOperands, bytecodes);
+		} else if(compound instanceof Codes.Invariant) {
+			return Codes.Invariant(bytecodes);
 		} else if(compound instanceof Codes.Assert) {
 			return Codes.Assert(bytecodes);
 		} else if(compound instanceof Codes.Assume) {
 			return Codes.Assume(bytecodes);
-		} else if(compound instanceof Codes.Invariant) {
-			return Codes.Invariant(bytecodes);
 		} else {
 			throw new IllegalArgumentException("Unknown compound bytecode encountered: " + compound.getClass().getName());
 		}
@@ -549,7 +549,7 @@ public final class WyilFileReader {
 
 	/**
 	 * Read all bytecodes between two given offsets.
-	 * 
+	 *
 	 * @param offset
 	 *            Starting offset to read from
 	 * @param count
@@ -574,7 +574,7 @@ public final class WyilFileReader {
 	 * format corresponds to exactly one in the object representation. However,
 	 * in the case of compound bytecodes (e.g. loop, forall, etc) then it
 	 * represents one plus the number contained within the block itself.
-	 * 
+	 *
 	 * @param code
 	 * @return
 	 */
@@ -777,7 +777,7 @@ public final class WyilFileReader {
 				throw new RuntimeException("expected tuple type");
 			}
 			int index = readRest(wideRest);
-			return Codes.TupleLoad((Type.Tuple) type, target, operand, index);
+			return Codes.TupleLoad((Type.EffectiveTuple) type, target, operand, index);
 		}
 
 		}
@@ -831,7 +831,7 @@ public final class WyilFileReader {
 					- Code.OPCODE_append];
 			return Codes.ListOperator((Type.EffectiveList) type, target,
 					leftOperand, rightOperand, kind);
-		}		
+		}
 		case Code.OPCODE_indexof: {
 			if (!(type instanceof Type.EffectiveIndexible)) {
 				throw new RuntimeException("expecting indexible type");
@@ -1021,7 +1021,7 @@ public final class WyilFileReader {
 			}
 			return Codes.SubList((Type.EffectiveList) type, target,
 					operands[0], operands[1], operands[2]);
-		}		
+		}
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
@@ -1052,17 +1052,17 @@ public final class WyilFileReader {
 		}
 		case Code.OPCODE_assertblock: {
 			int count = readRest(wideRest);
-			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);			
+			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);
 			return Codes.Assert(bytecodes);
 		}
 		case Code.OPCODE_assumeblock: {
 			int count = readRest(wideRest);
-			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);			
+			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);
 			return Codes.Assume(bytecodes);
 		}
 		case Code.OPCODE_invariantblock: {
 			int count = readRest(wideRest);
-			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);			
+			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);
 			return Codes.Invariant(bytecodes);
 		}
 		}

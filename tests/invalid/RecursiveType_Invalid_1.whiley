@@ -12,9 +12,3 @@ function sum(LinkedList list) -> nat:
         return 0
     else:
         return list.data + sum(list.next)
-
-method main(System.Console sys) -> void:
-    l = {next: 1, data: 1}
-    debug Any.toString(sum(l))
-    l = {next: l, data: -2}
-    debug Any.toString(sum(l))

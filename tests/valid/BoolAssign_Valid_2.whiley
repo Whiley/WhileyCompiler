@@ -1,12 +1,11 @@
-import whiley.lang.*
 
-method main(System.Console sys) -> void:
+
+public export method test() -> void:
     bool x = true
     bool y = false
-    sys.out.println(x)
-    sys.out.println(y)
-    sys.out.println_s("AND")
-    x = x && y
-    sys.out.println(x)
-    sys.out.println_s("NOT")
-    sys.out.println(!x)
+    assert (x && x) == true
+    assert (x && y) == false
+    assert (y && x) == false
+    assert (y && y) == false        
+    assert !y
+    assert !!x

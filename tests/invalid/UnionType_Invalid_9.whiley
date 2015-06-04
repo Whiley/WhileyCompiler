@@ -18,6 +18,3 @@ requires y >= 0:
 function f(int x) -> plt
 requires x >= 0:
     return g(x)
-
-method main(System.Console sys) -> void:
-    debug Any.toString(f(0))

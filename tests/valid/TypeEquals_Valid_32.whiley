@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type expr is {int} | bool
 
@@ -12,7 +12,7 @@ function f(expr e) -> {int}:
     else:
         return {}
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     {int} e = {1, 2, 3, 4}
-    sys.out.println(f(e))
-    sys.out.println(f(false))
+    assume f(e) == {-1, 1, 2, 3, 4}
+    assume f(false) == {}

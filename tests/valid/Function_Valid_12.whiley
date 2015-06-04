@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type msg is {int op, int s}
 
@@ -11,6 +11,6 @@ function f([int] ls) -> [int]:
 function f([real] ls) -> [real]:
     return ls
 
-method main(System.Console sys) -> void:
-    sys.out.println(f([1, 2, 3]))
-    sys.out.println(f([1.2, 2.2, 3.3]))
+public export method test() -> void:
+    assume f([1, 2, 3]) == [1,2,3]
+    assume f([1.2, 2.2, 3.3]) == [1.2,2.2,3.3]

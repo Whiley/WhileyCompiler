@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Matrix is ([[int]] rows)
     where no {
@@ -18,8 +18,8 @@ requires (|A| > 0) && ((|B| > 0) && (|B| == |A[0]|)):
         C = C ++ [row]
     return C
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     Matrix m1 = [[1, 2], [3, 4]]
     Matrix m2 = [[5, 6], [7, 8]]
     Matrix m3 = run(m1, m2)
-    sys.out.println(m3)
+    assume m3 == [[19, 22], [43, 50]]

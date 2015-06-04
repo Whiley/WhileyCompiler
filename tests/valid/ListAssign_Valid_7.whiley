@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(int i) -> [int]:
     [int] arr1 = [1, 2, 64]
@@ -10,6 +10,6 @@ function f(int i) -> [int]:
     assert arr2[2] == |arr1|
     return arr1 ++ arr2
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(2))
-    sys.out.println(f(3))
+public export method test() -> void:
+    assume f(2) == [1, 2, 64, 1, 2, 3]
+    assume f(3) == [1, 2, 64, 1, 2, 3]

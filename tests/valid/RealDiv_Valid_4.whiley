@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function g(int x) -> real:
     return (real) (x / 3)
@@ -6,5 +6,5 @@ function g(int x) -> real:
 function f(int x, int y) -> real:
     return g(x)
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(1, 2))
+public export method test() -> void:
+    assume f(1, 2) == 0.0

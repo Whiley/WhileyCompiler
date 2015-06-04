@@ -697,7 +697,8 @@ public class Wyil2JavaBuilder implements Builder {
 			Codes.Assert ca = (Codes.Assert) c;
 			translate(index, (CodeBlock) c, freeSlot, bytecodes);
 		} else {
-			// essentially a no-op for now
+			Codes.Assume ca = (Codes.Assume) c;
+			translate(index, (CodeBlock) c, freeSlot, bytecodes);
 		}
 	}
 

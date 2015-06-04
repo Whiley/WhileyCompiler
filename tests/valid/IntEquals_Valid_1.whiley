@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(int x, real y) -> bool:
     if ((real) x) == y:
@@ -6,7 +6,7 @@ function f(int x, real y) -> bool:
     else:
         return false
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(1, 4.0))
-    sys.out.println(f(1, 4.2))
-    sys.out.println(f(0, 0.0))
+public export method test() -> void:
+    assume f(1, 4.0) == false
+    assume f(1, 4.2) == false
+    assume f(0, 0.0) == true

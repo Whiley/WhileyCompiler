@@ -1,5 +1,3 @@
-import * from whiley.lang.*
-
-method main(System.Console sys) -> void:
+method main() -> int:
     int x = y
-    sys.out.println(Any.toString(x))
+    return x

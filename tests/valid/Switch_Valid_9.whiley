@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function f(int x) -> (int r)
 // Return cannot be 1
@@ -11,7 +11,7 @@ ensures r != 1:
             return 2
     return x
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(2))
-    sys.out.println(f(1))
-    sys.out.println(f(0))
+public export method test() -> void:
+    assume f(2) == 2
+    assume f(1) == 2
+    assume f(0) == 0

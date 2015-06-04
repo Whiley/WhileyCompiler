@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type Expr is int | real | [Expr] | ListAccess
 
@@ -24,8 +24,9 @@ function evaluate(Expr e) -> Value:
             else:
                 return null
 
-public method main(System.Console sys) -> void:
-    sys.out.println(evaluate(1))
-    sys.out.println(evaluate({index: 0, src: [112, 212, 342]}))
-    sys.out.println(evaluate({index: 2, src: [112312, 289712, 31231242]}))
-    sys.out.println(evaluate([1, 2, 3]))
+public export method test() -> void:
+    assume evaluate(1) == 1
+    assume evaluate({index: 0, src: [112, 212, 342]}) == 112
+    assume evaluate({index: 2, src: [112312, 289712, 31231242]}) == 31231242
+    assume evaluate([1, 2, 3]) == [1, 2, 3]
+

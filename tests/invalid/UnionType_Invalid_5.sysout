@@ -1,3 +1,3 @@
-../../tests/invalid/UnionType_Invalid_5.whiley:10: expected type UnionType_Invalid_5:IntList, found {[int] op,[real] rest}
+../../tests/invalid/UnionType_Invalid_5.whiley:8: expected type UnionType_Invalid_5:IntList, found {[int] op,[real] rest}
     x.op = [1, 2, 3]
     ^

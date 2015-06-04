@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type realtup is {real op}
 
@@ -6,6 +6,6 @@ function f(realtup t) -> real:
     real x = t.op
     return x
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     {int op} t = {op: 1}
-    sys.out.println(f((realtup) t))
+    assume f((realtup) t) == 1.0

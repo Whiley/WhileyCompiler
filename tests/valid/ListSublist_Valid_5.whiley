@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type posintlist is [int]
 
@@ -9,6 +9,6 @@ function sum(posintlist ls) -> int:
         [int] rest = ls[1..|ls|]
         return ls[0] + sum(rest)
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     int c = sum([-12987987234, -1, 2, 409234, 2398729879])
-    sys.out.println(c)
+    assume c == -10588848120

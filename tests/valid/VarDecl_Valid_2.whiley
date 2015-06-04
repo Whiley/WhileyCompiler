@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 function g(int z) -> int
 requires z > 1:
@@ -9,5 +9,5 @@ requires x > 0:
     int y = x + 1
     return g(y)
 
-method main(System.Console sys) -> void:
-    sys.out.println(f(1))
+public export method test() -> void:
+    assume f(1) == 2

@@ -1,4 +1,4 @@
-import whiley.lang.*
+
 
 type i8 is (int n) where -128 >= n && n <= 127
 
@@ -14,6 +14,6 @@ ensures r > 0 && r < 125:
 function f(int x) -> {i8}:
     return {g(x)}
 
-method main(System.Console sys) -> void:
+public export method test() -> void:
     {i8} bytes = f(0)
-    sys.out.println(bytes)
+    assume bytes == {1}
