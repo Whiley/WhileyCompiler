@@ -1234,7 +1234,7 @@ public final class CodeGenerator {
 		int sourceRegister = generate(s.source, environment, codes, context);
 
 		// FIXME: need to handle destructuring syntax properly.
-		Type.EffectiveCollection rawSrcType = (Type.EffectiveCollection) s.srcType.raw();
+		Type.EffectiveList rawSrcType = (Type.EffectiveList) s.srcType.raw();
 		int indexRegister = environment.get(s.variables.get(0));
 
 		AttributedCodeBlock body = codes.createSubBlock();
@@ -1642,9 +1642,8 @@ public final class CodeGenerator {
 			Pair<String, Expr> src = srcIterator.next();
 
 			// First, determine the src slot.
-			Nominal.EffectiveCollection srcType = (Nominal.EffectiveCollection) src
-					.second().result();
-			Type.EffectiveCollection rawSrcType = (Type.EffectiveCollection) srcType.raw();
+			Nominal.List srcType = (Nominal.List) src.second().result();
+			Type.EffectiveList rawSrcType = (Type.EffectiveList) srcType.raw();
 			int srcSlot;
 			int varSlot = environment.allocate(rawSrcType.element(),
 					src.first());
@@ -1716,9 +1715,6 @@ public final class CodeGenerator {
 			} else if (expression instanceof Expr.ConstantAccess) {
 				return generate((Expr.ConstantAccess) expression, environment,
 						codes, context);
-			} else if (expression instanceof Expr.Set) {
-				return generate((Expr.Set) expression, environment, codes,
-						context);
 			} else if (expression instanceof Expr.List) {
 				return generate((Expr.List) expression, environment, codes,
 						context);
@@ -1766,9 +1762,6 @@ public final class CodeGenerator {
 						context);
 			} else if (expression instanceof Expr.Tuple) {
 				return generate((Expr.Tuple) expression, environment, codes,
-						context);
-			} else if (expression instanceof Expr.Map) {
-				return generate((Expr.Map) expression, environment, codes,
 						context);
 			} else if (expression instanceof Expr.FunctionOrMethod) {
 				return generate((Expr.FunctionOrMethod) expression,
@@ -2011,7 +2004,7 @@ public final class CodeGenerator {
 			AttributedCodeBlock codes, Context context) {
 		int operand = generate(expr.src, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.LengthOf((Type.EffectiveCollection) expr.srcType.raw(),
+		codes.add(Codes.LengthOf((Type.List) expr.srcType.raw(),
 				target, operand), attributes(expr));
 		return target;
 	}
@@ -2030,7 +2023,7 @@ public final class CodeGenerator {
 		int srcOperand = generate(expr.src, environment, codes, context);
 		int idxOperand = generate(expr.index, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.IndexOf((Type.EffectiveIndexible) expr.srcType.raw(), target, srcOperand,
+		codes.add(Codes.IndexOf((Type.List) expr.srcType.raw(), target, srcOperand,
 				idxOperand), attributes(expr));
 		return target;
 	}
@@ -2051,8 +2044,7 @@ public final class CodeGenerator {
 		// could probably use a range test for this somehow
 		if (v.op == Expr.BOp.EQ || v.op == Expr.BOp.NEQ || v.op == Expr.BOp.LT
 				|| v.op == Expr.BOp.LTEQ || v.op == Expr.BOp.GT
-				|| v.op == Expr.BOp.GTEQ || v.op == Expr.BOp.SUBSET
-				|| v.op == Expr.BOp.SUBSETEQ || v.op == Expr.BOp.ELEMENTOF
+				|| v.op == Expr.BOp.GTEQ || v.op == Expr.BOp.ELEMENTOF
 				|| v.op == Expr.BOp.AND || v.op == Expr.BOp.OR) {
 			String trueLabel = CodeUtils.freshLabel();
 			String exitLabel = CodeUtils.freshLabel();
@@ -2075,30 +2067,11 @@ public final class CodeGenerator {
 			int target = environment.allocate(result);
 
 			switch (bop) {
-			case UNION:
-				codes.add(
-						Codes.SetOperator((Type.EffectiveSet) result, target,
-								leftOperand, rightOperand,
-								Codes.SetOperatorKind.UNION), attributes(v));
-				break;
-
-			case INTERSECTION:
-				codes.add(Codes.SetOperator((Type.EffectiveSet) result, target,
-						leftOperand, rightOperand,
-						Codes.SetOperatorKind.INTERSECTION), attributes(v));
-				break;
-
-			case DIFFERENCE:
-				codes.add(Codes.SetOperator((Type.EffectiveSet) result, target,
-						leftOperand, rightOperand,
-						Codes.SetOperatorKind.DIFFERENCE), attributes(v));
-				break;
-
 			case LISTAPPEND:
 				codes.add(Codes.ListOperator((Type.EffectiveList) result,
 						target, leftOperand, rightOperand,
 						Codes.ListOperatorKind.APPEND), attributes(v));
-				break;			
+				break;
 			default:
 				codes.add(Codes.BinaryOperator(result, target, leftOperand,
 						rightOperand, OP2BOP(bop, v, context)), attributes(v));
@@ -2106,15 +2079,6 @@ public final class CodeGenerator {
 
 			return target;
 		}
-	}
-
-	private int generate(Expr.Set expr, Environment environment,
-			AttributedCodeBlock codes, Context context) {
-		int[] operands = generate(expr.arguments, environment, codes, context);
-		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.NewSet((Type.Set) expr.type.raw(), target, operands),
-				attributes(expr));
-		return target;
 	}
 
 	private int generate(Expr.List expr, Environment environment,
@@ -2172,21 +2136,6 @@ public final class CodeGenerator {
 		int[] operands = generate(expr.fields, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
 		codes.add(Codes.NewTuple((Type.Tuple) expr.result().raw(), target, operands),
-				attributes(expr));
-		return target;
-	}
-
-	private int generate(Expr.Map expr, Environment environment,
-			AttributedCodeBlock codes, Context context) {
-		int[] operands = new int[expr.pairs.size() * 2];
-		for (int i = 0; i != expr.pairs.size(); ++i) {
-			Pair<Expr, Expr> e = expr.pairs.get(i);
-			operands[i << 1] = generate(e.first(), environment, codes, context);
-			operands[(i << 1) + 1] = generate(e.second(), environment, codes,
-					context);
-		}
-		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.NewMap((Type.Map) expr.result().raw(), target, operands),
 				attributes(expr));
 		return target;
 	}
@@ -2269,10 +2218,6 @@ public final class CodeGenerator {
 			return Codes.Comparator.GT;
 		case GTEQ:
 			return Codes.Comparator.GTEQ;
-		case SUBSET:
-			return Codes.Comparator.SUBSET;
-		case SUBSETEQ:
-			return Codes.Comparator.SUBSETEQ;
 		case ELEMENTOF:
 			return Codes.Comparator.IN;
 		default:

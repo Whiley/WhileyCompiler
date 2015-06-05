@@ -34,12 +34,6 @@ public class Exprs {
 
 			} else if (expr instanceof Expr.ConstantAccess) {
 				// do nout
-			} else if (expr instanceof Expr.Set) {
-				Expr.Set e = (Expr.Set) expr;
-				for(Expr p : e.arguments) {
-					uses(p, context, uses);
-				}
-
 			} else if (expr instanceof Expr.List) {
 				Expr.List e = (Expr.List) expr;
 				for(Expr p : e.arguments) {
@@ -127,13 +121,6 @@ public class Exprs {
 					uses(p, context, uses);
 				}
 
-			} else if (expr instanceof Expr.Map) {
-				Expr.Map e = (Expr.Map) expr;
-				for(Pair<Expr,Expr> p : e.pairs) {
-					uses(p.first(), context, uses);
-					uses(p.second(), context, uses);
-				}
-
 			} else if (expr instanceof Expr.FunctionOrMethod) {
 				// do nout
 			} else if (expr instanceof Expr.New) {
@@ -171,15 +158,6 @@ public class Exprs {
 				return true;
 			} else if (expr instanceof Expr.ConstantAccess) {
 				return true;
-			} else if (expr instanceof Expr.Set) {
-				Expr.Set e = (Expr.Set) expr;
-				for(Expr p : e.arguments) {
-					if(!isPure(p, context)) {
-						return false;
-					}
-				}
-				return true;
-
 			} else if (expr instanceof Expr.List) {
 				Expr.List e = (Expr.List) expr;
 				for(Expr p : e.arguments) {
@@ -271,15 +249,6 @@ public class Exprs {
 				Expr.Tuple e = (Expr.Tuple) expr;
 				for(Expr p : e.fields) {
 					if(!isPure(p, context)) {
-						return false;
-					}
-				}
-				return true;
-
-			} else if (expr instanceof Expr.Map) {
-				Expr.Map e = (Expr.Map) expr;
-				for(Pair<Expr,Expr> p : e.pairs) {
-					if(!isPure(p.first(), context) || isPure(p.second(), context)) {
 						return false;
 					}
 				}

@@ -1920,12 +1920,6 @@ public class WhileyFileParser {
 						index - 1));
 				return new Expr.BinOp(Expr.BOp.IS, lhs, rhs, sourceAttr(start,
 						index - 1));
-			case Subset:
-				bop = Expr.BOp.SUBSET;
-				break;
-			case SubsetEquals:
-				bop = Expr.BOp.SUBSETEQ;
-				break;
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
@@ -2568,7 +2562,7 @@ public class WhileyFileParser {
 		case LeftSquare:
 			return parseListExpression(wf, environment, terminated);
 		case LeftCurly:
-			return parseRecordOrSetOrMapExpression(wf, environment, terminated);
+			return parseRecordExpression(wf, environment, terminated);
 		case Shreak:
 			return parseLogicalNotExpression(wf, environment, terminated);
 		case Star:
@@ -2799,84 +2793,6 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Parse a record, set or map constructor, which are of the form:
-	 *
-	 * <pre>
-	 * RecordExpr ::= '{' Identifier ':' Expr (',' Identifier ':' Expr)* '}'
-	 * SetExpr   ::= '{' [ Expr (',' Expr)* ] '}'
-	 * MapExpr   ::= '{' Expr "=>" Expr ( ',' Expr "=>" Expr)* '}'
-	 * SetComprehension ::= '{' Expr '|'
-	 * 							Identifier "in" Expr (',' Identifier "in" Expr)*
-	 *                          [',' Expr] '}'
-	 * </pre>
-	 *
-	 * Disambiguating these three forms is relatively straightforward. We parse
-	 * the left curly brace. Then, if what follows is a right curly brace then
-	 * we have a set expression. Otherwise, we parse the first expression, then
-	 * examine what follows. If it's ':', then we have a record expression;
-	 * otherwise, we have a set expression.
-	 *
-	 * @param wf
-	 *            The enclosing WhileyFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseRecordOrSetOrMapExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
-		int start = index;
-		match(LeftCurly);
-		// Check for empty set or empty map
-		if (tryAndMatch(terminated, RightCurly) != null) {
-			// Yes. parsed empty set
-			return new Expr.Set(Collections.EMPTY_LIST, sourceAttr(start,
-					index - 1));
-		} else if (tryAndMatch(terminated, EqualsGreater) != null) {
-			// Yes. parsed empty map
-			match(RightCurly);
-			return new Expr.Map(Collections.EMPTY_LIST, sourceAttr(start,
-					index - 1));
-		}
-		// Parse first expression for disambiguation purposes
-		// NOTE: we require the following expression be a "non-tuple"
-		// expression. That is, it cannot be composed using ',' unless
-		// braces enclose the entire expression. This is because the outer
-		// set/map/record constructor expressions use ',' to distinguish
-		// elements.
-		Expr e = parseBitwiseXorExpression(wf, environment, terminated);
-		// Now, see what follows and disambiguate
-		if (tryAndMatch(terminated, Colon) != null) {
-			// Ok, it's a ':' so we have a record constructor
-			index = start;
-			return parseRecordExpression(wf, environment, terminated);
-		} else if (tryAndMatch(terminated, EqualsGreater) != null) {
-			// Ok, it's a "=>" so we have a record constructor
-			index = start;
-			return parseMapExpression(wf, environment, terminated);
-		} else {
-			// otherwise, assume a set expression
-			index = start;
-			return parseSetExpression(wf, environment, terminated);
-		}
-	}
-
-	/**
 	 * Parse a record constructor, which is of the form:
 	 *
 	 * <pre>
@@ -2941,117 +2857,6 @@ public class WhileyFileParser {
 		}
 
 		return new Expr.Record(exprs, sourceAttr(start, index - 1));
-	}
-
-	/**
-	 * Parse a map constructor expression, which is of the form:
-	 *
-	 * <pre>
-	 * MapExpr::= '{' Expr "=>" Expr (',' Expr "=>" Expr)* } '}'
-	 * </pre>
-	 *
-	 * @param wf
-	 *            The enclosing WhileyFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseMapExpression(WhileyFile wf, HashSet<String> environment,
-			boolean terminated) {
-		int start = index;
-		match(LeftCurly);
-		ArrayList<Pair<Expr, Expr>> exprs = new ArrayList<Pair<Expr, Expr>>();
-
-		// Match zero or more expressions separated by commas
-		boolean firstTime = true;
-		while (eventuallyMatch(RightCurly) == null) {
-			if (!firstTime) {
-				match(Comma);
-			}
-			firstTime = false;
-			Expr from = parseUnitExpression(wf, environment, terminated);
-			match(EqualsGreater);
-			// NOTE: we require the following expression be a "non-tuple"
-			// expression. That is, it cannot be composed using ',' unless
-			// braces enclose the entire expression. This is because the outer
-			// map constructor expression is used ',' to distinguish elements.
-			// Also, expression is guaranteed to be terminated, either by '}' or
-			// ','.
-			Expr to = parseUnitExpression(wf, environment, true);
-			exprs.add(new Pair<Expr, Expr>(from, to));
-		}
-		// done
-		return new Expr.Map(exprs, sourceAttr(start, index - 1));
-	}
-
-	/**
-	 * Parse a set constructor expression, which is of the form:
-	 *
-	 * <pre>
-	 * SetExpr::= '{' [ Expr (',' Expr)* } '}'
-	 * </pre>
-	 *
-	 * @param wf
-	 *            The enclosing WhileyFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseSetExpression(WhileyFile wf, HashSet<String> environment,
-			boolean terminated) {
-		int start = index;
-		match(LeftCurly);
-		ArrayList<Expr> exprs = new ArrayList<Expr>();
-
-		// Match zero or more expressions separated by commas
-		boolean firstTime = true;
-		while (eventuallyMatch(RightCurly) == null) {
-			if (!firstTime) {
-				match(Comma);
-			}
-			firstTime = false;
-			// NOTE: we require the following expression be a "non-tuple"
-			// expression. That is, it cannot be composed using ',' unless
-			// braces enclose the entire expression. This is because the outer
-			// set constructor expression is used ',' to distinguish elements.
-			// Also, expression is guaranteed to be terminated, either by '}' or
-			// ','.
-			exprs.add(parseUnitExpression(wf, environment, true));
-		}
-		// done
-		return new Expr.Set(exprs, sourceAttr(start, index - 1));
 	}
 	
 	/**
@@ -3750,13 +3555,9 @@ public class WhileyFileParser {
 			return true;
 		} else if(e instanceof Expr.List) {
 			return true;
-		} else if(e instanceof Expr.Map) {
-			return true;
 		} else if(e instanceof Expr.New) {
 			return true;
 		} else if(e instanceof Expr.Record) {
-			return true;
-		} else if(e instanceof Expr.Set) {
 			return true;
 		} else if(e instanceof Expr.SubList) {
 			return true;

@@ -171,37 +171,26 @@ public class TypeParser {
 			match("{");
 			Type elem = parse(typeVariables);
 			skipWhiteSpace();
-			if(index < str.length() && str.charAt(index) == '-') {
-				// dictionary
-				match("->");
-				Type value = parse(typeVariables);
-				match("}");
-				return Map(elem,value);
-
-			} else if(index < str.length() && str.charAt(index) != '}') {
-				// record
-				HashMap<String,Type> fields = new HashMap<String,Type>();
-				String id = parseIdentifier();
+			// record
+			HashMap<String,Type> fields = new HashMap<String,Type>();
+			String id = parseIdentifier();
+			fields.put(id, elem);
+			skipWhiteSpace();
+			boolean isOpen = false;
+			while(index < str.length() && str.charAt(index) == ',') {
+				match(",");
+				if(str.charAt(index) == '.') {
+					match("...");
+					isOpen=true;
+					break;
+				}
+				elem = parse(typeVariables);
+				id = parseIdentifier();
 				fields.put(id, elem);
 				skipWhiteSpace();
-				boolean isOpen = false;
-				while(index < str.length() && str.charAt(index) == ',') {
-					match(",");
-					if(str.charAt(index) == '.') {
-						match("...");
-						isOpen=true;
-						break;
-					}
-					elem = parse(typeVariables);
-					id = parseIdentifier();
-					fields.put(id, elem);
-					skipWhiteSpace();
-				}
-				match("}");
-				return Record(isOpen,fields);
 			}
 			match("}");
-			return Set(elem,false);
+			return Record(isOpen,fields);			
 		}
 		default:
 		{

@@ -95,18 +95,6 @@ public class VcGenerator {
 
 	protected void transform(WyilFile.Constant decl, WyilFile wyilFile) {
 		NameID name = new NameID(wyilFile.id(), decl.name());
-
-		// FIXME: This is a bit of a hack because enumerations basically don't
-		// work at the moment. It really needs to be removed!
-		if (decl.constant().type() instanceof Type.Set) {
-			Type.Set st = (Type.Set) decl.constant().type();
-			Expr.Variable var = new Expr.Variable("r0");
-			TypePattern.Leaf pattern = new TypePattern.Leaf(convert(
-					st.element(), Collections.EMPTY_LIST), var);
-
-			wycsFile.add(wycsFile.new Type(name.name(), Collections.EMPTY_LIST,
-					pattern, null, toWycsAttributes(decl.attributes())));
-		}
 	}
 
 	/**
@@ -774,11 +762,6 @@ public class VcGenerator {
 						"index out of bounds (not less than length)",
 						new Expr.Binary(Expr.Binary.Op.LT, idx, length, idx
 								.attributes())));
-				src = new Expr.IndexOf(src, idx);
-			} else if (lval instanceof Codes.MapLVal) {
-				// FIXME: need to implement some actual checks here!
-				Codes.MapLVal lv = (Codes.MapLVal) lval;
-				Expr idx = branch.read(lv.keyOperand);
 				src = new Expr.IndexOf(src, idx);
 			} else if (lval instanceof Codes.RecordLVal) {
 				Codes.RecordLVal lv = (Codes.RecordLVal) lval;
@@ -1616,19 +1599,12 @@ public class VcGenerator {
 			} else if (code instanceof Codes.ListOperator) {
 				Codes.ListOperator bc = (Codes.ListOperator) code;
 				transformBinary(Expr.Binary.Op.LISTAPPEND, bc, branch, block);
-			} else if (code instanceof Codes.SetOperator) {
-				Codes.SetOperator bc = (Codes.SetOperator) code;
-				transformBinary(setOperatorMap[bc.kind.ordinal()], bc, branch,
-						block);
 			} else if (code instanceof Codes.NewList) {
 				transformNary(Expr.Nary.Op.LIST, (Codes.NewList) code, branch,
 						block);
 			} else if (code instanceof Codes.NewRecord) {
 				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewRecord) code,
 						branch, block);
-			} else if (code instanceof Codes.NewSet) {
-				transformNary(Expr.Nary.Op.SET, (Codes.NewSet) code, branch,
-						block);
 			} else if (code instanceof Codes.NewTuple) {
 				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewTuple) code,
 						branch, block);
@@ -1658,8 +1634,6 @@ public class VcGenerator {
 				transform((Codes.Assign) code, block, branch);
 			} else if (code instanceof Codes.Update) {
 				transform((Codes.Update) code, block, branch);
-			} else if (code instanceof Codes.NewMap) {
-				transform((Codes.NewMap) code, block, branch);
 			} else if (code instanceof Codes.UnaryOperator) {
 				transform((Codes.UnaryOperator) code, block, branch);
 			} else if (code instanceof Codes.Dereference) {
@@ -1828,11 +1802,6 @@ public class VcGenerator {
 		branch.write(code.target(), branch.read(code.operand(0)));
 	}
 
-	protected void transform(Codes.NewMap code, AttributedCodeBlock block,
-			VcBranch branch) {
-		branch.havoc(code.target());
-	}
-
 	protected void transform(Codes.NewObject code, AttributedCodeBlock block,
 			VcBranch branch) {
 		branch.havoc(code.target());
@@ -1916,8 +1885,6 @@ public class VcGenerator {
 						attributes), result, branch, block);
 				return new Expr.Ternary(Expr.Ternary.Op.UPDATE, source, index,
 						result, toWycsAttributes(block.attributes(branch.pc())));
-			} else if (lv instanceof Codes.MapLVal) {
-				return source; // TODO
 			} else {
 				return source; // TODO
 			}
@@ -2626,23 +2593,6 @@ public class VcGenerator {
 				pairs.add(Value.Tuple(pair));
 			}
 			return Value.Set(pairs);
-		} else if (c instanceof Constant.Map) {
-			Constant.Map cb = (Constant.Map) c;
-			ArrayList<Value> pairs = new ArrayList<Value>();
-			for (Map.Entry<Constant, Constant> e : cb.values.entrySet()) {
-				ArrayList<Value> pair = new ArrayList<Value>();
-				pair.add(convert(e.getKey(), block, branch));
-				pair.add(convert(e.getValue(), block, branch));
-				pairs.add(Value.Tuple(pair));
-			}
-			return Value.Set(pairs);
-		} else if (c instanceof Constant.Set) {
-			Constant.Set cb = (Constant.Set) c;
-			ArrayList<Value> values = new ArrayList<Value>();
-			for (Constant v : cb.values) {
-				values.add(convert(v, block, branch));
-			}
-			return wycs.core.Value.Set(values);
 		} else if (c instanceof Constant.Tuple) {
 			Constant.Tuple cb = (Constant.Tuple) c;
 			ArrayList<Value> values = new ArrayList<Value>();
@@ -2716,16 +2666,6 @@ public class VcGenerator {
 			return new SyntacticType.Int(toWycsAttributes(attributes));
 		} else if (t instanceof Type.Real) {
 			return new SyntacticType.Real(toWycsAttributes(attributes));
-		} else if (t instanceof Type.Set) {
-			Type.Set st = (Type.Set) t;
-			SyntacticType element = convert(st.element(), attributes);
-			return new SyntacticType.Set(element);
-		} else if (t instanceof Type.Map) {
-			Type.Map lt = (Type.Map) t;
-			SyntacticType from = convert(lt.key(), attributes);
-			SyntacticType to = convert(lt.value(), attributes);
-			// ugly.
-			return new SyntacticType.Map(from, to);
 		} else if (t instanceof Type.List) {
 			Type.List lt = (Type.List) t;
 			SyntacticType element = convert(lt.element(), attributes);
@@ -2803,13 +2743,6 @@ public class VcGenerator {
 				|| t instanceof Type.Byte || t instanceof Type.Int
 				|| t instanceof Type.Real) {
 			return false;
-		} else if (t instanceof Type.Set) {
-			Type.Set st = (Type.Set) t;
-			return containsNominal(st.element(), attributes);
-		} else if (t instanceof Type.Map) {
-			Type.Map lt = (Type.Map) t;
-			return containsNominal(lt.key(), attributes)
-					|| containsNominal(lt.value(), attributes);
 		} else if (t instanceof Type.List) {
 			Type.List lt = (Type.List) t;
 			return containsNominal(lt.element(), attributes);
