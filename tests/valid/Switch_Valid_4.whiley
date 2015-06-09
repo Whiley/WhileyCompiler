@@ -6,7 +6,7 @@ constant Blue is 2
 
 constant Green is 3
 
-type RGB is (int x) where x in {Red, Blue, Green}
+type RGB is (int x) where x == Red || x == Blue || x == Green
 
 function f(RGB c) -> int:
     switch c:

@@ -1,14 +1,14 @@
 
 
-type listsetdict is [int] | {int} | {int=>int}
+type listibr is [int] | [bool] | [real]
 
-function len(listsetdict l) -> int:
+function len(listibr l) -> int:
     return |l|
 
 public export method test() -> void:
-    {int} s = {1, 2, 3}
+    [bool] s = [true,false,true]
     assume len(s) == 3
     [int] l = [1, 2]
     assume len(l) == 2
-    {int=>int} m = {1=>2, 3=>4, 5=>6, 7=>8}
+    [real] m = [1.0,2.0,3.0,4.0]
     assume len(m) == 4

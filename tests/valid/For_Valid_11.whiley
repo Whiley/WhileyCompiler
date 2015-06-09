@@ -1,6 +1,6 @@
 
 
-type listdict is [int] | {int=>int}
+type listdict is [int]
 
 function f(listdict ls) -> int:
     int r = 0
@@ -11,5 +11,3 @@ function f(listdict ls) -> int:
 public export method test() -> void:
     [int] ls = [1, 2, 3, 4, 5]
     assume f(ls) == 5
-    {int=>int} ms = {10=>20, 30=>40}
-    assume f(ms) == 2

@@ -751,20 +751,10 @@ public class WhileyFilePrinter {
 				firstTime=false;
 				out.print(name);
 			}
-		} else if(t instanceof SyntacticType.Set) {
-			out.print("{");
-			print(((SyntacticType.Set)t).element);
-			out.print("}");
 		} else if(t instanceof SyntacticType.List) {
 			out.print("[");
 			print(((SyntacticType.List)t).element);
 			out.print("]");
-		} else if(t instanceof SyntacticType.Map) {
-			out.print("{");
-			print(((SyntacticType.Map)t).key);
-			out.print("=>");
-			print(((SyntacticType.Map)t).value);
-			out.print("}");
 		} else if(t instanceof SyntacticType.Tuple) {
 			SyntacticType.Tuple tt = (SyntacticType.Tuple) t;
 			out.print("(");

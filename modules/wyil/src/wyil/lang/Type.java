@@ -696,7 +696,7 @@ public abstract class Type {
 			return "bool";
 		}
 	}
-	
+
 	/**
 	 * Represents a sequence of 8 bits. Note that, unlike many languages, there
 	 * is no representation associated with a byte. For example, to extract an
@@ -761,7 +761,7 @@ public abstract class Type {
 			return "real";
 		}
 	}
-	
+
 	/**
 	 * The existential type represents the an unknown type, defined at a given
 	 * position.
@@ -912,6 +912,7 @@ public abstract class Type {
 
 		public Type element();
 
+		public EffectiveList update(Type key, Type Value);
 	}
 
 	/**
@@ -964,7 +965,7 @@ public abstract class Type {
 			return construct(Automata.extract(automaton,elemIdx));
 		}
 	}
-	
+
 	/**
 	 * A type which is either a record, or a union of records. An effective
 	 * record gives access to a subset of the visible fields which are
@@ -1691,7 +1692,7 @@ public abstract class Type {
 			break;
 		case K_BYTE:
 			type = T_BYTE;
-			break;		
+			break;
 		case K_INT:
 			type = T_INT;
 			break;

@@ -1,12 +1,12 @@
 
 
-type listset is [int] | {int}
+type list is [int] | [bool]
 
-function len(listset l) -> int:
+function len(list l) -> int:
     return |l|
 
 public export method test() -> void:
     [int] l = [1, 2, 3]
     assume len(l) == 3
-    {int} s = {1, 2, 3, 4, 5, 6}
+    [bool] s = [true,false,true]
     assume len(s) == 6

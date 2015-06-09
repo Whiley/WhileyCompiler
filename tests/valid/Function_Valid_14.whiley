@@ -9,11 +9,7 @@ function f(real y) -> int:
 function f([int] xs) -> int:
     return 3
 
-function f({int} xs) -> int:
-    return 4
-
 public export method test() -> void:
     assume f(1) == 1
     assume f(1.234) == 2
     assume f([1, 2, 3]) == 3
-    assume f({1, 2, 3}) == 4

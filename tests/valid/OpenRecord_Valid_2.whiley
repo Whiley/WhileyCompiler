@@ -6,7 +6,7 @@ constant Int is 4
 type string is [int]
 type char is int
 
-type Primitive is (int x) where x in {Short, Int}
+type Primitive is (int x) where x == Short || x == Int
 
 type Class is {[string] classes, string pkg}
 

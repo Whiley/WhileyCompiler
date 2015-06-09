@@ -3459,9 +3459,6 @@ public class WhileyFileParser {
 		} else if (type instanceof SyntacticType.List) {
 			SyntacticType.List tt = (SyntacticType.List) type;
 			return mustParseAsType(tt.element);
-		} else if (type instanceof SyntacticType.Map) {
-			SyntacticType.Map tt = (SyntacticType.Map) type;
-			return mustParseAsType(tt.key) || mustParseAsType(tt.value);
 		} else if (type instanceof SyntacticType.Negation) {
 			SyntacticType.Negation tt = (SyntacticType.Negation) type;
 			return mustParseAsType(tt.element);
@@ -3469,9 +3466,6 @@ public class WhileyFileParser {
 			return false; // always can be an expression
 		} else if (type instanceof SyntacticType.Reference) {
 			SyntacticType.Reference tt = (SyntacticType.Reference) type;
-			return mustParseAsType(tt.element);
-		} else if (type instanceof SyntacticType.Set) {
-			SyntacticType.Set tt = (SyntacticType.Set) type;
 			return mustParseAsType(tt.element);
 		} else if (type instanceof SyntacticType.Union) {
 			SyntacticType.Union tt = (SyntacticType.Union) type;
@@ -3922,7 +3916,7 @@ public class WhileyFileParser {
 			// we just ignore it for now and acknowledge that, at some point, it
 			// might be nice to do better.
 			index = start; // backtrack
-			SyntacticType type = parseSetOrMapOrRecordType();
+			SyntacticType type = parseRecordType();
 			Expr.LocalVariable name = parseTypePatternVar(terminated);
 			if (name == null && type instanceof SyntacticType.Record) {
 				return new TypePattern.Record((SyntacticType.Record) type,
@@ -4069,7 +4063,7 @@ public class WhileyFileParser {
 		case LeftBrace:
 			return parseBracketedType();
 		case LeftCurly:
-			return parseSetOrMapOrRecordType();
+			return parseRecordType();
 		case LeftSquare:
 			return parseListType();
 		case Shreak:
@@ -4173,41 +4167,11 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseSetOrMapOrRecordType() {
+	private SyntacticType parseRecordType() {
 		int start = index;
 		match(LeftCurly);
 
-		// First, we need to disambiguate between a set, map or record type. The
-		// complication is the potential for mixed types. For example, when
-		// parsing "{ function f(int)->int }", the first element is not a type.
-		// Therefore, we have to first decide whether or not we have a mixed
-		// type, or a normal type.
-
-		if (!mustParseAsMixedType()) {
-			int t_start = index; // backtrack point
-
-			SyntacticType type = parseType();
-
-			if (tryAndMatch(true, RightCurly) != null) {
-				// This indicates a set type was encountered.
-				return new SyntacticType.Set(type, sourceAttr(start, index - 1));
-			} else if (tryAndMatch(true, EqualsGreater) != null) {
-				// This indicates a map type was encountered.
-				SyntacticType value = parseType();
-				match(RightCurly);
-				return new SyntacticType.Map(type, value, sourceAttr(start,
-						index - 1));
-			}
-			// At this point, we definitely have a record type (or an error).
-			// Therefore, we backtrack and parse the potentially mixed type
-			// properly.
-			index = t_start; // backtrack
-		}
-
 		HashMap<String, SyntacticType> types = new HashMap<String, SyntacticType>();
-		// Otherwise, we have a record type and we must continue to parse
-		// the remainder of the first field.
-
 		Pair<SyntacticType, Token> p = parseMixedType();
 		types.put(p.second().text, p.first());
 

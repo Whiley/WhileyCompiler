@@ -2911,21 +2911,6 @@ public class FlowTypeChecker {
 			myChildren[0] = resolveAsType(lt.element, context, states, roots,
 					nominal, unconstrained);
 			myData = false;
-		} else if (type instanceof SyntacticType.Set) {
-			SyntacticType.Set st = (SyntacticType.Set) type;
-			myKind = Type.K_SET;
-			myChildren = new int[1];
-			myChildren[0] = resolveAsType(st.element, context, states, roots,
-					nominal, unconstrained);
-			myData = false;
-		} else if (type instanceof SyntacticType.Map) {
-			SyntacticType.Map st = (SyntacticType.Map) type;
-			myKind = Type.K_MAP;
-			myChildren = new int[2];
-			myChildren[0] = resolveAsType(st.key, context, states, roots,
-					nominal, unconstrained);
-			myChildren[1] = resolveAsType(st.value, context, states, roots,
-					nominal, unconstrained);
 		} else if (type instanceof SyntacticType.Record) {
 			SyntacticType.Record tt = (SyntacticType.Record) type;
 			HashMap<String, SyntacticType> ttTypes = tt.types;
