@@ -389,16 +389,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void Coercion_Valid_4() {
-		runTest("Coercion_Valid_4");
-	}
-
-	@Test
-	public void Coercion_Valid_6() {
-		runTest("Coercion_Valid_6");
-	}
-
-	@Test
 	public void Coercion_Valid_7() {
 		runTest("Coercion_Valid_7");
 	}
@@ -459,16 +449,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void ConstrainedDictionary_Valid_1() {
-		runTest("ConstrainedDictionary_Valid_1");
-	}
-
-	@Test
-	public void ConstrainedDictionary_Valid_2() {
-		runTest("ConstrainedDictionary_Valid_2");
-	}
-	
-	@Test
 	public void ConstrainedInt_Valid_1() {
 		runTest("ConstrainedInt_Valid_1");
 	}
@@ -486,11 +466,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void ConstrainedInt_Valid_13() {
 		runTest("ConstrainedInt_Valid_13");
-	}
-
-	@Test
-	public void ConstrainedInt_Valid_14() {
-		runTest("ConstrainedInt_Valid_14");
 	}
 
 	@Test
@@ -649,11 +624,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void ConstrainedList_Valid_24() {
-		runTest("ConstrainedList_Valid_24");
-	}
-
-	@Test
 	public void ConstrainedList_Valid_25() {
 		runTest("ConstrainedList_Valid_25");
 	}
@@ -764,51 +734,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 	
 	@Test
-	public void ConstrainedSet_Valid_1() {
-		runTest("ConstrainedSet_Valid_1");
-	}
-
-	@Test
-	public void ConstrainedSet_Valid_2() {
-		runTest("ConstrainedSet_Valid_2");
-	}
-
-	@Test
-	public void ConstrainedSet_Valid_3() {
-		runTest("ConstrainedSet_Valid_3");
-	}
-
-	@Test
-	public void ConstrainedSet_Valid_4() {
-		runTest("ConstrainedSet_Valid_4");
-	}
-
-	@Test
-	public void ConstrainedSet_Valid_5() {
-		runTest("ConstrainedSet_Valid_5");
-	}
-
-	@Test
-	public void ConstrainedSet_Valid_6() {
-		runTest("ConstrainedSet_Valid_6");
-	}
-
-	@Test
-	public void ConstrainedSet_Valid_7() {
-		runTest("ConstrainedSet_Valid_7");
-	}
-
-	@Test
-	public void ConstrainedSet_Valid_8() {
-		runTest("ConstrainedSet_Valid_8");
-	}
-
-	@Test
-	public void ConstrainedSet_Valid_9() {
-		runTest("ConstrainedSet_Valid_9");
-	}
-	
-	@Test
 	public void ConstrainedTuple_Valid_1() {
 		runTest("ConstrainedTuple_Valid_1");
 	}
@@ -856,86 +781,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void Define_Valid_4() {
 		runTest("Define_Valid_4");
-	}
-
-	@Test
-	public void Dictionary_Valid_1() {
-		runTest("Dictionary_Valid_1");
-	}
-
-	@Test
-	public void Dictionary_Valid_10() {
-		runTest("Dictionary_Valid_10");
-	}
-
-	@Test
-	public void Dictionary_Valid_11() {
-		runTest("Dictionary_Valid_11");
-	}
-
-	@Test
-	public void Dictionary_Valid_12() {
-		runTest("Dictionary_Valid_12");
-	}
-
-	@Test
-	public void Dictionary_Valid_13() {
-		runTest("Dictionary_Valid_13");
-	}
-
-	@Test
-	public void Dictionary_Valid_14() {
-		runTest("Dictionary_Valid_14");
-	}
-
-	@Test
-	public void Dictionary_Valid_15() {
-		runTest("Dictionary_Valid_15");
-	}
-
-	@Test
-	public void Dictionary_Valid_16() {
-		runTest("Dictionary_Valid_16");
-	}
-
-	@Test
-	public void Dictionary_Valid_2() {
-		runTest("Dictionary_Valid_2");
-	}
-
-	@Test
-	public void Dictionary_Valid_3() {
-		runTest("Dictionary_Valid_3");
-	}
-
-	@Test
-	public void Dictionary_Valid_4() {
-		runTest("Dictionary_Valid_4");
-	}
-
-	@Test
-	public void Dictionary_Valid_5() {
-		runTest("Dictionary_Valid_5");
-	}
-
-	@Test
-	public void Dictionary_Valid_6() {
-		runTest("Dictionary_Valid_6");
-	}
-
-	@Test
-	public void Dictionary_Valid_7() {
-		runTest("Dictionary_Valid_7");
-	}
-
-	@Test
-	public void Dictionary_Valid_8() {
-		runTest("Dictionary_Valid_8");
-	}
-
-	@Test
-	public void Dictionary_Valid_9() {
-		runTest("Dictionary_Valid_9");
 	}
 
 	@Test
@@ -1029,16 +874,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void For_Valid_12() {
-		runTest("For_Valid_12");
-	}
-
-	@Test
-	public void For_Valid_13() {
-		runTest("For_Valid_13");
-	}
-
-	@Test
 	public void For_Valid_14() {
 		runTest("For_Valid_14");
 	}
@@ -1077,12 +912,7 @@ import wyjc.util.WyjcBuildTask;
 	public void For_Valid_2() {
 		runTest("For_Valid_2");
 	}
-
-	@Test
-	public void For_Valid_3() {
-		runTest("For_Valid_3");
-	}
-
+	
 	@Test
 	public void For_Valid_4() {
 		runTest("For_Valid_4");
@@ -1164,11 +994,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void Function_Valid_10() {
-		runTest("Function_Valid_10");
-	}
-
-	@Test
 	public void Function_Valid_12() {
 		runTest("Function_Valid_12");
 	}
@@ -1196,11 +1021,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void Function_Valid_18() {
 		runTest("Function_Valid_18");
-	}
-
-	@Test
-	public void Function_Valid_19() {
-		runTest("Function_Valid_19");
 	}
 
 	@Test
@@ -1424,16 +1244,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void LengthOf_Valid_1() {
 		runTest("LengthOf_Valid_1");
-	}
-
-	@Test
-	public void LengthOf_Valid_2() {
-		runTest("LengthOf_Valid_2");
-	}
-
-	@Test
-	public void LengthOf_Valid_3() {
-		runTest("LengthOf_Valid_3");
 	}
 
 	@Test
@@ -2176,11 +1986,6 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_28");
 	}
 
-	@Test
-	public void RecursiveType_Valid_29() {
-		runTest("RecursiveType_Valid_29");
-	}
-
 	@Ignore("#406") @Test
 	public void RecursiveType_Valid_3() {
 		runTest("RecursiveType_Valid_3");
@@ -2189,11 +1994,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void RecursiveType_Valid_30() {
 		runTest("RecursiveType_Valid_30");
-	}
-
-	@Test
-	public void RecursiveType_Valid_31() {
-		runTest("RecursiveType_Valid_31");
 	}
 
 	@Ignore("#406") @Test
@@ -2264,236 +2064,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void Resolution_Valid_1() {
 		runTest("Resolution_Valid_1");
-	}
-
-	@Test
-	public void SetAssign_Valid_1() {
-		runTest("SetAssign_Valid_1");
-	}
-
-	@Test
-	public void SetAssign_Valid_2() {
-		runTest("SetAssign_Valid_2");
-	}
-
-	@Test
-	public void SetAssign_Valid_3() {
-		runTest("SetAssign_Valid_3");
-	}
-
-	@Test
-	public void SetConversion_Valid_1() {
-		runTest("SetConversion_Valid_1");
-	}
-
-	@Test
-	public void SetDefine_Valid_1() {
-		runTest("SetDefine_Valid_1");
-	}
-
-	@Test
-	public void SetDefine_Valid_2() {
-		runTest("SetDefine_Valid_2");
-	}
-
-	@Test
-	public void SetDefine_Valid_3() {
-		runTest("SetDefine_Valid_3");
-	}
-
-	@Test
-	public void SetDifference_Valid_1() {
-		runTest("SetDifference_Valid_1");
-	}
-
-	@Test
-	public void SetElemOf_Valid_1() {
-		runTest("SetElemOf_Valid_1");
-	}
-
-	@Test
-	public void SetEmpty_Valid_1() {
-		runTest("SetEmpty_Valid_1");
-	}
-
-	@Test
-	public void SetEquals_Valid_1() {
-		runTest("SetEquals_Valid_1");
-	}
-
-	@Test
-	public void SetGenerator_Valid_1() {
-		runTest("SetGenerator_Valid_1");
-	}
-
-	@Test
-	public void SetIntersect_Valid_1() {
-		runTest("SetIntersect_Valid_1");
-	}
-
-	@Test
-	public void SetIntersect_Valid_2() {
-		runTest("SetIntersect_Valid_2");
-	}
-
-	@Test
-	public void SetIntersection_Valid_1() {
-		runTest("SetIntersection_Valid_1");
-	}
-
-	@Test
-	public void SetIntersection_Valid_2() {
-		runTest("SetIntersection_Valid_2");
-	}
-
-	@Test
-	public void SetIntersection_Valid_3() {
-		runTest("SetIntersection_Valid_3");
-	}
-
-	@Test
-	public void SetIntersection_Valid_4() {
-		runTest("SetIntersection_Valid_4");
-	}
-
-	@Test
-	public void SetIntersection_Valid_5() {
-		runTest("SetIntersection_Valid_5");
-	}
-
-	@Test
-	public void SetIntersection_Valid_6() {
-		runTest("SetIntersection_Valid_6");
-	}
-
-	@Test
-	public void SetIntersection_Valid_7() {
-		runTest("SetIntersection_Valid_7");
-	}
-
-	@Test
-	public void SetLength_Valid_1() {
-		runTest("SetLength_Valid_1");
-	}
-
-	@Test
-	public void SetNull_Valid_1() {
-		runTest("SetNull_Valid_1");
-	}
-
-	@Test
-	public void SetSubset_Valid_1() {
-		runTest("SetSubset_Valid_1");
-	}
-
-	@Test
-	public void SetSubset_Valid_10() {
-		runTest("SetSubset_Valid_10");
-	}
-
-	@Test
-	public void SetSubset_Valid_11() {
-		runTest("SetSubset_Valid_11");
-	}
-
-	@Test
-	public void SetSubset_Valid_12() {
-		runTest("SetSubset_Valid_12");
-	}
-
-	@Test
-	public void SetSubset_Valid_2() {
-		runTest("SetSubset_Valid_2");
-	}
-
-	@Test
-	public void SetSubset_Valid_3() {
-		runTest("SetSubset_Valid_3");
-	}
-
-	@Test
-	public void SetSubset_Valid_4() {
-		runTest("SetSubset_Valid_4");
-	}
-
-	@Test
-	public void SetSubset_Valid_5() {
-		runTest("SetSubset_Valid_5");
-	}
-
-	@Test
-	public void SetSubset_Valid_6() {
-		runTest("SetSubset_Valid_6");
-	}
-
-	@Test
-	public void SetSubset_Valid_7() {
-		runTest("SetSubset_Valid_7");
-	}
-
-	@Test
-	public void SetSubset_Valid_8() {
-		runTest("SetSubset_Valid_8");
-	}
-
-	@Test
-	public void SetSubset_Valid_9() {
-		runTest("SetSubset_Valid_9");
-	}
-
-	@Test
-	public void SetUnion_Valid_1() {
-		runTest("SetUnion_Valid_1");
-	}
-
-	@Test
-	public void SetUnion_Valid_10() {
-		runTest("SetUnion_Valid_10");
-	}
-
-	@Test
-	public void SetUnion_Valid_11() {
-		runTest("SetUnion_Valid_11");
-	}
-
-	@Test
-	public void SetUnion_Valid_2() {
-		runTest("SetUnion_Valid_2");
-	}
-
-	@Test
-	public void SetUnion_Valid_3() {
-		runTest("SetUnion_Valid_3");
-	}
-
-	@Test
-	public void SetUnion_Valid_4() {
-		runTest("SetUnion_Valid_4");
-	}
-
-	@Test
-	public void SetUnion_Valid_5() {
-		runTest("SetUnion_Valid_5");
-	}
-
-	@Test
-	public void SetUnion_Valid_6() {
-		runTest("SetUnion_Valid_6");
-	}
-
-	@Test
-	public void SetUnion_Valid_7() {
-		runTest("SetUnion_Valid_7");
-	}
-
-	@Test
-	public void SetUnion_Valid_8() {
-		runTest("SetUnion_Valid_8");
-	}
-
-	@Test
-	public void SetUnion_Valid_9() {
-		runTest("SetUnion_Valid_9");
 	}
 
 	@Test
@@ -2747,11 +2317,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void TypeEquals_Valid_13() {
-		runTest("TypeEquals_Valid_13");
-	}
-
-	@Test
 	public void TypeEquals_Valid_14() {
 		runTest("TypeEquals_Valid_14");
 	}
@@ -2796,11 +2361,6 @@ import wyjc.util.WyjcBuildTask;
 		runTest("TypeEquals_Valid_21");
 	}
 
-	@Test
-	public void TypeEquals_Valid_22() {
-		runTest("TypeEquals_Valid_22");
-	}
-
 	@Ignore("Issue ???") @Test
 	public void TypeEquals_Valid_23() {
 		runTest("TypeEquals_Valid_23");
@@ -2814,11 +2374,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void TypeEquals_Valid_25() {
 		runTest("TypeEquals_Valid_25");
-	}
-
-	@Test
-	public void TypeEquals_Valid_26() {
-		runTest("TypeEquals_Valid_26");
 	}
 
 	@Test

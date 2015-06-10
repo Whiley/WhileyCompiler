@@ -2481,13 +2481,7 @@ public class VcGenerator {
 			break;
 		case LT:
 			op = Expr.Binary.Op.LT;
-			break;
-		case SUBSET:
-			op = Expr.Binary.Op.SUBSET;
-			break;
-		case SUBSETEQ:
-			op = Expr.Binary.Op.SUBSETEQ;
-			break;
+			break;		
 		case IN:
 			op = Expr.Binary.Op.IN;
 			break;

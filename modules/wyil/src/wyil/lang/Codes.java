@@ -1157,8 +1157,6 @@ public abstract class Codes {
 	 * <code>real</code>.</li>
 	 * <li><i>element of (in).</i> The second operand must be a set whose
 	 * element type is that of the first.</li>
-	 * <li><i>subset (ss) and subset-equals (sse)</i>. Both operands must have
-	 * the given type, which additionally must be a set.</li>
 	 * </ul>
 	 * For example, the following Whiley code:
 	 *
@@ -1297,16 +1295,6 @@ public abstract class Codes {
 		IN(6) {
 			public String toString() {
 				return "in";
-			}
-		},
-		SUBSET(7) {
-			public String toString() {
-				return "sb";
-			}
-		},
-		SUBSETEQ(8) {
-			public String toString() {
-				return "sbe";
 			}
 		};
 		public int offset;
