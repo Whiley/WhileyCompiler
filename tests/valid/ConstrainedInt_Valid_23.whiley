@@ -1,6 +1,4 @@
-
-
-type cr2num is (int x) where x in {1, 2, 3, 4}
+type cr2num is (int x) where 1 <= x && x <= 4
 
 function f(cr2num x) -> int:
     int y = x

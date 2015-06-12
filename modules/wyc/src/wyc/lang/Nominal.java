@@ -40,16 +40,8 @@ public abstract class Nominal {
 			return new Reference((Type.Reference)nominal,(Type.Reference)raw);
 		} else if(nominal instanceof Type.EffectiveTuple && raw instanceof Type.EffectiveTuple) {
 			return new Tuple((Type.EffectiveTuple)nominal,(Type.EffectiveTuple)raw);
-		} else if(nominal instanceof Type.EffectiveSet && raw instanceof Type.EffectiveSet) {
-			return new Set((Type.EffectiveSet)nominal,(Type.EffectiveSet)raw);
 		} else if(nominal instanceof Type.EffectiveList && raw instanceof Type.EffectiveList) {
 			return new List((Type.EffectiveList)nominal,(Type.EffectiveList)raw);
-		} else if(nominal instanceof Type.EffectiveMap && raw instanceof Type.EffectiveMap) {
-			return new Map((Type.EffectiveMap)nominal,(Type.EffectiveMap)raw);
-		} else if(nominal instanceof Type.UnionOfIndexibles && raw instanceof Type.UnionOfIndexibles) {
-			return new UnionOfIndexibles((Type.UnionOfIndexibles)nominal,(Type.UnionOfIndexibles)raw);
-		} else if(nominal instanceof Type.UnionOfCollections && raw instanceof Type.UnionOfCollections) {
-			return new UnionOfCollections((Type.UnionOfCollections)nominal,(Type.UnionOfCollections)raw);
 		} else if(nominal instanceof Type.EffectiveRecord && raw instanceof Type.EffectiveRecord) {
 			return new Record((Type.EffectiveRecord)nominal,(Type.EffectiveRecord)raw);
 		} else if(nominal instanceof Type.Function && raw instanceof Type.Function) {
@@ -97,22 +89,10 @@ public abstract class Nominal {
 		return new Reference(nominal,raw);
 	}
 
-	public static Set Set(Nominal element, boolean nonEmpty) {
-		Type.Set nominal = Type.Set(element.nominal(), nonEmpty);
-		Type.Set raw = Type.Set(element.raw(), nonEmpty);
-		return new Set(nominal,raw);
-	}
-
 	public static List List(Nominal element, boolean nonEmpty) {
 		Type.List nominal = Type.List(element.nominal(), nonEmpty);
 		Type.List raw = Type.List(element.raw(), nonEmpty);
 		return new List(nominal,raw);
-	}
-
-	public static Map Map(Nominal key, Nominal value) {
-		Type.Map nominal = Type.Map(key.nominal(),value.nominal());
-		Type.Map raw = Type.Map(key.raw(),value.raw());
-		return new Map(nominal,raw);
 	}
 
 	public static Record Record(boolean isOpen, java.util.Map<String,Nominal> fields) {
@@ -207,55 +187,7 @@ public abstract class Nominal {
 		}
 	}
 
-	public interface EffectiveCollection {
-		public Type raw();
-		public Type nominal();
-		public Nominal element();
-	}
-	
-	public static final class Set extends Nominal implements EffectiveCollection {
-		private final Type.EffectiveSet nominal;
-		private final Type.EffectiveSet raw;
-
-		Set(Type.EffectiveSet nominal, Type.EffectiveSet raw) {
-			this.nominal = nominal;
-			this.raw = raw;
-		}
-
-		public Type nominal() {
-			return (Type) nominal;
-		}
-
-		public Type raw() {
-			return (Type) raw;
-		}
-
-		public Nominal element() {
-			return construct(nominal.element(),raw.element());
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Set) {
-				Set b = (Set) o;
-				return nominal.equals(b.nominal()) && raw.equals(b.raw());
-			}
-			return false;
-		}
-
-		public int hashCode() {
-			return raw.hashCode();
-		}
-	}
-
-	public interface EffectiveIndexible extends EffectiveCollection {
-		public Type raw();
-		public Type nominal();
-		public Nominal key();
-		public Nominal value();
-		public EffectiveIndexible update(Nominal key,Nominal value);
-	}
-
-	public static final class List extends Nominal implements EffectiveIndexible {
+	public static final class List extends Nominal {
 		private final Type.EffectiveList nominal;
 		private final Type.EffectiveList raw;
 
@@ -284,63 +216,15 @@ public abstract class Nominal {
 			return construct(nominal.element(),raw.element());
 		}
 
-		public Nominal.EffectiveIndexible update(Nominal key, Nominal value) {
+		public Nominal.List update(Nominal key, Nominal value) {
 			Type n = (Type) nominal.update(key.nominal(), value.nominal());
 			Type r = (Type) raw.update(key.raw(), value.raw());
-			return (EffectiveIndexible) construct(n,r);
+			return (List) construct(n,r);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof List) {
 				List b = (List) o;
-				return nominal.equals(b.nominal()) && raw.equals(b.raw());
-			}
-			return false;
-		}
-
-		public int hashCode() {
-			return raw.hashCode();
-		}
-	}
-
-	public static final class Map extends Nominal implements EffectiveIndexible {
-		private final Type.EffectiveMap nominal;
-		private final Type.EffectiveMap raw;
-
-		Map(Type.EffectiveMap nominal, Type.EffectiveMap raw) {
-			this.nominal = nominal;
-			this.raw = raw;
-		}
-
-		public Type nominal() {
-			return (Type) nominal;
-		}
-
-		public Type raw() {
-			return (Type) raw;
-		}
-
-		public Nominal key() {
-			return construct(nominal.key(),raw.key());
-		}
-
-		public Nominal value() {
-			return construct(nominal.value(),raw.value());
-		}
-
-		public Nominal element() {
-			return Tuple(key(),value());
-		}
-
-		public Nominal.Map update(Nominal key, Nominal value) {
-			key = Nominal.Union(key, key());
-			value = Nominal.Union(value, value());
-			return Nominal.Map(key,value);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Map) {
-				Map b = (Map) o;
 				return nominal.equals(b.nominal()) && raw.equals(b.raw());
 			}
 			return false;
@@ -444,87 +328,6 @@ public abstract class Nominal {
 		public boolean equals(Object o) {
 			if (o instanceof Record) {
 				Record b = (Record) o;
-				return nominal.equals(b.nominal()) && raw.equals(b.raw());
-			}
-			return false;
-		}
-
-		public int hashCode() {
-			return raw.hashCode();
-		}
-	}
-
-	public static final class UnionOfCollections extends Nominal implements EffectiveCollection {
-		private final Type.UnionOfCollections nominal;
-		private final Type.UnionOfCollections raw;
-
-		UnionOfCollections(Type.UnionOfCollections nominal, Type.UnionOfCollections raw) {
-			this.nominal = nominal;
-			this.raw = raw;
-		}
-
-		public Type.UnionOfCollections nominal() {
-			return nominal;
-		}
-
-		public Type.UnionOfCollections raw() {
-			return raw;
-		}
-
-		public Nominal element() {
-			return construct(nominal.element(),raw.element());
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof UnionOfCollections) {
-				UnionOfCollections b = (UnionOfCollections) o;
-				return nominal.equals(b.nominal()) && raw.equals(b.raw());
-			}
-			return false;
-		}
-
-		public int hashCode() {
-			return raw.hashCode();
-		}
-	}
-
-	public static final class UnionOfIndexibles extends Nominal implements EffectiveIndexible {
-		private final Type.UnionOfIndexibles nominal;
-		private final Type.UnionOfIndexibles raw;
-
-		UnionOfIndexibles(Type.UnionOfIndexibles nominal, Type.UnionOfIndexibles raw) {
-			this.nominal = nominal;
-			this.raw = raw;
-		}
-
-		public Type.UnionOfIndexibles nominal() {
-			return nominal;
-		}
-
-		public Type.UnionOfIndexibles raw() {
-			return raw;
-		}
-
-		public Nominal key() {
-			return construct(nominal.key(),raw.key());
-		}
-
-		public Nominal value() {
-			return construct(nominal.value(),raw.value());
-		}
-
-		public Nominal element() {
-			return construct(nominal.element(),raw.element());
-		}
-
-		public Nominal.EffectiveIndexible update(Nominal key, Nominal value) {
-			return (EffectiveIndexible) construct((Type) nominal.update(key.nominal(), value.nominal()),
-					(Type) raw.update(key.raw(), value.raw()));
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof UnionOfIndexibles) {
-				UnionOfIndexibles b = (UnionOfIndexibles) o;
 				return nominal.equals(b.nominal()) && raw.equals(b.raw());
 			}
 			return false;

@@ -3,7 +3,7 @@
 constant SIZE is 5
 
 public export method test() -> void:
-    [{int}] components = []
+    [[int]] components = []
     while |components| < SIZE:
-        components = components ++ [{}]
-    assume components == [{},{},{},{},{}]
+        components = components ++ [[]]
+    assume components == [[],[],[],[],[]]

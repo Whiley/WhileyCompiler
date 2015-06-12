@@ -138,27 +138,6 @@ public class Util {
 				}
 				break;
 			}
-			case K_SET:
-			{
-				if(obj instanceof WySet) {
-					WySet ol = (WySet) obj;
-					WyType.Set tl = (WyType.Set) t;
-					WyType el = tl.element;
-					if(el.kind == K_ANY) {
-						return true;
-					} else if(el.kind == K_VOID) {
-						return ol.isEmpty();
-					} else {
-						for(Object elem : ol) {
-							if(!instanceOf(elem,el)) {
-								return false;
-							}
-						}
-						return true;
-					}
-				}
-				break;
-			}
 			case K_TUPLE:
 			{
 				if(obj instanceof WyTuple) {
@@ -176,32 +155,7 @@ public class Util {
 					}
 				}
 				break;
-			}
-			case K_MAP:
-			{
-				if(obj instanceof WyMap) {
-					WyMap ol = (WyMap) obj;
-					WyType.Dictionary tl = (WyType.Dictionary) t;
-					WyType key = tl.key;
-					WyType value = tl.value;
-
-					if (key.kind == K_ANY && value.kind == K_ANY) {
-						return true;
-					} else if(key.kind == K_VOID || value.kind == K_VOID) {
-						return ol.isEmpty();
-					} else {
-						for (java.util.Map.Entry<Object, Object> elem : ol
-								.entrySet()) {
-							if (!instanceOf(elem.getKey(), key)
-									|| !instanceOf(elem.getValue(), value)) {
-								return false;
-							}
-						}
-						return true;
-					}
-				}
-				break;
-			}
+			}			
 			case K_RECORD:
 			{
 				if(obj instanceof WyRecord) {
@@ -273,82 +227,6 @@ public class Util {
 			} else {
 				for(Object elem : object) {
 					if(!instanceOf(elem,el)) {
-						return false;
-					}
-				}
-				return true;
-			}
-		} else {
-			return instanceOf((Object)object,type);
-		}
-	}
-
-	/**
-	 * This method gets called when we're testing a set object against some
-	 * type. To reduce the number of cases, we can narrow down the possible
-	 * types by a process of deduction. The type cannot be <code>void</code> or
-	 * <code>any</code> (since the test would already have been eliminated).
-	 * Likewise, it cannot be e.g. a record, since again the test would already
-	 * have been eliminated. In fact, the type can only be a set or its
-	 * negation.
-	 *
-	 * @param object
-	 *            --- object being tested against.
-	 * @param type
-	 *            --- type to test against.
-	 * @return
-	 */
-	public static boolean instanceOf(WySet object, WyType type) {
-		if(type instanceof WyType.Set) {
-			WyType.Set tl = (WyType.Set) type;
-			WyType el = tl.element;
-			if(el.kind == K_ANY) {
-				return true;
-			} else if(el.kind == K_VOID) {
-				return object.isEmpty();
-			} else {
-				for(Object elem : object) {
-					if(!instanceOf(elem,el)) {
-						return false;
-					}
-				}
-				return true;
-			}
-		} else {
-			return instanceOf((Object)object,type);
-		}
-	}
-
-	/**
-	 * This method gets called when we're testing a dictionary object against some
-	 * type. To reduce the number of cases, we can narrow down the possible
-	 * types by a process of deduction. The type cannot be <code>void</code> or
-	 * <code>any</code> (since the test would already have been eliminated).
-	 * Likewise, it cannot be e.g. a record, since again the test would already
-	 * have been eliminated. In fact, the type can only be a dictionary or its
-	 * negation.
-	 *
-	 * @param object
-	 *            --- object being tested against.
-	 * @param type
-	 *            --- type to test against.
-	 * @return
-	 */
-	public static boolean instanceOf(WyMap object, WyType type) {
-		if(type instanceof WyType.Dictionary) {
-			WyType.Dictionary tl = (WyType.Dictionary) type;
-			WyType key = tl.key;
-			WyType value = tl.value;
-
-			if (key.kind == K_ANY && value.kind == K_ANY) {
-				return true;
-			} else if(key.kind == K_VOID || value.kind == K_VOID) {
-				return object.isEmpty();
-			} else {
-				for (java.util.Map.Entry<Object, Object> elem : object
-						.entrySet()) {
-					if (!instanceOf(elem.getKey(), key)
-							|| !instanceOf(elem.getValue(), value)) {
 						return false;
 					}
 				}
@@ -451,12 +329,8 @@ public class Util {
 			return compare((BigInteger)o1,o2);
 		} else if(o1 instanceof WyRat) {
 			return compare((WyRat)o1,o2);
-		} else if(o1 instanceof WySet) {
-			return compare((WySet)o1,o2);
 		} else if(o1 instanceof WyList) {
 			return compare((WyList)o1,o2);
-		} else if(o1 instanceof WyMap) {
-			return compare((WyMap)o1,o2);
 		} else if(o1 instanceof WyTuple) {
 			return compare((WyTuple)o1,o2);
 		} else if(o1 instanceof WyRecord) {
@@ -488,45 +362,9 @@ public class Util {
 		}
 	}
 
-	public static int compare(WySet o1, Object o2) {
-		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof WyRat) {
-			return 1;
-		} else if (o2 instanceof WySet) {
-			return compare(o1, (WySet) o2);
-		} else {
-			return -1;
-		}
-	}
-
-	public static int compare(WySet o1, WySet o2) {
-		int s1_size = o1.size();
-		int s2_size = o2.size();
-		if(s1_size < s2_size) {
-			return -1;
-		} else if(s1_size > s2_size) {
-			return 1;
-		} else {
-			// this is ugly
-			ArrayList a1 = new ArrayList(o1);
-			ArrayList a2 = new ArrayList(o2);
-			Collections.sort(a1,COMPARATOR);
-			Collections.sort(a2,COMPARATOR);
-			for(int i=0;i!=s1_size;++i) {
-				Object e1 = a1.get(i);
-				Object e2 = a2.get(i);
-				int c = compare(e1,e2);
-				if(c != 0) {
-					return c;
-				}
-			}
-			return 0;
-		}
-	}
-
 	public static int compare(WyList o1, Object o2) {
 		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof WyRat || o2 instanceof WySet) {
+				|| o2 instanceof WyRat) {
 			return 1;
 		} else if (o2 instanceof WyList) {
 			return compare(o1, (WyList) o2);
@@ -557,8 +395,7 @@ public class Util {
 
 	public static int compare(WyTuple o1, Object o2) {
 		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof WyRat || o2 instanceof WySet
-				|| o2 instanceof WyList) {
+				|| o2 instanceof WyRat || o2 instanceof WyList) {
 			return 1;
 		} else if (o2 instanceof WyTuple) {
 			return compare(o1, (WyTuple) o2);
@@ -589,8 +426,7 @@ public class Util {
 
 	public static int compare(WyRecord o1, Object o2) {
 		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof WyRat || o2 instanceof WySet
-				|| o2 instanceof WyTuple) {
+				|| o2 instanceof WyRat || o2 instanceof WyTuple) {
 			return 1;
 		} else if (o2 instanceof WyRecord) {
 			return compare(o1, (WyRecord) o2);

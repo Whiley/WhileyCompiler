@@ -144,23 +144,6 @@ public class CoercionCheck implements Transform<WyilFile> {
 			Type.Reference t1 = (Type.Reference) from;
 			Type.Reference t2 = (Type.Reference) to;
 			check(t1.element(),t2.element(),visited,location);
-		} else if(from instanceof Type.Set && to instanceof Type.Set) {
-			Type.Set t1 = (Type.Set) from;
-			Type.Set t2 = (Type.Set) to;
-			check(t1.element(),t2.element(),visited,location);
-		} else if(from instanceof Type.Map && to instanceof Type.Set) {
-			Type.Map t1 = (Type.Map) from;
-			Type.Set t2 = (Type.Set) to;
-			Type tup = Type.Tuple(t1.key(),t1.value());
-			check(tup,t2.element(),visited,location);
-		} else if(from instanceof Type.List && to instanceof Type.Set) {
-			Type.List t1 = (Type.List) from;
-			Type.Set t2 = (Type.Set) to;
-			check(t1.element(),t2.element(),visited,location);
-		} else if(from instanceof Type.List && to instanceof Type.Map) {
-			Type.List t1 = (Type.List) from;
-			Type.Map t2 = (Type.Map) to;
-			check(t1.element(),t2.value(),visited,location);
 		} else if(from instanceof Type.List && to instanceof Type.List) {
 			Type.List t1 = (Type.List) from;
 			Type.List t2 = (Type.List) to;

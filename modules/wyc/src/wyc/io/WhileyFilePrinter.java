@@ -366,8 +366,6 @@ public class WhileyFilePrinter {
 			print ((Expr.AbstractVariable) expression);
 		} else if (expression instanceof Expr.ConstantAccess) {
 			print ((Expr.ConstantAccess) expression);
-		} else if (expression instanceof Expr.Set) {
-			print ((Expr.Set) expression);
 		} else if (expression instanceof Expr.List) {
 			print ((Expr.List) expression);
 		} else if (expression instanceof Expr.SubList) {
@@ -398,8 +396,6 @@ public class WhileyFilePrinter {
 			print ((Expr.Record) expression);
 		} else if (expression instanceof Expr.Tuple) {
 			print ((Expr.Tuple) expression);
-		} else if (expression instanceof Expr.Map) {
-			print ((Expr.Map) expression);
 		} else if (expression instanceof Expr.AbstractFunctionOrMethod) {
 			print ((Expr.AbstractFunctionOrMethod) expression);
 		} else if (expression instanceof Expr.Lambda) {
@@ -430,19 +426,6 @@ public class WhileyFilePrinter {
 		} else {
 			out.print(v.name);
 		}
-	}
-
-	public void print(Expr.Set e) {
-		out.print("{");
-		boolean firstTime = true;
-		for(Expr i : e.arguments) {
-			if(!firstTime) {
-				out.print(", ");
-			}
-			firstTime=false;
-			print(i);
-		}
-		out.print("}");
 	}
 
 	public void print(Expr.List e) {
@@ -632,25 +615,6 @@ public class WhileyFilePrinter {
 		out.print(")");
 	}
 
-	public void print(Expr.Map e) {
-		out.print("{");
-		if(e.pairs.isEmpty()) {
-			out.print("=>");
-		} else {
-			boolean firstTime = true;
-			for(Pair<Expr,Expr> p : e.pairs) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				print(p.first());
-				out.print("=>");
-				print(p.second());
-			}
-		}
-		out.print("}");
-	}
-
 	public void print(Expr.AbstractFunctionOrMethod e) {
 		out.print("&");
 		out.print(e.name);
@@ -787,20 +751,10 @@ public class WhileyFilePrinter {
 				firstTime=false;
 				out.print(name);
 			}
-		} else if(t instanceof SyntacticType.Set) {
-			out.print("{");
-			print(((SyntacticType.Set)t).element);
-			out.print("}");
 		} else if(t instanceof SyntacticType.List) {
 			out.print("[");
 			print(((SyntacticType.List)t).element);
 			out.print("]");
-		} else if(t instanceof SyntacticType.Map) {
-			out.print("{");
-			print(((SyntacticType.Map)t).key);
-			out.print("=>");
-			print(((SyntacticType.Map)t).value);
-			out.print("}");
 		} else if(t instanceof SyntacticType.Tuple) {
 			SyntacticType.Tuple tt = (SyntacticType.Tuple) t;
 			out.print("(");

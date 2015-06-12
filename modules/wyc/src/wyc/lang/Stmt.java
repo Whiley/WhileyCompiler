@@ -438,13 +438,13 @@ public interface Stmt extends SyntacticElement {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class ForAll extends SyntacticElement.Impl
-			implements Stmt {
+	public static final class ForAll extends SyntacticElement.Impl implements
+			Stmt {
 		public final ArrayList<String> variables;
 		public Expr source;
 		public Expr invariant;
 		public final ArrayList<Stmt> body;
-		public Nominal.EffectiveCollection srcType;
+		public Nominal.List srcType;
 
 		/**
 		 * Construct a for loop from a given index variable, source expression

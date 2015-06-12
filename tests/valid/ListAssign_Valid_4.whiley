@@ -1,5 +1,3 @@
-
-
 constant PAWN is 0
 
 constant KNIGHT is 1
@@ -12,7 +10,7 @@ constant QUEEN is 4
 
 constant KING is 5
 
-type PieceKind is (int x) where x in {PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING}
+type PieceKind is (int x) where PAWN <= x && x <= KING
 
 type Piece is {bool colour, PieceKind kind}
 

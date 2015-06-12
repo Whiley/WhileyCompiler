@@ -1,5 +1,5 @@
 
-function sum({int} xs) -> (int y)
+function sum([int] xs) -> (int y)
 ensures y >= 0:
     //
     int r = 0

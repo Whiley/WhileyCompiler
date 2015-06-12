@@ -287,8 +287,6 @@ public interface Expr extends SyntacticElement {
 			case GT:
 			case GTEQ:
 			case ELEMENTOF:
-			case SUBSET:
-			case SUBSETEQ:
 			case IS:
 				return Nominal.T_BOOL;
 			default:
@@ -310,7 +308,7 @@ public interface Expr extends SyntacticElement {
 			Expr, LVal {
 		public Expr src;
 		public Expr index;
-		public Nominal.EffectiveIndexible srcType;
+		public Nominal.List srcType;
 
 		public IndexOf(Expr src, Expr index, Attribute... attributes) {
 			super(attributes);
@@ -356,28 +354,6 @@ public interface Expr extends SyntacticElement {
 
 		public String toString() {
 			return op + mhs.toString();
-		}
-	}
-
-	public static class Set extends SyntacticElement.Impl implements Expr {
-		public final ArrayList<Expr> arguments;
-		public Nominal.Set type;
-
-		public Set(Collection<Expr> arguments, Attribute... attributes) {
-			super(attributes);
-			this.arguments = new ArrayList<Expr>(arguments);
-		}
-
-		public Set(Attribute attribute, Expr... arguments) {
-			super(attribute);
-			this.arguments = new ArrayList<Expr>();
-			for(Expr a : arguments) {
-				this.arguments.add(a);
-			}
-		}
-
-		public Nominal.Set result() {
-			return type;
 		}
 	}
 
@@ -542,20 +518,6 @@ public interface Expr extends SyntacticElement {
 
 		public String toString() {
 			return "*" + src.toString();
-		}
-	}
-
-	public static class Map extends SyntacticElement.Impl implements Expr {
-		public final ArrayList<Pair<Expr,Expr>> pairs;
-		public Nominal.Map type;
-
-		public Map(Collection<Pair<Expr,Expr>> pairs, Attribute... attributes) {
-			super(attributes);
-			this.pairs = new ArrayList<Pair<Expr,Expr>>(pairs);
-		}
-
-		public Nominal.Map result() {
-			return type;
 		}
 	}
 
@@ -741,7 +703,7 @@ public interface Expr extends SyntacticElement {
 
 	public static class LengthOf extends SyntacticElement.Impl implements Expr {
 		public Expr src;
-		public Nominal.EffectiveCollection srcType;
+		public Nominal.List srcType;
 
 		public LengthOf(Expr mhs, Attribute... attributes) {
 			super(attributes);
@@ -845,12 +807,6 @@ public interface Expr extends SyntacticElement {
 		},
 		GTEQ{
 			public String toString() { return ">="; }
-		},
-		SUBSET{
-			public String toString() { return "" + WhileyFileLexer.UC_SUBSET; }
-		},
-		SUBSETEQ{
-			public String toString() { return "" + WhileyFileLexer.UC_SUBSETEQ; }
 		},
 		ELEMENTOF{
 			public String toString() { return "in"; }

@@ -1,9 +1,9 @@
 
 
-type expr is {int} | bool
+type expr is [int] | bool
 
 function f(expr e) -> bool:
-    if e is {int}:
+    if e is [int]:
         return true
     else:
         return false
@@ -11,5 +11,5 @@ function f(expr e) -> bool:
 public export method test() -> void:
     expr e = true
     assume f(e) == false
-    e = {1, 2, 3, 4}
+    e = [1, 2, 3, 4]
     assume f(e) == true

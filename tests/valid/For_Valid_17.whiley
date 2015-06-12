@@ -2,7 +2,7 @@
 
 type nat is (int x) where x >= 0
 
-function sum({nat} xs) -> (int result)
+function sum([nat] xs) -> (int result)
 ensures result >= 0:
     //
     int r = 0
@@ -11,5 +11,5 @@ ensures result >= 0:
     return r
 
 public export method test() -> void:
-    int z = sum({1, 2, 3, 4, 5})
+    int z = sum([1, 2, 3, 4, 5])
     assume z == 15

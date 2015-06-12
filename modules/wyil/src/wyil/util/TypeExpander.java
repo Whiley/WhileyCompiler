@@ -186,24 +186,12 @@ public class TypeExpander {
 		
 		states.add(null); // reserve space for me!
 		
-		if (type instanceof Type.Set) {			
-			Type.Set tt = (Type.Set) type;
-			myChildren = new int[1];
-			myChildren[0] = getTypeHelper(tt.element(),maximallyConsumed,states,roots);
-			myKind = Type.K_SET;			
-			myData = tt.nonEmpty();
-		} else if (type instanceof Type.List) {			
+		if (type instanceof Type.List) {			
 			Type.List tt = (Type.List) type;
 			myChildren = new int[1];
 			myChildren[0] = getTypeHelper(tt.element(),maximallyConsumed,states,roots);
 			myKind = Type.K_LIST;			
 			myData = tt.nonEmpty();
-		} else if (type instanceof Type.Map) {			
-			Type.Map tt = (Type.Map) type;
-			myChildren = new int[2];
-			myChildren[0] = getTypeHelper(tt.key(),maximallyConsumed,states,roots);
-			myChildren[1] = getTypeHelper(tt.value(),maximallyConsumed,states,roots);
-			myKind = Type.K_MAP;			
 		} else if(type instanceof Type.Tuple) {
 			Type.Tuple tt = (Type.Tuple) type;
 			myChildren = new int[tt.size()];
