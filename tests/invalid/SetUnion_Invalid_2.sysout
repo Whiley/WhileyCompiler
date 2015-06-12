@@ -1,4 +1,0 @@
-../../tests/invalid/SetUnion_Invalid_2.whiley:7: unable to resolve name (no match for f({int|real})
-	found: SetUnion_Invalid_2:f : function({int}) -> int)
-    return f(xs + ys)
-           ^^^^^^^^^^

@@ -1,9 +1,9 @@
 
-type scf4set is ({int} set) where |set| > 0
+type scf4list is ([int] list) where |list| > 0
 
-function f(scf4set x) -> int:
+function f(scf4list x) -> int:
     return 1
 
 method main() -> void:
-    {int} x = {}
+    [int] x = []
     f(x)
