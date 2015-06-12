@@ -9,4 +9,4 @@ public export method test() -> void:
     [int] l = [1, 2, 3]
     assume len(l) == 3
     [bool] s = [true,false,true]
-    assume len(s) == 6
+    assume len(s) == 3

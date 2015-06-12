@@ -242,9 +242,9 @@ public final class CodeGenerator {
 		}
 
 		// Allocate all declared variables now. This ensures that all declared
-		// variables occur before any temporary variables. 
+		// variables occur before any temporary variables.
 		buildVariableDeclarations(fd.statements, declarations, environment, fd);
-		
+
 		// ==================================================================
 		// Generate pre-condition
 		// ==================================================================
@@ -290,13 +290,13 @@ public final class CodeGenerator {
 				postcondition.add(Codes.Label(endLab));
 				postcondition.add(Codes.Return());
 				ensures.add(postcondition);
-			}			
+			}
 		}
 
 		// ==================================================================
 		// Generate body
 		// ==================================================================
-		
+
 		AttributedCodeBlock body = new AttributedCodeBlock(new SourceLocationMap());
 		for (Stmt s : fd.statements) {
 			generate(s, environment, body, fd);
@@ -306,9 +306,9 @@ public final class CodeGenerator {
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
 		body.add(Codes.Return(), attributes(fd));
-				
+
 		WyilFile.FunctionOrMethod declaration;
-		
+
 		if (fd instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
 			declaration = new WyilFile.FunctionOrMethod(fd
@@ -327,14 +327,14 @@ public final class CodeGenerator {
 		//
 		// First, add type information for all temporary registers allocated
 		// during code generation. This complements the existing information
-		// about declared variables. 
+		// about declared variables.
 		for(int i=declarations.size();i!=environment.size();i=i+1) {
 			Type t = environment.type(i);
 			declarations.add(new VariableDeclarations.Declaration(t,null));
 		}
 		// Second, add the corresponding attribute to the enclosing method.
 		declaration.attributes().add(new VariableDeclarations(declarations));
-		
+
 		// Done.
 		return declaration;
 	}
@@ -666,7 +666,7 @@ public final class CodeGenerator {
 	 */
 	private void generate(Stmt.Assert s, Environment environment,
 			AttributedCodeBlock codes, Context context) {
-		
+
 		// First, create assert block body
 		AttributedCodeBlock body = codes.createSubBlock();
 		String endLab = CodeUtils.freshLabel();
@@ -862,7 +862,7 @@ public final class CodeGenerator {
 	 */
 	private void generate(Stmt.IfElse s, Environment environment,
 			AttributedCodeBlock codes, Context context) {
-		
+
 		String falseLab = CodeUtils.freshLabel();
 		String exitLab = s.falseBranch.isEmpty() ? falseLab : CodeUtils
 				.freshLabel();
@@ -1052,7 +1052,7 @@ public final class CodeGenerator {
 						c);
 			}
 		}
-		
+
 		codes.add(start, Codes.Switch(s.expr.result().raw(), operand,
 				defaultTarget, cases), attributes(s));
 		codes.add(Codes.Label(exitLab), attributes(s));
@@ -1104,11 +1104,11 @@ public final class CodeGenerator {
 		String exit = CodeUtils.freshLabel();
 
 		AttributedCodeBlock body = codes.createSubBlock();
-		
+
 		if(s.invariants.size() > 0) {
 			// Ok, there is at least one invariant expression. Therefore, create
 			// an invariant bytecode.
-			
+
 			for (Expr e : s.invariants) {
 				String nextLab = CodeUtils.freshLabel();
 				AttributedCodeBlock invariant = body.createSubBlock();
@@ -1119,7 +1119,7 @@ public final class CodeGenerator {
 				invariant.add(Codes.Return());
 				// Create the invariant block
 				body.add(Codes.Invariant(invariant.bytecodes()), attributes(e));
-			}			
+			}
 		}
 
 		generateCondition(exit, invert(s.condition), environment, body, context);
@@ -1196,13 +1196,13 @@ public final class CodeGenerator {
 			// an invariant bytecode.
 			for (Expr e : s.invariants) {
 				String nextLab = CodeUtils.freshLabel();
-				AttributedCodeBlock invariant = body.createSubBlock();				
+				AttributedCodeBlock invariant = body.createSubBlock();
 				generateCondition(nextLab, e, environment, invariant, context);
 				invariant.add(Codes.Fail(), attributes(e));
 				invariant.add(Codes.Label(nextLab));
 				// Terminate invariant block
 				invariant.add(Codes.Return());
-				body.add(Codes.Invariant(invariant.bytecodes()), attributes(e));				
+				body.add(Codes.Invariant(invariant.bytecodes()), attributes(e));
 			}
 		}
 
@@ -1879,7 +1879,7 @@ public final class CodeGenerator {
 		// Create environment for the lambda body.
 		ArrayList<Integer> operands = new ArrayList<Integer>();
 		ArrayList<Type> paramTypes = new ArrayList<Type>();
-		ArrayList<VariableDeclarations.Declaration> declarations = new ArrayList<VariableDeclarations.Declaration>();	
+		ArrayList<VariableDeclarations.Declaration> declarations = new ArrayList<VariableDeclarations.Declaration>();
 		Environment benv = new Environment();
 		for (int i = 0; i != tfm_params.size(); ++i) {
 			Type type = tfm_params.get(i);
@@ -1908,10 +1908,10 @@ public final class CodeGenerator {
 		} else {
 			body.add(Codes.Return(), attributes(expr));
 		}
-		
+
 		// Add type information for all temporary registers allocated
 		// during code generation. This complements the existing information
-		// about declared variables. 
+		// about declared variables.
 		for(int i=declarations.size();i!=benv.size();i=i+1) {
 			Type t = benv.type(i);
 			declarations.add(new VariableDeclarations.Declaration(t,null));
@@ -1956,7 +1956,7 @@ public final class CodeGenerator {
 			AttributedCodeBlock codes, Context context) throws ResolveError {
 
 		if (environment.get(expr.var) != null) {
-			int target = environment.get(expr.var); 
+			int target = environment.get(expr.var);
 			Type type = expr.result().raw();
 			return target;
 		} else {
@@ -2004,7 +2004,7 @@ public final class CodeGenerator {
 			AttributedCodeBlock codes, Context context) {
 		int operand = generate(expr.src, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.LengthOf((Type.List) expr.srcType.raw(),
+		codes.add(Codes.LengthOf((Type.EffectiveList) expr.srcType.raw(),
 				target, operand), attributes(expr));
 		return target;
 	}
@@ -2284,7 +2284,7 @@ public final class CodeGenerator {
 			// do nothing for leaf
 			TypePattern.Leaf lp = (TypePattern.Leaf) pattern;
 			if (lp.var != null) {
-				Integer index = environment.get(lp.var.var);				
+				Integer index = environment.get(lp.var.var);
 				if(index != null) {
 					blk.add(Codes.Assign(type, index, root));
 				} else {
@@ -2352,7 +2352,7 @@ public final class CodeGenerator {
 
 	/**
 	 * Construct the set of variable declarations for a given list of variables.
-	 * 
+	 *
 	 * @param block
 	 * @param declarations
 	 */
@@ -2365,10 +2365,10 @@ public final class CodeGenerator {
 					context);
 		}
 	}
-	
+
 	public void buildVariableDeclarations(Stmt stmt,
 			List<VariableDeclarations.Declaration> declarations, Environment environment,
-			WhileyFile.Context context) {	
+			WhileyFile.Context context) {
 		if (stmt instanceof Assign || stmt instanceof Assert
 				|| stmt instanceof Assume || stmt instanceof Return
 				|| stmt instanceof Debug || stmt instanceof Break
@@ -2390,7 +2390,7 @@ public final class CodeGenerator {
 			Switch s = (Switch) stmt;
 			for(Stmt.Case c : s.cases) {
 				buildVariableDeclarations(c.stmts,declarations, environment, context);
-			}			
+			}
 		} else if (stmt instanceof While) {
 			While s = (While) stmt;
 			buildVariableDeclarations(s.body,declarations, environment, context);
@@ -2410,7 +2410,7 @@ public final class CodeGenerator {
 					+ stmt.getClass().getName(), context, stmt);
 		}
 	}
-		
+
 	public static void addDeclaredVariables(TypePattern pattern, Nominal type,
 			List<VariableDeclarations.Declaration> declarations,
 			Environment environment) {
@@ -2445,7 +2445,7 @@ public final class CodeGenerator {
 		}
 	}
 
-	
+
 	/**
 	 * The attributes method extracts those attributes of relevance to WyIL, and
 	 * discards those which are only used for the wyc front end.
@@ -2518,7 +2518,7 @@ public final class CodeGenerator {
 		public Type type(int idx) {
 			return idx2type.get(idx);
 		}
-		
+
 		public void put(int idx, String v) {
 			var2idx.put(v, idx);
 		}
@@ -2526,7 +2526,7 @@ public final class CodeGenerator {
 		public ArrayList<Type> asList() {
 			return idx2type;
 		}
-		
+
 		public String toString() {
 			return idx2type.toString() + "," + var2idx.toString();
 		}
