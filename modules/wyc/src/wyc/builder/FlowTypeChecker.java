@@ -360,8 +360,6 @@ public class FlowTypeChecker {
 				return propagate((Stmt.IfElse) stmt, environment);
 			} else if (stmt instanceof Stmt.While) {
 				return propagate((Stmt.While) stmt, environment);
-			} else if (stmt instanceof Stmt.ForAll) {
-				return propagate((Stmt.ForAll) stmt, environment);
 			} else if (stmt instanceof Stmt.Switch) {
 				return propagate((Stmt.Switch) stmt, environment);
 			} else if (stmt instanceof Stmt.DoWhile) {
@@ -664,72 +662,6 @@ public class FlowTypeChecker {
 				environment, current);
 		stmt.condition = p.first();
 		environment = p.second();
-
-		return environment;
-	}
-
-	/**
-	 * Type check a <code>for</code> statement.
-	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into
-	 *            this block
-	 * @return
-	 */
-	private Environment propagate(Stmt.ForAll stmt, Environment environment)
-			throws IOException, ResolveError {
-
-		stmt.source = propagate(stmt.source, environment, current);
-		Nominal.List srcType = expandAsEffectiveList(stmt.source.result());
-		stmt.srcType = srcType;
-
-		if (srcType == null) {
-			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION), filename,
-					stmt);
-		}
-
-		// At this point, the major task is to determine what the types for the
-		// iteration variables declared in the for loop. More than one variable
-		// is permitted in some cases.
-
-		Nominal[] elementTypes = new Nominal[stmt.variables.size()];
-		if (elementTypes.length == 1) {
-			elementTypes[0] = srcType.element();
-		} else {
-			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-					filename, stmt);
-		}
-
-		// Update the environment to include those declared variables
-		ArrayList<String> stmtVariables = stmt.variables;
-		for (int i = 0; i != elementTypes.length; ++i) {
-			String var = stmtVariables.get(i);
-			if (environment.containsKey(var)) {
-				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED, var),
-						filename, stmt);
-			}
-			environment = environment.declare(var, elementTypes[i],
-					elementTypes[i]);
-		}
-
-		// Iterate to a fixed point
-		environment = computeFixedPoint(environment, stmt.body, null, false,
-				stmt);
-
-		// Remove the loop variables from the environment, since they are only
-		// scoped for the duration of the body but not beyond.
-		for (int i = 0; i != elementTypes.length; ++i) {
-			String var = stmtVariables.get(i);
-			environment = environment.remove(var);
-		}
-
-		// Finally, type the invariant
-		if (stmt.invariant != null) {
-			stmt.invariant = propagate(stmt.invariant, environment, current);
-			checkIsSubtype(Type.T_BOOL, stmt.invariant);
-		}
 
 		return environment;
 	}

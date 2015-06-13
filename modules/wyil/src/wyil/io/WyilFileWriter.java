@@ -573,9 +573,8 @@ public final class WyilFileWriter {
 		} else if(code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable c = (Code.AbstractAssignable) code;
 			writeBase(wide,c.target(),output);
-		} else if(code instanceof Codes.ForAll) {
-			// Covers Codes.Quantifier as well
-			Codes.ForAll l = (Codes.ForAll) code;
+		} else if(code instanceof Codes.Quantify) {
+			Codes.Quantify l = (Codes.Quantify) code;
 			int[] operands = l.modifiedOperands;
 			writeBase(wide,operands.length + 2,output);
 			writeBase(wide,l.indexOperand,output);
@@ -662,8 +661,8 @@ public final class WyilFileWriter {
 		} else if(code instanceof Codes.FieldLoad) {
 			Codes.FieldLoad c = (Codes.FieldLoad) code;
 			writeRest(wide,stringCache.get(c.field),output);
-		} else if(code instanceof Codes.ForAll) {
-			Codes.ForAll f = (Codes.ForAll) code;
+		} else if(code instanceof Codes.Quantify) {
+			Codes.Quantify f = (Codes.Quantify) code;
 			writeRest(wide,typeCache.get(f.type),output);
 			writeCodeBlock(wide,f,offset+1,labels,output);
 		} else if(code instanceof Codes.IfIs) {
@@ -815,8 +814,8 @@ public final class WyilFileWriter {
 		} else if(code instanceof Codes.FieldLoad) {
 			Codes.FieldLoad c = (Codes.FieldLoad) code;
 			maxRest = Math.max(maxRest,stringCache.get(c.field));
-		} else if(code instanceof Codes.ForAll) {
-			Codes.ForAll f = (Codes.ForAll) code;
+		} else if(code instanceof Codes.Quantify) {
+			Codes.Quantify f = (Codes.Quantify) code;
 			int[] operands = f.modifiedOperands;
 			maxBase = Math.max(f.sourceOperand, f.indexOperand);
 			for(int i=0;i!=operands.length;++i) {
@@ -998,8 +997,8 @@ public final class WyilFileWriter {
 		} else if(code instanceof Codes.FieldLoad) {
 			Codes.FieldLoad c = (Codes.FieldLoad) code;
 			addStringItem(c.field);
-		} else if(code instanceof Codes.ForAll) {
-			Codes.ForAll s = (Codes.ForAll) code;
+		} else if(code instanceof Codes.Quantify) {
+			Codes.Quantify s = (Codes.Quantify) code;
 			addTypeItem((Type)s.type);
 		}else if(code instanceof Codes.IfIs) {
 			Codes.IfIs c = (Codes.IfIs) code;

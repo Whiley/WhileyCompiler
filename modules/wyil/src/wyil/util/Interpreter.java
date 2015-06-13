@@ -175,8 +175,6 @@ public class Interpreter {
 			return execute((Codes.Fail) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.FieldLoad) {
 			return execute((Codes.FieldLoad) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.ForAll) {
-			return execute((Codes.ForAll) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Goto) {
 			return execute((Codes.Goto) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.If) {
@@ -685,27 +683,6 @@ public class Interpreter {
 			Context context) {
 		Constant.Record rec = (Constant.Record) frame[bytecode.operand(0)];
 		frame[bytecode.target()] = rec.values.get(bytecode.field);
-		return context.pc.next();
-	}
-
-	private Object execute(Codes.ForAll bytecode, Constant[] frame,
-			Context context) {
-		Constant operand = frame[bytecode.sourceOperand];
-		checkType(operand, context, Constant.List.class);		
-		Constant.List list = (Constant.List) operand;
-		
-		for (Constant value : list.values) {
-			// Assign the index variable
-			frame[bytecode.indexOperand] = value;
-			// Execute loop body for one iteration
-			Object r = executeAllWithin(frame, context);
-			// Now, check whether we fell through to the end or not. If not,
-			// then we must have exited somehow so return to signal that.
-			if (r != null) {
-				return r;
-			}
-		}
-
 		return context.pc.next();
 	}
 

@@ -610,8 +610,6 @@ public class WhileyFileParser {
 			return parseDoWhileStatement(wf, environment, indent);
 		case Debug:
 			return parseDebugStatement(wf, environment);
-		case For:
-			return parseForStatement(wf, environment, indent);
 		case If:
 			return parseIfStatement(wf, environment, indent);
 		case Return:
@@ -1046,74 +1044,6 @@ public class WhileyFileParser {
 		List<Stmt> blk = parseBlock(wf, environment, indent);
 		return new Stmt.While(condition, invariants, blk, sourceAttr(start,
 				end - 1));
-	}
-
-	/**
-	 * Parse a for statement, which has the form:
-	 *
-	 * <pre>
-	 * ForStmt ::= "for" VariablePattern "in" Expr ("where" Expr)* ':' NewLine Block
-	 * </pre>
-	 *
-	 * <p>
-	 * Here, the variable pattern allows variables to be declared without types.
-	 * The type of such variables is automatically inferred from the source
-	 * expression. The <code>where</code> clauses are commonly referred to as
-	 * the "loop invariant". When multiple clauses are given, these are combined
-	 * using a conjunction. The combined invariant defines a condition which
-	 * must be true on every iteration of the loop.
-	 * </p>
-	 *
-	 * @param wf
-	 *            The enclosing WhileyFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this block.
-	 * @param indent
-	 *            The indent level of this statement, which is needed to
-	 *            determine permissible indent level of child block(s).
-	 * @return
-	 */
-	private Stmt parseForStatement(WhileyFile wf, HashSet<String> environment,
-			Indent indent) {
-		// We have to clone the environment here because we want to add the
-		// index variable(s) declared as part of this for loop, but these must
-		// only be scoped for the body of the loop.
-		environment = new HashSet<String>(environment);
-
-		int start = index;
-		match(For);
-		String var = match(Identifier).text;
-		ArrayList<String> variables = new ArrayList<String>();
-		variables.add(var);
-		environment.add(var);
-		// FIXME: should be matching (untyped?) Pattern here.
-		if (tryAndMatch(true, Comma) != null) {
-			var = match(Identifier).text;
-			variables.add(var);
-			environment.add(var);
-		}
-		match(In);
-		// NOTE: expression terminated by ':'
-		Expr source = parseUnitExpression(wf, environment, true);
-		// Parse invariant and variant
-		// FIXME: should be an invariant list
-		Expr invariant = null;
-		if (tryAndMatch(true, Where) != null) {
-			// NOTE: expression terminated by ':'
-			invariant = parseLogicalExpression(wf, environment, true);
-		}
-		// match start of block
-		match(Colon);
-		int end = index;
-		matchEndLine();
-		// parse block
-		List<Stmt> blk = parseBlock(wf, environment, indent);
-		return new Stmt.ForAll(variables, source, invariant, blk, sourceAttr(
-				start, end - 1));
 	}
 
 	/**

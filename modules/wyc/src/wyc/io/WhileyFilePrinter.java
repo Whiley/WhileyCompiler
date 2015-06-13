@@ -172,8 +172,6 @@ public class WhileyFilePrinter {
 			print((Stmt.Debug) stmt);
 		} else if(stmt instanceof Stmt.DoWhile) {
 			print((Stmt.DoWhile) stmt, indent);
-		} else if(stmt instanceof Stmt.ForAll) {
-			print((Stmt.ForAll) stmt, indent);
 		} else if(stmt instanceof Stmt.IfElse) {
 			print((Stmt.IfElse) stmt, indent);
 		} else if(stmt instanceof Stmt.Return) {
@@ -280,28 +278,6 @@ public class WhileyFilePrinter {
 		}
 
 		// TODO: loop invariant
-		out.println(":");
-		print(s.body,indent+1);
-	}
-
-	public void print(Stmt.ForAll s, int indent) {
-		out.print("for ");
-		boolean firstTime = true;
-		for(String v : s.variables) {
-			if(!firstTime) {
-				out.print(", ");
-			}
-			firstTime=false;
-			out.print(v);
-		}
-		out.print(" in ");
-		print(s.source);
-
-		if(s.invariant != null) {
-			out.print(" where ");
-			print(s.invariant);
-		}
-
 		out.println(":");
 		print(s.body,indent+1);
 	}
