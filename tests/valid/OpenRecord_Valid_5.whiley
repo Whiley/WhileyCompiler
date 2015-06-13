@@ -9,8 +9,10 @@ function sum(VecPoint vp) -> int:
         return vp.x + vp.y
     else:
         int r = 0
-        for p in vp:
-            r = r + sum(p)
+        int i = 0
+        while i < |vp|:
+            r = r + sum(vp[i])
+            i = i + 1
         return r
 
 public export method test() -> void:

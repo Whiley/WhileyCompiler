@@ -8,14 +8,20 @@ type Matrix is ([[int]] rows)
 function run(Matrix A, Matrix B) -> Matrix
 requires (|A| > 0) && ((|B| > 0) && (|B| == |A[0]|)):
     [[int]] C = []
-    for i in 0 .. |A|:
+    int i = 0
+    while i < |A|:
         [int] row = []
-        for j in 0 .. |B[0]|:
+        int j = 0
+        while j < |B[0]|:
             int r = 0
-            for k in 0 .. |B|:
+            int k = 0 
+            while k < |B|:
                 r = r + (A[i][k] * B[k][j])
+                k = k + 1            
             row = row ++ [r]
+            j = j + 1        
         C = C ++ [row]
+        i = i + 1
     return C
 
 public export method test() -> void:

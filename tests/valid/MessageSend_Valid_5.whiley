@@ -4,8 +4,10 @@ type Sum is &{int result, [int] items}
 
 method start(Sum this) -> void:
     int sum = 0
-    for i in this->items:
-        sum = sum + i
+    int i = 0
+    while i < |this->items|:
+        sum = sum + this->items[i]
+        i = i + 1
     this->result = sum
 
 method get(Sum this) -> int:

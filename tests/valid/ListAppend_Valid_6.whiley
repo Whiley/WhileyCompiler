@@ -1,9 +1,12 @@
 
 
 function test([real] xs, [int] ys) -> bool:
-    for x in xs ++ ys:
-        if x is int:
+    [int|real] zs = xs ++ ys
+    int i = 0
+    while i < |zs|:
+        if zs[i] is int:
             return true
+        i = i + 1
     return false
 
 public export method test() -> void:

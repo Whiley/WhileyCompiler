@@ -2,13 +2,16 @@
 
 type Link is null | [Link]
 
-function maxDepth(Link l) -> int:
-    if l is [Link]:
+function maxDepth(Link links) -> int:
+    if links is [Link]:
         int r = 0
-        for i in l:
-            int t = maxDepth(i)
+        int i = 0
+        while i < |links|:
+            Link l = links[i]
+            int t = maxDepth(l)
             if t > r:
                 r = t
+            i = i + 1
         return r + 1
     else:
         return 0

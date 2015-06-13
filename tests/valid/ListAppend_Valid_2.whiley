@@ -1,9 +1,9 @@
-
-
 function append([int] input) -> [int]:
     [int] rs = []
-    for i in 0 .. |input|:
+    int i = 0
+    while i < |input|:
         rs = rs ++ [input[i]]
+        i = i + 1
     return rs
 
 public export method test() -> void:

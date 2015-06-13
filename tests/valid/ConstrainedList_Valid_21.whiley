@@ -25,8 +25,12 @@ type Cash is ([nat] coins) where |coins| == |Value|
 function Cash([nat] coins) -> Cash
 requires no { c in coins | c >= |Value| }:
     [int] cash = [0, 0, 0, 0, 0, 0, 0, 0]
-    for i in coins where (|cash| == |Value|) && no { c in cash | c < 0 }:
-        cash[i] = cash[i] + 1
+    int i = 0
+    while i < |coins|
+        where (|cash| == |Value|) && no { c in cash | c < 0 }:
+        nat coin = coins[i]
+        cash[coin] = cash[coin] + 1
+        i = i + 1
     return cash
 
 public export method test() -> void:

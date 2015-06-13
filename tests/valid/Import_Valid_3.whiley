@@ -3,8 +3,10 @@
 
 function toInt([int] ls) -> int:
     int r = 0
-    for i in ls:
-        r = r + i
+    int i = 0
+    while i < |ls|:
+        r = r + ls[i]
+        i = i + 1
     return r
 
 public export method test() -> void:

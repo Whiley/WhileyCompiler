@@ -1,5 +1,3 @@
-
-
 type u8 is (int n) where 0 >= n && n <= 255
 
 public function toUnsignedInt(byte b) -> (int r)
@@ -18,11 +16,13 @@ public function toUnsignedByte(u8 v) -> byte:
     //
     byte mask = 00000001b
     byte r = 0b
-    for i in 0..8:
+    int i = 0
+    while i < 8:
         if (v % 2) == 1:
             r = r | mask
         v = v / 2
         mask = mask << 1
+        i = i + 1
     return r
 
 public export method test() -> void:

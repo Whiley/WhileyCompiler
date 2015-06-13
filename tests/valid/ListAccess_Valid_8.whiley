@@ -12,8 +12,10 @@ public function toUnsignedInt(byte b) -> int:
 
 public function meth([byte] bytes) -> [int]:
     [int] data = []
-    for i in 0 .. |bytes|:
+    int i = 0
+    while i < |bytes|:
         data = data ++ [toUnsignedInt(bytes[i])]
+        i = i + 1
     return data
 
 public export method test() -> void:
