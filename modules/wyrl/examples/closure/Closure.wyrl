@@ -53,5 +53,6 @@ reduce LessThan[Expr e1, Expr e2]:
 infer And{LessThan[Expr e1, Expr e2] l1,
           LessThan[Expr e3, Expr e4] l2,
           BExpr... bs}:
-    => And (bs ++ {l1,l2} ++ LessThan[e1,e4]), if e2 == e3
+    => let rs = {l1,l2,LessThan[e1,e4]}
+       in And (bs ++ rs), if e2 == e3
 
