@@ -226,18 +226,14 @@ public class WhileyFileParser {
 	 *
 	 * MethodDeclaration ::= "method" TypePattern "->" TypePattern (FunctionMethodClause)* ':' NewLine Block
 	 *
-	 * FunctionMethodClause ::= "throws" Type | "requires" Expr | "ensures" Expr
+	 * FunctionMethodClause ::= "requires" Expr | "ensures" Expr
 	 * </pre>
 	 *
 	 * Here, the first type pattern (i.e. before "->") is referred to as the
 	 * "parameter", whilst the second is referred to as the "return". There are
-	 * three kinds of option clause:
+	 * two kinds of option clause:
 	 *
 	 * <ul>
-	 * <li><b>Throws clause</b>. This defines the exceptions which may be thrown
-	 * by this function. Multiple clauses may be given, and these are taken
-	 * together as a union. Furthermore, the convention is to specify the throws
-	 * clause before the others.</li>
 	 * <li><b>Requires clause</b>. This defines a constraint on the permissible
 	 * values of the parameters on entry to the function or method, and is often
 	 * referred to as the "precondition". This expression may refer to any
@@ -327,7 +323,7 @@ public class WhileyFileParser {
 			ret = new TypePattern.Leaf(vt, null, sourceAttr(start, index - 1));
 		}
 
-		// Parse optional throws/requires/ensures clauses
+		// Parse optional requires/ensures clauses
 
 		ArrayList<Expr> requires = new ArrayList<Expr>();
 		ArrayList<Expr> ensures = new ArrayList<Expr>();
@@ -2788,7 +2784,7 @@ public class WhileyFileParser {
 
 		return new Expr.Record(exprs, sourceAttr(start, index - 1));
 	}
-	
+
 	/**
 	 * Parse a new expression, which is of the form:
 	 *
@@ -4156,8 +4152,8 @@ public class WhileyFileParser {
 	 * Parse a function or method type, which is of the form:
 	 *
 	 * <pre>
-	 * FunctionType ::= "function" [Type (',' Type)* ] "->" Type [ "throws" Type ]
-	 * MethodType   ::= "method" [Type (',' Type)* ] "->" Type [ "throws" Type ]
+	 * FunctionType ::= "function" [Type (',' Type)* ] "->" Type
+	 * MethodType   ::= "method" [Type (',' Type)* ] "->" Type
 	 * </pre>
 	 *
 	 * At the moment, it is required that parameters for a function or method
@@ -4210,18 +4206,12 @@ public class WhileyFileParser {
 			ret = new SyntacticType.Void();
 		}
 
-		// Fourth, parse the optional throws type
-		SyntacticType throwsType = null;
-		if (tryAndMatch(true, Throws) != null) {
-			throwsType = parseType();
-		}
-
 		// Done
 		if (isFunction) {
-			return new SyntacticType.Function(ret, throwsType, paramTypes,
+			return new SyntacticType.Function(ret, new SyntacticType.Void(), paramTypes,
 					sourceAttr(start, index - 1));
 		} else {
-			return new SyntacticType.Method(ret, throwsType, paramTypes,
+			return new SyntacticType.Method(ret, new SyntacticType.Void(), paramTypes,
 					sourceAttr(start, index - 1));
 		}
 	}
@@ -4231,8 +4221,8 @@ public class WhileyFileParser {
 	 *
 	 * <pre>
 	 * MixedType ::= Type Identifier
-	 *            |  "function" Type Identifier '(' [Type (',' Type)* ] ')' "->" Type [ "throws" Type ]
-	 *            |  "method" Type Identifier '(' [Type (',' Type)* ] ')' "->" Type [ "throws" Type ]
+	 *            |  "function" Type Identifier '(' [Type (',' Type)* ] ')' "->" Type
+	 *            |  "method" Type Identifier '(' [Type (',' Type)* ] ')' "->" Type
 	 * </pre>
 	 *
 	 * @return
@@ -4285,20 +4275,17 @@ public class WhileyFileParser {
 					// If no return is given, then default to void.
 					ret = new SyntacticType.Void();
 				}
-				// Fourth, parse the optional throws type
-				SyntacticType throwsType = null;
-				if (tryAndMatch(true, Throws) != null) {
-					throwsType = parseType();
-				}
 
 				// Done
 				SyntacticType type;
 				if (lookahead.kind == Token.Kind.Function) {
-					type = new SyntacticType.Function(ret, throwsType,
-							paramTypes, sourceAttr(start, index - 1));
+					type = new SyntacticType.Function(ret,
+							new SyntacticType.Void(), paramTypes, sourceAttr(
+									start, index - 1));
 				} else {
-					type = new SyntacticType.Method(ret, throwsType,
-							paramTypes, sourceAttr(start, index - 1));
+					type = new SyntacticType.Method(ret,
+							new SyntacticType.Void(), paramTypes, sourceAttr(
+									start, index - 1));
 				}
 				return new Pair<SyntacticType, Token>(type, id);
 			} else {
@@ -4639,7 +4626,7 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a string constant whilst interpreting all escape characters.
-	 * 
+	 *
 	 * @param v
 	 * @return
 	 */
