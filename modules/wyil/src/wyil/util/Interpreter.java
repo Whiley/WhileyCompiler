@@ -152,7 +152,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Constant[] frame, Context context) {
+	private Object execute(Constant[] frame, Context context) {		
 		Code bytecode = context.block.get(context.pc);
 		// FIXME: turn this into a switch statement?
 		if (bytecode instanceof Codes.Invariant) {
@@ -198,6 +198,8 @@ public class Interpreter {
 			return execute((Codes.LengthOf) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.ListOperator) {
 			return execute((Codes.ListOperator) bytecode, frame, context);
+		} else if (bytecode instanceof Codes.Quantify) {
+			return execute((Codes.Quantify) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Loop) {
 			return execute((Codes.Loop) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Move) {
@@ -212,8 +214,6 @@ public class Interpreter {
 			return execute((Codes.NewTuple) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Nop) {
 			return execute((Codes.Nop) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Quantify) {
-			return execute((Codes.Quantify) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Return) {
 			return execute((Codes.Return) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.SubList) {
@@ -686,6 +686,27 @@ public class Interpreter {
 		return context.pc.next();
 	}
 
+	private Object execute(Codes.Quantify bytecode, Constant[] frame,
+			Context context) {
+		Constant operand = frame[bytecode.sourceOperand];
+		checkType(operand, context, Constant.List.class);		
+		Constant.List list = (Constant.List) operand;
+		
+		for (Constant value : list.values) {
+			// Assign the index variable
+			frame[bytecode.indexOperand] = value;
+			// Execute loop body for one iteration
+			Object r = executeAllWithin(frame, context);
+			// Now, check whether we fell through to the end or not. If not,
+			// then we must have exited somehow so return to signal that.
+			if (r != null) {
+				return r;
+			}
+		}
+
+		return context.pc.next();
+	}
+	
 	private Object execute(Codes.Goto bytecode, Constant[] frame,
 			Context context) {
 		return context.getLabel(bytecode.target);
