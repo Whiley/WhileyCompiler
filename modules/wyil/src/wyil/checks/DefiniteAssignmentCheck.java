@@ -158,8 +158,8 @@ public class DefiniteAssignmentCheck extends
 	@Override
 	public HashSet<Integer> propagate(CodeBlock.Index index, Codes.Loop loop,
 			HashSet<Integer> in) {
-		if (loop instanceof Codes.ForAll) {
-			Codes.ForAll fall = (Codes.ForAll) loop;
+		if (loop instanceof Codes.Quantify) {
+			Codes.Quantify fall = (Codes.Quantify) loop;
 
 			if (!in.contains(fall.sourceOperand)) {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),

@@ -114,11 +114,13 @@ public function toUnsignedByte(u8 v) -> byte:
     //
     byte mask = 00000001b
     byte r = 0b
-    for i in 0..8:
+    int i = 0
+    while i < 8:
         if (v % 2) == 1:
             r = r | mask
         v = v / 2
         mask = mask << 1
+        i = i + 1
     return r
 
 // convert an arbitrary sized unsigned integer into a list of bytes in
@@ -129,20 +131,24 @@ public function toUnsignedBytes(uint v) -> [byte]:
     // do-while is needed here
     byte r = 0b
     byte mask = 00000001b
-    for i in 0..8:
+    int i = 0
+    while i < 8:
         if (v % 2) == 1:
             r = r | mask
         v = v / 2
         mask = mask << 1
+        i = i + 1
     bytes = bytes ++ [r]
     while v > 0:
         r = 0b
         mask = 00000001b
-        for i in 0..8:
+        int j = 0
+        while j < 8:
             if (v % 2) == 1:
                 r = r | mask
             v = v / 2
             mask = mask << 1
+            j = j + 1
         bytes = bytes ++ [r]
     return bytes
 
@@ -167,12 +173,14 @@ public function parse(string input) -> int|null:
         negative = false
     // now, parse remaining digits
     int r = 0
-    for i in start .. |input|:
+    int i = start
+    while i < |input|:
         char c = input[i]
         r = r * 10
         if !ASCII.isDigit(c):
             return null
         r = r + ((int) c - '0')
+        i = i + 1
     // done
     if negative:
         return -r

@@ -506,10 +506,6 @@ public final class WyilFileReader {
 			Codes.Quantify l = (Codes.Quantify) compound;
 			return Codes.Quantify(l.type, l.sourceOperand, l.indexOperand,
 					l.modifiedOperands, bytecodes);
-		} else if(compound instanceof Codes.ForAll) {
-			Codes.ForAll l = (Codes.ForAll) compound;
-			return Codes.ForAll(l.type, l.sourceOperand, l.indexOperand,
-					l.modifiedOperands, bytecodes);
 		} else if(compound instanceof Codes.Loop) {
 			Codes.Loop l = (Codes.Loop) compound;
 			return Codes.Loop(l.modifiedOperands, bytecodes);
@@ -866,14 +862,9 @@ public final class WyilFileReader {
 			int indexOperand = operands[0];
 			int sourceOperand = operands[1];
 			operands = Arrays.copyOfRange(operands, 2, operands.length);
-			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);
-			if (opcode == Code.OPCODE_forall) {
-				return Codes.ForAll((Type.EffectiveList) type,
-						sourceOperand, indexOperand, operands, bytecodes);
-			} else {
-				return Codes.Quantify((Type.EffectiveList) type,
-						sourceOperand, indexOperand, operands, bytecodes);
-			}
+			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);			
+			return Codes.Quantify((Type.EffectiveList) type,
+					sourceOperand, indexOperand, operands, bytecodes);
 		}
 		case Code.OPCODE_indirectinvokefnv:
 		case Code.OPCODE_indirectinvokemdv: {

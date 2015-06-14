@@ -20,14 +20,20 @@ requires A.width == B.height
 ensures (C.width == B.width) && (C.height == A.height):
     //
     [[int]] C_data = []
-    for i in 0 .. A.height:
+    int i = 0
+    while i < A.height:
         [int] row = []
-        for j in 0 .. B.width:
+        int j = 0
+        while j < B.width:
             int r = 0
-            for k in 0 .. A.width:
+            int k = 0
+            while k < A.width:
                 r = r + (A.data[i][k] * B.data[k][j])
+                k = k + 1
             row = row ++ [r]
+            j = j + 1
         C_data = C_data ++ [row]
+        i = i + 1
     return Matrix(B.width, A.height, C_data)
 
 public export method test() -> void:

@@ -3,11 +3,11 @@
 type TYPE is null | int
 
 function f([TYPE] xs, TYPE p) -> int:
-    int r = 0
-    for x in xs:
-        if x == p:
-            return r
-        r = r + 1
+    int i = 0
+    while i < |xs|:
+        if xs[i] == p:
+            return i
+        i = i + 1
     return -1
 
 public export method test() -> void:

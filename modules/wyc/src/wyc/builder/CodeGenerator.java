@@ -385,8 +385,6 @@ public final class CodeGenerator {
 				generate((While) stmt, environment, codes, context);
 			} else if (stmt instanceof DoWhile) {
 				generate((DoWhile) stmt, environment, codes, context);
-			} else if (stmt instanceof ForAll) {
-				generate((ForAll) stmt, environment, codes, context);
 			} else if (stmt instanceof Expr.MethodCall) {
 				generate((Expr.MethodCall) stmt, Codes.NULL_REG, environment,
 						codes, context);
@@ -1209,61 +1207,6 @@ public final class CodeGenerator {
 		generateCondition(exit, invert(s.condition), environment, body, context);
 
 		codes.add(Codes.Loop(new int[] {}, body.bytecodes()), attributes(s));
-		codes.add(Codes.Label(exit), attributes(s));
-	}
-
-	/**
-	 * Translate a forall loop into WyIL bytecodes.
-	 *
-	 * @param stmt
-	 *            --- Statement to be translated.
-	 * @param environment
-	 *            --- Mapping from variable names to block registers.
-	 * @param codes
-	 *            --- Code block into which this statement is to be translated.
-	 * @param context
-	 *            --- Enclosing context of this statement (i.e. type, constant,
-	 *            function or method declaration). The context is used to aid
-	 *            with error reporting as it determines the enclosing file.
-	 * @return
-	 */
-	private void generate(Stmt.ForAll s, Environment environment,
-			AttributedCodeBlock codes, Context context) {
-		String exit = CodeUtils.freshLabel();
-
-		int sourceRegister = generate(s.source, environment, codes, context);
-
-		// FIXME: need to handle destructuring syntax properly.
-		Type.EffectiveList rawSrcType = (Type.EffectiveList) s.srcType.raw();
-		int indexRegister = environment.get(s.variables.get(0));
-
-		AttributedCodeBlock body = codes.createSubBlock();
-
-		if (s.invariant != null) {
-			// Ok, there is at least one invariant expression. Therefore, create
-			// an invariant bytecode.
-			AttributedCodeBlock invariant = body.createSubBlock();
-			String nextLab = CodeUtils.freshLabel();
-			generateCondition(nextLab, s.invariant, environment, invariant,
-					context);
-			invariant.add(Codes.Fail(), attributes(s.invariant));
-			invariant.add(Codes.Label(nextLab));
-			// Terminate invariant block
-			invariant.add(Codes.Return());
-			body.add(Codes.Invariant(invariant.bytecodes()),
-					attributes(s.invariant));
-		}
-
-		// FIXME: add a continue scope
-		scopes.push(new LoopScope(exit));
-		for (Stmt st : s.body) {
-			generate(st, environment, body, context);
-		}
-		scopes.pop(); // break
-
-		codes.add(Codes.ForAll(rawSrcType, sourceRegister, indexRegister,
-				new int[] {}, body.bytecodes()), attributes(s));
-
 		codes.add(Codes.Label(exit), attributes(s));
 	}
 
@@ -2396,13 +2339,6 @@ public final class CodeGenerator {
 			buildVariableDeclarations(s.body,declarations, environment, context);
 		} else if (stmt instanceof DoWhile) {
 			DoWhile s = (DoWhile) stmt;
-			buildVariableDeclarations(s.body,declarations, environment, context);
-		} else if (stmt instanceof ForAll) {
-			ForAll s = (ForAll) stmt;
-			Nominal type = s.srcType.element();
-			String name = s.variables.get(0);
-			declarations.add(new VariableDeclarations.Declaration(type.nominal(),name));
-			environment.allocate(type.raw(), name);
 			buildVariableDeclarations(s.body,declarations, environment, context);
 		} else {
 			// should be dead-code

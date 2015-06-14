@@ -1,5 +1,3 @@
-
-
 type Actor is {int data}
 
 method get(&Actor this) -> int:
@@ -10,16 +8,20 @@ method createActor(int n) -> &Actor:
 
 method createActors(int n) -> [&Actor]:
     [&Actor] row = []
-    for j in 0 .. n:
+    int j = 0
+    while j < n:
         &Actor m = createActor(j)
         row = row ++ [m]
+        j = j + 1
     return row
 
 public export method test() -> void:
     [&Actor] actors = createActors(10)
     int r = 0
     //
-    for i in 0 .. |actors|:
+    int i = 0
+    while i < |actors|:
         r = r + get(actors[i])
+        i = i + 1
     //
     assume r == 45

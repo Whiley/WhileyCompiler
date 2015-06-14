@@ -632,8 +632,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 
 		environment = new Env(environment);
 
-		if(loop instanceof Codes.ForAll) {
-			Codes.ForAll fall = (Codes.ForAll) loop;
+		if(loop instanceof Codes.Quantify) {
+			Codes.Quantify fall = (Codes.Quantify) loop;
 
 			// TO DO: could unroll loop if src collection is a value.
 			invalidate(fall.indexOperand,environment);

@@ -1,9 +1,7 @@
-
-
 function indexOf(int c1, [int] str) -> int | null:
     int i = 0
-    for c2 in str:
-        if c1 == c2:
+    while i < |str|:
+        if c1 == str[i]:
             return i
         i = i + 1
     return null

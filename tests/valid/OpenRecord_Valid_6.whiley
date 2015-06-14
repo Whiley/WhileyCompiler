@@ -7,8 +7,10 @@ type VecPoint is [Point] | Point
 function sum(VecPoint vp) -> int:
     if vp is [Point]:
         int r = 0
-        for p in vp:
-            r = r + sum(p)
+        int i = 0
+        while i < |vp|:
+            r = r + sum(vp[i])
+            i = i + 1
         return r
     else:
         return vp.x + vp.y

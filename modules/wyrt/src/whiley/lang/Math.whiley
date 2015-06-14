@@ -117,8 +117,10 @@ public function pow(int base, int exponent) -> int
 requires exponent > 0:
     //
     int r = 1
-    for i in 0 .. exponent:
+    int i = 0
+    while i < exponent:
         r = r * base
+        i = i + 1
     return r
 
 /**

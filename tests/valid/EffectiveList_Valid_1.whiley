@@ -4,11 +4,13 @@ type rec is {int y, int x}
 
 function f([int] xs) -> [bool | null]:
     [bool|null] r = []
-    for x in xs:
-        if x < 0:
+    int i = 0
+    while i < |xs|:
+        if xs[i] < 0:
             r = r ++ [true]
         else:
             r = r ++ [null]
+        i = i + 1
     return r
 
 public export method test() -> void:

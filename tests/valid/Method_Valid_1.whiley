@@ -1,5 +1,3 @@
-
-
 constant BLANK is 0
 constant CROSS is 1
 constant CIRCLE is 2
@@ -13,9 +11,12 @@ function EmptyBoard() -> Board:
 
 public function numPieces(Board board, Piece piece) -> int:
     int count = 0
-    for p in board:
+    int i = 0
+    while i < |board|:
+        Piece p = board[i]
         if p == piece:
             count = count + 1
+        i = i + 1
     return count
 
 method update(Board b) -> Board:

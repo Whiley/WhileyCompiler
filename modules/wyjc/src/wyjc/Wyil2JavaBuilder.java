@@ -610,8 +610,8 @@ public class Wyil2JavaBuilder implements Builder {
 				translate(index, (Codes.Fail) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.FieldLoad) {
 				translate(index, (Codes.FieldLoad) code, freeSlot, bytecodes);
-			} else if (code instanceof Codes.ForAll) {
-				freeSlot = translate(index, (Codes.ForAll) code, freeSlot,
+			} else if (code instanceof Codes.Quantify) {
+				freeSlot = translate(index, (Codes.Quantify) code, freeSlot,
 						bytecodes);
 			} else if (code instanceof Codes.Goto) {
 				translate(index, (Codes.Goto) code, freeSlot, bytecodes);
@@ -1246,7 +1246,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Goto(loopHeader));
 	}
 
-	private int translate(CodeBlock.Index index, Codes.ForAll c, int freeSlot,
+	private int translate(CodeBlock.Index index, Codes.Quantify c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 
 		Type elementType = c.type.element();

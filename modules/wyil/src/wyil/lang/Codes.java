@@ -256,20 +256,6 @@ public abstract class Codes {
 		return new Loop(operands,bytecodes);
 	}
 
-	public static ForAll ForAll(Type.EffectiveList type,
-			int sourceOperand, int indexOperand,
-			int[] modifiedOperands, Collection<Code> bytecodes) {
-		return new ForAll(type, sourceOperand, indexOperand,
-				modifiedOperands, bytecodes);
-	}
-
-	public static ForAll ForAll(Type.EffectiveList type,
-			int sourceOperand, int indexOperand, int[] modifiedOperands,
-			Code... bytecodes) {
-		return new ForAll(type, sourceOperand, indexOperand,
-				modifiedOperands, bytecodes);
-	}
-
 	/**
 	 * Construct a <code>newlist</code> bytecode which constructs a new list and
 	 * puts it on the stack.
@@ -2174,20 +2160,13 @@ public abstract class Codes {
 		}
 	}
 
-	/**
-	 * Pops a set, list or map from the stack and iterates over every element it
-	 * contains. A register is identified to hold the current value being
-	 * iterated over.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class ForAll extends Loop {
+	public static final class Quantify extends Loop {
+		
 		public final int sourceOperand;
 		public final int indexOperand;
 		public final Type.EffectiveList type;
 
-		private ForAll(Type.EffectiveList type, int sourceOperand,
+		private Quantify(Type.EffectiveList type, int sourceOperand,
 				int indexOperand, int[] modifies, Collection<Code> bytecodes) {
 			super(modifies, bytecodes);
 			this.type = type;
@@ -2195,18 +2174,18 @@ public abstract class Codes {
 			this.indexOperand = indexOperand;
 		}
 
-		private ForAll(Type.EffectiveList type, int sourceOperand,
+		private Quantify(Type.EffectiveList type, int sourceOperand,
 				int indexOperand, int[] modifies, Code[] bytecodes) {
 			super(modifies, bytecodes);
 			this.type = type;
 			this.sourceOperand = sourceOperand;
 			this.indexOperand = indexOperand;
 		}
-
+		
 		public int opcode() {
-			return OPCODE_forall;
+			return OPCODE_quantify;
 		}
-
+		
 		@Override
 		public void registers(java.util.Set<Integer> registers) {
 			registers.add(indexOperand);
@@ -2238,21 +2217,21 @@ public abstract class Codes {
 				nIndexOperand = nIndexOperand != null ? nIndexOperand
 						: indexOperand;
 
-				return ForAll(type, nSourceOperand, nIndexOperand,
+				return Quantify(type, nSourceOperand, nIndexOperand,
 						nModifiedOperands, bytecodes);
 			} else {
 				return this;
 			}
 		}
-
+		
 		public int hashCode() {
 			return super.hashCode() + sourceOperand + indexOperand
 					+ Arrays.hashCode(modifiedOperands);
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof ForAll) {
-				ForAll f = (ForAll) o;
+			if (o instanceof Quantify) {
+				Quantify f = (Quantify) o;
 				return type.equals(f.type)
 						&& sourceOperand == f.sourceOperand
 						&& indexOperand == f.indexOperand
@@ -2262,63 +2241,6 @@ public abstract class Codes {
 			return false;
 		}
 
-		public String toString() {
-			return "forall %" + indexOperand + " in %" + sourceOperand + " "
-					+ arrayToString(modifiedOperands) + " : " + type;
-		}
-	}
-
-	public static final class Quantify extends ForAll {
-		
-		private Quantify(Type.EffectiveList type, int sourceOperand,
-				int indexOperand, int[] modifies, Collection<Code> bytecodes) {
-			super(type,sourceOperand,indexOperand, modifies, bytecodes);
-		}
-		
-		private Quantify(Type.EffectiveList type, int sourceOperand,
-				int indexOperand, int[] modifies, Code... bytecodes) {
-			super(type,sourceOperand,indexOperand, modifies, bytecodes);
-		}
-		
-		public int opcode() {
-			return OPCODE_quantify;
-		}
-		
-		@Override
-		public Code.Compound remap(Map<Integer, Integer> binding) {
-			int[] nModifiedOperands = remapOperands(binding, modifiedOperands);
-			ArrayList<Code> bytecodes = this.bytecodes;
-
-			for (int i = 0; i != bytecodes.size(); ++i) {
-				Code code = bytecodes.get(i);
-				Code nCode = code.remap(binding);
-				if (code != nCode) {
-					if (bytecodes == this.bytecodes) {
-						bytecodes = new ArrayList<Code>(bytecodes);
-					}
-					bytecodes.set(i, nCode);
-				}
-			}
-			Integer nIndexOperand = binding.get(indexOperand);
-			Integer nSourceOperand = binding.get(sourceOperand);
-			if (nSourceOperand != null || nIndexOperand != null
-					|| nModifiedOperands != modifiedOperands || bytecodes != this.bytecodes) {
-				nSourceOperand = nSourceOperand != null ? nSourceOperand
-						: sourceOperand;
-				nIndexOperand = nIndexOperand != null ? nIndexOperand
-						: indexOperand;
-
-				return Quantify(type, nSourceOperand, nIndexOperand,
-						nModifiedOperands, bytecodes);
-			} else {
-				return this;
-			}
-		}
-		
-		public boolean equals(Object o) {
-			return super.equals(o) && o instanceof Quantify;
-		}
-		
 		public String toString() {
 			return "quantify %" + indexOperand + " in %" + sourceOperand + " "
 					+ arrayToString(modifiedOperands) + " : " + type;

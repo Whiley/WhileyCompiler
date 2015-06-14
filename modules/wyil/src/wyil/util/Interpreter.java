@@ -152,7 +152,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Constant[] frame, Context context) {
+	private Object execute(Constant[] frame, Context context) {		
 		Code bytecode = context.block.get(context.pc);
 		// FIXME: turn this into a switch statement?
 		if (bytecode instanceof Codes.Invariant) {
@@ -175,8 +175,6 @@ public class Interpreter {
 			return execute((Codes.Fail) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.FieldLoad) {
 			return execute((Codes.FieldLoad) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.ForAll) {
-			return execute((Codes.ForAll) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Goto) {
 			return execute((Codes.Goto) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.If) {
@@ -200,6 +198,8 @@ public class Interpreter {
 			return execute((Codes.LengthOf) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.ListOperator) {
 			return execute((Codes.ListOperator) bytecode, frame, context);
+		} else if (bytecode instanceof Codes.Quantify) {
+			return execute((Codes.Quantify) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Loop) {
 			return execute((Codes.Loop) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Move) {
@@ -214,8 +214,6 @@ public class Interpreter {
 			return execute((Codes.NewTuple) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Nop) {
 			return execute((Codes.Nop) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Quantify) {
-			return execute((Codes.Quantify) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Return) {
 			return execute((Codes.Return) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.SubList) {
@@ -688,7 +686,7 @@ public class Interpreter {
 		return context.pc.next();
 	}
 
-	private Object execute(Codes.ForAll bytecode, Constant[] frame,
+	private Object execute(Codes.Quantify bytecode, Constant[] frame,
 			Context context) {
 		Constant operand = frame[bytecode.sourceOperand];
 		checkType(operand, context, Constant.List.class);		
@@ -708,7 +706,7 @@ public class Interpreter {
 
 		return context.pc.next();
 	}
-
+	
 	private Object execute(Codes.Goto bytecode, Constant[] frame,
 			Context context) {
 		return context.getLabel(bytecode.target);

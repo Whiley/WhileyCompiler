@@ -1,20 +1,22 @@
-
-
 function pred([int] xs) -> (bool b)
 ensures b ==> no { z in xs | z < 0 }:
     //
     [int] zs = []
-    for y in xs:
-        if y < 0:
-            zs = zs ++ [y]
+    int i = 0
+    while i < |xs|:
+        if xs[i] < 0:
+            zs = zs ++ [xs[i]]
+        i = i + 1
     return |zs| == 0
 
 function countOver([int] xs, int y) -> int
 requires pred(xs):
     [int] tmp = []
-    for x in xs:
-        if x > y:
-            tmp = tmp ++ [x]
+    int i = 0
+    while i < |xs|:
+        if xs[i] > y:
+            tmp = tmp ++ [xs[i]]
+        i = i + 1
     return |tmp|
 
 public export method test() -> void:
