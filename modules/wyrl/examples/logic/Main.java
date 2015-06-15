@@ -6,7 +6,6 @@ import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.*;
 
 public final class Main {
-    public enum RewriteMode { SIMPLE, STATIC_DISPATCH };
 
     private Main() {} // avoid instantiation of this class
 
