@@ -1,0 +1,168 @@
+// This defines the basic rules for reducing logical expressions.
+
+// ====================================================================
+// Variables
+// ====================================================================
+
+term Var(string)
+
+// ====================================================================
+// Bool
+// ====================================================================
+
+term True
+term False
+define Bool as True | False
+
+// ====================================================================
+// Uninterpreted Functions
+// ====================================================================
+
+// An uninterpreted function is an expression representing an external
+// function call.  The only interpretation provided is that these are
+// mathematical functions which always return the same result given
+// the same input.
+term Fn[string,BExpr...]
+
+// ====================================================================
+// Not
+// ====================================================================
+
+term Not(BExpr)
+
+reduce Not(Bool b):
+    => False, if b == True
+    => True
+
+reduce Not(Not(* x)):
+    => x
+
+reduce Not(And{BExpr... xs}):
+    => let ys = { Not(x) | x in xs }
+       in Or(ys)
+
+reduce Not(Or{BExpr... xs}):
+    => let ys = { Not(x) | x in xs }
+       in And(ys)
+
+// ====================================================================
+// And
+// ====================================================================
+
+term And{BExpr...}
+
+reduce And{BExpr x}:
+    => x
+
+reduce And{Bool b, BExpr... xs}:
+    => False, if b == False
+    => True, if |xs| == 0
+    => And (xs)
+
+reduce And{And{BExpr... xs}, BExpr... ys}:
+    => And (xs ++ ys)
+
+reduce And{Not(BExpr x), BExpr y, BExpr... ys}:
+    => False, if x == y
+
+reduce And{Or{BExpr... xs}, BExpr... ys}:
+    => let ys = { And(x ++ ys) | x in xs }
+       in Or(ys)
+
+// ====================================================================
+// Or
+// ====================================================================
+
+term Or{BExpr...}
+
+reduce Or{BExpr x}:
+    => x
+
+reduce Or{Bool b, BExpr... xs}:
+    => True, if b == True
+    => False, if |xs| == 0
+    => Or (xs)
+
+reduce Or{Not(BExpr x), BExpr y, BExpr... ys}:
+    => True, if x == y
+
+reduce Or{Or{BExpr... xs}, BExpr... ys}:
+    => Or (xs ++ ys)
+
+// ====================================================================
+// ForAll
+// ====================================================================
+
+term ForAll[{Var...}, BExpr]
+
+// Quantifying over a constant, or an empty set of variables is
+// redundant (in which case we can simply drop the quantifier).
+reduce ForAll[{Var...qs}, BExpr be]:
+       => be, if be is Bool || |qs| == 0
+
+// Negate a universal quantifier to produce an existential quantifier
+reduce Not(ForAll[{Var...} vars, BExpr be]):
+       => Exists[vars, Not(be)]
+
+// Merge nested universal quantifiers
+reduce ForAll[{Var...} xs, ForAll[{Var...} ys, BExpr e]]:
+       => ForAll[xs++ys,e]
+
+// Push quantifier inwards?
+
+// Attempt to instantiate quantifier with a given expression
+infer And{
+    // The ground expression we're instantiating over
+    GExpr e1,
+    // The Quantifier we're attempting to instantiate
+    ForAll[{Var, Var...} vs,BExpr e2] qf,
+    // The rest
+    BExpr... es}:
+    => let instantiations = instantiate[e1,vs,e2]
+       in And({e1,qf} ++ es ++ instantiations), if |instantiations| > 0
+
+// ====================================================================
+// Exists
+// ====================================================================
+
+term Exists[{Var...}, BExpr]
+
+// Quantifying over a constant, or an empty set of variables is
+// redundant (in which case we can simply drop the quantifier).
+reduce Exists[{Var...qs}, BExpr be]:
+       => be, if be is Bool || |qs| == 0
+
+// Negate an existential quantifier to produce a universal quantifier.
+reduce Not(Exists[{Var...} vars, BExpr be]):
+       => ForAll[vars, Not(be)]
+
+// Merge consequtive existentials together
+reduce Exists[{Var...} xs, Exists[{Var...} ys, BExpr e]]:
+       => Exists[xs++ys,e]
+
+// Move extenstentials outwards (?)
+reduce And{Exists[{Var...} vs, BExpr e], BExpr... es}:
+       => Exists[vs, And(e++es)]
+
+// ====================================================================
+// Instantiate function
+// ====================================================================
+
+// Attempt to bind a quantified expression (right) with a concrete 
+// expression (left), generating one or more candidate bindings over one 
+// or more quantified variables. These bindings are then used to 
+// instantiate the quantified expression. 
+function instantiate[BExpr, {Var...}, BExpr] => {BExpr}
+
+// ====================================================================
+// Expressions & Values
+// ====================================================================
+
+define Value as Bool
+define GExpr as Bool | Fn | Var
+define BExpr as Bool | Not | And | Or | Var | Fn | ForAll | Exists
+
+
+
+
+
