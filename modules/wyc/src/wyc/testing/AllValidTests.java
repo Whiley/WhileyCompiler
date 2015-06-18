@@ -121,7 +121,7 @@ public class AllValidTests {
 		} else if (r == WycMain.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
 		}
-		
+
 		// Execute the compile WyIL file
 		TestUtils.execWyil(WHILEY_SRC_DIR, Trie.fromString(testName));
 	}
@@ -321,16 +321,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void Coercion_Valid_4() throws IOException {
-		runTest("Coercion_Valid_4");
-	}
-
-	@Test
-	public void Coercion_Valid_6() throws IOException {
-		runTest("Coercion_Valid_6");
-	}
-
-	@Test
 	public void Coercion_Valid_7() throws IOException {
 		runTest("Coercion_Valid_7");
 	}
@@ -391,16 +381,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ConstrainedDictionary_Valid_1() throws IOException {
-		runTest("ConstrainedDictionary_Valid_1");
-	}
-
-	@Test
-	public void ConstrainedDictionary_Valid_2() throws IOException {
-		runTest("ConstrainedDictionary_Valid_2");
-	}
-
-	@Test
 	public void ConstrainedInt_Valid_1() throws IOException {
 		runTest("ConstrainedInt_Valid_1");
 	}
@@ -418,11 +398,6 @@ public class AllValidTests {
 	@Test
 	public void ConstrainedInt_Valid_13() throws IOException {
 		runTest("ConstrainedInt_Valid_13");
-	}
-
-	@Test
-	public void ConstrainedInt_Valid_14() throws IOException {
-		runTest("ConstrainedInt_Valid_14");
 	}
 
 	@Test
@@ -581,11 +556,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ConstrainedList_Valid_24() throws IOException {
-		runTest("ConstrainedList_Valid_24");
-	}
-
-	@Test
 	public void ConstrainedList_Valid_25() throws IOException {
 		runTest("ConstrainedList_Valid_25");
 	}
@@ -696,51 +666,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ConstrainedSet_Valid_1() throws IOException {
-		runTest("ConstrainedSet_Valid_1");
-	}
-
-	@Test
-	public void ConstrainedSet_Valid_2() throws IOException {
-		runTest("ConstrainedSet_Valid_2");
-	}
-
-	@Test
-	public void ConstrainedSet_Valid_3() throws IOException {
-		runTest("ConstrainedSet_Valid_3");
-	}
-
-	@Test
-	public void ConstrainedSet_Valid_4() throws IOException {
-		runTest("ConstrainedSet_Valid_4");
-	}
-
-	@Test
-	public void ConstrainedSet_Valid_5() throws IOException {
-		runTest("ConstrainedSet_Valid_5");
-	}
-
-	@Test
-	public void ConstrainedSet_Valid_6() throws IOException {
-		runTest("ConstrainedSet_Valid_6");
-	}
-
-	@Test
-	public void ConstrainedSet_Valid_7() throws IOException {
-		runTest("ConstrainedSet_Valid_7");
-	}
-
-	@Test
-	public void ConstrainedSet_Valid_8() throws IOException {
-		runTest("ConstrainedSet_Valid_8");
-	}
-
-	@Test
-	public void ConstrainedSet_Valid_9() throws IOException {
-		runTest("ConstrainedSet_Valid_9");
-	}
-
-	@Test
 	public void ConstrainedUnion_Valid_1() throws IOException {
 		runTest("ConstrainedUnion_Valid_1");
 	}
@@ -788,86 +713,6 @@ public class AllValidTests {
 	@Test
 	public void Define_Valid_4() throws IOException {
 		runTest("Define_Valid_4");
-	}
-
-	@Test
-	public void Dictionary_Valid_1() throws IOException {
-		runTest("Dictionary_Valid_1");
-	}
-
-	@Test
-	public void Dictionary_Valid_10() throws IOException {
-		runTest("Dictionary_Valid_10");
-	}
-
-	@Test
-	public void Dictionary_Valid_11() throws IOException {
-		runTest("Dictionary_Valid_11");
-	}
-
-	@Test
-	public void Dictionary_Valid_12() throws IOException {
-		runTest("Dictionary_Valid_12");
-	}
-
-	@Test
-	public void Dictionary_Valid_13() throws IOException {
-		runTest("Dictionary_Valid_13");
-	}
-
-	@Test
-	public void Dictionary_Valid_14() throws IOException {
-		runTest("Dictionary_Valid_14");
-	}
-
-	@Test
-	public void Dictionary_Valid_15() throws IOException {
-		runTest("Dictionary_Valid_15");
-	}
-
-	@Test
-	public void Dictionary_Valid_16() throws IOException {
-		runTest("Dictionary_Valid_16");
-	}
-
-	@Test
-	public void Dictionary_Valid_2() throws IOException {
-		runTest("Dictionary_Valid_2");
-	}
-
-	@Test
-	public void Dictionary_Valid_3() throws IOException {
-		runTest("Dictionary_Valid_3");
-	}
-
-	@Test
-	public void Dictionary_Valid_4() throws IOException {
-		runTest("Dictionary_Valid_4");
-	}
-
-	@Test
-	public void Dictionary_Valid_5() throws IOException {
-		runTest("Dictionary_Valid_5");
-	}
-
-	@Test
-	public void Dictionary_Valid_6() throws IOException {
-		runTest("Dictionary_Valid_6");
-	}
-
-	@Test
-	public void Dictionary_Valid_7() throws IOException {
-		runTest("Dictionary_Valid_7");
-	}
-
-	@Test
-	public void Dictionary_Valid_8() throws IOException {
-		runTest("Dictionary_Valid_8");
-	}
-
-	@Test
-	public void Dictionary_Valid_9() throws IOException {
-		runTest("Dictionary_Valid_9");
 	}
 
 	@Test
@@ -944,107 +789,7 @@ public class AllValidTests {
 	public void Ensures_Valid_8() throws IOException {
 		runTest("Ensures_Valid_8");
 	}
-
-	@Test
-	public void For_Valid_1() throws IOException {
-		runTest("For_Valid_1");
-	}
-
-	@Test
-	public void For_Valid_10() throws IOException {
-		runTest("For_Valid_10");
-	}
-
-	@Test
-	public void For_Valid_11() throws IOException {
-		runTest("For_Valid_11");
-	}
-
-	@Test
-	public void For_Valid_12() throws IOException {
-		runTest("For_Valid_12");
-	}
-
-	@Test
-	public void For_Valid_13() throws IOException {
-		runTest("For_Valid_13");
-	}
-
-	@Test
-	public void For_Valid_14() throws IOException {
-		runTest("For_Valid_14");
-	}
-
-	@Test
-	public void For_Valid_15() throws IOException {
-		runTest("For_Valid_15");
-	}
-
-	@Test
-	public void For_Valid_16() throws IOException {
-		runTest("For_Valid_16");
-	}
-
-	@Test
-	public void For_Valid_17() throws IOException {
-		runTest("For_Valid_17");
-	}
-
-	@Test
-	public void For_Valid_18() throws IOException {
-		runTest("For_Valid_18");
-	}
-
-	@Test
-	public void For_Valid_19() throws IOException {
-		runTest("For_Valid_19");
-	}
-
-	@Test
-	public void For_Valid_20() throws IOException {
-		runTest("For_Valid_20");
-	}
-
-	@Test
-	public void For_Valid_2() throws IOException {
-		runTest("For_Valid_2");
-	}
-
-	@Test
-	public void For_Valid_3() throws IOException {
-		runTest("For_Valid_3");
-	}
-
-	@Test
-	public void For_Valid_4() throws IOException {
-		runTest("For_Valid_4");
-	}
-
-	@Ignore("Issue ???") @Test
-	public void For_Valid_5() throws IOException {
-		runTest("For_Valid_5");
-	}
-
-	@Ignore("Issue ???") @Test
-	public void For_Valid_6() throws IOException {
-		runTest("For_Valid_6");
-	}
-
-	@Test
-	public void For_Valid_7() throws IOException {
-		runTest("For_Valid_7");
-	}
-
-	@Test
-	public void For_Valid_8() throws IOException {
-		runTest("For_Valid_8");
-	}
-
-	@Test
-	public void For_Valid_9() throws IOException {
-		runTest("For_Valid_9");
-	}
-
+	
 	@Test
 	public void FunctionRef_Valid_1() throws IOException {
 		runTest("FunctionRef_Valid_1");
@@ -1096,11 +841,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void Function_Valid_10() throws IOException {
-		runTest("Function_Valid_10");
-	}
-
-	@Test
 	public void Function_Valid_12() throws IOException {
 		runTest("Function_Valid_12");
 	}
@@ -1128,11 +868,6 @@ public class AllValidTests {
 	@Test
 	public void Function_Valid_18() throws IOException {
 		runTest("Function_Valid_18");
-	}
-
-	@Test
-	public void Function_Valid_19() throws IOException {
-		runTest("Function_Valid_19");
 	}
 
 	@Test
@@ -1357,16 +1092,6 @@ public class AllValidTests {
 	@Test
 	public void LengthOf_Valid_1() throws IOException {
 		runTest("LengthOf_Valid_1");
-	}
-
-	@Test
-	public void LengthOf_Valid_2() throws IOException {
-		runTest("LengthOf_Valid_2");
-	}
-
-	@Test
-	public void LengthOf_Valid_3() throws IOException {
-		runTest("LengthOf_Valid_3");
 	}
 
 	@Test
@@ -2109,11 +1834,6 @@ public class AllValidTests {
 		runTest("RecursiveType_Valid_28");
 	}
 
-	@Test
-	public void RecursiveType_Valid_29() throws IOException {
-		runTest("RecursiveType_Valid_29");
-	}
-
 	@Ignore("#406") @Test
 	public void RecursiveType_Valid_3() throws IOException {
 		runTest("RecursiveType_Valid_3");
@@ -2122,11 +1842,6 @@ public class AllValidTests {
 	@Test
 	public void RecursiveType_Valid_30() throws IOException {
 		runTest("RecursiveType_Valid_30");
-	}
-
-	@Test
-	public void RecursiveType_Valid_31() throws IOException {
-		runTest("RecursiveType_Valid_31");
 	}
 
 	@Ignore("#406") @Test
@@ -2197,231 +1912,6 @@ public class AllValidTests {
 	@Test
 	public void Resolution_Valid_1() throws IOException {
 		runTest("Resolution_Valid_1");
-	}
-
-	@Test
-	public void SetAssign_Valid_1() throws IOException {
-		runTest("SetAssign_Valid_1");
-	}
-
-	@Test
-	public void SetAssign_Valid_2() throws IOException {
-		runTest("SetAssign_Valid_2");
-	}
-
-	@Test
-	public void SetAssign_Valid_3() throws IOException {
-		runTest("SetAssign_Valid_3");
-	}
-
-	@Test
-	public void SetDefine_Valid_1() throws IOException {
-		runTest("SetDefine_Valid_1");
-	}
-
-	@Test
-	public void SetDefine_Valid_2() throws IOException {
-		runTest("SetDefine_Valid_2");
-	}
-
-	@Test
-	public void SetDefine_Valid_3() throws IOException {
-		runTest("SetDefine_Valid_3");
-	}
-
-	@Test
-	public void SetDifference_Valid_1() throws IOException {
-		runTest("SetDifference_Valid_1");
-	}
-
-	@Test
-	public void SetElemOf_Valid_1() throws IOException {
-		runTest("SetElemOf_Valid_1");
-	}
-
-	@Test
-	public void SetEmpty_Valid_1() throws IOException {
-		runTest("SetEmpty_Valid_1");
-	}
-
-	@Test
-	public void SetEquals_Valid_1() throws IOException {
-		runTest("SetEquals_Valid_1");
-	}
-
-	@Test
-	public void SetGenerator_Valid_1() throws IOException {
-		runTest("SetGenerator_Valid_1");
-	}
-
-	@Test
-	public void SetIntersect_Valid_1() throws IOException {
-		runTest("SetIntersect_Valid_1");
-	}
-
-	@Test
-	public void SetIntersect_Valid_2() throws IOException {
-		runTest("SetIntersect_Valid_2");
-	}
-
-	@Test
-	public void SetIntersection_Valid_1() throws IOException {
-		runTest("SetIntersection_Valid_1");
-	}
-
-	@Test
-	public void SetIntersection_Valid_2() throws IOException {
-		runTest("SetIntersection_Valid_2");
-	}
-
-	@Test
-	public void SetIntersection_Valid_3() throws IOException {
-		runTest("SetIntersection_Valid_3");
-	}
-
-	@Test
-	public void SetIntersection_Valid_4() throws IOException {
-		runTest("SetIntersection_Valid_4");
-	}
-
-	@Test
-	public void SetIntersection_Valid_5() throws IOException {
-		runTest("SetIntersection_Valid_5");
-	}
-
-	@Test
-	public void SetIntersection_Valid_6() throws IOException {
-		runTest("SetIntersection_Valid_6");
-	}
-
-	@Test
-	public void SetIntersection_Valid_7() throws IOException {
-		runTest("SetIntersection_Valid_7");
-	}
-
-	@Test
-	public void SetLength_Valid_1() throws IOException {
-		runTest("SetLength_Valid_1");
-	}
-
-	@Test
-	public void SetNull_Valid_1() throws IOException {
-		runTest("SetNull_Valid_1");
-	}
-
-	@Test
-	public void SetSubset_Valid_1() throws IOException {
-		runTest("SetSubset_Valid_1");
-	}
-
-	@Test
-	public void SetSubset_Valid_10() throws IOException {
-		runTest("SetSubset_Valid_10");
-	}
-
-	@Test
-	public void SetSubset_Valid_11() throws IOException {
-		runTest("SetSubset_Valid_11");
-	}
-
-	@Test
-	public void SetSubset_Valid_12() throws IOException {
-		runTest("SetSubset_Valid_12");
-	}
-
-	@Test
-	public void SetSubset_Valid_2() throws IOException {
-		runTest("SetSubset_Valid_2");
-	}
-
-	@Test
-	public void SetSubset_Valid_3() throws IOException {
-		runTest("SetSubset_Valid_3");
-	}
-
-	@Test
-	public void SetSubset_Valid_4() throws IOException {
-		runTest("SetSubset_Valid_4");
-	}
-
-	@Test
-	public void SetSubset_Valid_5() throws IOException {
-		runTest("SetSubset_Valid_5");
-	}
-
-	@Test
-	public void SetSubset_Valid_6() throws IOException {
-		runTest("SetSubset_Valid_6");
-	}
-
-	@Test
-	public void SetSubset_Valid_7() throws IOException {
-		runTest("SetSubset_Valid_7");
-	}
-
-	@Test
-	public void SetSubset_Valid_8() throws IOException {
-		runTest("SetSubset_Valid_8");
-	}
-
-	@Test
-	public void SetSubset_Valid_9() throws IOException {
-		runTest("SetSubset_Valid_9");
-	}
-
-	@Test
-	public void SetUnion_Valid_1() throws IOException {
-		runTest("SetUnion_Valid_1");
-	}
-
-	@Test
-	public void SetUnion_Valid_10() throws IOException {
-		runTest("SetUnion_Valid_10");
-	}
-
-	@Test
-	public void SetUnion_Valid_11() throws IOException {
-		runTest("SetUnion_Valid_11");
-	}
-
-	@Test
-	public void SetUnion_Valid_2() throws IOException {
-		runTest("SetUnion_Valid_2");
-	}
-
-	@Test
-	public void SetUnion_Valid_3() throws IOException {
-		runTest("SetUnion_Valid_3");
-	}
-
-	@Test
-	public void SetUnion_Valid_4() throws IOException {
-		runTest("SetUnion_Valid_4");
-	}
-
-	@Test
-	public void SetUnion_Valid_5() throws IOException {
-		runTest("SetUnion_Valid_5");
-	}
-
-	@Test
-	public void SetUnion_Valid_6() throws IOException {
-		runTest("SetUnion_Valid_6");
-	}
-
-	@Test
-	public void SetUnion_Valid_7() throws IOException {
-		runTest("SetUnion_Valid_7");
-	}
-
-	@Test
-	public void SetUnion_Valid_8() throws IOException {
-		runTest("SetUnion_Valid_8");
-	}
-
-	@Test
-	public void SetUnion_Valid_9() throws IOException {
-		runTest("SetUnion_Valid_9");
 	}
 
 	@Test
@@ -2675,11 +2165,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void TypeEquals_Valid_13() throws IOException {
-		runTest("TypeEquals_Valid_13");
-	}
-
-	@Test
 	public void TypeEquals_Valid_14() throws IOException {
 		runTest("TypeEquals_Valid_14");
 	}
@@ -2724,11 +2209,6 @@ public class AllValidTests {
 		runTest("TypeEquals_Valid_21");
 	}
 
-	@Test
-	public void TypeEquals_Valid_22() throws IOException {
-		runTest("TypeEquals_Valid_22");
-	}
-
 	@Ignore("Issue ???") @Test
 	public void TypeEquals_Valid_23() throws IOException {
 		runTest("TypeEquals_Valid_23");
@@ -2742,11 +2222,6 @@ public class AllValidTests {
 	@Test
 	public void TypeEquals_Valid_25() throws IOException {
 		runTest("TypeEquals_Valid_25");
-	}
-
-	@Test
-	public void TypeEquals_Valid_26() throws IOException {
-		runTest("TypeEquals_Valid_26");
 	}
 
 	@Test
@@ -2997,11 +2472,6 @@ public class AllValidTests {
 	@Test
 	public void UnionType_Valid_9() throws IOException {
 		runTest("UnionType_Valid_9");
-	}
-
-	@Ignore("Issue ???") @Test
-	public void Update_Valid_1() throws IOException {
-		runTest("Update_Valid_1");
 	}
 
 	@Test

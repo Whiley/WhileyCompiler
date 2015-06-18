@@ -7,7 +7,7 @@ constant MUL is 3
 
 constant DIV is 4
 
-type bop is {int op, int rhs, int lhs} where op in {ADD, SUB, MUL, DIV}
+type bop is {int op, int rhs, int lhs} where ADD <= op && op <= DIV
 
 function f(bop b) -> bop:
     return b

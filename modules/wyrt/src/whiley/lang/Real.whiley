@@ -39,7 +39,8 @@ public function parse(string input) -> real|null:
     //
     int r = 0
     int dps = 0
-    for i in 0..|input|:
+    int i = 0
+    while i < |input|:
         char c = input[i]
         if c == '.' && dps == 0:
             dps = 1
@@ -49,6 +50,7 @@ public function parse(string input) -> real|null:
             r = r * 10
             r = r + (int) (c - '0')
             dps = dps * 10
+        i = i + 1
     // finally, perform division
     real rr = (real) r
     if dps > 0:

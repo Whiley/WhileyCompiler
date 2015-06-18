@@ -5,7 +5,7 @@ import wyautl.core.Automaton;
 import wyautl.rw.InferenceRule;
 import wyautl.rw.ReductionRule;
 import wyautl.rw.SimpleRewriteStrategy;
-import wyautl.rw.StrategyRewriter;
+import wyautl.rw.IterativeRewriter;
 
 public class TestRunner {
 
@@ -42,13 +42,13 @@ public class TestRunner {
 		int root = parser.parse(automaton);
 		automaton.setRoot(0, root);
 
-		StrategyRewriter.Strategy<InferenceRule> inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(
+		IterativeRewriter.Strategy<InferenceRule> inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(
 				automaton, Arithmetic.inferences);
-		StrategyRewriter.Strategy<ReductionRule> reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(
+		IterativeRewriter.Strategy<ReductionRule> reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(
 				automaton, Arithmetic.reductions);
-		StrategyRewriter rw = new StrategyRewriter(automaton,
+		IterativeRewriter rw = new IterativeRewriter(automaton,
 				inferenceStrategy, reductionStrategy, Arithmetic.SCHEMA);
-		rw.apply(10000);
+		rw.apply();
 
 		boolean result = automaton.get(automaton.getRoot(0)).equals(Arithmetic.False);
 		if(result != unsat) {

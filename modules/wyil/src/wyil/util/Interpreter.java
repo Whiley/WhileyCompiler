@@ -152,7 +152,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Constant[] frame, Context context) {
+	private Object execute(Constant[] frame, Context context) {		
 		Code bytecode = context.block.get(context.pc);
 		// FIXME: turn this into a switch statement?
 		if (bytecode instanceof Codes.Invariant) {
@@ -175,8 +175,6 @@ public class Interpreter {
 			return execute((Codes.Fail) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.FieldLoad) {
 			return execute((Codes.FieldLoad) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.ForAll) {
-			return execute((Codes.ForAll) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Goto) {
 			return execute((Codes.Goto) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.If) {
@@ -200,30 +198,24 @@ public class Interpreter {
 			return execute((Codes.LengthOf) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.ListOperator) {
 			return execute((Codes.ListOperator) bytecode, frame, context);
+		} else if (bytecode instanceof Codes.Quantify) {
+			return execute((Codes.Quantify) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Loop) {
 			return execute((Codes.Loop) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Move) {
 			return execute((Codes.Move) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.NewList) {
 			return execute((Codes.NewList) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.NewMap) {
-			return execute((Codes.NewMap) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.NewObject) {
 			return execute((Codes.NewObject) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.NewRecord) {
 			return execute((Codes.NewRecord) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.NewSet) {
-			return execute((Codes.NewSet) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.NewTuple) {
 			return execute((Codes.NewTuple) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Nop) {
 			return execute((Codes.Nop) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Quantify) {
-			return execute((Codes.Quantify) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Return) {
 			return execute((Codes.Return) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.SetOperator) {
-			return execute((Codes.SetOperator) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.SubList) {
 			return execute((Codes.SubList) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Switch) {
@@ -491,10 +483,6 @@ public class Interpreter {
 			return convert(value, (Type.Record) to, context);
 		} else if (to instanceof Type.List) {
 			return convert(value, (Type.List) to, context);
-		} else if (to instanceof Type.Set) {
-			return convert(value, (Type.Set) to, context);
-		} else if (to instanceof Type.Map) {
-			return convert(value, (Type.Map) to, context);
 		} else if (to instanceof Type.Tuple) {
 			return convert(value, (Type.Tuple) to, context);
 		} else if (to instanceof Type.Union) {
@@ -573,67 +561,7 @@ public class Interpreter {
 		}
 		return Constant.V_LIST(values);
 	}
-
-	/**
-	 * Convert a value into a set type. The value must be of set type for this
-	 * to make sense.
-	 *
-	 * @param value
-	 * @param to
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Constant convert(Constant value, Type.Set to, Context context) {
-		checkType(value, context, Constant.Set.class, Constant.List.class);
-		Collection<Constant> lv_values;
-		if (value instanceof Constant.Set) {
-			Constant.Set lv = (Constant.Set) value;
-			lv_values = lv.values;
-		} else {
-			Constant.List lv = (Constant.List) value;
-			lv_values = lv.values;
-		}
-		ArrayList<Constant> values = new ArrayList<Constant>(lv_values);
-		for (int i = 0; i != values.size(); ++i) {
-			values.set(i, convert(values.get(i), to.element(), context));
-		}
-		return Constant.V_SET(values);
-	}
-
-	/**
-	 * Convert a value into a map type. The value must be of map type for this
-	 * to make sense.
-	 *
-	 * @param value
-	 * @param to
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Constant convert(Constant value, Type.Map to, Context context) {
-		checkType(value, context, Constant.Map.class, Constant.List.class);
-		HashMap<Constant, Constant> nValues = new HashMap<Constant, Constant>();
-		if (value instanceof Constant.Map) {
-			Constant.Map lv = (Constant.Map) value;
-			HashMap<Constant, Constant> lv_values = lv.values;
-			for (Map.Entry<Constant, Constant> e : lv_values.entrySet()) {
-				Constant key = convert(e.getKey(), to.key(), context);
-				Constant val = convert(e.getValue(), to.value(), context);
-				nValues.put(key, val);
-			}
-		} else {
-			Constant.List lv = (Constant.List) value;
-			ArrayList<Constant> lv_values = lv.values;
-			for (int i = 0; i != lv_values.size(); ++i) {
-				Constant key = Constant.V_INTEGER(BigInteger.valueOf(i));
-				Constant val = convert(lv_values.get(i), to.value(), context);
-				nValues.put(key, val);
-			}
-		}
-		return Constant.V_MAP(nValues);
-	}
-
+	
 	/**
 	 * Convert a value into a tuple type. The value must be of tuple type for
 	 * this to make sense.
@@ -758,23 +686,13 @@ public class Interpreter {
 		return context.pc.next();
 	}
 
-	private Object execute(Codes.ForAll bytecode, Constant[] frame,
+	private Object execute(Codes.Quantify bytecode, Constant[] frame,
 			Context context) {
 		Constant operand = frame[bytecode.sourceOperand];
-		checkType(operand, context, Constant.Set.class, Constant.Map.class,
-				Constant.List.class);
-		Collection<Constant> values;
-		if (operand instanceof Constant.Set) {
-			Constant.Set set = (Constant.Set) operand;
-			values = set.values;
-		} else if (operand instanceof Constant.Map) {
-			Constant.Map map = (Constant.Map) operand;
-			values = map.values.values();
-		} else {
-			Constant.List list = (Constant.List) operand;
-			values = list.values;
-		}
-		for (Constant value : values) {
+		checkType(operand, context, Constant.List.class);		
+		Constant.List list = (Constant.List) operand;
+		
+		for (Constant value : list.values) {
 			// Assign the index variable
 			frame[bytecode.indexOperand] = value;
 			// Execute loop body for one iteration
@@ -788,7 +706,7 @@ public class Interpreter {
 
 		return context.pc.next();
 	}
-
+	
 	private Object execute(Codes.Goto bytecode, Constant[] frame,
 			Context context) {
 		return context.getLabel(bytecode.target);
@@ -821,13 +739,7 @@ public class Interpreter {
 			break;
 		case IN:
 			result = elementOf(op1, op2, context);
-			break;
-		case SUBSET:
-			result = subset(op1, op2, true, context);
-			break;
-		case SUBSETEQ:
-			result = subset(op1, op2, false, context);
-			break;
+			break;		
 		default:
 			return deadCode(context);
 		}
@@ -841,34 +753,10 @@ public class Interpreter {
 		}
 	}
 
-	private boolean subset(Constant op1, Constant op2, boolean isStrict,
-			Context context) {
-		checkType(op1, context, Constant.Set.class);
-		checkType(op2, context, Constant.Set.class);
-		Constant.Set lhs = (Constant.Set) op1;
-		Constant.Set rhs = (Constant.Set) op2;
-		if (rhs.values.containsAll(lhs.values)) {
-			return !isStrict || !lhs.equals(rhs);
-		} else {
-			return false;
-		}
-	}
-
 	private boolean elementOf(Constant lhs, Constant rhs, Context context) {
-		checkType(rhs, context, Constant.Set.class, Constant.Map.class,
-				Constant.List.class);
-		Collection<Constant> values;
-		if (rhs instanceof Constant.Set) {
-			Constant.Set set = (Constant.Set) rhs;
-			values = set.values;
-		} else if (rhs instanceof Constant.Map) {
-			Constant.Map map = (Constant.Map) rhs;
-			values = map.values.values();
-		} else {
-			Constant.List list = (Constant.List) rhs;
-			values = list.values;
-		}
-		return values.contains(lhs);
+		checkType(rhs, context,Constant.List.class);
+		Constant.List list = (Constant.List) rhs;		
+		return list.values.contains(lhs);
 	}
 
 	private boolean lessThan(Constant lhs, Constant rhs, boolean isStrict,
@@ -939,17 +827,6 @@ public class Interpreter {
 				return isMemberOfType(obj.value, rt.element(), context);
 			}
 			return false;
-		} else if (type instanceof Type.Set) {
-			if (value instanceof Constant.Set) {
-				Constant.Set t = (Constant.Set) value;
-				Type element = ((Type.Set) type).element();
-				boolean r = true;
-				for (Constant val : t.values) {
-					r &= isMemberOfType(val, element, context);
-				}
-				return r;
-			}
-			return false;
 		} else if (type instanceof Type.List) {
 			if (value instanceof Constant.List) {
 				Constant.List t = (Constant.List) value;
@@ -957,19 +834,6 @@ public class Interpreter {
 				boolean r = true;
 				for (Constant val : t.values) {
 					r &= isMemberOfType(val, element, context);
-				}
-				return r;
-			}
-			return false;
-		} else if (type instanceof Type.Map) {
-			if (value instanceof Constant.Map) {
-				Constant.Map t = (Constant.Map) value;
-				Type key = ((Type.Map) type).key();
-				Type val = ((Type.Map) type).value();
-				boolean r = true;
-				for (Map.Entry<Constant, Constant> e : t.values.entrySet()) {
-					r &= isMemberOfType(e.getKey(), key, context);
-					r &= isMemberOfType(e.getValue(), val, context);
 				}
 				return r;
 			}
@@ -1080,25 +944,18 @@ public class Interpreter {
 		Constant operand_0 = frame[bytecode.operand(0)];
 		Constant operand_1 = frame[bytecode.operand(1)];
 		// Check we have a list and an integer index
-		checkType(operand_0, context, Constant.List.class, Constant.Map.class);
+		checkType(operand_0, context, Constant.List.class);
+		checkType(operand_1, context, Constant.Integer.class);
 		// Yes, now check that this is in bounds
-		if (operand_0 instanceof Constant.List) {
-			checkType(operand_1, context, Constant.Integer.class);
-			Constant.List list = (Constant.List) operand_0;
-			Constant.Integer index = (Constant.Integer) operand_1;
-			int i = index.value.intValue();
-			if (i < 0 || i >= list.values.size()) {
-				error("index-out-of-bounds", context);
-			}
-			// Ok, get the element at that index
-			frame[bytecode.target()] = list.values.get(index.value.intValue());
-			// Done
-		} else {
-			Constant.Map map = (Constant.Map) operand_0;
-			// Ok, get the element at that index
-			frame[bytecode.target()] = map.values.get(operand_1);
-			// Done
+		Constant.List list = (Constant.List) operand_0;
+		Constant.Integer index = (Constant.Integer) operand_1;
+		int i = index.value.intValue();
+		if (i < 0 || i >= list.values.size()) {
+			error("index-out-of-bounds", context);
 		}
+		// Ok, get the element at that index
+		frame[bytecode.target()] = list.values.get(index.value.intValue());
+		// Done		
 		return context.pc.next();
 	}
 
@@ -1242,19 +1099,9 @@ public class Interpreter {
 	private Object execute(Codes.LengthOf bytecode, Constant[] frame,
 			Context context) {
 		Constant _source = frame[bytecode.operand(0)];
-		checkType(_source, context, Constant.List.class, Constant.Map.class,
-				Constant.Set.class);
-		BigInteger length;
-		if (_source instanceof Constant.List) {
-			Constant.List list = (Constant.List) _source;
-			length = BigInteger.valueOf(list.values.size());
-		} else if (_source instanceof Constant.Map) {
-			Constant.Map list = (Constant.Map) _source;
-			length = BigInteger.valueOf(list.values.size());
-		} else {
-			Constant.Set list = (Constant.Set) _source;
-			length = BigInteger.valueOf(list.values.size());
-		}
+		checkType(_source, context, Constant.List.class);
+		Constant.List list = (Constant.List) _source;
+		BigInteger length = BigInteger.valueOf(list.values.size());		
 		frame[bytecode.target()] = Constant.V_INTEGER(length);
 		return context.pc.next();
 	}
@@ -1344,31 +1191,6 @@ public class Interpreter {
 		return context.pc.next();
 	}
 
-	/**
-	 * Execute a Map constructor bytecode instruction at a given point in the
-	 * function or method body. This constructs a new map.
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Codes.NewMap bytecode, Constant[] frame,
-			Context context) {
-		HashSet<Pair<Constant, Constant>> values = new HashSet<Pair<Constant, Constant>>();
-		int[] operands = bytecode.operands();
-		for (int i = 0; i != operands.length; i = i + 2) {
-			Constant key = frame[operands[i]];
-			Constant value = frame[operands[i + 1]];
-			values.add(new Pair<Constant, Constant>(key, value));
-		}
-		frame[bytecode.target()] = Constant.V_MAP(values);
-		return context.pc.next();
-	}
-
 	private Object execute(Codes.NewObject bytecode, Constant[] frame,
 			Context context) {
 		Constant operand = frame[bytecode.operand(0)];
@@ -1400,17 +1222,6 @@ public class Interpreter {
 			values.put(fields.get(i), (Constant) frame[operands[i]]);
 		}
 		frame[bytecode.target()] = Constant.V_RECORD(values);
-		return context.pc.next();
-	}
-
-	private Object execute(Codes.NewSet bytecode, Constant[] frame,
-			Context context) {
-		HashSet<Constant> values = new HashSet<Constant>();
-		int[] operands = bytecode.operands();
-		for (int i = 0; i != operands.length; i = i + 1) {
-			values.add(frame[operands[i]]);
-		}
-		frame[bytecode.target()] = Constant.V_SET(values);
 		return context.pc.next();
 	}
 
@@ -1472,32 +1283,6 @@ public class Interpreter {
 		} else {
 			return frame[bytecode.operand];
 		}
-	}
-
-	private Object execute(Codes.SetOperator bytecode, Constant[] frame,
-			Context context) {
-		Constant operand_0 = frame[bytecode.operand(0)];
-		Constant operand_1 = frame[bytecode.operand(1)];
-		checkType(operand_0, context, Constant.Set.class);
-		checkType(operand_1, context, Constant.Set.class);
-		Constant.Set lhs = (Constant.Set) operand_0;
-		Constant.Set rhs = (Constant.Set) operand_1;
-		Constant result;
-		switch (bytecode.kind) {
-		case UNION:
-			result = lhs.union(rhs);
-			break;
-		case INTERSECTION:
-			result = lhs.intersect(rhs);
-			break;
-		case DIFFERENCE:
-			result = lhs.difference(rhs);
-			break;
-		default:
-			return deadCode(context);
-		}
-		frame[bytecode.target()] = result;
-		return context.pc.next();
 	}
 
 	private Object execute(Codes.SubList bytecode, Constant[] frame,
@@ -1633,17 +1418,6 @@ public class Interpreter {
 				rhs = update(values.get(index), descriptor, rhs, frame, context);
 				values.set(index, rhs);
 				return Constant.V_LIST(values);
-			} else if (lval instanceof Codes.MapLVal) {
-				// List
-				Codes.MapLVal lv = (Codes.MapLVal) lval;
-				Constant key = frame[lv.keyOperand];
-				checkType(lhs, context, Constant.Map.class);
-				Constant.Map map = (Constant.Map) lhs;
-				HashMap<Constant, Constant> values = new HashMap<Constant, Constant>(
-						map.values);
-				rhs = update(values.get(key), descriptor, rhs, frame, context);
-				values.put(key, rhs);
-				return Constant.V_MAP(values);
 			} else if (lval instanceof Codes.RecordLVal) {
 				// Record
 				Codes.RecordLVal lv = (Codes.RecordLVal) lval;
@@ -1730,13 +1504,6 @@ public class Interpreter {
 				values.set(i, cleanse(values.get(i), context));
 			}
 			return Constant.V_TUPLE(values);
-		} else if (constant instanceof Constant.Set) {
-			Constant.Set ct = (Constant.Set) constant;
-			ArrayList<Constant> values = new ArrayList<Constant>(ct.values);
-			for (int i = 0; i != values.size(); ++i) {
-				values.set(i, cleanse(values.get(i), context));
-			}
-			return Constant.V_SET(values);
 		} else if (constant instanceof Constant.List) {
 			Constant.List ct = (Constant.List) constant;
 			ArrayList<Constant> values = new ArrayList<Constant>(ct.values);
@@ -1744,16 +1511,6 @@ public class Interpreter {
 				values.set(i, cleanse(values.get(i), context));
 			}
 			return Constant.V_LIST(values);
-		} else if (constant instanceof Constant.Map) {
-			Constant.Map mt = (Constant.Map) constant;
-			HashMap<Constant, Constant> values = mt.values;
-			HashMap<Constant, Constant> nValues = new HashMap<Constant, Constant>();
-			for (Map.Entry<Constant, Constant> e : values.entrySet()) {
-				Constant key = cleanse(e.getKey(), context);
-				Constant value = cleanse(e.getValue(), context);
-				nValues.put(key, value);
-			}
-			return Constant.V_MAP(nValues);
 		} else if (constant instanceof Constant.Record) {
 			Constant.Record mt = (Constant.Record) constant;
 			HashMap<String, Constant> fields = mt.values;

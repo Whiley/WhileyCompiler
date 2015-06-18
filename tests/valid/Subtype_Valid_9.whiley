@@ -1,7 +1,7 @@
 
 
-type sr4set is {int}
+type sr4list is [int]
 
 public export method test() -> void:
-    sr4set x = {1}
-    assert x == {1}
+    sr4list x = [1]
+    assert x == [1]

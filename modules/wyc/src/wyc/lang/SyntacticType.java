@@ -210,42 +210,6 @@ public interface SyntacticType extends SyntacticElement {
 	}
 
 	/**
-	 * Represents a set type, which is of the form:
-	 *
-	 * <pre>
-	 * SetType ::= '{' Type '}'
-	 * </pre>
-	 *
-	 * @return
-	 */
-	public static final class Set extends SyntacticElement.Impl implements NonUnion {
-		public final SyntacticType element;
-		public Set(SyntacticType element, Attribute... attributes) {
-			super(attributes);
-			this.element = element;
-		}
-	}
-
-	/**
-	 * Represents a map type, which is of the form:
-	 *
-	 * <pre>
-	 * MapType ::= '{' Type "=>" Type '}'
-	 * </pre>
-	 *
-	 * @return
-	 */
-	public static final class Map extends SyntacticElement.Impl implements NonUnion {
-		public final SyntacticType key;
-		public final SyntacticType value;
-		public Map(SyntacticType key,SyntacticType value, Attribute... attributes) {
-			super(attributes);
-			this.key=key;
-			this.value=value;
-		}
-	}
-
-	/**
 	 * Parse a negation type, which is of the form:
 	 *
 	 * <pre>

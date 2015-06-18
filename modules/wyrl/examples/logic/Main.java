@@ -6,7 +6,6 @@ import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.*;
 
 public final class Main {
-    public enum RewriteMode { SIMPLE, STATIC_DISPATCH };
 
     private Main() {} // avoid instantiation of this class
 
@@ -15,7 +14,6 @@ public final class Main {
 	    new BufferedReader(new InputStreamReader(System.in));
 
 	try {
-	    RewriteMode rwMode = RewriteMode.STATIC_DISPATCH;
 	    System.out.println("Welcome!\n");
 	    while(true) {
 		System.out.print("> ");
@@ -26,14 +24,8 @@ public final class Main {
 		    printHelp();
 		} else if(text.equals("exit")) {
 		    System.exit(0);
-		} else if(text.equals("rw-simple")) {
-		    rwMode = RewriteMode.SIMPLE;
-		    System.out.println("Rewrite mode: simple");
-		} else if(text.equals("rw-static-dispatch")) {
-		    System.out.println("Rewrite mode: static-dispatch");
-		    rwMode = RewriteMode.STATIC_DISPATCH;
 		} else {
-		    reduce(text,rwMode);
+		    reduce(text);
 		}
 	    }
 	} catch(IOException e) {
@@ -41,7 +33,7 @@ public final class Main {
 	}
     }
 
-    private static void reduce(String text, RewriteMode rwMode) {
+    private static void reduce(String text) {
 		try {
 			Parser parser = new Parser(text);
 			Automaton automaton = new Automaton();
@@ -54,30 +46,12 @@ public final class Main {
 			writer.write(automaton);
 			writer.flush();
 
-			StrategyRewriter.Strategy<InferenceRule> inferenceStrategy;
-			StrategyRewriter.Strategy<ReductionRule> reductionStrategy;
-
-			switch (rwMode) {
-			case SIMPLE:
-				inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(
-						automaton, Logic.inferences);
-				reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(
+			IterativeRewriter.Strategy<InferenceRule> inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(automaton, Logic.inferences);
+			IterativeRewriter.Strategy<ReductionRule> reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(
 						automaton, Logic.reductions);
-				break;
-			case STATIC_DISPATCH:
-				inferenceStrategy = new StaticDispatchRewriteStrategy<InferenceRule>(
-						automaton, Logic.inferences,Logic.SCHEMA);
-				reductionStrategy = new StaticDispatchRewriteStrategy<ReductionRule>(
-						automaton, Logic.reductions,Logic.SCHEMA);
-				break;
-			default:
-				// DEAD-CODE
-				inferenceStrategy = null;
-				reductionStrategy = null;
-			}
-			StrategyRewriter rw = new StrategyRewriter(automaton,
+			IterativeRewriter rw = new IterativeRewriter(automaton,
 					inferenceStrategy, reductionStrategy, Logic.SCHEMA);
-			rw.apply(10000);
+			rw.apply();
 			System.out.println("\n\n=> (" + rw.getStats() + ")\n");
 			writer.write(automaton);
 			writer.flush();

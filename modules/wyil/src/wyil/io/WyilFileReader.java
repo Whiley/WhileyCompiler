@@ -205,17 +205,7 @@ public final class WyilFileReader {
 				}
 				constant = Constant.V_LIST(values);
 				break;
-			}
-			case WyilFileWriter.CONSTANT_Set: {
-				int len = input.read_uv();
-				ArrayList<Constant> values = new ArrayList<Constant>();
-				for (int j = 0; j != len; ++j) {
-					int index = input.read_uv();
-					values.add(myConstantPool[index]);
-				}
-				constant = Constant.V_SET(values);
-				break;
-			}
+			}			
 			case WyilFileWriter.CONSTANT_Tuple: {
 				int len = input.read_uv();
 				ArrayList<Constant> values = new ArrayList<Constant>();
@@ -224,19 +214,6 @@ public final class WyilFileReader {
 					values.add(myConstantPool[index]);
 				}
 				constant = Constant.V_TUPLE(values);
-				break;
-			}
-			case WyilFileWriter.CONSTANT_Map: {
-				int len = input.read_uv();
-				HashSet<Pair<Constant, Constant>> values = new HashSet<Pair<Constant, Constant>>();
-				for (int j = 0; j != len; ++j) {
-					int keyIndex = input.read_uv();
-					int valIndex = input.read_uv();
-					Constant key = myConstantPool[keyIndex];
-					Constant val = myConstantPool[valIndex];
-					values.add(new Pair<Constant, Constant>(key, val));
-				}
-				constant = Constant.V_MAP(values);
 				break;
 			}
 			case WyilFileWriter.CONSTANT_Record: {
@@ -529,10 +506,6 @@ public final class WyilFileReader {
 			Codes.Quantify l = (Codes.Quantify) compound;
 			return Codes.Quantify(l.type, l.sourceOperand, l.indexOperand,
 					l.modifiedOperands, bytecodes);
-		} else if(compound instanceof Codes.ForAll) {
-			Codes.ForAll l = (Codes.ForAll) compound;
-			return Codes.ForAll(l.type, l.sourceOperand, l.indexOperand,
-					l.modifiedOperands, bytecodes);
 		} else if(compound instanceof Codes.Loop) {
 			Codes.Loop l = (Codes.Loop) compound;
 			return Codes.Loop(l.modifiedOperands, bytecodes);
@@ -749,10 +722,10 @@ public final class WyilFileReader {
 			return Codes.NewObject((Type.Reference) type, target, operand);
 		}
 		case Code.OPCODE_lengthof: {
-			if (!(type instanceof Type.EffectiveCollection)) {
+			if (!(type instanceof Type.EffectiveList)) {
 				throw new RuntimeException("expected collection type");
 			}
-			return Codes.LengthOf((Type.EffectiveCollection) type, target,
+			return Codes.LengthOf((Type.EffectiveList) type, target,
 					operand);
 		}
 		case Code.OPCODE_move:
@@ -833,10 +806,10 @@ public final class WyilFileReader {
 					leftOperand, rightOperand, kind);
 		}
 		case Code.OPCODE_indexof: {
-			if (!(type instanceof Type.EffectiveIndexible)) {
+			if (!(type instanceof Type.EffectiveList)) {
 				throw new RuntimeException("expecting indexible type");
 			}
-			return Codes.IndexOf((Type.EffectiveIndexible) type, target,
+			return Codes.IndexOf((Type.EffectiveList) type, target,
 					leftOperand, rightOperand);
 		}
 		case Code.OPCODE_add:
@@ -855,23 +828,6 @@ public final class WyilFileReader {
 			return Codes.BinaryOperator(type, target, leftOperand,
 					rightOperand, kind);
 		}
-		case Code.OPCODE_union:
-		case Code.OPCODE_unionl:
-		case Code.OPCODE_unionr:
-		case Code.OPCODE_intersect:
-		case Code.OPCODE_intersectl:
-		case Code.OPCODE_intersectr:
-		case Code.OPCODE_difference:
-		case Code.OPCODE_differencel: {
-			if (!(type instanceof Type.EffectiveSet)) {
-				throw new RuntimeException("expecting set type");
-			}
-			Codes.SetOperatorKind kind = Codes.SetOperatorKind.values()[opcode
-					- Code.OPCODE_union];
-			return Codes.SetOperator((Type.EffectiveSet) type, target,
-					leftOperand, rightOperand, kind);
-		}
-
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
@@ -899,21 +855,16 @@ public final class WyilFileReader {
 		switch (opcode) {
 		case Code.OPCODE_quantify:
 		case Code.OPCODE_forall: {
-			if (!(type instanceof Type.EffectiveCollection)) {
+			if (!(type instanceof Type.EffectiveList)) {
 				throw new RuntimeException("expected collection type");
 			}
 			int count = readRest(wideRest);
 			int indexOperand = operands[0];
 			int sourceOperand = operands[1];
 			operands = Arrays.copyOfRange(operands, 2, operands.length);
-			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);
-			if (opcode == Code.OPCODE_forall) {
-				return Codes.ForAll((Type.EffectiveCollection) type,
-						sourceOperand, indexOperand, operands, bytecodes);
-			} else {
-				return Codes.Quantify((Type.EffectiveCollection) type,
-						sourceOperand, indexOperand, operands, bytecodes);
-			}
+			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);			
+			return Codes.Quantify((Type.EffectiveList) type,
+					sourceOperand, indexOperand, operands, bytecodes);
 		}
 		case Code.OPCODE_indirectinvokefnv:
 		case Code.OPCODE_indirectinvokemdv: {
@@ -985,12 +936,6 @@ public final class WyilFileReader {
 			return Codes.Lambda((Type.FunctionOrMethod) type, target, operands,
 					nid);
 		}
-		case Code.OPCODE_newmap: {
-			if (!(type instanceof Type.Map)) {
-				throw new RuntimeException("expected map type");
-			}
-			return Codes.NewMap((Type.Map) type, target, operands);
-		}
 		case Code.OPCODE_newrecord: {
 			if (!(type instanceof Type.Record)) {
 				throw new RuntimeException("expected record type");
@@ -1002,13 +947,7 @@ public final class WyilFileReader {
 				throw new RuntimeException("expected list type");
 			}
 			return Codes.NewList((Type.List) type, target, operands);
-		}
-		case Code.OPCODE_newset: {
-			if (!(type instanceof Type.Set)) {
-				throw new RuntimeException("expected set type");
-			}
-			return Codes.NewSet((Type.Set) type, target, operands);
-		}
+		}	
 		case Code.OPCODE_newtuple: {
 			if (!(type instanceof Type.Tuple)) {
 				throw new RuntimeException("expected tuple type");

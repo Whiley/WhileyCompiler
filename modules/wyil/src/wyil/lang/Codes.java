@@ -209,7 +209,7 @@ public abstract class Codes {
 		return new Not(target, operand);
 	}
 
-	public static LengthOf LengthOf(Type.EffectiveCollection type, int target,
+	public static LengthOf LengthOf(Type.EffectiveList type, int target,
 			int operand) {
 		return new LengthOf(type, target, operand);
 	}
@@ -243,7 +243,7 @@ public abstract class Codes {
 	 *            --- list type.
 	 * @return
 	 */
-	public static IndexOf IndexOf(Type.EffectiveIndexible type, int target,
+	public static IndexOf IndexOf(Type.EffectiveList type, int target,
 			int leftOperand, int rightOperand) {
 		return new IndexOf(type, target, leftOperand, rightOperand);
 	}
@@ -254,52 +254,6 @@ public abstract class Codes {
 
 	public static Loop Loop(int[] operands, Code... bytecodes) {
 		return new Loop(operands,bytecodes);
-	}
-
-	public static ForAll ForAll(Type.EffectiveCollection type,
-			int sourceOperand, int indexOperand,
-			int[] modifiedOperands, Collection<Code> bytecodes) {
-		return new ForAll(type, sourceOperand, indexOperand,
-				modifiedOperands, bytecodes);
-	}
-
-	public static ForAll ForAll(Type.EffectiveCollection type,
-			int sourceOperand, int indexOperand, int[] modifiedOperands,
-			Code... bytecodes) {
-		return new ForAll(type, sourceOperand, indexOperand,
-				modifiedOperands, bytecodes);
-	}
-
-	/**
-	 * Construct a <code>newdict</code> bytecode which constructs a new map and
-	 * puts it on the stack.
-	 *
-	 * @param type
-	 * @return
-	 */
-	public static NewMap NewMap(Type.Map type, int target,
-			Collection<Integer> operands) {
-		return new NewMap(type, target, CodeUtils.toIntArray(operands));
-	}
-
-	public static NewMap NewMap(Type.Map type, int target, int[] operands) {
-		return new NewMap(type, target, operands);
-	}
-
-	/**
-	 * Construct a <code>newset</code> bytecode which constructs a new set and
-	 * puts it on the stack.
-	 *
-	 * @param type
-	 * @return
-	 */
-	public static NewSet NewSet(Type.Set type, int target,
-			Collection<Integer> operands) {
-		return new NewSet(type, target, CodeUtils.toIntArray(operands));
-	}
-
-	public static NewSet NewSet(Type.Set type, int target, int[] operands) {
-		return new NewSet(type, target, operands);
 	}
 
 	/**
@@ -406,12 +360,6 @@ public abstract class Codes {
 
 	public static final Nop Nop = new Nop();
 
-	public static SetOperator SetOperator(Type.EffectiveSet type, int target,
-			int leftOperand, int rightOperand, SetOperatorKind operation) {
-		return new SetOperator(type, target, leftOperand, rightOperand,
-				operation);
-	}
-
 	/**
 	 * Construct a <code>switch</code> bytecode which pops a value off the
 	 * stack, and switches to a given label based on it.
@@ -445,14 +393,14 @@ public abstract class Codes {
 	}
 
 
-	public static Quantify Quantify(Type.EffectiveCollection type,
+	public static Quantify Quantify(Type.EffectiveList type,
 			int sourceOperand, int indexOperand,
 			int[] modifiedOperands, Collection<Code> bytecodes) {
 		return new Quantify(type, sourceOperand, indexOperand,
 				modifiedOperands, bytecodes);
 	}
 
-	public static Quantify Quantify(Type.EffectiveCollection type,
+	public static Quantify Quantify(Type.EffectiveList type,
 			int sourceOperand, int indexOperand, int[] modifiedOperands,
 			Code... bytecodes) {
 		return new Quantify(type, sourceOperand, indexOperand,
@@ -1195,8 +1143,6 @@ public abstract class Codes {
 	 * <code>real</code>.</li>
 	 * <li><i>element of (in).</i> The second operand must be a set whose
 	 * element type is that of the first.</li>
-	 * <li><i>subset (ss) and subset-equals (sse)</i>. Both operands must have
-	 * the given type, which additionally must be a set.</li>
 	 * </ul>
 	 * For example, the following Whiley code:
 	 *
@@ -1335,16 +1281,6 @@ public abstract class Codes {
 		IN(6) {
 			public String toString() {
 				return "in";
-			}
-		},
-		SUBSET(7) {
-			public String toString() {
-				return "sb";
-			}
-		},
-		SUBSETEQ(8) {
-			public String toString() {
-				return "sbe";
 			}
 		};
 		public int offset;
@@ -1938,8 +1874,8 @@ public abstract class Codes {
 	 *
 	 */
 	public static final class LengthOf extends
-			AbstractUnaryAssignable<Type.EffectiveCollection> {
-		private LengthOf(Type.EffectiveCollection type, int target, int operand) {
+			AbstractUnaryAssignable<Type.EffectiveList> {
+		private LengthOf(Type.EffectiveList type, int target, int operand) {
 			super(type, target, operand);
 		}
 
@@ -2030,8 +1966,8 @@ public abstract class Codes {
 	 *
 	 */
 	public static final class IndexOf extends
-			AbstractBinaryAssignable<Type.EffectiveIndexible> {
-		private IndexOf(Type.EffectiveIndexible type, int target,
+			AbstractBinaryAssignable<Type.EffectiveList> {
+		private IndexOf(Type.EffectiveList type, int target,
 				int sourceOperand, int keyOperand) {
 			super(type, target, sourceOperand, keyOperand);
 		}
@@ -2045,7 +1981,7 @@ public abstract class Codes {
 		}
 
 		public Type assignedType() {
-			return type().value();
+			return type().element();
 		}
 
 		public boolean equals(Object o) {
@@ -2224,20 +2160,13 @@ public abstract class Codes {
 		}
 	}
 
-	/**
-	 * Pops a set, list or map from the stack and iterates over every element it
-	 * contains. A register is identified to hold the current value being
-	 * iterated over.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class ForAll extends Loop {
+	public static final class Quantify extends Loop {
+		
 		public final int sourceOperand;
 		public final int indexOperand;
-		public final Type.EffectiveCollection type;
+		public final Type.EffectiveList type;
 
-		private ForAll(Type.EffectiveCollection type, int sourceOperand,
+		private Quantify(Type.EffectiveList type, int sourceOperand,
 				int indexOperand, int[] modifies, Collection<Code> bytecodes) {
 			super(modifies, bytecodes);
 			this.type = type;
@@ -2245,18 +2174,18 @@ public abstract class Codes {
 			this.indexOperand = indexOperand;
 		}
 
-		private ForAll(Type.EffectiveCollection type, int sourceOperand,
+		private Quantify(Type.EffectiveList type, int sourceOperand,
 				int indexOperand, int[] modifies, Code[] bytecodes) {
 			super(modifies, bytecodes);
 			this.type = type;
 			this.sourceOperand = sourceOperand;
 			this.indexOperand = indexOperand;
 		}
-
+		
 		public int opcode() {
-			return OPCODE_forall;
+			return OPCODE_quantify;
 		}
-
+		
 		@Override
 		public void registers(java.util.Set<Integer> registers) {
 			registers.add(indexOperand);
@@ -2288,21 +2217,21 @@ public abstract class Codes {
 				nIndexOperand = nIndexOperand != null ? nIndexOperand
 						: indexOperand;
 
-				return ForAll(type, nSourceOperand, nIndexOperand,
+				return Quantify(type, nSourceOperand, nIndexOperand,
 						nModifiedOperands, bytecodes);
 			} else {
 				return this;
 			}
 		}
-
+		
 		public int hashCode() {
 			return super.hashCode() + sourceOperand + indexOperand
 					+ Arrays.hashCode(modifiedOperands);
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof ForAll) {
-				ForAll f = (ForAll) o;
+			if (o instanceof Quantify) {
+				Quantify f = (Quantify) o;
 				return type.equals(f.type)
 						&& sourceOperand == f.sourceOperand
 						&& indexOperand == f.indexOperand
@@ -2312,63 +2241,6 @@ public abstract class Codes {
 			return false;
 		}
 
-		public String toString() {
-			return "forall %" + indexOperand + " in %" + sourceOperand + " "
-					+ arrayToString(modifiedOperands) + " : " + type;
-		}
-	}
-
-	public static final class Quantify extends ForAll {
-		
-		private Quantify(Type.EffectiveCollection type, int sourceOperand,
-				int indexOperand, int[] modifies, Collection<Code> bytecodes) {
-			super(type,sourceOperand,indexOperand, modifies, bytecodes);
-		}
-		
-		private Quantify(Type.EffectiveCollection type, int sourceOperand,
-				int indexOperand, int[] modifies, Code... bytecodes) {
-			super(type,sourceOperand,indexOperand, modifies, bytecodes);
-		}
-		
-		public int opcode() {
-			return OPCODE_quantify;
-		}
-		
-		@Override
-		public Code.Compound remap(Map<Integer, Integer> binding) {
-			int[] nModifiedOperands = remapOperands(binding, modifiedOperands);
-			ArrayList<Code> bytecodes = this.bytecodes;
-
-			for (int i = 0; i != bytecodes.size(); ++i) {
-				Code code = bytecodes.get(i);
-				Code nCode = code.remap(binding);
-				if (code != nCode) {
-					if (bytecodes == this.bytecodes) {
-						bytecodes = new ArrayList<Code>(bytecodes);
-					}
-					bytecodes.set(i, nCode);
-				}
-			}
-			Integer nIndexOperand = binding.get(indexOperand);
-			Integer nSourceOperand = binding.get(sourceOperand);
-			if (nSourceOperand != null || nIndexOperand != null
-					|| nModifiedOperands != modifiedOperands || bytecodes != this.bytecodes) {
-				nSourceOperand = nSourceOperand != null ? nSourceOperand
-						: sourceOperand;
-				nIndexOperand = nIndexOperand != null ? nIndexOperand
-						: indexOperand;
-
-				return Quantify(type, nSourceOperand, nIndexOperand,
-						nModifiedOperands, bytecodes);
-			} else {
-				return this;
-			}
-		}
-		
-		public boolean equals(Object o) {
-			return super.equals(o) && o instanceof Quantify;
-		}
-		
 		public String toString() {
 			return "quantify %" + indexOperand + " in %" + sourceOperand + " "
 					+ arrayToString(modifiedOperands) + " : " + type;
@@ -2392,21 +2264,6 @@ public abstract class Codes {
 
 		public T rawType() {
 			return type;
-		}
-	}
-
-	/**
-	 * An LVal with map type.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class MapLVal extends LVal<Type.EffectiveMap> {
-		public final int keyOperand;
-
-		public MapLVal(Type.EffectiveMap t, int keyOperand) {
-			super(t);
-			this.keyOperand = keyOperand;
 		}
 	}
 
@@ -2482,10 +2339,6 @@ public abstract class Codes {
 				Type.EffectiveList list = (Type.EffectiveList) iter;
 				iter = list.element();
 				return new ListLVal(list, operands[operandIndex++]);
-			} else if (iter instanceof Type.EffectiveMap) {
-				Type.EffectiveMap dict = (Type.EffectiveMap) iter;
-				iter = dict.value();
-				return new MapLVal(dict, operands[operandIndex++]);
 			} else if (iter instanceof Type.EffectiveRecord) {
 				Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;
 				String field = fields.get(fieldIndex++);
@@ -2637,9 +2490,6 @@ public abstract class Codes {
 				} else if (iter instanceof Type.EffectiveList) {
 					Type.EffectiveList list = (Type.EffectiveList) iter;
 					iter = list.element();
-				} else if (iter instanceof Type.EffectiveMap) {
-					Type.EffectiveMap dict = (Type.EffectiveMap) iter;
-					iter = dict.value();
 				} else if (iter instanceof Type.EffectiveRecord) {
 					Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;
 					String field = fields.get(fieldIndex++);
@@ -2674,9 +2524,6 @@ public abstract class Codes {
 				if (lv instanceof ListLVal) {
 					ListLVal l = (ListLVal) lv;
 					r = r + "[%" + l.indexOperand + "]";
-				} else if (lv instanceof MapLVal) {
-					MapLVal l = (MapLVal) lv;
-					r = r + "[%" + l.keyOperand + "]";
 				} else if (lv instanceof RecordLVal) {
 					RecordLVal l = (RecordLVal) lv;
 					r = r + "." + l.field;
@@ -2687,60 +2534,6 @@ public abstract class Codes {
 			}
 			return "update " + r + " = %" + result() + " : " + type() + " -> "
 					+ afterType;
-		}
-	}
-
-	/**
-	 * Constructs a map value from zero or more key-value pairs on the stack.
-	 * For each pair, the key must occur directly before the value on the stack.
-	 * For example, consider the following Whiley function <code>f()</code>:
-	 *
-	 * <pre>
-	 * function f() -> {int=>string}:
-	 *     return {1=>"Hello",2=>"World"}
-	 * </pre>
-	 *
-	 * This could be compiled into the following WyIL code using this bytecode:
-	 *
-	 * <pre>
-	 * function f() -> {int->string}:
-	 * body:
-	 *   const %1 = 1                   : int
-	 *   const %2 = "Hello"             : string
-	 *   const %3 = 2                   : int
-	 *   const %4 = "World"             : string
-	 *   newmap %0 = (%1, %2, %3, %4)   : {int=>string}
-	 *   return %0                      : {int=>string}
-	 * </pre>
-	 *
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class NewMap extends AbstractNaryAssignable<Type.Map> {
-
-		private NewMap(Type.Map type, int target, int[] operands) {
-			super(type, target, operands);
-		}
-
-		public int opcode() {
-			return OPCODE_newmap;
-		}
-
-		protected Code.Unit clone(int nTarget, int[] nOperands) {
-			return NewMap(type(), nTarget, nOperands);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof NewMap) {
-				return super.equals(o);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "newmap %" + target() + " = " + arrayToString(operands())
-					+ " : " + type();
 		}
 	}
 
@@ -2849,61 +2642,6 @@ public abstract class Codes {
 
 		public String toString() {
 			return "newtuple %" + target() + " = " + arrayToString(operands())
-					+ " : " + type();
-		}
-	}
-
-	/**
-	 * Constructs a new set value from the values given by zero or more operand
-	 * registers. The new set is then written into the target register. For
-	 * example, the following Whiley code:
-	 *
-	 * <pre>
-	 * function f(int x, int y, int z) -> {int}:
-	 *     return {x,y,z}
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f(int x, int y, int z) -> {int}:
-	 * body:
-	 *    assign %4 = %0             : int
-	 *    assign %5 = %1             : int
-	 *    assign %6 = %2             : int
-	 *    newset %3 = (%4, %5, %6)   : [int]
-	 *    return %3                  : [int]
-	 * </pre>
-	 *
-	 * Writes the set value given by <code>{x,y,z}</code> into register
-	 * <code>%3</code> and returns it.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class NewSet extends AbstractNaryAssignable<Type.Set> {
-
-		private NewSet(Type.Set type, int target, int[] operands) {
-			super(type, target, operands);
-		}
-
-		public int opcode() {
-			return OPCODE_newset;
-		}
-
-		protected Code.Unit clone(int nTarget, int[] nOperands) {
-			return NewSet(type(), nTarget, nOperands);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof NewSet) {
-				return super.equals(o);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "newset %" + target() + " = " + arrayToString(operands())
 					+ " : " + type();
 		}
 	}
@@ -3052,150 +2790,6 @@ public abstract class Codes {
 		}
 	}
 
-	public enum SetOperatorKind {
-		UNION(0) {
-			public String toString() {
-				return "union";
-			}
-		},		
-		INTERSECTION(1) {
-			public String toString() {
-				return "intersect";
-			}
-		},
-		DIFFERENCE(2) {
-			public String toString() {
-				return "diff";
-			}
-		};
-		public final int offset;
-
-		private SetOperatorKind(int offset) {
-			this.offset = offset;
-		}
-	}
-
-	/**
-	 * <p>
-	 * A binary operation which reads two set values from the operand registers,
-	 * performs an operation on them and writes the result to the target
-	 * register. The binary set operators are:
-	 * </p>
-	 * <ul>
-	 * <li><i>union, intersection, difference</i>. Both operands must be have
-	 * the given (effective) set type. same type is produced.</li>
-	 * <li><i>left union, left intersection, left difference</i>. The left
-	 * operand must have the given (effective) set type, whilst the right
-	 * operand has the given (effective) set element type.</li>
-	 * <li><i>right union, right intersection</i>. The right operand must have
-	 * the given (effective) set type, whilst the left operand has the given
-	 * (effective) set element type.</li>
-	 * </ul>
-	 * For example, the following Whiley code:
-	 *
-	 * <pre>
-	 * function f({int} xs, {int} ys) -> {int}:
-	 *     return xs + ys // set union
-	 *
-	 * function g(int x, {int} ys) -> {int}:
-	 *     return {x} & ys // set intersection
-	 *
-	 * function h({int} xs, int y) -> {int}:
-	 *     return xs - {y} // set difference
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f({int} xs, {int} ys) -> {int}:
-	 * body:
-	 *     union %2 = %0, %1  : {int}
-	 *     return %2          : {int}
-	 *
-	 * function g({int} xs, {int} ys) -> {int}:
-	 * body:
-	 *     rintersect %2 = %0, %1  : {int}
-	 *     return %2               : {int}
-	 *
-	 * function h({int} xs, {int} ys) -> {int}:
-	 * body:
-	 *     ldiff %2 = %0, %1    : {int}
-	 *     return %2            : {int}
-	 * </pre>
-	 *
-	 * Here, we see that the purpose of the <i>left-</i> and <i>right-</i>
-	 * operations is to avoid creating a temporary set in the common case of a
-	 * single element set on one side. This is largely an optimisation and it is
-	 * expected that the front-end of the compiler will spots such situations
-	 * and compile them down appropriately.
-	 *
-	 * @author David J. Pearce
-	 */
-	public static final class SetOperator extends
-			AbstractBinaryAssignable<Type.EffectiveSet> {
-		public final SetOperatorKind kind;
-
-		private SetOperator(Type.EffectiveSet type, int target, int leftOperand,
-				int rightOperand, SetOperatorKind operation) {
-			super(type, target, leftOperand, rightOperand);
-			if (operation == null) {
-				throw new IllegalArgumentException(
-						"SetOp operation cannot be null");
-			}
-			this.kind = operation;
-		}
-
-		@Override
-		public int opcode() {
-			return OPCODE_union + kind.offset;
-		}
-
-		protected Code.Unit clone(int nTarget, int[] nOperands) {
-			return SetOperator(type(), nTarget, nOperands[0], nOperands[1],
-					kind);
-		}
-
-		public int hashCode() {
-			return kind.hashCode() + super.hashCode();
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof SetOperator) {
-				SetOperator setop = (SetOperator) o;
-				return kind.equals(setop.kind) && super.equals(o);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return kind + " %" + target() + " = %" + operand(0) + ", %"
-					+ operand(1) + " : " + type();
-		}
-	}
-
-	public enum StringOperatorKind {
-		APPEND(0) {
-			public String toString() {
-				return "sappend";
-			}
-		},
-		LEFT_APPEND(1) {
-			public String toString() {
-				return "sappendl";
-			}
-		},
-		RIGHT_APPEND(2) {
-			public String toString() {
-				return "sappendr";
-			}
-		};
-		public final int offset;
-
-		private StringOperatorKind(int offset) {
-			this.offset = offset;
-		}
-	}
-	
 	/**
 	 * Performs a multi-way branch based on the value contained in the operand
 	 * register. A <i>dispatch table</i> is provided which maps individual

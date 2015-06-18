@@ -554,14 +554,14 @@ public interface Code {
 	public static final int OPCODE_lshr        = 9  + FMT_BINARYASSIGN;
 	public static final int OPCODE_rshr        = 10 + FMT_BINARYASSIGN;
 	public static final int OPCODE_indexof     = 11 + FMT_BINARYASSIGN;
-	public static final int OPCODE_union       = 12 + FMT_BINARYASSIGN;
-	public static final int OPCODE_unionl      = 13 + FMT_BINARYASSIGN;
-	public static final int OPCODE_unionr      = 14 + FMT_BINARYASSIGN;
-	public static final int OPCODE_intersect   = 15 + FMT_BINARYASSIGN;
-	public static final int OPCODE_intersectl  = 16 + FMT_BINARYASSIGN;
-	public static final int OPCODE_intersectr  = 17 + FMT_BINARYASSIGN;
-	public static final int OPCODE_difference  = 18 + FMT_BINARYASSIGN;
-	public static final int OPCODE_differencel = 19 + FMT_BINARYASSIGN;
+//	public static final int OPCODE_union       = 12 + FMT_BINARYASSIGN;
+//	public static final int OPCODE_unionl      = 13 + FMT_BINARYASSIGN;
+//	public static final int OPCODE_unionr      = 14 + FMT_BINARYASSIGN;
+//	public static final int OPCODE_intersect   = 15 + FMT_BINARYASSIGN;
+//	public static final int OPCODE_intersectl  = 16 + FMT_BINARYASSIGN;
+//	public static final int OPCODE_intersectr  = 17 + FMT_BINARYASSIGN;
+//	public static final int OPCODE_difference  = 18 + FMT_BINARYASSIGN;
+//	public static final int OPCODE_differencel = 19 + FMT_BINARYASSIGN;
 	public static final int OPCODE_append      = 20 + FMT_BINARYASSIGN;
 	public static final int OPCODE_appendl     = 21 + FMT_BINARYASSIGN;
 	public static final int OPCODE_appendr     = 22 + FMT_BINARYASSIGN;
@@ -582,8 +582,8 @@ public interface Code {
 	// Nary Assignables
 	// =========================================================================
 	public static final int OPCODE_newlist          = 0 + FMT_NARYASSIGN;
-	public static final int OPCODE_newset           = 1 + FMT_NARYASSIGN;
-	public static final int OPCODE_newmap           = 2 + FMT_NARYASSIGN;
+//	public static final int OPCODE_newset           = 1 + FMT_NARYASSIGN;
+//	public static final int OPCODE_newmap           = 2 + FMT_NARYASSIGN;
 	public static final int OPCODE_newtuple         = 3 + FMT_NARYASSIGN;
 	public static final int OPCODE_indirectinvokefn = 4 + FMT_NARYASSIGN;
 	public static final int OPCODE_indirectinvokemd = 5 + FMT_NARYASSIGN;

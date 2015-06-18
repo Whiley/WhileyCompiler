@@ -1,10 +1,12 @@
 function play([bool] board) -> [bool]:
     [bool] nboard = board
-    for i in 0 .. |board|:
+    int i = 0
+    while i < |board|:
         if isAlive(i, board):
             nboard[i] = true
         else:
             nboard[i] = false
+        i = i + 1
     return nboard
 
 function isAlive(int i, [bool] board) -> bool:

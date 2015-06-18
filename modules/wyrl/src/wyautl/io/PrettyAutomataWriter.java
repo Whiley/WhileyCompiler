@@ -110,6 +110,7 @@ public class PrettyAutomataWriter  {
 			header = headers[index];
 			if(header == 3) {
 				writer.print("$" + index + "<");
+				headers[index] = -1; // mark the header
 			} else if(header < 0) {
 				writer.print("$" + index);
 				return;

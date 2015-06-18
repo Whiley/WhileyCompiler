@@ -277,8 +277,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		Env oldEnv = null;
 		Env newEnv = null;
 
-		if(loop instanceof Codes.ForAll) {
-			Codes.ForAll fall = (Codes.ForAll) loop;
+		if(loop instanceof Codes.Quantify) {
+			Codes.Quantify fall = (Codes.Quantify) loop;
 			environment = new Env(environment);
 			environment.add(fall.sourceOperand);
 		} else {
@@ -294,8 +294,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 
 		environment = newEnv;
 
-		if(loop instanceof Codes.ForAll) {
-			Codes.ForAll fall = (Codes.ForAll) loop;
+		if(loop instanceof Codes.Quantify) {
+			Codes.Quantify fall = (Codes.Quantify) loop;
 			// FIXME: is the following really necessary?
 			environment.remove(fall.indexOperand);
 		}
@@ -317,12 +317,12 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 				}
 			}
 			Code code;
-			if(loop instanceof Codes.ForAll) {
-				Codes.ForAll fall = (Codes.ForAll) loop;
+			if(loop instanceof Codes.Quantify) {
+				Codes.Quantify fall = (Codes.Quantify) loop;
 
 				// FIXME: the following is surely broken ?
 
-				code = Codes.ForAll(fall.type, fall.sourceOperand,
+				code = Codes.Quantify(fall.type, fall.sourceOperand,
 						fall.indexOperand, nModifiedOperands, loop.bytecodes());
 			} else {
 

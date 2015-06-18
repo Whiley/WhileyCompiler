@@ -226,18 +226,14 @@ public class WhileyFileParser {
 	 *
 	 * MethodDeclaration ::= "method" TypePattern "->" TypePattern (FunctionMethodClause)* ':' NewLine Block
 	 *
-	 * FunctionMethodClause ::= "throws" Type | "requires" Expr | "ensures" Expr
+	 * FunctionMethodClause ::= "requires" Expr | "ensures" Expr
 	 * </pre>
 	 *
 	 * Here, the first type pattern (i.e. before "->") is referred to as the
 	 * "parameter", whilst the second is referred to as the "return". There are
-	 * three kinds of option clause:
+	 * two kinds of option clause:
 	 *
 	 * <ul>
-	 * <li><b>Throws clause</b>. This defines the exceptions which may be thrown
-	 * by this function. Multiple clauses may be given, and these are taken
-	 * together as a union. Furthermore, the convention is to specify the throws
-	 * clause before the others.</li>
 	 * <li><b>Requires clause</b>. This defines a constraint on the permissible
 	 * values of the parameters on entry to the function or method, and is often
 	 * referred to as the "precondition". This expression may refer to any
@@ -327,7 +323,7 @@ public class WhileyFileParser {
 			ret = new TypePattern.Leaf(vt, null, sourceAttr(start, index - 1));
 		}
 
-		// Parse optional throws/requires/ensures clauses
+		// Parse optional requires/ensures clauses
 
 		ArrayList<Expr> requires = new ArrayList<Expr>();
 		ArrayList<Expr> ensures = new ArrayList<Expr>();
@@ -610,8 +606,6 @@ public class WhileyFileParser {
 			return parseDoWhileStatement(wf, environment, indent);
 		case Debug:
 			return parseDebugStatement(wf, environment);
-		case For:
-			return parseForStatement(wf, environment, indent);
 		case If:
 			return parseIfStatement(wf, environment, indent);
 		case Return:
@@ -1046,74 +1040,6 @@ public class WhileyFileParser {
 		List<Stmt> blk = parseBlock(wf, environment, indent);
 		return new Stmt.While(condition, invariants, blk, sourceAttr(start,
 				end - 1));
-	}
-
-	/**
-	 * Parse a for statement, which has the form:
-	 *
-	 * <pre>
-	 * ForStmt ::= "for" VariablePattern "in" Expr ("where" Expr)* ':' NewLine Block
-	 * </pre>
-	 *
-	 * <p>
-	 * Here, the variable pattern allows variables to be declared without types.
-	 * The type of such variables is automatically inferred from the source
-	 * expression. The <code>where</code> clauses are commonly referred to as
-	 * the "loop invariant". When multiple clauses are given, these are combined
-	 * using a conjunction. The combined invariant defines a condition which
-	 * must be true on every iteration of the loop.
-	 * </p>
-	 *
-	 * @param wf
-	 *            The enclosing WhileyFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this block.
-	 * @param indent
-	 *            The indent level of this statement, which is needed to
-	 *            determine permissible indent level of child block(s).
-	 * @return
-	 */
-	private Stmt parseForStatement(WhileyFile wf, HashSet<String> environment,
-			Indent indent) {
-		// We have to clone the environment here because we want to add the
-		// index variable(s) declared as part of this for loop, but these must
-		// only be scoped for the body of the loop.
-		environment = new HashSet<String>(environment);
-
-		int start = index;
-		match(For);
-		String var = match(Identifier).text;
-		ArrayList<String> variables = new ArrayList<String>();
-		variables.add(var);
-		environment.add(var);
-		// FIXME: should be matching (untyped?) Pattern here.
-		if (tryAndMatch(true, Comma) != null) {
-			var = match(Identifier).text;
-			variables.add(var);
-			environment.add(var);
-		}
-		match(In);
-		// NOTE: expression terminated by ':'
-		Expr source = parseUnitExpression(wf, environment, true);
-		// Parse invariant and variant
-		// FIXME: should be an invariant list
-		Expr invariant = null;
-		if (tryAndMatch(true, Where) != null) {
-			// NOTE: expression terminated by ':'
-			invariant = parseLogicalExpression(wf, environment, true);
-		}
-		// match start of block
-		match(Colon);
-		int end = index;
-		matchEndLine();
-		// parse block
-		List<Stmt> blk = parseBlock(wf, environment, indent);
-		return new Stmt.ForAll(variables, source, invariant, blk, sourceAttr(
-				start, end - 1));
 	}
 
 	/**
@@ -1920,12 +1846,6 @@ public class WhileyFileParser {
 						index - 1));
 				return new Expr.BinOp(Expr.BOp.IS, lhs, rhs, sourceAttr(start,
 						index - 1));
-			case Subset:
-				bop = Expr.BOp.SUBSET;
-				break;
-			case SubsetEquals:
-				bop = Expr.BOp.SUBSETEQ;
-				break;
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
@@ -2568,7 +2488,7 @@ public class WhileyFileParser {
 		case LeftSquare:
 			return parseListExpression(wf, environment, terminated);
 		case LeftCurly:
-			return parseRecordOrSetOrMapExpression(wf, environment, terminated);
+			return parseRecordExpression(wf, environment, terminated);
 		case Shreak:
 			return parseLogicalNotExpression(wf, environment, terminated);
 		case Star:
@@ -2799,84 +2719,6 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Parse a record, set or map constructor, which are of the form:
-	 *
-	 * <pre>
-	 * RecordExpr ::= '{' Identifier ':' Expr (',' Identifier ':' Expr)* '}'
-	 * SetExpr   ::= '{' [ Expr (',' Expr)* ] '}'
-	 * MapExpr   ::= '{' Expr "=>" Expr ( ',' Expr "=>" Expr)* '}'
-	 * SetComprehension ::= '{' Expr '|'
-	 * 							Identifier "in" Expr (',' Identifier "in" Expr)*
-	 *                          [',' Expr] '}'
-	 * </pre>
-	 *
-	 * Disambiguating these three forms is relatively straightforward. We parse
-	 * the left curly brace. Then, if what follows is a right curly brace then
-	 * we have a set expression. Otherwise, we parse the first expression, then
-	 * examine what follows. If it's ':', then we have a record expression;
-	 * otherwise, we have a set expression.
-	 *
-	 * @param wf
-	 *            The enclosing WhileyFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseRecordOrSetOrMapExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
-		int start = index;
-		match(LeftCurly);
-		// Check for empty set or empty map
-		if (tryAndMatch(terminated, RightCurly) != null) {
-			// Yes. parsed empty set
-			return new Expr.Set(Collections.EMPTY_LIST, sourceAttr(start,
-					index - 1));
-		} else if (tryAndMatch(terminated, EqualsGreater) != null) {
-			// Yes. parsed empty map
-			match(RightCurly);
-			return new Expr.Map(Collections.EMPTY_LIST, sourceAttr(start,
-					index - 1));
-		}
-		// Parse first expression for disambiguation purposes
-		// NOTE: we require the following expression be a "non-tuple"
-		// expression. That is, it cannot be composed using ',' unless
-		// braces enclose the entire expression. This is because the outer
-		// set/map/record constructor expressions use ',' to distinguish
-		// elements.
-		Expr e = parseBitwiseXorExpression(wf, environment, terminated);
-		// Now, see what follows and disambiguate
-		if (tryAndMatch(terminated, Colon) != null) {
-			// Ok, it's a ':' so we have a record constructor
-			index = start;
-			return parseRecordExpression(wf, environment, terminated);
-		} else if (tryAndMatch(terminated, EqualsGreater) != null) {
-			// Ok, it's a "=>" so we have a record constructor
-			index = start;
-			return parseMapExpression(wf, environment, terminated);
-		} else {
-			// otherwise, assume a set expression
-			index = start;
-			return parseSetExpression(wf, environment, terminated);
-		}
-	}
-
-	/**
 	 * Parse a record constructor, which is of the form:
 	 *
 	 * <pre>
@@ -2943,117 +2785,6 @@ public class WhileyFileParser {
 		return new Expr.Record(exprs, sourceAttr(start, index - 1));
 	}
 
-	/**
-	 * Parse a map constructor expression, which is of the form:
-	 *
-	 * <pre>
-	 * MapExpr::= '{' Expr "=>" Expr (',' Expr "=>" Expr)* } '}'
-	 * </pre>
-	 *
-	 * @param wf
-	 *            The enclosing WhileyFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseMapExpression(WhileyFile wf, HashSet<String> environment,
-			boolean terminated) {
-		int start = index;
-		match(LeftCurly);
-		ArrayList<Pair<Expr, Expr>> exprs = new ArrayList<Pair<Expr, Expr>>();
-
-		// Match zero or more expressions separated by commas
-		boolean firstTime = true;
-		while (eventuallyMatch(RightCurly) == null) {
-			if (!firstTime) {
-				match(Comma);
-			}
-			firstTime = false;
-			Expr from = parseUnitExpression(wf, environment, terminated);
-			match(EqualsGreater);
-			// NOTE: we require the following expression be a "non-tuple"
-			// expression. That is, it cannot be composed using ',' unless
-			// braces enclose the entire expression. This is because the outer
-			// map constructor expression is used ',' to distinguish elements.
-			// Also, expression is guaranteed to be terminated, either by '}' or
-			// ','.
-			Expr to = parseUnitExpression(wf, environment, true);
-			exprs.add(new Pair<Expr, Expr>(from, to));
-		}
-		// done
-		return new Expr.Map(exprs, sourceAttr(start, index - 1));
-	}
-
-	/**
-	 * Parse a set constructor expression, which is of the form:
-	 *
-	 * <pre>
-	 * SetExpr::= '{' [ Expr (',' Expr)* } '}'
-	 * </pre>
-	 *
-	 * @param wf
-	 *            The enclosing WhileyFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseSetExpression(WhileyFile wf, HashSet<String> environment,
-			boolean terminated) {
-		int start = index;
-		match(LeftCurly);
-		ArrayList<Expr> exprs = new ArrayList<Expr>();
-
-		// Match zero or more expressions separated by commas
-		boolean firstTime = true;
-		while (eventuallyMatch(RightCurly) == null) {
-			if (!firstTime) {
-				match(Comma);
-			}
-			firstTime = false;
-			// NOTE: we require the following expression be a "non-tuple"
-			// expression. That is, it cannot be composed using ',' unless
-			// braces enclose the entire expression. This is because the outer
-			// set constructor expression is used ',' to distinguish elements.
-			// Also, expression is guaranteed to be terminated, either by '}' or
-			// ','.
-			exprs.add(parseUnitExpression(wf, environment, true));
-		}
-		// done
-		return new Expr.Set(exprs, sourceAttr(start, index - 1));
-	}
-	
 	/**
 	 * Parse a new expression, which is of the form:
 	 *
@@ -3654,9 +3385,6 @@ public class WhileyFileParser {
 		} else if (type instanceof SyntacticType.List) {
 			SyntacticType.List tt = (SyntacticType.List) type;
 			return mustParseAsType(tt.element);
-		} else if (type instanceof SyntacticType.Map) {
-			SyntacticType.Map tt = (SyntacticType.Map) type;
-			return mustParseAsType(tt.key) || mustParseAsType(tt.value);
 		} else if (type instanceof SyntacticType.Negation) {
 			SyntacticType.Negation tt = (SyntacticType.Negation) type;
 			return mustParseAsType(tt.element);
@@ -3664,9 +3392,6 @@ public class WhileyFileParser {
 			return false; // always can be an expression
 		} else if (type instanceof SyntacticType.Reference) {
 			SyntacticType.Reference tt = (SyntacticType.Reference) type;
-			return mustParseAsType(tt.element);
-		} else if (type instanceof SyntacticType.Set) {
-			SyntacticType.Set tt = (SyntacticType.Set) type;
 			return mustParseAsType(tt.element);
 		} else if (type instanceof SyntacticType.Union) {
 			SyntacticType.Union tt = (SyntacticType.Union) type;
@@ -3750,13 +3475,9 @@ public class WhileyFileParser {
 			return true;
 		} else if(e instanceof Expr.List) {
 			return true;
-		} else if(e instanceof Expr.Map) {
-			return true;
 		} else if(e instanceof Expr.New) {
 			return true;
 		} else if(e instanceof Expr.Record) {
-			return true;
-		} else if(e instanceof Expr.Set) {
 			return true;
 		} else if(e instanceof Expr.SubList) {
 			return true;
@@ -4121,7 +3842,7 @@ public class WhileyFileParser {
 			// we just ignore it for now and acknowledge that, at some point, it
 			// might be nice to do better.
 			index = start; // backtrack
-			SyntacticType type = parseSetOrMapOrRecordType();
+			SyntacticType type = parseRecordType();
 			Expr.LocalVariable name = parseTypePatternVar(terminated);
 			if (name == null && type instanceof SyntacticType.Record) {
 				return new TypePattern.Record((SyntacticType.Record) type,
@@ -4268,7 +3989,7 @@ public class WhileyFileParser {
 		case LeftBrace:
 			return parseBracketedType();
 		case LeftCurly:
-			return parseSetOrMapOrRecordType();
+			return parseRecordType();
 		case LeftSquare:
 			return parseListType();
 		case Shreak:
@@ -4372,41 +4093,11 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseSetOrMapOrRecordType() {
+	private SyntacticType parseRecordType() {
 		int start = index;
 		match(LeftCurly);
 
-		// First, we need to disambiguate between a set, map or record type. The
-		// complication is the potential for mixed types. For example, when
-		// parsing "{ function f(int)->int }", the first element is not a type.
-		// Therefore, we have to first decide whether or not we have a mixed
-		// type, or a normal type.
-
-		if (!mustParseAsMixedType()) {
-			int t_start = index; // backtrack point
-
-			SyntacticType type = parseType();
-
-			if (tryAndMatch(true, RightCurly) != null) {
-				// This indicates a set type was encountered.
-				return new SyntacticType.Set(type, sourceAttr(start, index - 1));
-			} else if (tryAndMatch(true, EqualsGreater) != null) {
-				// This indicates a map type was encountered.
-				SyntacticType value = parseType();
-				match(RightCurly);
-				return new SyntacticType.Map(type, value, sourceAttr(start,
-						index - 1));
-			}
-			// At this point, we definitely have a record type (or an error).
-			// Therefore, we backtrack and parse the potentially mixed type
-			// properly.
-			index = t_start; // backtrack
-		}
-
 		HashMap<String, SyntacticType> types = new HashMap<String, SyntacticType>();
-		// Otherwise, we have a record type and we must continue to parse
-		// the remainder of the first field.
-
 		Pair<SyntacticType, Token> p = parseMixedType();
 		types.put(p.second().text, p.first());
 
@@ -4461,8 +4152,8 @@ public class WhileyFileParser {
 	 * Parse a function or method type, which is of the form:
 	 *
 	 * <pre>
-	 * FunctionType ::= "function" [Type (',' Type)* ] "->" Type [ "throws" Type ]
-	 * MethodType   ::= "method" [Type (',' Type)* ] "->" Type [ "throws" Type ]
+	 * FunctionType ::= "function" [Type (',' Type)* ] "->" Type
+	 * MethodType   ::= "method" [Type (',' Type)* ] "->" Type
 	 * </pre>
 	 *
 	 * At the moment, it is required that parameters for a function or method
@@ -4515,18 +4206,12 @@ public class WhileyFileParser {
 			ret = new SyntacticType.Void();
 		}
 
-		// Fourth, parse the optional throws type
-		SyntacticType throwsType = null;
-		if (tryAndMatch(true, Throws) != null) {
-			throwsType = parseType();
-		}
-
 		// Done
 		if (isFunction) {
-			return new SyntacticType.Function(ret, throwsType, paramTypes,
+			return new SyntacticType.Function(ret, new SyntacticType.Void(), paramTypes,
 					sourceAttr(start, index - 1));
 		} else {
-			return new SyntacticType.Method(ret, throwsType, paramTypes,
+			return new SyntacticType.Method(ret, new SyntacticType.Void(), paramTypes,
 					sourceAttr(start, index - 1));
 		}
 	}
@@ -4536,8 +4221,8 @@ public class WhileyFileParser {
 	 *
 	 * <pre>
 	 * MixedType ::= Type Identifier
-	 *            |  "function" Type Identifier '(' [Type (',' Type)* ] ')' "->" Type [ "throws" Type ]
-	 *            |  "method" Type Identifier '(' [Type (',' Type)* ] ')' "->" Type [ "throws" Type ]
+	 *            |  "function" Type Identifier '(' [Type (',' Type)* ] ')' "->" Type
+	 *            |  "method" Type Identifier '(' [Type (',' Type)* ] ')' "->" Type
 	 * </pre>
 	 *
 	 * @return
@@ -4590,20 +4275,17 @@ public class WhileyFileParser {
 					// If no return is given, then default to void.
 					ret = new SyntacticType.Void();
 				}
-				// Fourth, parse the optional throws type
-				SyntacticType throwsType = null;
-				if (tryAndMatch(true, Throws) != null) {
-					throwsType = parseType();
-				}
 
 				// Done
 				SyntacticType type;
 				if (lookahead.kind == Token.Kind.Function) {
-					type = new SyntacticType.Function(ret, throwsType,
-							paramTypes, sourceAttr(start, index - 1));
+					type = new SyntacticType.Function(ret,
+							new SyntacticType.Void(), paramTypes, sourceAttr(
+									start, index - 1));
 				} else {
-					type = new SyntacticType.Method(ret, throwsType,
-							paramTypes, sourceAttr(start, index - 1));
+					type = new SyntacticType.Method(ret,
+							new SyntacticType.Void(), paramTypes, sourceAttr(
+									start, index - 1));
 				}
 				return new Pair<SyntacticType, Token>(type, id);
 			} else {
@@ -4944,7 +4626,7 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a string constant whilst interpreting all escape characters.
-	 * 
+	 *
 	 * @param v
 	 * @return
 	 */

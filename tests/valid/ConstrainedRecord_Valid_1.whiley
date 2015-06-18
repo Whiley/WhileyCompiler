@@ -4,7 +4,7 @@ constant RET is 169
 
 constant NOP is 0
 
-type unitCode is (int x) where x in {NOP, RET}
+type unitCode is (int x) where x == NOP || x == RET
 
 type UNIT is {unitCode op}
 

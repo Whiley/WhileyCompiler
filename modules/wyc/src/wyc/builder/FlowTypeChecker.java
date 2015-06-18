@@ -360,8 +360,6 @@ public class FlowTypeChecker {
 				return propagate((Stmt.IfElse) stmt, environment);
 			} else if (stmt instanceof Stmt.While) {
 				return propagate((Stmt.While) stmt, environment);
-			} else if (stmt instanceof Stmt.ForAll) {
-				return propagate((Stmt.ForAll) stmt, environment);
 			} else if (stmt instanceof Stmt.Switch) {
 				return propagate((Stmt.Switch) stmt, environment);
 			} else if (stmt instanceof Stmt.DoWhile) {
@@ -581,7 +579,7 @@ public class FlowTypeChecker {
 			return inferAfterType((Expr.LVal) pa.src, pa.srcType);
 		} else if (lv instanceof Expr.IndexOf) {
 			Expr.IndexOf la = (Expr.IndexOf) lv;
-			Nominal.EffectiveIndexible srcType = la.srcType;
+			Nominal.List srcType = la.srcType;
 			afterType = (Nominal) srcType.update(la.index.result(), afterType);
 			return inferAfterType((Expr.LVal) la.src, afterType);
 		} else if (lv instanceof Expr.FieldAccess) {
@@ -664,79 +662,6 @@ public class FlowTypeChecker {
 				environment, current);
 		stmt.condition = p.first();
 		environment = p.second();
-
-		return environment;
-	}
-
-	/**
-	 * Type check a <code>for</code> statement.
-	 *
-	 * @param stmt
-	 *            Statement to type check
-	 * @param environment
-	 *            Determines the type of all variables immediately going into
-	 *            this block
-	 * @return
-	 */
-	private Environment propagate(Stmt.ForAll stmt, Environment environment)
-			throws IOException, ResolveError {
-
-		stmt.source = propagate(stmt.source, environment, current);
-		Nominal.EffectiveCollection srcType = expandAsEffectiveCollection(stmt.source
-				.result());
-		stmt.srcType = srcType;
-
-		if (srcType == null) {
-			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION), filename,
-					stmt);
-		}
-
-		// At this point, the major task is to determine what the types for the
-		// iteration variables declared in the for loop. More than one variable
-		// is permitted in some cases.
-
-		Nominal[] elementTypes = new Nominal[stmt.variables.size()];
-		if (elementTypes.length == 2 && srcType instanceof Nominal.Map) {
-			Nominal.Map dt = (Nominal.Map) srcType;
-			elementTypes[0] = dt.key();
-			elementTypes[1] = dt.value();
-		} else {
-			if (elementTypes.length == 1) {
-				elementTypes[0] = srcType.element();
-			} else {
-				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-						filename, stmt);
-			}
-		}
-
-		// Update the environment to include those declared variables
-		ArrayList<String> stmtVariables = stmt.variables;
-		for (int i = 0; i != elementTypes.length; ++i) {
-			String var = stmtVariables.get(i);
-			if (environment.containsKey(var)) {
-				syntaxError(errorMessage(VARIABLE_ALREADY_DEFINED, var),
-						filename, stmt);
-			}
-			environment = environment.declare(var, elementTypes[i],
-					elementTypes[i]);
-		}
-
-		// Iterate to a fixed point
-		environment = computeFixedPoint(environment, stmt.body, null, false,
-				stmt);
-
-		// Remove the loop variables from the environment, since they are only
-		// scoped for the duration of the body but not beyond.
-		for (int i = 0; i != elementTypes.length; ++i) {
-			String var = stmtVariables.get(i);
-			environment = environment.remove(var);
-		}
-
-		// Finally, type the invariant
-		if (stmt.invariant != null) {
-			stmt.invariant = propagate(stmt.invariant, environment, current);
-			checkIsSubtype(Type.T_BOOL, stmt.invariant);
-		}
 
 		return environment;
 	}
@@ -1023,8 +948,7 @@ public class FlowTypeChecker {
 				Expr index = propagate(ai.index, environment, current);
 				ai.src = src;
 				ai.index = index;
-				Nominal.EffectiveIndexible srcType = expandAsEffectiveMap(src
-						.result());
+				Nominal.List srcType = expandAsEffectiveList(src.result());
 				if (srcType == null) {
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),
 							filename, lval);
@@ -1336,8 +1260,6 @@ public class FlowTypeChecker {
 		case GT:
 		case GTEQ:
 		case ELEMENTOF:
-		case SUBSET:
-		case SUBSETEQ:
 		case IS:
 			return resolveLeafCondition(bop, sign, environment, context);
 		default:
@@ -1523,36 +1445,15 @@ public class FlowTypeChecker {
 		case ELEMENTOF:
 			Type.EffectiveList listType = rhsRawType instanceof Type.EffectiveList ? (Type.EffectiveList) rhsRawType
 					: null;
-			Type.EffectiveSet setType = rhsRawType instanceof Type.EffectiveSet ? (Type.EffectiveSet) rhsRawType
-					: null;
 
 			if (listType != null
 					&& !Type.isSubtype(listType.element(), lhsRawType)) {
 				syntaxError(
 						errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
 								listType.element()), context, bop);
-			} else if (setType != null
-					&& !Type.isSubtype(setType.element(), lhsRawType)) {
-				syntaxError(
-						errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
-								setType.element()), context, bop);
 			}
 			bop.srcType = rhs.result();
-			break;
-		case SUBSET:
-		case SUBSETEQ:
-			checkIsSubtype(Type.T_SET_ANY, rhs, context);
-			checkIsSubtype(lhs.result(), rhs, context);
-			//
-			if (!lhsRawType.equals(rhsRawType)) {
-				syntaxError(
-						errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
-								rhsRawType), filename, bop);
-				return null;
-			} else {
-				bop.srcType = lhs.result();
-			}
-			break;
+			break;	
 		case LT:
 		case LTEQ:
 		case GTEQ:
@@ -1652,8 +1553,6 @@ public class FlowTypeChecker {
 						context);
 			} else if (expr instanceof Expr.FieldAccess) {
 				return propagate((Expr.FieldAccess) expr, environment, context);
-			} else if (expr instanceof Expr.Map) {
-				return propagate((Expr.Map) expr, environment, context);
 			} else if (expr instanceof Expr.AbstractFunctionOrMethod) {
 				return propagate((Expr.AbstractFunctionOrMethod) expr,
 						environment, context);
@@ -1674,8 +1573,6 @@ public class FlowTypeChecker {
 						context);
 			} else if (expr instanceof Expr.List) {
 				return propagate((Expr.List) expr, environment, context);
-			} else if (expr instanceof Expr.Set) {
-				return propagate((Expr.Set) expr, environment, context);
 			} else if (expr instanceof Expr.SubList) {
 				return propagate((Expr.SubList) expr, environment, context);
 			} else if (expr instanceof Expr.Dereference) {
@@ -1722,8 +1619,6 @@ public class FlowTypeChecker {
 		case GT:
 		case GTEQ:
 		case ELEMENTOF:
-		case SUBSET:
-		case SUBSETEQ:
 		case IS:
 			return propagateCondition(expr, true, environment, context).first();
 		}
@@ -1735,8 +1630,6 @@ public class FlowTypeChecker {
 		Type lhsRawType = lhs.result().raw();
 		Type rhsRawType = rhs.result().raw();
 
-		boolean lhs_set = Type.isSubtype(Type.T_SET_ANY, lhsRawType);
-		boolean rhs_set = Type.isSubtype(Type.T_SET_ANY, rhsRawType);
 		boolean lhs_list = Type.isSubtype(Type.T_LIST_ANY, lhsRawType);
 		boolean rhs_list = Type.isSubtype(Type.T_LIST_ANY, rhsRawType);
 
@@ -1756,55 +1649,6 @@ public class FlowTypeChecker {
 			default:
 				syntaxError("invalid list operation: " + expr.op, context, expr);
 				return null; // dead-code
-			}
-		} else if (lhs_set && rhs_set) {
-			checkIsSubtype(Type.T_SET_ANY, lhs, context);
-			checkIsSubtype(Type.T_SET_ANY, rhs, context);
-
-			// FIXME: something tells me there should be a function for doing
-			// this. Perhaps effectiveSetType?
-
-			if (lhs_list) {
-				Type.EffectiveList tmp = (Type.EffectiveList) lhsRawType;
-				lhsRawType = Type.Set(tmp.element(), false);
-			}
-
-			if (rhs_list) {
-				Type.EffectiveList tmp = (Type.EffectiveList) rhsRawType;
-				rhsRawType = Type.Set(tmp.element(), false);
-			}
-
-			// FIXME: loss of nominal information here
-			Type.EffectiveSet ls = (Type.EffectiveSet) lhsRawType;
-			Type.EffectiveSet rs = (Type.EffectiveSet) rhsRawType;
-
-			switch (expr.op) {
-			case ADD:
-				expr.op = Expr.BOp.UNION;
-			case UNION:
-				// TODO: this forces unnecessary coercions, which would be
-				// good to remove.
-				srcType = Type.Set(Type.Union(ls.element(), rs.element()),
-						false);
-				break;
-			case BITWISEAND:
-				expr.op = Expr.BOp.INTERSECTION;
-			case INTERSECTION:
-				// FIXME: this is just plain wierd.
-				if (Type.isSubtype(lhsRawType, rhsRawType)) {
-					srcType = rhsRawType;
-				} else {
-					srcType = lhsRawType;
-				}
-				break;
-			case SUB:
-				expr.op = Expr.BOp.DIFFERENCE;
-			case DIFFERENCE:
-				srcType = lhsRawType;
-				break;
-			default:
-				syntaxError("invalid set operation: " + expr.op, context, expr);
-				return null; // deadcode
 			}
 		} else {
 			switch (expr.op) {
@@ -1900,7 +1744,7 @@ public class FlowTypeChecker {
 			p = new Pair<String, Expr>(p.first(), e);
 			sources.set(i, p);
 			Nominal type = e.result();
-			Nominal.EffectiveCollection colType = expandAsEffectiveCollection(type);
+			Nominal.List colType = expandAsEffectiveList(type);
 			if (colType == null) {
 				syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),
 						context, e);
@@ -2096,7 +1940,7 @@ public class FlowTypeChecker {
 			Context context) throws IOException, ResolveError {
 		expr.src = propagate(expr.src, environment, context);
 		expr.index = propagate(expr.index, environment, context);
-		Nominal.EffectiveIndexible srcType = expandAsEffectiveMap(expr.src
+		Nominal.List srcType = expandAsEffectiveList(expr.src
 				.result());
 
 		if (srcType == null) {
@@ -2115,7 +1959,7 @@ public class FlowTypeChecker {
 			Context context) throws IOException, ResolveError {
 		expr.src = propagate(expr.src, environment, context);
 
-		Nominal.EffectiveCollection srcType = expandAsEffectiveCollection(expr.src
+		Nominal.List srcType = expandAsEffectiveList(expr.src
 				.result());
 
 		if (srcType == null) {
@@ -2136,23 +1980,6 @@ public class FlowTypeChecker {
 		return expr;
 	}
 
-	private Expr propagate(Expr.Set expr, Environment environment,
-			Context context) {
-		Nominal element = Nominal.T_VOID;
-
-		ArrayList<Expr> exprs = expr.arguments;
-		for (int i = 0; i != exprs.size(); ++i) {
-			Expr e = propagate(exprs.get(i), environment, context);
-			Nominal t = e.result();
-			exprs.set(i, e);
-			element = Nominal.Union(t, element);
-		}
-
-		expr.type = Nominal.Set(element, false);
-
-		return expr;
-	}
-
 	private Expr propagate(Expr.List expr, Environment environment,
 			Context context) {
 		Nominal element = Nominal.T_VOID;
@@ -2169,30 +1996,7 @@ public class FlowTypeChecker {
 
 		return expr;
 	}
-
-	private Expr propagate(Expr.Map expr, Environment environment,
-			Context context) {
-		Nominal keyType = Nominal.T_VOID;
-		Nominal valueType = Nominal.T_VOID;
-
-		ArrayList<Pair<Expr, Expr>> exprs = expr.pairs;
-		for (int i = 0; i != exprs.size(); ++i) {
-			Pair<Expr, Expr> p = exprs.get(i);
-			Expr key = propagate(p.first(), environment, context);
-			Expr value = propagate(p.second(), environment, context);
-			Nominal kt = key.result();
-			Nominal vt = value.result();
-			exprs.set(i, new Pair<Expr, Expr>(key, value));
-
-			keyType = Nominal.Union(kt, keyType);
-			valueType = Nominal.Union(vt, valueType);
-		}
-
-		expr.type = Nominal.Map(keyType, valueType);
-
-		return expr;
-	}
-
+	
 	private Expr propagate(Expr.Record expr, Environment environment,
 			Context context) {
 
@@ -3039,21 +2843,6 @@ public class FlowTypeChecker {
 			myChildren[0] = resolveAsType(lt.element, context, states, roots,
 					nominal, unconstrained);
 			myData = false;
-		} else if (type instanceof SyntacticType.Set) {
-			SyntacticType.Set st = (SyntacticType.Set) type;
-			myKind = Type.K_SET;
-			myChildren = new int[1];
-			myChildren[0] = resolveAsType(st.element, context, states, roots,
-					nominal, unconstrained);
-			myData = false;
-		} else if (type instanceof SyntacticType.Map) {
-			SyntacticType.Map st = (SyntacticType.Map) type;
-			myKind = Type.K_MAP;
-			myChildren = new int[2];
-			myChildren[0] = resolveAsType(st.key, context, states, roots,
-					nominal, unconstrained);
-			myChildren[1] = resolveAsType(st.value, context, states, roots,
-					nominal, unconstrained);
 		} else if (type instanceof SyntacticType.Record) {
 			SyntacticType.Record tt = (SyntacticType.Record) type;
 			HashMap<String, SyntacticType> ttTypes = tt.types;
@@ -3436,13 +3225,6 @@ public class FlowTypeChecker {
 				Expr.UnOp uop = (Expr.UnOp) expr;
 				Constant lhs = resolveAsConstant(uop.mhs, context, visited);
 				return evaluate(uop, lhs, context);
-			} else if (expr instanceof Expr.Set) {
-				Expr.Set nop = (Expr.Set) expr;
-				ArrayList<Constant> values = new ArrayList<Constant>();
-				for (Expr arg : nop.arguments) {
-					values.add(resolveAsConstant(arg, context, visited));
-				}
-				return Constant.V_SET(values);
 			} else if (expr instanceof Expr.List) {
 				Expr.List nop = (Expr.List) expr;
 				ArrayList<Constant> values = new ArrayList<Constant>();
@@ -3473,20 +3255,6 @@ public class FlowTypeChecker {
 					values.add(v);
 				}
 				return Constant.V_TUPLE(values);
-			} else if (expr instanceof Expr.Map) {
-				Expr.Map rg = (Expr.Map) expr;
-				HashSet<Pair<Constant, Constant>> values = new HashSet<Pair<Constant, Constant>>();
-				for (Pair<Expr, Expr> e : rg.pairs) {
-					Constant key = resolveAsConstant(e.first(), context,
-							visited);
-					Constant value = resolveAsConstant(e.second(), context,
-							visited);
-					if (key == null || value == null) {
-						return null;
-					}
-					values.add(new Pair<Constant, Constant>(key, value));
-				}
-				return Constant.V_MAP(values);
 			} else if (expr instanceof Expr.FunctionOrMethod) {
 				// TODO: add support for proper lambdas
 				Expr.FunctionOrMethod f = (Expr.FunctionOrMethod) expr;
@@ -3672,9 +3440,7 @@ public class FlowTypeChecker {
 		} else if (Type.isSubtype(Type.T_LIST_ANY, lub)) {
 			return evaluate(bop, (Constant.List) v1, (Constant.List) v2,
 					context);
-		} else if (Type.isSubtype(Type.T_SET_ANY, lub)) {
-			return evaluate(bop, (Constant.Set) v1, (Constant.Set) v2, context);
-		}
+		} 
 		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION), context, bop);
 		return null;
 	}
@@ -3738,55 +3504,10 @@ public class FlowTypeChecker {
 		syntaxError(errorMessage(INVALID_LIST_EXPRESSION), context, bop);
 		return null;
 	}
-
-	private Constant evaluate(Expr.BinOp bop, Constant.Set v1, Constant.Set v2,
-			Context context) {
-		switch (bop.op) {
-		case UNION: {
-			HashSet<Constant> vals = new HashSet<Constant>(v1.values);
-			vals.addAll(v2.values);
-			return Constant.V_SET(vals);
-		}
-		case INTERSECTION: {
-			HashSet<Constant> vals = new HashSet<Constant>();
-			for (Constant v : v1.values) {
-				if (v2.values.contains(v)) {
-					vals.add(v);
-				}
-			}
-			return Constant.V_SET(vals);
-		}
-		case SUB: {
-			HashSet<Constant> vals = new HashSet<Constant>();
-			for (Constant v : v1.values) {
-				if (!v2.values.contains(v)) {
-					vals.add(v);
-				}
-			}
-			return Constant.V_SET(vals);
-		}
-		}
-		syntaxError(errorMessage(INVALID_SET_EXPRESSION), context, bop);
-		return null;
-	}
-
+	
 	// =========================================================================
 	// expandAsType
 	// =========================================================================
-
-	public Nominal.Set expandAsEffectiveSet(Nominal lhs)
-			throws IOException, ResolveError {
-		Type raw = lhs.raw();
-		if (raw instanceof Type.EffectiveSet) {
-			Type nominal = expandOneLevel(lhs.nominal());
-			if (!(nominal instanceof Type.EffectiveSet)) {
-				nominal = raw; // discard nominal information
-			}
-			return (Nominal.Set) Nominal.construct(nominal, raw);
-		} else {
-			return null;
-		}
-	}
 
 	public Nominal.List expandAsEffectiveList(Nominal lhs)
 			throws IOException, ResolveError {
@@ -3797,49 +3518,6 @@ public class FlowTypeChecker {
 				nominal = raw; // discard nominal information
 			}
 			return (Nominal.List) Nominal.construct(nominal, raw);
-		} else {
-			return null;
-		}
-	}
-
-	public Nominal.EffectiveCollection expandAsEffectiveCollection(Nominal lhs)
-			throws IOException, ResolveError {
-		Type raw = lhs.raw();
-		if (raw instanceof Type.EffectiveCollection) {
-			Type nominal = expandOneLevel(lhs.nominal());
-			if (!(nominal instanceof Type.EffectiveCollection)) {
-				nominal = raw; // discard nominal information
-			}
-			return (Nominal.EffectiveCollection) Nominal
-					.construct(nominal, raw);
-		} else {
-			return null;
-		}
-	}
-
-	public Nominal.EffectiveIndexible expandAsEffectiveMap(Nominal lhs)
-			throws IOException, ResolveError {
-		Type raw = lhs.raw();
-		if (raw instanceof Type.EffectiveIndexible) {
-			Type nominal = expandOneLevel(lhs.nominal());
-			if (!(nominal instanceof Type.EffectiveIndexible)) {
-				nominal = raw; // discard nominal information
-			}
-			return (Nominal.EffectiveIndexible) Nominal.construct(nominal, raw);
-		} else {
-			return null;
-		}
-	}
-
-	public Nominal.Map expandAsEffectiveDictionary(Nominal lhs)
-			throws IOException, ResolveError {
-		Type raw = lhs.raw();
-		if (raw instanceof Type.EffectiveMap) {
-			Type nominal = expandOneLevel(lhs.nominal());
-			if (!(nominal instanceof Type.EffectiveMap)) {
-				nominal = raw; // discard nominal information
-			}
-			return (Nominal.Map) Nominal.construct(nominal, raw);
 		} else {
 			return null;
 		}
@@ -3937,8 +3615,7 @@ public class FlowTypeChecker {
 			}
 			return expandOneLevel(r);
 		} else if (type instanceof Type.Leaf || type instanceof Type.Reference
-				|| type instanceof Type.Tuple || type instanceof Type.Set
-				|| type instanceof Type.List || type instanceof Type.Map
+				|| type instanceof Type.Tuple || type instanceof Type.List
 				|| type instanceof Type.Record
 				|| type instanceof Type.FunctionOrMethod
 				|| type instanceof Type.Negation) {

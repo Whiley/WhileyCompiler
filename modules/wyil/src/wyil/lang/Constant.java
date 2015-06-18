@@ -59,25 +59,12 @@ public abstract class Constant implements Comparable<Constant> {
 		return get(new Integer(value));
 	}
 
-	public static Set V_SET(Collection<Constant> values) {
-		return get(new Set(values));
-	}
-
 	public static List V_LIST(Collection<Constant> values) {
 		return get(new List(values));
 	}
 
 	public static Record V_RECORD(java.util.Map<String,Constant> values) {
 		return get(new Record(values));
-	}
-
-	public static Map V_MAP(
-			java.util.Set<Pair<Constant, Constant>> values) {
-		return get(new Map(values));
-	}
-
-	public static Map V_MAP(java.util.Map<Constant, Constant> values) {
-		return get(new Map(values));
 	}
 
 	public static Type V_TYPE(wyil.lang.Type type) {
@@ -438,112 +425,6 @@ public abstract class Constant implements Comparable<Constant> {
 		}
 	}
 
-	public static final class Set extends Constant {
-		public final HashSet<Constant> values;
-		private Set() {
-			this.values = new HashSet<Constant>();
-		}
-		private Set(Collection<Constant> value) {
-			this.values = new HashSet<Constant>(value);
-		}
-		public wyil.lang.Type.Set type() {
-			wyil.lang.Type t = wyil.lang.Type.T_VOID;
-			for(Constant arg : values) {
-				t = wyil.lang.Type.Union(t,arg.type());
-			}
-			return wyil.lang.Type.Set(t, !values.isEmpty());
-		}
-		public int hashCode() {
-			return values.hashCode();
-		}
-		public boolean equals(Object o) {
-			if(o instanceof Set) {
-				Set i = (Set) o;
-				return values.equals(i.values);
-			}
-			return false;
-		}
-		public int compareTo(Constant v) {
-			if(v instanceof Set) {
-				Set l = (Set) v;
-				if(values.size() < l.values.size()) {
-					return -1;
-				} else if(values.size() > l.values.size()) {
-					return 1;
-				} else {
-					// this case is slightly awkward, since we can't rely on the
-					// iteration order for HashSet.
-					ArrayList<Constant> vs1 = new ArrayList<Constant>(values);
-					ArrayList<Constant> vs2 = new ArrayList<Constant>(l.values);
-					Collections.sort(vs1);
-					Collections.sort(vs2);
-					for(int i=0;i!=values.size();++i) {
-						Constant v1 = vs1.get(i);
-						Constant v2 = vs2.get(i);
-						int c = v1.compareTo(v2);
-						if(c != 0) { return c; }
-					}
-					return 0;
-				}
-			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Decimal || v instanceof Rational
-					|| v instanceof Byte || v instanceof Integer
-					|| v instanceof List || v instanceof Tuple) {
-				return 1;
-			}
-			return -1;
-		}
-		public String toString() {
-			String r = "{";
-			boolean firstTime=true;
-			for(Constant v : values) {
-				if(!firstTime) {
-					r += ",";
-				}
-				firstTime=false;
-				r += v;
-			}
-			return r + "}";
-		}
-
-		public Set union(Set rhs) {
-			Constant.Set nset = new Constant.Set(values);
-			nset.values.addAll(rhs.values);
-			return nset;
-
-		}
-
-		public Set add(Constant val) {
-			Constant.Set nset = new Constant.Set(values);
-			nset.values.add(val);
-			return nset;
-
-		}
-
-		public Set difference(Set rhs) {
-			Constant.Set nset = new Constant.Set(values);
-			nset.values.removeAll(rhs.values);
-			return nset;
-		}
-
-		public Set remove(Constant val) {
-			Constant.Set nset = new Constant.Set(values);
-			nset.values.remove(val);
-			return nset;
-
-		}
-
-		public Set intersect(Set rhs) {
-			Constant.Set nset = new Constant.Set();
-			for(Constant v : values) {
-				if(rhs.values.contains(v)) {
-					nset.values.add(v);
-				}
-			}
-			return nset;
-		}
-	}
-
 	public static final class Record extends Constant {
 		public final HashMap<String,Constant> values;
 		private Record(java.util.Map<String,Constant> value) {
@@ -611,95 +492,6 @@ public abstract class Constant implements Comparable<Constant> {
 				}
 				firstTime=false;
 				r += key + ":=" + values.get(key);
-			}
-			return r + "}";
-		}
-	}
-
-	public static final class Map extends Constant {
-		public final HashMap<Constant,Constant> values;
-		private Map(java.util.Map<Constant,Constant> value) {
-			this.values = new HashMap<Constant,Constant>(value);
-		}
-		private Map(java.util.Set<Pair<Constant,Constant>> values) {
-			this.values = new HashMap<Constant,Constant>();
-			for(Pair<Constant,Constant> p : values) {
-				this.values.put(p.first(), p.second());
-			}
-		}
-		public wyil.lang.Type.Map type() {
-			wyil.lang.Type key = wyil.lang.Type.T_VOID;
-			wyil.lang.Type value = wyil.lang.Type.T_VOID;
-			for (java.util.Map.Entry<Constant, Constant> e : values.entrySet()) {
-				key = wyil.lang.Type.Union(key,e.getKey().type());
-				value = wyil.lang.Type.Union(value,e.getKey().type());
-			}
-			return wyil.lang.Type.Map(key,value);
-		}
-		public int hashCode() {
-			return values.hashCode();
-		}
-		public boolean equals(Object o) {
-			if(o instanceof Map) {
-				Map i = (Map) o;
-				return values.equals(i.values);
-			}
-			return false;
-		}
-		public int compareTo(Constant v) {
-			if(v instanceof Map) {
-				Map l = (Map) v;
-				if(values.size() < l.values.size()) {
-					return -1;
-				} else if(values.size() > l.values.size()) {
-					return 1;
-				} else {
-					ArrayList<Constant> vs1 = new ArrayList<Constant>(values.keySet());
-					ArrayList<Constant> vs2 = new ArrayList<Constant>(l.values.keySet());
-					Collections.sort(vs1);
-					Collections.sort(vs2);
-					for(int i=0;i!=values.size();++i) {
-						Constant k1 = vs1.get(i);
-						Constant k2 = vs2.get(i);
-						int c = k1.compareTo(k2);
-						if(c != 0) { return c; }
-						Constant v1 = values.get(k1);
-						Constant v2 = l.values.get(k1);
-						c = v1.compareTo(v2);
-						if(c != 0) { return c; }
-					}
-					return 0;
-				}
-			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Decimal || v instanceof Rational
-					|| v instanceof Byte || v instanceof Integer
-					|| v instanceof Set || v instanceof List
-					|| v instanceof Tuple || v instanceof Record) {
-				return 1;
-			}
-			return -1;
-		}
-		public String toString() {
-			String r = "{";
-			if(values.isEmpty()) {
-				r = r + "=>";
-			} else {
-				boolean firstTime=true;
-				ArrayList<String> keystr = new ArrayList<String>();
-				HashMap<String,Constant> keymap = new HashMap<String,Constant>();
-				for(Constant key : values.keySet()) {
-					keystr.add(key.toString());
-					keymap.put(key.toString(), key);
-				}
-				Collections.sort(keystr);
-				for(String key : keystr) {
-					if(!firstTime) {
-						r += ",";
-					}
-					firstTime=false;
-					Constant k = keymap.get(key);
-					r += k + "=>" + values.get(k);
-				}
 			}
 			return r + "}";
 		}

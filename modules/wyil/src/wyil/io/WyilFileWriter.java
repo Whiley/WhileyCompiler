@@ -256,15 +256,6 @@ public final class WyilFileWriter {
 				output.write_uv(bytes.length);
 				output.write(bytes);
 				output.write_uv(exponent);
-			} else if(val instanceof Constant.Set) {
-				Constant.Set s = (Constant.Set) val;
-				output.write_uv(CONSTANT_Set);
-				output.write_uv(s.values.size());
-				for(Constant v : s.values) {
-					int index = constantCache.get(v);
-					output.write_uv(index);
-				}
-
 			} else if(val instanceof Constant.List) {
 				Constant.List s = (Constant.List) val;
 				output.write_uv(CONSTANT_List);
@@ -272,17 +263,6 @@ public final class WyilFileWriter {
 				for(Constant v : s.values) {
 					int index = constantCache.get(v);
 					output.write_uv(index);
-				}
-
-			} else if(val instanceof Constant.Map) {
-				Constant.Map m = (Constant.Map) val;
-				output.write_uv(CONSTANT_Map);
-				output.write_uv(m.values.size());
-				for(java.util.Map.Entry<Constant,Constant> e : m.values.entrySet()) {
-					int keyIndex = constantCache.get(e.getKey());
-					output.write_uv(keyIndex);
-					int valIndex = constantCache.get(e.getValue());
-					output.write_uv(valIndex);
 				}
 
 			} else if(val instanceof Constant.Record) {
@@ -593,9 +573,8 @@ public final class WyilFileWriter {
 		} else if(code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable c = (Code.AbstractAssignable) code;
 			writeBase(wide,c.target(),output);
-		} else if(code instanceof Codes.ForAll) {
-			// Covers Codes.Quantifier as well
-			Codes.ForAll l = (Codes.ForAll) code;
+		} else if(code instanceof Codes.Quantify) {
+			Codes.Quantify l = (Codes.Quantify) code;
 			int[] operands = l.modifiedOperands;
 			writeBase(wide,operands.length + 2,output);
 			writeBase(wide,l.indexOperand,output);
@@ -682,8 +661,8 @@ public final class WyilFileWriter {
 		} else if(code instanceof Codes.FieldLoad) {
 			Codes.FieldLoad c = (Codes.FieldLoad) code;
 			writeRest(wide,stringCache.get(c.field),output);
-		} else if(code instanceof Codes.ForAll) {
-			Codes.ForAll f = (Codes.ForAll) code;
+		} else if(code instanceof Codes.Quantify) {
+			Codes.Quantify f = (Codes.Quantify) code;
 			writeRest(wide,typeCache.get(f.type),output);
 			writeCodeBlock(wide,f,offset+1,labels,output);
 		} else if(code instanceof Codes.IfIs) {
@@ -835,8 +814,8 @@ public final class WyilFileWriter {
 		} else if(code instanceof Codes.FieldLoad) {
 			Codes.FieldLoad c = (Codes.FieldLoad) code;
 			maxRest = Math.max(maxRest,stringCache.get(c.field));
-		} else if(code instanceof Codes.ForAll) {
-			Codes.ForAll f = (Codes.ForAll) code;
+		} else if(code instanceof Codes.Quantify) {
+			Codes.Quantify f = (Codes.Quantify) code;
 			int[] operands = f.modifiedOperands;
 			maxBase = Math.max(f.sourceOperand, f.indexOperand);
 			for(int i=0;i!=operands.length;++i) {
@@ -1018,8 +997,8 @@ public final class WyilFileWriter {
 		} else if(code instanceof Codes.FieldLoad) {
 			Codes.FieldLoad c = (Codes.FieldLoad) code;
 			addStringItem(c.field);
-		} else if(code instanceof Codes.ForAll) {
-			Codes.ForAll s = (Codes.ForAll) code;
+		} else if(code instanceof Codes.Quantify) {
+			Codes.Quantify s = (Codes.Quantify) code;
 			addTypeItem((Type)s.type);
 		}else if(code instanceof Codes.IfIs) {
 			Codes.IfIs c = (Codes.IfIs) code;
@@ -1147,17 +1126,6 @@ public final class WyilFileWriter {
 			for (Constant e : l.values) {
 				addConstantItem(e);
 			}
-		} else if(v instanceof Constant.Set) {
-			Constant.Set s = (Constant.Set) v;
-			for (Constant e : s.values) {
-				addConstantItem(e);
-			}
-		} else if(v instanceof Constant.Map) {
-			Constant.Map m = (Constant.Map) v;
-			for (Map.Entry<Constant,Constant> e : m.values.entrySet()) {
-				addConstantItem(e.getKey());
-				addConstantItem(e.getValue());
-			}
 		} else if(v instanceof Constant.Tuple) {
 			Constant.Tuple t = (Constant.Tuple) v;
 			for (Constant e : t.values) {
@@ -1279,11 +1247,11 @@ public final class WyilFileWriter {
 	public final static int CONSTANT_Byte = 3;
 	public final static int CONSTANT_Int = 5;
 	public final static int CONSTANT_Real = 6;
-	public final static int CONSTANT_Set = 7;
+//	public final static int CONSTANT_Set = 7;
 	public final static int CONSTANT_List = 9;
 	public final static int CONSTANT_Record = 10;
 	public final static int CONSTANT_Tuple = 11;
-	public final static int CONSTANT_Map = 12;
+//	public final static int CONSTANT_Map = 12;
 	public final static int CONSTANT_Function = 13;
 	public final static int CONSTANT_Method = 14;
 
