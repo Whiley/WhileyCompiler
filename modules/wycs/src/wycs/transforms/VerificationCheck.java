@@ -507,7 +507,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	public static void debug(Code code, String filename) {
 		ArrayList<WycsFile.Declaration> tmpDecls = new ArrayList();
 		tmpDecls.add(new WycsFile.Assert("", code));
-		WycsFile tmp = new WycsFile(Trie.ROOT, filename, tmpDecls);
+		WycsFile tmp = new WycsFile(Trie.ROOT.append(filename), filename, tmpDecls);
 		try {
 			new WycsFilePrinter(System.err).write(tmp);
 		} catch (IOException e) {
