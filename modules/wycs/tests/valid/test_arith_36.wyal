@@ -1,0 +1,12 @@
+type nat is (int n) where n >= 0
+
+define invariant(int sum, int max, int k) is:
+    sum <= (max * k)
+
+assert:
+    forall(nat k, nat sum, nat max_1, nat max_2):
+        if:
+            invariant(sum,max_1,k)
+            max_1 < max_2            
+        then:
+            invariant(sum + max_1,max_2,k+1)
