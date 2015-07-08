@@ -119,7 +119,7 @@ public class VcGenerator {
 			// expression.
 			Type[] environment = new Type[] { typeDecl.type() };
 			List<VcBranch> exitBranches = transform(master,
-					CodeBlock.Index.ROOT, environment, body);
+					CodeBlock.Index.ROOT, true, environment, body);
 			// At this point, we are guaranteed exactly one exit branch because
 			// there is only ever one exit point from an invariant.
 			for (VcBranch exitBranch : exitBranches) {
@@ -156,13 +156,13 @@ public class VcGenerator {
 		String prefix = method.name() + "_requires_";
 		for (int i = 0; i != precondition.size(); ++i) {
 			buildMacroBlock(prefix + i, CodeBlock.Index.ROOT,
-					precondition.get(i), fmm.params());
+					precondition.get(i), fmm.params(), true);
 		}
 		prefix = method.name() + "_ensures_";
 		List<Type> postEnvironment = prepend(fmm.ret(), fmm.params());
 		for (int i = 0; i != postcondition.size(); ++i) {
 			buildMacroBlock(prefix + i, CodeBlock.Index.ROOT,
-					postcondition.get(i), postEnvironment);
+					postcondition.get(i), postEnvironment, true);
 		}
 
 		// Finally, add a function representing this function or method.
@@ -209,7 +209,7 @@ public class VcGenerator {
 		// statement, whilst failed branches are those which have reached a fail
 		// statement.
 		List<VcBranch> exitBranches = transform(master, CodeBlock.Index.ROOT,
-				bodyEnvironment, body);
+				false, bodyEnvironment, body);
 
 		// Examine all branches produced from the body. Each should be in one of
 		// two states: terminated or failed. Failed states indicate some
@@ -315,10 +315,10 @@ public class VcGenerator {
 	 * @return List of branches which reach the end of the block.
 	 */
 	public List<VcBranch> transform(VcBranch branch, CodeBlock.Index root,
-			Type[] environment, AttributedCodeBlock block) {
+			boolean isInvariant, Type[] environment, AttributedCodeBlock block) {
 		// Construct the label map which is needed for conditional branches
 		Map<String, CodeBlock.Index> labels = CodeUtils.buildLabelMap(block);
-		Pair<VcBranch, List<VcBranch>> p = transform(root, 0, branch, false,
+		Pair<VcBranch, List<VcBranch>> p = transform(root, 0, branch, false, isInvariant,
 				environment, labels, block);
 		// Ok, return list of exit branches
 		return p.second();
@@ -371,7 +371,7 @@ public class VcGenerator {
 	 * 
 	 */
 	protected Pair<VcBranch, List<VcBranch>> transform(CodeBlock.Index parent,
-			int offset, VcBranch entryState, boolean breakOnInvariant,
+			int offset, VcBranch entryState, boolean breakOnInvariant, boolean isInvariant,
 			Type[] environment, Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
 		// Move state to correct location
 		CodeBlock.Index start = new CodeBlock.Index(parent);
@@ -451,7 +451,7 @@ public class VcGenerator {
 								block);
 					} else if (code instanceof Codes.Quantify) {
 						bs = transform((Codes.Quantify) code, branch,
-								environment, labels, block);
+								isInvariant, environment, labels, block);
 					} else {
 						bs = transform((Codes.Loop) code, branch, environment,
 								labels, block);
@@ -472,23 +472,28 @@ public class VcGenerator {
 					// preconditions for this statement and, if so, add
 					// appropriate verification conditions to enforce them.
 					Code.Unit unit = (Code.Unit) code;
-					Pair<String,Expr>[] preconditions = getPreconditions(unit, branch, environment, block);
-					if (preconditions.length > 0) {
-						// This bytecode has one or more preconditions which
-						// need to be asserted. Therefore, for each, create a
-						// failed branch to ensure the precondition is met.
-						for (int i = 0; i != preconditions.length; ++i) {
-							Pair<String,Expr> p = preconditions[i];							
-							Expr vc = buildVerificationCondition(p.second(),
-									branch, environment, block);
-							wycsFile.add(wycsFile.new Assert(p.first(), vc,
-									toWycsAttributes(block.attributes(branch
-											.pc()))));
+					if (!isInvariant) {
+						Pair<String, Expr>[] preconditions = getPreconditions(
+								unit, branch, environment, block);
+						if (preconditions.length > 0) {
+							// This bytecode has one or more preconditions which
+							// need to be asserted. Therefore, for each, create
+							// a
+							// failed branch to ensure the precondition is met.
+							for (int i = 0; i != preconditions.length; ++i) {
+								Pair<String, Expr> p = preconditions[i];
+								Expr vc = buildVerificationCondition(
+										p.second(), branch, environment, block);
+								wycsFile.add(wycsFile.new Assert(p.first(), vc,
+										toWycsAttributes(block
+												.attributes(branch.pc()))));
+							}
+							// We need to fork the branch here, because it must
+							// have
+							// INTERNAL state by now (i.e. because of the forks
+							// above).
+							branch = branch.fork();
 						}
-						// We need to fork the branch here, because it must have
-						// INTERNAL state by now (i.e. because of the forks
-						// above).
-						branch = branch.fork();
 					}
 					//
 					transform(unit, block, branch);
@@ -845,8 +850,8 @@ public class VcGenerator {
 	 *            The block being transformed over.
 	 */
 	protected List<VcBranch> transform(Codes.Quantify code, VcBranch branch,
-			Type[] environment, Map<String, CodeBlock.Index> labels,
-			AttributedCodeBlock block) {
+			boolean isInvariant, Type[] environment,
+			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
 		// Write an arbitrary value to the index operand. This is necessary to
 		// ensure that there is something there if it is used within the loop
 		// body.
@@ -856,7 +861,7 @@ public class VcGenerator {
 		branch = branch.fork();
 		// This represents a quantifier looop
 		Pair<VcBranch, List<VcBranch>> p = transformQuantifierHelper(code,
-				branch, environment, labels, block);
+				branch, isInvariant, environment, labels, block);
 		return extractQuantifiers(code, original, p.first(), p.second());
 	}
 
@@ -937,8 +942,9 @@ public class VcGenerator {
 	 * @return
 	 */
 	protected Pair<VcBranch, List<VcBranch>> transformQuantifierHelper(
-			Codes.Loop code, VcBranch branch, Type[] environment,
-			Map<String, CodeBlock.Index> labels, AttributedCodeBlock block) {
+			Codes.Loop code, VcBranch branch, boolean isInvariant,
+			Type[] environment, Map<String, CodeBlock.Index> labels,
+			AttributedCodeBlock block) {
 		// The loopPc gives the block index of the loop bytecode.
 		CodeBlock.Index loopPc = branch.pc();
 		// This is the easy case, as there is no loop invariant. Therefore,
@@ -950,8 +956,8 @@ public class VcGenerator {
 		// Now, run through loop body. This will produce several kinds of
 		// branch. Those which have terminated or branched out of the loop body,
 		// and those which have reached the end of the loop body. ).
-		return transform(loopPc, 0, activeBranch, false, environment, labels,
-				block);
+		return transform(loopPc, 0, activeBranch, false, isInvariant,
+				environment, labels, block);
 	}
 
 	/**
@@ -1024,7 +1030,7 @@ public class VcGenerator {
 			// modified variables and then assume the loop invariant, before
 			// running through the loop until the invariant is reached again.
 			Pair<VcBranch, List<VcBranch>> p = transform(loopPc, 0, branch,
-					true, environment, labels, block);
+					true, false, environment, labels, block);
 			// At this point, any branch which has terminated or branched out of
 			// the loop represents a true execution path. Any branch which has
 			// failed corresponds to ensuring the loop invariant on entry.
@@ -1065,8 +1071,8 @@ public class VcGenerator {
 			// Branches which prematurely exit the loop are passed into the list
 			// of exit branches. These are valid as they only have information
 			// from the loop invariant.
-			p = transform(loopPc, invariantOffset + numberOfInvariants, activeBranch, true,
-					environment, labels, block);
+			p = transform(loopPc, invariantOffset + numberOfInvariants,
+					activeBranch, true, false, environment, labels, block);
 			activeBranch = p.first();
 			exitBranches.addAll(p.second());
 			// Reestablish loop invariant. To do this, we generate a
@@ -1127,7 +1133,7 @@ public class VcGenerator {
 		// in the former case go straight onto the list of returned branches.
 		// Those in the latter case are discarded (as discussed above).
 		Pair<VcBranch, List<VcBranch>> p = transform(loopPc, 0, activeBranch,
-				false, environment, labels, block);
+				false, false, environment, labels, block);
 		fallThru.goTo(loopPc.next());
 		return new Pair<VcBranch, List<VcBranch>>(fallThru, p.second());
 	}
@@ -1164,7 +1170,7 @@ public class VcGenerator {
 		}
 		String pc = invariantPC.toString().replace(".", "_");
 		buildMacroBlock(method.name() + "_loopinvariant_" + pc, invariantPC,
-				block, types);
+				block, types, true);
 	}
 
 	/**
@@ -1412,7 +1418,7 @@ public class VcGenerator {
 		// conditions (for asserts only).
 		CodeBlock.Index pc = branch.pc();
 		Pair<VcBranch, List<VcBranch>> p = transform(pc, 0, branch, false,
-				environment, labels, block);
+				true, environment, labels, block);
 		List<VcBranch> exitBranches = p.second();
 		// Second, examine the list of exit branches and decide what to do with
 		// them. In the case of a failing branch then we need to generate an
@@ -2010,7 +2016,7 @@ public class VcGenerator {
 	 * @return
 	 */
 	protected void buildMacroBlock(String name, CodeBlock.Index root,
-			AttributedCodeBlock block, List<Type> types) {
+			AttributedCodeBlock block, List<Type> types, boolean isInvariant) {
 		int start = wycsFile.declarations().size();
 		
 		// first, generate a branch for traversing the external block.
@@ -2045,8 +2051,8 @@ public class VcGenerator {
 	
 		// At this point, we are guaranteed exactly one branch because there
 		// is only ever one exit point from a pre-/post-condition.
-		List<VcBranch> exitBranches = transform(master, root, environment,
-				block);
+		List<VcBranch> exitBranches = transform(master, root, isInvariant,
+				environment, block);
 		// Remove any verification conditions that were generated when
 		// processing this block.  		
 		// FIXME: this is something of a hack for now. A better solution would
