@@ -881,23 +881,16 @@ public class VcGenerator {
 	protected List<VcBranch> extractQuantifiers(Codes.Quantify code,
 			VcBranch root, VcBranch fallThru, List<VcBranch> exitBranches) {
 		// First, setup some helper variables for use in the remainder.
-		SyntacticType elementType = convert(code.type.element(),
+		SyntacticType elementType = convert(Type.T_INT,
 				Collections.EMPTY_LIST);
 		Expr index = root.read(code.indexOperand);
 		TypePattern pattern = new TypePattern.Leaf(elementType,
-				(Expr.Variable) index);
-		if (code.type instanceof Type.List) {
-			// FIXME: This case is needed to handle the discrepancy between
-			// lists and
-			// maps. Eventually, I plan to eliminate this discrepancy.
-			Expr.Variable i = new Expr.Variable("_"
-					+ ((Expr.Variable) index).name);
-			index = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { i, index });
-			pattern = new TypePattern.Tuple(new TypePattern[] {
-					new TypePattern.Leaf(new SyntacticType.Int(), i), pattern });
-		}
-		Expr elementOf = new Expr.Binary(Expr.Binary.Op.IN, index,
-				root.read(code.sourceOperand));
+				(Expr.Variable) index);		
+		Expr lowerBound = new Expr.Binary(Expr.Binary.Op.LTEQ,
+				root.read(code.startOperand), index);
+		Expr upperBound = new Expr.Binary(Expr.Binary.Op.LT, index,
+				root.read(code.endOperand));
+		Expr range = new Expr.Binary(Expr.Binary.Op.AND, lowerBound, upperBound);
 		ArrayList<VcBranch> qBranches = new ArrayList<VcBranch>();
 		// Second, deal with the universally quantified fall-thru branch. We
 		// fork the root for this in order not to disturb it. We also must
@@ -905,7 +898,7 @@ public class VcGenerator {
 		Expr forallBody = generateAssumptions(fallThru, root);
 		fallThru = root.fork();
 		fallThru.assume(new Expr.ForAll(pattern, new Expr.Binary(
-				Expr.Binary.Op.IMPLIES, elementOf, forallBody)));
+				Expr.Binary.Op.IMPLIES, range, forallBody)));
 		fallThru.goTo(fallThru.pc().next());
 		qBranches.add(fallThru);
 		// Finally, deal with existential branches next. We must fork the root
@@ -913,7 +906,7 @@ public class VcGenerator {
 		for (int i = 0; i != exitBranches.size(); ++i) {
 			VcBranch b = exitBranches.get(i);
 			Expr body = generateAssumptions(b, root);
-			body = new Expr.Binary(Expr.Binary.Op.AND, elementOf, body);
+			body = new Expr.Binary(Expr.Binary.Op.AND, range, body);
 			CodeBlock.Index target = b.pc();
 			b = root.fork();
 			b.assume(new Expr.Exists(pattern, body));

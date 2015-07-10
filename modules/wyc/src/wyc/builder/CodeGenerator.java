@@ -1576,29 +1576,18 @@ public final class CodeGenerator {
 		}
 	}
 
-	private void generate(Iterator<Pair<String, Expr>> srcIterator,
+	private void generate(Iterator<Triple<String, Expr, Expr>> srcIterator,
 			String trueLabel, String falseLabel, Expr.Quantifier e,
 			Environment environment, AttributedCodeBlock codes, Context context) {
 
 		if (srcIterator.hasNext()) {
 			// This is the inductive case (i.e. an outer loop)
-			Pair<String, Expr> src = srcIterator.next();
+			Triple<String, Expr, Expr> src = srcIterator.next();
 
 			// First, determine the src slot.
-			Nominal.List srcType = (Nominal.List) src.second().result();
-			Type.EffectiveList rawSrcType = (Type.EffectiveList) srcType.raw();
-			int srcSlot;
-			int varSlot = environment.allocate(rawSrcType.element(),
-					src.first());
-
-			if (src.second() instanceof Expr.LocalVariable) {
-				// this is a little optimisation to produce slightly better
-				// code.
-				Expr.LocalVariable v = (Expr.LocalVariable) src.second();
-				srcSlot = environment.get(v.var);
-			} else {
-				srcSlot = generate(src.second(), environment, codes, context);
-			}
+			int varSlot = environment.allocate(Type.T_INT, src.first());		
+			int startSlot = generate(src.second(), environment, codes, context);
+			int endSlot = generate(src.third(), environment, codes, context);
 
 			// Second, recursively generate remaining parts
 			AttributedCodeBlock block = codes.createSubBlock();
@@ -1606,8 +1595,8 @@ public final class CodeGenerator {
 					context);
 
 			// Finally, create the forall loop bytecode
-			codes.add(Codes.Quantify(rawSrcType, srcSlot, varSlot,
-					new int[0], block.bytecodes()), attributes(e));
+			codes.add(Codes.Quantify(startSlot, endSlot, varSlot, new int[0],
+					block.bytecodes()), attributes(e));
 		} else {
 			// This is the base case (i.e. the innermost loop)
 			switch (e.cop) {
@@ -2127,8 +2116,6 @@ public final class CodeGenerator {
 			return Codes.BinaryOperatorKind.DIV;
 		case REM:
 			return Codes.BinaryOperatorKind.REM;
-		case RANGE:
-			return Codes.BinaryOperatorKind.RANGE;
 		case BITWISEAND:
 			return Codes.BinaryOperatorKind.BITWISEAND;
 		case BITWISEOR:

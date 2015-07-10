@@ -570,7 +570,7 @@ public interface Code {
 	// Nary Operators
 	// =========================================================================
 	public static final int OPCODE_loop              = 0 + FMT_NARYOP;
-	public static final int OPCODE_forall            = 1 + FMT_NARYOP;
+//	public static final int OPCODE_forall            = 1 + FMT_NARYOP;
 	public static final int OPCODE_quantify          = 2 + FMT_NARYOP;	
 	public static final int OPCODE_indirectinvokefnv = 3 + FMT_NARYOP;
 	public static final int OPCODE_indirectinvokemdv = 4 + FMT_NARYOP;

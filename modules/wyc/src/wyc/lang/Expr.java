@@ -32,6 +32,7 @@ import wycc.lang.Attribute;
 import wycc.lang.NameID;
 import wycc.lang.SyntacticElement;
 import wycc.util.Pair;
+import wycc.util.Triple;
 import wyfs.lang.Path;
 import wyil.lang.*;
 
@@ -415,17 +416,17 @@ public interface Expr extends SyntacticElement {
 
 	public static class Quantifier extends SyntacticElement.Impl implements Expr {
 		public final QOp cop;
-		public final ArrayList<Pair<String,Expr>> sources;
+		public final ArrayList<Triple<String,Expr,Expr>> sources;
 		public Expr condition;
 		public Nominal type;
 
 		public Quantifier(QOp cop, 
-				Collection<Pair<String, Expr>> sources, Expr condition,
+				Collection<Triple<String, Expr, Expr>> sources, Expr condition,
 				Attribute... attributes) {
 			super(attributes);
 			this.cop = cop;
 			this.condition = condition;
-			this.sources = new ArrayList<Pair<String, Expr>>(sources);
+			this.sources = new ArrayList<Triple<String, Expr, Expr>>(sources);
 		}
 
 		public Nominal result() {

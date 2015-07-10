@@ -161,11 +161,11 @@ public class DefiniteAssignmentCheck extends
 		if (loop instanceof Codes.Quantify) {
 			Codes.Quantify fall = (Codes.Quantify) loop;
 
-			if (!in.contains(fall.sourceOperand)) {
+			if (!in.contains(fall.startOperand) || !in.contains(fall.endOperand)) {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
 						filename,
 						rootBlock.attribute(index, SourceLocation.class));
-			}
+			} 
 
 			in = new HashSet<Integer>(in);
 			in.add(fall.indexOperand);

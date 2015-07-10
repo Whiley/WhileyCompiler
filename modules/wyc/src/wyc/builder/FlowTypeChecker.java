@@ -46,6 +46,7 @@ import wycc.lang.SyntacticElement;
 import wycc.lang.SyntaxError;
 import wycc.util.Pair;
 import wycc.util.ResolveError;
+import wycc.util.Triple;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.Constant;
@@ -1736,24 +1737,16 @@ public class FlowTypeChecker {
 	private Expr propagate(Expr.Quantifier expr, Environment environment,
 			Context context) throws IOException, ResolveError {
 
-		ArrayList<Pair<String, Expr>> sources = expr.sources;
+		ArrayList<Triple<String, Expr, Expr>> sources = expr.sources;
 		Environment local = environment.clone();
 		for (int i = 0; i != sources.size(); ++i) {
-			Pair<String, Expr> p = sources.get(i);
-			Expr e = propagate(p.second(), local, context);
-			p = new Pair<String, Expr>(p.first(), e);
-			sources.set(i, p);
-			Nominal type = e.result();
-			Nominal.List colType = expandAsEffectiveList(type);
-			if (colType == null) {
-				syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),
-						context, e);
-				return null; // dead code
-			}
-			// update environment for subsequent source expressions, the
-			// condition and the value.
-			local = local.declare(p.first(), colType.element(),
-					colType.element());
+			Triple<String, Expr, Expr> p = sources.get(i);
+			Expr start = propagate(p.second(), local, context);
+			Expr end = propagate(p.third(), local, context);
+			sources.set(i,
+					new Triple<String, Expr, Expr>(p.first(), start, end));
+			checkIsSubtype(Type.T_INT, start, context);
+			local = local.declare(p.first(), Nominal.T_INT, Nominal.T_INT);
 		}
 
 		if (expr.condition != null) {
