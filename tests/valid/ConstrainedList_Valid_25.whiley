@@ -1,7 +1,8 @@
 
 
 function indexOf([int] list, int index) -> int
-requires all { l in list | l >= 0 } && ((index >= 0) && (index < |list|)):
+requires all { i in 0..|list| | list[i] >= 0 }
+requires index >= 0 && index < |list|:
     return list[index]
 
 public export method test() -> void:

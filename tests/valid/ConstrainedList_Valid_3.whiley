@@ -3,11 +3,14 @@
 type nat is (int x) where x >= 0
 
 function init(nat length, int value) -> ([int] result)
-ensures (|result| == length) && all { i in result | i == value }:
+ensures (|result| == length)
+ensures all { i in 0..|result| | result[i] == value }:
     //
     int i = 0
     [int] data = []
-    while i != length where i == |data| && all { d in data | d == value }:
+    while i != length 
+        where i == |data|
+        where all { j in 0..|data| | data[j] == value }:
         data = data ++ [value]
         i = i + 1
     //

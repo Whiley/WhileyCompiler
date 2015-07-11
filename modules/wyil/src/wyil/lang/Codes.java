@@ -467,27 +467,27 @@ public abstract class Codes {
 				return "rem";
 			}
 		},
-		BITWISEOR(6) {
+		BITWISEOR(5) {
 			public String toString() {
 				return "or";
 			}
 		},
-		BITWISEXOR(7) {
+		BITWISEXOR(6) {
 			public String toString() {
 				return "xor";
 			}
 		},
-		BITWISEAND(8) {
+		BITWISEAND(7) {
 			public String toString() {
 				return "and";
 			}
 		},
-		LEFTSHIFT(9) {
+		LEFTSHIFT(8) {
 			public String toString() {
 				return "shl";
 			}
 		},
-		RIGHTSHIFT(10) {
+		RIGHTSHIFT(9) {
 			public String toString() {
 				return "shr";
 			}
@@ -509,7 +509,6 @@ public abstract class Codes {
 	 * <li><i>add, subtract, multiply, divide, remainder</i>. Both operands must
 	 * be either integers or reals (but not one or the other). A value of the
 	 * same type is produced.</li>
-	 * <li><i>range</i></li>
 	 * <li><i>bitwiseor, bitwisexor, bitwiseand</i></li>
 	 * <li><i>leftshift,rightshift</i></li>
 	 * </ul>

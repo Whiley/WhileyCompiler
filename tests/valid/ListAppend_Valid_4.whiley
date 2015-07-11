@@ -1,7 +1,7 @@
 function append([int] input) -> [int]:
     [int] rs = []
     int i = 0
-    while i < |input|:
+    while i < |input| where i >= 0:
         rs = [input[i]] ++ rs
         i = i + 1
     return rs

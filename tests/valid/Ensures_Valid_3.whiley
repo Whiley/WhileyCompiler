@@ -1,5 +1,5 @@
 function pred([int] xs) -> (bool b)
-ensures b ==> no { z in xs | z < 0 }:
+ensures b ==> no { i in 0..|xs| | xs[i] < 0 }:
     //
     [int] zs = []
     int i = 0

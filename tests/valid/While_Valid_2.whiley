@@ -8,9 +8,9 @@ function binarySearch([int] items, int item) -> (bool result)
 // The input list must be in sorted order
 requires all { i in 0 .. |items|-1 | items[i] < items[i+1] }
 // If return true, then matching item must exist in items
-ensures result ==> some { i in items | i == item }
+ensures result ==> some { i in 0..|items| | items[i] == item }
 // If return false, then no matching item exists in items
-ensures !result ==> no { i in items | i == item }:
+ensures !result ==> no { i in 0..|items| | items[i] == item }:
     //
     int lo = 0
     int hi = |items|

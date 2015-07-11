@@ -13,7 +13,7 @@ public function toUnsignedInt(byte b) -> int:
 public function meth([byte] bytes) -> [int]:
     [int] data = []
     int i = 0
-    while i < |bytes|:
+    while i < |bytes| where i >= 0:
         data = data ++ [toUnsignedInt(bytes[i])]
         i = i + 1
     return data

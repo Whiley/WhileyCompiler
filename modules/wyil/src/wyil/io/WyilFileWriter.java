@@ -526,7 +526,7 @@ public final class WyilFileWriter {
 	private void writeBase(boolean wide, Code code,
 			BinaryOutputStream output) throws IOException {
 
-		// second, deal with standard instruction formats
+		// second, deal with standard instruction formats		
 		output.write_u8(code.opcode());
 
 		if(code instanceof Code.AbstractUnaryOp) {

@@ -547,12 +547,11 @@ public interface Code {
 	public static final int OPCODE_mul         = 2  + FMT_BINARYASSIGN;
 	public static final int OPCODE_div         = 3  + FMT_BINARYASSIGN;
 	public static final int OPCODE_rem         = 4  + FMT_BINARYASSIGN;
-	public static final int OPCODE_range       = 5  + FMT_BINARYASSIGN;
-	public static final int OPCODE_bitwiseor   = 6  + FMT_BINARYASSIGN;
-	public static final int OPCODE_bitwisexor  = 7  + FMT_BINARYASSIGN;
-	public static final int OPCODE_bitwiseand  = 8  + FMT_BINARYASSIGN;
-	public static final int OPCODE_lshr        = 9  + FMT_BINARYASSIGN;
-	public static final int OPCODE_rshr        = 10 + FMT_BINARYASSIGN;
+	public static final int OPCODE_bitwiseor   = 5  + FMT_BINARYASSIGN;
+	public static final int OPCODE_bitwisexor  = 6  + FMT_BINARYASSIGN;
+	public static final int OPCODE_bitwiseand  = 7  + FMT_BINARYASSIGN;
+	public static final int OPCODE_lshr        = 8  + FMT_BINARYASSIGN;
+	public static final int OPCODE_rshr        = 9  + FMT_BINARYASSIGN;
 	public static final int OPCODE_indexof     = 11 + FMT_BINARYASSIGN;
 //	public static final int OPCODE_union       = 12 + FMT_BINARYASSIGN;
 //	public static final int OPCODE_unionl      = 13 + FMT_BINARYASSIGN;

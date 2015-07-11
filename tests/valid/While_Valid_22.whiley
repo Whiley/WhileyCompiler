@@ -10,7 +10,7 @@ requires |xs| > 0
 // Return must be element of input list
 ensures result in xs
 // No element of input list is larger than return
-ensures no { x in xs | x > result }:
+ensures no { i in 0..|xs| | xs[i] > result }:
     //
     int r = xs[0]
     int i = 0

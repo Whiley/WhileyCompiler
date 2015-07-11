@@ -817,7 +817,6 @@ public final class WyilFileReader {
 		case Code.OPCODE_mul:
 		case Code.OPCODE_div:
 		case Code.OPCODE_rem:
-		case Code.OPCODE_range:
 		case Code.OPCODE_bitwiseor:
 		case Code.OPCODE_bitwisexor:
 		case Code.OPCODE_bitwiseand:

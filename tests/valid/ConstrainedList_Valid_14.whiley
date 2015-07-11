@@ -1,6 +1,6 @@
 
 
-type wierd is ([int] xs) where some { x in xs | x > 0 }
+type wierd is ([int] xs) where some { i in 0..|xs| | xs[i] > 0 }
 
 function f([int] xs) -> wierd
 requires |xs| > 0:

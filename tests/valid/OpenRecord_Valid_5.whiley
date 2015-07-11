@@ -10,7 +10,7 @@ function sum(VecPoint vp) -> int:
     else:
         int r = 0
         int i = 0
-        while i < |vp|:
+        while i < |vp| where i >= 0:
             r = r + sum(vp[i])
             i = i + 1
         return r

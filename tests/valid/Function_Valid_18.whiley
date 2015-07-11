@@ -1,6 +1,9 @@
 type nat is (int x) where x >= 0
 
-function abs(int x) -> nat:
+function abs(int x) -> (nat r)
+ensures r == x || r == -x
+ensures r >= 0:
+    //
     if x >= 0:
         return x
     else:
