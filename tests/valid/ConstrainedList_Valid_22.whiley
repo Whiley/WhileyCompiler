@@ -10,7 +10,7 @@ function inc([nat] xs) -> [nat]:
             xs[i] = xs[i] + 1
         i = i + 1
         j = j + 1
-    assert no { x in xs | x < 0 }
+    assert no { k in 0..|xs| | xs[k] < 0 }
     return xs
 
 public export method test() -> void:

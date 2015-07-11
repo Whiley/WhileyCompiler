@@ -375,37 +375,6 @@ public class AllInvalidTests {
 	}
 
 	@Test
-	public void For_Invalid_1() {
-		runTest("For_Invalid_1");
-	}
-
-	@Test
-	public void For_Invalid_5() {
-		runTest("For_Invalid_5");
-	}
-
-	@Test
-	public void For_Invalid_6() {
-		runTest("For_Invalid_6");
-	}
-
-	@Test
-	public void For_Invalid_7() {
-		runTest("For_Invalid_7");
-	}
-
-	@Test
-	public void For_Invalid_8() {
-		runTest("For_Invalid_8");
-	}
-
-	@Ignore("#409") @Test
-	public void For_Invalid_9() {
-		runTest("For_Invalid_9");
-	}
-
-
-	@Test
 	public void FunctionRef_Invalid_1() {
 		runTest("FunctionRef_Invalid_1");
 	}
@@ -478,11 +447,6 @@ public class AllInvalidTests {
 	@Test
 	public void If_Invalid_2() {
 		runTest("If_Invalid_2");
-	}
-
-	@Test
-	public void If_Invalid_3() {
-		runTest("If_Invalid_3");
 	}
 
 	@Test

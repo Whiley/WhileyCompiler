@@ -1,6 +1,8 @@
 type list is [int]
 
-function index(list l, int index) -> any:
+function index(list l, int index) -> any
+requires index >= 0 && index < |l|:
+    //
     return l[index]
 
 public export method test() -> void:

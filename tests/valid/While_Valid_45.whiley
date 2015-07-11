@@ -11,7 +11,7 @@ function buildNatList(int n) -> ([int] m):
     //    r in rs ==> r >= 0
     while i < n
         where i >= 0
-        where all { r in rs | r >= 0 }:
+        where all { r in 0..|rs| | rs[r] >= 0 }:
         //
         rs = rs ++ [i]
         i = i + 1

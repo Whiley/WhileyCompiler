@@ -23,11 +23,11 @@ constant Value is [1, 5, 10, 20, 50, 100, 500, 1000]
 type Cash is ([nat] coins) where |coins| == |Value|
 
 function Cash([nat] coins) -> Cash
-requires no { c in coins | c >= |Value| }:
+requires no { i in 0..|coins| | coins[i] >= |Value| }:
     [int] cash = [0, 0, 0, 0, 0, 0, 0, 0]
     int i = 0
     while i < |coins|
-        where (|cash| == |Value|) && no { c in cash | c < 0 }:
+        where (|cash| == |Value|) && no { k in 0..|cash| | cash[k] < 0 }:
         nat coin = coins[i]
         cash[coin] = cash[coin] + 1
         i = i + 1

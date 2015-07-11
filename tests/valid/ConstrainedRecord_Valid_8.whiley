@@ -12,7 +12,7 @@ type piece is (int p) where p == BLANK || p == CIRCLE || p == CROSS
 
 type Board is {[piece] pieces, nat move} where (move <= 9) && (|pieces| == 9)
 
-type EmptyBoard is (Board b) where no { x in b.pieces | x != BLANK }
+type EmptyBoard is (Board b) where no { i in 0..|b.pieces| | b.pieces[i] != BLANK }
 
 function EmptyBoard() -> EmptyBoard:
     return {pieces: [BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK], move: 0}

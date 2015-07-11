@@ -1,6 +1,6 @@
 
 function f([int] ls) -> bool
-requires no { i in ls | i <= 0 }:
+requires no { i in 0..|ls| | ls[i] <= 0 }:
     return true
 
 method main() -> void:

@@ -340,15 +340,7 @@ public class Interpreter {
 		case DIV:
 			return i1.divide(i2);
 		case REM:
-			return i1.remainder(i2);
-		case RANGE:
-			ArrayList<Constant> values = new ArrayList<Constant>();
-			int start = i1.value.intValue();
-			int end = i2.value.intValue();
-			for (int i = start; i < end; ++i) {
-				values.add(Constant.V_INTEGER(BigInteger.valueOf(i)));
-			}
-			return Constant.V_LIST(values);
+			return i1.remainder(i2);		
 		}
 		deadCode(context);
 		return null;
@@ -688,13 +680,17 @@ public class Interpreter {
 
 	private Object execute(Codes.Quantify bytecode, Constant[] frame,
 			Context context) {
-		Constant operand = frame[bytecode.sourceOperand];
-		checkType(operand, context, Constant.List.class);		
-		Constant.List list = (Constant.List) operand;
-		
-		for (Constant value : list.values) {
+		Constant startOperand = frame[bytecode.startOperand];
+		Constant endOperand = frame[bytecode.endOperand];
+		checkType(startOperand, context, Constant.Integer.class);
+		checkType(endOperand, context, Constant.Integer.class);
+		Constant.Integer so = (Constant.Integer) startOperand;
+		Constant.Integer eo = (Constant.Integer) endOperand;
+		int start = so.value.intValue();
+		int end = eo.value.intValue();
+		for (int i = start; i < end; ++i) {		
 			// Assign the index variable
-			frame[bytecode.indexOperand] = value;
+			frame[bytecode.indexOperand] = Constant.V_INTEGER(BigInteger.valueOf(i));
 			// Execute loop body for one iteration
 			Object r = executeAllWithin(frame, context);
 			// Now, check whether we fell through to the end or not. If not,

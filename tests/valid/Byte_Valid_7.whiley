@@ -20,7 +20,7 @@ function invert(byte b) -> byte:
 
 public export method test() -> void:
     int i = 0
-    while i < |constants|:
+    while i < |constants| where i >= 0:
         byte constant_i = constants[i]
         assume (~constant_i) == invert(constant_i)
         i = i + 1

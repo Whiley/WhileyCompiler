@@ -504,7 +504,7 @@ public final class WyilFileReader {
 	private Code.Compound updateBytecodes(Code.Compound compound, ArrayList<Code> bytecodes) {
 		if (compound instanceof Codes.Quantify) {
 			Codes.Quantify l = (Codes.Quantify) compound;
-			return Codes.Quantify(l.type, l.sourceOperand, l.indexOperand,
+			return Codes.Quantify(l.startOperand, l.endOperand, l.indexOperand,
 					l.modifiedOperands, bytecodes);
 		} else if(compound instanceof Codes.Loop) {
 			Codes.Loop l = (Codes.Loop) compound;
@@ -817,7 +817,6 @@ public final class WyilFileReader {
 		case Code.OPCODE_mul:
 		case Code.OPCODE_div:
 		case Code.OPCODE_rem:
-		case Code.OPCODE_range:
 		case Code.OPCODE_bitwiseor:
 		case Code.OPCODE_bitwisexor:
 		case Code.OPCODE_bitwiseand:
@@ -842,30 +841,26 @@ public final class WyilFileReader {
 			operands[i] = readBase(wideBase);
 		}
 
-		if (opcode == Code.OPCODE_loop) {
-			// Special case which doesn't have a type.
+		// Special case which doesn't have a type.
+		if (opcode == Code.OPCODE_loop) {			
 			int count = readRest(wideRest);
 			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);
 			return Codes.Loop(operands, bytecodes);
+		} else if(opcode == Code.OPCODE_quantify) {
+			int count = readRest(wideRest);
+			int indexOperand = operands[0];
+			int startOperand = operands[1];
+			int endOperand = operands[2];
+			operands = Arrays.copyOfRange(operands, 3, operands.length);
+			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);			
+			return Codes.Quantify(startOperand, endOperand, indexOperand,
+					operands, bytecodes);
 		}
 
 		int typeIdx = readRest(wideRest);
 		Type type = typePool[typeIdx];
 
-		switch (opcode) {
-		case Code.OPCODE_quantify:
-		case Code.OPCODE_forall: {
-			if (!(type instanceof Type.EffectiveList)) {
-				throw new RuntimeException("expected collection type");
-			}
-			int count = readRest(wideRest);
-			int indexOperand = operands[0];
-			int sourceOperand = operands[1];
-			operands = Arrays.copyOfRange(operands, 2, operands.length);
-			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);			
-			return Codes.Quantify((Type.EffectiveList) type,
-					sourceOperand, indexOperand, operands, bytecodes);
-		}
+		switch (opcode) {		
 		case Code.OPCODE_indirectinvokefnv:
 		case Code.OPCODE_indirectinvokemdv: {
 			if (!(type instanceof Type.FunctionOrMethod)) {

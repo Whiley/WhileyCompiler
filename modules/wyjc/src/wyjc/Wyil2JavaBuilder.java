@@ -1249,14 +1249,14 @@ public class Wyil2JavaBuilder implements Builder {
 	private int translate(CodeBlock.Index index, Codes.Quantify c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 
-		Type elementType = c.type.element();
-
-		bytecodes.add(new Bytecode.Load(c.sourceOperand,
-				convertUnderlyingType((Type) c.type)));
-		JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
+		bytecodes.add(new Bytecode.Load(c.startOperand,WHILEYINT));
+		bytecodes.add(new Bytecode.Load(c.endOperand,WHILEYINT));
+		JvmType.Function ftype = new JvmType.Function(WHILEYLIST, WHILEYINT, WHILEYINT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "range", ftype,
+				Bytecode.InvokeMode.STATIC));
+		ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "iterator",
 				ftype, Bytecode.InvokeMode.INTERFACE));
-		ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
 		bytecodes.add(new Bytecode.Store(freeSlot, JAVA_UTIL_ITERATOR));
 		String loopHeader = freshLabel();
 		String loopExit = freshLabel();
@@ -1270,9 +1270,9 @@ public class Wyil2JavaBuilder implements Builder {
 		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next", ftype,
 				Bytecode.InvokeMode.INTERFACE));
-		addReadConversion(elementType, bytecodes);
+		addReadConversion(Type.T_INT, bytecodes);
 		bytecodes.add(new Bytecode.Store(c.indexOperand,
-				convertUnderlyingType(elementType)));
+				convertUnderlyingType(Type.T_INT)));
 		// Translate body of loop. The cast is required to ensure correct method
 		// is called.
 		translate(index, (CodeBlock) c, freeSlot + 1, bytecodes);
@@ -1431,10 +1431,6 @@ public class Wyil2JavaBuilder implements Builder {
 			bytecodes.add(new Bytecode.Load(c.operand(0), type));
 			bytecodes.add(new Bytecode.Load(c.operand(1), WHILEYINT));
 			break;
-		case RANGE:
-			bytecodes.add(new Bytecode.Load(c.operand(0), WHILEYINT));
-			bytecodes.add(new Bytecode.Load(c.operand(1), WHILEYINT));
-			break;
 		}
 
 		// second, apply operation
@@ -1458,11 +1454,6 @@ public class Wyil2JavaBuilder implements Builder {
 		case REM:
 			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
 					"remainder", ftype, Bytecode.InvokeMode.VIRTUAL));
-			break;
-		case RANGE:
-			ftype = new JvmType.Function(WHILEYLIST, WHILEYINT, WHILEYINT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "range", ftype,
-					Bytecode.InvokeMode.STATIC));
 			break;
 		case BITWISEAND:
 			ftype = new JvmType.Function(type, type);

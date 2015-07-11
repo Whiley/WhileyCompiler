@@ -5,7 +5,7 @@ type rec is {int y, int x}
 function f([int] xs) -> [bool | null]:
     [bool|null] r = []
     int i = 0
-    while i < |xs|:
+    while i < |xs| where i >= 0:
         if xs[i] < 0:
             r = r ++ [true]
         else:

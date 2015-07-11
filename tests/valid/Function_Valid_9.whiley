@@ -3,7 +3,7 @@ type fr6nat is int
 function g([fr6nat] xs) -> [fr6nat]:
     [fr6nat] ys = []
     int i = 0
-    while i < |xs|:
+    while i < |xs| where i >= 0:
         if xs[i] > 1:
             ys = ys ++ [xs[i]]
         i = i + 1

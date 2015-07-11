@@ -1,6 +1,6 @@
 
 
-type posintlist is ([int] xs) where no { x in xs | x < 0 }
+type posintlist is ([int] xs) where no { i in 0..|xs| | xs[i] < 0 }
 
 function sum(posintlist ls) -> (int result)
 // Result cannot be negative

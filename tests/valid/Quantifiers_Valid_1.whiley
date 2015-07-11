@@ -1,7 +1,7 @@
 
 
 function f([int] xs) -> [int]
-requires no { w in xs | w < 0 }:
+requires no { i in 0..|xs| | xs[i] < 0 }:
     return xs
 
 public export method test() -> void:

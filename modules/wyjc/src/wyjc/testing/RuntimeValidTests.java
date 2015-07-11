@@ -1372,11 +1372,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void ListRange_Valid_1() {
-		runTest("ListRange_Valid_1");
-	}
-
-	@Test
 	public void ListSublist_Valid_1() {
 		runTest("ListSublist_Valid_1");
 	}
@@ -1624,11 +1619,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void Quantifiers_Valid_1() {
 		runTest("Quantifiers_Valid_1");
-	}
-
-	@Test
-	public void Range_Valid_1() {
-		runTest("Range_Valid_1");
 	}
 
 	@Test

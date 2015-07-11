@@ -280,7 +280,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		if(loop instanceof Codes.Quantify) {
 			Codes.Quantify fall = (Codes.Quantify) loop;
 			environment = new Env(environment);
-			environment.add(fall.sourceOperand);
+			environment.add(fall.startOperand);
+			environment.add(fall.endOperand);
 		} else {
 			environment = EMPTY_ENV;
 		}
@@ -322,7 +323,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 
 				// FIXME: the following is surely broken ?
 
-				code = Codes.Quantify(fall.type, fall.sourceOperand,
+				code = Codes.Quantify(fall.startOperand, fall.endOperand,
 						fall.indexOperand, nModifiedOperands, loop.bytecodes());
 			} else {
 

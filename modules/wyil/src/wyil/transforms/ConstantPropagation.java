@@ -307,25 +307,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			case REM: {
 				result = lnum.remainder(rnum);
 				break;
-			}
-			case RANGE: {
-				int start = lnum.value.intValue();
-				int end = rnum.value.intValue();
-				if (BigInteger.valueOf(start).equals(lnum.value)
-						&& BigInteger.valueOf(end).equals(rnum.value)) {
-					if (start > -100 && start < 100 && end > -100 && end < 100) {
-						int dir = start < end ? 1 : -1;
-						ArrayList<Constant> values = new ArrayList<Constant>();
-						while (start != end) {
-							values.add(Constant.V_INTEGER(BigInteger
-									.valueOf(start)));
-							start = start + dir;
-						}
-						result = Constant.V_LIST(values);
-						break;
-					}
-				}
-			}
+			}			
 			}
 		}
 

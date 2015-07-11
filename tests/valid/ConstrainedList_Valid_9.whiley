@@ -1,6 +1,6 @@
 
 
-type posintlist is ([int] list) where no { x in list | x < 0 }
+type posintlist is ([int] list) where no { i in 0 .. |list| | list[i] < 0 }
 
 function sum(posintlist ls, int i) -> (int r)
 // Input i must be valid index in list, or one past

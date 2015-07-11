@@ -1305,11 +1305,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ListRange_Valid_1() throws IOException {
-		runTest("ListRange_Valid_1");
-	}
-
-	@Test
 	public void ListSublist_Valid_1() throws IOException {
 		runTest("ListSublist_Valid_1");
 	}
@@ -1557,11 +1552,6 @@ public class AllValidTests {
 	@Test
 	public void Quantifiers_Valid_1() throws IOException {
 		runTest("Quantifiers_Valid_1");
-	}
-
-	@Test
-	public void Range_Valid_1() throws IOException {
-		runTest("Range_Valid_1");
 	}
 
 	@Test

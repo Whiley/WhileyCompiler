@@ -393,17 +393,17 @@ public abstract class Codes {
 	}
 
 
-	public static Quantify Quantify(Type.EffectiveList type,
-			int sourceOperand, int indexOperand,
+	public static Quantify Quantify(
+			int startOperand, int endOperand, int indexOperand,
 			int[] modifiedOperands, Collection<Code> bytecodes) {
-		return new Quantify(type, sourceOperand, indexOperand,
+		return new Quantify(startOperand, endOperand, indexOperand,
 				modifiedOperands, bytecodes);
 	}
 
-	public static Quantify Quantify(Type.EffectiveList type,
-			int sourceOperand, int indexOperand, int[] modifiedOperands,
+	public static Quantify Quantify(
+			int startOperand, int endOperand, int indexOperand, int[] modifiedOperands,
 			Code... bytecodes) {
-		return new Quantify(type, sourceOperand, indexOperand,
+		return new Quantify(startOperand, endOperand, indexOperand,
 				modifiedOperands, bytecodes);
 	}
 
@@ -467,32 +467,27 @@ public abstract class Codes {
 				return "rem";
 			}
 		},
-		RANGE(5) {
-			public String toString() {
-				return "range";
-			}
-		},
-		BITWISEOR(6) {
+		BITWISEOR(5) {
 			public String toString() {
 				return "or";
 			}
 		},
-		BITWISEXOR(7) {
+		BITWISEXOR(6) {
 			public String toString() {
 				return "xor";
 			}
 		},
-		BITWISEAND(8) {
+		BITWISEAND(7) {
 			public String toString() {
 				return "and";
 			}
 		},
-		LEFTSHIFT(9) {
+		LEFTSHIFT(8) {
 			public String toString() {
 				return "shl";
 			}
 		},
-		RIGHTSHIFT(10) {
+		RIGHTSHIFT(9) {
 			public String toString() {
 				return "shr";
 			}
@@ -514,7 +509,6 @@ public abstract class Codes {
 	 * <li><i>add, subtract, multiply, divide, remainder</i>. Both operands must
 	 * be either integers or reals (but not one or the other). A value of the
 	 * same type is produced.</li>
-	 * <li><i>range</i></li>
 	 * <li><i>bitwiseor, bitwisexor, bitwiseand</i></li>
 	 * <li><i>leftshift,rightshift</i></li>
 	 * </ul>
@@ -2162,23 +2156,23 @@ public abstract class Codes {
 
 	public static final class Quantify extends Loop {
 		
-		public final int sourceOperand;
+		public final int startOperand;
+		public final int endOperand;
 		public final int indexOperand;
-		public final Type.EffectiveList type;
 
-		private Quantify(Type.EffectiveList type, int sourceOperand,
+		private Quantify(int startOperand,int endOperand,
 				int indexOperand, int[] modifies, Collection<Code> bytecodes) {
 			super(modifies, bytecodes);
-			this.type = type;
-			this.sourceOperand = sourceOperand;
+			this.startOperand = startOperand;
+			this.endOperand = endOperand;
 			this.indexOperand = indexOperand;
 		}
 
-		private Quantify(Type.EffectiveList type, int sourceOperand,
-				int indexOperand, int[] modifies, Code[] bytecodes) {
+		private Quantify(int startOperand, int endOperand, int indexOperand,
+				int[] modifies, Code[] bytecodes) {
 			super(modifies, bytecodes);
-			this.type = type;
-			this.sourceOperand = sourceOperand;
+			this.startOperand = startOperand;
+			this.endOperand = endOperand;
 			this.indexOperand = indexOperand;
 		}
 		
@@ -2189,7 +2183,8 @@ public abstract class Codes {
 		@Override
 		public void registers(java.util.Set<Integer> registers) {
 			registers.add(indexOperand);
-			registers.add(sourceOperand);
+			registers.add(startOperand);
+			registers.add(endOperand);
 			super.registers(registers);
 		}
 
@@ -2209,15 +2204,17 @@ public abstract class Codes {
 				}
 			}
 			Integer nIndexOperand = binding.get(indexOperand);
-			Integer nSourceOperand = binding.get(sourceOperand);
-			if (nSourceOperand != null || nIndexOperand != null
+			Integer nStartOperand = binding.get(startOperand);
+			Integer nEndOperand = binding.get(endOperand);
+			if (nStartOperand != null || nEndOperand != null || nIndexOperand != null
 					|| nModifiedOperands != modifiedOperands || bytecodes != this.bytecodes) {
-				nSourceOperand = nSourceOperand != null ? nSourceOperand
-						: sourceOperand;
+				nStartOperand = nStartOperand != null ? nStartOperand
+						: startOperand;
+				nEndOperand = nEndOperand != null ? nEndOperand
+						: endOperand;
 				nIndexOperand = nIndexOperand != null ? nIndexOperand
 						: indexOperand;
-
-				return Quantify(type, nSourceOperand, nIndexOperand,
+				return Quantify(nStartOperand, nEndOperand, nIndexOperand,
 						nModifiedOperands, bytecodes);
 			} else {
 				return this;
@@ -2225,15 +2222,15 @@ public abstract class Codes {
 		}
 		
 		public int hashCode() {
-			return super.hashCode() + sourceOperand + indexOperand
+			return super.hashCode() + startOperand + endOperand + indexOperand
 					+ Arrays.hashCode(modifiedOperands);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Quantify) {
 				Quantify f = (Quantify) o;
-				return type.equals(f.type)
-						&& sourceOperand == f.sourceOperand
+				return startOperand == f.startOperand
+						&& endOperand == f.endOperand
 						&& indexOperand == f.indexOperand
 						&& Arrays.equals(modifiedOperands, f.modifiedOperands)
 						&& bytecodes.equals(f.bytecodes);
@@ -2242,8 +2239,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "quantify %" + indexOperand + " in %" + sourceOperand + " "
-					+ arrayToString(modifiedOperands) + " : " + type;
+			return "quantify %" + indexOperand + " in %" + startOperand + "..%"
+					+ endOperand + arrayToString(modifiedOperands);
 		}
 	}
 	
