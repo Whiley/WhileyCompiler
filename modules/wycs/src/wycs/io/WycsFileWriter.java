@@ -219,9 +219,9 @@ public class WycsFileWriter {
 				output.write(bytes);
 				output.write_uv(exponent);
 
-			} else if(val instanceof Value.Set) {
-				Value.Set s = (Value.Set) val;
-				output.write_uv(CONSTANT_Set);
+			} else if(val instanceof Value.Array) {
+				Value.Array s = (Value.Array) val;
+				output.write_uv(CONSTANT_Array);
 				output.write_uv(s.values.size());
 				for(Value v : s.values) {
 					int index = constantCache.get(v);
@@ -431,7 +431,7 @@ public class WycsFileWriter {
 				Code.Load c = (Code.Load) code;
 				output.write_uv(c.index);
 				break;
-			}
+			}			
 			case FORALL:
 			case EXISTS: {
 				Code.Quantifier c = (Code.Quantifier) code;
@@ -636,8 +636,8 @@ public class WycsFileWriter {
 		if(v instanceof Value.String) {
 			Value.String s = (Value.String) v;
 			addStringItem(s.value);
-		} else if(v instanceof Value.Set) {
-			Value.Set s = (Value.Set) v;
+		} else if(v instanceof Value.Array) {
+			Value.Array s = (Value.Array) v;
 			for (Value e : s.values) {
 				addConstantItem(e);
 			}
@@ -746,7 +746,7 @@ public class WycsFileWriter {
 	public final static int CONSTANT_False = 2;
 	public final static int CONSTANT_Int = 3;
 	public final static int CONSTANT_Real = 4;
-	public final static int CONSTANT_Set = 5;
+	public final static int CONSTANT_Array = 5;
 	public final static int CONSTANT_String = 6;
 	public final static int CONSTANT_Tuple = 7;
 }

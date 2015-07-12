@@ -287,7 +287,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			checkIsSubtype(SemanticType.IntOrReal, op_type, e, context);
 			break;
 		case LENGTHOF:
-			checkIsSubtype(SemanticType.SetAny, op_type, e, context);
+			checkIsSubtype(SemanticType.ArrayAny, op_type, e, context);
 		}
 		return op_type;
 	}
@@ -307,13 +307,10 @@ public class TypePropagation implements Transform<WyalFile> {
 						e.index);
 			}
 		} else {
-			checkIsSubtype(SemanticType.SetTupleAnyAny, src_type, e.operand, context);
-			// FIXME: handle case for effective set (i.e. union of sets)
-			SemanticType.Set st = (SemanticType.Set) src_type;
-			SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) st
-					.element();
-			// FIXME: handle case for effective tuple of wrong size
-			checkIsSubtype(tt.tupleElement(0), index_type, e.index, context);
+			checkIsSubtype(SemanticType.ArrayAny, src_type, e.operand, context);
+			// FIXME: handle case for effective array (i.e. union of sets)
+			SemanticType.Array st = (SemanticType.Array) src_type;
+			checkIsSubtype(SemanticType.Int, index_type, e.index, context);
 		}
 
 		return src_type;
@@ -348,8 +345,7 @@ public class TypePropagation implements Transform<WyalFile> {
 		SemanticType rhs_type = propagate(e.rightOperand, rightEnvironment,
 				generics, context);
 		
-		if (e.op != Expr.Binary.Op.IN
-				&& SemanticType.And(lhs_type, rhs_type) instanceof SemanticType.Void) {
+		if (SemanticType.And(lhs_type, rhs_type) instanceof SemanticType.Void) {
 			// This is useful to sanity check that the operands make sense. For
 			// example, the expression "1.0 == 1" does not yield an automaton
 			// that reduces to "True" (i.e. because the Equality state has type
@@ -385,57 +381,16 @@ public class TypePropagation implements Transform<WyalFile> {
 		case GTEQ:
 			checkIsSubtype(SemanticType.IntOrReal, lhs_type, e.leftOperand, context);
 			checkIsSubtype(SemanticType.IntOrReal, rhs_type, e.rightOperand, context);
-			return SemanticType.Or(lhs_type, rhs_type);
-		case IN: {
-			checkIsSubtype(SemanticType.SetAny, rhs_type, e.rightOperand, context);
-			SemanticType.Set s = (SemanticType.Set) rhs_type;
-			return s;
-		}
-		case SUBSET:
-		case SUBSETEQ:
-		case SUPSET:
-		case SUPSETEQ: {
-			checkIsSubtype(SemanticType.SetAny, lhs_type, e.leftOperand, context);
-			checkIsSubtype(SemanticType.SetAny, rhs_type, e.rightOperand, context);
-			// following can cause some problems
-			// checkIsSubtype(lhs_type,rhs_type,e);
-			return SemanticType.Or(lhs_type, rhs_type);
-		}
-		case SETUNION: {
-			checkIsSubtype(SemanticType.SetAny, lhs_type, e.leftOperand, context);
-			checkIsSubtype(SemanticType.SetAny, rhs_type, e.rightOperand, context);
-			SemanticType.Set l = (SemanticType.Set) lhs_type;
-			SemanticType.Set r = (SemanticType.Set) rhs_type;
-			return SemanticType.Set(true,
-					SemanticType.Or(l.element(), r.element()));
-		}
-		case SETINTERSECTION: {
-			checkIsSubtype(SemanticType.SetAny, lhs_type, e.leftOperand, context);
-			checkIsSubtype(SemanticType.SetAny, rhs_type, e.rightOperand, context);
-			// TODO: the following gives a more accurate type, but there are
-			// some outstanding issues related to the type system reduction
-			// rules.
-			// return SemanticType.And(lhs_type,rhs_type);
-			SemanticType.Set l = (SemanticType.Set) lhs_type;
-			SemanticType.Set r = (SemanticType.Set) rhs_type;
-			return SemanticType.Set(true,
-					SemanticType.Or(l.element(), r.element()));
-		}
+			return SemanticType.Or(lhs_type, rhs_type);		
 		case LISTAPPEND: {
-			checkIsSubtype(SemanticType.SetTupleAnyAny, lhs_type, e.leftOperand, context);
-			checkIsSubtype(SemanticType.SetTupleAnyAny, rhs_type,
+			checkIsSubtype(SemanticType.ArrayAny, lhs_type, e.leftOperand, context);
+			checkIsSubtype(SemanticType.ArrayAny, rhs_type,
 					e.rightOperand, context);
-			SemanticType.Set l = (SemanticType.Set) lhs_type;
-			SemanticType.Set r = (SemanticType.Set) rhs_type;
-			return SemanticType.Set(true,
+			SemanticType.Array l = (SemanticType.Array) lhs_type;
+			SemanticType.Array r = (SemanticType.Array) rhs_type;
+			return SemanticType.Array(true,
 					SemanticType.Or(l.element(), r.element()));
-		}
-		case RANGE: {
-			checkIsSubtype(SemanticType.Int, lhs_type, e.leftOperand, context);
-			checkIsSubtype(SemanticType.Int, rhs_type, e.rightOperand, context);
-			return SemanticType.Set(true,
-					SemanticType.Tuple(SemanticType.Int, SemanticType.Int));
-		}
+		}		
 		}
 
 		internalFailure("unknown binary expression encountered (" + e + ")",
@@ -454,17 +409,14 @@ public class TypePropagation implements Transform<WyalFile> {
 				generics, context);
 		switch (e.op) {
 		case UPDATE:
-			checkIsSubtype(SemanticType.SetTupleAnyAny, firstType,
+			checkIsSubtype(SemanticType.ArrayAny, firstType,
 					e.firstOperand, context);
-			// FIXME: should this handle map updates?
 			checkIsSubtype(SemanticType.Int, secondType, e.secondOperand, context);
-			SemanticType.Set l = (SemanticType.Set) firstType;
-			SemanticType.Tuple elementType = SemanticType.Tuple(
-					SemanticType.Int, thirdType);
-			checkIsSubtype(l.element(), elementType, e.thirdOperand, context);
+			SemanticType.Array l = (SemanticType.Array) firstType;
+			checkIsSubtype(l.element(), thirdType, e.thirdOperand, context);
 			return firstType;
 		case SUBLIST:
-			checkIsSubtype(SemanticType.SetTupleAnyAny, firstType,
+			checkIsSubtype(SemanticType.ArrayAny, firstType,
 					e.firstOperand, context);
 			checkIsSubtype(SemanticType.Int, secondType, e.secondOperand, context);
 			checkIsSubtype(SemanticType.Int, thirdType, e.thirdOperand, context);
@@ -493,17 +445,11 @@ public class TypePropagation implements Transform<WyalFile> {
 			} else {
 				return SemanticType.Tuple(op_types);
 			}
-		case SET:
-			if (op_types.length == 0) {
-				return SemanticType.Set(true, SemanticType.Void);
-			} else {
-				return SemanticType.Set(true, SemanticType.Or(op_types));
-			}
 		case LIST:
 			if (op_types.length == 0) {
-				return SemanticType.Set(true, SemanticType.Void);
+				return SemanticType.Array(true, SemanticType.Void);
 			} else {
-				return SemanticType.Set(
+				return SemanticType.Array(
 						true,
 						SemanticType.Tuple(SemanticType.Int,
 								SemanticType.Or(op_types)));
@@ -686,10 +632,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			case MUL:
 			case DIV:
 			case REM:
-			case SETUNION:
-			case SETINTERSECTION:
 			case LISTAPPEND:
-			case RANGE:
 				return type;
 			case AND:
 			case OR:
@@ -701,11 +644,6 @@ public class TypePropagation implements Transform<WyalFile> {
 			case LTEQ:
 			case GT:
 			case GTEQ:
-			case IN:
-			case SUBSET:
-			case SUBSETEQ:
-			case SUPSET:
-			case SUPSETEQ:
 				return SemanticType.Bool;
 			}
 		} else if (e instanceof Expr.Ternary) {
@@ -719,7 +657,6 @@ public class TypePropagation implements Transform<WyalFile> {
 			Expr.Nary ue = (Expr.Nary) e;
 			switch (ue.op) {
 			case TUPLE:
-			case SET:
 			case LIST:
 				return type;
 			}
@@ -730,10 +667,8 @@ public class TypePropagation implements Transform<WyalFile> {
 				Value.Integer idx = (Value.Integer) ((Expr.Constant) ue.index).value;
 				return tt.tupleElement(idx.value.intValue());
 			} else {
-				SemanticType.Set st = (SemanticType.Set) type;
-				SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) st
-						.element();
-				return tt.tupleElement(1);
+				SemanticType.Array st = (SemanticType.Array) type;
+				return st.element();
 			}
 		} else {
 			Expr.Invoke fc = (Expr.Invoke) e;

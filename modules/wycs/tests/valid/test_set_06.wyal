@@ -1,3 +1,0 @@
-assert:
-  forall ({int} xs, {int} ys, {int} zs):
-       (xs ⊆ ys && ys ⊆ zs) ==> xs ⊆ zs

@@ -1,0 +1,7 @@
+assert:
+   forall ([int] xs):
+      if:
+        forall (int i):
+          0 <= xs[i] && xs[i] <= 2
+      then:
+          xs[0] != 3

@@ -142,6 +142,8 @@ public class MacroExpansion implements Transform<WycsFile> {
 			return transform((Code.Nary) e);
 		} else if (e instanceof Code.Load) {
 			return transform((Code.Load) e);
+		} else if (e instanceof Code.IndexOf) {
+			return transform((Code.IndexOf) e);
 		} else if (e instanceof Code.Is) {
 			return transform((Code.Is) e);
 		} else if (e instanceof Code.FunCall) {
@@ -201,6 +203,11 @@ public class MacroExpansion implements Transform<WycsFile> {
 				e.attributes());
 	}
 
+	private Code<?> transform(Code.IndexOf e) {
+		return Code.IndexOf(e.type, transform(e.operands[0]),
+				transform(e.operands[1]), e.attributes());
+	}
+	
 	private Code<?> transform(Code.FunCall e) {
 		Code<?> r = e;
 		try {
@@ -308,8 +315,8 @@ public class MacroExpansion implements Transform<WycsFile> {
 			return new Pair<SemanticType,Code<?>>(type,null);
 		} else if (type instanceof SemanticType.Tuple) {
 			return expand(root, (SemanticType.Tuple) type, freeVar);
-		} else if (type instanceof SemanticType.Set) {
-			return expand(root, (SemanticType.Set) type, freeVar);
+		} else if (type instanceof SemanticType.Array) {
+			return expand(root, (SemanticType.Array) type, freeVar);
 		} else if (type instanceof SemanticType.Nominal) {
 			return expand(root, (SemanticType.Nominal) type, freeVar);			
 		} else if(type instanceof SemanticType.Not) {
@@ -366,7 +373,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 	}
 	
 	/**
-	 * Expand a given set type into an invariant or null (if none exists). If an
+	 * Expand a given array type into an invariant or null (if none exists). If an
 	 * invariant is generated from the element, this will be generalised to all
 	 * elements of the set using a universal quantifier.
 	 * 
@@ -380,17 +387,19 @@ public class MacroExpansion implements Transform<WycsFile> {
 	 *         or null if no such invariant exists.
 	 */
 	private Pair<SemanticType, Code<?>> expand(Code<?> root,
-			SemanticType.Set type, int freeVar) {
-		Code.Variable variable = Code.Variable(type.element(), freeVar);
+			SemanticType.Array type, int freeVar) {
+		Code.Variable variable = Code.Variable(type.element(), freeVar);		
 		Pair<SemanticType, Code<?>> p = expand(variable, type.element(),
 				++freeVar);
-		SemanticType.Set nType = SemanticType.Set(type.flag(),
+		SemanticType.Array nType = SemanticType.Array(type.flag(),
 				p.first());
 		Code<?> invariant = p.second();
 		if (invariant != null) {
-			Code<?> elemOf = Code.Binary(nType, Code.Binary.Op.IN, variable,
-					root);
-			invariant = implies(elemOf, invariant);
+			Code<?> indexOf = Code.Binary(nType, Code.Binary.Op.INDEXOF,
+					variable, root);
+			HashMap<Integer, Code> binding = new HashMap<Integer, Code>();
+			binding.put(variable.index, indexOf);
+			invariant = invariant.substitute(binding);
 			invariant = Code.Quantifier(SemanticType.Bool, Code.Op.FORALL,
 					invariant,
 					new Pair[] { new Pair<SemanticType, Integer>(p.first(),

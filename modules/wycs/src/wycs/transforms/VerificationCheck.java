@@ -255,6 +255,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			r = translate((Code.Nary) expr,automaton,environment);
 		} else if(expr instanceof Code.Load) {
 			r = translate((Code.Load) expr,automaton,environment);
+		} else if(expr instanceof Code.IndexOf) {
+			r = translate((Code.IndexOf) expr,automaton,environment);
 		} else if(expr instanceof Code.Is) {
 			r = translate((Code.Is) expr,automaton,environment);
 		} else if(expr instanceof Code.Quantifier) {
@@ -322,15 +324,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		case LT:
 			return SolverUtil.LessThan(automaton, type, lhs, rhs);
 		case LTEQ:
-			return SolverUtil.LessThanEq(automaton, type, lhs, rhs);
-		case IN:
-			return SubsetEq(automaton, type, Set(automaton, lhs), rhs);
-		case SUBSET:
-			return And(automaton,
-					SubsetEq(automaton, type, lhs, rhs),
-					Not(automaton, SolverUtil.Equals(automaton, type, lhs, rhs)));
-		case SUBSETEQ:
-			return SubsetEq(automaton, type, lhs, rhs);
+			return SolverUtil.LessThanEq(automaton, type, lhs, rhs);		
 		}
 		internalFailure("unknown binary bytecode encountered (" + code + ")",
 				filename, code);
@@ -363,8 +357,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			return And(automaton,es);
 		case OR:
 			return Or(automaton,es);
-		case SET:
-			return Set(automaton,es);
+		case ARRAY:
+			return Array(automaton,es);
 		case TUPLE:
 			return Tuple(automaton,es);
 		}
@@ -379,6 +373,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 		return Solver.Load(automaton,e,i);
 	}
 
+	private int translate(Code.IndexOf code, Automaton automaton, HashMap<String,Integer> environment) {
+		int e = translate(code.operands[0],automaton,environment);
+		int i = translate(code.operands[1],automaton,environment);
+		return Solver.IndexOf(automaton,e,i);
+	}
+	
 	private int translate(Code.Is code, Automaton automaton, HashMap<String,Integer> environment) {
 		int e = translate(code.operands[0],automaton,environment);
 		int t = convert(automaton,code.test);
@@ -451,14 +451,14 @@ public class VerificationCheck implements Transform<WycsFile> {
 		} else if (value instanceof Value.String) {
 			Value.String v = (Value.String) value;
 			return Solver.String(automaton,v.value);
-		} else if (value instanceof Value.Set) {
-			Value.Set vs = (Value.Set) value;
+		} else if (value instanceof Value.Array) {
+			Value.Array vs = (Value.Array) value;
 			int[] vals = new int[vs.values.size()];
 			int i = 0;
 			for (Value c : vs.values) {
-				vals[i++] = convert(c,element,automaton);
+				vals[i++] = convert(c, element, automaton);
 			}
-			return Set(automaton , vals);
+			return Array(automaton, vals);
 		} else if (value instanceof Value.Tuple) {
 			Value.Tuple vt = (Value.Tuple) value;
 			int[] vals = new int[vt.values.size()];
@@ -606,10 +606,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		case EQ:
 		case NEQ:
 		case LT:
-		case LTEQ:
-		case IN:
-		case SUBSET:
-		case SUBSETEQ: {
+		case LTEQ: {
 			ArrayList<Code> axioms = new ArrayList<Code>();
 			instantiateFromExpression(condition, axioms, freeVariable);
 			return and(axioms,condition);
@@ -712,6 +709,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			instantiateFromExpression((Code.Nary)expression,axioms, freeVariable);
 		} else if (expression instanceof Code.Load) {
 			instantiateFromExpression((Code.Load)expression,axioms, freeVariable);
+		} else if (expression instanceof Code.IndexOf) {
+			instantiateFromExpression((Code.IndexOf)expression,axioms, freeVariable);
 		} else if (expression instanceof Code.Is) {
 			instantiateFromExpression((Code.Is)expression,axioms, freeVariable);
 		} else if (expression instanceof Code.FunCall) {
@@ -752,6 +751,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
 	}
 
+	private void instantiateFromExpression(Code.IndexOf expression, ArrayList<Code> axioms, int freeVariable) {
+		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
+		instantiateFromExpression(expression.operands[1],axioms, freeVariable);
+	}
+	
 	private void instantiateFromExpression(Code.Is expression, ArrayList<Code> axioms, int freeVariable) {
 		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
 	}

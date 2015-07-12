@@ -96,9 +96,6 @@ public class NormalForms {
 		case REM:
 		case LT:
 		case LTEQ:
-		case IN:
-		case SUBSET:
-		case SUBSETEQ:
 		case EQ:
 		case NEQ:
 			// TODO: there is a potential bug here if the arguments of this
@@ -111,7 +108,7 @@ public class NormalForms {
 
 	private static Code negationNormalForm(Code.Nary e, boolean negate) {
 		switch (e.opcode) {
-		case SET:
+		case ARRAY:
 		case TUPLE:
 			return e; // noop
 		case AND:

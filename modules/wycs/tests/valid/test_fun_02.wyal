@@ -1,7 +1,7 @@
-function indexOf({int,int} src, int x) -> (int r)
+function indexOf([int] src, int i) -> (int r)
 ensures:
-  (x,r) in src
+    src[i] == r
 
 assert:
-  forall ({int,int} xs, int i):
+  forall ([int] xs, int i):
     indexOf(xs,i) > 0 ==> indexOf(xs,i) >= 0

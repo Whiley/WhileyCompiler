@@ -249,6 +249,16 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		return new Load(type,source,index,attributes);
 	}
 
+	public static IndexOf IndexOf(SemanticType.Array type, Code<?> source, Code<?> index,
+			Attribute... attributes) {
+		return new IndexOf(type,source,index,attributes);
+	}
+
+	public static IndexOf IndexOf(SemanticType.Array type, Code<?> source, Code<?> index,
+			Collection<Attribute> attributes) {
+		return new IndexOf(type,source,index,attributes);
+	}
+
 	public static Is Is(SemanticType type, Code<?> operand, SemanticType test,
 			Attribute... attributes) {
 		return new Is(type, operand, test, attributes);
@@ -304,13 +314,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		NEQ(14),
 		LT(15),
 		LTEQ(16),
-		IN(17),
-		SUBSET(18),
-		SUBSETEQ(19),
+		INDEXOF(17),		
 		AND(20),
 		OR(21),
 		TUPLE(22),
-		SET(23),
+		ARRAY(23),
 		LOAD(24),
 		EXISTS(25),
 		FORALL(26),
@@ -483,7 +491,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			super(type, opcode, new Code[] { leftOperand, rightOperand },
 					attributes);
 			if (opcode.offset < Op.ADD.offset
-					|| opcode.offset > Op.SUBSETEQ.offset) {
+					|| opcode.offset > Op.LTEQ.offset) {
 				throw new IllegalArgumentException(
 						"invalid opcode for Binary constructor");
 			}
@@ -494,7 +502,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			super(type, opcode, new Code[] { leftOperand, rightOperand },
 					attributes);
 			if (opcode.offset < Op.ADD.offset
-					|| opcode.offset > Op.SUBSETEQ.offset) {
+					|| opcode.offset > Op.LTEQ.offset) {
 				throw new IllegalArgumentException(
 						"invalid opcode for Binary constructor");
 			}
@@ -513,9 +521,6 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			case NEQ:
 			case LT:
 			case LTEQ:
-			case IN:
-			case SUBSET:
-			case SUBSETEQ:
 				return SemanticType.Bool;
 			}
 			throw new IllegalArgumentException("invalid opcode for binary bytecode");
@@ -531,7 +536,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		private Nary(SemanticType type, Op opcode, Code<?>[] operands,
 				Attribute... attributes) {
 			super(type, opcode, operands, attributes);
-			if (opcode.offset < Op.AND.offset || opcode.offset > Op.SET.offset) {
+			if (opcode.offset < Op.AND.offset || opcode.offset > Op.ARRAY.offset) {
 				throw new IllegalArgumentException(
 						"invalid opcode for Nary constructor");
 			}
@@ -540,7 +545,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		private Nary(SemanticType type, Op opcode, Code<?>[] operands,
 				Collection<Attribute> attributes) {
 			super(type, opcode, operands, attributes);
-			if (opcode.offset < Op.AND.offset || opcode.offset > Op.SET.offset) {
+			if (opcode.offset < Op.AND.offset || opcode.offset > Op.ARRAY.offset) {
 				throw new IllegalArgumentException(
 						"invalid opcode for Nary constructor");
 			}
@@ -552,7 +557,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			case AND:
 			case OR:
 				return SemanticType.Bool;
-			case SET:
+			case ARRAY:
 				return type;
 			case TUPLE:
 				return type;
@@ -563,6 +568,29 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		@Override
 		public Code<?> clone(SemanticType type, Op opcode, Code<?>[] operands) {
 			return Nary(type,opcode,operands,attributes());
+		}
+	}
+
+	public final static class IndexOf extends Code<SemanticType.Array> {
+
+		private IndexOf(SemanticType.Array type, Code<?> source, Code<?> index,
+				Attribute... attributes) {
+			super(type, Op.INDEXOF, new Code[] { source, index }, attributes);
+		}
+
+		private IndexOf(SemanticType.Array type, Code<?> source, Code<?> index,
+				Collection<Attribute> attributes) {
+			super(type, Op.INDEXOF, new Code[] { source, index }, attributes);
+		}
+
+		@Override
+		public SemanticType returnType() {
+			return type.element();
+		}
+
+		@Override
+		public Code<?> clone(SemanticType.Array type, Op opcode, Code<?>[] operands) {
+			return IndexOf(type,operands[0],operands[1],attributes());
 		}
 	}
 

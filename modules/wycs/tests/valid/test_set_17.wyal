@@ -1,5 +1,0 @@
-define In<T>(T x, {T} xs) is:
-  x in xs
-
-assert:
-  In<int>(1,{1,2})

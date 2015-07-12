@@ -152,6 +152,8 @@ public class WycsFilePrinter {
 			writeStructured(wf, (Code.Nary) code, indent);
 		} else if(code instanceof Code.Load) {
 			writeStructured(wf, (Code.Load) code, indent);
+		} else if(code instanceof Code.IndexOf) {
+			writeStructured(wf, (Code.IndexOf) code, indent);
 		} else if(code instanceof Code.Is) {
 			writeStructured(wf, (Code.Is) code, indent);
 		} else if(code instanceof Code.Cast) {
@@ -223,16 +225,7 @@ public class WycsFilePrinter {
 			break;
 		case LTEQ:
 			op = " <= ";
-			break;
-		case IN:
-			op = " in ";
-			break;
-		case SUBSET:
-			op = " " + Token.sUC_SUBSET + " ";
-			break;
-		case SUBSETEQ:
-			op = " " + Token.sUC_SUBSETEQ + " ";
-			break;
+			break;		
 		default:
 			internalFailure("unknown bytecode encountered", wf.filename(), code);
 			return;
@@ -275,15 +268,15 @@ public class WycsFilePrinter {
 			}
 			out.print(")");
 			break;
-		case SET:
-			out.print("{");
+		case ARRAY:
+			out.print("[");
 			for(int i=0;i!=code.operands.length;++i) {
 				if(i!=0) {
 					out.print(", ");
 				}
 				writeStructured(wf,code.operands[i],indent);
 			}
-			out.print("}");
+			out.print("]");
 			break;
 		default:
 			internalFailure("unknown bytecode encountered", wf.filename(), code);
@@ -296,6 +289,13 @@ public class WycsFilePrinter {
 		out.print("[" + code.index + "]");
 	}
 
+	public void writeStructured(WycsFile wf, Code.IndexOf code, int indent) {
+		writeStructured(wf,code.operands[0],indent);
+		out.print("[");
+		writeStructured(wf,code.operands[1],indent);
+		out.print("]");
+	}
+	
 	public void writeStructured(WycsFile wf, Code.Is code, int indent) {
 		writeStructured(wf,code.operands[0],indent);
 		out.print(" is " + code.type);

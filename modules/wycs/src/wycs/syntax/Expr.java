@@ -401,58 +401,9 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 					return ">=";
 				}
 			},
-			IN(16) {
-				public String toString() {
-					//return Character.toString(Token.UC_ELEMENTOF);
-					return "in";
-				}
-			},
-			SUBSET(17) {
-				public String toString() {
-					return Character.toString(Token.UC_SUBSET);
-
-				}
-			},
-			SUBSETEQ(18) {
-				public String toString() {
-					// FIXME: need to figure out why this is necessary
-					//return Character.toString(Token.UC_SUBSETEQ);
-					return "{=";
-				}
-			},
-			SUPSET(19) {
-				public String toString() {
-					return Character.toString(Token.UC_SUPSET);
-				}
-			},
-			SUPSETEQ(20) {
-				public String toString() {
-					return Character.toString(Token.UC_SUPSETEQ);
-				}
-			},
-			SETUNION(21) {
-				public String toString() {
-					return Character.toString(Token.UC_SETUNION);
-				}
-			},
-			SETINTERSECTION(22) {
-				public String toString() {
-					return Character.toString(Token.UC_SETINTERSECTION);
-				}
-			},
-			SETDIFFERENCE(23) {
-				public String toString() {
-					return "-";
-				}
-			},
 			LISTAPPEND(24) {
 				public String toString() {
 					return "++";
-				}
-			},
-			RANGE(25) {
-				public String toString() {
-					return "..";
 				}
 			};
 
@@ -634,8 +585,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	public static class Nary extends Expr {
 		public enum Op {
 			TUPLE(0),
-			SET(1),
-			MAP(2),
 			LIST(3);
 
 			public int offset;
@@ -746,11 +695,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			String end;
 			String sep;
 			switch(this.op) {
-			case SET:
-				beg = "{";
-				end = "}";
-				sep = ", ";
-				break;
 			case LIST:
 				beg = "[";
 				end = "]";
@@ -761,27 +705,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				end = ")";
 				sep = ", ";
 				break;
-			case MAP:
-				String r = "{";
-				for(int i=0;i!=operands.size();i=i+2) {
-					if(i != 0) {
-						r = r + ",";
-					}
-					String os = operands.get(i).toString();
-					if(needsBraces(operands.get(i))) {
-						r = r + "(" + os + ")";
-					} else {
-						r = r + os;
-					}
-					r = r + "=>";
-					os = operands.get(i+1).toString();
-					if(needsBraces(operands.get(i+1))) {
-						r = r + "(" + os + ")";
-					} else {
-						r = r + os;
-					}
-				}
-				return r + "}";
 			default:
 				return "";
 			}

@@ -581,32 +581,11 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		} else if(type instanceof SyntacticType.Negation) {
 			SyntacticType.Negation t = (SyntacticType.Negation) type;
 			return SemanticType.Not(convert(t.element,generics,context));
-		} else if(type instanceof SyntacticType.Set) {
-			SyntacticType.Set t = (SyntacticType.Set) type;
-			return SemanticType.Set(true,convert(t.element,generics,context));
-		} else if(type instanceof SyntacticType.Map) {
-			// FIXME: need to include the map constraints here
-			SyntacticType.Map t = (SyntacticType.Map) type;
-			SemanticType key = convert(t.key,generics,context);
-			SemanticType value = convert(t.value,generics,context);
-			if (key instanceof SemanticType.Void
-					|| value instanceof SemanticType.Void) {
-				// surprisingly, this case is possible and does occur.
-				return SemanticType.Set(true, SemanticType.Void);
-			} else {
-				return SemanticType.Set(true, SemanticType.Tuple(key, value));
-			}
 		} else if(type instanceof SyntacticType.List) {
 			// FIXME: need to include the list constraints here
 			SyntacticType.List t = (SyntacticType.List) type;
 			SemanticType element = convert(t.element,generics,context);
-			if (element instanceof SemanticType.Void) {
-				// surprisingly, this case is possible and does occur.
-				return SemanticType.Set(true, SemanticType.Void);
-			} else {
-				return SemanticType.Set(true,
-						SemanticType.Tuple(SemanticType.Int, element));
-			}
+			return SemanticType.Array(true,element);
 		} else if(type instanceof SyntacticType.Union) {
 			SyntacticType.Union t = (SyntacticType.Union) type;
 			SemanticType[] types = new SemanticType[t.elements.size()];
@@ -728,11 +707,11 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				} else {
 					return type;
 				}
-			} else if (type instanceof SemanticType.Set) {
-				SemanticType.Set st = (SemanticType.Set) type;
+			} else if (type instanceof SemanticType.Array) {
+				SemanticType.Array st = (SemanticType.Array) type;
 				SemanticType element = expand(st.element(), maximallyConsumed, context);
 				if (element != st.element()) {
-					return SemanticType.Set(st.flag(), element);
+					return SemanticType.Array(st.flag(), element);
 				} else {
 					return type;
 				}

@@ -319,63 +319,11 @@ public class CodeGeneration {
 			rhs = tmp;
 			break;
 		}
-		case IN:
-			opcode = Code.Op.IN;
-			break;
-		case SUBSET:
-			opcode = Code.Op.SUBSET;
-			break;
-		case SUBSETEQ:
-			opcode = Code.Op.SUBSETEQ;
-			break;
-		case SUPSET: {
-			opcode = Code.Op.SUBSET;
-			Code tmp = lhs;
-			lhs = rhs;
-			rhs = tmp;
-			break;
-		}
-		case SUPSETEQ: {
-			opcode = Code.Op.SUBSETEQ;
-			Code tmp = lhs;
-			lhs = rhs;
-			rhs = tmp;
-			break;
-		}
-		case SETUNION:
-		case SETINTERSECTION:
-		case SETDIFFERENCE: {
-			String fn;
-			switch(e.op) {
-			case SETUNION:
-				fn = "Union";
-				break;
-			case SETINTERSECTION:
-				fn = "Intersect";
-				break;
-			case SETDIFFERENCE:
-				fn = "Difference";
-				break;
-			default:
-				internalFailure("deadcode reached", filename, e);
-				fn = ""; // deadcode
-			}
-			SemanticType.Tuple argType = SemanticType.Tuple(type, type);
-			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
-					lhs,rhs });			
-			return invokeInternal(WYCS_CORE_SET, fn, argument, context);
-		}
 		case LISTAPPEND: {
 			SemanticType.Tuple argType = SemanticType.Tuple(type, type);
 			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] { lhs,
 					rhs });
 			return invokeInternal(WYCS_CORE_LIST, "Append", argument, context);			
-		}
-		case RANGE: {
-			SemanticType.Tuple argType = SemanticType.Tuple(SemanticType.Int,SemanticType.Int);
-			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
-					lhs,rhs });
-			return invokeInternal(WYCS_CORE_LIST, "Range", argument, context);			
 		}
 		default:
 			internalFailure("unknown binary opcode encountered (" + e + ")",
@@ -390,8 +338,7 @@ public class CodeGeneration {
 
 	protected Code generate(Expr.Ternary e, HashMap<String, Code> environment,
 			WyalFile.Context context) {
-		SemanticType.Set type = (SemanticType.Set) e.attribute(TypeAttribute.class).type;
-		SemanticType.EffectiveTuple element = (SemanticType.EffectiveTuple) type.element();
+		SemanticType.Array type = (SemanticType.Array) e.attribute(TypeAttribute.class).type;
 		Code first = generate(e.firstOperand, environment, context);
 		Code second = generate(e.secondOperand, environment, context);
 		Code third = generate(e.thirdOperand, environment, context);
@@ -400,7 +347,7 @@ public class CodeGeneration {
 		switch (e.op) {
 		case UPDATE:
 			name = "ListUpdate";
-			argType = SemanticType.Tuple(type,SemanticType.Int, element.tupleElement(1));
+			argType = SemanticType.Tuple(type,SemanticType.Int, type.element());
 			break;
 		case SUBLIST:
 			name = "Sublist";
@@ -427,12 +374,6 @@ public class CodeGeneration {
 		case TUPLE:
 			opcode = Code.Op.TUPLE;
 			break;
-		case SET:
-			opcode = Code.Op.SET;
-			break;
-//		case MAP:
-//			opcode = Code.Op.MAP;
-//			break;
 		case LIST: {
 
 			// The goal here is convert from a list of the form [x,y,z] into a
@@ -446,7 +387,8 @@ public class CodeGeneration {
 				operands[i] = Code.Nary(tt, Code.Op.TUPLE, new Code[] { idx,
 						operands[i] });
 			}
-			opcode = Code.Op.SET;
+			
+			opcode = Code.Op.ARRAY;
 			break;
 		}
 		default:
@@ -557,25 +499,21 @@ public class CodeGeneration {
 		}
 	}
 
-	protected Code generate(Expr.IndexOf e, HashMap<String,Code> environment, WyalFile.Context context) {
-		SemanticType operand_type = (SemanticType) e.attribute(TypeAttribute.class).type;
+	protected Code generate(Expr.IndexOf e, HashMap<String, Code> environment,
+			WyalFile.Context context) {
+		SemanticType operand_type = (SemanticType) e
+				.attribute(TypeAttribute.class).type;
 		Code source = generate(e.operand, environment, context);
 
-		if(operand_type instanceof SemanticType.EffectiveTuple) {
+		if (operand_type instanceof SemanticType.EffectiveTuple) {
 			SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) operand_type;
 			Value.Integer idx = (Value.Integer) ((Expr.Constant) e.index).value;
 			return Code.Load(tt.tupleType(), source, idx.value.intValue(),
 					attributes(e));
 		} else {
-			// FIXME: handle effective set here
-			SemanticType.Set type = (SemanticType.Set) operand_type;
-			SemanticType.EffectiveTuple element = (SemanticType.EffectiveTuple) type.element();
-			SemanticType.Tuple argType = SemanticType.Tuple(type,
-					element.tupleElement(0));
-			Code index = generate(e.index, environment, context);			
-			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] {
-					source, index });
-			return invokeInternal(WYCS_CORE_MAP, "IndexOf", argument, context);						
+			SemanticType.Array type = (SemanticType.Array) operand_type;
+			Code index = generate(e.index, environment, context);
+			return Code.IndexOf(type, source, index, attributes(e));
 		}
 	}
 
@@ -697,10 +635,6 @@ public class CodeGeneration {
 	}
 
 
-	private static final Trie WYCS_CORE_SET = Trie.ROOT.append("wycs")
-			.append("core").append("Set");
-	private static final Trie WYCS_CORE_MAP = Trie.ROOT.append("wycs")
-			.append("core").append("Map");
 	private static final Trie WYCS_CORE_LIST = Trie.ROOT.append("wycs")
 			.append("core").append("List");
 }

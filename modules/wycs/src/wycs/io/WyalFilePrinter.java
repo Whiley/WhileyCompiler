@@ -304,37 +304,7 @@ public class WyalFilePrinter {
 				writeWithoutBraces(wf,operand,indent);
 			}
 			return;
-		}
-		case SET: {
-			boolean firstTime=true;
-			out.print("{");
-			for(Expr operand : e.operands) {
-				if(!firstTime) {
-					out.print(", ");
-				} else {
-					firstTime = false;
-				}
-				writeWithOptionalBraces(wf,operand,indent);
-			}
-			out.print("}");
-			return;
-		}
-		case MAP: {
-			boolean firstTime=true;
-			out.print("{");
-			for(int i=0;i!=e.operands.size();i=i+2) {
-				if(!firstTime) {
-					out.print(", ");
-				} else {
-					firstTime = false;
-				}
-				writeWithOptionalBraces(wf,e.operands.get(i),indent);
-				out.print(" => ");
-				writeWithOptionalBraces(wf,e.operands.get(i+1),indent);
-			}
-			out.print("}");
-			return;
-		}
+		}		
 		case LIST: {
 			boolean firstTime=true;
 			out.print("[");
