@@ -68,6 +68,8 @@ public class NormalForms {
 			return negationNormalForm((Code.FunCall)e,negate);
 		} else if(e instanceof Code.Load) {
 			return negationNormalForm((Code.Load)e,negate);
+		} else if(e instanceof Code.IndexOf) {
+			return negationNormalForm((Code.IndexOf)e,negate);
 		} else if(e instanceof Code.Is) {
 			return negationNormalForm((Code.Is)e,negate);
 		}
@@ -150,11 +152,13 @@ public class NormalForms {
 	}
 
 	private static Code negationNormalForm(Code.Load e, boolean negate) {
-		// TODO: there is a potential bug here if the arguments of this
-		// binary expression are boolean expressions.
 		return negate(e, negate);
 	}
 
+	private static Code negationNormalForm(Code.IndexOf e, boolean negate) {
+		return negate(e, negate);
+	}
+	
 	private static Code negationNormalForm(Code.Is e, boolean negate) {
 		return negate(e, negate);
 	}
@@ -271,6 +275,8 @@ public class NormalForms {
 			return renameVariables ((Code.FunCall)e,binding,globals);
 		} else if(e instanceof Code.Load) {
 			return renameVariables ((Code.Load)e,binding,globals);
+		} else if(e instanceof Code.IndexOf) {
+			return renameVariables ((Code.IndexOf)e,binding,globals);
 		}
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
@@ -344,6 +350,14 @@ public class NormalForms {
 				e.attributes());
 	}
 
+	private static Code renameVariables(Code.IndexOf e,
+			HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
+		return Code.IndexOf(e.type,
+				renameVariables(e.operands[0], binding, globals),
+				renameVariables(e.operands[1], binding, globals),
+				e.attributes());
+	}
+	
 	private static int findLargest(Set<Integer> vars) {
 		int max = -1;
 		for(int i : vars) {

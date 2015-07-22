@@ -1605,19 +1605,17 @@ public class VcGenerator {
 	 * Maps binary bytecodes into expression opcodes.
 	 */
 	private static Expr.Binary.Op[] binaryOperatorMap = { Expr.Binary.Op.ADD,
-			Expr.Binary.Op.SUB, Expr.Binary.Op.MUL, Expr.Binary.Op.DIV,
-			Expr.Binary.Op.REM, Expr.Binary.Op.RANGE, null, // bitwise or
+			Expr.Binary.Op.SUB, 
+			Expr.Binary.Op.MUL, 
+			Expr.Binary.Op.DIV,
+			Expr.Binary.Op.REM, 
+			null, 
+			null, // bitwise or
 			null, // bitwise xor
 			null, // bitwise and
 			null, // left shift
 			null // right shift
 	};
-
-	/**
-	 * Maps binary bytecodes into expression opcodes.
-	 */
-	private static Expr.Binary.Op[] setOperatorMap = { Expr.Binary.Op.SETUNION,
-			Expr.Binary.Op.SETINTERSECTION, Expr.Binary.Op.SETDIFFERENCE };
 
 	protected void transform(Codes.Convert code, AttributedCodeBlock block,
 			VcBranch branch) {
@@ -2418,9 +2416,6 @@ public class VcGenerator {
 		case LT:
 			op = Expr.Binary.Op.LT;
 			break;		
-		case IN:
-			op = Expr.Binary.Op.IN;
-			break;
 		default:
 			internalFailure("unknown comparator (" + cop + ")", filename,
 					block.attributes(branch.pc()));
@@ -2461,17 +2456,6 @@ public class VcGenerator {
 		case LT:
 			op = Expr.Binary.Op.GTEQ;
 			break;
-		case SUBSET:
-		case SUBSETEQ:
-		case SUPSET:
-		case SUPSETEQ:
-		case IN:
-			// NOTE: it's tempting to think that inverting x SUBSET y should
-			// give x SUPSETEQ y, but this is not correct. See #423.
-			op = Expr.Binary.Op.IN;
-			return new Expr.Unary(Expr.Unary.Op.NOT, new Expr.Binary(test.op,
-					test.leftOperand, test.rightOperand, test.attributes()),
-					test.attributes());
 		default:
 			wycc.lang.SyntaxError.internalFailure("unknown comparator ("
 					+ test.op + ")", filename, test);
@@ -2522,7 +2506,7 @@ public class VcGenerator {
 				pair.add(convert(cb_values.get(i), block, branch));
 				pairs.add(Value.Tuple(pair));
 			}
-			return Value.Set(pairs);
+			return Value.Array(pairs);
 		} else if (c instanceof Constant.Tuple) {
 			Constant.Tuple cb = (Constant.Tuple) c;
 			ArrayList<Value> values = new ArrayList<Value>();

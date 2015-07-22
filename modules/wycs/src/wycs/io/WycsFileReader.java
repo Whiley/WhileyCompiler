@@ -391,6 +391,12 @@ public class WycsFileReader {
 				int index = input.read_uv();
 				return Code.Load((SemanticType.Tuple) type, operands[0], index);
 			}
+			case INDEXOF: {
+				if (operands.length != 2 || !(type instanceof SemanticType.Array)) {
+					throw new RuntimeException("invalid indexof bytecode encountered");
+				}
+				return Code.IndexOf((SemanticType.Array) type, operands[0], operands[1]);
+			}
 			case FORALL:
 			case EXISTS: {
 				if (operands.length != 1) {

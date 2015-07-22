@@ -207,7 +207,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 
 		Code vc = instantiateAxioms(nnf, maxVar + 1);
 			
-		//debug(vc,filename);
+		// debug(vc,filename);
 
 		int assertion = translate(vc,automaton,new HashMap<String,Integer>());
 		automaton.setRoot(0, assertion);

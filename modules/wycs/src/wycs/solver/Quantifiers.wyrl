@@ -62,7 +62,7 @@ rank 1:
 // Attempt to instantiate quantifier with a given expression
 infer And{
     // The expression we're instantiating over
-    SubsetEq e1,
+    Expr e1,
     // The Quantifier we're attempting to instantiate
     ForAll[{[Var, Type], [Var,Type]...} vs, BExpr e2] qf,
     // The rest
@@ -71,19 +71,6 @@ name  "ForAll_5"
 rank 3:
     => let instantiations = instantiate[e1,vs,e2]
        in And({e1,qf} ++ es ++ instantiations), if |instantiations| > 0
-
-// Attempt to instantiate quantifier with a given expression
-infer And{
-    // The expression we're instantiating over
-    Not(SubsetEq e1) ne1,
-    // The Quantifier we're attempting to instantiate
-    ForAll[{[Var, Type], [Var,Type]...} vs, BExpr e2] qf,
-    // The rest
-    BExpr... es}
-name "ForAll_6"
-rank 3:
-    => let instantiations = instantiate[e1,vs,e2]
-       in And({ne1,qf} ++ es ++ instantiations), if |instantiations| > 0
 
 // ====================================================================
 // Exists
