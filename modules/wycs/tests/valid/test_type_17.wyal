@@ -1,2 +1,2 @@
 assert:
-    {1} is {int}
+    [1] is [int]

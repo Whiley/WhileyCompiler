@@ -5,6 +5,6 @@ define NatList([int] xs) is:
 assert:
   forall ([int] xs, int i):
        if:        
-         NatSet(xs)
+         NatList(xs)
        then:
          xs[i] >= 0

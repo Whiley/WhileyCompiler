@@ -8,6 +8,6 @@ define Bijection([int] xs) is:
       v1 != v2
 
 assert:
-  Bijection([1,2,3,4])
+    Bijection([1,2,3,4])
 
 

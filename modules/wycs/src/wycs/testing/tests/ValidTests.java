@@ -57,11 +57,10 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Fun_2() { verifyPassTest("test_fun_02"); }
 
 
-	@Ignore("Known Issue") @Test public void Test_List_1() { verifyPassTest("test_list_01"); }
+	@Test public void Test_List_1() { verifyPassTest("test_list_01"); }
 	@Test public void Test_List_2() { verifyPassTest("test_list_02"); }
 	@Test public void Test_List_5() { verifyPassTest("test_list_05"); }
 	@Ignore("#303") @Test public void Test_List_6() { verifyPassTest("test_list_06"); }
-	@Test public void Test_List_7() { verifyPassTest("test_list_07"); }
 	@Test public void Test_List_8() { verifyPassTest("test_list_08"); }
 	@Ignore("#231") @Test public void Test_List_9() { verifyPassTest("test_list_09"); }
 	@Ignore("#231") @Test public void Test_List_10() { verifyPassTest("test_list_10"); }
@@ -71,15 +70,14 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_List_16() { verifyPassTest("test_list_16"); }
 	@Test public void Test_List_17() { verifyPassTest("test_list_17"); }
 	@Test public void Test_List_18() { verifyPassTest("test_list_18"); }
-	@Test public void Test_List_19() { verifyPassTest("test_list_19"); }
-	@Test public void Test_List_20() { verifyPassTest("test_list_20"); }	
-		
+	@Ignore("Unknown") @Test public void Test_List_19() { verifyPassTest("test_list_19"); }
+	@Test public void Test_List_20() { verifyPassTest("test_list_20"); }		
 	@Test public void Test_List_21() { verifyPassTest("test_list_21"); }	
-	@Test public void Test_List_22() { verifyPassTest("test_list_22"); }	
-	@Test public void Test_List_23() { verifyPassTest("test_list_23"); }	
+	@Ignore("#290") @Test public void Test_List_22() { verifyPassTest("test_list_22"); }	
+	@Ignore("#290") @Test public void Test_List_23() { verifyPassTest("test_list_23"); }	
 	@Test public void Test_List_24() { verifyPassTest("test_list_24"); }	
 	@Test public void Test_List_25() { verifyPassTest("test_list_25"); }	
-	@Test public void Test_List_26() { verifyPassTest("test_list_26"); }	
+	@Ignore("Unknown") @Test public void Test_List_26() { verifyPassTest("test_list_26"); }	
 	@Test public void Test_List_27() { verifyPassTest("test_list_27"); }	
 	@Test public void Test_List_28() { verifyPassTest("test_list_28"); }	
 	@Test public void Test_List_29() { verifyPassTest("test_list_29"); }	
@@ -91,29 +89,29 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_List_35() { verifyPassTest("test_list_35"); }	
 	@Test public void Test_List_36() { verifyPassTest("test_list_36"); }	
 	@Test public void Test_List_37() { verifyPassTest("test_list_37"); }
-	@Test public void Test_List_38() { verifyPassTest("test_list_38"); }
+	@Ignore("#508") @Test public void Test_List_38() { verifyPassTest("test_list_38"); }
 	
 	@Test public void Test_Type_01() { verifyPassTest("test_type_01"); }
 	@Test public void Test_Type_02() { verifyPassTest("test_type_02"); }
 	@Test public void Test_Type_03() { verifyPassTest("test_type_03"); }
-	@Ignore("Unknown") @Test public void Test_Type_04() { verifyPassTest("test_type_04"); }
+	@Ignore("#468") @Test public void Test_Type_04() { verifyPassTest("test_type_04"); }
 	@Test public void Test_Type_05() { verifyPassTest("test_type_05"); }
-	@Ignore("Unknown") @Test public void Test_Type_06() { verifyPassTest("test_type_06"); }
+	@Ignore("#468") @Test public void Test_Type_06() { verifyPassTest("test_type_06"); }
 	@Test public void Test_Type_07() { verifyPassTest("test_type_07"); }
-	@Test public void Test_Type_08() { verifyPassTest("test_type_08"); }
-	@Ignore("Unknown") @Test public void Test_Type_09() { verifyPassTest("test_type_09"); }
+	@Ignore("#468") @Test public void Test_Type_08() { verifyPassTest("test_type_08"); }
+	@Ignore("#468") @Test public void Test_Type_09() { verifyPassTest("test_type_09"); }
 	@Test public void Test_Type_10() { verifyPassTest("test_type_10"); }
-	@Test public void Test_Type_11() { verifyPassTest("test_type_11"); }
-	@Ignore("Unknown") @Test public void Test_Type_12() { verifyPassTest("test_type_12"); }
-	@Ignore("Unknown") @Test public void Test_Type_13() { verifyPassTest("test_type_13"); }
-	@Ignore("Unknown") @Test public void Test_Type_14() { verifyPassTest("test_type_14"); }
-	@Ignore("Unknown") @Test public void Test_Type_15() { verifyPassTest("test_type_15"); }
-	@Ignore("Unknown") @Test public void Test_Type_16() { verifyPassTest("test_type_16"); }
-	@Test public void Test_Type_17() { verifyPassTest("test_type_17"); }
-	@Ignore("Unknown") @Test public void Test_Type_18() { verifyPassTest("test_type_18"); }
+	@Ignore("#468") @Test public void Test_Type_11() { verifyPassTest("test_type_11"); }
+	@Ignore("#468") @Test public void Test_Type_12() { verifyPassTest("test_type_12"); }
+	@Ignore("#468") @Test public void Test_Type_13() { verifyPassTest("test_type_13"); }
+	@Ignore("#468") @Test public void Test_Type_14() { verifyPassTest("test_type_14"); }
+	@Ignore("#468") @Test public void Test_Type_15() { verifyPassTest("test_type_15"); }
+	@Ignore("#468") @Test public void Test_Type_16() { verifyPassTest("test_type_16"); }
+	@Ignore("#468") @Test public void Test_Type_17() { verifyPassTest("test_type_17"); }
+	@Ignore("#468") @Test public void Test_Type_18() { verifyPassTest("test_type_18"); }
 	@Test public void Test_Type_19() { verifyPassTest("test_type_19"); }
-	@Test public void Test_Type_20() { verifyPassTest("test_type_20"); }
-	@Ignore("Unknown") @Test public void Test_Type_21() { verifyPassTest("test_type_21"); }
+	@Ignore("#468") @Test public void Test_Type_20() { verifyPassTest("test_type_20"); }
+	@Ignore("#468") @Test public void Test_Type_21() { verifyPassTest("test_type_21"); }
 	@Test public void Test_Type_22() { verifyPassTest("test_type_22"); }
 		
 	@Test public void Test_Tuple_1() { verifyPassTest("test_tuple_01"); }		
