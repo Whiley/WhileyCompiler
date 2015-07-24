@@ -395,8 +395,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 				p.first());
 		Code<?> invariant = p.second();
 		if (invariant != null) {
-			Code<?> indexOf = Code.Binary(nType, Code.Binary.Op.INDEXOF,
-					variable, root);
+			Code<?> indexOf = Code.IndexOf(nType, variable, root);
 			HashMap<Integer, Code> binding = new HashMap<Integer, Code>();
 			binding.put(variable.index, indexOf);
 			invariant = invariant.substitute(binding);
