@@ -1147,79 +1147,7 @@ public class AllValidVerificationTests {
 		runTest("ListAccess_Valid_9");
 	}
 
-	@Test
-	public void ListAppend_Valid_1() {
-		runTest("ListAppend_Valid_1");
-	}
-
-
-	@Ignore("#231") @Test
-	public void ListAppend_Valid_10() {
-		runTest("ListAppend_Valid_10");
-	}
-
-	@Test
-	public void ListAppend_Valid_11() {
-		runTest("ListAppend_Valid_11");
-	}
-
-
-	@Ignore("#231") @Test
-	public void ListAppend_Valid_12() {
-		runTest("ListAppend_Valid_12");
-	}
-
-	@Test
-	public void ListAppend_Valid_13() {
-		runTest("ListAppend_Valid_13");
-	}
-
-	@Test
-	public void ListAppend_Valid_14() {
-		runTest("ListAppend_Valid_14");
-	}
-
-	@Test
-	public void ListAppend_Valid_2() {
-		runTest("ListAppend_Valid_2");
-	}
-
-	@Ignore("#231") @Test
-	public void ListAppend_Valid_3() {
-		runTest("ListAppend_Valid_3");
-	}
-
-	@Test
-	public void ListAppend_Valid_4() {
-		runTest("ListAppend_Valid_4");
-	}
-
-	@Ignore("#231") @Test
-	public void ListAppend_Valid_5() {
-		runTest("ListAppend_Valid_5");
-	}
-
-	@Test
-	public void ListAppend_Valid_6() {
-		runTest("ListAppend_Valid_6");
-	}
-
-	@Test
-	public void ListAppend_Valid_7() {
-		runTest("ListAppend_Valid_7");
-	}
-
-	@Test
-	public void ListAppend_Valid_8() {
-		runTest("ListAppend_Valid_8");
-	}
-
-	@Test
-	public void ListAppend_Valid_9() {
-		runTest("ListAppend_Valid_9");
-	}
-
-
+	
 	@Ignore("#233") @Test
 	public void ListAssign_Valid_1() {
 		runTest("ListAssign_Valid_1");
@@ -1324,32 +1252,6 @@ public class AllValidVerificationTests {
 	public void ListLength_Valid_3() {
 		runTest("ListLength_Valid_3");
 	}
-
-	@Ignore("#232") @Test
-	public void ListSublist_Valid_1() {
-		runTest("ListSublist_Valid_1");
-	}
-
-	@Test
-	public void ListSublist_Valid_2() {
-		runTest("ListSublist_Valid_2");
-	}
-
-	@Ignore("#232") @Test
-	public void ListSublist_Valid_3() {
-		runTest("ListSublist_Valid_3");
-	}
-
-	@Test
-	public void ListSublist_Valid_4() {
-		runTest("ListSublist_Valid_4");
-	}
-
-	@Test
-	public void ListSublist_Valid_5() {
-		runTest("ListSublist_Valid_5");
-	}
-
 
 	@Ignore("#344") @Test
 	public void MessageRef_Valid_1() {
@@ -2541,7 +2443,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_11");
 	}
 
-	@Ignore("#379") @Test
+	@Test
 	public void While_Valid_12() {
 		runTest("While_Valid_12");
 	}
@@ -2581,7 +2483,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_2");
 	}
 
-	@Ignore("#298") @Test
+	@Test
 	public void While_Valid_20() {
 		runTest("While_Valid_20");
 	}
@@ -2681,7 +2583,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_39");
 	}
 
-	@Ignore("#379") @Test
+	@Test
 	public void While_Valid_40() {
 		runTest("While_Valid_40");
 	}

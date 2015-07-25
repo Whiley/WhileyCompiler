@@ -381,16 +381,7 @@ public class TypePropagation implements Transform<WyalFile> {
 		case GTEQ:
 			checkIsSubtype(SemanticType.IntOrReal, lhs_type, e.leftOperand, context);
 			checkIsSubtype(SemanticType.IntOrReal, rhs_type, e.rightOperand, context);
-			return SemanticType.Or(lhs_type, rhs_type);		
-		case LISTAPPEND: {
-			checkIsSubtype(SemanticType.ArrayAny, lhs_type, e.leftOperand, context);
-			checkIsSubtype(SemanticType.ArrayAny, rhs_type,
-					e.rightOperand, context);
-			SemanticType.Array l = (SemanticType.Array) lhs_type;
-			SemanticType.Array r = (SemanticType.Array) rhs_type;
-			return SemanticType.Array(true,
-					SemanticType.Or(l.element(), r.element()));
-		}		
+			return SemanticType.Or(lhs_type, rhs_type);				
 		}
 
 		internalFailure("unknown binary expression encountered (" + e + ")",
@@ -414,12 +405,6 @@ public class TypePropagation implements Transform<WyalFile> {
 			checkIsSubtype(SemanticType.Int, secondType, e.secondOperand, context);
 			SemanticType.Array l = (SemanticType.Array) firstType;
 			checkIsSubtype(l.element(), thirdType, e.thirdOperand, context);
-			return firstType;
-		case SUBLIST:
-			checkIsSubtype(SemanticType.ArrayAny, firstType,
-					e.firstOperand, context);
-			checkIsSubtype(SemanticType.Int, secondType, e.secondOperand, context);
-			checkIsSubtype(SemanticType.Int, thirdType, e.thirdOperand, context);
 			return firstType;
 		}
 		internalFailure("unknown ternary expression encountered (" + e + ")",
@@ -449,10 +434,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			if (op_types.length == 0) {
 				return SemanticType.Array(true, SemanticType.Void);
 			} else {
-				return SemanticType.Array(
-						true,
-						SemanticType.Tuple(SemanticType.Int,
-								SemanticType.Or(op_types)));
+				return SemanticType.Array(true, SemanticType.Or(op_types));
 			}
 		}
 
@@ -632,7 +614,6 @@ public class TypePropagation implements Transform<WyalFile> {
 			case MUL:
 			case DIV:
 			case REM:
-			case LISTAPPEND:
 				return type;
 			case AND:
 			case OR:
@@ -650,7 +631,6 @@ public class TypePropagation implements Transform<WyalFile> {
 			Expr.Ternary ue = (Expr.Ternary) e;
 			switch (ue.op) {
 			case UPDATE:
-			case SUBLIST:
 				return type;
 			}
 		} else if (e instanceof Expr.Nary) {

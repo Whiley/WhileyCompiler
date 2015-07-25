@@ -9,7 +9,10 @@ ensures |result| == |src|
 ensures no { x in 0 .. |src| | result[x] <= 0 }:
     //
     int i = 0
-    while i < |src| where i >= 0 && i <= |src| && no { x in 0 .. i | src[x] <= 0 }:
+    while i < |src| 
+        where i >= 0 && i <= |src| 
+        where no { x in 0 .. i | src[x] <= 0 }:
+        //
         src[i] = src[i] + 1
         i = i + 1
     return src

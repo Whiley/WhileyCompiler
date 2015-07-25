@@ -318,13 +318,7 @@ public class CodeGeneration {
 			lhs = rhs;
 			rhs = tmp;
 			break;
-		}
-		case LISTAPPEND: {
-			SemanticType.Tuple argType = SemanticType.Tuple(type, type);
-			Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] { lhs,
-					rhs });
-			return invokeInternal(WYCS_CORE_LIST, "Append", argument, context);			
-		}
+		}		
 		default:
 			internalFailure("unknown binary opcode encountered (" + e + ")",
 					filename, e);
@@ -348,10 +342,6 @@ public class CodeGeneration {
 		case UPDATE:
 			name = "ListUpdate";
 			argType = SemanticType.Tuple(type,SemanticType.Int, type.element());
-			break;
-		case SUBLIST:
-			name = "Sublist";
-			argType = SemanticType.Tuple(type,SemanticType.Int,SemanticType.Int);
 			break;
 		default:
 			internalFailure("unknown ternary opcode encountered (" + e + ")",

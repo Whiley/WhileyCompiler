@@ -400,11 +400,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 					//return Character.toString(Token.UC_GREATEREQUALS);
 					return ">=";
 				}
-			},
-			LISTAPPEND(24) {
-				public String toString() {
-					return "++";
-				}
 			};
 
 			public int offset;
@@ -494,8 +489,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 
 	public static class Ternary extends Expr {
 		public enum Op {
-			UPDATE(1),
-			SUBLIST(2);
+			UPDATE(1);
 
 			public int offset;
 
@@ -575,8 +569,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			switch(op) {
 			case UPDATE:
 				return firstOperand + "[" + secondOperand + ":=" + thirdOperand + "]";
-			case SUBLIST:
-				return firstOperand + "[" + secondOperand + ".." + thirdOperand + "]";
 			}
 			return "";
 		}

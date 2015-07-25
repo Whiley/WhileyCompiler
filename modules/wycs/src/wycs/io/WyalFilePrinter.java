@@ -277,14 +277,6 @@ public class WyalFilePrinter {
 			writeWithoutBraces(wf,e.thirdOperand,indent);
 			out.print("]");
 			return;
-		case SUBLIST:
-			writeWithoutBraces(wf,e.firstOperand,indent);
-			out.print("[");
-			writeWithoutBraces(wf,e.secondOperand,indent);
-			out.print("..");
-			writeWithoutBraces(wf,e.thirdOperand,indent);
-			out.print("]");
-			return;
 		}
 		internalFailure("unknown expression encountered \"" + e + "\" (" + e.getClass().getName() + ")", wf.filename(), e);
 	}

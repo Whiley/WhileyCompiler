@@ -1532,9 +1532,6 @@ public class VcGenerator {
 				Codes.BinaryOperator bc = (Codes.BinaryOperator) code;
 				transformBinary(binaryOperatorMap[bc.kind.ordinal()], bc,
 						branch, block);
-			} else if (code instanceof Codes.ListOperator) {
-				Codes.ListOperator bc = (Codes.ListOperator) code;
-				transformBinary(Expr.Binary.Op.LISTAPPEND, bc, branch, block);
 			} else if (code instanceof Codes.NewList) {
 				transformNary(Expr.Nary.Op.LIST, (Codes.NewList) code, branch,
 						block);
@@ -1560,8 +1557,6 @@ public class VcGenerator {
 				transform((Codes.Invert) code, block, branch);
 			} else if (code instanceof Codes.Label) {
 				// skip
-			} else if (code instanceof Codes.SubList) {
-				transform((Codes.SubList) code, block, branch);
 			} else if (code instanceof Codes.IndexOf) {
 				transform((Codes.IndexOf) code, block, branch);
 			} else if (code instanceof Codes.Move) {
@@ -1744,11 +1739,6 @@ public class VcGenerator {
 	protected void transform(Codes.Nop code, AttributedCodeBlock block,
 			VcBranch branch) {
 		// do nout
-	}
-
-	protected void transform(Codes.SubList code, AttributedCodeBlock block,
-			VcBranch branch) {
-		transformTernary(Expr.Ternary.Op.SUBLIST, code, branch, block);
 	}
 
 	protected void transform(Codes.TupleLoad code, AttributedCodeBlock block,

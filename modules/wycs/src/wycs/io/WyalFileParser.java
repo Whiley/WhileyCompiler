@@ -983,7 +983,7 @@ public class WyalFileParser {
 					environment, terminated);
 		}
 
-		Expr lhs = parseAppendExpression(wf, generics, environment, terminated);
+		Expr lhs = parseAdditiveExpression(wf, generics, environment, terminated);
 
 		lookahead = tryAndMatch(terminated, LessEquals, LeftAngle,
 				GreaterEquals, RightAngle, EqualsEquals, NotEquals, In, Is,
@@ -1020,7 +1020,7 @@ public class WyalFileParser {
 				return null;
 			}
 
-			Expr rhs = parseAppendExpression(wf, generics, environment,
+			Expr rhs = parseAdditiveExpression(wf, generics, environment,
 					terminated);
 			return new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
@@ -1090,54 +1090,7 @@ public class WyalFileParser {
 			return null;
 		}
 	}	
-	
-	/**
-	 * Parse an append expression, which has the form:
-	 *
-	 * <pre>
-	 * AppendExpr ::= RangeExpr ( "++" RangeExpr)*
-	 * </pre>
-	 *
-	 * @param wf
-	 *            The enclosing WyalFile being constructed. This is necessary to
-	 *            construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param generics
-	 *            Constraints the set of generic type variables declared in the
-	 *            enclosing scope.
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseAppendExpression(WyalFile wf, HashSet<String> generics,
-			HashSet<String> environment, boolean terminated) {
-		int start = index;
-		Expr lhs = parseAdditiveExpression(wf, generics, environment, terminated);
-
-		while (tryAndMatch(terminated, PlusPlus) != null) {
-			Expr rhs = parseAdditiveExpression(wf, generics, environment,
-					terminated);
-			lhs = new Expr.Binary(Expr.Binary.Op.LISTAPPEND, lhs, rhs,
-					sourceAttr(start, index - 1));
-		}
-
-		return lhs;
-	}
-
+		
 	/**
 	 * Parse an additive expression.
 	 *
@@ -1319,68 +1272,22 @@ public class WyalFileParser {
 			switch (token.kind) {
 			case LeftSquare:
 				// At this point, there are two possibilities: an access
-				// expression (e.g. x[i]), or a sublist (e.g. xs[0..1], xs[..1],
-				// xs[0..]). We have to disambiguate these four different
+				// expression (e.g. x[i]), or a list update (e.g. xs[a:=b]). We have to disambiguate these four different
 				// possibilities.
-
-				// Since ".." is not the valid start of a statement, we can
-				// safely set terminated=true for tryAndMatch().
-				if (tryAndMatch(true, DotDot) != null) {
-					// This indicates a sublist expression of the form
-					// "xs[..e]". Therefore, we inject 0 as the start value for
-					// the sublist expression.
-					Expr st = new Expr.Constant(
-							Value.Integer(BigInteger.ZERO), sourceAttr(
-									start, index - 1));
-					// NOTE: expression guaranteed to be terminated by ']'.
-					Expr end = parseAdditiveExpression(wf, generics, environment, true);
+				// NOTE: expression guaranteed to be terminated by ']'.
+				Expr rhs = parseAdditiveExpression(wf, generics, environment, true);
+				if(tryAndMatch(true, ColonEquals) != null) {
+					// Indicates a list update expression
+					Expr val = parseAdditiveExpression(wf, generics, environment,
+							true);
 					match(RightSquare);
-					lhs = new Expr.Ternary(Expr.Ternary.Op.SUBLIST,lhs, st, end, sourceAttr(start,
-							index - 1));
+					lhs = new Expr.Ternary(Expr.Ternary.Op.UPDATE, lhs,
+							rhs, val, sourceAttr(start, index - 1));
 				} else {
-					// This indicates either a list access, sublist or update of the
-					// forms xs[a], xs[a..b], xs[a..], xs[a:=b], etc
-					//
-					// NOTE: expression guaranteed to be terminated by ']'.
-					Expr rhs = parseAdditiveExpression(wf, generics, environment, true);
-					// Check whether this is a sublist expression
-					if (tryAndMatch(terminated, DotDot) != null) {
-						// Yes, this is a sublist but we still need to
-						// disambiguate the two possible forms xs[x..y] and
-						// xs[x..].
-						//
-						// NOTE: expression guaranteed to be terminated by ']'.
-						if (tryAndMatch(true, RightSquare) != null) {
-							// This is a sublist of the form xs[x..]. In this
-							// case, we inject |xs| as the end expression.
-							Expr end = new Expr.Unary(Expr.Unary.Op.LENGTHOF, lhs, sourceAttr(start,
-									index - 1));
-							lhs = new Expr.Ternary(Expr.Ternary.Op.SUBLIST,lhs, rhs, end, sourceAttr(
-									start, index - 1));
-						} else {
-							// This is a sublist of the form xs[x..y].
-							// Therefore, we need to parse the end expression.
-							// NOTE: expression guaranteed to be terminated by
-							// ']'.
-							Expr end = parseAdditiveExpression(wf, generics, environment,
-									true);
-							match(RightSquare);
-							lhs = new Expr.Ternary(Expr.Ternary.Op.SUBLIST,lhs, rhs, end, sourceAttr(
-									start, index - 1));
-						}
-					} else if(tryAndMatch(true, ColonEquals) != null) {
-						// Indicates a list update expression
-						Expr val = parseAdditiveExpression(wf, generics, environment,
-								true);
-						match(RightSquare);
-						lhs = new Expr.Ternary(Expr.Ternary.Op.UPDATE, lhs,
-								rhs, val, sourceAttr(start, index - 1));
-					} else {
-						// Nope, this is a plain old list access expression
-						match(RightSquare);
-						lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
-								index - 1));
-					}
+					// Nope, this is a plain old list access expression
+					match(RightSquare);
+					lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
+							index - 1));
 				}
 				break;
 			case Dot:
@@ -1900,7 +1807,7 @@ public class WyalFileParser {
 		// collections. Furthermore, the bitwise or expression could lead to
 		// ambiguity and, hence, we bypass that an consider append expressions
 		// only. However, the expression is guaranteed to be terminated by '|'.
-		Expr e = parseAppendExpression(wf, generics, environment, true);
+		Expr e = parseAdditiveExpression(wf, generics, environment, true);
 		match(VerticalBar);
 		return new Expr.Unary(Expr.Unary.Op.LENGTHOF, e, sourceAttr(start,
 				index - 1));

@@ -388,7 +388,6 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		// so that we can then choose the best fit.
 		try {
 			WycsFile wf = getModule(nid.module());
-
 			ArrayList<SemanticType.Function> fnTypes = new ArrayList<SemanticType.Function>();
 			for (WycsFile.Declaration d : wf.declarations()) {
 				if (d.name().equals(nid.name())) {
@@ -424,7 +423,6 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		SemanticType expandedParameter = expand(parameter,false,context);
 		SemanticType.Function candidateFn = null;	
 		HashMap<String,SemanticType> candidateBinding = null;
-		
 		
 		for (int i = 0; i != candidates.size(); ++i) {
 			// f is the original function or macro type
