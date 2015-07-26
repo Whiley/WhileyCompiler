@@ -55,8 +55,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 
 	/**
 	 * Determine what rewriter to use.
+	 * 
+	 * NOTE: GlobalDispatch with RankComparator must be default to ensure rules
+	 * are chosen according to rank. See #510 on why this is necessary to manage
+	 * quantifier instantiation versus inequality inference.
 	 */
-	private RewriteMode rwMode = RewriteMode.STATICDISPATCH;
+	private RewriteMode rwMode = RewriteMode.GLOBALDISPATCH;
 
 	/**
 	 * Determine the maximum number of reduction steps permitted
@@ -113,7 +117,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static String getRwmode() {
-		return "staticdispatch"; // default value
+		return "globaldispatch"; // default value
 	}
 
 	public void setRwmode(String mode) {
@@ -201,7 +205,10 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// The following conversion is potentially very expensive, but is
 		// currently necessary for the instantiate axioms phase.
 		Code nnf = NormalForms.negationNormalForm(neg);
-		
+		// Convert to prefix normal form. One reason for this is that it
+		// protectes against accidental variable capture by renaming all
+		// variables.
+		nnf = NormalForms.renameVariables(nnf);
 		//debug(nnf,filename);
 		int maxVar = findLargestVariable(nnf);
 
@@ -853,17 +860,17 @@ public class VerificationCheck implements Transform<WycsFile> {
 		switch(rwMode) {
 		case STATICDISPATCH:
 			inferenceStrategy = new UnfairStateRuleRewriteStrategy<InferenceRule>(
-					automaton, Solver.inferences,Solver.SCHEMA);
+					automaton, Solver.inferences,Solver.SCHEMA,new RewriteRule.RankComparator());
 			reductionStrategy = new UnfairStateRuleRewriteStrategy<ReductionRule>(
-					automaton, Solver.reductions,Solver.SCHEMA);
+					automaton, Solver.reductions,Solver.SCHEMA,new RewriteRule.RankComparator());
 			break;
 		case GLOBALDISPATCH:
 			// NOTE: I don't supply a max steps value here because the
 			// default value would be way too small for the simple rewriter.
 			inferenceStrategy = new UnfairRuleStateRewriteStrategy<InferenceRule>(
-					automaton, Solver.inferences);
+					automaton, Solver.inferences,new RewriteRule.RankComparator());
 			reductionStrategy = new UnfairRuleStateRewriteStrategy<ReductionRule>(
-					automaton, Solver.reductions);
+					automaton, Solver.reductions,new RewriteRule.RankComparator());
 			break;
 		default:
 			// NOTE: I don't supply a max steps value here because the

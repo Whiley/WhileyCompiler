@@ -273,6 +273,10 @@ public class NormalForms {
 			return renameVariables ((Code.Quantifier)e,binding,globals);
 		} else if(e instanceof Code.FunCall) {
 			return renameVariables ((Code.FunCall)e,binding,globals);
+		} else if(e instanceof Code.Cast) {
+			return renameVariables ((Code.Cast)e,binding,globals);
+		} else if(e instanceof Code.Is) {
+			return renameVariables ((Code.Is)e,binding,globals);
 		} else if(e instanceof Code.Load) {
 			return renameVariables ((Code.Load)e,binding,globals);
 		} else if(e instanceof Code.IndexOf) {
@@ -343,6 +347,14 @@ public class NormalForms {
 				e.attributes());
 	}
 
+	private static Code renameVariables(Code.Cast e, HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
+		return Code.Cast(e.type, renameVariables(e.operands[0], binding, globals), e.target, e.attributes());
+	}
+
+	private static Code renameVariables(Code.Is e, HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
+		return Code.Is(e.type, renameVariables(e.operands[0], binding, globals), e.test, e.attributes());
+	}
+
 	private static Code renameVariables(Code.Load e,
 			HashMap<Integer, Integer> binding, HashSet<Integer> globals) {
 		return Code.Load(e.type,
@@ -388,6 +400,8 @@ public class NormalForms {
 			return skolemiseExistentials((Code.FunCall)e,binding,captured);
 		} else if(e instanceof Code.Load) {
 			return skolemiseExistentials((Code.Load)e,binding,captured);
+		} else if(e instanceof Code.IndexOf) {
+			return skolemiseExistentials((Code.IndexOf)e,binding,captured);
 		}
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
@@ -479,6 +493,12 @@ public class NormalForms {
 		return Code.Load(e.type, operand, e.index, e.attributes());
 	}
 
+	private static Code skolemiseExistentials(Code.IndexOf e,
+			HashMap<Integer, Code> binding, ArrayList<Code.Variable> captured) {
+		Code operand1 = skolemiseExistentials(e.operands[0], binding, captured);
+		Code operand2 = skolemiseExistentials(e.operands[1], binding, captured);
+		return Code.IndexOf(e.type, operand1, operand2, e.attributes());
+	}
 
 	public static Code extractUniversals(Code e) {
 		ArrayList<Pair<SemanticType,Integer>> environment = new ArrayList();
@@ -511,6 +531,8 @@ public class NormalForms {
 			return extractUniversals((Code.FunCall)e,environment);
 		} else if(e instanceof Code.Load) {
 			return extractUniversals((Code.Load)e,environment);
+		} else if(e instanceof Code.IndexOf) {
+			return extractUniversals((Code.IndexOf)e,environment);
 		}
 		throw new IllegalArgumentException("unknown expression encountered: "
 				+ e);
@@ -556,6 +578,12 @@ public class NormalForms {
 				e.index, e.attributes());
 	}
 
+	private static Code extractUniversals(Code.IndexOf e,
+			ArrayList<Pair<SemanticType, Integer>> environment) {
+		return Code.IndexOf(e.type, extractUniversals(e.operands[0], environment),
+				extractUniversals(e.operands[1], environment), e.attributes());
+	}
+	
 	private static Code extractUniversals(Code.Quantifier e,
 			ArrayList<Pair<SemanticType, Integer>> environment) {
 

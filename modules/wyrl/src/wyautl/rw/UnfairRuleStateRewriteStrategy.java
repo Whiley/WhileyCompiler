@@ -74,7 +74,7 @@ public final class UnfairRuleStateRewriteStrategy<T extends RewriteRule> extends
 	private int numProbes;
 
 	public UnfairRuleStateRewriteStrategy(Automaton automaton, T[] rules) {
-		this(automaton, rules, new RewriteRule.MinComparator());
+		this(automaton, rules, new RewriteRule.RankComparator());
 	}
 
 	public UnfairRuleStateRewriteStrategy(Automaton automaton, T[] rules,

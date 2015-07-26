@@ -226,7 +226,7 @@ public final class IterativeRewriter implements Rewriter {
 //							+ ", " + activation.rule.getClass().getName() + " :: "
 //							+ activation.root() + " => " + target + " (" + automaton.nStates() + ")");
 
-					//wyrl.util.Runtime.debug(automaton, schema, "And","Or");
+					// wyrl.util.Runtime.debug(automaton, schema, "And","Or");
 					// Reset the strategy for the next time we use it.
 					inferenceStrategy.reset();
 					numInferenceSuccesses++;

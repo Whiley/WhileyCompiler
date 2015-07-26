@@ -291,16 +291,12 @@ function gcd[real,{|Mul...|}] => real
 // Handle case where we have x <= y <= x (for integer inequalities).
 // In this case, we can infer that x == y.  Case must be taken as this
 // only works for integer inequalities (which are non-strict).
-reduce And{Inequality[IntT, Sum[real x1, {|Mul[real x2,{|AExpr... v1s|}] xs|}] s1] ieq1,
-          Inequality[IntT, Sum[real y1, {|Mul[real y2,{|AExpr... v2s|}] ys|}] s2] ieq2, BExpr... rest}:
-    => And (Equation[IntT,s1] ++ rest), if x1 == -y1 && x2 == -y2 && v1s == v2s
-
-// This rule is needed as we're not guaranteed to have a sum term in
-// an inequality.  This is because sum terms of the form 0.0 + 1.x are
-// reduced to "x".
-reduce And{Inequality[IntT, VExpr v1] ieq1,
-          Inequality[IntT, Sum[real y1, {|Mul[real y2,{|AExpr v2|}] ys|}] s2] ieq2, BExpr... rest}:
-    => And (Equation[IntT,v1] ++ rest), if y1 == 0.0 && y2 == -1.0 && v1 == v2
+reduce And{Inequality[IntT, Sum[real x1, {|Mul[real x2,{|AExpr vx1|}], Mul[real x3,{|AExpr vx2|}]|}] s1] ieq1,
+           Inequality[IntT, Sum[real y1, {|Mul[real y2,{|AExpr vy1|}], Mul[real y3,{|AExpr vy2|}]|}] s2] ieq2, 
+           BExpr... rest}
+name "Inequality_2a"
+rank 1:
+    => And (Equation[IntT,s1] ++ rest), if x1 == -y1 && x2 == -y2 && x3 == -y3 && vx1 == vy1 && vx2 == vy2
 
 // Handle closure over inequalities.  For example, if x <= y and y <=
 // z then we want to infer that x <= z.  This must be an inference
@@ -351,7 +347,7 @@ rank 1:
      // neg-pos
      => let vx = maxMultiplicand(xxs),
             eq3 = Inequality[t1,Sum[x1,xs]]
-        in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && t1 == t2 && x2 < 0.0 && vx == v1
+        in And ({eq1,eq2,eq3} ++ rest), if v1 == v2 && t1 == t2 && x2 < 0.0  && vx == v1
      // pos-neg not required as symmetric
 
 

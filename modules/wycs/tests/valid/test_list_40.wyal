@@ -1,0 +1,16 @@
+define invariant([int] items) is:
+    forall (int j):
+        if:
+            0 <= j
+            j < 10
+        then:
+            items[j] == 0
+
+assert:
+    forall ([int] items):
+        if:
+            invariant(items)                       
+        then:
+            invariant(items)
+
+
