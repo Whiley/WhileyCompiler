@@ -634,8 +634,6 @@ public class Wyil2JavaBuilder implements Builder {
 				translate(index, (Codes.Lambda) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.LengthOf) {
 				translate(index, (Codes.LengthOf) code, freeSlot, bytecodes);
-			} else if (code instanceof Codes.SubList) {
-				translate(index, (Codes.SubList) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.IndexOf) {
 				translate(index, (Codes.IndexOf) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.Assign) {
@@ -1349,20 +1347,6 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "length", ftype,
 				Bytecode.InvokeMode.VIRTUAL));
 		bytecodes.add(new Bytecode.Store(c.target(), WHILEYINT));
-	}
-
-	private void translate(CodeBlock.Index index, Codes.SubList c,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Load(c.operands()[0], WHILEYLIST));
-		bytecodes.add(new Bytecode.Load(c.operands()[1], WHILEYINT));
-		bytecodes.add(new Bytecode.Load(c.operands()[2], WHILEYINT));
-
-		JvmType.Function ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST,
-				WHILEYINT, WHILEYINT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "sublist", ftype,
-				Bytecode.InvokeMode.STATIC));
-
-		bytecodes.add(new Bytecode.Store(c.target(), WHILEYLIST));
 	}
 
 	private void translate(CodeBlock.Index index, Codes.IndexOf c,

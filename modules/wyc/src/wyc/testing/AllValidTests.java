@@ -1305,31 +1305,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ListSublist_Valid_1() throws IOException {
-		runTest("ListSublist_Valid_1");
-	}
-
-	@Test
-	public void ListSublist_Valid_2() throws IOException {
-		runTest("ListSublist_Valid_2");
-	}
-
-	@Test
-	public void ListSublist_Valid_3() throws IOException {
-		runTest("ListSublist_Valid_3");
-	}
-
-	@Test
-	public void ListSublist_Valid_4() throws IOException {
-		runTest("ListSublist_Valid_4");
-	}
-
-	@Test
-	public void ListSublist_Valid_5() throws IOException {
-		runTest("ListSublist_Valid_5");
-	}
-
-	@Test
 	public void MessageRef_Valid_1() throws IOException {
 		runTest("MessageRef_Valid_1");
 	}
@@ -1942,16 +1917,6 @@ public class AllValidTests {
 	@Test
 	public void String_Valid_6() throws IOException {
 		runTest("String_Valid_6");
-	}
-
-	@Test
-	public void String_Valid_7() throws IOException {
-		runTest("String_Valid_7");
-	}
-
-	@Test
-	public void String_Valid_8() throws IOException {
-		runTest("String_Valid_8");
 	}
 
 	@Test

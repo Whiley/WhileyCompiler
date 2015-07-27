@@ -216,8 +216,6 @@ public class Interpreter {
 			return execute((Codes.Nop) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Return) {
 			return execute((Codes.Return) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.SubList) {
-			return execute((Codes.SubList) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Switch) {
 			return execute((Codes.Switch) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.TupleLoad) {
@@ -1279,26 +1277,6 @@ public class Interpreter {
 		} else {
 			return frame[bytecode.operand];
 		}
-	}
-
-	private Object execute(Codes.SubList bytecode, Constant[] frame,
-			Context context) {
-		Constant _source = frame[bytecode.operand(0)];
-		Constant _fromIndex = frame[bytecode.operand(1)];
-		Constant _toIndex = frame[bytecode.operand(2)];
-		// Check that we have a function reference
-		checkType(_source, context, Constant.List.class);
-		checkType(_fromIndex, context, Constant.Integer.class);
-		checkType(_toIndex, context, Constant.Integer.class);
-		// Now, perform the append
-		Constant.List source = (Constant.List) _source;
-		Constant.Integer fromIndex = (Constant.Integer) _fromIndex;
-		Constant.Integer toIndex = (Constant.Integer) _toIndex;
-
-		frame[bytecode.target()] = Constant.V_LIST(source.values.subList(
-				fromIndex.value.intValue(), toIndex.value.intValue()));
-
-		return context.pc.next();
 	}
 
 	private Object execute(Codes.Switch bytecode, Constant[] frame,

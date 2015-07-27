@@ -58,15 +58,6 @@ ensures |result| == size:
         i = i + 1
     return r
 
-public function reverse([bool] list) -> [bool]:
-    return list[|list|..0]
-
-public function reverse([byte] list) -> [byte]:
-    return list[|list|..0]
-
-public function reverse([int] list) -> [int]:
-    return list[|list|..0]
-
 // find first index in list which matches character.  If no match,
 // then return null.
 public function indexOf([int] items, int c) -> int|null:

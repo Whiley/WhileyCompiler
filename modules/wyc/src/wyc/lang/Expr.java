@@ -388,32 +388,7 @@ public interface Expr extends SyntacticElement {
 			return type;
 		}
 	}
-
-	public static class SubList extends SyntacticElement.Impl implements Expr {
-		public Expr src;
-		public Expr start;
-		public Expr end;
-		public Nominal.List type;
-
-		public SubList(Expr src, Expr start, Expr end, Attribute... attributes) {
-			super(attributes);
-			this.src = src;
-			this.start = start;
-			this.end = end;
-		}
-
-		public SubList(Expr src, Expr start, Expr end, Collection<Attribute> attributes) {
-			super(attributes);
-			this.src = src;
-			this.start = start;
-			this.end = end;
-		}
-
-		public Nominal result() {
-			return (Nominal) type;
-		}
-	}
-
+	
 	public static class Quantifier extends SyntacticElement.Impl implements Expr {
 		public final QOp cop;
 		public final ArrayList<Triple<String,Expr,Expr>> sources;

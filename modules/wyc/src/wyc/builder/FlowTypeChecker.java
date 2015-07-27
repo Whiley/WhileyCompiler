@@ -1574,8 +1574,6 @@ public class FlowTypeChecker {
 						context);
 			} else if (expr instanceof Expr.List) {
 				return propagate((Expr.List) expr, environment, context);
-			} else if (expr instanceof Expr.SubList) {
-				return propagate((Expr.SubList) expr, environment, context);
 			} else if (expr instanceof Expr.Dereference) {
 				return propagate((Expr.Dereference) expr, environment, context);
 			} else if (expr instanceof Expr.Record) {
@@ -2023,22 +2021,6 @@ public class FlowTypeChecker {
 
 		expr.type = Nominal.Tuple(fieldTypes);
 
-		return expr;
-	}
-
-	private Expr propagate(Expr.SubList expr, Environment environment,
-			Context context) throws IOException, ResolveError {
-
-		expr.src = propagate(expr.src, environment, context);
-		expr.start = propagate(expr.start, environment, context);
-		expr.end = propagate(expr.end, environment, context);
-
-		checkSuptypes(expr.src, context, Nominal.T_LIST_ANY);
-		checkIsSubtype(Type.T_INT, expr.start, context);
-		checkIsSubtype(Type.T_INT, expr.end, context);
-
-		expr.type = expandAsEffectiveList(expr.src.result());
-		
 		return expr;
 	}
 

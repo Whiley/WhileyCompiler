@@ -1650,9 +1650,6 @@ public final class CodeGenerator {
 			} else if (expression instanceof Expr.List) {
 				return generate((Expr.List) expression, environment, codes,
 						context);
-			} else if (expression instanceof Expr.SubList) {
-				return generate((Expr.SubList) expression, environment, codes,
-						context);
 			} else if (expression instanceof Expr.BinOp) {
 				return generate((Expr.BinOp) expression, environment, codes,
 						context);
@@ -2019,17 +2016,6 @@ public final class CodeGenerator {
 		int target = environment.allocate(expr.result().raw());
 		codes.add(Codes.NewList((Type.List) expr.type.raw(), target, operands),
 				attributes(expr));
-		return target;
-	}
-
-	private int generate(Expr.SubList expr, Environment environment,
-			AttributedCodeBlock codes, Context context) {
-		int srcOperand = generate(expr.src, environment, codes, context);
-		int startOperand = generate(expr.start, environment, codes, context);
-		int endOperand = generate(expr.end, environment, codes, context);
-		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.SubList((Type.EffectiveList) expr.type.raw(), target,
-				srcOperand, startOperand, endOperand), attributes(expr));
 		return target;
 	}
 

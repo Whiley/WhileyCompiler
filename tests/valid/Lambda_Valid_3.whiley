@@ -38,10 +38,15 @@ function min(int a, int b) -> int:
 
 // Read specified number of bytes from buffer
 method read(BufferState state, int amount) -> [byte]:
-    int start = state->pos
-    int end = start + min(amount, |state->bytes| - start)
-    state->pos = end
-    return state->bytes[start..end]
+    [byte] r = []
+    int i = 0
+    //
+    while i < amount && state->pos < |state->bytes|:
+        r = r ++ [state->bytes[state->pos]]
+        state->pos = state->pos + 1
+        i = i + 1
+    //
+    return r
 
 // Construct buffer from list of bytes
 public method BufferInputStream([byte] buffer) -> InputStream:

@@ -948,14 +948,7 @@ public final class WyilFileReader {
 				throw new RuntimeException("expected tuple type");
 			}
 			return Codes.NewTuple((Type.Tuple) type, target, operands);
-		}
-		case Code.OPCODE_sublist: {
-			if (!(type instanceof Type.EffectiveList)) {
-				throw new RuntimeException("expected list type");
-			}
-			return Codes.SubList((Type.EffectiveList) type, target,
-					operands[0], operands[1], operands[2]);
-		}
+		}		
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");

@@ -218,17 +218,6 @@ public abstract class Codes {
 		return new Move(type, target, operand);
 	}
 
-	public static SubList SubList(Type.EffectiveList type, int target,
-			int sourceOperand, int leftOperand, int rightOperand) {
-		int[] operands = new int[] { sourceOperand, leftOperand, rightOperand };
-		return new SubList(type, target, operands);
-	}
-
-	public static SubList SubList(Type.EffectiveList type, int target,
-			int[] operands) {
-		return new SubList(type, target, operands);
-	}
-
 	public static ListOperator ListOperator(Type.EffectiveList type, int target,
 			int leftOperand, int rightOperand, ListOperatorKind dir) {
 		return new ListOperator(type, target, leftOperand, rightOperand,
@@ -1896,41 +1885,7 @@ public abstract class Codes {
 			return "lengthof %" + target() + " = %" + operand(0) + " : " + type();
 		}
 	}
-
-	/**
-	 * Reads the (effective) list value from a source operand register, and the
-	 * integer values from two index operand registers, computes the sublist and
-	 * writes the result back to a target register.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class SubList extends
-			AbstractNaryAssignable<Type.EffectiveList> {
-
-		private SubList(Type.EffectiveList type, int target, int[] operands) {
-			super(type, target, operands);
-		}
-
-		public int opcode() {
-			return OPCODE_sublist;
-		}
-
-		@Override
-		public final Code.Unit clone(int nTarget, int[] nOperands) {
-			return SubList(type(), nTarget, nOperands);
-		}
-
-		public boolean equals(Object o) {
-			return o instanceof SubList && super.equals(o);
-		}
-
-		public String toString() {
-			return "sublist %" + target() + " = %" + operands()[0] + ", %"
-					+ operands()[1] + ", %" + operands()[2] + " : " + type();
-		}
-	}
-
+	
 	/**
 	 * Reads an effective list or map from the source (left) operand register,
 	 * and a key value from the key (right) operand register and returns the

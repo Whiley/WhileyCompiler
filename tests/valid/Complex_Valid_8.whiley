@@ -23,58 +23,58 @@ constant EmptyTrie is { transitions: [] }
 
 // Add a complete string into a Trie starting from the root node.
 function add(Trie trie, string str) -> Trie:
-    return add(trie,0,str)
+    return add(trie,0,str,0)
 
 // Add a string into a Trie from a given state, producing an
 // updated Trie.
-function add(Trie trie, int state, string str) -> Trie
+function add(Trie trie, int state, string str, int index) -> Trie
 requires state >= 0:
     //
-    if |str| == 0:
+    if |str| == index:
         return trie
     else:
         //
         // Check whether transition exists for first
         // character of str already.
-        char c = str[0]
+        char c = str[index]
         int i = 0
         //
         while i < |trie.transitions| where i >= 0:
             Transition t = trie.transitions[i]
             if t.from == state && t.character == c:
                 // Yes, existing transition for character
-                return add(trie,t.to,str[1..])
+                return add(trie,t.to,str,index+1)
             i = i + 1
         //
         // No existing transition, so make a new one.
         int target = |trie.transitions| + 1
         Transition t = { from: state, to: target, character: c }
         trie.transitions = trie.transitions ++ [t]
-        return add(trie,target,str[1..])
+        return add(trie,target,str,index+1)
 
 // Check whether a given string is contained in the trie,
 // starting from the root state.
 function contains(Trie trie, string str) -> bool:
-    return contains(trie,0,str)
+    return contains(trie,0,str,0)
 
 // Check whether a given string is contained in the trie,
 // starting from a given state.
-function contains(Trie trie, int state, string str) -> bool
+function contains(Trie trie, int state, string str, int index) -> bool
 requires state >= 0:
     //
-    if |str| == 0:
+    if |str| == index:
         return true
     else:
         // Check whether transition exists for first
         // character of str.
-        char c = str[0]
+        char c = str[index]
         int i = 0
         //
         while i < |trie.transitions| where i >= 0:
             Transition t = trie.transitions[i]
             if t.from == state && t.character == c:
                 // Yes, existing transition for character
-                return contains(trie,t.to,str[1..])
+                return contains(trie,t.to,str,index+1)
             i = i + 1
         //
         return false

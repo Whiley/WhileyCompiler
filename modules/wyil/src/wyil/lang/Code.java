@@ -586,7 +586,7 @@ public interface Code {
 	public static final int OPCODE_newtuple         = 3 + FMT_NARYASSIGN;
 	public static final int OPCODE_indirectinvokefn = 4 + FMT_NARYASSIGN;
 	public static final int OPCODE_indirectinvokemd = 5 + FMT_NARYASSIGN;
-	public static final int OPCODE_sublist          = 6 + FMT_NARYASSIGN;
+//	public static final int OPCODE_sublist          = 6 + FMT_NARYASSIGN;
 	public static final int OPCODE_invokefn         = 8 + FMT_NARYASSIGN; // +NAMEIDX
 	public static final int OPCODE_invokemd         = 9 + FMT_NARYASSIGN; // +NAMEIDX
 	public static final int OPCODE_lambdafn         = 10 + FMT_NARYASSIGN; // +NAMEIDX

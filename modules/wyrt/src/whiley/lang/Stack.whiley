@@ -25,33 +25,33 @@
 
 package whiley.lang
 
+public type Stack is {
+    [int] items,
+    int length
+}
+
 /**
  * Return the top element of the "stack".
  */
-public function top([int] list) -> int
-// Input list cannot be empty
-requires |list| > 0:
+public function top(Stack this) -> int:
     //
-    return list[|list|-1]
+    return this.items[this.length-1]
 
 
 /**
  * Push an element onto the "stack".
  */
-public function push([int] list, int element) -> ([int] r)
-// Length of stack increases by one
-ensures |r| == |list| + 1:
+public function push(Stack this, int element) -> (Stack r):
     //
-    return list ++ [element]
+    this.items[this.length] = element
+    this.length = this.length + 1
+    return this
 
 /**
  * Pop an element off the "stack".
  */
-public function pop([int] list) -> ([int] r)
-// Input list cannot be empty
-requires |list| > 0
-// Length of list decreases by one
-ensures |r| == |list| - 1:
+public function pop(Stack this) -> (Stack r):
     //
-    int end = |list| - 1
-    return list[0..end]
+    this.length = this.length - 1
+    //
+    return this

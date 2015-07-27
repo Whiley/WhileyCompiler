@@ -2254,64 +2254,13 @@ public class WhileyFileParser {
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
 				|| (token = tryAndMatch(terminated, Dot, MinusGreater)) != null) {
 			switch (token.kind) {
-			case LeftSquare:
-				// At this point, there are two possibilities: an access
-				// expression (e.g. x[i]), or a sublist (e.g. xs[0..1], xs[..1],
-				// xs[0..]). We have to disambiguate these four different
-				// possibilities.
-
-				// Since ".." is not the valid start of a statement, we can
-				// safely set terminated=true for tryAndMatch().
-				if (tryAndMatch(true, DotDot) != null) {
-					// This indicates a sublist expression of the form
-					// "xs[..e]". Therefore, we inject 0 as the start value for
-					// the sublist expression.
-					Expr st = new Expr.Constant(
-							Constant.V_INTEGER(BigInteger.ZERO), sourceAttr(
-									start, index - 1));
-					// NOTE: expression guaranteed to be terminated by ']'.
-					Expr end = parseAdditiveExpression(wf, environment, true);
-					match(RightSquare);
-					lhs = new Expr.SubList(lhs, st, end, sourceAttr(start,
-							index - 1));
-				} else {
-					// This indicates either a list access or a sublist of the
-					// forms xs[a..b] and xs[a..]
-					//
-					// NOTE: expression guaranteed to be terminated by ']'.
-					Expr rhs = parseAdditiveExpression(wf, environment, true);
-					// Check whether this is a sublist expression
-					if (tryAndMatch(terminated, DotDot) != null) {
-						// Yes, this is a sublist but we still need to
-						// disambiguate the two possible forms xs[x..y] and
-						// xs[x..].
-						//
-						// NOTE: expression guaranteed to be terminated by ']'.
-						if (tryAndMatch(true, RightSquare) != null) {
-							// This is a sublist of the form xs[x..]. In this
-							// case, we inject |xs| as the end expression.
-							Expr end = new Expr.LengthOf(lhs, sourceAttr(start,
-									index - 1));
-							lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(
-									start, index - 1));
-						} else {
-							// This is a sublist of the form xs[x..y].
-							// Therefore, we need to parse the end expression.
-							// NOTE: expression guaranteed to be terminated by
-							// ']'.
-							Expr end = parseAdditiveExpression(wf, environment,
-									true);
-							match(RightSquare);
-							lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(
-									start, index - 1));
-						}
-					} else {
-						// Nope, this is a plain old list access expression
-						match(RightSquare);
-						lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
-								index - 1));
-					}
-				}
+			case LeftSquare:				
+				// NOTE: expression guaranteed to be terminated by ']'.
+				Expr rhs = parseAdditiveExpression(wf, environment, true);
+				// This is a plain old list access expression
+				match(RightSquare);
+				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
+							index - 1));				
 				break;
 			case MinusGreater:
 				lhs = new Expr.Dereference(lhs, sourceAttr(start, index - 1));
@@ -3476,8 +3425,6 @@ public class WhileyFileParser {
 		} else if(e instanceof Expr.New) {
 			return true;
 		} else if(e instanceof Expr.Record) {
-			return true;
-		} else if(e instanceof Expr.SubList) {
 			return true;
 		} else if(e instanceof Expr.Tuple) {
 			return true;
