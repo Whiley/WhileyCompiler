@@ -731,9 +731,6 @@ public class Interpreter {
 		case GTEQ:
 			result = lessThan(op2, op1, false, context);
 			break;
-		case IN:
-			result = elementOf(op1, op2, context);
-			break;		
 		default:
 			return deadCode(context);
 		}

@@ -1973,7 +1973,7 @@ public final class CodeGenerator {
 		// could probably use a range test for this somehow
 		if (v.op == Expr.BOp.EQ || v.op == Expr.BOp.NEQ || v.op == Expr.BOp.LT
 				|| v.op == Expr.BOp.LTEQ || v.op == Expr.BOp.GT
-				|| v.op == Expr.BOp.GTEQ || v.op == Expr.BOp.ELEMENTOF
+				|| v.op == Expr.BOp.GTEQ
 				|| v.op == Expr.BOp.AND || v.op == Expr.BOp.OR) {
 			String trueLabel = CodeUtils.freshLabel();
 			String exitLabel = CodeUtils.freshLabel();
@@ -2134,8 +2134,6 @@ public final class CodeGenerator {
 			return Codes.Comparator.GT;
 		case GTEQ:
 			return Codes.Comparator.GTEQ;
-		case ELEMENTOF:
-			return Codes.Comparator.IN;
 		default:
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, elem);
 		}

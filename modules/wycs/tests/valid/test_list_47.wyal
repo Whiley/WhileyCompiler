@@ -1,0 +1,15 @@
+define update([int] items, [int] nitems, int i, int item) is:
+    |items| == |nitems|
+    forall(int j):
+        j != i ==> items[j] == nitems[j]
+    nitems[i] == item
+            
+assert "loop invariant not restored":
+    forall ([int] items, [int] nitems, int i, int n):
+        if:
+            update(items,nitems,n,0)
+            items[i] != 0
+        then:
+            n != i ==> nitems[i] != 0
+
+

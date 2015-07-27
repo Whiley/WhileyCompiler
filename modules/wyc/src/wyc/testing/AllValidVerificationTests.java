@@ -1877,17 +1877,7 @@ public class AllValidVerificationTests {
 	public void String_Valid_6() {
 		runTest("String_Valid_6");
 	}
-
-	@Test
-	public void String_Valid_7() {
-		runTest("String_Valid_7");
-	}
-
-	@Test
-	public void String_Valid_8() {
-		runTest("String_Valid_8");
-	}
-
+	
 	@Test
 	public void Subtype_Valid_1() {
 		runTest("Subtype_Valid_1");

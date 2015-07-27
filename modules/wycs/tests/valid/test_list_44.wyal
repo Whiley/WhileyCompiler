@@ -1,0 +1,22 @@
+define invariant([int] items, int n) is:
+    forall (int i):
+        if:
+            i < n
+        then:
+            items[i] == 0
+
+define update([int] items, [int] nitems, int i, int item) is:
+    |items| == |nitems|
+    forall(int j):
+        j != i ==> items[j] == nitems[j]
+    nitems[i] == item
+            
+assert "loop invariant not restored":
+    forall ([int] items, [int] nitems, int n):
+        if:
+            invariant(items,n)
+        then:
+            update(items,nitems,n,0)
+            invariant(nitems,n+1)
+
+

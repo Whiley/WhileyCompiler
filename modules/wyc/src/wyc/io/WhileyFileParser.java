@@ -1814,7 +1814,7 @@ public class WhileyFileParser {
 		Expr lhs = parseAppendExpression(wf, environment, terminated);
 
 		lookahead = tryAndMatch(terminated, LessEquals, LeftAngle,
-				GreaterEquals, RightAngle, EqualsEquals, NotEquals, In, Is,
+				GreaterEquals, RightAngle, EqualsEquals, NotEquals, Is,
 				Subset, SubsetEquals, Superset, SupersetEquals);
 
 		if (lookahead != null) {
@@ -1837,9 +1837,6 @@ public class WhileyFileParser {
 				break;
 			case NotEquals:
 				bop = Expr.BOp.NEQ;
-				break;
-			case In:
-				bop = Expr.BOp.ELEMENTOF;
 				break;
 			case Is:
 				SyntacticType type = parseUnitType();

@@ -1260,7 +1260,6 @@ public class FlowTypeChecker {
 		case LTEQ:
 		case GT:
 		case GTEQ:
-		case ELEMENTOF:
 		case IS:
 			return resolveLeafCondition(bop, sign, environment, context);
 		default:
@@ -1443,18 +1442,6 @@ public class FlowTypeChecker {
 
 			bop.srcType = lhs.result();
 			break;
-		case ELEMENTOF:
-			Type.EffectiveList listType = rhsRawType instanceof Type.EffectiveList ? (Type.EffectiveList) rhsRawType
-					: null;
-
-			if (listType != null
-					&& !Type.isSubtype(listType.element(), lhsRawType)) {
-				syntaxError(
-						errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
-								listType.element()), context, bop);
-			}
-			bop.srcType = rhs.result();
-			break;	
 		case LT:
 		case LTEQ:
 		case GTEQ:
@@ -1617,7 +1604,6 @@ public class FlowTypeChecker {
 		case LTEQ:
 		case GT:
 		case GTEQ:
-		case ELEMENTOF:
 		case IS:
 			return propagateCondition(expr, true, environment, context).first();
 		}

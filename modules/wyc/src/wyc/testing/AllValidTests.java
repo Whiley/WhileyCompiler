@@ -1255,11 +1255,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ListElemOf_Valid_1() throws IOException {
-		runTest("ListElemOf_Valid_1");
-	}
-
-	@Test
 	public void ListEmpty_Valid_1() throws IOException {
 		runTest("ListEmpty_Valid_1");
 	}

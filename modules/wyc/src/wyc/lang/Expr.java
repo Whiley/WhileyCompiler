@@ -287,7 +287,6 @@ public interface Expr extends SyntacticElement {
 			case LTEQ:
 			case GT:
 			case GTEQ:
-			case ELEMENTOF:
 			case IS:
 				return Nominal.T_BOOL;
 			default:
@@ -783,10 +782,7 @@ public interface Expr extends SyntacticElement {
 		},
 		GTEQ{
 			public String toString() { return ">="; }
-		},
-		ELEMENTOF{
-			public String toString() { return "in"; }
-		},
+		},		
 		RANGE{
 			public String toString() { return ".."; }
 		},

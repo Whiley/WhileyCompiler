@@ -966,16 +966,6 @@ public class Wyil2JavaBuilder implements Builder {
 			op = Bytecode.IfMode.GE;
 			break;
 		}	
-		case IN: {
-			JvmType.Function ftype = new JvmType.Function(T_BOOL,
-					JAVA_LANG_OBJECT);
-			bytecodes.add(new Bytecode.Swap());
-			bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "contains",
-					ftype, Bytecode.InvokeMode.INTERFACE));
-			op = Bytecode.IfMode.NE;
-			break;
-		}
-
 		default:
 			internalFailure("unknown if condition encountered", filename,
 					rootBlock.attribute(index, SourceLocation.class));

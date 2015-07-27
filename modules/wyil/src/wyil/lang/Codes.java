@@ -1260,11 +1260,6 @@ public abstract class Codes {
 			public String toString() {
 				return "ge";
 			}
-		},
-		IN(6) {
-			public String toString() {
-				return "in";
-			}
 		};
 		public int offset;
 

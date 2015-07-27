@@ -22,10 +22,9 @@ ensures:
     rs[index] == value
     |rs| == |pairs|
 ensures:
-    forall (int i, V v):
+    forall (int i):
         if:
-            pairs[i] == v
             i != index
         then:
-            rs[i] == v
+            rs[i] == pairs[i]
 
