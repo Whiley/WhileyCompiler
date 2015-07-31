@@ -5,12 +5,9 @@ import java.util.Map;
 
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
-import wyautl.rw.IterativeRewriter;
-import wyautl.rw.UnfairRuleStateRewriteStrategy;
-import wyautl.rw.InferenceRule;
-import wyautl.rw.ReductionRule;
-import wyautl.rw.SimpleRewriteStrategy;
-import wyautl.rw.UnfairStateRuleRewriteStrategy;
+import wyautl.util.CachingRewriter;
+import wyautl.util.Rewriters;
+import wyautl.util.SingleStepRewriter;
 import wycc.lang.NameID;
 import wyfs.lang.Path;
 import static wycs.core.Types.*;
@@ -728,7 +725,7 @@ public abstract class SemanticType {
 	 */
 	public static SemanticType construct(Automaton automaton) {
 		// First, we canonicalise the automaton
-		reduce(automaton);
+		automaton = reduce(automaton);
 		automaton.minimise();
 		automaton.compact();
 		automaton.canonicalise();
@@ -818,7 +815,7 @@ public abstract class SemanticType {
 //			new PrettyAutomataWriter(System.err, SCHEMA, "And",
 //					"Or").write(result.automaton);
 //			System.out.println();
-//		} catch(IOException e) {}
+//		} catch(IOException e) {}	
 		boolean r = result.equals(SemanticType.Void);
 //		System.out.println("CHECKING SUBTYPE: " + t1 + " :> " + t2 + " : " + r);
 //		try {
@@ -918,27 +915,7 @@ public abstract class SemanticType {
 		return r;
 	}
 
-	private static void reduce(Automaton automaton) {
-		//
-//		try {
-//			new PrettyAutomataWriter(System.err, SCHEMA, "And",
-//					"Or").write(automaton);
-//			System.out.println();
-//		} catch(IOException e) {}
-		//
-		IterativeRewriter.Strategy<InferenceRule> inferenceStrategy = new UnfairRuleStateRewriteStrategy<InferenceRule>(
-				automaton, Types.inferences);
-		IterativeRewriter.Strategy<ReductionRule> reductionStrategy = new UnfairRuleStateRewriteStrategy<ReductionRule>(
-				automaton, Types.reductions);
-		IterativeRewriter rw = new IterativeRewriter(automaton,
-				inferenceStrategy, reductionStrategy, Types.SCHEMA);
-		rw.apply();
-		//
-//		try {
-//			new PrettyAutomataWriter(System.err, SCHEMA, "And",
-//					"Or").write(automaton);
-//			System.out.println();
-//		} catch(IOException e) {}
-		//
-	}
+	private static Automaton reduce(Automaton automaton) {
+		return Rewriters.reduce(automaton, Types.SCHEMA, Types.reductions);
+	}	
 }

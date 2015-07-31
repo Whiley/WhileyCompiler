@@ -10,8 +10,10 @@ import java.util.*;
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.*;
-import wyautl.rw.Rewriter.Stats;
 import wyautl.util.BigRational;
+import wyautl.util.CachingRewriter;
+import wyautl.util.Rewriters;
+import wyautl.util.SingleStepRewriter;
 import wybs.lang.Builder;
 import wycc.lang.SyntacticElement;
 import wycc.lang.Transform;
@@ -230,15 +232,14 @@ public class VerificationCheck implements Transform<WycsFile> {
 			//debug(original);
 		}
 
-		Rewriter rewriter = createRewriter(automaton);
-		boolean r = rewriter.apply();
+		automaton = Rewriters.infer(automaton,Solver.SCHEMA,Solver.inferences,Solver.reductions,maxInferences);
 
-		if(!r) {
-			throw new AssertionFailure("timeout occurred during verification",stmt,rewriter,automaton,original);
+		if(automaton == null) {
+			throw new AssertionFailure("timeout occurred during verification",stmt,null,automaton,original);
 		} else if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
 			String msg = stmt.message;
 			msg = msg == null ? "assertion failure" : msg;
-			throw new AssertionFailure(msg,stmt,rewriter,automaton,original);
+			throw new AssertionFailure(msg,stmt,null,automaton,original);
 		}
 
 		long endTime = System.currentTimeMillis();
@@ -494,8 +495,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// form before verification begins. This firstly reduces the amount of
 		// work during verification, and also allows the functions in
 		// SolverUtils to work properly.
-		Rewriter rewriter = createRewriter(type_automaton);
-		rewriter.apply();
+		type_automaton = Rewriters.reduce(type_automaton,Solver.SCHEMA,Solver.reductions);
 		return automaton.addAll(type_automaton.getRoot(0), type_automaton);
 	}
 
@@ -850,44 +850,5 @@ public class VerificationCheck implements Transform<WycsFile> {
 			}
 			return Code.Nary(SemanticType.Bool,Code.Op.AND,clauses);
 		}
-	}
-
-	private Rewriter createRewriter(Automaton automaton) {
-		IterativeRewriter.Strategy<InferenceRule> inferenceStrategy;
-		IterativeRewriter.Strategy<ReductionRule> reductionStrategy;
-
-		// First, construct a fresh rewriter for this file.
-		switch(rwMode) {
-		case STATICDISPATCH:
-			inferenceStrategy = new UnfairStateRuleRewriteStrategy<InferenceRule>(
-					automaton, Solver.inferences,Solver.SCHEMA,new RewriteRule.RankComparator());
-			reductionStrategy = new UnfairStateRuleRewriteStrategy<ReductionRule>(
-					automaton, Solver.reductions,Solver.SCHEMA,new RewriteRule.RankComparator());
-			break;
-		case GLOBALDISPATCH:
-			// NOTE: I don't supply a max steps value here because the
-			// default value would be way too small for the simple rewriter.
-			inferenceStrategy = new UnfairRuleStateRewriteStrategy<InferenceRule>(
-					automaton, Solver.inferences,new RewriteRule.RankComparator());
-			reductionStrategy = new UnfairRuleStateRewriteStrategy<ReductionRule>(
-					automaton, Solver.reductions,new RewriteRule.RankComparator());
-			break;
-		default:
-			// NOTE: I don't supply a max steps value here because the
-			// default value would be way too small for the simple rewriter.
-			inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(
-					automaton, Solver.inferences);
-			reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(
-					automaton, Solver.reductions);
-			break;
-		}
-
-		IterativeRewriter rewriter = new IterativeRewriter(automaton, inferenceStrategy,
-				reductionStrategy, Solver.SCHEMA);
-
-		rewriter.setMaxReductionSteps(maxReductions);
-		rewriter.setMaxInferenceSteps(maxInferences);
-
-		return rewriter;
 	}
 }

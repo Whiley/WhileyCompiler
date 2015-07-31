@@ -1792,7 +1792,6 @@ public class VcGenerator {
 					.attributes(branch.pc()));
 			Codes.LVal lv = iter.next();
 			if (lv instanceof Codes.RecordLVal) {
-				System.out.println("GOT HERE");
 				Codes.RecordLVal rlv = (Codes.RecordLVal) lv;
 				ArrayList<String> fields = new ArrayList<String>(rlv.rawType()
 						.fields().keySet());

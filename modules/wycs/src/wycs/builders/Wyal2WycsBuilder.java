@@ -13,7 +13,6 @@ import static wycc.lang.SyntaxError.*;
 import static wycs.solver.Solver.SCHEMA;
 import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.Rewriter;
-import wyautl.rw.SimpleRewriteStrategy;
 import wybs.lang.*;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;
@@ -214,7 +213,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 						PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA,"Or","And");
 						writer.write(ex.original());
 						writer.flush();
-						System.err.println("\n\n=> (" + rw.getStats() + ")\n");
+						System.err.println("\n\n=>\n");
 						writer.write(ex.reduction());
 						writer.flush();
 					}

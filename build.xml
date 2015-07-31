@@ -8,7 +8,6 @@
   <target name="build-all">
     <subant failonerror="true" target="build">
       <fileset dir="modules" includes="wybs/build.xml"/>
-      <fileset dir="modules" includes="wyrl/build.xml"/>
       <fileset dir="modules" includes="wycs/build.xml"/>
       <fileset dir="modules" includes="wyil/build.xml"/>
       <fileset dir="modules" includes="wyc/build.xml"/>
@@ -30,11 +29,6 @@
        windowtitle="Whiley Compiler API">
       <doctitle><![CDATA[<h1>The Whiley Compiler (v${version})</h1>]]></doctitle>
       <bottom><![CDATA[<i>Copyright &#169; 2011 David J. Pearce. All Rights Reserved.</i>]]></bottom>
-      <packageset dir="modules/wyrl/src">
-	<include name="wyautl/**"/>
-	<include name="wyrl/**"/>
-	<exclude name="wyrl/testing/**"/>
-      </packageset>
       <packageset dir="modules/wybs/src">
 	<include name="wyfs/**"/>
 	<include name="wybs/**"/>
@@ -70,7 +64,6 @@
       <group title="Whiley-2-Java Compiler (WYJC)" packages="wyjc:wyjc.*:wyjvm.*"/>
       <!--<group title="Whiley-2-C Compiler (WYCC)" packages="wycc:wycc.*"/>-->
       <group title="Whiley Constraint Solver (WYCS)" packages="wycs:wycs.*"/>
-      <group title="Whiley Rewrite Language (WYRL)" packages="wyrl:wyrl.*:wyautl.*"/>
       </javadoc>
   </target>
 
@@ -81,7 +74,6 @@
   <target name="distjars" depends="build-all">
     <subant failonerror="false" target="dist">
       <fileset dir="modules" includes="wybs/build.xml"/>
-      <fileset dir="modules" includes="wyrl/build.xml"/>
       <fileset dir="modules" includes="wycs/build.xml"/>
       <fileset dir="modules" includes="wyil/build.xml"/>
       <fileset dir="modules" includes="wyc/build.xml"/>
@@ -114,7 +106,6 @@
       <include name="bin/wyj"/>
       <include name="bin/wycc"/>
       <include name="bin/wycs"/>
-      <include name="bin/wyrl"/>
       <include name="bin/wy_common.bash"/>
       <include name="lib/*-v${version}.jar"/>
       <include name="lib/jasm-v*.jar"/>

@@ -183,38 +183,6 @@ public class WycsMain {
 			verbose = values.containsKey("verbose");
 
 			// =====================================================================
-			// Wyone Debug Mode
-			// =====================================================================
-
-			if(values.containsKey("wyone")) {
-				// this is basically a hack to allow reading in wyone files so
-				// we can debug them.
-				try {
-					FileInputStream fin = new FileInputStream(args.get(0));
-					PrettyAutomataReader reader = new PrettyAutomataReader(fin,SCHEMA);
-					Automaton automaton = reader.read();
-
-					new PrettyAutomataWriter(System.err, SCHEMA, "And",
-							"Or").write(automaton);
-					IterativeRewriter.Strategy<InferenceRule> inferenceStrategy = new UnfairStateRuleRewriteStrategy<InferenceRule>(
-							automaton, Solver.inferences, Solver.SCHEMA);
-					IterativeRewriter.Strategy<ReductionRule> reductionStrategy = new UnfairStateRuleRewriteStrategy<ReductionRule>(
-							automaton, Solver.reductions, Solver.SCHEMA);
-					IterativeRewriter rw = new IterativeRewriter(automaton,
-							inferenceStrategy, reductionStrategy, SCHEMA);
-					rw.apply();
-					System.err.println("\n\n=> (" + rw.getStats() + ")\n");
-					new PrettyAutomataWriter(System.err, SCHEMA, "And",
-							"Or").write(automaton);
-					System.out.println();
-					System.exit(0);
-				} catch(IOException e) {
-					System.err.println(e.getMessage());
-					System.exit(1);
-				}
-			}
-
-			// =====================================================================
 			// Construct & Configure Build Task
 			// =====================================================================
 
