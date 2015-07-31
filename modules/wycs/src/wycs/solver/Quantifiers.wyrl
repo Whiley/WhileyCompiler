@@ -70,7 +70,7 @@ infer And{
 name  "ForAll_5"
 rank 3:
     => let instantiations = instantiate[e1,vs,e2]
-       in And({e1,qf} ++ es ++ instantiations), if |instantiations| > 0
+       in And({e1,qf} ++ es ++ instantiations), if !(e1 is ForAll) && |instantiations| > 0
 
 // ====================================================================
 // Exists
