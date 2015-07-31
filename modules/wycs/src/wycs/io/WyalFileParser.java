@@ -1275,20 +1275,10 @@ public class WyalFileParser {
 				// expression (e.g. x[i]), or a list update (e.g. xs[a:=b]). We have to disambiguate these four different
 				// possibilities.
 				// NOTE: expression guaranteed to be terminated by ']'.
-				Expr rhs = parseAdditiveExpression(wf, generics, environment, true);
-				if(tryAndMatch(true, ColonEquals) != null) {
-					// Indicates a list update expression
-					Expr val = parseAdditiveExpression(wf, generics, environment,
-							true);
-					match(RightSquare);
-					lhs = new Expr.Ternary(Expr.Ternary.Op.UPDATE, lhs,
-							rhs, val, sourceAttr(start, index - 1));
-				} else {
-					// Nope, this is a plain old list access expression
-					match(RightSquare);
-					lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
-							index - 1));
-				}
+				Expr rhs = parseAdditiveExpression(wf, generics, environment, true);				
+				match(RightSquare);
+				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
+						index - 1));
 				break;
 			case Dot:
 				// At this point, we could have a field access, a package access

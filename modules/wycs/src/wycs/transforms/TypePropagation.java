@@ -14,6 +14,7 @@ import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.SemanticType;
 import wycs.core.Value;
 import wycs.syntax.*;
+import wyfs.lang.Path;
 
 public class TypePropagation implements Transform<WyalFile> {
 
@@ -212,8 +213,6 @@ public class TypePropagation implements Transform<WyalFile> {
 			t = propagate((Expr.Unary) e, environment, generics, context);
 		} else if (e instanceof Expr.Binary) {
 			t = propagate((Expr.Binary) e, environment, generics, context);
-		} else if (e instanceof Expr.Ternary) {
-			t = propagate((Expr.Ternary) e, environment, generics, context);
 		} else if (e instanceof Expr.Nary) {
 			t = propagate((Expr.Nary) e, environment, generics, context);
 		} else if (e instanceof Expr.Is) {
@@ -389,29 +388,6 @@ public class TypePropagation implements Transform<WyalFile> {
 		return null; // deadcode
 	}
 
-	private SemanticType propagate(Expr.Ternary e,
-			HashMap<String, SemanticType> environment,
-			HashSet<String> generics, WyalFile.Context context) {
-		SemanticType firstType = propagate(e.firstOperand, environment,
-				generics, context);
-		SemanticType secondType = propagate(e.secondOperand, environment,
-				generics, context);
-		SemanticType thirdType = propagate(e.thirdOperand, environment,
-				generics, context);
-		switch (e.op) {
-		case UPDATE:
-			checkIsSubtype(SemanticType.ArrayAny, firstType,
-					e.firstOperand, context);
-			checkIsSubtype(SemanticType.Int, secondType, e.secondOperand, context);
-			SemanticType.Array l = (SemanticType.Array) firstType;
-			checkIsSubtype(l.element(), thirdType, e.thirdOperand, context);
-			return firstType;
-		}
-		internalFailure("unknown ternary expression encountered (" + e + ")",
-				filename, e);
-		return null; // deadcode
-	}
-
 	private SemanticType propagate(Expr.Nary e,
 			HashMap<String, SemanticType> environment,
 			HashSet<String> generics, WyalFile.Context context) {
@@ -551,10 +527,14 @@ public class TypePropagation implements Transform<WyalFile> {
 				fnType = p.second();
 				binding = p.third();
 			} else {
-				// In this case, a package qualification has been given. Hence,
-				// we know the fully name identifier for this function and we
-				// need only to check it exists and access the relevant
-				// information.
+				if(e.qualification.size() == 1) {
+					e.qualification = builder.resolveAsModule(e.qualification.last(), context);
+				} else {
+					// In this case, a complete package qualification has been given. Hence,
+					// we know the fully name identifier for this function and we
+					// need only to check it exists and access the relevant
+					// information.
+				}				
 				NameID nid = new NameID(e.qualification, e.name);
 				Pair<SemanticType.Function, Map<String, SemanticType>> p = builder
 						.resolveAsFunctionType(nid, argument, ivkGenerics,
@@ -626,12 +606,6 @@ public class TypePropagation implements Transform<WyalFile> {
 			case GT:
 			case GTEQ:
 				return SemanticType.Bool;
-			}
-		} else if (e instanceof Expr.Ternary) {
-			Expr.Ternary ue = (Expr.Ternary) e;
-			switch (ue.op) {
-			case UPDATE:
-				return type;
 			}
 		} else if (e instanceof Expr.Nary) {
 			Expr.Nary ue = (Expr.Nary) e;

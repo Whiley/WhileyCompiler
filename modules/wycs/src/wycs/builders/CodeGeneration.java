@@ -196,8 +196,6 @@ public class CodeGeneration {
 			return generate((Expr.Unary) e, environment, context);
 		} else if (e instanceof Expr.Binary) {
 			return generate((Expr.Binary) e, environment, context);
-		} else if (e instanceof Expr.Ternary) {
-			return generate((Expr.Ternary) e, environment, context);
 		} else if (e instanceof Expr.Nary) {
 			return generate((Expr.Nary) e, environment, context);
 		} else if (e instanceof Expr.Quantifier) {
@@ -327,30 +325,6 @@ public class CodeGeneration {
 
 		return Code.Binary(type, opcode, lhs, rhs,
 				attributes(e));
-	}
-
-
-	protected Code generate(Expr.Ternary e, HashMap<String, Code> environment,
-			WyalFile.Context context) {
-		SemanticType.Array type = (SemanticType.Array) e.attribute(TypeAttribute.class).type;
-		Code first = generate(e.firstOperand, environment, context);
-		Code second = generate(e.secondOperand, environment, context);
-		Code third = generate(e.thirdOperand, environment, context);
-		SemanticType argType;
-		String name;
-		switch (e.op) {
-		case UPDATE:
-			name = "ListUpdate";
-			argType = SemanticType.Tuple(type,SemanticType.Int, type.element());
-			break;
-		default:
-			internalFailure("unknown ternary opcode encountered (" + e + ")",
-					filename, e);
-			return null;
-		}		
-		Code argument = Code.Nary(argType, Code.Op.TUPLE, new Code[] { first,
-				second, third });
-		return invokeInternal(WYCS_CORE_LIST,name,argument,context);		
 	}
 
 	protected Code generate(Expr.Nary e, HashMap<String,Code> environment, WyalFile.Context context) {

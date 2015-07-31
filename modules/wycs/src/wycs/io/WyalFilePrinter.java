@@ -192,8 +192,6 @@ public class WyalFilePrinter {
 			write(wf, (Expr.Cast)e,indent);
 		} else if(e instanceof Expr.Binary) {
 			write(wf, (Expr.Binary)e,indent);
-		} else if(e instanceof Expr.Ternary) {
-			write(wf, (Expr.Ternary)e,indent);
 		} else if(e instanceof Expr.Nary) {
 			write(wf, (Expr.Nary)e,indent);
 		} else if(e instanceof Expr.Is) {
@@ -266,21 +264,6 @@ public class WyalFilePrinter {
 			writeWithOptionalBraces(wf,e.rightOperand,indent);
 		}
 	}
-
-	private void write(WyalFile wf, Expr.Ternary e, int indent) {
-		switch(e.op) {
-		case UPDATE:
-			writeWithoutBraces(wf,e.firstOperand,indent);
-			out.print("[");
-			writeWithoutBraces(wf,e.secondOperand,indent);
-			out.print(":=");
-			writeWithoutBraces(wf,e.thirdOperand,indent);
-			out.print("]");
-			return;
-		}
-		internalFailure("unknown expression encountered \"" + e + "\" (" + e.getClass().getName() + ")", wf.filename(), e);
-	}
-
 
 	private void write(WyalFile wf, Expr.Nary e, int indent) {
 		switch(e.op) {

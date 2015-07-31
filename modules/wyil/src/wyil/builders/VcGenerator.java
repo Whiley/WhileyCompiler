@@ -35,6 +35,7 @@ import java.util.*;
 
 import wybs.lang.*;
 import wyfs.lang.Path;
+import wyfs.util.Trie;
 import wyil.attributes.VariableDeclarations;
 import wyil.builders.VcBranch.State;
 import wyil.lang.*;
@@ -63,7 +64,7 @@ public class VcGenerator {
 	private final Builder builder;
 	private final TypeExpander expander;
 	private String filename;
-	private WyalFile wycsFile;
+	private WyalFile wyalFile;
 	WyilFile.FunctionOrMethod method;
 
 	public VcGenerator(Builder builder) {
@@ -77,8 +78,9 @@ public class VcGenerator {
 
 	protected WyalFile transform(WyilFile wyilFile) {
 		filename = wyilFile.filename();
-		wycsFile = new WyalFile(wyilFile.id(), filename);
-
+		wyalFile = new WyalFile(wyilFile.id(), filename);
+		addImports();
+		
 		for (WyilFile.Block b : wyilFile.blocks()) {
 			if (b instanceof WyilFile.Constant) {
 				transform((WyilFile.Constant) b, wyilFile);
@@ -90,9 +92,16 @@ public class VcGenerator {
 			}
 		}
 
-		return wycsFile;
+		return wyalFile;
 	}
 
+	/**
+	 * Add necessary imports from the theorem prover's library.
+	 */
+	private void addImports() {
+		wyalFile.add(wyalFile.new Import(Trie.fromString("wycs/core/Array"), null));
+	}
+	
 	protected void transform(WyilFile.Constant decl, WyilFile wyilFile) {
 		NameID name = new NameID(wyilFile.id(), decl.name());
 	}
@@ -136,7 +145,7 @@ public class VcGenerator {
 		TypePattern.Leaf pattern = new TypePattern.Leaf(convert(
 				typeDecl.type(), Collections.EMPTY_LIST), var);
 
-		wycsFile.add(wycsFile.new Type(typeDecl.name(), Collections.EMPTY_LIST,
+		wyalFile.add(wyalFile.new Type(typeDecl.name(), Collections.EMPTY_LIST,
 				pattern, invariant, toWycsAttributes(typeDecl.attributes())));
 	}
 
@@ -227,7 +236,7 @@ public class VcGenerator {
 				Expr vc = buildVerificationCondition(
 						new Expr.Constant(Value.Bool(false)), branch,
 						bodyEnvironment, body);
-				wycsFile.add(wycsFile.new Assert("assertion failed", vc,
+				wyalFile.add(wyalFile.new Assert("assertion failed", vc,
 						toWycsAttributes(body.attributes(branch.pc()))));
 				break;
 			}
@@ -255,7 +264,7 @@ public class VcGenerator {
 						Expr vc = buildVerificationCondition(nominalTest,
 								branch, bodyEnvironment, body, rawTest);
 						// FIXME: add contextual information here
-						wycsFile.add(wycsFile.new Assert(
+						wyalFile.add(wyalFile.new Assert(
 								"return type invariant not satisfied", vc,
 								wycsAttributes));
 					}
@@ -282,7 +291,7 @@ public class VcGenerator {
 						Expr vc = buildVerificationCondition(macro, branch,
 								bodyEnvironment, body, rawTest);
 						// FIXME: add contextual information here
-						wycsFile.add(wycsFile.new Assert(
+						wyalFile.add(wyalFile.new Assert(
 								"postcondition not satisfied", vc,
 								toWycsAttributes(body.attributes(branch.pc()))));
 					}
@@ -484,7 +493,7 @@ public class VcGenerator {
 								Pair<String, Expr> p = preconditions[i];
 								Expr vc = buildVerificationCondition(
 										p.second(), branch, environment, block);
-								wycsFile.add(wycsFile.new Assert(p.first(), vc,
+								wyalFile.add(wyalFile.new Assert(p.first(), vc,
 										toWycsAttributes(block
 												.attributes(branch.pc()))));
 							}
@@ -1042,7 +1051,7 @@ public class VcGenerator {
 						invariantMacroName, variables);
 				Expr vc = buildVerificationCondition(invariant, activeBranch,
 						environment, block);
-				wycsFile.add(wycsFile.new Assert(
+				wyalFile.add(wyalFile.new Assert(
 						"loop invariant does not hold on entry", vc,
 						toWycsAttributes(block.attributes(invariantPc))));
 			}
@@ -1079,7 +1088,7 @@ public class VcGenerator {
 						invariantMacroName, variables);
 				Expr vc = buildVerificationCondition(invariant, activeBranch,
 						environment, block);
-				wycsFile.add(wycsFile.new Assert("loop invariant not restored",
+				wyalFile.add(wyalFile.new Assert("loop invariant not restored",
 						vc, toWycsAttributes(block.attributes(invariantPc))));
 			}
 			// Reposition fall-through
@@ -1193,7 +1202,7 @@ public class VcGenerator {
 		}
 		Expr argument = arguments.size() == 1 ? arguments.get(1)
 				: new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
-		return new Expr.Invoke(name, wycsFile.id(), Collections.EMPTY_LIST,
+		return new Expr.Invoke(name, wyalFile.id(), Collections.EMPTY_LIST,
 				argument);
 	}
 
@@ -1404,7 +1413,7 @@ public class VcGenerator {
 			Codes.AssertOrAssume code, boolean isAssert, VcBranch branch,
 			Type[] environment, Map<String, CodeBlock.Index> labels,
 			AttributedCodeBlock block) {
-		int start = wycsFile.declarations().size();
+		int start = wyalFile.declarations().size();
 		// First, transform the given branch through the assert or assume block.
 		// This will produce one or more exit branches, some of which may have
 		// reached failed states and need to be turned into verification
@@ -1433,8 +1442,8 @@ public class VcGenerator {
 			// FIXME: this is something of a hack for now. A better solution would
 			// be to pass a variable recursively down through the call stack which
 			// signaled that no verification conditions should be generated.
-			while(wycsFile.declarations().size() > start) {
-				wycsFile.declarations().remove(wycsFile.declarations().size()-1);
+			while(wyalFile.declarations().size() > start) {
+				wyalFile.declarations().remove(wyalFile.declarations().size()-1);
 			}
 		}
 		
@@ -1783,9 +1792,8 @@ public class VcGenerator {
 					.attributes(branch.pc()));
 			Codes.LVal lv = iter.next();
 			if (lv instanceof Codes.RecordLVal) {
+				System.out.println("GOT HERE");
 				Codes.RecordLVal rlv = (Codes.RecordLVal) lv;
-
-				// FIXME: following is broken for open records.
 				ArrayList<String> fields = new ArrayList<String>(rlv.rawType()
 						.fields().keySet());
 				Collections.sort(fields);
@@ -1805,16 +1813,45 @@ public class VcGenerator {
 			} else if (lv instanceof Codes.ListLVal) {
 				Codes.ListLVal rlv = (Codes.ListLVal) lv;
 				Expr index = branch.read(rlv.indexOperand);
-				result = updateHelper(iter, new Expr.IndexOf(source, index,
-						attributes), result, branch, block);
-				return new Expr.Ternary(Expr.Ternary.Op.UPDATE, source, index,
-						result, toWycsAttributes(block.attributes(branch.pc())));
+				Expr nSource = havoc(source,branch,block);
+				result = updateHelper(iter, new Expr.IndexOf(source, index, attributes), result, branch, block);
+				Expr arg = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { source, nSource, index, result },
+						toWycsAttributes(block.attributes(branch.pc())));
+				Expr.Invoke macro = new Expr.Invoke("update", Trie.fromString("Array"),
+						Collections.EMPTY_LIST, arg);
+				branch.assume(macro);
+				return nSource; // broken
 			} else {
 				return source; // TODO
 			}
 		}
 	}
+	
 
+	/**
+	 * Havoc an "expression".  
+	 * 
+	 * @param source
+	 * @param branch
+	 * @param block
+	 * @return
+	 */
+	private Expr havoc(Expr source, VcBranch branch, AttributedCodeBlock block) {
+		if(source instanceof Expr.Variable) {
+			Expr.Variable v = (Expr.Variable) source;
+			int register = determineRegister(v.name,branch.prefixes()); 
+			branch.havoc(register);
+			return branch.read(register);
+		} else {
+			// TODO: Must implement the other cases. At the moment, I'm not sure
+			// the best way to do this though.
+		}
+		// It should be impossible to reach here.
+		internalFailure("unreachable code", filename);
+		return null;
+	}
+
+	
 	/**
 	 * Transform an assignable unary bytecode using a given target operator.
 	 * This must read the operand and then create the appropriate target
@@ -1865,29 +1902,6 @@ public class VcGenerator {
 			// target register to signal this.
 			branch.havoc(code.target());
 		}
-	}
-
-	/**
-	 * Transform an assignable ternary bytecode using a given target operator.
-	 * This must read all operands and then create the appropriate target
-	 * expression. Finally, the result of the bytecode must be written back to
-	 * the enclosing branch.
-	 * 
-	 * @param operator
-	 *            --- The target operator
-	 * @param code
-	 *            --- The bytecode being translated
-	 * @param branch
-	 *            --- The enclosing branch
-	 */
-	protected void transformTernary(Expr.Ternary.Op operator,
-			Code.AbstractNaryAssignable code, VcBranch branch,
-			AttributedCodeBlock block) {
-		Expr one = branch.read(code.operand(0));
-		Expr two = branch.read(code.operand(1));
-		Expr three = branch.read(code.operand(2));
-		branch.write(code.target(), new Expr.Ternary(operator, one, two, three,
-				toWycsAttributes(block.attributes(branch.pc()))));
 	}
 
 	/**
@@ -1998,7 +2012,7 @@ public class VcGenerator {
 	 */
 	protected void buildMacroBlock(String name, CodeBlock.Index root,
 			AttributedCodeBlock block, List<Type> types, boolean isInvariant) {
-		int start = wycsFile.declarations().size();
+		int start = wyalFile.declarations().size();
 		
 		// first, generate a branch for traversing the external block.
 		VcBranch master = new VcBranch(
@@ -2039,14 +2053,14 @@ public class VcGenerator {
 		// FIXME: this is something of a hack for now. A better solution would
 		// be for the verification conditions to be returned so that they
 		// can be discussed.
-		while(wycsFile.declarations().size() > start) {
-			wycsFile.declarations().remove(wycsFile.declarations().size()-1);
+		while(wyalFile.declarations().size() > start) {
+			wyalFile.declarations().remove(wyalFile.declarations().size()-1);
 		}
 		//
 		for (VcBranch exitBranch : exitBranches) {
 			if (exitBranch.state() == VcBranch.State.TERMINATED) {
 				Expr body = generateAssumptions(exitBranch, null);
-				wycsFile.add(wycsFile.new Macro(name, Collections.EMPTY_LIST,
+				wyalFile.add(wyalFile.new Macro(name, Collections.EMPTY_LIST,
 						type, body));
 				return;
 			}
@@ -2084,7 +2098,7 @@ public class VcGenerator {
 		TypePattern to = new TypePattern.Leaf(convert(ret,
 				Collections.EMPTY_LIST), null);
 
-		wycsFile.add(wycsFile.new Function(name, Collections.EMPTY_LIST, from,
+		wyalFile.add(wyalFile.new Function(name, Collections.EMPTY_LIST, from,
 				to, null));
 	}
 

@@ -351,6 +351,26 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		throw new ResolveError("name not found: " + name);
 	}
 
+	public Path.ID resolveAsModule(String name, WyalFile.Context context) throws ResolveError {
+		// Search the imports list to find it.				
+		for (WyalFile.Import imp : context.imports()) {
+			for (Path.ID id : imports(imp.filter)) {
+				try {
+					if(id.last().equals(name)) {
+						return id;
+					}
+				} catch(SyntaxError e) {
+					throw e;
+				} catch (Exception e) {
+					internalFailure(e.getMessage(), context.file().filename(),
+							context, e);
+				}
+			}
+		}
+				
+		throw new ResolveError("module not found: " + name);	
+	}
+	
 	/**
 	 * This function must be called after stubs are created.
 	 * @param name
@@ -388,6 +408,9 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		// so that we can then choose the best fit.
 		try {
 			WycsFile wf = getModule(nid.module());
+			if(wf == null) {
+				throw new ResolveError("module not found: " + nid.module());
+			}
 			ArrayList<SemanticType.Function> fnTypes = new ArrayList<SemanticType.Function>();
 			for (WycsFile.Declaration d : wf.declarations()) {
 				if (d.name().equals(nid.name())) {
