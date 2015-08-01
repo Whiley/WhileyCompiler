@@ -630,6 +630,8 @@ public class Wyil2JavaBuilder implements Builder {
 				translate(index, (Codes.Label) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.ListOperator) {
 				translate(index, (Codes.ListOperator) code, freeSlot, bytecodes);
+			} else if (code instanceof Codes.ListGenerator) {
+				translate(index, (Codes.ListGenerator) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.Lambda) {
 				translate(index, (Codes.Lambda) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.LengthOf) {
@@ -1324,6 +1326,21 @@ public class Wyil2JavaBuilder implements Builder {
 		JvmType.Function ftype = new JvmType.Function(WHILEYLIST, leftType,
 				rightType);
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
+				Bytecode.InvokeMode.STATIC));
+		bytecodes.add(new Bytecode.Store(c.target(), WHILEYLIST));
+	}
+	
+	private void translate(CodeBlock.Index index, Codes.ListGenerator c,
+			int freeSlot, ArrayList<Bytecode> bytecodes) {
+		
+		JvmType elementType = convertUnderlyingType(c.type().element());
+
+		bytecodes.add(new Bytecode.Load(c.operand(0), elementType));
+		addWriteConversion(c.type().element(), bytecodes);
+		bytecodes.add(new Bytecode.Load(c.operand(1), WHILEYINT));
+		
+		JvmType.Function ftype = new JvmType.Function(WHILEYLIST, JAVA_LANG_OBJECT, WHILEYINT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "generate", ftype,
 				Bytecode.InvokeMode.STATIC));
 		bytecodes.add(new Bytecode.Store(c.target(), WHILEYLIST));
 	}

@@ -1285,6 +1285,41 @@ public class AllValidTests {
 	}
 
 	@Test
+	public void ListGenerator_Valid_6() throws IOException {
+		runTest("ListGenerator_Valid_6");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_7() throws IOException {
+		runTest("ListGenerator_Valid_7");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_8() throws IOException {
+		runTest("ListGenerator_Valid_8");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_9() throws IOException {
+		runTest("ListGenerator_Valid_9");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_10() throws IOException {
+		runTest("ListGenerator_Valid_10");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_11() throws IOException {
+		runTest("ListGenerator_Valid_11");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_12() throws IOException {
+		runTest("ListGenerator_Valid_12");
+	}
+	
+	@Test
 	public void ListLength_Valid_1() throws IOException {
 		runTest("ListLength_Valid_1");
 	}

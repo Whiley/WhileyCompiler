@@ -1650,6 +1650,9 @@ public final class CodeGenerator {
 			} else if (expression instanceof Expr.List) {
 				return generate((Expr.List) expression, environment, codes,
 						context);
+			} else if (expression instanceof Expr.ListGenerator) {
+				return generate((Expr.ListGenerator) expression, environment, codes,
+						context);
 			} else if (expression instanceof Expr.BinOp) {
 				return generate((Expr.BinOp) expression, environment, codes,
 						context);
@@ -2019,6 +2022,14 @@ public final class CodeGenerator {
 		return target;
 	}
 
+	private int generate(Expr.ListGenerator expr, Environment environment, AttributedCodeBlock codes, Context context) {
+		int element = generate(expr.element, environment, codes, context);
+		int count = generate(expr.count, environment, codes, context);
+		int target = environment.allocate(expr.result().raw());
+		codes.add(Codes.ListGenerator((Type.List) expr.type.raw(), target, element, count), attributes(expr));
+		return target;
+	}
+	
 	private int generate(Expr.Quantifier e, Environment environment,
 			AttributedCodeBlock codes, Context context) {
 		String trueLabel = CodeUtils.freshLabel();

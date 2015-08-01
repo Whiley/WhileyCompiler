@@ -812,6 +812,13 @@ public final class WyilFileReader {
 			return Codes.IndexOf((Type.EffectiveList) type, target,
 					leftOperand, rightOperand);
 		}
+		case Code.OPCODE_listgen: {
+			if (!(type instanceof Type.List)) {
+				throw new RuntimeException("expecting list type");
+			}
+			return Codes.ListGenerator((Type.List) type, target,
+					leftOperand, rightOperand);
+		}
 		case Code.OPCODE_add:
 		case Code.OPCODE_sub:
 		case Code.OPCODE_mul:

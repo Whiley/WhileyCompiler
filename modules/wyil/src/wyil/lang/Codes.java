@@ -225,6 +225,18 @@ public abstract class Codes {
 	}
 
 	/**
+	 * Construct a <code>listgen</code> bytecode which constructs a new list
+	 * initialised to a given length, with each element containing a given item.
+	 *
+	 * @param type
+	 * @return
+	 */
+	public static ListGenerator ListGenerator(Type.List type, int target,
+			int element, int count) {
+		return new ListGenerator(type, target, element, count);
+	}
+	
+	/**
 	 * Construct a <code>listload</code> bytecode which reads a value from a
 	 * given index in a given list.
 	 *
@@ -1826,6 +1838,60 @@ public abstract class Codes {
 		public String toString() {
 			return kind + " %" + target() + " = %" + operand(0) + ", %"
 					+ operand(1) + " : " + type();
+		}
+	}
+	
+	/**
+	 * Constructs a new list value from the values given by zero or more operand
+	 * registers. The new list is then written into the target register. For
+	 * example, the following Whiley code:
+	 *
+	 * <pre>
+	 * function f(int x, int y, int z) -> [int]:
+	 *     return [x,y,z]
+	 * </pre>
+	 *
+	 * can be translated into the following WyIL code:
+	 *
+	 * <pre>
+	 * function f(int x, int y, int z) -> [int]:
+	 * body:
+	 *    assign %4 = %0             : int
+	 *    assign %5 = %1             : int
+	 *    assign %6 = %2             : int
+	 *    newlist %3 = (%4, %5, %6)  : [int]
+	 *    return %3                  : [int]
+	 * </pre>
+	 *
+	 * Writes the list value given by <code>[x,y,z]</code> into register
+	 * <code>%3</code> and returns it.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class ListGenerator extends AbstractBinaryAssignable<Type.List> {
+
+		private ListGenerator(Type.List type, int target, int element, int count) {
+			super(type, target, element, count);
+		}
+
+		public int opcode() {
+			return OPCODE_listgen;
+		}
+
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
+			return ListGenerator(type(), nTarget, nOperands[0],nOperands[1]);
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof ListGenerator) {
+				return super.equals(operands());
+			}
+			return false;
+		}
+
+		public String toString() {
+			return "listgen %" + target() + " = [" + operand(0) + "; " + operand(1) + "]" + " : " + type();
 		}
 	}
 

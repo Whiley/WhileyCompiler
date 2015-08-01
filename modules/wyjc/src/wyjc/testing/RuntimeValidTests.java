@@ -28,6 +28,7 @@ package wyjc.testing;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -77,7 +78,7 @@ import wyjc.util.WyjcBuildTask;
 
  	private static final String WYBS_CLASS_DIR="../../modules/wybs/src/";
 
- 	private static final String WYRL_CLASS_DIR="../../modules/wyrl/src/";
+ 	private static final String WYRL_CLASS_DIR="../../lib/wyrl-v0.4.0.jar";
 
 
  	static {
@@ -1322,11 +1323,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void ListElemOf_Valid_1() {
-		runTest("ListElemOf_Valid_1");
-	}
-
-	@Test
 	public void ListEmpty_Valid_1() {
 		runTest("ListEmpty_Valid_1");
 	}
@@ -1357,6 +1353,41 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
+	public void ListGenerator_Valid_6() throws IOException {
+		runTest("ListGenerator_Valid_6");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_7() throws IOException {
+		runTest("ListGenerator_Valid_7");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_8() throws IOException {
+		runTest("ListGenerator_Valid_8");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_9() throws IOException {
+		runTest("ListGenerator_Valid_9");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_10() throws IOException {
+		runTest("ListGenerator_Valid_10");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_11() throws IOException {
+		runTest("ListGenerator_Valid_11");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_12() throws IOException {
+		runTest("ListGenerator_Valid_12");
+	}
+	
+	@Test
 	public void ListLength_Valid_1() {
 		runTest("ListLength_Valid_1");
 	}
@@ -1369,31 +1400,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void ListLength_Valid_3() {
 		runTest("ListLength_Valid_3");
-	}
-
-	@Test
-	public void ListSublist_Valid_1() {
-		runTest("ListSublist_Valid_1");
-	}
-
-	@Test
-	public void ListSublist_Valid_2() {
-		runTest("ListSublist_Valid_2");
-	}
-
-	@Test
-	public void ListSublist_Valid_3() {
-		runTest("ListSublist_Valid_3");
-	}
-
-	@Test
-	public void ListSublist_Valid_4() {
-		runTest("ListSublist_Valid_4");
-	}
-
-	@Test
-	public void ListSublist_Valid_5() {
-		runTest("ListSublist_Valid_5");
 	}
 
 	@Test
@@ -2009,16 +2015,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void String_Valid_6() {
 		runTest("String_Valid_6");
-	}
-
-	@Test
-	public void String_Valid_7() {
-		runTest("String_Valid_7");
-	}
-
-	@Test
-	public void String_Valid_8() {
-		runTest("String_Valid_8");
 	}
 
 	@Test

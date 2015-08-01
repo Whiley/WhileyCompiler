@@ -7,3 +7,8 @@ define update([int] items, [int] nitems, int i, int item) is:
         j != i ==> items[j] == nitems[j]
     nitems[i] == item
 
+define generate([int] items, any element, int count) is:
+    |items| == count
+    forall(int j):
+        items[j] == element
+
