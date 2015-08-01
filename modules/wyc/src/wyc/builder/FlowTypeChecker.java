@@ -1260,7 +1260,6 @@ public class FlowTypeChecker {
 		case LTEQ:
 		case GT:
 		case GTEQ:
-		case ELEMENTOF:
 		case IS:
 			return resolveLeafCondition(bop, sign, environment, context);
 		default:
@@ -1443,18 +1442,6 @@ public class FlowTypeChecker {
 
 			bop.srcType = lhs.result();
 			break;
-		case ELEMENTOF:
-			Type.EffectiveList listType = rhsRawType instanceof Type.EffectiveList ? (Type.EffectiveList) rhsRawType
-					: null;
-
-			if (listType != null
-					&& !Type.isSubtype(listType.element(), lhsRawType)) {
-				syntaxError(
-						errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
-								listType.element()), context, bop);
-			}
-			bop.srcType = rhs.result();
-			break;	
 		case LT:
 		case LTEQ:
 		case GTEQ:
@@ -1574,8 +1561,6 @@ public class FlowTypeChecker {
 						context);
 			} else if (expr instanceof Expr.List) {
 				return propagate((Expr.List) expr, environment, context);
-			} else if (expr instanceof Expr.SubList) {
-				return propagate((Expr.SubList) expr, environment, context);
 			} else if (expr instanceof Expr.Dereference) {
 				return propagate((Expr.Dereference) expr, environment, context);
 			} else if (expr instanceof Expr.Record) {
@@ -1619,7 +1604,6 @@ public class FlowTypeChecker {
 		case LTEQ:
 		case GT:
 		case GTEQ:
-		case ELEMENTOF:
 		case IS:
 			return propagateCondition(expr, true, environment, context).first();
 		}
@@ -2023,22 +2007,6 @@ public class FlowTypeChecker {
 
 		expr.type = Nominal.Tuple(fieldTypes);
 
-		return expr;
-	}
-
-	private Expr propagate(Expr.SubList expr, Environment environment,
-			Context context) throws IOException, ResolveError {
-
-		expr.src = propagate(expr.src, environment, context);
-		expr.start = propagate(expr.start, environment, context);
-		expr.end = propagate(expr.end, environment, context);
-
-		checkSuptypes(expr.src, context, Nominal.T_LIST_ANY);
-		checkIsSubtype(Type.T_INT, expr.start, context);
-		checkIsSubtype(Type.T_INT, expr.end, context);
-
-		expr.type = expandAsEffectiveList(expr.src.result());
-		
 		return expr;
 	}
 

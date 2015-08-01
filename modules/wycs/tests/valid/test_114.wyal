@@ -1,4 +1,0 @@
-import wycs.core.Map
-import wycs.core.List
-
-assert |[1,2]++[3,4]| == 4

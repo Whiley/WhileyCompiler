@@ -6,7 +6,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/whiley.wyil"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/whiley.wycs"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/whiley.wyrl"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Ant"/>
 	<classpathentry kind="output" path="src"/>
 </classpath>

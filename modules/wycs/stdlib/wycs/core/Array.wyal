@@ -1,0 +1,9 @@
+package wycs.core
+
+// A helper macro for handling array updates
+define update([int] items, [int] nitems, int i, int item) is:
+    |items| == |nitems|
+    forall(int j):
+        j != i ==> items[j] == nitems[j]
+    nitems[i] == item
+

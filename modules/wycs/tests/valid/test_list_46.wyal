@@ -1,0 +1,11 @@
+import wycs.core.Array
+
+assert "loop invariant not restored":
+    forall ([int] items, [int] nitems, int n):
+        if:
+            Array.update(items,nitems,n,0)
+            items[0] != 0
+        then:
+            n > 0 ==> nitems[0] != 0
+
+

@@ -1,0 +1,17 @@
+define invariant([int] items, int item, int i) is:
+    forall (int j):
+        if:
+            0 <= j
+            j < i
+        then:
+            items[j] == item
+
+assert:
+    forall ([int] items, int item, int i):
+        if:
+            invariant(items, item, i)            
+            items[i] == item
+        then:
+            invariant(items, item, i+1)
+
+

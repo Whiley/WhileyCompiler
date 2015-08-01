@@ -6,7 +6,7 @@ type even is (int x) where x == 2 || x == 4 || x == 6
 type oddeven is odd|even
 
 function f(oddeven x) -> even:
-    if x in odd:
+    if x is odd:
         return 2
     return x
 

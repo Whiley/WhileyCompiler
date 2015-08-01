@@ -10,8 +10,10 @@ import java.util.*;
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.*;
-import wyautl.rw.Rewriter.Stats;
 import wyautl.util.BigRational;
+import wyautl.util.CachingRewriter;
+import wyautl.util.Rewriters;
+import wyautl.util.SingleStepRewriter;
 import wybs.lang.Builder;
 import wycc.lang.SyntacticElement;
 import wycc.lang.Transform;
@@ -55,8 +57,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 
 	/**
 	 * Determine what rewriter to use.
+	 * 
+	 * NOTE: GlobalDispatch with RankComparator must be default to ensure rules
+	 * are chosen according to rank. See #510 on why this is necessary to manage
+	 * quantifier instantiation versus inequality inference.
 	 */
-	private RewriteMode rwMode = RewriteMode.STATICDISPATCH;
+	private RewriteMode rwMode = RewriteMode.GLOBALDISPATCH;
 
 	/**
 	 * Determine the maximum number of reduction steps permitted
@@ -113,7 +119,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static String getRwmode() {
-		return "staticdispatch"; // default value
+		return "globaldispatch"; // default value
 	}
 
 	public void setRwmode(String mode) {
@@ -201,13 +207,16 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// The following conversion is potentially very expensive, but is
 		// currently necessary for the instantiate axioms phase.
 		Code nnf = NormalForms.negationNormalForm(neg);
-		
+		// Convert to prefix normal form. One reason for this is that it
+		// protectes against accidental variable capture by renaming all
+		// variables.
+		nnf = NormalForms.renameVariables(nnf);
 		//debug(nnf,filename);
 		int maxVar = findLargestVariable(nnf);
 
 		Code vc = instantiateAxioms(nnf, maxVar + 1);
 			
-		//debug(vc,filename);
+		// debug(vc,filename);
 
 		int assertion = translate(vc,automaton,new HashMap<String,Integer>());
 		automaton.setRoot(0, assertion);
@@ -223,15 +232,14 @@ public class VerificationCheck implements Transform<WycsFile> {
 			//debug(original);
 		}
 
-		Rewriter rewriter = createRewriter(automaton);
-		boolean r = rewriter.apply();
+		automaton = Rewriters.infer(automaton,Solver.SCHEMA,Solver.inferences,Solver.reductions,maxInferences);
 
-		if(!r) {
-			throw new AssertionFailure("timeout occurred during verification",stmt,rewriter,automaton,original);
+		if(automaton == null) {
+			throw new AssertionFailure("timeout occurred during verification",stmt,null,automaton,original);
 		} else if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
 			String msg = stmt.message;
 			msg = msg == null ? "assertion failure" : msg;
-			throw new AssertionFailure(msg,stmt,rewriter,automaton,original);
+			throw new AssertionFailure(msg,stmt,null,automaton,original);
 		}
 
 		long endTime = System.currentTimeMillis();
@@ -255,6 +263,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			r = translate((Code.Nary) expr,automaton,environment);
 		} else if(expr instanceof Code.Load) {
 			r = translate((Code.Load) expr,automaton,environment);
+		} else if(expr instanceof Code.IndexOf) {
+			r = translate((Code.IndexOf) expr,automaton,environment);
 		} else if(expr instanceof Code.Is) {
 			r = translate((Code.Is) expr,automaton,environment);
 		} else if(expr instanceof Code.Quantifier) {
@@ -322,15 +332,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		case LT:
 			return SolverUtil.LessThan(automaton, type, lhs, rhs);
 		case LTEQ:
-			return SolverUtil.LessThanEq(automaton, type, lhs, rhs);
-		case IN:
-			return SubsetEq(automaton, type, Set(automaton, lhs), rhs);
-		case SUBSET:
-			return And(automaton,
-					SubsetEq(automaton, type, lhs, rhs),
-					Not(automaton, SolverUtil.Equals(automaton, type, lhs, rhs)));
-		case SUBSETEQ:
-			return SubsetEq(automaton, type, lhs, rhs);
+			return SolverUtil.LessThanEq(automaton, type, lhs, rhs);		
 		}
 		internalFailure("unknown binary bytecode encountered (" + code + ")",
 				filename, code);
@@ -363,8 +365,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			return And(automaton,es);
 		case OR:
 			return Or(automaton,es);
-		case SET:
-			return Set(automaton,es);
+		case ARRAY:
+			return Array(automaton,es);
 		case TUPLE:
 			return Tuple(automaton,es);
 		}
@@ -379,6 +381,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 		return Solver.Load(automaton,e,i);
 	}
 
+	private int translate(Code.IndexOf code, Automaton automaton, HashMap<String,Integer> environment) {
+		int e = translate(code.operands[0],automaton,environment);
+		int i = translate(code.operands[1],automaton,environment);
+		return Solver.IndexOf(automaton,e,i);
+	}
+	
 	private int translate(Code.Is code, Automaton automaton, HashMap<String,Integer> environment) {
 		int e = translate(code.operands[0],automaton,environment);
 		int t = convert(automaton,code.test);
@@ -451,14 +459,14 @@ public class VerificationCheck implements Transform<WycsFile> {
 		} else if (value instanceof Value.String) {
 			Value.String v = (Value.String) value;
 			return Solver.String(automaton,v.value);
-		} else if (value instanceof Value.Set) {
-			Value.Set vs = (Value.Set) value;
+		} else if (value instanceof Value.Array) {
+			Value.Array vs = (Value.Array) value;
 			int[] vals = new int[vs.values.size()];
 			int i = 0;
 			for (Value c : vs.values) {
-				vals[i++] = convert(c,element,automaton);
+				vals[i++] = convert(c, element, automaton);
 			}
-			return Set(automaton , vals);
+			return Array(automaton, vals);
 		} else if (value instanceof Value.Tuple) {
 			Value.Tuple vt = (Value.Tuple) value;
 			int[] vals = new int[vt.values.size()];
@@ -487,8 +495,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// form before verification begins. This firstly reduces the amount of
 		// work during verification, and also allows the functions in
 		// SolverUtils to work properly.
-		Rewriter rewriter = createRewriter(type_automaton);
-		rewriter.apply();
+		type_automaton = Rewriters.reduce(type_automaton,Solver.SCHEMA,Solver.reductions);
 		return automaton.addAll(type_automaton.getRoot(0), type_automaton);
 	}
 
@@ -606,10 +613,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		case EQ:
 		case NEQ:
 		case LT:
-		case LTEQ:
-		case IN:
-		case SUBSET:
-		case SUBSETEQ: {
+		case LTEQ: {
 			ArrayList<Code> axioms = new ArrayList<Code>();
 			instantiateFromExpression(condition, axioms, freeVariable);
 			return and(axioms,condition);
@@ -712,6 +716,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			instantiateFromExpression((Code.Nary)expression,axioms, freeVariable);
 		} else if (expression instanceof Code.Load) {
 			instantiateFromExpression((Code.Load)expression,axioms, freeVariable);
+		} else if (expression instanceof Code.IndexOf) {
+			instantiateFromExpression((Code.IndexOf)expression,axioms, freeVariable);
 		} else if (expression instanceof Code.Is) {
 			instantiateFromExpression((Code.Is)expression,axioms, freeVariable);
 		} else if (expression instanceof Code.FunCall) {
@@ -752,6 +758,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
 	}
 
+	private void instantiateFromExpression(Code.IndexOf expression, ArrayList<Code> axioms, int freeVariable) {
+		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
+		instantiateFromExpression(expression.operands[1],axioms, freeVariable);
+	}
+	
 	private void instantiateFromExpression(Code.Is expression, ArrayList<Code> axioms, int freeVariable) {
 		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
 	}
@@ -839,44 +850,5 @@ public class VerificationCheck implements Transform<WycsFile> {
 			}
 			return Code.Nary(SemanticType.Bool,Code.Op.AND,clauses);
 		}
-	}
-
-	private Rewriter createRewriter(Automaton automaton) {
-		IterativeRewriter.Strategy<InferenceRule> inferenceStrategy;
-		IterativeRewriter.Strategy<ReductionRule> reductionStrategy;
-
-		// First, construct a fresh rewriter for this file.
-		switch(rwMode) {
-		case STATICDISPATCH:
-			inferenceStrategy = new UnfairStateRuleRewriteStrategy<InferenceRule>(
-					automaton, Solver.inferences,Solver.SCHEMA);
-			reductionStrategy = new UnfairStateRuleRewriteStrategy<ReductionRule>(
-					automaton, Solver.reductions,Solver.SCHEMA);
-			break;
-		case GLOBALDISPATCH:
-			// NOTE: I don't supply a max steps value here because the
-			// default value would be way too small for the simple rewriter.
-			inferenceStrategy = new UnfairRuleStateRewriteStrategy<InferenceRule>(
-					automaton, Solver.inferences);
-			reductionStrategy = new UnfairRuleStateRewriteStrategy<ReductionRule>(
-					automaton, Solver.reductions);
-			break;
-		default:
-			// NOTE: I don't supply a max steps value here because the
-			// default value would be way too small for the simple rewriter.
-			inferenceStrategy = new SimpleRewriteStrategy<InferenceRule>(
-					automaton, Solver.inferences);
-			reductionStrategy = new SimpleRewriteStrategy<ReductionRule>(
-					automaton, Solver.reductions);
-			break;
-		}
-
-		IterativeRewriter rewriter = new IterativeRewriter(automaton, inferenceStrategy,
-				reductionStrategy, Solver.SCHEMA);
-
-		rewriter.setMaxReductionSteps(maxReductions);
-		rewriter.setMaxInferenceSteps(maxInferences);
-
-		return rewriter;
 	}
 }

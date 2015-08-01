@@ -344,8 +344,6 @@ public class WhileyFilePrinter {
 			print ((Expr.ConstantAccess) expression);
 		} else if (expression instanceof Expr.List) {
 			print ((Expr.List) expression);
-		} else if (expression instanceof Expr.SubList) {
-			print ((Expr.SubList) expression);
 		} else if (expression instanceof Expr.BinOp) {
 			print ((Expr.BinOp) expression);
 		} else if (expression instanceof Expr.LengthOf) {
@@ -414,15 +412,6 @@ public class WhileyFilePrinter {
 			firstTime=false;
 			print(i);
 		}
-		out.print("]");
-	}
-
-	public void print(Expr.SubList e) {
-		print(e.src);
-		out.print("[");
-		print(e.start);
-		out.print("..");
-		print(e.end);
 		out.print("]");
 	}
 

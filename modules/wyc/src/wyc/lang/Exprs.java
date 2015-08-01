@@ -40,12 +40,6 @@ public class Exprs {
 					uses(p, context, uses);
 				}
 
-			} else if (expr instanceof Expr.SubList) {
-				Expr.SubList e = (Expr.SubList) expr;
-				uses(e.src, context, uses);
-				uses(e.start, context, uses);
-				uses(e.end, context, uses);
-
 			} else if (expr instanceof Expr.BinOp) {
 				Expr.BinOp e = (Expr.BinOp) expr;
 				uses(e.lhs, context, uses);
@@ -166,11 +160,6 @@ public class Exprs {
 					}
 				}
 				return true;
-
-			} else if (expr instanceof Expr.SubList) {
-				Expr.SubList e = (Expr.SubList) expr;
-				return isPure(e.src, context) && isPure(e.start, context)
-						&& isPure(e.end, context);
 
 			} else if (expr instanceof Expr.BinOp) {
 				Expr.BinOp e = (Expr.BinOp) expr;

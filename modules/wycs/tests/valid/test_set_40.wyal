@@ -1,8 +1,0 @@
-assert "assertion failure":
-    forall ({int} r0):
-        if:
-            true
-            |r0| != 0
-        then:
-            |r0| > 0
-

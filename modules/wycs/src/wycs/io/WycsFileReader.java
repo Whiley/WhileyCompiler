@@ -163,14 +163,14 @@ public class WycsFileReader {
 				constant = Value.String(stringPool[index]);
 				break;
 			}
-			case WycsFileWriter.CONSTANT_Set: {
+			case WycsFileWriter.CONSTANT_Array: {
 				int len = input.read_uv();
 				ArrayList<Value> values = new ArrayList<Value>();
 				for (int j = 0; j != len; ++j) {
 					int index = input.read_uv();
 					values.add(myConstantPool[index]);
 				}
-				constant = Value.Set(values);
+				constant = Value.Array(values);
 				break;
 			}
 			case WycsFileWriter.CONSTANT_Tuple: {
@@ -367,9 +367,6 @@ public class WycsFileReader {
 			case NEQ:
 			case LT:
 			case LTEQ:
-			case IN:
-			case SUBSET:
-			case SUBSETEQ:
 				if (operands.length != 2) {
 					throw new RuntimeException(
 							"invalid binary bytecode encountered");
@@ -385,7 +382,7 @@ public class WycsFileReader {
 			case AND:
 			case OR:
 			case TUPLE:
-			case SET:
+			case ARRAY:
 				return Code.Nary(type, op, operands);
 			case LOAD: {
 				if (operands.length != 1 || !(type instanceof SemanticType.Tuple)) {
@@ -393,6 +390,12 @@ public class WycsFileReader {
 				}
 				int index = input.read_uv();
 				return Code.Load((SemanticType.Tuple) type, operands[0], index);
+			}
+			case INDEXOF: {
+				if (operands.length != 2 || !(type instanceof SemanticType.Array)) {
+					throw new RuntimeException("invalid indexof bytecode encountered");
+				}
+				return Code.IndexOf((SemanticType.Array) type, operands[0], operands[1]);
 			}
 			case FORALL:
 			case EXISTS: {

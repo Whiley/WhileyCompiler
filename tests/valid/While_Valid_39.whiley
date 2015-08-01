@@ -1,7 +1,7 @@
 
 
 function contains([int] xs, int x) -> (bool r)
-ensures r ==> x in xs:
+ensures r ==> some { i in 0..|xs| | xs[i] == x }:
     //
     int i = 0
     //

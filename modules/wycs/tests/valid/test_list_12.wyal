@@ -1,9 +1,0 @@
-assert:
-    forall int x, (int i, int v):
-        if:
-           (i,v) in 0 .. x
-        then:
-           i >= 0
-           i < x
-
-

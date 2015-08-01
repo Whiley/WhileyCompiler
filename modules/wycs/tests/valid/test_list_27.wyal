@@ -1,0 +1,10 @@
+define NatList([int] xs) is:
+  forall (int i):
+    xs[i] >= 0
+
+assert:
+  forall ([int] xs, int i):
+       if:        
+         NatList(xs)
+       then:
+         xs[i] >= 0
