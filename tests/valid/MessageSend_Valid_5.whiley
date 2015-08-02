@@ -5,8 +5,9 @@ type Sum is &{int result, [int] items}
 method start(Sum this) -> void:
     int sum = 0
     int i = 0
-    while i < |this->items| where i >= 0:
-        sum = sum + this->items[i]
+    [int] items = this->items
+    while i < |items| where i >= 0:
+        sum = sum + items[i]
         i = i + 1
     this->result = sum
 

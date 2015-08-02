@@ -610,6 +610,8 @@ public class VcGenerator {
 				return divideByZeroCheck((Codes.BinaryOperator) code, branch);
 			case Code.OPCODE_indexof:
 				return indexOutOfBoundsChecks((Codes.IndexOf) code, branch);
+			case Code.OPCODE_listgen:
+				return listGeneratorChecks((Codes.ListGenerator) code, branch);
 			case Code.OPCODE_update:
 				return updateChecks((Codes.Update) code, branch);
 			case Code.OPCODE_invokefn:
@@ -680,6 +682,26 @@ public class VcGenerator {
 		}
 	}
 
+	/**
+	 * Generate preconditions necessary to protect against a negative array
+	 * size.
+	 * 
+	 * @param code
+	 *            --- The list generator bytecode
+	 * @param branch
+	 *            --- The branch the bytecode is on.
+	 * @return
+	 */
+	public Pair<String,Expr>[] listGeneratorChecks(Codes.ListGenerator code, VcBranch branch) {				
+		Expr idx = branch.read(code.operand(1));
+		Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
+				idx.attributes());
+		return new Pair[] {
+				new Pair("index out of bounds (negative)", new Expr.Binary(
+						Expr.Binary.Op.GTEQ, idx, zero, idx.attributes()))
+		};
+	}
+	
 	/**
 	 * Generate preconditions necessary to ensure the preconditions for a method
 	 * or method invocation are met.

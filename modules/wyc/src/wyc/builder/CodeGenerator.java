@@ -1992,22 +1992,13 @@ public final class CodeGenerator {
 
 		} else {
 
-			Expr.BOp bop = v.op;
 			int leftOperand = generate(v.lhs, environment, codes, context);
 			int rightOperand = generate(v.rhs, environment, codes, context);
 			Type result = v.result().raw();
 			int target = environment.allocate(result);
-
-			switch (bop) {
-			case LISTAPPEND:
-				codes.add(Codes.ListOperator((Type.EffectiveList) result,
-						target, leftOperand, rightOperand,
-						Codes.ListOperatorKind.APPEND), attributes(v));
-				break;
-			default:
-				codes.add(Codes.BinaryOperator(result, target, leftOperand,
-						rightOperand, OP2BOP(bop, v, context)), attributes(v));
-			}
+			
+			codes.add(Codes.BinaryOperator(result, target, leftOperand,
+					rightOperand, OP2BOP(v.op, v, context)), attributes(v));
 
 			return target;
 		}

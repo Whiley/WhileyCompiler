@@ -22,10 +22,10 @@ public function toByte(char v) -> byte:
 
 // Convert an ASCII string into a list of bytes
 public function toBytes(string s) -> [byte]:
-    [byte] r = []
+    [byte] r = [0b; |s|]
     int i = 0
     while i < |s|:
-        r = r ++ [toByte(s[i])]
+        r[i] = toByte(s[i])
         i = i + 1
     return r
 
@@ -37,12 +37,14 @@ function min(int a, int b) -> int:
         return b
 
 // Read specified number of bytes from buffer
-method read(BufferState state, int amount) -> [byte]:
-    [byte] r = []
+method read(BufferState state, int amount) -> [byte]
+requires amount >= 0:
+    //
+    [byte] r = [0b; amount]
     int i = 0
     //
     while i < amount && state->pos < |state->bytes|:
-        r = r ++ [state->bytes[state->pos]]
+        r[i] = state->bytes[state->pos]
         state->pos = state->pos + 1
         i = i + 1
     //
@@ -56,7 +58,7 @@ public method BufferInputStream([byte] buffer) -> InputStream:
 public export method test() -> void:
     InputStream bis = BufferInputStream(toBytes("hello"))
     [byte] bytes = bis.read(7)
-    assume bytes == [01101000b, 01100101b, 01101100b, 01101100b, 01101111b]
+    assume bytes == [01101000b, 01100101b, 01101100b, 01101100b, 01101111b, 0b, 0b]
     //
     bis = BufferInputStream(toBytes("cruel world"))
     bytes = bis.read(7)    

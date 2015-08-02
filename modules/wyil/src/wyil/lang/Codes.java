@@ -218,12 +218,6 @@ public abstract class Codes {
 		return new Move(type, target, operand);
 	}
 
-	public static ListOperator ListOperator(Type.EffectiveList type, int target,
-			int leftOperand, int rightOperand, ListOperatorKind dir) {
-		return new ListOperator(type, target, leftOperand, rightOperand,
-				dir);
-	}
-
 	/**
 	 * Construct a <code>listgen</code> bytecode which constructs a new list
 	 * initialised to a given length, with each element containing a given item.
@@ -1758,86 +1752,6 @@ public abstract class Codes {
 
 		public String toString() {
 			return "." + label;
-		}
-	}
-
-	public enum ListOperatorKind {
-		APPEND(0) {
-			public String toString() {
-				return "append";
-			}
-		};
-		public final int offset;
-
-		private ListOperatorKind(int offset) {
-			this.offset = offset;
-		}
-	}
-
-	/**
-	 * Reads the (effective) list values from two operand registers, performs an
-	 * operation (e.g. append) on them and writes the result back to a target
-	 * register. For example, the following Whiley code:
-	 *
-	 * <pre>
-	 * function f([int] xs, [int] ys) -> [int]:
-	 *    return xs ++ ys
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f([int] xs, [int] ys) -> [int]:
-	 * body:
-	 *    append %2 = %0, %1   : [int]
-	 *    return %2            : [int]
-	 * </pre>
-	 *
-	 * This appends two the parameter lists together writting the new list into
-	 * register <code>%2</code>.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class ListOperator extends
-			AbstractBinaryAssignable<Type.EffectiveList> {
-		public final ListOperatorKind kind;
-
-		private ListOperator(Type.EffectiveList type, int target, int leftOperand,
-				int rightOperand, ListOperatorKind operation) {
-			super(type, target, leftOperand, rightOperand);
-			if (operation == null) {
-				throw new IllegalArgumentException(
-						"ListAppend direction cannot be null");
-			}
-			this.kind = operation;
-		}
-
-		public int opcode() {
-			return OPCODE_append + kind.offset;
-		}
-
-		@Override
-		public Code.Unit clone(int nTarget, int[] nOperands) {
-			return ListOperator(type(), nTarget, nOperands[0], nOperands[1],
-					kind);
-		}
-
-		public int hashCode() {
-			return super.hashCode() + kind.hashCode();
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof ListOperator) {
-				ListOperator setop = (ListOperator) o;
-				return super.equals(setop) && kind.equals(setop.kind);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return kind + " %" + target() + " = %" + operand(0) + ", %"
-					+ operand(1) + " : " + type();
 		}
 	}
 	

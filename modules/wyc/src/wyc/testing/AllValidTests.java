@@ -1140,66 +1140,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ListAppend_Valid_1() throws IOException {
-		runTest("ListAppend_Valid_1");
-	}
-
-	@Test
-	public void ListAppend_Valid_11() throws IOException {
-		runTest("ListAppend_Valid_11");
-	}
-
-	@Test
-	public void ListAppend_Valid_13() throws IOException {
-		runTest("ListAppend_Valid_13");
-	}
-
-	@Test
-	public void ListAppend_Valid_14() throws IOException {
-		runTest("ListAppend_Valid_14");
-	}
-
-	@Test
-	public void ListAppend_Valid_2() throws IOException {
-		runTest("ListAppend_Valid_2");
-	}
-
-	@Test
-	public void ListAppend_Valid_3() throws IOException {
-		runTest("ListAppend_Valid_3");
-	}
-
-	@Test
-	public void ListAppend_Valid_4() throws IOException {
-		runTest("ListAppend_Valid_4");
-	}
-
-	@Test
-	public void ListAppend_Valid_5() throws IOException {
-		runTest("ListAppend_Valid_5");
-	}
-
-	@Test
-	public void ListAppend_Valid_6() throws IOException {
-		runTest("ListAppend_Valid_6");
-	}
-
-	@Test
-	public void ListAppend_Valid_7() throws IOException {
-		runTest("ListAppend_Valid_7");
-	}
-
-	@Test
-	public void ListAppend_Valid_8() throws IOException {
-		runTest("ListAppend_Valid_8");
-	}
-
-	@Test
-	public void ListAppend_Valid_9() throws IOException {
-		runTest("ListAppend_Valid_9");
-	}
-
-	@Test
 	public void ListAssign_Valid_1() throws IOException {
 		runTest("ListAssign_Valid_1");
 	}

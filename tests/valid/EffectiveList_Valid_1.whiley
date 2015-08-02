@@ -3,13 +3,16 @@
 type rec is {int y, int x}
 
 function f([int] xs) -> [bool | null]:
-    [bool|null] r = []
+    [bool|null] r = [false; |xs|]
     int i = 0
-    while i < |xs| where i >= 0:
+    while i < |xs|
+        where i >= 0
+        where |xs| == |r|:
+        //
         if xs[i] < 0:
-            r = r ++ [true]
+            r[i] = true
         else:
-            r = r ++ [null]
+            r[i] = null
         i = i + 1
     return r
 

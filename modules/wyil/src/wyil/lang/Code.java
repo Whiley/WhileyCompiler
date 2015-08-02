@@ -561,9 +561,9 @@ public interface Code {
 //	public static final int OPCODE_intersectr  = 17 + FMT_BINARYASSIGN;
 //	public static final int OPCODE_difference  = 18 + FMT_BINARYASSIGN;
 //	public static final int OPCODE_differencel = 19 + FMT_BINARYASSIGN;
-	public static final int OPCODE_append      = 20 + FMT_BINARYASSIGN;
-	public static final int OPCODE_appendl     = 21 + FMT_BINARYASSIGN;
-	public static final int OPCODE_appendr     = 22 + FMT_BINARYASSIGN;
+//	public static final int OPCODE_append      = 20 + FMT_BINARYASSIGN;
+//	public static final int OPCODE_appendl     = 21 + FMT_BINARYASSIGN;
+//	public static final int OPCODE_appendr     = 22 + FMT_BINARYASSIGN;
 
 	// =========================================================================
 	// Nary Operators

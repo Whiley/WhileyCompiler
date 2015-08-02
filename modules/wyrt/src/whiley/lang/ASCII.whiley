@@ -47,19 +47,19 @@ public function toByte(char v) -> byte:
 
 // Convert an ASCII string into a list of bytes
 public function toBytes(string s) -> [byte]:
-    [byte] r = []
+    [byte] r = [0b; |s|]
     int i = 0
-    while i < |s|:
-        r = r ++ [toByte(s[i])]
+    while i < |s| where i >= 0:
+        r[i] = toByte(s[i])
         i = i + 1
     return r
 
 // Convert a list of bytes into an ASCII string
 public function fromBytes([byte] data) -> string:
-    string r = ""
+    string r = [0; |data|]
     int i = 0
-    while i < |data|:
-        r = r ++ [Byte.toInt(data[i])]
+    while i < |data| where i >= 0:
+        r[i] = Byte.toInt(data[i])
         i = i + 1
     return r
 

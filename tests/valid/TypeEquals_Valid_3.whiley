@@ -3,10 +3,10 @@
 type nat is (int n) where n >= 0
 
 function create(nat size, nat value) -> [nat]:
-    [int] r = []
+    [int] r = [0; size]
     int i = 0
     while i < size where r is [nat]:
-        r = r ++ [value]
+        r[i] = value
         i = i + 1
     return r
 

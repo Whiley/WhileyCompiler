@@ -21,6 +21,14 @@ type Trie is {
 // Define the Empty Trie
 constant EmptyTrie is { transitions: [] }
 
+function append([Transition] transitions, Transition t) -> [Transition]:
+    [Transition] r = [t; |transitions| + 1]
+    int i = 0
+    while i < |transitions| where i >= 0:
+        r[i] = transitions[i]
+        i = i + 1
+    return r
+
 // Add a complete string into a Trie starting from the root node.
 function add(Trie trie, string str) -> Trie:
     return add(trie,0,str,0)
@@ -49,7 +57,7 @@ requires state >= 0:
         // No existing transition, so make a new one.
         int target = |trie.transitions| + 1
         Transition t = { from: state, to: target, character: c }
-        trie.transitions = trie.transitions ++ [t]
+        trie.transitions = append(trie.transitions,t)
         return add(trie,target,str,index+1)
 
 // Check whether a given string is contained in the trie,

@@ -1205,11 +1205,6 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
-	public void ListElemOf_Valid_1() {
-		runTest("ListElemOf_Valid_1");
-	}
-
-	@Test
 	public void ListEmpty_Valid_1() {
 		runTest("ListEmpty_Valid_1");
 	}

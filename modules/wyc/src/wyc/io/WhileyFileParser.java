@@ -1811,7 +1811,7 @@ public class WhileyFileParser {
 					terminated);
 		}
 
-		Expr lhs = parseAppendExpression(wf, environment, terminated);
+		Expr lhs = parseShiftExpression(wf, environment, terminated);
 
 		lookahead = tryAndMatch(terminated, LessEquals, LeftAngle,
 				GreaterEquals, RightAngle, EqualsEquals, NotEquals, Is,
@@ -1848,7 +1848,7 @@ public class WhileyFileParser {
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 
-			Expr rhs = parseAppendExpression(wf, environment, terminated);
+			Expr rhs = parseShiftExpression(wf, environment, terminated);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -1987,50 +1987,7 @@ public class WhileyFileParser {
 
 		return lhs;
 	}
-
-	/**
-	 * Parse an append expression, which has the form:
-	 *
-	 * <pre>
-	 * AppendExpr ::= RangeExpr ( "++" RangeExpr)*
-	 * </pre>
-	 *
-	 * @param wf
-	 *            The enclosing WhileyFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseAppendExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
-		int start = index;
-		Expr lhs = parseShiftExpression(wf, environment, terminated);
-
-		while (tryAndMatch(terminated, PlusPlus) != null) {
-			Expr rhs = parseShiftExpression(wf, environment, terminated);
-			lhs = new Expr.BinOp(Expr.BOp.LISTAPPEND, lhs, rhs, sourceAttr(
-					start, index - 1));
-		}
-
-		return lhs;
-	}
-
+	
 	/**
 	 * Parse a shift expression, which has the form:
 	 *
@@ -2894,7 +2851,7 @@ public class WhileyFileParser {
 		// collections. Furthermore, the bitwise or expression could lead to
 		// ambiguity and, hence, we bypass that an consider append expressions
 		// only. However, the expression is guaranteed to be terminated by '|'.
-		Expr e = parseAppendExpression(wf, environment, true);
+		Expr e = parseShiftExpression(wf, environment, true);
 		match(VerticalBar);
 		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
 	}
