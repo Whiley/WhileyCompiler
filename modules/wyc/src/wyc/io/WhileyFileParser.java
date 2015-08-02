@@ -2430,7 +2430,7 @@ public class WhileyFileParser {
 		case VerticalBar:
 			return parseLengthOfExpression(wf, environment, terminated);
 		case LeftSquare:
-			return parseListExpression(wf, environment, terminated);
+			return parseListOrGeneratorExpression(wf, environment, terminated);
 		case LeftCurly:
 			return parseRecordExpression(wf, environment, terminated);
 		case Shreak:
@@ -2610,10 +2610,58 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Parse a list constructor expression, which is of the form:
+	 * Parse a list constructor or generator expression, which is of the form:
 	 *
 	 * <pre>
 	 * ListExpr ::= '[' [ Expr (',' Expr)* ] ']'
+	 *            | '[' Expr ';' Expr ']' 
+	 * </pre>
+	 *
+	 * @param wf
+	 *            The enclosing WhileyFile being constructed. This is necessary
+	 *            to construct some nested declarations (e.g. parameters for
+	 *            lambdas)
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 *
+	 * @return
+	 */
+	private Expr parseListOrGeneratorExpression(WhileyFile wf,
+			HashSet<String> environment, boolean terminated) {
+		int start = index;
+		match(LeftSquare);
+		if(eventuallyMatch(RightSquare) == null) {
+			Expr expr = parseUnitExpression(wf, environment, true);
+			// Finally, disambiguate
+			if(tryAndMatch(true,SemiColon) != null) {
+				// this is a list generator
+				index = start;
+				return parseListGeneratorExpression(wf,environment,terminated);
+			}
+		}
+		// this is a list initialiser
+		index = start;
+		return parseListExpression(wf,environment,terminated);
+	}
+	
+	/**
+	 * Parse a list constructor expression, which is of the form:
+	 *
+	 * <pre>
+	 * ListExpr ::= '[' [ Expr (',' Expr)* ] ']' 
 	 * </pre>
 	 *
 	 * @param wf
@@ -2662,6 +2710,45 @@ public class WhileyFileParser {
 		return new Expr.List(exprs, sourceAttr(start, index - 1));
 	}
 
+	/**
+	 * Parse a list generator expression, which is of the form:
+	 *
+	 * <pre>
+	 * ListExpr ::= '[' Expr ';' Expr ']' 
+	 * </pre>
+	 *
+	 * @param wf
+	 *            The enclosing WhileyFile being constructed. This is necessary
+	 *            to construct some nested declarations (e.g. parameters for
+	 *            lambdas)
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 *
+	 * @return
+	 */
+	private Expr parseListGeneratorExpression(WhileyFile wf,
+			HashSet<String> environment, boolean terminated) {
+		int start = index;
+		match(LeftSquare);
+		Expr element = parseUnitExpression(wf, environment, true);
+		match(SemiColon);
+		Expr count = parseUnitExpression(wf, environment, true);
+		match(RightSquare);
+		return new Expr.ListGenerator(element,count,sourceAttr(start, index - 1));
+	}
 	/**
 	 * Parse a record constructor, which is of the form:
 	 *

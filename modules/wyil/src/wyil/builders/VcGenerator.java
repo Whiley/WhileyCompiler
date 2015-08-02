@@ -1541,6 +1541,8 @@ public class VcGenerator {
 				Codes.BinaryOperator bc = (Codes.BinaryOperator) code;
 				transformBinary(binaryOperatorMap[bc.kind.ordinal()], bc,
 						branch, block);
+			} else if (code instanceof Codes.ListGenerator) {
+				transform((Codes.ListGenerator) code, block, branch);
 			} else if (code instanceof Codes.NewList) {
 				transformNary(Expr.Nary.Op.LIST, (Codes.NewList) code, branch,
 						block);
@@ -1730,6 +1732,18 @@ public class VcGenerator {
 				toWycsAttributes(block.attributes(branch.pc()))));
 	}
 
+	protected void transform(Codes.ListGenerator code, AttributedCodeBlock block, VcBranch branch) {
+		Expr element = branch.read(code.operand(0));
+		Expr count = branch.read(code.operand(1));
+		branch.havoc(code.target());
+		Expr arg = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { 
+				branch.read(code.target()), element, count },
+				toWycsAttributes(block.attributes(branch.pc())));
+		Expr.Invoke macro = new Expr.Invoke("generate", Trie.fromString("Array"),
+				Collections.EMPTY_LIST, arg);
+		branch.assume(macro);
+	}
+	
 	protected void transform(Codes.Lambda code, AttributedCodeBlock block,
 			VcBranch branch) {
 		// TODO: implement lambdas somehow?

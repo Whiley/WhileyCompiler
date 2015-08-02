@@ -388,6 +388,31 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 	
+	/**
+	 * Represents a list generator expression, which is of the form:
+	 *
+	 * <pre>
+	 * ListExpression ::= '[' Expression ';' Expression ']'
+	 * </pre>
+	 *
+	 * @return
+	 */
+	public static class ListGenerator extends SyntacticElement.Impl implements Expr {
+		public Expr element;
+		public Expr count;
+		public Nominal.List type;
+
+		public ListGenerator(Expr element, Expr count, Attribute... attributes) {
+			super(attributes);
+			this.element = element;
+			this.count = count;
+		}
+
+		public Nominal.List result() {
+			return type;
+		}
+	}
+	
 	public static class Quantifier extends SyntacticElement.Impl implements Expr {
 		public final QOp cop;
 		public final ArrayList<Triple<String,Expr,Expr>> sources;

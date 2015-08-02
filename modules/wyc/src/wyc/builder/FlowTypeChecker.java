@@ -1561,6 +1561,8 @@ public class FlowTypeChecker {
 						context);
 			} else if (expr instanceof Expr.List) {
 				return propagate((Expr.List) expr, environment, context);
+			} else if (expr instanceof Expr.ListGenerator) {
+				return propagate((Expr.ListGenerator) expr, environment, context);
 			} else if (expr instanceof Expr.Dereference) {
 				return propagate((Expr.Dereference) expr, environment, context);
 			} else if (expr instanceof Expr.Record) {
@@ -1971,6 +1973,14 @@ public class FlowTypeChecker {
 
 		expr.type = Nominal.List(element, false);
 
+		return expr;
+	}
+	
+	private Expr propagate(Expr.ListGenerator expr, Environment environment,
+			Context context) {
+		expr.element = propagate(expr.element, environment, context);
+		expr.count = propagate(expr.count, environment, context);
+		expr.type = Nominal.List(expr.element.result(), true);		
 		return expr;
 	}
 	
