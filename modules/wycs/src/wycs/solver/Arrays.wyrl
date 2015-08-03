@@ -32,6 +32,9 @@ include "Core.wyrl"
 // An array is a mapping from an index value to another value.
 term Array{[Expr,Expr]...}
 
+reduce LengthOf(Array{[Expr,Expr]... xs}):
+    => Num((real) |xs|)
+
 // ====================================================================
 // IndexOf Expressions
 // ====================================================================
@@ -39,6 +42,9 @@ term Array{[Expr,Expr]...}
 // An index of expression represents an access expresion into a given
 // array (left) at a given index position (right).
 term IndexOf[Expr,Expr]
+
+reduce IndexOf[Array{[Num(real i1),Expr e], [Expr,Expr]...}, Num(real i2)]:
+    => e, if i1 == i2
 
 // ====================================================================
 // Expressions & Values
