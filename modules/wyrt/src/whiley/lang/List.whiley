@@ -27,36 +27,12 @@ package whiley.lang
 
 // Increase up to a given size
 public function enlarge([int] list, int size, int element) -> [int]:
-    while |list| <= size:
-        list = list ++ [element]
-    return list
-
-// Create a list of a given size with the given element
-public function create(int size, int element) -> ([int] result)
-// Size of list to create cannot be negative!
-requires size >= 0
-// Size of returned list must match requested size
-ensures |result| == size:
-    //
-    [int] r = []
+    [int] nlist = [0; size]
     int i = 0
-    while i < size:
-        r = r ++ [element]
+    while i < size where i >= 0:
+        nlist[i] = list[i]
         i = i + 1
-    return r
-
-// Create a list of a given size with the given element
-public function create(int size, bool element) -> ([bool] result)
-// Size of list to create cannot be negative!
-requires size >= 0
-// Size of returned list must match requested size
-ensures |result| == size:
-    [bool] r = []
-    int i = 0
-    while i < size:
-        r = r ++ [element]
-        i = i + 1
-    return r
+    return nlist
 
 // find first index in list which matches character.  If no match,
 // then return null.

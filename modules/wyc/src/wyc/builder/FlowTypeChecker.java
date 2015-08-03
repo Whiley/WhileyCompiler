@@ -1617,72 +1617,52 @@ public class FlowTypeChecker {
 		Type lhsRawType = lhs.result().raw();
 		Type rhsRawType = rhs.result().raw();
 
-		boolean lhs_list = Type.isSubtype(Type.T_LIST_ANY, lhsRawType);
-		boolean rhs_list = Type.isSubtype(Type.T_LIST_ANY, rhsRawType);
-
 		Type srcType;
 
-		if (lhs_list || rhs_list) {
-			checkIsSubtype(Type.T_LIST_ANY, lhs, context);
-			checkIsSubtype(Type.T_LIST_ANY, rhs, context);
-			Type.EffectiveList lel = (Type.EffectiveList) lhsRawType;
-			Type.EffectiveList rel = (Type.EffectiveList) rhsRawType;
-
-			switch (expr.op) {
-			case LISTAPPEND:
-				srcType = Type.List(Type.Union(lel.element(), rel.element()),
-						false);
-				break;
-			default:
-				syntaxError("invalid list operation: " + expr.op, context, expr);
-				return null; // dead-code
+		switch (expr.op) {
+		case IS:
+		case AND:
+		case OR:
+		case XOR:
+			return propagateCondition(expr, true, environment, context)
+					.first();
+		case BITWISEAND:
+		case BITWISEOR:
+		case BITWISEXOR:
+			checkIsSubtype(Type.T_BYTE, lhs, context);
+			checkIsSubtype(Type.T_BYTE, rhs, context);
+			srcType = Type.T_BYTE;
+			break;
+		case LEFTSHIFT:
+		case RIGHTSHIFT:
+			checkIsSubtype(Type.T_BYTE, lhs, context);
+			checkIsSubtype(Type.T_INT, rhs, context);
+			srcType = Type.T_BYTE;
+			break;
+		case RANGE:
+			checkIsSubtype(Type.T_INT, lhs, context);
+			checkIsSubtype(Type.T_INT, rhs, context);
+			srcType = Type.List(Type.T_INT, false);
+			break;
+		case REM:
+			checkIsSubtype(Type.T_INT, lhs, context);
+			checkIsSubtype(Type.T_INT, rhs, context);
+			srcType = Type.T_INT;
+			break;
+		default:
+			// all other operations go through here
+			checkSuptypes(lhs, context, Nominal.T_INT, Nominal.T_REAL);
+			checkSuptypes(rhs, context, Nominal.T_INT, Nominal.T_REAL);
+			//
+			if (!lhsRawType.equals(rhsRawType)) {
+				syntaxError(
+						errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
+								rhsRawType), filename, expr);
+				return null;
+			} else {
+				srcType = lhsRawType;
 			}
-		} else {
-			switch (expr.op) {
-			case IS:
-			case AND:
-			case OR:
-			case XOR:
-				return propagateCondition(expr, true, environment, context)
-						.first();
-			case BITWISEAND:
-			case BITWISEOR:
-			case BITWISEXOR:
-				checkIsSubtype(Type.T_BYTE, lhs, context);
-				checkIsSubtype(Type.T_BYTE, rhs, context);
-				srcType = Type.T_BYTE;
-				break;
-			case LEFTSHIFT:
-			case RIGHTSHIFT:
-				checkIsSubtype(Type.T_BYTE, lhs, context);
-				checkIsSubtype(Type.T_INT, rhs, context);
-				srcType = Type.T_BYTE;
-				break;
-			case RANGE:
-				checkIsSubtype(Type.T_INT, lhs, context);
-				checkIsSubtype(Type.T_INT, rhs, context);
-				srcType = Type.List(Type.T_INT, false);
-				break;
-			case REM:
-				checkIsSubtype(Type.T_INT, lhs, context);
-				checkIsSubtype(Type.T_INT, rhs, context);
-				srcType = Type.T_INT;
-				break;
-			default:
-				// all other operations go through here
-				checkSuptypes(lhs, context, Nominal.T_INT, Nominal.T_REAL);
-				checkSuptypes(rhs, context, Nominal.T_INT, Nominal.T_REAL);
-				//
-				if (!lhsRawType.equals(rhsRawType)) {
-					syntaxError(
-							errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
-									rhsRawType), filename, expr);
-					return null;
-				} else {
-					srcType = lhsRawType;
-				}
-			}
-		}
+		}		
 
 		// FIXME: loss of nominal information
 		expr.srcType = Nominal.construct(srcType, srcType);

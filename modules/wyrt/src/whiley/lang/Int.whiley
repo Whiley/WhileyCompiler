@@ -102,11 +102,22 @@ public function toString(int item) -> string:
 // Convert an integer into a hex string
 public function toHexString(int item) -> string:
     string r = ""
+    int count = 0
+    int i = item
+    while i > 0:
+        int v = i / 16
+        int w = i % 16
+        count = count + 1
+        i = v
+    //
+    i = count
     while item > 0:
+        i = i - 1    
         int v = item / 16
         int w = item % 16
-        r = [digits[w]] ++ r
+        r[i] = digits[w]
         item = v
+    //
     return r
 
 // convert an integer into an unsigned byte
@@ -125,32 +136,32 @@ public function toUnsignedByte(u8 v) -> byte:
 
 // convert an arbitrary sized unsigned integer into a list of bytes in
 // little endian form.
-public function toUnsignedBytes(uint v) -> [byte]:
-    //
-    [byte] bytes = []
-    // do-while is needed here
-    byte r = 0b
-    byte mask = 00000001b
-    int i = 0
-    while i < 8:
-        if (v % 2) == 1:
-            r = r | mask
-        v = v / 2
-        mask = mask << 1
-        i = i + 1
-    bytes = bytes ++ [r]
-    while v > 0:
-        r = 0b
-        mask = 00000001b
-        int j = 0
-        while j < 8:
-            if (v % 2) == 1:
-                r = r | mask
-            v = v / 2
-            mask = mask << 1
-            j = j + 1
-        bytes = bytes ++ [r]
-    return bytes
+// public function toUnsignedBytes(uint v) -> [byte]:
+//     //
+//     [byte] bytes = []
+//     // do-while is needed here
+//     byte r = 0b
+//     byte mask = 00000001b
+//     int i = 0
+//     while i < 8:
+//         if (v % 2) == 1:
+//             r = r | mask
+//         v = v / 2
+//         mask = mask << 1
+//         i = i + 1
+//     bytes = bytes ++ [r]
+//     while v > 0:
+//         r = 0b
+//         mask = 00000001b
+//         int j = 0
+//         while j < 8:
+//             if (v % 2) == 1:
+//                 r = r | mask
+//             v = v / 2
+//             mask = mask << 1
+//             j = j + 1
+//         bytes = bytes ++ [r]
+//     return bytes
 
 // Convert a signed integer into a single byte
 public function toSignedByte(i8 v) -> byte:

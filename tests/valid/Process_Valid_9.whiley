@@ -1,5 +1,3 @@
-
-
 type Queue is {[int] items, int length}
 
 method get(&Queue this) -> int:
@@ -14,10 +12,7 @@ method isEmpty(&Queue this) -> bool:
     return this->length == 0
 
 method Queue(int capacity) -> &Queue:
-    [int] slots = []
-    //
-    while |slots| < capacity:
-        slots = slots ++ [0]
+    [int] slots = [0; capacity]
     //
     return new {items: slots, length: 0}
 

@@ -793,18 +793,7 @@ public final class WyilFileReader {
 		int rightOperand = readBase(wideBase);
 		int typeIdx = readRest(wideRest);
 		Type type = typePool[typeIdx];
-		switch (opcode) {
-		case Code.OPCODE_append:
-		case Code.OPCODE_appendl:
-		case Code.OPCODE_appendr: {
-			if (!(type instanceof Type.EffectiveList)) {
-				throw new RuntimeException("expecting list type");
-			}
-			Codes.ListOperatorKind kind = Codes.ListOperatorKind.values()[opcode
-					- Code.OPCODE_append];
-			return Codes.ListOperator((Type.EffectiveList) type, target,
-					leftOperand, rightOperand, kind);
-		}
+		switch (opcode) {		
 		case Code.OPCODE_indexof: {
 			if (!(type instanceof Type.EffectiveList)) {
 				throw new RuntimeException("expecting indexible type");

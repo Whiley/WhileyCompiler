@@ -2,10 +2,11 @@
 
 function reverse([int] ls) -> [int]:
     int i = |ls|
-    [int] r = []
+    [int] r = [0; |ls|]
     while i > 0 where i <= |ls|:
+        int item = ls[|ls|-i]
         i = i - 1
-        r = r ++ [ls[i]]
+        r[i] = item
     return r
 
 public export method test() -> void:

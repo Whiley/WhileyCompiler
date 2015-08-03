@@ -26,10 +26,10 @@ public function toByte(char v) -> byte:
 
 // Convert an ASCII string into a list of bytes
 public function toBytes(string s) -> [byte]:
-    [byte] r = []
+    [byte] r = [0b; |s|]
     int i = 0
     while i < |s|:
-        r = r ++ [toByte(s[i])]
+        r[i] = toByte(s[i])
         i = i + 1
     return r
 
@@ -42,11 +42,11 @@ function min(int a, int b) -> int:
 
 // Read specified number of bytes from buffer
 method read(BufferState state, int amount) -> [byte]:
-    [byte] r = []
+    [byte] r = [0b; amount]
     int i = 0
     //
     while i < amount && state->pos < |state->bytes|:
-        r = r ++ [state->bytes[state->pos]]
+        r[i] = state->bytes[state->pos]
         state->pos = state->pos + 1
         i = i + 1
     //
@@ -59,7 +59,10 @@ method eof(BufferState state) -> bool:
 // Construct buffer from list of bytes
 public method BufferInputStream([byte] buffer) -> InputStream:
     BufferState this = new {bytes: buffer, pos: 0}
-    return {read: &(int x -> read(this, x)), eof: &( -> eof(this))}
+    return {
+        read: &(int x -> read(this, x)),
+        eof: &( -> eof(this))
+    }
 
 method read(string s) -> [byte]:
     [byte] bytes = []
@@ -71,5 +74,5 @@ method read(string s) -> [byte]:
     return bytes
         
 public export method test() -> void:
-    assume read("hello") == [01101100b, 01101111b]
+    assume read("hello") == [01101100b, 01101111b, 0b]
     

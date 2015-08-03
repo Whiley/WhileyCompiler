@@ -7,11 +7,11 @@ method createActor(int n) -> &Actor:
     return new {data: n}
 
 method createActors(int n) -> [&Actor]:
-    [&Actor] row = []
-    int j = 0
+    [&Actor] row = [createActor(0); n]
+    int j = 1
     while j < n:
         &Actor m = createActor(j)
-        row = row ++ [m]
+        row[j] = m
         j = j + 1
     return row
 

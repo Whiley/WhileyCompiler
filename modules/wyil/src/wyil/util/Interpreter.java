@@ -196,8 +196,6 @@ public class Interpreter {
 			return execute((Codes.Lambda) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.LengthOf) {
 			return execute((Codes.LengthOf) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.ListOperator) {
-			return execute((Codes.ListOperator) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.ListGenerator) {
 			return execute((Codes.ListGenerator) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Quantify) {
@@ -1098,37 +1096,7 @@ public class Interpreter {
 		frame[bytecode.target()] = Constant.V_INTEGER(length);
 		return context.pc.next();
 	}
-
-	/**
-	 * Execute the list append bytecode instruction at a given point in the
-	 * function or method body. This simply assigns the appended list to the
-	 * target register.
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Codes.ListOperator bytecode, Constant[] frame,
-			Context context) {
-		Constant lhs = frame[bytecode.operand(0)];
-		Constant rhs = frame[bytecode.operand(1)];
-		// Check that we have a function reference
-		checkType(lhs, context, Constant.List.class);
-		checkType(rhs, context, Constant.List.class);
-		// Now, perform the append
-		Constant.List l1 = (Constant.List) lhs;
-		Constant.List l2 = (Constant.List) rhs;
-		ArrayList<Constant> values = new ArrayList<Constant>();
-		values.addAll(l1.values);
-		values.addAll(l2.values);
-		frame[bytecode.target()] = Constant.V_LIST(values);
-		return context.pc.next();
-	}
-
+	
 	/**
 	 * Execute the list generator bytecode instruction at a given point in the
 	 * function or method body. This simply assigns the generated list to the

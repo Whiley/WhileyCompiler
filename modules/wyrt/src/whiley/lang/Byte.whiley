@@ -30,13 +30,13 @@ import uint from whiley.lang.Int
 
 // convert a byte into a string
 public function toString(byte b) -> string:
-    string r = "b"
+    string r = [0; 'b']
     int i = 0
     while i < 8:
         if (b & 00000001b) == 00000001b:
-            r = "1" ++ r
+            r[7-i] = '1'
         else:
-            r = "0" ++ r
+            r[7-i] = '0'
         b = b >> 1
         i = i + 1
     return r

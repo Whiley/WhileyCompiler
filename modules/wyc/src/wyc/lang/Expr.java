@@ -786,10 +786,7 @@ public interface Expr extends SyntacticElement {
 		},
 		DIFFERENCE{
 			public String toString() { return "-"; }
-		},
-		LISTAPPEND{
-			public String toString() { return "++"; }
-		},
+		},		
 		EQ{
 			public String toString() { return "=="; }
 		},

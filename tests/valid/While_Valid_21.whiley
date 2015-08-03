@@ -6,10 +6,10 @@ function create(nat count, int value) -> ([int] result)
 // Returned list must have count elements
 ensures |result| == count:
     //
-    [int] r = []
+    [int] r = [0; count]
     int i = 0
     while i < count where i <= count && i == |r|:
-        r = r ++ [value]
+        r[i] = value
         i = i + 1
     return r
 

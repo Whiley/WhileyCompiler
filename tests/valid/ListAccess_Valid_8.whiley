@@ -11,10 +11,12 @@ public function toUnsignedInt(byte b) -> int:
     return r
 
 public function meth([byte] bytes) -> [int]:
-    [int] data = []
+    [int] data = [0; |bytes|]
     int i = 0
-    while i < |bytes| where i >= 0:
-        data = data ++ [toUnsignedInt(bytes[i])]
+    while i < |bytes|
+        where i >= 0
+        where |data| == |bytes|:
+        data[i] = toUnsignedInt(bytes[i])
         i = i + 1
     return data
 

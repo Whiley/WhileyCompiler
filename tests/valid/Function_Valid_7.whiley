@@ -1,11 +1,14 @@
 type fr5nat is int
 
 function g([fr5nat] xs) -> [fr5nat]:
-    [fr5nat] ys = []
+    [fr5nat] ys = [0; |xs|]
     int i = 0
-    while i < |xs| where i >= 0:
+    while i < |xs|
+        where i >= 0
+        where |xs| == |ys|:
+        //
         if xs[i] > 1:
-            ys = ys ++ [xs[i]]
+            ys[i] = xs[i]
         i = i + 1
     return ys
 
@@ -14,4 +17,4 @@ function f([fr5nat] x) -> [int]:
 
 public export method test() -> void:
     [int] ys = [1, 2, 3]
-    assume f(g(ys)) == [2, 3]
+    assume f(g(ys)) == [0, 2, 3]

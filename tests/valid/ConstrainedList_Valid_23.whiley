@@ -7,10 +7,10 @@ type Matrix is ([[int]] rows)
 
 function run(Matrix A, Matrix B) -> Matrix
 requires (|A| > 0) && ((|B| > 0) && (|B| == |A[0]|)):
-    [[int]] C = []
+    [[int]] C = [[]; |A|]
     int i = 0
     while i < |A|:
-        [int] row = []
+        [int] row = [0; |B|]
         int j = 0
         while j < |B[0]|:
             int r = 0
@@ -18,9 +18,9 @@ requires (|A| > 0) && ((|B| > 0) && (|B| == |A[0]|)):
             while k < |B|:
                 r = r + (A[i][k] * B[k][j])
                 k = k + 1            
-            row = row ++ [r]
+            row[j] = r
             j = j + 1        
-        C = C ++ [row]
+        C[i] = row
         i = i + 1
     return C
 

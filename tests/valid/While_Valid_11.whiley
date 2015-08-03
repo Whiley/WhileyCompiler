@@ -2,15 +2,15 @@ type nat is (int x) where x >= 0
 
 function extract([int] ls) -> [nat]:
     int i = 0
-    [int] r = []
+    [int] r = [0; |ls|]
     while i < |ls| 
         where i >= 0
         where no { j in 0..|r| | r[j] < 0 }:
         //
         if ls[i] < 0:
-            r = r ++ [-ls[i]]
+            r[i] = -ls[i]
         else:
-            r = r ++ [ls[i]]
+            r[i] = ls[i]
         i = i + 1
     return r
 

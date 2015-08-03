@@ -217,8 +217,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			// skip
 		} else if(code instanceof Codes.Label) {
 			// skip
-		} else if(code instanceof Codes.ListOperator) {
-			infer(index,(Codes.ListOperator)code,environment);
 		} else if(code instanceof Codes.LengthOf) {
 			infer(index,(Codes.LengthOf)code,environment);
 		} else if(code instanceof Codes.IndexOf) {
@@ -375,26 +373,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		if (code.target() != Codes.NULL_REG) {
 			invalidate(code.target(),environment);
 		}
-	}
-
-	public void infer(CodeBlock.Index index, Codes.ListOperator code, Env environment) {
-		Constant lhs = environment.get(code.operand(0));
-		Constant rhs = environment.get(code.operand(1));
-		Constant result = null;
-		switch (code.kind) {
-		case APPEND:
-			if (lhs instanceof Constant.List && rhs instanceof Constant.List) {
-				Constant.List left = (Constant.List) lhs;
-				Constant.List right = (Constant.List) rhs;
-				ArrayList<Constant> values = new ArrayList<Constant>(
-						left.values);
-				values.addAll(right.values);
-				result = Constant.V_LIST(values);
-			}
-			break;		
-		}
-
-		assign(code.target(), result, environment, index);
 	}
 
 	public void infer(CodeBlock.Index index, Codes.Lambda code,

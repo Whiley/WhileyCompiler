@@ -628,8 +628,6 @@ public class Wyil2JavaBuilder implements Builder {
 				translate(index, (Codes.Invert) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.Label) {
 				translate(index, (Codes.Label) code, freeSlot, bytecodes);
-			} else if (code instanceof Codes.ListOperator) {
-				translate(index, (Codes.ListOperator) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.ListGenerator) {
 				translate(index, (Codes.ListGenerator) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.Lambda) {
@@ -1303,31 +1301,6 @@ public class Wyil2JavaBuilder implements Builder {
 		JvmType jt = convertUnderlyingType(c.type());
 		bytecodes.add(new Bytecode.Load(c.operand(0), jt));
 		bytecodes.add(new Bytecode.Store(c.target(), jt));
-	}
-
-	private void translate(CodeBlock.Index index, Codes.ListOperator c,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		JvmType leftType;
-		JvmType rightType;
-
-		switch (c.kind) {
-		case APPEND:
-			leftType = WHILEYLIST;
-			rightType = WHILEYLIST;
-			bytecodes.add(new Bytecode.Load(c.operand(0), leftType));
-			bytecodes.add(new Bytecode.Load(c.operand(1), rightType));
-			break;
-		default:
-			internalFailure("unknown list operation", filename,
-					rootBlock.attribute(index, SourceLocation.class));
-			return;
-		}
-
-		JvmType.Function ftype = new JvmType.Function(WHILEYLIST, leftType,
-				rightType);
-		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
-				Bytecode.InvokeMode.STATIC));
-		bytecodes.add(new Bytecode.Store(c.target(), WHILEYLIST));
 	}
 	
 	private void translate(CodeBlock.Index index, Codes.ListGenerator c,
