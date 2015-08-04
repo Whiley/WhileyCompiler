@@ -1566,7 +1566,7 @@ public class VcGenerator {
 			} else if (code instanceof Codes.ListGenerator) {
 				transform((Codes.ListGenerator) code, block, branch);
 			} else if (code instanceof Codes.NewList) {
-				transformNary(Expr.Nary.Op.LIST, (Codes.NewList) code, branch,
+				transformNary(Expr.Nary.Op.ARRAY, (Codes.NewList) code, branch,
 						block);
 			} else if (code instanceof Codes.NewRecord) {
 				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewRecord) code,

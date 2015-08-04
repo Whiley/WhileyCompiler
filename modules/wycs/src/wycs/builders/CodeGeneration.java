@@ -338,23 +338,9 @@ public class CodeGeneration {
 		case TUPLE:
 			opcode = Code.Op.TUPLE;
 			break;
-		case LIST: {
-
-			// The goal here is convert from a list of the form [x,y,z] into a
-			// set of tuples of the form {(0,x),(1,y),(2,z)}.
-
-			for (int i = 0; i != operands.length; ++i) {
-				SemanticType.Tuple tt = SemanticType.Tuple(SemanticType.Int,
-						operands[i].returnType());
-				Code.Constant idx = Code.Constant(Value.Integer(BigInteger
-						.valueOf(i)));
-				operands[i] = Code.Nary(tt, Code.Op.TUPLE, new Code[] { idx,
-						operands[i] });
-			}
-			
+		case ARRAY: 			
 			opcode = Code.Op.ARRAY;
-			break;
-		}
+			break;		
 		default:
 			internalFailure("unknown unary opcode encountered (" + e + ")",
 					filename, e);

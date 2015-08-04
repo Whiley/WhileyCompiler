@@ -30,7 +30,10 @@ include "Core.wyrl"
 // ====================================================================
 
 // An array is a mapping from an index value to another value.
-term Array{[Expr,Expr]...}
+term Array[Expr...]
+
+reduce LengthOf(Array[Expr... xs]):
+    => Num((real) |xs|)
 
 // ====================================================================
 // IndexOf Expressions
@@ -40,11 +43,15 @@ term Array{[Expr,Expr]...}
 // array (left) at a given index position (right).
 term IndexOf[Expr,Expr]
 
+reduce IndexOf[Array[Expr... xs], Num(real i)]:
+    => let j = num i
+       in xs[j], if j >= 0 && j < |xs|
+
 // ====================================================================
 // Expressions & Values
 // ====================================================================
 
-define Value as Array{[Value,Value]...} | ...
+define Value as Array[Value...] | ...
 
 define SExpr as VExpr | Array | ...
 

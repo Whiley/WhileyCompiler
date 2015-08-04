@@ -280,7 +280,7 @@ public class WyalFilePrinter {
 			}
 			return;
 		}		
-		case LIST: {
+		case ARRAY: {
 			boolean firstTime=true;
 			out.print("[");
 			for(Expr operand : e.operands) {

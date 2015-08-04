@@ -406,7 +406,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			} else {
 				return SemanticType.Tuple(op_types);
 			}
-		case LIST:
+		case ARRAY:
 			if (op_types.length == 0) {
 				return SemanticType.Array(true, SemanticType.Void);
 			} else {
@@ -611,7 +611,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			Expr.Nary ue = (Expr.Nary) e;
 			switch (ue.op) {
 			case TUPLE:
-			case LIST:
+			case ARRAY:
 				return type;
 			}
 		} else if (e instanceof Expr.IndexOf) {

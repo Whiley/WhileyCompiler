@@ -1680,7 +1680,7 @@ public class WyalFileParser {
 			exprs.add(parseUnitExpression(wf, generics, environment, true));
 		}
 
-		return new Expr.Nary(Expr.Nary.Op.LIST, exprs, sourceAttr(start,
+		return new Expr.Nary(Expr.Nary.Op.ARRAY, exprs, sourceAttr(start,
 				index - 1));
 	}
 
