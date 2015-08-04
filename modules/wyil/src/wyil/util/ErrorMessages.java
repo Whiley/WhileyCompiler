@@ -91,13 +91,10 @@ public class ErrorMessages {
 	public static final MsgWithNoParams INVALID_NUMERIC_EXPRESSION = new MsgWithNoParams("invalid numeric expression");
 	public static final MsgWithNoParams INVALID_UNARY_EXPRESSION = new MsgWithNoParams("invalid unary expression");
 	public static final MsgWithNoParams INVALID_BINARY_EXPRESSION = new MsgWithNoParams("invalid binary expression");
-	public static final MsgWithNoParams INVALID_LIST_EXPRESSION  = new MsgWithNoParams("invalid list expression");
-	public static final MsgWithNoParams INVALID_SET_EXPRESSION = new MsgWithNoParams("invalid set expression");
-	public static final MsgWithNoParams INVALID_SET_OR_LIST_EXPRESSION = new MsgWithNoParams("invalid set or list expression");
-	public static final MsgWithNoParams INVALID_MAP_EXPRESSION = new MsgWithNoParams("invalid map expression");
+	public static final MsgWithNoParams INVALID_ARRAY_EXPRESSION  = new MsgWithNoParams("invalid array expression");			
 	public static final MsgWithNoParams INVALID_LVAL_EXPRESSION = new MsgWithNoParams("invalid assignment expression");
 	public static final MsgWithNoParams INVALID_TUPLE_LVAL = new MsgWithNoParams("invalid tuple lval");
-	public static final MsgWithNoParams INVALID_MODULE_ACCESS = new MsgWithNoParams("invalid module access");
+	public static final MsgWithNoParams INVALID_FILE_ACCESS = new MsgWithNoParams("invalid file access");
 	public static final MsgWithNoParams INVALID_PACKAGE_ACCESS = new MsgWithNoParams("invalid package access");
 	public static final MsgWithNoParams BREAK_OUTSIDE_LOOP = new MsgWithNoParams("break outside switch or loop");
 	public static final MsgWithStringParam RESOLUTION_ERROR = new MsgWithStringParam("unable to resolve name ($0)");
@@ -108,12 +105,10 @@ public class ErrorMessages {
 	public static final MsgWithNoParams DUPLICATE_DEFAULT_LABEL = new MsgWithNoParams("duplicate default label");
 	public static final MsgWithNoParams DUPLICATE_CASE_LABEL = new MsgWithNoParams("duplicate case label");
 	public static final MsgWithNoParams DEAD_CODE = new MsgWithNoParams("dead-code encountered (i.e. this statement has no effect)");
-	public static final MsgWithNoParams UNREACHABLE_CODE = new MsgWithNoParams("unreachable code encountered (i.e. execution can never reach this statement)");
-	public static final MsgWithNoParams RECEIVER_NOT_REFERENCE = new MsgWithNoParams("method receiver must have reference type");
-	public static final MsgWithNoParams REFERENCE_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("reference not permitted in function");
-	public static final MsgWithNoParams SEND_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("message send not permitted in function");
-	public static final MsgWithNoParams METHODCALL_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("method invocation not permitted in function");
-	public static final MsgWithNoParams SPAWN_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("object creation not permitted in function");
+	public static final MsgWithNoParams UNREACHABLE_CODE = new MsgWithNoParams("unreachable code encountered (i.e. execution can never reach this statement)");	
+	public static final MsgWithNoParams ALLOCATION_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("object allocation not permitted in function");
+	public static final MsgWithNoParams REFERENCE_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("reference not permitted in function");	
+	public static final MsgWithNoParams METHODCALL_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("method invocation not permitted in function");	
 	public static final MsgWithNoParams REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("dereference not permitted in function");
 	public static final MsgWithTypeParams SUBTYPE_ERROR = new MsgWithTypeParams("expected type $0, found $1");
 	public static final MsgWithTypeParams INCOMPARABLE_OPERANDS = new MsgWithTypeParams("incomparable operands: $0 and $1");
@@ -122,8 +117,7 @@ public class ErrorMessages {
 	public static final MsgWithNoParams RETURN_FROM_VOID = new MsgWithNoParams("cannot return value from method with void return type");
 	public static final MsgWithNoParams MISSING_RETURN_VALUE = new MsgWithNoParams("missing return value");
 	public static final MsgWithNoParams BRANCH_ALWAYS_TAKEN = new MsgWithNoParams("branch always taken");
-	public static final MsgWithTypeParams AMBIGUOUS_COERCION = new MsgWithTypeParams("ambiguous coercion (from $0 to $1)");
-	public static final MsgWithNoParams MUST_DECLARE_THROWN_EXCEPTION = new MsgWithNoParams("exception may be thrown which is not declared");
+	public static final MsgWithTypeParams AMBIGUOUS_COERCION = new MsgWithTypeParams("ambiguous coercion (from $0 to $1)");	
 
 	/**
 	 * Return the error message for an error with no parameters.

@@ -1903,7 +1903,7 @@ public class FlowTypeChecker {
 				.result());
 
 		if (srcType == null) {
-			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION), context,
+			syntaxError(errorMessage(INVALID_ARRAY_EXPRESSION), context,
 					expr.src);
 		} else {
 			expr.srcType = srcType;
@@ -3452,7 +3452,7 @@ public class FlowTypeChecker {
 			vals.addAll(v2.values);
 			return Constant.V_LIST(vals);
 		}
-		syntaxError(errorMessage(INVALID_LIST_EXPRESSION), context, bop);
+		syntaxError(errorMessage(INVALID_ARRAY_EXPRESSION), context, bop);
 		return null;
 	}
 	
