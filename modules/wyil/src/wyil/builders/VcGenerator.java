@@ -1814,13 +1814,14 @@ public class VcGenerator {
 	protected void transform(Codes.Update code, AttributedCodeBlock block,
 			VcBranch branch) {
 		Expr result = branch.read(code.result());
-		Expr source = branch.read(code.target());
+		Expr oldSource = branch.read(code.target());
+		Expr newSource = branch.havoc(code.target());
 		branch.write(code.target(),
-				updateHelper(code.iterator(), source, result, branch, block));
+				updateHelper(code.iterator(), oldSource, newSource, result, branch, block));
 	}
 
-	protected Expr updateHelper(Iterator<Codes.LVal> iter, Expr source,
-			Expr result, VcBranch branch, AttributedCodeBlock block) {
+	protected Expr updateHelper(Iterator<Codes.LVal> iter, Expr oldSource, Expr newSource, Expr result, VcBranch branch,
+			AttributedCodeBlock block) {
 		if (!iter.hasNext()) {
 			return result;
 		} else {
@@ -1838,26 +1839,28 @@ public class VcGenerator {
 					Expr _i = new Expr.Constant(Value.Integer(BigInteger
 							.valueOf(i)));
 					if (i != index) {
-						operands[i] = new Expr.IndexOf(source, _i, attributes);
+						operands[i] = new Expr.IndexOf(oldSource, _i, attributes);
 					} else {
-						operands[i] = updateHelper(iter, new Expr.IndexOf(
-								source, _i, attributes), result, branch, block);
+						Expr oldS = new Expr.IndexOf(oldSource, _i, attributes);
+						Expr newS = new Expr.IndexOf(newSource, _i, attributes); 
+						operands[i] = updateHelper(iter, oldS, newS, result, branch, block);
 					}
 				}
 				return new Expr.Nary(Expr.Nary.Op.TUPLE, operands, attributes);
 			} else if (lv instanceof Codes.ListLVal) {
 				Codes.ListLVal rlv = (Codes.ListLVal) lv;
 				Expr index = branch.read(rlv.indexOperand);
-				Expr nSource = havoc(source,branch,block);
-				result = updateHelper(iter, new Expr.IndexOf(source, index, attributes), result, branch, block);
-				Expr arg = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { source, nSource, index, result },
+				Expr oldS = new Expr.IndexOf(oldSource, index, attributes);
+				Expr newS = new Expr.IndexOf(newSource, index, attributes);				
+				result = updateHelper(iter, oldS, newS, result, branch, block);
+				Expr arg = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { oldSource, newSource, index, result },
 						toWycsAttributes(block.attributes(branch.pc())));
 				Expr.Invoke macro = new Expr.Invoke("update", Trie.fromString("Array"),
 						Collections.EMPTY_LIST, arg);
 				branch.assume(macro);
-				return nSource; // broken
+				return newSource; // broken
 			} else {
-				return source; // TODO
+				return newSource; // TODO
 			}
 		}
 	}
@@ -1878,6 +1881,7 @@ public class VcGenerator {
 			branch.havoc(register);
 			return branch.read(register);
 		} else {
+			System.out.println("SOURCE IS: " + source.getClass().getName());
 			// TODO: Must implement the other cases. At the moment, I'm not sure
 			// the best way to do this though.
 		}
