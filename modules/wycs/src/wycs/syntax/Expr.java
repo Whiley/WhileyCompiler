@@ -490,7 +490,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 	public static class Nary extends Expr {
 		public enum Op {
 			TUPLE(0),
-			LIST(3);
+			ARRAY(3);
 
 			public int offset;
 
@@ -600,7 +600,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			String end;
 			String sep;
 			switch(this.op) {
-			case LIST:
+			case ARRAY:
 				beg = "[";
 				end = "]";
 				sep = ", ";
