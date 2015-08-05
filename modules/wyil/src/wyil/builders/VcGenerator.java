@@ -1755,14 +1755,18 @@ public class VcGenerator {
 	}
 
 	protected void transform(Codes.ListGenerator code, AttributedCodeBlock block, VcBranch branch) {
+		Collection<wyil.lang.Attribute> wyilAttributes = block.attributes(branch.pc());
+		Collection<Attribute> attributes = toWycsAttributes(wyilAttributes); 
 		Expr element = branch.read(code.operand(0));
 		Expr count = branch.read(code.operand(1));
 		branch.havoc(code.target());
 		Expr arg = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { 
 				branch.read(code.target()), element, count },
-				toWycsAttributes(block.attributes(branch.pc())));
+				attributes);
+		ArrayList<SyntacticType> generics = new ArrayList<SyntacticType>();
+		generics.add(convert(code.type().element(),wyilAttributes));
 		Expr.Invoke macro = new Expr.Invoke("generate", Trie.fromString("Array"),
-				Collections.EMPTY_LIST, arg);
+				generics, arg);
 		branch.assume(macro);
 	}
 	
