@@ -324,7 +324,17 @@ public class WyalFilePrinter {
 			out.print(qualification);
 			out.print(".");
 		}
-		out.print(e.name);
+		if(e.generics.size() > 0) {
+			out.print("<");
+			for(int i=0;i!=e.generics.size();++i) {
+				if(i != 0) {
+					out.print(",");
+				}
+				out.print(e.generics.get(i));				
+			}
+			out.print(">");
+		}
+		out.print(e.name);			
 		writeWithBraces(wf,e.operand,indent);
 	}
 

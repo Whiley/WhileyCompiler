@@ -404,7 +404,7 @@ public class WyalFileParser {
 		}
 		return name;
 	}
-
+	
 	/**
 	 * Parse an <code>assume</code> declaration in a WyAL source file.
 	 *
@@ -1280,11 +1280,17 @@ public class WyalFileParser {
 				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
 						index - 1));
 				break;
-			case Dot:
+			case Dot:				
 				// At this point, we could have a field access, a package access
 				// or a method/function invocation. Therefore, we start by
 				// parsing the field access and then check whether or not its an
 				// invocation.
+				List<SyntacticType> genericArguments = Collections.EMPTY_LIST;
+				if(canMatch(terminated, LeftAngle) != null) {
+					// This indicates a direct or indirect invocation with
+					// generic arguments supplied.
+					 genericArguments = parseGenericArguments(wf,generics);
+				}
 				String name = match(Identifier).text;
 				// This indicates we have either a direct or indirect access or
 				// invocation. We can disambiguate between these two categories
@@ -1304,16 +1310,16 @@ public class WyalFileParser {
 						lhs = new Expr.FieldAccess(lhs, name, sourceAttr(start,
 								index - 1));
 						lhs = new Expr.IndirectInvoke(lhs,
-								new ArrayList<SyntacticType>(), argument,
+								genericArguments, argument,
 								sourceAttr(start, index - 1));
 					} else {
 						// This indicates we have an direct invocation
 						lhs = new Expr.Invoke(name, id,
-								new ArrayList<SyntacticType>(), argument,
+								genericArguments, argument,
 								sourceAttr(start, index - 1));
 					}
 
-				} else if (id != null) {
+				} else if (id != null) {				
 					// Must be a qualified constant access
 					lhs = new Expr.ConstantAccess(name, id, sourceAttr(start,
 							index - 1));
