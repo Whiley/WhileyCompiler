@@ -99,6 +99,7 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_List_45() { verifyPassTest("test_list_45"); }
 	@Test public void Test_List_46() { verifyPassTest("test_list_46"); }
 	@Test public void Test_List_47() { verifyPassTest("test_list_47"); }
+	@Test public void Test_List_48() { verifyPassTest("test_list_48"); }
 	
 	@Test public void Test_Type_01() { verifyPassTest("test_type_01"); }
 	@Test public void Test_Type_02() { verifyPassTest("test_type_02"); }

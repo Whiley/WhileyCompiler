@@ -8,7 +8,8 @@ assert "loop invariant not restored":
     forall ([int] items, [int] nitems, int n):
         if:
             invariant(items)
-            Array.update(items,nitems,n,0)
+            Array.<int>update(items,nitems,n)
+            nitems[n] == 0
         then:
             invariant(nitems)
 

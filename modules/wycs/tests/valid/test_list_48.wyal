@@ -1,0 +1,11 @@
+import wycs.core.Array
+
+assert "loop invariant not restored":
+    forall ([int] xs, [int] ys, [int] zs, int i):
+        if:
+            Array.<int>generate(ys, 0, |xs|)
+            Array.<int>update(ys, zs, i)
+        then:
+            |xs| == |zs|
+
+

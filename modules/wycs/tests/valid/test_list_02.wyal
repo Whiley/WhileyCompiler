@@ -5,7 +5,8 @@ assert "constraint not satisfied":
        if:
           forall (int i):
             xs[i] >= 0
-          Array.update(xs,ys,0,1)
+          Array.<int>update(xs,ys,0)
+          ys[0] == 1
        then:           
           forall (int j):
              ys[j] >= 0
