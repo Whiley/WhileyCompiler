@@ -1,11 +1,10 @@
 package wycs.core
 
 // A helper macro for handling array updates
-define update<T>([T] items, [T] nitems, int i, T item) is:
+define update<T>([T] items, [T] nitems, int i) is:
     |items| == |nitems|
     forall(int j):
         j != i ==> items[j] == nitems[j]
-    nitems[i] == item
 
 define generate<T>([T] items, T element, int count) is:
     |items| == count

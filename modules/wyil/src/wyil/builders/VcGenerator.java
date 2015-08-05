@@ -1816,51 +1816,42 @@ public class VcGenerator {
 		Expr result = branch.read(code.result());
 		Expr oldSource = branch.read(code.target());
 		Expr newSource = branch.havoc(code.target());
-		branch.write(code.target(),
-				updateHelper(code.iterator(), oldSource, newSource, result, branch, block));
+		updateHelper(code.iterator(), oldSource, newSource, result, branch, block);
 	}
 
-	protected Expr updateHelper(Iterator<Codes.LVal> iter, Expr oldSource, Expr newSource, Expr result, VcBranch branch,
+	protected void updateHelper(Iterator<Codes.LVal> iter, Expr oldSource, Expr newSource, Expr result, VcBranch branch,
 			AttributedCodeBlock block) {
+		Collection<Attribute> attributes = toWycsAttributes(block.attributes(branch.pc()));
 		if (!iter.hasNext()) {
-			return result;
+			branch.assume(new Expr.Binary(Expr.Binary.Op.EQ, newSource, result, attributes));
 		} else {
-			Collection<Attribute> attributes = toWycsAttributes(block
-					.attributes(branch.pc()));
 			Codes.LVal lv = iter.next();
 			if (lv instanceof Codes.RecordLVal) {
 				Codes.RecordLVal rlv = (Codes.RecordLVal) lv;
-				ArrayList<String> fields = new ArrayList<String>(rlv.rawType()
-						.fields().keySet());
+				ArrayList<String> fields = new ArrayList<String>(rlv.rawType().fields().keySet());
 				Collections.sort(fields);
 				int index = fields.indexOf(rlv.field);
-				Expr[] operands = new Expr[fields.size()];
 				for (int i = 0; i != fields.size(); ++i) {
-					Expr _i = new Expr.Constant(Value.Integer(BigInteger
-							.valueOf(i)));
+					Expr j = new Expr.Constant(Value.Integer(BigInteger.valueOf(i)));
+					Expr oldS = new Expr.IndexOf(oldSource, j, attributes);
+					Expr newS = new Expr.IndexOf(newSource, j, attributes);
 					if (i != index) {
-						operands[i] = new Expr.IndexOf(oldSource, _i, attributes);
+						branch.assume(new Expr.Binary(Expr.Binary.Op.EQ, oldS, newS, attributes));
 					} else {
-						Expr oldS = new Expr.IndexOf(oldSource, _i, attributes);
-						Expr newS = new Expr.IndexOf(newSource, _i, attributes); 
-						operands[i] = updateHelper(iter, oldS, newS, result, branch, block);
+						updateHelper(iter, oldS, newS, result, branch, block);
 					}
 				}
-				return new Expr.Nary(Expr.Nary.Op.TUPLE, operands, attributes);
 			} else if (lv instanceof Codes.ListLVal) {
 				Codes.ListLVal rlv = (Codes.ListLVal) lv;
 				Expr index = branch.read(rlv.indexOperand);
 				Expr oldS = new Expr.IndexOf(oldSource, index, attributes);
-				Expr newS = new Expr.IndexOf(newSource, index, attributes);				
-				result = updateHelper(iter, oldS, newS, result, branch, block);
-				Expr arg = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { oldSource, newSource, index, result },
-						toWycsAttributes(block.attributes(branch.pc())));
-				Expr.Invoke macro = new Expr.Invoke("update", Trie.fromString("Array"),
-						Collections.EMPTY_LIST, arg);
+				Expr newS = new Expr.IndexOf(newSource, index, attributes);
+				updateHelper(iter, oldS, newS, result, branch, block);
+				Expr arg = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { oldSource, newSource, index }, attributes);
+				ArrayList<SyntacticType> generics = new ArrayList<SyntacticType>();
+				generics.add(convert(rlv.rawType().element(),Collections.EMPTY_LIST));
+				Expr.Invoke macro = new Expr.Invoke("update", Trie.fromString("Array"), generics, arg);
 				branch.assume(macro);
-				return newSource; // broken
-			} else {
-				return newSource; // TODO
 			}
 		}
 	}
