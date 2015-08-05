@@ -78,7 +78,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	 * 
 	 * @param variables
 	 */
-	public void getUsedVariables(java.util.Set<Integer> variables) {
+	public void getUsedVariables(java.util.Set<Code.Variable> variables) {
 		for(int i=0;i!=operands.length;++i) {
 			operands[i].getUsedVariables(variables);
 		}
@@ -111,6 +111,31 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		return this;
 	}
 
+	/**
+	 * Rebind variables within the given expression. This includes variables
+	 * declared in quantifiers.
+	 *
+	 * @param binding
+	 *            --- a map from variables to the bytecodes wwhich are to
+	 *            replace them.
+	 * @return
+	 */
+	public Code<?> rebind(Map<Integer,Integer> binding) {
+		Code<?>[] nOperands = operands;
+		for(int i=0;i!=nOperands.length;++i) {
+			Code<?> o = nOperands[i];
+			Code<?> c = o.rebind(binding);
+			if(c != o && operands == nOperands) {
+				nOperands = Arrays.copyOf(operands, operands.length);
+			}
+			nOperands[i] = c;
+		}
+		if(nOperands != operands) {
+			return clone(type,opcode,nOperands);
+		}
+		return this;
+	}
+	
 	/**
 	 * Instantiate generic variables with concrete types in bytecodes as
 	 * determined by a given map. Generic variables which are not keys of the
@@ -349,8 +374,8 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 
 		@Override
-		public void getUsedVariables(java.util.Set<Integer> variables) {
-			variables.add(index);
+		public void getUsedVariables(java.util.Set<Code.Variable> variables) {
+			variables.add(Code.Variable(type, index));
 		}
 		
 		@Override
@@ -359,10 +384,21 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			if(r != null) {
 				return r;
 			} else{
-				return this;
+				return super.substitute(binding);
 			}
 		}
 
+		@Override
+		public Code<?> rebind(Map<Integer, Integer> binding) {
+			Code<?> r = super.rebind(binding);
+			Integer nIndex = binding.get(index);
+			if (nIndex != null) {
+				return new Code.Variable(type, r.operands, nIndex, attributes());
+			} else {
+				return r;
+			}
+		}
+		
 		@Override
 		public SemanticType returnType() {
 			return type;
@@ -649,10 +685,10 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 
 		@Override
-		public void getUsedVariables(java.util.Set<Integer> variables) {
+		public void getUsedVariables(java.util.Set<Code.Variable> variables) {
 			super.getUsedVariables(variables);
 			for (Pair<SemanticType, Integer> p : types) {
-				variables.add(p.second());
+				variables.add(Code.Variable(p.first(), p.second()));
 			}
 		}
 		
@@ -662,8 +698,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 
 		@Override
-		public Code<?> substitute(Map<Integer, Code> binding) {
-			// FIXME: is this safe in the context of variable capture.
+		public Code<?> substitute(Map<Integer, Code> binding) {			
 			Code<?> operand = operands[0].substitute(binding);
 			if (operand != operands[0]) {
 				return new Quantifier(this.type, this.opcode, operand, types,
@@ -673,6 +708,19 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			}
 		}
 
+		@Override
+		public Code<?> rebind(Map<Integer, Integer> binding) {
+			// FIXME: is this safe in the context of variable capture?
+			Code<?> operand = operands[0].rebind(binding);
+			Pair<SemanticType,Integer>[] types = rebind(this.types,binding);
+			if (operand != operands[0] || types != this.types) {
+				return new Quantifier(this.type, this.opcode, operand, types,
+						attributes());
+			} else {
+				return this;
+			}
+		}
+		
 		@Override
 		public Code<?> instantiate(Map<String,SemanticType> binding) {
 			Pair<SemanticType, Integer>[] nTypes = types;
@@ -696,6 +744,23 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			} else {
 				return this;
 			}
+		}
+		
+		private static Pair<SemanticType, Integer>[] rebind(Pair<SemanticType, Integer>[] types,
+				Map<Integer, Integer> binding) {
+			Pair<SemanticType, Integer>[] nTypes = types;
+
+			for (int i = 0; i != nTypes.length; ++i) {
+				Pair<SemanticType, Integer> p = nTypes[i];
+				Integer nIndex = binding.get(p.second());
+				if (nIndex != null) {
+					if (nTypes == types) {
+						nTypes = Arrays.copyOf(types, types.length);
+					}
+					nTypes[i] = new Pair<SemanticType, Integer>(p.first(), nIndex);
+				}
+			}
+			return nTypes;
 		}
 	}
 

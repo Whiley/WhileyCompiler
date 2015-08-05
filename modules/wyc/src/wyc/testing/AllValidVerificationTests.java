@@ -479,7 +479,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedInt_Valid_8");
 	}
 
-	@Test
+	@Ignore("unknown") @Test
 	public void ConstrainedIntersection_Valid_1() {
 		runTest("ConstrainedIntersection_Valid_1");
 	}
