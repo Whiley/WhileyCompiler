@@ -1,8 +1,10 @@
 package wycs.transforms;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 
 import static wycc.lang.SyntaxError.*;
 import wybs.lang.Builder;
@@ -110,46 +112,54 @@ public class MacroExpansion implements Transform<WycsFile> {
 
 	private void transform(WycsFile.Function s) {
 		if (s.constraint != null) {
-			s.constraint = transform(s.constraint);
+			HashSet<Code.Variable> environment = new HashSet<Code.Variable>();
+			s.constraint.getUsedVariables(environment);
+			s.constraint = transform(s.constraint,environment);
 		}
 	}
 
 	private void transform(WycsFile.Macro s) {
-		s.condition = transform(s.condition);
+		HashSet<Code.Variable> environment = new HashSet<Code.Variable>();
+		s.condition.getUsedVariables(environment);
+		s.condition = transform(s.condition,environment);
 	}
 
 	private void transform(WycsFile.Assert s) {
-		s.condition = transform(s.condition);
+		HashSet<Code.Variable> environment = new HashSet<Code.Variable>();
+		s.condition.getUsedVariables(environment);
+		s.condition = transform(s.condition,environment);
 	}
 
 	private void transform(WycsFile.Type s) {
 		if(s.invariant != null) {
-			s.invariant = transform(s.invariant);
+			HashSet<Code.Variable> environment = new HashSet<Code.Variable>();
+			s.invariant.getUsedVariables(environment);
+			s.invariant = transform(s.invariant,environment);
 		}
 	}
 
-	private Code<?> transform(Code<?> e) {
+	private Code<?> transform(Code<?> e, Set<Code.Variable> environment) {
 		if (e instanceof Code.Variable || e instanceof Code.Constant) {
 			// do nothing
 			return e;
 		} else if (e instanceof Code.Cast) {
-			return transform((Code.Cast) e);
+			return transform((Code.Cast) e, environment);
 		}  else if (e instanceof Code.Unary) {
-			return transform((Code.Unary) e);
+			return transform((Code.Unary) e, environment);
 		} else if (e instanceof Code.Binary) {
-			return transform((Code.Binary) e);
+			return transform((Code.Binary) e, environment);
 		} else if (e instanceof Code.Nary) {
-			return transform((Code.Nary) e);
+			return transform((Code.Nary) e, environment);
 		} else if (e instanceof Code.Load) {
-			return transform((Code.Load) e);
+			return transform((Code.Load) e, environment);
 		} else if (e instanceof Code.IndexOf) {
-			return transform((Code.IndexOf) e);
+			return transform((Code.IndexOf) e, environment);
 		} else if (e instanceof Code.Is) {
-			return transform((Code.Is) e);
+			return transform((Code.Is) e, environment);
 		} else if (e instanceof Code.FunCall) {
-			return transform((Code.FunCall) e);
+			return transform((Code.FunCall) e, environment);
 		} else if (e instanceof Code.Quantifier) {
-			return transform((Code.Quantifier) e);
+			return transform((Code.Quantifier) e, environment);
 		} else {
 			internalFailure("invalid expression encountered (" + e + ", "
 					+ e.getClass().getName() + ")", filename, e);
@@ -157,22 +167,22 @@ public class MacroExpansion implements Transform<WycsFile> {
 		}
 	}
 
-	private Code<?> transform(Code.Cast e) {
-		return Code.Cast(e.type, transform(e.operands[0]), e.target, e.attributes());
+	private Code<?> transform(Code.Cast e, Set<Code.Variable> environment) {
+		return Code.Cast(e.type, transform(e.operands[0], environment), e.target, e.attributes());
 	}
 	
-	private Code<?> transform(Code.Unary e) {
-		return Code.Unary(e.type, e.opcode, transform(e.operands[0]),
+	private Code<?> transform(Code.Unary e, Set<Code.Variable> environment) {
+		return Code.Unary(e.type, e.opcode, transform(e.operands[0], environment),
 				e.attributes());
 	}
 
-	private Code<?> transform(Code.Binary e) {
-		return Code.Binary(e.type, e.opcode, transform(e.operands[0]),
-				transform(e.operands[1]), e.attributes());
+	private Code<?> transform(Code.Binary e, Set<Code.Variable> environment) {
+		return Code.Binary(e.type, e.opcode, transform(e.operands[0], environment),
+				transform(e.operands[1], environment), e.attributes());
 	}
 
-	private Code<?> transform(Code.Is e) {
-		Code operand = transform(e.operands[0]);
+	private Code<?> transform(Code.Is e, Set<Code.Variable> environment) {
+		Code operand = transform(e.operands[0], environment);
 		// Expand the type to extract any constraints associated with nominal
 		// contained within. These will produce null if there are no such
 		// constraints. 
@@ -189,26 +199,26 @@ public class MacroExpansion implements Transform<WycsFile> {
 		}
 	}
 	
-	private Code<?> transform(Code.Nary e) {
+	private Code<?> transform(Code.Nary e, Set<Code.Variable> environment) {
 		Code<?>[] e_operands = e.operands;
 		Code<?>[] operands = new Code[e_operands.length];
 		for (int i = 0; i != e_operands.length; ++i) {
-			operands[i] = transform(e_operands[i]);
+			operands[i] = transform(e_operands[i], environment);
 		}
 		return Code.Nary(e.type, e.opcode, operands, e.attributes());
 	}
 
-	private Code<?> transform(Code.Load e) {
-		return Code.Load(e.type, transform(e.operands[0]), e.index,
+	private Code<?> transform(Code.Load e, Set<Code.Variable> environment) {
+		return Code.Load(e.type, transform(e.operands[0], environment), e.index,
 				e.attributes());
 	}
 
-	private Code<?> transform(Code.IndexOf e) {
-		return Code.IndexOf(e.type, transform(e.operands[0]),
-				transform(e.operands[1]), e.attributes());
+	private Code<?> transform(Code.IndexOf e, Set<Code.Variable> environment) {
+		return Code.IndexOf(e.type, transform(e.operands[0], environment),
+				transform(e.operands[1], environment), e.attributes());
 	}
 	
-	private Code<?> transform(Code.FunCall e) {
+	private Code<?> transform(Code.FunCall e, Set<Code.Variable> environment) {
 		Code<?> r = e;
 		try {
 			WycsFile module = builder.getModule(e.nid.module());
@@ -229,10 +239,10 @@ public class MacroExpansion implements Transform<WycsFile> {
 				// or during rewriting.
 			} else if (d instanceof WycsFile.Macro) {
 				WycsFile.Macro m = (WycsFile.Macro) d;
-				HashMap<String, SemanticType> generics = buildGenericBinding(
-						m.type.generics(), e.type.generics());
-				HashMap<Integer, Code> binding = new HashMap<Integer, Code>();
-				binding.put(0, e.operands[0]);
+				HashMap<String, SemanticType> generics = buildGenericBinding(m.type.generics(), e.binding);
+				Code m_body = applyCaptureAvoidanceBinding(m.condition, environment, new int[] { 0 });
+				HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
+				binding.put(0, e.operands[0]);				
 				r = m.condition.substitute(binding).instantiate(generics);
 			} else {
 				internalFailure("cannot resolve as function or macro call",
@@ -244,7 +254,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 			internalFailure(ex.getMessage(), filename, e, ex);
 		}
 
-		transform(e.operands[0]);
+		transform(e.operands[0], environment);
 		return r;
 	}
 
@@ -257,8 +267,36 @@ public class MacroExpansion implements Transform<WycsFile> {
 		}
 		return binding;
 	}
+	
+	/**
+	 * Build a binding for all variables in a given code which maps them to
+	 * known fresh variables in the environment. A list of optional ignores can
+	 * be given which are not considered in the binding.
+	 * 
+	 * @param environment
+	 * @param ignores
+	 * @return
+	 */
+	private Code applyCaptureAvoidanceBinding(Code e, Set<Code.Variable> environment, int... ignores) {
+		HashMap<Integer, Integer> binding = new HashMap<Integer, Integer>();
+		HashSet<Code.Variable> usedVariables = new HashSet<Code.Variable>();
+		e.getUsedVariables(usedVariables);
+		// Remove all ignores from consideration
+		for (int i = 0; i != ignores.length; ++i) {
+			usedVariables.remove(i);
+		}
+		if (environment.size() != 0) {
+			// If the environment is empty, we can't use max()
+			int count = max(environment);
+			for (Code.Variable v : usedVariables) {
+				binding.put(v.index, count++);
+			}
+		}
 
-	private Code<?> transform(Code.Quantifier e) {
+		return e.rebind(binding);
+	}
+
+	private Code<?> transform(Code.Quantifier e, Set<Code.Variable> environment) {
 		// Need to expand type constraints
 		Pair<SemanticType, Integer>[] e_types = e.types;
 		Pair<SemanticType, Integer>[] n_types = new Pair[e_types.length];
@@ -273,7 +311,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 				invariant = invariant == null ? ei : and(invariant, ei);
 			}
 		}
-		Code<?> body = transform(e.operands[0]);
+		Code<?> body = transform(e.operands[0], environment);
 		if (invariant != null) {
 			// We need to treat universal and existential quantifiers
 			// differently.
@@ -567,5 +605,13 @@ public class MacroExpansion implements Transform<WycsFile> {
 	
 	private static Code<?> or(Code<?> lhs, Code<?> rhs) {
 		return Code.Nary(SemanticType.Bool, Code.Op.OR, new Code[] { lhs, rhs });
+	}
+	
+	private static int max(Set<Code.Variable> variables) {
+		int max = variables.iterator().next().index;
+		for(Code.Variable v : variables) {
+			max = Math.max(max,v.index);
+		}
+		return max;
 	}
 }

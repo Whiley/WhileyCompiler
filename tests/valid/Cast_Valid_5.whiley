@@ -5,7 +5,7 @@ ensures r >= 0:
     //
     int r = 0
     int base = 1
-    while b != 0b:
+    while b != 0b where r >= 0 && base >= 0:
         if (b & 00000001b) == 00000001b:
             r = r + base
         b = b >> 1
@@ -27,7 +27,7 @@ public function toUnsignedByte(u8 v) -> byte:
 
 public export method test() -> void:
     int i = 32
-    while i < 127:
+    while i < 127 where i >= 0:
         int c = toUnsignedInt(toUnsignedByte(i))
         assume c == i
         i = i + 1
