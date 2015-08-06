@@ -5,7 +5,7 @@ function extract([int] ls) -> ([int] result)
 ensures |result| > 0:
     int i = 0
     [int] r = [0; |ls| + 1]
-    while i < |ls| where |r| > 0:
+    while i < |ls| where i >= 0 && |r| == |ls| + 1:
         r[i] = 1
         i = i + 1
     return r

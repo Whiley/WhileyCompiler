@@ -2449,7 +2449,7 @@ public class AllValidVerificationTests {
 		runTest("VarDecl_Valid_4");
 	}
 
-	@Ignore("#231") @Test
+	@Test
 	public void While_Valid_1() {
 		runTest("While_Valid_1");
 	}
@@ -2489,7 +2489,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_17");
 	}
 
-	@Ignore("#290") @Test
+	@Test
 	public void While_Valid_18() {
 		runTest("While_Valid_18");
 	}
@@ -2509,7 +2509,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_20");
 	}
 
-	@Ignore("#231") @Test
+	@Test
 	public void While_Valid_21() {
 		runTest("While_Valid_21");
 	}
@@ -2564,7 +2564,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_31");
 	}
 
-	@Ignore("378") @Test
+	@Test
 	public void While_Valid_32() {
 		runTest("While_Valid_32");
 	}
@@ -2619,17 +2619,17 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_42");
 	}
 
-	@Ignore("#379") @Test
+	@Test
 	public void While_Valid_43() {
 		runTest("While_Valid_43");
 	}
 
-	@Ignore("#231") @Test
+	@Test
 	public void While_Valid_44() {
 		runTest("While_Valid_44");
 	}
 
-	@Ignore("#231") @Test
+	@Test
 	public void While_Valid_45() {
 		runTest("While_Valid_45");
 	}
@@ -2654,12 +2654,12 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_5");
 	}
 
-	@Ignore("#231") @Test
+	@Test
 	public void While_Valid_7() {
 		runTest("While_Valid_7");
 	}
 
-	@Ignore("#231") @Test
+	@Test
 	public void While_Valid_9() {
 		runTest("While_Valid_9");
 	}

@@ -11,7 +11,7 @@ requires n >= 0:
     // forall(int r, {int} rs):
     //    r in rs ==> r >= 0
     while i < n
-        where i >= 0
+        where i >= 0 && |rs| == n
         where all { r in 0..i | rs[r] >= 0 }:
         //
         rs[i] = i
