@@ -243,7 +243,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 				Code m_body = applyCaptureAvoidanceBinding(m.condition, environment, new int[] { 0 });
 				HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
 				binding.put(0, e.operands[0]);				
-				r = m.condition.substitute(binding).instantiate(generics);
+				r = m_body.substitute(binding).instantiate(generics);
 			} else {
 				internalFailure("cannot resolve as function or macro call",
 						filename, e);
