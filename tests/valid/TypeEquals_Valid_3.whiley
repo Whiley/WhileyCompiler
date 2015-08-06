@@ -13,4 +13,4 @@ function create(nat size, nat value) -> [nat]:
 public export method test() -> void:
     assume create(10, 10) == [10,10,10,10,10, 10,10,10,10,10]
     assume create(5, 0) == [0,0,0,0,0]
-    assume create(0, 0) == []
+    assume create(0, 0) == [0;0]

@@ -22,4 +22,4 @@ public export method test():
     assume isSorted([1,2,3,4])
     assume !isSorted([1,2,4,3])
     assume !isSorted([4,2,3,5])
-    assume isSorted([])
+    assume isSorted([0;0])

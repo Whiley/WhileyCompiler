@@ -11,7 +11,7 @@ ensures |result| == |ls|:
     return r
 
 public export method test() -> void:
-    assume reverse([]) == []
+    assume reverse([0;0]) == [0;0]
     assume reverse([1]) == [1]
     assume reverse([1,2]) == [2,1]
     assume reverse([1,2,3]) == [3,2,1]

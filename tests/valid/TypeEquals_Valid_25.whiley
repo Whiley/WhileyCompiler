@@ -23,7 +23,7 @@ function evaluate(Expr e) -> Value:
             return evaluate(e.lhs)
         else:
             if e is [Expr]:
-                return []
+                return [0;0]
             else:
                 if e is ListAccess:
                     Value src = evaluate(e.src)
@@ -40,4 +40,4 @@ public export method test() -> void:
     Value v = evaluate(e)
     assume v == 123
     e = [1]
-    assume evaluate(e) == []
+    assume evaluate(e) == [0;0]

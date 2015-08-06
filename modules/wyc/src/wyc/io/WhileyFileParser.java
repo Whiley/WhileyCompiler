@@ -1228,13 +1228,13 @@ public class WhileyFileParser {
 	 * <pre>
 	 * x = y       // variable assignment
 	 * x.f = y     // field assignment
-	 * x[i] = y    // list assignment
+	 * x[i] = y    // array assignment
 	 * x[i].f = y  // compound assignment
 	 * </pre>
 	 *
 	 * The last assignment here illustrates that the left-hand side of an
 	 * assignment can be arbitrarily complex, involving nested assignments into
-	 * lists and records.
+	 * arrays and records.
 	 *
 	 * @see wyc.lang.Stmt.Assign
 	 *
@@ -2211,7 +2211,7 @@ public class WhileyFileParser {
 			case LeftSquare:				
 				// NOTE: expression guaranteed to be terminated by ']'.
 				Expr rhs = parseAdditiveExpression(wf, environment, true);
-				// This is a plain old list access expression
+				// This is a plain old array access expression
 				match(RightSquare);
 				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
 							index - 1));				
@@ -2387,7 +2387,7 @@ public class WhileyFileParser {
 		case VerticalBar:
 			return parseLengthOfExpression(wf, environment, terminated);
 		case LeftSquare:
-			return parseListOrGeneratorExpression(wf, environment, terminated);
+			return parseArrayInitialiserOrGeneratorExpression(wf, environment, terminated);
 		case LeftCurly:
 			return parseRecordExpression(wf, environment, terminated);
 		case Shreak:
@@ -2567,11 +2567,11 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Parse a list constructor or generator expression, which is of the form:
+	 * Parse an array initialiser or generator expression, which is of the form:
 	 *
 	 * <pre>
-	 * ListExpr ::= '[' [ Expr (',' Expr)* ] ']'
-	 *            | '[' Expr ';' Expr ']' 
+	 * ArrayExpr ::= '[' [ Expr (',' Expr)+ ] ']'
+	 *             | '[' Expr ';' Expr ']' 
 	 * </pre>
 	 *
 	 * @param wf
@@ -2596,29 +2596,28 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr parseListOrGeneratorExpression(WhileyFile wf,
+	private Expr parseArrayInitialiserOrGeneratorExpression(WhileyFile wf,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(LeftSquare);
-		if(eventuallyMatch(RightSquare) == null) {
-			Expr expr = parseUnitExpression(wf, environment, true);
-			// Finally, disambiguate
-			if(tryAndMatch(true,SemiColon) != null) {
-				// this is a list generator
-				index = start;
-				return parseListGeneratorExpression(wf,environment,terminated);
-			}
+		Expr expr = parseUnitExpression(wf, environment, true);
+		// Finally, disambiguate
+		if(tryAndMatch(true,SemiColon) != null) {
+			// this is an array generator
+			index = start;
+			return parseArrayGeneratorExpression(wf,environment,terminated);
+		} else {		
+			// this is an array initialiser
+			index = start;
+			return parseArrayInitialiserExpression(wf,environment,terminated);
 		}
-		// this is a list initialiser
-		index = start;
-		return parseListExpression(wf,environment,terminated);
 	}
 	
 	/**
-	 * Parse a list constructor expression, which is of the form:
+	 * Parse an array initialiser expression, which is of the form:
 	 *
 	 * <pre>
-	 * ListExpr ::= '[' [ Expr (',' Expr)* ] ']' 
+	 * ArrayInitialiserExpr ::= '[' [ Expr (',' Expr)+ ] ']' 
 	 * </pre>
 	 *
 	 * @param wf
@@ -2643,14 +2642,14 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr parseListExpression(WhileyFile wf,
+	private Expr parseArrayInitialiserExpression(WhileyFile wf,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(LeftSquare);
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 
 		boolean firstTime = true;
-		while (eventuallyMatch(RightSquare) == null) {
+		do {		
 			if (!firstTime) {
 				match(Comma);
 			}
@@ -2662,16 +2661,16 @@ public class WhileyFileParser {
 			// Also, expression is guaranteed to be terminated, either by ']' or
 			// ','.
 			exprs.add(parseUnitExpression(wf, environment, true));
-		}
+		} while (eventuallyMatch(RightSquare) == null);
 
 		return new Expr.List(exprs, sourceAttr(start, index - 1));
 	}
 
 	/**
-	 * Parse a list generator expression, which is of the form:
+	 * Parse an array generator expression, which is of the form:
 	 *
 	 * <pre>
-	 * ListExpr ::= '[' Expr ';' Expr ']' 
+	 * ArrayGeneratorExpr ::= '[' Expr ';' Expr ']' 
 	 * </pre>
 	 *
 	 * @param wf
@@ -2696,7 +2695,7 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr parseListGeneratorExpression(WhileyFile wf,
+	private Expr parseArrayGeneratorExpression(WhileyFile wf,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(LeftSquare);
@@ -2706,6 +2705,7 @@ public class WhileyFileParser {
 		match(RightSquare);
 		return new Expr.ListGenerator(element,count,sourceAttr(start, index - 1));
 	}
+	
 	/**
 	 * Parse a record constructor, which is of the form:
 	 *
@@ -3977,7 +3977,7 @@ public class WhileyFileParser {
 		case LeftCurly:
 			return parseRecordType();
 		case LeftSquare:
-			return parseListType();
+			return parseArrayType();
 		case Shreak:
 			return parseNegationType();
 		case Ampersand:
@@ -4046,21 +4046,22 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Parse a list type, which is of the form:
+	 * Parse an array type, which is of the form:
 	 *
 	 * <pre>
-	 * ListType ::= '[' Type ']'
+	 * ArrayType ::= '[' Type ']'
 	 * </pre>
 	 *
 	 * @return
 	 */
-	private SyntacticType parseListType() {
+	private SyntacticType parseArrayType() {
 		int start = index;
 		match(LeftSquare);
 		SyntacticType element = parseType();
 		match(RightSquare);
 		return new SyntacticType.List(element, sourceAttr(start, index - 1));
 	}
+	
 
 	/**
 	 * Parse a set, map or record type, which are of the form:

@@ -17,7 +17,7 @@ function f([int] xs) -> [bool | null]:
     return r
 
 public export method test() -> void:
-    [int] e = []
-    assume f(e) == []
+    [int] e = [0;0]
+    assume f(e) == [false;0]
     e = [1, 2, 3, 4]
     assume f(e) == [null,null,null,null]

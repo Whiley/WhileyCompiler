@@ -7,5 +7,5 @@ requires |xs| == 0:
     return xs
 
 public export method test() -> void:
-    [nat] rs = f([])
-    assume rs == []
+    [nat] rs = f([0;0])
+    assume rs == [0;0]

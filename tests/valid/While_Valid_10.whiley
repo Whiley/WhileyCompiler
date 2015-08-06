@@ -11,5 +11,5 @@ function extract([int] ls) -> [int]:
 public export method test() -> void:
     [int] rs = extract([1, 2, 3, 4, 5, 6, 7])
     assume rs == [1, 1, 1, 1, 1, 1, 1]
-    rs = extract([])
-    assume rs == []
+    rs = extract([0;0])
+    assume rs == [0;0]

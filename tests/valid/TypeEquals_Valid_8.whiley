@@ -16,7 +16,7 @@ function g(ilist e) -> bool:
 public export method test() -> void:
     assume f(1.0) == false
     assume f([1]) == true
-    assume f([]) == true
+    assume f([0;0]) == true
     assume g(1) == false
     assume g([1]) == true
-    assume g([]) == true
+    assume g([0;0]) == true

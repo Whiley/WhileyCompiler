@@ -65,7 +65,7 @@ public method BufferInputStream([byte] buffer) -> InputStream:
     }
 
 method read(string s) -> [byte]:
-    [byte] bytes = []
+    [byte] bytes = [0b;0]
     InputStream bis = BufferInputStream(toBytes(s))
     //
     while !bis.eof():

@@ -1,7 +1,7 @@
 
 
 function f([int] str) -> [int]:
-    [int]|null r = []
+    [int]|null r = [0;0]
     for i in str:
         if r == null:
             r = [0]
