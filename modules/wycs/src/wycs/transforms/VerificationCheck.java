@@ -149,7 +149,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static int getMaxInferences() {
-		return 500; // default value
+		return 100000; // default value
 	}
 
 	public void setMaxInferences(int limit) {

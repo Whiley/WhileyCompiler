@@ -281,21 +281,28 @@ public class MacroExpansion implements Transform<WycsFile> {
 		HashMap<Integer, Integer> binding = new HashMap<Integer, Integer>();
 		HashSet<Code.Variable> usedVariables = new HashSet<Code.Variable>();
 		e.getUsedVariables(usedVariables);
-		// Remove all ignores from consideration
-		for (int i = 0; i != ignores.length; ++i) {
-			usedVariables.remove(i);
-		}
 		if (environment.size() != 0) {
 			// If the environment is empty, we can't use max()
 			int count = max(environment);
 			for (Code.Variable v : usedVariables) {
-				binding.put(v.index, count++);
+				if(!isIgnored(v,ignores)) {				
+					binding.put(v.index, count++);
+				}
 			}
 		}
 
 		return e.rebind(binding);
 	}
 
+	private boolean isIgnored(Code.Variable v, int... ignores) {
+		for(int i = 0; i != ignores.length;++i) {
+			if(v.index == ignores[i]) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	private Code<?> transform(Code.Quantifier e, Set<Code.Variable> environment) {
 		// Need to expand type constraints
 		Pair<SemanticType, Integer>[] e_types = e.types;
