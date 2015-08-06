@@ -56,7 +56,7 @@ public class Solver$native {
 		int least = -1;
 		for(int i=0;i!=bag.size();++i) {
 			int child = bag.get(i);
-			if (least == -1 || compare(automaton, child, least) == -1) {
+			if (least == -1 || compare(automaton, child, least) < 0) {
 				least = child;
 			}
 		}
@@ -79,7 +79,7 @@ public class Solver$native {
 		int greatest = -1;
 		for (int i = 0; i != bag.size(); ++i) {
 			int child = bag.get(i);
-			if (greatest == -1 || compare(automaton, child, greatest) == 1) {
+			if (greatest == -1 || compare(automaton, child, greatest) > 0) {
 				greatest = child;
 			}
 		}
