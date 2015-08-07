@@ -408,9 +408,9 @@ public class TypePropagation implements Transform<WyalFile> {
 			}
 		case ARRAY:
 			if (op_types.length == 0) {
-				return SemanticType.Array(true, SemanticType.Void);
+				return SemanticType.Void;
 			} else {
-				return SemanticType.Array(true, SemanticType.Or(op_types));
+				return SemanticType.Array(SemanticType.Or(op_types));
 			}
 		}
 
