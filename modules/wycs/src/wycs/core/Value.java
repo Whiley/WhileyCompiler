@@ -311,7 +311,7 @@ public abstract class Value implements Comparable<Value> {
 			return -1;
 		}
 		public java.lang.String toString() {
-			java.lang.String r = "{";
+			java.lang.String r = "[";
 			boolean firstTime=true;
 			for(Value v : values) {
 				if(!firstTime) {
@@ -320,7 +320,7 @@ public abstract class Value implements Comparable<Value> {
 				firstTime=false;
 				r += v;
 			}
-			return r + "}";
+			return r + "]";
 		}
 
 		public Array union(Array rhs) {

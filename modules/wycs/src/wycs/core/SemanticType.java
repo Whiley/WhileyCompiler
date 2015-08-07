@@ -641,13 +641,7 @@ public abstract class SemanticType {
 				break;
 			}
 			case K_ArrayT:
-				Automaton.List set = (Automaton.List) automaton.get(term.contents);
-				Automaton.Bool flag = (Automaton.Bool) automaton.get(set.get(0));
-				if(flag.value) {
-					body += "[" + toString(set.get(1),headers) + "]";
-				} else {
-					body += "[" + toString(set.get(1),headers) + "+]";
-				}
+				body += "[" + toString(term.contents,headers) + "]";				
 				break;
 			case K_TupleT: {
 				Automaton.List elements = (Automaton.List) automaton.get(term.contents);
