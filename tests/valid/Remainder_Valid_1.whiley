@@ -1,6 +1,7 @@
 
 
-function f(int x, int y) -> int:
+function f(int x, int y) -> int
+    requires y != 0:
     return x % y
 
 public export method test() -> void:

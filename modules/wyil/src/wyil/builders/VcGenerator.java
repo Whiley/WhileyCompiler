@@ -699,7 +699,7 @@ public class VcGenerator {
 		Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
 				idx.attributes());
 		return new Pair[] {
-				new Pair("index out of bounds (negative)", new Expr.Binary(
+				new Pair("negative length possible", new Expr.Binary(
 						Expr.Binary.Op.GTEQ, idx, zero, idx.attributes()))
 		};
 	}

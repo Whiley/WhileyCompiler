@@ -6,10 +6,11 @@ method get(&Actor this) -> int:
 method createActor(int n) -> &Actor:
     return new {data: n}
 
-method createActors(int n) -> [&Actor]:
+method createActors(int n) -> [&Actor]
+requires n >= 0:
     [&Actor] row = [createActor(0); n]
     int j = 1
-    while j < n:
+    while j < n where j >= 0 && |row| == n:
         &Actor m = createActor(j)
         row[j] = m
         j = j + 1
@@ -20,7 +21,7 @@ public export method test() -> void:
     int r = 0
     //
     int i = 0
-    while i < |actors|:
+    while i < |actors| where i >= 0:
         r = r + get(actors[i])
         i = i + 1
     //

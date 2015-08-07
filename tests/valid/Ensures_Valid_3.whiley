@@ -12,7 +12,9 @@ ensures no { i in 0..|ys| | ys[i] < 0 }:
     [int] zs = [0; count]
     i = 0
     int j = 0
-    while i < |xs| where i >= 0 && j >= 0:
+    while i < |xs| && j < |zs|
+        where i >= 0 && j >= 0
+        where all { k in 0 .. |zs| | zs[k] >= 0 }:
         if xs[i] >= 0:
             zs[j] = xs[i]
             j = j + 1

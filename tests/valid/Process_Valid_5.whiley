@@ -10,6 +10,6 @@ method run(MyProc this) -> bool:
 
 public export method test() -> void:
     MyProc mproc = new {flag: false}
-    assert run(mproc) == false
+    assume run(mproc) == false
     mproc = new {flag: true}
-    assert run(mproc) == true
+    assume run(mproc) == true
