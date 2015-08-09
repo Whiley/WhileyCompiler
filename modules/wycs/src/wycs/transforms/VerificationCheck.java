@@ -496,7 +496,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// form before verification begins. This firstly reduces the amount of
 		// work during verification, and also allows the functions in
 		// SolverUtils to work properly.
-		RewriteStep st = new BatchRewriter(automaton, Solver.SCHEMA, Solver.reductions).apply();
+		RewriteStep st = new BatchRewriter(type_automaton, Solver.SCHEMA, Solver.reductions).apply();
 		type_automaton = st.after().automaton();
 		return automaton.addAll(type_automaton.getRoot(0), type_automaton);
 	}
@@ -857,15 +857,23 @@ public class VerificationCheck implements Transform<WycsFile> {
 	private static final EncapsulatedRewriter.Constructor reductionConstructor = new EncapsulatedRewriter.Constructor() {
 		@Override
 		public Rewriter construct(Automaton automaton) {
-			return new BatchRewriter(automaton, Solver.SCHEMA, Solver.reductions);
+			return new BatchRewriter(automaton, Solver.SCHEMA, Solver.reductions);			
 		}
 	};
  	
 	private Automaton infer(Automaton automaton) {
-		Rewriter rewriter = new EncapsulatedRewriter(reductionConstructor, automaton, Solver.SCHEMA,
-				Activation.RANK_COMPARATOR, Solver.inferences);
+		//Rewriter rewriter = new EncapsulatedRewriter(reductionConstructor, automaton, Solver.SCHEMA,
+		//		Activation.RANK_COMPARATOR, Solver.inferences);
 		//
+		Rewriter rewriter = new SingleStepRewriter(automaton, Solver.SCHEMA, append(Solver.reductions,Solver.inferences));
 		rewriter = new CachingRewriter(rewriter);
 		return rewriter.apply().after().automaton();
+	}
+	
+	private RewriteRule[] append(RewriteRule[] lhs, RewriteRule[] rhs) {
+		RewriteRule[] rules = new RewriteRule[lhs.length+rhs.length];
+		System.arraycopy(lhs, 0, rules, 0, lhs.length);
+		System.arraycopy(rhs, 0, rules, lhs.length, rhs.length);
+		return rules;
 	}
 }
