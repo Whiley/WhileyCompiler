@@ -10,10 +10,10 @@ function shr(byte b, int i) -> byte:
 
 public export method test() -> void:
     int i = 0
-    while i < |constants|:
+    while i < |constants| where i >= 0:
         byte constant_i = constants[i]
         int j = 0
-        while j < 9:
+        while j < 9 where j >= 0:
             assume (constant_i << j) == shr(constant_i,j)
             j = j + 1
         //

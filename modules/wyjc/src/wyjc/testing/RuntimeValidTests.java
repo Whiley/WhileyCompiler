@@ -1842,11 +1842,6 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_3");
 	}
 
-	@Test
-	public void RecursiveType_Valid_30() {
-		runTest("RecursiveType_Valid_30");
-	}
-
 	@Ignore("#406") @Test
 	public void RecursiveType_Valid_4() {
 		runTest("RecursiveType_Valid_4");

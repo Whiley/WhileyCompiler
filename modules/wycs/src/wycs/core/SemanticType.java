@@ -26,7 +26,7 @@ public abstract class SemanticType {
 	public static final Real Real = new Real();
 	public static final String String = new String();
 	public static final SemanticType IntOrReal = Or(Int,Real);
-	public static final Array ArrayAny = new Array(true,Any);
+	public static final Array ArrayAny = new Array(Any);
 	
 	public static Var Var(java.lang.String name) {
 		return new Var(name);
@@ -59,8 +59,8 @@ public abstract class SemanticType {
 		return new Tuple(es);
 	}
 
-	public static Array Array(boolean flag, SemanticType element) {
-		return new Array(flag, element);
+	public static Array Array(SemanticType element) {
+		return new Array(element);
 	}
 
 	public static SemanticType Not(SemanticType element) {
@@ -234,15 +234,12 @@ public abstract class SemanticType {
 	}
 
 	public final static class Array extends SemanticType {
-		private Array(boolean flag, SemanticType element) {
-			int[] children = new int[2];
-			children[0] = automaton.add(new Automaton.Bool(flag));
+		
+		private Array(SemanticType element) {			
 			Automaton element_automaton = element.automaton;
-			children[1] = automaton.addAll(element_automaton.getRoot(0),
+			int child = automaton.addAll(element_automaton.getRoot(0),
 					element_automaton);
-			int compoundRoot = automaton.add(new Automaton.List(children));
-
-			int root = automaton.add(new Automaton.Term(K_ArrayT, compoundRoot));
+			int root = automaton.add(new Automaton.Term(K_ArrayT, child));
 			automaton.setRoot(0,root);
 		}
 
@@ -254,19 +251,10 @@ public abstract class SemanticType {
 			}
 		}
 
-		public boolean flag() {
-			int root = automaton.getRoot(0);
-			Automaton.Term term = (Automaton.Term) automaton.get(root);
-			Automaton.List list = (Automaton.List) automaton.get(term.contents);
-			Automaton.Bool val = (Automaton.Bool) automaton.get(list.get(0));
-			return val.value;
-		}
-
 		public SemanticType element() {
 			int root = automaton.getRoot(0);
-			Automaton.Term term = (Automaton.Term) automaton.get(root);
-			Automaton.List list = (Automaton.List) automaton.get(term.contents);
-			return extract(list.get(1));
+			Automaton.Term term = (Automaton.Term) automaton.get(root);			
+			return extract(term.contents);
 		}
 	}
 
@@ -653,13 +641,7 @@ public abstract class SemanticType {
 				break;
 			}
 			case K_ArrayT:
-				Automaton.List set = (Automaton.List) automaton.get(term.contents);
-				Automaton.Bool flag = (Automaton.Bool) automaton.get(set.get(0));
-				if(flag.value) {
-					body += "[" + toString(set.get(1),headers) + "]";
-				} else {
-					body += "[" + toString(set.get(1),headers) + "+]";
-				}
+				body += "[" + toString(term.contents,headers) + "]";				
 				break;
 			case K_TupleT: {
 				Automaton.List elements = (Automaton.List) automaton.get(term.contents);

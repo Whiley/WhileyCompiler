@@ -311,7 +311,7 @@ public abstract class Value implements Comparable<Value> {
 			return -1;
 		}
 		public java.lang.String toString() {
-			java.lang.String r = "{";
+			java.lang.String r = "[";
 			boolean firstTime=true;
 			for(Value v : values) {
 				if(!firstTime) {
@@ -320,7 +320,7 @@ public abstract class Value implements Comparable<Value> {
 				firstTime=false;
 				r += v;
 			}
-			return r + "}";
+			return r + "]";
 		}
 
 		public Array union(Array rhs) {
@@ -361,16 +361,12 @@ public abstract class Value implements Comparable<Value> {
 		}
 
 		public SemanticType type() {
-			if(values.isEmpty()) {
-				return SemanticType.Array(true,SemanticType.Void);
-			} else {
-				SemanticType[] types = new SemanticType[values.size()];
-				int i = 0;
-				for(Value v : values) {
-					types[i++] = v.type();
-				}
-				return SemanticType.Array(true,SemanticType.Or(types));
+			SemanticType[] types = new SemanticType[values.size()];
+			int i = 0;
+			for(Value v : values) {
+				types[i++] = v.type();
 			}
+			return SemanticType.Array(SemanticType.Or(types));			
 		}
 	}
 

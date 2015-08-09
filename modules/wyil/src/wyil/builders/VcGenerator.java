@@ -388,7 +388,7 @@ public class VcGenerator {
 		// Construct list of branches being processed.
 		Stack<VcBranch> worklist = new Stack<VcBranch>();
 		ArrayList<VcBranch> exitBranches = new ArrayList<VcBranch>();
-		ArrayList<VcBranch> fallThruBranches = new ArrayList<VcBranch>();
+		ArrayList<VcBranch> fallThruBranches = new ArrayList<VcBranch>();		
 		worklist.push(entryState);
 		// Process all branches in the worklist until it is empty and there are
 		// none left to process.
@@ -443,7 +443,9 @@ public class VcGenerator {
 						Pair<VcBranch, List<VcBranch>> p = transform(
 								(Codes.AssertOrAssume) code, isAssert, branch,
 								environment, labels, block);
-						worklist.add(p.first());
+						if(p.first() != null) {
+							worklist.add(p.first());
+						}
 						worklist.addAll(p.second());
 					}
 				} else if (code instanceof Codes.If
@@ -697,7 +699,7 @@ public class VcGenerator {
 		Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
 				idx.attributes());
 		return new Pair[] {
-				new Pair("index out of bounds (negative)", new Expr.Binary(
+				new Pair("negative length possible", new Expr.Binary(
 						Expr.Binary.Op.GTEQ, idx, zero, idx.attributes()))
 		};
 	}
@@ -1222,7 +1224,7 @@ public class VcGenerator {
 				arguments.add(branch.read(i));
 			}
 		}
-		Expr argument = arguments.size() == 1 ? arguments.get(1)
+		Expr argument = arguments.size() == 1 ? arguments.get(0)
 				: new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
 		return new Expr.Invoke(name, wyalFile.id(), Collections.EMPTY_LIST,
 				argument);
@@ -2537,14 +2539,11 @@ public class VcGenerator {
 		} else if (c instanceof Constant.List) {
 			Constant.List cb = (Constant.List) c;
 			List<Constant> cb_values = cb.values;
-			ArrayList<Value> pairs = new ArrayList<Value>();
+			ArrayList<Value> items = new ArrayList<Value>();
 			for (int i = 0; i != cb_values.size(); ++i) {
-				ArrayList<Value> pair = new ArrayList<Value>();
-				pair.add(Value.Integer(BigInteger.valueOf(i)));
-				pair.add(convert(cb_values.get(i), block, branch));
-				pairs.add(Value.Tuple(pair));
+				items.add(convert(cb_values.get(i), block, branch));				
 			}
-			return Value.Array(pairs);
+			return Value.Array(items);
 		} else if (c instanceof Constant.Tuple) {
 			Constant.Tuple cb = (Constant.Tuple) c;
 			ArrayList<Value> values = new ArrayList<Value>();

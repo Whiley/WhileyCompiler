@@ -8,16 +8,16 @@ ensures all { i in 0..|result| | result[i] == value }:
     //
     int i = 0
     [int] data = [0; length]
-    while i != length 
-        where i == |data|
-        where all { j in 0..|data| | data[j] == value }:
+    while i < length 
+        where 0 <= i && i <= |data| && |data| == length
+        where all { j in 0..i | data[j] == value }:
         data[i] = value
         i = i + 1
     //
     return data
 
 public export method test() -> void:
-    assume init(0,0) == []
+    assume init(0,0) == [0;0]
     assume init(1,1) == [1]
     assume init(2,2) == [2,2]
     assume init(3,3) == [3,3,3]

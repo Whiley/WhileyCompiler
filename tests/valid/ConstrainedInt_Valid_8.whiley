@@ -8,7 +8,8 @@ function f(num x) -> int:
     int y = x
     return y
 
-function contains([int] items, int item) -> bool:
+function contains([int] items, int item) -> (bool r)
+ensures r ==> some { i in 0 .. |items| | items[i] == item }:
     int i = 0
     //
     while i < |items| where i >= 0:

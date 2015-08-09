@@ -21,9 +21,9 @@ function f(expr e) -> [int]:
         [int] t = cons(0,e)
         return t
     else:
-        return []
+        return [0;0]
 
 public export method test() -> void:
     [int] e = [1, 2, 3, 4]
     assume f(e) == [0, 1, 2, 3, 4]
-    assume f(false) == []
+    assume f(false) == [0;0]

@@ -3,7 +3,7 @@
 function reverse([int] ls) -> [int]:
     int i = |ls|
     [int] r = [0; |ls|]
-    while i > 0 where i <= |ls|:
+    while i > 0 where i <= |ls| && |r| == |ls|:
         int item = ls[|ls|-i]
         i = i - 1
         r[i] = item

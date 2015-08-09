@@ -436,8 +436,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 		Code.Variable variable = Code.Variable(type.element(), freeVar);		
 		Pair<SemanticType, Code<?>> p = expand(variable, type.element(),
 				++freeVar);
-		SemanticType.Array nType = SemanticType.Array(type.flag(),
-				p.first());
+		SemanticType.Array nType = SemanticType.Array(p.first());
 		Code<?> invariant = p.second();
 		if (invariant != null) {
 			Code<?> indexOf = Code.IndexOf(nType, variable, root);

@@ -1,6 +1,6 @@
 
 
-type i8 is (int n) where -128 >= n && n <= 127
+type i8 is (int n) where -128 <= n && n <= 127
 
 function g(int x) -> (int r)
 ensures (r > 0) && (r < 125):

@@ -605,7 +605,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			// FIXME: need to include the list constraints here
 			SyntacticType.List t = (SyntacticType.List) type;
 			SemanticType element = convert(t.element,generics,context);
-			return SemanticType.Array(true,element);
+			return SemanticType.Array(element);
 		} else if(type instanceof SyntacticType.Union) {
 			SyntacticType.Union t = (SyntacticType.Union) type;
 			SemanticType[] types = new SemanticType[t.elements.size()];
@@ -731,7 +731,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				SemanticType.Array st = (SemanticType.Array) type;
 				SemanticType element = expand(st.element(), maximallyConsumed, context);
 				if (element != st.element()) {
-					return SemanticType.Array(st.flag(), element);
+					return SemanticType.Array(element);
 				} else {
 					return type;
 				}

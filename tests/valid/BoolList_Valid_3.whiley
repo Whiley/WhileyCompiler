@@ -2,12 +2,18 @@
 
 type Board is [[bool]]
 
-function update(Board board) -> Board:
+function update(Board board) -> Board
+requires |board| == 3
+requires all { k in 0 .. |board| | |board[k]| == 3 }:
     [[bool]] nboard = board
     int i = 0
-    while i < 3:
+    while i < 3 
+        where i >= 0 && |board| == |nboard|
+        where all { k in 0..|board| | |board[k]| == |nboard[k]| }:
         int j = 0
-        while j < 3:
+        while j < 3 
+            where j >= 0
+            where |board[i]| == |nboard[i]|:
             int c = countLiving(board, i, j)
             if board[i][j]:
                 switch c:

@@ -42,7 +42,7 @@ constant BLACK_QUEEN is {colour: false, kind: QUEEN}
 
 constant BLACK_KING is {colour: false, kind: KING}
 
-type RowCol is int
+type RowCol is (int x) where x >= 0
 
 type Pos is {RowCol col, RowCol row}
 
@@ -56,7 +56,10 @@ constant startingChessRows is [[WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QU
 
 constant startingChessBoard is {blackCastleKingSide: true, whiteCastleQueenSide: true, blackCastleQueenSide: true, rows: startingChessRows, whiteCastleKingSide: true}
 
-function sign(int x, int y) -> int:
+function sign(int x, int y) -> (int r)
+ensures x < y ==> r == 1
+ensures x >= y ==> r == -1:
+    //
     if x < y:
         return 1
     else:
@@ -69,7 +72,7 @@ function clearRowExcept(Pos from, Pos to, Board board) -> bool:
     int row = from.row
     int col = from.col + inc
     //
-    while col != to.col:
+    while col != to.col where col >= 0:
         if board.rows[row][col] is null:
             col = col + inc
         else:

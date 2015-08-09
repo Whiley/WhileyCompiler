@@ -14,5 +14,5 @@ function match(Attribute attr) -> bool:
 public export method test() -> void:
     Attribute r = {name: "Hello"}
     assume match(r) == false
-    r = {maxLocals: 0, maxStack: 0, name: "Code", data: []}
+    r = {maxLocals: 0, maxStack: 0, name: "Code", data: [0b;0]}
     assume match(r) == true

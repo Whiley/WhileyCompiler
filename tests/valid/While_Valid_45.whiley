@@ -11,7 +11,7 @@ requires n >= 0:
     // forall(int r, {int} rs):
     //    r in rs ==> r >= 0
     while i < n
-        where i >= 0
+        where i >= 0 && |rs| == n
         where all { r in 0..i | rs[r] >= 0 }:
         //
         rs[i] = i
@@ -30,7 +30,7 @@ requires n >= 0:
 
 public export method test():
     //
-    assume buildNatList(0) == []
+    assume buildNatList(0) == [0;0]
     assume buildNatList(1) == [0]
     assume buildNatList(2) == [0,1]
     assume buildNatList(3) == [0,1,2]

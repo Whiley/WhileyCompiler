@@ -3183,6 +3183,11 @@ public class FlowTypeChecker {
 					values.add(resolveAsConstant(arg, context, visited));
 				}
 				return Constant.V_LIST(values);
+			} else if (expr instanceof Expr.ListGenerator) {
+				Expr.ListGenerator lg = (Expr.ListGenerator) expr;				
+				Constant element = resolveAsConstant(lg.element, context, visited);
+				Constant count = resolveAsConstant(lg.count, context, visited);				
+				return evaluate(lg,element,count,context);
 			} else if (expr instanceof Expr.Record) {
 				Expr.Record rg = (Expr.Record) expr;
 				HashMap<String, Constant> values = new HashMap<String, Constant>();
@@ -3444,18 +3449,19 @@ public class FlowTypeChecker {
 		return null;
 	}
 
-	private Constant evaluate(Expr.BinOp bop, Constant.List v1,
-			Constant.List v2, Context context) {
-		switch (bop.op) {
-		case ADD:
-			ArrayList<Constant> vals = new ArrayList<Constant>(v1.values);
-			vals.addAll(v2.values);
-			return Constant.V_LIST(vals);
+	private Constant.List evaluate(Expr.ListGenerator bop, Constant element,
+			Constant count, Context context) {
+		if(count instanceof Constant.Integer) {
+			Constant.Integer c = (Constant.Integer)count;
+			ArrayList<Constant> items = new ArrayList<Constant>();
+			for(int i=0;i!=c.value.intValue();++i) {
+				items.add(element);
+			}
+			return Constant.V_LIST(items);
 		}
 		syntaxError(errorMessage(INVALID_ARRAY_EXPRESSION), context, bop);
 		return null;
 	}
-	
 	// =========================================================================
 	// expandAsType
 	// =========================================================================

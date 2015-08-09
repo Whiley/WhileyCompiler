@@ -3,8 +3,9 @@ type Sum is &{int result, [int] items}
 method start(Sum this) -> void:
     int sum = 0
     int i = 0
-    while i < |this->items|:
-        sum = sum + this->items[i]
+    [int] items = this->items
+    while i < |items| where i >= 0:
+        sum = sum + items[i]
         i = i + 1
     this->result = sum
 
@@ -17,7 +18,7 @@ method create([int] items) -> Sum:
 method seqSum([int] items) -> int:
     int r = 0
     int i = 0
-    while i < |items|:
+    while i < |items| where i >= 0:
         r = r + items[i]
         i = i + 1
     return r

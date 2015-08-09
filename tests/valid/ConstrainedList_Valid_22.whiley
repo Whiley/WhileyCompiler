@@ -5,7 +5,9 @@ type nat is (int x) where x >= 0
 function inc([nat] xs) -> [nat]:
     int i = 0
     int j = 0
-    while j < |xs| where i >= 0:
+    while j < |xs|  
+        where i >= 0
+        where all { k in 0 .. |xs| | xs[k] >= 0}:
         if i < |xs|:
             xs[i] = xs[i] + 1
         i = i + 1

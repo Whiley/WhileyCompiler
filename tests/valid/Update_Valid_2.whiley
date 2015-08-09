@@ -2,7 +2,8 @@
 
 type list is [int]
 
-function update(list l, int index, int value) -> list:
+function update(list l, int index, int value) -> list
+requires 0 <= index && index < |l|:
     l[index] = value
     return l
 

@@ -27,7 +27,8 @@ requires no { i in 0..|coins| | coins[i] >= |Value| }:
     [int] cash = [0, 0, 0, 0, 0, 0, 0, 0]
     int i = 0
     while i < |coins|
-        where (|cash| == |Value|) && no { k in 0..|cash| | cash[k] < 0 }:
+        where |cash| == |Value|
+        where all { k in 0..|cash| | cash[k] >= 0 }:
         nat coin = coins[i]
         cash[coin] = cash[coin] + 1
         i = i + 1

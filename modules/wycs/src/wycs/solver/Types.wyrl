@@ -153,38 +153,37 @@ rank 2:
 // ====================================================================
 // Array
 // ====================================================================
-term ArrayT[bool,Type]
+term ArrayT(Type)
 
 // Handle the case of an invalid set type.  This rule is really what
 // makes set types complicated.  The rule is necessary purely to help
 // with intersection.  For example {(int,int)} & {int} =>
 // {(int,int)&int}{void}. This makes sense, but is deceiving.  For
 // example, {int} & !{any} => {int&!any} => {void} as well.
-reduce ArrayT[bool b, VoidT]
+reduce ArrayT(VoidT)
 name "ArrayType_1"
 rank 0:
-    => VoidT, if !b
+    => VoidT
 
-reduce AndT{ArrayT[bool b1, Type t1], ArrayT[bool b2, Type t2], Type... ts}
+reduce AndT{ArrayT(Type t1), ArrayT(Type t2), Type... ts}
 name "ArrayType_2"
 rank 2:
-    => AndT(ArrayT[b1 && b2,AndT{t1,t2}]++ts)
+    => AndT(ArrayT(AndT{t1,t2})++ts)
 
-reduce AndT{ArrayT[bool b1, Type t1], NotT(ArrayT[bool b2, Type t2]), Type... ts}
+reduce AndT{ArrayT(Type t1), NotT(ArrayT(Type t2)), Type... ts}
 name "ArrayType_3"
 rank 2:
-    => AndT(ArrayT[b1 && !b2,AndT{t1,NotT(t2)}]++ts)
+    => AndT(ArrayT(AndT{t1,NotT(t2)})++ts)
 
-reduce AndT{ArrayT[bool,Type] s, Proton p, Type... ts}
+reduce AndT{ArrayT(Type) s, Proton p, Type... ts}
 name "ArrayType_4"
 rank 1:
     => VoidT, if !(p is AnyT)
 
-reduce OrT{ArrayT[bool b1,Type t1] s1, ArrayT[bool b2,Type t2] s2, Type... ts}
+reduce OrT{ArrayT(Type t1) s1, ArrayT(Type t2) s2, Type... ts}
 name "ArrayType_5"
 rank 2:
-    => OrT({s1}++ts), if t1 == t2 && b1 && !b2
-    => OrT({ArrayT[b1||b2,t1]}++ts), if t2 == VoidT && b2
+    => OrT({s1}++ts), if t1 == t2    
 
 // ====================================================================
 // Atoms
@@ -201,7 +200,7 @@ term VarT(string)
 term NominalT(string)
 
 define Quark as AnyT | NullT | VoidT | BoolT | IntT | RealT | StringT | VarT(string) | NominalT(string)
-define Proton as Quark | TupleT[Proton...] | ArrayT[bool,Proton]
+define Proton as Quark | TupleT[Proton...] | ArrayT(Proton)
 define Atom as Proton | NotT(Proton)
 
 reduce AndT{VoidT, Type... xs}

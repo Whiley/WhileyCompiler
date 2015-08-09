@@ -1,15 +1,22 @@
-type u8 is (int n) where 0 >= n && n <= 255
+type u8 is (int n) where 0 <= n && n <= 255
 
 public function toUnsignedInt(byte b) -> (int r)
-ensures r >= 0:
+ensures 0 <= r && r <= 255:
     //
     int r = 0
     int base = 1
-    while b != 0b where r >= 0 && base >= 0:
+    int i = 1
+    // this is not specified correctly
+    while i <= 8
+        where 1 <= i
+        where 0 <= r && r < base
+        where 1 <= base && base <= i*2:
         if (b & 00000001b) == 00000001b:
             r = r + base
         b = b >> 1
         base = base * 2
+        i = i + 1
+    //
     return r
 
 public function toUnsignedByte(u8 v) -> byte:

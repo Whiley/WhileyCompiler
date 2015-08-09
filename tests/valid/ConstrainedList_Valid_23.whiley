@@ -7,7 +7,7 @@ type Matrix is ([[int]] rows)
 
 function run(Matrix A, Matrix B) -> Matrix
 requires (|A| > 0) && ((|B| > 0) && (|B| == |A[0]|)):
-    [[int]] C = [[]; |A|]
+    [[int]] C = [[0;0]; |A|]
     int i = 0
     while i < |A|:
         [int] row = [0; |B|]
