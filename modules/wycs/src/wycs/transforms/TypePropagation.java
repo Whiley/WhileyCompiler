@@ -308,7 +308,6 @@ public class TypePropagation implements Transform<WyalFile> {
 		} else {
 			checkIsSubtype(SemanticType.ArrayAny, src_type, e.operand, context);
 			// FIXME: handle case for effective array (i.e. union of sets)
-			System.out.println("GOT: " + src_type);
 			SemanticType.Array st = (SemanticType.Array) src_type;
 			checkIsSubtype(SemanticType.Int, index_type, e.index, context);
 		}
