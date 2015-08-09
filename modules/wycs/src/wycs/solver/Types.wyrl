@@ -148,6 +148,11 @@ rank 2:
     => let r = [ AndT{t1s[i],NotT(t2s[i])} | i in 0..|t1s| ]
        in AndT(TupleT(r) ++ ts)
 
+reduce AndT{TupleT[Type...] t1, NotT(ArrayT(Type)), Type... ts}
+name "TupleType_4"
+rank 2:
+    => AndT({t1} ++ ts)
+
 // TODO: pull disjuncts out of tuples?
 
 // ====================================================================
@@ -174,6 +179,11 @@ reduce AndT{ArrayT(Type t1), NotT(ArrayT(Type t2)), Type... ts}
 name "ArrayType_3"
 rank 2:
     => AndT(ArrayT(AndT{t1,NotT(t2)})++ts)
+
+reduce AndT{ArrayT(Type) t1, NotT(TupleT[Type...]), Type... ts}
+name "ArrayType_3b"
+rank 2:
+    => AndT({t1} ++ ts)
 
 reduce AndT{ArrayT(Type) s, Proton p, Type... ts}
 name "ArrayType_4"

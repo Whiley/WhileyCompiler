@@ -644,7 +644,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedRecord_Valid_9");
 	}
 
-	@Test
+	@Ignore("#514") @Test
 	public void ConstrainedRecord_Valid_10() {
 		runTest("ConstrainedRecord_Valid_10");
 	}
@@ -1581,7 +1581,7 @@ public class AllValidVerificationTests {
 		runTest("RecordAssign_Valid_10");
 	}
 
-	@Test
+	@Ignore("#524") @Test
 	public void RecordAssign_Valid_2() {
 		runTest("RecordAssign_Valid_2");
 	}
