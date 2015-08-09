@@ -10,9 +10,10 @@ import java.util.*;
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
 import wyautl.rw.*;
+import wyautl.util.BatchRewriter;
 import wyautl.util.BigRational;
 import wyautl.util.CachingRewriter;
-import wyautl.util.Rewriters;
+import wyautl.util.EncapsulatedRewriter;
 import wyautl.util.SingleStepRewriter;
 import wybs.lang.Builder;
 import wycc.lang.SyntacticElement;
@@ -232,7 +233,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 			//debug(original);
 		}
 
-		automaton = Rewriters.infer(automaton,Solver.SCHEMA,Solver.inferences,Solver.reductions,maxInferences);
+		automaton = infer(automaton);
 
 		if(automaton == null) {
 			throw new AssertionFailure("timeout occurred during verification",stmt,null,automaton,original);
@@ -495,7 +496,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// form before verification begins. This firstly reduces the amount of
 		// work during verification, and also allows the functions in
 		// SolverUtils to work properly.
-		type_automaton = Rewriters.reduce(type_automaton,Solver.SCHEMA,Solver.reductions);
+		RewriteStep st = new BatchRewriter(automaton, Solver.SCHEMA, Solver.reductions).apply();
+		type_automaton = st.after().automaton();
 		return automaton.addAll(type_automaton.getRoot(0), type_automaton);
 	}
 
@@ -850,5 +852,20 @@ public class VerificationCheck implements Transform<WycsFile> {
 			}
 			return Code.Nary(SemanticType.Bool,Code.Op.AND,clauses);
 		}
+	}
+ 	
+	private static final EncapsulatedRewriter.Constructor reductionConstructor = new EncapsulatedRewriter.Constructor() {
+		@Override
+		public Rewriter construct(Automaton automaton) {
+			return new BatchRewriter(automaton, Solver.SCHEMA, Solver.reductions);
+		}
+	};
+ 	
+	private Automaton infer(Automaton automaton) {
+		Rewriter rewriter = new EncapsulatedRewriter(reductionConstructor, automaton, Solver.SCHEMA,
+				Activation.RANK_COMPARATOR, Solver.inferences);
+		//
+		rewriter = new CachingRewriter(rewriter);
+		return rewriter.apply().after().automaton();
 	}
 }

@@ -4,12 +4,9 @@ import java.io.IOException;
 import java.util.Map;
 
 import wyautl.core.*;
-import wyautl.io.PrettyAutomataWriter;
-import wyautl.util.CachingRewriter;
-import wyautl.util.Rewriters;
-import wyautl.util.SingleStepRewriter;
+import wyautl.rw.RewriteStep;
+import wyautl.util.BatchRewriter;
 import wycc.lang.NameID;
-import wyfs.lang.Path;
 import static wycs.core.Types.*;
 
 public abstract class SemanticType {
@@ -898,6 +895,7 @@ public abstract class SemanticType {
 	}
 
 	private static Automaton reduce(Automaton automaton) {
-		return Rewriters.reduce(automaton, Types.SCHEMA, Types.reductions);
+		RewriteStep st = new BatchRewriter(automaton, Types.SCHEMA, Types.reductions).apply();
+		return st.after().automaton();
 	}	
 }
