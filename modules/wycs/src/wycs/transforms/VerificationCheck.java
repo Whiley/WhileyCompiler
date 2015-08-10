@@ -861,15 +861,15 @@ public class VerificationCheck implements Transform<WycsFile> {
 	private static final EncapsulatedRewriter.Constructor reductionConstructor = new EncapsulatedRewriter.Constructor() {
 		@Override
 		public Rewriter construct() {
-			return new BatchRewriter(Solver.SCHEMA, Solver.reductions);
-			//return new SingleStepRewriter(Solver.SCHEMA, Solver.reductions);
+			//return new BatchRewriter(Solver.SCHEMA, Solver.reductions);
+			return new CachingRewriter(new SingleStepRewriter(Solver.SCHEMA, Solver.reductions));
 		}
 	};
  	
 	private Automaton infer(Automaton automaton) {
 		Rewriter rewriter = new EncapsulatedRewriter(reductionConstructor, Solver.SCHEMA,
-				Activation.RANK_COMPARATOR, Solver.inferences);
-//		Rewriter rewriter = new SingleStepRewriter(Solver.SCHEMA, append(Solver.reductions,Solver.inferences));
+				Activation.RANK_COMPARATOR, Solver.inferences);		
+		//Rewriter rewriter = new SingleStepRewriter(Solver.SCHEMA, append(Solver.reductions,Solver.inferences));
 		RewriteState initial = rewriter.initialise(automaton);		
 		// Add caching to the rewriter. This is essential to prevent oscillating
 		// between multiple equivalent or identical states.
