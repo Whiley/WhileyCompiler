@@ -497,10 +497,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// form before verification begins. This firstly reduces the amount of
 		// work during verification, and also allows the functions in
 		// SolverUtils to work properly.		
-		RewriteProof proof = new BatchRewriter(type_automaton, Solver.SCHEMA, Solver.reductions).apply();
+		Rewriter rewriter = new BatchRewriter(Solver.SCHEMA, Solver.reductions);
+		RewriteProof proof = rewriter.apply(rewriter.initialise(type_automaton));
 		if(proof.size() > 0) {
 			type_automaton = proof.last().automaton();
-		}
+		} 
 		return automaton.addAll(type_automaton.getRoot(0), type_automaton);
 	}
 
@@ -859,27 +860,34 @@ public class VerificationCheck implements Transform<WycsFile> {
  	
 	private static final EncapsulatedRewriter.Constructor reductionConstructor = new EncapsulatedRewriter.Constructor() {
 		@Override
-		public Rewriter construct(Automaton automaton) {
-			return new BatchRewriter(automaton, Solver.SCHEMA, Solver.reductions);					
+		public Rewriter construct() {
+			return new BatchRewriter(Solver.SCHEMA, Solver.reductions);
+			//return new SingleStepRewriter(Solver.SCHEMA, Solver.reductions);
 		}
 	};
  	
-	private Automaton infer(Automaton automaton) {		
-		Rewriter rewriter = new EncapsulatedRewriter(reductionConstructor, automaton, Solver.SCHEMA,
-				Activation.RANK_COMPARATOR, Solver.inferences);		
-		//Rewriter rewriter = new SingleStepRewriter(automaton, Solver.SCHEMA, append(Solver.reductions,Solver.inferences));
+	private Automaton infer(Automaton automaton) {
+		Rewriter rewriter = new EncapsulatedRewriter(reductionConstructor, Solver.SCHEMA,
+				Activation.RANK_COMPARATOR, Solver.inferences);
+//		Rewriter rewriter = new SingleStepRewriter(Solver.SCHEMA, append(Solver.reductions,Solver.inferences));
+		RewriteState initial = rewriter.initialise(automaton);		
 		// Add caching to the rewriter. This is essential to prevent oscillating
 		// between multiple equivalent or identical states.
 		rewriter = new CachingRewriter(rewriter);
 		// Add throttling to the rewriter. This is essential to cap the maximum
 		// number of rewriter steps which will be taken.		
 		rewriter = new ThrottledRewriter(rewriter,maxInferences);
-		RewriteProof proof = rewriter.apply();
+		// Finally, perform the rewrite!		
+		RewriteProof proof = rewriter.apply(initial);
 		System.out.println("Rewrite proof was " + proof.size() + " steps.");
 		if(proof.size() > 0) {
-			automaton = proof.last().automaton();
+			return  proof.last().automaton();
+		} else {
+			// Cannot return automaton parameter here, in case it was reduced
+			// during the Rewriter.initialise() function. This can result in an
+			// empty proof, since no inference rules were applied.
+			return initial.automaton();
 		}
-		return automaton;
 	}
 	
 	private RewriteRule[] append(RewriteRule[] lhs, RewriteRule[] rhs) {

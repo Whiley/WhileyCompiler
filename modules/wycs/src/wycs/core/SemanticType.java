@@ -6,6 +6,7 @@ import java.util.Map;
 import wyautl.core.*;
 import wyautl.rw.RewriteProof;
 import wyautl.rw.RewriteStep;
+import wyautl.rw.Rewriter;
 import wyautl.util.BatchRewriter;
 import wycc.lang.NameID;
 import static wycs.core.Types.*;
@@ -896,7 +897,8 @@ public abstract class SemanticType {
 	}
 
 	private static Automaton reduce(Automaton automaton) {
-		RewriteProof st = new BatchRewriter(automaton, Types.SCHEMA, Types.reductions).apply();
+		Rewriter rewriter = new BatchRewriter(Types.SCHEMA, Types.reductions);
+		RewriteProof st = rewriter.apply(rewriter.initialise(automaton));
 		if(st.size() > 0) {
 			return st.last().automaton();
 		} else {
