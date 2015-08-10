@@ -15,6 +15,7 @@ import wyautl.util.BigRational;
 import wyautl.util.CachingRewriter;
 import wyautl.util.EncapsulatedRewriter;
 import wyautl.util.SingleStepRewriter;
+import wyautl.util.ThrottledRewriter;
 import wybs.lang.Builder;
 import wycc.lang.SyntacticElement;
 import wycc.lang.Transform;
@@ -46,7 +47,7 @@ import wyfs.util.Trie;
 public class VerificationCheck implements Transform<WycsFile> {
     private enum RewriteMode { SIMPLE, STATICDISPATCH, GLOBALDISPATCH };
 
-	/**
+	/**	
 	 * Determines whether this transform is enabled or not.
 	 */
 	private boolean enabled = getEnable();
@@ -150,7 +151,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static int getMaxInferences() {
-		return 2000; // default value
+		return 500; // default value
 	}
 
 	public void setMaxInferences(int limit) {
@@ -495,9 +496,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// The following is important to make sure that the type is in minimised
 		// form before verification begins. This firstly reduces the amount of
 		// work during verification, and also allows the functions in
-		// SolverUtils to work properly.
-		RewriteStep st = new BatchRewriter(type_automaton, Solver.SCHEMA, Solver.reductions).apply();
-		type_automaton = st.after().automaton();
+		// SolverUtils to work properly.		
+		RewriteProof proof = new BatchRewriter(type_automaton, Solver.SCHEMA, Solver.reductions).apply();
+		if(proof.size() > 0) {
+			type_automaton = proof.last().automaton();
+		}
 		return automaton.addAll(type_automaton.getRoot(0), type_automaton);
 	}
 
@@ -857,17 +860,26 @@ public class VerificationCheck implements Transform<WycsFile> {
 	private static final EncapsulatedRewriter.Constructor reductionConstructor = new EncapsulatedRewriter.Constructor() {
 		@Override
 		public Rewriter construct(Automaton automaton) {
-			return new BatchRewriter(automaton, Solver.SCHEMA, Solver.reductions);			
+			return new BatchRewriter(automaton, Solver.SCHEMA, Solver.reductions);					
 		}
 	};
  	
-	private Automaton infer(Automaton automaton) {
-		//Rewriter rewriter = new EncapsulatedRewriter(reductionConstructor, automaton, Solver.SCHEMA,
-		//		Activation.RANK_COMPARATOR, Solver.inferences);
-		//
-		Rewriter rewriter = new SingleStepRewriter(automaton, Solver.SCHEMA, append(Solver.reductions,Solver.inferences));
+	private Automaton infer(Automaton automaton) {		
+		Rewriter rewriter = new EncapsulatedRewriter(reductionConstructor, automaton, Solver.SCHEMA,
+				Activation.RANK_COMPARATOR, Solver.inferences);		
+		//Rewriter rewriter = new SingleStepRewriter(automaton, Solver.SCHEMA, append(Solver.reductions,Solver.inferences));
+		// Add caching to the rewriter. This is essential to prevent oscillating
+		// between multiple equivalent or identical states.
 		rewriter = new CachingRewriter(rewriter);
-		return rewriter.apply().after().automaton();
+		// Add throttling to the rewriter. This is essential to cap the maximum
+		// number of rewriter steps which will be taken.		
+		rewriter = new ThrottledRewriter(rewriter,maxInferences);
+		RewriteProof proof = rewriter.apply();
+		System.out.println("Rewrite proof was " + proof.size() + " steps.");
+		if(proof.size() > 0) {
+			automaton = proof.last().automaton();
+		}
+		return automaton;
 	}
 	
 	private RewriteRule[] append(RewriteRule[] lhs, RewriteRule[] rhs) {
