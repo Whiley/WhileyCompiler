@@ -2239,7 +2239,7 @@ public class AllValidVerificationTests {
 		runTest("TypeEquals_Valid_44");
 	}
 
-	@Test
+	@Ignore("#528") @Test
 	public void TypeEquals_Valid_45() {
 		runTest("TypeEquals_Valid_45");
 	}
