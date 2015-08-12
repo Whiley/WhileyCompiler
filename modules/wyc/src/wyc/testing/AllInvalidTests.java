@@ -508,32 +508,7 @@ public class AllInvalidTests {
 	public void ListAccess_Invalid_5() {
 		runTest("ListAccess_Invalid_5");
 	}
-
-	@Test
-	public void ListAppend_Invalid_1() {
-		runTest("ListAppend_Invalid_1");
-	}
-
-	@Test
-	public void ListAppend_Invalid_2() {
-		runTest("ListAppend_Invalid_2");
-	}
-
-	@Ignore("Unknown Issue") @Test
-	public void ListAppend_Invalid_3() {
-		runTest("ListAppend_Invalid_3");
-	}
-
-	@Ignore("Internal Failure") @Test
-	public void ListAppend_Invalid_4() {
-		runTest("ListAppend_Invalid_4");
-	}
-
-	@Ignore("Internal Failure") @Test
-	public void ListAppend_Invalid_5() {
-		runTest("ListAppend_Invalid_5");
-	}
-
+	
 	@Test
 	public void ListAssign_Invalid_1() {
 		runTest("ListAssign_Invalid_1");
@@ -555,16 +530,6 @@ public class AllInvalidTests {
 	}
 
 	@Test
-	public void ListElemOf_Invalid_1() {
-		runTest("ListElemOf_Invalid_1");
-	}
-
-	@Test
-	public void ListElemOf_Invalid_2() {
-		runTest("ListElemOf_Invalid_2");
-	}
-
-	@Test
 	public void ListEmpty_Invalid_1() {
 		runTest("ListEmpty_Invalid_1");
 	}
@@ -580,6 +545,26 @@ public class AllInvalidTests {
 	}
 
 	@Test
+	public void ListGenerator_Invalid_1() {
+		runTest("ListGenerator_Invalid_1");	
+	}
+	
+	@Test
+	public void ListGenerator_Invalid_2() {
+		runTest("ListGenerator_Invalid_2");
+	}
+	
+	@Test
+	public void ListGenerator_Invalid_3() {
+		runTest("ListGenerator_Invalid_3");
+	}
+	
+	@Test
+	public void ListGenerator_Invalid_4() {
+		runTest("ListGenerator_Invalid_4");
+	}
+	
+	@Test
 	public void ListLength_Invalid_1() {
 		runTest("ListLength_Invalid_1");
 	}
@@ -593,22 +578,7 @@ public class AllInvalidTests {
 	public void ListLength_Invalid_3() {
 		runTest("ListLength_Invalid_3");
 	}
-
-	@Test
-	public void ListSublist_Invalid_1() {
-		runTest("ListSublist_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void ListSublist_Invalid_2() {
-		runTest("ListSublist_Invalid_2");
-	}
-
-	@Test
-	public void ListSublist_Invalid_3() {
-		runTest("ListSublist_Invalid_3");
-	}
-
+	
 	@Ignore("unclassified") @Test
 	public void ListUpdate_Invalid_1() {
 		runTest("ListUpdate_Invalid_1");
@@ -788,16 +758,6 @@ public class AllInvalidTests {
 	@Test
 	public void Process_Invalid_1() {
 		runTest("Process_Invalid_1");
-	}
-
-	@Test
-	public void Process_Invalid_2() {
-		runTest("Process_Invalid_2");
-	}
-
-	@Test
-	public void Process_Invalid_3() {
-		runTest("Process_Invalid_3");
 	}
 
 	@Test
