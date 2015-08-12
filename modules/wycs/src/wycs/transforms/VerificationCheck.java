@@ -858,11 +858,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
  	
-	private static final EncapsulatedRewriter.Constructor reductionConstructor = new EncapsulatedRewriter.Constructor() {
+	private final EncapsulatedRewriter.Constructor reductionConstructor = new EncapsulatedRewriter.Constructor() {
 		@Override
 		public Rewriter construct() {
-			//return new BatchRewriter(Solver.SCHEMA, Solver.reductions);
-			return new CachingRewriter(new SingleStepRewriter(Solver.SCHEMA, Solver.reductions));
+			return new BatchRewriter(maxReductions, Solver.SCHEMA, Activation.RANK_COMPARATOR, Solver.reductions);
+			//return new CachingRewriter(new SingleStepRewriter(Solver.SCHEMA, Solver.reductions));
 		}
 	};
  	
