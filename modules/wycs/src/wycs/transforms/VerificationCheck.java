@@ -9,13 +9,9 @@ import java.util.*;
 
 import wyautl.core.*;
 import wyautl.io.PrettyAutomataWriter;
-import wyautl.rw.*;
-import wyautl.util.BatchRewriter;
+import wyrw.core.*;
+import wyrw.util.*;
 import wyautl.util.BigRational;
-import wyautl.util.CachingRewriter;
-import wyautl.util.EncapsulatedRewriter;
-import wyautl.util.SingleStepRewriter;
-import wyautl.util.ThrottledRewriter;
 import wybs.lang.Builder;
 import wycc.lang.SyntacticElement;
 import wycc.lang.Transform;

@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.util.Map;
 
 import wyautl.core.*;
-import wyautl.rw.RewriteProof;
-import wyautl.rw.RewriteStep;
-import wyautl.rw.Rewriter;
-import wyautl.util.BatchRewriter;
+import wyrw.core.RewriteProof;
+import wyrw.core.RewriteStep;
+import wyrw.core.Rewriter;
+import wyrw.util.BatchRewriter;
 import wycc.lang.NameID;
 import static wycs.core.Types.*;
 

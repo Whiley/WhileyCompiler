@@ -12,7 +12,7 @@ import java.util.Set;
 import static wycc.lang.SyntaxError.*;
 import static wycs.solver.Solver.SCHEMA;
 import wyautl.io.PrettyAutomataWriter;
-import wyautl.rw.Rewriter;
+import wyrw.core.Rewriter;
 import wybs.lang.*;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;

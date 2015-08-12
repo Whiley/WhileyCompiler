@@ -30,20 +30,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-import wyautl.core.Automaton;
-import wyautl.io.PrettyAutomataReader;
-import wyautl.io.PrettyAutomataWriter;
-import wyautl.rw.*;
-import wybs.lang.*;
-import wybs.util.*;
 import static wycc.lang.SyntaxError.*;
-import static wycs.solver.Solver.SCHEMA;
 import wycc.lang.Pipeline;
 import wycc.lang.SyntaxError;
 import wycc.lang.Transform;
 import wycc.util.OptArg;
-import wycs.core.Types;
-import wycs.solver.Solver;
 import wycs.util.WycsBuildTask;
 
 /**
