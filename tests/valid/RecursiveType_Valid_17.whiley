@@ -1,11 +1,11 @@
 
 
-type State is {[int] input, int pos}
+type State is {int[] input, int pos}
     where (pos >= 0) && (pos <= |input|)
 
-type Expr is {int num} | {int op, Expr rhs, Expr lhs} | {[int] err}
+type Expr is {int num} | {int op, Expr rhs, Expr lhs} | {int[] err}
 
-function parse([int] input) -> Expr:
+function parse(int[] input) -> Expr:
     {Expr e, State st} r = parseAddSubExpr({input: input, pos: 0})
     return r.e
 

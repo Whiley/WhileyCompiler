@@ -2,7 +2,7 @@
 
 type nat is (int x) where x >= 0
 
-function f(nat pos, [int] input) -> bool|null:
+function f(nat pos, int[] input) -> bool|null:
     if pos >= |input|:
         return null
     else:

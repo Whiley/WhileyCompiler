@@ -1,12 +1,12 @@
-type t_Reader is method(int) -> [byte]
+type t_Reader is method(int) -> byte[]
 type InputStream is { t_Reader read }
-type BufferState is &{[byte] bytes, int pos}
+type BufferState is &{byte[] bytes, int pos}
 
 // Define the 8bit ASCII character
 public type char is (int x) where 0 <= x && x <= 255
 
 // Define ASCII String
-type string is [char]
+type string is char[]
 
 // Convert an ASCII character into a byte.
 public function toByte(char v) -> byte:
@@ -23,8 +23,8 @@ public function toByte(char v) -> byte:
     return r
 
 // Convert an ASCII string into a list of bytes
-public function toBytes(string s) -> [byte]:
-    [byte] r = [0b; |s|]
+public function toBytes(string s) -> byte[]:
+    byte[] r = [0b; |s|]
     int i = 0
     while i < |s| where i >= 0:
         r[i] = toByte(s[i])
@@ -39,10 +39,10 @@ function min(int a, int b) -> int:
         return b
 
 // Read specified number of bytes from buffer
-method read(BufferState state, int amount) -> [byte]
+method read(BufferState state, int amount) -> byte[]
 requires amount >= 0:
     //
-    [byte] r = [0b; amount]
+    byte[] r = [0b; amount]
     int i = 0
     //
     while i < amount && state->pos < |state->bytes|:
@@ -53,13 +53,13 @@ requires amount >= 0:
     return r
 
 // Construct buffer from list of bytes
-public method BufferInputStream([byte] buffer) -> InputStream:
+public method BufferInputStream(byte[] buffer) -> InputStream:
     BufferState this = new {bytes: buffer, pos: 0}
     return {read: &(int x -> read(this, x))}
 
 public export method test() -> void:
     InputStream bis = BufferInputStream(toBytes("hello"))
-    [byte] bytes = bis.read(7)
+    byte[] bytes = bis.read(7)
     assume bytes == [01101000b, 01100101b, 01101100b, 01101100b, 01101111b, 0b, 0b]
     //
     bis = BufferInputStream(toBytes("cruel world"))

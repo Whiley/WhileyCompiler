@@ -1,4 +1,4 @@
-function indexOf(int c1, [int] str) -> int | null:
+function indexOf(int c1, int[] str) -> int | null:
     int i = 0
     while i < |str| where i >= 0:
         if c1 == str[i]:

@@ -1,9 +1,9 @@
 
 
-function reverse([int] ls) -> ([int] result)
+function reverse(int[] ls) -> (int[] result)
 ensures |result| == |ls|:
     int i = |ls|
-    [int] r = [0; |ls|]
+    int[] r = [0; |ls|]
     while i > 0 where i <= |ls| && |r| == |ls|:
         int item = ls[|ls|-i]
         i = i - 1

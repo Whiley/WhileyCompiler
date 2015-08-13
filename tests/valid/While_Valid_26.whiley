@@ -2,7 +2,7 @@
 
 type nat is (int x) where x >= 0
 
-function search([int] items, int item) -> (null|nat result)
+function search(int[] items, int item) -> (null|nat result)
 // The input list must be in sorted order
 requires all { i in 0 .. |items|-1 | items[i] < items[i+1] }
 // If the answer is an integer, then it must be a value index
@@ -22,7 +22,7 @@ ensures (result == null) ==> no { i in 0..|items| | items[i] == item }:
     return null
 
 public export method test():
-    [int] list = [3,5,6,9]
+    int[] list = [3,5,6,9]
     assume search(list,0) == null
     assume search(list,1) == null
     assume search(list,2) == null

@@ -4,7 +4,7 @@ function max(int a, int b) -> int:
     else:
         return b
 
-function max([int] xs) -> (int result)
+function max(int[] xs) -> (int result)
 // Input list cannot be empty
 requires |xs| > 0
 // Return must be element of input list

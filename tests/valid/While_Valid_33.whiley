@@ -1,6 +1,6 @@
 
 
-function sum([int] items) -> (int r)
+function sum(int[] items) -> (int r)
 // Every element of items must be non-negative
 requires all { i in 0..|items| | items[i] >= 0 }
 // Return value must be non-negative

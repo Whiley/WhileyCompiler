@@ -1,7 +1,7 @@
+type intr is real|int
 
-
-function f([[real | int]] e) -> [int]:
-    if e is [[int]] && |e| > 0:
+function f(intr[][] e) -> int[]:
+    if e is int[][] && |e| > 0:
         return e[0]
     else:
         return [1, 2, 3]

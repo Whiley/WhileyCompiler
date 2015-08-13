@@ -1,6 +1,6 @@
 
 
-function f([[int]] x) -> int
+function f(int[][] x) -> int
 // Input list cannot be empty
 requires |x| > 0:
     //
@@ -10,5 +10,5 @@ requires |x| > 0:
         return 0
 
 public export method test() -> void:
-    [[int]] arr = [[1, 2, 3], [1]]
+    int[][] arr = [[1, 2, 3], [1]]
     assume f(arr) == 2

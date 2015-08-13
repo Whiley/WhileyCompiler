@@ -1,6 +1,6 @@
 
 
-type Expr is real | {int data, Expr lhs} | [Expr]
+type Expr is real | {int data, Expr lhs} | Expr[]
 
 type SubExpr is real | {int data, SubExpr lhs}
 

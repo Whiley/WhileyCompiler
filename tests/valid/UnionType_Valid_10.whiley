@@ -2,7 +2,7 @@
 
 type tenup is int
 
-type msg1 is {tenup op, [int] data}
+type msg1 is {tenup op, int[] data}
 
 type msg2 is {int index}
 

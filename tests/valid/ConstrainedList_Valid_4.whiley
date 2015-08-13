@@ -10,5 +10,5 @@ function f(int x) -> [i8]:
     return [g(x)]
 
 public export method test() -> void:
-    [int] bytes = f(0)
+    int[] bytes = f(0)
     assume bytes == [1]

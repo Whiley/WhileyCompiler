@@ -6,9 +6,9 @@ function g(int x) -> int:
     else:
         return x
 
-function f(int x) -> [int]:
+function f(int x) -> int[]:
     return [g(x)]
 
 public export method test() -> void:
-    [int] bytes = f(0)
+    int[] bytes = f(0)
     assume bytes == [1]

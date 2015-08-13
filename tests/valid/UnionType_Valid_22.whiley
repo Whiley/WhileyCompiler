@@ -1,7 +1,7 @@
 type nat is (int x) where x >= 0
-type nlist is int | [nat]
+type nlist is int | nat[]
 
-function f(int i, [nlist] xs) -> nlist:
+function f(int i, nlist[] xs) -> nlist:
     if (i < 0) || (i >= |xs|):
         return 0
     else:

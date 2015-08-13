@@ -1,11 +1,11 @@
 
 
-type IntList is int | [int]
+type IntList is int | int[]
 
 method f(int y) -> int:
     return y
 
-method g([int] z) -> [int]:
+method g(int[] z) -> int[]:
     return z
 
 public export method test() -> void:

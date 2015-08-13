@@ -1,11 +1,11 @@
 
 
-function f([int] x) -> [int]
+function f(int[] x) -> int[]
 requires x[0] == 0:
     assert x[0] == 0
     return x
 
-function g([int] x) -> [int]
+function g(int[] x) -> int[]
 requires x[0] == 0:
     assert |x| > 0
     return x

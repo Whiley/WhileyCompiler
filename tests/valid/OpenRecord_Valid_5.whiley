@@ -2,7 +2,7 @@
 
 type Point is {int y, int x, ...}
 
-type VecPoint is [Point] | Point
+type VecPoint is Point[] | Point
 
 function sum(VecPoint vp) -> int:
     if vp is Point:

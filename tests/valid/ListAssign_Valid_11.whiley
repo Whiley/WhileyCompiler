@@ -1,6 +1,6 @@
 
 
-function f([int] a) -> [int]
+function f(int[] a) -> int[]
 // Input list cannot be empty
 requires |a| > 0:
     //
@@ -8,6 +8,6 @@ requires |a| > 0:
     return a
 
 public export method test() -> void:
-    [int] b = [1, 2, 3]
+    int[] b = [1, 2, 3]
     assume f(b) == [5,2,3]
 

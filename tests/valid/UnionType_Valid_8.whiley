@@ -1,8 +1,8 @@
 
 
-type msgType1 is {int op, [int] payload}
+type msgType1 is {int op, int[] payload}
 
-type msgType2 is {int op, [int] rest, int header}
+type msgType2 is {int op, int[] rest, int header}
 
 type msgType is msgType1 | msgType2
 

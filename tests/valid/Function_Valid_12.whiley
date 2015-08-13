@@ -5,10 +5,10 @@ type msg is {int op, int s}
 function f(msg m) -> int:
     return m.op + m.s
 
-function f([int] ls) -> [int]:
+function f(int[] ls) -> int[]:
     return ls
 
-function f([real] ls) -> [real]:
+function f(real[] ls) -> real[]:
     return ls
 
 public export method test() -> void:

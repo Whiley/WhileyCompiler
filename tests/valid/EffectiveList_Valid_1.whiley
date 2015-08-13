@@ -1,9 +1,7 @@
-
-
 type rec is {int y, int x}
 
-function f([int] xs) -> [bool | null]:
-    [bool|null] r = [false; |xs|]
+function f(int[] xs) -> [bool | null]:
+    (bool|null)[] r = [false; |xs|]
     int i = 0
     while i < |xs|
         where i >= 0
@@ -17,7 +15,7 @@ function f([int] xs) -> [bool | null]:
     return r
 
 public export method test() -> void:
-    [int] e = [0;0]
+    int[] e = [0;0]
     assume f(e) == [false;0]
     e = [1, 2, 3, 4]
     assume f(e) == [null,null,null,null]

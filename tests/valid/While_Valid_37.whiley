@@ -1,6 +1,6 @@
 
 
-function invertByte([bool] bits) -> ([bool] ret)
+function invertByte(bool[] bits) -> (bool[] ret)
 // Precondition: 8 bits in a byte
 requires |bits| == 8
 // Postcondition: return a byte as well
@@ -9,7 +9,7 @@ ensures |ret| == 8
 ensures all { i in 0 .. 8 | ret[i] == !bits[i] }:
     //
     int i = 0
-    [bool] ret = bits
+    bool[] ret = bits
     //
     while i < 8
     // i is non-negative, and size of bits unchanged

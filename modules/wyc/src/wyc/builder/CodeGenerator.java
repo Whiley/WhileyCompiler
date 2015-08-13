@@ -1647,11 +1647,11 @@ public final class CodeGenerator {
 			} else if (expression instanceof Expr.ConstantAccess) {
 				return generate((Expr.ConstantAccess) expression, environment,
 						codes, context);
-			} else if (expression instanceof Expr.List) {
-				return generate((Expr.List) expression, environment, codes,
+			} else if (expression instanceof Expr.ArrayInitialiser) {
+				return generate((Expr.ArrayInitialiser) expression, environment, codes,
 						context);
-			} else if (expression instanceof Expr.ListGenerator) {
-				return generate((Expr.ListGenerator) expression, environment, codes,
+			} else if (expression instanceof Expr.ArrayGenerator) {
+				return generate((Expr.ArrayGenerator) expression, environment, codes,
 						context);
 			} else if (expression instanceof Expr.BinOp) {
 				return generate((Expr.BinOp) expression, environment, codes,
@@ -2004,7 +2004,7 @@ public final class CodeGenerator {
 		}
 	}
 
-	private int generate(Expr.List expr, Environment environment,
+	private int generate(Expr.ArrayInitialiser expr, Environment environment,
 			AttributedCodeBlock codes, Context context) {
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
@@ -2013,7 +2013,7 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.ListGenerator expr, Environment environment, AttributedCodeBlock codes, Context context) {
+	private int generate(Expr.ArrayGenerator expr, Environment environment, AttributedCodeBlock codes, Context context) {
 		int element = generate(expr.element, environment, codes, context);
 		int count = generate(expr.count, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());

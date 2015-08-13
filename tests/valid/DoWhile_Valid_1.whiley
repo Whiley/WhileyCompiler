@@ -1,6 +1,6 @@
 
 
-method f([int] args) -> int
+method f(int[] args) -> int
 requires |args| >= 2:
     //
     int r = 0

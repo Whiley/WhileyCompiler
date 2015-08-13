@@ -1,6 +1,6 @@
 
 
-function f([int] x) -> int
+function f(int[] x) -> int
 requires |x| > 0:
     return x[0]
 

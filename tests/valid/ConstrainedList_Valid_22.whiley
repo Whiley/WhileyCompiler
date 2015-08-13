@@ -2,7 +2,7 @@
 
 type nat is (int x) where x >= 0
 
-function inc([nat] xs) -> [nat]:
+function inc(nat[] xs) -> nat[]:
     int i = 0
     int j = 0
     while j < |xs|  

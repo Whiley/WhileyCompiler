@@ -1,6 +1,6 @@
 
 
-type string is [int]
+type string is int[]
 
 constant PAWN is 0
 
@@ -70,11 +70,11 @@ constant D3 is {col: 3, row: 2}
 
 constant H1 is {col: 8, row: 1}
 
-function append([int] xs, [int] ys) -> ([int] zs)
+function append(int[] xs, int[] ys) -> (int[] zs)
 ensures |zs| == |xs| + |ys|:
     //    
     int count = |xs| + |ys|
-    [int] rs = [0; count]
+    int[] rs = [0; count]
     //
     int i = 0
     while i < |xs| where i >= 0:

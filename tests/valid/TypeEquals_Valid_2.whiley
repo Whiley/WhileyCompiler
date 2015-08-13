@@ -1,9 +1,9 @@
 
 
-type expr is {int op, expr lhs} | {[int] err}
+type expr is {int op, expr lhs} | {int[] err}
 
 function f(expr e) -> int:
-    if e is {[int] err}:
+    if e is {int[] err}:
         return |e.err|
     else:
         return -1

@@ -358,24 +358,24 @@ public interface Expr extends SyntacticElement {
 	}
 
 	/**
-	 * Represents a list constructor expression, which is of the form:
+	 * Represents an array initialiser expression, which is of the form:
 	 *
 	 * <pre>
-	 * ListExpression ::= '[' [ Expression (',' Expression)* ] ']'
+	 * ArrayInitialiser ::= '[' [ Expression (',' Expression)+ ] ']'
 	 * </pre>
 	 *
 	 * @return
 	 */
-	public static class List extends SyntacticElement.Impl implements Expr {
+	public static class ArrayInitialiser extends SyntacticElement.Impl implements Expr {
 		public final ArrayList<Expr> arguments;
 		public Nominal.List type;
 
-		public List(Collection<Expr> arguments, Attribute... attributes) {
+		public ArrayInitialiser(Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
 			this.arguments = new ArrayList<Expr>(arguments);
 		}
 
-		public List(Attribute attribute, Expr... arguments) {
+		public ArrayInitialiser(Attribute attribute, Expr... arguments) {
 			super(attribute);
 			this.arguments = new ArrayList<Expr>();
 			for(Expr a : arguments) {
@@ -389,20 +389,20 @@ public interface Expr extends SyntacticElement {
 	}
 	
 	/**
-	 * Represents a list generator expression, which is of the form:
+	 * Represents an array generator expression, which is of the form:
 	 *
 	 * <pre>
-	 * ListExpression ::= '[' Expression ';' Expression ']'
+	 * ArrayGenerator ::= '[' Expression ';' Expression ']'
 	 * </pre>
 	 *
 	 * @return
 	 */
-	public static class ListGenerator extends SyntacticElement.Impl implements Expr {
+	public static class ArrayGenerator extends SyntacticElement.Impl implements Expr {
 		public Expr element;
 		public Expr count;
 		public Nominal.List type;
 
-		public ListGenerator(Expr element, Expr count, Attribute... attributes) {
+		public ArrayGenerator(Expr element, Expr count, Attribute... attributes) {
 			super(attributes);
 			this.element = element;
 			this.count = count;

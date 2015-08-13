@@ -7,7 +7,7 @@ type item is (int d) where (0 <= d) && (d < 7)
 function inc(item i) -> item:
     return (i + 1) % 7
 
-method get(item day, int count) -> [int]:
+method get(item day, int count) -> int[]:
     if count > 0:
         return get(inc(day), count - 1)
     else:

@@ -342,8 +342,8 @@ public class WhileyFilePrinter {
 			print ((Expr.AbstractVariable) expression);
 		} else if (expression instanceof Expr.ConstantAccess) {
 			print ((Expr.ConstantAccess) expression);
-		} else if (expression instanceof Expr.List) {
-			print ((Expr.List) expression);
+		} else if (expression instanceof Expr.ArrayInitialiser) {
+			print ((Expr.ArrayInitialiser) expression);
 		} else if (expression instanceof Expr.BinOp) {
 			print ((Expr.BinOp) expression);
 		} else if (expression instanceof Expr.LengthOf) {
@@ -402,7 +402,7 @@ public class WhileyFilePrinter {
 		}
 	}
 
-	public void print(Expr.List e) {
+	public void print(Expr.ArrayInitialiser e) {
 		out.print("[");
 		boolean firstTime = true;
 		for(Expr i : e.arguments) {
@@ -716,9 +716,9 @@ public class WhileyFilePrinter {
 				firstTime=false;
 				out.print(name);
 			}
-		} else if(t instanceof SyntacticType.List) {
+		} else if(t instanceof SyntacticType.Array) {
 			out.print("[");
-			print(((SyntacticType.List)t).element);
+			print(((SyntacticType.Array)t).element);
 			out.print("]");
 		} else if(t instanceof SyntacticType.Tuple) {
 			SyntacticType.Tuple tt = (SyntacticType.Tuple) t;

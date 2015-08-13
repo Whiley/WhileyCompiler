@@ -1,4 +1,4 @@
-function f() -> [bool,bool]:
+function f() -> (bool,bool)[]:
     return [(false,false); 2]
 
 public export method test():

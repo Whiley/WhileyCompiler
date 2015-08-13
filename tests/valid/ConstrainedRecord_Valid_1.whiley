@@ -8,9 +8,9 @@ type unitCode is (int x) where x == NOP || x == RET
 
 type UNIT is {unitCode op}
 
-function f(UNIT x) -> [int]:
+function f(UNIT x) -> int[]:
     return [x.op]
 
 public export method test() -> void:
-    [int] bytes = f({op: NOP})
+    int[] bytes = f({op: NOP})
     assume bytes == [NOP]

@@ -1,8 +1,8 @@
 
 
-function reverse([int] ls) -> [int]:
+function reverse(int[] ls) -> int[]:
     int i = |ls|
-    [int] r = [0; |ls|]
+    int[] r = [0; |ls|]
     while i > 0 where i <= |ls| && |r| == |ls|:
         int item = ls[|ls|-i]
         i = i - 1
@@ -10,5 +10,5 @@ function reverse([int] ls) -> [int]:
     return r
 
 public export method test() -> void:
-    [int] rs = reverse([1, 2, 3, 4, 5])
+    int[] rs = reverse([1, 2, 3, 4, 5])
     assume rs == [5,4,3,2,1]

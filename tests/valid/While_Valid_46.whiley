@@ -1,6 +1,6 @@
 
 
-function indexOf([int] items, int item) -> (int r)
+function indexOf(int[] items, int item) -> (int r)
 ensures r == |items| || items[r] == item:
     //
     int i = 0

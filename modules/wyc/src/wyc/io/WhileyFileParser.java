@@ -2663,7 +2663,7 @@ public class WhileyFileParser {
 			exprs.add(parseUnitExpression(wf, environment, true));
 		} while (eventuallyMatch(RightSquare) == null);
 
-		return new Expr.List(exprs, sourceAttr(start, index - 1));
+		return new Expr.ArrayInitialiser(exprs, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -2703,7 +2703,7 @@ public class WhileyFileParser {
 		match(SemiColon);
 		Expr count = parseUnitExpression(wf, environment, true);
 		match(RightSquare);
-		return new Expr.ListGenerator(element,count,sourceAttr(start, index - 1));
+		return new Expr.ArrayGenerator(element,count,sourceAttr(start, index - 1));
 	}
 	
 	/**
@@ -3370,8 +3370,8 @@ public class WhileyFileParser {
 				result |= mustParseAsType(element);
 			}
 			return result;
-		} else if (type instanceof SyntacticType.List) {
-			SyntacticType.List tt = (SyntacticType.List) type;
+		} else if (type instanceof SyntacticType.Array) {
+			SyntacticType.Array tt = (SyntacticType.Array) type;
 			return mustParseAsType(tt.element);
 		} else if (type instanceof SyntacticType.Negation) {
 			SyntacticType.Negation tt = (SyntacticType.Negation) type;
@@ -3461,7 +3461,7 @@ public class WhileyFileParser {
 			return true;
 		} else if(e instanceof Expr.LengthOf) {
 			return true;
-		} else if(e instanceof Expr.List) {
+		} else if(e instanceof Expr.ArrayInitialiser) {
 			return true;
 		} else if(e instanceof Expr.New) {
 			return true;
@@ -3934,7 +3934,7 @@ public class WhileyFileParser {
 	 */
 	private SyntacticType parseIntersectionType() {
 		int start = index;
-		SyntacticType t = parseBaseType();
+		SyntacticType t = parseArrayType();
 
 		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(true, Ampersand) != null) {
@@ -3942,7 +3942,7 @@ public class WhileyFileParser {
 			ArrayList types = new ArrayList<SyntacticType>();
 			types.add(t);
 			do {
-				types.add(parseBaseType());
+				types.add(parseArrayType());
 			} while (tryAndMatch(true, Ampersand) != null);
 			return new SyntacticType.Intersection(types, sourceAttr(start,
 					index - 1));
@@ -3951,6 +3951,27 @@ public class WhileyFileParser {
 		}
 	}
 
+	/**
+	 * Parse an array type, which is of the form:
+	 *
+	 * <pre>
+	 * ArrayType ::= Type '[' ']'
+	 * </pre>
+	 *
+	 * @return
+	 */
+	private SyntacticType parseArrayType() {
+		int start = index;
+		SyntacticType element = parseBaseType();
+		
+		while (tryAndMatch(true, LeftSquare) != null) {
+			match(RightSquare);
+			element = new SyntacticType.Array(element, sourceAttr(start, index - 1));
+		}
+		
+		return element;
+	}
+	
 	private SyntacticType parseBaseType() {
 		checkNotEof();
 		int start = index;
@@ -3976,8 +3997,6 @@ public class WhileyFileParser {
 			return parseBracketedType();
 		case LeftCurly:
 			return parseRecordType();
-		case LeftSquare:
-			return parseArrayType();
 		case Shreak:
 			return parseNegationType();
 		case Ampersand:
@@ -4044,24 +4063,6 @@ public class WhileyFileParser {
 		match(RightBrace);
 		return type;
 	}
-
-	/**
-	 * Parse an array type, which is of the form:
-	 *
-	 * <pre>
-	 * ArrayType ::= '[' Type ']'
-	 * </pre>
-	 *
-	 * @return
-	 */
-	private SyntacticType parseArrayType() {
-		int start = index;
-		match(LeftSquare);
-		SyntacticType element = parseType();
-		match(RightSquare);
-		return new SyntacticType.List(element, sourceAttr(start, index - 1));
-	}
-	
 
 	/**
 	 * Parse a set, map or record type, which are of the form:

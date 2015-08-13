@@ -1,9 +1,9 @@
 
 
-type string is [int]
+type string is int[]
 type Attribute is {string name, ...}
 
-type CodeAttr is {int maxLocals, int maxStack, string name, [byte] data}
+type CodeAttr is {int maxLocals, int maxStack, string name, byte[] data}
 
 function match(Attribute attr) -> bool:
     if attr is CodeAttr:

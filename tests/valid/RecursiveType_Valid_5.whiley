@@ -1,6 +1,6 @@
 
 
-type Link is null | {[int] items, Link next}
+type Link is null | {int[] items, Link next}
 
 method create(int n) -> Link:
     Link start = null

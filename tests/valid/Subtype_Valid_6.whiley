@@ -1,10 +1,8 @@
-
-
 type sr9nat is int
 
 type sr9tup is {sr9nat f, int g}
 
-type sr9arr is [{sr9nat f, int g}]
+type sr9arr is {sr9nat f, int g}[]
 
 public export method test() -> void:
     sr9arr x = [{f: 1, g: 2}, {f: 1, g: 8}]

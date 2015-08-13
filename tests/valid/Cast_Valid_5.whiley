@@ -2,7 +2,7 @@ type u8 is (int n) where 0 <= n && n <= 255
 
 constant bases is [1,2,4,8,16,32,64,128]
 
-public function bases() -> ([int] r)
+public function bases() -> (int[] r)
 ensures |bases| == |r|
 ensures all { i in 0 .. |r| | bases[i] == r[i] }
 ensures all { i in 1 .. |r| | 2 * r[i-1] == r[i] }:

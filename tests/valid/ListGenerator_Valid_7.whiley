@@ -1,4 +1,4 @@
-function f() -> ([int] ys):
+function f() -> (int[] ys):
     return [0; 4]
 
 public export method test():

@@ -1,9 +1,7 @@
-
-
-type Link is null | [Link]
+type Link is null | Link[]
 
 function maxDepth(Link links) -> int:
-    if links is [Link]:
+    if links is Link[]:
         int r = 0
         int i = 0
         while i < |links|:

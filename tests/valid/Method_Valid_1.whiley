@@ -4,7 +4,7 @@ constant CIRCLE is 2
 
 type Piece is (int x) where x == BLANK || x == CROSS || x == CIRCLE
 
-type Board is ([Piece] pieces) where |pieces| == 9
+type Board is (Piece[] pieces) where |pieces| == 9
 
 function EmptyBoard() -> Board:
     return [BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK]

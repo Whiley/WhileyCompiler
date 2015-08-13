@@ -1,7 +1,7 @@
 
 
 
-function toInt([int] ls) -> int:
+function toInt(int[] ls) -> int:
     int r = 0
     int i = 0
     while i < |ls| where i >= 0:
@@ -10,5 +10,5 @@ function toInt([int] ls) -> int:
     return r
 
 public export method test() -> void:
-    [int] ls = [1, 2, 3, 4]
+    int[] ls = [1, 2, 3, 4]
     assume toInt(ls) == 10

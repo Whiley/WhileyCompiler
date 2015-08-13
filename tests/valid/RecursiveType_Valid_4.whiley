@@ -1,17 +1,17 @@
 
 
-type Expr is int | real | [Expr] | ListAccess
+type Expr is int | real | Expr[] | ListAccess
 
 type ListAccess is {Expr index, Expr src}
 
-type Value is int | real | [Value]
+type Value is int | real | Value[]
 
 function evaluate(Expr e) -> null | Value:
     if (e is real) || (e is int):
         return e
     else:
-        if e is [Expr]:
-            [Value] r = []
+        if e is Expr[]:
+            Value[] r = []
             for i in e:
                 null|Value v = evaluate(i)
                 if v is null:
@@ -22,7 +22,7 @@ function evaluate(Expr e) -> null | Value:
         else:
             null|Value src = evaluate(e.src)
             null|Value index = evaluate(e.index)
-            if src is [Expr] && index is int && index >= 0 && index < |src|:
+            if src is Expr[] && index is int && index >= 0 && index < |src|:
                 return src[index]
             else:
                 return null

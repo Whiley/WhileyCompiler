@@ -1,6 +1,6 @@
 
 
-function f([int] xs) -> (int result)
+function f(int[] xs) -> (int result)
 // Input list cannot be empty
 requires |xs| > 0
 // Return must match some element from input list

@@ -1,9 +1,9 @@
 
 
-type T is [int] | int
+type T is int[] | int
 
 function f(T x) -> int:
-    if x is [int]:
+    if x is int[]:
         return |x|
     else:
         return x

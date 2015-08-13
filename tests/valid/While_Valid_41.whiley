@@ -1,8 +1,8 @@
 
 
-function zeroOut([int] items) -> [int]:
+function zeroOut(int[] items) -> int[]:
     int i = 0
-    [int] oitems = items
+    int[] oitems = items
     //
     while i < |items|
     //

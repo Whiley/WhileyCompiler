@@ -1,45 +1,25 @@
-
-
 constant PAWN is 0
-
 constant KNIGHT is 1
-
 constant BISHOP is 2
-
 constant ROOK is 3
-
 constant QUEEN is 4
-
 constant KING is 5
-
 constant PIECE_CHARS is ['P', 'N', 'B', 'R', 'Q', 'K']
 
 type PieceKind is (int x) where PAWN <= x && x <= KING
-
 type Piece is {bool colour, PieceKind kind}
 
 constant WHITE_PAWN is {colour: true, kind: PAWN}
-
 constant WHITE_KNIGHT is {colour: true, kind: KNIGHT}
-
 constant WHITE_BISHOP is {colour: true, kind: BISHOP}
-
 constant WHITE_ROOK is {colour: true, kind: ROOK}
-
 constant WHITE_QUEEN is {colour: true, kind: QUEEN}
-
 constant WHITE_KING is {colour: true, kind: KING}
-
 constant BLACK_PAWN is {colour: false, kind: PAWN}
-
 constant BLACK_KNIGHT is {colour: false, kind: KNIGHT}
-
 constant BLACK_BISHOP is {colour: false, kind: BISHOP}
-
 constant BLACK_ROOK is {colour: false, kind: ROOK}
-
 constant BLACK_QUEEN is {colour: false, kind: QUEEN}
-
 constant BLACK_KING is {colour: false, kind: KING}
 
 type RowCol is (int x) where x >= 0
@@ -48,7 +28,7 @@ type Pos is {RowCol col, RowCol row}
 
 type Square is Piece | null
 
-type Row is [Square]
+type Row is Square[]
 
 type Board is {bool blackCastleKingSide, bool whiteCastleQueenSide, bool blackCastleQueenSide, [Row] rows, bool whiteCastleKingSide}
 
@@ -81,11 +61,8 @@ function clearRowExcept(Pos from, Pos to, Board board) -> bool:
     return true
 
 constant A1 is {col: 1, row: 1}
-
 constant H1 is {col: 8, row: 1}
-
 constant A3 is {col: 1, row: 3}
-
 constant D3 is {col: 4, row: 3}
 
 public export method test() -> void:

@@ -2,7 +2,7 @@
 
 type point is {int y, int x}
 
-type listint is [int]
+type listint is int[]
 
 public export method test() -> void:
     listint li = [1, 2, 3]

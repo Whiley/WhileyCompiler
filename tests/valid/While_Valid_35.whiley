@@ -1,6 +1,6 @@
 
 
-function lastIndexOf([int] xs, int x) -> (int|null r)
+function lastIndexOf(int[] xs, int x) -> (int|null r)
 ensures r is int ==> xs[r] == x:
     //
     int i = 0
@@ -20,7 +20,7 @@ ensures r is int ==> xs[r] == x:
         return last
 
 public export method test():
-    [int] list = [1,2,1,3,1,2]
+    int[] list = [1,2,1,3,1,2]
     assume lastIndexOf(list,0) == null
     assume lastIndexOf(list,1) == 4
     assume lastIndexOf(list,2) == 5

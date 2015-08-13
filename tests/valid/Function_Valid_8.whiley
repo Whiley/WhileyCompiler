@@ -9,10 +9,10 @@ function g([fr6nat] xs) -> [fr6nat]:
         i = i + 1
     return ys
 
-function f([int] x) -> [int]:
+function f(int[] x) -> int[]:
     return x
 
 public export method test() -> void:
-    [int] ys = [1, 2, 3]
+    int[] ys = [1, 2, 3]
     assume f(g(ys)) == [0, 2, 3]
 

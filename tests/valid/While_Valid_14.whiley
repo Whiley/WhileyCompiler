@@ -1,6 +1,6 @@
 
 
-function extract([int] ls) -> (int r)
+function extract(int[] ls) -> (int r)
 ensures r >= |ls|:
     //
     int i = 0

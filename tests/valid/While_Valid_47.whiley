@@ -1,4 +1,4 @@
-function sum([int] xs) -> (int r)
+function sum(int[] xs) -> (int r)
 // All elements of parameter xs are greater-or-equal to zero
 requires all { i in 0..|xs| | xs[i] >= 0 }
 // Return value must be greater-or-equal to zero

@@ -1,4 +1,4 @@
-function f() -> ([real] ys):
+function f() -> (real[] ys):
     return [1.0; 2]
 
 public export method test():

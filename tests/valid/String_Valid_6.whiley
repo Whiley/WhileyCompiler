@@ -1,9 +1,9 @@
 
-function append([int] xs, [int] ys) -> ([int] zs)
+function append(int[] xs, int[] ys) -> (int[] zs)
 ensures |zs| == |xs| + |ys|:
     //    
     int count = |xs| + |ys|
-    [int] rs = [0; count]
+    int[] rs = [0; count]
     //
     int i = 0
     while i < |xs|

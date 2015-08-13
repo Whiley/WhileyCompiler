@@ -1,6 +1,6 @@
 
 
-function f([bool] x) -> [bool]
+function f(bool[] x) -> bool[]
 requires (|x| > 0) && x[0]:
     return x
 
