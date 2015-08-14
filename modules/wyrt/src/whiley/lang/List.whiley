@@ -26,8 +26,8 @@
 package whiley.lang
 
 // Increase up to a given size
-public function enlarge([int] list, int size, int element) -> [int]:
-    [int] nlist = [0; size]
+public function enlarge(int[] list, int size, int element) -> int[]:
+    int[] nlist = [0; size]
     int i = 0
     while i < size where i >= 0:
         nlist[i] = list[i]
@@ -36,7 +36,7 @@ public function enlarge([int] list, int size, int element) -> [int]:
 
 // find first index in list which matches character.  If no match,
 // then return null.
-public function indexOf([int] items, int c) -> int|null:
+public function indexOf(int[] items, int c) -> int|null:
     int i = 0
     while i < |items|:
         if items[i] == c:
@@ -44,7 +44,7 @@ public function indexOf([int] items, int c) -> int|null:
         i = i + 1
     return null
 
-public function indexOf([int] items, int c, int start) -> int|null:
+public function indexOf(int[] items, int c, int start) -> int|null:
     //
     int i = start
     while i < |items|:
@@ -55,7 +55,7 @@ public function indexOf([int] items, int c, int start) -> int|null:
 
 // find last index in list which matches character.  If no match,
 // then return null.
-public function lastIndexOf([int] items, int c) -> int|null:
+public function lastIndexOf(int[] items, int c) -> int|null:
     //
     int i = |items|
     while i > 0:
@@ -65,7 +65,7 @@ public function lastIndexOf([int] items, int c) -> int|null:
     return null
 
 // replace all occurrences of "old" with "new" in list "items".
-public function replace([int] items, int old, int n) -> [int]:
+public function replace(int[] items, int old, int n) -> int[]:
     //
     int i = 0
     while i < |items|:
