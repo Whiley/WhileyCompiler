@@ -1,4 +1,4 @@
-function sum([int] ls) -> int:
+function sum(int[] ls) -> int:
     int i = 0
     int r = 0
     //

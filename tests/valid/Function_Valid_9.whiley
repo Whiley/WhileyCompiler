@@ -1,7 +1,7 @@
-type fr6nat is int
+type nat is int
 
-function g([fr6nat] xs) -> [fr6nat]:
-    [fr6nat] ys = [0; |xs|]
+function g(nat[] xs) -> nat[]:
+    nat[] ys = [0; |xs|]
     int i = 0
     while i < |xs|
         where i >= 0

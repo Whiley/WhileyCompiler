@@ -1,5 +1,3 @@
-
-
 constant Short is 3
 constant Int is 4
 
@@ -20,7 +18,7 @@ type Bytecode is Unit | FieldIndex
 
 type Attribute is {string name, ...}
 
-type CodeAttribute is {string name, [Bytecode] data}
+type CodeAttribute is {string name, Bytecode[] data}
 
 function codeLength(Attribute a) -> null | int:
     if a is CodeAttribute:

@@ -1,5 +1,5 @@
 
-function f([int] xs) -> bool
+function f(int[] xs) -> bool
 requires |xs| > 0:
     return true
 

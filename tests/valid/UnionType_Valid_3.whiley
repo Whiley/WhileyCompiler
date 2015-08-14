@@ -1,8 +1,6 @@
-
-
 type TYPE is null | int
 
-function f([TYPE] xs, TYPE p) -> int:
+function f(TYPE[] xs, TYPE p) -> int:
     int i = 0
     while i < |xs| where i >= 0:
         if xs[i] == p:

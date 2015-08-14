@@ -186,8 +186,8 @@ public class TypeExpander {
 		
 		states.add(null); // reserve space for me!
 		
-		if (type instanceof Type.List) {			
-			Type.List tt = (Type.List) type;
+		if (type instanceof Type.Array) {			
+			Type.Array tt = (Type.Array) type;
 			myChildren = new int[1];
 			myChildren[0] = getTypeHelper(tt.element(),maximallyConsumed,states,roots);
 			myKind = Type.K_LIST;			

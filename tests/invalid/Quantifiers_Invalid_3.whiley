@@ -1,4 +1,4 @@
-function f([int] ls) -> bool
+function f(int[] ls) -> bool
 requires no { i in 0..5 | (i >= 0) && (i < |ls|) && (ls[i] < 0) }:
     return true
 

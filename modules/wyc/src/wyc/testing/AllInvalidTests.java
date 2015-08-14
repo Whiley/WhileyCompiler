@@ -284,12 +284,12 @@ public class AllInvalidTests {
 		runTest("ConstrainedInt_Invalid_6");
 	}
 
-	@Test
+	@Ignore("timeout") @Test
 	public void ConstrainedInt_Invalid_7() {
 		runTest("ConstrainedInt_Invalid_7");
 	}
 
-	@Test
+	@Ignore("timeout") @Test
 	public void ConstrainedInt_Invalid_8() {
 		runTest("ConstrainedInt_Invalid_8");
 	}
@@ -319,7 +319,7 @@ public class AllInvalidTests {
 		runTest("ConstrainedTuple_Invalid_1");
 	}
 
-	@Test
+	@Ignore("#425") @Test
 	public void Contractive_Invalid_1() {
 		runTest("Contractive_Invalid_1");
 	}
@@ -1135,7 +1135,7 @@ public class AllInvalidTests {
 		runTest("UnionType_Invalid_1");
 	}
 
-	@Test
+	@Ignore("#469") @Test
 	public void UnionType_Invalid_10() {
 		runTest("UnionType_Invalid_10");
 	}

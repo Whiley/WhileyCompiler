@@ -471,8 +471,8 @@ public class Interpreter {
 			return convert(value, (Type.Real) to, context);
 		} else if (to instanceof Type.Record) {
 			return convert(value, (Type.Record) to, context);
-		} else if (to instanceof Type.List) {
-			return convert(value, (Type.List) to, context);
+		} else if (to instanceof Type.Array) {
+			return convert(value, (Type.Array) to, context);
 		} else if (to instanceof Type.Tuple) {
 			return convert(value, (Type.Tuple) to, context);
 		} else if (to instanceof Type.Union) {
@@ -542,7 +542,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Constant convert(Constant value, Type.List to, Context context) {
+	private Constant convert(Constant value, Type.Array to, Context context) {
 		checkType(value, context, Constant.List.class);
 		Constant.List lv = (Constant.List) value;
 		ArrayList<Constant> values = new ArrayList<Constant>(lv.values);
@@ -818,10 +818,10 @@ public class Interpreter {
 				return isMemberOfType(obj.value, rt.element(), context);
 			}
 			return false;
-		} else if (type instanceof Type.List) {
+		} else if (type instanceof Type.Array) {
 			if (value instanceof Constant.List) {
 				Constant.List t = (Constant.List) value;
-				Type element = ((Type.List) type).element();
+				Type element = ((Type.Array) type).element();
 				boolean r = true;
 				for (Constant val : t.values) {
 					r &= isMemberOfType(val, element, context);

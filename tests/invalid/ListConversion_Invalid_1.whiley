@@ -1,4 +1,4 @@
-function f([real] ls) -> int:
+function f(real[] ls) -> int:
     return 0
 
 method main():

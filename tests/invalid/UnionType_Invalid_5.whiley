@@ -1,4 +1,4 @@
-type IntList is {int op, [real] rest} | {[int] op, int mode}
+type IntList is {int op, real[] rest} | {int[] op, int mode}
 
 function f(IntList x) -> IntList:
     return x

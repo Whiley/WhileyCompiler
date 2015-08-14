@@ -1,0 +1,3 @@
+../../tests/invalid/ListGenerator_Invalid_4.whiley:0: operand types are not compatible (real vs int)
+
+^

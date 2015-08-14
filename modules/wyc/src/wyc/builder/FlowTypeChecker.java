@@ -627,7 +627,7 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.Debug stmt, Environment environment) {
 		stmt.expr = propagate(stmt.expr, environment, current);
-		checkIsSubtype(Type.List(Type.T_INT,false), stmt.expr);
+		checkIsSubtype(Type.Array(Type.T_INT,false), stmt.expr);
 		return environment;
 	}
 
@@ -1642,7 +1642,7 @@ public class FlowTypeChecker {
 		case RANGE:
 			checkIsSubtype(Type.T_INT, lhs, context);
 			checkIsSubtype(Type.T_INT, rhs, context);
-			srcType = Type.List(Type.T_INT, false);
+			srcType = Type.Array(Type.T_INT, false);
 			break;
 		case REM:
 			checkIsSubtype(Type.T_INT, lhs, context);
@@ -3393,7 +3393,7 @@ public class FlowTypeChecker {
 			}
 			return evaluate(bop, (Constant.Decimal) v1, (Constant.Decimal) v2,
 					context);
-		} else if (Type.isSubtype(Type.T_LIST_ANY, lub)) {
+		} else if (Type.isSubtype(Type.T_ARRAY_ANY, lub)) {
 			return evaluate(bop, (Constant.List) v1, (Constant.List) v2,
 					context);
 		} 
@@ -3469,9 +3469,9 @@ public class FlowTypeChecker {
 	public Nominal.List expandAsEffectiveList(Nominal lhs)
 			throws IOException, ResolveError {
 		Type raw = lhs.raw();
-		if (raw instanceof Type.EffectiveList) {
+		if (raw instanceof Type.EffectiveArray) {
 			Type nominal = expandOneLevel(lhs.nominal());
-			if (!(nominal instanceof Type.EffectiveList)) {
+			if (!(nominal instanceof Type.EffectiveArray)) {
 				nominal = raw; // discard nominal information
 			}
 			return (Nominal.List) Nominal.construct(nominal, raw);
@@ -3572,7 +3572,7 @@ public class FlowTypeChecker {
 			}
 			return expandOneLevel(r);
 		} else if (type instanceof Type.Leaf || type instanceof Type.Reference
-				|| type instanceof Type.Tuple || type instanceof Type.List
+				|| type instanceof Type.Tuple || type instanceof Type.Array
 				|| type instanceof Type.Record
 				|| type instanceof Type.FunctionOrMethod
 				|| type instanceof Type.Negation) {

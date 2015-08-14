@@ -2,21 +2,13 @@ type i16 is (int x) where -32768 <= x && x <= 32767
 type string is int[]
 
 constant T_VOID is 3
-
 constant T_BOOLEAN is 4
-
 constant T_CHAR is 5
-
 constant T_FLOAT is 6
-
 constant T_DOUBLE is 7
-
 constant T_BYTE is 8
-
 constant T_SHORT is 9
-
 constant T_INT is 10
-
 constant T_LONG is 11
 
 type primitive_t is (int x) where T_BOOLEAN <= x && x <= T_LONG
@@ -26,23 +18,14 @@ type array_t is {jvm_t element}
 type class_t is {string[] classes, string pkg}
 
 type ref_t is array_t | class_t
-
-type fun_t is {jvm_t ret, [jvm_t] params}
-
+type fun_t is {jvm_t ret, jvm_t[] params}
 type jvm_t is primitive_t | ref_t
-
 type Unit is {int op, int offset}
-
 type Branch is {int op, i16 off, int offset}
-
 type VarIndex is {int index, int op, int offset}
-
 type MethodIndex is {int op, string name, class_t owner, int offset, fun_t type}
-
 type FieldIndex is {int op, string name, class_t owner, int offset, jvm_t type}
-
 type ConstIndex is {int index, int op, int offset}
-
 type Bytecode is Unit | VarIndex | Branch | MethodIndex | FieldIndex | ConstIndex
 
 function Unit(int offset, int op) -> Unit:

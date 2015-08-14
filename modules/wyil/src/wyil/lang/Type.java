@@ -89,7 +89,7 @@ public abstract class Type {
 	/**
 	 * The type representing all possible list types.
 	 */
-	public static final List T_LIST_ANY = List(T_ANY,false);
+	public static final Array T_ARRAY_ANY = Array(T_ANY,false);
 
 	/**
 	 * Construct a tuple type using the given element types.
@@ -147,8 +147,8 @@ public abstract class Type {
 	 *
 	 * @param element
 	 */
-	public static final Type.List List(Type element, boolean nonEmpty) {
-		return (Type.List) construct(K_LIST, nonEmpty, element);
+	public static final Type.Array Array(Type element, boolean nonEmpty) {
+		return (Type.Array) construct(K_LIST, nonEmpty, element);
 	}
 
 	/**
@@ -908,11 +908,11 @@ public abstract class Type {
 	 *
 	 * @return
 	 */
-	public interface EffectiveList {
+	public interface EffectiveArray {
 
 		public Type element();
 
-		public EffectiveList update(Type key, Type Value);
+		public EffectiveArray update(Type key, Type Value);
 	}
 
 	/**
@@ -923,8 +923,8 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class List extends Compound implements EffectiveList {
-		private List(Automaton automaton) {
+	public static final class Array extends Compound implements EffectiveArray {
+		private Array(Automaton automaton) {
 			super(automaton);
 		}
 
@@ -945,8 +945,8 @@ public abstract class Type {
 			return (Boolean) automaton.states[0].data;
 		}
 
-		public EffectiveList update(Type key, Type value) {
-			return Type.List(Type.Union(value, element()), nonEmpty());
+		public EffectiveArray update(Type key, Type value) {
+			return Type.Array(Type.Union(value, element()), nonEmpty());
 		}
 	}
 
@@ -1110,9 +1110,9 @@ public abstract class Type {
 		}
 	}
 
-	public static final class UnionOfLists extends Union implements
-			EffectiveList {
-		private UnionOfLists(Automaton automaton) {
+	public static final class UnionOfArrays extends Union implements
+			EffectiveArray {
+		private UnionOfArrays(Automaton automaton) {
 			super(automaton);
 		}
 
@@ -1126,8 +1126,8 @@ public abstract class Type {
 
 		public Type element() {
 			Type r = null;
-			HashSet<Type.List> bounds = (HashSet) bounds();
-			for(Type.List bound : bounds) {
+			HashSet<Type.Array> bounds = (HashSet) bounds();
+			for(Type.Array bound : bounds) {
 				Type t = bound.element();
 				if(r == null || t == null) {
 					r = t;
@@ -1138,10 +1138,10 @@ public abstract class Type {
 			return r;
 		}
 
-		public EffectiveList update(Type key, Type type) {
+		public EffectiveArray update(Type key, Type type) {
 			HashSet<Type> nbounds = new HashSet<Type>();
-			HashSet<Type.List> bounds = (HashSet) bounds();
-			for(Type.List bound : bounds) {
+			HashSet<Type.Array> bounds = (HashSet) bounds();
+			for(Type.Array bound : bounds) {
 				nbounds.add((Type) bound.update(key,type));
 			}
 
@@ -1152,7 +1152,7 @@ public abstract class Type {
 			//
 			// assigning type any into this yields [any]
 
-			return (EffectiveList) Type.Union(nbounds);
+			return (EffectiveArray) Type.Union(nbounds);
 		}
 	}
 
@@ -1438,14 +1438,8 @@ public abstract class Type {
 			break;
 		}
 		case K_LIST: {
-			boolean nonEmpty = (Boolean) state.data;
-			if(nonEmpty) {
-				middle = "[" + toString(state.children[0], visited, headers, automaton)
-						+ "+]";
-			} else {
-				middle = "[" + toString(state.children[0], visited, headers, automaton)
-						+ "]";
-			}
+			middle = toString(state.children[0], visited, headers, automaton)
+					+ "[]";
 			break;
 		}
 		case K_NOMINAL:
@@ -1706,7 +1700,7 @@ public abstract class Type {
 			type = new Tuple(automaton);
 			break;
 		case K_LIST:
-			type = new List(automaton);
+			type = new Array(automaton);
 			break;
 		case K_REFERENCE:
 			type = new Reference(automaton);
@@ -1721,14 +1715,14 @@ public abstract class Type {
 			Type.Union union = new Union(automaton);
 			for(Type bound : union.bounds()) {
 				boolean isSet = bound instanceof Set;
-				boolean isList = bound instanceof List;
+				boolean isList = bound instanceof Array;
 				boolean isMap = bound instanceof Map;
 				allRecords &= bound instanceof Record;
 				allLists &= isList;
 				allTuples &= bound instanceof Tuple;
 			}
 			if(allLists) {
-				type = new UnionOfLists(automaton);
+				type = new UnionOfArrays(automaton);
 			} else if(allTuples) {
 				type = new UnionOfTuples(automaton);
 			} else if(allRecords) {

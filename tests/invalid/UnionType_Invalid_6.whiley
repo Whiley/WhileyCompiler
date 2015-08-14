@@ -1,4 +1,4 @@
-type IntList is {int | [int] op}
+type IntList is {int | int[] op}
 
 function f({int op} x) -> int:
     return x.op
