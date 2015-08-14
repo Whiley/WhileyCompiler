@@ -632,7 +632,7 @@ public class WhileyFileParser {
 
 		int start = index;
 		TypePattern pattern = parsePossibleTypePattern(environment, false);
-		if (pattern != null) {
+		if (pattern != null) {			
 			// Must be a variable declaration here.
 			return parseVariableDeclaration(start, pattern, wf, environment);
 		} else {
@@ -3340,7 +3340,6 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private boolean mustParseAsType(SyntacticType type) {
-
 		if (type instanceof SyntacticType.Primitive) {
 			// All primitive types must be parsed as types, since their
 			// identifiers are keywords.
@@ -3370,9 +3369,8 @@ public class WhileyFileParser {
 				result |= mustParseAsType(element);
 			}
 			return result;
-		} else if (type instanceof SyntacticType.Array) {
-			SyntacticType.Array tt = (SyntacticType.Array) type;
-			return mustParseAsType(tt.element);
+		} else if (type instanceof SyntacticType.Array) {			
+			return true;
 		} else if (type instanceof SyntacticType.Negation) {
 			SyntacticType.Negation tt = (SyntacticType.Negation) type;
 			return mustParseAsType(tt.element);
@@ -3711,7 +3709,7 @@ public class WhileyFileParser {
 	public TypePattern parseIntersectionTypePattern(
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		TypePattern t = parseRationalTypePattern(environment, terminated);
+		TypePattern t = parseArrayTypePattern(environment, terminated);
 
 		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(terminated, Ampersand) != null) {
@@ -3719,7 +3717,7 @@ public class WhileyFileParser {
 			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
 			types.add(t);
 			do {
-				types.add(parseRationalTypePattern(environment, terminated));
+				types.add(parseArrayTypePattern(environment, terminated));
 			} while (tryAndMatch(terminated, Ampersand) != null);
 			return new TypePattern.Intersection(types, null, sourceAttr(start,
 					index - 1));
@@ -3728,6 +3726,21 @@ public class WhileyFileParser {
 		}
 	}
 
+	public TypePattern parseArrayTypePattern(HashSet<String> environment, boolean terminated) {
+		int start = index;
+		TypePattern t = parseRationalTypePattern(environment, terminated);
+		// Now, attempt to look for union and/or intersection types
+		while (tryAndMatch(terminated, LeftSquare) != null) {
+			match(RightSquare);
+			Expr.LocalVariable name = parseTypePatternVar(terminated);
+			// FIXME: this is a bit of a kludge
+			SyntacticType.Array at = new SyntacticType.Array(t.toSyntacticType(), sourceAttr(start, index - 1));			
+			t = new TypePattern.Leaf(at, name, sourceAttr(start, index - 1));
+		}
+
+		return t;
+	}
+	
 	/**
 	 * Parse a rational type pattern, which has the form:
 	 *

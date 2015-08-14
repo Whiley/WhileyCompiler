@@ -1,7 +1,8 @@
 type rec is {int y, int x}
+type nbool is bool|null
 
-function f(int[] xs) -> [bool | null]:
-    (bool|null)[] r = [false; |xs|]
+function f(int[] xs) -> nbool[]:
+    nbool[] r = [false; |xs|]
     int i = 0
     while i < |xs|
         where i >= 0

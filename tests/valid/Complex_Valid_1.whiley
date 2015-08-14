@@ -30,7 +30,7 @@ type Square is Piece | null
 
 type Row is Square[]
 
-type Board is {bool blackCastleKingSide, bool whiteCastleQueenSide, bool blackCastleQueenSide, [Row] rows, bool whiteCastleKingSide}
+type Board is {bool blackCastleKingSide, bool whiteCastleQueenSide, bool blackCastleQueenSide, Row[] rows, bool whiteCastleKingSide}
 
 constant startingChessRows is [[WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN, WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK], [WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN], [null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null], [BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN], [BLACK_ROOK, BLACK_KNIGHT, BLACK_BISHOP, BLACK_QUEEN, BLACK_KING, BLACK_BISHOP, BLACK_KNIGHT, BLACK_ROOK]]
 
