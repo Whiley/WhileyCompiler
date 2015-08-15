@@ -1,13 +1,15 @@
+import whiley.lang.*
+
 /**
  * Perform a merge sort of integer items.
  */
-function sort([int] items) -> [int]:
+function sort(int[] items) -> int[]:
     //
     if |items| > 1:
         // First, sort left and right sub-lists
         int pivot = |items| / 2
-        [int] lhs = sort(items[..pivot])
-        [int] rhs = sort(items[pivot..])
+        int[] lhs = sort(Array.slice(items,0,pivot))
+        int[] rhs = sort(Array.slice(items,pivot,|items|))
         // Second, merge left and right sublists into
         // original list.
         int l = 0 // left sublist index
@@ -35,7 +37,7 @@ function sort([int] items) -> [int]:
     return items
 
 method main(System.Console sys):
-    sys.out.println(sort([]))
+    sys.out.println(sort([0;0]))
     sys.out.println(sort([4,3,5,2,1]))
     sys.out.println(sort([3,4,7,1,2]))
     sys.out.println(sort([3,4,7,2]))

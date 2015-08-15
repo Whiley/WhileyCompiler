@@ -63,6 +63,17 @@ public function fromBytes(byte[] data) -> string:
         i = i + 1
     return r
 
+public function append(string s1, string s2) -> string:
+    string s3 = [0; |s1| + |s2|]
+    int i = 0
+    while i < |s3|:
+       if i < |s1|:
+          s3[i] = s1[i]
+       else:
+          s3[i] = s2[i-|s1|]
+       i = i + 1
+    return s3
+
 public function isUpperCase(char c) -> bool:
     return 'A' <= c && c <= 'Z'
 
