@@ -1,5 +1,5 @@
 
-function sumOver([int] ls) -> int:
+function sumOver(int[] ls) -> int:
     int i = 0
     int sum = 0
     //

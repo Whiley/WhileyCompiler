@@ -164,7 +164,7 @@ public class TypeParser {
 			match("[");
 			Type elem = parse(typeVariables);
 			match("]");
-			return List(elem, false);
+			return Array(elem, false);
 		}
 		case '{':
 		{

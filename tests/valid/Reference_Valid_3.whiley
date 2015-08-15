@@ -1,6 +1,6 @@
 
 
-type Rec is &{ [real] items }
+type Rec is &{ real[] items }
 
 public export method test():
     Rec r = new { items: [1.0, 2.0, 3.0] }

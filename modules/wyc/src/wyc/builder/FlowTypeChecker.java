@@ -627,7 +627,7 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.Debug stmt, Environment environment) {
 		stmt.expr = propagate(stmt.expr, environment, current);
-		checkIsSubtype(Type.List(Type.T_INT,false), stmt.expr);
+		checkIsSubtype(Type.Array(Type.T_INT,false), stmt.expr);
 		return environment;
 	}
 
@@ -1559,10 +1559,10 @@ public class FlowTypeChecker {
 			} else if (expr instanceof Expr.LocalVariable) {
 				return propagate((Expr.LocalVariable) expr, environment,
 						context);
-			} else if (expr instanceof Expr.List) {
-				return propagate((Expr.List) expr, environment, context);
-			} else if (expr instanceof Expr.ListGenerator) {
-				return propagate((Expr.ListGenerator) expr, environment, context);
+			} else if (expr instanceof Expr.ArrayInitialiser) {
+				return propagate((Expr.ArrayInitialiser) expr, environment, context);
+			} else if (expr instanceof Expr.ArrayGenerator) {
+				return propagate((Expr.ArrayGenerator) expr, environment, context);
 			} else if (expr instanceof Expr.Dereference) {
 				return propagate((Expr.Dereference) expr, environment, context);
 			} else if (expr instanceof Expr.Record) {
@@ -1642,7 +1642,7 @@ public class FlowTypeChecker {
 		case RANGE:
 			checkIsSubtype(Type.T_INT, lhs, context);
 			checkIsSubtype(Type.T_INT, rhs, context);
-			srcType = Type.List(Type.T_INT, false);
+			srcType = Type.Array(Type.T_INT, false);
 			break;
 		case REM:
 			checkIsSubtype(Type.T_INT, lhs, context);
@@ -1939,7 +1939,7 @@ public class FlowTypeChecker {
 		return expr;
 	}
 
-	private Expr propagate(Expr.List expr, Environment environment,
+	private Expr propagate(Expr.ArrayInitialiser expr, Environment environment,
 			Context context) {
 		Nominal element = Nominal.T_VOID;
 
@@ -1956,7 +1956,7 @@ public class FlowTypeChecker {
 		return expr;
 	}
 	
-	private Expr propagate(Expr.ListGenerator expr, Environment environment,
+	private Expr propagate(Expr.ArrayGenerator expr, Environment environment,
 			Context context) {
 		expr.element = propagate(expr.element, environment, context);
 		expr.count = propagate(expr.count, environment, context);
@@ -2787,8 +2787,8 @@ public class FlowTypeChecker {
 
 		states.add(null); // reserve space for me
 
-		if (type instanceof SyntacticType.List) {
-			SyntacticType.List lt = (SyntacticType.List) type;
+		if (type instanceof SyntacticType.Array) {
+			SyntacticType.Array lt = (SyntacticType.Array) type;
 			myKind = Type.K_LIST;
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(lt.element, context, states, roots,
@@ -3176,15 +3176,15 @@ public class FlowTypeChecker {
 				Expr.UnOp uop = (Expr.UnOp) expr;
 				Constant lhs = resolveAsConstant(uop.mhs, context, visited);
 				return evaluate(uop, lhs, context);
-			} else if (expr instanceof Expr.List) {
-				Expr.List nop = (Expr.List) expr;
+			} else if (expr instanceof Expr.ArrayInitialiser) {
+				Expr.ArrayInitialiser nop = (Expr.ArrayInitialiser) expr;
 				ArrayList<Constant> values = new ArrayList<Constant>();
 				for (Expr arg : nop.arguments) {
 					values.add(resolveAsConstant(arg, context, visited));
 				}
 				return Constant.V_LIST(values);
-			} else if (expr instanceof Expr.ListGenerator) {
-				Expr.ListGenerator lg = (Expr.ListGenerator) expr;				
+			} else if (expr instanceof Expr.ArrayGenerator) {
+				Expr.ArrayGenerator lg = (Expr.ArrayGenerator) expr;				
 				Constant element = resolveAsConstant(lg.element, context, visited);
 				Constant count = resolveAsConstant(lg.count, context, visited);				
 				return evaluate(lg,element,count,context);
@@ -3393,7 +3393,7 @@ public class FlowTypeChecker {
 			}
 			return evaluate(bop, (Constant.Decimal) v1, (Constant.Decimal) v2,
 					context);
-		} else if (Type.isSubtype(Type.T_LIST_ANY, lub)) {
+		} else if (Type.isSubtype(Type.T_ARRAY_ANY, lub)) {
 			return evaluate(bop, (Constant.List) v1, (Constant.List) v2,
 					context);
 		} 
@@ -3449,7 +3449,7 @@ public class FlowTypeChecker {
 		return null;
 	}
 
-	private Constant.List evaluate(Expr.ListGenerator bop, Constant element,
+	private Constant.List evaluate(Expr.ArrayGenerator bop, Constant element,
 			Constant count, Context context) {
 		if(count instanceof Constant.Integer) {
 			Constant.Integer c = (Constant.Integer)count;
@@ -3469,9 +3469,9 @@ public class FlowTypeChecker {
 	public Nominal.List expandAsEffectiveList(Nominal lhs)
 			throws IOException, ResolveError {
 		Type raw = lhs.raw();
-		if (raw instanceof Type.EffectiveList) {
+		if (raw instanceof Type.EffectiveArray) {
 			Type nominal = expandOneLevel(lhs.nominal());
-			if (!(nominal instanceof Type.EffectiveList)) {
+			if (!(nominal instanceof Type.EffectiveArray)) {
 				nominal = raw; // discard nominal information
 			}
 			return (Nominal.List) Nominal.construct(nominal, raw);
@@ -3572,7 +3572,7 @@ public class FlowTypeChecker {
 			}
 			return expandOneLevel(r);
 		} else if (type instanceof Type.Leaf || type instanceof Type.Reference
-				|| type instanceof Type.Tuple || type instanceof Type.List
+				|| type instanceof Type.Tuple || type instanceof Type.Array
 				|| type instanceof Type.Record
 				|| type instanceof Type.FunctionOrMethod
 				|| type instanceof Type.Negation) {

@@ -6,7 +6,7 @@ function f(int x) -> int:
 function f(real y) -> int:
     return 2
 
-function f([int] xs) -> int:
+function f(int[] xs) -> int:
     return 3
 
 public export method test() -> void:

@@ -1,6 +1,6 @@
 
 
-function lastIndexOf([int] xs, int x) -> (int r)
+function lastIndexOf(int[] xs, int x) -> (int r)
 // Return value is either -1 or a valid index in xs.
 // Here, -1 indicates element was not found in list
 ensures r >= -1 && r < |xs|
@@ -23,7 +23,7 @@ ensures r >= 0 ==> xs[r] == x:
     return last
 
 public export method test():
-    [int] list = [1,2,1,3,1,2]
+    int[] list = [1,2,1,3,1,2]
     assume lastIndexOf(list,0) == -1
     assume lastIndexOf(list,1) == 4
     assume lastIndexOf(list,2) == 5

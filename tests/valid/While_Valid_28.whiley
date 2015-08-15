@@ -4,7 +4,7 @@
 // This example represents the expansion of a do-while loop
 //
 
-function sum([int] xs) -> int
+function sum(int[] xs) -> int
 requires |xs| > 0:
     //
     int i = 0

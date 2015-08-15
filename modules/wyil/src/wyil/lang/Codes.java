@@ -209,7 +209,7 @@ public abstract class Codes {
 		return new Not(target, operand);
 	}
 
-	public static LengthOf LengthOf(Type.EffectiveList type, int target,
+	public static LengthOf LengthOf(Type.EffectiveArray type, int target,
 			int operand) {
 		return new LengthOf(type, target, operand);
 	}
@@ -225,7 +225,7 @@ public abstract class Codes {
 	 * @param type
 	 * @return
 	 */
-	public static ListGenerator ListGenerator(Type.List type, int target,
+	public static ListGenerator ListGenerator(Type.Array type, int target,
 			int element, int count) {
 		return new ListGenerator(type, target, element, count);
 	}
@@ -238,7 +238,7 @@ public abstract class Codes {
 	 *            --- list type.
 	 * @return
 	 */
-	public static IndexOf IndexOf(Type.EffectiveList type, int target,
+	public static IndexOf IndexOf(Type.EffectiveArray type, int target,
 			int leftOperand, int rightOperand) {
 		return new IndexOf(type, target, leftOperand, rightOperand);
 	}
@@ -258,12 +258,12 @@ public abstract class Codes {
 	 * @param type
 	 * @return
 	 */
-	public static NewList NewList(Type.List type, int target,
+	public static NewList NewList(Type.Array type, int target,
 			Collection<Integer> operands) {
 		return new NewList(type, target, CodeUtils.toIntArray(operands));
 	}
 
-	public static NewList NewList(Type.List type, int target, int[] operands) {
+	public static NewList NewList(Type.Array type, int target, int[] operands) {
 		return new NewList(type, target, operands);
 	}
 
@@ -835,7 +835,7 @@ public abstract class Codes {
 	public static final class Debug extends AbstractUnaryOp<Type> {
 
 		private Debug(int operand) {
-			super(Type.List(Type.T_INT,false), operand);
+			super(Type.Array(Type.T_INT,false), operand);
 		}
 
 		public int opcode() {
@@ -1783,9 +1783,9 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class ListGenerator extends AbstractBinaryAssignable<Type.List> {
+	public static final class ListGenerator extends AbstractBinaryAssignable<Type.Array> {
 
-		private ListGenerator(Type.List type, int target, int element, int count) {
+		private ListGenerator(Type.Array type, int target, int element, int count) {
 			super(type, target, element, count);
 		}
 
@@ -1832,8 +1832,8 @@ public abstract class Codes {
 	 *
 	 */
 	public static final class LengthOf extends
-			AbstractUnaryAssignable<Type.EffectiveList> {
-		private LengthOf(Type.EffectiveList type, int target, int operand) {
+			AbstractUnaryAssignable<Type.EffectiveArray> {
+		private LengthOf(Type.EffectiveArray type, int target, int operand) {
 			super(type, target, operand);
 		}
 
@@ -1890,8 +1890,8 @@ public abstract class Codes {
 	 *
 	 */
 	public static final class IndexOf extends
-			AbstractBinaryAssignable<Type.EffectiveList> {
-		private IndexOf(Type.EffectiveList type, int target,
+			AbstractBinaryAssignable<Type.EffectiveArray> {
+		private IndexOf(Type.EffectiveArray type, int target,
 				int sourceOperand, int keyOperand) {
 			super(type, target, sourceOperand, keyOperand);
 		}
@@ -2200,10 +2200,10 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class ListLVal extends LVal<Type.EffectiveList> {
+	public static final class ListLVal extends LVal<Type.EffectiveArray> {
 		public final int indexOperand;
 
-		public ListLVal(Type.EffectiveList t, int indexOperand) {
+		public ListLVal(Type.EffectiveArray t, int indexOperand) {
 			super(t);
 			this.indexOperand = indexOperand;
 		}
@@ -2262,8 +2262,8 @@ public abstract class Codes {
 				Type.Reference proc = Type.effectiveReference(iter);
 				iter = proc.element();
 				return new ReferenceLVal(proc);
-			} else if (iter instanceof Type.EffectiveList) {
-				Type.EffectiveList list = (Type.EffectiveList) iter;
+			} else if (iter instanceof Type.EffectiveArray) {
+				Type.EffectiveArray list = (Type.EffectiveArray) iter;
 				iter = list.element();
 				return new ListLVal(list, operands[operandIndex++]);
 			} else if (iter instanceof Type.EffectiveRecord) {
@@ -2414,8 +2414,8 @@ public abstract class Codes {
 				if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
 					Type.Reference proc = Type.effectiveReference(iter);
 					iter = proc.element();
-				} else if (iter instanceof Type.EffectiveList) {
-					Type.EffectiveList list = (Type.EffectiveList) iter;
+				} else if (iter instanceof Type.EffectiveArray) {
+					Type.EffectiveArray list = (Type.EffectiveArray) iter;
 					iter = list.element();
 				} else if (iter instanceof Type.EffectiveRecord) {
 					Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;
@@ -2601,9 +2601,9 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class NewList extends AbstractNaryAssignable<Type.List> {
+	public static final class NewList extends AbstractNaryAssignable<Type.Array> {
 
-		private NewList(Type.List type, int target, int[] operands) {
+		private NewList(Type.Array type, int target, int[] operands) {
 			super(type, target, operands);
 		}
 

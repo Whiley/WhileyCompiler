@@ -1,10 +1,10 @@
 
 
-function buildNatList(int n) -> ([int] m)
+function buildNatList(int n) -> (int[] m)
 requires n >= 0:
     //
     int i = 0
-    [int] rs = [0; n]
+    int[] rs = [0; n]
     //
     // forall(int i):
     //    i == 0 ==> i >= 0

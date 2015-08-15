@@ -1,7 +1,5 @@
-
-
 type char is int
-type string is [int]
+type string is int[]
 
 // Represents a transition from one
 // state to another for a given character.
@@ -15,15 +13,15 @@ type Transition is {
 
 // A Finite State Machine representation of a Trie
 type Trie is {
-    [Transition] transitions
+    Transition[] transitions
 }
 
 // Define the Empty Trie
 constant DummyTransition is { from: 0, to: 0, char: 0 }
 constant EmptyTrie is { transitions: [DummyTransition; 0] }
 
-function append([Transition] transitions, Transition t) -> [Transition]:
-    [Transition] r = [t; |transitions| + 1]
+function append(Transition[] transitions, Transition t) -> Transition[]:
+    Transition[] r = [t; |transitions| + 1]
     int i = 0
     while i < |transitions| where i >= 0:
         r[i] = transitions[i]

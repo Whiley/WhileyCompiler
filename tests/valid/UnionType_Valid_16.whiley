@@ -1,6 +1,6 @@
 
 
-type IntList is {int | [int] op}
+type IntList is {int | int[] op}
 
 public export method test() -> void:
     IntList x = {op: 2}

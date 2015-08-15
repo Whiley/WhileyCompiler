@@ -1,9 +1,9 @@
 
 
-type Expr is real | [Expr]
+type Expr is real | Expr[]
 
 function f(Expr x) -> real:
-    if x is [Expr]:
+    if x is Expr[]:
         return (real) |x|
     else:
         return x

@@ -1,5 +1,5 @@
 
-function extract([int] ls, [int] r) -> [int] requires |ls| == |r|:
+function extract(int[] ls, int[] r) -> int[] requires |ls| == |r|:
     int i = 0
     //
     while i < |ls| where |r| > 0:

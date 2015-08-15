@@ -33,15 +33,15 @@ public abstract class Nominal {
 	public static final Nominal T_BYTE = new Base(Type.T_BYTE,Type.T_BYTE);
 	public static final Nominal T_INT = new Base(Type.T_INT,Type.T_INT);
 	public static final Nominal T_REAL = new Base(Type.T_REAL,Type.T_REAL);
-	public static final Nominal T_LIST_ANY = new List(Type.T_LIST_ANY,Type.T_LIST_ANY);
+	public static final Nominal T_LIST_ANY = new List(Type.T_ARRAY_ANY,Type.T_ARRAY_ANY);
 
 	public static Nominal construct(Type nominal, Type raw) {
 		if(nominal instanceof Type.Reference && raw instanceof Type.Reference) {
 			return new Reference((Type.Reference)nominal,(Type.Reference)raw);
 		} else if(nominal instanceof Type.EffectiveTuple && raw instanceof Type.EffectiveTuple) {
 			return new Tuple((Type.EffectiveTuple)nominal,(Type.EffectiveTuple)raw);
-		} else if(nominal instanceof Type.EffectiveList && raw instanceof Type.EffectiveList) {
-			return new List((Type.EffectiveList)nominal,(Type.EffectiveList)raw);
+		} else if(nominal instanceof Type.EffectiveArray && raw instanceof Type.EffectiveArray) {
+			return new List((Type.EffectiveArray)nominal,(Type.EffectiveArray)raw);
 		} else if(nominal instanceof Type.EffectiveRecord && raw instanceof Type.EffectiveRecord) {
 			return new Record((Type.EffectiveRecord)nominal,(Type.EffectiveRecord)raw);
 		} else if(nominal instanceof Type.Function && raw instanceof Type.Function) {
@@ -90,8 +90,8 @@ public abstract class Nominal {
 	}
 
 	public static List List(Nominal element, boolean nonEmpty) {
-		Type.List nominal = Type.List(element.nominal(), nonEmpty);
-		Type.List raw = Type.List(element.raw(), nonEmpty);
+		Type.Array nominal = Type.Array(element.nominal(), nonEmpty);
+		Type.Array raw = Type.Array(element.raw(), nonEmpty);
 		return new List(nominal,raw);
 	}
 
@@ -188,10 +188,10 @@ public abstract class Nominal {
 	}
 
 	public static final class List extends Nominal {
-		private final Type.EffectiveList nominal;
-		private final Type.EffectiveList raw;
+		private final Type.EffectiveArray nominal;
+		private final Type.EffectiveArray raw;
 
-		List(Type.EffectiveList nominal, Type.EffectiveList raw) {
+		List(Type.EffectiveArray nominal, Type.EffectiveArray raw) {
 			this.nominal = nominal;
 			this.raw = raw;
 		}

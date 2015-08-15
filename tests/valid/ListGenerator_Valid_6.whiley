@@ -1,4 +1,4 @@
-function f() -> ([bool] ys):
+function f() -> (bool[] ys):
     return [false; 3]
 
 public export method test():

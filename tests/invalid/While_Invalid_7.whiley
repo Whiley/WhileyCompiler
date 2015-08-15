@@ -1,9 +1,9 @@
 
 type nat is (int n) where n >= 0
 
-function extract([int] ls) -> [int]:
+function extract(int[] ls) -> int[]:
     int i = 0
-    [int] r = [0; |ls|]
+    int[] r = [0; |ls|]
     //
     while i < |ls|:
         r[i] = ls[i]

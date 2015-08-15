@@ -1,9 +1,9 @@
 
 
-type expr is [int] | int
+type expr is int[] | int
 
 function f(expr e) -> bool:
-    if e is [int]:
+    if e is int[]:
         return true
     else:
         return false

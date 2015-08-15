@@ -26,7 +26,7 @@
 package whiley.lang
 
 public type Stack is {
-    [int] items,
+    int[] items,
     int length
 }
 

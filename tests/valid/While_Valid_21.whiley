@@ -2,11 +2,11 @@
 
 type nat is (int x) where x >= 0
 
-function create(nat count, int value) -> ([int] result)
+function create(nat count, int value) -> (int[] result)
 // Returned list must have count elements
 ensures |result| == count:
     //
-    [int] r = [0; count]
+    int[] r = [0; count]
     int i = 0
     while i < count where i <= count && i >= 0 && count == |r|:
         r[i] = value

@@ -38,7 +38,7 @@ import string from whiley.lang.ASCII
 public type Writer is {
 
     // Writes a given list of bytes to the output stream.
-    method write([byte]) -> uint,
+    method write(byte[]) -> uint,
 
     // Flush this output stream thereby forcing those items written
     // thus far to the output device.

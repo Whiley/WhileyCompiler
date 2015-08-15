@@ -10,10 +10,10 @@ type FilePos is {int col}
 
 type ShortPos is Pos | RankPos | FilePos | null
 
-function pos2str(Pos p) -> [int]:
+function pos2str(Pos p) -> int[]:
     return ['a' + p.col, '1' + p.row]
 
-function shortPos2str(ShortPos p) -> [int]:
+function shortPos2str(ShortPos p) -> int[]:
     if p is null:
         return ""
     else:

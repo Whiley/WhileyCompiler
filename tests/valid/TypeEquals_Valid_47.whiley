@@ -2,10 +2,10 @@
 
 type nat is (int n) where n >= 0
 
-type T is int | [int]
+type T is int | int[]
 
 function f(T x) -> int:
-    if x is [int] | nat:
+    if x is int[] | nat:
         return 0
     else:
         return x

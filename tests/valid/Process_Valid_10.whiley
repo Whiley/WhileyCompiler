@@ -1,6 +1,6 @@
 
 
-type Queue is {[int] items, int length}
+type Queue is {int[] items, int length}
 
 method get(&Queue this) -> int:
     this->length = this->length - 1
@@ -14,7 +14,7 @@ method isEmpty(&Queue this) -> bool:
     return this->length == 0
 
 public export method test() -> void:
-    [int] items = [1, 2, 3, 4, 5]
+    int[] items = [1, 2, 3, 4, 5]
     &Queue q = new {items: [0,0,0,0,0], length: 0}
     // Put items into the queue    
     put(q, 1)

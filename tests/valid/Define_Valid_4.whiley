@@ -2,7 +2,7 @@
 
 type codeOp is (int x) where 1 <= x && x <= 4
 
-type code is {codeOp op, [int] payload}
+type code is {codeOp op, int[] payload}
 
 function f(codeOp x) -> code:
     code y = {op: x, payload: [0]}

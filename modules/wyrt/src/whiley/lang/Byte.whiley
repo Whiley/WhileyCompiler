@@ -55,7 +55,7 @@ public function toUnsignedInt(byte b) -> uint:
 
 // Convert a byte array into an unsigned int assuming a little endian
 // form for both individual bytes, and the array as a whole
-public function toUnsignedInt([byte] bytes) -> uint:
+public function toUnsignedInt(byte[] bytes) -> uint:
     int val = 0
     int base = 1
     int i = 0
@@ -84,7 +84,7 @@ public function toInt(byte b) -> int:
 
 // Convert a byte array into a signed int assuming a little endian
 // form for both individual bytes, and the array as a whole
-public function toInt([byte] bytes) -> int:
+public function toInt(byte[] bytes) -> int:
     int val = 0
     int base = 1
     int i = 0

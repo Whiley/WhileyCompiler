@@ -1,16 +1,16 @@
 
 
-type Matrix is ([[int]] rows)
+type Matrix is (int[][] rows)
     where no {
         i in 0 .. |rows|, j in 0 .. |rows| | |rows[i]| != |rows[j]|
     }
 
 function run(Matrix A, Matrix B) -> Matrix
 requires (|A| > 0) && ((|B| > 0) && (|B| == |A[0]|)):
-    [[int]] C = [[0;0]; |A|]
+    int[][] C = [[0;0]; |A|]
     int i = 0
     while i < |A|:
-        [int] row = [0; |B|]
+        int[] row = [0; |B|]
         int j = 0
         while j < |B[0]|:
             int r = 0

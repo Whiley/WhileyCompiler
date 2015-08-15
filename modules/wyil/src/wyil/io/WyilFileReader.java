@@ -722,10 +722,10 @@ public final class WyilFileReader {
 			return Codes.NewObject((Type.Reference) type, target, operand);
 		}
 		case Code.OPCODE_lengthof: {
-			if (!(type instanceof Type.EffectiveList)) {
+			if (!(type instanceof Type.EffectiveArray)) {
 				throw new RuntimeException("expected collection type");
 			}
-			return Codes.LengthOf((Type.EffectiveList) type, target,
+			return Codes.LengthOf((Type.EffectiveArray) type, target,
 					operand);
 		}
 		case Code.OPCODE_move:
@@ -795,17 +795,17 @@ public final class WyilFileReader {
 		Type type = typePool[typeIdx];
 		switch (opcode) {		
 		case Code.OPCODE_indexof: {
-			if (!(type instanceof Type.EffectiveList)) {
+			if (!(type instanceof Type.EffectiveArray)) {
 				throw new RuntimeException("expecting indexible type");
 			}
-			return Codes.IndexOf((Type.EffectiveList) type, target,
+			return Codes.IndexOf((Type.EffectiveArray) type, target,
 					leftOperand, rightOperand);
 		}
 		case Code.OPCODE_listgen: {
-			if (!(type instanceof Type.List)) {
+			if (!(type instanceof Type.Array)) {
 				throw new RuntimeException("expecting list type");
 			}
-			return Codes.ListGenerator((Type.List) type, target,
+			return Codes.ListGenerator((Type.Array) type, target,
 					leftOperand, rightOperand);
 		}
 		case Code.OPCODE_add:
@@ -934,10 +934,10 @@ public final class WyilFileReader {
 			return Codes.NewRecord((Type.Record) type, target, operands);
 		}
 		case Code.OPCODE_newlist: {
-			if (!(type instanceof Type.List)) {
+			if (!(type instanceof Type.Array)) {
 				throw new RuntimeException("expected list type");
 			}
-			return Codes.NewList((Type.List) type, target, operands);
+			return Codes.NewList((Type.Array) type, target, operands);
 		}	
 		case Code.OPCODE_newtuple: {
 			if (!(type instanceof Type.Tuple)) {

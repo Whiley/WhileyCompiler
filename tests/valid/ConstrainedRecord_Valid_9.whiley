@@ -5,11 +5,11 @@ type nat is (int x) where x >= 0
 type Matrix is {
     int height,
     int width,
-    [[int]] data
+    int[][] data
 } where |data| == height && height >= 0 && width >= 0 &&
         no { i in 0..|data| | |data[i]| != width }
 
-function Matrix(nat width, nat height, [[int]] data) -> (Matrix result)
+function Matrix(nat width, nat height, int[][] data) -> (Matrix result)
 requires (|data| == height) && no { i in 0..|data| | |data[i]| != width }
 ensures result.width == width && result.height == height && result.data == data:
     //
@@ -19,10 +19,10 @@ function run(Matrix A, Matrix B) -> (Matrix C)
 requires A.width == B.height
 ensures (C.width == B.width) && (C.height == A.height):
     //
-    [[int]] C_data = [[0;0]; A.height]
+    int[][] C_data = [[0;0]; A.height]
     int i = 0
     while i < A.height where i >= 0:
-        [int] row = [0; B.width]
+        int[] row = [0; B.width]
         int j = 0
         while j < B.width where j >= 0:
             int r = 0

@@ -1,6 +1,6 @@
 
 
-function f([int] input) -> int
+function f(int[] input) -> int
 requires |input| > 0:
     //
     int c = input[0]

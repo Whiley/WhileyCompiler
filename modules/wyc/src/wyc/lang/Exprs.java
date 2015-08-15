@@ -34,8 +34,8 @@ public class Exprs {
 
 			} else if (expr instanceof Expr.ConstantAccess) {
 				// do nout
-			} else if (expr instanceof Expr.List) {
-				Expr.List e = (Expr.List) expr;
+			} else if (expr instanceof Expr.ArrayInitialiser) {
+				Expr.ArrayInitialiser e = (Expr.ArrayInitialiser) expr;
 				for(Expr p : e.arguments) {
 					uses(p, context, uses);
 				}
@@ -152,8 +152,8 @@ public class Exprs {
 				return true;
 			} else if (expr instanceof Expr.ConstantAccess) {
 				return true;
-			} else if (expr instanceof Expr.List) {
-				Expr.List e = (Expr.List) expr;
+			} else if (expr instanceof Expr.ArrayInitialiser) {
+				Expr.ArrayInitialiser e = (Expr.ArrayInitialiser) expr;
 				for(Expr p : e.arguments) {
 					if(!isPure(p, context)) {
 						return false;

@@ -371,12 +371,12 @@ public abstract class Constant implements Comparable<Constant> {
 		private List(Collection<Constant> value) {
 			this.values = new ArrayList<Constant>(value);
 		}
-		public wyil.lang.Type.List type() {
+		public wyil.lang.Type.Array type() {
 			wyil.lang.Type t = wyil.lang.Type.T_VOID;
 			for(Constant arg : values) {
 				t = wyil.lang.Type.Union(t,arg.type());
 			}
-			return wyil.lang.Type.List(t, !values.isEmpty());
+			return wyil.lang.Type.Array(t, !values.isEmpty());
 		}
 		public int hashCode() {
 			return values.hashCode();

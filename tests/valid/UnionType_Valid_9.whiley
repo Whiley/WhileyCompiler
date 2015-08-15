@@ -2,7 +2,7 @@
 
 type tenup is (int x) where x > 10
 
-type msg1 is {tenup op, [int] data}
+type msg1 is {tenup op, int[] data}
 
 type msg2 is {int index}
 

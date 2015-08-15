@@ -1647,11 +1647,11 @@ public final class CodeGenerator {
 			} else if (expression instanceof Expr.ConstantAccess) {
 				return generate((Expr.ConstantAccess) expression, environment,
 						codes, context);
-			} else if (expression instanceof Expr.List) {
-				return generate((Expr.List) expression, environment, codes,
+			} else if (expression instanceof Expr.ArrayInitialiser) {
+				return generate((Expr.ArrayInitialiser) expression, environment, codes,
 						context);
-			} else if (expression instanceof Expr.ListGenerator) {
-				return generate((Expr.ListGenerator) expression, environment, codes,
+			} else if (expression instanceof Expr.ArrayGenerator) {
+				return generate((Expr.ArrayGenerator) expression, environment, codes,
 						context);
 			} else if (expression instanceof Expr.BinOp) {
 				return generate((Expr.BinOp) expression, environment, codes,
@@ -1936,7 +1936,7 @@ public final class CodeGenerator {
 			AttributedCodeBlock codes, Context context) {
 		int operand = generate(expr.src, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.LengthOf((Type.EffectiveList) expr.srcType.raw(),
+		codes.add(Codes.LengthOf((Type.EffectiveArray) expr.srcType.raw(),
 				target, operand), attributes(expr));
 		return target;
 	}
@@ -1955,7 +1955,7 @@ public final class CodeGenerator {
 		int srcOperand = generate(expr.src, environment, codes, context);
 		int idxOperand = generate(expr.index, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.IndexOf((Type.List) expr.srcType.raw(), target, srcOperand,
+		codes.add(Codes.IndexOf((Type.Array) expr.srcType.raw(), target, srcOperand,
 				idxOperand), attributes(expr));
 		return target;
 	}
@@ -2004,20 +2004,20 @@ public final class CodeGenerator {
 		}
 	}
 
-	private int generate(Expr.List expr, Environment environment,
+	private int generate(Expr.ArrayInitialiser expr, Environment environment,
 			AttributedCodeBlock codes, Context context) {
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.NewList((Type.List) expr.type.raw(), target, operands),
+		codes.add(Codes.NewList((Type.Array) expr.type.raw(), target, operands),
 				attributes(expr));
 		return target;
 	}
 
-	private int generate(Expr.ListGenerator expr, Environment environment, AttributedCodeBlock codes, Context context) {
+	private int generate(Expr.ArrayGenerator expr, Environment environment, AttributedCodeBlock codes, Context context) {
 		int element = generate(expr.element, environment, codes, context);
 		int count = generate(expr.count, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.ListGenerator((Type.List) expr.type.raw(), target, element, count), attributes(expr));
+		codes.add(Codes.ListGenerator((Type.Array) expr.type.raw(), target, element, count), attributes(expr));
 		return target;
 	}
 	

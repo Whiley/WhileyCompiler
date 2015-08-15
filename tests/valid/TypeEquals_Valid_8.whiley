@@ -1,11 +1,11 @@
 
 
-type ilist is int | [int]
+type ilist is int | int[]
 
-type rlist is real | [int]
+type rlist is real | int[]
 
 function f(rlist e) -> bool:
-    if e is [int]:
+    if e is int[]:
         return true
     else:
         return false

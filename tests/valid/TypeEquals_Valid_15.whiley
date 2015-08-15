@@ -1,9 +1,9 @@
 
 
-type src is int | [int] | [[int]]
+type src is int | int[] | int[][]
 
 function f(src e) -> bool:
-    if e is [any]:
+    if e is any[]:
         return true
     else:
         return false

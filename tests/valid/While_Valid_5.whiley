@@ -2,9 +2,9 @@
 
 type nat is (int x) where x >= 0
 
-function extract([int] ls) -> [nat]:
+function extract(int[] ls) -> nat[]:
     int i = 0
-    [int] rs = [0;|ls|]
+    int[] rs = [0;|ls|]
     while i < |ls| 
         where i >= 0
         where |rs| == |ls|
@@ -16,5 +16,5 @@ function extract([int] ls) -> [nat]:
     return rs
 
 public export method test() -> void:
-    [int] rs = extract([-2, -3, 1, 2, -23, 3, 2345, 4, 5])
+    int[] rs = extract([-2, -3, 1, 2, -23, 3, 2345, 4, 5])
     assume rs ==       [ 0,  0, 1, 2,   0, 3, 2345, 4, 5]

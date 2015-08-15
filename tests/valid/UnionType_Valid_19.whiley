@@ -2,7 +2,7 @@
 
 type utr12nat is int
 
-type intList is utr12nat | [int]
+type intList is utr12nat | int[]
 
 type tupper is {int op, intList il}
 

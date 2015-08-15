@@ -1,6 +1,6 @@
 
 
-function f([int] x) -> int:
+function f(int[] x) -> int:
     switch x:
         case [0;0]:
             return 0

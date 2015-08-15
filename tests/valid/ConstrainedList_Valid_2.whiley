@@ -1,10 +1,10 @@
 type nat is (int x) where x >= 0
 
-function abs([int] items) -> [nat]
+function abs(int[] items) -> nat[]
 requires |items| > 0:
     return abs(items, 0)
 
-function abs([int] items, nat index) -> [nat]
+function abs(int[] items, nat index) -> nat[]
 requires (index <= |items|) && all { i in 0 .. index | items[i] >= 0 }:
     if index == |items|:
         return items
@@ -19,6 +19,6 @@ function abs(int x) -> nat:
         return -x
 
 public export method test() -> void:
-    [nat] xs = [1, -3, -5, 7, -9, 11]
+    nat[] xs = [1, -3, -5, 7, -9, 11]
     xs = abs(xs)
     assume xs == [1,3,5,7,9,11]

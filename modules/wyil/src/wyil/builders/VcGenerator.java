@@ -664,7 +664,7 @@ public class VcGenerator {
 	 * @return
 	 */
 	public Pair<String,Expr>[] indexOutOfBoundsChecks(Codes.IndexOf code, VcBranch branch) {
-		if (code.type() instanceof Type.EffectiveList) {
+		if (code.type() instanceof Type.EffectiveArray) {
 			Expr src = branch.read(code.operand(0));
 			Expr idx = branch.read(code.operand(1));
 			Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
@@ -2617,8 +2617,8 @@ public class VcGenerator {
 			return new SyntacticType.Int(toWycsAttributes(attributes));
 		} else if (t instanceof Type.Real) {
 			return new SyntacticType.Real(toWycsAttributes(attributes));
-		} else if (t instanceof Type.List) {
-			Type.List lt = (Type.List) t;
+		} else if (t instanceof Type.Array) {
+			Type.Array lt = (Type.Array) t;
 			SyntacticType element = convert(lt.element(), attributes);
 			// ugly.
 			return new SyntacticType.List(element);
@@ -2694,8 +2694,8 @@ public class VcGenerator {
 				|| t instanceof Type.Byte || t instanceof Type.Int
 				|| t instanceof Type.Real) {
 			return false;
-		} else if (t instanceof Type.List) {
-			Type.List lt = (Type.List) t;
+		} else if (t instanceof Type.Array) {
+			Type.Array lt = (Type.Array) t;
 			return containsNominal(lt.element(), attributes);
 		} else if (t instanceof Type.Tuple) {
 			Type.Tuple tt = (Type.Tuple) t;

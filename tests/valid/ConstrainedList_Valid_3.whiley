@@ -2,12 +2,12 @@
 
 type nat is (int x) where x >= 0
 
-function init(nat length, int value) -> ([int] result)
+function init(nat length, int value) -> (int[] result)
 ensures (|result| == length)
 ensures all { i in 0..|result| | result[i] == value }:
     //
     int i = 0
-    [int] data = [0; length]
+    int[] data = [0; length]
     while i < length 
         where 0 <= i && i <= |data| && |data| == length
         where all { j in 0..i | data[j] == value }:

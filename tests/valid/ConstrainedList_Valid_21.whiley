@@ -20,11 +20,11 @@ constant TEN_DOLLARS is 7
 
 constant Value is [1, 5, 10, 20, 50, 100, 500, 1000]
 
-type Cash is ([nat] coins) where |coins| == |Value|
+type Cash is (nat[] coins) where |coins| == |Value|
 
-function Cash([nat] coins) -> Cash
+function Cash(nat[] coins) -> Cash
 requires no { i in 0..|coins| | coins[i] >= |Value| }:
-    [int] cash = [0, 0, 0, 0, 0, 0, 0, 0]
+    int[] cash = [0, 0, 0, 0, 0, 0, 0, 0]
     int i = 0
     while i < |coins|
         where |cash| == |Value|

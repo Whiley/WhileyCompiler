@@ -1,6 +1,6 @@
 
 
-function f([int] x, int i) -> void
+function f(int[] x, int i) -> void
 requires |x| > 0:
     if (i < 0) || (i >= |x|):
         i = 0
@@ -10,7 +10,7 @@ requires |x| > 0:
     assert y == z
 
 public export method test() -> void:
-    [int] arr = [1, 2, 3]
+    int[] arr = [1, 2, 3]
     f(arr, 1)
     assume arr == [1,2,3]
     f(arr, 2)

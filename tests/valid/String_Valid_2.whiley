@@ -1,6 +1,6 @@
 
 
-public function has(int c, [int] str) -> bool:
+public function has(int c, int[] str) -> bool:
     int i = 0
     while i < |str| where i >= 0:
         if str[i] == c:
@@ -9,7 +9,7 @@ public function has(int c, [int] str) -> bool:
     return false
 
 public export method test() -> void:
-    [int] s = "Hello World"
+    int[] s = "Hello World"
     assume has('l', s) == true
     assume has('e', s) == true
     assume has('h', s) == false

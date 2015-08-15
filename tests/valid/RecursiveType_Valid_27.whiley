@@ -4,9 +4,9 @@ type Expr is real | Var | BinOp
 
 type BinOp is {Expr rhs, Expr lhs}
 
-type Var is {[int] id}
+type Var is {int[] id}
 
-type SyntaxError is {[int] err}
+type SyntaxError is {int[] err}
 
 type SExpr is SyntaxError | Expr
 

@@ -2,10 +2,10 @@
 
 type BinOp is {Expr rhs, Expr lhs}
 
-type Expr is BinOp | real | [Expr]
+type Expr is BinOp | real | Expr[]
 
 function f(Expr e) -> int:
-    if e is [Expr]:
+    if e is Expr[]:
         return |e|
     else:
         return 0

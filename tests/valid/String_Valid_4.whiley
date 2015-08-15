@@ -1,6 +1,6 @@
 
 
-public function repl(int old, int n, [int] str) -> [int]:
+public function repl(int old, int n, int[] str) -> int[]:
     int i = 0
     while i < |str| where i >= 0:
         if str[i] == old:
@@ -9,5 +9,5 @@ public function repl(int old, int n, [int] str) -> [int]:
     return str
 
 public export method test() -> void:
-    [int] s = "Hello World"
+    int[] s = "Hello World"
     assume repl('l', '1', s) == "He11o Wor1d"

@@ -1,7 +1,7 @@
+type intr is int|real
 
-
-function f([int | real] e) -> [int]:
-    if e is [int]:
+function f(intr[] e) -> int[]:
+    if e is int[]:
         return e
     else:
         return [1, 2, 3]

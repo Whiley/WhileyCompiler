@@ -1,11 +1,9 @@
-
-
-type Board is [[bool]]
+type Board is bool[][]
 
 function update(Board board) -> Board
 requires |board| == 3
 requires all { k in 0 .. |board| | |board[k]| == 3 }:
-    [[bool]] nboard = board
+    bool[][] nboard = board
     int i = 0
     while i < 3 
         where i >= 0 && |board| == |nboard|
@@ -48,7 +46,7 @@ function isAlive(Board board, int row, int col) -> int:
         return 0
 
 public export method test() -> void:
-    [[bool]] board = [[false, true, false], [false, true, false], [false, true, false]]
-    [[bool]] nboard = update(board)
+    bool[][] board = [[false, true, false], [false, true, false], [false, true, false]]
+    bool[][] nboard = update(board)
     assume board == [[false, true, false], [false, true, false], [false, true, false]]
     assume nboard == [[false, false, false], [false, true, false], [false, false, false]]

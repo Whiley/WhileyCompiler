@@ -1,4 +1,4 @@
 ../../tests/invalid/UnionType_Invalid_3.whiley:7: unable to resolve name (no match for f(UnionType_Invalid_3:IntList)
-	found: UnionType_Invalid_3:f : function([int]) -> int)
+	found: UnionType_Invalid_3:f : function(int[]) -> int)
     return f(xs)
            ^^^^^

@@ -1,16 +1,12 @@
-
-
 constant BLANK is 0
-
 constant CIRCLE is 1
-
 constant CROSS is 2
 
 type nat is (int x) where x >= 0
 
 type Piece is (int p) where (p == BLANK) || p == CIRCLE || p == CROSS
 
-type Board is {[Piece] pieces, nat move} where (move <= 9) && (|pieces| == 9)
+type Board is {Piece[] pieces, nat move} where (move <= 9) && (|pieces| == 9)
 
 type EmptyBoard is (Board b) where all { i in 0..|b.pieces| | b.pieces[i] == BLANK }
 

@@ -1128,8 +1128,8 @@ public class Wyil2JavaBuilder implements Builder {
 					.element())));
 			translateInvariantTest(falseTarget, rt.element(), freeSlot,
 					freeSlot + 1, constants, bytecodes);
-		} else if (type instanceof Type.EffectiveList) {
-			Type.EffectiveList ts = (Type.EffectiveList) type;
+		} else if (type instanceof Type.EffectiveArray) {
+			Type.EffectiveArray ts = (Type.EffectiveArray) type;
 			Triple<String, String, String> loopLabels = translateLoopBegin(
 					bytecodes, rootSlot, freeSlot);
 			addReadConversion(ts.element(), bytecodes);
@@ -2191,8 +2191,8 @@ public class Wyil2JavaBuilder implements Builder {
 		} else if (from instanceof Type.Reference
 				&& to instanceof Type.Reference) {
 			// TODO
-		} else if (from instanceof Type.List && to instanceof Type.List) {
-			buildCoercion((Type.List) from, (Type.List) to, freeSlot,
+		} else if (from instanceof Type.Array && to instanceof Type.Array) {
+			buildCoercion((Type.Array) from, (Type.Array) to, freeSlot,
 					constants, bytecodes);
 		} else if (to instanceof Type.Record && from instanceof Type.Record) {
 			buildCoercion((Type.Record) from, (Type.Record) to, freeSlot,
@@ -2243,7 +2243,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Load(newSlot, WHILEYTUPLE));
 	}
 
-	protected void buildCoercion(Type.List fromType, Type.List toType,
+	protected void buildCoercion(Type.Array fromType, Type.Array toType,
 			int freeSlot, HashMap<JvmConstant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 
@@ -2584,7 +2584,7 @@ public class Wyil2JavaBuilder implements Builder {
 			return WHILEYRAT;
 		} else if (t instanceof Type.Meta) {
 			return WHILEYTYPE;
-		} else if (t instanceof Type.EffectiveList) {
+		} else if (t instanceof Type.EffectiveArray) {
 			return WHILEYLIST;
 		} else if (t instanceof Type.EffectiveRecord) {
 			return WHILEYRECORD;

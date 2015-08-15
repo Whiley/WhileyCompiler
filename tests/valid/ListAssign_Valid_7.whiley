@@ -1,8 +1,8 @@
 
 
-function f(int i) -> ([int],[int]):
-    [int] arr1 = [1, 2, 64]
-    [int] arr2 = arr1
+function f(int i) -> (int[],int[]):
+    int[] arr1 = [1, 2, 64]
+    int[] arr2 = arr1
     if i != |arr1|:
         arr2[2] = 3
     else:

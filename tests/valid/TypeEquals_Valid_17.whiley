@@ -1,6 +1,6 @@
 
 
-type rlist is real | [int]
+type rlist is real | int[]
 
 function f(rlist l) -> int:
     if l is real:

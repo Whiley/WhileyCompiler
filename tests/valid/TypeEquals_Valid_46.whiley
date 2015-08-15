@@ -4,7 +4,7 @@ type pos is int
 
 type neg is int
 
-type intlist is pos | neg | [int]
+type intlist is pos | neg | int[]
 
 function f(intlist x) -> int:
     if x is int:

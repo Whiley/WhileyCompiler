@@ -1,7 +1,7 @@
 
 
-function f([int] xs, [real] ys) -> bool:
-    if (([real]) xs) == ys:
+function f(int[] xs, real[] ys) -> bool:
+    if ((real[]) xs) == ys:
         return true
     else:
         return false

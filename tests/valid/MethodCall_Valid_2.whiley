@@ -3,7 +3,7 @@
 method get() -> int:
     return 1
 
-method f() -> [int]:
+method f() -> int[]:
     return [1, 2, 3, get()]
 
 public export method test() -> void:
