@@ -49,10 +49,27 @@ ensures all { i in |list| .. size | nitems[i] == element}:
 public function indexOf(int[] items, int item) -> (int|null index)
 // If int returned, element at this position matches item
 ensures index is int ==> items[index] == item
+// If int returned, element at this position is first match
+ensures index is int ==> no { i in 0 .. index | items[i] == item }
 // If null returned, no element in items matches item
 ensures index is null ==> no { i in 0 .. |items| | items[i] == item }:
     //
-    int i = 0
+    return indexOf(items,item,0)
+
+
+// find first index after a given start point in list which matches character.
+// If no match, then return null.
+public function indexOf(int[] items, int item, int start) -> (int|null index)
+// Starting point cannot be negative
+requires start >= 0
+// If int returned, element at this position matches item
+ensures index is int ==> items[index] == item
+// If int returned, element at this position is first match
+ensures index is int ==> no { i in 0 .. index | items[i] == item }
+// If null returned, no element in items matches item
+ensures index is null ==> no { i in start .. |items| | items[i] == item }:
+    //
+    int i = start
     //
     while i < |items|:
         if items[i] == item:
@@ -61,24 +78,23 @@ ensures index is null ==> no { i in 0 .. |items| | items[i] == item }:
     //
     return null
 
-public function indexOf(int[] items, int c, int start) -> int|null:
-    //
-    int i = start
-    while i < |items|:
-        if items[i] == c:
-            return i
-        i = i + 1
-    return null
-
 // find last index in list which matches character.  If no match,
 // then return null.
-public function lastIndexOf(int[] items, int c) -> int|null:
+public function lastIndexOf(int[] items, int item) -> (int|null index)
+// If int returned, element at this position matches item
+ensures index is int ==> items[index] == item
+// If int returned, element at this position is last match
+ensures index is int ==> no { i in (index+1) .. |items| | items[i] == item }
+// If null returned, no element in items matches item
+ensures index is null ==> no { i in 0 .. |items| | items[i] == item }:
     //
     int i = |items|
+    //
     while i > 0:
         i = i - 1
-        if items[i] == c:
+        if items[i] == item:
             return i
+    //
     return null
 
 // replace all occurrences of "old" with "new" in list "items".
