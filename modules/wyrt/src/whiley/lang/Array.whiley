@@ -25,23 +25,40 @@
 
 package whiley.lang
 
-// Increase up to a given size
-public function enlarge(int[] list, int size, int element) -> int[]:
-    int[] nlist = [0; size]
+// Resize an array to a given size
+public function resize(int[] list, int size, int element) -> (int[] nitems)
+// Required size cannot be negative
+requires size >= 0
+// Returned array is of specified size
+ensures |nitems| == size
+// If array is enlarged, the all elements up to new size match
+ensures all { i in 0 .. |list| | i >= size || nitems[i] == list[i] }
+// All new elements match given element
+ensures all { i in |list| .. size | nitems[i] == element}:
+    //
+    int[] nlist = [element; size]
     int i = 0
-    while i < size where i >= 0:
+    while i < size && i < |list| where i >= 0:
         nlist[i] = list[i]
         i = i + 1
+    //
     return nlist
 
 // find first index in list which matches character.  If no match,
 // then return null.
-public function indexOf(int[] items, int c) -> int|null:
+public function indexOf(int[] items, int item) -> (int|null index)
+// If int returned, element at this position matches item
+ensures index is int ==> items[index] == item
+// If null returned, no element in items matches item
+ensures index is null ==> no { i in 0 .. |items| | items[i] == item }:
+    //
     int i = 0
+    //
     while i < |items|:
-        if items[i] == c:
+        if items[i] == item:
             return i
         i = i + 1
+    //
     return null
 
 public function indexOf(int[] items, int c, int start) -> int|null:
