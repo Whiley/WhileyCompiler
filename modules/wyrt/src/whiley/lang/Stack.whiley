@@ -30,6 +30,15 @@ public type Stack is {
     int length
 }
 
+public function create(int max) -> Stack:
+    return {
+        items: [0; max],
+        length: 0
+    }
+
+public function size(Stack this) -> int:
+    return this.length
+
 /**
  * Return the top element of the "stack".
  */
