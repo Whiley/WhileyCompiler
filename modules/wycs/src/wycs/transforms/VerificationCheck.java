@@ -41,9 +41,11 @@ import wyfs.util.Trie;
  *
  */
 public class VerificationCheck implements Transform<WycsFile> {
-    private enum RewriteMode { SIMPLE, STATICDISPATCH, GLOBALDISPATCH };
+	private enum RewriteMode {
+		SIMPLE, STATICDISPATCH, GLOBALDISPATCH
+	};
 
-	/**	
+	/**
 	 * Determines whether this transform is enabled or not.
 	 */
 	private boolean enabled = getEnable();
@@ -121,8 +123,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public void setRwmode(String mode) {
-		for(RewriteMode rw : RewriteMode.values()) {
-			if(mode.equals(rw.name().toLowerCase())) {
+		for (RewriteMode rw : RewriteMode.values()) {
+			if (mode.equals(rw.name().toLowerCase())) {
 				this.rwMode = rw;
 				return;
 			}
@@ -147,13 +149,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static int getMaxInferences() {
-		return 5000; // default value
+		return 1000; // default value
 	}
 
 	public void setMaxInferences(int limit) {
 		this.maxInferences = limit;
 	}
-
 
 	// ======================================================================
 	// Apply Method
@@ -178,15 +179,13 @@ public class VerificationCheck implements Transform<WycsFile> {
 
 				if (stmt instanceof WycsFile.Assert) {
 					checkValid((WycsFile.Assert) stmt, ++count);
-				} else if (stmt instanceof WycsFile.Function
-						|| stmt instanceof WycsFile.Macro
+				} else if (stmt instanceof WycsFile.Function || stmt instanceof WycsFile.Macro
 						|| stmt instanceof WycsFile.Type) {
 					// TODO: we could try to verify that the function makes
 					// sense (i.e. that it's specification is satisfiable for at
 					// least one input).
 				} else {
-					internalFailure("unknown statement encountered " + stmt,
-							filename, stmt);
+					internalFailure("unknown statement encountered " + stmt, filename, stmt);
 				}
 			}
 		}
@@ -200,8 +199,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		Automaton automaton = new Automaton();
 		Automaton original = null;
 
-		Code neg = Code.Unary(SemanticType.Bool,
-				Code.Op.NOT, stmt.condition);
+		Code neg = Code.Unary(SemanticType.Bool, Code.Op.NOT, stmt.condition);
 		// The following conversion is potentially very expensive, but is
 		// currently necessary for the instantiate axioms phase.
 		Code nnf = NormalForms.negationNormalForm(neg);
@@ -209,114 +207,113 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// protectes against accidental variable capture by renaming all
 		// variables.
 		nnf = NormalForms.renameVariables(nnf);
-		//debug(nnf,filename);
+		// debug(nnf,filename);
 		int maxVar = findLargestVariable(nnf);
 
 		Code vc = instantiateAxioms(nnf, maxVar + 1);
-			
+
 		// debug(vc,filename);
 
-		int assertion = translate(vc,automaton,new HashMap<String,Integer>());
+		int assertion = translate(vc, automaton, new HashMap<String, Integer>());
 		automaton.setRoot(0, assertion);
 		// NOTE: don't need to minimise or compact here since the rewriter does
 		// this for me.
 		//
-		//		automaton.minimise();
-		//		automaton.compact();
+		// automaton.minimise();
+		// automaton.compact();
 
 		if (debug) {
-			debug(neg,filename);
+			debug(neg, filename);
 			original = new Automaton(automaton);
-			//debug(original);
+			// debug(original);
 		}
 
-		automaton = infer(automaton);
+		RESULT result = unsat(automaton);
 
-		if(automaton == null) {
-			throw new AssertionFailure("timeout occurred during verification",stmt,null,automaton,original);
-		} else if(!automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
+		if (result == RESULT.TIMEOUT) {
+			throw new AssertionFailure("timeout occurred during verification", stmt, null, automaton, original);
+		} else if (result == RESULT.SAT) {
 			String msg = stmt.message;
 			msg = msg == null ? "assertion failure" : msg;
-			throw new AssertionFailure(msg,stmt,null,automaton,original);
+			throw new AssertionFailure(msg, stmt, null, automaton, original);
 		}
 
 		long endTime = System.currentTimeMillis();
-		builder.logTimedMessage("[" + filename + "] Verified assertion #" + number,
-				endTime - startTime, startMemory - runtime.freeMemory());
+		builder.logTimedMessage("[" + filename + "] Verified assertion #" + number, endTime - startTime,
+				startMemory - runtime.freeMemory());
 	}
 
-	private int translate(Code expr, Automaton automaton, HashMap<String,Integer> environment) {
+	private int translate(Code expr, Automaton automaton, HashMap<String, Integer> environment) {
 		int r;
-		if(expr instanceof Code.Constant) {
-			r = translate((Code.Constant) expr,automaton,environment);
-		} else if(expr instanceof Code.Cast) {
-			r = translate((Code.Cast) expr,automaton,environment);
-		} else if(expr instanceof Code.Variable) {
-			r = translate((Code.Variable) expr,automaton,environment);
-		} else if(expr instanceof Code.Binary) {
-			r = translate((Code.Binary) expr,automaton,environment);
-		} else if(expr instanceof Code.Unary) {
-			r = translate((Code.Unary) expr,automaton,environment);
-		} else if(expr instanceof Code.Nary) {
-			r = translate((Code.Nary) expr,automaton,environment);
-		} else if(expr instanceof Code.Load) {
-			r = translate((Code.Load) expr,automaton,environment);
-		} else if(expr instanceof Code.IndexOf) {
-			r = translate((Code.IndexOf) expr,automaton,environment);
-		} else if(expr instanceof Code.Is) {
-			r = translate((Code.Is) expr,automaton,environment);
-		} else if(expr instanceof Code.Quantifier) {
-			r = translate((Code.Quantifier) expr,automaton,environment);
-		} else if(expr instanceof Code.FunCall) {
-			r = translate((Code.FunCall) expr,automaton,environment);
+		if (expr instanceof Code.Constant) {
+			r = translate((Code.Constant) expr, automaton, environment);
+		} else if (expr instanceof Code.Cast) {
+			r = translate((Code.Cast) expr, automaton, environment);
+		} else if (expr instanceof Code.Variable) {
+			r = translate((Code.Variable) expr, automaton, environment);
+		} else if (expr instanceof Code.Binary) {
+			r = translate((Code.Binary) expr, automaton, environment);
+		} else if (expr instanceof Code.Unary) {
+			r = translate((Code.Unary) expr, automaton, environment);
+		} else if (expr instanceof Code.Nary) {
+			r = translate((Code.Nary) expr, automaton, environment);
+		} else if (expr instanceof Code.Load) {
+			r = translate((Code.Load) expr, automaton, environment);
+		} else if (expr instanceof Code.IndexOf) {
+			r = translate((Code.IndexOf) expr, automaton, environment);
+		} else if (expr instanceof Code.Is) {
+			r = translate((Code.Is) expr, automaton, environment);
+		} else if (expr instanceof Code.Quantifier) {
+			r = translate((Code.Quantifier) expr, automaton, environment);
+		} else if (expr instanceof Code.FunCall) {
+			r = translate((Code.FunCall) expr, automaton, environment);
 		} else {
-			internalFailure("unknown: " + expr.getClass().getName(),
-					filename, expr);
+			internalFailure("unknown: " + expr.getClass().getName(), filename, expr);
 			return -1; // dead code
 		}
 
-		//debug(automaton,r);
+		// debug(automaton,r);
 		return r;
 	}
 
-	private int translate(Code.Constant expr, Automaton automaton, HashMap<String,Integer> environment) {
-		return convert(expr.value,expr,automaton);
+	private int translate(Code.Constant expr, Automaton automaton, HashMap<String, Integer> environment) {
+		return convert(expr.value, expr, automaton);
 	}
 
-	private int translate(Code.Cast expr, Automaton automaton, HashMap<String,Integer> environment) {
-		int e = translate(expr.operands[0],automaton,environment);
+	private int translate(Code.Cast expr, Automaton automaton, HashMap<String, Integer> environment) {
+		int e = translate(expr.operands[0], automaton, environment);
 		// FIXME: implement cast expressions!
 		return e;
 	}
-	
-	private int translate(Code.Variable code, Automaton automaton, HashMap<String,Integer> environment) {
-		if(code.operands.length > 0) {
+
+	private int translate(Code.Variable code, Automaton automaton, HashMap<String, Integer> environment) {
+		if (code.operands.length > 0) {
 			throw new RuntimeException("need to add support for variables with sub-components");
 		}
 		// TODO: just use an integer for variables directly
 		String name = "r" + code.index;
 		Integer idx = environment.get(name);
 		// FIXME: need to handle code.operands as well!
-		if(idx == null) {
+		if (idx == null) {
 			// FIXME: this is a hack to work around modified operands after a
 			// loop.
-			return Var(automaton,name);
+			return Var(automaton, name);
 		} else {
 			return idx;
 		}
 	}
 
-	private int translate(Code.Binary code, Automaton automaton, HashMap<String,Integer> environment) {
-		int lhs = translate(code.operands[0],automaton,environment);
-		int rhs = translate(code.operands[1],automaton,environment);
+	private int translate(Code.Binary code, Automaton automaton, HashMap<String, Integer> environment) {
+		int lhs = translate(code.operands[0], automaton, environment);
+		int rhs = translate(code.operands[1], automaton, environment);
 
-		int type = convert(automaton,code.type);
+		int type = convert(automaton, code.type);
 
-		switch(code.opcode) {
+		switch (code.opcode) {
 		case ADD:
-			return SolverUtil.Add(automaton,lhs,rhs);
+			return SolverUtil.Add(automaton, lhs, rhs);
 		case SUB:
-			return SolverUtil.Sub(automaton,lhs,rhs);
+			return SolverUtil.Sub(automaton, lhs, rhs);
 		case MUL:
 			return SolverUtil.Mul(automaton, lhs, rhs);
 		case DIV:
@@ -330,16 +327,15 @@ public class VerificationCheck implements Transform<WycsFile> {
 		case LT:
 			return SolverUtil.LessThan(automaton, type, lhs, rhs);
 		case LTEQ:
-			return SolverUtil.LessThanEq(automaton, type, lhs, rhs);		
+			return SolverUtil.LessThanEq(automaton, type, lhs, rhs);
 		}
-		internalFailure("unknown binary bytecode encountered (" + code + ")",
-				filename, code);
+		internalFailure("unknown binary bytecode encountered (" + code + ")", filename, code);
 		return -1;
 	}
 
-	private int translate(Code.Unary code, Automaton automaton, HashMap<String,Integer> environment) {
-		int e = translate(code.operands[0],automaton,environment);
-		switch(code.opcode) {
+	private int translate(Code.Unary code, Automaton automaton, HashMap<String, Integer> environment) {
+		int e = translate(code.operands[0], automaton, environment);
+		switch (code.opcode) {
 		case NOT:
 			return Not(automaton, e);
 		case NEG:
@@ -347,88 +343,86 @@ public class VerificationCheck implements Transform<WycsFile> {
 		case LENGTH:
 			return LengthOf(automaton, e);
 		}
-		internalFailure("unknown unary bytecode encountered (" + code + ")",
-				filename, code);
+		internalFailure("unknown unary bytecode encountered (" + code + ")", filename, code);
 		return -1;
 	}
 
-	private int translate(Code.Nary code, Automaton automaton, HashMap<String,Integer> environment) {
+	private int translate(Code.Nary code, Automaton automaton, HashMap<String, Integer> environment) {
 		Code[] operands = code.operands;
 		int[] es = new int[operands.length];
-		for(int i=0;i!=es.length;++i) {
-			es[i] = translate(operands[i],automaton,environment);
+		for (int i = 0; i != es.length; ++i) {
+			es[i] = translate(operands[i], automaton, environment);
 		}
-		switch(code.opcode) {
+		switch (code.opcode) {
 		case AND:
-			return And(automaton,es);
+			return And(automaton, es);
 		case OR:
-			return Or(automaton,es);
+			return Or(automaton, es);
 		case ARRAY:
-			return Array(automaton,es);
+			return Array(automaton, es);
 		case TUPLE:
-			return Tuple(automaton,es);
+			return Tuple(automaton, es);
 		}
-		internalFailure("unknown nary expression encountered (" + code + ")",
-				filename, code);
+		internalFailure("unknown nary expression encountered (" + code + ")", filename, code);
 		return -1;
 	}
 
-	private int translate(Code.Load code, Automaton automaton, HashMap<String,Integer> environment) {
-		int e = translate(code.operands[0],automaton,environment);
+	private int translate(Code.Load code, Automaton automaton, HashMap<String, Integer> environment) {
+		int e = translate(code.operands[0], automaton, environment);
 		int i = automaton.add(new Automaton.Int(code.index));
-		return Solver.Load(automaton,e,i);
+		return Solver.Load(automaton, e, i);
 	}
 
-	private int translate(Code.IndexOf code, Automaton automaton, HashMap<String,Integer> environment) {
-		int e = translate(code.operands[0],automaton,environment);
-		int i = translate(code.operands[1],automaton,environment);
-		return Solver.IndexOf(automaton,e,i);
+	private int translate(Code.IndexOf code, Automaton automaton, HashMap<String, Integer> environment) {
+		int e = translate(code.operands[0], automaton, environment);
+		int i = translate(code.operands[1], automaton, environment);
+		return Solver.IndexOf(automaton, e, i);
 	}
-	
-	private int translate(Code.Is code, Automaton automaton, HashMap<String,Integer> environment) {
-		int e = translate(code.operands[0],automaton,environment);
-		int t = convert(automaton,code.test);
-		return Solver.Is(automaton,e,t);
+
+	private int translate(Code.Is code, Automaton automaton, HashMap<String, Integer> environment) {
+		int e = translate(code.operands[0], automaton, environment);
+		int t = convert(automaton, code.test);
+		return Solver.Is(automaton, e, t);
 	}
-	
-	private int translate(Code.FunCall code, Automaton automaton,
-			HashMap<String, Integer> environment) {
+
+	private int translate(Code.FunCall code, Automaton automaton, HashMap<String, Integer> environment) {
 		// uninterpreted function call
 		int argument = translate(code.operands[0], automaton, environment);
-		int[] es = new int[] {
-				automaton.add(new Automaton.Strung(code.nid.toString())),
-				argument };
+		int[] es = new int[] { automaton.add(new Automaton.Strung(code.nid.toString())), argument };
 		return Fn(automaton, es);
 	}
 
-	private int translate(Code.Quantifier code, Automaton automaton, HashMap<String,Integer> environment) {
-		HashMap<String,Integer> nEnvironment = new HashMap<String,Integer>(environment);
-		Pair<SemanticType,Integer>[] variables = code.types;
+	private int translate(Code.Quantifier code, Automaton automaton, HashMap<String, Integer> environment) {
+		HashMap<String, Integer> nEnvironment = new HashMap<String, Integer>(environment);
+		Pair<SemanticType, Integer>[] variables = code.types;
 		int[] vars = new int[variables.length];
-		
-		//int[] typeTests = new int[variables.length];
+
+		// int[] typeTests = new int[variables.length];
 		for (int i = 0; i != variables.length; ++i) {
-			Pair<SemanticType,Integer> p = variables[i];
+			Pair<SemanticType, Integer> p = variables[i];
 			// First, construct variable pairs
 			SemanticType type = p.first();
 			String var = "r" + p.second();
 			int varIdx = Var(automaton, var);
 			nEnvironment.put(var, varIdx);
-			int typeIdx = convert(automaton,type);
+			int typeIdx = convert(automaton, type);
 			vars[i] = automaton.add(new Automaton.List(varIdx, typeIdx));
 			// Second, construct the appropriate type test for each variable
-			//typeTests[i] = Solver.Is(automaton,varIdx,convert(automaton,type));
+			// typeTests[i] =
+			// Solver.Is(automaton,varIdx,convert(automaton,type));
 		}
 
 		int avars = automaton.add(new Automaton.Set(vars));
-		//int typeTest = And(automaton,typeTests);
+		// int typeTest = And(automaton,typeTests);
 		int quantifiedExpression = translate(code.operands[0], automaton, nEnvironment);
-				
-		if(code.opcode == Code.Op.FORALL) {
-			//return ForAll(automaton, avars, SolverUtil.Implies(automaton,typeTest, quantifiedExpression));
+
+		if (code.opcode == Code.Op.FORALL) {
+			// return ForAll(automaton, avars,
+			// SolverUtil.Implies(automaton,typeTest, quantifiedExpression));
 			return ForAll(automaton, avars, quantifiedExpression);
 		} else {
-			//return Exists(automaton, avars, And(automaton,typeTest, quantifiedExpression));
+			// return Exists(automaton, avars, And(automaton,typeTest,
+			// quantifiedExpression));
 			return Exists(automaton, avars, quantifiedExpression);
 		}
 	}
@@ -450,13 +444,13 @@ public class VerificationCheck implements Transform<WycsFile> {
 			return b.value ? automaton.add(True) : automaton.add(False);
 		} else if (value instanceof Value.Integer) {
 			Value.Integer v = (Value.Integer) value;
-			return Num(automaton , BigRational.valueOf(v.value));
+			return Num(automaton, BigRational.valueOf(v.value));
 		} else if (value instanceof Value.Decimal) {
 			Value.Decimal v = (Value.Decimal) value;
 			return Num(automaton, new BigRational(v.value));
 		} else if (value instanceof Value.String) {
 			Value.String v = (Value.String) value;
-			return Solver.String(automaton,v.value);
+			return Solver.String(automaton, v.value);
 		} else if (value instanceof Value.Array) {
 			Value.Array vs = (Value.Array) value;
 			int[] vals = new int[vs.values.size()];
@@ -469,22 +463,22 @@ public class VerificationCheck implements Transform<WycsFile> {
 			Value.Tuple vt = (Value.Tuple) value;
 			int[] vals = new int[vt.values.size()];
 			for (int i = 0; i != vals.length; ++i) {
-				vals[i] = convert(vt.values.get(i),element,automaton);
+				vals[i] = convert(vt.values.get(i), element, automaton);
 			}
-			return Tuple(automaton , vals);
+			return Tuple(automaton, vals);
 		} else {
-			internalFailure("unknown value encountered (" + value + ", " + value.getClass().getName() + ")",
-					filename,element);
+			internalFailure("unknown value encountered (" + value + ", " + value.getClass().getName() + ")", filename,
+					element);
 			return -1;
 		}
 	}
-
 
 	/**
 	 * Construct an automaton node representing a given semantic type.
 	 *
 	 * @param automaton
-	 * @param type --- to be converted.
+	 * @param type
+	 *            --- to be converted.
 	 * @return the index of the new node.
 	 */
 	public int convert(Automaton automaton, SemanticType type) {
@@ -492,23 +486,23 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// The following is important to make sure that the type is in minimised
 		// form before verification begins. This firstly reduces the amount of
 		// work during verification, and also allows the functions in
-		// SolverUtils to work properly.		
-		Rewriter rewriter = new BatchRewriter(Solver.SCHEMA, Solver.reductions);
-		RewriteProof proof = rewriter.apply(rewriter.initialise(type_automaton));
-		if(proof.size() > 0) {
-			type_automaton = proof.last().automaton();
-		} 
+		// SolverUtils to work properly.
+		Rewrite rewrite = new TreeRewrite(Solver.SCHEMA, Activation.RANK_COMPARATOR, Solver.reductions);
+		Rewriter rewriter = new LinearRewriter(rewrite);
+		rewriter.initialise(type_automaton);
+		rewriter.apply(10000);
+		List<Rewrite.State> states = rewrite.states();
+		type_automaton = states.get(states.size() - 1).automaton();
 		return automaton.addAll(type_automaton.getRoot(0), type_automaton);
 	}
 
 	public static void debug(Automaton automaton) {
 		try {
 			// System.out.println(automaton);
-			PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,
-					SCHEMA, "Or", "And");
+			PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out, SCHEMA, "Or", "And");
 			writer.write(automaton);
 			writer.flush();
-		} catch(IOException e) {
+		} catch (IOException e) {
 			System.out.println("I/O Exception - " + e);
 		}
 	}
@@ -529,8 +523,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 		private final Automaton reduced;
 		private final Automaton original;
 
-		public AssertionFailure(String msg, WycsFile.Assert assertion,
-				Rewriter rewriter, Automaton reduced, Automaton original) {
+		public AssertionFailure(String msg, WycsFile.Assert assertion, Rewriter rewriter, Automaton reduced,
+				Automaton original) {
 			super(msg);
 			this.assertion = assertion;
 			this.rewriter = rewriter;
@@ -555,11 +549,9 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 
-
 	// =============================================================================
 	// Axiom Instantiation
 	// =============================================================================
-
 
 	/**
 	 * Blindly instantiate all axioms. Note, this function is assuming the
@@ -578,34 +570,32 @@ public class VerificationCheck implements Transform<WycsFile> {
 			// do nothing
 			return condition;
 		} else if (condition instanceof Code.Unary) {
-			return instantiateAxioms((Code.Unary)condition, freeVariable);
+			return instantiateAxioms((Code.Unary) condition, freeVariable);
 		} else if (condition instanceof Code.Binary) {
-			return instantiateAxioms((Code.Binary)condition, freeVariable);
+			return instantiateAxioms((Code.Binary) condition, freeVariable);
 		} else if (condition instanceof Code.Nary) {
-			return instantiateAxioms((Code.Nary)condition, freeVariable);
+			return instantiateAxioms((Code.Nary) condition, freeVariable);
 		} else if (condition instanceof Code.Quantifier) {
-			return instantiateAxioms((Code.Quantifier)condition, freeVariable);
+			return instantiateAxioms((Code.Quantifier) condition, freeVariable);
 		} else if (condition instanceof Code.FunCall) {
-			return instantiateAxioms((Code.FunCall)condition, freeVariable);
+			return instantiateAxioms((Code.FunCall) condition, freeVariable);
 		} else if (condition instanceof Code.Load) {
-			return instantiateAxioms((Code.Load)condition, freeVariable);
+			return instantiateAxioms((Code.Load) condition, freeVariable);
 		} else if (condition instanceof Code.Is) {
-			return instantiateAxioms((Code.Is)condition, freeVariable);
+			return instantiateAxioms((Code.Is) condition, freeVariable);
 		} else {
-			internalFailure("invalid boolean expression encountered (" + condition
-					+ ")", filename, condition);
+			internalFailure("invalid boolean expression encountered (" + condition + ")", filename, condition);
 			return null;
 		}
 	}
 
 	private Code instantiateAxioms(Code.Unary condition, int freeVariable) {
-		switch(condition.opcode) {
+		switch (condition.opcode) {
 		case NOT:
-			return Code.Unary(condition.type, condition.opcode,
-					instantiateAxioms(condition.operands[0], freeVariable), condition.attributes());
+			return Code.Unary(condition.type, condition.opcode, instantiateAxioms(condition.operands[0], freeVariable),
+					condition.attributes());
 		default:
-			internalFailure("invalid boolean expression encountered (" + condition
-					+ ")", filename, condition);
+			internalFailure("invalid boolean expression encountered (" + condition + ")", filename, condition);
 			return null;
 		}
 	}
@@ -618,28 +608,26 @@ public class VerificationCheck implements Transform<WycsFile> {
 		case LTEQ: {
 			ArrayList<Code> axioms = new ArrayList<Code>();
 			instantiateFromExpression(condition, axioms, freeVariable);
-			return and(axioms,condition);
+			return and(axioms, condition);
 		}
 		default:
-			internalFailure("invalid boolean expression encountered (" + condition
-					+ ")", filename, condition);
+			internalFailure("invalid boolean expression encountered (" + condition + ")", filename, condition);
 			return null;
 		}
 	}
 
 	private Code instantiateAxioms(Code.Nary condition, int freeVariable) {
-		switch(condition.opcode) {
+		switch (condition.opcode) {
 		case AND:
 		case OR: {
 			Code[] e_operands = new Code[condition.operands.length];
-			for(int i=0;i!=e_operands.length;++i) {
+			for (int i = 0; i != e_operands.length; ++i) {
 				e_operands[i] = instantiateAxioms(condition.operands[i], freeVariable);
 			}
 			return Code.Nary(condition.type, condition.opcode, e_operands, condition.attributes());
 		}
 		default:
-			internalFailure("invalid boolean expression encountered (" + condition
-					+ ")", filename, condition);
+			internalFailure("invalid boolean expression encountered (" + condition + ")", filename, condition);
 			return null;
 		}
 	}
@@ -647,12 +635,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 	private Code instantiateAxioms(Code.Is condition, int freeVariable) {
 		ArrayList<Code> axioms = new ArrayList<Code>();
 		instantiateFromExpression(condition.operands[0], axioms, freeVariable);
-		return and(axioms,condition);
+		return and(axioms, condition);
 	}
-	
+
 	private Code instantiateAxioms(Code.Quantifier condition, int freeVariable) {
-		return Code.Quantifier(condition.type, condition.opcode,
-				instantiateAxioms(condition.operands[0], freeVariable), condition.types, condition.attributes());
+		return Code.Quantifier(condition.type, condition.opcode, instantiateAxioms(condition.operands[0], freeVariable),
+				condition.types, condition.attributes());
 	}
 
 	private Code instantiateAxioms(Code.FunCall condition, int freeVariable) {
@@ -661,37 +649,35 @@ public class VerificationCheck implements Transform<WycsFile> {
 			WycsFile module = builder.getModule(condition.nid.module());
 			// module should not be null if TypePropagation has already passed.
 			Object d = module.declaration(condition.nid.name());
-			if(d instanceof WycsFile.Function) {
+			if (d instanceof WycsFile.Function) {
 				WycsFile.Function fn = (WycsFile.Function) d;
-				if(fn.constraint != null) {
-					// There are some axioms we can instantiate. First, we need to
+				if (fn.constraint != null) {
+					// There are some axioms we can instantiate. First, we need
+					// to
 					// construct the generic binding for this function.
-					HashMap<String,SemanticType> generics = buildGenericBinding(fn.type.generics(),condition.binding);
-					Code axiom = renameToAvoidCapture(fn.constraint,freeVariable);
-					HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
+					HashMap<String, SemanticType> generics = buildGenericBinding(fn.type.generics(), condition.binding);
+					Code axiom = renameToAvoidCapture(fn.constraint, freeVariable);
+					HashMap<Integer, Code> binding = new HashMap<Integer, Code>();
 					binding.put(1, condition.operands[0]);
 					binding.put(0, condition);
-					axiom = axiom.substitute(binding).instantiate(
-							generics);
+					axiom = axiom.substitute(binding).instantiate(generics);
 					axioms.add(axiom);
 				}
-			} else if(d instanceof WycsFile.Macro){
+			} else if (d instanceof WycsFile.Macro) {
 				// we can ignore macros, because they are inlined separately by
 				// MacroExpansion.
 			} else {
-				internalFailure("cannot resolve as function or macro call",
-						filename, condition);
+				internalFailure("cannot resolve as function or macro call", filename, condition);
 			}
-		} catch(Exception ex) {
+		} catch (Exception ex) {
 			internalFailure(ex.getMessage(), filename, condition, ex);
 		}
 
 		instantiateFromExpression(condition.operands[0], axioms, freeVariable);
-		return and(axioms,condition);
+		return and(axioms, condition);
 	}
 
-	private HashMap<String, SemanticType> buildGenericBinding(
-			SemanticType[] from, SemanticType[] to) {
+	private HashMap<String, SemanticType> buildGenericBinding(SemanticType[] from, SemanticType[] to) {
 		HashMap<String, SemanticType> binding = new HashMap<String, SemanticType>();
 		for (int i = 0; i != to.length; ++i) {
 			SemanticType.Var v = (SemanticType.Var) from[i];
@@ -709,85 +695,83 @@ public class VerificationCheck implements Transform<WycsFile> {
 		if (expression instanceof Code.Variable || expression instanceof Code.Constant) {
 			// do nothing
 		} else if (expression instanceof Code.Cast) {
-			instantiateFromExpression((Code.Cast)expression,axioms, freeVariable);
+			instantiateFromExpression((Code.Cast) expression, axioms, freeVariable);
 		} else if (expression instanceof Code.Unary) {
-			instantiateFromExpression((Code.Unary)expression,axioms, freeVariable);
+			instantiateFromExpression((Code.Unary) expression, axioms, freeVariable);
 		} else if (expression instanceof Code.Binary) {
-			instantiateFromExpression((Code.Binary)expression,axioms, freeVariable);
+			instantiateFromExpression((Code.Binary) expression, axioms, freeVariable);
 		} else if (expression instanceof Code.Nary) {
-			instantiateFromExpression((Code.Nary)expression,axioms, freeVariable);
+			instantiateFromExpression((Code.Nary) expression, axioms, freeVariable);
 		} else if (expression instanceof Code.Load) {
-			instantiateFromExpression((Code.Load)expression,axioms, freeVariable);
+			instantiateFromExpression((Code.Load) expression, axioms, freeVariable);
 		} else if (expression instanceof Code.IndexOf) {
-			instantiateFromExpression((Code.IndexOf)expression,axioms, freeVariable);
+			instantiateFromExpression((Code.IndexOf) expression, axioms, freeVariable);
 		} else if (expression instanceof Code.Is) {
-			instantiateFromExpression((Code.Is)expression,axioms, freeVariable);
+			instantiateFromExpression((Code.Is) expression, axioms, freeVariable);
 		} else if (expression instanceof Code.FunCall) {
-			instantiateFromExpression((Code.FunCall)expression,axioms, freeVariable);
+			instantiateFromExpression((Code.FunCall) expression, axioms, freeVariable);
 		} else {
-			internalFailure("invalid expression encountered (" + expression
-					+ ", " + expression.getClass().getName() + ")", filename, expression);
+			internalFailure(
+					"invalid expression encountered (" + expression + ", " + expression.getClass().getName() + ")",
+					filename, expression);
 		}
 	}
 
 	private void instantiateFromExpression(Code.Cast expression, ArrayList<Code> axioms, int freeVariable) {
-		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
+		instantiateFromExpression(expression.operands[0], axioms, freeVariable);
 	}
-	
-	private void instantiateFromExpression(Code.Unary expression, ArrayList<Code> axioms, int freeVariable) {
-		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
 
-		if(expression.opcode == Code.Op.LENGTH) {
-			Code lez = Code.Binary(SemanticType.Int, Code.Op.LTEQ,
-					Code.Constant(Value.Integer(BigInteger.ZERO)), expression);
+	private void instantiateFromExpression(Code.Unary expression, ArrayList<Code> axioms, int freeVariable) {
+		instantiateFromExpression(expression.operands[0], axioms, freeVariable);
+
+		if (expression.opcode == Code.Op.LENGTH) {
+			Code lez = Code.Binary(SemanticType.Int, Code.Op.LTEQ, Code.Constant(Value.Integer(BigInteger.ZERO)),
+					expression);
 			axioms.add(lez);
 		}
 	}
 
 	private void instantiateFromExpression(Code.Binary expression, ArrayList<Code> axioms, int freeVariable) {
-		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
-		instantiateFromExpression(expression.operands[1],axioms, freeVariable);
+		instantiateFromExpression(expression.operands[0], axioms, freeVariable);
+		instantiateFromExpression(expression.operands[1], axioms, freeVariable);
 	}
 
 	private void instantiateFromExpression(Code.Nary expression, ArrayList<Code> axioms, int freeVariable) {
 		Code[] e_operands = expression.operands;
-		for(int i=0;i!=e_operands.length;++i) {
-			instantiateFromExpression(e_operands[i],axioms, freeVariable);
+		for (int i = 0; i != e_operands.length; ++i) {
+			instantiateFromExpression(e_operands[i], axioms, freeVariable);
 		}
 	}
 
 	private void instantiateFromExpression(Code.Load expression, ArrayList<Code> axioms, int freeVariable) {
-		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
+		instantiateFromExpression(expression.operands[0], axioms, freeVariable);
 	}
 
 	private void instantiateFromExpression(Code.IndexOf expression, ArrayList<Code> axioms, int freeVariable) {
-		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
-		instantiateFromExpression(expression.operands[1],axioms, freeVariable);
+		instantiateFromExpression(expression.operands[0], axioms, freeVariable);
+		instantiateFromExpression(expression.operands[1], axioms, freeVariable);
 	}
-	
+
 	private void instantiateFromExpression(Code.Is expression, ArrayList<Code> axioms, int freeVariable) {
-		instantiateFromExpression(expression.operands[0],axioms, freeVariable);
+		instantiateFromExpression(expression.operands[0], axioms, freeVariable);
 	}
-	
+
 	private void instantiateFromExpression(Code.FunCall expression, ArrayList<Code> axioms, int freeVariable) {
 		instantiateFromExpression(expression.operands[0], axioms, freeVariable);
 
 		try {
 			WycsFile module = builder.getModule(expression.nid.module());
 			// module should not be null if TypePropagation has already passed.
-			WycsFile.Function fn = module.declaration(expression.nid.name(),
-					WycsFile.Function.class);
+			WycsFile.Function fn = module.declaration(expression.nid.name(), WycsFile.Function.class);
 			if (fn.constraint != null) {
 				// There are some axioms we can instantiate. First, we need to
 				// construct the generic binding for this function.
-				HashMap<String, SemanticType> generics = buildGenericBinding(
-						fn.type.generics(), expression.binding);
-				Code axiom = renameToAvoidCapture(fn.constraint,freeVariable);
-				HashMap<Integer,Code> binding = new HashMap<Integer,Code>();
+				HashMap<String, SemanticType> generics = buildGenericBinding(fn.type.generics(), expression.binding);
+				Code axiom = renameToAvoidCapture(fn.constraint, freeVariable);
+				HashMap<Integer, Code> binding = new HashMap<Integer, Code>();
 				binding.put(1, expression.operands[0]);
 				binding.put(0, expression);
-				axiom = axiom.substitute(binding).instantiate(
-						generics);
+				axiom = axiom.substitute(binding).instantiate(generics);
 				axioms.add(axiom);
 			}
 		} catch (Exception ex) {
@@ -796,9 +780,9 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	private Code renameToAvoidCapture(Code code, int freeVariable) {
-		HashSet<Pair<SemanticType,Integer>> usedVariables = new HashSet();
-		findUsedVariables(code,usedVariables);
-		return NormalForms.renameVariables(code,freeVariable);
+		HashSet<Pair<SemanticType, Integer>> usedVariables = new HashSet();
+		findUsedVariables(code, usedVariables);
+		return NormalForms.renameVariables(code, freeVariable);
 	}
 
 	/**
@@ -815,8 +799,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			return v.index;
 		} else {
 			int max = -1;
-			for(Code c : condition.operands) {
-				max = Math.max(findLargestVariable(c),max);
+			for (Code c : condition.operands) {
+				max = Math.max(findLargestVariable(c), max);
 			}
 			return max;
 		}
@@ -829,67 +813,73 @@ public class VerificationCheck implements Transform<WycsFile> {
 	 * @param condition
 	 * @return
 	 */
-	private void findUsedVariables(Code condition, HashSet<Pair<SemanticType,Integer>> vars) {
+	private void findUsedVariables(Code condition, HashSet<Pair<SemanticType, Integer>> vars) {
 		if (condition instanceof Code.Variable) {
 			// do nothing
 			Code.Variable v = (Code.Variable) condition;
-			vars.add(new Pair<SemanticType,Integer>(v.type,v.index));
+			vars.add(new Pair<SemanticType, Integer>(v.type, v.index));
 		} else {
-			for(Code c : condition.operands) {
-				findUsedVariables(c,vars);
+			for (Code c : condition.operands) {
+				findUsedVariables(c, vars);
 			}
 		}
 	}
 
- 	private Code and(ArrayList<Code> axioms, Code c) {
-		if(axioms.size() == 0) {
+	private Code and(ArrayList<Code> axioms, Code c) {
+		if (axioms.size() == 0) {
 			return c;
 		} else {
-			Code[] clauses = new Code[axioms.size()+1];
+			Code[] clauses = new Code[axioms.size() + 1];
 			clauses[0] = c;
-			for(int i=0;i!=axioms.size();++i) {
-				clauses[i+1] = axioms.get(i);
+			for (int i = 0; i != axioms.size(); ++i) {
+				clauses[i + 1] = axioms.get(i);
 			}
-			return Code.Nary(SemanticType.Bool,Code.Op.AND,clauses);
+			return Code.Nary(SemanticType.Bool, Code.Op.AND, clauses);
 		}
 	}
- 	
-	private final EncapsulatedRewriter.Constructor reductionConstructor = new EncapsulatedRewriter.Constructor() {
-		@Override
-		public Rewriter construct() {
-			return new BatchRewriter(maxReductions, Solver.SCHEMA, Activation.RANK_COMPARATOR, Solver.reductions);
-			//return new CachingRewriter(new SingleStepRewriter(Solver.SCHEMA, Solver.reductions));
+
+	private RESULT unsat(Automaton automaton) {		
+		// Graph rewrite is needed to ensure that previously visited states are
+		// not visited again.
+		Rewrite rewrite = new GraphRewrite(Solver.SCHEMA, Activation.RANK_COMPARATOR, Solver.inferences);
+		// Stacked rewriter ensures that reduction rules are applied atomically
+		rewrite = new StackedRewrite(rewrite, Solver.SCHEMA, Solver.reductions);
+		// Breadth-first rewriter ensures that the search spans outwards in a
+		// fair style. This protects against rule starvation.
+		//Rewriter rewriter = new BreadthFirstRewriter(rewrite);
+		Rewriter rewriter = new LinearRewriter(rewrite);
+		// Initialiser the rewriter with our starting state
+		rewriter.initialise(automaton);
+		// Finally, perform the rewrite!
+		rewriter.apply(maxInferences);
+		List<Rewrite.State> states = rewrite.states();
+		System.out.println("Rewrite proof was " + states.size() + " steps.");
+		// Search through the states encountered and see whether we found a
+		// contradiction or not.
+		for (int i = 0; i != states.size(); ++i) {
+			automaton = states.get(i).automaton();
+			if (automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
+				// Yes, we found a contradiction!
+				return RESULT.UNSAT;
+			}
 		}
-	};
- 	
-	private Automaton infer(Automaton automaton) {
-		Rewriter rewriter = new EncapsulatedRewriter(reductionConstructor, Solver.SCHEMA,
-				Activation.RANK_COMPARATOR, Solver.inferences);		
-		//Rewriter rewriter = new SingleStepRewriter(Solver.SCHEMA, append(Solver.reductions,Solver.inferences));
-		RewriteState initial = rewriter.initialise(automaton);		
-		// Add caching to the rewriter. This is essential to prevent oscillating
-		// between multiple equivalent or identical states.
-		rewriter = new CachingRewriter(rewriter);
-		// Add throttling to the rewriter. This is essential to cap the maximum
-		// number of rewriter steps which will be taken.		
-		rewriter = new ThrottledRewriter(rewriter,maxInferences);
-		// Finally, perform the rewrite!		
-		RewriteProof proof = rewriter.apply(initial);
-		System.out.println("Rewrite proof was " + proof.size() + " steps.");
-		if(proof.size() > 0) {
-			return  proof.last().automaton();
+		if (states.size() == maxInferences) {
+			// The rewrite has been bounded by the maximum number of permitted
+			// steps. Therefore, we declare it a timeout.
+			return RESULT.TIMEOUT;
 		} else {
-			// Cannot return automaton parameter here, in case it was reduced
-			// during the Rewriter.initialise() function. This can result in an
-			// empty proof, since no inference rules were applied.
-			return initial.automaton();
+			return RESULT.SAT;
 		}
 	}
-	
+
 	private RewriteRule[] append(RewriteRule[] lhs, RewriteRule[] rhs) {
-		RewriteRule[] rules = new RewriteRule[lhs.length+rhs.length];
+		RewriteRule[] rules = new RewriteRule[lhs.length + rhs.length];
 		System.arraycopy(lhs, 0, rules, 0, lhs.length);
 		System.arraycopy(rhs, 0, rules, lhs.length, rhs.length);
 		return rules;
+	}
+
+	private enum RESULT {
+		TIMEOUT, SAT, UNSAT
 	}
 }

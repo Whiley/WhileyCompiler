@@ -2579,7 +2579,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_40");
 	}
 
-	@Ignore("Does work") @Test
+	@Test
 	public void While_Valid_41() {
 		runTest("While_Valid_41");
 	}

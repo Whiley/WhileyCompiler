@@ -1,13 +1,12 @@
 package wycs.core;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import wyautl.core.*;
-import wyrw.core.RewriteProof;
-import wyrw.core.RewriteStep;
-import wyrw.core.Rewriter;
-import wyrw.util.BatchRewriter;
+import wyrw.core.*;
+import wyrw.util.*;
 import wycc.lang.NameID;
 import static wycs.core.Types.*;
 
@@ -897,12 +896,11 @@ public abstract class SemanticType {
 	}
 
 	private static Automaton reduce(Automaton automaton) {
-		Rewriter rewriter = new BatchRewriter(Types.SCHEMA, Types.reductions);
-		RewriteProof st = rewriter.apply(rewriter.initialise(automaton));
-		if(st.size() > 0) {
-			return st.last().automaton();
-		} else {
-			return automaton;
-		}
+		Rewrite rewrite = new TreeRewrite(Types.SCHEMA, Activation.RANK_COMPARATOR, Types.reductions);
+		Rewriter rewriter = new LinearRewriter(rewrite);
+		rewriter.initialise(automaton);
+		rewriter.apply(10000);
+		List<Rewrite.State> states = rewrite.states();
+		return states.get(states.size()-1).automaton();
 	}	
 }
