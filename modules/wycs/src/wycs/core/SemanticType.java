@@ -897,7 +897,7 @@ public abstract class SemanticType {
 
 	private static Automaton reduce(Automaton automaton) {
 		Rewrite rewrite = new TreeRewrite(Types.SCHEMA, Activation.RANK_COMPARATOR, Types.reductions);
-		Rewriter rewriter = new LinearRewriter(rewrite);
+		Rewriter rewriter = new UnfairLinearRewriter(rewrite);
 		rewriter.initialise(automaton);
 		rewriter.apply(10000);
 		List<Rewrite.State> states = rewrite.states();

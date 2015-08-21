@@ -149,7 +149,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static int getMaxInferences() {
-		return 1000; // default value
+		return 10000; // default value
 	}
 
 	public void setMaxInferences(int limit) {
@@ -488,7 +488,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// work during verification, and also allows the functions in
 		// SolverUtils to work properly.
 		Rewrite rewrite = new TreeRewrite(Solver.SCHEMA, Activation.RANK_COMPARATOR, Solver.reductions);
-		Rewriter rewriter = new LinearRewriter(rewrite);
+		Rewriter rewriter = new UnfairLinearRewriter(rewrite);
 		rewriter.initialise(type_automaton);
 		rewriter.apply(10000);
 		List<Rewrite.State> states = rewrite.states();
@@ -846,14 +846,20 @@ public class VerificationCheck implements Transform<WycsFile> {
 		rewrite = new StackedRewrite(rewrite, Solver.SCHEMA, Solver.reductions);
 		// Breadth-first rewriter ensures that the search spans outwards in a
 		// fair style. This protects against rule starvation.
-		//Rewriter rewriter = new BreadthFirstRewriter(rewrite);
-		Rewriter rewriter = new LinearRewriter(rewrite);
+		Rewriter rewriter = new BreadthFirstRewriter(rewrite);
+		//Rewriter rewriter = new UnfairLinearRewriter(rewrite);
 		// Initialiser the rewriter with our starting state
 		rewriter.initialise(automaton);
 		// Finally, perform the rewrite!
 		rewriter.apply(maxInferences);
 		List<Rewrite.State> states = rewrite.states();
 		System.out.println("Rewrite proof was " + states.size() + " steps.");
+//		for(int i = 0; i != states.size();++i) {
+//			System.out.println("RANK: " + states.get(i).rank());
+//			wyrl.util.Runtime.debug(states.get(i).automaton(), Solver.SCHEMA, "And","Or");
+//			//System.out.println(states.get(i).automaton());
+//			System.out.println("--");
+//		}
 		// Search through the states encountered and see whether we found a
 		// contradiction or not.
 		for (int i = 0; i != states.size(); ++i) {
