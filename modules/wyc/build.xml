@@ -44,10 +44,6 @@
       <fileset dir="../wycs/src">
 	<include name="wycs/**/*.class"/>
       </fileset>
-      <fileset dir="../wyrl/src">
-	<include name="wyrl/**/*.class"/>
-	<include name="wyautl/**/*.class"/>
-      </fileset>
       <fileset dir="../wyil/src">
 	<include name="wyautl_old/**/*.class"/>
 	<include name="wybs/**/*.class"/>

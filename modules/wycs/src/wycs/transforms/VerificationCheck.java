@@ -42,7 +42,7 @@ import wyfs.util.Trie;
  */
 public class VerificationCheck implements Transform<WycsFile> {
 	private enum RewriteMode {
-		SIMPLE, STATICDISPATCH, GLOBALDISPATCH
+		UNFAIR, FAIR, EXHAUSTIVE
 	};
 
 	/**
@@ -62,12 +62,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	 * are chosen according to rank. See #510 on why this is necessary to manage
 	 * quantifier instantiation versus inequality inference.
 	 */
-	private RewriteMode rwMode = RewriteMode.GLOBALDISPATCH;
-
-	/**
-	 * Determine the maximum number of reduction steps permitted
-	 */
-	private int maxReductions = getMaxReductions();
+	private RewriteMode rwMode = RewriteMode.UNFAIR;
 
 	/**
 	 * Determine the maximum number of inference steps permitted
@@ -115,11 +110,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static String describeRwMode() {
-		return "Set the rewrite mode to use (simple or static-dispatch)";
+		return "Set the rewrite mode to use (unfair, fair or exhaustive)";
 	}
 
 	public static String getRwmode() {
-		return "globaldispatch"; // default value
+		return "unfaise"; // default value
 	}
 
 	public void setRwmode(String mode) {
@@ -132,24 +127,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 		throw new RuntimeException("unknown rewrite mode: " + mode);
 	}
 
-	public static String describeMaxReductions() {
-		return "Limits the number of reduction steps permitted";
-	}
-
-	public static int getMaxReductions() {
-		return 1000; // default value
-	}
-
-	public void setMaxReductions(int limit) {
-		this.maxReductions = limit;
-	}
-
 	public static String describeMaxInferences() {
 		return "Limits the number of inference steps permitted";
 	}
 
 	public static int getMaxInferences() {
-		return 10000; // default value
+		return 500; // default value
 	}
 
 	public void setMaxInferences(int limit) {
@@ -846,20 +829,16 @@ public class VerificationCheck implements Transform<WycsFile> {
 		rewrite = new StackedRewrite(rewrite, Solver.SCHEMA, Solver.reductions);
 		// Breadth-first rewriter ensures that the search spans outwards in a
 		// fair style. This protects against rule starvation.
-		Rewriter rewriter = new BreadthFirstRewriter(rewrite);
-		//Rewriter rewriter = new UnfairLinearRewriter(rewrite);
+		Rewriter rewriter = createRewriter(rewrite);
 		// Initialiser the rewriter with our starting state
 		rewriter.initialise(automaton);
 		// Finally, perform the rewrite!
 		rewriter.apply(maxInferences);
 		List<Rewrite.State> states = rewrite.states();
 		System.out.println("Rewrite proof was " + states.size() + " steps.");
-//		for(int i = 0; i != states.size();++i) {
-//			System.out.println("RANK: " + states.get(i).rank());
-//			wyrl.util.Runtime.debug(states.get(i).automaton(), Solver.SCHEMA, "And","Or");
-//			//System.out.println(states.get(i).automaton());
-//			System.out.println("--");
-//		}
+		if(debug) {
+			printRewriteProof(rewrite);
+		}
 		// Search through the states encountered and see whether we found a
 		// contradiction or not.
 		for (int i = 0; i != states.size(); ++i) {
@@ -878,6 +857,33 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 
+	/**
+	 * Construct rewriter based on selected rewrite mode.
+	 * 
+	 * @param rewrite
+	 * @return
+	 */
+	private Rewriter createRewriter(Rewrite rewrite) {
+		switch(rwMode) {
+		case UNFAIR:
+			return new UnfairLinearRewriter(rewrite); 
+		case FAIR:
+			return new FairLinearRewriter(rewrite);
+		case EXHAUSTIVE:
+			return new BreadthFirstRewriter(rewrite);
+		}
+		throw new RuntimeException("Unknown rewrite mode encountered: " + rwMode);
+	}
+	
+	private void printRewriteProof(Rewrite rewrite) {
+		List<Rewrite.State> states = rewrite.states();
+		for (int i = 0; i != states.size(); ++i) {
+			wyrl.util.Runtime.debug(states.get(i).automaton(), Solver.SCHEMA, "And", "Or");
+			// System.out.println(states.get(i).automaton());
+			System.out.println("--");
+	}
+	}
+	
 	private RewriteRule[] append(RewriteRule[] lhs, RewriteRule[] rhs) {
 		RewriteRule[] rules = new RewriteRule[lhs.length + rhs.length];
 		System.arraycopy(lhs, 0, rules, 0, lhs.length);
