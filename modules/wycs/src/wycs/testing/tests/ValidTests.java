@@ -28,7 +28,7 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Arith_16() { verifyPassTest("test_arith_16"); }
 	@Test public void Test_Arith_17() { verifyPassTest("test_arith_17"); }
 	@Ignore("Known Issue") @Test public void Test_Arith_18() { verifyPassTest("test_arith_18"); }
-	@Ignore("Known Issue") @Test public void Test_Arith_19() { verifyPassTest("test_arith_19"); }
+	@Test public void Test_Arith_19() { verifyPassTest("test_arith_19"); }
 	@Test public void Test_Arith_20() { verifyPassTest("test_arith_20"); }
 	@Test public void Test_Arith_21() { verifyPassTest("test_arith_21"); }
 	@Test public void Test_Arith_22() { verifyPassTest("test_arith_22"); }
@@ -42,7 +42,7 @@ public class ValidTests extends TestHarness {
 	@Ignore("Known Issue") @Test public void Test_Arith_30() { verifyPassTest("test_arith_30"); }
 	@Ignore("Known Issue") @Test public void Test_Arith_31() { verifyPassTest("test_arith_31"); }
 	@Test public void Test_Arith_32() { verifyPassTest("test_arith_32"); }
-	@Ignore("Known Issue") @Test public void Test_Arith_33() { verifyPassTest("test_arith_33"); }
+	@Test public void Test_Arith_33() { verifyPassTest("test_arith_33"); }
 	@Test public void Test_Arith_34() { verifyPassTest("test_arith_34"); }
 	@Test public void Test_Arith_35() { verifyPassTest("test_arith_35"); }
 	@Test public void Test_Arith_36() { verifyPassTest("test_arith_36"); }
@@ -62,8 +62,6 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_List_5() { verifyPassTest("test_list_05"); }
 	@Ignore("#303") @Test public void Test_List_6() { verifyPassTest("test_list_06"); }
 	@Test public void Test_List_8() { verifyPassTest("test_list_08"); }
-	@Ignore("#231") @Test public void Test_List_9() { verifyPassTest("test_list_09"); }
-	@Ignore("#231") @Test public void Test_List_10() { verifyPassTest("test_list_10"); }
 	@Test public void Test_List_13() { verifyPassTest("test_list_13"); }
 	@Test public void Test_List_14() { verifyPassTest("test_list_14"); }
 	@Ignore("#378") @Test public void Test_List_15() { verifyPassTest("test_list_15"); }
@@ -101,6 +99,7 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_List_47() { verifyPassTest("test_list_47"); }
 	@Test public void Test_List_48() { verifyPassTest("test_list_48"); }
 	@Test public void Test_List_49() { verifyPassTest("test_list_49"); }
+	@Test public void Test_List_50() { verifyPassTest("test_list_50"); }
 	
 	@Test public void Test_Type_01() { verifyPassTest("test_type_01"); }
 	@Test public void Test_Type_02() { verifyPassTest("test_type_02"); }
@@ -120,7 +119,7 @@ public class ValidTests extends TestHarness {
 	@Ignore("#468") @Test public void Test_Type_16() { verifyPassTest("test_type_16"); }
 	@Ignore("#468") @Test public void Test_Type_17() { verifyPassTest("test_type_17"); }
 	@Ignore("#468") @Test public void Test_Type_18() { verifyPassTest("test_type_18"); }
-	@Test public void Test_Type_19() { verifyPassTest("test_type_19"); }
+	@Ignore("#468") @Test public void Test_Type_19() { verifyPassTest("test_type_19"); }
 	@Ignore("#468") @Test public void Test_Type_20() { verifyPassTest("test_type_20"); }
 	@Ignore("#468") @Test public void Test_Type_21() { verifyPassTest("test_type_21"); }
 	@Test public void Test_Type_22() { verifyPassTest("test_type_22"); }

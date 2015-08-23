@@ -5,11 +5,11 @@ assert:
         if:
             test_sum(xs, x + 1) >= 0
             exists (int i1, int v1):
-                (i1, v1) in xs
+                xs[i1] == v1
                 v1 < 0
             forall (int i2, int v2):
                 if:
-                    (i2, v2) in xs
+                    xs[i2] == v2
                 then:
                     v2 >= 0
         then:
