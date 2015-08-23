@@ -46,7 +46,10 @@ public class ValidTests extends TestHarness {
 	@Test public void Test_Arith_34() { verifyPassTest("test_arith_34"); }
 	@Test public void Test_Arith_35() { verifyPassTest("test_arith_35"); }
 	@Test public void Test_Arith_36() { verifyPassTest("test_arith_36"); }
-
+	@Test public void Test_Arith_37() { verifyPassTest("test_arith_37"); }
+	@Test public void Test_Arith_38() { verifyPassTest("test_arith_38"); }
+	@Test public void Test_Arith_39() { verifyPassTest("test_arith_39"); }
+	
 	@Test public void Test_Macro_1() { verifyPassTest("test_macro_01"); }
 	@Test public void Test_Macro_2() { verifyPassTest("test_macro_02"); }
 	@Test public void Test_Macro_3() { verifyPassTest("test_macro_03"); }
