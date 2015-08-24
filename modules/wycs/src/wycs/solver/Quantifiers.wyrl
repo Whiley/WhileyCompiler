@@ -62,7 +62,7 @@ rank 1:
 // Attempt to instantiate quantifier with a given expression
 infer And{
     // The expression we're instantiating over
-    Expr e1,
+    BExpr e1,
     // The Quantifier we're attempting to instantiate
     ForAll[{[Var, Type], [Var,Type]...} vs, BExpr e2] qf,
     // The rest

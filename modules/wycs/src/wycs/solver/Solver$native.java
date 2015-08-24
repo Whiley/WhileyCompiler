@@ -28,6 +28,8 @@ package wycs.solver;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
+import java.util.HashSet;
 
 import wyautl.core.Automaton;
 import wyautl.util.BigRational;
@@ -337,7 +339,7 @@ public class Solver$native {
 		// Attempt to find as many bindings as possible. This is a
 		// potentially expensive operation when the quantified expression is
 		// large and/or there are a large number of quantified variables.
-		ArrayList<Binding> bindings = generateBindings(automaton,quantifiedVariables,quantifiedTriggers,concreteTriggers); 
+		ArrayList<Binding> bindings = generateBindings(automaton,quantifiedVariables,quantifiedTriggers,concreteTriggers); 		
 		
 		// If one or more bindings have been computed, then apply them to the
 		// quantified expression to produce one or more instantiated
@@ -490,7 +492,7 @@ public class Solver$native {
 	private static ArrayList<Binding> generateBindings(Automaton automaton, boolean[] quantifiedVariables,
 			boolean[] quantifiedTriggers, boolean[] concreteTriggers) {
 		ArrayList<Binding> bindings = new ArrayList<Binding>();
-
+		
 		for (int i = 0; i != quantifiedTriggers.length; ++i) {
 			if (quantifiedTriggers[i]) {
 				for (int j = 0; j != concreteTriggers.length; ++j) {
@@ -716,7 +718,7 @@ public class Solver$native {
 	 * @author David J. Pearce
 	 *
 	 */
-	private final static class Binding {
+	private final static class Binding implements Comparable<Binding> {
 		/**
 		 * The mapping from automaton states to automaton states. Initially,
 		 * each state maps to itself. As the computation proceeds, those states
@@ -781,6 +783,54 @@ public class Solver$native {
 			}
 
 			return true;
+		}
+
+		@Override
+		public int compareTo(Binding b) {
+			int c = compare(binding,b.binding);
+			if(c != 0) {
+				return c;
+			} else if(numberUnbound < b.numberUnbound){
+				return -1;
+			} else if(numberUnbound > b.numberUnbound){
+				return 1;
+			} else {
+				return 0;
+			}
+		}	
+		
+		@Override
+		public boolean equals(Object o) {
+			if(o instanceof Binding) {
+				Binding b = (Binding) o;
+				return compareTo(b) == 0;
+			} else {
+				return false;
+			}
+		}
+		
+		@Override
+		public int hashCode() {
+			return Arrays.hashCode(binding);
+		}
+	}
+	
+	private static int compare(int[] lhs, int[] rhs) {
+		if(lhs.length < rhs.length) {
+			return -1;
+		} else if(lhs.length > rhs.length) {
+			return 1;
+		} else {
+			for(int i=0;i!=lhs.length;++i) {
+				int l = lhs[i];
+				int r = rhs[i];
+				if(l < r) {
+					return -1;
+				} else if(l > r) {
+					return 1;
+				}
+			}
+			return 0;
 		}
 	}
 }
