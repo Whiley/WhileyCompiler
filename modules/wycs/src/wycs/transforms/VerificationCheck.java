@@ -881,7 +881,30 @@ public class VerificationCheck implements Transform<WycsFile> {
 			wyrl.util.Runtime.debug(states.get(i).automaton(), Solver.SCHEMA, "And", "Or");
 			// System.out.println(states.get(i).automaton());
 			System.out.println("--");
+		}
+		List<Rewrite.Step> steps = rewrite.steps();
+		Counter good = new Counter();
+		Counter bad = new Counter();
+		for(int i = 0; i != steps.size();++i) {
+			Rewrite.Step step = steps.get(i);
+			int activation = step.activation();
+			Activation a = states.get(step.before()).activation(activation);
+			if(step.before() != step.after()) {
+				good.inc(a.rule().name());
+			} else {
+				bad.inc(a.rule().name());
+			}
+		}
+		System.out.println("Successfully applied: ");
+		printCounts(good);
+		System.out.println("\nUnsuccessfully applied: ");
+		printCounts(bad);
 	}
+	
+	private void printCounts(Counter c) {
+		for(Map.Entry<String, Integer> e : c.counts()) {
+			System.out.println("\t" + e.getKey() + " = " + e.getValue());
+		}
 	}
 	
 	private RewriteRule[] append(RewriteRule[] lhs, RewriteRule[] rhs) {
@@ -893,5 +916,21 @@ public class VerificationCheck implements Transform<WycsFile> {
 
 	private enum RESULT {
 		TIMEOUT, SAT, UNSAT
+	}
+	
+	private static class Counter {
+		private HashMap<String,Integer> counts = new HashMap<String,Integer>();
+		
+		public void inc(String id) {
+			Integer count = counts.get(id);
+			if(count == null) {
+				count = 0;
+			} 
+			counts.put(id, count+1);
+		}
+		
+		public Set<Map.Entry<String,Integer>> counts() {
+			return counts.entrySet();
+		}
 	}
 }
