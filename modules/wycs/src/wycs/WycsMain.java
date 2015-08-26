@@ -30,12 +30,22 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
+import wyautl.core.Automaton;
+import wyautl.io.PrettyAutomataReader;
+
 import static wycc.lang.SyntaxError.*;
 import wycc.lang.Pipeline;
 import wycc.lang.SyntaxError;
 import wycc.lang.Transform;
 import wycc.util.OptArg;
+import wycs.solver.Solver;
+import wycs.transforms.VerificationCheck;
 import wycs.util.WycsBuildTask;
+import wyrw.core.Activation;
+import wyrw.core.Rewrite;
+import wyrw.core.Rewriter;
+import wyrw.util.GraphRewrite;
+import wyrw.util.StackedRewrite;
 
 /**
 * The main class provides all of the necessary plumbing to process command-line
@@ -171,6 +181,13 @@ public class WycsMain {
 				return SUCCESS;
 			}
 
+			if (values.containsKey("wyone")) {				
+				FileReader input = new FileReader(args.get(0));
+				PrettyAutomataReader reader = new PrettyAutomataReader(input, Solver.SCHEMA);				
+				VerificationCheck.unsat(reader.read(),VerificationCheck.RewriteMode.UNFAIR,500,values.containsKey("debug"));
+				return SUCCESS;
+			}
+			
 			verbose = values.containsKey("verbose");
 
 			// =====================================================================
@@ -304,7 +321,7 @@ public class WycsMain {
 		}
 		return r;
 	}
-
+	
  // =========================================================================
 	// Main Method
 	// =========================================================================
