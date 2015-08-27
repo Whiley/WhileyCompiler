@@ -21,10 +21,10 @@ ensures (C.width == B.width) && (C.height == A.height):
     //
     int[][] C_data = [[0;0]; A.height]
     int i = 0
-    while i < A.height where i >= 0:
+    while i < A.height where i >= 0 where |C_data| == A.height:
         int[] row = [0; B.width]
         int j = 0
-        while j < B.width where j >= 0:
+        while j < B.width where j >= 0 where |row| == B.width:
             int r = 0
             int k = 0
             while k < A.width where k >= 0:

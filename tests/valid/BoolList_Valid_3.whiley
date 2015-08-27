@@ -11,6 +11,7 @@ requires all { k in 0 .. |board| | |board[k]| == 3 }:
         int j = 0
         while j < 3 
             where j >= 0
+            where |board| == |nboard|
             where |board[i]| == |nboard[i]|:
             int c = countLiving(board, i, j)
             if board[i][j]:

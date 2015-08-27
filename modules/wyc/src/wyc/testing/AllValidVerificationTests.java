@@ -129,7 +129,7 @@ public class AllValidVerificationTests {
 		runTest("Access_Valid_2");
 	}
 
-	@Ignore("#308") @Test
+	@Test
 	public void Assume_Valid_1() {
 		runTest("Assume_Valid_1");
 	}
@@ -374,7 +374,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedInt_Valid_1");
 	}
 
-	@Ignore("Issue ???	") @Test
+	@Test
 	public void ConstrainedInt_Valid_10() {
 		runTest("ConstrainedInt_Valid_10");
 	}
@@ -559,7 +559,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_27");
 	}
 
-	@Ignore("#231") @Test
+	@Test
 	public void ConstrainedList_Valid_3() {
 		runTest("ConstrainedList_Valid_3");
 	}
@@ -2564,7 +2564,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_37");
 	}
 
-	@Ignore("#379") @Test
+	@Test
 	public void While_Valid_38() {
 		runTest("While_Valid_38");
 	}

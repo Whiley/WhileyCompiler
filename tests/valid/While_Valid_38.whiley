@@ -12,7 +12,7 @@ ensures r ==> all { j in 1 .. |items| | items[j-1] < items[j] }:
     where i >= 1 && i <= |items|
     where all { j in 1 .. i | items[j-1] < items[j] }:
         //
-        if items[i-1] > items[i]:
+        if items[i-1] >= items[i]:
             return false
         i = i + 1
 
