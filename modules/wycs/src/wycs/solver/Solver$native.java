@@ -105,7 +105,6 @@ public class Solver$native {
 				}
 			}
 		}
-
 		return (Automaton.Term) automaton.get(greatest);
 	}
 
@@ -137,7 +136,15 @@ public class Solver$native {
 		} else if(s1 instanceof Automaton.Term) {
 			Automaton.Term t1 = (Automaton.Term) s1;
 			Automaton.Term t2 = (Automaton.Term) s2;
-			return compare(automaton,t1.contents,t2.contents);
+			int t1_contents = t1.contents;
+			int t2_contents = t2.contents;
+			if(t1_contents == Automaton.K_VOID) {
+				return t2_contents == Automaton.K_VOID ? 0 : -1;
+			} else if(t2_contents == Automaton.K_VOID) {
+				return 1;
+			} else {
+				return compare(automaton,t1.contents,t2.contents);
+			}
 		} else {
 			Automaton.Collection c1 = (Automaton.Collection) s1;
 			Automaton.Collection c2 = (Automaton.Collection) s2;

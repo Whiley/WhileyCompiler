@@ -9,13 +9,13 @@ function run(Matrix A, Matrix B) -> Matrix
 requires (|A| > 0) && ((|B| > 0) && (|B| == |A[0]|)):
     int[][] C = [[0;0]; |A|]
     int i = 0
-    while i < |A|:
+    while i < |A| where i >= 0:
         int[] row = [0; |B|]
         int j = 0
-        while j < |B[0]|:
+        while j < |B[0]| where j >= 0:
             int r = 0
             int k = 0 
-            while k < |B|:
+            while k < |B| where k >= 0:
                 r = r + (A[i][k] * B[k][j])
                 k = k + 1            
             row[j] = r

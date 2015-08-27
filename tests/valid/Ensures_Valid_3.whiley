@@ -3,8 +3,12 @@ ensures |ys| <= |xs|
 ensures no { i in 0..|ys| | ys[i] < 0 }:
     //
     int i = 0
+    int size = |xs|
     int count = 0
-    while i < |xs| where i >= 0 && count >= 0:
+    while i < |xs| 
+        where i >= 0 && i <= |xs| && |xs| == size 
+        where count >= 0 && count <= i:
+        //
         if xs[i] >= 0:
             count = count + 1
         i = i + 1
@@ -13,8 +17,8 @@ ensures no { i in 0..|ys| | ys[i] < 0 }:
     i = 0
     int j = 0
     while i < |xs| && j < |zs|
-        where i >= 0 && j >= 0
-        where all { k in 0 .. |zs| | zs[k] >= 0 }:
+        where i >= 0 && j >= 0 && j <= |zs| && |zs| == count
+        where all { k in 0 .. j | zs[k] >= 0 }:
         if xs[i] >= 0:
             zs[j] = xs[i]
             j = j + 1

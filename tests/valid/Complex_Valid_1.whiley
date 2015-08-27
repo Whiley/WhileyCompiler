@@ -22,17 +22,30 @@ constant BLACK_ROOK is {colour: false, kind: ROOK}
 constant BLACK_QUEEN is {colour: false, kind: QUEEN}
 constant BLACK_KING is {colour: false, kind: KING}
 
-type RowCol is (int x) where x >= 0
+type RowCol is (int x) where x >= 0 && x < 8
 
 type Pos is {RowCol col, RowCol row}
 
 type Square is Piece | null
 
-type Row is Square[]
+type Row is (Square[] squares) where |squares| == 8
 
-type Board is {bool blackCastleKingSide, bool whiteCastleQueenSide, bool blackCastleQueenSide, Row[] rows, bool whiteCastleKingSide}
+type Board is {
+    bool blackCastleKingSide, 
+    bool whiteCastleQueenSide, 
+    bool blackCastleQueenSide, 
+    Row[] rows, 
+    bool whiteCastleKingSide
+} where |rows| == 8
 
-constant startingChessRows is [[WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN, WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK], [WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN], [null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null], [BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN], [BLACK_ROOK, BLACK_KNIGHT, BLACK_BISHOP, BLACK_QUEEN, BLACK_KING, BLACK_BISHOP, BLACK_KNIGHT, BLACK_ROOK]]
+constant startingChessRows is [
+    [WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN, WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK], 
+    [WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN], 
+    [null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null], 
+    [null, null, null, null, null, null, null, null], [null, null, null, null, null, null, null, null], 
+    [BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN],
+    [BLACK_ROOK, BLACK_KNIGHT, BLACK_BISHOP, BLACK_QUEEN, BLACK_KING, BLACK_BISHOP, BLACK_KNIGHT, BLACK_ROOK]
+]
 
 constant startingChessBoard is {blackCastleKingSide: true, whiteCastleQueenSide: true, blackCastleQueenSide: true, rows: startingChessRows, whiteCastleKingSide: true}
 

@@ -41,7 +41,7 @@ import wyfs.util.Trie;
  *
  */
 public class VerificationCheck implements Transform<WycsFile> {
-	private enum RewriteMode {
+	public enum RewriteMode {
 		UNFAIR, FAIR, EXHAUSTIVE
 	};
 
@@ -132,7 +132,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	}
 
 	public static int getMaxInferences() {
-		return 500; // default value
+		return 2000; // default value
 	}
 
 	public void setMaxInferences(int limit) {
@@ -207,11 +207,10 @@ public class VerificationCheck implements Transform<WycsFile> {
 
 		if (debug) {
 			debug(neg, filename);
-			original = new Automaton(automaton);
-			// debug(original);
+			debug(nnf, filename);
 		}
 
-		RESULT result = unsat(automaton);
+		RESULT result = unsat(automaton,rwMode,maxInferences,debug);
 
 		if (result == RESULT.TIMEOUT) {
 			throw new AssertionFailure("timeout occurred during verification", stmt, null, automaton, original);
@@ -471,7 +470,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// work during verification, and also allows the functions in
 		// SolverUtils to work properly.
 		Rewrite rewrite = new TreeRewrite(Solver.SCHEMA, Activation.RANK_COMPARATOR, Solver.reductions);
-		Rewriter rewriter = new UnfairLinearRewriter(rewrite);
+		Rewriter rewriter = new LinearRewriter(rewrite);
 		rewriter.initialise(type_automaton);
 		rewriter.apply(10000);
 		List<Rewrite.State> states = rewrite.states();
@@ -821,19 +820,21 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 
-	private RESULT unsat(Automaton automaton) {		
+	public static RESULT unsat(Automaton automaton,  RewriteMode rwMode, int maxSteps, boolean debug) {		
 		// Graph rewrite is needed to ensure that previously visited states are
-		// not visited again.
+		// not visited again.		
 		Rewrite rewrite = new GraphRewrite(Solver.SCHEMA, Activation.RANK_COMPARATOR, Solver.inferences);
 		// Stacked rewriter ensures that reduction rules are applied atomically
 		rewrite = new StackedRewrite(rewrite, Solver.SCHEMA, Solver.reductions);
 		// Breadth-first rewriter ensures that the search spans outwards in a
 		// fair style. This protects against rule starvation.
-		Rewriter rewriter = createRewriter(rewrite);
-		// Initialiser the rewriter with our starting state
+		Rewriter rewriter = createRewriter(rewrite,rwMode);
+		// Initialiser the rewriter with our starting state		
+		automaton.minimise();
+		automaton.compact();
 		rewriter.initialise(automaton);
-		// Finally, perform the rewrite!
-		rewriter.apply(maxInferences);
+		// Finally, perform the rewrite!		
+		rewriter.apply(maxSteps);
 		List<Rewrite.State> states = rewrite.states();
 		System.out.println("Rewrite proof was " + states.size() + " steps.");
 		if(debug) {
@@ -847,8 +848,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 				// Yes, we found a contradiction!
 				return RESULT.UNSAT;
 			}
-		}
-		if (states.size() == maxInferences) {
+		}		
+		if (states.size() == maxSteps) {
 			// The rewrite has been bounded by the maximum number of permitted
 			// steps. Therefore, we declare it a timeout.
 			return RESULT.TIMEOUT;
@@ -863,25 +864,46 @@ public class VerificationCheck implements Transform<WycsFile> {
 	 * @param rewrite
 	 * @return
 	 */
-	private Rewriter createRewriter(Rewrite rewrite) {
+	private static Rewriter createRewriter(Rewrite rewrite, RewriteMode rwMode) {
 		switch(rwMode) {
 		case UNFAIR:
-			return new UnfairLinearRewriter(rewrite); 
-		case FAIR:
-			return new FairLinearRewriter(rewrite);
+			return new StackableLinearRewriter(rewrite); 
 		case EXHAUSTIVE:
 			return new BreadthFirstRewriter(rewrite);
 		}
 		throw new RuntimeException("Unknown rewrite mode encountered: " + rwMode);
 	}
 	
-	private void printRewriteProof(Rewrite rewrite) {
+	private static void printRewriteProof(Rewrite rewrite) {
 		List<Rewrite.State> states = rewrite.states();
-		for (int i = 0; i != states.size(); ++i) {
-			wyrl.util.Runtime.debug(states.get(i).automaton(), Solver.SCHEMA, "And", "Or");
-			// System.out.println(states.get(i).automaton());
-			System.out.println("--");
+		List<Rewrite.Step> steps = rewrite.steps();
+		Counter good = new Counter();
+		Counter bad = new Counter();
+		int count = 0;
+		for(int i = 0; i != steps.size();++i) {
+			Rewrite.Step step = steps.get(i);			
+			int activation = step.activation();
+			Activation a = states.get(step.before()).activation(activation);
+			if(step.before() != step.after()) {
+				Automaton automaton = states.get(step.before()).automaton();
+				System.out.println("-- Step " + count + " (" + a.rule().name() + ", " + automaton.nStates() + " states) --");				
+				//wyrl.util.Runtime.debug(automaton, Solver.SCHEMA, "And", "Or");
+				count = count + 1;
+				good.inc(a.rule().name());
+			} else {
+				bad.inc(a.rule().name());
+			}
+		}
+		System.out.println("Successfully applied: ");
+		printCounts(good);
+		System.out.println("\nUnsuccessfully applied: ");
+		printCounts(bad);
 	}
+	
+	private static void printCounts(Counter c) {
+		for(Map.Entry<String, Integer> e : c.counts()) {
+			System.out.println("\t" + e.getKey() + " = " + e.getValue());
+		}
 	}
 	
 	private RewriteRule[] append(RewriteRule[] lhs, RewriteRule[] rhs) {
@@ -893,5 +915,21 @@ public class VerificationCheck implements Transform<WycsFile> {
 
 	private enum RESULT {
 		TIMEOUT, SAT, UNSAT
+	}
+	
+	private static class Counter {
+		private HashMap<String,Integer> counts = new HashMap<String,Integer>();
+		
+		public void inc(String id) {
+			Integer count = counts.get(id);
+			if(count == null) {
+				count = 0;
+			} 
+			counts.put(id, count+1);
+		}
+		
+		public Set<Map.Entry<String,Integer>> counts() {
+			return counts.entrySet();
+		}
 	}
 }
