@@ -108,6 +108,7 @@
       <include name="bin/wycs"/>
       <include name="bin/wy_common.bash"/>
       <include name="lib/*-v${version}.jar"/>
+      <include name="lib/wyrl-v*.jar"/>
       <include name="lib/jasm-v*.jar"/>
     </fileset>
   </copy>
