@@ -154,3 +154,29 @@ public function append(int item, int[] items) -> int[]:
     nitems[0] = item    
     //
     return nitems
+
+public function copy(int[] src, int srcStart, int[] dest, int destStart, int length) -> (int[] result)
+// Source array must contain enough elements to be copied
+requires (srcStart + length) <= |src|
+// Destination array must have enough space for copied elements
+requires (destStart + length) <= |dest|
+// Result is same size as dest
+ensures |result| == |dest|
+// All elements before copied region are same
+ensures all { i in 0 .. destStart | dest[i] == result[i] }
+// All elements in copied region match src
+ensures all { i in 0 .. length | dest[i+destStart] == src[i+srcStart] }
+// All elements above copied region are same
+ensures all { i in (destStart+length) .. |dest| | dest[i] == result[i] }:
+    //
+    int i = srcStart
+    int j = destStart
+    int srcEnd = srcStart + length
+    //
+    while i < srcEnd:
+        dest[j] = src[i]
+        i = i + 1
+        j = j + 1
+    //
+    return dest
+
