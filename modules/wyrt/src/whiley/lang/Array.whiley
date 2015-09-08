@@ -155,6 +155,44 @@ public function append(int item, int[] items) -> int[]:
     //
     return nitems
 
+public function append(bool[] lhs, bool[] rhs) -> bool[]:
+    bool[] rs = [false; |lhs| + |rhs|]
+    int i = |lhs|
+    //
+    while i > 0:
+        i = i - 1
+        rs[i] = lhs[i]
+    //
+    while i < |rhs|:
+        rs[i+|lhs|] = rhs[i]
+        i = i + 1
+    //
+    return rs
+
+public function append(bool[] items, bool item) -> bool[]:
+    bool[] nitems = [false; |items| + 1]
+    int i = 0
+    //
+    while i < |items|:
+        nitems[i] = items[i]
+        i = i + 1
+    //
+    nitems[i] = item    
+    //
+    return nitems
+
+public function append(bool item, bool[] items) -> bool[]:
+    bool[] nitems = [false; |items| + 1]
+    int i = 0
+    //
+    while i < |items|:
+        nitems[i+1] = items[i]
+        i = i + 1
+    //
+    nitems[0] = item    
+    //
+    return nitems
+
 public function copy(int[] src, int srcStart, int[] dest, int destStart, int length) -> (int[] result)
 // Source array must contain enough elements to be copied
 requires (srcStart + length) <= |src|
