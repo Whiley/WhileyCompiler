@@ -774,6 +774,9 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			} else if (type instanceof SemanticType.Nominal) {
 				SemanticType.Nominal nt = (SemanticType.Nominal) type;
 				WycsFile wf = getModule(nt.name().module());
+				if(wf == null) {
+					syntaxError("module not found: " + nt.name().module(), context.file().filename(), context);
+				}
 				WycsFile.Type td = wf.declaration(nt.name().name(),
 						WycsFile.Type.class);				
 				if(maximallyConsumed && td.invariant != null) {
@@ -783,6 +786,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 					return expand(td.type, maximallyConsumed, context);
 				}
 			}
+		} catch(SyntaxError e) {
+			throw e;
 		} catch (Exception e) {
 			internalFailure(e.getMessage(), context.file().filename(), context, e);
 		}
