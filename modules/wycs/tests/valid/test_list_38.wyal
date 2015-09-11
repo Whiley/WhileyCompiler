@@ -1,0 +1,13 @@
+define Bijection([int] xs) is:
+  forall(int i1, int i2, int v1, int v2):
+    if:
+      xs[i1] == v1
+      xs[i2] == v2
+      i1 != i2
+    then:
+      v1 != v2
+
+assert:
+    Bijection([1,2,3,4])
+
+

@@ -628,14 +628,12 @@ public class Wyil2JavaBuilder implements Builder {
 				translate(index, (Codes.Invert) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.Label) {
 				translate(index, (Codes.Label) code, freeSlot, bytecodes);
-			} else if (code instanceof Codes.ListOperator) {
-				translate(index, (Codes.ListOperator) code, freeSlot, bytecodes);
+			} else if (code instanceof Codes.ListGenerator) {
+				translate(index, (Codes.ListGenerator) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.Lambda) {
 				translate(index, (Codes.Lambda) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.LengthOf) {
 				translate(index, (Codes.LengthOf) code, freeSlot, bytecodes);
-			} else if (code instanceof Codes.SubList) {
-				translate(index, (Codes.SubList) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.IndexOf) {
 				translate(index, (Codes.IndexOf) code, freeSlot, bytecodes);
 			} else if (code instanceof Codes.Assign) {
@@ -968,16 +966,6 @@ public class Wyil2JavaBuilder implements Builder {
 			op = Bytecode.IfMode.GE;
 			break;
 		}	
-		case IN: {
-			JvmType.Function ftype = new JvmType.Function(T_BOOL,
-					JAVA_LANG_OBJECT);
-			bytecodes.add(new Bytecode.Swap());
-			bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "contains",
-					ftype, Bytecode.InvokeMode.INTERFACE));
-			op = Bytecode.IfMode.NE;
-			break;
-		}
-
 		default:
 			internalFailure("unknown if condition encountered", filename,
 					rootBlock.attribute(index, SourceLocation.class));
@@ -1140,8 +1128,8 @@ public class Wyil2JavaBuilder implements Builder {
 					.element())));
 			translateInvariantTest(falseTarget, rt.element(), freeSlot,
 					freeSlot + 1, constants, bytecodes);
-		} else if (type instanceof Type.EffectiveList) {
-			Type.EffectiveList ts = (Type.EffectiveList) type;
+		} else if (type instanceof Type.EffectiveArray) {
+			Type.EffectiveArray ts = (Type.EffectiveArray) type;
 			Triple<String, String, String> loopLabels = translateLoopBegin(
 					bytecodes, rootSlot, freeSlot);
 			addReadConversion(ts.element(), bytecodes);
@@ -1249,14 +1237,14 @@ public class Wyil2JavaBuilder implements Builder {
 	private int translate(CodeBlock.Index index, Codes.Quantify c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 
-		Type elementType = c.type.element();
-
-		bytecodes.add(new Bytecode.Load(c.sourceOperand,
-				convertUnderlyingType((Type) c.type)));
-		JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
+		bytecodes.add(new Bytecode.Load(c.startOperand,WHILEYINT));
+		bytecodes.add(new Bytecode.Load(c.endOperand,WHILEYINT));
+		JvmType.Function ftype = new JvmType.Function(WHILEYLIST, WHILEYINT, WHILEYINT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "range", ftype,
+				Bytecode.InvokeMode.STATIC));
+		ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "iterator",
 				ftype, Bytecode.InvokeMode.INTERFACE));
-		ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
 		bytecodes.add(new Bytecode.Store(freeSlot, JAVA_UTIL_ITERATOR));
 		String loopHeader = freshLabel();
 		String loopExit = freshLabel();
@@ -1270,9 +1258,9 @@ public class Wyil2JavaBuilder implements Builder {
 		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next", ftype,
 				Bytecode.InvokeMode.INTERFACE));
-		addReadConversion(elementType, bytecodes);
+		addReadConversion(Type.T_INT, bytecodes);
 		bytecodes.add(new Bytecode.Store(c.indexOperand,
-				convertUnderlyingType(elementType)));
+				convertUnderlyingType(Type.T_INT)));
 		// Translate body of loop. The cast is required to ensure correct method
 		// is called.
 		translate(index, (CodeBlock) c, freeSlot + 1, bytecodes);
@@ -1314,28 +1302,18 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Load(c.operand(0), jt));
 		bytecodes.add(new Bytecode.Store(c.target(), jt));
 	}
-
-	private void translate(CodeBlock.Index index, Codes.ListOperator c,
+	
+	private void translate(CodeBlock.Index index, Codes.ListGenerator c,
 			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		JvmType leftType;
-		JvmType rightType;
+		
+		JvmType elementType = convertUnderlyingType(c.type().element());
 
-		switch (c.kind) {
-		case APPEND:
-			leftType = WHILEYLIST;
-			rightType = WHILEYLIST;
-			bytecodes.add(new Bytecode.Load(c.operand(0), leftType));
-			bytecodes.add(new Bytecode.Load(c.operand(1), rightType));
-			break;
-		default:
-			internalFailure("unknown list operation", filename,
-					rootBlock.attribute(index, SourceLocation.class));
-			return;
-		}
-
-		JvmType.Function ftype = new JvmType.Function(WHILEYLIST, leftType,
-				rightType);
-		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "append", ftype,
+		bytecodes.add(new Bytecode.Load(c.operand(0), elementType));
+		addWriteConversion(c.type().element(), bytecodes);
+		bytecodes.add(new Bytecode.Load(c.operand(1), WHILEYINT));
+		
+		JvmType.Function ftype = new JvmType.Function(WHILEYLIST, JAVA_LANG_OBJECT, WHILEYINT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "generate", ftype,
 				Bytecode.InvokeMode.STATIC));
 		bytecodes.add(new Bytecode.Store(c.target(), WHILEYLIST));
 	}
@@ -1349,20 +1327,6 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "length", ftype,
 				Bytecode.InvokeMode.VIRTUAL));
 		bytecodes.add(new Bytecode.Store(c.target(), WHILEYINT));
-	}
-
-	private void translate(CodeBlock.Index index, Codes.SubList c,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Load(c.operands()[0], WHILEYLIST));
-		bytecodes.add(new Bytecode.Load(c.operands()[1], WHILEYINT));
-		bytecodes.add(new Bytecode.Load(c.operands()[2], WHILEYINT));
-
-		JvmType.Function ftype = new JvmType.Function(WHILEYLIST, WHILEYLIST,
-				WHILEYINT, WHILEYINT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "sublist", ftype,
-				Bytecode.InvokeMode.STATIC));
-
-		bytecodes.add(new Bytecode.Store(c.target(), WHILEYLIST));
 	}
 
 	private void translate(CodeBlock.Index index, Codes.IndexOf c,
@@ -1431,10 +1395,6 @@ public class Wyil2JavaBuilder implements Builder {
 			bytecodes.add(new Bytecode.Load(c.operand(0), type));
 			bytecodes.add(new Bytecode.Load(c.operand(1), WHILEYINT));
 			break;
-		case RANGE:
-			bytecodes.add(new Bytecode.Load(c.operand(0), WHILEYINT));
-			bytecodes.add(new Bytecode.Load(c.operand(1), WHILEYINT));
-			break;
 		}
 
 		// second, apply operation
@@ -1458,11 +1418,6 @@ public class Wyil2JavaBuilder implements Builder {
 		case REM:
 			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
 					"remainder", ftype, Bytecode.InvokeMode.VIRTUAL));
-			break;
-		case RANGE:
-			ftype = new JvmType.Function(WHILEYLIST, WHILEYINT, WHILEYINT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYLIST, "range", ftype,
-					Bytecode.InvokeMode.STATIC));
 			break;
 		case BITWISEAND:
 			ftype = new JvmType.Function(type, type);
@@ -2236,8 +2191,8 @@ public class Wyil2JavaBuilder implements Builder {
 		} else if (from instanceof Type.Reference
 				&& to instanceof Type.Reference) {
 			// TODO
-		} else if (from instanceof Type.List && to instanceof Type.List) {
-			buildCoercion((Type.List) from, (Type.List) to, freeSlot,
+		} else if (from instanceof Type.Array && to instanceof Type.Array) {
+			buildCoercion((Type.Array) from, (Type.Array) to, freeSlot,
 					constants, bytecodes);
 		} else if (to instanceof Type.Record && from instanceof Type.Record) {
 			buildCoercion((Type.Record) from, (Type.Record) to, freeSlot,
@@ -2288,7 +2243,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Load(newSlot, WHILEYTUPLE));
 	}
 
-	protected void buildCoercion(Type.List fromType, Type.List toType,
+	protected void buildCoercion(Type.Array fromType, Type.Array toType,
 			int freeSlot, HashMap<JvmConstant, Integer> constants,
 			ArrayList<Bytecode> bytecodes) {
 
@@ -2629,7 +2584,7 @@ public class Wyil2JavaBuilder implements Builder {
 			return WHILEYRAT;
 		} else if (t instanceof Type.Meta) {
 			return WHILEYTYPE;
-		} else if (t instanceof Type.EffectiveList) {
+		} else if (t instanceof Type.EffectiveArray) {
 			return WHILEYLIST;
 		} else if (t instanceof Type.EffectiveRecord) {
 			return WHILEYRECORD;

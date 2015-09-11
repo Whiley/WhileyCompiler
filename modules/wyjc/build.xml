@@ -2,13 +2,13 @@
   <import file="../../config.xml"/>
 
   <target name="compile-wyjc">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.7" target="1.7" includeantruntime="true" classpath="../wyrl/src:../wyil/src:../wyc/src:../wybs/src/:../../${JASM_JAR}">
+    <javac debug="true" debuglevel="vars,lines,source" source="1.7" target="1.7" includeantruntime="true" classpath="../wyil/src:../wyc/src:../wybs/src/:../../${WYRL_JAR}:../../${JASM_JAR}">
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="wyjc/testing/**"/>
       <exclude name="*/**/package-info.java"/>
     </javac>
-    <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src:../wyrl/src:../wycs/src:../wybs/src/:../../${JASM_JAR}"/>
+    <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src:../wycs/src:../wybs/src/:../../${WYRL_JAR}:../../${JASM_JAR}"/>
     <wyjc verbose="false" wyildir="../wyrt/src" classdir="src" includes="whiley/**/*.wyil"/>
   </target>
 
@@ -38,6 +38,7 @@
       <attribute name="Implementation-Title" value="wyjc-v${version}.jar"/>
     </manifest>
     <unzip src="../../${JASM_JAR}" dest="tmp"/>
+    <unzip src="../../${WYRL_JAR}" dest="tmp"/>
     <jar destfile="../../dist/wyjc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="../wybs/src">
 	<include name="wyfs/**/*.class"/>
@@ -46,10 +47,6 @@
       </fileset>
       <fileset dir="../wycs/src">
 	<include name="wycs/**/*.class"/>
-      </fileset>
-      <fileset dir="../wyrl/src">
-	<include name="wyrl/**/*.class"/>
-	<include name="wyautl/**/*.class"/>
       </fileset>
       <fileset dir="../wyil/src">
 	<include name="wyautl_old/**/*.class"/>
@@ -68,6 +65,7 @@
       </fileset>
       <fileset dir="tmp">
 	<include name="jasm/**/*.class"/>
+	<include name="wyrl/**/*.class"/>
       </fileset>
     </jar>
     <delete dir="tmp"/>

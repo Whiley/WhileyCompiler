@@ -303,8 +303,8 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             // TODO: Implement type instanceof SemanticType.Or
         } else if (type instanceof SemanticType.Real) {
             return Sort.REAL;
-        } else if (type instanceof SemanticType.Set) {
-            SemanticType.Set set = (SemanticType.Set) type;
+        } else if (type instanceof SemanticType.Array) {
+            SemanticType.Array set = (SemanticType.Array) type;
 
             String inner;
             // An empty set has an inner type of Void, which we can't actually translate properly
@@ -484,14 +484,11 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             case NEQ:
             case LT:
             case LTEQ:
-            case IN:
-            case SUBSET:
-            case SUBSETEQ:
                 return translate((Code.Binary) code);
             case AND:
             case OR:
             case TUPLE:
-            case SET:
+            case ARRAY:
                 return translate((Code.Nary) code);
             default:
                 internalFailure("translate(Code<?>) not fully implemented: " + code.opcode,
@@ -537,7 +534,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
                 break;
             case TUPLE:
                 return translateTuple(code);
-            case SET:
+            case ARRAY:
                 return translateSet(code);
             default:
                 internalFailure("translate(Code.Nary) not fully implemented: " + code.opcode,
@@ -592,20 +589,6 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
                 break;
             case LTEQ:
                 op = "<=";
-                break;
-            case IN:
-                op = Sort.Set.FUN_CONTAINS_NAME;
-
-                // Swap round the lhs and rhs
-                String tmp = rhs;
-                rhs = lhs;
-                lhs = tmp;
-                break;
-            case SUBSET:
-                op = Sort.Set.FUN_SUBSET_NAME;
-                break;
-            case SUBSETEQ:
-                op = Sort.Set.FUN_SUBSETEQ_NAME;
                 break;
             default:
                 internalFailure("translate(Code.Binary) not fully implemented: " + code.opcode,
@@ -800,8 +783,8 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
             return ((Value.Decimal) value).value.toString();
         } else if (value instanceof Value.Integer) {
             return ((Value.Integer) value).value.toString();
-        } else if (value instanceof Value.Set) {
-            return translate((Value.Set) value);
+        } else if (value instanceof Value.Array) {
+            return translate((Value.Array) value);
         } else if (value instanceof Value.Tuple) {
             return translate((Value.Tuple) value);
         }
@@ -810,7 +793,7 @@ public final class SmtVerificationCheck implements Transform<WycsFile> {
         throw new InternalError("translate(Value) not fully implemented: " + value.getClass());
     }
 
-    private String translate(Value.Set value) {
+    private String translate(Value.Array value) {
         // Trigger the addition of the set functions
         translate(value.type());
 

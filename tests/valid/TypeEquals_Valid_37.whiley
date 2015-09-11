@@ -1,8 +1,8 @@
 
 
-type plist is [int]
+type plist is int[]
 
-type expr is [int] | int
+type expr is int[] | int
 
 type tup is {int p, expr lhs}
 

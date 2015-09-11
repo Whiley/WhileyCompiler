@@ -20,10 +20,9 @@ reduce Inhabited(AndT{NotT(Proton)... ts})
 name "Inhabited_2":
     => True, if no { t in ts | t == AnyT }
 
-reduce Inhabited(SetT[bool b1, Type t])
+reduce Inhabited(ArrayT(Type t))
 name "Inhabited_3":
-    => Inhabited(t), if !b1
-    => True
+    => Inhabited(t)
 
 // ====================================================================
 // Is

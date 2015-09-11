@@ -1,8 +1,8 @@
 
-
 type nat is (int x) where x >= 0
+type pos is (int x) where x > 0
 
-function f(nat x, int y) -> nat
+function f(pos x, int y) -> nat
 requires y > 0:
     int z
     if true:

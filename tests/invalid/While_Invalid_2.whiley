@@ -1,4 +1,4 @@
-method main([[int]] args) -> int:
+method main(int[][] args) -> int:
     int i = 0
     int r = 0
     //

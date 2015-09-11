@@ -1,8 +1,8 @@
 
 
-function f([int] x) -> int:
+function f(int[] x) -> int:
     return |x|
 
 public export method test() -> void:
-    [int] arr = []
+    int[] arr = [0;0]
     assume f(arr) == 0

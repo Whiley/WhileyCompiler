@@ -17,7 +17,7 @@ ensures r == x || r == y || r == z:
         return z
 
 // Following is just to help verification
-method fn([int] xs):
+method fn(int[] xs):
     int i1 = 0
     while i1 < |xs| where i1 >= 0:
         int v1 = xs[i1]

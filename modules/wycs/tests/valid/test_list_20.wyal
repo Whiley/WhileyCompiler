@@ -1,0 +1,10 @@
+assert "loop invariant not restored":
+    forall (int item, [int] items):
+        if:
+            forall(int j):
+                items[j] == 0
+        then:
+            forall(int j):
+                items[j] == 0
+
+

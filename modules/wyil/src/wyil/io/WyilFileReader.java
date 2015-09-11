@@ -504,7 +504,7 @@ public final class WyilFileReader {
 	private Code.Compound updateBytecodes(Code.Compound compound, ArrayList<Code> bytecodes) {
 		if (compound instanceof Codes.Quantify) {
 			Codes.Quantify l = (Codes.Quantify) compound;
-			return Codes.Quantify(l.type, l.sourceOperand, l.indexOperand,
+			return Codes.Quantify(l.startOperand, l.endOperand, l.indexOperand,
 					l.modifiedOperands, bytecodes);
 		} else if(compound instanceof Codes.Loop) {
 			Codes.Loop l = (Codes.Loop) compound;
@@ -722,10 +722,10 @@ public final class WyilFileReader {
 			return Codes.NewObject((Type.Reference) type, target, operand);
 		}
 		case Code.OPCODE_lengthof: {
-			if (!(type instanceof Type.EffectiveList)) {
+			if (!(type instanceof Type.EffectiveArray)) {
 				throw new RuntimeException("expected collection type");
 			}
-			return Codes.LengthOf((Type.EffectiveList) type, target,
+			return Codes.LengthOf((Type.EffectiveArray) type, target,
 					operand);
 		}
 		case Code.OPCODE_move:
@@ -793,23 +793,19 @@ public final class WyilFileReader {
 		int rightOperand = readBase(wideBase);
 		int typeIdx = readRest(wideRest);
 		Type type = typePool[typeIdx];
-		switch (opcode) {
-		case Code.OPCODE_append:
-		case Code.OPCODE_appendl:
-		case Code.OPCODE_appendr: {
-			if (!(type instanceof Type.EffectiveList)) {
-				throw new RuntimeException("expecting list type");
-			}
-			Codes.ListOperatorKind kind = Codes.ListOperatorKind.values()[opcode
-					- Code.OPCODE_append];
-			return Codes.ListOperator((Type.EffectiveList) type, target,
-					leftOperand, rightOperand, kind);
-		}
+		switch (opcode) {		
 		case Code.OPCODE_indexof: {
-			if (!(type instanceof Type.EffectiveList)) {
+			if (!(type instanceof Type.EffectiveArray)) {
 				throw new RuntimeException("expecting indexible type");
 			}
-			return Codes.IndexOf((Type.EffectiveList) type, target,
+			return Codes.IndexOf((Type.EffectiveArray) type, target,
+					leftOperand, rightOperand);
+		}
+		case Code.OPCODE_listgen: {
+			if (!(type instanceof Type.Array)) {
+				throw new RuntimeException("expecting list type");
+			}
+			return Codes.ListGenerator((Type.Array) type, target,
 					leftOperand, rightOperand);
 		}
 		case Code.OPCODE_add:
@@ -817,7 +813,6 @@ public final class WyilFileReader {
 		case Code.OPCODE_mul:
 		case Code.OPCODE_div:
 		case Code.OPCODE_rem:
-		case Code.OPCODE_range:
 		case Code.OPCODE_bitwiseor:
 		case Code.OPCODE_bitwisexor:
 		case Code.OPCODE_bitwiseand:
@@ -842,30 +837,26 @@ public final class WyilFileReader {
 			operands[i] = readBase(wideBase);
 		}
 
-		if (opcode == Code.OPCODE_loop) {
-			// Special case which doesn't have a type.
+		// Special case which doesn't have a type.
+		if (opcode == Code.OPCODE_loop) {			
 			int count = readRest(wideRest);
 			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);
 			return Codes.Loop(operands, bytecodes);
+		} else if(opcode == Code.OPCODE_quantify) {
+			int count = readRest(wideRest);
+			int indexOperand = operands[0];
+			int startOperand = operands[1];
+			int endOperand = operands[2];
+			operands = Arrays.copyOfRange(operands, 3, operands.length);
+			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);			
+			return Codes.Quantify(startOperand, endOperand, indexOperand,
+					operands, bytecodes);
 		}
 
 		int typeIdx = readRest(wideRest);
 		Type type = typePool[typeIdx];
 
-		switch (opcode) {
-		case Code.OPCODE_quantify:
-		case Code.OPCODE_forall: {
-			if (!(type instanceof Type.EffectiveList)) {
-				throw new RuntimeException("expected collection type");
-			}
-			int count = readRest(wideRest);
-			int indexOperand = operands[0];
-			int sourceOperand = operands[1];
-			operands = Arrays.copyOfRange(operands, 2, operands.length);
-			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);			
-			return Codes.Quantify((Type.EffectiveList) type,
-					sourceOperand, indexOperand, operands, bytecodes);
-		}
+		switch (opcode) {		
 		case Code.OPCODE_indirectinvokefnv:
 		case Code.OPCODE_indirectinvokemdv: {
 			if (!(type instanceof Type.FunctionOrMethod)) {
@@ -943,24 +934,17 @@ public final class WyilFileReader {
 			return Codes.NewRecord((Type.Record) type, target, operands);
 		}
 		case Code.OPCODE_newlist: {
-			if (!(type instanceof Type.List)) {
+			if (!(type instanceof Type.Array)) {
 				throw new RuntimeException("expected list type");
 			}
-			return Codes.NewList((Type.List) type, target, operands);
+			return Codes.NewList((Type.Array) type, target, operands);
 		}	
 		case Code.OPCODE_newtuple: {
 			if (!(type instanceof Type.Tuple)) {
 				throw new RuntimeException("expected tuple type");
 			}
 			return Codes.NewTuple((Type.Tuple) type, target, operands);
-		}
-		case Code.OPCODE_sublist: {
-			if (!(type instanceof Type.EffectiveList)) {
-				throw new RuntimeException("expected list type");
-			}
-			return Codes.SubList((Type.EffectiveList) type, target,
-					operands[0], operands[1], operands[2]);
-		}
+		}		
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");

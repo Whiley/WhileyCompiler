@@ -1,19 +1,20 @@
 
 
-function buildNatList(int n) -> ([int] m):
+function buildNatList(int n) -> (int[] m)
+requires n >= 0:
     //
     int i = 0
-    [int] rs = []
+    int[] rs = [0; n]
     //
     // forall(int i):
     //    i == 0 ==> i >= 0
     // forall(int r, {int} rs):
     //    r in rs ==> r >= 0
     while i < n
-        where i >= 0
-        where all { r in rs | r >= 0 }:
+        where i >= 0 && |rs| == n
+        where all { r in 0..i | rs[r] >= 0 }:
         //
-        rs = rs ++ [i]
+        rs[i] = i
         i = i + 1
         // forall(int i):
         //    i >= 0 ==> i+1 >= 0
@@ -29,8 +30,7 @@ function buildNatList(int n) -> ([int] m):
 
 public export method test():
     //
-    assume buildNatList(-1) == []
-    assume buildNatList(0) == []
+    assume buildNatList(0) == [0;0]
     assume buildNatList(1) == [0]
     assume buildNatList(2) == [0,1]
     assume buildNatList(3) == [0,1,2]

@@ -1,6 +1,6 @@
 
 
-function f() -> [int]:
+function f() -> int[]:
     return ""
 
 public export method test() -> void:

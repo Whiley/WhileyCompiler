@@ -1,9 +1,10 @@
-type State is {[int] input, int pos} where pos >= 0
-type Expr is real | {[int] id}
-type SyntaxError is {[int] err}
-type SExpr is SyntaxError | Expr
 // Define the 8bit ASCII character
 public type char is (int x) where 0 <= x && x <= 255
+//
+type State is {char[] input, int pos} where pos >= 0
+type Expr is real | {int[] id}
+type SyntaxError is {int[] err}
+type SExpr is SyntaxError | Expr
 
 public function isDigit(char c) -> bool:
     return '0' <= c && c <= '9'

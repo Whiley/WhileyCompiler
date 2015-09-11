@@ -1,12 +1,12 @@
 
 
-type intlist is int | [int]
+type intlist is int | int[]
 
-function f([intlist] l) -> any:
+function f(intlist[] l) -> any:
     return l
 
 public export method test() -> void:
-    [int|[int]] x
+    (int|int[])[] x
 
     if 0 == 0:
         x = [1, 2, 3]

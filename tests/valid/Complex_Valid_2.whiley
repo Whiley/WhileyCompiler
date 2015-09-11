@@ -1,6 +1,6 @@
 
 
-type string is [int]
+type string is int[]
 
 constant PAWN is 0
 
@@ -70,12 +70,35 @@ constant D3 is {col: 3, row: 2}
 
 constant H1 is {col: 8, row: 1}
 
+function append(int[] xs, int[] ys) -> (int[] zs)
+ensures |zs| == |xs| + |ys|:
+    //    
+    int count = |xs| + |ys|
+    int[] rs = [0; count]
+    //
+    int i = 0
+    while i < |xs| where i >= 0:
+        rs[i] = xs[i]
+        i = i + 1
+    //
+    int j = 0
+    while j < |ys| where j >= 0:
+        rs[j + i] = ys[j]
+        j = j + 1
+    //
+    return rs
+
 function move2str(Move m) -> string:
     if m is SingleTake:
-        return (((piece2str(m.piece) ++ pos2str(m.from)) ++ "x") ++ piece2str(m.taken)) ++ pos2str(m.to)
+        string tmp = append(piece2str(m.piece),pos2str(m.from))
+        tmp = append(tmp,"x")
+        tmp = append(tmp,piece2str(m.taken))
+        return append(tmp,pos2str(m.to))
     else:
         if m is SingleMove:
-            return ((piece2str(m.piece) ++ pos2str(m.from)) ++ "-") ++ pos2str(m.to)
+            string tmp = append(piece2str(m.piece),pos2str(m.from))
+            tmp = append(tmp,"-")
+            return append(tmp,pos2str(m.to))
         else:
             if m is CastleMove:
                 if m.kingSide:
@@ -84,7 +107,7 @@ function move2str(Move m) -> string:
                     return "O-O-O"
             else:
                 if m is CheckMove:
-                    return move2str(m.check) ++ "+"
+                    return append(move2str(m.check),"+")
                 else:
                     return ""
 

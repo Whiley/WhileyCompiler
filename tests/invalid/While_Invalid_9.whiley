@@ -1,5 +1,5 @@
 
-function extract([int] ls, [int] rs) -> [int]:
+function extract(int[] ls, int[] rs) -> int[]:
     int i = 0
     int r = [1]
     //

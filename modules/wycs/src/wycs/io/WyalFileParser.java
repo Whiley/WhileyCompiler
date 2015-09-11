@@ -404,7 +404,7 @@ public class WyalFileParser {
 		}
 		return name;
 	}
-
+	
 	/**
 	 * Parse an <code>assume</code> declaration in a WyAL source file.
 	 *
@@ -983,7 +983,7 @@ public class WyalFileParser {
 					environment, terminated);
 		}
 
-		Expr lhs = parseUnionExpression(wf, generics, environment, terminated);
+		Expr lhs = parseAdditiveExpression(wf, generics, environment, terminated);
 
 		lookahead = tryAndMatch(terminated, LessEquals, LeftAngle,
 				GreaterEquals, RightAngle, EqualsEquals, NotEquals, In, Is,
@@ -1009,22 +1009,7 @@ public class WyalFileParser {
 				break;
 			case NotEquals:
 				bop = Expr.Binary.Op.NEQ;
-				break;
-			case In:
-				bop = Expr.Binary.Op.IN;
 				break;			
-			case Subset:
-				bop = Expr.Binary.Op.SUBSET;
-				break;
-			case SubsetEquals:
-				bop = Expr.Binary.Op.SUBSETEQ;
-				break;
-			case Superset:
-				bop = Expr.Binary.Op.SUPSET;
-				break;
-			case SupersetEquals:
-				bop = Expr.Binary.Op.SUPSETEQ;
-				break;
 			case Is:
 				// We handle this one slightly differently because the
 				// right-hand side is not an expression.
@@ -1035,7 +1020,7 @@ public class WyalFileParser {
 				return null;
 			}
 
-			Expr rhs = parseUnionExpression(wf, generics, environment,
+			Expr rhs = parseAdditiveExpression(wf, generics, environment,
 					terminated);
 			return new Expr.Binary(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
@@ -1104,197 +1089,8 @@ public class WyalFileParser {
 			syntaxError("unknown quantifier kind", lookahead);
 			return null;
 		}
-	}
-
-	/**
-	 * Parse a set union expression, which is of the form:
-	 * <pre>
-	 * UnionExpr ::= IntersectExpr ( "∪" IntersectExpr )*
-	 * </pre>
-	 *
-	 * @param lookahead
-	 * @param wf
-	 *            The enclosing WyalFile being constructed. This is necessary to
-	 *            construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param generics
-	 *            Constraints the set of generic type variables declared in the
-	 *            enclosing scope.
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 * @return
-	 */
-	private Expr parseUnionExpression(WyalFile wf,
-			HashSet<String> generics, HashSet<String> environment,
-			boolean terminated) {
-		int start = index;
-		Expr lhs = parseIntersectExpression(wf, generics, environment, terminated);
-
-		while (tryAndMatch(terminated, SetUnion) != null) {
-			Expr rhs = parseIntersectExpression(wf, generics, environment,
-					terminated);
-			lhs = new Expr.Binary(Expr.Binary.Op.SETUNION, lhs, rhs,
-					sourceAttr(start, index - 1));
-		}
-
-		return lhs;
-	}
-	
-	/**
-	 * Parse a set intersection expression, which is of the form:
-	 * <pre>
-	 * AppendExpr ::= AppendExpr ( "∩" AppendExpr )*
-	 * </pre>
-	 *
-	 * @param lookahead
-	 * @param wf
-	 *            The enclosing WyalFile being constructed. This is necessary to
-	 *            construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param generics
-	 *            Constraints the set of generic type variables declared in the
-	 *            enclosing scope.
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 * @return
-	 */
-	private Expr parseIntersectExpression(WyalFile wf,
-			HashSet<String> generics, HashSet<String> environment,
-			boolean terminated) {
-		int start = index;
-		Expr lhs = parseAppendExpression(wf, generics, environment, terminated);
-
-		while (tryAndMatch(terminated, SetIntersection) != null) {
-			Expr rhs = parseAppendExpression(wf, generics, environment,
-					terminated);
-			lhs = new Expr.Binary(Expr.Binary.Op.SETINTERSECTION, lhs, rhs,
-					sourceAttr(start, index - 1));
-		}
-
-		return lhs;
-	}
-	
-	/**
-	 * Parse an append expression, which has the form:
-	 *
-	 * <pre>
-	 * AppendExpr ::= RangeExpr ( "++" RangeExpr)*
-	 * </pre>
-	 *
-	 * @param wf
-	 *            The enclosing WyalFile being constructed. This is necessary to
-	 *            construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param generics
-	 *            Constraints the set of generic type variables declared in the
-	 *            enclosing scope.
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseAppendExpression(WyalFile wf, HashSet<String> generics,
-			HashSet<String> environment, boolean terminated) {
-		int start = index;
-		Expr lhs = parseRangeExpression(wf, generics, environment, terminated);
-
-		while (tryAndMatch(terminated, PlusPlus) != null) {
-			Expr rhs = parseRangeExpression(wf, generics, environment,
-					terminated);
-			lhs = new Expr.Binary(Expr.Binary.Op.LISTAPPEND, lhs, rhs,
-					sourceAttr(start, index - 1));
-		}
-
-		return lhs;
-	}
-
-	/**
-	 * Parse a range expression, which has the form:
-	 *
-	 * <pre>
-	 * RangeExpr ::= ShiftExpr [ ".." ShiftExpr ]
-	 * </pre>
-	 *
-	 * @param wf
-	 *            The enclosing WyalFile being constructed. This is necessary to
-	 *            construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param generics
-	 *            Constraints the set of generic type variables declared in the
-	 *            enclosing scope.
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseRangeExpression(WyalFile wf, HashSet<String> generics,
-			HashSet<String> environment, boolean terminated) {
-		int start = index;
-		Expr lhs = parseAdditiveExpression(wf, generics, environment,
-				terminated);
-
-		if (tryAndMatch(terminated, DotDot) != null) {
-			Expr rhs = parseAdditiveExpression(wf, generics, environment,
-					terminated);
-			return new Expr.Binary(Expr.Binary.Op.RANGE, lhs, rhs, sourceAttr(
-					start, index - 1));
-		}
-
-		return lhs;
-	}
-
+	}	
+		
 	/**
 	 * Parse an additive expression.
 	 *
@@ -1476,75 +1272,25 @@ public class WyalFileParser {
 			switch (token.kind) {
 			case LeftSquare:
 				// At this point, there are two possibilities: an access
-				// expression (e.g. x[i]), or a sublist (e.g. xs[0..1], xs[..1],
-				// xs[0..]). We have to disambiguate these four different
+				// expression (e.g. x[i]), or a list update (e.g. xs[a:=b]). We have to disambiguate these four different
 				// possibilities.
-
-				// Since ".." is not the valid start of a statement, we can
-				// safely set terminated=true for tryAndMatch().
-				if (tryAndMatch(true, DotDot) != null) {
-					// This indicates a sublist expression of the form
-					// "xs[..e]". Therefore, we inject 0 as the start value for
-					// the sublist expression.
-					Expr st = new Expr.Constant(
-							Value.Integer(BigInteger.ZERO), sourceAttr(
-									start, index - 1));
-					// NOTE: expression guaranteed to be terminated by ']'.
-					Expr end = parseAdditiveExpression(wf, generics, environment, true);
-					match(RightSquare);
-					lhs = new Expr.Ternary(Expr.Ternary.Op.SUBLIST,lhs, st, end, sourceAttr(start,
-							index - 1));
-				} else {
-					// This indicates either a list access, sublist or update of the
-					// forms xs[a], xs[a..b], xs[a..], xs[a:=b], etc
-					//
-					// NOTE: expression guaranteed to be terminated by ']'.
-					Expr rhs = parseAdditiveExpression(wf, generics, environment, true);
-					// Check whether this is a sublist expression
-					if (tryAndMatch(terminated, DotDot) != null) {
-						// Yes, this is a sublist but we still need to
-						// disambiguate the two possible forms xs[x..y] and
-						// xs[x..].
-						//
-						// NOTE: expression guaranteed to be terminated by ']'.
-						if (tryAndMatch(true, RightSquare) != null) {
-							// This is a sublist of the form xs[x..]. In this
-							// case, we inject |xs| as the end expression.
-							Expr end = new Expr.Unary(Expr.Unary.Op.LENGTHOF, lhs, sourceAttr(start,
-									index - 1));
-							lhs = new Expr.Ternary(Expr.Ternary.Op.SUBLIST,lhs, rhs, end, sourceAttr(
-									start, index - 1));
-						} else {
-							// This is a sublist of the form xs[x..y].
-							// Therefore, we need to parse the end expression.
-							// NOTE: expression guaranteed to be terminated by
-							// ']'.
-							Expr end = parseAdditiveExpression(wf, generics, environment,
-									true);
-							match(RightSquare);
-							lhs = new Expr.Ternary(Expr.Ternary.Op.SUBLIST,lhs, rhs, end, sourceAttr(
-									start, index - 1));
-						}
-					} else if(tryAndMatch(true, ColonEquals) != null) {
-						// Indicates an list of map update expression
-						Expr val = parseRangeExpression(wf, generics, environment,
-								true);
-						match(RightSquare);
-						lhs = new Expr.Ternary(Expr.Ternary.Op.UPDATE, lhs,
-								rhs, val, sourceAttr(start, index - 1));
-					} else {
-						// Nope, this is a plain old list access expression
-						match(RightSquare);
-						lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
-								index - 1));
-					}
-				}
+				// NOTE: expression guaranteed to be terminated by ']'.
+				Expr rhs = parseAdditiveExpression(wf, generics, environment, true);				
+				match(RightSquare);
+				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
+						index - 1));
 				break;
-			case Dot:
+			case Dot:				
 				// At this point, we could have a field access, a package access
 				// or a method/function invocation. Therefore, we start by
 				// parsing the field access and then check whether or not its an
 				// invocation.
+				List<SyntacticType> genericArguments = Collections.EMPTY_LIST;
+				if(canMatch(terminated, LeftAngle) != null) {
+					// This indicates a direct or indirect invocation with
+					// generic arguments supplied.
+					 genericArguments = parseGenericArguments(wf,generics);
+				}
 				String name = match(Identifier).text;
 				// This indicates we have either a direct or indirect access or
 				// invocation. We can disambiguate between these two categories
@@ -1564,16 +1310,16 @@ public class WyalFileParser {
 						lhs = new Expr.FieldAccess(lhs, name, sourceAttr(start,
 								index - 1));
 						lhs = new Expr.IndirectInvoke(lhs,
-								new ArrayList<SyntacticType>(), argument,
+								genericArguments, argument,
 								sourceAttr(start, index - 1));
 					} else {
 						// This indicates we have an direct invocation
 						lhs = new Expr.Invoke(name, id,
-								new ArrayList<SyntacticType>(), argument,
+								genericArguments, argument,
 								sourceAttr(start, index - 1));
 					}
 
-				} else if (id != null) {
+				} else if (id != null) {				
 					// Must be a qualified constant access
 					lhs = new Expr.ConstantAccess(name, id, sourceAttr(start,
 							index - 1));
@@ -1716,7 +1462,7 @@ public class WyalFileParser {
 		case LeftSquare:
 			return parseListExpression(wf, generics, environment, terminated);
 		case LeftCurly:
-			return parseRecordOrSetOrMapExpression(wf, generics, environment,
+			return parseRecordExpression(wf, generics, environment,
 					terminated);
 		case Shreak:
 			return parseLogicalNotExpression(wf, generics, environment,
@@ -1940,91 +1686,8 @@ public class WyalFileParser {
 			exprs.add(parseUnitExpression(wf, generics, environment, true));
 		}
 
-		return new Expr.Nary(Expr.Nary.Op.LIST, exprs, sourceAttr(start,
+		return new Expr.Nary(Expr.Nary.Op.ARRAY, exprs, sourceAttr(start,
 				index - 1));
-	}
-
-	/**
-	 * Parse a record, set or map constructor, which are of the form:
-	 *
-	 * <pre>
-	 * RecordExpr ::= '{' Identifier ':' Expr (',' Identifier ':' Expr)* '}'
-	 * SetExpr   ::= '{' [ Expr (',' Expr)* ] '}'
-	 * MapExpr   ::= '{' Expr "=>" Expr ( ',' Expr "=>" Expr)* '}'
-	 * SetComprehension ::= '{' Expr '|'
-	 * 							Identifier "in" Expr (',' Identifier "in" Expr)*
-	 *                          [',' Expr] '}'
-	 * </pre>
-	 *
-	 * Disambiguating these three forms is relatively straightforward. We parse
-	 * the left curly brace. Then, if what follows is a right curly brace then
-	 * we have a set expression. Otherwise, we parse the first expression, then
-	 * examine what follows. If it's ':', then we have a record expression;
-	 * otherwise, we have a set expression.
-	 *
-	 * @param wf
-	 *            The enclosing WyalFile being constructed. This is necessary to
-	 *            construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param generics
-	 *            Constraints the set of generic type variables declared in the
-	 *            enclosing scope.
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseRecordOrSetOrMapExpression(WyalFile wf,
-			HashSet<String> generics, HashSet<String> environment,
-			boolean terminated) {
-		int start = index;
-		match(LeftCurly);
-		// Check for empty set or empty map
-		if (tryAndMatch(terminated, RightCurly) != null) {
-			// Yes. parsed empty set
-			return new Expr.Nary(Expr.Nary.Op.SET, Collections.EMPTY_LIST,
-					sourceAttr(start, index - 1));
-		} else if (tryAndMatch(terminated, EqualsGreater) != null) {
-			// Yes. parsed empty map
-			match(RightCurly);
-			return new Expr.Nary(Expr.Nary.Op.MAP, Collections.EMPTY_LIST,
-					sourceAttr(start, index - 1));
-		}
-		// Parse first expression for disambiguation purposes
-		// NOTE: we require the following expression be a "non-tuple"
-		// expression. That is, it cannot be composed using ',' unless
-		// braces enclose the entire expression. This is because the outer
-		// set/map/record constructor expressions use ',' to distinguish
-		// elements.
-		Expr e = parseBitwiseXorExpression(wf, generics, environment,
-				terminated);
-		// Now, see what follows and disambiguate
-		if (tryAndMatch(terminated, Colon) != null) {
-			// Ok, it's a ':' so we have a record constructor
-			index = start;
-			return parseRecordExpression(wf, generics, environment, terminated);
-		} else if (tryAndMatch(terminated, EqualsGreater) != null) {
-			// Ok, it's a "=>" so we have a record constructor
-			index = start;
-			return parseMapExpression(wf, generics, environment, terminated);
-		} else {
-			// otherwise, assume a set expression
-			index = start;
-			return parseSetExpression(wf, generics, environment, terminated);
-		}
 	}
 
 	/**
@@ -2098,138 +1761,6 @@ public class WyalFileParser {
 	}
 
 	/**
-	 * Parse a map constructor expression, which is of the form:
-	 *
-	 * <pre>
-	 * MapExpr::= '{' Expr "=>" Expr (',' Expr "=>" Expr)* } '}'
-	 * </pre>
-	 *
-	 * @param wf
-	 *            The enclosing WyalFile being constructed. This is necessary to
-	 *            construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param generics
-	 *            Constraints the set of generic type variables declared in the
-	 *            enclosing scope.
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseMapExpression(WyalFile wf, HashSet<String> generics,
-			HashSet<String> environment, boolean terminated) {
-		int start = index;
-		match(LeftCurly);
-		ArrayList<Expr> exprs = new ArrayList<Expr>();
-
-		// Match zero or more expressions separated by commas
-		boolean firstTime = true;
-		while (eventuallyMatch(RightCurly) == null) {
-			if (!firstTime) {
-				match(Comma);
-			}
-			firstTime = false;
-			Expr pair = parseMapPairExpression(wf, generics, environment,
-					terminated);
-			exprs.add(pair);
-		}
-		// done
-		return new Expr.Nary(Expr.Nary.Op.MAP, exprs, sourceAttr(start,
-				index - 1));
-	}
-
-	private Expr parseMapPairExpression(WyalFile wf, HashSet<String> generics,
-			HashSet<String> environment, boolean terminated) {
-		int start = index;
-		Expr from = parseUnitExpression(wf, generics, environment, terminated);
-		match(EqualsGreater);
-		// NOTE: we require the following expression be a "non-tuple"
-		// expression. That is, it cannot be composed using ',' unless
-		// braces enclose the entire expression. This is because the outer
-		// map constructor expression is used ',' to distinguish elements.
-		// Also, expression is guaranteed to be terminated, either by '}' or
-		// ','.
-		Expr to = parseUnitExpression(wf, generics, environment, true);
-		// Construct the tuple now
-		ArrayList<Expr> args = new ArrayList<Expr>();
-		args.add(from);
-		args.add(to);
-		return new Expr.Nary(Expr.Nary.Op.TUPLE, args, sourceAttr(start,
-				index - 1));
-	}
-
-	/**
-	 * Parse a set constructor expression, which is of the form:
-	 *
-	 * <pre>
-	 * SetExpr::= '{' [ Expr (',' Expr)* } '}'
-	 * </pre>
-	 *
-	 * @param wf
-	 *            The enclosing WyalFile being constructed. This is necessary to
-	 *            construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param generics
-	 *            Constraints the set of generic type variables declared in the
-	 *            enclosing scope.
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseSetExpression(WyalFile wf, HashSet<String> generics,
-			HashSet<String> environment, boolean terminated) {
-		int start = index;
-		match(LeftCurly);
-		ArrayList<Expr> exprs = new ArrayList<Expr>();
-
-		// Match zero or more expressions separated by commas
-		boolean firstTime = true;
-		while (eventuallyMatch(RightCurly) == null) {
-			if (!firstTime) {
-				match(Comma);
-			}
-			firstTime = false;
-			// NOTE: we require the following expression be a "non-tuple"
-			// expression. That is, it cannot be composed using ',' unless
-			// braces enclose the entire expression. This is because the outer
-			// set constructor expression is used ',' to distinguish elements.
-			// Also, expression is guaranteed to be terminated, either by '}' or
-			// ','.
-			exprs.add(parseUnitExpression(wf, generics, environment, true));
-		}
-		// done
-		return new Expr.Nary(Expr.Nary.Op.SET, exprs, sourceAttr(start,
-				index - 1));
-	}
-
-	/**
 	 * Parse a length of expression, which is of the form:
 	 *
 	 * <pre>
@@ -2272,7 +1803,7 @@ public class WyalFileParser {
 		// collections. Furthermore, the bitwise or expression could lead to
 		// ambiguity and, hence, we bypass that an consider append expressions
 		// only. However, the expression is guaranteed to be terminated by '|'.
-		Expr e = parseUnionExpression(wf, generics, environment, true);
+		Expr e = parseAdditiveExpression(wf, generics, environment, true);
 		match(VerticalBar);
 		return new Expr.Unary(Expr.Unary.Op.LENGTHOF, e, sourceAttr(start,
 				index - 1));
@@ -2678,9 +2209,6 @@ public class WyalFileParser {
 		} else if (type instanceof SyntacticType.List) {
 			SyntacticType.List tt = (SyntacticType.List) type;
 			return mustParseAsType(tt.element);
-		} else if (type instanceof SyntacticType.Map) {
-			SyntacticType.Map tt = (SyntacticType.Map) type;
-			return mustParseAsType(tt.key) || mustParseAsType(tt.value);
 		} else if (type instanceof SyntacticType.Negation) {
 			SyntacticType.Negation tt = (SyntacticType.Negation) type;
 			return mustParseAsType(tt.element);
@@ -2688,9 +2216,6 @@ public class WyalFileParser {
 			return false; // always can be an expression
 		} else if (type instanceof SyntacticType.Reference) {
 			SyntacticType.Reference tt = (SyntacticType.Reference) type;
-			return mustParseAsType(tt.element);
-		} else if (type instanceof SyntacticType.Set) {
-			SyntacticType.Set tt = (SyntacticType.Set) type;
 			return mustParseAsType(tt.element);
 		} else if (type instanceof SyntacticType.Union) {
 			SyntacticType.Union tt = (SyntacticType.Union) type;
@@ -3092,7 +2617,7 @@ public class WyalFileParser {
 			// we just ignore it for now and acknowledge that, at some point, it
 			// might be nice to do better.
 			index = start; // backtrack
-			SyntacticType type = parseSetOrMapOrRecordType(generics);
+			SyntacticType type = parseRecordType(generics);
 			Expr.Variable name = parseTypePatternVar(terminated);
 			if (name == null && type instanceof SyntacticType.Record) {
 				return new TypePattern.Record((SyntacticType.Record) type,
@@ -3242,7 +2767,7 @@ public class WyalFileParser {
 		case LeftBrace:
 			return parseBracketedType(generics);
 		case LeftCurly:
-			return parseSetOrMapOrRecordType(generics);
+			return parseRecordType(generics);
 		case LeftSquare:
 			return parseListType(generics);
 		case Shreak:
@@ -3322,36 +2847,9 @@ public class WyalFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseSetOrMapOrRecordType(HashSet<String> generics) {
+	private SyntacticType parseRecordType(HashSet<String> generics) {
 		int start = index;
 		match(LeftCurly);
-
-		// First, we need to disambiguate between a set, map or record type. The
-		// complication is the potential for mixed types. For example, when
-		// parsing "{ function f(int)->int }", the first element is not a type.
-		// Therefore, we have to first decide whether or not we have a mixed
-		// type, or a normal type.
-
-		if (!mustParseAsMixedType()) {
-			int t_start = index; // backtrack point
-
-			SyntacticType type = parseType(generics);
-
-			if (tryAndMatch(true, RightCurly) != null) {
-				// This indicates a set type was encountered.
-				return new SyntacticType.Set(type, sourceAttr(start, index - 1));
-			} else if (tryAndMatch(true, EqualsGreater) != null) {
-				// This indicates a map type was encountered.
-				SyntacticType value = parseType(generics);
-				match(RightCurly);
-				return new SyntacticType.Map(type, value, sourceAttr(start,
-						index - 1));
-			}
-			// At this point, we definitely have a record type (or an error).
-			// Therefore, we backtrack and parse the potentially mixed type
-			// properly.
-			index = t_start; // backtrack
-		}
 
 		ArrayList<Pair<SyntacticType, Expr.Variable>> types = new ArrayList<Pair<SyntacticType, Expr.Variable>>();
 		HashSet<String> names = new HashSet<String>();

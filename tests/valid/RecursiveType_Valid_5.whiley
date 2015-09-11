@@ -1,9 +1,11 @@
 
 
-type Link is {[int] items, null | Link next}
+type Link is null | {int[] items, Link next}
 
 method create(int n) -> Link:
     Link start = null
-    for i in 0 .. n:
-        start = {items: [], next: start}
+    int i = 0
+    while i < n:
+        start = {items: [0;0], next: start}
+        i = i + 1
     return start

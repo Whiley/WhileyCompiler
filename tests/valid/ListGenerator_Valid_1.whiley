@@ -1,6 +1,6 @@
 
 
-function f([int] x) -> int
+function f(int[] x) -> int
 // Input list cannot be empty
 requires |x| > 0:
     //
@@ -8,5 +8,5 @@ requires |x| > 0:
     return x[z-1]
 
 public export method test() -> void:
-    [int] arr = [1, 2, 3]
+    int[] arr = [1, 2, 3]
     assume f(arr) == 3

@@ -3,7 +3,7 @@
 
   <target name="compile-wyrt">
     <taskdef name="wyc" classname="wyc.util.WycAntTask" classpath="../wyc/src/:../wyil/src/:../wycs/src/:../wybs/src/:../wyrl/src/"/>
-    <wyc verbose="false" verificationConditions="true" bootpath="../wycs/stdlib/" whileydir="src" wycsdir="src" includes="whiley/**/*.whiley"/>
+    <wyc verbose="false" verificationConditions="false" bootpath="../wycs/stdlib/" whileydir="src" wycsdir="src" includes="whiley/**/*.whiley"/>
   </target>
 
   <target name="build" depends="compile-wyrt">

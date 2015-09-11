@@ -196,14 +196,14 @@ public interface SyntacticType extends SyntacticElement {
 	 * Represents a list type, which is of the form:
 	 *
 	 * <pre>
-	 * ListType ::= '[' Type ']'
+	 * ArrayType ::= Type '[' ']'
 	 * </pre>
 	 *
 	 * @return
 	 */
-	public static final class List extends SyntacticElement.Impl implements NonUnion {
+	public static final class Array extends SyntacticElement.Impl implements NonUnion {
 		public final SyntacticType element;
-		public List(SyntacticType element, Attribute... attributes) {
+		public Array(SyntacticType element, Attribute... attributes) {
 			super(attributes);
 			this.element = element;
 		}

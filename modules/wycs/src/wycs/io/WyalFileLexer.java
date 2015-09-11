@@ -510,10 +510,8 @@ public class WyalFileLexer {
 			put("any", Token.Kind.Any);
 			put("null", Token.Kind.Null);
 			put("bool", Token.Kind.Bool);
-			put("char", Token.Kind.Char);
 			put("int", Token.Kind.Int);
 			put("real", Token.Kind.Real);
-			put("string", Token.Kind.String);
 			// constants
 			put("true", Token.Kind.True);
 			put("false", Token.Kind.False);

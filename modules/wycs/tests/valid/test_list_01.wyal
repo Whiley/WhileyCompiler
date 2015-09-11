@@ -1,6 +1,9 @@
+import wycs.core.Array
+
 assert:
   forall ([int] xs, [int] ys):
     if:
-        xs == ys[0:=0]
+        Array.<int>update(xs,ys,0)
+        ys[0] == 0
     then:
-        xs[0] == 0
+        ys[0] == 0

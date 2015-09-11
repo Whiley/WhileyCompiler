@@ -192,8 +192,6 @@ public class WyalFilePrinter {
 			write(wf, (Expr.Cast)e,indent);
 		} else if(e instanceof Expr.Binary) {
 			write(wf, (Expr.Binary)e,indent);
-		} else if(e instanceof Expr.Ternary) {
-			write(wf, (Expr.Ternary)e,indent);
 		} else if(e instanceof Expr.Nary) {
 			write(wf, (Expr.Nary)e,indent);
 		} else if(e instanceof Expr.Is) {
@@ -267,29 +265,6 @@ public class WyalFilePrinter {
 		}
 	}
 
-	private void write(WyalFile wf, Expr.Ternary e, int indent) {
-		switch(e.op) {
-		case UPDATE:
-			writeWithoutBraces(wf,e.firstOperand,indent);
-			out.print("[");
-			writeWithoutBraces(wf,e.secondOperand,indent);
-			out.print(":=");
-			writeWithoutBraces(wf,e.thirdOperand,indent);
-			out.print("]");
-			return;
-		case SUBLIST:
-			writeWithoutBraces(wf,e.firstOperand,indent);
-			out.print("[");
-			writeWithoutBraces(wf,e.secondOperand,indent);
-			out.print("..");
-			writeWithoutBraces(wf,e.thirdOperand,indent);
-			out.print("]");
-			return;
-		}
-		internalFailure("unknown expression encountered \"" + e + "\" (" + e.getClass().getName() + ")", wf.filename(), e);
-	}
-
-
 	private void write(WyalFile wf, Expr.Nary e, int indent) {
 		switch(e.op) {
 		case TUPLE:
@@ -304,38 +279,8 @@ public class WyalFilePrinter {
 				writeWithoutBraces(wf,operand,indent);
 			}
 			return;
-		}
-		case SET: {
-			boolean firstTime=true;
-			out.print("{");
-			for(Expr operand : e.operands) {
-				if(!firstTime) {
-					out.print(", ");
-				} else {
-					firstTime = false;
-				}
-				writeWithOptionalBraces(wf,operand,indent);
-			}
-			out.print("}");
-			return;
-		}
-		case MAP: {
-			boolean firstTime=true;
-			out.print("{");
-			for(int i=0;i!=e.operands.size();i=i+2) {
-				if(!firstTime) {
-					out.print(", ");
-				} else {
-					firstTime = false;
-				}
-				writeWithOptionalBraces(wf,e.operands.get(i),indent);
-				out.print(" => ");
-				writeWithOptionalBraces(wf,e.operands.get(i+1),indent);
-			}
-			out.print("}");
-			return;
-		}
-		case LIST: {
+		}		
+		case ARRAY: {
 			boolean firstTime=true;
 			out.print("[");
 			for(Expr operand : e.operands) {
@@ -379,7 +324,17 @@ public class WyalFilePrinter {
 			out.print(qualification);
 			out.print(".");
 		}
-		out.print(e.name);
+		if(e.generics.size() > 0) {
+			out.print("<");
+			for(int i=0;i!=e.generics.size();++i) {
+				if(i != 0) {
+					out.print(",");
+				}
+				out.print(e.generics.get(i));				
+			}
+			out.print(">");
+		}
+		out.print(e.name);			
 		writeWithBraces(wf,e.operand,indent);
 	}
 

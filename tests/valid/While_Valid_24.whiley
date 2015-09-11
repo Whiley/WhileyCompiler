@@ -1,6 +1,6 @@
 
 
-function indexOf([int] xs, int x) -> (int|null result)
+function indexOf(int[] xs, int x) -> (int|null result)
 // Either result is null, or gives the index of x in xs
 ensures result is null || xs[result] == x:
     //

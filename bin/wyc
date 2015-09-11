@@ -43,4 +43,4 @@ LIBS="wyc wyil wycs wybs wyrl"
 # RUN APPLICATION
 ######################
 
-java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyc.WycMain -bp "$WHILEY_BOOTPATH" "$@"
+java -server -Xmx2G -cp "$WHILEY_CLASSPATH" wyc.WycMain -bp "$WHILEY_BOOTPATH" "$@"

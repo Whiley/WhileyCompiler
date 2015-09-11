@@ -1,3 +1,5 @@
+import whiley.lang.*
+
 // the British interpretation of traffic lights!
 type TrafficLights is {
     bool red,
@@ -30,31 +32,31 @@ function change(TrafficLights ls) -> TrafficLights:
         // -> !red && amber && !green
         return { red: true, amber: false, green: false }
 
-function toString(TrafficLights ls) -> string:
-    string r
+function toString(TrafficLights ls) -> ASCII.string:
+    ASCII.string r
     //
     if ls.red:
         r = "RED "
     else:
         r = "    "
     if ls.amber:
-        r = r ++ "AMBER "
+        r = ASCII.append(r,"AMBER ")
     else:
-        r = r ++ "       "
+        r = ASCII.append(r,"       ")
     if ls.green:
-        r = r ++ "GREEN "
+        r = ASCII.append(r,"GREEN ")
     else:
-        r = r ++ "      "
+        r = ASCII.append(r,"      ")
     return r
 
 public method main(System.Console console):
     TrafficLights lights = TrafficLights()
-    console.out.println(toString(lights))
+    console.out.println_s(toString(lights))
     lights = change(lights)
-    console.out.println(toString(lights))
+    console.out.println_s(toString(lights))
     lights = change(lights)
-    console.out.println(toString(lights))
+    console.out.println_s(toString(lights))
     lights = change(lights)
-    console.out.println(toString(lights))
+    console.out.println_s(toString(lights))
     lights = change(lights)
-    console.out.println(toString(lights))
+    console.out.println_s(toString(lights))

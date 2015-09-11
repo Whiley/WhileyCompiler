@@ -32,6 +32,7 @@ import wycc.lang.Attribute;
 import wycc.lang.NameID;
 import wycc.lang.SyntacticElement;
 import wycc.util.Pair;
+import wycc.util.Triple;
 import wyfs.lang.Path;
 import wyil.lang.*;
 
@@ -286,7 +287,6 @@ public interface Expr extends SyntacticElement {
 			case LTEQ:
 			case GT:
 			case GTEQ:
-			case ELEMENTOF:
 			case IS:
 				return Nominal.T_BOOL;
 			default:
@@ -358,24 +358,24 @@ public interface Expr extends SyntacticElement {
 	}
 
 	/**
-	 * Represents a list constructor expression, which is of the form:
+	 * Represents an array initialiser expression, which is of the form:
 	 *
 	 * <pre>
-	 * ListExpression ::= '[' [ Expression (',' Expression)* ] ']'
+	 * ArrayInitialiser ::= '[' [ Expression (',' Expression)+ ] ']'
 	 * </pre>
 	 *
 	 * @return
 	 */
-	public static class List extends SyntacticElement.Impl implements Expr {
+	public static class ArrayInitialiser extends SyntacticElement.Impl implements Expr {
 		public final ArrayList<Expr> arguments;
 		public Nominal.List type;
 
-		public List(Collection<Expr> arguments, Attribute... attributes) {
+		public ArrayInitialiser(Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
 			this.arguments = new ArrayList<Expr>(arguments);
 		}
 
-		public List(Attribute attribute, Expr... arguments) {
+		public ArrayInitialiser(Attribute attribute, Expr... arguments) {
 			super(attribute);
 			this.arguments = new ArrayList<Expr>();
 			for(Expr a : arguments) {
@@ -387,45 +387,45 @@ public interface Expr extends SyntacticElement {
 			return type;
 		}
 	}
-
-	public static class SubList extends SyntacticElement.Impl implements Expr {
-		public Expr src;
-		public Expr start;
-		public Expr end;
+	
+	/**
+	 * Represents an array generator expression, which is of the form:
+	 *
+	 * <pre>
+	 * ArrayGenerator ::= '[' Expression ';' Expression ']'
+	 * </pre>
+	 *
+	 * @return
+	 */
+	public static class ArrayGenerator extends SyntacticElement.Impl implements Expr {
+		public Expr element;
+		public Expr count;
 		public Nominal.List type;
 
-		public SubList(Expr src, Expr start, Expr end, Attribute... attributes) {
+		public ArrayGenerator(Expr element, Expr count, Attribute... attributes) {
 			super(attributes);
-			this.src = src;
-			this.start = start;
-			this.end = end;
+			this.element = element;
+			this.count = count;
 		}
 
-		public SubList(Expr src, Expr start, Expr end, Collection<Attribute> attributes) {
-			super(attributes);
-			this.src = src;
-			this.start = start;
-			this.end = end;
-		}
-
-		public Nominal result() {
-			return (Nominal) type;
+		public Nominal.List result() {
+			return type;
 		}
 	}
-
+	
 	public static class Quantifier extends SyntacticElement.Impl implements Expr {
 		public final QOp cop;
-		public final ArrayList<Pair<String,Expr>> sources;
+		public final ArrayList<Triple<String,Expr,Expr>> sources;
 		public Expr condition;
 		public Nominal type;
 
 		public Quantifier(QOp cop, 
-				Collection<Pair<String, Expr>> sources, Expr condition,
+				Collection<Triple<String, Expr, Expr>> sources, Expr condition,
 				Attribute... attributes) {
 			super(attributes);
 			this.cop = cop;
 			this.condition = condition;
-			this.sources = new ArrayList<Pair<String, Expr>>(sources);
+			this.sources = new ArrayList<Triple<String, Expr, Expr>>(sources);
 		}
 
 		public Nominal result() {
@@ -786,10 +786,7 @@ public interface Expr extends SyntacticElement {
 		},
 		DIFFERENCE{
 			public String toString() { return "-"; }
-		},
-		LISTAPPEND{
-			public String toString() { return "++"; }
-		},
+		},		
 		EQ{
 			public String toString() { return "=="; }
 		},
@@ -807,10 +804,7 @@ public interface Expr extends SyntacticElement {
 		},
 		GTEQ{
 			public String toString() { return ">="; }
-		},
-		ELEMENTOF{
-			public String toString() { return "in"; }
-		},
+		},		
 		RANGE{
 			public String toString() { return ".."; }
 		},

@@ -1,7 +1,7 @@
 
 
 public export method test() -> void:
-    [bool] ls = [true, false, true]
+    bool[] ls = [true, false, true]
     assert ls == [true, false, true]
     assert ls[0] == true
     assert ls[1] == false

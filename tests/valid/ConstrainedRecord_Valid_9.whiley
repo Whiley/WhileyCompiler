@@ -5,12 +5,12 @@ type nat is (int x) where x >= 0
 type Matrix is {
     int height,
     int width,
-    [[int]] data
-} where |data| == height &&
-        no { i in data | |i| != width }
+    int[][] data
+} where |data| == height && height >= 0 && width >= 0 &&
+        no { i in 0..|data| | |data[i]| != width }
 
-function Matrix(nat width, nat height, [[int]] data) -> (Matrix result)
-requires (|data| == height) && no { i in data | |i| != width }
+function Matrix(nat width, nat height, int[][] data) -> (Matrix result)
+requires (|data| == height) && no { i in 0..|data| | |data[i]| != width }
 ensures result.width == width && result.height == height && result.data == data:
     //
     return {height: height, width: width, data: data}
@@ -19,23 +19,23 @@ function run(Matrix A, Matrix B) -> (Matrix C)
 requires A.width == B.height
 ensures (C.width == B.width) && (C.height == A.height):
     //
-    [[int]] C_data = []
+    int[][] C_data = [[0;0]; A.height]
     int i = 0
-    while i < A.height:
-        [int] row = []
+    while i < A.height where i >= 0 where |C_data| == A.height:
+        int[] row = [0; B.width]
         int j = 0
-        while j < B.width:
+        while j < B.width where j >= 0 where |row| == B.width:
             int r = 0
             int k = 0
-            while k < A.width:
+            while k < A.width where k >= 0:
                 r = r + (A.data[i][k] * B.data[k][j])
                 k = k + 1
-            row = row ++ [r]
+            row[j] = r
             j = j + 1
-        C_data = C_data ++ [row]
+        C_data[i] = row
         i = i + 1
     return Matrix(B.width, A.height, C_data)
-
+    
 public export method test() -> void:
     Matrix m1 = Matrix(2, 2, [[1, 0], [-3, 2]])
     Matrix m2 = Matrix(2, 2, [[-1, 4], [3, 5]])

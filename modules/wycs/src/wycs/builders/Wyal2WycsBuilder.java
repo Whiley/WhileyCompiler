@@ -12,8 +12,7 @@ import java.util.Set;
 import static wycc.lang.SyntaxError.*;
 import static wycs.solver.Solver.SCHEMA;
 import wyautl.io.PrettyAutomataWriter;
-import wyautl.rw.Rewriter;
-import wyautl.rw.SimpleRewriteStrategy;
+import wyrw.core.Rewriter;
 import wybs.lang.*;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;
@@ -214,7 +213,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 						PrettyAutomataWriter writer = new PrettyAutomataWriter(System.out,SCHEMA,"Or","And");
 						writer.write(ex.original());
 						writer.flush();
-						System.err.println("\n\n=> (" + rw.getStats() + ")\n");
+						System.err.println("\n\n=>\n");
 						writer.write(ex.reduction());
 						writer.flush();
 					}
@@ -351,6 +350,26 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		throw new ResolveError("name not found: " + name);
 	}
 
+	public Path.ID resolveAsModule(String name, WyalFile.Context context) throws ResolveError {
+		// Search the imports list to find it.				
+		for (WyalFile.Import imp : context.imports()) {
+			for (Path.ID id : imports(imp.filter)) {
+				try {
+					if(id.last().equals(name)) {
+						return id;
+					}
+				} catch(SyntaxError e) {
+					throw e;
+				} catch (Exception e) {
+					internalFailure(e.getMessage(), context.file().filename(),
+							context, e);
+				}
+			}
+		}
+				
+		throw new ResolveError("module not found: " + name);	
+	}
+	
 	/**
 	 * This function must be called after stubs are created.
 	 * @param name
@@ -388,7 +407,9 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		// so that we can then choose the best fit.
 		try {
 			WycsFile wf = getModule(nid.module());
-
+			if(wf == null) {
+				throw new ResolveError("module not found: " + nid.module());
+			}
 			ArrayList<SemanticType.Function> fnTypes = new ArrayList<SemanticType.Function>();
 			for (WycsFile.Declaration d : wf.declarations()) {
 				if (d.name().equals(nid.name())) {
@@ -424,7 +445,6 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		SemanticType expandedParameter = expand(parameter,false,context);
 		SemanticType.Function candidateFn = null;	
 		HashMap<String,SemanticType> candidateBinding = null;
-		
 		
 		for (int i = 0; i != candidates.size(); ++i) {
 			// f is the original function or macro type
@@ -581,32 +601,11 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		} else if(type instanceof SyntacticType.Negation) {
 			SyntacticType.Negation t = (SyntacticType.Negation) type;
 			return SemanticType.Not(convert(t.element,generics,context));
-		} else if(type instanceof SyntacticType.Set) {
-			SyntacticType.Set t = (SyntacticType.Set) type;
-			return SemanticType.Set(true,convert(t.element,generics,context));
-		} else if(type instanceof SyntacticType.Map) {
-			// FIXME: need to include the map constraints here
-			SyntacticType.Map t = (SyntacticType.Map) type;
-			SemanticType key = convert(t.key,generics,context);
-			SemanticType value = convert(t.value,generics,context);
-			if (key instanceof SemanticType.Void
-					|| value instanceof SemanticType.Void) {
-				// surprisingly, this case is possible and does occur.
-				return SemanticType.Set(true, SemanticType.Void);
-			} else {
-				return SemanticType.Set(true, SemanticType.Tuple(key, value));
-			}
 		} else if(type instanceof SyntacticType.List) {
 			// FIXME: need to include the list constraints here
 			SyntacticType.List t = (SyntacticType.List) type;
 			SemanticType element = convert(t.element,generics,context);
-			if (element instanceof SemanticType.Void) {
-				// surprisingly, this case is possible and does occur.
-				return SemanticType.Set(true, SemanticType.Void);
-			} else {
-				return SemanticType.Set(true,
-						SemanticType.Tuple(SemanticType.Int, element));
-			}
+			return SemanticType.Array(element);
 		} else if(type instanceof SyntacticType.Union) {
 			SyntacticType.Union t = (SyntacticType.Union) type;
 			SemanticType[] types = new SemanticType[t.elements.size()];
@@ -728,11 +727,11 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				} else {
 					return type;
 				}
-			} else if (type instanceof SemanticType.Set) {
-				SemanticType.Set st = (SemanticType.Set) type;
+			} else if (type instanceof SemanticType.Array) {
+				SemanticType.Array st = (SemanticType.Array) type;
 				SemanticType element = expand(st.element(), maximallyConsumed, context);
 				if (element != st.element()) {
-					return SemanticType.Set(st.flag(), element);
+					return SemanticType.Array(element);
 				} else {
 					return type;
 				}

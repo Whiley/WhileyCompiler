@@ -3,5 +3,5 @@ assert:
     if:
       |xs| > 0
     then:
-      exists (int,int) p:
-        p in (xs ++ xs)
+      exists (int v):
+        xs[0] == v

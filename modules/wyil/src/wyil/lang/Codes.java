@@ -209,7 +209,7 @@ public abstract class Codes {
 		return new Not(target, operand);
 	}
 
-	public static LengthOf LengthOf(Type.EffectiveList type, int target,
+	public static LengthOf LengthOf(Type.EffectiveArray type, int target,
 			int operand) {
 		return new LengthOf(type, target, operand);
 	}
@@ -218,23 +218,18 @@ public abstract class Codes {
 		return new Move(type, target, operand);
 	}
 
-	public static SubList SubList(Type.EffectiveList type, int target,
-			int sourceOperand, int leftOperand, int rightOperand) {
-		int[] operands = new int[] { sourceOperand, leftOperand, rightOperand };
-		return new SubList(type, target, operands);
+	/**
+	 * Construct a <code>listgen</code> bytecode which constructs a new list
+	 * initialised to a given length, with each element containing a given item.
+	 *
+	 * @param type
+	 * @return
+	 */
+	public static ListGenerator ListGenerator(Type.Array type, int target,
+			int element, int count) {
+		return new ListGenerator(type, target, element, count);
 	}
-
-	public static SubList SubList(Type.EffectiveList type, int target,
-			int[] operands) {
-		return new SubList(type, target, operands);
-	}
-
-	public static ListOperator ListOperator(Type.EffectiveList type, int target,
-			int leftOperand, int rightOperand, ListOperatorKind dir) {
-		return new ListOperator(type, target, leftOperand, rightOperand,
-				dir);
-	}
-
+	
 	/**
 	 * Construct a <code>listload</code> bytecode which reads a value from a
 	 * given index in a given list.
@@ -243,7 +238,7 @@ public abstract class Codes {
 	 *            --- list type.
 	 * @return
 	 */
-	public static IndexOf IndexOf(Type.EffectiveList type, int target,
+	public static IndexOf IndexOf(Type.EffectiveArray type, int target,
 			int leftOperand, int rightOperand) {
 		return new IndexOf(type, target, leftOperand, rightOperand);
 	}
@@ -263,12 +258,12 @@ public abstract class Codes {
 	 * @param type
 	 * @return
 	 */
-	public static NewList NewList(Type.List type, int target,
+	public static NewList NewList(Type.Array type, int target,
 			Collection<Integer> operands) {
 		return new NewList(type, target, CodeUtils.toIntArray(operands));
 	}
 
-	public static NewList NewList(Type.List type, int target, int[] operands) {
+	public static NewList NewList(Type.Array type, int target, int[] operands) {
 		return new NewList(type, target, operands);
 	}
 
@@ -393,17 +388,17 @@ public abstract class Codes {
 	}
 
 
-	public static Quantify Quantify(Type.EffectiveList type,
-			int sourceOperand, int indexOperand,
+	public static Quantify Quantify(
+			int startOperand, int endOperand, int indexOperand,
 			int[] modifiedOperands, Collection<Code> bytecodes) {
-		return new Quantify(type, sourceOperand, indexOperand,
+		return new Quantify(startOperand, endOperand, indexOperand,
 				modifiedOperands, bytecodes);
 	}
 
-	public static Quantify Quantify(Type.EffectiveList type,
-			int sourceOperand, int indexOperand, int[] modifiedOperands,
+	public static Quantify Quantify(
+			int startOperand, int endOperand, int indexOperand, int[] modifiedOperands,
 			Code... bytecodes) {
-		return new Quantify(type, sourceOperand, indexOperand,
+		return new Quantify(startOperand, endOperand, indexOperand,
 				modifiedOperands, bytecodes);
 	}
 
@@ -467,32 +462,27 @@ public abstract class Codes {
 				return "rem";
 			}
 		},
-		RANGE(5) {
-			public String toString() {
-				return "range";
-			}
-		},
-		BITWISEOR(6) {
+		BITWISEOR(5) {
 			public String toString() {
 				return "or";
 			}
 		},
-		BITWISEXOR(7) {
+		BITWISEXOR(6) {
 			public String toString() {
 				return "xor";
 			}
 		},
-		BITWISEAND(8) {
+		BITWISEAND(7) {
 			public String toString() {
 				return "and";
 			}
 		},
-		LEFTSHIFT(9) {
+		LEFTSHIFT(8) {
 			public String toString() {
 				return "shl";
 			}
 		},
-		RIGHTSHIFT(10) {
+		RIGHTSHIFT(9) {
 			public String toString() {
 				return "shr";
 			}
@@ -514,7 +504,6 @@ public abstract class Codes {
 	 * <li><i>add, subtract, multiply, divide, remainder</i>. Both operands must
 	 * be either integers or reals (but not one or the other). A value of the
 	 * same type is produced.</li>
-	 * <li><i>range</i></li>
 	 * <li><i>bitwiseor, bitwisexor, bitwiseand</i></li>
 	 * <li><i>leftshift,rightshift</i></li>
 	 * </ul>
@@ -846,7 +835,7 @@ public abstract class Codes {
 	public static final class Debug extends AbstractUnaryOp<Type> {
 
 		private Debug(int operand) {
-			super(Type.List(Type.T_INT,false), operand);
+			super(Type.Array(Type.T_INT,false), operand);
 		}
 
 		public int opcode() {
@@ -1276,11 +1265,6 @@ public abstract class Codes {
 		GTEQ(5) {
 			public String toString() {
 				return "ge";
-			}
-		},
-		IN(6) {
-			public String toString() {
-				return "in";
 			}
 		};
 		public int offset;
@@ -1770,84 +1754,58 @@ public abstract class Codes {
 			return "." + label;
 		}
 	}
-
-	public enum ListOperatorKind {
-		APPEND(0) {
-			public String toString() {
-				return "append";
-			}
-		};
-		public final int offset;
-
-		private ListOperatorKind(int offset) {
-			this.offset = offset;
-		}
-	}
-
+	
 	/**
-	 * Reads the (effective) list values from two operand registers, performs an
-	 * operation (e.g. append) on them and writes the result back to a target
-	 * register. For example, the following Whiley code:
+	 * Constructs a new list value from the values given by zero or more operand
+	 * registers. The new list is then written into the target register. For
+	 * example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f([int] xs, [int] ys) -> [int]:
-	 *    return xs ++ ys
+	 * function f(int x, int y, int z) -> [int]:
+	 *     return [x,y,z]
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f([int] xs, [int] ys) -> [int]:
+	 * function f(int x, int y, int z) -> [int]:
 	 * body:
-	 *    append %2 = %0, %1   : [int]
-	 *    return %2            : [int]
+	 *    assign %4 = %0             : int
+	 *    assign %5 = %1             : int
+	 *    assign %6 = %2             : int
+	 *    newlist %3 = (%4, %5, %6)  : [int]
+	 *    return %3                  : [int]
 	 * </pre>
 	 *
-	 * This appends two the parameter lists together writting the new list into
-	 * register <code>%2</code>.
+	 * Writes the list value given by <code>[x,y,z]</code> into register
+	 * <code>%3</code> and returns it.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class ListOperator extends
-			AbstractBinaryAssignable<Type.EffectiveList> {
-		public final ListOperatorKind kind;
+	public static final class ListGenerator extends AbstractBinaryAssignable<Type.Array> {
 
-		private ListOperator(Type.EffectiveList type, int target, int leftOperand,
-				int rightOperand, ListOperatorKind operation) {
-			super(type, target, leftOperand, rightOperand);
-			if (operation == null) {
-				throw new IllegalArgumentException(
-						"ListAppend direction cannot be null");
-			}
-			this.kind = operation;
+		private ListGenerator(Type.Array type, int target, int element, int count) {
+			super(type, target, element, count);
 		}
 
 		public int opcode() {
-			return OPCODE_append + kind.offset;
+			return OPCODE_listgen;
 		}
 
-		@Override
-		public Code.Unit clone(int nTarget, int[] nOperands) {
-			return ListOperator(type(), nTarget, nOperands[0], nOperands[1],
-					kind);
-		}
-
-		public int hashCode() {
-			return super.hashCode() + kind.hashCode();
+		protected Code.Unit clone(int nTarget, int[] nOperands) {
+			return ListGenerator(type(), nTarget, nOperands[0],nOperands[1]);
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof ListOperator) {
-				ListOperator setop = (ListOperator) o;
-				return super.equals(setop) && kind.equals(setop.kind);
+			if (o instanceof ListGenerator) {
+				return super.equals(operands());
 			}
 			return false;
 		}
 
 		public String toString() {
-			return kind + " %" + target() + " = %" + operand(0) + ", %"
-					+ operand(1) + " : " + type();
+			return "listgen %" + target() + " = [" + operand(0) + "; " + operand(1) + "]" + " : " + type();
 		}
 	}
 
@@ -1874,8 +1832,8 @@ public abstract class Codes {
 	 *
 	 */
 	public static final class LengthOf extends
-			AbstractUnaryAssignable<Type.EffectiveList> {
-		private LengthOf(Type.EffectiveList type, int target, int operand) {
+			AbstractUnaryAssignable<Type.EffectiveArray> {
+		private LengthOf(Type.EffectiveArray type, int target, int operand) {
 			super(type, target, operand);
 		}
 
@@ -1902,41 +1860,7 @@ public abstract class Codes {
 			return "lengthof %" + target() + " = %" + operand(0) + " : " + type();
 		}
 	}
-
-	/**
-	 * Reads the (effective) list value from a source operand register, and the
-	 * integer values from two index operand registers, computes the sublist and
-	 * writes the result back to a target register.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class SubList extends
-			AbstractNaryAssignable<Type.EffectiveList> {
-
-		private SubList(Type.EffectiveList type, int target, int[] operands) {
-			super(type, target, operands);
-		}
-
-		public int opcode() {
-			return OPCODE_sublist;
-		}
-
-		@Override
-		public final Code.Unit clone(int nTarget, int[] nOperands) {
-			return SubList(type(), nTarget, nOperands);
-		}
-
-		public boolean equals(Object o) {
-			return o instanceof SubList && super.equals(o);
-		}
-
-		public String toString() {
-			return "sublist %" + target() + " = %" + operands()[0] + ", %"
-					+ operands()[1] + ", %" + operands()[2] + " : " + type();
-		}
-	}
-
+	
 	/**
 	 * Reads an effective list or map from the source (left) operand register,
 	 * and a key value from the key (right) operand register and returns the
@@ -1966,8 +1890,8 @@ public abstract class Codes {
 	 *
 	 */
 	public static final class IndexOf extends
-			AbstractBinaryAssignable<Type.EffectiveList> {
-		private IndexOf(Type.EffectiveList type, int target,
+			AbstractBinaryAssignable<Type.EffectiveArray> {
+		private IndexOf(Type.EffectiveArray type, int target,
 				int sourceOperand, int keyOperand) {
 			super(type, target, sourceOperand, keyOperand);
 		}
@@ -2162,23 +2086,23 @@ public abstract class Codes {
 
 	public static final class Quantify extends Loop {
 		
-		public final int sourceOperand;
+		public final int startOperand;
+		public final int endOperand;
 		public final int indexOperand;
-		public final Type.EffectiveList type;
 
-		private Quantify(Type.EffectiveList type, int sourceOperand,
+		private Quantify(int startOperand,int endOperand,
 				int indexOperand, int[] modifies, Collection<Code> bytecodes) {
 			super(modifies, bytecodes);
-			this.type = type;
-			this.sourceOperand = sourceOperand;
+			this.startOperand = startOperand;
+			this.endOperand = endOperand;
 			this.indexOperand = indexOperand;
 		}
 
-		private Quantify(Type.EffectiveList type, int sourceOperand,
-				int indexOperand, int[] modifies, Code[] bytecodes) {
+		private Quantify(int startOperand, int endOperand, int indexOperand,
+				int[] modifies, Code[] bytecodes) {
 			super(modifies, bytecodes);
-			this.type = type;
-			this.sourceOperand = sourceOperand;
+			this.startOperand = startOperand;
+			this.endOperand = endOperand;
 			this.indexOperand = indexOperand;
 		}
 		
@@ -2189,7 +2113,8 @@ public abstract class Codes {
 		@Override
 		public void registers(java.util.Set<Integer> registers) {
 			registers.add(indexOperand);
-			registers.add(sourceOperand);
+			registers.add(startOperand);
+			registers.add(endOperand);
 			super.registers(registers);
 		}
 
@@ -2209,15 +2134,17 @@ public abstract class Codes {
 				}
 			}
 			Integer nIndexOperand = binding.get(indexOperand);
-			Integer nSourceOperand = binding.get(sourceOperand);
-			if (nSourceOperand != null || nIndexOperand != null
+			Integer nStartOperand = binding.get(startOperand);
+			Integer nEndOperand = binding.get(endOperand);
+			if (nStartOperand != null || nEndOperand != null || nIndexOperand != null
 					|| nModifiedOperands != modifiedOperands || bytecodes != this.bytecodes) {
-				nSourceOperand = nSourceOperand != null ? nSourceOperand
-						: sourceOperand;
+				nStartOperand = nStartOperand != null ? nStartOperand
+						: startOperand;
+				nEndOperand = nEndOperand != null ? nEndOperand
+						: endOperand;
 				nIndexOperand = nIndexOperand != null ? nIndexOperand
 						: indexOperand;
-
-				return Quantify(type, nSourceOperand, nIndexOperand,
+				return Quantify(nStartOperand, nEndOperand, nIndexOperand,
 						nModifiedOperands, bytecodes);
 			} else {
 				return this;
@@ -2225,15 +2152,15 @@ public abstract class Codes {
 		}
 		
 		public int hashCode() {
-			return super.hashCode() + sourceOperand + indexOperand
+			return super.hashCode() + startOperand + endOperand + indexOperand
 					+ Arrays.hashCode(modifiedOperands);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Quantify) {
 				Quantify f = (Quantify) o;
-				return type.equals(f.type)
-						&& sourceOperand == f.sourceOperand
+				return startOperand == f.startOperand
+						&& endOperand == f.endOperand
 						&& indexOperand == f.indexOperand
 						&& Arrays.equals(modifiedOperands, f.modifiedOperands)
 						&& bytecodes.equals(f.bytecodes);
@@ -2242,8 +2169,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "quantify %" + indexOperand + " in %" + sourceOperand + " "
-					+ arrayToString(modifiedOperands) + " : " + type;
+			return "quantify %" + indexOperand + " in %" + startOperand + "..%"
+					+ endOperand + arrayToString(modifiedOperands);
 		}
 	}
 	
@@ -2273,10 +2200,10 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class ListLVal extends LVal<Type.EffectiveList> {
+	public static final class ListLVal extends LVal<Type.EffectiveArray> {
 		public final int indexOperand;
 
-		public ListLVal(Type.EffectiveList t, int indexOperand) {
+		public ListLVal(Type.EffectiveArray t, int indexOperand) {
 			super(t);
 			this.indexOperand = indexOperand;
 		}
@@ -2335,8 +2262,8 @@ public abstract class Codes {
 				Type.Reference proc = Type.effectiveReference(iter);
 				iter = proc.element();
 				return new ReferenceLVal(proc);
-			} else if (iter instanceof Type.EffectiveList) {
-				Type.EffectiveList list = (Type.EffectiveList) iter;
+			} else if (iter instanceof Type.EffectiveArray) {
+				Type.EffectiveArray list = (Type.EffectiveArray) iter;
 				iter = list.element();
 				return new ListLVal(list, operands[operandIndex++]);
 			} else if (iter instanceof Type.EffectiveRecord) {
@@ -2487,8 +2414,8 @@ public abstract class Codes {
 				if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
 					Type.Reference proc = Type.effectiveReference(iter);
 					iter = proc.element();
-				} else if (iter instanceof Type.EffectiveList) {
-					Type.EffectiveList list = (Type.EffectiveList) iter;
+				} else if (iter instanceof Type.EffectiveArray) {
+					Type.EffectiveArray list = (Type.EffectiveArray) iter;
 					iter = list.element();
 				} else if (iter instanceof Type.EffectiveRecord) {
 					Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;
@@ -2674,9 +2601,9 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class NewList extends AbstractNaryAssignable<Type.List> {
+	public static final class NewList extends AbstractNaryAssignable<Type.Array> {
 
-		private NewList(Type.List type, int target, int[] operands) {
+		private NewList(Type.Array type, int target, int[] operands) {
 			super(type, target, operands);
 		}
 

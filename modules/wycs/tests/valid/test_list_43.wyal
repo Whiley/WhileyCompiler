@@ -1,0 +1,16 @@
+import wycs.core.Array
+
+define invariant([int] items) is:
+    forall (int i):
+        items[i] == 0
+            
+assert "loop invariant not restored":
+    forall ([int] items, [int] nitems, int n):
+        if:
+            invariant(items)
+            Array.<int>update(items,nitems,n)
+            nitems[n] == 0
+        then:
+            invariant(nitems)
+
+

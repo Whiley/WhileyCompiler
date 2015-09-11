@@ -284,12 +284,12 @@ public class AllInvalidTests {
 		runTest("ConstrainedInt_Invalid_6");
 	}
 
-	@Test
+	@Ignore("timeout") @Test
 	public void ConstrainedInt_Invalid_7() {
 		runTest("ConstrainedInt_Invalid_7");
 	}
 
-	@Test
+	@Ignore("timeout") @Test
 	public void ConstrainedInt_Invalid_8() {
 		runTest("ConstrainedInt_Invalid_8");
 	}
@@ -319,7 +319,7 @@ public class AllInvalidTests {
 		runTest("ConstrainedTuple_Invalid_1");
 	}
 
-	@Test
+	@Ignore("#425") @Test
 	public void Contractive_Invalid_1() {
 		runTest("Contractive_Invalid_1");
 	}
@@ -373,37 +373,6 @@ public class AllInvalidTests {
 	public void Export_Invalid_1() {
 		runTest("Export_Invalid_1");
 	}
-
-	@Test
-	public void For_Invalid_1() {
-		runTest("For_Invalid_1");
-	}
-
-	@Test
-	public void For_Invalid_5() {
-		runTest("For_Invalid_5");
-	}
-
-	@Test
-	public void For_Invalid_6() {
-		runTest("For_Invalid_6");
-	}
-
-	@Test
-	public void For_Invalid_7() {
-		runTest("For_Invalid_7");
-	}
-
-	@Test
-	public void For_Invalid_8() {
-		runTest("For_Invalid_8");
-	}
-
-	@Ignore("#409") @Test
-	public void For_Invalid_9() {
-		runTest("For_Invalid_9");
-	}
-
 
 	@Test
 	public void FunctionRef_Invalid_1() {
@@ -481,11 +450,6 @@ public class AllInvalidTests {
 	}
 
 	@Test
-	public void If_Invalid_3() {
-		runTest("If_Invalid_3");
-	}
-
-	@Test
 	public void If_Invalid_4() {
 		runTest("If_Invalid_4");
 	}
@@ -544,32 +508,7 @@ public class AllInvalidTests {
 	public void ListAccess_Invalid_5() {
 		runTest("ListAccess_Invalid_5");
 	}
-
-	@Test
-	public void ListAppend_Invalid_1() {
-		runTest("ListAppend_Invalid_1");
-	}
-
-	@Test
-	public void ListAppend_Invalid_2() {
-		runTest("ListAppend_Invalid_2");
-	}
-
-	@Ignore("Unknown Issue") @Test
-	public void ListAppend_Invalid_3() {
-		runTest("ListAppend_Invalid_3");
-	}
-
-	@Ignore("Internal Failure") @Test
-	public void ListAppend_Invalid_4() {
-		runTest("ListAppend_Invalid_4");
-	}
-
-	@Ignore("Internal Failure") @Test
-	public void ListAppend_Invalid_5() {
-		runTest("ListAppend_Invalid_5");
-	}
-
+	
 	@Test
 	public void ListAssign_Invalid_1() {
 		runTest("ListAssign_Invalid_1");
@@ -591,16 +530,6 @@ public class AllInvalidTests {
 	}
 
 	@Test
-	public void ListElemOf_Invalid_1() {
-		runTest("ListElemOf_Invalid_1");
-	}
-
-	@Test
-	public void ListElemOf_Invalid_2() {
-		runTest("ListElemOf_Invalid_2");
-	}
-
-	@Test
 	public void ListEmpty_Invalid_1() {
 		runTest("ListEmpty_Invalid_1");
 	}
@@ -616,6 +545,26 @@ public class AllInvalidTests {
 	}
 
 	@Test
+	public void ListGenerator_Invalid_1() {
+		runTest("ListGenerator_Invalid_1");	
+	}
+	
+	@Test
+	public void ListGenerator_Invalid_2() {
+		runTest("ListGenerator_Invalid_2");
+	}
+	
+	@Test
+	public void ListGenerator_Invalid_3() {
+		runTest("ListGenerator_Invalid_3");
+	}
+	
+	@Test
+	public void ListGenerator_Invalid_4() {
+		runTest("ListGenerator_Invalid_4");
+	}
+	
+	@Test
 	public void ListLength_Invalid_1() {
 		runTest("ListLength_Invalid_1");
 	}
@@ -629,22 +578,7 @@ public class AllInvalidTests {
 	public void ListLength_Invalid_3() {
 		runTest("ListLength_Invalid_3");
 	}
-
-	@Test
-	public void ListSublist_Invalid_1() {
-		runTest("ListSublist_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void ListSublist_Invalid_2() {
-		runTest("ListSublist_Invalid_2");
-	}
-
-	@Test
-	public void ListSublist_Invalid_3() {
-		runTest("ListSublist_Invalid_3");
-	}
-
+	
 	@Ignore("unclassified") @Test
 	public void ListUpdate_Invalid_1() {
 		runTest("ListUpdate_Invalid_1");
@@ -824,16 +758,6 @@ public class AllInvalidTests {
 	@Test
 	public void Process_Invalid_1() {
 		runTest("Process_Invalid_1");
-	}
-
-	@Test
-	public void Process_Invalid_2() {
-		runTest("Process_Invalid_2");
-	}
-
-	@Test
-	public void Process_Invalid_3() {
-		runTest("Process_Invalid_3");
 	}
 
 	@Test
@@ -1211,7 +1135,7 @@ public class AllInvalidTests {
 		runTest("UnionType_Invalid_1");
 	}
 
-	@Test
+	@Ignore("#469") @Test
 	public void UnionType_Invalid_10() {
 		runTest("UnionType_Invalid_10");
 	}

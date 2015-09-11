@@ -1,18 +1,13 @@
 package wycs.core;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import wyautl.core.*;
-import wyautl.io.PrettyAutomataWriter;
-import wyautl.rw.IterativeRewriter;
-import wyautl.rw.UnfairRuleStateRewriteStrategy;
-import wyautl.rw.InferenceRule;
-import wyautl.rw.ReductionRule;
-import wyautl.rw.SimpleRewriteStrategy;
-import wyautl.rw.UnfairStateRuleRewriteStrategy;
+import wyrw.core.*;
+import wyrw.util.*;
 import wycc.lang.NameID;
-import wyfs.lang.Path;
 import static wycs.core.Types.*;
 
 public abstract class SemanticType {
@@ -29,9 +24,8 @@ public abstract class SemanticType {
 	public static final Real Real = new Real();
 	public static final String String = new String();
 	public static final SemanticType IntOrReal = Or(Int,Real);
-	public static final Set SetAny = new Set(true,Any);
-	public static final Set SetTupleAnyAny = Set(true,Tuple(Any,Any));
-
+	public static final Array ArrayAny = new Array(Any);
+	
 	public static Var Var(java.lang.String name) {
 		return new Var(name);
 	}
@@ -63,8 +57,8 @@ public abstract class SemanticType {
 		return new Tuple(es);
 	}
 
-	public static Set Set(boolean flag, SemanticType element) {
-		return new Set(flag, element);
+	public static Array Array(SemanticType element) {
+		return new Array(element);
 	}
 
 	public static SemanticType Not(SemanticType element) {
@@ -237,40 +231,28 @@ public abstract class SemanticType {
 		}
 	}
 
-	public final static class Set extends SemanticType {
-		private Set(boolean flag, SemanticType element) {
-			int[] children = new int[2];
-			children[0] = automaton.add(new Automaton.Bool(flag));
+	public final static class Array extends SemanticType {
+		
+		private Array(SemanticType element) {			
 			Automaton element_automaton = element.automaton;
-			children[1] = automaton.addAll(element_automaton.getRoot(0),
+			int child = automaton.addAll(element_automaton.getRoot(0),
 					element_automaton);
-			int compoundRoot = automaton.add(new Automaton.List(children));
-
-			int root = automaton.add(new Automaton.Term(K_SetT, compoundRoot));
+			int root = automaton.add(new Automaton.Term(K_ArrayT, child));
 			automaton.setRoot(0,root);
 		}
 
-		private Set(Automaton automaton) {
+		private Array(Automaton automaton) {
 			super(automaton);
 			int kind = automaton.get(automaton.getRoot(0)).kind;
-			if (kind != K_SetT) {
+			if (kind != K_ArrayT) {
 				throw new IllegalArgumentException("Invalid set kind");
 			}
 		}
 
-		public boolean flag() {
-			int root = automaton.getRoot(0);
-			Automaton.Term term = (Automaton.Term) automaton.get(root);
-			Automaton.List list = (Automaton.List) automaton.get(term.contents);
-			Automaton.Bool val = (Automaton.Bool) automaton.get(list.get(0));
-			return val.value;
-		}
-
 		public SemanticType element() {
 			int root = automaton.getRoot(0);
-			Automaton.Term term = (Automaton.Term) automaton.get(root);
-			Automaton.List list = (Automaton.List) automaton.get(term.contents);
-			return extract(list.get(1));
+			Automaton.Term term = (Automaton.Term) automaton.get(root);			
+			return extract(term.contents);
 		}
 	}
 
@@ -656,14 +638,8 @@ public abstract class SemanticType {
 				}
 				break;
 			}
-			case K_SetT:
-				Automaton.List set = (Automaton.List) automaton.get(term.contents);
-				Automaton.Bool flag = (Automaton.Bool) automaton.get(set.get(0));
-				if(flag.value) {
-					body += "{" + toString(set.get(1),headers) + "}";
-				} else {
-					body += "{" + toString(set.get(1),headers) + "+}";
-				}
+			case K_ArrayT:
+				body += "[" + toString(term.contents,headers) + "]";				
 				break;
 			case K_TupleT: {
 				Automaton.List elements = (Automaton.List) automaton.get(term.contents);
@@ -729,7 +705,7 @@ public abstract class SemanticType {
 	 */
 	public static SemanticType construct(Automaton automaton) {
 		// First, we canonicalise the automaton
-		reduce(automaton);
+		automaton = reduce(automaton);
 		automaton.minimise();
 		automaton.compact();
 		automaton.canonicalise();
@@ -771,8 +747,8 @@ public abstract class SemanticType {
 			}
 		}
 		// compounds
-		case K_SetT:
-			return new SemanticType.Set(automaton);
+		case K_ArrayT:
+			return new SemanticType.Array(automaton);
 		case K_TupleT:
 			return new SemanticType.Tuple(automaton);
 		case K_FunctionT:
@@ -819,7 +795,7 @@ public abstract class SemanticType {
 //			new PrettyAutomataWriter(System.err, SCHEMA, "And",
 //					"Or").write(result.automaton);
 //			System.out.println();
-//		} catch(IOException e) {}
+//		} catch(IOException e) {}	
 		boolean r = result.equals(SemanticType.Void);
 //		System.out.println("CHECKING SUBTYPE: " + t1 + " :> " + t2 + " : " + r);
 //		try {
@@ -883,10 +859,10 @@ public abstract class SemanticType {
 			}
 			binding.put(var.name(), concrete);
 			return true;
-		} else if (generic instanceof SemanticType.Set
-				&& concrete instanceof SemanticType.Set) {
-			SemanticType.Set pt = (SemanticType.Set) generic;
-			SemanticType.Set at = (SemanticType.Set) concrete;
+		} else if (generic instanceof SemanticType.Array
+				&& concrete instanceof SemanticType.Array) {
+			SemanticType.Array pt = (SemanticType.Array) generic;
+			SemanticType.Array at = (SemanticType.Array) concrete;
 			return bind(pt.element(),at.element(),binding);
 		} else if (generic instanceof SemanticType.Tuple
 				&& concrete instanceof SemanticType.Tuple) {
@@ -919,27 +895,12 @@ public abstract class SemanticType {
 		return r;
 	}
 
-	private static void reduce(Automaton automaton) {
-		//
-//		try {
-//			new PrettyAutomataWriter(System.err, SCHEMA, "And",
-//					"Or").write(automaton);
-//			System.out.println();
-//		} catch(IOException e) {}
-		//
-		IterativeRewriter.Strategy<InferenceRule> inferenceStrategy = new UnfairRuleStateRewriteStrategy<InferenceRule>(
-				automaton, Types.inferences);
-		IterativeRewriter.Strategy<ReductionRule> reductionStrategy = new UnfairRuleStateRewriteStrategy<ReductionRule>(
-				automaton, Types.reductions);
-		IterativeRewriter rw = new IterativeRewriter(automaton,
-				inferenceStrategy, reductionStrategy, Types.SCHEMA);
-		rw.apply();
-		//
-//		try {
-//			new PrettyAutomataWriter(System.err, SCHEMA, "And",
-//					"Or").write(automaton);
-//			System.out.println();
-//		} catch(IOException e) {}
-		//
-	}
+	private static Automaton reduce(Automaton automaton) {
+		Rewrite rewrite = new TreeRewrite(Types.SCHEMA, Activation.RANK_COMPARATOR, Types.reductions);
+		Rewriter rewriter = new LinearRewriter(rewrite);
+		rewriter.initialise(automaton);
+		rewriter.apply(10000);
+		List<Rewrite.State> states = rewrite.states();
+		return states.get(states.size()-1).automaton();
+	}	
 }

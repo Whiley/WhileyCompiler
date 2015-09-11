@@ -2,7 +2,7 @@ package wycs.solver
 
 include "Core.wyrl"
 include "Arithmetic.wyrl"
-include "Sets.wyrl"
+include "Arrays.wyrl"
 include "Quantifiers.wyrl"
 include "TypeTests.wyrl"
 

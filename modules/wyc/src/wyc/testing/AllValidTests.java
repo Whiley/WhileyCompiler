@@ -1140,66 +1140,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ListAppend_Valid_1() throws IOException {
-		runTest("ListAppend_Valid_1");
-	}
-
-	@Test
-	public void ListAppend_Valid_11() throws IOException {
-		runTest("ListAppend_Valid_11");
-	}
-
-	@Test
-	public void ListAppend_Valid_13() throws IOException {
-		runTest("ListAppend_Valid_13");
-	}
-
-	@Test
-	public void ListAppend_Valid_14() throws IOException {
-		runTest("ListAppend_Valid_14");
-	}
-
-	@Test
-	public void ListAppend_Valid_2() throws IOException {
-		runTest("ListAppend_Valid_2");
-	}
-
-	@Test
-	public void ListAppend_Valid_3() throws IOException {
-		runTest("ListAppend_Valid_3");
-	}
-
-	@Test
-	public void ListAppend_Valid_4() throws IOException {
-		runTest("ListAppend_Valid_4");
-	}
-
-	@Test
-	public void ListAppend_Valid_5() throws IOException {
-		runTest("ListAppend_Valid_5");
-	}
-
-	@Test
-	public void ListAppend_Valid_6() throws IOException {
-		runTest("ListAppend_Valid_6");
-	}
-
-	@Test
-	public void ListAppend_Valid_7() throws IOException {
-		runTest("ListAppend_Valid_7");
-	}
-
-	@Test
-	public void ListAppend_Valid_8() throws IOException {
-		runTest("ListAppend_Valid_8");
-	}
-
-	@Test
-	public void ListAppend_Valid_9() throws IOException {
-		runTest("ListAppend_Valid_9");
-	}
-
-	@Test
 	public void ListAssign_Valid_1() throws IOException {
 		runTest("ListAssign_Valid_1");
 	}
@@ -1255,11 +1195,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ListElemOf_Valid_1() throws IOException {
-		runTest("ListElemOf_Valid_1");
-	}
-
-	@Test
 	public void ListEmpty_Valid_1() throws IOException {
 		runTest("ListEmpty_Valid_1");
 	}
@@ -1290,6 +1225,41 @@ public class AllValidTests {
 	}
 
 	@Test
+	public void ListGenerator_Valid_6() throws IOException {
+		runTest("ListGenerator_Valid_6");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_7() throws IOException {
+		runTest("ListGenerator_Valid_7");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_8() throws IOException {
+		runTest("ListGenerator_Valid_8");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_9() throws IOException {
+		runTest("ListGenerator_Valid_9");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_10() throws IOException {
+		runTest("ListGenerator_Valid_10");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_11() throws IOException {
+		runTest("ListGenerator_Valid_11");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_12() throws IOException {
+		runTest("ListGenerator_Valid_12");
+	}
+	
+	@Test
 	public void ListLength_Valid_1() throws IOException {
 		runTest("ListLength_Valid_1");
 	}
@@ -1302,36 +1272,6 @@ public class AllValidTests {
 	@Test
 	public void ListLength_Valid_3() throws IOException {
 		runTest("ListLength_Valid_3");
-	}
-
-	@Test
-	public void ListRange_Valid_1() throws IOException {
-		runTest("ListRange_Valid_1");
-	}
-
-	@Test
-	public void ListSublist_Valid_1() throws IOException {
-		runTest("ListSublist_Valid_1");
-	}
-
-	@Test
-	public void ListSublist_Valid_2() throws IOException {
-		runTest("ListSublist_Valid_2");
-	}
-
-	@Test
-	public void ListSublist_Valid_3() throws IOException {
-		runTest("ListSublist_Valid_3");
-	}
-
-	@Test
-	public void ListSublist_Valid_4() throws IOException {
-		runTest("ListSublist_Valid_4");
-	}
-
-	@Test
-	public void ListSublist_Valid_5() throws IOException {
-		runTest("ListSublist_Valid_5");
 	}
 
 	@Test
@@ -1557,11 +1497,6 @@ public class AllValidTests {
 	@Test
 	public void Quantifiers_Valid_1() throws IOException {
 		runTest("Quantifiers_Valid_1");
-	}
-
-	@Test
-	public void Range_Valid_1() throws IOException {
-		runTest("Range_Valid_1");
 	}
 
 	@Test
@@ -1839,11 +1774,6 @@ public class AllValidTests {
 		runTest("RecursiveType_Valid_3");
 	}
 
-	@Test
-	public void RecursiveType_Valid_30() throws IOException {
-		runTest("RecursiveType_Valid_30");
-	}
-
 	@Ignore("#406") @Test
 	public void RecursiveType_Valid_4() throws IOException {
 		runTest("RecursiveType_Valid_4");
@@ -1952,16 +1882,6 @@ public class AllValidTests {
 	@Test
 	public void String_Valid_6() throws IOException {
 		runTest("String_Valid_6");
-	}
-
-	@Test
-	public void String_Valid_7() throws IOException {
-		runTest("String_Valid_7");
-	}
-
-	@Test
-	public void String_Valid_8() throws IOException {
-		runTest("String_Valid_8");
 	}
 
 	@Test

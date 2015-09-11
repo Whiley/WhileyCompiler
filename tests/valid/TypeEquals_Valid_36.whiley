@@ -1,8 +1,8 @@
 
 
-type plist is ([int] xs) where |xs| > 0 && xs[0] == 0
+type plist is (int[] xs) where |xs| > 0 && xs[0] == 0
 
-type expr is [int] | int
+type expr is int[] | int
 
 type tup is {int p, expr lhs}
 

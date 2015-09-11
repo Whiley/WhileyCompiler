@@ -1,6 +1,6 @@
 
 
-function find([int] items, int item) -> (int r)
+function find(int[] items, int item) -> (int r)
 // Return value is within bounds of items or one past
 ensures 0 <= r && r <= |items|
 // If return within bounds then value at index must be item

@@ -4,13 +4,13 @@
 // the search space on each iteration until either the item is found, or
 // the search space is emtpy.  Its fair to say that this is quite a test
 // for the verifier!!
-function binarySearch([int] items, int item) -> (bool result)
+function binarySearch(int[] items, int item) -> (bool result)
 // The input list must be in sorted order
 requires all { i in 0 .. |items|-1 | items[i] < items[i+1] }
 // If return true, then matching item must exist in items
-ensures result ==> some { i in items | i == item }
+ensures result ==> some { i in 0..|items| | items[i] == item }
 // If return false, then no matching item exists in items
-ensures !result ==> no { i in items | i == item }:
+ensures !result ==> no { i in 0..|items| | items[i] == item }:
     //
     int lo = 0
     int hi = |items|
@@ -37,7 +37,7 @@ ensures !result ==> no { i in items | i == item }:
     return false
 
 public export method test():
-    [int] list = [3,5,6,9]
+    int[] list = [3,5,6,9]
     assume binarySearch(list,0) == false
     assume binarySearch(list,1) == false
     assume binarySearch(list,2) == false

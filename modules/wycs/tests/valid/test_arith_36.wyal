@@ -1,0 +1,22 @@
+type nat is (int n) where n >= 0
+
+// Following verification conditions taken from sumax benchmark
+
+define invariant(int sum, int max, int k) is:
+    sum <= (max * k)
+
+assert:
+    forall(nat k, nat sum, nat max, nat item):
+        if:
+            invariant(sum,max,k)
+            item < max
+        then:
+            invariant(sum + item,max,k+1)
+
+assert:
+    forall (nat k, nat sum, nat item, nat max):
+        if:
+                invariant(sum, max, k)
+                max <= item
+        then:
+            invariant(sum + item, item, k + 1)

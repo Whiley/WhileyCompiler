@@ -29,7 +29,7 @@ package whiley.lang
 public type char is (int x) where 0 <= x && x <= 255
 
 // Define string as sequence of ASCII characters
-public type string is [char]
+public type string is char[]
 
 // Convert an ASCII character into a byte.
 public function toByte(char v) -> byte:
@@ -46,22 +46,33 @@ public function toByte(char v) -> byte:
     return r
 
 // Convert an ASCII string into a list of bytes
-public function toBytes(string s) -> [byte]:
-    [byte] r = []
+public function toBytes(string s) -> byte[]:
+    byte[] r = [0b; |s|]
     int i = 0
-    while i < |s|:
-        r = r ++ [toByte(s[i])]
+    while i < |s| where i >= 0:
+        r[i] = toByte(s[i])
         i = i + 1
     return r
 
 // Convert a list of bytes into an ASCII string
-public function fromBytes([byte] data) -> string:
-    string r = ""
+public function fromBytes(byte[] data) -> string:
+    string r = [0; |data|]
     int i = 0
-    while i < |data|:
-        r = r ++ [Byte.toInt(data[i])]
+    while i < |data| where i >= 0:
+        r[i] = Byte.toInt(data[i])
         i = i + 1
     return r
+
+public function append(string s1, string s2) -> string:
+    string s3 = [0; |s1| + |s2|]
+    int i = 0
+    while i < |s3|:
+       if i < |s1|:
+          s3[i] = s1[i]
+       else:
+          s3[i] = s2[i-|s1|]
+       i = i + 1
+    return s3
 
 public function isUpperCase(char c) -> bool:
     return 'A' <= c && c <= 'Z'

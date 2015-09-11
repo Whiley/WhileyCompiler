@@ -2,13 +2,13 @@
 
 type Point is {int y, int x, ...}
 
-type VecPoint is [Point] | Point
+type VecPoint is Point[] | Point
 
 function sum(VecPoint vp) -> int:
-    if vp is [Point]:
+    if vp is Point[]:
         int r = 0
         int i = 0
-        while i < |vp|:
+        while i < |vp| where i >= 0:
             r = r + sum(vp[i])
             i = i + 1
         return r

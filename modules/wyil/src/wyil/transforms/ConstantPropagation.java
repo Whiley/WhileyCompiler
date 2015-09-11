@@ -217,12 +217,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			// skip
 		} else if(code instanceof Codes.Label) {
 			// skip
-		} else if(code instanceof Codes.ListOperator) {
-			infer(index,(Codes.ListOperator)code,environment);
 		} else if(code instanceof Codes.LengthOf) {
 			infer(index,(Codes.LengthOf)code,environment);
-		} else if(code instanceof Codes.SubList) {
-			infer(index,(Codes.SubList)code,environment);
 		} else if(code instanceof Codes.IndexOf) {
 			infer(index,(Codes.IndexOf)code,environment);
 		} else if(code instanceof Codes.Assign) {
@@ -307,25 +303,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			case REM: {
 				result = lnum.remainder(rnum);
 				break;
-			}
-			case RANGE: {
-				int start = lnum.value.intValue();
-				int end = rnum.value.intValue();
-				if (BigInteger.valueOf(start).equals(lnum.value)
-						&& BigInteger.valueOf(end).equals(rnum.value)) {
-					if (start > -100 && start < 100 && end > -100 && end < 100) {
-						int dir = start < end ? 1 : -1;
-						ArrayList<Constant> values = new ArrayList<Constant>();
-						while (start != end) {
-							values.add(Constant.V_INTEGER(BigInteger
-									.valueOf(start)));
-							start = start + dir;
-						}
-						result = Constant.V_LIST(values);
-						break;
-					}
-				}
-			}
+			}			
 			}
 		}
 
@@ -397,26 +375,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		}
 	}
 
-	public void infer(CodeBlock.Index index, Codes.ListOperator code, Env environment) {
-		Constant lhs = environment.get(code.operand(0));
-		Constant rhs = environment.get(code.operand(1));
-		Constant result = null;
-		switch (code.kind) {
-		case APPEND:
-			if (lhs instanceof Constant.List && rhs instanceof Constant.List) {
-				Constant.List left = (Constant.List) lhs;
-				Constant.List right = (Constant.List) rhs;
-				ArrayList<Constant> values = new ArrayList<Constant>(
-						left.values);
-				values.addAll(right.values);
-				result = Constant.V_LIST(values);
-			}
-			break;		
-		}
-
-		assign(code.target(), result, environment, index);
-	}
-
 	public void infer(CodeBlock.Index index, Codes.Lambda code,
 			Env environment) {
 		// For now, don't do anything!
@@ -428,36 +386,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Constant.List list = (Constant.List) val;
 		Constant result = Constant.V_INTEGER(BigInteger.valueOf(list.values.size()));
 		assign(code.target(), result, environment, index);
-	}
-
-	public void infer(CodeBlock.Index index, Codes.SubList code,
-			Env environment) {
-		Constant list = environment.get(code.operands()[0]);
-		Constant start = environment.get(code.operands()[1]);
-		Constant end = environment.get(code.operands()[2]);
-		Constant result = null;
-		if (list instanceof Constant.List && start instanceof Constant.Decimal
-				&& end instanceof Constant.Decimal) {
-			Constant.Decimal en = (Constant.Decimal) end;
-			Constant.Decimal st = (Constant.Decimal) start;
-			if (en.value.scale() <= 0 && st.value.scale() <= 0) {
-				Constant.List li = (Constant.List) list;
-				int eni = en.value.intValue();
-				int sti = st.value.intValue();
-				if (BigRational.valueOf(eni).equals(en.value) && eni >= 0
-						&& eni <= li.values.size()
-						&& BigRational.valueOf(sti).equals(st.value)
-						&& sti >= 0 && sti <= li.values.size()) {
-					ArrayList<Constant> nvals = new ArrayList<Constant>();
-					for (int i = sti; i < eni; ++i) {
-						nvals.add(li.values.get(i));
-					}
-					result = Constant.V_LIST(nvals);
-				}
-			}
-		}
-
-		assign(code.target(),result,environment,index);
 	}
 
 	public void infer(CodeBlock.Index index, Codes.IndexOf code,

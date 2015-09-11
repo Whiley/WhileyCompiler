@@ -526,7 +526,7 @@ public final class WyilFileWriter {
 	private void writeBase(boolean wide, Code code,
 			BinaryOutputStream output) throws IOException {
 
-		// second, deal with standard instruction formats
+		// second, deal with standard instruction formats		
 		output.write_u8(code.opcode());
 
 		if(code instanceof Code.AbstractUnaryOp) {
@@ -576,9 +576,10 @@ public final class WyilFileWriter {
 		} else if(code instanceof Codes.Quantify) {
 			Codes.Quantify l = (Codes.Quantify) code;
 			int[] operands = l.modifiedOperands;
-			writeBase(wide,operands.length + 2,output);
+			writeBase(wide,operands.length + 3,output);
 			writeBase(wide,l.indexOperand,output);
-			writeBase(wide,l.sourceOperand,output);
+			writeBase(wide,l.startOperand,output);
+			writeBase(wide,l.endOperand,output);
 			for(int i=0;i!=operands.length;++i) {
 				writeBase(wide,operands[i],output);
 			}
@@ -663,7 +664,6 @@ public final class WyilFileWriter {
 			writeRest(wide,stringCache.get(c.field),output);
 		} else if(code instanceof Codes.Quantify) {
 			Codes.Quantify f = (Codes.Quantify) code;
-			writeRest(wide,typeCache.get(f.type),output);
 			writeCodeBlock(wide,f,offset+1,labels,output);
 		} else if(code instanceof Codes.IfIs) {
 			Codes.IfIs c = (Codes.IfIs) code;
@@ -817,11 +817,11 @@ public final class WyilFileWriter {
 		} else if(code instanceof Codes.Quantify) {
 			Codes.Quantify f = (Codes.Quantify) code;
 			int[] operands = f.modifiedOperands;
-			maxBase = Math.max(f.sourceOperand, f.indexOperand);
+			maxBase = Math.max(f.startOperand, f.endOperand);
+			maxBase = Math.max(f.indexOperand, maxBase);
 			for(int i=0;i!=operands.length;++i) {
 				maxBase = Math.max(maxBase, operands[i]);
 			}
-			maxRest = Math.max(maxRest,typeCache.get(f.type));
 			maxRest = Math.max(maxRest,f.size());
 		} else if(code instanceof Codes.IfIs) {
 			Codes.IfIs c = (Codes.IfIs) code;
@@ -997,10 +997,7 @@ public final class WyilFileWriter {
 		} else if(code instanceof Codes.FieldLoad) {
 			Codes.FieldLoad c = (Codes.FieldLoad) code;
 			addStringItem(c.field);
-		} else if(code instanceof Codes.Quantify) {
-			Codes.Quantify s = (Codes.Quantify) code;
-			addTypeItem((Type)s.type);
-		}else if(code instanceof Codes.IfIs) {
+		} else if(code instanceof Codes.IfIs) {
 			Codes.IfIs c = (Codes.IfIs) code;
 			addTypeItem(c.type);
 			addTypeItem(c.rightOperand);

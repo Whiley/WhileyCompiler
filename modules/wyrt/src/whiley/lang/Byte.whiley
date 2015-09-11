@@ -30,13 +30,13 @@ import uint from whiley.lang.Int
 
 // convert a byte into a string
 public function toString(byte b) -> string:
-    string r = "b"
+    string r = [0; 'b']
     int i = 0
     while i < 8:
         if (b & 00000001b) == 00000001b:
-            r = "1" ++ r
+            r[7-i] = '1'
         else:
-            r = "0" ++ r
+            r[7-i] = '0'
         b = b >> 1
         i = i + 1
     return r
@@ -55,7 +55,7 @@ public function toUnsignedInt(byte b) -> uint:
 
 // Convert a byte array into an unsigned int assuming a little endian
 // form for both individual bytes, and the array as a whole
-public function toUnsignedInt([byte] bytes) -> uint:
+public function toUnsignedInt(byte[] bytes) -> uint:
     int val = 0
     int base = 1
     int i = 0
@@ -84,7 +84,7 @@ public function toInt(byte b) -> int:
 
 // Convert a byte array into a signed int assuming a little endian
 // form for both individual bytes, and the array as a whole
-public function toInt([byte] bytes) -> int:
+public function toInt(byte[] bytes) -> int:
     int val = 0
     int base = 1
     int i = 0

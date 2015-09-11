@@ -1,26 +1,33 @@
-function pred([int] xs) -> (bool b)
-ensures b ==> no { z in xs | z < 0 }:
+function selectOver(int[] xs) -> (int[] ys)
+ensures |ys| <= |xs|
+ensures no { i in 0..|ys| | ys[i] < 0 }:
     //
-    [int] zs = []
     int i = 0
-    while i < |xs|:
-        if xs[i] < 0:
-            zs = zs ++ [xs[i]]
+    int size = |xs|
+    int count = 0
+    while i < |xs| 
+        where i >= 0 && i <= |xs| && |xs| == size 
+        where count >= 0 && count <= i:
+        //
+        if xs[i] >= 0:
+            count = count + 1
         i = i + 1
-    return |zs| == 0
-
-function countOver([int] xs, int y) -> int
-requires pred(xs):
-    [int] tmp = []
-    int i = 0
-    while i < |xs|:
-        if xs[i] > y:
-            tmp = tmp ++ [xs[i]]
+    //
+    int[] zs = [0; count]
+    i = 0
+    int j = 0
+    while i < |xs| && j < |zs|
+        where i >= 0 && j >= 0 && j <= |zs| && |zs| == count
+        where all { k in 0 .. j | zs[k] >= 0 }:
+        if xs[i] >= 0:
+            zs[j] = xs[i]
+            j = j + 1
         i = i + 1
-    return |tmp|
+    //
+    return zs
 
 public export method test() -> void:
-    int c1 = countOver([1, 2, 3, 4], 1)
-    int c2 = countOver([1, 2, 3, 4], 3)
-    assume c1 == 3
-    assume c2 == 1
+    int[] a1 = selectOver([1, -2, 3, 4])
+    int[] a2 = selectOver([1, -2, -3, 4])
+    assume a1 == [1,3,4]
+    assume a2 == [1,4]

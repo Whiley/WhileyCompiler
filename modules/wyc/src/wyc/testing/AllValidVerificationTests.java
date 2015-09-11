@@ -28,6 +28,7 @@ package wyc.testing;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.junit.*;
 
@@ -128,7 +129,7 @@ public class AllValidVerificationTests {
 		runTest("Access_Valid_2");
 	}
 
-	@Ignore("#308") @Test
+	@Test
 	public void Assume_Valid_1() {
 		runTest("Assume_Valid_1");
 	}
@@ -188,7 +189,7 @@ public class AllValidVerificationTests {
 		runTest("BoolList_Valid_1");
 	}
 
-	@Ignore("#229") @Test
+	@Test
 	public void BoolList_Valid_2() {
 		runTest("BoolList_Valid_2");
 	}
@@ -198,7 +199,7 @@ public class AllValidVerificationTests {
 		runTest("BoolList_Valid_3");
 	}
 
-	@Test
+	@Ignore("#522") @Test
 	public void BoolRecord_Valid_1() {
 		runTest("BoolRecord_Valid_1");
 	}
@@ -223,27 +224,27 @@ public class AllValidVerificationTests {
 		runTest("Byte_Valid_1");
 	}
 
-	@Ignore("#336") @Test
+	@Test
 	public void Byte_Valid_2() {
 		runTest("Byte_Valid_2");
 	}
 
-	@Ignore("#336") @Test
+	@Test
 	public void Byte_Valid_3() {
 		runTest("Byte_Valid_3");
 	}
 
-	@Ignore("#336") @Test
+	@Test
 	public void Byte_Valid_4() {
 		runTest("Byte_Valid_4");
 	}
 
-	@Ignore("#336") @Test
+	@Test
 	public void Byte_Valid_5() {
 		runTest("Byte_Valid_5");
 	}
 
-	@Ignore("#336") @Test
+	@Test
 	public void Byte_Valid_6() {
 		runTest("Byte_Valid_6");
 	}
@@ -253,12 +254,12 @@ public class AllValidVerificationTests {
 		runTest("Byte_Valid_7");
 	}
 
-	@Ignore("#336") @Test
+	@Test
 	public void Byte_Valid_8() {
 		runTest("Byte_Valid_8");
 	}
 
-	@Ignore("#336") @Test
+	@Test
 	public void Byte_Valid_9() {
 		runTest("Byte_Valid_9");
 	}
@@ -283,12 +284,12 @@ public class AllValidVerificationTests {
 		runTest("Cast_Valid_4");
 	}
 
-	@Test
+	@Ignore("#468") @Test
 	public void Cast_Valid_5() {
 		runTest("Cast_Valid_5");
 	}
 
-	@Ignore("#366") @Test
+	@Test
 	public void Cast_Valid_6() {
 		runTest("Cast_Valid_6");
 	}
@@ -368,17 +369,12 @@ public class AllValidVerificationTests {
 		runTest("Constant_Valid_3");
 	}
 
-	@Ignore("#340") @Test
-	public void ConstrainedDictionary_Valid_1() {
-		runTest("ConstrainedDictionary_Valid_1");
-	}
-
 	@Test
 	public void ConstrainedInt_Valid_1() {
 		runTest("ConstrainedInt_Valid_1");
 	}
 
-	@Ignore("Issue ???	") @Test
+	@Test
 	public void ConstrainedInt_Valid_10() {
 		runTest("ConstrainedInt_Valid_10");
 	}
@@ -398,7 +394,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedInt_Valid_15");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void ConstrainedInt_Valid_16() {
 		runTest("ConstrainedInt_Valid_16");
 	}
@@ -463,14 +459,9 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedInt_Valid_5");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void ConstrainedInt_Valid_6() {
 		runTest("ConstrainedInt_Valid_6");
-	}
-
-	@Ignore("Issue ???") @Test
-	public void ConstrainedInt_Valid_7() {
-		runTest("ConstrainedInt_Valid_7");
 	}
 
 	@Ignore("Issue ???") @Test
@@ -478,12 +469,12 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedInt_Valid_8");
 	}
 
-	@Test
+	@Ignore("unknown") @Test
 	public void ConstrainedIntersection_Valid_1() {
 		runTest("ConstrainedIntersection_Valid_1");
 	}
 
-	@Test
+	@Ignore("#468") @Test
 	public void ConstrainedList_Valid_1() {
 		runTest("ConstrainedList_Valid_1");
 	}
@@ -498,7 +489,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_12");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void ConstrainedList_Valid_14() {
 		runTest("ConstrainedList_Valid_14");
 	}
@@ -508,12 +499,12 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_15");
 	}
 
-	@Test
+	@Ignore("#468") @Test
 	public void ConstrainedList_Valid_16() {
 		runTest("ConstrainedList_Valid_16");
 	}
 
-	@Test
+	@Ignore("#508") @Test
 	public void ConstrainedList_Valid_17() {
 		runTest("ConstrainedList_Valid_17");
 	}
@@ -523,7 +514,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_18");
 	}
 
-	@Test
+	@Ignore("#468") @Test
 	public void ConstrainedList_Valid_19() {
 		runTest("ConstrainedList_Valid_19");
 	}
@@ -533,7 +524,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_2");
 	}
 
-	@Test
+	@Ignore("#468") @Test
 	public void ConstrainedList_Valid_20() {
 		runTest("ConstrainedList_Valid_20");
 	}
@@ -553,17 +544,12 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_23");
 	}
 
-	@Ignore("Issue ???") @Test
-	public void ConstrainedList_Valid_24() {
-		runTest("ConstrainedList_Valid_24");
-	}
-
-	@Ignore("???") @Test
+	@Test
 	public void ConstrainedList_Valid_25() {
 		runTest("ConstrainedList_Valid_25");
 	}
 
-	@Test
+	@Ignore("#290") @Test
 	public void ConstrainedList_Valid_26() {
 		runTest("ConstrainedList_Valid_26");
 	}
@@ -573,12 +559,12 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_27");
 	}
 
-	@Ignore("#231") @Test
+	@Test
 	public void ConstrainedList_Valid_3() {
 		runTest("ConstrainedList_Valid_3");
 	}
 
-	@Test
+	@Ignore("#468") @Test
 	public void ConstrainedList_Valid_4() {
 		runTest("ConstrainedList_Valid_4");
 	}
@@ -593,7 +579,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_6");
 	}
 
-	@Test
+	@Ignore("#290") @Test
 	public void ConstrainedList_Valid_7() {
 		runTest("ConstrainedList_Valid_7");
 	}
@@ -658,7 +644,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedRecord_Valid_9");
 	}
 
-	@Test
+	@Ignore("#514") @Test
 	public void ConstrainedRecord_Valid_10() {
 		runTest("ConstrainedRecord_Valid_10");
 	}
@@ -718,7 +704,7 @@ public class AllValidVerificationTests {
 		runTest("Define_Valid_4");
 	}
 
-	@Ignore("Issue #343") @Test
+	@Test
 	public void DoWhile_Valid_1() {
 		runTest("DoWhile_Valid_1");
 	}
@@ -738,12 +724,12 @@ public class AllValidVerificationTests {
 		runTest("DoWhile_Valid_4");
 	}
 
-	@Ignore("#343") @Test
+	@Test
 	public void DoWhile_Valid_5() {
 		runTest("DoWhile_Valid_5");
 	}
 
-	@Ignore("timeout?") @Test
+	@Test
 	public void DoWhile_Valid_6() {
 		runTest("DoWhile_Valid_6");
 	}
@@ -785,7 +771,7 @@ public class AllValidVerificationTests {
 	}
 
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void Ensures_Valid_7() {
 		runTest("Ensures_Valid_7");
 	}
@@ -795,7 +781,7 @@ public class AllValidVerificationTests {
 		runTest("Ensures_Valid_8");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void FunctionRef_Valid_1() {
 		runTest("FunctionRef_Valid_1");
 	}
@@ -806,7 +792,7 @@ public class AllValidVerificationTests {
 	}
 
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void FunctionRef_Valid_3() {
 		runTest("FunctionRef_Valid_3");
 	}
@@ -816,12 +802,12 @@ public class AllValidVerificationTests {
 		runTest("FunctionRef_Valid_4");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void FunctionRef_Valid_5() {
 		runTest("FunctionRef_Valid_5");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void FunctionRef_Valid_6() {
 		runTest("FunctionRef_Valid_6");
 	}
@@ -831,12 +817,12 @@ public class AllValidVerificationTests {
 		runTest("FunctionRef_Valid_7");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void FunctionRef_Valid_8() {
 		runTest("FunctionRef_Valid_8");
 	}
 
-	@Ignore("Unknown Issue") @Test
+	@Test
 	public void FunctionRef_Valid_9() {
 		runTest("FunctionRef_Valid_9");
 	}
@@ -876,11 +862,6 @@ public class AllValidVerificationTests {
 		runTest("Function_Valid_18");
 	}
 
-	@Ignore("#290") @Test
-	public void Function_Valid_19() {
-		runTest("Function_Valid_19");
-	}
-
 	@Test
 	public void Function_Valid_2() {
 		runTest("Function_Valid_2");
@@ -912,7 +893,7 @@ public class AllValidVerificationTests {
 	}
 
 
-	@Ignore("#234") @Test
+	@Test
 	public void Function_Valid_6() {
 		runTest("Function_Valid_6");
 	}
@@ -923,7 +904,7 @@ public class AllValidVerificationTests {
 	}
 
 
-	@Ignore("#234") @Test
+	@Test
 	public void Function_Valid_8() {
 		runTest("Function_Valid_8");
 	}
@@ -1057,12 +1038,12 @@ public class AllValidVerificationTests {
 		runTest("Intersection_Valid_2");
 	}
 
-	@Ignore("#344") @Test
+	@Test
 	public void Lambda_Valid_1() {
 		runTest("Lambda_Valid_1");
 	}
 
-	@Ignore("#344") @Test
+	@Test
 	public void Lambda_Valid_2() {
 		runTest("Lambda_Valid_2");
 	}
@@ -1077,12 +1058,12 @@ public class AllValidVerificationTests {
 		runTest("Lambda_Valid_4");
 	}
 
-	@Ignore("#344") @Test
+	@Test
 	public void Lambda_Valid_5() {
 		runTest("Lambda_Valid_5");
 	}
 
-	@Ignore("#344") @Test
+	@Test
 	public void Lambda_Valid_6() {
 		runTest("Lambda_Valid_6");
 	}
@@ -1092,7 +1073,7 @@ public class AllValidVerificationTests {
 		runTest("Lambda_Valid_7");
 	}
 
-	@Ignore("#344") @Test
+	@Test
 	public void Lambda_Valid_8() {
 		runTest("Lambda_Valid_8");
 	}
@@ -1132,11 +1113,6 @@ public class AllValidVerificationTests {
 		runTest("ListAccess_Valid_6");
 	}
 
-	@Ignore("Known Issue") @Test
-	public void ListAccess_Valid_7() {
-		runTest("ListAccess_Valid_7");
-	}
-
 	@Test
 	public void ListAccess_Valid_8() {
 		runTest("ListAccess_Valid_8");
@@ -1147,79 +1123,7 @@ public class AllValidVerificationTests {
 		runTest("ListAccess_Valid_9");
 	}
 
-	@Test
-	public void ListAppend_Valid_1() {
-		runTest("ListAppend_Valid_1");
-	}
-
-
-	@Ignore("#231") @Test
-	public void ListAppend_Valid_10() {
-		runTest("ListAppend_Valid_10");
-	}
-
-	@Test
-	public void ListAppend_Valid_11() {
-		runTest("ListAppend_Valid_11");
-	}
-
-
-	@Ignore("#231") @Test
-	public void ListAppend_Valid_12() {
-		runTest("ListAppend_Valid_12");
-	}
-
-	@Test
-	public void ListAppend_Valid_13() {
-		runTest("ListAppend_Valid_13");
-	}
-
-	@Test
-	public void ListAppend_Valid_14() {
-		runTest("ListAppend_Valid_14");
-	}
-
-	@Test
-	public void ListAppend_Valid_2() {
-		runTest("ListAppend_Valid_2");
-	}
-
-	@Ignore("#231") @Test
-	public void ListAppend_Valid_3() {
-		runTest("ListAppend_Valid_3");
-	}
-
-	@Test
-	public void ListAppend_Valid_4() {
-		runTest("ListAppend_Valid_4");
-	}
-
-	@Ignore("#231") @Test
-	public void ListAppend_Valid_5() {
-		runTest("ListAppend_Valid_5");
-	}
-
-	@Test
-	public void ListAppend_Valid_6() {
-		runTest("ListAppend_Valid_6");
-	}
-
-	@Test
-	public void ListAppend_Valid_7() {
-		runTest("ListAppend_Valid_7");
-	}
-
-	@Test
-	public void ListAppend_Valid_8() {
-		runTest("ListAppend_Valid_8");
-	}
-
-	@Test
-	public void ListAppend_Valid_9() {
-		runTest("ListAppend_Valid_9");
-	}
-
-
+	
 	@Ignore("#233") @Test
 	public void ListAssign_Valid_1() {
 		runTest("ListAssign_Valid_1");
@@ -1230,7 +1134,7 @@ public class AllValidVerificationTests {
 		runTest("ListAssign_Valid_11");
 	}
 
-	@Ignore("timeout") @Test
+	@Test
 	public void ListAssign_Valid_2() {
 		runTest("ListAssign_Valid_2");
 	}
@@ -1240,12 +1144,12 @@ public class AllValidVerificationTests {
 		runTest("ListAssign_Valid_3");
 	}
 
-	@Ignore("#233") @Test
+	@Test
 	public void ListAssign_Valid_4() {
 		runTest("ListAssign_Valid_4");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void ListAssign_Valid_5() {
 		runTest("ListAssign_Valid_5");
 	}
@@ -1255,7 +1159,7 @@ public class AllValidVerificationTests {
 		runTest("ListAssign_Valid_6");
 	}
 
-	@Ignore("#233") @Test
+	@Test
 	public void ListAssign_Valid_7() {
 		runTest("ListAssign_Valid_7");
 	}
@@ -1276,11 +1180,6 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
-	public void ListElemOf_Valid_1() {
-		runTest("ListElemOf_Valid_1");
-	}
-
-	@Test
 	public void ListEmpty_Valid_1() {
 		runTest("ListEmpty_Valid_1");
 	}
@@ -1295,7 +1194,7 @@ public class AllValidVerificationTests {
 		runTest("ListGenerator_Valid_1");
 	}
 
-	@Ignore("Unknown Issue") @Test
+	@Test
 	public void ListGenerator_Valid_2() {
 		runTest("ListGenerator_Valid_2");
 	}
@@ -1310,6 +1209,41 @@ public class AllValidVerificationTests {
 		runTest("ListGenerator_Valid_5");
 	}
 
+	@Test
+	public void ListGenerator_Valid_6() throws IOException {
+		runTest("ListGenerator_Valid_6");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_7() throws IOException {
+		runTest("ListGenerator_Valid_7");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_8() throws IOException {
+		runTest("ListGenerator_Valid_8");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_9() throws IOException {
+		runTest("ListGenerator_Valid_9");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_10() throws IOException {
+		runTest("ListGenerator_Valid_10");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_11() throws IOException {
+		runTest("ListGenerator_Valid_11");
+	}
+	
+	@Ignore("Unknown") @Test
+	public void ListGenerator_Valid_12() throws IOException {
+		runTest("ListGenerator_Valid_12");
+	}
+	
 	@Test
 	public void ListLength_Valid_1() {
 		runTest("ListLength_Valid_1");
@@ -1326,43 +1260,12 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
-	public void ListRange_Valid_1() {
-		runTest("ListRange_Valid_1");
-	}
-
-	@Ignore("#232") @Test
-	public void ListSublist_Valid_1() {
-		runTest("ListSublist_Valid_1");
-	}
-
-	@Test
-	public void ListSublist_Valid_2() {
-		runTest("ListSublist_Valid_2");
-	}
-
-	@Ignore("#232") @Test
-	public void ListSublist_Valid_3() {
-		runTest("ListSublist_Valid_3");
-	}
-
-	@Test
-	public void ListSublist_Valid_4() {
-		runTest("ListSublist_Valid_4");
-	}
-
-	@Test
-	public void ListSublist_Valid_5() {
-		runTest("ListSublist_Valid_5");
-	}
-
-
-	@Ignore("#344") @Test
 	public void MessageRef_Valid_1() {
 		runTest("MessageRef_Valid_1");
 	}
 
 
-	@Ignore("#344") @Test
+	@Test
 	public void MessageRef_Valid_2() {
 		runTest("MessageRef_Valid_2");
 	}
@@ -1407,17 +1310,17 @@ public class AllValidVerificationTests {
 		runTest("MethodCall_Valid_3");
 	}
 
-	@Ignore("#344") @Test
+	@Test
 	public void MethodCall_Valid_4() {
 		runTest("MethodCall_Valid_4");
 	}
 
-	@Ignore("#344") @Test
+	@Test
 	public void MethodRef_Valid_1() {
 		runTest("MethodRef_Valid_1");
 	}
 
-	@Ignore("#344") @Test
+	@Test
 	public void MethodRef_Valid_2() {
 		runTest("MethodRef_Valid_2");
 	}
@@ -1472,7 +1375,7 @@ public class AllValidVerificationTests {
 		runTest("OpenRecord_Valid_2");
 	}
 
-	@Ignore("Known Issue") @Test
+	@Test
 	public void OpenRecord_Valid_3() {
 		runTest("OpenRecord_Valid_3");
 	}
@@ -1527,12 +1430,12 @@ public class AllValidVerificationTests {
 		runTest("Process_Valid_10");
 	}
 
-	@Ignore("#291") @Test
+	@Test
 	public void Process_Valid_11() {
 		runTest("Process_Valid_11");
 	}
 
-	@Ignore("#291") @Test
+	@Test
 	public void Process_Valid_12() {
 		runTest("Process_Valid_12");
 	}
@@ -1557,7 +1460,7 @@ public class AllValidVerificationTests {
 		runTest("Process_Valid_5");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void Process_Valid_6() {
 		runTest("Process_Valid_6");
 	}
@@ -1581,11 +1484,6 @@ public class AllValidVerificationTests {
 	@Test
 	public void Quantifiers_Valid_1() {
 		runTest("Quantifiers_Valid_1");
-	}
-
-	@Ignore("#308") @Test
-	public void Range_Valid_1() {
-		runTest("Range_Valid_1");
 	}
 
 	@Test
@@ -1683,7 +1581,7 @@ public class AllValidVerificationTests {
 		runTest("RecordAssign_Valid_10");
 	}
 
-	@Test
+	@Ignore("#524") @Test
 	public void RecordAssign_Valid_2() {
 		runTest("RecordAssign_Valid_2");
 	}
@@ -1763,7 +1661,7 @@ public class AllValidVerificationTests {
 		runTest("RecursiveType_Valid_10");
 	}
 
-	@Test
+	@Ignore("#298") @Test
 	public void RecursiveType_Valid_11() {
 		runTest("RecursiveType_Valid_11");
 	}
@@ -1778,7 +1676,7 @@ public class AllValidVerificationTests {
 		runTest("RecursiveType_Valid_13");
 	}
 
-	@Test
+	@Ignore("#298") @Test
 	public void RecursiveType_Valid_14() {
 		runTest("RecursiveType_Valid_14");
 	}
@@ -1929,7 +1827,7 @@ public class AllValidVerificationTests {
 		runTest("Reference_Valid_5");
 	}
 
-	@Ignore("#337") @Test
+	@Test
 	public void Remainder_Valid_1() {
 		runTest("Remainder_Valid_1");
 	}
@@ -1985,43 +1883,33 @@ public class AllValidVerificationTests {
 	public void String_Valid_6() {
 		runTest("String_Valid_6");
 	}
-
-	@Test
-	public void String_Valid_7() {
-		runTest("String_Valid_7");
-	}
-
-	@Test
-	public void String_Valid_8() {
-		runTest("String_Valid_8");
-	}
-
-	@Test
+	
+	@Ignore("#522") @Test
 	public void Subtype_Valid_1() {
 		runTest("Subtype_Valid_1");
 	}
 
-	@Test
+	@Ignore("#522") @Test
 	public void Subtype_Valid_10() {
 		runTest("Subtype_Valid_10");
 	}
 
-	@Test
+	@Ignore("#522") @Test
 	public void Subtype_Valid_11() {
 		runTest("Subtype_Valid_11");
 	}
 
-	@Test
+	@Ignore("#522") @Test
 	public void Subtype_Valid_12() {
 		runTest("Subtype_Valid_12");
 	}
 
-	@Test
+	@Ignore("#522") @Test
 	public void Subtype_Valid_13() {
 		runTest("Subtype_Valid_13");
 	}
 
-	@Test
+	@Ignore("#522") @Test
 	public void Subtype_Valid_14() {
 		runTest("Subtype_Valid_14");
 	}
@@ -2051,7 +1939,7 @@ public class AllValidVerificationTests {
 		runTest("Subtype_Valid_6");
 	}
 
-	@Test
+	@Ignore("#522") @Test
 	public void Subtype_Valid_7() {
 		runTest("Subtype_Valid_7");
 	}
@@ -2171,7 +2059,7 @@ public class AllValidVerificationTests {
 		runTest("TupleType_Valid_7");
 	}
 
-	@Ignore("timeout") @Test
+	@Test
 	public void TupleType_Valid_8() {
 		runTest("TupleType_Valid_8");
 	}
@@ -2206,7 +2094,7 @@ public class AllValidVerificationTests {
 		runTest("TypeEquals_Valid_15");
 	}
 
-	@Ignore("#298") @Test
+	@Test
 	public void TypeEquals_Valid_16() {
 		runTest("TypeEquals_Valid_16");
 	}
@@ -2351,7 +2239,7 @@ public class AllValidVerificationTests {
 		runTest("TypeEquals_Valid_44");
 	}
 
-	@Test
+	@Ignore("#528") @Test
 	public void TypeEquals_Valid_45() {
 		runTest("TypeEquals_Valid_45");
 	}
@@ -2436,7 +2324,7 @@ public class AllValidVerificationTests {
 		runTest("UnionType_Valid_17");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void UnionType_Valid_18() {
 		runTest("UnionType_Valid_18");
 	}
@@ -2451,12 +2339,12 @@ public class AllValidVerificationTests {
 		runTest("UnionType_Valid_2");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void UnionType_Valid_20() {
 		runTest("UnionType_Valid_20");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Test
 	public void UnionType_Valid_21() {
 		runTest("UnionType_Valid_21");
 	}
@@ -2506,12 +2394,7 @@ public class AllValidVerificationTests {
 		runTest("UnionType_Valid_9");
 	}
 
-	@Ignore("Known Issue") @Test
-	public void Update_Valid_1() {
-		runTest("Update_Valid_1");
-	}
-
-	@Ignore("Known Issue") @Test
+	@Test
 	public void Update_Valid_2() {
 		runTest("Update_Valid_2");
 	}
@@ -2551,7 +2434,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_11");
 	}
 
-	@Ignore("#379") @Test
+	@Test
 	public void While_Valid_12() {
 		runTest("While_Valid_12");
 	}
@@ -2591,12 +2474,12 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_2");
 	}
 
-	@Ignore("#298") @Test
+	@Test
 	public void While_Valid_20() {
 		runTest("While_Valid_20");
 	}
 
-	@Ignore("#231") @Test
+	@Test
 	public void While_Valid_21() {
 		runTest("While_Valid_21");
 	}
@@ -2651,7 +2534,7 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_31");
 	}
 
-	@Ignore("378") @Test
+	@Test
 	public void While_Valid_32() {
 		runTest("While_Valid_32");
 	}
@@ -2681,22 +2564,22 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_37");
 	}
 
-	@Ignore("#379") @Test
+	@Test
 	public void While_Valid_38() {
 		runTest("While_Valid_38");
 	}
 
-	@Ignore("#393") @Test
+	@Test
 	public void While_Valid_39() {
 		runTest("While_Valid_39");
 	}
 
-	@Ignore("#379") @Test
+	@Test
 	public void While_Valid_40() {
 		runTest("While_Valid_40");
 	}
 
-	@Ignore("#379") @Test
+	@Test
 	public void While_Valid_41() {
 		runTest("While_Valid_41");
 	}
@@ -2706,12 +2589,12 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_42");
 	}
 
-	@Ignore("#379") @Test
+	@Test
 	public void While_Valid_43() {
 		runTest("While_Valid_43");
 	}
 
-	@Ignore("#231") @Test
+	@Test
 	public void While_Valid_44() {
 		runTest("While_Valid_44");
 	}
@@ -2731,12 +2614,12 @@ public class AllValidVerificationTests {
 		runTest("While_Valid_46");
 	}
 
-	@Test
+	@Ignore("466") @Test
 	public void While_Valid_3() {
 		runTest("While_Valid_3");
 	}
 
-	@Ignore("#379") @Test
+	@Ignore("#231") @Test
 	public void While_Valid_5() {
 		runTest("While_Valid_5");
 	}

@@ -1,5 +1,5 @@
 type nat is (int x) where x >= 0
-type nlist is nat | [int]
+type nlist is nat | int[]
 
 function f(int x) -> nlist:
     if x <= 0:

@@ -14,7 +14,7 @@ type BinOp is {BOp op, Expr rhs, Expr lhs}
 
 type ListAccess is {Expr index, Expr src}
 
-type Expr is int | BinOp | [Expr] | ListAccess
+type Expr is int | BinOp | Expr[] | ListAccess
 
 function evaluate(Expr e) -> int:
     if e is int:
@@ -23,7 +23,7 @@ function evaluate(Expr e) -> int:
         if e is BinOp:
             return 2
         else:
-            if e is [Expr]:
+            if e is Expr[]:
                 return 3
             else:
                 if e is ListAccess:

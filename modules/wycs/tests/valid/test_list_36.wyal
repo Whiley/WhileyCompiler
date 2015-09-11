@@ -1,0 +1,7 @@
+assert "assertion failure":
+    forall ([int] r0):
+        if:
+            |r0| != 0
+        then:
+            |r0| > 0
+

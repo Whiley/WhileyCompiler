@@ -34,17 +34,11 @@ public class Exprs {
 
 			} else if (expr instanceof Expr.ConstantAccess) {
 				// do nout
-			} else if (expr instanceof Expr.List) {
-				Expr.List e = (Expr.List) expr;
+			} else if (expr instanceof Expr.ArrayInitialiser) {
+				Expr.ArrayInitialiser e = (Expr.ArrayInitialiser) expr;
 				for(Expr p : e.arguments) {
 					uses(p, context, uses);
 				}
-
-			} else if (expr instanceof Expr.SubList) {
-				Expr.SubList e = (Expr.SubList) expr;
-				uses(e.src, context, uses);
-				uses(e.start, context, uses);
-				uses(e.end, context, uses);
 
 			} else if (expr instanceof Expr.BinOp) {
 				Expr.BinOp e = (Expr.BinOp) expr;
@@ -158,19 +152,14 @@ public class Exprs {
 				return true;
 			} else if (expr instanceof Expr.ConstantAccess) {
 				return true;
-			} else if (expr instanceof Expr.List) {
-				Expr.List e = (Expr.List) expr;
+			} else if (expr instanceof Expr.ArrayInitialiser) {
+				Expr.ArrayInitialiser e = (Expr.ArrayInitialiser) expr;
 				for(Expr p : e.arguments) {
 					if(!isPure(p, context)) {
 						return false;
 					}
 				}
 				return true;
-
-			} else if (expr instanceof Expr.SubList) {
-				Expr.SubList e = (Expr.SubList) expr;
-				return isPure(e.src, context) && isPure(e.start, context)
-						&& isPure(e.end, context);
 
 			} else if (expr instanceof Expr.BinOp) {
 				Expr.BinOp e = (Expr.BinOp) expr;

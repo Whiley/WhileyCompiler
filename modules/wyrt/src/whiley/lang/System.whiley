@@ -34,5 +34,5 @@ public type PrintWriter is {
 
 public type Console is {
     PrintWriter out,
-    [ASCII.string] args
+    ASCII.string[] args
 }

@@ -1,13 +1,14 @@
 
 
-type list is [int]
+type list is int[]
 
-function update(list l, int index, int value) -> list:
+function update(list l, int index, int value) -> list
+requires 0 <= index && index < |l|:
     l[index] = value
     return l
 
 public export method test() -> void:
-    [int] l = ['1', '2', '3']
+    int[] l = ['1', '2', '3']
     assume update(l, 1, 0) == ['1',0,'3']
     assume update(l, 2, 0) == ['1','2',0]
     l = "Hello World"

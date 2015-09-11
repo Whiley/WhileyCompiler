@@ -1,0 +1,7 @@
+assert:
+    forall (int k, int sum, int j, int max):
+        if:
+            sum * j <= max * k
+        then:
+            sum * j <= max * k
+

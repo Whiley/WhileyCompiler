@@ -1,11 +1,14 @@
+import wycs.core.Array
 
 assert "constraint not satisfied":
-    forall [int] xs:
+    forall([int] xs, [int] ys):
        if:
-          forall (int i1,int v1):
-            (i1,v1) in xs ==> v1 >= 0
-       then:
-          forall (int i2,int v2):
-             (i2,v2) in xs[0:=1] ==> v2 >= 0
+          forall (int i):
+            xs[i] >= 0
+          Array.<int>update(xs,ys,0)
+          ys[0] == 1
+       then:           
+          forall (int j):
+             ys[j] >= 0
 
 

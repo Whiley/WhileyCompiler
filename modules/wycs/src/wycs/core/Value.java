@@ -54,8 +54,8 @@ public abstract class Value implements Comparable<Value> {
 		return get(new String(string));
 	}
 
-	public static Set Set(Collection<Value> values) {
-		return get(new Set(values));
+	public static Array Array(Collection<Value> values) {
+		return get(new Array(values));
 	}
 
 	public static Tuple Tuple(Collection<Value> values) {
@@ -260,27 +260,27 @@ public abstract class Value implements Comparable<Value> {
 		}
 	}
 
-	public static final class Set extends Value {
-		public final HashSet<Value> values;
-		private Set() {
-			this.values = new HashSet<Value>();
+	public static final class Array extends Value {
+		public final ArrayList<Value> values;
+		private Array() {
+			this.values = new ArrayList<Value>();
 		}
-		private Set(Collection<Value> value) {
-			this.values = new HashSet<Value>(value);
+		private Array(Collection<Value> value) {
+			this.values = new ArrayList<Value>(value);
 		}
 		public int hashCode() {
 			return values.hashCode();
 		}
 		public boolean equals(Object o) {
-			if(o instanceof Set) {
-				Set i = (Set) o;
+			if(o instanceof Array) {
+				Array i = (Array) o;
 				return values.equals(i.values);
 			}
 			return false;
 		}
 		public int compareTo(Value v) {
-			if(v instanceof Set) {
-				Set l = (Set) v;
+			if(v instanceof Array) {
+				Array l = (Array) v;
 				if(values.size() < l.values.size()) {
 					return -1;
 				} else if(values.size() > l.values.size()) {
@@ -311,7 +311,7 @@ public abstract class Value implements Comparable<Value> {
 			return -1;
 		}
 		public java.lang.String toString() {
-			java.lang.String r = "{";
+			java.lang.String r = "[";
 			boolean firstTime=true;
 			for(Value v : values) {
 				if(!firstTime) {
@@ -320,38 +320,38 @@ public abstract class Value implements Comparable<Value> {
 				firstTime=false;
 				r += v;
 			}
-			return r + "}";
+			return r + "]";
 		}
 
-		public Set union(Set rhs) {
-			Value.Set nset = new Value.Set(values);
+		public Array union(Array rhs) {
+			Value.Array nset = new Value.Array(values);
 			nset.values.addAll(rhs.values);
 			return nset;
 
 		}
 
-		public Set add(Value val) {
-			Value.Set nset = new Value.Set(values);
+		public Array add(Value val) {
+			Value.Array nset = new Value.Array(values);
 			nset.values.add(val);
 			return nset;
 
 		}
 
-		public Set difference(Set rhs) {
-			Value.Set nset = new Value.Set(values);
+		public Array difference(Array rhs) {
+			Value.Array nset = new Value.Array(values);
 			nset.values.removeAll(rhs.values);
 			return nset;
 		}
 
-		public Set remove(Value val) {
-			Value.Set nset = new Value.Set(values);
+		public Array remove(Value val) {
+			Value.Array nset = new Value.Array(values);
 			nset.values.remove(val);
 			return nset;
 
 		}
 
-		public Set intersect(Set rhs) {
-			Value.Set nset = new Value.Set();
+		public Array intersect(Array rhs) {
+			Value.Array nset = new Value.Array();
 			for(Value v : values) {
 				if(rhs.values.contains(v)) {
 					nset.values.add(v);
@@ -361,16 +361,12 @@ public abstract class Value implements Comparable<Value> {
 		}
 
 		public SemanticType type() {
-			if(values.isEmpty()) {
-				return SemanticType.Set(true,SemanticType.Void);
-			} else {
-				SemanticType[] types = new SemanticType[values.size()];
-				int i = 0;
-				for(Value v : values) {
-					types[i++] = v.type();
-				}
-				return SemanticType.Set(true,SemanticType.Or(types));
+			SemanticType[] types = new SemanticType[values.size()];
+			int i = 0;
+			for(Value v : values) {
+				types[i++] = v.type();
 			}
+			return SemanticType.Array(SemanticType.Or(types));			
 		}
 	}
 
@@ -413,7 +409,7 @@ public abstract class Value implements Comparable<Value> {
 					|| v instanceof Decimal
 					|| v instanceof Integer
 					|| v instanceof String
-					|| v instanceof Set) {
+					|| v instanceof Array) {
 				return 1;
 			}
 			return -1;

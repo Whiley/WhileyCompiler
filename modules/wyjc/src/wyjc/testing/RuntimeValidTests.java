@@ -28,6 +28,7 @@ package wyjc.testing;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -77,7 +78,7 @@ import wyjc.util.WyjcBuildTask;
 
  	private static final String WYBS_CLASS_DIR="../../modules/wybs/src/";
 
- 	private static final String WYRL_CLASS_DIR="../../modules/wyrl/src/";
+ 	private static final String WYRL_CLASS_DIR="../../lib/wyrl-v0.4.0.jar";
 
 
  	static {
@@ -1205,67 +1206,7 @@ import wyjc.util.WyjcBuildTask;
 	public void ListAccess_Valid_9() {
 		runTest("ListAccess_Valid_9");
 	}
-
-	@Test
-	public void ListAppend_Valid_1() {
-		runTest("ListAppend_Valid_1");
-	}
-
-	@Test
-	public void ListAppend_Valid_11() {
-		runTest("ListAppend_Valid_11");
-	}
-
-	@Test
-	public void ListAppend_Valid_13() {
-		runTest("ListAppend_Valid_13");
-	}
-
-	@Test
-	public void ListAppend_Valid_14() {
-		runTest("ListAppend_Valid_14");
-	}
-
-	@Test
-	public void ListAppend_Valid_2() {
-		runTest("ListAppend_Valid_2");
-	}
-
-	@Test
-	public void ListAppend_Valid_3() {
-		runTest("ListAppend_Valid_3");
-	}
-
-	@Test
-	public void ListAppend_Valid_4() {
-		runTest("ListAppend_Valid_4");
-	}
-
-	@Test
-	public void ListAppend_Valid_5() {
-		runTest("ListAppend_Valid_5");
-	}
-
-	@Test
-	public void ListAppend_Valid_6() {
-		runTest("ListAppend_Valid_6");
-	}
-
-	@Test
-	public void ListAppend_Valid_7() {
-		runTest("ListAppend_Valid_7");
-	}
-
-	@Test
-	public void ListAppend_Valid_8() {
-		runTest("ListAppend_Valid_8");
-	}
-
-	@Test
-	public void ListAppend_Valid_9() {
-		runTest("ListAppend_Valid_9");
-	}
-
+	
 	@Test
 	public void ListAssign_Valid_1() {
 		runTest("ListAssign_Valid_1");
@@ -1322,11 +1263,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void ListElemOf_Valid_1() {
-		runTest("ListElemOf_Valid_1");
-	}
-
-	@Test
 	public void ListEmpty_Valid_1() {
 		runTest("ListEmpty_Valid_1");
 	}
@@ -1357,6 +1293,41 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
+	public void ListGenerator_Valid_6() throws IOException {
+		runTest("ListGenerator_Valid_6");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_7() throws IOException {
+		runTest("ListGenerator_Valid_7");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_8() throws IOException {
+		runTest("ListGenerator_Valid_8");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_9() throws IOException {
+		runTest("ListGenerator_Valid_9");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_10() throws IOException {
+		runTest("ListGenerator_Valid_10");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_11() throws IOException {
+		runTest("ListGenerator_Valid_11");
+	}
+	
+	@Test
+	public void ListGenerator_Valid_12() throws IOException {
+		runTest("ListGenerator_Valid_12");
+	}
+	
+	@Test
 	public void ListLength_Valid_1() {
 		runTest("ListLength_Valid_1");
 	}
@@ -1369,36 +1340,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void ListLength_Valid_3() {
 		runTest("ListLength_Valid_3");
-	}
-
-	@Test
-	public void ListRange_Valid_1() {
-		runTest("ListRange_Valid_1");
-	}
-
-	@Test
-	public void ListSublist_Valid_1() {
-		runTest("ListSublist_Valid_1");
-	}
-
-	@Test
-	public void ListSublist_Valid_2() {
-		runTest("ListSublist_Valid_2");
-	}
-
-	@Test
-	public void ListSublist_Valid_3() {
-		runTest("ListSublist_Valid_3");
-	}
-
-	@Test
-	public void ListSublist_Valid_4() {
-		runTest("ListSublist_Valid_4");
-	}
-
-	@Test
-	public void ListSublist_Valid_5() {
-		runTest("ListSublist_Valid_5");
 	}
 
 	@Test
@@ -1624,11 +1565,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void Quantifiers_Valid_1() {
 		runTest("Quantifiers_Valid_1");
-	}
-
-	@Test
-	public void Range_Valid_1() {
-		runTest("Range_Valid_1");
 	}
 
 	@Test
@@ -1906,11 +1842,6 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_3");
 	}
 
-	@Test
-	public void RecursiveType_Valid_30() {
-		runTest("RecursiveType_Valid_30");
-	}
-
 	@Ignore("#406") @Test
 	public void RecursiveType_Valid_4() {
 		runTest("RecursiveType_Valid_4");
@@ -2019,16 +1950,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void String_Valid_6() {
 		runTest("String_Valid_6");
-	}
-
-	@Test
-	public void String_Valid_7() {
-		runTest("String_Valid_7");
-	}
-
-	@Test
-	public void String_Valid_8() {
-		runTest("String_Valid_8");
 	}
 
 	@Test

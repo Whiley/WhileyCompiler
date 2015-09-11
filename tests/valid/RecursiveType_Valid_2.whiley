@@ -4,9 +4,9 @@ type Expr is real | Var | BinOp
 
 type BinOp is {Expr rhs, Expr lhs}
 
-type Var is {[int] id}
+type Var is {int[] id}
 
-type SyntaxError is {[int] err}
+type SyntaxError is {int[] err}
 
 type SExpr is SyntaxError | Expr
 
@@ -22,7 +22,7 @@ function build(int i) -> Expr:
 function evaluate(Expr e) -> real:
     if e is real:
         return e
-    if e is {[int] id}:
+    if e is {int[] id}:
         return (real) |e.id|
     else:
         return evaluate(e.lhs) + evaluate(e.rhs)

@@ -46,6 +46,7 @@ import wycc.lang.SyntacticElement;
 import wycc.lang.SyntaxError;
 import wycc.util.Pair;
 import wycc.util.ResolveError;
+import wycc.util.Triple;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.Constant;
@@ -626,7 +627,7 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.Debug stmt, Environment environment) {
 		stmt.expr = propagate(stmt.expr, environment, current);
-		checkIsSubtype(Type.List(Type.T_INT,false), stmt.expr);
+		checkIsSubtype(Type.Array(Type.T_INT,false), stmt.expr);
 		return environment;
 	}
 
@@ -1259,7 +1260,6 @@ public class FlowTypeChecker {
 		case LTEQ:
 		case GT:
 		case GTEQ:
-		case ELEMENTOF:
 		case IS:
 			return resolveLeafCondition(bop, sign, environment, context);
 		default:
@@ -1442,18 +1442,6 @@ public class FlowTypeChecker {
 
 			bop.srcType = lhs.result();
 			break;
-		case ELEMENTOF:
-			Type.EffectiveList listType = rhsRawType instanceof Type.EffectiveList ? (Type.EffectiveList) rhsRawType
-					: null;
-
-			if (listType != null
-					&& !Type.isSubtype(listType.element(), lhsRawType)) {
-				syntaxError(
-						errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
-								listType.element()), context, bop);
-			}
-			bop.srcType = rhs.result();
-			break;	
 		case LT:
 		case LTEQ:
 		case GTEQ:
@@ -1571,10 +1559,10 @@ public class FlowTypeChecker {
 			} else if (expr instanceof Expr.LocalVariable) {
 				return propagate((Expr.LocalVariable) expr, environment,
 						context);
-			} else if (expr instanceof Expr.List) {
-				return propagate((Expr.List) expr, environment, context);
-			} else if (expr instanceof Expr.SubList) {
-				return propagate((Expr.SubList) expr, environment, context);
+			} else if (expr instanceof Expr.ArrayInitialiser) {
+				return propagate((Expr.ArrayInitialiser) expr, environment, context);
+			} else if (expr instanceof Expr.ArrayGenerator) {
+				return propagate((Expr.ArrayGenerator) expr, environment, context);
 			} else if (expr instanceof Expr.Dereference) {
 				return propagate((Expr.Dereference) expr, environment, context);
 			} else if (expr instanceof Expr.Record) {
@@ -1618,7 +1606,6 @@ public class FlowTypeChecker {
 		case LTEQ:
 		case GT:
 		case GTEQ:
-		case ELEMENTOF:
 		case IS:
 			return propagateCondition(expr, true, environment, context).first();
 		}
@@ -1630,72 +1617,52 @@ public class FlowTypeChecker {
 		Type lhsRawType = lhs.result().raw();
 		Type rhsRawType = rhs.result().raw();
 
-		boolean lhs_list = Type.isSubtype(Type.T_LIST_ANY, lhsRawType);
-		boolean rhs_list = Type.isSubtype(Type.T_LIST_ANY, rhsRawType);
-
 		Type srcType;
 
-		if (lhs_list || rhs_list) {
-			checkIsSubtype(Type.T_LIST_ANY, lhs, context);
-			checkIsSubtype(Type.T_LIST_ANY, rhs, context);
-			Type.EffectiveList lel = (Type.EffectiveList) lhsRawType;
-			Type.EffectiveList rel = (Type.EffectiveList) rhsRawType;
-
-			switch (expr.op) {
-			case LISTAPPEND:
-				srcType = Type.List(Type.Union(lel.element(), rel.element()),
-						false);
-				break;
-			default:
-				syntaxError("invalid list operation: " + expr.op, context, expr);
-				return null; // dead-code
+		switch (expr.op) {
+		case IS:
+		case AND:
+		case OR:
+		case XOR:
+			return propagateCondition(expr, true, environment, context)
+					.first();
+		case BITWISEAND:
+		case BITWISEOR:
+		case BITWISEXOR:
+			checkIsSubtype(Type.T_BYTE, lhs, context);
+			checkIsSubtype(Type.T_BYTE, rhs, context);
+			srcType = Type.T_BYTE;
+			break;
+		case LEFTSHIFT:
+		case RIGHTSHIFT:
+			checkIsSubtype(Type.T_BYTE, lhs, context);
+			checkIsSubtype(Type.T_INT, rhs, context);
+			srcType = Type.T_BYTE;
+			break;
+		case RANGE:
+			checkIsSubtype(Type.T_INT, lhs, context);
+			checkIsSubtype(Type.T_INT, rhs, context);
+			srcType = Type.Array(Type.T_INT, false);
+			break;
+		case REM:
+			checkIsSubtype(Type.T_INT, lhs, context);
+			checkIsSubtype(Type.T_INT, rhs, context);
+			srcType = Type.T_INT;
+			break;
+		default:
+			// all other operations go through here
+			checkSuptypes(lhs, context, Nominal.T_INT, Nominal.T_REAL);
+			checkSuptypes(rhs, context, Nominal.T_INT, Nominal.T_REAL);
+			//
+			if (!lhsRawType.equals(rhsRawType)) {
+				syntaxError(
+						errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
+								rhsRawType), filename, expr);
+				return null;
+			} else {
+				srcType = lhsRawType;
 			}
-		} else {
-			switch (expr.op) {
-			case IS:
-			case AND:
-			case OR:
-			case XOR:
-				return propagateCondition(expr, true, environment, context)
-						.first();
-			case BITWISEAND:
-			case BITWISEOR:
-			case BITWISEXOR:
-				checkIsSubtype(Type.T_BYTE, lhs, context);
-				checkIsSubtype(Type.T_BYTE, rhs, context);
-				srcType = Type.T_BYTE;
-				break;
-			case LEFTSHIFT:
-			case RIGHTSHIFT:
-				checkIsSubtype(Type.T_BYTE, lhs, context);
-				checkIsSubtype(Type.T_INT, rhs, context);
-				srcType = Type.T_BYTE;
-				break;
-			case RANGE:
-				checkIsSubtype(Type.T_INT, lhs, context);
-				checkIsSubtype(Type.T_INT, rhs, context);
-				srcType = Type.List(Type.T_INT, false);
-				break;
-			case REM:
-				checkIsSubtype(Type.T_INT, lhs, context);
-				checkIsSubtype(Type.T_INT, rhs, context);
-				srcType = Type.T_INT;
-				break;
-			default:
-				// all other operations go through here
-				checkSuptypes(lhs, context, Nominal.T_INT, Nominal.T_REAL);
-				checkSuptypes(rhs, context, Nominal.T_INT, Nominal.T_REAL);
-				//
-				if (!lhsRawType.equals(rhsRawType)) {
-					syntaxError(
-							errorMessage(INCOMPARABLE_OPERANDS, lhsRawType,
-									rhsRawType), filename, expr);
-					return null;
-				} else {
-					srcType = lhsRawType;
-				}
-			}
-		}
+		}		
 
 		// FIXME: loss of nominal information
 		expr.srcType = Nominal.construct(srcType, srcType);
@@ -1736,24 +1703,16 @@ public class FlowTypeChecker {
 	private Expr propagate(Expr.Quantifier expr, Environment environment,
 			Context context) throws IOException, ResolveError {
 
-		ArrayList<Pair<String, Expr>> sources = expr.sources;
+		ArrayList<Triple<String, Expr, Expr>> sources = expr.sources;
 		Environment local = environment.clone();
 		for (int i = 0; i != sources.size(); ++i) {
-			Pair<String, Expr> p = sources.get(i);
-			Expr e = propagate(p.second(), local, context);
-			p = new Pair<String, Expr>(p.first(), e);
-			sources.set(i, p);
-			Nominal type = e.result();
-			Nominal.List colType = expandAsEffectiveList(type);
-			if (colType == null) {
-				syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION),
-						context, e);
-				return null; // dead code
-			}
-			// update environment for subsequent source expressions, the
-			// condition and the value.
-			local = local.declare(p.first(), colType.element(),
-					colType.element());
+			Triple<String, Expr, Expr> p = sources.get(i);
+			Expr start = propagate(p.second(), local, context);
+			Expr end = propagate(p.third(), local, context);
+			sources.set(i,
+					new Triple<String, Expr, Expr>(p.first(), start, end));
+			checkIsSubtype(Type.T_INT, start, context);
+			local = local.declare(p.first(), Nominal.T_INT, Nominal.T_INT);
 		}
 
 		if (expr.condition != null) {
@@ -1944,7 +1903,7 @@ public class FlowTypeChecker {
 				.result());
 
 		if (srcType == null) {
-			syntaxError(errorMessage(INVALID_SET_OR_LIST_EXPRESSION), context,
+			syntaxError(errorMessage(INVALID_ARRAY_EXPRESSION), context,
 					expr.src);
 		} else {
 			expr.srcType = srcType;
@@ -1980,7 +1939,7 @@ public class FlowTypeChecker {
 		return expr;
 	}
 
-	private Expr propagate(Expr.List expr, Environment environment,
+	private Expr propagate(Expr.ArrayInitialiser expr, Environment environment,
 			Context context) {
 		Nominal element = Nominal.T_VOID;
 
@@ -1994,6 +1953,14 @@ public class FlowTypeChecker {
 
 		expr.type = Nominal.List(element, false);
 
+		return expr;
+	}
+	
+	private Expr propagate(Expr.ArrayGenerator expr, Environment environment,
+			Context context) {
+		expr.element = propagate(expr.element, environment, context);
+		expr.count = propagate(expr.count, environment, context);
+		expr.type = Nominal.List(expr.element.result(), true);		
 		return expr;
 	}
 	
@@ -2030,22 +1997,6 @@ public class FlowTypeChecker {
 
 		expr.type = Nominal.Tuple(fieldTypes);
 
-		return expr;
-	}
-
-	private Expr propagate(Expr.SubList expr, Environment environment,
-			Context context) throws IOException, ResolveError {
-
-		expr.src = propagate(expr.src, environment, context);
-		expr.start = propagate(expr.start, environment, context);
-		expr.end = propagate(expr.end, environment, context);
-
-		checkSuptypes(expr.src, context, Nominal.T_LIST_ANY);
-		checkIsSubtype(Type.T_INT, expr.start, context);
-		checkIsSubtype(Type.T_INT, expr.end, context);
-
-		expr.type = expandAsEffectiveList(expr.src.result());
-		
 		return expr;
 	}
 
@@ -2836,8 +2787,8 @@ public class FlowTypeChecker {
 
 		states.add(null); // reserve space for me
 
-		if (type instanceof SyntacticType.List) {
-			SyntacticType.List lt = (SyntacticType.List) type;
+		if (type instanceof SyntacticType.Array) {
+			SyntacticType.Array lt = (SyntacticType.Array) type;
 			myKind = Type.K_LIST;
 			myChildren = new int[1];
 			myChildren[0] = resolveAsType(lt.element, context, states, roots,
@@ -3225,13 +3176,18 @@ public class FlowTypeChecker {
 				Expr.UnOp uop = (Expr.UnOp) expr;
 				Constant lhs = resolveAsConstant(uop.mhs, context, visited);
 				return evaluate(uop, lhs, context);
-			} else if (expr instanceof Expr.List) {
-				Expr.List nop = (Expr.List) expr;
+			} else if (expr instanceof Expr.ArrayInitialiser) {
+				Expr.ArrayInitialiser nop = (Expr.ArrayInitialiser) expr;
 				ArrayList<Constant> values = new ArrayList<Constant>();
 				for (Expr arg : nop.arguments) {
 					values.add(resolveAsConstant(arg, context, visited));
 				}
 				return Constant.V_LIST(values);
+			} else if (expr instanceof Expr.ArrayGenerator) {
+				Expr.ArrayGenerator lg = (Expr.ArrayGenerator) expr;				
+				Constant element = resolveAsConstant(lg.element, context, visited);
+				Constant count = resolveAsConstant(lg.count, context, visited);				
+				return evaluate(lg,element,count,context);
 			} else if (expr instanceof Expr.Record) {
 				Expr.Record rg = (Expr.Record) expr;
 				HashMap<String, Constant> values = new HashMap<String, Constant>();
@@ -3437,7 +3393,7 @@ public class FlowTypeChecker {
 			}
 			return evaluate(bop, (Constant.Decimal) v1, (Constant.Decimal) v2,
 					context);
-		} else if (Type.isSubtype(Type.T_LIST_ANY, lub)) {
+		} else if (Type.isSubtype(Type.T_ARRAY_ANY, lub)) {
 			return evaluate(bop, (Constant.List) v1, (Constant.List) v2,
 					context);
 		} 
@@ -3493,18 +3449,19 @@ public class FlowTypeChecker {
 		return null;
 	}
 
-	private Constant evaluate(Expr.BinOp bop, Constant.List v1,
-			Constant.List v2, Context context) {
-		switch (bop.op) {
-		case ADD:
-			ArrayList<Constant> vals = new ArrayList<Constant>(v1.values);
-			vals.addAll(v2.values);
-			return Constant.V_LIST(vals);
+	private Constant.List evaluate(Expr.ArrayGenerator bop, Constant element,
+			Constant count, Context context) {
+		if(count instanceof Constant.Integer) {
+			Constant.Integer c = (Constant.Integer)count;
+			ArrayList<Constant> items = new ArrayList<Constant>();
+			for(int i=0;i!=c.value.intValue();++i) {
+				items.add(element);
+			}
+			return Constant.V_LIST(items);
 		}
-		syntaxError(errorMessage(INVALID_LIST_EXPRESSION), context, bop);
+		syntaxError(errorMessage(INVALID_ARRAY_EXPRESSION), context, bop);
 		return null;
 	}
-	
 	// =========================================================================
 	// expandAsType
 	// =========================================================================
@@ -3512,9 +3469,9 @@ public class FlowTypeChecker {
 	public Nominal.List expandAsEffectiveList(Nominal lhs)
 			throws IOException, ResolveError {
 		Type raw = lhs.raw();
-		if (raw instanceof Type.EffectiveList) {
+		if (raw instanceof Type.EffectiveArray) {
 			Type nominal = expandOneLevel(lhs.nominal());
-			if (!(nominal instanceof Type.EffectiveList)) {
+			if (!(nominal instanceof Type.EffectiveArray)) {
 				nominal = raw; // discard nominal information
 			}
 			return (Nominal.List) Nominal.construct(nominal, raw);
@@ -3615,7 +3572,7 @@ public class FlowTypeChecker {
 			}
 			return expandOneLevel(r);
 		} else if (type instanceof Type.Leaf || type instanceof Type.Reference
-				|| type instanceof Type.Tuple || type instanceof Type.List
+				|| type instanceof Type.Tuple || type instanceof Type.Array
 				|| type instanceof Type.Record
 				|| type instanceof Type.FunctionOrMethod
 				|| type instanceof Type.Negation) {

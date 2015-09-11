@@ -5,7 +5,7 @@ type Proc is &{int state}
 method get(Proc this) -> int:
     return this->state
 
-method f(Proc x) -> [int]:
+method f(Proc x) -> int[]:
     return [1, 2, 3, get(x)]
 
 public export method test() -> void:

@@ -78,27 +78,6 @@ public final class WyList extends java.util.ArrayList {
 	public BigInteger length() {
 		return BigInteger.valueOf(size());
 	}
-	
-	public static WyList sublist(final WyList list, final BigInteger start, final BigInteger end) {
-		int st = start.intValue();
-		int en = end.intValue();
-
-		WyList r;
-		if(st <= en) {
-			r = new WyList(en-st);
-			for (int i = st; i != en; ++i) {
-				Object item = list.get(i);
-				r.add(item);
-			}
-		} else {
-			r = new WyList(st-en);
-			for (int i = (st-1); i >= en; --i) {
-				Object item = list.get(i);
-				r.add(item);
-			}
-		}
-		return r;
-	}
 
 	public static WyList append(WyList lhs, WyList rhs) {				
 		lhs = new WyList(lhs);
@@ -155,6 +134,15 @@ public final class WyList extends java.util.ArrayList {
 		}
 
 		return l;
+	}
+	
+	public static WyList generate(final Object element, final BigInteger count) {
+		int n = count.intValue();
+		WyList list = new WyList();
+		for(int i=0;i<n;++i) {
+			list.add(element);
+		}
+		return list;
 	}
 	
 	// ========================================================

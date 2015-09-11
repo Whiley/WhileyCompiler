@@ -148,43 +148,52 @@ rank 2:
     => let r = [ AndT{t1s[i],NotT(t2s[i])} | i in 0..|t1s| ]
        in AndT(TupleT(r) ++ ts)
 
+reduce AndT{TupleT[Type...] t1, NotT(ArrayT(Type)), Type... ts}
+name "TupleType_4"
+rank 2:
+    => AndT({t1} ++ ts)
+
 // TODO: pull disjuncts out of tuples?
 
 // ====================================================================
-// Set
+// Array
 // ====================================================================
-term SetT[bool,Type]
+term ArrayT(Type)
 
 // Handle the case of an invalid set type.  This rule is really what
 // makes set types complicated.  The rule is necessary purely to help
 // with intersection.  For example {(int,int)} & {int} =>
 // {(int,int)&int}{void}. This makes sense, but is deceiving.  For
 // example, {int} & !{any} => {int&!any} => {void} as well.
-reduce SetT[bool b, VoidT]
-name "SetType_1"
+reduce ArrayT(VoidT)
+name "ArrayType_1"
 rank 0:
-    => VoidT, if !b
+    => VoidT
 
-reduce AndT{SetT[bool b1, Type t1], SetT[bool b2, Type t2], Type... ts}
-name "SetType_2"
+reduce AndT{ArrayT(Type t1), ArrayT(Type t2), Type... ts}
+name "ArrayType_2"
 rank 2:
-    => AndT(SetT[b1 && b2,AndT{t1,t2}]++ts)
+    => AndT(ArrayT(AndT{t1,t2})++ts)
 
-reduce AndT{SetT[bool b1, Type t1], NotT(SetT[bool b2, Type t2]), Type... ts}
-name "SetType_3"
+reduce AndT{ArrayT(Type t1), NotT(ArrayT(Type t2)), Type... ts}
+name "ArrayType_3"
 rank 2:
-    => AndT(SetT[b1 && !b2,AndT{t1,NotT(t2)}]++ts)
+    => AndT(ArrayT(AndT{t1,NotT(t2)})++ts)
 
-reduce AndT{SetT[bool,Type] s, Proton p, Type... ts}
-name "SetType_4"
+reduce AndT{ArrayT(Type) t1, NotT(TupleT[Type...]), Type... ts}
+name "ArrayType_3b"
+rank 2:
+    => AndT({t1} ++ ts)
+
+reduce AndT{ArrayT(Type) s, Proton p, Type... ts}
+name "ArrayType_4"
 rank 1:
     => VoidT, if !(p is AnyT)
 
-reduce OrT{SetT[bool b1,Type t1] s1, SetT[bool b2,Type t2] s2, Type... ts}
-name "SetType_5"
+reduce OrT{ArrayT(Type t1) s1, ArrayT(Type t2) s2, Type... ts}
+name "ArrayType_5"
 rank 2:
-    => OrT({s1}++ts), if t1 == t2 && b1 && !b2
-    => OrT({SetT[b1||b2,t1]}++ts), if t2 == VoidT && b2
+    => OrT({s1}++ts), if t1 == t2    
 
 // ====================================================================
 // Atoms
@@ -201,7 +210,7 @@ term VarT(string)
 term NominalT(string)
 
 define Quark as AnyT | NullT | VoidT | BoolT | IntT | RealT | StringT | VarT(string) | NominalT(string)
-define Proton as Quark | TupleT[Proton...] | SetT[bool,Proton]
+define Proton as Quark | TupleT[Proton...] | ArrayT(Proton)
 define Atom as Proton | NotT(Proton)
 
 reduce AndT{VoidT, Type... xs}
@@ -248,5 +257,5 @@ term FunctionT[Type,Type, Type...]
 // General Type
 // ====================================================================
 
-define Type as Atom | NotT | OrT | AndT | SetT | TupleT | FunctionT
+define Type as Atom | NotT | OrT | AndT | ArrayT | TupleT | FunctionT
 

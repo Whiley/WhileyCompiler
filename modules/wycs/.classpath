@@ -4,7 +4,7 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/whiley.wybs"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/whiley.wyrl"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/Ant"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/WyRL"/>
 	<classpathentry kind="output" path="src"/>
 </classpath>

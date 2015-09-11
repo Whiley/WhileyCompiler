@@ -14,13 +14,13 @@ type BinOp is {BOp op, Expr rhs, Expr lhs}
 
 type ListAccess is {Expr index, Expr src}
 
-type Expr is int | BinOp | [Expr] | ListAccess
+type Expr is int | BinOp | Expr[] | ListAccess
 
 function f(Expr e) -> int:
     if e is int:
         return e
     else:
-        if e is [int]:
+        if e is int[]:
             return |e|
         else:
             return 1

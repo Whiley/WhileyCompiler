@@ -1,7 +1,7 @@
 
 
 public export method test() -> void:
-    int|[int] x
+    int|int[] x
     //
     if 0 == 1:
         x = 1

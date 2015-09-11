@@ -1576,29 +1576,18 @@ public final class CodeGenerator {
 		}
 	}
 
-	private void generate(Iterator<Pair<String, Expr>> srcIterator,
+	private void generate(Iterator<Triple<String, Expr, Expr>> srcIterator,
 			String trueLabel, String falseLabel, Expr.Quantifier e,
 			Environment environment, AttributedCodeBlock codes, Context context) {
 
 		if (srcIterator.hasNext()) {
 			// This is the inductive case (i.e. an outer loop)
-			Pair<String, Expr> src = srcIterator.next();
+			Triple<String, Expr, Expr> src = srcIterator.next();
 
 			// First, determine the src slot.
-			Nominal.List srcType = (Nominal.List) src.second().result();
-			Type.EffectiveList rawSrcType = (Type.EffectiveList) srcType.raw();
-			int srcSlot;
-			int varSlot = environment.allocate(rawSrcType.element(),
-					src.first());
-
-			if (src.second() instanceof Expr.LocalVariable) {
-				// this is a little optimisation to produce slightly better
-				// code.
-				Expr.LocalVariable v = (Expr.LocalVariable) src.second();
-				srcSlot = environment.get(v.var);
-			} else {
-				srcSlot = generate(src.second(), environment, codes, context);
-			}
+			int varSlot = environment.allocate(Type.T_INT, src.first());		
+			int startSlot = generate(src.second(), environment, codes, context);
+			int endSlot = generate(src.third(), environment, codes, context);
 
 			// Second, recursively generate remaining parts
 			AttributedCodeBlock block = codes.createSubBlock();
@@ -1606,8 +1595,8 @@ public final class CodeGenerator {
 					context);
 
 			// Finally, create the forall loop bytecode
-			codes.add(Codes.Quantify(rawSrcType, srcSlot, varSlot,
-					new int[0], block.bytecodes()), attributes(e));
+			codes.add(Codes.Quantify(startSlot, endSlot, varSlot, new int[0],
+					block.bytecodes()), attributes(e));
 		} else {
 			// This is the base case (i.e. the innermost loop)
 			switch (e.cop) {
@@ -1658,11 +1647,11 @@ public final class CodeGenerator {
 			} else if (expression instanceof Expr.ConstantAccess) {
 				return generate((Expr.ConstantAccess) expression, environment,
 						codes, context);
-			} else if (expression instanceof Expr.List) {
-				return generate((Expr.List) expression, environment, codes,
+			} else if (expression instanceof Expr.ArrayInitialiser) {
+				return generate((Expr.ArrayInitialiser) expression, environment, codes,
 						context);
-			} else if (expression instanceof Expr.SubList) {
-				return generate((Expr.SubList) expression, environment, codes,
+			} else if (expression instanceof Expr.ArrayGenerator) {
+				return generate((Expr.ArrayGenerator) expression, environment, codes,
 						context);
 			} else if (expression instanceof Expr.BinOp) {
 				return generate((Expr.BinOp) expression, environment, codes,
@@ -1947,7 +1936,7 @@ public final class CodeGenerator {
 			AttributedCodeBlock codes, Context context) {
 		int operand = generate(expr.src, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.LengthOf((Type.EffectiveList) expr.srcType.raw(),
+		codes.add(Codes.LengthOf((Type.EffectiveArray) expr.srcType.raw(),
 				target, operand), attributes(expr));
 		return target;
 	}
@@ -1966,7 +1955,7 @@ public final class CodeGenerator {
 		int srcOperand = generate(expr.src, environment, codes, context);
 		int idxOperand = generate(expr.index, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.IndexOf((Type.List) expr.srcType.raw(), target, srcOperand,
+		codes.add(Codes.IndexOf((Type.Array) expr.srcType.raw(), target, srcOperand,
 				idxOperand), attributes(expr));
 		return target;
 	}
@@ -1987,7 +1976,7 @@ public final class CodeGenerator {
 		// could probably use a range test for this somehow
 		if (v.op == Expr.BOp.EQ || v.op == Expr.BOp.NEQ || v.op == Expr.BOp.LT
 				|| v.op == Expr.BOp.LTEQ || v.op == Expr.BOp.GT
-				|| v.op == Expr.BOp.GTEQ || v.op == Expr.BOp.ELEMENTOF
+				|| v.op == Expr.BOp.GTEQ
 				|| v.op == Expr.BOp.AND || v.op == Expr.BOp.OR) {
 			String trueLabel = CodeUtils.freshLabel();
 			String exitLabel = CodeUtils.freshLabel();
@@ -2003,47 +1992,35 @@ public final class CodeGenerator {
 
 		} else {
 
-			Expr.BOp bop = v.op;
 			int leftOperand = generate(v.lhs, environment, codes, context);
 			int rightOperand = generate(v.rhs, environment, codes, context);
 			Type result = v.result().raw();
 			int target = environment.allocate(result);
-
-			switch (bop) {
-			case LISTAPPEND:
-				codes.add(Codes.ListOperator((Type.EffectiveList) result,
-						target, leftOperand, rightOperand,
-						Codes.ListOperatorKind.APPEND), attributes(v));
-				break;
-			default:
-				codes.add(Codes.BinaryOperator(result, target, leftOperand,
-						rightOperand, OP2BOP(bop, v, context)), attributes(v));
-			}
+			
+			codes.add(Codes.BinaryOperator(result, target, leftOperand,
+					rightOperand, OP2BOP(v.op, v, context)), attributes(v));
 
 			return target;
 		}
 	}
 
-	private int generate(Expr.List expr, Environment environment,
+	private int generate(Expr.ArrayInitialiser expr, Environment environment,
 			AttributedCodeBlock codes, Context context) {
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.NewList((Type.List) expr.type.raw(), target, operands),
+		codes.add(Codes.NewList((Type.Array) expr.type.raw(), target, operands),
 				attributes(expr));
 		return target;
 	}
 
-	private int generate(Expr.SubList expr, Environment environment,
-			AttributedCodeBlock codes, Context context) {
-		int srcOperand = generate(expr.src, environment, codes, context);
-		int startOperand = generate(expr.start, environment, codes, context);
-		int endOperand = generate(expr.end, environment, codes, context);
+	private int generate(Expr.ArrayGenerator expr, Environment environment, AttributedCodeBlock codes, Context context) {
+		int element = generate(expr.element, environment, codes, context);
+		int count = generate(expr.count, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.SubList((Type.EffectiveList) expr.type.raw(), target,
-				srcOperand, startOperand, endOperand), attributes(expr));
+		codes.add(Codes.ListGenerator((Type.Array) expr.type.raw(), target, element, count), attributes(expr));
 		return target;
 	}
-
+	
 	private int generate(Expr.Quantifier e, Environment environment,
 			AttributedCodeBlock codes, Context context) {
 		String trueLabel = CodeUtils.freshLabel();
@@ -2127,8 +2104,6 @@ public final class CodeGenerator {
 			return Codes.BinaryOperatorKind.DIV;
 		case REM:
 			return Codes.BinaryOperatorKind.REM;
-		case RANGE:
-			return Codes.BinaryOperatorKind.RANGE;
 		case BITWISEAND:
 			return Codes.BinaryOperatorKind.BITWISEAND;
 		case BITWISEOR:
@@ -2161,8 +2136,6 @@ public final class CodeGenerator {
 			return Codes.Comparator.GT;
 		case GTEQ:
 			return Codes.Comparator.GTEQ;
-		case ELEMENTOF:
-			return Codes.Comparator.IN;
 		default:
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, elem);
 		}

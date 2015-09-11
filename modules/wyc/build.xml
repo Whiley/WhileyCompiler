@@ -2,7 +2,7 @@
   <import file="../../config.xml"/>
 
   <target name="compile-wyc">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.7" target="1.7" includeantruntime="true" classpath="../wyil/src:../wybs/src/:../wycs/src:../wyrl/src/">
+    <javac debug="true" debuglevel="vars,lines,source" source="1.7" target="1.7" includeantruntime="true" classpath="../wyil/src:../wybs/src/:../wycs/src:../../${WYRL_JAR}">
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/>
@@ -43,10 +43,6 @@
       </fileset>
       <fileset dir="../wycs/src">
 	<include name="wycs/**/*.class"/>
-      </fileset>
-      <fileset dir="../wyrl/src">
-	<include name="wyrl/**/*.class"/>
-	<include name="wyautl/**/*.class"/>
       </fileset>
       <fileset dir="../wyil/src">
 	<include name="wyautl_old/**/*.class"/>

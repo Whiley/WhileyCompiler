@@ -2,7 +2,7 @@
 
 type tenup is (int x) where x > 10
 
-type msg1 is {tenup op, [int] data}
+type msg1 is {tenup op, int[] data}
 
 type msg2 is {int index}
 
@@ -12,7 +12,7 @@ function f(msgType m) -> msgType:
     return m
 
 public export method test() -> void:
-    msg1 m1 = {op: 11, data: []}
+    msg1 m1 = {op: 11, data: [0;0]}
     msg2 m2 = {index: 1}
-    assume f(m1) == {op: 11, data: []}
+    assume f(m1) == {op: 11, data: [0;0]}
     assume f(m2) == {index: 1}

@@ -21,10 +21,10 @@ function xor(byte b1, byte b2) -> byte:
 
 public export method test() -> void:
     int i = 0
-    while i < |constants|:
+    while i < |constants| where i >= 0:
         byte constant_i = constants[i]
         int j = 0
-        while j < |constants|:
+        while j < |constants| where j >= 0:
             byte constant_j = constants[j]
             assume (constant_i ^ constant_j) == xor(constant_i,constant_j)
             j = j + 1

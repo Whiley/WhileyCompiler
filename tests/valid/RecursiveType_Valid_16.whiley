@@ -1,6 +1,6 @@
 
 
-type Expr is {int num} | {int op, Expr rhs, Expr lhs} | {[int] err}
+type Expr is {int num} | {int op, Expr rhs, Expr lhs} | {int[] err}
 
 function parseTerm() -> Expr:
     return parseIdentifier()

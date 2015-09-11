@@ -1,0 +1,12 @@
+type nat is (int n) where n >= 0
+
+// Following verification conditions taken from sumax benchmark
+
+assert:
+    forall (nat k, nat sum, nat item, nat max):
+        if:
+            sum <= max * k
+            max <= item
+        then:
+            sum <= item * k
+

@@ -1,2 +1,2 @@
-function f() -> [int]:
+function f() -> int[]:
     return 1

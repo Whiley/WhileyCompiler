@@ -47,6 +47,7 @@ import wycc.lang.NameID;
 import wycc.lang.SyntacticElement;
 import wycc.lang.SyntaxError;
 import wycc.util.Pair;
+import wycc.util.Triple;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.Modifier;
@@ -631,7 +632,7 @@ public class WhileyFileParser {
 
 		int start = index;
 		TypePattern pattern = parsePossibleTypePattern(environment, false);
-		if (pattern != null) {
+		if (pattern != null) {			
 			// Must be a variable declaration here.
 			return parseVariableDeclaration(start, pattern, wf, environment);
 		} else {
@@ -1227,13 +1228,13 @@ public class WhileyFileParser {
 	 * <pre>
 	 * x = y       // variable assignment
 	 * x.f = y     // field assignment
-	 * x[i] = y    // list assignment
+	 * x[i] = y    // array assignment
 	 * x[i].f = y  // compound assignment
 	 * </pre>
 	 *
 	 * The last assignment here illustrates that the left-hand side of an
 	 * assignment can be arbitrarily complex, involving nested assignments into
-	 * lists and records.
+	 * arrays and records.
 	 *
 	 * @see wyc.lang.Stmt.Assign
 	 *
@@ -1810,10 +1811,10 @@ public class WhileyFileParser {
 					terminated);
 		}
 
-		Expr lhs = parseAppendExpression(wf, environment, terminated);
+		Expr lhs = parseShiftExpression(wf, environment, terminated);
 
 		lookahead = tryAndMatch(terminated, LessEquals, LeftAngle,
-				GreaterEquals, RightAngle, EqualsEquals, NotEquals, In, Is,
+				GreaterEquals, RightAngle, EqualsEquals, NotEquals, Is,
 				Subset, SubsetEquals, Superset, SupersetEquals);
 
 		if (lookahead != null) {
@@ -1837,9 +1838,6 @@ public class WhileyFileParser {
 			case NotEquals:
 				bop = Expr.BOp.NEQ;
 				break;
-			case In:
-				bop = Expr.BOp.ELEMENTOF;
-				break;
 			case Is:
 				SyntacticType type = parseUnitType();
 				Expr.TypeVal rhs = new Expr.TypeVal(type, sourceAttr(start,
@@ -1850,7 +1848,7 @@ public class WhileyFileParser {
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 
-			Expr rhs = parseAppendExpression(wf, environment, terminated);
+			Expr rhs = parseShiftExpression(wf, environment, terminated);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -1915,7 +1913,7 @@ public class WhileyFileParser {
 
 		// Parse one or more source variables / expressions
 		environment = new HashSet<String>(environment);
-		List<Pair<String, Expr>> srcs = new ArrayList<Pair<String, Expr>>();
+		List<Triple<String, Expr, Expr>> srcs = new ArrayList<Triple<String, Expr, Expr>>();
 		boolean firstTime = true;
 
 		do {
@@ -1929,14 +1927,10 @@ public class WhileyFileParser {
 				syntaxError("variable already declared", id);
 			}
 			match(In);
-			// We have to parse an Append Expression here, which is the most
-			// general form of expression that can generate a collection of some
-			// kind. All expressions higher up (e.g. logical expressions) cannot
-			// generate collections. Furthermore, the bitwise or expression
-			// could lead to ambiguity and, hence, we bypass that an consider
-			// append expressions only.
-			Expr src = parseAppendExpression(wf, environment, terminated);
-			srcs.add(new Pair<String, Expr>(id.text, src));
+			Expr lhs = parseAdditiveExpression(wf, environment, terminated);
+			match(DotDot);
+			Expr rhs = parseAdditiveExpression(wf, environment, terminated);			
+			srcs.add(new Triple<String, Expr, Expr>(id.text, lhs, rhs));
 			environment.add(id.text);
 		} while (eventuallyMatch(VerticalBar) == null);
 
@@ -1950,48 +1944,6 @@ public class WhileyFileParser {
 				index - 1));
 	}
 
-	/**
-	 * Parse an append expression, which has the form:
-	 *
-	 * <pre>
-	 * AppendExpr ::= RangeExpr ( "++" RangeExpr)*
-	 * </pre>
-	 *
-	 * @param wf
-	 *            The enclosing WhileyFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 * @param terminated
-	 *            This indicates that the expression is known to be terminated
-	 *            (or not). An expression that's known to be terminated is one
-	 *            which is guaranteed to be followed by something. This is
-	 *            important because it means that we can ignore any newline
-	 *            characters encountered in parsing this expression, and that
-	 *            we'll never overrun the end of the expression (i.e. because
-	 *            there's guaranteed to be something which terminates this
-	 *            expression). A classic situation where terminated is true is
-	 *            when parsing an expression surrounded in braces. In such case,
-	 *            we know the right-brace will always terminate this expression.
-	 *
-	 * @return
-	 */
-	private Expr parseAppendExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
-		int start = index;
-		Expr lhs = parseRangeExpression(wf, environment, terminated);
-
-		while (tryAndMatch(terminated, PlusPlus) != null) {
-			Expr rhs = parseRangeExpression(wf, environment, terminated);
-			lhs = new Expr.BinOp(Expr.BOp.LISTAPPEND, lhs, rhs, sourceAttr(
-					start, index - 1));
-		}
-
-		return lhs;
-	}
 
 	/**
 	 * Parse a range expression, which has the form:
@@ -2035,7 +1987,7 @@ public class WhileyFileParser {
 
 		return lhs;
 	}
-
+	
 	/**
 	 * Parse a shift expression, which has the form:
 	 *
@@ -2256,64 +2208,13 @@ public class WhileyFileParser {
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
 				|| (token = tryAndMatch(terminated, Dot, MinusGreater)) != null) {
 			switch (token.kind) {
-			case LeftSquare:
-				// At this point, there are two possibilities: an access
-				// expression (e.g. x[i]), or a sublist (e.g. xs[0..1], xs[..1],
-				// xs[0..]). We have to disambiguate these four different
-				// possibilities.
-
-				// Since ".." is not the valid start of a statement, we can
-				// safely set terminated=true for tryAndMatch().
-				if (tryAndMatch(true, DotDot) != null) {
-					// This indicates a sublist expression of the form
-					// "xs[..e]". Therefore, we inject 0 as the start value for
-					// the sublist expression.
-					Expr st = new Expr.Constant(
-							Constant.V_INTEGER(BigInteger.ZERO), sourceAttr(
-									start, index - 1));
-					// NOTE: expression guaranteed to be terminated by ']'.
-					Expr end = parseAdditiveExpression(wf, environment, true);
-					match(RightSquare);
-					lhs = new Expr.SubList(lhs, st, end, sourceAttr(start,
-							index - 1));
-				} else {
-					// This indicates either a list access or a sublist of the
-					// forms xs[a..b] and xs[a..]
-					//
-					// NOTE: expression guaranteed to be terminated by ']'.
-					Expr rhs = parseAdditiveExpression(wf, environment, true);
-					// Check whether this is a sublist expression
-					if (tryAndMatch(terminated, DotDot) != null) {
-						// Yes, this is a sublist but we still need to
-						// disambiguate the two possible forms xs[x..y] and
-						// xs[x..].
-						//
-						// NOTE: expression guaranteed to be terminated by ']'.
-						if (tryAndMatch(true, RightSquare) != null) {
-							// This is a sublist of the form xs[x..]. In this
-							// case, we inject |xs| as the end expression.
-							Expr end = new Expr.LengthOf(lhs, sourceAttr(start,
-									index - 1));
-							lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(
-									start, index - 1));
-						} else {
-							// This is a sublist of the form xs[x..y].
-							// Therefore, we need to parse the end expression.
-							// NOTE: expression guaranteed to be terminated by
-							// ']'.
-							Expr end = parseAdditiveExpression(wf, environment,
-									true);
-							match(RightSquare);
-							lhs = new Expr.SubList(lhs, rhs, end, sourceAttr(
-									start, index - 1));
-						}
-					} else {
-						// Nope, this is a plain old list access expression
-						match(RightSquare);
-						lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
-								index - 1));
-					}
-				}
+			case LeftSquare:				
+				// NOTE: expression guaranteed to be terminated by ']'.
+				Expr rhs = parseAdditiveExpression(wf, environment, true);
+				// This is a plain old array access expression
+				match(RightSquare);
+				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
+							index - 1));				
 				break;
 			case MinusGreater:
 				lhs = new Expr.Dereference(lhs, sourceAttr(start, index - 1));
@@ -2486,7 +2387,7 @@ public class WhileyFileParser {
 		case VerticalBar:
 			return parseLengthOfExpression(wf, environment, terminated);
 		case LeftSquare:
-			return parseListExpression(wf, environment, terminated);
+			return parseArrayInitialiserOrGeneratorExpression(wf, environment, terminated);
 		case LeftCurly:
 			return parseRecordExpression(wf, environment, terminated);
 		case Shreak:
@@ -2666,10 +2567,11 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Parse a list constructor expression, which is of the form:
+	 * Parse an array initialiser or generator expression, which is of the form:
 	 *
 	 * <pre>
-	 * ListExpr ::= '[' [ Expr (',' Expr)* ] ']'
+	 * ArrayExpr ::= '[' [ Expr (',' Expr)+ ] ']'
+	 *             | '[' Expr ';' Expr ']' 
 	 * </pre>
 	 *
 	 * @param wf
@@ -2694,14 +2596,60 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr parseListExpression(WhileyFile wf,
+	private Expr parseArrayInitialiserOrGeneratorExpression(WhileyFile wf,
+			HashSet<String> environment, boolean terminated) {
+		int start = index;
+		match(LeftSquare);
+		Expr expr = parseUnitExpression(wf, environment, true);
+		// Finally, disambiguate
+		if(tryAndMatch(true,SemiColon) != null) {
+			// this is an array generator
+			index = start;
+			return parseArrayGeneratorExpression(wf,environment,terminated);
+		} else {		
+			// this is an array initialiser
+			index = start;
+			return parseArrayInitialiserExpression(wf,environment,terminated);
+		}
+	}
+	
+	/**
+	 * Parse an array initialiser expression, which is of the form:
+	 *
+	 * <pre>
+	 * ArrayInitialiserExpr ::= '[' [ Expr (',' Expr)+ ] ']' 
+	 * </pre>
+	 *
+	 * @param wf
+	 *            The enclosing WhileyFile being constructed. This is necessary
+	 *            to construct some nested declarations (e.g. parameters for
+	 *            lambdas)
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 *
+	 * @return
+	 */
+	private Expr parseArrayInitialiserExpression(WhileyFile wf,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(LeftSquare);
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 
 		boolean firstTime = true;
-		while (eventuallyMatch(RightSquare) == null) {
+		do {		
 			if (!firstTime) {
 				match(Comma);
 			}
@@ -2713,11 +2661,51 @@ public class WhileyFileParser {
 			// Also, expression is guaranteed to be terminated, either by ']' or
 			// ','.
 			exprs.add(parseUnitExpression(wf, environment, true));
-		}
+		} while (eventuallyMatch(RightSquare) == null);
 
-		return new Expr.List(exprs, sourceAttr(start, index - 1));
+		return new Expr.ArrayInitialiser(exprs, sourceAttr(start, index - 1));
 	}
 
+	/**
+	 * Parse an array generator expression, which is of the form:
+	 *
+	 * <pre>
+	 * ArrayGeneratorExpr ::= '[' Expr ';' Expr ']' 
+	 * </pre>
+	 *
+	 * @param wf
+	 *            The enclosing WhileyFile being constructed. This is necessary
+	 *            to construct some nested declarations (e.g. parameters for
+	 *            lambdas)
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within this
+	 *            expression.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 *
+	 * @return
+	 */
+	private Expr parseArrayGeneratorExpression(WhileyFile wf,
+			HashSet<String> environment, boolean terminated) {
+		int start = index;
+		match(LeftSquare);
+		Expr element = parseUnitExpression(wf, environment, true);
+		match(SemiColon);
+		Expr count = parseUnitExpression(wf, environment, true);
+		match(RightSquare);
+		return new Expr.ArrayGenerator(element,count,sourceAttr(start, index - 1));
+	}
+	
 	/**
 	 * Parse a record constructor, which is of the form:
 	 *
@@ -2863,7 +2851,7 @@ public class WhileyFileParser {
 		// collections. Furthermore, the bitwise or expression could lead to
 		// ambiguity and, hence, we bypass that an consider append expressions
 		// only. However, the expression is guaranteed to be terminated by '|'.
-		Expr e = parseAppendExpression(wf, environment, true);
+		Expr e = parseShiftExpression(wf, environment, true);
 		match(VerticalBar);
 		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
 	}
@@ -3352,7 +3340,6 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private boolean mustParseAsType(SyntacticType type) {
-
 		if (type instanceof SyntacticType.Primitive) {
 			// All primitive types must be parsed as types, since their
 			// identifiers are keywords.
@@ -3382,9 +3369,8 @@ public class WhileyFileParser {
 				result |= mustParseAsType(element);
 			}
 			return result;
-		} else if (type instanceof SyntacticType.List) {
-			SyntacticType.List tt = (SyntacticType.List) type;
-			return mustParseAsType(tt.element);
+		} else if (type instanceof SyntacticType.Array) {			
+			return true;
 		} else if (type instanceof SyntacticType.Negation) {
 			SyntacticType.Negation tt = (SyntacticType.Negation) type;
 			return mustParseAsType(tt.element);
@@ -3473,13 +3459,11 @@ public class WhileyFileParser {
 			return true;
 		} else if(e instanceof Expr.LengthOf) {
 			return true;
-		} else if(e instanceof Expr.List) {
+		} else if(e instanceof Expr.ArrayInitialiser) {
 			return true;
 		} else if(e instanceof Expr.New) {
 			return true;
 		} else if(e instanceof Expr.Record) {
-			return true;
-		} else if(e instanceof Expr.SubList) {
 			return true;
 		} else if(e instanceof Expr.Tuple) {
 			return true;
@@ -3725,7 +3709,7 @@ public class WhileyFileParser {
 	public TypePattern parseIntersectionTypePattern(
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
-		TypePattern t = parseRationalTypePattern(environment, terminated);
+		TypePattern t = parseArrayTypePattern(environment, terminated);
 
 		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(terminated, Ampersand) != null) {
@@ -3733,7 +3717,7 @@ public class WhileyFileParser {
 			ArrayList<TypePattern> types = new ArrayList<TypePattern>();
 			types.add(t);
 			do {
-				types.add(parseRationalTypePattern(environment, terminated));
+				types.add(parseArrayTypePattern(environment, terminated));
 			} while (tryAndMatch(terminated, Ampersand) != null);
 			return new TypePattern.Intersection(types, null, sourceAttr(start,
 					index - 1));
@@ -3742,6 +3726,21 @@ public class WhileyFileParser {
 		}
 	}
 
+	public TypePattern parseArrayTypePattern(HashSet<String> environment, boolean terminated) {
+		int start = index;
+		TypePattern t = parseRationalTypePattern(environment, terminated);
+		// Now, attempt to look for union and/or intersection types
+		while (tryAndMatch(terminated, LeftSquare) != null) {
+			match(RightSquare);
+			Expr.LocalVariable name = parseTypePatternVar(terminated);
+			// FIXME: this is a bit of a kludge
+			SyntacticType.Array at = new SyntacticType.Array(t.toSyntacticType(), sourceAttr(start, index - 1));			
+			t = new TypePattern.Leaf(at, name, sourceAttr(start, index - 1));
+		}
+
+		return t;
+	}
+	
 	/**
 	 * Parse a rational type pattern, which has the form:
 	 *
@@ -3948,7 +3947,7 @@ public class WhileyFileParser {
 	 */
 	private SyntacticType parseIntersectionType() {
 		int start = index;
-		SyntacticType t = parseBaseType();
+		SyntacticType t = parseArrayType();
 
 		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(true, Ampersand) != null) {
@@ -3956,7 +3955,7 @@ public class WhileyFileParser {
 			ArrayList types = new ArrayList<SyntacticType>();
 			types.add(t);
 			do {
-				types.add(parseBaseType());
+				types.add(parseArrayType());
 			} while (tryAndMatch(true, Ampersand) != null);
 			return new SyntacticType.Intersection(types, sourceAttr(start,
 					index - 1));
@@ -3965,6 +3964,27 @@ public class WhileyFileParser {
 		}
 	}
 
+	/**
+	 * Parse an array type, which is of the form:
+	 *
+	 * <pre>
+	 * ArrayType ::= Type '[' ']'
+	 * </pre>
+	 *
+	 * @return
+	 */
+	private SyntacticType parseArrayType() {
+		int start = index;
+		SyntacticType element = parseBaseType();
+		
+		while (tryAndMatch(true, LeftSquare) != null) {
+			match(RightSquare);
+			element = new SyntacticType.Array(element, sourceAttr(start, index - 1));
+		}
+		
+		return element;
+	}
+	
 	private SyntacticType parseBaseType() {
 		checkNotEof();
 		int start = index;
@@ -3990,8 +4010,6 @@ public class WhileyFileParser {
 			return parseBracketedType();
 		case LeftCurly:
 			return parseRecordType();
-		case LeftSquare:
-			return parseListType();
 		case Shreak:
 			return parseNegationType();
 		case Ampersand:
@@ -4057,23 +4075,6 @@ public class WhileyFileParser {
 		SyntacticType type = parseType();
 		match(RightBrace);
 		return type;
-	}
-
-	/**
-	 * Parse a list type, which is of the form:
-	 *
-	 * <pre>
-	 * ListType ::= '[' Type ']'
-	 * </pre>
-	 *
-	 * @return
-	 */
-	private SyntacticType parseListType() {
-		int start = index;
-		match(LeftSquare);
-		SyntacticType element = parseType();
-		match(RightSquare);
-		return new SyntacticType.List(element, sourceAttr(start, index - 1));
 	}
 
 	/**

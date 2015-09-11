@@ -78,7 +78,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 	 * 
 	 * @param variables
 	 */
-	public void getUsedVariables(java.util.Set<Integer> variables) {
+	public void getUsedVariables(java.util.Set<Code.Variable> variables) {
 		for(int i=0;i!=operands.length;++i) {
 			operands[i].getUsedVariables(variables);
 		}
@@ -111,6 +111,31 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		return this;
 	}
 
+	/**
+	 * Rebind variables within the given expression. This includes variables
+	 * declared in quantifiers.
+	 *
+	 * @param binding
+	 *            --- a map from variables to the bytecodes wwhich are to
+	 *            replace them.
+	 * @return
+	 */
+	public Code<?> rebind(Map<Integer,Integer> binding) {
+		Code<?>[] nOperands = operands;
+		for(int i=0;i!=nOperands.length;++i) {
+			Code<?> o = nOperands[i];
+			Code<?> c = o.rebind(binding);
+			if(c != o && operands == nOperands) {
+				nOperands = Arrays.copyOf(operands, operands.length);
+			}
+			nOperands[i] = c;
+		}
+		if(nOperands != operands) {
+			return clone(type,opcode,nOperands);
+		}
+		return this;
+	}
+	
 	/**
 	 * Instantiate generic variables with concrete types in bytecodes as
 	 * determined by a given map. Generic variables which are not keys of the
@@ -249,6 +274,16 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		return new Load(type,source,index,attributes);
 	}
 
+	public static IndexOf IndexOf(SemanticType.Array type, Code<?> source, Code<?> index,
+			Attribute... attributes) {
+		return new IndexOf(type,source,index,attributes);
+	}
+
+	public static IndexOf IndexOf(SemanticType.Array type, Code<?> source, Code<?> index,
+			Collection<Attribute> attributes) {
+		return new IndexOf(type,source,index,attributes);
+	}
+
 	public static Is Is(SemanticType type, Code<?> operand, SemanticType test,
 			Attribute... attributes) {
 		return new Is(type, operand, test, attributes);
@@ -304,13 +339,11 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		NEQ(14),
 		LT(15),
 		LTEQ(16),
-		IN(17),
-		SUBSET(18),
-		SUBSETEQ(19),
+		INDEXOF(17),		
 		AND(20),
 		OR(21),
 		TUPLE(22),
-		SET(23),
+		ARRAY(23),
 		LOAD(24),
 		EXISTS(25),
 		FORALL(26),
@@ -341,8 +374,8 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 
 		@Override
-		public void getUsedVariables(java.util.Set<Integer> variables) {
-			variables.add(index);
+		public void getUsedVariables(java.util.Set<Code.Variable> variables) {
+			variables.add(Code.Variable(type, index));
 		}
 		
 		@Override
@@ -351,10 +384,21 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			if(r != null) {
 				return r;
 			} else{
-				return this;
+				return super.substitute(binding);
 			}
 		}
 
+		@Override
+		public Code<?> rebind(Map<Integer, Integer> binding) {
+			Code<?> r = super.rebind(binding);
+			Integer nIndex = binding.get(index);
+			if (nIndex != null) {
+				return new Code.Variable(type, r.operands, nIndex, attributes());
+			} else {
+				return r;
+			}
+		}
+		
 		@Override
 		public SemanticType returnType() {
 			return type;
@@ -483,7 +527,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			super(type, opcode, new Code[] { leftOperand, rightOperand },
 					attributes);
 			if (opcode.offset < Op.ADD.offset
-					|| opcode.offset > Op.SUBSETEQ.offset) {
+					|| opcode.offset > Op.LTEQ.offset) {
 				throw new IllegalArgumentException(
 						"invalid opcode for Binary constructor");
 			}
@@ -494,7 +538,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			super(type, opcode, new Code[] { leftOperand, rightOperand },
 					attributes);
 			if (opcode.offset < Op.ADD.offset
-					|| opcode.offset > Op.SUBSETEQ.offset) {
+					|| opcode.offset > Op.LTEQ.offset) {
 				throw new IllegalArgumentException(
 						"invalid opcode for Binary constructor");
 			}
@@ -513,9 +557,6 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			case NEQ:
 			case LT:
 			case LTEQ:
-			case IN:
-			case SUBSET:
-			case SUBSETEQ:
 				return SemanticType.Bool;
 			}
 			throw new IllegalArgumentException("invalid opcode for binary bytecode");
@@ -531,7 +572,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		private Nary(SemanticType type, Op opcode, Code<?>[] operands,
 				Attribute... attributes) {
 			super(type, opcode, operands, attributes);
-			if (opcode.offset < Op.AND.offset || opcode.offset > Op.SET.offset) {
+			if (opcode.offset < Op.AND.offset || opcode.offset > Op.ARRAY.offset) {
 				throw new IllegalArgumentException(
 						"invalid opcode for Nary constructor");
 			}
@@ -540,7 +581,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		private Nary(SemanticType type, Op opcode, Code<?>[] operands,
 				Collection<Attribute> attributes) {
 			super(type, opcode, operands, attributes);
-			if (opcode.offset < Op.AND.offset || opcode.offset > Op.SET.offset) {
+			if (opcode.offset < Op.AND.offset || opcode.offset > Op.ARRAY.offset) {
 				throw new IllegalArgumentException(
 						"invalid opcode for Nary constructor");
 			}
@@ -552,7 +593,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			case AND:
 			case OR:
 				return SemanticType.Bool;
-			case SET:
+			case ARRAY:
 				return type;
 			case TUPLE:
 				return type;
@@ -563,6 +604,29 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		@Override
 		public Code<?> clone(SemanticType type, Op opcode, Code<?>[] operands) {
 			return Nary(type,opcode,operands,attributes());
+		}
+	}
+
+	public final static class IndexOf extends Code<SemanticType.Array> {
+
+		private IndexOf(SemanticType.Array type, Code<?> source, Code<?> index,
+				Attribute... attributes) {
+			super(type, Op.INDEXOF, new Code[] { source, index }, attributes);
+		}
+
+		private IndexOf(SemanticType.Array type, Code<?> source, Code<?> index,
+				Collection<Attribute> attributes) {
+			super(type, Op.INDEXOF, new Code[] { source, index }, attributes);
+		}
+
+		@Override
+		public SemanticType returnType() {
+			return type.element();
+		}
+
+		@Override
+		public Code<?> clone(SemanticType.Array type, Op opcode, Code<?>[] operands) {
+			return IndexOf(type,operands[0],operands[1],attributes());
 		}
 	}
 
@@ -621,10 +685,10 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 
 		@Override
-		public void getUsedVariables(java.util.Set<Integer> variables) {
+		public void getUsedVariables(java.util.Set<Code.Variable> variables) {
 			super.getUsedVariables(variables);
 			for (Pair<SemanticType, Integer> p : types) {
-				variables.add(p.second());
+				variables.add(Code.Variable(p.first(), p.second()));
 			}
 		}
 		
@@ -634,8 +698,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		}
 
 		@Override
-		public Code<?> substitute(Map<Integer, Code> binding) {
-			// FIXME: is this safe in the context of variable capture.
+		public Code<?> substitute(Map<Integer, Code> binding) {			
 			Code<?> operand = operands[0].substitute(binding);
 			if (operand != operands[0]) {
 				return new Quantifier(this.type, this.opcode, operand, types,
@@ -645,6 +708,19 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			}
 		}
 
+		@Override
+		public Code<?> rebind(Map<Integer, Integer> binding) {
+			// FIXME: is this safe in the context of variable capture?
+			Code<?> operand = operands[0].rebind(binding);
+			Pair<SemanticType,Integer>[] types = rebind(this.types,binding);
+			if (operand != operands[0] || types != this.types) {
+				return new Quantifier(this.type, this.opcode, operand, types,
+						attributes());
+			} else {
+				return this;
+			}
+		}
+		
 		@Override
 		public Code<?> instantiate(Map<String,SemanticType> binding) {
 			Pair<SemanticType, Integer>[] nTypes = types;
@@ -668,6 +744,23 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			} else {
 				return this;
 			}
+		}
+		
+		private static Pair<SemanticType, Integer>[] rebind(Pair<SemanticType, Integer>[] types,
+				Map<Integer, Integer> binding) {
+			Pair<SemanticType, Integer>[] nTypes = types;
+
+			for (int i = 0; i != nTypes.length; ++i) {
+				Pair<SemanticType, Integer> p = nTypes[i];
+				Integer nIndex = binding.get(p.second());
+				if (nIndex != null) {
+					if (nTypes == types) {
+						nTypes = Arrays.copyOf(types, types.length);
+					}
+					nTypes[i] = new Pair<SemanticType, Integer>(p.first(), nIndex);
+				}
+			}
+			return nTypes;
 		}
 	}
 

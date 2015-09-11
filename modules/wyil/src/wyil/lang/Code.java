@@ -547,14 +547,13 @@ public interface Code {
 	public static final int OPCODE_mul         = 2  + FMT_BINARYASSIGN;
 	public static final int OPCODE_div         = 3  + FMT_BINARYASSIGN;
 	public static final int OPCODE_rem         = 4  + FMT_BINARYASSIGN;
-	public static final int OPCODE_range       = 5  + FMT_BINARYASSIGN;
-	public static final int OPCODE_bitwiseor   = 6  + FMT_BINARYASSIGN;
-	public static final int OPCODE_bitwisexor  = 7  + FMT_BINARYASSIGN;
-	public static final int OPCODE_bitwiseand  = 8  + FMT_BINARYASSIGN;
-	public static final int OPCODE_lshr        = 9  + FMT_BINARYASSIGN;
-	public static final int OPCODE_rshr        = 10 + FMT_BINARYASSIGN;
+	public static final int OPCODE_bitwiseor   = 5  + FMT_BINARYASSIGN;
+	public static final int OPCODE_bitwisexor  = 6  + FMT_BINARYASSIGN;
+	public static final int OPCODE_bitwiseand  = 7  + FMT_BINARYASSIGN;
+	public static final int OPCODE_lshr        = 8  + FMT_BINARYASSIGN;
+	public static final int OPCODE_rshr        = 9  + FMT_BINARYASSIGN;
 	public static final int OPCODE_indexof     = 11 + FMT_BINARYASSIGN;
-//	public static final int OPCODE_union       = 12 + FMT_BINARYASSIGN;
+	public static final int OPCODE_listgen       = 12 + FMT_BINARYASSIGN;
 //	public static final int OPCODE_unionl      = 13 + FMT_BINARYASSIGN;
 //	public static final int OPCODE_unionr      = 14 + FMT_BINARYASSIGN;
 //	public static final int OPCODE_intersect   = 15 + FMT_BINARYASSIGN;
@@ -562,15 +561,15 @@ public interface Code {
 //	public static final int OPCODE_intersectr  = 17 + FMT_BINARYASSIGN;
 //	public static final int OPCODE_difference  = 18 + FMT_BINARYASSIGN;
 //	public static final int OPCODE_differencel = 19 + FMT_BINARYASSIGN;
-	public static final int OPCODE_append      = 20 + FMT_BINARYASSIGN;
-	public static final int OPCODE_appendl     = 21 + FMT_BINARYASSIGN;
-	public static final int OPCODE_appendr     = 22 + FMT_BINARYASSIGN;
+//	public static final int OPCODE_append      = 20 + FMT_BINARYASSIGN;
+//	public static final int OPCODE_appendl     = 21 + FMT_BINARYASSIGN;
+//	public static final int OPCODE_appendr     = 22 + FMT_BINARYASSIGN;
 
 	// =========================================================================
 	// Nary Operators
 	// =========================================================================
 	public static final int OPCODE_loop              = 0 + FMT_NARYOP;
-	public static final int OPCODE_forall            = 1 + FMT_NARYOP;
+//	public static final int OPCODE_forall            = 1 + FMT_NARYOP;
 	public static final int OPCODE_quantify          = 2 + FMT_NARYOP;	
 	public static final int OPCODE_indirectinvokefnv = 3 + FMT_NARYOP;
 	public static final int OPCODE_indirectinvokemdv = 4 + FMT_NARYOP;
@@ -582,12 +581,12 @@ public interface Code {
 	// Nary Assignables
 	// =========================================================================
 	public static final int OPCODE_newlist          = 0 + FMT_NARYASSIGN;
-//	public static final int OPCODE_newset           = 1 + FMT_NARYASSIGN;
+//  public static final int OPCODE_newset          = 1 + FMT_NARYASSIGN;
 //	public static final int OPCODE_newmap           = 2 + FMT_NARYASSIGN;
 	public static final int OPCODE_newtuple         = 3 + FMT_NARYASSIGN;
 	public static final int OPCODE_indirectinvokefn = 4 + FMT_NARYASSIGN;
 	public static final int OPCODE_indirectinvokemd = 5 + FMT_NARYASSIGN;
-	public static final int OPCODE_sublist          = 6 + FMT_NARYASSIGN;
+//	public static final int OPCODE_sublist          = 6 + FMT_NARYASSIGN;
 	public static final int OPCODE_invokefn         = 8 + FMT_NARYASSIGN; // +NAMEIDX
 	public static final int OPCODE_invokemd         = 9 + FMT_NARYASSIGN; // +NAMEIDX
 	public static final int OPCODE_lambdafn         = 10 + FMT_NARYASSIGN; // +NAMEIDX

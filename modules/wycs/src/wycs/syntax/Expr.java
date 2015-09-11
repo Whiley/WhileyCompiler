@@ -400,60 +400,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 					//return Character.toString(Token.UC_GREATEREQUALS);
 					return ">=";
 				}
-			},
-			IN(16) {
-				public String toString() {
-					//return Character.toString(Token.UC_ELEMENTOF);
-					return "in";
-				}
-			},
-			SUBSET(17) {
-				public String toString() {
-					return Character.toString(Token.UC_SUBSET);
-
-				}
-			},
-			SUBSETEQ(18) {
-				public String toString() {
-					// FIXME: need to figure out why this is necessary
-					//return Character.toString(Token.UC_SUBSETEQ);
-					return "{=";
-				}
-			},
-			SUPSET(19) {
-				public String toString() {
-					return Character.toString(Token.UC_SUPSET);
-				}
-			},
-			SUPSETEQ(20) {
-				public String toString() {
-					return Character.toString(Token.UC_SUPSETEQ);
-				}
-			},
-			SETUNION(21) {
-				public String toString() {
-					return Character.toString(Token.UC_SETUNION);
-				}
-			},
-			SETINTERSECTION(22) {
-				public String toString() {
-					return Character.toString(Token.UC_SETINTERSECTION);
-				}
-			},
-			SETDIFFERENCE(23) {
-				public String toString() {
-					return "-";
-				}
-			},
-			LISTAPPEND(24) {
-				public String toString() {
-					return "++";
-				}
-			},
-			RANGE(25) {
-				public String toString() {
-					return "..";
-				}
 			};
 
 			public int offset;
@@ -541,102 +487,10 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		}
 	}
 
-	public static class Ternary extends Expr {
-		public enum Op {
-			UPDATE(1),
-			SUBLIST(2);
-
-			public int offset;
-
-			private Op(int offset) {
-				this.offset = offset;
-			}
-		};
-
-		public final Op op;
-		public Expr firstOperand;
-		public Expr secondOperand;
-		public Expr thirdOperand;
-
-		public Ternary(Op op, Expr first, Expr second, Expr third, Attribute... attributes) {
-			super(attributes);
-			this.op = op;
-			this.firstOperand = first;
-			this.secondOperand = second;
-			this.thirdOperand = third;
-		}
-
-		public Ternary(Op op, Expr first, Expr second, Expr third, Collection<Attribute> attributes) {
-			super(attributes);
-			this.op = op;
-			this.firstOperand = first;
-			this.secondOperand = second;
-			this.thirdOperand = third;
-		}
-
-		public void freeVariables(Set<String> matches) {
-			firstOperand.freeVariables(matches);
-			secondOperand.freeVariables(matches);
-			thirdOperand.freeVariables(matches);
-		}
-
-		public Expr instantiate(Map<String,SyntacticType> binding) {
-			Expr first = firstOperand.instantiate(binding);
-			Expr second = secondOperand.instantiate(binding);
-			Expr third = thirdOperand.instantiate(binding);
-			if(first == firstOperand && second == secondOperand && third == thirdOperand) {
-				return this;
-			} else {
-				return new Expr.Ternary(op, first, second, third, attributes());
-			}
-		}
-
-		public Expr substitute(Map<String,Expr> binding) {
-			Expr first = firstOperand.substitute(binding);
-			Expr second = secondOperand.substitute(binding);
-			Expr third = thirdOperand.substitute(binding);
-			if(first == firstOperand && second == secondOperand && third == thirdOperand) {
-				return this;
-			} else {
-				return new Expr.Ternary(op, first, second, third, attributes());
-			}
-		}
-
-		@Override
-		public boolean equivalent(Expr e) {
-			if (e instanceof Ternary) {
-				Ternary v = (Ternary) e;
-				return op == v.op && firstOperand.equivalent(v.firstOperand)
-						&& secondOperand.equivalent(v.secondOperand)
-						&& thirdOperand.equivalent(v.thirdOperand);
-			} else {
-				return false;
-			}
-		}
-		
-		@Override
-		public Expr.Ternary copy() {
-			return new Expr.Ternary(op, firstOperand.copy(),
-					secondOperand.copy(), thirdOperand.copy(), attributes());
-		}
-		
-		public String toString() {
-			switch(op) {
-			case UPDATE:
-				return firstOperand + "[" + secondOperand + ":=" + thirdOperand + "]";
-			case SUBLIST:
-				return firstOperand + "[" + secondOperand + ".." + thirdOperand + "]";
-			}
-			return "";
-		}
-	}
-
 	public static class Nary extends Expr {
 		public enum Op {
 			TUPLE(0),
-			SET(1),
-			MAP(2),
-			LIST(3);
+			ARRAY(3);
 
 			public int offset;
 
@@ -746,12 +600,7 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 			String end;
 			String sep;
 			switch(this.op) {
-			case SET:
-				beg = "{";
-				end = "}";
-				sep = ", ";
-				break;
-			case LIST:
+			case ARRAY:
 				beg = "[";
 				end = "]";
 				sep = ", ";
@@ -761,27 +610,6 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 				end = ")";
 				sep = ", ";
 				break;
-			case MAP:
-				String r = "{";
-				for(int i=0;i!=operands.size();i=i+2) {
-					if(i != 0) {
-						r = r + ",";
-					}
-					String os = operands.get(i).toString();
-					if(needsBraces(operands.get(i))) {
-						r = r + "(" + os + ")";
-					} else {
-						r = r + os;
-					}
-					r = r + "=>";
-					os = operands.get(i+1).toString();
-					if(needsBraces(operands.get(i+1))) {
-						r = r + "(" + os + ")";
-					} else {
-						r = r + os;
-					}
-				}
-				return r + "}";
 			default:
 				return "";
 			}

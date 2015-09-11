@@ -1,10 +1,10 @@
 
 
-function add([int] items, int n) -> [int]
+function add(int[] items, int n) -> int[]
 requires n > 0:
     //
     int i = 0
-    [int] oitems = items
+    int[] oitems = items
     //
     while i < |items|
     //
@@ -19,6 +19,6 @@ requires n > 0:
 
 
 public export method test():
-    [int] ls = [1,2,3,4]
+    int[] ls = [1,2,3,4]
     assume add(ls,1) == [2, 3, 4, 5]
     assume add(ls,11) == [12, 13, 14, 15]

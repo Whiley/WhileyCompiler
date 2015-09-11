@@ -196,8 +196,8 @@ public class Interpreter {
 			return execute((Codes.Lambda) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.LengthOf) {
 			return execute((Codes.LengthOf) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.ListOperator) {
-			return execute((Codes.ListOperator) bytecode, frame, context);
+		} else if (bytecode instanceof Codes.ListGenerator) {
+			return execute((Codes.ListGenerator) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Quantify) {
 			return execute((Codes.Quantify) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Loop) {
@@ -216,8 +216,6 @@ public class Interpreter {
 			return execute((Codes.Nop) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Return) {
 			return execute((Codes.Return) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.SubList) {
-			return execute((Codes.SubList) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Switch) {
 			return execute((Codes.Switch) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.TupleLoad) {
@@ -340,15 +338,7 @@ public class Interpreter {
 		case DIV:
 			return i1.divide(i2);
 		case REM:
-			return i1.remainder(i2);
-		case RANGE:
-			ArrayList<Constant> values = new ArrayList<Constant>();
-			int start = i1.value.intValue();
-			int end = i2.value.intValue();
-			for (int i = start; i < end; ++i) {
-				values.add(Constant.V_INTEGER(BigInteger.valueOf(i)));
-			}
-			return Constant.V_LIST(values);
+			return i1.remainder(i2);		
 		}
 		deadCode(context);
 		return null;
@@ -481,8 +471,8 @@ public class Interpreter {
 			return convert(value, (Type.Real) to, context);
 		} else if (to instanceof Type.Record) {
 			return convert(value, (Type.Record) to, context);
-		} else if (to instanceof Type.List) {
-			return convert(value, (Type.List) to, context);
+		} else if (to instanceof Type.Array) {
+			return convert(value, (Type.Array) to, context);
 		} else if (to instanceof Type.Tuple) {
 			return convert(value, (Type.Tuple) to, context);
 		} else if (to instanceof Type.Union) {
@@ -552,7 +542,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Constant convert(Constant value, Type.List to, Context context) {
+	private Constant convert(Constant value, Type.Array to, Context context) {
 		checkType(value, context, Constant.List.class);
 		Constant.List lv = (Constant.List) value;
 		ArrayList<Constant> values = new ArrayList<Constant>(lv.values);
@@ -688,13 +678,17 @@ public class Interpreter {
 
 	private Object execute(Codes.Quantify bytecode, Constant[] frame,
 			Context context) {
-		Constant operand = frame[bytecode.sourceOperand];
-		checkType(operand, context, Constant.List.class);		
-		Constant.List list = (Constant.List) operand;
-		
-		for (Constant value : list.values) {
+		Constant startOperand = frame[bytecode.startOperand];
+		Constant endOperand = frame[bytecode.endOperand];
+		checkType(startOperand, context, Constant.Integer.class);
+		checkType(endOperand, context, Constant.Integer.class);
+		Constant.Integer so = (Constant.Integer) startOperand;
+		Constant.Integer eo = (Constant.Integer) endOperand;
+		int start = so.value.intValue();
+		int end = eo.value.intValue();
+		for (int i = start; i < end; ++i) {		
 			// Assign the index variable
-			frame[bytecode.indexOperand] = value;
+			frame[bytecode.indexOperand] = Constant.V_INTEGER(BigInteger.valueOf(i));
 			// Execute loop body for one iteration
 			Object r = executeAllWithin(frame, context);
 			// Now, check whether we fell through to the end or not. If not,
@@ -737,9 +731,6 @@ public class Interpreter {
 		case GTEQ:
 			result = lessThan(op2, op1, false, context);
 			break;
-		case IN:
-			result = elementOf(op1, op2, context);
-			break;		
 		default:
 			return deadCode(context);
 		}
@@ -827,10 +818,10 @@ public class Interpreter {
 				return isMemberOfType(obj.value, rt.element(), context);
 			}
 			return false;
-		} else if (type instanceof Type.List) {
+		} else if (type instanceof Type.Array) {
 			if (value instanceof Constant.List) {
 				Constant.List t = (Constant.List) value;
-				Type element = ((Type.List) type).element();
+				Type element = ((Type.Array) type).element();
 				boolean r = true;
 				for (Constant val : t.values) {
 					r &= isMemberOfType(val, element, context);
@@ -1105,10 +1096,10 @@ public class Interpreter {
 		frame[bytecode.target()] = Constant.V_INTEGER(length);
 		return context.pc.next();
 	}
-
+	
 	/**
-	 * Execute the list append bytecode instruction at a given point in the
-	 * function or method body. This simply assigns the appended list to the
+	 * Execute the list generator bytecode instruction at a given point in the
+	 * function or method body. This simply assigns the generated list to the
 	 * target register.
 	 *
 	 * @param bytecode
@@ -1119,23 +1110,23 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.ListOperator bytecode, Constant[] frame,
+	private Object execute(Codes.ListGenerator bytecode, Constant[] frame,
 			Context context) {
-		Constant lhs = frame[bytecode.operand(0)];
-		Constant rhs = frame[bytecode.operand(1)];
-		// Check that we have a function reference
-		checkType(lhs, context, Constant.List.class);
-		checkType(rhs, context, Constant.List.class);
+		Constant element = frame[bytecode.operand(0)];
+		Constant count = frame[bytecode.operand(1)];
+		// Check that we have a integer count
+		checkType(count, context, Constant.Integer.class);
 		// Now, perform the append
-		Constant.List l1 = (Constant.List) lhs;
-		Constant.List l2 = (Constant.List) rhs;
+		Constant.Integer l2 = (Constant.Integer) count;
+		int n = l2.value.intValue();		
 		ArrayList<Constant> values = new ArrayList<Constant>();
-		values.addAll(l1.values);
-		values.addAll(l2.values);
+		for(int i=0;i!=n;++i) {
+			values.add(element);
+		}
 		frame[bytecode.target()] = Constant.V_LIST(values);
 		return context.pc.next();
 	}
-
+	
 	private Object execute(Codes.Loop bytecode, Constant[] frame,
 			Context context) {
 		Object r;
@@ -1283,26 +1274,6 @@ public class Interpreter {
 		} else {
 			return frame[bytecode.operand];
 		}
-	}
-
-	private Object execute(Codes.SubList bytecode, Constant[] frame,
-			Context context) {
-		Constant _source = frame[bytecode.operand(0)];
-		Constant _fromIndex = frame[bytecode.operand(1)];
-		Constant _toIndex = frame[bytecode.operand(2)];
-		// Check that we have a function reference
-		checkType(_source, context, Constant.List.class);
-		checkType(_fromIndex, context, Constant.Integer.class);
-		checkType(_toIndex, context, Constant.Integer.class);
-		// Now, perform the append
-		Constant.List source = (Constant.List) _source;
-		Constant.Integer fromIndex = (Constant.Integer) _fromIndex;
-		Constant.Integer toIndex = (Constant.Integer) _toIndex;
-
-		frame[bytecode.target()] = Constant.V_LIST(source.values.subList(
-				fromIndex.value.intValue(), toIndex.value.intValue()));
-
-		return context.pc.next();
 	}
 
 	private Object execute(Codes.Switch bytecode, Constant[] frame,

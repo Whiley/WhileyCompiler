@@ -32,19 +32,20 @@ import java.util.*;
 
 import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataReader;
-import wyautl.io.PrettyAutomataWriter;
-import wyautl.rw.*;
-import wybs.lang.*;
-import wybs.util.*;
+
 import static wycc.lang.SyntaxError.*;
-import static wycs.solver.Solver.SCHEMA;
 import wycc.lang.Pipeline;
 import wycc.lang.SyntaxError;
 import wycc.lang.Transform;
 import wycc.util.OptArg;
-import wycs.core.Types;
 import wycs.solver.Solver;
+import wycs.transforms.VerificationCheck;
 import wycs.util.WycsBuildTask;
+import wyrw.core.Activation;
+import wyrw.core.Rewrite;
+import wyrw.core.Rewriter;
+import wyrw.util.GraphRewrite;
+import wyrw.util.StackedRewrite;
 
 /**
 * The main class provides all of the necessary plumbing to process command-line
@@ -180,39 +181,14 @@ public class WycsMain {
 				return SUCCESS;
 			}
 
-			verbose = values.containsKey("verbose");
-
-			// =====================================================================
-			// Wyone Debug Mode
-			// =====================================================================
-
-			if(values.containsKey("wyone")) {
-				// this is basically a hack to allow reading in wyone files so
-				// we can debug them.
-				try {
-					FileInputStream fin = new FileInputStream(args.get(0));
-					PrettyAutomataReader reader = new PrettyAutomataReader(fin,SCHEMA);
-					Automaton automaton = reader.read();
-
-					new PrettyAutomataWriter(System.err, SCHEMA, "And",
-							"Or").write(automaton);
-					IterativeRewriter.Strategy<InferenceRule> inferenceStrategy = new UnfairStateRuleRewriteStrategy<InferenceRule>(
-							automaton, Solver.inferences, Solver.SCHEMA);
-					IterativeRewriter.Strategy<ReductionRule> reductionStrategy = new UnfairStateRuleRewriteStrategy<ReductionRule>(
-							automaton, Solver.reductions, Solver.SCHEMA);
-					IterativeRewriter rw = new IterativeRewriter(automaton,
-							inferenceStrategy, reductionStrategy, SCHEMA);
-					rw.apply();
-					System.err.println("\n\n=> (" + rw.getStats() + ")\n");
-					new PrettyAutomataWriter(System.err, SCHEMA, "And",
-							"Or").write(automaton);
-					System.out.println();
-					System.exit(0);
-				} catch(IOException e) {
-					System.err.println(e.getMessage());
-					System.exit(1);
-				}
+			if (values.containsKey("wyone")) {				
+				FileReader input = new FileReader(args.get(0));
+				PrettyAutomataReader reader = new PrettyAutomataReader(input, Solver.SCHEMA);				
+				VerificationCheck.unsat(reader.read(),VerificationCheck.RewriteMode.UNFAIR,500,values.containsKey("debug"));
+				return SUCCESS;
 			}
+			
+			verbose = values.containsKey("verbose");
 
 			// =====================================================================
 			// Construct & Configure Build Task
@@ -345,7 +321,7 @@ public class WycsMain {
 		}
 		return r;
 	}
-
+	
  // =========================================================================
 	// Main Method
 	// =========================================================================

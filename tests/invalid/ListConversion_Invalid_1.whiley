@@ -1,5 +1,5 @@
-function f([real] ls) -> int:
+function f(real[] ls) -> int:
     return 0
 
 method main():
-    f([1, 2, 3, []])
+    f([1, 2, 3])

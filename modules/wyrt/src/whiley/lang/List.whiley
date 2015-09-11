@@ -26,50 +26,17 @@
 package whiley.lang
 
 // Increase up to a given size
-public function enlarge([int] list, int size, int element) -> [int]:
-    while |list| <= size:
-        list = list ++ [element]
-    return list
-
-// Create a list of a given size with the given element
-public function create(int size, int element) -> ([int] result)
-// Size of list to create cannot be negative!
-requires size >= 0
-// Size of returned list must match requested size
-ensures |result| == size:
-    //
-    [int] r = []
+public function enlarge(int[] list, int size, int element) -> int[]:
+    int[] nlist = [0; size]
     int i = 0
-    while i < size:
-        r = r ++ [element]
+    while i < size where i >= 0:
+        nlist[i] = list[i]
         i = i + 1
-    return r
-
-// Create a list of a given size with the given element
-public function create(int size, bool element) -> ([bool] result)
-// Size of list to create cannot be negative!
-requires size >= 0
-// Size of returned list must match requested size
-ensures |result| == size:
-    [bool] r = []
-    int i = 0
-    while i < size:
-        r = r ++ [element]
-        i = i + 1
-    return r
-
-public function reverse([bool] list) -> [bool]:
-    return list[|list|..0]
-
-public function reverse([byte] list) -> [byte]:
-    return list[|list|..0]
-
-public function reverse([int] list) -> [int]:
-    return list[|list|..0]
+    return nlist
 
 // find first index in list which matches character.  If no match,
 // then return null.
-public function indexOf([int] items, int c) -> int|null:
+public function indexOf(int[] items, int c) -> int|null:
     int i = 0
     while i < |items|:
         if items[i] == c:
@@ -77,7 +44,7 @@ public function indexOf([int] items, int c) -> int|null:
         i = i + 1
     return null
 
-public function indexOf([int] items, int c, int start) -> int|null:
+public function indexOf(int[] items, int c, int start) -> int|null:
     //
     int i = start
     while i < |items|:
@@ -88,7 +55,7 @@ public function indexOf([int] items, int c, int start) -> int|null:
 
 // find last index in list which matches character.  If no match,
 // then return null.
-public function lastIndexOf([int] items, int c) -> int|null:
+public function lastIndexOf(int[] items, int c) -> int|null:
     //
     int i = |items|
     while i > 0:
@@ -98,7 +65,7 @@ public function lastIndexOf([int] items, int c) -> int|null:
     return null
 
 // replace all occurrences of "old" with "new" in list "items".
-public function replace([int] items, int old, int n) -> [int]:
+public function replace(int[] items, int old, int n) -> int[]:
     //
     int i = 0
     while i < |items|:

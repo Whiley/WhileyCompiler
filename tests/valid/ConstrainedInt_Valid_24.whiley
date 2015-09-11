@@ -1,5 +1,3 @@
-
-
 //
 // This little example is showing off an almost complete encoding
 // of C ASCII.strings as constrained lists of ints in Whiley.  The key 
@@ -11,7 +9,7 @@
 //
 type ASCII_char is (int n) where 0 <= n && n <= 255
 
-type C_string is ([ASCII_char] chars) 
+type C_string is (ASCII_char[] chars) 
 // Must have at least one ASCII.character (i.e. null terminator)
 where |chars| > 0 && chars[|chars|-1] == 0
 
@@ -30,5 +28,5 @@ ensures r >= 0:
 
 // Print out hello world!
 public export method test():
-    C_string hw = ([int]) ['H','e','l','l','o','W','o','r','l','d',0]
+    C_string hw = (int[]) ['H','e','l','l','o','W','o','r','l','d',0]
     assume strlen(hw) == 10

@@ -1,7 +1,7 @@
 
 
-function contains([int] xs, int x) -> (bool r)
-ensures r ==> x in xs:
+function contains(int[] xs, int x) -> (bool r)
+ensures r ==> some { i in 0..|xs| | xs[i] == x }:
     //
     int i = 0
     //
@@ -13,7 +13,7 @@ ensures r ==> x in xs:
     return false
 
 public export method test():
-    [int] ls = [1,2,3,4]
+    int[] ls = [1,2,3,4]
     assume contains(ls,0) == false
     assume contains(ls,1) == true
     assume contains(ls,2) == true

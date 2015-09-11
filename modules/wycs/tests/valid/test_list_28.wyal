@@ -1,0 +1,11 @@
+define NatList([int] xs) is:
+  forall (int i):
+      xs[i] >= 0
+
+define PosSet([int] xs) is:
+  forall (int i):
+      xs[i] > 0
+
+assert:
+  forall ([int] xs):
+    PosSet(xs) ==> NatList(xs)

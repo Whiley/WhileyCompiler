@@ -1,0 +1,11 @@
+define invariant([int] items, int item, int n) is:
+    exists(int i):
+        n < i && items[i] == item
+
+assert:
+    forall([int] items, int item, int n):
+        if:
+            invariant(items,item,n)
+            items[n] != item
+        then:
+            invariant(items,item,n+1)

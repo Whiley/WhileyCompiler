@@ -1,2 +1,4 @@
+import whiley.lang.*
+
 method main(System.Console sys):
-    sys.out.println("Hello World")
+    sys.out.println_s("Hello World")

@@ -1,14 +1,12 @@
-
-
 constant Short is 3
 constant Int is 4
 
-type string is [int]
+type string is int[]
 type char is int
 
 type Primitive is (int x) where x == Short || x == Int
 
-type Class is {[string] classes, string pkg}
+type Class is {string[] classes, string pkg}
 
 type Any is Primitive | Class
 
@@ -20,7 +18,7 @@ type Bytecode is Unit | FieldIndex
 
 type Attribute is {string name, ...}
 
-type CodeAttribute is {string name, [Bytecode] data}
+type CodeAttribute is {string name, Bytecode[] data}
 
 function codeLength(Attribute a) -> null | int:
     if a is CodeAttribute:

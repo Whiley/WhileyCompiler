@@ -1,6 +1,6 @@
 
 method main() -> void:
-    [int] arr
+    int[] arr
     //
     if |sys.args| > 0:
         arr = [1, 2, 4]

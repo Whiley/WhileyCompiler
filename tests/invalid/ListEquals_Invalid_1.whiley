@@ -1,8 +1,8 @@
 
-function f([int] xs) -> bool
-requires xs != []:
+function f(int[] xs) -> bool
+requires xs != [0;0]:
     return true
 
 method main() -> void:
     f([1, 4])
-    f([])
+    f([0;0])

@@ -34,12 +34,12 @@ import string from whiley.lang.ASCII
 public type Reader is  {
 
     // Read all bytes of this file in one go.
-    method readAll() -> [byte],
+    method readAll() -> byte[],
 
     // Reads at most a given number of bytes from the file.  This
     // operation may block if the number requested is greater than that
     // available.
-    method read(uint) -> [byte],
+    method read(uint) -> byte[],
 
     // Check whether the end-of-stream has been reached and, hence,
     // that there are no further bytes which can be read.
@@ -72,7 +72,7 @@ type Writer is whiley.io.Writer.Writer
 public method Writer(string fileName) -> Writer:
     NativeFile this = NativeFileWriter(fileName)
     return {
-        write: &([byte] data -> write(this,data)),
+        write: &(byte[] data -> write(this,data)),
         close: &( -> close(this)),
         flush: &( -> flush(this))
     }
@@ -101,10 +101,10 @@ private native method available(NativeFile f) -> uint
 private native method hasMore(NativeFile f) -> bool
 
 // read at most max bytes from native file
-private native method read(NativeFile f, int max) -> [byte]
+private native method read(NativeFile f, int max) -> byte[]
 
 // read as many bytes as possible from native file
-private native method read(NativeFile f) -> [byte]
+private native method read(NativeFile f) -> byte[]
 
 // write entire contents of native file
-private native method write(NativeFile f, [byte] data)
+private native method write(NativeFile f, byte[] data)

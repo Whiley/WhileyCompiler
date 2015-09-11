@@ -127,7 +127,7 @@ public class LoopVariants implements Transform<WyilFile> {
 					// already implied that this is modified.
 					Codes.Quantify qc = (Codes.Quantify) code;
 					loopModified.clear(qc.indexOperand);
-					code = Codes.Quantify(qc.type, qc.sourceOperand,
+					code = Codes.Quantify(qc.startOperand, qc.endOperand,
 							qc.indexOperand, toArray(loopModified),
 							qc.bytecodes());
 					block.set(i, code);
