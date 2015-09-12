@@ -1,2 +1,10 @@
 language: java
-script: ant
+
+
+#
+jdk:
+    - openjdk7
+
+#
+script:
+    ant build-all
