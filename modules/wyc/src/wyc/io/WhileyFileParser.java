@@ -420,21 +420,21 @@ public class WhileyFileParser {
 		// Parse the type pattern
 		TypePattern pattern = parseTypePattern(new HashSet<String>(), false);
 
-		Expr constraint = null;
+		ArrayList<Expr> invariant = new ArrayList<Expr>();
 		// Check whether or not there is an optional "where" clause.
-		if (tryAndMatch(true, Where) != null) {
+		while (tryAndMatch(true, Where) != null) {
 			// Yes, there is a "where" clause so parse the constraint. First,
 			// construct the environment which will be used to identify the set
 			// of declared variables in the current scope.
 			HashSet<String> environment = new HashSet<String>();
 			pattern.addDeclaredVariables(environment);
-			constraint = parseLogicalExpression(wf, environment, false);
+			invariant.add(parseLogicalExpression(wf, environment, false));
 		}
 		int end = index;
 		matchEndLine();
 
 		WhileyFile.Declaration declaration = wf.new Type(modifiers, pattern,
-				name.text, constraint, sourceAttr(start, end - 1));
+				name.text, invariant, sourceAttr(start, end - 1));
 		wf.add(declaration);
 		return;
 	}

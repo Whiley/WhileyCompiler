@@ -191,7 +191,7 @@ public final class CodeGenerator {
 			throws Exception {
 		AttributedCodeBlock invariant = null;
 
-		if (td.invariant != null) {
+		if (td.invariant.size() > 0) {
 			// Here, an explicit invariant is given for the type and this needs
 			// to be translated into bytecodes as well.
 			Environment environment = new Environment();
@@ -200,10 +200,12 @@ public final class CodeGenerator {
 
 			addDeclaredVariables(root, td.pattern, td.resolvedType.raw(),
 					environment, invariant);
-			String lab = CodeUtils.freshLabel();
-			generateCondition(lab, td.invariant, environment, invariant, td);
-			invariant.add(Codes.Fail());
-			invariant.add(Codes.Label(lab));
+			for(int i = 0;i!=td.invariant.size();++i) {
+				String lab = CodeUtils.freshLabel();
+				generateCondition(lab, td.invariant.get(i), environment, invariant, td);
+				invariant.add(Codes.Fail());
+				invariant.add(Codes.Label(lab));
+			}
 			invariant.add(Codes.Return());
 		}
 
