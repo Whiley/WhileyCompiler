@@ -62,7 +62,6 @@ ensures index is null ==> no { i in 0 .. |items| | items[i] == item }:
     //
     return indexOf(items,item,0)
 
-
 // find first index after a given start point in list which matches character.
 // If no match, then return null.
 public function indexOf(int[] items, int item, int start) -> (int|null index)
@@ -71,13 +70,18 @@ requires start >= 0
 // If int returned, element at this position matches item
 ensures index is int ==> items[index] == item
 // If int returned, element at this position is first match
-ensures index is int ==> no { i in 0 .. index | items[i] == item }
+ensures index is int ==> no { i in start .. index | items[i] == item }
 // If null returned, no element in items matches item
 ensures index is null ==> no { i in start .. |items| | items[i] == item }:
     //
     int i = start
     //
-    while i < |items|:
+    while i < |items|
+    // i is positive
+    where i >= 0
+    // No element seen so far matches item
+    where no { j in start .. i | items[j] == item }:
+        //
         if items[i] == item:
             return i
         i = i + 1
