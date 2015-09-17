@@ -141,9 +141,9 @@ public class WhileyFilePrinter {
 		out.print(" is ");
 		print(decl.pattern);
 
-		if(decl.invariant != null) {
+		for(Expr invariant : decl.invariant) {
 			out.print(" where ");
-			print(decl.invariant);
+			print(invariant);
 		}
 
 		out.println();
