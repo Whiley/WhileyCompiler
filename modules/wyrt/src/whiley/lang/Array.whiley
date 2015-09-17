@@ -26,23 +26,29 @@
 package whiley.lang
 
 // Resize an array to a given size
-public function resize(int[] list, int size, int element) -> (int[] nitems)
+public function resize(int[] items, int size, int element) -> (int[] nitems)
 // Required size cannot be negative
 requires size >= 0
 // Returned array is of specified size
 ensures |nitems| == size
 // If array is enlarged, the all elements up to new size match
-ensures all { i in 0 .. |list| | i >= size || nitems[i] == list[i] }
+ensures all { i in 0 .. |items| | i >= size || nitems[i] == items[i] }
 // All new elements match given element
-ensures all { i in |list| .. size | nitems[i] == element}:
+ensures all { i in |items| .. size | nitems[i] == element}:
     //
-    int[] nlist = [element; size]
+    int[] nitems = [element; size]
     int i = 0
-    while i < size && i < |list| where i >= 0:
-        nlist[i] = list[i]
+    while i < size && i < |items|
+    where i >= 0 && |nitems| == size
+    // All elements up to i match as before
+    where all { j in 0..i | nitems[j] == items[j] }
+    // All elements about size match element
+    where all { j in |items| .. size | nitems[j] == element}:
+        //
+        nitems[i] = items[i]
         i = i + 1
     //
-    return nlist
+    return nitems
 
 // find first index in list which matches character.  If no match,
 // then return null.
@@ -56,7 +62,6 @@ ensures index is null ==> no { i in 0 .. |items| | items[i] == item }:
     //
     return indexOf(items,item,0)
 
-
 // find first index after a given start point in list which matches character.
 // If no match, then return null.
 public function indexOf(int[] items, int item, int start) -> (int|null index)
@@ -65,13 +70,18 @@ requires start >= 0
 // If int returned, element at this position matches item
 ensures index is int ==> items[index] == item
 // If int returned, element at this position is first match
-ensures index is int ==> no { i in 0 .. index | items[i] == item }
+ensures index is int ==> no { i in start .. index | items[i] == item }
 // If null returned, no element in items matches item
 ensures index is null ==> no { i in start .. |items| | items[i] == item }:
     //
     int i = start
     //
-    while i < |items|:
+    while i < |items|
+    // i is positive
+    where i >= 0
+    // No element seen so far matches item
+    where no { j in start .. i | items[j] == item }:
+        //
         if items[i] == item:
             return i
         i = i + 1
@@ -90,7 +100,11 @@ ensures index is null ==> no { i in 0 .. |items| | items[i] == item }:
     //
     int i = |items|
     //
-    while i > 0:
+    while i > 0
+    where i <= |items|
+    // No element seen so far matches item
+    where no { j in i..|items| | items[j] == item }:
+        //
         i = i - 1
         if items[i] == item:
             return i
