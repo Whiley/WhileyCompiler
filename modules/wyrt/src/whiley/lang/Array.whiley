@@ -26,23 +26,29 @@
 package whiley.lang
 
 // Resize an array to a given size
-public function resize(int[] list, int size, int element) -> (int[] nitems)
+public function resize(int[] items, int size, int element) -> (int[] nitems)
 // Required size cannot be negative
 requires size >= 0
 // Returned array is of specified size
 ensures |nitems| == size
 // If array is enlarged, the all elements up to new size match
-ensures all { i in 0 .. |list| | i >= size || nitems[i] == list[i] }
+ensures all { i in 0 .. |items| | i >= size || nitems[i] == items[i] }
 // All new elements match given element
-ensures all { i in |list| .. size | nitems[i] == element}:
+ensures all { i in |items| .. size | nitems[i] == element}:
     //
-    int[] nlist = [element; size]
+    int[] nitems = [element; size]
     int i = 0
-    while i < size && i < |list| where i >= 0:
-        nlist[i] = list[i]
+    while i < size && i < |items|
+    where i >= 0 && |nitems| == size
+    // All elements up to i match as before
+    where all { j in 0..i | nitems[j] == items[j] }
+    // All elements about size match element
+    where all { j in |items| .. size | nitems[j] == element}:
+        //
+        nitems[i] = items[i]
         i = i + 1
     //
-    return nlist
+    return nitems
 
 // find first index in list which matches character.  If no match,
 // then return null.
