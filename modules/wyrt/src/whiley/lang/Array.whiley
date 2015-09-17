@@ -100,7 +100,11 @@ ensures index is null ==> no { i in 0 .. |items| | items[i] == item }:
     //
     int i = |items|
     //
-    while i > 0:
+    while i > 0
+    where i <= |items|
+    // No element seen so far matches item
+    where no { j in i..|items| | items[j] == item }:
+        //
         i = i - 1
         if items[i] == item:
             return i
