@@ -66,6 +66,7 @@
       <fileset dir="tmp">
 	<include name="jasm/**/*.class"/>
 	<include name="wyrl/**/*.class"/>
+	<include name="wyautl/**/*.class"/>
       </fileset>
     </jar>
     <delete dir="tmp"/>
