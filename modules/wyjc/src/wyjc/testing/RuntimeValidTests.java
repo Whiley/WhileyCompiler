@@ -640,6 +640,12 @@ import wyjc.util.WyjcBuildTask;
 	}
 	
 	@Test
+	public void ConstrainedList_Valid_28() {
+		runTest("ConstrainedList_Valid_28");
+	}
+
+	
+	@Test
 	public void ConstrainedList_Valid_3() {
 		runTest("ConstrainedList_Valid_3");
 	}
