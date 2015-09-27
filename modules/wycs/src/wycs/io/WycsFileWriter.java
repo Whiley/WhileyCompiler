@@ -253,7 +253,7 @@ public class WycsFileWriter {
 		}
 
 		global.minimise();
-		global.compact();
+		global.compact(0);
 		// FIXME: put this back in!!
 		// global.canonicalise();
 

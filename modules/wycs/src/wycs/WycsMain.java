@@ -30,7 +30,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-import wyautl.core.Automaton;
 import wyautl.io.PrettyAutomataReader;
 
 import static wycc.lang.SyntaxError.*;
@@ -41,11 +40,6 @@ import wycc.util.OptArg;
 import wycs.solver.Solver;
 import wycs.transforms.VerificationCheck;
 import wycs.util.WycsBuildTask;
-import wyrw.core.Activation;
-import wyrw.core.Rewrite;
-import wyrw.core.Rewriter;
-import wyrw.util.GraphRewrite;
-import wyrw.util.StackedRewrite;
 
 /**
 * The main class provides all of the necessary plumbing to process command-line
