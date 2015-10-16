@@ -459,7 +459,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedInt_Valid_5");
 	}
 
-	@Ignore("TOO LONG") @Test
+	@Test
 	public void ConstrainedInt_Valid_6() {
 		runTest("ConstrainedInt_Valid_6");
 	}
