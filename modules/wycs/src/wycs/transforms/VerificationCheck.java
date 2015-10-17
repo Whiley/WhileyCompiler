@@ -835,9 +835,10 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 		// Search through the states encountered and see whether we found a
 		// contradiction or not.
-		for (int i = 0; i != states.size(); ++i) {
-			automaton = states.get(i).automaton();			
-			if (automaton.get(automaton.getRoot(i)).equals(Solver.False)) {
+		for (int i = 0; i != states.size(); ++i) { 
+			automaton = states.get(i).automaton();
+			int root = wyrw.core.Inference.USE_SUBSTITUTION ? i : 0;
+			if (automaton.get(automaton.getRoot(root)).equals(Solver.False)) {
 				// Yes, we found a contradiction!
 				return RESULT.UNSAT;
 			}
