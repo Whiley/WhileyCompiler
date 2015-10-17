@@ -193,21 +193,21 @@ rank 2:
 //
 // NOTE: is an inference rule to ensure all terms are reduced before
 // this is called
-infer And{
+reduce And{
       Equation[AType t, Sum[real c, {|Mul[real vc, {|AExpr v|}], Mul... ms|} xs]] eq,
       BExpr... bs}
 name "Equation_2"
-rank 0:
+rank 1:
      => let var = maxMultiplicand(xs),
            rhs = Sum[0.0,{|Div[Mul[-1.0,{|Sum[c,ms]|}],Num(vc)]|}],
            cs = { b[var \ rhs] | b in bs }
-        in And (eq ++ cs), if v == var // if reduce, then && no { m in ms | v in (*m)[1] }
+        in And (eq ++ cs), if v == var && no { m in ms | v in (*m)[1] }
 
 infer And{
         Equation[AType t, VExpr v] eq,
         BExpr... bs}
 name "Equation_3"
-rank 0:
+rank 1:
      => let cs = { b[v \ Num(0.0)] | b in bs }
         in And (eq ++ cs)
 

@@ -469,12 +469,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// form before verification begins. This firstly reduces the amount of
 		// work during verification, and also allows the functions in
 		// SolverUtils to work properly.
-		Rewrite rewrite = new TreeRewrite(Solver.SCHEMA, Activation.RANK_COMPARATOR, Solver.reductions);
-		Rewriter rewriter = new LinearRewriter(rewrite);
-		rewriter.initialise(type_automaton);
-		rewriter.apply(10000);
-		List<Rewrite.State> states = rewrite.states();
-		type_automaton = states.get(states.size() - 1).automaton();
+		Reductions.minimiseAndReduce(type_automaton, 5000, Types.reductions);
 		return automaton.addAll(type_automaton.getRoot(0), type_automaton);
 	}
 
@@ -823,18 +818,16 @@ public class VerificationCheck implements Transform<WycsFile> {
 	public static RESULT unsat(Automaton automaton,  RewriteMode rwMode, int maxSteps, boolean debug) {		
 		// Graph rewrite is needed to ensure that previously visited states are
 		// not visited again.		
-		Rewrite rewrite = new GraphRewrite(Solver.SCHEMA, Activation.RANK_COMPARATOR, Solver.inferences);
+		Rewrite rewrite = new Inference(Solver.SCHEMA, AbstractActivation.RANK_COMPARATOR, Solver.inferences, Solver.reductions);
+		// Initialise the rewrite with our starting state		
+		int HEAD = rewrite.initialise(automaton);
 		// Stacked rewriter ensures that reduction rules are applied atomically
-		rewrite = new StackedRewrite(rewrite, Solver.SCHEMA, Solver.reductions);
 		// Breadth-first rewriter ensures that the search spans outwards in a
 		// fair style. This protects against rule starvation.
 		Rewriter rewriter = createRewriter(rewrite,rwMode);
-		// Initialiser the rewriter with our starting state		
-		automaton.minimise();
-		automaton.compact();
-		rewriter.initialise(automaton);
+		rewriter.reset(HEAD);
 		// Finally, perform the rewrite!		
-		rewriter.apply(maxSteps);
+		rewriter.apply(maxSteps);		
 		List<Rewrite.State> states = rewrite.states();
 		System.out.println("Rewrite proof was " + states.size() + " steps.");
 		if(debug) {
@@ -843,8 +836,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// Search through the states encountered and see whether we found a
 		// contradiction or not.
 		for (int i = 0; i != states.size(); ++i) {
-			automaton = states.get(i).automaton();
-			if (automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
+			automaton = states.get(i).automaton();			
+			if (automaton.get(automaton.getRoot(i)).equals(Solver.False)) {
 				// Yes, we found a contradiction!
 				return RESULT.UNSAT;
 			}
@@ -867,7 +860,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	private static Rewriter createRewriter(Rewrite rewrite, RewriteMode rwMode) {
 		switch(rwMode) {
 		case UNFAIR:
-			return new StackableLinearRewriter(rewrite); 
+			return new LinearRewriter(rewrite,LinearRewriter.UNFAIR_HEURISTIC); 
 		case EXHAUSTIVE:
 			return new BreadthFirstRewriter(rewrite);
 		}
@@ -883,7 +876,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		for(int i = 0; i != steps.size();++i) {
 			Rewrite.Step step = steps.get(i);			
 			int activation = step.activation();
-			Activation a = states.get(step.before()).activation(activation);
+			Rewrite.Activation a = states.get(step.before()).activation(activation);
 			if(step.before() != step.after()) {
 				Automaton automaton = states.get(step.before()).automaton();
 				System.out.println("-- Step " + count + " (" + a.rule().name() + ", " + automaton.nStates() + " states) --");				
