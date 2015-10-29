@@ -818,7 +818,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	public static RESULT unsat(Automaton automaton,  RewriteMode rwMode, int maxSteps, boolean debug) {		
 		// Graph rewrite is needed to ensure that previously visited states are
 		// not visited again.		
-		Rewrite rewrite = new Inference(Solver.SCHEMA, AbstractActivation.RANK_COMPARATOR, Solver.inferences, Solver.reductions);
+		Rewrite rewrite = new Inference(Solver.SCHEMA, new AbstractActivation.RankComparator("rank"), Solver.inferences, Solver.reductions);
 		// Initialise the rewrite with our starting state		
 		int HEAD = rewrite.initialise(automaton);
 		// Stacked rewriter ensures that reduction rules are applied atomically
@@ -880,12 +880,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 			Rewrite.Activation a = states.get(step.before()).activation(activation);
 			if(step.before() != step.after()) {
 				Automaton automaton = states.get(step.before()).automaton();
-				System.out.println("-- Step " + count + " (" + a.rule().name() + ", " + automaton.nStates() + " states) --");				
+				System.out.println("-- Step " + count + " (" + a.rule().annotation("name") + ", " + automaton.nStates() + " states) --");				
 				//wyrl.util.Runtime.debug(automaton, Solver.SCHEMA, "And", "Or");
 				count = count + 1;
-				good.inc(a.rule().name());
+				good.inc((String) a.rule().annotation("name"));
 			} else {
-				bad.inc(a.rule().name());
+				bad.inc((String) a.rule().annotation("name"));
 			}
 		}
 		System.out.println("Successfully applied: ");
