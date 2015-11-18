@@ -36,8 +36,9 @@ term ForAll[{[Var,Type]...}, BExpr]
 // redundant (in which case we can simply drop the quantifier).
 @rank(1)
 @name("ForAll({},Bool)")
-reduce ForAll[{[Var,Type]...qs}, BExpr be]:
-       => be, if be is Bool || |qs| == 0
+reduce ForAll[{[Var,Type]...qs}, BExpr be]
+requires be is Bool || |qs| == 0:
+       => be
 
 // Negate a universal quantifier to produce an existential quantifier
 @rank(0)
@@ -68,9 +69,10 @@ infer And{
     // The Quantifier we're attempting to instantiate
     ForAll[{[Var, Type], [Var,Type]...} vs, BExpr e2] qf,
     // The rest
-    BExpr... es}:
+    BExpr... es}
+requires !(e1 is ForAll):
     => let instantiations = instantiate[e1,vs,e2]
-       in And({e1,qf} ++ es ++ instantiations), if !(e1 is ForAll) && |instantiations| > 0
+       in And({e1,qf} ++ es ++ instantiations), if |instantiations| > 0
 
 // ====================================================================
 // Exists
@@ -82,8 +84,9 @@ term Exists[{[Var,Type]...}, BExpr]
 // redundant (in which case we can simply drop the quantifier).
 @rank(1)
 @name("Exists[{},Bool]")
-reduce Exists[{[Var,Type]...qs}, BExpr be]:
-       => be, if be is Bool || |qs| == 0
+reduce Exists[{[Var,Type]...qs}, BExpr be]
+requires be is Bool || |qs| == 0:
+       => be
 
 // Negate an existential quantifier to produce a universal quantifier.
 @rank(2)

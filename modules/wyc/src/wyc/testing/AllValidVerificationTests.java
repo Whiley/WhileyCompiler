@@ -770,7 +770,7 @@ public class AllValidVerificationTests {
 		runTest("Ensures_Valid_5");
 	}
 
-	@Test
+	@Ignore("timeout") @Test
 	public void Ensures_Valid_6() {
 		runTest("Ensures_Valid_6");
 	}

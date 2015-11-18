@@ -120,13 +120,15 @@ term TupleT[Type...]
 
 @rank(0)
 @name("TupleT[Type...]")
-reduce TupleT[Type... ts]:
-    => VoidT, if VoidT in ts
+reduce TupleT[Type... ts]
+requires VoidT in ts:
+    => VoidT
 
 @rank(0)
 @name("TupleT[]")
-reduce TupleT[Type... ts]:
-    => VoidT, if |ts| == 0
+reduce TupleT[Type... ts]
+requires |ts| == 0:
+    => VoidT
 
 @rank(0)
 @name("TupleT[Type]")
@@ -187,13 +189,15 @@ reduce AndT{ArrayT(Type) t1, NotT(TupleT[Type...]), Type... ts}:
 
 @rank(1)
 @name("AndT{ArrayT,Proton,Type...}")
-reduce AndT{ArrayT(Type) s, Proton p, Type... ts}:
-    => VoidT, if !(p is AnyT)
+reduce AndT{ArrayT(Type) s, Proton p, Type... ts}
+requires !(p is AnyT):
+    => VoidT
 
 @rank(2)
 @name("OrT{ArrayT,ArrayT,Type...}")
-reduce OrT{ArrayT(Type t1) s1, ArrayT(Type t2) s2, Type... ts}:
-    => OrT({s1}++ts), if t1 == t2    
+reduce OrT{ArrayT(Type t1) s1, ArrayT(Type t2) s2, Type... ts}
+requires t1 == t2:
+    => OrT({s1}++ts)
 
 // ====================================================================
 // Atoms
@@ -227,16 +231,23 @@ reduce AndT{AnyT, Type... xs}:
 // above.
 @rank(1)
 @name("AndT{Quark,Proton,Type...}")
-reduce AndT{Quark a1, Proton a2, Type... ts}:
-    => VoidT, if a1 != a2 && a1 != AnyT && a2 != AnyT
+reduce AndT{Quark a1, Proton a2, Type... ts}
+requires a1 != a2 && a1 != AnyT && a2 != AnyT:
+    => VoidT
 
 // a1 needs to be a quark here, as the rule for tuples is handled
 // above.
 @rank(1)
 @name("AndT{Quark,NotT(Proton),Type...}")
-reduce AndT{Quark a1, NotT(Proton a2), Type... ts}:
-    => VoidT, if a1 == a2
-    => AndT (a1 ++ ts), if a2 != AnyT
+reduce AndT{Quark a1, NotT(Proton a2), Type... ts}
+requires a1 == a2:
+    => VoidT
+
+@rank(1)
+@name("AndT{Quark,NotT(Proton),Type...}")
+reduce AndT{Quark a1, NotT(Proton a2), Type... ts}
+requires a1 != a2 && a2 != AnyT:
+    => AndT (a1 ++ ts)
 
 @rank(0)
 @name("OrT{AnyT,Type...}")
