@@ -71,8 +71,9 @@ term Load[Expr,int]
 // requires that the index is within the bounds of the tuple.
 @rank(1) 
 @name("Load[Tuple[Expr...],int]")
-reduce Load[Tuple[Expr... ls], int idx]:
-    => ls[idx], if idx >= 0 && idx < |ls|
+reduce Load[Tuple[Expr... ls], int idx]
+requires idx >= 0 && idx < |ls|:
+    => ls[idx]
 
 // Denotes the length of a tuple expression (and other kinds as well)
 term LengthOf(Expr)
@@ -187,8 +188,9 @@ reduce And{And{BExpr... xs}, BExpr... ys}:
 // unsatisfiable.
 @rank(2)
 @name("And{Not(BExpr x),BExpr x,BExpr...}")
-reduce And{Not(BExpr x), BExpr y, BExpr... ys}:
-    => False, if x == y
+reduce And{Not(BExpr x), BExpr y, BExpr... ys}
+requires x == y:
+    => False
 
 // Distribute conjuncts over disjuncts.  This rule can be quite
 // expensive and making it an inference rule can help.
@@ -222,8 +224,9 @@ reduce Or{False, BExpr... xs}:
 
 @rank(2)
 @name("Or{Not(BExpr x),BExpr x,BExpr...}")
-reduce Or{Not(BExpr x), BExpr y, BExpr... ys}:
-    => True, if x == y
+reduce Or{Not(BExpr x), BExpr y, BExpr... ys}
+requires x == y:
+    => True
 
 @rank(1)
 @name("Or{Or{BExpr...},BExpr...}")
@@ -239,15 +242,21 @@ reduce Or{Or{BExpr... xs}, BExpr... ys}:
 // equalities).
 term Equals[Type,{|Expr,Expr|}]
 
-// An expression is always equal to itself (1); any two distinct
-// values are never equal (2).  Notice that we cannot conclude False
+// An expression is always equal to itself. Notice that we cannot conclude False
 // when we have general expressions that aren't equal, because these may
 // eventually reduce to the same value (or not).
 @rank(1)
 @name("Equals{|Expr,Expr|}")
-reduce Equals[Type t, {|Expr x, Expr y|}]:
-    => True, if x == y
-    => False, if x != y && x is Value && y is Value
+reduce Equals[Type t, {|Expr x, Expr y|}]
+requires x == y:
+    => True
+
+// Any two distinct values are never equal (2).
+@rank(1)
+@name("Equals{|Value,Value|}")
+reduce Equals[Type t, {|Value x, Value y|}]
+requires x != y:
+    => False
 
 // Substitute any variable which is known to equal a value through
 // for that value in all expressions.

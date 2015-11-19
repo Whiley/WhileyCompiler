@@ -16,8 +16,9 @@ reduce Inhabited(Atom t):
 // A conjunct in this normal form can be reduced to true in the
 // general case
 @name("Inhabited_2")
-reduce Inhabited(AndT{NotT(Proton)... ts}):
-    => True, if no { t in ts | t == AnyT }
+reduce Inhabited(AndT{NotT(Proton)... ts})
+requires no { t in ts | t == AnyT }:
+    => True
 
 @name("Inhabited_3")
 reduce Inhabited(ArrayT(Type t)):
@@ -41,5 +42,6 @@ reduce Not(Is[Expr e, Type t]):
 
 // Transitivity of type tests
 @name("Is_3")
-reduce And{Is[Expr e1, Type t1], Is[Expr e2, Type t2], BExpr... bs}:
-    => And({Is[e1,AndT{t1,t2}]} ++ bs), if e1 == e2
+reduce And{Is[Expr e1, Type t1], Is[Expr e2, Type t2], BExpr... bs}
+requires e1 == e2:
+    => And({Is[e1,AndT{t1,t2}]} ++ bs)
