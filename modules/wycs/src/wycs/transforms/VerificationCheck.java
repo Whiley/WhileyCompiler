@@ -212,17 +212,17 @@ public class VerificationCheck implements Transform<WycsFile> {
 
 		RESULT result = unsat(automaton,rwMode,maxInferences,debug);
 
-		if (result == RESULT.TIMEOUT) {
+		if (result instanceof RESULT.TIMEOUT) {
 			throw new AssertionFailure("timeout occurred during verification", stmt, null, automaton, original);
-		} else if (result == RESULT.SAT) {
+		} else if (result instanceof RESULT.SAT) {
 			String msg = stmt.message;
 			msg = msg == null ? "assertion failure" : msg;
 			throw new AssertionFailure(msg, stmt, null, automaton, original);
 		}
 
 		long endTime = System.currentTimeMillis();
-		builder.logTimedMessage("[" + filename + "] Verified assertion #" + number, endTime - startTime,
-				startMemory - runtime.freeMemory());
+		builder.logTimedMessage("[" + filename + "] Verified assertion #" + number + " (steps: " + result.numberOfSteps + ")",
+				endTime - startTime, startMemory - runtime.freeMemory());
 	}
 
 	private int translate(Code expr, Automaton automaton, HashMap<String, Integer> environment) {
@@ -829,7 +829,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// Finally, perform the rewrite!		
 		rewriter.apply(maxSteps);		
 		List<Rewrite.State> states = rewrite.states();
-		System.out.println("Rewrite proof was " + states.size() + " steps.");
+		int numberOfSteps = states.size();
 		if(debug) {
 			printRewriteProof(rewrite);
 		}
@@ -840,15 +840,15 @@ public class VerificationCheck implements Transform<WycsFile> {
 			int root = wyrw.core.Inference.USE_SUBSTITUTION ? i : 0;
 			if (automaton.get(automaton.getRoot(root)).equals(Solver.False)) {
 				// Yes, we found a contradiction!
-				return RESULT.UNSAT;
+				return new RESULT.UNSAT(numberOfSteps);
 			}
 		}		
 		if (states.size() == maxSteps) {
 			// The rewrite has been bounded by the maximum number of permitted
 			// steps. Therefore, we declare it a timeout.
-			return RESULT.TIMEOUT;
+			return new RESULT.TIMEOUT(numberOfSteps);
 		} else {
-			return RESULT.SAT;
+			return new RESULT.SAT(numberOfSteps);
 		}
 	}
 
@@ -907,8 +907,35 @@ public class VerificationCheck implements Transform<WycsFile> {
 		return rules;
 	}
 
-	private enum RESULT {
-		TIMEOUT, SAT, UNSAT
+	/**
+	 * The result of a verification attempt.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static abstract class RESULT {
+		public final int numberOfSteps;
+		public RESULT(int numberOfSteps) {
+			this.numberOfSteps = numberOfSteps;
+		}
+		
+		public static class SAT extends RESULT {
+			public SAT(int numberOfSteps) {
+				super(numberOfSteps);
+			}
+		}
+		
+		public static class UNSAT extends RESULT {
+			public UNSAT(int numberOfSteps) {
+				super(numberOfSteps);
+			}
+		}
+		
+		public static class TIMEOUT extends RESULT {
+			public TIMEOUT(int numberOfSteps) {
+				super(numberOfSteps);
+			}
+		}
 	}
 	
 	private static class Counter {
