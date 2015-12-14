@@ -469,7 +469,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// form before verification begins. This firstly reduces the amount of
 		// work during verification, and also allows the functions in
 		// SolverUtils to work properly.
-		Reductions.minimiseAndReduce(type_automaton, 5000, Types.reductions);
+		Reductions.minimiseAndReduce(type_automaton, 5000, Types.SCHEMA, Types.reductions);
 		return automaton.addAll(type_automaton.getRoot(0), type_automaton);
 	}
 
@@ -815,11 +815,11 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 
-	public static RESULT unsat(Automaton automaton,  RewriteMode rwMode, int maxSteps, boolean debug) {		
+	public static RESULT unsat(Automaton automaton,  RewriteMode rwMode, int maxSteps, boolean debug) {
 		// Graph rewrite is needed to ensure that previously visited states are
 		// not visited again.		
 		Rewrite rewrite = new Inference(Solver.SCHEMA, new AbstractActivation.RankComparator("rank"), Solver.inferences, Solver.reductions);
-		// Initialise the rewrite with our starting state		
+		// Initialise the rewrite with our starting state
 		int HEAD = rewrite.initialise(automaton);
 		// Stacked rewriter ensures that reduction rules are applied atomically
 		// Breadth-first rewriter ensures that the search spans outwards in a

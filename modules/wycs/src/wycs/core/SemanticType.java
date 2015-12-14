@@ -705,7 +705,7 @@ public abstract class SemanticType {
 	 */
 	public static SemanticType construct(Automaton automaton) {
 		// First, we canonicalise the automaton
-		Reductions.minimiseAndReduce(automaton, 5000, Types.reductions);		
+		Reductions.minimiseAndReduce(automaton, 5000, Types.SCHEMA, Types.reductions);
 		automaton.canonicalise();
 
 		// Second, construct the object representing the type
