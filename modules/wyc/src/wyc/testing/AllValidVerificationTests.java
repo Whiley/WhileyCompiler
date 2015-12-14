@@ -349,7 +349,7 @@ public class AllValidVerificationTests {
 		runTest("Complex_Valid_5");
 	}
 
-	@Test
+	@Ignore("#468") @Test
 	public void Complex_Valid_6() {
 		runTest("Complex_Valid_6");
 	}
@@ -654,7 +654,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedRecord_Valid_10");
 	}
 
-	@Test
+	@Ignore("#468") @Test
 	public void ConstrainedReference_Valid_1() {
 		runTest("ConstrainedReference_Valid_1");
 	}
@@ -2339,7 +2339,7 @@ public class AllValidVerificationTests {
 		runTest("UnionType_Valid_19");
 	}
 
-	@Test
+	@Ignore("#468") @Test
 	public void UnionType_Valid_2() {
 		runTest("UnionType_Valid_2");
 	}
