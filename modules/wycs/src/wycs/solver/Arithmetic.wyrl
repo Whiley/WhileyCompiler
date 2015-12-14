@@ -103,7 +103,7 @@ requires x == y:
 
 @rank(1)
 @name("Div[Mul,AExpr]")
-reduce Div[Mul[real n, {|AExpr x, AExpr... xs|}],Num y]:
+reduce Div[Mul[real n, {|AExpr... xs|}],Num y]:
     => Mul[n / *y, xs]
 
 // Distribute division through sum
