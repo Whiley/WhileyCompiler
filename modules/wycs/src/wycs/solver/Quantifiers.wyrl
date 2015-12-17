@@ -34,32 +34,35 @@ term ForAll[{[Var,Type]...}, BExpr]
 
 // Quantifying over a constant, or an empty set of variables is
 // redundant (in which case we can simply drop the quantifier).
+@rank(1)
+@name("ForAll({},Bool)")
 reduce ForAll[{[Var,Type]...qs}, BExpr be]
-name "ForAll_1"
-rank 1:
-       => be, if be is Bool || |qs| == 0
+requires be is Bool || |qs| == 0:
+       => be
 
 // Negate a universal quantifier to produce an existential quantifier
-reduce Not(ForAll[{[Var,Type]...} vars, BExpr be])
-name "ForAll_2"
-rank 0:
+@rank(0)
+@name("Not(ForAll)")
+reduce Not(ForAll[{[Var,Type]...} vars, BExpr be]):
        => Exists[vars, Not(be)]
 
 // Merge nested universal quantifiers
-reduce ForAll[{[Var,Type]...} xs, ForAll[{[Var,Type]...} ys, BExpr e]]
-name "ForAll_3"
-rank 1:
+@rank(1)
+@name("ForAll[ForAll]")
+reduce ForAll[{[Var,Type]...} xs, ForAll[{[Var,Type]...} ys, BExpr e]]:
        => ForAll[xs++ys,e]
 
 // Eliminate unused variables as these can prevent instantiation.
-reduce ForAll[{[Var v,Type], [Var,Type]... xs}, BExpr e]
-name "ForAll_4"
-rank 1:
+@rank(1)
+@name("ForAll[{Var,Var...},BExpr]")
+reduce ForAll[{[Var v,Type], [Var,Type]... xs}, BExpr e]:
        => ForAll[xs,e], if !(contains[e,v])
 
 // Push quantifier inwards?
 
 // Attempt to instantiate quantifier with a given expression
+@rank(3)
+@name("And{BExpr,ForAll,BExpr...}")
 infer And{
     // The expression we're instantiating over
     BExpr e1,
@@ -67,10 +70,9 @@ infer And{
     ForAll[{[Var, Type], [Var,Type]...} vs, BExpr e2] qf,
     // The rest
     BExpr... es}
-name  "ForAll_5"
-rank 3:
+requires !(e1 is ForAll):
     => let instantiations = instantiate[e1,vs,e2]
-       in And({e1,qf} ++ es ++ instantiations), if !(e1 is ForAll) && |instantiations| > 0
+       in And({e1,qf} ++ es ++ instantiations), if |instantiations| > 0
 
 // ====================================================================
 // Exists
@@ -80,27 +82,28 @@ term Exists[{[Var,Type]...}, BExpr]
 
 // Quantifying over a constant, or an empty set of variables is
 // redundant (in which case we can simply drop the quantifier).
+@rank(1)
+@name("Exists[{},Bool]")
 reduce Exists[{[Var,Type]...qs}, BExpr be]
-name "Exists_1"
-rank 1:
-       => be, if be is Bool || |qs| == 0
+requires be is Bool || |qs| == 0:
+       => be
 
 // Negate an existential quantifier to produce a universal quantifier.
-reduce Not(Exists[{[Var,Type]...} vars, BExpr be])
-name "Exists_2"
-rank 2:
+@rank(2)
+@name("Not(Exists)")
+reduce Not(Exists[{[Var,Type]...} vars, BExpr be]):
        => ForAll[vars, Not(be)]
 
 // Merge consequtive existentials together
-reduce Exists[{[Var,Type]...} xs, Exists[{[Var,Type]...} ys, BExpr e]]
-name "Exists_3"
-rank 1:
+@rank(1)
+@name("Exists[Exists,BExpr]")
+reduce Exists[{[Var,Type]...} xs, Exists[{[Var,Type]...} ys, BExpr e]]:
        => Exists[xs++ys,e]
 
 // Move extenstentials outwards (?)
-reduce And{Exists[{[Var,Type]...} vs, BExpr e], BExpr... es}
-name "Exists_4"
-rank 1:
+@rank(1)
+@name("And{Exists,BExpr...}")
+reduce And{Exists[{[Var,Type]...} vs, BExpr e], BExpr... es}:
        => Exists[vs, And(e++es)]
 
 // ====================================================================

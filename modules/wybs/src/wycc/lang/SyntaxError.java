@@ -167,7 +167,7 @@ public class SyntaxError extends RuntimeException {
 		output.print(filename + ":" + enclosing.lineNumber + ":"
 				+ enclosing.columnStart() + ":"
 				+ enclosing.columnEnd() + ":\""
-				+ message.replace("\n", "\\n") + "\"");
+				+ escapeMessage(message) + "\"");
 
 		// Now print contextual information (if applicable)
 		if(context != null && context.length > 0) {
@@ -399,6 +399,12 @@ public class SyntaxError extends RuntimeException {
 		}
 
 		throw new InternalFailure(msg, filename, start, end, ex);
+	}
+	
+	private static String escapeMessage(String message) {
+		message = message.replace("\n", "\\n");
+		message = message.replace("\"", "\\\"");
+		return message;
 	}
 
 }

@@ -352,13 +352,13 @@ public final class WhileyFile implements CompilationUnit {
 	public class Type extends NamedDeclaration {
 		public final TypePattern pattern;
 		public Nominal resolvedType;
-		public Expr invariant;
+		public ArrayList<Expr> invariant;
 
 		public Type(List<Modifier> modifiers, TypePattern pattern,
-				String name, Expr constraint, Attribute... attributes) {
+				String name, List<Expr> constraint, Attribute... attributes) {
 			super(name, modifiers,attributes);
 			this.pattern = pattern;
-			this.invariant = constraint;
+			this.invariant = new ArrayList<Expr>(constraint);
 		}
 	}
 

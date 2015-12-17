@@ -571,6 +571,11 @@ public class AllValidTests {
 	}
 
 	@Test
+	public void ConstrainedList_Valid_28() throws IOException {
+		runTest("ConstrainedList_Valid_28");
+	}
+
+	@Test
 	public void ConstrainedList_Valid_3() throws IOException {
 		runTest("ConstrainedList_Valid_3");
 	}

@@ -32,6 +32,8 @@ include "Core.wyrl"
 // An array is a mapping from an index value to another value.
 term Array[Expr...]
 
+@rank(0)
+@name("LengthOf(Array)")
 reduce LengthOf(Array[Expr... xs]):
     => Num((real) |xs|)
 
@@ -43,6 +45,8 @@ reduce LengthOf(Array[Expr... xs]):
 // array (left) at a given index position (right).
 term IndexOf[Expr,Expr]
 
+@rank(0)
+@name("IndexOf[Array]")
 reduce IndexOf[Array[Expr... xs], Num(real i)]:
     => let j = num i
        in xs[j], if j >= 0 && j < |xs|

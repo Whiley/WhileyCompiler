@@ -99,7 +99,6 @@ public class VcGenerator {
 	 * Add necessary imports from the theorem prover's library.
 	 */
 	private void addImports() {
-		wyalFile.add(wyalFile.new Import(Trie.fromString("wycs/core/Array"), null));
 	}
 	
 	protected void transform(WyilFile.Constant decl, WyilFile wyilFile) {
@@ -1767,7 +1766,7 @@ public class VcGenerator {
 				attributes);
 		ArrayList<SyntacticType> generics = new ArrayList<SyntacticType>();
 		generics.add(convert(code.type().element(),wyilAttributes));
-		Expr.Invoke macro = new Expr.Invoke("generate", Trie.fromString("Array"),
+		Expr.Invoke macro = new Expr.Invoke("generate", Trie.fromString("wycs/core/Array"),
 				generics, arg);
 		branch.assume(macro);
 	}
@@ -1856,7 +1855,7 @@ public class VcGenerator {
 				Expr arg = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { oldSource, newSource, index }, attributes);
 				ArrayList<SyntacticType> generics = new ArrayList<SyntacticType>();
 				generics.add(convert(rlv.rawType().element(),Collections.EMPTY_LIST));
-				Expr.Invoke macro = new Expr.Invoke("update", Trie.fromString("Array"), generics, arg);
+				Expr.Invoke macro = new Expr.Invoke("update", Trie.fromString("wycs/core/Array"), generics, arg);
 				branch.assume(macro);
 			}
 		}

@@ -349,7 +349,7 @@ public class AllValidVerificationTests {
 		runTest("Complex_Valid_5");
 	}
 
-	@Test
+	@Ignore("#468") @Test
 	public void Complex_Valid_6() {
 		runTest("Complex_Valid_6");
 	}
@@ -559,6 +559,11 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedList_Valid_27");
 	}
 
+	@Ignore("TOO LONG") @Test
+	public void ConstrainedList_Valid_28() {
+		runTest("ConstrainedList_Valid_28");
+	}
+
 	@Test
 	public void ConstrainedList_Valid_3() {
 		runTest("ConstrainedList_Valid_3");
@@ -649,7 +654,7 @@ public class AllValidVerificationTests {
 		runTest("ConstrainedRecord_Valid_10");
 	}
 
-	@Test
+	@Ignore("#468") @Test
 	public void ConstrainedReference_Valid_1() {
 		runTest("ConstrainedReference_Valid_1");
 	}
@@ -765,7 +770,7 @@ public class AllValidVerificationTests {
 		runTest("Ensures_Valid_5");
 	}
 
-	@Test
+	@Ignore("timeout") @Test
 	public void Ensures_Valid_6() {
 		runTest("Ensures_Valid_6");
 	}
@@ -2334,7 +2339,7 @@ public class AllValidVerificationTests {
 		runTest("UnionType_Valid_19");
 	}
 
-	@Test
+	@Ignore("#468") @Test
 	public void UnionType_Valid_2() {
 		runTest("UnionType_Valid_2");
 	}

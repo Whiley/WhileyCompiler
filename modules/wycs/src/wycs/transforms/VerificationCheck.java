@@ -212,17 +212,17 @@ public class VerificationCheck implements Transform<WycsFile> {
 
 		RESULT result = unsat(automaton,rwMode,maxInferences,debug);
 
-		if (result == RESULT.TIMEOUT) {
+		if (result instanceof RESULT.TIMEOUT) {
 			throw new AssertionFailure("timeout occurred during verification", stmt, null, automaton, original);
-		} else if (result == RESULT.SAT) {
+		} else if (result instanceof RESULT.SAT) {
 			String msg = stmt.message;
 			msg = msg == null ? "assertion failure" : msg;
 			throw new AssertionFailure(msg, stmt, null, automaton, original);
 		}
 
 		long endTime = System.currentTimeMillis();
-		builder.logTimedMessage("[" + filename + "] Verified assertion #" + number, endTime - startTime,
-				startMemory - runtime.freeMemory());
+		builder.logTimedMessage("[" + filename + "] Verified assertion #" + number + " (steps: " + result.numberOfSteps + ")",
+				endTime - startTime, startMemory - runtime.freeMemory());
 	}
 
 	private int translate(Code expr, Automaton automaton, HashMap<String, Integer> environment) {
@@ -469,12 +469,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// form before verification begins. This firstly reduces the amount of
 		// work during verification, and also allows the functions in
 		// SolverUtils to work properly.
-		Rewrite rewrite = new TreeRewrite(Solver.SCHEMA, Activation.RANK_COMPARATOR, Solver.reductions);
-		Rewriter rewriter = new LinearRewriter(rewrite);
-		rewriter.initialise(type_automaton);
-		rewriter.apply(10000);
-		List<Rewrite.State> states = rewrite.states();
-		type_automaton = states.get(states.size() - 1).automaton();
+		Reductions.minimiseAndReduce(type_automaton, 5000, Types.SCHEMA, Types.reductions);
 		return automaton.addAll(type_automaton.getRoot(0), type_automaton);
 	}
 
@@ -820,41 +815,40 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 
-	public static RESULT unsat(Automaton automaton,  RewriteMode rwMode, int maxSteps, boolean debug) {		
+	public static RESULT unsat(Automaton automaton,  RewriteMode rwMode, int maxSteps, boolean debug) {
 		// Graph rewrite is needed to ensure that previously visited states are
 		// not visited again.		
-		Rewrite rewrite = new GraphRewrite(Solver.SCHEMA, Activation.RANK_COMPARATOR, Solver.inferences);
+		Rewrite rewrite = new Inference(Solver.SCHEMA, new AbstractActivation.RankComparator("rank"), Solver.inferences, Solver.reductions);
+		// Initialise the rewrite with our starting state
+		int HEAD = rewrite.initialise(automaton);
 		// Stacked rewriter ensures that reduction rules are applied atomically
-		rewrite = new StackedRewrite(rewrite, Solver.SCHEMA, Solver.reductions);
 		// Breadth-first rewriter ensures that the search spans outwards in a
 		// fair style. This protects against rule starvation.
 		Rewriter rewriter = createRewriter(rewrite,rwMode);
-		// Initialiser the rewriter with our starting state		
-		automaton.minimise();
-		automaton.compact();
-		rewriter.initialise(automaton);
+		rewriter.reset(HEAD);
 		// Finally, perform the rewrite!		
-		rewriter.apply(maxSteps);
+		rewriter.apply(maxSteps);		
 		List<Rewrite.State> states = rewrite.states();
-		System.out.println("Rewrite proof was " + states.size() + " steps.");
+		int numberOfSteps = states.size();
 		if(debug) {
 			printRewriteProof(rewrite);
 		}
 		// Search through the states encountered and see whether we found a
 		// contradiction or not.
-		for (int i = 0; i != states.size(); ++i) {
+		for (int i = 0; i != states.size(); ++i) { 
 			automaton = states.get(i).automaton();
-			if (automaton.get(automaton.getRoot(0)).equals(Solver.False)) {
+			int root = wyrw.core.Inference.USE_SUBSTITUTION ? i : 0;
+			if (automaton.get(automaton.getRoot(root)).equals(Solver.False)) {
 				// Yes, we found a contradiction!
-				return RESULT.UNSAT;
+				return new RESULT.UNSAT(numberOfSteps);
 			}
 		}		
 		if (states.size() == maxSteps) {
 			// The rewrite has been bounded by the maximum number of permitted
 			// steps. Therefore, we declare it a timeout.
-			return RESULT.TIMEOUT;
+			return new RESULT.TIMEOUT(numberOfSteps);
 		} else {
-			return RESULT.SAT;
+			return new RESULT.SAT(numberOfSteps);
 		}
 	}
 
@@ -867,7 +861,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	private static Rewriter createRewriter(Rewrite rewrite, RewriteMode rwMode) {
 		switch(rwMode) {
 		case UNFAIR:
-			return new StackableLinearRewriter(rewrite); 
+			return new LinearRewriter(rewrite,LinearRewriter.UNFAIR_HEURISTIC); 
 		case EXHAUSTIVE:
 			return new BreadthFirstRewriter(rewrite);
 		}
@@ -883,15 +877,15 @@ public class VerificationCheck implements Transform<WycsFile> {
 		for(int i = 0; i != steps.size();++i) {
 			Rewrite.Step step = steps.get(i);			
 			int activation = step.activation();
-			Activation a = states.get(step.before()).activation(activation);
+			Rewrite.Activation a = states.get(step.before()).activation(activation);
 			if(step.before() != step.after()) {
 				Automaton automaton = states.get(step.before()).automaton();
-				System.out.println("-- Step " + count + " (" + a.rule().name() + ", " + automaton.nStates() + " states) --");				
+				System.out.println("-- Step " + count + " (" + a.rule().annotation("name") + ", " + automaton.nStates() + " states) --");				
 				//wyrl.util.Runtime.debug(automaton, Solver.SCHEMA, "And", "Or");
 				count = count + 1;
-				good.inc(a.rule().name());
+				good.inc((String) a.rule().annotation("name"));
 			} else {
-				bad.inc(a.rule().name());
+				bad.inc((String) a.rule().annotation("name"));
 			}
 		}
 		System.out.println("Successfully applied: ");
@@ -913,8 +907,35 @@ public class VerificationCheck implements Transform<WycsFile> {
 		return rules;
 	}
 
-	private enum RESULT {
-		TIMEOUT, SAT, UNSAT
+	/**
+	 * The result of a verification attempt.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static abstract class RESULT {
+		public final int numberOfSteps;
+		public RESULT(int numberOfSteps) {
+			this.numberOfSteps = numberOfSteps;
+		}
+		
+		public static class SAT extends RESULT {
+			public SAT(int numberOfSteps) {
+				super(numberOfSteps);
+			}
+		}
+		
+		public static class UNSAT extends RESULT {
+			public UNSAT(int numberOfSteps) {
+				super(numberOfSteps);
+			}
+		}
+		
+		public static class TIMEOUT extends RESULT {
+			public TIMEOUT(int numberOfSteps) {
+				super(numberOfSteps);
+			}
+		}
 	}
 	
 	private static class Counter {

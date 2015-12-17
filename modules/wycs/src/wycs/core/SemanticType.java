@@ -705,9 +705,7 @@ public abstract class SemanticType {
 	 */
 	public static SemanticType construct(Automaton automaton) {
 		// First, we canonicalise the automaton
-		automaton = reduce(automaton);
-		automaton.minimise();
-		automaton.compact();
+		Reductions.minimiseAndReduce(automaton, 5000, Types.SCHEMA, Types.reductions);
 		automaton.canonicalise();
 
 		// Second, construct the object representing the type
@@ -893,14 +891,5 @@ public abstract class SemanticType {
 		r[1] = t2;
 		System.arraycopy(ts, 0, r, 2, ts.length);
 		return r;
-	}
-
-	private static Automaton reduce(Automaton automaton) {
-		Rewrite rewrite = new TreeRewrite(Types.SCHEMA, Activation.RANK_COMPARATOR, Types.reductions);
-		Rewriter rewriter = new LinearRewriter(rewrite);
-		rewriter.initialise(automaton);
-		rewriter.apply(10000);
-		List<Rewrite.State> states = rewrite.states();
-		return states.get(states.size()-1).automaton();
 	}	
 }

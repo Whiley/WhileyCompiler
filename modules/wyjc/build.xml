@@ -46,8 +46,11 @@
 	<include name="wycc/**/*.class"/>
       </fileset>
       <fileset dir="../wycs/src">
-	<include name="wycs/**/*.class"/>
+	<include name="wycs/**/*.class"/>	
       </fileset>
+      <fileset dir="../wycs/stdlib">
+	<include name="wycs/**/*.wycs"/>	
+      </fileset>      
       <fileset dir="../wyil/src">
 	<include name="wyautl_old/**/*.class"/>
 	<include name="wyil/**/*.class"/>
@@ -65,7 +68,9 @@
       </fileset>
       <fileset dir="tmp">
 	<include name="jasm/**/*.class"/>
+	<include name="wyautl/**/*.class"/>
 	<include name="wyrl/**/*.class"/>
+	<include name="wyrw/**/*.class"/>	
       </fileset>
     </jar>
     <delete dir="tmp"/>

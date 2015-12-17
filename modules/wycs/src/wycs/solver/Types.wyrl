@@ -38,30 +38,30 @@
 
 term NotT(Type)
 
-reduce NotT(AnyT)
-name "Not_1"
-rank 0:
+@rank(0)
+@name("NotT(AnyT)")
+reduce NotT(AnyT):
     => VoidT
 
-reduce NotT(VoidT)
-name "Not_2"
-rank 0:
+@rank(0)
+@name("NotT(VoidT)")
+reduce NotT(VoidT):
     => AnyT
 
-reduce NotT(NotT(Type t))
-name "Not_3"
-rank 0:
+@rank(0)
+@name("NotT(NotT)")
+reduce NotT(NotT(Type t)):
     => t
 
-reduce NotT(OrT{Type... es})
-name "Not_4"
-rank 1:
+@rank(1)
+@name("NotT(OrT)")
+reduce NotT(OrT{Type... es}):
     => let ns = { NotT(e) | e in es }
        in AndT(ns)
 
-reduce NotT(AndT{Type... es})
-name "Not_5"
-rank 2:
+@rank(2)
+@name("NotT(AndT)")
+reduce NotT(AndT{Type... es}):
     => let ns = { NotT(e) | e in es }
        in OrT(ns)
 
@@ -71,24 +71,24 @@ rank 2:
 
 term AndT{Type...}
 
-reduce AndT{}
-name "AndType_1"
-rank 0:
+@rank(0)
+@name("AndT{}")
+reduce AndT{}:
     => VoidT
 
-reduce AndT{Type t}
-name "AndType_2"
-rank 0:
+@rank(0)
+@name("AndT{Type}")
+reduce AndT{Type t}:
     => t
 
-reduce AndT{AndT{Type... xs}, Type... ys}
-name "AndType_3"
-rank 1:
+@rank(1)
+@name("AndT{AndT,Type...}")
+reduce AndT{AndT{Type... xs}, Type... ys}:
     => AndT (xs ++ ys)
 
-reduce AndT{OrT{Type... xs}, Type... ys}
-name "AndType_4"
-rank 3:
+@rank(3)
+@name("AndT{OrT,Type...}")
+reduce AndT{OrT{Type... xs}, Type... ys}:
     => let zs = { AndT(x ++ ys) | x in xs }
        in OrT (zs)
 
@@ -98,19 +98,19 @@ rank 3:
 
 term OrT{Type...}
 
-reduce OrT{}
-name "OrType_1"
-rank 0:
+@rank(0) 
+@name("OrT{}")
+reduce OrT{}:
     => VoidT
 
-reduce OrT{Type t}
-name "OrType_2"
-rank 0:
+@rank(0)
+@name("OrT{Type}")
+reduce OrT{Type t}:
     => t
 
-reduce OrT{OrT{Type... xs}, Type... ys}
-name "OrType_3"
-rank 1:
+@rank(1)
+@name("OrT{OrT,Type...}")
+reduce OrT{OrT{Type... xs}, Type... ys}:
     => OrT (xs ++ ys)
 
 // ====================================================================
@@ -118,39 +118,41 @@ rank 1:
 // ====================================================================
 term TupleT[Type...]
 
+@rank(0)
+@name("TupleT[Type...]")
 reduce TupleT[Type... ts]
-name "TupleType_1"
-rank 0:
-    => VoidT, if VoidT in ts
+requires VoidT in ts:
+    => VoidT
 
+@rank(0)
+@name("TupleT[]")
 reduce TupleT[Type... ts]
-name "TupleType_1b"
-rank 0:
-    => VoidT, if |ts| == 0
+requires |ts| == 0:
+    => VoidT
 
-reduce TupleT[Type t]
-name "TupleType_1c"
-rank 0:
+@rank(0)
+@name("TupleT[Type]")
+reduce TupleT[Type t]:
     => t
 
-reduce AndT{TupleT[Type... t1s], TupleT[Type... t2s], Type... ts}
-name "TupleType_2"
-rank 2:
+@rank(2)
+@name("AndT{TupleT,TupleT,Type...}")
+reduce AndT{TupleT[Type... t1s], TupleT[Type... t2s], Type... ts}:
     => VoidT, if |t1s| != |t2s|
     => let r = [ AndT{t1s[i],t2s[i]} | i in 0..|t1s| ]
        in AndT(TupleT(r) ++ ts)
 
-reduce AndT{TupleT[Type... t1s] t1, NotT(TupleT[Type... t2s]), Type... ts}
-name "TupleType_3"
-rank 2:
+@rank(2)
+@name("AndT{TupleT,NotT(TupleT,Type...}")
+reduce AndT{TupleT[Type... t1s] t1, NotT(TupleT[Type... t2s]), Type... ts}:
     => AndT(t1 ++ ts), if |t1s| != |t2s|
     => VoidT, if |t1s| == 0
     => let r = [ AndT{t1s[i],NotT(t2s[i])} | i in 0..|t1s| ]
        in AndT(TupleT(r) ++ ts)
 
-reduce AndT{TupleT[Type...] t1, NotT(ArrayT(Type)), Type... ts}
-name "TupleType_4"
-rank 2:
+@rank(2)
+@name("AndT{TupleT,NotT(ArrayT),Type...}")
+reduce AndT{TupleT[Type...] t1, NotT(ArrayT(Type)), Type... ts}:
     => AndT({t1} ++ ts)
 
 // TODO: pull disjuncts out of tuples?
@@ -165,35 +167,37 @@ term ArrayT(Type)
 // with intersection.  For example {(int,int)} & {int} =>
 // {(int,int)&int}{void}. This makes sense, but is deceiving.  For
 // example, {int} & !{any} => {int&!any} => {void} as well.
-reduce ArrayT(VoidT)
-name "ArrayType_1"
-rank 0:
+@rank(0)
+@name("ArrayT(VoidT)")
+reduce ArrayT(VoidT):
     => VoidT
 
-reduce AndT{ArrayT(Type t1), ArrayT(Type t2), Type... ts}
-name "ArrayType_2"
-rank 2:
+@rank(2)
+@name("AndT{ArrayT,ArrayT,Type...}")
+reduce AndT{ArrayT(Type t1), ArrayT(Type t2), Type... ts}:
     => AndT(ArrayT(AndT{t1,t2})++ts)
 
-reduce AndT{ArrayT(Type t1), NotT(ArrayT(Type t2)), Type... ts}
-name "ArrayType_3"
-rank 2:
+@rank(2)
+@name("AndT{ArrayT,NotT(ArrayT),Type...}")
+reduce AndT{ArrayT(Type t1), NotT(ArrayT(Type t2)), Type... ts}:
     => AndT(ArrayT(AndT{t1,NotT(t2)})++ts)
 
-reduce AndT{ArrayT(Type) t1, NotT(TupleT[Type...]), Type... ts}
-name "ArrayType_3b"
-rank 2:
+@rank(2)
+@name("AndT{ArrayT,NotT(Tuple),Type...}")
+reduce AndT{ArrayT(Type) t1, NotT(TupleT[Type...]), Type... ts}:
     => AndT({t1} ++ ts)
 
+@rank(1)
+@name("AndT{ArrayT,Proton,Type...}")
 reduce AndT{ArrayT(Type) s, Proton p, Type... ts}
-name "ArrayType_4"
-rank 1:
-    => VoidT, if !(p is AnyT)
+requires !(p is AnyT):
+    => VoidT
 
+@rank(2)
+@name("OrT{ArrayT,ArrayT,Type...}")
 reduce OrT{ArrayT(Type t1) s1, ArrayT(Type t2) s2, Type... ts}
-name "ArrayType_5"
-rank 2:
-    => OrT({s1}++ts), if t1 == t2    
+requires t1 == t2:
+    => OrT({s1}++ts)
 
 // ====================================================================
 // Atoms
@@ -213,39 +217,46 @@ define Quark as AnyT | NullT | VoidT | BoolT | IntT | RealT | StringT | VarT(str
 define Proton as Quark | TupleT[Proton...] | ArrayT(Proton)
 define Atom as Proton | NotT(Proton)
 
-reduce AndT{VoidT, Type... xs}
-name "AtomType_1"
-rank 0:
+@rank(0)
+@name("AndT{VoidT,Type...}")
+reduce AndT{VoidT, Type... xs}:
     => VoidT
 
-reduce AndT{AnyT, Type... xs}
-name "AtomType_2"
-rank 0:
+@rank(0)
+@name("AndT{AnyT, Type...}")
+reduce AndT{AnyT, Type... xs}:
     => AndT(xs)
 
 // a1 needs to be a quark here, as the rule for tuples is handled
 // above.
+@rank(1)
+@name("AndT{Quark,Proton,Type...}")
 reduce AndT{Quark a1, Proton a2, Type... ts}
-name "AtomType_3"
-rank 1:
-    => VoidT, if a1 != a2 && a1 != AnyT && a2 != AnyT
+requires a1 != a2 && a1 != AnyT && a2 != AnyT:
+    => VoidT
 
 // a1 needs to be a quark here, as the rule for tuples is handled
 // above.
+@rank(1)
+@name("AndT{Quark,NotT(Proton),Type...}")
 reduce AndT{Quark a1, NotT(Proton a2), Type... ts}
-name "AtomType_4"
-rank 1:
-    => VoidT, if a1 == a2
-    => AndT (a1 ++ ts), if a2 != AnyT
+requires a1 == a2:
+    => VoidT
 
-reduce OrT{AnyT, Type... xs}
-name "AtomType_5"
-rank 0:
+@rank(1)
+@name("AndT{Quark,NotT(Proton),Type...}")
+reduce AndT{Quark a1, NotT(Proton a2), Type... ts}
+requires a1 != a2 && a2 != AnyT:
+    => AndT (a1 ++ ts)
+
+@rank(0)
+@name("OrT{AnyT,Type...}")
+reduce OrT{AnyT, Type... xs}:
     => AnyT
 
-reduce OrT{VoidT, Type... xs}
-name "AtomType_5"
-rank 0:
+@rank(0)
+@name("Or{VoidT,Type...}")
+reduce OrT{VoidT, Type... xs}:
     => OrT(xs)
 
 // ====================================================================

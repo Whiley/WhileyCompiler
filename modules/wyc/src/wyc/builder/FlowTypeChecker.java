@@ -215,7 +215,7 @@ public class FlowTypeChecker {
 			// type NonContractive is { NonContractive x }
 			//
 			syntaxError("type is not contractive", filename, td);
-		} else if (td.invariant != null) {
+		} else if (td.invariant.size() > 0) {
 			// Second, an invariant expression is given, so propagate through
 			// that.
 
@@ -223,7 +223,10 @@ public class FlowTypeChecker {
 			Environment environment = new Environment();
 			environment = addDeclaredVariables(td.pattern, environment, td);
 			// Propagate type information through the constraint
-			td.invariant = propagate(td.invariant, environment, td);
+			for(int i=0;i!=td.invariant.size();++i) {
+				Expr invariant = propagate(td.invariant.get(i), environment, td);
+				td.invariant.set(i, invariant);
+			}
 		}
 	}
 
@@ -2946,7 +2949,7 @@ public class FlowTypeChecker {
 		SyntacticType type = td.pattern.toSyntacticType();
 
 		// now, expand the given type fully
-		if (unconstrained && td.invariant != null) {
+		if (unconstrained && td.invariant.size() > 0) {
 			int myIndex = states.size();
 			int kind = Type.leafKind(Type.T_VOID);
 			Object data = null;
