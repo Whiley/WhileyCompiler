@@ -1878,31 +1878,36 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_9");
 	}
 
-	@Ignore("#551") @Test
+	@Test
 	public void Reference_Valid_1() {
 		runTest("Reference_Valid_1");
 	}
 
-	@Ignore("#551") @Test
+	@Test
 	public void Reference_Valid_2() {
 		runTest("Reference_Valid_2");
 	}
 
-	@Ignore("#551") @Test
+	@Test
 	public void Reference_Valid_3() {
 		runTest("Reference_Valid_3");
 	}
 
-	@Ignore("#551") @Test
+	@Test
 	public void Reference_Valid_4() {
 		runTest("Reference_Valid_4");
 	}
 
-	@Ignore("#551") @Test
+	@Test
 	public void Reference_Valid_5() {
 		runTest("Reference_Valid_5");
 	}
 
+	@Test
+	public void Reference_Valid_6() {
+		runTest("Reference_Valid_6");
+	}
+	
 	@Test
 	public void Remainder_Valid_1() {
 		runTest("Remainder_Valid_1");

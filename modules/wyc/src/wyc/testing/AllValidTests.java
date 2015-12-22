@@ -1835,6 +1835,11 @@ public class AllValidTests {
 	}
 
 	@Test
+	public void Reference_Valid_6() throws IOException {
+		runTest("Reference_Valid_6");
+	}
+	
+	@Test
 	public void Remainder_Valid_1() throws IOException {
 		runTest("Remainder_Valid_1");
 	}

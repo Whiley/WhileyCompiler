@@ -741,29 +741,38 @@ public class Wyil2JavaBuilder implements Builder {
 	 * </pre>
 	 * <p>
 	 * In the above update, we have two LVals: an ArrayLVal and a RecordLVal.
-	 * The ArrayLVal is considered the "innermost" and the RecordLVal is
-	 * consider the outermost.  To translate this
-	 * </p>
-	 * <p>
-	 * This function 
+	 * The ArrayLVal is considered the "outermost" and the RecordLVal is
+	 * consider the "innermost". To translate this we pass the "current" value
+	 * for each level onto the next, which returns the "updated" value that we
+	 * then apply.
 	 * </p>
 	 * 
 	 * @param iterator
 	 *            --- Update iterator.
-	 * @param rhsOperand
-	 *            --- Register operand of right-hand side
+	 * @param code
+	 *            --- The enclosing bytecode.
 	 * @param bytecodes
 	 *            --- List of bytecodes to append to.
 	 */
 	private void translateUpdate(Iterator<Codes.LVal> iterator,
 			Codes.Update code, ArrayList<Bytecode> bytecodes) {
-		Codes.LVal lv = iterator.next();
-		if (lv instanceof Codes.ArrayLVal) {
-			translateUpdate((Codes.ArrayLVal) lv,iterator,code,bytecodes);
-		} else if (lv instanceof Codes.RecordLVal) {
-			translateUpdate((Codes.RecordLVal) lv,iterator,code,bytecodes);
+		if(iterator.hasNext()) {
+			// At this point, we have not yet reached the "innermost" position.
+			// Therefore, we keep recursing down the chain of LVals.
+			Codes.LVal lv = iterator.next();
+			if (lv instanceof Codes.ArrayLVal) {
+				translateUpdate((Codes.ArrayLVal) lv,iterator,code,bytecodes);
+			} else if (lv instanceof Codes.RecordLVal) {
+				translateUpdate((Codes.RecordLVal) lv,iterator,code,bytecodes);
+			} else {
+				translateUpdate((Codes.ReferenceLVal) lv,iterator,code,bytecodes);
+			}
 		} else {
-			translateUpdate((Codes.ReferenceLVal) lv,iterator,code,bytecodes);
+			// At this point, we have now reached the "innermost" position. In
+			// this case, we just want to return the rhs element being assigned.
+			JvmType rhsJvmType = convertUnderlyingType(code.rhs());
+			bytecodes.add(new Bytecode.Pop(rhsJvmType));
+			bytecodes.add(new Bytecode.Load(code.result(),rhsJvmType));
 		}
 	}
 
@@ -779,7 +788,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * </pre>
 	 * 
 	 * <p>
-	 * In the first one, we have the array LVal as the "innermost" component of
+	 * In the first one, we have the array LVal as the "outermost" component of
 	 * the assignment. In the second one, it is part of an assignment to a
 	 * larger LVal which contains it (in this case, a record LVal).
 	 * </p>
@@ -791,48 +800,33 @@ public class Wyil2JavaBuilder implements Builder {
 	 */
 	private void translateUpdate(Codes.ArrayLVal lval, Iterator<Codes.LVal> iterator, Codes.Update code,
 			ArrayList<Bytecode> bytecodes) {
-		if (iterator.hasNext()) {
-			// In this case, we're partially updating the element at a
-			// given position.
-			bytecodes.add(new Bytecode.Dup(WHILEYARRAY));
-			bytecodes.add(new Bytecode.Load(lval.indexOperand, WHILEYINT));
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYARRAY, WHILEYINT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "internal_get", ftype, Bytecode.InvokeMode.STATIC));
-			addReadConversion(lval.rawType().element(), bytecodes);
-			translateUpdate(iterator, code, bytecodes);
-			bytecodes.add(new Bytecode.Load(lval.indexOperand, WHILEYINT));
-			bytecodes.add(new Bytecode.Swap());
-		} else {
-			bytecodes.add(new Bytecode.Load(lval.indexOperand, WHILEYINT));
-			bytecodes.add(new Bytecode.Load(code.result(), convertUnderlyingType(lval.rawType().element())));
-			addWriteConversion(code.rhs(), bytecodes);
-		}
-
-		JvmType.Function ftype = new JvmType.Function(WHILEYARRAY, WHILEYARRAY, WHILEYINT, JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "set", ftype, Bytecode.InvokeMode.STATIC));
+		bytecodes.add(new Bytecode.Dup(WHILEYARRAY));
+		bytecodes.add(new Bytecode.Load(lval.indexOperand, WHILEYINT));
+		JvmType.Function getFunType = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYARRAY, WHILEYINT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "internal_get", getFunType, Bytecode.InvokeMode.STATIC));
+		addReadConversion(lval.rawType().element(), bytecodes);
+		translateUpdate(iterator, code, bytecodes);
+		bytecodes.add(new Bytecode.Load(lval.indexOperand, WHILEYINT));
+		bytecodes.add(new Bytecode.Swap());
+		JvmType.Function setFunType = new JvmType.Function(WHILEYARRAY, WHILEYARRAY, WHILEYINT, JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "set", setFunType, Bytecode.InvokeMode.STATIC));
 	}
 	
 	private void translateUpdate(Codes.RecordLVal lval, Iterator<Codes.LVal> iterator, Codes.Update code,
 			ArrayList<Bytecode> bytecodes) {
 		Type.EffectiveRecord type = lval.rawType();
 
-		if (iterator.hasNext()) {
-			bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
-			bytecodes.add(new Bytecode.LoadConst(lval.field));
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYRECORD, JAVA_LANG_STRING);
-			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "internal_get", ftype, Bytecode.InvokeMode.STATIC));
-			addReadConversion(type.field(lval.field), bytecodes);
-			translateUpdate(iterator, code, bytecodes);
-			bytecodes.add(new Bytecode.LoadConst(lval.field));
-			bytecodes.add(new Bytecode.Swap());
-		} else {
-			bytecodes.add(new Bytecode.LoadConst(lval.field));
-			bytecodes.add(new Bytecode.Load(code.result(), convertUnderlyingType(type.field(lval.field))));
-			addWriteConversion(type.field(lval.field), bytecodes);
-		}
+		bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
+		bytecodes.add(new Bytecode.LoadConst(lval.field));
+		JvmType.Function getFunType = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYRECORD, JAVA_LANG_STRING);
+		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "internal_get", getFunType, Bytecode.InvokeMode.STATIC));
+		addReadConversion(type.field(lval.field), bytecodes);
+		translateUpdate(iterator, code, bytecodes);
+		bytecodes.add(new Bytecode.LoadConst(lval.field));
+		bytecodes.add(new Bytecode.Swap());		
 
-		JvmType.Function ftype = new JvmType.Function(WHILEYRECORD, WHILEYRECORD, JAVA_LANG_STRING, JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "put", ftype, Bytecode.InvokeMode.STATIC));
+		JvmType.Function putFunType = new JvmType.Function(WHILEYRECORD, WHILEYRECORD, JAVA_LANG_STRING, JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "put", putFunType, Bytecode.InvokeMode.STATIC));
 	}
 
 	private void translateUpdate(Codes.ReferenceLVal lval, Iterator<Codes.LVal> iterator, Codes.Update code,
