@@ -78,7 +78,7 @@ import wyjc.util.WyjcBuildTask;
 
  	private static final String WYBS_CLASS_DIR="../../modules/wybs/src/";
 
- 	private static final String WYRL_CLASS_DIR="../../lib/wyrl-v0.4.0.jar";
+ 	private static final String WYRL_CLASS_DIR="../../lib/wyrl-v0.4.3.jar";
 
 
  	static {
@@ -1878,27 +1878,27 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_9");
 	}
 
-	@Ignore("???") @Test
+	@Ignore("#551") @Test
 	public void Reference_Valid_1() {
 		runTest("Reference_Valid_1");
 	}
 
-	@Ignore("???") @Test
+	@Ignore("#551") @Test
 	public void Reference_Valid_2() {
 		runTest("Reference_Valid_2");
 	}
 
-	@Ignore("???") @Test
+	@Ignore("#551") @Test
 	public void Reference_Valid_3() {
 		runTest("Reference_Valid_3");
 	}
 
-	@Ignore("#428") @Test
+	@Ignore("#551") @Test
 	public void Reference_Valid_4() {
 		runTest("Reference_Valid_4");
 	}
 
-	@Ignore("#428") @Test
+	@Ignore("#551") @Test
 	public void Reference_Valid_5() {
 		runTest("Reference_Valid_5");
 	}

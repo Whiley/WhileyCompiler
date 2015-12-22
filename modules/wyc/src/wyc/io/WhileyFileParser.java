@@ -2379,7 +2379,7 @@ public class WhileyFileParser {
 		}
 		case StringValue: {
 			List<Constant> str = parseString(token.text);
-			return new Expr.Constant(wyil.lang.Constant.V_LIST(str),
+			return new Expr.Constant(wyil.lang.Constant.V_ARRAY(str),
 					sourceAttr(start, index++));
 		}
 		case Minus:

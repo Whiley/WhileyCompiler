@@ -35,11 +35,11 @@ import java.util.HashMap;
 import wyjc.runtime.Util;
 import wyjc.runtime.WyByte;
 import wyjc.runtime.WyObject;
-import wyjc.runtime.WyList;
+import wyjc.runtime.WyArray;
 import wyjc.runtime.WyRecord;
 
 public class File$native {
-	public static WyObject NativeFileReader(WyList _filename) {
+	public static WyObject NativeFileReader(WyArray _filename) {
 		try {
 			String filename = Util.il2str(_filename);
 			return new WyObject(new FileInputStream(filename));
@@ -49,7 +49,7 @@ public class File$native {
 		return null;
 	}
 
-	public static WyObject NativeFileWriter(WyList _filename) {
+	public static WyObject NativeFileWriter(WyArray _filename) {
 		try {
 			String filename = Util.il2str(_filename);
 			return new WyObject(new FileOutputStream(filename));
@@ -99,10 +99,10 @@ public class File$native {
 		return BigInteger.ZERO;
 	}
 
-	public static WyList read(WyObject p, BigInteger max) {
+	public static WyArray read(WyObject p, BigInteger max) {
 		FileInputStream fin = (FileInputStream) p.state();
 
-		WyList r = new WyList();
+		WyArray r = new WyArray();
 		byte[] bytes = new byte[max.intValue()];
 		try {
 			int nbytes = fin.read(bytes);
@@ -117,10 +117,10 @@ public class File$native {
 	}
 
 	private static final int CHUNK_SIZE = 1024;
-	public static WyList read(WyObject p) {
+	public static WyArray read(WyObject p) {
 		FileInputStream fin = (FileInputStream) p.state();
 
-		WyList r = new WyList();
+		WyArray r = new WyArray();
 		try {
 			int nbytes = 0;
 			do {
@@ -137,7 +137,7 @@ public class File$native {
 		return r;
 	}
 
-	public static void write(WyObject p, WyList bytes) {
+	public static void write(WyObject p, WyArray bytes) {
 		FileOutputStream fout = (FileOutputStream) p.state();
 
 		try {

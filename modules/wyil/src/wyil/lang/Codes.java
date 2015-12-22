@@ -225,9 +225,9 @@ public abstract class Codes {
 	 * @param type
 	 * @return
 	 */
-	public static ListGenerator ListGenerator(Type.Array type, int target,
+	public static ArrayGenerator ArrayGenerator(Type.Array type, int target,
 			int element, int count) {
-		return new ListGenerator(type, target, element, count);
+		return new ArrayGenerator(type, target, element, count);
 	}
 	
 	/**
@@ -252,19 +252,26 @@ public abstract class Codes {
 	}
 
 	/**
-	 * Construct a <code>newlist</code> bytecode which constructs a new list and
+	 * Construct a <code>NewArray</code> bytecode which constructs a new array and
 	 * puts it on the stack.
 	 *
 	 * @param type
 	 * @return
 	 */
-	public static NewList NewList(Type.Array type, int target,
+	public static NewArray NewArray(Type.Array type, int target,
 			Collection<Integer> operands) {
-		return new NewList(type, target, CodeUtils.toIntArray(operands));
+		return new NewArray(type, target, CodeUtils.toIntArray(operands));
 	}
 
-	public static NewList NewList(Type.Array type, int target, int[] operands) {
-		return new NewList(type, target, operands);
+	/**
+	 * Construct a <code>NewArray</code> bytecode which constructs a new array and
+	 * puts it on the stack.
+	 *
+	 * @param type
+	 * @return
+	 */
+	public static NewArray NewArray(Type.Array type, int target, int[] operands) {
+		return new NewArray(type, target, operands);
 	}
 
 	/**
@@ -1284,8 +1291,8 @@ public abstract class Codes {
 	 * type test. For example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int|[int] x) -> int:
-	 *     if x is [int]:
+	 * function f(int|int[] x) -> int:
+	 *     if x is int[]:
 	 *         return |x|
 	 *     else:
 	 *         return x
@@ -1294,18 +1301,18 @@ public abstract class Codes {
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int|[int] x) -> int:
+	 * function f(int|int[] x) -> int:
 	 * body:
-	 *     ifis %0, [int] goto lab    : int|[int]
+	 *     ifis %0, int[] goto lab    : int|int[]
 	 *     return %0                  : int
 	 * .lab
-	 *     lengthof %0 = %0           : [int]
+	 *     lengthof %0 = %0           : int[]
 	 *     return %0                  : int
 	 * </pre>
 	 *
 	 * Here, we see that, on the false branch, register <code>%0</code> is
 	 * automatically given type <code>int</code>, whilst on the true branch it
-	 * is automatically given type <code>[int]</code>.
+	 * is automatically given type <code>int[]</code>.
 	 *
 	 * <p>
 	 * <b>Note:</b> in WyIL bytecode, <i>such branches may only go forward</i>.
@@ -1756,36 +1763,36 @@ public abstract class Codes {
 	}
 	
 	/**
-	 * Constructs a new list value from the values given by zero or more operand
+	 * Constructs a new array value from the values given by zero or more operand
 	 * registers. The new list is then written into the target register. For
 	 * example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int x, int y, int z) -> [int]:
+	 * function f(int x, int y, int z) -> int[]:
 	 *     return [x,y,z]
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int x, int y, int z) -> [int]:
+	 * function f(int x, int y, int z) -> int[]:
 	 * body:
 	 *    assign %4 = %0             : int
 	 *    assign %5 = %1             : int
 	 *    assign %6 = %2             : int
-	 *    newlist %3 = (%4, %5, %6)  : [int]
-	 *    return %3                  : [int]
+	 *    newlist %3 = (%4, %5, %6)  : int[]
+	 *    return %3                  : int[]
 	 * </pre>
 	 *
-	 * Writes the list value given by <code>[x,y,z]</code> into register
+	 * Writes the array value given by <code>[x,y,z]</code> into register
 	 * <code>%3</code> and returns it.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class ListGenerator extends AbstractBinaryAssignable<Type.Array> {
+	public static final class ArrayGenerator extends AbstractBinaryAssignable<Type.Array> {
 
-		private ListGenerator(Type.Array type, int target, int element, int count) {
+		private ArrayGenerator(Type.Array type, int target, int element, int count) {
 			super(type, target, element, count);
 		}
 
@@ -1794,11 +1801,11 @@ public abstract class Codes {
 		}
 
 		protected Code.Unit clone(int nTarget, int[] nOperands) {
-			return ListGenerator(type(), nTarget, nOperands[0],nOperands[1]);
+			return ArrayGenerator(type(), nTarget, nOperands[0],nOperands[1]);
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof ListGenerator) {
+			if (o instanceof ArrayGenerator) {
 				return super.equals(operands());
 			}
 			return false;
@@ -1815,16 +1822,16 @@ public abstract class Codes {
 	 * example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f([int] ls) -> int:
+	 * function f(int[] ls) -> int:
 	 *     return |ls|
 	 * </pre>
 	 *
 	 * translates to the following WyIL code:
 	 *
 	 * <pre>
-	 * function f([int] ls) -> int:
+	 * function f(int[] ls) -> int:
 	 * body:
-	 *     lengthof %0 = %0   : [int]
+	 *     lengthof %0 = %0   : int[]
 	 *     return %0          : int
 	 * </pre>
 	 *
@@ -2176,7 +2183,7 @@ public abstract class Codes {
 	
 	/**
 	 * Represents a type which may appear on the left of an assignment
-	 * expression. Lists, Dictionaries, Strings, Records and References are the
+	 * expression. Arrays, Records and References are the
 	 * only valid types for an lval.
 	 *
 	 * @author David J. Pearce
@@ -2195,15 +2202,15 @@ public abstract class Codes {
 	}
 
 	/**
-	 * An LVal with list type.
+	 * An LVal with array type.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class ListLVal extends LVal<Type.EffectiveArray> {
+	public static final class ArrayLVal extends LVal<Type.EffectiveArray> {
 		public final int indexOperand;
 
-		public ListLVal(Type.EffectiveArray t, int indexOperand) {
+		public ArrayLVal(Type.EffectiveArray t, int indexOperand) {
 			super(t);
 			this.indexOperand = indexOperand;
 		}
@@ -2265,7 +2272,7 @@ public abstract class Codes {
 			} else if (iter instanceof Type.EffectiveArray) {
 				Type.EffectiveArray list = (Type.EffectiveArray) iter;
 				iter = list.element();
-				return new ListLVal(list, operands[operandIndex++]);
+				return new ArrayLVal(list, operands[operandIndex++]);
 			} else if (iter instanceof Type.EffectiveRecord) {
 				Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;
 				String field = fields.get(fieldIndex++);
@@ -2448,8 +2455,8 @@ public abstract class Codes {
 		public String toString() {
 			String r = "%" + target();
 			for (LVal lv : this) {
-				if (lv instanceof ListLVal) {
-					ListLVal l = (ListLVal) lv;
+				if (lv instanceof ArrayLVal) {
+					ArrayLVal l = (ArrayLVal) lv;
 					r = r + "[%" + l.indexOperand + "]";
 				} else if (lv instanceof RecordLVal) {
 					RecordLVal l = (RecordLVal) lv;
@@ -2574,36 +2581,36 @@ public abstract class Codes {
 	}
 
 	/**
-	 * Constructs a new list value from the values given by zero or more operand
+	 * Constructs a new array value from the values given by zero or more operand
 	 * registers. The new list is then written into the target register. For
 	 * example, the following Whiley code:
 	 *
 	 * <pre>
-	 * function f(int x, int y, int z) -> [int]:
+	 * function f(int x, int y, int z) -> int[]:
 	 *     return [x,y,z]
 	 * </pre>
 	 *
 	 * can be translated into the following WyIL code:
 	 *
 	 * <pre>
-	 * function f(int x, int y, int z) -> [int]:
+	 * function f(int x, int y, int z) -> int[]:
 	 * body:
 	 *    assign %4 = %0             : int
 	 *    assign %5 = %1             : int
 	 *    assign %6 = %2             : int
-	 *    newlist %3 = (%4, %5, %6)  : [int]
-	 *    return %3                  : [int]
+	 *    newlist %3 = (%4, %5, %6)  : int[]
+	 *    return %3                  : int[]
 	 * </pre>
 	 *
-	 * Writes the list value given by <code>[x,y,z]</code> into register
+	 * Writes the array value given by <code>[x,y,z]</code> into register
 	 * <code>%3</code> and returns it.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class NewList extends AbstractNaryAssignable<Type.Array> {
+	public static final class NewArray extends AbstractNaryAssignable<Type.Array> {
 
-		private NewList(Type.Array type, int target, int[] operands) {
+		private NewArray(Type.Array type, int target, int[] operands) {
 			super(type, target, operands);
 		}
 
@@ -2612,11 +2619,11 @@ public abstract class Codes {
 		}
 
 		protected Code.Unit clone(int nTarget, int[] nOperands) {
-			return NewList(type(), nTarget, nOperands);
+			return NewArray(type(), nTarget, nOperands);
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof NewList) {
+			if (o instanceof NewArray) {
 				return super.equals(operands());
 			}
 			return false;

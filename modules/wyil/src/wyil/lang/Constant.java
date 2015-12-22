@@ -59,8 +59,8 @@ public abstract class Constant implements Comparable<Constant> {
 		return get(new Integer(value));
 	}
 
-	public static List V_LIST(Collection<Constant> values) {
-		return get(new List(values));
+	public static Array V_ARRAY(Collection<Constant> values) {
+		return get(new Array(values));
 	}
 
 	public static Record V_RECORD(java.util.Map<String,Constant> values) {
@@ -366,9 +366,9 @@ public abstract class Constant implements Comparable<Constant> {
 		}
 	}
 	
-	public static final class List extends Constant {
+	public static final class Array extends Constant {
 		public final ArrayList<Constant> values;
-		private List(Collection<Constant> value) {
+		private Array(Collection<Constant> value) {
 			this.values = new ArrayList<Constant>(value);
 		}
 		public wyil.lang.Type.Array type() {
@@ -382,15 +382,15 @@ public abstract class Constant implements Comparable<Constant> {
 			return values.hashCode();
 		}
 		public boolean equals(Object o) {
-			if(o instanceof List) {
-				List i = (List) o;
+			if(o instanceof Array) {
+				Array i = (Array) o;
 				return values.equals(i.values);
 			}
 			return false;
 		}
 		public int compareTo(Constant v) {
-			if(v instanceof List) {
-				List l = (List) v;
+			if(v instanceof Array) {
+				Array l = (Array) v;
 				if(values.size() < l.values.size()) {
 					return -1;
 				} else if(values.size() > l.values.size()) {
@@ -475,7 +475,7 @@ public abstract class Constant implements Comparable<Constant> {
 			} else if (v instanceof Null || v instanceof Bool
 					|| v instanceof Decimal || v instanceof Rational
 					|| v instanceof Byte || v instanceof Integer
-					|| v instanceof Set || v instanceof List
+					|| v instanceof Set || v instanceof Array
 					|| v instanceof Tuple) {
 				return 1;
 			}
@@ -645,7 +645,7 @@ public abstract class Constant implements Comparable<Constant> {
 			} else if (v instanceof Null || v instanceof Bool
 					|| v instanceof Decimal || v instanceof Rational
 					|| v instanceof Byte || v instanceof Integer
-					|| v instanceof Set || v instanceof List) {
+					|| v instanceof Set || v instanceof Array) {
 				return 1;
 			}
 			return -1;
