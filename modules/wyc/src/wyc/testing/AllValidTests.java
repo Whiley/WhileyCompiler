@@ -841,6 +841,11 @@ public class AllValidTests {
 	}
 
 	@Test
+	public void FunctionRef_Valid_10() throws IOException {
+		runTest("FunctionRef_Valid_10");
+	}
+
+	@Test
 	public void Function_Valid_1() throws IOException {
 		runTest("Function_Valid_1");
 	}
