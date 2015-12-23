@@ -1832,7 +1832,7 @@ public class AllValidVerificationTests {
 		runTest("Reference_Valid_5");
 	}
 
-	@Test
+	@Ignore("#553") @Test
 	public void Reference_Valid_6() {
 		runTest("Reference_Valid_6");
 	}

@@ -756,24 +756,16 @@ public class Wyil2JavaBuilder implements Builder {
 	 */
 	private void translateUpdate(Iterator<Codes.LVal> iterator,
 			Codes.Update code, ArrayList<Bytecode> bytecodes) {
-		if(iterator.hasNext()) {
-			// At this point, we have not yet reached the "innermost" position.
-			// Therefore, we keep recursing down the chain of LVals.
-			Codes.LVal lv = iterator.next();
-			if (lv instanceof Codes.ArrayLVal) {
-				translateUpdate((Codes.ArrayLVal) lv,iterator,code,bytecodes);
-			} else if (lv instanceof Codes.RecordLVal) {
-				translateUpdate((Codes.RecordLVal) lv,iterator,code,bytecodes);
-			} else {
-				translateUpdate((Codes.ReferenceLVal) lv,iterator,code,bytecodes);
-			}
+		// At this point, we have not yet reached the "innermost" position.
+		// Therefore, we keep recursing down the chain of LVals.
+		Codes.LVal lv = iterator.next();
+		if (lv instanceof Codes.ArrayLVal) {
+			translateUpdate((Codes.ArrayLVal) lv,iterator,code,bytecodes);
+		} else if (lv instanceof Codes.RecordLVal) {
+			translateUpdate((Codes.RecordLVal) lv,iterator,code,bytecodes);
 		} else {
-			// At this point, we have now reached the "innermost" position. In
-			// this case, we just want to return the rhs element being assigned.
-			JvmType rhsJvmType = convertUnderlyingType(code.rhs());
-			bytecodes.add(new Bytecode.Pop(rhsJvmType));
-			bytecodes.add(new Bytecode.Load(code.result(),rhsJvmType));
-		}
+			translateUpdate((Codes.ReferenceLVal) lv,iterator,code,bytecodes);
+		}		
 	}
 
 	/**
@@ -800,14 +792,27 @@ public class Wyil2JavaBuilder implements Builder {
 	 */
 	private void translateUpdate(Codes.ArrayLVal lval, Iterator<Codes.LVal> iterator, Codes.Update code,
 			ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Dup(WHILEYARRAY));
-		bytecodes.add(new Bytecode.Load(lval.indexOperand, WHILEYINT));
-		JvmType.Function getFunType = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYARRAY, WHILEYINT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "internal_get", getFunType, Bytecode.InvokeMode.STATIC));
-		addReadConversion(lval.rawType().element(), bytecodes);
-		translateUpdate(iterator, code, bytecodes);
-		bytecodes.add(new Bytecode.Load(lval.indexOperand, WHILEYINT));
-		bytecodes.add(new Bytecode.Swap());
+		
+		if(iterator.hasNext()) {
+			// This is not the innermost case, hence we read out the current
+			// value of the location being assigned and pass that forward to the
+			// next stage.
+			bytecodes.add(new Bytecode.Dup(WHILEYARRAY));
+			bytecodes.add(new Bytecode.Load(lval.indexOperand, WHILEYINT));
+			JvmType.Function getFunType = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYARRAY, WHILEYINT);
+			bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "internal_get", getFunType, Bytecode.InvokeMode.STATIC));
+			addReadConversion(lval.rawType().element(), bytecodes);
+			translateUpdate(iterator, code, bytecodes);
+			bytecodes.add(new Bytecode.Load(lval.indexOperand, WHILEYINT));
+			bytecodes.add(new Bytecode.Swap());
+		} else {
+			// This is the innermost case, hence we can avoid the unnecessary
+			// read of the current value and, instead, just return the rhs value
+			// directly.
+			bytecodes.add(new Bytecode.Load(lval.indexOperand, WHILEYINT));
+			bytecodes.add(new Bytecode.Load(code.result(), convertUnderlyingType(lval.rawType().element())));
+			addWriteConversion(code.rhs(), bytecodes);
+		}
 		JvmType.Function setFunType = new JvmType.Function(WHILEYARRAY, WHILEYARRAY, WHILEYINT, JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "set", setFunType, Bytecode.InvokeMode.STATIC));
 	}
@@ -816,28 +821,50 @@ public class Wyil2JavaBuilder implements Builder {
 			ArrayList<Bytecode> bytecodes) {
 		Type.EffectiveRecord type = lval.rawType();
 
-		bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
-		bytecodes.add(new Bytecode.LoadConst(lval.field));
-		JvmType.Function getFunType = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYRECORD, JAVA_LANG_STRING);
-		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "internal_get", getFunType, Bytecode.InvokeMode.STATIC));
-		addReadConversion(type.field(lval.field), bytecodes);
-		translateUpdate(iterator, code, bytecodes);
-		bytecodes.add(new Bytecode.LoadConst(lval.field));
-		bytecodes.add(new Bytecode.Swap());		
-
+		if(iterator.hasNext()) {
+			// This is not the innermost case, hence we read out the current
+			// value of the location being assigned and pass that forward to the
+			// next stage.
+			bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
+			bytecodes.add(new Bytecode.LoadConst(lval.field));
+			JvmType.Function getFunType = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYRECORD, JAVA_LANG_STRING);
+			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "internal_get", getFunType, Bytecode.InvokeMode.STATIC));
+			addReadConversion(type.field(lval.field), bytecodes);
+			translateUpdate(iterator, code, bytecodes);
+			bytecodes.add(new Bytecode.LoadConst(lval.field));
+			bytecodes.add(new Bytecode.Swap());		
+		} else {
+			// This is the innermost case, hence we can avoid the unnecessary
+			// read of the current value and, instead, just return the rhs value
+			// directly.
+			bytecodes.add(new Bytecode.LoadConst(lval.field));
+			bytecodes.add(new Bytecode.Load(code.result(), convertUnderlyingType(type.field(lval.field))));
+			addWriteConversion(type.field(lval.field), bytecodes);
+		}
 		JvmType.Function putFunType = new JvmType.Function(WHILEYRECORD, WHILEYRECORD, JAVA_LANG_STRING, JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "put", putFunType, Bytecode.InvokeMode.STATIC));
 	}
 
 	private void translateUpdate(Codes.ReferenceLVal lval, Iterator<Codes.LVal> iterator, Codes.Update code,
 			ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Dup(WHILEYOBJECT));
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "state", ftype, Bytecode.InvokeMode.VIRTUAL));
-		addReadConversion(lval.rawType().element(), bytecodes);
-		translateUpdate(iterator, code, bytecodes);
-		ftype = new JvmType.Function(WHILEYOBJECT, JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "setState", ftype, Bytecode.InvokeMode.VIRTUAL));
+		if(iterator.hasNext()) {
+			// This is not the innermost case, hence we read out the current
+			// value of the location being assigned and pass that forward to the
+			// next stage.
+			bytecodes.add(new Bytecode.Dup(WHILEYOBJECT));
+			JvmType.Function getFunType = new JvmType.Function(JAVA_LANG_OBJECT);
+			bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "state", getFunType, Bytecode.InvokeMode.VIRTUAL));
+			addReadConversion(lval.rawType().element(), bytecodes);
+			translateUpdate(iterator, code, bytecodes);
+		} else {
+			// This is the innermost case, hence we can avoid the unnecessary
+			// read of the current value and, instead, just return the rhs value
+			// directly.
+			JvmType rhsJvmType = convertUnderlyingType(code.rhs());
+			bytecodes.add(new Bytecode.Load(code.result(),rhsJvmType));
+		}
+		JvmType.Function setFunType = new JvmType.Function(WHILEYOBJECT, JAVA_LANG_OBJECT);
+		bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "setState", setFunType, Bytecode.InvokeMode.VIRTUAL));
 	}
 
 	private void translate(CodeBlock.Index index, Codes.Return c, int freeSlot,
