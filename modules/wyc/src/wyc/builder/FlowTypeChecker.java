@@ -3185,7 +3185,7 @@ public class FlowTypeChecker {
 				for (Expr arg : nop.arguments) {
 					values.add(resolveAsConstant(arg, context, visited));
 				}
-				return Constant.V_LIST(values);
+				return Constant.V_ARRAY(values);
 			} else if (expr instanceof Expr.ArrayGenerator) {
 				Expr.ArrayGenerator lg = (Expr.ArrayGenerator) expr;				
 				Constant element = resolveAsConstant(lg.element, context, visited);
@@ -3397,7 +3397,7 @@ public class FlowTypeChecker {
 			return evaluate(bop, (Constant.Decimal) v1, (Constant.Decimal) v2,
 					context);
 		} else if (Type.isSubtype(Type.T_ARRAY_ANY, lub)) {
-			return evaluate(bop, (Constant.List) v1, (Constant.List) v2,
+			return evaluate(bop, (Constant.Array) v1, (Constant.Array) v2,
 					context);
 		} 
 		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION), context, bop);
@@ -3452,7 +3452,7 @@ public class FlowTypeChecker {
 		return null;
 	}
 
-	private Constant.List evaluate(Expr.ArrayGenerator bop, Constant element,
+	private Constant.Array evaluate(Expr.ArrayGenerator bop, Constant element,
 			Constant count, Context context) {
 		if(count instanceof Constant.Integer) {
 			Constant.Integer c = (Constant.Integer)count;
@@ -3460,7 +3460,7 @@ public class FlowTypeChecker {
 			for(int i=0;i!=c.value.intValue();++i) {
 				items.add(element);
 			}
-			return Constant.V_LIST(items);
+			return Constant.V_ARRAY(items);
 		}
 		syntaxError(errorMessage(INVALID_ARRAY_EXPRESSION), context, bop);
 		return null;

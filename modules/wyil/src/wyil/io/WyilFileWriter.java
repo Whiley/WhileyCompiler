@@ -256,8 +256,8 @@ public final class WyilFileWriter {
 				output.write_uv(bytes.length);
 				output.write(bytes);
 				output.write_uv(exponent);
-			} else if(val instanceof Constant.List) {
-				Constant.List s = (Constant.List) val;
+			} else if(val instanceof Constant.Array) {
+				Constant.Array s = (Constant.Array) val;
 				output.write_uv(CONSTANT_List);
 				output.write_uv(s.values.size());
 				for(Constant v : s.values) {
@@ -1118,8 +1118,8 @@ public final class WyilFileWriter {
 	}
 
 	private void addConstantSubitems(Constant v) {
-		if(v instanceof Constant.List) {
-			Constant.List l = (Constant.List) v;
+		if(v instanceof Constant.Array) {
+			Constant.Array l = (Constant.Array) v;
 			for (Constant e : l.values) {
 				addConstantItem(e);
 			}

@@ -225,8 +225,8 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(Codes.Assign)code,environment);
 		} else if(code instanceof Codes.Update) {
 			infer(index, (Codes.Update)code,environment);
-		} else if(code instanceof Codes.NewList) {
-			infer(index,(Codes.NewList)code,environment);
+		} else if(code instanceof Codes.NewArray) {
+			infer(index,(Codes.NewArray)code,environment);
 		} else if(code instanceof Codes.NewRecord) {
 			infer(index,(Codes.NewRecord)code,environment);
 		} else if(code instanceof Codes.NewTuple) {
@@ -383,7 +383,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 
 	public void infer(CodeBlock.Index index, Codes.LengthOf code, Env environment) {
 		Constant val = environment.get(code.operand(0));
-		Constant.List list = (Constant.List) val;
+		Constant.Array list = (Constant.Array) val;
 		Constant result = Constant.V_INTEGER(BigInteger.valueOf(list.values.size()));
 		assign(code.target(), result, environment, index);
 	}
@@ -393,9 +393,9 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Constant src = environment.get(code.operand(0));
 		Constant idx = environment.get(code.operand(1));
 		Constant result = null;
-		if (idx instanceof Constant.Decimal && src instanceof Constant.List) {
+		if (idx instanceof Constant.Decimal && src instanceof Constant.Array) {
 			Constant.Decimal num = (Constant.Decimal) idx;
-			Constant.List list = (Constant.List) src;
+			Constant.Array list = (Constant.Array) src;
 			if (num.value.scale() <= 0) {
 				int i = num.value.intValue();
 				if (BigRational.valueOf(i).equals(num.value) && i >= 0
@@ -444,7 +444,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		assign(code.target(), result, environment, index);
 	}
 
-	public void infer(CodeBlock.Index index, Codes.NewList code,
+	public void infer(CodeBlock.Index index, Codes.NewArray code,
 			Env environment) {
 		ArrayList<Constant> values = new ArrayList<Constant>();
 
@@ -461,7 +461,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 
 		Constant result = null;
 		if (isValue) {
-			result = Constant.V_LIST(values);
+			result = Constant.V_ARRAY(values);
 		}
 		assign(code.target(),result,environment,index);
 	}

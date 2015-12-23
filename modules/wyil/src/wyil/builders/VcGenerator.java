@@ -612,7 +612,7 @@ public class VcGenerator {
 			case Code.OPCODE_indexof:
 				return indexOutOfBoundsChecks((Codes.IndexOf) code, branch);
 			case Code.OPCODE_listgen:
-				return listGeneratorChecks((Codes.ListGenerator) code, branch);
+				return arrayGeneratorChecks((Codes.ArrayGenerator) code, branch);
 			case Code.OPCODE_update:
 				return updateChecks((Codes.Update) code, branch);
 			case Code.OPCODE_invokefn:
@@ -688,12 +688,12 @@ public class VcGenerator {
 	 * size.
 	 * 
 	 * @param code
-	 *            --- The list generator bytecode
+	 *            --- The array generator bytecode
 	 * @param branch
 	 *            --- The branch the bytecode is on.
 	 * @return
 	 */
-	public Pair<String,Expr>[] listGeneratorChecks(Codes.ListGenerator code, VcBranch branch) {				
+	public Pair<String,Expr>[] arrayGeneratorChecks(Codes.ArrayGenerator code, VcBranch branch) {
 		Expr idx = branch.read(code.operand(1));
 		Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
 				idx.attributes());
@@ -782,8 +782,8 @@ public class VcGenerator {
 		Expr src = branch.read(code.target());
 
 		for (Codes.LVal lval : code) {
-			if (lval instanceof Codes.ListLVal) {
-				Codes.ListLVal lv = (Codes.ListLVal) lval;
+			if (lval instanceof Codes.ArrayLVal) {
+				Codes.ArrayLVal lv = (Codes.ArrayLVal) lval;
 				Expr idx = branch.read(lv.indexOperand);
 				Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
 						idx.attributes());
@@ -1564,10 +1564,10 @@ public class VcGenerator {
 				Codes.BinaryOperator bc = (Codes.BinaryOperator) code;
 				transformBinary(binaryOperatorMap[bc.kind.ordinal()], bc,
 						branch, block);
-			} else if (code instanceof Codes.ListGenerator) {
-				transform((Codes.ListGenerator) code, block, branch);
-			} else if (code instanceof Codes.NewList) {
-				transformNary(Expr.Nary.Op.ARRAY, (Codes.NewList) code, branch,
+			} else if (code instanceof Codes.ArrayGenerator) {
+				transform((Codes.ArrayGenerator) code, block, branch);
+			} else if (code instanceof Codes.NewArray) {
+				transformNary(Expr.Nary.Op.ARRAY, (Codes.NewArray) code, branch,
 						block);
 			} else if (code instanceof Codes.NewRecord) {
 				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewRecord) code,
@@ -1755,7 +1755,7 @@ public class VcGenerator {
 				toWycsAttributes(block.attributes(branch.pc()))));
 	}
 
-	protected void transform(Codes.ListGenerator code, AttributedCodeBlock block, VcBranch branch) {
+	protected void transform(Codes.ArrayGenerator code, AttributedCodeBlock block, VcBranch branch) {
 		Collection<wyil.lang.Attribute> wyilAttributes = block.attributes(branch.pc());
 		Collection<Attribute> attributes = toWycsAttributes(wyilAttributes); 
 		Expr element = branch.read(code.operand(0));
@@ -1846,8 +1846,8 @@ public class VcGenerator {
 						updateHelper(iter, oldS, newS, result, branch, block);
 					}
 				}
-			} else if (lv instanceof Codes.ListLVal) {
-				Codes.ListLVal rlv = (Codes.ListLVal) lv;
+			} else if (lv instanceof Codes.ArrayLVal) {
+				Codes.ArrayLVal rlv = (Codes.ArrayLVal) lv;
 				Expr index = branch.read(rlv.indexOperand);
 				Expr oldS = new Expr.IndexOf(oldSource, index, attributes);
 				Expr newS = new Expr.IndexOf(newSource, index, attributes);
@@ -2535,8 +2535,8 @@ public class VcGenerator {
 		} else if (c instanceof Constant.Decimal) {
 			Constant.Decimal cb = (Constant.Decimal) c;
 			return wycs.core.Value.Decimal(cb.value);
-		} else if (c instanceof Constant.List) {
-			Constant.List cb = (Constant.List) c;
+		} else if (c instanceof Constant.Array) {
+			Constant.Array cb = (Constant.Array) c;
 			List<Constant> cb_values = cb.values;
 			ArrayList<Value> items = new ArrayList<Value>();
 			for (int i = 0; i != cb_values.size(); ++i) {

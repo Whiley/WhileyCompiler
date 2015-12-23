@@ -42,8 +42,8 @@ public class Util {
 	 * @param args
 	 * @return
 	 */
-	public static WyList fromStringList(String[] args) {
-		WyList r = new WyList(args.length);
+	public static WyArray fromStringList(String[] args) {
+		WyArray r = new WyArray(args.length);
 		for(int i=0;i!=args.length;++i) {
 			r.add(str2il(args[i]));
 		}
@@ -55,15 +55,15 @@ public class Util {
 	 * @param str
 	 * @return
 	 */
-	public static WyList str2il(String str) {
-		WyList r = new WyList(str.length());
+	public static WyArray str2il(String str) {
+		WyArray r = new WyArray(str.length());
 		for(int i=0;i!=str.length();++i) {
 			r.add(BigInteger.valueOf(str.charAt(i)));
 		}
 		return r;
 	}
 
-	public static String il2str(WyList argument) {
+	public static String il2str(WyArray argument) {
 		String r = "";
 		for(int i=0;i!=argument.size();++i) {
 			BigInteger c = (BigInteger) argument.get(i);
@@ -116,8 +116,8 @@ public class Util {
 			}				
 			case K_LIST:
 			{
-				if(obj instanceof WyList) {
-					WyList ol = (WyList) obj;
+				if(obj instanceof WyArray) {
+					WyArray ol = (WyArray) obj;
 					WyType.List tl = (WyType.List) t;
 					if(tl.nonEmpty && ol.isEmpty()) {
 						return false;
@@ -216,7 +216,7 @@ public class Util {
 	 *            --- type to test against.
 	 * @return
 	 */
-	public static boolean instanceOf(WyList object, WyType type) {
+	public static boolean instanceOf(WyArray object, WyType type) {
 		if(type instanceof WyType.List) {
 			WyType.List tl = (WyType.List) type;
 			WyType el = tl.element;
@@ -329,8 +329,8 @@ public class Util {
 			return compare((BigInteger)o1,o2);
 		} else if(o1 instanceof WyRat) {
 			return compare((WyRat)o1,o2);
-		} else if(o1 instanceof WyList) {
-			return compare((WyList)o1,o2);
+		} else if(o1 instanceof WyArray) {
+			return compare((WyArray)o1,o2);
 		} else if(o1 instanceof WyTuple) {
 			return compare((WyTuple)o1,o2);
 		} else if(o1 instanceof WyRecord) {
@@ -362,18 +362,18 @@ public class Util {
 		}
 	}
 
-	public static int compare(WyList o1, Object o2) {
+	public static int compare(WyArray o1, Object o2) {
 		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
 				|| o2 instanceof WyRat) {
 			return 1;
-		} else if (o2 instanceof WyList) {
-			return compare(o1, (WyList) o2);
+		} else if (o2 instanceof WyArray) {
+			return compare(o1, (WyArray) o2);
 		} else {
 			return -1;
 		}
 	}
 
-	public static int compare(WyList o1, WyList o2) {
+	public static int compare(WyArray o1, WyArray o2) {
 		int s1_size = o1.size();
 		int s2_size = o2.size();
 		if(s1_size < s2_size) {
@@ -395,7 +395,7 @@ public class Util {
 
 	public static int compare(WyTuple o1, Object o2) {
 		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof WyRat || o2 instanceof WyList) {
+				|| o2 instanceof WyRat || o2 instanceof WyArray) {
 			return 1;
 		} else if (o2 instanceof WyTuple) {
 			return compare(o1, (WyTuple) o2);
@@ -465,14 +465,14 @@ public class Util {
 		}
 	}
 
-	public static void print(WyList argument) {
+	public static void print(WyArray argument) {
 		for(int i=0;i!=argument.size();++i) {
 			BigInteger c = (BigInteger) argument.get(i);
 			System.out.print((char) c.intValue());
 		}
 	}
 	
-	public static void println(WyList argument) {
+	public static void println(WyArray argument) {
 		print(argument);
 		System.out.println();
 	}
@@ -482,13 +482,13 @@ public class Util {
 
 		sysout.put("print_s", new WyLambda((Object[]) null) {
 			public Object call(Object[] arguments) {
-				print((WyList) arguments[0]);						
+				print((WyArray) arguments[0]);						
 				return null;
 			}
 		});
 		sysout.put("println_s", new WyLambda((Object[]) null) {
 			public Object call(Object[] arguments) {
-				println((WyList) arguments[0]);								
+				println((WyArray) arguments[0]);								
 				return null;
 			}
 		});

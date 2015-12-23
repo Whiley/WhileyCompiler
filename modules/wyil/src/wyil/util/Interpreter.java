@@ -196,16 +196,16 @@ public class Interpreter {
 			return execute((Codes.Lambda) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.LengthOf) {
 			return execute((Codes.LengthOf) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.ListGenerator) {
-			return execute((Codes.ListGenerator) bytecode, frame, context);
+		} else if (bytecode instanceof Codes.ArrayGenerator) {
+			return execute((Codes.ArrayGenerator) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Quantify) {
 			return execute((Codes.Quantify) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Loop) {
 			return execute((Codes.Loop) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Move) {
 			return execute((Codes.Move) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.NewList) {
-			return execute((Codes.NewList) bytecode, frame, context);
+		} else if (bytecode instanceof Codes.NewArray) {
+			return execute((Codes.NewArray) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.NewObject) {
 			return execute((Codes.NewObject) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.NewRecord) {
@@ -543,13 +543,13 @@ public class Interpreter {
 	 * @return
 	 */
 	private Constant convert(Constant value, Type.Array to, Context context) {
-		checkType(value, context, Constant.List.class);
-		Constant.List lv = (Constant.List) value;
+		checkType(value, context, Constant.Array.class);
+		Constant.Array lv = (Constant.Array) value;
 		ArrayList<Constant> values = new ArrayList<Constant>(lv.values);
 		for (int i = 0; i != values.size(); ++i) {
 			values.set(i, convert(values.get(i), to.element(), context));
 		}
-		return Constant.V_LIST(values);
+		return Constant.V_ARRAY(values);
 	}
 	
 	/**
@@ -633,7 +633,7 @@ public class Interpreter {
 	private Object execute(Codes.Debug bytecode, Constant[] frame,
 			Context context) {
 		//
-		Constant.List list = (Constant.List) frame[bytecode.operand];
+		Constant.Array list = (Constant.Array) frame[bytecode.operand];
 		for (Constant item : list.values) {
 			BigInteger b = ((Constant.Integer) item).value;
 			char c = (char) b.intValue();
@@ -745,8 +745,8 @@ public class Interpreter {
 	}
 
 	private boolean elementOf(Constant lhs, Constant rhs, Context context) {
-		checkType(rhs, context,Constant.List.class);
-		Constant.List list = (Constant.List) rhs;		
+		checkType(rhs, context,Constant.Array.class);
+		Constant.Array list = (Constant.Array) rhs;
 		return list.values.contains(lhs);
 	}
 
@@ -819,8 +819,8 @@ public class Interpreter {
 			}
 			return false;
 		} else if (type instanceof Type.Array) {
-			if (value instanceof Constant.List) {
-				Constant.List t = (Constant.List) value;
+			if (value instanceof Constant.Array) {
+				Constant.Array t = (Constant.Array) value;
 				Type element = ((Type.Array) type).element();
 				boolean r = true;
 				for (Constant val : t.values) {
@@ -935,10 +935,10 @@ public class Interpreter {
 		Constant operand_0 = frame[bytecode.operand(0)];
 		Constant operand_1 = frame[bytecode.operand(1)];
 		// Check we have a list and an integer index
-		checkType(operand_0, context, Constant.List.class);
+		checkType(operand_0, context, Constant.Array.class);
 		checkType(operand_1, context, Constant.Integer.class);
 		// Yes, now check that this is in bounds
-		Constant.List list = (Constant.List) operand_0;
+		Constant.Array list = (Constant.Array) operand_0;
 		Constant.Integer index = (Constant.Integer) operand_1;
 		int i = index.value.intValue();
 		if (i < 0 || i >= list.values.size()) {
@@ -1090,8 +1090,8 @@ public class Interpreter {
 	private Object execute(Codes.LengthOf bytecode, Constant[] frame,
 			Context context) {
 		Constant _source = frame[bytecode.operand(0)];
-		checkType(_source, context, Constant.List.class);
-		Constant.List list = (Constant.List) _source;
+		checkType(_source, context, Constant.Array.class);
+		Constant.Array list = (Constant.Array) _source;
 		BigInteger length = BigInteger.valueOf(list.values.size());		
 		frame[bytecode.target()] = Constant.V_INTEGER(length);
 		return context.pc.next();
@@ -1110,7 +1110,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.ListGenerator bytecode, Constant[] frame,
+	private Object execute(Codes.ArrayGenerator bytecode, Constant[] frame,
 			Context context) {
 		Constant element = frame[bytecode.operand(0)];
 		Constant count = frame[bytecode.operand(1)];
@@ -1123,7 +1123,7 @@ public class Interpreter {
 		for(int i=0;i!=n;++i) {
 			values.add(element);
 		}
-		frame[bytecode.target()] = Constant.V_LIST(values);
+		frame[bytecode.target()] = Constant.V_ARRAY(values);
 		return context.pc.next();
 	}
 	
@@ -1172,13 +1172,13 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.NewList bytecode, Constant[] frame,
+	private Object execute(Codes.NewArray bytecode, Constant[] frame,
 			Context context) {
 		ArrayList<Constant> values = new ArrayList<Constant>();
 		for (int operand : bytecode.operands()) {
 			values.add((Constant) frame[operand]);
 		}
-		frame[bytecode.target()] = Constant.V_LIST(values);
+		frame[bytecode.target()] = Constant.V_ARRAY(values);
 		return context.pc.next();
 	}
 
@@ -1376,19 +1376,19 @@ public class Interpreter {
 		if (descriptor.hasNext()) {
 			Codes.LVal lval = descriptor.next();
 			// Check what shape the left-hand side is
-			if (lval instanceof Codes.ListLVal) {
+			if (lval instanceof Codes.ArrayLVal) {
 				// List
-				Codes.ListLVal lv = (Codes.ListLVal) lval;
+				Codes.ArrayLVal lv = (Codes.ArrayLVal) lval;
 				Constant operand = frame[lv.indexOperand];
 				checkType(operand, context, Constant.Integer.class);
-				checkType(lhs, context, Constant.List.class);
-				Constant.List list = (Constant.List) lhs;
+				checkType(lhs, context, Constant.Array.class);
+				Constant.Array list = (Constant.Array) lhs;
 				int index = ((Constant.Integer) operand).value.intValue();
 				ArrayList<Constant> values = new ArrayList<Constant>(
 						list.values);
 				rhs = update(values.get(index), descriptor, rhs, frame, context);
 				values.set(index, rhs);
-				return Constant.V_LIST(values);
+				return Constant.V_ARRAY(values);
 			} else if (lval instanceof Codes.RecordLVal) {
 				// Record
 				Codes.RecordLVal lv = (Codes.RecordLVal) lval;
@@ -1475,13 +1475,13 @@ public class Interpreter {
 				values.set(i, cleanse(values.get(i), context));
 			}
 			return Constant.V_TUPLE(values);
-		} else if (constant instanceof Constant.List) {
-			Constant.List ct = (Constant.List) constant;
+		} else if (constant instanceof Constant.Array) {
+			Constant.Array ct = (Constant.Array) constant;
 			ArrayList<Constant> values = new ArrayList<Constant>(ct.values);
 			for (int i = 0; i != values.size(); ++i) {
 				values.set(i, cleanse(values.get(i), context));
 			}
-			return Constant.V_LIST(values);
+			return Constant.V_ARRAY(values);
 		} else if (constant instanceof Constant.Record) {
 			Constant.Record mt = (Constant.Record) constant;
 			HashMap<String, Constant> fields = mt.values;

@@ -2010,7 +2010,7 @@ public final class CodeGenerator {
 			AttributedCodeBlock codes, Context context) {
 		int[] operands = generate(expr.arguments, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.NewList((Type.Array) expr.type.raw(), target, operands),
+		codes.add(Codes.NewArray((Type.Array) expr.type.raw(), target, operands),
 				attributes(expr));
 		return target;
 	}
@@ -2019,7 +2019,7 @@ public final class CodeGenerator {
 		int element = generate(expr.element, environment, codes, context);
 		int count = generate(expr.count, environment, codes, context);
 		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.ListGenerator((Type.Array) expr.type.raw(), target, element, count), attributes(expr));
+		codes.add(Codes.ArrayGenerator((Type.Array) expr.type.raw(), target, element, count), attributes(expr));
 		return target;
 	}
 	

@@ -203,7 +203,7 @@ public final class WyilFileReader {
 					int index = input.read_uv();
 					values.add(myConstantPool[index]);
 				}
-				constant = Constant.V_LIST(values);
+				constant = Constant.V_ARRAY(values);
 				break;
 			}			
 			case WyilFileWriter.CONSTANT_Tuple: {
@@ -805,7 +805,7 @@ public final class WyilFileReader {
 			if (!(type instanceof Type.Array)) {
 				throw new RuntimeException("expecting list type");
 			}
-			return Codes.ListGenerator((Type.Array) type, target,
+			return Codes.ArrayGenerator((Type.Array) type, target,
 					leftOperand, rightOperand);
 		}
 		case Code.OPCODE_add:
@@ -937,7 +937,7 @@ public final class WyilFileReader {
 			if (!(type instanceof Type.Array)) {
 				throw new RuntimeException("expected list type");
 			}
-			return Codes.NewList((Type.Array) type, target, operands);
+			return Codes.NewArray((Type.Array) type, target, operands);
 		}	
 		case Code.OPCODE_newtuple: {
 			if (!(type instanceof Type.Tuple)) {
