@@ -49,6 +49,7 @@ import static wyil.lang.Type.K_RECORD;
 import static wyil.lang.Type.K_UNION;
 import static wyil.lang.Type.K_NEGATION;
 import static wyil.lang.Type.K_FUNCTION;
+import static wyil.lang.Type.K_METHOD;
 import static wyil.lang.Type.K_NOMINAL;
 
 public abstract class WyType {
@@ -169,6 +170,26 @@ public abstract class WyType {
 		}
 	}
 
+	public static final class Function extends WyType {
+		public WyType returns;
+		public final WyType[] parameters;
+		public Function(WyType returns, WyType[] parameters) {
+			super(K_FUNCTION);
+			this.parameters = parameters;
+			this.returns = returns;
+		}
+	}
+	
+	public static final class Method extends WyType {
+		public WyType returns;
+		public final WyType[] parameters;
+		public Method(WyType returns, WyType[] parameters) {
+			super(K_METHOD);
+			this.parameters = parameters;
+			this.returns = returns;
+		}
+	}
+	
 	public static final class Label extends WyType {
 		public final int label;
 		public Label(int label) {
@@ -188,7 +209,9 @@ public abstract class WyType {
 		for(int i=0;i!=size;++i) {
 			substitute(nodes.get(i),nodes);
 		}
-		return nodes.get(0);
+		WyType t = nodes.get(0);
+		System.out.println(toString(t));
+		return t;
 	}
 
 	private static WyType readNode(BinaryInputStream reader, ArrayList<WyType> nodes) throws IOException {
@@ -256,6 +279,12 @@ public abstract class WyType {
 			String module = readString(reader);
 			String name = readString(reader);
 			return new WyType.Nominal(module + ":" + name);
+		}
+		case K_FUNCTION: {
+			return new WyType.Function(children[0],Arrays.copyOfRange(children, 2, children.length));
+		}
+		case K_METHOD: {
+			return new WyType.Function(children[0],Arrays.copyOfRange(children, 1, children.length));
 		}
 		}
 
@@ -326,6 +355,18 @@ public abstract class WyType {
 		case K_NEGATION: {
 			Negation t = (Negation) type;
 			t.element = substitute((Label)t.element,nodes);
+			return;
+		}
+		case K_FUNCTION: {
+			Function t = (Function) type;
+			t.returns = substitute((Label)t.returns,nodes);
+			substitute(t.parameters,nodes);
+			return;
+		}
+		case K_METHOD: {
+			Method t = (Method) type;
+			t.returns = substitute((Label)t.returns,nodes);
+			substitute(t.parameters,nodes);
 			return;
 		}
 		}
@@ -432,7 +473,115 @@ public abstract class WyType {
 				}
 				break;
 			}
+			case K_FUNCTION:
+			{
+				WyType.Function ft = (WyType.Function) type;
+				WyType[] types = ft.parameters;
+				for(int i=0;i!=types.length;++i) {
+					types[i] = substitute(types[i],label,root,visited);
+				}
+				ft.returns = substitute(ft.returns,label,root,visited);
+				break;
+			}
+			case K_METHOD:
+			{
+				WyType.Method ft = (WyType.Method) type;
+				WyType[] types = ft.parameters;
+				for(int i=0;i!=types.length;++i) {
+					types[i] = substitute(types[i],label,root,visited);
+				}
+				ft.returns = substitute(ft.returns,label,root,visited);
+				break;
+			}
 		}
 		return type;
+	}
+	
+	private static String toString(WyType t) {
+		return toString(t, new HashSet<WyType>());
+	}
+	
+	private static String toString(WyType t, HashSet<WyType> visited) {
+		if(visited.contains(t)) {
+			return "...";
+		} else {
+			visited.add(t);
+		}
+		switch (t.kind) {
+		case K_ANY:
+			return "any";
+		case K_VOID:
+			return "void";
+		case K_NULL:
+			return "null";
+		case K_INT:
+			return "int";
+		case K_RATIONAL:
+			return "real";
+		case K_STRING:
+			return "string";
+		case K_NOMINAL: {
+			WyType.Nominal leaf = (WyType.Nominal) t;
+			return leaf.name;
+		}
+		case K_LIST: {
+			WyType.List list = (WyType.List) t;
+			return toString(list.element,visited) + "[]";
+		}
+		case K_RECORD: {
+			WyType.Record rec = (WyType.Record) t;
+			WyType[] types = rec.types;
+			String r = "";
+			for (int i = 0; i != types.length; ++i) {
+				if (i != 0) {
+					r = r + ",";
+				}
+				r += toString(types[i],visited) + " " + rec.names[i];
+			}
+			return "{" + r + "}";
+		}
+		case K_NEGATION: {
+			WyType.Negation not = (WyType.Negation) t;
+			return "!" + toString(not.element,visited);
+		}
+		case K_UNION: {
+			WyType.Union un = (WyType.Union) t;
+			WyType[] types = un.bounds;
+			String r = "";
+			for (int i = 0; i != types.length; ++i) {
+				if (i != 0) {
+					r = r + "|";
+				}
+				r += toString(types[i],visited);
+			}
+			return r;
+		}
+		case K_FUNCTION: {
+			WyType.Function ft = (WyType.Function) t;
+			WyType[] types = ft.parameters;
+			String r = "function(";
+			for (int i = 0; i != types.length; ++i) {
+				if (i != 0) {
+					r = r + ",";
+				}
+				r += toString(types[i],visited);
+			}
+			return r + ")->(" + toString(ft.returns,visited) + ")";
+		}
+		case K_METHOD: {
+			WyType.Method ft = (WyType.Method) t;
+			WyType[] types = ft.parameters;
+			String r = "function(";
+			for (int i = 0; i != types.length; ++i) {
+				if (i != 0) {
+					r = r + ",";
+				}
+				r += toString(types[i],visited);
+			}
+			return r + ")->(" + toString(ft.returns,visited) + ")";
+		}
+		}
+
+		throw new RuntimeException("unknow type encountered (kind: " + t.kind + ")");
 	}
 }
