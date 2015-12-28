@@ -308,7 +308,7 @@ public interface Expr extends SyntacticElement {
 			Expr, LVal {
 		public Expr src;
 		public Expr index;
-		public Nominal.List srcType;
+		public Nominal.Array srcType;
 
 		public IndexOf(Expr src, Expr index, Attribute... attributes) {
 			super(attributes);
@@ -368,7 +368,7 @@ public interface Expr extends SyntacticElement {
 	 */
 	public static class ArrayInitialiser extends SyntacticElement.Impl implements Expr {
 		public final ArrayList<Expr> arguments;
-		public Nominal.List type;
+		public Nominal.Array type;
 
 		public ArrayInitialiser(Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
@@ -383,7 +383,7 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 
-		public Nominal.List result() {
+		public Nominal.Array result() {
 			return type;
 		}
 	}
@@ -400,7 +400,7 @@ public interface Expr extends SyntacticElement {
 	public static class ArrayGenerator extends SyntacticElement.Impl implements Expr {
 		public Expr element;
 		public Expr count;
-		public Nominal.List type;
+		public Nominal.Array type;
 
 		public ArrayGenerator(Expr element, Expr count, Attribute... attributes) {
 			super(attributes);
@@ -408,7 +408,7 @@ public interface Expr extends SyntacticElement {
 			this.count = count;
 		}
 
-		public Nominal.List result() {
+		public Nominal.Array result() {
 			return type;
 		}
 	}
@@ -705,7 +705,7 @@ public interface Expr extends SyntacticElement {
 
 	public static class LengthOf extends SyntacticElement.Impl implements Expr {
 		public Expr src;
-		public Nominal.List srcType;
+		public Nominal.Array srcType;
 
 		public LengthOf(Expr mhs, Attribute... attributes) {
 			super(attributes);

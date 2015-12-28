@@ -583,7 +583,7 @@ public class FlowTypeChecker {
 			return inferAfterType((Expr.LVal) pa.src, pa.srcType);
 		} else if (lv instanceof Expr.IndexOf) {
 			Expr.IndexOf la = (Expr.IndexOf) lv;
-			Nominal.List srcType = la.srcType;
+			Nominal.Array srcType = la.srcType;
 			afterType = (Nominal) srcType.update(la.index.result(), afterType);
 			return inferAfterType((Expr.LVal) la.src, afterType);
 		} else if (lv instanceof Expr.FieldAccess) {
@@ -952,7 +952,7 @@ public class FlowTypeChecker {
 				Expr index = propagate(ai.index, environment, current);
 				ai.src = src;
 				ai.index = index;
-				Nominal.List srcType = expandAsEffectiveList(src.result());
+				Nominal.Array srcType = expandAsEffectiveList(src.result());
 				if (srcType == null) {
 					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION),
 							filename, lval);
@@ -1902,7 +1902,7 @@ public class FlowTypeChecker {
 			Context context) throws IOException, ResolveError {
 		expr.src = propagate(expr.src, environment, context);
 		expr.index = propagate(expr.index, environment, context);
-		Nominal.List srcType = expandAsEffectiveList(expr.src
+		Nominal.Array srcType = expandAsEffectiveList(expr.src
 				.result());
 
 		if (srcType == null) {
@@ -1921,7 +1921,7 @@ public class FlowTypeChecker {
 			Context context) throws IOException, ResolveError {
 		expr.src = propagate(expr.src, environment, context);
 
-		Nominal.List srcType = expandAsEffectiveList(expr.src
+		Nominal.Array srcType = expandAsEffectiveList(expr.src
 				.result());
 
 		if (srcType == null) {
@@ -1954,7 +1954,7 @@ public class FlowTypeChecker {
 			element = Nominal.Union(t, element);
 		}
 
-		expr.type = Nominal.List(element, false);
+		expr.type = Nominal.Array(element, false);
 
 		return expr;
 	}
@@ -1963,7 +1963,7 @@ public class FlowTypeChecker {
 			Context context) {
 		expr.element = propagate(expr.element, environment, context);
 		expr.count = propagate(expr.count, environment, context);
-		expr.type = Nominal.List(expr.element.result(), true);		
+		expr.type = Nominal.Array(expr.element.result(), true);
 		return expr;
 	}
 	
@@ -3192,13 +3192,13 @@ public class FlowTypeChecker {
 					element = Nominal.Union(element, e.second());
 				}
 				return new Pair<Constant, Nominal>(Constant.V_ARRAY(values),
-						Nominal.List(element, !nop.arguments.isEmpty()));
+						Nominal.Array(element, !nop.arguments.isEmpty()));
 			} else if (expr instanceof Expr.ArrayGenerator) {
 				Expr.ArrayGenerator lg = (Expr.ArrayGenerator) expr;				
 				Pair<Constant,Nominal> element = resolveAsConstant(lg.element, context, visited);
 				Pair<Constant,Nominal> count = resolveAsConstant(lg.count, context, visited);
 				Constant.Array l = evaluate(lg,element.first(),count.first(),context);
-				return new Pair<Constant,Nominal>(l,Nominal.List(element.second(), !l.values.isEmpty()));
+				return new Pair<Constant,Nominal>(l,Nominal.Array(element.second(), !l.values.isEmpty()));
 			} else if (expr instanceof Expr.Record) {
 				Expr.Record rg = (Expr.Record) expr;
 				HashMap<String, Constant> values = new HashMap<String, Constant>();
@@ -3481,7 +3481,7 @@ public class FlowTypeChecker {
 	// expandAsType
 	// =========================================================================
 
-	public Nominal.List expandAsEffectiveList(Nominal lhs)
+	public Nominal.Array expandAsEffectiveList(Nominal lhs)
 			throws IOException, ResolveError {
 		Type raw = lhs.raw();
 		if (raw instanceof Type.EffectiveArray) {
@@ -3489,7 +3489,7 @@ public class FlowTypeChecker {
 			if (!(nominal instanceof Type.EffectiveArray)) {
 				nominal = raw; // discard nominal information
 			}
-			return (Nominal.List) Nominal.construct(nominal, raw);
+			return (Nominal.Array) Nominal.construct(nominal, raw);
 		} else {
 			return null;
 		}
