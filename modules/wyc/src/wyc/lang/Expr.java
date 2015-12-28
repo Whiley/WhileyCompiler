@@ -472,6 +472,7 @@ public interface Expr extends SyntacticElement {
 		public final String name;
 		public Path.ID qualification;
 		public wyil.lang.Constant value;
+		public Nominal type;
 
 		public ConstantAccess(String name, Path.ID qualification,
 				Attribute... attributes) {
@@ -488,9 +489,10 @@ public interface Expr extends SyntacticElement {
 		}
 
 		public Nominal result() {
-			// FIXME: loss of nominal information here, since the type of the
-			// constant in question is always fully expanded.
-			return Nominal.construct(value.type(), value.type());
+			// Note: must return our type here, rather than value.type(). This
+			// is because value.type() does not distinguish nominal and raw
+			// types.  See #544.
+			return type;
 		}
 
 		public String toString() {

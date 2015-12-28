@@ -63,7 +63,7 @@ import wyil.util.TypeExpander;
  * types are used soundly. For example:
  *
  * <pre>
- * function sum([int] data) -> int:
+ * function sum(int[] data) -> int:
  *     int r = 0      // declared int type for r
  *     for v in data: // infers int type for v, based on type of data
  *         r = r + v  // infers int type for r + v, based on type of operands
@@ -148,7 +148,7 @@ public class FlowTypeChecker {
 	 * The constant cache contains a cache of expanded constant values. This is
 	 * simply to prevent recomputing them every time.
 	 */
-	private final HashMap<NameID, Constant> constantCache = new HashMap<NameID, Constant>();
+	private final HashMap<NameID, Pair<Constant, Nominal>> constantCache = new HashMap<NameID, Pair<Constant, Nominal>>();
 
 	public FlowTypeChecker(WhileyBuilder builder) {
 		this.builder = builder;
@@ -240,7 +240,7 @@ public class FlowTypeChecker {
 	public void propagate(WhileyFile.Constant cd) throws IOException,
 			ResolveError {
 		NameID nid = new NameID(cd.file().module, cd.name());
-		cd.resolvedValue = resolveAsConstant(nid);
+		cd.resolvedValue = resolveAsConstant(nid).first();
 	}
 
 	/**
@@ -848,7 +848,7 @@ public class FlowTypeChecker {
 
 			ArrayList<Constant> values = new ArrayList<Constant>();
 			for (Expr e : c.expr) {
-				values.add(resolveAsConstant(e, current));
+				values.add(resolveAsConstant(e, current).first());
 			}
 			c.constants = values;
 
@@ -2035,7 +2035,9 @@ public class FlowTypeChecker {
 		try {
 			NameID name = resolveAsName(qualifications, context);
 			// Second, determine the value of the constant.
-			expr.value = resolveAsConstant(name);
+			Pair<Constant,Nominal> ct = resolveAsConstant(name);
+			expr.value = ct.first();
+			expr.type = ct.second();
 			return expr;
 		} catch (ResolveError e) {
 			syntaxError(errorMessage(UNKNOWN_VARIABLE), context, expr);
@@ -3046,7 +3048,7 @@ public class FlowTypeChecker {
 	 * @return Constant value representing named constant
 	 * @throws IOException
 	 */
-	public Constant resolveAsConstant(NameID nid) throws IOException,
+	public Pair<Constant,Nominal> resolveAsConstant(NameID nid) throws IOException,
 			ResolveError {
 		return resolveAsConstant(nid, new HashSet<NameID>());
 	}
@@ -3070,7 +3072,7 @@ public class FlowTypeChecker {
 	 * @param context
 	 * @return
 	 */
-	public Constant resolveAsConstant(Expr e, Context context) {
+	public Pair<Constant,Nominal> resolveAsConstant(Expr e, Context context) {
 		e = propagate(e, new Environment(), context);
 		return resolveAsConstant(e, context, new HashSet<NameID>());
 	}
@@ -3091,9 +3093,9 @@ public class FlowTypeChecker {
 	 * @return
 	 * @throws IOException
 	 */
-	private Constant resolveAsConstant(NameID key, HashSet<NameID> visited)
+	private Pair<Constant,Nominal> resolveAsConstant(NameID key, HashSet<NameID> visited)
 			throws IOException, ResolveError {
-		Constant result = constantCache.get(key);
+		Pair<Constant,Nominal> result = constantCache.get(key);
 		if (result != null) {
 			return result;
 		} else if (visited.contains(key)) {
@@ -3111,10 +3113,9 @@ public class FlowTypeChecker {
 				WhileyFile.Constant cd = (WhileyFile.Constant) decl;
 				if (cd.resolvedValue == null) {
 					cd.constant = propagate(cd.constant, new Environment(), cd);
-					cd.resolvedValue = resolveAsConstant(cd.constant, cd,
-							visited);
+					cd.resolvedValue = resolveAsConstant(cd.constant, cd, visited).first();
 				}
-				result = cd.resolvedValue;
+				result = new Pair<Constant,Nominal>(cd.resolvedValue,cd.constant.result());
 			} else {
 				throw new ResolveError("unable to find constant " + key);
 			}
@@ -3122,7 +3123,9 @@ public class FlowTypeChecker {
 			WyilFile module = builder.getModule(key.module());
 			WyilFile.Constant cd = module.constant(key.name());
 			if (cd != null) {
-				result = cd.constant();
+				Constant c = cd.constant();
+				Nominal t = Nominal.construct(c.type(), expander.getUnderlyingType(c.type()));
+				result = new Pair<Constant,Nominal>(c,t);
 			} else {
 				throw new ResolveError("unable to find constant " + key);
 			}
@@ -3148,12 +3151,12 @@ public class FlowTypeChecker {
 	 *            --- set of all constants seen during this traversal (used to
 	 *            detect cycles).
 	 */
-	private Constant resolveAsConstant(Expr expr, Context context,
+	private Pair<Constant,Nominal> resolveAsConstant(Expr expr, Context context,
 			HashSet<NameID> visited) {
 		try {
 			if (expr instanceof Expr.Constant) {
 				Expr.Constant c = (Expr.Constant) expr;
-				return c.value;
+				return new Pair<Constant,Nominal>(c.value,c.result());
 			} else if (expr instanceof Expr.ConstantAccess) {
 				Expr.ConstantAccess c = (Expr.ConstantAccess) expr;
 				ArrayList<String> qualifications = new ArrayList<String>();
@@ -3172,52 +3175,61 @@ public class FlowTypeChecker {
 				}
 			} else if (expr instanceof Expr.BinOp) {
 				Expr.BinOp bop = (Expr.BinOp) expr;
-				Constant lhs = resolveAsConstant(bop.lhs, context, visited);
-				Constant rhs = resolveAsConstant(bop.rhs, context, visited);
-				return evaluate(bop, lhs, rhs, context);
+				Pair<Constant,Nominal> lhs = resolveAsConstant(bop.lhs, context, visited);
+				Pair<Constant,Nominal> rhs = resolveAsConstant(bop.rhs, context, visited);
+				return new Pair<Constant, Nominal>(evaluate(bop, lhs.first(), rhs.first(), context), lhs.second());
 			} else if (expr instanceof Expr.UnOp) {
 				Expr.UnOp uop = (Expr.UnOp) expr;
-				Constant lhs = resolveAsConstant(uop.mhs, context, visited);
-				return evaluate(uop, lhs, context);
+				Pair<Constant,Nominal> lhs = resolveAsConstant(uop.mhs, context, visited);
+				return new Pair<Constant, Nominal>(evaluate(uop, lhs.first(), context), lhs.second());
 			} else if (expr instanceof Expr.ArrayInitialiser) {
 				Expr.ArrayInitialiser nop = (Expr.ArrayInitialiser) expr;
 				ArrayList<Constant> values = new ArrayList<Constant>();
+				Nominal element = Nominal.T_VOID;
 				for (Expr arg : nop.arguments) {
-					values.add(resolveAsConstant(arg, context, visited));
+					Pair<Constant,Nominal> e = resolveAsConstant(arg, context, visited);
+					values.add(e.first());
+					element = Nominal.Union(element, e.second());
 				}
-				return Constant.V_ARRAY(values);
+				return new Pair<Constant, Nominal>(Constant.V_ARRAY(values),
+						Nominal.List(element, !nop.arguments.isEmpty()));
 			} else if (expr instanceof Expr.ArrayGenerator) {
 				Expr.ArrayGenerator lg = (Expr.ArrayGenerator) expr;				
-				Constant element = resolveAsConstant(lg.element, context, visited);
-				Constant count = resolveAsConstant(lg.count, context, visited);				
-				return evaluate(lg,element,count,context);
+				Pair<Constant,Nominal> element = resolveAsConstant(lg.element, context, visited);
+				Pair<Constant,Nominal> count = resolveAsConstant(lg.count, context, visited);
+				Constant.Array l = evaluate(lg,element.first(),count.first(),context);
+				return new Pair<Constant,Nominal>(l,Nominal.List(element.second(), !l.values.isEmpty()));
 			} else if (expr instanceof Expr.Record) {
 				Expr.Record rg = (Expr.Record) expr;
 				HashMap<String, Constant> values = new HashMap<String, Constant>();
+				HashMap<String, Nominal> types =  new HashMap<String, Nominal>();
 				for (Map.Entry<String, Expr> e : rg.fields.entrySet()) {
-					Constant v = resolveAsConstant(e.getValue(), context,
+					Pair<Constant,Nominal> v = resolveAsConstant(e.getValue(), context,
 							visited);
 					if (v == null) {
 						return null;
 					}
-					values.put(e.getKey(), v);
+					values.put(e.getKey(), v.first());
+					types.put(e.getKey(), v.second());
 				}
-				return Constant.V_RECORD(values);
+				return new Pair<Constant,Nominal>(Constant.V_RECORD(values),Nominal.Record(false, types));
 			} else if (expr instanceof Expr.Tuple) {
 				Expr.Tuple rg = (Expr.Tuple) expr;
 				ArrayList<Constant> values = new ArrayList<Constant>();
+				ArrayList<Nominal> types = new ArrayList<Nominal>();
 				for (Expr e : rg.fields) {
-					Constant v = resolveAsConstant(e, context, visited);
+					Pair<Constant,Nominal> v = resolveAsConstant(e, context, visited);
 					if (v == null) {
 						return null;
 					}
-					values.add(v);
+					values.add(v.first());
+					types.add(v.second());
 				}
-				return Constant.V_TUPLE(values);
+				return new Pair<Constant,Nominal>(Constant.V_TUPLE(values),Nominal.Tuple(types));
 			} else if (expr instanceof Expr.FunctionOrMethod) {
 				// TODO: add support for proper lambdas
 				Expr.FunctionOrMethod f = (Expr.FunctionOrMethod) expr;
-				return Constant.V_LAMBDA(f.nid, f.type.raw());
+				return new Pair<Constant, Nominal>(Constant.V_LAMBDA(f.nid, f.type.nominal()), f.type);
 			}
 		} catch (SyntaxError.InternalFailure e) {
 			throw e;

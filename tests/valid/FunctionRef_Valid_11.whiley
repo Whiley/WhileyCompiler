@@ -29,9 +29,9 @@ public export method test():
         //
         assert apply(FUNCTIONS[i],LIST_3) == 0
         //
-        assert apply(FUNCTIONS[i],LIST_3) == 10
+        assert apply(FUNCTIONS[i],LIST_4) == 10
         //
-        assert apply(FUNCTIONS[i],LIST_4) == 13
+        assert apply(FUNCTIONS[i],LIST_5) == 13
         // 
         i = i + 1
     //

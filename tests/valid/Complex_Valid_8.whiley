@@ -17,7 +17,7 @@ type Trie is {
 }
 
 // Define the Empty Trie
-constant DummyTransition is { from: 0, to: 0, char: 0 }
+constant DummyTransition is { from: 0, to: 0, character: 0 }
 constant EmptyTrie is { transitions: [DummyTransition; 0] }
 
 function append(Transition[] transitions, Transition t) -> Transition[]:
