@@ -33,7 +33,7 @@ public abstract class Nominal {
 	public static final Nominal T_BYTE = new Base(Type.T_BYTE,Type.T_BYTE);
 	public static final Nominal T_INT = new Base(Type.T_INT,Type.T_INT);
 	public static final Nominal T_REAL = new Base(Type.T_REAL,Type.T_REAL);
-	public static final Nominal T_LIST_ANY = new List(Type.T_ARRAY_ANY,Type.T_ARRAY_ANY);
+	public static final Nominal T_ARRAY_ANY = new Array(Type.T_ARRAY_ANY,Type.T_ARRAY_ANY);
 
 	public static Nominal construct(Type nominal, Type raw) {
 		if(nominal instanceof Type.Reference && raw instanceof Type.Reference) {
@@ -41,7 +41,7 @@ public abstract class Nominal {
 		} else if(nominal instanceof Type.EffectiveTuple && raw instanceof Type.EffectiveTuple) {
 			return new Tuple((Type.EffectiveTuple)nominal,(Type.EffectiveTuple)raw);
 		} else if(nominal instanceof Type.EffectiveArray && raw instanceof Type.EffectiveArray) {
-			return new List((Type.EffectiveArray)nominal,(Type.EffectiveArray)raw);
+			return new Array((Type.EffectiveArray)nominal,(Type.EffectiveArray)raw);
 		} else if(nominal instanceof Type.EffectiveRecord && raw instanceof Type.EffectiveRecord) {
 			return new Record((Type.EffectiveRecord)nominal,(Type.EffectiveRecord)raw);
 		} else if(nominal instanceof Type.Function && raw instanceof Type.Function) {
@@ -89,10 +89,10 @@ public abstract class Nominal {
 		return new Reference(nominal,raw);
 	}
 
-	public static List List(Nominal element, boolean nonEmpty) {
+	public static Array Array(Nominal element, boolean nonEmpty) {
 		Type.Array nominal = Type.Array(element.nominal(), nonEmpty);
 		Type.Array raw = Type.Array(element.raw(), nonEmpty);
-		return new List(nominal,raw);
+		return new Array(nominal,raw);
 	}
 
 	public static Record Record(boolean isOpen, java.util.Map<String,Nominal> fields) {
@@ -187,11 +187,11 @@ public abstract class Nominal {
 		}
 	}
 
-	public static final class List extends Nominal {
+	public static final class Array extends Nominal {
 		private final Type.EffectiveArray nominal;
 		private final Type.EffectiveArray raw;
 
-		List(Type.EffectiveArray nominal, Type.EffectiveArray raw) {
+		Array(Type.EffectiveArray nominal, Type.EffectiveArray raw) {
 			this.nominal = nominal;
 			this.raw = raw;
 		}
@@ -216,15 +216,15 @@ public abstract class Nominal {
 			return construct(nominal.element(),raw.element());
 		}
 
-		public Nominal.List update(Nominal key, Nominal value) {
+		public Nominal.Array update(Nominal key, Nominal value) {
 			Type n = (Type) nominal.update(key.nominal(), value.nominal());
 			Type r = (Type) raw.update(key.raw(), value.raw());
-			return (List) construct(n,r);
+			return (Array) construct(n,r);
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof List) {
-				List b = (List) o;
+			if (o instanceof Array) {
+				Array b = (Array) o;
 				return nominal.equals(b.nominal()) && raw.equals(b.raw());
 			}
 			return false;
@@ -258,8 +258,8 @@ public abstract class Nominal {
 
 		public ArrayList<Nominal> elements() {
 			ArrayList<Nominal> r = new ArrayList<Nominal>();
-			java.util.List<Type> rawElements = raw.elements();
-			java.util.List<Type> nominalElements = nominal.elements();
+			List<Type> rawElements = raw.elements();
+			List<Type> nominalElements = nominal.elements();
 			for(int i=0;i!=rawElements.size();++i) {
 				Type nominalElement = nominalElements.get(i);
 				Type rawElement = rawElements.get(i);
@@ -347,7 +347,7 @@ public abstract class Nominal {
 
 		abstract public Nominal param(int i);
 		
-		abstract public java.util.List<Nominal> params();
+		abstract public List<Nominal> params();
 	}
 
 	public static final class Function extends FunctionOrMethod {
@@ -372,17 +372,17 @@ public abstract class Nominal {
 		}
 		
 		public Nominal param(int i) {
-			java.util.List<Type> rawElements = raw.params();
-			java.util.List<Type> nominalElements = nominal.params();
+			List<Type> rawElements = raw.params();
+			List<Type> nominalElements = nominal.params();
 			Type nominalElement = nominalElements.get(i);
 			Type rawElement = rawElements.get(i);
 			return construct(nominalElement,rawElement);
 		}
 		
-		public java.util.List<Nominal> params() {
+		public List<Nominal> params() {
 			ArrayList<Nominal> r = new ArrayList<Nominal>();
-			java.util.List<Type> rawElements = raw.params();
-			java.util.List<Type> nominalElements = nominal.params();
+			List<Type> rawElements = raw.params();
+			List<Type> nominalElements = nominal.params();
 			for(int i=0;i!=rawElements.size();++i) {
 				Type nominalElement = nominalElements.get(i);
 				Type rawElement = rawElements.get(i);
@@ -426,17 +426,17 @@ public abstract class Nominal {
 		}
 
 		public Nominal param(int i) {
-			java.util.List<Type> rawElements = raw.params();
-			java.util.List<Type> nominalElements = nominal.params();
+			List<Type> rawElements = raw.params();
+			List<Type> nominalElements = nominal.params();
 			Type nominalElement = nominalElements.get(i);
 			Type rawElement = rawElements.get(i);
 			return construct(nominalElement,rawElement);
 		}
 		
-		public java.util.List<Nominal> params() {
+		public List<Nominal> params() {
 			ArrayList<Nominal> r = new ArrayList<Nominal>();
-			java.util.List<Type> rawElements = raw.params();
-			java.util.List<Type> nominalElements = nominal.params();
+			List<Type> rawElements = raw.params();
+			List<Type> nominalElements = nominal.params();
 			for(int i=0;i!=rawElements.size();++i) {
 				Type nominalElement = nominalElements.get(i);
 				Type rawElement = rawElements.get(i);
