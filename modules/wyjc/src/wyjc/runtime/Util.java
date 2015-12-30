@@ -197,6 +197,12 @@ public class Util {
 				}
 				break;
 			}
+			case K_FUNCTION:
+			case K_METHOD: {
+				// FIXME: this is fundamentally broken, since it does not consider
+				// the parameter types of the underlying function. See #552
+				return obj instanceof WyLambda;
+			}
 		}
 		return false;
 	}

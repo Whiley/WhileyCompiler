@@ -11,6 +11,6 @@ function f(null|SizeGetter x) -> int:
 function getSize(Sized this) -> int:
     return 1
 
-method test():    
+public export method test():    
     assume f(&getSize) == 1
     assume f(null) == 0

@@ -91,7 +91,6 @@ public abstract class WyType {
 		}
 	}
 
-
 	public static final class List extends WyType {
 		public WyType element;
 		public final boolean nonEmpty;
@@ -288,7 +287,6 @@ public abstract class WyType {
 
 		throw new RuntimeException("unknow type encountered (kind: " + kind + ")");
 	}
-
 
 	private static String readString(BinaryInputStream reader) throws IOException {
 		String r = "";
