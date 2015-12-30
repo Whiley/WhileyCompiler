@@ -18,12 +18,12 @@ public export method test():
     LinkedList l4 = {data: 10, next: l3}
     LinkedList l5 = {data: 3, next: l4}
     //
-    assert apply(&sum,l1) == 0
+    assume apply(&sum,l1) == 0
     //
-    assert apply(&sum,l2) == 1
+    assume apply(&sum,l2) == 1
     //
-    assert apply(&sum,l3) == 0
+    assume apply(&sum,l3) == 0
     //
-    assert apply(&sum,l4) == 10
+    assume apply(&sum,l4) == 10
     //
-    assert apply(&sum,l5) == 13
+    assume apply(&sum,l5) == 13
