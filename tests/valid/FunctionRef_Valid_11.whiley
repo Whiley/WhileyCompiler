@@ -23,15 +23,15 @@ public export method test():
     int i = 0
     while i < |FUNCTIONS|:
         //
-        assert apply(FUNCTIONS[i],LIST_1) == 0
+        assume apply(FUNCTIONS[i],LIST_1) == 0
         //
-        assert apply(FUNCTIONS[i],LIST_2) == 1
+        assume apply(FUNCTIONS[i],LIST_2) == 1
         //
-        assert apply(FUNCTIONS[i],LIST_3) == 0
+        assume apply(FUNCTIONS[i],LIST_3) == 0
         //
-        assert apply(FUNCTIONS[i],LIST_4) == 10
+        assume apply(FUNCTIONS[i],LIST_4) == 10
         //
-        assert apply(FUNCTIONS[i],LIST_5) == 13
+        assume apply(FUNCTIONS[i],LIST_5) == 13
         // 
         i = i + 1
     //

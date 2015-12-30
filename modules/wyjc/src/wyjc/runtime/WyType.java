@@ -209,9 +209,7 @@ public abstract class WyType {
 		for(int i=0;i!=size;++i) {
 			substitute(nodes.get(i),nodes);
 		}
-		WyType t = nodes.get(0);
-		System.out.println(toString(t));
-		return t;
+		return nodes.get(0);
 	}
 
 	private static WyType readNode(BinaryInputStream reader, ArrayList<WyType> nodes) throws IOException {

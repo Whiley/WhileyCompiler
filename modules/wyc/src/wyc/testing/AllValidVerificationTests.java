@@ -843,6 +843,11 @@ public class AllValidVerificationTests {
 	}
 	
 	@Test
+	public void FunctionRef_Valid_12() {
+		runTest("FunctionRef_Valid_12");
+	}
+	
+	@Test
 	public void Function_Valid_1() {
 		runTest("Function_Valid_1");
 	}
