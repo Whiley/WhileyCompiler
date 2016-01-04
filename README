@@ -42,11 +42,13 @@ To find out more, visit http://whiley.org
 
 There are several ways to get started with Whiley:
 
-1) You can install the Eclipse Plugin.
+1) You can run it directly in your web browser.
 
 2) Or, you can download and run the executable Jar.
 
 3) Or, you can download and setup the Whiley Development Kit.
+
+4) You can install the Eclipse Plugin.
 
 The Eclipse plugin is the easiest way to get started with Whiley (see
 instructions below).  If you don't use Eclipse, another simple option
@@ -55,18 +57,12 @@ like to download the Whiley Development Kit (WDK), which includes the
 source code for the compiler/runtime and various scripts to simplify
 compiling and running Whiley programs from the command-line.
 
-1. Whiley Eclipse Plugin (Wyclipse)
+2.1 Whiley Play
 ----------------------------------------------------------------------
-To install the Whiley Eclipse plugin start Eclipse and select "Install
-New Software" (normally found under "Help").  Then, add
-http://whiley.org/eclipse as a "software site", afterwhich you should
-find the "Whiley Eclipse Plugin" becomes an option to install.  At
-this point, "select all" and follow the instructions to install the
-plugin.
 
-For more info on Wyclipse, see http://whiley.org/tools/wyclipse/
+To run Whiley in your web-browser, goto http://whiley.org/play/
 
-2. Whiley Executable Jar
+2.2 Whiley Executable Jar
 ----------------------------------------------------------------------
 If you're running on a Windows system without cygwin, or you're having
 trouble getting the wyjc scripts to work, then a useful alternative is
@@ -86,7 +82,7 @@ Hello World
 
 (note: under Mac OS and UNIX you will want to replace the ';' with a ':')
 
-3. Whiley Development Kit (WDK)
+2.3 Whiley Development Kit (WDK)
 ----------------------------------------------------------------------
 To install the Whiley Development Kit, first download it from
 http://whiley.org/downloads.  Then, unpack the tarball into an
@@ -125,6 +121,20 @@ Then, to run the program you would do this:
 Hello World
 
 (note: under Mac OS and UNIX you will want to replace the ';' with a ':')
+
+2.4 Whiley Eclipse Plugin (Wyclipse)
+----------------------------------------------------------------------
+
+*** NOTE: the Eclipse plugin is out-of-date and not recommended
+
+To install the Whiley Eclipse plugin start Eclipse and select "Install
+New Software" (normally found under "Help").  Then, add
+http://whiley.org/eclipse as a "software site", afterwhich you should
+find the "Whiley Eclipse Plugin" becomes an option to install.  At
+this point, "select all" and follow the instructions to install the
+plugin.
+
+For more info on Wyclipse, see http://whiley.org/tools/wyclipse/
 
 ============================================================================
 3. Building from Source
