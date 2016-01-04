@@ -7,7 +7,19 @@
                             |___/             |___/
 
 ======================================================================
-Introduction
+Contents
+======================================================================
+
+1. Introduction
+
+2. Installation
+
+3. Building from Source
+
+4. Making a Contribution
+
+======================================================================
+1. Introduction
 ======================================================================
 
 Whiley is a programming language particularly suited to
@@ -25,7 +37,7 @@ for more on this.
 To find out more, visit http://whiley.org
 
 ======================================================================
-Installation
+2. Installation
 ======================================================================
 
 There are several ways to get started with Whiley:
@@ -115,7 +127,31 @@ Hello World
 (note: under Mac OS and UNIX you will want to replace the ';' with a ':')
 
 ============================================================================
-Making a Contribution
+3. Building from Source
+============================================================================
+
+You can build the Whiley compiler from scratch by cloning this
+repository.  There are a few notes about setting up under an IDE such
+as Eclipse or IntelliJ:
+
+* The repository should not be setup as a single project!  Rather,
+  each module in the modules/ directory is intended to be its own
+  project.
+
+* Appropriate .classpath and .project files for each module are
+  included for use with Eclipse.  This should make it easy to setup
+  under Eclipse.
+
+* The .classpath Eclipse files refer to the libraries "WyRL" and
+  "Jasm".  Under Eclipse, you should set these up as "User-Defined
+  Libraries" and point them to the appropriate jar files in the lib/
+  directory.
+
+Finally, you can also build from source using the Ant build.xml files
+provided.  
+
+============================================================================
+4. Making a Contribution
 ============================================================================
 
 When making a contribution to the Whiley project, you will need to
