@@ -71,10 +71,6 @@ public abstract class Constant implements Comparable<Constant> {
 		return get(new Type(type));
 	}
 
-	public static Tuple V_TUPLE(Collection<Constant> values) {
-		return get(new Tuple(values));
-	}
-
 	public static Lambda V_LAMBDA(NameID name,
 			wyil.lang.Type.FunctionOrMethod type, Constant... arguments) {
 		return get(new Lambda(name, type, arguments));
@@ -475,8 +471,7 @@ public abstract class Constant implements Comparable<Constant> {
 			} else if (v instanceof Null || v instanceof Bool
 					|| v instanceof Decimal || v instanceof Rational
 					|| v instanceof Byte || v instanceof Integer
-					|| v instanceof Set || v instanceof Array
-					|| v instanceof Tuple) {
+					|| v instanceof Set || v instanceof Array) {
 				return 1;
 			}
 			return -1;
@@ -598,69 +593,6 @@ public abstract class Constant implements Comparable<Constant> {
 				
 			}
 			return "&" + name.toString() + "(" + args + "):" + type.toString();
-		}
-	}
-
-	public static final class Tuple extends Constant {
-		public final ArrayList<Constant> values;
-		private Tuple(Collection<Constant> values) {
-			this.values = new ArrayList<Constant>(values);
-		}
-
-		public wyil.lang.Type.Tuple type() {
-			ArrayList<wyil.lang.Type> types = new ArrayList<wyil.lang.Type>();
-			for (Constant e : values) {
-				types.add(e.type());
-			}
-			return wyil.lang.Type.Tuple(types);
-		}
-		public int hashCode() {
-			return values.hashCode();
-		}
-		public boolean equals(Object o) {
-			if(o instanceof Tuple) {
-				Tuple i = (Tuple) o;
-				return values.equals(i.values);
-			}
-			return false;
-		}
-		public int compareTo(Constant v) {
-			if(v instanceof Tuple) {
-				Tuple l = (Tuple) v;
-				if(values.size() < l.values.size()) {
-					return -1;
-				} else if(values.size() > l.values.size()) {
-					return 1;
-				} else {
-					ArrayList<Constant> vs1 = values;
-					ArrayList<Constant> vs2 = l.values;
-					for(int i=0;i!=values.size();++i) {
-						Constant s1 = vs1.get(i);
-						Constant s2 = vs2.get(i);
-						int c = s1.compareTo(s2);
-						if(c != 0) { return c; }
-					}
-					return 0;
-				}
-			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Decimal || v instanceof Rational
-					|| v instanceof Byte || v instanceof Integer
-					|| v instanceof Set || v instanceof Array) {
-				return 1;
-			}
-			return -1;
-		}
-		public String toString() {
-			String r = "(";
-			boolean firstTime=true;
-			for(Constant v : values) {
-				if(!firstTime) {
-					r += ",";
-				}
-				firstTime=false;
-				r += v;
-			}
-			return r + ")";
 		}
 	}
 

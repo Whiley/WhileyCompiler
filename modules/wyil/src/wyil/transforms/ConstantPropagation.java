@@ -205,8 +205,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(Codes.Fail)code,environment);
 		} else if(code instanceof Codes.FieldLoad) {
 			infer(index,(Codes.FieldLoad)code,environment);
-		} else if(code instanceof Codes.TupleLoad) {
-			infer(index,(Codes.TupleLoad)code,environment);
 		} else if(code instanceof Codes.IndirectInvoke) {
 			infer(index, (Codes.IndirectInvoke)code,environment);
 		} else if(code instanceof Codes.Invoke) {
@@ -229,8 +227,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 			infer(index,(Codes.NewArray)code,environment);
 		} else if(code instanceof Codes.NewRecord) {
 			infer(index,(Codes.NewRecord)code,environment);
-		} else if(code instanceof Codes.NewTuple) {
-			infer(index,(Codes.NewTuple)code,environment);
 		} else if(code instanceof Codes.UnaryOperator) {
 			infer(index,(Codes.UnaryOperator)code,environment);
 		} else if(code instanceof Codes.Dereference) {
@@ -343,19 +339,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		assign(code.target(),result,environment,index);
 	}
 
-	public void infer(CodeBlock.Index index, Codes.TupleLoad code,
-			Env environment) {
-		Constant src = environment.get(code.operand(0));
-
-		Constant result = null;
-		if (src instanceof Constant.Tuple) {
-			Constant.Tuple tup = (Constant.Tuple) src;
-			result = tup.values.get(code.index);
-		}
-
-		assign(code.target(),result,environment,index);
-	}
-
 	public void infer(CodeBlock.Index index, Codes.IndirectInvoke code,
 			Env environment) {
 
@@ -462,28 +445,6 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Constant result = null;
 		if (isValue) {
 			result = Constant.V_ARRAY(values);
-		}
-		assign(code.target(),result,environment,index);
-	}
-
-	public void infer(CodeBlock.Index index, Codes.NewTuple code,
-			Env environment) {
-		ArrayList<Constant> values = new ArrayList<Constant>();
-
-		boolean isValue=true;
-		int[] code_operands = code.operands();
-		for (int i = 0; i != code_operands.length; ++i) {
-			Constant val = environment.get(code_operands[i]);
-			if (isRealConstant(val)) {
-				values.add(val);
-			} else {
-				isValue = false;
-			}
-		}
-
-		Constant result = null;
-		if (isValue) {
-			result = Constant.V_TUPLE(values);
 		}
 		assign(code.target(),result,environment,index);
 	}

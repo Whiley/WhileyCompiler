@@ -1572,9 +1572,6 @@ public class VcGenerator {
 			} else if (code instanceof Codes.NewRecord) {
 				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewRecord) code,
 						branch, block);
-			} else if (code instanceof Codes.NewTuple) {
-				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewTuple) code,
-						branch, block);
 			} else if (code instanceof Codes.Convert) {
 				transform((Codes.Convert) code, block, branch);
 			} else if (code instanceof Codes.Const) {
@@ -1607,8 +1604,6 @@ public class VcGenerator {
 				// skip
 			} else if (code instanceof Codes.NewObject) {
 				transform((Codes.NewObject) code, block, branch);
-			} else if (code instanceof Codes.TupleLoad) {
-				transform((Codes.TupleLoad) code, block, branch);
 			} else if (code instanceof Codes.Lambda) {
 				transform((Codes.Lambda) code, block, branch);
 			} else {
@@ -1789,16 +1784,6 @@ public class VcGenerator {
 	protected void transform(Codes.Nop code, AttributedCodeBlock block,
 			VcBranch branch) {
 		// do nout
-	}
-
-	protected void transform(Codes.TupleLoad code, AttributedCodeBlock block,
-			VcBranch branch) {
-		Expr src = branch.read(code.operand(0));
-		Expr index = new Expr.Constant(Value.Integer(BigInteger
-				.valueOf(code.index)));
-		Expr result = new Expr.IndexOf(src, index,
-				toWycsAttributes(block.attributes(branch.pc())));
-		branch.write(code.target(), result);
 	}
 
 	protected void transform(Codes.UnaryOperator code,
@@ -2543,13 +2528,6 @@ public class VcGenerator {
 				items.add(convert(cb_values.get(i), block, branch));				
 			}
 			return Value.Array(items);
-		} else if (c instanceof Constant.Tuple) {
-			Constant.Tuple cb = (Constant.Tuple) c;
-			ArrayList<Value> values = new ArrayList<Value>();
-			for (Constant v : cb.values) {
-				values.add(convert(v, block, branch));
-			}
-			return wycs.core.Value.Tuple(values);
 		} else if (c instanceof Constant.Record) {
 			Constant.Record rb = (Constant.Record) c;
 
@@ -2621,13 +2599,6 @@ public class VcGenerator {
 			SyntacticType element = convert(lt.element(), attributes);
 			// ugly.
 			return new SyntacticType.List(element);
-		} else if (t instanceof Type.Tuple) {
-			Type.Tuple tt = (Type.Tuple) t;
-			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();
-			for (int i = 0; i != tt.size(); ++i) {
-				elements.add(convert(tt.element(i), attributes));
-			}
-			return new SyntacticType.Tuple(elements);
 		} else if (t instanceof Type.Record) {
 			Type.Record rt = (Type.Record) t;
 			HashMap<String, Type> fields = rt.fields();
@@ -2696,14 +2667,6 @@ public class VcGenerator {
 		} else if (t instanceof Type.Array) {
 			Type.Array lt = (Type.Array) t;
 			return containsNominal(lt.element(), attributes);
-		} else if (t instanceof Type.Tuple) {
-			Type.Tuple tt = (Type.Tuple) t;
-			for (int i = 0; i != tt.size(); ++i) {
-				if (containsNominal(tt.element(i), attributes)) {
-					return true;
-				}
-			}
-			return false;
 		} else if (t instanceof Type.Record) {
 			Type.Record rt = (Type.Record) t;
 			for (Type field : rt.fields().values()) {

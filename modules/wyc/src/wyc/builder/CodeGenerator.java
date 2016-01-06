@@ -195,11 +195,8 @@ public final class CodeGenerator {
 			// Here, an explicit invariant is given for the type and this needs
 			// to be translated into bytecodes as well.
 			Environment environment = new Environment();
-			int root = environment.allocate(td.resolvedType.raw());
+			environment.allocate(td.resolvedType.raw(),td.parameter.name());
 			invariant = new AttributedCodeBlock(new SourceLocationMap());
-
-			addDeclaredVariables(root, td.pattern, td.resolvedType.raw(),
-					environment, invariant);
 			for(int i = 0;i!=td.invariant.size();++i) {
 				String lab = CodeUtils.freshLabel();
 				generateCondition(lab, td.invariant.get(i), environment, invariant, td);
@@ -219,30 +216,22 @@ public final class CodeGenerator {
 
 	private WyilFile.FunctionOrMethod generate(
 			WhileyFile.FunctionOrMethod fd) throws Exception {
-		Type.FunctionOrMethod rawFnType = fd.resolvedType().raw();
+		//Type.FunctionOrMethod rawFnType = fd.resolvedType().raw();
 		Type.FunctionOrMethod nominalFnType = fd.resolvedType().nominal();
 
 		// The environment maintains the mapping from source-level variables to
 		// the registers in WyIL block(s).
-		Environment environment = new Environment();
-
-		// method return type
-		int paramIndex = 0;
 
 		// ==================================================================
 		// Construct environments
 		// ==================================================================
 
-		ArrayList<AttributedCodeBlock> requires = new ArrayList<AttributedCodeBlock>();
-		List<VariableDeclarations.Declaration> declarations = new ArrayList<>();
-		for (WhileyFile.Parameter p : fd.parameters) {
-			// allocate parameter to register in the current block
-			environment.allocate(rawFnType.params().get(paramIndex), p.name());
-			declarations.add(new VariableDeclarations.Declaration(nominalFnType
-					.params().get(paramIndex), p.name()));
-			paramIndex = paramIndex + 1;
-		}
-
+		Environment environment = addDeclaredParameters(fd.parameters,fd.resolvedType().params(),new Environment());
+		
+		List<VariableDeclarations.Declaration> declarations = new ArrayList<VariableDeclarations.Declaration>(); 				
+		addDeclaredParameters(fd.parameters,fd.resolvedType().params(), declarations);
+		addDeclaredParameter(fd.returnType,fd.resolvedType().ret(), declarations);
+		
 		// Allocate all declared variables now. This ensures that all declared
 		// variables occur before any temporary variables.
 		buildVariableDeclarations(fd.statements, declarations, environment, fd);
@@ -251,6 +240,7 @@ public final class CodeGenerator {
 		// Generate pre-condition
 		// ==================================================================
 
+		ArrayList<AttributedCodeBlock> requires = new ArrayList<AttributedCodeBlock>();
 		for (Expr condition : fd.requires) {
 			AttributedCodeBlock precondition = new AttributedCodeBlock(new SourceLocationMap());
 			String endLab = CodeUtils.freshLabel();
@@ -270,23 +260,17 @@ public final class CodeGenerator {
 			// This indicates one or more explicit ensures clauses are given.
 			// Therefore, we must translate each of these into Wyil bytecodes.
 
-			// First, we need to create an appropriate environment within which
-			// to translate the post-conditions.
-			Environment postEnv = new Environment();
-			int root = postEnv.allocate(fd.resolvedType().ret().raw(), "$");
-
-			paramIndex = 0;
-			for (WhileyFile.Parameter p : fd.parameters) {
-				postEnv.allocate(rawFnType.params().get(paramIndex), p.name());
-				paramIndex++;
-			}
+			// First, update the environment to include the declared return
+			// variables.
+			Environment postEnvironment = addDeclaredParameter(fd.returnType,fd.resolvedType().ret(),environment);
 
 			for (Expr condition : fd.ensures) {
-				AttributedCodeBlock postcondition = new AttributedCodeBlock(new SourceLocationMap());
-				addDeclaredVariables(root, fd.ret, fd.resolvedType().ret().raw(),
-						postEnv, postcondition);
+				AttributedCodeBlock postcondition = new AttributedCodeBlock(new SourceLocationMap());				
 				String endLab = CodeUtils.freshLabel();
-				generateCondition(endLab, condition, new Environment(postEnv),
+				// Clone the environment at this stage to avoid updates to the
+				// environment within the condition affecting the external
+				// environment.
+				generateCondition(endLab, condition, new Environment(postEnvironment),
 						postcondition, fd);
 				postcondition.add(Codes.Fail(), attributes(condition));
 				postcondition.add(Codes.Label(endLab));
@@ -321,24 +305,97 @@ public final class CodeGenerator {
 					.modifiers(), fd.name(), md.resolvedType.nominal(), body, requires, ensures);
 		}
 
-		// Construct register declarations for this function or method. The
-		// register declarations stores information about the names and declared
-		// types of all registers. Technically speaking, this information is not
-		// necessary to compile and run a Whiley program. However, it is very
-		// useful for debugging and performing verification.
-		//
-		// First, add type information for all temporary registers allocated
-		// during code generation. This complements the existing information
-		// about declared variables.
-		for(int i=declarations.size();i!=environment.size();i=i+1) {
-			Type t = environment.type(i);
-			declarations.add(new VariableDeclarations.Declaration(t,null));
-		}
 		// Second, add the corresponding attribute to the enclosing method.
-		declaration.attributes().add(new VariableDeclarations(declarations));
+		declaration.attributes().add(createVariableDeclarations(environment,declarations));
 
 		// Done.
 		return declaration;
+	}
+
+	/**
+	 * Construct register declarations for this function or method. The register
+	 * declarations stores information about the names and declared types of all
+	 * registers. Technically speaking, this information is not necessary to
+	 * compile and run a Whiley program. However, it is very useful for
+	 * debugging and performing verification.
+	 */	
+	private VariableDeclarations createVariableDeclarations(Environment environment,
+			List<VariableDeclarations.Declaration> declarations) {
+		// FIXME: this is a hack. In essence, we're trying to get the types of
+		// all intermediate registers used in code generation. To do this, we're
+		// looking at their type having typed the entire function.
+		for(int i=declarations.size();i<environment.size();i=i+1) {
+			Type t = environment.type(i);
+			declarations.add(new VariableDeclarations.Declaration(t,null));
+		}
+		return new VariableDeclarations(declarations);
+	}
+	
+	/**
+	 * Add a list of parameter declarations to a given environment
+	 * 
+	 * @param parameters --- List of parameters to add
+	 * @param types --- List of parameter types
+	 * @param environment --- environment to add parameters to
+	 */
+	private Environment addDeclaredParameters(List<WhileyFile.Parameter> parameters, List<Nominal> types,
+			Environment environment) {
+		for (int i = 0; i != parameters.size(); ++i) {
+			WhileyFile.Parameter parameter = parameters.get(i);
+			// allocate parameter to register in the current block
+			environment.allocate(types.get(i).raw(), parameter.name);
+		}
+		return environment;
+	}
+	
+	/**
+	 * Add a list of parameter declarations to a given environment
+	 * 
+	 * @param parameters --- List of parameters to add
+	 * @param types --- List of parameter types
+	 * @param environment --- environment to add parameters to
+	 */
+	private Environment addDeclaredParameter(WhileyFile.Parameter parameter, Nominal type,
+			Environment environment) {
+		// allocate parameter to register in the current block
+		environment.allocate(type.raw(), parameter.name);
+		return environment;
+	}
+
+	/**
+	 * Add a list of parameter declarations to a given environment
+	 *
+	 * @param parameters
+	 *            --- List of parameters to add
+	 * @param types
+	 *            --- List of nominal parameter types
+	 * @param declarations
+	 *            --- List of declarations being constructed
+	 */
+	private List<VariableDeclarations.Declaration> addDeclaredParameters(List<WhileyFile.Parameter> parameters,
+			List<Nominal> types, List<VariableDeclarations.Declaration> declarations) {
+		for (int i = 0; i != parameters.size(); ++i) {
+			WhileyFile.Parameter parameter = parameters.get(i);
+			// allocate parameter to register in the current block
+			declarations.add(new VariableDeclarations.Declaration(types.get(i).nominal(), parameter.name));
+		}
+		return declarations;
+	}
+
+	/**
+	 * Add a list of parameter declarations to a given environment
+	 * 
+	 * @param parameters --- List of parameters to add
+	 * @param types --- List of parameter types
+	 * @param environment --- environment to add parameters to
+	 */
+	private List<VariableDeclarations.Declaration> addDeclaredParameter(WhileyFile.Parameter parameter, Nominal type,
+			List<VariableDeclarations.Declaration> declarations) {
+		// allocate parameter to register in the current block
+		if(parameter != null) {
+			declarations.add(new VariableDeclarations.Declaration(type.nominal(), parameter.name));
+		}
+		return declarations;
 	}
 
 	// =========================================================================
@@ -452,24 +509,14 @@ public final class CodeGenerator {
 	private void generate(VariableDeclaration s, Environment environment,
 			AttributedCodeBlock codes, Context context) {
 		// First, we allocate this variable to a given slot in the environment.
-		int root = environment.allocate(s.type.raw());
+		int root = environment.allocate(s.type.raw(),s.parameter.name);
 
 		// Second, translate initialiser expression if it exists.
 		if (s.expr != null) {
 			int operand = generate(s.expr, environment, codes, context);
 			codes.add(Codes.Assign(s.expr.result().raw(), root, operand),
-					attributes(s));
-			addDeclaredVariables(root, s.pattern, s.type.raw(), environment,
-					codes);
-		} else {
-			// The following is a little sneaky. Since we don't have an
-			// initialiser, we cannot generate any codes for destructuring it.
-			// Therefore, we create a dummy block into which any such codes are
-			// placed and then we discard it. This is essentially a hack to
-			// reuse the existing addDeclaredVariables method.
-			addDeclaredVariables(root, s.pattern, s.type.raw(), environment,
-					new AttributedCodeBlock());
-		}
+					attributes(s));			
+		} 	
 	}
 
 	/**
@@ -553,19 +600,6 @@ public final class CodeGenerator {
 					environment.get(rv.var), operand,
 					Codes.UnaryOperatorKind.DENOMINATOR), attributes(s));
 
-		} else if (s.lhs instanceof Expr.Tuple) {
-			Expr.Tuple tg = (Expr.Tuple) s.lhs;
-			// Having translated the right-hand side expression, we now
-			// destructure it using tupleload bytecodes and assign to those
-			// variables on the left-hand side.
-			ArrayList<Expr> fields = new ArrayList<Expr>(tg.fields);
-
-			for (int i = 0; i != fields.size(); ++i) {
-				Expr.AssignedVariable v = (Expr.AssignedVariable) fields.get(i);
-				codes.add(Codes.TupleLoad((Type.EffectiveTuple) s.rhs.result()
-						.raw(), environment.get(v.var), operand, i),
-						attributes(s));
-			}
 		} else if (s.lhs instanceof Expr.IndexOf
 				|| s.lhs instanceof Expr.FieldAccess
 				|| s.lhs instanceof Expr.Dereference) {
@@ -738,19 +772,14 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Return s, Environment environment,
-			AttributedCodeBlock codes, Context context) {
-
+	private void generate(Stmt.Return s, Environment environment, AttributedCodeBlock codes, Context context) {
 		if (s.expr != null) {
 			int operand = generate(s.expr, environment, codes, context);
-
 			// Here, we don't put the type propagated for the return expression.
 			// Instead, we use the declared return type of this function. This
 			// has the effect of forcing an implicit coercion between the
 			// actual value being returned and its required type.
-
-			Type ret = ((WhileyFile.FunctionOrMethod) context).resolvedType()
-					.raw().ret();
+			Type ret = ((WhileyFile.FunctionOrMethod) context).resolvedType().raw().ret();
 
 			codes.add(Codes.Return(ret, operand), attributes(s));
 		} else {
@@ -1694,9 +1723,6 @@ public final class CodeGenerator {
 			} else if (expression instanceof Expr.Record) {
 				return generate((Expr.Record) expression, environment, codes,
 						context);
-			} else if (expression instanceof Expr.Tuple) {
-				return generate((Expr.Tuple) expression, environment, codes,
-						context);
 			} else if (expression instanceof Expr.FunctionOrMethod) {
 				return generate((Expr.FunctionOrMethod) expression,
 						environment, codes, context);
@@ -1854,9 +1880,9 @@ public final class CodeGenerator {
 		// Create concrete type for private lambda function
 		Type.FunctionOrMethod cfm;
 		if (tfm instanceof Type.Function) {
-			cfm = Type.Function(tfm.ret(), tfm.throwsClause(), paramTypes);
+			cfm = Type.Function(tfm.ret(), paramTypes);
 		} else {
-			cfm = Type.Method(tfm.ret(), tfm.throwsClause(), paramTypes);
+			cfm = Type.Method(tfm.ret(), paramTypes);
 		}
 
 		// Construct private lambda function using generated body
@@ -2053,15 +2079,6 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.Tuple expr, Environment environment,
-			AttributedCodeBlock codes, Context context) {
-		int[] operands = generate(expr.fields, environment, codes, context);
-		int target = environment.allocate(expr.result().raw());
-		codes.add(Codes.NewTuple((Type.Tuple) expr.result().raw(), target, operands),
-				attributes(expr));
-		return target;
-	}
-
 	private int generate(Expr.FieldAccess expr, Environment environment,
 			AttributedCodeBlock codes, Context context) {
 		int operand = generate(expr.src, environment, codes, context);
@@ -2143,73 +2160,6 @@ public final class CodeGenerator {
 		}
 		// dead-code
 		return null;
-	}
-
-	/**
-	 * The purpose of this method is to construct aliases for variables declared
-	 * as part of type patterns. For example:
-	 *
-	 * <pre>
-	 * type tup as {int x, int y} where x < y
-	 * </pre>
-	 *
-	 * Here, variables <code>x</code> and <code>y</code> are declared as part of
-	 * the type pattern, and we translate them into the aliases : $.x and $.y,
-	 * where "$" is the root variable passed as a parameter.
-	 *
-	 * @param src
-	 * @param t
-	 * @param environment
-	 */
-	public static void addDeclaredVariables(int root, TypePattern pattern,
-			Type type, Environment environment, AttributedCodeBlock blk) {
-
-		if (pattern instanceof TypePattern.Record) {
-			TypePattern.Record tp = (TypePattern.Record) pattern;
-			Type.Record tt = (Type.Record) type;
-			for (TypePattern.Leaf element : tp.elements) {
-				String fieldName = element.var.var;
-				Type fieldType = tt.field(fieldName);
-				int target = environment.allocate(fieldType);
-				blk.add(Codes.FieldLoad(tt, target, root, fieldName));
-				addDeclaredVariables(target, element, fieldType, environment,
-						blk);
-			}
-		} else if (pattern instanceof TypePattern.Tuple) {
-			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
-			Type.Tuple tt = (Type.Tuple) type;
-			for (int i = 0; i != tp.elements.size(); ++i) {
-				TypePattern element = tp.elements.get(i);
-				Type elemType = tt.element(i);
-				int target = environment.allocate(elemType);
-				blk.add(Codes.TupleLoad(tt, target, root, i));
-				addDeclaredVariables(target, element, elemType, environment,
-						blk);
-			}
-		} else if (pattern instanceof TypePattern.Rational) {
-			TypePattern.Rational tp = (TypePattern.Rational) pattern;
-			int num = environment.allocate(Type.T_INT);
-			int den = environment.allocate(Type.T_INT);
-			blk.add(Codes.UnaryOperator(Type.T_REAL, num, root,
-					Codes.UnaryOperatorKind.NUMERATOR));
-			blk.add(Codes.UnaryOperator(Type.T_REAL, den, root,
-					Codes.UnaryOperatorKind.DENOMINATOR));
-			addDeclaredVariables(num, tp.numerator, Type.T_INT, environment,
-					blk);
-			addDeclaredVariables(den, tp.denominator, Type.T_INT, environment,
-					blk);
-		} else {
-			// do nothing for leaf
-			TypePattern.Leaf lp = (TypePattern.Leaf) pattern;
-			if (lp.var != null) {
-				Integer index = environment.get(lp.var.var);
-				if(index != null) {
-					blk.add(Codes.Assign(type, index, root));
-				} else {
-					environment.put(root,lp.var.var);
-				}
-			}
-		}
 	}
 
 	@SuppressWarnings("incomplete-switch")
@@ -2299,7 +2249,8 @@ public final class CodeGenerator {
 			return;
 		} else if (stmt instanceof VariableDeclaration) {
 			VariableDeclaration d = (VariableDeclaration) stmt;
-			addDeclaredVariables(d.pattern,d.type,declarations,environment);
+			declarations.add(new VariableDeclarations.Declaration(d.type.nominal(),d.parameter.name));
+			environment.allocate(d.type.raw(),d.parameter.name);			
 		} else if (stmt instanceof IfElse) {
 			IfElse s = (IfElse) stmt;
 			buildVariableDeclarations(s.trueBranch, declarations, environment, context);
@@ -2321,41 +2272,6 @@ public final class CodeGenerator {
 					+ stmt.getClass().getName(), context, stmt);
 		}
 	}
-
-	public static void addDeclaredVariables(TypePattern pattern, Nominal type,
-			List<VariableDeclarations.Declaration> declarations,
-			Environment environment) {
-
-		if (pattern instanceof TypePattern.Record) {
-			TypePattern.Record tp = (TypePattern.Record) pattern;
-			Nominal.Record tt = (Nominal.Record) type;
-			for (TypePattern.Leaf element : tp.elements) {
-				String fieldName = element.var.var;
-				Nominal fieldType = tt.field(fieldName);
-				addDeclaredVariables(pattern, fieldType, declarations, environment);
-			}
-		} else if (pattern instanceof TypePattern.Tuple) {
-			TypePattern.Tuple tp = (TypePattern.Tuple) pattern;
-			Nominal.Tuple tt = (Nominal.Tuple) type;
-			for (int i = 0; i != tp.elements.size(); ++i) {
-				TypePattern element = tp.elements.get(i);
-				Nominal elemType = tt.element(i);
-				addDeclaredVariables(element,elemType,declarations, environment);
-			}
-		} else if (pattern instanceof TypePattern.Rational) {
-			TypePattern.Rational tp = (TypePattern.Rational) pattern;
-			addDeclaredVariables(tp.numerator, Nominal.T_INT, declarations, environment);
-			addDeclaredVariables(tp.denominator, Nominal.T_INT, declarations, environment);
-		} else {
-			// do nothing for leaf
-			TypePattern.Leaf lp = (TypePattern.Leaf) pattern;
-			if (lp.var != null) {
-				declarations.add(new VariableDeclarations.Declaration(type.nominal(),lp.var.var));
-				environment.allocate(type.raw(),lp.var.var);
-			}
-		}
-	}
-
 
 	/**
 	 * The attributes method extracts those attributes of relevance to WyIL, and

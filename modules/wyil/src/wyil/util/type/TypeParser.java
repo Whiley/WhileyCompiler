@@ -86,7 +86,7 @@ public class TypeParser {
 			}
 			match(")");
 			skipWhiteSpace();
-			return Function(t,Type.T_VOID,elems);
+			return Function(t,elems);
 		}
 		return t;
 	}
@@ -108,25 +108,9 @@ public class TypeParser {
 			match("(");
 			Type t = parse(typeVariables);
 			skipWhiteSpace();
-			lookahead = str.charAt(index);
-			if(lookahead == ',') {
-				// this is a tuple, not a bracketed type.
-				ArrayList<Type> elems = new ArrayList();
-				elems.add(t);
-				while(lookahead == ',') {
-					match(",");
-					elems.add(parse(typeVariables));
-					skipWhiteSpace();
-					lookahead = str.charAt(index);
-				}
-				match(")");
-				skipWhiteSpace();
-				return Tuple(elems);
-			} else {
-				match(")");
-				skipWhiteSpace();
-				return t;
-			}
+			match(")");
+			skipWhiteSpace();
+			return t;
 		} else {
 			return parseTerm(typeVariables);
 		}

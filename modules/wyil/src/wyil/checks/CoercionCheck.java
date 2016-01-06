@@ -130,16 +130,6 @@ public class CoercionCheck implements Transform<WyilFile> {
 			// also no problem
 		} else if(from instanceof Type.Leaf && to instanceof Type.Leaf) {
 			// no problem
-		} else if(from instanceof Type.Tuple && to instanceof Type.Tuple) {
-			Type.Tuple t1 = (Type.Tuple) from;
-			Type.Tuple t2 = (Type.Tuple) to;
-			List<Type> t1_elements = t1.elements();
-			List<Type> t2_elements = t2.elements();
-			for(int i=0;i!=t2.elements().size();++i) {
-				Type e1 = t1_elements.get(i);
-				Type e2 = t2_elements.get(i);
-				check(e1,e2,visited,location);
-			}
 		} else if(from instanceof Type.Reference && to instanceof Type.Reference) {
 			Type.Reference t1 = (Type.Reference) from;
 			Type.Reference t2 = (Type.Reference) to;

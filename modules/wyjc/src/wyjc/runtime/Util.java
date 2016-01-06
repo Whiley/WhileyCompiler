@@ -138,24 +138,6 @@ public class Util {
 				}
 				break;
 			}
-			case K_TUPLE:
-			{
-				if(obj instanceof WyTuple) {
-					WyTuple ol = (WyTuple) obj;
-					WyType.Tuple tl = (WyType.Tuple) t;
-					WyType[] types = tl.types;
-					if(types.length == ol.size()) {
-						int i=0;
-						for(Object o : ol) {
-							if(!instanceOf(o,types[i++])) {
-								return false;
-							}
-						}
-						return true;
-					}
-				}
-				break;
-			}			
 			case K_RECORD:
 			{
 				if(obj instanceof WyRecord) {
@@ -283,41 +265,7 @@ public class Util {
 			return instanceOf((Object)object,type);
 		}
 	}
-
-	/**
-	 * This method gets called when we're testing a tuple object against some
-	 * type. To reduce the number of cases, we can narrow down the possible
-	 * types by a process of deduction. The type cannot be <code>void</code> or
-	 * <code>any</code> (since the test would already have been eliminated).
-	 * Likewise, it cannot be e.g. a record, since again the test would already
-	 * have been eliminated. In fact, the type can only be a tuple or its
-	 * negation.
-	 *
-	 * @param object
-	 *            --- object being tested against.
-	 * @param type
-	 *            --- type to test against.
-	 * @return
-	 */
-	public static boolean instanceOf(WyTuple object, WyType type) {
-		if(type instanceof WyType.Tuple) {
-			WyType.Tuple tl = (WyType.Tuple) type;
-			WyType[] types = tl.types;
-			if(types.length == object.size()) {
-				int i=0;
-				for(Object o : object) {
-					if(!instanceOf(o,types[i++])) {
-						return false;
-					}
-				}
-				return true;
-			}
-			return false;
-		} else {
-			return instanceOf((Object)object,type);
-		}
-	}
-
+	
 	public static final Comparator COMPARATOR = new Comparator();
 
 	public static final class Comparator implements java.util.Comparator {
@@ -337,8 +285,6 @@ public class Util {
 			return compare((WyRat)o1,o2);
 		} else if(o1 instanceof WyArray) {
 			return compare((WyArray)o1,o2);
-		} else if(o1 instanceof WyTuple) {
-			return compare((WyTuple)o1,o2);
 		} else if(o1 instanceof WyRecord) {
 			return compare((WyRecord)o1,o2);
 		} else {
@@ -399,40 +345,9 @@ public class Util {
 		}
 	}
 
-	public static int compare(WyTuple o1, Object o2) {
-		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof WyRat || o2 instanceof WyArray) {
-			return 1;
-		} else if (o2 instanceof WyTuple) {
-			return compare(o1, (WyTuple) o2);
-		} else {
-			return -1;
-		}
-	}
-
-	public static int compare(WyTuple o1, WyTuple o2) {
-		int s1_size = o1.size();
-		int s2_size = o2.size();
-		if(s1_size < s2_size) {
-			return -1;
-		} else if(s1_size > s2_size) {
-			return 1;
-		} else {
-			for(int i=0;i!=s1_size;++i) {
-				Object e1 = o1.get(i);
-				Object e2 = o2.get(i);
-				int c = compare(e1,e2);
-				if(c != 0) {
-					return c;
-				}
-			}
-			return 0;
-		}
-	}
-
 	public static int compare(WyRecord o1, Object o2) {
 		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof WyRat || o2 instanceof WyTuple) {
+				|| o2 instanceof WyRat) {
 			return 1;
 		} else if (o2 instanceof WyRecord) {
 			return compare(o1, (WyRecord) o2);

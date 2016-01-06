@@ -210,16 +210,12 @@ public class Interpreter {
 			return execute((Codes.NewObject) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.NewRecord) {
 			return execute((Codes.NewRecord) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.NewTuple) {
-			return execute((Codes.NewTuple) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Nop) {
 			return execute((Codes.Nop) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Return) {
 			return execute((Codes.Return) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Switch) {
 			return execute((Codes.Switch) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.TupleLoad) {
-			return execute((Codes.TupleLoad) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.UnaryOperator) {
 			return execute((Codes.UnaryOperator) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Update) {
@@ -473,8 +469,6 @@ public class Interpreter {
 			return convert(value, (Type.Record) to, context);
 		} else if (to instanceof Type.Array) {
 			return convert(value, (Type.Array) to, context);
-		} else if (to instanceof Type.Tuple) {
-			return convert(value, (Type.Tuple) to, context);
 		} else if (to instanceof Type.Union) {
 			return convert(value, (Type.Union) to, context);
 		} else if (to instanceof Type.FunctionOrMethod) {
@@ -552,36 +546,6 @@ public class Interpreter {
 		return Constant.V_ARRAY(values);
 	}
 	
-	/**
-	 * Convert a value into a tuple type. The value must be of tuple type for
-	 * this to make sense.
-	 *
-	 * @param value
-	 * @param to
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Constant convert(Constant value, Type.Tuple to, Context context) {
-		checkType(value, context, Constant.Tuple.class);
-		Constant.Tuple lv = (Constant.Tuple) value;
-		List<Type> to_elements = to.elements();
-		ArrayList<Constant> lv_values = lv.values;
-		// Check we have matching fields
-		if (lv_values.size() != to_elements.size()) {
-			error("cannot convert between tuples with differing sizes", context);
-			return null; // deadcode
-		} else {
-			ArrayList<Constant> nValues = new ArrayList<Constant>();
-			for (int i = 0; i != lv_values.size(); ++i) {
-				Constant nValue = convert(lv_values.get(i), to_elements.get(i),
-						context);
-				nValues.add(nValue);
-			}
-			return Constant.V_TUPLE(nValues);
-		}
-	}
-
 	/**
 	 * Convert a value into a union type. In this case, we must find an
 	 * appropriate bound for the type in question. If no such type can be found,
@@ -827,24 +791,6 @@ public class Interpreter {
 					r &= isMemberOfType(val, element, context);
 				}
 				return r;
-			}
-			return false;
-		} else if (type instanceof Type.Tuple) {
-			if (value instanceof Constant.Tuple) {
-				Constant.Tuple t = (Constant.Tuple) value;
-				Type.Tuple tt = (Type.Tuple) type;
-				List<Constant> t_values = t.values;
-				List<Type> tt_elements = tt.elements();
-				if (t_values.size() != tt_elements.size()) {
-					return false;
-				} else {
-					boolean r = true;
-					for (int i = 0; i != t_values.size(); ++i) {
-						r &= isMemberOfType(t_values.get(i),
-								tt_elements.get(i), context);
-					}
-					return r;
-				}
 			}
 			return false;
 		} else if (type instanceof Type.Record) {
@@ -1217,28 +1163,6 @@ public class Interpreter {
 	}
 
 	/**
-	 * Execute a Tuple bytecode instruction at a given point in the function or
-	 * method body. This constructs a new tuple.
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Codes.NewTuple bytecode, Constant[] frame,
-			Context context) {
-		ArrayList<Constant> values = new ArrayList<Constant>();
-		for (int operand : bytecode.operands()) {
-			values.add((Constant) frame[operand]);
-		}
-		frame[bytecode.target()] = Constant.V_TUPLE(values);
-		return context.pc.next();
-	}
-
-	/**
 	 * Execute a Nop bytecode instruction at a given point in the function or
 	 * method body. This basically doesn't do anything!
 	 *
@@ -1287,19 +1211,6 @@ public class Interpreter {
 			}
 		}
 		return context.getLabel(bytecode.defaultTarget);
-	}
-
-	private Object execute(Codes.TupleLoad bytecode, Constant[] frame,
-			Context context) {
-		//
-		Constant _source = frame[bytecode.operand(0)];
-		// Check that we have a tuple
-		checkType(_source, context, Constant.Tuple.class);
-		Constant.Tuple source = (Constant.Tuple) _source;
-		// Assign tuple element to target register
-		frame[bytecode.target()] = source.values.get(bytecode.index);
-		// Fall through to next bytecode
-		return context.pc.next();
 	}
 
 	private Object execute(Codes.UnaryOperator bytecode, Constant[] frame,
@@ -1468,13 +1379,6 @@ public class Interpreter {
 		} else if (constant instanceof Constant.Decimal) {
 			Constant.Decimal dec = (Constant.Decimal) constant;
 			return Constant.V_RATIONAL(new BigRational(dec.value));
-		} else if (constant instanceof Constant.Tuple) {
-			Constant.Tuple ct = (Constant.Tuple) constant;
-			ArrayList<Constant> values = new ArrayList<Constant>(ct.values);
-			for (int i = 0; i != values.size(); ++i) {
-				values.set(i, cleanse(values.get(i), context));
-			}
-			return Constant.V_TUPLE(values);
 		} else if (constant instanceof Constant.Array) {
 			Constant.Array ct = (Constant.Array) constant;
 			ArrayList<Constant> values = new ArrayList<Constant>(ct.values);

@@ -38,8 +38,6 @@ public abstract class Nominal {
 	public static Nominal construct(Type nominal, Type raw) {
 		if(nominal instanceof Type.Reference && raw instanceof Type.Reference) {
 			return new Reference((Type.Reference)nominal,(Type.Reference)raw);
-		} else if(nominal instanceof Type.EffectiveTuple && raw instanceof Type.EffectiveTuple) {
-			return new Tuple((Type.EffectiveTuple)nominal,(Type.EffectiveTuple)raw);
 		} else if(nominal instanceof Type.EffectiveArray && raw instanceof Type.EffectiveArray) {
 			return new Array((Type.EffectiveArray)nominal,(Type.EffectiveArray)raw);
 		} else if(nominal instanceof Type.EffectiveRecord && raw instanceof Type.EffectiveRecord) {
@@ -57,30 +55,6 @@ public abstract class Nominal {
 		Type nominal = Type.intersect(lhs.nominal(),rhs.nominal());
 		Type raw = Type.intersect(lhs.raw(),rhs.raw());
 		return Nominal.construct(nominal, raw);
-	}
-
-	public static Tuple Tuple(Nominal... elements) {
-		ArrayList<Type> rawElements = new ArrayList<Type>();
-		ArrayList<Type> nominalElements = new ArrayList<Type>();
-		for(Nominal e : elements) {
-			rawElements.add(e.raw());
-			nominalElements.add(e.raw());
-		}
-		Type.Tuple rawType = Type.Tuple(rawElements);
-		Type.Tuple nominalType = Type.Tuple(nominalElements);
-		return new Tuple(nominalType,rawType);
-	}
-
-	public static Tuple Tuple(Collection<Nominal> elements) {
-		ArrayList<Type> rawElements = new ArrayList<Type>();
-		ArrayList<Type> nominalElements = new ArrayList<Type>();
-		for(Nominal e : elements) {
-			rawElements.add(e.raw());
-			nominalElements.add(e.raw());
-		}
-		Type.Tuple rawType = Type.Tuple(rawElements);
-		Type.Tuple nominalType = Type.Tuple(nominalElements);
-		return new Tuple(nominalType,rawType);
 	}
 
 	public static Reference Reference(Nominal element) {
@@ -235,52 +209,6 @@ public abstract class Nominal {
 		}
 	}
 
-	public static final class Tuple extends Nominal {
-		private final Type.EffectiveTuple nominal;
-		private final Type.EffectiveTuple raw;
-
-		Tuple(Type.EffectiveTuple nominal, Type.EffectiveTuple raw) {
-			this.nominal = nominal;
-			this.raw = raw;
-		}
-
-		public Type nominal() {
-			return (Type) nominal;
-		}
-
-		public Type raw() {
-			return (Type) raw;
-		}
-
-		public Nominal element(int index) {
-			return construct(nominal.element(index),raw.element(index));
-		}
-
-		public ArrayList<Nominal> elements() {
-			ArrayList<Nominal> r = new ArrayList<Nominal>();
-			List<Type> rawElements = raw.elements();
-			List<Type> nominalElements = nominal.elements();
-			for(int i=0;i!=rawElements.size();++i) {
-				Type nominalElement = nominalElements.get(i);
-				Type rawElement = rawElements.get(i);
-				r.add(construct(nominalElement,rawElement));
-			}
-			return r;
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Tuple) {
-				Tuple b = (Tuple) o;
-				return nominal.equals(b.nominal()) && raw.equals(b.raw());
-			}
-			return false;
-		}
-
-		public int hashCode() {
-			return raw.hashCode();
-		}
-	}
-
 	public static final class Record extends Nominal {
 		private final Type.EffectiveRecord nominal;
 		private final Type.EffectiveRecord raw;
@@ -343,11 +271,31 @@ public abstract class Nominal {
 
 		abstract public Type.FunctionOrMethod raw();
 
-		abstract public Nominal ret();
-
-		abstract public Nominal param(int i);
+		public Nominal ret() {
+			Type nominalElement = nominal().ret();
+			Type rawElement = raw().ret();
+			return construct(nominalElement,rawElement);
+		}
+				
+		public Nominal param(int i) {
+			List<Type> rawElements = raw().params();
+			List<Type> nominalElements = nominal().params();
+			Type nominalElement = nominalElements.get(i);
+			Type rawElement = rawElements.get(i);
+			return construct(nominalElement,rawElement);
+		}
 		
-		abstract public List<Nominal> params();
+		public List<Nominal> params() {
+			ArrayList<Nominal> r = new ArrayList<Nominal>();
+			List<Type> rawElements = raw().params();
+			List<Type> nominalElements = nominal().params();
+			for(int i=0;i!=rawElements.size();++i) {
+				Type nominalElement = nominalElements.get(i);
+				Type rawElement = rawElements.get(i);
+				r.add(construct(nominalElement,rawElement));
+			}
+			return r;
+		}
 	}
 
 	public static final class Function extends FunctionOrMethod {
@@ -366,31 +314,7 @@ public abstract class Nominal {
 		public Type.Function raw() {
 			return raw;
 		}
-
-		public Nominal ret() {
-			return construct(nominal.ret(),raw.ret());
-		}
 		
-		public Nominal param(int i) {
-			List<Type> rawElements = raw.params();
-			List<Type> nominalElements = nominal.params();
-			Type nominalElement = nominalElements.get(i);
-			Type rawElement = rawElements.get(i);
-			return construct(nominalElement,rawElement);
-		}
-		
-		public List<Nominal> params() {
-			ArrayList<Nominal> r = new ArrayList<Nominal>();
-			List<Type> rawElements = raw.params();
-			List<Type> nominalElements = nominal.params();
-			for(int i=0;i!=rawElements.size();++i) {
-				Type nominalElement = nominalElements.get(i);
-				Type rawElement = rawElements.get(i);
-				r.add(construct(nominalElement,rawElement));
-			}
-			return r;
-		}
-
 		public boolean equals(Object o) {
 			if (o instanceof Function) {
 				Function b = (Function) o;
@@ -420,31 +344,6 @@ public abstract class Nominal {
 		public Type.Method raw() {
 			return raw;
 		}
-
-		public Nominal ret() {
-			return construct(nominal.ret(),raw.ret());
-		}
-
-		public Nominal param(int i) {
-			List<Type> rawElements = raw.params();
-			List<Type> nominalElements = nominal.params();
-			Type nominalElement = nominalElements.get(i);
-			Type rawElement = rawElements.get(i);
-			return construct(nominalElement,rawElement);
-		}
-		
-		public List<Nominal> params() {
-			ArrayList<Nominal> r = new ArrayList<Nominal>();
-			List<Type> rawElements = raw.params();
-			List<Type> nominalElements = nominal.params();
-			for(int i=0;i!=rawElements.size();++i) {
-				Type nominalElement = nominalElements.get(i);
-				Type rawElement = rawElements.get(i);
-				r.add(construct(nominalElement,rawElement));
-			}
-			return r;
-		}
-
 
 		public boolean equals(Object o) {
 			if (o instanceof Method) {

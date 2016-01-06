@@ -522,7 +522,7 @@ public interface Code {
 	public static final int OPCODE_numerator   = 7 + FMT_UNARYASSIGN;
 	public static final int OPCODE_denominator = 8 + FMT_UNARYASSIGN;
 	public static final int OPCODE_not         = 9 + FMT_UNARYASSIGN;
-	public static final int OPCODE_tupleload   = 10 + FMT_UNARYASSIGN;
+//	public static final int OPCODE_tupleload   = 10 + FMT_UNARYASSIGN;
 	public static final int OPCODE_fieldload   = 11 + FMT_UNARYASSIGN; // +STRINGIDX
 	public static final int OPCODE_convert     = 12 + FMT_UNARYASSIGN; // +TYPEIDX
 
@@ -583,7 +583,7 @@ public interface Code {
 	public static final int OPCODE_newlist          = 0 + FMT_NARYASSIGN;
 //  public static final int OPCODE_newset          = 1 + FMT_NARYASSIGN;
 //	public static final int OPCODE_newmap           = 2 + FMT_NARYASSIGN;
-	public static final int OPCODE_newtuple         = 3 + FMT_NARYASSIGN;
+//	public static final int OPCODE_newtuple         = 3 + FMT_NARYASSIGN;
 	public static final int OPCODE_indirectinvokefn = 4 + FMT_NARYASSIGN;
 	public static final int OPCODE_indirectinvokemd = 5 + FMT_NARYASSIGN;
 //	public static final int OPCODE_sublist          = 6 + FMT_NARYASSIGN;
