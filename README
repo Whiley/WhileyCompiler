@@ -141,8 +141,11 @@ For more info on Wyclipse, see http://whiley.org/tools/wyclipse/
 ============================================================================
 
 You can build the Whiley compiler from scratch by cloning this
-repository.  There are a few notes about setting up under an IDE such
-as Eclipse or IntelliJ:
+repository.  Then build all the projects simply by running 'ant'
+at the top level (You need to have Apache Ant installed to do this).
+
+If you wish to use an IDE, here are a few notes about setting up
+under an IDE such as Eclipse or IntelliJ:
 
 * The repository should not be setup as a single project!  Rather,
   each module in the modules/ directory is intended to be its own
@@ -153,12 +156,13 @@ as Eclipse or IntelliJ:
   under Eclipse.
 
 * The .classpath Eclipse files refer to the libraries "WyRL" and
-  "Jasm".  Under Eclipse, you should set these up as "User-Defined
-  Libraries" and point them to the appropriate jar files in the lib/
-  directory.
+  "Jasm".  Under Eclipse (Preferences/Java/Build Path/User Libraries),
+  you should set these up as "User-Defined Libraries" and point them
+  to the appropriate jar files in the lib/ directory (the "config.xml"
+  file will tell you which version of each .jar file you should use).
+  You should also create a user-defined library called "Ant" and add
+  to it at least the lib/ant.jar file in your Apache Ant installation.
 
-Finally, you can also build from source using the Ant build.xml files
-provided.  
 
 ============================================================================
 4. Making a Contribution
