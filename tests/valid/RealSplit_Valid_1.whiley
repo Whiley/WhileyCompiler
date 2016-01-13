@@ -1,7 +1,9 @@
 
 
 function f(real z) -> {int n, int d}:
-    int x / int y = z
+    int x
+    int y
+    x/y = z
     return {n: x, d: y}
 
 public export method test() -> void:

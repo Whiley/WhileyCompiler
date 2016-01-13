@@ -230,7 +230,6 @@ public final class CodeGenerator {
 		// Allocate all declared variables now. This ensures that all declared
 		// variables occur before any temporary variables.
 		buildVariableDeclarations(fd.statements, declarations, environment, fd);
-		
 		// ==================================================================
 		// Generate pre-condition
 		// ==================================================================

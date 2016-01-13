@@ -127,11 +127,11 @@ requires exponent > 0:
  * Return largest integer which is less-than-or-equal to
  * the given value
  */
-public function floor(real x) -> (int r)
+public function floor(real x) -> (int result)
 // Return is greater-than-or-equal to input
-ensures ((real) r) <= x
+ensures ((real) result) <= x
 // Input value is between return and return plus one
-ensures ((real) r + 1) > x:
+ensures ((real) result + 1) > x:
     //
     int num
     int den
@@ -146,11 +146,11 @@ ensures ((real) r + 1) > x:
  * Return smallest integer which is greater-than-or-equal to
  * the given value
  */
-public function ceil(real x) -> (int r)
+public function ceil(real x) -> (int result)
 // Return is greater-than-or-equal to input
-ensures x <= ((real) r)
+ensures x <= ((real) result)
 // Input value is between return and return less one
-ensures ((real) r - 1) < x:
+ensures ((real) result - 1) < x:
     //
     int num
     int den

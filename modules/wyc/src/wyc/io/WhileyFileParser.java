@@ -289,15 +289,13 @@ public class WhileyFileParser {
 		
 		// Parse (optional) return type
 		Parameter ret = null;
-		HashSet<String> ensuresEnvironment = environment;
 
 		if (tryAndMatch(true, MinusGreater) != null) {
 			// Explicit return type is given, so parse it! We first clone the
 			// environent and create a special one only for use within ensures
 			// clauses, since these are the only expressions which may refer to
 			// variables declared in the return type.
-			ensuresEnvironment = new HashSet<String>(environment);						
-			ret = parseOptionalParameter(wf,ensuresEnvironment);		
+			ret = parseOptionalParameter(wf,environment);		
 		} 
 
 		// Parse optional requires/ensures clauses
@@ -315,7 +313,7 @@ public class WhileyFileParser {
 				// Use the ensuresEnvironment here to get access to any
 				// variables declared in the return type pattern.
 				// NOTE: expression terminated by ':'
-				ensures.add(parseLogicalExpression(wf, ensuresEnvironment, true));
+				ensures.add(parseLogicalExpression(wf, environment, true));
 				break;
 			}
 		}

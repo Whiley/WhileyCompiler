@@ -1862,7 +1862,6 @@ public class VcGenerator {
 			branch.havoc(register);
 			return branch.read(register);
 		} else {
-			System.out.println("SOURCE IS: " + source.getClass().getName());
 			// TODO: Must implement the other cases. At the moment, I'm not sure
 			// the best way to do this though.
 		}

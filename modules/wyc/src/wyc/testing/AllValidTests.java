@@ -1694,7 +1694,7 @@ public class AllValidTests {
 		runTest("RecursiveType_Valid_11");
 	}
 
-	@Test
+	@Ignore("#339") @Test
 	public void RecursiveType_Valid_12() throws IOException {
 		runTest("RecursiveType_Valid_12");
 	}
@@ -1749,7 +1749,7 @@ public class AllValidTests {
 		runTest("RecursiveType_Valid_21");
 	}
 
-	@Test
+	@Ignore("#339") @Test
 	public void RecursiveType_Valid_22() throws IOException {
 		runTest("RecursiveType_Valid_22");
 	}

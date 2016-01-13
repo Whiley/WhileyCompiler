@@ -250,12 +250,12 @@ public class FlowTypeChecker {
 		
 		// Resolve the types of all parameters and construct an appropriate
 		// environment for use in the flow-sensitive type propagation.
-		Environment environment = addDeclaredParameters(d.parameters,new Environment(),d);		
+		Environment environment = addDeclaredParameters(d.parameters,new Environment(),d);
+		environment = addDeclaredParameter(d.returnType, environment.clone(), d);
 		// Resolve types for any preconditions (i.e. requires clauses) provided.
 		propagateConditions(d.requires, environment, d);		
 		// Resolve types for any postconditions (i.e. ensures clauses) provided.
-		Environment ensuresEnvironment = addDeclaredParameter(d.returnType, environment.clone(), d);
-		propagateConditions(d.ensures, ensuresEnvironment, d);
+		propagateConditions(d.ensures, environment, d);
 
 		// Resolve the overall type for the function or method.
 		if (d instanceof WhileyFile.Function) {

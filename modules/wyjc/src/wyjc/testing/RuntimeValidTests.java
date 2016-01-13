@@ -414,7 +414,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Complex_Valid_2");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Ignore("#339") @Test
 	public void Complex_Valid_3() {
 		runTest("Complex_Valid_3");
 	}
@@ -1763,7 +1763,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_11");
 	}
 
-	@Test
+	@Ignore("#339") @Test
 	public void RecursiveType_Valid_12() {
 		runTest("RecursiveType_Valid_12");
 	}
@@ -1818,7 +1818,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_21");
 	}
 
-	@Test
+	@Ignore("#339") @Test
 	public void RecursiveType_Valid_22() {
 		runTest("RecursiveType_Valid_22");
 	}
