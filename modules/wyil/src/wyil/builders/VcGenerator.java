@@ -167,7 +167,7 @@ public class VcGenerator {
 					precondition.get(i), fmm.params(), true);
 		}
 		prefix = method.name() + "_ensures_";
-		List<Type> postEnvironment = prepend(fmm.ret(), fmm.params());
+		List<Type> postEnvironment = append(fmm.params(), fmm.ret());		
 		for (int i = 0; i != postcondition.size(); ++i) {
 			buildMacroBlock(prefix + i, CodeBlock.Index.ROOT,
 					postcondition.get(i), postEnvironment, true);
@@ -273,10 +273,10 @@ public class VcGenerator {
 					// which held on entry to this function.
 					arguments = new Expr[fmm.params().size() + 1];
 					for (int i = 0; i != fmm.params().size(); ++i) {
-						arguments[i + 1] = new Expr.Variable(prefixes[i]);
+						arguments[i] = new Expr.Variable(prefixes[i]);
 					}
 					
-					arguments[0] = returnedOperand;
+					arguments[fmm.params().size()] = returnedOperand;
 					// For each postcondition generate a separate
 					// verification condition. Doing this allows us to gather
 					// more detailed context information in the case of a
@@ -1724,8 +1724,8 @@ public class VcGenerator {
 				// To assume the post-condition holds after the method, we
 				// simply called the corresponding post-condition macros.
 				Expr[] arguments = new Expr[operands.length + 1];
-				System.arraycopy(operands, 0, arguments, 1, operands.length);
-				arguments[0] = branch.read(code.target());
+				System.arraycopy(operands, 0, arguments, 0, operands.length);
+				arguments[operands.length] = branch.read(code.target());
 				String prefix = code.name.name() + "_ensures_";
 				for (int i = 0; i != ensures.size(); ++i) {
 					Expr.Invoke macro = new Expr.Invoke(prefix + i,
@@ -2444,8 +2444,7 @@ public class VcGenerator {
 			internalFailure("unknown comparator (" + cop + ")", filename,
 					block.attributes(branch.pc()));
 			return null;
-		}
-
+		}		
 		return new Expr.Binary(op, lhs, rhs,
 				toWycsAttributes(block.attributes(branch.pc())));
 	}
@@ -2717,10 +2716,10 @@ public class VcGenerator {
 		return null; // dead-code
 	}
 	
-	private static <T> List<T> prepend(T x, List<T> xs) {
+	private static <T> List<T> append(List<T> xs, T x) {
 		ArrayList<T> rs = new ArrayList<T>();
-		rs.add(x);
 		rs.addAll(xs);
+		rs.add(x);		
 		return rs;
 	}
 

@@ -78,7 +78,7 @@ import wyjc.util.WyjcBuildTask;
 
  	private static final String WYBS_CLASS_DIR="../../modules/wybs/src/";
 
- 	private static final String WYRL_CLASS_DIR="../../lib/wyrl-v0.4.3.jar";
+ 	private static final String WYRL_CLASS_DIR="../../lib/wyrl-v0.4.4.jar";
 
 
  	static {

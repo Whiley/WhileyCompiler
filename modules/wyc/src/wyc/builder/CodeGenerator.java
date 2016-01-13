@@ -219,23 +219,18 @@ public final class CodeGenerator {
 		//Type.FunctionOrMethod rawFnType = fd.resolvedType().raw();
 		Type.FunctionOrMethod nominalFnType = fd.resolvedType().nominal();
 
-		// The environment maintains the mapping from source-level variables to
-		// the registers in WyIL block(s).
-
 		// ==================================================================
 		// Construct environments
 		// ==================================================================
 
-		Environment environment = addDeclaredParameters(fd.parameters,fd.resolvedType().params(),new Environment());
-		
-		List<VariableDeclarations.Declaration> declarations = new ArrayList<VariableDeclarations.Declaration>(); 				
-		addDeclaredParameters(fd.parameters,fd.resolvedType().params(), declarations);
-		addDeclaredParameter(fd.returnType,fd.resolvedType().ret(), declarations);
-		
+		Environment environment = new Environment();		
+		ArrayList<VariableDeclarations.Declaration> declarations = new ArrayList<VariableDeclarations.Declaration>(); 				
+		addDeclaredParameters(fd.parameters,fd.resolvedType().params(), environment, declarations);
+		addDeclaredParameter(fd.returnType,fd.resolvedType().ret(), environment, declarations);		
 		// Allocate all declared variables now. This ensures that all declared
 		// variables occur before any temporary variables.
 		buildVariableDeclarations(fd.statements, declarations, environment, fd);
-
+		
 		// ==================================================================
 		// Generate pre-condition
 		// ==================================================================
@@ -250,35 +245,27 @@ public final class CodeGenerator {
 			precondition.add(Codes.Return());
 			requires.add(precondition);
 		}
-
+		
 		// ==================================================================
 		// Generate post-condition
 		// ==================================================================
 		ArrayList<AttributedCodeBlock> ensures = new ArrayList<AttributedCodeBlock>();
-
-		if (fd.ensures.size() > 0) {
-			// This indicates one or more explicit ensures clauses are given.
-			// Therefore, we must translate each of these into Wyil bytecodes.
-
-			// First, update the environment to include the declared return
-			// variables.
-			Environment postEnvironment = addDeclaredParameter(fd.returnType,fd.resolvedType().ret(),environment);
-
-			for (Expr condition : fd.ensures) {
-				AttributedCodeBlock postcondition = new AttributedCodeBlock(new SourceLocationMap());				
-				String endLab = CodeUtils.freshLabel();
-				// Clone the environment at this stage to avoid updates to the
-				// environment within the condition affecting the external
-				// environment.
-				generateCondition(endLab, condition, new Environment(postEnvironment),
-						postcondition, fd);
-				postcondition.add(Codes.Fail(), attributes(condition));
-				postcondition.add(Codes.Label(endLab));
-				postcondition.add(Codes.Return());
-				ensures.add(postcondition);
-			}
+		// This indicates one or more explicit ensures clauses are given.
+		// Therefore, we must translate each of these into Wyil bytecodes.
+		for (Expr condition : fd.ensures) {
+			AttributedCodeBlock postcondition = new AttributedCodeBlock(new SourceLocationMap());				
+			String endLab = CodeUtils.freshLabel();
+			// Clone the environment at this stage to avoid updates to the
+			// environment within the condition affecting the external
+			// environment.
+			generateCondition(endLab, condition, new Environment(environment),
+					postcondition, fd);
+			postcondition.add(Codes.Fail(), attributes(condition));
+			postcondition.add(Codes.Label(endLab));
+			postcondition.add(Codes.Return());
+			ensures.add(postcondition);
 		}
-
+		
 		// ==================================================================
 		// Generate body
 		// ==================================================================
@@ -287,7 +274,7 @@ public final class CodeGenerator {
 		for (Stmt s : fd.statements) {
 			generate(s, environment, body, fd);
 		}
-
+		
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
@@ -303,8 +290,7 @@ public final class CodeGenerator {
 			WhileyFile.Method md = (WhileyFile.Method) fd;
 			declaration = new WyilFile.FunctionOrMethod(fd
 					.modifiers(), fd.name(), md.resolvedType.nominal(), body, requires, ensures);
-		}
-
+		}		
 		// Second, add the corresponding attribute to the enclosing method.
 		declaration.attributes().add(createVariableDeclarations(environment,declarations));
 
@@ -330,37 +316,6 @@ public final class CodeGenerator {
 		}
 		return new VariableDeclarations(declarations);
 	}
-	
-	/**
-	 * Add a list of parameter declarations to a given environment
-	 * 
-	 * @param parameters --- List of parameters to add
-	 * @param types --- List of parameter types
-	 * @param environment --- environment to add parameters to
-	 */
-	private Environment addDeclaredParameters(List<WhileyFile.Parameter> parameters, List<Nominal> types,
-			Environment environment) {
-		for (int i = 0; i != parameters.size(); ++i) {
-			WhileyFile.Parameter parameter = parameters.get(i);
-			// allocate parameter to register in the current block
-			environment.allocate(types.get(i).raw(), parameter.name);
-		}
-		return environment;
-	}
-	
-	/**
-	 * Add a list of parameter declarations to a given environment
-	 * 
-	 * @param parameters --- List of parameters to add
-	 * @param types --- List of parameter types
-	 * @param environment --- environment to add parameters to
-	 */
-	private Environment addDeclaredParameter(WhileyFile.Parameter parameter, Nominal type,
-			Environment environment) {
-		// allocate parameter to register in the current block
-		environment.allocate(type.raw(), parameter.name);
-		return environment;
-	}
 
 	/**
 	 * Add a list of parameter declarations to a given environment
@@ -372,14 +327,15 @@ public final class CodeGenerator {
 	 * @param declarations
 	 *            --- List of declarations being constructed
 	 */
-	private List<VariableDeclarations.Declaration> addDeclaredParameters(List<WhileyFile.Parameter> parameters,
-			List<Nominal> types, List<VariableDeclarations.Declaration> declarations) {
+	private void addDeclaredParameters(List<WhileyFile.Parameter> parameters,
+			List<Nominal> types, Environment environment, List<VariableDeclarations.Declaration> declarations) {
 		for (int i = 0; i != parameters.size(); ++i) {
 			WhileyFile.Parameter parameter = parameters.get(i);
 			// allocate parameter to register in the current block
 			declarations.add(new VariableDeclarations.Declaration(types.get(i).nominal(), parameter.name));
+			// allocate parameter to register in the current block
+			environment.allocate(types.get(i).raw(), parameter.name);
 		}
-		return declarations;
 	}
 
 	/**
@@ -389,13 +345,14 @@ public final class CodeGenerator {
 	 * @param types --- List of parameter types
 	 * @param environment --- environment to add parameters to
 	 */
-	private List<VariableDeclarations.Declaration> addDeclaredParameter(WhileyFile.Parameter parameter, Nominal type,
-			List<VariableDeclarations.Declaration> declarations) {
+	private void addDeclaredParameter(WhileyFile.Parameter parameter, Nominal type,
+			Environment environment, List<VariableDeclarations.Declaration> declarations) {
 		// allocate parameter to register in the current block
 		if(parameter != null) {
 			declarations.add(new VariableDeclarations.Declaration(type.nominal(), parameter.name));
-		}
-		return declarations;
+			// allocate parameter to register in the current block
+			environment.allocate(type.raw(), parameter.name);
+		}		
 	}
 
 	// =========================================================================
@@ -508,9 +465,8 @@ public final class CodeGenerator {
 	 */
 	private void generate(VariableDeclaration s, Environment environment,
 			AttributedCodeBlock codes, Context context) {
-		// First, we allocate this variable to a given slot in the environment.
-		int root = environment.allocate(s.type.raw(),s.parameter.name);
-
+		// First, we allocate this variable to a given slot in the environment.		
+		int root = environment.get(s.parameter.name);		
 		// Second, translate initialiser expression if it exists.
 		if (s.expr != null) {
 			int operand = generate(s.expr, environment, codes, context);
