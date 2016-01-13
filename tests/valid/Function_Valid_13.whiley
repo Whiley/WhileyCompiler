@@ -1,6 +1,6 @@
 
 
-type Point is {int y, int x} where x != y
+type Point is ({int y, int x} p) where p.x != p.y
 
 function f(int x) -> int:
     return x

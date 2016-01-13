@@ -275,14 +275,6 @@ public final class WyilFileWriter {
 					output.write_uv(index);
 				}
 
-			} else if(val instanceof Constant.Tuple) {
-				Constant.Tuple t = (Constant.Tuple) val;
-				output.write_uv(CONSTANT_Tuple);
-				output.write_uv(t.values.size());
-				for(Constant v : t.values) {
-					int index = constantCache.get(v);
-					output.write_uv(index);
-				}
 			} else if(val instanceof Constant.Lambda) {
 				Constant.Lambda fm = (Constant.Lambda) val;
 				Type.FunctionOrMethod t = fm.type();
@@ -706,9 +698,6 @@ public final class WyilFileWriter {
 				target = labels.get(b.second());
 				writeTarget(wide,offset,target,output);
 			}
-		} else if(code instanceof Codes.TupleLoad) {
-			Codes.TupleLoad c = (Codes.TupleLoad) code;
-			writeRest(wide,c.index,output);
 		}
 	}
 
@@ -864,9 +853,6 @@ public final class WyilFileWriter {
 				maxRest = Math.max(maxRest,constantCache.get(b.first()));
 				maxRest = Math.max(maxRest,targetWidth(b.second(), offset, labels));
 			}
-		} else if(code instanceof Codes.TupleLoad) {
-			Codes.TupleLoad c = (Codes.TupleLoad) code;
-			maxRest = Math.max(maxRest,c.index);
 		}
 
 		if(maxBase < 16) {
@@ -1123,11 +1109,6 @@ public final class WyilFileWriter {
 			for (Constant e : l.values) {
 				addConstantItem(e);
 			}
-		} else if(v instanceof Constant.Tuple) {
-			Constant.Tuple t = (Constant.Tuple) v;
-			for (Constant e : t.values) {
-				addConstantItem(e);
-			}
 		} else if(v instanceof Constant.Record) {
 			Constant.Record r = (Constant.Record) v;
 			for (Map.Entry<String,Constant> e : r.values.entrySet()) {
@@ -1247,7 +1228,7 @@ public final class WyilFileWriter {
 //	public final static int CONSTANT_Set = 7;
 	public final static int CONSTANT_List = 9;
 	public final static int CONSTANT_Record = 10;
-	public final static int CONSTANT_Tuple = 11;
+//	public final static int CONSTANT_Tuple = 11;
 //	public final static int CONSTANT_Map = 12;
 	public final static int CONSTANT_Function = 13;
 	public final static int CONSTANT_Method = 14;

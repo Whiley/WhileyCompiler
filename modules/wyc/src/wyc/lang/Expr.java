@@ -539,21 +539,6 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
-	public static class Tuple extends SyntacticElement.Impl implements
-			LVal {
-		public final ArrayList<Expr> fields;
-		public Nominal.Tuple type;
-
-		public Tuple(Collection<Expr> fields, Attribute... attributes) {
-			super(attributes);
-			this.fields = new ArrayList<Expr>(fields);
-		}
-
-		public Nominal.Tuple result() {
-			return type;
-		}
-	}
-
 	public static class AbstractInvoke extends SyntacticElement.Impl implements Expr,
 			Stmt {
 		public final String name;

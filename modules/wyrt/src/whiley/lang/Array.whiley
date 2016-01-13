@@ -26,15 +26,15 @@
 package whiley.lang
 
 // Resize an array to a given size
-public function resize(int[] items, int size, int element) -> (int[] nitems)
+public function resize(int[] items, int size, int element) -> (int[] result)
 // Required size cannot be negative
 requires size >= 0
 // Returned array is of specified size
-ensures |nitems| == size
+ensures |result| == size
 // If array is enlarged, the all elements up to new size match
-ensures all { i in 0 .. |items| | i >= size || nitems[i] == items[i] }
+ensures all { i in 0 .. |items| | i >= size || result[i] == items[i] }
 // All new elements match given element
-ensures all { i in |items| .. size | nitems[i] == element}:
+ensures all { i in |items| .. size | result[i] == element}:
     //
     int[] nitems = [element; size]
     int i = 0
@@ -142,16 +142,16 @@ ensures |r| == (end - start)
 // Items returned in slice match those in region from start
 ensures all { i in 0..|r| | items[i+start] == r[i] }:
     //
-    int[] r = [0; end-start]
+    int[] nitems = [0; end-start]
     int i = 0
     //
-    while i < |r|
-    where i >= 0 && |r| == (end-start)
-    where all { k in 0..i | r[k] == items[k+start] }:
-        r[i] = items[i+start]
+    while i < |nitems|
+    where i >= 0 && |nitems| == (end-start)
+    where all { k in 0..i | nitems[k] == items[k+start] }:
+        nitems[i] = items[i+start]
         i = i + 1
     //
-    return r
+    return nitems
 
 public function append(int[] lhs, int[] rhs) -> int[]:
     int[] rs = [0; |lhs| + |rhs|]

@@ -2,7 +2,7 @@
 
 type sr9nat is (int x) where x > 0
 
-type sr9tup is {sr9nat f, int g} where g > f
+type sr9tup is ({sr9nat f, int g} r) where r.g > r.f
 
 type sr9arr is (sr9tup[] xs) where some { i in 0..|xs| | xs[i].f == 1 }
 

@@ -78,7 +78,7 @@ import wyjc.util.WyjcBuildTask;
 
  	private static final String WYBS_CLASS_DIR="../../modules/wybs/src/";
 
- 	private static final String WYRL_CLASS_DIR="../../lib/wyrl-v0.4.3.jar";
+ 	private static final String WYRL_CLASS_DIR="../../lib/wyrl-v0.4.4.jar";
 
 
  	static {
@@ -414,7 +414,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Complex_Valid_2");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Ignore("#339") @Test
 	public void Complex_Valid_3() {
 		runTest("Complex_Valid_3");
 	}
@@ -738,16 +738,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void ConstrainedReference_Valid_1() {
 		runTest("ConstrainedReference_Valid_1");
-	}
-	
-	@Test
-	public void ConstrainedTuple_Valid_1() {
-		runTest("ConstrainedTuple_Valid_1");
-	}
-
-	@Test
-	public void ConstrainedTuple_Valid_2() {
-		runTest("ConstrainedTuple_Valid_2");
 	}
 	
 	@Test
@@ -1773,7 +1763,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_11");
 	}
 
-	@Test
+	@Ignore("#339") @Test
 	public void RecursiveType_Valid_12() {
 		runTest("RecursiveType_Valid_12");
 	}
@@ -1828,7 +1818,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_21");
 	}
 
-	@Test
+	@Ignore("#339") @Test
 	public void RecursiveType_Valid_22() {
 		runTest("RecursiveType_Valid_22");
 	}
@@ -2122,47 +2112,7 @@ import wyjc.util.WyjcBuildTask;
 	public void Syntax_Valid_1() {
 		runTest("Syntax_Valid_1");
 	}
-
-	@Test
-	public void TupleType_Valid_1() {
-		runTest("TupleType_Valid_1");
-	}
-
-	@Test
-	public void TupleType_Valid_2() {
-		runTest("TupleType_Valid_2");
-	}
-
-	@Test
-	public void TupleType_Valid_3() {
-		runTest("TupleType_Valid_3");
-	}
-
-	@Test
-	public void TupleType_Valid_4() {
-		runTest("TupleType_Valid_4");
-	}
-
-	@Test
-	public void TupleType_Valid_5() {
-		runTest("TupleType_Valid_5");
-	}
-
-	@Test
-	public void TupleType_Valid_6() {
-		runTest("TupleType_Valid_6");
-	}
-
-	@Test
-	public void TupleType_Valid_7() {
-		runTest("TupleType_Valid_7");
-	}
-
-	@Test
-	public void TupleType_Valid_8() {
-		runTest("TupleType_Valid_8");
-	}
-
+	
 	@Test
 	public void TypeEquals_Valid_1() {
 		runTest("TypeEquals_Valid_1");
@@ -2216,11 +2166,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void TypeEquals_Valid_2() {
 		runTest("TypeEquals_Valid_2");
-	}
-
-	@Test
-	public void TypeEquals_Valid_20() {
-		runTest("TypeEquals_Valid_20");
 	}
 
 	@Test

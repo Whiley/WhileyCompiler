@@ -226,7 +226,7 @@ public interface Stmt extends SyntacticElement {
 		 * Create a given return statement with an optional return value.
 		 *
 		 * @param expr
-		 *            the return value, which may be <code>null</code>.
+		 *            value being returned (may be null)
 		 * @param attributes
 		 */
 		public Return(Expr expr, Attribute... attributes) {
@@ -246,12 +246,12 @@ public interface Stmt extends SyntacticElement {
 			this.expr = expr;
 		}
 
-		public String toString() {
+		public String toString() {			
 			if(expr != null) {
 				return "return " + expr;
 			} else {
 				return "return";
-			}
+			}			
 		}
 	}
 
@@ -503,7 +503,7 @@ public interface Stmt extends SyntacticElement {
 	 */
 	public static final class VariableDeclaration extends SyntacticElement.Impl implements
 			Stmt {
-		public final TypePattern pattern;
+		public final WhileyFile.Parameter parameter;
 		public Nominal type;
 		public Expr expr;
 
@@ -517,10 +517,10 @@ public interface Stmt extends SyntacticElement {
 		 *            Optional initialiser expression, which may be null.
 		 * @param attributes
 		 */
-		public VariableDeclaration(TypePattern pattern, Expr expr,
+		public VariableDeclaration(WhileyFile.Parameter parameter, Expr expr,
 				Attribute... attributes) {
 			super(attributes);
-			this.pattern = pattern;
+			this.parameter = parameter;
 			this.expr = expr;
 		}
 
@@ -534,10 +534,10 @@ public interface Stmt extends SyntacticElement {
 		 *            Optional initialiser expression, which may be null.
 		 * @param attributes
 		 */
-		public VariableDeclaration(TypePattern pattern, Expr expr,
+		public VariableDeclaration(WhileyFile.Parameter parameter, Expr expr,
 				Collection<Attribute> attributes) {
 			super(attributes);
-			this.pattern = pattern;
+			this.parameter = parameter;
 			this.expr = expr;
 		}
 	}

@@ -167,7 +167,7 @@ public class VcGenerator {
 					precondition.get(i), fmm.params(), true);
 		}
 		prefix = method.name() + "_ensures_";
-		List<Type> postEnvironment = prepend(fmm.ret(), fmm.params());
+		List<Type> postEnvironment = append(fmm.params(), fmm.ret());		
 		for (int i = 0; i != postcondition.size(); ++i) {
 			buildMacroBlock(prefix + i, CodeBlock.Index.ROOT,
 					postcondition.get(i), postEnvironment, true);
@@ -273,10 +273,10 @@ public class VcGenerator {
 					// which held on entry to this function.
 					arguments = new Expr[fmm.params().size() + 1];
 					for (int i = 0; i != fmm.params().size(); ++i) {
-						arguments[i + 1] = new Expr.Variable(prefixes[i]);
+						arguments[i] = new Expr.Variable(prefixes[i]);
 					}
 					
-					arguments[0] = returnedOperand;
+					arguments[fmm.params().size()] = returnedOperand;
 					// For each postcondition generate a separate
 					// verification condition. Doing this allows us to gather
 					// more detailed context information in the case of a
@@ -1572,9 +1572,6 @@ public class VcGenerator {
 			} else if (code instanceof Codes.NewRecord) {
 				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewRecord) code,
 						branch, block);
-			} else if (code instanceof Codes.NewTuple) {
-				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewTuple) code,
-						branch, block);
 			} else if (code instanceof Codes.Convert) {
 				transform((Codes.Convert) code, block, branch);
 			} else if (code instanceof Codes.Const) {
@@ -1607,8 +1604,6 @@ public class VcGenerator {
 				// skip
 			} else if (code instanceof Codes.NewObject) {
 				transform((Codes.NewObject) code, block, branch);
-			} else if (code instanceof Codes.TupleLoad) {
-				transform((Codes.TupleLoad) code, block, branch);
 			} else if (code instanceof Codes.Lambda) {
 				transform((Codes.Lambda) code, block, branch);
 			} else {
@@ -1729,8 +1724,8 @@ public class VcGenerator {
 				// To assume the post-condition holds after the method, we
 				// simply called the corresponding post-condition macros.
 				Expr[] arguments = new Expr[operands.length + 1];
-				System.arraycopy(operands, 0, arguments, 1, operands.length);
-				arguments[0] = branch.read(code.target());
+				System.arraycopy(operands, 0, arguments, 0, operands.length);
+				arguments[operands.length] = branch.read(code.target());
 				String prefix = code.name.name() + "_ensures_";
 				for (int i = 0; i != ensures.size(); ++i) {
 					Expr.Invoke macro = new Expr.Invoke(prefix + i,
@@ -1789,16 +1784,6 @@ public class VcGenerator {
 	protected void transform(Codes.Nop code, AttributedCodeBlock block,
 			VcBranch branch) {
 		// do nout
-	}
-
-	protected void transform(Codes.TupleLoad code, AttributedCodeBlock block,
-			VcBranch branch) {
-		Expr src = branch.read(code.operand(0));
-		Expr index = new Expr.Constant(Value.Integer(BigInteger
-				.valueOf(code.index)));
-		Expr result = new Expr.IndexOf(src, index,
-				toWycsAttributes(block.attributes(branch.pc())));
-		branch.write(code.target(), result);
 	}
 
 	protected void transform(Codes.UnaryOperator code,
@@ -1877,7 +1862,6 @@ public class VcGenerator {
 			branch.havoc(register);
 			return branch.read(register);
 		} else {
-			System.out.println("SOURCE IS: " + source.getClass().getName());
 			// TODO: Must implement the other cases. At the moment, I'm not sure
 			// the best way to do this though.
 		}
@@ -2459,8 +2443,7 @@ public class VcGenerator {
 			internalFailure("unknown comparator (" + cop + ")", filename,
 					block.attributes(branch.pc()));
 			return null;
-		}
-
+		}		
 		return new Expr.Binary(op, lhs, rhs,
 				toWycsAttributes(block.attributes(branch.pc())));
 	}
@@ -2543,13 +2526,6 @@ public class VcGenerator {
 				items.add(convert(cb_values.get(i), block, branch));				
 			}
 			return Value.Array(items);
-		} else if (c instanceof Constant.Tuple) {
-			Constant.Tuple cb = (Constant.Tuple) c;
-			ArrayList<Value> values = new ArrayList<Value>();
-			for (Constant v : cb.values) {
-				values.add(convert(v, block, branch));
-			}
-			return wycs.core.Value.Tuple(values);
 		} else if (c instanceof Constant.Record) {
 			Constant.Record rb = (Constant.Record) c;
 
@@ -2621,13 +2597,6 @@ public class VcGenerator {
 			SyntacticType element = convert(lt.element(), attributes);
 			// ugly.
 			return new SyntacticType.List(element);
-		} else if (t instanceof Type.Tuple) {
-			Type.Tuple tt = (Type.Tuple) t;
-			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();
-			for (int i = 0; i != tt.size(); ++i) {
-				elements.add(convert(tt.element(i), attributes));
-			}
-			return new SyntacticType.Tuple(elements);
 		} else if (t instanceof Type.Record) {
 			Type.Record rt = (Type.Record) t;
 			HashMap<String, Type> fields = rt.fields();
@@ -2696,14 +2665,6 @@ public class VcGenerator {
 		} else if (t instanceof Type.Array) {
 			Type.Array lt = (Type.Array) t;
 			return containsNominal(lt.element(), attributes);
-		} else if (t instanceof Type.Tuple) {
-			Type.Tuple tt = (Type.Tuple) t;
-			for (int i = 0; i != tt.size(); ++i) {
-				if (containsNominal(tt.element(i), attributes)) {
-					return true;
-				}
-			}
-			return false;
 		} else if (t instanceof Type.Record) {
 			Type.Record rt = (Type.Record) t;
 			for (Type field : rt.fields().values()) {
@@ -2754,10 +2715,10 @@ public class VcGenerator {
 		return null; // dead-code
 	}
 	
-	private static <T> List<T> prepend(T x, List<T> xs) {
+	private static <T> List<T> append(List<T> xs, T x) {
 		ArrayList<T> rs = new ArrayList<T>();
-		rs.add(x);
 		rs.addAll(xs);
+		rs.add(x);		
 		return rs;
 	}
 

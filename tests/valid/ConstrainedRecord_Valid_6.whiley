@@ -1,6 +1,6 @@
 
 
-type state is {int[] input, int pos} where (pos >= 0) && (pos <= |input|)
+type state is ({int[] input, int pos} s) where (s.pos >= 0) && (s.pos <= |s.input|)
 
 function parseWhiteSpace(state st) -> state:
     if (st.pos < |st.input|) && (st.input[st.pos] == ' '):

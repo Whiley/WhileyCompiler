@@ -109,12 +109,6 @@ public class Exprs {
 					uses(p, context, uses);
 				}
 
-			} else if (expr instanceof Expr.Tuple) {
-				Expr.Tuple e = (Expr.Tuple) expr;
-				for(Expr p : e.fields) {
-					uses(p, context, uses);
-				}
-
 			} else if (expr instanceof Expr.FunctionOrMethod) {
 				// do nout
 			} else if (expr instanceof Expr.New) {
@@ -228,15 +222,6 @@ public class Exprs {
 			} else if (expr instanceof Expr.Record) {
 				Expr.Record e = (Expr.Record) expr;
 				for(Expr p : e.fields.values()) {
-					if(!isPure(p, context)) {
-						return false;
-					}
-				}
-				return true;
-
-			} else if (expr instanceof Expr.Tuple) {
-				Expr.Tuple e = (Expr.Tuple) expr;
-				for(Expr p : e.fields) {
 					if(!isPure(p, context)) {
 						return false;
 					}

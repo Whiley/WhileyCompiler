@@ -1,6 +1,6 @@
 
 
-type state is {int y, int x} where x < y
+type state is ({int y, int x} s) where s.x < s.y
 
 type pState is &state
 
