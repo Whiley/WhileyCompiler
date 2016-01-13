@@ -1,6 +1,4 @@
-
-
-type bop is {int y, int x} where x > 0
+type bop is ({int y, int x} r) where r.x > 0
 
 type expr is int | bop
 

@@ -361,6 +361,9 @@ public interface SyntacticType extends SyntacticElement {
 			super(attributes);
 			this.returnType = returnType;			
 			this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
+			if(returnType == null) {
+				throw new IllegalArgumentException("Invalid return type");
+			}
 		}
 
 		public FunctionOrMethod(SyntacticType returnType, Collection<SyntacticType> paramTypes,
@@ -368,6 +371,9 @@ public interface SyntacticType extends SyntacticElement {
 			super(attributes);
 			this.returnType = returnType;
 			this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
+			if(returnType == null) {
+				throw new IllegalArgumentException("Invalid return type");
+			}
 		}
 	}
 

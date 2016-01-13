@@ -3734,7 +3734,7 @@ public class WhileyFileParser {
 				// Therefore, we continue to pass the remaining type parameters.
 
 				List<SyntacticType> paramTypes = parseParameterTypes();
-				SyntacticType returnType = null;
+				SyntacticType returnType;
 				
 				if (lookahead.kind == Function) {
 					// Functions require a return type (since otherwise they are
@@ -3751,7 +3751,9 @@ public class WhileyFileParser {
 					// disambiguate
 					// this.
 					returnType = parseType();
-				} 
+				} else {
+					returnType = new SyntacticType.Void();
+				}
 
 				// Done
 				SyntacticType type;

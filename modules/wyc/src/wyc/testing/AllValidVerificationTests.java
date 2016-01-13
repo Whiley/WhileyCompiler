@@ -660,16 +660,6 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
-	public void ConstrainedTuple_Valid_1() {
-		runTest("ConstrainedTuple_Valid_1");
-	}
-
-	@Test
-	public void ConstrainedTuple_Valid_2() {
-		runTest("ConstrainedTuple_Valid_2");
-	}
-
-	@Test
 	public void ConstrainedUnion_Valid_1() {
 		runTest("ConstrainedUnion_Valid_1");
 	}
@@ -2055,46 +2045,6 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
-	public void TupleType_Valid_1() {
-		runTest("TupleType_Valid_1");
-	}
-
-	@Test
-	public void TupleType_Valid_2() {
-		runTest("TupleType_Valid_2");
-	}
-
-	@Test
-	public void TupleType_Valid_3() {
-		runTest("TupleType_Valid_3");
-	}
-
-	@Test
-	public void TupleType_Valid_4() {
-		runTest("TupleType_Valid_4");
-	}
-
-	@Test
-	public void TupleType_Valid_5() {
-		runTest("TupleType_Valid_5");
-	}
-
-	@Test
-	public void TupleType_Valid_6() {
-		runTest("TupleType_Valid_6");
-	}
-
-	@Test
-	public void TupleType_Valid_7() {
-		runTest("TupleType_Valid_7");
-	}
-
-	@Test
-	public void TupleType_Valid_8() {
-		runTest("TupleType_Valid_8");
-	}
-
-	@Test
 	public void TypeEquals_Valid_1() {
 		runTest("TypeEquals_Valid_1");
 	}
@@ -2147,11 +2097,6 @@ public class AllValidVerificationTests {
 	@Ignore("#298") @Test
 	public void TypeEquals_Valid_2() {
 		runTest("TypeEquals_Valid_2");
-	}
-
-	@Test
-	public void TypeEquals_Valid_20() {
-		runTest("TypeEquals_Valid_20");
 	}
 
 	@Test

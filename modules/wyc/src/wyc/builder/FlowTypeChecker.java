@@ -2671,7 +2671,7 @@ public class FlowTypeChecker {
 			myChildren[0] = resolveAsType(ut.element, context, states, roots,
 					nominal, unconstrained);
 		} else {
-			SyntacticType.FunctionOrMethod ut = (SyntacticType.FunctionOrMethod) type;
+			SyntacticType.FunctionOrMethod ut = (SyntacticType.FunctionOrMethod) type;			
 			ArrayList<SyntacticType> utParamTypes = ut.paramTypes;
 
 			if (ut instanceof SyntacticType.Method) {

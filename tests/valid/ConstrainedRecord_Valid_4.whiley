@@ -1,9 +1,9 @@
 
 
-type point is {
+type point is ({
     int x,
     int y
-} where x > 0 && y > 0
+} p) where p.x > 0 && p.y > 0
 
 public export method test() -> void:
     point p = {y: 1, x: 1}

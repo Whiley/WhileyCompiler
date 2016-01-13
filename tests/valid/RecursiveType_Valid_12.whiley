@@ -2,7 +2,8 @@
 
 type Tree is null | Node
 
-type Node is {int data, Tree rhs, Tree lhs} where ((lhs == null) || (lhs.data < data)) && ((rhs == null) || (rhs.data > data))
+type Node is ({int data, Tree rhs, Tree lhs} this)
+where ((this.lhs == null) || (this.lhs.data < this.data)) && ((this.rhs == null) || (this.rhs.data > this.data))
 
 function Tree(int data, Tree left, Tree right) -> Tree
 requires ((left == null) || (left.data < data)) && ((right == null) || (right.data > data)):

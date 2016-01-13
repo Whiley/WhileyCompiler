@@ -1,7 +1,7 @@
 
 
-type State is {int[] input, int pos}
-    where (pos >= 0) && (pos <= |input|)
+type State is ({int[] input, int pos} s)
+    where (s.pos >= 0) && (s.pos <= |s.input|)
 
 type Expr is {int num} | {int op, Expr rhs, Expr lhs} | {int[] err}
 

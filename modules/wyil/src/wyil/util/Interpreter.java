@@ -822,7 +822,15 @@ public class Interpreter {
 		} else if (type instanceof Type.Negation) {
 			Type.Negation t = (Type.Negation) type;
 			return !isMemberOfType(value, t.element(), context);
-		} else if (type instanceof Type.Nominal) {
+		}  else if(type instanceof Type.FunctionOrMethod) {
+			if(value instanceof Constant.Lambda) {
+				Constant.Lambda l = (Constant.Lambda) value;
+				if(Type.isSubtype(type, l.type)) {
+					return true;
+				}
+			} 
+			return false;
+		}else if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
 			NameID nid = nt.name();
 			try {
@@ -857,7 +865,7 @@ public class Interpreter {
 				return false;
 			}
 		}
-
+		
 		deadCode(context);
 		return false; // deadcode
 	}
