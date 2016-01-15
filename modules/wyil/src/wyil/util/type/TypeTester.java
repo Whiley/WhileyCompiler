@@ -97,8 +97,9 @@ public class TypeTester {
 					return false;
 				}
 				int length = schildren.length;
+				int sNumParams = (Integer) state.data;
 				// First, do parameters (which are contravariant).
-				for(int i=2;i<length;++i) {
+				for(int i=0;i<sNumParams;++i) {
 					int schild = schildren[i];
 					Term vchild = vchildren[i];
 					if(accepts(schild,automaton,vchild)) {
@@ -106,9 +107,12 @@ public class TypeTester {
 					}
 				}
 				// Second, do return values (which are covariant)
-				if(!accepts(schildren[2],automaton,vchildren[2])) {
-					return false;
+				for(int i=sNumParams;i<schildren.length;++i) {
+					if(!accepts(schildren[i],automaton,vchildren[i])) {
+						return false;
+					}	
 				}
+				
 				// Third, do return values (which should be contra-variant)
 				return true;
 			}

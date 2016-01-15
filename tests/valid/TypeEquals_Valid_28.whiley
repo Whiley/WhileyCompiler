@@ -12,7 +12,7 @@ public export method test(Points t) -> bool:
     else:
         return false
 
-public export method test() -> void:
+public export method test() :
     Point3D p3d = {z: 3, y: 2, x: 1}
     assume test(p3d) == true
     Point p2d = {y: 2, x: 1}

@@ -13,7 +13,7 @@ function toString(Expr e) -> int:
     else:
         return -1
 
-public export method test() -> void:
+public export method test() :
     SubExpr se1 = 0.1234
     SubExpr se2 = {data: 1, lhs: se1}
     SubExpr se3 = {data: 45, lhs: se2}

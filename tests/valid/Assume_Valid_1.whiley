@@ -9,6 +9,6 @@ function sum(int[] list) -> nat:
         i = i + 1
     return r
 
-public export method test() -> void:
+public export method test() :
     nat rs = sum([0, 1, 2, 3])
     assume rs == 6

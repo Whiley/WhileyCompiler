@@ -10,7 +10,7 @@ function f(Rec2 rec) -> int:
     x/y = rec.x
     return x
 
-public export method test() -> void:
+public export method test() :
     Rec1 rec = {x: 1}
     int num = f((Rec2) rec)
     assume num == 1

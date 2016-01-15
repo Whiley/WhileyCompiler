@@ -69,17 +69,15 @@ public class WhileyFilePrinter {
 		out.print(fm.name());
 		printParameters(fm.parameters);		
 		out.print(" -> ");
-		printParameter(fm.returnType,true);		
-
+		printParameters(fm.returns);
+		
 		for(Expr r : fm.requires) {
 			out.println();
 			out.print("requires ");
 			print(r);
 		}
-		boolean firstTime=true;
 		for(Expr r : fm.ensures) {
 			out.println();
-			firstTime = false;
 			out.print("ensures ");
 			print(r);
 		}
@@ -208,9 +206,12 @@ public class WhileyFilePrinter {
 
 	public void print(Stmt.Return s) {
 		out.print("return");
-		if(s.expr != null) {
-			out.print(" ");
-			print(s.expr);
+		for(int i=0;i!=s.returns.size();++i) {
+			if(i != 0) {
+				out.print(",");
+			}
+			out.print(" ");	
+			print(s.returns.get(i));
 		}
 		out.println();
 	}
@@ -670,7 +671,7 @@ public class WhileyFilePrinter {
 			}
 			printParameterTypes(tt.paramTypes);
 			out.print("->");
-			print(tt.returnType);			
+			printParameterTypes(tt.returnTypes);			
 		} else if(t instanceof SyntacticType.Record) {
 			SyntacticType.Record tt = (SyntacticType.Record) t;
 			out.print("{");

@@ -11,6 +11,6 @@ ensures result is null || xs[result] == x:
         i = i + 1
     return null
 
-public export method test() -> void:
+public export method test() :
     assume indexOf([1, 2, 3], 1) == 0
     assume indexOf([1, 2, 3], 0) == null

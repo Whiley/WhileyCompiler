@@ -22,7 +22,7 @@ function parseNumber(State st) -> {Expr f1, State f2}:
         st.pos = st.pos + 1
     return {f1: (real) n, f2: st}
 
-public export method test() -> void:
+public export method test() :
     {SExpr f1, State f2} s = parseTerm({input: "123", pos: 0})
     assume s.f1 == 6.0
     s = parseTerm({input: "abc", pos: 0})

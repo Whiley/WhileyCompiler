@@ -18,6 +18,6 @@ function f(int x) -> bool:
 function syntaxError(int[] errorMessage) -> SyntaxError:
     return {msg: errorMessage}
 
-public export method test() -> void:
+public export method test() :
     assume f(0) == true
     assume f(1) == false

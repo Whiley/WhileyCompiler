@@ -7,7 +7,7 @@ type Value is real | Value[]
 function init() -> Value:
     return 0.0123
 
-public export method test() -> void:
+public export method test() :
     Value v = init()
     if v is Expr[]:
         assume false

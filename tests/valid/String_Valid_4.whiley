@@ -8,6 +8,6 @@ public function repl(int old, int n, int[] str) -> int[]:
         i = i + 1
     return str
 
-public export method test() -> void:
+public export method test() :
     int[] s = "Hello World"
     assume repl('l', '1', s) == "He11o Wor1d"

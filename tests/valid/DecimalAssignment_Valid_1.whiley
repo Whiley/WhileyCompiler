@@ -1,6 +1,6 @@
 
 
-public export method test() -> void:
+public export method test() :
     real x = 5.0
     assert x == 5.0
     x = 3.234

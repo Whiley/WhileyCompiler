@@ -9,6 +9,6 @@ function g(int x) -> int:
 function f(int x) -> int[]:
     return [g(x)]
 
-public export method test() -> void:
+public export method test() :
     int[] bytes = f(0)
     assume bytes == [1]

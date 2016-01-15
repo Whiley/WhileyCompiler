@@ -25,7 +25,7 @@ method update(Board b) -> Board:
     b[0] = CIRCLE
     return b
 
-public export method test() -> void:
+public export method test() :
     Board b = EmptyBoard()
     b = update(b)
     assume b == [2, 1, 0, 0, 0, 0, 0, 0, 0]

@@ -13,7 +13,7 @@ type EmptyBoard is (Board b) where no { i in 0..|b.pieces| | b.pieces[i] != BLAN
 function EmptyBoard() -> EmptyBoard:
     return {pieces: [BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK, BLANK], move: 0}
 
-public export method test() -> void:
+public export method test() :
     Board b = EmptyBoard()
     assert b.pieces[0] == BLANK
     assert b.pieces[1] == BLANK

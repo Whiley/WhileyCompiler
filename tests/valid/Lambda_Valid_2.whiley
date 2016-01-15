@@ -5,7 +5,7 @@ type func is function(int) -> int
 function g(int y) -> func:
     return &(int x -> x + y)
 
-public export method test() -> void:
+public export method test() :
     func f = g(3)
     assume f(1) == 4
     assume f(2) == 5

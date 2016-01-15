@@ -10,6 +10,6 @@ function f(int i) -> {int[] f1,int[] f2}:
     assert arr2[2] == |arr1|
     return {f1: arr1, f2: arr2}
 
-public export method test() -> void:
+public export method test() :
     assume f(2) == {f1: [1, 2, 64], f2: [1, 2, 3]}
     assume f(3) == {f1: [1, 2, 64], f2: [1, 2, 3]}

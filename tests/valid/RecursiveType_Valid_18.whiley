@@ -11,7 +11,7 @@ function parse(int[] input) -> Expr:
 function parseAddSubExpr(State st) -> {Expr e, State st}:
     return {e: {num: 1}, st: st}
 
-public export method test() -> void:
+public export method test() :
     Expr e = parse("Hello")
     assume e == {num:1}
 

@@ -20,7 +20,7 @@ ensures r > 0:
     else:
         return 1
 
-public export method test() -> void:
+public export method test() :
     assume f(1, 1) == 1
     assume f(0, 0) == 1
     assume f(4, 345) == 349

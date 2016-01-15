@@ -288,14 +288,14 @@ public class WhileyFileParser {
 		List<Parameter> parameters = parseParameters(wf,environment);
 		
 		// Parse (optional) return type
-		Parameter ret = null;
+		List<Parameter> returns = Collections.EMPTY_LIST;
 
 		if (tryAndMatch(true, MinusGreater) != null) {
 			// Explicit return type is given, so parse it! We first clone the
 			// environent and create a special one only for use within ensures
 			// clauses, since these are the only expressions which may refer to
 			// variables declared in the return type.
-			ret = parseOptionalParameter(wf,environment);		
+			returns = parseOptionalParameters(wf,environment);		
 		} 
 
 		// Parse optional requires/ensures clauses
@@ -336,10 +336,10 @@ public class WhileyFileParser {
 
 		WhileyFile.Declaration declaration;
 		if (isFunction) {
-			declaration = wf.new Function(modifiers, name.text, ret, parameters, requires, ensures, stmts,
+			declaration = wf.new Function(modifiers, name.text, returns, parameters, requires, ensures, stmts,
 					sourceAttr(start, end - 1));
 		} else {
-			declaration = wf.new Method(modifiers, name.text, ret, parameters, requires, ensures, stmts,
+			declaration = wf.new Method(modifiers, name.text, returns, parameters, requires, ensures, stmts,
 					sourceAttr(start, end - 1));
 		}
 		wf.add(declaration);
@@ -366,6 +366,19 @@ public class WhileyFileParser {
 					pStart, index - 1)));			
 		}
 		return parameters;
+	}
+	
+
+	public List<Parameter> parseOptionalParameters(WhileyFile wf, HashSet<String> environment) {
+		int next = skipWhiteSpace(index);
+		if(next < tokens.size() && tokens.get(next).kind == LeftBrace) {
+			return parseParameters(wf,environment);
+		} else {			
+			Parameter p = parseOptionalParameter(wf,environment);
+			ArrayList<Parameter> ps = new ArrayList<Parameter>();
+			ps.add(p);
+			return ps;
+		}
 	}
 	
 	public Parameter parseOptionalParameter(WhileyFile wf, HashSet<String> environment) {
@@ -753,7 +766,7 @@ public class WhileyFileParser {
 
 		match(Return);
 
-		Expr e = null;
+		ArrayList<Expr> returns = new ArrayList<Expr>();
 		// A return statement may optionally have a return expression.
 		// Therefore, we first skip all whitespace on the given line.
 		int next = skipLineSpace(index);
@@ -762,14 +775,14 @@ public class WhileyFileParser {
 		// means expressions must start on the same line as a return. Otherwise,
 		// a potentially cryptic error message will be given.
 		if (next < tokens.size() && tokens.get(next).kind != NewLine) {
-			e = parseExpression(wf, environment, false);
+			returns.add(parseExpression(wf, environment, false));
 		}
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
 		int end = index;
 		matchEndLine();
 		// Done.
-		return new Stmt.Return(e, sourceAttr(start, end - 1));
+		return new Stmt.Return(returns, sourceAttr(start, end - 1));
 	}
 
 	/**
@@ -3292,7 +3305,9 @@ public class WhileyFileParser {
 			for (SyntacticType element : tt.paramTypes) {
 				result |= mustParseAsType(element);
 			}
-			result |= mustParseAsType(tt.returnType);			
+			for (SyntacticType element : tt.returnTypes) {
+				result |= mustParseAsType(element);
+			}			
 			return result;
 		} else if (type instanceof SyntacticType.Intersection) {
 			SyntacticType.Intersection tt = (SyntacticType.Intersection) type;
@@ -3683,7 +3698,7 @@ public class WhileyFileParser {
 
 		// First, parse the parameter type(s).
 		List<SyntacticType> paramTypes = parseParameterTypes();
-		SyntacticType returnType = null;
+		List<SyntacticType> returnTypes = Collections.EMPTY_LIST;
 
 		// Second, parse the right arrow.
 		if (isFunction) {
@@ -3691,18 +3706,18 @@ public class WhileyFileParser {
 			// nops)
 			match(MinusGreater);
 			// Third, parse the return types.
-			returnType = parseType();
+			returnTypes = parseOptionalParameterTypes();
 		} else if (tryAndMatch(true, MinusGreater) != null) {
 			// Methods have an optional return type
 			// Third, parse the return type
-			returnType = parseType();
+			returnTypes = parseOptionalParameterTypes();
 		} 
 
 		// Done
 		if (isFunction) {
-			return new SyntacticType.Function(returnType, paramTypes, sourceAttr(start, index - 1));
+			return new SyntacticType.Function(returnTypes, paramTypes, sourceAttr(start, index - 1));
 		} else {
-			return new SyntacticType.Method(returnType, paramTypes, sourceAttr(start, index - 1));
+			return new SyntacticType.Method(returnTypes, paramTypes, sourceAttr(start, index - 1));
 		}
 	}	
 
@@ -3732,14 +3747,14 @@ public class WhileyFileParser {
 				// Therefore, we continue to pass the remaining type parameters.
 
 				List<SyntacticType> paramTypes = parseParameterTypes();
-				SyntacticType returnType;
+				List<SyntacticType> returnTypes = Collections.EMPTY_LIST; 
 				
 				if (lookahead.kind == Function) {
 					// Functions require a return type (since otherwise they are
 					// just nops)
 					match(MinusGreater);
 					// Third, parse the return type
-					returnType = parseType();
+					returnTypes = parseOptionalParameterTypes();
 				} else if (tryAndMatch(true, MinusGreater) != null) {
 					// Third, parse the (optional) return type. Observe that
 					// this is forced to be a
@@ -3748,17 +3763,15 @@ public class WhileyFileParser {
 					// may be part of an enclosing record type and we must
 					// disambiguate
 					// this.
-					returnType = parseType();
-				} else {
-					returnType = new SyntacticType.Void();
-				}
+					returnTypes = parseOptionalParameterTypes();
+				} 
 
 				// Done
 				SyntacticType type;
 				if (lookahead.kind == Token.Kind.Function) {
-					type = new SyntacticType.Function(returnType, paramTypes, sourceAttr(start, index - 1));
+					type = new SyntacticType.Function(returnTypes, paramTypes, sourceAttr(start, index - 1));
 				} else {
-					type = new SyntacticType.Method(returnType, paramTypes, sourceAttr(start, index - 1));
+					type = new SyntacticType.Method(returnTypes, paramTypes, sourceAttr(start, index - 1));
 				}
 				return new Pair<SyntacticType, Token>(type, id);
 			} else {
@@ -3776,6 +3789,18 @@ public class WhileyFileParser {
 		return new Pair<SyntacticType, Token>(type, id);
 	}
 
+	public List<SyntacticType> parseOptionalParameterTypes() {
+		int next = skipWhiteSpace(index);
+		if(next < tokens.size() && tokens.get(next).kind == LeftBrace) {
+			return parseParameterTypes();
+		} else {
+			SyntacticType t = parseType();
+			ArrayList<SyntacticType> rs = new ArrayList<SyntacticType>();
+			rs.add(t);
+			return rs;
+		}		
+	}
+	
 	public List<SyntacticType> parseParameterTypes() {
 		ArrayList<SyntacticType> paramTypes = new ArrayList<SyntacticType>();
 		match(LeftBrace);

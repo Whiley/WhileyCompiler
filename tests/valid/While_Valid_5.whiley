@@ -15,6 +15,6 @@ function extract(int[] ls) -> nat[]:
         i = i + 1
     return rs
 
-public export method test() -> void:
+public export method test() :
     int[] rs = extract([-2, -3, 1, 2, -23, 3, 2345, 4, 5])
     assume rs ==       [ 0,  0, 1, 2,   0, 3, 2345, 4, 5]

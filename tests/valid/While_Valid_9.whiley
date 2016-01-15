@@ -10,7 +10,7 @@ ensures |result| > 0:
         i = i + 1
     return r
 
-public export method test() -> void:
+public export method test() :
     int[] rs = extract([1, 2, 3, 4, 5, 6, 7])
     assume rs == [1, 1, 1, 1, 1, 1, 1, 0]
     rs = extract([0;0])

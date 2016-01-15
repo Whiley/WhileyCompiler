@@ -11,6 +11,6 @@ requires y > 0:
         z = y / x
     return z
 
-public export method test() -> void:
+public export method test() :
     assume f(10, 2) == 5
 

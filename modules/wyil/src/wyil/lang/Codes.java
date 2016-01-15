@@ -1448,7 +1448,7 @@ public abstract class Codes {
 		}
 
 		public Type assignedType() {
-			return type().ret();
+			return type().returns().get(0);
 		}
 
 		public String toString() {
@@ -1623,7 +1623,7 @@ public abstract class Codes {
 		}
 
 		public Type assignedType() {
-			return type().ret();
+			return type().returns().get(0);
 		}
 
 		public int hashCode() {
@@ -1673,7 +1673,7 @@ public abstract class Codes {
 		}
 
 		public Type assignedType() {
-			return type().ret();
+			return type().returns().get(0);
 		}
 
 		public int hashCode() {

@@ -7,6 +7,6 @@ function f(int x) -> nlist:
     else:
         return f(x - 1)
 
-public export method test() -> void:
+public export method test() :
     nlist x = f(2)
     assume x == 0

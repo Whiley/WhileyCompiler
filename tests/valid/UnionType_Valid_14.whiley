@@ -25,7 +25,7 @@ function f(Expr e) -> int:
         else:
             return 1
 
-public export method test() -> void:
+public export method test() :
     assume f(1) == 1
     assume f([1, 2, 3]) == 3
     assume f({op: ADD, rhs: 2, lhs: 1}) == 1

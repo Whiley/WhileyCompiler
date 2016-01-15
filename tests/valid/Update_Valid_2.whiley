@@ -7,7 +7,7 @@ requires 0 <= index && index < |l|:
     l[index] = value
     return l
 
-public export method test() -> void:
+public export method test() :
     int[] l = ['1', '2', '3']
     assume update(l, 1, 0) == ['1',0,'3']
     assume update(l, 2, 0) == ['1','2',0]

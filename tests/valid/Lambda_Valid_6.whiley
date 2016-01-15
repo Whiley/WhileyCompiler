@@ -9,6 +9,6 @@ method g(int p) -> int:
     func_t func = &(int x -> f(x + 1))
     return func(p)
 
-public export method test() -> void:
+public export method test() :
     int x = g(5)
     assume x == 7

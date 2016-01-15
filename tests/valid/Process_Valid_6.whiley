@@ -16,7 +16,7 @@ requires n >= 0:
         j = j + 1
     return row
 
-public export method test() -> void:
+public export method test() :
     (&Actor)[] actors = createActors(10)
     int r = 0
     //

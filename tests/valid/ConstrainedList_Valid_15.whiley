@@ -3,5 +3,5 @@
 function f() -> int[]:
     return ""
 
-public export method test() -> void:
+public export method test() :
     assume f() == ""

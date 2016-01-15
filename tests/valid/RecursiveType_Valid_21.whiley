@@ -10,7 +10,7 @@ function sum(LinkedList l) -> int:
     else:
         return l.data + sum(l.next)
 
-public export method test() -> void:
+public export method test() :
     LinkedList l1 = {next: null, data: 1}
     LinkedList l2 = {next: l1, data: 2}
     LinkedList l3 = {next: l2, data: 3}

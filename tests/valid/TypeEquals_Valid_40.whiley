@@ -15,7 +15,7 @@ function f(expr e) -> int:
         else:
             return 2
 
-public export method test() -> void:
+public export method test() :
     assume f(-1) == 1
     assume f(1.0) == 0
     assume f(1.234) == 0

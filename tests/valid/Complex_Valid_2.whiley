@@ -120,7 +120,7 @@ function piece2str(Piece p) -> string:
 function pos2str(Pos p) -> string:
     return ['a' + p.col,'1' + p.row]
 
-public export method test() -> void:
+public export method test() :
     Move m = {to: A1, from: A2, piece: WHITE_PAWN}
     assume move2str(m) == "a2-a1"
     m = {to: A1, from: A2, piece: WHITE_KNIGHT}

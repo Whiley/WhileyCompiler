@@ -78,6 +78,6 @@ constant H1 is {col: 8, row: 1}
 constant A3 is {col: 1, row: 3}
 constant D3 is {col: 4, row: 3}
 
-public export method test() -> void:
+public export method test() :
     assume clearRowExcept(A1, H1, startingChessBoard) == false
     assume clearRowExcept(A3, D3, startingChessBoard) == true

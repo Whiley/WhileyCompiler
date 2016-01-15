@@ -10,7 +10,7 @@ method f(int amount) -> int:
 method m(Reader r, int x) -> int:
     return r.read(x)
 
-public export method test() -> void:
+public export method test() :
     Reader reader = {read: &f}
     int data = m(reader, 1)
     assume data == 1

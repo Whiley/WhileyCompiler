@@ -8,7 +8,7 @@ function f(expr e) -> int:
     else:
         return -1
 
-public export method test() -> void:
+public export method test() :
     int x = f({err: "Hello World"})
     assume x == 11
     x = f({op: 1, lhs: {err: "Gotcha"}})

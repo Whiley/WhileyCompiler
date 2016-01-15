@@ -12,7 +12,7 @@ function isPosNeg(any v) -> bool:
     else:
         return false
 
-public export method test() -> void:
+public export method test() :
     assume isPosNeg(1)
     assume !isPosNeg(0)
     assume isPosNeg(-1)

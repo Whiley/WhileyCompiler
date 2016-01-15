@@ -15,7 +15,7 @@ function sum(VecPoint vp) -> int:
     else:
         return vp.x + vp.y
 
-public export method test() -> void:
+public export method test() :
     VecPoint vp = {y: 2, x: 1}
     assume sum(vp) == 3
     vp = [{y: 2, x: 1}, {y: 5, x: -10}]

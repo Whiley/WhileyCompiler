@@ -12,7 +12,7 @@ type binop is {int op, expr left, expr right}
 
 type expr is int | binop
 
-public export method test() -> void:
+public export method test() :
     expr e1 = {op: ADD, left: 1, right: 2}
     expr e2 = {op: SUB, left: e1, right: 2}
     expr e3 = {op: SUB, left: {op: MUL, left: 2, right: 2}, right: 2}

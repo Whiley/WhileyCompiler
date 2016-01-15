@@ -8,6 +8,6 @@ function getMessage(imsg m) -> any:
     else:
         return m
 
-public export method test() -> void:
+public export method test() :
     assume getMessage({msg: "HELLO WORLD"}) == "HELLO WORLD"
     assume getMessage(1) == 1

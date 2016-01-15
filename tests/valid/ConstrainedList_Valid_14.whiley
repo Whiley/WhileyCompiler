@@ -7,5 +7,5 @@ requires |xs| > 0:
     xs[0] = 1
     return xs
 
-public export method test() -> void:
+public export method test() :
     assume f([-1, -2]) == [1,-2]

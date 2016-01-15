@@ -35,7 +35,7 @@ function evaluate(Expr e) -> Value:
                 else:
                     return 0
 
-public export method test() -> void:
+public export method test() :
     Expr e = {op: ADD, rhs: 1, lhs: 123}
     Value v = evaluate(e)
     assume v == 123

@@ -12,7 +12,7 @@ requires |ls| > 0 && |ls[0]| > 0:
     int[][] nls = update(ls)
     return {f1: ls, f2: nls}
 
-public export method test() -> void:
+public export method test() :
     int[][] ls = [[1, 2, 3, 4]]
     {int[][] f1, int[][] f2} r = f(ls)
     assume r.f1 == [[1,2,3,4]]

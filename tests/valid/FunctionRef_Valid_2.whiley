@@ -6,5 +6,5 @@ function f(real x) -> real:
 function g(function(int)->real func) -> real:
     return func(1)
 
-public export method test() -> void:
+public export method test() :
     assume g(&f) == 2.0

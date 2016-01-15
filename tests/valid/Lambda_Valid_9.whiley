@@ -3,8 +3,8 @@
 type Point is {
     int x,
     int y,
-    function toString(Point) -> int,
-    function getX(Point) -> int
+    function toString(Point)->(int),
+    function getX(Point)->(int)
 }
 
 function toString(Point p) -> int:

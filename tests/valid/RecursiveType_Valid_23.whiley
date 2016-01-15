@@ -10,7 +10,7 @@ function f(Expr e) -> int:
     else:
         return 0
 
-public export method test() -> void:
+public export method test() :
     int v = f([1.0, 2.0, 3.0])
     assume v == 3
     v = f(1.234)

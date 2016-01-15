@@ -21,7 +21,7 @@ requires |input| > 0:
     //
     return r
 
-public export method test() -> void:
+public export method test() :
     assume f("N") == 1
     assume f("B") == 2
     assume f("R") == 3

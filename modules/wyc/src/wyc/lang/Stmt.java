@@ -220,7 +220,7 @@ public interface Stmt extends SyntacticElement {
 	 *
 	 */
 	public static final class Return extends SyntacticElement.Impl implements Stmt {
-		public Expr expr;
+		public ArrayList<Expr> returns;
 
 		/**
 		 * Create a given return statement with an optional return value.
@@ -229,9 +229,9 @@ public interface Stmt extends SyntacticElement {
 		 *            value being returned (may be null)
 		 * @param attributes
 		 */
-		public Return(Expr expr, Attribute... attributes) {
+		public Return(List<Expr> returns, Attribute... attributes) {
 			super(attributes);
-			this.expr = expr;
+			this.returns = new ArrayList<Expr>(returns);
 		}
 
 		/**
@@ -241,17 +241,20 @@ public interface Stmt extends SyntacticElement {
 		 *            the return value, which may be <code>null</code>.
 		 * @param attributes
 		 */
-		public Return(Expr expr, Collection<Attribute> attributes) {
+		public Return(List<Expr> returns, Collection<Attribute> attributes) {
 			super(attributes);
-			this.expr = expr;
+			this.returns = new ArrayList<Expr>(returns);
 		}
 
-		public String toString() {			
-			if(expr != null) {
-				return "return " + expr;
-			} else {
-				return "return";
-			}			
+		public String toString() {
+			String r = "return";
+			for(int i=0;i!=returns.size();++i) {
+				if(i != 0) {
+					r = r + ",";
+				}
+				r = r + " " + returns.get(i);
+			}
+			return r;
 		}
 	}
 

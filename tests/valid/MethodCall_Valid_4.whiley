@@ -1,6 +1,6 @@
 type Sum is &{int result, int[] items}
 
-method start(Sum this) -> void:
+method start(Sum this) :
     int sum = 0
     int i = 0
     int[] items = this->items
@@ -33,7 +33,7 @@ type pst is method (int[])->int
 method sum(pst m, int[] data) -> int:
     return m(data)
 
-public export method test() -> void:
+public export method test() :
     int[] data = [1, 3, 5, 7, 3, 93, 1, 4, 6]
     int s1 = sum(&parSum, data)
     assume s1 == 123

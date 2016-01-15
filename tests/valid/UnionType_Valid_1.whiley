@@ -1,6 +1,6 @@
 
 
-public export method test() -> void:
+public export method test() :
     int|int[] x
     //
     if 0 == 1:

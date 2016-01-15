@@ -1,6 +1,6 @@
 
 
-public export method test() -> void:
+public export method test() :
     int x = 1
     switch x:
         case 1:

@@ -2,7 +2,7 @@
 
 
 
-public export method test() -> void:
+public export method test() :
     int i = 0
     while i < 5:
         if i == 3:

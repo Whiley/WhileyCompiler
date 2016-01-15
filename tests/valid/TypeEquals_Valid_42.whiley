@@ -10,7 +10,7 @@ function f(expr e) -> int:
     else:
         return e
 
-public export method test() -> void:
+public export method test() :
     int x = f(1)
     assume x == 1
     x = f({y: 10, x: 4})

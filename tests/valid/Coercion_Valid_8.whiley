@@ -8,6 +8,6 @@ function f(Expr x) -> real:
     else:
         return x
 
-public export method test() -> void:
+public export method test() :
     assume f([1.0, 2.0, 3.0]) == 3.0
     assume f(1.234) == 1.234

@@ -6,5 +6,5 @@ function f(cr1nat x) -> int:
     int y = x
     return y
 
-public export method test() -> void:
+public export method test() :
     assume f(9) == 9

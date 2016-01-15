@@ -271,10 +271,24 @@ public abstract class Nominal {
 
 		abstract public Type.FunctionOrMethod raw();
 
-		public Nominal ret() {
-			Type nominalElement = nominal().ret();
-			Type rawElement = raw().ret();
+		public Nominal ret(int i) {
+			List<Type> rawElements = raw().returns();
+			List<Type> nominalElements = nominal().returns();
+			Type nominalElement = nominalElements.get(i);
+			Type rawElement = rawElements.get(i);
 			return construct(nominalElement,rawElement);
+		}
+		
+		public List<Nominal> returns() {
+			ArrayList<Nominal> r = new ArrayList<Nominal>();
+			List<Type> rawElements = raw().returns();
+			List<Type> nominalElements = nominal().returns();
+			for(int i=0;i!=rawElements.size();++i) {
+				Type nominalElement = nominalElements.get(i);
+				Type rawElement = rawElements.get(i);
+				r.add(construct(nominalElement,rawElement));
+			}
+			return r;
 		}
 				
 		public Nominal param(int i) {

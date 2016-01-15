@@ -10,7 +10,7 @@ function f(oddeven x) -> even:
         return 2
     return x
 
-public export method test() -> void:
+public export method test() :
     int y = 1
     y = f(1)
     assume y == 2

@@ -331,8 +331,7 @@ public class Wyil2JavaBuilder implements Builder {
 		codes.add(new Bytecode.Load(0, strArr));
 		codes.add(new Bytecode.Invoke(WHILEYUTIL, "systemConsole", ft1,
 				Bytecode.InvokeMode.STATIC));
-		Type.Method wyft = Type.Method(Type.T_VOID, Type.T_VOID,
-				WHILEY_SYSTEM_T);
+		Type.Method wyft = Type.Method(new Type[0], Type.T_VOID, WHILEY_SYSTEM_T);
 		JvmType.Function ft3 = convertFunType(wyft);
 		codes.add(new Bytecode.Invoke(owner, nameMangle("main", wyft), ft3,
 				Bytecode.InvokeMode.STATIC));
@@ -492,10 +491,10 @@ public class Wyil2JavaBuilder implements Builder {
 					Bytecode.InvokeMode.STATIC));
 		}
 
-		if (ft.ret() == Type.T_VOID) {
+		if (ft.returns().isEmpty()) {
 			bytecodes.add(new Bytecode.Return(null));
 		} else {
-			bytecodes.add(new Bytecode.Return(convertUnderlyingType(ft.ret())));
+			bytecodes.add(new Bytecode.Return(convertUnderlyingType(ft.returns().get(0))));
 		}
 
 		return bytecodes;
@@ -1669,15 +1668,12 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Invoke(owner, mangled, type,
 				Bytecode.InvokeMode.STATIC));
 
-		// now, handle the case of an invoke which returns a value that should
-		// be discarded.
 		if (c.target() != Codes.NULL_REG) {
-			bytecodes.add(new Bytecode.Store(c.target(),
-					convertUnderlyingType(c.type().ret())));
-		} else if (c.target() == Codes.NULL_REG
-				&& c.type().ret() != Type.T_VOID) {
-			bytecodes.add(new Bytecode.Pop(
-					convertUnderlyingType(c.type().ret())));
+			bytecodes.add(new Bytecode.Store(c.target(), convertUnderlyingType(c.type().returns().get(0))));
+		} else if (c.target() == Codes.NULL_REG && !(c.type().returns().isEmpty())) {
+			// handles the case of an invoke which returns a value that should
+			// be discarded.
+			bytecodes.add(new Bytecode.Pop(convertUnderlyingType(c.type().returns().get(0))));
 		}
 	}
 
@@ -1709,13 +1705,12 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Invoke(owner, "call", type,
 				Bytecode.InvokeMode.VIRTUAL));
 
-		// now, handle the case of an invoke which returns a value that should
-		// be discarded.
 		if (c.target() != Codes.NULL_REG) {
-			addReadConversion(ft.ret(), bytecodes);
-			bytecodes.add(new Bytecode.Store(c.target(),
-					convertUnderlyingType(c.type().ret())));
+			addReadConversion(ft.returns().get(0), bytecodes);
+			bytecodes.add(new Bytecode.Store(c.target(), convertUnderlyingType(c.type().returns().get(0))));
 		} else if (c.target() == Codes.NULL_REG) {
+			// handles the case of an invoke which returns a value that should
+			// be discarded.
 			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 		}
 	}
@@ -2058,12 +2053,12 @@ public class Wyil2JavaBuilder implements Builder {
 		JvmType.Function fnType = convertFunType(type);
 		bytecodes.add(new Bytecode.Invoke(owner, mangled, fnType,
 				Bytecode.InvokeMode.STATIC));
-		if (type.ret() instanceof Type.Void) {
+		if (type.returns().isEmpty()) {
 			// Called function doesn't return anything, but we have to.
 			// Therefore, push on dummy null value.
 			bytecodes.add(new Bytecode.LoadConst(null));
 		} else {
-			addWriteConversion(type.ret(), bytecodes);
+			addWriteConversion(type.returns().get(0), bytecodes);
 		}
 
 		bytecodes.add(new Bytecode.Return(JAVA_LANG_OBJECT));
@@ -2496,7 +2491,12 @@ public class Wyil2JavaBuilder implements Builder {
 		for (Type pt : ft.params()) {
 			paramTypes.add(convertUnderlyingType(pt));
 		}
-		JvmType rt = convertUnderlyingType(ft.ret());
+		JvmType rt;
+		if (ft.returns().isEmpty()) {
+			rt = T_VOID;
+		} else {
+			rt = convertUnderlyingType(ft.returns().get(0));
+		}
 		return new JvmType.Function(rt, paramTypes);
 	}
 

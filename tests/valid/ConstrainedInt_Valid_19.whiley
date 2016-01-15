@@ -10,7 +10,7 @@ function f(a_nat x) -> b_nat:
     else:
         return f(x - 1)
 
-public export method test() -> void:
+public export method test() :
     int x = 0
     x = f(x)
     assume x == 1

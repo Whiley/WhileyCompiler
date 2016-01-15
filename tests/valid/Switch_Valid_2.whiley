@@ -11,7 +11,7 @@ function f(int x) -> int:
             y = 0
     return y
 
-public export method test() -> void:
+public export method test() :
     assume f(1) == -1
     assume f(2) == -2
     assume f(3) == 0

@@ -10,7 +10,7 @@ function f(tup t) -> bool:
     else:
         return false
 
-public export method test() -> void:
+public export method test() :
     assume f({p: 0, lhs: [0]}) == true
     assume f({p: 0, lhs: [1]}) == false
     assume f({p: 0, lhs: [0;0]}) == false

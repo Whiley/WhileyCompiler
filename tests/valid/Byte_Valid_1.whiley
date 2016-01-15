@@ -14,7 +14,7 @@ function inc(byte b) -> byte:
     return b | mask
     
 
-public export method test() -> void:
+public export method test() :
     byte r = 0b
     int i = 0
     while i < |constants|:

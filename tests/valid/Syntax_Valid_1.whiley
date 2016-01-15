@@ -1,4 +1,4 @@
 
 
-public export method test() -> void:
+public export method test() :
     debug ""

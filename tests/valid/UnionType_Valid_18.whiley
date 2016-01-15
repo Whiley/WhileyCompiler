@@ -11,6 +11,6 @@ ensures result >= 0:
     //
     return y.op
 
-public export method test() -> void:
+public export method test() :
     tupper x = {op: 1, il: 1}
     assume f(x) == 1

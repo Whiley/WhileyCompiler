@@ -943,7 +943,7 @@ public class Interpreter {
 		// Make the actual call
 		Constant result = execute(func.name, func.type(), arguments);
 		// Coerce the result (may not be actually necessary)
-		result = convert(result,bytecode.type().ret(),context);
+		result = convert(result,bytecode.type().returns().get(0),context);
 		// Check whether a return value was expected or not
 		if (bytecode.target() != Codes.NULL_REG) {
 			frame[bytecode.target()] = result;

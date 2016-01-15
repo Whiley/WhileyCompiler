@@ -11,6 +11,6 @@ type UNIT is {unitCode op}
 function f(UNIT x) -> int:
     return x.op
 
-public export method test() -> void:
+public export method test() :
     int bytes = f({op: NOP})
     assume bytes == NOP

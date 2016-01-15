@@ -22,7 +22,7 @@ ensures r == max(a - b, b - a):
     //
     return diff
 
-public export method test() -> void:
+public export method test() :
     int i = 0
     while i < 20:
         int j = 0

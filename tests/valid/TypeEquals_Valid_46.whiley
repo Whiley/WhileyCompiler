@@ -11,7 +11,7 @@ function f(intlist x) -> int:
         return x
     return 1
 
-public export method test() -> void:
+public export method test() :
     int x = f([1, 2, 3])
     assume x == 1
     x = f(123)

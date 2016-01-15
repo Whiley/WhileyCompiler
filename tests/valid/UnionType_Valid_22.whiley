@@ -7,6 +7,6 @@ function f(int i, nlist[] xs) -> nlist:
     else:
         return xs[i]
 
-public export method test() -> void:
+public export method test() :
     nlist x = f(2, [2, 3, 4])
     assume x == 4

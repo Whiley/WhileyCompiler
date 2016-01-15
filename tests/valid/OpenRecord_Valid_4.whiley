@@ -11,7 +11,7 @@ function getField(OpenRecord r) -> int:
         else:
             return -r.x
 
-public export method test() -> void:
+public export method test() :
     OpenRecord r = {x: 1}
     assume getField(r) == 1
     r = {y: 1, x: 3}

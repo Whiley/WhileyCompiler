@@ -7,5 +7,5 @@ requires x == (2 * y):
     assert (2 * y) == x
     return {nx: x, ny: y}
 
-public export method test() -> void:
+public export method test() :
     assume f(2, 1) == {nx: 4, ny: 2}

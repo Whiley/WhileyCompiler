@@ -8,5 +8,5 @@ function f(int n) -> int:
         y = y + 2
     return x + y
 
-public export method test() -> void:
+public export method test() :
     assume f(10) == 30

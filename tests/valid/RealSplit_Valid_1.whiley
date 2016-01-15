@@ -6,7 +6,7 @@ function f(real z) -> {int n, int d}:
     x/y = z
     return {n: x, d: y}
 
-public export method test() -> void:
+public export method test() :
     assume f(10.0 / 5.0) == {n: 2, d: 1}
     assume f(10.0 / 4.0) == {n: 5, d: 2}
     assume f(1.0 / 4.0) == {n: 1, d: 4}

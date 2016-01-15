@@ -9,6 +9,6 @@ requires |x| > 0:
     else:
         return 0
 
-public export method test() -> void:
+public export method test() :
     int[][] arr = [[1, 2, 3], [1]]
     assume f(arr) == 2

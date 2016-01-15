@@ -21,7 +21,7 @@ function contains(int item, SortedList list) -> bool:
             else:
                 return contains(item, list.next)
 
-public export method test() -> void:
+public export method test() :
     SortedList list = SortedList(10, null)
     list = SortedList(5, list)
     list = SortedList(3, list)

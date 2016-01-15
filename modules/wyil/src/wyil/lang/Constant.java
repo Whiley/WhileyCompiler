@@ -546,8 +546,7 @@ public abstract class Constant implements Comparable<Constant> {
 		
 		public wyil.lang.Type.FunctionOrMethod type() {
 			if (type == null) {
-				return wyil.lang.Type.Function(wyil.lang.Type.T_ANY,
-						wyil.lang.Type.T_ANY);
+				return wyil.lang.Type.Function(new wyil.lang.Type[] { wyil.lang.Type.T_ANY }, wyil.lang.Type.T_ANY);
 			} else {
 				return type;
 			}

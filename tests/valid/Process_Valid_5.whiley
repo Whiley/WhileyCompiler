@@ -8,7 +8,7 @@ method run(MyProc this) -> bool:
     else:
         return false
 
-public export method test() -> void:
+public export method test() :
     MyProc mproc = new {flag: false}
     assume run(mproc) == false
     mproc = new {flag: true}

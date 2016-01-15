@@ -588,7 +588,11 @@ public interface Expr extends SyntacticElement {
 		}
 
 		public Nominal result() {
-			return methodType.ret();
+			if(methodType.returns().isEmpty()) {
+				return null;
+			} else {
+				return methodType.returns().get(0);
+			}
 		}
 	}
 
@@ -622,7 +626,7 @@ public interface Expr extends SyntacticElement {
 		}
 
 		public Nominal result() {
-			return functionType.ret();
+			return functionType.returns().get(0);
 		}
 	}
 
@@ -666,7 +670,7 @@ public interface Expr extends SyntacticElement {
 		}
 
 		public Nominal result() {
-			return methodType.ret();
+			return methodType.returns().get(0);
 		}
 	}
 
@@ -684,7 +688,7 @@ public interface Expr extends SyntacticElement {
 		}
 
 		public Nominal result() {
-			return functionType.ret();
+			return functionType.returns().get(0);
 		}
 	}
 

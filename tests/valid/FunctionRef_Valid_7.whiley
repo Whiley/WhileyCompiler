@@ -8,7 +8,7 @@ method read(Proc this, int x) -> int:
 public export method test(Proc p, int arg) -> int:
     return read(p,arg)
 
-public export method test() -> void:
+public export method test() :
     Proc p = new {data: 1}
     int x = test(p, 123)
     assume x == 124

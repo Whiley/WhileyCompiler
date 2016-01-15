@@ -226,7 +226,7 @@ public final class CodeGenerator {
 		Environment environment = new Environment();		
 		ArrayList<VariableDeclarations.Declaration> declarations = new ArrayList<VariableDeclarations.Declaration>(); 				
 		addDeclaredParameters(fd.parameters,fd.resolvedType().params(), environment, declarations);
-		addDeclaredParameter(fd.returnType,fd.resolvedType().ret(), environment, declarations);		
+		addDeclaredParameters(fd.returns,fd.resolvedType().returns(), environment, declarations);		
 		// Allocate all declared variables now. This ensures that all declared
 		// variables occur before any temporary variables.
 		buildVariableDeclarations(fd.statements, declarations, environment, fd);
@@ -728,13 +728,14 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generate(Stmt.Return s, Environment environment, AttributedCodeBlock codes, Context context) {
-		if (s.expr != null) {
-			int operand = generate(s.expr, environment, codes, context);
+		if (!s.returns.isEmpty()) {
+			// FIXME: this is clearly broken!
+			int operand = generate(s.returns.get(0), environment, codes, context);
 			// Here, we don't put the type propagated for the return expression.
 			// Instead, we use the declared return type of this function. This
 			// has the effect of forcing an implicit coercion between the
 			// actual value being returned and its required type.
-			Type ret = ((WhileyFile.FunctionOrMethod) context).resolvedType().raw().ret();
+			Type ret = ((WhileyFile.FunctionOrMethod) context).resolvedType().raw().returns().get(0);
 
 			codes.add(Codes.Return(ret, operand), attributes(s));
 		} else {
@@ -1816,12 +1817,12 @@ public final class CodeGenerator {
 
 		// Generate body based on current environment
 		AttributedCodeBlock body = new AttributedCodeBlock(
-				new SourceLocationMap());
-		if (tfm.ret() != Type.T_VOID) {
-			int target = generate(expr.body, benv, body, context);
-			body.add(Codes.Return(tfm.ret(), target), attributes(expr));
-		} else {
+				new SourceLocationMap());		
+		if (tfm.returns().isEmpty()) {
 			body.add(Codes.Return(), attributes(expr));
+		} else {
+			int target = generate(expr.body, benv, body, context);
+			body.add(Codes.Return(tfm.returns().get(0), target), attributes(expr));
 		}
 
 		// Add type information for all temporary registers allocated
@@ -1835,9 +1836,9 @@ public final class CodeGenerator {
 		// Create concrete type for private lambda function
 		Type.FunctionOrMethod cfm;
 		if (tfm instanceof Type.Function) {
-			cfm = Type.Function(tfm.ret(), paramTypes);
+			cfm = Type.Function(tfm.returns(), paramTypes);
 		} else {
-			cfm = Type.Method(tfm.ret(), paramTypes);
+			cfm = Type.Method(tfm.returns(), paramTypes);
 		}
 
 		// Construct private lambda function using generated body

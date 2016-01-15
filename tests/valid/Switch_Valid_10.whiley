@@ -8,7 +8,7 @@ function f(real x) -> int:
             return -1
     return 10
 
-public export method test() -> void:
+public export method test() :
     assume f(1.23) == 0
     assume f(2.01) == -1
     assume f(3.0) == 10

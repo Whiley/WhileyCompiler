@@ -11,6 +11,6 @@ public function myFn(Object o) -> int:
 public function get(Object o) -> int:
     return o.fn(o)
 
-public export method test() -> void:
+public export method test() :
     Object o = {fn: &myFn}
     assume get(o) == 123

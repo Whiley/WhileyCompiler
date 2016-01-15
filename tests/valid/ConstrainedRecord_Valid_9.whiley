@@ -36,7 +36,7 @@ ensures (C.width == B.width) && (C.height == A.height):
         i = i + 1
     return Matrix(B.width, A.height, C_data)
     
-public export method test() -> void:
+public export method test() :
     Matrix m1 = Matrix(2, 2, [[1, 0], [-3, 2]])
     Matrix m2 = Matrix(2, 2, [[-1, 4], [3, 5]])
     Matrix m3 = run(m1, m2)

@@ -18,7 +18,7 @@ requires pos < 9:
     b.pieces[pos] = p
     return b
 
-public export method test() -> void:
+public export method test() :
     Board b = EmptyBoard()
     b = play(b, CIRCLE, 0)
     assume b == {move:0,pieces:[1, 0, 0, 0, 0, 0, 0, 0, 0]}

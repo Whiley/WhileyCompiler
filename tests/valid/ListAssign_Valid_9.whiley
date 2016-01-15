@@ -6,7 +6,7 @@ ensures |rs| > 1:
     //
     return [1, 2]
 
-public export method test() -> void:
+public export method test() :
     int[] a1 = f()
     int[] a2 = f()
     a2[0] = 0

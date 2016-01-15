@@ -4,6 +4,6 @@ function f(int x) -> u8[]
 requires x == 0 || x == 169:
     return [x]
 
-public export method test() -> void:
+public export method test() :
     u8[] bytes = f(0)
     assume bytes == [0]
