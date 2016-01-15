@@ -1,7 +1,7 @@
 type MyProc1 is &{int data}
 type MyProc2 is &{any data}
 
-method set(MyProc2 this, any d) -> void:
+method set(MyProc2 this, any d) :
     this.data = d
 
 method get(MyProc1 this) -> int:

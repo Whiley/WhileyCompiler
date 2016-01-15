@@ -1,5 +1,5 @@
 
-method main() -> void:
+method main() :
     int[] arr
     //
     if |sys.args| > 0:

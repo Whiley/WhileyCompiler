@@ -4,6 +4,6 @@ requires x >= 0:
     int y = 10 / x
     return y
 
-method main() -> void:
+method main() :
     f(10)
     f(0)

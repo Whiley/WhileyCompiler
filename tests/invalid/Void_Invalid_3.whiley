@@ -1,5 +1,5 @@
-method method() -> void:
+method method() :
     b = 1
 
-method main() -> void:
+method main() :
     a = method()

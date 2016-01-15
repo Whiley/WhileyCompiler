@@ -1,2 +1,2 @@
-method main(int[] this) -> void:
+method main(int[] this) :
     this.f(1)

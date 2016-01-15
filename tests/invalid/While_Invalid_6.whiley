@@ -1,4 +1,4 @@
-function extract(int[] ls) -> void[]:
+function extract(int[] ls) -> int:
     int i = 0
     int r = [1]
     //

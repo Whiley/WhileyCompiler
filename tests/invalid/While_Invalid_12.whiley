@@ -1,5 +1,5 @@
 
-type nat is int x where x > 0
+type nat is (int x) where x > 0
 
 function f(int v) -> (int r)
 ensures r >= 0:

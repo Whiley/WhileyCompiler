@@ -1,2 +1,2 @@
-function f() -> void:
+function f() :
     return 1

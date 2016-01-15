@@ -1,14 +1,14 @@
 type nat is (int x) where x >= 0
 
-type natpair is (nat, nat)
+function f(int x, int y) -> (int xp, int yp):
+    return y,x
 
-function min(natpair p) -> int:
-    int x, int y = p
+function min(nat a, int b) -> int:
+    a,b = f(a,b)
     if x > y:
         return y
     else:
         return x
 
-method main() -> void:
-    (int,int) p = (0, -1)
-    int x = min(p)
+method main() :
+    int x = min(0,-1)
