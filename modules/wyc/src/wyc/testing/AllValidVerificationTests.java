@@ -822,12 +822,12 @@ public class AllValidVerificationTests {
 		runTest("FunctionRef_Valid_9");
 	}
 
-	@Ignore("unclassified") @Test
+	@Ignore("#298") @Test
 	public void FunctionRef_Valid_10() {
 		runTest("FunctionRef_Valid_10");
 	}
 
-	@Ignore("unclassified") @Test
+	@Ignore("#298") @Test
 	public void FunctionRef_Valid_11() {
 		runTest("FunctionRef_Valid_11");
 	}
