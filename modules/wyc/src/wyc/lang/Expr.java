@@ -439,9 +439,7 @@ public interface Expr extends SyntacticElement {
 		ALL, // implies value == null
 	}
 
-	public static class FieldAccess extends SyntacticElement.Impl
-			implements
-				LVal {
+	public static class FieldAccess extends SyntacticElement.Impl implements LVal {
 		public Expr src;
 		public final String name;
 		public Nominal.Record srcType;
@@ -728,8 +726,7 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
-	public static class RationalLVal extends SyntacticElement.Impl implements
-	LVal {
+	public static class RationalLVal extends SyntacticElement.Impl implements LVal {
 		public LVal numerator;
 		public LVal denominator;
 
@@ -741,6 +738,19 @@ public interface Expr extends SyntacticElement {
 
 		public final Nominal result() {
 			return null; // better be dead-code
+		}
+	}
+	
+	public static class TupleLVal extends SyntacticElement.Impl implements LVal {
+		public final ArrayList<LVal> elements;
+
+		public TupleLVal(Collection<LVal> elements, Attribute... attributes) {
+			super(attributes);
+			this.elements = new ArrayList<LVal>(elements);
+		}
+
+		public Nominal result() {
+			return null;  // better be dead-code
 		}
 	}
 
