@@ -650,20 +650,33 @@ public class WhileyFileParser {
 		// be *any* of the three forms, but we definitely have an
 		// expression-like thing at this point. Therefore, we parse that
 		// expression and see what this gives and/or what follows...
+		return parseHeadlessStatement(wf,environment,indent);
+	}
+
+	/**
+	 * A headless statement is one which has no identifying keyword. The set of
+	 * headless statements include assignments, invocations and variable
+	 * declarations.
+	 * 
+	 * @param wf
+	 * @param environment
+	 * @param indent
+	 * @return
+	 */
+	private Stmt parseHeadlessStatement(WhileyFile wf, HashSet<String> environment, Indent indent) {
 
 		int start = index;
 		SyntacticType type = parseDefiniteType();
-		
-		if (type == null) {					
+
+		if (type == null) {
 			// Can still be a variable declaration, assignment or invocation.
 			Expr e = parseExpression(wf, environment, false);
-			if (e instanceof Expr.AbstractInvoke
-					|| e instanceof Expr.AbstractIndirectInvoke) {
+			if (e instanceof Expr.AbstractInvoke || e instanceof Expr.AbstractIndirectInvoke) {
 				// Must be an invocation since these are neither valid
 				// lvals (i.e. they cannot be assigned) nor types.
 				matchEndLine();
 				return (Stmt) e;
-			} else if(tryAndMatch(true,Equals) != null) {
+			} else if (tryAndMatch(true, Equals) != null) {
 				// Must be an assignment a valid type cannot be followed by "="
 				// on its own. Therefore, we backtrack and attempt to parse the
 				// expression as an lval (i.e. as part of an assignment
@@ -671,12 +684,17 @@ public class WhileyFileParser {
 				index = start; // backtrack
 				//
 				return parseAssignmentStatement(wf, environment);
+			} else if (tryAndMatch(true, Comma) != null) {
+				// Must be an multi-assignment 
+				index = start; // backtrack
+				//
+				return parseAssignmentStatement(wf, environment);
 			} else {
 				// At this point, we must be left with a variable declaration.
 				// Therefore, we backtrack and parse the expression again as a
-				// type. 
+				// type.
 				index = start; // backtrack
-				type = parseType(); 
+				type = parseType();
 			}
 		}
 		// Must be a variable declaration here.
@@ -684,7 +702,7 @@ public class WhileyFileParser {
 		WhileyFile.Parameter decl = wf.new Parameter(type, name.text, sourceAttr(start, index - 1));
 		return parseVariableDeclaration(start, decl, wf, environment);
 	}
-
+	
 	/**
 	 * Parse a variable declaration statement which has the form:
 	 *
@@ -765,17 +783,16 @@ public class WhileyFileParser {
 		int start = index;
 
 		match(Return);
-
-		ArrayList<Expr> returns = new ArrayList<Expr>();
-		// A return statement may optionally have a return expression.
-		// Therefore, we first skip all whitespace on the given line.
+		// A return statement may optionally have one or more return
+		// expressions.  Therefore, we first skip all whitespace on the given line.
 		int next = skipLineSpace(index);
 		// Then, we check whether or not we reached the end of the line. If not,
 		// then we assume what's remaining is the returned expression. This
 		// means expressions must start on the same line as a return. Otherwise,
 		// a potentially cryptic error message will be given.
+		List<Expr> returns = Collections.EMPTY_LIST;
 		if (next < tokens.size() && tokens.get(next).kind != NewLine) {
-			returns.add(parseExpression(wf, environment, false));
+			returns = parseExpressions(wf,environment,false); 
 		}
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
@@ -1247,6 +1264,7 @@ public class WhileyFileParser {
 	 *
 	 * <pre>
 	 * x = y       // variable assignment
+	 * x,y = z     // multi-assignment
 	 * x.f = y     // field assignment
 	 * x[i] = y    // array assignment
 	 * x[i].f = y  // compound assignment
@@ -1272,12 +1290,12 @@ public class WhileyFileParser {
 	private Stmt parseAssignmentStatement(WhileyFile wf,
 			HashSet<String> environment) {
 		int start = index;
-		Expr.LVal lhs = parseLVal(wf, environment);
+		List<Expr.LVal> lvals = parseLVals(wf, environment);
 		match(Equals);
-		Expr rhs = parseExpression(wf, environment, false);
+		List<Expr> rvals = parseExpressions(wf, environment, false);
 		int end = index;
 		matchEndLine();
-		return new Stmt.Assign((Expr.LVal) lhs, rhs, sourceAttr(start, end - 1));
+		return new Stmt.Assign(lvals, rvals, sourceAttr(start, end - 1));
 	}
 
 	/**
@@ -1300,39 +1318,23 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr.LVal parseLVal(WhileyFile wf, HashSet<String> environment) {
-		return parseRationalLVal(wf, environment);
-	}
-
-	/**
-	 * Parse a rational lval, which is of the form:
-	 *
-	 * <pre>
-	 * RationalLVal ::= TermLVal [ '/' TermLVal ]
-	 * </pre>
-	 *
-	 * @param wf
-	 *            The enclosing WhileyFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 *
-	 * @return
-	 */
-	private Expr.LVal parseRationalLVal(WhileyFile wf,
-			HashSet<String> environment) {
+	private List<Expr.LVal> parseLVals(WhileyFile wf, HashSet<String> environment) {
 		int start = index;
-		Expr.LVal lhs = parseAccessLVal(wf, environment);
-
-		if (tryAndMatch(true, RightSlash) != null) {
-			Expr.LVal rhs = parseAccessLVal(wf, environment);
-			return new Expr.RationalLVal(lhs, rhs, sourceAttr(start, index - 1));
+		ArrayList<Expr.LVal> elements = new ArrayList<Expr.LVal>();				
+		elements.add(parseLVal(wf,environment));
+		
+		// Check whether we have a multiple lvals or not
+		while (tryAndMatch(true, Comma) != null) {
+			// Add all expressions separated by a comma
+			elements.add(parseLVal(wf, environment));
+			// Done
 		}
 
-		return lhs;
+		return elements;
+	}
+	
+	private Expr.LVal parseLVal(WhileyFile wf, HashSet<String> environment) {
+		return parseAccessLVal(wf, environment);
 	}
 
 	/**
@@ -1430,6 +1432,32 @@ public class WhileyFileParser {
 			syntaxError("unrecognised lval", lookahead);
 			return null; // dead-code
 		}
+	}
+	
+	/**
+	 * Parse a "multi-expression"; that is, a sequence of one or more
+	 * expressions separated by comma's
+	 * 
+	 * @param wf
+	 * @param environment
+	 * @param terminated
+	 * @return
+	 */
+	public List<Expr> parseExpressions(WhileyFile wf,
+			HashSet<String> environment, boolean terminated) {
+		ArrayList<Expr> returns = new ArrayList<Expr>();
+		// A return statement may optionally have a return expression.
+		// Therefore, we first skip all whitespace on the given line.
+		int next = skipLineSpace(index);
+		// Then, we check whether or not we reached the end of the line. If not,
+		// then we assume what's remaining is the returned expression. This
+		// means expressions must start on the same line as a return. Otherwise,
+		// a potentially cryptic error message will be given.
+		returns.add(parseExpression(wf, environment, terminated));
+		while(tryAndMatch(false,Comma) != null) {
+			returns.add(parseExpression(wf, environment, terminated));
+		}
+		return returns;
 	}
 	
 	/**

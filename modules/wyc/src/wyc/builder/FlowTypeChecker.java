@@ -263,7 +263,7 @@ public class FlowTypeChecker {
 			WhileyFile.Method m = (WhileyFile.Method) d;
 			m.resolvedType = resolveAsType(m.unresolvedType(), d);
 		}
-
+		
 		// Finally, propagate type information throughout all statements in the
 		// function / method body.
 		Environment last = propagate(d.statements, environment);
@@ -482,53 +482,40 @@ public class FlowTypeChecker {
 	 * @return
 	 */
 	private Environment propagate(Stmt.Assign stmt, Environment environment) throws IOException, ResolveError {
-
-		Expr.LVal lhs = propagate(stmt.lhs, environment);
-		Expr rhs = propagate(stmt.rhs, environment, current);
-
-		if (lhs instanceof Expr.RationalLVal) {
-			// represents a destructuring assignment
-			Expr.RationalLVal tv = (Expr.RationalLVal) lhs;
-			Pair<Expr.AssignedVariable, Expr.AssignedVariable> avs = inferAfterType(tv, rhs);
-			String numVar = avs.first().var;
-			String denVar = avs.second().var;
-			checkIsSubtype(environment.getDeclaredType(numVar), avs.first().afterType, avs.first());
-			checkIsSubtype(environment.getDeclaredType(denVar), avs.second().afterType, avs.second());
-			environment = environment.update(numVar, avs.first().afterType);
-			environment = environment.update(denVar, avs.second().afterType);
-		} else {
-			// represents element or field update
-			Expr.AssignedVariable av = inferAfterType(lhs, rhs.result());
+		// First, type check each lval that occurs on the left-hand side.
+		for(int i=0;i!=stmt.lvals.size();++i) {
+			stmt.lvals.set(i, propagate(stmt.lvals.get(i), environment));
+		}		
+		// Second, type check expressions on right-hand side, and calculate the
+		// number of values produced by the right-hand side. This is challenging
+		// because the number of explicit rvals given can legitimately be less
+		// than the number of values produced. This occurs when an invocation
+		// occurs on the right-hand side has multiple return values.		
+		ArrayList<Nominal> valuesProduced = new ArrayList<Nominal>();
+		for (int i = 0; i != stmt.rvals.size(); ++i) {
+			Expr e = propagate(stmt.rvals.get(i), environment, current);
+			// FIXME: update for expressions which can provide multiple rvals
+			valuesProduced.add(e.result());
+			stmt.rvals.set(i, e);
+		}
+		// Check the number of expected values matches the number of values
+		// produced by the right-hand side.
+		if(stmt.lvals.size() < valuesProduced.size()) {
+			syntaxError("too many values provided on right-hand side", filename, stmt);
+		} else if(stmt.lvals.size() > valuesProduced.size()) {
+			syntaxError("not enough values provided on right-hand side", filename, stmt);
+		}
+		// For each value produced, check that the variable being assigned
+		// matches the value produced.
+		for (int i = 0; i != valuesProduced.size(); ++i) {			
+			Expr.LVal lval = stmt.lvals.get(i);
+			Nominal rval = valuesProduced.get(i);
+			Expr.AssignedVariable av = inferAfterType(lval, rval);
 			checkIsSubtype(environment.getDeclaredType(av.var), av.afterType, av);
 			environment = environment.update(av.var, av.afterType);
 		}
 
-		stmt.lhs = (Expr.LVal) lhs;
-		stmt.rhs = rhs;
-
 		return environment;
-	}
-
-	private Pair<Expr.AssignedVariable, Expr.AssignedVariable> inferAfterType(Expr.RationalLVal tv, Expr rhs)
-			throws IOException {
-		Nominal afterType = rhs.result();
-
-		if (!Type.isSubtype(Type.T_REAL, afterType.raw())) {
-			syntaxError("real value expected, got " + afterType, filename, rhs);
-		}
-
-		if (tv.numerator instanceof Expr.AssignedVariable && tv.denominator instanceof Expr.AssignedVariable) {
-			Expr.AssignedVariable lv = (Expr.AssignedVariable) tv.numerator;
-			Expr.AssignedVariable rv = (Expr.AssignedVariable) tv.denominator;
-			lv.type = Nominal.T_VOID;
-			rv.type = Nominal.T_VOID;
-			lv.afterType = Nominal.T_INT;
-			rv.afterType = Nominal.T_INT;
-			return new Pair<Expr.AssignedVariable, Expr.AssignedVariable>(lv, rv);
-		} else {
-			syntaxError(errorMessage(INVALID_TUPLE_LVAL), filename, tv);
-			return null; // dead code
-		}
 	}
 
 	private Expr.AssignedVariable inferAfterType(Expr.LVal lv, Nominal afterType) {
@@ -897,11 +884,6 @@ public class FlowTypeChecker {
 				Expr.AssignedVariable lv = new Expr.AssignedVariable(av.var, av.attributes());
 				lv.type = p;
 				return lv;
-			} else if (lval instanceof Expr.RationalLVal) {
-				Expr.RationalLVal av = (Expr.RationalLVal) lval;
-				av.numerator = propagate(av.numerator, environment);
-				av.denominator = propagate(av.denominator, environment);
-				return av;
 			} else if (lval instanceof Expr.Dereference) {
 				Expr.Dereference pa = (Expr.Dereference) lval;
 				Expr.LVal src = propagate((Expr.LVal) pa.src, environment);

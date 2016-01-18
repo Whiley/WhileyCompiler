@@ -520,45 +520,39 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Assign s, Environment environment,
+	private void generate(Assign s, Environment environment, AttributedCodeBlock codes, Context context) {
+		// First, we translate all right-hand side expressions and assign them
+		// to temporary registers.
+		ArrayList<Integer> operands = new ArrayList<Integer>();
+		ArrayList<Type> types = new ArrayList<Type>();
+		for(int i=0;i!=s.rvals.size();++i) {
+			// FIXME: handle rvals which generated multiple values.
+			operands.add(generate(s.rvals.get(i), environment, codes, context));
+			types.add(s.rvals.get(i).result().raw());
+		}
+		
+		// Second, update each expression on left-hand side of this assignment
+		// appropriately. Note that we can safely assume here the number of
+		// rvals and lvals matches as this has already been checked by
+		// FlowTypeChecker.
+		for (int i = 0; i != s.lvals.size(); ++i) {
+			Expr.LVal lval = s.lvals.get(i);
+			generateAssignment(lval, operands.get(i), types.get(i), environment, codes, context);
+		}
+	}
+	
+	public void generateAssignment(Expr.LVal lval, int operand, Type type, Environment environment,
 			AttributedCodeBlock codes, Context context) {
-
-		// First, we translate the right-hand side expression and assign it to a
-		// temporary register.
-		int operand = generate(s.rhs, environment, codes, context);
-
-		// Second, we update the left-hand side of this assignment
-		// appropriately.
-		if (s.lhs instanceof Expr.AssignedVariable) {
-			Expr.AssignedVariable v = (Expr.AssignedVariable) s.lhs;
-
+		if (lval instanceof Expr.AssignedVariable) {
+			Expr.AssignedVariable v = (Expr.AssignedVariable) lval;
 			// This is the easiest case. Having translated the right-hand side
 			// expression, we now assign it directly to the register allocated
 			// for variable on the left-hand side.
 			int target = environment.get(v.var);
-			codes.add(Codes.Assign(s.rhs.result().raw(), target, operand),
-					attributes(s));
-		} else if (s.lhs instanceof Expr.RationalLVal) {
-			Expr.RationalLVal tg = (Expr.RationalLVal) s.lhs;
-
-			// Having translated the right-hand side expression, we now
-			// destructure it using the numerator and denominator unary
-			// bytecodes.
-			Expr.AssignedVariable lv = (Expr.AssignedVariable) tg.numerator;
-			Expr.AssignedVariable rv = (Expr.AssignedVariable) tg.denominator;
-
-			codes.add(Codes.UnaryOperator(s.rhs.result().raw(),
-					environment.get(lv.var), operand,
-					Codes.UnaryOperatorKind.NUMERATOR), attributes(s));
-
-			codes.add(Codes.UnaryOperator(s.rhs.result().raw(),
-					environment.get(rv.var), operand,
-					Codes.UnaryOperatorKind.DENOMINATOR), attributes(s));
-
-		} else if (s.lhs instanceof Expr.IndexOf
-				|| s.lhs instanceof Expr.FieldAccess
-				|| s.lhs instanceof Expr.Dereference) {
-
+			codes.add(Codes.Assign(type, target, operand), attributes(lval));
+		} else if (lval instanceof Expr.IndexOf
+				|| lval instanceof Expr.FieldAccess
+				|| lval instanceof Expr.Dereference) {
 			// This is the more complicated case, since the left-hand side
 			// expression is recursive. However, the WyIL update bytecode comes
 			// to the rescue here. All we need to do is extract the variable
@@ -567,15 +561,13 @@ public final class CodeGenerator {
 			// updated.
 			ArrayList<String> fields = new ArrayList<String>();
 			ArrayList<Integer> operands = new ArrayList<Integer>();
-			Expr.AssignedVariable lhs = extractLVal(s.lhs, fields, operands,
+			Expr.AssignedVariable lhs = extractLVal(lval, fields, operands,
 					environment, codes, context);
 			int target = environment.get(lhs.var);
-			int rhsRegister = generate(s.rhs, environment, codes, context);
-
 			codes.add(Codes.Update(lhs.type.raw(), target, operands,
-					rhsRegister, lhs.afterType.raw(), fields), attributes(s));
+					operand, lhs.afterType.raw(), fields), attributes(lval));
 		} else {
-			WhileyFile.syntaxError("invalid assignment", context, s);
+			WhileyFile.syntaxError("invalid assignment", context, lval);
 		}
 	}
 

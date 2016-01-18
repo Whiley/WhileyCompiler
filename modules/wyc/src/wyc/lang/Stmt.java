@@ -66,39 +66,41 @@ public interface Stmt extends SyntacticElement {
 	 */
 	public static final class Assign extends SyntacticElement.Impl implements
 			Stmt {
-		public Expr.LVal lhs;
-		public Expr rhs;
+		public final List<Expr.LVal> lvals;
+		public final List<Expr> rvals;
 
 		/**
-		 * Create an assignment from a given <code>lhs</code> and
-		 * <code>rhs</code>.
+		 * Create an assignment from a given sequence of lvals and expressions on the right-hand side.
 		 *
-		 * @param lhs
-		 *            --- left-hand side, which may not be <code>null</code>.
-		 * @param rhs
-		 *            --- right-hand side, which may not be <code>null</code>.
+		 * @param lvals
+		 *            Sequence of one or more lval expressions representing the
+		 *            left-hand side
+		 * @param rvals
+		 *            Sequence of one or more expressions representing the
+		 *            right-hand side
 		 * @param attributes
 		 */
-		public Assign(Expr.LVal lhs, Expr rhs, Attribute... attributes) {
+		public Assign(List<Expr.LVal> lvals, List<Expr> rvals, Attribute... attributes) {
 			super(attributes);
-			this.lhs = lhs;
-			this.rhs = rhs;
+			this.lvals = new ArrayList<Expr.LVal>(lvals);
+			this.rvals = new ArrayList<Expr>(rvals);
 		}
 
 		/**
-		 * Create an assignment from a given <code>lhs</code> and
-		 * <code>rhs</code>.
+		 * Create an assignment from a given sequence of lvals and expressions on the right-hand side.
 		 *
-		 * @param lhs
-		 *            --- left-hand side, which may not be <code>null</code>.
-		 * @param rhs
-		 *            --- right-hand side, which may not be <code>null</code>.
+		 * @param lvals
+		 *            Sequence of one or more lval expressions representing the
+		 *            left-hand side
+		 * @param rvals
+		 *            Sequence of one or more expressions representing the
+		 *            right-hand side
 		 * @param attributes
 		 */
-		public Assign(Expr.LVal lhs, Expr rhs, Collection<Attribute> attributes) {
+		public Assign(List<Expr.LVal> lvals, List<Expr> rvals, Collection<Attribute> attributes) {
 			super(attributes);
-			this.lhs = lhs;
-			this.rhs = rhs;
+			this.lvals = new ArrayList<Expr.LVal>(lvals);
+			this.rvals = new ArrayList<Expr>(rvals);
 		}
 	}
 
