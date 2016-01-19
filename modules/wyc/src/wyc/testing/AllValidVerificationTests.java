@@ -1551,7 +1551,7 @@ public class AllValidVerificationTests {
 		runTest("RealNeg_Valid_2");
 	}
 
-	@Test
+	@Ignore("#564") @Test
 	public void RealSplit_Valid_1() {
 		runTest("RealSplit_Valid_1");
 	}
@@ -1636,7 +1636,7 @@ public class AllValidVerificationTests {
 		runTest("RecordAssign_Valid_9");
 	}
 
-	@Test
+	@Ignore("#564") @Test
 	public void RecordCoercion_Valid_1() {
 		runTest("RecordCoercion_Valid_1");
 	}
@@ -1851,7 +1851,12 @@ public class AllValidVerificationTests {
 	public void Remainder_Valid_1() {
 		runTest("Remainder_Valid_1");
 	}
-
+	
+	@Test
+	public void Return_Valid_1() {
+		runTest("Return_Valid_1");
+	}
+	
 	@Test
 	public void Requires_Valid_1() {
 		runTest("Requires_Valid_1");

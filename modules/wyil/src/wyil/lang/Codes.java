@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import wycc.lang.NameID;
@@ -172,14 +173,14 @@ public abstract class Codes {
 		return new Goto(label);
 	}
 
-	public static Invoke Invoke(Type.FunctionOrMethod fun, int target,
-			Collection<Integer> operands, NameID name) {
-		return new Invoke(fun, target, CodeUtils.toIntArray(operands), name);
+	public static Invoke Invoke(Type.FunctionOrMethod fun, Collection<Integer> targets, Collection<Integer> operands,
+			NameID name) {
+		return new Invoke(fun, CodeUtils.toIntArray(targets), CodeUtils.toIntArray(operands), name);
 	}
 
-	public static Invoke Invoke(Type.FunctionOrMethod fun, int target,
+	public static Invoke Invoke(Type.FunctionOrMethod fun, int[] targets,
 			int[] operands, NameID name) {
-		return new Invoke(fun, target, operands, name);
+		return new Invoke(fun, targets, operands, name);
 	}
 	
 	/**
@@ -298,7 +299,8 @@ public abstract class Codes {
 	 * @return
 	 */
 	public static Return Return() {
-		return new Return(Type.T_VOID, Codes.NULL_REG);
+		// FIXME: this is completely broken!
+		return new Return(Type.T_VOID);
 	}
 
 	/**
@@ -311,10 +313,34 @@ public abstract class Codes {
 	 *            --- register to read return value from.
 	 * @return
 	 */
-	public static Return Return(Type type, int operand) {
-		return new Return(type, operand);
+	public static Return Return(Type[] types, int... operands) {
+		// FIXME: this is completely broken!
+		if(types.length == 0) {
+			return new Return(Type.T_VOID, operands);
+		} else {
+			return new Return(types[0], operands);
+		}
 	}
 
+	/**
+	 * Construct a return bytecode which reads a value from the operand register
+	 * and returns it.
+	 *
+	 * @param type
+	 *            --- type of the value to be returned (cannot be void).
+	 * @param operand
+	 *            --- register to read return value from.
+	 * @return
+	 */
+	public static Return Return(List<Type> types, int... operands) {
+		// FIXME: this is completely broken!
+		if(types.size() == 0) {
+			return new Return(Type.T_VOID, operands);
+		} else {
+			return new Return(types.get(0), operands);
+		}
+	}
+	
 	public static If If(Type type, int leftOperand, int rightOperand,
 			Comparator cop, String label) {
 		return new If(type, leftOperand, rightOperand, cop, label);
@@ -326,14 +352,14 @@ public abstract class Codes {
 	}
 
 	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun,
-			int target, int operand, Collection<Integer> operands) {
-		return new IndirectInvoke(fun, target, operand, CodeUtils
+			int[] targets, int operand, Collection<Integer> operands) {
+		return new IndirectInvoke(fun, targets, operand, CodeUtils
 				.toIntArray(operands));
 	}
 
 	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun,
-			int target, int operand, int[] operands) {
-		return new IndirectInvoke(fun, target, operand, operands);
+			int[] targets, int operand, int[] operands) {
+		return new IndirectInvoke(fun, targets, operand, operands);
 	}
 
 	public static Invert Invert(Type type, int target, int operand) {
@@ -692,12 +718,12 @@ public abstract class Codes {
 
 		@Override
 		public void registers(java.util.Set<Integer> registers) {
-			registers.add(target());
+			registers.add(targets()[0]);
 		}
 
 		@Override
 		public Code.Unit remap(Map<Integer, Integer> binding) {
-			Integer nTarget = binding.get(target());
+			Integer nTarget = binding.get(targets()[0]);
 			if (nTarget != null) {
 				return Const(nTarget, constant);
 			}
@@ -707,21 +733,25 @@ public abstract class Codes {
 		public Type assignedType() {
 			return (Type) constant.type();
 		}
+		
+		public int target() {
+			return targets()[0];
+		}
 
 		public int hashCode() {
-			return constant.hashCode() + target();
+			return constant.hashCode() + targets()[0];
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Const) {
 				Const c = (Const) o;
-				return constant.equals(c.constant) && target() == c.target();
+				return constant.equals(c.constant) && Arrays.equals(targets(),c.targets());
 			}
 			return false;
 		}
 
 		public String toString() {
-			return "const %" + target() + " = " + constant + " : "
+			return "const %" + targets()[0] + " = " + constant + " : "
 					+ constant.type();
 		}
 	}
@@ -947,6 +977,11 @@ public abstract class Codes {
 			return OPCODE_fail;
 		}
 
+		@Override
+		public Code.Unit remap(Map<Integer, Integer> binding) {
+			return this;
+		}
+		
 		public String toString() {
 			return "fail";			
 		}
@@ -1087,6 +1122,11 @@ public abstract class Codes {
 				return Goto(nlabel);
 			}
 		}
+		
+		@Override
+		public Code.Unit remap(Map<Integer, Integer> binding) {
+			return this;
+		}
 
 		public int hashCode() {
 			return target.hashCode();
@@ -1101,7 +1141,7 @@ public abstract class Codes {
 
 		public String toString() {
 			return "goto " + target;
-		}
+		}		
 	}
 
 	/**
@@ -1375,7 +1415,7 @@ public abstract class Codes {
 	 *
 	 */
 	public static final class IndirectInvoke extends
-			AbstractNaryAssignable<Type.FunctionOrMethod> {
+			AbstractMultiNaryAssignable<Type.FunctionOrMethod> {
 
 		/**
 		 * Construct an indirect invocation bytecode which assigns to an
@@ -1387,9 +1427,9 @@ public abstract class Codes {
 		 * @param operand Register holding function point through which indirect invocation is made.
 		 * @param operands Registers holding parameters for the invoked function
 		 */
-		private IndirectInvoke(Type.FunctionOrMethod type, int target,
+		private IndirectInvoke(Type.FunctionOrMethod type, int[] targets,
 				int operand, int[] operands) {
-			super(type, target, append(operand,operands));
+			super(type, targets, append(operand,operands));
 		}
 
 		/**
@@ -1423,23 +1463,15 @@ public abstract class Codes {
 
 		public int opcode() {
 			if (type() instanceof Type.Function) {
-				if (target() != Codes.NULL_REG) {
-					return OPCODE_indirectinvokefn;
-				} else {
-					return OPCODE_indirectinvokefnv;
-				}
-			} else {
-				if (target() != Codes.NULL_REG) {
-					return OPCODE_indirectinvokemd;
-				} else {
-					return OPCODE_indirectinvokemdv;
-				}
+				return OPCODE_indirectinvokefn;
+			} else {				
+				return OPCODE_indirectinvokemd;
 			}
 		}
 
 		@Override
-		public Code.Unit clone(int nTarget, int[] nOperands) {
-			return IndirectInvoke(type(), nTarget, nOperands[0],
+		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+			return IndirectInvoke(type(), nTargets, nOperands[0],
 					Arrays.copyOfRange(nOperands, 1, nOperands.length));
 		}
 
@@ -1451,14 +1483,9 @@ public abstract class Codes {
 			return type().returns().get(0);
 		}
 
-		public String toString() {
-			if (target() != Codes.NULL_REG) {
-				return "indirectinvoke " + target() + " = " + reference() + " "
-						+ arrayToString(parameters()) + " : " + type();
-			} else {
-				return "indirectinvoke %" + reference() + " "
-						+ arrayToString(parameters()) + " : " + type();
-			}
+		public String toString() {			
+			return "indirectinvoke " + arrayToString(targets()) + " = %" + reference() + " "
+					+ arrayToString(parameters()) + " : " + type();			
 		}
 	}
 	
@@ -1597,28 +1624,20 @@ public abstract class Codes {
 	 *
 	 */
 	public static final class Invoke extends
-			AbstractNaryAssignable<Type.FunctionOrMethod> {
+			AbstractMultiNaryAssignable<Type.FunctionOrMethod> {
 		public final NameID name;
 
-		private Invoke(Type.FunctionOrMethod type, int target, int[] operands,
+		private Invoke(Type.FunctionOrMethod type, int[] targets, int[] operands,
 				NameID name) {
-			super(type, target, operands);
+			super(type, targets, operands);
 			this.name = name;
 		}
 
 		public int opcode() {
 			if (type() instanceof Type.Function) {
-				if (target() != Codes.NULL_REG) {
-					return OPCODE_invokefn;
-				} else {
-					return OPCODE_invokefnv;
-				}
+				return OPCODE_invokefn;				
 			} else {
-				if (target() != Codes.NULL_REG) {
-					return OPCODE_invokemd;
-				} else {
-					return OPCODE_invokemdv;
-				}
+				return OPCODE_invokemd;			
 			}
 		}
 
@@ -1631,8 +1650,8 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int nTarget, int[] nOperands) {
-			return Invoke(type(), nTarget, nOperands, name);
+		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+			return Invoke(type(), nTargets, nOperands, name);
 		}
 
 		public boolean equals(Object o) {
@@ -1644,13 +1663,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			if (target() != Codes.NULL_REG) {
-				return "invoke %" + target() + " = " + arrayToString(operands())
-						+ " " + name + " : " + type();
-			} else {
-				return "invoke %" + arrayToString(operands()) + " " + name
-						+ " : " + type();
-			}
+			return "invoke " + arrayToString(targets()) + " = " + arrayToString(operands()) + " " + name + " : "
+					+ type();			
 		}
 	}
 
@@ -1725,6 +1739,11 @@ public abstract class Codes {
 			}
 		}
 
+		@Override
+		public Code.Unit remap(Map<Integer, Integer> binding) {
+			return this;
+		}
+		
 		public int hashCode() {
 			return label.hashCode();
 		}
@@ -2576,6 +2595,11 @@ public abstract class Codes {
 			return OPCODE_nop;
 		}
 
+		@Override
+		public Code.Unit remap(Map<Integer, Integer> binding) {
+			return this;
+		}
+		
 		public String toString() {
 			return "nop";
 		}
@@ -2607,30 +2631,29 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Return extends AbstractUnaryOp<Type> {
+	public static final class Return extends AbstractMultiNaryAssignable<Type> {
 
-		private Return(Type type, int operand) {
-			super(type, operand);
-			if (type == Type.T_VOID && operand != Codes.NULL_REG) {
-				throw new IllegalArgumentException(
-						"Return with void type cannot have target register.");
-			} else if (type != Type.T_VOID && operand == Codes.NULL_REG) {
-				throw new IllegalArgumentException(
-						"Return with non-void type must have target register.");
+		private Return(Type type, int... operands) {
+			super(type, new int[0], operands);			
+		}
+
+		public List<Type> types() {
+			// FIXME: also clearly broken.
+			ArrayList<Type> types = new ArrayList<Type>();
+			for(int i=0;i!=operands.length;++i) {
+				types.add(type());
 			}
+			return types;
+		}
+		
+		@Override
+		public int opcode() {			
+			return OPCODE_return;
 		}
 
 		@Override
-		public int opcode() {
-			if (type == Type.T_VOID) {
-				return OPCODE_returnv;
-			} else {
-				return OPCODE_return;
-			}
-		}
-
-		public Code.Unit clone(int nOperand) {
-			return new Return(type, nOperand);
+		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+			return new Return(type, nOperands);
 		}
 
 		public boolean equals(Object o) {
@@ -2641,11 +2664,14 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			if (operand != Codes.NULL_REG) {
-				return "return %" + operand + " : " + type;
-			} else {
-				return "return";
+			String r = "return";
+			for(int i=0;i!=operands.length;++i) {
+				if(i!=0) {
+					r += ",";
+				}
+				r += " %" + operands[i];
 			}
+			return r;
 		}
 	}
 

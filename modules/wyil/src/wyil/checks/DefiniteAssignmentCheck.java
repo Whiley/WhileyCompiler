@@ -106,10 +106,13 @@ public class DefiniteAssignmentCheck extends
 			HashSet<Integer> in) {
 		checkUses(index, code, in);
 
-		int def = defs(code);
-		if (def >= 0) {
-			in = new HashSet<Integer>(in);
-			in.add(def);
+		int[] defs = defs(code);
+		
+		if (defs.length >= 0) {
+			for(int def : defs) {
+				in = new HashSet<Integer>(in);
+				in.add(def);
+			}
 		}
 
 		return in;
@@ -222,11 +225,11 @@ public class DefiniteAssignmentCheck extends
                 filename, rootBlock.attribute(index,SourceLocation.class));
 	}
 
-	public int defs(Code code) {
+	public int[] defs(Code code) {
 		if (code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
-			return aa.target();
+			return aa.targets();
 		}
-		return Codes.NULL_REG;
+		return new int[0];
 	}
 }

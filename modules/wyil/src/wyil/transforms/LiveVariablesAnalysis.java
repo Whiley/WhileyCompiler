@@ -190,17 +190,19 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		if (code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
 			if(code instanceof Codes.Update) {
-				Codes.Update cu = (Codes.Update) code;
+				Codes.Update cu = (Codes.Update) aa;
 				// In the normal case, this bytecode is considered live if the
 				// assigned register is live. However, in the case of an
 				// indirect assignment, then it is always considered live.
 				if(!(cu.type() instanceof Type.Reference)) {
 					// No, this is not an indirect assignment through a
 					// reference
-					isLive = environment.contains(aa.target());
+					isLive = environment.contains(cu.target());
 				}
 			} else {
-				isLive = environment.remove(aa.target());
+				for(int target : aa.targets()) {
+					isLive = environment.remove(target);
+				}
 			}
 		}
 

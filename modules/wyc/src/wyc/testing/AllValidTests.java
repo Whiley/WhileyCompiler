@@ -1564,7 +1564,7 @@ public class AllValidTests {
 		runTest("RealNeg_Valid_2");
 	}
 
-	@Test
+	@Ignore("#564") @Test
 	public void RealSplit_Valid_1() throws IOException {
 		runTest("RealSplit_Valid_1");
 	}
@@ -1649,7 +1649,7 @@ public class AllValidTests {
 		runTest("RecordAssign_Valid_9");
 	}
 
-	@Test
+	@Ignore("#564") @Test
 	public void RecordCoercion_Valid_1() throws IOException {
 		runTest("RecordCoercion_Valid_1");
 	}
@@ -1854,6 +1854,11 @@ public class AllValidTests {
 		runTest("Remainder_Valid_1");
 	}
 
+	@Test
+	public void Return_Valid_1() throws IOException {
+		runTest("Return_Valid_1");
+	}
+	
 	@Test
 	public void Requires_Valid_1() throws IOException {
 		runTest("Requires_Valid_1");

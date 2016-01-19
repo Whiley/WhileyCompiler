@@ -490,14 +490,11 @@ public class FlowTypeChecker {
 		// number of values produced by the right-hand side. This is challenging
 		// because the number of explicit rvals given can legitimately be less
 		// than the number of values produced. This occurs when an invocation
-		// occurs on the right-hand side has multiple return values.		
-		ArrayList<Nominal> valuesProduced = new ArrayList<Nominal>();
+		// occurs on the right-hand side has multiple return values.			
 		for (int i = 0; i != stmt.rvals.size(); ++i) {
-			Expr e = propagate(stmt.rvals.get(i), environment, current);
-			// FIXME: update for expressions which can provide multiple rvals
-			valuesProduced.add(e.result());
-			stmt.rvals.set(i, e);
+			stmt.rvals.set(i, propagate(stmt.rvals.get(i), environment, current));
 		}
+		List<Nominal> valuesProduced = calculateTypesProduced(stmt.rvals);
 		// Check the number of expected values matches the number of values
 		// produced by the right-hand side.
 		if(stmt.lvals.size() < valuesProduced.size()) {
@@ -517,7 +514,7 @@ public class FlowTypeChecker {
 
 		return environment;
 	}
-
+	
 	private Expr.AssignedVariable inferAfterType(Expr.LVal lv, Nominal afterType) {
 		if (lv instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) lv;
@@ -698,14 +695,18 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.Return stmt, Environment environment) throws IOException {
 		List<Expr> stmt_returns = stmt.returns;
+		for(int i=0;i!=stmt_returns.size();++i) {
+			stmt_returns.set(i, propagate(stmt_returns.get(i), environment, current));
+		}			
+		List<Nominal> stmt_types = calculateTypesProduced(stmt_returns);
 		List<Nominal> current_returns = current.resolvedType().returns();
 
-		if (stmt_returns.size() < current_returns.size()) {
+		if (stmt_types.size() < current_returns.size()) {
 			// In this case, a return statement was provided with too few return
 			// values compared with the number declared for the enclosing
 			// method.
 			syntaxError("not enough return values provided", filename, stmt);
-		} else if (stmt_returns.size() > current_returns.size()) {
+		} else if (stmt_types.size() > current_returns.size()) {
 			// In this case, a return statement was provided with too many return
 			// values compared with the number declared for the enclosing
 			// method.
@@ -716,10 +717,8 @@ public class FlowTypeChecker {
 		// function/method. Now, check they have appropriate types.
 		for(int i=0;i!=current_returns.size();++i) {
 			Nominal t = current_returns.get(i);
-			Expr e = propagate(stmt_returns.get(i), environment, current);
-			checkIsSubtype(t, e.result(), e);
-			stmt_returns.set(i, e);
-		}		
+			checkIsSubtype(t, stmt_types.get(i), stmt);
+		}	
 
 		environment.free();
 		return BOTTOM;
@@ -1564,8 +1563,16 @@ public class FlowTypeChecker {
 		}
 
 		expr.body = propagate(expr.body, environment, context);
-		Nominal result = expr.body.result();
-		if(result != null) {
+		if(expr.body instanceof Expr.Multi) {
+			Expr.Multi m = (Expr.Multi) expr.body;
+			List<Nominal> returns = m.returns();
+			for(int i=0;i!=returns.size();++i) {
+				Nominal result = returns.get(i);
+				rawReturnTypes.add(result.raw());
+				nomReturnTypes.add(result.nominal());
+			}
+		} else {
+			Nominal result = expr.body.result();		
 			rawReturnTypes.add(result.raw());
 			nomReturnTypes.add(result.nominal());
 		}
@@ -1799,6 +1806,24 @@ public class FlowTypeChecker {
 		return expr;
 	}
 
+
+	private List<Nominal> calculateTypesProduced(List<Expr> expressions) {
+		ArrayList<Nominal> types = new ArrayList<Nominal>();
+		for (int i = 0; i != expressions.size(); ++i) {
+			Expr e = expressions.get(i);
+			if(e instanceof Expr.Multi) {
+				// The assigned expression actually has multiple returns,
+				// therefore extract them all.
+				Expr.Multi me = (Expr.Multi) e;
+				types.addAll(me.returns());
+			} else {
+				// The assigned rval is a simple expression which returns a
+				// single value
+				types.add(e.result());
+			}
+		}
+		return types;
+	}
 	// =========================================================================
 	// Compute fixed point
 	// =========================================================================

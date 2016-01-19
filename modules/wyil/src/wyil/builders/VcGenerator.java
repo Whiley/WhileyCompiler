@@ -250,8 +250,9 @@ public class VcGenerator {
 					Codes.Return ret = (Codes.Return) body.get(branch.pc());
 					// Construct verification check to ensure that return
 					// type invariant holds
-					Expr returnedOperand = branch.read(ret.operand);					
-					Type rawType = expand(bodyEnvironment[ret.operand],attributes);
+					// FIXME: need proper support for multiple returns
+					Expr returnedOperand = branch.read(ret.operand(0));					
+					Type rawType = expand(bodyEnvironment[ret.operand(0)],attributes);
 					Expr rawTest = new Expr.Is(returnedOperand,
 							convert(rawType, attributes));
 					// FIXME: needs to handle all returns
@@ -617,9 +618,7 @@ public class VcGenerator {
 			case Code.OPCODE_update:
 				return updateChecks((Codes.Update) code, branch);
 			case Code.OPCODE_invokefn:
-			case Code.OPCODE_invokefnv:
 			case Code.OPCODE_invokemd:
-			case Code.OPCODE_invokemdv:
 				return preconditionCheck((Codes.Invoke) code, branch, environment, block);
 			}
 			return new Pair[0];
@@ -1683,8 +1682,8 @@ public class VcGenerator {
 
 	protected void transform(Codes.IndirectInvoke code,
 			AttributedCodeBlock block, VcBranch branch) {
-		if (code.target() != Codes.NULL_REG) {
-			branch.havoc(code.target());
+		for(int target : code.targets()) {
+			branch.havoc(target);
 		}
 	}
 
@@ -1694,8 +1693,9 @@ public class VcGenerator {
 				.attributes(branch.pc());
 		Collection<Attribute> wyccAttributes = toWycsAttributes(attributes);
 		int[] code_operands = code.operands();
+		int[] targets = code.targets();
 		
-		if (code.target() != Codes.NULL_REG) {
+		if (targets.length > 0) {
 			// Need to assume the post-condition holds.
 			Expr[] operands = new Expr[code_operands.length];
 			for (int i = 0; i != code_operands.length; ++i) {
@@ -1703,7 +1703,7 @@ public class VcGenerator {
 			}
 			Expr argument = operands.length == 1 ? operands[0] : new Expr.Nary(
 					Expr.Nary.Op.TUPLE, operands,wyccAttributes);
-			branch.write(code.target(), new Expr.Invoke(code.name.name(),
+			branch.write(code.targets()[0], new Expr.Invoke(code.name.name(),
 					code.name.module(), Collections.EMPTY_LIST, argument,
 					wyccAttributes));
 
@@ -1712,7 +1712,7 @@ public class VcGenerator {
 			if (containsNominal(code.type().returns().get(0), attributes)) {
 				// This is required to handle the implicit constraints implied
 				// by a nominal type. See #488.
-				Expr nominalTest = new Expr.Is(branch.read(code.target()),
+				Expr nominalTest = new Expr.Is(branch.read(code.targets()[0]),
 						convert(code.type().returns().get(0), attributes));
 				branch.assume(nominalTest);
 			}
@@ -1725,9 +1725,11 @@ public class VcGenerator {
 			if (ensures.size() > 0) {
 				// To assume the post-condition holds after the method, we
 				// simply called the corresponding post-condition macros.
-				Expr[] arguments = new Expr[operands.length + 1];
+				Expr[] arguments = new Expr[operands.length + targets.length];
 				System.arraycopy(operands, 0, arguments, 0, operands.length);
-				arguments[operands.length] = branch.read(code.target());
+				for(int i=0;i!=targets.length;++i) {
+					arguments[operands.length+i] = branch.read(targets[i]);						
+				}				
 				String prefix = code.name.name() + "_ensures_";
 				for (int i = 0; i != ensures.size(); ++i) {
 					Expr.Invoke macro = new Expr.Invoke(prefix + i,

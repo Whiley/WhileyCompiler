@@ -115,8 +115,8 @@ public class LoopVariants implements Transform<WyilFile> {
 
 			if (code instanceof Code.AbstractAssignable) {
 				Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
-				if (aa.target() != Codes.NULL_REG) {
-					modified.set(aa.target());
+				for(int target : aa.targets()) {
+					modified.set(target);
 				}
 			}
 			if (code instanceof Code.Compound) {

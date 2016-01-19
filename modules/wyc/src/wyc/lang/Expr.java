@@ -71,6 +71,23 @@ public interface Expr extends SyntacticElement {
 	 */
 	public interface LVal extends Expr {}
 
+	/**
+	 * A Multi expression is one which returns multiple values. Certain
+	 * expression forms are permitted to return multiple values and these
+	 * implement Multi.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Multi extends SyntacticElement{
+		/**
+		 * Get all the return types this expression can produce.
+		 * 
+		 * @return
+		 */
+		public List<Nominal> returns();		
+	}
+	
 	public static class AbstractVariable extends SyntacticElement.Impl implements Expr, LVal {
 		public final String var;
 
@@ -565,31 +582,54 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
-	public static class MethodCall extends AbstractInvoke {
+	public static abstract class FunctionOrMethodCall extends AbstractInvoke implements Multi {
 		public final NameID nid;
-		public Nominal.Method methodType;
-
-		public MethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
+		
+		public FunctionOrMethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Attribute... attributes) {
 			super(nid.name(),qualification,arguments,attributes);
 			this.nid = nid;
 		}
 
-		public MethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
+		public FunctionOrMethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
 			super(nid.name(),qualification,arguments,attributes);
 			this.nid = nid;
 		}
-
+		
 		public NameID nid() {
 			return nid;
 		}
 
+		public abstract Nominal.FunctionOrMethod type();
+		
+		public List<Nominal> returns() {
+			return type().returns();
+		}		
+	}
+	
+	public static class MethodCall extends FunctionOrMethodCall {
+		public Nominal.Method methodType;
+
+		public MethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
+				Attribute... attributes) {
+			super(nid,qualification,arguments,attributes);
+		}
+
+		public MethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
+				Collection<Attribute> attributes) {
+			super(nid,qualification,arguments,attributes);
+		}
+
+		public Nominal.Method type() {
+			return methodType;
+		}
+		
 		public Nominal result() {
-			if(methodType.returns().isEmpty()) {
-				return null;
-			} else {
+			if (methodType.returns().size() == 1) {
 				return methodType.returns().get(0);
+			} else {
+				throw new IllegalArgumentException("incorrect number of returns for function call");
 			}
 		}
 	}
@@ -603,28 +643,30 @@ public interface Expr extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public static class FunctionCall extends AbstractInvoke {
-		public final NameID nid;
+	public static class FunctionCall extends FunctionOrMethodCall {
+
 		public Nominal.Function functionType;
 
 		public FunctionCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Attribute... attributes) {
-			super(nid.name(),qualification,arguments,attributes);
-			this.nid = nid;
+			super(nid,qualification,arguments,attributes);
 		}
 
 		public FunctionCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
-			super(nid.name(),qualification,arguments,attributes);
-			this.nid = nid;
+			super(nid,qualification,arguments,attributes);
 		}
 
-		public NameID nid() {
-			return nid;
+		public Nominal.Function type() {
+			return functionType;
 		}
-
+		
 		public Nominal result() {
-			return functionType.returns().get(0);
+			if(functionType.returns().size() == 1) {
+				return functionType.returns().get(0);
+			} else {
+				throw new IllegalArgumentException("incorrect number of returns for function call");
+			}
 		}
 	}
 
@@ -654,7 +696,21 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
-	public static class IndirectMethodCall extends AbstractIndirectInvoke {
+	public static abstract class IndirectFunctionOrMethodCall extends AbstractIndirectInvoke {
+		public IndirectFunctionOrMethodCall(Expr src, Collection<Expr> arguments,
+				Attribute... attributes) {
+			super(src,arguments,attributes);
+		}
+
+		public IndirectFunctionOrMethodCall(Expr src, Collection<Expr> arguments,
+				Collection<Attribute> attributes) {
+			super(src,arguments,attributes);
+		}
+
+		public abstract Nominal.FunctionOrMethod type();
+	}
+	
+	public static class IndirectMethodCall extends IndirectFunctionOrMethodCall {
 		public Nominal.Method methodType;
 
 		public IndirectMethodCall(Expr src, Collection<Expr> arguments,
@@ -670,9 +726,13 @@ public interface Expr extends SyntacticElement {
 		public Nominal result() {
 			return methodType.returns().get(0);
 		}
+		
+		public Nominal.FunctionOrMethod type() {
+			return methodType;
+		}
 	}
 
-	public static class IndirectFunctionCall extends AbstractIndirectInvoke {
+	public static class IndirectFunctionCall extends IndirectFunctionOrMethodCall {
 		public Nominal.Function functionType;
 
 		public IndirectFunctionCall(Expr src, Collection<Expr> arguments,
@@ -687,6 +747,10 @@ public interface Expr extends SyntacticElement {
 
 		public Nominal result() {
 			return functionType.returns().get(0);
+		}
+		
+		public Nominal.FunctionOrMethod type() {
+			return functionType;
 		}
 	}
 

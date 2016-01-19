@@ -133,9 +133,8 @@ ensures ((real) result) <= x
 // Input value is between return and return plus one
 ensures ((real) result + 1) > x:
     //
-    int num
-    int den
-    num/den = x
+    int num = numerator(x)
+    int den = denominator(x)
     int r = num / den
     if x < 0.0 && den != 1:
         return r - 1
@@ -152,9 +151,8 @@ ensures x <= ((real) result)
 // Input value is between return and return less one
 ensures ((real) result - 1) < x:
     //
-    int num
-    int den
-    num/den = x
+    int num = numerator(x)
+    int den = denominator(x)
     int r = num / den
     if x > 0.0 && den != 1:
         return r + 1
@@ -207,7 +205,10 @@ public function sqrt(real x, real error) -> (real r)
 requires x >= 0.0
 ensures r >= 0.0:
     //
-    int numerator
-    int denominator
-    numerator/denominator = x
+    int numerator = numerator(x)
+    int denominator = denominator(x)
     return sqrt(numerator,error) / sqrt(denominator,error)
+
+native function numerator(real x) -> (int n)
+
+native function denominator(real x) -> (int n)

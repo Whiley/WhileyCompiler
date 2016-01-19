@@ -331,7 +331,7 @@ public class Wyil2JavaBuilder implements Builder {
 		codes.add(new Bytecode.Load(0, strArr));
 		codes.add(new Bytecode.Invoke(WHILEYUTIL, "systemConsole", ft1,
 				Bytecode.InvokeMode.STATIC));
-		Type.Method wyft = Type.Method(new Type[0], Type.T_VOID, WHILEY_SYSTEM_T);
+		Type.Method wyft = Type.Method(new Type[0], WHILEY_SYSTEM_T);
 		JvmType.Function ft3 = convertFunType(wyft);
 		codes.add(new Bytecode.Invoke(owner, nameMangle("main", wyft), ft3,
 				Bytecode.InvokeMode.STATIC));
@@ -864,13 +864,17 @@ public class Wyil2JavaBuilder implements Builder {
 
 	private void translate(CodeBlock.Index index, Codes.Return c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
-		if (c.type == Type.T_VOID) {
-			bytecodes.add(new Bytecode.Return(null));
-		} else {
-			JvmType jt = convertUnderlyingType(c.type);
-			bytecodes.add(new Bytecode.Load(c.operand, jt));
+		JvmType jt = null;
+		int[] operands = c.operands();
+		 if(operands.length == 1) {
+			jt = convertUnderlyingType(c.type());
+			bytecodes.add(new Bytecode.Load(operands[0], jt));
 			bytecodes.add(new Bytecode.Return(jt));
+		} else if(operands.length > 1){
+			jt = JAVA_LANG_OBJECT_ARRAY;
+			encodeOperandArray(c.types(),c.operands(),bytecodes);			
 		}
+		bytecodes.add(new Bytecode.Return(jt));
 	}
 
 	private void translate(CodeBlock.Index index, Codes.Switch c, int freeSlot,
@@ -1668,13 +1672,16 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Invoke(owner, mangled, type,
 				Bytecode.InvokeMode.STATIC));
 
-		if (c.target() != Codes.NULL_REG) {
-			bytecodes.add(new Bytecode.Store(c.target(), convertUnderlyingType(c.type().returns().get(0))));
-		} else if (c.target() == Codes.NULL_REG && !(c.type().returns().isEmpty())) {
-			// handles the case of an invoke which returns a value that should
-			// be discarded.
+		int[] targets = c.targets();
+		List<Type> returns = c.type().returns();
+		if(targets.length == 0 && !returns.isEmpty()) {
 			bytecodes.add(new Bytecode.Pop(convertUnderlyingType(c.type().returns().get(0))));
-		}
+		} else if(targets.length == 1){
+			bytecodes.add(new Bytecode.Store(targets[0], convertUnderlyingType(returns.get(0))));
+		} else if(targets.length > 1){
+			// Multiple return values are provided, and these will have been encoded into an object array.
+			decodeOperandArray(c.type().returns(),targets,bytecodes);
+		}		
 	}
 
 	private void translate(CodeBlock.Index index, Codes.IndirectInvoke c,
@@ -1684,37 +1691,33 @@ public class Wyil2JavaBuilder implements Builder {
 		JvmType.Clazz owner = (JvmType.Clazz) convertUnderlyingType(ft);
 		bytecodes.add(new Bytecode.Load(c.reference(),
 				convertUnderlyingType(ft)));
-		bytecodes.add(new Bytecode.LoadConst(ft.params().size()));
-		bytecodes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
-
-		int[] parameters = c.parameters();
-		for (int i = 0; i != parameters.length; ++i) {
-			int register = parameters[i];
-			Type pt = c.type().params().get(i);
-			JvmType jpt = convertUnderlyingType(pt);
-			bytecodes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
-			bytecodes.add(new Bytecode.LoadConst(i));
-			bytecodes.add(new Bytecode.Load(register, jpt));
-			addWriteConversion(pt, bytecodes);
-			bytecodes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
-		}
-
+		encodeOperandArray(ft.params(),c.parameters(),bytecodes);
+		
 		JvmType.Function type = new JvmType.Function(JAVA_LANG_OBJECT,
 				JAVA_LANG_OBJECT_ARRAY);
 
 		bytecodes.add(new Bytecode.Invoke(owner, "call", type,
 				Bytecode.InvokeMode.VIRTUAL));
 
-		if (c.target() != Codes.NULL_REG) {
-			addReadConversion(ft.returns().get(0), bytecodes);
-			bytecodes.add(new Bytecode.Store(c.target(), convertUnderlyingType(c.type().returns().get(0))));
-		} else if (c.target() == Codes.NULL_REG) {
+		int[] targets = c.targets();
+		List<Type> returns = ft.returns();
+		if (targets.length == 0) {
 			// handles the case of an invoke which returns a value that should
 			// be discarded.
 			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
+		} else if(targets.length == 1) {
+			// Only a single return value, which means it is passed directly as
+			// a return value rather then being encoded into an object array.
+			addReadConversion(returns.get(0), bytecodes);
+			bytecodes.add(new Bytecode.Store(targets[0], convertUnderlyingType(returns.get(0))));
+		} else {
+			// Multiple return values, which must be encoded into an object
+			// array.
+			internalFailure("multiple returns not supported", filename, rootBlock.attribute(index, SourceLocation.class));
 		}
 	}
 
+	
 	private void translate(Constant v, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		if (v instanceof Constant.Null) {
@@ -2387,6 +2390,43 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 
 	/**
+	 * Create an Object[] array from a list of operands. This involves
+	 * appropriately coercing primitives as necessary.
+	 * 
+	 * @param types
+	 * @param operands
+	 * @param bytecodes
+	 */
+	private void encodeOperandArray(List<Type> types, int[] operands, ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.LoadConst(operands.length));
+		bytecodes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
+		for (int i = 0; i != operands.length; ++i) {
+			int register = operands[i];
+			Type type = types.get(i);
+			JvmType jvmType = convertUnderlyingType(type);
+			bytecodes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
+			bytecodes.add(new Bytecode.LoadConst(i));
+			bytecodes.add(new Bytecode.Load(register, jvmType));
+			addWriteConversion(type, bytecodes);
+			bytecodes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
+		}
+	}
+	
+	private void decodeOperandArray(List<Type> types, int[] targets, ArrayList<Bytecode> bytecodes) {
+		for (int i = 0; i != targets.length; ++i) {
+			int register = targets[i];
+			Type type = types.get(i);
+			bytecodes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
+			bytecodes.add(new Bytecode.LoadConst(i));
+			bytecodes.add(new Bytecode.ArrayLoad(JAVA_LANG_OBJECT_ARRAY));			
+			addReadConversion(type, bytecodes);
+			JvmType jvmType = convertUnderlyingType(type);
+			bytecodes.add(new Bytecode.Store(register, jvmType));
+		}
+		bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT_ARRAY));
+	}
+		
+	/**
 	 * The read conversion is necessary in situations where we're reading a
 	 * value from a collection (e.g. WhileyList, WhileySet, etc) and then
 	 * putting it on the stack. In such case, we need to convert boolean values
@@ -2492,11 +2532,19 @@ public class Wyil2JavaBuilder implements Builder {
 			paramTypes.add(convertUnderlyingType(pt));
 		}
 		JvmType rt;
-		if (ft.returns().isEmpty()) {
+		switch(ft.returns().size()) {
+		case 0:
 			rt = T_VOID;
-		} else {
+			break;
+		case 1:
+			// Single return value
 			rt = convertUnderlyingType(ft.returns().get(0));
+			break;
+		default:
+			// Multiple return value
+			rt = JAVA_LANG_OBJECT_ARRAY;
 		}
+		
 		return new JvmType.Function(rt, paramTypes);
 	}
 

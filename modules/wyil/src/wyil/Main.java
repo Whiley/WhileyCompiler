@@ -15,6 +15,7 @@ import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
+import wyil.lang.Constant;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
 import wyil.util.Interpreter;
@@ -91,8 +92,13 @@ public class Main {
 			Type.Method sig = Type.Method(Collections.EMPTY_LIST, Collections.EMPTY_LIST);
 			NameID name = new NameID(wf.id(),"test");
 			Build.Project project = initialiseProject(".");
-			Object r = new Interpreter(project,System.out).execute(name,sig);
-			System.out.println(r);
+			Constant[] returns = new Interpreter(project,System.out).execute(name,sig);
+			for(int i=0;i!=returns.length;++i) {
+				if(i != 0) {
+					System.out.println(", ");
+				}
+				System.out.println(returns[i]);
+			}
 			//
 		} catch (InternalFailure e) {
 			e.outputSourceError(System.err);

@@ -146,6 +146,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		} else {
 			out.print("method ");
 		}
+		out.print(method.name());
 		writeParameters(ft.params(),out);		
 		if (!ft.returns().isEmpty()) {
 			out.print(" -> ");

@@ -7,7 +7,7 @@ type Rec2 is {real x}
 function f(Rec2 rec) -> int:
     int x
     int y
-    x/y = rec.x
+    x,y = rec.x
     return x
 
 public export method test() :
