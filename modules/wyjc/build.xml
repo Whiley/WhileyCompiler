@@ -29,6 +29,8 @@
     <echo message="============================================="/>
   </target>
 
+  <target name="test"/>
+
   <target name="dist" depends="build">
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">
