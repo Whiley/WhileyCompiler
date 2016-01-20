@@ -26,13 +26,13 @@
 package whiley.lang;
 
 import wyjc.runtime.Util;
-import wyjc.runtime.WyList;
+import wyjc.runtime.WyArray;
 
 public class Any$native {
-	public static WyList toString(Object o) {
+	public static WyArray toString(Object o) {
 		return Util.str2il(toRealString(o));
 	}
-	public static WyList toString(byte b) {
+	public static WyArray toString(byte b) {
 		return Util.str2il(toRealString(b));
 	}
 	public static java.lang.String toRealString(Object o) {

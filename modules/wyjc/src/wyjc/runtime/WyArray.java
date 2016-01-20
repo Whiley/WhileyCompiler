@@ -29,21 +29,21 @@ import java.math.BigInteger;
 import java.util.Collections;
 import java.util.Map;
 
-public final class WyList extends java.util.ArrayList {
+public final class WyArray extends java.util.ArrayList {
 
 	// ================================================================================
 	// Generic Operations
 	// ================================================================================
 
-	public WyList() {
+	public WyArray() {
 		super();
 	}
 
-	public WyList(int size) {
+	public WyArray(int size) {
 		super(size);
 	}
 
-	WyList(java.util.Collection items) {
+	WyArray(java.util.Collection items) {
 		super(items);		
 	}
 
@@ -64,13 +64,13 @@ public final class WyList extends java.util.ArrayList {
 	// List Operations
 	// ================================================================================
 
-	public static Object get(WyList list, BigInteger index) {
+	public static Object get(WyArray list, BigInteger index) {
 		return list.get(index.intValue());
 	}
 
-	public static WyList set(WyList list, final BigInteger index, final Object value) {		
+	public static WyArray set(WyArray list, final BigInteger index, final Object value) {		
 		// Clone the list to be safe.
-		list = new WyList(list);		
+		list = new WyArray(list);		
 		list.set(index.intValue(),value);
 		return list;
 	}
@@ -79,25 +79,25 @@ public final class WyList extends java.util.ArrayList {
 		return BigInteger.valueOf(size());
 	}
 
-	public static WyList append(WyList lhs, WyList rhs) {				
-		lhs = new WyList(lhs);
+	public static WyArray append(WyArray lhs, WyArray rhs) {				
+		lhs = new WyArray(lhs);
 		lhs.addAll(rhs);
 		return lhs;
 	}
 
-	public static WyList append(WyList list, final Object item) {			
-		list = new WyList(list);
+	public static WyArray append(WyArray list, final Object item) {			
+		list = new WyArray(list);
 		list.add(item);
 		return list;
 	}
 
-	public static WyList append(final Object item, WyList list) {
-		list = new WyList(list);
+	public static WyArray append(final Object item, WyArray list) {
+		list = new WyArray(list);
 		list.add(0,item);
 		return list;
 	}
 
-	public static int size(final WyList list) {
+	public static int size(final WyArray list) {
 		return list.size();
 	}
 
@@ -108,8 +108,8 @@ public final class WyList extends java.util.ArrayList {
 	 * @param end
 	 * @return
 	 */
-	public static WyList range(BigInteger start, BigInteger end) {
-		WyList l = new WyList();
+	public static WyArray range(BigInteger start, BigInteger end) {
+		WyArray l = new WyArray();
 
 		long st = start.longValue();
 		long en = start.longValue();
@@ -136,9 +136,9 @@ public final class WyList extends java.util.ArrayList {
 		return l;
 	}
 	
-	public static WyList generate(final Object element, final BigInteger count) {
+	public static WyArray generate(final Object element, final BigInteger count) {
 		int n = count.intValue();
-		WyList list = new WyList();
+		WyArray list = new WyArray();
 		for(int i=0;i<n;++i) {
 			list.add(element);
 		}
@@ -157,7 +157,7 @@ public final class WyList extends java.util.ArrayList {
 	 * @param item
 	 * @return
 	 */
-	public static WyList internal_add(WyList list, final Object item) {
+	public static WyArray internal_add(WyArray list, final Object item) {
 		list.add(item);
 		return list;
 	}
@@ -170,11 +170,11 @@ public final class WyList extends java.util.ArrayList {
 	 * @param item
 	 * @return
 	 */
-	public static Object internal_get(WyList list, BigInteger index) {
+	public static Object internal_get(WyArray list, BigInteger index) {
 		return list.get(index.intValue());		
 	}
 
-	public static java.util.Iterator iterator(WyList list) {
+	public static java.util.Iterator iterator(WyArray list) {
 		return list.iterator();
 	}
 }

@@ -244,10 +244,6 @@ public class SubtypeOperator {
 							// return type is co-variant
 							v = isIntersection(fromChildren[i], fromSign,
 									toChildren[i], toSign);
-						} else if(i == 1) {
-							// throws type is co-variant
-							v = isIntersection(fromChildren[i], fromSign,
-									toChildren[i], toSign);
 						} else {
 							// parameter type(s) are contra-variant
 							v = isIntersection(fromChildren[i], !fromSign,

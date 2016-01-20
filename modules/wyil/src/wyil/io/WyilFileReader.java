@@ -203,17 +203,7 @@ public final class WyilFileReader {
 					int index = input.read_uv();
 					values.add(myConstantPool[index]);
 				}
-				constant = Constant.V_LIST(values);
-				break;
-			}			
-			case WyilFileWriter.CONSTANT_Tuple: {
-				int len = input.read_uv();
-				ArrayList<Constant> values = new ArrayList<Constant>();
-				for (int j = 0; j != len; ++j) {
-					int index = input.read_uv();
-					values.add(myConstantPool[index]);
-				}
-				constant = Constant.V_TUPLE(values);
+				constant = Constant.V_ARRAY(values);
 				break;
 			}
 			case WyilFileWriter.CONSTANT_Record: {
@@ -745,13 +735,6 @@ public final class WyilFileReader {
 			}
 			return Codes.Not(target, operand);
 		}
-		case Code.OPCODE_tupleload: {
-			if (!(type instanceof Type.EffectiveTuple)) {
-				throw new RuntimeException("expected tuple type");
-			}
-			int index = readRest(wideRest);
-			return Codes.TupleLoad((Type.EffectiveTuple) type, target, operand, index);
-		}
 
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
@@ -805,7 +788,7 @@ public final class WyilFileReader {
 			if (!(type instanceof Type.Array)) {
 				throw new RuntimeException("expecting list type");
 			}
-			return Codes.ListGenerator((Type.Array) type, target,
+			return Codes.ArrayGenerator((Type.Array) type, target,
 					leftOperand, rightOperand);
 		}
 		case Code.OPCODE_add:
@@ -937,14 +920,8 @@ public final class WyilFileReader {
 			if (!(type instanceof Type.Array)) {
 				throw new RuntimeException("expected list type");
 			}
-			return Codes.NewList((Type.Array) type, target, operands);
-		}	
-		case Code.OPCODE_newtuple: {
-			if (!(type instanceof Type.Tuple)) {
-				throw new RuntimeException("expected tuple type");
-			}
-			return Codes.NewTuple((Type.Tuple) type, target, operands);
-		}		
+			return Codes.NewArray((Type.Array) type, target, operands);
+		}			
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");

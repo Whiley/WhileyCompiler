@@ -674,17 +674,7 @@ public class AllValidTests {
 	public void ConstrainedUnion_Valid_1() throws IOException {
 		runTest("ConstrainedUnion_Valid_1");
 	}
-
-	@Test
-	public void ConstrainedTuple_Valid_1() throws IOException {
-		runTest("ConstrainedTuple_Valid_1");
-	}
-
-	@Test
-	public void ConstrainedTuple_Valid_2() throws IOException {
-		runTest("ConstrainedTuple_Valid_2");
-	}
-
+	
 	@Ignore("Issue ???") @Test
 	public void Contractive_Valid_1() throws IOException {
 		runTest("Contractive_Valid_1");
@@ -840,6 +830,26 @@ public class AllValidTests {
 		runTest("FunctionRef_Valid_9");
 	}
 
+	@Test
+	public void FunctionRef_Valid_10() throws IOException {
+		runTest("FunctionRef_Valid_10");
+	}
+	
+	@Test
+	public void FunctionRef_Valid_11() throws IOException {
+		runTest("FunctionRef_Valid_11");
+	}
+
+	@Test
+	public void FunctionRef_Valid_12() throws IOException {
+		runTest("FunctionRef_Valid_12");
+	}
+	
+	@Ignore("#555") @Test
+	public void FunctionRef_Valid_13() throws IOException {
+		runTest("FunctionRef_Valid_13");
+	}
+	
 	@Test
 	public void Function_Valid_1() throws IOException {
 		runTest("Function_Valid_1");
@@ -1684,7 +1694,7 @@ public class AllValidTests {
 		runTest("RecursiveType_Valid_11");
 	}
 
-	@Test
+	@Ignore("#339") @Test
 	public void RecursiveType_Valid_12() throws IOException {
 		runTest("RecursiveType_Valid_12");
 	}
@@ -1739,7 +1749,7 @@ public class AllValidTests {
 		runTest("RecursiveType_Valid_21");
 	}
 
-	@Test
+	@Ignore("#339") @Test
 	public void RecursiveType_Valid_22() throws IOException {
 		runTest("RecursiveType_Valid_22");
 	}
@@ -1834,6 +1844,11 @@ public class AllValidTests {
 		runTest("Reference_Valid_5");
 	}
 
+	@Ignore("#553") @Test
+	public void Reference_Valid_6() throws IOException {
+		runTest("Reference_Valid_6");
+	}
+	
 	@Test
 	public void Remainder_Valid_1() throws IOException {
 		runTest("Remainder_Valid_1");
@@ -2030,46 +2045,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void TupleType_Valid_1() throws IOException {
-		runTest("TupleType_Valid_1");
-	}
-
-	@Test
-	public void TupleType_Valid_2() throws IOException {
-		runTest("TupleType_Valid_2");
-	}
-
-	@Test
-	public void TupleType_Valid_3() throws IOException {
-		runTest("TupleType_Valid_3");
-	}
-
-	@Test
-	public void TupleType_Valid_4() throws IOException {
-		runTest("TupleType_Valid_4");
-	}
-
-	@Test
-	public void TupleType_Valid_5() throws IOException {
-		runTest("TupleType_Valid_5");
-	}
-
-	@Test
-	public void TupleType_Valid_6() throws IOException {
-		runTest("TupleType_Valid_6");
-	}
-
-	@Test
-	public void TupleType_Valid_7() throws IOException {
-		runTest("TupleType_Valid_7");
-	}
-
-	@Test
-	public void TupleType_Valid_8() throws IOException {
-		runTest("TupleType_Valid_8");
-	}
-
-	@Test
 	public void TypeEquals_Valid_1() throws IOException {
 		runTest("TypeEquals_Valid_1");
 	}
@@ -2122,11 +2097,6 @@ public class AllValidTests {
 	@Test
 	public void TypeEquals_Valid_2() throws IOException {
 		runTest("TypeEquals_Valid_2");
-	}
-
-	@Test
-	public void TypeEquals_Valid_20() throws IOException {
-		runTest("TypeEquals_Valid_20");
 	}
 
 	@Test

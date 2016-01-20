@@ -660,16 +660,6 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
-	public void ConstrainedTuple_Valid_1() {
-		runTest("ConstrainedTuple_Valid_1");
-	}
-
-	@Test
-	public void ConstrainedTuple_Valid_2() {
-		runTest("ConstrainedTuple_Valid_2");
-	}
-
-	@Test
 	public void ConstrainedUnion_Valid_1() {
 		runTest("ConstrainedUnion_Valid_1");
 	}
@@ -832,6 +822,26 @@ public class AllValidVerificationTests {
 		runTest("FunctionRef_Valid_9");
 	}
 
+	@Ignore("unclassified") @Test
+	public void FunctionRef_Valid_10() {
+		runTest("FunctionRef_Valid_10");
+	}
+
+	@Ignore("unclassified") @Test
+	public void FunctionRef_Valid_11() {
+		runTest("FunctionRef_Valid_11");
+	}
+	
+	@Test
+	public void FunctionRef_Valid_12() {
+		runTest("FunctionRef_Valid_12");
+	}
+	
+	@Ignore("#555") @Test
+	public void FunctionRef_Valid_13() {
+		runTest("FunctionRef_Valid_13");
+	}
+	
 	@Test
 	public void Function_Valid_1() {
 		runTest("Function_Valid_1");
@@ -1832,6 +1842,11 @@ public class AllValidVerificationTests {
 		runTest("Reference_Valid_5");
 	}
 
+	@Ignore("#553") @Test
+	public void Reference_Valid_6() {
+		runTest("Reference_Valid_6");
+	}
+	
 	@Test
 	public void Remainder_Valid_1() {
 		runTest("Remainder_Valid_1");
@@ -2030,46 +2045,6 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
-	public void TupleType_Valid_1() {
-		runTest("TupleType_Valid_1");
-	}
-
-	@Test
-	public void TupleType_Valid_2() {
-		runTest("TupleType_Valid_2");
-	}
-
-	@Test
-	public void TupleType_Valid_3() {
-		runTest("TupleType_Valid_3");
-	}
-
-	@Test
-	public void TupleType_Valid_4() {
-		runTest("TupleType_Valid_4");
-	}
-
-	@Test
-	public void TupleType_Valid_5() {
-		runTest("TupleType_Valid_5");
-	}
-
-	@Test
-	public void TupleType_Valid_6() {
-		runTest("TupleType_Valid_6");
-	}
-
-	@Test
-	public void TupleType_Valid_7() {
-		runTest("TupleType_Valid_7");
-	}
-
-	@Test
-	public void TupleType_Valid_8() {
-		runTest("TupleType_Valid_8");
-	}
-
-	@Test
 	public void TypeEquals_Valid_1() {
 		runTest("TypeEquals_Valid_1");
 	}
@@ -2122,11 +2097,6 @@ public class AllValidVerificationTests {
 	@Ignore("#298") @Test
 	public void TypeEquals_Valid_2() {
 		runTest("TypeEquals_Valid_2");
-	}
-
-	@Test
-	public void TypeEquals_Valid_20() {
-		runTest("TypeEquals_Valid_20");
 	}
 
 	@Test

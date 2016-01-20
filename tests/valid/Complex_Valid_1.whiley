@@ -30,13 +30,13 @@ type Square is Piece | null
 
 type Row is (Square[] squares) where |squares| == 8
 
-type Board is {
+type Board is ({
     bool blackCastleKingSide, 
     bool whiteCastleQueenSide, 
     bool blackCastleQueenSide, 
     Row[] rows, 
     bool whiteCastleKingSide
-} where |rows| == 8
+} b) where |b.rows| == 8
 
 constant startingChessRows is [
     [WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN, WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK], 

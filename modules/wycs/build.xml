@@ -33,6 +33,8 @@
     <echo message="============================================="/>
   </target>
 
+  <target name="test"/>
+
   <target name="dist">
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">

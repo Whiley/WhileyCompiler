@@ -1,6 +1,4 @@
-
-
-type Point is {int y, int x} where x > 0 && y > 0
+type Point is ({int y, int x} p) where p.x > 0 && p.y > 0
 
 function f(Point x) -> Point:
     return x

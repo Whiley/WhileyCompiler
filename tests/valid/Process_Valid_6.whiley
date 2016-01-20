@@ -6,7 +6,7 @@ method get(&Actor this) -> int:
 method createActor(int n) -> &Actor:
     return new {data: n}
 
-method createActors(int n) -> (&Actor)[]
+method createActors(int n) -> ((&Actor)[] r)
 requires n >= 0:
     (&Actor)[] row = [createActor(0); n]
     int j = 1
