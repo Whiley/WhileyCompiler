@@ -7,5 +7,4 @@ jdk:
 
 #
 script:
-    ant build-all
     ant test-all
