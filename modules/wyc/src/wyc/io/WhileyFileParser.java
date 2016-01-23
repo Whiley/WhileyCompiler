@@ -1321,20 +1321,20 @@ public class WhileyFileParser {
 	private List<Expr.LVal> parseLVals(WhileyFile wf, HashSet<String> environment) {
 		int start = index;
 		ArrayList<Expr.LVal> elements = new ArrayList<Expr.LVal>();				
-		elements.add(parseLVal(wf,environment));
+		elements.add(parseLVal(index, wf,environment));
 		
 		// Check whether we have a multiple lvals or not
 		while (tryAndMatch(true, Comma) != null) {
 			// Add all expressions separated by a comma
-			elements.add(parseLVal(wf, environment));
+			elements.add(parseLVal(index,wf, environment));
 			// Done
 		}
 
 		return elements;
 	}
 	
-	private Expr.LVal parseLVal(WhileyFile wf, HashSet<String> environment) {
-		return parseAccessLVal(wf, environment);
+	private Expr.LVal parseLVal(int start, WhileyFile wf, HashSet<String> environment) {
+		return parseAccessLVal(start, wf, environment);
 	}
 
 	/**
@@ -1359,14 +1359,12 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr.LVal parseAccessLVal(WhileyFile wf, HashSet<String> environment) {
-		int start = index;
-		Expr.LVal lhs = parseLValTerm(wf, environment);
+	private Expr.LVal parseAccessLVal(int start, WhileyFile wf, HashSet<String> environment) {
+		Expr.LVal lhs = parseLValTerm(start, wf, environment);
 		Token token;
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
 				|| (token = tryAndMatch(true, Dot, MinusGreater)) != null) {
-			start = index;
 			switch (token.kind) {
 			case LeftSquare:
 				// NOTE: expression is terminated by ']'
@@ -1407,9 +1405,8 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr.LVal parseLValTerm(WhileyFile wf, HashSet<String> environment) {
+	private Expr.LVal parseLValTerm(int start, WhileyFile wf, HashSet<String> environment) {
 		checkNotEof();
-		int start = index;
 		// First, attempt to disambiguate the easy forms:
 		Token lookahead = tokens.get(index);
 		switch (lookahead.kind) {
@@ -1419,13 +1416,13 @@ public class WhileyFileParser {
 					index - 1));
 		case LeftBrace: {
 			match(LeftBrace);
-			Expr.LVal lval = parseLVal(wf, environment);
+			Expr.LVal lval = parseLVal(start, wf, environment);
 			match(RightBrace);
 			return lval;
 		}
 		case Star: {
 			match(Star);
-			Expr.LVal lval = parseLVal(wf, environment);
+			Expr.LVal lval = parseLVal(start, wf, environment);
 			return new Expr.Dereference(lval, sourceAttr(start, index - 1));
 		}
 		default:

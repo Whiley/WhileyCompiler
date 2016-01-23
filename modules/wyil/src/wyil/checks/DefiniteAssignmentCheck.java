@@ -97,7 +97,7 @@ public class DefiniteAssignmentCheck extends
 		for(int i=0;i!=method.type().params().size();++i) {
 			defined.add(i+diff);
 		}
-
+		
 		return defined;
 	}
 
@@ -215,6 +215,15 @@ public class DefiniteAssignmentCheck extends
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
                         filename, rootBlock.attribute(index,SourceLocation.class));
 			}
+			return;
+		} else if(code instanceof Code.AbstractMultiNaryAssignable) {
+			Code.AbstractMultiNaryAssignable a = (Code.AbstractMultiNaryAssignable) code;
+			for(int operand : a.operands()) {
+				if(operand != Codes.NULL_REG && !in.contains(operand)) {
+					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
+	                        filename, rootBlock.attribute(index,SourceLocation.class));
+				}
+			}			
 			return;
 		} else {
 			// includes abstract-assignables and branching bytecodes

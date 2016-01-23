@@ -494,7 +494,7 @@ public class FlowTypeChecker {
 		for (int i = 0; i != stmt.rvals.size(); ++i) {
 			stmt.rvals.set(i, propagate(stmt.rvals.get(i), environment, current));
 		}
-		List<Nominal> valuesProduced = calculateTypesProduced(stmt.rvals);
+		List<Pair<Expr,Nominal>> valuesProduced = calculateTypesProduced(stmt.rvals);
 		// Check the number of expected values matches the number of values
 		// produced by the right-hand side.
 		if(stmt.lvals.size() < valuesProduced.size()) {
@@ -506,7 +506,7 @@ public class FlowTypeChecker {
 		// matches the value produced.
 		for (int i = 0; i != valuesProduced.size(); ++i) {			
 			Expr.LVal lval = stmt.lvals.get(i);
-			Nominal rval = valuesProduced.get(i);
+			Nominal rval = valuesProduced.get(i).second();
 			Expr.AssignedVariable av = inferAfterType(lval, rval);
 			checkIsSubtype(environment.getDeclaredType(av.var), av.afterType, av);
 			environment = environment.update(av.var, av.afterType);
@@ -698,7 +698,7 @@ public class FlowTypeChecker {
 		for(int i=0;i!=stmt_returns.size();++i) {
 			stmt_returns.set(i, propagate(stmt_returns.get(i), environment, current));
 		}			
-		List<Nominal> stmt_types = calculateTypesProduced(stmt_returns);
+		List<Pair<Expr,Nominal>> stmt_types = calculateTypesProduced(stmt_returns);
 		List<Nominal> current_returns = current.resolvedType().returns();
 
 		if (stmt_types.size() < current_returns.size()) {
@@ -716,8 +716,9 @@ public class FlowTypeChecker {
 		// Number of return values match number declared for enclosing
 		// function/method. Now, check they have appropriate types.
 		for(int i=0;i!=current_returns.size();++i) {
-			Nominal t = current_returns.get(i);
-			checkIsSubtype(t, stmt_types.get(i), stmt);
+			Pair<Expr,Nominal> p = stmt_types.get(i);
+			Nominal t = current_returns.get(i);						
+			checkIsSubtype(t, p.second(), p.first());
 		}	
 
 		environment.free();
@@ -1807,19 +1808,21 @@ public class FlowTypeChecker {
 	}
 
 
-	private List<Nominal> calculateTypesProduced(List<Expr> expressions) {
-		ArrayList<Nominal> types = new ArrayList<Nominal>();
+	private List<Pair<Expr,Nominal>> calculateTypesProduced(List<Expr> expressions) {
+		ArrayList<Pair<Expr,Nominal>> types = new ArrayList<Pair<Expr,Nominal>>();
 		for (int i = 0; i != expressions.size(); ++i) {
 			Expr e = expressions.get(i);
 			if(e instanceof Expr.Multi) {
 				// The assigned expression actually has multiple returns,
 				// therefore extract them all.
 				Expr.Multi me = (Expr.Multi) e;
-				types.addAll(me.returns());
+				for(Nominal ret : me.returns()) {
+					types.add(new Pair<Expr,Nominal>(e,ret));
+				}
 			} else {
 				// The assigned rval is a simple expression which returns a
 				// single value
-				types.add(e.result());
+				types.add(new Pair<Expr,Nominal>(e,e.result()));
 			}
 		}
 		return types;

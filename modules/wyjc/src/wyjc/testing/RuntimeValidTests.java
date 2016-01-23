@@ -2383,7 +2383,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("UnionType_Valid_19");
 	}
 
-	@Test
+	@Ignore("#565") @Test
 	public void UnionType_Valid_2() {
 		runTest("UnionType_Valid_2");
 	}
