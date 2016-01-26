@@ -396,6 +396,8 @@ public final class CodeGenerator {
 				generate((Switch) stmt, environment, codes, context);
 			} else if (stmt instanceof Break) {
 				generate((Break) stmt, environment, codes, context);
+			} else if (stmt instanceof Continue) {
+				generate((Continue) stmt, environment, codes, context);
 			} else if (stmt instanceof While) {
 				generate((While) stmt, environment, codes, context);
 			} else if (stmt instanceof DoWhile) {
@@ -925,9 +927,67 @@ public final class CodeGenerator {
 		LoopScope scope = findEnclosingScope(LoopScope.class);
 		if (scope == null) {
 			WhileyFile
-					.syntaxError(errorMessage(BREAK_OUTSIDE_LOOP), context, s);
+					.syntaxError(errorMessage(BREAK_OUTSIDE_SWITCH_OR_LOOP), context, s);
 		}
 		codes.add(Codes.Goto(scope.breakLabel));
+	}
+
+	/**
+	 * Translate a continue statement into a WyIL unconditional branch bytecode.
+	 * This requires examining the scope stack to determine the correct target
+	 * for the branch. Consider the following use of a continue statement:
+	 *
+	 * <pre>
+	 * while x < 10:
+	 *    x = x + 1
+	 *    if x == 0:
+	 *       continue
+	 *    ...
+	 * ...
+	 * </pre>
+	 *
+	 * This might be translated into the following WyIL bytecodes:
+	 *
+	 * <pre>
+	 * loop (%0)
+	 *     const %3 = 10
+	 *     ifge %0, %3 goto label0
+	 *     const %7 = 1
+	 *     add %8 = %0, %7
+	 *     assign %0 = %8
+	 *     const %5 = 0
+	 *     ifne %0, %5 goto label1
+	 *     goto label2
+	 *     .label1
+	 *     ...
+	 *     .label2
+	 * .label0
+	 * ...
+	 * </pre>
+	 *
+	 * Here, we see that the continue statement is translated into the bytecode
+	 * "goto label2", which skips the loop body for one iteration.
+	 *
+	 * @param stmt
+	 *            --- Statement to be translated.
+	 * @param environment
+	 *            --- Mapping from variable names to block registers.
+	 * @param codes
+	 *            --- Code block into which this statement is to be translated.
+	 * @param context
+	 *            --- Enclosing context of this statement (i.e. type, constant,
+	 *            function or method declaration). The context is used to aid
+	 *            with error reporting as it determines the enclosing file.
+	 * @return
+	 */
+	private void generate(Stmt.Continue s, Environment environment,
+			AttributedCodeBlock codes, Context context) {
+		LoopScope scope = findEnclosingScope(LoopScope.class);
+		if (scope == null) {
+			WhileyFile
+					.syntaxError(errorMessage(CONTINUE_OUTSIDE_LOOP), context, s);
+		}
+		codes.add(Codes.Goto(scope.continueLabel));
 	}
 
 	/**
@@ -1092,7 +1152,13 @@ public final class CodeGenerator {
 	 */
 	private void generate(Stmt.While s, Environment environment,
 			AttributedCodeBlock codes, Context context) {
-		String exit = CodeUtils.freshLabel();
+		// A label marking where execution continues after the while
+		// loop finishes. Used when the loop condition evaluates to false
+		// or when a break statement is encountered.
+		String exitLab = CodeUtils.freshLabel();
+		// A label marking the end of the current loop iteration. Used
+		// by the continue statement.
+		String continueLab = CodeUtils.freshLabel();
 
 		AttributedCodeBlock body = codes.createSubBlock();
 
@@ -1113,18 +1179,19 @@ public final class CodeGenerator {
 			}
 		}
 
-		generateCondition(exit, invert(s.condition), environment, body, context);
+		generateCondition(exitLab, invert(s.condition), environment, body, context);
 
-		// FIXME: add a continue scope
-		scopes.push(new LoopScope(exit));
+		scopes.push(new LoopScope(continueLab, exitLab));
 		for (Stmt st : s.body) {
 			generate(st, environment, body, context);
 		}
 		scopes.pop(); // break
 
+		body.add(Codes.Label(continueLab), attributes(s));
+
 		codes.add(Codes.Loop(new int[] {}, body.bytecodes()), attributes(s));
 
-		codes.add(Codes.Label(exit), attributes(s));
+		codes.add(Codes.Label(exitLab), attributes(s));
 	}
 
 	/**
@@ -1171,12 +1238,16 @@ public final class CodeGenerator {
 	 */
 	private void generate(Stmt.DoWhile s, Environment environment,
 			AttributedCodeBlock codes, Context context) {
-		String exit = CodeUtils.freshLabel();
+		// A label marking where execution continues after the do-while
+		// loop finishes. Used when the loop condition evaluates to false
+		// or when a break statement is encountered.
+		String exitLab = CodeUtils.freshLabel();
+		// A label marking the end of the current loop iteration. Used
+		// by the continue statement.
+		String continueLab = CodeUtils.freshLabel();
 
 		AttributedCodeBlock body = codes.createSubBlock();
-
-		// FIXME: add a continue scope
-		scopes.push(new LoopScope(exit));
+		scopes.push(new LoopScope(continueLab, exitLab));
 		for (Stmt st : s.body) {
 			generate(st, environment, body, context);
 		}
@@ -1197,10 +1268,11 @@ public final class CodeGenerator {
 			}
 		}
 
-		generateCondition(exit, invert(s.condition), environment, body, context);
+		body.add(Codes.Label(continueLab), attributes(s));
+		generateCondition(exitLab, invert(s.condition), environment, body, context);
 
 		codes.add(Codes.Loop(new int[] {}, body.bytecodes()), attributes(s));
-		codes.add(Codes.Label(exit), attributes(s));
+		codes.add(Codes.Label(exitLab), attributes(s));
 	}
 
 	// =========================================================================
@@ -2202,6 +2274,7 @@ public final class CodeGenerator {
 		if (stmt instanceof Assign || stmt instanceof Assert
 				|| stmt instanceof Assume || stmt instanceof Return
 				|| stmt instanceof Debug || stmt instanceof Break
+				|| stmt instanceof Continue
 				|| stmt instanceof Expr.MethodCall
 				|| stmt instanceof Expr.IndirectMethodCall
 				|| stmt instanceof Expr.FunctionCall
@@ -2362,10 +2435,12 @@ public final class CodeGenerator {
 	 *
 	 */
 	private class LoopScope extends Scope {
+		public final String continueLabel;
 		public final String breakLabel;
 
-		public LoopScope(String l) {
-			breakLabel = l;
+		public LoopScope(String cl, String bl) {
+			continueLabel = cl;
+			breakLabel = bl;
 		}
 	}
 }

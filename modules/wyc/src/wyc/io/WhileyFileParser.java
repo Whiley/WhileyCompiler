@@ -624,6 +624,8 @@ public class WhileyFileParser {
 			return parseAssumeStatement(wf, environment);
 		case Break:
 			return parseBreakStatement(environment);
+		case Continue:
+			return parseContinueStatement(environment);
 		case Do:
 			return parseDoWhileStatement(wf, environment, indent);
 		case Debug:
@@ -893,6 +895,31 @@ public class WhileyFileParser {
 		matchEndLine();
 		// Done.
 		return new Stmt.Break(sourceAttr(start, end - 1));
+	}
+
+	/**
+	 * Parse a continue statement, which is of the form:
+	 *
+	 * <pre>
+	 * ContinueStmt ::= "continue"
+	 * </pre>
+	 *
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            This is necessary to identify local variables within
+	 *            expressions used in this statement.
+	 *
+	 * @see wyc.lang.Stmt.Debug
+	 * @return
+	 */
+	private Stmt.Continue parseContinueStatement(HashSet<String> environment) {
+		int start = index;
+		// Match the continue keyword
+		match(Continue);
+		int end = index;
+		matchEndLine();
+		// Done.
+		return new Stmt.Continue(sourceAttr(start, end - 1));
 	}
 
 	/**

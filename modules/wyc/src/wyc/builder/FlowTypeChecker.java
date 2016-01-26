@@ -369,6 +369,8 @@ public class FlowTypeChecker {
 				return propagate((Stmt.DoWhile) stmt, environment);
 			} else if (stmt instanceof Stmt.Break) {
 				return propagate((Stmt.Break) stmt, environment);
+			} else if (stmt instanceof Stmt.Continue) {
+				return propagate((Stmt.Continue) stmt, environment);
 			} else if (stmt instanceof Stmt.Assert) {
 				return propagate((Stmt.Assert) stmt, environment);
 			} else if (stmt instanceof Stmt.Assume) {
@@ -558,6 +560,23 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.Break stmt, Environment environment) {
 		// FIXME: need to propagate environment to the break destination
+		return BOTTOM;
+	}
+
+	/**
+	 * Type check a continue statement. This requires propagating the current
+	 * environment to the block destination, to ensure that the actual types of
+	 * all variables at that point are precise.
+	 *
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
+	private Environment propagate(Stmt.Continue stmt, Environment environment) {
+		// FIXME: need to propagate environment to the continue destination
 		return BOTTOM;
 	}
 
