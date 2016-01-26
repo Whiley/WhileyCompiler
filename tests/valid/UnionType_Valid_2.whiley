@@ -20,7 +20,7 @@ function parseNumber(State st) -> (Expr f1, State f2):
     while st.pos < |st.input| && isDigit(st.input[st.pos]) where st.pos >= 0:
         n = n + (int) (st.input[st.pos] - '0')
         st.pos = st.pos + 1
-    return (real) n, f2
+    return (real) n,st 
 
 public export method test() :
     SExpr f1
