@@ -838,68 +838,75 @@ public final class WyilFileReader {
 
 	private Code readNaryAssign(int opcode, boolean wideBase, boolean wideRest)
 			throws IOException {
+		int nTypes = readBase(wideBase);
 		int nTargets = readBase(wideBase);
 		int nOperands = readBase(wideBase);
+		Type[] types = new Type[nTypes];
 		int[] targets = new int[nTargets];
 		int[] operands = new int[nOperands];
+		for (int i = 0; i != nTypes; ++i) {
+			int typeIndex = readBase(wideBase); 
+			types[i] = typePool[typeIndex];
+		}
 		for (int i = 0; i != nTargets; ++i) {
 			targets[i] = readBase(wideBase);
 		}		
 		for (int i = 0; i != nOperands; ++i) {
 			operands[i] = readBase(wideBase);
-		}
-		int typeIdx = readRest(wideRest);
-		Type type = typePool[typeIdx];
+		}				
 		switch (opcode) {
 		case Code.OPCODE_return:
-			return Codes.Return(new Type[]{type}, operands);
+			return Codes.Return(types, operands);
 		case Code.OPCODE_indirectinvokefn:
-		case Code.OPCODE_indirectinvokemd: {
-			if (!(type instanceof Type.FunctionOrMethod)) {
+		case Code.OPCODE_indirectinvokemd: {			
+			if (!(types[0] instanceof Type.FunctionOrMethod)) {
 				throw new RuntimeException("expected function or method type");
 			}
 			int operand = operands[0];
 			operands = Arrays.copyOfRange(operands, 1, operands.length);
-			return Codes.IndirectInvoke((Type.FunctionOrMethod) type, targets,
+			return Codes.IndirectInvoke((Type.FunctionOrMethod) types[0], targets,
 					operand, operands);
 		}
 		case Code.OPCODE_invokefn:
-		case Code.OPCODE_invokemd: {
-			if (!(type instanceof Type.FunctionOrMethod)) {
+		case Code.OPCODE_invokemd: { 
+			if (!(types[0] instanceof Type.FunctionOrMethod)) {
 				throw new RuntimeException("expected function or method type");
 			}
 			int nameIdx = readRest(wideRest);
 			NameID nid = namePool[nameIdx];
-			return Codes.Invoke((Type.FunctionOrMethod) type, targets, operands,
+			return Codes.Invoke((Type.FunctionOrMethod) types[0], targets, operands,
 					nid);
 		}
 		case Code.OPCODE_lambdafn:
 		case Code.OPCODE_lambdamd: {
-			if (!(type instanceof Type.FunctionOrMethod)) {
+			if (!(types[0] instanceof Type.FunctionOrMethod)) {
 				throw new RuntimeException("expected function or method type");
 			} else if(targets.length != 1) {
 				throw new RuntimeException("expected exactly one target");
 			}			
 			int nameIdx = readRest(wideRest);
 			NameID nid = namePool[nameIdx];
-			return Codes.Lambda((Type.FunctionOrMethod) type, targets[0], operands,
+			for(int i=0;i!=operands.length;++i) {
+				operands[i] -= 1;
+			}
+			return Codes.Lambda((Type.FunctionOrMethod) types[0], targets[0], operands,
 					nid);
 		}
 		case Code.OPCODE_newrecord: {
-			if (!(type instanceof Type.Record)) {
+			if (!(types[0] instanceof Type.Record)) {
 				throw new RuntimeException("expected record type");
 			} else if(targets.length != 1) {
 				throw new RuntimeException("expected exactly one target");
 			}
-			return Codes.NewRecord((Type.Record) type, targets[0], operands);
+			return Codes.NewRecord((Type.Record) types[0], targets[0], operands);
 		}
 		case Code.OPCODE_newlist: {
-			if (!(type instanceof Type.Array)) {
+			if (!(types[0] instanceof Type.Array)) {
 				throw new RuntimeException("expected list type");
 			} else if(targets.length != 1) {
 				throw new RuntimeException("expected exactly one target");
 			}
-			return Codes.NewArray((Type.Array) type, targets[0], operands);
+			return Codes.NewArray((Type.Array) types[0], targets[0], operands);
 		}			
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
@@ -911,10 +918,15 @@ public final class WyilFileReader {
 			throws IOException {
 		switch (opcode) {
 		case Code.OPCODE_update: {
+			int nTypes = readBase(wideBase);
 			int nTargets = readBase(wideBase);
 			int nOperands = readBase(wideBase);
+			Type[] types = new Type[nTypes];
 			int[] targets = new int[nTargets];
 			int[] operands = new int[nOperands-1];
+			for (int i = 0; i != types.length; ++i) {
+				types[i] = typePool[readBase(wideBase)];
+			}
 			for (int i = 0; i != targets.length; ++i) {
 				targets[i] = readBase(wideBase);
 			}
@@ -922,7 +934,6 @@ public final class WyilFileReader {
 				operands[i] = readBase(wideBase);
 			}
 			int operand = readBase(wideBase);
-			Type beforeType = typePool[readRest(wideRest)];
 			Type afterType = typePool[readRest(wideRest)];
 			int nFields = readRest(wideRest);
 			ArrayList<String> fields = new ArrayList<String>();
@@ -930,7 +941,7 @@ public final class WyilFileReader {
 				String field = stringPool[readRest(wideRest)];
 				fields.add(field);
 			}
-			return Codes.Update(beforeType, targets[0], operands, operand,
+			return Codes.Update(types[0], targets[0], operands, operand,
 					afterType, fields);
 		}
 		case Code.OPCODE_assertblock: {

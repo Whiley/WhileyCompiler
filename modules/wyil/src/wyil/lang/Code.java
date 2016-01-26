@@ -209,14 +209,6 @@ public interface Code {
 		}
 
 		/**
-		 * Return the type of value assigned to the target register by this
-		 * bytecode.
-		 *
-		 * @return
-		 */
-		public abstract Type assignedType();
-
-		/**
 		 * Return the target register assigned by this bytecode.
 		 *
 		 * @return
@@ -238,16 +230,12 @@ public interface Code {
 	 */
 	public static abstract class AbstractMultiNaryAssignable<T> extends
 			AbstractAssignable {
-		protected final T type;
+		protected final T[] types;
 		protected final int[] operands;
 
-		public AbstractMultiNaryAssignable(T type, int[] targets, int... operands) {
-			super(targets);
-			if (type == null) {
-				throw new IllegalArgumentException(
-						"AbstractBinOp type argument cannot be null");
-			}
-			this.type = type;
+		public AbstractMultiNaryAssignable(T[] types, int[] targets, int[] operands) {
+			super(targets);			
+			this.types = types;
 			this.operands = operands;
 		}
 
@@ -271,27 +259,27 @@ public interface Code {
 			return this;
 		}
 
-		public Type assignedType() {
-			return (Type) this.type();
-		}
-
 		protected abstract Code.Unit clone(int[] nTargets, int[] nOperands);
 
 		public int hashCode() {
-			return type().hashCode() + Arrays.hashCode(targets()) + Arrays.hashCode(operands());
+			return Arrays.hashCode(types) + Arrays.hashCode(targets()) + Arrays.hashCode(operands());
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof AbstractNaryAssignable) {
 				AbstractMultiNaryAssignable bo = (AbstractMultiNaryAssignable) o;
 				return Arrays.equals(targets(), bo.targets()) && Arrays.equals(operands(), bo.operands())
-						&& type().equals(bo.type());
+						&& Arrays.equals(types, bo.types);
 			}
 			return false;
 		}
 
-		public T type() {
-			return type;
+		public T[] types() {
+			return types;
+		}
+		
+		public T type(int i) {
+			return types[i];
 		}
 
 		public int[] operands() {
@@ -351,10 +339,6 @@ public interface Code {
 				return clone(nTarget, nOperands);
 			}
 			return this;
-		}
-
-		public Type assignedType() {
-			return (Type) this.type();
 		}
 
 		protected abstract Code.Unit clone(int nTarget, int[] nOperands);
