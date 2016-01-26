@@ -66,7 +66,7 @@ public class Interpreter {
 	 *            The supplied arguments
 	 * @return
 	 */
-	public Constant execute(NameID nid, Type.FunctionOrMethod sig,
+	public Constant[] execute(NameID nid, Type.FunctionOrMethod sig,
 			Constant... args) {
 		// First, find the enclosing WyilFile
 		try {
@@ -102,7 +102,7 @@ public class Interpreter {
 				frame[i] = args[i];
 			}
 			// Finally, let's do it!
-			return (Constant) executeAllWithin(frame, new Context(null, body));
+			return (Constant[]) executeAllWithin(frame, new Context(null, body));
 		} catch (IOException e) {
 			throw new RuntimeException(e.getMessage(), e);
 		}
@@ -941,12 +941,13 @@ public class Interpreter {
 			}
 		}
 		// Make the actual call
-		Constant result = execute(func.name, func.type(), arguments);
-		// Coerce the result (may not be actually necessary)
-		result = convert(result,bytecode.type().ret(),context);
+		Constant[] results = execute(func.name, func.type(), arguments);		
 		// Check whether a return value was expected or not
-		if (bytecode.target() != Codes.NULL_REG) {
-			frame[bytecode.target()] = result;
+		int[] targets = bytecode.targets();
+		List<Type> returns = bytecode.type().returns();
+		for(int i=0;i!=targets.length;++i) {
+			// Coerce the result (may not be actually necessary))
+			frame[targets[i]] = convert(results[i],returns.get(i),context);
 		}
 		// Done
 		return context.pc.next();
@@ -1003,10 +1004,12 @@ public class Interpreter {
 		for (int i = 0; i != arguments.length; ++i) {
 			arguments[i] = frame[operands[i]];
 		}
-		Constant result = execute(bytecode.name, bytecode.type(), arguments);
-		if (bytecode.target() != Codes.NULL_REG) {
-			frame[bytecode.target()] = result;
-		}
+		Constant[] results = execute(bytecode.name, bytecode.type(), arguments);
+		int[] targets = bytecode.targets();
+		List<Type> returns = bytecode.type().returns();
+		for(int i=0;i!=targets.length;++i) {
+			frame[targets[i]] = results[i];
+		}		
 		return context.pc.next();
 	}
 
@@ -1200,12 +1203,12 @@ public class Interpreter {
 	 */
 	private Object execute(Codes.Return bytecode, Constant[] frame,
 			Context context) {
-		if (bytecode.operand == Codes.NULL_REG) {
-			// This is a void return
-			return null;
-		} else {
-			return frame[bytecode.operand];
+		int[] operands = bytecode.operands();
+		Constant[] returns = new Constant[operands.length];
+		for(int i=0;i!=operands.length;++i) {
+			returns[i] = frame[operands[i]];
 		}
+		return returns;
 	}
 
 	private Object execute(Codes.Switch bytecode, Constant[] frame,

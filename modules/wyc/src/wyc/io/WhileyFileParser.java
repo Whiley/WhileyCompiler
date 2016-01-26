@@ -288,14 +288,14 @@ public class WhileyFileParser {
 		List<Parameter> parameters = parseParameters(wf,environment);
 		
 		// Parse (optional) return type
-		Parameter ret = null;
+		List<Parameter> returns = Collections.EMPTY_LIST;
 
 		if (tryAndMatch(true, MinusGreater) != null) {
 			// Explicit return type is given, so parse it! We first clone the
 			// environent and create a special one only for use within ensures
 			// clauses, since these are the only expressions which may refer to
 			// variables declared in the return type.
-			ret = parseOptionalParameter(wf,environment);		
+			returns = parseOptionalParameters(wf,environment);		
 		} 
 
 		// Parse optional requires/ensures clauses
@@ -336,10 +336,10 @@ public class WhileyFileParser {
 
 		WhileyFile.Declaration declaration;
 		if (isFunction) {
-			declaration = wf.new Function(modifiers, name.text, ret, parameters, requires, ensures, stmts,
+			declaration = wf.new Function(modifiers, name.text, returns, parameters, requires, ensures, stmts,
 					sourceAttr(start, end - 1));
 		} else {
-			declaration = wf.new Method(modifiers, name.text, ret, parameters, requires, ensures, stmts,
+			declaration = wf.new Method(modifiers, name.text, returns, parameters, requires, ensures, stmts,
 					sourceAttr(start, end - 1));
 		}
 		wf.add(declaration);
@@ -366,6 +366,19 @@ public class WhileyFileParser {
 					pStart, index - 1)));			
 		}
 		return parameters;
+	}
+	
+
+	public List<Parameter> parseOptionalParameters(WhileyFile wf, HashSet<String> environment) {
+		int next = skipWhiteSpace(index);
+		if(next < tokens.size() && tokens.get(next).kind == LeftBrace) {
+			return parseParameters(wf,environment);
+		} else {			
+			Parameter p = parseOptionalParameter(wf,environment);
+			ArrayList<Parameter> ps = new ArrayList<Parameter>();
+			ps.add(p);
+			return ps;
+		}
 	}
 	
 	public Parameter parseOptionalParameter(WhileyFile wf, HashSet<String> environment) {
@@ -637,20 +650,33 @@ public class WhileyFileParser {
 		// be *any* of the three forms, but we definitely have an
 		// expression-like thing at this point. Therefore, we parse that
 		// expression and see what this gives and/or what follows...
+		return parseHeadlessStatement(wf,environment,indent);
+	}
+
+	/**
+	 * A headless statement is one which has no identifying keyword. The set of
+	 * headless statements include assignments, invocations and variable
+	 * declarations.
+	 * 
+	 * @param wf
+	 * @param environment
+	 * @param indent
+	 * @return
+	 */
+	private Stmt parseHeadlessStatement(WhileyFile wf, HashSet<String> environment, Indent indent) {
 
 		int start = index;
 		SyntacticType type = parseDefiniteType();
-		
-		if (type == null) {					
+
+		if (type == null) {
 			// Can still be a variable declaration, assignment or invocation.
 			Expr e = parseExpression(wf, environment, false);
-			if (e instanceof Expr.AbstractInvoke
-					|| e instanceof Expr.AbstractIndirectInvoke) {
+			if (e instanceof Expr.AbstractInvoke || e instanceof Expr.AbstractIndirectInvoke) {
 				// Must be an invocation since these are neither valid
 				// lvals (i.e. they cannot be assigned) nor types.
 				matchEndLine();
 				return (Stmt) e;
-			} else if(tryAndMatch(true,Equals) != null) {
+			} else if (tryAndMatch(true, Equals) != null) {
 				// Must be an assignment a valid type cannot be followed by "="
 				// on its own. Therefore, we backtrack and attempt to parse the
 				// expression as an lval (i.e. as part of an assignment
@@ -658,12 +684,17 @@ public class WhileyFileParser {
 				index = start; // backtrack
 				//
 				return parseAssignmentStatement(wf, environment);
+			} else if (tryAndMatch(true, Comma) != null) {
+				// Must be an multi-assignment 
+				index = start; // backtrack
+				//
+				return parseAssignmentStatement(wf, environment);
 			} else {
 				// At this point, we must be left with a variable declaration.
 				// Therefore, we backtrack and parse the expression again as a
-				// type. 
+				// type.
 				index = start; // backtrack
-				type = parseType(); 
+				type = parseType();
 			}
 		}
 		// Must be a variable declaration here.
@@ -671,7 +702,7 @@ public class WhileyFileParser {
 		WhileyFile.Parameter decl = wf.new Parameter(type, name.text, sourceAttr(start, index - 1));
 		return parseVariableDeclaration(start, decl, wf, environment);
 	}
-
+	
 	/**
 	 * Parse a variable declaration statement which has the form:
 	 *
@@ -752,24 +783,23 @@ public class WhileyFileParser {
 		int start = index;
 
 		match(Return);
-
-		Expr e = null;
-		// A return statement may optionally have a return expression.
-		// Therefore, we first skip all whitespace on the given line.
+		// A return statement may optionally have one or more return
+		// expressions.  Therefore, we first skip all whitespace on the given line.
 		int next = skipLineSpace(index);
 		// Then, we check whether or not we reached the end of the line. If not,
 		// then we assume what's remaining is the returned expression. This
 		// means expressions must start on the same line as a return. Otherwise,
 		// a potentially cryptic error message will be given.
+		List<Expr> returns = Collections.EMPTY_LIST;
 		if (next < tokens.size() && tokens.get(next).kind != NewLine) {
-			e = parseExpression(wf, environment, false);
+			returns = parseExpressions(wf,environment,false); 
 		}
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
 		int end = index;
 		matchEndLine();
 		// Done.
-		return new Stmt.Return(e, sourceAttr(start, end - 1));
+		return new Stmt.Return(returns, sourceAttr(start, end - 1));
 	}
 
 	/**
@@ -1234,6 +1264,7 @@ public class WhileyFileParser {
 	 *
 	 * <pre>
 	 * x = y       // variable assignment
+	 * x,y = z     // multi-assignment
 	 * x.f = y     // field assignment
 	 * x[i] = y    // array assignment
 	 * x[i].f = y  // compound assignment
@@ -1259,12 +1290,12 @@ public class WhileyFileParser {
 	private Stmt parseAssignmentStatement(WhileyFile wf,
 			HashSet<String> environment) {
 		int start = index;
-		Expr.LVal lhs = parseLVal(wf, environment);
+		List<Expr.LVal> lvals = parseLVals(wf, environment);
 		match(Equals);
-		Expr rhs = parseExpression(wf, environment, false);
+		List<Expr> rvals = parseExpressions(wf, environment, false);
 		int end = index;
 		matchEndLine();
-		return new Stmt.Assign((Expr.LVal) lhs, rhs, sourceAttr(start, end - 1));
+		return new Stmt.Assign(lvals, rvals, sourceAttr(start, end - 1));
 	}
 
 	/**
@@ -1287,39 +1318,23 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr.LVal parseLVal(WhileyFile wf, HashSet<String> environment) {
-		return parseRationalLVal(wf, environment);
-	}
-
-	/**
-	 * Parse a rational lval, which is of the form:
-	 *
-	 * <pre>
-	 * RationalLVal ::= TermLVal [ '/' TermLVal ]
-	 * </pre>
-	 *
-	 * @param wf
-	 *            The enclosing WhileyFile being constructed. This is necessary
-	 *            to construct some nested declarations (e.g. parameters for
-	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
-	 *
-	 * @return
-	 */
-	private Expr.LVal parseRationalLVal(WhileyFile wf,
-			HashSet<String> environment) {
+	private List<Expr.LVal> parseLVals(WhileyFile wf, HashSet<String> environment) {
 		int start = index;
-		Expr.LVal lhs = parseAccessLVal(wf, environment);
-
-		if (tryAndMatch(true, RightSlash) != null) {
-			Expr.LVal rhs = parseAccessLVal(wf, environment);
-			return new Expr.RationalLVal(lhs, rhs, sourceAttr(start, index - 1));
+		ArrayList<Expr.LVal> elements = new ArrayList<Expr.LVal>();				
+		elements.add(parseLVal(index, wf,environment));
+		
+		// Check whether we have a multiple lvals or not
+		while (tryAndMatch(true, Comma) != null) {
+			// Add all expressions separated by a comma
+			elements.add(parseLVal(index,wf, environment));
+			// Done
 		}
 
-		return lhs;
+		return elements;
+	}
+	
+	private Expr.LVal parseLVal(int start, WhileyFile wf, HashSet<String> environment) {
+		return parseAccessLVal(start, wf, environment);
 	}
 
 	/**
@@ -1344,14 +1359,12 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr.LVal parseAccessLVal(WhileyFile wf, HashSet<String> environment) {
-		int start = index;
-		Expr.LVal lhs = parseLValTerm(wf, environment);
+	private Expr.LVal parseAccessLVal(int start, WhileyFile wf, HashSet<String> environment) {
+		Expr.LVal lhs = parseLValTerm(start, wf, environment);
 		Token token;
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
 				|| (token = tryAndMatch(true, Dot, MinusGreater)) != null) {
-			start = index;
 			switch (token.kind) {
 			case LeftSquare:
 				// NOTE: expression is terminated by ']'
@@ -1392,9 +1405,8 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr.LVal parseLValTerm(WhileyFile wf, HashSet<String> environment) {
+	private Expr.LVal parseLValTerm(int start, WhileyFile wf, HashSet<String> environment) {
 		checkNotEof();
-		int start = index;
 		// First, attempt to disambiguate the easy forms:
 		Token lookahead = tokens.get(index);
 		switch (lookahead.kind) {
@@ -1404,19 +1416,45 @@ public class WhileyFileParser {
 					index - 1));
 		case LeftBrace: {
 			match(LeftBrace);
-			Expr.LVal lval = parseLVal(wf, environment);
+			Expr.LVal lval = parseLVal(start, wf, environment);
 			match(RightBrace);
 			return lval;
 		}
 		case Star: {
 			match(Star);
-			Expr.LVal lval = parseLVal(wf, environment);
+			Expr.LVal lval = parseLVal(start, wf, environment);
 			return new Expr.Dereference(lval, sourceAttr(start, index - 1));
 		}
 		default:
 			syntaxError("unrecognised lval", lookahead);
 			return null; // dead-code
 		}
+	}
+	
+	/**
+	 * Parse a "multi-expression"; that is, a sequence of one or more
+	 * expressions separated by comma's
+	 * 
+	 * @param wf
+	 * @param environment
+	 * @param terminated
+	 * @return
+	 */
+	public List<Expr> parseExpressions(WhileyFile wf,
+			HashSet<String> environment, boolean terminated) {
+		ArrayList<Expr> returns = new ArrayList<Expr>();
+		// A return statement may optionally have a return expression.
+		// Therefore, we first skip all whitespace on the given line.
+		int next = skipLineSpace(index);
+		// Then, we check whether or not we reached the end of the line. If not,
+		// then we assume what's remaining is the returned expression. This
+		// means expressions must start on the same line as a return. Otherwise,
+		// a potentially cryptic error message will be given.
+		returns.add(parseExpression(wf, environment, terminated));
+		while(tryAndMatch(false,Comma) != null) {
+			returns.add(parseExpression(wf, environment, terminated));
+		}
+		return returns;
 	}
 	
 	/**
@@ -3292,7 +3330,9 @@ public class WhileyFileParser {
 			for (SyntacticType element : tt.paramTypes) {
 				result |= mustParseAsType(element);
 			}
-			result |= mustParseAsType(tt.returnType);			
+			for (SyntacticType element : tt.returnTypes) {
+				result |= mustParseAsType(element);
+			}			
 			return result;
 		} else if (type instanceof SyntacticType.Intersection) {
 			SyntacticType.Intersection tt = (SyntacticType.Intersection) type;
@@ -3683,7 +3723,7 @@ public class WhileyFileParser {
 
 		// First, parse the parameter type(s).
 		List<SyntacticType> paramTypes = parseParameterTypes();
-		SyntacticType returnType = null;
+		List<SyntacticType> returnTypes = Collections.EMPTY_LIST;
 
 		// Second, parse the right arrow.
 		if (isFunction) {
@@ -3691,18 +3731,18 @@ public class WhileyFileParser {
 			// nops)
 			match(MinusGreater);
 			// Third, parse the return types.
-			returnType = parseType();
+			returnTypes = parseOptionalParameterTypes();
 		} else if (tryAndMatch(true, MinusGreater) != null) {
 			// Methods have an optional return type
 			// Third, parse the return type
-			returnType = parseType();
+			returnTypes = parseOptionalParameterTypes();
 		} 
 
 		// Done
 		if (isFunction) {
-			return new SyntacticType.Function(returnType, paramTypes, sourceAttr(start, index - 1));
+			return new SyntacticType.Function(returnTypes, paramTypes, sourceAttr(start, index - 1));
 		} else {
-			return new SyntacticType.Method(returnType, paramTypes, sourceAttr(start, index - 1));
+			return new SyntacticType.Method(returnTypes, paramTypes, sourceAttr(start, index - 1));
 		}
 	}	
 
@@ -3732,14 +3772,14 @@ public class WhileyFileParser {
 				// Therefore, we continue to pass the remaining type parameters.
 
 				List<SyntacticType> paramTypes = parseParameterTypes();
-				SyntacticType returnType;
+				List<SyntacticType> returnTypes = Collections.EMPTY_LIST; 
 				
 				if (lookahead.kind == Function) {
 					// Functions require a return type (since otherwise they are
 					// just nops)
 					match(MinusGreater);
 					// Third, parse the return type
-					returnType = parseType();
+					returnTypes = parseOptionalParameterTypes();
 				} else if (tryAndMatch(true, MinusGreater) != null) {
 					// Third, parse the (optional) return type. Observe that
 					// this is forced to be a
@@ -3748,17 +3788,15 @@ public class WhileyFileParser {
 					// may be part of an enclosing record type and we must
 					// disambiguate
 					// this.
-					returnType = parseType();
-				} else {
-					returnType = new SyntacticType.Void();
-				}
+					returnTypes = parseOptionalParameterTypes();
+				} 
 
 				// Done
 				SyntacticType type;
 				if (lookahead.kind == Token.Kind.Function) {
-					type = new SyntacticType.Function(returnType, paramTypes, sourceAttr(start, index - 1));
+					type = new SyntacticType.Function(returnTypes, paramTypes, sourceAttr(start, index - 1));
 				} else {
-					type = new SyntacticType.Method(returnType, paramTypes, sourceAttr(start, index - 1));
+					type = new SyntacticType.Method(returnTypes, paramTypes, sourceAttr(start, index - 1));
 				}
 				return new Pair<SyntacticType, Token>(type, id);
 			} else {
@@ -3776,6 +3814,18 @@ public class WhileyFileParser {
 		return new Pair<SyntacticType, Token>(type, id);
 	}
 
+	public List<SyntacticType> parseOptionalParameterTypes() {
+		int next = skipWhiteSpace(index);
+		if(next < tokens.size() && tokens.get(next).kind == LeftBrace) {
+			return parseParameterTypes();
+		} else {
+			SyntacticType t = parseType();
+			ArrayList<SyntacticType> rs = new ArrayList<SyntacticType>();
+			rs.add(t);
+			return rs;
+		}		
+	}
+	
 	public List<SyntacticType> parseParameterTypes() {
 		ArrayList<SyntacticType> paramTypes = new ArrayList<SyntacticType>();
 		match(LeftBrace);

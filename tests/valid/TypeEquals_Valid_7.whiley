@@ -8,7 +8,7 @@ function f(intreal e) -> bool:
     else:
         return false
 
-public export method test() -> void:
+public export method test() :
     assume f(1) == true
     assume f(1.134) == false
     assume f(1.0) == false

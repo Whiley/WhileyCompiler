@@ -10,7 +10,7 @@ function create(nat size, nat value) -> nat[]:
         i = i + 1
     return r
 
-public export method test() -> void:
+public export method test() :
     assume create(10, 10) == [10,10,10,10,10, 10,10,10,10,10]
     assume create(5, 0) == [0,0,0,0,0]
     assume create(0, 0) == [0;0]

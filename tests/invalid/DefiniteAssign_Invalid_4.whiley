@@ -1,5 +1,5 @@
-method f(any this) -> void:
+method f(any this) :
     debug a
 
-method g() -> void:
+method g() :
     f(x)

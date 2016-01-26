@@ -34,7 +34,7 @@ requires no { i in 0..|coins| | coins[i] >= |Value| }:
         i = i + 1
     return cash
 
-public export method test() -> void:
+public export method test() :
     Cash cash = Cash([ONE_DOLLAR, FIVE_CENTS])
     assume cash == [0, 1, 0, 0, 0, 1, 0, 0]
     cash = Cash([FIVE_DOLLARS, TEN_CENTS, FIFTY_CENTS])

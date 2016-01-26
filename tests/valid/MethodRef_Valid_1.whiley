@@ -8,6 +8,6 @@ method read(int x) -> int:
 public export method test(MyMeth m) -> int:
     return m(1)
 
-public export method test() -> void:
+public export method test() :
     int r = test(&read)
     assume r == 124

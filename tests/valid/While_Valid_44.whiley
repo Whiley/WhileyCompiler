@@ -10,7 +10,7 @@ ensures |result| == |ls|:
         r[i] = item
     return r
 
-public export method test() -> void:
+public export method test() :
     assume reverse([0;0]) == [0;0]
     assume reverse([1]) == [1]
     assume reverse([1,2]) == [2,1]

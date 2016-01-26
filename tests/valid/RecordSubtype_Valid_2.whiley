@@ -11,7 +11,7 @@ type List4 is List3 | List2
 function f(List1 r) -> List4:
     return r
 
-public export method test() -> void:
+public export method test() :
     List1 list = {next: null, data: 1}
     list = {next: list, data: null}
     List4 ans = f(list)

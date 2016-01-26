@@ -18,5 +18,5 @@ ensures r >= 0:
     //
     return sum(ls, 0)
 
-public export method test() -> void:
+public export method test() :
     assume sum([1, 2, 3, 4, 5, 6, 7]) == 28

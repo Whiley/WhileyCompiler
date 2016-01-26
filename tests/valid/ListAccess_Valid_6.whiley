@@ -12,5 +12,5 @@ function f(int[] str) -> int[]:
         i = i + 1
     return r
 
-public export method test() -> void:
+public export method test() :
     assume f("Hello") == [0,0,0,0,0]

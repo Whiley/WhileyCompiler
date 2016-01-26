@@ -9,6 +9,6 @@ ensures r > 0:
     else:
         return x + y
 
-public export method test() -> void:
+public export method test() :
     assume add(1,2) == 3
     assume add(1,1) == 1

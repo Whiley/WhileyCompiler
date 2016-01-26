@@ -22,7 +22,7 @@ function sum_3(LinkedList ls) -> int:
     else:
         return 0
 
-public export method test() -> void:
+public export method test() :
     LinkedList ls = {next: null, data: 1}
     ls = {next: ls, data: 2}
     ls = {next: ls, data: 3}

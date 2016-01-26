@@ -27,7 +27,7 @@ function evaluate(Expr e) -> real:
     else:
         return evaluate(e.lhs) + evaluate(e.rhs)
 
-public export method test() -> void:
+public export method test() :
     assume evaluate(build(-5)) == 46.0
     assume evaluate(build(-4)) == 41.0
     assume evaluate(build(-3)) == 35.0

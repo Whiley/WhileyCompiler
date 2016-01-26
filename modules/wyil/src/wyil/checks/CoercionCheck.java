@@ -152,14 +152,8 @@ public class CoercionCheck implements Transform<WyilFile> {
 		} else if(from instanceof Type.Function && to instanceof Type.Function) {
 			Type.Function t1 = (Type.Function) from;
 			Type.Function t2 = (Type.Function) to;
-			List<Type> t1_elements = t1.params();
-			List<Type> t2_elements = t2.params();
-			for(int i=0;i!=t1_elements.size();++i) {
-				Type e1 = t1_elements.get(i);
-				Type e2 = t2_elements.get(i);
-				check(e1,e2,visited,location);
-			}
-			check(t1.ret(),t2.ret(),visited,location);
+			check(t1.params(),t2.params(),visited,location);
+			check(t1.returns(),t2.returns(),visited,location);
 		} else if(from instanceof Type.Union) {
 			Type.Union t1 = (Type.Union) from;
 			for(Type b : t1.bounds()) {
@@ -211,6 +205,15 @@ public class CoercionCheck implements Transform<WyilFile> {
 					}
 				}
 			}
+		}
+	}
+	
+	private void check(List<Type> params1, List<Type> params2, HashSet<Pair<Type, Type>> visited,
+			SourceLocation location) {
+		for (int i = 0; i != params1.size(); ++i) {
+			Type e1 = params1.get(i);
+			Type e2 = params2.get(i);
+			check(e1, e2, visited, location);
 		}
 	}
 }

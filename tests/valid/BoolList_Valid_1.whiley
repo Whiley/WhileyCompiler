@@ -1,6 +1,6 @@
 
 
-public export method test() -> void:
+public export method test() :
     bool[] ls = [true, false, true]
     assert ls == [true, false, true]
     assert ls[0] == true

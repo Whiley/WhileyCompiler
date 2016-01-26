@@ -6,5 +6,5 @@ function f(int x) -> int:
     else:
         return x
 
-public export method test() -> void:
+public export method test() :
     assume f(1) == 1

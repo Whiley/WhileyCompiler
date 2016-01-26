@@ -35,7 +35,7 @@ function contains(BTree tree, int item) -> bool:
             else:
                 return contains(tree.right, item)
 
-public export method test() -> void:
+public export method test() :
     BTree tree = BTree()
     tree = add(tree, 1)
     tree = add(tree, 2)

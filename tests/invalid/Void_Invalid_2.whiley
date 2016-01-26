@@ -1,2 +1,2 @@
-function f(int x, void z) -> void:
+function f(int x, void z) :
     return

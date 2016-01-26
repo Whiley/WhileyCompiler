@@ -20,7 +20,7 @@ public function meth(byte[] bytes) -> int[]:
         i = i + 1
     return data
 
-public export method test() -> void:
+public export method test() :
     byte[] bytes = [00000000b, 00000001b, 00000011b, 00000111b]
     assume meth(bytes) == [0,1,3,7]
 

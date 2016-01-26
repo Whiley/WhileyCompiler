@@ -8,6 +8,6 @@ function f(TYPE[] xs, TYPE p) -> int:
         i = i + 1
     return -1
 
-public export method test() -> void:
+public export method test() :
     assume f([null, 1, 2], null) == 0
     assume f([1, 2, null, 10], 10) == 3

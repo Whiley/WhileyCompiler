@@ -8,5 +8,5 @@ method get() -> int:
 method f(int y) -> wmcr6tup:
     return {y: get(), x: y}
 
-public export method test() -> void:
+public export method test() :
     assume f(2) == {y: 1, x: 2}

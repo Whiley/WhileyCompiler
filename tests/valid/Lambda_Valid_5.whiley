@@ -6,6 +6,6 @@ method f(int x) -> int:
 method g(method func(int) -> int, int p) -> int:
     return func(p)
 
-public export method test() -> void:
+public export method test() :
     int y = g(&(int x -> f(x + 1)), 5)
     assume y == 7

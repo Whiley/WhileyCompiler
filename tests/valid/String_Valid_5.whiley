@@ -6,7 +6,7 @@ function indexOf(int c1, int[] str) -> int | null:
         i = i + 1
     return null
 
-public export method test() -> void:
+public export method test() :
     assume indexOf('H', "Hello World") == 0
     assume indexOf('e', "Hello World") == 1
     assume indexOf('l', "Hello World") == 2

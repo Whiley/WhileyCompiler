@@ -345,17 +345,17 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		// TODO: in principle we can do better here in the case that the target
 		// is a constant. This seems pretty unlikely though ...
 
-		if (code.target() != Codes.NULL_REG) {
-			invalidate(code.target(),environment);
+		for(int target : code.targets()) {		
+			invalidate(target,environment);
 		}
 	}
 
 	public void infer(CodeBlock.Index index, Codes.Invoke code,
 			Env environment) {
 
-		if (code.target() != Codes.NULL_REG) {
-			invalidate(code.target(),environment);
-		}
+		for(int target : code.targets()) {		
+			invalidate(target,environment);
+		}		
 	}
 
 	public void infer(CodeBlock.Index index, Codes.Lambda code,

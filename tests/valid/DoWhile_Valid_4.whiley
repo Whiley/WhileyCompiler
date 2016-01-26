@@ -16,7 +16,7 @@ function dist(Link list) -> Leaf:
     //
     return iter + distance
 
-public export method test() -> void:
+public export method test() :
     LinkedList list = 123
     list = {next: list}
     list = {next: list}

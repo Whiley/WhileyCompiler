@@ -1,6 +1,6 @@
 
 
-public export method test() -> void:
+public export method test() :
     real x = 1.20
     real y = 2.40
     assume x + y == 3.6

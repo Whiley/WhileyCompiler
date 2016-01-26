@@ -13,7 +13,7 @@ public export method test(Proc this, int arg) -> int:
 function id(int x) -> int:
     return x
 
-public export method test() -> void:
+public export method test() :
     Proc p = new {func: &id}
     int x = test(p, 123)
     assume x == 123

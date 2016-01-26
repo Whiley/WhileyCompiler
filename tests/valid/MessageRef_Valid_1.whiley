@@ -10,7 +10,7 @@ method read(MyProc this, int x) -> int:
 public export method test(MyMeth m, MyProc proc) -> int:
     return m(proc,1)
 
-public export method test() -> void:
+public export method test() :
     MyProc p = new {position: 0}
     int r = test(&read, p)
     assume r == 124

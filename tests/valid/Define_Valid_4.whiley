@@ -8,5 +8,5 @@ function f(codeOp x) -> code:
     code y = {op: x, payload: [0]}
     return y
 
-public export method test() -> void:
+public export method test() :
     assume f(1) == {op:1, payload: [0]}

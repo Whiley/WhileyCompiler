@@ -8,6 +8,6 @@ function f(Rtypes e) -> bool:
     else:
         return false
 
-public export method test() -> void:
+public export method test() :
     assume f({y: 1, x: 3}) == true
     assume f({z: 1, x: 3}) == false

@@ -16,7 +16,7 @@ ensures all { i in 0..|result| | result[i] == value }:
     //
     return data
 
-public export method test() -> void:
+public export method test() :
     assume init(0,0) == [0;0]
     assume init(1,1) == [1]
     assume init(2,2) == [2,2]

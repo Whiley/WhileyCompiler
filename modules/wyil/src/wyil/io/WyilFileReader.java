@@ -600,7 +600,7 @@ public final class WyilFileReader {
 		case Code.FMT_NARYOP:
 			return readNaryOp(opcode, wideBase, wideRest, offset, labels);
 		case Code.FMT_NARYASSIGN:
-			return readNaryAssign(opcode, wideBase, wideRest);
+			return readNaryAssign(opcode, wideBase, wideRest);				
 		case Code.FMT_OTHER:
 			return readOther(opcode, wideBase, wideRest, offset, labels);
 		default:
@@ -629,8 +629,6 @@ public final class WyilFileReader {
 		}
 		case Code.OPCODE_nop:
 			return Codes.Nop;
-		case Code.OPCODE_returnv:
-			return Codes.Return();
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
@@ -652,8 +650,6 @@ public final class WyilFileReader {
 			Codes.Label l = findLabel(target, labels);
 			return Codes.IfIs(type, operand, result, l.label);
 		}
-		case Code.OPCODE_return:
-			return Codes.Return(type, operand);
 		case Code.OPCODE_switch: {
 			ArrayList<Pair<Constant, String>> cases = new ArrayList<Pair<Constant, String>>();
 			int target = readTarget(wideRest, offset);
@@ -836,46 +832,27 @@ public final class WyilFileReader {
 					operands, bytecodes);
 		}
 
-		int typeIdx = readRest(wideRest);
-		Type type = typePool[typeIdx];
-
-		switch (opcode) {		
-		case Code.OPCODE_indirectinvokefnv:
-		case Code.OPCODE_indirectinvokemdv: {
-			if (!(type instanceof Type.FunctionOrMethod)) {
-				throw new RuntimeException("expected function or method type");
-			}
-			int operand = operands[0];
-			operands = Arrays.copyOfRange(operands, 1, operands.length);
-			return Codes.IndirectInvoke((Type.FunctionOrMethod) type,
-					Codes.NULL_REG, operand, operands);
-		}
-		case Code.OPCODE_invokefnv:
-		case Code.OPCODE_invokemdv: {
-			if (!(type instanceof Type.FunctionOrMethod)) {
-				throw new RuntimeException("expected function or method type");
-			}
-			int nameIdx = readRest(wideRest);
-			NameID nid = namePool[nameIdx];
-			return Codes.Invoke((Type.FunctionOrMethod) type, Codes.NULL_REG,
-					operands, nid);
-		}
-		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
 	}
 
 	private Code readNaryAssign(int opcode, boolean wideBase, boolean wideRest)
 			throws IOException {
-		int target = readBase(wideBase);
+		int nTargets = readBase(wideBase);
 		int nOperands = readBase(wideBase);
+		int[] targets = new int[nTargets];
 		int[] operands = new int[nOperands];
+		for (int i = 0; i != nTargets; ++i) {
+			targets[i] = readBase(wideBase);
+		}		
 		for (int i = 0; i != nOperands; ++i) {
 			operands[i] = readBase(wideBase);
 		}
 		int typeIdx = readRest(wideRest);
 		Type type = typePool[typeIdx];
 		switch (opcode) {
+		case Code.OPCODE_return:
+			return Codes.Return(new Type[]{type}, operands);
 		case Code.OPCODE_indirectinvokefn:
 		case Code.OPCODE_indirectinvokemd: {
 			if (!(type instanceof Type.FunctionOrMethod)) {
@@ -883,7 +860,7 @@ public final class WyilFileReader {
 			}
 			int operand = operands[0];
 			operands = Arrays.copyOfRange(operands, 1, operands.length);
-			return Codes.IndirectInvoke((Type.FunctionOrMethod) type, target,
+			return Codes.IndirectInvoke((Type.FunctionOrMethod) type, targets,
 					operand, operands);
 		}
 		case Code.OPCODE_invokefn:
@@ -893,34 +870,36 @@ public final class WyilFileReader {
 			}
 			int nameIdx = readRest(wideRest);
 			NameID nid = namePool[nameIdx];
-			return Codes.Invoke((Type.FunctionOrMethod) type, target, operands,
+			return Codes.Invoke((Type.FunctionOrMethod) type, targets, operands,
 					nid);
 		}
 		case Code.OPCODE_lambdafn:
 		case Code.OPCODE_lambdamd: {
 			if (!(type instanceof Type.FunctionOrMethod)) {
 				throw new RuntimeException("expected function or method type");
-			}
-			// Lambda's are the only instances of NULLABLENARYASSIGN's
-			for (int i = 0; i != operands.length; ++i) {
-				operands[i] -= 1;
-			}
+			} else if(targets.length != 1) {
+				throw new RuntimeException("expected exactly one target");
+			}			
 			int nameIdx = readRest(wideRest);
 			NameID nid = namePool[nameIdx];
-			return Codes.Lambda((Type.FunctionOrMethod) type, target, operands,
+			return Codes.Lambda((Type.FunctionOrMethod) type, targets[0], operands,
 					nid);
 		}
 		case Code.OPCODE_newrecord: {
 			if (!(type instanceof Type.Record)) {
 				throw new RuntimeException("expected record type");
+			} else if(targets.length != 1) {
+				throw new RuntimeException("expected exactly one target");
 			}
-			return Codes.NewRecord((Type.Record) type, target, operands);
+			return Codes.NewRecord((Type.Record) type, targets[0], operands);
 		}
 		case Code.OPCODE_newlist: {
 			if (!(type instanceof Type.Array)) {
 				throw new RuntimeException("expected list type");
+			} else if(targets.length != 1) {
+				throw new RuntimeException("expected exactly one target");
 			}
-			return Codes.NewArray((Type.Array) type, target, operands);
+			return Codes.NewArray((Type.Array) type, targets[0], operands);
 		}			
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
@@ -932,9 +911,13 @@ public final class WyilFileReader {
 			throws IOException {
 		switch (opcode) {
 		case Code.OPCODE_update: {
-			int target = readBase(wideBase);
+			int nTargets = readBase(wideBase);
 			int nOperands = readBase(wideBase);
-			int[] operands = new int[nOperands - 1];
+			int[] targets = new int[nTargets];
+			int[] operands = new int[nOperands-1];
+			for (int i = 0; i != targets.length; ++i) {
+				targets[i] = readBase(wideBase);
+			}
 			for (int i = 0; i != operands.length; ++i) {
 				operands[i] = readBase(wideBase);
 			}
@@ -947,7 +930,7 @@ public final class WyilFileReader {
 				String field = stringPool[readRest(wideRest)];
 				fields.add(field);
 			}
-			return Codes.Update(beforeType, target, operands, operand,
+			return Codes.Update(beforeType, targets[0], operands, operand,
 					afterType, fields);
 		}
 		case Code.OPCODE_assertblock: {

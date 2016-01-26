@@ -10,7 +10,7 @@ function f(msg1 m) -> int:
 function f(msg2 m) -> int:
     return 2
 
-public export method test() -> void:
+public export method test() :
     msg1 m1 = {op: 1, s: 123}
     msg1 m2 = {op: 2, s: 123}
     assume f(m1) == 1

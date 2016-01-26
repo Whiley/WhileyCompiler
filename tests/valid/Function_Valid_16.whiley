@@ -10,7 +10,7 @@ function g(int x, int y) -> int
 requires x > y:
     return x + y
 
-public export method test() -> void:
+public export method test() :
     int a = 2
     int b = 1
     if a < b:

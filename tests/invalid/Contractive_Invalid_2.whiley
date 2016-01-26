@@ -1,5 +1,5 @@
 type Point is {
-    (Point,Point) f
+    Point f
 }
 
 function toString(int p) -> Point:

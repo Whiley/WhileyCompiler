@@ -167,14 +167,14 @@ public class VcGenerator {
 					precondition.get(i), fmm.params(), true);
 		}
 		prefix = method.name() + "_ensures_";
-		List<Type> postEnvironment = append(fmm.params(), fmm.ret());		
+		List<Type> postEnvironment = append(fmm.params(), fmm.returns());		
 		for (int i = 0; i != postcondition.size(); ++i) {
 			buildMacroBlock(prefix + i, CodeBlock.Index.ROOT,
 					postcondition.get(i), postEnvironment, true);
 		}
 
 		// Finally, add a function representing this function or method.
-		buildFunctionBlock(method.name(), fmm.params(), fmm.ret());
+		buildFunctionBlock(method.name(), fmm.params(), fmm.returns());
 
 		if (method.hasModifier(Modifier.NATIVE)) {
 			// We don't consider native methods because they have empty bodies,
@@ -240,7 +240,7 @@ public class VcGenerator {
 				break;
 			}
 			case TERMINATED: {
-				if (fmm.ret() instanceof Type.Void) {
+				if (fmm.returns().isEmpty()) {
 					// In this case, there is not return value and, hence, there
 					// is no need to ensure the postcondition holds.
 				} else {
@@ -250,16 +250,18 @@ public class VcGenerator {
 					Codes.Return ret = (Codes.Return) body.get(branch.pc());
 					// Construct verification check to ensure that return
 					// type invariant holds
-					Expr returnedOperand = branch.read(ret.operand);					
-					Type rawType = expand(bodyEnvironment[ret.operand],attributes);
+					// FIXME: need proper support for multiple returns
+					Expr returnedOperand = branch.read(ret.operand(0));					
+					Type rawType = expand(bodyEnvironment[ret.operand(0)],attributes);
 					Expr rawTest = new Expr.Is(returnedOperand,
 							convert(rawType, attributes));
-					if (containsNominal(fmm.ret(),attributes)) {
+					// FIXME: needs to handle all returns
+					if (containsNominal(fmm.returns().get(0),attributes)) {
 						// FIXME: we need the raw test here, because the
 						// verifier can't work out the type of the expression
 						// otherwise.						
 						Expr nominalTest = new Expr.Is(returnedOperand,
-								convert(fmm.ret(), attributes));
+								convert(fmm.returns().get(0), attributes));
 						Expr vc = buildVerificationCondition(nominalTest,
 								branch, bodyEnvironment, body, rawTest);
 						// FIXME: add contextual information here
@@ -616,9 +618,7 @@ public class VcGenerator {
 			case Code.OPCODE_update:
 				return updateChecks((Codes.Update) code, branch);
 			case Code.OPCODE_invokefn:
-			case Code.OPCODE_invokefnv:
 			case Code.OPCODE_invokemd:
-			case Code.OPCODE_invokemdv:
 				return preconditionCheck((Codes.Invoke) code, branch, environment, block);
 			}
 			return new Pair[0];
@@ -1682,8 +1682,8 @@ public class VcGenerator {
 
 	protected void transform(Codes.IndirectInvoke code,
 			AttributedCodeBlock block, VcBranch branch) {
-		if (code.target() != Codes.NULL_REG) {
-			branch.havoc(code.target());
+		for(int target : code.targets()) {
+			branch.havoc(target);
 		}
 	}
 
@@ -1693,8 +1693,9 @@ public class VcGenerator {
 				.attributes(branch.pc());
 		Collection<Attribute> wyccAttributes = toWycsAttributes(attributes);
 		int[] code_operands = code.operands();
+		int[] targets = code.targets();
 		
-		if (code.target() != Codes.NULL_REG) {
+		if (targets.length > 0) {
 			// Need to assume the post-condition holds.
 			Expr[] operands = new Expr[code_operands.length];
 			for (int i = 0; i != code_operands.length; ++i) {
@@ -1702,16 +1703,17 @@ public class VcGenerator {
 			}
 			Expr argument = operands.length == 1 ? operands[0] : new Expr.Nary(
 					Expr.Nary.Op.TUPLE, operands,wyccAttributes);
-			branch.write(code.target(), new Expr.Invoke(code.name.name(),
+			branch.write(code.targets()[0], new Expr.Invoke(code.name.name(),
 					code.name.module(), Collections.EMPTY_LIST, argument,
 					wyccAttributes));
 
 			// This is a potential fix for #488, although it doesn't work
-			if(containsNominal(code.type().ret(),attributes)) {
+			// FIXME: needs to updated to handle multiple returns as well
+			if (containsNominal(code.type().returns().get(0), attributes)) {
 				// This is required to handle the implicit constraints implied
 				// by a nominal type. See #488.
-				Expr nominalTest = new Expr.Is(branch.read(code.target()),
-						convert(code.type().ret(), attributes));
+				Expr nominalTest = new Expr.Is(branch.read(code.targets()[0]),
+						convert(code.type().returns().get(0), attributes));
 				branch.assume(nominalTest);
 			}
 			
@@ -1723,9 +1725,11 @@ public class VcGenerator {
 			if (ensures.size() > 0) {
 				// To assume the post-condition holds after the method, we
 				// simply called the corresponding post-condition macros.
-				Expr[] arguments = new Expr[operands.length + 1];
+				Expr[] arguments = new Expr[operands.length + targets.length];
 				System.arraycopy(operands, 0, arguments, 0, operands.length);
-				arguments[operands.length] = branch.read(code.target());
+				for(int i=0;i!=targets.length;++i) {
+					arguments[operands.length+i] = branch.read(targets[i]);						
+				}				
 				String prefix = code.name.name() + "_ensures_";
 				for (int i = 0; i != ensures.size(); ++i) {
 					Expr.Invoke macro = new Expr.Invoke(prefix + i,
@@ -2101,21 +2105,26 @@ public class VcGenerator {
 	 *            --- return type to use
 	 * @return
 	 */
-	protected void buildFunctionBlock(String name, List<Type> params, Type ret) {
+	protected void buildFunctionBlock(String name, List<Type> params, List<Type> returns) {
 
-		TypePattern.Leaf[] declarations = new TypePattern.Leaf[params.size()];
+		TypePattern.Leaf[] parameterPatterns = new TypePattern.Leaf[params.size()];
 		// second, set initial environment
 		for (int i = 0; i != params.size(); ++i) {
 			Expr.Variable v = new Expr.Variable("r" + i);
 			// FIXME: what attributes to pass into convert?
-			declarations[i] = new TypePattern.Leaf(convert(params.get(i),
+			parameterPatterns[i] = new TypePattern.Leaf(convert(params.get(i),
 					Collections.EMPTY_LIST), v);
 		}
-
+		TypePattern.Leaf[] returnPatterns = new TypePattern.Leaf[returns.size()];
+		// second, set initial environment
+		for (int i = 0; i != returns.size(); ++i) {
+			Expr.Variable v = new Expr.Variable("r" + i);
+			returnPatterns[i] = new TypePattern.Leaf(convert(returns.get(i),
+					Collections.EMPTY_LIST), v);
+		}
 		// Construct the type declaration for the new block macro
-		TypePattern from = new TypePattern.Tuple(declarations);
-		TypePattern to = new TypePattern.Leaf(convert(ret,
-				Collections.EMPTY_LIST), null);
+		TypePattern from = new TypePattern.Tuple(parameterPatterns);
+		TypePattern to = new TypePattern.Tuple(returnPatterns);
 
 		wyalFile.add(wyalFile.new Function(name, Collections.EMPTY_LIST, from,
 				to, null));
@@ -2694,7 +2703,12 @@ public class VcGenerator {
 					return true;
 				}
 			}
-			return containsNominal(ft.ret(), attributes);
+			for (Type pt : ft.returns()) {
+				if (containsNominal(pt, attributes)) {
+					return true;
+				}
+			}
+			return false;
 		} else if (t instanceof Type.Nominal) {
 			return true;
 		} else {
@@ -2715,10 +2729,10 @@ public class VcGenerator {
 		return null; // dead-code
 	}
 	
-	private static <T> List<T> append(List<T> xs, T x) {
+	private static <T> List<T> append(List<T> xs, List<T> ys) {
 		ArrayList<T> rs = new ArrayList<T>();
 		rs.addAll(xs);
-		rs.add(x);		
+		rs.addAll(ys);		
 		return rs;
 	}
 

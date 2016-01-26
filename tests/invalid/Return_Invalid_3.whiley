@@ -1,2 +1,2 @@
-function f(bool z) -> void:
+function f(bool z) :
     return z

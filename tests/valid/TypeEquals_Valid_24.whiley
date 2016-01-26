@@ -8,6 +8,6 @@ function f(T x) -> int:
     else:
         return x
 
-public export method test() -> void:
+public export method test() :
     assume f([1, 2, 3, 4]) == 4
     assume f(123) == 123

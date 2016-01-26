@@ -314,9 +314,9 @@ public class AllInvalidTests {
 		runTest("ConstrainedList_Invalid_3");
 	}
 
-	@Ignore("unclassified") @Test
-	public void ConstrainedTuple_Invalid_1() {
-		runTest("ConstrainedTuple_Invalid_1");
+	@Test
+	public void ConstrainedRecord_Invalid_1() {
+		runTest("ConstrainedRecord_Invalid_1");
 	}
 
 	@Ignore("#425") @Test
@@ -1080,9 +1080,9 @@ public class AllInvalidTests {
 		runTest("TupleDefine_Invalid_2");
 	}
 
-	@Ignore("unclassified") @Test
-	public void Tuple_Invalid_1() {
-		runTest("Tuple_Invalid_1");
+	@Test
+	public void MultiAssign_Invalid_1() {
+		runTest("MultiAssign_Invalid_1");
 	}
 
 	@Ignore("unclassified") @Test

@@ -13,7 +13,7 @@ function f(rlist e) -> bool:
 function g(ilist e) -> bool:
     return f((rlist) e)
 
-public export method test() -> void:
+public export method test() :
     assume f(1.0) == false
     assume f([1]) == true
     assume f([0;0]) == true

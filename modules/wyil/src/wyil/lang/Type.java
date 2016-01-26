@@ -155,14 +155,17 @@ public abstract class Type {
 	 *
 	 * @param element
 	 */
-	public static final Type.Function Function(Type ret,
+	public static final Type.Function Function(List<Type> returns,
 			List<Type> params) {		
-		Type[] rparams = new Type[params.size()+1];
-		rparams[0] = ret;
-		for(int i=0;i!=params.size();++i) {
-			rparams[i+1] = params.get(i);
+		Type[] rparams = new Type[params.size()+returns.size()];
+		int params_size = params.size();
+		for(int i=0;i!=params_size;++i) {
+			rparams[i] = params.get(i);
+		}
+		for(int i=0;i!=returns.size();++i) {
+			rparams[i+params_size] = returns.get(i);
 		}		
-		Type r = construct(K_FUNCTION, null, rparams);
+		Type r = construct(K_FUNCTION, params_size, rparams);
 		if (r instanceof Type.Function) {
 			return (Type.Function) r;
 		} else {
@@ -176,12 +179,12 @@ public abstract class Type {
 	 *
 	 * @param element
 	 */
-	public static final Type.Function Function(Type ret,
+	public static final Type.Function Function(Type[] returns,
 			Type... params) {		
-		Type[] rparams = new Type[params.length+1];
-		rparams[0] = ret;
-		System.arraycopy(params, 0, rparams, 1, params.length);		
-		Type r = construct(K_FUNCTION, null, rparams);
+		Type[] rparams = new Type[params.length+returns.length];
+		System.arraycopy(params, 0, rparams, 0, params.length);
+		System.arraycopy(returns, 0, rparams, params.length, returns.length);
+		Type r = construct(K_FUNCTION, params.length, rparams);
 		if (r instanceof Type.Function) {
 			return (Type.Function) r;
 		} else {
@@ -195,13 +198,16 @@ public abstract class Type {
 	 *
 	 * @param element
 	 */
-	public static final Type.Method Method(Type ret, List<Type> params) {
-		Type[] rparams = new Type[params.size()+1];
-		rparams[0] = ret;
-		for(int i=0;i!=params.size();++i) {
-			rparams[i+1] = params.get(i);
-		}	
-		Type r = construct(K_METHOD, null, rparams);
+	public static final Type.Method Method(List<Type> returns, List<Type> params) {
+		Type[] rparams = new Type[params.size()+returns.size()];
+		int params_size = params.size();
+		for(int i=0;i!=params_size;++i) {
+			rparams[i] = params.get(i);
+		}
+		for(int i=0;i!=returns.size();++i) {
+			rparams[i+params_size] = returns.get(i);
+		}			
+		Type r = construct(K_METHOD, params_size, rparams);
 		if (r instanceof Type.Method) {
 			return (Type.Method) r;
 		} else {
@@ -215,11 +221,11 @@ public abstract class Type {
 	 *
 	 * @param element
 	 */
-	public static final Type.Method Method(Type ret, Type... params) {
-		Type[] rparams = new Type[params.length+1];
-		rparams[0] = ret;
-		System.arraycopy(params, 0, rparams, 1, params.length);	
-		Type r = construct(K_METHOD, null, rparams);
+	public static final Type.Method Method(Type[] returns, Type... params) {
+		Type[] rparams = new Type[params.length+returns.length];
+		System.arraycopy(params, 0, rparams, 0, params.length);
+		System.arraycopy(returns, 0, rparams, params.length, returns.length);
+		Type r = construct(K_METHOD, params.length, rparams);
 		if (r instanceof Type.Method) {
 			return (Type.Method) r;
 		} else {
@@ -398,6 +404,9 @@ public abstract class Type {
 			}  else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) {
 				boolean nonEmpty = reader.read_bit();
 				state.data = nonEmpty;
+			} else if(state.kind == Type.K_FUNCTION || state.kind == Type.K_METHOD) {
+				int numParameters = reader.read_uv();
+				state.data = numParameters;
 			}
 			return state;
 		}
@@ -450,6 +459,8 @@ public abstract class Type {
 				}
 			} else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) {
 				writer.write_bit((Boolean) state.data);
+			}  else if(state.kind == Type.K_FUNCTION || state.kind == Type.K_METHOD) {
+				writer.write_uv((Integer) state.data);				
 			}
 		}
 
@@ -1163,26 +1174,34 @@ public abstract class Type {
 		FunctionOrMethod(Automaton automaton) {
 			super(automaton);
 		}
-
+		
 		/**
-		 * Get the return type of this function or method type.
+		 * Get the parameter types of this function or method type.
 		 *
 		 * @return
 		 */
-		public Type ret() {
-			int[] fields = automaton.states[0].children;
-			return construct(Automata.extract(automaton, fields[0]));
+		public ArrayList<Type> returns() {
+			Automaton.State state = automaton.states[0];
+			int[] fields = state.children;
+			int numParams = (Integer) state.data;
+			ArrayList<Type> r = new ArrayList<Type>();
+			for(int i=numParams;i<fields.length;++i) {
+				r.add(construct(Automata.extract(automaton, fields[i])));
+			}
+			return r;
 		}
-
+		
 		/**
 		 * Get the parameter types of this function or method type.
 		 *
 		 * @return
 		 */
 		public ArrayList<Type> params() {
-			int[] fields = automaton.states[0].children;
+			Automaton.State state = automaton.states[0];
+			int[] fields = state.children;
+			int numParams = (Integer) state.data;
 			ArrayList<Type> r = new ArrayList<Type>();
-			for(int i=1;i<fields.length;++i) {
+			for(int i=0;i<numParams;++i) {
 				r.add(construct(Automata.extract(automaton, fields[i])));
 			}
 			return r;
@@ -1364,21 +1383,26 @@ public abstract class Type {
 		}
 		case K_METHOD:
 		case K_FUNCTION: {
-			middle = "";
+			String parameters = "";
 			int[] children = state.children;			;
-			String ret = toString(children[0], visited, headers, automaton);			
-			boolean firstTime=true;
-			for (int i = 1; i != children.length; ++i) {
-				if (!firstTime) {
-					middle += ",";
+			int numParameters = (Integer) state.data;
+			for (int i = 0; i != numParameters; ++i) {
+				if (i!=0) {
+					parameters += ",";
 				}
-				firstTime=false;
-				middle += toString(children[i], visited, headers, automaton);
+				parameters += toString(children[i], visited, headers, automaton);
+			}
+			String returns = "";
+			for (int i = numParameters; i != children.length; ++i) {
+				if (i!=numParameters) {
+					returns += ",";
+				}
+				returns += toString(children[i], visited, headers, automaton);
 			}
 			if(state.kind == K_FUNCTION) {
-				middle = "function(" + middle + ") -> " + ret;
+				middle = "function(" + parameters + ")->(" + returns + ")";
 			} else {
-				middle = "method(" + middle + ") -> " + ret;
+				middle = "method(" + parameters + ")->(" + returns + ")";
 			}			
 			break;
 		}

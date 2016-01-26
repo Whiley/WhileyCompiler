@@ -6,5 +6,5 @@ ensures y < -0.2:
     //
     return 0.0 - x
 
-public export method test() -> void:
+public export method test() :
     assume f(1.234) == -1.234

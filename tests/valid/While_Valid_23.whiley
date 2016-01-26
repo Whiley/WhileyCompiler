@@ -15,5 +15,5 @@ ensures some { i in 0 .. |xs| | result == xs[i] }:
         i = i + 1
     return r
 
-public export method test() -> void:
+public export method test() :
     assume f([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) == 10

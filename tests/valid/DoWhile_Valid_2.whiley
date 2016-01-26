@@ -2,7 +2,7 @@
 
 
 
-public export method test() -> void:
+public export method test() :
     int i = 0
     do:
         if i == 2:

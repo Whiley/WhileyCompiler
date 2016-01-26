@@ -69,17 +69,15 @@ public class WhileyFilePrinter {
 		out.print(fm.name());
 		printParameters(fm.parameters);		
 		out.print(" -> ");
-		printParameter(fm.returnType,true);		
-
+		printParameters(fm.returns);
+		
 		for(Expr r : fm.requires) {
 			out.println();
 			out.print("requires ");
 			print(r);
 		}
-		boolean firstTime=true;
 		for(Expr r : fm.ensures) {
 			out.println();
-			firstTime = false;
 			out.print("ensures ");
 			print(r);
 		}
@@ -208,17 +206,30 @@ public class WhileyFilePrinter {
 
 	public void print(Stmt.Return s) {
 		out.print("return");
-		if(s.expr != null) {
-			out.print(" ");
-			print(s.expr);
+		for(int i=0;i!=s.returns.size();++i) {
+			if(i != 0) {
+				out.print(",");
+			}
+			out.print(" ");	
+			print(s.returns.get(i));
 		}
 		out.println();
 	}
 
 	public void print(Stmt.Assign s) {
-		print(s.lhs);
+		for(int i=0;i!=s.lvals.size();++i) {
+			if(i!=0) {
+				out.print(", ");
+			}
+			print(s.lvals.get(i));
+		}
 		out.print(" = ");
-		print(s.rhs);
+		for(int i=0;i!=s.rvals.size();++i) {
+			if(i!=0) {
+				out.print(", ");
+			}
+			print(s.rvals.get(i));
+		}
 		out.println();
 	}
 
@@ -358,8 +369,6 @@ public class WhileyFilePrinter {
 			print ((Expr.New) expression);
 		} else if (expression instanceof Expr.TypeVal) {
 			print ((Expr.TypeVal) expression);
-		} else if (expression instanceof Expr.RationalLVal) {
-			print ((Expr.RationalLVal) expression);
 		} else {
 			// should be dead-code
 			throw new RuntimeException("Unknown expression kind encountered: " + expression.getClass().getName());
@@ -590,12 +599,6 @@ public class WhileyFilePrinter {
 		print(e.unresolvedType);
 	}
 
-	public void print(Expr.RationalLVal e) {
-		print(e.numerator);
-		out.print(" / ");
-		print(e.denominator);
-	}
-
 	private void printParameters(List<WhileyFile.Parameter> parameters) {
 		out.print("(");
 		boolean firstTime = true;
@@ -670,7 +673,7 @@ public class WhileyFilePrinter {
 			}
 			printParameterTypes(tt.paramTypes);
 			out.print("->");
-			print(tt.returnType);			
+			printParameterTypes(tt.returnTypes);			
 		} else if(t instanceof SyntacticType.Record) {
 			SyntacticType.Record tt = (SyntacticType.Record) t;
 			out.print("{");

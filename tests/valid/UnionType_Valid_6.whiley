@@ -9,5 +9,5 @@ type wur4nat is ur4nat | tur4nat
 function f(wur4nat x) -> any:
     return x
 
-public export method test() -> void:
+public export method test() :
     assume f(1) == 1

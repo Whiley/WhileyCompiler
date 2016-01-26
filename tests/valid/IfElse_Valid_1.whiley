@@ -9,7 +9,7 @@ function f(int x) -> int:
         else:
             return 0
 
-public export method test() -> void:
+public export method test() :
     assume f(1) == -1
     assume f(10) == 0
     assume f(11) == 1

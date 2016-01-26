@@ -97,7 +97,7 @@ public class DefiniteAssignmentCheck extends
 		for(int i=0;i!=method.type().params().size();++i) {
 			defined.add(i+diff);
 		}
-
+		
 		return defined;
 	}
 
@@ -106,10 +106,13 @@ public class DefiniteAssignmentCheck extends
 			HashSet<Integer> in) {
 		checkUses(index, code, in);
 
-		int def = defs(code);
-		if (def >= 0) {
-			in = new HashSet<Integer>(in);
-			in.add(def);
+		int[] defs = defs(code);
+		
+		if (defs.length >= 0) {
+			for(int def : defs) {
+				in = new HashSet<Integer>(in);
+				in.add(def);
+			}
 		}
 
 		return in;
@@ -213,6 +216,15 @@ public class DefiniteAssignmentCheck extends
                         filename, rootBlock.attribute(index,SourceLocation.class));
 			}
 			return;
+		} else if(code instanceof Code.AbstractMultiNaryAssignable) {
+			Code.AbstractMultiNaryAssignable a = (Code.AbstractMultiNaryAssignable) code;
+			for(int operand : a.operands()) {
+				if(operand != Codes.NULL_REG && !in.contains(operand)) {
+					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
+	                        filename, rootBlock.attribute(index,SourceLocation.class));
+				}
+			}			
+			return;
 		} else {
 			// includes abstract-assignables and branching bytecodes
 			return;
@@ -222,11 +234,11 @@ public class DefiniteAssignmentCheck extends
                 filename, rootBlock.attribute(index,SourceLocation.class));
 	}
 
-	public int defs(Code code) {
+	public int[] defs(Code code) {
 		if (code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
-			return aa.target();
+			return aa.targets();
 		}
-		return Codes.NULL_REG;
+		return new int[0];
 	}
 }

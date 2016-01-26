@@ -541,30 +541,36 @@ public final class WyilFileWriter {
 			writeBase(wide, a.target(),output);
 			writeBase(wide, a.operand(0),output);
 			writeBase(wide, a.operand(1),output);
-		} else if(code instanceof Codes.Lambda) {
-			// Special case for lambda since their operands maybe NULL_REG.
-			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
-			if(a.target() != Codes.NULL_REG) {
-				writeBase(wide,a.target(),output);
-			}
-			int[] operands = a.operands();
-			writeBase(wide,operands.length,output);
-			for(int i=0;i!=operands.length;++i) {
-				writeBase(wide,operands[i]+1,output);
-			}
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
-			if(a.target() != Codes.NULL_REG) {
-				writeBase(wide,a.target(),output);
-			}
+			int[] targets = a.targets();
 			int[] operands = a.operands();
+			writeBase(wide,targets.length,output);
 			writeBase(wide,operands.length,output);
+			for(int i=0;i!=targets.length;++i) {
+				writeBase(wide,targets[i],output);
+			}			
 			for(int i=0;i!=operands.length;++i) {
 				writeBase(wide,operands[i],output);
 			}
-		} else if(code instanceof Code.AbstractAssignable) {
+		} else if(code instanceof Code.AbstractMultiNaryAssignable) {
+			Code.AbstractMultiNaryAssignable<Type> a = (Code.AbstractMultiNaryAssignable) code;
+			int[] targets = a.targets();
+			int[] operands = a.operands();
+			writeBase(wide,targets.length,output);
+			writeBase(wide,operands.length,output);
+			for(int i=0;i!=targets.length;++i) {
+				writeBase(wide,targets[i],output);
+			}			
+			for(int i=0;i!=operands.length;++i) {
+				writeBase(wide,operands[i],output);
+			}
+		} else if(code instanceof Code.AbstractAssignable) {			
 			Code.AbstractAssignable c = (Code.AbstractAssignable) code;
-			writeBase(wide,c.target(),output);
+			// This is safe because only Codes.Const implements
+			// AbstractAssignable on its own. Realistically, this should be done
+			// differently.
+			writeBase(wide,c.targets()[0],output);
 		} else if(code instanceof Codes.Quantify) {
 			Codes.Quantify l = (Codes.Quantify) code;
 			int[] operands = l.modifiedOperands;
@@ -638,6 +644,9 @@ public final class WyilFileWriter {
 			writeRest(wide,typeCache.get(a.type()),output);
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
+			writeRest(wide,typeCache.get(a.type()),output);
+		} else if(code instanceof Code.AbstractMultiNaryAssignable) {
+			Code.AbstractMultiNaryAssignable<Type> a = (Code.AbstractMultiNaryAssignable) code;
 			writeRest(wide,typeCache.get(a.type()),output);
 		}
 		// now deal with non-uniform instructions
@@ -779,15 +788,32 @@ public final class WyilFileWriter {
 			maxRest = typeCache.get(a.type());
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
-			int[] operands = a.operands();
-			maxBase = Math.max(a.target(),operands.length);
+			int[] targets = a.targets();
+			int[] operands = a.operands();			
+			for(int i=0;i!=targets.length;++i) {
+				maxBase = Math.max(maxBase,targets[i]);
+			}						
+			for(int i=0;i!=operands.length;++i) {
+				maxBase = Math.max(maxBase,operands[i]);
+			}
+			maxRest = typeCache.get(a.type());
+		} else if(code instanceof Code.AbstractMultiNaryAssignable) {
+			Code.AbstractMultiNaryAssignable<Type> a = (Code.AbstractMultiNaryAssignable) code;
+			int[] targets = a.targets();
+			int[] operands = a.operands();			
+			for(int i=0;i!=targets.length;++i) {
+				maxBase = Math.max(maxBase,targets[i]);
+			}						
 			for(int i=0;i!=operands.length;++i) {
 				maxBase = Math.max(maxBase,operands[i]);
 			}
 			maxRest = typeCache.get(a.type());
 		} else if(code instanceof Code.AbstractAssignable) {
 			Code.AbstractAssignable a = (Code.AbstractAssignable) code;
-			maxBase = a.target();
+			int[] targets = a.targets();					
+			for(int i=0;i!=targets.length;++i) {
+				maxBase = Math.max(maxBase,targets[i]);
+			}
 		}
 
 		// now, deal with non-uniform opcodes
@@ -1026,6 +1052,9 @@ public final class WyilFileWriter {
 			addTypeItem(a.type());
 		} else if(code instanceof Code.AbstractNaryAssignable) {
 			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
+			addTypeItem(a.type());
+		} else if(code instanceof Code.AbstractMultiNaryAssignable) {
+			Code.AbstractMultiNaryAssignable<Type> a = (Code.AbstractMultiNaryAssignable) code;
 			addTypeItem(a.type());
 		}
 	}

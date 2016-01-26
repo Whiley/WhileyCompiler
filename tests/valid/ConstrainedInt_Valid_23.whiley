@@ -4,5 +4,5 @@ function f(cr2num x) -> int:
     int y = x
     return y
 
-public export method test() -> void:
+public export method test() :
     assume f(3) == 3

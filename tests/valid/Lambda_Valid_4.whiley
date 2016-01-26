@@ -74,6 +74,6 @@ method read(string s) -> byte[]:
     //
     return bytes
         
-public export method test() -> void:
+public export method test() :
     assume read("hello") == [01101100b, 01101111b, 0b]
     

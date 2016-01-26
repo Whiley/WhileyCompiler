@@ -24,7 +24,7 @@ requires (|A| > 0) && ((|B| > 0) && (|B| == |A[0]|)):
         i = i + 1
     return C
 
-public export method test() -> void:
+public export method test() :
     Matrix m1 = [[1, 2], [3, 4]]
     Matrix m2 = [[5, 6], [7, 8]]
     Matrix m3 = run(m1, m2)

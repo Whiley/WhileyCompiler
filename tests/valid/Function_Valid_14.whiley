@@ -9,7 +9,7 @@ function f(real y) -> int:
 function f(int[] xs) -> int:
     return 3
 
-public export method test() -> void:
+public export method test() :
     assume f(1) == 1
     assume f(1.234) == 2
     assume f([1, 2, 3]) == 3

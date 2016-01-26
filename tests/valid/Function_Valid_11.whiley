@@ -10,7 +10,7 @@ function f(fr8nat y) -> bool:
 function f(fr8neg x) -> bool:
     return false
 
-public export method test() -> void:
+public export method test() :
     fr8nat x = 1
     assume f(x) == true
     fr8neg y = -1

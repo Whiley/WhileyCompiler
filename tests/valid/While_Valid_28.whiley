@@ -19,7 +19,7 @@ requires |xs| > 0:
     //
     return r
 
-public export method test() -> void:
+public export method test() :
     assume sum([1]) == 1
     assume sum([1, 2]) == 3
     assume sum([1, 2, 3]) == 6

@@ -5,13 +5,15 @@ type State is {int[] input, int pos}
 type Expr is {int num} | {int op, Expr rhs, Expr lhs} | {int[] err}
 
 function parse(int[] input) -> Expr:
-    {Expr e, State st} r = parseAddSubExpr({input: input, pos: 0})
-    return r.e
+    Expr e
+    State st
+    e,st = parseAddSubExpr({input: input, pos: 0})
+    return e
 
-function parseAddSubExpr(State st) -> {Expr e, State st}:
-    return {e: {num: 1}, st: st}
+function parseAddSubExpr(State st) -> (Expr e, State nst):
+    return {num: 1}, st
 
-public export method test() -> void:
+public export method test() :
     Expr e = parse("Hello")
     assume e == {num:1}
 

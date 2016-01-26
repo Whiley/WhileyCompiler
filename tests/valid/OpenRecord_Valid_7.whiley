@@ -12,7 +12,7 @@ function sum(Point vp) -> real:
     else:
         return vp.x + vp.y
 
-public export method test() -> void:
+public export method test() :
     Point vp = {y: 2, x: 1}
     assume sum(vp) == 3.0
     vp = {y: 2.34, x: 1.23}

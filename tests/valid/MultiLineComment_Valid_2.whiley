@@ -1,4 +1,4 @@
 
 
-public export method test() -> void:
+public export method test() :
     assert 5 == 5 /* a comment */

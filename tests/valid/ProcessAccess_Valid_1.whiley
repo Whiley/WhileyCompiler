@@ -6,7 +6,7 @@ method get(Ptype this) -> int:
     this->rest = 123
     return this->mode
 
-public export method test() -> void:
+public export method test() :
     Ptype p = new {rest: 2, mode: 2}
     assume (*p) == {rest: 2, mode: 2}
     int x = get(p)

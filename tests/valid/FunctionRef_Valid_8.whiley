@@ -9,7 +9,7 @@ function id(int x) -> int:
 function test(function (int)->int read, int arg) -> int:
     return read(arg)
 
-public export method test() -> void:
+public export method test() :
     int x = test(&id, 1)
     assume x == 1
     x = test(&id, 123)

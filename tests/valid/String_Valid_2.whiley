@@ -8,7 +8,7 @@ public function has(int c, int[] str) -> bool:
         i = i + 1
     return false
 
-public export method test() -> void:
+public export method test() :
     int[] s = "Hello World"
     assume has('l', s) == true
     assume has('e', s) == true

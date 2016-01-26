@@ -17,7 +17,7 @@ function f(RGB c) -> int:
         default:
             return 456
 
-public export method test() -> void:
+public export method test() :
     assume f(Red) == 123
     assume f(Green) == 456
     assume f(Blue) == 234

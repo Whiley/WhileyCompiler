@@ -226,7 +226,7 @@ public final class CodeGenerator {
 		Environment environment = new Environment();		
 		ArrayList<VariableDeclarations.Declaration> declarations = new ArrayList<VariableDeclarations.Declaration>(); 				
 		addDeclaredParameters(fd.parameters,fd.resolvedType().params(), environment, declarations);
-		addDeclaredParameter(fd.returnType,fd.resolvedType().ret(), environment, declarations);		
+		addDeclaredParameters(fd.returns,fd.resolvedType().returns(), environment, declarations);		
 		// Allocate all declared variables now. This ensures that all declared
 		// variables occur before any temporary variables.
 		buildVariableDeclarations(fd.statements, declarations, environment, fd);
@@ -400,17 +400,11 @@ public final class CodeGenerator {
 				generate((While) stmt, environment, codes, context);
 			} else if (stmt instanceof DoWhile) {
 				generate((DoWhile) stmt, environment, codes, context);
-			} else if (stmt instanceof Expr.MethodCall) {
-				generate((Expr.MethodCall) stmt, Codes.NULL_REG, environment,
+			} else if (stmt instanceof Expr.FunctionOrMethodCall) {
+				generate((Expr.Multi) stmt, environment,
 						codes, context);
-			} else if (stmt instanceof Expr.FunctionCall) {
-				generate((Expr.FunctionCall) stmt, Codes.NULL_REG, environment,
-						codes, context);
-			} else if (stmt instanceof Expr.IndirectMethodCall) {
-				generate((Expr.IndirectMethodCall) stmt, Codes.NULL_REG,
-						environment, codes, context);
-			} else if (stmt instanceof Expr.IndirectFunctionCall) {
-				generate((Expr.IndirectFunctionCall) stmt, Codes.NULL_REG,
+			} else if (stmt instanceof Expr.IndirectFunctionOrMethodCall) {
+				generate((Expr.Multi) stmt,
 						environment, codes, context);
 			} else if (stmt instanceof Expr.New) {
 				generate((Expr.New) stmt, environment, codes, context);
@@ -483,7 +477,6 @@ public final class CodeGenerator {
 	 * x = e     // variable assignment
 	 * x,y = e   // tuple assignment
 	 * x.f = e   // field assignment
-	 * x / y = e // rational assignment
 	 * x[i] = e  // index-of assignment
 	 * </pre>
 	 *
@@ -520,45 +513,52 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Assign s, Environment environment,
+	private void generate(Assign s, Environment environment, AttributedCodeBlock codes, Context context) {
+		// First, we translate all right-hand side expressions and assign them
+		// to temporary registers.
+		ArrayList<Integer> operands = new ArrayList<Integer>();
+		ArrayList<Type> types = new ArrayList<Type>();
+		for(int i=0;i!=s.rvals.size();++i) {
+			Expr e = s.rvals.get(i);
+			// FIXME: this is a rather ugly
+			if(e instanceof Expr.Multi) {
+				// The assigned expression actually has multiple returns,
+				// therefore extract them all.
+				Expr.Multi me = (Expr.Multi) e;
+				for(Nominal t : me.returns()) {
+					types.add(t.raw());
+				}				
+				operands.addAll(toIntegerList(generate(me, environment, codes, context)));
+			} else {
+				// The assigned rval is a simple expression which returns a
+				// single value
+				operands.add(generate(e, environment, codes, context));
+				types.add(e.result().raw());
+			}			
+		}
+		
+		// Second, update each expression on left-hand side of this assignment
+		// appropriately. Note that we can safely assume here the number of
+		// rvals and lvals matches as this has already been checked by
+		// FlowTypeChecker.
+		for (int i = 0; i != s.lvals.size(); ++i) {
+			Expr.LVal lval = s.lvals.get(i);
+			generateAssignment(lval, operands.get(i), types.get(i), environment, codes, context);
+		}
+	}
+	
+	public void generateAssignment(Expr.LVal lval, int operand, Type type, Environment environment,
 			AttributedCodeBlock codes, Context context) {
-
-		// First, we translate the right-hand side expression and assign it to a
-		// temporary register.
-		int operand = generate(s.rhs, environment, codes, context);
-
-		// Second, we update the left-hand side of this assignment
-		// appropriately.
-		if (s.lhs instanceof Expr.AssignedVariable) {
-			Expr.AssignedVariable v = (Expr.AssignedVariable) s.lhs;
-
+		if (lval instanceof Expr.AssignedVariable) {
+			Expr.AssignedVariable v = (Expr.AssignedVariable) lval;
 			// This is the easiest case. Having translated the right-hand side
 			// expression, we now assign it directly to the register allocated
 			// for variable on the left-hand side.
 			int target = environment.get(v.var);
-			codes.add(Codes.Assign(s.rhs.result().raw(), target, operand),
-					attributes(s));
-		} else if (s.lhs instanceof Expr.RationalLVal) {
-			Expr.RationalLVal tg = (Expr.RationalLVal) s.lhs;
-
-			// Having translated the right-hand side expression, we now
-			// destructure it using the numerator and denominator unary
-			// bytecodes.
-			Expr.AssignedVariable lv = (Expr.AssignedVariable) tg.numerator;
-			Expr.AssignedVariable rv = (Expr.AssignedVariable) tg.denominator;
-
-			codes.add(Codes.UnaryOperator(s.rhs.result().raw(),
-					environment.get(lv.var), operand,
-					Codes.UnaryOperatorKind.NUMERATOR), attributes(s));
-
-			codes.add(Codes.UnaryOperator(s.rhs.result().raw(),
-					environment.get(rv.var), operand,
-					Codes.UnaryOperatorKind.DENOMINATOR), attributes(s));
-
-		} else if (s.lhs instanceof Expr.IndexOf
-				|| s.lhs instanceof Expr.FieldAccess
-				|| s.lhs instanceof Expr.Dereference) {
-
+			codes.add(Codes.Assign(type, target, operand), attributes(lval));
+		} else if (lval instanceof Expr.IndexOf
+				|| lval instanceof Expr.FieldAccess
+				|| lval instanceof Expr.Dereference) {
 			// This is the more complicated case, since the left-hand side
 			// expression is recursive. However, the WyIL update bytecode comes
 			// to the rescue here. All we need to do is extract the variable
@@ -567,15 +567,13 @@ public final class CodeGenerator {
 			// updated.
 			ArrayList<String> fields = new ArrayList<String>();
 			ArrayList<Integer> operands = new ArrayList<Integer>();
-			Expr.AssignedVariable lhs = extractLVal(s.lhs, fields, operands,
+			Expr.AssignedVariable lhs = extractLVal(lval, fields, operands,
 					environment, codes, context);
 			int target = environment.get(lhs.var);
-			int rhsRegister = generate(s.rhs, environment, codes, context);
-
 			codes.add(Codes.Update(lhs.type.raw(), target, operands,
-					rhsRegister, lhs.afterType.raw(), fields), attributes(s));
+					operand, lhs.afterType.raw(), fields), attributes(lval));
 		} else {
-			WhileyFile.syntaxError("invalid assignment", context, s);
+			WhileyFile.syntaxError("invalid assignment", context, lval);
 		}
 	}
 
@@ -728,18 +726,27 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generate(Stmt.Return s, Environment environment, AttributedCodeBlock codes, Context context) {
-		if (s.expr != null) {
-			int operand = generate(s.expr, environment, codes, context);
-			// Here, we don't put the type propagated for the return expression.
-			// Instead, we use the declared return type of this function. This
-			// has the effect of forcing an implicit coercion between the
-			// actual value being returned and its required type.
-			Type ret = ((WhileyFile.FunctionOrMethod) context).resolvedType().raw().ret();
-
-			codes.add(Codes.Return(ret, operand), attributes(s));
-		} else {
-			codes.add(Codes.Return(), attributes(s));
+		List<Expr> returns = s.returns;
+		// Here, we don't put the type propagated for the return expression.
+		// Instead, we use the declared return type of this function. This
+		// has the effect of forcing an implicit coercion between the
+		// actual value being returned and its required type.
+		List<Type> types = ((WhileyFile.FunctionOrMethod) context).resolvedType().raw().returns(); 
+		int[] operands = new int[types.size()];
+		int index = 0;
+		for (int i = 0; i != returns.size(); ++i) {
+			Expr e = returns.get(i);
+			// FIXME: this is a rather ugly
+			if (e instanceof Expr.Multi) {
+				int[] results = generate((Expr.Multi) e, environment, codes, context);
+				for (int r : results) {
+					operands[index++] = r;
+				}
+			} else {
+				operands[index++] = generate(e, environment, codes, context);
+			}
 		}
+		codes.add(Codes.Return(types,operands), attributes(s));
 	}
 
 	/**
@@ -1603,6 +1610,58 @@ public final class CodeGenerator {
 	}
 
 	// =========================================================================
+	// Multi-Expressions
+	// =========================================================================
+
+	
+	public int[] generate(Expr.Multi expression, Environment environment,
+			AttributedCodeBlock codes, Context context) {
+		List<Nominal> returns = expression.returns();
+		int[] targets = new int[returns.size()];
+		for(int i=0;i!=targets.length;++i) {
+			targets[i] = environment.allocate(returns.get(i).raw());
+		}
+		try {
+			if(expression instanceof Expr.FunctionOrMethodCall) {
+				Expr.FunctionOrMethodCall fmc = (Expr.FunctionOrMethodCall) expression;  
+				generateStmt(fmc,environment,codes,context,targets);
+			} else if(expression instanceof Expr.IndirectFunctionOrMethodCall) {
+				Expr.IndirectFunctionOrMethodCall fmc = (Expr.IndirectFunctionOrMethodCall) expression;  
+				generateStmt(fmc,environment,codes,context,targets);
+			} else {
+				// should be dead-code
+				internalFailure("unknown expression: "
+						+ expression.getClass().getName(), context, expression);
+			}
+		} catch (ResolveError rex) {
+			syntaxError(rex.getMessage(), context, expression, rex);
+		} catch (SyntaxError se) {
+			throw se;
+		} catch (Exception ex) {
+			internalFailure(ex.getMessage(), context, expression, ex);
+		}
+		// done
+		return targets;
+	}
+	
+	public void generateStmt(Expr.FunctionOrMethodCall expr, Environment environment, AttributedCodeBlock codes,
+			Context context, int... targets) throws ResolveError {
+		//
+		int[] operands = generate(expr.arguments, environment, codes, context);
+		codes.add(Codes.Invoke(expr.type().nominal(), targets, operands, expr.nid()), attributes(expr));
+	}
+	
+
+	public void generateStmt(Expr.IndirectFunctionOrMethodCall expr, Environment environment, AttributedCodeBlock codes,
+			Context context, int... targets) throws ResolveError {
+		//
+		int operand = generate(expr.src, environment, codes, context);
+		int[] operands = generate(expr.arguments, environment, codes, context);
+		codes.add(Codes.IndirectInvoke(expr.type().raw(), targets, operand, operands), attributes(expr));
+	}
+
+	
+	// =========================================================================
 	// Expressions
 	// =========================================================================
 
@@ -1657,11 +1716,8 @@ public final class CodeGenerator {
 			} else if (expression instanceof Expr.UnOp) {
 				return generate((Expr.UnOp) expression, environment, codes,
 						context);
-			} else if (expression instanceof Expr.FunctionCall) {
-				return generate((Expr.FunctionCall) expression, environment,
-						codes, context);
-			} else if (expression instanceof Expr.MethodCall) {
-				return generate((Expr.MethodCall) expression, environment,
+			} else if (expression instanceof Expr.FunctionOrMethodCall) {
+				return generate((Expr.FunctionOrMethodCall) expression, environment,
 						codes, context);
 			} else if (expression instanceof Expr.IndirectFunctionCall) {
 				return generate((Expr.IndirectFunctionCall) expression,
@@ -1703,68 +1759,19 @@ public final class CodeGenerator {
 		return -1; // deadcode
 	}
 
-	public int generate(Expr.MethodCall expr, Environment environment,
+	public int generate(Expr.FunctionOrMethodCall expr, Environment environment,
 			AttributedCodeBlock codes, Context context) throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
-		generate(expr, target, environment, codes, context);
+		generateStmt(expr, environment, codes, context, target);
 		return target;
 	}
 
-	public void generate(Expr.MethodCall expr, int target,
-			Environment environment, AttributedCodeBlock codes, Context context)
-			throws ResolveError {
-		int[] operands = generate(expr.arguments, environment, codes, context);
-		codes.add(
-				Codes.Invoke(expr.methodType.nominal(), target, operands,
-						expr.nid()), attributes(expr));
-	}
-
-	public int generate(Expr.FunctionCall expr, Environment environment,
-			AttributedCodeBlock codes, Context context) throws ResolveError {
-		int target = environment.allocate(expr.result().raw());
-		generate(expr, target, environment, codes, context);
-		return target;
-	}
-
-	public void generate(Expr.FunctionCall expr, int target,
-			Environment environment, AttributedCodeBlock codes, Context context)
-			throws ResolveError {
-		int[] operands = generate(expr.arguments, environment, codes, context);
-		codes.add(Codes.Invoke(expr.functionType.nominal(), target, operands,
-				expr.nid()), attributes(expr));
-	}
-
-	public int generate(Expr.IndirectFunctionCall expr,
+	public int generate(Expr.IndirectFunctionOrMethodCall expr,
 			Environment environment, AttributedCodeBlock codes, Context context)
 			throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
-		generate(expr, target, environment, codes, context);
+		generateStmt(expr, environment, codes, context, target);
 		return target;
-	}
-
-	public void generate(Expr.IndirectFunctionCall expr, int target,
-			Environment environment, AttributedCodeBlock codes, Context context)
-			throws ResolveError {
-		int operand = generate(expr.src, environment, codes, context);
-		int[] operands = generate(expr.arguments, environment, codes, context);
-		codes.add(Codes.IndirectInvoke(expr.functionType.raw(), target,
-				operand, operands), attributes(expr));
-	}
-
-	public int generate(Expr.IndirectMethodCall expr, Environment environment,
-			AttributedCodeBlock codes, Context context) throws ResolveError {
-		int target = environment.allocate(expr.result().raw());
-		generate(expr, target, environment, codes, context);
-		return target;
-	}
-
-	public void generate(Expr.IndirectMethodCall expr, int target,
-			Environment environment, AttributedCodeBlock codes, Context context)
-			throws ResolveError {
-		int operand = generate(expr.src, environment, codes, context);
-		int[] operands = generate(expr.arguments, environment, codes, context);
-		codes.add(Codes.IndirectInvoke(expr.methodType.raw(), target, operand,
-				operands), attributes(expr));
 	}
 
 	private int generate(Expr.Constant expr, Environment environment,
@@ -1816,12 +1823,12 @@ public final class CodeGenerator {
 
 		// Generate body based on current environment
 		AttributedCodeBlock body = new AttributedCodeBlock(
-				new SourceLocationMap());
-		if (tfm.ret() != Type.T_VOID) {
-			int target = generate(expr.body, benv, body, context);
-			body.add(Codes.Return(tfm.ret(), target), attributes(expr));
-		} else {
+				new SourceLocationMap());		
+		if (tfm.returns().isEmpty()) {
 			body.add(Codes.Return(), attributes(expr));
+		} else {
+			int target = generate(expr.body, benv, body, context);
+			body.add(Codes.Return(tfm.returns(), target), attributes(expr));
 		}
 
 		// Add type information for all temporary registers allocated
@@ -1835,9 +1842,9 @@ public final class CodeGenerator {
 		// Create concrete type for private lambda function
 		Type.FunctionOrMethod cfm;
 		if (tfm instanceof Type.Function) {
-			cfm = Type.Function(tfm.ret(), paramTypes);
+			cfm = Type.Function(tfm.returns(), paramTypes);
 		} else {
-			cfm = Type.Method(tfm.ret(), paramTypes);
+			cfm = Type.Method(tfm.returns(), paramTypes);
 		}
 
 		// Construct private lambda function using generated body
@@ -2244,6 +2251,14 @@ public final class CodeGenerator {
 			attrs.add(new wyil.attributes.SourceLocation(0, s.start, s.end));
 		}
 		return attrs;
+	}
+	
+	public List<Integer> toIntegerList(int...items) {
+		ArrayList<Integer> list = new ArrayList<Integer>();
+		for(int i=0;i!=items.length;++i) {
+			list.add(items[i]);
+		}
+		return list;
 	}
 
 	/**

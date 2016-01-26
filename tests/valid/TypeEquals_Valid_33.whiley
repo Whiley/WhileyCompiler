@@ -12,7 +12,7 @@ function f(expr e) -> bool:
     else:
         return false
 
-public export method test() -> void:
+public export method test() :
     assume f(-1) == false
     assume f(1) == true
     assume f(1234) == true

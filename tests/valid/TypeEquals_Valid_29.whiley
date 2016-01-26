@@ -25,7 +25,7 @@ function shortPos2str(ShortPos p) -> int[]:
             else:
                 return pos2str(p)
 
-public export method test() -> void:
+public export method test() :
     assume shortPos2str(null) == ""
     assume shortPos2str({row: 1}) == "2"
     assume shortPos2str({col: 1}) == "b"

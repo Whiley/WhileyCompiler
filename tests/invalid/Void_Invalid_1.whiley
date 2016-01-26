@@ -1,1 +1,1 @@
-function f(void z) -> void:
+function f(void z) :

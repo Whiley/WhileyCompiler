@@ -6,7 +6,7 @@ function f(int[] xs, real[] ys) -> bool:
     else:
         return false
 
-public export method test() -> void:
+public export method test() :
     assume f([1, 4], [1.0, 4.0]) == true
     assume f([1, 4], [1.0, 4.2]) == false
     assume f([0;0], [0.0;0]) == true

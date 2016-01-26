@@ -13,7 +13,7 @@ function dist(LinkedList list) -> Leaf:
         distance = distance + 1
     return list + distance
 
-public export method test() -> void:
+public export method test() :
     LinkedList list = 123
     list = {next: list}
     list = {next: list}

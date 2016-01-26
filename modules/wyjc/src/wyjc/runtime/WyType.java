@@ -170,9 +170,9 @@ public abstract class WyType {
 	}
 
 	public static final class Function extends WyType {
-		public WyType returns;
+		public final WyType[] returns;
 		public final WyType[] parameters;
-		public Function(WyType returns, WyType[] parameters) {
+		public Function(WyType[] returns, WyType[] parameters) {
 			super(K_FUNCTION);
 			this.parameters = parameters;
 			this.returns = returns;
@@ -180,9 +180,9 @@ public abstract class WyType {
 	}
 	
 	public static final class Method extends WyType {
-		public WyType returns;
+		public final WyType[] returns;
 		public final WyType[] parameters;
-		public Method(WyType returns, WyType[] parameters) {
+		public Method(WyType[] returns, WyType[] parameters) {
 			super(K_METHOD);
 			this.parameters = parameters;
 			this.returns = returns;
@@ -278,10 +278,14 @@ public abstract class WyType {
 			return new WyType.Nominal(module + ":" + name);
 		}
 		case K_FUNCTION: {
-			return new WyType.Function(children[0],Arrays.copyOfRange(children, 2, children.length));
+			int numParams = reader.read_uv();
+			return new WyType.Function(Arrays.copyOfRange(children, numParams, children.length),
+					Arrays.copyOfRange(children, 0, numParams));
 		}
 		case K_METHOD: {
-			return new WyType.Function(children[0],Arrays.copyOfRange(children, 1, children.length));
+			int numParams = reader.read_uv();
+			return new WyType.Method(Arrays.copyOfRange(children, numParams, children.length),
+					Arrays.copyOfRange(children, 0, numParams));
 		}
 		}
 
@@ -355,13 +359,13 @@ public abstract class WyType {
 		}
 		case K_FUNCTION: {
 			Function t = (Function) type;
-			t.returns = substitute((Label)t.returns,nodes);
+			substitute(t.returns,nodes);
 			substitute(t.parameters,nodes);
 			return;
 		}
 		case K_METHOD: {
 			Method t = (Method) type;
-			t.returns = substitute((Label)t.returns,nodes);
+			substitute(t.returns,nodes);
 			substitute(t.parameters,nodes);
 			return;
 		}
@@ -472,11 +476,14 @@ public abstract class WyType {
 			case K_FUNCTION:
 			{
 				WyType.Function ft = (WyType.Function) type;
-				WyType[] types = ft.parameters;
-				for(int i=0;i!=types.length;++i) {
-					types[i] = substitute(types[i],label,root,visited);
+				WyType[] paramTypes = ft.parameters;
+				for(int i=0;i!=paramTypes.length;++i) {
+					paramTypes[i] = substitute(paramTypes[i],label,root,visited);
 				}
-				ft.returns = substitute(ft.returns,label,root,visited);
+				WyType[] returnTypes = ft.returns;
+				for(int i=0;i!=returnTypes.length;++i) {
+					returnTypes[i] = substitute(returnTypes[i],label,root,visited);
+				}
 				break;
 			}
 			case K_METHOD:
@@ -486,7 +493,10 @@ public abstract class WyType {
 				for(int i=0;i!=types.length;++i) {
 					types[i] = substitute(types[i],label,root,visited);
 				}
-				ft.returns = substitute(ft.returns,label,root,visited);
+				WyType[] returnTypes = ft.returns;
+				for(int i=0;i!=returnTypes.length;++i) {
+					returnTypes[i] = substitute(returnTypes[i],label,root,visited);
+				}
 				break;
 			}
 		}
@@ -567,17 +577,21 @@ public abstract class WyType {
 		case K_METHOD: {
 			WyType.Method ft = (WyType.Method) t;
 			WyType[] types = ft.parameters;
-			String r = "function(";
-			for (int i = 0; i != types.length; ++i) {
-				if (i != 0) {
-					r = r + ",";
-				}
-				r += toString(types[i],visited);
-			}
-			return r + ")->(" + toString(ft.returns,visited) + ")";
+			return "function" + toString(ft.parameters, visited) + "->" + toString(ft.returns, visited);
 		}
 		}
 
 		throw new RuntimeException("unknow type encountered (kind: " + t.kind + ")");
+	}
+	
+	private static String toString(WyType[] types, HashSet<WyType> visited) {
+		String r = "(";
+		for (int i = 0; i != types.length; ++i) {
+			if (i != 0) {
+				r = r + ",";
+			}
+			r += toString(types[i],visited);
+		}
+		return r + ")";
 	}
 }

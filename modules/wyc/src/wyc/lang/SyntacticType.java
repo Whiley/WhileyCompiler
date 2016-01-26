@@ -353,52 +353,66 @@ public interface SyntacticType extends SyntacticElement {
 
 	public abstract static class FunctionOrMethod extends
 			SyntacticElement.Impl implements NonUnion {
-		public final SyntacticType returnType;
+		public final ArrayList<SyntacticType> returnTypes;
 		public final ArrayList<SyntacticType> paramTypes;
 
-		public FunctionOrMethod(SyntacticType returnType, Collection<SyntacticType> paramTypes,
+		public FunctionOrMethod(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
 				Attribute... attributes) {
 			super(attributes);
-			this.returnType = returnType;			
+			this.returnTypes = new ArrayList<SyntacticType>(returnTypes);
 			this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
-			if(returnType == null) {
-				throw new IllegalArgumentException("Invalid return type");
+			for(SyntacticType t : paramTypes) {
+				if(t == null) {
+					throw new IllegalArgumentException("parameter cannot be null"); 
+				}
+			}
+			for(SyntacticType t : returnTypes) {
+				if(t == null) {
+					throw new IllegalArgumentException("return cannot be null"); 
+				}
 			}
 		}
 
-		public FunctionOrMethod(SyntacticType returnType, Collection<SyntacticType> paramTypes,
+		public FunctionOrMethod(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
 			super(attributes);
-			this.returnType = returnType;
+			this.returnTypes = new ArrayList<SyntacticType>(returnTypes);
 			this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
-			if(returnType == null) {
-				throw new IllegalArgumentException("Invalid return type");
+			for(SyntacticType t : paramTypes) {
+				if(t == null) {
+					throw new IllegalArgumentException("parameter cannot be null"); 
+				}
+			}
+			for(SyntacticType t : returnTypes) {
+				if(t == null) {
+					throw new IllegalArgumentException("return cannot be null"); 
+				}
 			}
 		}
 	}
 
 	public static class Function extends FunctionOrMethod
 	implements NonUnion {
-		public Function(SyntacticType returnType, 
+		public Function(Collection<SyntacticType> returnTypes, 
 				Collection<SyntacticType> paramTypes,
 				Attribute... attributes) {
-			super(returnType,paramTypes,attributes);
+			super(returnTypes,paramTypes,attributes);
 		}
-		public Function(SyntacticType returnType,  Collection<SyntacticType> paramTypes,
+		public Function(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
-			super(returnType,paramTypes,attributes);
+			super(returnTypes,paramTypes,attributes);
 		}
 	}
 
 	public static class Method extends FunctionOrMethod
 	implements NonUnion {
-				public Method(SyntacticType returnType,  Collection<SyntacticType> paramTypes,
+				public Method(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
 				Attribute... attributes) {
-			super(returnType,paramTypes,attributes);
+			super(returnTypes,paramTypes,attributes);
 		}
-		public Method(SyntacticType returnType,  Collection<SyntacticType> paramTypes,
+		public Method(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
-			super(returnType,paramTypes,attributes);
+			super(returnTypes,paramTypes,attributes);
 		}
 	}
 }

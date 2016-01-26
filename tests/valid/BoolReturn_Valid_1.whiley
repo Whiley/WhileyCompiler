@@ -3,6 +3,6 @@
 function pred() -> bool:
     return false
 
-public export method test() -> void:
+public export method test() :
     assume !pred()
 

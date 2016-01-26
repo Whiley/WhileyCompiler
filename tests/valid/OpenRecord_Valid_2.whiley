@@ -25,7 +25,7 @@ function codeLength(Attribute a) -> null | int:
         return |a.data|
     return null
 
-public export method test() -> void:
+public export method test() :
     Attribute attr = {name: "Code", data: [{op: 2, offset: 1}]}
     assume codeLength(attr) == 1
     attr = {name: "Blah"}

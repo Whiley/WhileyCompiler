@@ -14,7 +14,7 @@ ensures r == 0 || r == 1:
         default:
             return 0
 
-public export method test() -> void:
+public export method test() :
     assume f(2) == 0
     assume f(1) == 1
     assume f(0) == 0

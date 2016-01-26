@@ -107,6 +107,10 @@ public final class TypeAlgorithms {
 				Boolean nid1 = (Boolean) s1.data;
 				Boolean nid2 = (Boolean) s2.data;
 				return nid1.toString().compareTo(nid2.toString());
+			} else if(s1.kind == Type.K_FUNCTION || s1.kind == Type.K_METHOD) {
+				int s1NumParams = (Integer) s1.data;
+				int s2NumParams = (Integer) s2.data;				
+				return Integer.compare(s1NumParams, s2NumParams);
 			} else {
 				String str1 = (String) s1.data;
 				String str2 = (String) s2.data;
@@ -299,11 +303,7 @@ public final class TypeAlgorithms {
 			isOpenRecord = data.isOpen;
 		}
 
-		for(int i=0;i<children.length;++i) {
-			if ((i == 0 || i == 1) && (kind == Type.K_METHOD || kind == Type.K_FUNCTION)) {
-				// headless method and function return or throws type allowed to be void
-				continue;
-			}
+		for(int i=0;i<children.length;++i) {			
 			Automaton.State child = automaton.states[children[i]];
 			if(child.kind == Type.K_VOID) {
 				automaton.states[index] = new Automaton.State(Type.K_VOID);

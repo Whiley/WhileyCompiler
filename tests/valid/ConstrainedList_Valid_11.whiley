@@ -13,5 +13,5 @@ function f(state st) -> int:
             return st.input[st.pos]
     return ' '
 
-public export method test() -> void:
+public export method test() :
     assume f({input: "hello", pos: 0}) == 104

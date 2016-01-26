@@ -9,7 +9,7 @@ function Tree(int data, Tree left, Tree right) -> Tree
 requires ((left == null) || (left.data < data)) && ((right == null) || (right.data > data)):
     return {data: data, rhs: right, lhs: left}
 
-public export method test() -> void:
+public export method test() :
     Tree l1 = Tree(1, null, null)
     Tree l2 = Tree(3, null, null)
     Tree l3 = Tree(5, null, null)

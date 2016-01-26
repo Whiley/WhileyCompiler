@@ -8,7 +8,7 @@ function f(IntList y) -> IntList:
 function g({int op, int mode} z) -> IntList:
     return z
 
-public export method test() -> void:
+public export method test() :
     IntList x = {op: 1, rest: [1.23]}
     assume f(x) == {op: 1, rest: [1.23]}
     x = {op: 123, mode: 0}
