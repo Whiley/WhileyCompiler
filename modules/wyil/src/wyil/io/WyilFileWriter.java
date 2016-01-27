@@ -556,12 +556,6 @@ public final class WyilFileWriter {
 			for(int i=0;i!=operands.length;++i) {
 				writeBase(wide,operands[i],output);
 			}
-		} else if(code instanceof Code.AbstractAssignable) {			
-			Code.AbstractAssignable c = (Code.AbstractAssignable) code;
-			// This is safe because only Codes.Const implements
-			// AbstractAssignable on its own. Realistically, this should be done
-			// differently.
-			writeBase(wide,c.targets()[0],output);
 		} else if(code instanceof Codes.Quantify) {
 			Codes.Quantify l = (Codes.Quantify) code;
 			int[] operands = l.modifiedOperands;
@@ -770,13 +764,7 @@ public final class WyilFileWriter {
 			for(int i=0;i!=operands.length;++i) {
 				maxBase = Math.max(maxBase,operands[i]);
 			}
-		} else if(code instanceof Code.AbstractAssignable) {
-			Code.AbstractAssignable a = (Code.AbstractAssignable) code;
-			int[] targets = a.targets();					
-			for(int i=0;i!=targets.length;++i) {
-				maxBase = Math.max(maxBase,targets[i]);
-			}
-		}
+		} 
 
 		// now, deal with non-uniform opcodes
 		if(code instanceof Codes.AssertOrAssume) {

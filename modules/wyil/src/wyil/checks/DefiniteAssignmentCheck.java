@@ -226,8 +226,8 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	public int[] defs(Code code) {
-		if (code instanceof Code.AbstractAssignable) {
-			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
+		if (code instanceof Code.AbstractMultiNaryAssignable) {
+			Code.AbstractMultiNaryAssignable aa = (Code.AbstractMultiNaryAssignable) code;
 			return aa.targets();
 		}
 		return new int[0];

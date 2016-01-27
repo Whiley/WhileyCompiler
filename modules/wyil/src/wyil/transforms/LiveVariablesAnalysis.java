@@ -187,8 +187,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		boolean isLive = true;
 		environment = (Env) environment.clone();
 
-		if (code instanceof Code.AbstractAssignable) {
-			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
+		if (code instanceof Code.AbstractMultiNaryAssignable) {
+			Code.AbstractMultiNaryAssignable aa = (Code.AbstractMultiNaryAssignable) code;
 			if(code instanceof Codes.Update) {
 				Codes.Update cu = (Codes.Update) aa;
 				// In the normal case, this bytecode is considered live if the

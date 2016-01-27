@@ -113,8 +113,8 @@ public class LoopVariants implements Transform<WyilFile> {
 		for(int i=0;i<size;++i) {
 			Code code = block.get(i);
 
-			if (code instanceof Code.AbstractAssignable) {
-				Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
+			if (code instanceof Code.AbstractMultiNaryAssignable) {
+				Code.AbstractMultiNaryAssignable aa = (Code.AbstractMultiNaryAssignable) code;
 				for(int target : aa.targets()) {
 					modified.set(target);
 				}

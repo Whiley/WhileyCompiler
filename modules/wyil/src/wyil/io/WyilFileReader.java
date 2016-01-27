@@ -610,13 +610,7 @@ public final class WyilFileReader {
 	private Code readEmpty(int opcode, boolean wideBase, boolean wideRest,
 			int offset, HashMap<Integer, Codes.Label> labels)
 			throws IOException {
-		switch (opcode) {
-		case Code.OPCODE_const: {
-			int target = readBase(wideBase);
-			int idx = readRest(wideRest);
-			Constant c = constantPool[idx];
-			return Codes.Const(target, c);
-		}
+		switch (opcode) {		
 		case Code.OPCODE_fail: {
 			return Codes.Fail();
 		}
@@ -662,21 +656,6 @@ public final class WyilFileReader {
 			}
 			return Codes.Switch(type, operand, defaultLabel.label, cases);
 		}
-		}
-		throw new RuntimeException("unknown opcode encountered (" + opcode
-				+ ")");
-	}
-
-	private Code readUnaryAssign(int opcode, boolean wideBase, boolean wideRest)
-			throws IOException {
-		int target = readBase(wideBase);
-
-		int operand = readBase(wideBase);
-		int typeIdx = readRest(wideRest);
-		Type type = typePool[typeIdx];
-		switch (opcode) {
-		
-
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
@@ -887,6 +866,11 @@ public final class WyilFileReader {
 		case Code.OPCODE_rshr: {
 			Codes.BinaryOperatorKind kind = Codes.BinaryOperatorKind.values()[opcode - Code.OPCODE_add];
 			return Codes.BinaryOperator(types[0], targets[0], operands[0], operands[1], kind);
+		}
+		case Code.OPCODE_const: {			
+			int idx = readRest(wideRest);
+			Constant c = constantPool[idx];
+			return Codes.Const(targets[0], c);
 		}
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode

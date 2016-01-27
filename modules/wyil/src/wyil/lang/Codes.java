@@ -679,30 +679,16 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Const extends AbstractAssignable {
+	public static final class Const extends AbstractMultiNaryAssignable {
 		public final Constant constant;
 
 		private Const(int target, Constant constant) {
-			super(target);
+			super(new Type[0],new int[]{target}, new int[0]);
 			this.constant = constant;
 		}
 
 		public int opcode() {
 			return OPCODE_const;
-		}
-
-		@Override
-		public void registers(java.util.Set<Integer> registers) {
-			registers.add(targets()[0]);
-		}
-
-		@Override
-		public Code.Unit remap(Map<Integer, Integer> binding) {
-			Integer nTarget = binding.get(targets()[0]);
-			if (nTarget != null) {
-				return Const(nTarget, constant);
-			}
-			return this;
 		}
 
 		public int target() {
@@ -724,6 +710,11 @@ public abstract class Codes {
 		public String toString() {
 			return "const %" + targets()[0] + " = " + constant + " : "
 					+ constant.type();
+		}
+
+		@Override
+		protected Unit clone(int[] nTargets, int[] nOperands) {			
+			return new Const(nTargets[0],constant);
 		}
 	}
 

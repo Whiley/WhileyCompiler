@@ -189,45 +189,6 @@ public interface Code {
 	// ===============================================================
 
 	/**
-	 * Represents the set of all bytecodes which assign a result to a single
-	 * target register.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static abstract class AbstractAssignable extends Code.Unit {
-		private final int[] targets;
-
-		/**
-		 * Construct an abstract bytecode which assigns to a given target
-		 * register.
-		 *
-		 * @param target
-		 */
-		public AbstractAssignable(int... targets) {
-			this.targets = targets;
-		}
-
-		/**
-		 * Return a specific target register assigned by this bytecode.
-		 *
-		 * @return
-		 */
-		public int target(int i) {
-			return targets[0];
-		}
-		
-		/**
-		 * Return the target registers assigned by this bytecode.
-		 *
-		 * @return
-		 */
-		public int[] targets() {
-			return targets;
-		}		
-	}
-
-	/**
 	 * Represents the set of all bytecodes which take an arbitrary number of
 	 * register operands and write a result to an arbitrary number of target
 	 * registers.
@@ -237,20 +198,20 @@ public interface Code {
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
-	public static abstract class AbstractMultiNaryAssignable<T> extends
-			AbstractAssignable {
+	public static abstract class AbstractMultiNaryAssignable<T> extends Code.Unit { 
 		protected final Type[] types;
-		protected final int[] operands;
-
-		public AbstractMultiNaryAssignable(Type type, int target, int... operands) {
-			super(target);			
+		private final int[] targets;
+		protected final int[] operands;		
+		
+		public AbstractMultiNaryAssignable(Type type, int target, int... operands) {			
 			this.types = new Type[]{type};
+			this.targets = new int[] {target};
 			this.operands = operands;
 		}
 		
-		public AbstractMultiNaryAssignable(Type[] types, int[] targets, int[] operands) {
-			super(targets);			
+		public AbstractMultiNaryAssignable(Type[] types, int[] targets, int[] operands) {			
 			this.types = types;
+			this.targets = targets;
 			this.operands = operands;
 		}
 
@@ -299,6 +260,29 @@ public interface Code {
 			return (T) types[i];
 		}
 
+		/**
+		 * Return a specific target register assigned by this bytecode.
+		 *
+		 * @return
+		 */
+		public int target(int i) {
+			return targets[0];
+		}
+		
+		/**
+		 * Return the target registers assigned by this bytecode.
+		 *
+		 * @return
+		 */
+		public int[] targets() {
+			return targets;
+		}		
+		
+		/**
+		 * Return the operand registers assigned by this bytecode.
+		 *
+		 * @return
+		 */
 		public int[] operands() {
 			return operands;
 		}
@@ -491,7 +475,6 @@ public interface Code {
 	// Empty Bytecodes
 	// =========================================================================
 	public static final int OPCODE_nop      = 0 + FMT_EMPTY;
-	public static final int OPCODE_const    = 2 + FMT_EMPTY; // +CONSTIDX
 	public static final int OPCODE_goto     = 3 + FMT_EMPTY; // +INT
 	public static final int OPCODE_fail     = 4 + FMT_EMPTY;
 
@@ -520,7 +503,8 @@ public interface Code {
 //	public static final int OPCODE_tupleload   = 10 + FMT_UNARYASSIGN;
 	public static final int OPCODE_fieldload   = 11 + FMT_UNARYASSIGN; // +STRINGIDX
 	public static final int OPCODE_convert     = 12 + FMT_UNARYASSIGN; // +TYPEIDX
-
+	public static final int OPCODE_const       = 14 + FMT_UNARYASSIGN; // +CONSTIDX
+	
 	// =========================================================================
 	// Binary Operators
 	// =========================================================================
