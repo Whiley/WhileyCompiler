@@ -23,11 +23,11 @@ import whiley.io.File
 
 type nat is (int x) where x >= 0
 
-type Matrix is {
+type Matrix is ({
     int width,
     int height,
     int[][] data
-} where |data| == height && no { i in 0..height | |data[i]| != width }
+} this) where |this.data| == this.height && no { i in 0..this.height | |this.data[i]| != this.width }
 
 function Matrix(nat width, nat height, int[][] data) -> (Matrix r)
 // Input array must match matrix height
@@ -74,27 +74,25 @@ ensures C.width == B.width && C.height == A.height:
 // Parser Code
 // ========================================================
 
-function parseFile(ASCII.string input) -> (Matrix,Matrix) | null:
+function parseFile(ASCII.string input) -> (Matrix|null a,Matrix|null b):
     Matrix|null A // 1st result
     Matrix|null B // 2nd result
-    int[]|null data, int pos = parseLine(2,0,input)
+    int[]|null data
+    int pos
+    data,pos = parseLine(2,0,input)
     // santity check    
     if data != null:
         int nrows = data[0]
         int ncols = data[1]
         pos = skipBreak(pos,input)
         A,pos = parseMatrix(nrows,ncols,pos,input)
-        // sanity check
-        if A != null:
-            pos = skipBreak(pos,input)
-            B,pos = parseMatrix(nrows,ncols,pos,input)
-            // sanity check
-            if B != null:
-                return A,B
+        pos = skipBreak(pos,input)
+        B,pos = parseMatrix(nrows,ncols,pos,input)
+        return A,B
     //
-    return null
+    return null,null
 
-function parseMatrix(nat height, nat width, int pos, ASCII.string input) -> (Matrix|null,int):
+function parseMatrix(nat height, nat width, int pos, ASCII.string input) -> (Matrix|null m, int npos):
     //
     int[][] rows = [[0;0];height]
     int[]|null row
@@ -110,7 +108,7 @@ function parseMatrix(nat height, nat width, int pos, ASCII.string input) -> (Mat
     //
     return Matrix(width,height,rows),pos
 
-function parseLine(int count, int pos, ASCII.string input) -> (int[]|null,int):
+function parseLine(int count, int pos, ASCII.string input) -> (int[]|null data,int npos):
     //
     pos = skipWhiteSpace(pos,input)
     int[] ints = [0;0]
@@ -129,7 +127,7 @@ function parseLine(int count, int pos, ASCII.string input) -> (int[]|null,int):
     else:
         return ints,pos
 
-function parseInt(int pos, ASCII.string input) -> (int|null,int):
+function parseInt(int pos, ASCII.string input) -> (int|null data,int npos):
     //
     int start = pos
     // check for negative input
@@ -183,13 +181,14 @@ method main(System.Console sys):
         // first, read data
         ASCII.string input = ASCII.fromBytes(file.readAll())
         // second, build the matrices
-        null|(Matrix, Matrix) AxB = parseFile(input)
+        null|Matrix A
+        null|Matrix B
+        //
+        A,B = parseFile(input)
         // third, sanity check we succeeded
-        if AxB is null:
+        if A is null || B is null:
             sys.out.println_s("error parsing input")
         else:
-            //
-            Matrix A, Matrix B = AxB
             // fourth, run the benchmark
             Matrix C = multiply(A,B)
             // finally, print the result!

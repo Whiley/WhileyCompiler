@@ -696,7 +696,7 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
-	public static abstract class IndirectFunctionOrMethodCall extends AbstractIndirectInvoke {
+	public static abstract class IndirectFunctionOrMethodCall extends AbstractIndirectInvoke implements Multi {
 		public IndirectFunctionOrMethodCall(Expr src, Collection<Expr> arguments,
 				Attribute... attributes) {
 			super(src,arguments,attributes);
@@ -708,6 +708,10 @@ public interface Expr extends SyntacticElement {
 		}
 
 		public abstract Nominal.FunctionOrMethod type();
+		
+		public List<Nominal> returns() {
+			return type().returns();
+		}
 	}
 	
 	public static class IndirectMethodCall extends IndirectFunctionOrMethodCall {
@@ -724,12 +728,16 @@ public interface Expr extends SyntacticElement {
 		}
 
 		public Nominal result() {
-			return methodType.returns().get(0);
+			if(methodType.returns().size() == 1) {
+				return methodType.returns().get(0);
+			} else {
+				throw new IllegalArgumentException("incorrect number of returns for indirect method call");
+			}			
 		}
 		
 		public Nominal.FunctionOrMethod type() {
 			return methodType;
-		}
+		}		
 	}
 
 	public static class IndirectFunctionCall extends IndirectFunctionOrMethodCall {
@@ -746,7 +754,11 @@ public interface Expr extends SyntacticElement {
 		}
 
 		public Nominal result() {
-			return functionType.returns().get(0);
+			if(functionType.returns().size() == 1) {
+				return functionType.returns().get(0);
+			} else {
+				throw new IllegalArgumentException("incorrect number of returns for indirect function call");
+			}
 		}
 		
 		public Nominal.FunctionOrMethod type() {
