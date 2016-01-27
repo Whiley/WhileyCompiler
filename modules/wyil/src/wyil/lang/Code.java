@@ -209,13 +209,22 @@ public interface Code {
 		}
 
 		/**
-		 * Return the target register assigned by this bytecode.
+		 * Return a specific target register assigned by this bytecode.
+		 *
+		 * @return
+		 */
+		public int target(int i) {
+			return targets[0];
+		}
+		
+		/**
+		 * Return the target registers assigned by this bytecode.
 		 *
 		 * @return
 		 */
 		public int[] targets() {
 			return targets;
-		}
+		}		
 	}
 
 	/**
@@ -230,10 +239,16 @@ public interface Code {
 	 */
 	public static abstract class AbstractMultiNaryAssignable<T> extends
 			AbstractAssignable {
-		protected final T[] types;
+		protected final Type[] types;
 		protected final int[] operands;
 
-		public AbstractMultiNaryAssignable(T[] types, int[] targets, int[] operands) {
+		public AbstractMultiNaryAssignable(Type type, int target, int... operands) {
+			super(target);			
+			this.types = new Type[]{type};
+			this.operands = operands;
+		}
+		
+		public AbstractMultiNaryAssignable(Type[] types, int[] targets, int[] operands) {
 			super(targets);			
 			this.types = types;
 			this.operands = operands;
@@ -245,7 +260,7 @@ public interface Code {
 				registers.add(targets()[i]);
 			}
 			for (int i = 0; i != operands().length; ++i) {
-				registers.add(operands()[i]);
+				registers.add(operands[i]);
 			}
 		}
 
@@ -260,13 +275,15 @@ public interface Code {
 		}
 
 		protected abstract Code.Unit clone(int[] nTargets, int[] nOperands);
-
+		
+		@Override
 		public int hashCode() {
 			return Arrays.hashCode(types) + Arrays.hashCode(targets()) + Arrays.hashCode(operands());
 		}
 
+		@Override
 		public boolean equals(Object o) {
-			if (o instanceof AbstractNaryAssignable) {
+			if (o instanceof AbstractMultiNaryAssignable) {
 				AbstractMultiNaryAssignable bo = (AbstractMultiNaryAssignable) o;
 				return Arrays.equals(targets(), bo.targets()) && Arrays.equals(operands(), bo.operands())
 						&& Arrays.equals(types, bo.types);
@@ -274,12 +291,12 @@ public interface Code {
 			return false;
 		}
 
-		public T[] types() {
+		public Type[] types() {
 			return types;
 		}
 		
 		public T type(int i) {
-			return types[i];
+			return (T) types[i];
 		}
 
 		public int[] operands() {
@@ -295,90 +312,7 @@ public interface Code {
 			return operands[i];
 		}	
 	}
-	
-	/**
-	 * Represents the set of all bytecodes which take an arbitrary number of
-	 * register operands and write a result to the target register.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 *            --- the type associated with this bytecode.
-	 */
-	public static abstract class AbstractNaryAssignable<T> extends
-			AbstractAssignable {
-		protected final T type;
-		protected final int[] operands;
-
-		public AbstractNaryAssignable(T type, int target, int... operands) {
-			super(target);
-			if (type == null) {
-				throw new IllegalArgumentException(
-						"AbstractBinOp type argument cannot be null");
-			}
-			this.type = type;
-			this.operands = operands;
-		}
-
-		@Override
-		public final void registers(java.util.Set<Integer> registers) {
-			if (target() >= 0) {
-				registers.add(target());
-			}
-			for (int i = 0; i != operands().length; ++i) {
-				registers.add(operands()[i]);
-			}
-		}
-
-		@Override
-		public final Code.Unit remap(Map<Integer, Integer> binding) {
-			Integer nTarget = binding.get(target());
-			int[] nOperands = remapOperands(binding, operands());
-			if (nTarget != null || nOperands != operands()) {
-				nTarget = nTarget != null ? nTarget : target();
-				return clone(nTarget, nOperands);
-			}
-			return this;
-		}
-
-		protected abstract Code.Unit clone(int nTarget, int[] nOperands);
-
-		public int hashCode() {
-			return type().hashCode() + target() + Arrays.hashCode(operands());
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof AbstractNaryAssignable) {
-				AbstractNaryAssignable bo = (AbstractNaryAssignable) o;
-				return target() == bo.target()
-						&& Arrays.equals(operands(), bo.operands())
-						&& type().equals(bo.type());
-			}
-			return false;
-		}
-
-		public int target() {
-			return targets()[0];
-		}
 		
-		public T type() {
-			return type;
-		}
-
-		public int[] operands() {
-			return operands;
-		}
-
-		/**
-		 * Return the ith operand read by this bytecode.
-		 * @param i
-		 * @return
-		 */
-		public int operand(int i) {
-			return operands[i];
-		}
-	}
-
 	/**
 	 * Represents the set of all bytcodes which take a single register operand
 	 * and assign a result to the target register.
@@ -388,10 +322,9 @@ public interface Code {
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
-	public static abstract class AbstractUnaryAssignable<T> extends
-			AbstractNaryAssignable<T> {
+	public static abstract class AbstractUnaryAssignable<T> extends AbstractMultiNaryAssignable<T> {
 
-		public AbstractUnaryAssignable(T type, int target, int operand) {
+		public AbstractUnaryAssignable(Type type, int target, int operand) {
 			super(type,target,operand);
 			if (type == null) {
 				throw new IllegalArgumentException(
@@ -460,12 +393,9 @@ public interface Code {
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
-	public static abstract class AbstractBinaryAssignable<T> extends
-			AbstractNaryAssignable<T> {
-
-		public AbstractBinaryAssignable(T type, int target, int leftOperand,
-				int rightOperand) {
-			super(type,target,leftOperand,rightOperand);
+	public static abstract class AbstractBinaryAssignable<T> extends AbstractMultiNaryAssignable<T> {
+		public AbstractBinaryAssignable(Type type, int target, int leftOperand, int rightOperand) {
+			super(type, target, leftOperand, rightOperand);
 		}
 	}
 

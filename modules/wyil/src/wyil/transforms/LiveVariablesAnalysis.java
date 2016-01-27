@@ -194,10 +194,10 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 				// In the normal case, this bytecode is considered live if the
 				// assigned register is live. However, in the case of an
 				// indirect assignment, then it is always considered live.
-				if(!(cu.type() instanceof Type.Reference)) {
+				if(!(cu.type(0) instanceof Type.Reference)) {
 					// No, this is not an indirect assignment through a
 					// reference
-					isLive = environment.contains(cu.target());
+					isLive = environment.contains(cu.target(0));
 				}
 			} else {
 				for(int target : aa.targets()) {
@@ -216,11 +216,13 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			Code.AbstractBinaryOp c = (Code.AbstractBinaryOp) code;
 			environment.add(c.leftOperand);
 			environment.add(c.rightOperand);
-		} else if ((isLive && code instanceof Code.AbstractNaryAssignable)
-				|| (code instanceof Codes.Invoke && ((Codes.Invoke) code).type() instanceof Type.Method)
-				|| (code instanceof Codes.IndirectInvoke && ((Codes.IndirectInvoke) code).type() instanceof Type.Method)) {
-			Code.AbstractNaryAssignable c = (Code.AbstractNaryAssignable) code;
-			for(int operand : c.operands()) {
+		} else if ((isLive && code instanceof Code.AbstractMultiNaryAssignable)
+				|| (code instanceof Codes.Invoke && ((Codes.Invoke) code).type(0) instanceof Type.Method)
+				|| (code instanceof Codes.IndirectInvoke
+						&& ((Codes.IndirectInvoke) code).type(0) instanceof Type.Method)) {
+			// FIXME: this seems to be a problem if there are no assigned variables!
+			Code.AbstractMultiNaryAssignable c = (Code.AbstractMultiNaryAssignable) code;
+			for (int operand : c.operands()) {
 				environment.add(operand);
 			}
 		} else if(!isLive) {

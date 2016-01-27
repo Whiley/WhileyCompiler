@@ -591,14 +591,12 @@ public final class WyilFileReader {
 			return readEmpty(opcode, wideBase, wideRest, offset, labels);
 		case Code.FMT_UNARYOP:
 			return readUnaryOp(opcode, wideBase, wideRest, offset, labels);
-		case Code.FMT_UNARYASSIGN:
-			return readUnaryAssign(opcode, wideBase, wideRest);
 		case Code.FMT_BINARYOP:
 			return readBinaryOp(opcode, wideBase, wideRest, offset, labels);
-		case Code.FMT_BINARYASSIGN:
-			return readBinaryAssign(opcode, wideBase, wideRest);
 		case Code.FMT_NARYOP:
 			return readNaryOp(opcode, wideBase, wideRest, offset, labels);
+		case Code.FMT_UNARYASSIGN:
+		case Code.FMT_BINARYASSIGN:
 		case Code.FMT_NARYASSIGN:
 			return readNaryAssign(opcode, wideBase, wideRest);				
 		case Code.FMT_OTHER:
@@ -677,60 +675,7 @@ public final class WyilFileReader {
 		int typeIdx = readRest(wideRest);
 		Type type = typePool[typeIdx];
 		switch (opcode) {
-		case Code.OPCODE_convert: {
-			int i = readRest(wideRest);
-			Type t = typePool[i];
-			return Codes.Convert(type, target, operand, t);
-		}
-		case Code.OPCODE_assign:
-			return Codes.Assign(type, target, operand);
-		case Code.OPCODE_dereference: {
-			if (!(type instanceof Type.Reference)) {
-				throw new RuntimeException("expected reference type");
-			}
-			return Codes.Dereference((Type.Reference) type, target, operand);
-		}
-		case Code.OPCODE_fieldload: {
-			if (!(type instanceof Type.EffectiveRecord)) {
-				throw new RuntimeException("expected record type");
-			}
-			int i = readRest(wideRest);
-			String field = stringPool[i];
-			return Codes.FieldLoad((Type.EffectiveRecord) type, target,
-					operand, field);
-		}
-		case Code.OPCODE_invert:
-			return Codes.Invert(type, target, operand);
-		case Code.OPCODE_newobject: {
-			if (!(type instanceof Type.Reference)) {
-				throw new RuntimeException("expected reference type");
-			}
-			return Codes.NewObject((Type.Reference) type, target, operand);
-		}
-		case Code.OPCODE_lengthof: {
-			if (!(type instanceof Type.EffectiveArray)) {
-				throw new RuntimeException("expected collection type");
-			}
-			return Codes.LengthOf((Type.EffectiveArray) type, target,
-					operand);
-		}
-		case Code.OPCODE_move:
-			return Codes.Move(type, target, operand);
-		case Code.OPCODE_neg:
-			return Codes.UnaryOperator(type, target, operand,
-					Codes.UnaryOperatorKind.NEG);
-		case Code.OPCODE_numerator:
-			return Codes.UnaryOperator(type, target, operand,
-					Codes.UnaryOperatorKind.NUMERATOR);
-		case Code.OPCODE_denominator:
-			return Codes.UnaryOperator(type, target, operand,
-					Codes.UnaryOperatorKind.DENOMINATOR);
-		case Code.OPCODE_not: {
-			if (!(type instanceof Type.Bool)) {
-				throw new RuntimeException("expected bool type");
-			}
-			return Codes.Not(target, operand);
-		}
+		
 
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
@@ -759,48 +704,6 @@ public final class WyilFileReader {
 			Codes.Comparator cop = Codes.Comparator.values()[opcode
 					- Code.OPCODE_ifeq];
 			return Codes.If(type, leftOperand, rightOperand, cop, l.label);
-		}
-		}
-		throw new RuntimeException("unknown opcode encountered (" + opcode
-				+ ")");
-	}
-
-	private Code readBinaryAssign(int opcode, boolean wideBase, boolean wideRest)
-			throws IOException {
-		int target = readBase(wideBase);
-		int leftOperand = readBase(wideBase);
-		int rightOperand = readBase(wideBase);
-		int typeIdx = readRest(wideRest);
-		Type type = typePool[typeIdx];
-		switch (opcode) {		
-		case Code.OPCODE_indexof: {
-			if (!(type instanceof Type.EffectiveArray)) {
-				throw new RuntimeException("expecting indexible type");
-			}
-			return Codes.IndexOf((Type.EffectiveArray) type, target,
-					leftOperand, rightOperand);
-		}
-		case Code.OPCODE_listgen: {
-			if (!(type instanceof Type.Array)) {
-				throw new RuntimeException("expecting list type");
-			}
-			return Codes.ArrayGenerator((Type.Array) type, target,
-					leftOperand, rightOperand);
-		}
-		case Code.OPCODE_add:
-		case Code.OPCODE_sub:
-		case Code.OPCODE_mul:
-		case Code.OPCODE_div:
-		case Code.OPCODE_rem:
-		case Code.OPCODE_bitwiseor:
-		case Code.OPCODE_bitwisexor:
-		case Code.OPCODE_bitwiseand:
-		case Code.OPCODE_lshr:
-		case Code.OPCODE_rshr: {
-			Codes.BinaryOperatorKind kind = Codes.BinaryOperatorKind.values()[opcode
-					- Code.OPCODE_add];
-			return Codes.BinaryOperator(type, target, leftOperand,
-					rightOperand, kind);
 		}
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
@@ -902,12 +805,89 @@ public final class WyilFileReader {
 		}
 		case Code.OPCODE_newlist: {
 			if (!(types[0] instanceof Type.Array)) {
-				throw new RuntimeException("expected list type");
+				throw new RuntimeException("expected array type");
 			} else if(targets.length != 1) {
 				throw new RuntimeException("expected exactly one target");
 			}
 			return Codes.NewArray((Type.Array) types[0], targets[0], operands);
-		}			
+		}
+		// Unary assignables
+		case Code.OPCODE_convert: {
+			int i = readRest(wideRest);
+			Type t = typePool[i];
+			return Codes.Convert(types[0], targets[0], operands[0], t);
+		}
+		case Code.OPCODE_assign:
+			return Codes.Assign(types[0], targets[0], operands[0]);
+		case Code.OPCODE_dereference: {
+			if (!(types[0] instanceof Type.Reference)) {
+				throw new RuntimeException("expected reference type");
+			}
+			return Codes.Dereference((Type.Reference) types[0], targets[0], operands[0]);
+		}
+		case Code.OPCODE_fieldload: {
+			if (!(types[0] instanceof Type.EffectiveRecord)) {
+				throw new RuntimeException("expected record type");
+			}
+			int i = readRest(wideRest);
+			String field = stringPool[i];
+			return Codes.FieldLoad((Type.EffectiveRecord) types[0], targets[0],
+					operands[0], field);
+		}
+		case Code.OPCODE_invert:
+			return Codes.Invert(types[0], targets[0], operands[0]);
+		case Code.OPCODE_newobject: {
+			if (!(types[0] instanceof Type.Reference)) {
+				throw new RuntimeException("expected reference type");
+			}
+			return Codes.NewObject((Type.Reference) types[0], targets[0], operands[0]);
+		}
+		case Code.OPCODE_lengthof: {
+			if (!(types[0] instanceof Type.EffectiveArray)) {
+				throw new RuntimeException("expected collection type");
+			}
+			return Codes.LengthOf((Type.EffectiveArray) types[0], targets[0], operands[0]);
+		}
+		case Code.OPCODE_move:
+			return Codes.Move(types[0], targets[0], operands[0]);
+		case Code.OPCODE_neg:
+			return Codes.UnaryOperator(types[0], targets[0], operands[0], Codes.UnaryOperatorKind.NEG);
+		case Code.OPCODE_numerator:
+			return Codes.UnaryOperator(types[0], targets[0], operands[0], Codes.UnaryOperatorKind.NUMERATOR);
+		case Code.OPCODE_denominator:
+			return Codes.UnaryOperator(types[0], targets[0], operands[0], Codes.UnaryOperatorKind.DENOMINATOR);
+		case Code.OPCODE_not: {
+			if (!(types[0] instanceof Type.Bool)) {
+				throw new RuntimeException("expected bool type");
+			}
+			return Codes.Not(targets[0], operands[0]);
+		}
+		// Binary Assignables
+		case Code.OPCODE_indexof: {
+			if (!(types[0] instanceof Type.EffectiveArray)) {
+				throw new RuntimeException("expecting indexible type");
+			}
+			return Codes.IndexOf((Type.EffectiveArray) types[0], targets[0], operands[0], operands[1]);
+		}
+		case Code.OPCODE_listgen: {
+			if (!(types[0] instanceof Type.Array)) {
+				throw new RuntimeException("expecting list type");
+			}
+			return Codes.ArrayGenerator((Type.Array) types[0], targets[0], operands[0], operands[1]);
+		}
+		case Code.OPCODE_add:
+		case Code.OPCODE_sub:
+		case Code.OPCODE_mul:
+		case Code.OPCODE_div:
+		case Code.OPCODE_rem:
+		case Code.OPCODE_bitwiseor:
+		case Code.OPCODE_bitwisexor:
+		case Code.OPCODE_bitwiseand:
+		case Code.OPCODE_lshr:
+		case Code.OPCODE_rshr: {
+			Codes.BinaryOperatorKind kind = Codes.BinaryOperatorKind.values()[opcode - Code.OPCODE_add];
+			return Codes.BinaryOperator(types[0], targets[0], operands[0], operands[1], kind);
+		}
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");

@@ -97,13 +97,10 @@ public class CoercionCheck implements Transform<WyilFile> {
 			Code code = block.get(i);
 			if (code instanceof Codes.Convert) {
 				Codes.Convert conv = (Codes.Convert) code;
-				check(conv.type(), conv.result,
-						new HashSet<Pair<Type, Type>>(), root.attribute(
-								new CodeBlock.Index(index, i),
-								SourceLocation.class));
+				check(conv.type(0), conv.result, new HashSet<Pair<Type, Type>>(),
+						root.attribute(new CodeBlock.Index(index, i), SourceLocation.class));
 			} else if (code instanceof CodeBlock) {
-				check(new CodeBlock.Index(index, i), (CodeBlock) code, root,
-						method);
+				check(new CodeBlock.Index(index, i), (CodeBlock) code, root, method);
 			}
 		}
 	}

@@ -201,21 +201,6 @@ public class DefiniteAssignmentCheck extends
 			if (in.contains(a.leftOperand) && in.contains(a.rightOperand)) {
 				return;
 			}
-		} else if(code instanceof Code.AbstractNaryAssignable) {
-			Code.AbstractNaryAssignable a = (Code.AbstractNaryAssignable) code;
-			for(int operand : a.operands()) {
-				if(operand != Codes.NULL_REG && !in.contains(operand)) {
-					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-	                        filename, rootBlock.attribute(index,SourceLocation.class));
-				}
-			}
-			if(code instanceof Codes.Update && !in.contains(a.target())) {
-				// In this case, we are assigning to an index or field.
-				// Therefore, the target register must already be defined.
-				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-                        filename, rootBlock.attribute(index,SourceLocation.class));
-			}
-			return;
 		} else if(code instanceof Code.AbstractMultiNaryAssignable) {
 			Code.AbstractMultiNaryAssignable a = (Code.AbstractMultiNaryAssignable) code;
 			for(int operand : a.operands()) {
@@ -223,7 +208,13 @@ public class DefiniteAssignmentCheck extends
 					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
 	                        filename, rootBlock.attribute(index,SourceLocation.class));
 				}
-			}			
+			}	
+			if(code instanceof Codes.Update && !in.contains(a.target(0))) {
+				// In this case, we are assigning to an index or field.
+				// Therefore, the target register must already be defined.
+				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
+                        filename, rootBlock.attribute(index,SourceLocation.class));
+			}
 			return;
 		} else {
 			// includes abstract-assignables and branching bytecodes
