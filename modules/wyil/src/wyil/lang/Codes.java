@@ -679,7 +679,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Const extends AbstractBytecode {
+	public static final class Const extends AbstractBytecode<Type> {
 		public final Constant constant;
 
 		private Const(int target, Constant constant) {
@@ -811,10 +811,10 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Debug extends AbstractUnaryOp<Type> {
+	public static final class Debug extends AbstractBytecode<Type> {
 
 		private Debug(int operand) {
-			super(Type.Array(Type.T_INT,false), operand);
+			super(new Type[]{Type.Array(Type.T_INT,false)}, new int[0], operand);
 		}
 
 		public int opcode() {
@@ -822,8 +822,8 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int nOperand) {
-			return Debug(nOperand);
+		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+			return Debug(nOperands[0]);
 		}
 
 		public boolean equals(Object o) {
@@ -831,7 +831,7 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "debug %" + operand + " " + " : " + type;
+			return "debug %" + operands[0] + " " + " : " + types[0];
 		}
 	}
 
@@ -1152,13 +1152,13 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class If extends AbstractBinaryOp<Type> {
+	public static final class If extends AbstractBytecode<Type> {
 		public final String target;
 		public final Comparator op;
 
 		private If(Type type, int leftOperand, int rightOperand, Comparator op,
 				String target) {
-			super(type, leftOperand, rightOperand);
+			super(new Type[]{type}, new int[0], leftOperand, rightOperand);
 			if (op == null) {
 				throw new IllegalArgumentException(
 						"IfGoto op argument cannot be null");
@@ -1176,7 +1176,7 @@ public abstract class Codes {
 			if (nlabel == null) {
 				return this;
 			} else {
-				return If(type, leftOperand, rightOperand, op, nlabel);
+				return If(types[0], operands[0], operands[1], op, nlabel);
 			}
 		}
 
@@ -1185,8 +1185,8 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int nLeftOperand, int nRightOperand) {
-			return If(type, nLeftOperand, nRightOperand, op, target);
+		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+			return If(types[0], nOperands[0], nOperands[1], op, target);
 		}
 
 		public int hashCode() {
@@ -1207,8 +1207,7 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "if" + op + " %" + leftOperand + ", %" + rightOperand
-					+ " goto " + target + " : " + type;
+			return "if" + op + " %" + operands[0] + ", %" + operands[1] + " goto " + target + " : " + types[0];
 		}
 	}
 
@@ -1299,13 +1298,13 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class IfIs extends AbstractUnaryOp<Type> {
+	public static final class IfIs extends AbstractBytecode<Type> {
 		public final String target;
 		public final Type rightOperand;
 
 		private IfIs(Type type, int leftOperand, Type rightOperand,
 				String target) {
-			super(type, leftOperand);
+			super(new Type[]{type}, new int[0], leftOperand);
 			if (rightOperand == null) {
 				throw new IllegalArgumentException(
 						"IfIs test argument cannot be null");
@@ -1327,19 +1326,15 @@ public abstract class Codes {
 			if (nlabel == null) {
 				return this;
 			} else {
-				return IfIs(type, operand, rightOperand, nlabel);
+				return IfIs(types[0], operands[0], rightOperand, nlabel);
 			}
 		}
 
 		@Override
-		public Code.Unit clone(int nOperand) {
-			return IfIs(type, nOperand, rightOperand, target);
+		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+			return IfIs(types[0], nOperands[0], rightOperand, target);
 		}
-
-		public int hashCode() {
-			return type.hashCode() + +target.hashCode() + super.hashCode();
-		}
-
+		
 		public boolean equals(Object o) {
 			if (o instanceof IfIs) {
 				IfIs ig = (IfIs) o;
@@ -1350,10 +1345,8 @@ public abstract class Codes {
 		}
 
 		public String toString() {
-			return "ifis" + " %" + operand + ", " + rightOperand + " goto "
-					+ target + " : " + type;
+			return "ifis" + " %" + operands[0] + ", " + rightOperand + " goto " + target + " : " + types[0];
 		}
-
 	}
 
 	/**
@@ -2645,13 +2638,13 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Switch extends AbstractUnaryOp<Type> {
+	public static final class Switch extends AbstractBytecode<Type> {
 		public final ArrayList<Pair<Constant, String>> branches;
 		public final String defaultTarget;
 
 		Switch(Type type, int operand, String defaultTarget,
 				Collection<Pair<Constant, String>> branches) {
-			super(type, operand);
+			super(new Type[]{type}, new int[0], operand);
 			this.branches = new ArrayList<Pair<Constant, String>>(branches);
 			this.defaultTarget = defaultTarget;
 		}
@@ -2674,23 +2667,18 @@ public abstract class Codes {
 
 			String nlabel = labels.get(defaultTarget);
 			if (nlabel == null) {
-				return Switch(type, operand, defaultTarget, nbranches);
+				return Switch(types[0], operands[0], defaultTarget, nbranches);
 			} else {
-				return Switch(type, operand, nlabel, nbranches);
+				return Switch(types[0], operands[0], nlabel, nbranches);
 			}
-		}
-
-		public int hashCode() {
-			return type.hashCode() + operand + defaultTarget.hashCode()
-					+ branches.hashCode();
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Switch) {
 				Switch ig = (Switch) o;
-				return operand == ig.operand
+				return operands[0] == ig.operands[0]
 						&& defaultTarget.equals(ig.defaultTarget)
-						&& branches.equals(ig.branches) && type.equals(ig.type);
+						&& branches.equals(ig.branches) && types[0].equals(ig.types[0]);
 			}
 			return false;
 		}
@@ -2706,12 +2694,12 @@ public abstract class Codes {
 				table += p.first() + "->" + p.second();
 			}
 			table += ", *->" + defaultTarget;
-			return "switch %" + operand + " " + table;
+			return "switch %" + operands[0] + " " + table;
 		}
 
 		@Override
-		public Code.Unit clone(int nOperand) {
-			return new Switch(type, nOperand, defaultTarget, branches);
+		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+			return new Switch(types[0], nOperands[0], defaultTarget, branches);
 		}
 
 	}

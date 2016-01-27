@@ -1286,8 +1286,7 @@ public class VcGenerator {
 		VcBranch trueBranch = branch.fork();
 		VcBranch falseBranch = branch.fork();
 		// Second assume the condition on each branch
-		Expr.Binary trueTest = buildTest(code.op, code.leftOperand,
-				code.rightOperand, code.type, block, trueBranch);
+		Expr.Binary trueTest = buildTest(code.op, code.operand(0), code.operand(1), code.type(0), block, trueBranch);
 		trueBranch.assume(trueTest);
 		falseBranch.assume(invert(trueTest));
 		// Third, dispatch branches to their targets
@@ -1331,9 +1330,9 @@ public class VcGenerator {
 		SyntacticType trueType = convert(code.rightOperand, attributes);
 		SyntacticType falseType = new SyntacticType.Negation(convert(code.rightOperand,
 				attributes), wycsAttributes);
-		trueBranch.assume(new Expr.Is(branch.read(code.operand), trueType,
+		trueBranch.assume(new Expr.Is(branch.read(code.operand(0)), trueType,
 				wycsAttributes));
-		falseBranch.assume(new Expr.Is(branch.read(code.operand), falseType,
+		falseBranch.assume(new Expr.Is(branch.read(code.operand(0)), falseType,
 				wycsAttributes));
 		// Finally dispatch the branches
 		falseBranch.goTo(branch.pc().next());
@@ -1375,7 +1374,7 @@ public class VcGenerator {
 			Constant caseValue = code.branches.get(i).first();
 			// Second, on the new branch we need assume that the variable being
 			// switched on matches the given value.
-			Expr src = branch.read(code.operand);
+			Expr src = branch.read(code.operand(0));
 			Expr constant = new Expr.Constant(
 					convert(caseValue, block, branch),
 					toWycsAttributes(block.attributes(branch.pc())));

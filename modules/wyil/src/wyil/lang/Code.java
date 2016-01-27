@@ -221,7 +221,7 @@ public interface Code {
 			this.operands = operands;
 		}
 		
-		public AbstractBytecode(Type[] types, int[] targets, int[] operands) {			
+		public AbstractBytecode(Type[] types, int[] targets, int... operands) {			
 			this.types = types;
 			this.targets = targets;
 			this.operands = operands;
@@ -308,120 +308,7 @@ public interface Code {
 			return operands[i];
 		}	
 	}	
-
-	/**
-	 * Represents the set of all bytcodes which take a single register operand,
-	 * and do not assign to a target register.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 *            --- the type associated with this bytecode.
-	 */
-	public static abstract class AbstractUnaryOp<T> extends Code.Unit {
-		public final T type;
-		public final int operand;
-
-		public AbstractUnaryOp(T type, int operand) {
-			if (type == null) {
-				throw new IllegalArgumentException(
-						"AbstractUnaryOp type argument cannot be null");
-			}
-			this.type = type;
-			this.operand = operand;
-		}
-
-		@Override
-		public final void registers(java.util.Set<Integer> registers) {
-			registers.add(operand);
-		}
-
-		@Override
-		public final Code.Unit remap(Map<Integer, Integer> binding) {
-			Integer nOperand = binding.get(operand);
-			if (nOperand != null) {
-				return clone(nOperand);
-			}
-			return this;
-		}
-
-		protected abstract Code.Unit clone(int nOperand);
-
-		public int hashCode() {
-			return type.hashCode() + operand;
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof AbstractUnaryOp) {
-				AbstractUnaryOp bo = (AbstractUnaryOp) o;
-				return operand == bo.operand && type.equals(bo.type);
-			}
-			return false;
-		}
-	}
-
-	/**
-	 * Represents the set of all bytcodes which take two register operands and
-	 * perform a comparison of their values.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 *            --- the type associated with this bytecode.
-	 */
-	public static abstract class AbstractBinaryOp<T> extends Code.Unit {
-		public final T type;
-		public final int leftOperand;
-		public final int rightOperand;
-
-		public AbstractBinaryOp(T type, int leftOperand, int rightOperand) {
-			if (type == null) {
-				throw new IllegalArgumentException(
-						"AbstractBinCond type argument cannot be null");
-			}
-			this.type = type;
-			this.leftOperand = leftOperand;
-			this.rightOperand = rightOperand;
-		}
-
-		@Override
-		public final void registers(java.util.Set<Integer> registers) {
-			registers.add(leftOperand);
-			registers.add(rightOperand);
-		}
-
-		@Override
-		public final Code.Unit remap(Map<Integer, Integer> binding) {
-			Integer nLeftOperand = binding.get(leftOperand);
-			Integer nRightOperand = binding.get(rightOperand);
-			if (nLeftOperand != null || nRightOperand != null) {
-				nLeftOperand = nLeftOperand != null ? nLeftOperand
-						: leftOperand;
-				nRightOperand = nRightOperand != null ? nRightOperand
-						: rightOperand;
-				return clone(nLeftOperand, nRightOperand);
-			}
-			return this;
-		}
-
-		protected abstract Code.Unit clone(int nLeftOperand, int nRightOperand);
-
-		public int hashCode() {
-			return type.hashCode() + leftOperand + rightOperand;
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof AbstractBinaryOp) {
-				AbstractBinaryOp bo = (AbstractBinaryOp) o;
-				return leftOperand == bo.leftOperand
-						&& rightOperand == bo.rightOperand
-						&& type.equals(bo.type);
-			}
-			return false;
-		}
-	}
-
-
+	
 	// =========================================================================
 	// Opcodes
 	// =========================================================================

@@ -601,7 +601,7 @@ public class Interpreter {
 	private Object execute(Codes.Debug bytecode, Constant[] frame,
 			Context context) {
 		//
-		Constant.Array list = (Constant.Array) frame[bytecode.operand];
+		Constant.Array list = (Constant.Array) frame[bytecode.operand(0)];
 		for (Constant item : list.values) {
 			BigInteger b = ((Constant.Integer) item).value;
 			char c = (char) b.intValue();
@@ -675,8 +675,8 @@ public class Interpreter {
 	}
 
 	private Object execute(Codes.If bytecode, Constant[] frame, Context context) {
-		Constant op1 = frame[bytecode.leftOperand];
-		Constant op2 = frame[bytecode.rightOperand];
+		Constant op1 = frame[bytecode.operand(0)];
+		Constant op2 = frame[bytecode.operand(1)];
 		boolean result;
 		switch (bytecode.op) {
 		// Handle cases which apply to all values
@@ -741,10 +741,9 @@ public class Interpreter {
 		}
 	}
 
-	private Object execute(Codes.IfIs bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.IfIs bytecode, Constant[] frame, Context context) {
 		Type typeOperand = bytecode.rightOperand;
-		Constant op = frame[bytecode.operand];
+		Constant op = frame[bytecode.operand(0)];
 		if (isMemberOfType(op, typeOperand, context)) {
 			return context.getLabel(bytecode.target);
 		}
@@ -1205,8 +1204,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.Return bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Return bytecode, Constant[] frame, Context context) {
 		int[] operands = bytecode.operands();
 		Constant[] returns = new Constant[operands.length];
 		for(int i=0;i!=operands.length;++i) {
@@ -1215,10 +1213,9 @@ public class Interpreter {
 		return returns;
 	}
 
-	private Object execute(Codes.Switch bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Switch bytecode, Constant[] frame, Context context) {
 		//
-		Constant operand = frame[bytecode.operand];
+		Constant operand = frame[bytecode.operand(0)];
 		for (Pair<Constant, String> branch : bytecode.branches) {
 			Constant caseOperand = cleanse(branch.first(), context);
 			if (caseOperand.equals(operand)) {

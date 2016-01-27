@@ -896,8 +896,7 @@ public class Wyil2JavaBuilder implements Builder {
 
 		if (canUseSwitchBytecode) {
 			JvmType.Function ftype = new JvmType.Function(T_INT);
-			bytecodes.add(new Bytecode.Load(c.operand,
-					convertUnderlyingType((Type) c.type)));
+			bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0))));
 			bytecodes.add(new Bytecode.Invoke(WHILEYINT, "intValue", ftype,
 					Bytecode.InvokeMode.VIRTUAL));
 			bytecodes.add(new Bytecode.Switch(c.defaultTarget, cases));
@@ -908,8 +907,7 @@ public class Wyil2JavaBuilder implements Builder {
 				Constant value = p.first();
 				String target = p.second();
 				translate(value, freeSlot, bytecodes);
-				bytecodes.add(new Bytecode.Load(c.operand,
-						convertUnderlyingType(c.type)));
+				bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0))));
 				translateIfGoto(index, value.type(), Codes.Comparator.EQ,
 						target, freeSlot + 1, bytecodes);
 			}
@@ -917,13 +915,11 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 
-	private void translateIfGoto(CodeBlock.Index index, Codes.If code,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-		JvmType jt = convertUnderlyingType(code.type);
-		bytecodes.add(new Bytecode.Load(code.leftOperand, jt));
-		bytecodes.add(new Bytecode.Load(code.rightOperand, jt));
-		translateIfGoto(index, code.type, code.op, code.target, freeSlot,
-				bytecodes);
+	private void translateIfGoto(CodeBlock.Index index, Codes.If code, int freeSlot, ArrayList<Bytecode> bytecodes) {
+		JvmType jt = convertUnderlyingType(code.type(0));
+		bytecodes.add(new Bytecode.Load(code.operand(0), jt));
+		bytecodes.add(new Bytecode.Load(code.operand(1), jt));
+		translateIfGoto(index, code.type(0), code.op, code.target, freeSlot, bytecodes);
 	}
 
 	private void translateIfGoto(CodeBlock.Index index, Type c_type,
@@ -1061,36 +1057,29 @@ public class Wyil2JavaBuilder implements Builder {
 		// matching the underlying type towards the step label. At that point,
 		// we need to check whether the necessary constrained (if applicable)
 		// are met.
-		bytecodes.add(new Bytecode.Load(c.operand,
-				convertUnderlyingType(c.type)));
+		bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0))));
 		translateTypeTest(falseLabel, underlyingType, constants, bytecodes);
 		
 		// Third, update the type of the variable on the true branch. This is
 		// the intersection of its original type with that of the test to
 		// produce the most precise type possible.
-		Type typeOnTrueBranch = Type.intersect(c.type, underlyingType);
-		bytecodes.add(new Bytecode.Load(c.operand,
-				convertUnderlyingType(c.type)));
+		Type typeOnTrueBranch = Type.intersect(c.type(0), underlyingType);
+		bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0))));
 		addReadConversion(typeOnTrueBranch, bytecodes);
-		bytecodes.add(new Bytecode.Store(c.operand,
-				convertUnderlyingType(typeOnTrueBranch)));
+		bytecodes.add(new Bytecode.Store(c.operand(0), convertUnderlyingType(typeOnTrueBranch)));
 
 		// Fourth handle constrained types by invoking a function which will
 		// execute any and all constraints associated with the type. For
 		// recursive types, this may result in recursive calls.
-		translateInvariantTest(falseLabel, c.rightOperand, c.operand, freeSlot,
-				constants, bytecodes);
+		translateInvariantTest(falseLabel, c.rightOperand, c.operand(0), freeSlot, constants, bytecodes);
 		bytecodes.add(new Bytecode.Goto(c.target));
 		// Finally, construct false branch and retype the variable on the false
 		// branch to ensure it has the most precise type we know at this point.
 		bytecodes.add(new Bytecode.Label(falseLabel));
-		Type typeOnFalseBranch = Type.intersect(c.type,
-				Type.Negation(maximalConsumedType));
-		bytecodes.add(new Bytecode.Load(c.operand,
-				convertUnderlyingType(c.type)));
+		Type typeOnFalseBranch = Type.intersect(c.type(0), Type.Negation(maximalConsumedType));
+		bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0))));
 		addReadConversion(typeOnFalseBranch, bytecodes);
-		bytecodes.add(new Bytecode.Store(c.operand,
-				convertUnderlyingType(typeOnFalseBranch)));
+		bytecodes.add(new Bytecode.Store(c.operand(0), convertUnderlyingType(typeOnFalseBranch)));
 	}
 
 	// The purpose of this method is to translate a type test. We're testing to
@@ -1302,9 +1291,8 @@ public class Wyil2JavaBuilder implements Builder {
 	private void translate(CodeBlock.Index index, Codes.Debug c, int freeSlot,
 			ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(T_VOID, WHILEYARRAY);
-		bytecodes.add(new Bytecode.Load(c.operand, WHILEYARRAY));
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "print", ftype,
-				Bytecode.InvokeMode.STATIC));
+		bytecodes.add(new Bytecode.Load(c.operand(0), WHILEYARRAY));
+		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "print", ftype, Bytecode.InvokeMode.STATIC));
 	}
 
 	private void translate(CodeBlock.Index index, Codes.Assign c, int freeSlot,

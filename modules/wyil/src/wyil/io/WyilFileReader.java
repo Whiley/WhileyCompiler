@@ -588,17 +588,15 @@ public final class WyilFileReader {
 
 		switch (fmt) {
 		case Code.FMT_EMPTY:
-			return readEmpty(opcode, wideBase, wideRest, offset, labels);
-		case Code.FMT_UNARYOP:
-			return readUnaryOp(opcode, wideBase, wideRest, offset, labels);
-		case Code.FMT_BINARYOP:
-			return readBinaryOp(opcode, wideBase, wideRest, offset, labels);
+			return readEmpty(opcode, wideBase, wideRest, offset, labels);										
 		case Code.FMT_NARYOP:
 			return readNaryOp(opcode, wideBase, wideRest, offset, labels);
+		case Code.FMT_UNARYOP:
+		case Code.FMT_BINARYOP:
 		case Code.FMT_UNARYASSIGN:
 		case Code.FMT_BINARYASSIGN:
 		case Code.FMT_NARYASSIGN:
-			return readNaryAssign(opcode, wideBase, wideRest);				
+			return readNaryAssign(opcode, wideBase, wideRest, offset, labels);				
 		case Code.FMT_OTHER:
 			return readOther(opcode, wideBase, wideRest, offset, labels);
 		default:
@@ -621,69 +619,6 @@ public final class WyilFileReader {
 		}
 		case Code.OPCODE_nop:
 			return Codes.Nop;
-		}
-		throw new RuntimeException("unknown opcode encountered (" + opcode
-				+ ")");
-	}
-
-	private Code readUnaryOp(int opcode, boolean wideBase, boolean wideRest,
-			int offset, HashMap<Integer, Codes.Label> labels)
-			throws IOException {
-		int operand = readBase(wideBase);
-		int typeIdx = readRest(wideRest);
-		Type type = typePool[typeIdx];
-		switch (opcode) {
-		case Code.OPCODE_debug:
-			return Codes.Debug(operand);
-		case Code.OPCODE_ifis: {
-			int resultIdx = readRest(wideRest);
-			Type result = typePool[resultIdx];
-			int target = readTarget(wideRest, offset);
-			Codes.Label l = findLabel(target, labels);
-			return Codes.IfIs(type, operand, result, l.label);
-		}
-		case Code.OPCODE_switch: {
-			ArrayList<Pair<Constant, String>> cases = new ArrayList<Pair<Constant, String>>();
-			int target = readTarget(wideRest, offset);
-			Codes.Label defaultLabel = findLabel(target, labels);
-			int nCases = readRest(wideRest);
-			for (int i = 0; i != nCases; ++i) {
-				int constIdx = readRest(wideRest);
-				Constant constant = constantPool[constIdx];
-				target = readTarget(wideRest, offset);
-				Codes.Label l = findLabel(target, labels);
-				cases.add(new Pair<Constant, String>(constant, l.label));
-			}
-			return Codes.Switch(type, operand, defaultLabel.label, cases);
-		}
-		}
-		throw new RuntimeException("unknown opcode encountered (" + opcode
-				+ ")");
-	}
-
-	private Code readBinaryOp(int opcode, boolean wideBase, boolean wideRest,
-			int offset, HashMap<Integer, Codes.Label> labels)
-			throws IOException {
-		int leftOperand = readBase(wideBase);
-		int rightOperand = readBase(wideBase);
-		int typeIdx = readRest(wideRest);
-		Type type = typePool[typeIdx];
-		switch (opcode) {
-		case Code.OPCODE_ifeq:
-		case Code.OPCODE_ifne:
-		case Code.OPCODE_iflt:
-		case Code.OPCODE_ifle:
-		case Code.OPCODE_ifgt:
-		case Code.OPCODE_ifge:
-		case Code.OPCODE_ifel:
-		case Code.OPCODE_ifss:
-		case Code.OPCODE_ifse: {
-			int target = readTarget(wideRest, offset);
-			Codes.Label l = findLabel(target, labels);
-			Codes.Comparator cop = Codes.Comparator.values()[opcode
-					- Code.OPCODE_ifeq];
-			return Codes.If(type, leftOperand, rightOperand, cop, l.label);
-		}
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
@@ -718,8 +653,8 @@ public final class WyilFileReader {
 				+ ")");
 	}
 
-	private Code readNaryAssign(int opcode, boolean wideBase, boolean wideRest)
-			throws IOException {		
+	private Code readNaryAssign(int opcode, boolean wideBase, boolean wideRest, int offset,
+			HashMap<Integer, Codes.Label> labels) throws IOException {
 		int nTargets = readBase(wideBase);
 		int nOperands = readBase(wideBase);
 		int nTypes = readBase(wideBase);		
@@ -871,6 +806,45 @@ public final class WyilFileReader {
 			int idx = readRest(wideRest);
 			Constant c = constantPool[idx];
 			return Codes.Const(targets[0], c);
+		}
+		// Unary operations
+		case Code.OPCODE_debug:
+			return Codes.Debug(operands[0]);
+		case Code.OPCODE_ifis: {
+			int resultIdx = readRest(wideRest);
+			Type result = typePool[resultIdx];
+			int target = readTarget(wideRest, offset);
+			Codes.Label l = findLabel(target, labels);
+			return Codes.IfIs(types[0], operands[0], result, l.label);
+		}
+		case Code.OPCODE_switch: {
+			ArrayList<Pair<Constant, String>> cases = new ArrayList<Pair<Constant, String>>();
+			int target = readTarget(wideRest, offset);
+			Codes.Label defaultLabel = findLabel(target, labels);
+			int nCases = readRest(wideRest);
+			for (int i = 0; i != nCases; ++i) {
+				int constIdx = readRest(wideRest);
+				Constant constant = constantPool[constIdx];
+				target = readTarget(wideRest, offset);
+				Codes.Label l = findLabel(target, labels);
+				cases.add(new Pair<Constant, String>(constant, l.label));
+			}
+			return Codes.Switch(types[0], operands[0], defaultLabel.label, cases);
+		}
+		// Binary operators
+		case Code.OPCODE_ifeq:
+		case Code.OPCODE_ifne:
+		case Code.OPCODE_iflt:
+		case Code.OPCODE_ifle:
+		case Code.OPCODE_ifgt:
+		case Code.OPCODE_ifge:
+		case Code.OPCODE_ifel:
+		case Code.OPCODE_ifss:
+		case Code.OPCODE_ifse: {
+			int target = readTarget(wideRest, offset);
+			Codes.Label l = findLabel(target, labels);
+			Codes.Comparator cop = Codes.Comparator.values()[opcode - Code.OPCODE_ifeq];
+			return Codes.If(types[0], operands[0], operands[1], cop, l.label);
 		}
 		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode

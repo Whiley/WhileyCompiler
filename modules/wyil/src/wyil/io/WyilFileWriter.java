@@ -521,18 +521,7 @@ public final class WyilFileWriter {
 		// second, deal with standard instruction formats		
 		output.write_u8(code.opcode());
 
-		if(code instanceof Code.AbstractUnaryOp) {
-			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
-			if(a.operand != Codes.NULL_REG) {
-				writeBase(wide,a.operand,output);
-			} else {
-				// possible only for empty return
-			}
-		} else if(code instanceof Code.AbstractBinaryOp) {
-			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
-			writeBase(wide,a.leftOperand,output);
-			writeBase(wide,a.rightOperand,output);
-		} else if(code instanceof Code.AbstractBytecode) {
+		if(code instanceof Code.AbstractBytecode) {
 			Code.AbstractBytecode<Type> a = (Code.AbstractBytecode) code;			
 			int[] targets = a.targets();
 			int[] operands = a.operands();
@@ -611,17 +600,6 @@ public final class WyilFileWriter {
 	private void writeRest(boolean wide, Code code, int offset,
 			HashMap<String, Integer> labels, BinaryOutputStream output) throws IOException {
 
-		if(code instanceof Code.AbstractUnaryOp) {
-			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
-			if(a.operand != Codes.NULL_REG) {
-				writeRest(wide,typeCache.get(a.type),output);
-			} else {
-				// possible only for empty return
-			}
-		} else if(code instanceof Code.AbstractBinaryOp) {
-			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
-			writeRest(wide,typeCache.get(a.type),output);
-		}
 		// now deal with non-uniform instructions
 		// First, deal with special cases
 		if(code instanceof Codes.AssertOrAssume) {
@@ -742,15 +720,7 @@ public final class WyilFileWriter {
 		int maxBase = 0;
 		int maxRest = 0;
 
-		if(code instanceof Code.AbstractUnaryOp) {
-			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
-			maxBase = a.operand;
-			maxRest = typeCache.get(a.type);
-		} else if(code instanceof Code.AbstractBinaryOp) {
-			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
-			maxBase = Math.max(a.leftOperand,a.rightOperand);
-			maxRest = typeCache.get(a.type);
-		} else if(code instanceof Code.AbstractBytecode) {
+		if(code instanceof Code.AbstractBytecode) {
 			Code.AbstractBytecode<Type> a = (Code.AbstractBytecode) code;
 			Type[] types = a.types();
 			int[] targets = a.targets();
@@ -961,7 +931,6 @@ public final class WyilFileWriter {
 			addStringItem(c.field);
 		} else if(code instanceof Codes.IfIs) {
 			Codes.IfIs c = (Codes.IfIs) code;
-			addTypeItem(c.type);
 			addTypeItem(c.rightOperand);
 		} else if(code instanceof Codes.Invoke) {
 			Codes.Invoke c = (Codes.Invoke) code;
@@ -980,20 +949,13 @@ public final class WyilFileWriter {
 			}
 		} else if(code instanceof Codes.Switch) {
 			Codes.Switch s = (Codes.Switch) code;
-			addTypeItem(s.type);
 			for(Pair<Constant,String> b : s.branches) {
 				addConstantItem(b.first());
 			}
 		}
 
 		// Second, deal with standard cases
-		if(code instanceof Code.AbstractUnaryOp) {
-			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
-			addTypeItem(a.type);
-		} else if(code instanceof Code.AbstractBinaryOp) {
-			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
-			addTypeItem(a.type);
-		} else if(code instanceof Code.AbstractBytecode) {
+		if(code instanceof Code.AbstractBytecode) {
 			Code.AbstractBytecode<Type> a = (Code.AbstractBytecode) code;
 			for(Type type : a.types()) {
 				addTypeItem(type);

@@ -206,17 +206,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			}
 		}
 
-		if(isLive && code instanceof Code.AbstractUnaryOp) {
-			Code.AbstractUnaryOp c = (Code.AbstractUnaryOp) code;
-			if(c.operand != Codes.NULL_REG) {
-				// return bytecode has an optional operand.
-				environment.add(c.operand);
-			}
-		} else if(isLive && code instanceof Code.AbstractBinaryOp) {
-			Code.AbstractBinaryOp c = (Code.AbstractBinaryOp) code;
-			environment.add(c.leftOperand);
-			environment.add(c.rightOperand);
-		} else if ((isLive && code instanceof Code.AbstractBytecode)
+		if ((isLive && code instanceof Code.AbstractBytecode)
 				|| (code instanceof Codes.Invoke && ((Codes.Invoke) code).type(0) instanceof Type.Method)
 				|| (code instanceof Codes.IndirectInvoke
 						&& ((Codes.IndirectInvoke) code).type(0) instanceof Type.Method)) {
@@ -239,8 +229,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			Env falseEnv) {
 		Env r = join(trueEnv, falseEnv);
 
-		r.add(code.leftOperand);
-		r.add(code.rightOperand);
+		r.add(code.operand(0));
+		r.add(code.operand(1));
 
 		return r;
 	}
@@ -255,7 +245,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	public Env propagate(CodeBlock.Index index, Codes.IfIs code, Env trueEnv, Env falseEnv) {
 		Env r = join(trueEnv,falseEnv);
 
-		r.add(code.operand);
+		r.add(code.operand(0));
 
 		return r;
 	}
@@ -269,7 +259,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			environment = join(environment,environments.get(i));
 		}
 
-		environment.add(code.operand);
+		environment.add(code.operand(0));
 
 		return environment;
 	}
