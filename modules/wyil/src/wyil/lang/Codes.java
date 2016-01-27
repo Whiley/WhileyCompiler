@@ -523,7 +523,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class BinaryOperator extends AbstractBinaryAssignable<Type> {
+	public static final class BinaryOperator extends AbstractBytecode<Type> {
 		public final BinaryOperatorKind kind;
 
 		private BinaryOperator(Type type, int target, int lhs, int rhs,
@@ -605,7 +605,7 @@ public abstract class Codes {
 	 * </p>
 	 *
 	 */
-	public static final class Convert extends AbstractUnaryAssignable<Type> {
+	public static final class Convert extends AbstractBytecode<Type> {
 		public final Type result;
 
 		private Convert(Type from, int target, int operand, Type result) {
@@ -679,7 +679,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Const extends AbstractMultiNaryAssignable {
+	public static final class Const extends AbstractBytecode {
 		public final Constant constant;
 
 		private Const(int target, Constant constant) {
@@ -754,7 +754,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Assign extends AbstractUnaryAssignable<Type> {
+	public static final class Assign extends AbstractBytecode<Type> {
 
 		private Assign(Type type, int target, int operand) {
 			super(type, target, operand);
@@ -976,7 +976,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class FieldLoad extends AbstractUnaryAssignable<Type.EffectiveRecord> {
+	public static final class FieldLoad extends AbstractBytecode<Type.EffectiveRecord> {
 		public final String field;
 
 		private FieldLoad(Type.EffectiveRecord type, int target, int operand, String field) {
@@ -1372,7 +1372,7 @@ public abstract class Codes {
 	 *
 	 */
 	public static final class IndirectInvoke extends
-			AbstractMultiNaryAssignable<Type.FunctionOrMethod> {
+			AbstractBytecode<Type.FunctionOrMethod> {
 
 		/**
 		 * Construct an indirect invocation bytecode which assigns to an
@@ -1504,7 +1504,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Not extends AbstractUnaryAssignable<Type.Bool> {
+	public static final class Not extends AbstractBytecode<Type.Bool> {
 
 		private Not(int target, int operand) {
 			super(Type.T_BOOL, target, operand);
@@ -1577,7 +1577,7 @@ public abstract class Codes {
 	 *
 	 */
 	public static final class Invoke extends
-			AbstractMultiNaryAssignable<Type.FunctionOrMethod> {
+			AbstractBytecode<Type.FunctionOrMethod> {
 		public final NameID name;
 
 		private Invoke(Type.FunctionOrMethod type, int[] targets, int[] operands,
@@ -1618,7 +1618,7 @@ public abstract class Codes {
 	}
 
 	public static final class Lambda extends
-			AbstractMultiNaryAssignable<Type.FunctionOrMethod> {
+			AbstractBytecode<Type.FunctionOrMethod> {
 		public final NameID name;
 
 		private Lambda(Type.FunctionOrMethod type, int target, int[] operands,
@@ -1733,7 +1733,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class ArrayGenerator extends AbstractBinaryAssignable<Type.Array> {
+	public static final class ArrayGenerator extends AbstractBytecode<Type.Array> {
 
 		private ArrayGenerator(Type.Array type, int target, int element, int count) {
 			super(type, target, element, count);
@@ -1782,7 +1782,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class LengthOf extends AbstractUnaryAssignable<Type.EffectiveArray> {
+	public static final class LengthOf extends AbstractBytecode<Type.EffectiveArray> {
 		
 		private LengthOf(Type.EffectiveArray type, int target, int operand) {
 			super((Type) type, target, operand);
@@ -1837,7 +1837,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class IndexOf extends AbstractBinaryAssignable<Type.EffectiveArray> {
+	public static final class IndexOf extends AbstractBytecode<Type.EffectiveArray> {
 		
 		private IndexOf(Type.EffectiveArray type, int target,
 				int sourceOperand, int keyOperand) {
@@ -1898,7 +1898,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Move extends AbstractUnaryAssignable<Type> {
+	public static final class Move extends AbstractBytecode<Type> {
 
 		private Move(Type type, int target, int operand) {
 			super(type, target, operand);
@@ -2250,7 +2250,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Update extends AbstractMultiNaryAssignable<Type>
+	public static final class Update extends AbstractBytecode<Type>
 			implements Iterable<LVal> {
 		public final Type afterType;
 		public final ArrayList<String> fields;
@@ -2432,7 +2432,7 @@ public abstract class Codes {
 	 *
 	 */
 	public static final class NewRecord extends
-			AbstractMultiNaryAssignable<Type.Record> {
+			AbstractBytecode<Type.Record> {
 		
 		private NewRecord(Type.Record type, int target, int[] operands) {
 			super(type, target, operands);
@@ -2488,7 +2488,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class NewArray extends AbstractMultiNaryAssignable<Type.Array> {
+	public static final class NewArray extends AbstractBytecode<Type.Array> {
 
 		private NewArray(Type.Array type, int target, int[] operands) {
 			super(type, target, operands);
@@ -2567,7 +2567,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Return extends AbstractMultiNaryAssignable<Type> {
+	public static final class Return extends AbstractBytecode<Type> {
 
 		private Return(Type[] types, int... operands) {
 			super(types, new int[0], operands);			
@@ -2741,7 +2741,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Invert extends AbstractUnaryAssignable<Type> {
+	public static final class Invert extends AbstractBytecode<Type> {
 
 		private Invert(Type type, int target, int operand) {
 			super(type, target, operand);
@@ -2799,7 +2799,7 @@ public abstract class Codes {
 	 *
 	 */
 	public static final class NewObject extends
-			AbstractUnaryAssignable<Type.Reference> {
+			AbstractBytecode<Type.Reference> {
 
 		private NewObject(Type.Reference type, int target, int operand) {
 			super(type, target, operand);
@@ -2834,7 +2834,7 @@ public abstract class Codes {
 	 *
 	 */
 	public static final class Dereference extends
-			AbstractUnaryAssignable<Type.Reference> {
+			AbstractBytecode<Type.Reference> {
 
 		private Dereference(Type.Reference type, int target, int operand) {
 			super(type, target, operand);
@@ -2911,7 +2911,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class UnaryOperator extends AbstractUnaryAssignable<Type> {
+	public static final class UnaryOperator extends AbstractBytecode<Type> {
 		public final UnaryOperatorKind kind;
 
 		private UnaryOperator(Type type, int target, int operand, UnaryOperatorKind uop) {
@@ -2958,7 +2958,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Void extends AbstractMultiNaryAssignable<Type> {
+	public static class Void extends AbstractBytecode<Type> {
 
 		private Void(Type type, int[] operands) {
 			super(type, Codes.NULL_REG, operands);

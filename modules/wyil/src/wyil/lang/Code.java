@@ -69,29 +69,41 @@ import static wyil.lang.CodeUtils.*;
  *
  * <p>
  * Each bytecode has a binary format which identifies the <i>opcode</i>,
- * <i>registers</i> used and <i>pool items</i> used (e.g. names, constants,
- * etc). The generic organisation of a bytecode is as follows:
+ * <i>target registers</i>, <i>operand registers</i> <i>types</i> and <i>other
+ * items</i> used (e.g. names, constants, etc). The generic organisation of a
+ * bytecode is as follows:
  * </p>
  *
  * <pre>
- * +--------+-----------+------------+
- * | opcode | registers | pool items |
- * +--------+-----------+------------+
+ * +--------+---------+----------+-------+-------------+
+ * | opcode | targets | operands | types | other items |
+ * +--------+---------+----------+-------+-------------+
  * </pre>
  * <p>
  * The opcode is currently always 1 byte, whilst the remainder varies between
- * instructions. Many bytecodes assign to a <i>target</i> register and read
- * values from <i>operand</i> registers. Such bytecodes are organised as
- * follows:
+ * instructions. The opcode itself splits into two components:
  * </p>
- *
+ * 
  * <pre>
- * +--------+--------+----------+------------+
- * | opcode | target | operands | pool items |
- * +--------+--------+----------+------------+
+ *  7   6 5         0
+ * +-----+-----------+
+ * | fmt | operation |
+ * +-----+-----------+
  * </pre>
- *
- *
+ * <p>
+ * Here, <i>operation</i> identifies the bytecode operation (e.g. add, invoke,
+ * etc), whilst <i>fmt</i> identifies the bytecode format. Different formats are
+ * used to specify common bytecode layouts:
+ * </p>
+ * <pre>
+ * fmt | constaints
+ * ----+-----------
+ *  00 | none
+ *  01 | zero targets
+ *  10 | one target
+ *  11 | unused
+ * </pre>
+ * 
  * @author David J. Pearce
  */
 public interface Code {
@@ -189,27 +201,27 @@ public interface Code {
 	// ===============================================================
 
 	/**
-	 * Represents the set of all bytecodes which take an arbitrary number of
-	 * register operands and write a result to an arbitrary number of target
-	 * registers.
+	 * Represents the set of all bytecodes. Each bytecode consists of zero or
+	 * more types, zero or more targets and zero or more operands. Furthermore,
+	 * bytecodes may contain additional data.
 	 *
 	 * @author David J. Pearce
 	 *
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
-	public static abstract class AbstractMultiNaryAssignable<T> extends Code.Unit { 
+	public static abstract class AbstractBytecode<T> extends Code.Unit { 
 		protected final Type[] types;
 		private final int[] targets;
 		protected final int[] operands;		
 		
-		public AbstractMultiNaryAssignable(Type type, int target, int... operands) {			
+		public AbstractBytecode(Type type, int target, int... operands) {			
 			this.types = new Type[]{type};
 			this.targets = new int[] {target};
 			this.operands = operands;
 		}
 		
-		public AbstractMultiNaryAssignable(Type[] types, int[] targets, int[] operands) {			
+		public AbstractBytecode(Type[] types, int[] targets, int[] operands) {			
 			this.types = types;
 			this.targets = targets;
 			this.operands = operands;
@@ -244,8 +256,8 @@ public interface Code {
 
 		@Override
 		public boolean equals(Object o) {
-			if (o instanceof AbstractMultiNaryAssignable) {
-				AbstractMultiNaryAssignable bo = (AbstractMultiNaryAssignable) o;
+			if (o instanceof AbstractBytecode) {
+				AbstractBytecode bo = (AbstractBytecode) o;
 				return Arrays.equals(targets(), bo.targets()) && Arrays.equals(operands(), bo.operands())
 						&& Arrays.equals(types, bo.types);
 			}
@@ -295,27 +307,7 @@ public interface Code {
 		public int operand(int i) {
 			return operands[i];
 		}	
-	}
-		
-	/**
-	 * Represents the set of all bytcodes which take a single register operand
-	 * and assign a result to the target register.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 *            --- the type associated with this bytecode.
-	 */
-	public static abstract class AbstractUnaryAssignable<T> extends AbstractMultiNaryAssignable<T> {
-
-		public AbstractUnaryAssignable(Type type, int target, int operand) {
-			super(type,target,operand);
-			if (type == null) {
-				throw new IllegalArgumentException(
-						"AbstractUnOp type argument cannot be null");
-			}
-		}
-	}
+	}	
 
 	/**
 	 * Represents the set of all bytcodes which take a single register operand,
@@ -367,31 +359,6 @@ public interface Code {
 			return false;
 		}
 	}
-
-	/**
-	 * Represents the set of all bytcodes which take two register operands and
-	 * write a result to the target register.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 *            --- the type associated with this bytecode.
-	 */
-	public static abstract class AbstractBinaryAssignable<T> extends AbstractMultiNaryAssignable<T> {
-		public AbstractBinaryAssignable(Type type, int target, int leftOperand, int rightOperand) {
-			super(type, target, leftOperand, rightOperand);
-		}
-	}
-
-	/**
-	 * Represents the set of all bytcodes which take an arbitrary number of
-	 * register operands and write a result to the target register.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 *            --- the type associated with this bytecode.
-	 */
 
 	/**
 	 * Represents the set of all bytcodes which take two register operands and

@@ -1863,7 +1863,7 @@ public class VcGenerator {
 	 * @param branch
 	 *            --- The enclosing branch
 	 */
-	protected void transformUnary(Expr.Unary.Op operator, Code.AbstractUnaryAssignable code, VcBranch branch,
+	protected void transformUnary(Expr.Unary.Op operator, Code.AbstractBytecode code, VcBranch branch,
 			AttributedCodeBlock block) {
 		Expr lhs = branch.read(code.operand(0));
 		branch.write(code.target(0), new Expr.Unary(operator, lhs, toWycsAttributes(block.attributes(branch.pc()))));
@@ -1882,7 +1882,7 @@ public class VcGenerator {
 	 * @param branch
 	 *            --- The enclosing branch
 	 */
-	protected void transformBinary(Expr.Binary.Op operator, Code.AbstractBinaryAssignable code, VcBranch branch,
+	protected void transformBinary(Expr.Binary.Op operator, Code.AbstractBytecode code, VcBranch branch,
 			AttributedCodeBlock block) {
 		Expr lhs = branch.read(code.operand(0));
 		Expr rhs = branch.read(code.operand(1));
@@ -1911,7 +1911,7 @@ public class VcGenerator {
 	 * @param branch
 	 *            --- The enclosing branch
 	 */
-	protected void transformNary(Expr.Nary.Op operator, Code.AbstractMultiNaryAssignable code, VcBranch branch,
+	protected void transformNary(Expr.Nary.Op operator, Code.AbstractBytecode code, VcBranch branch,
 			AttributedCodeBlock block) {
 		int[] code_operands = code.operands();
 		Expr[] vals = new Expr[code_operands.length];

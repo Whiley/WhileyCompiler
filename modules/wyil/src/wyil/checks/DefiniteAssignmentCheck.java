@@ -201,8 +201,8 @@ public class DefiniteAssignmentCheck extends
 			if (in.contains(a.leftOperand) && in.contains(a.rightOperand)) {
 				return;
 			}
-		} else if(code instanceof Code.AbstractMultiNaryAssignable) {
-			Code.AbstractMultiNaryAssignable a = (Code.AbstractMultiNaryAssignable) code;
+		} else if(code instanceof Code.AbstractBytecode) {
+			Code.AbstractBytecode a = (Code.AbstractBytecode) code;
 			for(int operand : a.operands()) {
 				if(operand != Codes.NULL_REG && !in.contains(operand)) {
 					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
@@ -226,8 +226,8 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	public int[] defs(Code code) {
-		if (code instanceof Code.AbstractMultiNaryAssignable) {
-			Code.AbstractMultiNaryAssignable aa = (Code.AbstractMultiNaryAssignable) code;
+		if (code instanceof Code.AbstractBytecode) {
+			Code.AbstractBytecode aa = (Code.AbstractBytecode) code;
 			return aa.targets();
 		}
 		return new int[0];

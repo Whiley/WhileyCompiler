@@ -532,29 +532,29 @@ public final class WyilFileWriter {
 			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
 			writeBase(wide,a.leftOperand,output);
 			writeBase(wide,a.rightOperand,output);
-		} else if(code instanceof Code.AbstractMultiNaryAssignable) {
-			Code.AbstractMultiNaryAssignable<Type> a = (Code.AbstractMultiNaryAssignable) code;
-			Type[] types = a.types();
+		} else if(code instanceof Code.AbstractBytecode) {
+			Code.AbstractBytecode<Type> a = (Code.AbstractBytecode) code;			
 			int[] targets = a.targets();
 			int[] operands = a.operands();
+			Type[] types = a.types();
 			if(code instanceof Codes.Lambda) {
 				// FIXME: This is something of a hack, but the reason is that
 				// lambda operands can be NULL_REG.
 				for(int i=0;i!=operands.length;++i) {
 					operands[i] ++;
 				}
-			}
-			writeBase(wide,types.length,output);
+			}			
 			writeBase(wide,targets.length,output);
 			writeBase(wide,operands.length,output);
-			for(int i=0;i!=types.length;++i) {
-				writeBase(wide,typeCache.get(types[i]),output);
-			}
+			writeBase(wide,types.length,output);			
 			for(int i=0;i!=targets.length;++i) {
 				writeBase(wide,targets[i],output);
 			}			
 			for(int i=0;i!=operands.length;++i) {
 				writeBase(wide,operands[i],output);
+			}
+			for(int i=0;i!=types.length;++i) {
+				writeBase(wide,typeCache.get(types[i]),output);
 			}
 		} else if(code instanceof Codes.Quantify) {
 			Codes.Quantify l = (Codes.Quantify) code;
@@ -750,8 +750,8 @@ public final class WyilFileWriter {
 			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
 			maxBase = Math.max(a.leftOperand,a.rightOperand);
 			maxRest = typeCache.get(a.type);
-		} else if(code instanceof Code.AbstractMultiNaryAssignable) {
-			Code.AbstractMultiNaryAssignable<Type> a = (Code.AbstractMultiNaryAssignable) code;
+		} else if(code instanceof Code.AbstractBytecode) {
+			Code.AbstractBytecode<Type> a = (Code.AbstractBytecode) code;
 			Type[] types = a.types();
 			int[] targets = a.targets();
 			int[] operands = a.operands();
@@ -993,8 +993,8 @@ public final class WyilFileWriter {
 		} else if(code instanceof Code.AbstractBinaryOp) {
 			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
 			addTypeItem(a.type);
-		} else if(code instanceof Code.AbstractMultiNaryAssignable) {
-			Code.AbstractMultiNaryAssignable<Type> a = (Code.AbstractMultiNaryAssignable) code;
+		} else if(code instanceof Code.AbstractBytecode) {
+			Code.AbstractBytecode<Type> a = (Code.AbstractBytecode) code;
 			for(Type type : a.types()) {
 				addTypeItem(type);
 			}

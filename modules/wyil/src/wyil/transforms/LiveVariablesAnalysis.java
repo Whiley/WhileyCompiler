@@ -187,8 +187,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		boolean isLive = true;
 		environment = (Env) environment.clone();
 
-		if (code instanceof Code.AbstractMultiNaryAssignable) {
-			Code.AbstractMultiNaryAssignable aa = (Code.AbstractMultiNaryAssignable) code;
+		if (code instanceof Code.AbstractBytecode) {
+			Code.AbstractBytecode aa = (Code.AbstractBytecode) code;
 			if(code instanceof Codes.Update) {
 				Codes.Update cu = (Codes.Update) aa;
 				// In the normal case, this bytecode is considered live if the
@@ -216,12 +216,12 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			Code.AbstractBinaryOp c = (Code.AbstractBinaryOp) code;
 			environment.add(c.leftOperand);
 			environment.add(c.rightOperand);
-		} else if ((isLive && code instanceof Code.AbstractMultiNaryAssignable)
+		} else if ((isLive && code instanceof Code.AbstractBytecode)
 				|| (code instanceof Codes.Invoke && ((Codes.Invoke) code).type(0) instanceof Type.Method)
 				|| (code instanceof Codes.IndirectInvoke
 						&& ((Codes.IndirectInvoke) code).type(0) instanceof Type.Method)) {
 			// FIXME: this seems to be a problem if there are no assigned variables!
-			Code.AbstractMultiNaryAssignable c = (Code.AbstractMultiNaryAssignable) code;
+			Code.AbstractBytecode c = (Code.AbstractBytecode) code;
 			for (int operand : c.operands()) {
 				environment.add(operand);
 			}

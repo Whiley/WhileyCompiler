@@ -719,23 +719,23 @@ public final class WyilFileReader {
 	}
 
 	private Code readNaryAssign(int opcode, boolean wideBase, boolean wideRest)
-			throws IOException {
-		int nTypes = readBase(wideBase);
+			throws IOException {		
 		int nTargets = readBase(wideBase);
 		int nOperands = readBase(wideBase);
-		Type[] types = new Type[nTypes];
+		int nTypes = readBase(wideBase);		
 		int[] targets = new int[nTargets];
 		int[] operands = new int[nOperands];
-		for (int i = 0; i != nTypes; ++i) {
-			int typeIndex = readBase(wideBase); 
-			types[i] = typePool[typeIndex];
-		}
+		Type[] types = new Type[nTypes];		
 		for (int i = 0; i != nTargets; ++i) {
 			targets[i] = readBase(wideBase);
 		}		
 		for (int i = 0; i != nOperands; ++i) {
 			operands[i] = readBase(wideBase);
 		}				
+		for (int i = 0; i != nTypes; ++i) {
+			int typeIndex = readBase(wideBase); 
+			types[i] = typePool[typeIndex];
+		}
 		switch (opcode) {
 		case Code.OPCODE_return:
 			return Codes.Return(types, operands);
@@ -881,16 +881,13 @@ public final class WyilFileReader {
 			int offset, HashMap<Integer, Codes.Label> labels)
 			throws IOException {
 		switch (opcode) {
-		case Code.OPCODE_update: {
-			int nTypes = readBase(wideBase);
+		case Code.OPCODE_update: {			
 			int nTargets = readBase(wideBase);
 			int nOperands = readBase(wideBase);
-			Type[] types = new Type[nTypes];
+			int nTypes = readBase(wideBase);			
 			int[] targets = new int[nTargets];
 			int[] operands = new int[nOperands-1];
-			for (int i = 0; i != types.length; ++i) {
-				types[i] = typePool[readBase(wideBase)];
-			}
+			Type[] types = new Type[nTypes];			
 			for (int i = 0; i != targets.length; ++i) {
 				targets[i] = readBase(wideBase);
 			}
@@ -898,6 +895,9 @@ public final class WyilFileReader {
 				operands[i] = readBase(wideBase);
 			}
 			int operand = readBase(wideBase);
+			for (int i = 0; i != types.length; ++i) {
+				types[i] = typePool[readBase(wideBase)];
+			}			
 			Type afterType = typePool[readRest(wideRest)];
 			int nFields = readRest(wideRest);
 			ArrayList<String> fields = new ArrayList<String>();
