@@ -122,9 +122,9 @@ public class DefiniteAssignmentCheck extends
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(CodeBlock.Index index,
 			Codes.If igoto, HashSet<Integer> in) {
 
-		if (!in.contains(igoto.leftOperand) || !in.contains(igoto.rightOperand)) {
+		if (!in.contains(igoto.operand(0)) || !in.contains(igoto.operand(1))) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
-					rootBlock.attribute(index,SourceLocation.class));
+					rootBlock.attribute(index, SourceLocation.class));
 		}
 
 		return new Pair(in, in);
@@ -134,7 +134,7 @@ public class DefiniteAssignmentCheck extends
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(CodeBlock.Index index,
 			Codes.IfIs iftype, HashSet<Integer> in) {
 
-		if (!in.contains(iftype.operand)) {
+		if (!in.contains(iftype.operand(0))) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
 					rootBlock.attribute(index,SourceLocation.class));
 		}
@@ -146,7 +146,7 @@ public class DefiniteAssignmentCheck extends
 	public List<HashSet<Integer>> propagate(CodeBlock.Index index, Codes.Switch sw,
 			HashSet<Integer> in) {
 
-		if (!in.contains(sw.operand)) {
+		if (!in.contains(sw.operand(0))) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
 					rootBlock.attribute(index,SourceLocation.class));
 		}
@@ -191,52 +191,30 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	public void checkUses(CodeBlock.Index index, Code code, HashSet<Integer> in) {
-		if(code instanceof Code.AbstractUnaryOp) {
-			Code.AbstractUnaryOp a = (Code.AbstractUnaryOp) code;
-			if(a.operand == Codes.NULL_REG || in.contains(a.operand)) {
-				return;
-			}
-		} else if(code instanceof Code.AbstractBinaryOp) {
-			Code.AbstractBinaryOp a = (Code.AbstractBinaryOp) code;
-			if (in.contains(a.leftOperand) && in.contains(a.rightOperand)) {
-				return;
-			}
-		} else if(code instanceof Code.AbstractNaryAssignable) {
-			Code.AbstractNaryAssignable a = (Code.AbstractNaryAssignable) code;
+		if(code instanceof Code.AbstractBytecode) {
+			Code.AbstractBytecode a = (Code.AbstractBytecode) code;
 			for(int operand : a.operands()) {
 				if(operand != Codes.NULL_REG && !in.contains(operand)) {
 					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
 	                        filename, rootBlock.attribute(index,SourceLocation.class));
 				}
-			}
-			if(code instanceof Codes.Update && !in.contains(a.target())) {
+			}	
+			if(code instanceof Codes.Update && !in.contains(a.target(0))) {
 				// In this case, we are assigning to an index or field.
 				// Therefore, the target register must already be defined.
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
                         filename, rootBlock.attribute(index,SourceLocation.class));
 			}
 			return;
-		} else if(code instanceof Code.AbstractMultiNaryAssignable) {
-			Code.AbstractMultiNaryAssignable a = (Code.AbstractMultiNaryAssignable) code;
-			for(int operand : a.operands()) {
-				if(operand != Codes.NULL_REG && !in.contains(operand)) {
-					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-	                        filename, rootBlock.attribute(index,SourceLocation.class));
-				}
-			}			
-			return;
 		} else {
 			// includes abstract-assignables and branching bytecodes
 			return;
 		}
-
-		syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-                filename, rootBlock.attribute(index,SourceLocation.class));
 	}
 
 	public int[] defs(Code code) {
-		if (code instanceof Code.AbstractAssignable) {
-			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
+		if (code instanceof Code.AbstractBytecode) {
+			Code.AbstractBytecode aa = (Code.AbstractBytecode) code;
 			return aa.targets();
 		}
 		return new int[0];

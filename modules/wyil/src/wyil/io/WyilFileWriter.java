@@ -521,56 +521,30 @@ public final class WyilFileWriter {
 		// second, deal with standard instruction formats		
 		output.write_u8(code.opcode());
 
-		if(code instanceof Code.AbstractUnaryOp) {
-			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
-			if(a.operand != Codes.NULL_REG) {
-				writeBase(wide,a.operand,output);
-			} else {
-				// possible only for empty return
-			}
-		} else if(code instanceof Code.AbstractBinaryOp) {
-			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
-			writeBase(wide,a.leftOperand,output);
-			writeBase(wide,a.rightOperand,output);
-		} else if(code instanceof Code.AbstractUnaryAssignable) {
-			Code.AbstractUnaryAssignable<Type> a = (Code.AbstractUnaryAssignable) code;
-			writeBase(wide,a.target(),output);
-			writeBase(wide,a.operand(0),output);
-		} else if(code instanceof Code.AbstractBinaryAssignable) {
-			Code.AbstractBinaryAssignable<Type> a = (Code.AbstractBinaryAssignable) code;
-			writeBase(wide, a.target(),output);
-			writeBase(wide, a.operand(0),output);
-			writeBase(wide, a.operand(1),output);
-		} else if(code instanceof Code.AbstractNaryAssignable) {
-			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
+		if(code instanceof Code.AbstractBytecode) {
+			Code.AbstractBytecode<Type> a = (Code.AbstractBytecode) code;			
 			int[] targets = a.targets();
 			int[] operands = a.operands();
+			Type[] types = a.types();
+			if(code instanceof Codes.Lambda) {
+				// FIXME: This is something of a hack, but the reason is that
+				// lambda operands can be NULL_REG.
+				for(int i=0;i!=operands.length;++i) {
+					operands[i] ++;
+				}
+			}			
 			writeBase(wide,targets.length,output);
 			writeBase(wide,operands.length,output);
+			writeBase(wide,types.length,output);			
 			for(int i=0;i!=targets.length;++i) {
 				writeBase(wide,targets[i],output);
 			}			
 			for(int i=0;i!=operands.length;++i) {
 				writeBase(wide,operands[i],output);
 			}
-		} else if(code instanceof Code.AbstractMultiNaryAssignable) {
-			Code.AbstractMultiNaryAssignable<Type> a = (Code.AbstractMultiNaryAssignable) code;
-			int[] targets = a.targets();
-			int[] operands = a.operands();
-			writeBase(wide,targets.length,output);
-			writeBase(wide,operands.length,output);
-			for(int i=0;i!=targets.length;++i) {
-				writeBase(wide,targets[i],output);
-			}			
-			for(int i=0;i!=operands.length;++i) {
-				writeBase(wide,operands[i],output);
+			for(int i=0;i!=types.length;++i) {
+				writeBase(wide,typeCache.get(types[i]),output);
 			}
-		} else if(code instanceof Code.AbstractAssignable) {			
-			Code.AbstractAssignable c = (Code.AbstractAssignable) code;
-			// This is safe because only Codes.Const implements
-			// AbstractAssignable on its own. Realistically, this should be done
-			// differently.
-			writeBase(wide,c.targets()[0],output);
 		} else if(code instanceof Codes.Quantify) {
 			Codes.Quantify l = (Codes.Quantify) code;
 			int[] operands = l.modifiedOperands;
@@ -626,29 +600,6 @@ public final class WyilFileWriter {
 	private void writeRest(boolean wide, Code code, int offset,
 			HashMap<String, Integer> labels, BinaryOutputStream output) throws IOException {
 
-		if(code instanceof Code.AbstractUnaryOp) {
-			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
-			if(a.operand != Codes.NULL_REG) {
-				writeRest(wide,typeCache.get(a.type),output);
-			} else {
-				// possible only for empty return
-			}
-		} else if(code instanceof Code.AbstractBinaryOp) {
-			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
-			writeRest(wide,typeCache.get(a.type),output);
-		} else if(code instanceof Code.AbstractUnaryAssignable) {
-			Code.AbstractUnaryAssignable<Type> a = (Code.AbstractUnaryAssignable) code;
-			writeRest(wide,typeCache.get(a.type()),output);
-		} else if(code instanceof Code.AbstractBinaryAssignable) {
-			Code.AbstractBinaryAssignable<Type> a = (Code.AbstractBinaryAssignable) code;
-			writeRest(wide,typeCache.get(a.type()),output);
-		} else if(code instanceof Code.AbstractNaryAssignable) {
-			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
-			writeRest(wide,typeCache.get(a.type()),output);
-		} else if(code instanceof Code.AbstractMultiNaryAssignable) {
-			Code.AbstractMultiNaryAssignable<Type> a = (Code.AbstractMultiNaryAssignable) code;
-			writeRest(wide,typeCache.get(a.type()),output);
-		}
 		// now deal with non-uniform instructions
 		// First, deal with special cases
 		if(code instanceof Codes.AssertOrAssume) {
@@ -769,52 +720,21 @@ public final class WyilFileWriter {
 		int maxBase = 0;
 		int maxRest = 0;
 
-		if(code instanceof Code.AbstractUnaryOp) {
-			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
-			maxBase = a.operand;
-			maxRest = typeCache.get(a.type);
-		} else if(code instanceof Code.AbstractBinaryOp) {
-			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
-			maxBase = Math.max(a.leftOperand,a.rightOperand);
-			maxRest = typeCache.get(a.type);
-		} else if(code instanceof Code.AbstractUnaryAssignable) {
-			Code.AbstractUnaryAssignable<Type> a = (Code.AbstractUnaryAssignable) code;
-			maxBase = Math.max(a.target(),a.operand(0));
-			maxRest = typeCache.get(a.type());
-		} else if(code instanceof Code.AbstractBinaryAssignable) {
-			Code.AbstractBinaryAssignable<Type> a = (Code.AbstractBinaryAssignable) code;
-			maxBase = Math.max(a.operand(0),a.operand(1));
-			maxBase = Math.max(a.target(),maxBase);
-			maxRest = typeCache.get(a.type());
-		} else if(code instanceof Code.AbstractNaryAssignable) {
-			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
+		if(code instanceof Code.AbstractBytecode) {
+			Code.AbstractBytecode<Type> a = (Code.AbstractBytecode) code;
+			Type[] types = a.types();
 			int[] targets = a.targets();
-			int[] operands = a.operands();			
+			int[] operands = a.operands();
+			for(int i=0;i!=types.length;++i) {
+				maxBase = Math.max(maxBase,typeCache.get(types[i]));
+			}
 			for(int i=0;i!=targets.length;++i) {
 				maxBase = Math.max(maxBase,targets[i]);
 			}						
 			for(int i=0;i!=operands.length;++i) {
 				maxBase = Math.max(maxBase,operands[i]);
 			}
-			maxRest = typeCache.get(a.type());
-		} else if(code instanceof Code.AbstractMultiNaryAssignable) {
-			Code.AbstractMultiNaryAssignable<Type> a = (Code.AbstractMultiNaryAssignable) code;
-			int[] targets = a.targets();
-			int[] operands = a.operands();			
-			for(int i=0;i!=targets.length;++i) {
-				maxBase = Math.max(maxBase,targets[i]);
-			}						
-			for(int i=0;i!=operands.length;++i) {
-				maxBase = Math.max(maxBase,operands[i]);
-			}
-			maxRest = typeCache.get(a.type());
-		} else if(code instanceof Code.AbstractAssignable) {
-			Code.AbstractAssignable a = (Code.AbstractAssignable) code;
-			int[] targets = a.targets();					
-			for(int i=0;i!=targets.length;++i) {
-				maxBase = Math.max(maxBase,targets[i]);
-			}
-		}
+		} 
 
 		// now, deal with non-uniform opcodes
 		if(code instanceof Codes.AssertOrAssume) {
@@ -1011,7 +931,6 @@ public final class WyilFileWriter {
 			addStringItem(c.field);
 		} else if(code instanceof Codes.IfIs) {
 			Codes.IfIs c = (Codes.IfIs) code;
-			addTypeItem(c.type);
 			addTypeItem(c.rightOperand);
 		} else if(code instanceof Codes.Invoke) {
 			Codes.Invoke c = (Codes.Invoke) code;
@@ -1021,7 +940,6 @@ public final class WyilFileWriter {
 			addNameItem(c.name);
 		} else if(code instanceof Codes.Update) {
 			Codes.Update c = (Codes.Update) code;
-			addTypeItem(c.type());
 			addTypeItem(c.afterType);
 			for(Codes.LVal l : c) {
 				if(l instanceof Codes.RecordLVal) {
@@ -1031,31 +949,17 @@ public final class WyilFileWriter {
 			}
 		} else if(code instanceof Codes.Switch) {
 			Codes.Switch s = (Codes.Switch) code;
-			addTypeItem(s.type);
 			for(Pair<Constant,String> b : s.branches) {
 				addConstantItem(b.first());
 			}
 		}
 
 		// Second, deal with standard cases
-		if(code instanceof Code.AbstractUnaryOp) {
-			Code.AbstractUnaryOp<Type> a = (Code.AbstractUnaryOp) code;
-			addTypeItem(a.type);
-		} else if(code instanceof Code.AbstractBinaryOp) {
-			Code.AbstractBinaryOp<Type> a = (Code.AbstractBinaryOp) code;
-			addTypeItem(a.type);
-		} else if(code instanceof Code.AbstractUnaryAssignable) {
-			Code.AbstractUnaryAssignable<Type> a = (Code.AbstractUnaryAssignable) code;
-			addTypeItem(a.type());
-		} else if(code instanceof Code.AbstractBinaryAssignable) {
-			Code.AbstractBinaryAssignable<Type> a = (Code.AbstractBinaryAssignable) code;
-			addTypeItem(a.type());
-		} else if(code instanceof Code.AbstractNaryAssignable) {
-			Code.AbstractNaryAssignable<Type> a = (Code.AbstractNaryAssignable) code;
-			addTypeItem(a.type());
-		} else if(code instanceof Code.AbstractMultiNaryAssignable) {
-			Code.AbstractMultiNaryAssignable<Type> a = (Code.AbstractMultiNaryAssignable) code;
-			addTypeItem(a.type());
+		if(code instanceof Code.AbstractBytecode) {
+			Code.AbstractBytecode<Type> a = (Code.AbstractBytecode) code;
+			for(Type type : a.types()) {
+				addTypeItem(type);
+			}
 		}
 	}
 

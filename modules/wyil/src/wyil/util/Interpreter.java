@@ -266,7 +266,10 @@ public class Interpreter {
 	 */
 	private Object execute(Codes.Assign bytecode, Constant[] frame,
 			Context context) {
-		frame[bytecode.target()] = frame[bytecode.operand(0)];
+		int[] targets = bytecode.targets();
+		for (int i = 0; i != targets.length; ++i) {
+			frame[bytecode.target(i)] = frame[bytecode.operand(i)];
+		}		
 		return context.pc.next();
 	}
 
@@ -305,7 +308,8 @@ public class Interpreter {
 		}
 
 		// Write result to target
-		frame[bytecode.target()] = result;
+		frame[bytecode.target(0)] = result;
+		
 		return context.pc.next();
 	}
 
@@ -437,7 +441,7 @@ public class Interpreter {
 		try {
 			Constant operand = frame[bytecode.operand(0)];
 			Type target = expander.getUnderlyingType(bytecode.result);
-			frame[bytecode.target()] = convert(operand, target, context);
+			frame[bytecode.target(0)] = convert(operand, target, context);
 			return context.pc.next();
 		} catch (IOException e) {
 			return error(e.getMessage(), context);
@@ -597,7 +601,7 @@ public class Interpreter {
 	private Object execute(Codes.Debug bytecode, Constant[] frame,
 			Context context) {
 		//
-		Constant.Array list = (Constant.Array) frame[bytecode.operand];
+		Constant.Array list = (Constant.Array) frame[bytecode.operand(0)];
 		for (Constant item : list.values) {
 			BigInteger b = ((Constant.Integer) item).value;
 			char c = (char) b.intValue();
@@ -612,7 +616,7 @@ public class Interpreter {
 		Constant operand = frame[bytecode.operand(0)];
 		checkType(operand, context, ConstantObject.class);
 		ConstantObject ref = (ConstantObject) operand;
-		frame[bytecode.target()] = ref.read();
+		frame[bytecode.target(0)] = ref.read();
 		return context.pc.next();
 	}
 
@@ -636,7 +640,7 @@ public class Interpreter {
 	private Object execute(Codes.FieldLoad bytecode, Constant[] frame,
 			Context context) {
 		Constant.Record rec = (Constant.Record) frame[bytecode.operand(0)];
-		frame[bytecode.target()] = rec.values.get(bytecode.field);
+		frame[bytecode.target(0)] = rec.values.get(bytecode.field);
 		return context.pc.next();
 	}
 
@@ -671,8 +675,8 @@ public class Interpreter {
 	}
 
 	private Object execute(Codes.If bytecode, Constant[] frame, Context context) {
-		Constant op1 = frame[bytecode.leftOperand];
-		Constant op2 = frame[bytecode.rightOperand];
+		Constant op1 = frame[bytecode.operand(0)];
+		Constant op2 = frame[bytecode.operand(1)];
 		boolean result;
 		switch (bytecode.op) {
 		// Handle cases which apply to all values
@@ -737,10 +741,9 @@ public class Interpreter {
 		}
 	}
 
-	private Object execute(Codes.IfIs bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.IfIs bytecode, Constant[] frame, Context context) {
 		Type typeOperand = bytecode.rightOperand;
-		Constant op = frame[bytecode.operand];
+		Constant op = frame[bytecode.operand(0)];
 		if (isMemberOfType(op, typeOperand, context)) {
 			return context.getLabel(bytecode.target);
 		}
@@ -899,7 +902,7 @@ public class Interpreter {
 			error("index-out-of-bounds", context);
 		}
 		// Ok, get the element at that index
-		frame[bytecode.target()] = list.values.get(index.value.intValue());
+		frame[bytecode.target(0)] = list.values.get(index.value.intValue());
 		// Done		
 		return context.pc.next();
 	}
@@ -944,7 +947,7 @@ public class Interpreter {
 		Constant[] results = execute(func.name, func.type(), arguments);		
 		// Check whether a return value was expected or not
 		int[] targets = bytecode.targets();
-		List<Type> returns = bytecode.type().returns();
+		List<Type> returns = bytecode.type(0).returns();
 		for(int i=0;i!=targets.length;++i) {
 			// Coerce the result (may not be actually necessary))
 			frame[targets[i]] = convert(results[i],returns.get(i),context);
@@ -978,7 +981,7 @@ public class Interpreter {
 		checkType(operand, context, Constant.Byte.class);
 		// Write back the inverted value
 		Constant.Byte b = (Constant.Byte) operand;
-		frame[bytecode.target()] = Constant.V_BYTE((byte) ~b.value);
+		frame[bytecode.target(0)] = Constant.V_BYTE((byte) ~b.value);
 		// Done
 		return context.pc.next();
 	}
@@ -1004,9 +1007,8 @@ public class Interpreter {
 		for (int i = 0; i != arguments.length; ++i) {
 			arguments[i] = frame[operands[i]];
 		}
-		Constant[] results = execute(bytecode.name, bytecode.type(), arguments);
+		Constant[] results = execute(bytecode.name, bytecode.type(0), arguments);
 		int[] targets = bytecode.targets();
-		List<Type> returns = bytecode.type().returns();
 		for(int i=0;i!=targets.length;++i) {
 			frame[targets[i]] = results[i];
 		}		
@@ -1025,8 +1027,7 @@ public class Interpreter {
 			}
 		}
 		// FIXME: need to do something with the operands here.
-		frame[bytecode.target()] = Constant.V_LAMBDA(bytecode.name,
-				bytecode.type(), arguments);
+		frame[bytecode.target(0)] = Constant.V_LAMBDA(bytecode.name, bytecode.type(0), arguments);
 		//
 		return context.pc.next();
 	}
@@ -1050,7 +1051,7 @@ public class Interpreter {
 		checkType(_source, context, Constant.Array.class);
 		Constant.Array list = (Constant.Array) _source;
 		BigInteger length = BigInteger.valueOf(list.values.size());		
-		frame[bytecode.target()] = Constant.V_INTEGER(length);
+		frame[bytecode.target(0)] = Constant.V_INTEGER(length);
 		return context.pc.next();
 	}
 	
@@ -1080,7 +1081,7 @@ public class Interpreter {
 		for(int i=0;i!=n;++i) {
 			values.add(element);
 		}
-		frame[bytecode.target()] = Constant.V_ARRAY(values);
+		frame[bytecode.target(0)] = Constant.V_ARRAY(values);
 		return context.pc.next();
 	}
 	
@@ -1112,8 +1113,11 @@ public class Interpreter {
 	 */
 	private Object execute(Codes.Move bytecode, Constant[] frame,
 			Context context) {
-		frame[bytecode.target()] = frame[bytecode.operand(0)];
-		frame[bytecode.operand(0)] = null;
+		int[] operands = bytecode.operands();
+		for(int i=0;i!=operands.length;++i) {
+			frame[bytecode.target(i)] = frame[bytecode.operand(i)];
+			frame[bytecode.operand(i)] = null;
+		}
 		return context.pc.next();
 	}
 
@@ -1135,7 +1139,7 @@ public class Interpreter {
 		for (int operand : bytecode.operands()) {
 			values.add((Constant) frame[operand]);
 		}
-		frame[bytecode.target()] = Constant.V_ARRAY(values);
+		frame[bytecode.target(0)] = Constant.V_ARRAY(values);
 		return context.pc.next();
 	}
 
@@ -1143,7 +1147,7 @@ public class Interpreter {
 			Context context) {
 		Constant operand = frame[bytecode.operand(0)];
 		ConstantObject o = new ConstantObject(operand);
-		frame[bytecode.target()] = o;
+		frame[bytecode.target(0)] = o;
 		return context.pc.next();
 	}
 
@@ -1162,14 +1166,13 @@ public class Interpreter {
 	private Object execute(Codes.NewRecord bytecode, Constant[] frame,
 			Context context) {
 		HashMap<String, Constant> values = new HashMap<String, Constant>();
-		ArrayList<String> fields = new ArrayList<String>(bytecode.type()
-				.fields().keySet());
+		ArrayList<String> fields = new ArrayList<String>(bytecode.type(0).fields().keySet());
 		Collections.sort(fields);
 		int[] operands = bytecode.operands();
 		for (int i = 0; i != operands.length; ++i) {
 			values.put(fields.get(i), (Constant) frame[operands[i]]);
 		}
-		frame[bytecode.target()] = Constant.V_RECORD(values);
+		frame[bytecode.target(0)] = Constant.V_RECORD(values);
 		return context.pc.next();
 	}
 
@@ -1201,8 +1204,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.Return bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Return bytecode, Constant[] frame, Context context) {
 		int[] operands = bytecode.operands();
 		Constant[] returns = new Constant[operands.length];
 		for(int i=0;i!=operands.length;++i) {
@@ -1211,10 +1213,9 @@ public class Interpreter {
 		return returns;
 	}
 
-	private Object execute(Codes.Switch bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Switch bytecode, Constant[] frame, Context context) {
 		//
-		Constant operand = frame[bytecode.operand];
+		Constant operand = frame[bytecode.operand(0)];
 		for (Pair<Constant, String> branch : bytecode.branches) {
 			Constant caseOperand = cleanse(branch.first(), context);
 			if (caseOperand.equals(operand)) {
@@ -1257,7 +1258,7 @@ public class Interpreter {
 			return deadCode(context);
 		}
 		// Assign result to target register
-		frame[bytecode.target()] = result;
+		frame[bytecode.target(0)] = result;
 		// Fall through to next bytecode
 		return context.pc.next();
 
@@ -1266,9 +1267,8 @@ public class Interpreter {
 	private Object execute(Codes.Update bytecode, Constant[] frame,
 			Context context) {
 		Constant rhs = frame[bytecode.result()];
-		Constant lhs = frame[bytecode.target()];
-		frame[bytecode.target()] = update(lhs, bytecode.iterator(), rhs, frame,
-				context);
+		Constant lhs = frame[bytecode.target(0)];
+		frame[bytecode.target(0)] = update(lhs, bytecode.iterator(), rhs, frame, context);
 		return context.pc.next();
 	}
 

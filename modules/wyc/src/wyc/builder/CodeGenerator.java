@@ -733,8 +733,9 @@ public final class CodeGenerator {
 		// Instead, we use the declared return type of this function. This
 		// has the effect of forcing an implicit coercion between the
 		// actual value being returned and its required type.
-		List<Type> types = ((WhileyFile.FunctionOrMethod) context).resolvedType().raw().returns(); 
-		int[] operands = new int[types.size()];
+		List<Type> returnTypes = ((WhileyFile.FunctionOrMethod) context).resolvedType().raw().returns(); 
+		Type[] types = returnTypes.toArray(new Type[returnTypes.size()]); 
+		int[] operands = new int[types.length];
 		int index = 0;
 		for (int i = 0; i != returns.size(); ++i) {
 			Expr e = returns.get(i);
@@ -1900,7 +1901,7 @@ public final class CodeGenerator {
 			body.add(Codes.Return(), attributes(expr));
 		} else {
 			int target = generate(expr.body, benv, body, context);
-			body.add(Codes.Return(tfm.returns(), target), attributes(expr));
+			body.add(Codes.Return(tfm.returns().toArray(new Type[tfm.returns().size()]), target), attributes(expr));
 		}
 
 		// Add type information for all temporary registers allocated
