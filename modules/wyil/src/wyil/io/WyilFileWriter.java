@@ -247,15 +247,6 @@ public final class WyilFileWriter {
 				output.write_uv(CONSTANT_Int);
 				output.write_uv(numbytes.length);
 				output.write(numbytes);
-			} else if(val instanceof Constant.Decimal) {
-				Constant.Decimal r = (Constant.Decimal) val;
-				output.write_uv(CONSTANT_Real);
-				BigInteger mantissa = r.value.unscaledValue();
-				int exponent = r.value.scale();
-				byte[] bytes = mantissa.toByteArray();
-				output.write_uv(bytes.length);
-				output.write(bytes);
-				output.write_uv(exponent);
 			} else if(val instanceof Constant.Array) {
 				Constant.Array s = (Constant.Array) val;
 				output.write_uv(CONSTANT_List);

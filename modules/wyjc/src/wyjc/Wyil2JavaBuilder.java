@@ -693,8 +693,7 @@ public class Wyil2JavaBuilder implements Builder {
 		Constant constant = c.constant;
 		JvmType jt = convertUnderlyingType(constant.type());
 
-		if (constant instanceof Constant.Decimal
-				|| constant instanceof Constant.Bool
+		if (constant instanceof Constant.Bool
 				|| constant instanceof Constant.Null
 				|| constant instanceof Constant.Byte) {
 			translate(constant, freeSlot, bytecodes);
@@ -1101,9 +1100,6 @@ public class Wyil2JavaBuilder implements Builder {
 		} else if (test instanceof Type.Int) {
 			bytecodes.add(new Bytecode.InstanceOf(WHILEYINT));
 			bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, falseTarget));
-		} else if (test instanceof Type.Real) {
-			bytecodes.add(new Bytecode.InstanceOf(WHILEYRAT));
-			bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, falseTarget));
 		} else {
 			// Fall-back to an external (recursive) check
 			Constant constant = Constant.V_TYPE(test);
@@ -1453,14 +1449,6 @@ public class Wyil2JavaBuilder implements Builder {
 			targetType = srcType;
 			name = "negate";
 			break;
-		case NUMERATOR:
-			targetType = WHILEYINT;
-			name = "numerator";
-			break;
-		case DENOMINATOR:
-			targetType = WHILEYINT;
-			name = "denominator";
-			break;
 		}
 		JvmType.Function ftype = new JvmType.Function(targetType);
 		bytecodes.add(new Bytecode.Load(c.operand(0), srcType));
@@ -1661,8 +1649,6 @@ public class Wyil2JavaBuilder implements Builder {
 			translate((Constant.Integer) v, freeSlot, bytecodes);
 		} else if (v instanceof Constant.Type) {
 			translate((Constant.Type) v, freeSlot, bytecodes);
-		} else if (v instanceof Constant.Decimal) {
-			translate((Constant.Decimal) v, freeSlot, bytecodes);
 		} else if (v instanceof Constant.Array) {
 			translate((Constant.Array) v, freeSlot, lambdas, bytecodes);
 		} else if (v instanceof Constant.Record) {
@@ -1745,83 +1731,6 @@ public class Wyil2JavaBuilder implements Builder {
 			bytecodes.add(new Bytecode.Invoke(WHILEYINT, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
 		}
 
-	}
-
-	protected void translate(Constant.Decimal e, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		BigRational rat = new BigRational(e.value);
-		BigInteger den = rat.denominator();
-		BigInteger num = rat.numerator();
-		if (rat.isInteger()) {
-			// this
-			if (num.bitLength() < 32) {
-				bytecodes.add(new Bytecode.LoadConst(num.intValue()));
-				JvmType.Function ftype = new JvmType.Function(WHILEYRAT, T_INT);
-				bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "valueOf", ftype, Bytecode.InvokeMode.STATIC));
-			} else if (num.bitLength() < 64) {
-				bytecodes.add(new Bytecode.LoadConst(num.longValue()));
-				JvmType.Function ftype = new JvmType.Function(WHILEYRAT, T_LONG);
-				bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "valueOf", ftype, Bytecode.InvokeMode.STATIC));
-			} else {
-				// in this context, we need to use a byte array to construct the
-				// integer object.
-				byte[] bytes = num.toByteArray();
-				JvmType.Array bat = new JvmType.Array(JvmTypes.T_BYTE);
-
-				bytecodes.add(new Bytecode.New(WHILEYRAT));
-				bytecodes.add(new Bytecode.Dup(WHILEYRAT));
-				bytecodes.add(new Bytecode.LoadConst(bytes.length));
-				bytecodes.add(new Bytecode.New(bat));
-				for (int i = 0; i != bytes.length; ++i) {
-					bytecodes.add(new Bytecode.Dup(bat));
-					bytecodes.add(new Bytecode.LoadConst(i));
-					bytecodes.add(new Bytecode.LoadConst(bytes[i]));
-					bytecodes.add(new Bytecode.ArrayStore(bat));
-				}
-
-				JvmType.Function ftype = new JvmType.Function(T_VOID, bat);
-				bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
-			}
-		} else if (num.bitLength() < 32 && den.bitLength() < 32) {
-			bytecodes.add(new Bytecode.LoadConst(num.intValue()));
-			bytecodes.add(new Bytecode.LoadConst(den.intValue()));
-			JvmType.Function ftype = new JvmType.Function(WHILEYRAT, T_INT, T_INT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "valueOf", ftype, Bytecode.InvokeMode.STATIC));
-		} else if (num.bitLength() < 64 && den.bitLength() < 64) {
-			bytecodes.add(new Bytecode.LoadConst(num.longValue()));
-			bytecodes.add(new Bytecode.LoadConst(den.longValue()));
-			JvmType.Function ftype = new JvmType.Function(WHILEYRAT, T_LONG, T_LONG);
-			bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "valueOf", ftype, Bytecode.InvokeMode.STATIC));
-		} else {
-			// First, do numerator bytes
-			byte[] bytes = num.toByteArray();
-			JvmType.Array bat = new JvmType.Array(JvmTypes.T_BYTE);
-
-			bytecodes.add(new Bytecode.New(WHILEYRAT));
-			bytecodes.add(new Bytecode.Dup(WHILEYRAT));
-			bytecodes.add(new Bytecode.LoadConst(bytes.length));
-			bytecodes.add(new Bytecode.New(bat));
-			for (int i = 0; i != bytes.length; ++i) {
-				bytecodes.add(new Bytecode.Dup(bat));
-				bytecodes.add(new Bytecode.LoadConst(i));
-				bytecodes.add(new Bytecode.LoadConst(bytes[i]));
-				bytecodes.add(new Bytecode.ArrayStore(bat));
-			}
-
-			// Second, do denominator bytes
-			bytes = den.toByteArray();
-			bytecodes.add(new Bytecode.LoadConst(bytes.length));
-			bytecodes.add(new Bytecode.New(bat));
-			for (int i = 0; i != bytes.length; ++i) {
-				bytecodes.add(new Bytecode.Dup(bat));
-				bytecodes.add(new Bytecode.LoadConst(i));
-				bytecodes.add(new Bytecode.LoadConst(bytes[i]));
-				bytecodes.add(new Bytecode.ArrayStore(bat));
-			}
-
-			// Finally, construct BigRational object
-			JvmType.Function ftype = new JvmType.Function(T_VOID, bat, bat);
-			bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
-		}
 	}
 
 	protected void translate(Constant.Array lv, int freeSlot, ArrayList<ClassFile> lambdas,
@@ -1985,7 +1894,7 @@ public class Wyil2JavaBuilder implements Builder {
 			// (note, need to check this after primitive types to avoid risk of
 			// missing coercion to any)
 		} else if (from == Type.T_INT) {
-			buildCoercion((Type.Int) from, to, freeSlot, bytecodes);
+			// do nothing!
 		} else {
 			// ok, it's a harder case so we use an explicit coercion function
 			int id = JvmCoercion.get(from, to, constants);
@@ -2006,14 +1915,6 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE, "valueOf", ftype,
 				Bytecode.InvokeMode.STATIC));
 		// done deal!
-	}
-
-	private void buildCoercion(Type.Int fromType, Type toType, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		// coercion required!
-		JvmType.Function ftype = new JvmType.Function(WHILEYRAT, WHILEYINT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYRAT, "valueOf", ftype,
-				Bytecode.InvokeMode.STATIC));
 	}
 
 	/**
@@ -2394,8 +2295,6 @@ public class Wyil2JavaBuilder implements Builder {
 			"wyjc.runtime", "WyByte");
 	private final static JvmType.Clazz WHILEYINT = new JvmType.Clazz(
 			"java.math", "BigInteger");
-	private final static JvmType.Clazz WHILEYRAT = new JvmType.Clazz(
-			"wyjc.runtime", "WyRat");
 	private final static JvmType.Clazz WHILEYLAMBDA = new JvmType.Clazz(
 			"wyjc.runtime", "WyLambda");
 
@@ -2465,8 +2364,6 @@ public class Wyil2JavaBuilder implements Builder {
 			return WHILEYBYTE;
 		} else if (t instanceof Type.Int) {
 			return WHILEYINT;
-		} else if (t instanceof Type.Real) {
-			return WHILEYRAT;
 		} else if (t instanceof Type.Meta) {
 			return WHILEYTYPE;
 		} else if (t instanceof Type.EffectiveArray) {

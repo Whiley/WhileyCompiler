@@ -101,8 +101,6 @@ public class Util {
 				return obj instanceof WyByte;
 			case K_INT:
 				return obj instanceof BigInteger;
-			case K_RATIONAL:
-				return obj instanceof WyRat;
 			case K_STRING:
 				return obj instanceof String;
 			case K_REFERENCE: {
@@ -281,8 +279,6 @@ public class Util {
 			return o2 == null ? 0 : -1;
 		} else if(o1 instanceof BigInteger) {
 			return compare((BigInteger)o1,o2);
-		} else if(o1 instanceof WyRat) {
-			return compare((WyRat)o1,o2);
 		} else if(o1 instanceof WyArray) {
 			return compare((WyArray)o1,o2);
 		} else if(o1 instanceof WyRecord) {
@@ -303,20 +299,8 @@ public class Util {
 		}
 	}
 
-	public static int compare(WyRat o1, Object o2) {
-		if(o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger) {
-			return 1;
-		} else if(o2 instanceof WyRat) {
-			WyRat b2 = (WyRat) o2;
-			return o1.compareTo(b2);
-		} else {
-			return -1;
-		}
-	}
-
 	public static int compare(WyArray o1, Object o2) {
-		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof WyRat) {
+		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger) {
 			return 1;
 		} else if (o2 instanceof WyArray) {
 			return compare(o1, (WyArray) o2);
@@ -346,8 +330,7 @@ public class Util {
 	}
 
 	public static int compare(WyRecord o1, Object o2) {
-		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger
-				|| o2 instanceof WyRat) {
+		if (o2 == null || o2 instanceof Boolean || o2 instanceof BigInteger) {
 			return 1;
 		} else if (o2 instanceof WyRecord) {
 			return compare(o1, (WyRecord) o2);

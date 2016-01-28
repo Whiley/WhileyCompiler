@@ -2866,19 +2866,8 @@ public abstract class Codes {
 			public String toString() {
 				return "neg";
 			}
-		},
-
-		NUMERATOR(1) {
-			public String toString() {
-				return "num";
-			}
-		},
-
-		DENOMINATOR(2) {
-			public String toString() {
-				return "den";
-			}
 		};
+		
 		public final int offset;
 
 		private UnaryOperatorKind(int offset) {

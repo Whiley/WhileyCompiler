@@ -1771,10 +1771,6 @@ public class VcGenerator {
 		case NEG:
 			transformUnary(Expr.Unary.Op.NEG, code, branch, block);
 			break;
-		case NUMERATOR:
-		case DENOMINATOR:
-			branch.havoc(code.target(0));
-			break;
 		default:
 			branch.havoc(code.target(0));
 		}
@@ -2484,9 +2480,6 @@ public class VcGenerator {
 		} else if (c instanceof Constant.Integer) {
 			Constant.Integer cb = (Constant.Integer) c;
 			return wycs.core.Value.Integer(cb.value);
-		} else if (c instanceof Constant.Decimal) {
-			Constant.Decimal cb = (Constant.Decimal) c;
-			return wycs.core.Value.Decimal(cb.value);
 		} else if (c instanceof Constant.Array) {
 			Constant.Array cb = (Constant.Array) c;
 			List<Constant> cb_values = cb.values;
@@ -2559,8 +2552,6 @@ public class VcGenerator {
 			return new SyntacticType.Int(toWycsAttributes(attributes));
 		} else if (t instanceof Type.Int) {
 			return new SyntacticType.Int(toWycsAttributes(attributes));
-		} else if (t instanceof Type.Real) {
-			return new SyntacticType.Real(toWycsAttributes(attributes));
 		} else if (t instanceof Type.Array) {
 			Type.Array lt = (Type.Array) t;
 			SyntacticType element = convert(lt.element(), attributes);
@@ -2628,8 +2619,7 @@ public class VcGenerator {
 		// See Issue #298.
 		if (t instanceof Type.Any || t instanceof Type.Void
 				|| t instanceof Type.Null || t instanceof Type.Bool
-				|| t instanceof Type.Byte || t instanceof Type.Int
-				|| t instanceof Type.Real) {
+				|| t instanceof Type.Byte || t instanceof Type.Int) {
 			return false;
 		} else if (t instanceof Type.Array) {
 			Type.Array lt = (Type.Array) t;

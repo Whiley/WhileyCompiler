@@ -145,10 +145,7 @@ public class TypeParser {
 			}		
 		case 'i':
 			match("int");
-			return T_INT;
-		case 'r':
-			match("real");
-			return T_REAL;		
+			return T_INT;		
 		case '[':
 		{
 			match("[");

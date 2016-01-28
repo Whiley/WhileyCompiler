@@ -186,16 +186,6 @@ public final class WyilFileReader {
 				constant = Constant.V_INTEGER(bi);
 				break;
 			}
-			case WyilFileWriter.CONSTANT_Real: {
-				int len = input.read_uv();
-				byte[] bytes = new byte[len];
-				input.read(bytes);
-				BigInteger mantissa = new BigInteger(bytes);
-				int exponent = input.read_uv();
-				constant = Constant
-						.V_DECIMAL(new BigDecimal(mantissa, exponent));
-				break;
-			}
 			case WyilFileWriter.CONSTANT_List: {
 				int len = input.read_uv();
 				ArrayList<Constant> values = new ArrayList<Constant>();
@@ -746,10 +736,6 @@ public final class WyilFileReader {
 			return Codes.Move(types[0], targets[0], operands[0]);
 		case Code.OPCODE_neg:
 			return Codes.UnaryOperator(types[0], targets[0], operands[0], Codes.UnaryOperatorKind.NEG);
-		case Code.OPCODE_numerator:
-			return Codes.UnaryOperator(types[0], targets[0], operands[0], Codes.UnaryOperatorKind.NUMERATOR);
-		case Code.OPCODE_denominator:
-			return Codes.UnaryOperator(types[0], targets[0], operands[0], Codes.UnaryOperatorKind.DENOMINATOR);
 		case Code.OPCODE_not: {
 			if (!(types[0] instanceof Type.Bool)) {
 				throw new RuntimeException("expected bool type");
