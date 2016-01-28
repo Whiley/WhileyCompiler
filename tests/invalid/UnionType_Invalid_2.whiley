@@ -1,12 +1,12 @@
-type IntReal is int | real
+type IntBool is int | bool
 
 function f(int y) -> int:
     return y
 
 method main():
-    IntReal x
+    IntBool x
     //
     x = 123
     f(x)
-    x = 1.234
+    x = false
     f(x)

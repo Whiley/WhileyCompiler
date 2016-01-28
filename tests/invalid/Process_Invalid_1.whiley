@@ -12,5 +12,5 @@ method create(int data) -> MyProc1:
 
 method main() -> int:
     MyProc2 p = create(1)
-    p.set(1.23)
+    p.set(false)
     return get(p)

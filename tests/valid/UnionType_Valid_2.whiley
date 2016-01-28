@@ -2,7 +2,7 @@
 public type char is (int x) where 0 <= x && x <= 255
 //
 type State is ({char[] input, int pos} s) where s.pos >= 0
-type Expr is real | {int[] id}
+type Expr is int | {int[] id}
 type SyntaxError is {int[] err}
 type SExpr is SyntaxError | Expr
 
@@ -20,13 +20,13 @@ function parseNumber(State st) -> (Expr f1, State f2):
     while st.pos < |st.input| && isDigit(st.input[st.pos]) where st.pos >= 0:
         n = n + (int) (st.input[st.pos] - '0')
         st.pos = st.pos + 1
-    return (real) n,st 
+    return n,st 
 
 public export method test() :
     SExpr f1
     State f2
     f1,f2 = parseTerm({input: "123", pos: 0})
-    assume f1 == 6.0
+    assume f1 == 6
     f1,f2 = parseTerm({input: "abc", pos: 0})
     //
     assume f1 is SyntaxError

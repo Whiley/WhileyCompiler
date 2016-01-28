@@ -1,6 +1,6 @@
 
 
-function f(real x) -> int:
+function f(bool x) -> int:
     return 1
 
 function f(int x) -> int:
@@ -8,4 +8,4 @@ function f(int x) -> int:
 
 public export method test() :
     assume f(1) == 2
-    assume f(1.23) == 1
+    assume f(false) == 1

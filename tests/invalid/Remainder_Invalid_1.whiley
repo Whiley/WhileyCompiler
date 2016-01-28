@@ -1,2 +1,2 @@
-function f(real x, int y) -> int:
+function f(int x, int y) -> int:
     return x % y
