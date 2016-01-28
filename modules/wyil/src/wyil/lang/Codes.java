@@ -931,8 +931,9 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Fail extends Code.Unit {
-		private Fail() {		
+	public static final class Fail extends Code.AbstractBytecode<Type> {
+		private Fail() {	
+			super(new Type[0],new int[0]);
 		}
 
 		@Override
@@ -941,13 +942,15 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit remap(Map<Integer, Integer> binding) {
+		protected Unit clone(int[] nTargets, int[] nOperands) {
 			return this;
 		}
 		
 		public String toString() {
 			return "fail";			
 		}
+
+		
 	}
 
 	/**
@@ -1060,10 +1063,11 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Goto extends Code.Unit {
+	public static final class Goto extends AbstractBytecode<Type> {
 		public final String target;
 
 		private Goto(String target) {
+			super(new Type[0],new int[0]);
 			this.target = target;
 		}
 
@@ -1080,11 +1084,6 @@ public abstract class Codes {
 			}
 		}
 		
-		@Override
-		public Code.Unit remap(Map<Integer, Integer> binding) {
-			return this;
-		}
-
 		public int hashCode() {
 			return target.hashCode();
 		}
@@ -1096,9 +1095,15 @@ public abstract class Codes {
 			return false;
 		}
 
+		@Override
+		protected Unit clone(int[] nTargets, int[] nOperands) {
+			return this;
+		}		
+		
 		public String toString() {
 			return "goto " + target;
-		}		
+		}
+	
 	}
 
 	/**
@@ -2515,8 +2520,9 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Nop extends Code.Unit {
+	public static final class Nop extends AbstractBytecode<Type> {
 		private Nop() {
+			super(new Type[0],new int[0]);
 		}
 
 		@Override
@@ -2525,13 +2531,19 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit remap(Map<Integer, Integer> binding) {
+		protected Unit clone(int[] nTargets, int[] nOperands) {
 			return this;
+		}
+		
+		public boolean equals(Object o) {
+			return o instanceof Nop;
 		}
 		
 		public String toString() {
 			return "nop";
 		}
+
+	
 	}
 
 	/**

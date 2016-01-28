@@ -587,10 +587,9 @@ public final class WyilFileReader {
 		int fmt = (opcode & Code.FMT_MASK);
 
 		switch (fmt) {
-		case Code.FMT_EMPTY:
-			return readEmpty(opcode, wideBase, wideRest, offset, labels);										
 		case Code.FMT_NARYOP:
 			return readNaryOp(opcode, wideBase, wideRest, offset, labels);
+		case Code.FMT_EMPTY:
 		case Code.FMT_UNARYOP:
 		case Code.FMT_BINARYOP:
 		case Code.FMT_UNARYASSIGN:
@@ -603,25 +602,6 @@ public final class WyilFileReader {
 			throw new RuntimeException("unknown opcode encountered (" + opcode
 					+ ")");
 		}
-	}
-
-	private Code readEmpty(int opcode, boolean wideBase, boolean wideRest,
-			int offset, HashMap<Integer, Codes.Label> labels)
-			throws IOException {
-		switch (opcode) {		
-		case Code.OPCODE_fail: {
-			return Codes.Fail();
-		}
-		case Code.OPCODE_goto: {
-			int target = readTarget(wideRest, offset);
-			Codes.Label lab = findLabel(target, labels);
-			return Codes.Goto(lab.label);
-		}
-		case Code.OPCODE_nop:
-			return Codes.Nop;
-		}
-		throw new RuntimeException("unknown opcode encountered (" + opcode
-				+ ")");
 	}
 
 	private Code readNaryOp(int opcode, boolean wideBase, boolean wideRest,
@@ -846,7 +826,18 @@ public final class WyilFileReader {
 			Codes.Comparator cop = Codes.Comparator.values()[opcode - Code.OPCODE_ifeq];
 			return Codes.If(types[0], operands[0], operands[1], cop, l.label);
 		}
+		// Empty bytecodes
+		case Code.OPCODE_fail: {
+			return Codes.Fail();
 		}
+		case Code.OPCODE_goto: {
+			int target = readTarget(wideRest, offset);
+			Codes.Label lab = findLabel(target, labels);
+			return Codes.Goto(lab.label);
+		}
+		case Code.OPCODE_nop:
+			return Codes.Nop;
+		}		
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
 	}
