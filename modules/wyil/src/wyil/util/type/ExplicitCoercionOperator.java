@@ -57,7 +57,7 @@ import wyil.lang.Type;
  * @author David J. Pearce
  *
  */
-public class ExplicitCoercionOperator extends ImplicitCoercionOperator {
+public class ExplicitCoercionOperator extends SubtypeOperator {
 
 	public ExplicitCoercionOperator(Automaton fromAutomata, Automaton toAutomata) {
 		super(fromAutomata,toAutomata);
@@ -71,22 +71,12 @@ public class ExplicitCoercionOperator extends ImplicitCoercionOperator {
 		int fromKind = fromState.kind;
 		int toKind = toState.kind;
 
-		if (primitiveSubtype(fromKind, toKind)) {
-			return fromSign == toSign || (fromSign && !toSign);
-		} else if(fromKind == K_RECORD && toKind == K_RECORD) {
+		if(fromKind == K_RECORD && toKind == K_RECORD) {
 			return intersectRecords(fromIndex,fromSign,toIndex,toSign);
 		} else {
 			return super.isIntersectionInner(fromIndex, fromSign, toIndex,
 					toSign);
 		}
-	}
-
-	private static boolean primitiveSubtype(int fromKind, int toKind) {
-		if (fromKind == K_CHAR && toKind == K_INT) {
-			// ints can flow (explicitly) into chars
-			return true;
-		}
-		return false;
 	}
 
 	/**
