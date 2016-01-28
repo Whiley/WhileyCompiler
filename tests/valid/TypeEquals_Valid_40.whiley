@@ -1,13 +1,13 @@
 
 
-type pos is real
+type pos is bool
 
 type neg is int
 
 type expr is pos | neg | int[]
 
 function f(expr e) -> int:
-    if (e is pos) && (e > 0.0):
+    if (e is pos) && e == true:
         return 0
     else:
         if e is neg:
@@ -17,6 +17,6 @@ function f(expr e) -> int:
 
 public export method test() :
     assume f(-1) == 1
-    assume f(1.0) == 0
-    assume f(1.234) == 0
+    assume f(false) == 2
+    assume f(true) == 0
     assume f([1, 2, 3]) == 2

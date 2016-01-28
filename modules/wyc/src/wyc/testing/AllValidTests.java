@@ -276,38 +276,8 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void Cast_Valid_1() throws IOException {
-		runTest("Cast_Valid_1");
-	}
-
-	@Test
-	public void Cast_Valid_2() throws IOException {
-		runTest("Cast_Valid_2");
-	}
-
-	@Test
-	public void Cast_Valid_3() throws IOException {
-		runTest("Cast_Valid_3");
-	}
-
-	@Test
-	public void Cast_Valid_4() throws IOException {
-		runTest("Cast_Valid_4");
-	}
-
-	@Test
 	public void Cast_Valid_5() throws IOException {
 		runTest("Cast_Valid_5");
-	}
-
-	@Test
-	public void Cast_Valid_6() throws IOException {
-		runTest("Cast_Valid_6");
-	}
-
-	@Test
-	public void Coercion_Valid_1() throws IOException {
-		runTest("Coercion_Valid_1");
 	}
 
 	@Test
@@ -686,11 +656,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void DecimalAssignment_Valid_1() throws IOException {
-		runTest("DecimalAssignment_Valid_1");
-	}
-
-	@Test
 	public void Define_Valid_1() throws IOException {
 		runTest("Define_Valid_1");
 	}
@@ -793,11 +758,6 @@ public class AllValidTests {
 	@Ignore("Issue ???") @Test
 	public void FunctionRef_Valid_2() throws IOException {
 		runTest("FunctionRef_Valid_2");
-	}
-
-	@Test
-	public void FunctionRef_Valid_3() throws IOException {
-		runTest("FunctionRef_Valid_3");
 	}
 
 	@Test
@@ -1031,11 +991,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void IntEquals_Valid_1() throws IOException {
-		runTest("IntEquals_Valid_1");
-	}
-
-	@Test
 	public void IntMul_Valid_1() throws IOException {
 		runTest("IntMul_Valid_1");
 	}
@@ -1205,18 +1160,8 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void ListConversion_Valid_1() throws IOException {
-		runTest("ListConversion_Valid_1");
-	}
-
-	@Test
 	public void ListEmpty_Valid_1() throws IOException {
 		runTest("ListEmpty_Valid_1");
-	}
-
-	@Test
-	public void ListEquals_Valid_1() throws IOException {
-		runTest("ListEquals_Valid_1");
 	}
 
 	@Test
@@ -1425,16 +1370,6 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void OpenRecord_Valid_7() throws IOException {
-		runTest("OpenRecord_Valid_7");
-	}
-
-	@Test
-	public void OpenRecord_Valid_8() throws IOException {
-		runTest("OpenRecord_Valid_8");
-	}
-
-	@Test
 	public void OpenRecord_Valid_9() throws IOException {
 		runTest("OpenRecord_Valid_9");
 	}
@@ -1515,88 +1450,8 @@ public class AllValidTests {
 	}
 
 	@Test
-	public void RealConst_Valid_1() throws IOException {
-		runTest("RealConst_Valid_1");
-	}
-
-	@Test
-	public void RealDiv_Valid_1() throws IOException {
-		runTest("RealDiv_Valid_1");
-	}
-
-	@Test
-	public void RealDiv_Valid_2() throws IOException {
-		runTest("RealDiv_Valid_2");
-	}
-
-	@Test
-	public void RealDiv_Valid_3() throws IOException {
-		runTest("RealDiv_Valid_3");
-	}
-
-	@Test
-	public void RealDiv_Valid_4() throws IOException {
-		runTest("RealDiv_Valid_4");
-	}
-
-	@Test
-	public void RealDiv_Valid_5() throws IOException {
-		runTest("RealDiv_Valid_5");
-	}
-
-	@Test
-	public void RealDiv_Valid_6() throws IOException {
-		runTest("RealDiv_Valid_6");
-	}
-
-	@Test
-	public void RealDiv_Valid_7() throws IOException {
-		runTest("RealDiv_Valid_7");
-	}
-
-	@Test
-	public void RealNeg_Valid_1() throws IOException {
-		runTest("RealNeg_Valid_1");
-	}
-
-	@Test
-	public void RealNeg_Valid_2() throws IOException {
-		runTest("RealNeg_Valid_2");
-	}
-
-	@Ignore("#564") @Test
-	public void RealSplit_Valid_1() throws IOException {
-		runTest("RealSplit_Valid_1");
-	}
-
-	@Test
-	public void RealSub_Valid_1() throws IOException {
-		runTest("RealSub_Valid_1");
-	}
-
-	@Test
-	public void RealSub_Valid_2() throws IOException {
-		runTest("RealSub_Valid_2");
-	}
-
-	@Test
-	public void RealSub_Valid_3() throws IOException {
-		runTest("RealSub_Valid_3");
-	}
-
-	@Test
-	public void Real_Valid_1() throws IOException {
-		runTest("Real_Valid_1");
-	}
-
-	@Test
 	public void RecordAccess_Valid_1() throws IOException {
 		runTest("RecordAccess_Valid_1");
-	}
-
-	@Test
-	public void RecordAccess_Valid_2() throws IOException {
-		runTest("RecordAccess_Valid_2");
 	}
 
 	@Test
@@ -1652,11 +1507,6 @@ public class AllValidTests {
 	@Ignore("#564") @Test
 	public void RecordCoercion_Valid_1() throws IOException {
 		runTest("RecordCoercion_Valid_1");
-	}
-
-	@Test
-	public void RecordConversion_Valid_1() throws IOException {
-		runTest("RecordConversion_Valid_1");
 	}
 
 	@Test
@@ -2247,11 +2097,6 @@ public class AllValidTests {
 	@Test
 	public void TypeEquals_Valid_7() throws IOException {
 		runTest("TypeEquals_Valid_7");
-	}
-
-	@Test
-	public void TypeEquals_Valid_8() throws IOException {
-		runTest("TypeEquals_Valid_8");
 	}
 
 	@Test

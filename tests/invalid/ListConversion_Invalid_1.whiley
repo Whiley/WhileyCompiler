@@ -1,4 +1,4 @@
-function f(real[] ls) -> int:
+function f(byte[] ls) -> int:
     return 0
 
 method main():

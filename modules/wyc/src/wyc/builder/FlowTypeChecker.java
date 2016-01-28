@@ -1267,8 +1267,8 @@ public class FlowTypeChecker {
 		case LTEQ:
 		case GTEQ:
 		case GT:
-			checkSuptypes(lhs, context, Nominal.T_INT, Nominal.T_REAL);
-			checkSuptypes(rhs, context, Nominal.T_INT, Nominal.T_REAL);
+			checkSuptypes(lhs, context, Nominal.T_INT);
+			checkSuptypes(rhs, context, Nominal.T_INT);
 			//
 			if (!lhsRawType.equals(rhsRawType)) {
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType, rhsRawType), filename, bop);
@@ -1453,8 +1453,8 @@ public class FlowTypeChecker {
 			break;
 		default:
 			// all other operations go through here
-			checkSuptypes(lhs, context, Nominal.T_INT, Nominal.T_REAL);
-			checkSuptypes(rhs, context, Nominal.T_INT, Nominal.T_REAL);
+			checkSuptypes(lhs, context, Nominal.T_INT);
+			checkSuptypes(rhs, context, Nominal.T_INT);
 			//
 			if (!lhsRawType.equals(rhsRawType)) {
 				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType, rhsRawType), filename, expr);
@@ -1482,7 +1482,7 @@ public class FlowTypeChecker {
 
 		switch (expr.op) {
 		case NEG:
-			checkSuptypes(src, context, Nominal.T_INT, Nominal.T_REAL);
+			checkSuptypes(src, context, Nominal.T_INT);
 			break;
 		case INVERT:
 			checkIsSubtype(Type.T_BYTE, src, context);
@@ -2475,8 +2475,6 @@ public class FlowTypeChecker {
 				return Type.T_BYTE;
 			} else if (t instanceof SyntacticType.Int) {
 				return Type.T_INT;
-			} else if (t instanceof SyntacticType.Real) {
-				return Type.T_REAL;
 			} else {
 				internalFailure("unrecognised type encountered (" + t.getClass().getName() + ")", context, t);
 				return null; // deadcode
@@ -2696,8 +2694,6 @@ public class FlowTypeChecker {
 			kind = Type.K_BYTE;
 		} else if (t instanceof SyntacticType.Int) {
 			kind = Type.K_INT;
-		} else if (t instanceof SyntacticType.Real) {
-			kind = Type.K_RATIONAL;
 		} else {
 			internalFailure("unrecognised type encountered (" + t.getClass().getName() + ")", context, t);
 			return 0; // dead-code
@@ -3040,10 +3036,7 @@ public class FlowTypeChecker {
 			if (operand instanceof Constant.Integer) {
 				Constant.Integer b = (Constant.Integer) operand;
 				return Constant.V_INTEGER(b.value.negate());
-			} else if (operand instanceof Constant.Decimal) {
-				Constant.Decimal b = (Constant.Decimal) operand;
-				return Constant.V_DECIMAL(b.value.negate());
-			}
+			} 
 			syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION), context, operator);
 			break;
 		case INVERT:
@@ -3068,15 +3061,6 @@ public class FlowTypeChecker {
 			return evaluateBoolean(bop, (Constant.Bool) v1, (Constant.Bool) v2, context);
 		} else if (Type.isSubtype(Type.T_INT, lub)) {
 			return evaluate(bop, (Constant.Integer) v1, (Constant.Integer) v2, context);
-		} else if (Type.isSubtype(Type.T_REAL, v1_type) && Type.isSubtype(Type.T_REAL, v1_type)) {
-			if (v1 instanceof Constant.Integer) {
-				Constant.Integer i1 = (Constant.Integer) v1;
-				v1 = Constant.V_DECIMAL(new BigDecimal(i1.value));
-			} else if (v2 instanceof Constant.Integer) {
-				Constant.Integer i2 = (Constant.Integer) v2;
-				v2 = Constant.V_DECIMAL(new BigDecimal(i2.value));
-			}
-			return evaluate(bop, (Constant.Decimal) v1, (Constant.Decimal) v2, context);
 		} else if (Type.isSubtype(Type.T_ARRAY_ANY, lub)) {
 			return evaluate(bop, (Constant.Array) v1, (Constant.Array) v2, context);
 		}
@@ -3109,21 +3093,6 @@ public class FlowTypeChecker {
 			return Constant.V_INTEGER(v1.value.divide(v2.value));
 		case REM:
 			return Constant.V_INTEGER(v1.value.remainder(v2.value));
-		}
-		syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION), context, bop);
-		return null;
-	}
-
-	private Constant evaluate(Expr.BinOp bop, Constant.Decimal v1, Constant.Decimal v2, Context context) {
-		switch (bop.op) {
-		case ADD:
-			return Constant.V_DECIMAL(v1.value.add(v2.value));
-		case SUB:
-			return Constant.V_DECIMAL(v1.value.subtract(v2.value));
-		case MUL:
-			return Constant.V_DECIMAL(v1.value.multiply(v2.value));
-		case DIV:
-			return Constant.V_DECIMAL(v1.value.divide(v2.value));
 		}
 		syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION), context, bop);
 		return null;

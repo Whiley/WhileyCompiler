@@ -645,8 +645,6 @@ public class WhileyFilePrinter {
 			out.print("int");
 		} else if(t instanceof SyntacticType.Null) {
 			out.print("null");
-		} else if(t instanceof SyntacticType.Real) {
-			out.print("real");
 		} else if(t instanceof SyntacticType.Void) {
 			out.print("void");
 		} else if(t instanceof SyntacticType.Nominal) {

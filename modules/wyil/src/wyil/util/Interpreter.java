@@ -296,10 +296,6 @@ public class Interpreter {
 			checkType(op2, context, Constant.Integer.class);
 			result = execute(bytecode.kind, (Constant.Integer) op1,
 					(Constant.Integer) op2, context);
-		} else if (op1 instanceof Constant.Rational) {
-			checkType(op2, context, Constant.Rational.class);
-			result = execute(bytecode.kind, (Constant.Rational) op1,
-					(Constant.Rational) op2, context);
 		} else if (op1 instanceof Constant.Byte) {
 			checkType(op2, context, Constant.Byte.class, Constant.Integer.class);
 			result = execute(bytecode.kind, (Constant.Byte) op1, op2, context);
@@ -339,35 +335,6 @@ public class Interpreter {
 			return i1.divide(i2);
 		case REM:
 			return i1.remainder(i2);		
-		}
-		deadCode(context);
-		return null;
-	}
-
-	/**
-	 * Execute a rational binary operator
-	 *
-	 * @param kind
-	 *            --- operator kind
-	 * @param i1
-	 *            --- left operand
-	 * @param i2
-	 *            --- right operand
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Constant execute(Codes.BinaryOperatorKind kind,
-			Constant.Rational r1, Constant.Rational r2, Context context) {
-		switch (kind) {
-		case ADD:
-			return r1.add(r2);
-		case SUB:
-			return r1.subtract(r2);
-		case MUL:
-			return r1.multiply(r2);
-		case DIV:
-			return r1.divide(r2);
 		}
 		deadCode(context);
 		return null;
@@ -467,9 +434,7 @@ public class Interpreter {
 			// In this case, we don't need to do anything because the value is
 			// already of the correct type.
 			return value;
-		} else if (to instanceof Type.Real) {
-			return convert(value, (Type.Real) to, context);
-		} else if (to instanceof Type.Record) {
+		} if (to instanceof Type.Record) {
 			return convert(value, (Type.Record) to, context);
 		} else if (to instanceof Type.Array) {
 			return convert(value, (Type.Array) to, context);
@@ -480,23 +445,6 @@ public class Interpreter {
 		}
 		deadCode(context);
 		return null;
-	}
-
-	/**
-	 * Convert a value into an real type. The value must be of integer type for
-	 * this to make sense.
-	 *
-	 * @param value
-	 * @param to
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Constant convert(Constant value, Type.Real to, Context context) {
-		checkType(value, context, Constant.Integer.class);
-		// int -> real
-		Constant.Integer iv = (Constant.Integer) value;
-		return Constant.V_RATIONAL(new BigRational(iv.value));
 	}
 
 	/**
@@ -720,18 +668,11 @@ public class Interpreter {
 
 	private boolean lessThan(Constant lhs, Constant rhs, boolean isStrict,
 			Context context) {
-		checkType(lhs, context, Constant.Integer.class, Constant.Rational.class);
-		checkType(rhs, context, lhs.getClass());
-		int result;
-		if (lhs instanceof Constant.Integer) {
-			Constant.Integer lhs_i = (Constant.Integer) lhs;
-			Constant.Integer rhs_i = (Constant.Integer) rhs;
-			result = lhs_i.compareTo(rhs_i);
-		} else {
-			Constant.Rational lhs_i = (Constant.Rational) lhs;
-			Constant.Rational rhs_i = (Constant.Rational) rhs;
-			result = lhs_i.compareTo(rhs_i);
-		}
+		checkType(lhs, context, Constant.Integer.class);
+		checkType(rhs, context, Constant.Integer.class);
+		Constant.Integer lhs_i = (Constant.Integer) lhs;
+		Constant.Integer rhs_i = (Constant.Integer) rhs;
+		int result = lhs_i.compareTo(rhs_i); 
 		// In the strict case, the lhs must be strictly below the rhs. In the
 		// non-strict case, they can be equal.
 		if (isStrict) {
@@ -776,8 +717,6 @@ public class Interpreter {
 			return value instanceof Constant.Byte;
 		} else if (type instanceof Type.Int) {
 			return value instanceof Constant.Integer;
-		} else if (type instanceof Type.Real) {
-			return value instanceof Constant.Rational;
 		} else if (type instanceof Type.Reference) {
 			if (value instanceof ConstantObject) {
 				ConstantObject obj = (ConstantObject) value;
@@ -1232,28 +1171,10 @@ public class Interpreter {
 		//
 		switch (bytecode.kind) {
 		case NEG:
-			checkType(_operand, context, Constant.Integer.class,
-					Constant.Rational.class);
-			if (_operand instanceof Constant.Integer) {
-				Constant.Integer operand = (Constant.Integer) _operand;
-				result = operand.negate();
-			} else {
-				Constant.Rational operand = (Constant.Rational) _operand;
-				result = operand.negate();
-			}
-			break;
-		case DENOMINATOR: {
-			checkType(_operand, context, Constant.Rational.class);
-			Constant.Rational operand = (Constant.Rational) _operand;
-			result = Constant.V_INTEGER(operand.value.denominator());
-			break;
-		}
-		case NUMERATOR: {
-			checkType(_operand, context, Constant.Rational.class);
-			Constant.Rational operand = (Constant.Rational) _operand;
-			result = Constant.V_INTEGER(operand.value.numerator());
-			break;
-		}
+			checkType(_operand, context, Constant.Integer.class);
+			Constant.Integer operand = (Constant.Integer) _operand;
+			result = operand.negate();			
+			break;		
 		default:
 			return deadCode(context);
 		}
@@ -1387,9 +1308,6 @@ public class Interpreter {
 				|| constant instanceof Constant.Lambda
 				|| constant instanceof Constant.Type) {
 			return constant;
-		} else if (constant instanceof Constant.Decimal) {
-			Constant.Decimal dec = (Constant.Decimal) constant;
-			return Constant.V_RATIONAL(new BigRational(dec.value));
 		} else if (constant instanceof Constant.Array) {
 			Constant.Array ct = (Constant.Array) constant;
 			ArrayList<Constant> values = new ArrayList<Constant>(ct.values);

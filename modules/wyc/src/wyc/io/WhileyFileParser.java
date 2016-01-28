@@ -2375,11 +2375,6 @@ public class WhileyFileParser {
 			return new Expr.Constant(wyil.lang.Constant.V_INTEGER(val),
 					sourceAttr(start, index++));
 		}
-		case RealValue: {
-			BigDecimal val = new BigDecimal(token.text);
-			return new Expr.Constant(wyil.lang.Constant.V_DECIMAL(val),
-					sourceAttr(start, index++));
-		}
 		case StringValue: {
 			List<Constant> str = parseString(token.text);
 			return new Expr.Constant(wyil.lang.Constant.V_ARRAY(str),
@@ -2894,20 +2889,6 @@ public class WhileyFileParser {
 		int start = index;
 		match(Minus);
 		Expr e = parseAccessExpression(wf, environment, terminated);
-
-		// FIXME: we shouldn't be doing constant folding here, as it's
-		// unnecessary at this point and should be performed later during
-		// constant propagation.
-
-		if (e instanceof Expr.Constant) {
-			Expr.Constant c = (Expr.Constant) e;
-			if (c.value instanceof Constant.Decimal) {
-				BigDecimal br = ((Constant.Decimal) c.value).value;
-				return new Expr.Constant(wyil.lang.Constant.V_DECIMAL(br
-						.negate()), sourceAttr(start, index));
-			}
-		}
-
 		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index - 1));
 	}
 
@@ -3579,8 +3560,6 @@ public class WhileyFileParser {
 			return new SyntacticType.Byte(sourceAttr(start, index++));
 		case Int:
 			return new SyntacticType.Int(sourceAttr(start, index++));
-		case Real:
-			return new SyntacticType.Real(sourceAttr(start, index++));
 		case LeftBrace:
 			return parseBracketedType();
 		case LeftCurly:

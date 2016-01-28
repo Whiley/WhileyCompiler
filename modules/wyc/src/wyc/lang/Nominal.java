@@ -32,7 +32,6 @@ public abstract class Nominal {
 	public static final Nominal T_BOOL = new Base(Type.T_BOOL,Type.T_BOOL);
 	public static final Nominal T_BYTE = new Base(Type.T_BYTE,Type.T_BYTE);
 	public static final Nominal T_INT = new Base(Type.T_INT,Type.T_INT);
-	public static final Nominal T_REAL = new Base(Type.T_REAL,Type.T_REAL);
 	public static final Nominal T_ARRAY_ANY = new Array(Type.T_ARRAY_ANY,Type.T_ARRAY_ANY);
 
 	public static Nominal construct(Type nominal, Type raw) {

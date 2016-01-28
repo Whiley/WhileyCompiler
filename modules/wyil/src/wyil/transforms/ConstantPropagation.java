@@ -252,29 +252,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Constant rhs = environment.get(code.operand(1));
 		Constant result = null;
 
-		if (lhs instanceof Constant.Decimal && rhs instanceof Constant.Decimal) {
-			Constant.Decimal lnum = (Constant.Decimal) lhs;
-			Constant.Decimal rnum = (Constant.Decimal) rhs;
-
-			switch (code.kind) {
-			case ADD: {
-				result = lnum.add(rnum);
-				break;
-			}
-			case SUB: {
-				result = lnum.subtract(rnum);
-				break;
-			}
-			case MUL: {
-				result = lnum.multiply(rnum);
-				break;
-			}
-			case DIV: {
-				result = lnum.divide(rnum);
-				break;
-			}
-			}
-		} else if (lhs instanceof Constant.Integer
+		if (lhs instanceof Constant.Integer
 				&& rhs instanceof Constant.Integer) {
 			Constant.Integer lnum = (Constant.Integer) lhs;
 			Constant.Integer rnum = (Constant.Integer) rhs;
@@ -374,14 +352,12 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 		Constant src = environment.get(code.operand(0));
 		Constant idx = environment.get(code.operand(1));
 		Constant result = null;
-		if (idx instanceof Constant.Decimal && src instanceof Constant.Array) {
-			Constant.Decimal num = (Constant.Decimal) idx;
+		if (idx instanceof Constant.Integer && src instanceof Constant.Array) {
+			Constant.Integer num = (Constant.Integer) idx;
 			Constant.Array list = (Constant.Array) src;
-			if (num.value.scale() <= 0) {
-				int i = num.value.intValue();
-				if (BigRational.valueOf(i).equals(num.value) && i >= 0 && i < list.values.size()) {
-					result = list.values.get(i);
-				}
+			int i = num.value.intValue();
+			if (i >= 0 && i < list.values.size()) {
+				result = list.values.get(i);
 			}
 		}
 
@@ -465,10 +441,7 @@ public class ConstantPropagation extends ForwardFlowAnalysis<ConstantPropagation
 
 		switch (code.kind) {
 		case NEG:
-			if (val instanceof Constant.Decimal) {
-				Constant.Decimal num = (Constant.Decimal) val;
-				result = Constant.V_DECIMAL(num.value.negate());
-			} else if (val instanceof Constant.Integer) {
+			if (val instanceof Constant.Integer) {
 				Constant.Integer num = (Constant.Integer) val;
 				result = Constant.V_INTEGER(num.value.negate());
 			}

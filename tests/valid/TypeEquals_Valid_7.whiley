@@ -1,8 +1,8 @@
 
 
-type intreal is real | int
+type intbool is bool | int
 
-function f(intreal e) -> bool:
+function f(intbool e) -> bool:
     if e is int:
         return true
     else:
@@ -10,5 +10,5 @@ function f(intreal e) -> bool:
 
 public export method test() :
     assume f(1) == true
-    assume f(1.134) == false
-    assume f(1.0) == false
+    assume f(false) == false
+    assume f(true) == false

@@ -1,4 +1,4 @@
-type Expr is real | Var | BinOp
+type Expr is int | Var | BinOp
 
 type BinOp is {Expr rhs, Expr lhs}
 
@@ -13,7 +13,7 @@ function build(int i) -> SExpr:
         return {id: "var"}
     else:
         if i > 0:
-            return (real) i
+            return i
         else:
             return {rhs: sbuild(i + 1), lhs: sbuild(i + 10)}
 

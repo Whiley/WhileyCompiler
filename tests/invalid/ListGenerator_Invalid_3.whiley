@@ -1,2 +1,2 @@
-function f(real n) -> int[]:
+function f(bool n) -> int[]:
     return [0; n]

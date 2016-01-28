@@ -351,8 +351,8 @@ public interface Code {
 	public static final int OPCODE_move        = 4 + FMT_UNARYASSIGN;
 	public static final int OPCODE_newobject   = 5 + FMT_UNARYASSIGN;
 	public static final int OPCODE_neg         = 6 + FMT_UNARYASSIGN;
-	public static final int OPCODE_numerator   = 7 + FMT_UNARYASSIGN;
-	public static final int OPCODE_denominator = 8 + FMT_UNARYASSIGN;
+//	public static final int OPCODE_numerator   = 7 + FMT_UNARYASSIGN;
+//	public static final int OPCODE_denominator = 8 + FMT_UNARYASSIGN;
 	public static final int OPCODE_not         = 9 + FMT_UNARYASSIGN;
 //	public static final int OPCODE_tupleload   = 10 + FMT_UNARYASSIGN;
 	public static final int OPCODE_fieldload   = 11 + FMT_UNARYASSIGN; // +STRINGIDX

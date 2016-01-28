@@ -264,39 +264,9 @@ public class AllValidVerificationTests {
 		runTest("Byte_Valid_9");
 	}
 
-	@Test
-	public void Cast_Valid_1() {
-		runTest("Cast_Valid_1");
-	}
-
-	@Test
-	public void Cast_Valid_2() {
-		runTest("Cast_Valid_2");
-	}
-
-	@Test
-	public void Cast_Valid_3() {
-		runTest("Cast_Valid_3");
-	}
-
-	@Test
-	public void Cast_Valid_4() {
-		runTest("Cast_Valid_4");
-	}
-
 	@Ignore("#468") @Test
 	public void Cast_Valid_5() {
 		runTest("Cast_Valid_5");
-	}
-
-	@Test
-	public void Cast_Valid_6() {
-		runTest("Cast_Valid_6");
-	}
-
-	@Test
-	public void Coercion_Valid_1() {
-		runTest("Coercion_Valid_1");
 	}
 
 	@Test
@@ -675,11 +645,6 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
-	public void DecimalAssignment_Valid_1() {
-		runTest("DecimalAssignment_Valid_1");
-	}
-
-	@Test
 	public void Define_Valid_1() {
 		runTest("Define_Valid_1");
 	}
@@ -784,12 +749,6 @@ public class AllValidVerificationTests {
 	@Ignore("Issue ???") @Test
 	public void FunctionRef_Valid_2() {
 		runTest("FunctionRef_Valid_2");
-	}
-
-
-	@Test
-	public void FunctionRef_Valid_3() {
-		runTest("FunctionRef_Valid_3");
 	}
 
 	@Ignore("Issue ???") @Test
@@ -1025,11 +984,6 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
-	public void IntEquals_Valid_1() {
-		runTest("IntEquals_Valid_1");
-	}
-
-	@Test
 	public void IntMul_Valid_1() {
 		runTest("IntMul_Valid_1");
 	}
@@ -1190,18 +1144,8 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
-	public void ListConversion_Valid_1() {
-		runTest("ListConversion_Valid_1");
-	}
-
-	@Test
 	public void ListEmpty_Valid_1() {
 		runTest("ListEmpty_Valid_1");
-	}
-
-	@Test
-	public void ListEquals_Valid_1() {
-		runTest("ListEquals_Valid_1");
 	}
 
 	@Test
@@ -1411,16 +1355,6 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
-	public void OpenRecord_Valid_7() {
-		runTest("OpenRecord_Valid_7");
-	}
-
-	@Test
-	public void OpenRecord_Valid_8() {
-		runTest("OpenRecord_Valid_8");
-	}
-
-	@Test
 	public void OpenRecord_Valid_9() {
 		runTest("OpenRecord_Valid_9");
 	}
@@ -1502,88 +1436,8 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
-	public void RealConst_Valid_1() {
-		runTest("RealConst_Valid_1");
-	}
-
-	@Test
-	public void RealDiv_Valid_1() {
-		runTest("RealDiv_Valid_1");
-	}
-
-	@Test
-	public void RealDiv_Valid_2() {
-		runTest("RealDiv_Valid_2");
-	}
-
-	@Test
-	public void RealDiv_Valid_3() {
-		runTest("RealDiv_Valid_3");
-	}
-
-	@Test
-	public void RealDiv_Valid_4() {
-		runTest("RealDiv_Valid_4");
-	}
-
-	@Ignore("#183") @Test
-	public void RealDiv_Valid_5() {
-		runTest("RealDiv_Valid_5");
-	}
-
-	@Test
-	public void RealDiv_Valid_6() {
-		runTest("RealDiv_Valid_6");
-	}
-
-	@Test
-	public void RealDiv_Valid_7() {
-		runTest("RealDiv_Valid_7");
-	}
-
-	@Test
-	public void RealNeg_Valid_1() {
-		runTest("RealNeg_Valid_1");
-	}
-
-	@Test
-	public void RealNeg_Valid_2() {
-		runTest("RealNeg_Valid_2");
-	}
-
-	@Ignore("#564") @Test
-	public void RealSplit_Valid_1() {
-		runTest("RealSplit_Valid_1");
-	}
-
-	@Test
-	public void RealSub_Valid_1() {
-		runTest("RealSub_Valid_1");
-	}
-
-	@Test
-	public void RealSub_Valid_2() {
-		runTest("RealSub_Valid_2");
-	}
-
-	@Test
-	public void RealSub_Valid_3() {
-		runTest("RealSub_Valid_3");
-	}
-
-	@Test
-	public void Real_Valid_1() {
-		runTest("Real_Valid_1");
-	}
-
-	@Test
 	public void RecordAccess_Valid_1() {
 		runTest("RecordAccess_Valid_1");
-	}
-
-	@Test
-	public void RecordAccess_Valid_2() {
-		runTest("RecordAccess_Valid_2");
 	}
 
 	@Test
@@ -1639,11 +1493,6 @@ public class AllValidVerificationTests {
 	@Ignore("#564") @Test
 	public void RecordCoercion_Valid_1() {
 		runTest("RecordCoercion_Valid_1");
-	}
-
-	@Test
-	public void RecordConversion_Valid_1() {
-		runTest("RecordConversion_Valid_1");
 	}
 
 	@Test
@@ -2247,11 +2096,6 @@ public class AllValidVerificationTests {
 	@Test
 	public void TypeEquals_Valid_7() {
 		runTest("TypeEquals_Valid_7");
-	}
-
-	@Test
-	public void TypeEquals_Valid_8() {
-		runTest("TypeEquals_Valid_8");
 	}
 
 	@Test

@@ -12,6 +12,6 @@ method create(any data) -> &MyProc2:
     return new {data: data}
 
 public export method test() :
-    &MyProc2 p2 = create(1.23)
+    &MyProc2 p2 = create(false)
     set(p2,1)
     assume get(p2) == 1

@@ -1,8 +1,8 @@
 function f(int x) -> int:
     return x + 1
 
-function g(function func(real)->int) -> int:
-    return func(1.2345)
+function g(function func(bool)->int) -> int:
+    return func(010b)
 
 method h() -> int
     return g(&f)

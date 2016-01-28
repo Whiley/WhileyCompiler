@@ -78,7 +78,6 @@ public abstract class Type {
 	public static final Bool T_BOOL = new Bool();
 	public static final Byte T_BYTE = new Byte();
 	public static final Int T_INT = new Int();
-	public static final Real T_REAL = new Real();
 	public static final Meta T_META = new Meta();
 
 	// the following are strictly unnecessary, but since they occur very
@@ -719,25 +718,6 @@ public abstract class Type {
 		}
 		public String toString() {
 			return "int";
-		}
-	}
-
-	/**
-	 * Represents the set of (unbound) rational numbers.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Real extends Leaf {
-		private Real() {}
-		public boolean equals(Object o) {
-			return o == T_REAL;
-		}
-		public int hashCode() {
-			return 5;
-		}
-		public String toString() {
-			return "real";
 		}
 	}
 
@@ -1508,8 +1488,6 @@ public abstract class Type {
 			return K_BYTE;
 		} else if(leaf instanceof Type.Int) {
 			return K_INT;
-		} else if(leaf instanceof Type.Real) {
-			return K_RATIONAL;
 		} else if(leaf instanceof Type.Meta) {
 			return K_META;
 		} else if(leaf instanceof Type.Nominal) {
@@ -1566,9 +1544,6 @@ public abstract class Type {
 			break;
 		case K_INT:
 			type = T_INT;
-			break;
-		case K_RATIONAL:
-			type = T_REAL;
 			break;
 		case K_NOMINAL:
 			type = new Nominal((NameID) root.data);

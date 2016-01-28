@@ -1,6 +1,6 @@
 
 
-type pos is (real r) where r > 0.0
+type pos is (bool r)
 
 type neg is (int n) where n < 0
 
@@ -14,6 +14,6 @@ function f(expr e) -> bool:
 
 public export method test() :
     assume f(-1) == false
-    assume f(1.0) == true
-    assume f(1234.0) == true
-    assume f(-1.0) == false
+    assume f(false) == true
+    assume f(true) == true
+    assume f(!true) == true

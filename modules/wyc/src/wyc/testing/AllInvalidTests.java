@@ -195,31 +195,6 @@ public class AllInvalidTests {
 	}
 
 	@Test
-	public void Cast_Invalid_1() {
-		runTest("Cast_Invalid_1");
-	}
-
-	@Test
-	public void Cast_Invalid_2() {
-		runTest("Cast_Invalid_2");
-	}
-
-	@Test
-	public void Cast_Invalid_3() {
-		runTest("Cast_Invalid_3");
-	}
-
-	@Test
-	public void Cast_Invalid_4() {
-		runTest("Cast_Invalid_4");
-	}
-
-	@Test
-	public void Coercion_Invalid_1() {
-		runTest("Coercion_Invalid_1");
-	}
-
-	@Test
 	public void Coercion_Invalid_2() {
 		runTest("Coercion_Invalid_2");
 	}
@@ -798,46 +773,6 @@ public class AllInvalidTests {
 	@Test
 	public void Quantifiers_Invalid_8() {
 		runTest("Quantifiers_Invalid_8");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Rational_Invalid_1() {
-		runTest("Rational_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Rational_Invalid_2() {
-		runTest("Rational_Invalid_2");
-	}
-
-	@Test
-	public void RealAdd_Invalid_1() {
-		runTest("RealAdd_Invalid_1");
-	}
-
-	@Test
-	public void RealConvert_Invalid_1() {
-		runTest("RealConvert_Invalid_1");
-	}
-
-	@Test
-	public void RealConvert_Invalid_2() {
-		runTest("RealConvert_Invalid_2");
-	}
-
-	@Test
-	public void RealDiv_Invalid_1() {
-		runTest("RealDiv_Invalid_1");
-	}
-
-	@Test
-	public void RealDiv_Invalid_2() {
-		runTest("RealDiv_Invalid_2");
-	}
-
-	@Ignore("Internal Failure") @Test
-	public void RealMul_Invalid_1() {
-		runTest("RealMul_Invalid_1");
 	}
 
 	@Test

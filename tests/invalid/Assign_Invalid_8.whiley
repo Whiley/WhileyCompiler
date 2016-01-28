@@ -1,3 +1,3 @@
 function f(int x) -> int:
-    x = 2.0
+    x = false
     return 1
