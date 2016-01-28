@@ -1739,10 +1739,11 @@ public class FlowTypeChecker {
 		return expr;
 	}
 
-	private Expr propagate(Expr.ArrayGenerator expr, Environment environment, Context context) {
+	private Expr propagate(Expr.ArrayGenerator expr, Environment environment, Context context) {		
 		expr.element = propagate(expr.element, environment, context);
-		expr.count = propagate(expr.count, environment, context);
+		expr.count = propagate(expr.count, environment, context);		
 		expr.type = Nominal.Array(expr.element.result(), true);
+		checkIsSubtype(Type.T_INT, expr.count);
 		return expr;
 	}
 
