@@ -114,6 +114,7 @@
       <include name="lib/*-v${version}.jar"/>
       <include name="lib/wyrl-v*.jar"/>
       <include name="lib/jasm-v*.jar"/>
+      <include name="lib/maven-ant-tasks*.jar"/>      
     </fileset>
   </copy>
   <tar destfile="dist/wdk-src-v${version}.tar" longfile="gnu">
