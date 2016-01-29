@@ -10,7 +10,6 @@ import java.util.Map;
 import wyc.lang.Expr;
 import wyc.lang.Stmt;
 import wyc.lang.SyntacticType;
-import wyc.lang.TypePattern;
 import wyc.lang.WhileyFile;
 import wycc.util.Pair;
 import wyil.lang.*;
@@ -61,8 +60,6 @@ public class WhileyFilePrinter {
 		out.println();
 		print(fm.modifiers());
 
-		int paramStart = 0;
-
 		if(fm instanceof WhileyFile.Method) {
 			out.print("method ");
 		} else {
@@ -70,26 +67,10 @@ public class WhileyFilePrinter {
 		}
 
 		out.print(fm.name());
-		out.print("(");
-		boolean firstTime = true;
-		for(int i = paramStart; i < fm.parameters.size();++i) {
-			WhileyFile.Parameter p = fm.parameters.get(i);
-			if(!firstTime) {
-				out.print(", ");
-			}
-			firstTime=false;
-			print(p.type);
-			out.print(" ");
-			out.print(p.name);
-		}
-		out.print(") -> ");
-		print(fm.ret);
-
-		if(!(fm.throwType instanceof SyntacticType.Void)) {
-			out.print(" throws ");
-			print(fm.throwType);
-		}
-
+		printParameters(fm.parameters);		
+		out.print(" -> ");
+		printParameters(fm.returns);
+		
 		for(Expr r : fm.requires) {
 			out.println();
 			out.print("requires ");
@@ -97,7 +78,6 @@ public class WhileyFilePrinter {
 		}
 		for(Expr r : fm.ensures) {
 			out.println();
-			firstTime = false;
 			out.print("ensures ");
 			print(r);
 		}
@@ -106,7 +86,7 @@ public class WhileyFilePrinter {
 
 		print(fm.statements,1);
 	}
-
+	
 	public void print(WhileyFile.Import decl) {
 		out.print("import ");
 		if(decl.name != null) {
@@ -139,8 +119,8 @@ public class WhileyFilePrinter {
 		out.print("type ");
 		out.print(decl.name());
 		out.print(" is ");
-		print(decl.pattern);
-
+		printParameter(decl.parameter,true);
+		
 		for(Expr invariant : decl.invariant) {
 			out.print(" where ");
 			print(invariant);
@@ -226,17 +206,30 @@ public class WhileyFilePrinter {
 
 	public void print(Stmt.Return s) {
 		out.print("return");
-		if(s.expr != null) {
-			out.print(" ");
-			print(s.expr);
+		for(int i=0;i!=s.returns.size();++i) {
+			if(i != 0) {
+				out.print(",");
+			}
+			out.print(" ");	
+			print(s.returns.get(i));
 		}
 		out.println();
 	}
 
 	public void print(Stmt.Assign s) {
-		print(s.lhs);
+		for(int i=0;i!=s.lvals.size();++i) {
+			if(i!=0) {
+				out.print(", ");
+			}
+			print(s.lvals.get(i));
+		}
 		out.print(" = ");
-		print(s.rhs);
+		for(int i=0;i!=s.rvals.size();++i) {
+			if(i!=0) {
+				out.print(", ");
+			}
+			print(s.rvals.get(i));
+		}
 		out.println();
 	}
 
@@ -308,7 +301,7 @@ public class WhileyFilePrinter {
 	}
 
 	public void print(Stmt.VariableDeclaration s, int indent) {
-		print(s.pattern);
+		printParameter(s.parameter,false);		
 		if(s.expr != null) {
 			out.print(" = ");
 			print(s.expr);
@@ -368,8 +361,6 @@ public class WhileyFilePrinter {
 			print ((Expr.FieldAccess) expression);
 		} else if (expression instanceof Expr.Record) {
 			print ((Expr.Record) expression);
-		} else if (expression instanceof Expr.Tuple) {
-			print ((Expr.Tuple) expression);
 		} else if (expression instanceof Expr.AbstractFunctionOrMethod) {
 			print ((Expr.AbstractFunctionOrMethod) expression);
 		} else if (expression instanceof Expr.Lambda) {
@@ -378,8 +369,6 @@ public class WhileyFilePrinter {
 			print ((Expr.New) expression);
 		} else if (expression instanceof Expr.TypeVal) {
 			print ((Expr.TypeVal) expression);
-		} else if (expression instanceof Expr.RationalLVal) {
-			print ((Expr.RationalLVal) expression);
 		} else {
 			// should be dead-code
 			throw new RuntimeException("Unknown expression kind encountered: " + expression.getClass().getName());
@@ -567,19 +556,6 @@ public class WhileyFilePrinter {
 		out.print("}");
 	}
 
-	public void print(Expr.Tuple e) {
-		out.print("(");
-		boolean firstTime = true;
-		for(Expr i : e.fields) {
-			if(!firstTime) {
-				out.print(", ");
-			}
-			firstTime=false;
-			print(i);
-		}
-		out.print(")");
-	}
-
 	public void print(Expr.AbstractFunctionOrMethod e) {
 		out.print("&");
 		out.print(e.name);
@@ -623,12 +599,33 @@ public class WhileyFilePrinter {
 		print(e.unresolvedType);
 	}
 
-	public void print(Expr.RationalLVal e) {
-		print(e.numerator);
-		out.print(" / ");
-		print(e.denominator);
+	private void printParameters(List<WhileyFile.Parameter> parameters) {
+		out.print("(");
+		boolean firstTime = true;
+		for(int i = 0; i < parameters.size();++i) {
+			WhileyFile.Parameter p = parameters.get(i);
+			if(!firstTime) {
+				out.print(", ");
+			}
+			firstTime=false;
+			printParameter(p,false);			
+		}
+		out.print(")");
 	}
-
+	
+	private void printParameter(WhileyFile.Parameter parameter, boolean braces) {
+		braces &= parameter.name == null;
+		if(braces) {
+			out.print("(");
+		}
+		print(parameter.type);
+		out.print(" ");
+		out.print(parameter.name);
+		if(braces) {
+			out.print(")");
+		}
+	}
+	
 	public void print(List<Modifier> modifiers) {
 		for(Modifier m : modifiers) {
 			out.print(m);
@@ -636,60 +633,6 @@ public class WhileyFilePrinter {
 		}
 	}
 
-	public void print(TypePattern t) {
-		if (t instanceof TypePattern.Leaf) {
-			TypePattern.Leaf tp = (TypePattern.Leaf) t;
-			print(tp.type);
-			if (tp.var != null) {
-				out.print(" ");
-				out.print(tp.var);
-			}
-		} else if(t instanceof TypePattern.Union) {
-			TypePattern.Union tp = (TypePattern.Union) t;
-			boolean firstTime = true;
-			for (TypePattern element : tp.elements) {
-				if (!firstTime) {
-					out.print(" | ");
-				}
-				firstTime = false;
-				print(element);
-			}
-		} else if(t instanceof TypePattern.Intersection) {
-			TypePattern.Intersection tp = (TypePattern.Intersection) t;
-			boolean firstTime = true;
-			for (TypePattern element : tp.elements) {
-				if (!firstTime) {
-					out.print(" & ");
-				}
-				firstTime = false;
-				print(element);
-			}
-		} else if(t instanceof TypePattern.Record) {
-			TypePattern.Record tp = (TypePattern.Record) t;
-			boolean firstTime = true;
-			out.print("{");
-			for (TypePattern element : tp.elements) {
-				if (!firstTime) {
-					out.print(", ");
-				}
-				firstTime = false;
-				print(element);
-			}
-			out.print("}");
-		} else {
-			TypePattern.Tuple tp = (TypePattern.Tuple) t;
-			boolean firstTime = true;
-			out.print("(");
-			for (TypePattern element : tp.elements) {
-				if (!firstTime) {
-					out.print(", ");
-				}
-				firstTime = false;
-				print(element);
-			}
-			out.print(")");
-		}
-	}
 
 	public void print(SyntacticType t) {
 		if(t instanceof SyntacticType.Any) {
@@ -702,8 +645,6 @@ public class WhileyFilePrinter {
 			out.print("int");
 		} else if(t instanceof SyntacticType.Null) {
 			out.print("null");
-		} else if(t instanceof SyntacticType.Real) {
-			out.print("real");
 		} else if(t instanceof SyntacticType.Void) {
 			out.print("void");
 		} else if(t instanceof SyntacticType.Nominal) {
@@ -720,36 +661,17 @@ public class WhileyFilePrinter {
 			out.print("[");
 			print(((SyntacticType.Array)t).element);
 			out.print("]");
-		} else if(t instanceof SyntacticType.Tuple) {
-			SyntacticType.Tuple tt = (SyntacticType.Tuple) t;
-			out.print("(");
-			boolean firstTime = true;
-			for(SyntacticType et : tt.types) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				print(et);
-			}
-			out.print(")");
 		} else if(t instanceof SyntacticType.FunctionOrMethod) {
 			SyntacticType.FunctionOrMethod tt = (SyntacticType.FunctionOrMethod) t;
 
-			print(tt.ret);
-
 			if(t instanceof SyntacticType.Method) {
-				out.print(" ::");
+				out.print("method ");
+			} else {
+				out.print("function ");
 			}
-			out.print("(");
-			boolean firstTime = true;
-			for(SyntacticType et : tt.paramTypes) {
-				if(!firstTime) {
-					out.print(", ");
-				}
-				firstTime=false;
-				print(et);
-			}
-			out.print(")");
+			printParameterTypes(tt.paramTypes);
+			out.print("->");
+			printParameterTypes(tt.returnTypes);			
 		} else if(t instanceof SyntacticType.Record) {
 			SyntacticType.Record tt = (SyntacticType.Record) t;
 			out.print("{");
@@ -799,6 +721,21 @@ public class WhileyFilePrinter {
 		}
 	}
 
+	private void printParameterTypes(List<SyntacticType> parameters) {
+		out.print("(");
+		boolean firstTime = true;
+		for(int i = 0; i < parameters.size();++i) {
+			SyntacticType p = parameters.get(i);
+			if(!firstTime) {
+				out.print(", ");
+			}
+			firstTime=false;						
+			print(p);
+		}
+		out.print(")");
+	}
+	
+	
 	public void indent(int level) {
 		for(int i=0;i!=level;++i) {
 			out.print("    ");

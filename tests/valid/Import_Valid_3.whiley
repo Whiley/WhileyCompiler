@@ -9,6 +9,6 @@ function toInt(int[] ls) -> int:
         i = i + 1
     return r
 
-public export method test() -> void:
+public export method test() :
     int[] ls = [1, 2, 3, 4]
     assume toInt(ls) == 10

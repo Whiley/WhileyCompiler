@@ -4,5 +4,5 @@ function f(int x) -> int[]:
 
 import toString from whiley.lang.Any
 
-function g(real x) -> int[]:
+function g(any x) -> int[]:
     return toString(x)

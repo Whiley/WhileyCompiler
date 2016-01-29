@@ -15,7 +15,7 @@ function g(nat[] xs) -> nat[]:
 function f(int[] x) -> int[]:
     return x
 
-public export method test() -> void:
+public export method test() :
     int[] ys = [-12309812, 1, 2, 2987, 2349872, 234987234987, 234987234987234]
     assume f(g(ys)) == [0, 0, 2, 2987, 2349872, 234987234987, 234987234987234]
 

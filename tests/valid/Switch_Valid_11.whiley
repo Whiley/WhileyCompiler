@@ -11,7 +11,7 @@ ensures r >= 0 && r <= 2:
             return 1
     return 2
 
-public export method test() -> void:
+public export method test() :
     assume f(2) == 1
     assume f(1) == 0
     assume f(0) == 2

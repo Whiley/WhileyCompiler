@@ -46,7 +46,7 @@ function isAlive(Board board, int row, int col) -> int:
     else:
         return 0
 
-public export method test() -> void:
+public export method test() :
     bool[][] board = [[false, true, false], [false, true, false], [false, true, false]]
     bool[][] nboard = update(board)
     assume board == [[false, true, false], [false, true, false], [false, true, false]]

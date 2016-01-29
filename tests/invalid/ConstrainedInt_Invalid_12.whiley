@@ -1,11 +1,11 @@
 
-type irf2nat is int x where x > 0
+type irf2nat is (int x) where x > 0
 
 function f(irf2nat x) -> int:
     return x
 
-function g(int x) -> void:
+function g(int x) :
     f(x)
 
-method main() -> void:
+method main() :
     g(-1)

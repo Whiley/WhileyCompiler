@@ -134,8 +134,10 @@ public class ModuleCheck implements Transform<WyilFile> {
 		for (int i = 0; i != block.size(); ++i) {
 			Code code = block.get(i);
 			CodeBlock.Index index = new CodeBlock.Index(parent,i);
-			if(code instanceof Codes.Invoke && ((Codes.Invoke)code).type() instanceof Type.Method) {
+			if(code instanceof Codes.Invoke && ((Codes.Invoke)code).type(0) instanceof Type.Method) {
 				// internal message send
+				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, root.attribute(index, SourceLocation.class));
+			} else if (code instanceof Codes.IndirectInvoke && ((Codes.IndirectInvoke)code).type(0) instanceof Type.Method) {
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, root.attribute(index, SourceLocation.class));
 			} else if(code instanceof Codes.NewObject) {
 				syntaxError(errorMessage(ALLOCATION_NOT_PERMITTED_IN_FUNCTION), filename, root.attribute(index, SourceLocation.class));

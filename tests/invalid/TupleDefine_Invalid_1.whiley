@@ -1,8 +1,8 @@
-type point is {real y, real x}
+type point is {bool y, bool x}
 
 function f(int x) -> int:
     return x
 
 method main() -> int:
-    point p = {y: 2.23, x: 1.0}
+    point p = {y: false, x: true}
     return f(p.y)

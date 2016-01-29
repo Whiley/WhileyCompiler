@@ -22,7 +22,7 @@ ensures r < 0 ==> all { i in index .. |items| | items[i] != item }:
         else:
             return rest
 
-public method test():
+public export method test():
     //
     int[] arr = [1,2,3,2,3,4,1,2,3]
     //

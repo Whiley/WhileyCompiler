@@ -27,7 +27,7 @@ public function f(int type) -> int:
         default:
             return 6
 
-public export method test() -> void:
+public export method test() :
     assume f(IHDR_TYPE) == 1
     assume f(IEND_TYPE) == 2
     assume f(PLTE_TYPE) == 3

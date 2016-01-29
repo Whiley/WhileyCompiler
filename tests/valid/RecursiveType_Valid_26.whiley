@@ -1,20 +1,20 @@
 
 
-type Expr is real | {int data, Expr lhs} | Expr[]
+type Expr is bool | {int data, Expr lhs} | Expr[]
 
-type SubExpr is real | {int data, SubExpr lhs}
+type SubExpr is bool | {int data, SubExpr lhs}
 
 function toString(Expr e) -> int:
     if e is SubExpr:
-        if e is real:
+        if e is bool:
             return 0
         else:
             return 1
     else:
         return -1
 
-public export method test() -> void:
-    SubExpr se1 = 0.1234
+public export method test() :
+    SubExpr se1 = false
     SubExpr se2 = {data: 1, lhs: se1}
     SubExpr se3 = {data: 45, lhs: se2}
     Expr e1 = [se1]

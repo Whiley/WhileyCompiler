@@ -155,23 +155,6 @@ public interface SyntacticType extends SyntacticElement {
 	}
 
 	/**
-	 * The type <code>real</code> represents the set of (unbound) rational
-	 * numbers.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Real extends SyntacticElement.Impl implements NonUnion,Primitive {
-		public Real(Attribute... attributes) {
-			super(attributes);
-		}
-
-		public Real(java.util.List<Attribute> attributes) {
-			super(attributes);
-		}
-	}
-
-	/**
 	 * Represents a nominal type, which is of the form:
 	 *
 	 * <pre>
@@ -351,81 +334,68 @@ public interface SyntacticType extends SyntacticElement {
 		}
 	}
 
-	/**
-	 * Parse a tuple type, which is of the form:
-	 *
-	 * <pre>
-	 * TupleType ::= '(' Type (',' Type)* ')'
-	 * </pre>
-	 *
-	 * @return
-	 */
-	public static final class Tuple extends SyntacticElement.Impl implements NonUnion {
-		public final ArrayList<SyntacticType> types;
-		public Tuple(Collection<SyntacticType> types, Attribute... attributes) {
-			super(attributes);
-			if(types.size() == 0) {
-				throw new IllegalArgumentException(
-						"Cannot create type tuple with no fields");
-			}
-			this.types = new ArrayList<SyntacticType>(types);
-		}
-		public Tuple(Collection<SyntacticType> types, Collection<Attribute> attributes) {
-			super(attributes);
-			if(types.size() == 0) {
-				throw new IllegalArgumentException(
-						"Cannot create type tuple with no fields");
-			}
-			this.types = new ArrayList<SyntacticType>(types);
-		}
-	}
-
 	public abstract static class FunctionOrMethod extends
 			SyntacticElement.Impl implements NonUnion {
-		public final SyntacticType ret;
-		public final SyntacticType throwType;
+		public final ArrayList<SyntacticType> returnTypes;
 		public final ArrayList<SyntacticType> paramTypes;
 
-		public FunctionOrMethod(SyntacticType ret, SyntacticType throwType,
-				Collection<SyntacticType> paramTypes, Attribute... attributes) {
+		public FunctionOrMethod(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
+				Attribute... attributes) {
 			super(attributes);
-			this.ret = ret;
-			this.throwType = throwType;
+			this.returnTypes = new ArrayList<SyntacticType>(returnTypes);
 			this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
+			for(SyntacticType t : paramTypes) {
+				if(t == null) {
+					throw new IllegalArgumentException("parameter cannot be null"); 
+				}
+			}
+			for(SyntacticType t : returnTypes) {
+				if(t == null) {
+					throw new IllegalArgumentException("return cannot be null"); 
+				}
+			}
 		}
 
-		public FunctionOrMethod(SyntacticType ret, SyntacticType throwType,
-				Collection<SyntacticType> paramTypes,
+		public FunctionOrMethod(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
 			super(attributes);
-			this.ret = ret;
-			this.throwType = throwType;
+			this.returnTypes = new ArrayList<SyntacticType>(returnTypes);
 			this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
+			for(SyntacticType t : paramTypes) {
+				if(t == null) {
+					throw new IllegalArgumentException("parameter cannot be null"); 
+				}
+			}
+			for(SyntacticType t : returnTypes) {
+				if(t == null) {
+					throw new IllegalArgumentException("return cannot be null"); 
+				}
+			}
 		}
 	}
 
 	public static class Function extends FunctionOrMethod
 	implements NonUnion {
-		public Function(SyntacticType ret, SyntacticType throwType,
+		public Function(Collection<SyntacticType> returnTypes, 
 				Collection<SyntacticType> paramTypes,
 				Attribute... attributes) {
-			super(ret,throwType,paramTypes,attributes);
+			super(returnTypes,paramTypes,attributes);
 		}
-		public Function(SyntacticType ret, SyntacticType throwType, Collection<SyntacticType> paramTypes,
+		public Function(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
-			super(ret,throwType,paramTypes,attributes);
+			super(returnTypes,paramTypes,attributes);
 		}
 	}
 
 	public static class Method extends FunctionOrMethod
 	implements NonUnion {
-				public Method(SyntacticType ret, SyntacticType throwType, Collection<SyntacticType> paramTypes,
+				public Method(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
 				Attribute... attributes) {
-			super(ret,throwType,paramTypes,attributes);
+			super(returnTypes,paramTypes,attributes);
 		}
-		public Method(SyntacticType ret, SyntacticType throwType, Collection<SyntacticType> paramTypes,
+		public Method(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
-			super(ret,throwType,paramTypes,attributes);
+			super(returnTypes,paramTypes,attributes);
 		}
 	}
 }

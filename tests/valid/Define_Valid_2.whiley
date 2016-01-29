@@ -1,8 +1,8 @@
 
 
-type dr2point is {real y, real x}
+type dr2point is {bool y, bool x}
 
-public export method test() -> void:
-    dr2point p = {y: 2.23, x: 1.0}
-    assert p == {x:1.0, y:2.23}
+public export method test() :
+    dr2point p = {y: false, x: true}
+    assert p == {x:true, y:false}
 

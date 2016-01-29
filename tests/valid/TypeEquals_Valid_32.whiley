@@ -23,7 +23,7 @@ function f(expr e) -> int[]:
     else:
         return [0;0]
 
-public export method test() -> void:
+public export method test() :
     int[] e = [1, 2, 3, 4]
     assume f(e) == [0, 1, 2, 3, 4]
     assume f(false) == [0;0]

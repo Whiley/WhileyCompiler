@@ -18,6 +18,6 @@ method h(C3 x) -> C1:
 method i(C3 x) -> C2:
     return x
 
-public export method test() -> void:
+public export method test() :
     C3 x = f(null)
     assume x == null

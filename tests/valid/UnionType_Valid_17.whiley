@@ -8,7 +8,7 @@ method f(int y) -> int:
 method g(int[] z) -> int[]:
     return z
 
-public export method test() -> void:
+public export method test() :
     IntList x = 123
     assume f(x) == 123
     x = [1, 2, 3]

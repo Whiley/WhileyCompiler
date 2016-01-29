@@ -6,5 +6,5 @@ function f(code x) -> int:
     int y = x.op
     return y
 
-public export method test() -> void:
+public export method test() :
     assume f({op: 1, payload: [1]}) == 1

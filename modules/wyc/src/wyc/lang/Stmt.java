@@ -66,39 +66,41 @@ public interface Stmt extends SyntacticElement {
 	 */
 	public static final class Assign extends SyntacticElement.Impl implements
 			Stmt {
-		public Expr.LVal lhs;
-		public Expr rhs;
+		public final List<Expr.LVal> lvals;
+		public final List<Expr> rvals;
 
 		/**
-		 * Create an assignment from a given <code>lhs</code> and
-		 * <code>rhs</code>.
+		 * Create an assignment from a given sequence of lvals and expressions on the right-hand side.
 		 *
-		 * @param lhs
-		 *            --- left-hand side, which may not be <code>null</code>.
-		 * @param rhs
-		 *            --- right-hand side, which may not be <code>null</code>.
+		 * @param lvals
+		 *            Sequence of one or more lval expressions representing the
+		 *            left-hand side
+		 * @param rvals
+		 *            Sequence of one or more expressions representing the
+		 *            right-hand side
 		 * @param attributes
 		 */
-		public Assign(Expr.LVal lhs, Expr rhs, Attribute... attributes) {
+		public Assign(List<Expr.LVal> lvals, List<Expr> rvals, Attribute... attributes) {
 			super(attributes);
-			this.lhs = lhs;
-			this.rhs = rhs;
+			this.lvals = new ArrayList<Expr.LVal>(lvals);
+			this.rvals = new ArrayList<Expr>(rvals);
 		}
 
 		/**
-		 * Create an assignment from a given <code>lhs</code> and
-		 * <code>rhs</code>.
+		 * Create an assignment from a given sequence of lvals and expressions on the right-hand side.
 		 *
-		 * @param lhs
-		 *            --- left-hand side, which may not be <code>null</code>.
-		 * @param rhs
-		 *            --- right-hand side, which may not be <code>null</code>.
+		 * @param lvals
+		 *            Sequence of one or more lval expressions representing the
+		 *            left-hand side
+		 * @param rvals
+		 *            Sequence of one or more expressions representing the
+		 *            right-hand side
 		 * @param attributes
 		 */
-		public Assign(Expr.LVal lhs, Expr rhs, Collection<Attribute> attributes) {
+		public Assign(List<Expr.LVal> lvals, List<Expr> rvals, Collection<Attribute> attributes) {
 			super(attributes);
-			this.lhs = lhs;
-			this.rhs = rhs;
+			this.lvals = new ArrayList<Expr.LVal>(lvals);
+			this.rvals = new ArrayList<Expr>(rvals);
 		}
 	}
 
@@ -220,18 +222,18 @@ public interface Stmt extends SyntacticElement {
 	 *
 	 */
 	public static final class Return extends SyntacticElement.Impl implements Stmt {
-		public Expr expr;
+		public ArrayList<Expr> returns;
 
 		/**
 		 * Create a given return statement with an optional return value.
 		 *
 		 * @param expr
-		 *            the return value, which may be <code>null</code>.
+		 *            value being returned (may be null)
 		 * @param attributes
 		 */
-		public Return(Expr expr, Attribute... attributes) {
+		public Return(List<Expr> returns, Attribute... attributes) {
 			super(attributes);
-			this.expr = expr;
+			this.returns = new ArrayList<Expr>(returns);
 		}
 
 		/**
@@ -241,17 +243,20 @@ public interface Stmt extends SyntacticElement {
 		 *            the return value, which may be <code>null</code>.
 		 * @param attributes
 		 */
-		public Return(Expr expr, Collection<Attribute> attributes) {
+		public Return(List<Expr> returns, Collection<Attribute> attributes) {
 			super(attributes);
-			this.expr = expr;
+			this.returns = new ArrayList<Expr>(returns);
 		}
 
 		public String toString() {
-			if(expr != null) {
-				return "return " + expr;
-			} else {
-				return "return";
+			String r = "return";
+			for(int i=0;i!=returns.size();++i) {
+				if(i != 0) {
+					r = r + ",";
+				}
+				r = r + " " + returns.get(i);
 			}
+			return r;
 		}
 	}
 
@@ -503,7 +508,7 @@ public interface Stmt extends SyntacticElement {
 	 */
 	public static final class VariableDeclaration extends SyntacticElement.Impl implements
 			Stmt {
-		public final TypePattern pattern;
+		public final WhileyFile.Parameter parameter;
 		public Nominal type;
 		public Expr expr;
 
@@ -517,10 +522,10 @@ public interface Stmt extends SyntacticElement {
 		 *            Optional initialiser expression, which may be null.
 		 * @param attributes
 		 */
-		public VariableDeclaration(TypePattern pattern, Expr expr,
+		public VariableDeclaration(WhileyFile.Parameter parameter, Expr expr,
 				Attribute... attributes) {
 			super(attributes);
-			this.pattern = pattern;
+			this.parameter = parameter;
 			this.expr = expr;
 		}
 
@@ -534,10 +539,10 @@ public interface Stmt extends SyntacticElement {
 		 *            Optional initialiser expression, which may be null.
 		 * @param attributes
 		 */
-		public VariableDeclaration(TypePattern pattern, Expr expr,
+		public VariableDeclaration(WhileyFile.Parameter parameter, Expr expr,
 				Collection<Attribute> attributes) {
 			super(attributes);
-			this.pattern = pattern;
+			this.parameter = parameter;
 			this.expr = expr;
 		}
 	}

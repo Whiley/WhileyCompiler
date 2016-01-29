@@ -1,6 +1,8 @@
-
-
-type state is {int[] input, int pos} where (pos >= 0) && (pos <= |input|)
+type state is ({
+    int[] input,
+    int pos
+} this)
+where (this.pos >= 0) && (this.pos <= |this.input|)
 
 public function isLetter(int c) -> bool:
     return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
@@ -11,5 +13,5 @@ function f(state st) -> int:
             return st.input[st.pos]
     return ' '
 
-public export method test() -> void:
+public export method test() :
     assume f({input: "hello", pos: 0}) == 104

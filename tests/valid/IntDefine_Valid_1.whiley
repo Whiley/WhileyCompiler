@@ -10,7 +10,7 @@ function f(int x) -> int:
         return y
     return 0
 
-public export method test() -> void:
+public export method test() :
     assume f(1) == 0
     assume f(2) == 0
     assume f(3) == 3

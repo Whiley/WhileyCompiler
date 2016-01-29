@@ -186,16 +186,6 @@ public final class WyilFileReader {
 				constant = Constant.V_INTEGER(bi);
 				break;
 			}
-			case WyilFileWriter.CONSTANT_Real: {
-				int len = input.read_uv();
-				byte[] bytes = new byte[len];
-				input.read(bytes);
-				BigInteger mantissa = new BigInteger(bytes);
-				int exponent = input.read_uv();
-				constant = Constant
-						.V_DECIMAL(new BigDecimal(mantissa, exponent));
-				break;
-			}
 			case WyilFileWriter.CONSTANT_List: {
 				int len = input.read_uv();
 				ArrayList<Constant> values = new ArrayList<Constant>();
@@ -203,17 +193,7 @@ public final class WyilFileReader {
 					int index = input.read_uv();
 					values.add(myConstantPool[index]);
 				}
-				constant = Constant.V_LIST(values);
-				break;
-			}			
-			case WyilFileWriter.CONSTANT_Tuple: {
-				int len = input.read_uv();
-				ArrayList<Constant> values = new ArrayList<Constant>();
-				for (int j = 0; j != len; ++j) {
-					int index = input.read_uv();
-					values.add(myConstantPool[index]);
-				}
-				constant = Constant.V_TUPLE(values);
+				constant = Constant.V_ARRAY(values);
 				break;
 			}
 			case WyilFileWriter.CONSTANT_Record: {
@@ -597,235 +577,21 @@ public final class WyilFileReader {
 		int fmt = (opcode & Code.FMT_MASK);
 
 		switch (fmt) {
-		case Code.FMT_EMPTY:
-			return readEmpty(opcode, wideBase, wideRest, offset, labels);
-		case Code.FMT_UNARYOP:
-			return readUnaryOp(opcode, wideBase, wideRest, offset, labels);
-		case Code.FMT_UNARYASSIGN:
-			return readUnaryAssign(opcode, wideBase, wideRest);
-		case Code.FMT_BINARYOP:
-			return readBinaryOp(opcode, wideBase, wideRest, offset, labels);
-		case Code.FMT_BINARYASSIGN:
-			return readBinaryAssign(opcode, wideBase, wideRest);
 		case Code.FMT_NARYOP:
 			return readNaryOp(opcode, wideBase, wideRest, offset, labels);
+		case Code.FMT_EMPTY:
+		case Code.FMT_UNARYOP:
+		case Code.FMT_BINARYOP:
+		case Code.FMT_UNARYASSIGN:
+		case Code.FMT_BINARYASSIGN:
 		case Code.FMT_NARYASSIGN:
-			return readNaryAssign(opcode, wideBase, wideRest);
+			return readNaryAssign(opcode, wideBase, wideRest, offset, labels);				
 		case Code.FMT_OTHER:
 			return readOther(opcode, wideBase, wideRest, offset, labels);
 		default:
 			throw new RuntimeException("unknown opcode encountered (" + opcode
 					+ ")");
 		}
-	}
-
-	private Code readEmpty(int opcode, boolean wideBase, boolean wideRest,
-			int offset, HashMap<Integer, Codes.Label> labels)
-			throws IOException {
-		switch (opcode) {
-		case Code.OPCODE_const: {
-			int target = readBase(wideBase);
-			int idx = readRest(wideRest);
-			Constant c = constantPool[idx];
-			return Codes.Const(target, c);
-		}
-		case Code.OPCODE_fail: {
-			return Codes.Fail();
-		}
-		case Code.OPCODE_goto: {
-			int target = readTarget(wideRest, offset);
-			Codes.Label lab = findLabel(target, labels);
-			return Codes.Goto(lab.label);
-		}
-		case Code.OPCODE_nop:
-			return Codes.Nop;
-		case Code.OPCODE_returnv:
-			return Codes.Return();
-		}
-		throw new RuntimeException("unknown opcode encountered (" + opcode
-				+ ")");
-	}
-
-	private Code readUnaryOp(int opcode, boolean wideBase, boolean wideRest,
-			int offset, HashMap<Integer, Codes.Label> labels)
-			throws IOException {
-		int operand = readBase(wideBase);
-		int typeIdx = readRest(wideRest);
-		Type type = typePool[typeIdx];
-		switch (opcode) {
-		case Code.OPCODE_debug:
-			return Codes.Debug(operand);
-		case Code.OPCODE_ifis: {
-			int resultIdx = readRest(wideRest);
-			Type result = typePool[resultIdx];
-			int target = readTarget(wideRest, offset);
-			Codes.Label l = findLabel(target, labels);
-			return Codes.IfIs(type, operand, result, l.label);
-		}
-		case Code.OPCODE_return:
-			return Codes.Return(type, operand);
-		case Code.OPCODE_switch: {
-			ArrayList<Pair<Constant, String>> cases = new ArrayList<Pair<Constant, String>>();
-			int target = readTarget(wideRest, offset);
-			Codes.Label defaultLabel = findLabel(target, labels);
-			int nCases = readRest(wideRest);
-			for (int i = 0; i != nCases; ++i) {
-				int constIdx = readRest(wideRest);
-				Constant constant = constantPool[constIdx];
-				target = readTarget(wideRest, offset);
-				Codes.Label l = findLabel(target, labels);
-				cases.add(new Pair<Constant, String>(constant, l.label));
-			}
-			return Codes.Switch(type, operand, defaultLabel.label, cases);
-		}
-		}
-		throw new RuntimeException("unknown opcode encountered (" + opcode
-				+ ")");
-	}
-
-	private Code readUnaryAssign(int opcode, boolean wideBase, boolean wideRest)
-			throws IOException {
-		int target = readBase(wideBase);
-
-		int operand = readBase(wideBase);
-		int typeIdx = readRest(wideRest);
-		Type type = typePool[typeIdx];
-		switch (opcode) {
-		case Code.OPCODE_convert: {
-			int i = readRest(wideRest);
-			Type t = typePool[i];
-			return Codes.Convert(type, target, operand, t);
-		}
-		case Code.OPCODE_assign:
-			return Codes.Assign(type, target, operand);
-		case Code.OPCODE_dereference: {
-			if (!(type instanceof Type.Reference)) {
-				throw new RuntimeException("expected reference type");
-			}
-			return Codes.Dereference((Type.Reference) type, target, operand);
-		}
-		case Code.OPCODE_fieldload: {
-			if (!(type instanceof Type.EffectiveRecord)) {
-				throw new RuntimeException("expected record type");
-			}
-			int i = readRest(wideRest);
-			String field = stringPool[i];
-			return Codes.FieldLoad((Type.EffectiveRecord) type, target,
-					operand, field);
-		}
-		case Code.OPCODE_invert:
-			return Codes.Invert(type, target, operand);
-		case Code.OPCODE_newobject: {
-			if (!(type instanceof Type.Reference)) {
-				throw new RuntimeException("expected reference type");
-			}
-			return Codes.NewObject((Type.Reference) type, target, operand);
-		}
-		case Code.OPCODE_lengthof: {
-			if (!(type instanceof Type.EffectiveArray)) {
-				throw new RuntimeException("expected collection type");
-			}
-			return Codes.LengthOf((Type.EffectiveArray) type, target,
-					operand);
-		}
-		case Code.OPCODE_move:
-			return Codes.Move(type, target, operand);
-		case Code.OPCODE_neg:
-			return Codes.UnaryOperator(type, target, operand,
-					Codes.UnaryOperatorKind.NEG);
-		case Code.OPCODE_numerator:
-			return Codes.UnaryOperator(type, target, operand,
-					Codes.UnaryOperatorKind.NUMERATOR);
-		case Code.OPCODE_denominator:
-			return Codes.UnaryOperator(type, target, operand,
-					Codes.UnaryOperatorKind.DENOMINATOR);
-		case Code.OPCODE_not: {
-			if (!(type instanceof Type.Bool)) {
-				throw new RuntimeException("expected bool type");
-			}
-			return Codes.Not(target, operand);
-		}
-		case Code.OPCODE_tupleload: {
-			if (!(type instanceof Type.EffectiveTuple)) {
-				throw new RuntimeException("expected tuple type");
-			}
-			int index = readRest(wideRest);
-			return Codes.TupleLoad((Type.EffectiveTuple) type, target, operand, index);
-		}
-
-		}
-		throw new RuntimeException("unknown opcode encountered (" + opcode
-				+ ")");
-	}
-
-	private Code readBinaryOp(int opcode, boolean wideBase, boolean wideRest,
-			int offset, HashMap<Integer, Codes.Label> labels)
-			throws IOException {
-		int leftOperand = readBase(wideBase);
-		int rightOperand = readBase(wideBase);
-		int typeIdx = readRest(wideRest);
-		Type type = typePool[typeIdx];
-		switch (opcode) {
-		case Code.OPCODE_ifeq:
-		case Code.OPCODE_ifne:
-		case Code.OPCODE_iflt:
-		case Code.OPCODE_ifle:
-		case Code.OPCODE_ifgt:
-		case Code.OPCODE_ifge:
-		case Code.OPCODE_ifel:
-		case Code.OPCODE_ifss:
-		case Code.OPCODE_ifse: {
-			int target = readTarget(wideRest, offset);
-			Codes.Label l = findLabel(target, labels);
-			Codes.Comparator cop = Codes.Comparator.values()[opcode
-					- Code.OPCODE_ifeq];
-			return Codes.If(type, leftOperand, rightOperand, cop, l.label);
-		}
-		}
-		throw new RuntimeException("unknown opcode encountered (" + opcode
-				+ ")");
-	}
-
-	private Code readBinaryAssign(int opcode, boolean wideBase, boolean wideRest)
-			throws IOException {
-		int target = readBase(wideBase);
-		int leftOperand = readBase(wideBase);
-		int rightOperand = readBase(wideBase);
-		int typeIdx = readRest(wideRest);
-		Type type = typePool[typeIdx];
-		switch (opcode) {		
-		case Code.OPCODE_indexof: {
-			if (!(type instanceof Type.EffectiveArray)) {
-				throw new RuntimeException("expecting indexible type");
-			}
-			return Codes.IndexOf((Type.EffectiveArray) type, target,
-					leftOperand, rightOperand);
-		}
-		case Code.OPCODE_listgen: {
-			if (!(type instanceof Type.Array)) {
-				throw new RuntimeException("expecting list type");
-			}
-			return Codes.ListGenerator((Type.Array) type, target,
-					leftOperand, rightOperand);
-		}
-		case Code.OPCODE_add:
-		case Code.OPCODE_sub:
-		case Code.OPCODE_mul:
-		case Code.OPCODE_div:
-		case Code.OPCODE_rem:
-		case Code.OPCODE_bitwiseor:
-		case Code.OPCODE_bitwisexor:
-		case Code.OPCODE_bitwiseand:
-		case Code.OPCODE_lshr:
-		case Code.OPCODE_rshr: {
-			Codes.BinaryOperatorKind kind = Codes.BinaryOperatorKind.values()[opcode
-					- Code.OPCODE_add];
-			return Codes.BinaryOperator(type, target, leftOperand,
-					rightOperand, kind);
-		}
-		}
-		throw new RuntimeException("unknown opcode encountered (" + opcode
-				+ ")");
 	}
 
 	private Code readNaryOp(int opcode, boolean wideBase, boolean wideRest,
@@ -853,99 +619,211 @@ public final class WyilFileReader {
 					operands, bytecodes);
 		}
 
-		int typeIdx = readRest(wideRest);
-		Type type = typePool[typeIdx];
-
-		switch (opcode) {		
-		case Code.OPCODE_indirectinvokefnv:
-		case Code.OPCODE_indirectinvokemdv: {
-			if (!(type instanceof Type.FunctionOrMethod)) {
-				throw new RuntimeException("expected function or method type");
-			}
-			int operand = operands[0];
-			operands = Arrays.copyOfRange(operands, 1, operands.length);
-			return Codes.IndirectInvoke((Type.FunctionOrMethod) type,
-					Codes.NULL_REG, operand, operands);
-		}
-		case Code.OPCODE_invokefnv:
-		case Code.OPCODE_invokemdv: {
-			if (!(type instanceof Type.FunctionOrMethod)) {
-				throw new RuntimeException("expected function or method type");
-			}
-			int nameIdx = readRest(wideRest);
-			NameID nid = namePool[nameIdx];
-			return Codes.Invoke((Type.FunctionOrMethod) type, Codes.NULL_REG,
-					operands, nid);
-		}
-		}
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
 	}
 
-	private Code readNaryAssign(int opcode, boolean wideBase, boolean wideRest)
-			throws IOException {
-		int target = readBase(wideBase);
+	private Code readNaryAssign(int opcode, boolean wideBase, boolean wideRest, int offset,
+			HashMap<Integer, Codes.Label> labels) throws IOException {
+		int nTargets = readBase(wideBase);
 		int nOperands = readBase(wideBase);
+		int nTypes = readBase(wideBase);		
+		int[] targets = new int[nTargets];
 		int[] operands = new int[nOperands];
+		Type[] types = new Type[nTypes];		
+		for (int i = 0; i != nTargets; ++i) {
+			targets[i] = readBase(wideBase);
+		}		
 		for (int i = 0; i != nOperands; ++i) {
 			operands[i] = readBase(wideBase);
+		}				
+		for (int i = 0; i != nTypes; ++i) {
+			int typeIndex = readBase(wideBase); 
+			types[i] = typePool[typeIndex];
 		}
-		int typeIdx = readRest(wideRest);
-		Type type = typePool[typeIdx];
 		switch (opcode) {
+		case Code.OPCODE_return:
+			return Codes.Return(types, operands);
 		case Code.OPCODE_indirectinvokefn:
-		case Code.OPCODE_indirectinvokemd: {
-			if (!(type instanceof Type.FunctionOrMethod)) {
+		case Code.OPCODE_indirectinvokemd: {			
+			if (!(types[0] instanceof Type.FunctionOrMethod)) {
 				throw new RuntimeException("expected function or method type");
 			}
 			int operand = operands[0];
 			operands = Arrays.copyOfRange(operands, 1, operands.length);
-			return Codes.IndirectInvoke((Type.FunctionOrMethod) type, target,
+			return Codes.IndirectInvoke((Type.FunctionOrMethod) types[0], targets,
 					operand, operands);
 		}
 		case Code.OPCODE_invokefn:
-		case Code.OPCODE_invokemd: {
-			if (!(type instanceof Type.FunctionOrMethod)) {
+		case Code.OPCODE_invokemd: { 
+			if (!(types[0] instanceof Type.FunctionOrMethod)) {
 				throw new RuntimeException("expected function or method type");
 			}
 			int nameIdx = readRest(wideRest);
 			NameID nid = namePool[nameIdx];
-			return Codes.Invoke((Type.FunctionOrMethod) type, target, operands,
+			return Codes.Invoke((Type.FunctionOrMethod) types[0], targets, operands,
 					nid);
 		}
 		case Code.OPCODE_lambdafn:
 		case Code.OPCODE_lambdamd: {
-			if (!(type instanceof Type.FunctionOrMethod)) {
+			if (!(types[0] instanceof Type.FunctionOrMethod)) {
 				throw new RuntimeException("expected function or method type");
-			}
-			// Lambda's are the only instances of NULLABLENARYASSIGN's
-			for (int i = 0; i != operands.length; ++i) {
-				operands[i] -= 1;
-			}
+			} else if(targets.length != 1) {
+				throw new RuntimeException("expected exactly one target");
+			}			
 			int nameIdx = readRest(wideRest);
 			NameID nid = namePool[nameIdx];
-			return Codes.Lambda((Type.FunctionOrMethod) type, target, operands,
+			for(int i=0;i!=operands.length;++i) {
+				operands[i] -= 1;
+			}
+			return Codes.Lambda((Type.FunctionOrMethod) types[0], targets[0], operands,
 					nid);
 		}
 		case Code.OPCODE_newrecord: {
-			if (!(type instanceof Type.Record)) {
+			if (!(types[0] instanceof Type.Record)) {
 				throw new RuntimeException("expected record type");
+			} else if(targets.length != 1) {
+				throw new RuntimeException("expected exactly one target");
 			}
-			return Codes.NewRecord((Type.Record) type, target, operands);
+			return Codes.NewRecord((Type.Record) types[0], targets[0], operands);
 		}
 		case Code.OPCODE_newlist: {
-			if (!(type instanceof Type.Array)) {
-				throw new RuntimeException("expected list type");
+			if (!(types[0] instanceof Type.Array)) {
+				throw new RuntimeException("expected array type");
+			} else if(targets.length != 1) {
+				throw new RuntimeException("expected exactly one target");
 			}
-			return Codes.NewList((Type.Array) type, target, operands);
-		}	
-		case Code.OPCODE_newtuple: {
-			if (!(type instanceof Type.Tuple)) {
-				throw new RuntimeException("expected tuple type");
-			}
-			return Codes.NewTuple((Type.Tuple) type, target, operands);
-		}		
+			return Codes.NewArray((Type.Array) types[0], targets[0], operands);
 		}
+		// Unary assignables
+		case Code.OPCODE_convert: {
+			int i = readRest(wideRest);
+			Type t = typePool[i];
+			return Codes.Convert(types[0], targets[0], operands[0], t);
+		}
+		case Code.OPCODE_assign:
+			return Codes.Assign(types[0], targets[0], operands[0]);
+		case Code.OPCODE_dereference: {
+			if (!(types[0] instanceof Type.Reference)) {
+				throw new RuntimeException("expected reference type");
+			}
+			return Codes.Dereference((Type.Reference) types[0], targets[0], operands[0]);
+		}
+		case Code.OPCODE_fieldload: {
+			if (!(types[0] instanceof Type.EffectiveRecord)) {
+				throw new RuntimeException("expected record type");
+			}
+			int i = readRest(wideRest);
+			String field = stringPool[i];
+			return Codes.FieldLoad((Type.EffectiveRecord) types[0], targets[0],
+					operands[0], field);
+		}
+		case Code.OPCODE_invert:
+			return Codes.Invert(types[0], targets[0], operands[0]);
+		case Code.OPCODE_newobject: {
+			if (!(types[0] instanceof Type.Reference)) {
+				throw new RuntimeException("expected reference type");
+			}
+			return Codes.NewObject((Type.Reference) types[0], targets[0], operands[0]);
+		}
+		case Code.OPCODE_lengthof: {
+			if (!(types[0] instanceof Type.EffectiveArray)) {
+				throw new RuntimeException("expected collection type");
+			}
+			return Codes.LengthOf((Type.EffectiveArray) types[0], targets[0], operands[0]);
+		}
+		case Code.OPCODE_move:
+			return Codes.Move(types[0], targets[0], operands[0]);
+		case Code.OPCODE_neg:
+			return Codes.UnaryOperator(types[0], targets[0], operands[0], Codes.UnaryOperatorKind.NEG);
+		case Code.OPCODE_not: {
+			if (!(types[0] instanceof Type.Bool)) {
+				throw new RuntimeException("expected bool type");
+			}
+			return Codes.Not(targets[0], operands[0]);
+		}
+		// Binary Assignables
+		case Code.OPCODE_indexof: {
+			if (!(types[0] instanceof Type.EffectiveArray)) {
+				throw new RuntimeException("expecting indexible type");
+			}
+			return Codes.IndexOf((Type.EffectiveArray) types[0], targets[0], operands[0], operands[1]);
+		}
+		case Code.OPCODE_listgen: {
+			if (!(types[0] instanceof Type.Array)) {
+				throw new RuntimeException("expecting list type");
+			}
+			return Codes.ArrayGenerator((Type.Array) types[0], targets[0], operands[0], operands[1]);
+		}
+		case Code.OPCODE_add:
+		case Code.OPCODE_sub:
+		case Code.OPCODE_mul:
+		case Code.OPCODE_div:
+		case Code.OPCODE_rem:
+		case Code.OPCODE_bitwiseor:
+		case Code.OPCODE_bitwisexor:
+		case Code.OPCODE_bitwiseand:
+		case Code.OPCODE_lshr:
+		case Code.OPCODE_rshr: {
+			Codes.BinaryOperatorKind kind = Codes.BinaryOperatorKind.values()[opcode - Code.OPCODE_add];
+			return Codes.BinaryOperator(types[0], targets[0], operands[0], operands[1], kind);
+		}
+		case Code.OPCODE_const: {			
+			int idx = readRest(wideRest);
+			Constant c = constantPool[idx];
+			return Codes.Const(targets[0], c);
+		}
+		// Unary operations
+		case Code.OPCODE_debug:
+			return Codes.Debug(operands[0]);
+		case Code.OPCODE_ifis: {
+			int resultIdx = readRest(wideRest);
+			Type result = typePool[resultIdx];
+			int target = readTarget(wideRest, offset);
+			Codes.Label l = findLabel(target, labels);
+			return Codes.IfIs(types[0], operands[0], result, l.label);
+		}
+		case Code.OPCODE_switch: {
+			ArrayList<Pair<Constant, String>> cases = new ArrayList<Pair<Constant, String>>();
+			int target = readTarget(wideRest, offset);
+			Codes.Label defaultLabel = findLabel(target, labels);
+			int nCases = readRest(wideRest);
+			for (int i = 0; i != nCases; ++i) {
+				int constIdx = readRest(wideRest);
+				Constant constant = constantPool[constIdx];
+				target = readTarget(wideRest, offset);
+				Codes.Label l = findLabel(target, labels);
+				cases.add(new Pair<Constant, String>(constant, l.label));
+			}
+			return Codes.Switch(types[0], operands[0], defaultLabel.label, cases);
+		}
+		// Binary operators
+		case Code.OPCODE_ifeq:
+		case Code.OPCODE_ifne:
+		case Code.OPCODE_iflt:
+		case Code.OPCODE_ifle:
+		case Code.OPCODE_ifgt:
+		case Code.OPCODE_ifge:
+		case Code.OPCODE_ifel:
+		case Code.OPCODE_ifss:
+		case Code.OPCODE_ifse: {
+			int target = readTarget(wideRest, offset);
+			Codes.Label l = findLabel(target, labels);
+			Codes.Comparator cop = Codes.Comparator.values()[opcode - Code.OPCODE_ifeq];
+			return Codes.If(types[0], operands[0], operands[1], cop, l.label);
+		}
+		// Empty bytecodes
+		case Code.OPCODE_fail: {
+			return Codes.Fail();
+		}
+		case Code.OPCODE_goto: {
+			int target = readTarget(wideRest, offset);
+			Codes.Label lab = findLabel(target, labels);
+			return Codes.Goto(lab.label);
+		}
+		case Code.OPCODE_nop:
+			return Codes.Nop;
+		}		
 		throw new RuntimeException("unknown opcode encountered (" + opcode
 				+ ")");
 	}
@@ -954,15 +832,23 @@ public final class WyilFileReader {
 			int offset, HashMap<Integer, Codes.Label> labels)
 			throws IOException {
 		switch (opcode) {
-		case Code.OPCODE_update: {
-			int target = readBase(wideBase);
+		case Code.OPCODE_update: {			
+			int nTargets = readBase(wideBase);
 			int nOperands = readBase(wideBase);
-			int[] operands = new int[nOperands - 1];
+			int nTypes = readBase(wideBase);			
+			int[] targets = new int[nTargets];
+			int[] operands = new int[nOperands-1];
+			Type[] types = new Type[nTypes];			
+			for (int i = 0; i != targets.length; ++i) {
+				targets[i] = readBase(wideBase);
+			}
 			for (int i = 0; i != operands.length; ++i) {
 				operands[i] = readBase(wideBase);
 			}
 			int operand = readBase(wideBase);
-			Type beforeType = typePool[readRest(wideRest)];
+			for (int i = 0; i != types.length; ++i) {
+				types[i] = typePool[readBase(wideBase)];
+			}			
 			Type afterType = typePool[readRest(wideRest)];
 			int nFields = readRest(wideRest);
 			ArrayList<String> fields = new ArrayList<String>();
@@ -970,7 +856,7 @@ public final class WyilFileReader {
 				String field = stringPool[readRest(wideRest)];
 				fields.add(field);
 			}
-			return Codes.Update(beforeType, target, operands, operand,
+			return Codes.Update(types[0], targets[0], operands, operand,
 					afterType, fields);
 		}
 		case Code.OPCODE_assertblock: {

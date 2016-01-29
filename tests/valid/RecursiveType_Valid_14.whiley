@@ -8,13 +8,13 @@ constant MUL is 3
 
 constant DIV is 4
 
-type binop is {int op, Expr left, Expr right} where op == ADD || op ==  SUB || op ==  MUL || op ==  DIV
+type binop is ({int op, Expr left, Expr right} this) where this.op == ADD || this.op ==  SUB || this.op ==  MUL || this.op ==  DIV
 
-type asbinop is {int op, Expr left, Expr right} where op == ADD || op ==  SUB
+type asbinop is ({int op, Expr left, Expr right} this) where this.op == ADD || this.op ==  SUB
 
 type Expr is int | binop
 
-public export method test() -> void:
+public export method test() :
     Expr bop1 = {op: ADD, left: 1, right: 2}
     Expr bop2 = bop1
     Expr e1 = bop1

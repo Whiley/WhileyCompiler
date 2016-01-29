@@ -1,4 +1,4 @@
-function g(int x) -> void:
+function g(int x) :
     return
 
 function f(int x, int y) -> int

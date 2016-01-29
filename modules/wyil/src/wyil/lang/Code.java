@@ -69,29 +69,41 @@ import static wyil.lang.CodeUtils.*;
  *
  * <p>
  * Each bytecode has a binary format which identifies the <i>opcode</i>,
- * <i>registers</i> used and <i>pool items</i> used (e.g. names, constants,
- * etc). The generic organisation of a bytecode is as follows:
+ * <i>target registers</i>, <i>operand registers</i> <i>types</i> and <i>other
+ * items</i> used (e.g. names, constants, etc). The generic organisation of a
+ * bytecode is as follows:
  * </p>
  *
  * <pre>
- * +--------+-----------+------------+
- * | opcode | registers | pool items |
- * +--------+-----------+------------+
+ * +--------+---------+----------+-------+-------------+
+ * | opcode | targets | operands | types | other items |
+ * +--------+---------+----------+-------+-------------+
  * </pre>
  * <p>
  * The opcode is currently always 1 byte, whilst the remainder varies between
- * instructions. Many bytecodes assign to a <i>target</i> register and read
- * values from <i>operand</i> registers. Such bytecodes are organised as
- * follows:
+ * instructions. The opcode itself splits into two components:
  * </p>
- *
+ * 
  * <pre>
- * +--------+--------+----------+------------+
- * | opcode | target | operands | pool items |
- * +--------+--------+----------+------------+
+ *  7   6 5         0
+ * +-----+-----------+
+ * | fmt | operation |
+ * +-----+-----------+
  * </pre>
- *
- *
+ * <p>
+ * Here, <i>operation</i> identifies the bytecode operation (e.g. add, invoke,
+ * etc), whilst <i>fmt</i> identifies the bytecode format. Different formats are
+ * used to specify common bytecode layouts:
+ * </p>
+ * <pre>
+ * fmt | constaints
+ * ----+-----------
+ *  00 | none
+ *  01 | zero targets
+ *  10 | one target
+ *  11 | unused
+ * </pre>
+ * 
  * @author David J. Pearce
  */
 public interface Code {
@@ -144,9 +156,7 @@ public interface Code {
 		}
 
 		@Override
-		public Code.Unit remap(Map<Integer, Integer> binding) {
-			return this;
-		}
+		public abstract Code.Unit remap(Map<Integer, Integer> binding);
 	}
 
 	/**
@@ -186,119 +196,105 @@ public interface Code {
 		public abstract Code.Compound clone();
 	}
 
-
-
 	// ===============================================================C
 	// Abstract Bytecodes
 	// ===============================================================
 
 	/**
-	 * Represents the set of all bytecodes which assign a result to a single
-	 * target register.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static abstract class AbstractAssignable extends Code.Unit {
-		private final int target;
-
-		/**
-		 * Construct an abstract bytecode which assigns to a given target
-		 * register.
-		 *
-		 * @param target
-		 */
-		public AbstractAssignable(int target) {
-			this.target = target;
-		}
-
-		/**
-		 * Return the type of value assigned to the target register by this
-		 * bytecode.
-		 *
-		 * @return
-		 */
-		public abstract Type assignedType();
-
-		/**
-		 * Return the target register assigned by this bytecode.
-		 *
-		 * @return
-		 */
-		public int target() {
-			return target;
-		}
-	}
-
-	/**
-	 * Represents the set of all bytcodes which take an arbitrary number of
-	 * register operands and write a result to the target register.
+	 * Represents the set of all bytecodes. Each bytecode consists of zero or
+	 * more types, zero or more targets and zero or more operands. Furthermore,
+	 * bytecodes may contain additional data.
 	 *
 	 * @author David J. Pearce
 	 *
 	 * @param <T>
 	 *            --- the type associated with this bytecode.
 	 */
-	public static abstract class AbstractNaryAssignable<T> extends
-			AbstractAssignable {
-		private final T type;
-		private final int[] operands;
-
-		public AbstractNaryAssignable(T type, int target, int... operands) {
-			super(target);
-			if (type == null) {
-				throw new IllegalArgumentException(
-						"AbstractBinOp type argument cannot be null");
-			}
-			this.type = type;
+	public static abstract class AbstractBytecode<T> extends Code.Unit { 
+		protected final Type[] types;
+		private final int[] targets;
+		protected final int[] operands;		
+		
+		public AbstractBytecode(Type type, int target, int... operands) {			
+			this.types = new Type[]{type};
+			this.targets = new int[] {target};
+			this.operands = operands;
+		}
+		
+		public AbstractBytecode(Type[] types, int[] targets, int... operands) {			
+			this.types = types;
+			this.targets = targets;
 			this.operands = operands;
 		}
 
 		@Override
 		public final void registers(java.util.Set<Integer> registers) {
-			if (target() >= 0) {
-				registers.add(target());
+			for (int i = 0; i != targets().length; ++i) {
+				registers.add(targets()[i]);
 			}
 			for (int i = 0; i != operands().length; ++i) {
-				registers.add(operands()[i]);
+				registers.add(operands[i]);
 			}
 		}
 
 		@Override
 		public final Code.Unit remap(Map<Integer, Integer> binding) {
-			Integer nTarget = binding.get(target());
+			int[] nTargets = remapOperands(binding, targets());
 			int[] nOperands = remapOperands(binding, operands());
-			if (nTarget != null || nOperands != operands()) {
-				nTarget = nTarget != null ? nTarget : target();
-				return clone(nTarget, nOperands);
+			if (nTargets != targets() || nOperands != operands()) {
+				return clone(nTargets, nOperands);
 			}
 			return this;
 		}
 
-		public Type assignedType() {
-			return (Type) this.type();
-		}
-
-		protected abstract Code.Unit clone(int nTarget, int[] nOperands);
-
+		protected abstract Code.Unit clone(int[] nTargets, int[] nOperands);
+		
+		@Override
 		public int hashCode() {
-			return type().hashCode() + target() + Arrays.hashCode(operands());
+			return Arrays.hashCode(types) + Arrays.hashCode(targets()) + Arrays.hashCode(operands());
 		}
 
+		@Override
 		public boolean equals(Object o) {
-			if (o instanceof AbstractNaryAssignable) {
-				AbstractNaryAssignable bo = (AbstractNaryAssignable) o;
-				return target() == bo.target()
-						&& Arrays.equals(operands(), bo.operands())
-						&& type().equals(bo.type());
+			if (o instanceof AbstractBytecode) {
+				AbstractBytecode bo = (AbstractBytecode) o;
+				return Arrays.equals(targets(), bo.targets()) && Arrays.equals(operands(), bo.operands())
+						&& Arrays.equals(types, bo.types);
 			}
 			return false;
 		}
 
-		public T type() {
-			return type;
+		public Type[] types() {
+			return types;
+		}
+		
+		public T type(int i) {
+			return (T) types[i];
 		}
 
+		/**
+		 * Return a specific target register assigned by this bytecode.
+		 *
+		 * @return
+		 */
+		public int target(int i) {
+			return targets[0];
+		}
+		
+		/**
+		 * Return the target registers assigned by this bytecode.
+		 *
+		 * @return
+		 */
+		public int[] targets() {
+			return targets;
+		}		
+		
+		/**
+		 * Return the operand registers assigned by this bytecode.
+		 *
+		 * @return
+		 */
 		public int[] operands() {
 			return operands;
 		}
@@ -310,171 +306,9 @@ public interface Code {
 		 */
 		public int operand(int i) {
 			return operands[i];
-		}
-	}
-
-	/**
-	 * Represents the set of all bytcodes which take a single register operand
-	 * and assign a result to the target register.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 *            --- the type associated with this bytecode.
-	 */
-	public static abstract class AbstractUnaryAssignable<T> extends
-			AbstractNaryAssignable<T> {
-
-		public AbstractUnaryAssignable(T type, int target, int operand) {
-			super(type,target,operand);
-			if (type == null) {
-				throw new IllegalArgumentException(
-						"AbstractUnOp type argument cannot be null");
-			}
-		}
-	}
-
-	/**
-	 * Represents the set of all bytcodes which take a single register operand,
-	 * and do not assign to a target register.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 *            --- the type associated with this bytecode.
-	 */
-	public static abstract class AbstractUnaryOp<T> extends Code.Unit {
-		public final T type;
-		public final int operand;
-
-		public AbstractUnaryOp(T type, int operand) {
-			if (type == null) {
-				throw new IllegalArgumentException(
-						"AbstractUnaryOp type argument cannot be null");
-			}
-			this.type = type;
-			this.operand = operand;
-		}
-
-		@Override
-		public final void registers(java.util.Set<Integer> registers) {
-			registers.add(operand);
-		}
-
-		@Override
-		public final Code.Unit remap(Map<Integer, Integer> binding) {
-			Integer nOperand = binding.get(operand);
-			if (nOperand != null) {
-				return clone(nOperand);
-			}
-			return this;
-		}
-
-		protected abstract Code.Unit clone(int nOperand);
-
-		public int hashCode() {
-			return type.hashCode() + operand;
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof AbstractUnaryOp) {
-				AbstractUnaryOp bo = (AbstractUnaryOp) o;
-				return operand == bo.operand && type.equals(bo.type);
-			}
-			return false;
-		}
-	}
-
-	/**
-	 * Represents the set of all bytcodes which take two register operands and
-	 * write a result to the target register.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 *            --- the type associated with this bytecode.
-	 */
-	public static abstract class AbstractBinaryAssignable<T> extends
-			AbstractNaryAssignable<T> {
-
-		public AbstractBinaryAssignable(T type, int target, int leftOperand,
-				int rightOperand) {
-			super(type,target,leftOperand,rightOperand);
-		}
-	}
-
-	/**
-	 * Represents the set of all bytcodes which take an arbitrary number of
-	 * register operands and write a result to the target register.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 *            --- the type associated with this bytecode.
-	 */
-
-	/**
-	 * Represents the set of all bytcodes which take two register operands and
-	 * perform a comparison of their values.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 *            --- the type associated with this bytecode.
-	 */
-	public static abstract class AbstractBinaryOp<T> extends Code.Unit {
-		public final T type;
-		public final int leftOperand;
-		public final int rightOperand;
-
-		public AbstractBinaryOp(T type, int leftOperand, int rightOperand) {
-			if (type == null) {
-				throw new IllegalArgumentException(
-						"AbstractBinCond type argument cannot be null");
-			}
-			this.type = type;
-			this.leftOperand = leftOperand;
-			this.rightOperand = rightOperand;
-		}
-
-		@Override
-		public final void registers(java.util.Set<Integer> registers) {
-			registers.add(leftOperand);
-			registers.add(rightOperand);
-		}
-
-		@Override
-		public final Code.Unit remap(Map<Integer, Integer> binding) {
-			Integer nLeftOperand = binding.get(leftOperand);
-			Integer nRightOperand = binding.get(rightOperand);
-			if (nLeftOperand != null || nRightOperand != null) {
-				nLeftOperand = nLeftOperand != null ? nLeftOperand
-						: leftOperand;
-				nRightOperand = nRightOperand != null ? nRightOperand
-						: rightOperand;
-				return clone(nLeftOperand, nRightOperand);
-			}
-			return this;
-		}
-
-		protected abstract Code.Unit clone(int nLeftOperand, int nRightOperand);
-
-		public int hashCode() {
-			return type.hashCode() + leftOperand + rightOperand;
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof AbstractBinaryOp) {
-				AbstractBinaryOp bo = (AbstractBinaryOp) o;
-				return leftOperand == bo.leftOperand
-						&& rightOperand == bo.rightOperand
-						&& type.equals(bo.type);
-			}
-			return false;
-		}
-	}
-
-
+		}	
+	}	
+	
 	// =========================================================================
 	// Opcodes
 	// =========================================================================
@@ -495,8 +329,6 @@ public interface Code {
 	// Empty Bytecodes
 	// =========================================================================
 	public static final int OPCODE_nop      = 0 + FMT_EMPTY;
-	public static final int OPCODE_returnv  = 1 + FMT_EMPTY;
-	public static final int OPCODE_const    = 2 + FMT_EMPTY; // +CONSTIDX
 	public static final int OPCODE_goto     = 3 + FMT_EMPTY; // +INT
 	public static final int OPCODE_fail     = 4 + FMT_EMPTY;
 
@@ -504,7 +336,7 @@ public interface Code {
 	// Unary Operators
 	// =========================================================================
 	public static final int OPCODE_debug    = 0 + FMT_UNARYOP;
-	public static final int OPCODE_return   = 1 + FMT_UNARYOP;
+	public static final int OPCODE_return   = 1 + FMT_NARYASSIGN;
 	public static final int OPCODE_ifis     = 3 + FMT_UNARYOP; // +TYPEIDX
 	public static final int OPCODE_switch   = 4 + FMT_UNARYOP; // +OTHER
 	public static final int OPCODE_throw    = 5 + FMT_UNARYOP;
@@ -519,13 +351,14 @@ public interface Code {
 	public static final int OPCODE_move        = 4 + FMT_UNARYASSIGN;
 	public static final int OPCODE_newobject   = 5 + FMT_UNARYASSIGN;
 	public static final int OPCODE_neg         = 6 + FMT_UNARYASSIGN;
-	public static final int OPCODE_numerator   = 7 + FMT_UNARYASSIGN;
-	public static final int OPCODE_denominator = 8 + FMT_UNARYASSIGN;
+//	public static final int OPCODE_numerator   = 7 + FMT_UNARYASSIGN;
+//	public static final int OPCODE_denominator = 8 + FMT_UNARYASSIGN;
 	public static final int OPCODE_not         = 9 + FMT_UNARYASSIGN;
-	public static final int OPCODE_tupleload   = 10 + FMT_UNARYASSIGN;
+//	public static final int OPCODE_tupleload   = 10 + FMT_UNARYASSIGN;
 	public static final int OPCODE_fieldload   = 11 + FMT_UNARYASSIGN; // +STRINGIDX
 	public static final int OPCODE_convert     = 12 + FMT_UNARYASSIGN; // +TYPEIDX
-
+	public static final int OPCODE_const       = 14 + FMT_UNARYASSIGN; // +CONSTIDX
+	
 	// =========================================================================
 	// Binary Operators
 	// =========================================================================
@@ -571,10 +404,6 @@ public interface Code {
 	public static final int OPCODE_loop              = 0 + FMT_NARYOP;
 //	public static final int OPCODE_forall            = 1 + FMT_NARYOP;
 	public static final int OPCODE_quantify          = 2 + FMT_NARYOP;	
-	public static final int OPCODE_indirectinvokefnv = 3 + FMT_NARYOP;
-	public static final int OPCODE_indirectinvokemdv = 4 + FMT_NARYOP;
-	public static final int OPCODE_invokefnv         = 5 + FMT_NARYOP; // +NAMEIDX
-	public static final int OPCODE_invokemdv         = 6 + FMT_NARYOP; // +NAMEIDX
 	public static final int OPCODE_void              = 7 + FMT_NARYOP;	
 
 	// =========================================================================
@@ -583,7 +412,7 @@ public interface Code {
 	public static final int OPCODE_newlist          = 0 + FMT_NARYASSIGN;
 //  public static final int OPCODE_newset          = 1 + FMT_NARYASSIGN;
 //	public static final int OPCODE_newmap           = 2 + FMT_NARYASSIGN;
-	public static final int OPCODE_newtuple         = 3 + FMT_NARYASSIGN;
+//	public static final int OPCODE_newtuple         = 3 + FMT_NARYASSIGN;
 	public static final int OPCODE_indirectinvokefn = 4 + FMT_NARYASSIGN;
 	public static final int OPCODE_indirectinvokemd = 5 + FMT_NARYASSIGN;
 //	public static final int OPCODE_sublist          = 6 + FMT_NARYASSIGN;

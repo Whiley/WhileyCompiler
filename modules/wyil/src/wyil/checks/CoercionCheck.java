@@ -97,13 +97,10 @@ public class CoercionCheck implements Transform<WyilFile> {
 			Code code = block.get(i);
 			if (code instanceof Codes.Convert) {
 				Codes.Convert conv = (Codes.Convert) code;
-				check(conv.type(), conv.result,
-						new HashSet<Pair<Type, Type>>(), root.attribute(
-								new CodeBlock.Index(index, i),
-								SourceLocation.class));
+				check(conv.type(0), conv.result, new HashSet<Pair<Type, Type>>(),
+						root.attribute(new CodeBlock.Index(index, i), SourceLocation.class));
 			} else if (code instanceof CodeBlock) {
-				check(new CodeBlock.Index(index, i), (CodeBlock) code, root,
-						method);
+				check(new CodeBlock.Index(index, i), (CodeBlock) code, root, method);
 			}
 		}
 	}
@@ -130,16 +127,6 @@ public class CoercionCheck implements Transform<WyilFile> {
 			// also no problem
 		} else if(from instanceof Type.Leaf && to instanceof Type.Leaf) {
 			// no problem
-		} else if(from instanceof Type.Tuple && to instanceof Type.Tuple) {
-			Type.Tuple t1 = (Type.Tuple) from;
-			Type.Tuple t2 = (Type.Tuple) to;
-			List<Type> t1_elements = t1.elements();
-			List<Type> t2_elements = t2.elements();
-			for(int i=0;i!=t2.elements().size();++i) {
-				Type e1 = t1_elements.get(i);
-				Type e2 = t2_elements.get(i);
-				check(e1,e2,visited,location);
-			}
 		} else if(from instanceof Type.Reference && to instanceof Type.Reference) {
 			Type.Reference t1 = (Type.Reference) from;
 			Type.Reference t2 = (Type.Reference) to;
@@ -162,14 +149,8 @@ public class CoercionCheck implements Transform<WyilFile> {
 		} else if(from instanceof Type.Function && to instanceof Type.Function) {
 			Type.Function t1 = (Type.Function) from;
 			Type.Function t2 = (Type.Function) to;
-			List<Type> t1_elements = t1.params();
-			List<Type> t2_elements = t2.params();
-			for(int i=0;i!=t1_elements.size();++i) {
-				Type e1 = t1_elements.get(i);
-				Type e2 = t2_elements.get(i);
-				check(e1,e2,visited,location);
-			}
-			check(t1.ret(),t2.ret(),visited,location);
+			check(t1.params(),t2.params(),visited,location);
+			check(t1.returns(),t2.returns(),visited,location);
 		} else if(from instanceof Type.Union) {
 			Type.Union t1 = (Type.Union) from;
 			for(Type b : t1.bounds()) {
@@ -221,6 +202,15 @@ public class CoercionCheck implements Transform<WyilFile> {
 					}
 				}
 			}
+		}
+	}
+	
+	private void check(List<Type> params1, List<Type> params2, HashSet<Pair<Type, Type>> visited,
+			SourceLocation location) {
+		for (int i = 0; i != params1.size(); ++i) {
+			Type e1 = params1.get(i);
+			Type e2 = params2.get(i);
+			check(e1, e2, visited, location);
 		}
 	}
 }

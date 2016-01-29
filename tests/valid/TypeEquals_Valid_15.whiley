@@ -8,7 +8,7 @@ function f(src e) -> bool:
     else:
         return false
 
-public export method test() -> void:
+public export method test() :
     assume f([1, 2, 3]) == true
     assume f([[1], [2]]) == true
     assume f(1) == false

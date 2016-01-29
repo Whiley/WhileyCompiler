@@ -10,7 +10,7 @@ function sum(nat[] ls) -> nat:
         i = i + 1
     return sum
 
-public export method test() -> void:
+public export method test() :
     assume sum([0;0]) == 0
     assume sum([1, 2, 3]) == 6
     assume sum([12387, 98123, 12398, 12309, 0]) == 135217

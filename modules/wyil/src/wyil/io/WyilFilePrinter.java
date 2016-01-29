@@ -146,23 +146,14 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		} else {
 			out.print("method ");
 		}
-		List<Type> pts = ft.params();
-
-		out.print(method.name() + "(");
-		for (int i = 0; i != ft.params().size(); ++i) {
-			if (i != 0) {
-				out.print(", ");
-			}
-			out.print(pts.get(i));
-		}
-		out.print(")");
-
-		if (ft.ret() instanceof Type.Void) {
-			out.println(":");
-		} else {
-			out.println(" -> " + ft.ret() + ":");
-		}
-
+		out.print(method.name());
+		writeParameters(ft.params(),out);		
+		if (!ft.returns().isEmpty()) {
+			out.print(" -> ");
+			writeParameters(ft.returns(),out);
+		}		
+		out.println(":");
+		
 		for (AttributedCodeBlock precondition : method.precondition()) {
 			out.println("requires:");
 			write(0, precondition, out);
@@ -179,6 +170,17 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 	}
 
+	private void writeParameters(List<Type> parameters, PrintWriter out) {
+		out.print("(");
+		for (int i = 0; i != parameters.size(); ++i) {
+			if (i != 0) {
+				out.print(", ");
+			}
+			out.print(parameters.get(i));
+		}
+		out.print(")");
+	}
+	
 	private void write(int indent, CodeBlock blk, PrintWriter out) {
 		if(blk == null) { return; }
 		for(int i=0;i!=blk.size();++i) {

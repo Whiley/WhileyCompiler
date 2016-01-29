@@ -22,5 +22,5 @@ function g(bignum[] zs, int z) -> int:
     else:
         return -1
 
-public export method test() -> void:
+public export method test() :
     assume g([1, 2, 3, 5], 3) == 3

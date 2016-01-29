@@ -8,7 +8,7 @@ function f(expr e) -> bool:
     else:
         return false
 
-public export method test() -> void:
+public export method test() :
     expr e = 1
     assume f(e) == false
     e = [1, 2, 3, 4]

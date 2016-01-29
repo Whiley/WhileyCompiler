@@ -11,7 +11,7 @@ requires to + 1 < |list[to]|:
     list[to][to + 1] = tmp
     return list
 
-public export method test() -> void:
+public export method test() :
     nint[][] ls = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
     ls = move(0, 1, ls)
     assume ls == [[1, null, 3], [4, 5, 2], [7, 8, 9]]

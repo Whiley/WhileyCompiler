@@ -192,13 +192,6 @@ public class TypeExpander {
 			myChildren[0] = getTypeHelper(tt.element(),maximallyConsumed,states,roots);
 			myKind = Type.K_LIST;			
 			myData = tt.nonEmpty();
-		} else if(type instanceof Type.Tuple) {
-			Type.Tuple tt = (Type.Tuple) type;
-			myChildren = new int[tt.size()];
-			for(int i=0;i!=tt.size();++i) {
-				myChildren[i] = getTypeHelper(tt.element(i),maximallyConsumed,states,roots);
-			}
-			myKind = Type.K_TUPLE;			
 		} else if(type instanceof Type.Record) {
 			Type.Record tt = (Type.Record) type;
 			HashMap<String, Type> ttTypes = tt.fields();
@@ -234,12 +227,17 @@ public class TypeExpander {
 		} else if(type instanceof Type.FunctionOrMethod) {
 			Type.FunctionOrMethod tt = (Type.FunctionOrMethod) type;
 			List<Type> tt_params = tt.params();
-			myChildren = new int[2 + tt_params.size()];
-			myChildren[0] = getTypeHelper(tt.ret(),maximallyConsumed,states,roots);
-			myChildren[1] = getTypeHelper(tt.throwsClause(),maximallyConsumed,states,roots);
-			for(int i=0;i!=tt_params.size();++i) {
-				myChildren[i+2] = getTypeHelper(tt_params.get(i),maximallyConsumed,states,roots);
+			List<Type> tt_returns = tt.returns();
+			int tt_params_size = tt_params.size();
+			int tt_returns_size = tt_returns.size();
+			myChildren = new int[tt_params_size+tt_returns_size];
+			for(int i=0;i!=tt_params_size;++i) {
+				myChildren[i] = getTypeHelper(tt_params.get(i),maximallyConsumed,states,roots);
 			}
+			for(int i=0;i!=tt_returns_size;++i) {
+				myChildren[i+tt_params_size] = getTypeHelper(tt_returns.get(i),maximallyConsumed,states,roots);
+			}
+			myData = tt_params_size;
 			myKind = tt instanceof Type.Function ? Type.K_FUNCTION
 					: Type.K_METHOD;			
 		}else {

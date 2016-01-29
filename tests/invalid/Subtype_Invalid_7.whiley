@@ -6,7 +6,7 @@ type scf7tup is {scf7nat f}
 function f(scf7tup x) -> int:
     return x.f
 
-method main() -> void:
+method main() :
     {int f} x = {f: -1}
     x.f = x.f + 1
     f(x)

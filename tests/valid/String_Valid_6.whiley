@@ -21,5 +21,5 @@ ensures |zs| == |xs| + |ys|:
     //
     return rs
     
-public export method test() -> void:
+public export method test() :
     assume append("Hello ","122") == "Hello 122"

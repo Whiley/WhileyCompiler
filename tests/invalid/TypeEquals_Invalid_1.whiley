@@ -1,6 +1,6 @@
 type expr is int[] | int
 
-method f(expr e) -> void:
+method f(expr e) :
     if e is int[]:
         debug ("GOT [INT]")
     else:

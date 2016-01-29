@@ -17,7 +17,7 @@ ensures no { x in 0 .. |src| | result[x] <= 0 }:
         i = i + 1
     return src
 
-public export method test() -> void:
+public export method test() :
     nat[] xs = [1, 3, 5, 7, 9, 11]
     xs = inc(xs)
     assume xs == [2, 4, 6, 8, 10, 12]

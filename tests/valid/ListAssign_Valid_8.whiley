@@ -1,6 +1,6 @@
 
 
-public export method test() -> void:
+public export method test() :
     int[][] a1 = [[1, 2, 3], [0]]
     int[][] a2 = a1
     a2[0] = [3, 4, 5]

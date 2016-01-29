@@ -1,15 +1,15 @@
 
 
-type Expr is real | Expr[]
+type Expr is bool | Expr[]
 
-type Value is real | Value[]
+type Value is bool | Value[]
 
 function init() -> Value:
-    return 0.0123
+    return false
 
-public export method test() -> void:
+public export method test() :
     Value v = init()
     if v is Expr[]:
         assume false
     else:
-        assume v == 0.0123
+        assume v == false

@@ -1,6 +1,6 @@
-function f(real e) -> int[]:
-    if e is real:
-        return "real"
+function f(bool e) -> int[]:
+    if e is bool:
+        return "bool"
     else:
         if e is int:
             return "int"

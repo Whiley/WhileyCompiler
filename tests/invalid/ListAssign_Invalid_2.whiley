@@ -1,5 +1,5 @@
 
-method main() -> void:
+method main() :
     int[] arr1 = [1, 2, 3]
     int[] arr2 = arr1
     arr2[2] = 2

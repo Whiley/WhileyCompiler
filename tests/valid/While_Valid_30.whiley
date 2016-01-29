@@ -5,11 +5,11 @@ requires n >= 0
 ensures  r == 2*n:
     //
     int i = 0
-    int r = 0
-    while i < n where i <= n && r == 2*i:
-        r = r + 2
+    int x = 0
+    while i < n where i <= n && x == 2*i:
+        x = x + 2
         i = i + 1
-    return r
+    return x
 
 public export method test():
     assume duplicate(0) == 0

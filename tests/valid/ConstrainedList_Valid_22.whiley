@@ -15,7 +15,7 @@ function inc(nat[] xs) -> nat[]:
     assert no { k in 0..|xs| | xs[k] < 0 }
     return xs
 
-public export method test() -> void:
+public export method test() :
     assume inc([0]) == [1]
     assume inc([1, 2, 3]) == [2,3,4]
     assume inc([10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]) == [11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]

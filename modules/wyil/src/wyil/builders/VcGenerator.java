@@ -167,14 +167,14 @@ public class VcGenerator {
 					precondition.get(i), fmm.params(), true);
 		}
 		prefix = method.name() + "_ensures_";
-		List<Type> postEnvironment = prepend(fmm.ret(), fmm.params());
+		List<Type> postEnvironment = append(fmm.params(), fmm.returns());		
 		for (int i = 0; i != postcondition.size(); ++i) {
 			buildMacroBlock(prefix + i, CodeBlock.Index.ROOT,
 					postcondition.get(i), postEnvironment, true);
 		}
 
 		// Finally, add a function representing this function or method.
-		buildFunctionBlock(method.name(), fmm.params(), fmm.ret());
+		buildFunctionBlock(method.name(), fmm.params(), fmm.returns());
 
 		if (method.hasModifier(Modifier.NATIVE)) {
 			// We don't consider native methods because they have empty bodies,
@@ -240,7 +240,7 @@ public class VcGenerator {
 				break;
 			}
 			case TERMINATED: {
-				if (fmm.ret() instanceof Type.Void) {
+				if (fmm.returns().isEmpty()) {
 					// In this case, there is not return value and, hence, there
 					// is no need to ensure the postcondition holds.
 				} else {
@@ -250,16 +250,18 @@ public class VcGenerator {
 					Codes.Return ret = (Codes.Return) body.get(branch.pc());
 					// Construct verification check to ensure that return
 					// type invariant holds
-					Expr returnedOperand = branch.read(ret.operand);					
-					Type rawType = expand(bodyEnvironment[ret.operand],attributes);
+					// FIXME: need proper support for multiple returns
+					Expr returnedOperand = branch.read(ret.operand(0));					
+					Type rawType = expand(bodyEnvironment[ret.operand(0)],attributes);
 					Expr rawTest = new Expr.Is(returnedOperand,
 							convert(rawType, attributes));
-					if (containsNominal(fmm.ret(),attributes)) {
+					// FIXME: needs to handle all returns
+					if (containsNominal(fmm.returns().get(0),attributes)) {
 						// FIXME: we need the raw test here, because the
 						// verifier can't work out the type of the expression
 						// otherwise.						
 						Expr nominalTest = new Expr.Is(returnedOperand,
-								convert(fmm.ret(), attributes));
+								convert(fmm.returns().get(0), attributes));
 						Expr vc = buildVerificationCondition(nominalTest,
 								branch, bodyEnvironment, body, rawTest);
 						// FIXME: add contextual information here
@@ -273,10 +275,10 @@ public class VcGenerator {
 					// which held on entry to this function.
 					arguments = new Expr[fmm.params().size() + 1];
 					for (int i = 0; i != fmm.params().size(); ++i) {
-						arguments[i + 1] = new Expr.Variable(prefixes[i]);
+						arguments[i] = new Expr.Variable(prefixes[i]);
 					}
 					
-					arguments[0] = returnedOperand;
+					arguments[fmm.params().size()] = returnedOperand;
 					// For each postcondition generate a separate
 					// verification condition. Doing this allows us to gather
 					// more detailed context information in the case of a
@@ -612,13 +614,11 @@ public class VcGenerator {
 			case Code.OPCODE_indexof:
 				return indexOutOfBoundsChecks((Codes.IndexOf) code, branch);
 			case Code.OPCODE_listgen:
-				return listGeneratorChecks((Codes.ListGenerator) code, branch);
+				return arrayGeneratorChecks((Codes.ArrayGenerator) code, branch);
 			case Code.OPCODE_update:
 				return updateChecks((Codes.Update) code, branch);
 			case Code.OPCODE_invokefn:
-			case Code.OPCODE_invokefnv:
 			case Code.OPCODE_invokemd:
-			case Code.OPCODE_invokemdv:
 				return preconditionCheck((Codes.Invoke) code, branch, environment, block);
 			}
 			return new Pair[0];
@@ -638,17 +638,17 @@ public class VcGenerator {
 	 *            --- The branch the division is on.
 	 * @return
 	 */
-	public Pair<String,Expr>[] divideByZeroCheck(Codes.BinaryOperator binOp, VcBranch branch) {
+	public Pair<String, Expr>[] divideByZeroCheck(Codes.BinaryOperator binOp, VcBranch branch) {
 		Expr rhs = branch.read(binOp.operand(1));
 		Value zero;
-		if (binOp.type() instanceof Type.Int) {
+		if (binOp.type(0) instanceof Type.Int) {
 			zero = Value.Integer(BigInteger.ZERO);
 		} else {
 			zero = Value.Decimal(BigDecimal.ZERO);
 		}
 		Expr.Constant constant = new Expr.Constant(zero, rhs.attributes());
-		return new Pair[] { new Pair("division by zero", new Expr.Binary(
-				Expr.Binary.Op.NEQ, rhs, constant, rhs.attributes())) };
+		return new Pair[] {
+				new Pair("division by zero", new Expr.Binary(Expr.Binary.Op.NEQ, rhs, constant, rhs.attributes())) };
 	}
 
 	/**
@@ -663,7 +663,7 @@ public class VcGenerator {
 	 * @return
 	 */
 	public Pair<String,Expr>[] indexOutOfBoundsChecks(Codes.IndexOf code, VcBranch branch) {
-		if (code.type() instanceof Type.EffectiveArray) {
+		if (code.type(0) instanceof Type.EffectiveArray) {
 			Expr src = branch.read(code.operand(0));
 			Expr idx = branch.read(code.operand(1));
 			Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
@@ -688,12 +688,12 @@ public class VcGenerator {
 	 * size.
 	 * 
 	 * @param code
-	 *            --- The list generator bytecode
+	 *            --- The array generator bytecode
 	 * @param branch
 	 *            --- The branch the bytecode is on.
 	 * @return
 	 */
-	public Pair<String,Expr>[] listGeneratorChecks(Codes.ListGenerator code, VcBranch branch) {				
+	public Pair<String,Expr>[] arrayGeneratorChecks(Codes.ArrayGenerator code, VcBranch branch) {
 		Expr idx = branch.read(code.operand(1));
 		Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
 				idx.attributes());
@@ -723,26 +723,21 @@ public class VcGenerator {
 		// First, check for any potentially constrained types.    
 		//
 		List<wyil.lang.Attribute> attributes = block.attributes(branch.pc());
-		List<Type> code_type_params = code.type().params();		
+		List<Type> code_type_params = code.type(0).params();		
 		int[] code_operands = code.operands();
 		for (int i = 0; i != code_operands.length; ++i) {
 			Type t = code_type_params.get(i);
 			if (containsNominal(t, attributes)) {
 				int operand = code_operands[i];
-				Type rawType = expand(environment[operand],attributes);
-				Expr rawTest = new Expr.Is(branch.read(operand), convert(
-						rawType, attributes));
-				Expr nominalTest = new Expr.Is(branch.read(operand), convert(t,
-						attributes));
-				preconditions.add(new Pair(
-						"type invariant not satisfied (argument " + i + ")",
-						new Expr.Binary(Expr.Binary.Op.IMPLIES, rawTest,
-								nominalTest)));
+				Type rawType = expand(environment[operand], attributes);
+				Expr rawTest = new Expr.Is(branch.read(operand), convert(rawType, attributes));
+				Expr nominalTest = new Expr.Is(branch.read(operand), convert(t, attributes));
+				preconditions.add(new Pair("type invariant not satisfied (argument " + i + ")",
+						new Expr.Binary(Expr.Binary.Op.IMPLIES, rawTest, nominalTest)));
 			}
 		}
 		//
-		List<AttributedCodeBlock> requires = findPrecondition(code.name,
-				code.type(), block, branch);
+		List<AttributedCodeBlock> requires = findPrecondition(code.name, code.type(0), block, branch);
 		//
 		if (requires.size() > 0) {
 			// First, read out the operands from the branch
@@ -754,12 +749,10 @@ public class VcGenerator {
 			// simply called the corresponding pre-condition macros.
 			String prefix = code.name.name() + "_requires_";
 
-			Expr argument = operands.length == 1 ? operands[0] : new Expr.Nary(
-					Expr.Nary.Op.TUPLE, operands);
+			Expr argument = operands.length == 1 ? operands[0] : new Expr.Nary(Expr.Nary.Op.TUPLE, operands);
 			for (int i = 0; i != requires.size(); ++i) {
-				Expr precondition = new Expr.Invoke(prefix + i,
-						code.name.module(), Collections.EMPTY_LIST, argument);
-				preconditions.add(new Pair<String,Expr>("precondition not satisfied",precondition));
+				Expr precondition = new Expr.Invoke(prefix + i, code.name.module(), Collections.EMPTY_LIST, argument);
+				preconditions.add(new Pair<String, Expr>("precondition not satisfied", precondition));
 
 			}
 		}
@@ -779,11 +772,11 @@ public class VcGenerator {
 	public Pair<String,Expr>[] updateChecks(Codes.Update code, VcBranch branch) {
 		ArrayList<Pair<String,Expr>> preconditions = new ArrayList<Pair<String,Expr>>();
 
-		Expr src = branch.read(code.target());
+		Expr src = branch.read(code.target(0));
 
 		for (Codes.LVal lval : code) {
-			if (lval instanceof Codes.ListLVal) {
-				Codes.ListLVal lv = (Codes.ListLVal) lval;
+			if (lval instanceof Codes.ArrayLVal) {
+				Codes.ArrayLVal lv = (Codes.ArrayLVal) lval;
 				Expr idx = branch.read(lv.indexOperand);
 				Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
 						idx.attributes());
@@ -1293,8 +1286,7 @@ public class VcGenerator {
 		VcBranch trueBranch = branch.fork();
 		VcBranch falseBranch = branch.fork();
 		// Second assume the condition on each branch
-		Expr.Binary trueTest = buildTest(code.op, code.leftOperand,
-				code.rightOperand, code.type, block, trueBranch);
+		Expr.Binary trueTest = buildTest(code.op, code.operand(0), code.operand(1), code.type(0), block, trueBranch);
 		trueBranch.assume(trueTest);
 		falseBranch.assume(invert(trueTest));
 		// Third, dispatch branches to their targets
@@ -1338,9 +1330,9 @@ public class VcGenerator {
 		SyntacticType trueType = convert(code.rightOperand, attributes);
 		SyntacticType falseType = new SyntacticType.Negation(convert(code.rightOperand,
 				attributes), wycsAttributes);
-		trueBranch.assume(new Expr.Is(branch.read(code.operand), trueType,
+		trueBranch.assume(new Expr.Is(branch.read(code.operand(0)), trueType,
 				wycsAttributes));
-		falseBranch.assume(new Expr.Is(branch.read(code.operand), falseType,
+		falseBranch.assume(new Expr.Is(branch.read(code.operand(0)), falseType,
 				wycsAttributes));
 		// Finally dispatch the branches
 		falseBranch.goTo(branch.pc().next());
@@ -1382,7 +1374,7 @@ public class VcGenerator {
 			Constant caseValue = code.branches.get(i).first();
 			// Second, on the new branch we need assume that the variable being
 			// switched on matches the given value.
-			Expr src = branch.read(code.operand);
+			Expr src = branch.read(code.operand(0));
 			Expr constant = new Expr.Constant(
 					convert(caseValue, block, branch),
 					toWycsAttributes(block.attributes(branch.pc())));
@@ -1564,17 +1556,12 @@ public class VcGenerator {
 				Codes.BinaryOperator bc = (Codes.BinaryOperator) code;
 				transformBinary(binaryOperatorMap[bc.kind.ordinal()], bc,
 						branch, block);
-			} else if (code instanceof Codes.ListGenerator) {
-				transform((Codes.ListGenerator) code, block, branch);
-			} else if (code instanceof Codes.NewList) {
-				transformNary(Expr.Nary.Op.ARRAY, (Codes.NewList) code, branch,
-						block);
+			} else if (code instanceof Codes.ArrayGenerator) {
+				transform((Codes.ArrayGenerator) code, block, branch);
+			} else if (code instanceof Codes.NewArray) {
+				transformNary(Expr.Nary.Op.ARRAY, (Codes.NewArray) code, branch, block);
 			} else if (code instanceof Codes.NewRecord) {
-				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewRecord) code,
-						branch, block);
-			} else if (code instanceof Codes.NewTuple) {
-				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewTuple) code,
-						branch, block);
+				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewRecord) code, branch, block);
 			} else if (code instanceof Codes.Convert) {
 				transform((Codes.Convert) code, block, branch);
 			} else if (code instanceof Codes.Const) {
@@ -1607,8 +1594,6 @@ public class VcGenerator {
 				// skip
 			} else if (code instanceof Codes.NewObject) {
 				transform((Codes.NewObject) code, block, branch);
-			} else if (code instanceof Codes.TupleLoad) {
-				transform((Codes.TupleLoad) code, block, branch);
 			} else if (code instanceof Codes.Lambda) {
 				transform((Codes.Lambda) code, block, branch);
 			} else {
@@ -1627,7 +1612,9 @@ public class VcGenerator {
 
 	protected void transform(Codes.Assign code, AttributedCodeBlock block,
 			VcBranch branch) {
-		branch.write(code.target(), branch.read(code.operand(0)));
+		for (int i = 0; i != code.operands().length; ++i) {
+			branch.write(code.target(i), branch.read(code.operand(i)));
+		}
 	}
 
 	/**
@@ -1646,20 +1633,16 @@ public class VcGenerator {
 			null // right shift
 	};
 
-	protected void transform(Codes.Convert code, AttributedCodeBlock block,
-			VcBranch branch) {
-		Collection<Attribute> attributes = toWycsAttributes(block
-				.attributes(branch.pc()));
+	protected void transform(Codes.Convert code, AttributedCodeBlock block, VcBranch branch) {
+		Collection<Attribute> attributes = toWycsAttributes(block.attributes(branch.pc()));
 		Expr result = branch.read(code.operand(0));
 		SyntacticType type = convert(code.result, block.attributes(branch.pc()));
-		branch.write(code.target(), new Expr.Cast(type, result, attributes));
+		branch.write(code.target(0), new Expr.Cast(type, result, attributes));
 	}
 
-	protected void transform(Codes.Const code, AttributedCodeBlock block,
-			VcBranch branch) {
+	protected void transform(Codes.Const code, AttributedCodeBlock block, VcBranch branch) {
 		Value val = convert(code.constant, block, branch);
-		branch.write(code.target(), new Expr.Constant(val,
-				toWycsAttributes(block.attributes(branch.pc()))));
+		branch.write(code.target(), new Expr.Constant(val, toWycsAttributes(block.attributes(branch.pc()))));
 	}
 
 	protected void transform(Codes.Debug code, AttributedCodeBlock block,
@@ -1667,28 +1650,23 @@ public class VcGenerator {
 		// do nout
 	}
 
-	protected void transform(Codes.Dereference code, AttributedCodeBlock block,
-			VcBranch branch) {
-		branch.havoc(code.target());
+	protected void transform(Codes.Dereference code, AttributedCodeBlock block, VcBranch branch) {
+		branch.havoc(code.target(0));
 	}
 
-	protected void transform(Codes.FieldLoad code, AttributedCodeBlock block,
-			VcBranch branch) {
-		ArrayList<String> fields = new ArrayList<String>(code.type().fields()
-				.keySet());
+	protected void transform(Codes.FieldLoad code, AttributedCodeBlock block, VcBranch branch) {
+		ArrayList<String> fields = new ArrayList<String>(code.type(0).fields().keySet());
 		Collections.sort(fields);
 		Expr src = branch.read(code.operand(0));
-		Expr index = new Expr.Constant(Value.Integer(BigInteger.valueOf(fields
-				.indexOf(code.field))));
-		Expr result = new Expr.IndexOf(src, index,
-				toWycsAttributes(block.attributes(branch.pc())));
-		branch.write(code.target(), result);
+		Expr index = new Expr.Constant(Value.Integer(BigInteger.valueOf(fields.indexOf(code.field))));
+		Expr result = new Expr.IndexOf(src, index, toWycsAttributes(block.attributes(branch.pc())));
+		branch.write(code.target(0), result);
 	}
 
 	protected void transform(Codes.IndirectInvoke code,
 			AttributedCodeBlock block, VcBranch branch) {
-		if (code.target() != Codes.NULL_REG) {
-			branch.havoc(code.target());
+		for(int target : code.targets()) {
+			branch.havoc(target);
 		}
 	}
 
@@ -1698,8 +1676,9 @@ public class VcGenerator {
 				.attributes(branch.pc());
 		Collection<Attribute> wyccAttributes = toWycsAttributes(attributes);
 		int[] code_operands = code.operands();
+		int[] targets = code.targets();
 		
-		if (code.target() != Codes.NULL_REG) {
+		if (targets.length > 0) {
 			// Need to assume the post-condition holds.
 			Expr[] operands = new Expr[code_operands.length];
 			for (int i = 0; i != code_operands.length; ++i) {
@@ -1707,30 +1686,32 @@ public class VcGenerator {
 			}
 			Expr argument = operands.length == 1 ? operands[0] : new Expr.Nary(
 					Expr.Nary.Op.TUPLE, operands,wyccAttributes);
-			branch.write(code.target(), new Expr.Invoke(code.name.name(),
+			branch.write(code.targets()[0], new Expr.Invoke(code.name.name(),
 					code.name.module(), Collections.EMPTY_LIST, argument,
 					wyccAttributes));
 
 			// This is a potential fix for #488, although it doesn't work
-			if(containsNominal(code.type().ret(),attributes)) {
+			// FIXME: needs to updated to handle multiple returns as well
+			if (containsNominal(code.type(0).returns().get(0), attributes)) {
 				// This is required to handle the implicit constraints implied
 				// by a nominal type. See #488.
-				Expr nominalTest = new Expr.Is(branch.read(code.target()),
-						convert(code.type().ret(), attributes));
+				Expr nominalTest = new Expr.Is(branch.read(code.targets()[0]),
+						convert(code.type(0).returns().get(0), attributes));
 				branch.assume(nominalTest);
 			}
-			
+
 			// Here, we must find the name of the corresponding postcondition so
 			// that we can assume it.
-			List<AttributedCodeBlock> ensures = findPostcondition(code.name,
-					code.type(), block, branch);
+			List<AttributedCodeBlock> ensures = findPostcondition(code.name, code.type(0), block, branch);
 
 			if (ensures.size() > 0) {
 				// To assume the post-condition holds after the method, we
 				// simply called the corresponding post-condition macros.
-				Expr[] arguments = new Expr[operands.length + 1];
-				System.arraycopy(operands, 0, arguments, 1, operands.length);
-				arguments[0] = branch.read(code.target());
+				Expr[] arguments = new Expr[operands.length + targets.length];
+				System.arraycopy(operands, 0, arguments, 0, operands.length);
+				for(int i=0;i!=targets.length;++i) {
+					arguments[operands.length+i] = branch.read(targets[i]);						
+				}				
 				String prefix = code.name.name() + "_ensures_";
 				for (int i = 0; i != ensures.size(); ++i) {
 					Expr.Invoke macro = new Expr.Invoke(prefix + i,
@@ -1742,48 +1723,42 @@ public class VcGenerator {
 		}
 	}
 
-	protected void transform(Codes.Invert code, AttributedCodeBlock block,
-			VcBranch branch) {
-		branch.havoc(code.target());
+	protected void transform(Codes.Invert code, AttributedCodeBlock block, VcBranch branch) {
+		branch.havoc(code.target(0));
 	}
 
-	protected void transform(Codes.IndexOf code, AttributedCodeBlock block,
-			VcBranch branch) {
+	protected void transform(Codes.IndexOf code, AttributedCodeBlock block, VcBranch branch) {
 		Expr src = branch.read(code.operand(0));
 		Expr idx = branch.read(code.operand(1));
-		branch.write(code.target(), new Expr.IndexOf(src, idx,
-				toWycsAttributes(block.attributes(branch.pc()))));
+		branch.write(code.target(0), new Expr.IndexOf(src, idx, toWycsAttributes(block.attributes(branch.pc()))));
 	}
 
-	protected void transform(Codes.ListGenerator code, AttributedCodeBlock block, VcBranch branch) {
+	protected void transform(Codes.ArrayGenerator code, AttributedCodeBlock block, VcBranch branch) {
 		Collection<wyil.lang.Attribute> wyilAttributes = block.attributes(branch.pc());
 		Collection<Attribute> attributes = toWycsAttributes(wyilAttributes); 
 		Expr element = branch.read(code.operand(0));
 		Expr count = branch.read(code.operand(1));
-		branch.havoc(code.target());
-		Expr arg = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { 
-				branch.read(code.target()), element, count },
+		branch.havoc(code.target(0));
+		Expr arg = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { branch.read(code.target(0)), element, count },
 				attributes);
 		ArrayList<SyntacticType> generics = new ArrayList<SyntacticType>();
-		generics.add(convert(code.type().element(),wyilAttributes));
+		generics.add(convert(code.type(0).element(),wyilAttributes));
 		Expr.Invoke macro = new Expr.Invoke("generate", Trie.fromString("wycs/core/Array"),
 				generics, arg);
 		branch.assume(macro);
 	}
 	
-	protected void transform(Codes.Lambda code, AttributedCodeBlock block,
-			VcBranch branch) {
+	protected void transform(Codes.Lambda code, AttributedCodeBlock block, VcBranch branch) {
 		// TODO: implement lambdas somehow?
-		branch.havoc(code.target());
+		branch.havoc(code.target(0));
 	}
 
 	protected void transform(Codes.Move code, VcBranch branch) {
-		branch.write(code.target(), branch.read(code.operand(0)));
+		branch.write(code.target(0), branch.read(code.operand(0)));
 	}
 
-	protected void transform(Codes.NewObject code, AttributedCodeBlock block,
-			VcBranch branch) {
-		branch.havoc(code.target());
+	protected void transform(Codes.NewObject code, AttributedCodeBlock block, VcBranch branch) {
+		branch.havoc(code.target(0));
 	}
 
 	protected void transform(Codes.Nop code, AttributedCodeBlock block,
@@ -1791,36 +1766,20 @@ public class VcGenerator {
 		// do nout
 	}
 
-	protected void transform(Codes.TupleLoad code, AttributedCodeBlock block,
-			VcBranch branch) {
-		Expr src = branch.read(code.operand(0));
-		Expr index = new Expr.Constant(Value.Integer(BigInteger
-				.valueOf(code.index)));
-		Expr result = new Expr.IndexOf(src, index,
-				toWycsAttributes(block.attributes(branch.pc())));
-		branch.write(code.target(), result);
-	}
-
-	protected void transform(Codes.UnaryOperator code,
-			AttributedCodeBlock block, VcBranch branch) {
+	protected void transform(Codes.UnaryOperator code, AttributedCodeBlock block, VcBranch branch) {
 		switch (code.kind) {
 		case NEG:
 			transformUnary(Expr.Unary.Op.NEG, code, branch, block);
 			break;
-		case NUMERATOR:
-		case DENOMINATOR:
-			branch.havoc(code.target());
-			break;
 		default:
-			branch.havoc(code.target());
+			branch.havoc(code.target(0));
 		}
 	}
 
-	protected void transform(Codes.Update code, AttributedCodeBlock block,
-			VcBranch branch) {
+	protected void transform(Codes.Update code, AttributedCodeBlock block, VcBranch branch) {
 		Expr result = branch.read(code.result());
-		Expr oldSource = branch.read(code.target());
-		Expr newSource = branch.havoc(code.target());
+		Expr oldSource = branch.read(code.target(0));
+		Expr newSource = branch.havoc(code.target(0));
 		updateHelper(code.iterator(), oldSource, newSource, result, branch, block);
 	}
 
@@ -1846,8 +1805,8 @@ public class VcGenerator {
 						updateHelper(iter, oldS, newS, result, branch, block);
 					}
 				}
-			} else if (lv instanceof Codes.ListLVal) {
-				Codes.ListLVal rlv = (Codes.ListLVal) lv;
+			} else if (lv instanceof Codes.ArrayLVal) {
+				Codes.ArrayLVal rlv = (Codes.ArrayLVal) lv;
 				Expr index = branch.read(rlv.indexOperand);
 				Expr oldS = new Expr.IndexOf(oldSource, index, attributes);
 				Expr newS = new Expr.IndexOf(newSource, index, attributes);
@@ -1877,7 +1836,6 @@ public class VcGenerator {
 			branch.havoc(register);
 			return branch.read(register);
 		} else {
-			System.out.println("SOURCE IS: " + source.getClass().getName());
 			// TODO: Must implement the other cases. At the moment, I'm not sure
 			// the best way to do this though.
 		}
@@ -1900,13 +1858,10 @@ public class VcGenerator {
 	 * @param branch
 	 *            --- The enclosing branch
 	 */
-	protected void transformUnary(Expr.Unary.Op operator,
-			Code.AbstractUnaryAssignable code, VcBranch branch,
+	protected void transformUnary(Expr.Unary.Op operator, Code.AbstractBytecode code, VcBranch branch,
 			AttributedCodeBlock block) {
 		Expr lhs = branch.read(code.operand(0));
-
-		branch.write(code.target(), new Expr.Unary(operator, lhs,
-				toWycsAttributes(block.attributes(branch.pc()))));
+		branch.write(code.target(0), new Expr.Unary(operator, lhs, toWycsAttributes(block.attributes(branch.pc()))));
 	}
 
 	/**
@@ -1922,20 +1877,19 @@ public class VcGenerator {
 	 * @param branch
 	 *            --- The enclosing branch
 	 */
-	protected void transformBinary(Expr.Binary.Op operator,
-			Code.AbstractBinaryAssignable code, VcBranch branch,
+	protected void transformBinary(Expr.Binary.Op operator, Code.AbstractBytecode code, VcBranch branch,
 			AttributedCodeBlock block) {
 		Expr lhs = branch.read(code.operand(0));
 		Expr rhs = branch.read(code.operand(1));
 
 		if (operator != null) {
-			branch.write(code.target(), new Expr.Binary(operator, lhs, rhs,
-					toWycsAttributes(block.attributes(branch.pc()))));
+			branch.write(code.target(0),
+					new Expr.Binary(operator, lhs, rhs, toWycsAttributes(block.attributes(branch.pc()))));
 		} else {
 			// In this case, we have a binary operator which we don't know how
 			// to translate into WyCS. Therefore, we need to invalidate the
 			// target register to signal this.
-			branch.havoc(code.target());
+			branch.havoc(code.target(0));
 		}
 	}
 
@@ -1952,16 +1906,14 @@ public class VcGenerator {
 	 * @param branch
 	 *            --- The enclosing branch
 	 */
-	protected void transformNary(Expr.Nary.Op operator,
-			Code.AbstractNaryAssignable code, VcBranch branch,
+	protected void transformNary(Expr.Nary.Op operator, Code.AbstractBytecode code, VcBranch branch,
 			AttributedCodeBlock block) {
 		int[] code_operands = code.operands();
 		Expr[] vals = new Expr[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
 		}
-		branch.write(code.target(), new Expr.Nary(operator, vals,
-				toWycsAttributes(block.attributes(branch.pc()))));
+		branch.write(code.target(0), new Expr.Nary(operator, vals, toWycsAttributes(block.attributes(branch.pc()))));
 	}
 
 	/**
@@ -1980,20 +1932,16 @@ public class VcGenerator {
 	 * @return
 	 * @throws Exception
 	 */
-	protected List<AttributedCodeBlock> findPrecondition(NameID name,
-			Type.FunctionOrMethod fun, AttributedCodeBlock block,
-			VcBranch branch) throws Exception {
-		Path.Entry<WyilFile> e = builder.project().get(name.module(),
-				WyilFile.ContentType);
+	protected List<AttributedCodeBlock> findPrecondition(NameID name, Type.FunctionOrMethod fun,
+			AttributedCodeBlock block, VcBranch branch) throws Exception {
+		Path.Entry<WyilFile> e = builder.project().get(name.module(), WyilFile.ContentType);
 		if (e == null) {
-			syntaxError(
-					errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module()
-							.toString()), filename, block.attributes(branch
-							.pc()));
+			syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module().toString()), filename,
+					block.attributes(branch.pc()));
 		}
 		WyilFile m = e.read();
 		WyilFile.FunctionOrMethod method = m.functionOrMethod(name.name(), fun);
-	
+
 		return method.precondition();
 	}
 
@@ -2013,16 +1961,12 @@ public class VcGenerator {
 	 * @return
 	 * @throws Exception
 	 */
-	protected List<AttributedCodeBlock> findPostcondition(NameID name,
-			Type.FunctionOrMethod fun, AttributedCodeBlock block,
-			VcBranch branch) throws Exception {
-		Path.Entry<WyilFile> e = builder.project().get(name.module(),
-				WyilFile.ContentType);
+	protected List<AttributedCodeBlock> findPostcondition(NameID name, Type.FunctionOrMethod fun,
+			AttributedCodeBlock block, VcBranch branch) throws Exception {
+		Path.Entry<WyilFile> e = builder.project().get(name.module(), WyilFile.ContentType);
 		if (e == null) {
-			syntaxError(
-					errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module()
-							.toString()), filename, block.attributes(branch
-							.pc()));
+			syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module().toString()), filename,
+					block.attributes(branch.pc()));
 		}
 		WyilFile m = e.read();
 		WyilFile.FunctionOrMethod method = m.functionOrMethod(name.name(), fun);
@@ -2117,21 +2061,26 @@ public class VcGenerator {
 	 *            --- return type to use
 	 * @return
 	 */
-	protected void buildFunctionBlock(String name, List<Type> params, Type ret) {
+	protected void buildFunctionBlock(String name, List<Type> params, List<Type> returns) {
 
-		TypePattern.Leaf[] declarations = new TypePattern.Leaf[params.size()];
+		TypePattern.Leaf[] parameterPatterns = new TypePattern.Leaf[params.size()];
 		// second, set initial environment
 		for (int i = 0; i != params.size(); ++i) {
 			Expr.Variable v = new Expr.Variable("r" + i);
 			// FIXME: what attributes to pass into convert?
-			declarations[i] = new TypePattern.Leaf(convert(params.get(i),
+			parameterPatterns[i] = new TypePattern.Leaf(convert(params.get(i),
 					Collections.EMPTY_LIST), v);
 		}
-
+		TypePattern.Leaf[] returnPatterns = new TypePattern.Leaf[returns.size()];
+		// second, set initial environment
+		for (int i = 0; i != returns.size(); ++i) {
+			Expr.Variable v = new Expr.Variable("r" + i);
+			returnPatterns[i] = new TypePattern.Leaf(convert(returns.get(i),
+					Collections.EMPTY_LIST), v);
+		}
 		// Construct the type declaration for the new block macro
-		TypePattern from = new TypePattern.Tuple(declarations);
-		TypePattern to = new TypePattern.Leaf(convert(ret,
-				Collections.EMPTY_LIST), null);
+		TypePattern from = new TypePattern.Tuple(parameterPatterns);
+		TypePattern to = new TypePattern.Tuple(returnPatterns);
 
 		wyalFile.add(wyalFile.new Function(name, Collections.EMPTY_LIST, from,
 				to, null));
@@ -2459,8 +2408,7 @@ public class VcGenerator {
 			internalFailure("unknown comparator (" + cop + ")", filename,
 					block.attributes(branch.pc()));
 			return null;
-		}
-
+		}		
 		return new Expr.Binary(op, lhs, rhs,
 				toWycsAttributes(block.attributes(branch.pc())));
 	}
@@ -2532,24 +2480,14 @@ public class VcGenerator {
 		} else if (c instanceof Constant.Integer) {
 			Constant.Integer cb = (Constant.Integer) c;
 			return wycs.core.Value.Integer(cb.value);
-		} else if (c instanceof Constant.Decimal) {
-			Constant.Decimal cb = (Constant.Decimal) c;
-			return wycs.core.Value.Decimal(cb.value);
-		} else if (c instanceof Constant.List) {
-			Constant.List cb = (Constant.List) c;
+		} else if (c instanceof Constant.Array) {
+			Constant.Array cb = (Constant.Array) c;
 			List<Constant> cb_values = cb.values;
 			ArrayList<Value> items = new ArrayList<Value>();
 			for (int i = 0; i != cb_values.size(); ++i) {
 				items.add(convert(cb_values.get(i), block, branch));				
 			}
 			return Value.Array(items);
-		} else if (c instanceof Constant.Tuple) {
-			Constant.Tuple cb = (Constant.Tuple) c;
-			ArrayList<Value> values = new ArrayList<Value>();
-			for (Constant v : cb.values) {
-				values.add(convert(v, block, branch));
-			}
-			return wycs.core.Value.Tuple(values);
 		} else if (c instanceof Constant.Record) {
 			Constant.Record rb = (Constant.Record) c;
 
@@ -2614,20 +2552,11 @@ public class VcGenerator {
 			return new SyntacticType.Int(toWycsAttributes(attributes));
 		} else if (t instanceof Type.Int) {
 			return new SyntacticType.Int(toWycsAttributes(attributes));
-		} else if (t instanceof Type.Real) {
-			return new SyntacticType.Real(toWycsAttributes(attributes));
 		} else if (t instanceof Type.Array) {
 			Type.Array lt = (Type.Array) t;
 			SyntacticType element = convert(lt.element(), attributes);
 			// ugly.
 			return new SyntacticType.List(element);
-		} else if (t instanceof Type.Tuple) {
-			Type.Tuple tt = (Type.Tuple) t;
-			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();
-			for (int i = 0; i != tt.size(); ++i) {
-				elements.add(convert(tt.element(i), attributes));
-			}
-			return new SyntacticType.Tuple(elements);
 		} else if (t instanceof Type.Record) {
 			Type.Record rt = (Type.Record) t;
 			HashMap<String, Type> fields = rt.fields();
@@ -2690,20 +2619,11 @@ public class VcGenerator {
 		// See Issue #298.
 		if (t instanceof Type.Any || t instanceof Type.Void
 				|| t instanceof Type.Null || t instanceof Type.Bool
-				|| t instanceof Type.Byte || t instanceof Type.Int
-				|| t instanceof Type.Real) {
+				|| t instanceof Type.Byte || t instanceof Type.Int) {
 			return false;
 		} else if (t instanceof Type.Array) {
 			Type.Array lt = (Type.Array) t;
 			return containsNominal(lt.element(), attributes);
-		} else if (t instanceof Type.Tuple) {
-			Type.Tuple tt = (Type.Tuple) t;
-			for (int i = 0; i != tt.size(); ++i) {
-				if (containsNominal(tt.element(i), attributes)) {
-					return true;
-				}
-			}
-			return false;
 		} else if (t instanceof Type.Record) {
 			Type.Record rt = (Type.Record) t;
 			for (Type field : rt.fields().values()) {
@@ -2733,7 +2653,12 @@ public class VcGenerator {
 					return true;
 				}
 			}
-			return containsNominal(ft.ret(), attributes);
+			for (Type pt : ft.returns()) {
+				if (containsNominal(pt, attributes)) {
+					return true;
+				}
+			}
+			return false;
 		} else if (t instanceof Type.Nominal) {
 			return true;
 		} else {
@@ -2754,10 +2679,10 @@ public class VcGenerator {
 		return null; // dead-code
 	}
 	
-	private static <T> List<T> prepend(T x, List<T> xs) {
+	private static <T> List<T> append(List<T> xs, List<T> ys) {
 		ArrayList<T> rs = new ArrayList<T>();
-		rs.add(x);
 		rs.addAll(xs);
+		rs.addAll(ys);		
 		return rs;
 	}
 

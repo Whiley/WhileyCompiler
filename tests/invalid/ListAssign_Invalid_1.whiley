@@ -3,5 +3,5 @@ function f(int[] ls) -> int[]:
 
 method main():
     int[] xs = [1, 2]
-    xs[0] = 1.23
+    xs[0] = true
     f(xs)

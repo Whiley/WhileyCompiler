@@ -6,7 +6,7 @@ function f(int x) -> int:
     else:
         return 2
 
-public export method test() -> void:
+public export method test() :
     assume f(1) == 1
     assume f(10) == 2
     assume f(11) == 2

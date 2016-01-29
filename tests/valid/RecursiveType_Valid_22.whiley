@@ -2,7 +2,8 @@
 
 type SortedList is null | SortedListNode
 
-type SortedListNode is {SortedList next, int data} where (next == null) || (data < next.data)
+type SortedListNode is ({SortedList next, int data} this)
+where (this.next == null) || (this.data < this.next.data)
 
 function SortedList(int head, SortedList tail) -> SortedList
 requires (tail == null) || (head < tail.data):
@@ -20,7 +21,7 @@ function contains(int item, SortedList list) -> bool:
             else:
                 return contains(item, list.next)
 
-public export method test() -> void:
+public export method test() :
     SortedList list = SortedList(10, null)
     list = SortedList(5, list)
     list = SortedList(3, list)

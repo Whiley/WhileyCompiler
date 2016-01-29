@@ -7,6 +7,6 @@ ensures (r > 0) && (r < 125):
 function f(int x) -> i8[]:
     return [g(x)]
 
-public export method test() -> void:
+public export method test() :
     int[] bytes = f(0)
     assume bytes == [1]

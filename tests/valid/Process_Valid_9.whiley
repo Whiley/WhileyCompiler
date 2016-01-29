@@ -4,7 +4,7 @@ method get(&Queue this) -> int:
     this->length = this->length - 1
     return this->items[this->length]
 
-method put(&Queue this, int item) -> void:
+method put(&Queue this, int item) :
     this->items[this->length] = item
     this->length = this->length + 1
 
@@ -16,7 +16,7 @@ method Queue(int capacity) -> &Queue:
     //
     return new {items: slots, length: 0}
 
-public export method test() -> void:
+public export method test() :
     int[] items = [1, 2, 3, 4, 5]
     &Queue q = Queue(5)
     // Put items into the queue    

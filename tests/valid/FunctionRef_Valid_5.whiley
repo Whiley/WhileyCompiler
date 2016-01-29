@@ -10,7 +10,7 @@ function id(int x) -> int:
 function test(Func f, int arg) -> int:
     return f.read(arg)
 
-public export method test() -> void:
+public export method test() :
     int x = test({read: &id}, 123)
     assume x == 123
     x = test({read: &id}, 12545)

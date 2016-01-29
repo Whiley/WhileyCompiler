@@ -14,7 +14,7 @@ function maxDepth(Link links) -> int:
     else:
         return 0
 
-public export method test() -> void:
+public export method test() :
     Link l1 = null
     Link l2 = [l1]
     Link l3 = [l2]

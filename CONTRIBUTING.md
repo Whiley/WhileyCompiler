@@ -61,3 +61,5 @@ Signed-off-by: Daniel Gibbs <daniel@danielgibbs.name>
 Signed-off-by: Min-Hsien Weng <samminweng@gmail.com>
 Signed-off-by: Henry J. Wylde <public@hjwylde.com>
 Signed-off-by: Mark Utting <bm.utting@gmail.com>
+Signed-off-by: Drew Stratford <drewstratford@outlook.com>
+Signed-off-by: Rich Dougherty <rich@rd.gen.nz>

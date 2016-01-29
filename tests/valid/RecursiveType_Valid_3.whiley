@@ -24,7 +24,7 @@ function evaluate(Expr e) -> Value:
             else:
                 return null
 
-public export method test() -> void:
+public export method test() :
     assume evaluate(1) == 1
     assume evaluate({index: 0, src: [112, 212, 342]}) == 112
     assume evaluate({index: 2, src: [112312, 289712, 31231242]}) == 31231242

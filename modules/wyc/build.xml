@@ -19,12 +19,40 @@
       <attribute name="Implementation-Title" value="wyc-v${version}.jar"/>
     </manifest>
     <jar destfile="../../lib/wyc-v${version}.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="src" includes="*/**/*.class"/>
+      <fileset dir="src">
+        <include name="*/**/*.class"/>
+        <exclude name="wyc/testing/**"/>
+      </fileset>
     </jar>
     <delete dir="tmp"/>
     <echo message="============================================="/>
     <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
     <echo message="============================================="/>
+  </target>
+
+  <target name="test-compile-wyc" depends="compile-wyc">
+    <javac debug="true" debuglevel="vars,lines,source" source="1.7" target="1.7" includeantruntime="true">
+      <src path="src"/>
+      <include name="wyc/testing/**"/>
+      <classpath>
+        <pathelement path="src:../wyil/src:../wybs/src/:../wycs/src:../../${WYRL_JAR}"/>
+        <path refid="junit.classpath"/>
+      </classpath>
+    </javac>
+  </target>
+
+  <target name="test" depends="test-compile-wyc">
+    <junit fork="true" dir="${basedir}" failureProperty="tests.failed" printsummary="yes" outputtoformatters="true">
+      <classpath>
+        <pathelement path="src:../wyil/src:../wybs/src/:../wycs/src:../../${WYRL_JAR}"/>
+        <path refid="junit.classpath"/>
+      </classpath>
+      <batchtest>
+        <fileset dir="src" includes="wyc/testing/*Tests.java"/>
+      </batchtest>
+      <formatter type="plain" usefile="false"/>
+    </junit>
+    <fail message="Test failure detected, stopping build." if="tests.failed"/>
   </target>
 
   <target name="dist">
@@ -43,6 +71,7 @@
       </fileset>
       <fileset dir="../wycs/src">
 	<include name="wycs/**/*.class"/>
+  <exclude name="wyc/testing/**"/>
       </fileset>
       <fileset dir="../wyil/src">
 	<include name="wyautl_old/**/*.class"/>

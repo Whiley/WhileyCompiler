@@ -1,7 +1,7 @@
 
 
-method f(int x) -> void:
+method f(int x) :
     skip
 
-public export method test() -> void:
+public export method test() :
     f(1)

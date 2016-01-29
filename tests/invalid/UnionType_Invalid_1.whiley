@@ -1,4 +1,4 @@
-type IntReal is int | real
+type IntBool is int | bool
 
-function f(IntReal x) -> int:
+function f(IntBool x) -> int:
     return x

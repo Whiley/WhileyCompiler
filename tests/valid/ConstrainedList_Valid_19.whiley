@@ -8,6 +8,6 @@ function g(nat[] xs) -> nat[]:
 function f(nat[] xs) -> nat[]:
     return g(xs)
 
-public export method test() -> void:
+public export method test() :
     nat[] rs = f([1, 2, 3])
     assume rs == [1,2,3]

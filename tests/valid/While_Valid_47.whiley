@@ -5,13 +5,13 @@ requires all { i in 0..|xs| | xs[i] >= 0 }
 ensures r >= 0:
    //
    nat i = 0
-   nat r = 0
+   nat x = 0
    //
    while i < |xs|:
-       r = r + xs[i]
+       x = x + xs[i]
        i = i + 1
    //
-   return r
+   return x
 
 type nat is (int x) where x >= 0
 

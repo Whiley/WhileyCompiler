@@ -1,6 +1,6 @@
 
 
-public export method test() -> void:
+public export method test() :
     int x = 200
     assert x == 200
     x = 1

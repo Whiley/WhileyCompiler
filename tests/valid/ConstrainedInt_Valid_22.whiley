@@ -13,7 +13,7 @@ method get(item day, int count) -> int[]:
     else:
         return Days[day]
 
-public export method test() -> void:
+public export method test() :
     assume get(0, 0) == "Monday"
     assume get(0, 1) == "Tuesday"
     assume get(0, 2) == "Wednesday"

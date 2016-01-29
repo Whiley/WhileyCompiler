@@ -15,7 +15,7 @@ function isAlive(int i, bool[] board) -> bool:
     else:
         return false
 
-public export method test() -> void:
+public export method test() :
     bool[] xs = [true, true, true, true, true, true, true]
     assume xs == [true, true, true, true, true, true, true]
     xs = play(xs)

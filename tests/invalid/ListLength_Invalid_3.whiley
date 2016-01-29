@@ -5,5 +5,5 @@ ensures y < 0:
     //
     return -1
 
-method main() -> void:
+method main() :
     f(-1)

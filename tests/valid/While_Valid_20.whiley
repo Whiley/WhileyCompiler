@@ -9,7 +9,7 @@ function sum(LinkedList l) -> int:
         l = l.next
     return r
 
-public export method test() -> void:
+public export method test() :
     LinkedList list = null
     assume sum(list) == 0
     list = {next: list, data: 1}

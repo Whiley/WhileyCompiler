@@ -1,5 +1,5 @@
 
-type i8 is int x where (x >= -128) && (x <= 127)
+type i8 is (int x) where (x >= -128) && (x <= 127)
 
 function g(int x) -> (int r)
 ensures (r > 0) && (r <= 256):

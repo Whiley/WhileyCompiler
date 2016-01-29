@@ -1,3 +1,3 @@
 
-public export method test() -> void:
+public export method test() :
     assume toString(1223374) == "1223374"

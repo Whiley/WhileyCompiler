@@ -8,6 +8,6 @@ function parseTerm() -> Expr:
 function parseIdentifier() -> Expr:
     return {err: "err"}
 
-public export method test() -> void:
+public export method test() :
     Expr e = parseTerm()
     assume e == {err: "err"}

@@ -2,22 +2,32 @@
   <import file="config.xml"/>
 
   <!-- ============================================== -->
+  <!-- Configuration -->
+  <!-- ============================================== -->
+
+  <!-- The set of build files in the order they should be built. -->
+  <filelist id="module.build.files" dir="modules">
+    <file name="wybs/build.xml"/>
+    <file name="wycs/build.xml"/>
+    <file name="wyil/build.xml"/>
+    <file name="wyc/build.xml"/>
+    <file name="wyrt/build.xml"/>
+    <file name="wyjc/build.xml"/>
+  </filelist>
+
+
+  <!-- ============================================== -->
   <!-- Build Commands -->
   <!-- ============================================== -->
 
   <target name="build-all">
     <subant failonerror="true" target="build">
-      <fileset dir="modules" includes="wybs/build.xml"/>
-      <fileset dir="modules" includes="wycs/build.xml"/>
-      <fileset dir="modules" includes="wyil/build.xml"/>
-      <fileset dir="modules" includes="wyc/build.xml"/>
-      <fileset dir="modules" includes="wyrt/build.xml"/>
-      <fileset dir="modules" includes="wyjc/build.xml"/>
+      <filelist refid="module.build.files"/>
     </subant>
   </target>
 
   <!-- ============================================== -->
-  <!-- Documenation -->
+  <!-- Documentation -->
   <!-- ============================================== -->
 
   <target name="doc">
@@ -73,13 +83,7 @@
 
   <target name="distjars" depends="build-all">
     <subant failonerror="false" target="dist">
-      <fileset dir="modules" includes="wybs/build.xml"/>
-      <fileset dir="modules" includes="wycs/build.xml"/>
-      <fileset dir="modules" includes="wyil/build.xml"/>
-      <fileset dir="modules" includes="wyc/build.xml"/>
-      <fileset dir="modules" includes="wyrt/build.xml"/>
-      <fileset dir="modules" includes="wyjc/build.xml"/>
-
+      <filelist refid="module.build.files"/>
     </subant>
   </target>
 
@@ -110,6 +114,7 @@
       <include name="lib/*-v${version}.jar"/>
       <include name="lib/wyrl-v*.jar"/>
       <include name="lib/jasm-v*.jar"/>
+      <include name="lib/maven-ant-tasks*.jar"/>      
     </fileset>
   </copy>
   <tar destfile="dist/wdk-src-v${version}.tar" longfile="gnu">
@@ -133,9 +138,15 @@
   <!-- Misc Commands -->
   <!-- ============================================== -->
 
+  <target name="test-all" depends="build-all">
+    <subant failonerror="true" target="test">
+      <filelist refid="module.build.files"/>
+    </subant>
+  </target>
+
   <target name="clean">
     <subant failonerror="false" target="clean">
-      <fileset dir="modules" includes="*/build.xml"/>
+      <filelist refid="module.build.files"/>
     </subant>
     <delete includeEmptyDirs="true" failonerror="false">
       <fileset file="*~"/>

@@ -10,7 +10,7 @@ function f(expr e) -> bool:
     else:
         return false
 
-public export method test() -> void:
+public export method test() :
     expr e = 1
     assume f(e) == true
     e = {y: 2, x: 1}

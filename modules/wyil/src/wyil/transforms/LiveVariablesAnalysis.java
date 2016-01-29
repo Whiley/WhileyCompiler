@@ -187,38 +187,32 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 		boolean isLive = true;
 		environment = (Env) environment.clone();
 
-		if (code instanceof Code.AbstractAssignable) {
-			Code.AbstractAssignable aa = (Code.AbstractAssignable) code;
+		if (code instanceof Code.AbstractBytecode) {
+			Code.AbstractBytecode aa = (Code.AbstractBytecode) code;
 			if(code instanceof Codes.Update) {
-				Codes.Update cu = (Codes.Update) code;
+				Codes.Update cu = (Codes.Update) aa;
 				// In the normal case, this bytecode is considered live if the
 				// assigned register is live. However, in the case of an
 				// indirect assignment, then it is always considered live.
-				if(!(cu.type() instanceof Type.Reference)) {
+				if(!(cu.type(0) instanceof Type.Reference)) {
 					// No, this is not an indirect assignment through a
 					// reference
-					isLive = environment.contains(aa.target());
+					isLive = environment.contains(cu.target(0));
 				}
 			} else {
-				isLive = environment.remove(aa.target());
+				for(int target : aa.targets()) {
+					isLive = environment.remove(target);
+				}
 			}
 		}
 
-		if(isLive && code instanceof Code.AbstractUnaryOp) {
-			Code.AbstractUnaryOp c = (Code.AbstractUnaryOp) code;
-			if(c.operand != Codes.NULL_REG) {
-				// return bytecode has an optional operand.
-				environment.add(c.operand);
-			}
-		} else if(isLive && code instanceof Code.AbstractBinaryOp) {
-			Code.AbstractBinaryOp c = (Code.AbstractBinaryOp) code;
-			environment.add(c.leftOperand);
-			environment.add(c.rightOperand);
-		} else if ((isLive && code instanceof Code.AbstractNaryAssignable)
-				|| (code instanceof Codes.Invoke && ((Codes.Invoke) code).type() instanceof Type.Method)
-				|| (code instanceof Codes.IndirectInvoke && ((Codes.IndirectInvoke) code).type() instanceof Type.Method)) {
-			Code.AbstractNaryAssignable c = (Code.AbstractNaryAssignable) code;
-			for(int operand : c.operands()) {
+		if ((isLive && code instanceof Code.AbstractBytecode)
+				|| (code instanceof Codes.Invoke && ((Codes.Invoke) code).type(0) instanceof Type.Method)
+				|| (code instanceof Codes.IndirectInvoke
+						&& ((Codes.IndirectInvoke) code).type(0) instanceof Type.Method)) {
+			// FIXME: this seems to be a problem if there are no assigned variables!
+			Code.AbstractBytecode c = (Code.AbstractBytecode) code;
+			for (int operand : c.operands()) {
 				environment.add(operand);
 			}
 		} else if(!isLive) {
@@ -235,8 +229,8 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			Env falseEnv) {
 		Env r = join(trueEnv, falseEnv);
 
-		r.add(code.leftOperand);
-		r.add(code.rightOperand);
+		r.add(code.operand(0));
+		r.add(code.operand(1));
 
 		return r;
 	}
@@ -251,7 +245,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 	public Env propagate(CodeBlock.Index index, Codes.IfIs code, Env trueEnv, Env falseEnv) {
 		Env r = join(trueEnv,falseEnv);
 
-		r.add(code.operand);
+		r.add(code.operand(0));
 
 		return r;
 	}
@@ -265,7 +259,7 @@ public class LiveVariablesAnalysis extends BackwardFlowAnalysis<LiveVariablesAna
 			environment = join(environment,environments.get(i));
 		}
 
-		environment.add(code.operand);
+		environment.add(code.operand(0));
 
 		return environment;
 	}

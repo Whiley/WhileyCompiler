@@ -1,3 +1,3 @@
 function f() -> int:
-    int x = 2.0
+    int x = 010b
     return x

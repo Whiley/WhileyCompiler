@@ -235,17 +235,18 @@ public class SubtypeOperator {
 					if(fromChildren.length != toChildren.length){
 						return false;
 					}
-
+					int fromNumParams = (Integer) fromState.data;
+					int toNumParams = (Integer) toState.data;
+					if(fromNumParams != toNumParams){
+						return false;
+					}		
 					boolean andChildren = true;
 					boolean orChildren = false;
+					 
 					for(int i=0;i<fromChildren.length;++i) {
 						boolean v;
-						if(i == 0) {
-							// return type is co-variant
-							v = isIntersection(fromChildren[i], fromSign,
-									toChildren[i], toSign);
-						} else if(i == 1) {
-							// throws type is co-variant
+						if(i >= fromNumParams) {
+							// return type(s) are co-variant
 							v = isIntersection(fromChildren[i], fromSign,
 									toChildren[i], toSign);
 						} else {

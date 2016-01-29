@@ -5,7 +5,7 @@ requires index >= 0 && index < |l|:
     //
     return l[index]
 
-public export method test() -> void:
+public export method test() :
     int[] l = [1, 2, 3]
     assume index(l,0) == 1
     assume index(l,1) == 2

@@ -18,7 +18,7 @@ function and(byte b1, byte b2) -> byte:
     //
     return r
 
-public export method test() -> void:
+public export method test() :
     int i = 0
     while i < |constants| where i >= 0:
         byte constant_i = constants[i]

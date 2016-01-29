@@ -26,7 +26,7 @@ ensures no { i in 0..|ys| | ys[i] < 0 }:
     //
     return zs
 
-public export method test() -> void:
+public export method test() :
     int[] a1 = selectOver([1, -2, 3, 4])
     int[] a2 = selectOver([1, -2, -3, 4])
     assume a1 == [1,3,4]

@@ -11,6 +11,6 @@ type msgType is msg1 | msg2
 function f(msgType m) -> msgType:
     return m
 
-public export method test() -> void:
+public export method test() :
     msg1 x = {op: 11, data: [0;0]}
     assume f(x) == {op: 11, data: [0;0]}

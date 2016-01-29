@@ -11,7 +11,7 @@ function match(Attribute attr) -> bool:
     else:
         return false
 
-public export method test() -> void:
+public export method test() :
     Attribute r = {name: "Hello"}
     assume match(r) == false
     r = {maxLocals: 0, maxStack: 0, name: "Code", data: [0b;0]}

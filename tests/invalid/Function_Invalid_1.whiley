@@ -1,2 +1,2 @@
-function f(int x) -> void:
+function f(int x) :
     asdkljkljg(x)

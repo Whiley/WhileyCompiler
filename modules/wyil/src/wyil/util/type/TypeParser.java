@@ -28,6 +28,7 @@ package wyil.util.type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import wycc.lang.NameID;
 import wyfs.lang.Path;
@@ -56,7 +57,7 @@ public class TypeParser {
 	}
 
 	public Type parse(HashSet<String> typeVariables) {
-		Type term = parseFunctionTerm(typeVariables);
+		Type term = parseNotTerm(typeVariables);
 		skipWhiteSpace();
 		while (index < str.length()
 				&& (str.charAt(index) == '|')) {
@@ -67,30 +68,35 @@ public class TypeParser {
 		}
 		return term;
 	}
-
-	public Type parseFunctionTerm(HashSet<String> typeVariables) {
-		Type t = parseNotTerm(typeVariables);
-		if(index >= str.length()) { return t; }
-		char lookahead = str.charAt(index);
-		if(lookahead == '(') {
-			// this is a tuple, not a bracketed type.
-			match("(");
-			ArrayList<Type> elems = new ArrayList();
-			elems.add(parse(typeVariables));
-			lookahead = str.charAt(index);
-			while(lookahead == ',') {
-				match(",");
-				elems.add(parse(typeVariables));
-				skipWhiteSpace();
-				lookahead = str.charAt(index);
-			}
-			match(")");
-			skipWhiteSpace();
-			return Function(t,Type.T_VOID,elems);
-		}
-		return t;
-	}
-
+//  FIXME: This is broken and needs to be updated to handle multiple returns.
+//	public Type parseFunctionTerm(HashSet<String> typeVariables) {		
+//		Type t = parseNotTerm(typeVariables);
+//		if(index >= str.length()) { return t; }
+//		char lookahead = str.charAt(index);
+//		if(lookahead == '(') {
+//			// this is a tuple, not a bracketed type.
+//			List<Type> parameters = parseParameters(typeVariables);			
+//			skipWhiteSpace();
+//			return Function(t,parameters);
+//		}
+//		return t;
+//	}
+//
+//	private List<Type> parseParameters(HashSet<String> typeVariables) {
+//		match("(");
+//		ArrayList<Type> elems = new ArrayList();
+//		elems.add(parse(typeVariables));
+//		char lookahead = str.charAt(index);
+//		while(lookahead == ',') {
+//			match(",");
+//			elems.add(parse(typeVariables));
+//			skipWhiteSpace();
+//			lookahead = str.charAt(index);
+//		}
+//		match(")");
+//		return elems;
+//	}
+	
 	public Type parseNotTerm(HashSet<String> typeVariables) {
 		skipWhiteSpace();
 		char lookahead = str.charAt(index);
@@ -108,25 +114,9 @@ public class TypeParser {
 			match("(");
 			Type t = parse(typeVariables);
 			skipWhiteSpace();
-			lookahead = str.charAt(index);
-			if(lookahead == ',') {
-				// this is a tuple, not a bracketed type.
-				ArrayList<Type> elems = new ArrayList();
-				elems.add(t);
-				while(lookahead == ',') {
-					match(",");
-					elems.add(parse(typeVariables));
-					skipWhiteSpace();
-					lookahead = str.charAt(index);
-				}
-				match(")");
-				skipWhiteSpace();
-				return Tuple(elems);
-			} else {
-				match(")");
-				skipWhiteSpace();
-				return t;
-			}
+			match(")");
+			skipWhiteSpace();
+			return t;
 		} else {
 			return parseTerm(typeVariables);
 		}
@@ -155,10 +145,7 @@ public class TypeParser {
 			}		
 		case 'i':
 			match("int");
-			return T_INT;
-		case 'r':
-			match("real");
-			return T_REAL;		
+			return T_INT;		
 		case '[':
 		{
 			match("[");

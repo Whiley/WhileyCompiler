@@ -78,7 +78,6 @@ public abstract class Type {
 	public static final Bool T_BOOL = new Bool();
 	public static final Byte T_BYTE = new Byte();
 	public static final Int T_INT = new Int();
-	public static final Real T_REAL = new Real();
 	public static final Meta T_META = new Meta();
 
 	// the following are strictly unnecessary, but since they occur very
@@ -90,35 +89,7 @@ public abstract class Type {
 	 * The type representing all possible list types.
 	 */
 	public static final Array T_ARRAY_ANY = Array(T_ANY,false);
-
-	/**
-	 * Construct a tuple type using the given element types.
-	 *
-	 * @param element
-	 */
-	public static final Type.Tuple Tuple(Type... elements) {
-		Type r = construct(K_TUPLE, null, elements);
-		if(r instanceof Type.Tuple) {
-			return (Type.Tuple) r;
-		} else {
-			throw new IllegalArgumentException("invalid arguments for Type.Tuple()");
-		}
-	}
-
-	/**
-	 * Construct a tuple type using the given element types.
-	 *
-	 * @param element
-	 */
-	public static final Type.Tuple Tuple(java.util.List<Type> elements) {
-		Type r = construct(K_TUPLE, null, elements);
-		if(r instanceof Type.Tuple) {
-			return (Type.Tuple) r;
-		} else {
-			throw new IllegalArgumentException("invalid arguments for Type.Tuple()");
-		}
-	}
-
+	
 	/**
 	 * Construct a reference type using the given element type.
 	 *
@@ -183,14 +154,17 @@ public abstract class Type {
 	 *
 	 * @param element
 	 */
-	public static final Type.Function Function(Type ret, Type throwsClause,
-			Collection<Type> params) {
-		Type[] rparams = new Type[params.size()+2];
-		int i = 2;
-		for (Type t : params) { rparams[i++] = t; }
-		rparams[0] = ret;
-		rparams[1] = throwsClause;
-		Type r = construct(K_FUNCTION, null, rparams);
+	public static final Type.Function Function(List<Type> returns,
+			List<Type> params) {		
+		Type[] rparams = new Type[params.size()+returns.size()];
+		int params_size = params.size();
+		for(int i=0;i!=params_size;++i) {
+			rparams[i] = params.get(i);
+		}
+		for(int i=0;i!=returns.size();++i) {
+			rparams[i+params_size] = returns.get(i);
+		}		
+		Type r = construct(K_FUNCTION, params_size, rparams);
 		if (r instanceof Type.Function) {
 			return (Type.Function) r;
 		} else {
@@ -204,13 +178,12 @@ public abstract class Type {
 	 *
 	 * @param element
 	 */
-	public static final Type.Function Function(Type ret, Type throwsClause,
-			Type... params) {
-		Type[] rparams = new Type[params.length+2];
-		System.arraycopy(params, 0, rparams, 2, params.length);
-		rparams[0] = ret;
-		rparams[1] = throwsClause;
-		Type r = construct(K_FUNCTION, null, rparams);
+	public static final Type.Function Function(Type[] returns,
+			Type... params) {		
+		Type[] rparams = new Type[params.length+returns.length];
+		System.arraycopy(params, 0, rparams, 0, params.length);
+		System.arraycopy(returns, 0, rparams, params.length, returns.length);
+		Type r = construct(K_FUNCTION, params.length, rparams);
 		if (r instanceof Type.Function) {
 			return (Type.Function) r;
 		} else {
@@ -224,14 +197,16 @@ public abstract class Type {
 	 *
 	 * @param element
 	 */
-	public static final Type.Method Method(Type ret, Type throwsClause,
-			Collection<Type> params) {
-		Type[] rparams = new Type[params.size()+2];
-		int i = 2;
-		for (Type t : params) { rparams[i++] = t; }
-		rparams[0] = ret;
-		rparams[1] = throwsClause;
-		Type r = construct(K_METHOD, null, rparams);
+	public static final Type.Method Method(List<Type> returns, List<Type> params) {
+		Type[] rparams = new Type[params.size()+returns.size()];
+		int params_size = params.size();
+		for(int i=0;i!=params_size;++i) {
+			rparams[i] = params.get(i);
+		}
+		for(int i=0;i!=returns.size();++i) {
+			rparams[i+params_size] = returns.get(i);
+		}			
+		Type r = construct(K_METHOD, params_size, rparams);
 		if (r instanceof Type.Method) {
 			return (Type.Method) r;
 		} else {
@@ -245,13 +220,11 @@ public abstract class Type {
 	 *
 	 * @param element
 	 */
-	public static final Type.Method Method(Type ret,
-			Type throwsClause, Type... params) {
-		Type[] rparams = new Type[params.length+2];
-		System.arraycopy(params, 0, rparams, 2, params.length);
-		rparams[0] = ret;
-		rparams[1] = throwsClause;
-		Type r = construct(K_METHOD, null, rparams);
+	public static final Type.Method Method(Type[] returns, Type... params) {
+		Type[] rparams = new Type[params.length+returns.length];
+		System.arraycopy(params, 0, rparams, 0, params.length);
+		System.arraycopy(returns, 0, rparams, params.length, returns.length);
+		Type r = construct(K_METHOD, params.length, rparams);
 		if (r instanceof Type.Method) {
 			return (Type.Method) r;
 		} else {
@@ -430,6 +403,9 @@ public abstract class Type {
 			}  else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) {
 				boolean nonEmpty = reader.read_bit();
 				state.data = nonEmpty;
+			} else if(state.kind == Type.K_FUNCTION || state.kind == Type.K_METHOD) {
+				int numParameters = reader.read_uv();
+				state.data = numParameters;
 			}
 			return state;
 		}
@@ -482,6 +458,8 @@ public abstract class Type {
 				}
 			} else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) {
 				writer.write_bit((Boolean) state.data);
+			}  else if(state.kind == Type.K_FUNCTION || state.kind == Type.K_METHOD) {
+				writer.write_uv((Integer) state.data);				
 			}
 		}
 
@@ -744,25 +722,6 @@ public abstract class Type {
 	}
 
 	/**
-	 * Represents the set of (unbound) rational numbers.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Real extends Leaf {
-		private Real() {}
-		public boolean equals(Object o) {
-			return o == T_REAL;
-		}
-		public int hashCode() {
-			return 5;
-		}
-		public String toString() {
-			return "real";
-		}
-	}
-
-	/**
 	 * The existential type represents the an unknown type, defined at a given
 	 * position.
 	 *
@@ -843,55 +802,6 @@ public abstract class Type {
 				}
 			}
 			return Type.toString(0,visited,titles,automaton);
-		}
-	}
-
-	/**
-	 * A type which is either a tuple, or a union of tuples. An effective
-	 * tuple gives access to a subset of the accessible elements
-	 * guaranteed to be in the type. For example, consider this type:
-	 *
-	 * <pre>
-	 * (int,int,int) | (int,[int])
-	 * </pre>
-	 *
-	 * Here, we're guaranteed to have at least two elements. Therefore, the effective
-	 * tuple type is <code>(int,int|[int])</code>.
-	 *
-	 * @return
-	 */
-	public interface EffectiveTuple {
-		public Type element(int index);
-		public java.util.List<Type> elements();
-	}
-
-	/**
-	 * A tuple type describes a compound type made up of two or more
-	 * subcomponents. It is similar to a record, except that fields are
-	 * effectively anonymous.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Tuple extends Compound implements EffectiveTuple {
-		private Tuple(Automaton automaton) {
-			super(automaton);
-		}
-		public int size() {
-			int[] values = (int[]) automaton.states[0].children;
-			return values.length;
-		}
-		public Type element(int index) {
-			int[] values = (int[]) automaton.states[0].children;
-			return construct(Automata.extract(automaton,values[index]));
-		}
-		public java.util.List<Type> elements() {
-			int[] values = (int[]) automaton.states[0].children;
-			ArrayList<Type> elems = new ArrayList<Type>();
-			for(Integer i : values) {
-				elems.add(construct(Automata.extract(automaton,i)));
-			}
-			return elems;
 		}
 	}
 
@@ -1156,57 +1066,6 @@ public abstract class Type {
 		}
 	}
 
-	public static final class UnionOfTuples extends Union implements
-	EffectiveTuple {
-		private UnionOfTuples(Automaton automaton) {
-			super(automaton);
-		}
-
-		public Type element(int index) {
-			Type r = null;
-			HashSet<Type.Tuple> bounds = (HashSet) bounds();
-			for(Type.Tuple bound : bounds) {
-				Type t = bound.element(index);
-				if(r == null || t == null) {
-					r = t;
-				} else {
-					r = Type.Union(r,t);
-				}
-			}
-			return r;
-		}
-
-		public int size() {
-			HashSet<Type.Tuple> bounds = (HashSet) bounds();
-			int max = Integer.MAX_VALUE;
-			// first, determine maximum number of elements in effective tuple.
-			for(Type.Tuple bound : bounds) {
-				max = Math.min(max,bound.size());
-			}
-			return max;
-		}
-
-		public ArrayList<Type> elements() {
-			HashSet<Type.Tuple> bounds = (HashSet) bounds();
-			int max = Integer.MAX_VALUE;
-			// first, determine maximum number of elements in effective tuple.
-			for(Type.Tuple bound : bounds) {
-				max = Math.min(max,bound.size());
-			}
-
-			// now, create list of elements
-			ArrayList<Type> elements = new ArrayList<Type>();
-			for(int i=0;i!=max;++i) {
-				Type element = Type.T_VOID;
-				for(Type.Tuple bound : bounds) {
-					element = Type.Union(bound.element(i),element);
-				}
-				elements.add(element);
-			}
-			return elements;
-		}
-	}
-
 	public static final class UnionOfRecords extends Union implements
 			EffectiveRecord {
 		private UnionOfRecords(Automaton automaton) {
@@ -1295,36 +1154,34 @@ public abstract class Type {
 		FunctionOrMethod(Automaton automaton) {
 			super(automaton);
 		}
-
+		
 		/**
-		 * Get the return type of this function or method type.
+		 * Get the parameter types of this function or method type.
 		 *
 		 * @return
 		 */
-		public Type ret() {
-			int[] fields = automaton.states[0].children;
-			return construct(Automata.extract(automaton, fields[0]));
+		public ArrayList<Type> returns() {
+			Automaton.State state = automaton.states[0];
+			int[] fields = state.children;
+			int numParams = (Integer) state.data;
+			ArrayList<Type> r = new ArrayList<Type>();
+			for(int i=numParams;i<fields.length;++i) {
+				r.add(construct(Automata.extract(automaton, fields[i])));
+			}
+			return r;
 		}
-
-		/**
-		 * Get the throws clause of this function or method type.
-		 *
-		 * @return
-		 */
-		public Type throwsClause() {
-			int[] fields = automaton.states[0].children;
-			return construct(Automata.extract(automaton, fields[1]));
-		}
-
+		
 		/**
 		 * Get the parameter types of this function or method type.
 		 *
 		 * @return
 		 */
 		public ArrayList<Type> params() {
-			int[] fields = automaton.states[0].children;
+			Automaton.State state = automaton.states[0];
+			int[] fields = state.children;
+			int numParams = (Integer) state.data;
 			ArrayList<Type> r = new ArrayList<Type>();
-			for(int i=2;i<fields.length;++i) {
+			for(int i=0;i<numParams;++i) {
 				r.add(construct(Automata.extract(automaton, fields[i])));
 			}
 			return r;
@@ -1506,27 +1363,27 @@ public abstract class Type {
 		}
 		case K_METHOD:
 		case K_FUNCTION: {
-			middle = "";
-			int[] children = state.children;
-			int start = 0;
-			String ret = toString(children[start], visited, headers, automaton);
-			String thros = toString(children[start+1], visited, headers, automaton);
-			boolean firstTime=true;
-			for (int i = start+2; i != children.length; ++i) {
-				if (!firstTime) {
-					middle += ",";
+			String parameters = "";
+			int[] children = state.children;			;
+			int numParameters = (Integer) state.data;
+			for (int i = 0; i != numParameters; ++i) {
+				if (i!=0) {
+					parameters += ",";
 				}
-				firstTime=false;
-				middle += toString(children[i], visited, headers, automaton);
+				parameters += toString(children[i], visited, headers, automaton);
+			}
+			String returns = "";
+			for (int i = numParameters; i != children.length; ++i) {
+				if (i!=numParameters) {
+					returns += ",";
+				}
+				returns += toString(children[i], visited, headers, automaton);
 			}
 			if(state.kind == K_FUNCTION) {
-				middle = "function(" + middle + ") -> " + ret;
+				middle = "function(" + parameters + ")->(" + returns + ")";
 			} else {
-				middle = "method(" + middle + ") -> " + ret;
-			}
-			if(!thros.equals("void")) {
-				middle = middle + " throws " + thros;
-			}
+				middle = "method(" + parameters + ")->(" + returns + ")";
+			}			
 			break;
 		}
 		default:
@@ -1631,8 +1488,6 @@ public abstract class Type {
 			return K_BYTE;
 		} else if(leaf instanceof Type.Int) {
 			return K_INT;
-		} else if(leaf instanceof Type.Real) {
-			return K_RATIONAL;
 		} else if(leaf instanceof Type.Meta) {
 			return K_META;
 		} else if(leaf instanceof Type.Nominal) {
@@ -1690,14 +1545,8 @@ public abstract class Type {
 		case K_INT:
 			type = T_INT;
 			break;
-		case K_RATIONAL:
-			type = T_REAL;
-			break;
 		case K_NOMINAL:
 			type = new Nominal((NameID) root.data);
-			break;
-		case K_TUPLE:
-			type = new Tuple(automaton);
 			break;
 		case K_LIST:
 			type = new Array(automaton);
@@ -1710,21 +1559,15 @@ public abstract class Type {
 			break;
 		case K_UNION: {
 			boolean allRecords = true;
-			boolean allLists = true;
-			boolean allTuples = true;
+			boolean allArrays = true;
 			Type.Union union = new Union(automaton);
 			for(Type bound : union.bounds()) {
-				boolean isSet = bound instanceof Set;
-				boolean isList = bound instanceof Array;
-				boolean isMap = bound instanceof Map;
+				boolean isArray = bound instanceof Array;				
 				allRecords &= bound instanceof Record;
-				allLists &= isList;
-				allTuples &= bound instanceof Tuple;
+				allArrays &= isArray;
 			}
-			if(allLists) {
+			if(allArrays) {
 				type = new UnionOfArrays(automaton);
-			} else if(allTuples) {
-				type = new UnionOfTuples(automaton);
 			} else if(allRecords) {
 				type = new UnionOfRecords(automaton);
 			} else {

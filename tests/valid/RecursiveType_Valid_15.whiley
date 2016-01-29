@@ -14,7 +14,7 @@ type asbinop is {int op, Expr left, Expr right}
 
 type Expr is int | binop
 
-public export method test() -> void:
+public export method test() :
     Expr bop1 = {op: ADD, left: 1, right: 2}
     Expr bop2 = bop1
     Expr e1 = bop1

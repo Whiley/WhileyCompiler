@@ -10,7 +10,7 @@ function atob(anat x) -> bnat:
 function btoa(bnat x) -> anat:
     return x
 
-public export method test() -> void:
+public export method test() :
     int x = 1
     assume atob(x) == 1
     assume btoa(x) == 1

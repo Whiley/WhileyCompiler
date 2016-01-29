@@ -66,7 +66,7 @@ public class Interpreter {
 	 *            The supplied arguments
 	 * @return
 	 */
-	public Constant execute(NameID nid, Type.FunctionOrMethod sig,
+	public Constant[] execute(NameID nid, Type.FunctionOrMethod sig,
 			Constant... args) {
 		// First, find the enclosing WyilFile
 		try {
@@ -102,7 +102,7 @@ public class Interpreter {
 				frame[i] = args[i];
 			}
 			// Finally, let's do it!
-			return (Constant) executeAllWithin(frame, new Context(null, body));
+			return (Constant[]) executeAllWithin(frame, new Context(null, body));
 		} catch (IOException e) {
 			throw new RuntimeException(e.getMessage(), e);
 		}
@@ -196,30 +196,26 @@ public class Interpreter {
 			return execute((Codes.Lambda) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.LengthOf) {
 			return execute((Codes.LengthOf) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.ListGenerator) {
-			return execute((Codes.ListGenerator) bytecode, frame, context);
+		} else if (bytecode instanceof Codes.ArrayGenerator) {
+			return execute((Codes.ArrayGenerator) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Quantify) {
 			return execute((Codes.Quantify) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Loop) {
 			return execute((Codes.Loop) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Move) {
 			return execute((Codes.Move) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.NewList) {
-			return execute((Codes.NewList) bytecode, frame, context);
+		} else if (bytecode instanceof Codes.NewArray) {
+			return execute((Codes.NewArray) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.NewObject) {
 			return execute((Codes.NewObject) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.NewRecord) {
 			return execute((Codes.NewRecord) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.NewTuple) {
-			return execute((Codes.NewTuple) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Nop) {
 			return execute((Codes.Nop) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Return) {
 			return execute((Codes.Return) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Switch) {
 			return execute((Codes.Switch) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.TupleLoad) {
-			return execute((Codes.TupleLoad) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.UnaryOperator) {
 			return execute((Codes.UnaryOperator) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Update) {
@@ -270,7 +266,10 @@ public class Interpreter {
 	 */
 	private Object execute(Codes.Assign bytecode, Constant[] frame,
 			Context context) {
-		frame[bytecode.target()] = frame[bytecode.operand(0)];
+		int[] targets = bytecode.targets();
+		for (int i = 0; i != targets.length; ++i) {
+			frame[bytecode.target(i)] = frame[bytecode.operand(i)];
+		}		
 		return context.pc.next();
 	}
 
@@ -297,10 +296,6 @@ public class Interpreter {
 			checkType(op2, context, Constant.Integer.class);
 			result = execute(bytecode.kind, (Constant.Integer) op1,
 					(Constant.Integer) op2, context);
-		} else if (op1 instanceof Constant.Rational) {
-			checkType(op2, context, Constant.Rational.class);
-			result = execute(bytecode.kind, (Constant.Rational) op1,
-					(Constant.Rational) op2, context);
 		} else if (op1 instanceof Constant.Byte) {
 			checkType(op2, context, Constant.Byte.class, Constant.Integer.class);
 			result = execute(bytecode.kind, (Constant.Byte) op1, op2, context);
@@ -309,7 +304,8 @@ public class Interpreter {
 		}
 
 		// Write result to target
-		frame[bytecode.target()] = result;
+		frame[bytecode.target(0)] = result;
+		
 		return context.pc.next();
 	}
 
@@ -339,35 +335,6 @@ public class Interpreter {
 			return i1.divide(i2);
 		case REM:
 			return i1.remainder(i2);		
-		}
-		deadCode(context);
-		return null;
-	}
-
-	/**
-	 * Execute a rational binary operator
-	 *
-	 * @param kind
-	 *            --- operator kind
-	 * @param i1
-	 *            --- left operand
-	 * @param i2
-	 *            --- right operand
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Constant execute(Codes.BinaryOperatorKind kind,
-			Constant.Rational r1, Constant.Rational r2, Context context) {
-		switch (kind) {
-		case ADD:
-			return r1.add(r2);
-		case SUB:
-			return r1.subtract(r2);
-		case MUL:
-			return r1.multiply(r2);
-		case DIV:
-			return r1.divide(r2);
 		}
 		deadCode(context);
 		return null;
@@ -441,7 +408,7 @@ public class Interpreter {
 		try {
 			Constant operand = frame[bytecode.operand(0)];
 			Type target = expander.getUnderlyingType(bytecode.result);
-			frame[bytecode.target()] = convert(operand, target, context);
+			frame[bytecode.target(0)] = convert(operand, target, context);
 			return context.pc.next();
 		} catch (IOException e) {
 			return error(e.getMessage(), context);
@@ -467,14 +434,10 @@ public class Interpreter {
 			// In this case, we don't need to do anything because the value is
 			// already of the correct type.
 			return value;
-		} else if (to instanceof Type.Real) {
-			return convert(value, (Type.Real) to, context);
-		} else if (to instanceof Type.Record) {
+		} if (to instanceof Type.Record) {
 			return convert(value, (Type.Record) to, context);
 		} else if (to instanceof Type.Array) {
 			return convert(value, (Type.Array) to, context);
-		} else if (to instanceof Type.Tuple) {
-			return convert(value, (Type.Tuple) to, context);
 		} else if (to instanceof Type.Union) {
 			return convert(value, (Type.Union) to, context);
 		} else if (to instanceof Type.FunctionOrMethod) {
@@ -482,23 +445,6 @@ public class Interpreter {
 		}
 		deadCode(context);
 		return null;
-	}
-
-	/**
-	 * Convert a value into an real type. The value must be of integer type for
-	 * this to make sense.
-	 *
-	 * @param value
-	 * @param to
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Constant convert(Constant value, Type.Real to, Context context) {
-		checkType(value, context, Constant.Integer.class);
-		// int -> real
-		Constant.Integer iv = (Constant.Integer) value;
-		return Constant.V_RATIONAL(new BigRational(iv.value));
 	}
 
 	/**
@@ -543,45 +489,15 @@ public class Interpreter {
 	 * @return
 	 */
 	private Constant convert(Constant value, Type.Array to, Context context) {
-		checkType(value, context, Constant.List.class);
-		Constant.List lv = (Constant.List) value;
+		checkType(value, context, Constant.Array.class);
+		Constant.Array lv = (Constant.Array) value;
 		ArrayList<Constant> values = new ArrayList<Constant>(lv.values);
 		for (int i = 0; i != values.size(); ++i) {
 			values.set(i, convert(values.get(i), to.element(), context));
 		}
-		return Constant.V_LIST(values);
+		return Constant.V_ARRAY(values);
 	}
 	
-	/**
-	 * Convert a value into a tuple type. The value must be of tuple type for
-	 * this to make sense.
-	 *
-	 * @param value
-	 * @param to
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Constant convert(Constant value, Type.Tuple to, Context context) {
-		checkType(value, context, Constant.Tuple.class);
-		Constant.Tuple lv = (Constant.Tuple) value;
-		List<Type> to_elements = to.elements();
-		ArrayList<Constant> lv_values = lv.values;
-		// Check we have matching fields
-		if (lv_values.size() != to_elements.size()) {
-			error("cannot convert between tuples with differing sizes", context);
-			return null; // deadcode
-		} else {
-			ArrayList<Constant> nValues = new ArrayList<Constant>();
-			for (int i = 0; i != lv_values.size(); ++i) {
-				Constant nValue = convert(lv_values.get(i), to_elements.get(i),
-						context);
-				nValues.add(nValue);
-			}
-			return Constant.V_TUPLE(nValues);
-		}
-	}
-
 	/**
 	 * Convert a value into a union type. In this case, we must find an
 	 * appropriate bound for the type in question. If no such type can be found,
@@ -633,7 +549,7 @@ public class Interpreter {
 	private Object execute(Codes.Debug bytecode, Constant[] frame,
 			Context context) {
 		//
-		Constant.List list = (Constant.List) frame[bytecode.operand];
+		Constant.Array list = (Constant.Array) frame[bytecode.operand(0)];
 		for (Constant item : list.values) {
 			BigInteger b = ((Constant.Integer) item).value;
 			char c = (char) b.intValue();
@@ -648,7 +564,7 @@ public class Interpreter {
 		Constant operand = frame[bytecode.operand(0)];
 		checkType(operand, context, ConstantObject.class);
 		ConstantObject ref = (ConstantObject) operand;
-		frame[bytecode.target()] = ref.read();
+		frame[bytecode.target(0)] = ref.read();
 		return context.pc.next();
 	}
 
@@ -672,7 +588,7 @@ public class Interpreter {
 	private Object execute(Codes.FieldLoad bytecode, Constant[] frame,
 			Context context) {
 		Constant.Record rec = (Constant.Record) frame[bytecode.operand(0)];
-		frame[bytecode.target()] = rec.values.get(bytecode.field);
+		frame[bytecode.target(0)] = rec.values.get(bytecode.field);
 		return context.pc.next();
 	}
 
@@ -707,8 +623,8 @@ public class Interpreter {
 	}
 
 	private Object execute(Codes.If bytecode, Constant[] frame, Context context) {
-		Constant op1 = frame[bytecode.leftOperand];
-		Constant op2 = frame[bytecode.rightOperand];
+		Constant op1 = frame[bytecode.operand(0)];
+		Constant op2 = frame[bytecode.operand(1)];
 		boolean result;
 		switch (bytecode.op) {
 		// Handle cases which apply to all values
@@ -745,25 +661,18 @@ public class Interpreter {
 	}
 
 	private boolean elementOf(Constant lhs, Constant rhs, Context context) {
-		checkType(rhs, context,Constant.List.class);
-		Constant.List list = (Constant.List) rhs;		
+		checkType(rhs, context,Constant.Array.class);
+		Constant.Array list = (Constant.Array) rhs;
 		return list.values.contains(lhs);
 	}
 
 	private boolean lessThan(Constant lhs, Constant rhs, boolean isStrict,
 			Context context) {
-		checkType(lhs, context, Constant.Integer.class, Constant.Rational.class);
-		checkType(rhs, context, lhs.getClass());
-		int result;
-		if (lhs instanceof Constant.Integer) {
-			Constant.Integer lhs_i = (Constant.Integer) lhs;
-			Constant.Integer rhs_i = (Constant.Integer) rhs;
-			result = lhs_i.compareTo(rhs_i);
-		} else {
-			Constant.Rational lhs_i = (Constant.Rational) lhs;
-			Constant.Rational rhs_i = (Constant.Rational) rhs;
-			result = lhs_i.compareTo(rhs_i);
-		}
+		checkType(lhs, context, Constant.Integer.class);
+		checkType(rhs, context, Constant.Integer.class);
+		Constant.Integer lhs_i = (Constant.Integer) lhs;
+		Constant.Integer rhs_i = (Constant.Integer) rhs;
+		int result = lhs_i.compareTo(rhs_i); 
 		// In the strict case, the lhs must be strictly below the rhs. In the
 		// non-strict case, they can be equal.
 		if (isStrict) {
@@ -773,10 +682,9 @@ public class Interpreter {
 		}
 	}
 
-	private Object execute(Codes.IfIs bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.IfIs bytecode, Constant[] frame, Context context) {
 		Type typeOperand = bytecode.rightOperand;
-		Constant op = frame[bytecode.operand];
+		Constant op = frame[bytecode.operand(0)];
 		if (isMemberOfType(op, typeOperand, context)) {
 			return context.getLabel(bytecode.target);
 		}
@@ -809,8 +717,6 @@ public class Interpreter {
 			return value instanceof Constant.Byte;
 		} else if (type instanceof Type.Int) {
 			return value instanceof Constant.Integer;
-		} else if (type instanceof Type.Real) {
-			return value instanceof Constant.Rational;
 		} else if (type instanceof Type.Reference) {
 			if (value instanceof ConstantObject) {
 				ConstantObject obj = (ConstantObject) value;
@@ -819,32 +725,14 @@ public class Interpreter {
 			}
 			return false;
 		} else if (type instanceof Type.Array) {
-			if (value instanceof Constant.List) {
-				Constant.List t = (Constant.List) value;
+			if (value instanceof Constant.Array) {
+				Constant.Array t = (Constant.Array) value;
 				Type element = ((Type.Array) type).element();
 				boolean r = true;
 				for (Constant val : t.values) {
 					r &= isMemberOfType(val, element, context);
 				}
 				return r;
-			}
-			return false;
-		} else if (type instanceof Type.Tuple) {
-			if (value instanceof Constant.Tuple) {
-				Constant.Tuple t = (Constant.Tuple) value;
-				Type.Tuple tt = (Type.Tuple) type;
-				List<Constant> t_values = t.values;
-				List<Type> tt_elements = tt.elements();
-				if (t_values.size() != tt_elements.size()) {
-					return false;
-				} else {
-					boolean r = true;
-					for (int i = 0; i != t_values.size(); ++i) {
-						r &= isMemberOfType(t_values.get(i),
-								tt_elements.get(i), context);
-					}
-					return r;
-				}
 			}
 			return false;
 		} else if (type instanceof Type.Record) {
@@ -876,7 +764,15 @@ public class Interpreter {
 		} else if (type instanceof Type.Negation) {
 			Type.Negation t = (Type.Negation) type;
 			return !isMemberOfType(value, t.element(), context);
-		} else if (type instanceof Type.Nominal) {
+		}  else if(type instanceof Type.FunctionOrMethod) {
+			if(value instanceof Constant.Lambda) {
+				Constant.Lambda l = (Constant.Lambda) value;
+				if(Type.isSubtype(type, l.type)) {
+					return true;
+				}
+			} 
+			return false;
+		}else if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
 			NameID nid = nt.name();
 			try {
@@ -911,7 +807,7 @@ public class Interpreter {
 				return false;
 			}
 		}
-
+		
 		deadCode(context);
 		return false; // deadcode
 	}
@@ -935,17 +831,17 @@ public class Interpreter {
 		Constant operand_0 = frame[bytecode.operand(0)];
 		Constant operand_1 = frame[bytecode.operand(1)];
 		// Check we have a list and an integer index
-		checkType(operand_0, context, Constant.List.class);
+		checkType(operand_0, context, Constant.Array.class);
 		checkType(operand_1, context, Constant.Integer.class);
 		// Yes, now check that this is in bounds
-		Constant.List list = (Constant.List) operand_0;
+		Constant.Array list = (Constant.Array) operand_0;
 		Constant.Integer index = (Constant.Integer) operand_1;
 		int i = index.value.intValue();
 		if (i < 0 || i >= list.values.size()) {
 			error("index-out-of-bounds", context);
 		}
 		// Ok, get the element at that index
-		frame[bytecode.target()] = list.values.get(index.value.intValue());
+		frame[bytecode.target(0)] = list.values.get(index.value.intValue());
 		// Done		
 		return context.pc.next();
 	}
@@ -987,12 +883,13 @@ public class Interpreter {
 			}
 		}
 		// Make the actual call
-		Constant result = execute(func.name, func.type(), arguments);
-		// Coerce the result (may not be actually necessary)
-		result = convert(result,bytecode.type().ret(),context);
+		Constant[] results = execute(func.name, func.type(), arguments);		
 		// Check whether a return value was expected or not
-		if (bytecode.target() != Codes.NULL_REG) {
-			frame[bytecode.target()] = result;
+		int[] targets = bytecode.targets();
+		List<Type> returns = bytecode.type(0).returns();
+		for(int i=0;i!=targets.length;++i) {
+			// Coerce the result (may not be actually necessary))
+			frame[targets[i]] = convert(results[i],returns.get(i),context);
 		}
 		// Done
 		return context.pc.next();
@@ -1023,7 +920,7 @@ public class Interpreter {
 		checkType(operand, context, Constant.Byte.class);
 		// Write back the inverted value
 		Constant.Byte b = (Constant.Byte) operand;
-		frame[bytecode.target()] = Constant.V_BYTE((byte) ~b.value);
+		frame[bytecode.target(0)] = Constant.V_BYTE((byte) ~b.value);
 		// Done
 		return context.pc.next();
 	}
@@ -1049,10 +946,11 @@ public class Interpreter {
 		for (int i = 0; i != arguments.length; ++i) {
 			arguments[i] = frame[operands[i]];
 		}
-		Constant result = execute(bytecode.name, bytecode.type(), arguments);
-		if (bytecode.target() != Codes.NULL_REG) {
-			frame[bytecode.target()] = result;
-		}
+		Constant[] results = execute(bytecode.name, bytecode.type(0), arguments);
+		int[] targets = bytecode.targets();
+		for(int i=0;i!=targets.length;++i) {
+			frame[targets[i]] = results[i];
+		}		
 		return context.pc.next();
 	}
 
@@ -1068,8 +966,7 @@ public class Interpreter {
 			}
 		}
 		// FIXME: need to do something with the operands here.
-		frame[bytecode.target()] = Constant.V_LAMBDA(bytecode.name,
-				bytecode.type(), arguments);
+		frame[bytecode.target(0)] = Constant.V_LAMBDA(bytecode.name, bytecode.type(0), arguments);
 		//
 		return context.pc.next();
 	}
@@ -1090,10 +987,10 @@ public class Interpreter {
 	private Object execute(Codes.LengthOf bytecode, Constant[] frame,
 			Context context) {
 		Constant _source = frame[bytecode.operand(0)];
-		checkType(_source, context, Constant.List.class);
-		Constant.List list = (Constant.List) _source;
+		checkType(_source, context, Constant.Array.class);
+		Constant.Array list = (Constant.Array) _source;
 		BigInteger length = BigInteger.valueOf(list.values.size());		
-		frame[bytecode.target()] = Constant.V_INTEGER(length);
+		frame[bytecode.target(0)] = Constant.V_INTEGER(length);
 		return context.pc.next();
 	}
 	
@@ -1110,7 +1007,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.ListGenerator bytecode, Constant[] frame,
+	private Object execute(Codes.ArrayGenerator bytecode, Constant[] frame,
 			Context context) {
 		Constant element = frame[bytecode.operand(0)];
 		Constant count = frame[bytecode.operand(1)];
@@ -1123,7 +1020,7 @@ public class Interpreter {
 		for(int i=0;i!=n;++i) {
 			values.add(element);
 		}
-		frame[bytecode.target()] = Constant.V_LIST(values);
+		frame[bytecode.target(0)] = Constant.V_ARRAY(values);
 		return context.pc.next();
 	}
 	
@@ -1155,8 +1052,11 @@ public class Interpreter {
 	 */
 	private Object execute(Codes.Move bytecode, Constant[] frame,
 			Context context) {
-		frame[bytecode.target()] = frame[bytecode.operand(0)];
-		frame[bytecode.operand(0)] = null;
+		int[] operands = bytecode.operands();
+		for(int i=0;i!=operands.length;++i) {
+			frame[bytecode.target(i)] = frame[bytecode.operand(i)];
+			frame[bytecode.operand(i)] = null;
+		}
 		return context.pc.next();
 	}
 
@@ -1172,13 +1072,13 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.NewList bytecode, Constant[] frame,
+	private Object execute(Codes.NewArray bytecode, Constant[] frame,
 			Context context) {
 		ArrayList<Constant> values = new ArrayList<Constant>();
 		for (int operand : bytecode.operands()) {
 			values.add((Constant) frame[operand]);
 		}
-		frame[bytecode.target()] = Constant.V_LIST(values);
+		frame[bytecode.target(0)] = Constant.V_ARRAY(values);
 		return context.pc.next();
 	}
 
@@ -1186,7 +1086,7 @@ public class Interpreter {
 			Context context) {
 		Constant operand = frame[bytecode.operand(0)];
 		ConstantObject o = new ConstantObject(operand);
-		frame[bytecode.target()] = o;
+		frame[bytecode.target(0)] = o;
 		return context.pc.next();
 	}
 
@@ -1205,36 +1105,13 @@ public class Interpreter {
 	private Object execute(Codes.NewRecord bytecode, Constant[] frame,
 			Context context) {
 		HashMap<String, Constant> values = new HashMap<String, Constant>();
-		ArrayList<String> fields = new ArrayList<String>(bytecode.type()
-				.fields().keySet());
+		ArrayList<String> fields = new ArrayList<String>(bytecode.type(0).fields().keySet());
 		Collections.sort(fields);
 		int[] operands = bytecode.operands();
 		for (int i = 0; i != operands.length; ++i) {
 			values.put(fields.get(i), (Constant) frame[operands[i]]);
 		}
-		frame[bytecode.target()] = Constant.V_RECORD(values);
-		return context.pc.next();
-	}
-
-	/**
-	 * Execute a Tuple bytecode instruction at a given point in the function or
-	 * method body. This constructs a new tuple.
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Codes.NewTuple bytecode, Constant[] frame,
-			Context context) {
-		ArrayList<Constant> values = new ArrayList<Constant>();
-		for (int operand : bytecode.operands()) {
-			values.add((Constant) frame[operand]);
-		}
-		frame[bytecode.target()] = Constant.V_TUPLE(values);
+		frame[bytecode.target(0)] = Constant.V_RECORD(values);
 		return context.pc.next();
 	}
 
@@ -1266,20 +1143,18 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.Return bytecode, Constant[] frame,
-			Context context) {
-		if (bytecode.operand == Codes.NULL_REG) {
-			// This is a void return
-			return null;
-		} else {
-			return frame[bytecode.operand];
+	private Object execute(Codes.Return bytecode, Constant[] frame, Context context) {
+		int[] operands = bytecode.operands();
+		Constant[] returns = new Constant[operands.length];
+		for(int i=0;i!=operands.length;++i) {
+			returns[i] = frame[operands[i]];
 		}
+		return returns;
 	}
 
-	private Object execute(Codes.Switch bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Switch bytecode, Constant[] frame, Context context) {
 		//
-		Constant operand = frame[bytecode.operand];
+		Constant operand = frame[bytecode.operand(0)];
 		for (Pair<Constant, String> branch : bytecode.branches) {
 			Constant caseOperand = cleanse(branch.first(), context);
 			if (caseOperand.equals(operand)) {
@@ -1289,19 +1164,6 @@ public class Interpreter {
 		return context.getLabel(bytecode.defaultTarget);
 	}
 
-	private Object execute(Codes.TupleLoad bytecode, Constant[] frame,
-			Context context) {
-		//
-		Constant _source = frame[bytecode.operand(0)];
-		// Check that we have a tuple
-		checkType(_source, context, Constant.Tuple.class);
-		Constant.Tuple source = (Constant.Tuple) _source;
-		// Assign tuple element to target register
-		frame[bytecode.target()] = source.values.get(bytecode.index);
-		// Fall through to next bytecode
-		return context.pc.next();
-	}
-
 	private Object execute(Codes.UnaryOperator bytecode, Constant[] frame,
 			Context context) {
 		Constant _operand = frame[bytecode.operand(0)];
@@ -1309,33 +1171,15 @@ public class Interpreter {
 		//
 		switch (bytecode.kind) {
 		case NEG:
-			checkType(_operand, context, Constant.Integer.class,
-					Constant.Rational.class);
-			if (_operand instanceof Constant.Integer) {
-				Constant.Integer operand = (Constant.Integer) _operand;
-				result = operand.negate();
-			} else {
-				Constant.Rational operand = (Constant.Rational) _operand;
-				result = operand.negate();
-			}
-			break;
-		case DENOMINATOR: {
-			checkType(_operand, context, Constant.Rational.class);
-			Constant.Rational operand = (Constant.Rational) _operand;
-			result = Constant.V_INTEGER(operand.value.denominator());
-			break;
-		}
-		case NUMERATOR: {
-			checkType(_operand, context, Constant.Rational.class);
-			Constant.Rational operand = (Constant.Rational) _operand;
-			result = Constant.V_INTEGER(operand.value.numerator());
-			break;
-		}
+			checkType(_operand, context, Constant.Integer.class);
+			Constant.Integer operand = (Constant.Integer) _operand;
+			result = operand.negate();			
+			break;		
 		default:
 			return deadCode(context);
 		}
 		// Assign result to target register
-		frame[bytecode.target()] = result;
+		frame[bytecode.target(0)] = result;
 		// Fall through to next bytecode
 		return context.pc.next();
 
@@ -1344,9 +1188,8 @@ public class Interpreter {
 	private Object execute(Codes.Update bytecode, Constant[] frame,
 			Context context) {
 		Constant rhs = frame[bytecode.result()];
-		Constant lhs = frame[bytecode.target()];
-		frame[bytecode.target()] = update(lhs, bytecode.iterator(), rhs, frame,
-				context);
+		Constant lhs = frame[bytecode.target(0)];
+		frame[bytecode.target(0)] = update(lhs, bytecode.iterator(), rhs, frame, context);
 		return context.pc.next();
 	}
 
@@ -1376,19 +1219,19 @@ public class Interpreter {
 		if (descriptor.hasNext()) {
 			Codes.LVal lval = descriptor.next();
 			// Check what shape the left-hand side is
-			if (lval instanceof Codes.ListLVal) {
+			if (lval instanceof Codes.ArrayLVal) {
 				// List
-				Codes.ListLVal lv = (Codes.ListLVal) lval;
+				Codes.ArrayLVal lv = (Codes.ArrayLVal) lval;
 				Constant operand = frame[lv.indexOperand];
 				checkType(operand, context, Constant.Integer.class);
-				checkType(lhs, context, Constant.List.class);
-				Constant.List list = (Constant.List) lhs;
+				checkType(lhs, context, Constant.Array.class);
+				Constant.Array list = (Constant.Array) lhs;
 				int index = ((Constant.Integer) operand).value.intValue();
 				ArrayList<Constant> values = new ArrayList<Constant>(
 						list.values);
 				rhs = update(values.get(index), descriptor, rhs, frame, context);
 				values.set(index, rhs);
-				return Constant.V_LIST(values);
+				return Constant.V_ARRAY(values);
 			} else if (lval instanceof Codes.RecordLVal) {
 				// Record
 				Codes.RecordLVal lv = (Codes.RecordLVal) lval;
@@ -1465,23 +1308,13 @@ public class Interpreter {
 				|| constant instanceof Constant.Lambda
 				|| constant instanceof Constant.Type) {
 			return constant;
-		} else if (constant instanceof Constant.Decimal) {
-			Constant.Decimal dec = (Constant.Decimal) constant;
-			return Constant.V_RATIONAL(new BigRational(dec.value));
-		} else if (constant instanceof Constant.Tuple) {
-			Constant.Tuple ct = (Constant.Tuple) constant;
+		} else if (constant instanceof Constant.Array) {
+			Constant.Array ct = (Constant.Array) constant;
 			ArrayList<Constant> values = new ArrayList<Constant>(ct.values);
 			for (int i = 0; i != values.size(); ++i) {
 				values.set(i, cleanse(values.get(i), context));
 			}
-			return Constant.V_TUPLE(values);
-		} else if (constant instanceof Constant.List) {
-			Constant.List ct = (Constant.List) constant;
-			ArrayList<Constant> values = new ArrayList<Constant>(ct.values);
-			for (int i = 0; i != values.size(); ++i) {
-				values.set(i, cleanse(values.get(i), context));
-			}
-			return Constant.V_LIST(values);
+			return Constant.V_ARRAY(values);
 		} else if (constant instanceof Constant.Record) {
 			Constant.Record mt = (Constant.Record) constant;
 			HashMap<String, Constant> fields = mt.values;

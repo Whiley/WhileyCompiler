@@ -6,7 +6,7 @@ type msgType is msg1 | msg2
 function f(msgType m) -> msgType:
     return m
 
-public export method test() -> void:
+public export method test() :
     msg1 x = {op: 1, data: [1, 2, 3]}
     assume f(x) == {op: 1, data: [1, 2, 3]}
     int[] list = x.data

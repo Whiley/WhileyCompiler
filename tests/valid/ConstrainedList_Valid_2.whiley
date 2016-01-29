@@ -18,7 +18,7 @@ function abs(int x) -> nat:
     else:
         return -x
 
-public export method test() -> void:
+public export method test() :
     nat[] xs = [1, -3, -5, 7, -9, 11]
     xs = abs(xs)
     assume xs == [1,3,5,7,9,11]

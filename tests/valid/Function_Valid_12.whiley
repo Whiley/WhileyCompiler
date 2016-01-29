@@ -8,9 +8,9 @@ function f(msg m) -> int:
 function f(int[] ls) -> int[]:
     return ls
 
-function f(real[] ls) -> real[]:
+function f(bool[] ls) -> bool[]:
     return ls
 
-public export method test() -> void:
+public export method test() :
     assume f([1, 2, 3]) == [1,2,3]
-    assume f([1.2, 2.2, 3.3]) == [1.2,2.2,3.3]
+    assume f([true,false,true]) == [true,false,true]

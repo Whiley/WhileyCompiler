@@ -1,8 +1,8 @@
 
 
-type Rec is { real[] items }
+type Rec is { bool[] items }
 
 public export method test():
-    Rec r = { items: [1.0, 2.0, 3.0] }
-    real x = (r.items)[1]
-    assert x == 2.0
+    Rec r = { items: [true, true, false] }
+    bool x = (r.items)[1]
+    assert x == true

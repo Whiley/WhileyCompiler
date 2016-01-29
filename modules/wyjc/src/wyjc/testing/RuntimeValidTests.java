@@ -78,7 +78,7 @@ import wyjc.util.WyjcBuildTask;
 
  	private static final String WYBS_CLASS_DIR="../../modules/wybs/src/";
 
- 	private static final String WYRL_CLASS_DIR="../../lib/wyrl-v0.4.0.jar";
+ 	private static final String WYRL_CLASS_DIR="../../lib/wyrl-v0.4.4.jar";
 
 
  	static {
@@ -343,40 +343,9 @@ import wyjc.util.WyjcBuildTask;
 	public void Byte_Valid_9() {
 		runTest("Byte_Valid_9");
 	}
-
-	@Test
-	public void Cast_Valid_1() {
-		runTest("Cast_Valid_1");
-	}
-
-	@Test
-	public void Cast_Valid_2() {
-		runTest("Cast_Valid_2");
-	}
-
-	@Test
-	public void Cast_Valid_3() {
-		runTest("Cast_Valid_3");
-	}
-
-	@Test
-	public void Cast_Valid_4() {
-		runTest("Cast_Valid_4");
-	}
-
 	@Test
 	public void Cast_Valid_5() {
 		runTest("Cast_Valid_5");
-	}
-
-	@Test
-	public void Cast_Valid_6() {
-		runTest("Cast_Valid_6");
-	}
-
-	@Test
-	public void Coercion_Valid_1() {
-		runTest("Coercion_Valid_1");
 	}
 
 	@Test
@@ -414,7 +383,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("Complex_Valid_2");
 	}
 
-	@Ignore("Issue ???") @Test
+	@Ignore("#339") @Test
 	public void Complex_Valid_3() {
 		runTest("Complex_Valid_3");
 	}
@@ -741,16 +710,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 	
 	@Test
-	public void ConstrainedTuple_Valid_1() {
-		runTest("ConstrainedTuple_Valid_1");
-	}
-
-	@Test
-	public void ConstrainedTuple_Valid_2() {
-		runTest("ConstrainedTuple_Valid_2");
-	}
-	
-	@Test
 	public void ConstrainedUnion_Valid_1() {
 		runTest("ConstrainedUnion_Valid_1");
 	}
@@ -763,11 +722,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void Contractive_Valid_2() {
 		runTest("Contractive_Valid_2");
-	}
-
-	@Test
-	public void DecimalAssignment_Valid_1() {
-		runTest("DecimalAssignment_Valid_1");
 	}
 
 	@Test
@@ -910,6 +864,26 @@ import wyjc.util.WyjcBuildTask;
 		runTest("FunctionRef_Valid_9");
 	}
 
+	@Test
+	public void FunctionRef_Valid_10() {
+		runTest("FunctionRef_Valid_10");
+	}
+	
+	@Test
+	public void FunctionRef_Valid_11() {
+		runTest("FunctionRef_Valid_11");
+	}
+	
+	@Test
+	public void FunctionRef_Valid_12() {
+		runTest("FunctionRef_Valid_12");
+	}
+	
+	@Ignore("#555") @Test
+	public void FunctionRef_Valid_13() {
+		runTest("FunctionRef_Valid_13");
+	}
+	
 	@Test
 	public void Function_Valid_1() {
 		runTest("Function_Valid_1");
@@ -1090,11 +1064,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void IntEquals_Valid_1() {
-		runTest("IntEquals_Valid_1");
-	}
-
-	@Test
 	public void IntMul_Valid_1() {
 		runTest("IntMul_Valid_1");
 	}
@@ -1264,18 +1233,8 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void ListConversion_Valid_1() {
-		runTest("ListConversion_Valid_1");
-	}
-
-	@Test
 	public void ListEmpty_Valid_1() {
 		runTest("ListEmpty_Valid_1");
-	}
-
-	@Test
-	public void ListEquals_Valid_1() {
-		runTest("ListEquals_Valid_1");
 	}
 
 	@Test
@@ -1484,16 +1443,6 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void OpenRecord_Valid_7() {
-		runTest("OpenRecord_Valid_7");
-	}
-
-	@Test
-	public void OpenRecord_Valid_8() {
-		runTest("OpenRecord_Valid_8");
-	}
-
-	@Test
 	public void OpenRecord_Valid_9() {
 		runTest("OpenRecord_Valid_9");
 	}
@@ -1574,88 +1523,8 @@ import wyjc.util.WyjcBuildTask;
 	}
 
 	@Test
-	public void RealConst_Valid_1() {
-		runTest("RealConst_Valid_1");
-	}
-
-	@Test
-	public void RealDiv_Valid_1() {
-		runTest("RealDiv_Valid_1");
-	}
-
-	@Test
-	public void RealDiv_Valid_2() {
-		runTest("RealDiv_Valid_2");
-	}
-
-	@Test
-	public void RealDiv_Valid_3() {
-		runTest("RealDiv_Valid_3");
-	}
-
-	@Test
-	public void RealDiv_Valid_4() {
-		runTest("RealDiv_Valid_4");
-	}
-
-	@Test
-	public void RealDiv_Valid_5() {
-		runTest("RealDiv_Valid_5");
-	}
-
-	@Test
-	public void RealDiv_Valid_6() {
-		runTest("RealDiv_Valid_6");
-	}
-
-	@Test
-	public void RealDiv_Valid_7() {
-		runTest("RealDiv_Valid_7");
-	}
-
-	@Test
-	public void RealNeg_Valid_1() {
-		runTest("RealNeg_Valid_1");
-	}
-
-	@Test
-	public void RealNeg_Valid_2() {
-		runTest("RealNeg_Valid_2");
-	}
-
-	@Test
-	public void RealSplit_Valid_1() {
-		runTest("RealSplit_Valid_1");
-	}
-
-	@Test
-	public void RealSub_Valid_1() {
-		runTest("RealSub_Valid_1");
-	}
-
-	@Test
-	public void RealSub_Valid_2() {
-		runTest("RealSub_Valid_2");
-	}
-
-	@Test
-	public void RealSub_Valid_3() {
-		runTest("RealSub_Valid_3");
-	}
-
-	@Test
-	public void Real_Valid_1() {
-		runTest("Real_Valid_1");
-	}
-
-	@Test
 	public void RecordAccess_Valid_1() {
 		runTest("RecordAccess_Valid_1");
-	}
-
-	@Test
-	public void RecordAccess_Valid_2() {
-		runTest("RecordAccess_Valid_2");
 	}
 
 	@Test
@@ -1708,14 +1577,9 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecordAssign_Valid_9");
 	}
 
-	@Test
+	@Ignore("#564") @Test
 	public void RecordCoercion_Valid_1() {
 		runTest("RecordCoercion_Valid_1");
-	}
-
-	@Test
-	public void RecordConversion_Valid_1() {
-		runTest("RecordConversion_Valid_1");
 	}
 
 	@Test
@@ -1753,7 +1617,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_11");
 	}
 
-	@Test
+	@Ignore("#339") @Test
 	public void RecursiveType_Valid_12() {
 		runTest("RecursiveType_Valid_12");
 	}
@@ -1808,7 +1672,7 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_21");
 	}
 
-	@Test
+	@Ignore("#339") @Test
 	public void RecursiveType_Valid_22() {
 		runTest("RecursiveType_Valid_22");
 	}
@@ -1878,36 +1742,46 @@ import wyjc.util.WyjcBuildTask;
 		runTest("RecursiveType_Valid_9");
 	}
 
-	@Ignore("???") @Test
+	@Test
 	public void Reference_Valid_1() {
 		runTest("Reference_Valid_1");
 	}
 
-	@Ignore("???") @Test
+	@Test
 	public void Reference_Valid_2() {
 		runTest("Reference_Valid_2");
 	}
 
-	@Ignore("???") @Test
+	@Test
 	public void Reference_Valid_3() {
 		runTest("Reference_Valid_3");
 	}
 
-	@Ignore("#428") @Test
+	@Test
 	public void Reference_Valid_4() {
 		runTest("Reference_Valid_4");
 	}
 
-	@Ignore("#428") @Test
+	@Test
 	public void Reference_Valid_5() {
 		runTest("Reference_Valid_5");
 	}
 
+	@Ignore("#553") @Test
+	public void Reference_Valid_6() {
+		runTest("Reference_Valid_6");
+	}
+	
 	@Test
 	public void Remainder_Valid_1() {
 		runTest("Remainder_Valid_1");
 	}
 
+	@Test
+	public void Return_Valid_1() {
+		runTest("Return_Valid_1");
+	}
+	
 	@Test
 	public void Requires_Valid_1() {
 		runTest("Requires_Valid_1");
@@ -2097,47 +1971,7 @@ import wyjc.util.WyjcBuildTask;
 	public void Syntax_Valid_1() {
 		runTest("Syntax_Valid_1");
 	}
-
-	@Test
-	public void TupleType_Valid_1() {
-		runTest("TupleType_Valid_1");
-	}
-
-	@Test
-	public void TupleType_Valid_2() {
-		runTest("TupleType_Valid_2");
-	}
-
-	@Test
-	public void TupleType_Valid_3() {
-		runTest("TupleType_Valid_3");
-	}
-
-	@Test
-	public void TupleType_Valid_4() {
-		runTest("TupleType_Valid_4");
-	}
-
-	@Test
-	public void TupleType_Valid_5() {
-		runTest("TupleType_Valid_5");
-	}
-
-	@Test
-	public void TupleType_Valid_6() {
-		runTest("TupleType_Valid_6");
-	}
-
-	@Test
-	public void TupleType_Valid_7() {
-		runTest("TupleType_Valid_7");
-	}
-
-	@Test
-	public void TupleType_Valid_8() {
-		runTest("TupleType_Valid_8");
-	}
-
+	
 	@Test
 	public void TypeEquals_Valid_1() {
 		runTest("TypeEquals_Valid_1");
@@ -2191,11 +2025,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void TypeEquals_Valid_2() {
 		runTest("TypeEquals_Valid_2");
-	}
-
-	@Test
-	public void TypeEquals_Valid_20() {
-		runTest("TypeEquals_Valid_20");
 	}
 
 	@Test
@@ -2341,11 +2170,6 @@ import wyjc.util.WyjcBuildTask;
 	@Test
 	public void TypeEquals_Valid_7() {
 		runTest("TypeEquals_Valid_7");
-	}
-
-	@Test
-	public void TypeEquals_Valid_8() {
-		runTest("TypeEquals_Valid_8");
 	}
 
 	@Test

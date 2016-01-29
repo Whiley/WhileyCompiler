@@ -1,6 +1,6 @@
 
 
-public export method test() -> void:
+public export method test() :
     bool x = true
     bool y = false
     assert (x && x) == true

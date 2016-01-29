@@ -12,7 +12,7 @@ function match(byte[] data, nat offset, nat end) -> int:
     //
     return len
 
-public export method test() -> void:
+public export method test() :
     byte[] xs = [
         00000000b,
         00000101b,

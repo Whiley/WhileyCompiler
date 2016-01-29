@@ -6,6 +6,6 @@ function f(int | bool x) -> int:
     else:
         return 1
 
-public export method test() -> void:
+public export method test() :
     assume f(true) == 1
     assume f(123) == 123

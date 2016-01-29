@@ -5,7 +5,7 @@ type OpenRecord is {int field, ...}
 function getField(OpenRecord r) -> int:
     return r.field
 
-public export method test() -> void:
+public export method test() :
     OpenRecord r = {field: 1}
     assume getField(r) == 1
     r = {field: 2, x: "hello"}

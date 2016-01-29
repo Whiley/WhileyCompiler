@@ -14,7 +14,7 @@ ensures item == r:
     //
     return abs(item)
 
-public export method test() -> void:
+public export method test() :
     nat xs = abs(-123)
     assume xs == 123
     xs = nop(1)

@@ -1,12 +1,12 @@
 
 
-type IntReal is int | real
+type IntBool is int | bool
 
-function f(IntReal y) -> IntReal:
+function f(IntBool y) -> IntBool:
     return y
 
-public export method test() -> void:
-    IntReal x = 123
+public export method test() :
+    IntBool x = 123
     assume f(x) == 123
-    x = 1.234
-    assume f(x) == 1.234
+    x = true
+    assume f(x) == true

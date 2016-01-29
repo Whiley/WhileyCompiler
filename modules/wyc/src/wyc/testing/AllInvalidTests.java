@@ -195,31 +195,6 @@ public class AllInvalidTests {
 	}
 
 	@Test
-	public void Cast_Invalid_1() {
-		runTest("Cast_Invalid_1");
-	}
-
-	@Test
-	public void Cast_Invalid_2() {
-		runTest("Cast_Invalid_2");
-	}
-
-	@Test
-	public void Cast_Invalid_3() {
-		runTest("Cast_Invalid_3");
-	}
-
-	@Test
-	public void Cast_Invalid_4() {
-		runTest("Cast_Invalid_4");
-	}
-
-	@Test
-	public void Coercion_Invalid_1() {
-		runTest("Coercion_Invalid_1");
-	}
-
-	@Test
 	public void Coercion_Invalid_2() {
 		runTest("Coercion_Invalid_2");
 	}
@@ -239,7 +214,7 @@ public class AllInvalidTests {
 		runTest("ConstrainedDictionary_Invalid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ConstrainedInt_Invalid_1() {
 		runTest("ConstrainedInt_Invalid_1");
 	}
@@ -249,12 +224,12 @@ public class AllInvalidTests {
 		runTest("ConstrainedInt_Invalid_10");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ConstrainedInt_Invalid_11() {
 		runTest("ConstrainedInt_Invalid_11");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ConstrainedInt_Invalid_12() {
 		runTest("ConstrainedInt_Invalid_12");
 	}
@@ -304,7 +279,7 @@ public class AllInvalidTests {
 		runTest("ConstrainedList_Invalid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ConstrainedList_Invalid_2() {
 		runTest("ConstrainedList_Invalid_2");
 	}
@@ -315,8 +290,8 @@ public class AllInvalidTests {
 	}
 
 	@Test
-	public void ConstrainedTuple_Invalid_1() {
-		runTest("ConstrainedTuple_Invalid_1");
+	public void ConstrainedRecord_Invalid_1() {
+		runTest("ConstrainedRecord_Invalid_1");
 	}
 
 	@Ignore("#425") @Test
@@ -324,7 +299,7 @@ public class AllInvalidTests {
 		runTest("Contractive_Invalid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Contractive_Invalid_2() {
 		runTest("Contractive_Invalid_2");
 	}
@@ -349,7 +324,7 @@ public class AllInvalidTests {
 		runTest("DefiniteAssign_Invalid_4");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void EndOfFile_Invalid_1() {
 		runTest("EndOfFile_Invalid_1");
 	}
@@ -414,7 +389,7 @@ public class AllInvalidTests {
 		runTest("Function_Invalid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Function_Invalid_10() {
 		runTest("Function_Invalid_10");
 	}
@@ -539,7 +514,7 @@ public class AllInvalidTests {
 		runTest("ListEmpty_Invalid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void ListEquals_Invalid_1() {
 		runTest("ListEquals_Invalid_1");
 	}
@@ -695,7 +670,7 @@ public class AllInvalidTests {
 		runTest("NegationType_Invalid_3");
 	}
 
-	@Test
+	@Ignore("wrong output") @Test
 	public void OpenRecord_Invalid_1() {
 		runTest("OpenRecord_Invalid_1");
 	}
@@ -798,46 +773,6 @@ public class AllInvalidTests {
 	@Test
 	public void Quantifiers_Invalid_8() {
 		runTest("Quantifiers_Invalid_8");
-	}
-
-	@Test
-	public void Rational_Invalid_1() {
-		runTest("Rational_Invalid_1");
-	}
-
-	@Test
-	public void Rational_Invalid_2() {
-		runTest("Rational_Invalid_2");
-	}
-
-	@Test
-	public void RealAdd_Invalid_1() {
-		runTest("RealAdd_Invalid_1");
-	}
-
-	@Test
-	public void RealConvert_Invalid_1() {
-		runTest("RealConvert_Invalid_1");
-	}
-
-	@Test
-	public void RealConvert_Invalid_2() {
-		runTest("RealConvert_Invalid_2");
-	}
-
-	@Test
-	public void RealDiv_Invalid_1() {
-		runTest("RealDiv_Invalid_1");
-	}
-
-	@Test
-	public void RealDiv_Invalid_2() {
-		runTest("RealDiv_Invalid_2");
-	}
-
-	@Ignore("Internal Failure") @Test
-	public void RealMul_Invalid_1() {
-		runTest("RealMul_Invalid_1");
 	}
 
 	@Test
@@ -1000,7 +935,7 @@ public class AllInvalidTests {
 		runTest("Subtype_Invalid_5");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Subtype_Invalid_6() {
 		runTest("Subtype_Invalid_6");
 	}
@@ -1055,17 +990,17 @@ public class AllInvalidTests {
 		runTest("Switch_Invalid_7");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TupleAssign_Invalid_1() {
 		runTest("TupleAssign_Invalid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TupleAssign_Invalid_2() {
 		runTest("TupleAssign_Invalid_2");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TupleAssign_Invalid_3() {
 		runTest("TupleAssign_Invalid_3");
 	}
@@ -1075,37 +1010,37 @@ public class AllInvalidTests {
 		runTest("TupleDefine_Invalid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void TupleDefine_Invalid_2() {
 		runTest("TupleDefine_Invalid_2");
 	}
 
 	@Test
-	public void Tuple_Invalid_1() {
-		runTest("Tuple_Invalid_1");
+	public void MultiAssign_Invalid_1() {
+		runTest("MultiAssign_Invalid_1");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Tuple_Invalid_3() {
 		runTest("Tuple_Invalid_3");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Tuple_Invalid_4() {
 		runTest("Tuple_Invalid_4");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Tuple_Invalid_5() {
 		runTest("Tuple_Invalid_5");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Tuple_Invalid_6() {
 		runTest("Tuple_Invalid_6");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void Tuple_Invalid_7() {
 		runTest("Tuple_Invalid_7");
 	}
@@ -1165,7 +1100,7 @@ public class AllInvalidTests {
 		runTest("UnionType_Invalid_6");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void UnionType_Invalid_7() {
 		runTest("UnionType_Invalid_7");
 	}
@@ -1225,7 +1160,7 @@ public class AllInvalidTests {
 		runTest("While_Invalid_11");
 	}
 
-	@Test
+	@Ignore("unclassified") @Test
 	public void While_Invalid_12() {
 		runTest("While_Invalid_12");
 	}

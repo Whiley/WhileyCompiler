@@ -1,15 +1,13 @@
 
 
-function f(real x) -> int:
+function f(bool x) -> int:
     switch x:
-        case 1.23:
+        case true:
             return 0
-        case 2.01:
+        case false:
             return -1
     return 10
 
-public export method test() -> void:
-    assume f(1.23) == 0
-    assume f(2.01) == -1
-    assume f(3.0) == 10
-    assume f(-1.0) == 10
+public export method test() :
+    assume f(true) == 0
+    assume f(false) == -1

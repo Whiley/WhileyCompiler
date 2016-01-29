@@ -13,6 +13,6 @@ type byteCode is STORE | BRANCH
 function f(byteCode b) -> byteCode:
     return b
 
-public export method test() -> void:
+public export method test() :
     STORE b = {index: 1, op: 0}
     assume f(b) == {index: 1, op: 0}

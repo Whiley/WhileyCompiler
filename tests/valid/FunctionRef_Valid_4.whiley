@@ -14,6 +14,6 @@ function g(int d) -> int:
     func y = table[d]
     return y(123)
 
-public export method test() -> void:
+public export method test() :
     assume g(0) == 123
     assume g(1) == -123

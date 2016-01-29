@@ -1,6 +1,6 @@
 type Proc is &{
-    function func(real,int)->real
+    function func(bool,int)->bool
 }
 
-method test(Proc this, real arg) -> real:
+method test(Proc this, bool arg) -> bool:
     return this->func(arg)

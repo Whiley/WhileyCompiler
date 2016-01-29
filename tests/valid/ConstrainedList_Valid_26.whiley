@@ -8,7 +8,7 @@ ensures r == [0;0]:
     else:
         return [0;0]
 
-public export method test() -> void:
+public export method test() :
     int[] items = [5, 4, 6, 3, 7, 2, 8, 1]
     assume f(items) == [0;0]
     assume f([0;0]) == [0;0]

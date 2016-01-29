@@ -47,20 +47,12 @@ public abstract class Constant implements Comparable<Constant> {
 		return get(new Byte(value));
 	}
 
-	public static Decimal V_DECIMAL(BigDecimal value) {
-		return get(new Decimal(value));
-	}
-
-	public static Rational V_RATIONAL(BigRational value) {
-		return get(new Rational(value));
-	}
-	
 	public static Integer V_INTEGER(BigInteger value) {
 		return get(new Integer(value));
 	}
 
-	public static List V_LIST(Collection<Constant> values) {
-		return get(new List(values));
+	public static Array V_ARRAY(Collection<Constant> values) {
+		return get(new Array(values));
 	}
 
 	public static Record V_RECORD(java.util.Map<String,Constant> values) {
@@ -69,10 +61,6 @@ public abstract class Constant implements Comparable<Constant> {
 
 	public static Type V_TYPE(wyil.lang.Type type) {
 		return get(new Type(type));
-	}
-
-	public static Tuple V_TUPLE(Collection<Constant> values) {
-		return get(new Tuple(values));
 	}
 
 	public static Lambda V_LAMBDA(NameID name,
@@ -241,134 +229,9 @@ public abstract class Constant implements Comparable<Constant> {
 		}
 	}
 
-	public static final class Decimal extends Constant {
-		public final BigDecimal value;
-
-		private Decimal(BigDecimal value) {
-			this.value = value;
-		}
-
-		public wyil.lang.Type type() {
-			return wyil.lang.Type.T_REAL;
-		}
-
-		public int hashCode() {
-			return value.hashCode();
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Decimal) {
-				Decimal i = (Decimal) o;
-				return value.equals(i.value);
-			}
-			return false;
-		}
-
-		public int compareTo(Constant v) {
-			if (v instanceof Decimal) {
-				Decimal i = (Decimal) v;
-				return value.compareTo(i.value);
-			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Byte || v instanceof Integer) {
-				return 1;
-			}
-			return -1;
-		}
-
-		public String toString() {
-			String r = value.toString();
-			// We need to force the string to include the decimal point.
-			if(!r.contains(".")) {
-				return r + ".0";
-			} else {
-				return r;
-			}
-		}
-
-		public Constant.Decimal add(Constant.Decimal val) {
-			return Constant.V_DECIMAL(value.add(val.value));
-		}
-
-		public Constant.Decimal subtract(Constant.Decimal val) {
-			return Constant.V_DECIMAL(value.subtract(val.value));
-		}
-
-		public Constant.Decimal multiply(Constant.Decimal val) {
-			return Constant.V_DECIMAL(value.multiply(val.value));
-		}
-
-		public Constant.Decimal divide(Constant.Decimal val) {
-			return Constant.V_DECIMAL(value.divide(val.value));
-		}
-
-		public Constant.Decimal negate() {
-			return Constant.V_DECIMAL(value.negate());
-		}
-	}
-
-	public static final class Rational extends Constant {
-		public final BigRational value;
-
-		private Rational(BigRational value) {
-			this.value = value;
-		}
-
-		public wyil.lang.Type type() {
-			return wyil.lang.Type.T_REAL;
-		}
-
-		public int hashCode() {
-			return value.hashCode();
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Rational) {
-				Rational i = (Rational) o;
-				return value.equals(i.value);
-			}
-			return false;
-		}
-
-		public int compareTo(Constant v) {
-			if (v instanceof Rational) {
-				Rational i = (Rational) v;
-				return value.compareTo(i.value);
-			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Byte || v instanceof Integer
-					|| v instanceof Decimal) {
-				return 1;
-			}
-			return -1;
-		}
-
-		public String toString() {
-			return value.toString();
-		}
-
-		public Constant.Rational add(Constant.Rational val) {
-			return Constant.V_RATIONAL(value.add(val.value));
-		}
-
-		public Constant.Rational subtract(Constant.Rational val) {
-			return Constant.V_RATIONAL(value.subtract(val.value));
-		}
-
-		public Constant.Rational multiply(Constant.Rational val) {
-			return Constant.V_RATIONAL(value.multiply(val.value));
-		}
-
-		public Constant.Rational divide(Constant.Rational val) {
-			return Constant.V_RATIONAL(value.divide(val.value));
-		}
-
-		public Constant.Rational negate() {
-			return Constant.V_RATIONAL(value.negate());
-		}
-	}
-	
-	public static final class List extends Constant {
+	public static final class Array extends Constant {
 		public final ArrayList<Constant> values;
-		private List(Collection<Constant> value) {
+		private Array(Collection<Constant> value) {
 			this.values = new ArrayList<Constant>(value);
 		}
 		public wyil.lang.Type.Array type() {
@@ -382,15 +245,15 @@ public abstract class Constant implements Comparable<Constant> {
 			return values.hashCode();
 		}
 		public boolean equals(Object o) {
-			if(o instanceof List) {
-				List i = (List) o;
+			if(o instanceof Array) {
+				Array i = (Array) o;
 				return values.equals(i.values);
 			}
 			return false;
 		}
 		public int compareTo(Constant v) {
-			if(v instanceof List) {
-				List l = (List) v;
+			if(v instanceof Array) {
+				Array l = (Array) v;
 				if(values.size() < l.values.size()) {
 					return -1;
 				} else if(values.size() > l.values.size()) {
@@ -405,8 +268,7 @@ public abstract class Constant implements Comparable<Constant> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Byte || v instanceof Integer
-					|| v instanceof Decimal || v instanceof Rational) {
+					|| v instanceof Byte || v instanceof Integer) {
 				return 1;
 			}
 			return -1;
@@ -473,10 +335,8 @@ public abstract class Constant implements Comparable<Constant> {
 					return 0;
 				}
 			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Decimal || v instanceof Rational
 					|| v instanceof Byte || v instanceof Integer
-					|| v instanceof Set || v instanceof List
-					|| v instanceof Tuple) {
+					|| v instanceof Set || v instanceof Array) {
 				return 1;
 			}
 			return -1;
@@ -551,8 +411,7 @@ public abstract class Constant implements Comparable<Constant> {
 		
 		public wyil.lang.Type.FunctionOrMethod type() {
 			if (type == null) {
-				return wyil.lang.Type.Function(wyil.lang.Type.T_ANY,
-						wyil.lang.Type.T_ANY);
+				return wyil.lang.Type.Function(new wyil.lang.Type[] { wyil.lang.Type.T_ANY }, wyil.lang.Type.T_ANY);
 			} else {
 				return type;
 			}
@@ -598,69 +457,6 @@ public abstract class Constant implements Comparable<Constant> {
 				
 			}
 			return "&" + name.toString() + "(" + args + "):" + type.toString();
-		}
-	}
-
-	public static final class Tuple extends Constant {
-		public final ArrayList<Constant> values;
-		private Tuple(Collection<Constant> values) {
-			this.values = new ArrayList<Constant>(values);
-		}
-
-		public wyil.lang.Type.Tuple type() {
-			ArrayList<wyil.lang.Type> types = new ArrayList<wyil.lang.Type>();
-			for (Constant e : values) {
-				types.add(e.type());
-			}
-			return wyil.lang.Type.Tuple(types);
-		}
-		public int hashCode() {
-			return values.hashCode();
-		}
-		public boolean equals(Object o) {
-			if(o instanceof Tuple) {
-				Tuple i = (Tuple) o;
-				return values.equals(i.values);
-			}
-			return false;
-		}
-		public int compareTo(Constant v) {
-			if(v instanceof Tuple) {
-				Tuple l = (Tuple) v;
-				if(values.size() < l.values.size()) {
-					return -1;
-				} else if(values.size() > l.values.size()) {
-					return 1;
-				} else {
-					ArrayList<Constant> vs1 = values;
-					ArrayList<Constant> vs2 = l.values;
-					for(int i=0;i!=values.size();++i) {
-						Constant s1 = vs1.get(i);
-						Constant s2 = vs2.get(i);
-						int c = s1.compareTo(s2);
-						if(c != 0) { return c; }
-					}
-					return 0;
-				}
-			} else if (v instanceof Null || v instanceof Bool
-					|| v instanceof Decimal || v instanceof Rational
-					|| v instanceof Byte || v instanceof Integer
-					|| v instanceof Set || v instanceof List) {
-				return 1;
-			}
-			return -1;
-		}
-		public String toString() {
-			String r = "(";
-			boolean firstTime=true;
-			for(Constant v : values) {
-				if(!firstTime) {
-					r += ",";
-				}
-				firstTime=false;
-				r += v;
-			}
-			return r + ")";
 		}
 	}
 

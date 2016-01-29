@@ -3,13 +3,13 @@ type string is int[]
 
 // Represents a transition from one
 // state to another for a given character.
-type Transition is {
+type Transition is ({
     int from,
     int to,
     char character
-} where
-    from >= 0 && to >= 0 &&
-    from < to
+} t) where
+    t.from >= 0 && t.to >= 0 &&
+    t.from < t.to
 
 // A Finite State Machine representation of a Trie
 type Trie is {
@@ -17,7 +17,7 @@ type Trie is {
 }
 
 // Define the Empty Trie
-constant DummyTransition is { from: 0, to: 0, char: 0 }
+constant DummyTransition is { from: 0, to: 0, character: 0 }
 constant EmptyTrie is { transitions: [DummyTransition; 0] }
 
 function append(Transition[] transitions, Transition t) -> Transition[]:

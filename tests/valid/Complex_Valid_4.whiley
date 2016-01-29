@@ -29,7 +29,7 @@ function contains(BTree tree, int item) -> bool:
 
 constant items is [5, 4, 6, 3, 7, 2, 8, 1, 9]
 
-public export method test() -> void:
+public export method test() :
     BTree tree = BTree()
     tree = add(tree, 1)
     tree = add(tree, 2)

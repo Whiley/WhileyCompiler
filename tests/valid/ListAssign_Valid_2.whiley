@@ -5,7 +5,7 @@ type intlist is int | int[]
 function f(intlist[] l) -> any:
     return l
 
-public export method test() -> void:
+public export method test() :
     (int|int[])[] x
 
     if 0 == 0:

@@ -350,14 +350,14 @@ public final class WhileyFile implements CompilationUnit {
 	 *
 	 */
 	public class Type extends NamedDeclaration {
-		public final TypePattern pattern;
+		public final Parameter parameter;
 		public Nominal resolvedType;
 		public ArrayList<Expr> invariant;
 
-		public Type(List<Modifier> modifiers, TypePattern pattern,
+		public Type(List<Modifier> modifiers, Parameter type,
 				String name, List<Expr> constraint, Attribute... attributes) {
 			super(name, modifiers,attributes);
-			this.pattern = pattern;
+			this.parameter = type;
 			this.invariant = new ArrayList<Expr>(constraint);
 		}
 	}
@@ -421,9 +421,8 @@ public final class WhileyFile implements CompilationUnit {
 	 * </p>
 	 */
 	public abstract class FunctionOrMethod extends NamedDeclaration {
-		public final TypePattern ret;
-		public final SyntacticType throwType;
 		public final ArrayList<Parameter> parameters;
+		public final ArrayList<Parameter> returns;
 		public final ArrayList<Stmt> statements;
 		public List<Expr> requires;
 		public List<Expr> ensures;
@@ -446,17 +445,16 @@ public final class WhileyFile implements CompilationUnit {
 		 *            - The Statements making up the function body.
 		 */
 		public FunctionOrMethod(List<Modifier> modifiers, String name,
-				TypePattern ret, List<Parameter> parameters,
+				List<Parameter> returns, List<Parameter> parameters,
 				List<Expr> requires, List<Expr> ensures,
-				SyntacticType throwType, List<Stmt> statements,
+				List<Stmt> statements,
 				Attribute... attributes) {
 			super(name, modifiers,attributes);
-			this.ret = ret;
+			this.returns  = new ArrayList<Parameter>(returns);
 			this.parameters = new ArrayList<Parameter>(parameters);
 			this.requires = new ArrayList<Expr>(requires);
 			this.ensures = new ArrayList<Expr>(ensures);
 			this.statements = new ArrayList<Stmt>(statements);
-			this.throwType = throwType;
 		}
 
 		public abstract SyntacticType.FunctionOrMethod unresolvedType();
@@ -501,21 +499,24 @@ public final class WhileyFile implements CompilationUnit {
 	public final class Function extends FunctionOrMethod {
 		public Nominal.Function resolvedType;
 
-		public Function(List<Modifier> modifiers, String name, TypePattern ret,
+		public Function(List<Modifier> modifiers, String name, List<Parameter> returns,
 				List<Parameter> parameters, List<Expr> requires,
-				List<Expr> ensures, SyntacticType throwType,
+				List<Expr> ensures,
 				List<Stmt> statements, Attribute... attributes) {
-			super(modifiers, name, ret, parameters, requires, ensures,
-					throwType, statements, attributes);
+			super(modifiers, name, returns, parameters, requires, ensures,
+					statements, attributes);
 		}
 
 		public SyntacticType.Function unresolvedType() {
-			ArrayList<SyntacticType> params = new ArrayList<SyntacticType>();
+			ArrayList<SyntacticType> paramTypes = new ArrayList<SyntacticType>();
 			for (Parameter p : parameters) {
-				params.add(p.type);
+				paramTypes.add(p.type);
 			}
-			return new SyntacticType.Function(ret.toSyntacticType(), throwType,
-					params, attributes());
+			ArrayList<SyntacticType> returnTypes = new ArrayList<SyntacticType>();
+			for (Parameter r : returns) {
+				returnTypes.add(r.type);
+			}
+			return new SyntacticType.Function(returnTypes, paramTypes, attributes());
 		}
 
 		public Nominal.Function resolvedType() {
@@ -558,22 +559,21 @@ public final class WhileyFile implements CompilationUnit {
 	public final class Method extends FunctionOrMethod {
 		public Nominal.Method resolvedType;
 
-		public Method(List<Modifier> modifiers, String name,
-				TypePattern ret, List<Parameter> parameters,
-				List<Expr> requires, List<Expr> ensures,
-				SyntacticType throwType, List<Stmt> statements,
-				Attribute... attributes) {
-			super(modifiers, name, ret, parameters, requires, ensures,
-					throwType, statements, attributes);
+		public Method(List<Modifier> modifiers, String name, List<Parameter> returns, List<Parameter> parameters,
+				List<Expr> requires, List<Expr> ensures, List<Stmt> statements, Attribute... attributes) {
+			super(modifiers, name, returns, parameters, requires, ensures, statements, attributes);
 		}
 
 		public SyntacticType.Method unresolvedType() {
-			ArrayList<SyntacticType> params = new ArrayList<SyntacticType>();
+			ArrayList<SyntacticType> parameterTypes = new ArrayList<SyntacticType>();
 			for (Parameter p : parameters) {
-				params.add(p.type);
+				parameterTypes.add(p.type);
 			}
-			return new SyntacticType.Method(ret.toSyntacticType(), throwType,
-					params, attributes());
+			ArrayList<SyntacticType> returnTypes = new ArrayList<SyntacticType>();
+			for (Parameter r : returns) {
+				returnTypes.add(r.type);
+			}
+			return new SyntacticType.Method(returnTypes, parameterTypes, attributes());
 		}
 
 		public Nominal.Method resolvedType() {
@@ -591,7 +591,7 @@ public final class WhileyFile implements CompilationUnit {
 	 *
 	 */
 	public final class Parameter extends AbstractContext {
-		public final SyntacticType type;
+		public final SyntacticType type;		
 		public final String name;
 
 		public Parameter(SyntacticType type, String name,

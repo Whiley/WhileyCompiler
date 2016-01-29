@@ -2,7 +2,7 @@
 
 type IntList is {int | int[] op}
 
-public export method test() -> void:
+public export method test() :
     IntList x = {op: 2}
     x.op = 1
     IntList y = x
