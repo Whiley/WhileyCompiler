@@ -62,3 +62,4 @@ Signed-off-by: Min-Hsien Weng <samminweng@gmail.com>
 Signed-off-by: Henry J. Wylde <public@hjwylde.com>
 Signed-off-by: Drew Stratford <drewstratford@outlook.com>
 Signed-off-by: Rich Dougherty <rich@rd.gen.nz>
+Signed-off-by: Sebastian Schweizer <sebastian@schweizer.tel>
