@@ -33,7 +33,6 @@ import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyil.attributes.SourceLocation;
 import wyil.lang.*;
-import wyil.util.AttributedCodeBlock;
 
 /**
  * <p>
@@ -88,20 +87,22 @@ public class CoercionCheck implements Transform<WyilFile> {
 	}
 
 	public void check(WyilFile.FunctionOrMethod method) {
-		check(null, method.body(), method.body(), method);
+		CodeForest forest = method.code();
+		for(int i=0;i!=forest.numBlocks();++i) {
+			check(i, forest, method);
+		}
 	}
 
-	protected void check(CodeBlock.Index index, CodeBlock block, AttributedCodeBlock root, WyilFile.FunctionOrMethod method) {
+	protected void check(int blockID, CodeForest forest, WyilFile.FunctionOrMethod method) {
 		// Examine all entries in this block looking for a conversion bytecode
+		CodeForest.Block block = forest.get(blockID);
 		for (int i = 0; i != block.size(); ++i) {
-			Code code = block.get(i);
+			CodeForest.Entry e = block.get(i);
+			Code code = e.code();
 			if (code instanceof Codes.Convert) {
 				Codes.Convert conv = (Codes.Convert) code;
-				check(conv.type(0), conv.result, new HashSet<Pair<Type, Type>>(),
-						root.attribute(new CodeBlock.Index(index, i), SourceLocation.class));
-			} else if (code instanceof CodeBlock) {
-				check(new CodeBlock.Index(index, i), (CodeBlock) code, root, method);
-			}
+				check(conv.type(0), conv.result(), new HashSet<Pair<Type, Type>>(), e.attribute(SourceLocation.class));
+			} 
 		}
 	}
 
@@ -115,8 +116,7 @@ public class CoercionCheck implements Transform<WyilFile> {
 	 * @param visited - the set of pairs already checked.
 	 * @param location - source location attribute (if applicable).
 	 */
-	protected void check(Type from, Type to, HashSet<Pair<Type, Type>> visited,
-			SourceLocation location) {
+	protected void check(Type from, Type to, HashSet<Pair<Type, Type>> visited, SourceLocation location) {
 		Pair<Type,Type> p = new Pair<Type,Type>(from,to);
 		if(visited.contains(p)) {
 			return; // already checked this pair

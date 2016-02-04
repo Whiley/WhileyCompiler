@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import wycc.lang.NameID;
 import wycc.util.Pair;
@@ -76,8 +77,8 @@ public abstract class Codes {
 	 *            --- message to report upon failure.
 	 * @return
 	 */
-	public static Assert Assert(Collection<Code> bytecodes) {
-		return new Assert(bytecodes);
+	public static Assert Assert(int block) {
+		return new Assert(block);
 	}
 
 	/**
@@ -88,8 +89,8 @@ public abstract class Codes {
 	 *            --- message to report upon failure.
 	 * @return
 	 */
-	public static Assume Assume(Collection<Code> bytecodes) {
-		return new Assume(bytecodes);
+	public static Assume Assume(int block) {
+		return new Assume(block);
 	}
 
 	public static BinaryOperator BinaryOperator(Type type, int target, int leftOperand,
@@ -191,8 +192,8 @@ public abstract class Codes {
 	 *            --- message to report upon failure.
 	 * @return
 	 */
-	public static Invariant Invariant(Collection<Code> bytecodes) {
-		return new Invariant(bytecodes);
+	public static Invariant Invariant(int block) {
+		return new Invariant(block);
 	}
 
 
@@ -244,12 +245,8 @@ public abstract class Codes {
 		return new IndexOf(type, target, leftOperand, rightOperand);
 	}
 
-	public static Loop Loop(int[] operands, Collection<Code> bytecodes) {
-		return new Loop(operands,bytecodes);
-	}
-
-	public static Loop Loop(int[] operands, Code... bytecodes) {
-		return new Loop(operands,bytecodes);
+	public static Loop Loop(int[] modifiedOperands, int block) {
+		return new Loop(modifiedOperands,block);
 	}
 
 	/**
@@ -374,22 +371,11 @@ public abstract class Codes {
 		return new Dereference(type, target, operand);
 	}
 
-
-	public static Quantify Quantify(
-			int startOperand, int endOperand, int indexOperand,
-			int[] modifiedOperands, Collection<Code> bytecodes) {
-		return new Quantify(startOperand, endOperand, indexOperand,
-				modifiedOperands, bytecodes);
+	public static Quantify Quantify(int startOperand, int endOperand, int indexOperand, int[] modifiedOperands,
+			int block) {
+		return new Quantify(startOperand, endOperand, indexOperand, modifiedOperands, block);
 	}
 
-	public static Quantify Quantify(
-			int startOperand, int endOperand, int indexOperand, int[] modifiedOperands,
-			Code... bytecodes) {
-		return new Quantify(startOperand, endOperand, indexOperand,
-				modifiedOperands, bytecodes);
-	}
-
-	
 	public static Update Update(Type beforeType, int target,
 			Collection<Integer> operands, int operand, Type afterType,
 			Collection<String> fields) {
@@ -542,7 +528,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+		public Code clone(int[] nTargets, int[] nOperands) {
 			return BinaryOperator(type(0), nTargets[0], nOperands[0], nOperands[1],
 					kind);
 		}
@@ -606,40 +592,29 @@ public abstract class Codes {
 	 *
 	 */
 	public static final class Convert extends AbstractBytecode<Type> {
-		public final Type result;
-
+		
 		private Convert(Type from, int target, int operand, Type result) {
-			super(from, target, operand);
-			if (result == null) {
-				throw new IllegalArgumentException(
-						"Convert to argument cannot be null");
-			}
-			this.result = result;
+			super(new Type[]{from,result}, new int[]{target}, operand);
 		}
 
-		public Code.Unit clone(int[] nTargets, int[] nOperands) {
-			return Convert(type(0), nTargets[0], nOperands[0], result);
+		public Code clone(int[] nTargets, int[] nOperands) {
+			return Convert(type(0), nTargets[0], nOperands[0], type(1));
 		}
 
+		public Type result() {
+			return type(1);
+		}
+		
 		public int opcode() {
 			return OPCODE_convert;
 		}
 
-		public int hashCode() {
-			return result.hashCode() + super.hashCode();
-		}
-
 		public boolean equals(Object o) {
-			if (o instanceof Convert) {
-				Convert c = (Convert) o;
-				return super.equals(c) && result.equals(c.result);
-			}
-			return false;
+			return o instanceof Convert && super.equals(o);
 		}
 
 		public String toString() {
-			return "convert %" + target(0) + " = %" + operand(0) + " " + result
-					+ " : " + type(0);
+			return "convert %" + target(0) + " = %" + operand(0) + " " + result() + " : " + type(0);
 		}
 	}
 
@@ -713,7 +688,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		protected Unit clone(int[] nTargets, int[] nOperands) {			
+		protected Code clone(int[] nTargets, int[] nOperands) {			
 			return new Const(nTargets[0],constant);
 		}
 	}
@@ -765,7 +740,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+		public Code clone(int[] nTargets, int[] nOperands) {
 			return Assign(type(0), nTargets[0], nOperands[0]);
 		}
 
@@ -822,7 +797,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+		public Code clone(int[] nTargets, int[] nOperands) {
 			return Debug(nOperands[0]);
 		}
 
@@ -842,9 +817,9 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static abstract class AssertOrAssume extends Code.Compound {
-		private AssertOrAssume(Collection<Code> bytecodes) {
-			super(bytecodes);
+	public static abstract class AssertOrAssume extends AbstractCompoundBytecode {
+		private AssertOrAssume(int block) {
+			super(block, new Type[0], new int[0],new int[0]);
 		}
 	}
 	/**
@@ -855,33 +830,25 @@ public abstract class Codes {
 	 */
 	public static class Assert extends AssertOrAssume {
 
-		private Assert(Collection<Code> bytecodes) {
-			super(bytecodes);
+		private Assert(int block) {
+			super(block);
 		}
 
 		public int opcode() {
-			return OPCODE_assertblock;
+			return OPCODE_assert;
 		}
 
 		public String toString() {
-			return "assert";
-		}
-
-		public int hashCode() {
-			return bytecodes.hashCode();
+			return "assert #" + block;
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof Assert) {
-				Assert f = (Assert) o;
-				return bytecodes.equals(f.bytecodes);
-			}
-			return false;
+			return o instanceof Assume && super.equals(o);
 		}
 
 		@Override
-		public Assert clone() {
-			return new Assert(bytecodes);
+		protected Code clone(int[] nTargets, int[] nOperands) {
+			return this;
 		}
 	}
 
@@ -893,33 +860,25 @@ public abstract class Codes {
 	 */
 	public static final class Assume extends AssertOrAssume {
 
-		private Assume(Collection<Code> bytecodes) {
-			super(bytecodes);
+		private Assume(int block) {
+			super(block);
 		}
 
 		public int opcode() {
-			return OPCODE_assumeblock;
+			return OPCODE_assume;
 		}
 
 		public String toString() {
-			return "assume ";
+			return "assume #" + block;
 		}
 		
-		public int hashCode() {
-			return bytecodes.hashCode();
-		}
-
 		public boolean equals(Object o) {
-			if (o instanceof Assume) {
-				Assume f = (Assume) o;
-				return bytecodes.equals(f.bytecodes);
-			}
-			return false;
+			return o instanceof Assume && super.equals(o);			
 		}
 
 		@Override
-		public Assume clone() {
-			return new Assume(bytecodes);
+		protected Code clone(int[] nTargets, int[] nOperands) {
+			return this;
 		}
 	}
 
@@ -942,7 +901,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		protected Unit clone(int[] nTargets, int[] nOperands) {
+		protected Code clone(int[] nTargets, int[] nOperands) {
 			return this;
 		}
 		
@@ -992,7 +951,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+		public Code clone(int[] nTargets, int[] nOperands) {
 			return FieldLoad(type(0), nTargets[0], nOperands[0], field);
 		}
 
@@ -1063,12 +1022,9 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Goto extends AbstractBytecode<Type> {
-		public final String target;
-
+	public static final class Goto extends AbstractBranchingBytecode {
 		private Goto(String target) {
-			super(new Type[0],new int[0]);
-			this.target = target;
+			super(target,new Type[0],new int[0]);
 		}
 
 		public int opcode() {
@@ -1076,34 +1032,26 @@ public abstract class Codes {
 		}
 
 		public Goto relabel(Map<String, String> labels) {
-			String nlabel = labels.get(target);
+			String nlabel = labels.get(destination());
 			if (nlabel == null) {
 				return this;
 			} else {
 				return Goto(nlabel);
 			}
 		}
-		
-		public int hashCode() {
-			return target.hashCode();
-		}
 
 		public boolean equals(Object o) {
-			if (o instanceof Goto) {
-				return target.equals(((Goto) o).target);
-			}
-			return false;
+			return o instanceof Goto && super.equals(o);
 		}
 
 		@Override
-		protected Unit clone(int[] nTargets, int[] nOperands) {
+		protected Code clone(int[] nTargets, int[] nOperands) {
 			return this;
 		}		
 		
 		public String toString() {
-			return "goto " + target;
-		}
-	
+			return "goto " + destination();
+		}	
 	}
 
 	/**
@@ -1157,27 +1105,17 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class If extends AbstractBytecode<Type> {
-		public final String target;
+	public static final class If extends AbstractBranchingBytecode {
 		public final Comparator op;
 
 		private If(Type type, int leftOperand, int rightOperand, Comparator op,
 				String target) {
-			super(new Type[]{type}, new int[0], leftOperand, rightOperand);
-			if (op == null) {
-				throw new IllegalArgumentException(
-						"IfGoto op argument cannot be null");
-			}
-			if (target == null) {
-				throw new IllegalArgumentException(
-						"IfGoto target argument cannot be null");
-			}
+			super(target,new Type[]{type}, new int[0], leftOperand, rightOperand);
 			this.op = op;
-			this.target = target;
 		}
 
 		public If relabel(Map<String, String> labels) {
-			String nlabel = labels.get(target);
+			String nlabel = labels.get(destination());
 			if (nlabel == null) {
 				return this;
 			} else {
@@ -1190,29 +1128,24 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int[] nTargets, int[] nOperands) {
-			return If(types[0], nOperands[0], nOperands[1], op, target);
+		public Code clone(int[] nTargets, int[] nOperands) {
+			return If(types[0], nOperands[0], nOperands[1], op, destination());
 		}
 
 		public int hashCode() {
-			return super.hashCode() + op.hashCode() + target.hashCode();
+			return super.hashCode() + op.hashCode();
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof If) {
 				If ig = (If) o;
-				return op == ig.op && target.equals(ig.target)
-						&& super.equals(ig);
+				return op == ig.op && super.equals(ig);
 			}
 			return false;
 		}
 
-		public String codeString() {
-			return null;
-		}
-
 		public String toString() {
-			return "if" + op + " %" + operands[0] + ", %" + operands[1] + " goto " + target + " : " + types[0];
+			return "if" + op + " %" + operands[0] + ", %" + operands[1] + " goto " + destination() + " : " + types[0];
 		}
 	}
 
@@ -1303,23 +1236,9 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class IfIs extends AbstractBytecode<Type> {
-		public final String target;
-		public final Type rightOperand;
-
-		private IfIs(Type type, int leftOperand, Type rightOperand,
-				String target) {
-			super(new Type[]{type}, new int[0], leftOperand);
-			if (rightOperand == null) {
-				throw new IllegalArgumentException(
-						"IfIs test argument cannot be null");
-			}
-			if (target == null) {
-				throw new IllegalArgumentException(
-						"IfIs target argument cannot be null");
-			}
-			this.target = target;
-			this.rightOperand = rightOperand;
+	public static final class IfIs extends AbstractBranchingBytecode {
+		private IfIs(Type type, int leftOperand, Type rightOperand, String target) {
+			super(target, new Type[] { type, rightOperand }, new int[0], leftOperand);
 		}
 
 		public int opcode() {
@@ -1327,30 +1246,25 @@ public abstract class Codes {
 		}
 
 		public IfIs relabel(Map<String, String> labels) {
-			String nlabel = labels.get(target);
+			String nlabel = labels.get(destination());
 			if (nlabel == null) {
 				return this;
 			} else {
-				return IfIs(types[0], operands[0], rightOperand, nlabel);
+				return IfIs(types[0], operands[0], types[1], nlabel);
 			}
 		}
 
 		@Override
-		public Code.Unit clone(int[] nTargets, int[] nOperands) {
-			return IfIs(types[0], nOperands[0], rightOperand, target);
+		public Code clone(int[] nTargets, int[] nOperands) {
+			return IfIs(types[0], nOperands[0], types[1], destination());
 		}
-		
+
 		public boolean equals(Object o) {
-			if (o instanceof IfIs) {
-				IfIs ig = (IfIs) o;
-				return super.equals(o) && rightOperand.equals(ig.rightOperand)
-						&& target.equals(ig.target);
-			}
-			return false;
+			return o instanceof IfIs && super.equals(o);
 		}
 
 		public String toString() {
-			return "ifis" + " %" + operands[0] + ", " + rightOperand + " goto " + target + " : " + types[0];
+			return "ifis" + " %" + operands[0] + ", " + types[1] + " goto " + destination() + " : " + types[0];
 		}
 	}
 
@@ -1369,8 +1283,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class IndirectInvoke extends
-			AbstractBytecode<Type.FunctionOrMethod> {
+	public static final class IndirectInvoke extends AbstractBytecode<Type.FunctionOrMethod> {
 
 		/**
 		 * Construct an indirect invocation bytecode which assigns to an
@@ -1417,15 +1330,11 @@ public abstract class Codes {
 		}
 
 		public int opcode() {
-			if (type(0) instanceof Type.Function) {
-				return OPCODE_indirectinvokefn;
-			} else {				
-				return OPCODE_indirectinvokemd;
-			}
+			return OPCODE_indirectinvoke;			
 		}
 
 		@Override
-		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+		public Code clone(int[] nTargets, int[] nOperands) {
 			return IndirectInvoke(type(0), nTargets, nOperands[0],
 					Arrays.copyOfRange(nOperands, 1, nOperands.length));
 		}
@@ -1448,12 +1357,12 @@ public abstract class Codes {
 	 */
 	public static class Invariant extends Assert {
 
-		private Invariant(Collection<Code> bytecodes) {
-			super(bytecodes);
+		private Invariant(int block) {
+			super(block);
 		}
 
 		public int opcode() {
-			return OPCODE_invariantblock;
+			return OPCODE_invariant;
 		}
 
 		public String toString() {
@@ -1461,20 +1370,20 @@ public abstract class Codes {
 		}
 
 		public int hashCode() {
-			return bytecodes.hashCode();
+			return block;
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Invariant) {
 				Invariant f = (Invariant) o;
-				return bytecodes.equals(f.bytecodes);
+				return block == f.block;
 			}
 			return false;
 		}
 
 		@Override
 		public Invariant clone() {
-			return new Invariant(bytecodes);
+			return this;
 		}
 	}
 
@@ -1513,7 +1422,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+		public Code clone(int[] nTargets, int[] nOperands) {
 			return Not(nTargets[0], nOperands[0]);
 		}
 
@@ -1574,8 +1483,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Invoke extends
-			AbstractBytecode<Type.FunctionOrMethod> {
+	public static final class Invoke extends AbstractBytecode<Type.FunctionOrMethod> {
 		public final NameID name;
 
 		private Invoke(Type.FunctionOrMethod type, int[] targets, int[] operands,
@@ -1585,11 +1493,7 @@ public abstract class Codes {
 		}
 				
 		public int opcode() {
-			if (type(0) instanceof Type.Function) {
-				return OPCODE_invokefn;				
-			} else {
-				return OPCODE_invokemd;			
-			}
+			return OPCODE_invoke;							
 		}
 
 		public int hashCode() {
@@ -1597,7 +1501,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+		public Code clone(int[] nTargets, int[] nOperands) {
 			return Invoke(type(0), nTargets, nOperands, name);
 		}
 
@@ -1615,8 +1519,7 @@ public abstract class Codes {
 		}
 	}
 
-	public static final class Lambda extends
-			AbstractBytecode<Type.FunctionOrMethod> {
+	public static final class Lambda extends AbstractBytecode<Type.FunctionOrMethod> {
 		public final NameID name;
 
 		private Lambda(Type.FunctionOrMethod type, int target, int[] operands,
@@ -1626,11 +1529,7 @@ public abstract class Codes {
 		}
 
 		public int opcode() {
-			if (type(0) instanceof Type.Function) {
-				return OPCODE_lambdafn;
-			} else {
-				return OPCODE_lambdamd;
-			}
+			return OPCODE_lambda;			
 		}
 
 		public int hashCode() {
@@ -1638,7 +1537,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+		public Code clone(int[] nTargets, int[] nOperands) {
 			return Lambda(type(0), nTargets[0], nOperands, name);
 		}
 
@@ -1662,7 +1561,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Label extends Code.Unit {
+	public static class Label implements Code {
 		public final String label;
 
 		private Label(String label) {
@@ -1683,7 +1582,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit remap(Map<Integer, Integer> binding) {
+		public Code remap(Map<Integer, Integer> binding) {
 			return this;
 		}
 		
@@ -1700,6 +1599,11 @@ public abstract class Codes {
 
 		public String toString() {
 			return "." + label;
+		}
+
+		@Override
+		public void registers(Set<Integer> register) {
+			// TODO Auto-generated method stub			
 		}
 	}
 	
@@ -1742,7 +1646,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		protected Code.Unit clone(int[] nTargets, int[] nOperands) {
+		protected Code clone(int[] nTargets, int[] nOperands) {
 			return ArrayGenerator(type(0), nTargets[0], nOperands[0],nOperands[1]);
 		}
 
@@ -1791,7 +1695,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		protected Code.Unit clone(int[] nTargets, int[] nOperands) {
+		protected Code clone(int[] nTargets, int[] nOperands) {
 			return LengthOf(type(0), nTargets[0], nOperands[0]);
 		}
 
@@ -1847,7 +1751,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		protected Code.Unit clone(int[] nTargets, int[] nOperands) {
+		protected Code clone(int[] nTargets, int[] nOperands) {
 			return IndexOf(type(0), nTargets[0], nOperands[0], nOperands[1]);
 		}
 
@@ -1907,7 +1811,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		protected Code.Unit clone(int[] nTargets, int[] nOperands) {
+		protected Code clone(int[] nTargets, int[] nOperands) {
 			return Move(type(0), nTargets[0], nOperands[0]);
 		}
 
@@ -1964,156 +1868,67 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Loop extends Code.Compound {
-		public final int[] modifiedOperands;
+	public static class Loop extends AbstractCompoundBytecode {
 
-		private Loop(int[] modifies, Code... codes) {
-			super(codes);
-			this.modifiedOperands = modifies;
-		}
-
-		private Loop(int[] modifies, Collection<Code> codes) {
-			super(codes);
-			this.modifiedOperands = modifies;
+		private Loop(int[] targets, int block, int... operands) {
+			super(block, new Type[0], targets, operands);
 		}
 
 		public int opcode() {
 			return OPCODE_loop;
 		}
 
-		@Override
-		public Code.Compound remap(Map<Integer, Integer> binding) {
-			int[] nOperands = remapOperands(binding, modifiedOperands);
-			ArrayList<Code> bytecodes = this.bytecodes;
-
-			for (int i = 0; i != bytecodes.size(); ++i) {
-				Code code = bytecodes.get(i);
-				Code nCode = code.remap(binding);
-				if (code != nCode) {
-					if (bytecodes == this.bytecodes) {
-						bytecodes = new ArrayList<Code>(bytecodes);
-					}
-					bytecodes.set(i, nCode);
-				}
-			}
-
-			if (nOperands != modifiedOperands || bytecodes != this.bytecodes) {
-				return Loop(nOperands, bytecodes);
-			} else {
-				return this;
-			}
-		}
-
-		public int hashCode() {
-			return bytecodes.hashCode() + Arrays.hashCode(modifiedOperands);
-		}
-
 		public boolean equals(Object o) {
 			if (o instanceof Loop) {
 				Loop f = (Loop) o;
-				return bytecodes.equals(f.bytecodes)
-						&& Arrays.equals(modifiedOperands, f.modifiedOperands);
+				return block == f.block && super.equals(f);
 			}
 			return false;
 		}
 
 		@Override
-		public Loop clone() {
-			return new Loop(modifiedOperands,bytecodes);
+		public Loop clone(int[] nTargets, int[] nOperands) {
+			return new Loop(nTargets, block, nOperands);
 		}
 
 		public String toString() {
-			return "loop " + arrayToString(modifiedOperands);
+			return "loop " + arrayToString(targets()) + " = " + block;
 		}
 	}
 
 	public static final class Quantify extends Loop {
 		
-		public final int startOperand;
-		public final int endOperand;
-		public final int indexOperand;
-
 		private Quantify(int startOperand,int endOperand,
-				int indexOperand, int[] modifies, Collection<Code> bytecodes) {
-			super(modifies, bytecodes);
-			this.startOperand = startOperand;
-			this.endOperand = endOperand;
-			this.indexOperand = indexOperand;
+				int indexOperand, int[] targets, int block) {
+			super(targets, block, startOperand, endOperand, indexOperand);
 		}
 
-		private Quantify(int startOperand, int endOperand, int indexOperand,
-				int[] modifies, Code[] bytecodes) {
-			super(modifies, bytecodes);
-			this.startOperand = startOperand;
-			this.endOperand = endOperand;
-			this.indexOperand = indexOperand;
-		}
-		
 		public int opcode() {
 			return OPCODE_quantify;
 		}
 		
-		@Override
-		public void registers(java.util.Set<Integer> registers) {
-			registers.add(indexOperand);
-			registers.add(startOperand);
-			registers.add(endOperand);
-			super.registers(registers);
-		}
-
-		@Override
-		public Code.Compound remap(Map<Integer, Integer> binding) {
-			int[] nModifiedOperands = remapOperands(binding, modifiedOperands);
-			ArrayList<Code> bytecodes = this.bytecodes;
-
-			for (int i = 0; i != bytecodes.size(); ++i) {
-				Code code = bytecodes.get(i);
-				Code nCode = code.remap(binding);
-				if (code != nCode) {
-					if (bytecodes == this.bytecodes) {
-						bytecodes = new ArrayList<Code>(bytecodes);
-					}
-					bytecodes.set(i, nCode);
-				}
-			}
-			Integer nIndexOperand = binding.get(indexOperand);
-			Integer nStartOperand = binding.get(startOperand);
-			Integer nEndOperand = binding.get(endOperand);
-			if (nStartOperand != null || nEndOperand != null || nIndexOperand != null
-					|| nModifiedOperands != modifiedOperands || bytecodes != this.bytecodes) {
-				nStartOperand = nStartOperand != null ? nStartOperand
-						: startOperand;
-				nEndOperand = nEndOperand != null ? nEndOperand
-						: endOperand;
-				nIndexOperand = nIndexOperand != null ? nIndexOperand
-						: indexOperand;
-				return Quantify(nStartOperand, nEndOperand, nIndexOperand,
-						nModifiedOperands, bytecodes);
-			} else {
-				return this;
-			}
+		public int startOperand() {
+			return operands[0];
 		}
 		
-		public int hashCode() {
-			return super.hashCode() + startOperand + endOperand + indexOperand
-					+ Arrays.hashCode(modifiedOperands);
+		public int endOperand() {
+			return operands[1];
 		}
-
+		
+		public int indexOperand() {
+			return operands[2];
+		}
+				
 		public boolean equals(Object o) {
 			if (o instanceof Quantify) {
 				Quantify f = (Quantify) o;
-				return startOperand == f.startOperand
-						&& endOperand == f.endOperand
-						&& indexOperand == f.indexOperand
-						&& Arrays.equals(modifiedOperands, f.modifiedOperands)
-						&& bytecodes.equals(f.bytecodes);
+				return super.equals(f);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return "quantify %" + indexOperand + " in %" + startOperand + "..%"
-					+ endOperand + arrayToString(modifiedOperands);
+			return "quantify " + arrayToString(targets()) + " = #" + block() + arrayToString(operands());
 		}
 	}
 	
@@ -2250,7 +2065,6 @@ public abstract class Codes {
 	 */
 	public static final class Update extends AbstractBytecode<Type>
 			implements Iterable<LVal> {
-		public final Type afterType;
 		public final ArrayList<String> fields;
 
 		/**
@@ -2273,24 +2087,21 @@ public abstract class Codes {
 		 */
 		private Update(Type beforeType, int target, int[] operands,
 				int operand, Type afterType, Collection<String> fields) {
-			super(beforeType, target, append(operands,operand));
+			super(new Type[]{beforeType,afterType}, new int[]{target}, append(operands,operand));
 			if (fields == null) {
 				throw new IllegalArgumentException(
 						"FieldStore fields argument cannot be null");
 			}
-			this.afterType = afterType;
 			this.fields = new ArrayList<String>(fields);
 		}
 
 		// Helper used for clone()
-		private Update(Type beforeType, int target, int[] operands,
-				Type afterType, Collection<String> fields) {
-			super(beforeType, target, operands);
+		private Update(Type[] types, int[] targets, int[] operands, Collection<String> fields) {
+			super(types,targets,operands);
 			if (fields == null) {
 				throw new IllegalArgumentException(
 						"FieldStore fields argument cannot be null");
 			}
-			this.afterType = afterType;
 			this.fields = new ArrayList<String>(fields);
 		}
 
@@ -2337,16 +2148,20 @@ public abstract class Codes {
 		}
 
 		public Iterator<LVal> iterator() {
-			return new UpdateIterator(afterType, level(), keys(), fields);
+			return new UpdateIterator(afterType(), level(), keys(), fields);
 		}
 
+		public Type afterType() {
+			return types[1];
+		}
+		
 		/**
 		 * Extract the type for the right-hand side of this assignment.
 		 *
 		 * @return
 		 */
 		public Type rhs() {
-			Type iter = afterType;
+			Type iter = afterType();
 
 			int fieldIndex = 0;
 			for (int i = 0; i != level(); ++i) {
@@ -2369,17 +2184,14 @@ public abstract class Codes {
 		}
 
 		@Override
-		public final Code.Unit clone(int[] nTargets, int[] nOperands) {
-			return Update(type(0), nTargets[0],
-					Arrays.copyOf(nOperands, nOperands.length - 1),
-					nOperands[nOperands.length - 1], afterType, fields);
+		public final Code clone(int[] nTargets, int[] nOperands) {
+			return new Update(types, nTargets, nOperands, fields);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Update) {
 				Update i = (Update) o;
-				return super.equals(o) && afterType.equals(i.afterType)
-						&& fields.equals(i.fields);
+				return super.equals(o) && fields.equals(i.fields);
 			}
 			return false;
 		}
@@ -2398,7 +2210,7 @@ public abstract class Codes {
 					r = "(*" + r + ")";
 				}
 			}
-			return "update " + r + " = %" + result() + " : " + type(0) + " -> " + afterType;
+			return "update " + r + " = %" + result() + " : " + type(0) + " -> " + afterType();
 		}
 	}
 
@@ -2437,7 +2249,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		protected Code.Unit clone(int[] nTargets, int[] nOperands) {
+		protected Code clone(int[] nTargets, int[] nOperands) {
 			return NewRecord(type(0), nTargets[0], nOperands);
 		}
 
@@ -2497,7 +2309,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		protected Code.Unit clone(int[] nTargets, int[] nOperands) {
+		protected Code clone(int[] nTargets, int[] nOperands) {
 			return NewArray(type(0), nTargets[0], nOperands);
 		}
 
@@ -2531,7 +2343,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		protected Unit clone(int[] nTargets, int[] nOperands) {
+		protected Code clone(int[] nTargets, int[] nOperands) {
 			return this;
 		}
 		
@@ -2584,7 +2396,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+		public Code clone(int[] nTargets, int[] nOperands) {
 			return new Return(Arrays.copyOf(types, types.length), nOperands);
 		}
 
@@ -2710,7 +2522,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+		public Code clone(int[] nTargets, int[] nOperands) {
 			return new Switch(types[0], nOperands[0], defaultTarget, branches);
 		}
 
@@ -2753,7 +2565,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		protected Code.Unit clone(int[] nTargets, int[] nOperands) {
+		protected Code clone(int[] nTargets, int[] nOperands) {
 			return Invert(type(0), nTargets[0], nOperands[0]);
 		}
 
@@ -2798,8 +2610,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class NewObject extends
-			AbstractBytecode<Type.Reference> {
+	public static final class NewObject extends AbstractBytecode<Type.Reference> {
 
 		private NewObject(Type.Reference type, int target, int operand) {
 			super(type, target, operand);
@@ -2810,7 +2621,7 @@ public abstract class Codes {
 			return OPCODE_newobject;
 		}
 
-		protected Code.Unit clone(int[] nTargets, int[] nOperands) {
+		protected Code clone(int[] nTargets, int[] nOperands) {
 			return NewObject(type(0), nTargets[0], nOperands[0]);
 		}
 
@@ -2833,8 +2644,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Dereference extends
-			AbstractBytecode<Type.Reference> {
+	public static final class Dereference extends AbstractBytecode<Type.Reference> {
 
 		private Dereference(Type.Reference type, int target, int operand) {
 			super(type, target, operand);
@@ -2845,7 +2655,7 @@ public abstract class Codes {
 			return OPCODE_dereference;
 		}
 
-		protected Code.Unit clone(int[] nTargets, int[] nOperands) {
+		protected Code clone(int[] nTargets, int[] nOperands) {
 			return Dereference(type(0), nTargets[0], nOperands[0]);
 		}
 
@@ -2918,7 +2728,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code.Unit clone(int[] nTargets, int[] nOperands) {
+		public Code clone(int[] nTargets, int[] nOperands) {
 			return UnaryOperator(type(0), nTargets[0], nOperands[0], kind);
 		}
 
@@ -2959,7 +2769,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		protected Code.Unit clone(int[] nTargets, int[] nOperands) {
+		protected Code clone(int[] nTargets, int[] nOperands) {
 			return Void(type(0), nOperands);
 		}
 

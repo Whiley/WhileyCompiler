@@ -51,9 +51,9 @@ public abstract class ForwardFlowAnalysis<T> {
 	protected WyilFile.FunctionOrMethod method;
 
 	/**
-	 * The root block currently being propagated through.
+	 * The code forest currently being propagated through.
 	 */
-	protected AttributedCodeBlock rootBlock;
+	protected CodeForest forest;
 
 	/**
 	 * The temporary abstract stores being generated during propagation.
@@ -92,12 +92,12 @@ public abstract class ForwardFlowAnalysis<T> {
 			WyilFile.FunctionOrMethod method) {
 		this.method = method;
 		this.stores = new HashMap<String, T>();
-		this.rootBlock = method.body();
+		this.forest = method.code();
 		T init = initialStore();
-		propagate(null, rootBlock, init);
+		propagate(method.body(), init);
 		return new WyilFile.FunctionOrMethod(method.modifiers(), method.name(),
-				method.type(), method.body(), method.precondition(),
-				method.postcondition(), method.attributes());
+				method.type(), method.code(), method.preconditions().length,
+				method.postconditions().length, method.attributes());
 	}
 
 	/**
@@ -115,14 +115,14 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            The list of active exception handlers
 	 * @return
 	 */
-	protected T propagate(CodeBlock.Index parentIndex, CodeBlock block,
-			T store) {
-
+	protected T propagate(int blockID, T store) {
+		
+		CodeForest.Block block = forest.get(blockID);
 		for (int i = 0; i < block.size(); ++i) {
-			Code code = block.get(i);
+			Code code = block.get(i).code();
 
 			// Construct the bytecode ID
-			CodeBlock.Index id = new CodeBlock.Index(parentIndex,i);
+			CodeForest.Index id = new CodeForest.Index(blockID,i);
 
 			try {
 				// First, check for a label which may have incoming information.
@@ -150,12 +150,12 @@ public abstract class ForwardFlowAnalysis<T> {
 					Codes.If ifgoto = (Codes.If) code;
 					Pair<T, T> r = propagate(id, ifgoto, store);
 					store = r.second();
-					merge(ifgoto.target, r.first(), stores);
+					merge(ifgoto.destination(), r.first(), stores);
 				} else if (code instanceof Codes.IfIs) {
 					Codes.IfIs ifgoto = (Codes.IfIs) code;
 					Pair<T, T> r = propagate(id, ifgoto, store);
 					store = r.second();
-					merge(ifgoto.target, r.first(), stores);
+					merge(ifgoto.destination(), r.first(), stores);
 				} else if (code instanceof Codes.Switch) {
 					Codes.Switch sw = (Codes.Switch) code;
 
@@ -172,7 +172,7 @@ public abstract class ForwardFlowAnalysis<T> {
 					store = null;
 				} else if (code instanceof Codes.Goto) {
 					Codes.Goto gto = (Codes.Goto) code;
-					merge(gto.target, store, stores);
+					merge(gto.destination(), store, stores);
 					store = null;
 				} else {
 					// This indicates a sequential statement was encountered.
@@ -186,7 +186,7 @@ public abstract class ForwardFlowAnalysis<T> {
 			} catch (SyntaxError se) {
 				throw se;
 			} catch (Throwable ex) {
-				internalFailure("internal failure", filename, ex, rootBlock.attribute(id,SourceLocation.class));
+				internalFailure("internal failure", filename, ex, forest.get(id).attribute(SourceLocation.class));
 			}
 		}
 
@@ -220,7 +220,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<T,T> propagate(CodeBlock.Index index, Codes.If ifgoto, T store);
+	protected abstract Pair<T,T> propagate(CodeForest.Index index, Codes.If ifgoto, T store);
 
 	/**
 	 * <p>
@@ -240,7 +240,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<T, T> propagate(CodeBlock.Index index, Codes.IfIs iftype, T store);
+	protected abstract Pair<T, T> propagate(CodeForest.Index index, Codes.IfIs iftype, T store);
 
 	/**
 	 * <p>
@@ -257,7 +257,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract List<T> propagate(CodeBlock.Index index, Codes.Switch sw, T store);
+	protected abstract List<T> propagate(CodeForest.Index index, Codes.Switch sw, T store);
 
 	/**
 	 * <p>
@@ -280,7 +280,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(CodeBlock.Index index, Codes.Loop code, T store);
+	protected abstract T propagate(CodeForest.Index index, Codes.Loop code, T store);
 
 	/**
 	 * <p>
@@ -297,7 +297,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(CodeBlock.Index index, Code code, T store);
+	protected abstract T propagate(CodeForest.Index index, Code code, T store);
 
 	/**
 	 * Determine the initial store for the current method case.
