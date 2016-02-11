@@ -2201,10 +2201,10 @@ public abstract class Codes {
 		public LVal next() {
 			Type raw = iter;
 			index--;
-			if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
-				Type.Reference proc = Type.effectiveReference(iter);
-				iter = proc.element();
-				return new ReferenceLVal(proc);
+			if (iter instanceof Type.Reference) {
+				Type.Reference ref = (Type.Reference) iter;
+				iter = ref.element();
+				return new ReferenceLVal(ref);
 			} else if (iter instanceof Type.EffectiveArray) {
 				Type.EffectiveArray list = (Type.EffectiveArray) iter;
 				iter = list.element();
