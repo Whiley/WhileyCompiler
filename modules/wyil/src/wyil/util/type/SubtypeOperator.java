@@ -191,6 +191,13 @@ public class SubtypeOperator {
 				}
 				return true;
 			case K_REFERENCE:
+				if(fromSign || toSign) {
+					int fromChild = fromState.children[0];
+					int toChild = toState.children[0];
+					return isIntersection(fromChild, fromSign, toChild, toSign)
+						|| isIntersection(fromChild, !fromSign, toChild, !toSign);
+				}
+				return true;
 			case K_MAP:
 			case K_TUPLE:  {
 				if(fromSign || toSign) {
