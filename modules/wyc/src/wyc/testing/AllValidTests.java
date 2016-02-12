@@ -91,6 +91,7 @@ public class AllValidTests {
 		IGNORED.put("ListAccess_Valid_6", "Issue ???");
 		IGNORED.put("ListAccess_Valid_7", "Issue ???");
 		IGNORED.put("NegationType_Valid_3", "Issue ???");
+		IGNORED.put("OpenRecord_Valid_11", "#585");
 		IGNORED.put("RecordCoercion_Valid_1", "#564");
 		IGNORED.put("RecordSubtype_Valid_1", "Issue ???");
 		IGNORED.put("RecordSubtype_Valid_2", "Issue ???");

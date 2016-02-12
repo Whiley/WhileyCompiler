@@ -108,6 +108,7 @@ public class AllInvalidTests {
 		IGNORED.put("RecursiveType_Invalid_7", "unclassified");
 		IGNORED.put("RecursiveType_Invalid_8", "unclassified");
 		IGNORED.put("RecursiveType_Invalid_9", "unclassified");
+		IGNORED.put("ReferenceOpenRecord_Invalid_1", "#585");
 		IGNORED.put("Subtype_Invalid_6", "unclassified");
 		IGNORED.put("Subtype_Invalid_8", "unclassified");
 		IGNORED.put("Subtype_Invalid_9", "unclassified");
