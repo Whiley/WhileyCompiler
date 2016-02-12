@@ -128,6 +128,7 @@ public class AllValidVerificationTests {
 		IGNORED.put("ListGenerator_Valid_12", "Unknown");
 		IGNORED.put("Method_Valid_1", "Issue ???");
 		IGNORED.put("NegationType_Valid_3", "Known Issue");
+		IGNORED.put("OpenRecord_Valid_11", "#585");
 		IGNORED.put("Process_Valid_1", "#291");
 		IGNORED.put("Process_Valid_10", "#291");
 		IGNORED.put("Process_Valid_9", "#231");
