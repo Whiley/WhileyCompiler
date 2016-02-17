@@ -525,8 +525,8 @@ public class FlowTypeChecker {
 		} else if (lv instanceof Expr.Dereference) {
 			Expr.Dereference pa = (Expr.Dereference) lv;
 			// The before and after types are the same since an assignment
-			// through a reference does not change its type.
-			checkIsSubtype(pa.srcType, Nominal.Reference(afterType), lv);
+			// through a reference does not change its type.			
+			checkIsSubtype(pa.srcType.element(), afterType, lv);
 			return inferAfterType((Expr.LVal) pa.src, pa.srcType);
 		} else if (lv instanceof Expr.IndexOf) {
 			Expr.IndexOf la = (Expr.IndexOf) lv;
