@@ -145,34 +145,30 @@ public class TestUtils {
 			BufferedReader refReader = new BufferedReader(new FileReader(
 					new File(referenceFile)));
 
-			while (refReader.ready() && outReader.ready()) {
-				String a = refReader.readLine();
-				String b = outReader.readLine();
-
-				if (a.equals(b)) {
-					continue;
-				} else {
-					System.err.println(" > " + a);
-					System.err.println(" < " + b);
-					throw new Error("Output doesn't match reference");
-				}
-			}
-
-			String l1 = outReader.readLine();
-			String l2 = refReader.readLine();
-			if (l1 == null && l2 == null)
-				return;
-			do {
-				l1 = outReader.readLine();
-				l2 = refReader.readLine();
-				if (l1 != null) {
+			boolean match = true;
+			while (true) {
+				String l1 = refReader.readLine();
+				String l2 = outReader.readLine();
+				if (l1 != null && l2 != null) {
+					if (!l1.equals(l2)) {
+						System.err.println(" < " + l1);
+						System.err.println(" > " + l2);
+						match = false;
+					}
+				} else if (l1 != null) {
 					System.err.println(" < " + l1);
+					match = false;
 				} else if (l2 != null) {
 					System.err.println(" > " + l2);
+					match = false;
+				} else {
+					break;
 				}
-			} while (l1 != null && l2 != null);
-
-			fail("Files do not match");
+			}
+			if (!match) {
+				System.err.println();
+				fail("Output doesn't match reference");
+			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			fail();
