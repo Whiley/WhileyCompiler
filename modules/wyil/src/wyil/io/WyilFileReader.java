@@ -1066,7 +1066,7 @@ public final class WyilFileReader {
 				return Codes.IndexOf((Type.EffectiveArray)types[0],targets[0],operands[0],operands[1]);
 			}
 		};
-		schemas[Code.OPCODE_listgen] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+		schemas[Code.OPCODE_arrygen] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
 			public Code construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
 				return Codes.ArrayGenerator((Type.Array) types[0], targets[0], operands[0], operands[1]);
 			}
@@ -1075,7 +1075,7 @@ public final class WyilFileReader {
 		// =========================================================================
 		// Nary Assignables
 		// =========================================================================
-		schemas[Code.OPCODE_newlist] = new Schema(Targets.ONE, Operands.MANY, Types.ONE){
+		schemas[Code.OPCODE_newarray] = new Schema(Targets.ONE, Operands.MANY, Types.ONE){
 			public Code construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
 				return Codes.NewArray((Type.Array) types[0], targets[0], operands);
 			}

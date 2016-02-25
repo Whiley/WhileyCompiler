@@ -148,13 +148,13 @@ public class VcBranch {
 	 *            --- Variable names to use as prefixes when generating register
 	 *            names. If null, the default names are used instead.
 	 */
-	public VcBranch(int numInputs, String[] prefixes) {
+	public VcBranch(int numInputs, CodeForest.Index pc, String[] prefixes) {
 		int numSlots = numInputs;
 		this.parents = new VcBranch[0];
 		this.environment = new Expr[numSlots];
 		this.versions = new int[numSlots];
 		this.constraints = null;
-		this.pc = new CodeForest.Index(CodeForest.Index.ROOT);
+		this.pc = pc;
 		this.state = State.ACTIVE;
 
 		if (prefixes == null) {

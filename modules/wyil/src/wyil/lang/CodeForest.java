@@ -188,6 +188,14 @@ public class CodeForest {
 		public Index next() {
 			return new Index(block,offset+1);
 		}
+		
+		public Index next(int i) {
+			return new Index(block,offset+i);
+		}
+		
+		public String toString() {
+			return block + ":" + offset;
+		}
 	}
 	
 	/**

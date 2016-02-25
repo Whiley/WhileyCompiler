@@ -339,7 +339,6 @@ public interface Code {
 	public static final int OPCODE_return   = UNARY_OPERATOR+1;
 	public static final int OPCODE_ifis     = UNARY_OPERATOR+2;
 	public static final int OPCODE_switch   = UNARY_OPERATOR+3;
-	public static final int OPCODE_throw    = UNARY_OPERATOR+4;
 
 	// =========================================================================
 	// Unary Assignables
@@ -386,14 +385,14 @@ public interface Code {
 	public static final int OPCODE_lshr        = BINARY_ASSIGNABLE+8;
 	public static final int OPCODE_rshr        = BINARY_ASSIGNABLE+9;
 	public static final int OPCODE_indexof     = BINARY_ASSIGNABLE+10;
-	public static final int OPCODE_listgen     = BINARY_ASSIGNABLE+11;
+	public static final int OPCODE_arrygen     = BINARY_ASSIGNABLE+11;
 
 	// =========================================================================
 	// Nary Assignables
 	// =========================================================================
 	public static final int NARY_ASSIGNABLE = BINARY_ASSIGNABLE+12;
 	
-	public static final int OPCODE_newlist          = NARY_ASSIGNABLE+0;
+	public static final int OPCODE_newarray         = NARY_ASSIGNABLE+0;
 	public static final int OPCODE_newrecord        = NARY_ASSIGNABLE+1;
 	public static final int OPCODE_invoke           = NARY_ASSIGNABLE+2;
 	public static final int OPCODE_indirectinvoke   = NARY_ASSIGNABLE+3;

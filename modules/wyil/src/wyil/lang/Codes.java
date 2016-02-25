@@ -1244,6 +1244,10 @@ public abstract class Codes {
 		public int opcode() {
 			return OPCODE_ifis;
 		}
+		
+		public Type rightOperand() {
+			return type(1);
+		}
 
 		public IfIs relabel(Map<String, String> labels) {
 			String nlabel = labels.get(destination());
@@ -1642,7 +1646,7 @@ public abstract class Codes {
 		}
 
 		public int opcode() {
-			return OPCODE_listgen;
+			return OPCODE_arrygen;
 		}
 
 		@Override
@@ -1886,6 +1890,10 @@ public abstract class Codes {
 			return false;
 		}
 
+		public int[] modifiedOperands() {
+			return targets();
+		}
+		
 		@Override
 		public Loop clone(int[] nTargets, int[] nOperands) {
 			return new Loop(nTargets, block, nOperands);
@@ -2305,7 +2313,7 @@ public abstract class Codes {
 		}
 
 		public int opcode() {
-			return OPCODE_newlist;
+			return OPCODE_newarray;
 		}
 
 		@Override

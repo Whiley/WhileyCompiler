@@ -239,6 +239,17 @@ public final class CodeGenerator {
 		// Generate body
 		// ==================================================================
 
+		// First, reset the environment. This is necessary because the
+		// environment may have been contaminated with local variables arising
+		// in the precondition or postcondition. Such variables are possible if
+		// quantifiers are used.
+		
+		// FIXME: using resetEnvironment feels ugly and could fail when multiple
+		// variables of the same name are declared in the body of a function
+		// or method (currently this is only possible via quantifiers, but won't
+		// fail because they have the same type).
+		environment = resetEnvironment(environment, declarations);
+
 		CodeForest.Block body = new CodeForest.Block();
 		forest.addAsRoot(body);
 		for (Stmt s : fd.statements) {
@@ -489,7 +500,8 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Assign s, Environment environment, CodeForest.Block block, CodeForest forest, Context context) {
+	private void generate(Assign s, Environment environment, CodeForest.Block block, CodeForest forest,
+			Context context) {
 		// First, we translate all right-hand side expressions and assign them
 		// to temporary registers.
 		ArrayList<Integer> operands = new ArrayList<Integer>();
@@ -803,7 +815,8 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Fail s, Environment environment, CodeForest.Block block, CodeForest forest, Context context) {
+	private void generate(Stmt.Fail s, Environment environment, CodeForest.Block block, CodeForest forest,
+			Context context) {
 		block.add(Codes.Fail(), attributes(s));
 	}
 
@@ -852,12 +865,11 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.IfElse s, Environment environment,
-			CodeForest.Block block, CodeForest forest, Context context) {
+	private void generate(Stmt.IfElse s, Environment environment, CodeForest.Block block, CodeForest forest,
+			Context context) {
 
 		String falseLab = CodeUtils.freshLabel();
-		String exitLab = s.falseBranch.isEmpty() ? falseLab : CodeUtils
-				.freshLabel();
+		String exitLab = s.falseBranch.isEmpty() ? falseLab : CodeUtils.freshLabel();
 
 		generateCondition(falseLab, invert(s.condition), environment, block, forest, context);
 
@@ -1734,8 +1746,7 @@ public final class CodeGenerator {
 				return generate((Expr.New) expression, environment, block, forest, context);
 			} else {
 				// should be dead-code
-				internalFailure("unknown expression: "
-						+ expression.getClass().getName(), context, expression);
+				internalFailure("unknown expression: " + expression.getClass().getName(), context, expression);
 			}
 		} catch (ResolveError rex) {
 			syntaxError(rex.getMessage(), context, expression, rex);
@@ -1748,16 +1759,15 @@ public final class CodeGenerator {
 		return -1; // deadcode
 	}
 
-	public int generate(Expr.FunctionOrMethodCall expr, Environment environment,
-			CodeForest.Block block, CodeForest forest, Context context) throws ResolveError {
+	public int generate(Expr.FunctionOrMethodCall expr, Environment environment, CodeForest.Block block,
+			CodeForest forest, Context context) throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
 		generateStmt(expr, environment, block, forest, context, target);
 		return target;
 	}
 
-	public int generate(Expr.IndirectFunctionOrMethodCall expr,
-			Environment environment, CodeForest.Block block, CodeForest forest, Context context)
-			throws ResolveError {
+	public int generate(Expr.IndirectFunctionOrMethodCall expr, Environment environment, CodeForest.Block block,
+			CodeForest forest, Context context) throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
 		generateStmt(expr, environment, block, forest, context, target);
 		return target;
@@ -1790,14 +1800,14 @@ public final class CodeGenerator {
 		ArrayList<Integer> operands = new ArrayList<Integer>();
 		ArrayList<Type> paramTypes = new ArrayList<Type>();
 		CodeForest bodyForest = new CodeForest();
-		List<CodeForest.Register> declarations = bodyForest.registers(); 
-		Environment benv = new Environment();				
+		List<CodeForest.Register> declarations = bodyForest.registers();
+		Environment benv = new Environment();
 		for (int i = 0; i != tfm_params.size(); ++i) {
 			Type type = tfm_params.get(i);
 			String name = expr_params.get(i).name;
 			benv.allocate(type, name);
 			paramTypes.add(type);
-			declarations.add(new CodeForest.Register(type,name));
+			declarations.add(new CodeForest.Register(type, name));
 		}
 		for (Pair<Type, String> v : Exprs.uses(expr.body, context)) {
 			if (benv.get(v.second()) == null) {
@@ -1805,27 +1815,28 @@ public final class CodeGenerator {
 				benv.allocate(type, v.second());
 				paramTypes.add(type);
 				operands.add(environment.get(v.second()));
-				declarations.add(new CodeForest.Register(type,v.second()));
+				declarations.add(new CodeForest.Register(type, v.second()));
 			}
 		}
 		// Generate body based on current environment
-	
+
 		CodeForest.Block bodyBlock = new CodeForest.Block();
 		bodyForest.addAsRoot(bodyBlock);
 		if (tfm.returns().isEmpty()) {
 			bodyBlock.add(Codes.Return(), attributes(expr));
 		} else {
 			int target = generate(expr.body, benv, bodyBlock, bodyForest, context);
-			bodyBlock.add(Codes.Return(tfm.returns().toArray(new Type[tfm.returns().size()]), target), attributes(expr));
+			bodyBlock.add(Codes.Return(tfm.returns().toArray(new Type[tfm.returns().size()]), target),
+					attributes(expr));
 		}
 
 		// Add type information for all temporary registers allocated
 		// during code generation. This complements the existing information
 		// about declared variables.
-		for(int i=declarations.size();i!=benv.size();i=i+1) {
+		for (int i = declarations.size(); i != benv.size(); i = i + 1) {
 			Type t = benv.type(i);
-			declarations.add(new CodeForest.Register(t,null));
-		}		
+			declarations.add(new CodeForest.Register(t, null));
+		}
 		// Create concrete type for private lambda function
 		Type.FunctionOrMethod cfm;
 		if (tfm instanceof Type.Function) {
@@ -1839,8 +1850,8 @@ public final class CodeGenerator {
 		String name = "$lambda" + id;
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.PRIVATE);
-		WyilFile.FunctionOrMethod lambda = new WyilFile.FunctionOrMethod(
-				modifiers, name, cfm, bodyForest, 0, 0, attributes(expr));
+		WyilFile.FunctionOrMethod lambda = new WyilFile.FunctionOrMethod(modifiers, name, cfm, bodyForest, 0, 0,
+				attributes(expr));
 		lambdas.add(lambda);
 		Path.ID mid = context.file().module;
 		NameID nid = new NameID(mid, name);
@@ -1851,8 +1862,8 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.ConstantAccess expr, Environment environment,
-			CodeForest.Block block, CodeForest forest, Context context) throws ResolveError {
+	private int generate(Expr.ConstantAccess expr, Environment environment, CodeForest.Block block, CodeForest forest,
+			Context context) throws ResolveError {
 		Constant val = expr.value;
 		int target = environment.allocate(val.type());
 		block.add(Codes.Const(target, val), attributes(expr));
@@ -1872,35 +1883,31 @@ public final class CodeGenerator {
 		}
 	}
 
-	private int generate(Expr.UnOp expr, Environment environment,
-			CodeForest.Block block, CodeForest forest, Context context) {
+	private int generate(Expr.UnOp expr, Environment environment, CodeForest.Block block, CodeForest forest,
+			Context context) {
 		int operand = generate(expr.mhs, environment, block, forest, context);
 		int target = environment.allocate(expr.result().raw());
 		switch (expr.op) {
 		case NEG:
-			block.add(Codes.UnaryOperator(expr.result().raw(), target, operand,
-					Codes.UnaryOperatorKind.NEG), attributes(expr));
+			block.add(Codes.UnaryOperator(expr.result().raw(), target, operand, Codes.UnaryOperatorKind.NEG),
+					attributes(expr));
 			break;
 		case INVERT:
-			block.add(Codes.Invert(expr.result().raw(), target, operand),
-					attributes(expr));
+			block.add(Codes.Invert(expr.result().raw(), target, operand), attributes(expr));
 			break;
 		case NOT:
 			String falseLabel = CodeUtils.freshLabel();
 			String exitLabel = CodeUtils.freshLabel();
 			generateCondition(falseLabel, expr.mhs, environment, block, forest, context);
-			block.add(Codes.Const(target, Constant.V_BOOL(true)),
-					attributes(expr));
+			block.add(Codes.Const(target, Constant.V_BOOL(true)), attributes(expr));
 			block.add(Codes.Goto(exitLabel));
 			block.add(Codes.Label(falseLabel));
-			block.add(Codes.Const(target, Constant.V_BOOL(false)),
-					attributes(expr));
+			block.add(Codes.Const(target, Constant.V_BOOL(false)), attributes(expr));
 			block.add(Codes.Label(exitLabel));
 			break;
 		default:
 			// should be dead-code
-			internalFailure("unexpected unary operator encountered", context,
-					expr);
+			internalFailure("unexpected unary operator encountered", context, expr);
 			return -1;
 		}
 		return target;
@@ -1914,27 +1921,25 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.Dereference expr, Environment environment,
-			CodeForest.Block block, CodeForest forest, Context context) {
+	private int generate(Expr.Dereference expr, Environment environment, CodeForest.Block block, CodeForest forest,
+			Context context) {
 		int operand = generate(expr.src, environment, block, forest, context);
 		int target = environment.allocate(expr.result().raw());
-		block.add(Codes.Dereference(expr.srcType.raw(), target, operand),
-				attributes(expr));
+		block.add(Codes.Dereference(expr.srcType.raw(), target, operand), attributes(expr));
 		return target;
 	}
 
-	private int generate(Expr.IndexOf expr, Environment environment,
-			CodeForest.Block block, CodeForest forest, Context context) {
+	private int generate(Expr.IndexOf expr, Environment environment, CodeForest.Block block, CodeForest forest,
+			Context context) {
 		int srcOperand = generate(expr.src, environment, block, forest, context);
 		int idxOperand = generate(expr.index, environment, block, forest, context);
 		int target = environment.allocate(expr.result().raw());
-		block.add(Codes.IndexOf((Type.Array) expr.srcType.raw(), target, srcOperand,
-				idxOperand), attributes(expr));
+		block.add(Codes.IndexOf((Type.Array) expr.srcType.raw(), target, srcOperand, idxOperand), attributes(expr));
 		return target;
 	}
 
-	private int generate(Expr.Cast expr, Environment environment,
-			CodeForest.Block block, CodeForest forest, Context context) {
+	private int generate(Expr.Cast expr, Environment environment, CodeForest.Block block, CodeForest forest,
+			Context context) {
 		int operand = generate(expr.expr, environment, block, forest, context);
 		Type from = expr.expr.result().raw();
 		Type to = expr.result().raw();
@@ -1943,20 +1948,17 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.BinOp v, Environment environment,
-			CodeForest.Block block, CodeForest forest, Context context) throws Exception {
+	private int generate(Expr.BinOp v, Environment environment, CodeForest.Block block, CodeForest forest,
+			Context context) throws Exception {
 
 		// could probably use a range test for this somehow
-		if (v.op == Expr.BOp.EQ || v.op == Expr.BOp.NEQ || v.op == Expr.BOp.LT
-				|| v.op == Expr.BOp.LTEQ || v.op == Expr.BOp.GT
-				|| v.op == Expr.BOp.GTEQ
-				|| v.op == Expr.BOp.AND || v.op == Expr.BOp.OR) {
+		if (v.op == Expr.BOp.EQ || v.op == Expr.BOp.NEQ || v.op == Expr.BOp.LT || v.op == Expr.BOp.LTEQ
+				|| v.op == Expr.BOp.GT || v.op == Expr.BOp.GTEQ || v.op == Expr.BOp.AND || v.op == Expr.BOp.OR) {
 			String trueLabel = CodeUtils.freshLabel();
 			String exitLabel = CodeUtils.freshLabel();
 			generateCondition(trueLabel, v, environment, block, forest, context);
 			int target = environment.allocate(Type.T_BOOL);
-			block.add(Codes.Const(target, Constant.V_BOOL(false)),
-					attributes(v));
+			block.add(Codes.Const(target, Constant.V_BOOL(false)), attributes(v));
 			block.add(Codes.Goto(exitLabel));
 			block.add(Codes.Label(trueLabel));
 			block.add(Codes.Const(target, Constant.V_BOOL(true)), attributes(v));
@@ -1977,23 +1979,23 @@ public final class CodeGenerator {
 		}
 	}
 
-	private int generate(Expr.ArrayInitialiser expr, Environment environment,
-			CodeForest.Block block, CodeForest forest, Context context) {
+	private int generate(Expr.ArrayInitialiser expr, Environment environment, CodeForest.Block block, CodeForest forest,
+			Context context) {
 		int[] operands = generate(expr.arguments, environment, block, forest, context);
 		int target = environment.allocate(expr.result().raw());
-		block.add(Codes.NewArray((Type.Array) expr.type.raw(), target, operands),
-				attributes(expr));
+		block.add(Codes.NewArray((Type.Array) expr.type.raw(), target, operands), attributes(expr));
 		return target;
 	}
 
-	private int generate(Expr.ArrayGenerator expr, Environment environment, CodeForest.Block block, CodeForest forest, Context context) {
+	private int generate(Expr.ArrayGenerator expr, Environment environment, CodeForest.Block block, CodeForest forest,
+			Context context) {
 		int element = generate(expr.element, environment, block, forest, context);
 		int count = generate(expr.count, environment, block, forest, context);
 		int target = environment.allocate(expr.result().raw());
 		block.add(Codes.ArrayGenerator((Type.Array) expr.type.raw(), target, element, count), attributes(expr));
 		return target;
 	}
-	
+
 	private int generate(Expr.Quantifier e, Environment environment, CodeForest.Block block, CodeForest forest,
 			Context context) {
 		String trueLabel = CodeUtils.freshLabel();
@@ -2032,8 +2034,8 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.New expr, Environment environment,
-			CodeForest.Block block, CodeForest forest, Context context) throws ResolveError {
+	private int generate(Expr.New expr, Environment environment, CodeForest.Block block, CodeForest forest,
+			Context context) throws ResolveError {
 		int operand = generate(expr.expr, environment, block, forest, context);
 		int target = environment.allocate(expr.result().raw());
 		block.add(Codes.NewObject(expr.type.raw(), target, operand));
@@ -2054,8 +2056,7 @@ public final class CodeGenerator {
 	// Helpers
 	// =========================================================================
 
-	private Codes.BinaryOperatorKind OP2BOP(Expr.BOp bop,
-			SyntacticElement elem, Context context) {
+	private Codes.BinaryOperatorKind OP2BOP(Expr.BOp bop, SyntacticElement elem, Context context) {
 		switch (bop) {
 		case ADD:
 			return Codes.BinaryOperatorKind.ADD;
@@ -2084,8 +2085,7 @@ public final class CodeGenerator {
 		return null;
 	}
 
-	private Codes.Comparator OP2COP(Expr.BOp bop, SyntacticElement elem,
-			Context context) {
+	private Codes.Comparator OP2COP(Expr.BOp bop, SyntacticElement elem, Context context) {
 		switch (bop) {
 		case EQ:
 			return Codes.Comparator.EQ;
@@ -2113,36 +2113,28 @@ public final class CodeGenerator {
 			Expr.BinOp nbop = null;
 			switch (bop.op) {
 			case AND:
-				nbop = new Expr.BinOp(Expr.BOp.OR, invert(bop.lhs),
-						invert(bop.rhs), e.attributes());
+				nbop = new Expr.BinOp(Expr.BOp.OR, invert(bop.lhs), invert(bop.rhs), e.attributes());
 				break;
 			case OR:
-				nbop = new Expr.BinOp(Expr.BOp.AND, invert(bop.lhs),
-						invert(bop.rhs), e.attributes());
+				nbop = new Expr.BinOp(Expr.BOp.AND, invert(bop.lhs), invert(bop.rhs), e.attributes());
 				break;
 			case EQ:
-				nbop = new Expr.BinOp(Expr.BOp.NEQ, bop.lhs, bop.rhs,
-						e.attributes());
+				nbop = new Expr.BinOp(Expr.BOp.NEQ, bop.lhs, bop.rhs, e.attributes());
 				break;
 			case NEQ:
-				nbop = new Expr.BinOp(Expr.BOp.EQ, bop.lhs, bop.rhs,
-						e.attributes());
+				nbop = new Expr.BinOp(Expr.BOp.EQ, bop.lhs, bop.rhs, e.attributes());
 				break;
 			case LT:
-				nbop = new Expr.BinOp(Expr.BOp.GTEQ, bop.lhs, bop.rhs,
-						e.attributes());
+				nbop = new Expr.BinOp(Expr.BOp.GTEQ, bop.lhs, bop.rhs, e.attributes());
 				break;
 			case LTEQ:
-				nbop = new Expr.BinOp(Expr.BOp.GT, bop.lhs, bop.rhs,
-						e.attributes());
+				nbop = new Expr.BinOp(Expr.BOp.GT, bop.lhs, bop.rhs, e.attributes());
 				break;
 			case GT:
-				nbop = new Expr.BinOp(Expr.BOp.LTEQ, bop.lhs, bop.rhs,
-						e.attributes());
+				nbop = new Expr.BinOp(Expr.BOp.LTEQ, bop.lhs, bop.rhs, e.attributes());
 				break;
 			case GTEQ:
-				nbop = new Expr.BinOp(Expr.BOp.LT, bop.lhs, bop.rhs,
-						e.attributes());
+				nbop = new Expr.BinOp(Expr.BOp.LT, bop.lhs, bop.rhs, e.attributes());
 				break;
 			}
 			if (nbop != null) {
@@ -2161,60 +2153,74 @@ public final class CodeGenerator {
 		r.type = Nominal.T_BOOL;
 		return r;
 	}
-
+	
+	/**
+	 * This resets the environment so that all variable names refer to those
+	 * variables indicated in the given list of declared registers. This flushes
+	 * out any unwanted assignments of variable names to temporary registers
+	 * which can occur when we have multiple variables with the same name. 
+	 * 
+	 * @param environment
+	 * @param declarations
+	 * @return
+	 */
+	public Environment resetEnvironment(Environment environment, List<CodeForest.Register> declarations) {
+		Environment nenv = new Environment();
+		for(int i=0;i!=declarations.size();++i) {
+			CodeForest.Register reg = declarations.get(i);
+			nenv.allocate(reg.type(),reg.name());
+		}
+		for(int i=declarations.size();i<environment.size();++i) {
+			nenv.allocate(environment.type(i));
+		}
+		return nenv;
+	}
+	
 	/**
 	 * Construct the set of variable declarations for a given list of variables.
 	 *
 	 * @param block
 	 * @param declarations
 	 */
-	public void buildVariableDeclarations(List<Stmt> block,
-			List<CodeForest.Register> declarations,
+	public void buildVariableDeclarations(List<Stmt> block, List<CodeForest.Register> declarations,
 			Environment environment, WhileyFile.Context context) {
 		//
 		for (int i = 0; i != block.size(); ++i) {
-			buildVariableDeclarations(block.get(i), declarations, environment,
-					context);
+			buildVariableDeclarations(block.get(i), declarations, environment, context);
 		}
 	}
 
-	public void buildVariableDeclarations(Stmt stmt,
-			List<CodeForest.Register> declarations, Environment environment,
+	public void buildVariableDeclarations(Stmt stmt, List<CodeForest.Register> declarations, Environment environment,
 			WhileyFile.Context context) {
-		if (stmt instanceof Assign || stmt instanceof Assert
-				|| stmt instanceof Assume || stmt instanceof Return
-				|| stmt instanceof Debug || stmt instanceof Fail
-				|| stmt instanceof Break || stmt instanceof Continue
-				|| stmt instanceof Expr.MethodCall
-				|| stmt instanceof Expr.IndirectMethodCall
-				|| stmt instanceof Expr.FunctionCall
-				|| stmt instanceof Expr.IndirectFunctionCall
+		if (stmt instanceof Assign || stmt instanceof Assert || stmt instanceof Assume || stmt instanceof Return
+				|| stmt instanceof Debug || stmt instanceof Fail || stmt instanceof Break || stmt instanceof Continue
+				|| stmt instanceof Expr.MethodCall || stmt instanceof Expr.IndirectMethodCall
+				|| stmt instanceof Expr.FunctionCall || stmt instanceof Expr.IndirectFunctionCall
 				|| stmt instanceof Expr.New || stmt instanceof Skip) {
 			// Don't need to do anything in these cases.
 			return;
 		} else if (stmt instanceof VariableDeclaration) {
 			VariableDeclaration d = (VariableDeclaration) stmt;
-			declarations.add(new CodeForest.Register(d.type.nominal(),d.parameter.name));
-			environment.allocate(d.type.raw(),d.parameter.name);			
+			declarations.add(new CodeForest.Register(d.type.nominal(), d.parameter.name));
+			environment.allocate(d.type.raw(), d.parameter.name);
 		} else if (stmt instanceof IfElse) {
 			IfElse s = (IfElse) stmt;
 			buildVariableDeclarations(s.trueBranch, declarations, environment, context);
 			buildVariableDeclarations(s.falseBranch, declarations, environment, context);
 		} else if (stmt instanceof Switch) {
 			Switch s = (Switch) stmt;
-			for(Stmt.Case c : s.cases) {
-				buildVariableDeclarations(c.stmts,declarations, environment, context);
+			for (Stmt.Case c : s.cases) {
+				buildVariableDeclarations(c.stmts, declarations, environment, context);
 			}
 		} else if (stmt instanceof While) {
 			While s = (While) stmt;
-			buildVariableDeclarations(s.body,declarations, environment, context);
+			buildVariableDeclarations(s.body, declarations, environment, context);
 		} else if (stmt instanceof DoWhile) {
 			DoWhile s = (DoWhile) stmt;
-			buildVariableDeclarations(s.body,declarations, environment, context);
+			buildVariableDeclarations(s.body, declarations, environment, context);
 		} else {
 			// should be dead-code
-			WhileyFile.internalFailure("unknown statement: "
-					+ stmt.getClass().getName(), context, stmt);
+			WhileyFile.internalFailure("unknown statement: " + stmt.getClass().getName(), context, stmt);
 		}
 	}
 
@@ -2225,8 +2231,7 @@ public final class CodeGenerator {
 	 * @param elem
 	 * @return
 	 */
-	private static List<wyil.lang.Attribute> attributes(
-			SyntacticElement elem) {
+	private static List<wyil.lang.Attribute> attributes(SyntacticElement elem) {
 		ArrayList<wyil.lang.Attribute> attrs = new ArrayList<wyil.lang.Attribute>();
 		Attribute.Source s = elem.attribute(Attribute.Source.class);
 		if (s != null) {
@@ -2235,10 +2240,10 @@ public final class CodeGenerator {
 		}
 		return attrs;
 	}
-	
-	public List<Integer> toIntegerList(int...items) {
+
+	public List<Integer> toIntegerList(int... items) {
 		ArrayList<Integer> list = new ArrayList<Integer>();
-		for(int i=0;i!=items.length;++i) {
+		for (int i = 0; i != items.length; ++i) {
 			list.add(items[i]);
 		}
 		return list;
@@ -2305,7 +2310,7 @@ public final class CodeGenerator {
 
 		public ArrayList<CodeForest.Register> asRegisters() {
 			ArrayList<CodeForest.Register> registers = new ArrayList<CodeForest.Register>();
-			for(int i=0;i!=idx2type.size();++i) {
+			for (int i = 0; i != idx2type.size(); ++i) {
 				Type t = idx2type.get(i);
 				registers.add(new CodeForest.Register(t, get(i)));
 			}
