@@ -390,6 +390,8 @@ public final class CodeGenerator {
 				generate((Return) stmt, environment, codes, context);
 			} else if (stmt instanceof Debug) {
 				generate((Debug) stmt, environment, codes, context);
+			} else if (stmt instanceof Fail) {
+				generate((Fail) stmt, environment, codes, context);
 			} else if (stmt instanceof IfElse) {
 				generate((IfElse) stmt, environment, codes, context);
 			} else if (stmt instanceof Switch) {
@@ -807,6 +809,36 @@ public final class CodeGenerator {
 			AttributedCodeBlock codes, Context context) {
 		int operand = generate(s.expr, environment, codes, context);
 		codes.add(Codes.Debug(operand), attributes(s));
+	}
+
+	/**
+	 * Translate a fail statement into WyIL bytecodes.
+	 *
+	 * <pre>
+	 * fail
+	 * </pre>
+	 *
+	 * A fail statement is always translated into a WyIL fail bytecode:
+	 *
+	 * <pre>
+	 * fail
+	 * </pre>
+	 *
+	 * @param stmt
+	 *            --- Statement to be translated.
+	 * @param environment
+	 *            --- Mapping from variable names to block registers.
+	 * @param codes
+	 *            --- Code block into which this statement is to be translated.
+	 * @param context
+	 *            --- Enclosing context of this statement (i.e. type, constant,
+	 *            function or method declaration). The context is used to aid
+	 *            with error reporting as it determines the enclosing file.
+	 * @return
+	 */
+	private void generate(Stmt.Fail s, Environment environment,
+			AttributedCodeBlock codes, Context context) {
+		codes.add(Codes.Fail(), attributes(s));
 	}
 
 	/**
@@ -2274,8 +2306,8 @@ public final class CodeGenerator {
 			WhileyFile.Context context) {
 		if (stmt instanceof Assign || stmt instanceof Assert
 				|| stmt instanceof Assume || stmt instanceof Return
-				|| stmt instanceof Debug || stmt instanceof Break
-				|| stmt instanceof Continue
+				|| stmt instanceof Debug || stmt instanceof Fail
+				|| stmt instanceof Break || stmt instanceof Continue
 				|| stmt instanceof Expr.MethodCall
 				|| stmt instanceof Expr.IndirectMethodCall
 				|| stmt instanceof Expr.FunctionCall
