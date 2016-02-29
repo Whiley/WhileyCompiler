@@ -3592,7 +3592,7 @@ public class WhileyFileParser {
 	private SyntacticType parseNegationType() {
 		int start = index;
 		match(Shreak);
-		SyntacticType element = parseType();
+		SyntacticType element = parseArrayType();
 		return new SyntacticType.Negation(element, sourceAttr(start, index - 1));
 	}
 
@@ -3608,7 +3608,7 @@ public class WhileyFileParser {
 	private SyntacticType parseReferenceType() {
 		int start = index;
 		match(Ampersand);
-		SyntacticType element = parseType();
+		SyntacticType element = parseArrayType();
 		return new SyntacticType.Reference(element,
 				sourceAttr(start, index - 1));
 	}
