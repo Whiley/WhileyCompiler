@@ -4,4 +4,3 @@ function f(int x) -> int:
             return 0
         default:
             return 1
-    return 10

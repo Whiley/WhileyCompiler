@@ -535,6 +535,7 @@ public class WhileyFileLexer {
 			put("do", Token.Kind.Do);
 			put("else", Token.Kind.Else);
 			put("ensures", Token.Kind.Ensures);
+			put("fail", Token.Kind.Fail);
 			put("for", Token.Kind.For);
 			put("if", Token.Kind.If);
 			put("new", Token.Kind.New);
@@ -694,6 +695,11 @@ public class WhileyFileLexer {
 				}
 			},
 			For {
+				public String toString() {
+					return "for";
+				}
+			},
+			Fail {
 				public String toString() {
 					return "for";
 				}
