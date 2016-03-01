@@ -31,7 +31,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.*;
@@ -282,18 +284,23 @@ public class AllValidVerificationTests {
 	// Here we enumerate all available test cases.
 	@Parameters(name = "{0}")
 	public static Collection<Object[]> data() {
-		ArrayList<Object[]> testcases = new ArrayList<Object[]>();
+		List<String> testNames = new ArrayList<String>();
 		for (File f : new File(WHILEY_SRC_DIR).listFiles()) {
 			if (f.isFile()) {
 				String name = f.getName();
 				if (name.endsWith(".whiley")) {
 					// Get rid of ".whiley" extension
 					String testName = name.substring(0, name.length() - 7);
-					testcases.add(new Object[] { testName });
+					testNames.add(testName);
 				}
 			}
 		}
-		return testcases;
+		Collections.sort(testNames);
+		ArrayList<Object[]> result = new ArrayList<Object[]>(testNames.size());
+		for (String testName : testNames) {
+			result.add(new Object[] { testName });
+		}
+		return result;
 	}
 
 	// Skip ignored tests
@@ -304,7 +311,7 @@ public class AllValidVerificationTests {
 	}
 
 	@Test
-	public void valid() throws IOException {
+	public void validVerification() throws IOException {
 		runTest(this.testName);
 	}
 }
