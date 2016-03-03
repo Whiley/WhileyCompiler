@@ -800,6 +800,10 @@ public interface Expr extends SyntacticElement {
 		public Nominal.Reference result() {
 			return type;
 		}
+
+		public String toString() {
+			return "(new " + expr.toString() + ")";
+		}
 	}
 
 	public enum BOp {

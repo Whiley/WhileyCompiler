@@ -9,7 +9,7 @@ function getField(OpenRecord r) -> int:
         if r is {int y, int x}:
             return r.x + r.y
         else:
-            return -r.x
+            return -(r.x)
 
 public export method test() :
     OpenRecord r = {x: 1}

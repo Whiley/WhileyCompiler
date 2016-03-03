@@ -188,7 +188,7 @@ public function parse(string input) -> int|null:
     while i < |input|:
         char c = input[i]
         r = r * 10
-        if !ASCII.isDigit(c):
+        if !(ASCII.isDigit(c)):
             return null
         r = r + ((int) c - '0')
         i = i + 1

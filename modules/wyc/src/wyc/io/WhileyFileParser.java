@@ -2525,7 +2525,7 @@ public class WhileyFileParser {
 			// bracketed type.
 			if (tryAndMatch(true, RightBrace) != null) {
 				// Ok, finally, we are sure that it is definitely a cast.
-				Expr e = parseExpression(wf, environment, terminated);
+				Expr e = parseTermExpression(wf, environment, terminated);
 				return new Expr.Cast(t, e, sourceAttr(start, index - 1));
 			}
 		}
@@ -2572,12 +2572,12 @@ public class WhileyFileParser {
 				case VerticalBar:
 				case Shreak:
 				case Identifier: {
-					// Ok, this must be cast so back tract and reparse
+					// Ok, this must be cast so back track and reparse
 					// expression as a type.
 					index = start; // backtrack
 					SyntacticType type = parseType();
 					// Now, parse cast expression
-					e = parseExpression(wf, environment, terminated);
+					e = parseTermExpression(wf, environment, terminated);
 					return new Expr.Cast(type, e, sourceAttr(start, index - 1));
 				}
 				default:
@@ -2831,7 +2831,7 @@ public class WhileyFileParser {
 			boolean terminated) {
 		int start = index;
 		match(New);
-		Expr e = parseExpression(wf, environment, terminated);
+		Expr e = parseTermExpression(wf, environment, terminated);
 		return new Expr.New(e, sourceAttr(start, index - 1));
 	}
 
@@ -2914,7 +2914,7 @@ public class WhileyFileParser {
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(Minus);
-		Expr e = parseAccessExpression(wf, environment, terminated);
+		Expr e = parseTermExpression(wf, environment, terminated);
 		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index - 1));
 	}
 
@@ -3065,7 +3065,7 @@ public class WhileyFileParser {
 		// Note: cannot parse unit expression here, because that messes up the
 		// precedence. For example, !result ==> other should be parsed as
 		// (!result) ==> other, not !(result ==> other).
-		Expr expression = parseConditionExpression(wf, environment, terminated);
+		Expr expression = parseTermExpression(wf, environment, terminated);
 		return new Expr.UnOp(Expr.UOp.NOT, expression, sourceAttr(start,
 				index - 1));
 	}
@@ -3093,7 +3093,7 @@ public class WhileyFileParser {
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(Star);
-		Expr expression = parseExpression(wf, environment, terminated);
+		Expr expression = parseTermExpression(wf, environment, terminated);
 		return new Expr.Dereference(expression, sourceAttr(start, index - 1));
 	}
 
@@ -3300,7 +3300,7 @@ public class WhileyFileParser {
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(Tilde);
-		Expr expression = parseExpression(wf, environment, terminated);
+		Expr expression = parseTermExpression(wf, environment, terminated);
 		return new Expr.UnOp(Expr.UOp.INVERT, expression, sourceAttr(start,
 				index - 1));
 	}

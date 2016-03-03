@@ -69,7 +69,7 @@ method read(string s) -> byte[]:
     byte[] bytes = [0b;0]
     InputStream bis = BufferInputStream(toBytes(s))
     //
-    while !bis.eof():
+    while !(bis.eof()):
         bytes = bis.read(3)
     //
     return bytes
