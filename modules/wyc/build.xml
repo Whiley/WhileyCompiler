@@ -41,12 +41,18 @@
     </javac>
   </target>
 
+  <!-- Set the default value of this property. Since Ant properties are immutable
+       if the value has already been set by the user with -Dtest.name.contains=...
+       this will not override that value. -->
+  <property name="test.name.contains" value=""/>
+
   <target name="test" depends="test-compile-wyc">
     <junit fork="true" dir="${basedir}" failureProperty="tests.failed" printsummary="yes" outputtoformatters="true">
       <classpath>
         <pathelement path="src:../wyil/src:../wybs/src/:../wycs/src:../../${WYRL_JAR}"/>
         <path refid="junit.classpath"/>
       </classpath>
+      <sysproperty key="test.name.contains" value="${test.name.contains}"/>
       <batchtest>
         <fileset dir="src" includes="wyc/testing/*Tests.java"/>
       </batchtest>
