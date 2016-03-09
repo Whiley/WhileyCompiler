@@ -4,7 +4,9 @@ import static org.junit.Assert.fail;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 
 import wybs.lang.Build;
 import wybs.util.StdProject;
@@ -30,6 +32,46 @@ import wyil.util.Interpreter;
  *
  */
 public class TestUtils {
+
+	/**
+	 * Scan a directory to get the names of all the whiley source files
+	 * in that directory. The list of file names can be used as input
+	 * parameters to a JUnit test.
+	 *
+	 * If the system property <code>test.name.contains</code> is set,
+	 * then the list of files returned will be filtered. Only file
+	 * names that contain the property will be returned. This makes it
+	 * possible to run a subset of tests when testing interactively
+	 * from the command line.
+	 *
+	 * @param srcDir The path of the directory to scan.
+	 */
+	public static Collection<Object[]> findTestNames(String srcDir) {
+		final String suffix = ".whiley";
+		String containsFilter = System.getProperty("test.name.contains");
+
+		ArrayList<Object[]> testcases = new ArrayList<Object[]>();
+		for (File f : new File(srcDir).listFiles()) {
+			// Check it's a file
+			if (!f.isFile()) continue;
+			String name = f.getName();
+			// Check it's a whiley source file
+			if (!name.endsWith(suffix)) continue;
+			// Get rid of ".whiley" extension
+			String testName = name.substring(0, name.length() - suffix.length());
+			// If there's a filter, check the name matches
+			if (containsFilter != null && !testName.contains(containsFilter)) continue;
+			testcases.add(new Object[] { testName });
+		}
+		// Sort the result by filename
+		Collections.sort(testcases, new Comparator<Object[]>() {
+				@Override
+				public int compare(Object[] o1, Object[] o2) {
+					return ((String) o1[0]).compareTo((String) o2[0]);
+				}
+		});
+		return testcases;
+	}
 
 	/**
 	 * Run the Whiley Compiler with the given list of arguments.

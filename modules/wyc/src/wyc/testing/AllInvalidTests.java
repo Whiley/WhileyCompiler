@@ -225,23 +225,7 @@ public class AllInvalidTests {
 	// Here we enumerate all available test cases.
 	@Parameters(name = "{0}")
 	public static Collection<Object[]> data() {
-		List<String> testNames = new ArrayList<String>();
-		for (File f : new File(WHILEY_SRC_DIR).listFiles()) {
-			if (f.isFile()) {
-				String name = f.getName();
-				if (name.endsWith(".whiley")) {
-					// Get rid of ".whiley" extension
-					String testName = name.substring(0, name.length() - 7);
-					testNames.add(testName);
-				}
-			}
-		}
-		Collections.sort(testNames);
-		ArrayList<Object[]> result = new ArrayList<Object[]>(testNames.size());
-		for (String testName : testNames) {
-			result.add(new Object[] { testName });
-		}
-		return result;
+		return TestUtils.findTestNames(WHILEY_SRC_DIR);
 	}
 
 	// Skip ignored tests
