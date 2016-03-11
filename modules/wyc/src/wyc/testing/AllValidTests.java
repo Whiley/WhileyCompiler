@@ -77,6 +77,8 @@ public class AllValidTests {
 	public final static Map<String, String> IGNORED = new HashMap<String, String>();
 
 	static {
+		IGNORED.put("Byte_Valid_3", "#592");
+		IGNORED.put("Byte_Valid_4", "#592");
 		IGNORED.put("Coercion_Valid_8", "#406");
 		IGNORED.put("Complex_Valid_3", "Issue ???");
 		IGNORED.put("ConstrainedIntersection_Valid_1", "unknown");
