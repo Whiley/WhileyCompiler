@@ -535,6 +535,7 @@ public class WhileyFileLexer {
 			put("do", Token.Kind.Do);
 			put("else", Token.Kind.Else);
 			put("ensures", Token.Kind.Ensures);
+			put("fail", Token.Kind.Fail);
 			put("for", Token.Kind.For);
 			put("if", Token.Kind.If);
 			put("new", Token.Kind.New);
@@ -576,487 +577,128 @@ public class WhileyFileLexer {
 		public enum Kind {
 			Identifier,
 			// Constants
-			True {
-				public String toString() {
-					return "true";
-				}
-			},
-			False {
-				public String toString() {
-					return "true";
-				}
-			},
+			True("true"),
+			False("false"),
 			ByteValue,
 			RealValue,
 			IntValue,
 			CharValue,
 			StringValue,
 			// Types
-			Null {
-				public String toString() {
-					return "null";
-				}
-			},
-			Void {
-				public String toString() {
-					return "void";
-				}
-			},
-			Any {
-				public String toString() {
-					return "any";
-				}
-			},
-			Bool {
-				public String toString() {
-					return "bool";
-				}
-			},
-			Byte {
-				public String toString() {
-					return "byte";
-				}
-			},
-			Int {
-				public String toString() {
-					return "int";
-				}
-			},
-			Real {
-				public String toString() {
-					return "real";
-				}
-			},
-			Char {
-				public String toString() {
-					return "char";
-				}
-			},
-			String {
-				public String toString() {
-					return "string";
-				}
-			},
+			Null("null"),
+			Void("void"),
+			Any("any"),
+			Bool("bool"),
+			Byte("byte"),
+			Int("int"),
+			Real("real"),
+			Char("char"),
+			String("string"),
 			// Statements
-			Assert {
-				public String toString() {
-					return "assert";
-				}
-			},
-			Assume {
-				public String toString() {
-					return "assume";
-				}
-			},
-			Break {
-				public String toString() {
-					return "break";
-				}
-			},
-			Case {
-				public String toString() {
-					return "case";
-				}
-			},
-			Catch {
-				public String toString() {
-					return "catch";
-				}
-			},
-			Continue {
-				public String toString() {
-					return "continue";
-				}
-			},
-			Debug {
-				public String toString() {
-					return "debug";
-				}
-			},
-			Default {
-				public String toString() {
-					return "default";
-				}
-			},
-			Do {
-				public String toString() {
-					return "do";
-				}
-			},
-			Else {
-				public String toString() {
-					return "else";
-				}
-			},
-			Ensures {
-				public String toString() {
-					return "ensures";
-				}
-			},
-			For {
-				public String toString() {
-					return "for";
-				}
-			},
-			If {
-				public String toString() {
-					return "if";
-				}
-			},
-			New {
-				public String toString() {
-					return "new";
-				}
-			},
-			Return {
-				public String toString() {
-					return "return";
-				}
-			},
-			Requires {
-				public String toString() {
-					return "requires";
-				}
-			},
-			Skip {
-				public String toString() {
-					return "skip";
-				}
-			},
-			Switch {
-				public String toString() {
-					return "switch";
-				}
-			},
-			Throw {
-				public String toString() {
-					return "throw";
-				}
-			},
-			Throws {
-				public String toString() {
-					return "throws";
-				}
-			},
-			Try {
-				public String toString() {
-					return "try";
-				}
-			},
-			While {
-				public String toString() {
-					return "while";
-				}
-			},
+			Assert("assert"),
+			Assume("assume"),
+			Break("break"),
+			Case("case"),
+			Catch("catch"),
+			Continue("continue"),
+			Debug("debug"),
+			Default("default"),
+			Do("do"),
+			Else("else"),
+			Ensures("ensures"),
+			For("for"),
+			Fail("for"),
+			If("if"),
+			New("new"),
+			Return("return"),
+			Requires("requires"),
+			Skip("skip"),
+			Switch("switch"),
+			Throw("throw"),
+			Throws("throws"),
+			Try("try"),
+			While("while"),
 			// Declarations
-			Package {
-				public String toString() {
-					return "package";
-				}
-			},
-			Import {
-				public String toString() {
-					return "import";
-				}
-			},
-			Public {
-				public String toString() {
-					return "public";
-				}
-			},
-			Private {
-				public String toString() {
-					return "private";
-				}
-			},			
-			Native {
-				public String toString() {
-					return "native";
-				}
-			},
-			Export {
-				public String toString() {
-					return "export";
-				}
-			},
-			Function {
-				public String toString() {
-					return "function";
-				}
-			},
-			Method {
-				public String toString() {
-					return "method";
-				}
-			},
+			Package("package"),
+			Import("import"),
+			Public("public"),
+			Private("private"),			
+			Native("native"),
+			Export("export"),
+			Function("function"),
+			Method("method"),
 			// Expressions
-			All {
-				public String toString() {
-					return "all";
-				}
-			},
-			No {
-				public String toString() {
-					return "no";
-				}
-			},
-			Some {
-				public String toString() {
-					return "some";
-				}
-			},
-			Is {
-				public String toString() {
-					return "is";
-				}
-			},
-			In {
-				public String toString() {
-					return "in";
-				}
-			},
-			Where {
-				public String toString() {
-					return "where";
-				}
-			},
-			Comma {
-				public String toString() {
-					return ",";
-				}
-			},
-			SemiColon {
-				public String toString() {
-					return ";";
-				}
-			},
-			Colon {
-				public String toString() {
-					return ":";
-				}
-			},
-			Ampersand {
-				public String toString() {
-					return "&";
-				}
-			},
-			VerticalBar {
-				public String toString() {
-					return "|";
-				}
-			},
-			LeftBrace {
-				public String toString() {
-					return "(";
-				}
-			},
-			RightBrace {
-				public String toString() {
-					return ")";
-				}
-			},
-			LeftSquare {
-				public String toString() {
-					return "[";
-				}
-			},
-			RightSquare {
-				public String toString() {
-					return "]";
-				}
-			},
-			LeftAngleLeftAngle {
-				public String toString() {
-					return "<<";
-				}
-			},
-			LeftAngle {
-				public String toString() {
-					return "<";
-				}
-			},
-			RightAngleRightAngle {
-				public String toString() {
-					return ">>";
-				}
-			},
-			RightAngle {
-				public String toString() {
-					return ">";
-				}
-			},
-			LeftCurly {
-				public String toString() {
-					return "{";
-				}
-			},
-			RightCurly {
-				public String toString() {
-					return "}";
-				}
-			},
-			PlusPlus {
-				public String toString() {
-					return "++";
-				}
-			},
-			Plus {
-				public String toString() {
-					return "+";
-				}
-			},
-			Minus {
-				public String toString() {
-					return "-";
-				}
-			},
-			Star {
-				public String toString() {
-					return "*";
-				}
-			},
-			LeftSlash {
-				public String toString() {
-					return "\\";
-				}
-			},
-			RightSlash {
-				public String toString() {
-					return "//";
-				}
-			},
-			Percent {
-				public String toString() {
-					return "%";
-				}
-			},
-			Shreak {
-				public String toString() {
-					return "!";
-				}
-			},
-			Caret {
-				public String toString() {
-					return "^";
-				}
-			},
-			Tilde {
-				public String toString() {
-					return "~";
-				}
-			},
-			Dot {
-				public String toString() {
-					return ".";
-				}
-			},
-			DotDot {
-				public String toString() {
-					return "..";
-				}
-			},
-			DotDotDot {
-				public String toString() {
-					return "...";
-				}
-			},
-			Equals {
-				public String toString() {
-					return "=";
-				}
-			},
-			EqualsEquals {
-				public String toString() {
-					return "==";
-				}
-			},
-			NotEquals {
-				public String toString() {
-					return "!=";
-				}
-			},
-			LessEquals {
-				public String toString() {
-					return "<=";
-				}
-			},
-			GreaterEquals {
-				public String toString() {
-					return ">=";
-				}
-			},
-			EqualsGreater {
-				public String toString() {
-					return "=>";
-				}
-			},
-			MinusGreater {
-				public String toString() {
-					return "->";
-				}
-			},
-			LogicalAnd {
-				public String toString() {
-					return "&&";
-				}
-			},
-			LogicalOr {
-				public String toString() {
-					return "||";
-				}
-			},
-			LogicalImplication {
-				public String toString() {
-					return "==>";
-				}
-			},
-			LogicalIff {
-				public String toString() {
-					return "<==>";
-				}
-			},
-			SetUnion {
-				public String toString() {
-					return "" + UC_SETUNION;
-				}
-			},
-			SetIntersection {
-				public String toString() {
-					return "" + UC_SETINTERSECTION;
-				}
-			},
-			ElementOf {
-				public String toString() {
-					return "" + UC_ELEMENTOF;
-				}
-			},
-			EmptySet {
-				public String toString() {
-					return "" + UC_EMPTYSET;
-				}
-			},
-			Subset {
-				public String toString() {
-					return "" + UC_SUBSET;
-				}
-			},
-			SubsetEquals {
-				public String toString() {
-					return "" + UC_SUBSETEQ;
-				}
-			},
-			Superset {
-				public String toString() {
-					return "" + UC_SUPSETEQ;
-				}
-			},
-			SupersetEquals {
-				public String toString() {
-					return "" + UC_SUPSETEQ;
-				}
-			},
+			All("all"),
+			No("no"),
+			Some("some"),
+			Is("is"),
+			In("in"),
+			Where("where"),
+			Comma(","),
+			SemiColon(";"),
+			Colon(":"),
+			Ampersand("&"),
+			VerticalBar("|"),
+			LeftBrace("("),
+			RightBrace(")"),
+			LeftSquare("["),
+			RightSquare("]"),
+			LeftAngleLeftAngle("<<"),
+			LeftAngle("<"),
+			RightAngleRightAngle(">>"),
+			RightAngle(">"),
+			LeftCurly("{"),
+			RightCurly("}"),
+			PlusPlus("++"),
+			Plus("+"),
+			Minus("-"),
+			Star("*"),
+			LeftSlash("\\"),
+			RightSlash("//"),
+			Percent("%"),
+			Shreak("!"),
+			Caret("^"),
+			Tilde("~"),
+			Dot("."),
+			DotDot(".."),
+			DotDotDot("..."),
+			Equals("="),
+			EqualsEquals("=="),
+			NotEquals("!="),
+			LessEquals("<="),
+			GreaterEquals(">="),
+			EqualsGreater("=>"),
+			MinusGreater("->"),
+			LogicalAnd("&&"),
+			LogicalOr("||"),
+			LogicalImplication("==>"),
+			LogicalIff("<==>"),
+			SetUnion("" + UC_SETUNION),
+			SetIntersection("" + UC_SETINTERSECTION),
+			ElementOf("" + UC_ELEMENTOF),
+			EmptySet("" + UC_EMPTYSET),
+			Subset("" + UC_SUBSET),
+			SubsetEquals("" + UC_SUBSETEQ),
+			Superset("" + UC_SUPSETEQ),
+			SupersetEquals("" + UC_SUPSETEQ),
 			// Other
-			NewLine, Indent, LineComment, BlockComment
+			NewLine, Indent, LineComment, BlockComment;
+
+			private final String displayString;
+
+			private Kind() {
+				this.displayString = null; // Use default toString
+			}
+
+			private Kind(String displayString) {
+				this.displayString = displayString;
+			}
+
+			@Override
+			public String toString() {
+				// Use displayString if present, otherwise default toString
+				return (displayString != null) ? displayString : super.toString();
+			}
 		}
 
 		public final Kind kind;

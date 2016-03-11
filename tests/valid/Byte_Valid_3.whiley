@@ -26,6 +26,6 @@ public export method test() :
         while j < |constants| where j >= 0:
             byte constant_j = constants[j]
             assume (constant_i | constant_j) == or(constant_i,constant_j)
-            j = j + 1
+            j = j + 3
         //
-        i = i + 1
+        i = i + 2

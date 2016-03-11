@@ -278,7 +278,7 @@ public interface Code {
 		 * @return
 		 */
 		public int target(int i) {
-			return targets[0];
+			return targets[i];
 		}
 		
 		/**

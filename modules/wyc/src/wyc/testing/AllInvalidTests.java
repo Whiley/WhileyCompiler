@@ -30,8 +30,17 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.*;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import wyc.WycMain;
 import wyc.util.WycBuildTask;
@@ -46,6 +55,7 @@ import wycc.util.Pair;
  * @author David J. Pearce
  *
  */
+@RunWith(Parameterized.class)
 public class AllInvalidTests {
 
 	/**
@@ -53,6 +63,77 @@ public class AllInvalidTests {
 	 * corresponds to a file in this directory.
 	 */
 	public final static String WHILEY_SRC_DIR = "../../tests/invalid".replace('/', File.separatorChar);
+
+	/**
+	 * Ignored tests and a reason why we ignore them.
+	 */
+	public final static Map<String, String> IGNORED = new HashMap<String, String>();
+
+	static {
+		IGNORED.put("Constant_Invalid_1", "unclassified");
+		IGNORED.put("ConstrainedDictionary_Invalid_1", "unclassified");
+		IGNORED.put("ConstrainedInt_Invalid_1", "unclassified");
+		IGNORED.put("ConstrainedInt_Invalid_10", "unclassified");
+		IGNORED.put("ConstrainedInt_Invalid_11", "unclassified");
+		IGNORED.put("ConstrainedInt_Invalid_12", "unclassified");
+		IGNORED.put("ConstrainedInt_Invalid_7", "timeout");
+		IGNORED.put("ConstrainedInt_Invalid_8", "timeout");
+		IGNORED.put("ConstrainedInt_Invalid_9", "Timeout");
+		IGNORED.put("ConstrainedList_Invalid_2", "unclassified");
+		IGNORED.put("ConstrainedList_Invalid_3", "unclassified");
+		IGNORED.put("Contractive_Invalid_1", "#425");
+		IGNORED.put("Contractive_Invalid_2", "unclassified");
+		IGNORED.put("EndOfFile_Invalid_1", "unclassified");
+		IGNORED.put("Export_Invalid_1", "unclassified");
+		IGNORED.put("Function_Invalid_10", "unclassified");
+		IGNORED.put("Function_Invalid_2", "unclassified");
+		IGNORED.put("Function_Invalid_9", "unclassified");
+		IGNORED.put("Intersection_Invalid_1", "unclassified");
+		IGNORED.put("Intersection_Invalid_2", "unclassified");
+		IGNORED.put("Lambda_Invalid_3", "unclassified");
+		IGNORED.put("ListAssign_Invalid_2", "Infinite Loop?");
+		IGNORED.put("ListAssign_Invalid_3", "Infinite Loop?");
+		IGNORED.put("ListEquals_Invalid_1", "unclassified");
+		IGNORED.put("ListLength_Invalid_2", "Timeout");
+		IGNORED.put("ListUpdate_Invalid_1", "unclassified");
+		IGNORED.put("MethodRef_Invalid_1", "unclassified");
+		IGNORED.put("MethodRef_Invalid_2", "unclassified");
+		IGNORED.put("MethodRef_Invalid_3", "unclassified");
+		IGNORED.put("Native_Invalid_1", "unclassified");
+		IGNORED.put("NegationType_Invalid_2", "unclassified");
+		IGNORED.put("OpenRecord_Invalid_1", "wrong output");
+		IGNORED.put("OpenRecord_Invalid_2", "unclassified");
+		IGNORED.put("RecursiveType_Invalid_1", "unclassified");
+		IGNORED.put("RecursiveType_Invalid_10", "unclassified");
+		IGNORED.put("RecursiveType_Invalid_2", "unclassified");
+		IGNORED.put("RecursiveType_Invalid_4", "unclassified");
+		IGNORED.put("RecursiveType_Invalid_7", "unclassified");
+		IGNORED.put("RecursiveType_Invalid_8", "unclassified");
+		IGNORED.put("RecursiveType_Invalid_9", "unclassified");
+		IGNORED.put("ReferenceOpenRecord_Invalid_1", "#585");
+		IGNORED.put("Subtype_Invalid_6", "unclassified");
+		IGNORED.put("Subtype_Invalid_8", "unclassified");
+		IGNORED.put("Subtype_Invalid_9", "unclassified");
+		IGNORED.put("Switch_Invalid_6", "unclassified");
+		IGNORED.put("TupleAssign_Invalid_1", "unclassified");
+		IGNORED.put("TupleAssign_Invalid_2", "unclassified");
+		IGNORED.put("TupleAssign_Invalid_3", "unclassified");
+		IGNORED.put("TupleDefine_Invalid_2", "unclassified");
+		IGNORED.put("Tuple_Invalid_3", "unclassified");
+		IGNORED.put("Tuple_Invalid_4", "unclassified");
+		IGNORED.put("Tuple_Invalid_5", "unclassified");
+		IGNORED.put("Tuple_Invalid_6", "unclassified");
+		IGNORED.put("Tuple_Invalid_7", "unclassified");
+		IGNORED.put("TypeEquals_Invalid_5", "unclassified");
+		IGNORED.put("UnionType_Invalid_10", "#469");
+		IGNORED.put("UnionType_Invalid_7", "unclassified");
+		IGNORED.put("UnionType_Invalid_8", "unclassified");
+		IGNORED.put("UnionType_Invalid_9", "#348");
+		IGNORED.put("Void_Invalid_1", "unclassified");
+		IGNORED.put("Void_Invalid_2", "unclassified");
+		IGNORED.put("Void_Invalid_3", "unclassified");
+		IGNORED.put("While_Invalid_12", "unclassified");
+	}	
 
 	/**
 	 * The directory where compiler libraries are stored. This is necessary
@@ -134,1084 +215,28 @@ public class AllInvalidTests {
 	// Tests
 	// ======================================================================
 
-	@Test
-	public void Assert_Invalid_1() {
-		runTest("Assert_Invalid_1");
-	}
-
-	@Test
-	public void Assert_Invalid_2() {
-		runTest("Assert_Invalid_2");
-	}
-
-	@Test
-	public void Assign_Invalid_1() {
-		runTest("Assign_Invalid_1");
-	}
-
-	@Test
-	public void Assign_Invalid_2() {
-		runTest("Assign_Invalid_2");
-	}
-
-	@Test
-	public void Assign_Invalid_3() {
-		runTest("Assign_Invalid_3");
-	}
-
-	@Test
-	public void Assign_Invalid_4() {
-		runTest("Assign_Invalid_4");
-	}
-
-	@Test
-	public void Assign_Invalid_5() {
-		runTest("Assign_Invalid_5");
-	}
-
-	@Test
-	public void Assign_Invalid_6() {
-		runTest("Assign_Invalid_6");
-	}
-
-	@Test
-	public void Assign_Invalid_7() {
-		runTest("Assign_Invalid_7");
-	}
-
-	@Test
-	public void Assign_Invalid_8() {
-		runTest("Assign_Invalid_8");
-	}
-
-	@Test
-	public void Assign_Invalid_9() {
-		runTest("Assign_Invalid_9");
-	}
-
-	@Test
-	public void Byte_Invalid_1() {
-		runTest("Byte_Invalid_1");
-	}
-
-	@Test
-	public void Coercion_Invalid_2() {
-		runTest("Coercion_Invalid_2");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Constant_Invalid_1() {
-		runTest("Constant_Invalid_1");
-	}
-
-	@Test
-	public void Constant_Invalid_2() {
-		runTest("Constant_Invalid_2");
-	}
-
-	@Ignore("unclassified") @Test
-	public void ConstrainedDictionary_Invalid_1() {
-		runTest("ConstrainedDictionary_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void ConstrainedInt_Invalid_1() {
-		runTest("ConstrainedInt_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void ConstrainedInt_Invalid_10() {
-		runTest("ConstrainedInt_Invalid_10");
-	}
-
-	@Ignore("unclassified") @Test
-	public void ConstrainedInt_Invalid_11() {
-		runTest("ConstrainedInt_Invalid_11");
-	}
-
-	@Ignore("unclassified") @Test
-	public void ConstrainedInt_Invalid_12() {
-		runTest("ConstrainedInt_Invalid_12");
-	}
-
-	@Test
-	public void ConstrainedInt_Invalid_2() {
-		runTest("ConstrainedInt_Invalid_2");
-	}
-
-	@Test
-	public void ConstrainedInt_Invalid_3() {
-		runTest("ConstrainedInt_Invalid_3");
-	}
-
-	@Test
-	public void ConstrainedInt_Invalid_4() {
-		runTest("ConstrainedInt_Invalid_4");
-	}
-
-	@Test
-	public void ConstrainedInt_Invalid_5() {
-		runTest("ConstrainedInt_Invalid_5");
-	}
-
-	@Test
-	public void ConstrainedInt_Invalid_6() {
-		runTest("ConstrainedInt_Invalid_6");
-	}
-
-	@Ignore("timeout") @Test
-	public void ConstrainedInt_Invalid_7() {
-		runTest("ConstrainedInt_Invalid_7");
-	}
-
-	@Ignore("timeout") @Test
-	public void ConstrainedInt_Invalid_8() {
-		runTest("ConstrainedInt_Invalid_8");
-	}
-
-	@Ignore("Timeout") @Test
-	public void ConstrainedInt_Invalid_9() {
-		runTest("ConstrainedInt_Invalid_9");
-	}
-
-	@Test
-	public void ConstrainedList_Invalid_1() {
-		runTest("ConstrainedList_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void ConstrainedList_Invalid_2() {
-		runTest("ConstrainedList_Invalid_2");
-	}
-
-	@Ignore("unclassified") @Test
-	public void ConstrainedList_Invalid_3() {
-		runTest("ConstrainedList_Invalid_3");
-	}
-
-	@Test
-	public void ConstrainedRecord_Invalid_1() {
-		runTest("ConstrainedRecord_Invalid_1");
-	}
-
-	@Ignore("#425") @Test
-	public void Contractive_Invalid_1() {
-		runTest("Contractive_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Contractive_Invalid_2() {
-		runTest("Contractive_Invalid_2");
-	}
-
-	@Test
-	public void DefiniteAssign_Invalid_1() {
-		runTest("DefiniteAssign_Invalid_1");
-	}
-
-	@Test
-	public void DefiniteAssign_Invalid_2() {
-		runTest("DefiniteAssign_Invalid_2");
-	}
-
-	@Test
-	public void DefiniteAssign_Invalid_3() {
-		runTest("DefiniteAssign_Invalid_3");
-	}
-
-	@Test
-	public void DefiniteAssign_Invalid_4() {
-		runTest("DefiniteAssign_Invalid_4");
-	}
-
-	@Ignore("unclassified") @Test
-	public void EndOfFile_Invalid_1() {
-		runTest("EndOfFile_Invalid_1");
-	}
-
-	@Test
-	public void Ensures_Invalid_1() {
-		runTest("Ensures_Invalid_1");
-	}
-
-	@Test
-	public void Ensures_Invalid_2() {
-		runTest("Ensures_Invalid_2");
-	}
-
-	@Test
-	public void Ensures_Invalid_3() {
-		runTest("Ensures_Invalid_3");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Export_Invalid_1() {
-		runTest("Export_Invalid_1");
-	}
-
-	@Test
-	public void FunctionRef_Invalid_1() {
-		runTest("FunctionRef_Invalid_1");
-	}
-
-	@Test
-	public void FunctionRef_Invalid_2() {
-		runTest("FunctionRef_Invalid_2");
-	}
-
-	@Test
-	public void FunctionRef_Invalid_3() {
-		runTest("FunctionRef_Invalid_3");
-	}
-
-	@Test
-	public void FunctionRef_Invalid_4() {
-		runTest("FunctionRef_Invalid_4");
-	}
-
-	@Test
-	public void FunctionRef_Invalid_5() {
-		runTest("FunctionRef_Invalid_5");
-	}
-
-	@Test
-	public void FunctionRef_Invalid_6() {
-		runTest("FunctionRef_Invalid_6");
-	}
-
-	@Test
-	public void FunctionRef_Invalid_7() {
-		runTest("FunctionRef_Invalid_7");
-	}
-
-	@Test
-	public void Function_Invalid_1() {
-		runTest("Function_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Function_Invalid_10() {
-		runTest("Function_Invalid_10");
-	}
-
-	@Ignore("Internal Failure") @Test
-	public void Function_Invalid_2() {
-		runTest("Function_Invalid_2");
-	}
-
-	@Test
-	public void Function_Invalid_3() {
-		runTest("Function_Invalid_3");
-	}
-
-	@Test
-	public void Function_Invalid_4() {
-		runTest("Function_Invalid_4");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Function_Invalid_9() {
-		runTest("Function_Invalid_9");
-	}
-
-	@Test
-	public void If_Invalid_1() {
-		runTest("If_Invalid_1");
-	}
-
-	@Test
-	public void If_Invalid_2() {
-		runTest("If_Invalid_2");
-	}
-
-	@Test
-	public void If_Invalid_4() {
-		runTest("If_Invalid_4");
-	}
-
-	@Test
-	public void If_Invalid_5() {
-		runTest("If_Invalid_5");
-	}
-
-	@Test
-	public void Import_Invalid_1() {
-		runTest("Import_Invalid_1");
-	}
-
-	@Test
-	public void IntDiv_Invalid_1() {
-		runTest("IntDiv_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Intersection_Invalid_1() {
-		runTest("Intersection_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Intersection_Invalid_2() {
-		runTest("Intersection_Invalid_2");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Lambda_Invalid_3() {
-		runTest("Lambda_Invalid_3");
-	}
-
-	@Test
-	public void ListAccess_Invalid_1() {
-		runTest("ListAccess_Invalid_1");
-	}
-
-	@Test
-	public void ListAccess_Invalid_2() {
-		runTest("ListAccess_Invalid_2");
-	}
-
-	@Test
-	public void ListAccess_Invalid_3() {
-		runTest("ListAccess_Invalid_3");
-	}
-
-	@Test
-	public void ListAccess_Invalid_4() {
-		runTest("ListAccess_Invalid_4");
-	}
-
-	@Test
-	public void ListAccess_Invalid_5() {
-		runTest("ListAccess_Invalid_5");
-	}
-	
-	@Test
-	public void ListAssign_Invalid_1() {
-		runTest("ListAssign_Invalid_1");
-	}
-
-	@Ignore("Infinite Loop?") @Test
-	public void ListAssign_Invalid_2() {
-		runTest("ListAssign_Invalid_2");
-	}
-
-	@Ignore("Infinite Loop?") @Test
-	public void ListAssign_Invalid_3() {
-		runTest("ListAssign_Invalid_3");
-	}
-
-	@Test
-	public void ListConversion_Invalid_1() {
-		runTest("ListConversion_Invalid_1");
-	}
-
-	@Test
-	public void ListEmpty_Invalid_1() {
-		runTest("ListEmpty_Invalid_1");
-	}
-
-	@Test
-	public void ListEmpty_Invalid_2() {
-		runTest("ListEmpty_Invalid_2");
-	}
-
-	@Ignore("unclassified") @Test
-	public void ListEquals_Invalid_1() {
-		runTest("ListEquals_Invalid_1");
-	}
-
-	@Test
-	public void ListGenerator_Invalid_1() {
-		runTest("ListGenerator_Invalid_1");	
-	}
-	
-	@Test
-	public void ListGenerator_Invalid_2() {
-		runTest("ListGenerator_Invalid_2");
-	}
-	
-	@Test
-	public void ListGenerator_Invalid_3() {
-		runTest("ListGenerator_Invalid_3");
-	}
-	
-	@Test
-	public void ListGenerator_Invalid_4() {
-		runTest("ListGenerator_Invalid_4");
-	}
-	
-	@Test
-	public void ListLength_Invalid_1() {
-		runTest("ListLength_Invalid_1");
-	}
-
-	@Ignore("Timeout") @Test
-	public void ListLength_Invalid_2() {
-		runTest("ListLength_Invalid_2");
-	}
-
-	@Test
-	public void ListLength_Invalid_3() {
-		runTest("ListLength_Invalid_3");
-	}
-	
-	@Ignore("unclassified") @Test
-	public void ListUpdate_Invalid_1() {
-		runTest("ListUpdate_Invalid_1");
-	}
-
-	@Test
-	public void List_Invalid_1() {
-		runTest("List_Invalid_1");
-	}
-
-	@Test
-	public void List_Invalid_2() {
-		runTest("List_Invalid_2");
-	}
-
-	@Test
-	public void List_Invalid_3() {
-		runTest("List_Invalid_3");
-	}
-
-	@Test
-	public void List_Invalid_4() {
-		runTest("List_Invalid_4");
-	}
-
-	@Test
-	public void List_Invalid_5() {
-		runTest("List_Invalid_5");
-	}
-
-	@Test
-	public void List_Invalid_6() {
-		runTest("List_Invalid_6");
-	}
-
-	@Test
-	public void List_Invalid_7() {
-		runTest("List_Invalid_7");
-	}
-
-
-	@Test
-	public void MethodCall_Invalid_1() {
-		runTest("MethodCall_Invalid_1");
-	}
-
-	@Test
-	public void MethodCall_Invalid_2() {
-		runTest("MethodCall_Invalid_2");
-	}
-
-	@Test
-	public void MethodCall_Invalid_3() {
-		runTest("MethodCall_Invalid_3");
-	}
-
-	@Test
-	public void MethodCall_Invalid_4() {
-		runTest("MethodCall_Invalid_4");
-	}
-
-	@Test
-	public void MethodCall_Invalid_5() {
-		runTest("MethodCall_Invalid_5");
-	}
-
-	@Test
-	public void MethodCall_Invalid_6() {
-		runTest("MethodCall_Invalid_6");
-	}
-
-	@Test
-	public void MethodCall_Invalid_7() {
-		runTest("MethodCall_Invalid_7");
-	}
-
-	@Test
-	public void MethodCall_Invalid_8() {
-		runTest("MethodCall_Invalid_8");
-	}
-
-	@Ignore("unclassified") @Test
-	public void MethodRef_Invalid_1() {
-		runTest("MethodRef_Invalid_1");
-	}
-
-	@Ignore("Internal Failure") @Test
-	public void MethodRef_Invalid_2() {
-		runTest("MethodRef_Invalid_2");
-	}
-
-	@Ignore("unclassified") @Test
-	public void MethodRef_Invalid_3() {
-		runTest("MethodRef_Invalid_3");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Native_Invalid_1() {
-		runTest("Native_Invalid_1");
-	}
-
-	@Test
-	public void NegationType_Invalid_1() {
-		runTest("NegationType_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void NegationType_Invalid_2() {
-		runTest("NegationType_Invalid_2");
-	}
-
-	@Test
-	public void NegationType_Invalid_3() {
-		runTest("NegationType_Invalid_3");
-	}
-
-	@Ignore("wrong output") @Test
-	public void OpenRecord_Invalid_1() {
-		runTest("OpenRecord_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void OpenRecord_Invalid_2() {
-		runTest("OpenRecord_Invalid_2");
-	}
-
-	@Test
-	public void OpenRecord_Invalid_3() {
-		runTest("OpenRecord_Invalid_3");
-	}
-
-	@Test
-	public void OpenRecord_Invalid_4() {
-		runTest("OpenRecord_Invalid_4");
-	}
-
-	@Test
-	public void OpenRecord_Invalid_5() {
-		runTest("OpenRecord_Invalid_5");
-	}
-
-	@Test
-	public void OpenRecord_Invalid_6() {
-		runTest("OpenRecord_Invalid_6");
-	}
-
-	@Test
-	public void OpenRecord_Invalid_7() {
-		runTest("OpenRecord_Invalid_7");
-	}
-
-	@Test
-	public void Parameter_Invalid_1() {
-		runTest("Parameter_Invalid_1");
-	}
-
-	@Test
-	public void Parameter_Invalid_2() {
-		runTest("Parameter_Invalid_2");
-	}
-
-	@Test
-	public void ProcessAccess_Invalid_1() {
-		runTest("ProcessAccess_Invalid_1");
-	}
-
-	@Test
-	public void ProcessAccess_Invalid_2() {
-		runTest("ProcessAccess_Invalid_2");
-	}
-
-	@Test
-	public void ProcessAccess_Invalid_3() {
-		runTest("ProcessAccess_Invalid_3");
-	}
-
-	@Test
-	public void Process_Invalid_1() {
-		runTest("Process_Invalid_1");
-	}
-
-	@Test
-	public void Quantifiers_Invalid_1() {
-		runTest("Quantifiers_Invalid_1");
-	}
-
-	@Test
-	public void Quantifiers_Invalid_2() {
-		runTest("Quantifiers_Invalid_2");
-	}
-
-	@Test
-	public void Quantifiers_Invalid_3() {
-		runTest("Quantifiers_Invalid_3");
-	}
-
-	@Test
-	public void Quantifiers_Invalid_4() {
-		runTest("Quantifiers_Invalid_4");
-	}
-
-	@Test
-	public void Quantifiers_Invalid_5() {
-		runTest("Quantifiers_Invalid_5");
-	}
-
-	@Test
-	public void Quantifiers_Invalid_6() {
-		runTest("Quantifiers_Invalid_6");
-	}
-
-	@Test
-	public void Quantifiers_Invalid_7() {
-		runTest("Quantifiers_Invalid_7");
-	}
-
-	@Test
-	public void Quantifiers_Invalid_8() {
-		runTest("Quantifiers_Invalid_8");
-	}
-
-	@Test
-	public void Record_Invalid_1() {
-		runTest("Record_Invalid_1");
-	}
-
-	@Test
-	public void Record_Invalid_2() {
-		runTest("Record_Invalid_2");
-	}
-
-	@Test
-	public void Record_Invalid_3() {
-		runTest("Record_Invalid_3");
-	}
-
-	@Ignore("unclassified") @Test
-	public void RecursiveType_Invalid_1() {
-		runTest("RecursiveType_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void RecursiveType_Invalid_10() {
-		runTest("RecursiveType_Invalid_10");
-	}
-
-	@Ignore("unclassified") @Test
-	public void RecursiveType_Invalid_2() {
-		runTest("RecursiveType_Invalid_2");
-	}
-
-	@Test
-	public void RecursiveType_Invalid_3() {
-		runTest("RecursiveType_Invalid_3");
-	}
-
-	@Ignore("unclassified") @Test
-	public void RecursiveType_Invalid_4() {
-		runTest("RecursiveType_Invalid_4");
-	}
-
-	@Test
-	public void RecursiveType_Invalid_5() {
-		runTest("RecursiveType_Invalid_5");
-	}
-
-	@Ignore("unclassified") @Test
-	public void RecursiveType_Invalid_7() {
-		runTest("RecursiveType_Invalid_7");
-	}
-
-	@Ignore("unclassified") @Test
-	public void RecursiveType_Invalid_8() {
-		runTest("RecursiveType_Invalid_8");
-	}
-
-	@Ignore("unclassified") @Test
-	public void RecursiveType_Invalid_9() {
-		runTest("RecursiveType_Invalid_9");
-	}
-
-	@Test
-	public void Remainder_Invalid_1() {
-		runTest("Remainder_Invalid_1");
-	}
-
-	@Test
-	public void Remainder_Invalid_2() {
-		runTest("Remainder_Invalid_2");
-	}
-
-	@Test
-	public void Remainder_Invalid_3() {
-		runTest("Remainder_Invalid_3");
-	}
-
-	@Test
-	public void Requires_Invalid_1() {
-		runTest("Requires_Invalid_1");
-	}
-
-	@Test
-	public void Return_Invalid_1() {
-		runTest("Return_Invalid_1");
-	}
-
-	@Test
-	public void Return_Invalid_10() {
-		runTest("Return_Invalid_10");
-	}
-
-	@Test
-	public void Return_Invalid_11() {
-		runTest("Return_Invalid_11");
-	}
-
-	@Test
-	public void Return_Invalid_2() {
-		runTest("Return_Invalid_2");
-	}
-
-	@Test
-	public void Return_Invalid_3() {
-		runTest("Return_Invalid_3");
-	}
-
-	@Test
-	public void Return_Invalid_4() {
-		runTest("Return_Invalid_4");
-	}
-
-	@Test
-	public void Return_Invalid_5() {
-		runTest("Return_Invalid_5");
-	}
-
-	@Test
-	public void Return_Invalid_6() {
-		runTest("Return_Invalid_6");
-	}
-
-	@Test
-	public void Return_Invalid_7() {
-		runTest("Return_Invalid_7");
-	}
-
-	@Test
-	public void Return_Invalid_8() {
-		runTest("Return_Invalid_8");
-	}
-
-	@Test
-	public void Return_Invalid_9() {
-		runTest("Return_Invalid_9");
-	}
-
-	@Test
-	public void Subtype_Invalid_1() {
-		runTest("Subtype_Invalid_1");
-	}
-
-	@Test
-	public void Subtype_Invalid_2() {
-		runTest("Subtype_Invalid_2");
-	}
-
-	@Test
-	public void Subtype_Invalid_3() {
-		runTest("Subtype_Invalid_3");
-	}
-
-	@Test
-	public void Subtype_Invalid_4() {
-		runTest("Subtype_Invalid_4");
-	}
-
-	@Test
-	public void Subtype_Invalid_5() {
-		runTest("Subtype_Invalid_5");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Subtype_Invalid_6() {
-		runTest("Subtype_Invalid_6");
-	}
-
-	@Test
-	public void Subtype_Invalid_7() {
-		runTest("Subtype_Invalid_7");
-	}
-
-	@Ignore("Infinite Loop") @Test
-	public void Subtype_Invalid_8() {
-		runTest("Subtype_Invalid_8");
-	}
-
-	@Ignore("timeout") @Test
-	public void Subtype_Invalid_9() {
-		runTest("Subtype_Invalid_9");
-	}
-
-	@Test
-	public void Switch_Invalid_1() {
-		runTest("Switch_Invalid_1");
-	}
-
-	@Test
-	public void Switch_Invalid_2() {
-		runTest("Switch_Invalid_2");
-	}
-
-	@Test
-	public void Switch_Invalid_3() {
-		runTest("Switch_Invalid_3");
-	}
-
-	@Test
-	public void Switch_Invalid_4() {
-		runTest("Switch_Invalid_4");
-	}
-
-	@Test
-	public void Switch_Invalid_5() {
-		runTest("Switch_Invalid_5");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Switch_Invalid_6() {
-		runTest("Switch_Invalid_6");
-	}
-
-	@Test
-	public void Switch_Invalid_7() {
-		runTest("Switch_Invalid_7");
-	}
-
-	@Ignore("unclassified") @Test
-	public void TupleAssign_Invalid_1() {
-		runTest("TupleAssign_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void TupleAssign_Invalid_2() {
-		runTest("TupleAssign_Invalid_2");
-	}
-
-	@Ignore("unclassified") @Test
-	public void TupleAssign_Invalid_3() {
-		runTest("TupleAssign_Invalid_3");
-	}
-
-	@Test
-	public void TupleDefine_Invalid_1() {
-		runTest("TupleDefine_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void TupleDefine_Invalid_2() {
-		runTest("TupleDefine_Invalid_2");
-	}
-
-	@Test
-	public void MultiAssign_Invalid_1() {
-		runTest("MultiAssign_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Tuple_Invalid_3() {
-		runTest("Tuple_Invalid_3");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Tuple_Invalid_4() {
-		runTest("Tuple_Invalid_4");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Tuple_Invalid_5() {
-		runTest("Tuple_Invalid_5");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Tuple_Invalid_6() {
-		runTest("Tuple_Invalid_6");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Tuple_Invalid_7() {
-		runTest("Tuple_Invalid_7");
-	}
-
-	@Test
-	public void TypeEquals_Invalid_1() {
-		runTest("TypeEquals_Invalid_1");
-	}
-
-	@Test
-	public void TypeEquals_Invalid_2() {
-		runTest("TypeEquals_Invalid_2");
-	}
-
-	@Ignore("unclassified") @Test
-	public void TypeEquals_Invalid_5() {
-		runTest("TypeEquals_Invalid_5");
-	}
-
-	@Test
-	public void TypeEquals_Invalid_6() {
-		runTest("TypeEquals_Invalid_6");
-	}
-
-	@Test
-	public void UnionType_Invalid_1() {
-		runTest("UnionType_Invalid_1");
-	}
-
-	@Ignore("#469") @Test
-	public void UnionType_Invalid_10() {
-		runTest("UnionType_Invalid_10");
-	}
-
-	@Test
-	public void UnionType_Invalid_2() {
-		runTest("UnionType_Invalid_2");
-	}
-
-	@Test
-	public void UnionType_Invalid_3() {
-		runTest("UnionType_Invalid_3");
-	}
-
-	@Test
-	public void UnionType_Invalid_4() {
-		runTest("UnionType_Invalid_4");
-	}
-
-	@Test
-	public void UnionType_Invalid_5() {
-		runTest("UnionType_Invalid_5");
-	}
-
-	@Test
-	public void UnionType_Invalid_6() {
-		runTest("UnionType_Invalid_6");
-	}
-
-	@Ignore("unclassified") @Test
-	public void UnionType_Invalid_7() {
-		runTest("UnionType_Invalid_7");
-	}
-
-	@Ignore("unclassified") @Test
-	public void UnionType_Invalid_8() {
-		runTest("UnionType_Invalid_8");
-	}
-
-	@Ignore("#348") @Test
-	public void UnionType_Invalid_9() {
-		runTest("UnionType_Invalid_9");
-	}
-
-	@Test
-	public void VarDecl_Invalid_1() {
-		runTest("VarDecl_Invalid_1");
-	}
-
-	@Test
-	public void VarDecl_Invalid_2() {
-		runTest("VarDecl_Invalid_2");
-	}
-
-	@Test
-	public void VarDecl_Invalid_3() {
-		runTest("VarDecl_Invalid_3");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Void_Invalid_1() {
-		runTest("Void_Invalid_1");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Void_Invalid_2() {
-		runTest("Void_Invalid_2");
-	}
-
-	@Ignore("unclassified") @Test
-	public void Void_Invalid_3() {
-		runTest("Void_Invalid_3");
-	}
-
-	@Test
-	public void While_Invalid_1() {
-		runTest("While_Invalid_1");
-	}
-
-	@Test
-	public void While_Invalid_10() {
-		runTest("While_Invalid_10");
-	}
-
-	@Test
-	public void While_Invalid_11() {
-		runTest("While_Invalid_11");
-	}
-
-	@Ignore("unclassified") @Test
-	public void While_Invalid_12() {
-		runTest("While_Invalid_12");
-	}
-
-	@Test
-	public void While_Invalid_13() {
-		runTest("While_Invalid_13");
-	}
-
-	@Test
-	public void While_Invalid_2() {
-		runTest("While_Invalid_2");
+	// Parameter to test case is the name of the current test.
+	// It will be passed to the constructor by JUnit.
+	private final String testName;
+	public AllInvalidTests(String testName) {
+		this.testName = testName;
 	}
 
-	@Test
-	public void While_Invalid_3() {
-		runTest("While_Invalid_3");
-	}
-
-	@Test
-	public void While_Invalid_4() {
-		runTest("While_Invalid_4");
-	}
-
-	@Test
-	public void While_Invalid_5() {
-		runTest("While_Invalid_5");
-	}
-
-	@Test
-	public void While_Invalid_6() {
-		runTest("While_Invalid_6");
-	}
-
-	@Test
-	public void While_Invalid_7() {
-		runTest("While_Invalid_7");
-	}
-
-	@Test
-	public void While_Invalid_8() {
-		runTest("While_Invalid_8");
+	// Here we enumerate all available test cases.
+	@Parameters(name = "{0}")
+	public static Collection<Object[]> data() {
+		return TestUtils.findTestNames(WHILEY_SRC_DIR);
 	}
 
-	@Test
-	public void While_Invalid_9() {
-		runTest("While_Invalid_9");
+	// Skip ignored tests
+	@Before
+	public void beforeMethod() {
+		String ignored = IGNORED.get(this.testName);
+		Assume.assumeTrue("Test " + this.testName + " skipped: " + ignored, ignored == null);
 	}
 
 	@Test
-	public void XOR_Invalid_1() {
-		runTest("XOR_Invalid_1");
+	public void invalid() throws IOException {
+		runTest(this.testName);
 	}
 }

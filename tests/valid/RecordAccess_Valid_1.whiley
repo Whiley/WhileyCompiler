@@ -9,5 +9,5 @@ method get(Ptype this) -> int:
     return this->mode
 
 public export method test() :
-    assume get(new {mode:2}) == 1
-    assume get(new {mode:3,x:1}) == 1
+    assume get(new (etype) {mode:2}) == 1
+    assume get(new (etype) {mode:3,x:1}) == 1

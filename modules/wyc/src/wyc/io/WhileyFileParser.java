@@ -630,6 +630,8 @@ public class WhileyFileParser {
 			return parseDoWhileStatement(wf, environment, indent);
 		case Debug:
 			return parseDebugStatement(wf, environment);
+		case Fail:
+			return parseFailStatement(environment);
 		case If:
 			return parseIfStatement(wf, environment, indent);
 		case Return:
@@ -820,7 +822,7 @@ public class WhileyFileParser {
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this statement.
 	 *
-	 * @see wyc.lang.Stmt.Debug
+	 * @see wyc.lang.Stmt.Assert
 	 * @return
 	 */
 	private Stmt.Assert parseAssertStatement(WhileyFile wf,
@@ -854,7 +856,7 @@ public class WhileyFileParser {
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this statement.
 	 *
-	 * @see wyc.lang.Stmt.Debug
+	 * @see wyc.lang.Stmt.Assume
 	 * @return
 	 */
 	private Stmt.Assume parseAssumeStatement(WhileyFile wf,
@@ -884,7 +886,7 @@ public class WhileyFileParser {
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this statement.
 	 *
-	 * @see wyc.lang.Stmt.Debug
+	 * @see wyc.lang.Stmt.Break
 	 * @return
 	 */
 	private Stmt.Break parseBreakStatement(HashSet<String> environment) {
@@ -909,7 +911,7 @@ public class WhileyFileParser {
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this statement.
 	 *
-	 * @see wyc.lang.Stmt.Debug
+	 * @see wyc.lang.Stmt.Continue
 	 * @return
 	 */
 	private Stmt.Continue parseContinueStatement(HashSet<String> environment) {
@@ -1000,6 +1002,30 @@ public class WhileyFileParser {
 		matchEndLine();
 		return new Stmt.DoWhile(condition, invariants, blk, sourceAttr(start,
 				end - 1));
+	}
+
+	/**
+	 * Parse a fail statement, which is of the form:
+	 *
+	 * <pre>
+	 * FailStmt ::= "fail"
+	 * </pre>
+	 *
+	 * @param environment
+	 *            The set of declared variables visible in the enclosing scope.
+	 *            The environment is not used by the fail statement.
+	 *
+	 * @see wyc.lang.Stmt.Fail
+	 * @return
+	 */
+	private Stmt.Fail parseFailStatement(HashSet<String> environment) {
+		int start = index;
+		// Match the fail keyword
+		match(Fail);
+		int end = index;
+		matchEndLine();
+		// Done.
+		return new Stmt.Fail(sourceAttr(start, end - 1));
 	}
 
 	/**
@@ -1119,7 +1145,7 @@ public class WhileyFileParser {
 	 *            This is necessary to identify local variables within
 	 *            expressions used in this statement.
 	 *
-	 * @see wyc.lang.Stmt.Debug
+	 * @see wyc.lang.Stmt.Skip
 	 * @return
 	 */
 	private Stmt.Skip parseSkipStatement(HashSet<String> environment) {
@@ -3592,7 +3618,7 @@ public class WhileyFileParser {
 	private SyntacticType parseNegationType() {
 		int start = index;
 		match(Shreak);
-		SyntacticType element = parseType();
+		SyntacticType element = parseArrayType();
 		return new SyntacticType.Negation(element, sourceAttr(start, index - 1));
 	}
 
@@ -3608,7 +3634,7 @@ public class WhileyFileParser {
 	private SyntacticType parseReferenceType() {
 		int start = index;
 		match(Ampersand);
-		SyntacticType element = parseType();
+		SyntacticType element = parseArrayType();
 		return new SyntacticType.Reference(element,
 				sourceAttr(start, index - 1));
 	}

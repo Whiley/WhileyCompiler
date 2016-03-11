@@ -1,0 +1,3 @@
+../../tests/invalid/Continue_Invalid_2.whiley:4: unreachable code encountered (i.e. execution can never reach this statement)
+        x = x + 1
+        ^^^^^^^^^

@@ -3,7 +3,7 @@
 type MyProc2 is {any data}
 
 method set(&MyProc2 this, int d) :
-    this->data = d
+    this->data = (any)d
 
 method get(&MyProc2 this) -> any:
     return this->data

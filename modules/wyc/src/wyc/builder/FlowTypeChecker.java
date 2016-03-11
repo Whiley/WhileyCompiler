@@ -351,7 +351,10 @@ public class FlowTypeChecker {
 	 * @return
 	 */
 	private Environment propagate(Stmt stmt, Environment environment) {
-
+		if (environment == BOTTOM) {
+			syntaxError(errorMessage(UNREACHABLE_CODE), filename, stmt);
+			return null; // dead code
+		}
 		try {
 			if (stmt instanceof Stmt.VariableDeclaration) {
 				return propagate((Stmt.VariableDeclaration) stmt, environment);
@@ -375,6 +378,8 @@ public class FlowTypeChecker {
 				return propagate((Stmt.Assert) stmt, environment);
 			} else if (stmt instanceof Stmt.Assume) {
 				return propagate((Stmt.Assume) stmt, environment);
+			} else if (stmt instanceof Stmt.Fail) {
+				return propagate((Stmt.Fail) stmt, environment);
 			} else if (stmt instanceof Stmt.Debug) {
 				return propagate((Stmt.Debug) stmt, environment);
 			} else if (stmt instanceof Stmt.Skip) {
@@ -426,6 +431,21 @@ public class FlowTypeChecker {
 		stmt.expr = propagate(stmt.expr, environment, current);
 		checkIsSubtype(Type.T_BOOL, stmt.expr);
 		return environment;
+	}
+
+	/**
+	 * Type check a fail statement. The environment after a fail statement is
+	 * "bottom" because that represents an unreachable program point.
+	 *
+	 * @param stmt
+	 *            Statement to type check
+	 * @param environment
+	 *            Determines the type of all variables immediately going into
+	 *            this block
+	 * @return
+	 */
+	private Environment propagate(Stmt.Fail stmt, Environment environment) {
+		return BOTTOM;
 	}
 
 	/**
@@ -525,8 +545,8 @@ public class FlowTypeChecker {
 		} else if (lv instanceof Expr.Dereference) {
 			Expr.Dereference pa = (Expr.Dereference) lv;
 			// The before and after types are the same since an assignment
-			// through a reference does not change its type.
-			checkIsSubtype(pa.srcType, Nominal.Reference(afterType), lv);
+			// through a reference does not change its type.			
+			checkIsSubtype(pa.srcType.element(), afterType, lv);
 			return inferAfterType((Expr.LVal) pa.src, pa.srcType);
 		} else if (lv instanceof Expr.IndexOf) {
 			Expr.IndexOf la = (Expr.IndexOf) lv;

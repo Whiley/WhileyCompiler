@@ -408,6 +408,15 @@ public interface Stmt extends SyntacticElement {
 	}
 
 	/**
+	 * Represents a fail statement.
+	 */
+	public static final class Fail extends SyntacticElement.Impl implements Stmt {
+		public Fail(Attribute... attributes) {
+			super(attributes);
+		}
+	}
+
+	/**
 	 * Represents a classical if-else statement, which is has the form:
 	 *
 	 * <pre>
