@@ -154,7 +154,7 @@ public class TypeExpander {
 				// At this point, need to find the corresponding declatation.
 				WyilFile mi = project.get(nid.module(),WyilFile.ContentType).read();
 				WyilFile.Type td = mi.type(nid.name());
-				if(maximallyConsumed && td.invariant() != null) {
+				if(maximallyConsumed && td.invariant().numBlocks() > 0) {
 					// In this specially case, we have a constrained type
 					// and we are attempting to compute the maximally
 					// consumed type. This type is not fully consumed as it

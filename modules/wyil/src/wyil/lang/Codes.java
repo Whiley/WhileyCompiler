@@ -2038,8 +2038,7 @@ public abstract class Codes {
 				iter = rec.fields().get(field);
 				return new RecordLVal(rec, field);
 			} else {
-				throw new IllegalArgumentException(
-						"Invalid type for Update");
+				throw new IllegalArgumentException("Invalid type for Update: " + iter);
 			}
 		}
 
@@ -2173,7 +2172,7 @@ public abstract class Codes {
 
 			int fieldIndex = 0;
 			for (int i = 0; i != level(); ++i) {
-				if (Type.isSubtype(Type.Reference(Type.T_ANY), iter)) {
+				if (iter instanceof Type.Reference) {
 					Type.Reference proc = Type.effectiveReference(iter);
 					iter = proc.element();
 				} else if (iter instanceof Type.EffectiveArray) {
@@ -2184,8 +2183,7 @@ public abstract class Codes {
 					String field = fields.get(fieldIndex++);
 					iter = rec.fields().get(field);
 				} else {
-					throw new IllegalArgumentException(
-							"Invalid type for Update");
+					throw new IllegalArgumentException("Invalid type for Update: " + iter);
 				}
 			}
 			return iter;

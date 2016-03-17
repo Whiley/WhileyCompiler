@@ -124,13 +124,19 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			String t_str;
 			t_str = t.toString();
 			writeModifiers(td.modifiers(),out);
-			out.println("type " + td.name() + " : " + t_str);			
+			out.println("type " + td.name() + " : " + t_str);						
+			CodeForest forest = td.invariant();
+			for(int i=0;i!=forest.numRoots();++i) {
+				out.println("where:");
+				write(0, forest.getRoot(i), forest, out);
+				out.println();
+			}
 			out.println();
 		}
 
 		for(FunctionOrMethod md : module.functionOrMethods()) {
 			write(md,out);
-			out.println();
+			out.println();			
 		}
 		out.flush();
 	}

@@ -31,6 +31,15 @@ public class CodeForest {
 		this(Collections.EMPTY_LIST);
 	}
 	
+	public CodeForest(CodeForest forest) {
+		this.registers = new ArrayList<Register>(forest.registers);
+		this.roots = new ArrayList<Integer>(forest.roots);
+		this.blocks = new ArrayList<Block>();
+		for(int i=0;i!=forest.blocks.size();++i) {
+			this.blocks.add(new Block(forest.blocks.get(i)));
+		}		
+	}
+	
 	public CodeForest(List<Register> registers) {
 		this.registers = new ArrayList<Register>(registers);
 		this.roots = new ArrayList<Integer>();
