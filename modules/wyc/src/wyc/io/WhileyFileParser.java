@@ -3247,10 +3247,9 @@ public class WhileyFileParser {
 		// Check whether or not parameters are supplied
 		if (tryAndMatch(terminated, LeftBrace) != null) {
 			// Yes, parameters are supplied!
-			match(LeftBrace);
 			ArrayList<SyntacticType> parameters = new ArrayList<SyntacticType>();
 			boolean firstTime = true;
-			while (eventuallyMatch(MinusGreater) == null) {
+			while (eventuallyMatch(RightBrace) == null) {
 				int p_start = index;
 				if (!firstTime) {
 					match(Comma);
@@ -3259,7 +3258,6 @@ public class WhileyFileParser {
 				SyntacticType type = parseType();
 				parameters.add(type);
 			}
-			match(RightBrace);
 			return new Expr.AbstractFunctionOrMethod(id.text, parameters,
 					sourceAttr(start, index - 1));
 		} else {
