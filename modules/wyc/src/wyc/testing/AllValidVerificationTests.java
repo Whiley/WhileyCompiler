@@ -296,6 +296,9 @@ public class AllValidVerificationTests {
 
 	@Test
 	public void validVerification() throws IOException {
+		if (new File("../../running_on_travis").exists()) {
+			System.out.println(".");
+		}
 		runTest(this.testName);
 	}
 }
