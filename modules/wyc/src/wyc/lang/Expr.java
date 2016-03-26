@@ -794,6 +794,7 @@ public interface Expr extends SyntacticElement {
 		public Nominal.Reference type;
 
 		public New(Expr expr, Attribute... attributes) {
+			super(attributes);
 			this.expr = expr;
 		}
 
