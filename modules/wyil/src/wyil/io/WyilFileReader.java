@@ -1122,10 +1122,5 @@ public final class WyilFileReader {
 				return Codes.Update(types[0], targets[0], operands, operand, types[1], fields);
 			}
 		};
-		schemas[Code.OPCODE_void] = new Schema(Targets.MANY, Operands.ZERO, Types.ONE){
-			public Code construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return Codes.Void(types[0], targets);
-			}
-		};
 	}
 }

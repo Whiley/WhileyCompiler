@@ -189,7 +189,7 @@ public class DefiniteAssignmentCheck extends
 		if (code instanceof Code.AbstractBytecode) {
 			Code.AbstractBytecode a = (Code.AbstractBytecode) code;
 			for (int operand : a.operands()) {
-				if (operand != Codes.NULL_REG && !in.contains(operand)) {
+				if (!in.contains(operand)) {
 					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
 							forest.get(index).attribute(SourceLocation.class));
 				}

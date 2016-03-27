@@ -17,54 +17,6 @@ import static wyil.lang.CodeUtils.*;
 
 public abstract class Codes {
 
-	/**
-	 * Provided to aid readability of client code.
-	 */
-	public final static int NULL_REG = -1;
-	/**
-	 * Provided to aid readability of client code.
-	 */
-	public final static int REG_0 = 0;
-	/**
-	 * Provided to aid readability of client code.
-	 */
-	public final static int REG_1 = 1;
-	/**
-	 * Provided to aid readability of client code.
-	 */
-	public final static int REG_2 = 2;
-	/**
-	 * Provided to aid readability of client code.
-	 */
-	public final static int REG_3 = 3;
-	/**
-	 * Provided to aid readability of client code.
-	 */
-	public final static int REG_4 = 4;
-	/**
-	 * Provided to aid readability of client code.
-	 */
-	public final static int REG_5 = 5;
-	/**
-	 * Provided to aid readability of client code.
-	 */
-	public final static int REG_6 = 6;
-
-	/**
-	 * Provided to aid readability of client code.
-	 */
-	public final static int REG_7 = 7;
-
-	/**
-	 * Provided to aid readability of client code.
-	 */
-	public final static int REG_8 = 8;
-
-	/**
-	 * Provided to aid readability of client code.
-	 */
-	public final static int REG_9 = 9;
-
 	// ===============================================================
 	// Bytecode Constructors
 	// ===============================================================
@@ -392,10 +344,6 @@ public abstract class Codes {
 	public static UnaryOperator UnaryOperator(Type type, int target, int operand,
 			UnaryOperatorKind uop) {
 		return new UnaryOperator(type, target, operand, uop);
-	}
-
-	public static Void Void(Type type, int[] operands) {
-		return new Void(type, operands);
 	}
 
 	// ===============================================================
@@ -2752,42 +2700,6 @@ public abstract class Codes {
 
 		public String toString() {
 			return kind + " %" + target(0) + " = %" + operand(0) + " : " + type(0);
-		}
-	}
-
-	/**
-	 * The void bytecode is used to indicate that the given register(s) are no
-	 * longer live. This is useful for communicating information to the memory
-	 * management system about which values could in principle be collected.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Void extends AbstractBytecode<Type> {
-
-		private Void(Type type, int[] operands) {
-			super(type, Codes.NULL_REG, operands);
-		}
-
-		@Override
-		public int opcode() {
-			return OPCODE_void;
-		}
-
-		@Override
-		protected Code clone(int[] nTargets, int[] nOperands) {
-			return Void(type(0), nOperands);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Void) {
-				return super.equals(o);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "void " + arrayToString(operands());
 		}
 	}
 

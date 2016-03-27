@@ -399,8 +399,7 @@ public interface Code {
 	public static final int OPCODE_lambda           = NARY_ASSIGNABLE+4;
 	public static final int OPCODE_loop             = NARY_ASSIGNABLE+5;	
 	public static final int OPCODE_quantify         = NARY_ASSIGNABLE+6;
-	public static final int OPCODE_update           = NARY_ASSIGNABLE+7;
-	public static final int OPCODE_void             = NARY_ASSIGNABLE+8;	
+	public static final int OPCODE_update           = NARY_ASSIGNABLE+7;	
 		
 	// =========================================================================
 	// Bytecode Schemas

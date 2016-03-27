@@ -20,11 +20,7 @@ public class CodeUtils {
 			if (i != 0) {
 				r = r + ", ";
 			}
-			if(operands[i] == Codes.NULL_REG) {
-				r = r + "_";
-			} else {
-				r = r + "%" + operands[i];
-			}
+			r = r + "%" + operands[i];			
 		}
 		return r + ")";
 	}

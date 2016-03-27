@@ -220,8 +220,6 @@ public class Interpreter {
 			return execute((Codes.UnaryOperator) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Update) {
 			return execute((Codes.Update) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Void) {
-			return execute((Codes.Void) bytecode, frame, context);
 		} else {
 			throw new IllegalArgumentException("Unknown bytecode encountered: "
 					+ bytecode);
@@ -1259,15 +1257,6 @@ public class Interpreter {
 			// we effectively replace the lhs with the rhs.
 			return rhs;
 		}
-	}
-
-	private Object execute(Codes.Void bytecode, Constant[] frame,
-			Context context) {
-		// This bytecode just voids out all of its operands.
-		for (int operand : bytecode.operands()) {
-			frame[operand] = null;
-		}
-		return context.pc.next();
 	}
 
 	/**
