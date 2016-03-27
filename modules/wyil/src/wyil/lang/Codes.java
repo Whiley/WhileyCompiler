@@ -45,10 +45,8 @@ public abstract class Codes {
 		return new Assume(block);
 	}
 
-	public static BinaryOperator BinaryOperator(Type type, int target, int leftOperand,
-			int rightOperand, BinaryOperatorKind op) {
-		return new BinaryOperator(type, target, leftOperand,
-				rightOperand, op);
+	public static Operator Operator(Type type, int[] targets, int[] operands, OperatorKind op) {
+		return new Operator(type, targets, operands, op);
 	}
 
 	/**
@@ -157,10 +155,6 @@ public abstract class Codes {
 	public static Lambda Lambda(Type.FunctionOrMethod fun, int target,
 			int[] operands, NameID name) {
 		return new Lambda(fun, target, operands, name);
-	}
-
-	public static Not Not(int target, int operand) {
-		return new Not(target, operand);
 	}
 
 	public static LengthOf LengthOf(Type.EffectiveArray type, int target,
@@ -286,10 +280,6 @@ public abstract class Codes {
 		return new IndirectInvoke(fun, targets, operand, operands);
 	}
 
-	public static Invert Invert(Type type, int target, int operand) {
-		return new Invert(type, target, operand);
-	}
-
 	public static Label Label(String label) {
 		return new Label(label);
 	}
@@ -318,11 +308,6 @@ public abstract class Codes {
 		return new NewObject(type, target, operand);
 	}
 
-	public static Dereference Dereference(Type.Reference type, int target,
-			int operand) {
-		return new Dereference(type, target, operand);
-	}
-
 	public static Quantify Quantify(int startOperand, int endOperand, int indexOperand, int[] modifiedOperands,
 			int block) {
 		return new Quantify(startOperand, endOperand, indexOperand, modifiedOperands, block);
@@ -341,11 +326,6 @@ public abstract class Codes {
 				afterType, fields);
 	}
 
-	public static UnaryOperator UnaryOperator(Type type, int target, int operand,
-			UnaryOperatorKind uop) {
-		return new UnaryOperator(type, target, operand, uop);
-	}
-
 	// ===============================================================
 	// Bytecode Implementations
 	// ===============================================================
@@ -357,60 +337,77 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public enum BinaryOperatorKind {
-		ADD(0) {
+	public enum OperatorKind {
+		// Unary
+		NEG(0) {
+			public String toString() {
+				return "neg";
+			}
+		},
+		INVERT(1) {
+			public String toString() {
+				return "invert";
+			}
+		},
+		DEREFERENCE(2) {
+			public String toString() {
+				return "deref";
+			}
+		},
+		// Binary
+		ADD(3) {
 			public String toString() {
 				return "add";
 			}
 		},
-		SUB(1) {
+		SUB(4) {
 			public String toString() {
 				return "sub";
 			}
 		},
-		MUL(2) {
+		MUL(5) {
 			public String toString() {
 				return "mul";
 			}
 		},
-		DIV(3) {
+		DIV(6) {
 			public String toString() {
 				return "div";
 			}
 		},
-		REM(4) {
+		REM(7) {
 			public String toString() {
 				return "rem";
 			}
 		},
-		BITWISEOR(5) {
+		BITWISEOR(8) {
 			public String toString() {
 				return "or";
 			}
 		},
-		BITWISEXOR(6) {
+		BITWISEXOR(9) {
 			public String toString() {
 				return "xor";
 			}
 		},
-		BITWISEAND(7) {
+		BITWISEAND(10) {
 			public String toString() {
 				return "and";
 			}
 		},
-		LEFTSHIFT(8) {
+		LEFTSHIFT(11) {
 			public String toString() {
 				return "shl";
 			}
 		},
-		RIGHTSHIFT(9) {
+		RIGHTSHIFT(12) {
 			public String toString() {
 				return "shr";
 			}
 		};
 		public int offset;
 
-		private BinaryOperatorKind(int offset) {
+		private OperatorKind(int offset) {
 			this.offset = offset;
 		}
 	};
@@ -457,28 +454,27 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class BinaryOperator extends AbstractBytecode<Type> {
-		public final BinaryOperatorKind kind;
+	public static final class Operator extends AbstractBytecode<Type> {
+		public final OperatorKind kind;
 
-		private BinaryOperator(Type type, int target, int lhs, int rhs,
-				BinaryOperatorKind bop) {
-			super(type, target, lhs, rhs);
+		private Operator(Type type, int[] targets, int[] operands,
+				OperatorKind bop) {
+			super(new Type[]{ type }, targets, operands);
 			if (bop == null) {
 				throw new IllegalArgumentException(
-						"BinOp bop argument cannot be null");
+						"Operator kind cannot be null");
 			}
 			this.kind = bop;
 		}
 
 		@Override
-		public int opcode() {
-			return OPCODE_add + kind.offset;
+		public int opcode() {			
+			return OPCODE_neg + kind.offset;
 		}
 
 		@Override
 		public Code clone(int[] nTargets, int[] nOperands) {
-			return BinaryOperator(type(0), nTargets[0], nOperands[0], nOperands[1],
-					kind);
+			return Operator(type(0), nTargets, nOperands, kind);
 		}
 
 		public int hashCode() {
@@ -486,16 +482,15 @@ public abstract class Codes {
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof BinaryOperator) {
-				BinaryOperator bo = (BinaryOperator) o;
+			if (o instanceof Operator) {
+				Operator bo = (Operator) o;
 				return kind.equals(bo.kind) && super.equals(bo);
 			}
 			return false;
 		}
 
 		public String toString() {
-			return kind + " %" + target(0) + " = %" + operand(0) + ", %"
-					+ operand(1) + " : " + type(0);
+			return kind + " %" + target(0) + " = " + arrayToString(operands()) + " : " + type(0);
 		}
 	}
 
@@ -1336,62 +1331,6 @@ public abstract class Codes {
 		@Override
 		public Invariant clone() {
 			return this;
-		}
-	}
-
-	/**
-	 * Read a boolean value from the operand register, inverts it and writes the
-	 * result to the target register. For example, the following Whiley code:
-	 *
-	 * <pre>
-	 * function f(bool x) -> bool:
-	 *     return !x
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL:
-	 *
-	 * <pre>
-	 * function f(bool x) -> bool:
-	 * body:
-	 *     not %0 = %0     : int
-	 *     return %0       : int
-	 * </pre>
-	 *
-	 * This simply reads the parameter <code>x</code> stored in register
-	 * <code>%0</code>, inverts it and then returns the inverted value.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Not extends AbstractBytecode<Type.Bool> {
-
-		private Not(int target, int operand) {
-			super(Type.T_BOOL, target, operand);
-		}
-
-		public int opcode() {
-			return OPCODE_not;
-		}
-
-		@Override
-		public Code clone(int[] nTargets, int[] nOperands) {
-			return Not(nTargets[0], nOperands[0]);
-		}
-
-		public int hashCode() {
-			return super.hashCode();
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Not) {
-				Not n = (Not) o;
-				return super.equals(n);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "not %" + target(0) + " = %" + operand(0) + " : " + type(0);
 		}
 	}
 
@@ -2483,59 +2422,6 @@ public abstract class Codes {
 	}
 
 	/**
-	 * Corresponds to a bitwise inversion operation, which reads a byte value
-	 * from the operand register, inverts it and writes the result to the target
-	 * resgister. For example, the following Whiley code:
-	 *
-	 * <pre>
-	 * function f(byte x) -> byte:
-	 *    return ~x
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f(byte x) -> byte:
-	 * body:
-	 *     invert %0 = %0   : byte
-	 *     return %0        : byte
-	 * </pre>
-	 *
-	 * Here, the expression <code>~x</code> generates an <code>invert</code>
-	 * bytecode.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Invert extends AbstractBytecode<Type> {
-
-		private Invert(Type type, int target, int operand) {
-			super(type, target, operand);
-		}
-
-		@Override
-		public int opcode() {
-			return OPCODE_invert;
-		}
-
-		@Override
-		protected Code clone(int[] nTargets, int[] nOperands) {
-			return Invert(type(0), nTargets[0], nOperands[0]);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Invert) {
-				return super.equals(o);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "invert %" + target(0) + " = %" + operand(0) + " : " + type(0);
-		}
-	}
-
-	/**
 	 * Instantiate a new object from the value in a given operand register, and
 	 * write the result (a reference to that object) to a given target register.
 	 * For example, the following Whiley code:
@@ -2588,118 +2474,6 @@ public abstract class Codes {
 
 		public String toString() {
 			return "newobject %" + target(0) + " = %" + operand(0) + " : " + type(0);
-		}
-	}
-
-	/**
-	 * Reads a reference value from the operand register, dereferences it (i.e.
-	 * extracts the value it refers to) and writes this to the target register.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Dereference extends AbstractBytecode<Type.Reference> {
-
-		private Dereference(Type.Reference type, int target, int operand) {
-			super(type, target, operand);
-		}
-
-		@Override
-		public int opcode() {
-			return OPCODE_dereference;
-		}
-
-		protected Code clone(int[] nTargets, int[] nOperands) {
-			return Dereference(type(0), nTargets[0], nOperands[0]);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Dereference) {
-				return super.equals(o);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "deref %" + target(0) + " = %" + operand(0) + " : " + type(0);
-		}
-	}
-
-	public enum UnaryOperatorKind {
-		NEG(0) {
-			public String toString() {
-				return "neg";
-			}
-		};
-		
-		public final int offset;
-
-		private UnaryOperatorKind(int offset) {
-			this.offset = offset;
-		}
-	};
-
-	/**
-	 * Read a number (int or real) from the operand register, perform a unary
-	 * arithmetic operation on it (e.g. negation) and writes the result to the
-	 * target register. For example, the following Whiley code:
-	 *
-	 * <pre>
-	 * function f(int x) -> int:
-	 *     return -x
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL:
-	 *
-	 * <pre>
-	 * function f(int x) -> int:
-	 * body:
-	 *     neg %0 = %0     : int
-	 *     return %0       : int
-	 * </pre>
-	 *
-	 * This simply reads the parameter <code>x</code> stored in register
-	 * <code>%0</code>, negates it and then returns the negated value.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class UnaryOperator extends AbstractBytecode<Type> {
-		public final UnaryOperatorKind kind;
-
-		private UnaryOperator(Type type, int target, int operand, UnaryOperatorKind uop) {
-			super(type, target, operand);
-			if (uop == null) {
-				throw new IllegalArgumentException(
-						"UnaryArithOp bop argument cannot be null");
-			}
-			this.kind = uop;
-		}
-
-		@Override
-		public int opcode() {
-			return OPCODE_neg + kind.offset;
-		}
-
-		@Override
-		public Code clone(int[] nTargets, int[] nOperands) {
-			return UnaryOperator(type(0), nTargets[0], nOperands[0], kind);
-		}
-
-		public int hashCode() {
-			return kind.hashCode() + super.hashCode();
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof UnaryOperator) {
-				UnaryOperator bo = (UnaryOperator) o;
-				return kind.equals(bo.kind) && super.equals(bo);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return kind + " %" + target(0) + " = %" + operand(0) + " : " + type(0);
 		}
 	}
 

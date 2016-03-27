@@ -368,7 +368,7 @@ public class VcUtils {
 			switch (code.opcode()) {
 			case Code.OPCODE_div:
 			case Code.OPCODE_rem:
-				return divideByZeroCheck((Codes.BinaryOperator) code, branch);
+				return divideByZeroCheck((Codes.Operator) code, branch);
 			case Code.OPCODE_indexof:
 				return indexOutOfBoundsChecks((Codes.IndexOf) code, branch);
 			case Code.OPCODE_arrygen:
@@ -395,7 +395,7 @@ public class VcUtils {
 	 *            --- The branch the division is on.
 	 * @return
 	 */
-	public Pair<String, Expr>[] divideByZeroCheck(Codes.BinaryOperator binOp, VcBranch branch) {
+	public Pair<String, Expr>[] divideByZeroCheck(Codes.Operator binOp, VcBranch branch) {
 		Expr rhs = branch.read(binOp.operand(1));
 		Value zero;
 		if (binOp.type(0) instanceof Type.Int) {

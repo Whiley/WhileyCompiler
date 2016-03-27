@@ -346,13 +346,12 @@ public interface Code {
 	public static final int UNARY_ASSIGNABLE = UNARY_OPERATOR+5;
 	
 	public static final int OPCODE_assign      = UNARY_ASSIGNABLE+0;
-	public static final int OPCODE_dereference = UNARY_ASSIGNABLE+1;
-	public static final int OPCODE_invert      = UNARY_ASSIGNABLE+2;
+
 	public static final int OPCODE_lengthof    = UNARY_ASSIGNABLE+3;
 	public static final int OPCODE_move        = UNARY_ASSIGNABLE+4;
 	public static final int OPCODE_newobject   = UNARY_ASSIGNABLE+5;
-	public static final int OPCODE_neg         = UNARY_ASSIGNABLE+6;
-	public static final int OPCODE_not         = UNARY_ASSIGNABLE+7;
+	
+	//public static final int OPCODE_not         = UNARY_ASSIGNABLE+7;
 	public static final int OPCODE_fieldload   = UNARY_ASSIGNABLE+8;
 	public static final int OPCODE_convert     = UNARY_ASSIGNABLE+9;
 	public static final int OPCODE_const       = UNARY_ASSIGNABLE+10;
@@ -374,23 +373,26 @@ public interface Code {
 	// =========================================================================
 	public static final int BINARY_ASSIGNABLE = BINARY_OPERATOR+6;
 	
-	public static final int OPCODE_add         = BINARY_ASSIGNABLE+0;
-	public static final int OPCODE_sub         = BINARY_ASSIGNABLE+1;
-	public static final int OPCODE_mul         = BINARY_ASSIGNABLE+2;
-	public static final int OPCODE_div         = BINARY_ASSIGNABLE+3;
-	public static final int OPCODE_rem         = BINARY_ASSIGNABLE+4;
-	public static final int OPCODE_bitwiseor   = BINARY_ASSIGNABLE+5;
-	public static final int OPCODE_bitwisexor  = BINARY_ASSIGNABLE+6;
-	public static final int OPCODE_bitwiseand  = BINARY_ASSIGNABLE+7;
-	public static final int OPCODE_lshr        = BINARY_ASSIGNABLE+8;
-	public static final int OPCODE_rshr        = BINARY_ASSIGNABLE+9;
-	public static final int OPCODE_indexof     = BINARY_ASSIGNABLE+10;
-	public static final int OPCODE_arrygen     = BINARY_ASSIGNABLE+11;
+	public static final int OPCODE_neg         = BINARY_ASSIGNABLE+0;
+	public static final int OPCODE_invert      = BINARY_ASSIGNABLE+1;	
+	public static final int OPCODE_dereference = BINARY_ASSIGNABLE+2;
+	public static final int OPCODE_add         = BINARY_ASSIGNABLE+3;
+	public static final int OPCODE_sub         = BINARY_ASSIGNABLE+4;
+	public static final int OPCODE_mul         = BINARY_ASSIGNABLE+5;
+	public static final int OPCODE_div         = BINARY_ASSIGNABLE+6;
+	public static final int OPCODE_rem         = BINARY_ASSIGNABLE+7;
+	public static final int OPCODE_bitwiseor   = BINARY_ASSIGNABLE+8;
+	public static final int OPCODE_bitwisexor  = BINARY_ASSIGNABLE+9;
+	public static final int OPCODE_bitwiseand  = BINARY_ASSIGNABLE+10;
+	public static final int OPCODE_lshr        = BINARY_ASSIGNABLE+11;
+	public static final int OPCODE_rshr        = BINARY_ASSIGNABLE+12;
+	public static final int OPCODE_indexof     = BINARY_ASSIGNABLE+13;
+	public static final int OPCODE_arrygen     = BINARY_ASSIGNABLE+14;
 
 	// =========================================================================
 	// Nary Assignables
 	// =========================================================================
-	public static final int NARY_ASSIGNABLE = BINARY_ASSIGNABLE+12;
+	public static final int NARY_ASSIGNABLE = BINARY_ASSIGNABLE+15;
 	
 	public static final int OPCODE_newarray         = NARY_ASSIGNABLE+0;
 	public static final int OPCODE_newrecord        = NARY_ASSIGNABLE+1;

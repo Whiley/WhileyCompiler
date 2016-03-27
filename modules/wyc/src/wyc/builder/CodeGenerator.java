@@ -1885,24 +1885,25 @@ public final class CodeGenerator {
 
 	private int generate(Expr.UnOp expr, Environment environment, CodeForest.Block block, CodeForest forest,
 			Context context) {
-		int operand = generate(expr.mhs, environment, block, forest, context);
-		int target = environment.allocate(expr.result().raw());
+		int[] operands = new int[] { generate(expr.mhs, environment, block, forest, context) };
+		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
 		switch (expr.op) {
 		case NEG:
-			block.add(Codes.UnaryOperator(expr.result().raw(), target, operand, Codes.UnaryOperatorKind.NEG),
+			block.add(Codes.Operator(expr.result().raw(), targets, operands, Codes.OperatorKind.NEG),
 					attributes(expr));
 			break;
 		case INVERT:
-			block.add(Codes.Invert(expr.result().raw(), target, operand), attributes(expr));
+			block.add(Codes.Operator(expr.result().raw(), targets, operands, Codes.OperatorKind.INVERT),
+					attributes(expr));
 			break;
 		case NOT:
 			String falseLabel = CodeUtils.freshLabel();
 			String exitLabel = CodeUtils.freshLabel();
 			generateCondition(falseLabel, expr.mhs, environment, block, forest, context);
-			block.add(Codes.Const(target, Constant.V_BOOL(true)), attributes(expr));
+			block.add(Codes.Const(targets[0], Constant.V_BOOL(true)), attributes(expr));
 			block.add(Codes.Goto(exitLabel));
 			block.add(Codes.Label(falseLabel));
-			block.add(Codes.Const(target, Constant.V_BOOL(false)), attributes(expr));
+			block.add(Codes.Const(targets[0], Constant.V_BOOL(false)), attributes(expr));
 			block.add(Codes.Label(exitLabel));
 			break;
 		default:
@@ -1910,7 +1911,7 @@ public final class CodeGenerator {
 			internalFailure("unexpected unary operator encountered", context, expr);
 			return -1;
 		}
-		return target;
+		return targets[0];
 	}
 
 	private int generate(Expr.LengthOf expr, Environment environment, CodeForest.Block block, CodeForest forest,
@@ -1923,10 +1924,11 @@ public final class CodeGenerator {
 
 	private int generate(Expr.Dereference expr, Environment environment, CodeForest.Block block, CodeForest forest,
 			Context context) {
-		int operand = generate(expr.src, environment, block, forest, context);
-		int target = environment.allocate(expr.result().raw());
-		block.add(Codes.Dereference(expr.srcType.raw(), target, operand), attributes(expr));
-		return target;
+		int[] operands = new int[] { generate(expr.src, environment, block, forest, context) };
+		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
+		block.add(Codes.Operator(expr.srcType.raw(), targets, operands, Codes.OperatorKind.DEREFERENCE),
+				attributes(expr));
+		return targets[0];
 	}
 
 	private int generate(Expr.IndexOf expr, Environment environment, CodeForest.Block block, CodeForest forest,
@@ -1966,16 +1968,17 @@ public final class CodeGenerator {
 			return target;
 
 		} else {
-
-			int leftOperand = generate(v.lhs, environment, block, forest, context);
-			int rightOperand = generate(v.rhs, environment, block, forest, context);
 			Type result = v.result().raw();
-			int target = environment.allocate(result);
+			int[] targets = new int[] { environment.allocate(result) };
+			int[] operands = { 
+					generate(v.lhs, environment, block, forest, context),
+					generate(v.rhs, environment, block, forest, context) 
+			};
 
-			block.add(Codes.BinaryOperator(result, target, leftOperand, rightOperand, OP2BOP(v.op, v, context)),
+			block.add(Codes.Operator(result, targets, operands, OP2BOP(v.op, v, context)),
 					attributes(v));
 
-			return target;
+			return targets[0];
 		}
 	}
 
@@ -2056,28 +2059,28 @@ public final class CodeGenerator {
 	// Helpers
 	// =========================================================================
 
-	private Codes.BinaryOperatorKind OP2BOP(Expr.BOp bop, SyntacticElement elem, Context context) {
+	private Codes.OperatorKind OP2BOP(Expr.BOp bop, SyntacticElement elem, Context context) {
 		switch (bop) {
 		case ADD:
-			return Codes.BinaryOperatorKind.ADD;
+			return Codes.OperatorKind.ADD;
 		case SUB:
-			return Codes.BinaryOperatorKind.SUB;
+			return Codes.OperatorKind.SUB;
 		case MUL:
-			return Codes.BinaryOperatorKind.MUL;
+			return Codes.OperatorKind.MUL;
 		case DIV:
-			return Codes.BinaryOperatorKind.DIV;
+			return Codes.OperatorKind.DIV;
 		case REM:
-			return Codes.BinaryOperatorKind.REM;
+			return Codes.OperatorKind.REM;
 		case BITWISEAND:
-			return Codes.BinaryOperatorKind.BITWISEAND;
+			return Codes.OperatorKind.BITWISEAND;
 		case BITWISEOR:
-			return Codes.BinaryOperatorKind.BITWISEOR;
+			return Codes.OperatorKind.BITWISEOR;
 		case BITWISEXOR:
-			return Codes.BinaryOperatorKind.BITWISEXOR;
+			return Codes.OperatorKind.BITWISEXOR;
 		case LEFTSHIFT:
-			return Codes.BinaryOperatorKind.LEFTSHIFT;
+			return Codes.OperatorKind.LEFTSHIFT;
 		case RIGHTSHIFT:
-			return Codes.BinaryOperatorKind.RIGHTSHIFT;
+			return Codes.OperatorKind.RIGHTSHIFT;
 		default:
 			syntaxError(errorMessage(INVALID_BINARY_EXPRESSION), context, elem);
 		}

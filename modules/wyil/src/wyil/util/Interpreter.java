@@ -161,16 +161,14 @@ public class Interpreter {
 			return execute((Codes.AssertOrAssume) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Assign) {
 			return execute((Codes.Assign) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.BinaryOperator) {
-			return execute((Codes.BinaryOperator) bytecode, frame, context);
+		} else if (bytecode instanceof Codes.Operator) {
+			return execute((Codes.Operator) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Const) {
 			return execute((Codes.Const) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Convert) {
 			return execute((Codes.Convert) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Debug) {
 			return execute((Codes.Debug) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Dereference) {
-			return execute((Codes.Dereference) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Fail) {
 			return execute((Codes.Fail) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.FieldLoad) {
@@ -185,8 +183,6 @@ public class Interpreter {
 			return execute((Codes.IndexOf) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.IndirectInvoke) {
 			return execute((Codes.IndirectInvoke) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Invert) {
-			return execute((Codes.Invert) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Invoke) {
 			return execute((Codes.Invoke) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Label) {
@@ -216,8 +212,6 @@ public class Interpreter {
 			return execute((Codes.Return) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Switch) {
 			return execute((Codes.Switch) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.UnaryOperator) {
-			return execute((Codes.UnaryOperator) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Update) {
 			return execute((Codes.Update) bytecode, frame, context);
 		} else {
@@ -283,22 +277,39 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.BinaryOperator bytecode, Constant[] frame,
+	private Object execute(Codes.Operator bytecode, Constant[] frame,
 			Context context) {
-		Constant op1 = frame[bytecode.operand(0)];
-		Constant op2 = frame[bytecode.operand(1)];
-
 		// Compute result
 		Constant result;
-		if (op1 instanceof Constant.Integer) {
-			checkType(op2, context, Constant.Integer.class);
-			result = execute(bytecode.kind, (Constant.Integer) op1,
-					(Constant.Integer) op2, context);
-		} else if (op1 instanceof Constant.Byte) {
-			checkType(op2, context, Constant.Byte.class, Constant.Integer.class);
-			result = execute(bytecode.kind, (Constant.Byte) op1, op2, context);
-		} else {
-			return deadCode(context); // dead because of above checks
+		//
+		switch(bytecode.kind) {
+		case NEG:			
+		case INVERT:			
+		case DEREFERENCE:
+			result = executeUnary(bytecode.kind,frame[bytecode.operand(0)],context); 
+			break;
+		case ADD:
+		case SUB:
+		case MUL:
+		case DIV:
+		case REM: {
+			Constant.Integer lhs = checkType(frame[bytecode.operand(0)], context, Constant.Integer.class);
+			Constant.Integer rhs = checkType(frame[bytecode.operand(1)], context, Constant.Integer.class);
+			result = execute(bytecode.kind,lhs,rhs,context);
+			break;
+		}
+		case BITWISEXOR:
+		case BITWISEOR:
+		case BITWISEAND: 
+		case LEFTSHIFT:
+		case RIGHTSHIFT: {
+			Constant.Byte lhs = checkType(frame[bytecode.operand(0)], context, Constant.Byte.class);
+			Constant rhs = frame[bytecode.operand(1)];
+			result = execute(bytecode.kind,lhs,rhs,context);
+			break;
+		}
+		default:
+			return deadCode(context);		
 		}
 
 		// Write result to target
@@ -307,6 +318,26 @@ public class Interpreter {
 		return context.pc.next();
 	}
 
+	private Constant executeUnary(Codes.OperatorKind kind,
+			Constant operand, Context context) {
+		switch(kind) {
+		case NEG: {
+			Constant.Integer i = checkType(operand, context, Constant.Integer.class);
+			return i.negate();
+		}
+		case INVERT: {
+			Constant.Byte b = checkType(operand, context, Constant.Byte.class);			
+			return Constant.V_BYTE((byte) ~b.value);
+		}
+		case DEREFERENCE: {
+			checkType(operand, context, ConstantObject.class);
+			ConstantObject ref = (ConstantObject) operand;
+			return ref.read();
+		}
+		}
+		return (Constant) deadCode(context);
+	}
+	
 	/**
 	 * Execute an integer binary operator
 	 *
@@ -320,7 +351,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Constant execute(Codes.BinaryOperatorKind kind,
+	private Constant execute(Codes.OperatorKind kind,
 			Constant.Integer i1, Constant.Integer i2, Context context) {
 		switch (kind) {
 		case ADD:
@@ -351,7 +382,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed            
 	 * @return
 	 */
-	private Constant execute(Codes.BinaryOperatorKind kind, Constant.Byte i1,
+	private Constant execute(Codes.OperatorKind kind, Constant.Byte i1,
 			Constant i2, Context context) {
 		int result;
 		switch (kind) {
@@ -554,15 +585,6 @@ public class Interpreter {
 			debug.print(c);
 		}
 		//
-		return context.pc.next();
-	}
-
-	private Object execute(Codes.Dereference bytecode, Constant[] frame,
-			Context context) {
-		Constant operand = frame[bytecode.operand(0)];
-		checkType(operand, context, ConstantObject.class);
-		ConstantObject ref = (ConstantObject) operand;
-		frame[bytecode.target(0)] = ref.read();
 		return context.pc.next();
 	}
 
@@ -902,30 +924,6 @@ public class Interpreter {
 	}
 
 	/**
-	 * Execute an Invert bytecode instruction at a given point in the function
-	 * or method body. This checks the operand is a byte value.
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Codes.Invert bytecode, Constant[] frame,
-			Context context) {
-		Constant operand = frame[bytecode.operand(0)];
-		// Check that we have a byte operand
-		checkType(operand, context, Constant.Byte.class);
-		// Write back the inverted value
-		Constant.Byte b = (Constant.Byte) operand;
-		frame[bytecode.target(0)] = Constant.V_BYTE((byte) ~b.value);
-		// Done
-		return context.pc.next();
-	}
-
-	/**
 	 * Execute an Invoke bytecode instruction at a given point in the function
 	 * or method body. This generates a recursive call to execute the given
 	 * function. If the function does not exist, or is provided with the wrong
@@ -1164,27 +1162,6 @@ public class Interpreter {
 		return context.getLabel(bytecode.defaultTarget);
 	}
 
-	private Object execute(Codes.UnaryOperator bytecode, Constant[] frame,
-			Context context) {
-		Constant _operand = frame[bytecode.operand(0)];
-		Constant result;
-		//
-		switch (bytecode.kind) {
-		case NEG:
-			checkType(_operand, context, Constant.Integer.class);
-			Constant.Integer operand = (Constant.Integer) _operand;
-			result = operand.negate();			
-			break;		
-		default:
-			return deadCode(context);
-		}
-		// Assign result to target register
-		frame[bytecode.target(0)] = result;
-		// Fall through to next bytecode
-		return context.pc.next();
-
-	}
-
 	private Object execute(Codes.Update bytecode, Constant[] frame,
 			Context context) {
 		Constant rhs = frame[bytecode.result()];
@@ -1269,17 +1246,17 @@ public class Interpreter {
 	 * @param types
 	 *            --- Types to be checked against
 	 */
-	private void checkType(Constant operand, Context context,
-			Class<? extends Constant>... types) {
+	private <T extends Constant> T checkType(Constant operand, Context context, Class<T>... types) {
 		// Got through each type in turn checking for a match
 		for (int i = 0; i != types.length; ++i) {
 			if (types[i].isInstance(operand)) {
 				// Matched!
-				return;
+				return (T) operand;
 			}
 		}
 		// No match, therefore through an error
 		error("invalid operand", context);
+		return null;
 	}
 
 	/**

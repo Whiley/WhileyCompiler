@@ -53,10 +53,8 @@ public class VcExprGenerator {
 			if (code instanceof Codes.LengthOf) {
 				transformUnary(Expr.Unary.Op.LENGTHOF, (Codes.LengthOf) code,
 						branch, forest);
-			} else if (code instanceof Codes.BinaryOperator) {
-				Codes.BinaryOperator bc = (Codes.BinaryOperator) code;
-				transformBinary(binaryOperatorMap[bc.kind.ordinal()], bc,
-						branch, forest);
+			} else if (code instanceof Codes.Operator) {
+				transform((Codes.Operator) code, forest, branch);				
 			} else if (code instanceof Codes.ArrayGenerator) {
 				transform((Codes.ArrayGenerator) code, forest, branch);
 			} else if (code instanceof Codes.NewArray) {
@@ -75,8 +73,6 @@ public class VcExprGenerator {
 				transform((Codes.IndirectInvoke) code, forest, branch);
 			} else if (code instanceof Codes.Invoke) {
 				transform((Codes.Invoke) code, forest, branch);
-			} else if (code instanceof Codes.Invert) {
-				transform((Codes.Invert) code, forest, branch);
 			} else if (code instanceof Codes.Label) {
 				// skip
 			} else if (code instanceof Codes.IndexOf) {
@@ -87,10 +83,6 @@ public class VcExprGenerator {
 				transform((Codes.Assign) code, forest, branch);
 			} else if (code instanceof Codes.Update) {
 				transform((Codes.Update) code, forest, branch);
-			} else if (code instanceof Codes.UnaryOperator) {
-				transform((Codes.UnaryOperator) code, forest, branch);
-			} else if (code instanceof Codes.Dereference) {
-				transform((Codes.Dereference) code, forest, branch);
 			} else if (code instanceof Codes.Nop) {
 				// skip
 			} else if (code instanceof Codes.NewObject) {
@@ -120,11 +112,15 @@ public class VcExprGenerator {
 	/**
 	 * Maps binary bytecodes into expression opcodes.
 	 */
-	private static Expr.Binary.Op[] binaryOperatorMap = { Expr.Binary.Op.ADD,
+	private static Expr.Binary.Op[] binaryOperatorMap = {
+			null, // neg
+			null, // invert
+			null, // deref
+			Expr.Binary.Op.ADD,
 			Expr.Binary.Op.SUB, 
 			Expr.Binary.Op.MUL, 
 			Expr.Binary.Op.DIV,
-			Expr.Binary.Op.REM, 
+			Expr.Binary.Op.REM,
 			null, 
 			null, // bitwise or
 			null, // bitwise xor
@@ -133,6 +129,37 @@ public class VcExprGenerator {
 			null // right shift
 	};
 
+	protected void transform(Codes.Operator code, CodeForest forest, VcBranch branch) {
+		switch(code.kind) {
+		case NEG:{
+			Codes.Operator bc = (Codes.Operator) code;
+			transformUnary(Expr.Unary.Op.NEG, bc, branch, forest);
+			break;
+		}
+		case INVERT: 
+		case DEREFERENCE: {
+			branch.havoc(code.target(0));
+			break;
+		}
+		case ADD:
+		case SUB:
+		case MUL:
+		case DIV:
+		case REM:{
+			transformBinary(binaryOperatorMap[code.kind.ordinal()], code, branch, forest);
+			break;
+		}
+		case BITWISEAND:
+		case BITWISEOR:
+		case BITWISEXOR: 
+		case LEFTSHIFT:
+		case RIGHTSHIFT: {
+			branch.havoc(code.target(0));
+			break;
+		}
+		}
+	}
+	
 	protected void transform(Codes.Convert code, CodeForest forest, VcBranch branch) {
 		Collection<Attribute> attributes = VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes());
 		Expr result = branch.read(code.operand(0));
@@ -148,10 +175,6 @@ public class VcExprGenerator {
 	protected void transform(Codes.Debug code, CodeForest forest,
 			VcBranch branch) {
 		// do nout
-	}
-
-	protected void transform(Codes.Dereference code, CodeForest forest, VcBranch branch) {
-		branch.havoc(code.target(0));
 	}
 
 	protected void transform(Codes.FieldLoad code, CodeForest forest, VcBranch branch) {
@@ -222,10 +245,6 @@ public class VcExprGenerator {
 		}
 	}
 
-	protected void transform(Codes.Invert code, CodeForest forest, VcBranch branch) {
-		branch.havoc(code.target(0));
-	}
-
 	protected void transform(Codes.IndexOf code, CodeForest forest, VcBranch branch) {
 		Expr src = branch.read(code.operand(0));
 		Expr idx = branch.read(code.operand(1));
@@ -264,16 +283,6 @@ public class VcExprGenerator {
 	protected void transform(Codes.Nop code, CodeForest forest,
 			VcBranch branch) {
 		// do nout
-	}
-
-	protected void transform(Codes.UnaryOperator code, CodeForest forest, VcBranch branch) {
-		switch (code.kind) {
-		case NEG:
-			transformUnary(Expr.Unary.Op.NEG, code, branch, forest);
-			break;
-		default:
-			branch.havoc(code.target(0));
-		}
 	}
 
 	protected void transform(Codes.Update code, CodeForest forest, VcBranch branch) {

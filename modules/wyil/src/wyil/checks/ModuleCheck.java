@@ -140,10 +140,12 @@ public class ModuleCheck implements Transform<WyilFile> {
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, e.attribute(SourceLocation.class));
 			} else if(code instanceof Codes.NewObject) {
 				syntaxError(errorMessage(ALLOCATION_NOT_PERMITTED_IN_FUNCTION), filename, e.attribute(SourceLocation.class));
-			} else if(code instanceof Codes.Dereference){
-				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, e.attribute(SourceLocation.class));
-			} else if(code instanceof Code.AbstractCompoundBytecode) {
-				Code.AbstractCompoundBytecode a = (Code.AbstractCompoundBytecode) code; 
+			} else if (code instanceof Codes.Operator
+					&& ((Codes.Operator) code).kind == Codes.OperatorKind.DEREFERENCE) {
+				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename,
+						e.attribute(SourceLocation.class));
+			} else if (code instanceof Code.AbstractCompoundBytecode) {
+				Code.AbstractCompoundBytecode a = (Code.AbstractCompoundBytecode) code;
 				checkFunctionPure(a.block(), forest);
 			}
 		}
