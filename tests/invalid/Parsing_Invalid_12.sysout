@@ -1,0 +1,3 @@
+../../tests/invalid/Parsing_Invalid_12.whiley:5: duplicate case label
+     case 1:
+^^^^^^^^^^^^

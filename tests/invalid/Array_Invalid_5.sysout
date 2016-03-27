@@ -1,0 +1,3 @@
+../../tests/invalid/Array_Invalid_5.whiley:2: expected type int[], found int
+    return 1
+           ^

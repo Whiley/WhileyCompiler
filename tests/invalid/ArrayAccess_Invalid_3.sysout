@@ -1,0 +1,4 @@
+../../tests/invalid/ArrayAccess_Invalid_3.whiley:11: unable to resolve name (no match for f({int data,int mode}|{int[] data,int mode}[])
+	found: ArrayAccess_Invalid_3:f : function({int data,int mode}[])->({int data,int mode}[]))
+    return f(tups)
+           ^^^^^^^

@@ -1,3 +1,0 @@
-../../tests/invalid/List_Invalid_2.whiley:2: unknown variable
-    int x = a2[0]
-            ^^

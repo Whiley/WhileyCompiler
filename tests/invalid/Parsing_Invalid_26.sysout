@@ -1,0 +1,3 @@
+../../tests/invalid/Parsing_Invalid_26.whiley:1: empty type encountered
+type Record is {
+^^^^^^^^^^^^^^^^^^

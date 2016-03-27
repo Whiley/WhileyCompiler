@@ -1,3 +1,0 @@
-../../tests/invalid/ListLength_Invalid_3.whiley:9: precondition not satisfied
-    f(-1)
-    ^^^^^

@@ -1,0 +1,3 @@
+../../tests/invalid/ArrayEmpty_Invalid_2.whiley:8: precondition not satisfied
+    f([0;0])
+    ^^^^^^^^

@@ -1,0 +1,3 @@
+../../tests/invalid/Parsing_Invalid_25.whiley:6: unknown variable
+    return x
+           ^

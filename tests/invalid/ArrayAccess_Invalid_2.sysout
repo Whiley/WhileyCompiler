@@ -1,0 +1,3 @@
+../../tests/invalid/ArrayAccess_Invalid_2.whiley:5: index out of bounds (negative)
+    int z = x[-1]
+            ^^^^^

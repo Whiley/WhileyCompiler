@@ -1,0 +1,3 @@
+../../tests/invalid/ConstrainedArray_Invalid_2.whiley:10: postcondition not satisfied
+        return x
+        ^^^^^^^^

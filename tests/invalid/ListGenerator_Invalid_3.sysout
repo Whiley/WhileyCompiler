@@ -1,3 +1,0 @@
-../../tests/invalid/ListGenerator_Invalid_3.whiley:2: expected type int, found bool
-    return [0; n]
-               ^
