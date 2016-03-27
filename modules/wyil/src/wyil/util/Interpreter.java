@@ -88,21 +88,21 @@ public class Interpreter {
 						"incorrect number of arguments: " + nid + ", " + sig);
 			}
 			// Third, get and check the function or method body
-			AttributedCodeBlock body = fm.body();
-			if (body == null) {
+			CodeForest code = fm.code();
+			if (fm.body() == null) {
 				// FIXME: add support for native functions or methods
 				throw new IllegalArgumentException(
 						"no function or method body found: " + nid + ", " + sig);
 			}
 			// Fourth, construct the stack frame for execution
 			ArrayList<Type> sig_params = sig.params();
-			Constant[] frame = new Constant[Math.max(sig_params.size(),
-					body.numSlots())];
+			Constant[] frame = new Constant[code.numRegisters()];
 			for (int i = 0; i != sig_params.size(); ++i) {
 				frame[i] = args[i];
 			}
 			// Finally, let's do it!
-			return (Constant[]) executeAllWithin(frame, new Context(null, body));
+			CodeForest.Index pc = new CodeForest.Index(fm.body(), 0);
+			return (Constant[]) executeAllWithin(frame, new Context(pc, code));
 		} catch (IOException e) {
 			throw new RuntimeException(e.getMessage(), e);
 		}
@@ -118,21 +118,21 @@ public class Interpreter {
 	 * @return
 	 */
 	private Object executeAllWithin(Constant[] frame, Context context) {
-		AttributedCodeBlock block = context.block;
-		CodeBlock.Index parent = context.pc;
-		CodeBlock.Index pc = parent == null ? new CodeBlock.Index(null, 0)
-				: parent.firstWithin();
-
-		do {
-			Object r = execute(frame, new Context(pc, block));
+		CodeForest forest = context.forest;
+		CodeForest.Index pc = context.pc;
+		int block = pc.block();
+		CodeForest.Block codes = forest.get(pc.block());		
+		
+		while(pc.block() == block && pc.offset() < codes.size()) {
+			Object r = execute(frame, new Context(pc, context.forest));
 			// Now, see whether we are continuing or not
-			if (r instanceof CodeBlock.Index) {
-				pc = (CodeBlock.Index) r;
+			if (r instanceof CodeForest.Index) {
+				pc = (CodeForest.Index) r;
 			} else {
 				return r;
 			}
-		} while (pc.isWithin(parent) && block.contains(pc));
-		if (!pc.isWithin(parent)) {
+		} 
+		if (pc.block() != block) {
 			// non-local exit
 			return pc;
 		} else {
@@ -153,7 +153,7 @@ public class Interpreter {
 	 * @return
 	 */
 	private Object execute(Constant[] frame, Context context) {		
-		Code bytecode = context.block.get(context.pc);
+		Code bytecode = context.forest.get(context.pc).code();
 		// FIXME: turn this into a switch statement?
 		if (bytecode instanceof Codes.Invariant) {
 			return execute((Codes.Invariant) bytecode, frame, context);
@@ -239,10 +239,10 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.AssertOrAssume bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.AssertOrAssume bytecode, Constant[] frame, Context context) {
 		//
-		Object r = executeAllWithin(frame, context);
+		CodeForest.Index pc = new CodeForest.Index(bytecode.block(), 0);
+		Object r = executeAllWithin(frame, new Context(pc,context.forest));
 		//
 		if (r == null) {
 			// Body of assert fell through to next
@@ -407,7 +407,7 @@ public class Interpreter {
 			Context context) {
 		try {
 			Constant operand = frame[bytecode.operand(0)];
-			Type target = expander.getUnderlyingType(bytecode.result);
+			Type target = expander.getUnderlyingType(bytecode.result());
 			frame[bytecode.target(0)] = convert(operand, target, context);
 			return context.pc.next();
 		} catch (IOException e) {
@@ -594,8 +594,8 @@ public class Interpreter {
 
 	private Object execute(Codes.Quantify bytecode, Constant[] frame,
 			Context context) {
-		Constant startOperand = frame[bytecode.startOperand];
-		Constant endOperand = frame[bytecode.endOperand];
+		Constant startOperand = frame[bytecode.startOperand()];
+		Constant endOperand = frame[bytecode.endOperand()];
 		checkType(startOperand, context, Constant.Integer.class);
 		checkType(endOperand, context, Constant.Integer.class);
 		Constant.Integer so = (Constant.Integer) startOperand;
@@ -604,9 +604,10 @@ public class Interpreter {
 		int end = eo.value.intValue();
 		for (int i = start; i < end; ++i) {		
 			// Assign the index variable
-			frame[bytecode.indexOperand] = Constant.V_INTEGER(BigInteger.valueOf(i));
+			frame[bytecode.indexOperand()] = Constant.V_INTEGER(BigInteger.valueOf(i));
 			// Execute loop body for one iteration
-			Object r = executeAllWithin(frame, context);
+			CodeForest.Index pc = new CodeForest.Index(bytecode.block(), 0);
+			Object r = executeAllWithin(frame,  new Context(pc,context.forest));
 			// Now, check whether we fell through to the end or not. If not,
 			// then we must have exited somehow so return to signal that.
 			if (r != null) {
@@ -619,7 +620,7 @@ public class Interpreter {
 	
 	private Object execute(Codes.Goto bytecode, Constant[] frame,
 			Context context) {
-		return context.getLabel(bytecode.target);
+		return context.getLabel(bytecode.destination());
 	}
 
 	private Object execute(Codes.If bytecode, Constant[] frame, Context context) {
@@ -653,7 +654,7 @@ public class Interpreter {
 
 		if (result) {
 			// branch taken, so jump to destination label
-			return context.getLabel(bytecode.target);
+			return context.getLabel(bytecode.destination());
 		} else {
 			// branch not taken, so fall through to next bytecode.
 			return context.pc.next();
@@ -683,10 +684,10 @@ public class Interpreter {
 	}
 
 	private Object execute(Codes.IfIs bytecode, Constant[] frame, Context context) {
-		Type typeOperand = bytecode.rightOperand;
+		Type typeOperand = bytecode.type(1);
 		Constant op = frame[bytecode.operand(0)];
 		if (isMemberOfType(op, typeOperand, context)) {
-			return context.getLabel(bytecode.target);
+			return context.getLabel(bytecode.destination());
 		}
 		// No, it doesn't so fall through to next instruction
 		return context.pc.next();
@@ -791,11 +792,12 @@ public class Interpreter {
 					return false;
 				}
 				// Check any invariant associated with this type
-				AttributedCodeBlock invariant = td.invariant();
-				if (invariant != null) {
-					Constant[] frame = new Constant[invariant.numSlots()];
+				CodeForest invariant = td.invariant();
+				if (invariant.numBlocks() > 0) {
+					Constant[] frame = new Constant[invariant.numRegisters()];
 					frame[0] = value;
-					executeAllWithin(frame, new Context(null, invariant));
+					CodeForest.Index pc = new CodeForest.Index(invariant.getRoot(0), 0);
+					executeAllWithin(frame, new Context(pc, invariant));
 				}
 				// Done
 				return true;
@@ -870,20 +872,20 @@ public class Interpreter {
 		// constant arguments provided in the lambda itself along with those
 		// operands provided for the "holes".
 		Constant.Lambda func = (Constant.Lambda) operand;
+		List<Constant> func_arguments = func.arguments;
 		int[] operands = bytecode.operands();
-		Constant[] arguments = new Constant[Math.max(func.arguments.size(),
-				operands.length - 1)];
-		int operandIndex = 1;
-		for (int i = 0; i != arguments.length; ++i) {
-			if (i >= func.arguments.size() || func.arguments.get(i) == null) {
-				arguments[i] = frame[operands[operandIndex]];
-				operandIndex = operandIndex + 1;
-			} else {
-				arguments[i] = func.arguments.get(i);
+		Constant[] arguments = new Constant[func_arguments.size() + (operands.length-1)];
+		{
+			int i=0;
+			for (int j = 1; j != operands.length; ++j) {
+				arguments[i++] = frame[operands[j]];	
+			}
+			for (int j = 0; j != func_arguments.size(); ++j) {
+				arguments[i++] = func.arguments.get(j);						
 			}
 		}
 		// Make the actual call
-		Constant[] results = execute(func.name, func.type(), arguments);		
+		Constant[] results = execute(func.name, func.type(), arguments);
 		// Check whether a return value was expected or not
 		int[] targets = bytecode.targets();
 		List<Type> returns = bytecode.type(0).returns();
@@ -959,11 +961,10 @@ public class Interpreter {
 
 		int[] operands = bytecode.operands();
 		Constant[] arguments = new Constant[operands.length];
+		
 		for (int i = 0; i != arguments.length; ++i) {
 			int reg = operands[i];
-			if (reg != Codes.NULL_REG) {
-				arguments[i] = frame[reg];
-			}
+			arguments[i] = frame[reg];
 		}
 		// FIXME: need to do something with the operands here.
 		frame[bytecode.target(0)] = Constant.V_LAMBDA(bytecode.name, bytecode.type(0), arguments);
@@ -1029,7 +1030,8 @@ public class Interpreter {
 		Object r;
 		do {
 			// Keep executing the loop body until we exit it somehow.
-			r = executeAllWithin(frame, context);
+			CodeForest.Index pc = new CodeForest.Index(bytecode.block(), 0);
+			r = executeAllWithin(frame, new Context(pc,context.forest));
 		} while (r == null);
 
 		// If we get here, then we have exited the loop body without falling
@@ -1365,18 +1367,18 @@ public class Interpreter {
 	 *
 	 */
 	public static class Context {
-		public final CodeBlock.Index pc;
-		public final AttributedCodeBlock block;
-		private Map<String, CodeBlock.Index> labels;
+		public final CodeForest.Index pc;
+		public final CodeForest forest;
+		private Map<String, CodeForest.Index> labels;
 
-		public Context(CodeBlock.Index pc, AttributedCodeBlock block) {
+		public Context(CodeForest.Index pc, CodeForest block) {
 			this.pc = pc;
-			this.block = block;
+			this.forest = block;
 		}
 
-		public CodeBlock.Index getLabel(String label) {
+		public CodeForest.Index getLabel(String label) {
 			if (labels == null) {
-				labels = CodeUtils.buildLabelMap(block);
+				labels = CodeUtils.buildLabelMap(forest);
 			}
 			return labels.get(label);
 		}

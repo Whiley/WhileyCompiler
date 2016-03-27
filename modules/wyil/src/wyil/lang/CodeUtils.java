@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import wyil.lang.Codes.Comparator;
-import wyil.util.AttributedCodeBlock;
 
 public class CodeUtils {
 
@@ -86,9 +85,19 @@ public class CodeUtils {
 	 * @param block
 	 * @return
 	 */
-	public static Map<String, CodeBlock.Index> buildLabelMap(AttributedCodeBlock block) {
-		HashMap<String, CodeBlock.Index> labels = new HashMap<String, CodeBlock.Index>();
-		buildLabelMap(new CodeBlock.Index(null), null, labels, block);
+	public static Map<String, CodeForest.Index> buildLabelMap(CodeForest forest) {
+		HashMap<String, CodeForest.Index> labels = new HashMap<String, CodeForest.Index>();
+		for (int i = 0; i != forest.numBlocks(); ++i) {
+			CodeForest.Block block = forest.get(i);
+			for (int j = 0; j != block.size(); ++j) {
+				Code code = block.get(j).code();
+				if (code instanceof Codes.Label) {
+					// Found a label, so register it in the labels map
+					Codes.Label label = (Codes.Label) code;
+					labels.put(label.label, new CodeForest.Index(i, j));
+				}
+			}
+		}
 		return labels;
 	}
 
@@ -102,21 +111,8 @@ public class CodeUtils {
 	 * @param block
 	 *            Root block
 	 */
-	private static void buildLabelMap(CodeBlock.Index index, CodeBlock.Index parent,
-			Map<String, CodeBlock.Index> labels, CodeBlock block) {
+	private static void buildLabelMap(int blockID, Map<String, CodeForest.Index> labels, CodeForest forest) {
 		//
-		for (int i = 0; i != block.size(); ++i) {
-			Code code = block.get(i);
-			if (code instanceof Codes.Label) {
-				// Found a label, so register it in the labels map
-				Codes.Label label = (Codes.Label) code;
-				labels.put(label.label, index);
-			} else if (code instanceof CodeBlock) {
-				// Found a subblock, so traverse that
-				CodeBlock subblock = (CodeBlock) code;
-				buildLabelMap(index.firstWithin(), index, labels, subblock);
-			}
-			index = index.next();
-		}
+		
 	}
 }

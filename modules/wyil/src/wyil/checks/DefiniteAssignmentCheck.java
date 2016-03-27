@@ -36,7 +36,7 @@ import wyil.util.dfa.*;
 import wyil.attributes.SourceLocation;
 import wyil.lang.*;
 import static wycc.lang.SyntaxError.*;
-import static wyil.lang.CodeBlock.*;
+import static wyil.lang.CodeForest.*;
 import static wyil.util.ErrorMessages.*;
 
 /**
@@ -102,14 +102,13 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public HashSet<Integer> propagate(CodeBlock.Index index, Code code,
-			HashSet<Integer> in) {
+	public HashSet<Integer> propagate(CodeForest.Index index, Code code, HashSet<Integer> in) {
 		checkUses(index, code, in);
 
 		int[] defs = defs(code);
-		
+
 		if (defs.length >= 0) {
-			for(int def : defs) {
+			for (int def : defs) {
 				in = new HashSet<Integer>(in);
 				in.add(def);
 			}
@@ -119,36 +118,35 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(CodeBlock.Index index,
+	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(CodeForest.Index index,
 			Codes.If igoto, HashSet<Integer> in) {
 
 		if (!in.contains(igoto.operand(0)) || !in.contains(igoto.operand(1))) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
-					rootBlock.attribute(index, SourceLocation.class));
+					forest.get(index).attribute(SourceLocation.class));
 		}
 
 		return new Pair(in, in);
 	}
 
 	@Override
-	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(CodeBlock.Index index,
-			Codes.IfIs iftype, HashSet<Integer> in) {
+	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(CodeForest.Index index, Codes.IfIs iftype,
+			HashSet<Integer> in) {
 
 		if (!in.contains(iftype.operand(0))) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
-					rootBlock.attribute(index,SourceLocation.class));
+					forest.get(index).attribute(SourceLocation.class));
 		}
 
-		return new Pair(in,in);
+		return new Pair(in, in);
 	}
 
 	@Override
-	public List<HashSet<Integer>> propagate(CodeBlock.Index index, Codes.Switch sw,
-			HashSet<Integer> in) {
+	public List<HashSet<Integer>> propagate(CodeForest.Index index, Codes.Switch sw, HashSet<Integer> in) {
 
 		if (!in.contains(sw.operand(0))) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
-					rootBlock.attribute(index,SourceLocation.class));
+					forest.get(index).attribute(SourceLocation.class));
 		}
 
 		ArrayList<HashSet<Integer>> stores = new ArrayList();
@@ -159,23 +157,20 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public HashSet<Integer> propagate(CodeBlock.Index index, Codes.Loop loop,
-			HashSet<Integer> in) {
+	public HashSet<Integer> propagate(CodeForest.Index index, Codes.Loop loop, HashSet<Integer> in) {
 		if (loop instanceof Codes.Quantify) {
 			Codes.Quantify fall = (Codes.Quantify) loop;
 
-			if (!in.contains(fall.startOperand) || !in.contains(fall.endOperand)) {
-				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-						filename,
-						rootBlock.attribute(index, SourceLocation.class));
-			} 
+			if (!in.contains(fall.startOperand()) || !in.contains(fall.endOperand())) {
+				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
+						forest.get(index).attribute(SourceLocation.class));
+			}
 
 			in = new HashSet<Integer>(in);
-			in.add(fall.indexOperand);
+			in.add(fall.indexOperand());
 		}
 
-		CodeBlock blk = loop;
-		HashSet<Integer> r = propagate(index, blk, in);
+		HashSet<Integer> r = propagate(loop.block(), in);
 		return join(in, r);
 	}
 
@@ -190,20 +185,20 @@ public class DefiniteAssignmentCheck extends
 		return r;
 	}
 
-	public void checkUses(CodeBlock.Index index, Code code, HashSet<Integer> in) {
-		if(code instanceof Code.AbstractBytecode) {
+	public void checkUses(CodeForest.Index index, Code code, HashSet<Integer> in) {
+		if (code instanceof Code.AbstractBytecode) {
 			Code.AbstractBytecode a = (Code.AbstractBytecode) code;
-			for(int operand : a.operands()) {
-				if(operand != Codes.NULL_REG && !in.contains(operand)) {
-					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-	                        filename, rootBlock.attribute(index,SourceLocation.class));
+			for (int operand : a.operands()) {
+				if (operand != Codes.NULL_REG && !in.contains(operand)) {
+					syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
+							forest.get(index).attribute(SourceLocation.class));
 				}
-			}	
-			if(code instanceof Codes.Update && !in.contains(a.target(0))) {
+			}
+			if (code instanceof Codes.Update && !in.contains(a.target(0))) {
 				// In this case, we are assigning to an index or field.
 				// Therefore, the target register must already be defined.
-				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED),
-                        filename, rootBlock.attribute(index,SourceLocation.class));
+				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
+						forest.get(index).attribute(SourceLocation.class));
 			}
 			return;
 		} else {

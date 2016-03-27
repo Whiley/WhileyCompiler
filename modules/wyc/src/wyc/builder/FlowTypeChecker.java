@@ -343,7 +343,7 @@ public class FlowTypeChecker {
 	 * recursively propagate type information through them as well.
 	 *
 	 *
-	 * @param block
+	 * @param forest
 	 *            Block of statements to flow-sensitively type check
 	 * @param environment
 	 *            Determines the type of all variables immediately going into

@@ -42,7 +42,6 @@ import wyfs.util.Trie;
 import wyil.attributes.SourceLocation;
 import wyil.lang.*;
 import wyil.lang.Constant;
-import wyil.util.AttributedCodeBlock;
 import wyil.util.TypeExpander;
 import static wyil.util.ErrorMessages.internalFailure;
 import wyjc.util.WyjcBuildTask;
@@ -91,11 +90,6 @@ public class Wyil2JavaBuilder implements Builder {
 	 * Filename of module being translated
 	 */
 	protected String filename;
-
-	/**
-	 * Root of block being translated
-	 */
-	protected AttributedCodeBlock rootBlock;
 
 	/**
 	 * Type of enclosing class being generated
@@ -359,18 +353,16 @@ public class Wyil2JavaBuilder implements Builder {
 		ClassFile.Method cm = new ClassFile.Method(td.name() + "$typeof",
 				funType, modifiers);
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
-
 		// First, generate code for testing elements of type (if any)
 		String falseBranch = freshLabel();
 		// FIXME: this is inefficient in cases where there are no invariants in
 		// component types (e.g. there are no component types).
-		translateInvariantTest(falseBranch, td.type(), 0, 1, constants,
-				bytecodes);
+		translateInvariantTest(falseBranch, td.type(), 0, 1, constants, bytecodes);
 		// Second, generate code for invariant (if applicable).
-		AttributedCodeBlock invariant = td.invariant();
-		if (invariant != null) {
-			invariant = patchInvariantBlock(falseBranch, invariant);
-			translate(invariant, 1, bytecodes);
+		// FIXME: use of patchInvariantBlock is not ideal
+		CodeForest invariant = patchInvariantBlock(falseBranch, td.invariant());
+		for(int i=0;i!=invariant.numRoots();++i) {				
+			translate(invariant.getRoot(i), 1, invariant, bytecodes);
 		}
 		bytecodes.add(new Bytecode.LoadConst(true));
 		bytecodes.add(new Bytecode.Return(new JvmType.Bool()));
@@ -382,26 +374,28 @@ public class Wyil2JavaBuilder implements Builder {
 				new ArrayList(), cm);
 		cm.attributes().add(code);
 		return cm;
-
 	}
 
 	/**
-	 * Construct a modified version of the invariant block whereby all fail
-	 * bytecodes are replaced with returning false, and all return bytecodes are
-	 * replaced with returning true.
+	 * Update the invariant block to replace fail and return statements with
+	 * goto's and nops (respectively).
+	 * 
+	 * @param falseBranch
+	 * @param forest
 	 */
-	private AttributedCodeBlock patchInvariantBlock(String falseBranch,
-			AttributedCodeBlock block) {
-		AttributedCodeBlock copy = new AttributedCodeBlock(block.bytecodes(),
-				block.attributes());
-		patchInvariantBlockHelper(falseBranch, copy);
-		return copy;
+	private CodeForest patchInvariantBlock(String falseBranch, CodeForest forest) {
+		CodeForest nForest = new CodeForest(forest);
+		for(int i=0;i!=forest.numBlocks();++i) {
+			patchInvariantBlockHelper(falseBranch, nForest.get(i));
+		}
+		return nForest;
 	}
 
-	private void patchInvariantBlockHelper(String falseBranch, CodeBlock block) {
+	private void patchInvariantBlockHelper(String falseBranch, CodeForest.Block block) {
 		for (int i = 0; i != block.size(); ++i) {
 			// This is still a valid index
-			Code c = block.get(i);
+			CodeForest.Entry e = block.get(i);
+			Code c = e.code();
 
 			if (c instanceof Codes.Return) {
 				// first patch point
@@ -409,9 +403,7 @@ public class Wyil2JavaBuilder implements Builder {
 			} else if (c instanceof Codes.Fail) {
 				// second patch point
 				block.set(i, Codes.Goto(falseBranch));
-			} else if (c instanceof Code.Compound) {
-				patchInvariantBlockHelper(falseBranch, (Code.Compound) c);
-			}
+			} 
 		}
 	}
 
@@ -515,8 +507,8 @@ public class Wyil2JavaBuilder implements Builder {
 
 		lineNumbers = new ArrayList<LineNumberTable.Entry>();
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
-		AttributedCodeBlock block = method.body();
-		translate(block, block.numSlots(), bytecodes);
+		CodeForest forest = method.code();
+		translate(method.body(), forest.numRegisters(), forest, bytecodes);
 		jasm.attributes.Code code = new jasm.attributes.Code(bytecodes,
 				Collections.EMPTY_LIST, cm);
 		if (!lineNumbers.isEmpty()) {
@@ -537,10 +529,8 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param bytecodes
 	 *            --- list to insert bytecodes into *
 	 */
-	private void translate(AttributedCodeBlock blk, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		rootBlock = blk;
-		translate(null, blk, freeSlot, bytecodes);
+	private void translate(int blk, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
+		translate(new CodeForest.Index(blk, 0), freeSlot, forest, bytecodes);
 	}
 
 	/**
@@ -557,19 +547,17 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param bytecodes
 	 *            List of bytecodes being accumulated
 	 */
-	private void translate(CodeBlock.Index parentIndex, CodeBlock block,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
-
+	private void translate(CodeForest.Index pc, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
+		CodeForest.Block block = forest.get(pc.block());
 		for (int i = 0; i != block.size(); ++i) {
-			CodeBlock.Index index = new CodeBlock.Index(parentIndex, i);
-			SourceLocation loc = rootBlock.attribute(index,
-					SourceLocation.class);
+			CodeForest.Index index = new CodeForest.Index(pc.block(), i);
+			SourceLocation loc = forest.get(index).attribute(SourceLocation.class);
 			if (loc != null) {
 				// FIXME: figure our how to get line number!
 				// lineNumbers.add(new
 				// LineNumberTable.Entry(bytecodes.size(),loc.line));
 			}
-			freeSlot = translate(index, block.get(i), freeSlot, bytecodes);
+			freeSlot = translate(index, block.get(i).code(), freeSlot, forest, bytecodes);
 		}
 	}
 
@@ -578,9 +566,9 @@ public class Wyil2JavaBuilder implements Builder {
 	 * bytecodes. The bytecode index is given to help with debugging (i.e. to
 	 * extract attributes associated with the given bytecode).
 	 * 
-	 * @param index
+	 * @param pc
 	 *            The index of the WyIL bytecode being translated in the
-	 *            rootBlock.
+	 *            forest.
 	 * @param code
 	 *            The WyIL bytecode being translated.
 	 * @param freeSlot
@@ -589,107 +577,101 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            The list of bytecodes being accumulated
 	 * @return
 	 */
-	private int translate(CodeBlock.Index index, Code code, int freeSlot,
+	private int translate(CodeForest.Index pc, Code code, int freeSlot, CodeForest forest,
 			ArrayList<Bytecode> bytecodes) {
 
 		try {
 			if (code instanceof Codes.BinaryOperator) {
-				translate(index, (Codes.BinaryOperator) code, freeSlot,
-						bytecodes);
+				translate(pc, (Codes.BinaryOperator) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Convert) {
-				translate(index, (Codes.Convert) code, freeSlot, bytecodes);
+				translate(pc, (Codes.Convert) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Const) {
-				translate(index, (Codes.Const) code, freeSlot, bytecodes);
+				translate(pc, (Codes.Const) code, freeSlot, forest,bytecodes);
 			} else if (code instanceof Codes.Debug) {
-				translate(index, (Codes.Debug) code, freeSlot, bytecodes);
+				translate(pc, (Codes.Debug) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.AssertOrAssume) {
-				translate(index, (Codes.AssertOrAssume) code, freeSlot,
+				translate(pc, (Codes.AssertOrAssume) code, freeSlot, forest,
 						bytecodes);
 			} else if (code instanceof Codes.Fail) {
-				translate(index, (Codes.Fail) code, freeSlot, bytecodes);
+				translate(pc, (Codes.Fail) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.FieldLoad) {
-				translate(index, (Codes.FieldLoad) code, freeSlot, bytecodes);
+				translate(pc, (Codes.FieldLoad) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Quantify) {
-				freeSlot = translate(index, (Codes.Quantify) code, freeSlot,
-						bytecodes);
+				freeSlot = translate(pc, (Codes.Quantify) code, freeSlot,
+						 forest, bytecodes);
 			} else if (code instanceof Codes.Goto) {
-				translate(index, (Codes.Goto) code, freeSlot, bytecodes);
+				translate(pc, (Codes.Goto) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.If) {
-				translateIfGoto(index, (Codes.If) code, freeSlot, bytecodes);
+				translateIfGoto(pc, (Codes.If) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.IfIs) {
-				translate(index, (Codes.IfIs) code, freeSlot, bytecodes);
+				translate(pc, (Codes.IfIs) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.IndirectInvoke) {
-				translate(index, (Codes.IndirectInvoke) code, freeSlot,
-						bytecodes);
+				translate(pc, (Codes.IndirectInvoke) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Invoke) {
-				translate(index, (Codes.Invoke) code, freeSlot, bytecodes);
+				translate(pc, (Codes.Invoke) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Invert) {
-				translate(index, (Codes.Invert) code, freeSlot, bytecodes);
+				translate(pc, (Codes.Invert) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Label) {
-				translate(index, (Codes.Label) code, freeSlot, bytecodes);
+				translate(pc, (Codes.Label) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.ArrayGenerator) {
-				translate(index, (Codes.ArrayGenerator) code, freeSlot, bytecodes);
+				translate(pc, (Codes.ArrayGenerator) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Lambda) {
-				translate(index, (Codes.Lambda) code, freeSlot, bytecodes);
+				translate(pc, (Codes.Lambda) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.LengthOf) {
-				translate(index, (Codes.LengthOf) code, freeSlot, bytecodes);
+				translate(pc, (Codes.LengthOf) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.IndexOf) {
-				translate(index, (Codes.IndexOf) code, freeSlot, bytecodes);
+				translate(pc, (Codes.IndexOf) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Assign) {
-				translate(index, (Codes.Assign) code, freeSlot, bytecodes);
+				translate(pc, (Codes.Assign) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Loop) {
-				translate(index, (Codes.Loop) code, freeSlot, bytecodes);
+				translate(pc, (Codes.Loop) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Move) {
-				translate(index, (Codes.Move) code, freeSlot, bytecodes);
+				translate(pc, (Codes.Move) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Update) {
-				translate(index, (Codes.Update) code, freeSlot, bytecodes);
+				translate(pc, (Codes.Update) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.NewArray) {
-				translate(index, (Codes.NewArray) code, freeSlot, bytecodes);
+				translate(pc, (Codes.NewArray) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.NewRecord) {
-				translate(index, (Codes.NewRecord) code, freeSlot, bytecodes);
+				translate(pc, (Codes.NewRecord) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.UnaryOperator) {
-				translate(index, (Codes.UnaryOperator) code, freeSlot,
-						bytecodes);
+				translate(pc, (Codes.UnaryOperator) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Dereference) {
-				translate(index, (Codes.Dereference) code, freeSlot, bytecodes);
+				translate(pc, (Codes.Dereference) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Return) {
-				translate(index, (Codes.Return) code, freeSlot, bytecodes);
+				translate(pc, (Codes.Return) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Nop) {
 				// do nothing
 			} else if (code instanceof Codes.Switch) {
-				translate(index, (Codes.Switch) code, freeSlot, bytecodes);
+				translate(pc, (Codes.Switch) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.NewObject) {
-				translate(index, (Codes.NewObject) code, freeSlot, bytecodes);
+				translate(pc, (Codes.NewObject) code, freeSlot,  forest, bytecodes);
 			} else {
 				internalFailure("unknown wyil code encountered (" + code + ")",
 						filename,
-						rootBlock.attribute(index, SourceLocation.class));
+						forest.get(pc).attribute(SourceLocation.class));
 			}
 
 		} catch (Exception ex) {
 			internalFailure(ex.getMessage(), filename, ex,
-					rootBlock.attribute(index, SourceLocation.class));
+					forest.get(pc).attribute(SourceLocation.class));
 		}
 
 		return freeSlot;
 	}
 	
 
-	private void translate(CodeBlock.Index index, Codes.AssertOrAssume c,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.AssertOrAssume c,
+			int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
+		CodeForest.Index pc = new CodeForest.Index(c.block(), 0);
 		if(c instanceof Codes.Invariant) {
 			// essentially a no-op for now			
-		} else if(c instanceof Codes.Assert) { 
-			Codes.Assert ca = (Codes.Assert) c;
-			translate(index, (CodeBlock) c, freeSlot, bytecodes);
 		} else {
-			Codes.Assume ca = (Codes.Assume) c;
-			translate(index, (CodeBlock) c, freeSlot, bytecodes);
+			translate(pc, freeSlot, forest, bytecodes);
 		}
 	}
 
-	private void translate(CodeBlock.Index index, Codes.Const c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.Const c, int freeSlot,
+			CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		Constant constant = c.constant;
 		JvmType jt = convertUnderlyingType(constant.type());
 
@@ -706,16 +688,18 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(c.target(), jt));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.Convert c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.Convert c, int freeSlot, CodeForest forest,
+			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0))));
-		addCoercion(c.type(0), c.result, freeSlot, constants, bytecodes);
-		bytecodes.add(new Bytecode.Store(c.target(0), convertUnderlyingType(c.result)));
+		addCoercion(c.type(0), c.result(), freeSlot, constants, bytecodes);
+		bytecodes.add(new Bytecode.Store(c.target(0), convertUnderlyingType(c.result())));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.Update code, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.Update code, int freeSlot, CodeForest forest,
+			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Load(code.target(0), convertUnderlyingType(code.type(0))));
 		translateUpdate(code.iterator(), code, bytecodes);
-		bytecodes.add(new Bytecode.Store(code.target(0), convertUnderlyingType(code.afterType)));
+		bytecodes.add(new Bytecode.Store(code.target(0), convertUnderlyingType(code.afterType())));
 	}
 
 	/**
@@ -855,8 +839,8 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "setState", setFunType, Bytecode.InvokeMode.VIRTUAL));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.Return c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.Return c, int freeSlot,
+			CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		JvmType jt = null;
 		int[] operands = c.operands();
 		 if(operands.length == 1) {
@@ -870,8 +854,8 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Return(jt));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.Switch c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.Switch c, int freeSlot,
+			CodeForest forest, ArrayList<Bytecode> bytecodes) {
 
 		ArrayList<jasm.util.Pair<Integer, String>> cases = new ArrayList();
 		boolean canUseSwitchBytecode = true;
@@ -907,23 +891,22 @@ public class Wyil2JavaBuilder implements Builder {
 				String target = p.second();
 				translate(value, freeSlot, bytecodes);
 				bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0))));
-				translateIfGoto(index, value.type(), Codes.Comparator.EQ,
-						target, freeSlot + 1, bytecodes);
+				translateIfGoto(index, value.type(), Codes.Comparator.EQ, target, freeSlot + 1, forest, bytecodes);
 			}
 			bytecodes.add(new Bytecode.Goto(c.defaultTarget));
 		}
 	}
 
-	private void translateIfGoto(CodeBlock.Index index, Codes.If code, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translateIfGoto(CodeForest.Index index, Codes.If code, int freeSlot, CodeForest forest,
+			ArrayList<Bytecode> bytecodes) {
 		JvmType jt = convertUnderlyingType(code.type(0));
 		bytecodes.add(new Bytecode.Load(code.operand(0), jt));
 		bytecodes.add(new Bytecode.Load(code.operand(1), jt));
-		translateIfGoto(index, code.type(0), code.op, code.target, freeSlot, bytecodes);
+		translateIfGoto(index, code.type(0), code.op, code.destination(), freeSlot, forest, bytecodes);
 	}
 
-	private void translateIfGoto(CodeBlock.Index index, Type c_type,
-			Codes.Comparator cop, String target, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+	private void translateIfGoto(CodeForest.Index index, Type c_type, Codes.Comparator cop, String target, int freeSlot,
+			CodeForest forest, ArrayList<Bytecode> bytecodes) {
 
 		JvmType type = convertUnderlyingType(c_type);
 		// Just use the Object.equals() method, followed
@@ -998,7 +981,7 @@ public class Wyil2JavaBuilder implements Builder {
 		}	
 		default:
 			internalFailure("unknown if condition encountered", filename,
-					rootBlock.attribute(index, SourceLocation.class));
+					forest.get(index).attribute(SourceLocation.class));
 			return;
 		}
 
@@ -1006,8 +989,8 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.If(op, target));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.IfIs c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.IfIs c, int freeSlot,
+			CodeForest forest, ArrayList<Bytecode> bytecodes) {
 
 		// In this case, we're updating the type of a local variable. To
 		// make this work, we must update the JVM type of that slot as well
@@ -1036,18 +1019,16 @@ public class Wyil2JavaBuilder implements Builder {
 		//
 		// First, calculate the underlying and maximal consumed types, which
 		// we'll need later.
+		Type targetType = c.rightOperand();
 		Type maximalConsumedType;
 		Type underlyingType;
 		try {
-			maximalConsumedType = expander
-					.getMaximallyConsumedType(c.rightOperand);
-			underlyingType = expander.getUnderlyingType(c.rightOperand);
+			maximalConsumedType = expander.getMaximallyConsumedType(targetType);
+			underlyingType = expander.getUnderlyingType(targetType);
 		} catch (Exception e) {
-			internalFailure("error computing maximally consumed type: "
-					+ c.rightOperand, filename, e);
+			internalFailure("error computing maximally consumed type: " + targetType, filename, e);
 			return;
 		}
-
 		// The false label will determine the destination where the variable
 		// will be retyped on the false branch begins.
 		String falseLabel = freshLabel();
@@ -1070,8 +1051,8 @@ public class Wyil2JavaBuilder implements Builder {
 		// Fourth handle constrained types by invoking a function which will
 		// execute any and all constraints associated with the type. For
 		// recursive types, this may result in recursive calls.
-		translateInvariantTest(falseLabel, c.rightOperand, c.operand(0), freeSlot, constants, bytecodes);
-		bytecodes.add(new Bytecode.Goto(c.target));
+		translateInvariantTest(falseLabel, targetType, c.operand(0), freeSlot, constants, bytecodes);
+		bytecodes.add(new Bytecode.Goto(c.destination()));
 		// Finally, construct false branch and retype the variable on the false
 		// branch to ensure it has the most precise type we know at this point.
 		bytecodes.add(new Bytecode.Label(falseLabel));
@@ -1116,24 +1097,18 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 
-	private void translateInvariantTest(String falseTarget, Type type,
-			int rootSlot, int freeSlot,
-			HashMap<JvmConstant, Integer> constants,
-			ArrayList<Bytecode> bytecodes) {
+	private void translateInvariantTest(String falseTarget, Type type, int rootSlot, int freeSlot,
+			HashMap<JvmConstant, Integer> constants, ArrayList<Bytecode> bytecodes) {
 		//
 		JvmType underlyingType = convertUnderlyingType(type);
 		//
 		if (type instanceof Type.Nominal) {
 			Type.Nominal c = (Type.Nominal) type;
 			Path.ID mid = c.name().module();
-			JvmType.Clazz owner = new JvmType.Clazz(mid.parent().toString()
-					.replace('/', '.'), mid.last());
-			JvmType.Function fnType = new JvmType.Function(new JvmType.Bool(),
-					convertUnderlyingType(c));
-			bytecodes.add(new Bytecode.Load(rootSlot,
-					convertUnderlyingType(type)));
-			bytecodes.add(new Bytecode.Invoke(owner, c.name().name()
-					+ "$typeof", fnType, Bytecode.InvokeMode.STATIC));
+			JvmType.Clazz owner = new JvmType.Clazz(mid.parent().toString().replace('/', '.'), mid.last());
+			JvmType.Function fnType = new JvmType.Function(new JvmType.Bool(), convertUnderlyingType(c));
+			bytecodes.add(new Bytecode.Load(rootSlot, convertUnderlyingType(type)));
+			bytecodes.add(new Bytecode.Invoke(owner, c.name().name() + "$typeof", fnType, Bytecode.InvokeMode.STATIC));
 			bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, falseTarget));
 		} else if (type instanceof Type.Leaf) {
 			// Do nout
@@ -1141,22 +1116,16 @@ public class Wyil2JavaBuilder implements Builder {
 			Type.Reference rt = (Type.Reference) type;
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);
 			bytecodes.add(new Bytecode.Load(rootSlot, underlyingType));
-			bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "state", ftype,
-					Bytecode.InvokeMode.VIRTUAL));
+			bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "state", ftype, Bytecode.InvokeMode.VIRTUAL));
 			addReadConversion(rt.element(), bytecodes);
-			bytecodes.add(new Bytecode.Store(freeSlot, convertUnderlyingType(rt
-					.element())));
-			translateInvariantTest(falseTarget, rt.element(), freeSlot,
-					freeSlot + 1, constants, bytecodes);
+			bytecodes.add(new Bytecode.Store(freeSlot, convertUnderlyingType(rt.element())));
+			translateInvariantTest(falseTarget, rt.element(), freeSlot, freeSlot + 1, constants, bytecodes);
 		} else if (type instanceof Type.EffectiveArray) {
 			Type.EffectiveArray ts = (Type.EffectiveArray) type;
-			Triple<String, String, String> loopLabels = translateLoopBegin(
-					bytecodes, rootSlot, freeSlot);
+			Triple<String, String, String> loopLabels = translateLoopBegin(bytecodes, rootSlot, freeSlot);
 			addReadConversion(ts.element(), bytecodes);
-			bytecodes.add(new Bytecode.Store(freeSlot + 1,
-					convertUnderlyingType(ts.element())));
-			translateInvariantTest(falseTarget, ts.element(), freeSlot + 1,
-					freeSlot + 2, constants, bytecodes);
+			bytecodes.add(new Bytecode.Store(freeSlot + 1, convertUnderlyingType(ts.element())));
+			translateInvariantTest(falseTarget, ts.element(), freeSlot + 1, freeSlot + 2, constants, bytecodes);
 			translateLoopEnd(bytecodes, loopLabels);
 		} else if (type instanceof Type.Record) {
 			Type.Record tt = (Type.Record) type;
@@ -1169,15 +1138,11 @@ public class Wyil2JavaBuilder implements Builder {
 				JvmType underlyingFieldType = convertUnderlyingType(fieldType);
 				bytecodes.add(new Bytecode.Load(rootSlot, underlyingType));
 				bytecodes.add(new Bytecode.LoadConst(field));
-				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-						JAVA_LANG_STRING);
-				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "get", ftype,
-						Bytecode.InvokeMode.VIRTUAL));
+				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, JAVA_LANG_STRING);
+				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "get", ftype, Bytecode.InvokeMode.VIRTUAL));
 				addReadConversion(fieldType, bytecodes);
-				bytecodes
-						.add(new Bytecode.Store(freeSlot, underlyingFieldType));
-				translateInvariantTest(falseTarget, fieldType, freeSlot,
-						freeSlot + 1, constants, bytecodes);
+				bytecodes.add(new Bytecode.Store(freeSlot, underlyingFieldType));
+				translateInvariantTest(falseTarget, fieldType, freeSlot, freeSlot + 1, constants, bytecodes);
 			}
 		} else if (type instanceof Type.FunctionOrMethod) {
 			// FIXME: this is clearly a bug. However, it's not completely
@@ -1187,8 +1152,7 @@ public class Wyil2JavaBuilder implements Builder {
 		} else if (type instanceof Type.Negation) {
 			Type.Reference rt = (Type.Reference) type;
 			String trueTarget = freshLabel();
-			translateInvariantTest(trueTarget, rt.element(), rootSlot,
-					freeSlot, constants, bytecodes);
+			translateInvariantTest(trueTarget, rt.element(), rootSlot, freeSlot, constants, bytecodes);
 			bytecodes.add(new Bytecode.Goto(falseTarget));
 			bytecodes.add(new Bytecode.Label(trueTarget));
 		} else if (type instanceof Type.Union) {
@@ -1198,17 +1162,12 @@ public class Wyil2JavaBuilder implements Builder {
 				try {
 					Type underlyingBound = expander.getUnderlyingType(bound);
 					String nextLabel = freshLabel();
-					bytecodes.add(new Bytecode.Load(rootSlot,
-							convertUnderlyingType(type)));
-					translateTypeTest(nextLabel, underlyingBound, constants,
-							bytecodes);
-					bytecodes.add(new Bytecode.Load(rootSlot,
-							convertUnderlyingType(type)));
+					bytecodes.add(new Bytecode.Load(rootSlot, convertUnderlyingType(type)));
+					translateTypeTest(nextLabel, underlyingBound, constants, bytecodes);
+					bytecodes.add(new Bytecode.Load(rootSlot, convertUnderlyingType(type)));
 					addReadConversion(bound, bytecodes);
-					bytecodes.add(new Bytecode.Store(freeSlot,
-							convertUnderlyingType(bound)));
-					translateInvariantTest(nextLabel, bound, freeSlot,
-							freeSlot + 1, constants, bytecodes);
+					bytecodes.add(new Bytecode.Store(freeSlot, convertUnderlyingType(bound)));
+					translateInvariantTest(nextLabel, bound, freeSlot, freeSlot + 1, constants, bytecodes);
 					bytecodes.add(new Bytecode.Goto(trueLabel));
 					bytecodes.add(new Bytecode.Label(nextLabel));
 				} catch (ResolveError e) {
@@ -1224,49 +1183,42 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 
-	private void translate(CodeBlock.Index index, Codes.Loop c, int freeSlot,
+	private void translate(CodeForest.Index index, Codes.Loop c, int freeSlot, CodeForest forest,
 			ArrayList<Bytecode> bytecodes) {
-
 		// Allocate header label for loop
 		String loopHeader = freshLabel();
 		bytecodes.add(new Bytecode.Label(loopHeader));
 		// Translate body of loop. The cast is required to ensure correct method
 		// is called.
-		translate(index, (CodeBlock) c, freeSlot, bytecodes);
+		translate(new CodeForest.Index(c.block(), 0), freeSlot, forest, bytecodes);
 		// Terminate loop by branching back to head of loop
 		bytecodes.add(new Bytecode.Goto(loopHeader));
 	}
 
-	private int translate(CodeBlock.Index index, Codes.Quantify c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-
-		bytecodes.add(new Bytecode.Load(c.startOperand,WHILEYINT));
-		bytecodes.add(new Bytecode.Load(c.endOperand,WHILEYINT));
+	private int translate(CodeForest.Index index, Codes.Quantify c, int freeSlot,
+			CodeForest forest, ArrayList<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.Load(c.startOperand(), WHILEYINT));
+		bytecodes.add(new Bytecode.Load(c.endOperand(), WHILEYINT));
 		JvmType.Function ftype = new JvmType.Function(WHILEYARRAY, WHILEYINT, WHILEYINT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "range", ftype,
-				Bytecode.InvokeMode.STATIC));
+		bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "range", ftype, Bytecode.InvokeMode.STATIC));
 		ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
-		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "iterator",
-				ftype, Bytecode.InvokeMode.INTERFACE));
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "iterator", ftype, Bytecode.InvokeMode.INTERFACE));
 		bytecodes.add(new Bytecode.Store(freeSlot, JAVA_UTIL_ITERATOR));
 		String loopHeader = freshLabel();
 		String loopExit = freshLabel();
 		bytecodes.add(new Bytecode.Label(loopHeader));
 		ftype = new JvmType.Function(T_BOOL);
 		bytecodes.add(new Bytecode.Load(freeSlot, JAVA_UTIL_ITERATOR));
-		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "hasNext", ftype,
-				Bytecode.InvokeMode.INTERFACE));
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "hasNext", ftype, Bytecode.InvokeMode.INTERFACE));
 		bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, loopExit));
 		bytecodes.add(new Bytecode.Load(freeSlot, JAVA_UTIL_ITERATOR));
 		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next", ftype,
-				Bytecode.InvokeMode.INTERFACE));
+		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next", ftype, Bytecode.InvokeMode.INTERFACE));
 		addReadConversion(Type.T_INT, bytecodes);
-		bytecodes.add(new Bytecode.Store(c.indexOperand,
-				convertUnderlyingType(Type.T_INT)));
+		bytecodes.add(new Bytecode.Store(c.indexOperand(), convertUnderlyingType(Type.T_INT)));
 		// Translate body of loop. The cast is required to ensure correct method
 		// is called.
-		translate(index, (CodeBlock) c, freeSlot + 1, bytecodes);
+		translate(new CodeForest.Index(c.block(), 0), freeSlot + 1, forest, bytecodes);
 		// Terminate loop by branching back to head of loop
 		bytecodes.add(new Bytecode.Goto(loopHeader));
 		bytecodes.add(new Bytecode.Label(loopExit));
@@ -1274,38 +1226,38 @@ public class Wyil2JavaBuilder implements Builder {
 		return freeSlot;
 	}
 
-	private void translate(CodeBlock.Index index, Codes.Goto c, int freeSlot,
+	private void translate(CodeForest.Index index, Codes.Goto c, int freeSlot, CodeForest forest,
 			ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Goto(c.target));
+		bytecodes.add(new Bytecode.Goto(c.destination()));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.Label c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.Label c, int freeSlot,
+			CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Label(c.label));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.Debug c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.Debug c, int freeSlot,
+			CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(T_VOID, WHILEYARRAY);
 		bytecodes.add(new Bytecode.Load(c.operand(0), WHILEYARRAY));
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "print", ftype, Bytecode.InvokeMode.STATIC));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.Assign c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.Assign c, int freeSlot,
+			CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		JvmType jt = convertUnderlyingType(c.type(0));
 		bytecodes.add(new Bytecode.Load(c.operand(0), jt));
 		bytecodes.add(new Bytecode.Store(c.target(0), jt));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.Move c, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.Move c, int freeSlot,
+			CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		JvmType jt = convertUnderlyingType(c.type(0));
 		bytecodes.add(new Bytecode.Load(c.operand(0), jt));
 		bytecodes.add(new Bytecode.Store(c.target(0), jt));
 	}
 	
-	private void translate(CodeBlock.Index index, Codes.ArrayGenerator c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.ArrayGenerator c, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		JvmType elementType = convertUnderlyingType(c.type(0).element());
 		bytecodes.add(new Bytecode.Load(c.operand(0), elementType));
 		addWriteConversion(c.type(0).element(), bytecodes);
@@ -1315,7 +1267,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(c.target(0), WHILEYARRAY));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.LengthOf c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.LengthOf c, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType((Type) c.type(0))));
 		JvmType.Clazz ctype = JAVA_LANG_OBJECT;
 		JvmType.Function ftype = new JvmType.Function(WHILEYINT);
@@ -1323,7 +1275,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(c.target(0), WHILEYINT));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.IndexOf c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.IndexOf c, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Load(c.operand(0), WHILEYARRAY));
 		bytecodes.add(new Bytecode.Load(c.operand(1), WHILEYINT));
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYARRAY, WHILEYINT);
@@ -1332,7 +1284,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(c.target(0), convertUnderlyingType(c.type(0).element())));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.Fail c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.Fail c, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.New(JAVA_LANG_RUNTIMEEXCEPTION));
 		bytecodes.add(new Bytecode.Dup(JAVA_LANG_RUNTIMEEXCEPTION));
 		bytecodes.add(new Bytecode.LoadConst("runtime fault encountered"));
@@ -1341,7 +1293,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Throw());
 	}
 
-	private void translate(CodeBlock.Index index, Codes.FieldLoad c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.FieldLoad c, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Load(c.operand(0), WHILEYRECORD));
 		bytecodes.add(new Bytecode.LoadConst(c.field));
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYRECORD, JAVA_LANG_STRING);
@@ -1350,8 +1302,8 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(c.target(0), convertUnderlyingType(c.fieldType())));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.BinaryOperator c,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.BinaryOperator c, int freeSlot, CodeForest forest,
+			ArrayList<Bytecode> bytecodes) {
 
 		JvmType type = convertUnderlyingType(c.type(0));
 		JvmType.Function ftype = new JvmType.Function(type, type);
@@ -1425,13 +1377,13 @@ public class Wyil2JavaBuilder implements Builder {
 			break;
 		default:
 			internalFailure("unknown binary expression encountered", filename,
-					rootBlock.attribute(index, SourceLocation.class));
+					forest.get(index).attribute(SourceLocation.class));
 		}
 
 		bytecodes.add(new Bytecode.Store(c.target(0), type));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.Invert c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.Invert c, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		JvmType type = convertUnderlyingType(c.type(0));
 		bytecodes.add(new Bytecode.Load(c.operand(0), type));
 		JvmType.Function ftype = new JvmType.Function(type);
@@ -1439,8 +1391,8 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(c.target(0), type));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.UnaryOperator c,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.UnaryOperator c, int freeSlot, CodeForest forest,
+			ArrayList<Bytecode> bytecodes) {
 		JvmType srcType = convertUnderlyingType(c.type(0));
 		JvmType targetType = null;
 		String name = null;
@@ -1456,7 +1408,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(c.target(0), targetType));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.NewObject c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.NewObject c, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		JvmType type = convertUnderlyingType(c.type(0));
 		bytecodes.add(new Bytecode.New(WHILEYOBJECT));
 		bytecodes.add(new Bytecode.Dup(WHILEYOBJECT));
@@ -1467,8 +1419,8 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(c.target(0), type));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.Dereference c,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.Dereference c, int freeSlot, CodeForest forest,
+			ArrayList<Bytecode> bytecodes) {
 		JvmType type = convertUnderlyingType(c.type(0));
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Load(c.operand(0), type));
@@ -1479,7 +1431,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(c.target(0), convertUnderlyingType(c.type(0).element())));
 	}
 
-	protected void translate(CodeBlock.Index index, Codes.NewArray c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	protected void translate(CodeForest.Index index, Codes.NewArray c, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.New(WHILEYARRAY));
 		bytecodes.add(new Bytecode.Dup(WHILEYARRAY));
 		bytecodes.add(new Bytecode.LoadConst(c.operands().length));
@@ -1496,8 +1448,8 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(c.target(0), WHILEYARRAY));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.NewRecord code,
-			int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.NewRecord code, int freeSlot, CodeForest forest,
+			ArrayList<Bytecode> bytecodes) {
 		construct(WHILEYRECORD, freeSlot, bytecodes);
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
 
@@ -1519,12 +1471,14 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(code.target(0), WHILEYRECORD));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.Lambda c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.Lambda c, int freeSlot, CodeForest forest,
+			ArrayList<Bytecode> bytecodes) {
 
 		// First, build and register lambda class which calls the given function
 		// or method. This class will extend class wyjc.runtime.WyLambda.
+		Type.FunctionOrMethod lamType = (Type.FunctionOrMethod) c.type(0); 
 		int lambda_id = lambdas.size();
-		lambdas.add(buildLambda(c.name, c.type(0), lambda_id));
+		lambdas.add(buildLambda(c.name, lamType, lambda_id));
 
 		// Second, create and duplicate new lambda object. This will then stay
 		// on the stack (whilst the parameters are constructed) until the
@@ -1540,34 +1494,28 @@ public class Wyil2JavaBuilder implements Builder {
 		// this as an argument to the lambda class constructor; otherwise, we
 		// just pass null. To do this, we first check whether or not a binding
 		// is required.
-		boolean hasBinding = false;
-
-		for (int operand : c.operands()) {
-			if (operand != Codes.NULL_REG) {
-				hasBinding = true;
-				break;
-			}
-		}
-
-		if (hasBinding) {
-			// Yes, binding is required.
-			bytecodes.add(new Bytecode.LoadConst(c.operands().length));
+		int[] c_operands = c.operands();
+		
+		if (c_operands.length > 0) {
+			// Yes, binding is required.				
+			int numParams = lamType.params().size();
+			int numBlanks = numParams - c_operands.length;
+			bytecodes.add(new Bytecode.LoadConst(numParams));
 			bytecodes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
 
-			for (int i = 0; i != c.operands().length; ++i) {
-				bytecodes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
+			for(int i=0;i<numParams;++i) {
+				bytecodes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));				
 				bytecodes.add(new Bytecode.LoadConst(i));
-				int operand = c.operands()[i];
-
-				if (operand != Codes.NULL_REG) {
+				if(i < numBlanks) {
+					bytecodes.add(new Bytecode.LoadConst(null));
+				} else {
+					int operand = c.operands()[i-numBlanks];
 					Type pt = c.type(0).params().get(i);
 					bytecodes.add(new Bytecode.Load(operand, convertUnderlyingType(pt)));
 					addWriteConversion(pt, bytecodes);
-				} else {
-					bytecodes.add(new Bytecode.LoadConst(null));
 				}
 				bytecodes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
-			}
+			}								
 		} else {
 			// No, binding not required.
 			bytecodes.add(new Bytecode.LoadConst(null));
@@ -1582,7 +1530,8 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(c.target(0), clazz));
 	}
 
-	private void translate(CodeBlock.Index index, Codes.Invoke c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.Invoke c, int freeSlot, CodeForest forest,
+			ArrayList<Bytecode> bytecodes) {
 
 		for (int i = 0; i != c.operands().length; ++i) {
 			int register = c.operands()[i];
@@ -1609,7 +1558,7 @@ public class Wyil2JavaBuilder implements Builder {
 		}		
 	}
 
-	private void translate(CodeBlock.Index index, Codes.IndirectInvoke c, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void translate(CodeForest.Index index, Codes.IndirectInvoke c, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		Type.FunctionOrMethod ft = c.type(0);
 		JvmType.Clazz owner = (JvmType.Clazz) convertUnderlyingType(ft);
 		bytecodes.add(new Bytecode.Load(c.reference(), convertUnderlyingType(ft)));
@@ -1634,7 +1583,7 @@ public class Wyil2JavaBuilder implements Builder {
 			// Multiple return values, which must be encoded into an object
 			// array.
 			internalFailure("multiple returns not supported", filename,
-					rootBlock.attribute(index, SourceLocation.class));
+					forest.get(index).attribute(SourceLocation.class));
 		}
 	}
 
