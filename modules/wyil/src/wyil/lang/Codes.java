@@ -146,7 +146,6 @@ public abstract class Codes {
 		return new Invariant(block);
 	}
 
-
 	public static Lambda Lambda(Type.FunctionOrMethod fun, int target,
 			Collection<Integer> operands, NameID name) {
 		return new Lambda(fun, target, CodeUtils.toIntArray(operands), name);
@@ -157,40 +156,10 @@ public abstract class Codes {
 		return new Lambda(fun, target, operands, name);
 	}
 
-	public static LengthOf LengthOf(Type.EffectiveArray type, int target,
-			int operand) {
-		return new LengthOf(type, target, operand);
-	}
-
 	public static Move Move(Type type, int target, int operand) {
 		return new Move(type, target, operand);
 	}
-
-	/**
-	 * Construct a <code>listgen</code> bytecode which constructs a new list
-	 * initialised to a given length, with each element containing a given item.
-	 *
-	 * @param type
-	 * @return
-	 */
-	public static ArrayGenerator ArrayGenerator(Type.Array type, int target,
-			int element, int count) {
-		return new ArrayGenerator(type, target, element, count);
-	}
 	
-	/**
-	 * Construct a <code>listload</code> bytecode which reads a value from a
-	 * given index in a given list.
-	 *
-	 * @param type
-	 *            --- list type.
-	 * @return
-	 */
-	public static IndexOf IndexOf(Type.EffectiveArray type, int target,
-			int leftOperand, int rightOperand) {
-		return new IndexOf(type, target, leftOperand, rightOperand);
-	}
-
 	public static Loop Loop(int[] modifiedOperands, int block) {
 		return new Loop(modifiedOperands,block);
 	}
@@ -354,55 +323,70 @@ public abstract class Codes {
 				return "deref";
 			}
 		},
+		LENGTHOF(3) {
+			public String toString() {
+				return "length";
+			}
+		},		
 		// Binary
-		ADD(3) {
+		ADD(4) {
 			public String toString() {
 				return "add";
 			}
 		},
-		SUB(4) {
+		SUB(5) {
 			public String toString() {
 				return "sub";
 			}
 		},
-		MUL(5) {
+		MUL(6) {
 			public String toString() {
 				return "mul";
 			}
 		},
-		DIV(6) {
+		DIV(7) {
 			public String toString() {
 				return "div";
 			}
 		},
-		REM(7) {
+		REM(8) {
 			public String toString() {
 				return "rem";
 			}
 		},
-		BITWISEOR(8) {
+		BITWISEOR(9) {
 			public String toString() {
 				return "or";
 			}
 		},
-		BITWISEXOR(9) {
+		BITWISEXOR(10) {
 			public String toString() {
 				return "xor";
 			}
 		},
-		BITWISEAND(10) {
+		BITWISEAND(11) {
 			public String toString() {
 				return "and";
 			}
 		},
-		LEFTSHIFT(11) {
+		LEFTSHIFT(12) {
 			public String toString() {
 				return "shl";
 			}
 		},
-		RIGHTSHIFT(12) {
+		RIGHTSHIFT(13) {
 			public String toString() {
 				return "shr";
+			}
+		},
+		INDEXOF(14) {
+			public String toString() {
+				return "indexof";
+			}
+		},
+		ARRAYGEN(15) {
+			public String toString() {
+				return "arraygen";
 			}
 		};
 		public int offset;
@@ -1498,166 +1482,7 @@ public abstract class Codes {
 		}
 	}
 	
-	/**
-	 * Constructs a new array value from the values given by zero or more operand
-	 * registers. The new list is then written into the target register. For
-	 * example, the following Whiley code:
-	 *
-	 * <pre>
-	 * function f(int x, int y, int z) -> int[]:
-	 *     return [x,y,z]
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f(int x, int y, int z) -> int[]:
-	 * body:
-	 *    assign %4 = %0             : int
-	 *    assign %5 = %1             : int
-	 *    assign %6 = %2             : int
-	 *    newlist %3 = (%4, %5, %6)  : int[]
-	 *    return %3                  : int[]
-	 * </pre>
-	 *
-	 * Writes the array value given by <code>[x,y,z]</code> into register
-	 * <code>%3</code> and returns it.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class ArrayGenerator extends AbstractBytecode<Type.Array> {
-
-		private ArrayGenerator(Type.Array type, int target, int element, int count) {
-			super(type, target, element, count);
-		}
-
-		public int opcode() {
-			return OPCODE_arrygen;
-		}
-
-		@Override
-		protected Code clone(int[] nTargets, int[] nOperands) {
-			return ArrayGenerator(type(0), nTargets[0], nOperands[0],nOperands[1]);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof ArrayGenerator) {
-				return super.equals(operands());
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "arraygen %" + target(0) + " = [" + operand(0) + "; " + operand(1) + "]" + " : " + type(0);
-		}
-	}
-
-	/**
-	 * Reads an (effective) collection (i.e. a set, list or map) from the
-	 * operand register, and writes its length into the target register. For
-	 * example, the following Whiley code:
-	 *
-	 * <pre>
-	 * function f(int[] ls) -> int:
-	 *     return |ls|
-	 * </pre>
-	 *
-	 * translates to the following WyIL code:
-	 *
-	 * <pre>
-	 * function f(int[] ls) -> int:
-	 * body:
-	 *     lengthof %0 = %0   : int[]
-	 *     return %0          : int
-	 * </pre>
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class LengthOf extends AbstractBytecode<Type.EffectiveArray> {
-		
-		private LengthOf(Type.EffectiveArray type, int target, int operand) {
-			super((Type) type, target, operand);
-		}
-
-		public int opcode() {
-			return OPCODE_lengthof;
-		}
-
-		@Override
-		protected Code clone(int[] nTargets, int[] nOperands) {
-			return LengthOf(type(0), nTargets[0], nOperands[0]);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof LengthOf) {
-				return super.equals(o);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "lengthof %" + target(0) + " = %" + operand(0) + " : " + type(0);
-		}
-	}
 	
-	/**
-	 * Reads an effective list or map from the source (left) operand register,
-	 * and a key value from the key (right) operand register and returns the
-	 * value associated with that key. If the key does not exist, then a fault
-	 * is raised. For example, the following Whiley code:
-	 *
-	 * <pre>
-	 * function f({int=>string} map, int key) -> string:
-	 *     return map[key]
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f({int->string} map, int key) -> string:
-	 * body:
-	 *     assertky %1, %0 "invalid key"       : {int->string}
-	 *     indexof %2 = %0, %1                 : {int->string}
-	 *     return %2                          : string
-	 * </pre>
-	 *
-	 * Here, we see the <code>assertky</code> bytecode is used to first check
-	 * that the given key exists in <code>map</code>, otherwise a fault is
-	 * raised.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class IndexOf extends AbstractBytecode<Type.EffectiveArray> {
-		
-		private IndexOf(Type.EffectiveArray type, int target,
-				int sourceOperand, int keyOperand) {
-			super((Type) type, target, sourceOperand, keyOperand);
-		}
-
-		public int opcode() {
-			return OPCODE_indexof;
-		}
-
-		@Override
-		protected Code clone(int[] nTargets, int[] nOperands) {
-			return IndexOf(type(0), nTargets[0], nOperands[0], nOperands[1]);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof IndexOf) {
-				return super.equals(o);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "indexof %" + target(0) + " = %" + operand(0) + ", %" + operand(1) + " : " + type(0);
-		}
-	}
-
 	/**
 	 * Moves the contents of a given operand register into a given target
 	 * register. This is similar to an <code>assign</code> bytecode, except that
@@ -2162,7 +1987,6 @@ public abstract class Codes {
 		}
 	}
 
-	
 	/**
 	 * Constructs a new array value from the values given by zero or more operand
 	 * registers. The new list is then written into the target register. For

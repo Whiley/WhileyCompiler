@@ -1916,10 +1916,10 @@ public final class CodeGenerator {
 
 	private int generate(Expr.LengthOf expr, Environment environment, CodeForest.Block block, CodeForest forest,
 			Context context) {
-		int operand = generate(expr.src, environment, block, forest, context);
-		int target = environment.allocate(expr.result().raw());
-		block.add(Codes.LengthOf((Type.EffectiveArray) expr.srcType.raw(), target, operand), attributes(expr));
-		return target;
+		int[] operands = new int[] { generate(expr.src, environment, block, forest, context) };
+		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
+		block.add(Codes.Operator(expr.srcType.raw(), targets, operands, Codes.OperatorKind.LENGTHOF), attributes(expr));
+		return targets[0];
 	}
 
 	private int generate(Expr.Dereference expr, Environment environment, CodeForest.Block block, CodeForest forest,
@@ -1933,11 +1933,11 @@ public final class CodeGenerator {
 
 	private int generate(Expr.IndexOf expr, Environment environment, CodeForest.Block block, CodeForest forest,
 			Context context) {
-		int srcOperand = generate(expr.src, environment, block, forest, context);
-		int idxOperand = generate(expr.index, environment, block, forest, context);
-		int target = environment.allocate(expr.result().raw());
-		block.add(Codes.IndexOf((Type.Array) expr.srcType.raw(), target, srcOperand, idxOperand), attributes(expr));
-		return target;
+		int[] operands = { generate(expr.src, environment, block, forest, context),
+				generate(expr.index, environment, block, forest, context) };
+		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
+		block.add(Codes.Operator(expr.srcType.raw(), targets, operands, Codes.OperatorKind.INDEXOF), attributes(expr));
+		return targets[0];
 	}
 
 	private int generate(Expr.Cast expr, Environment environment, CodeForest.Block block, CodeForest forest,
@@ -1992,11 +1992,11 @@ public final class CodeGenerator {
 
 	private int generate(Expr.ArrayGenerator expr, Environment environment, CodeForest.Block block, CodeForest forest,
 			Context context) {
-		int element = generate(expr.element, environment, block, forest, context);
-		int count = generate(expr.count, environment, block, forest, context);
-		int target = environment.allocate(expr.result().raw());
-		block.add(Codes.ArrayGenerator((Type.Array) expr.type.raw(), target, element, count), attributes(expr));
-		return target;
+		int[] operands = new int[] { generate(expr.element, environment, block, forest, context),
+				generate(expr.count, environment, block, forest, context) };
+		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
+		block.add(Codes.Operator(expr.type.raw(), targets, operands, Codes.OperatorKind.ARRAYGEN), attributes(expr));
+		return targets[0];
 	}
 
 	private int generate(Expr.Quantifier e, Environment environment, CodeForest.Block block, CodeForest forest,

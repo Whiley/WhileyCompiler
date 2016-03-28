@@ -179,8 +179,6 @@ public class Interpreter {
 			return execute((Codes.If) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.IfIs) {
 			return execute((Codes.IfIs) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.IndexOf) {
-			return execute((Codes.IndexOf) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.IndirectInvoke) {
 			return execute((Codes.IndirectInvoke) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Invoke) {
@@ -190,10 +188,6 @@ public class Interpreter {
 			return context.pc.next();
 		} else if (bytecode instanceof Codes.Lambda) {
 			return execute((Codes.Lambda) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.LengthOf) {
-			return execute((Codes.LengthOf) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.ArrayGenerator) {
-			return execute((Codes.ArrayGenerator) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Quantify) {
 			return execute((Codes.Quantify) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Loop) {
@@ -286,8 +280,9 @@ public class Interpreter {
 		case NEG:			
 		case INVERT:			
 		case DEREFERENCE:
+		case LENGTHOF:
 			result = executeUnary(bytecode.kind,frame[bytecode.operand(0)],context); 
-			break;
+			break;		
 		case ADD:
 		case SUB:
 		case MUL:
@@ -306,6 +301,29 @@ public class Interpreter {
 			Constant.Byte lhs = checkType(frame[bytecode.operand(0)], context, Constant.Byte.class);
 			Constant rhs = frame[bytecode.operand(1)];
 			result = execute(bytecode.kind,lhs,rhs,context);
+			break;
+		}
+		case INDEXOF: {
+			Constant.Array src = checkType(frame[bytecode.operand(0)], context, Constant.Array.class);
+			Constant.Integer index = checkType(frame[bytecode.operand(1)], context, Constant.Integer.class);
+			int i = index.value.intValue();
+			if (i < 0 || i >= src.values.size()) {
+				error("index-out-of-bounds", context);
+			}
+			// Ok, get the element at that index
+			result = src.values.get(index.value.intValue());
+			break;
+		}
+		case ARRAYGEN: {
+			Constant element = frame[bytecode.operand(0)];
+			Constant.Integer count = checkType(frame[bytecode.operand(1)], context, Constant.Integer.class);
+			// Check that we have a integer count
+			int n = count.value.intValue();		
+			ArrayList<Constant> values = new ArrayList<Constant>();
+			for(int i=0;i!=n;++i) {
+				values.add(element);
+			}
+			result = Constant.V_ARRAY(values);
 			break;
 		}
 		default:
@@ -333,6 +351,12 @@ public class Interpreter {
 			checkType(operand, context, ConstantObject.class);
 			ConstantObject ref = (ConstantObject) operand;
 			return ref.read();
+		}
+		case LENGTHOF: {
+			checkType(operand, context, Constant.Array.class);
+			Constant.Array list = (Constant.Array) operand;
+			BigInteger length = BigInteger.valueOf(list.values.size());		
+			return Constant.V_INTEGER(length);
 		}
 		}
 		return (Constant) deadCode(context);
@@ -835,40 +859,6 @@ public class Interpreter {
 	}
 
 	/**
-	 * Execute an IndexOf bytecode instruction at a given point in the function
-	 * or method body. This checks the first operand is a list value, and the
-	 * second operand is an integer value. It also checks that the integer index
-	 * is within bounds and, if not, raises a runtime fault.
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Codes.IndexOf bytecode, Constant[] frame,
-			Context context) {
-		Constant operand_0 = frame[bytecode.operand(0)];
-		Constant operand_1 = frame[bytecode.operand(1)];
-		// Check we have a list and an integer index
-		checkType(operand_0, context, Constant.Array.class);
-		checkType(operand_1, context, Constant.Integer.class);
-		// Yes, now check that this is in bounds
-		Constant.Array list = (Constant.Array) operand_0;
-		Constant.Integer index = (Constant.Integer) operand_1;
-		int i = index.value.intValue();
-		if (i < 0 || i >= list.values.size()) {
-			error("index-out-of-bounds", context);
-		}
-		// Ok, get the element at that index
-		frame[bytecode.target(0)] = list.values.get(index.value.intValue());
-		// Done		
-		return context.pc.next();
-	}
-
-	/**
 	 * Execute an IndirectInvoke bytecode instruction at a given point in the
 	 * function or method body. This first checks the operand is a function
 	 * reference, and then generates a recursive call to execute the given
@@ -968,59 +958,6 @@ public class Interpreter {
 		return context.pc.next();
 	}
 
-	/**
-	 * Execute a LengthOf bytecode instruction at a given point in the function
-	 * or method body. This simply returns the length of the list at the given
-	 * position.
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Codes.LengthOf bytecode, Constant[] frame,
-			Context context) {
-		Constant _source = frame[bytecode.operand(0)];
-		checkType(_source, context, Constant.Array.class);
-		Constant.Array list = (Constant.Array) _source;
-		BigInteger length = BigInteger.valueOf(list.values.size());		
-		frame[bytecode.target(0)] = Constant.V_INTEGER(length);
-		return context.pc.next();
-	}
-	
-	/**
-	 * Execute the list generator bytecode instruction at a given point in the
-	 * function or method body. This simply assigns the generated list to the
-	 * target register.
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Codes.ArrayGenerator bytecode, Constant[] frame,
-			Context context) {
-		Constant element = frame[bytecode.operand(0)];
-		Constant count = frame[bytecode.operand(1)];
-		// Check that we have a integer count
-		checkType(count, context, Constant.Integer.class);
-		// Now, perform the append
-		Constant.Integer l2 = (Constant.Integer) count;
-		int n = l2.value.intValue();		
-		ArrayList<Constant> values = new ArrayList<Constant>();
-		for(int i=0;i!=n;++i) {
-			values.add(element);
-		}
-		frame[bytecode.target(0)] = Constant.V_ARRAY(values);
-		return context.pc.next();
-	}
-	
 	private Object execute(Codes.Loop bytecode, Constant[] frame,
 			Context context) {
 		Object r;

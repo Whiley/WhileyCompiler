@@ -370,9 +370,9 @@ public class VcUtils {
 			case Code.OPCODE_rem:
 				return divideByZeroCheck((Codes.Operator) code, branch);
 			case Code.OPCODE_indexof:
-				return indexOutOfBoundsChecks((Codes.IndexOf) code, branch);
+				return indexOutOfBoundsChecks((Codes.Operator) code, branch);
 			case Code.OPCODE_arrygen:
-				return arrayGeneratorChecks((Codes.ArrayGenerator) code, branch);
+				return arrayGeneratorChecks((Codes.Operator) code, branch);
 			case Code.OPCODE_update:
 				return updateChecks((Codes.Update) code, branch);
 			case Code.OPCODE_invoke:
@@ -419,7 +419,7 @@ public class VcUtils {
 	 *            --- The branch the bytecode is on.
 	 * @return
 	 */
-	public Pair<String,Expr>[] indexOutOfBoundsChecks(Codes.IndexOf code, VcBranch branch) {
+	public Pair<String,Expr>[] indexOutOfBoundsChecks(Codes.Operator code, VcBranch branch) {
 		if (code.type(0) instanceof Type.EffectiveArray) {
 			Expr src = branch.read(code.operand(0));
 			Expr idx = branch.read(code.operand(1));
@@ -450,7 +450,7 @@ public class VcUtils {
 	 *            --- The branch the bytecode is on.
 	 * @return
 	 */
-	public Pair<String,Expr>[] arrayGeneratorChecks(Codes.ArrayGenerator code, VcBranch branch) {
+	public Pair<String,Expr>[] arrayGeneratorChecks(Codes.Operator code, VcBranch branch) {
 		Expr idx = branch.read(code.operand(1));
 		Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
 				idx.attributes());

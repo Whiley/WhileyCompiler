@@ -50,13 +50,8 @@ public class VcExprGenerator {
 	 */
 	public void transform(Code code, CodeForest forest, VcBranch branch) {
 		try {
-			if (code instanceof Codes.LengthOf) {
-				transformUnary(Expr.Unary.Op.LENGTHOF, (Codes.LengthOf) code,
-						branch, forest);
-			} else if (code instanceof Codes.Operator) {
+			if (code instanceof Codes.Operator) {
 				transform((Codes.Operator) code, forest, branch);				
-			} else if (code instanceof Codes.ArrayGenerator) {
-				transform((Codes.ArrayGenerator) code, forest, branch);
 			} else if (code instanceof Codes.NewArray) {
 				transformNary(Expr.Nary.Op.ARRAY, (Codes.NewArray) code, branch, forest);
 			} else if (code instanceof Codes.NewRecord) {
@@ -75,8 +70,6 @@ public class VcExprGenerator {
 				transform((Codes.Invoke) code, forest, branch);
 			} else if (code instanceof Codes.Label) {
 				// skip
-			} else if (code instanceof Codes.IndexOf) {
-				transform((Codes.IndexOf) code, forest, branch);
 			} else if (code instanceof Codes.Move) {
 				transform((Codes.Move) code, forest, branch);
 			} else if (code instanceof Codes.Assign) {
@@ -110,12 +103,23 @@ public class VcExprGenerator {
 	}
 
 	/**
+	 * Maps unary bytecodes into expression opcodes.
+	 */
+	private static Expr.Unary.Op[] unaryOperatorMap = {
+			Expr.Unary.Op.NEG, // neg
+			null, // invert
+			null, // deref
+			Expr.Unary.Op.LENGTHOF
+	};
+	
+	/**
 	 * Maps binary bytecodes into expression opcodes.
 	 */
 	private static Expr.Binary.Op[] binaryOperatorMap = {
 			null, // neg
 			null, // invert
 			null, // deref
+			null, // lengthof
 			Expr.Binary.Op.ADD,
 			Expr.Binary.Op.SUB, 
 			Expr.Binary.Op.MUL, 
@@ -131,9 +135,10 @@ public class VcExprGenerator {
 
 	protected void transform(Codes.Operator code, CodeForest forest, VcBranch branch) {
 		switch(code.kind) {
-		case NEG:{
+		case NEG:
+		case LENGTHOF: {
 			Codes.Operator bc = (Codes.Operator) code;
-			transformUnary(Expr.Unary.Op.NEG, bc, branch, forest);
+			transformUnary(unaryOperatorMap[code.kind.ordinal()], bc, branch, forest);
 			break;
 		}
 		case INVERT: 
@@ -157,6 +162,16 @@ public class VcExprGenerator {
 			branch.havoc(code.target(0));
 			break;
 		}
+		case INDEXOF: {
+			Expr src = branch.read(code.operand(0));
+			Expr idx = branch.read(code.operand(1));
+			branch.write(code.target(0),
+					new Expr.IndexOf(src, idx, VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes())));
+			break;
+		}
+		case ARRAYGEN:
+			transformArrayGenerator(code,forest,branch);
+			break;
 		}
 	}
 	
@@ -245,25 +260,18 @@ public class VcExprGenerator {
 		}
 	}
 
-	protected void transform(Codes.IndexOf code, CodeForest forest, VcBranch branch) {
-		Expr src = branch.read(code.operand(0));
-		Expr idx = branch.read(code.operand(1));
-		branch.write(code.target(0),
-				new Expr.IndexOf(src, idx, VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes())));
-	}
-
-	protected void transform(Codes.ArrayGenerator code, CodeForest forest, VcBranch branch) {
+	protected void transformArrayGenerator(Codes.Operator code, CodeForest forest, VcBranch branch) {
+		Type elementType = ((Type.Array) code.type(0)).element();
 		Collection<wyil.lang.Attribute> wyilAttributes = forest.get(branch.pc()).attributes();
-		Collection<Attribute> attributes = VcUtils.toWycsAttributes(wyilAttributes); 
+		Collection<Attribute> attributes = VcUtils.toWycsAttributes(wyilAttributes);
 		Expr element = branch.read(code.operand(0));
 		Expr count = branch.read(code.operand(1));
 		branch.havoc(code.target(0));
 		Expr arg = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { branch.read(code.target(0)), element, count },
 				attributes);
 		ArrayList<SyntacticType> generics = new ArrayList<SyntacticType>();
-		generics.add(utils.convert(code.type(0).element(),wyilAttributes));
-		Expr.Invoke macro = new Expr.Invoke("generate", Trie.fromString("wycs/core/Array"),
-				generics, arg);
+		generics.add(utils.convert(elementType, wyilAttributes));
+		Expr.Invoke macro = new Expr.Invoke("generate", Trie.fromString("wycs/core/Array"), generics, arg);
 		branch.assume(macro);
 	}
 	
@@ -345,7 +353,8 @@ public class VcExprGenerator {
 	protected void transformUnary(Expr.Unary.Op operator, Code.AbstractBytecode code, VcBranch branch,
 			CodeForest forest) {
 		Expr lhs = branch.read(code.operand(0));
-		branch.write(code.target(0), new Expr.Unary(operator, lhs, VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes())));
+		branch.write(code.target(0),
+				new Expr.Unary(operator, lhs, VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes())));
 	}
 
 	/**
