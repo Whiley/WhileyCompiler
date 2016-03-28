@@ -2135,11 +2135,17 @@ public class FlowTypeChecker {
 					candidateID = p.first();
 				} else if (!paramStrictSubtypes(ft, candidateType.raw())) {
 					// this is an ambiguous error
-					String msg = name + parameterString(parameters) + " is ambiguous";
+					StringBuilder msg = new StringBuilder(name + parameterString(parameters) + " is ambiguous");
 					// FIXME: should report all ambiguous matches here
-					msg += "\n\tfound: " + candidateID + " : " + candidateType.nominal();
-					msg += "\n\tfound: " + p.first() + " : " + p.second().nominal();
-					throw new ResolveError(msg);
+					List<String> candidateStrings = new ArrayList<String>();
+					candidateStrings.add(candidateID + " : " + candidateType.nominal());
+					candidateStrings.add(p.first() + " : " + p.second().nominal());
+					Collections.sort(candidateStrings);// make error message deterministic!
+					for (String s : candidateStrings) {
+						msg.append("\n\tfound: ");
+						msg.append(s);
+					}
+					throw new ResolveError(msg.toString());
 				}
 			}
 		}
