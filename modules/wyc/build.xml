@@ -47,7 +47,7 @@
   <property name="test.name.contains" value=""/>
 
   <target name="test" depends="test-compile-wyc">
-    <junit fork="true" dir="${basedir}" failureProperty="tests.failed" printsummary="yes" outputtoformatters="true">
+    <junit fork="true" dir="${basedir}" failureProperty="tests.failed" printsummary="yes" showoutput="yes" outputtoformatters="no">
       <classpath>
         <pathelement path="src:../wyil/src:../wybs/src/:../wycs/src:../../${WYRL_JAR}"/>
         <path refid="junit.classpath"/>

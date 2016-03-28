@@ -7,4 +7,5 @@ jdk:
 
 #
 script:
-    ant test-all
+    - touch running_on_travis
+    - ant test-all

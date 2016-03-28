@@ -243,6 +243,9 @@ public class AllInvalidTests {
 
 	@Test
 	public void invalid() throws IOException {
+		if (new File("../../running_on_travis").exists()) {
+			System.out.println(".");
+		}
 		runTest(this.testName);
 	}
 }
