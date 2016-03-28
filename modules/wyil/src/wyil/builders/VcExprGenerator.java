@@ -70,8 +70,6 @@ public class VcExprGenerator {
 				transform((Codes.Invoke) code, forest, branch);
 			} else if (code instanceof Codes.Label) {
 				// skip
-			} else if (code instanceof Codes.Move) {
-				transform((Codes.Move) code, forest, branch);
 			} else if (code instanceof Codes.Assign) {
 				transform((Codes.Assign) code, forest, branch);
 			} else if (code instanceof Codes.Update) {
@@ -278,10 +276,6 @@ public class VcExprGenerator {
 	protected void transform(Codes.Lambda code, CodeForest forest, VcBranch branch) {
 		// TODO: implement lambdas somehow?
 		branch.havoc(code.target(0));
-	}
-
-	protected void transform(Codes.Move code, VcBranch branch) {
-		branch.write(code.target(0), branch.read(code.operand(0)));
 	}
 
 	protected void transform(Codes.NewObject code, CodeForest forest, VcBranch branch) {

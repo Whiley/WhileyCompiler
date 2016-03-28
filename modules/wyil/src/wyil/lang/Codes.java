@@ -156,10 +156,6 @@ public abstract class Codes {
 		return new Lambda(fun, target, operands, name);
 	}
 
-	public static Move Move(Type type, int target, int operand) {
-		return new Move(type, target, operand);
-	}
-	
 	public static Loop Loop(int[] modifiedOperands, int block) {
 		return new Loop(modifiedOperands,block);
 	}
@@ -1482,66 +1478,6 @@ public abstract class Codes {
 		}
 	}
 	
-	
-	/**
-	 * Moves the contents of a given operand register into a given target
-	 * register. This is similar to an <code>assign</code> bytecode, except that
-	 * the register's contents are <i>voided</i> afterwards. This guarantees
-	 * that the register is no longer live, which is useful for determining the
-	 * live ranges of registers in a function or method. For example, the
-	 * following Whiley code:
-	 *
-	 * <pre>
-	 * function f(int x, int y) -> int:
-	 *     x = x + 1
-	 *     return x
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f(int x, int y) -> int:
-	 * body:
-	 *     ifge %0, %1 goto blklab0  : int
-	 *     move %0 = %1              : int
-	 * .blklab0
-	 *     return %0                 : int
-	 * </pre>
-	 *
-	 * Here we see that when <code>x < y</code> the value of <code>y</code>
-	 * (held in register <code>%1</code>) is <i>moved</i> into variable
-	 * <code>x</code> (held in register <code>%0</code>). This is safe because
-	 * register <code>%1</code> is no longer live at that point.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Move extends AbstractBytecode<Type> {
-
-		private Move(Type type, int target, int operand) {
-			super(type, target, operand);
-		}
-
-		public int opcode() {
-			return OPCODE_move;
-		}
-
-		@Override
-		protected Code clone(int[] nTargets, int[] nOperands) {
-			return Move(type(0), nTargets[0], nOperands[0]);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Move) {
-				return super.equals(o);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "move %" + target(0) + " = %" + operand(0) + " : " + type(0);
-		}
-	}
 
 	/**
 	 * Represents a block of code which loops continuously until e.g. a

@@ -192,8 +192,6 @@ public class Interpreter {
 			return execute((Codes.Quantify) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Loop) {
 			return execute((Codes.Loop) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Move) {
-			return execute((Codes.Move) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.NewArray) {
 			return execute((Codes.NewArray) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.NewObject) {
@@ -970,29 +968,6 @@ public class Interpreter {
 		// If we get here, then we have exited the loop body without falling
 		// through to the next bytecode.
 		return r;
-	}
-
-	/**
-	 * Execute a move bytecode instruction at a given point in the function or
-	 * method body. This moves the operand value into the target register, and
-	 * voids the operand.
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Codes.Move bytecode, Constant[] frame,
-			Context context) {
-		int[] operands = bytecode.operands();
-		for(int i=0;i!=operands.length;++i) {
-			frame[bytecode.target(i)] = frame[bytecode.operand(i)];
-			frame[bytecode.operand(i)] = null;
-		}
-		return context.pc.next();
 	}
 
 	/**

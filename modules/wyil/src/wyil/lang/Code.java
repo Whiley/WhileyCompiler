@@ -347,7 +347,7 @@ public interface Code {
 	
 	public static final int OPCODE_assign      = UNARY_ASSIGNABLE+0;
 
-	public static final int OPCODE_move        = UNARY_ASSIGNABLE+4;
+	//public static final int OPCODE_move        = UNARY_ASSIGNABLE+4;
 	public static final int OPCODE_newobject   = UNARY_ASSIGNABLE+5;
 	
 	public static final int OPCODE_fieldload   = UNARY_ASSIGNABLE+8;

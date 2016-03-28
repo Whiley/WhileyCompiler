@@ -923,11 +923,7 @@ public final class WyilFileReader {
 				return Codes.Assign(types[0], targets[0], operands[0]);
 			}
 		};
-		schemas[Code.OPCODE_move] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
-			public Code construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return Codes.Move(types[0], targets[0], operands[0]);
-			}
-		};
+		
 		schemas[Code.OPCODE_newobject] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
 			public Code construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
 				return Codes.NewObject((Type.Reference) types[0], targets[0], operands[0]);
