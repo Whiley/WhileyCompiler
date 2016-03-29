@@ -23,7 +23,7 @@ import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
-import wyil.util.Interpreter;
+import wyil.util.interpreter.Interpreter;
 
 /**
  * Provides some simple helper functions used by all test harnesses.

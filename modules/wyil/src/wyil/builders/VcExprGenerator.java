@@ -52,8 +52,6 @@ public class VcExprGenerator {
 		try {
 			if (code instanceof Codes.Operator) {
 				transform((Codes.Operator) code, forest, branch);				
-			} else if (code instanceof Codes.NewArray) {
-				transformNary(Expr.Nary.Op.ARRAY, (Codes.NewArray) code, branch, forest);
 			} else if (code instanceof Codes.NewRecord) {
 				transformNary(Expr.Nary.Op.TUPLE, (Codes.NewRecord) code, branch, forest);
 			} else if (code instanceof Codes.Convert) {
@@ -134,7 +132,7 @@ public class VcExprGenerator {
 	protected void transform(Codes.Operator code, CodeForest forest, VcBranch branch) {
 		switch(code.kind) {
 		case NEG:
-		case LENGTHOF: {
+		case ARRAYLENGTH: {
 			Codes.Operator bc = (Codes.Operator) code;
 			transformUnary(unaryOperatorMap[code.kind.ordinal()], bc, branch, forest);
 			break;
@@ -167,8 +165,11 @@ public class VcExprGenerator {
 					new Expr.IndexOf(src, idx, VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes())));
 			break;
 		}
-		case ARRAYGEN:
+		case ARRAYGENERATOR:
 			transformArrayGenerator(code,forest,branch);
+			break;
+		case ARRAYCONSTRUCTOR:
+			transformNary(Expr.Nary.Op.ARRAY,code,branch,forest);
 			break;
 		}
 	}

@@ -619,8 +619,6 @@ public class Wyil2JavaBuilder implements Builder {
 				translate(pc, (Codes.Loop) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Update) {
 				translate(pc, (Codes.Update) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof Codes.NewArray) {
-				translate(pc, (Codes.NewArray) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.NewRecord) {
 				translate(pc, (Codes.NewRecord) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Return) {
@@ -1264,7 +1262,7 @@ public class Wyil2JavaBuilder implements Builder {
 		switch (c.kind) {
 		case NEG:
 		case INVERT:
-		case LENGTHOF:
+		case ARRAYLENGTH:
 			ftype = new JvmType.Function(type);
 			bytecodes.add(new Bytecode.Load(c.operand(0), type));
 			break;
@@ -1295,7 +1293,7 @@ public class Wyil2JavaBuilder implements Builder {
 			bytecodes.add(new Bytecode.Load(c.operand(0), WHILEYARRAY));
 			bytecodes.add(new Bytecode.Load(c.operand(1), WHILEYINT));		
 			break;
-		case ARRAYGEN: {
+		case ARRAYGENERATOR: {
 			Type elementType = ((Type.Array) c.type(0)).element();
 			ftype = new JvmType.Function(WHILEYARRAY, JAVA_LANG_OBJECT, WHILEYINT);
 			bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(elementType)));
@@ -1303,6 +1301,9 @@ public class Wyil2JavaBuilder implements Builder {
 			bytecodes.add(new Bytecode.Load(c.operand(1), WHILEYINT));
 			break;
 		}
+		case ARRAYCONSTRUCTOR:
+			translateArrayConstructor(index,c,freeSlot,forest,bytecodes);
+			return;
 		}
 
 		// second, apply operation
@@ -1319,7 +1320,7 @@ public class Wyil2JavaBuilder implements Builder {
 			Type.Reference pt = (Type.Reference) c.type(0);
 			addReadConversion(pt.element(), bytecodes);
 			break;
-		case LENGTHOF:
+		case ARRAYLENGTH:
 			ftype = new JvmType.Function(WHILEYINT);
 			bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "length", ftype, Bytecode.InvokeMode.VIRTUAL));
 			break;
@@ -1370,7 +1371,7 @@ public class Wyil2JavaBuilder implements Builder {
 			type = convertUnderlyingType(arrType.element());
 			break;
 		}
-		case ARRAYGEN: {			
+		case ARRAYGENERATOR: {			
 			bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "generate", ftype, Bytecode.InvokeMode.STATIC));
 			break;
 		}
@@ -1394,7 +1395,8 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(c.target(0), type));
 	}
 
-	protected void translate(CodeForest.Index index, Codes.NewArray c, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
+	protected void translateArrayConstructor(CodeForest.Index index, Codes.Operator c, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
+		Type.Array arrType = (Type.Array) c.type(0); 
 		bytecodes.add(new Bytecode.New(WHILEYARRAY));
 		bytecodes.add(new Bytecode.Dup(WHILEYARRAY));
 		bytecodes.add(new Bytecode.LoadConst(c.operands().length));
@@ -1403,8 +1405,8 @@ public class Wyil2JavaBuilder implements Builder {
 
 		ftype = new JvmType.Function(WHILEYARRAY, WHILEYARRAY, JAVA_LANG_OBJECT);
 		for (int i = 0; i != c.operands().length; ++i) {
-			bytecodes.add(new Bytecode.Load(c.operands()[i], convertUnderlyingType(c.type(0).element())));
-			addWriteConversion(c.type(0).element(), bytecodes);
+			bytecodes.add(new Bytecode.Load(c.operands()[i], convertUnderlyingType(arrType.element())));
+			addWriteConversion(arrType.element(), bytecodes);
 			bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "internal_add", ftype, Bytecode.InvokeMode.STATIC));
 		}
 

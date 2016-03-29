@@ -1918,7 +1918,7 @@ public final class CodeGenerator {
 			Context context) {
 		int[] operands = new int[] { generate(expr.src, environment, block, forest, context) };
 		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
-		block.add(Codes.Operator(expr.srcType.raw(), targets, operands, Codes.OperatorKind.LENGTHOF), attributes(expr));
+		block.add(Codes.Operator(expr.srcType.raw(), targets, operands, Codes.OperatorKind.ARRAYLENGTH), attributes(expr));
 		return targets[0];
 	}
 
@@ -1985,9 +1985,10 @@ public final class CodeGenerator {
 	private int generate(Expr.ArrayInitialiser expr, Environment environment, CodeForest.Block block, CodeForest forest,
 			Context context) {
 		int[] operands = generate(expr.arguments, environment, block, forest, context);
-		int target = environment.allocate(expr.result().raw());
-		block.add(Codes.NewArray((Type.Array) expr.type.raw(), target, operands), attributes(expr));
-		return target;
+		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
+		block.add(Codes.Operator(expr.type.raw(), targets, operands, Codes.OperatorKind.ARRAYCONSTRUCTOR),
+				attributes(expr));
+		return targets[0];
 	}
 
 	private int generate(Expr.ArrayGenerator expr, Environment environment, CodeForest.Block block, CodeForest forest,
@@ -1995,7 +1996,7 @@ public final class CodeGenerator {
 		int[] operands = new int[] { generate(expr.element, environment, block, forest, context),
 				generate(expr.count, environment, block, forest, context) };
 		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
-		block.add(Codes.Operator(expr.type.raw(), targets, operands, Codes.OperatorKind.ARRAYGEN), attributes(expr));
+		block.add(Codes.Operator(expr.type.raw(), targets, operands, Codes.OperatorKind.ARRAYGENERATOR), attributes(expr));
 		return targets[0];
 	}
 

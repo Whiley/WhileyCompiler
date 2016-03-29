@@ -387,13 +387,13 @@ public interface Code {
 	public static final int OPCODE_rshr        = BINARY_ASSIGNABLE+13;
 	public static final int OPCODE_indexof     = BINARY_ASSIGNABLE+14;	
 	public static final int OPCODE_arrygen     = BINARY_ASSIGNABLE+15;
-
+	public static final int OPCODE_newarray    = BINARY_ASSIGNABLE+16;
+	
 	// =========================================================================
 	// Nary Assignables
 	// =========================================================================
 	public static final int NARY_ASSIGNABLE = BINARY_ASSIGNABLE+16;
 	
-	public static final int OPCODE_newarray         = NARY_ASSIGNABLE+0;
 	public static final int OPCODE_newrecord        = NARY_ASSIGNABLE+1;
 	public static final int OPCODE_invoke           = NARY_ASSIGNABLE+2;
 	public static final int OPCODE_indirectinvoke   = NARY_ASSIGNABLE+3;

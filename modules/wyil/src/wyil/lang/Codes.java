@@ -161,29 +161,6 @@ public abstract class Codes {
 	}
 
 	/**
-	 * Construct a <code>NewArray</code> bytecode which constructs a new array and
-	 * puts it on the stack.
-	 *
-	 * @param type
-	 * @return
-	 */
-	public static NewArray NewArray(Type.Array type, int target,
-			Collection<Integer> operands) {
-		return new NewArray(type, target, CodeUtils.toIntArray(operands));
-	}
-
-	/**
-	 * Construct a <code>NewArray</code> bytecode which constructs a new array and
-	 * puts it on the stack.
-	 *
-	 * @param type
-	 * @return
-	 */
-	public static NewArray NewArray(Type.Array type, int target, int[] operands) {
-		return new NewArray(type, target, operands);
-	}
-
-	/**
 	 * Construct a <code>newrecord</code> bytecode which constructs a new record
 	 * and puts it on the stack.
 	 *
@@ -319,7 +296,7 @@ public abstract class Codes {
 				return "deref";
 			}
 		},
-		LENGTHOF(3) {
+		ARRAYLENGTH(3) {
 			public String toString() {
 				return "length";
 			}
@@ -380,9 +357,14 @@ public abstract class Codes {
 				return "indexof";
 			}
 		},
-		ARRAYGEN(15) {
+		ARRAYGENERATOR(15) {
 			public String toString() {
 				return "arraygen";
+			}
+		},
+		ARRAYCONSTRUCTOR(16) {
+			public String toString() {
+				return "array";
 			}
 		};
 		public int offset;
@@ -1920,61 +1902,6 @@ public abstract class Codes {
 
 		public String toString() {
 			return "newrecord %" + target(0) + " = " + arrayToString(operands()) + " : " + type(0);
-		}
-	}
-
-	/**
-	 * Constructs a new array value from the values given by zero or more operand
-	 * registers. The new list is then written into the target register. For
-	 * example, the following Whiley code:
-	 *
-	 * <pre>
-	 * function f(int x, int y, int z) -> int[]:
-	 *     return [x,y,z]
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f(int x, int y, int z) -> int[]:
-	 * body:
-	 *    assign %4 = %0             : int
-	 *    assign %5 = %1             : int
-	 *    assign %6 = %2             : int
-	 *    newlist %3 = (%4, %5, %6)  : int[]
-	 *    return %3                  : int[]
-	 * </pre>
-	 *
-	 * Writes the array value given by <code>[x,y,z]</code> into register
-	 * <code>%3</code> and returns it.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class NewArray extends AbstractBytecode<Type.Array> {
-
-		private NewArray(Type.Array type, int target, int[] operands) {
-			super(type, target, operands);
-		}
-
-		public int opcode() {
-			return OPCODE_newarray;
-		}
-
-		@Override
-		protected Code clone(int[] nTargets, int[] nOperands) {
-			return NewArray(type(0), nTargets[0], nOperands);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof NewArray) {
-				return super.equals(operands());
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "newlist %" + target(0) + " = " + arrayToString(operands()) + " : " + type(0);
 		}
 	}
 

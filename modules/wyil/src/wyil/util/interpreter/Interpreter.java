@@ -1,4 +1,4 @@
-package wyil.util;
+package wyil.util.interpreter;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -12,6 +12,7 @@ import wycc.util.Pair;
 import wycc.util.ResolveError;
 import wyfs.lang.Path;
 import wyil.lang.*;
+import wyil.util.TypeExpander;
 
 /**
  * <p>
@@ -39,6 +40,11 @@ public class Interpreter {
 	 * constraints.
 	 */
 	private final TypeExpander expander;
+	
+	/**
+	 * Implementations for the internal operators
+	 */
+	private final InternalFunction[] operators;
 
 	/**
 	 * The debug stream provides an I/O stream through which debug bytecodes can
@@ -50,6 +56,7 @@ public class Interpreter {
 		this.project = project;
 		this.debug = debug;
 		this.expander = new TypeExpander(project);
+		this.operators = StandardFunctions.standardFunctions;
 	}
 
 	/**
@@ -66,33 +73,26 @@ public class Interpreter {
 	 *            The supplied arguments
 	 * @return
 	 */
-	public Constant[] execute(NameID nid, Type.FunctionOrMethod sig,
-			Constant... args) {
+	public Constant[] execute(NameID nid, Type.FunctionOrMethod sig, Constant... args) {
 		// First, find the enclosing WyilFile
 		try {
-			Path.Entry<WyilFile> entry = project.get(nid.module(),
-					WyilFile.ContentType);
+			Path.Entry<WyilFile> entry = project.get(nid.module(), WyilFile.ContentType);
 			if (entry == null) {
-				throw new IllegalArgumentException("no WyIL file found: "
-						+ nid.module());
+				throw new IllegalArgumentException("no WyIL file found: " + nid.module());
 			}
 			// Second, find the given function or method
 			WyilFile wyilFile = entry.read();
-			WyilFile.FunctionOrMethod fm = wyilFile.functionOrMethod(
-					nid.name(), sig);
+			WyilFile.FunctionOrMethod fm = wyilFile.functionOrMethod(nid.name(), sig);
 			if (fm == null) {
-				throw new IllegalArgumentException(
-						"no function or method found: " + nid + ", " + sig);
+				throw new IllegalArgumentException("no function or method found: " + nid + ", " + sig);
 			} else if (sig.params().size() != args.length) {
-				throw new IllegalArgumentException(
-						"incorrect number of arguments: " + nid + ", " + sig);
+				throw new IllegalArgumentException("incorrect number of arguments: " + nid + ", " + sig);
 			}
 			// Third, get and check the function or method body
 			CodeForest code = fm.code();
 			if (fm.body() == null) {
 				// FIXME: add support for native functions or methods
-				throw new IllegalArgumentException(
-						"no function or method body found: " + nid + ", " + sig);
+				throw new IllegalArgumentException("no function or method body found: " + nid + ", " + sig);
 			}
 			// Fourth, construct the stack frame for execution
 			ArrayList<Type> sig_params = sig.params();
@@ -121,9 +121,9 @@ public class Interpreter {
 		CodeForest forest = context.forest;
 		CodeForest.Index pc = context.pc;
 		int block = pc.block();
-		CodeForest.Block codes = forest.get(pc.block());		
-		
-		while(pc.block() == block && pc.offset() < codes.size()) {
+		CodeForest.Block codes = forest.get(pc.block());
+
+		while (pc.block() == block && pc.offset() < codes.size()) {
 			Object r = execute(frame, new Context(pc, context.forest));
 			// Now, see whether we are continuing or not
 			if (r instanceof CodeForest.Index) {
@@ -131,7 +131,7 @@ public class Interpreter {
 			} else {
 				return r;
 			}
-		} 
+		}
 		if (pc.block() != block) {
 			// non-local exit
 			return pc;
@@ -152,7 +152,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Constant[] frame, Context context) {		
+	private Object execute(Constant[] frame, Context context) {
 		Code bytecode = context.forest.get(context.pc).code();
 		// FIXME: turn this into a switch statement?
 		if (bytecode instanceof Codes.Invariant) {
@@ -192,8 +192,6 @@ public class Interpreter {
 			return execute((Codes.Quantify) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Loop) {
 			return execute((Codes.Loop) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.NewArray) {
-			return execute((Codes.NewArray) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.NewObject) {
 			return execute((Codes.NewObject) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.NewRecord) {
@@ -207,8 +205,7 @@ public class Interpreter {
 		} else if (bytecode instanceof Codes.Update) {
 			return execute((Codes.Update) bytecode, frame, context);
 		} else {
-			throw new IllegalArgumentException("Unknown bytecode encountered: "
-					+ bytecode);
+			throw new IllegalArgumentException("Unknown bytecode encountered: " + bytecode);
 		}
 	}
 
@@ -226,7 +223,7 @@ public class Interpreter {
 	private Object execute(Codes.AssertOrAssume bytecode, Constant[] frame, Context context) {
 		//
 		CodeForest.Index pc = new CodeForest.Index(bytecode.block(), 0);
-		Object r = executeAllWithin(frame, new Context(pc,context.forest));
+		Object r = executeAllWithin(frame, new Context(pc, context.forest));
 		//
 		if (r == null) {
 			// Body of assert fell through to next
@@ -248,12 +245,11 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.Assign bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Assign bytecode, Constant[] frame, Context context) {
 		int[] targets = bytecode.targets();
 		for (int i = 0; i != targets.length; ++i) {
 			frame[bytecode.target(i)] = frame[bytecode.operand(i)];
-		}		
+		}
 		return context.pc.next();
 	}
 
@@ -269,170 +265,19 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.Operator bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Operator bytecode, Constant[] frame, Context context) {
+		int[] operands = bytecode.operands();
+		Constant[] values = new Constant[operands.length];
+		// Read all operands
+		for(int i=0;i!=operands.length;++i) {
+			values[i] = frame[operands[i]];
+		}		
 		// Compute result
-		Constant result;
-		//
-		switch(bytecode.kind) {
-		case NEG:			
-		case INVERT:			
-		case DEREFERENCE:
-		case LENGTHOF:
-			result = executeUnary(bytecode.kind,frame[bytecode.operand(0)],context); 
-			break;		
-		case ADD:
-		case SUB:
-		case MUL:
-		case DIV:
-		case REM: {
-			Constant.Integer lhs = checkType(frame[bytecode.operand(0)], context, Constant.Integer.class);
-			Constant.Integer rhs = checkType(frame[bytecode.operand(1)], context, Constant.Integer.class);
-			result = execute(bytecode.kind,lhs,rhs,context);
-			break;
-		}
-		case BITWISEXOR:
-		case BITWISEOR:
-		case BITWISEAND: 
-		case LEFTSHIFT:
-		case RIGHTSHIFT: {
-			Constant.Byte lhs = checkType(frame[bytecode.operand(0)], context, Constant.Byte.class);
-			Constant rhs = frame[bytecode.operand(1)];
-			result = execute(bytecode.kind,lhs,rhs,context);
-			break;
-		}
-		case INDEXOF: {
-			Constant.Array src = checkType(frame[bytecode.operand(0)], context, Constant.Array.class);
-			Constant.Integer index = checkType(frame[bytecode.operand(1)], context, Constant.Integer.class);
-			int i = index.value.intValue();
-			if (i < 0 || i >= src.values.size()) {
-				error("index-out-of-bounds", context);
-			}
-			// Ok, get the element at that index
-			result = src.values.get(index.value.intValue());
-			break;
-		}
-		case ARRAYGEN: {
-			Constant element = frame[bytecode.operand(0)];
-			Constant.Integer count = checkType(frame[bytecode.operand(1)], context, Constant.Integer.class);
-			// Check that we have a integer count
-			int n = count.value.intValue();		
-			ArrayList<Constant> values = new ArrayList<Constant>();
-			for(int i=0;i!=n;++i) {
-				values.add(element);
-			}
-			result = Constant.V_ARRAY(values);
-			break;
-		}
-		default:
-			return deadCode(context);		
-		}
-
+		Constant result = operators[bytecode.opcode()].apply(values, context);		
 		// Write result to target
 		frame[bytecode.target(0)] = result;
-		
+		// Continue on to next instruction
 		return context.pc.next();
-	}
-
-	private Constant executeUnary(Codes.OperatorKind kind,
-			Constant operand, Context context) {
-		switch(kind) {
-		case NEG: {
-			Constant.Integer i = checkType(operand, context, Constant.Integer.class);
-			return i.negate();
-		}
-		case INVERT: {
-			Constant.Byte b = checkType(operand, context, Constant.Byte.class);			
-			return Constant.V_BYTE((byte) ~b.value);
-		}
-		case DEREFERENCE: {
-			checkType(operand, context, ConstantObject.class);
-			ConstantObject ref = (ConstantObject) operand;
-			return ref.read();
-		}
-		case LENGTHOF: {
-			checkType(operand, context, Constant.Array.class);
-			Constant.Array list = (Constant.Array) operand;
-			BigInteger length = BigInteger.valueOf(list.values.size());		
-			return Constant.V_INTEGER(length);
-		}
-		}
-		return (Constant) deadCode(context);
-	}
-	
-	/**
-	 * Execute an integer binary operator
-	 *
-	 * @param kind
-	 *            --- operator kind
-	 * @param i1
-	 *            --- left operand
-	 * @param i2
-	 *            --- right operand
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Constant execute(Codes.OperatorKind kind,
-			Constant.Integer i1, Constant.Integer i2, Context context) {
-		switch (kind) {
-		case ADD:
-			return i1.add(i2);
-		case SUB:
-			return i1.subtract(i2);
-		case MUL:
-			return i1.multiply(i2);
-		case DIV:
-			return i1.divide(i2);
-		case REM:
-			return i1.remainder(i2);		
-		}
-		deadCode(context);
-		return null;
-	}
-
-	/**
-	 * Execute an bitwise binary operator
-	 *
-	 * @param kind
-	 *            --- operator kind
-	 * @param i1
-	 *            --- left operand
-	 * @param i2
-	 *            --- right operand
-	 * @param context
-	 *            --- Context in which bytecodes are executed            
-	 * @return
-	 */
-	private Constant execute(Codes.OperatorKind kind, Constant.Byte i1,
-			Constant i2, Context context) {
-		int result;
-		switch (kind) {
-		case BITWISEAND:
-			checkType(i2, context, Constant.Byte.class);
-			result = i1.value & ((Constant.Byte) i2).value;
-			break;
-		case BITWISEOR:
-			checkType(i2, context, Constant.Byte.class);
-			result = i1.value | ((Constant.Byte) i2).value;
-			break;
-		case BITWISEXOR:
-			checkType(i2, context, Constant.Byte.class);
-			result = i1.value ^ ((Constant.Byte) i2).value;
-			break;
-		case LEFTSHIFT:
-			checkType(i2, context, Constant.Integer.class);
-			result = i1.value << ((Constant.Integer) i2).value.intValue();
-			break;
-		case RIGHTSHIFT:
-			checkType(i2, context, Constant.Integer.class);
-			result = i1.value >> ((Constant.Integer) i2).value.intValue();
-			break;
-		default:
-			deadCode(context);
-			return null;
-		}
-		return Constant.V_BYTE((byte) result);
 	}
 
 	/**
@@ -447,15 +292,13 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.Const bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Const bytecode, Constant[] frame, Context context) {
 		Constant c = cleanse(bytecode.constant, context);
 		frame[bytecode.target()] = c;
 		return context.pc.next();
 	}
 
-	private Object execute(Codes.Convert bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Convert bytecode, Constant[] frame, Context context) {
 		try {
 			Constant operand = frame[bytecode.operand(0)];
 			Type target = expander.getUnderlyingType(bytecode.result());
@@ -485,7 +328,8 @@ public class Interpreter {
 			// In this case, we don't need to do anything because the value is
 			// already of the correct type.
 			return value;
-		} if (to instanceof Type.Record) {
+		}
+		if (to instanceof Type.Record) {
 			return convert(value, (Type.Record) to, context);
 		} else if (to instanceof Type.Array) {
 			return convert(value, (Type.Array) to, context);
@@ -515,14 +359,12 @@ public class Interpreter {
 		HashSet<String> rv_fields = new HashSet<String>(rv.values.keySet());
 		// Check fields in value are subset of those in target type
 		if (!rv_fields.containsAll(to.keys())) {
-			error("cannot convert between records with differing fields",
-					context);
+			error("cannot convert between records with differing fields", context);
 			return null; // deadcode
 		} else {
 			HashMap<String, Constant> nValues = new HashMap<String, Constant>();
 			for (String field : to.keys()) {
-				Constant nValue = convert(rv.values.get(field),
-						to.field(field), context);
+				Constant nValue = convert(rv.values.get(field), to.field(field), context);
 				nValues.put(field, nValue);
 			}
 			return Constant.V_RECORD(nValues);
@@ -548,7 +390,7 @@ public class Interpreter {
 		}
 		return Constant.V_ARRAY(values);
 	}
-	
+
 	/**
 	 * Convert a value into a union type. In this case, we must find an
 	 * appropriate bound for the type in question. If no such type can be found,
@@ -584,7 +426,7 @@ public class Interpreter {
 	private Constant convert(Constant value, Type.FunctionOrMethod to, Context context) {
 		return value;
 	}
-	
+
 	/**
 	 * Execute a Debug bytecode instruction at a given point in the function or
 	 * method body. This will write the provided string out to the debug stream.
@@ -597,8 +439,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.Debug bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Debug bytecode, Constant[] frame, Context context) {
 		//
 		Constant.Array list = (Constant.Array) frame[bytecode.operand(0)];
 		for (Constant item : list.values) {
@@ -622,20 +463,17 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.Fail bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Fail bytecode, Constant[] frame, Context context) {
 		throw new Error("Runtime fault occurred");
 	}
 
-	private Object execute(Codes.FieldLoad bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.FieldLoad bytecode, Constant[] frame, Context context) {
 		Constant.Record rec = (Constant.Record) frame[bytecode.operand(0)];
 		frame[bytecode.target(0)] = rec.values.get(bytecode.field);
 		return context.pc.next();
 	}
 
-	private Object execute(Codes.Quantify bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Quantify bytecode, Constant[] frame, Context context) {
 		Constant startOperand = frame[bytecode.startOperand()];
 		Constant endOperand = frame[bytecode.endOperand()];
 		checkType(startOperand, context, Constant.Integer.class);
@@ -644,12 +482,12 @@ public class Interpreter {
 		Constant.Integer eo = (Constant.Integer) endOperand;
 		int start = so.value.intValue();
 		int end = eo.value.intValue();
-		for (int i = start; i < end; ++i) {		
+		for (int i = start; i < end; ++i) {
 			// Assign the index variable
 			frame[bytecode.indexOperand()] = Constant.V_INTEGER(BigInteger.valueOf(i));
 			// Execute loop body for one iteration
 			CodeForest.Index pc = new CodeForest.Index(bytecode.block(), 0);
-			Object r = executeAllWithin(frame,  new Context(pc,context.forest));
+			Object r = executeAllWithin(frame, new Context(pc, context.forest));
 			// Now, check whether we fell through to the end or not. If not,
 			// then we must have exited somehow so return to signal that.
 			if (r != null) {
@@ -659,9 +497,8 @@ public class Interpreter {
 
 		return context.pc.next();
 	}
-	
-	private Object execute(Codes.Goto bytecode, Constant[] frame,
-			Context context) {
+
+	private Object execute(Codes.Goto bytecode, Constant[] frame, Context context) {
 		return context.getLabel(bytecode.destination());
 	}
 
@@ -704,18 +541,17 @@ public class Interpreter {
 	}
 
 	private boolean elementOf(Constant lhs, Constant rhs, Context context) {
-		checkType(rhs, context,Constant.Array.class);
+		checkType(rhs, context, Constant.Array.class);
 		Constant.Array list = (Constant.Array) rhs;
 		return list.values.contains(lhs);
 	}
 
-	private boolean lessThan(Constant lhs, Constant rhs, boolean isStrict,
-			Context context) {
+	private boolean lessThan(Constant lhs, Constant rhs, boolean isStrict, Context context) {
 		checkType(lhs, context, Constant.Integer.class);
 		checkType(rhs, context, Constant.Integer.class);
 		Constant.Integer lhs_i = (Constant.Integer) lhs;
 		Constant.Integer rhs_i = (Constant.Integer) rhs;
-		int result = lhs_i.compareTo(rhs_i); 
+		int result = lhs_i.compareTo(rhs_i);
 		// In the strict case, the lhs must be strictly below the rhs. In the
 		// non-strict case, they can be equal.
 		if (isStrict) {
@@ -783,15 +619,13 @@ public class Interpreter {
 				Type.Record rt = (Type.Record) type;
 				Constant.Record t = (Constant.Record) value;
 				Set<String> fields = t.values.keySet();
-				if (!fields.containsAll(rt.keys())
-						|| (!rt.keys().containsAll(fields) && !rt.isOpen())) {
+				if (!fields.containsAll(rt.keys()) || (!rt.keys().containsAll(fields) && !rt.isOpen())) {
 					// In this case, the set of fields does not match properly
 					return false;
 				}
 				boolean r = true;
 				for (String field : fields) {
-					r &= isMemberOfType(t.values.get(field), rt.field(field),
-							context);
+					r &= isMemberOfType(t.values.get(field), rt.field(field), context);
 				}
 				return r;
 			}
@@ -807,23 +641,21 @@ public class Interpreter {
 		} else if (type instanceof Type.Negation) {
 			Type.Negation t = (Type.Negation) type;
 			return !isMemberOfType(value, t.element(), context);
-		}  else if(type instanceof Type.FunctionOrMethod) {
-			if(value instanceof Constant.Lambda) {
+		} else if (type instanceof Type.FunctionOrMethod) {
+			if (value instanceof Constant.Lambda) {
 				Constant.Lambda l = (Constant.Lambda) value;
-				if(Type.isSubtype(type, l.type)) {
+				if (Type.isSubtype(type, l.type)) {
 					return true;
 				}
-			} 
+			}
 			return false;
-		}else if (type instanceof Type.Nominal) {
+		} else if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
 			NameID nid = nt.name();
 			try {
-				Path.Entry<WyilFile> entry = project.get(nid.module(),
-						WyilFile.ContentType);
+				Path.Entry<WyilFile> entry = project.get(nid.module(), WyilFile.ContentType);
 				if (entry == null) {
-					throw new IllegalArgumentException("no WyIL file found: "
-							+ nid.module());
+					throw new IllegalArgumentException("no WyIL file found: " + nid.module());
 				}
 				// Second, find the given function or method
 				WyilFile wyilFile = entry.read();
@@ -851,7 +683,7 @@ public class Interpreter {
 				return false;
 			}
 		}
-		
+
 		deadCode(context);
 		return false; // deadcode
 	}
@@ -871,8 +703,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.IndirectInvoke bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.IndirectInvoke bytecode, Constant[] frame, Context context) {
 		Constant operand = frame[bytecode.operand(0)];
 		// Check that we have a function reference
 		checkType(operand, context, Constant.Lambda.class);
@@ -882,14 +713,14 @@ public class Interpreter {
 		Constant.Lambda func = (Constant.Lambda) operand;
 		List<Constant> func_arguments = func.arguments;
 		int[] operands = bytecode.operands();
-		Constant[] arguments = new Constant[func_arguments.size() + (operands.length-1)];
+		Constant[] arguments = new Constant[func_arguments.size() + (operands.length - 1)];
 		{
-			int i=0;
+			int i = 0;
 			for (int j = 1; j != operands.length; ++j) {
-				arguments[i++] = frame[operands[j]];	
+				arguments[i++] = frame[operands[j]];
 			}
 			for (int j = 0; j != func_arguments.size(); ++j) {
-				arguments[i++] = func.arguments.get(j);						
+				arguments[i++] = func.arguments.get(j);
 			}
 		}
 		// Make the actual call
@@ -897,16 +728,15 @@ public class Interpreter {
 		// Check whether a return value was expected or not
 		int[] targets = bytecode.targets();
 		List<Type> returns = bytecode.type(0).returns();
-		for(int i=0;i!=targets.length;++i) {
+		for (int i = 0; i != targets.length; ++i) {
 			// Coerce the result (may not be actually necessary))
-			frame[targets[i]] = convert(results[i],returns.get(i),context);
+			frame[targets[i]] = convert(results[i], returns.get(i), context);
 		}
 		// Done
 		return context.pc.next();
 	}
 
-	private Object execute(Codes.Invariant bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Invariant bytecode, Constant[] frame, Context context) {
 		// FIXME: currently implemented as a NOP because of #480
 		return context.pc.next();
 	}
@@ -925,8 +755,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.Invoke bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Invoke bytecode, Constant[] frame, Context context) {
 		int[] operands = bytecode.operands();
 		Constant[] arguments = new Constant[operands.length];
 		for (int i = 0; i != arguments.length; ++i) {
@@ -934,18 +763,17 @@ public class Interpreter {
 		}
 		Constant[] results = execute(bytecode.name, bytecode.type(0), arguments);
 		int[] targets = bytecode.targets();
-		for(int i=0;i!=targets.length;++i) {
+		for (int i = 0; i != targets.length; ++i) {
 			frame[targets[i]] = results[i];
-		}		
+		}
 		return context.pc.next();
 	}
 
-	private Object execute(Codes.Lambda bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Lambda bytecode, Constant[] frame, Context context) {
 
 		int[] operands = bytecode.operands();
 		Constant[] arguments = new Constant[operands.length];
-		
+
 		for (int i = 0; i != arguments.length; ++i) {
 			int reg = operands[i];
 			arguments[i] = frame[reg];
@@ -956,13 +784,12 @@ public class Interpreter {
 		return context.pc.next();
 	}
 
-	private Object execute(Codes.Loop bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Loop bytecode, Constant[] frame, Context context) {
 		Object r;
 		do {
 			// Keep executing the loop body until we exit it somehow.
 			CodeForest.Index pc = new CodeForest.Index(bytecode.block(), 0);
-			r = executeAllWithin(frame, new Context(pc,context.forest));
+			r = executeAllWithin(frame, new Context(pc, context.forest));
 		} while (r == null);
 
 		// If we get here, then we have exited the loop body without falling
@@ -970,30 +797,7 @@ public class Interpreter {
 		return r;
 	}
 
-	/**
-	 * Execute a Record bytecode instruction at a given point in the function or
-	 * method body. This constructs a new list.
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Codes.NewArray bytecode, Constant[] frame,
-			Context context) {
-		ArrayList<Constant> values = new ArrayList<Constant>();
-		for (int operand : bytecode.operands()) {
-			values.add((Constant) frame[operand]);
-		}
-		frame[bytecode.target(0)] = Constant.V_ARRAY(values);
-		return context.pc.next();
-	}
-
-	private Object execute(Codes.NewObject bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.NewObject bytecode, Constant[] frame, Context context) {
 		Constant operand = frame[bytecode.operand(0)];
 		ConstantObject o = new ConstantObject(operand);
 		frame[bytecode.target(0)] = o;
@@ -1012,8 +816,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.NewRecord bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.NewRecord bytecode, Constant[] frame, Context context) {
 		HashMap<String, Constant> values = new HashMap<String, Constant>();
 		ArrayList<String> fields = new ArrayList<String>(bytecode.type(0).fields().keySet());
 		Collections.sort(fields);
@@ -1056,7 +859,7 @@ public class Interpreter {
 	private Object execute(Codes.Return bytecode, Constant[] frame, Context context) {
 		int[] operands = bytecode.operands();
 		Constant[] returns = new Constant[operands.length];
-		for(int i=0;i!=operands.length;++i) {
+		for (int i = 0; i != operands.length; ++i) {
 			returns[i] = frame[operands[i]];
 		}
 		return returns;
@@ -1074,8 +877,7 @@ public class Interpreter {
 		return context.getLabel(bytecode.defaultTarget);
 	}
 
-	private Object execute(Codes.Update bytecode, Constant[] frame,
-			Context context) {
+	private Object execute(Codes.Update bytecode, Constant[] frame, Context context) {
 		Constant rhs = frame[bytecode.result()];
 		Constant lhs = frame[bytecode.target(0)];
 		frame[bytecode.target(0)] = update(lhs, bytecode.iterator(), rhs, frame, context);
@@ -1103,8 +905,8 @@ public class Interpreter {
 	 *
 	 * @return The left-hand side updated with the new value assigned
 	 */
-	private Constant update(Constant lhs, Iterator<Codes.LVal> descriptor,
-			Constant rhs, Constant[] frame, Context context) {
+	private Constant update(Constant lhs, Iterator<Codes.LVal> descriptor, Constant rhs, Constant[] frame,
+			Context context) {
 		if (descriptor.hasNext()) {
 			Codes.LVal lval = descriptor.next();
 			// Check what shape the left-hand side is
@@ -1116,8 +918,7 @@ public class Interpreter {
 				checkType(lhs, context, Constant.Array.class);
 				Constant.Array list = (Constant.Array) lhs;
 				int index = ((Constant.Integer) operand).value.intValue();
-				ArrayList<Constant> values = new ArrayList<Constant>(
-						list.values);
+				ArrayList<Constant> values = new ArrayList<Constant>(list.values);
 				rhs = update(values.get(index), descriptor, rhs, frame, context);
 				values.set(index, rhs);
 				return Constant.V_ARRAY(values);
@@ -1126,10 +927,8 @@ public class Interpreter {
 				Codes.RecordLVal lv = (Codes.RecordLVal) lval;
 				checkType(lhs, context, Constant.Record.class);
 				Constant.Record record = (Constant.Record) lhs;
-				HashMap<String, Constant> values = new HashMap<String, Constant>(
-						record.values);
-				rhs = update(values.get(lv.field), descriptor, rhs, frame,
-						context);
+				HashMap<String, Constant> values = new HashMap<String, Constant>(record.values);
+				rhs = update(values.get(lv.field), descriptor, rhs, frame, context);
 				values.put(lv.field, rhs);
 				return Constant.V_RECORD(values);
 			} else {
@@ -1158,7 +957,7 @@ public class Interpreter {
 	 * @param types
 	 *            --- Types to be checked against
 	 */
-	private <T extends Constant> T checkType(Constant operand, Context context, Class<T>... types) {
+	public static <T extends Constant> T checkType(Constant operand, Context context, Class<T>... types) {
 		// Got through each type in turn checking for a match
 		for (int i = 0; i != types.length; ++i) {
 			if (types[i].isInstance(operand)) {
@@ -1181,11 +980,8 @@ public class Interpreter {
 	private Constant cleanse(Constant constant, Context context) {
 		// See #494 for more on why this method exists, and whether or not we
 		// can get rid of it.
-		if (constant instanceof Constant.Null
-				|| constant instanceof Constant.Byte
-				|| constant instanceof Constant.Bool
-				|| constant instanceof Constant.Integer
-				|| constant instanceof Constant.Lambda
+		if (constant instanceof Constant.Null || constant instanceof Constant.Byte || constant instanceof Constant.Bool
+				|| constant instanceof Constant.Integer || constant instanceof Constant.Lambda
 				|| constant instanceof Constant.Type) {
 			return constant;
 		} else if (constant instanceof Constant.Array) {
@@ -1219,7 +1015,7 @@ public class Interpreter {
 	 * @param context
 	 *            --- Context in which bytecodes are executed
 	 */
-	private Object error(String msg, Context context) {
+	public static Object error(String msg, Context context) {
 		// FIXME: do more here
 		throw new RuntimeException(msg);
 	}
@@ -1268,7 +1064,7 @@ public class Interpreter {
 	 * @author David J. Pearce
 	 *
 	 */
-	private class ConstantObject extends Constant {
+	public static class ConstantObject extends Constant {
 		private Constant value;
 
 		public ConstantObject(Constant value) {
@@ -1295,8 +1091,7 @@ public class Interpreter {
 		public int compareTo(Constant o) {
 			// This method cannot be implmened because it does not make sense to
 			// compare a reference with another reference.
-			throw new UnsupportedOperationException(
-					"ConstantObject.compare() cannot be implemented");
+			throw new UnsupportedOperationException("ConstantObject.compare() cannot be implemented");
 		}
 
 		@Override
@@ -1304,5 +1099,16 @@ public class Interpreter {
 			return wyil.lang.Type.Reference(value.type());
 		}
 
+	}
+
+	/**
+	 * An internal function is simply a named internal function. This reads a
+	 * bunch of operands and returns a set of results.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static interface InternalFunction {
+		public Constant apply(Constant[] operands, Context context);
 	}
 }
