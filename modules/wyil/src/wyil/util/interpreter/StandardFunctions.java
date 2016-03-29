@@ -18,7 +18,7 @@ public class StandardFunctions {
 	
 	static {
 		standardFunctions[Code.OPCODE_neg] = new Negate();
-		standardFunctions[Code.OPCODE_invert] = new Invert();	
+		standardFunctions[Code.OPCODE_invert] = new BitwiseInvert();	
 		standardFunctions[Code.OPCODE_dereference] = new Dereference();
 		standardFunctions[Code.OPCODE_lengthof] = new ArrayLength();	
 		standardFunctions[Code.OPCODE_add ] = new Add();
@@ -36,14 +36,10 @@ public class StandardFunctions {
 		standardFunctions[Code.OPCODE_newarray] = new ArrayConstructor();	
 	};
 
-	private static final class Invert implements InternalFunction {
-		@Override
-		public Constant apply(Constant[] operands, Context context) {
-			Constant.Byte b = checkType(operands[0], context, Constant.Byte.class);
-			return Constant.V_BYTE((byte) ~b.value);
-		}		
-	}
-	
+	// ====================================================================================
+	// References
+	// ====================================================================================
+
 	private static final class Dereference implements InternalFunction {
 		@Override
 		public Constant apply(Constant[] operands, Context context) {
@@ -113,6 +109,15 @@ public class StandardFunctions {
 	// Bytes
 	// ====================================================================================
 		
+
+	private static final class BitwiseInvert implements InternalFunction {
+		@Override
+		public Constant apply(Constant[] operands, Context context) {
+			Constant.Byte b = checkType(operands[0], context, Constant.Byte.class);
+			return Constant.V_BYTE((byte) ~b.value);
+		}		
+	}
+	
 	private static final class BitwiseOr implements InternalFunction {
 		@Override
 		public Constant apply(Constant[] operands, Context context) {

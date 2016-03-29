@@ -44,6 +44,8 @@ import wyil.lang.*;
 import wyil.lang.Constant;
 import wyil.util.TypeExpander;
 import static wyil.util.ErrorMessages.internalFailure;
+
+import wyjc.util.BytecodeTranslators;
 import wyjc.util.WyjcBuildTask;
 import jasm.attributes.Code.Handler;
 import jasm.attributes.LineNumberTable;
@@ -89,31 +91,37 @@ public class Wyil2JavaBuilder implements Builder {
 	/**
 	 * Filename of module being translated
 	 */
-	protected String filename;
+	private String filename;
 
 	/**
 	 * Type of enclosing class being generated
 	 */
-	protected JvmType.Clazz owner;
+	private JvmType.Clazz owner;
 
+	/**
+	 * The set of generators for individual WyIL bytecodes
+	 */
+	private BytecodeTranslator[] generators;
+	
 	/**
 	 * Map of Constant values to their pool index
 	 */
-	protected HashMap<JvmConstant, Integer> constants;
+	private HashMap<JvmConstant, Integer> constants;
 
 	/**
 	 * List of temporary classes created to implement lambda expressions
 	 */
-	protected ArrayList<ClassFile> lambdas;
+	private ArrayList<ClassFile> lambdas;
 
 	/**
 	 * List of line number entries for current function / method being compiled.
 	 */
-	protected ArrayList<LineNumberTable.Entry> lineNumbers;
+	private ArrayList<LineNumberTable.Entry> lineNumbers;
 
 	public Wyil2JavaBuilder(Build.Project project) {
 		this.project = project;
 		this.expander = new TypeExpander(project);
+		this.generators = BytecodeTranslators.standardFunctions;
 	}
 
 	public void setLogger(Logger logger) {
@@ -1254,134 +1262,8 @@ public class Wyil2JavaBuilder implements Builder {
 
 	private void translate(CodeForest.Index index, Codes.Operator c, int freeSlot, CodeForest forest,
 			ArrayList<Bytecode> bytecodes) {
-
-		JvmType type = convertUnderlyingType(c.type(0));
-		JvmType.Function ftype = null;
-
-		// first, load operands
-		switch (c.kind) {
-		case NEG:
-		case INVERT:
-		case ARRAYLENGTH:
-			ftype = new JvmType.Function(type);
-			bytecodes.add(new Bytecode.Load(c.operand(0), type));
-			break;
-		case DEREFERENCE:
-			ftype = new JvmType.Function(JAVA_LANG_OBJECT);
-			bytecodes.add(new Bytecode.Load(c.operand(0), type));
-			break;				
-		case ADD:
-		case SUB:
-		case MUL:
-		case DIV:
-		case REM:
-		case BITWISEAND:
-		case BITWISEOR:
-		case BITWISEXOR:
-			ftype = new JvmType.Function(type, type);
-			bytecodes.add(new Bytecode.Load(c.operand(0), type));
-			bytecodes.add(new Bytecode.Load(c.operand(1), type));
-			break;
-		case LEFTSHIFT:
-		case RIGHTSHIFT:
-			ftype = new JvmType.Function(type, WHILEYINT);
-			bytecodes.add(new Bytecode.Load(c.operand(0), type));
-			bytecodes.add(new Bytecode.Load(c.operand(1), WHILEYINT));
-			break;
-		case INDEXOF:
-			ftype = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYARRAY, WHILEYINT);
-			bytecodes.add(new Bytecode.Load(c.operand(0), WHILEYARRAY));
-			bytecodes.add(new Bytecode.Load(c.operand(1), WHILEYINT));		
-			break;
-		case ARRAYGENERATOR: {
-			Type elementType = ((Type.Array) c.type(0)).element();
-			ftype = new JvmType.Function(WHILEYARRAY, JAVA_LANG_OBJECT, WHILEYINT);
-			bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(elementType)));
-			addWriteConversion(elementType, bytecodes);		
-			bytecodes.add(new Bytecode.Load(c.operand(1), WHILEYINT));
-			break;
-		}
-		case ARRAYCONSTRUCTOR:
-			translateArrayConstructor(index,c,freeSlot,forest,bytecodes);
-			return;
-		}
-
-		// second, apply operation
-		switch (c.kind) {
-		case NEG:
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "negate", ftype, Bytecode.InvokeMode.VIRTUAL));
-			break;
-		case INVERT:
-			bytecodes.add(new Bytecode.Invoke(WHILEYBYTE, "compliment", ftype, Bytecode.InvokeMode.VIRTUAL));
-			break;
-		case DEREFERENCE:
-			bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "state", ftype, Bytecode.InvokeMode.VIRTUAL));
-			// finally, we need to cast the object we got back appropriately.
-			Type.Reference pt = (Type.Reference) c.type(0);
-			addReadConversion(pt.element(), bytecodes);
-			break;
-		case ARRAYLENGTH:
-			ftype = new JvmType.Function(WHILEYINT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "length", ftype, Bytecode.InvokeMode.VIRTUAL));
-			break;
-		case ADD:
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "add",
-					ftype, Bytecode.InvokeMode.VIRTUAL));
-			break;
-		case SUB:
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "subtract",
-					ftype, Bytecode.InvokeMode.VIRTUAL));
-			break;
-		case MUL:
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "multiply",
-					ftype, Bytecode.InvokeMode.VIRTUAL));
-			break;
-		case DIV:
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type, "divide",
-					ftype, Bytecode.InvokeMode.VIRTUAL));
-			break;
-		case REM:
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
-					"remainder", ftype, Bytecode.InvokeMode.VIRTUAL));
-			break;
-		case BITWISEAND:
-			bytecodes.add(new Bytecode.Invoke(WHILEYBYTE, "and", ftype,
-					Bytecode.InvokeMode.VIRTUAL));
-			break;
-		case BITWISEOR:
-			bytecodes.add(new Bytecode.Invoke(WHILEYBYTE, "or", ftype,
-					Bytecode.InvokeMode.VIRTUAL));
-			break;
-		case BITWISEXOR:
-			bytecodes.add(new Bytecode.Invoke(WHILEYBYTE, "xor", ftype,
-					Bytecode.InvokeMode.VIRTUAL));
-			break;
-		case LEFTSHIFT:
-			bytecodes.add(new Bytecode.Invoke(WHILEYBYTE, "leftShift", ftype,
-					Bytecode.InvokeMode.VIRTUAL));
-			break;
-		case RIGHTSHIFT:
-			bytecodes.add(new Bytecode.Invoke(WHILEYBYTE, "rightShift", ftype,
-					Bytecode.InvokeMode.VIRTUAL));
-			break;
-		case INDEXOF: {
-			Type.EffectiveArray arrType = (Type.EffectiveArray) c.type(0);
-			bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "get", ftype, Bytecode.InvokeMode.STATIC));
-			addReadConversion(arrType.element(), bytecodes);
-			type = convertUnderlyingType(arrType.element());
-			break;
-		}
-		case ARRAYGENERATOR: {			
-			bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "generate", ftype, Bytecode.InvokeMode.STATIC));
-			break;
-		}
-			
-		default:
-			internalFailure("unknown binary expression encountered", filename,
-					forest.get(index).attribute(SourceLocation.class));
-		}
-
-		bytecodes.add(new Bytecode.Store(c.target(0), type));
+		Context context = new Context(forest, index, freeSlot, bytecodes);
+		generators[c.opcode()].translate(c, context);
 	}
 
 	private void translate(CodeForest.Index index, Codes.NewObject c, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
@@ -1393,24 +1275,6 @@ public class Wyil2JavaBuilder implements Builder {
 		JvmType.Function ftype = new JvmType.Function(T_VOID, JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
 		bytecodes.add(new Bytecode.Store(c.target(0), type));
-	}
-
-	protected void translateArrayConstructor(CodeForest.Index index, Codes.Operator c, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
-		Type.Array arrType = (Type.Array) c.type(0); 
-		bytecodes.add(new Bytecode.New(WHILEYARRAY));
-		bytecodes.add(new Bytecode.Dup(WHILEYARRAY));
-		bytecodes.add(new Bytecode.LoadConst(c.operands().length));
-		JvmType.Function ftype = new JvmType.Function(T_VOID, T_INT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
-
-		ftype = new JvmType.Function(WHILEYARRAY, WHILEYARRAY, JAVA_LANG_OBJECT);
-		for (int i = 0; i != c.operands().length; ++i) {
-			bytecodes.add(new Bytecode.Load(c.operands()[i], convertUnderlyingType(arrType.element())));
-			addWriteConversion(arrType.element(), bytecodes);
-			bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "internal_add", ftype, Bytecode.InvokeMode.STATIC));
-		}
-
-		bytecodes.add(new Bytecode.Store(c.target(0), WHILEYARRAY));
 	}
 
 	private void translate(CodeForest.Index index, Codes.NewRecord code, int freeSlot, CodeForest forest,
@@ -2190,26 +2054,26 @@ public class Wyil2JavaBuilder implements Builder {
 				Bytecode.InvokeMode.SPECIAL));
 	}
 
-	private final static Type WHILEY_SYSTEM_T = Type.Nominal(new NameID(Trie
+	public final static Type WHILEY_SYSTEM_T = Type.Nominal(new NameID(Trie
 			.fromString("whiley/lang/System"), "Console"));
 
-	private final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz(
+	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz(
 			"wyjc.runtime", "Util");
-	private final static JvmType.Clazz WHILEYARRAY = new JvmType.Clazz(
+	public final static JvmType.Clazz WHILEYARRAY = new JvmType.Clazz(
 			"wyjc.runtime", "WyArray");
-	private final static JvmType.Clazz WHILEYTYPE = new JvmType.Clazz(
+	public final static JvmType.Clazz WHILEYTYPE = new JvmType.Clazz(
 			"wyjc.runtime", "WyType");
-	private final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz(
+	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz(
 			"wyjc.runtime", "WyRecord");
-	private final static JvmType.Clazz WHILEYOBJECT = new JvmType.Clazz(
+	public final static JvmType.Clazz WHILEYOBJECT = new JvmType.Clazz(
 			"wyjc.runtime", "WyObject");
-	private final static JvmType.Clazz WHILEYBOOL = new JvmType.Clazz(
+	public final static JvmType.Clazz WHILEYBOOL = new JvmType.Clazz(
 			"wyjc.runtime", "WyBool");
-	private final static JvmType.Clazz WHILEYBYTE = new JvmType.Clazz(
+	public final static JvmType.Clazz WHILEYBYTE = new JvmType.Clazz(
 			"wyjc.runtime", "WyByte");
-	private final static JvmType.Clazz WHILEYINT = new JvmType.Clazz(
+	public final static JvmType.Clazz WHILEYINT = new JvmType.Clazz(
 			"java.math", "BigInteger");
-	private final static JvmType.Clazz WHILEYLAMBDA = new JvmType.Clazz(
+	public final static JvmType.Clazz WHILEYLAMBDA = new JvmType.Clazz(
 			"wyjc.runtime", "WyLambda");
 
 	private static final JvmType.Clazz JAVA_LANG_CHARACTER = new JvmType.Clazz(
@@ -2440,16 +2304,58 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 
-	/*
-	 * public static void testMangle1(Type.Fun ft) throws IOException {
-	 * IdentifierOutputStream jout = new IdentifierOutputStream();
-	 * BinaryOutputStream binout = new BinaryOutputStream(jout);
-	 * Types.BinaryWriter tm = new Types.BinaryWriter(binout);
-	 * Type.build(tm,ft); binout.close(); System.out.println("MANGLED: " + ft +
-	 * " => " + jout.toString()); Type.Fun type = (Type.Fun) new
-	 * Types.BinaryReader( new BinaryInputStream(new IdentifierInputStream(
-	 * jout.toString()))).read(); System.out.println("UNMANGLED TO: " + type);
-	 * if(!type.equals(ft)) { throw new
-	 * RuntimeException("INVALID TYPE RECONSTRUCTED"); } }
+	public final class Context {
+		/**
+		 * The code forest in which we are currently operating
+		 */
+		private final CodeForest forest;
+		
+		/**
+		 * The index of the bytecode being translated
+		 */
+		private final CodeForest.Index pc;
+		
+		/**
+		 * The list of bytecodes that have been generated so far
+		 */
+		private final ArrayList<Bytecode> bytecodes;
+		
+		/**
+		 * The next available free register slot
+		 */
+		private final int freeSlot;
+		
+		public Context(CodeForest forest, CodeForest.Index pc, int freeSlot, ArrayList<Bytecode> bytecodes) {
+			this.forest = forest;
+			this.bytecodes = bytecodes;
+			this.pc = pc;
+			this.freeSlot = freeSlot;
+		}
+		
+		public void add(Bytecode bytecode) {
+			bytecodes.add(bytecode);
+		}
+		
+		public void addReadConversion(Type type) {
+			Wyil2JavaBuilder.this.addReadConversion(type,bytecodes);
+		}
+		
+		public void addWriteConversion(Type type) {
+			Wyil2JavaBuilder.this.addWriteConversion(type,bytecodes);
+		}
+		
+		public JvmType toJvmType(Type type) {
+			return convertUnderlyingType(type);
+		}
+	}
+	
+	/**
+	 * Provides a simple interface for translating individual bytecodes.
+	 * 
+	 * @author David J. Pearce
+	 *
 	 */
+	public interface BytecodeTranslator {
+		void translate(Codes.Operator bytecode, Context context);
+	}
 }
