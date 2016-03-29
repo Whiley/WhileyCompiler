@@ -407,7 +407,7 @@ public class Wyil2JavaBuilder implements Builder {
 
 			if (c instanceof Codes.Return) {
 				// first patch point
-				block.set(i, Codes.Nop);
+				block.set(i, Codes.Operator(Type.T_VOID, new int[0], new int[0], Codes.OperatorKind.ASSIGN));
 			} else if (c instanceof Codes.Fail) {
 				// second patch point
 				block.set(i, Codes.Goto(falseBranch));
@@ -621,20 +621,14 @@ public class Wyil2JavaBuilder implements Builder {
 				translate(pc, (Codes.Label) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Lambda) {
 				translate(pc, (Codes.Lambda) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof Codes.Assign) {
-				translate(pc, (Codes.Assign) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Loop) {
 				translate(pc, (Codes.Loop) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Update) {
 				translate(pc, (Codes.Update) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Return) {
 				translate(pc, (Codes.Return) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof Codes.Nop) {
-				// do nothing
 			} else if (code instanceof Codes.Switch) {
 				translate(pc, (Codes.Switch) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof Codes.NewObject) {
-				translate(pc, (Codes.NewObject) code, freeSlot,  forest, bytecodes);
 			} else {
 				internalFailure("unknown wyil code encountered (" + code + ")",
 						filename,
@@ -1233,13 +1227,6 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "print", ftype, Bytecode.InvokeMode.STATIC));
 	}
 
-	private void translate(CodeForest.Index index, Codes.Assign c, int freeSlot,
-			CodeForest forest, ArrayList<Bytecode> bytecodes) {
-		JvmType jt = convertUnderlyingType(c.type(0));
-		bytecodes.add(new Bytecode.Load(c.operand(0), jt));
-		bytecodes.add(new Bytecode.Store(c.target(0), jt));
-	}
-
 	private void translate(CodeForest.Index index, Codes.Fail c, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.New(JAVA_LANG_RUNTIMEEXCEPTION));
 		bytecodes.add(new Bytecode.Dup(JAVA_LANG_RUNTIMEEXCEPTION));
@@ -1262,17 +1249,6 @@ public class Wyil2JavaBuilder implements Builder {
 			ArrayList<Bytecode> bytecodes) {
 		Context context = new Context(forest, index, freeSlot, bytecodes);
 		generators[c.opcode()].translate(c, context);
-	}
-
-	private void translate(CodeForest.Index index, Codes.NewObject c, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
-		JvmType type = convertUnderlyingType(c.type(0));
-		bytecodes.add(new Bytecode.New(WHILEYOBJECT));
-		bytecodes.add(new Bytecode.Dup(WHILEYOBJECT));
-		bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0).element())));
-		addWriteConversion(c.type(0).element(), bytecodes);
-		JvmType.Function ftype = new JvmType.Function(T_VOID, JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
-		bytecodes.add(new Bytecode.Store(c.target(0), type));
 	}
 
 	private void translate(CodeForest.Index index, Codes.Lambda c, int freeSlot, CodeForest forest,

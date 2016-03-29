@@ -21,6 +21,7 @@ public class StandardFunctions {
 	public static final InternalFunction[] standardFunctions = new InternalFunction[255];
 	
 	static {
+		standardFunctions[Code.OPCODE_assign] = new Assign();
 		standardFunctions[Code.OPCODE_neg] = new Negate();
 		standardFunctions[Code.OPCODE_arrayinvert] = new BitwiseInvert();	
 		standardFunctions[Code.OPCODE_dereference] = new Dereference();
@@ -39,8 +40,20 @@ public class StandardFunctions {
 		standardFunctions[Code.OPCODE_arrygen] = new ArrayGenerator();
 		standardFunctions[Code.OPCODE_array] = new ArrayConstructor();
 		standardFunctions[Code.OPCODE_record] = new RecordConstructor();
+		standardFunctions[Code.OPCODE_newobject] = new ObjectConstructor();
 	};
 
+	// ====================================================================================
+	// General
+	// ====================================================================================
+
+	private static final class Assign implements InternalFunction {
+		@Override
+		public Constant apply(Constant[] operands, Context context) {			
+			return operands[0];
+		}		
+	}
+	
 	// ====================================================================================
 	// References
 	// ====================================================================================
@@ -50,6 +63,13 @@ public class StandardFunctions {
 		public Constant apply(Constant[] operands, Context context) {
 			ConstantObject ref = checkType(operands[0], context, ConstantObject.class);
 			return ref.read();
+		}
+	}
+	
+	private static final class ObjectConstructor implements InternalFunction {
+		@Override
+		public Constant apply(Constant[] operands, Context context) {
+			return new ConstantObject(operands[0]);
 		}
 		
 	}

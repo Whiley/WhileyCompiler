@@ -857,12 +857,7 @@ public final class WyilFileReader {
 	private static final Schema[] schemas = new Schema[255];
 
 	static {
-		//
-		schemas[Code.OPCODE_nop] = new Schema(Targets.ZERO, Operands.ZERO, Types.ZERO) {
-			public Code construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return Codes.Nop;
-			}
-		};
+		//		
 		schemas[Code.OPCODE_goto] = new Schema(Targets.ZERO, Operands.ZERO, Types.ZERO, Extras.TARGET){
 			public Code construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
 				return Codes.Goto((String) extras[0]);
@@ -920,13 +915,12 @@ public final class WyilFileReader {
 		// =========================================================================
 		schemas[Code.OPCODE_assign] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
 			public Code construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return Codes.Assign(types[0], targets[0], operands[0]);
+				return Codes.Operator(types[0], targets, operands, Codes.OperatorKind.ASSIGN);
 			}
-		};
-		
+		};		
 		schemas[Code.OPCODE_newobject] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
 			public Code construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return Codes.NewObject((Type.Reference) types[0], targets[0], operands[0]);
+				return Codes.Operator(types[0],targets,operands,Codes.OperatorKind.NEW);
 			}
 		};
 		schemas[Code.OPCODE_dereference] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){

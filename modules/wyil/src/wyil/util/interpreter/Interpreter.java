@@ -159,8 +159,6 @@ public class Interpreter {
 			return execute((Codes.Invariant) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.AssertOrAssume) {
 			return execute((Codes.AssertOrAssume) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Assign) {
-			return execute((Codes.Assign) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Operator) {
 			return execute((Codes.Operator) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Const) {
@@ -192,10 +190,6 @@ public class Interpreter {
 			return execute((Codes.Quantify) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Loop) {
 			return execute((Codes.Loop) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.NewObject) {
-			return execute((Codes.NewObject) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Nop) {
-			return execute((Codes.Nop) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Return) {
 			return execute((Codes.Return) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Switch) {
@@ -229,26 +223,6 @@ public class Interpreter {
 		} else {
 			return r;
 		}
-	}
-
-	/**
-	 * Execute an Assign bytecode instruction at a given point in the function
-	 * or method body
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Codes.Assign bytecode, Constant[] frame, Context context) {
-		int[] targets = bytecode.targets();
-		for (int i = 0; i != targets.length; ++i) {
-			frame[bytecode.target(i)] = frame[bytecode.operand(i)];
-		}
-		return context.pc.next();
 	}
 
 	/**
@@ -793,29 +767,6 @@ public class Interpreter {
 		// If we get here, then we have exited the loop body without falling
 		// through to the next bytecode.
 		return r;
-	}
-
-	private Object execute(Codes.NewObject bytecode, Constant[] frame, Context context) {
-		Constant operand = frame[bytecode.operand(0)];
-		ConstantObject o = new ConstantObject(operand);
-		frame[bytecode.target(0)] = o;
-		return context.pc.next();
-	}
-
-	/**
-	 * Execute a Nop bytecode instruction at a given point in the function or
-	 * method body. This basically doesn't do anything!
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Codes.Nop bytecode, Constant[] frame, Context context) {
-		return context.pc.next();
 	}
 
 	/**

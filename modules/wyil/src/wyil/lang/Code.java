@@ -323,7 +323,7 @@ public interface Code {
 	// =========================================================================
 	// Empty Bytecodes
 	// =========================================================================
-	public static final int OPCODE_nop       = 0;
+	
 	public static final int OPCODE_goto      = 1;
 	public static final int OPCODE_fail      = 2;
 	public static final int OPCODE_assert    = 4;
@@ -344,12 +344,7 @@ public interface Code {
 	// Unary Assignables
 	// =========================================================================
 	public static final int UNARY_ASSIGNABLE = UNARY_OPERATOR+5;
-	
-	public static final int OPCODE_assign      = UNARY_ASSIGNABLE+0;
-
-	//public static final int OPCODE_move        = UNARY_ASSIGNABLE+4;
-	public static final int OPCODE_newobject   = UNARY_ASSIGNABLE+5;
-	
+		
 	public static final int OPCODE_fieldload   = UNARY_ASSIGNABLE+8;
 	public static final int OPCODE_convert     = UNARY_ASSIGNABLE+9;
 	public static final int OPCODE_const       = UNARY_ASSIGNABLE+10;
@@ -389,11 +384,13 @@ public interface Code {
 	public static final int OPCODE_arrygen     = BINARY_ASSIGNABLE+15;
 	public static final int OPCODE_array       = BINARY_ASSIGNABLE+16;
 	public static final int OPCODE_record      = BINARY_ASSIGNABLE+17;
+	public static final int OPCODE_newobject   = BINARY_ASSIGNABLE+18;
+	public static final int OPCODE_assign      = BINARY_ASSIGNABLE+19;
 	
 	// =========================================================================
 	// Nary Assignables
 	// =========================================================================
-	public static final int NARY_ASSIGNABLE = BINARY_ASSIGNABLE+18;
+	public static final int NARY_ASSIGNABLE = BINARY_ASSIGNABLE+20;
 		
 	public static final int OPCODE_invoke           = NARY_ASSIGNABLE+2;
 	public static final int OPCODE_indirectinvoke   = NARY_ASSIGNABLE+3;

@@ -28,6 +28,7 @@ public class BytecodeTranslators {
 	public static final BytecodeTranslator[] standardFunctions = new BytecodeTranslator[255];
 	
 	static {
+		standardFunctions[Code.OPCODE_assign] = new Assign();
 		standardFunctions[Code.OPCODE_neg] = new Negate();
 		standardFunctions[Code.OPCODE_arrayinvert] = new Invert();	
 		standardFunctions[Code.OPCODE_dereference] = new Dereference();
@@ -46,7 +47,26 @@ public class BytecodeTranslators {
 		standardFunctions[Code.OPCODE_arrygen] = new ArrayGenerator();
 		standardFunctions[Code.OPCODE_array] = new ArrayConstructor();
 		standardFunctions[Code.OPCODE_record] = new RecordConstructor();
+		standardFunctions[Code.OPCODE_newobject] = new New();
 	};
+	
+
+	// ====================================================================================
+	// General
+	// ====================================================================================
+
+	private static final class Assign implements BytecodeTranslator {
+		@Override
+		public void translate(Codes.Operator bytecode, Context context) {
+			JvmType jt = context.toJvmType(bytecode.type(0));
+			int[] targets = bytecode.targets();
+			int[] operands = bytecode.operands();
+			for (int i = 0; i != operands.length; ++i) {
+				context.add(new Bytecode.Load(operands[i], jt));
+				context.add(new Bytecode.Store(targets[i], jt));
+			}
+		}
+	}
 	
 	// ====================================================================================
 	// References
@@ -62,6 +82,22 @@ public class BytecodeTranslators {
 			// finally, we need to cast the object we got back appropriately.
 			Type.Reference pt = (Type.Reference) bytecode.type(0);
 			context.addReadConversion(pt.element());
+			context.add(new Bytecode.Store(bytecode.target(0), type));
+		}		
+	}
+	
+	private static final class New implements BytecodeTranslator {
+		@Override
+		public void translate(Codes.Operator bytecode, Context context) {
+			Type.Reference refType = (Type.Reference) bytecode.type(0); 
+			JvmType type = context.toJvmType(refType);
+			JvmType elementType = context.toJvmType(refType.element());
+			JvmType.Function ftype = new JvmType.Function(T_VOID, JAVA_LANG_OBJECT);
+			context.add(new Bytecode.New(WHILEYOBJECT));
+			context.add(new Bytecode.Dup(WHILEYOBJECT));
+			context.add(new Bytecode.Load(bytecode.operand(0), elementType));
+			context.addWriteConversion(refType.element());
+			context.add(new Bytecode.Invoke(WHILEYOBJECT, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
 			context.add(new Bytecode.Store(bytecode.target(0), type));
 		}		
 	}

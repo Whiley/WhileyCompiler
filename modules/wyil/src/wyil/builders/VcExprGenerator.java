@@ -66,14 +66,8 @@ public class VcExprGenerator {
 				transform((Codes.Invoke) code, forest, branch);
 			} else if (code instanceof Codes.Label) {
 				// skip
-			} else if (code instanceof Codes.Assign) {
-				transform((Codes.Assign) code, forest, branch);
 			} else if (code instanceof Codes.Update) {
 				transform((Codes.Update) code, forest, branch);
-			} else if (code instanceof Codes.Nop) {
-				// skip
-			} else if (code instanceof Codes.NewObject) {
-				transform((Codes.NewObject) code, forest, branch);
 			} else if (code instanceof Codes.Lambda) {
 				transform((Codes.Lambda) code, forest, branch);
 			} else {
@@ -88,14 +82,7 @@ public class VcExprGenerator {
 			internalFailure(e.getMessage(), filename, e, forest.get(branch.pc()).attributes());
 		}
 	}
-
-	protected void transform(Codes.Assign code, CodeForest forest,
-			VcBranch branch) {
-		for (int i = 0; i != code.operands().length; ++i) {
-			branch.write(code.target(i), branch.read(code.operand(i)));
-		}
-	}
-
+	
 	/**
 	 * Maps unary bytecodes into expression opcodes.
 	 */
@@ -129,6 +116,11 @@ public class VcExprGenerator {
 
 	protected void transform(Codes.Operator code, CodeForest forest, VcBranch branch) {
 		switch(code.kind) {
+		case ASSIGN:
+			for (int i = 0; i != code.operands().length; ++i) {
+				branch.write(code.target(i), branch.read(code.operand(i)));
+			}
+			break;
 		case NEG:
 		case ARRAYLENGTH: {
 			Codes.Operator bc = (Codes.Operator) code;
@@ -171,6 +163,9 @@ public class VcExprGenerator {
 			break;
 		case RECORDCONSTRUCTOR:
 			transformNary(Expr.Nary.Op.TUPLE,code,branch,forest);
+			break;
+		case NEW:
+			branch.havoc(code.target(0));
 			break;
 		}
 	}
@@ -278,15 +273,6 @@ public class VcExprGenerator {
 	protected void transform(Codes.Lambda code, CodeForest forest, VcBranch branch) {
 		// TODO: implement lambdas somehow?
 		branch.havoc(code.target(0));
-	}
-
-	protected void transform(Codes.NewObject code, CodeForest forest, VcBranch branch) {
-		branch.havoc(code.target(0));
-	}
-
-	protected void transform(Codes.Nop code, CodeForest forest,
-			VcBranch branch) {
-		// do nout
 	}
 
 	protected void transform(Codes.Update code, CodeForest forest, VcBranch branch) {

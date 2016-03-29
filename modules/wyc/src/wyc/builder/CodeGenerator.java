@@ -447,11 +447,12 @@ public final class CodeGenerator {
 	private void generate(VariableDeclaration s, Environment environment, CodeForest.Block block, CodeForest forest,
 			Context context) {
 		// First, we allocate this variable to a given slot in the environment.
-		int root = environment.get(s.parameter.name);
+		int[] targets = { environment.get(s.parameter.name) };
 		// Second, translate initialiser expression if it exists.
 		if (s.expr != null) {
-			int operand = generate(s.expr, environment, block, forest, context);
-			block.add(Codes.Assign(s.expr.result().raw(), root, operand), attributes(s));
+			int[] operands = { generate(s.expr, environment, block, forest, context) };
+			block.add(Codes.Operator(s.expr.result().raw(), targets, operands, Codes.OperatorKind.ASSIGN),
+					attributes(s));
 		}
 	}
 
@@ -542,8 +543,9 @@ public final class CodeGenerator {
 			// This is the easiest case. Having translated the right-hand side
 			// expression, we now assign it directly to the register allocated
 			// for variable on the left-hand side.
-			int target = environment.get(v.var);
-			block.add(Codes.Assign(type, target, operand), attributes(lval));
+			int[] targets = new int[] { environment.get(v.var) };
+			int[] operands = new int[] { operand };
+			block.add(Codes.Operator(type, targets, operands, Codes.OperatorKind.ASSIGN), attributes(lval));
 		} else if (lval instanceof Expr.IndexOf || lval instanceof Expr.FieldAccess
 				|| lval instanceof Expr.Dereference) {
 			// This is the more complicated case, since the left-hand side
@@ -750,7 +752,9 @@ public final class CodeGenerator {
 	 */
 	private void generate(Stmt.Skip s, Environment environment, CodeForest.Block block, CodeForest forest,
 			Context context) {
-		block.add(Codes.Nop, attributes(s));
+		// TODO: should actually generate a NOP bytecode. This is an assignment
+		// from zero operands to zero targets. At the moment, I cannot encode
+		// this however because it will fail in the interpreter.
 	}
 
 	/**
@@ -2041,10 +2045,10 @@ public final class CodeGenerator {
 
 	private int generate(Expr.New expr, Environment environment, CodeForest.Block block, CodeForest forest,
 			Context context) throws ResolveError {
-		int operand = generate(expr.expr, environment, block, forest, context);
-		int target = environment.allocate(expr.result().raw());
-		block.add(Codes.NewObject(expr.type.raw(), target, operand));
-		return target;
+		int[] operands = new int[] { generate(expr.expr, environment, block, forest, context) };
+		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
+		block.add(Codes.Operator(expr.type.raw(), targets, operands, Codes.OperatorKind.NEW));
+		return targets[0];
 	}
 
 	private int[] generate(List<Expr> arguments, Environment environment, CodeForest.Block block, CodeForest forest,

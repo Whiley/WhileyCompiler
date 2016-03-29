@@ -63,20 +63,6 @@ public abstract class Codes {
 		return new Const(target, constant);
 	}
 
-	/**
-	 * Construct a <code>copy</code> bytecode which copies the value from a
-	 * given operand register into a given target register.
-	 *
-	 * @param type
-	 *            --- record type.
-	 * @param reg
-	 *            --- reg to load.
-	 * @return
-	 */
-	public static Assign Assign(Type type, int target, int operand) {
-		return new Assign(type, target, operand);
-	}
-
 	public static Convert Convert(Type from, int target, int operand, Type to) {
 		return new Convert(from, target, operand, to);
 	}
@@ -209,8 +195,6 @@ public abstract class Codes {
 		return new Label(label);
 	}
 
-	public static final Nop Nop = new Nop();
-
 	/**
 	 * Construct a <code>switch</code> bytecode which pops a value off the
 	 * stack, and switches to a given label based on it.
@@ -226,11 +210,6 @@ public abstract class Codes {
 	public static Switch Switch(Type type, int operand, String defaultLabel,
 			Collection<Pair<Constant, String>> cases) {
 		return new Switch(type, operand, defaultLabel, cases);
-	}
-	
-	public static NewObject NewObject(Type.Reference type, int target,
-			int operand) {
-		return new NewObject(type, target, operand);
 	}
 
 	public static Quantify Quantify(int startOperand, int endOperand, int indexOperand, int[] modifiedOperands,
@@ -353,6 +332,16 @@ public abstract class Codes {
 		RECORDCONSTRUCTOR(17) {
 			public String toString() {
 				return "record";
+			}
+		},
+		NEW(18) {
+			public String toString() {
+				return "new";
+			}
+		},
+		ASSIGN(19) {
+			public String toString() {
+				return "assign";
 			}
 		};
 		public int offset;
@@ -583,69 +572,6 @@ public abstract class Codes {
 		@Override
 		protected Code clone(int[] nTargets, int[] nOperands) {			
 			return new Const(nTargets[0],constant);
-		}
-	}
-
-	/**
-	 * Copy the contents from a given operand register into a given target
-	 * register. For example, the following Whiley code:
-	 *
-	 * <pre>
-	 * function f(int x) -> int:
-	 *     x = x + 1
-	 *     return x
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f(int x) -> int:
-	 * body:
-	 *     assign %1 = %0      : int
-	 *     const %2 = 1        : int
-	 *     add %0 = %1, %2     : int
-	 *     return %0           : int
-	 * </pre>
-	 *
-	 * Here we see that an initial assignment is made from register
-	 * <code>%0</code> to register <code>%1</code>. In fact, this assignment is
-	 * unecessary but is useful to illustrate the <code>assign</code> bytecode.
-	 *
-	 * <p>
-	 * <b>NOTE:</b> on many architectures this operation may not actually clone
-	 * the data in question. Rather, it may copy the <i>reference</i> to the
-	 * data and then increment its <i>reference count</i>. This is to ensure
-	 * efficient treatment of large compound structures (e.g. lists, sets, maps
-	 * and records).
-	 * </p>
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Assign extends AbstractBytecode<Type> {
-
-		private Assign(Type type, int target, int operand) {
-			super(type, target, operand);
-		}
-
-		public int opcode() {
-			return OPCODE_assign;
-		}
-
-		@Override
-		public Code clone(int[] nTargets, int[] nOperands) {
-			return Assign(type(0), nTargets[0], nOperands[0]);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Assign) {
-				return super.equals(o);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "assign %" + target(0) + " = %" + operand(0) + " " + " : " + type(0);
 		}
 	}
 
@@ -1839,39 +1765,6 @@ public abstract class Codes {
 	}
 
 	/**
-	 * Represents a no-operation bytecode which, as the name suggests, does
-	 * nothing.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Nop extends AbstractBytecode<Type> {
-		private Nop() {
-			super(new Type[0],new int[0]);
-		}
-
-		@Override
-		public int opcode() {
-			return OPCODE_nop;
-		}
-
-		@Override
-		protected Code clone(int[] nTargets, int[] nOperands) {
-			return this;
-		}
-		
-		public boolean equals(Object o) {
-			return o instanceof Nop;
-		}
-		
-		public String toString() {
-			return "nop";
-		}
-
-	
-	}
-
-	/**
 	 * Returns from the enclosing function or method, possibly returning a
 	 * value. For example, the following Whiley code:
 	 *
@@ -2039,62 +1932,6 @@ public abstract class Codes {
 			return new Switch(types[0], nOperands[0], defaultTarget, branches);
 		}
 
-	}
-
-	/**
-	 * Instantiate a new object from the value in a given operand register, and
-	 * write the result (a reference to that object) to a given target register.
-	 * For example, the following Whiley code:
-	 *
-	 * <pre>
-	 * type PointObj as &{real x, real y}
-	 *
-	 * method f(real x, real y) -> PointObj:
-	 *     return new {x: x, y: y}
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * method f(int x, int y) -> &{real x,real y}:
-	 * body:
-	 *     newrecord %2 = (%0, %1)  : {real x,real y}
-	 *     newobject %2 = %2        : ref {real x,real y}
-	 *     return %2                : ref {real x,real y}
-	 * </pre>
-	 *
-	 * <b>NOTE:</b> objects are unlike other data types in WyIL, in that they
-	 * represent mutable state allocated on a heap. Thus, changes to an object
-	 * within a method are visible to those outside of the method.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class NewObject extends AbstractBytecode<Type.Reference> {
-
-		private NewObject(Type.Reference type, int target, int operand) {
-			super(type, target, operand);
-		}
-
-		@Override
-		public int opcode() {
-			return OPCODE_newobject;
-		}
-
-		protected Code clone(int[] nTargets, int[] nOperands) {
-			return NewObject(type(0), nTargets[0], nOperands[0]);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof NewObject) {
-				return super.equals(o);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "newobject %" + target(0) + " = %" + operand(0) + " : " + type(0);
-		}
 	}
 
 	// =============================================================
