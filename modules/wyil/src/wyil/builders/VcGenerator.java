@@ -421,7 +421,7 @@ public class VcGenerator {
 			} else {
 				// Continue executing this branch as it is still within the
 				// scope of this block.
-				Code code = forest.get(pc).code();
+				Bytecode code = forest.get(pc).code();
 				// Now, dispatch statements. Control statements are treated
 				// specially from unit statements.
 				if (code instanceof Codes.AssertOrAssume) {
@@ -444,7 +444,7 @@ public class VcGenerator {
 				} else if (code instanceof Codes.If
 						|| code instanceof Codes.IfIs
 						|| code instanceof Codes.Switch
-						|| code instanceof Code.AbstractCompoundBytecode) {
+						|| code instanceof Bytecode.Compound) {
 					List<VcBranch> bs;
 					if (code instanceof Codes.If) {
 						bs = transform((Codes.If) code, branch, labels, forest);

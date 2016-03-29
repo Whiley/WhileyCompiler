@@ -132,19 +132,19 @@ public class ModuleCheck implements Transform<WyilFile> {
 		CodeForest.Block block = forest.get(blockID);
 		for (int i = 0; i != block.size(); ++i) {
 			CodeForest.Entry e = block.get(i);
-			Code code = e.first();			
+			Bytecode code = e.first();			
 			if(code instanceof Codes.Invoke && ((Codes.Invoke)code).type(0) instanceof Type.Method) {
 				// internal message send
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, e.attribute(SourceLocation.class));
 			} else if (code instanceof Codes.IndirectInvoke && ((Codes.IndirectInvoke)code).type(0) instanceof Type.Method) {
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, e.attribute(SourceLocation.class));
-			} else if (code.opcode() == Code.OPCODE_newobject) {
+			} else if (code.opcode() == Bytecode.OPCODE_newobject) {
 				syntaxError(errorMessage(ALLOCATION_NOT_PERMITTED_IN_FUNCTION), filename, e.attribute(SourceLocation.class));
-			} else if (code.opcode() == Code.OPCODE_dereference) {
+			} else if (code.opcode() == Bytecode.OPCODE_dereference) {
 				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename,
 						e.attribute(SourceLocation.class));
-			} else if (code instanceof Code.AbstractCompoundBytecode) {
-				Code.AbstractCompoundBytecode a = (Code.AbstractCompoundBytecode) code;
+			} else if (code instanceof Bytecode.Compound) {
+				Bytecode.Compound a = (Bytecode.Compound) code;
 				checkFunctionPure(a.block(), forest);
 			}
 		}

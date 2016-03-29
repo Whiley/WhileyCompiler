@@ -594,7 +594,7 @@ public final class WyilFileWriter {
 		for (int i = 0; i != forest.numBlocks(); ++i) {
 			CodeForest.Block block = forest.get(i);
 			for (int j = 0; j != block.size(); ++j) {
-				Code code = block.get(j).code();
+				Bytecode code = block.get(j).code();
 				if (code instanceof Codes.Label) {
 					Codes.Label l = (Codes.Label) code;
 					labels.put(l.label, offset-1);
@@ -678,12 +678,12 @@ public final class WyilFileWriter {
 
 		// Finally, write the actual bytecodes!
 		for (int i = 0; i != block.size(); ++i) {
-			Code code = block.get(i).code();
+			Bytecode code = block.get(i).code();
 			if (code instanceof Codes.Label) {
 				// Skip over labels because these are not written to disk and
 				// have no "offset"
 			} else {
-				writeBytecode((Code.AbstractBytecode) code, offset, labels, output);
+				writeBytecode(code, offset, labels, output);
 				offset = offset + 1;
 			}
 		}
@@ -729,7 +729,7 @@ public final class WyilFileWriter {
 	 * items can be reduced from uv to u4, etc.
 	 * </p>
 	 */
-	private void writeBytecode(Code.AbstractBytecode code, int offset, HashMap<String, Integer> labels, BinaryOutputStream output)
+	private void writeBytecode(Bytecode code, int offset, HashMap<String, Integer> labels, BinaryOutputStream output)
 			throws IOException {
 		writeCommon(code, output);
 		writeRest(code, offset, labels, output);
@@ -745,7 +745,7 @@ public final class WyilFileWriter {
 	 *            --- The binary stream to write this bytecode to.
 	 * @throws IOException
 	 */
-	private void writeCommon(Code.AbstractBytecode code, BinaryOutputStream output) throws IOException {
+	private void writeCommon(Bytecode code, BinaryOutputStream output) throws IOException {
 		output.write_u8(code.opcode());
 		int[] targets = code.targets();
 		int[] operands = code.operands();
@@ -796,17 +796,17 @@ public final class WyilFileWriter {
 	 *            written.
 	 * @throws IOException
 	 */
-	private void writeRest(Code code, int offset, HashMap<String, Integer> labels,
+	private void writeRest(Bytecode code, int offset, HashMap<String, Integer> labels,
 			BinaryOutputStream output) throws IOException {
 
 		// now deal with non-uniform instructions
 		// First, deal with special cases
-		if(code instanceof Code.AbstractCompoundBytecode) {
+		if(code instanceof Bytecode.Compound) {
 			// Assert / Assume / Loop / Quantify
-			Code.AbstractCompoundBytecode cb = (Code.AbstractCompoundBytecode) code; 
+			Bytecode.Compound cb = (Bytecode.Compound) code; 
 			output.write_uv(cb.block());
-		} else if(code instanceof Code.AbstractBranchingBytecode) {
-			Code.AbstractBranchingBytecode bb = (Code.AbstractBranchingBytecode) code;
+		} else if(code instanceof Bytecode.Branching) {
+			Bytecode.Branching bb = (Bytecode.Branching) code;
 			int destination = labels.get(bb.destination());
 			output.write_uv(destination);
 		} else if (code instanceof Codes.Const) {
@@ -870,7 +870,7 @@ public final class WyilFileWriter {
 	private int countLabels(CodeForest.Block block) {
 		int nlabels = 0;
 		for (int i = 0; i != block.size(); ++i) {
-			Code code = block.get(i).code();
+			Bytecode code = block.get(i).code();
 			if (code instanceof Codes.Label) {
 				nlabels++;
 			}
@@ -951,7 +951,7 @@ public final class WyilFileWriter {
 		}
 	}
 
-	private void buildPools(Code code) {
+	private void buildPools(Bytecode code) {
 
 		// First, deal with special cases
 		if (code instanceof Codes.Const) {
@@ -982,11 +982,8 @@ public final class WyilFileWriter {
 		}
 
 		// Second, deal with standard cases
-		if (code instanceof Code.AbstractBytecode) {
-			Code.AbstractBytecode<Type> a = (Code.AbstractBytecode) code;
-			for (Type type : a.types()) {
-				addTypeItem(type);
-			}
+		for (Type type : code.types()) {
+			addTypeItem(type);
 		}
 	}
 

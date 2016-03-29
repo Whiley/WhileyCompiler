@@ -20,7 +20,7 @@ import wycs.syntax.Expr;
 import wycs.syntax.SyntacticType;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
-import wyil.lang.Code;
+import wyil.lang.Bytecode;
 import wyil.lang.CodeForest;
 import wyil.lang.Codes;
 import wyil.lang.Type;
@@ -48,7 +48,7 @@ public class VcExprGenerator {
 	 * @param branch
 	 *            The branch on entry to the bytecode.
 	 */
-	public void transform(Code code, CodeForest forest, VcBranch branch) {
+	public void transform(Bytecode code, CodeForest forest, VcBranch branch) {
 		try {
 			if (code instanceof Codes.Operator) {
 				transform((Codes.Operator) code, forest, branch);				
@@ -188,7 +188,8 @@ public class VcExprGenerator {
 	}
 
 	protected void transform(Codes.FieldLoad code, CodeForest forest, VcBranch branch) {
-		ArrayList<String> fields = new ArrayList<String>(code.type(0).fields().keySet());
+		Type.EffectiveRecord er = (Type.EffectiveRecord) code.type(0); 
+		ArrayList<String> fields = new ArrayList<String>(er.fields().keySet());
 		Collections.sort(fields);
 		Expr src = branch.read(code.operand(0));
 		Expr index = new Expr.Constant(Value.Integer(BigInteger.valueOf(fields.indexOf(code.field))));
@@ -332,7 +333,7 @@ public class VcExprGenerator {
 	 * @param branch
 	 *            --- The enclosing branch
 	 */
-	protected void transformUnary(Expr.Unary.Op operator, Code.AbstractBytecode code, VcBranch branch,
+	protected void transformUnary(Expr.Unary.Op operator, Bytecode code, VcBranch branch,
 			CodeForest forest) {
 		Expr lhs = branch.read(code.operand(0));
 		branch.write(code.target(0),
@@ -352,7 +353,7 @@ public class VcExprGenerator {
 	 * @param branch
 	 *            --- The enclosing branch
 	 */
-	protected void transformBinary(Expr.Binary.Op operator, Code.AbstractBytecode code, VcBranch branch,
+	protected void transformBinary(Expr.Binary.Op operator, Bytecode code, VcBranch branch,
 			CodeForest forest) {
 		Expr lhs = branch.read(code.operand(0));
 		Expr rhs = branch.read(code.operand(1));
@@ -381,7 +382,7 @@ public class VcExprGenerator {
 	 * @param branch
 	 *            --- The enclosing branch
 	 */
-	protected void transformNary(Expr.Nary.Op operator, Code.AbstractBytecode code, VcBranch branch,
+	protected void transformNary(Expr.Nary.Op operator, Bytecode code, VcBranch branch,
 			CodeForest forest) {
 		int[] code_operands = code.operands();
 		Expr[] vals = new Expr[code_operands.length];

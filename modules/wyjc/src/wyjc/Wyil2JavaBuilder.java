@@ -51,6 +51,7 @@ import jasm.attributes.Code.Handler;
 import jasm.attributes.LineNumberTable;
 import jasm.attributes.SourceFile;
 import jasm.lang.*;
+import jasm.lang.Bytecode;
 import jasm.lang.Bytecode.Goto;
 import jasm.lang.Modifier;
 import jasm.lang.Bytecode.Load;
@@ -403,7 +404,7 @@ public class Wyil2JavaBuilder implements Builder {
 		for (int i = 0; i != block.size(); ++i) {
 			// This is still a valid index
 			CodeForest.Entry e = block.get(i);
-			Code c = e.code();
+			wyil.lang.Bytecode c = e.code();
 
 			if (c instanceof Codes.Return) {
 				// first patch point
@@ -585,7 +586,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            The list of bytecodes being accumulated
 	 * @return
 	 */
-	private int translate(CodeForest.Index pc, Code code, int freeSlot, CodeForest forest,
+	private int translate(CodeForest.Index pc, wyil.lang.Bytecode code, int freeSlot, CodeForest forest,
 			ArrayList<Bytecode> bytecodes) {
 
 		try {

@@ -107,11 +107,22 @@ import static wyil.lang.CodeUtils.*;
  * 
  * @author David J. Pearce
  */
-public interface Code {
-
-	// ===============================================================
-	// Abstract Methods
-	// ===============================================================
+public abstract class Bytecode {
+	protected final Type[] types;
+	private final int[] targets;
+	protected final int[] operands;		
+	
+	public Bytecode(Type type, int target, int... operands) {			
+		this.types = new Type[]{type};
+		this.targets = new int[] {target};
+		this.operands = operands;
+	}
+	
+	public Bytecode(Type[] types, int[] targets, int... operands) {			
+		this.types = types;
+		this.targets = targets;
+		this.operands = operands;
+	}
 
 	/**
 	 * Determine which registers are used in this bytecode. This can be used,
@@ -120,7 +131,15 @@ public interface Code {
 	 *
 	 * @param register
 	 */
-	public void registers(java.util.Set<Integer> register);
+	public void registers(java.util.Set<Integer> registers) {
+		for (int i = 0; i != targets().length; ++i) {
+			registers.add(targets()[i]);
+		}
+		for (int i = 0; i != operands().length; ++i) {
+			registers.add(operands[i]);
+		}
+	}
+
 
 	/**
 	 * Remaps all registers according to a given binding. Registers not
@@ -131,126 +150,84 @@ public interface Code {
 	 *            --- map from (existing) registers to (new) registers.
 	 * @return
 	 */
-	public Code remap(Map<Integer, Integer> binding);
+	public Bytecode remap(Map<Integer, Integer> binding) {
+		int[] nTargets = remapOperands(binding, targets());
+		int[] nOperands = remapOperands(binding, operands());
+		if (nTargets != targets() || nOperands != operands()) {
+			return clone(nTargets, nOperands);
+		}
+		return this;
+	}
+
+	protected abstract Bytecode clone(int[] nTargets, int[] nOperands);
+	
+	@Override
+	public int hashCode() {
+		return Arrays.hashCode(types) + Arrays.hashCode(targets()) + Arrays.hashCode(operands());
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof Bytecode) {
+			Bytecode bo = (Bytecode) o;
+			return Arrays.equals(targets(), bo.targets()) && Arrays.equals(operands(), bo.operands())
+					&& Arrays.equals(types, bo.types);
+		}
+		return false;
+	}
+
+	public Type[] types() {
+		return types;
+	}
+	
+	public Type type(int i) {
+		return (Type) types[i];
+	}
+
+	/**
+	 * Return a specific target register assigned by this bytecode.
+	 *
+	 * @return
+	 */
+	public int target(int i) {
+		return targets[i];
+	}
+	
+	/**
+	 * Return the target registers assigned by this bytecode.
+	 *
+	 * @return
+	 */
+	public int[] targets() {
+		return targets;
+	}		
+	
+	/**
+	 * Return the operand registers assigned by this bytecode.
+	 *
+	 * @return
+	 */
+	public int[] operands() {
+		return operands;
+	}
+
+	/**
+	 * Return the ith operand read by this bytecode.
+	 * @param i
+	 * @return
+	 */
+	public int operand(int i) {
+		return operands[i];
+	}	
+	// ===============================================================
+	// Abstract Methods
+	// ===============================================================
 
 	/**
 	 * Return the opcode value of this bytecode.
 	 * @return
 	 */
 	public abstract int opcode();
-
-	// ===============================================================C
-	// Abstract Bytecodes
-	// ===============================================================
-
-	/**
-	 * Represents the set of all bytecodes. Each bytecode consists of zero or
-	 * more types, zero or more targets and zero or more operands. Furthermore,
-	 * bytecodes may contain additional data.
-	 *
-	 * @author David J. Pearce
-	 *
-	 * @param <T>
-	 *            --- the type associated with this bytecode.
-	 */
-	public static abstract class AbstractBytecode<T> implements Code { 
-		protected final Type[] types;
-		private final int[] targets;
-		protected final int[] operands;		
-		
-		public AbstractBytecode(Type type, int target, int... operands) {			
-			this.types = new Type[]{type};
-			this.targets = new int[] {target};
-			this.operands = operands;
-		}
-		
-		public AbstractBytecode(Type[] types, int[] targets, int... operands) {			
-			this.types = types;
-			this.targets = targets;
-			this.operands = operands;
-		}
-
-		@Override
-		public void registers(java.util.Set<Integer> registers) {
-			for (int i = 0; i != targets().length; ++i) {
-				registers.add(targets()[i]);
-			}
-			for (int i = 0; i != operands().length; ++i) {
-				registers.add(operands[i]);
-			}
-		}
-
-		@Override
-		public Code remap(Map<Integer, Integer> binding) {
-			int[] nTargets = remapOperands(binding, targets());
-			int[] nOperands = remapOperands(binding, operands());
-			if (nTargets != targets() || nOperands != operands()) {
-				return clone(nTargets, nOperands);
-			}
-			return this;
-		}
-
-		protected abstract Code clone(int[] nTargets, int[] nOperands);
-		
-		@Override
-		public int hashCode() {
-			return Arrays.hashCode(types) + Arrays.hashCode(targets()) + Arrays.hashCode(operands());
-		}
-
-		@Override
-		public boolean equals(Object o) {
-			if (o instanceof AbstractBytecode) {
-				AbstractBytecode bo = (AbstractBytecode) o;
-				return Arrays.equals(targets(), bo.targets()) && Arrays.equals(operands(), bo.operands())
-						&& Arrays.equals(types, bo.types);
-			}
-			return false;
-		}
-
-		public Type[] types() {
-			return types;
-		}
-		
-		public T type(int i) {
-			return (T) types[i];
-		}
-
-		/**
-		 * Return a specific target register assigned by this bytecode.
-		 *
-		 * @return
-		 */
-		public int target(int i) {
-			return targets[i];
-		}
-		
-		/**
-		 * Return the target registers assigned by this bytecode.
-		 *
-		 * @return
-		 */
-		public int[] targets() {
-			return targets;
-		}		
-		
-		/**
-		 * Return the operand registers assigned by this bytecode.
-		 *
-		 * @return
-		 */
-		public int[] operands() {
-			return operands;
-		}
-
-		/**
-		 * Return the ith operand read by this bytecode.
-		 * @param i
-		 * @return
-		 */
-		public int operand(int i) {
-			return operands[i];
-		}	
-	}	
 	
 	/**
 	 * A compound bytecode represents a bytecode that contains sequence of zero
@@ -261,10 +238,10 @@ public interface Code {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static abstract class AbstractCompoundBytecode extends AbstractBytecode {
+	public static abstract class Compound extends Bytecode {
 		protected final int block;
 
-		public AbstractCompoundBytecode(int block, Type[] types, int[] targets, int... operands) {
+		public Compound(int block, Type[] types, int[] targets, int... operands) {
 			super(types, targets, operands);
 			this.block = block;
 		}
@@ -278,8 +255,8 @@ public interface Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof AbstractCompoundBytecode) {
-				AbstractCompoundBytecode abc = (AbstractCompoundBytecode) o;
+			if(o instanceof Compound) {
+				Compound abc = (Compound) o;
 				return block == abc.block && super.equals(o);
 			}
 			return false;
@@ -295,10 +272,10 @@ public interface Code {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static abstract class AbstractBranchingBytecode extends AbstractBytecode<Type> {
+	public static abstract class Branching extends Bytecode {
 		protected final String destination;
 
-		public AbstractBranchingBytecode(String destination, Type[] types, int[] targets, int... operands) {
+		public Branching(String destination, Type[] types, int[] targets, int... operands) {
 			super(types, targets, operands);
 			this.destination = destination;
 		}
@@ -312,8 +289,8 @@ public interface Code {
 		}
 		
 		public boolean equals(Object o) {
-			if(o instanceof AbstractBranchingBytecode) {
-				AbstractBranchingBytecode abc = (AbstractBranchingBytecode) o;
+			if(o instanceof Branching) {
+				Branching abc = (Branching) o;
 				return destination.equals(abc.destination) && super.equals(o);
 			}
 			return false;
@@ -442,7 +419,7 @@ public interface Code {
 			return extras;
 		}
 		
-		public abstract Code construct(int opcode, int[] targets, int[] operands, Type[] types, Object[] extras);
+		public abstract Bytecode construct(int opcode, int[] targets, int[] operands, Type[] types, Object[] extras);
 
 		public String toString() {
 			return "<" + targets.toString() + " targets, " + operands + " operands, " + types + " types, " + Arrays.toString(extras) + ">";

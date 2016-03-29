@@ -1,6 +1,6 @@
 package wyil.util.interpreter;
 
-import wyil.lang.Code;
+import wyil.lang.Bytecode;
 import wyil.lang.Codes;
 import wyil.lang.Constant;
 import wyil.lang.Type;
@@ -21,26 +21,26 @@ public class StandardFunctions {
 	public static final InternalFunction[] standardFunctions = new InternalFunction[255];
 	
 	static {
-		standardFunctions[Code.OPCODE_assign] = new Assign();
-		standardFunctions[Code.OPCODE_neg] = new Negate();
-		standardFunctions[Code.OPCODE_arrayinvert] = new BitwiseInvert();	
-		standardFunctions[Code.OPCODE_dereference] = new Dereference();
-		standardFunctions[Code.OPCODE_arraylength] = new ArrayLength();	
-		standardFunctions[Code.OPCODE_add ] = new Add();
-		standardFunctions[Code.OPCODE_sub ] = new Subtract();
-		standardFunctions[Code.OPCODE_mul ] = new Multiply();
-		standardFunctions[Code.OPCODE_div ] = new Divide();
-		standardFunctions[Code.OPCODE_rem ] = new Remainder();
-		standardFunctions[Code.OPCODE_bitwiseor] = new BitwiseOr();
-		standardFunctions[Code.OPCODE_bitwisexor] = new BitwiseXor();
-		standardFunctions[Code.OPCODE_bitwiseand] = new BitwiseAnd();
-		standardFunctions[Code.OPCODE_lshr] = new LeftShift();
-		standardFunctions[Code.OPCODE_rshr] = new RightShift();
-		standardFunctions[Code.OPCODE_arrayindex] = new ArrayIndex();	
-		standardFunctions[Code.OPCODE_arrygen] = new ArrayGenerator();
-		standardFunctions[Code.OPCODE_array] = new ArrayConstructor();
-		standardFunctions[Code.OPCODE_record] = new RecordConstructor();
-		standardFunctions[Code.OPCODE_newobject] = new ObjectConstructor();
+		standardFunctions[Bytecode.OPCODE_assign] = new Assign();
+		standardFunctions[Bytecode.OPCODE_neg] = new Negate();
+		standardFunctions[Bytecode.OPCODE_arrayinvert] = new BitwiseInvert();	
+		standardFunctions[Bytecode.OPCODE_dereference] = new Dereference();
+		standardFunctions[Bytecode.OPCODE_arraylength] = new ArrayLength();	
+		standardFunctions[Bytecode.OPCODE_add ] = new Add();
+		standardFunctions[Bytecode.OPCODE_sub ] = new Subtract();
+		standardFunctions[Bytecode.OPCODE_mul ] = new Multiply();
+		standardFunctions[Bytecode.OPCODE_div ] = new Divide();
+		standardFunctions[Bytecode.OPCODE_rem ] = new Remainder();
+		standardFunctions[Bytecode.OPCODE_bitwiseor] = new BitwiseOr();
+		standardFunctions[Bytecode.OPCODE_bitwisexor] = new BitwiseXor();
+		standardFunctions[Bytecode.OPCODE_bitwiseand] = new BitwiseAnd();
+		standardFunctions[Bytecode.OPCODE_lshr] = new LeftShift();
+		standardFunctions[Bytecode.OPCODE_rshr] = new RightShift();
+		standardFunctions[Bytecode.OPCODE_arrayindex] = new ArrayIndex();	
+		standardFunctions[Bytecode.OPCODE_arrygen] = new ArrayGenerator();
+		standardFunctions[Bytecode.OPCODE_array] = new ArrayConstructor();
+		standardFunctions[Bytecode.OPCODE_record] = new RecordConstructor();
+		standardFunctions[Bytecode.OPCODE_newobject] = new ObjectConstructor();
 	};
 
 	// ====================================================================================

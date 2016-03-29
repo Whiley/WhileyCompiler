@@ -86,7 +86,7 @@ public class CodeUtils {
 		for (int i = 0; i != forest.numBlocks(); ++i) {
 			CodeForest.Block block = forest.get(i);
 			for (int j = 0; j != block.size(); ++j) {
-				Code code = block.get(j).code();
+				Bytecode code = block.get(j).code();
 				if (code instanceof Codes.Label) {
 					// Found a label, so register it in the labels map
 					Codes.Label label = (Codes.Label) code;

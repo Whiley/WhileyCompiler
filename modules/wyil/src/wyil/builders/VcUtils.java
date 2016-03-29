@@ -26,7 +26,7 @@ import wycs.syntax.WyalFile;
 import wycs.syntax.WyalFile.Function;
 import wyfs.lang.Path;
 import wyil.attributes.VariableDeclarations;
-import wyil.lang.Code;
+import wyil.lang.Bytecode;
 import wyil.lang.CodeForest;
 import wyil.lang.Codes;
 import wyil.lang.Constant;
@@ -361,21 +361,21 @@ public class VcUtils {
 	 * @param branches
 	 * @param block
 	 */
-	public Pair<String,Expr>[] getPreconditions(Code code, VcBranch branch,
+	public Pair<String,Expr>[] getPreconditions(Bytecode code, VcBranch branch,
 			Type[] environment, CodeForest forest) {
 		//
 		try {
 			switch (code.opcode()) {
-			case Code.OPCODE_div:
-			case Code.OPCODE_rem:
+			case Bytecode.OPCODE_div:
+			case Bytecode.OPCODE_rem:
 				return divideByZeroCheck((Codes.Operator) code, branch);
-			case Code.OPCODE_arrayindex:
+			case Bytecode.OPCODE_arrayindex:
 				return indexOutOfBoundsChecks((Codes.Operator) code, branch);
-			case Code.OPCODE_arrygen:
+			case Bytecode.OPCODE_arrygen:
 				return arrayGeneratorChecks((Codes.Operator) code, branch);
-			case Code.OPCODE_update:
+			case Bytecode.OPCODE_update:
 				return updateChecks((Codes.Update) code, branch);
-			case Code.OPCODE_invoke:
+			case Bytecode.OPCODE_invoke:
 				return preconditionCheck((Codes.Invoke) code, branch, environment, forest);
 			}
 			return new Pair[0];

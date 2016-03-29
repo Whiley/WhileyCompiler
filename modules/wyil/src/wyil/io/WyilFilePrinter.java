@@ -189,7 +189,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 	private void write(int indent, int blockID, CodeForest forest, PrintWriter out) {
 		CodeForest.Block block = forest.get(blockID);
 		for(int i=0;i!=block.size();++i) {
-			Code code = block.get(i).code();
+			Bytecode code = block.get(i).code();
 			if(code instanceof Codes.Label) {
 				write(indent-1,code,forest,out);
 			} else {
@@ -198,7 +198,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 	}
 
-	private void write(int indent, Code c, CodeForest forest, PrintWriter out) {
+	private void write(int indent, Bytecode c, CodeForest forest, PrintWriter out) {
 		String line = "null";
 		tabIndent(indent+1,out);
 
@@ -223,8 +223,8 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 //		}
 		out.println();
 		
-		if(c instanceof Code.AbstractCompoundBytecode) {
-			Code.AbstractCompoundBytecode cc = (Code.AbstractCompoundBytecode) c;
+		if(c instanceof Bytecode.Compound) {
+			Bytecode.Compound cc = (Bytecode.Compound) c;
 			write(indent+1,cc.block(),forest,out);
 		}
 	}

@@ -8,7 +8,7 @@ import java.util.List;
 import wybs.lang.Builder;
 import wycc.lang.Transform;
 import wyil.lang.CodeForest;
-import wyil.lang.Code;
+import wyil.lang.Bytecode;
 import wyil.lang.Codes;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
@@ -113,16 +113,12 @@ public class LoopVariants implements Transform<WyilFile> {
 		int size = block.size();
 		for (int i = 0; i < size; ++i) {
 			CodeForest.Entry e = block.get(i);
-			Code code = e.code();
-
-			if (code instanceof Code.AbstractBytecode) {
-				Code.AbstractBytecode aa = (Code.AbstractBytecode) code;
-				for (int target : aa.targets()) {
-					modified.set(target);
-				}
+			Bytecode code = e.code();
+			for (int target : code.targets()) {
+				modified.set(target);
 			}
-			if (code instanceof Code.AbstractCompoundBytecode) {
-				Code.AbstractCompoundBytecode body = (Code.AbstractCompoundBytecode) code;
+			if (code instanceof Bytecode.Compound) {
+				Bytecode.Compound body = (Bytecode.Compound) code;
 				BitSet loopModified = infer(body.block(), forest);
 				if (code instanceof Codes.Quantify) {
 					// Unset the modified status of the index operand, it is

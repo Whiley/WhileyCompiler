@@ -119,7 +119,7 @@ public abstract class ForwardFlowAnalysis<T> {
 		
 		CodeForest.Block block = forest.get(blockID);
 		for (int i = 0; i < block.size(); ++i) {
-			Code code = block.get(i).code();
+			Bytecode code = block.get(i).code();
 
 			// Construct the bytecode ID
 			CodeForest.Index id = new CodeForest.Index(blockID,i);
@@ -297,7 +297,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(CodeForest.Index index, Code code, T store);
+	protected abstract T propagate(CodeForest.Index index, Bytecode code, T store);
 
 	/**
 	 * Determine the initial store for the current method case.

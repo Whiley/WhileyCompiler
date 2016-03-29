@@ -153,7 +153,7 @@ public class Interpreter {
 	 * @return
 	 */
 	private Object execute(Constant[] frame, Context context) {
-		Code bytecode = context.forest.get(context.pc).code();
+		Bytecode bytecode = context.forest.get(context.pc).code();
 		// FIXME: turn this into a switch statement?
 		if (bytecode instanceof Codes.Invariant) {
 			return execute((Codes.Invariant) bytecode, frame, context);
@@ -982,7 +982,7 @@ public class Interpreter {
 			return labels.get(label);
 		}
 		
-		public Code getBytecode() {
+		public Bytecode getBytecode() {
 			return forest.get(pc).first();
 		}
 	}

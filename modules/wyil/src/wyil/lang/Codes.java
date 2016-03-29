@@ -11,8 +11,8 @@ import java.util.Set;
 
 import wycc.lang.NameID;
 import wycc.util.Pair;
-import wyil.lang.Code.*;
-import static wyil.lang.Code.*;
+import wyil.lang.Bytecode.*;
+import static wyil.lang.Bytecode.*;
 import static wyil.lang.CodeUtils.*;
 
 public abstract class Codes {
@@ -393,7 +393,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Operator extends AbstractBytecode<Type> {
+	public static final class Operator extends Bytecode {
 		public final OperatorKind kind;
 
 		private Operator(Type type, int[] targets, int[] operands,
@@ -412,7 +412,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int[] nTargets, int[] nOperands) {
+		public Bytecode clone(int[] nTargets, int[] nOperands) {
 			return Operator(type(0), nTargets, nOperands, kind);
 		}
 
@@ -473,13 +473,13 @@ public abstract class Codes {
 	 * </p>
 	 *
 	 */
-	public static final class Convert extends AbstractBytecode<Type> {
+	public static final class Convert extends Bytecode {
 		
 		private Convert(Type from, int target, int operand, Type result) {
 			super(new Type[]{from,result}, new int[]{target}, operand);
 		}
 
-		public Code clone(int[] nTargets, int[] nOperands) {
+		public Bytecode clone(int[] nTargets, int[] nOperands) {
 			return Convert(type(0), nTargets[0], nOperands[0], type(1));
 		}
 
@@ -536,7 +536,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Const extends AbstractBytecode<Type> {
+	public static final class Const extends Bytecode {
 		public final Constant constant;
 
 		private Const(int target, Constant constant) {
@@ -570,7 +570,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		protected Code clone(int[] nTargets, int[] nOperands) {			
+		protected Bytecode clone(int[] nTargets, int[] nOperands) {			
 			return new Const(nTargets[0],constant);
 		}
 	}
@@ -605,7 +605,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Debug extends AbstractBytecode<Type> {
+	public static final class Debug extends Bytecode {
 
 		private Debug(int operand) {
 			super(new Type[]{Type.Array(Type.T_INT,false)}, new int[0], operand);
@@ -616,7 +616,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int[] nTargets, int[] nOperands) {
+		public Bytecode clone(int[] nTargets, int[] nOperands) {
 			return Debug(nOperands[0]);
 		}
 
@@ -636,7 +636,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static abstract class AssertOrAssume extends AbstractCompoundBytecode {
+	public static abstract class AssertOrAssume extends Compound {
 		private AssertOrAssume(int block) {
 			super(block, new Type[0], new int[0],new int[0]);
 		}
@@ -666,7 +666,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		protected Code clone(int[] nTargets, int[] nOperands) {
+		protected Bytecode clone(int[] nTargets, int[] nOperands) {
 			return this;
 		}
 	}
@@ -696,7 +696,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		protected Code clone(int[] nTargets, int[] nOperands) {
+		protected Bytecode clone(int[] nTargets, int[] nOperands) {
 			return this;
 		}
 	}
@@ -709,7 +709,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Fail extends Code.AbstractBytecode<Type> {
+	public static final class Fail extends Bytecode {
 		private Fail() {	
 			super(new Type[0],new int[0]);
 		}
@@ -720,7 +720,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		protected Code clone(int[] nTargets, int[] nOperands) {
+		protected Bytecode clone(int[] nTargets, int[] nOperands) {
 			return this;
 		}
 		
@@ -757,7 +757,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class FieldLoad extends AbstractBytecode<Type.EffectiveRecord> {
+	public static final class FieldLoad extends Bytecode{
 		public final String field;
 
 		private FieldLoad(Type.EffectiveRecord type, int target, int operand, String field) {
@@ -770,8 +770,8 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int[] nTargets, int[] nOperands) {
-			return FieldLoad(type(0), nTargets[0], nOperands[0], field);
+		public Bytecode clone(int[] nTargets, int[] nOperands) {
+			return FieldLoad((Type.EffectiveRecord) type(0), nTargets[0], nOperands[0], field);
 		}
 
 		public int opcode() {
@@ -783,7 +783,8 @@ public abstract class Codes {
 		}
 
 		public Type fieldType() {
-			return type(0).fields().get(field);
+			Type.EffectiveRecord er = (Type.EffectiveRecord) type(0);
+			return er.fields().get(field);
 		}
 
 		public boolean equals(Object o) {
@@ -841,7 +842,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Goto extends AbstractBranchingBytecode {
+	public static final class Goto extends Branching {
 		private Goto(String target) {
 			super(target,new Type[0],new int[0]);
 		}
@@ -864,7 +865,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		protected Code clone(int[] nTargets, int[] nOperands) {
+		protected Bytecode clone(int[] nTargets, int[] nOperands) {
 			return this;
 		}		
 		
@@ -924,7 +925,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class If extends AbstractBranchingBytecode {
+	public static final class If extends Branching {
 		public final Comparator op;
 
 		private If(Type type, int leftOperand, int rightOperand, Comparator op,
@@ -947,7 +948,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int[] nTargets, int[] nOperands) {
+		public Bytecode clone(int[] nTargets, int[] nOperands) {
 			return If(types[0], nOperands[0], nOperands[1], op, destination());
 		}
 
@@ -1055,7 +1056,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class IfIs extends AbstractBranchingBytecode {
+	public static final class IfIs extends Branching {
 		private IfIs(Type type, int leftOperand, Type rightOperand, String target) {
 			super(target, new Type[] { type, rightOperand }, new int[0], leftOperand);
 		}
@@ -1078,7 +1079,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int[] nTargets, int[] nOperands) {
+		public Bytecode clone(int[] nTargets, int[] nOperands) {
 			return IfIs(types[0], nOperands[0], types[1], destination());
 		}
 
@@ -1106,7 +1107,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class IndirectInvoke extends AbstractBytecode<Type.FunctionOrMethod> {
+	public static final class IndirectInvoke extends Bytecode {
 
 		/**
 		 * Construct an indirect invocation bytecode which assigns to an
@@ -1155,9 +1156,14 @@ public abstract class Codes {
 		public int opcode() {
 			return OPCODE_indirectinvoke;			
 		}
-
+		
 		@Override
-		public Code clone(int[] nTargets, int[] nOperands) {
+		public Type.FunctionOrMethod type(int i) {
+			return (Type.FunctionOrMethod) super.type(i); 
+		}
+		
+		@Override
+		public Bytecode clone(int[] nTargets, int[] nOperands) {
 			return IndirectInvoke(type(0), nTargets, nOperands[0],
 					Arrays.copyOfRange(nOperands, 1, nOperands.length));
 		}
@@ -1250,7 +1256,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Invoke extends AbstractBytecode<Type.FunctionOrMethod> {
+	public static final class Invoke extends Bytecode {
 		public final NameID name;
 
 		private Invoke(Type.FunctionOrMethod type, int[] targets, int[] operands,
@@ -1268,7 +1274,12 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int[] nTargets, int[] nOperands) {
+		public Type.FunctionOrMethod type(int i) {
+			return (Type.FunctionOrMethod) super.type(i); 
+		}
+		
+		@Override
+		public Bytecode clone(int[] nTargets, int[] nOperands) {
 			return Invoke(type(0), nTargets, nOperands, name);
 		}
 
@@ -1286,7 +1297,7 @@ public abstract class Codes {
 		}
 	}
 
-	public static final class Lambda extends AbstractBytecode<Type.FunctionOrMethod> {
+	public static final class Lambda extends Bytecode {
 		public final NameID name;
 
 		private Lambda(Type.FunctionOrMethod type, int target, int[] operands,
@@ -1304,8 +1315,13 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int[] nTargets, int[] nOperands) {
-			return Lambda(type(0), nTargets[0], nOperands, name);
+		public Type.FunctionOrMethod type(int i) {
+			return (Type.FunctionOrMethod) super.type(i); 
+		}
+		
+		@Override
+		public Bytecode clone(int[] nTargets, int[] nOperands) {
+			return Lambda((Type.FunctionOrMethod) type(0), nTargets[0], nOperands, name);
 		}
 
 		public boolean equals(Object o) {
@@ -1328,10 +1344,11 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Label implements Code {
+	public static class Label extends Bytecode {
 		public final String label;
 
 		private Label(String label) {
+			super(new Type[0],new int[0],new int[0]);
 			this.label = label;
 		}
 
@@ -1349,7 +1366,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code remap(Map<Integer, Integer> binding) {
+		public Bytecode remap(Map<Integer, Integer> binding) {
 			return this;
 		}
 		
@@ -1372,9 +1389,14 @@ public abstract class Codes {
 		public void registers(Set<Integer> register) {
 			// TODO Auto-generated method stub			
 		}
+
+		
+		@Override
+		protected Bytecode clone(int[] nTargets, int[] nOperands) {			
+			return new Label(label);
+		}
 	}
 	
-
 	/**
 	 * Represents a block of code which loops continuously until e.g. a
 	 * conditional branch is taken out of the block. For example:
@@ -1416,7 +1438,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Loop extends AbstractCompoundBytecode {
+	public static class Loop extends Compound {
 
 		private Loop(int[] targets, int block, int... operands) {
 			super(block, new Type[0], targets, operands);
@@ -1614,7 +1636,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Update extends AbstractBytecode<Type>
+	public static final class Update extends Bytecode
 			implements Iterable<LVal> {
 		public final ArrayList<String> fields;
 
@@ -1734,7 +1756,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public final Code clone(int[] nTargets, int[] nOperands) {
+		public final Bytecode clone(int[] nTargets, int[] nOperands) {
 			return new Update(types, nTargets, nOperands, fields);
 		}
 
@@ -1790,7 +1812,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Return extends AbstractBytecode<Type> {
+	public static final class Return extends Bytecode {
 
 		private Return(Type[] types, int... operands) {
 			super(types, new int[0], operands);			
@@ -1802,7 +1824,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int[] nTargets, int[] nOperands) {
+		public Bytecode clone(int[] nTargets, int[] nOperands) {
 			return new Return(Arrays.copyOf(types, types.length), nOperands);
 		}
 
@@ -1868,7 +1890,7 @@ public abstract class Codes {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Switch extends AbstractBytecode<Type> {
+	public static final class Switch extends Bytecode {
 		public final ArrayList<Pair<Constant, String>> branches;
 		public final String defaultTarget;
 
@@ -1928,7 +1950,7 @@ public abstract class Codes {
 		}
 
 		@Override
-		public Code clone(int[] nTargets, int[] nOperands) {
+		public Bytecode clone(int[] nTargets, int[] nOperands) {
 			return new Switch(types[0], nOperands[0], defaultTarget, branches);
 		}
 

@@ -120,7 +120,7 @@ public abstract class BackwardFlowAnalysis<T> {
 		CodeForest.Block block = forest.get(blockID);
 		
 		for (int i = block.size()-1; i >= 0; --i) {
-			Code code = block.get(i).code();
+			Bytecode code = block.get(i).code();
 
 			// Construct the bytecode index
 			CodeForest.Index id = new CodeForest.Index(blockID,i);
@@ -272,7 +272,7 @@ public abstract class BackwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(CodeForest.Index index, Code code, T store);
+	protected abstract T propagate(CodeForest.Index index, Bytecode code, T store);
 
 	/**
 	 * Propagate from an exception handler.

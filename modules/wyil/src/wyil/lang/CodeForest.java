@@ -222,22 +222,22 @@ public class CodeForest {
 		public Block(Collection<Entry> entries) {
 			super(entries);
 		}		
-		public void add(Code code, Attribute...attributes) {
+		public void add(Bytecode code, Attribute...attributes) {
 			super.add(new Entry(code,attributes));
 		}
-		public void add(Code code, List<Attribute> attributes) {
+		public void add(Bytecode code, List<Attribute> attributes) {
 			super.add(new Entry(code,attributes));
 		}
-		public void add(int start, Code code, Attribute...attributes) {
+		public void add(int start, Bytecode code, Attribute...attributes) {
 			super.add(start, new Entry(code,attributes));
 		}
-		public void add(int start, Code code, List<Attribute> attributes) {
+		public void add(int start, Bytecode code, List<Attribute> attributes) {
 			super.add(start, new Entry(code,attributes));
 		}
-		public void set(int i, Code code, Attribute...attributes) {
+		public void set(int i, Bytecode code, Attribute...attributes) {
 			super.set(i,new Entry(code,attributes));
 		}
-		public void set(int i, Code code, List<Attribute> attributes) {
+		public void set(int i, Bytecode code, List<Attribute> attributes) {
 			super.set(i,new Entry(code,attributes));
 		}
 	}
@@ -249,14 +249,14 @@ public class CodeForest {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Entry extends Pair<Code,List<Attribute>> {
-		public Entry(Code code, List<Attribute> attributes) {
+	public static class Entry extends Pair<Bytecode,List<Attribute>> {
+		public Entry(Bytecode code, List<Attribute> attributes) {
 			super(code,attributes);
 		}
-		public Entry(Code code, Attribute... attributes) {
+		public Entry(Bytecode code, Attribute... attributes) {
 			super(code,Arrays.asList(attributes));
 		}
-		public Code code() {
+		public Bytecode code() {
 			return first();
 		}
 		public <T extends Attribute> T attribute(Class<T> clazz) {
