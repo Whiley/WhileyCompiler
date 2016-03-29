@@ -161,23 +161,6 @@ public abstract class Codes {
 	}
 
 	/**
-	 * Construct a <code>newrecord</code> bytecode which constructs a new record
-	 * and puts it on the stack.
-	 *
-	 * @param type
-	 * @return
-	 */
-	public static NewRecord NewRecord(Type.Record type, int target,
-			Collection<Integer> operands) {
-		return new NewRecord(type, target, CodeUtils.toIntArray(operands));
-	}
-
-	public static NewRecord NewRecord(Type.Record type, int target,
-			int[] operands) {
-		return new NewRecord(type, target, operands);
-	}
-
-	/**
 	 * Construct a return bytecode which does return a value and, hence, its
 	 * type automatically defaults to void.
 	 *
@@ -286,7 +269,7 @@ public abstract class Codes {
 				return "neg";
 			}
 		},
-		INVERT(1) {
+		BITWISEINVERT(1) {
 			public String toString() {
 				return "invert";
 			}
@@ -352,7 +335,7 @@ public abstract class Codes {
 				return "shr";
 			}
 		},
-		INDEXOF(14) {
+		ARRAYINDEX(14) {
 			public String toString() {
 				return "indexof";
 			}
@@ -365,6 +348,11 @@ public abstract class Codes {
 		ARRAYCONSTRUCTOR(16) {
 			public String toString() {
 				return "array";
+			}
+		},
+		RECORDCONSTRUCTOR(17) {
+			public String toString() {
+				return "record";
 			}
 		};
 		public int offset;
@@ -1847,61 +1835,6 @@ public abstract class Codes {
 				}
 			}
 			return "update " + r + " = %" + result() + " : " + type(0) + " -> " + afterType();
-		}
-	}
-
-	/**
-	 * Constructs a new record value from the values of zero or more operand
-	 * register, each of which is associated with a field name. The new record
-	 * value is then written into the target register. For example, the
-	 * following Whiley code:
-	 *
-	 * <pre>
-	 * type Point is {real x, real y}
-	 *
-	 * function f(real x, real y) -> Point:
-	 *     return {x: x, y: x}
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL:
-	 *
-	 * <pre>
-	 * function f(real x, real y) -> Point:
-	 * body:
-	 *     assign %3 = %0         : real
-	 *     assign %4 = %0         : real
-	 *     newrecord %2 (%3, %4)  : {real x,real y}
-	 *     return %2              : {real x,real y}
-	 * </pre>
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class NewRecord extends
-			AbstractBytecode<Type.Record> {
-		
-		private NewRecord(Type.Record type, int target, int[] operands) {
-			super(type, target, operands);
-		}
-
-		@Override
-		protected Code clone(int[] nTargets, int[] nOperands) {
-			return NewRecord(type(0), nTargets[0], nOperands);
-		}
-
-		public int opcode() {
-			return OPCODE_newrecord;
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof NewRecord) {
-				return super.equals(o);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "newrecord %" + target(0) + " = " + arrayToString(operands()) + " : " + type(0);
 		}
 	}
 

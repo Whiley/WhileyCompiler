@@ -627,8 +627,6 @@ public class Wyil2JavaBuilder implements Builder {
 				translate(pc, (Codes.Loop) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Update) {
 				translate(pc, (Codes.Update) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof Codes.NewRecord) {
-				translate(pc, (Codes.NewRecord) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Return) {
 				translate(pc, (Codes.Return) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Codes.Nop) {
@@ -1275,29 +1273,6 @@ public class Wyil2JavaBuilder implements Builder {
 		JvmType.Function ftype = new JvmType.Function(T_VOID, JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
 		bytecodes.add(new Bytecode.Store(c.target(0), type));
-	}
-
-	private void translate(CodeForest.Index index, Codes.NewRecord code, int freeSlot, CodeForest forest,
-			ArrayList<Bytecode> bytecodes) {
-		construct(WHILEYRECORD, freeSlot, bytecodes);
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
-
-		HashMap<String, Type> fields = code.type(0).fields();
-		ArrayList<String> keys = new ArrayList<String>(fields.keySet());
-		Collections.sort(keys);
-		for (int i = 0; i != code.operands().length; i++) {
-			int register = code.operands()[i];
-			String key = keys.get(i);
-			Type fieldType = fields.get(key);
-			bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
-			bytecodes.add(new Bytecode.LoadConst(key));
-			bytecodes.add(new Bytecode.Load(register, convertUnderlyingType(fieldType)));
-			addWriteConversion(fieldType, bytecodes);
-			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "put", ftype, Bytecode.InvokeMode.VIRTUAL));
-			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
-		}
-
-		bytecodes.add(new Bytecode.Store(code.target(0), WHILEYRECORD));
 	}
 
 	private void translate(CodeForest.Index index, Codes.Lambda c, int freeSlot, CodeForest forest,
@@ -2044,14 +2019,12 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param bytecodes
 	 * @param params
 	 */
-	private void construct(JvmType.Clazz owner, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+	private void construct(JvmType.Clazz owner, int freeSlot, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.New(owner));
 		bytecodes.add(new Bytecode.Dup(owner));
 		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
 		JvmType.Function ftype = new JvmType.Function(T_VOID, paramTypes);
-		bytecodes.add(new Bytecode.Invoke(owner, "<init>", ftype,
-				Bytecode.InvokeMode.SPECIAL));
+		bytecodes.add(new Bytecode.Invoke(owner, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
 	}
 
 	public final static Type WHILEY_SYSTEM_T = Type.Nominal(new NameID(Trie
@@ -2342,6 +2315,10 @@ public class Wyil2JavaBuilder implements Builder {
 		
 		public void addWriteConversion(Type type) {
 			Wyil2JavaBuilder.this.addWriteConversion(type,bytecodes);
+		}
+		
+		public void construct(JvmType.Clazz type) {
+			Wyil2JavaBuilder.this.construct(type,freeSlot,bytecodes);
 		}
 		
 		public JvmType toJvmType(Type type) {

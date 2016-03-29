@@ -1,7 +1,9 @@
 package wyil.util.interpreter;
 
 import wyil.lang.Code;
+import wyil.lang.Codes;
 import wyil.lang.Constant;
+import wyil.lang.Type;
 import wyil.util.interpreter.Interpreter.ConstantObject;
 import wyil.util.interpreter.Interpreter.Context;
 import wyil.util.interpreter.Interpreter.InternalFunction;
@@ -9,6 +11,8 @@ import static wyil.util.interpreter.Interpreter.*;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 
 public class StandardFunctions {
 	/**
@@ -18,9 +22,9 @@ public class StandardFunctions {
 	
 	static {
 		standardFunctions[Code.OPCODE_neg] = new Negate();
-		standardFunctions[Code.OPCODE_invert] = new BitwiseInvert();	
+		standardFunctions[Code.OPCODE_arrayinvert] = new BitwiseInvert();	
 		standardFunctions[Code.OPCODE_dereference] = new Dereference();
-		standardFunctions[Code.OPCODE_lengthof] = new ArrayLength();	
+		standardFunctions[Code.OPCODE_arraylength] = new ArrayLength();	
 		standardFunctions[Code.OPCODE_add ] = new Add();
 		standardFunctions[Code.OPCODE_sub ] = new Subtract();
 		standardFunctions[Code.OPCODE_mul ] = new Multiply();
@@ -31,9 +35,10 @@ public class StandardFunctions {
 		standardFunctions[Code.OPCODE_bitwiseand] = new BitwiseAnd();
 		standardFunctions[Code.OPCODE_lshr] = new LeftShift();
 		standardFunctions[Code.OPCODE_rshr] = new RightShift();
-		standardFunctions[Code.OPCODE_indexof] = new ArrayIndex();	
+		standardFunctions[Code.OPCODE_arrayindex] = new ArrayIndex();	
 		standardFunctions[Code.OPCODE_arrygen] = new ArrayGenerator();
-		standardFunctions[Code.OPCODE_newarray] = new ArrayConstructor();	
+		standardFunctions[Code.OPCODE_array] = new ArrayConstructor();
+		standardFunctions[Code.OPCODE_record] = new RecordConstructor();
 	};
 
 	// ====================================================================================
@@ -212,4 +217,22 @@ public class StandardFunctions {
 			return Constant.V_ARRAY(values);
 		}		
 	}
+	
+	// ====================================================================================
+	// Records
+	// ====================================================================================
+	private static final class RecordConstructor implements InternalFunction {
+		@Override
+		public Constant apply(Constant[] operands, Context context) {
+			Codes.Operator bytecode = (Codes.Operator) context.getBytecode();
+			Type.EffectiveRecord rType = (Type.EffectiveRecord) bytecode.type(0); 
+			HashMap<String, Constant> values = new HashMap<String, Constant>();
+			ArrayList<String> fields = new ArrayList<String>(rType.fields().keySet());
+			Collections.sort(fields);
+			for (int i = 0; i != operands.length; ++i) {
+				values.put(fields.get(i), operands[i]);
+			}
+			return Constant.V_RECORD(values);
+		}		
+	}	
 }

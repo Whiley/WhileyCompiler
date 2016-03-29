@@ -2,6 +2,11 @@ package wyjc.util;
 
 import static jasm.lang.JvmTypes.*;
 import static wyjc.Wyil2JavaBuilder.*;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+
 import jasm.lang.Bytecode;
 import jasm.lang.JvmType;
 import wyil.lang.Code;
@@ -24,9 +29,9 @@ public class BytecodeTranslators {
 	
 	static {
 		standardFunctions[Code.OPCODE_neg] = new Negate();
-		standardFunctions[Code.OPCODE_invert] = new Invert();	
+		standardFunctions[Code.OPCODE_arrayinvert] = new Invert();	
 		standardFunctions[Code.OPCODE_dereference] = new Dereference();
-		standardFunctions[Code.OPCODE_lengthof] = new ArrayLength();	
+		standardFunctions[Code.OPCODE_arraylength] = new ArrayLength();	
 		standardFunctions[Code.OPCODE_add ] = new Add();
 		standardFunctions[Code.OPCODE_sub ] = new Subtract();
 		standardFunctions[Code.OPCODE_mul ] = new Multiply();
@@ -37,9 +42,10 @@ public class BytecodeTranslators {
 		standardFunctions[Code.OPCODE_bitwiseand] = new BitwiseAnd();
 		standardFunctions[Code.OPCODE_lshr] = new LeftShift();
 		standardFunctions[Code.OPCODE_rshr] = new RightShift();
-		standardFunctions[Code.OPCODE_indexof] = new ArrayIndex();	
+		standardFunctions[Code.OPCODE_arrayindex] = new ArrayIndex();	
 		standardFunctions[Code.OPCODE_arrygen] = new ArrayGenerator();
-		standardFunctions[Code.OPCODE_newarray] = new ArrayConstructor();	
+		standardFunctions[Code.OPCODE_array] = new ArrayConstructor();
+		standardFunctions[Code.OPCODE_record] = new RecordConstructor();
 	};
 	
 	// ====================================================================================
@@ -256,5 +262,31 @@ public class BytecodeTranslators {
 
 			context.add(new Bytecode.Store(bytecode.target(0), WHILEYARRAY));
 		}		
+	}
+	
+	private static final class RecordConstructor implements BytecodeTranslator {
+		@Override
+		public void translate(Codes.Operator code, Context context) {
+			Type.EffectiveRecord recType = (Type.EffectiveRecord) code.type(0); 
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
+			
+			context.construct(WHILEYRECORD);
+			
+			ArrayList<String> keys = new ArrayList<String>(recType.fields().keySet());
+			Collections.sort(keys);
+			for (int i = 0; i != code.operands().length; i++) {
+				int register = code.operands()[i];
+				String key = keys.get(i);
+				Type fieldType = recType.field(key);
+				context.add(new Bytecode.Dup(WHILEYRECORD));
+				context.add(new Bytecode.LoadConst(key));
+				context.add(new Bytecode.Load(register, context.toJvmType(fieldType)));
+				context.addWriteConversion(fieldType);
+				context.add(new Bytecode.Invoke(WHILEYRECORD, "put", ftype, Bytecode.InvokeMode.VIRTUAL));
+				context.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
+			}
+
+			context.add(new Bytecode.Store(code.target(0), WHILEYRECORD));
+		}
 	}
 }

@@ -194,8 +194,6 @@ public class Interpreter {
 			return execute((Codes.Loop) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.NewObject) {
 			return execute((Codes.NewObject) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.NewRecord) {
-			return execute((Codes.NewRecord) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Nop) {
 			return execute((Codes.Nop) bytecode, frame, context);
 		} else if (bytecode instanceof Codes.Return) {
@@ -805,30 +803,6 @@ public class Interpreter {
 	}
 
 	/**
-	 * Execute a Record bytecode instruction at a given point in the function or
-	 * method body. This constructs a new record.
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Codes.NewRecord bytecode, Constant[] frame, Context context) {
-		HashMap<String, Constant> values = new HashMap<String, Constant>();
-		ArrayList<String> fields = new ArrayList<String>(bytecode.type(0).fields().keySet());
-		Collections.sort(fields);
-		int[] operands = bytecode.operands();
-		for (int i = 0; i != operands.length; ++i) {
-			values.put(fields.get(i), (Constant) frame[operands[i]]);
-		}
-		frame[bytecode.target(0)] = Constant.V_RECORD(values);
-		return context.pc.next();
-	}
-
-	/**
 	 * Execute a Nop bytecode instruction at a given point in the function or
 	 * method body. This basically doesn't do anything!
 	 *
@@ -1055,6 +1029,10 @@ public class Interpreter {
 				labels = CodeUtils.buildLabelMap(forest);
 			}
 			return labels.get(label);
+		}
+		
+		public Code getBytecode() {
+			return forest.get(pc).first();
 		}
 	}
 

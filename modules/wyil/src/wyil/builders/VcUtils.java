@@ -369,7 +369,7 @@ public class VcUtils {
 			case Code.OPCODE_div:
 			case Code.OPCODE_rem:
 				return divideByZeroCheck((Codes.Operator) code, branch);
-			case Code.OPCODE_indexof:
+			case Code.OPCODE_arrayindex:
 				return indexOutOfBoundsChecks((Codes.Operator) code, branch);
 			case Code.OPCODE_arrygen:
 				return arrayGeneratorChecks((Codes.Operator) code, branch);

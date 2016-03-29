@@ -1893,7 +1893,7 @@ public final class CodeGenerator {
 					attributes(expr));
 			break;
 		case INVERT:
-			block.add(Codes.Operator(expr.result().raw(), targets, operands, Codes.OperatorKind.INVERT),
+			block.add(Codes.Operator(expr.result().raw(), targets, operands, Codes.OperatorKind.BITWISEINVERT),
 					attributes(expr));
 			break;
 		case NOT:
@@ -1936,7 +1936,7 @@ public final class CodeGenerator {
 		int[] operands = { generate(expr.src, environment, block, forest, context),
 				generate(expr.index, environment, block, forest, context) };
 		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
-		block.add(Codes.Operator(expr.srcType.raw(), targets, operands, Codes.OperatorKind.INDEXOF), attributes(expr));
+		block.add(Codes.Operator(expr.srcType.raw(), targets, operands, Codes.OperatorKind.ARRAYINDEX), attributes(expr));
 		return targets[0];
 	}
 
@@ -2024,9 +2024,10 @@ public final class CodeGenerator {
 			Expr arg = expr.fields.get(key);
 			operands[i] = generate(arg, environment, block, forest, context);
 		}
-		int target = environment.allocate(expr.result().raw());
-		block.add(Codes.NewRecord((Type.Record) expr.result().raw(), target, operands), attributes(expr));
-		return target;
+		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
+		block.add(Codes.Operator(expr.result().raw(), targets, operands, Codes.OperatorKind.RECORDCONSTRUCTOR),
+				attributes(expr));
+		return targets[0];
 	}
 
 	private int generate(Expr.FieldAccess expr, Environment environment, CodeForest.Block block, CodeForest forest,

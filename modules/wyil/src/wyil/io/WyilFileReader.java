@@ -934,12 +934,12 @@ public final class WyilFileReader {
 				return Codes.Operator(types[0], targets, operands, Codes.OperatorKind.DEREFERENCE);
 			}
 		};
-		schemas[Code.OPCODE_invert] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
+		schemas[Code.OPCODE_arrayinvert] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
 			public Code construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return Codes.Operator(types[0], targets, operands, Codes.OperatorKind.INVERT);
+				return Codes.Operator(types[0], targets, operands, Codes.OperatorKind.BITWISEINVERT);
 			}
 		};
-		schemas[Code.OPCODE_lengthof] = new Schema(Targets.ONE, Operands.ONE, Types.ONE) {
+		schemas[Code.OPCODE_arraylength] = new Schema(Targets.ONE, Operands.ONE, Types.ONE) {
 			public Code construct(int opcode, int[] targets, int[] operands, Type[] types, Object[] extras) {
 				return Codes.Operator(types[0], targets, operands, Codes.OperatorKind.ARRAYLENGTH);
 			}
@@ -1052,9 +1052,9 @@ public final class WyilFileReader {
 				return Codes.Operator(types[0], targets, operands, Codes.OperatorKind.RIGHTSHIFT);
 			}
 		};
-		schemas[Code.OPCODE_indexof] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+		schemas[Code.OPCODE_arrayindex] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
 			public Code construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return Codes.Operator(types[0],targets,operands,Codes.OperatorKind.INDEXOF);
+				return Codes.Operator(types[0],targets,operands,Codes.OperatorKind.ARRAYINDEX);
 			}
 		};
 		schemas[Code.OPCODE_arrygen] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
@@ -1063,7 +1063,7 @@ public final class WyilFileReader {
 			}
 		};
 
-		schemas[Code.OPCODE_newarray] = new Schema(Targets.ONE, Operands.MANY, Types.ONE){
+		schemas[Code.OPCODE_array] = new Schema(Targets.ONE, Operands.MANY, Types.ONE){
 			public Code construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
 				return Codes.Operator(types[0], targets, operands, Codes.OperatorKind.ARRAYCONSTRUCTOR);
 			}
@@ -1072,9 +1072,9 @@ public final class WyilFileReader {
 		// =========================================================================
 		// Nary Assignables
 		// =========================================================================
-		schemas[Code.OPCODE_newrecord] = new Schema(Targets.ONE, Operands.MANY, Types.ONE){
+		schemas[Code.OPCODE_record] = new Schema(Targets.ONE, Operands.MANY, Types.ONE){
 			public Code construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return Codes.NewRecord((Type.Record) types[0], targets[0], operands);
+				return Codes.Operator(types[0], targets, operands, Codes.OperatorKind.RECORDCONSTRUCTOR);
 			}
 		};
 		schemas[Code.OPCODE_invoke] = new Schema(Targets.MANY, Operands.MANY, Types.ONE, Extras.NAME){
