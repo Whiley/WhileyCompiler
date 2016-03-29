@@ -1583,6 +1583,7 @@ public class FlowTypeChecker {
 	}
 
 	private Expr propagate(Expr.Lambda expr, Environment environment, Context context) throws IOException {
+		environment = environment.clone();
 		Type.FunctionOrMethod rawResultType;
 		Type.FunctionOrMethod nomResultType;
 		ArrayList<Type> rawParameterTypes = new ArrayList<Type>();
