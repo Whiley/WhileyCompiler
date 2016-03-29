@@ -2877,7 +2877,7 @@ public class WhileyFileParser {
 		// only. However, the expression is guaranteed to be terminated by '|'.
 		Expr e = parseShiftExpression(wf, environment, true);
 		match(VerticalBar);
-		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
+		return new Expr.UnOp(Expr.UOp.ARRAYLENGTH, e, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -3438,9 +3438,13 @@ public class WhileyFileParser {
 			return false;
 		} else if(e instanceof Expr.UnOp) {
 			Expr.UnOp uop = (Expr.UnOp) e;
-			if(uop.op == Expr.UOp.NOT) {
+			switch(uop.op) {
+			case NOT:
 				return mustParseAsExpr(uop.mhs);
-			} else {
+			case ARRAYLENGTH:
+			case INVERT:
+				return true;
+			default:
 				return false;
 			}
 		} else if(e instanceof Expr.AbstractFunctionOrMethod) {
@@ -3460,8 +3464,6 @@ public class WhileyFileParser {
 		} else if(e instanceof Expr.IndexOf) {
 			return true;
 		} else if(e instanceof Expr.Lambda) {
-			return true;
-		} else if(e instanceof Expr.LengthOf) {
 			return true;
 		} else if(e instanceof Expr.ArrayInitialiser) {
 			return true;

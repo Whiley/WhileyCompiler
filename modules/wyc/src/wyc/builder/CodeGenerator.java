@@ -1720,8 +1720,6 @@ public final class CodeGenerator {
 				return generate((Expr.ArrayGenerator) expression, environment, block, forest, context);
 			} else if (expression instanceof Expr.BinOp) {
 				return generate((Expr.BinOp) expression, environment, block, forest, context);
-			} else if (expression instanceof Expr.LengthOf) {
-				return generate((Expr.LengthOf) expression, environment, block, forest, context);
 			} else if (expression instanceof Expr.Dereference) {
 				return generate((Expr.Dereference) expression, environment, block, forest, context);
 			} else if (expression instanceof Expr.Cast) {
@@ -1910,19 +1908,14 @@ public final class CodeGenerator {
 			block.add(Codes.Const(targets[0], Constant.V_BOOL(false)), attributes(expr));
 			block.add(Codes.Label(exitLabel));
 			break;
+		case ARRAYLENGTH:
+			block.add(Codes.Operator(expr.type.raw(), targets, operands, Codes.OperatorKind.ARRAYLENGTH), attributes(expr));
+			break;
 		default:
 			// should be dead-code
 			internalFailure("unexpected unary operator encountered", context, expr);
 			return -1;
 		}
-		return targets[0];
-	}
-
-	private int generate(Expr.LengthOf expr, Environment environment, CodeForest.Block block, CodeForest forest,
-			Context context) {
-		int[] operands = new int[] { generate(expr.src, environment, block, forest, context) };
-		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
-		block.add(Codes.Operator(expr.srcType.raw(), targets, operands, Codes.OperatorKind.ARRAYLENGTH), attributes(expr));
 		return targets[0];
 	}
 
