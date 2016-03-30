@@ -7,6 +7,10 @@ public class WyBool {
 		this.value = value;
 	}
 
+	public boolean value() {
+		return value;
+	}
+	
 	public boolean equals(Object o) {
 		if (o instanceof WyBool) {
 			WyBool b = (WyBool) o;

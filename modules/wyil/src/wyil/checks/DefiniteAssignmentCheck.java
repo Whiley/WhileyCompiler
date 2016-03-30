@@ -121,7 +121,7 @@ public class DefiniteAssignmentCheck extends
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(CodeForest.Index index,
 			Bytecode.If igoto, HashSet<Integer> in) {
 
-		if (!in.contains(igoto.operand(0)) || !in.contains(igoto.operand(1))) {
+		if (!in.contains(igoto.operand(0))) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
 					forest.get(index).attribute(SourceLocation.class));
 		}

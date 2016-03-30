@@ -36,6 +36,12 @@ public class BytecodeTranslators {
 		standardFunctions[OPCODE_mul ] = new Multiply();
 		standardFunctions[OPCODE_div ] = new Divide();
 		standardFunctions[OPCODE_rem ] = new Remainder();
+		standardFunctions[OPCODE_eq ] = new Equal();
+		standardFunctions[OPCODE_ne ] = new NotEqual();
+		standardFunctions[OPCODE_lt ] = new LessThan();
+		standardFunctions[OPCODE_le ] = new LessThanEqual();
+		standardFunctions[OPCODE_gt ] = new GreaterThan();
+		standardFunctions[OPCODE_ge ] = new GreaterThanEqual();		
 		standardFunctions[OPCODE_bitwiseor] = new BitwiseOr();
 		standardFunctions[OPCODE_bitwisexor] = new BitwiseXor();
 		standardFunctions[OPCODE_bitwiseand] = new BitwiseAnd();
@@ -169,6 +175,72 @@ public class BytecodeTranslators {
 		}		
 	}
 
+	private static final class Equal implements BytecodeTranslator {
+		@Override
+		public void translate(Operator bytecode, Context context) {
+			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
+			context.add(new Bytecode.Load(bytecode.operand(0), type));
+			context.add(new Bytecode.Load(bytecode.operand(1), type));
+			JvmType.Function ftype = new JvmType.Function(WHILEYBOOL, JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
+			context.add(new Bytecode.Invoke(WHILEYUTIL, "equal", ftype, Bytecode.InvokeMode.STATIC));
+			context.add(new Bytecode.Store(bytecode.target(0), type));
+		}		
+	}
+	private static final class NotEqual implements BytecodeTranslator {
+		@Override
+		public void translate(Operator bytecode, Context context) {
+			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
+			context.add(new Bytecode.Load(bytecode.operand(0), type));
+			context.add(new Bytecode.Load(bytecode.operand(1), type));
+			JvmType.Function ftype = new JvmType.Function(WHILEYBOOL, JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
+			context.add(new Bytecode.Invoke(WHILEYUTIL, "notEqual", ftype, Bytecode.InvokeMode.STATIC));
+			context.add(new Bytecode.Store(bytecode.target(0), type));
+		}		
+	}
+	private static final class LessThan implements BytecodeTranslator {
+		@Override
+		public void translate(Operator bytecode, Context context) {
+			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
+			context.add(new Bytecode.Load(bytecode.operand(0), type));
+			context.add(new Bytecode.Load(bytecode.operand(1), type));
+			JvmType.Function ftype = new JvmType.Function(WHILEYBOOL, WHILEYINT, WHILEYINT);
+			context.add(new Bytecode.Invoke(WHILEYUTIL, "lessThan", ftype, Bytecode.InvokeMode.STATIC));
+			context.add(new Bytecode.Store(bytecode.target(0), type));
+		}		
+	}
+	private static final class LessThanEqual implements BytecodeTranslator {
+		@Override
+		public void translate(Operator bytecode, Context context) {
+			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
+			context.add(new Bytecode.Load(bytecode.operand(0), type));
+			context.add(new Bytecode.Load(bytecode.operand(1), type));
+			JvmType.Function ftype = new JvmType.Function(WHILEYBOOL, WHILEYINT, WHILEYINT);
+			context.add(new Bytecode.Invoke(WHILEYUTIL, "lessThanEqual", ftype, Bytecode.InvokeMode.STATIC));
+			context.add(new Bytecode.Store(bytecode.target(0), type));
+		}		
+	}
+	private static final class GreaterThan implements BytecodeTranslator {
+		@Override
+		public void translate(Operator bytecode, Context context) {
+			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
+			context.add(new Bytecode.Load(bytecode.operand(0), type));
+			context.add(new Bytecode.Load(bytecode.operand(1), type));
+			JvmType.Function ftype = new JvmType.Function(WHILEYBOOL, WHILEYINT, WHILEYINT);
+			context.add(new Bytecode.Invoke(WHILEYUTIL, "greaterThan", ftype, Bytecode.InvokeMode.STATIC));
+			context.add(new Bytecode.Store(bytecode.target(0), type));
+		}		
+	}
+	private static final class GreaterThanEqual implements BytecodeTranslator {
+		@Override
+		public void translate(Operator bytecode, Context context) {
+			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
+			context.add(new Bytecode.Load(bytecode.operand(0), type));
+			context.add(new Bytecode.Load(bytecode.operand(1), type));
+			JvmType.Function ftype = new JvmType.Function(WHILEYBOOL, WHILEYINT, WHILEYINT);
+			context.add(new Bytecode.Invoke(WHILEYUTIL, "greaterThanEqual", ftype, Bytecode.InvokeMode.STATIC));
+			context.add(new Bytecode.Store(bytecode.target(0), type));
+		}		
+	}
 	// ====================================================================================
 	// Bytes
 	// ====================================================================================

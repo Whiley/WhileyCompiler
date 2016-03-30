@@ -447,8 +447,8 @@ public abstract class Bytecode {
 		return new Return(types, operands);
 	}
 
-	public static If If(Type type, int leftOperand, int rightOperand, Comparator cop, String label) {
-		return new If(type, leftOperand, rightOperand, cop, label);
+	public static If If(Type type, int operand, String label) {
+		return new If(type, operand, label);
 	}
 
 	public static IfIs IfIs(Type type, int leftOperand, Type rightOperand, String label) {
@@ -558,57 +558,87 @@ public abstract class Bytecode {
 				return "rem";
 			}
 		},
-		BITWISEOR(9) {
+		EQ(9) {
+			public String toString() {
+				return "eq";
+			}
+		},
+		NEQ(10) {
+			public String toString() {
+				return "ne";
+			}
+		},
+		LT(11) {
+			public String toString() {
+				return "lt";
+			}
+		},
+		LTEQ(12) {
+			public String toString() {
+				return "le";
+			}
+		},
+		GT(13) {
+			public String toString() {
+				return "gt";
+			}
+		},
+		GTEQ(14) {
+			public String toString() {
+				return "ge";
+			}
+		},
+		BITWISEOR(15) {
 			public String toString() {
 				return "or";
 			}
 		},
-		BITWISEXOR(10) {
+		BITWISEXOR(16) {
 			public String toString() {
 				return "xor";
 			}
 		},
-		BITWISEAND(11) {
+		BITWISEAND(17) {
 			public String toString() {
 				return "and";
 			}
 		},
-		LEFTSHIFT(12) {
+		LEFTSHIFT(18) {
 			public String toString() {
 				return "shl";
 			}
 		},
-		RIGHTSHIFT(13) {
+		RIGHTSHIFT(19) {
 			public String toString() {
 				return "shr";
 			}
 		},
-		ARRAYINDEX(14) {
+		ARRAYINDEX(20) {
 			public String toString() {
 				return "indexof";
 			}
 		},
-		ARRAYGENERATOR(15) {
+		ARRAYGENERATOR(21) {
 			public String toString() {
 				return "arraygen";
 			}
 		},
-		ARRAYCONSTRUCTOR(16) {
+		ARRAYCONSTRUCTOR(22) {
 			public String toString() {
 				return "array";
 			}
 		},
-		RECORDCONSTRUCTOR(17) {
+		RECORDCONSTRUCTOR(23) {
 			public String toString() {
 				return "record";
 			}
 		},
-		NEW(18) {
+		NEW(24) {
 			public String toString() {
 				return "new";
 			}
 		},
-		ASSIGN(19) {
+		ASSIGN(25) {
 			public String toString() {
 				return "assign";
 			}
@@ -1190,11 +1220,8 @@ public abstract class Bytecode {
 	 *
 	 */
 	public static final class If extends Branching {
-		public final Comparator op;
-
-		private If(Type type, int leftOperand, int rightOperand, Comparator op, String target) {
-			super(target, new Type[] { type }, new int[0], leftOperand, rightOperand);
-			this.op = op;
+		private If(Type type, int operand, String target) {
+			super(target, new Type[] { type }, new int[0], operand);
 		}
 
 		public If relabel(Map<String, String> labels) {
@@ -1202,80 +1229,27 @@ public abstract class Bytecode {
 			if (nlabel == null) {
 				return this;
 			} else {
-				return If(types[0], operands[0], operands[1], op, nlabel);
+				return If(types[0], operands[0], nlabel);
 			}
 		}
 
 		public int opcode() {
-			return OPCODE_ifeq + op.offset;
+			return OPCODE_if;
 		}
 
 		@Override
 		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return If(types[0], nOperands[0], nOperands[1], op, destination());
-		}
-
-		public int hashCode() {
-			return super.hashCode() + op.hashCode();
+			return If(types[0], nOperands[0], destination());
 		}
 
 		public boolean equals(Object o) {
-			if (o instanceof If) {
-				If ig = (If) o;
-				return op == ig.op && super.equals(ig);
-			}
-			return false;
+			return o instanceof If && super.equals(o);			
 		}
 
 		public String toString() {
-			return "if" + op + " %" + operands[0] + ", %" + operands[1] + " goto " + destination() + " : " + types[0];
+			return "if" + " %" + operands[0] + " goto " + destination() + " : " + types[0];
 		}
 	}
-
-	/**
-	 * Represents a comparison operator (e.g. '==','!=',etc) that is provided to
-	 * a <code>IfGoto</code> bytecode.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public enum Comparator {
-		EQ(0) {
-			public String toString() {
-				return "eq";
-			}
-		},
-		NEQ(1) {
-			public String toString() {
-				return "ne";
-			}
-		},
-		LT(2) {
-			public String toString() {
-				return "lt";
-			}
-		},
-		LTEQ(3) {
-			public String toString() {
-				return "le";
-			}
-		},
-		GT(4) {
-			public String toString() {
-				return "gt";
-			}
-		},
-		GTEQ(5) {
-			public String toString() {
-				return "ge";
-			}
-		};
-		public int offset;
-
-		private Comparator(int offset) {
-			this.offset = offset;
-		}
-	};
 
 	/**
 	 * Branches conditionally to the given label based on the result of a
@@ -2254,12 +2228,7 @@ public abstract class Bytecode {
 	// Binary Operators
 	public static final int BINARY_OPERATOR = UNARY_ASSIGNABLE+11;
 	
-	public static final int OPCODE_ifeq     = BINARY_OPERATOR+0;
-	public static final int OPCODE_ifne     = BINARY_OPERATOR+1;
-	public static final int OPCODE_iflt     = BINARY_OPERATOR+2;
-	public static final int OPCODE_ifle     = BINARY_OPERATOR+3;
-	public static final int OPCODE_ifgt     = BINARY_OPERATOR+4;
-	public static final int OPCODE_ifge     = BINARY_OPERATOR+5;
+	public static final int OPCODE_if         = BINARY_OPERATOR+0;
 	
 	// Binary Assignables
 	public static final int BINARY_ASSIGNABLE = BINARY_OPERATOR+6;
@@ -2273,20 +2242,26 @@ public abstract class Bytecode {
 	public static final int OPCODE_mul         = BINARY_ASSIGNABLE+6;
 	public static final int OPCODE_div         = BINARY_ASSIGNABLE+7;
 	public static final int OPCODE_rem         = BINARY_ASSIGNABLE+8;
-	public static final int OPCODE_bitwiseor   = BINARY_ASSIGNABLE+9;
-	public static final int OPCODE_bitwisexor  = BINARY_ASSIGNABLE+10;
-	public static final int OPCODE_bitwiseand  = BINARY_ASSIGNABLE+11;
-	public static final int OPCODE_lshr        = BINARY_ASSIGNABLE+12;
-	public static final int OPCODE_rshr        = BINARY_ASSIGNABLE+13;
-	public static final int OPCODE_arrayindex  = BINARY_ASSIGNABLE+14;	
-	public static final int OPCODE_arrygen     = BINARY_ASSIGNABLE+15;
-	public static final int OPCODE_array       = BINARY_ASSIGNABLE+16;
-	public static final int OPCODE_record      = BINARY_ASSIGNABLE+17;
-	public static final int OPCODE_newobject   = BINARY_ASSIGNABLE+18;
-	public static final int OPCODE_assign      = BINARY_ASSIGNABLE+19;
+	public static final int OPCODE_eq          = BINARY_ASSIGNABLE+9;
+	public static final int OPCODE_ne          = BINARY_ASSIGNABLE+10;
+	public static final int OPCODE_lt          = BINARY_ASSIGNABLE+11;
+	public static final int OPCODE_le          = BINARY_ASSIGNABLE+12;
+	public static final int OPCODE_gt          = BINARY_ASSIGNABLE+13;
+	public static final int OPCODE_ge          = BINARY_ASSIGNABLE+14;
+	public static final int OPCODE_bitwiseor   = BINARY_ASSIGNABLE+15;
+	public static final int OPCODE_bitwisexor  = BINARY_ASSIGNABLE+16;
+	public static final int OPCODE_bitwiseand  = BINARY_ASSIGNABLE+17;
+	public static final int OPCODE_lshr        = BINARY_ASSIGNABLE+18;
+	public static final int OPCODE_rshr        = BINARY_ASSIGNABLE+19;
+	public static final int OPCODE_arrayindex  = BINARY_ASSIGNABLE+20;	
+	public static final int OPCODE_arrygen     = BINARY_ASSIGNABLE+21;
+	public static final int OPCODE_array       = BINARY_ASSIGNABLE+22;
+	public static final int OPCODE_record      = BINARY_ASSIGNABLE+23;
+	public static final int OPCODE_newobject   = BINARY_ASSIGNABLE+24;
+	public static final int OPCODE_assign      = BINARY_ASSIGNABLE+25;
 	
 	// Nary Assignables
-	public static final int NARY_ASSIGNABLE = BINARY_ASSIGNABLE+20;
+	public static final int NARY_ASSIGNABLE = BINARY_ASSIGNABLE+26;
 		
 	public static final int OPCODE_invoke           = NARY_ASSIGNABLE+2;
 	public static final int OPCODE_indirectinvoke   = NARY_ASSIGNABLE+3;

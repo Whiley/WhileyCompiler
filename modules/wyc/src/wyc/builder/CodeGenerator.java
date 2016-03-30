@@ -1341,10 +1341,8 @@ public final class CodeGenerator {
 				// true. In some cases, we could actually do better. For
 				// example, !(x < 5) could be rewritten into x >= 5.
 
-				int r1 = generate(condition, environment, block, forest, context);
-				int r2 = environment.allocate(Type.T_BOOL);
-				block.add(Bytecode.Const(r2, Constant.V_BOOL(true)), attributes(condition));
-				block.add(Bytecode.If(Type.T_BOOL, r1, r2, Bytecode.Comparator.EQ, target), attributes(condition));
+				int result = generate(condition, environment, block, forest, context);
+				block.add(Bytecode.If(Type.T_BOOL, result, target), attributes(condition));
 
 			} else {
 				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, condition);
@@ -1435,10 +1433,7 @@ public final class CodeGenerator {
 			generateTypeCondition(target, v, environment, block, forest, context);
 
 		} else {
-
-			Bytecode.Comparator cop = OP2COP(bop, v, context);
-
-			if (cop == Bytecode.Comparator.EQ && v.lhs instanceof Expr.LocalVariable && v.rhs instanceof Expr.Constant
+			if (bop == Expr.BOp.EQ && v.lhs instanceof Expr.LocalVariable && v.rhs instanceof Expr.Constant
 					&& ((Expr.Constant) v.rhs).value == Constant.V_NULL) {
 				// this is a simple rewrite to enable type inference.
 				Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
@@ -1447,7 +1442,7 @@ public final class CodeGenerator {
 				}
 				int slot = environment.get(lhs.var);
 				block.add(Bytecode.IfIs(v.srcType.raw(), slot, Type.T_NULL, target), attributes(v));
-			} else if (cop == Bytecode.Comparator.NEQ && v.lhs instanceof Expr.LocalVariable
+			} else if (bop == Expr.BOp.NEQ && v.lhs instanceof Expr.LocalVariable
 					&& v.rhs instanceof Expr.Constant && ((Expr.Constant) v.rhs).value == Constant.V_NULL) {
 				// this is a simple rewrite to enable type inference.
 				String exitLabel = CodeUtils.freshLabel();
@@ -1460,9 +1455,8 @@ public final class CodeGenerator {
 				block.add(Bytecode.Goto(target));
 				block.add(Bytecode.Label(exitLabel));
 			} else {
-				int lhs = generate(v.lhs, environment, block, forest, context);
-				int rhs = generate(v.rhs, environment, block, forest, context);
-				block.add(Bytecode.If(v.srcType.raw(), lhs, rhs, cop, target), attributes(v));
+				int result = generate(v, environment, block, forest, context);
+				block.add(Bytecode.If(v.srcType.raw(), result, target), attributes(v));
 			}
 		}
 	}
@@ -1949,10 +1943,8 @@ public final class CodeGenerator {
 
 	private int generate(Expr.BinOp v, Environment environment, CodeForest.Block block, CodeForest forest,
 			Context context) throws Exception {
-
 		// could probably use a range test for this somehow
-		if (v.op == Expr.BOp.EQ || v.op == Expr.BOp.NEQ || v.op == Expr.BOp.LT || v.op == Expr.BOp.LTEQ
-				|| v.op == Expr.BOp.GT || v.op == Expr.BOp.GTEQ || v.op == Expr.BOp.AND || v.op == Expr.BOp.OR) {
+		if(v.op == Expr.BOp.AND || v.op == Expr.BOp.OR) {
 			String trueLabel = CodeUtils.freshLabel();
 			String exitLabel = CodeUtils.freshLabel();
 			generateCondition(trueLabel, v, environment, block, forest, context);
@@ -1963,7 +1955,6 @@ public final class CodeGenerator {
 			block.add(Bytecode.Const(target, Constant.V_BOOL(true)), attributes(v));
 			block.add(Bytecode.Label(exitLabel));
 			return target;
-
 		} else {
 			Type result = v.result().raw();
 			int[] targets = new int[] { environment.allocate(result) };
@@ -1972,8 +1963,7 @@ public final class CodeGenerator {
 					generate(v.rhs, environment, block, forest, context) 
 			};
 
-			block.add(Bytecode.Operator(result, targets, operands, OP2BOP(v.op, v, context)),
-					attributes(v));
+			block.add(Bytecode.Operator(result, targets, operands, OP2BOP(v.op, v, context)), attributes(v));
 
 			return targets[0];
 		}
@@ -2070,6 +2060,18 @@ public final class CodeGenerator {
 			return Bytecode.OperatorKind.DIV;
 		case REM:
 			return Bytecode.OperatorKind.REM;
+		case EQ:
+			return Bytecode.OperatorKind.EQ;
+		case NEQ:
+			return Bytecode.OperatorKind.NEQ;
+		case LT:
+			return Bytecode.OperatorKind.LT;
+		case LTEQ:
+			return Bytecode.OperatorKind.LTEQ;
+		case GT:
+			return Bytecode.OperatorKind.GT;
+		case GTEQ:
+			return Bytecode.OperatorKind.GTEQ;
 		case BITWISEAND:
 			return Bytecode.OperatorKind.BITWISEAND;
 		case BITWISEOR:
@@ -2082,27 +2084,6 @@ public final class CodeGenerator {
 			return Bytecode.OperatorKind.RIGHTSHIFT;
 		default:
 			syntaxError(errorMessage(INVALID_BINARY_EXPRESSION), context, elem);
-		}
-		// dead-code
-		return null;
-	}
-
-	private Bytecode.Comparator OP2COP(Expr.BOp bop, SyntacticElement elem, Context context) {
-		switch (bop) {
-		case EQ:
-			return Bytecode.Comparator.EQ;
-		case NEQ:
-			return Bytecode.Comparator.NEQ;
-		case LT:
-			return Bytecode.Comparator.LT;
-		case LTEQ:
-			return Bytecode.Comparator.LTEQ;
-		case GT:
-			return Bytecode.Comparator.GT;
-		case GTEQ:
-			return Bytecode.Comparator.GTEQ;
-		default:
-			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, elem);
 		}
 		// dead-code
 		return null;

@@ -105,7 +105,12 @@ public class VcExprGenerator {
 			Expr.Binary.Op.MUL, 
 			Expr.Binary.Op.DIV,
 			Expr.Binary.Op.REM,
-			null, 
+			Expr.Binary.Op.EQ,
+			Expr.Binary.Op.NEQ,
+			Expr.Binary.Op.LT,
+			Expr.Binary.Op.LTEQ,
+			Expr.Binary.Op.GT,
+			Expr.Binary.Op.GTEQ,
 			null, // bitwise or
 			null, // bitwise xor
 			null, // bitwise and
@@ -135,7 +140,13 @@ public class VcExprGenerator {
 		case SUB:
 		case MUL:
 		case DIV:
-		case REM:{
+		case REM:
+		case EQ:
+		case NEQ:
+		case LT:
+		case LTEQ:
+		case GT:
+		case GTEQ: {
 			transformBinary(binaryOperatorMap[code.kind.ordinal()], code, branch, forest);
 			break;
 		}

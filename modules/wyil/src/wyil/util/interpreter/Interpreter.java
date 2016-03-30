@@ -474,61 +474,14 @@ public class Interpreter {
 	}
 
 	private Object execute(Bytecode.If bytecode, Constant[] frame, Context context) {
-		Constant op1 = frame[bytecode.operand(0)];
-		Constant op2 = frame[bytecode.operand(1)];
-		boolean result;
-		switch (bytecode.op) {
-		// Handle cases which apply to all values
-		case EQ:
-			result = op1.equals(op2);
-			break;
-		case NEQ:
-			result = !op1.equals(op2);
-			break;
-		// Handle arithmetic cases
-		case LT:
-			result = lessThan(op1, op2, true, context);
-			break;
-		case LTEQ:
-			result = lessThan(op1, op2, false, context);
-			break;
-		case GT:
-			result = lessThan(op2, op1, true, context);
-			break;
-		case GTEQ:
-			result = lessThan(op2, op1, false, context);
-			break;
-		default:
-			return deadCode(context);
-		}
-
-		if (result) {
+		Constant.Bool operand = checkType(frame[bytecode.operand(0)],context,Constant.Bool.class);
+		
+		if (operand.value) {
 			// branch taken, so jump to destination label
 			return context.getLabel(bytecode.destination());
 		} else {
 			// branch not taken, so fall through to next bytecode.
 			return context.pc.next();
-		}
-	}
-
-	private boolean elementOf(Constant lhs, Constant rhs, Context context) {
-		checkType(rhs, context, Constant.Array.class);
-		Constant.Array list = (Constant.Array) rhs;
-		return list.values.contains(lhs);
-	}
-
-	private boolean lessThan(Constant lhs, Constant rhs, boolean isStrict, Context context) {
-		checkType(lhs, context, Constant.Integer.class);
-		checkType(rhs, context, Constant.Integer.class);
-		Constant.Integer lhs_i = (Constant.Integer) lhs;
-		Constant.Integer rhs_i = (Constant.Integer) rhs;
-		int result = lhs_i.compareTo(rhs_i);
-		// In the strict case, the lhs must be strictly below the rhs. In the
-		// non-strict case, they can be equal.
-		if (isStrict) {
-			return result < 0;
-		} else {
-			return result <= 0;
 		}
 	}
 

@@ -84,6 +84,30 @@ public class Util {
 		return (o1 != null && o1.equals(o2)) || (o1 == o2);
 	}
 
+	public static WyBool equal(Object o1, Object o2) {
+		return WyBool.valueOf(equals(o1,o2));
+	}
+		
+	public static WyBool notEqual(Object o1, Object o2) {
+		return WyBool.valueOf(!equals(o1,o2));
+	}
+	
+	public static WyBool lessThan(BigInteger i1, BigInteger i2) {
+		return WyBool.valueOf(i1.compareTo(i2) < 0);
+	}
+	
+	public static WyBool lessThanEqual(BigInteger i1, BigInteger i2) {
+		return WyBool.valueOf(i1.compareTo(i2) <= 0);
+	}
+	
+	public static WyBool greaterThan(BigInteger i1, BigInteger i2) {
+		return WyBool.valueOf(i1.compareTo(i2) > 0);
+	}
+	
+	public static WyBool greaterThanEqual(BigInteger i1, BigInteger i2) {
+		return WyBool.valueOf(i1.compareTo(i2) >= 0);
+	}
+	
 	/**
 	 * The <code>instanceOf</code> method implements a runtime type test.
 	 */

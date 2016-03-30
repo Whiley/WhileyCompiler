@@ -30,6 +30,14 @@ public class StandardFunctions {
 		standardFunctions[Bytecode.OPCODE_mul ] = new Multiply();
 		standardFunctions[Bytecode.OPCODE_div ] = new Divide();
 		standardFunctions[Bytecode.OPCODE_rem ] = new Remainder();
+		
+		standardFunctions[Bytecode.OPCODE_eq ] = new Equal();
+		standardFunctions[Bytecode.OPCODE_ne ] = new NotEqual();
+		standardFunctions[Bytecode.OPCODE_lt ] = new LessThan();
+		standardFunctions[Bytecode.OPCODE_le ] = new LessThanEqual();
+		standardFunctions[Bytecode.OPCODE_gt ] = new GreaterThan();
+		standardFunctions[Bytecode.OPCODE_ge ] = new GreaterThanEqual();
+		
 		standardFunctions[Bytecode.OPCODE_bitwiseor] = new BitwiseOr();
 		standardFunctions[Bytecode.OPCODE_bitwisexor] = new BitwiseXor();
 		standardFunctions[Bytecode.OPCODE_bitwiseand] = new BitwiseAnd();
@@ -128,7 +136,42 @@ public class StandardFunctions {
 			return lhs.remainder(rhs);
 		}
 	}
-	
+	private static final class Equal implements InternalFunction {
+		@Override
+		public Constant apply(Constant[] operands, Context context) {
+			return Constant.V_BOOL(operands[0].equals(operands[1]));
+		}
+	}
+	private static final class NotEqual implements InternalFunction {
+		@Override
+		public Constant apply(Constant[] operands, Context context) {
+			return Constant.V_BOOL(!operands[0].equals(operands[1]));
+		}
+	}
+	private static final class LessThan implements InternalFunction {
+		@Override
+		public Constant apply(Constant[] operands, Context context) {
+			return lessThan(operands[0],operands[1],true,context);
+		}
+	}
+	private static final class LessThanEqual implements InternalFunction {
+		@Override
+		public Constant apply(Constant[] operands, Context context) {
+			return lessThan(operands[0],operands[1],false,context);
+		}
+	}
+	private static final class GreaterThan implements InternalFunction {
+		@Override
+		public Constant apply(Constant[] operands, Context context) {
+			return lessThan(operands[1],operands[0],true,context);
+		}
+	}
+	private static final class GreaterThanEqual implements InternalFunction {
+		@Override
+		public Constant apply(Constant[] operands, Context context) {
+			return lessThan(operands[1],operands[0],false,context);
+		}
+	}
 	// ====================================================================================
 	// Bytes
 	// ====================================================================================
@@ -254,4 +297,25 @@ public class StandardFunctions {
 			return Constant.V_RECORD(values);
 		}		
 	}	
+	
+
+	// ====================================================================================
+	// Helpers
+	// ====================================================================================
+	private static Constant.Bool lessThan(Constant lhs, Constant rhs, boolean isStrict, Context context) {
+		checkType(lhs, context, Constant.Integer.class);
+		checkType(rhs, context, Constant.Integer.class);
+		Constant.Integer lhs_i = (Constant.Integer) lhs;
+		Constant.Integer rhs_i = (Constant.Integer) rhs;
+		int result = lhs_i.compareTo(rhs_i);
+		// In the strict case, the lhs must be strictly below the rhs. In the
+		// non-strict case, they can be equal.
+		if (isStrict) {
+			return Constant.V_BOOL(result < 0);
+		} else {
+			return Constant.V_BOOL(result <= 0);
+		}
+		
+	}
+
 }

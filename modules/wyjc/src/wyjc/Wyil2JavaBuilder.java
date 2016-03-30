@@ -45,6 +45,7 @@ import wyil.lang.Constant;
 import static wyil.lang.Bytecode.*;
 import wyil.util.TypeExpander;
 import static wyil.util.ErrorMessages.internalFailure;
+import static wyjc.Wyil2JavaBuilder.WHILEYUTIL;
 
 import wyjc.util.BytecodeTranslators;
 import wyjc.util.WyjcBuildTask;
@@ -864,8 +865,7 @@ public class Wyil2JavaBuilder implements Builder {
 		if (canUseSwitchBytecode) {
 			JvmType.Function ftype = new JvmType.Function(T_INT);
 			bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0))));
-			bytecodes.add(new Bytecode.Invoke(WHILEYINT, "intValue", ftype,
-					Bytecode.InvokeMode.VIRTUAL));
+			bytecodes.add(new Bytecode.Invoke(WHILEYINT, "intValue", ftype, Bytecode.InvokeMode.VIRTUAL));
 			bytecodes.add(new Bytecode.Switch(c.defaultTarget, cases));
 		} else {
 			// ok, in this case we have to fall back to series of the if
@@ -875,7 +875,10 @@ public class Wyil2JavaBuilder implements Builder {
 				String target = p.second();
 				translate(value, freeSlot, bytecodes);
 				bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0))));
-				translateIfGoto(index, value.type(), wyil.lang.Bytecode.Comparator.EQ, target, freeSlot + 1, forest, bytecodes);
+				JvmType.Function ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
+				bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "equals", ftype, Bytecode.InvokeMode.STATIC));
+				bytecodes.add(new Bytecode.If(Bytecode.IfMode.NE, target));
+
 			}
 			bytecodes.add(new Bytecode.Goto(c.defaultTarget));
 		}
@@ -885,94 +888,12 @@ public class Wyil2JavaBuilder implements Builder {
 			ArrayList<Bytecode> bytecodes) {
 		JvmType jt = convertUnderlyingType(code.type(0));
 		bytecodes.add(new Bytecode.Load(code.operand(0), jt));
-		bytecodes.add(new Bytecode.Load(code.operand(1), jt));
-		translateIfGoto(index, code.type(0), code.op, code.destination(), freeSlot, forest, bytecodes);
+		JvmType.Function ftype = new JvmType.Function(T_BOOL);
+		bytecodes.add(new Bytecode.Invoke(WHILEYBOOL, "value", ftype, Bytecode.InvokeMode.VIRTUAL));
+		bytecodes.add(new Bytecode.If(Bytecode.IfMode.NE, code.destination()));
 	}
 
-	private void translateIfGoto(CodeForest.Index index, Type c_type, wyil.lang.Bytecode.Comparator cop, String target, int freeSlot,
-			CodeForest forest, ArrayList<Bytecode> bytecodes) {
-
-		JvmType type = convertUnderlyingType(c_type);
-		// Just use the Object.equals() method, followed
-		// by "if" bytecode.
-		Bytecode.IfMode op;
-		switch (cop) {
-		case EQ: {
-			if (Type.isSubtype(c_type, Type.T_NULL)) {
-				// this indicates an interesting special case. The left
-				// handside of this equality can be null. Therefore, we
-				// cannot directly call "equals()" on this method, since
-				// this would cause a null pointer exception!
-				JvmType.Function ftype = new JvmType.Function(T_BOOL,
-						JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
-				bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "equals", ftype,
-						Bytecode.InvokeMode.STATIC));
-			} else {
-				JvmType.Function ftype = new JvmType.Function(T_BOOL,
-						JAVA_LANG_OBJECT);
-				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
-						"equals", ftype, Bytecode.InvokeMode.VIRTUAL));
-			}
-			op = Bytecode.IfMode.NE;
-			break;
-		}
-		case NEQ: {
-			if (Type.isSubtype(c_type, Type.T_NULL)) {
-				// this indicates an interesting special case. The left
-				// handside of this equality can be null. Therefore, we
-				// cannot directly call "equals()" on this method, since
-				// this would cause a null pointer exception!
-				JvmType.Function ftype = new JvmType.Function(T_BOOL,
-						JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
-				bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "equals", ftype,
-						Bytecode.InvokeMode.STATIC));
-			} else {
-				JvmType.Function ftype = new JvmType.Function(T_BOOL,
-						JAVA_LANG_OBJECT);
-				bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
-						"equals", ftype, Bytecode.InvokeMode.VIRTUAL));
-			}
-			op = Bytecode.IfMode.EQ;
-			break;
-		}
-		case LT: {
-			JvmType.Function ftype = new JvmType.Function(T_INT, type);
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
-					"compareTo", ftype, Bytecode.InvokeMode.VIRTUAL));
-			op = Bytecode.IfMode.LT;
-			break;
-		}
-		case LTEQ: {
-			JvmType.Function ftype = new JvmType.Function(T_INT, type);
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
-					"compareTo", ftype, Bytecode.InvokeMode.VIRTUAL));
-			op = Bytecode.IfMode.LE;
-			break;
-		}
-		case GT: {
-			JvmType.Function ftype = new JvmType.Function(T_INT, type);
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
-					"compareTo", ftype, Bytecode.InvokeMode.VIRTUAL));
-			op = Bytecode.IfMode.GT;
-			break;
-		}
-		case GTEQ: {
-			JvmType.Function ftype = new JvmType.Function(T_INT, type);
-			bytecodes.add(new Bytecode.Invoke((JvmType.Clazz) type,
-					"compareTo", ftype, Bytecode.InvokeMode.VIRTUAL));
-			op = Bytecode.IfMode.GE;
-			break;
-		}	
-		default:
-			internalFailure("unknown if condition encountered", filename,
-					forest.get(index).attribute(SourceLocation.class));
-			return;
-		}
-
-		// do the jump
-		bytecodes.add(new Bytecode.If(op, target));
-	}
-
+	
 	private void translate(CodeForest.Index index, IfIs c, int freeSlot,
 			CodeForest forest, ArrayList<Bytecode> bytecodes) {
 

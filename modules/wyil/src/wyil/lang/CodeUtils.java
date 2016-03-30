@@ -5,8 +5,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import wyil.lang.Bytecode.Comparator;
-
 public class CodeUtils {
 
 	private static int _idx=0;
@@ -47,30 +45,6 @@ public class CodeUtils {
 			}
 		}
 		return nOperands;
-	}
-
-	/**
-	 * Determine the inverse comparator, or null if no inverse exists.
-	 *
-	 * @param cop
-	 * @return
-	 */
-	public static Bytecode.Comparator invert(Bytecode.Comparator cop) {
-		switch (cop) {
-		case EQ:
-			return Bytecode.Comparator.NEQ;
-		case NEQ:
-			return Bytecode.Comparator.EQ;
-		case LT:
-			return Bytecode.Comparator.GTEQ;
-		case LTEQ:
-			return Bytecode.Comparator.GT;
-		case GT:
-			return Bytecode.Comparator.LTEQ;
-		case GTEQ:
-			return Bytecode.Comparator.LT;
-		}
-		return null;
 	}
 	
 	/**

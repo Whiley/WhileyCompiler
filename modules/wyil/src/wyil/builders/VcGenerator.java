@@ -1055,7 +1055,7 @@ public class VcGenerator {
 		VcBranch trueBranch = branch.fork();
 		VcBranch falseBranch = branch.fork();
 		// Second assume the condition on each branch
-		Expr.Binary trueTest = buildTest(code.op, code.operand(0), code.operand(1), code.type(0), forest, trueBranch);
+		Expr.Binary trueTest = buildCondition(branch.read(code.operand(0)),forest,branch);
 		trueBranch.assume(trueTest);
 		falseBranch.assume(utils.invert(trueTest));
 		// Third, dispatch branches to their targets
@@ -1564,40 +1564,16 @@ public class VcGenerator {
 	 * @param elem
 	 * @return
 	 */
-	private Expr.Binary buildTest(Bytecode.Comparator cop, int leftOperand,
-			int rightOperand, Type type, CodeForest forest,
-			VcBranch branch) {
-		Expr lhs = branch.read(leftOperand);
-		Expr rhs = branch.read(rightOperand);
-		Expr.Binary.Op op;
-		switch (cop) {
-		case EQ:
-			op = Expr.Binary.Op.EQ;
-			break;
-		case NEQ:
-			op = Expr.Binary.Op.NEQ;
-			break;
-		case GTEQ:
-			op = Expr.Binary.Op.GTEQ;
-			break;
-		case GT:
-			op = Expr.Binary.Op.GT;
-			break;
-		case LTEQ:
-			op = Expr.Binary.Op.LTEQ;
-			break;
-		case LT:
-			op = Expr.Binary.Op.LT;
-			break;		
-		default:
-			internalFailure("unknown comparator (" + cop + ")", filename,
-					forest.get(branch.pc()).attributes());
-			return null;
-		}		
-		return new Expr.Binary(op, lhs, rhs,
-				VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes()));
+	private Expr.Binary buildCondition(Expr test, CodeForest forest, VcBranch branch) {
+		if (test instanceof Expr.Binary) {
+			return (Expr.Binary) test;
+		} else {
+			Collection<Attribute> attributes = VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes());
+			Expr.Constant tt = new Expr.Constant(Value.Bool(true), attributes);  
+			return new Expr.Binary(Expr.Binary.Op.EQ, test, tt, attributes);
+		}
 	}
-
+	
 	private Type expand(Type t, Collection<wyil.lang.Attribute> attributes) {
 		try {
 			return expander.getUnderlyingType(t);

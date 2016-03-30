@@ -962,37 +962,12 @@ public final class WyilFileReader {
 		// =========================================================================
 		// Binary Operators
 		// =========================================================================
-		schemas[Bytecode.OPCODE_ifeq] = new Schema(Targets.ZERO, Operands.TWO, Types.ONE, Extras.TARGET){
+		schemas[Bytecode.OPCODE_if] = new Schema(Targets.ZERO, Operands.ONE, Types.ONE, Extras.TARGET){
 			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return Bytecode.If(types[0], operands[0], operands[1], Bytecode.Comparator.EQ, (String) extras[0]);
+				return Bytecode.If(types[0], operands[0], (String) extras[0]);
 			}
 		};
-		schemas[Bytecode.OPCODE_ifne] = new Schema(Targets.ZERO, Operands.TWO, Types.ONE, Extras.TARGET){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return Bytecode.If(types[0], operands[0], operands[1], Bytecode.Comparator.NEQ, (String) extras[0]);
-			}
-		};
-		schemas[Bytecode.OPCODE_iflt] = new Schema(Targets.ZERO, Operands.TWO, Types.ONE, Extras.TARGET){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return Bytecode.If(types[0], operands[0], operands[1], Bytecode.Comparator.LT, (String) extras[0]);
-			}
-		};
-		schemas[Bytecode.OPCODE_ifle] = new Schema(Targets.ZERO, Operands.TWO, Types.ONE, Extras.TARGET){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return Bytecode.If(types[0], operands[0], operands[1], Bytecode.Comparator.LTEQ, (String) extras[0]);
-			}
-		};
-		schemas[Bytecode.OPCODE_ifgt] = new Schema(Targets.ZERO, Operands.TWO, Types.ONE, Extras.TARGET){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return Bytecode.If(types[0], operands[0], operands[1], Bytecode.Comparator.GT, (String) extras[0]);
-			}
-		};
-		schemas[Bytecode.OPCODE_ifge] = new Schema(Targets.ZERO, Operands.TWO, Types.ONE, Extras.TARGET){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return Bytecode.If(types[0], operands[0], operands[1], Bytecode.Comparator.GTEQ, (String) extras[0]);
-			}
-		};
-
+		
 		// =========================================================================
 		// Binary Assignables
 		// =========================================================================
@@ -1019,6 +994,36 @@ public final class WyilFileReader {
 		schemas[Bytecode.OPCODE_rem] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
 			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
 				return Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.REM);
+			}
+		};
+		schemas[Bytecode.OPCODE_eq] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.EQ);
+			}
+		};
+		schemas[Bytecode.OPCODE_ne] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.NEQ);
+			}
+		};
+		schemas[Bytecode.OPCODE_lt] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.LT);
+			}
+		};
+		schemas[Bytecode.OPCODE_le] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.LTEQ);
+			}
+		};
+		schemas[Bytecode.OPCODE_gt] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.GT);
+			}
+		};
+		schemas[Bytecode.OPCODE_ge] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.GTEQ);
 			}
 		};
 		schemas[Bytecode.OPCODE_bitwiseor] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
