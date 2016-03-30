@@ -265,8 +265,7 @@ public class Interpreter {
 	 * @return
 	 */
 	private Object execute(Bytecode.Const bytecode, Constant[] frame, Context context) {
-		Constant c = cleanse(bytecode.constant, context);
-		frame[bytecode.target()] = c;
+		frame[bytecode.target()] = bytecode.constant;
 		return context.pc.next();
 	}
 
@@ -794,7 +793,7 @@ public class Interpreter {
 		//
 		Constant operand = frame[bytecode.operand(0)];
 		for (Pair<Constant, String> branch : bytecode.branches) {
-			Constant caseOperand = cleanse(branch.first(), context);
+			Constant caseOperand = branch.first();
 			if (caseOperand.equals(operand)) {
 				return context.getLabel(branch.second());
 			}
@@ -893,42 +892,6 @@ public class Interpreter {
 		// No match, therefore through an error
 		error("invalid operand", context);
 		return null;
-	}
-
-	/**
-	 * Cleanse all instances of Constant.Decimal from the given constant and
-	 * replace them with Constant.Rational.
-	 *
-	 * @param constant
-	 * @return
-	 */
-	private Constant cleanse(Constant constant, Context context) {
-		// See #494 for more on why this method exists, and whether or not we
-		// can get rid of it.
-		if (constant instanceof Constant.Null || constant instanceof Constant.Byte || constant instanceof Constant.Bool
-				|| constant instanceof Constant.Integer || constant instanceof Constant.Lambda
-				|| constant instanceof Constant.Type) {
-			return constant;
-		} else if (constant instanceof Constant.Array) {
-			Constant.Array ct = (Constant.Array) constant;
-			ArrayList<Constant> values = new ArrayList<Constant>(ct.values);
-			for (int i = 0; i != values.size(); ++i) {
-				values.set(i, cleanse(values.get(i), context));
-			}
-			return Constant.V_ARRAY(values);
-		} else if (constant instanceof Constant.Record) {
-			Constant.Record mt = (Constant.Record) constant;
-			HashMap<String, Constant> fields = mt.values;
-			HashMap<String, Constant> nFields = new HashMap<String, Constant>();
-			for (Map.Entry<String, Constant> e : fields.entrySet()) {
-				Constant value = cleanse(e.getValue(), context);
-				nFields.put(e.getKey(), value);
-			}
-			return Constant.V_RECORD(nFields);
-		} else {
-			deadCode(context);
-			return null;
-		}
 	}
 
 	/**
