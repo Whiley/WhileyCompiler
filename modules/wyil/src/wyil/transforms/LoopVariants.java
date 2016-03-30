@@ -9,7 +9,6 @@ import wybs.lang.Builder;
 import wycc.lang.Transform;
 import wyil.lang.CodeForest;
 import wyil.lang.Bytecode;
-import wyil.lang.Codes;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
 
@@ -120,17 +119,17 @@ public class LoopVariants implements Transform<WyilFile> {
 			if (code instanceof Bytecode.Compound) {
 				Bytecode.Compound body = (Bytecode.Compound) code;
 				BitSet loopModified = infer(body.block(), forest);
-				if (code instanceof Codes.Quantify) {
+				if (code instanceof Bytecode.Quantify) {
 					// Unset the modified status of the index operand, it is
 					// already implied that this is modified.
-					Codes.Quantify qc = (Codes.Quantify) code;
+					Bytecode.Quantify qc = (Bytecode.Quantify) code;
 					loopModified.clear(qc.indexOperand());
-					code = Codes.Quantify(qc.startOperand(), qc.endOperand(), qc.indexOperand(), toArray(loopModified),
+					code = Bytecode.Quantify(qc.startOperand(), qc.endOperand(), qc.indexOperand(), toArray(loopModified),
 							qc.block());
 					block.set(i, code, e.attributes());
-				} else if (code instanceof Codes.Loop) {
-					Codes.Loop loop = (Codes.Loop) code;
-					code = Codes.Loop(toArray(loopModified), loop.block());
+				} else if (code instanceof Bytecode.Loop) {
+					Bytecode.Loop loop = (Bytecode.Loop) code;
+					code = Bytecode.Loop(toArray(loopModified), loop.block());
 					block.set(i, code, e.attributes());
 				}
 

@@ -1,7 +1,6 @@
 package wyil.util.interpreter;
 
 import wyil.lang.Bytecode;
-import wyil.lang.Codes;
 import wyil.lang.Constant;
 import wyil.lang.Type;
 import wyil.util.interpreter.Interpreter.ConstantObject;
@@ -244,7 +243,7 @@ public class StandardFunctions {
 	private static final class RecordConstructor implements InternalFunction {
 		@Override
 		public Constant apply(Constant[] operands, Context context) {
-			Codes.Operator bytecode = (Codes.Operator) context.getBytecode();
+			Bytecode.Operator bytecode = (Bytecode.Operator) context.getBytecode();
 			Type.EffectiveRecord rType = (Type.EffectiveRecord) bytecode.type(0); 
 			HashMap<String, Constant> values = new HashMap<String, Constant>();
 			ArrayList<String> fields = new ArrayList<String>(rType.fields().keySet());

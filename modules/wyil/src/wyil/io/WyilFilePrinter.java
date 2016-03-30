@@ -190,7 +190,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		CodeForest.Block block = forest.get(blockID);
 		for(int i=0;i!=block.size();++i) {
 			Bytecode code = block.get(i).code();
-			if(code instanceof Codes.Label) {
+			if(code instanceof Bytecode.Label) {
 				write(indent-1,code,forest,out);
 			} else {
 				write(indent,code,forest,out);

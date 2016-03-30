@@ -126,8 +126,8 @@ public abstract class ForwardFlowAnalysis<T> {
 
 			try {
 				// First, check for a label which may have incoming information.
-				if (code instanceof Codes.Label) {
-					Codes.Label l = (Codes.Label) code;
+				if (code instanceof Bytecode.Label) {
+					Bytecode.Label l = (Bytecode.Label) code;
 					T tmp = stores.get(l.label);
 					if (tmp != null && store != null) {
 						store = join(store, tmp);
@@ -141,28 +141,28 @@ public abstract class ForwardFlowAnalysis<T> {
 				if (store == null) {
 					// this indicates dead-code has been reached.
 					continue;
-				} else if (code instanceof Codes.Loop) {
-					Codes.Loop loop = (Codes.Loop) code;
+				} else if (code instanceof Bytecode.Loop) {
+					Bytecode.Loop loop = (Bytecode.Loop) code;
 					// propagate through the loop body
 					store = propagate(id, loop, store);
 					continue;
-				} else if (code instanceof Codes.If) {
-					Codes.If ifgoto = (Codes.If) code;
+				} else if (code instanceof Bytecode.If) {
+					Bytecode.If ifgoto = (Bytecode.If) code;
 					Pair<T, T> r = propagate(id, ifgoto, store);
 					store = r.second();
 					merge(ifgoto.destination(), r.first(), stores);
-				} else if (code instanceof Codes.IfIs) {
-					Codes.IfIs ifgoto = (Codes.IfIs) code;
+				} else if (code instanceof Bytecode.IfIs) {
+					Bytecode.IfIs ifgoto = (Bytecode.IfIs) code;
 					Pair<T, T> r = propagate(id, ifgoto, store);
 					store = r.second();
 					merge(ifgoto.destination(), r.first(), stores);
-				} else if (code instanceof Codes.Switch) {
-					Codes.Switch sw = (Codes.Switch) code;
+				} else if (code instanceof Bytecode.Switch) {
+					Bytecode.Switch sw = (Bytecode.Switch) code;
 
 					List<T> r = propagate(id, sw, store);
 
 					// assert r.second().size() == nsw.branches.size()
-					Codes.Switch nsw = (Codes.Switch) code;
+					Bytecode.Switch nsw = (Bytecode.Switch) code;
 					for (int j = 0; j != nsw.branches.size(); ++j) {
 						String target = nsw.branches.get(j).second();
 						T nstore = r.get(j);
@@ -170,15 +170,15 @@ public abstract class ForwardFlowAnalysis<T> {
 					}
 					merge(sw.defaultTarget, store, stores);
 					store = null;
-				} else if (code instanceof Codes.Goto) {
-					Codes.Goto gto = (Codes.Goto) code;
+				} else if (code instanceof Bytecode.Goto) {
+					Bytecode.Goto gto = (Bytecode.Goto) code;
 					merge(gto.destination(), store, stores);
 					store = null;
 				} else {
 					// This indicates a sequential statement was encountered.
 					store = propagate(id, code, store);
-					if (code instanceof Codes.Return
-							|| code instanceof Codes.Fail) {
+					if (code instanceof Bytecode.Return
+							|| code instanceof Bytecode.Fail) {
 						store = null;
 					}
 				}
@@ -220,7 +220,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<T,T> propagate(CodeForest.Index index, Codes.If ifgoto, T store);
+	protected abstract Pair<T,T> propagate(CodeForest.Index index, Bytecode.If ifgoto, T store);
 
 	/**
 	 * <p>
@@ -240,7 +240,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<T, T> propagate(CodeForest.Index index, Codes.IfIs iftype, T store);
+	protected abstract Pair<T, T> propagate(CodeForest.Index index, Bytecode.IfIs iftype, T store);
 
 	/**
 	 * <p>
@@ -257,7 +257,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract List<T> propagate(CodeForest.Index index, Codes.Switch sw, T store);
+	protected abstract List<T> propagate(CodeForest.Index index, Bytecode.Switch sw, T store);
 
 	/**
 	 * <p>
@@ -280,7 +280,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(CodeForest.Index index, Codes.Loop code, T store);
+	protected abstract T propagate(CodeForest.Index index, Bytecode.Loop code, T store);
 
 	/**
 	 * <p>

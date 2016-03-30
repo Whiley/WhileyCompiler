@@ -28,7 +28,6 @@ import wyfs.lang.Path;
 import wyil.attributes.VariableDeclarations;
 import wyil.lang.Bytecode;
 import wyil.lang.CodeForest;
-import wyil.lang.Codes;
 import wyil.lang.Constant;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
@@ -368,15 +367,15 @@ public class VcUtils {
 			switch (code.opcode()) {
 			case Bytecode.OPCODE_div:
 			case Bytecode.OPCODE_rem:
-				return divideByZeroCheck((Codes.Operator) code, branch);
+				return divideByZeroCheck((Bytecode.Operator) code, branch);
 			case Bytecode.OPCODE_arrayindex:
-				return indexOutOfBoundsChecks((Codes.Operator) code, branch);
+				return indexOutOfBoundsChecks((Bytecode.Operator) code, branch);
 			case Bytecode.OPCODE_arrygen:
-				return arrayGeneratorChecks((Codes.Operator) code, branch);
+				return arrayGeneratorChecks((Bytecode.Operator) code, branch);
 			case Bytecode.OPCODE_update:
-				return updateChecks((Codes.Update) code, branch);
+				return updateChecks((Bytecode.Update) code, branch);
 			case Bytecode.OPCODE_invoke:
-				return preconditionCheck((Codes.Invoke) code, branch, environment, forest);
+				return preconditionCheck((Bytecode.Invoke) code, branch, environment, forest);
 			}
 			return new Pair[0];
 		} catch (Exception e) {
@@ -395,7 +394,7 @@ public class VcUtils {
 	 *            --- The branch the division is on.
 	 * @return
 	 */
-	public Pair<String, Expr>[] divideByZeroCheck(Codes.Operator binOp, VcBranch branch) {
+	public Pair<String, Expr>[] divideByZeroCheck(Bytecode.Operator binOp, VcBranch branch) {
 		Expr rhs = branch.read(binOp.operand(1));
 		Value zero;
 		if (binOp.type(0) instanceof Type.Int) {
@@ -419,7 +418,7 @@ public class VcUtils {
 	 *            --- The branch the bytecode is on.
 	 * @return
 	 */
-	public Pair<String,Expr>[] indexOutOfBoundsChecks(Codes.Operator code, VcBranch branch) {
+	public Pair<String,Expr>[] indexOutOfBoundsChecks(Bytecode.Operator code, VcBranch branch) {
 		if (code.type(0) instanceof Type.EffectiveArray) {
 			Expr src = branch.read(code.operand(0));
 			Expr idx = branch.read(code.operand(1));
@@ -450,7 +449,7 @@ public class VcUtils {
 	 *            --- The branch the bytecode is on.
 	 * @return
 	 */
-	public Pair<String,Expr>[] arrayGeneratorChecks(Codes.Operator code, VcBranch branch) {
+	public Pair<String,Expr>[] arrayGeneratorChecks(Bytecode.Operator code, VcBranch branch) {
 		Expr idx = branch.read(code.operand(1));
 		Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
 				idx.attributes());
@@ -473,7 +472,7 @@ public class VcUtils {
 	 * @return
 	 * @throws Exception
 	 */
-	public Pair<String,Expr>[] preconditionCheck(Codes.Invoke code, VcBranch branch,
+	public Pair<String,Expr>[] preconditionCheck(Bytecode.Invoke code, VcBranch branch,
 			Type[] environment, CodeForest forest) throws Exception {
 		ArrayList<Pair<String,Expr>> preconditions = new ArrayList<>();
 		//
@@ -526,14 +525,14 @@ public class VcUtils {
 	 *            --- The branch containing the update bytecode.
 	 * @return
 	 */
-	public Pair<String,Expr>[] updateChecks(Codes.Update code, VcBranch branch) {
+	public Pair<String,Expr>[] updateChecks(Bytecode.Update code, VcBranch branch) {
 		ArrayList<Pair<String,Expr>> preconditions = new ArrayList<Pair<String,Expr>>();
 
 		Expr src = branch.read(code.target(0));
 
-		for (Codes.LVal lval : code) {
-			if (lval instanceof Codes.ArrayLVal) {
-				Codes.ArrayLVal lv = (Codes.ArrayLVal) lval;
+		for (Bytecode.LVal lval : code) {
+			if (lval instanceof Bytecode.ArrayLVal) {
+				Bytecode.ArrayLVal lv = (Bytecode.ArrayLVal) lval;
 				Expr idx = branch.read(lv.indexOperand);
 				Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
 						idx.attributes());
@@ -547,8 +546,8 @@ public class VcUtils {
 						new Expr.Binary(Expr.Binary.Op.LT, idx, length, idx
 								.attributes())));
 				src = new Expr.IndexOf(src, idx);
-			} else if (lval instanceof Codes.RecordLVal) {
-				Codes.RecordLVal lv = (Codes.RecordLVal) lval;
+			} else if (lval instanceof Bytecode.RecordLVal) {
+				Bytecode.RecordLVal lv = (Bytecode.RecordLVal) lval;
 				ArrayList<String> fields = new ArrayList<String>(lv.rawType()
 						.fields().keySet());
 				Collections.sort(fields);

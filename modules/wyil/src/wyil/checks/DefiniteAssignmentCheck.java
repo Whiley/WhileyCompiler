@@ -119,7 +119,7 @@ public class DefiniteAssignmentCheck extends
 
 	@Override
 	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(CodeForest.Index index,
-			Codes.If igoto, HashSet<Integer> in) {
+			Bytecode.If igoto, HashSet<Integer> in) {
 
 		if (!in.contains(igoto.operand(0)) || !in.contains(igoto.operand(1))) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
@@ -130,7 +130,7 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(CodeForest.Index index, Codes.IfIs iftype,
+	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(CodeForest.Index index, Bytecode.IfIs iftype,
 			HashSet<Integer> in) {
 
 		if (!in.contains(iftype.operand(0))) {
@@ -142,7 +142,7 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public List<HashSet<Integer>> propagate(CodeForest.Index index, Codes.Switch sw, HashSet<Integer> in) {
+	public List<HashSet<Integer>> propagate(CodeForest.Index index, Bytecode.Switch sw, HashSet<Integer> in) {
 
 		if (!in.contains(sw.operand(0))) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
@@ -157,9 +157,9 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public HashSet<Integer> propagate(CodeForest.Index index, Codes.Loop loop, HashSet<Integer> in) {
-		if (loop instanceof Codes.Quantify) {
-			Codes.Quantify fall = (Codes.Quantify) loop;
+	public HashSet<Integer> propagate(CodeForest.Index index, Bytecode.Loop loop, HashSet<Integer> in) {
+		if (loop instanceof Bytecode.Quantify) {
+			Bytecode.Quantify fall = (Bytecode.Quantify) loop;
 
 			if (!in.contains(fall.startOperand()) || !in.contains(fall.endOperand())) {
 				syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
@@ -193,7 +193,7 @@ public class DefiniteAssignmentCheck extends
 						forest.get(index).attribute(SourceLocation.class));
 			}
 		}
-		if (code instanceof Codes.Update && !in.contains(code.target(0))) {
+		if (code instanceof Bytecode.Update && !in.contains(code.target(0))) {
 			// In this case, we are assigning to an index or field.
 			// Therefore, the target register must already be defined.
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,

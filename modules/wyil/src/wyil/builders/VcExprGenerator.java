@@ -22,7 +22,6 @@ import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.Bytecode;
 import wyil.lang.CodeForest;
-import wyil.lang.Codes;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
 import wyil.util.ErrorMessages;
@@ -50,26 +49,26 @@ public class VcExprGenerator {
 	 */
 	public void transform(Bytecode code, CodeForest forest, VcBranch branch) {
 		try {
-			if (code instanceof Codes.Operator) {
-				transform((Codes.Operator) code, forest, branch);				
-			} else if (code instanceof Codes.Convert) {
-				transform((Codes.Convert) code, forest, branch);
-			} else if (code instanceof Codes.Const) {
-				transform((Codes.Const) code, forest, branch);
-			} else if (code instanceof Codes.Debug) {
+			if (code instanceof Bytecode.Operator) {
+				transform((Bytecode.Operator) code, forest, branch);				
+			} else if (code instanceof Bytecode.Convert) {
+				transform((Bytecode.Convert) code, forest, branch);
+			} else if (code instanceof Bytecode.Const) {
+				transform((Bytecode.Const) code, forest, branch);
+			} else if (code instanceof Bytecode.Debug) {
 				// skip
-			} else if (code instanceof Codes.FieldLoad) {
-				transform((Codes.FieldLoad) code, forest, branch);
-			} else if (code instanceof Codes.IndirectInvoke) {
-				transform((Codes.IndirectInvoke) code, forest, branch);
-			} else if (code instanceof Codes.Invoke) {
-				transform((Codes.Invoke) code, forest, branch);
-			} else if (code instanceof Codes.Label) {
+			} else if (code instanceof Bytecode.FieldLoad) {
+				transform((Bytecode.FieldLoad) code, forest, branch);
+			} else if (code instanceof Bytecode.IndirectInvoke) {
+				transform((Bytecode.IndirectInvoke) code, forest, branch);
+			} else if (code instanceof Bytecode.Invoke) {
+				transform((Bytecode.Invoke) code, forest, branch);
+			} else if (code instanceof Bytecode.Label) {
 				// skip
-			} else if (code instanceof Codes.Update) {
-				transform((Codes.Update) code, forest, branch);
-			} else if (code instanceof Codes.Lambda) {
-				transform((Codes.Lambda) code, forest, branch);
+			} else if (code instanceof Bytecode.Update) {
+				transform((Bytecode.Update) code, forest, branch);
+			} else if (code instanceof Bytecode.Lambda) {
+				transform((Bytecode.Lambda) code, forest, branch);
 			} else {
 				internalFailure("unknown: " + code.getClass().getName(), filename,
 						forest.get(branch.pc()).attributes());
@@ -114,7 +113,7 @@ public class VcExprGenerator {
 			null // right shift
 	};
 
-	protected void transform(Codes.Operator code, CodeForest forest, VcBranch branch) {
+	protected void transform(Bytecode.Operator code, CodeForest forest, VcBranch branch) {
 		switch(code.kind) {
 		case ASSIGN:
 			for (int i = 0; i != code.operands().length; ++i) {
@@ -123,7 +122,7 @@ public class VcExprGenerator {
 			break;
 		case NEG:
 		case ARRAYLENGTH: {
-			Codes.Operator bc = (Codes.Operator) code;
+			Bytecode.Operator bc = (Bytecode.Operator) code;
 			transformUnary(unaryOperatorMap[code.kind.ordinal()], bc, branch, forest);
 			break;
 		}
@@ -170,24 +169,24 @@ public class VcExprGenerator {
 		}
 	}
 	
-	protected void transform(Codes.Convert code, CodeForest forest, VcBranch branch) {
+	protected void transform(Bytecode.Convert code, CodeForest forest, VcBranch branch) {
 		Collection<Attribute> attributes = VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes());
 		Expr result = branch.read(code.operand(0));
 		SyntacticType type = utils.convert(code.result(), forest.get(branch.pc()).attributes());
 		branch.write(code.target(0), new Expr.Cast(type, result, attributes));
 	}
 
-	protected void transform(Codes.Const code, CodeForest forest, VcBranch branch) {
+	protected void transform(Bytecode.Const code, CodeForest forest, VcBranch branch) {
 		Value val = utils.convert(code.constant, forest, branch);
 		branch.write(code.target(), new Expr.Constant(val, VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes())));
 	}
 
-	protected void transform(Codes.Debug code, CodeForest forest,
+	protected void transform(Bytecode.Debug code, CodeForest forest,
 			VcBranch branch) {
 		// do nout
 	}
 
-	protected void transform(Codes.FieldLoad code, CodeForest forest, VcBranch branch) {
+	protected void transform(Bytecode.FieldLoad code, CodeForest forest, VcBranch branch) {
 		Type.EffectiveRecord er = (Type.EffectiveRecord) code.type(0); 
 		ArrayList<String> fields = new ArrayList<String>(er.fields().keySet());
 		Collections.sort(fields);
@@ -197,14 +196,14 @@ public class VcExprGenerator {
 		branch.write(code.target(0), result);
 	}
 
-	protected void transform(Codes.IndirectInvoke code,
+	protected void transform(Bytecode.IndirectInvoke code,
 			CodeForest forest, VcBranch branch) {
 		for(int target : code.targets()) {
 			branch.havoc(target);
 		}
 	}
 
-	protected void transform(Codes.Invoke code, CodeForest forest,
+	protected void transform(Bytecode.Invoke code, CodeForest forest,
 			VcBranch branch) throws Exception {
 		Collection<wyil.lang.Attribute> attributes =  forest.get(branch.pc()).attributes();
 		Collection<Attribute> wyccAttributes = VcUtils.toWycsAttributes(attributes);
@@ -256,7 +255,7 @@ public class VcExprGenerator {
 		}
 	}
 
-	protected void transformArrayGenerator(Codes.Operator code, CodeForest forest, VcBranch branch) {
+	protected void transformArrayGenerator(Bytecode.Operator code, CodeForest forest, VcBranch branch) {
 		Type elementType = ((Type.Array) code.type(0)).element();
 		Collection<wyil.lang.Attribute> wyilAttributes = forest.get(branch.pc()).attributes();
 		Collection<Attribute> attributes = VcUtils.toWycsAttributes(wyilAttributes);
@@ -271,27 +270,27 @@ public class VcExprGenerator {
 		branch.assume(macro);
 	}
 	
-	protected void transform(Codes.Lambda code, CodeForest forest, VcBranch branch) {
+	protected void transform(Bytecode.Lambda code, CodeForest forest, VcBranch branch) {
 		// TODO: implement lambdas somehow?
 		branch.havoc(code.target(0));
 	}
 
-	protected void transform(Codes.Update code, CodeForest forest, VcBranch branch) {
+	protected void transform(Bytecode.Update code, CodeForest forest, VcBranch branch) {
 		Expr result = branch.read(code.result());
 		Expr oldSource = branch.read(code.target(0));
 		Expr newSource = branch.havoc(code.target(0));
 		updateHelper(code.iterator(), oldSource, newSource, result, branch, forest);
 	}
 
-	protected void updateHelper(Iterator<Codes.LVal> iter, Expr oldSource, Expr newSource, Expr result, VcBranch branch,
+	protected void updateHelper(Iterator<Bytecode.LVal> iter, Expr oldSource, Expr newSource, Expr result, VcBranch branch,
 			CodeForest forest) {
 		Collection<Attribute> attributes = VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes());
 		if (!iter.hasNext()) {
 			branch.assume(new Expr.Binary(Expr.Binary.Op.EQ, newSource, result, attributes));
 		} else {
-			Codes.LVal lv = iter.next();
-			if (lv instanceof Codes.RecordLVal) {
-				Codes.RecordLVal rlv = (Codes.RecordLVal) lv;
+			Bytecode.LVal lv = iter.next();
+			if (lv instanceof Bytecode.RecordLVal) {
+				Bytecode.RecordLVal rlv = (Bytecode.RecordLVal) lv;
 				ArrayList<String> fields = new ArrayList<String>(rlv.rawType().fields().keySet());
 				Collections.sort(fields);
 				int index = fields.indexOf(rlv.field);
@@ -305,8 +304,8 @@ public class VcExprGenerator {
 						updateHelper(iter, oldS, newS, result, branch, forest);
 					}
 				}
-			} else if (lv instanceof Codes.ArrayLVal) {
-				Codes.ArrayLVal rlv = (Codes.ArrayLVal) lv;
+			} else if (lv instanceof Bytecode.ArrayLVal) {
+				Bytecode.ArrayLVal rlv = (Bytecode.ArrayLVal) lv;
 				Expr index = branch.read(rlv.indexOperand);
 				Expr oldS = new Expr.IndexOf(oldSource, index, attributes);
 				Expr newS = new Expr.IndexOf(newSource, index, attributes);

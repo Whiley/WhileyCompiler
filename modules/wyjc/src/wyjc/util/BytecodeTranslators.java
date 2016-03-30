@@ -6,11 +6,9 @@ import static wyil.lang.Bytecode.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 
 import jasm.lang.Bytecode;
 import jasm.lang.JvmType;
-import wyil.lang.Codes;
 import wyil.lang.Type;
 import wyjc.Wyil2JavaBuilder.BytecodeTranslator;
 import wyjc.Wyil2JavaBuilder.Context;
@@ -57,7 +55,7 @@ public class BytecodeTranslators {
 
 	private static final class Assign implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			JvmType jt = context.toJvmType(bytecode.type(0));
 			int[] targets = bytecode.targets();
 			int[] operands = bytecode.operands();
@@ -74,7 +72,7 @@ public class BytecodeTranslators {
 
 	private static final class Dereference implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);
 			context.add(new Bytecode.Load(bytecode.operand(0), type));
@@ -88,7 +86,7 @@ public class BytecodeTranslators {
 	
 	private static final class New implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			Type.Reference refType = (Type.Reference) bytecode.type(0); 
 			JvmType type = context.toJvmType(refType);
 			JvmType elementType = context.toJvmType(refType.element());
@@ -107,7 +105,7 @@ public class BytecodeTranslators {
 	
 	private static final class Negate implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			JvmType.Clazz type = (JvmType.Clazz) context.toJvmType(bytecode.type(0));
 			JvmType.Function ftype = new JvmType.Function(type);
 			context.add(new Bytecode.Load(bytecode.operand(0), type));
@@ -117,7 +115,7 @@ public class BytecodeTranslators {
 	}
 	private static final class Add implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
 			JvmType.Function ftype = new JvmType.Function(type, type);
 			context.add(new Bytecode.Load(bytecode.operand(0), type));
@@ -128,7 +126,7 @@ public class BytecodeTranslators {
 	}
 	private static final class Subtract implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
 			JvmType.Function ftype = new JvmType.Function(type, type);
 			context.add(new Bytecode.Load(bytecode.operand(0), type));
@@ -139,7 +137,7 @@ public class BytecodeTranslators {
 	}
 	private static final class Multiply implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
 			JvmType.Function ftype = new JvmType.Function(type, type);
 			context.add(new Bytecode.Load(bytecode.operand(0), type));
@@ -150,7 +148,7 @@ public class BytecodeTranslators {
 	}
 	private static final class Divide implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
 			JvmType.Function ftype = new JvmType.Function(type, type);
 			context.add(new Bytecode.Load(bytecode.operand(0), type));
@@ -161,7 +159,7 @@ public class BytecodeTranslators {
 	}
 	private static final class Remainder implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
 			JvmType.Function ftype = new JvmType.Function(type, type);
 			context.add(new Bytecode.Load(bytecode.operand(0), type));
@@ -176,7 +174,7 @@ public class BytecodeTranslators {
 	// ====================================================================================
 	private static final class Invert implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
 			JvmType.Function ftype = new JvmType.Function(type);
 			context.add(new Bytecode.Load(bytecode.operand(0), type));
@@ -186,7 +184,7 @@ public class BytecodeTranslators {
 	}
 	private static final class BitwiseOr implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
 			JvmType.Function ftype = new JvmType.Function(type, type);
 			context.add(new Bytecode.Load(bytecode.operand(0), type));
@@ -197,7 +195,7 @@ public class BytecodeTranslators {
 	}
 	private static final class BitwiseXor implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
 			JvmType.Function ftype = new JvmType.Function(type, type);
 			context.add(new Bytecode.Load(bytecode.operand(0), type));
@@ -208,7 +206,7 @@ public class BytecodeTranslators {
 	}
 	private static final class BitwiseAnd implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
 			JvmType.Function ftype = new JvmType.Function(type, type);
 			context.add(new Bytecode.Load(bytecode.operand(0), type));
@@ -219,7 +217,7 @@ public class BytecodeTranslators {
 	}
 	private static final class LeftShift implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
 			JvmType.Function ftype = new JvmType.Function(type, WHILEYINT);
 			context.add(new Bytecode.Load(bytecode.operand(0), type));
@@ -230,7 +228,7 @@ public class BytecodeTranslators {
 	}
 	private static final class RightShift implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
 			JvmType.Function ftype = new JvmType.Function(type, WHILEYINT);
 			context.add(new Bytecode.Load(bytecode.operand(0), type));
@@ -244,7 +242,7 @@ public class BytecodeTranslators {
 	// ====================================================================================
 	private static final class ArrayLength implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
 			JvmType.Function ftype = new JvmType.Function(WHILEYINT);
 			context.add(new Bytecode.Load(bytecode.operand(0), type));			
@@ -254,7 +252,7 @@ public class BytecodeTranslators {
 	}
 	private static final class ArrayIndex implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			Type.EffectiveArray arrType = (Type.EffectiveArray) bytecode.type(0);
 			JvmType elementType = context.toJvmType(arrType.element());
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYARRAY, WHILEYINT);
@@ -267,7 +265,7 @@ public class BytecodeTranslators {
 	}
 	private static final class ArrayGenerator implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			Type elementType = ((Type.Array) bytecode.type(0)).element();			
 			JvmType.Function ftype = new JvmType.Function(WHILEYARRAY, JAVA_LANG_OBJECT, WHILEYINT);
 			context.add(new Bytecode.Load(bytecode.operand(0), context.toJvmType(elementType)));
@@ -279,7 +277,7 @@ public class BytecodeTranslators {
 	}
 	private static final class ArrayConstructor implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator bytecode, Context context) {
+		public void translate(Operator bytecode, Context context) {
 			Type.Array arrType = (Type.Array) bytecode.type(0);
 			JvmType elementType = context.toJvmType(arrType.element());
 			JvmType.Function initJvmType = new JvmType.Function(T_VOID, T_INT);
@@ -302,7 +300,7 @@ public class BytecodeTranslators {
 	
 	private static final class RecordConstructor implements BytecodeTranslator {
 		@Override
-		public void translate(Codes.Operator code, Context context) {
+		public void translate(Operator code, Context context) {
 			Type.EffectiveRecord recType = (Type.EffectiveRecord) code.type(0); 
 			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
 			

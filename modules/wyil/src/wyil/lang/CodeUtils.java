@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import wyil.lang.Codes.Comparator;
+import wyil.lang.Bytecode.Comparator;
 
 public class CodeUtils {
 
@@ -55,20 +55,20 @@ public class CodeUtils {
 	 * @param cop
 	 * @return
 	 */
-	public static Codes.Comparator invert(Codes.Comparator cop) {
+	public static Bytecode.Comparator invert(Bytecode.Comparator cop) {
 		switch (cop) {
 		case EQ:
-			return Codes.Comparator.NEQ;
+			return Bytecode.Comparator.NEQ;
 		case NEQ:
-			return Codes.Comparator.EQ;
+			return Bytecode.Comparator.EQ;
 		case LT:
-			return Codes.Comparator.GTEQ;
+			return Bytecode.Comparator.GTEQ;
 		case LTEQ:
-			return Codes.Comparator.GT;
+			return Bytecode.Comparator.GT;
 		case GT:
-			return Codes.Comparator.LTEQ;
+			return Bytecode.Comparator.LTEQ;
 		case GTEQ:
-			return Codes.Comparator.LT;
+			return Bytecode.Comparator.LT;
 		}
 		return null;
 	}
@@ -87,28 +87,13 @@ public class CodeUtils {
 			CodeForest.Block block = forest.get(i);
 			for (int j = 0; j != block.size(); ++j) {
 				Bytecode code = block.get(j).code();
-				if (code instanceof Codes.Label) {
+				if (code instanceof Bytecode.Label) {
 					// Found a label, so register it in the labels map
-					Codes.Label label = (Codes.Label) code;
+					Bytecode.Label label = (Bytecode.Label) code;
 					labels.put(label.label, new CodeForest.Index(i, j));
 				}
 			}
 		}
 		return labels;
-	}
-
-	/**
-	 * Helper function for buildLabelMap
-	 * 
-	 * @param index
-	 *            Current block index being traversed.
-	 * @param labels
-	 *            Labels map being constructed
-	 * @param block
-	 *            Root block
-	 */
-	private static void buildLabelMap(int blockID, Map<String, CodeForest.Index> labels, CodeForest forest) {
-		//
-		
 	}
 }

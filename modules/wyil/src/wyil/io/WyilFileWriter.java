@@ -595,8 +595,8 @@ public final class WyilFileWriter {
 			CodeForest.Block block = forest.get(i);
 			for (int j = 0; j != block.size(); ++j) {
 				Bytecode code = block.get(j).code();
-				if (code instanceof Codes.Label) {
-					Codes.Label l = (Codes.Label) code;
+				if (code instanceof Bytecode.Label) {
+					Bytecode.Label l = (Bytecode.Label) code;
 					labels.put(l.label, offset-1);
 				} else {
 					offset = offset + 1;
@@ -679,7 +679,7 @@ public final class WyilFileWriter {
 		// Finally, write the actual bytecodes!
 		for (int i = 0; i != block.size(); ++i) {
 			Bytecode code = block.get(i).code();
-			if (code instanceof Codes.Label) {
+			if (code instanceof Bytecode.Label) {
 				// Skip over labels because these are not written to disk and
 				// have no "offset"
 			} else {
@@ -809,27 +809,27 @@ public final class WyilFileWriter {
 			Bytecode.Branching bb = (Bytecode.Branching) code;
 			int destination = labels.get(bb.destination());
 			output.write_uv(destination);
-		} else if (code instanceof Codes.Const) {
-			Codes.Const c = (Codes.Const) code;
+		} else if (code instanceof Bytecode.Const) {
+			Bytecode.Const c = (Bytecode.Const) code;
 			output.write_uv(constantCache.get(c.constant));
-		} else if (code instanceof Codes.FieldLoad) {
-			Codes.FieldLoad c = (Codes.FieldLoad) code;
+		} else if (code instanceof Bytecode.FieldLoad) {
+			Bytecode.FieldLoad c = (Bytecode.FieldLoad) code;
 			output.write_uv(stringCache.get(c.field));
-		} else if (code instanceof Codes.Invoke) {
-			Codes.Invoke c = (Codes.Invoke) code;
+		} else if (code instanceof Bytecode.Invoke) {
+			Bytecode.Invoke c = (Bytecode.Invoke) code;
 			output.write_uv(nameCache.get(c.name));
-		} else if (code instanceof Codes.Lambda) {
-			Codes.Lambda c = (Codes.Lambda) code;
+		} else if (code instanceof Bytecode.Lambda) {
+			Bytecode.Lambda c = (Bytecode.Lambda) code;
 			output.write_uv(nameCache.get(c.name));
-		} else if (code instanceof Codes.Update) {
-			Codes.Update c = (Codes.Update) code;
+		} else if (code instanceof Bytecode.Update) {
+			Bytecode.Update c = (Bytecode.Update) code;
 			List<String> fields = c.fields;
 			output.write_uv(fields.size());
 			for (int i = 0; i != fields.size(); ++i) {
 				output.write_uv(stringCache.get(fields.get(i)));
 			}
-		} else if (code instanceof Codes.Switch) {
-			Codes.Switch c = (Codes.Switch) code;
+		} else if (code instanceof Bytecode.Switch) {
+			Bytecode.Switch c = (Bytecode.Switch) code;
 			List<Pair<Constant, String>> branches = c.branches;
 			int target = labels.get(c.defaultTarget);
 			output.write_uv(target);
@@ -871,7 +871,7 @@ public final class WyilFileWriter {
 		int nlabels = 0;
 		for (int i = 0; i != block.size(); ++i) {
 			Bytecode code = block.get(i).code();
-			if (code instanceof Codes.Label) {
+			if (code instanceof Bytecode.Label) {
 				nlabels++;
 			}
 		}
@@ -954,28 +954,28 @@ public final class WyilFileWriter {
 	private void buildPools(Bytecode code) {
 
 		// First, deal with special cases
-		if (code instanceof Codes.Const) {
-			Codes.Const c = (Codes.Const) code;
+		if (code instanceof Bytecode.Const) {
+			Bytecode.Const c = (Bytecode.Const) code;
 			addConstantItem(c.constant);
-		} else if (code instanceof Codes.FieldLoad) {
-			Codes.FieldLoad c = (Codes.FieldLoad) code;
+		} else if (code instanceof Bytecode.FieldLoad) {
+			Bytecode.FieldLoad c = (Bytecode.FieldLoad) code;
 			addStringItem(c.field);
-		}else if (code instanceof Codes.Invoke) {
-			Codes.Invoke c = (Codes.Invoke) code;
+		}else if (code instanceof Bytecode.Invoke) {
+			Bytecode.Invoke c = (Bytecode.Invoke) code;
 			addNameItem(c.name);
-		} else if (code instanceof Codes.Lambda) {
-			Codes.Lambda c = (Codes.Lambda) code;
+		} else if (code instanceof Bytecode.Lambda) {
+			Bytecode.Lambda c = (Bytecode.Lambda) code;
 			addNameItem(c.name);
-		} else if (code instanceof Codes.Update) {
-			Codes.Update c = (Codes.Update) code;
-			for (Codes.LVal l : c) {
-				if (l instanceof Codes.RecordLVal) {
-					Codes.RecordLVal lv = (Codes.RecordLVal) l;
+		} else if (code instanceof Bytecode.Update) {
+			Bytecode.Update c = (Bytecode.Update) code;
+			for (Bytecode.LVal l : c) {
+				if (l instanceof Bytecode.RecordLVal) {
+					Bytecode.RecordLVal lv = (Bytecode.RecordLVal) l;
 					addStringItem(lv.field);
 				}
 			}
-		} else if (code instanceof Codes.Switch) {
-			Codes.Switch s = (Codes.Switch) code;
+		} else if (code instanceof Bytecode.Switch) {
+			Bytecode.Switch s = (Bytecode.Switch) code;
 			for (Pair<Constant, String> b : s.branches) {
 				addConstantItem(b.first());
 			}

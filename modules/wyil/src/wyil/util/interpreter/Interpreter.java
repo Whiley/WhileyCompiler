@@ -155,47 +155,47 @@ public class Interpreter {
 	private Object execute(Constant[] frame, Context context) {
 		Bytecode bytecode = context.forest.get(context.pc).code();
 		// FIXME: turn this into a switch statement?
-		if (bytecode instanceof Codes.Invariant) {
-			return execute((Codes.Invariant) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.AssertOrAssume) {
-			return execute((Codes.AssertOrAssume) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Operator) {
-			return execute((Codes.Operator) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Const) {
-			return execute((Codes.Const) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Convert) {
-			return execute((Codes.Convert) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Debug) {
-			return execute((Codes.Debug) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Fail) {
-			return execute((Codes.Fail) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.FieldLoad) {
-			return execute((Codes.FieldLoad) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Goto) {
-			return execute((Codes.Goto) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.If) {
-			return execute((Codes.If) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.IfIs) {
-			return execute((Codes.IfIs) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.IndirectInvoke) {
-			return execute((Codes.IndirectInvoke) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Invoke) {
-			return execute((Codes.Invoke) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Label) {
+		if (bytecode instanceof Bytecode.Invariant) {
+			return execute((Bytecode.Invariant) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.AssertOrAssume) {
+			return execute((Bytecode.AssertOrAssume) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.Operator) {
+			return execute((Bytecode.Operator) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.Const) {
+			return execute((Bytecode.Const) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.Convert) {
+			return execute((Bytecode.Convert) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.Debug) {
+			return execute((Bytecode.Debug) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.Fail) {
+			return execute((Bytecode.Fail) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.FieldLoad) {
+			return execute((Bytecode.FieldLoad) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.Goto) {
+			return execute((Bytecode.Goto) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.If) {
+			return execute((Bytecode.If) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.IfIs) {
+			return execute((Bytecode.IfIs) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.IndirectInvoke) {
+			return execute((Bytecode.IndirectInvoke) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.Invoke) {
+			return execute((Bytecode.Invoke) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.Label) {
 			// essentially do nout
 			return context.pc.next();
-		} else if (bytecode instanceof Codes.Lambda) {
-			return execute((Codes.Lambda) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Quantify) {
-			return execute((Codes.Quantify) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Loop) {
-			return execute((Codes.Loop) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Return) {
-			return execute((Codes.Return) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Switch) {
-			return execute((Codes.Switch) bytecode, frame, context);
-		} else if (bytecode instanceof Codes.Update) {
-			return execute((Codes.Update) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.Lambda) {
+			return execute((Bytecode.Lambda) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.Quantify) {
+			return execute((Bytecode.Quantify) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.Loop) {
+			return execute((Bytecode.Loop) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.Return) {
+			return execute((Bytecode.Return) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.Switch) {
+			return execute((Bytecode.Switch) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.Update) {
+			return execute((Bytecode.Update) bytecode, frame, context);
 		} else {
 			throw new IllegalArgumentException("Unknown bytecode encountered: " + bytecode);
 		}
@@ -212,7 +212,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.AssertOrAssume bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.AssertOrAssume bytecode, Constant[] frame, Context context) {
 		//
 		CodeForest.Index pc = new CodeForest.Index(bytecode.block(), 0);
 		Object r = executeAllWithin(frame, new Context(pc, context.forest));
@@ -237,7 +237,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.Operator bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.Operator bytecode, Constant[] frame, Context context) {
 		int[] operands = bytecode.operands();
 		Constant[] values = new Constant[operands.length];
 		// Read all operands
@@ -264,13 +264,13 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.Const bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.Const bytecode, Constant[] frame, Context context) {
 		Constant c = cleanse(bytecode.constant, context);
 		frame[bytecode.target()] = c;
 		return context.pc.next();
 	}
 
-	private Object execute(Codes.Convert bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.Convert bytecode, Constant[] frame, Context context) {
 		try {
 			Constant operand = frame[bytecode.operand(0)];
 			Type target = expander.getUnderlyingType(bytecode.result());
@@ -411,7 +411,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.Debug bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.Debug bytecode, Constant[] frame, Context context) {
 		//
 		Constant.Array list = (Constant.Array) frame[bytecode.operand(0)];
 		for (Constant item : list.values) {
@@ -435,17 +435,17 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.Fail bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.Fail bytecode, Constant[] frame, Context context) {
 		throw new Error("Runtime fault occurred");
 	}
 
-	private Object execute(Codes.FieldLoad bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.FieldLoad bytecode, Constant[] frame, Context context) {
 		Constant.Record rec = (Constant.Record) frame[bytecode.operand(0)];
 		frame[bytecode.target(0)] = rec.values.get(bytecode.field);
 		return context.pc.next();
 	}
 
-	private Object execute(Codes.Quantify bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.Quantify bytecode, Constant[] frame, Context context) {
 		Constant startOperand = frame[bytecode.startOperand()];
 		Constant endOperand = frame[bytecode.endOperand()];
 		checkType(startOperand, context, Constant.Integer.class);
@@ -470,11 +470,11 @@ public class Interpreter {
 		return context.pc.next();
 	}
 
-	private Object execute(Codes.Goto bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.Goto bytecode, Constant[] frame, Context context) {
 		return context.getLabel(bytecode.destination());
 	}
 
-	private Object execute(Codes.If bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.If bytecode, Constant[] frame, Context context) {
 		Constant op1 = frame[bytecode.operand(0)];
 		Constant op2 = frame[bytecode.operand(1)];
 		boolean result;
@@ -533,7 +533,7 @@ public class Interpreter {
 		}
 	}
 
-	private Object execute(Codes.IfIs bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.IfIs bytecode, Constant[] frame, Context context) {
 		Type typeOperand = bytecode.type(1);
 		Constant op = frame[bytecode.operand(0)];
 		if (isMemberOfType(op, typeOperand, context)) {
@@ -675,7 +675,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.IndirectInvoke bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.IndirectInvoke bytecode, Constant[] frame, Context context) {
 		Constant operand = frame[bytecode.operand(0)];
 		// Check that we have a function reference
 		checkType(operand, context, Constant.Lambda.class);
@@ -708,7 +708,7 @@ public class Interpreter {
 		return context.pc.next();
 	}
 
-	private Object execute(Codes.Invariant bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.Invariant bytecode, Constant[] frame, Context context) {
 		// FIXME: currently implemented as a NOP because of #480
 		return context.pc.next();
 	}
@@ -727,7 +727,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.Invoke bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.Invoke bytecode, Constant[] frame, Context context) {
 		int[] operands = bytecode.operands();
 		Constant[] arguments = new Constant[operands.length];
 		for (int i = 0; i != arguments.length; ++i) {
@@ -741,7 +741,7 @@ public class Interpreter {
 		return context.pc.next();
 	}
 
-	private Object execute(Codes.Lambda bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.Lambda bytecode, Constant[] frame, Context context) {
 
 		int[] operands = bytecode.operands();
 		Constant[] arguments = new Constant[operands.length];
@@ -756,7 +756,7 @@ public class Interpreter {
 		return context.pc.next();
 	}
 
-	private Object execute(Codes.Loop bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.Loop bytecode, Constant[] frame, Context context) {
 		Object r;
 		do {
 			// Keep executing the loop body until we exit it somehow.
@@ -781,7 +781,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Codes.Return bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.Return bytecode, Constant[] frame, Context context) {
 		int[] operands = bytecode.operands();
 		Constant[] returns = new Constant[operands.length];
 		for (int i = 0; i != operands.length; ++i) {
@@ -790,7 +790,7 @@ public class Interpreter {
 		return returns;
 	}
 
-	private Object execute(Codes.Switch bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.Switch bytecode, Constant[] frame, Context context) {
 		//
 		Constant operand = frame[bytecode.operand(0)];
 		for (Pair<Constant, String> branch : bytecode.branches) {
@@ -802,7 +802,7 @@ public class Interpreter {
 		return context.getLabel(bytecode.defaultTarget);
 	}
 
-	private Object execute(Codes.Update bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.Update bytecode, Constant[] frame, Context context) {
 		Constant rhs = frame[bytecode.result()];
 		Constant lhs = frame[bytecode.target(0)];
 		frame[bytecode.target(0)] = update(lhs, bytecode.iterator(), rhs, frame, context);
@@ -830,14 +830,14 @@ public class Interpreter {
 	 *
 	 * @return The left-hand side updated with the new value assigned
 	 */
-	private Constant update(Constant lhs, Iterator<Codes.LVal> descriptor, Constant rhs, Constant[] frame,
+	private Constant update(Constant lhs, Iterator<Bytecode.LVal> descriptor, Constant rhs, Constant[] frame,
 			Context context) {
 		if (descriptor.hasNext()) {
-			Codes.LVal lval = descriptor.next();
+			Bytecode.LVal lval = descriptor.next();
 			// Check what shape the left-hand side is
-			if (lval instanceof Codes.ArrayLVal) {
+			if (lval instanceof Bytecode.ArrayLVal) {
 				// List
-				Codes.ArrayLVal lv = (Codes.ArrayLVal) lval;
+				Bytecode.ArrayLVal lv = (Bytecode.ArrayLVal) lval;
 				Constant operand = frame[lv.indexOperand];
 				checkType(operand, context, Constant.Integer.class);
 				checkType(lhs, context, Constant.Array.class);
@@ -847,9 +847,9 @@ public class Interpreter {
 				rhs = update(values.get(index), descriptor, rhs, frame, context);
 				values.set(index, rhs);
 				return Constant.V_ARRAY(values);
-			} else if (lval instanceof Codes.RecordLVal) {
+			} else if (lval instanceof Bytecode.RecordLVal) {
 				// Record
-				Codes.RecordLVal lv = (Codes.RecordLVal) lval;
+				Bytecode.RecordLVal lv = (Bytecode.RecordLVal) lval;
 				checkType(lhs, context, Constant.Record.class);
 				Constant.Record record = (Constant.Record) lhs;
 				HashMap<String, Constant> values = new HashMap<String, Constant>(record.values);
@@ -858,7 +858,7 @@ public class Interpreter {
 				return Constant.V_RECORD(values);
 			} else {
 				// Reference
-				Codes.ReferenceLVal lv = (Codes.ReferenceLVal) lval;
+				Bytecode.ReferenceLVal lv = (Bytecode.ReferenceLVal) lval;
 				checkType(lhs, context, ConstantObject.class);
 				ConstantObject object = (ConstantObject) lhs;
 				rhs = update(object.read(), descriptor, rhs, frame, context);

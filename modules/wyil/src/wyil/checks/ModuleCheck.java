@@ -34,7 +34,7 @@ import wycc.util.Pair;
 import wyil.attributes.SourceLocation;
 import wyil.lang.*;
 import wyil.lang.CodeForest.Index;
-import wyil.lang.Codes.*;
+import wyil.lang.Bytecode.*;
 import static wyil.util.ErrorMessages.*;
 
 /**
@@ -133,10 +133,10 @@ public class ModuleCheck implements Transform<WyilFile> {
 		for (int i = 0; i != block.size(); ++i) {
 			CodeForest.Entry e = block.get(i);
 			Bytecode code = e.first();			
-			if(code instanceof Codes.Invoke && ((Codes.Invoke)code).type(0) instanceof Type.Method) {
+			if(code instanceof Bytecode.Invoke && ((Bytecode.Invoke)code).type(0) instanceof Type.Method) {
 				// internal message send
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, e.attribute(SourceLocation.class));
-			} else if (code instanceof Codes.IndirectInvoke && ((Codes.IndirectInvoke)code).type(0) instanceof Type.Method) {
+			} else if (code instanceof Bytecode.IndirectInvoke && ((Bytecode.IndirectInvoke)code).type(0) instanceof Type.Method) {
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, e.attribute(SourceLocation.class));
 			} else if (code.opcode() == Bytecode.OPCODE_newobject) {
 				syntaxError(errorMessage(ALLOCATION_NOT_PERMITTED_IN_FUNCTION), filename, e.attribute(SourceLocation.class));
