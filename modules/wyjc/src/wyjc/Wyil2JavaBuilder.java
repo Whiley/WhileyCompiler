@@ -408,10 +408,10 @@ public class Wyil2JavaBuilder implements Builder {
 
 			if (c instanceof Return) {
 				// first patch point
-				block.set(i, Operator(Type.T_VOID, new int[0], new int[0], OperatorKind.ASSIGN));
+				block.set(i, new Operator(Type.T_VOID, new int[0], new int[0], OperatorKind.ASSIGN));
 			} else if (c instanceof Fail) {
 				// second patch point
-				block.set(i, Goto(falseBranch));
+				block.set(i, new Goto(falseBranch));
 			} 
 		}
 	}

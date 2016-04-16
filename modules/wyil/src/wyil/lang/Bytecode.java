@@ -298,206 +298,6 @@ public abstract class Bytecode {
 		}
 	}
 
-	// ===============================================================
-	// Bytecode Constructors
-	// ===============================================================
-
-	/**
-	 * Construct an <code>assert</code> bytecode which represents a user-defined
-	 * assertion check.
-	 *
-	 * @param message
-	 *            --- message to report upon failure.
-	 * @return
-	 */
-	public static Assert Assert(int block) {
-		return new Assert(block);
-	}
-
-	/**
-	 * Construct an <code>assume</code> bytecode which represents a user-defined
-	 * assumption.
-	 *
-	 * @param message
-	 *            --- message to report upon failure.
-	 * @return
-	 */
-	public static Assume Assume(int block) {
-		return new Assume(block);
-	}
-
-	public static Operator Operator(Type type, int[] targets, int[] operands, OperatorKind op) {
-		return new Operator(type, targets, operands, op);
-	}
-
-	/**
-	 * Construct a <code>const</code> bytecode which loads a given constant onto
-	 * the stack.
-	 *
-	 * @param afterType
-	 *            --- record type.
-	 * @param field
-	 *            --- field to write.
-	 * @return
-	 */
-	public static Const Const(int target, Constant constant) {
-		return new Const(target, constant);
-	}
-
-	public static Convert Convert(Type from, int target, int operand, Type to) {
-		return new Convert(from, target, operand, to);
-	}
-
-	public static final Debug Debug(int operand) {
-		return new Debug(operand);
-	}
-
-	/**
-	 * Construct a <code>fail</code> bytecode which halts execution by raising a
-	 * fault.
-	 *
-	 * @param string
-	 *            --- Message to give on error.
-	 * @return
-	 */
-	public static Fail Fail() {
-		return new Fail();
-	}
-
-	/**
-	 * Construct a <code>fieldload</code> bytecode which reads a given field
-	 * from a record of a given type.
-	 *
-	 * @param type
-	 *            --- record type.
-	 * @param field
-	 *            --- field to load.
-	 * @return
-	 */
-	public static FieldLoad FieldLoad(Type.EffectiveRecord type, int target, int operand, String field) {
-		return new FieldLoad(type, target, operand, field);
-	}
-
-	/**
-	 * Construct a <code>goto</code> bytecode which branches unconditionally to
-	 * a given label.
-	 *
-	 * @param label
-	 *            --- destination label.
-	 * @return
-	 */
-	public static Goto Goto(String label) {
-		return new Goto(label);
-	}
-
-	public static Invoke Invoke(Type.FunctionOrMethod fun, Collection<Integer> targets, Collection<Integer> operands,
-			NameID name) {
-		return new Invoke(fun, CodeUtils.toIntArray(targets), CodeUtils.toIntArray(operands), name);
-	}
-
-	public static Invoke Invoke(Type.FunctionOrMethod fun, int[] targets, int[] operands, NameID name) {
-		return new Invoke(fun, targets, operands, name);
-	}
-
-	/**
-	 * Construct an <code>invariant</code> bytecode which represents a
-	 * user-defined loop invariant.
-	 *
-	 * @param message
-	 *            --- message to report upon failure.
-	 * @return
-	 */
-	public static Invariant Invariant(int block) {
-		return new Invariant(block);
-	}
-
-	public static Lambda Lambda(Type.FunctionOrMethod fun, int target, Collection<Integer> operands, NameID name) {
-		return new Lambda(fun, target, CodeUtils.toIntArray(operands), name);
-	}
-
-	public static Lambda Lambda(Type.FunctionOrMethod fun, int target, int[] operands, NameID name) {
-		return new Lambda(fun, target, operands, name);
-	}
-
-	public static Loop Loop(int[] modifiedOperands, int block) {
-		return new Loop(modifiedOperands, block);
-	}
-
-	/**
-	 * Construct a return bytecode which does return a value and, hence, its
-	 * type automatically defaults to void.
-	 *
-	 * @return
-	 */
-	public static Return Return() {
-		return new Return(new Type[0]);
-	}
-
-	/**
-	 * Construct a return bytecode which reads a value from the operand register
-	 * and returns it.
-	 *
-	 * @param type
-	 *            --- type of the value to be returned (cannot be void).
-	 * @param operand
-	 *            --- register to read return value from.
-	 * @return
-	 */
-	public static Return Return(Type[] types, int... operands) {
-		return new Return(types, operands);
-	}
-
-	public static If If(Type type, int operand, String label) {
-		return new If(type, operand, label);
-	}
-
-	public static IfIs IfIs(Type type, int leftOperand, Type rightOperand, String label) {
-		return new IfIs(type, leftOperand, rightOperand, label);
-	}
-
-	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun, int[] targets, int operand,
-			Collection<Integer> operands) {
-		return new IndirectInvoke(fun, targets, operand, CodeUtils.toIntArray(operands));
-	}
-
-	public static IndirectInvoke IndirectInvoke(Type.FunctionOrMethod fun, int[] targets, int operand, int[] operands) {
-		return new IndirectInvoke(fun, targets, operand, operands);
-	}
-
-	public static Label Label(String label) {
-		return new Label(label);
-	}
-
-	/**
-	 * Construct a <code>switch</code> bytecode which pops a value off the
-	 * stack, and switches to a given label based on it.
-	 *
-	 * @param type
-	 *            --- value type to switch on.
-	 * @param defaultLabel
-	 *            --- target for the default case.
-	 * @param cases
-	 *            --- map from values to destination labels.
-	 * @return
-	 */
-	public static Switch Switch(Type type, int operand, String defaultLabel, Collection<Pair<Constant, String>> cases) {
-		return new Switch(type, operand, defaultLabel, cases);
-	}
-
-	public static Quantify Quantify(int startOperand, int endOperand, int indexOperand, int[] modifiedOperands,
-			int block) {
-		return new Quantify(startOperand, endOperand, indexOperand, modifiedOperands, block);
-	}
-
-	public static Update Update(Type beforeType, int target, Collection<Integer> operands, int operand, Type afterType,
-			Collection<String> fields) {
-		return new Update(beforeType, target, CodeUtils.toIntArray(operands), operand, afterType, fields);
-	}
-
-	public static Update Update(Type beforeType, int target, int[] operands, int operand, Type afterType,
-			Collection<String> fields) {
-		return new Update(beforeType, target, operands, operand, afterType, fields);
-	}
 
 	// ===============================================================
 	// Bytecode Implementations
@@ -695,7 +495,7 @@ public abstract class Bytecode {
 	public static final class Operator extends Bytecode {
 		public final OperatorKind kind;
 
-		private Operator(Type type, int[] targets, int[] operands, OperatorKind bop) {
+		public Operator(Type type, int[] targets, int[] operands, OperatorKind bop) {
 			super(new Type[] { type }, targets, operands);
 			if (bop == null) {
 				throw new IllegalArgumentException("Operator kind cannot be null");
@@ -710,7 +510,7 @@ public abstract class Bytecode {
 
 		@Override
 		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return Operator(type(0), nTargets, nOperands, kind);
+			return new Operator(type(0), nTargets, nOperands, kind);
 		}
 
 		public int hashCode() {
@@ -772,12 +572,12 @@ public abstract class Bytecode {
 	 */
 	public static final class Convert extends Bytecode {
 
-		private Convert(Type from, int target, int operand, Type result) {
+		public Convert(Type from, int target, int operand, Type result) {
 			super(new Type[] { from, result }, new int[] { target }, operand);
 		}
 
 		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return Convert(type(0), nTargets[0], nOperands[0], type(1));
+			return new Convert(type(0), nTargets[0], nOperands[0], type(1));
 		}
 
 		public Type result() {
@@ -836,7 +636,7 @@ public abstract class Bytecode {
 	public static final class Const extends Bytecode {
 		public final Constant constant;
 
-		private Const(int target, Constant constant) {
+		public Const(int target, Constant constant) {
 			super(new Type[0], new int[] { target }, new int[0]);
 			this.constant = constant;
 		}
@@ -903,7 +703,7 @@ public abstract class Bytecode {
 	 */
 	public static final class Debug extends Bytecode {
 
-		private Debug(int operand) {
+		public Debug(int operand) {
 			super(new Type[] { Type.Array(Type.T_INT, false) }, new int[0], operand);
 		}
 
@@ -913,7 +713,7 @@ public abstract class Bytecode {
 
 		@Override
 		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return Debug(nOperands[0]);
+			return new Debug(nOperands[0]);
 		}
 
 		public boolean equals(Object o) {
@@ -946,7 +746,7 @@ public abstract class Bytecode {
 	 */
 	public static class Assert extends AssertOrAssume {
 
-		private Assert(int block) {
+		public Assert(int block) {
 			super(block);
 		}
 
@@ -976,7 +776,7 @@ public abstract class Bytecode {
 	 */
 	public static final class Assume extends AssertOrAssume {
 
-		private Assume(int block) {
+		public Assume(int block) {
 			super(block);
 		}
 
@@ -1007,7 +807,7 @@ public abstract class Bytecode {
 	 *
 	 */
 	public static final class Fail extends Bytecode {
-		private Fail() {
+		public Fail() {
 			super(new Type[0], new int[0]);
 		}
 
@@ -1056,7 +856,7 @@ public abstract class Bytecode {
 	public static final class FieldLoad extends Bytecode {
 		public final String field;
 
-		private FieldLoad(Type.EffectiveRecord type, int target, int operand, String field) {
+		public FieldLoad(Type.EffectiveRecord type, int target, int operand, String field) {
 			super((Type) type, target, operand);
 			if (field == null) {
 				throw new IllegalArgumentException("FieldLoad field argument cannot be null");
@@ -1066,7 +866,7 @@ public abstract class Bytecode {
 
 		@Override
 		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return FieldLoad((Type.EffectiveRecord) type(0), nTargets[0], nOperands[0], field);
+			return new FieldLoad((Type.EffectiveRecord) type(0), nTargets[0], nOperands[0], field);
 		}
 
 		public int opcode() {
@@ -1137,7 +937,7 @@ public abstract class Bytecode {
 	 *
 	 */
 	public static final class Goto extends Branching {
-		private Goto(String target) {
+		public Goto(String target) {
 			super(target, new Type[0], new int[0]);
 		}
 
@@ -1150,7 +950,7 @@ public abstract class Bytecode {
 			if (nlabel == null) {
 				return this;
 			} else {
-				return Goto(nlabel);
+				return new Goto(nlabel);
 			}
 		}
 
@@ -1220,7 +1020,7 @@ public abstract class Bytecode {
 	 *
 	 */
 	public static final class If extends Branching {
-		private If(Type type, int operand, String target) {
+		public If(Type type, int operand, String target) {
 			super(target, new Type[] { type }, new int[0], operand);
 		}
 
@@ -1229,7 +1029,7 @@ public abstract class Bytecode {
 			if (nlabel == null) {
 				return this;
 			} else {
-				return If(types[0], operands[0], nlabel);
+				return new If(types[0], operands[0], nlabel);
 			}
 		}
 
@@ -1239,7 +1039,7 @@ public abstract class Bytecode {
 
 		@Override
 		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return If(types[0], nOperands[0], destination());
+			return new If(types[0], nOperands[0], destination());
 		}
 
 		public boolean equals(Object o) {
@@ -1294,7 +1094,7 @@ public abstract class Bytecode {
 	 *
 	 */
 	public static final class IfIs extends Branching {
-		private IfIs(Type type, int leftOperand, Type rightOperand, String target) {
+		public IfIs(Type type, int leftOperand, Type rightOperand, String target) {
 			super(target, new Type[] { type, rightOperand }, new int[0], leftOperand);
 		}
 
@@ -1311,13 +1111,13 @@ public abstract class Bytecode {
 			if (nlabel == null) {
 				return this;
 			} else {
-				return IfIs(types[0], operands[0], types[1], nlabel);
+				return new IfIs(types[0], operands[0], types[1], nlabel);
 			}
 		}
 
 		@Override
 		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return IfIs(types[0], nOperands[0], types[1], destination());
+			return new IfIs(types[0], nOperands[0], types[1], destination());
 		}
 
 		public boolean equals(Object o) {
@@ -1361,7 +1161,7 @@ public abstract class Bytecode {
 		 * @param operands
 		 *            Registers holding parameters for the invoked function
 		 */
-		private IndirectInvoke(Type.FunctionOrMethod type, int[] targets, int operand, int[] operands) {
+		public IndirectInvoke(Type.FunctionOrMethod type, int[] targets, int operand, int[] operands) {
 			super(new Type.FunctionOrMethod[] { type }, targets, append(operand, operands));
 		}
 
@@ -1405,7 +1205,7 @@ public abstract class Bytecode {
 
 		@Override
 		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return IndirectInvoke(type(0), nTargets, nOperands[0], Arrays.copyOfRange(nOperands, 1, nOperands.length));
+			return new IndirectInvoke(type(0), nTargets, nOperands[0], Arrays.copyOfRange(nOperands, 1, nOperands.length));
 		}
 
 		public boolean equals(Object o) {
@@ -1426,7 +1226,7 @@ public abstract class Bytecode {
 	 */
 	public static class Invariant extends Assert {
 
-		private Invariant(int block) {
+		public Invariant(int block) {
 			super(block);
 		}
 
@@ -1499,7 +1299,7 @@ public abstract class Bytecode {
 	public static final class Invoke extends Bytecode {
 		public final NameID name;
 
-		private Invoke(Type.FunctionOrMethod type, int[] targets, int[] operands, NameID name) {
+		public Invoke(Type.FunctionOrMethod type, int[] targets, int[] operands, NameID name) {
 			super(new Type.FunctionOrMethod[] { type }, targets, operands);
 			this.name = name;
 		}
@@ -1519,7 +1319,7 @@ public abstract class Bytecode {
 
 		@Override
 		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return Invoke(type(0), nTargets, nOperands, name);
+			return new Invoke(type(0), nTargets, nOperands, name);
 		}
 
 		public boolean equals(Object o) {
@@ -1539,7 +1339,7 @@ public abstract class Bytecode {
 	public static final class Lambda extends Bytecode {
 		public final NameID name;
 
-		private Lambda(Type.FunctionOrMethod type, int target, int[] operands, NameID name) {
+		public Lambda(Type.FunctionOrMethod type, int target, int[] operands, NameID name) {
 			super(type, target, operands);
 			this.name = name;
 		}
@@ -1559,7 +1359,7 @@ public abstract class Bytecode {
 
 		@Override
 		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return Lambda((Type.FunctionOrMethod) type(0), nTargets[0], nOperands, name);
+			return new Lambda((Type.FunctionOrMethod) type(0), nTargets[0], nOperands, name);
 		}
 
 		public boolean equals(Object o) {
@@ -1584,7 +1384,7 @@ public abstract class Bytecode {
 	public static class Label extends Bytecode {
 		public final String label;
 
-		private Label(String label) {
+		public Label(String label) {
 			super(new Type[0], new int[0], new int[0]);
 			this.label = label;
 		}
@@ -1598,7 +1398,7 @@ public abstract class Bytecode {
 			if (nlabel == null) {
 				return this;
 			} else {
-				return Label(nlabel);
+				return new Label(nlabel);
 			}
 		}
 
@@ -1676,7 +1476,7 @@ public abstract class Bytecode {
 	 */
 	public static class Loop extends Compound {
 
-		private Loop(int[] targets, int block, int... operands) {
+		public Loop(int[] targets, int block, int... operands) {
 			super(block, new Type[0], targets, operands);
 		}
 
@@ -1708,7 +1508,7 @@ public abstract class Bytecode {
 
 	public static final class Quantify extends Loop {
 
-		private Quantify(int startOperand, int endOperand, int indexOperand, int[] targets, int block) {
+		public Quantify(int startOperand, int endOperand, int indexOperand, int[] targets, int block) {
 			super(targets, block, startOperand, endOperand, indexOperand);
 		}
 
@@ -1890,7 +1690,7 @@ public abstract class Bytecode {
 		 * @param fields
 		 *            Fields for record updates
 		 */
-		private Update(Type beforeType, int target, int[] operands, int operand, Type afterType,
+		public Update(Type beforeType, int target, int[] operands, int operand, Type afterType,
 				Collection<String> fields) {
 			super(new Type[] { beforeType, afterType }, new int[] { target }, append(operands, operand));
 			if (fields == null) {
@@ -2044,7 +1844,11 @@ public abstract class Bytecode {
 	 */
 	public static final class Return extends Bytecode {
 
-		private Return(Type[] types, int... operands) {
+		public Return() {
+			super(new Type[0], new int[0], new int[0]);
+		}
+		
+		public Return(Type[] types, int... operands) {
 			super(types, new int[0], operands);
 		}
 
@@ -2124,7 +1928,7 @@ public abstract class Bytecode {
 		public final ArrayList<Pair<Constant, String>> branches;
 		public final String defaultTarget;
 
-		Switch(Type type, int operand, String defaultTarget, Collection<Pair<Constant, String>> branches) {
+		public Switch(Type type, int operand, String defaultTarget, Collection<Pair<Constant, String>> branches) {
 			super(new Type[] { type }, new int[0], operand);
 			this.branches = new ArrayList<Pair<Constant, String>>(branches);
 			this.defaultTarget = defaultTarget;
@@ -2148,9 +1952,9 @@ public abstract class Bytecode {
 
 			String nlabel = labels.get(defaultTarget);
 			if (nlabel == null) {
-				return Switch(types[0], operands[0], defaultTarget, nbranches);
+				return new Switch(types[0], operands[0], defaultTarget, nbranches);
 			} else {
-				return Switch(types[0], operands[0], nlabel, nbranches);
+				return new Switch(types[0], operands[0], nlabel, nbranches);
 			}
 		}
 

@@ -259,7 +259,7 @@ public final class CodeGenerator {
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
-		body.add(Bytecode.Return(), attributes(fd));
+		body.add(new Bytecode.Return(), attributes(fd));
 
 		WyilFile.FunctionOrMethod declaration;
 
@@ -294,9 +294,9 @@ public final class CodeGenerator {
 		int index = forest.add(precondition);
 		String endLab = CodeUtils.freshLabel();
 		generateCondition(endLab, invariant, environment, precondition, forest, context);
-		precondition.add(Bytecode.Fail(), attributes(invariant));
-		precondition.add(Bytecode.Label(endLab));
-		precondition.add(Bytecode.Return());
+		precondition.add(new Bytecode.Fail(), attributes(invariant));
+		precondition.add(new Bytecode.Label(endLab));
+		precondition.add(new Bytecode.Return());
 		return index;
 	}
 
@@ -451,7 +451,7 @@ public final class CodeGenerator {
 		// Second, translate initialiser expression if it exists.
 		if (s.expr != null) {
 			int[] operands = { generate(s.expr, environment, block, forest, context) };
-			block.add(Bytecode.Operator(s.expr.result().raw(), targets, operands, Bytecode.OperatorKind.ASSIGN),
+			block.add(new Bytecode.Operator(s.expr.result().raw(), targets, operands, Bytecode.OperatorKind.ASSIGN),
 					attributes(s));
 		}
 	}
@@ -545,7 +545,7 @@ public final class CodeGenerator {
 			// for variable on the left-hand side.
 			int[] targets = new int[] { environment.get(v.var) };
 			int[] operands = new int[] { operand };
-			block.add(Bytecode.Operator(type, targets, operands, Bytecode.OperatorKind.ASSIGN), attributes(lval));
+			block.add(new Bytecode.Operator(type, targets, operands, Bytecode.OperatorKind.ASSIGN), attributes(lval));
 		} else if (lval instanceof Expr.IndexOf || lval instanceof Expr.FieldAccess
 				|| lval instanceof Expr.Dereference) {
 			// This is the more complicated case, since the left-hand side
@@ -558,8 +558,8 @@ public final class CodeGenerator {
 			ArrayList<Integer> operands = new ArrayList<Integer>();
 			Expr.AssignedVariable lhs = extractLVal(lval, fields, operands, environment, block, forest, context);
 			int target = environment.get(lhs.var);
-			block.add(Bytecode.Update(lhs.type.raw(), target, operands, operand, lhs.afterType.raw(), fields),
-					attributes(lval));
+			block.add(new Bytecode.Update(lhs.type.raw(), target, toIntArray(operands), operand, lhs.afterType.raw(),
+					fields), attributes(lval));
 		} else {
 			WhileyFile.syntaxError("invalid assignment", context, lval);
 		}
@@ -641,10 +641,10 @@ public final class CodeGenerator {
 		int body = forest.add(subblock);
 		String endLab = CodeUtils.freshLabel();
 		generateCondition(endLab, s.expr, environment, subblock, forest, context);
-		subblock.add(Bytecode.Fail(), attributes(s.expr));
-		subblock.add(Bytecode.Label(endLab));
+		subblock.add(new Bytecode.Fail(), attributes(s.expr));
+		subblock.add(new Bytecode.Label(endLab));
 		// Second, create assert bytecode
-		block.add(Bytecode.Assert(body), attributes(s));
+		block.add(new Bytecode.Assert(body), attributes(s));
 
 	}
 
@@ -670,10 +670,10 @@ public final class CodeGenerator {
 		int body = forest.add(subblock);
 		String endLab = CodeUtils.freshLabel();
 		generateCondition(endLab, s.expr, environment, subblock, forest, context);
-		subblock.add(Bytecode.Fail(), attributes(s.expr));
-		subblock.add(Bytecode.Label(endLab));
+		subblock.add(new Bytecode.Fail(), attributes(s.expr));
+		subblock.add(new Bytecode.Label(endLab));
 		// Second, create assert bytecode
-		block.add(Bytecode.Assume(body), attributes(s));
+		block.add(new Bytecode.Assume(body), attributes(s));
 	}
 
 	/**
@@ -732,7 +732,7 @@ public final class CodeGenerator {
 				operands[index++] = generate(e, environment, block, forest, context);
 			}
 		}
-		block.add(Bytecode.Return(types, operands), attributes(s));
+		block.add(new Bytecode.Return(types, operands), attributes(s));
 	}
 
 	/**
@@ -791,7 +791,7 @@ public final class CodeGenerator {
 	private void generate(Stmt.Debug s, Environment environment, CodeForest.Block block, CodeForest forest,
 			Context context) {
 		int operand = generate(s.expr, environment, block, forest, context);
-		block.add(Bytecode.Debug(operand), attributes(s));
+		block.add(new Bytecode.Debug(operand), attributes(s));
 	}
 
 	/**
@@ -821,7 +821,7 @@ public final class CodeGenerator {
 	 */
 	private void generate(Stmt.Fail s, Environment environment, CodeForest.Block block, CodeForest forest,
 			Context context) {
-		block.add(Bytecode.Fail(), attributes(s));
+		block.add(new Bytecode.Fail(), attributes(s));
 	}
 
 	/**
@@ -881,14 +881,14 @@ public final class CodeGenerator {
 			generate(st, environment, block, forest, context);
 		}
 		if (!s.falseBranch.isEmpty()) {
-			block.add(Bytecode.Goto(exitLab));
-			block.add(Bytecode.Label(falseLab));
+			block.add(new Bytecode.Goto(exitLab));
+			block.add(new Bytecode.Label(falseLab));
 			for (Stmt st : s.falseBranch) {
 				generate(st, environment, block, forest, context);
 			}
 		}
 
-		block.add(Bytecode.Label(exitLab));
+		block.add(new Bytecode.Label(exitLab));
 	}
 
 	/**
@@ -942,7 +942,7 @@ public final class CodeGenerator {
 		if (scope == null) {
 			WhileyFile.syntaxError(errorMessage(BREAK_OUTSIDE_SWITCH_OR_LOOP), context, s);
 		}
-		block.add(Bytecode.Goto(scope.breakLabel));
+		block.add(new Bytecode.Goto(scope.breakLabel));
 	}
 
 	/**
@@ -999,7 +999,7 @@ public final class CodeGenerator {
 		if (scope == null) {
 			WhileyFile.syntaxError(errorMessage(CONTINUE_OUTSIDE_LOOP), context, s);
 		}
-		block.add(Bytecode.Goto(scope.continueLabel));
+		block.add(new Bytecode.Goto(scope.continueLabel));
 	}
 
 	/**
@@ -1074,16 +1074,16 @@ public final class CodeGenerator {
 					WhileyFile.syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL), context, c);
 				} else {
 					defaultTarget = CodeUtils.freshLabel();
-					block.add(Bytecode.Label(defaultTarget), attributes(c));
+					block.add(new Bytecode.Label(defaultTarget), attributes(c));
 					for (Stmt st : c.stmts) {
 						generate(st, environment, block, forest, context);
 					}
-					block.add(Bytecode.Goto(exitLab), attributes(c));
+					block.add(new Bytecode.Goto(exitLab), attributes(c));
 				}
 
 			} else if (defaultTarget == exitLab) {
 				String target = CodeUtils.freshLabel();
-				block.add(Bytecode.Label(target), attributes(c));
+				block.add(new Bytecode.Label(target), attributes(c));
 
 				// Case statements in Whiley may have multiple matching constant
 				// values. Therefore, we iterate each matching value and
@@ -1103,7 +1103,7 @@ public final class CodeGenerator {
 				for (Stmt st : c.stmts) {
 					generate(st, environment, block, forest, context);
 				}
-				block.add(Bytecode.Goto(exitLab), attributes(c));
+				block.add(new Bytecode.Goto(exitLab), attributes(c));
 
 			} else {
 				// This represents the case where we have another non-default
@@ -1113,8 +1113,8 @@ public final class CodeGenerator {
 			}
 		}
 
-		block.add(start, Bytecode.Switch(s.expr.result().raw(), operand, defaultTarget, cases), attributes(s));
-		block.add(Bytecode.Label(exitLab), attributes(s));
+		block.add(start, new Bytecode.Switch(s.expr.result().raw(), operand, defaultTarget, cases), attributes(s));
+		block.add(new Bytecode.Label(exitLab), attributes(s));
 	}
 
 	/**
@@ -1173,7 +1173,7 @@ public final class CodeGenerator {
 
 		for (Expr condition : s.invariants) {
 			int invariant = generateInvariantBlock(condition, environment, forest, context);
-			bodyBlock.add(Bytecode.Invariant(invariant), attributes(condition));
+			bodyBlock.add(new Bytecode.Invariant(invariant), attributes(condition));
 		}
 
 		generateCondition(exitLab, invert(s.condition), environment, bodyBlock, forest, context);
@@ -1184,9 +1184,9 @@ public final class CodeGenerator {
 		}
 		scopes.pop(); // break
 
-		bodyBlock.add(Bytecode.Label(continueLab), attributes(s));
-		block.add(Bytecode.Loop(new int[] {}, body), attributes(s));
-		block.add(Bytecode.Label(exitLab), attributes(s));
+		bodyBlock.add(new Bytecode.Label(continueLab), attributes(s));
+		block.add(new Bytecode.Loop(new int[] {}, body), attributes(s));
+		block.add(new Bytecode.Label(exitLab), attributes(s));
 	}
 
 	/**
@@ -1252,14 +1252,14 @@ public final class CodeGenerator {
 
 		for (Expr condition : s.invariants) {
 			int invariant = generateInvariantBlock(condition, environment, forest, context);
-			bodyBlock.add(Bytecode.Invariant(invariant), attributes(condition));
+			bodyBlock.add(new Bytecode.Invariant(invariant), attributes(condition));
 		}
 
-		bodyBlock.add(Bytecode.Label(continueLab), attributes(s));
+		bodyBlock.add(new Bytecode.Label(continueLab), attributes(s));
 		generateCondition(exitLab, invert(s.condition), environment, bodyBlock, forest, context);
 
-		block.add(Bytecode.Loop(new int[] {}, body), attributes(s));
-		block.add(Bytecode.Label(exitLab), attributes(s));
+		block.add(new Bytecode.Loop(new int[] {}, body), attributes(s));
+		block.add(new Bytecode.Label(exitLab), attributes(s));
 	}
 
 	// =========================================================================
@@ -1342,7 +1342,7 @@ public final class CodeGenerator {
 				// example, !(x < 5) could be rewritten into x >= 5.
 
 				int result = generate(condition, environment, block, forest, context);
-				block.add(Bytecode.If(Type.T_BOOL, result, target), attributes(condition));
+				block.add(new Bytecode.If(Type.T_BOOL, result, target), attributes(condition));
 
 			} else {
 				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, condition);
@@ -1388,7 +1388,7 @@ public final class CodeGenerator {
 			CodeForest forest, Context context) {
 		Constant.Bool b = (Constant.Bool) c.value;
 		if (b.value) {
-			block.add(Bytecode.Goto(target));
+			block.add(new Bytecode.Goto(target));
 		} else {
 			// do nout
 		}
@@ -1427,7 +1427,7 @@ public final class CodeGenerator {
 			String exitLabel = CodeUtils.freshLabel();
 			generateCondition(exitLabel, invert(v.lhs), environment, block, forest, context);
 			generateCondition(target, v.rhs, environment, block, forest, context);
-			block.add(Bytecode.Label(exitLabel));
+			block.add(new Bytecode.Label(exitLabel));
 
 		} else if (bop == Expr.BOp.IS) {
 			generateTypeCondition(target, v, environment, block, forest, context);
@@ -1441,7 +1441,7 @@ public final class CodeGenerator {
 					syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
 				}
 				int slot = environment.get(lhs.var);
-				block.add(Bytecode.IfIs(v.srcType.raw(), slot, Type.T_NULL, target), attributes(v));
+				block.add(new Bytecode.IfIs(v.srcType.raw(), slot, Type.T_NULL, target), attributes(v));
 			} else if (bop == Expr.BOp.NEQ && v.lhs instanceof Expr.LocalVariable
 					&& v.rhs instanceof Expr.Constant && ((Expr.Constant) v.rhs).value == Constant.V_NULL) {
 				// this is a simple rewrite to enable type inference.
@@ -1451,12 +1451,12 @@ public final class CodeGenerator {
 					syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
 				}
 				int slot = environment.get(lhs.var);
-				block.add(Bytecode.IfIs(v.srcType.raw(), slot, Type.T_NULL, exitLabel), attributes(v));
-				block.add(Bytecode.Goto(target));
-				block.add(Bytecode.Label(exitLabel));
+				block.add(new Bytecode.IfIs(v.srcType.raw(), slot, Type.T_NULL, exitLabel), attributes(v));
+				block.add(new Bytecode.Goto(target));
+				block.add(new Bytecode.Label(exitLabel));
 			} else {
 				int result = generate(v, environment, block, forest, context);
-				block.add(Bytecode.If(v.srcType.raw(), result, target), attributes(v));
+				block.add(new Bytecode.If(v.srcType.raw(), result, target), attributes(v));
 			}
 		}
 	}
@@ -1511,7 +1511,7 @@ public final class CodeGenerator {
 		// following cast is always safe.
 		Expr.TypeVal rhs = (Expr.TypeVal) condition.rhs;
 
-		block.add(Bytecode.IfIs(condition.srcType.raw(), leftOperand, rhs.type.nominal(), target), attributes(condition));
+		block.add(new Bytecode.IfIs(condition.srcType.raw(), leftOperand, rhs.type.nominal(), target), attributes(condition));
 	}
 
 	/**
@@ -1548,8 +1548,8 @@ public final class CodeGenerator {
 
 			String label = CodeUtils.freshLabel();
 			generateCondition(label, v.mhs, environment, block, forest, context);
-			block.add(Bytecode.Goto(target));
-			block.add(Bytecode.Label(label));
+			block.add(new Bytecode.Goto(target));
+			block.add(new Bytecode.Label(label));
 			return;
 		default:
 			// Nothing else is a valud boolean condition here.
@@ -1586,14 +1586,14 @@ public final class CodeGenerator {
 
 		switch (e.cop) {
 		case NONE:
-			block.add(Bytecode.Goto(target));
-			block.add(Bytecode.Label(exit));
+			block.add(new Bytecode.Goto(target));
+			block.add(new Bytecode.Label(exit));
 			break;
 		case SOME:
 			break;
 		case ALL:
-			block.add(Bytecode.Goto(target));
-			block.add(Bytecode.Label(exit));
+			block.add(new Bytecode.Goto(target));
+			block.add(new Bytecode.Label(exit));
 			break;
 		}
 	}
@@ -1615,7 +1615,7 @@ public final class CodeGenerator {
 			int body = forest.add(bodyBlock);
 			generate(srcIterator, trueLabel, falseLabel, e, environment, bodyBlock, forest, context);
 			// Finally, create the forall loop bytecode
-			block.add(Bytecode.Quantify(startSlot, endSlot, varSlot, new int[0], body), attributes(e));
+			block.add(new Bytecode.Quantify(startSlot, endSlot, varSlot, new int[0], body), attributes(e));
 		} else {
 			// This is the base case (i.e. the innermost loop)
 			switch (e.cop) {
@@ -1669,7 +1669,7 @@ public final class CodeGenerator {
 			CodeForest forest, Context context, int... targets) throws ResolveError {
 		//
 		int[] operands = generate(expr.arguments, environment, block, forest, context);
-		block.add(Bytecode.Invoke(expr.type().nominal(), targets, operands, expr.nid()), attributes(expr));
+		block.add(new Bytecode.Invoke(expr.type().nominal(), targets, operands, expr.nid()), attributes(expr));
 	}
 
 	public void generateStmt(Expr.IndirectFunctionOrMethodCall expr, Environment environment, CodeForest.Block block,
@@ -1677,7 +1677,7 @@ public final class CodeGenerator {
 		//
 		int operand = generate(expr.src, environment, block, forest, context);
 		int[] operands = generate(expr.arguments, environment, block, forest, context);
-		block.add(Bytecode.IndirectInvoke(expr.type().raw(), targets, operand, operands), attributes(expr));
+		block.add(new Bytecode.IndirectInvoke(expr.type().raw(), targets, operand, operands), attributes(expr));
 	}
 
 	// =========================================================================
@@ -1773,7 +1773,7 @@ public final class CodeGenerator {
 			Context context) {
 		Constant val = expr.value;
 		int target = environment.allocate(val.type());
-		block.add(Bytecode.Const(target, expr.value), attributes(expr));
+		block.add(new Bytecode.Const(target, expr.value), attributes(expr));
 		return target;
 	}
 
@@ -1782,7 +1782,7 @@ public final class CodeGenerator {
 		Type.FunctionOrMethod rawType = expr.type.raw();
 		Type.FunctionOrMethod nominalType = expr.type.nominal();
 		int target = environment.allocate(rawType);
-		block.add(Bytecode.Lambda(nominalType, target, Collections.EMPTY_LIST, expr.nid), attributes(expr));
+		block.add(new Bytecode.Lambda(nominalType, target, new int[0], expr.nid), attributes(expr));
 		return target;
 	}
 
@@ -1819,10 +1819,10 @@ public final class CodeGenerator {
 		CodeForest.Block bodyBlock = new CodeForest.Block();
 		bodyForest.addAsRoot(bodyBlock);
 		if (tfm.returns().isEmpty()) {
-			bodyBlock.add(Bytecode.Return(), attributes(expr));
+			bodyBlock.add(new Bytecode.Return(), attributes(expr));
 		} else {
 			int target = generate(expr.body, benv, bodyBlock, bodyForest, context);
-			bodyBlock.add(Bytecode.Return(tfm.returns().toArray(new Type[tfm.returns().size()]), target),
+			bodyBlock.add(new Bytecode.Return(tfm.returns().toArray(new Type[tfm.returns().size()]), target),
 					attributes(expr));
 		}
 
@@ -1854,7 +1854,7 @@ public final class CodeGenerator {
 
 		// Finally, create the lambda
 		int target = environment.allocate(tfm);
-		block.add(Bytecode.Lambda(cfm, target, operands, nid), attributes(expr));
+		block.add(new Bytecode.Lambda(cfm, target, toIntArray(operands), nid), attributes(expr));
 		return target;
 	}
 
@@ -1862,7 +1862,7 @@ public final class CodeGenerator {
 			Context context) throws ResolveError {
 		Constant val = expr.value;
 		int target = environment.allocate(val.type());
-		block.add(Bytecode.Const(target, val), attributes(expr));
+		block.add(new Bytecode.Const(target, val), attributes(expr));
 		return target;
 	}
 
@@ -1885,25 +1885,25 @@ public final class CodeGenerator {
 		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
 		switch (expr.op) {
 		case NEG:
-			block.add(Bytecode.Operator(expr.result().raw(), targets, operands, Bytecode.OperatorKind.NEG),
+			block.add(new Bytecode.Operator(expr.result().raw(), targets, operands, Bytecode.OperatorKind.NEG),
 					attributes(expr));
 			break;
 		case INVERT:
-			block.add(Bytecode.Operator(expr.result().raw(), targets, operands, Bytecode.OperatorKind.BITWISEINVERT),
+			block.add(new Bytecode.Operator(expr.result().raw(), targets, operands, Bytecode.OperatorKind.BITWISEINVERT),
 					attributes(expr));
 			break;
 		case NOT:
 			String falseLabel = CodeUtils.freshLabel();
 			String exitLabel = CodeUtils.freshLabel();
 			generateCondition(falseLabel, expr.mhs, environment, block, forest, context);
-			block.add(Bytecode.Const(targets[0], Constant.V_BOOL(true)), attributes(expr));
-			block.add(Bytecode.Goto(exitLabel));
-			block.add(Bytecode.Label(falseLabel));
-			block.add(Bytecode.Const(targets[0], Constant.V_BOOL(false)), attributes(expr));
-			block.add(Bytecode.Label(exitLabel));
+			block.add(new Bytecode.Const(targets[0], Constant.V_BOOL(true)), attributes(expr));
+			block.add(new Bytecode.Goto(exitLabel));
+			block.add(new Bytecode.Label(falseLabel));
+			block.add(new Bytecode.Const(targets[0], Constant.V_BOOL(false)), attributes(expr));
+			block.add(new Bytecode.Label(exitLabel));
 			break;
 		case ARRAYLENGTH:
-			block.add(Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.ARRAYLENGTH), attributes(expr));
+			block.add(new Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.ARRAYLENGTH), attributes(expr));
 			break;
 		default:
 			// should be dead-code
@@ -1917,7 +1917,7 @@ public final class CodeGenerator {
 			Context context) {
 		int[] operands = new int[] { generate(expr.src, environment, block, forest, context) };
 		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
-		block.add(Bytecode.Operator(expr.srcType.raw(), targets, operands, Bytecode.OperatorKind.DEREFERENCE),
+		block.add(new Bytecode.Operator(expr.srcType.raw(), targets, operands, Bytecode.OperatorKind.DEREFERENCE),
 				attributes(expr));
 		return targets[0];
 	}
@@ -1927,7 +1927,7 @@ public final class CodeGenerator {
 		int[] operands = { generate(expr.src, environment, block, forest, context),
 				generate(expr.index, environment, block, forest, context) };
 		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
-		block.add(Bytecode.Operator(expr.srcType.raw(), targets, operands, Bytecode.OperatorKind.ARRAYINDEX), attributes(expr));
+		block.add(new Bytecode.Operator(expr.srcType.raw(), targets, operands, Bytecode.OperatorKind.ARRAYINDEX), attributes(expr));
 		return targets[0];
 	}
 
@@ -1937,7 +1937,7 @@ public final class CodeGenerator {
 		Type from = expr.expr.result().raw();
 		Type to = expr.result().raw();
 		int target = environment.allocate(to);
-		block.add(Bytecode.Convert(from, target, operand, to), attributes(expr));
+		block.add(new Bytecode.Convert(from, target, operand, to), attributes(expr));
 		return target;
 	}
 
@@ -1949,11 +1949,11 @@ public final class CodeGenerator {
 			String exitLabel = CodeUtils.freshLabel();
 			generateCondition(trueLabel, v, environment, block, forest, context);
 			int target = environment.allocate(Type.T_BOOL);
-			block.add(Bytecode.Const(target, Constant.V_BOOL(false)), attributes(v));
-			block.add(Bytecode.Goto(exitLabel));
-			block.add(Bytecode.Label(trueLabel));
-			block.add(Bytecode.Const(target, Constant.V_BOOL(true)), attributes(v));
-			block.add(Bytecode.Label(exitLabel));
+			block.add(new Bytecode.Const(target, Constant.V_BOOL(false)), attributes(v));
+			block.add(new Bytecode.Goto(exitLabel));
+			block.add(new Bytecode.Label(trueLabel));
+			block.add(new Bytecode.Const(target, Constant.V_BOOL(true)), attributes(v));
+			block.add(new Bytecode.Label(exitLabel));
 			return target;
 		} else {
 			Type result = v.result().raw();
@@ -1963,7 +1963,7 @@ public final class CodeGenerator {
 					generate(v.rhs, environment, block, forest, context) 
 			};
 
-			block.add(Bytecode.Operator(result, targets, operands, OP2BOP(v.op, v, context)), attributes(v));
+			block.add(new Bytecode.Operator(result, targets, operands, OP2BOP(v.op, v, context)), attributes(v));
 
 			return targets[0];
 		}
@@ -1973,7 +1973,7 @@ public final class CodeGenerator {
 			Context context) {
 		int[] operands = generate(expr.arguments, environment, block, forest, context);
 		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
-		block.add(Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.ARRAYCONSTRUCTOR),
+		block.add(new Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.ARRAYCONSTRUCTOR),
 				attributes(expr));
 		return targets[0];
 	}
@@ -1983,7 +1983,7 @@ public final class CodeGenerator {
 		int[] operands = new int[] { generate(expr.element, environment, block, forest, context),
 				generate(expr.count, environment, block, forest, context) };
 		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
-		block.add(Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.ARRAYGENERATOR), attributes(expr));
+		block.add(new Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.ARRAYGENERATOR), attributes(expr));
 		return targets[0];
 	}
 
@@ -1993,11 +1993,11 @@ public final class CodeGenerator {
 		String exitLabel = CodeUtils.freshLabel();
 		generateCondition(trueLabel, e, environment, block, forest, context);
 		int target = environment.allocate(Type.T_BOOL);
-		block.add(Bytecode.Const(target, Constant.V_BOOL(false)), attributes(e));
-		block.add(Bytecode.Goto(exitLabel));
-		block.add(Bytecode.Label(trueLabel));
-		block.add(Bytecode.Const(target, Constant.V_BOOL(true)), attributes(e));
-		block.add(Bytecode.Label(exitLabel));
+		block.add(new Bytecode.Const(target, Constant.V_BOOL(false)), attributes(e));
+		block.add(new Bytecode.Goto(exitLabel));
+		block.add(new Bytecode.Label(trueLabel));
+		block.add(new Bytecode.Const(target, Constant.V_BOOL(true)), attributes(e));
+		block.add(new Bytecode.Label(exitLabel));
 		return target;
 	}
 
@@ -2012,7 +2012,7 @@ public final class CodeGenerator {
 			operands[i] = generate(arg, environment, block, forest, context);
 		}
 		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
-		block.add(Bytecode.Operator(expr.result().raw(), targets, operands, Bytecode.OperatorKind.RECORDCONSTRUCTOR),
+		block.add(new Bytecode.Operator(expr.result().raw(), targets, operands, Bytecode.OperatorKind.RECORDCONSTRUCTOR),
 				attributes(expr));
 		return targets[0];
 	}
@@ -2021,7 +2021,7 @@ public final class CodeGenerator {
 			Context context) {
 		int operand = generate(expr.src, environment, block, forest, context);
 		int target = environment.allocate(expr.result().raw());
-		block.add(Bytecode.FieldLoad((Type.EffectiveRecord) expr.srcType.raw(), target, operand, expr.name),
+		block.add(new Bytecode.FieldLoad((Type.EffectiveRecord) expr.srcType.raw(), target, operand, expr.name),
 				attributes(expr));
 		return target;
 	}
@@ -2030,7 +2030,7 @@ public final class CodeGenerator {
 			Context context) throws ResolveError {
 		int[] operands = new int[] { generate(expr.expr, environment, block, forest, context) };
 		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
-		block.add(Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.NEW));
+		block.add(new Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.NEW));
 		return targets[0];
 	}
 
@@ -2232,6 +2232,14 @@ public final class CodeGenerator {
 		return list;
 	}
 
+	public int[] toIntArray(List<Integer> items) {
+		int[] arr = new int[items.size()];
+		for(int i=0;i!=arr.length;++i) {
+			arr[i] = items.get(i);
+		}
+		return arr;
+	}
+	
 	/**
 	 * Maintains a mapping from Variable names to their allocated register slot,
 	 * and their declared types.
