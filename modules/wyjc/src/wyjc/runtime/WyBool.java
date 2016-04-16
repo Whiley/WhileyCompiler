@@ -11,6 +11,10 @@ public class WyBool {
 		return value;
 	}
 	
+	public WyBool not() {
+		return new WyBool(!value);
+	}
+	
 	public boolean equals(Object o) {
 		if (o instanceof WyBool) {
 			WyBool b = (WyBool) o;

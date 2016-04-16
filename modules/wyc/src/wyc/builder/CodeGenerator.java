@@ -165,7 +165,6 @@ public final class CodeGenerator {
 	 * indicate an invalid constant declaration was encountered.
 	 */
 	private WyilFile.Constant generate(WhileyFile.Constant cd) {
-		// TODO: this the point where were should run an evaluator ?
 		return new WyilFile.Constant(cd.modifiers(), cd.name(), cd.resolvedValue);
 	}
 
@@ -1893,14 +1892,8 @@ public final class CodeGenerator {
 					attributes(expr));
 			break;
 		case NOT:
-			String falseLabel = CodeUtils.freshLabel();
-			String exitLabel = CodeUtils.freshLabel();
-			generateCondition(falseLabel, expr.mhs, environment, block, forest, context);
-			block.add(new Bytecode.Const(targets[0], Constant.V_BOOL(true)), attributes(expr));
-			block.add(new Bytecode.Goto(exitLabel));
-			block.add(new Bytecode.Label(falseLabel));
-			block.add(new Bytecode.Const(targets[0], Constant.V_BOOL(false)), attributes(expr));
-			block.add(new Bytecode.Label(exitLabel));
+			block.add(new Bytecode.Operator(expr.result().raw(), targets, operands, Bytecode.OperatorKind.NOT),
+					attributes(expr));
 			break;
 		case ARRAYLENGTH:
 			block.add(new Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.ARRAYLENGTH), attributes(expr));

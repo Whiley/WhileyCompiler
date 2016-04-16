@@ -943,6 +943,11 @@ public final class WyilFileReader {
 				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.NEG);
 			}
 		};
+		schemas[Bytecode.OPCODE_not] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.NOT);
+			}
+		};
 		schemas[Bytecode.OPCODE_fieldload] = new Schema(Targets.ONE, Operands.ONE, Types.ONE, Extras.STRING){
 			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
 				return new Bytecode.FieldLoad((Type.EffectiveRecord) types[0], targets[0], operands[0], (String) extras[0]);

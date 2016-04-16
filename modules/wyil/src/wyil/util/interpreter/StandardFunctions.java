@@ -22,6 +22,7 @@ public class StandardFunctions {
 	static {
 		standardFunctions[Bytecode.OPCODE_assign] = new Assign();
 		standardFunctions[Bytecode.OPCODE_neg] = new Negate();
+		standardFunctions[Bytecode.OPCODE_not] = new Not();
 		standardFunctions[Bytecode.OPCODE_arrayinvert] = new BitwiseInvert();	
 		standardFunctions[Bytecode.OPCODE_dereference] = new Dereference();
 		standardFunctions[Bytecode.OPCODE_arraylength] = new ArrayLength();	
@@ -82,6 +83,18 @@ public class StandardFunctions {
 	}
 	
 	// ====================================================================================
+	// Boolean
+	// ====================================================================================
+		
+	private static final class Not implements InternalFunction {
+		@Override
+		public Constant apply(Constant[] operands, Context context) {
+			Constant.Bool i = checkType(operands[0], context, Constant.Bool.class);
+			return Constant.V_BOOL(!i.value);
+		}		
+	}
+	
+	// ====================================================================================
 	// Arithmetic
 	// ====================================================================================
 		
@@ -92,7 +105,7 @@ public class StandardFunctions {
 			return i.negate();
 		}		
 	}
-	
+		
 	private static final class Add implements InternalFunction {
 		@Override
 		public Constant apply(Constant[] operands, Context context) {

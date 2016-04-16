@@ -317,128 +317,133 @@ public abstract class Bytecode {
 				return "neg";
 			}
 		},
-		BITWISEINVERT(1) {
+		NOT(1) {
+			public String toString() {
+				return "not";
+			}
+		},
+		BITWISEINVERT(2) {
 			public String toString() {
 				return "invert";
 			}
 		},
-		DEREFERENCE(2) {
+		DEREFERENCE(3) {
 			public String toString() {
 				return "deref";
 			}
 		},
-		ARRAYLENGTH(3) {
+		ARRAYLENGTH(4) {
 			public String toString() {
 				return "length";
 			}
 		},
 		// Binary
-		ADD(4) {
+		ADD(5) {
 			public String toString() {
 				return "add";
 			}
 		},
-		SUB(5) {
+		SUB(6) {
 			public String toString() {
 				return "sub";
 			}
 		},
-		MUL(6) {
+		MUL(7) {
 			public String toString() {
 				return "mul";
 			}
 		},
-		DIV(7) {
+		DIV(8) {
 			public String toString() {
 				return "div";
 			}
 		},
-		REM(8) {
+		REM(9) {
 			public String toString() {
 				return "rem";
 			}
 		},
-		EQ(9) {
+		EQ(10) {
 			public String toString() {
 				return "eq";
 			}
 		},
-		NEQ(10) {
+		NEQ(11) {
 			public String toString() {
 				return "ne";
 			}
 		},
-		LT(11) {
+		LT(12) {
 			public String toString() {
 				return "lt";
 			}
 		},
-		LTEQ(12) {
+		LTEQ(13) {
 			public String toString() {
 				return "le";
 			}
 		},
-		GT(13) {
+		GT(14) {
 			public String toString() {
 				return "gt";
 			}
 		},
-		GTEQ(14) {
+		GTEQ(15) {
 			public String toString() {
 				return "ge";
 			}
 		},
-		BITWISEOR(15) {
+		BITWISEOR(16) {
 			public String toString() {
 				return "or";
 			}
 		},
-		BITWISEXOR(16) {
+		BITWISEXOR(17) {
 			public String toString() {
 				return "xor";
 			}
 		},
-		BITWISEAND(17) {
+		BITWISEAND(18) {
 			public String toString() {
 				return "and";
 			}
 		},
-		LEFTSHIFT(18) {
+		LEFTSHIFT(19) {
 			public String toString() {
 				return "shl";
 			}
 		},
-		RIGHTSHIFT(19) {
+		RIGHTSHIFT(20) {
 			public String toString() {
 				return "shr";
 			}
 		},
-		ARRAYINDEX(20) {
+		ARRAYINDEX(21) {
 			public String toString() {
 				return "indexof";
 			}
 		},
-		ARRAYGENERATOR(21) {
+		ARRAYGENERATOR(22) {
 			public String toString() {
 				return "arraygen";
 			}
 		},
-		ARRAYCONSTRUCTOR(22) {
+		ARRAYCONSTRUCTOR(23) {
 			public String toString() {
 				return "array";
 			}
 		},
-		RECORDCONSTRUCTOR(23) {
+		RECORDCONSTRUCTOR(24) {
 			public String toString() {
 				return "record";
 			}
 		},
-		NEW(24) {
+		NEW(25) {
 			public String toString() {
 				return "new";
 			}
 		},
-		ASSIGN(25) {
+		ASSIGN(26) {
 			public String toString() {
 				return "assign";
 			}
@@ -2038,31 +2043,32 @@ public abstract class Bytecode {
 	public static final int BINARY_ASSIGNABLE = BINARY_OPERATOR+6;
 	
 	public static final int OPCODE_neg         = BINARY_ASSIGNABLE+0;
-	public static final int OPCODE_arrayinvert = BINARY_ASSIGNABLE+1;	
-	public static final int OPCODE_dereference = BINARY_ASSIGNABLE+2;
-	public static final int OPCODE_arraylength = BINARY_ASSIGNABLE+3;	
-	public static final int OPCODE_add         = BINARY_ASSIGNABLE+4;
-	public static final int OPCODE_sub         = BINARY_ASSIGNABLE+5;
-	public static final int OPCODE_mul         = BINARY_ASSIGNABLE+6;
-	public static final int OPCODE_div         = BINARY_ASSIGNABLE+7;
-	public static final int OPCODE_rem         = BINARY_ASSIGNABLE+8;
-	public static final int OPCODE_eq          = BINARY_ASSIGNABLE+9;
-	public static final int OPCODE_ne          = BINARY_ASSIGNABLE+10;
-	public static final int OPCODE_lt          = BINARY_ASSIGNABLE+11;
-	public static final int OPCODE_le          = BINARY_ASSIGNABLE+12;
-	public static final int OPCODE_gt          = BINARY_ASSIGNABLE+13;
-	public static final int OPCODE_ge          = BINARY_ASSIGNABLE+14;
-	public static final int OPCODE_bitwiseor   = BINARY_ASSIGNABLE+15;
-	public static final int OPCODE_bitwisexor  = BINARY_ASSIGNABLE+16;
-	public static final int OPCODE_bitwiseand  = BINARY_ASSIGNABLE+17;
-	public static final int OPCODE_lshr        = BINARY_ASSIGNABLE+18;
-	public static final int OPCODE_rshr        = BINARY_ASSIGNABLE+19;
-	public static final int OPCODE_arrayindex  = BINARY_ASSIGNABLE+20;	
-	public static final int OPCODE_arrygen     = BINARY_ASSIGNABLE+21;
-	public static final int OPCODE_array       = BINARY_ASSIGNABLE+22;
-	public static final int OPCODE_record      = BINARY_ASSIGNABLE+23;
-	public static final int OPCODE_newobject   = BINARY_ASSIGNABLE+24;
-	public static final int OPCODE_assign      = BINARY_ASSIGNABLE+25;
+	public static final int OPCODE_not         = BINARY_ASSIGNABLE+1;
+	public static final int OPCODE_arrayinvert = BINARY_ASSIGNABLE+2;	
+	public static final int OPCODE_dereference = BINARY_ASSIGNABLE+3;
+	public static final int OPCODE_arraylength = BINARY_ASSIGNABLE+4;	
+	public static final int OPCODE_add         = BINARY_ASSIGNABLE+5;
+	public static final int OPCODE_sub         = BINARY_ASSIGNABLE+6;
+	public static final int OPCODE_mul         = BINARY_ASSIGNABLE+7;
+	public static final int OPCODE_div         = BINARY_ASSIGNABLE+8;
+	public static final int OPCODE_rem         = BINARY_ASSIGNABLE+9;
+	public static final int OPCODE_eq          = BINARY_ASSIGNABLE+10;
+	public static final int OPCODE_ne          = BINARY_ASSIGNABLE+11;
+	public static final int OPCODE_lt          = BINARY_ASSIGNABLE+12;
+	public static final int OPCODE_le          = BINARY_ASSIGNABLE+13;
+	public static final int OPCODE_gt          = BINARY_ASSIGNABLE+14;
+	public static final int OPCODE_ge          = BINARY_ASSIGNABLE+15;
+	public static final int OPCODE_bitwiseor   = BINARY_ASSIGNABLE+16;
+	public static final int OPCODE_bitwisexor  = BINARY_ASSIGNABLE+17;
+	public static final int OPCODE_bitwiseand  = BINARY_ASSIGNABLE+18;
+	public static final int OPCODE_lshr        = BINARY_ASSIGNABLE+19;
+	public static final int OPCODE_rshr        = BINARY_ASSIGNABLE+20;
+	public static final int OPCODE_arrayindex  = BINARY_ASSIGNABLE+21;	
+	public static final int OPCODE_arrygen     = BINARY_ASSIGNABLE+22;
+	public static final int OPCODE_array       = BINARY_ASSIGNABLE+23;
+	public static final int OPCODE_record      = BINARY_ASSIGNABLE+24;
+	public static final int OPCODE_newobject   = BINARY_ASSIGNABLE+25;
+	public static final int OPCODE_assign      = BINARY_ASSIGNABLE+26;
 	
 	// Nary Assignables
 	public static final int NARY_ASSIGNABLE = BINARY_ASSIGNABLE+26;

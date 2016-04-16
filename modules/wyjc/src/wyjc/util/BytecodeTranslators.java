@@ -28,6 +28,7 @@ public class BytecodeTranslators {
 	static {
 		standardFunctions[OPCODE_assign] = new Assign();
 		standardFunctions[OPCODE_neg] = new Negate();
+		standardFunctions[OPCODE_not] = new Not();
 		standardFunctions[OPCODE_arrayinvert] = new Invert();	
 		standardFunctions[OPCODE_dereference] = new Dereference();
 		standardFunctions[OPCODE_arraylength] = new ArrayLength();	
@@ -102,6 +103,20 @@ public class BytecodeTranslators {
 			context.add(new Bytecode.Load(bytecode.operand(0), elementType));
 			context.addWriteConversion(refType.element());
 			context.add(new Bytecode.Invoke(WHILEYOBJECT, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
+			context.add(new Bytecode.Store(bytecode.target(0), type));
+		}		
+	}
+	// ====================================================================================
+	// Boolean
+	// ====================================================================================
+
+	private static final class Not implements BytecodeTranslator {
+		@Override
+		public void translate(Operator bytecode, Context context) {
+			JvmType.Clazz type = (JvmType.Clazz) context.toJvmType(bytecode.type(0));
+			JvmType.Function ftype = new JvmType.Function(type);
+			context.add(new Bytecode.Load(bytecode.operand(0), type));
+			context.add(new Bytecode.Invoke(type, "not", ftype, Bytecode.InvokeMode.VIRTUAL));
 			context.add(new Bytecode.Store(bytecode.target(0), type));
 		}		
 	}

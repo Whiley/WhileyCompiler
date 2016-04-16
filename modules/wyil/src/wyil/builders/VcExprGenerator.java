@@ -87,6 +87,7 @@ public class VcExprGenerator {
 	 */
 	private static Expr.Unary.Op[] unaryOperatorMap = {
 			Expr.Unary.Op.NEG, // neg
+			Expr.Unary.Op.NOT, // not
 			null, // invert
 			null, // deref
 			Expr.Unary.Op.LENGTHOF
@@ -97,6 +98,7 @@ public class VcExprGenerator {
 	 */
 	private static Expr.Binary.Op[] binaryOperatorMap = {
 			null, // neg
+			null, // not
 			null, // invert
 			null, // deref
 			null, // lengthof
