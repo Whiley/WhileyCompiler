@@ -53,7 +53,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	/**
 	 * The code forest currently being propagated through.
 	 */
-	protected CodeForest forest;
+	protected BytecodeForest forest;
 
 	/**
 	 * The temporary abstract stores being generated during propagation.
@@ -117,12 +117,12 @@ public abstract class ForwardFlowAnalysis<T> {
 	 */
 	protected T propagate(int blockID, T store) {
 		
-		CodeForest.Block block = forest.get(blockID);
+		BytecodeForest.Block block = forest.get(blockID);
 		for (int i = 0; i < block.size(); ++i) {
 			Bytecode code = block.get(i).code();
 
 			// Construct the bytecode ID
-			CodeForest.Index id = new CodeForest.Index(blockID,i);
+			BytecodeForest.Index id = new BytecodeForest.Index(blockID,i);
 
 			try {
 				// First, check for a label which may have incoming information.
@@ -163,12 +163,12 @@ public abstract class ForwardFlowAnalysis<T> {
 
 					// assert r.second().size() == nsw.branches.size()
 					Bytecode.Switch nsw = (Bytecode.Switch) code;
-					for (int j = 0; j != nsw.branches.size(); ++j) {
-						String target = nsw.branches.get(j).second();
+					for (int j = 0; j != nsw.branches().size(); ++j) {
+						String target = nsw.branches().get(j).second();
 						T nstore = r.get(j);
 						merge(target, nstore, stores);
 					}
-					merge(sw.defaultTarget, store, stores);
+					merge(sw.defaultTarget(), store, stores);
 					store = null;
 				} else if (code instanceof Bytecode.Goto) {
 					Bytecode.Goto gto = (Bytecode.Goto) code;
@@ -220,7 +220,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<T,T> propagate(CodeForest.Index index, Bytecode.If ifgoto, T store);
+	protected abstract Pair<T,T> propagate(BytecodeForest.Index index, Bytecode.If ifgoto, T store);
 
 	/**
 	 * <p>
@@ -240,7 +240,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract Pair<T, T> propagate(CodeForest.Index index, Bytecode.IfIs iftype, T store);
+	protected abstract Pair<T, T> propagate(BytecodeForest.Index index, Bytecode.IfIs iftype, T store);
 
 	/**
 	 * <p>
@@ -257,7 +257,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract List<T> propagate(CodeForest.Index index, Bytecode.Switch sw, T store);
+	protected abstract List<T> propagate(BytecodeForest.Index index, Bytecode.Switch sw, T store);
 
 	/**
 	 * <p>
@@ -280,7 +280,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(CodeForest.Index index, Bytecode.Loop code, T store);
+	protected abstract T propagate(BytecodeForest.Index index, Bytecode.Loop code, T store);
 
 	/**
 	 * <p>
@@ -297,7 +297,7 @@ public abstract class ForwardFlowAnalysis<T> {
 	 *            statement.
 	 * @return
 	 */
-	protected abstract T propagate(CodeForest.Index index, Bytecode code, T store);
+	protected abstract T propagate(BytecodeForest.Index index, Bytecode code, T store);
 
 	/**
 	 * Determine the initial store for the current method case.

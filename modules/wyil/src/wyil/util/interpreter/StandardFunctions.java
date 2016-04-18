@@ -90,7 +90,7 @@ public class StandardFunctions {
 		@Override
 		public Constant apply(Constant[] operands, Context context) {
 			Constant.Bool i = checkType(operands[0], context, Constant.Bool.class);
-			return Constant.V_BOOL(!i.value);
+			return Constant.Bool(!i.value());
 		}		
 	}
 	
@@ -102,7 +102,7 @@ public class StandardFunctions {
 		@Override
 		public Constant apply(Constant[] operands, Context context) {
 			Constant.Integer i = checkType(operands[0], context, Constant.Integer.class);
-			return i.negate();
+			return new Constant.Integer(i.value().negate());
 		}		
 	}
 		
@@ -111,7 +111,7 @@ public class StandardFunctions {
 		public Constant apply(Constant[] operands, Context context) {
 			Constant.Integer lhs = checkType(operands[0], context, Constant.Integer.class);
 			Constant.Integer rhs = checkType(operands[1], context, Constant.Integer.class);
-			return lhs.add(rhs);
+			return new Constant.Integer(lhs.value().add(rhs.value()));
 		}
 		
 	}
@@ -120,7 +120,7 @@ public class StandardFunctions {
 		public Constant apply(Constant[] operands, Context context) {
 			Constant.Integer lhs = checkType(operands[0], context, Constant.Integer.class);
 			Constant.Integer rhs = checkType(operands[1], context, Constant.Integer.class);
-			return lhs.subtract(rhs);
+			return new Constant.Integer(lhs.value().subtract(rhs.value()));
 		}
 		
 	}
@@ -129,7 +129,7 @@ public class StandardFunctions {
 		public Constant apply(Constant[] operands, Context context) {
 			Constant.Integer lhs = checkType(operands[0], context, Constant.Integer.class);
 			Constant.Integer rhs = checkType(operands[1], context, Constant.Integer.class);
-			return lhs.multiply(rhs);
+			return new Constant.Integer(lhs.value().multiply(rhs.value()));
 		}		
 	}
 	private static final class Divide implements InternalFunction {
@@ -137,7 +137,7 @@ public class StandardFunctions {
 		public Constant apply(Constant[] operands, Context context) {
 			Constant.Integer lhs = checkType(operands[0], context, Constant.Integer.class);
 			Constant.Integer rhs = checkType(operands[1], context, Constant.Integer.class);
-			return lhs.divide(rhs);
+			return new Constant.Integer(lhs.value().divide(rhs.value()));
 		}
 		
 	}
@@ -146,19 +146,21 @@ public class StandardFunctions {
 		public Constant apply(Constant[] operands, Context context) {
 			Constant.Integer lhs = checkType(operands[0], context, Constant.Integer.class);
 			Constant.Integer rhs = checkType(operands[1], context, Constant.Integer.class);
-			return lhs.remainder(rhs);
+			return new Constant.Integer(lhs.value().remainder(rhs.value()));
 		}
 	}
+
+	
 	private static final class Equal implements InternalFunction {
 		@Override
 		public Constant apply(Constant[] operands, Context context) {
-			return Constant.V_BOOL(operands[0].equals(operands[1]));
+			return Constant.Bool(operands[0].equals(operands[1]));
 		}
 	}
 	private static final class NotEqual implements InternalFunction {
 		@Override
 		public Constant apply(Constant[] operands, Context context) {
-			return Constant.V_BOOL(!operands[0].equals(operands[1]));
+			return Constant.Bool(!operands[0].equals(operands[1]));
 		}
 	}
 	private static final class LessThan implements InternalFunction {
@@ -194,7 +196,7 @@ public class StandardFunctions {
 		@Override
 		public Constant apply(Constant[] operands, Context context) {
 			Constant.Byte b = checkType(operands[0], context, Constant.Byte.class);
-			return Constant.V_BYTE((byte) ~b.value);
+			return new Constant.Byte((byte) ~b.value());
 		}		
 	}
 	
@@ -203,8 +205,8 @@ public class StandardFunctions {
 		public Constant apply(Constant[] operands, Context context) {
 			Constant.Byte lhs = checkType(operands[0], context, Constant.Byte.class);
 			Constant.Byte rhs = checkType(operands[1], context, Constant.Byte.class);
-			int result = lhs.value | rhs.value;
-			return Constant.V_BYTE((byte) result);
+			int result = lhs.value() | rhs.value();
+			return new Constant.Byte((byte) result);
 		}		
 	}
 	private static final class BitwiseXor implements InternalFunction {
@@ -212,8 +214,8 @@ public class StandardFunctions {
 		public Constant apply(Constant[] operands, Context context) {
 			Constant.Byte lhs = checkType(operands[0], context, Constant.Byte.class);
 			Constant.Byte rhs = checkType(operands[1], context, Constant.Byte.class);
-			int result = lhs.value ^ rhs.value;
-			return Constant.V_BYTE((byte) result);
+			int result = lhs.value() ^ rhs.value();
+			return new Constant.Byte((byte) result);
 		}		
 	}
 	private static final class BitwiseAnd implements InternalFunction {
@@ -221,8 +223,8 @@ public class StandardFunctions {
 		public Constant apply(Constant[] operands, Context context) {
 			Constant.Byte lhs = checkType(operands[0], context, Constant.Byte.class);
 			Constant.Byte rhs = checkType(operands[1], context, Constant.Byte.class);
-			int result = lhs.value & rhs.value;
-			return Constant.V_BYTE((byte) result);
+			int result = lhs.value() & rhs.value();
+			return new Constant.Byte((byte) result);
 		}		
 	}
 	private static final class LeftShift implements InternalFunction {
@@ -230,8 +232,8 @@ public class StandardFunctions {
 		public Constant apply(Constant[] operands, Context context) {
 			Constant.Byte lhs = checkType(operands[0], context, Constant.Byte.class);
 			Constant.Integer rhs = checkType(operands[1], context, Constant.Integer.class);
-			int result = lhs.value << rhs.value.intValue();
-			return Constant.V_BYTE((byte) result);
+			int result = lhs.value() << rhs.value().intValue();
+			return new Constant.Byte((byte) result);
 		}		
 	}
 	private static final class RightShift implements InternalFunction {
@@ -239,8 +241,8 @@ public class StandardFunctions {
 		public Constant apply(Constant[] operands, Context context) {
 			Constant.Byte lhs = checkType(operands[0], context, Constant.Byte.class);
 			Constant.Integer rhs = checkType(operands[1], context, Constant.Integer.class);
-			int result = lhs.value >> rhs.value.intValue();
-			return Constant.V_BYTE((byte) result);
+			int result = lhs.value() >> rhs.value().intValue();
+			return new Constant.Byte((byte) result);
 		}		
 	}
 	
@@ -251,8 +253,8 @@ public class StandardFunctions {
 		@Override
 		public Constant apply(Constant[] operands, Context context) {
 			Constant.Array array = checkType(operands[0], context, Constant.Array.class);
-			BigInteger length = BigInteger.valueOf(array.values.size());
-			return Constant.V_INTEGER(length);
+			BigInteger length = BigInteger.valueOf(array.values().size());
+			return new Constant.Integer(length);
 		}		
 	}	
 	private static final class ArrayIndex implements InternalFunction {
@@ -260,12 +262,12 @@ public class StandardFunctions {
 		public Constant apply(Constant[] operands, Context context) {
 			Constant.Array src = checkType(operands[0], context, Constant.Array.class);
 			Constant.Integer index = checkType(operands[1], context, Constant.Integer.class);
-			int i = index.value.intValue();
-			if (i < 0 || i >= src.values.size()) {
+			int i = index.value().intValue();
+			if (i < 0 || i >= src.values().size()) {
 				error("index-out-of-bounds", context);
 			}
 			// Ok, get the element at that index
-			return src.values.get(index.value.intValue());
+			return src.values().get(index.value().intValue());
 		}		
 	}
 	private static final class ArrayGenerator implements InternalFunction {
@@ -274,12 +276,12 @@ public class StandardFunctions {
 			Constant element = operands[0];
 			Constant.Integer count = checkType(operands[1], context, Constant.Integer.class);
 			// Check that we have a integer count
-			int n = count.value.intValue();
+			int n = count.value().intValue();
 			ArrayList<Constant> values = new ArrayList<Constant>();
 			for (int i = 0; i != n; ++i) {
 				values.add(element);
 			}
-			return Constant.V_ARRAY(values);
+			return new Constant.Array(values);
 		}		
 	}
 	private static final class ArrayConstructor implements InternalFunction {
@@ -289,7 +291,7 @@ public class StandardFunctions {
 			for (Constant operand : operands) {
 				values.add(operand);
 			}
-			return Constant.V_ARRAY(values);
+			return new Constant.Array(values);
 		}		
 	}
 	
@@ -307,7 +309,7 @@ public class StandardFunctions {
 			for (int i = 0; i != operands.length; ++i) {
 				values.put(fields.get(i), operands[i]);
 			}
-			return Constant.V_RECORD(values);
+			return new Constant.Record(values);
 		}		
 	}	
 	
@@ -315,6 +317,8 @@ public class StandardFunctions {
 	// ====================================================================================
 	// Helpers
 	// ====================================================================================
+
+	
 	private static Constant.Bool lessThan(Constant lhs, Constant rhs, boolean isStrict, Context context) {
 		checkType(lhs, context, Constant.Integer.class);
 		checkType(rhs, context, Constant.Integer.class);
@@ -324,9 +328,9 @@ public class StandardFunctions {
 		// In the strict case, the lhs must be strictly below the rhs. In the
 		// non-strict case, they can be equal.
 		if (isStrict) {
-			return Constant.V_BOOL(result < 0);
+			return Constant.Bool(result < 0);
 		} else {
-			return Constant.V_BOOL(result <= 0);
+			return Constant.Bool(result <= 0);
 		}
 		
 	}

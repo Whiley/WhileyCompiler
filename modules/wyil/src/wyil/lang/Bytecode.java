@@ -28,10 +28,7 @@ package wyil.lang;
 import java.util.*;
 
 import wycc.lang.NameID;
-import wycc.lang.SyntacticElement;
 import wycc.util.Pair;
-import wyil.lang.Bytecode.Branching;
-import wyil.lang.Bytecode.Compound;
 
 /**
  * Represents a WyIL bytecode. The Whiley Intermediate Language (WyIL) employs
@@ -1810,8 +1807,8 @@ public abstract class Bytecode {
 	 *
 	 */
 	public static final class Switch extends Bytecode {
-		public final ArrayList<Pair<Constant, String>> branches;
-		public final String defaultTarget;
+		private final ArrayList<Pair<Constant, String>> branches;
+		private final String defaultTarget;
 
 		public Switch(Type type, int operand, String defaultTarget, Collection<Pair<Constant, String>> branches) {
 			super(new Type[] { type }, new int[0], operand);
@@ -1826,7 +1823,7 @@ public abstract class Bytecode {
 
 		public Switch relabel(Map<String, String> labels) {
 			ArrayList<Pair<Constant, String>> nbranches = new ArrayList();
-			for (Pair<Constant, String> p : branches) {
+			for (Pair<Constant, String> p : branches()) {
 				String nlabel = labels.get(p.second());
 				if (nlabel == null) {
 					nbranches.add(p);
@@ -1835,9 +1832,9 @@ public abstract class Bytecode {
 				}
 			}
 
-			String nlabel = labels.get(defaultTarget);
+			String nlabel = labels.get(defaultTarget());
 			if (nlabel == null) {
-				return new Switch(types[0], operands[0], defaultTarget, nbranches);
+				return new Switch(types[0], operands[0], defaultTarget(), nbranches);
 			} else {
 				return new Switch(types[0], operands[0], nlabel, nbranches);
 			}
@@ -1846,8 +1843,8 @@ public abstract class Bytecode {
 		public boolean equals(Object o) {
 			if (o instanceof Switch) {
 				Switch ig = (Switch) o;
-				return operands[0] == ig.operands[0] && defaultTarget.equals(ig.defaultTarget)
-						&& branches.equals(ig.branches) && types[0].equals(ig.types[0]);
+				return operands[0] == ig.operands[0] && defaultTarget().equals(ig.defaultTarget())
+						&& branches().equals(ig.branches()) && types[0].equals(ig.types[0]);
 			}
 			return false;
 		}
@@ -1855,22 +1852,30 @@ public abstract class Bytecode {
 		public String toString() {
 			String table = "";
 			boolean firstTime = true;
-			for (Pair<Constant, String> p : branches) {
+			for (Pair<Constant, String> p : branches()) {
 				if (!firstTime) {
 					table += ", ";
 				}
 				firstTime = false;
 				table += p.first() + "->" + p.second();
 			}
-			table += ", *->" + defaultTarget;
+			table += ", *->" + defaultTarget();
 			return "switch %" + operands[0] + " " + table;
+		}
+
+		
+		public String defaultTarget() {
+			return defaultTarget;
+		}
+
+		public ArrayList<Pair<Constant, String>> branches() {
+			return branches;
 		}
 	}
 
 	// =============================================================
 	// Helpers
 	// =============================================================
-
 
 	/**
 	 * Construct a mapping from labels to their block indices within a root
@@ -1880,16 +1885,16 @@ public abstract class Bytecode {
 	 * @param block
 	 * @return
 	 */
-	public static Map<String, CodeForest.Index> buildLabelMap(CodeForest forest) {
-		HashMap<String, CodeForest.Index> labels = new HashMap<String, CodeForest.Index>();
+	public static Map<String, BytecodeForest.Index> buildLabelMap(BytecodeForest forest) {
+		HashMap<String, BytecodeForest.Index> labels = new HashMap<String, BytecodeForest.Index>();
 		for (int i = 0; i != forest.numBlocks(); ++i) {
-			CodeForest.Block block = forest.get(i);
+			BytecodeForest.Block block = forest.get(i);
 			for (int j = 0; j != block.size(); ++j) {
 				Bytecode code = block.get(j).code();
 				if (code instanceof Bytecode.Label) {
 					// Found a label, so register it in the labels map
 					Bytecode.Label label = (Bytecode.Label) code;
-					labels.put(label.label(), new CodeForest.Index(i, j));
+					labels.put(label.label(), new BytecodeForest.Index(i, j));
 				}
 			}
 		}

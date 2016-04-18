@@ -12,7 +12,7 @@ import java.util.Set;
 import wycc.util.Pair;
 
 /**
- * A CodeBlock can be thought of in different ways. For example, it can be
+ * A bytecode forest can be thought of in different ways. For example, it can be
  * thought of as a forest of rooted trees; or, more simply, as an array of
  * bytecode sequences. Some bytecodes can be thought of as compound structures
  * containing nested blocks of bytecodes. In reality, such compound bytecodes
@@ -22,16 +22,16 @@ import wycc.util.Pair;
  * @author David J. Pearce
  *
  */
-public class CodeForest {
+public class BytecodeForest {
 	private final ArrayList<Register> registers;
 	private final ArrayList<Integer> roots;
 	private final ArrayList<Block> blocks;
 
-	public CodeForest() {
+	public BytecodeForest() {
 		this(Collections.EMPTY_LIST);
 	}
 	
-	public CodeForest(CodeForest forest) {
+	public BytecodeForest(BytecodeForest forest) {
 		this.registers = new ArrayList<Register>(forest.registers);
 		this.roots = new ArrayList<Integer>(forest.roots);
 		this.blocks = new ArrayList<Block>();
@@ -40,7 +40,7 @@ public class CodeForest {
 		}		
 	}
 	
-	public CodeForest(List<Register> registers) {
+	public BytecodeForest(List<Register> registers) {
 		this.registers = new ArrayList<Register>(registers);
 		this.roots = new ArrayList<Integer>();
 		this.blocks = new ArrayList<Block>();

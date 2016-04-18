@@ -21,7 +21,7 @@ import wycs.syntax.SyntacticType;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.Bytecode;
-import wyil.lang.CodeForest;
+import wyil.lang.BytecodeForest;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
 import wyil.util.ErrorMessages;
@@ -47,7 +47,7 @@ public class VcExprGenerator {
 	 * @param branch
 	 *            The branch on entry to the bytecode.
 	 */
-	public void transform(Bytecode code, CodeForest forest, VcBranch branch) {
+	public void transform(Bytecode code, BytecodeForest forest, VcBranch branch) {
 		try {
 			if (code instanceof Bytecode.Operator) {
 				transform((Bytecode.Operator) code, forest, branch);				
@@ -120,7 +120,7 @@ public class VcExprGenerator {
 			null // right shift
 	};
 
-	protected void transform(Bytecode.Operator code, CodeForest forest, VcBranch branch) {
+	protected void transform(Bytecode.Operator code, BytecodeForest forest, VcBranch branch) {
 		switch(code.kind()) {
 		case ASSIGN:
 			for (int i = 0; i != code.operands().length; ++i) {
@@ -182,24 +182,24 @@ public class VcExprGenerator {
 		}
 	}
 	
-	protected void transform(Bytecode.Convert code, CodeForest forest, VcBranch branch) {
+	protected void transform(Bytecode.Convert code, BytecodeForest forest, VcBranch branch) {
 		Collection<Attribute> attributes = VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes());
 		Expr result = branch.read(code.operand(0));
 		SyntacticType type = utils.convert(code.result(), forest.get(branch.pc()).attributes());
 		branch.write(code.target(0), new Expr.Cast(type, result, attributes));
 	}
 
-	protected void transform(Bytecode.Const code, CodeForest forest, VcBranch branch) {
+	protected void transform(Bytecode.Const code, BytecodeForest forest, VcBranch branch) {
 		Value val = utils.convert(code.constant(), forest, branch);
 		branch.write(code.target(), new Expr.Constant(val, VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes())));
 	}
 
-	protected void transform(Bytecode.Debug code, CodeForest forest,
+	protected void transform(Bytecode.Debug code, BytecodeForest forest,
 			VcBranch branch) {
 		// do nout
 	}
 
-	protected void transform(Bytecode.FieldLoad code, CodeForest forest, VcBranch branch) {
+	protected void transform(Bytecode.FieldLoad code, BytecodeForest forest, VcBranch branch) {
 		Type.EffectiveRecord er = (Type.EffectiveRecord) code.type(0); 
 		ArrayList<String> fields = new ArrayList<String>(er.fields().keySet());
 		Collections.sort(fields);
@@ -210,13 +210,13 @@ public class VcExprGenerator {
 	}
 
 	protected void transform(Bytecode.IndirectInvoke code,
-			CodeForest forest, VcBranch branch) {
+			BytecodeForest forest, VcBranch branch) {
 		for(int target : code.targets()) {
 			branch.havoc(target);
 		}
 	}
 
-	protected void transform(Bytecode.Invoke code, CodeForest forest,
+	protected void transform(Bytecode.Invoke code, BytecodeForest forest,
 			VcBranch branch) throws Exception {
 		Collection<wyil.lang.Attribute> attributes =  forest.get(branch.pc()).attributes();
 		Collection<Attribute> wyccAttributes = VcUtils.toWycsAttributes(attributes);
@@ -268,7 +268,7 @@ public class VcExprGenerator {
 		}
 	}
 
-	protected void transformArrayGenerator(Bytecode.Operator code, CodeForest forest, VcBranch branch) {
+	protected void transformArrayGenerator(Bytecode.Operator code, BytecodeForest forest, VcBranch branch) {
 		Type elementType = ((Type.Array) code.type(0)).element();
 		Collection<wyil.lang.Attribute> wyilAttributes = forest.get(branch.pc()).attributes();
 		Collection<Attribute> attributes = VcUtils.toWycsAttributes(wyilAttributes);
@@ -283,12 +283,12 @@ public class VcExprGenerator {
 		branch.assume(macro);
 	}
 	
-	protected void transform(Bytecode.Lambda code, CodeForest forest, VcBranch branch) {
+	protected void transform(Bytecode.Lambda code, BytecodeForest forest, VcBranch branch) {
 		// TODO: implement lambdas somehow?
 		branch.havoc(code.target(0));
 	}
 
-	protected void transform(Bytecode.Update code, CodeForest forest, VcBranch branch) {
+	protected void transform(Bytecode.Update code, BytecodeForest forest, VcBranch branch) {
 		Expr result = branch.read(code.result());
 		Expr oldSource = branch.read(code.target(0));
 		Expr newSource = branch.havoc(code.target(0));
@@ -296,7 +296,7 @@ public class VcExprGenerator {
 	}
 
 	protected void updateHelper(Iterator<Bytecode.LVal> iter, Expr oldSource, Expr newSource, Expr result, VcBranch branch,
-			CodeForest forest) {
+			BytecodeForest forest) {
 		Collection<Attribute> attributes = VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes());
 		if (!iter.hasNext()) {
 			branch.assume(new Expr.Binary(Expr.Binary.Op.EQ, newSource, result, attributes));
@@ -346,7 +346,7 @@ public class VcExprGenerator {
 	 *            --- The enclosing branch
 	 */
 	protected void transformUnary(Expr.Unary.Op operator, Bytecode code, VcBranch branch,
-			CodeForest forest) {
+			BytecodeForest forest) {
 		Expr lhs = branch.read(code.operand(0));
 		branch.write(code.target(0),
 				new Expr.Unary(operator, lhs, VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes())));
@@ -366,7 +366,7 @@ public class VcExprGenerator {
 	 *            --- The enclosing branch
 	 */
 	protected void transformBinary(Expr.Binary.Op operator, Bytecode code, VcBranch branch,
-			CodeForest forest) {
+			BytecodeForest forest) {
 		Expr lhs = branch.read(code.operand(0));
 		Expr rhs = branch.read(code.operand(1));
 
@@ -395,7 +395,7 @@ public class VcExprGenerator {
 	 *            --- The enclosing branch
 	 */
 	protected void transformNary(Expr.Nary.Op operator, Bytecode code, VcBranch branch,
-			CodeForest forest) {
+			BytecodeForest forest) {
 		int[] code_operands = code.operands();
 		Expr[] vals = new Expr[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
@@ -421,7 +421,7 @@ public class VcExprGenerator {
 	 * @throws Exception
 	 */
 	private int countPostconditions(NameID name, Type.FunctionOrMethod fun,
-			CodeForest forest, VcBranch branch) throws Exception {
+			BytecodeForest forest, VcBranch branch) throws Exception {
 		Path.Entry<WyilFile> e = builder.project().get(name.module(), WyilFile.ContentType);
 		if (e == null) {
 			syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module().toString()), filename,

@@ -7,7 +7,7 @@ import java.util.List;
 
 import wybs.lang.Builder;
 import wycc.lang.Transform;
-import wyil.lang.CodeForest;
+import wyil.lang.BytecodeForest;
 import wyil.lang.Bytecode;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
@@ -84,14 +84,14 @@ public class LoopVariants implements Transform<WyilFile> {
 	}
 
 	public void infer(WyilFile.Type type) {
-		CodeForest forest = type.invariant();
+		BytecodeForest forest = type.invariant();
 		for(int i=0;i!=forest.numRoots();++i) {
 			infer(forest.getRoot(i),forest);
 		}
 	}
 
 	public void infer(WyilFile.FunctionOrMethod method) {		
-		CodeForest forest = method.code();
+		BytecodeForest forest = method.code();
 		for(int i=0;i!=forest.numRoots();++i) {
 			infer(forest.getRoot(i),forest);
 		}		
@@ -106,12 +106,12 @@ public class LoopVariants implements Transform<WyilFile> {
 	 * @param method
 	 * @return
 	 */
-	protected BitSet infer(int blockID, CodeForest forest) {
-		CodeForest.Block block = forest.get(blockID);
+	protected BitSet infer(int blockID, BytecodeForest forest) {
+		BytecodeForest.Block block = forest.get(blockID);
 		BitSet modified = new BitSet(forest.registers().size());
 		int size = block.size();
 		for (int i = 0; i < size; ++i) {
-			CodeForest.Entry e = block.get(i);
+			BytecodeForest.Entry e = block.get(i);
 			Bytecode code = e.code();
 			for (int target : code.targets()) {
 				modified.set(target);

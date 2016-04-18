@@ -1301,7 +1301,7 @@ public class FlowTypeChecker {
 			// treated the same as !(x is null)
 
 			if (lhs instanceof Expr.LocalVariable && rhs instanceof Expr.Constant
-					&& ((Expr.Constant) rhs).value == Constant.V_NULL) {
+					&& ((Expr.Constant) rhs).value == Constant.Null) {
 				// bingo, special case
 				Expr.LocalVariable lv = (Expr.LocalVariable) lhs;
 				Nominal newType;
@@ -2890,14 +2890,14 @@ public class FlowTypeChecker {
 					values.add(e.first());
 					element = Nominal.Union(element, e.second());
 				}
-				return new Pair<Constant, Nominal>(Constant.V_ARRAY(values),
+				return new Pair<Constant, Nominal>(new Constant.Array(values),
 						Nominal.Array(element, !nop.arguments.isEmpty()));
 			} else if (expr instanceof Expr.ArrayGenerator) {
 				Expr.ArrayGenerator lg = (Expr.ArrayGenerator) expr;
 				Pair<Constant, Nominal> element = resolveAsConstant(lg.element, context, visited);
 				Pair<Constant, Nominal> count = resolveAsConstant(lg.count, context, visited);
 				Constant.Array l = evaluate(lg, element.first(), count.first(), context);
-				return new Pair<Constant, Nominal>(l, Nominal.Array(element.second(), !l.values.isEmpty()));
+				return new Pair<Constant, Nominal>(l, Nominal.Array(element.second(), !l.values().isEmpty()));
 			} else if (expr instanceof Expr.Record) {
 				Expr.Record rg = (Expr.Record) expr;
 				HashMap<String, Constant> values = new HashMap<String, Constant>();
@@ -2910,11 +2910,11 @@ public class FlowTypeChecker {
 					values.put(e.getKey(), v.first());
 					types.put(e.getKey(), v.second());
 				}
-				return new Pair<Constant, Nominal>(Constant.V_RECORD(values), Nominal.Record(false, types));
+				return new Pair<Constant, Nominal>(new Constant.Record(values), Nominal.Record(false, types));
 			} else if (expr instanceof Expr.FunctionOrMethod) {
 				// TODO: add support for proper lambdas
 				Expr.FunctionOrMethod f = (Expr.FunctionOrMethod) expr;
-				return new Pair<Constant, Nominal>(Constant.V_LAMBDA(f.nid, f.type.nominal()), f.type);
+				return new Pair<Constant, Nominal>(new Constant.Lambda(f.nid, f.type.nominal()), f.type);
 			}
 		} catch (SyntaxError.InternalFailure e) {
 			throw e;
@@ -3036,21 +3036,21 @@ public class FlowTypeChecker {
 		case NOT:
 			if (operand instanceof Constant.Bool) {
 				Constant.Bool b = (Constant.Bool) operand;
-				return Constant.V_BOOL(!b.value);
+				return Constant.Bool(!b.value());
 			}
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, operator);
 			break;
 		case NEG:
 			if (operand instanceof Constant.Integer) {
 				Constant.Integer b = (Constant.Integer) operand;
-				return Constant.V_INTEGER(b.value.negate());
+				return new Constant.Integer(b.value().negate());
 			} 
 			syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION), context, operator);
 			break;
 		case INVERT:
 			if (operand instanceof Constant.Byte) {
 				Constant.Byte b = (Constant.Byte) operand;
-				return Constant.V_BYTE((byte) ~b.value);
+				return new Constant.Byte((byte) ~b.value());
 			}
 			break;
 		}
@@ -3079,11 +3079,11 @@ public class FlowTypeChecker {
 	private Constant evaluateBoolean(Expr.BinOp bop, Constant.Bool v1, Constant.Bool v2, Context context) {
 		switch (bop.op) {
 		case AND:
-			return Constant.V_BOOL(v1.value & v2.value);
+			return Constant.Bool(v1.value() & v2.value());
 		case OR:
-			return Constant.V_BOOL(v1.value | v2.value);
+			return Constant.Bool(v1.value() | v2.value());
 		case XOR:
-			return Constant.V_BOOL(v1.value ^ v2.value);
+			return Constant.Bool(v1.value() ^ v2.value());
 		}
 		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, bop);
 		return null;
@@ -3092,15 +3092,15 @@ public class FlowTypeChecker {
 	private Constant evaluate(Expr.BinOp bop, Constant.Integer v1, Constant.Integer v2, Context context) {
 		switch (bop.op) {
 		case ADD:
-			return Constant.V_INTEGER(v1.value.add(v2.value));
+			return new Constant.Integer(v1.value().add(v2.value()));
 		case SUB:
-			return Constant.V_INTEGER(v1.value.subtract(v2.value));
+			return new Constant.Integer(v1.value().subtract(v2.value()));
 		case MUL:
-			return Constant.V_INTEGER(v1.value.multiply(v2.value));
+			return new Constant.Integer(v1.value().multiply(v2.value()));
 		case DIV:
-			return Constant.V_INTEGER(v1.value.divide(v2.value));
+			return new Constant.Integer(v1.value().divide(v2.value()));
 		case REM:
-			return Constant.V_INTEGER(v1.value.remainder(v2.value));
+			return new Constant.Integer(v1.value().remainder(v2.value()));
 		}
 		syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION), context, bop);
 		return null;
@@ -3110,10 +3110,10 @@ public class FlowTypeChecker {
 		if (count instanceof Constant.Integer) {
 			Constant.Integer c = (Constant.Integer) count;
 			ArrayList<Constant> items = new ArrayList<Constant>();
-			for (int i = 0; i != c.value.intValue(); ++i) {
+			for (int i = 0; i != c.value().intValue(); ++i) {
 				items.add(element);
 			}
-			return Constant.V_ARRAY(items);
+			return new Constant.Array(items);
 		}
 		syntaxError(errorMessage(INVALID_ARRAY_EXPRESSION), context, bop);
 		return null;

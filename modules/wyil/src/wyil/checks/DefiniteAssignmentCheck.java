@@ -36,7 +36,7 @@ import wyil.util.dfa.*;
 import wyil.attributes.SourceLocation;
 import wyil.lang.*;
 import static wycc.lang.SyntaxError.*;
-import static wyil.lang.CodeForest.*;
+import static wyil.lang.BytecodeForest.*;
 import static wyil.util.ErrorMessages.*;
 
 /**
@@ -102,7 +102,7 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public HashSet<Integer> propagate(CodeForest.Index index, Bytecode code, HashSet<Integer> in) {
+	public HashSet<Integer> propagate(BytecodeForest.Index index, Bytecode code, HashSet<Integer> in) {
 		checkUses(index, code, in);
 
 		int[] defs = defs(code);
@@ -118,7 +118,7 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(CodeForest.Index index,
+	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(BytecodeForest.Index index,
 			Bytecode.If igoto, HashSet<Integer> in) {
 
 		if (!in.contains(igoto.operand(0))) {
@@ -130,7 +130,7 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(CodeForest.Index index, Bytecode.IfIs iftype,
+	public Pair<HashSet<Integer>, HashSet<Integer>> propagate(BytecodeForest.Index index, Bytecode.IfIs iftype,
 			HashSet<Integer> in) {
 
 		if (!in.contains(iftype.operand(0))) {
@@ -142,7 +142,7 @@ public class DefiniteAssignmentCheck extends
 	}
 
 	@Override
-	public List<HashSet<Integer>> propagate(CodeForest.Index index, Bytecode.Switch sw, HashSet<Integer> in) {
+	public List<HashSet<Integer>> propagate(BytecodeForest.Index index, Bytecode.Switch sw, HashSet<Integer> in) {
 
 		if (!in.contains(sw.operand(0))) {
 			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), filename,
@@ -150,14 +150,14 @@ public class DefiniteAssignmentCheck extends
 		}
 
 		ArrayList<HashSet<Integer>> stores = new ArrayList();
-		for (int i = 0; i != sw.branches.size(); ++i) {
+		for (int i = 0; i != sw.branches().size(); ++i) {
 			stores.add(in);
 		}
 		return stores;
 	}
 
 	@Override
-	public HashSet<Integer> propagate(CodeForest.Index index, Bytecode.Loop loop, HashSet<Integer> in) {
+	public HashSet<Integer> propagate(BytecodeForest.Index index, Bytecode.Loop loop, HashSet<Integer> in) {
 		if (loop instanceof Bytecode.Quantify) {
 			Bytecode.Quantify fall = (Bytecode.Quantify) loop;
 
@@ -185,7 +185,7 @@ public class DefiniteAssignmentCheck extends
 		return r;
 	}
 
-	public void checkUses(CodeForest.Index index, Bytecode code, HashSet<Integer> in) {
+	public void checkUses(BytecodeForest.Index index, Bytecode code, HashSet<Integer> in) {
 
 		for (int operand : code.operands()) {
 			if (!in.contains(operand)) {

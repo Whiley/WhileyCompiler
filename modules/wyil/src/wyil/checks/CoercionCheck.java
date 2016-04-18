@@ -87,17 +87,17 @@ public class CoercionCheck implements Transform<WyilFile> {
 	}
 
 	public void check(WyilFile.FunctionOrMethod method) {
-		CodeForest forest = method.code();
+		BytecodeForest forest = method.code();
 		for(int i=0;i!=forest.numBlocks();++i) {
 			check(i, forest, method);
 		}
 	}
 
-	protected void check(int blockID, CodeForest forest, WyilFile.FunctionOrMethod method) {
+	protected void check(int blockID, BytecodeForest forest, WyilFile.FunctionOrMethod method) {
 		// Examine all entries in this block looking for a conversion bytecode
-		CodeForest.Block block = forest.get(blockID);
+		BytecodeForest.Block block = forest.get(blockID);
 		for (int i = 0; i != block.size(); ++i) {
-			CodeForest.Entry e = block.get(i);
+			BytecodeForest.Entry e = block.get(i);
 			Bytecode code = e.code();
 			if (code instanceof Bytecode.Convert) {
 				Bytecode.Convert conv = (Bytecode.Convert) code;

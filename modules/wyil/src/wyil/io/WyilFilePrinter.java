@@ -125,7 +125,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			t_str = t.toString();
 			writeModifiers(td.modifiers(),out);
 			out.println("type " + td.name() + " : " + t_str);						
-			CodeForest forest = td.invariant();
+			BytecodeForest forest = td.invariant();
 			for(int i=0;i!=forest.numRoots();++i) {
 				out.println("where:");
 				write(0, forest.getRoot(i), forest, out);
@@ -142,7 +142,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 	}
 
 	private void write(FunctionOrMethod method, PrintWriter out) {
-		CodeForest forest = method.code();
+		BytecodeForest forest = method.code();
 		//
 		writeModifiers(method.modifiers(), out);
 		Type.FunctionOrMethod ft = method.type();
@@ -186,8 +186,8 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		out.print(")");
 	}
 	
-	private void write(int indent, int blockID, CodeForest forest, PrintWriter out) {
-		CodeForest.Block block = forest.get(blockID);
+	private void write(int indent, int blockID, BytecodeForest forest, PrintWriter out) {
+		BytecodeForest.Block block = forest.get(blockID);
 		for(int i=0;i!=block.size();++i) {
 			Bytecode code = block.get(i).code();
 			if(code instanceof Bytecode.Label) {
@@ -198,7 +198,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 	}
 
-	private void write(int indent, Bytecode c, CodeForest forest, PrintWriter out) {
+	private void write(int indent, Bytecode c, BytecodeForest forest, PrintWriter out) {
 		String line = "null";
 		tabIndent(indent+1,out);
 

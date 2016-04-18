@@ -89,7 +89,7 @@ public class Interpreter {
 				throw new IllegalArgumentException("incorrect number of arguments: " + nid + ", " + sig);
 			}
 			// Third, get and check the function or method body
-			CodeForest code = fm.code();
+			BytecodeForest code = fm.code();
 			if (fm.body() == null) {
 				// FIXME: add support for native functions or methods
 				throw new IllegalArgumentException("no function or method body found: " + nid + ", " + sig);
@@ -101,7 +101,7 @@ public class Interpreter {
 				frame[i] = args[i];
 			}
 			// Finally, let's do it!
-			CodeForest.Index pc = new CodeForest.Index(fm.body(), 0);
+			BytecodeForest.Index pc = new BytecodeForest.Index(fm.body(), 0);
 			return (Constant[]) executeAllWithin(frame, new Context(pc, code));
 		} catch (IOException e) {
 			throw new RuntimeException(e.getMessage(), e);
@@ -118,16 +118,16 @@ public class Interpreter {
 	 * @return
 	 */
 	private Object executeAllWithin(Constant[] frame, Context context) {
-		CodeForest forest = context.forest;
-		CodeForest.Index pc = context.pc;
+		BytecodeForest forest = context.forest;
+		BytecodeForest.Index pc = context.pc;
 		int block = pc.block();
-		CodeForest.Block codes = forest.get(pc.block());
+		BytecodeForest.Block codes = forest.get(pc.block());
 
 		while (pc.block() == block && pc.offset() < codes.size()) {
 			Object r = execute(frame, new Context(pc, context.forest));
 			// Now, see whether we are continuing or not
-			if (r instanceof CodeForest.Index) {
-				pc = (CodeForest.Index) r;
+			if (r instanceof BytecodeForest.Index) {
+				pc = (BytecodeForest.Index) r;
 			} else {
 				return r;
 			}
@@ -214,7 +214,7 @@ public class Interpreter {
 	 */
 	private Object execute(Bytecode.AssertOrAssume bytecode, Constant[] frame, Context context) {
 		//
-		CodeForest.Index pc = new CodeForest.Index(bytecode.block(), 0);
+		BytecodeForest.Index pc = new BytecodeForest.Index(bytecode.block(), 0);
 		Object r = executeAllWithin(frame, new Context(pc, context.forest));
 		//
 		if (r == null) {
@@ -327,7 +327,7 @@ public class Interpreter {
 	private Constant convert(Constant value, Type.Record to, Context context) {
 		checkType(value, context, Constant.Record.class);
 		Constant.Record rv = (Constant.Record) value;
-		HashSet<String> rv_fields = new HashSet<String>(rv.values.keySet());
+		HashSet<String> rv_fields = new HashSet<String>(rv.values().keySet());
 		// Check fields in value are subset of those in target type
 		if (!rv_fields.containsAll(to.keys())) {
 			error("cannot convert between records with differing fields", context);
@@ -335,10 +335,10 @@ public class Interpreter {
 		} else {
 			HashMap<String, Constant> nValues = new HashMap<String, Constant>();
 			for (String field : to.keys()) {
-				Constant nValue = convert(rv.values.get(field), to.field(field), context);
+				Constant nValue = convert(rv.values().get(field), to.field(field), context);
 				nValues.put(field, nValue);
 			}
-			return Constant.V_RECORD(nValues);
+			return new Constant.Record(nValues);
 		}
 	}
 
@@ -355,11 +355,11 @@ public class Interpreter {
 	private Constant convert(Constant value, Type.Array to, Context context) {
 		checkType(value, context, Constant.Array.class);
 		Constant.Array lv = (Constant.Array) value;
-		ArrayList<Constant> values = new ArrayList<Constant>(lv.values);
+		ArrayList<Constant> values = new ArrayList<Constant>(lv.values());
 		for (int i = 0; i != values.size(); ++i) {
 			values.set(i, convert(values.get(i), to.element(), context));
 		}
-		return Constant.V_ARRAY(values);
+		return new Constant.Array(values);
 	}
 
 	/**
@@ -413,8 +413,8 @@ public class Interpreter {
 	private Object execute(Bytecode.Debug bytecode, Constant[] frame, Context context) {
 		//
 		Constant.Array list = (Constant.Array) frame[bytecode.operand(0)];
-		for (Constant item : list.values) {
-			BigInteger b = ((Constant.Integer) item).value;
+		for (Constant item : list.values()) {
+			BigInteger b = ((Constant.Integer) item).value();
 			char c = (char) b.intValue();
 			debug.print(c);
 		}
@@ -440,7 +440,7 @@ public class Interpreter {
 
 	private Object execute(Bytecode.FieldLoad bytecode, Constant[] frame, Context context) {
 		Constant.Record rec = (Constant.Record) frame[bytecode.operand(0)];
-		frame[bytecode.target(0)] = rec.values.get(bytecode.fieldName());
+		frame[bytecode.target(0)] = rec.values().get(bytecode.fieldName());
 		return context.pc.next();
 	}
 
@@ -451,13 +451,13 @@ public class Interpreter {
 		checkType(endOperand, context, Constant.Integer.class);
 		Constant.Integer so = (Constant.Integer) startOperand;
 		Constant.Integer eo = (Constant.Integer) endOperand;
-		int start = so.value.intValue();
-		int end = eo.value.intValue();
+		int start = so.value().intValue();
+		int end = eo.value().intValue();
 		for (int i = start; i < end; ++i) {
 			// Assign the index variable
-			frame[bytecode.indexOperand()] = Constant.V_INTEGER(BigInteger.valueOf(i));
+			frame[bytecode.indexOperand()] = new Constant.Integer(BigInteger.valueOf(i));
 			// Execute loop body for one iteration
-			CodeForest.Index pc = new CodeForest.Index(bytecode.block(), 0);
+			BytecodeForest.Index pc = new BytecodeForest.Index(bytecode.block(), 0);
 			Object r = executeAllWithin(frame, new Context(pc, context.forest));
 			// Now, check whether we fell through to the end or not. If not,
 			// then we must have exited somehow so return to signal that.
@@ -476,7 +476,7 @@ public class Interpreter {
 	private Object execute(Bytecode.If bytecode, Constant[] frame, Context context) {
 		Constant.Bool operand = checkType(frame[bytecode.operand(0)],context,Constant.Bool.class);
 		
-		if (operand.value) {
+		if (operand.value()) {
 			// branch taken, so jump to destination label
 			return context.getLabel(bytecode.destination());
 		} else {
@@ -532,7 +532,7 @@ public class Interpreter {
 				Constant.Array t = (Constant.Array) value;
 				Type element = ((Type.Array) type).element();
 				boolean r = true;
-				for (Constant val : t.values) {
+				for (Constant val : t.values()) {
 					r &= isMemberOfType(val, element, context);
 				}
 				return r;
@@ -542,14 +542,14 @@ public class Interpreter {
 			if (value instanceof Constant.Record) {
 				Type.Record rt = (Type.Record) type;
 				Constant.Record t = (Constant.Record) value;
-				Set<String> fields = t.values.keySet();
+				Set<String> fields = t.values().keySet();
 				if (!fields.containsAll(rt.keys()) || (!rt.keys().containsAll(fields) && !rt.isOpen())) {
 					// In this case, the set of fields does not match properly
 					return false;
 				}
 				boolean r = true;
 				for (String field : fields) {
-					r &= isMemberOfType(t.values.get(field), rt.field(field), context);
+					r &= isMemberOfType(t.values().get(field), rt.field(field), context);
 				}
 				return r;
 			}
@@ -568,7 +568,7 @@ public class Interpreter {
 		} else if (type instanceof Type.FunctionOrMethod) {
 			if (value instanceof Constant.Lambda) {
 				Constant.Lambda l = (Constant.Lambda) value;
-				if (Type.isSubtype(type, l.type)) {
+				if (Type.isSubtype(type, l.type())) {
 					return true;
 				}
 			}
@@ -590,11 +590,11 @@ public class Interpreter {
 					return false;
 				}
 				// Check any invariant associated with this type
-				CodeForest invariant = td.invariant();
+				BytecodeForest invariant = td.invariant();
 				if (invariant.numBlocks() > 0) {
 					Constant[] frame = new Constant[invariant.numRegisters()];
 					frame[0] = value;
-					CodeForest.Index pc = new CodeForest.Index(invariant.getRoot(0), 0);
+					BytecodeForest.Index pc = new BytecodeForest.Index(invariant.getRoot(0), 0);
 					executeAllWithin(frame, new Context(pc, invariant));
 				}
 				// Done
@@ -635,7 +635,7 @@ public class Interpreter {
 		// constant arguments provided in the lambda itself along with those
 		// operands provided for the "holes".
 		Constant.Lambda func = (Constant.Lambda) operand;
-		List<Constant> func_arguments = func.arguments;
+		List<Constant> func_arguments = func.arguments();
 		int[] operands = bytecode.operands();
 		Constant[] arguments = new Constant[func_arguments.size() + (operands.length - 1)];
 		{
@@ -644,11 +644,11 @@ public class Interpreter {
 				arguments[i++] = frame[operands[j]];
 			}
 			for (int j = 0; j != func_arguments.size(); ++j) {
-				arguments[i++] = func.arguments.get(j);
+				arguments[i++] = func.arguments().get(j);
 			}
 		}
 		// Make the actual call
-		Constant[] results = execute(func.name, func.type(), arguments);
+		Constant[] results = execute(func.name(), func.type(), arguments);
 		// Check whether a return value was expected or not
 		int[] targets = bytecode.targets();
 		List<Type> returns = bytecode.type(0).returns();
@@ -703,7 +703,7 @@ public class Interpreter {
 			arguments[i] = frame[reg];
 		}
 		// FIXME: need to do something with the operands here.
-		frame[bytecode.target(0)] = Constant.V_LAMBDA(bytecode.name(), bytecode.type(0), arguments);
+		frame[bytecode.target(0)] = new Constant.Lambda(bytecode.name(), bytecode.type(0), arguments);
 		//
 		return context.pc.next();
 	}
@@ -712,7 +712,7 @@ public class Interpreter {
 		Object r;
 		do {
 			// Keep executing the loop body until we exit it somehow.
-			CodeForest.Index pc = new CodeForest.Index(bytecode.block(), 0);
+			BytecodeForest.Index pc = new BytecodeForest.Index(bytecode.block(), 0);
 			r = executeAllWithin(frame, new Context(pc, context.forest));
 		} while (r == null);
 
@@ -745,13 +745,13 @@ public class Interpreter {
 	private Object execute(Bytecode.Switch bytecode, Constant[] frame, Context context) {
 		//
 		Constant operand = frame[bytecode.operand(0)];
-		for (Pair<Constant, String> branch : bytecode.branches) {
+		for (Pair<Constant, String> branch : bytecode.branches()) {
 			Constant caseOperand = branch.first();
 			if (caseOperand.equals(operand)) {
 				return context.getLabel(branch.second());
 			}
 		}
-		return context.getLabel(bytecode.defaultTarget);
+		return context.getLabel(bytecode.defaultTarget());
 	}
 
 	private Object execute(Bytecode.Update bytecode, Constant[] frame, Context context) {
@@ -794,20 +794,20 @@ public class Interpreter {
 				checkType(operand, context, Constant.Integer.class);
 				checkType(lhs, context, Constant.Array.class);
 				Constant.Array list = (Constant.Array) lhs;
-				int index = ((Constant.Integer) operand).value.intValue();
-				ArrayList<Constant> values = new ArrayList<Constant>(list.values);
+				int index = ((Constant.Integer) operand).value().intValue();
+				ArrayList<Constant> values = new ArrayList<Constant>(list.values());
 				rhs = update(values.get(index), descriptor, rhs, frame, context);
 				values.set(index, rhs);
-				return Constant.V_ARRAY(values);
+				return new Constant.Array(values);
 			} else if (lval instanceof Bytecode.RecordLVal) {
 				// Record
 				Bytecode.RecordLVal lv = (Bytecode.RecordLVal) lval;
 				checkType(lhs, context, Constant.Record.class);
 				Constant.Record record = (Constant.Record) lhs;
-				HashMap<String, Constant> values = new HashMap<String, Constant>(record.values);
+				HashMap<String, Constant> values = new HashMap<String, Constant>(record.values());
 				rhs = update(values.get(lv.field), descriptor, rhs, frame, context);
 				values.put(lv.field, rhs);
-				return Constant.V_RECORD(values);
+				return new Constant.Record(values);
 			} else {
 				// Reference
 				Bytecode.ReferenceLVal lv = (Bytecode.ReferenceLVal) lval;
@@ -882,16 +882,16 @@ public class Interpreter {
 	 *
 	 */
 	public static class Context {
-		public final CodeForest.Index pc;
-		public final CodeForest forest;
-		private Map<String, CodeForest.Index> labels;
+		public final BytecodeForest.Index pc;
+		public final BytecodeForest forest;
+		private Map<String, BytecodeForest.Index> labels;
 
-		public Context(CodeForest.Index pc, CodeForest block) {
+		public Context(BytecodeForest.Index pc, BytecodeForest block) {
 			this.pc = pc;
 			this.forest = block;
 		}
 
-		public CodeForest.Index getLabel(String label) {
+		public BytecodeForest.Index getLabel(String label) {
 			if (labels == null) {
 				labels = Bytecode.buildLabelMap(forest);
 			}

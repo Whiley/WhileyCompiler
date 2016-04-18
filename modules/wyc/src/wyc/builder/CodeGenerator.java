@@ -182,7 +182,7 @@ public final class CodeGenerator {
 	 * @throws Exception
 	 */
 	private WyilFile.Type generate(WhileyFile.Type td) throws Exception {
-		CodeForest forest = new CodeForest();
+		BytecodeForest forest = new BytecodeForest();
 		Environment environment = new Environment();
 		// Allocate declared parameter
 		environment.allocate(td.resolvedType.raw(), td.parameter.name());
@@ -209,9 +209,9 @@ public final class CodeGenerator {
 		// Construct environments
 		// ==================================================================
 
-		CodeForest forest = new CodeForest();
+		BytecodeForest forest = new BytecodeForest();
 		Environment environment = new Environment();
-		ArrayList<CodeForest.Register> declarations = new ArrayList<CodeForest.Register>();
+		ArrayList<BytecodeForest.Register> declarations = new ArrayList<BytecodeForest.Register>();
 		addDeclaredParameters(fd.parameters, fd.resolvedType().params(), environment, declarations);
 		addDeclaredParameters(fd.returns, fd.resolvedType().returns(), environment, declarations);
 		// Allocate all declared variables now. This ensures that all declared
@@ -249,7 +249,7 @@ public final class CodeGenerator {
 		// fail because they have the same type).
 		environment = resetEnvironment(environment, declarations);
 
-		CodeForest.Block body = new CodeForest.Block();
+		BytecodeForest.Block body = new BytecodeForest.Block();
 		forest.addAsRoot(body);
 		for (Stmt s : fd.statements) {
 			generate(s, environment, body, forest, fd);
@@ -288,8 +288,8 @@ public final class CodeGenerator {
 	 * @param forest
 	 * @param context
 	 */
-	private int generateInvariantBlock(Expr invariant, Environment environment, CodeForest forest, Context context) {
-		CodeForest.Block precondition = new CodeForest.Block();
+	private int generateInvariantBlock(Expr invariant, Environment environment, BytecodeForest forest, Context context) {
+		BytecodeForest.Block precondition = new BytecodeForest.Block();
 		int index = forest.add(precondition);
 		String endLab = freshLabel();
 		generateCondition(endLab, invariant, environment, precondition, forest, context);
@@ -306,14 +306,14 @@ public final class CodeGenerator {
 	 * compile and run a Whiley program. However, it is very useful for
 	 * debugging and performing verification.
 	 */
-	private List<CodeForest.Register> createVariableDeclarations(Environment environment,
-			List<CodeForest.Register> declarations) {
+	private List<BytecodeForest.Register> createVariableDeclarations(Environment environment,
+			List<BytecodeForest.Register> declarations) {
 		// FIXME: this is a hack. In essence, we're trying to get the types of
 		// all intermediate registers used in code generation. To do this, we're
 		// looking at their type having typed the entire function.
 		for (int i = declarations.size(); i < environment.size(); i = i + 1) {
 			Type t = environment.type(i);
-			declarations.add(new CodeForest.Register(t, null));
+			declarations.add(new BytecodeForest.Register(t, null));
 		}
 		return declarations;
 	}
@@ -329,11 +329,11 @@ public final class CodeGenerator {
 	 *            --- List of declarations being constructed
 	 */
 	private void addDeclaredParameters(List<WhileyFile.Parameter> parameters, List<Nominal> types,
-			Environment environment, List<CodeForest.Register> declarations) {
+			Environment environment, List<BytecodeForest.Register> declarations) {
 		for (int i = 0; i != parameters.size(); ++i) {
 			WhileyFile.Parameter parameter = parameters.get(i);
 			// allocate parameter to register in the current block
-			declarations.add(new CodeForest.Register(types.get(i).nominal(), parameter.name));
+			declarations.add(new BytecodeForest.Register(types.get(i).nominal(), parameter.name));
 			// allocate parameter to register in the current block
 			environment.allocate(types.get(i).raw(), parameter.name);
 		}
@@ -361,7 +361,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt stmt, Environment environment, CodeForest.Block block, CodeForest forest,
+	private void generate(Stmt stmt, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		try {
 			if (stmt instanceof VariableDeclaration) {
@@ -443,7 +443,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(VariableDeclaration s, Environment environment, CodeForest.Block block, CodeForest forest,
+	private void generate(VariableDeclaration s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		// First, we allocate this variable to a given slot in the environment.
 		int[] targets = { environment.get(s.parameter.name) };
@@ -500,7 +500,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Assign s, Environment environment, CodeForest.Block block, CodeForest forest,
+	private void generate(Assign s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		// First, we translate all right-hand side expressions and assign them
 		// to temporary registers.
@@ -536,7 +536,7 @@ public final class CodeGenerator {
 	}
 
 	public void generateAssignment(Expr.LVal lval, int operand, Type type, Environment environment,
-			CodeForest.Block block, CodeForest forest, Context context) {
+			BytecodeForest.Block block, BytecodeForest forest, Context context) {
 		if (lval instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) lval;
 			// This is the easiest case. Having translated the right-hand side
@@ -593,7 +593,7 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private Expr.AssignedVariable extractLVal(Expr e, ArrayList<String> fields, ArrayList<Integer> operands,
-			Environment environment, CodeForest.Block block, CodeForest forest, Context context) {
+			Environment environment, BytecodeForest.Block block, BytecodeForest forest, Context context) {
 
 		if (e instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) e;
@@ -633,10 +633,10 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Assert s, Environment environment, CodeForest.Block block, CodeForest forest,
+	private void generate(Stmt.Assert s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		// First, create assert block body
-		CodeForest.Block subblock = new CodeForest.Block();
+		BytecodeForest.Block subblock = new BytecodeForest.Block();
 		int body = forest.add(subblock);
 		String endLab = freshLabel();
 		generateCondition(endLab, s.expr, environment, subblock, forest, context);
@@ -662,10 +662,10 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Assume s, Environment environment, CodeForest.Block block, CodeForest forest,
+	private void generate(Stmt.Assume s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		// First, create assume block body
-		CodeForest.Block subblock = new CodeForest.Block();
+		BytecodeForest.Block subblock = new BytecodeForest.Block();
 		int body = forest.add(subblock);
 		String endLab = freshLabel();
 		generateCondition(endLab, s.expr, environment, subblock, forest, context);
@@ -708,7 +708,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Return s, Environment environment, CodeForest.Block block, CodeForest forest,
+	private void generate(Stmt.Return s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		List<Expr> returns = s.returns;
 		// Here, we don't put the type propagated for the return expression.
@@ -749,7 +749,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Skip s, Environment environment, CodeForest.Block block, CodeForest forest,
+	private void generate(Stmt.Skip s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		// TODO: should actually generate a NOP bytecode. This is an assignment
 		// from zero operands to zero targets. At the moment, I cannot encode
@@ -787,7 +787,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Debug s, Environment environment, CodeForest.Block block, CodeForest forest,
+	private void generate(Stmt.Debug s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		int operand = generate(s.expr, environment, block, forest, context);
 		block.add(new Bytecode.Debug(operand), attributes(s));
@@ -818,7 +818,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Fail s, Environment environment, CodeForest.Block block, CodeForest forest,
+	private void generate(Stmt.Fail s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		block.add(new Bytecode.Fail(), attributes(s));
 	}
@@ -868,7 +868,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.IfElse s, Environment environment, CodeForest.Block block, CodeForest forest,
+	private void generate(Stmt.IfElse s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 
 		String falseLab = freshLabel();
@@ -935,7 +935,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Break s, Environment environment, CodeForest.Block block, CodeForest forest,
+	private void generate(Stmt.Break s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		LoopScope scope = findEnclosingScope(LoopScope.class);
 		if (scope == null) {
@@ -992,7 +992,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Continue s, Environment environment, CodeForest.Block block, CodeForest forest,
+	private void generate(Stmt.Continue s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		LoopScope scope = findEnclosingScope(LoopScope.class);
 		if (scope == null) {
@@ -1055,7 +1055,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Switch s, Environment environment, CodeForest.Block block, CodeForest forest,
+	private void generate(Stmt.Switch s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) throws Exception {
 		String exitLab = freshLabel();
 		int operand = generate(s.expr, environment, block, forest, context);
@@ -1157,7 +1157,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.While s, Environment environment, CodeForest.Block block, CodeForest forest,
+	private void generate(Stmt.While s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		// A label marking where execution continues after the while
 		// loop finishes. Used when the loop condition evaluates to false
@@ -1167,7 +1167,7 @@ public final class CodeGenerator {
 		// by the continue statement.
 		String continueLab = freshLabel();
 
-		CodeForest.Block bodyBlock = new CodeForest.Block();
+		BytecodeForest.Block bodyBlock = new BytecodeForest.Block();
 		int body = forest.add(bodyBlock);
 
 		for (Expr condition : s.invariants) {
@@ -1230,7 +1230,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.DoWhile s, Environment environment, CodeForest.Block block, CodeForest forest,
+	private void generate(Stmt.DoWhile s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		// A label marking where execution continues after the do-while
 		// loop finishes. Used when the loop condition evaluates to false
@@ -1240,7 +1240,7 @@ public final class CodeGenerator {
 		// by the continue statement.
 		String continueLab = freshLabel();
 
-		CodeForest.Block bodyBlock = new CodeForest.Block();
+		BytecodeForest.Block bodyBlock = new BytecodeForest.Block();
 		int body = forest.add(bodyBlock);
 
 		scopes.push(new LoopScope(continueLab, exitLab));
@@ -1316,8 +1316,8 @@ public final class CodeGenerator {
 	 *            appended.
 	 * @return
 	 */
-	public void generateCondition(String target, Expr condition, Environment environment, CodeForest.Block block,
-			CodeForest forest, Context context) {
+	public void generateCondition(String target, Expr condition, Environment environment, BytecodeForest.Block block,
+			BytecodeForest forest, Context context) {
 		try {
 
 			// First, we see whether or not we can employ a special handler for
@@ -1383,10 +1383,10 @@ public final class CodeGenerator {
 	 *            appended.
 	 * @return
 	 */
-	private void generateCondition(String target, Expr.Constant c, Environment environment, CodeForest.Block block,
-			CodeForest forest, Context context) {
+	private void generateCondition(String target, Expr.Constant c, Environment environment, BytecodeForest.Block block,
+			BytecodeForest forest, Context context) {
 		Constant.Bool b = (Constant.Bool) c.value;
-		if (b.value) {
+		if (b.value()) {
 			block.add(new Bytecode.Goto(target));
 		} else {
 			// do nout
@@ -1413,8 +1413,8 @@ public final class CodeGenerator {
 	 *            appended.
 	 * @return
 	 */
-	private void generateCondition(String target, Expr.BinOp v, Environment environment, CodeForest.Block block,
-			CodeForest forest, Context context) throws Exception {
+	private void generateCondition(String target, Expr.BinOp v, Environment environment, BytecodeForest.Block block,
+			BytecodeForest forest, Context context) throws Exception {
 
 		Expr.BOp bop = v.op;
 
@@ -1433,7 +1433,7 @@ public final class CodeGenerator {
 
 		} else {
 			if (bop == Expr.BOp.EQ && v.lhs instanceof Expr.LocalVariable && v.rhs instanceof Expr.Constant
-					&& ((Expr.Constant) v.rhs).value == Constant.V_NULL) {
+					&& ((Expr.Constant) v.rhs).value == Constant.Null) {
 				// this is a simple rewrite to enable type inference.
 				Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
 				if (environment.get(lhs.var) == null) {
@@ -1442,7 +1442,7 @@ public final class CodeGenerator {
 				int slot = environment.get(lhs.var);
 				block.add(new Bytecode.IfIs(v.srcType.raw(), slot, Type.T_NULL, target), attributes(v));
 			} else if (bop == Expr.BOp.NEQ && v.lhs instanceof Expr.LocalVariable
-					&& v.rhs instanceof Expr.Constant && ((Expr.Constant) v.rhs).value == Constant.V_NULL) {
+					&& v.rhs instanceof Expr.Constant && ((Expr.Constant) v.rhs).value == Constant.Null) {
 				// this is a simple rewrite to enable type inference.
 				String exitLabel = freshLabel();
 				Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
@@ -1485,7 +1485,7 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generateTypeCondition(String target, Expr.BinOp condition, Environment environment,
-			CodeForest.Block block, CodeForest forest, Context context) throws Exception {
+			BytecodeForest.Block block, BytecodeForest forest, Context context) throws Exception {
 		int leftOperand;
 
 		if (condition.lhs instanceof Expr.LocalVariable) {
@@ -1536,8 +1536,8 @@ public final class CodeGenerator {
 	 *            appended.
 	 * @return
 	 */
-	private void generateCondition(String target, Expr.UnOp v, Environment environment, CodeForest.Block block,
-			CodeForest forest, Context context) {
+	private void generateCondition(String target, Expr.UnOp v, Environment environment, BytecodeForest.Block block,
+			BytecodeForest forest, Context context) {
 		Expr.UOp uop = v.op;
 		switch (uop) {
 		case NOT:
@@ -1577,8 +1577,8 @@ public final class CodeGenerator {
 	 *            appended.
 	 * @return
 	 */
-	private void generateCondition(String target, Expr.Quantifier e, Environment environment, CodeForest.Block block,
-			CodeForest forest, Context context) {
+	private void generateCondition(String target, Expr.Quantifier e, Environment environment, BytecodeForest.Block block,
+			BytecodeForest forest, Context context) {
 
 		String exit = freshLabel();
 		generate(e.sources.iterator(), target, exit, e, environment, block, forest, context);
@@ -1598,7 +1598,7 @@ public final class CodeGenerator {
 	}
 
 	private void generate(Iterator<Triple<String, Expr, Expr>> srcIterator, String trueLabel, String falseLabel,
-			Expr.Quantifier e, Environment environment, CodeForest.Block block, CodeForest forest, Context context) {
+			Expr.Quantifier e, Environment environment, BytecodeForest.Block block, BytecodeForest forest, Context context) {
 
 		if (srcIterator.hasNext()) {
 			// This is the inductive case (i.e. an outer loop)
@@ -1610,7 +1610,7 @@ public final class CodeGenerator {
 			int endSlot = generate(src.third(), environment, block, forest, context);
 
 			// Second, recursively generate remaining parts
-			CodeForest.Block bodyBlock = new CodeForest.Block();
+			BytecodeForest.Block bodyBlock = new BytecodeForest.Block();
 			int body = forest.add(bodyBlock);
 			generate(srcIterator, trueLabel, falseLabel, e, environment, bodyBlock, forest, context);
 			// Finally, create the forall loop bytecode
@@ -1635,7 +1635,7 @@ public final class CodeGenerator {
 	// Multi-Expressions
 	// =========================================================================
 
-	public int[] generate(Expr.Multi expression, Environment environment, CodeForest.Block block, CodeForest forest,
+	public int[] generate(Expr.Multi expression, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		List<Nominal> returns = expression.returns();
 		int[] targets = new int[returns.size()];
@@ -1664,15 +1664,15 @@ public final class CodeGenerator {
 		return targets;
 	}
 
-	public void generateStmt(Expr.FunctionOrMethodCall expr, Environment environment, CodeForest.Block block,
-			CodeForest forest, Context context, int... targets) throws ResolveError {
+	public void generateStmt(Expr.FunctionOrMethodCall expr, Environment environment, BytecodeForest.Block block,
+			BytecodeForest forest, Context context, int... targets) throws ResolveError {
 		//
 		int[] operands = generate(expr.arguments, environment, block, forest, context);
 		block.add(new Bytecode.Invoke(expr.type().nominal(), targets, operands, expr.nid()), attributes(expr));
 	}
 
-	public void generateStmt(Expr.IndirectFunctionOrMethodCall expr, Environment environment, CodeForest.Block block,
-			CodeForest forest, Context context, int... targets) throws ResolveError {
+	public void generateStmt(Expr.IndirectFunctionOrMethodCall expr, Environment environment, BytecodeForest.Block block,
+			BytecodeForest forest, Context context, int... targets) throws ResolveError {
 		//
 		int operand = generate(expr.src, environment, block, forest, context);
 		int[] operands = generate(expr.arguments, environment, block, forest, context);
@@ -1698,7 +1698,7 @@ public final class CodeGenerator {
 	 *
 	 * @return --- the register
 	 */
-	public int generate(Expr expression, Environment environment, CodeForest.Block block, CodeForest forest,
+	public int generate(Expr expression, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		try {
 			if (expression instanceof Expr.Constant) {
@@ -1754,21 +1754,21 @@ public final class CodeGenerator {
 		return -1; // deadcode
 	}
 
-	public int generate(Expr.FunctionOrMethodCall expr, Environment environment, CodeForest.Block block,
-			CodeForest forest, Context context) throws ResolveError {
+	public int generate(Expr.FunctionOrMethodCall expr, Environment environment, BytecodeForest.Block block,
+			BytecodeForest forest, Context context) throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
 		generateStmt(expr, environment, block, forest, context, target);
 		return target;
 	}
 
-	public int generate(Expr.IndirectFunctionOrMethodCall expr, Environment environment, CodeForest.Block block,
-			CodeForest forest, Context context) throws ResolveError {
+	public int generate(Expr.IndirectFunctionOrMethodCall expr, Environment environment, BytecodeForest.Block block,
+			BytecodeForest forest, Context context) throws ResolveError {
 		int target = environment.allocate(expr.result().raw());
 		generateStmt(expr, environment, block, forest, context, target);
 		return target;
 	}
 
-	private int generate(Expr.Constant expr, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int generate(Expr.Constant expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		Constant val = expr.value;
 		int target = environment.allocate(val.type());
@@ -1776,7 +1776,7 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.FunctionOrMethod expr, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int generate(Expr.FunctionOrMethod expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		Type.FunctionOrMethod rawType = expr.type.raw();
 		Type.FunctionOrMethod nominalType = expr.type.nominal();
@@ -1785,7 +1785,7 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.Lambda expr, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int generate(Expr.Lambda expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		Type.FunctionOrMethod tfm = expr.type.raw();
 		List<Type> tfm_params = tfm.params();
@@ -1794,15 +1794,15 @@ public final class CodeGenerator {
 		// Create environment for the lambda body.
 		ArrayList<Integer> operands = new ArrayList<Integer>();
 		ArrayList<Type> paramTypes = new ArrayList<Type>();
-		CodeForest bodyForest = new CodeForest();
-		List<CodeForest.Register> declarations = bodyForest.registers();
+		BytecodeForest bodyForest = new BytecodeForest();
+		List<BytecodeForest.Register> declarations = bodyForest.registers();
 		Environment benv = new Environment();
 		for (int i = 0; i != tfm_params.size(); ++i) {
 			Type type = tfm_params.get(i);
 			String name = expr_params.get(i).name;
 			benv.allocate(type, name);
 			paramTypes.add(type);
-			declarations.add(new CodeForest.Register(type, name));
+			declarations.add(new BytecodeForest.Register(type, name));
 		}
 		for (Pair<Type, String> v : Exprs.uses(expr.body, context)) {
 			if (benv.get(v.second()) == null) {
@@ -1810,12 +1810,12 @@ public final class CodeGenerator {
 				benv.allocate(type, v.second());
 				paramTypes.add(type);
 				operands.add(environment.get(v.second()));
-				declarations.add(new CodeForest.Register(type, v.second()));
+				declarations.add(new BytecodeForest.Register(type, v.second()));
 			}
 		}
 		// Generate body based on current environment
 
-		CodeForest.Block bodyBlock = new CodeForest.Block();
+		BytecodeForest.Block bodyBlock = new BytecodeForest.Block();
 		bodyForest.addAsRoot(bodyBlock);
 		if (tfm.returns().isEmpty()) {
 			bodyBlock.add(new Bytecode.Return(), attributes(expr));
@@ -1830,7 +1830,7 @@ public final class CodeGenerator {
 		// about declared variables.
 		for (int i = declarations.size(); i != benv.size(); i = i + 1) {
 			Type t = benv.type(i);
-			declarations.add(new CodeForest.Register(t, null));
+			declarations.add(new BytecodeForest.Register(t, null));
 		}
 		// Create concrete type for private lambda function
 		Type.FunctionOrMethod cfm;
@@ -1857,7 +1857,7 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.ConstantAccess expr, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int generate(Expr.ConstantAccess expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) throws ResolveError {
 		Constant val = expr.value;
 		int target = environment.allocate(val.type());
@@ -1865,7 +1865,7 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.LocalVariable expr, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int generate(Expr.LocalVariable expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) throws ResolveError {
 
 		if (environment.get(expr.var) != null) {
@@ -1878,7 +1878,7 @@ public final class CodeGenerator {
 		}
 	}
 
-	private int generate(Expr.UnOp expr, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int generate(Expr.UnOp expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		int[] operands = new int[] { generate(expr.mhs, environment, block, forest, context) };
 		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
@@ -1906,7 +1906,7 @@ public final class CodeGenerator {
 		return targets[0];
 	}
 
-	private int generate(Expr.Dereference expr, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int generate(Expr.Dereference expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		int[] operands = new int[] { generate(expr.src, environment, block, forest, context) };
 		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
@@ -1915,7 +1915,7 @@ public final class CodeGenerator {
 		return targets[0];
 	}
 
-	private int generate(Expr.IndexOf expr, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int generate(Expr.IndexOf expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		int[] operands = { generate(expr.src, environment, block, forest, context),
 				generate(expr.index, environment, block, forest, context) };
@@ -1924,7 +1924,7 @@ public final class CodeGenerator {
 		return targets[0];
 	}
 
-	private int generate(Expr.Cast expr, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int generate(Expr.Cast expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		int operand = generate(expr.expr, environment, block, forest, context);
 		Type from = expr.expr.result().raw();
@@ -1934,7 +1934,7 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.BinOp v, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int generate(Expr.BinOp v, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) throws Exception {
 		// could probably use a range test for this somehow
 		if(v.op == Expr.BOp.AND || v.op == Expr.BOp.OR) {
@@ -1942,10 +1942,10 @@ public final class CodeGenerator {
 			String exitLabel = freshLabel();
 			generateCondition(trueLabel, v, environment, block, forest, context);
 			int target = environment.allocate(Type.T_BOOL);
-			block.add(new Bytecode.Const(target, Constant.V_BOOL(false)), attributes(v));
+			block.add(new Bytecode.Const(target, Constant.Bool(false)), attributes(v));
 			block.add(new Bytecode.Goto(exitLabel));
 			block.add(new Bytecode.Label(trueLabel));
-			block.add(new Bytecode.Const(target, Constant.V_BOOL(true)), attributes(v));
+			block.add(new Bytecode.Const(target, Constant.Bool(true)), attributes(v));
 			block.add(new Bytecode.Label(exitLabel));
 			return target;
 		} else {
@@ -1962,7 +1962,7 @@ public final class CodeGenerator {
 		}
 	}
 
-	private int generate(Expr.ArrayInitialiser expr, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int generate(Expr.ArrayInitialiser expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		int[] operands = generate(expr.arguments, environment, block, forest, context);
 		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
@@ -1971,7 +1971,7 @@ public final class CodeGenerator {
 		return targets[0];
 	}
 
-	private int generate(Expr.ArrayGenerator expr, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int generate(Expr.ArrayGenerator expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		int[] operands = new int[] { generate(expr.element, environment, block, forest, context),
 				generate(expr.count, environment, block, forest, context) };
@@ -1980,21 +1980,21 @@ public final class CodeGenerator {
 		return targets[0];
 	}
 
-	private int generate(Expr.Quantifier e, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int generate(Expr.Quantifier e, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		String trueLabel = freshLabel();
 		String exitLabel = freshLabel();
 		generateCondition(trueLabel, e, environment, block, forest, context);
 		int target = environment.allocate(Type.T_BOOL);
-		block.add(new Bytecode.Const(target, Constant.V_BOOL(false)), attributes(e));
+		block.add(new Bytecode.Const(target, Constant.Bool(false)), attributes(e));
 		block.add(new Bytecode.Goto(exitLabel));
 		block.add(new Bytecode.Label(trueLabel));
-		block.add(new Bytecode.Const(target, Constant.V_BOOL(true)), attributes(e));
+		block.add(new Bytecode.Const(target, Constant.Bool(true)), attributes(e));
 		block.add(new Bytecode.Label(exitLabel));
 		return target;
 	}
 
-	private int generate(Expr.Record expr, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int generate(Expr.Record expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		ArrayList<String> keys = new ArrayList<String>(expr.fields.keySet());
 		Collections.sort(keys);
@@ -2010,7 +2010,7 @@ public final class CodeGenerator {
 		return targets[0];
 	}
 
-	private int generate(Expr.FieldAccess expr, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int generate(Expr.FieldAccess expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		int operand = generate(expr.src, environment, block, forest, context);
 		int target = environment.allocate(expr.result().raw());
@@ -2019,7 +2019,7 @@ public final class CodeGenerator {
 		return target;
 	}
 
-	private int generate(Expr.New expr, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int generate(Expr.New expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) throws ResolveError {
 		int[] operands = new int[] { generate(expr.expr, environment, block, forest, context) };
 		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
@@ -2027,7 +2027,7 @@ public final class CodeGenerator {
 		return targets[0];
 	}
 
-	private int[] generate(List<Expr> arguments, Environment environment, CodeForest.Block block, CodeForest forest,
+	private int[] generate(List<Expr> arguments, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
 			Context context) {
 		int[] operands = new int[arguments.size()];
 		for (int i = 0; i != operands.length; ++i) {
@@ -2140,10 +2140,10 @@ public final class CodeGenerator {
 	 * @param declarations
 	 * @return
 	 */
-	public Environment resetEnvironment(Environment environment, List<CodeForest.Register> declarations) {
+	public Environment resetEnvironment(Environment environment, List<BytecodeForest.Register> declarations) {
 		Environment nenv = new Environment();
 		for(int i=0;i!=declarations.size();++i) {
-			CodeForest.Register reg = declarations.get(i);
+			BytecodeForest.Register reg = declarations.get(i);
 			nenv.allocate(reg.type(),reg.name());
 		}
 		for(int i=declarations.size();i<environment.size();++i) {
@@ -2158,7 +2158,7 @@ public final class CodeGenerator {
 	 * @param block
 	 * @param declarations
 	 */
-	public void buildVariableDeclarations(List<Stmt> block, List<CodeForest.Register> declarations,
+	public void buildVariableDeclarations(List<Stmt> block, List<BytecodeForest.Register> declarations,
 			Environment environment, WhileyFile.Context context) {
 		//
 		for (int i = 0; i != block.size(); ++i) {
@@ -2166,7 +2166,7 @@ public final class CodeGenerator {
 		}
 	}
 
-	public void buildVariableDeclarations(Stmt stmt, List<CodeForest.Register> declarations, Environment environment,
+	public void buildVariableDeclarations(Stmt stmt, List<BytecodeForest.Register> declarations, Environment environment,
 			WhileyFile.Context context) {
 		if (stmt instanceof Assign || stmt instanceof Assert || stmt instanceof Assume || stmt instanceof Return
 				|| stmt instanceof Debug || stmt instanceof Fail || stmt instanceof Break || stmt instanceof Continue
@@ -2177,7 +2177,7 @@ public final class CodeGenerator {
 			return;
 		} else if (stmt instanceof VariableDeclaration) {
 			VariableDeclaration d = (VariableDeclaration) stmt;
-			declarations.add(new CodeForest.Register(d.type.nominal(), d.parameter.name));
+			declarations.add(new BytecodeForest.Register(d.type.nominal(), d.parameter.name));
 			environment.allocate(d.type.raw(), d.parameter.name);
 		} else if (stmt instanceof IfElse) {
 			IfElse s = (IfElse) stmt;
@@ -2298,11 +2298,11 @@ public final class CodeGenerator {
 			var2idx.put(v, idx);
 		}
 
-		public ArrayList<CodeForest.Register> asRegisters() {
-			ArrayList<CodeForest.Register> registers = new ArrayList<CodeForest.Register>();
+		public ArrayList<BytecodeForest.Register> asRegisters() {
+			ArrayList<BytecodeForest.Register> registers = new ArrayList<BytecodeForest.Register>();
 			for (int i = 0; i != idx2type.size(); ++i) {
 				Type t = idx2type.get(i);
-				registers.add(new CodeForest.Register(t, get(i)));
+				registers.add(new BytecodeForest.Register(t, get(i)));
 			}
 			return registers;
 		}

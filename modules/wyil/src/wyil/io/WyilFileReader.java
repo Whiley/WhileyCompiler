@@ -242,17 +242,17 @@ public final class WyilFileReader {
 
 			switch (code) {
 			case WyilFileWriter.CONSTANT_Null:
-				constant = Constant.V_NULL;
+				constant = Constant.Null;
 				break;
 			case WyilFileWriter.CONSTANT_False:
-				constant = Constant.V_BOOL(false);
+				constant = Constant.False;
 				break;
 			case WyilFileWriter.CONSTANT_True:
-				constant = Constant.V_BOOL(true);
+				constant = Constant.True;
 				break;
 			case WyilFileWriter.CONSTANT_Byte: {
 				byte val = (byte) input.read_u8();
-				constant = Constant.V_BYTE(val);
+				constant = new Constant.Byte(val);
 				break;
 			}
 			case WyilFileWriter.CONSTANT_Int: {
@@ -260,7 +260,7 @@ public final class WyilFileReader {
 				byte[] bytes = new byte[len];
 				input.read(bytes);
 				BigInteger bi = new BigInteger(bytes);
-				constant = Constant.V_INTEGER(bi);
+				constant = new Constant.Integer(bi);
 				break;
 			}
 			case WyilFileWriter.CONSTANT_Array: {
@@ -270,7 +270,7 @@ public final class WyilFileReader {
 					int index = input.read_uv();
 					values.add(myConstantPool[index]);
 				}
-				constant = Constant.V_ARRAY(values);
+				constant = new Constant.Array(values);
 				break;
 			}
 			case WyilFileWriter.CONSTANT_Record: {
@@ -282,7 +282,7 @@ public final class WyilFileReader {
 					String str = stringPool[fieldIndex];
 					tvs.put(str, myConstantPool[constantIndex]);
 				}
-				constant = Constant.V_RECORD(tvs);
+				constant = new Constant.Record(tvs);
 				break;
 			}
 			case WyilFileWriter.CONSTANT_Function:
@@ -291,7 +291,7 @@ public final class WyilFileReader {
 				int nameIndex = input.read_uv();
 				Type.FunctionOrMethod t = (Type.FunctionOrMethod) typePool[typeIndex];
 				NameID name = namePool[nameIndex];
-				constant = Constant.V_LAMBDA(name, t);
+				constant = new Constant.Lambda(name, t);
 				break;
 			}
 			default:
@@ -461,7 +461,7 @@ public final class WyilFileReader {
 		int modifiers = input.read_uv();
 		int typeIdx = input.read_uv();
 
-		CodeForest forest = readCodeForestBlock();
+		BytecodeForest forest = readCodeForestBlock();
 		
 		return new WyilFile.Type(generateModifiers(modifiers), stringPool[nameIdx], typePool[typeIdx], forest);
 	}
@@ -511,7 +511,7 @@ public final class WyilFileReader {
 
 		Type.FunctionOrMethod type = (Type.FunctionOrMethod) typePool[typeIdx];
 
-		CodeForest forest = readCodeForestBlock();
+		BytecodeForest forest = readCodeForestBlock();
 
 		return new WyilFile.FunctionOrMethod(generateModifiers(modifiers), stringPool[nameIdx], type, forest,
 				nRequires, nEnsures);
@@ -591,7 +591,7 @@ public final class WyilFileReader {
 	 * @param output
 	 * @throws IOException
 	 */
-	private CodeForest readCodeForestBlock() throws IOException {
+	private BytecodeForest readCodeForestBlock() throws IOException {
 		input.pad_u8();
 		int kind = input.read_uv(); // unused
 		int size = input.read_uv(); // unused
@@ -602,10 +602,10 @@ public final class WyilFileReader {
 		int nRoots = input.read_uv();
 		int nAttrs = input.read_uv();
 		
-		CodeForest forest = new CodeForest();
+		BytecodeForest forest = new BytecodeForest();
 		
 		for(int i=0;i!=nRegs;++i) {
-			CodeForest.Register register = readCodeRegister();
+			BytecodeForest.Register register = readCodeRegister();
 			forest.registers().add(register);
 		}
 		
@@ -618,7 +618,7 @@ public final class WyilFileReader {
 		
 		int offset = 0;
 		for(int i=0;i!=nBlocks;++i) {
-			CodeForest.Block block = readCodeBlock(offset,labels);
+			BytecodeForest.Block block = readCodeBlock(offset,labels);
 			forest.add(block);
 			offset += block.size();
 		}
@@ -647,11 +647,11 @@ public final class WyilFileReader {
 	 * @param output
 	 * @throws IOException
 	 */
-	private CodeForest.Register readCodeRegister() throws IOException {
+	private BytecodeForest.Register readCodeRegister() throws IOException {
 		int nAttrs = input.read_uv();
 		int typeIdx = input.read_uv();
 		// TODO: read any attributes given
-		return new CodeForest.Register(typePool[typeIdx], "unknown");
+		return new BytecodeForest.Register(typePool[typeIdx], "unknown");
 	}
 	
 	/**
@@ -672,10 +672,10 @@ public final class WyilFileReader {
 	 *            The map of offsets to labels being inserted.
 	 * @return
 	 */
-	private int insertLabels(CodeForest forest, HashMap<Integer, Bytecode.Label> labels) {
+	private int insertLabels(BytecodeForest forest, HashMap<Integer, Bytecode.Label> labels) {
 		int offset = 0;
 		for (int i = 0; i != forest.numBlocks(); ++i) {
-			CodeForest.Block block = forest.get(i);
+			BytecodeForest.Block block = forest.get(i);
 			for (int j = 0; j != block.size(); ++j) {
 				// First, check whether there is a label to insert
 				Bytecode.Label label = labels.get(offset++);
@@ -717,18 +717,18 @@ public final class WyilFileReader {
 	 * @return
 	 * @throws IOException
 	 */
-	public CodeForest.Block readCodeBlock(int offset, HashMap<Integer, Bytecode.Label> labels)
+	public BytecodeForest.Block readCodeBlock(int offset, HashMap<Integer, Bytecode.Label> labels)
 			throws IOException {
 		int nCodes = input.read_uv();
 		int nAttrs = input.read_uv();
 
-		ArrayList<CodeForest.Entry> bytecodes = new ArrayList<CodeForest.Entry>();
+		ArrayList<BytecodeForest.Entry> bytecodes = new ArrayList<BytecodeForest.Entry>();
 		for (int i = 0; i < nCodes; ++i) {
 			Bytecode code = readBytecode(i + offset, labels);
-			bytecodes.add(new CodeForest.Entry(code));
+			bytecodes.add(new BytecodeForest.Entry(code));
 		}
 		// TODO: read any attributes given
-		return new CodeForest.Block(bytecodes);
+		return new BytecodeForest.Block(bytecodes);
 	}
 
 	private Bytecode readBytecode(int offset, HashMap<Integer, Bytecode.Label> labels) throws IOException {

@@ -27,7 +27,7 @@ import wycs.syntax.WyalFile.Function;
 import wyfs.lang.Path;
 import wyil.attributes.VariableDeclarations;
 import wyil.lang.Bytecode;
-import wyil.lang.CodeForest;
+import wyil.lang.BytecodeForest;
 import wyil.lang.Constant;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
@@ -60,21 +60,21 @@ public class VcUtils {
 	 *            (for debugging purposes)
 	 * @return
 	 */
-	public Value convert(Constant c, CodeForest forest, VcBranch branch) {
+	public Value convert(Constant c, BytecodeForest forest, VcBranch branch) {
 		if (c instanceof Constant.Null) {
 			return wycs.core.Value.Null;
 		} else if (c instanceof Constant.Bool) {
 			Constant.Bool cb = (Constant.Bool) c;
-			return wycs.core.Value.Bool(cb.value);
+			return wycs.core.Value.Bool(cb.value());
 		} else if (c instanceof Constant.Byte) {
 			Constant.Byte cb = (Constant.Byte) c;
-			return wycs.core.Value.Integer(BigInteger.valueOf(cb.value));
+			return wycs.core.Value.Integer(BigInteger.valueOf(cb.value()));
 		} else if (c instanceof Constant.Integer) {
 			Constant.Integer cb = (Constant.Integer) c;
-			return wycs.core.Value.Integer(cb.value);
+			return wycs.core.Value.Integer(cb.value());
 		} else if (c instanceof Constant.Array) {
 			Constant.Array cb = (Constant.Array) c;
-			List<Constant> cb_values = cb.values;
+			List<Constant> cb_values = cb.values();
 			ArrayList<Value> items = new ArrayList<Value>();
 			for (int i = 0; i != cb_values.size(); ++i) {
 				items.add(convert(cb_values.get(i), forest, branch));				
@@ -90,11 +90,11 @@ public class VcUtils {
 			// a general solution. In particular, it would seem to be brokwn for
 			// type testing.
 
-			ArrayList<String> fields = new ArrayList<String>(rb.values.keySet());
+			ArrayList<String> fields = new ArrayList<String>(rb.values().keySet());
 			Collections.sort(fields);
 			ArrayList<Value> values = new ArrayList<Value>();
 			for (String field : fields) {
-				values.add(convert(rb.values.get(field), forest, branch));
+				values.add(convert(rb.values().get(field), forest, branch));
 			}
 			return wycs.core.Value.Tuple(values);
 		} else {
@@ -361,7 +361,7 @@ public class VcUtils {
 	 * @param block
 	 */
 	public Pair<String,Expr>[] getPreconditions(Bytecode code, VcBranch branch,
-			Type[] environment, CodeForest forest) {
+			Type[] environment, BytecodeForest forest) {
 		//
 		try {
 			switch (code.opcode()) {
@@ -473,7 +473,7 @@ public class VcUtils {
 	 * @throws Exception
 	 */
 	public Pair<String,Expr>[] preconditionCheck(Bytecode.Invoke code, VcBranch branch,
-			Type[] environment, CodeForest forest) throws Exception {
+			Type[] environment, BytecodeForest forest) throws Exception {
 		ArrayList<Pair<String,Expr>> preconditions = new ArrayList<>();
 		//
 		// First, check for any potentially constrained types.    
@@ -580,7 +580,7 @@ public class VcUtils {
 	 * @throws Exception
 	 */
 	public int countPreconditions(NameID name, Type.FunctionOrMethod fun,
-			CodeForest forest, VcBranch branch) throws Exception {
+			BytecodeForest forest, VcBranch branch) throws Exception {
 		Path.Entry<WyilFile> e = builder.project().get(name.module(), WyilFile.ContentType);
 		if (e == null) {
 			syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module().toString()), filename,
@@ -654,12 +654,12 @@ public class VcUtils {
 	 * @param d
 	 * @return
 	 */
-	public static Pair<String[], Type[]> parseRegisterDeclarations(CodeForest forest) {
-		List<CodeForest.Register> regs = forest.registers();
+	public static Pair<String[], Type[]> parseRegisterDeclarations(BytecodeForest forest) {
+		List<BytecodeForest.Register> regs = forest.registers();
 		String[] prefixes = new String[regs.size()];
 		Type[] types = new Type[regs.size()];
 		for (int i = 0; i != prefixes.length; ++i) {
-			CodeForest.Register d = regs.get(i);			
+			BytecodeForest.Register d = regs.get(i);			
 			prefixes[i] = d.name();
 			types[i] = d.type();
 		}

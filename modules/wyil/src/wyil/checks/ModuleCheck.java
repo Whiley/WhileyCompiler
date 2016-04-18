@@ -33,7 +33,7 @@ import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyil.attributes.SourceLocation;
 import wyil.lang.*;
-import wyil.lang.CodeForest.Index;
+import wyil.lang.BytecodeForest.Index;
 import wyil.lang.Bytecode.*;
 import static wyil.util.ErrorMessages.*;
 
@@ -128,10 +128,10 @@ public class ModuleCheck implements Transform<WyilFile> {
 		checkFunctionPure(c.body(),c.code());
 	}
 
-	protected void checkFunctionPure(int blockID, CodeForest forest) {
-		CodeForest.Block block = forest.get(blockID);
+	protected void checkFunctionPure(int blockID, BytecodeForest forest) {
+		BytecodeForest.Block block = forest.get(blockID);
 		for (int i = 0; i != block.size(); ++i) {
-			CodeForest.Entry e = block.get(i);
+			BytecodeForest.Entry e = block.get(i);
 			Bytecode code = e.first();			
 			if(code instanceof Bytecode.Invoke && ((Bytecode.Invoke)code).type(0) instanceof Type.Method) {
 				// internal message send
