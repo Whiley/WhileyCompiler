@@ -33,8 +33,8 @@ import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyil.attributes.SourceLocation;
 import wyil.lang.*;
-import wyil.lang.CodeForest.Index;
-import wyil.lang.Codes.*;
+import wyil.lang.BytecodeForest.Index;
+import wyil.lang.Bytecode.*;
 import static wyil.util.ErrorMessages.*;
 
 /**
@@ -128,22 +128,23 @@ public class ModuleCheck implements Transform<WyilFile> {
 		checkFunctionPure(c.body(),c.code());
 	}
 
-	protected void checkFunctionPure(int blockID, CodeForest forest) {
-		CodeForest.Block block = forest.get(blockID);
+	protected void checkFunctionPure(int blockID, BytecodeForest forest) {
+		BytecodeForest.Block block = forest.get(blockID);
 		for (int i = 0; i != block.size(); ++i) {
-			CodeForest.Entry e = block.get(i);
-			Code code = e.first();			
-			if(code instanceof Codes.Invoke && ((Codes.Invoke)code).type(0) instanceof Type.Method) {
+			BytecodeForest.Entry e = block.get(i);
+			Bytecode code = e.first();			
+			if(code instanceof Bytecode.Invoke && ((Bytecode.Invoke)code).type(0) instanceof Type.Method) {
 				// internal message send
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, e.attribute(SourceLocation.class));
-			} else if (code instanceof Codes.IndirectInvoke && ((Codes.IndirectInvoke)code).type(0) instanceof Type.Method) {
+			} else if (code instanceof Bytecode.IndirectInvoke && ((Bytecode.IndirectInvoke)code).type(0) instanceof Type.Method) {
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, e.attribute(SourceLocation.class));
-			} else if(code instanceof Codes.NewObject) {
+			} else if (code.opcode() == Bytecode.OPCODE_newobject) {
 				syntaxError(errorMessage(ALLOCATION_NOT_PERMITTED_IN_FUNCTION), filename, e.attribute(SourceLocation.class));
-			} else if(code instanceof Codes.Dereference){
-				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, e.attribute(SourceLocation.class));
-			} else if(code instanceof Code.AbstractCompoundBytecode) {
-				Code.AbstractCompoundBytecode a = (Code.AbstractCompoundBytecode) code; 
+			} else if (code.opcode() == Bytecode.OPCODE_dereference) {
+				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename,
+						e.attribute(SourceLocation.class));
+			} else if (code instanceof Bytecode.Compound) {
+				Bytecode.Compound a = (Bytecode.Compound) code;
 				checkFunctionPure(a.block(), forest);
 			}
 		}

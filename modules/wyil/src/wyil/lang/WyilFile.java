@@ -451,16 +451,16 @@ public final class WyilFile implements CompilationUnit {
 	 */
 	public static final class Type extends Declaration {
 		private wyil.lang.Type type;
-		private CodeForest invariant;
+		private BytecodeForest invariant;
 
-		public Type(Collection<Modifier> modifiers, String name, wyil.lang.Type type, CodeForest invariant,
+		public Type(Collection<Modifier> modifiers, String name, wyil.lang.Type type, BytecodeForest invariant,
 				Attribute... attributes) {
 			super(name, modifiers, attributes);
 			this.type = type;
 			this.invariant = invariant;
 		}
 
-		public Type(Collection<Modifier> modifiers, String name, wyil.lang.Type type, CodeForest invariant,
+		public Type(Collection<Modifier> modifiers, String name, wyil.lang.Type type, BytecodeForest invariant,
 				Collection<Attribute> attributes) {
 			super(name, modifiers, attributes);
 			this.type = type;
@@ -471,7 +471,7 @@ public final class WyilFile implements CompilationUnit {
 			return type;
 		}
 
-		public CodeForest invariant() {
+		public BytecodeForest invariant() {
 			return invariant;
 		}
 	}
@@ -511,10 +511,10 @@ public final class WyilFile implements CompilationUnit {
 		private wyil.lang.Type.FunctionOrMethod type;
 		private int numPreconditions;
 		private int numPostconditions;
-		private final CodeForest forest;
+		private final BytecodeForest forest;
 		
 		public FunctionOrMethod(Collection<Modifier> modifiers, String name, wyil.lang.Type.FunctionOrMethod type,
-				CodeForest forest, int numPreconditions, int numPostconditions, Attribute... attributes) {
+				BytecodeForest forest, int numPreconditions, int numPostconditions, Attribute... attributes) {
 			super(name, modifiers, attributes);
 			this.type = type;
 			this.forest = forest;
@@ -523,7 +523,7 @@ public final class WyilFile implements CompilationUnit {
 		}
 
 		public FunctionOrMethod(Collection<Modifier> modifiers, String name, wyil.lang.Type.FunctionOrMethod type,
-				CodeForest forest, int numPreconditions, int numPostconditions, Collection<Attribute> attributes) {
+				BytecodeForest forest, int numPreconditions, int numPostconditions, Collection<Attribute> attributes) {
 			super(name, modifiers, attributes);
 			this.type = type;
 			this.forest = forest;
@@ -543,7 +543,7 @@ public final class WyilFile implements CompilationUnit {
 			return type instanceof wyil.lang.Type.Method;
 		}
 		
-		public CodeForest code() {
+		public BytecodeForest code() {
 			return forest;
 		}
 		

@@ -39,7 +39,7 @@ import wyfs.util.Trie;
 import wyil.attributes.VariableDeclarations;
 import wyil.builders.VcBranch.State;
 import wyil.lang.*;
-import wyil.lang.CodeForest.Index;
+import wyil.lang.BytecodeForest.Index;
 import wyil.util.ErrorMessages;
 import wyil.util.TypeExpander;
 import wycc.lang.Attribute;
@@ -118,12 +118,12 @@ public class VcGenerator {
 	 * @param wyilFile
 	 */
 	protected void transform(WyilFile.Type typeDecl, WyilFile wyilFile) {
-		CodeForest forest = typeDecl.invariant();
+		BytecodeForest forest = typeDecl.invariant();
 		Expr invariant = null;
 		// FIXME: get the register prefix!
 		Expr.Variable var = new Expr.Variable("r0");
 		if (forest.numBlocks() > 0) {
-			CodeForest.Index root = new CodeForest.Index(forest.getRoot(0), 0);
+			BytecodeForest.Index root = new BytecodeForest.Index(forest.getRoot(0), 0);
 			VcBranch master = new VcBranch(Math.max(1, forest.numRegisters()), root, null);
 			master.write(0, var);
 			// Pass the given branch through the type invariant, producing
@@ -155,7 +155,7 @@ public class VcGenerator {
 		this.method = method;
 
 		Type.FunctionOrMethod fmm = method.type();
-		CodeForest forest = method.code();
+		BytecodeForest forest = method.code();
 		int[] preconditions = method.preconditions();
 		int[] postconditions = method.postconditions();				
 		// First, translate pre- and post-conditions into macro blocks. These
@@ -164,13 +164,13 @@ public class VcGenerator {
 		// an invocation site, we can call this macro directly.
 		String prefix = method.name() + "_requires_";
 		for (int i = 0; i != preconditions.length; ++i) {
-			CodeForest.Index pc = new CodeForest.Index(preconditions[i], 0);
+			BytecodeForest.Index pc = new BytecodeForest.Index(preconditions[i], 0);
 			buildMacroBlock(prefix + i, pc, forest, fmm.params(), true);
 		}
 		prefix = method.name() + "_ensures_";
 		List<Type> postEnvironment = append(fmm.params(), fmm.returns());		
 		for (int i = 0; i != postconditions.length; ++i) {
-			CodeForest.Index pc = new CodeForest.Index(postconditions[i], 0);
+			BytecodeForest.Index pc = new BytecodeForest.Index(postconditions[i], 0);
 			buildMacroBlock(prefix + i, pc, forest, postEnvironment, true);
 		}
 
@@ -191,7 +191,7 @@ public class VcGenerator {
 		// declared types in the master branch. The master branch needs to have
 		// at least as many slots as there are parameters, though may require
 		// more if the body uses them.
-		CodeForest.Index pc = new CodeForest.Index(method.body(), 0);
+		BytecodeForest.Index pc = new BytecodeForest.Index(method.body(), 0);
 		VcBranch master = new VcBranch(Math.max(forest.numRegisters(), fmm.params().size()), pc, prefixes);
 
 		Expr[] arguments = new Expr[fmm.params().size()];
@@ -246,7 +246,7 @@ public class VcGenerator {
 					List<wyil.lang.Attribute> attributes = forest.get(branch.pc()).attributes();
 					Collection<wycc.lang.Attribute> wycsAttributes = VcUtils.toWycsAttributes(attributes);
 					// Find the return statement in question
-					Codes.Return ret = (Codes.Return) forest.get(branch.pc()).code();
+					Bytecode.Return ret = (Bytecode.Return) forest.get(branch.pc()).code();
 					// Construct verification check to ensure that return
 					// type invariant holds
 					// FIXME: need proper support for multiple returns
@@ -319,10 +319,10 @@ public class VcGenerator {
 	 * 
 	 * @return List of branches which reach the end of the block.
 	 */
-	public List<VcBranch> transform(VcBranch branch, CodeForest.Index root, boolean isInvariant, Type[] environment,
-			CodeForest forest) {
+	public List<VcBranch> transform(VcBranch branch, BytecodeForest.Index root, boolean isInvariant, Type[] environment,
+			BytecodeForest forest) {
 		// Construct the label map which is needed for conditional branches
-		Map<String, CodeForest.Index> labels = CodeUtils.buildLabelMap(forest);
+		Map<String, BytecodeForest.Index> labels = Bytecode.buildLabelMap(forest);
 		Pair<VcBranch, List<VcBranch>> p = transform(root.block(), 0, null, branch, false, isInvariant, environment,
 				labels, forest);
 		// Ok, return list of exit branches
@@ -375,12 +375,12 @@ public class VcGenerator {
 	 *         this is marked as terminated.
 	 * 
 	 */
-	protected Pair<VcBranch, List<VcBranch>> transform(int block, int offset, CodeForest.Index parent,
+	protected Pair<VcBranch, List<VcBranch>> transform(int block, int offset, BytecodeForest.Index parent,
 			VcBranch entryState, boolean breakOnInvariant, boolean isInvariant, Type[] environment,
-			Map<String, CodeForest.Index> labels, CodeForest forest) {
+			Map<String, BytecodeForest.Index> labels, BytecodeForest forest) {
 		// Move state to correct location
-		entryState.goTo(new CodeForest.Index(block, offset));
-		CodeForest.Block blk = forest.get(block);
+		entryState.goTo(new BytecodeForest.Index(block, offset));
+		BytecodeForest.Block blk = forest.get(block);
 		// Construct list of branches being processed.
 		Stack<VcBranch> worklist = new Stack<VcBranch>();
 		ArrayList<VcBranch> exitBranches = new ArrayList<VcBranch>();
@@ -393,7 +393,7 @@ public class VcGenerator {
 
 			// The program counter represents the current position of the branch
 			// being explored.
-			CodeForest.Index pc = branch.pc();
+			BytecodeForest.Index pc = branch.pc();
 			// Determine whether to continue executing this branch, or whether
 			// it has completed within this scope.
 			if (pc.block() != block || branch.state() != VcBranch.State.ACTIVE) {
@@ -421,11 +421,11 @@ public class VcGenerator {
 			} else {
 				// Continue executing this branch as it is still within the
 				// scope of this block.
-				Code code = forest.get(pc).code();
+				Bytecode code = forest.get(pc).code();
 				// Now, dispatch statements. Control statements are treated
 				// specially from unit statements.
-				if (code instanceof Codes.AssertOrAssume) {
-					if (breakOnInvariant && code instanceof Codes.Invariant) {
+				if (code instanceof Bytecode.AssertOrAssume) {
+					if (breakOnInvariant && code instanceof Bytecode.Invariant) {
 						// In this special case, we have reached the invariant
 						// bytecode and, hence, we break out of this loop. This
 						// is needed for handling loop invariants where we need
@@ -433,43 +433,43 @@ public class VcGenerator {
 						// encountered.
 						fallThruBranches.add(branch);
 					} else {
-						boolean isAssert = code instanceof Codes.Assert;
-						Pair<VcBranch, List<VcBranch>> p = transform((Codes.AssertOrAssume) code, isAssert, branch,
+						boolean isAssert = code instanceof Bytecode.Assert;
+						Pair<VcBranch, List<VcBranch>> p = transform((Bytecode.AssertOrAssume) code, isAssert, branch,
 								environment, labels, forest);
 						if(p.first() != null) {
 							worklist.add(p.first());
 						}
 						worklist.addAll(p.second());
 					}
-				} else if (code instanceof Codes.If
-						|| code instanceof Codes.IfIs
-						|| code instanceof Codes.Switch
-						|| code instanceof Code.AbstractCompoundBytecode) {
+				} else if (code instanceof Bytecode.If
+						|| code instanceof Bytecode.IfIs
+						|| code instanceof Bytecode.Switch
+						|| code instanceof Bytecode.Compound) {
 					List<VcBranch> bs;
-					if (code instanceof Codes.If) {
-						bs = transform((Codes.If) code, branch, labels, forest);
-					} else if (code instanceof Codes.IfIs) {
-						bs = transform((Codes.IfIs) code, branch, labels, forest);
-					} else if (code instanceof Codes.Switch) {
-						bs = transform((Codes.Switch) code, branch, labels,
+					if (code instanceof Bytecode.If) {
+						bs = transform((Bytecode.If) code, branch, labels, forest);
+					} else if (code instanceof Bytecode.IfIs) {
+						bs = transform((Bytecode.IfIs) code, branch, labels, forest);
+					} else if (code instanceof Bytecode.Switch) {
+						bs = transform((Bytecode.Switch) code, branch, labels,
 								forest);
-					} else if (code instanceof Codes.Quantify) {
-						bs = transform((Codes.Quantify) code, branch,
+					} else if (code instanceof Bytecode.Quantify) {
+						bs = transform((Bytecode.Quantify) code, branch,
 								isInvariant, environment, labels, forest);
 					} else {
-						bs = transform((Codes.Loop) code, branch, environment,
+						bs = transform((Bytecode.Loop) code, branch, environment,
 								labels, forest);
 					}
 					worklist.addAll(bs);
 
-				} else if (code instanceof Codes.Goto) {
-					transform((Codes.Goto) code, branch, labels, forest);
+				} else if (code instanceof Bytecode.Goto) {
+					transform((Bytecode.Goto) code, branch, labels, forest);
 					worklist.push(branch);
-				} else if (code instanceof Codes.Return) {
-					transform((Codes.Return) code, branch);
+				} else if (code instanceof Bytecode.Return) {
+					transform((Bytecode.Return) code, branch);
 					exitBranches.add(branch);
-				} else if (code instanceof Codes.Fail) {
-					transform((Codes.Fail) code, branch, forest);
+				} else if (code instanceof Bytecode.Fail) {
+					transform((Bytecode.Fail) code, branch, forest);
 					exitBranches.add(branch);
 				} else {
 					// Unit statement. First, check whether or not there are any
@@ -532,7 +532,7 @@ public class VcGenerator {
 		for (int i = 0; i < branches.size(); ++i) {
 			VcBranch i_branch = branches.get(i);
 			if (i_branch != null) {
-				CodeForest.Index i_pc = i_branch.pc();
+				BytecodeForest.Index i_pc = i_branch.pc();
 				// Now, the goal is to identify all remaining branches which are
 				// at the same location. These can then be all joined together
 				// in one go. First, we count how many their are
@@ -615,9 +615,9 @@ public class VcGenerator {
 	 *            The enclosing code block. This is needed to access source
 	 *            location information.
 	 */
-	protected List<VcBranch> transform(Codes.Loop code, VcBranch branch,
-			Type[] environment, Map<String, CodeForest.Index> labels,
-			CodeForest forest) {
+	protected List<VcBranch> transform(Bytecode.Loop code, VcBranch branch,
+			Type[] environment, Map<String, BytecodeForest.Index> labels,
+			BytecodeForest forest) {
 		return transformLoopHelper(code, branch, environment, labels, forest).second();
 	}
 
@@ -649,9 +649,9 @@ public class VcGenerator {
 	 * @param block
 	 *            The block being transformed over.
 	 */
-	protected List<VcBranch> transform(Codes.Quantify code, VcBranch branch,
+	protected List<VcBranch> transform(Bytecode.Quantify code, VcBranch branch,
 			boolean isInvariant, Type[] environment,
-			Map<String, CodeForest.Index> labels, CodeForest forest) {
+			Map<String, BytecodeForest.Index> labels, BytecodeForest forest) {
 		// Write an arbitrary value to the index operand. This is necessary to
 		// ensure that there is something there if it is used within the loop
 		// body.
@@ -678,7 +678,7 @@ public class VcGenerator {
 	 * @param exitBranches
 	 * @return
 	 */
-	protected List<VcBranch> extractQuantifiers(Codes.Quantify code,
+	protected List<VcBranch> extractQuantifiers(Bytecode.Quantify code,
 			VcBranch root, VcBranch fallThru, List<VcBranch> exitBranches) {
 		// First, setup some helper variables for use in the remainder.
 		SyntacticType elementType = utils.convert(Type.T_INT,
@@ -707,7 +707,7 @@ public class VcGenerator {
 			VcBranch b = exitBranches.get(i);
 			Expr body = generateAssumptions(b, root);
 			body = new Expr.Binary(Expr.Binary.Op.AND, range, body);
-			CodeForest.Index target = b.pc();
+			BytecodeForest.Index target = b.pc();
 			b = root.fork();
 			b.assume(new Expr.Exists(pattern, body));
 			b.goTo(target);
@@ -735,11 +735,11 @@ public class VcGenerator {
 	 * @return
 	 */
 	protected Pair<VcBranch, List<VcBranch>> transformQuantifierHelper(
-			Codes.Loop code, VcBranch branch, boolean isInvariant,
-			Type[] environment, Map<String, CodeForest.Index> labels,
-			CodeForest forest) {
+			Bytecode.Loop code, VcBranch branch, boolean isInvariant,
+			Type[] environment, Map<String, BytecodeForest.Index> labels,
+			BytecodeForest forest) {
 		// The loopPc gives the block index of the loop bytecode.
-		CodeForest.Index loopPc = branch.pc();
+		BytecodeForest.Index loopPc = branch.pc();
 		// This is the easy case, as there is no loop invariant. Therefore,
 		// we just havoc modified variables at the beginning and then allow
 		// branches to exit the loop as normal. Branches which reach the end
@@ -773,10 +773,10 @@ public class VcGenerator {
 	 *            location information.
 	 * @return
 	 */
-	protected Pair<VcBranch, List<VcBranch>> transformLoopHelper(Codes.Loop code, VcBranch branch, Type[] environment,
-			Map<String, CodeForest.Index> labels, CodeForest forest) {
+	protected Pair<VcBranch, List<VcBranch>> transformLoopHelper(Bytecode.Loop code, VcBranch branch, Type[] environment,
+			Map<String, BytecodeForest.Index> labels, BytecodeForest forest) {
 		// The loopPc gives the block index of the loop bytecode.
-		CodeForest.Index loopPc = branch.pc();
+		BytecodeForest.Index loopPc = branch.pc();
 		int invariantOffset = getInvariantOffset(code,forest);
 
 		// First thing we need to do is determine whether or not this loop has a
@@ -787,14 +787,14 @@ public class VcGenerator {
 			// Determine how many invariant blocks there are, as there might be
 			// more than one. In the case that there is more than one, they are
 			// assumed to be arranged consecutively one after the other.
-			CodeForest.Block block = forest.get(code.block());
+			BytecodeForest.Block block = forest.get(code.block());
 			int numberOfInvariants = 0;
 			for (int i = invariantOffset; i < block.size()
-					&& block.get(i).first() instanceof Codes.Invariant; ++i) {
+					&& block.get(i).first() instanceof Bytecode.Invariant; ++i) {
 				numberOfInvariants = numberOfInvariants+1;
 			}
 			//
-			CodeForest.Index firstInvariantPc = new CodeForest.Index(code.block(), invariantOffset);
+			BytecodeForest.Index firstInvariantPc = new BytecodeForest.Index(code.block(), invariantOffset);
 			String invariantMacroPrefix = method.name() + "_loopinvariant_";
 			
 			// FIXME: this is a hack to determine which variables should be
@@ -831,7 +831,7 @@ public class VcGenerator {
 			// verification condition that asserts each invariant macro given the
 			// current branch state.
 			for (int i = 0; i != numberOfInvariants; ++i) {
-				CodeForest.Index invariantPc = firstInvariantPc.next(i);
+				BytecodeForest.Index invariantPc = firstInvariantPc.next(i);
 				String invariantMacroName = invariantMacroPrefix + invariantPc.toString().replace(":", "_");
 				Expr.Invoke invariant = buildInvariantCall(activeBranch, invariantMacroName, variables);
 				Expr vc = buildVerificationCondition(invariant, activeBranch, environment, forest);
@@ -844,7 +844,7 @@ public class VcGenerator {
 			// the invariant macro holds in the current branch state.
 			havocVariables(code.modifiedOperands(), activeBranch);
 			for (int i = 0; i != numberOfInvariants; ++i) {
-				CodeForest.Index invariantPc = firstInvariantPc.next(i);
+				BytecodeForest.Index invariantPc = firstInvariantPc.next(i);
 				String invariantMacroName = invariantMacroPrefix
 						+ invariantPc.toString().replace(":", "_");
 				Expr.Invoke invariant = buildInvariantCall(activeBranch, invariantMacroName,
@@ -864,7 +864,7 @@ public class VcGenerator {
 			// verification condition that asserts the invariant macro given the
 			// current branch state.
 			for (int i = 0; i != numberOfInvariants; ++i) {
-				CodeForest.Index invariantPc = firstInvariantPc.next(i);
+				BytecodeForest.Index invariantPc = firstInvariantPc.next(i);
 				String invariantMacroName = invariantMacroPrefix
 						+ invariantPc.toString().replace(":", "_");
 				Expr.Invoke invariant = buildInvariantCall(activeBranch,
@@ -901,9 +901,9 @@ public class VcGenerator {
 	 * @return
 	 */
 	protected Pair<VcBranch, List<VcBranch>> transformLoopWithoutInvariant(
-			Codes.Loop code, VcBranch branch, Type[] environment,
-			Map<String, CodeForest.Index> labels, CodeForest forest) {
-		CodeForest.Index loopPc = branch.pc();
+			Bytecode.Loop code, VcBranch branch, Type[] environment,
+			Map<String, BytecodeForest.Index> labels, BytecodeForest forest) {
+		BytecodeForest.Index loopPc = branch.pc();
 		// This is the easy case, as there is no loop invariant. Therefore,
 		// we just havoc modified variables at the beginning and then allow
 		// branches to exit the loop as normal. Branches which reach the end
@@ -941,9 +941,9 @@ public class VcGenerator {
 	 * @param block
 	 *            The enclosing code block
 	 */
-	private void buildInvariantMacro(CodeForest.Index invariantPC,
-			boolean[] variables, Type[] environment, CodeForest forest) {
-		Codes.Invariant code = (Codes.Invariant) forest.get(invariantPC).first();
+	private void buildInvariantMacro(BytecodeForest.Index invariantPC,
+			boolean[] variables, Type[] environment, BytecodeForest forest) {
+		Bytecode.Invariant code = (Bytecode.Invariant) forest.get(invariantPC).first();
 		// FIXME: we don't need to include all variables, only those which are
 		// "active".
 		ArrayList<Type> types = new ArrayList<Type>();
@@ -955,7 +955,7 @@ public class VcGenerator {
 			}
 		}
 		String pc = invariantPC.block() + "_" + invariantPC.offset();
-		CodeForest.Index root = new CodeForest.Index(code.block(),0);
+		BytecodeForest.Index root = new BytecodeForest.Index(code.block(),0);
 		buildMacroBlock(method.name() + "_loopinvariant_" + pc, root, forest, types, true);
 	}
 
@@ -996,10 +996,10 @@ public class VcGenerator {
 	 * @param branch
 	 * @return
 	 */
-	private int getInvariantOffset(Codes.Loop loop, CodeForest forest) {
-		CodeForest.Block block = forest.get(loop.block());
+	private int getInvariantOffset(Bytecode.Loop loop, BytecodeForest forest) {
+		BytecodeForest.Block block = forest.get(loop.block());
 		for (int i = 0; i != block.size(); ++i) {
-			if (block.get(i).first() instanceof Codes.Invariant) {
+			if (block.get(i).first() instanceof Bytecode.Invariant) {
 				return i;
 			}
 		}
@@ -1049,13 +1049,13 @@ public class VcGenerator {
 	 * @param branches
 	 *            The list of branches currently being managed.
 	 */
-	protected List<VcBranch> transform(Codes.If code, VcBranch branch,
-			Map<String, CodeForest.Index> labels, CodeForest forest) {
+	protected List<VcBranch> transform(Bytecode.If code, VcBranch branch,
+			Map<String, BytecodeForest.Index> labels, BytecodeForest forest) {
 		// First, clone and register the true branch
 		VcBranch trueBranch = branch.fork();
 		VcBranch falseBranch = branch.fork();
 		// Second assume the condition on each branch
-		Expr.Binary trueTest = buildTest(code.op, code.operand(0), code.operand(1), code.type(0), forest, trueBranch);
+		Expr.Binary trueTest = buildCondition(branch.read(code.operand(0)),forest,branch);
 		trueBranch.assume(trueTest);
 		falseBranch.assume(utils.invert(trueTest));
 		// Third, dispatch branches to their targets
@@ -1086,8 +1086,8 @@ public class VcGenerator {
 	 * @param branches
 	 *            The list of branches currently being managed.
 	 */
-	protected List<VcBranch> transform(Codes.IfIs code, VcBranch branch,
-			Map<String, CodeForest.Index> labels, CodeForest forest) {
+	protected List<VcBranch> transform(Bytecode.IfIs code, VcBranch branch,
+			Map<String, BytecodeForest.Index> labels, BytecodeForest forest) {
 		ArrayList<VcBranch> exitBranches = new ArrayList<VcBranch>();
 		// In this case, both branches are reachable.
 		// First, clone and register the branch
@@ -1127,20 +1127,20 @@ public class VcGenerator {
 	 * @param branches
 	 *            The list of branches currently being managed.
 	 */
-	protected List<VcBranch> transform(Codes.Switch code, VcBranch branch,
-			Map<String, CodeForest.Index> labels, CodeForest forest) {
+	protected List<VcBranch> transform(Bytecode.Switch code, VcBranch branch,
+			Map<String, BytecodeForest.Index> labels, BytecodeForest forest) {
 		ArrayList<VcBranch> exitBranches = new ArrayList<VcBranch>();
 		VcBranch defaultBranch = branch.fork();
 
 		// Process each case individually, whilst also updating the default
 		// branch.
-		for (int i = 0; i != code.branches.size(); ++i) {
+		for (int i = 0; i != code.branches().size(); ++i) {
 			// First, for each case fork a new branch to traverse it.
 			VcBranch caseBranch = branch.fork();
 			// Second, for each case, assume that the variable switched on
 			// matches the give case value. Likewise, assume that the default
 			// branch does *not* equal this value.
-			Constant caseValue = code.branches.get(i).first();
+			Constant caseValue = code.branches().get(i).first();
 			// Second, on the new branch we need assume that the variable being
 			// switched on matches the given value.
 			Expr src = branch.read(code.operand(0));
@@ -1153,12 +1153,12 @@ public class VcGenerator {
 			defaultBranch.assume(new Expr.Binary(Expr.Binary.Op.NEQ, src,
 					constant, VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes())));
 			// Finally, dispatch branch
-			caseBranch.goTo(labels.get(code.branches.get(i).second()));
+			caseBranch.goTo(labels.get(code.branches().get(i).second()));
 			exitBranches.add(caseBranch);
 		}
 
 		// Finally, the dispatch the default branch to the default target.
-		defaultBranch.goTo(labels.get(code.defaultTarget));
+		defaultBranch.goTo(labels.get(code.defaultTarget()));
 		exitBranches.add(defaultBranch);
 
 		// TODO: here is where we can add a coverage check. Specifically, that
@@ -1193,15 +1193,15 @@ public class VcGenerator {
 	 *         branches which have terminated or failed.
 	 */
 	protected Pair<VcBranch, List<VcBranch>> transform(
-			Codes.AssertOrAssume code, boolean isAssert, VcBranch branch,
-			Type[] environment, Map<String, CodeForest.Index> labels,
-			CodeForest forest) {
+			Bytecode.AssertOrAssume code, boolean isAssert, VcBranch branch,
+			Type[] environment, Map<String, BytecodeForest.Index> labels,
+			BytecodeForest forest) {
 		int start = wyalFile.declarations().size();
 		// First, transform the given branch through the assert or assume block.
 		// This will produce one or more exit branches, some of which may have
 		// reached failed states and need to be turned into verification
 		// conditions (for asserts only).
-		CodeForest.Index pc = branch.pc();
+		BytecodeForest.Index pc = branch.pc();
 		Pair<VcBranch, List<VcBranch>> p = transform(code.block(), 0, pc, branch, false, true, environment, labels,
 				forest);
 		List<VcBranch> exitBranches = p.second();
@@ -1248,8 +1248,8 @@ public class VcGenerator {
 	 * @param branches
 	 *            The list of branches currently being managed.
 	 */
-	protected void transform(Codes.Goto code, final VcBranch branch,
-			Map<String, CodeForest.Index> labels, CodeForest forest) {
+	protected void transform(Bytecode.Goto code, final VcBranch branch,
+			Map<String, BytecodeForest.Index> labels, BytecodeForest forest) {
 		branch.goTo(labels.get(code.destination()));
 	}
 
@@ -1269,8 +1269,8 @@ public class VcGenerator {
 	 * @param branches
 	 *            The list of branches currently being managed.
 	 */
-	protected void transform(Codes.Fail code, VcBranch branch,
-			CodeForest forest) {
+	protected void transform(Bytecode.Fail code, VcBranch branch,
+			BytecodeForest forest) {
 		// Update status of this branch to failed. This simply indicates that
 		// this branch's location should be unreachable and, hence, we need a
 		// verification condition to enforce this.
@@ -1291,7 +1291,7 @@ public class VcGenerator {
 	 * @param branches
 	 *            The list of branches currently being managed.
 	 */
-	protected void transform(Codes.Return code, VcBranch branch) {
+	protected void transform(Bytecode.Return code, VcBranch branch) {
 		// Marking the branch as terminated indicates that it is no longer
 		// active. Thus, the original callers of this block transformation can
 		// subsequently extract the constraints which hold at the point of the
@@ -1317,8 +1317,8 @@ public class VcGenerator {
 	 *            the inputs of the block being translated.
 	 * @return
 	 */
-	protected void buildMacroBlock(String name, CodeForest.Index root,
-			CodeForest forest, List<Type> types, boolean isInvariant) {
+	protected void buildMacroBlock(String name, BytecodeForest.Index root,
+			BytecodeForest forest, List<Type> types, boolean isInvariant) {
 		int start = wyalFile.declarations().size();
 		
 		// first, generate a branch for traversing the external block.
@@ -1397,7 +1397,7 @@ public class VcGenerator {
 	 * @return
 	 */
 	protected Expr buildVerificationCondition(Expr assertion, VcBranch branch,
-			Type[] environment, CodeForest forest, Expr... extraAssumptions) {
+			Type[] environment, BytecodeForest forest, Expr... extraAssumptions) {
 		// First construct the assertion which forms the basis of the
 		// verification condition. The assertion must be shown to hold assuming
 		// the assumptions did. Therefore, we construct an implication to
@@ -1564,40 +1564,16 @@ public class VcGenerator {
 	 * @param elem
 	 * @return
 	 */
-	private Expr.Binary buildTest(Codes.Comparator cop, int leftOperand,
-			int rightOperand, Type type, CodeForest forest,
-			VcBranch branch) {
-		Expr lhs = branch.read(leftOperand);
-		Expr rhs = branch.read(rightOperand);
-		Expr.Binary.Op op;
-		switch (cop) {
-		case EQ:
-			op = Expr.Binary.Op.EQ;
-			break;
-		case NEQ:
-			op = Expr.Binary.Op.NEQ;
-			break;
-		case GTEQ:
-			op = Expr.Binary.Op.GTEQ;
-			break;
-		case GT:
-			op = Expr.Binary.Op.GT;
-			break;
-		case LTEQ:
-			op = Expr.Binary.Op.LTEQ;
-			break;
-		case LT:
-			op = Expr.Binary.Op.LT;
-			break;		
-		default:
-			internalFailure("unknown comparator (" + cop + ")", filename,
-					forest.get(branch.pc()).attributes());
-			return null;
-		}		
-		return new Expr.Binary(op, lhs, rhs,
-				VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes()));
+	private Expr.Binary buildCondition(Expr test, BytecodeForest forest, VcBranch branch) {
+		if (test instanceof Expr.Binary) {
+			return (Expr.Binary) test;
+		} else {
+			Collection<Attribute> attributes = VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes());
+			Expr.Constant tt = new Expr.Constant(Value.Bool(true), attributes);  
+			return new Expr.Binary(Expr.Binary.Op.EQ, test, tt, attributes);
+		}
 	}
-
+	
 	private Type expand(Type t, Collection<wyil.lang.Attribute> attributes) {
 		try {
 			return expander.getUnderlyingType(t);

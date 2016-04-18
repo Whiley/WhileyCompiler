@@ -2378,32 +2378,32 @@ public class WhileyFileParser {
 						start, index - 1));
 			}
 		case Null:
-			return new Expr.Constant(wyil.lang.Constant.V_NULL, sourceAttr(
+			return new Expr.Constant(wyil.lang.Constant.Null, sourceAttr(
 					start, index++));
 		case True:
-			return new Expr.Constant(wyil.lang.Constant.V_BOOL(true),
+			return new Expr.Constant(Constant.True,
 					sourceAttr(start, index++));
 		case False:
-			return new Expr.Constant(wyil.lang.Constant.V_BOOL(false),
+			return new Expr.Constant(Constant.False,
 					sourceAttr(start, index++));
 		case ByteValue: {
 			byte val = parseByte(token);
-			return new Expr.Constant(wyil.lang.Constant.V_BYTE(val),
+			return new Expr.Constant(new Constant.Byte(val),
 					sourceAttr(start, index++));
 		}
 		case CharValue: {
 			BigInteger c = parseCharacter(token.text);
-			return new Expr.Constant(wyil.lang.Constant.V_INTEGER(c), sourceAttr(
+			return new Expr.Constant(new Constant.Integer(c), sourceAttr(
 					start, index++));
 		}
 		case IntValue: {
 			BigInteger val = new BigInteger(token.text);
-			return new Expr.Constant(wyil.lang.Constant.V_INTEGER(val),
+			return new Expr.Constant(new Constant.Integer(val),
 					sourceAttr(start, index++));
 		}
 		case StringValue: {
 			List<Constant> str = parseString(token.text);
-			return new Expr.Constant(wyil.lang.Constant.V_ARRAY(str),
+			return new Expr.Constant(new Constant.Array(str),
 					sourceAttr(start, index++));
 		}
 		case Minus:
@@ -2877,7 +2877,7 @@ public class WhileyFileParser {
 		// only. However, the expression is guaranteed to be terminated by '|'.
 		Expr e = parseShiftExpression(wf, environment, true);
 		match(VerticalBar);
-		return new Expr.LengthOf(e, sourceAttr(start, index - 1));
+		return new Expr.UnOp(Expr.UOp.ARRAYLENGTH, e, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -3438,9 +3438,13 @@ public class WhileyFileParser {
 			return false;
 		} else if(e instanceof Expr.UnOp) {
 			Expr.UnOp uop = (Expr.UnOp) e;
-			if(uop.op == Expr.UOp.NOT) {
+			switch(uop.op) {
+			case NOT:
 				return mustParseAsExpr(uop.mhs);
-			} else {
+			case ARRAYLENGTH:
+			case INVERT:
+				return true;
+			default:
 				return false;
 			}
 		} else if(e instanceof Expr.AbstractFunctionOrMethod) {
@@ -3460,8 +3464,6 @@ public class WhileyFileParser {
 		} else if(e instanceof Expr.IndexOf) {
 			return true;
 		} else if(e instanceof Expr.Lambda) {
-			return true;
-		} else if(e instanceof Expr.LengthOf) {
 			return true;
 		} else if(e instanceof Expr.ArrayInitialiser) {
 			return true;
@@ -4250,11 +4252,11 @@ public class WhileyFileParser {
 					default:
 						throw new RuntimeException("unknown escape character");
 					}
-					result.add(Constant.V_INTEGER(BigInteger.valueOf(replace)));
+					result.add(new Constant.Integer(BigInteger.valueOf(replace)));
 					i = i + 1;
 				}
 			} else {
-				result.add(Constant.V_INTEGER(BigInteger.valueOf(v.charAt(i))));
+				result.add(new Constant.Integer(BigInteger.valueOf(v.charAt(i))));
 			}
 		}
 		return result;

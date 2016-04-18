@@ -18,7 +18,7 @@ import wyil.io.WyilFileReader;
 import wyil.lang.Constant;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
-import wyil.util.Interpreter;
+import wyil.util.interpreter.Interpreter;
 
 public class Main {
 

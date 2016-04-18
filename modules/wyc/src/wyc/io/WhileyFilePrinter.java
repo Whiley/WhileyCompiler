@@ -339,8 +339,6 @@ public class WhileyFilePrinter {
 			print ((Expr.ArrayInitialiser) expression);
 		} else if (expression instanceof Expr.BinOp) {
 			print ((Expr.BinOp) expression);
-		} else if (expression instanceof Expr.LengthOf) {
-			print ((Expr.LengthOf) expression);
 		} else if (expression instanceof Expr.Dereference) {
 			print ((Expr.Dereference) expression);
 		} else if (expression instanceof Expr.Cast) {
@@ -412,12 +410,6 @@ public class WhileyFilePrinter {
 		printWithBrackets(e.rhs, Expr.BinOp.class, Expr.Cast.class);
 	}
 
-	public void print(Expr.LengthOf e) {
-		out.print("|");
-		print(e.src);
-		out.print("|");
-	}
-
 	public void print(Expr.Dereference e) {
 		out.print("*");
 		print(e.src);
@@ -448,6 +440,11 @@ public class WhileyFilePrinter {
 		case INVERT:
 			out.print("~");
 			break;
+		case ARRAYLENGTH:
+			out.print("|");
+			print(e.mhs);
+			out.print("|");
+			return;
 		}
 		printWithBrackets(e.mhs,Expr.BinOp.class,Expr.Cast.class);
 	}

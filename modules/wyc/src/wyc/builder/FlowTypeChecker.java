@@ -142,7 +142,7 @@ public class FlowTypeChecker {
 	private final WhileyBuilder builder;
 	private final TypeExpander expander;
 	private String filename;
-	private WhileyFile.FunctionOrMethod current;
+	//private WhileyFile.FunctionOrMethod current;
 
 	/**
 	 * The constant cache contains a cache of expanded constant values. This is
@@ -244,8 +244,6 @@ public class FlowTypeChecker {
 	 * @throws IOException
 	 */
 	public void propagate(WhileyFile.FunctionOrMethod d) throws IOException {
-		this.current = d; // ugly
-
 		// Resolve the types of all parameters and construct an appropriate
 		// environment for use in the flow-sensitive type propagation.
 		Environment environment = addDeclaredParameters(d.parameters, new Environment(), d);
@@ -266,7 +264,7 @@ public class FlowTypeChecker {
 		
 		// Finally, propagate type information throughout all statements in the
 		// function / method body.
-		Environment last = propagate(d.statements, environment);
+		Environment last = propagate(d.statements, environment, d);
 		//
 		checkReturnValue(d, last);
 	}
@@ -282,7 +280,7 @@ public class FlowTypeChecker {
 	 */
 	private void checkReturnValue(WhileyFile.FunctionOrMethod d, Environment last) {
 		if (!d.hasModifier(Modifier.NATIVE) && last != BOTTOM
-				&& !current.resolvedType().returns().isEmpty()) {
+				&& !d.resolvedType().returns().isEmpty()) {
 			// In this case, code reaches the end of the function or method and,
 			// furthermore, that this requires a return value. To get here means
 			// that there was no explicit return statement given on at least one
@@ -322,14 +320,14 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(ArrayList<Stmt> block, Environment environment) {
+	private Environment propagate(ArrayList<Stmt> block, Environment environment, Context context) {
 
 		for (int i = 0; i != block.size(); ++i) {
 			Stmt stmt = block.get(i);
 			if (stmt instanceof Expr) {
-				block.set(i, (Stmt) propagate((Expr) stmt, environment, current));
+				block.set(i, (Stmt) propagate((Expr) stmt, environment, context));
 			} else {
-				environment = propagate(stmt, environment);
+				environment = propagate(stmt, environment, context);
 			}
 		}
 
@@ -350,36 +348,36 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt stmt, Environment environment) {
+	private Environment propagate(Stmt stmt, Environment environment, Context context) {
 		if (environment == BOTTOM) {
 			syntaxError(errorMessage(UNREACHABLE_CODE), filename, stmt);
 			return null; // dead code
 		}
 		try {
 			if (stmt instanceof Stmt.VariableDeclaration) {
-				return propagate((Stmt.VariableDeclaration) stmt, environment);
+				return propagate((Stmt.VariableDeclaration) stmt, environment, context);
 			} else if (stmt instanceof Stmt.Assign) {
-				return propagate((Stmt.Assign) stmt, environment);
+				return propagate((Stmt.Assign) stmt, environment, context);
 			} else if (stmt instanceof Stmt.Return) {
-				return propagate((Stmt.Return) stmt, environment);
+				return propagate((Stmt.Return) stmt, environment, context);
 			} else if (stmt instanceof Stmt.IfElse) {
-				return propagate((Stmt.IfElse) stmt, environment);
+				return propagate((Stmt.IfElse) stmt, environment, context);
 			} else if (stmt instanceof Stmt.While) {
-				return propagate((Stmt.While) stmt, environment);
+				return propagate((Stmt.While) stmt, environment, context);
 			} else if (stmt instanceof Stmt.Switch) {
-				return propagate((Stmt.Switch) stmt, environment);
+				return propagate((Stmt.Switch) stmt, environment, context);
 			} else if (stmt instanceof Stmt.DoWhile) {
-				return propagate((Stmt.DoWhile) stmt, environment);
+				return propagate((Stmt.DoWhile) stmt, environment, context);
 			} else if (stmt instanceof Stmt.Break) {
-				return propagate((Stmt.Break) stmt, environment);
+				return propagate((Stmt.Break) stmt, environment, context);
 			} else if (stmt instanceof Stmt.Continue) {
-				return propagate((Stmt.Continue) stmt, environment);
+				return propagate((Stmt.Continue) stmt, environment, context);
 			} else if (stmt instanceof Stmt.Assert) {
-				return propagate((Stmt.Assert) stmt, environment);
+				return propagate((Stmt.Assert) stmt, environment, context);
 			} else if (stmt instanceof Stmt.Assume) {
-				return propagate((Stmt.Assume) stmt, environment);
+				return propagate((Stmt.Assume) stmt, environment, context);
 			} else if (stmt instanceof Stmt.Fail) {
-				return propagate((Stmt.Fail) stmt, environment);
+				return propagate((Stmt.Fail) stmt, environment, context);
 			} else if (stmt instanceof Stmt.Debug) {
 				return propagate((Stmt.Debug) stmt, environment);
 			} else if (stmt instanceof Stmt.Skip) {
@@ -410,8 +408,8 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Assert stmt, Environment environment) {
-		stmt.expr = propagate(stmt.expr, environment, current);
+	private Environment propagate(Stmt.Assert stmt, Environment environment, Context context) {
+		stmt.expr = propagate(stmt.expr, environment, context);
 		checkIsSubtype(Type.T_BOOL, stmt.expr);
 		return environment;
 	}
@@ -427,8 +425,8 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Assume stmt, Environment environment) {
-		stmt.expr = propagate(stmt.expr, environment, current);
+	private Environment propagate(Stmt.Assume stmt, Environment environment, Context context) {
+		stmt.expr = propagate(stmt.expr, environment, context);
 		checkIsSubtype(Type.T_BOOL, stmt.expr);
 		return environment;
 	}
@@ -444,7 +442,7 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Fail stmt, Environment environment) {
+	private Environment propagate(Stmt.Fail stmt, Environment environment, Context context) {
 		return BOTTOM;
 	}
 
@@ -464,23 +462,23 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.VariableDeclaration stmt, Environment environment)
+	private Environment propagate(Stmt.VariableDeclaration stmt, Environment environment, Context context)
 			throws IOException, ResolveError {
 		// First, resolve declared type
-		stmt.type = resolveAsType(stmt.parameter.type, current);
+		stmt.type = resolveAsType(stmt.parameter.type, context);
 
 		// Second, resolve type of initialiser. This must be performed before we
 		// update the environment, since this expression is not allowed to refer
 		// to the newly declared variable.
 		if (stmt.expr != null) {
-			stmt.expr = propagate(stmt.expr, environment, current);
+			stmt.expr = propagate(stmt.expr, environment, context);
 			checkIsSubtype(stmt.type, stmt.expr);
 		}
 
 		// Third, update environment accordingly. Observe that we can safely
 		// assume any variable(s) are not already declared in the enclosing
 		// scope because the parser checks this for us.
-		environment = addDeclaredParameter(stmt.parameter, environment, current);
+		environment = addDeclaredParameter(stmt.parameter, environment, context);
 
 		// Fourth, set the current type of the assigned variable if an
 		// initialiser is used. This is because the current type may differ
@@ -503,10 +501,10 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Assign stmt, Environment environment) throws IOException, ResolveError {
+	private Environment propagate(Stmt.Assign stmt, Environment environment, Context context) throws IOException, ResolveError {
 		// First, type check each lval that occurs on the left-hand side.
 		for(int i=0;i!=stmt.lvals.size();++i) {
-			stmt.lvals.set(i, propagate(stmt.lvals.get(i), environment));
+			stmt.lvals.set(i, propagate(stmt.lvals.get(i), environment, context));
 		}		
 		// Second, type check expressions on right-hand side, and calculate the
 		// number of values produced by the right-hand side. This is challenging
@@ -514,7 +512,7 @@ public class FlowTypeChecker {
 		// than the number of values produced. This occurs when an invocation
 		// occurs on the right-hand side has multiple return values.			
 		for (int i = 0; i != stmt.rvals.size(); ++i) {
-			stmt.rvals.set(i, propagate(stmt.rvals.get(i), environment, current));
+			stmt.rvals.set(i, propagate(stmt.rvals.get(i), environment, context));
 		}
 		List<Pair<Expr,Nominal>> valuesProduced = calculateTypesProduced(stmt.rvals);
 		// Check the number of expected values matches the number of values
@@ -578,7 +576,7 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Break stmt, Environment environment) {
+	private Environment propagate(Stmt.Break stmt, Environment environment, Context context) {
 		// FIXME: need to propagate environment to the break destination
 		return BOTTOM;
 	}
@@ -595,7 +593,7 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Continue stmt, Environment environment) {
+	private Environment propagate(Stmt.Continue stmt, Environment environment, Context context) {
 		// FIXME: need to propagate environment to the continue destination
 		return BOTTOM;
 	}
@@ -611,8 +609,8 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Debug stmt, Environment environment) {
-		stmt.expr = propagate(stmt.expr, environment, current);
+	private Environment propagate(Stmt.Debug stmt, Environment environment, Context context) {
+		stmt.expr = propagate(stmt.expr, environment, context);
 		checkIsSubtype(Type.Array(Type.T_INT, false), stmt.expr);
 		return environment;
 	}
@@ -627,16 +625,16 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.DoWhile stmt, Environment environment) {
+	private Environment propagate(Stmt.DoWhile stmt, Environment environment, Context context) {
 
 		// Iterate to a fixed point
-		environment = computeFixedPoint(environment, stmt.body, stmt.condition, true, stmt);
+		environment = computeFixedPoint(environment, stmt.body, stmt.condition, true, stmt, context);
 
 		// Type invariants
 		List<Expr> stmt_invariants = stmt.invariants;
 		for (int i = 0; i != stmt_invariants.size(); ++i) {
 			Expr invariant = stmt_invariants.get(i);
-			invariant = propagate(invariant, environment, current);
+			invariant = propagate(invariant, environment, context);
 			stmt_invariants.set(i, invariant);
 			checkIsSubtype(Type.T_BOOL, invariant);
 		}
@@ -644,7 +642,7 @@ public class FlowTypeChecker {
 		// Type condition assuming its false to represent the terminated loop.
 		// This is important if the condition contains a type test, as we'll
 		// know that doesn't hold here.
-		Pair<Expr, Environment> p = propagateCondition(stmt.condition, false, environment, current);
+		Pair<Expr, Environment> p = propagateCondition(stmt.condition, false, environment, context);
 		stmt.condition = p.first();
 		environment = p.second();
 
@@ -691,13 +689,13 @@ public class FlowTypeChecker {
 	 * @return
 	 */
 
-	private Environment propagate(Stmt.IfElse stmt, Environment environment) {
+	private Environment propagate(Stmt.IfElse stmt, Environment environment, Context context) {
 
 		// First, check condition and apply variable retypings.
 		Pair<Expr, Environment> p1, p2;
 
-		p1 = propagateCondition(stmt.condition, true, environment.clone(), current);
-		p2 = propagateCondition(stmt.condition, false, environment.clone(), current);
+		p1 = propagateCondition(stmt.condition, true, environment.clone(), context);
+		p2 = propagateCondition(stmt.condition, false, environment.clone(), context);
 		stmt.condition = p1.first();
 
 		Environment trueEnvironment = p1.second();
@@ -705,13 +703,13 @@ public class FlowTypeChecker {
 
 		// Second, update environments for true and false branches
 		if (stmt.trueBranch != null && stmt.falseBranch != null) {
-			trueEnvironment = propagate(stmt.trueBranch, trueEnvironment);
-			falseEnvironment = propagate(stmt.falseBranch, falseEnvironment);
+			trueEnvironment = propagate(stmt.trueBranch, trueEnvironment, context);
+			falseEnvironment = propagate(stmt.falseBranch, falseEnvironment, context);
 		} else if (stmt.trueBranch != null) {
-			trueEnvironment = propagate(stmt.trueBranch, trueEnvironment);
+			trueEnvironment = propagate(stmt.trueBranch, trueEnvironment, context);
 		} else if (stmt.falseBranch != null) {
 			trueEnvironment = environment;
-			falseEnvironment = propagate(stmt.falseBranch, falseEnvironment);
+			falseEnvironment = propagate(stmt.falseBranch, falseEnvironment, context);
 		}
 
 		// Finally, join results back together
@@ -732,13 +730,14 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Return stmt, Environment environment) throws IOException {
+	private Environment propagate(Stmt.Return stmt, Environment environment, Context context) throws IOException {
 		List<Expr> stmt_returns = stmt.returns;
 		for(int i=0;i!=stmt_returns.size();++i) {
-			stmt_returns.set(i, propagate(stmt_returns.get(i), environment, current));
+			stmt_returns.set(i, propagate(stmt_returns.get(i), environment, context));
 		}			
 		List<Pair<Expr,Nominal>> stmt_types = calculateTypesProduced(stmt_returns);
-		List<Nominal> current_returns = current.resolvedType().returns();
+		// FIXME: this is less than ideal
+		List<Nominal> current_returns = ((WhileyFile.FunctionOrMethod)context).resolvedType().returns();
 
 		if (stmt_types.size() < current_returns.size()) {
 			// In this case, a return statement was provided with too few return
@@ -827,9 +826,9 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Switch stmt, Environment environment) throws IOException {
+	private Environment propagate(Stmt.Switch stmt, Environment environment, Context context) throws IOException {
 
-		stmt.expr = propagate(stmt.expr, environment, current);
+		stmt.expr = propagate(stmt.expr, environment, context);
 
 		Environment finalEnv = null;
 		boolean hasDefault = false;
@@ -840,14 +839,14 @@ public class FlowTypeChecker {
 
 			ArrayList<Constant> values = new ArrayList<Constant>();
 			for (Expr e : c.expr) {
-				values.add(resolveAsConstant(e, current).first());
+				values.add(resolveAsConstant(e, context).first());
 			}
 			c.constants = values;
 
 			// second, propagate through the statements
 
 			Environment localEnv = environment.clone();
-			localEnv = propagate(c.stmts, localEnv);
+			localEnv = propagate(c.stmts, localEnv, context);
 
 			if (finalEnv == null) {
 				finalEnv = localEnv;
@@ -884,16 +883,16 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.While stmt, Environment environment) {
+	private Environment propagate(Stmt.While stmt, Environment environment, Context context) {
 
 		// Determine typing at beginning of loop
-		environment = computeFixedPoint(environment, stmt.body, stmt.condition, false, stmt);
+		environment = computeFixedPoint(environment, stmt.body, stmt.condition, false, stmt, context);
 
 		// Type loop invariant(s)
 		List<Expr> stmt_invariants = stmt.invariants;
 		for (int i = 0; i != stmt_invariants.size(); ++i) {
 			Expr invariant = stmt_invariants.get(i);
-			invariant = propagate(invariant, environment, current);
+			invariant = propagate(invariant, environment, context);
 			stmt_invariants.set(i, invariant);
 			checkIsSubtype(Type.T_BOOL, invariant);
 		}
@@ -901,7 +900,7 @@ public class FlowTypeChecker {
 		// Type condition assuming its false to represent the terminated loop.
 		// This is important if the condition contains a type test, as we'll
 		// know that doesn't hold here.
-		Pair<Expr, Environment> p = propagateCondition(stmt.condition, false, environment, current);
+		Pair<Expr, Environment> p = propagateCondition(stmt.condition, false, environment, context);
 		stmt.condition = p.first();
 		environment = p.second();
 
@@ -912,7 +911,7 @@ public class FlowTypeChecker {
 	// LVals
 	// =========================================================================
 
-	private Expr.LVal propagate(Expr.LVal lval, Environment environment) {
+	private Expr.LVal propagate(Expr.LVal lval, Environment environment, Context context) {
 		try {
 			if (lval instanceof Expr.AbstractVariable) {
 				Expr.AbstractVariable av = (Expr.AbstractVariable) lval;
@@ -925,27 +924,23 @@ public class FlowTypeChecker {
 				return lv;
 			} else if (lval instanceof Expr.Dereference) {
 				Expr.Dereference pa = (Expr.Dereference) lval;
-				Expr.LVal src = propagate((Expr.LVal) pa.src, environment);
+				Expr.LVal src = propagate((Expr.LVal) pa.src, environment, context);
 				pa.src = src;
 				pa.srcType = expandAsReference(src.result());
 				return pa;
 			} else if (lval instanceof Expr.IndexOf) {
 				// this indicates either a list, string or dictionary update
 				Expr.IndexOf ai = (Expr.IndexOf) lval;
-				Expr.LVal src = propagate((Expr.LVal) ai.src, environment);
-				Expr index = propagate(ai.index, environment, current);
+				Expr.LVal src = propagate((Expr.LVal) ai.src, environment, context);
+				Expr index = propagate(ai.index, environment, context);
 				ai.src = src;
 				ai.index = index;
-				Nominal.Array srcType = expandAsEffectiveList(src.result());
-				if (srcType == null) {
-					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION), filename, lval);
-				}
-				ai.srcType = srcType;
+				ai.srcType = expandAsEffectiveArray(src,context);				
 				return ai;
 			} else if (lval instanceof Expr.FieldAccess) {
 				// this indicates a record update
 				Expr.FieldAccess ad = (Expr.FieldAccess) lval;
-				Expr.LVal src = propagate((Expr.LVal) ad.src, environment);
+				Expr.LVal src = propagate((Expr.LVal) ad.src, environment, context);
 				Expr.FieldAccess ra = new Expr.FieldAccess(src, ad.name, ad.attributes());
 				Nominal.Record srcType = expandAsEffectiveRecord(src.result());
 				if (srcType == null) {
@@ -1306,7 +1301,7 @@ public class FlowTypeChecker {
 			// treated the same as !(x is null)
 
 			if (lhs instanceof Expr.LocalVariable && rhs instanceof Expr.Constant
-					&& ((Expr.Constant) rhs).value == Constant.V_NULL) {
+					&& ((Expr.Constant) rhs).value == Constant.Null) {
 				// bingo, special case
 				Expr.LocalVariable lv = (Expr.LocalVariable) lhs;
 				Nominal newType;
@@ -1383,8 +1378,6 @@ public class FlowTypeChecker {
 				return propagate((Expr.IndexOf) expr, environment, context);
 			} else if (expr instanceof Expr.Lambda) {
 				return propagate((Expr.Lambda) expr, environment, context);
-			} else if (expr instanceof Expr.LengthOf) {
-				return propagate((Expr.LengthOf) expr, environment, context);
 			} else if (expr instanceof Expr.LocalVariable) {
 				return propagate((Expr.LocalVariable) expr, environment, context);
 			} else if (expr instanceof Expr.ArrayInitialiser) {
@@ -1490,7 +1483,7 @@ public class FlowTypeChecker {
 		return expr;
 	}
 
-	private Expr propagate(Expr.UnOp expr, Environment environment, Context context) throws IOException {
+	private Expr propagate(Expr.UnOp expr, Environment environment, Context context) throws IOException, ResolveError {
 
 		if (expr.op == Expr.UOp.NOT) {
 			// hand off to special method for conditions
@@ -1507,7 +1500,10 @@ public class FlowTypeChecker {
 		case INVERT:
 			checkIsSubtype(Type.T_BYTE, src, context);
 			break;
-
+		case ARRAYLENGTH: {
+			expr.type = expandAsEffectiveArray(expr.mhs, context);
+			return expr;
+		}	
 		default:
 			internalFailure("unknown operator: " + expr.op.getClass().getName(), context, expr);
 		}
@@ -1709,7 +1705,7 @@ public class FlowTypeChecker {
 			throws IOException, ResolveError {
 		expr.src = propagate(expr.src, environment, context);
 		expr.index = propagate(expr.index, environment, context);
-		Nominal.Array srcType = expandAsEffectiveList(expr.src.result());
+		Nominal.Array srcType = expandAsEffectiveArray(expr.src, context);
 
 		if (srcType == null) {
 			syntaxError(errorMessage(INVALID_ARRAY_EXPRESSION), context, expr.src);
@@ -1718,22 +1714,6 @@ public class FlowTypeChecker {
 		}
 
 		checkIsSubtype(srcType.key(), expr.index, context);
-
-		return expr;
-	}
-
-	private Expr propagate(Expr.LengthOf expr, Environment environment, Context context)
-			throws IOException, ResolveError {
-		expr.src = propagate(expr.src, environment, context);
-
-		Nominal.Array srcType = expandAsEffectiveList(expr.src.result());
-
-		if (srcType == null) {
-			syntaxError("found " + expr.src.result().nominal() + ", expected string, set, list or dictionary.", context,
-					expr.src);
-		} else {
-			expr.srcType = srcType;
-		}
 
 		return expr;
 	}
@@ -1921,7 +1901,7 @@ public class FlowTypeChecker {
 	 * @return
 	 */
 	private Environment computeFixedPoint(Environment environment, ArrayList<Stmt> body, Expr condition,
-			boolean doWhile, SyntacticElement element) {
+			boolean doWhile, SyntacticElement element, Context context) {
 		// The count is used simply to guarantee termination.
 		int count = 0;
 		// The original environment is an exact copy of the initial environment.
@@ -1945,14 +1925,14 @@ public class FlowTypeChecker {
 			// Second, propagate through condition (if applicable). This may
 			// update the environment if one or more type tests are used.
 			if (condition != null && !doWhile) {
-				tmp = propagateCondition(condition, true, old.clone(), current).second();
+				tmp = propagateCondition(condition, true, old.clone(), context).second();
 			} else {
 				tmp = old;
 				doWhile = false;
 			}
 			// Merge updated environment with original environment to produce
 			// potentially updated environment.
-			environment = original.merge(variables, propagate(body, tmp));
+			environment = original.merge(variables, propagate(body, tmp, context));
 			old.free(); // hacky, but safe
 			// Finally, check loop count to force termination
 			if (count++ == 10) {
@@ -2910,14 +2890,14 @@ public class FlowTypeChecker {
 					values.add(e.first());
 					element = Nominal.Union(element, e.second());
 				}
-				return new Pair<Constant, Nominal>(Constant.V_ARRAY(values),
+				return new Pair<Constant, Nominal>(new Constant.Array(values),
 						Nominal.Array(element, !nop.arguments.isEmpty()));
 			} else if (expr instanceof Expr.ArrayGenerator) {
 				Expr.ArrayGenerator lg = (Expr.ArrayGenerator) expr;
 				Pair<Constant, Nominal> element = resolveAsConstant(lg.element, context, visited);
 				Pair<Constant, Nominal> count = resolveAsConstant(lg.count, context, visited);
 				Constant.Array l = evaluate(lg, element.first(), count.first(), context);
-				return new Pair<Constant, Nominal>(l, Nominal.Array(element.second(), !l.values.isEmpty()));
+				return new Pair<Constant, Nominal>(l, Nominal.Array(element.second(), !l.values().isEmpty()));
 			} else if (expr instanceof Expr.Record) {
 				Expr.Record rg = (Expr.Record) expr;
 				HashMap<String, Constant> values = new HashMap<String, Constant>();
@@ -2930,11 +2910,11 @@ public class FlowTypeChecker {
 					values.put(e.getKey(), v.first());
 					types.put(e.getKey(), v.second());
 				}
-				return new Pair<Constant, Nominal>(Constant.V_RECORD(values), Nominal.Record(false, types));
+				return new Pair<Constant, Nominal>(new Constant.Record(values), Nominal.Record(false, types));
 			} else if (expr instanceof Expr.FunctionOrMethod) {
 				// TODO: add support for proper lambdas
 				Expr.FunctionOrMethod f = (Expr.FunctionOrMethod) expr;
-				return new Pair<Constant, Nominal>(Constant.V_LAMBDA(f.nid, f.type.nominal()), f.type);
+				return new Pair<Constant, Nominal>(new Constant.Lambda(f.nid, f.type.nominal()), f.type);
 			}
 		} catch (SyntaxError.InternalFailure e) {
 			throw e;
@@ -3056,21 +3036,21 @@ public class FlowTypeChecker {
 		case NOT:
 			if (operand instanceof Constant.Bool) {
 				Constant.Bool b = (Constant.Bool) operand;
-				return Constant.V_BOOL(!b.value);
+				return Constant.Bool(!b.value());
 			}
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, operator);
 			break;
 		case NEG:
 			if (operand instanceof Constant.Integer) {
 				Constant.Integer b = (Constant.Integer) operand;
-				return Constant.V_INTEGER(b.value.negate());
+				return new Constant.Integer(b.value().negate());
 			} 
 			syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION), context, operator);
 			break;
 		case INVERT:
 			if (operand instanceof Constant.Byte) {
 				Constant.Byte b = (Constant.Byte) operand;
-				return Constant.V_BYTE((byte) ~b.value);
+				return new Constant.Byte((byte) ~b.value());
 			}
 			break;
 		}
@@ -3099,11 +3079,11 @@ public class FlowTypeChecker {
 	private Constant evaluateBoolean(Expr.BinOp bop, Constant.Bool v1, Constant.Bool v2, Context context) {
 		switch (bop.op) {
 		case AND:
-			return Constant.V_BOOL(v1.value & v2.value);
+			return Constant.Bool(v1.value() & v2.value());
 		case OR:
-			return Constant.V_BOOL(v1.value | v2.value);
+			return Constant.Bool(v1.value() | v2.value());
 		case XOR:
-			return Constant.V_BOOL(v1.value ^ v2.value);
+			return Constant.Bool(v1.value() ^ v2.value());
 		}
 		syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, bop);
 		return null;
@@ -3112,15 +3092,15 @@ public class FlowTypeChecker {
 	private Constant evaluate(Expr.BinOp bop, Constant.Integer v1, Constant.Integer v2, Context context) {
 		switch (bop.op) {
 		case ADD:
-			return Constant.V_INTEGER(v1.value.add(v2.value));
+			return new Constant.Integer(v1.value().add(v2.value()));
 		case SUB:
-			return Constant.V_INTEGER(v1.value.subtract(v2.value));
+			return new Constant.Integer(v1.value().subtract(v2.value()));
 		case MUL:
-			return Constant.V_INTEGER(v1.value.multiply(v2.value));
+			return new Constant.Integer(v1.value().multiply(v2.value()));
 		case DIV:
-			return Constant.V_INTEGER(v1.value.divide(v2.value));
+			return new Constant.Integer(v1.value().divide(v2.value()));
 		case REM:
-			return Constant.V_INTEGER(v1.value.remainder(v2.value));
+			return new Constant.Integer(v1.value().remainder(v2.value()));
 		}
 		syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION), context, bop);
 		return null;
@@ -3130,10 +3110,10 @@ public class FlowTypeChecker {
 		if (count instanceof Constant.Integer) {
 			Constant.Integer c = (Constant.Integer) count;
 			ArrayList<Constant> items = new ArrayList<Constant>();
-			for (int i = 0; i != c.value.intValue(); ++i) {
+			for (int i = 0; i != c.value().intValue(); ++i) {
 				items.add(element);
 			}
-			return Constant.V_ARRAY(items);
+			return new Constant.Array(items);
 		}
 		syntaxError(errorMessage(INVALID_ARRAY_EXPRESSION), context, bop);
 		return null;
@@ -3142,7 +3122,9 @@ public class FlowTypeChecker {
 	// expandAsType
 	// =========================================================================
 
-	public Nominal.Array expandAsEffectiveList(Nominal lhs) throws IOException, ResolveError {
+	public Nominal.Array expandAsEffectiveArray(Expr src, Context context)
+			throws IOException, ResolveError {
+		Nominal lhs = src.result();
 		Type raw = lhs.raw();
 		if (raw instanceof Type.EffectiveArray) {
 			Type nominal = expandOneLevel(lhs.nominal());
@@ -3150,8 +3132,9 @@ public class FlowTypeChecker {
 				nominal = raw; // discard nominal information
 			}
 			return (Nominal.Array) Nominal.construct(nominal, raw);
-		} else {
-			return null;
+		} else {		
+			syntaxError(errorMessage(INVALID_ARRAY_EXPRESSION), context, src);
+			return null; // dead code
 		}
 	}
 
@@ -3170,8 +3153,7 @@ public class FlowTypeChecker {
 				nominal = (Type) raw; // discard nominal information
 			}
 			return (Nominal.Record) Nominal.construct(nominal, raw);
-		}
-		{
+		} else {
 			return null;
 		}
 	}

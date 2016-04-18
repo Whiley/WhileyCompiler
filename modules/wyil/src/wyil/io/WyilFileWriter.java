@@ -132,7 +132,7 @@ public final class WyilFileWriter {
 			bytes = generateFunctionOrMethodBlock((WyilFile.FunctionOrMethod) data);
 			break;
 		case BLOCK_CodeForest:
-			bytes = generateCodeForest((CodeForest) data);
+			bytes = generateCodeForest((BytecodeForest) data);
 			break;
 		}
 
@@ -283,14 +283,14 @@ public final class WyilFileWriter {
 				output.write_uv(CONSTANT_Null);
 			} else if (val instanceof Constant.Bool) {
 				Constant.Bool b = (Constant.Bool) val;
-				output.write_uv(b.value ? CONSTANT_True : CONSTANT_False);
+				output.write_uv(b.value() ? CONSTANT_True : CONSTANT_False);
 			} else if (val instanceof Constant.Byte) {
 				Constant.Byte b = (Constant.Byte) val;
 				output.write_uv(CONSTANT_Byte);
-				output.write_u8(b.value);
+				output.write_u8(b.value());
 			} else if (val instanceof Constant.Integer) {
 				Constant.Integer i = (Constant.Integer) val;
-				BigInteger num = i.value;
+				BigInteger num = i.value();
 				byte[] numbytes = num.toByteArray();
 				output.write_uv(CONSTANT_Int);
 				output.write_uv(numbytes.length);
@@ -298,16 +298,16 @@ public final class WyilFileWriter {
 			} else if (val instanceof Constant.Array) {
 				Constant.Array s = (Constant.Array) val;
 				output.write_uv(CONSTANT_Array);
-				output.write_uv(s.values.size());
-				for (Constant v : s.values) {
+				output.write_uv(s.values().size());
+				for (Constant v : s.values()) {
 					int index = constantCache.get(v);
 					output.write_uv(index);
 				}
 			} else if (val instanceof Constant.Record) {
 				Constant.Record r = (Constant.Record) val;
 				output.write_uv(CONSTANT_Record);
-				output.write_uv(r.values.size());
-				for (java.util.Map.Entry<String, Constant> v : r.values.entrySet()) {
+				output.write_uv(r.values().size());
+				for (java.util.Map.Entry<String, Constant> v : r.values().entrySet()) {
 					output.write_uv(stringCache.get(v.getKey()));
 					int index = constantCache.get(v.getValue());
 					output.write_uv(index);
@@ -317,7 +317,7 @@ public final class WyilFileWriter {
 				Type.FunctionOrMethod t = fm.type();
 				output.write_uv(t instanceof Type.Function ? CONSTANT_Function : CONSTANT_Method);
 				output.write_uv(typeCache.get(t));
-				output.write_uv(nameCache.get(fm.name));
+				output.write_uv(nameCache.get(fm.name()));
 			} else {
 				throw new RuntimeException("Unknown value encountered - " + val);
 			}
@@ -533,7 +533,7 @@ public final class WyilFileWriter {
 	 *            The set of pre-calculated label offsets
 	 * @throws IOException
 	 */
-	private byte[] generateCodeForest(CodeForest forest) throws IOException {
+	private byte[] generateCodeForest(BytecodeForest forest) throws IOException {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 
@@ -543,7 +543,7 @@ public final class WyilFileWriter {
 		output.write_uv(forest.numRoots());
 		output.write_uv(0); // currently no attributes
 
-		List<CodeForest.Register> registers = forest.registers();
+		List<BytecodeForest.Register> registers = forest.registers();
 		for (int i = 0; i != registers.size(); ++i) {
 			writeCodeRegister(registers.get(i), output);
 		}
@@ -556,7 +556,7 @@ public final class WyilFileWriter {
 
 		int offset = 0;
 		for (int i = 0; i != forest.numBlocks(); ++i) {
-			CodeForest.Block block = forest.get(i);
+			BytecodeForest.Block block = forest.get(i);
 			offset = writeCodeBlock(block, offset, labels, output);
 		}
 
@@ -588,16 +588,16 @@ public final class WyilFileWriter {
 	 *            Lab map being constructed
 	 * @return
 	 */
-	private HashMap<String, Integer> buildLabelsMap(CodeForest forest) {
+	private HashMap<String, Integer> buildLabelsMap(BytecodeForest forest) {
 		HashMap<String, Integer> labels = new HashMap<String, Integer>();
 		int offset = 0;
 		for (int i = 0; i != forest.numBlocks(); ++i) {
-			CodeForest.Block block = forest.get(i);
+			BytecodeForest.Block block = forest.get(i);
 			for (int j = 0; j != block.size(); ++j) {
-				Code code = block.get(j).code();
-				if (code instanceof Codes.Label) {
-					Codes.Label l = (Codes.Label) code;
-					labels.put(l.label, offset-1);
+				Bytecode code = block.get(j).code();
+				if (code instanceof Bytecode.Label) {
+					Bytecode.Label l = (Bytecode.Label) code;
+					labels.put(l.label(), offset-1);
 				} else {
 					offset = offset + 1;
 				}
@@ -625,7 +625,7 @@ public final class WyilFileWriter {
 	 * @param output
 	 * @throws  
 	 */
-	private void writeCodeRegister(CodeForest.Register register, BinaryOutputStream output) throws IOException {
+	private void writeCodeRegister(BytecodeForest.Register register, BinaryOutputStream output) throws IOException {
 		// TODO: write out register attributes (including name)
 		output.write_uv(0);
 		// Write out the type index
@@ -664,7 +664,7 @@ public final class WyilFileWriter {
 	 * @return
 	 * @throws IOException
 	 */
-	private int writeCodeBlock(CodeForest.Block block, int offset, HashMap<String, Integer> labels,
+	private int writeCodeBlock(BytecodeForest.Block block, int offset, HashMap<String, Integer> labels,
 			BinaryOutputStream output) throws IOException {
 		// First, determine how many labels there are in this block (since
 		// labels are not real bytecodes)
@@ -678,12 +678,12 @@ public final class WyilFileWriter {
 
 		// Finally, write the actual bytecodes!
 		for (int i = 0; i != block.size(); ++i) {
-			Code code = block.get(i).code();
-			if (code instanceof Codes.Label) {
+			Bytecode code = block.get(i).code();
+			if (code instanceof Bytecode.Label) {
 				// Skip over labels because these are not written to disk and
 				// have no "offset"
 			} else {
-				writeBytecode((Code.AbstractBytecode) code, offset, labels, output);
+				writeBytecode(code, offset, labels, output);
 				offset = offset + 1;
 			}
 		}
@@ -729,7 +729,7 @@ public final class WyilFileWriter {
 	 * items can be reduced from uv to u4, etc.
 	 * </p>
 	 */
-	private void writeBytecode(Code.AbstractBytecode code, int offset, HashMap<String, Integer> labels, BinaryOutputStream output)
+	private void writeBytecode(Bytecode code, int offset, HashMap<String, Integer> labels, BinaryOutputStream output)
 			throws IOException {
 		writeCommon(code, output);
 		writeRest(code, offset, labels, output);
@@ -745,7 +745,7 @@ public final class WyilFileWriter {
 	 *            --- The binary stream to write this bytecode to.
 	 * @throws IOException
 	 */
-	private void writeCommon(Code.AbstractBytecode code, BinaryOutputStream output) throws IOException {
+	private void writeCommon(Bytecode code, BinaryOutputStream output) throws IOException {
 		output.write_u8(code.opcode());
 		int[] targets = code.targets();
 		int[] operands = code.operands();
@@ -796,42 +796,42 @@ public final class WyilFileWriter {
 	 *            written.
 	 * @throws IOException
 	 */
-	private void writeRest(Code code, int offset, HashMap<String, Integer> labels,
+	private void writeRest(Bytecode code, int offset, HashMap<String, Integer> labels,
 			BinaryOutputStream output) throws IOException {
 
 		// now deal with non-uniform instructions
 		// First, deal with special cases
-		if(code instanceof Code.AbstractCompoundBytecode) {
+		if(code instanceof Bytecode.Compound) {
 			// Assert / Assume / Loop / Quantify
-			Code.AbstractCompoundBytecode cb = (Code.AbstractCompoundBytecode) code; 
+			Bytecode.Compound cb = (Bytecode.Compound) code; 
 			output.write_uv(cb.block());
-		} else if(code instanceof Code.AbstractBranchingBytecode) {
-			Code.AbstractBranchingBytecode bb = (Code.AbstractBranchingBytecode) code;
+		} else if(code instanceof Bytecode.Branching) {
+			Bytecode.Branching bb = (Bytecode.Branching) code;
 			int destination = labels.get(bb.destination());
 			output.write_uv(destination);
-		} else if (code instanceof Codes.Const) {
-			Codes.Const c = (Codes.Const) code;
-			output.write_uv(constantCache.get(c.constant));
-		} else if (code instanceof Codes.FieldLoad) {
-			Codes.FieldLoad c = (Codes.FieldLoad) code;
-			output.write_uv(stringCache.get(c.field));
-		} else if (code instanceof Codes.Invoke) {
-			Codes.Invoke c = (Codes.Invoke) code;
-			output.write_uv(nameCache.get(c.name));
-		} else if (code instanceof Codes.Lambda) {
-			Codes.Lambda c = (Codes.Lambda) code;
-			output.write_uv(nameCache.get(c.name));
-		} else if (code instanceof Codes.Update) {
-			Codes.Update c = (Codes.Update) code;
+		} else if (code instanceof Bytecode.Const) {
+			Bytecode.Const c = (Bytecode.Const) code;
+			output.write_uv(constantCache.get(c.constant()));
+		} else if (code instanceof Bytecode.FieldLoad) {
+			Bytecode.FieldLoad c = (Bytecode.FieldLoad) code;
+			output.write_uv(stringCache.get(c.fieldName()));
+		} else if (code instanceof Bytecode.Invoke) {
+			Bytecode.Invoke c = (Bytecode.Invoke) code;
+			output.write_uv(nameCache.get(c.name()));
+		} else if (code instanceof Bytecode.Lambda) {
+			Bytecode.Lambda c = (Bytecode.Lambda) code;
+			output.write_uv(nameCache.get(c.name()));
+		} else if (code instanceof Bytecode.Update) {
+			Bytecode.Update c = (Bytecode.Update) code;
 			List<String> fields = c.fields;
 			output.write_uv(fields.size());
 			for (int i = 0; i != fields.size(); ++i) {
 				output.write_uv(stringCache.get(fields.get(i)));
 			}
-		} else if (code instanceof Codes.Switch) {
-			Codes.Switch c = (Codes.Switch) code;
-			List<Pair<Constant, String>> branches = c.branches;
-			int target = labels.get(c.defaultTarget);
+		} else if (code instanceof Bytecode.Switch) {
+			Bytecode.Switch c = (Bytecode.Switch) code;
+			List<Pair<Constant, String>> branches = c.branches();
+			int target = labels.get(c.defaultTarget());
 			output.write_uv(target);
 			output.write_uv(branches.size());
 			for (Pair<Constant, String> b : branches) {
@@ -867,11 +867,11 @@ public final class WyilFileWriter {
 	 * @param block
 	 * @return
 	 */
-	private int countLabels(CodeForest.Block block) {
+	private int countLabels(BytecodeForest.Block block) {
 		int nlabels = 0;
 		for (int i = 0; i != block.size(); ++i) {
-			Code code = block.get(i).code();
-			if (code instanceof Codes.Label) {
+			Bytecode code = block.get(i).code();
+			if (code instanceof Bytecode.Label) {
 				nlabels++;
 			}
 		}
@@ -930,7 +930,7 @@ public final class WyilFileWriter {
 		buildPools(declaration.code());		
 	}
 
-	private void buildPools(CodeForest forest) {		
+	private void buildPools(BytecodeForest forest) {		
 		for(int i=0;i!=forest.numRegisters();++i) {
 			buildPools(forest.getRegister(i));
 		}
@@ -939,54 +939,51 @@ public final class WyilFileWriter {
 		}
 	}
 
-	private void buildPools(CodeForest.Register reg) {
+	private void buildPools(BytecodeForest.Register reg) {
 		addTypeItem(reg.type());
 	}
 	
-	private void buildPools(CodeForest.Block block) {
+	private void buildPools(BytecodeForest.Block block) {
 		for (int i = 0; i != block.size(); ++i) {
-			CodeForest.Entry entry = block.get(i);
+			BytecodeForest.Entry entry = block.get(i);
 			buildPools(entry.code());			
 			// TODO: handle entry attributes
 		}
 	}
 
-	private void buildPools(Code code) {
+	private void buildPools(Bytecode code) {
 
 		// First, deal with special cases
-		if (code instanceof Codes.Const) {
-			Codes.Const c = (Codes.Const) code;
-			addConstantItem(c.constant);
-		} else if (code instanceof Codes.FieldLoad) {
-			Codes.FieldLoad c = (Codes.FieldLoad) code;
-			addStringItem(c.field);
-		}else if (code instanceof Codes.Invoke) {
-			Codes.Invoke c = (Codes.Invoke) code;
-			addNameItem(c.name);
-		} else if (code instanceof Codes.Lambda) {
-			Codes.Lambda c = (Codes.Lambda) code;
-			addNameItem(c.name);
-		} else if (code instanceof Codes.Update) {
-			Codes.Update c = (Codes.Update) code;
-			for (Codes.LVal l : c) {
-				if (l instanceof Codes.RecordLVal) {
-					Codes.RecordLVal lv = (Codes.RecordLVal) l;
+		if (code instanceof Bytecode.Const) {
+			Bytecode.Const c = (Bytecode.Const) code;
+			addConstantItem(c.constant());
+		} else if (code instanceof Bytecode.FieldLoad) {
+			Bytecode.FieldLoad c = (Bytecode.FieldLoad) code;
+			addStringItem(c.fieldName());
+		}else if (code instanceof Bytecode.Invoke) {
+			Bytecode.Invoke c = (Bytecode.Invoke) code;
+			addNameItem(c.name());
+		} else if (code instanceof Bytecode.Lambda) {
+			Bytecode.Lambda c = (Bytecode.Lambda) code;
+			addNameItem(c.name());
+		} else if (code instanceof Bytecode.Update) {
+			Bytecode.Update c = (Bytecode.Update) code;
+			for (Bytecode.LVal l : c) {
+				if (l instanceof Bytecode.RecordLVal) {
+					Bytecode.RecordLVal lv = (Bytecode.RecordLVal) l;
 					addStringItem(lv.field);
 				}
 			}
-		} else if (code instanceof Codes.Switch) {
-			Codes.Switch s = (Codes.Switch) code;
-			for (Pair<Constant, String> b : s.branches) {
+		} else if (code instanceof Bytecode.Switch) {
+			Bytecode.Switch s = (Bytecode.Switch) code;
+			for (Pair<Constant, String> b : s.branches()) {
 				addConstantItem(b.first());
 			}
 		}
 
 		// Second, deal with standard cases
-		if (code instanceof Code.AbstractBytecode) {
-			Code.AbstractBytecode<Type> a = (Code.AbstractBytecode) code;
-			for (Type type : a.types()) {
-				addTypeItem(type);
-			}
+		for (Type type : code.types()) {
+			addTypeItem(type);
 		}
 	}
 
@@ -1065,19 +1062,19 @@ public final class WyilFileWriter {
 	private void addConstantSubitems(Constant v) {
 		if (v instanceof Constant.Array) {
 			Constant.Array l = (Constant.Array) v;
-			for (Constant e : l.values) {
+			for (Constant e : l.values()) {
 				addConstantItem(e);
 			}
 		} else if (v instanceof Constant.Record) {
 			Constant.Record r = (Constant.Record) v;
-			for (Map.Entry<String, Constant> e : r.values.entrySet()) {
+			for (Map.Entry<String, Constant> e : r.values().entrySet()) {
 				addStringItem(e.getKey());
 				addConstantItem(e.getValue());
 			}
 		} else if (v instanceof Constant.Lambda) {
 			Constant.Lambda fm = (Constant.Lambda) v;
 			addTypeItem(fm.type());
-			addNameItem(fm.name);
+			addNameItem(fm.name());
 		}
 	}
 

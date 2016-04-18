@@ -26,9 +26,8 @@ import wycs.syntax.WyalFile;
 import wycs.syntax.WyalFile.Function;
 import wyfs.lang.Path;
 import wyil.attributes.VariableDeclarations;
-import wyil.lang.Code;
-import wyil.lang.CodeForest;
-import wyil.lang.Codes;
+import wyil.lang.Bytecode;
+import wyil.lang.BytecodeForest;
 import wyil.lang.Constant;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
@@ -61,21 +60,21 @@ public class VcUtils {
 	 *            (for debugging purposes)
 	 * @return
 	 */
-	public Value convert(Constant c, CodeForest forest, VcBranch branch) {
+	public Value convert(Constant c, BytecodeForest forest, VcBranch branch) {
 		if (c instanceof Constant.Null) {
 			return wycs.core.Value.Null;
 		} else if (c instanceof Constant.Bool) {
 			Constant.Bool cb = (Constant.Bool) c;
-			return wycs.core.Value.Bool(cb.value);
+			return wycs.core.Value.Bool(cb.value());
 		} else if (c instanceof Constant.Byte) {
 			Constant.Byte cb = (Constant.Byte) c;
-			return wycs.core.Value.Integer(BigInteger.valueOf(cb.value));
+			return wycs.core.Value.Integer(BigInteger.valueOf(cb.value()));
 		} else if (c instanceof Constant.Integer) {
 			Constant.Integer cb = (Constant.Integer) c;
-			return wycs.core.Value.Integer(cb.value);
+			return wycs.core.Value.Integer(cb.value());
 		} else if (c instanceof Constant.Array) {
 			Constant.Array cb = (Constant.Array) c;
-			List<Constant> cb_values = cb.values;
+			List<Constant> cb_values = cb.values();
 			ArrayList<Value> items = new ArrayList<Value>();
 			for (int i = 0; i != cb_values.size(); ++i) {
 				items.add(convert(cb_values.get(i), forest, branch));				
@@ -91,11 +90,11 @@ public class VcUtils {
 			// a general solution. In particular, it would seem to be brokwn for
 			// type testing.
 
-			ArrayList<String> fields = new ArrayList<String>(rb.values.keySet());
+			ArrayList<String> fields = new ArrayList<String>(rb.values().keySet());
 			Collections.sort(fields);
 			ArrayList<Value> values = new ArrayList<Value>();
 			for (String field : fields) {
-				values.add(convert(rb.values.get(field), forest, branch));
+				values.add(convert(rb.values().get(field), forest, branch));
 			}
 			return wycs.core.Value.Tuple(values);
 		} else {
@@ -361,22 +360,22 @@ public class VcUtils {
 	 * @param branches
 	 * @param block
 	 */
-	public Pair<String,Expr>[] getPreconditions(Code code, VcBranch branch,
-			Type[] environment, CodeForest forest) {
+	public Pair<String,Expr>[] getPreconditions(Bytecode code, VcBranch branch,
+			Type[] environment, BytecodeForest forest) {
 		//
 		try {
 			switch (code.opcode()) {
-			case Code.OPCODE_div:
-			case Code.OPCODE_rem:
-				return divideByZeroCheck((Codes.BinaryOperator) code, branch);
-			case Code.OPCODE_indexof:
-				return indexOutOfBoundsChecks((Codes.IndexOf) code, branch);
-			case Code.OPCODE_arrygen:
-				return arrayGeneratorChecks((Codes.ArrayGenerator) code, branch);
-			case Code.OPCODE_update:
-				return updateChecks((Codes.Update) code, branch);
-			case Code.OPCODE_invoke:
-				return preconditionCheck((Codes.Invoke) code, branch, environment, forest);
+			case Bytecode.OPCODE_div:
+			case Bytecode.OPCODE_rem:
+				return divideByZeroCheck((Bytecode.Operator) code, branch);
+			case Bytecode.OPCODE_arrayindex:
+				return indexOutOfBoundsChecks((Bytecode.Operator) code, branch);
+			case Bytecode.OPCODE_arrygen:
+				return arrayGeneratorChecks((Bytecode.Operator) code, branch);
+			case Bytecode.OPCODE_update:
+				return updateChecks((Bytecode.Update) code, branch);
+			case Bytecode.OPCODE_invoke:
+				return preconditionCheck((Bytecode.Invoke) code, branch, environment, forest);
 			}
 			return new Pair[0];
 		} catch (Exception e) {
@@ -395,7 +394,7 @@ public class VcUtils {
 	 *            --- The branch the division is on.
 	 * @return
 	 */
-	public Pair<String, Expr>[] divideByZeroCheck(Codes.BinaryOperator binOp, VcBranch branch) {
+	public Pair<String, Expr>[] divideByZeroCheck(Bytecode.Operator binOp, VcBranch branch) {
 		Expr rhs = branch.read(binOp.operand(1));
 		Value zero;
 		if (binOp.type(0) instanceof Type.Int) {
@@ -419,7 +418,7 @@ public class VcUtils {
 	 *            --- The branch the bytecode is on.
 	 * @return
 	 */
-	public Pair<String,Expr>[] indexOutOfBoundsChecks(Codes.IndexOf code, VcBranch branch) {
+	public Pair<String,Expr>[] indexOutOfBoundsChecks(Bytecode.Operator code, VcBranch branch) {
 		if (code.type(0) instanceof Type.EffectiveArray) {
 			Expr src = branch.read(code.operand(0));
 			Expr idx = branch.read(code.operand(1));
@@ -450,7 +449,7 @@ public class VcUtils {
 	 *            --- The branch the bytecode is on.
 	 * @return
 	 */
-	public Pair<String,Expr>[] arrayGeneratorChecks(Codes.ArrayGenerator code, VcBranch branch) {
+	public Pair<String,Expr>[] arrayGeneratorChecks(Bytecode.Operator code, VcBranch branch) {
 		Expr idx = branch.read(code.operand(1));
 		Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
 				idx.attributes());
@@ -473,8 +472,8 @@ public class VcUtils {
 	 * @return
 	 * @throws Exception
 	 */
-	public Pair<String,Expr>[] preconditionCheck(Codes.Invoke code, VcBranch branch,
-			Type[] environment, CodeForest forest) throws Exception {
+	public Pair<String,Expr>[] preconditionCheck(Bytecode.Invoke code, VcBranch branch,
+			Type[] environment, BytecodeForest forest) throws Exception {
 		ArrayList<Pair<String,Expr>> preconditions = new ArrayList<>();
 		//
 		// First, check for any potentially constrained types.    
@@ -494,7 +493,7 @@ public class VcUtils {
 			}
 		}
 		//
-		int numPreconditions = countPreconditions(code.name, code.type(0), forest, branch);
+		int numPreconditions = countPreconditions(code.name(), code.type(0), forest, branch);
 		//
 		if (numPreconditions > 0) {
 			// First, read out the operands from the branch
@@ -504,11 +503,11 @@ public class VcUtils {
 			}
 			// To check the pre-condition holds after the method, we
 			// simply called the corresponding pre-condition macros.
-			String prefix = code.name.name() + "_requires_";
+			String prefix = code.name().name() + "_requires_";
 
 			Expr argument = operands.length == 1 ? operands[0] : new Expr.Nary(Expr.Nary.Op.TUPLE, operands);
 			for (int i = 0; i < numPreconditions; ++i) {
-				Expr precondition = new Expr.Invoke(prefix + i, code.name.module(), Collections.EMPTY_LIST, argument);
+				Expr precondition = new Expr.Invoke(prefix + i, code.name().module(), Collections.EMPTY_LIST, argument);
 				preconditions.add(new Pair<String, Expr>("precondition not satisfied", precondition));
 
 			}
@@ -526,14 +525,14 @@ public class VcUtils {
 	 *            --- The branch containing the update bytecode.
 	 * @return
 	 */
-	public Pair<String,Expr>[] updateChecks(Codes.Update code, VcBranch branch) {
+	public Pair<String,Expr>[] updateChecks(Bytecode.Update code, VcBranch branch) {
 		ArrayList<Pair<String,Expr>> preconditions = new ArrayList<Pair<String,Expr>>();
 
 		Expr src = branch.read(code.target(0));
 
-		for (Codes.LVal lval : code) {
-			if (lval instanceof Codes.ArrayLVal) {
-				Codes.ArrayLVal lv = (Codes.ArrayLVal) lval;
+		for (Bytecode.LVal lval : code) {
+			if (lval instanceof Bytecode.ArrayLVal) {
+				Bytecode.ArrayLVal lv = (Bytecode.ArrayLVal) lval;
 				Expr idx = branch.read(lv.indexOperand);
 				Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
 						idx.attributes());
@@ -547,8 +546,8 @@ public class VcUtils {
 						new Expr.Binary(Expr.Binary.Op.LT, idx, length, idx
 								.attributes())));
 				src = new Expr.IndexOf(src, idx);
-			} else if (lval instanceof Codes.RecordLVal) {
-				Codes.RecordLVal lv = (Codes.RecordLVal) lval;
+			} else if (lval instanceof Bytecode.RecordLVal) {
+				Bytecode.RecordLVal lv = (Bytecode.RecordLVal) lval;
 				ArrayList<String> fields = new ArrayList<String>(lv.rawType()
 						.fields().keySet());
 				Collections.sort(fields);
@@ -581,7 +580,7 @@ public class VcUtils {
 	 * @throws Exception
 	 */
 	public int countPreconditions(NameID name, Type.FunctionOrMethod fun,
-			CodeForest forest, VcBranch branch) throws Exception {
+			BytecodeForest forest, VcBranch branch) throws Exception {
 		Path.Entry<WyilFile> e = builder.project().get(name.module(), WyilFile.ContentType);
 		if (e == null) {
 			syntaxError(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module().toString()), filename,
@@ -655,12 +654,12 @@ public class VcUtils {
 	 * @param d
 	 * @return
 	 */
-	public static Pair<String[], Type[]> parseRegisterDeclarations(CodeForest forest) {
-		List<CodeForest.Register> regs = forest.registers();
+	public static Pair<String[], Type[]> parseRegisterDeclarations(BytecodeForest forest) {
+		List<BytecodeForest.Register> regs = forest.registers();
 		String[] prefixes = new String[regs.size()];
 		Type[] types = new Type[regs.size()];
 		for (int i = 0; i != prefixes.length; ++i) {
-			CodeForest.Register d = regs.get(i);			
+			BytecodeForest.Register d = regs.get(i);			
 			prefixes[i] = d.name();
 			types[i] = d.type();
 		}

@@ -45,10 +45,6 @@ public class Exprs {
 				uses(e.lhs, context, uses);
 				uses(e.rhs, context, uses);
 
-			} else if (expr instanceof Expr.LengthOf) {
-				Expr.LengthOf e = (Expr.LengthOf) expr;
-				uses(e.src, context, uses);
-
 			} else if (expr instanceof Expr.Dereference) {
 				Expr.Dereference e = (Expr.Dereference) expr;
 				uses(e.src, context, uses);
@@ -158,10 +154,6 @@ public class Exprs {
 			} else if (expr instanceof Expr.BinOp) {
 				Expr.BinOp e = (Expr.BinOp) expr;
 				return isPure(e.lhs, context) && isPure(e.rhs, context);
-
-			} else if (expr instanceof Expr.LengthOf) {
-				Expr.LengthOf e = (Expr.LengthOf) expr;
-				return isPure(e.src, context);
 
 			} else if (expr instanceof Expr.Dereference) {
 				Expr.Dereference e = (Expr.Dereference) expr;

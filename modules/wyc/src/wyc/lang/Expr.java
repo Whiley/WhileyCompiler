@@ -351,7 +351,8 @@ public interface Expr extends SyntacticElement {
 	public enum UOp {
 		NOT,
 		NEG,
-		INVERT
+		INVERT,
+		ARRAYLENGTH
 	}
 
 	public static class UnOp extends SyntacticElement.Impl implements Expr {
@@ -366,7 +367,11 @@ public interface Expr extends SyntacticElement {
 		}
 
 		public Nominal result() {
-			return type;
+			if(op == UOp.ARRAYLENGTH) {
+				return Nominal.T_INT;
+			} else {
+				return type;
+			}
 		}
 
 		public String toString() {
@@ -763,29 +768,6 @@ public interface Expr extends SyntacticElement {
 		
 		public Nominal.FunctionOrMethod type() {
 			return functionType;
-		}
-	}
-
-	public static class LengthOf extends SyntacticElement.Impl implements Expr {
-		public Expr src;
-		public Nominal.Array srcType;
-
-		public LengthOf(Expr mhs, Attribute... attributes) {
-			super(attributes);
-			this.src = mhs;
-		}
-
-		public LengthOf(Expr mhs, Collection<Attribute> attributes) {
-			super(attributes);
-			this.src = mhs;
-		}
-
-		public Nominal result() {
-			return Nominal.T_INT;
-		}
-
-		public String toString() {
-			return "|" + src.toString() + "|";
 		}
 	}
 
