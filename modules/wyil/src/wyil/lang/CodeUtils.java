@@ -64,7 +64,7 @@ public class CodeUtils {
 				if (code instanceof Bytecode.Label) {
 					// Found a label, so register it in the labels map
 					Bytecode.Label label = (Bytecode.Label) code;
-					labels.put(label.label, new CodeForest.Index(i, j));
+					labels.put(label.label(), new CodeForest.Index(i, j));
 				}
 			}
 		}

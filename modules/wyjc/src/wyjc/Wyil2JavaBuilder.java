@@ -657,7 +657,7 @@ public class Wyil2JavaBuilder implements Builder {
 
 	private void translate(CodeForest.Index index, Const c, int freeSlot,
 			CodeForest forest, ArrayList<Bytecode> bytecodes) {
-		Constant constant = c.constant;
+		Constant constant = c.constant();
 		JvmType jt = convertUnderlyingType(constant.type());
 
 		if (constant instanceof Constant.Bool
@@ -1138,7 +1138,7 @@ public class Wyil2JavaBuilder implements Builder {
 
 	private void translate(CodeForest.Index index, Label c, int freeSlot,
 			CodeForest forest, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Label(c.label));
+		bytecodes.add(new Bytecode.Label(c.label()));
 	}
 
 	private void translate(CodeForest.Index index, Debug c, int freeSlot,
@@ -1159,7 +1159,7 @@ public class Wyil2JavaBuilder implements Builder {
 
 	private void translate(CodeForest.Index index, FieldLoad c, int freeSlot, CodeForest forest, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Load(c.operand(0), WHILEYRECORD));
-		bytecodes.add(new Bytecode.LoadConst(c.field));
+		bytecodes.add(new Bytecode.LoadConst(c.fieldName()));
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYRECORD, JAVA_LANG_STRING);
 		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "get", ftype, Bytecode.InvokeMode.STATIC));
 		addReadConversion(c.fieldType(), bytecodes);
@@ -1179,7 +1179,7 @@ public class Wyil2JavaBuilder implements Builder {
 		// or method. This class will extend class wyjc.runtime.WyLambda.
 		Type.FunctionOrMethod lamType = (Type.FunctionOrMethod) c.type(0); 
 		int lambda_id = lambdas.size();
-		lambdas.add(buildLambda(c.name, lamType, lambda_id));
+		lambdas.add(buildLambda(c.name(), lamType, lambda_id));
 
 		// Second, create and duplicate new lambda object. This will then stay
 		// on the stack (whilst the parameters are constructed) until the
@@ -1240,8 +1240,8 @@ public class Wyil2JavaBuilder implements Builder {
 			bytecodes.add(new Bytecode.Load(register, parameterType));
 		}
 
-		Path.ID mid = c.name.module();
-		String mangled = nameMangle(c.name.name(), c.type(0));
+		Path.ID mid = c.name().module();
+		String mangled = nameMangle(c.name().name(), c.type(0));
 		JvmType.Clazz owner = new JvmType.Clazz(mid.parent().toString().replace('/', '.'), mid.last());
 		JvmType.Function type = convertFunType(c.type(0));
 		bytecodes.add(new Bytecode.Invoke(owner, mangled, type, Bytecode.InvokeMode.STATIC));

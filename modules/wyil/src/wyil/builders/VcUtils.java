@@ -493,7 +493,7 @@ public class VcUtils {
 			}
 		}
 		//
-		int numPreconditions = countPreconditions(code.name, code.type(0), forest, branch);
+		int numPreconditions = countPreconditions(code.name(), code.type(0), forest, branch);
 		//
 		if (numPreconditions > 0) {
 			// First, read out the operands from the branch
@@ -503,11 +503,11 @@ public class VcUtils {
 			}
 			// To check the pre-condition holds after the method, we
 			// simply called the corresponding pre-condition macros.
-			String prefix = code.name.name() + "_requires_";
+			String prefix = code.name().name() + "_requires_";
 
 			Expr argument = operands.length == 1 ? operands[0] : new Expr.Nary(Expr.Nary.Op.TUPLE, operands);
 			for (int i = 0; i < numPreconditions; ++i) {
-				Expr precondition = new Expr.Invoke(prefix + i, code.name.module(), Collections.EMPTY_LIST, argument);
+				Expr precondition = new Expr.Invoke(prefix + i, code.name().module(), Collections.EMPTY_LIST, argument);
 				preconditions.add(new Pair<String, Expr>("precondition not satisfied", precondition));
 
 			}

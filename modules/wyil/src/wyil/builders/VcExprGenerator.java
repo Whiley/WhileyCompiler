@@ -121,7 +121,7 @@ public class VcExprGenerator {
 	};
 
 	protected void transform(Bytecode.Operator code, CodeForest forest, VcBranch branch) {
-		switch(code.kind) {
+		switch(code.kind()) {
 		case ASSIGN:
 			for (int i = 0; i != code.operands().length; ++i) {
 				branch.write(code.target(i), branch.read(code.operand(i)));
@@ -130,7 +130,7 @@ public class VcExprGenerator {
 		case NEG:
 		case ARRAYLENGTH: {
 			Bytecode.Operator bc = (Bytecode.Operator) code;
-			transformUnary(unaryOperatorMap[code.kind.ordinal()], bc, branch, forest);
+			transformUnary(unaryOperatorMap[code.kind().ordinal()], bc, branch, forest);
 			break;
 		}
 		case BITWISEINVERT: 
@@ -149,7 +149,7 @@ public class VcExprGenerator {
 		case LTEQ:
 		case GT:
 		case GTEQ: {
-			transformBinary(binaryOperatorMap[code.kind.ordinal()], code, branch, forest);
+			transformBinary(binaryOperatorMap[code.kind().ordinal()], code, branch, forest);
 			break;
 		}
 		case BITWISEAND:
@@ -190,7 +190,7 @@ public class VcExprGenerator {
 	}
 
 	protected void transform(Bytecode.Const code, CodeForest forest, VcBranch branch) {
-		Value val = utils.convert(code.constant, forest, branch);
+		Value val = utils.convert(code.constant(), forest, branch);
 		branch.write(code.target(), new Expr.Constant(val, VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes())));
 	}
 
@@ -204,7 +204,7 @@ public class VcExprGenerator {
 		ArrayList<String> fields = new ArrayList<String>(er.fields().keySet());
 		Collections.sort(fields);
 		Expr src = branch.read(code.operand(0));
-		Expr index = new Expr.Constant(Value.Integer(BigInteger.valueOf(fields.indexOf(code.field))));
+		Expr index = new Expr.Constant(Value.Integer(BigInteger.valueOf(fields.indexOf(code.fieldName()))));
 		Expr result = new Expr.IndexOf(src, index, VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes()));
 		branch.write(code.target(0), result);
 	}
@@ -231,8 +231,8 @@ public class VcExprGenerator {
 			}
 			Expr argument = operands.length == 1 ? operands[0] : new Expr.Nary(
 					Expr.Nary.Op.TUPLE, operands,wyccAttributes);
-			branch.write(code.targets()[0], new Expr.Invoke(code.name.name(),
-					code.name.module(), Collections.EMPTY_LIST, argument,
+			branch.write(code.targets()[0], new Expr.Invoke(code.name().name(),
+					code.name().module(), Collections.EMPTY_LIST, argument,
 					wyccAttributes));
 
 			// This is a potential fix for #488, although it doesn't work
@@ -247,7 +247,7 @@ public class VcExprGenerator {
 
 			// Here, we must find the name of the corresponding postcondition so
 			// that we can assume it.
-			int numPostconditions = countPostconditions(code.name, code.type(0), forest, branch);
+			int numPostconditions = countPostconditions(code.name(), code.type(0), forest, branch);
 
 			if (numPostconditions > 0) {
 				// To assume the post-condition holds after the method, we
@@ -257,10 +257,10 @@ public class VcExprGenerator {
 				for(int i=0;i!=targets.length;++i) {
 					arguments[operands.length+i] = branch.read(targets[i]);						
 				}				
-				String prefix = code.name.name() + "_ensures_";
+				String prefix = code.name().name() + "_ensures_";
 				for (int i = 0; i != numPostconditions; ++i) {
 					Expr.Invoke macro = new Expr.Invoke(prefix + i,
-							code.name.module(), Collections.EMPTY_LIST,
+							code.name().module(), Collections.EMPTY_LIST,
 							new Expr.Nary(Expr.Nary.Op.TUPLE, arguments));
 					branch.assume(macro);
 				}

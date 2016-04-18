@@ -597,7 +597,7 @@ public final class WyilFileWriter {
 				Bytecode code = block.get(j).code();
 				if (code instanceof Bytecode.Label) {
 					Bytecode.Label l = (Bytecode.Label) code;
-					labels.put(l.label, offset-1);
+					labels.put(l.label(), offset-1);
 				} else {
 					offset = offset + 1;
 				}
@@ -811,16 +811,16 @@ public final class WyilFileWriter {
 			output.write_uv(destination);
 		} else if (code instanceof Bytecode.Const) {
 			Bytecode.Const c = (Bytecode.Const) code;
-			output.write_uv(constantCache.get(c.constant));
+			output.write_uv(constantCache.get(c.constant()));
 		} else if (code instanceof Bytecode.FieldLoad) {
 			Bytecode.FieldLoad c = (Bytecode.FieldLoad) code;
-			output.write_uv(stringCache.get(c.field));
+			output.write_uv(stringCache.get(c.fieldName()));
 		} else if (code instanceof Bytecode.Invoke) {
 			Bytecode.Invoke c = (Bytecode.Invoke) code;
-			output.write_uv(nameCache.get(c.name));
+			output.write_uv(nameCache.get(c.name()));
 		} else if (code instanceof Bytecode.Lambda) {
 			Bytecode.Lambda c = (Bytecode.Lambda) code;
-			output.write_uv(nameCache.get(c.name));
+			output.write_uv(nameCache.get(c.name()));
 		} else if (code instanceof Bytecode.Update) {
 			Bytecode.Update c = (Bytecode.Update) code;
 			List<String> fields = c.fields;
@@ -956,16 +956,16 @@ public final class WyilFileWriter {
 		// First, deal with special cases
 		if (code instanceof Bytecode.Const) {
 			Bytecode.Const c = (Bytecode.Const) code;
-			addConstantItem(c.constant);
+			addConstantItem(c.constant());
 		} else if (code instanceof Bytecode.FieldLoad) {
 			Bytecode.FieldLoad c = (Bytecode.FieldLoad) code;
-			addStringItem(c.field);
+			addStringItem(c.fieldName());
 		}else if (code instanceof Bytecode.Invoke) {
 			Bytecode.Invoke c = (Bytecode.Invoke) code;
-			addNameItem(c.name);
+			addNameItem(c.name());
 		} else if (code instanceof Bytecode.Lambda) {
 			Bytecode.Lambda c = (Bytecode.Lambda) code;
-			addNameItem(c.name);
+			addNameItem(c.name());
 		} else if (code instanceof Bytecode.Update) {
 			Bytecode.Update c = (Bytecode.Update) code;
 			for (Bytecode.LVal l : c) {

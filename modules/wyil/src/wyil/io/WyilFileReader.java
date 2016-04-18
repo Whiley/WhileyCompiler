@@ -788,7 +788,7 @@ public final class WyilFileReader {
 			case TARGET: {
 				int target = input.read_uv();
 				Bytecode.Label l = findLabel(target, labels);
-				results[i] = l.label;
+				results[i] = l.label();
 				break;
 			}
 			case STRING_ARRAY: {
@@ -807,7 +807,7 @@ public final class WyilFileReader {
 				for(int j=0;j!=nPairs;++j) {
 					int constIdx = input.read_uv();
 					int target = input.read_uv();
-					String label = findLabel(target,labels).label;
+					String label = findLabel(target,labels).label();
 					pairs[j] = new Pair<Constant,String>(constantPool[constIdx],label);
 				}
 				results[i] = pairs;

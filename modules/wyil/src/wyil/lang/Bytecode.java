@@ -47,7 +47,7 @@ import static wyil.lang.CodeUtils.*;
  * tests. The following illustrates:
  *
  * <pre>
- * function sum([int] data) -> int:
+ * function sum(int[] data) -> int:
  *    int r = 0
  *    for item in data:
  *       r = r + item
@@ -57,7 +57,7 @@ import static wyil.lang.CodeUtils.*;
  * This function is compiled into the following WyIL bytecode:
  *
  * <pre>
- * function sum([int] data) -> int:
+ * function sum(int[] data) -> int:
  * body:
  *   const %1 = 0          : int
  *   assign %2 = %0        : [int]
@@ -128,43 +128,6 @@ public abstract class Bytecode {
 		this.operands = operands;
 	}
 
-	/**
-	 * Determine which registers are used in this bytecode. This can be used,
-	 * for example, to determine the size of the register file required for a
-	 * given method.
-	 *
-	 * @param register
-	 */
-	public void registers(java.util.Set<Integer> registers) {
-		for (int i = 0; i != targets().length; ++i) {
-			registers.add(targets()[i]);
-		}
-		for (int i = 0; i != operands().length; ++i) {
-			registers.add(operands[i]);
-		}
-	}
-
-
-	/**
-	 * Remaps all registers according to a given binding. Registers not
-	 * mentioned in the binding retain their original value. Note, if the
-	 * returned bytecode is unchanged then it must be <code>this</code>.
-	 *
-	 * @param binding
-	 *            --- map from (existing) registers to (new) registers.
-	 * @return
-	 */
-	public Bytecode remap(Map<Integer, Integer> binding) {
-		int[] nTargets = remapOperands(binding, targets());
-		int[] nOperands = remapOperands(binding, operands());
-		if (nTargets != targets() || nOperands != operands()) {
-			return clone(nTargets, nOperands);
-		}
-		return this;
-	}
-
-	protected abstract Bytecode clone(int[] nTargets, int[] nOperands);
-	
 	@Override
 	public int hashCode() {
 		return Arrays.hashCode(types) + Arrays.hashCode(targets()) + Arrays.hashCode(operands());
@@ -498,7 +461,7 @@ public abstract class Bytecode {
 	 *
 	 */
 	public static final class Operator extends Bytecode {
-		public final OperatorKind kind;
+		private final OperatorKind kind;
 
 		public Operator(Type type, int[] targets, int[] operands, OperatorKind bop) {
 			super(new Type[] { type }, targets, operands);
@@ -510,12 +473,7 @@ public abstract class Bytecode {
 
 		@Override
 		public int opcode() {
-			return OPCODE_neg + kind.offset;
-		}
-
-		@Override
-		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return new Operator(type(0), nTargets, nOperands, kind);
+			return OPCODE_neg + kind().offset;
 		}
 
 		public int hashCode() {
@@ -531,7 +489,11 @@ public abstract class Bytecode {
 		}
 
 		public String toString() {
-			return kind + " %" + target(0) + " = " + arrayToString(operands()) + " : " + type(0);
+			return kind() + " %" + target(0) + " = " + arrayToString(operands()) + " : " + type(0);
+		}
+
+		public OperatorKind kind() {
+			return kind;
 		}
 	}
 
@@ -579,10 +541,6 @@ public abstract class Bytecode {
 
 		public Convert(Type from, int target, int operand, Type result) {
 			super(new Type[] { from, result }, new int[] { target }, operand);
-		}
-
-		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return new Convert(type(0), nTargets[0], nOperands[0], type(1));
 		}
 
 		public Type result() {
@@ -639,7 +597,7 @@ public abstract class Bytecode {
 	 *
 	 */
 	public static final class Const extends Bytecode {
-		public final Constant constant;
+		private final Constant constant;
 
 		public Const(int target, Constant constant) {
 			super(new Type[0], new int[] { target }, new int[0]);
@@ -652,6 +610,10 @@ public abstract class Bytecode {
 
 		public int target() {
 			return targets()[0];
+		}
+		
+		public Constant constant() {
+			return constant;
 		}
 
 		public int hashCode() {
@@ -668,11 +630,6 @@ public abstract class Bytecode {
 
 		public String toString() {
 			return "const %" + targets()[0] + " = " + constant + " : " + constant.type();
-		}
-
-		@Override
-		protected Bytecode clone(int[] nTargets, int[] nOperands) {
-			return new Const(nTargets[0], constant);
 		}
 	}
 
@@ -714,11 +671,6 @@ public abstract class Bytecode {
 
 		public int opcode() {
 			return OPCODE_debug;
-		}
-
-		@Override
-		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return new Debug(nOperands[0]);
 		}
 
 		public boolean equals(Object o) {
@@ -766,11 +718,6 @@ public abstract class Bytecode {
 		public boolean equals(Object o) {
 			return o instanceof Assume && super.equals(o);
 		}
-
-		@Override
-		protected Bytecode clone(int[] nTargets, int[] nOperands) {
-			return this;
-		}
 	}
 
 	/**
@@ -796,11 +743,6 @@ public abstract class Bytecode {
 		public boolean equals(Object o) {
 			return o instanceof Assume && super.equals(o);
 		}
-
-		@Override
-		protected Bytecode clone(int[] nTargets, int[] nOperands) {
-			return this;
-		}
 	}
 
 	/**
@@ -821,15 +763,9 @@ public abstract class Bytecode {
 			return OPCODE_fail;
 		}
 
-		@Override
-		protected Bytecode clone(int[] nTargets, int[] nOperands) {
-			return this;
-		}
-
 		public String toString() {
 			return "fail";
 		}
-
 	}
 
 	/**
@@ -859,7 +795,7 @@ public abstract class Bytecode {
 	 *
 	 */
 	public static final class FieldLoad extends Bytecode {
-		public final String field;
+		private final String field;
 
 		public FieldLoad(Type.EffectiveRecord type, int target, int operand, String field) {
 			super((Type) type, target, operand);
@@ -867,11 +803,6 @@ public abstract class Bytecode {
 				throw new IllegalArgumentException("FieldLoad field argument cannot be null");
 			}
 			this.field = field;
-		}
-
-		@Override
-		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return new FieldLoad((Type.EffectiveRecord) type(0), nTargets[0], nOperands[0], field);
 		}
 
 		public int opcode() {
@@ -887,6 +818,10 @@ public abstract class Bytecode {
 			return er.fields().get(field);
 		}
 
+		public String fieldName() {
+			return field;
+		}
+		
 		public boolean equals(Object o) {
 			if (o instanceof FieldLoad) {
 				FieldLoad i = (FieldLoad) o;
@@ -963,11 +898,6 @@ public abstract class Bytecode {
 			return o instanceof Goto && super.equals(o);
 		}
 
-		@Override
-		protected Bytecode clone(int[] nTargets, int[] nOperands) {
-			return this;
-		}
-
 		public String toString() {
 			return "goto " + destination();
 		}
@@ -1042,11 +972,6 @@ public abstract class Bytecode {
 			return OPCODE_if;
 		}
 
-		@Override
-		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return new If(types[0], nOperands[0], destination());
-		}
-
 		public boolean equals(Object o) {
 			return o instanceof If && super.equals(o);			
 		}
@@ -1118,11 +1043,6 @@ public abstract class Bytecode {
 			} else {
 				return new IfIs(types[0], operands[0], types[1], nlabel);
 			}
-		}
-
-		@Override
-		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return new IfIs(types[0], nOperands[0], types[1], destination());
 		}
 
 		public boolean equals(Object o) {
@@ -1208,11 +1128,6 @@ public abstract class Bytecode {
 			return (Type.FunctionOrMethod) super.type(i);
 		}
 
-		@Override
-		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return new IndirectInvoke(type(0), nTargets, nOperands[0], Arrays.copyOfRange(nOperands, 1, nOperands.length));
-		}
-
 		public boolean equals(Object o) {
 			return o instanceof IndirectInvoke && super.equals(o);
 		}
@@ -1253,11 +1168,6 @@ public abstract class Bytecode {
 				return block == f.block;
 			}
 			return false;
-		}
-
-		@Override
-		public Invariant clone() {
-			return this;
 		}
 	}
 
@@ -1302,7 +1212,7 @@ public abstract class Bytecode {
 	 *
 	 */
 	public static final class Invoke extends Bytecode {
-		public final NameID name;
+		private final NameID name;
 
 		public Invoke(Type.FunctionOrMethod type, int[] targets, int[] operands, NameID name) {
 			super(new Type.FunctionOrMethod[] { type }, targets, operands);
@@ -1313,6 +1223,10 @@ public abstract class Bytecode {
 			return OPCODE_invoke;
 		}
 
+		public NameID name() {
+			return name;
+		}
+		
 		public int hashCode() {
 			return name.hashCode() + super.hashCode();
 		}
@@ -1322,15 +1236,10 @@ public abstract class Bytecode {
 			return (Type.FunctionOrMethod) super.type(i);
 		}
 
-		@Override
-		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return new Invoke(type(0), nTargets, nOperands, name);
-		}
-
 		public boolean equals(Object o) {
 			if (o instanceof Invoke) {
 				Invoke i = (Invoke) o;
-				return name.equals(i.name) && super.equals(i);
+				return name().equals(i.name) && super.equals(i);
 			}
 			return false;
 		}
@@ -1342,7 +1251,7 @@ public abstract class Bytecode {
 	}
 
 	public static final class Lambda extends Bytecode {
-		public final NameID name;
+		private final NameID name;
 
 		public Lambda(Type.FunctionOrMethod type, int target, int[] operands, NameID name) {
 			super(type, target, operands);
@@ -1353,6 +1262,10 @@ public abstract class Bytecode {
 			return OPCODE_lambda;
 		}
 
+		public NameID name() {
+			return name;
+		}
+		
 		public int hashCode() {
 			return name.hashCode() + super.hashCode();
 		}
@@ -1362,15 +1275,10 @@ public abstract class Bytecode {
 			return (Type.FunctionOrMethod) super.type(i);
 		}
 
-		@Override
-		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return new Lambda((Type.FunctionOrMethod) type(0), nTargets[0], nOperands, name);
-		}
-
 		public boolean equals(Object o) {
 			if (o instanceof Lambda) {
 				Lambda i = (Lambda) o;
-				return name.equals(i.name) && super.equals(i);
+				return name().equals(i.name()) && super.equals(i);
 			}
 			return false;
 		}
@@ -1387,7 +1295,7 @@ public abstract class Bytecode {
 	 *
 	 */
 	public static class Label extends Bytecode {
-		public final String label;
+		private final String label;
 
 		public Label(String label) {
 			super(new Type[0], new int[0], new int[0]);
@@ -1398,6 +1306,10 @@ public abstract class Bytecode {
 			return -1;
 		}
 
+		public String label() {
+			return label;
+		}
+		
 		public Label relabel(Map<String, String> labels) {
 			String nlabel = labels.get(label);
 			if (nlabel == null) {
@@ -1407,13 +1319,8 @@ public abstract class Bytecode {
 			}
 		}
 
-		@Override
-		public Bytecode remap(Map<Integer, Integer> binding) {
-			return this;
-		}
-
 		public int hashCode() {
-			return label.hashCode();
+			return label().hashCode();
 		}
 
 		public boolean equals(Object o) {
@@ -1425,16 +1332,6 @@ public abstract class Bytecode {
 
 		public String toString() {
 			return "." + label;
-		}
-
-		@Override
-		public void registers(Set<Integer> register) {
-			// TODO Auto-generated method stub
-		}
-
-		@Override
-		protected Bytecode clone(int[] nTargets, int[] nOperands) {
-			return new Label(label);
 		}
 	}
 
@@ -1499,11 +1396,6 @@ public abstract class Bytecode {
 
 		public int[] modifiedOperands() {
 			return targets();
-		}
-
-		@Override
-		public Loop clone(int[] nTargets, int[] nOperands) {
-			return new Loop(nTargets, block, nOperands);
 		}
 
 		public String toString() {
@@ -1790,11 +1682,6 @@ public abstract class Bytecode {
 			return iter;
 		}
 
-		@Override
-		public final Bytecode clone(int[] nTargets, int[] nOperands) {
-			return new Update(types, nTargets, nOperands, fields);
-		}
-
 		public boolean equals(Object o) {
 			if (o instanceof Update) {
 				Update i = (Update) o;
@@ -1860,11 +1747,6 @@ public abstract class Bytecode {
 		@Override
 		public int opcode() {
 			return OPCODE_return;
-		}
-
-		@Override
-		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return new Return(Arrays.copyOf(types, types.length), nOperands);
 		}
 
 		public boolean equals(Object o) {
@@ -1985,12 +1867,6 @@ public abstract class Bytecode {
 			table += ", *->" + defaultTarget;
 			return "switch %" + operands[0] + " " + table;
 		}
-
-		@Override
-		public Bytecode clone(int[] nTargets, int[] nOperands) {
-			return new Switch(types[0], nOperands[0], defaultTarget, branches);
-		}
-
 	}
 
 	// =============================================================

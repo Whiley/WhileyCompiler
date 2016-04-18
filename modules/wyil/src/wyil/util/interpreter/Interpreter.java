@@ -265,7 +265,7 @@ public class Interpreter {
 	 * @return
 	 */
 	private Object execute(Bytecode.Const bytecode, Constant[] frame, Context context) {
-		frame[bytecode.target()] = bytecode.constant;
+		frame[bytecode.target()] = bytecode.constant();
 		return context.pc.next();
 	}
 
@@ -440,7 +440,7 @@ public class Interpreter {
 
 	private Object execute(Bytecode.FieldLoad bytecode, Constant[] frame, Context context) {
 		Constant.Record rec = (Constant.Record) frame[bytecode.operand(0)];
-		frame[bytecode.target(0)] = rec.values.get(bytecode.field);
+		frame[bytecode.target(0)] = rec.values.get(bytecode.fieldName());
 		return context.pc.next();
 	}
 
@@ -685,7 +685,7 @@ public class Interpreter {
 		for (int i = 0; i != arguments.length; ++i) {
 			arguments[i] = frame[operands[i]];
 		}
-		Constant[] results = execute(bytecode.name, bytecode.type(0), arguments);
+		Constant[] results = execute(bytecode.name(), bytecode.type(0), arguments);
 		int[] targets = bytecode.targets();
 		for (int i = 0; i != targets.length; ++i) {
 			frame[targets[i]] = results[i];
@@ -703,7 +703,7 @@ public class Interpreter {
 			arguments[i] = frame[reg];
 		}
 		// FIXME: need to do something with the operands here.
-		frame[bytecode.target(0)] = Constant.V_LAMBDA(bytecode.name, bytecode.type(0), arguments);
+		frame[bytecode.target(0)] = Constant.V_LAMBDA(bytecode.name(), bytecode.type(0), arguments);
 		//
 		return context.pc.next();
 	}

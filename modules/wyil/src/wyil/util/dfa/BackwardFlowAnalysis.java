@@ -133,7 +133,7 @@ public abstract class BackwardFlowAnalysis<T> {
 					continue;
 				} else if (code instanceof Bytecode.Label) {
 					Bytecode.Label l = (Bytecode.Label) code;
-					stores.put(l.label,store);
+					stores.put(l.label(),store);
 				} else if (code instanceof Bytecode.If) {
 					Bytecode.If ifgoto = (Bytecode.If) code;
 					T trueStore = stores.get(ifgoto.destination());

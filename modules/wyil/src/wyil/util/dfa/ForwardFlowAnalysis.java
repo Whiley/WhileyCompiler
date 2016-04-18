@@ -128,7 +128,7 @@ public abstract class ForwardFlowAnalysis<T> {
 				// First, check for a label which may have incoming information.
 				if (code instanceof Bytecode.Label) {
 					Bytecode.Label l = (Bytecode.Label) code;
-					T tmp = stores.get(l.label);
+					T tmp = stores.get(l.label());
 					if (tmp != null && store != null) {
 						store = join(store, tmp);
 					} else if (tmp != null) {
