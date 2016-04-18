@@ -26,6 +26,7 @@
 package wyc.builder;
 
 import java.util.*;
+import java.util.jar.Attributes;
 
 import static wyc.lang.WhileyFile.internalFailure;
 import static wyc.lang.WhileyFile.syntaxError;
@@ -182,19 +183,17 @@ public final class CodeGenerator {
 	 * @throws Exception
 	 */
 	private WyilFile.Type generate(WhileyFile.Type td) throws Exception {
-		BytecodeForest forest = new BytecodeForest();
-		Environment environment = new Environment();
+		GenerationContext context = new GenerationContext(td);
 		// Allocate declared parameter
-		environment.allocate(td.resolvedType.raw(), td.parameter.name());
+		context.allocate(td.resolvedType.raw(), td.parameter.name());
 		// Generate code for each invariant condition
 		for (Expr invariant : td.invariant) {
-			int root = generateInvariantBlock(invariant, environment, forest, td);
-			forest.addRoot(root);
+			generateInvariantBlock(invariant, context.createRootBlock());
 		}
 		// Add all registers used within the invariant
 		forest.registers().addAll(environment.asRegisters());
 		// done
-		return new WyilFile.Type(td.modifiers(), td.name(), td.resolvedType.nominal(), forest);
+		return new WyilFile.Type(td.modifiers(), td.name(), td.resolvedType.nominal(), context.forest());
 	}
 
 	// =========================================================================
@@ -209,8 +208,7 @@ public final class CodeGenerator {
 		// Construct environments
 		// ==================================================================
 
-		BytecodeForest forest = new BytecodeForest();
-		Environment environment = new Environment();
+		GenerationContext context = new GenerationContext(fd);
 		ArrayList<BytecodeForest.Register> declarations = new ArrayList<BytecodeForest.Register>();
 		addDeclaredParameters(fd.parameters, fd.resolvedType().params(), environment, declarations);
 		addDeclaredParameters(fd.returns, fd.resolvedType().returns(), environment, declarations);
@@ -222,16 +220,14 @@ public final class CodeGenerator {
 		// Generate pre-condition
 		// ==================================================================
 		for (Expr precondition : fd.requires) {
-			int root = generateInvariantBlock(precondition, environment, forest, fd);
-			forest.addRoot(root);
+			generateInvariantBlock(precondition, context.createRootBlock());			
 		}
 
 		// ==================================================================
 		// Generate post-condition
 		// ==================================================================
 		for (Expr postcondition : fd.ensures) {
-			int root = generateInvariantBlock(postcondition, environment, forest, fd);
-			forest.addRoot(root);
+			generateInvariantBlock(postcondition, context.createRootBlock());
 		}
 
 		// ==================================================================
@@ -249,16 +245,15 @@ public final class CodeGenerator {
 		// fail because they have the same type).
 		environment = resetEnvironment(environment, declarations);
 
-		BytecodeForest.Block body = new BytecodeForest.Block();
-		forest.addAsRoot(body);
+		context = context.createRootBlock();
 		for (Stmt s : fd.statements) {
-			generate(s, environment, body, forest, fd);
+			generate(s, context);
 		}
 
 		// The following is sneaky. It guarantees that every method ends in a
 		// return. For methods that actually need a value, this is either
 		// removed as dead-code or remains and will cause an error.
-		body.add(new Bytecode.Return(), attributes(fd));
+		context.add(new Bytecode.Return(), attributes(fd));
 
 		WyilFile.FunctionOrMethod declaration;
 
@@ -267,12 +262,12 @@ public final class CodeGenerator {
 
 		if (fd instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) fd;
-			declaration = new WyilFile.FunctionOrMethod(fd.modifiers(), fd.name(), f.resolvedType.nominal(), forest,
-					fd.requires.size(), fd.ensures.size());
+			declaration = new WyilFile.FunctionOrMethod(fd.modifiers(), fd.name(), f.resolvedType.nominal(),
+					context.forest(), fd.requires.size(), fd.ensures.size());
 		} else {
 			WhileyFile.Method md = (WhileyFile.Method) fd;
-			declaration = new WyilFile.FunctionOrMethod(fd.modifiers(), fd.name(), md.resolvedType.nominal(), forest,
-					fd.requires.size(), fd.ensures.size());
+			declaration = new WyilFile.FunctionOrMethod(fd.modifiers(), fd.name(), md.resolvedType.nominal(),
+					context.forest(), fd.requires.size(), fd.ensures.size());
 		}
 
 		// Done.
@@ -288,15 +283,13 @@ public final class CodeGenerator {
 	 * @param forest
 	 * @param context
 	 */
-	private int generateInvariantBlock(Expr invariant, Environment environment, BytecodeForest forest, Context context) {
-		BytecodeForest.Block precondition = new BytecodeForest.Block();
-		int index = forest.add(precondition);
+	private int generateInvariantBlock(Expr invariant, GenerationContext context) {
 		String endLab = freshLabel();
-		generateCondition(endLab, invariant, environment, precondition, forest, context);
-		precondition.add(new Bytecode.Fail(), attributes(invariant));
-		precondition.add(new Bytecode.Label(endLab));
-		precondition.add(new Bytecode.Return());
-		return index;
+		generateCondition(endLab, invariant, context);
+		context.add(new Bytecode.Fail(), attributes(invariant));
+		context.add(new Bytecode.Label(endLab));
+		context.add(new Bytecode.Return());
+		return context.blockIndex();
 	}
 
 	/**
@@ -335,7 +328,7 @@ public final class CodeGenerator {
 			// allocate parameter to register in the current block
 			declarations.add(new BytecodeForest.Register(types.get(i).nominal(), parameter.name));
 			// allocate parameter to register in the current block
-			environment.allocate(types.get(i).raw(), parameter.name);
+			context.allocate(types.get(i).raw(), parameter.name);
 		}
 	}
 
@@ -361,53 +354,52 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt stmt, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	private void generate(Stmt stmt, GenerationContext context) {
 		try {
 			if (stmt instanceof VariableDeclaration) {
-				generate((VariableDeclaration) stmt, environment, block, forest, context);
+				generate((VariableDeclaration) stmt, context);
 			} else if (stmt instanceof Assign) {
-				generate((Assign) stmt, environment, block, forest, context);
+				generate((Assign) stmt, context);
 			} else if (stmt instanceof Assert) {
-				generate((Assert) stmt, environment, block, forest, context);
+				generate((Assert) stmt, context);
 			} else if (stmt instanceof Assume) {
-				generate((Assume) stmt, environment, block, forest, context);
+				generate((Assume) stmt, context);
 			} else if (stmt instanceof Return) {
-				generate((Return) stmt, environment, block, forest, context);
+				generate((Return) stmt, context);
 			} else if (stmt instanceof Debug) {
-				generate((Debug) stmt, environment, block, forest, context);
+				generate((Debug) stmt, context);
 			} else if (stmt instanceof Fail) {
-				generate((Fail) stmt, environment, block, forest, context);
+				generate((Fail) stmt, context);
 			} else if (stmt instanceof IfElse) {
-				generate((IfElse) stmt, environment, block, forest, context);
+				generate((IfElse) stmt, context);
 			} else if (stmt instanceof Switch) {
-				generate((Switch) stmt, environment, block, forest, context);
+				generate((Switch) stmt, context);
 			} else if (stmt instanceof Break) {
-				generate((Break) stmt, environment, block, forest, context);
+				generate((Break) stmt, context);
 			} else if (stmt instanceof Continue) {
-				generate((Continue) stmt, environment, block, forest, context);
+				generate((Continue) stmt, context);
 			} else if (stmt instanceof While) {
-				generate((While) stmt, environment, block, forest, context);
+				generate((While) stmt, context);
 			} else if (stmt instanceof DoWhile) {
-				generate((DoWhile) stmt, environment, block, forest, context);
+				generate((DoWhile) stmt, context);
 			} else if (stmt instanceof Expr.FunctionOrMethodCall) {
-				generate((Expr.Multi) stmt, environment, block, forest, context);
+				generate((Expr.Multi) stmt, context);
 			} else if (stmt instanceof Expr.IndirectFunctionOrMethodCall) {
-				generate((Expr.Multi) stmt, environment, block, forest, context);
+				generate((Expr.Multi) stmt, context);
 			} else if (stmt instanceof Expr.New) {
-				generate((Expr.New) stmt, environment, block, forest, context);
+				generate((Expr.New) stmt, context);
 			} else if (stmt instanceof Skip) {
-				generate((Skip) stmt, environment, block, forest, context);
+				generate((Skip) stmt, context);
 			} else {
 				// should be dead-code
-				WhileyFile.internalFailure("unknown statement: " + stmt.getClass().getName(), context, stmt);
+				WhileyFile.internalFailure("unknown statement: " + stmt.getClass().getName(), context.enclosingDeclaration(), stmt);
 			}
 		} catch (ResolveError rex) {
-			WhileyFile.syntaxError(rex.getMessage(), context, stmt, rex);
+			WhileyFile.syntaxError(rex.getMessage(), context.enclosingDeclaration(), stmt, rex);
 		} catch (SyntaxError sex) {
 			throw sex;
 		} catch (Exception ex) {
-			WhileyFile.internalFailure(ex.getMessage(), context, stmt, ex);
+			WhileyFile.internalFailure(ex.getMessage(), context.enclosingDeclaration(), stmt, ex);
 		}
 	}
 
@@ -443,14 +435,13 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(VariableDeclaration s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	private void generate(VariableDeclaration s, GenerationContext context) {
 		// First, we allocate this variable to a given slot in the environment.
-		int[] targets = { environment.get(s.parameter.name) };
+		int[] targets = { context.get(s.parameter.name) };
 		// Second, translate initialiser expression if it exists.
 		if (s.expr != null) {
-			int[] operands = { generate(s.expr, environment, block, forest, context) };
-			block.add(new Bytecode.Operator(s.expr.result().raw(), targets, operands, Bytecode.OperatorKind.ASSIGN),
+			int[] operands = { generate(s.expr, context) };
+			context.add(new Bytecode.Operator(s.expr.result().raw(), targets, operands, Bytecode.OperatorKind.ASSIGN),
 					attributes(s));
 		}
 	}
@@ -500,8 +491,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Assign s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	private void generate(Assign s, GenerationContext context) {
 		// First, we translate all right-hand side expressions and assign them
 		// to temporary registers.
 		ArrayList<Integer> operands = new ArrayList<Integer>();
@@ -516,11 +506,11 @@ public final class CodeGenerator {
 				for (Nominal t : me.returns()) {
 					types.add(t.raw());
 				}
-				operands.addAll(toIntegerList(generate(me, environment, block, forest, context)));
+				operands.addAll(toIntegerList(generate(me, context)));
 			} else {
 				// The assigned rval is a simple expression which returns a
 				// single value
-				operands.add(generate(e, environment, block, forest, context));
+				operands.add(generate(e, context));
 				types.add(e.result().raw());
 			}
 		}
@@ -531,20 +521,19 @@ public final class CodeGenerator {
 		// FlowTypeChecker.
 		for (int i = 0; i != s.lvals.size(); ++i) {
 			Expr.LVal lval = s.lvals.get(i);
-			generateAssignment(lval, operands.get(i), types.get(i), environment, block, forest, context);
+			generateAssignment(lval, operands.get(i), types.get(i), context);
 		}
 	}
 
-	public void generateAssignment(Expr.LVal lval, int operand, Type type, Environment environment,
-			BytecodeForest.Block block, BytecodeForest forest, Context context) {
+	public void generateAssignment(Expr.LVal lval, int operand, Type type, GenerationContext context) {
 		if (lval instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) lval;
 			// This is the easiest case. Having translated the right-hand side
 			// expression, we now assign it directly to the register allocated
 			// for variable on the left-hand side.
-			int[] targets = new int[] { environment.get(v.var) };
+			int[] targets = new int[] { context.get(v.var) };
 			int[] operands = new int[] { operand };
-			block.add(new Bytecode.Operator(type, targets, operands, Bytecode.OperatorKind.ASSIGN), attributes(lval));
+			context.add(new Bytecode.Operator(type, targets, operands, Bytecode.OperatorKind.ASSIGN), attributes(lval));
 		} else if (lval instanceof Expr.IndexOf || lval instanceof Expr.FieldAccess
 				|| lval instanceof Expr.Dereference) {
 			// This is the more complicated case, since the left-hand side
@@ -555,12 +544,12 @@ public final class CodeGenerator {
 			// updated.
 			ArrayList<String> fields = new ArrayList<String>();
 			ArrayList<Integer> operands = new ArrayList<Integer>();
-			Expr.AssignedVariable lhs = extractLVal(lval, fields, operands, environment, block, forest, context);
-			int target = environment.get(lhs.var);
-			block.add(new Bytecode.Update(lhs.type.raw(), target, toIntArray(operands), operand, lhs.afterType.raw(),
+			Expr.AssignedVariable lhs = extractLVal(lval, fields, operands, context);
+			int target = context.get(lhs.var);
+			context.add(new Bytecode.Update(lhs.type.raw(), target, toIntArray(operands), operand, lhs.afterType.raw(),
 					fields), attributes(lval));
 		} else {
-			WhileyFile.syntaxError("invalid assignment", context, lval);
+			WhileyFile.syntaxError("invalid assignment", context.enclosingDeclaration(), lval);
 		}
 	}
 
@@ -593,27 +582,27 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private Expr.AssignedVariable extractLVal(Expr e, ArrayList<String> fields, ArrayList<Integer> operands,
-			Environment environment, BytecodeForest.Block block, BytecodeForest forest, Context context) {
+			GenerationContext context) {
 
 		if (e instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) e;
 			return v;
 		} else if (e instanceof Expr.Dereference) {
 			Expr.Dereference pa = (Expr.Dereference) e;
-			return extractLVal(pa.src, fields, operands, environment, block, forest, context);
+			return extractLVal(pa.src, fields, operands, context);
 		} else if (e instanceof Expr.IndexOf) {
 			Expr.IndexOf la = (Expr.IndexOf) e;
-			int operand = generate(la.index, environment, block, forest, context);
-			Expr.AssignedVariable l = extractLVal(la.src, fields, operands, environment, block, forest, context);
+			int operand = generate(la.index, context);
+			Expr.AssignedVariable l = extractLVal(la.src, fields, operands, context);
 			operands.add(operand);
 			return l;
 		} else if (e instanceof Expr.FieldAccess) {
 			Expr.FieldAccess ra = (Expr.FieldAccess) e;
-			Expr.AssignedVariable r = extractLVal(ra.src, fields, operands, environment, block, forest, context);
+			Expr.AssignedVariable r = extractLVal(ra.src, fields, operands, context);
 			fields.add(ra.name);
 			return r;
 		} else {
-			WhileyFile.syntaxError(errorMessage(INVALID_LVAL_EXPRESSION), context, e);
+			WhileyFile.syntaxError(errorMessage(INVALID_LVAL_EXPRESSION), context.enclosingDeclaration(), e);
 			return null; // dead code
 		}
 	}
@@ -633,18 +622,15 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Assert s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	private void generate(Stmt.Assert s, GenerationContext context) {
 		// First, create assert block body
-		BytecodeForest.Block subblock = new BytecodeForest.Block();
-		int body = forest.add(subblock);
+		GenerationContext subcontext = context.createBlock();
 		String endLab = freshLabel();
-		generateCondition(endLab, s.expr, environment, subblock, forest, context);
-		subblock.add(new Bytecode.Fail(), attributes(s.expr));
-		subblock.add(new Bytecode.Label(endLab));
+		generateCondition(endLab, s.expr, subcontext);
+		subcontext.add(new Bytecode.Fail(), attributes(s.expr));
+		subcontext.add(new Bytecode.Label(endLab));
 		// Second, create assert bytecode
-		block.add(new Bytecode.Assert(body), attributes(s));
-
+		context.add(new Bytecode.Assert(subcontext.blockIndex()), attributes(s));
 	}
 
 	/**
@@ -662,17 +648,15 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Assume s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	private void generate(Stmt.Assume s, GenerationContext context) {
 		// First, create assume block body
-		BytecodeForest.Block subblock = new BytecodeForest.Block();
-		int body = forest.add(subblock);
+		GenerationContext subcontext = context.createBlock();
 		String endLab = freshLabel();
-		generateCondition(endLab, s.expr, environment, subblock, forest, context);
-		subblock.add(new Bytecode.Fail(), attributes(s.expr));
-		subblock.add(new Bytecode.Label(endLab));
+		generateCondition(endLab, s.expr, subcontext);
+		subcontext.add(new Bytecode.Fail(), attributes(s.expr));
+		subcontext.add(new Bytecode.Label(endLab));
 		// Second, create assert bytecode
-		block.add(new Bytecode.Assume(body), attributes(s));
+		context.add(new Bytecode.Assume(subcontext.blockIndex()), attributes(s));
 	}
 
 	/**
@@ -708,14 +692,13 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Return s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	private void generate(Stmt.Return s, GenerationContext context) {
 		List<Expr> returns = s.returns;
 		// Here, we don't put the type propagated for the return expression.
 		// Instead, we use the declared return type of this function. This
 		// has the effect of forcing an implicit coercion between the
 		// actual value being returned and its required type.
-		List<Type> returnTypes = ((WhileyFile.FunctionOrMethod) context).resolvedType().raw().returns();
+		List<Type> returnTypes = context.getEnclosingFunctionType().raw().returns();
 		Type[] types = returnTypes.toArray(new Type[returnTypes.size()]);
 		int[] operands = new int[types.length];
 		int index = 0;
@@ -723,15 +706,15 @@ public final class CodeGenerator {
 			Expr e = returns.get(i);
 			// FIXME: this is a rather ugly
 			if (e instanceof Expr.Multi) {
-				int[] results = generate((Expr.Multi) e, environment, block, forest, context);
+				int[] results = generate((Expr.Multi) e, context);
 				for (int r : results) {
 					operands[index++] = r;
 				}
 			} else {
-				operands[index++] = generate(e, environment, block, forest, context);
+				operands[index++] = generate(e, context);
 			}
 		}
-		block.add(new Bytecode.Return(types, operands), attributes(s));
+		context.add(new Bytecode.Return(types, operands), attributes(s));
 	}
 
 	/**
@@ -749,8 +732,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Skip s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	private void generate(Stmt.Skip s, GenerationContext context) {
 		// TODO: should actually generate a NOP bytecode. This is an assignment
 		// from zero operands to zero targets. At the moment, I cannot encode
 		// this however because it will fail in the interpreter.
@@ -787,10 +769,9 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Debug s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
-		int operand = generate(s.expr, environment, block, forest, context);
-		block.add(new Bytecode.Debug(operand), attributes(s));
+	private void generate(Stmt.Debug s, GenerationContext context) {
+		int operand = generate(s.expr, context);
+		context.add(new Bytecode.Debug(operand), attributes(s));
 	}
 
 	/**
@@ -818,9 +799,8 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Fail s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
-		block.add(new Bytecode.Fail(), attributes(s));
+	private void generate(Stmt.Fail s, GenerationContext context) {
+		context.add(new Bytecode.Fail(), attributes(s));
 	}
 
 	/**
@@ -868,26 +848,25 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.IfElse s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	private void generate(Stmt.IfElse s, GenerationContext context) {
 
 		String falseLab = freshLabel();
 		String exitLab = s.falseBranch.isEmpty() ? falseLab : freshLabel();
 
-		generateCondition(falseLab, invert(s.condition), environment, block, forest, context);
+		generateCondition(falseLab, invert(s.condition), context);
 
 		for (Stmt st : s.trueBranch) {
-			generate(st, environment, block, forest, context);
+			generate(st, context);
 		}
 		if (!s.falseBranch.isEmpty()) {
-			block.add(new Bytecode.Goto(exitLab));
-			block.add(new Bytecode.Label(falseLab));
+			context.add(new Bytecode.Goto(exitLab));
+			context.add(new Bytecode.Label(falseLab));
 			for (Stmt st : s.falseBranch) {
-				generate(st, environment, block, forest, context);
+				generate(st, context);
 			}
 		}
 
-		block.add(new Bytecode.Label(exitLab));
+		context.add(new Bytecode.Label(exitLab));
 	}
 
 	/**
@@ -935,13 +914,13 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Break s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
-		LoopScope scope = findEnclosingScope(LoopScope.class);
-		if (scope == null) {
-			WhileyFile.syntaxError(errorMessage(BREAK_OUTSIDE_SWITCH_OR_LOOP), context, s);
+	private void generate(Stmt.Break s, GenerationContext context) {
+		String breakLabel = context.getBreakLabel();
+		if (breakLabel == null) {
+			// FIXME: this should be located elsewhere
+			WhileyFile.syntaxError(errorMessage(BREAK_OUTSIDE_SWITCH_OR_LOOP), context.enclosingDeclaration(), s);
 		}
-		block.add(new Bytecode.Goto(scope.breakLabel));
+		context.add(new Bytecode.Goto(breakLabel));
 	}
 
 	/**
@@ -992,13 +971,12 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Continue s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
-		LoopScope scope = findEnclosingScope(LoopScope.class);
-		if (scope == null) {
-			WhileyFile.syntaxError(errorMessage(CONTINUE_OUTSIDE_LOOP), context, s);
+	private void generate(Stmt.Continue s, GenerationContext context) {
+		String continueLabel = context.getContinueLabel();
+		if (continueLabel == null) {
+			WhileyFile.syntaxError(errorMessage(CONTINUE_OUTSIDE_LOOP), context.enclosingDeclaration(), s);
 		}
-		block.add(new Bytecode.Goto(scope.continueLabel));
+		context.add(new Bytecode.Goto(continueLabel));
 	}
 
 	/**
@@ -1055,10 +1033,9 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.Switch s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) throws Exception {
+	private void generate(Stmt.Switch s, GenerationContext context) throws Exception {
 		String exitLab = freshLabel();
-		int operand = generate(s.expr, environment, block, forest, context);
+		int operand = generate(s.expr, context);
 		String defaultTarget = exitLab;
 		HashSet<Constant> values = new HashSet<>();
 		ArrayList<Pair<Constant, String>> cases = new ArrayList<>();
@@ -1070,19 +1047,19 @@ public final class CodeGenerator {
 				// must check that we have not already seen a case with an empty
 				// match (otherwise, we'd have two default labels ;)
 				if (defaultTarget != exitLab) {
-					WhileyFile.syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL), context, c);
+					WhileyFile.syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL), context.enclosingDeclaration(), c);
 				} else {
 					defaultTarget = freshLabel();
-					block.add(new Bytecode.Label(defaultTarget), attributes(c));
+					context.add(new Bytecode.Label(defaultTarget), attributes(c));
 					for (Stmt st : c.stmts) {
-						generate(st, environment, block, forest, context);
+						generate(st, context);
 					}
-					block.add(new Bytecode.Goto(exitLab), attributes(c));
+					context.add(new Bytecode.Goto(exitLab), attributes(c));
 				}
 
 			} else if (defaultTarget == exitLab) {
 				String target = freshLabel();
-				block.add(new Bytecode.Label(target), attributes(c));
+				context.add(new Bytecode.Label(target), attributes(c));
 
 				// Case statements in Whiley may have multiple matching constant
 				// values. Therefore, we iterate each matching value and
@@ -1093,27 +1070,27 @@ public final class CodeGenerator {
 					// Check whether this case constant has already been used as
 					// a case constant elsewhere. If so, then report an error.
 					if (values.contains(constant)) {
-						WhileyFile.syntaxError(errorMessage(DUPLICATE_CASE_LABEL), context, c);
+						WhileyFile.syntaxError(errorMessage(DUPLICATE_CASE_LABEL), context.enclosingDeclaration(), c);
 					}
 					cases.add(new Pair<>(constant, target));
 					values.add(constant);
 				}
 
 				for (Stmt st : c.stmts) {
-					generate(st, environment, block, forest, context);
+					generate(st, context);
 				}
-				block.add(new Bytecode.Goto(exitLab), attributes(c));
+				context.add(new Bytecode.Goto(exitLab), attributes(c));
 
 			} else {
 				// This represents the case where we have another non-default
 				// case after the default case. Such code cannot be executed,
 				// and is therefore reported as an error.
-				WhileyFile.syntaxError(errorMessage(UNREACHABLE_CODE), context, c);
+				WhileyFile.syntaxError(errorMessage(UNREACHABLE_CODE), context.enclosingDeclaration(), c);
 			}
 		}
 
-		block.add(start, new Bytecode.Switch(s.expr.result().raw(), operand, defaultTarget, cases), attributes(s));
-		block.add(new Bytecode.Label(exitLab), attributes(s));
+		context.add(start, new Bytecode.Switch(s.expr.result().raw(), operand, defaultTarget, cases), attributes(s));
+		context.add(new Bytecode.Label(exitLab), attributes(s));
 	}
 
 	/**
@@ -1157,8 +1134,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.While s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	private void generate(Stmt.While s, GenerationContext context) {
 		// A label marking where execution continues after the while
 		// loop finishes. Used when the loop condition evaluates to false
 		// or when a break statement is encountered.
@@ -1167,25 +1143,22 @@ public final class CodeGenerator {
 		// by the continue statement.
 		String continueLab = freshLabel();
 
-		BytecodeForest.Block bodyBlock = new BytecodeForest.Block();
-		int body = forest.add(bodyBlock);
+		GenerationContext subcontext = context.createBlock(exitLab,continueLab);
 
 		for (Expr condition : s.invariants) {
-			int invariant = generateInvariantBlock(condition, environment, forest, context);
-			bodyBlock.add(new Bytecode.Invariant(invariant), attributes(condition));
+			int invariant = generateInvariantBlock(condition,subcontext.createBlock());
+			subcontext.add(new Bytecode.Invariant(invariant), attributes(condition));
 		}
 
-		generateCondition(exitLab, invert(s.condition), environment, bodyBlock, forest, context);
+		generateCondition(exitLab, invert(s.condition), subcontext);
 
-		scopes.push(new LoopScope(continueLab, exitLab));
 		for (Stmt st : s.body) {
-			generate(st, environment, bodyBlock, forest, context);
+			generate(st, subcontext);
 		}
-		scopes.pop(); // break
 
-		bodyBlock.add(new Bytecode.Label(continueLab), attributes(s));
-		block.add(new Bytecode.Loop(new int[] {}, body), attributes(s));
-		block.add(new Bytecode.Label(exitLab), attributes(s));
+		subcontext.add(new Bytecode.Label(continueLab), attributes(s));
+		context.add(new Bytecode.Loop(new int[] {}, subcontext.blockIndex()), attributes(s));
+		context.add(new Bytecode.Label(exitLab), attributes(s));
 	}
 
 	/**
@@ -1230,8 +1203,7 @@ public final class CodeGenerator {
 	 *            with error reporting as it determines the enclosing file.
 	 * @return
 	 */
-	private void generate(Stmt.DoWhile s, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	private void generate(Stmt.DoWhile s, GenerationContext context) {
 		// A label marking where execution continues after the do-while
 		// loop finishes. Used when the loop condition evaluates to false
 		// or when a break statement is encountered.
@@ -1240,25 +1212,22 @@ public final class CodeGenerator {
 		// by the continue statement.
 		String continueLab = freshLabel();
 
-		BytecodeForest.Block bodyBlock = new BytecodeForest.Block();
-		int body = forest.add(bodyBlock);
+		GenerationContext subcontext = context.createBlock(exitLab,continueLab);
 
-		scopes.push(new LoopScope(continueLab, exitLab));
 		for (Stmt st : s.body) {
-			generate(st, environment, bodyBlock, forest, context);
+			generate(st, subcontext.createBlock());
 		}
-		scopes.pop(); // break
 
 		for (Expr condition : s.invariants) {
-			int invariant = generateInvariantBlock(condition, environment, forest, context);
-			bodyBlock.add(new Bytecode.Invariant(invariant), attributes(condition));
+			int invariant = generateInvariantBlock(condition, subcontext);
+			subcontext.add(new Bytecode.Invariant(invariant), attributes(condition));
 		}
 
-		bodyBlock.add(new Bytecode.Label(continueLab), attributes(s));
-		generateCondition(exitLab, invert(s.condition), environment, bodyBlock, forest, context);
+		subcontext.add(new Bytecode.Label(continueLab), attributes(s));
+		generateCondition(exitLab, invert(s.condition), subcontext);
 
-		block.add(new Bytecode.Loop(new int[] {}, body), attributes(s));
-		block.add(new Bytecode.Label(exitLab), attributes(s));
+		context.add(new Bytecode.Loop(new int[] {}, subcontext.blockIndex()), attributes(s));
+		context.add(new Bytecode.Label(exitLab), attributes(s));
 	}
 
 	// =========================================================================
@@ -1316,21 +1285,20 @@ public final class CodeGenerator {
 	 *            appended.
 	 * @return
 	 */
-	public void generateCondition(String target, Expr condition, Environment environment, BytecodeForest.Block block,
-			BytecodeForest forest, Context context) {
+	public void generateCondition(String target, Expr condition, GenerationContext context) {
 		try {
 
 			// First, we see whether or not we can employ a special handler for
 			// translating this condition.
 
 			if (condition instanceof Expr.Constant) {
-				generateCondition(target, (Expr.Constant) condition, environment, block, forest, context);
+				generateCondition(target, (Expr.Constant) condition, context);
 			} else if (condition instanceof Expr.UnOp) {
-				generateCondition(target, (Expr.UnOp) condition, environment, block, forest, context);
+				generateCondition(target, (Expr.UnOp) condition, context);
 			} else if (condition instanceof Expr.BinOp) {
-				generateCondition(target, (Expr.BinOp) condition, environment, block, forest, context);
+				generateCondition(target, (Expr.BinOp) condition, context);
 			} else if (condition instanceof Expr.Quantifier) {
-				generateCondition(target, (Expr.Quantifier) condition, environment, block, forest, context);
+				generateCondition(target, (Expr.Quantifier) condition, context);
 			} else if (condition instanceof Expr.ConstantAccess || condition instanceof Expr.LocalVariable
 					|| condition instanceof Expr.AbstractInvoke || condition instanceof Expr.AbstractIndirectInvoke
 					|| condition instanceof Expr.FieldAccess || condition instanceof Expr.IndexOf) {
@@ -1340,17 +1308,17 @@ public final class CodeGenerator {
 				// true. In some cases, we could actually do better. For
 				// example, !(x < 5) could be rewritten into x >= 5.
 
-				int result = generate(condition, environment, block, forest, context);
-				block.add(new Bytecode.If(Type.T_BOOL, result, target), attributes(condition));
+				int result = generate(condition, context);
+				context.add(new Bytecode.If(Type.T_BOOL, result, target), attributes(condition));
 
 			} else {
-				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, condition);
+				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context.enclosingDeclaration(), condition);
 			}
 
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
-			internalFailure(ex.getMessage(), context, condition, ex);
+			internalFailure(ex.getMessage(), context.enclosingDeclaration(), condition, ex);
 		}
 
 	}
@@ -1383,11 +1351,10 @@ public final class CodeGenerator {
 	 *            appended.
 	 * @return
 	 */
-	private void generateCondition(String target, Expr.Constant c, Environment environment, BytecodeForest.Block block,
-			BytecodeForest forest, Context context) {
+	private void generateCondition(String target, Expr.Constant c, GenerationContext context) {
 		Constant.Bool b = (Constant.Bool) c.value;
 		if (b.value()) {
-			block.add(new Bytecode.Goto(target));
+			context.add(new Bytecode.Goto(target));
 		} else {
 			// do nout
 		}
@@ -1413,49 +1380,48 @@ public final class CodeGenerator {
 	 *            appended.
 	 * @return
 	 */
-	private void generateCondition(String target, Expr.BinOp v, Environment environment, BytecodeForest.Block block,
-			BytecodeForest forest, Context context) throws Exception {
+	private void generateCondition(String target, Expr.BinOp v, GenerationContext context) throws Exception {
 
 		Expr.BOp bop = v.op;
 
 		if (bop == Expr.BOp.OR) {
-			generateCondition(target, v.lhs, environment, block, forest, context);
-			generateCondition(target, v.rhs, environment, block, forest, context);
+			generateCondition(target, v.lhs, context);
+			generateCondition(target, v.rhs, context);
 
 		} else if (bop == Expr.BOp.AND) {
 			String exitLabel = freshLabel();
-			generateCondition(exitLabel, invert(v.lhs), environment, block, forest, context);
-			generateCondition(target, v.rhs, environment, block, forest, context);
-			block.add(new Bytecode.Label(exitLabel));
+			generateCondition(exitLabel, invert(v.lhs), context);
+			generateCondition(target, v.rhs, context);
+			context.add(new Bytecode.Label(exitLabel));
 
 		} else if (bop == Expr.BOp.IS) {
-			generateTypeCondition(target, v, environment, block, forest, context);
+			generateTypeCondition(target, v, context);
 
 		} else {
 			if (bop == Expr.BOp.EQ && v.lhs instanceof Expr.LocalVariable && v.rhs instanceof Expr.Constant
 					&& ((Expr.Constant) v.rhs).value == Constant.Null) {
 				// this is a simple rewrite to enable type inference.
 				Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
-				if (environment.get(lhs.var) == null) {
-					syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
+				if (context.get(lhs.var) == null) {
+					syntaxError(errorMessage(UNKNOWN_VARIABLE), context.enclosingDeclaration(), v.lhs);
 				}
-				int slot = environment.get(lhs.var);
-				block.add(new Bytecode.IfIs(v.srcType.raw(), slot, Type.T_NULL, target), attributes(v));
+				int slot = context.get(lhs.var);
+				context.add(new Bytecode.IfIs(v.srcType.raw(), slot, Type.T_NULL, target), attributes(v));
 			} else if (bop == Expr.BOp.NEQ && v.lhs instanceof Expr.LocalVariable
 					&& v.rhs instanceof Expr.Constant && ((Expr.Constant) v.rhs).value == Constant.Null) {
 				// this is a simple rewrite to enable type inference.
 				String exitLabel = freshLabel();
 				Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
-				if (environment.get(lhs.var) == null) {
-					syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
+				if (context.get(lhs.var) == null) {
+					syntaxError(errorMessage(UNKNOWN_VARIABLE), context.enclosingDeclaration(), v.lhs);
 				}
-				int slot = environment.get(lhs.var);
-				block.add(new Bytecode.IfIs(v.srcType.raw(), slot, Type.T_NULL, exitLabel), attributes(v));
-				block.add(new Bytecode.Goto(target));
-				block.add(new Bytecode.Label(exitLabel));
+				int slot = context.get(lhs.var);
+				context.add(new Bytecode.IfIs(v.srcType.raw(), slot, Type.T_NULL, exitLabel), attributes(v));
+				context.add(new Bytecode.Goto(target));
+				context.add(new Bytecode.Label(exitLabel));
 			} else {
-				int result = generate(v, environment, block, forest, context);
-				block.add(new Bytecode.If(v.srcType.raw(), result, target), attributes(v));
+				int result = generate(v, context);
+				context.add(new Bytecode.If(v.srcType.raw(), result, target), attributes(v));
 			}
 		}
 	}
@@ -1484,8 +1450,7 @@ public final class CodeGenerator {
 	 *            appended.
 	 * @return
 	 */
-	private void generateTypeCondition(String target, Expr.BinOp condition, Environment environment,
-			BytecodeForest.Block block, BytecodeForest forest, Context context) throws Exception {
+	private void generateTypeCondition(String target, Expr.BinOp condition, GenerationContext context) throws Exception {
 		int leftOperand;
 
 		if (condition.lhs instanceof Expr.LocalVariable) {
@@ -1495,22 +1460,22 @@ public final class CodeGenerator {
 			// variable (since, otherwise, we'll retype the temporary but not
 			// the intended variable).
 			Expr.LocalVariable lhs = (Expr.LocalVariable) condition.lhs;
-			if (environment.get(lhs.var) == null) {
-				syntaxError(errorMessage(UNKNOWN_VARIABLE), context, condition.lhs);
+			if (context.get(lhs.var) == null) {
+				syntaxError(errorMessage(UNKNOWN_VARIABLE), context.enclosingDeclaration(), condition.lhs);
 			}
-			leftOperand = environment.get(lhs.var);
+			leftOperand = context.get(lhs.var);
 		} else {
 			// This is the general case whether the lhs is an arbitrary variable
 			// and, hence, retyping does not apply. Therefore, we can simply
 			// evaluate the lhs into a temporary register as per usual.
-			leftOperand = generate(condition.lhs, environment, block, forest, context);
+			leftOperand = generate(condition.lhs, context);
 		}
 
 		// Note, the type checker guarantees that the rhs is a type val, so the
 		// following cast is always safe.
 		Expr.TypeVal rhs = (Expr.TypeVal) condition.rhs;
 
-		block.add(new Bytecode.IfIs(condition.srcType.raw(), leftOperand, rhs.type.nominal(), target), attributes(condition));
+		context.add(new Bytecode.IfIs(condition.srcType.raw(), leftOperand, rhs.type.nominal(), target), attributes(condition));
 	}
 
 	/**
@@ -1536,8 +1501,7 @@ public final class CodeGenerator {
 	 *            appended.
 	 * @return
 	 */
-	private void generateCondition(String target, Expr.UnOp v, Environment environment, BytecodeForest.Block block,
-			BytecodeForest forest, Context context) {
+	private void generateCondition(String target, Expr.UnOp v, GenerationContext context) {
 		Expr.UOp uop = v.op;
 		switch (uop) {
 		case NOT:
@@ -1546,13 +1510,13 @@ public final class CodeGenerator {
 			// through case we branch to our true destination.
 
 			String label = freshLabel();
-			generateCondition(label, v.mhs, environment, block, forest, context);
-			block.add(new Bytecode.Goto(target));
-			block.add(new Bytecode.Label(label));
+			generateCondition(label, v.mhs, context);
+			context.add(new Bytecode.Goto(target));
+			context.add(new Bytecode.Label(label));
 			return;
 		default:
 			// Nothing else is a valud boolean condition here.
-			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, v);
+			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context.enclosingDeclaration(), v);
 		}
 	}
 
@@ -1577,55 +1541,53 @@ public final class CodeGenerator {
 	 *            appended.
 	 * @return
 	 */
-	private void generateCondition(String target, Expr.Quantifier e, Environment environment, BytecodeForest.Block block,
-			BytecodeForest forest, Context context) {
+	private void generateCondition(String target, Expr.Quantifier e, GenerationContext context) {
 
 		String exit = freshLabel();
-		generate(e.sources.iterator(), target, exit, e, environment, block, forest, context);
+		generate(e.sources.iterator(), target, exit, e, context);
 
 		switch (e.cop) {
 		case NONE:
-			block.add(new Bytecode.Goto(target));
-			block.add(new Bytecode.Label(exit));
+			context.add(new Bytecode.Goto(target));
+			context.add(new Bytecode.Label(exit));
 			break;
 		case SOME:
 			break;
 		case ALL:
-			block.add(new Bytecode.Goto(target));
-			block.add(new Bytecode.Label(exit));
+			context.add(new Bytecode.Goto(target));
+			context.add(new Bytecode.Label(exit));
 			break;
 		}
 	}
 
 	private void generate(Iterator<Triple<String, Expr, Expr>> srcIterator, String trueLabel, String falseLabel,
-			Expr.Quantifier e, Environment environment, BytecodeForest.Block block, BytecodeForest forest, Context context) {
+			Expr.Quantifier e, GenerationContext context) {
 
 		if (srcIterator.hasNext()) {
 			// This is the inductive case (i.e. an outer loop)
 			Triple<String, Expr, Expr> src = srcIterator.next();
 
 			// First, determine the src slot.
-			int varSlot = environment.allocate(Type.T_INT, src.first());
-			int startSlot = generate(src.second(), environment, block, forest, context);
-			int endSlot = generate(src.third(), environment, block, forest, context);
+			int varSlot = context.allocate(Type.T_INT, src.first());
+			int startSlot = generate(src.second(), context);
+			int endSlot = generate(src.third(), context);
 
 			// Second, recursively generate remaining parts
-			BytecodeForest.Block bodyBlock = new BytecodeForest.Block();
-			int body = forest.add(bodyBlock);
-			generate(srcIterator, trueLabel, falseLabel, e, environment, bodyBlock, forest, context);
+			GenerationContext subcontext = context.createBlock();
+			generate(srcIterator, trueLabel, falseLabel, e, subcontext);
 			// Finally, create the forall loop bytecode
-			block.add(new Bytecode.Quantify(startSlot, endSlot, varSlot, new int[0], body), attributes(e));
+			context.add(new Bytecode.Quantify(startSlot, endSlot, varSlot, new int[0], subcontext.blockIndex()), attributes(e));
 		} else {
 			// This is the base case (i.e. the innermost loop)
 			switch (e.cop) {
 			case NONE:
-				generateCondition(falseLabel, e.condition, environment, block, forest, context);
+				generateCondition(falseLabel, e.condition, context);
 				break;
 			case SOME:
-				generateCondition(trueLabel, e.condition, environment, block, forest, context);
+				generateCondition(trueLabel, e.condition, context);
 				break;
 			case ALL:
-				generateCondition(falseLabel, invert(e.condition), environment, block, forest, context);
+				generateCondition(falseLabel, invert(e.condition), context);
 				break;
 			}
 		}
@@ -1635,48 +1597,45 @@ public final class CodeGenerator {
 	// Multi-Expressions
 	// =========================================================================
 
-	public int[] generate(Expr.Multi expression, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	public int[] generate(Expr.Multi expression, GenerationContext context) {
 		List<Nominal> returns = expression.returns();
 		int[] targets = new int[returns.size()];
 		for (int i = 0; i != targets.length; ++i) {
-			targets[i] = environment.allocate(returns.get(i).raw());
+			targets[i] = context.allocate(returns.get(i).raw());
 		}
 		try {
 			if (expression instanceof Expr.FunctionOrMethodCall) {
 				Expr.FunctionOrMethodCall fmc = (Expr.FunctionOrMethodCall) expression;
-				generateStmt(fmc, environment, block, forest, context, targets);
+				generateStmt(fmc, context, targets);
 			} else if (expression instanceof Expr.IndirectFunctionOrMethodCall) {
 				Expr.IndirectFunctionOrMethodCall fmc = (Expr.IndirectFunctionOrMethodCall) expression;
-				generateStmt(fmc, environment, block, forest, context, targets);
+				generateStmt(fmc, context, targets);
 			} else {
 				// should be dead-code
-				internalFailure("unknown expression: " + expression.getClass().getName(), context, expression);
+				internalFailure("unknown expression: " + expression.getClass().getName(), context.enclosingDeclaration(), expression);
 			}
 		} catch (ResolveError rex) {
-			syntaxError(rex.getMessage(), context, expression, rex);
+			syntaxError(rex.getMessage(), context.enclosingDeclaration(), expression, rex);
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
-			internalFailure(ex.getMessage(), context, expression, ex);
+			internalFailure(ex.getMessage(), context.enclosingDeclaration(), expression, ex);
 		}
 		// done
 		return targets;
 	}
 
-	public void generateStmt(Expr.FunctionOrMethodCall expr, Environment environment, BytecodeForest.Block block,
-			BytecodeForest forest, Context context, int... targets) throws ResolveError {
+	public void generateStmt(Expr.FunctionOrMethodCall expr, GenerationContext context, int... targets) throws ResolveError {
 		//
-		int[] operands = generate(expr.arguments, environment, block, forest, context);
-		block.add(new Bytecode.Invoke(expr.type().nominal(), targets, operands, expr.nid()), attributes(expr));
+		int[] operands = generate(expr.arguments, context);
+		context.add(new Bytecode.Invoke(expr.type().nominal(), targets, operands, expr.nid()), attributes(expr));
 	}
 
-	public void generateStmt(Expr.IndirectFunctionOrMethodCall expr, Environment environment, BytecodeForest.Block block,
-			BytecodeForest forest, Context context, int... targets) throws ResolveError {
+	public void generateStmt(Expr.IndirectFunctionOrMethodCall expr, GenerationContext context, int... targets) throws ResolveError {
 		//
-		int operand = generate(expr.src, environment, block, forest, context);
-		int[] operands = generate(expr.arguments, environment, block, forest, context);
-		block.add(new Bytecode.IndirectInvoke(expr.type().raw(), targets, operand, operands), attributes(expr));
+		int operand = generate(expr.src, context);
+		int[] operands = generate(expr.arguments, context);
+		context.add(new Bytecode.IndirectInvoke(expr.type().raw(), targets, operand, operands), attributes(expr));
 	}
 
 	// =========================================================================
@@ -1698,95 +1657,89 @@ public final class CodeGenerator {
 	 *
 	 * @return --- the register
 	 */
-	public int generate(Expr expression, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	public int generate(Expr expression, GenerationContext context) {
 		try {
 			if (expression instanceof Expr.Constant) {
-				return generate((Expr.Constant) expression, environment, block, forest, context);
+				return generate((Expr.Constant) expression, context);
 			} else if (expression instanceof Expr.LocalVariable) {
-				return generate((Expr.LocalVariable) expression, environment, block, forest, context);
+				return generate((Expr.LocalVariable) expression, context);
 			} else if (expression instanceof Expr.ConstantAccess) {
-				return generate((Expr.ConstantAccess) expression, environment, block, forest, context);
+				return generate((Expr.ConstantAccess) expression, context);
 			} else if (expression instanceof Expr.ArrayInitialiser) {
-				return generate((Expr.ArrayInitialiser) expression, environment, block, forest, context);
+				return generate((Expr.ArrayInitialiser) expression, context);
 			} else if (expression instanceof Expr.ArrayGenerator) {
-				return generate((Expr.ArrayGenerator) expression, environment, block, forest, context);
+				return generate((Expr.ArrayGenerator) expression, context);
 			} else if (expression instanceof Expr.BinOp) {
-				return generate((Expr.BinOp) expression, environment, block, forest, context);
+				return generate((Expr.BinOp) expression, context);
 			} else if (expression instanceof Expr.Dereference) {
-				return generate((Expr.Dereference) expression, environment, block, forest, context);
+				return generate((Expr.Dereference) expression, context);
 			} else if (expression instanceof Expr.Cast) {
-				return generate((Expr.Cast) expression, environment, block, forest, context);
+				return generate((Expr.Cast) expression, context);
 			} else if (expression instanceof Expr.IndexOf) {
-				return generate((Expr.IndexOf) expression, environment, block, forest, context);
+				return generate((Expr.IndexOf) expression, context);
 			} else if (expression instanceof Expr.UnOp) {
-				return generate((Expr.UnOp) expression, environment, block, forest, context);
+				return generate((Expr.UnOp) expression, context);
 			} else if (expression instanceof Expr.FunctionOrMethodCall) {
-				return generate((Expr.FunctionOrMethodCall) expression, environment, block, forest, context);
+				return generate((Expr.FunctionOrMethodCall) expression, context);
 			} else if (expression instanceof Expr.IndirectFunctionCall) {
-				return generate((Expr.IndirectFunctionCall) expression, environment, block, forest, context);
+				return generate((Expr.IndirectFunctionCall) expression, context);
 			} else if (expression instanceof Expr.IndirectMethodCall) {
-				return generate((Expr.IndirectMethodCall) expression, environment, block, forest, context);
+				return generate((Expr.IndirectMethodCall) expression, context);
 			} else if (expression instanceof Expr.Quantifier) {
-				return generate((Expr.Quantifier) expression, environment, block, forest, context);
+				return generate((Expr.Quantifier) expression, context);
 			} else if (expression instanceof Expr.FieldAccess) {
-				return generate((Expr.FieldAccess) expression, environment, block, forest, context);
+				return generate((Expr.FieldAccess) expression, context);
 			} else if (expression instanceof Expr.Record) {
-				return generate((Expr.Record) expression, environment, block, forest, context);
+				return generate((Expr.Record) expression, context);
 			} else if (expression instanceof Expr.FunctionOrMethod) {
-				return generate((Expr.FunctionOrMethod) expression, environment, block, forest, context);
+				return generate((Expr.FunctionOrMethod) expression, context);
 			} else if (expression instanceof Expr.Lambda) {
-				return generate((Expr.Lambda) expression, environment, block, forest, context);
+				return generate((Expr.Lambda) expression, context);
 			} else if (expression instanceof Expr.New) {
-				return generate((Expr.New) expression, environment, block, forest, context);
+				return generate((Expr.New) expression, context);
 			} else {
 				// should be dead-code
-				internalFailure("unknown expression: " + expression.getClass().getName(), context, expression);
+				internalFailure("unknown expression: " + expression.getClass().getName(), context.enclosingDeclaration(), expression);
 			}
 		} catch (ResolveError rex) {
-			syntaxError(rex.getMessage(), context, expression, rex);
+			syntaxError(rex.getMessage(), context.enclosingDeclaration(), expression, rex);
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
-			internalFailure(ex.getMessage(), context, expression, ex);
+			internalFailure(ex.getMessage(), context.enclosingDeclaration(), expression, ex);
 		}
 
 		return -1; // deadcode
 	}
 
-	public int generate(Expr.FunctionOrMethodCall expr, Environment environment, BytecodeForest.Block block,
-			BytecodeForest forest, Context context) throws ResolveError {
-		int target = environment.allocate(expr.result().raw());
-		generateStmt(expr, environment, block, forest, context, target);
+	public int generate(Expr.FunctionOrMethodCall expr, GenerationContext context) throws ResolveError {
+		int target = context.allocate(expr.result().raw());
+		generateStmt(expr, context, target);
 		return target;
 	}
 
-	public int generate(Expr.IndirectFunctionOrMethodCall expr, Environment environment, BytecodeForest.Block block,
-			BytecodeForest forest, Context context) throws ResolveError {
-		int target = environment.allocate(expr.result().raw());
-		generateStmt(expr, environment, block, forest, context, target);
+	public int generate(Expr.IndirectFunctionOrMethodCall expr, GenerationContext context) throws ResolveError {
+		int target = context.allocate(expr.result().raw());
+		generateStmt(expr, context, target);
 		return target;
 	}
 
-	private int generate(Expr.Constant expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	private int generate(Expr.Constant expr, GenerationContext context) {
 		Constant val = expr.value;
-		int target = environment.allocate(val.type());
-		block.add(new Bytecode.Const(target, expr.value), attributes(expr));
+		int target = context.allocate(val.type());
+		context.add(new Bytecode.Const(target, expr.value), attributes(expr));
 		return target;
 	}
 
-	private int generate(Expr.FunctionOrMethod expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	private int generate(Expr.FunctionOrMethod expr, GenerationContext context) {
 		Type.FunctionOrMethod rawType = expr.type.raw();
 		Type.FunctionOrMethod nominalType = expr.type.nominal();
-		int target = environment.allocate(rawType);
-		block.add(new Bytecode.Lambda(nominalType, target, new int[0], expr.nid), attributes(expr));
+		int target = context.allocate(rawType);
+		context.add(new Bytecode.Lambda(nominalType, target, new int[0], expr.nid), attributes(expr));
 		return target;
 	}
 
-	private int generate(Expr.Lambda expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	private int generate(Expr.Lambda expr, GenerationContext context) {
 		Type.FunctionOrMethod tfm = expr.type.raw();
 		List<Type> tfm_params = tfm.params();
 		List<WhileyFile.Parameter> expr_params = expr.parameters;
@@ -1794,34 +1747,32 @@ public final class CodeGenerator {
 		// Create environment for the lambda body.
 		ArrayList<Integer> operands = new ArrayList<Integer>();
 		ArrayList<Type> paramTypes = new ArrayList<Type>();
-		BytecodeForest bodyForest = new BytecodeForest();
+		GenerationContext lambdaContext = new GenerationContext(context.enclosingDeclaration());
 		List<BytecodeForest.Register> declarations = bodyForest.registers();
-		Environment benv = new Environment();
+		
 		for (int i = 0; i != tfm_params.size(); ++i) {
 			Type type = tfm_params.get(i);
 			String name = expr_params.get(i).name;
-			benv.allocate(type, name);
+			lambdaContext.allocate(type, name);
 			paramTypes.add(type);
 			declarations.add(new BytecodeForest.Register(type, name));
 		}
-		for (Pair<Type, String> v : Exprs.uses(expr.body, context)) {
-			if (benv.get(v.second()) == null) {
+		for (Pair<Type, String> v : Exprs.uses(expr.body, context.enclosingDeclaration())) {
+			if (lambdaContext.get(v.second()) == null) {
 				Type type = v.first();
-				benv.allocate(type, v.second());
+				lambdaContext.allocate(type, v.second());
 				paramTypes.add(type);
-				operands.add(environment.get(v.second()));
+				operands.add(context.get(v.second()));
 				declarations.add(new BytecodeForest.Register(type, v.second()));
 			}
 		}
 		// Generate body based on current environment
 
-		BytecodeForest.Block bodyBlock = new BytecodeForest.Block();
-		bodyForest.addAsRoot(bodyBlock);
 		if (tfm.returns().isEmpty()) {
-			bodyBlock.add(new Bytecode.Return(), attributes(expr));
+			lambdaContext.add(new Bytecode.Return(), attributes(expr));
 		} else {
-			int target = generate(expr.body, benv, bodyBlock, bodyForest, context);
-			bodyBlock.add(new Bytecode.Return(tfm.returns().toArray(new Type[tfm.returns().size()]), target),
+			int target = generate(expr.body, lambdaContext);
+			lambdaContext.add(new Bytecode.Return(tfm.returns().toArray(new Type[tfm.returns().size()]), target),
 					attributes(expr));
 		}
 
@@ -1845,194 +1796,180 @@ public final class CodeGenerator {
 		String name = "$lambda" + id;
 		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
 		modifiers.add(Modifier.PRIVATE);
-		WyilFile.FunctionOrMethod lambda = new WyilFile.FunctionOrMethod(modifiers, name, cfm, bodyForest, 0, 0,
+		WyilFile.FunctionOrMethod lambda = new WyilFile.FunctionOrMethod(modifiers, name, cfm, lambdaContext.forest(), 0, 0,
 				attributes(expr));
 		lambdas.add(lambda);
 		Path.ID mid = context.file().module;
 		NameID nid = new NameID(mid, name);
 
 		// Finally, create the lambda
-		int target = environment.allocate(tfm);
-		block.add(new Bytecode.Lambda(cfm, target, toIntArray(operands), nid), attributes(expr));
+		int target = context.allocate(tfm);
+		context.add(new Bytecode.Lambda(cfm, target, toIntArray(operands), nid), attributes(expr));
 		return target;
 	}
 
-	private int generate(Expr.ConstantAccess expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) throws ResolveError {
+	private int generate(Expr.ConstantAccess expr, GenerationContext context) throws ResolveError {
 		Constant val = expr.value;
-		int target = environment.allocate(val.type());
-		block.add(new Bytecode.Const(target, val), attributes(expr));
+		int target = context.allocate(val.type());
+		context.add(new Bytecode.Const(target, val), attributes(expr));
 		return target;
 	}
 
-	private int generate(Expr.LocalVariable expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) throws ResolveError {
+	private int generate(Expr.LocalVariable expr, GenerationContext context) throws ResolveError {
 
-		if (environment.get(expr.var) != null) {
-			int target = environment.get(expr.var);
+		if (context.get(expr.var) != null) {
+			int target = context.get(expr.var);
 			Type type = expr.result().raw();
 			return target;
 		} else {
-			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), context, expr);
+			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), context.enclosingDeclaration(), expr);
 			return -1;
 		}
 	}
 
-	private int generate(Expr.UnOp expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
-		int[] operands = new int[] { generate(expr.mhs, environment, block, forest, context) };
-		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
+	private int generate(Expr.UnOp expr, GenerationContext context) {
+		int[] operands = new int[] { generate(expr.mhs, context) };
+		int[] targets = new int[] { context.allocate(expr.result().raw()) };
 		switch (expr.op) {
 		case NEG:
-			block.add(new Bytecode.Operator(expr.result().raw(), targets, operands, Bytecode.OperatorKind.NEG),
+			context.add(new Bytecode.Operator(expr.result().raw(), targets, operands, Bytecode.OperatorKind.NEG),
 					attributes(expr));
 			break;
 		case INVERT:
-			block.add(new Bytecode.Operator(expr.result().raw(), targets, operands, Bytecode.OperatorKind.BITWISEINVERT),
+			context.add(new Bytecode.Operator(expr.result().raw(), targets, operands, Bytecode.OperatorKind.BITWISEINVERT),
 					attributes(expr));
 			break;
 		case NOT:
-			block.add(new Bytecode.Operator(expr.result().raw(), targets, operands, Bytecode.OperatorKind.NOT),
+			context.add(new Bytecode.Operator(expr.result().raw(), targets, operands, Bytecode.OperatorKind.NOT),
 					attributes(expr));
 			break;
 		case ARRAYLENGTH:
-			block.add(new Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.ARRAYLENGTH), attributes(expr));
+			context.add(new Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.ARRAYLENGTH), attributes(expr));
 			break;
 		default:
 			// should be dead-code
-			internalFailure("unexpected unary operator encountered", context, expr);
+			internalFailure("unexpected unary operator encountered", context.enclosingDeclaration(), expr);
 			return -1;
 		}
 		return targets[0];
 	}
 
-	private int generate(Expr.Dereference expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
-		int[] operands = new int[] { generate(expr.src, environment, block, forest, context) };
-		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
-		block.add(new Bytecode.Operator(expr.srcType.raw(), targets, operands, Bytecode.OperatorKind.DEREFERENCE),
+	private int generate(Expr.Dereference expr, GenerationContext context) {
+		int[] operands = new int[] { generate(expr.src, context) };
+		int[] targets = new int[] { context.allocate(expr.result().raw()) };
+		context.add(new Bytecode.Operator(expr.srcType.raw(), targets, operands, Bytecode.OperatorKind.DEREFERENCE),
 				attributes(expr));
 		return targets[0];
 	}
 
-	private int generate(Expr.IndexOf expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
-		int[] operands = { generate(expr.src, environment, block, forest, context),
-				generate(expr.index, environment, block, forest, context) };
-		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
-		block.add(new Bytecode.Operator(expr.srcType.raw(), targets, operands, Bytecode.OperatorKind.ARRAYINDEX), attributes(expr));
+	private int generate(Expr.IndexOf expr, GenerationContext context) {
+		int[] operands = { generate(expr.src, context),
+				generate(expr.index, context) };
+		int[] targets = new int[] { context.allocate(expr.result().raw()) };
+		context.add(new Bytecode.Operator(expr.srcType.raw(), targets, operands, Bytecode.OperatorKind.ARRAYINDEX), attributes(expr));
 		return targets[0];
 	}
 
-	private int generate(Expr.Cast expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
-		int operand = generate(expr.expr, environment, block, forest, context);
+	private int generate(Expr.Cast expr, GenerationContext context) {
+		int operand = generate(expr.expr, context);
 		Type from = expr.expr.result().raw();
 		Type to = expr.result().raw();
-		int target = environment.allocate(to);
-		block.add(new Bytecode.Convert(from, target, operand, to), attributes(expr));
+		int target = context.allocate(to);
+		context.add(new Bytecode.Convert(from, target, operand, to), attributes(expr));
 		return target;
 	}
 
-	private int generate(Expr.BinOp v, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) throws Exception {
+	private int generate(Expr.BinOp v, GenerationContext context) throws Exception {
 		// could probably use a range test for this somehow
 		if(v.op == Expr.BOp.AND || v.op == Expr.BOp.OR) {
 			String trueLabel = freshLabel();
 			String exitLabel = freshLabel();
-			generateCondition(trueLabel, v, environment, block, forest, context);
-			int target = environment.allocate(Type.T_BOOL);
-			block.add(new Bytecode.Const(target, Constant.Bool(false)), attributes(v));
-			block.add(new Bytecode.Goto(exitLabel));
-			block.add(new Bytecode.Label(trueLabel));
-			block.add(new Bytecode.Const(target, Constant.Bool(true)), attributes(v));
-			block.add(new Bytecode.Label(exitLabel));
+			generateCondition(trueLabel, v, context);
+			int target = context.allocate(Type.T_BOOL);
+			context.add(new Bytecode.Const(target, Constant.Bool(false)), attributes(v));
+			context.add(new Bytecode.Goto(exitLabel));
+			context.add(new Bytecode.Label(trueLabel));
+			context.add(new Bytecode.Const(target, Constant.Bool(true)), attributes(v));
+			context.add(new Bytecode.Label(exitLabel));
 			return target;
 		} else {
 			Type result = v.result().raw();
-			int[] targets = new int[] { environment.allocate(result) };
+			int[] targets = new int[] { context.allocate(result) };
 			int[] operands = { 
-					generate(v.lhs, environment, block, forest, context),
-					generate(v.rhs, environment, block, forest, context) 
+					generate(v.lhs, context),
+					generate(v.rhs, context) 
 			};
 
-			block.add(new Bytecode.Operator(result, targets, operands, OP2BOP(v.op, v, context)), attributes(v));
+			context.add(new Bytecode.Operator(result, targets, operands, OP2BOP(v.op, v, context.enclosingDeclaration())), attributes(v));
 
 			return targets[0];
 		}
 	}
 
-	private int generate(Expr.ArrayInitialiser expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
-		int[] operands = generate(expr.arguments, environment, block, forest, context);
-		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
-		block.add(new Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.ARRAYCONSTRUCTOR),
+	private int generate(Expr.ArrayInitialiser expr, GenerationContext context) {
+		int[] operands = generate(expr.arguments, context);
+		int[] targets = new int[] { context.allocate(expr.result().raw()) };
+		context.add(new Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.ARRAYCONSTRUCTOR),
 				attributes(expr));
 		return targets[0];
 	}
 
-	private int generate(Expr.ArrayGenerator expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
-		int[] operands = new int[] { generate(expr.element, environment, block, forest, context),
-				generate(expr.count, environment, block, forest, context) };
-		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
-		block.add(new Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.ARRAYGENERATOR), attributes(expr));
+	private int generate(Expr.ArrayGenerator expr, GenerationContext context) {
+		int[] operands = new int[] { generate(expr.element, context),
+				generate(expr.count, context) };
+		int[] targets = new int[] { context.allocate(expr.result().raw()) };
+		context.add(new Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.ARRAYGENERATOR), attributes(expr));
 		return targets[0];
 	}
 
-	private int generate(Expr.Quantifier e, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	private int generate(Expr.Quantifier e, GenerationContext context) {
 		String trueLabel = freshLabel();
 		String exitLabel = freshLabel();
-		generateCondition(trueLabel, e, environment, block, forest, context);
-		int target = environment.allocate(Type.T_BOOL);
-		block.add(new Bytecode.Const(target, Constant.Bool(false)), attributes(e));
-		block.add(new Bytecode.Goto(exitLabel));
-		block.add(new Bytecode.Label(trueLabel));
-		block.add(new Bytecode.Const(target, Constant.Bool(true)), attributes(e));
-		block.add(new Bytecode.Label(exitLabel));
+		generateCondition(trueLabel, e, context);
+		int target = context.allocate(Type.T_BOOL);
+		context.add(new Bytecode.Const(target, Constant.Bool(false)), attributes(e));
+		context.add(new Bytecode.Goto(exitLabel));
+		context.add(new Bytecode.Label(trueLabel));
+		context.add(new Bytecode.Const(target, Constant.Bool(true)), attributes(e));
+		context.add(new Bytecode.Label(exitLabel));
 		return target;
 	}
 
-	private int generate(Expr.Record expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	private int generate(Expr.Record expr, GenerationContext context) {
 		ArrayList<String> keys = new ArrayList<String>(expr.fields.keySet());
 		Collections.sort(keys);
 		int[] operands = new int[expr.fields.size()];
 		for (int i = 0; i != operands.length; ++i) {
 			String key = keys.get(i);
 			Expr arg = expr.fields.get(key);
-			operands[i] = generate(arg, environment, block, forest, context);
+			operands[i] = generate(arg, context);
 		}
-		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
-		block.add(new Bytecode.Operator(expr.result().raw(), targets, operands, Bytecode.OperatorKind.RECORDCONSTRUCTOR),
+		int[] targets = new int[] { context.allocate(expr.result().raw()) };
+		context.add(new Bytecode.Operator(expr.result().raw(), targets, operands, Bytecode.OperatorKind.RECORDCONSTRUCTOR),
 				attributes(expr));
 		return targets[0];
 	}
 
-	private int generate(Expr.FieldAccess expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
-		int operand = generate(expr.src, environment, block, forest, context);
-		int target = environment.allocate(expr.result().raw());
-		block.add(new Bytecode.FieldLoad((Type.EffectiveRecord) expr.srcType.raw(), target, operand, expr.name),
+	private int generate(Expr.FieldAccess expr, GenerationContext context) {
+		int operand = generate(expr.src, context);
+		int target = context.allocate(expr.result().raw());
+		context.add(new Bytecode.FieldLoad((Type.EffectiveRecord) expr.srcType.raw(), target, operand, expr.name),
 				attributes(expr));
 		return target;
 	}
 
-	private int generate(Expr.New expr, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) throws ResolveError {
-		int[] operands = new int[] { generate(expr.expr, environment, block, forest, context) };
-		int[] targets = new int[] { environment.allocate(expr.result().raw()) };
-		block.add(new Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.NEW));
+	private int generate(Expr.New expr, GenerationContext context) throws ResolveError {
+		int[] operands = new int[] { generate(expr.expr, context) };
+		int[] targets = new int[] { context.allocate(expr.result().raw()) };
+		context.add(new Bytecode.Operator(expr.type.raw(), targets, operands, Bytecode.OperatorKind.NEW));
 		return targets[0];
 	}
 
-	private int[] generate(List<Expr> arguments, Environment environment, BytecodeForest.Block block, BytecodeForest forest,
-			Context context) {
+	private int[] generate(List<Expr> arguments, GenerationContext context) {
 		int[] operands = new int[arguments.size()];
 		for (int i = 0; i != operands.length; ++i) {
 			Expr arg = arguments.get(i);
-			operands[i] = generate(arg, environment, block, forest, context);
+			operands[i] = generate(arg, context);
 		}
 		return operands;
 	}
@@ -2238,6 +2175,120 @@ public final class CodeGenerator {
 		return "blklab" + _idx++;
 	}
 
+	private static final class GenerationContext {
+		/**
+		 * Maps variables to their WyIL register number and type.
+		 */
+		private final Environment environment;
+		/**
+		 * The outermost forest (needed for creating new subblocks).
+		 */
+		private final BytecodeForest forest;
+		/**
+		 * The enclosing source file context (needed for error reporting)
+		 */
+		private final WhileyFile.Context context;
+		/**
+		 * The enclosing bytecode block into which bytecodes are being written.
+		 */
+		private final BytecodeForest.Block block;		
+		/**
+		 * Get the index of the bytecode block into which bytecodes are being written
+		 */
+		private final int blockIndex;
+		
+		/**
+		 * Get the target for any continue statement encountered
+		 */
+		private final String continueLabel;
+		
+		/**
+		 * Get the target for any break statement encountered
+		 */
+		private final String breakLabel;
+		
+		public GenerationContext(WhileyFile.Context context) {
+			this(new Environment(), new BytecodeForest(), context, -1);
+		}
+		
+		private GenerationContext(Environment environment, BytecodeForest forest, WhileyFile.Context context, int blockIndex) {
+			this(environment,forest,context,blockIndex,null,null);
+		}
+		
+		private GenerationContext(Environment environment, BytecodeForest forest, WhileyFile.Context context,
+				int blockIndex, String breakLabel, String continueLabel) {
+			this.environment = environment;
+			this.forest = forest;
+			this.context = context;
+			this.blockIndex = blockIndex;			
+			this.block = blockIndex == -1 ? null : forest.get(blockIndex);
+			this.breakLabel = breakLabel;
+			this.continueLabel = continueLabel;
+		}
+		
+		public int blockIndex() {
+			return blockIndex;
+		}
+		
+		public BytecodeForest forest() {
+			return forest;
+		}
+		
+		public WhileyFile.Context enclosingDeclaration() {
+			return context;
+		}
+		
+		public String getBreakLabel() {
+			return breakLabel;
+		}
+		
+		public String getContinueLabel() {
+			return breakLabel;
+		}
+		
+		public Nominal.FunctionOrMethod getEnclosingFunctionType() {
+			WhileyFile.FunctionOrMethod m = (WhileyFile.FunctionOrMethod) context;
+			return m.resolvedType();
+		}
+		
+		public Integer get(String name) {
+			return environment.get(name);
+		}	
+		
+		public int allocate(Type t) {
+			return environment.allocate(t);
+		}
+		
+		public int allocate(Type t, String name) {
+			return environment.allocate(t,name);
+		}
+		
+		public void add(Bytecode b) {
+			block.add(b);
+		}
+		
+		public void add(Bytecode b, List<wyil.lang.Attribute> attributes) {
+			block.add(b,attributes);
+		}		
+			
+		public GenerationContext createRootBlock() {
+			BytecodeForest.Block block = new BytecodeForest.Block();
+			int index = forest.addAsRoot(block);
+			return new GenerationContext(environment,forest,context,index);
+		}
+		
+		public GenerationContext createBlock() {
+			BytecodeForest.Block block = new BytecodeForest.Block();
+			int index = forest.add(block);
+			return new GenerationContext(environment,forest,context,index);
+		}
+		
+		public GenerationContext createBlock(String breakLabel, String continueLabel) {
+			BytecodeForest.Block block = new BytecodeForest.Block();
+			int index = forest.add(block);
+			return new GenerationContext(environment,forest,context,index,breakLabel,continueLabel);
+		}
+	}
 	
 	/**
 	 * Maintains a mapping from Variable names to their allocated register slot,
@@ -2309,48 +2360,6 @@ public final class CodeGenerator {
 
 		public String toString() {
 			return idx2type.toString() + "," + var2idx.toString();
-		}
-	}
-
-	private <T extends Scope> T findEnclosingScope(Class<T> c) {
-		for (int i = scopes.size() - 1; i >= 0; --i) {
-			Scope s = scopes.get(i);
-			if (c.isInstance(s)) {
-				return (T) s;
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Respresents the scope of a statement or block (e.g. for a While or For
-	 * loop). The allows additional information to be retained about that scope
-	 * and passed down to statements which need it (e.g. break / continued
-	 * statements). It also allows such statements to determine what the
-	 * "nearest" enclosing scope is.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	private abstract class Scope {
-	}
-
-	/**
-	 * A scope representing a given loop statement, allowing contained
-	 * statements to determine where the break and continue statements should be
-	 * directed.
-	 *
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	private class LoopScope extends Scope {
-		public final String continueLabel;
-		public final String breakLabel;
-
-		public LoopScope(String cl, String bl) {
-			continueLabel = cl;
-			breakLabel = bl;
 		}
 	}
 }
