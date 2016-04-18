@@ -322,7 +322,7 @@ public class VcGenerator {
 	public List<VcBranch> transform(VcBranch branch, CodeForest.Index root, boolean isInvariant, Type[] environment,
 			CodeForest forest) {
 		// Construct the label map which is needed for conditional branches
-		Map<String, CodeForest.Index> labels = CodeUtils.buildLabelMap(forest);
+		Map<String, CodeForest.Index> labels = Bytecode.buildLabelMap(forest);
 		Pair<VcBranch, List<VcBranch>> p = transform(root.block(), 0, null, branch, false, isInvariant, environment,
 				labels, forest);
 		// Ok, return list of exit branches

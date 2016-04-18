@@ -33,8 +33,6 @@ import wycc.util.Pair;
 import wyil.lang.Bytecode.Branching;
 import wyil.lang.Bytecode.Compound;
 
-import static wyil.lang.CodeUtils.*;
-
 /**
  * Represents a WyIL bytecode. The Whiley Intermediate Language (WyIL) employs
  * register-based bytecodes (as opposed to e.g. the Java Virtual Machine, which
@@ -1872,6 +1870,43 @@ public abstract class Bytecode {
 	// =============================================================
 	// Helpers
 	// =============================================================
+
+
+	/**
+	 * Construct a mapping from labels to their block indices within a root
+	 * block. This is useful so they can easily be resolved during the
+	 * subsequent traversal of the block.
+	 * 
+	 * @param block
+	 * @return
+	 */
+	public static Map<String, CodeForest.Index> buildLabelMap(CodeForest forest) {
+		HashMap<String, CodeForest.Index> labels = new HashMap<String, CodeForest.Index>();
+		for (int i = 0; i != forest.numBlocks(); ++i) {
+			CodeForest.Block block = forest.get(i);
+			for (int j = 0; j != block.size(); ++j) {
+				Bytecode code = block.get(j).code();
+				if (code instanceof Bytecode.Label) {
+					// Found a label, so register it in the labels map
+					Bytecode.Label label = (Bytecode.Label) code;
+					labels.put(label.label(), new CodeForest.Index(i, j));
+				}
+			}
+		}
+		return labels;
+	}
+	
+	private static String arrayToString(int... operands) {
+		String r = "(";
+		for (int i = 0; i != operands.length; ++i) {
+			if (i != 0) {
+				r = r + ", ";
+			}
+			r = r + "%" + operands[i];			
+		}
+		return r + ")";
+	}
+
 	private static int[] append(int[] operands, int operand) {
 		int[] noperands = Arrays.copyOf(operands, operands.length + 1);
 		noperands[operands.length] = operand;

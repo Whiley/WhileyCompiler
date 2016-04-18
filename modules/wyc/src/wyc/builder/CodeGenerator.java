@@ -291,7 +291,7 @@ public final class CodeGenerator {
 	private int generateInvariantBlock(Expr invariant, Environment environment, CodeForest forest, Context context) {
 		CodeForest.Block precondition = new CodeForest.Block();
 		int index = forest.add(precondition);
-		String endLab = CodeUtils.freshLabel();
+		String endLab = freshLabel();
 		generateCondition(endLab, invariant, environment, precondition, forest, context);
 		precondition.add(new Bytecode.Fail(), attributes(invariant));
 		precondition.add(new Bytecode.Label(endLab));
@@ -638,7 +638,7 @@ public final class CodeGenerator {
 		// First, create assert block body
 		CodeForest.Block subblock = new CodeForest.Block();
 		int body = forest.add(subblock);
-		String endLab = CodeUtils.freshLabel();
+		String endLab = freshLabel();
 		generateCondition(endLab, s.expr, environment, subblock, forest, context);
 		subblock.add(new Bytecode.Fail(), attributes(s.expr));
 		subblock.add(new Bytecode.Label(endLab));
@@ -667,7 +667,7 @@ public final class CodeGenerator {
 		// First, create assume block body
 		CodeForest.Block subblock = new CodeForest.Block();
 		int body = forest.add(subblock);
-		String endLab = CodeUtils.freshLabel();
+		String endLab = freshLabel();
 		generateCondition(endLab, s.expr, environment, subblock, forest, context);
 		subblock.add(new Bytecode.Fail(), attributes(s.expr));
 		subblock.add(new Bytecode.Label(endLab));
@@ -871,8 +871,8 @@ public final class CodeGenerator {
 	private void generate(Stmt.IfElse s, Environment environment, CodeForest.Block block, CodeForest forest,
 			Context context) {
 
-		String falseLab = CodeUtils.freshLabel();
-		String exitLab = s.falseBranch.isEmpty() ? falseLab : CodeUtils.freshLabel();
+		String falseLab = freshLabel();
+		String exitLab = s.falseBranch.isEmpty() ? falseLab : freshLabel();
 
 		generateCondition(falseLab, invert(s.condition), environment, block, forest, context);
 
@@ -1057,7 +1057,7 @@ public final class CodeGenerator {
 	 */
 	private void generate(Stmt.Switch s, Environment environment, CodeForest.Block block, CodeForest forest,
 			Context context) throws Exception {
-		String exitLab = CodeUtils.freshLabel();
+		String exitLab = freshLabel();
 		int operand = generate(s.expr, environment, block, forest, context);
 		String defaultTarget = exitLab;
 		HashSet<Constant> values = new HashSet<>();
@@ -1072,7 +1072,7 @@ public final class CodeGenerator {
 				if (defaultTarget != exitLab) {
 					WhileyFile.syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL), context, c);
 				} else {
-					defaultTarget = CodeUtils.freshLabel();
+					defaultTarget = freshLabel();
 					block.add(new Bytecode.Label(defaultTarget), attributes(c));
 					for (Stmt st : c.stmts) {
 						generate(st, environment, block, forest, context);
@@ -1081,7 +1081,7 @@ public final class CodeGenerator {
 				}
 
 			} else if (defaultTarget == exitLab) {
-				String target = CodeUtils.freshLabel();
+				String target = freshLabel();
 				block.add(new Bytecode.Label(target), attributes(c));
 
 				// Case statements in Whiley may have multiple matching constant
@@ -1162,10 +1162,10 @@ public final class CodeGenerator {
 		// A label marking where execution continues after the while
 		// loop finishes. Used when the loop condition evaluates to false
 		// or when a break statement is encountered.
-		String exitLab = CodeUtils.freshLabel();
+		String exitLab = freshLabel();
 		// A label marking the end of the current loop iteration. Used
 		// by the continue statement.
-		String continueLab = CodeUtils.freshLabel();
+		String continueLab = freshLabel();
 
 		CodeForest.Block bodyBlock = new CodeForest.Block();
 		int body = forest.add(bodyBlock);
@@ -1235,10 +1235,10 @@ public final class CodeGenerator {
 		// A label marking where execution continues after the do-while
 		// loop finishes. Used when the loop condition evaluates to false
 		// or when a break statement is encountered.
-		String exitLab = CodeUtils.freshLabel();
+		String exitLab = freshLabel();
 		// A label marking the end of the current loop iteration. Used
 		// by the continue statement.
-		String continueLab = CodeUtils.freshLabel();
+		String continueLab = freshLabel();
 
 		CodeForest.Block bodyBlock = new CodeForest.Block();
 		int body = forest.add(bodyBlock);
@@ -1423,7 +1423,7 @@ public final class CodeGenerator {
 			generateCondition(target, v.rhs, environment, block, forest, context);
 
 		} else if (bop == Expr.BOp.AND) {
-			String exitLabel = CodeUtils.freshLabel();
+			String exitLabel = freshLabel();
 			generateCondition(exitLabel, invert(v.lhs), environment, block, forest, context);
 			generateCondition(target, v.rhs, environment, block, forest, context);
 			block.add(new Bytecode.Label(exitLabel));
@@ -1444,7 +1444,7 @@ public final class CodeGenerator {
 			} else if (bop == Expr.BOp.NEQ && v.lhs instanceof Expr.LocalVariable
 					&& v.rhs instanceof Expr.Constant && ((Expr.Constant) v.rhs).value == Constant.V_NULL) {
 				// this is a simple rewrite to enable type inference.
-				String exitLabel = CodeUtils.freshLabel();
+				String exitLabel = freshLabel();
 				Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
 				if (environment.get(lhs.var) == null) {
 					syntaxError(errorMessage(UNKNOWN_VARIABLE), context, v.lhs);
@@ -1545,7 +1545,7 @@ public final class CodeGenerator {
 			// its true destination to a temporary label. Then, for the fall
 			// through case we branch to our true destination.
 
-			String label = CodeUtils.freshLabel();
+			String label = freshLabel();
 			generateCondition(label, v.mhs, environment, block, forest, context);
 			block.add(new Bytecode.Goto(target));
 			block.add(new Bytecode.Label(label));
@@ -1580,7 +1580,7 @@ public final class CodeGenerator {
 	private void generateCondition(String target, Expr.Quantifier e, Environment environment, CodeForest.Block block,
 			CodeForest forest, Context context) {
 
-		String exit = CodeUtils.freshLabel();
+		String exit = freshLabel();
 		generate(e.sources.iterator(), target, exit, e, environment, block, forest, context);
 
 		switch (e.cop) {
@@ -1938,8 +1938,8 @@ public final class CodeGenerator {
 			Context context) throws Exception {
 		// could probably use a range test for this somehow
 		if(v.op == Expr.BOp.AND || v.op == Expr.BOp.OR) {
-			String trueLabel = CodeUtils.freshLabel();
-			String exitLabel = CodeUtils.freshLabel();
+			String trueLabel = freshLabel();
+			String exitLabel = freshLabel();
 			generateCondition(trueLabel, v, environment, block, forest, context);
 			int target = environment.allocate(Type.T_BOOL);
 			block.add(new Bytecode.Const(target, Constant.V_BOOL(false)), attributes(v));
@@ -1982,8 +1982,8 @@ public final class CodeGenerator {
 
 	private int generate(Expr.Quantifier e, Environment environment, CodeForest.Block block, CodeForest forest,
 			Context context) {
-		String trueLabel = CodeUtils.freshLabel();
-		String exitLabel = CodeUtils.freshLabel();
+		String trueLabel = freshLabel();
+		String exitLabel = freshLabel();
 		generateCondition(trueLabel, e, environment, block, forest, context);
 		int target = environment.allocate(Type.T_BOOL);
 		block.add(new Bytecode.Const(target, Constant.V_BOOL(false)), attributes(e));
@@ -2225,13 +2225,19 @@ public final class CodeGenerator {
 		return list;
 	}
 
-	public int[] toIntArray(List<Integer> items) {
+	private int[] toIntArray(List<Integer> items) {
 		int[] arr = new int[items.size()];
 		for(int i=0;i!=arr.length;++i) {
 			arr[i] = items.get(i);
 		}
 		return arr;
 	}
+	
+	private static int _idx=0;
+	public static String freshLabel() {
+		return "blklab" + _idx++;
+	}
+
 	
 	/**
 	 * Maintains a mapping from Variable names to their allocated register slot,

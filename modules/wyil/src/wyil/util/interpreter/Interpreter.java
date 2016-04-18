@@ -893,7 +893,7 @@ public class Interpreter {
 
 		public CodeForest.Index getLabel(String label) {
 			if (labels == null) {
-				labels = CodeUtils.buildLabelMap(forest);
+				labels = Bytecode.buildLabelMap(forest);
 			}
 			return labels.get(label);
 		}
