@@ -8,7 +8,7 @@ function extract(int[] ls) -> nat[]:
         where all { j in 0..|r| | r[j] >= 0 }:
         //
         if ls[i] < 0:
-            r[i] = -ls[i]
+            r[i] = -(ls[i])
         else:
             r[i] = ls[i]
         i = i + 1

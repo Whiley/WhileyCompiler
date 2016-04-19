@@ -6,7 +6,7 @@ requires |bits| == 8
 // Postcondition: return a byte as well
 ensures |r| == 8
 // Postcondition: every bit must be inverted
-ensures all { i in 0 .. 8 | r[i] == !bits[i] }:
+ensures all { i in 0 .. 8 | r[i] == !(bits[i]) }:
     //
     int i = 0
     bool[] ret = bits
@@ -15,9 +15,9 @@ ensures all { i in 0 .. 8 | r[i] == !bits[i] }:
     // i is non-negative, and size of bits unchanged
     where i >= 0 && |ret| == |bits| && i <= |bits|
     // Every bit upto i is inverted now
-    where all { j in 0 .. i | ret[j] == !bits[j] }:
+    where all { j in 0 .. i | ret[j] == !(bits[j]) }:
         //
-        ret[i] = !bits[i]
+        ret[i] = !(bits[i])
         i = i + 1
     //
     return ret

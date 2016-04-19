@@ -1,0 +1,3 @@
+../../tests/invalid/LogicalNot_Invalid_2.whiley:2: expected type bool, found bool[]
+    assume ![false][0]
+            ^^^^^^^
