@@ -1,5 +1,5 @@
 method f(any this) :
-    debug a
+    debug this
 
 method g() :
     f(x)

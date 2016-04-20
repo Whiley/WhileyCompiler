@@ -36,9 +36,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.sun.org.apache.bcel.internal.Constants;
+
 import wyc.lang.*;
 import wyc.lang.Expr.ConstantAccess;
 import wyc.io.WhileyFileLexer.Token;
+import static wyil.util.ErrorMessages.*;
 import static wyc.io.WhileyFileLexer.Token.Kind.*;
 import static wycc.lang.SyntaxError.*;
 import wyc.lang.WhileyFile.*;
@@ -1241,6 +1244,7 @@ public class WhileyFileParser {
 			// with the appropriate level of indent.
 			//
 			ArrayList<Stmt.Case> cases = new ArrayList<Stmt.Case>();
+			
 			Indent nextIndent;
 			while ((nextIndent = getIndent()) != null
 					&& indent.lessThanEq(nextIndent)) {
@@ -1257,11 +1261,29 @@ public class WhileyFileParser {
 				// Second, parse the actual case statement at this point!
 				cases.add(parseCaseStatement(wf, environment, indent));
 			}
-
+			checkForDuplicateDefault(cases);
 			return cases;
 		}
 	}
 
+	/**
+	 * Check whether we have a duplicate default statement, or a case which
+	 * occurs after a default statement (and, hence, is unreachable).
+	 * 
+	 * @param cases
+	 */
+	private void checkForDuplicateDefault(List<Stmt.Case> cases) {
+		boolean hasDefault = false;
+		for(Stmt.Case c: cases) {
+			if(c.expr.size() > 0 && hasDefault) {
+				syntaxError(errorMessage(UNREACHABLE_CODE), c);					
+			} else if(c.expr.size() == 0 && hasDefault) {
+				syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL), c);
+			} else {
+				hasDefault = c.expr.size() == 0;
+			}
+		}
+	}
 	/**
 	 * Parse a case Statement, which has the form:
 	 *
@@ -2779,7 +2801,7 @@ public class WhileyFileParser {
 			Token n = match(Identifier);
 			// Check field name is unique
 			if (keys.contains(n.text)) {
-				syntaxError("duplicate tuple key", n);
+				syntaxError("duplicate record key", n);
 			}
 			match(Colon);
 			// Parse expression being assigned to field
