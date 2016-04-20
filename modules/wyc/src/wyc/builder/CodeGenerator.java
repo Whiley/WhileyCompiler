@@ -787,11 +787,7 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generate(Stmt.Break s, EnclosingScope scope) {
-		String breakLabel = scope.getBreakLabel();
-		if (breakLabel == null) {
-			// FIXME: this should be located elsewhere
-			WhileyFile.syntaxError(errorMessage(BREAK_OUTSIDE_SWITCH_OR_LOOP), scope.getSourceContext(), s);
-		}
+		String breakLabel = scope.getBreakLabel();		
 		scope.add(new Bytecode.Goto(breakLabel));
 	}
 
@@ -838,10 +834,7 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generate(Stmt.Continue s, EnclosingScope scope) {
-		String continueLabel = scope.getContinueLabel();
-		if (continueLabel == null) {
-			WhileyFile.syntaxError(errorMessage(CONTINUE_OUTSIDE_LOOP), scope.getSourceContext(), s);
-		}
+		String continueLabel = scope.getContinueLabel();		
 		scope.add(new Bytecode.Goto(continueLabel));
 	}
 
@@ -903,7 +896,7 @@ public final class CodeGenerator {
 		// FIXME: the following check should really occur earlier in the
 		// pipeline. However, it is difficult to do it earlier because it's only
 		// after FlowTypeChecker that we have determined the concrete values.
-		// See #6
+		// See #628
 		checkNoDuplicateLabels(s.cases,scope);
 		
 		for (Stmt.Case c : s.cases) {
@@ -953,7 +946,7 @@ public final class CodeGenerator {
 	}
 
 	/**
-	 * Check that not two case statements have the same constant label
+	 * Check that not two case statements have the same constant label.  
 	 * 
 	 * @param cases
 	 * @param indent
@@ -967,14 +960,7 @@ public final class CodeGenerator {
 		for(int i=0;i!=cases.size();++i) {
 			Stmt.Case caseBlock = cases.get(i);
 			List<Constant> caseLabels = caseBlock.constants;
-			if(caseLabels == null) {
-				// Default case
-				if (labels.contains(null)) {
-					WhileyFile.syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL), scope.getSourceContext(), caseBlock);
-				} else {
-					labels.add(null);
-				}
-			} else {
+			if(caseLabels != null) {
 				for (int j = 0; j != caseLabels.size(); ++j) {
 					Constant c = caseLabels.get(j);
 					if (labels.contains(c)) {
