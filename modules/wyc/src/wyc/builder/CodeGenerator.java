@@ -28,7 +28,6 @@ package wyc.builder;
 import java.util.*;
 
 import static wyc.lang.WhileyFile.internalFailure;
-import static wyc.lang.WhileyFile.syntaxError;
 import static wyil.util.ErrorMessages.*;
 import wyc.lang.*;
 import wyc.lang.Stmt.*;
@@ -330,11 +329,11 @@ public final class CodeGenerator {
 				WhileyFile.internalFailure("unknown statement: " + stmt.getClass().getName(), scope.getSourceContext(), stmt);
 			}
 		} catch (ResolveError rex) {
-			WhileyFile.syntaxError(rex.getMessage(), scope.getSourceContext(), stmt, rex);
+			internalFailure(rex.getMessage(), scope.getSourceContext(), stmt, rex);
 		} catch (SyntaxError sex) {
 			throw sex;
 		} catch (Exception ex) {
-			WhileyFile.internalFailure(ex.getMessage(), scope.getSourceContext(), stmt, ex);
+			internalFailure(ex.getMessage(), scope.getSourceContext(), stmt, ex);
 		}
 	}
 
@@ -474,7 +473,7 @@ public final class CodeGenerator {
 			scope.add(new Bytecode.Update(lhs.type.raw(), target, toIntArray(operands), operand, lhs.afterType.raw(),
 					fields), attributes(lval));
 		} else {
-			WhileyFile.syntaxError("invalid assignment", scope.getSourceContext(), lval);
+			internalFailure("invalid assignment", scope.getSourceContext(), lval);
 		}
 	}
 
@@ -515,15 +514,12 @@ public final class CodeGenerator {
 			Expr.AssignedVariable l = extractLVal(la.src, fields, operands, scope);
 			operands.add(operand);
 			return l;
-		} else if (e instanceof Expr.FieldAccess) {
+		} else {
 			Expr.FieldAccess ra = (Expr.FieldAccess) e;
 			Expr.AssignedVariable r = extractLVal(ra.src, fields, operands, scope);
 			fields.add(ra.name);
 			return r;
-		} else {
-			WhileyFile.syntaxError(errorMessage(INVALID_LVAL_EXPRESSION), scope.getSourceContext(), e);
-			return null; // dead code
-		}
+		} 
 	}
 
 	/**
@@ -901,29 +897,29 @@ public final class CodeGenerator {
 		String exitLab = freshLabel();
 		int operand = generate(s.expr, scope);
 		String defaultTarget = exitLab;
-		HashSet<Constant> values = new HashSet<>();
 		ArrayList<Pair<Constant, String>> cases = new ArrayList<>();
 		int start = scope.getBlock().size();
 
+		// FIXME: the following check should really occur earlier in the
+		// pipeline. However, it is difficult to do it earlier because it's only
+		// after FlowTypeChecker that we have determined the concrete values.
+		// See #6
+		checkNoDuplicateLabels(s.cases,scope);
+		
 		for (Stmt.Case c : s.cases) {
 			if (c.expr.isEmpty()) {
 				// A case with an empty match represents the default label. We
 				// must check that we have not already seen a case with an empty
 				// match (otherwise, we'd have two default labels ;)
-				if (defaultTarget != exitLab) {
-					WhileyFile.syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL), scope.getSourceContext(), c);
-				} else {
-					defaultTarget = freshLabel();
-					scope.add(new Bytecode.Label(defaultTarget), attributes(c));
-					// We need to clone the scope here to isolate variables
-					// declared in the default block from the enclosing scope
-					EnclosingScope defaultScope = scope.clone();
-					for (Stmt st : c.stmts) {
-						generate(st, defaultScope);
-					}
-					scope.add(new Bytecode.Goto(exitLab), attributes(c));
+				defaultTarget = freshLabel();
+				scope.add(new Bytecode.Label(defaultTarget), attributes(c));
+				// We need to clone the scope here to isolate variables
+				// declared in the default block from the enclosing scope
+				EnclosingScope defaultScope = scope.clone();
+				for (Stmt st : c.stmts) {
+					generate(st, defaultScope);
 				}
-
+				scope.add(new Bytecode.Goto(exitLab), attributes(c));
 			} else if (defaultTarget == exitLab) {
 				String target = freshLabel();
 				scope.add(new Bytecode.Label(target), attributes(c));
@@ -933,15 +929,8 @@ public final class CodeGenerator {
 				// construct a mapping from that to a label indicating the start
 				// of the case body.
 
-				for (Constant constant : c.constants) {
-					// Check whether this case constant has already been used as
-					// a case constant elsewhere. If so, then report an error.
-					if (values.contains(constant)) {
-						// FIXME: this should be located elsewhere
-						WhileyFile.syntaxError(errorMessage(DUPLICATE_CASE_LABEL), scope.getSourceContext(), c);
-					}
+				for (Constant constant : c.constants) {					
 					cases.add(new Pair<>(constant, target));
-					values.add(constant);
 				}
 				// We need to clone the scope here to isolate variables
 				// declared in the case block from the enclosing scope
@@ -955,7 +944,7 @@ public final class CodeGenerator {
 				// This represents the case where we have another non-default
 				// case after the default case. Such code cannot be executed,
 				// and is therefore reported as an error.
-				WhileyFile.syntaxError(errorMessage(UNREACHABLE_CODE), scope.getSourceContext(), c);
+				internalFailure(errorMessage(UNREACHABLE_CODE), scope.getSourceContext(), c);
 			}
 		}
 
@@ -963,6 +952,42 @@ public final class CodeGenerator {
 		scope.add(new Bytecode.Label(exitLab), attributes(s));
 	}
 
+	/**
+	 * Check that not two case statements have the same constant label
+	 * 
+	 * @param cases
+	 * @param indent
+	 */
+	private void checkNoDuplicateLabels(List<Stmt.Case> cases, EnclosingScope scope) {
+		// The set of seen case labels captures those which have been seen
+		// already in some previous case block. Thus, if we see one again
+		// then we have a syntax error.
+		HashSet<Constant> labels = new HashSet<Constant>();
+		//
+		for(int i=0;i!=cases.size();++i) {
+			Stmt.Case caseBlock = cases.get(i);
+			List<Constant> caseLabels = caseBlock.constants;
+			if(caseLabels == null) {
+				// Default case
+				if (labels.contains(null)) {
+					WhileyFile.syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL), scope.getSourceContext(), caseBlock);
+				} else {
+					labels.add(null);
+				}
+			} else {
+				for (int j = 0; j != caseLabels.size(); ++j) {
+					Constant c = caseLabels.get(j);
+					if (labels.contains(c)) {
+						WhileyFile.syntaxError(errorMessage(DUPLICATE_CASE_LABEL), scope.getSourceContext(), caseBlock);
+					} else {
+						labels.add(c);
+					}
+				}
+			}
+		}
+	}
+	
+	
 	/**
 	 * Translate a while loop into WyIL bytecodes. Consider the following use of
 	 * a while statement:
@@ -1167,7 +1192,7 @@ public final class CodeGenerator {
 				scope.add(new Bytecode.If(Type.T_BOOL, result, target), attributes(condition));
 
 			} else {
-				syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), scope.getSourceContext(), condition);
+				internalFailure(errorMessage(INVALID_BOOLEAN_EXPRESSION), scope.getSourceContext(), condition);
 			}
 
 		} catch (SyntaxError se) {
@@ -1251,19 +1276,13 @@ public final class CodeGenerator {
 					&& ((Expr.Constant) v.rhs).value == Constant.Null) {
 				// this is a simple rewrite to enable type inference.
 				Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
-				if (scope.get(lhs.var) == null) {
-					syntaxError(errorMessage(UNKNOWN_VARIABLE), scope.getSourceContext(), v.lhs);
-				}
 				int slot = scope.get(lhs.var);
 				scope.add(new Bytecode.IfIs(v.srcType.raw(), slot, Type.T_NULL, target), attributes(v));
 			} else if (bop == Expr.BOp.NEQ && v.lhs instanceof Expr.LocalVariable
 					&& v.rhs instanceof Expr.Constant && ((Expr.Constant) v.rhs).value == Constant.Null) {
 				// this is a simple rewrite to enable type inference.
 				String exitLabel = freshLabel();
-				Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;
-				if (scope.get(lhs.var) == null) {
-					syntaxError(errorMessage(UNKNOWN_VARIABLE), scope.getSourceContext(), v.lhs);
-				}
+				Expr.LocalVariable lhs = (Expr.LocalVariable) v.lhs;				
 				int slot = scope.get(lhs.var);
 				scope.add(new Bytecode.IfIs(v.srcType.raw(), slot, Type.T_NULL, exitLabel), attributes(v));
 				scope.add(new Bytecode.Goto(target));
@@ -1305,10 +1324,7 @@ public final class CodeGenerator {
 			// on the original variable directly, rather than a temporary
 			// variable (since, otherwise, we'll retype the temporary but not
 			// the intended variable).
-			Expr.LocalVariable lhs = (Expr.LocalVariable) condition.lhs;
-			if (scope.get(lhs.var) == null) {
-				syntaxError(errorMessage(UNKNOWN_VARIABLE), scope.getSourceContext(), condition.lhs);
-			}
+			Expr.LocalVariable lhs = (Expr.LocalVariable) condition.lhs;			
 			leftOperand = scope.get(lhs.var);
 		} else {
 			// This is the general case whether the lhs is an arbitrary variable
@@ -1359,7 +1375,7 @@ public final class CodeGenerator {
 			return;
 		default:
 			// Nothing else is a valud boolean condition here.
-			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), scope.getSourceContext(), v);
+			internalFailure(errorMessage(INVALID_BOOLEAN_EXPRESSION), scope.getSourceContext(), v);
 		}
 	}
 
@@ -1457,7 +1473,7 @@ public final class CodeGenerator {
 				internalFailure("unknown expression: " + expression.getClass().getName(), scope.getSourceContext(), expression);
 			}
 		} catch (ResolveError rex) {
-			syntaxError(rex.getMessage(), scope.getSourceContext(), expression, rex);
+			internalFailure(rex.getMessage(), scope.getSourceContext(), expression, rex);
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
@@ -1541,7 +1557,7 @@ public final class CodeGenerator {
 				internalFailure("unknown expression: " + expression.getClass().getName(), scope.getSourceContext(), expression);
 			}
 		} catch (ResolveError rex) {
-			syntaxError(rex.getMessage(), scope.getSourceContext(), expression, rex);
+			internalFailure(rex.getMessage(), scope.getSourceContext(), expression, rex);
 		} catch (SyntaxError se) {
 			throw se;
 		} catch (Exception ex) {
@@ -1680,13 +1696,7 @@ public final class CodeGenerator {
 	}
 
 	private int generate(Expr.LocalVariable expr, EnclosingScope scope) throws ResolveError {
-		if (scope.get(expr.var) != null) {
-			int target = scope.get(expr.var);
-			return target;
-		} else {
-			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), scope.getSourceContext(), expr);
-			return -1;
-		}
+		return scope.get(expr.var);
 	}
 
 	private int generate(Expr.UnOp expr, EnclosingScope scope) {
@@ -1875,7 +1885,7 @@ public final class CodeGenerator {
 		case RIGHTSHIFT:
 			return Bytecode.OperatorKind.RIGHTSHIFT;
 		default:
-			syntaxError(errorMessage(INVALID_BINARY_EXPRESSION), scope, elem);
+			internalFailure(errorMessage(INVALID_BINARY_EXPRESSION), scope, elem);
 		}
 		// dead-code
 		return null;
