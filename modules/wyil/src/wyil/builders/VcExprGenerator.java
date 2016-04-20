@@ -127,6 +127,7 @@ public class VcExprGenerator {
 				branch.write(code.target(i), branch.read(code.operand(i)));
 			}
 			break;
+		case NOT:
 		case NEG:
 		case ARRAYLENGTH: {
 			Bytecode.Operator bc = (Bytecode.Operator) code;

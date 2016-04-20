@@ -1426,7 +1426,12 @@ public final class CodeGenerator {
 			Triple<String, Expr, Expr> src = srcIterator.next();
 
 			// First, determine the src slot.
-			int varSlot = scope.allocate(Nominal.T_INT, src.first());
+			int varSlot = scope.allocate(Nominal.T_INT);
+			// FIXME: the following line is a hack to deal with the relatively
+			// primitive way that VcGenerator determines the type of a variable.
+			// This should be removed when VcGenerator is reworked. 
+			scope.environment.put(src.first(), varSlot);
+			//
 			int startSlot = generate(src.second(), scope);
 			int endSlot = generate(src.third(), scope);
 
