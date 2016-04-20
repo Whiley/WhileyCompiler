@@ -286,9 +286,9 @@ public class WhileyFileParser {
 
 		Token name = match(Identifier);
 
-		// Parse function or method parameters		
-		HashSet<String> environment = new HashSet<String>();
-		List<Parameter> parameters = parseParameters(wf,environment);
+		// Parse function or method parameters
+		EnclosingScope scope = new EnclosingScope();		
+		List<Parameter> parameters = parseParameters(wf,scope);
 		
 		// Parse (optional) return type
 		List<Parameter> returns = Collections.EMPTY_LIST;
@@ -298,7 +298,7 @@ public class WhileyFileParser {
 			// environent and create a special one only for use within ensures
 			// clauses, since these are the only expressions which may refer to
 			// variables declared in the return type.
-			returns = parseOptionalParameters(wf,environment);		
+			returns = parseOptionalParameters(wf,scope);		
 		} 
 
 		// Parse optional requires/ensures clauses
@@ -310,13 +310,13 @@ public class WhileyFileParser {
 			switch (lookahead.kind) {
 			case Requires:
 				// NOTE: expression terminated by ':'
-				requires.add(parseLogicalExpression(wf, environment, true));
+				requires.add(parseLogicalExpression(wf, scope, true));
 				break;
 			case Ensures:
 				// Use the ensuresEnvironment here to get access to any
 				// variables declared in the return type pattern.
 				// NOTE: expression terminated by ':'
-				ensures.add(parseLogicalExpression(wf, environment, true));
+				ensures.add(parseLogicalExpression(wf, scope, true));
 				break;
 			}
 		}
@@ -334,7 +334,7 @@ public class WhileyFileParser {
 			match(Colon);
 			end = index;
 			matchEndLine();
-			stmts = parseBlock(wf, environment, ROOT_INDENT);
+			stmts = parseBlock(wf, scope, false);
 		}
 
 		WhileyFile.Declaration declaration;
@@ -348,7 +348,7 @@ public class WhileyFileParser {
 		wf.add(declaration);
 	}
 
-	public List<Parameter> parseParameters(WhileyFile wf, HashSet<String> environment) {
+	public List<Parameter> parseParameters(WhileyFile wf, EnclosingScope scope) {
 		match(LeftBrace);
 		ArrayList<Parameter> parameters = new ArrayList<Parameter>();
 		boolean firstTime = true;
@@ -360,10 +360,10 @@ public class WhileyFileParser {
 			int pStart = index;
 			Pair<SyntacticType, Token> p = parseMixedType();
 			Token id = p.second();
-			if (environment.contains(id.text)) {
+			if (scope.contains(id.text)) {
 				syntaxError("parameter already declared", id);
 			} else {
-				environment.add(id.text);
+				scope.add(id.text);
 			}
 			parameters.add(wf.new Parameter(p.first(), id.text, sourceAttr(
 					pStart, index - 1)));			
@@ -372,19 +372,19 @@ public class WhileyFileParser {
 	}
 	
 
-	public List<Parameter> parseOptionalParameters(WhileyFile wf, HashSet<String> environment) {
+	public List<Parameter> parseOptionalParameters(WhileyFile wf, EnclosingScope scope) {
 		int next = skipWhiteSpace(index);
 		if(next < tokens.size() && tokens.get(next).kind == LeftBrace) {
-			return parseParameters(wf,environment);
+			return parseParameters(wf, scope);
 		} else {			
-			Parameter p = parseOptionalParameter(wf,environment);
+			Parameter p = parseOptionalParameter(wf, scope);
 			ArrayList<Parameter> ps = new ArrayList<Parameter>();
 			ps.add(p);
 			return ps;
 		}
 	}
 	
-	public Parameter parseOptionalParameter(WhileyFile wf, HashSet<String> environment) {
+	public Parameter parseOptionalParameter(WhileyFile wf, EnclosingScope scope) {
 		int start = index;
 		boolean braced = false;
 		SyntacticType type;
@@ -393,10 +393,10 @@ public class WhileyFileParser {
 			Pair<SyntacticType, Token> p = parseMixedType();
 			type = p.first();
 			name = p.second().text;			
-			if (environment.contains(name)) {
+			if (scope.contains(name)) {
 				syntaxError("parameter already declared",p.second());
 			} else {
-				environment.add(name);
+				scope.add(name);
 			}
 			match(RightBrace);
 		} else {
@@ -445,15 +445,15 @@ public class WhileyFileParser {
 		Token name = match(Identifier);
 		match(Is);
 		// Parse the type pattern
-		HashSet<String> environment = new HashSet<String>();
-		Parameter p = parseOptionalParameter(wf,environment);				
+		EnclosingScope scope = new EnclosingScope();
+		Parameter p = parseOptionalParameter(wf, scope);				
 		ArrayList<Expr> invariant = new ArrayList<Expr>();
 		// Check whether or not there is an optional "where" clause.
 		while (tryAndMatch(true, Where) != null) {
 			// Yes, there is a "where" clause so parse the constraint. First,
 			// construct the environment which will be used to identify the set
 			// of declared variables in the current scope.
-			invariant.add(parseLogicalExpression(wf, environment, false));
+			invariant.add(parseLogicalExpression(wf, scope, false));
 		}
 		int end = index;
 		matchEndLine();
@@ -498,7 +498,7 @@ public class WhileyFileParser {
 		//
 		Token name = match(Identifier);
 		match(Is);
-		Expr e = parseExpression(wf, new HashSet<String>(), false);
+		Expr e = parseExpression(wf, new EnclosingScope(), false);
 		int end = index;
 		matchEndLine();
 		WhileyFile.Declaration declaration = wf.new Constant(modifiers, e,
@@ -523,22 +523,25 @@ public class WhileyFileParser {
 	 *            The indentation level of the parent, for which all statements
 	 *            in this block must have a greater indent. May not be
 	 *            <code>null</code>.
+	 * @param isLoop
+	 *            Indicates whether or not this block represents the body of a
+	 *            loop. This is important in order to setup the scope for this
+	 *            block appropriately.
 	 * @return
 	 */
-	private List<Stmt> parseBlock(WhileyFile wf, HashSet<String> environment,
-			Indent parentIndent) {
-
-		// We must clone the environment here, in order to ensure variables
-		// declared within this block are properly scoped.
-		environment = new HashSet<String>(environment);
+	private List<Stmt> parseBlock(WhileyFile wf, EnclosingScope scope, boolean isLoop) {
 
 		// First, determine the initial indentation of this block based on the
 		// first statement (or null if there is no statement).
 		Indent indent = getIndent();
 
+		// We must clone the environment here, in order to ensure variables
+		// declared within this block are properly scoped.
+		EnclosingScope blockScope = scope.newEnclosingScope(indent, isLoop);		
+		
 		// Second, check that this is indeed the initial indentation for this
 		// block (i.e. that it is strictly greater than parent indent).
-		if (indent == null || indent.lessThanEq(parentIndent)) {
+		if (indent == null || indent.lessThanEq(scope.getIndent())) {
 			// Initial indent either doesn't exist or is not strictly greater
 			// than parent indent and,therefore, signals an empty block.
 			//
@@ -562,7 +565,7 @@ public class WhileyFileParser {
 				}
 
 				// Second, parse the actual statement at this point!
-				stmts.add(parseStatement(wf, environment, indent));
+				stmts.add(parseStatement(wf, blockScope));
 			}
 
 			return stmts;
@@ -601,20 +604,13 @@ public class WhileyFileParser {
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
 	 *
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this statement.
-	 *
-	 * @param indent
-	 *            The indent level for the current statement. This is needed in
-	 *            order to constraint the indent level for any sub-blocks (e.g.
-	 *            for <code>while</code> or <code>if</code> statements).
-	 *
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @return
 	 */
-	private Stmt parseStatement(WhileyFile wf, HashSet<String> environment,
-			Indent indent) {
+	private Stmt parseStatement(WhileyFile wf, EnclosingScope scope) {
 		checkNotEof();
 		Token lookahead = tokens.get(index);
 
@@ -622,29 +618,29 @@ public class WhileyFileParser {
 
 		switch (lookahead.kind) {
 		case Assert:
-			return parseAssertStatement(wf, environment);
+			return parseAssertStatement(wf, scope);
 		case Assume:
-			return parseAssumeStatement(wf, environment);
+			return parseAssumeStatement(wf, scope);
 		case Break:
-			return parseBreakStatement(environment);
+			return parseBreakStatement(scope);
 		case Continue:
-			return parseContinueStatement(environment);
+			return parseContinueStatement(scope);
 		case Do:
-			return parseDoWhileStatement(wf, environment, indent);
+			return parseDoWhileStatement(wf, scope);
 		case Debug:
-			return parseDebugStatement(wf, environment);
+			return parseDebugStatement(wf, scope);
 		case Fail:
-			return parseFailStatement(environment);
+			return parseFailStatement(scope);
 		case If:
-			return parseIfStatement(wf, environment, indent);
+			return parseIfStatement(wf, scope);
 		case Return:
-			return parseReturnStatement(wf, environment);
+			return parseReturnStatement(wf, scope);
 		case While:
-			return parseWhileStatement(wf, environment, indent);
+			return parseWhileStatement(wf, scope);
 		case Skip:
-			return parseSkipStatement(environment);
+			return parseSkipStatement(scope);
 		case Switch:
-			return parseSwitchStatement(wf, environment, indent);
+			return parseSwitchStatement(wf, scope);
 		default:
 			// fall through to the more difficult cases
 		}
@@ -657,7 +653,7 @@ public class WhileyFileParser {
 		// be *any* of the three forms, but we definitely have an
 		// expression-like thing at this point. Therefore, we parse that
 		// expression and see what this gives and/or what follows...
-		return parseHeadlessStatement(wf,environment,indent);
+		return parseHeadlessStatement(wf, scope);
 	}
 
 	/**
@@ -666,18 +662,19 @@ public class WhileyFileParser {
 	 * declarations.
 	 * 
 	 * @param wf
-	 * @param environment
-	 * @param indent
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @return
 	 */
-	private Stmt parseHeadlessStatement(WhileyFile wf, HashSet<String> environment, Indent indent) {
-
+	private Stmt parseHeadlessStatement(WhileyFile wf, EnclosingScope scope) {
 		int start = index;
 		SyntacticType type = parseDefiniteType();
 
 		if (type == null) {
 			// Can still be a variable declaration, assignment or invocation.
-			Expr e = parseExpression(wf, environment, false);
+			Expr e = parseExpression(wf, scope, false);
 			if (e instanceof Expr.AbstractInvoke || e instanceof Expr.AbstractIndirectInvoke) {
 				// Must be an invocation since these are neither valid
 				// lvals (i.e. they cannot be assigned) nor types.
@@ -690,12 +687,12 @@ public class WhileyFileParser {
 				// statement).
 				index = start; // backtrack
 				//
-				return parseAssignmentStatement(wf, environment);
+				return parseAssignmentStatement(wf, scope);
 			} else if (tryAndMatch(true, Comma) != null) {
 				// Must be an multi-assignment 
 				index = start; // backtrack
 				//
-				return parseAssignmentStatement(wf, environment);
+				return parseAssignmentStatement(wf, scope);
 			} else {
 				// At this point, we must be left with a variable declaration.
 				// Therefore, we backtrack and parse the expression again as a
@@ -707,7 +704,7 @@ public class WhileyFileParser {
 		// Must be a variable declaration here.
 		Token name = match(Identifier);
 		WhileyFile.Parameter decl = wf.new Parameter(type, name.text, sourceAttr(start, index - 1));
-		return parseVariableDeclaration(start, decl, wf, environment);
+		return parseVariableDeclaration(start, decl, wf, scope);
 	}
 	
 	/**
@@ -727,36 +724,39 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this statement.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 *
 	 * @see wyc.lang.Stmt.VariableDeclaration
 	 *
 	 * @return
 	 */
 	private Stmt.VariableDeclaration parseVariableDeclaration(int start,
-			Parameter parameter, WhileyFile wf, HashSet<String> environment) {
-		HashSet<String> originalEnvironment = (HashSet) environment.clone();
+			Parameter parameter, WhileyFile wf, EnclosingScope scope) {		
 
 		// Ensure at least one variable is defined by this pattern.		
 		// Check that declared variables are not already defined.		
-		if (environment.contains(parameter.name)) {
+		if (scope.contains(parameter.name)) {
 			syntaxError("variable already declared", parameter);
 		} else {
-			environment.add(parameter.name);
+
 		}		
 
 		// A variable declaration may optionally be assigned an initialiser
 		// expression.
 		Expr initialiser = null;
 		if (tryAndMatch(true, Token.Kind.Equals) != null) {
-			initialiser = parseExpression(wf, originalEnvironment, false);
+			initialiser = parseExpression(wf, scope, false);
 		}
-		// Finally, a new line indicates the end-of-statement
+		// Now, a new line indicates the end-of-statement
 		int end = index;
 		matchEndLine();
+		// Finally, register the new variable in the enclosing scope. This
+		// should be done after parsing the initialiser expression to prevent it
+		// from referring to this variable.
+		scope.add(parameter.name);
 		// Done.
 		return new Stmt.VariableDeclaration(parameter, initialiser, sourceAttr(
 				start, end - 1));
@@ -777,16 +777,16 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this statement.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 *
 	 * @see wyc.lang.Stmt.Return
 	 * @return
 	 */
 	private Stmt.Return parseReturnStatement(WhileyFile wf,
-			HashSet<String> environment) {
+			EnclosingScope scope) {
 		int start = index;
 
 		match(Return);
@@ -799,7 +799,7 @@ public class WhileyFileParser {
 		// a potentially cryptic error message will be given.
 		List<Expr> returns = Collections.EMPTY_LIST;
 		if (next < tokens.size() && tokens.get(next).kind != NewLine) {
-			returns = parseExpressions(wf,environment,false); 
+			returns = parseExpressions(wf, scope,false); 
 		}
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
@@ -820,21 +820,21 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this statement.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 *
 	 * @see wyc.lang.Stmt.Assert
 	 * @return
 	 */
 	private Stmt.Assert parseAssertStatement(WhileyFile wf,
-			HashSet<String> environment) {
+			EnclosingScope scope) {
 		int start = index;
 		// Match the assert keyword
 		match(Assert);
 		// Parse the expression to be printed
-		Expr e = parseLogicalExpression(wf, environment, false);
+		Expr e = parseLogicalExpression(wf, scope, false);
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
 		int end = index;
@@ -854,21 +854,21 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this statement.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 *
 	 * @see wyc.lang.Stmt.Assume
 	 * @return
 	 */
 	private Stmt.Assume parseAssumeStatement(WhileyFile wf,
-			HashSet<String> environment) {
+			EnclosingScope scope) {
 		int start = index;
 		// Match the assume keyword
 		match(Assume);
 		// Parse the expression to be printed
-		Expr e = parseLogicalExpression(wf, environment, false);
+		Expr e = parseLogicalExpression(wf, scope, false);
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
 		int end = index;
@@ -884,20 +884,24 @@ public class WhileyFileParser {
 	 * BreakStmt ::= "break"
 	 * </pre>
 	 *
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this statement.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 *
 	 * @see wyc.lang.Stmt.Break
 	 * @return
 	 */
-	private Stmt.Break parseBreakStatement(HashSet<String> environment) {
+	private Stmt.Break parseBreakStatement(EnclosingScope scope) {
 		int start = index;
 		// Match the break keyword
-		match(Break);
+		Token t = match(Break);
 		int end = index;
 		matchEndLine();
+		// Check that break statement makes sense at this point.
+		if(!scope.isInLoop()) {
+			syntaxError(errorMessage(BREAK_OUTSIDE_SWITCH_OR_LOOP),t);
+		}
 		// Done.
 		return new Stmt.Break(sourceAttr(start, end - 1));
 	}
@@ -909,20 +913,24 @@ public class WhileyFileParser {
 	 * ContinueStmt ::= "continue"
 	 * </pre>
 	 *
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this statement.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 *
 	 * @see wyc.lang.Stmt.Continue
 	 * @return
 	 */
-	private Stmt.Continue parseContinueStatement(HashSet<String> environment) {
+	private Stmt.Continue parseContinueStatement(EnclosingScope scope) {
 		int start = index;
 		// Match the continue keyword
-		match(Continue);
+		Token t = match(Continue);
 		int end = index;
 		matchEndLine();
+		// Check that continue statement makes sense at this point.
+		if(!scope.isInLoop()) {
+			syntaxError(errorMessage(CONTINUE_OUTSIDE_LOOP),t);
+		}
 		// Done.
 		return new Stmt.Continue(sourceAttr(start, end - 1));
 	}
@@ -938,21 +946,20 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this statement.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 *
 	 * @see wyc.lang.Stmt.Debug
 	 * @return
 	 */
-	private Stmt.Debug parseDebugStatement(WhileyFile wf,
-			HashSet<String> environment) {
+	private Stmt.Debug parseDebugStatement(WhileyFile wf, EnclosingScope scope) {
 		int start = index;
 		// Match the debug keyword
 		match(Debug);
 		// Parse the expression to be printed
-		Expr e = parseExpression(wf, environment, false);
+		Expr e = parseExpression(wf, scope, false);
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
 		int end = index;
@@ -974,33 +981,29 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this block.
-	 * @param indent
-	 *            The indent level of this statement, which is needed to
-	 *            determine permissible indent level of child block(s).
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @return
 	 * @author David J. Pearce
 	 *
 	 */
-	private Stmt parseDoWhileStatement(WhileyFile wf,
-			HashSet<String> environment, Indent indent) {
+	private Stmt parseDoWhileStatement(WhileyFile wf, EnclosingScope scope) {
 		int start = index;
 		match(Do);
 		match(Colon);
 		int end = index;
 		matchEndLine();
 		// match the block
-		List<Stmt> blk = parseBlock(wf, environment, indent);
+		List<Stmt> blk = parseBlock(wf, scope, true);
 		// match while and condition
 		match(While);
-		Expr condition = parseLogicalExpression(wf, environment, false);
+		Expr condition = parseLogicalExpression(wf, scope, false);
 		// Parse the loop invariants
 		List<Expr> invariants = new ArrayList<Expr>();
 		while (tryAndMatch(true, Where) != null) {
-			invariants.add(parseLogicalExpression(wf, environment, false));
+			invariants.add(parseLogicalExpression(wf, scope, false));
 		}
 		matchEndLine();
 		return new Stmt.DoWhile(condition, invariants, blk, sourceAttr(start,
@@ -1014,14 +1017,15 @@ public class WhileyFileParser {
 	 * FailStmt ::= "fail"
 	 * </pre>
 	 *
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            The environment is not used by the fail statement.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 *
 	 * @see wyc.lang.Stmt.Fail
 	 * @return
 	 */
-	private Stmt.Fail parseFailStatement(HashSet<String> environment) {
+	private Stmt.Fail parseFailStatement(EnclosingScope scope) {
 		int start = index;
 		// Match the fail keyword
 		match(Fail);
@@ -1048,44 +1052,40 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this statement.
-	 * @param indent
-	 *            The indent level of this statement, which is needed to
-	 *            determine permissible indent level of child block(s).
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @return
 	 */
-	private Stmt.IfElse parseIfStatement(WhileyFile wf,
-			HashSet<String> environment, Indent indent) {
+	private Stmt.IfElse parseIfStatement(WhileyFile wf, EnclosingScope scope) {
 		int start = index;
 		// An if statement begins with the keyword "if", followed by an
 		// expression representing the condition.
 		match(If);
 		// NOTE: expression terminated by ':'
-		Expr c = parseLogicalExpression(wf, environment, true);
+		Expr c = parseLogicalExpression(wf, scope, true);
 		// The a colon to signal the start of a block.
 		match(Colon);
 		matchEndLine();
 
 		int end = index;
 		// First, parse the true branch, which is required
-		List<Stmt> tblk = parseBlock(wf, environment, indent);
+		List<Stmt> tblk = parseBlock(wf, scope, scope.isInLoop());
 
 		// Second, attempt to parse the false branch, which is optional.
 		List<Stmt> fblk = Collections.emptyList();
-		if (tryAndMatchAtIndent(true, indent, Else) != null) {
+		if (tryAndMatchAtIndent(true, scope.getIndent(), Else) != null) {
 			int if_start = index;
 			if (tryAndMatch(true, If) != null) {
 				// This is an if-chain, so backtrack and parse a complete If
 				index = if_start;
 				fblk = new ArrayList<Stmt>();
-				fblk.add(parseIfStatement(wf, environment, indent));
+				fblk.add(parseIfStatement(wf, scope));
 			} else {
 				match(Colon);
 				matchEndLine();
-				fblk = parseBlock(wf, environment, indent);
+				fblk = parseBlock(wf, scope, scope.isInLoop());
 			}
 		}
 		// Done!
@@ -1105,33 +1105,29 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this block.
-	 * @param indent
-	 *            The indent level of this statement, which is needed to
-	 *            determine permissible indent level of child block(s).
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @return
 	 * @author David J. Pearce
 	 *
 	 */
-	private Stmt parseWhileStatement(WhileyFile wf,
-			HashSet<String> environment, Indent indent) {
+	private Stmt parseWhileStatement(WhileyFile wf, EnclosingScope scope) {
 		int start = index;
 		match(While);
 		// NOTE: expression terminated by ':'
-		Expr condition = parseLogicalExpression(wf, environment, true);
+		Expr condition = parseLogicalExpression(wf, scope, true);
 		// Parse the loop invariants
 		List<Expr> invariants = new ArrayList<Expr>();
 		while (tryAndMatch(true, Where) != null) {
 			// NOTE: expression terminated by ':'
-			invariants.add(parseLogicalExpression(wf, environment, true));
+			invariants.add(parseLogicalExpression(wf, scope, true));
 		}
 		match(Colon);
 		int end = index;
 		matchEndLine();
-		List<Stmt> blk = parseBlock(wf, environment, indent);
+		List<Stmt> blk = parseBlock(wf, scope, true);
 		return new Stmt.While(condition, invariants, blk, sourceAttr(start,
 				end - 1));
 	}
@@ -1143,15 +1139,15 @@ public class WhileyFileParser {
 	 * SkipStmt ::= "skip"
 	 * </pre>
 	 *
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this statement.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 *
 	 * @see wyc.lang.Stmt.Skip
 	 * @return
 	 */
-	private Stmt.Skip parseSkipStatement(HashSet<String> environment) {
+	private Stmt.Skip parseSkipStatement(EnclosingScope scope) {
 		int start = index;
 		// Match the break keyword
 		match(Skip);
@@ -1176,28 +1172,24 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this block.
-	 * @param indent
-	 *            The indent level of this statement, which is needed to
-	 *            determine permissible indent level of child block(s).
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @return
 	 * @author David J. Pearce
 	 *
 	 */
-	private Stmt parseSwitchStatement(WhileyFile wf,
-			HashSet<String> environment, Indent indent) {
+	private Stmt parseSwitchStatement(WhileyFile wf, EnclosingScope scope) {
 		int start = index;
 		match(Switch);
 		// NOTE: expression terminated by ':'
-		Expr condition = parseExpression(wf, environment, true);
+		Expr condition = parseExpression(wf, scope, true);
 		match(Colon);
 		int end = index;
 		matchEndLine();
 		// Match case block
-		List<Stmt.Case> cases = parseCaseBlock(wf, environment, indent);
+		List<Stmt.Case> cases = parseCaseBlock(wf, scope);
 		// Done
 		return new Stmt.Switch(condition, cases, sourceAttr(start, end - 1));
 	}
@@ -1215,26 +1207,26 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param parentIndent
-	 *            The indentation level of the parent, for which all case
-	 *            statements in this block must have a greater indent. May not
-	 *            be <code>null</code>.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @return
 	 */
-	private List<Stmt.Case> parseCaseBlock(WhileyFile wf,
-			HashSet<String> environment, Indent parentIndent) {
+	private List<Stmt.Case> parseCaseBlock(WhileyFile wf, EnclosingScope scope) {
 
-		// We must clone the environment here, in order to ensure variables
-		// declared within this block are properly scoped.
-		environment = new HashSet<String>(environment);
 
 		// First, determine the initial indentation of this block based on the
 		// first statement (or null if there is no statement).
 		Indent indent = getIndent();
-
+		
+		// We must create a new scope to ensure variables declared within this
+		// block are not visible in the enclosing scope.		
+		EnclosingScope caseScope = scope.newEnclosingScope(indent);
+		
 		// Second, check that this is indeed the initial indentation for this
 		// block (i.e. that it is strictly greater than parent indent).
-		if (indent == null || indent.lessThanEq(parentIndent)) {
+		if (indent == null || indent.lessThanEq(scope.getIndent())) {
 			// Initial indent either doesn't exist or is not strictly greater
 			// than parent indent and,therefore, signals an empty block.
 			//
@@ -1259,7 +1251,7 @@ public class WhileyFileParser {
 				}
 
 				// Second, parse the actual case statement at this point!
-				cases.add(parseCaseStatement(wf, environment, indent));
+				cases.add(parseCaseStatement(wf, caseScope));
 			}
 			checkForDuplicateDefault(cases);
 			return cases;
@@ -1295,17 +1287,13 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this block.
-	 * @param indent
-	 *            The indent level of this statement, which is needed to
-	 *            determine permissible indent level of child block(s).
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @return
 	 */
-	private Stmt.Case parseCaseStatement(WhileyFile wf,
-			HashSet<String> environment, Indent indent) {
+	private Stmt.Case parseCaseStatement(WhileyFile wf, EnclosingScope scope) {
 		int start = index;
 		List<Expr> values;
 		if (tryAndMatch(true, Default) != null) {
@@ -1316,13 +1304,13 @@ public class WhileyFileParser {
 			values = new ArrayList<Expr>();
 			do {
 				// NOTE: expression terminated by ':'
-				values.add(parseExpression(wf, environment, true));
+				values.add(parseExpression(wf, scope, true));
 			} while (tryAndMatch(true, Comma) != null);
 		}
 		match(Colon);
 		int end = index;
 		matchEndLine();
-		List<Stmt> stmts = parseBlock(wf, environment, indent);
+		List<Stmt> stmts = parseBlock(wf, scope, scope.isInLoop());
 		return new Stmt.Case(values, stmts, sourceAttr(start, end - 1));
 	}
 
@@ -1355,19 +1343,18 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within
-	 *            expressions used in this block.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 *
 	 * @return
 	 */
-	private Stmt parseAssignmentStatement(WhileyFile wf,
-			HashSet<String> environment) {
+	private Stmt parseAssignmentStatement(WhileyFile wf, EnclosingScope scope) {
 		int start = index;
-		List<Expr.LVal> lvals = parseLVals(wf, environment);
+		List<Expr.LVal> lvals = parseLVals(wf, scope);
 		match(Equals);
-		List<Expr> rvals = parseExpressions(wf, environment, false);
+		List<Expr> rvals = parseExpressions(wf, scope, false);
 		int end = index;
 		matchEndLine();
 		return new Stmt.Assign(lvals, rvals, sourceAttr(start, end - 1));
@@ -1386,30 +1373,30 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 *
 	 * @return
 	 */
-	private List<Expr.LVal> parseLVals(WhileyFile wf, HashSet<String> environment) {
+	private List<Expr.LVal> parseLVals(WhileyFile wf, EnclosingScope scope) {
 		int start = index;
 		ArrayList<Expr.LVal> elements = new ArrayList<Expr.LVal>();				
-		elements.add(parseLVal(index, wf,environment));
+		elements.add(parseLVal(index, wf, scope));
 		
 		// Check whether we have a multiple lvals or not
 		while (tryAndMatch(true, Comma) != null) {
 			// Add all expressions separated by a comma
-			elements.add(parseLVal(index,wf, environment));
+			elements.add(parseLVal(index,wf, scope));
 			// Done
 		}
 
 		return elements;
 	}
 	
-	private Expr.LVal parseLVal(int start, WhileyFile wf, HashSet<String> environment) {
-		return parseAccessLVal(start, wf, environment);
+	private Expr.LVal parseLVal(int start, WhileyFile wf, EnclosingScope scope) {
+		return parseAccessLVal(start, wf, scope);
 	}
 
 	/**
@@ -1427,15 +1414,15 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 *
 	 * @return
 	 */
-	private Expr.LVal parseAccessLVal(int start, WhileyFile wf, HashSet<String> environment) {
-		Expr.LVal lhs = parseLValTerm(start, wf, environment);
+	private Expr.LVal parseAccessLVal(int start, WhileyFile wf, EnclosingScope scope) {
+		Expr.LVal lhs = parseLValTerm(start, wf, scope);
 		Token token;
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
@@ -1443,7 +1430,7 @@ public class WhileyFileParser {
 			switch (token.kind) {
 			case LeftSquare:
 				// NOTE: expression is terminated by ']'
-				Expr rhs = parseAdditiveExpression(wf, environment, true);
+				Expr rhs = parseAdditiveExpression(wf, scope, true);
 				match(RightSquare);
 				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start, index - 1));
 				break;
@@ -1473,14 +1460,14 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 *
 	 * @return
 	 */
-	private Expr.LVal parseLValTerm(int start, WhileyFile wf, HashSet<String> environment) {
+	private Expr.LVal parseLValTerm(int start, WhileyFile wf, EnclosingScope scope) {
 		checkNotEof();
 		// First, attempt to disambiguate the easy forms:
 		Token lookahead = tokens.get(index);
@@ -1491,13 +1478,13 @@ public class WhileyFileParser {
 					index - 1));
 		case LeftBrace: {
 			match(LeftBrace);
-			Expr.LVal lval = parseLVal(start, wf, environment);
+			Expr.LVal lval = parseLVal(start, wf, scope);
 			match(RightBrace);
 			return lval;
 		}
 		case Star: {
 			match(Star);
-			Expr.LVal lval = parseLVal(start, wf, environment);
+			Expr.LVal lval = parseLVal(start, wf, scope);
 			return new Expr.Dereference(lval, sourceAttr(start, index - 1));
 		}
 		default:
@@ -1511,12 +1498,27 @@ public class WhileyFileParser {
 	 * expressions separated by comma's
 	 * 
 	 * @param wf
-	 * @param environment
+	 *            The enclosing WhileyFile being constructed. This is necessary
+	 *            to construct some nested declarations (e.g. parameters for
+	 *            lambdas)
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
 	 * @return
 	 */
-	public List<Expr> parseExpressions(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+	public List<Expr> parseExpressions(WhileyFile wf, EnclosingScope scope, boolean terminated) {
 		ArrayList<Expr> returns = new ArrayList<Expr>();
 		// A return statement may optionally have a return expression.
 		// Therefore, we first skip all whitespace on the given line.
@@ -1525,9 +1527,9 @@ public class WhileyFileParser {
 		// then we assume what's remaining is the returned expression. This
 		// means expressions must start on the same line as a return. Otherwise,
 		// a potentially cryptic error message will be given.
-		returns.add(parseExpression(wf, environment, terminated));
+		returns.add(parseExpression(wf, scope, terminated));
 		while(tryAndMatch(false,Comma) != null) {
-			returns.add(parseExpression(wf, environment, terminated));
+			returns.add(parseExpression(wf, scope, terminated));
 		}
 		return returns;
 	}
@@ -1557,10 +1559,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -1574,9 +1576,8 @@ public class WhileyFileParser {
 	 *            we know the right-brace will always terminate this expression.
 	 * @return
 	 */
-	private Expr parseExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
-		return parseLogicalExpression(wf, environment, terminated);
+	private Expr parseExpression(WhileyFile wf, EnclosingScope scope, boolean terminated) {
+		return parseLogicalExpression(wf, scope, terminated);
 	}
 
 	/**
@@ -1590,10 +1591,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -1608,17 +1609,16 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr parseLogicalExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+	private Expr parseLogicalExpression(WhileyFile wf, EnclosingScope scope, boolean terminated) {
 		checkNotEof();
 		int start = index;
-		Expr lhs = parseAndOrExpression(wf, environment, terminated);
+		Expr lhs = parseAndOrExpression(wf, scope, terminated);
 		Token lookahead = tryAndMatch(terminated,  LogicalImplication, LogicalIff);
 		if (lookahead != null) {
 			switch (lookahead.kind) {
 
 			case LogicalImplication: {
-				Expr rhs = parseExpression(wf, environment, terminated);
+				Expr rhs = parseExpression(wf, scope, terminated);
 				// FIXME: this is something of a hack, although it does work. It
 				// would be nicer to have a binary expression kind for logical
 				// implication.
@@ -1629,7 +1629,7 @@ public class WhileyFileParser {
 						index - 1));
 			}
 			case LogicalIff: {
-				Expr rhs = parseExpression(wf, environment, terminated);
+				Expr rhs = parseExpression(wf, scope, terminated);
 				// FIXME: this is something of a hack, although it does work. It
 				// would be nicer to have a binary expression kind for logical
 				// implication.
@@ -1666,10 +1666,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -1684,11 +1684,10 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr parseAndOrExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+	private Expr parseAndOrExpression(WhileyFile wf, EnclosingScope scope, boolean terminated) {
 		checkNotEof();
 		int start = index;
-		Expr lhs = parseBitwiseOrExpression(wf, environment, terminated);
+		Expr lhs = parseBitwiseOrExpression(wf, scope, terminated);
 		Token lookahead = tryAndMatch(terminated, LogicalAnd, LogicalOr);
 		if (lookahead != null) {
 			Expr.BOp bop;
@@ -1702,7 +1701,7 @@ public class WhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseExpression(wf, environment, terminated);
+			Expr rhs = parseExpression(wf, scope, terminated);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -1716,10 +1715,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -1734,13 +1733,12 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr parseBitwiseOrExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+	private Expr parseBitwiseOrExpression(WhileyFile wf, EnclosingScope scope, boolean terminated) {
 		int start = index;
-		Expr lhs = parseBitwiseXorExpression(wf, environment, terminated);
+		Expr lhs = parseBitwiseXorExpression(wf, scope, terminated);
 
 		if (tryAndMatch(terminated, VerticalBar) != null) {
-			Expr rhs = parseExpression(wf, environment, terminated);
+			Expr rhs = parseExpression(wf, scope, terminated);
 			return new Expr.BinOp(Expr.BOp.BITWISEOR, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
@@ -1755,10 +1753,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -1773,13 +1771,12 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr parseBitwiseXorExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+	private Expr parseBitwiseXorExpression(WhileyFile wf, EnclosingScope scope, boolean terminated) {
 		int start = index;
-		Expr lhs = parseBitwiseAndExpression(wf, environment, terminated);
+		Expr lhs = parseBitwiseAndExpression(wf, scope, terminated);
 
 		if (tryAndMatch(terminated, Caret) != null) {
-			Expr rhs = parseExpression(wf, environment, terminated);
+			Expr rhs = parseExpression(wf, scope, terminated);
 			return new Expr.BinOp(Expr.BOp.BITWISEXOR, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
@@ -1794,10 +1791,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -1813,12 +1810,12 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseBitwiseAndExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
-		Expr lhs = parseConditionExpression(wf, environment, terminated);
+		Expr lhs = parseConditionExpression(wf, scope, terminated);
 
 		if (tryAndMatch(terminated, Ampersand) != null) {
-			Expr rhs = parseExpression(wf, environment, terminated);
+			Expr rhs = parseExpression(wf, scope, terminated);
 			return new Expr.BinOp(Expr.BOp.BITWISEAND, lhs, rhs, sourceAttr(
 					start, index - 1));
 		}
@@ -1833,10 +1830,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -1852,17 +1849,17 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseConditionExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		Token lookahead;
 
 		// First, attempt to parse quantifiers (e.g. some, all, no, etc)
 		if ((lookahead = tryAndMatch(terminated, Some, No, All)) != null) {
-			return parseQuantifierExpression(lookahead, wf, environment,
+			return parseQuantifierExpression(lookahead, wf, scope,
 					terminated);
 		}
 
-		Expr lhs = parseShiftExpression(wf, environment, terminated);
+		Expr lhs = parseShiftExpression(wf, scope, terminated);
 
 		lookahead = tryAndMatch(terminated, LessEquals, LeftAngle,
 				GreaterEquals, RightAngle, EqualsEquals, NotEquals, Is,
@@ -1899,7 +1896,7 @@ public class WhileyFileParser {
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 
-			Expr rhs = parseShiftExpression(wf, environment, terminated);
+			Expr rhs = parseShiftExpression(wf, scope, terminated);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -1921,10 +1918,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -1936,12 +1933,10 @@ public class WhileyFileParser {
 	 *            expression). A classic situation where terminated is true is
 	 *            when parsing an expression surrounded in braces. In such case,
 	 *            we know the right-brace will always terminate this expression.
-	 *
-	 * @param environment
 	 * @return
 	 */
 	private Expr parseQuantifierExpression(Token lookahead, WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index - 1;
 
 		// Determine the quantifier operation
@@ -1963,7 +1958,7 @@ public class WhileyFileParser {
 		match(LeftCurly);
 
 		// Parse one or more source variables / expressions
-		environment = new HashSet<String>(environment);
+		scope = scope.newEnclosingScope();		
 		List<Triple<String, Expr, Expr>> srcs = new ArrayList<Triple<String, Expr, Expr>>();
 		boolean firstTime = true;
 
@@ -1973,20 +1968,20 @@ public class WhileyFileParser {
 			}
 			firstTime = false;
 			Token id = match(Identifier);
-			if (environment.contains(id.text)) {
+			if (scope.contains(id.text)) {
 				// It is already defined which is a syntax error
 				syntaxError("variable already declared", id);
 			}
 			match(In);
-			Expr lhs = parseAdditiveExpression(wf, environment, terminated);
+			Expr lhs = parseAdditiveExpression(wf, scope, terminated);
 			match(DotDot);
-			Expr rhs = parseAdditiveExpression(wf, environment, terminated);			
+			Expr rhs = parseAdditiveExpression(wf, scope, terminated);			
 			srcs.add(new Triple<String, Expr, Expr>(id.text, lhs, rhs));
-			environment.add(id.text);
+			scope.add(id.text);
 		} while (eventuallyMatch(VerticalBar) == null);
 
 		// Parse condition over source variables
-		Expr condition = parseLogicalExpression(wf, environment, terminated);
+		Expr condition = parseLogicalExpression(wf, scope, terminated);
 
 		match(RightCurly);
 
@@ -2007,10 +2002,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -2026,12 +2021,12 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseRangeExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
-		Expr lhs = parseShiftExpression(wf, environment, terminated);
+		Expr lhs = parseShiftExpression(wf, scope, terminated);
 
 		if (tryAndMatch(terminated, DotDot) != null) {
-			Expr rhs = parseAdditiveExpression(wf, environment, terminated);
+			Expr rhs = parseAdditiveExpression(wf, scope, terminated);
 			return new Expr.BinOp(Expr.BOp.RANGE, lhs, rhs, sourceAttr(start,
 					index - 1));
 		}
@@ -2050,10 +2045,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -2069,14 +2064,14 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseShiftExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
-		Expr lhs = parseAdditiveExpression(wf, environment, terminated);
+		Expr lhs = parseAdditiveExpression(wf, scope, terminated);
 
 		Token lookahead;
 		while ((lookahead = tryAndMatch(terminated, LeftAngleLeftAngle,
 				RightAngleRightAngle)) != null) {
-			Expr rhs = parseAdditiveExpression(wf, environment, terminated);
+			Expr rhs = parseAdditiveExpression(wf, scope, terminated);
 			Expr.BOp bop = null;
 			switch (lookahead.kind) {
 			case LeftAngleLeftAngle:
@@ -2099,10 +2094,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -2118,9 +2113,9 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseAdditiveExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
-		Expr lhs = parseMultiplicativeExpression(wf, environment, terminated);
+		Expr lhs = parseMultiplicativeExpression(wf, scope, terminated);
 
 		Token lookahead;
 		while ((lookahead = tryAndMatch(terminated, Plus, Minus)) != null) {
@@ -2136,7 +2131,7 @@ public class WhileyFileParser {
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 
-			Expr rhs = parseMultiplicativeExpression(wf, environment,
+			Expr rhs = parseMultiplicativeExpression(wf, scope,
 					terminated);
 			lhs = new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
@@ -2151,10 +2146,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -2170,9 +2165,9 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseMultiplicativeExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
-		Expr lhs = parseAccessExpression(wf, environment, terminated);
+		Expr lhs = parseAccessExpression(wf, scope, terminated);
 
 		Token lookahead = tryAndMatch(terminated, Star, RightSlash, Percent);
 		if (lookahead != null) {
@@ -2190,7 +2185,7 @@ public class WhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
-			Expr rhs = parseAccessExpression(wf, environment, terminated);
+			Expr rhs = parseAccessExpression(wf, scope, terminated);
 			return new Expr.BinOp(bop, lhs, rhs, sourceAttr(start, index - 1));
 		}
 
@@ -2232,10 +2227,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -2251,9 +2246,9 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseAccessExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
-		Expr lhs = parseTermExpression(wf, environment, terminated);
+		Expr lhs = parseTermExpression(wf, scope, terminated);
 		Token token;
 
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
@@ -2261,7 +2256,7 @@ public class WhileyFileParser {
 			switch (token.kind) {
 			case LeftSquare:				
 				// NOTE: expression guaranteed to be terminated by ']'.
-				Expr rhs = parseAdditiveExpression(wf, environment, true);
+				Expr rhs = parseAdditiveExpression(wf, scope, true);
 				// This is a plain old array access expression
 				match(RightSquare);
 				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
@@ -2281,13 +2276,12 @@ public class WhileyFileParser {
 				// by examining what we have parsed already. A direct access or
 				// invocation requires a sequence of identifiers where the first
 				// is not a declared variable name.
-				Path.ID id = parsePossiblePathID(lhs, environment);
+				Path.ID id = parsePossiblePathID(lhs, scope);
 
 				if (tryAndMatch(terminated, LeftBrace) != null) {
 					// This indicates a direct or indirect invocation. First,
 					// parse arguments to invocation
-					ArrayList<Expr> arguments = parseInvocationArguments(wf,
-							environment);
+					ArrayList<Expr> arguments = parseInvocationArguments(wf,scope);
 					// Second, determine what kind of invocation we have.
 					if(id == null) {
 						// This indicates we have an indirect invocation
@@ -2322,10 +2316,13 @@ public class WhileyFileParser {
 	 * environment.
 	 *
 	 * @param src
-	 * @param environment
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @return
 	 */
-	private Path.ID parsePossiblePathID(Expr src, HashSet<String> environment) {
+	private Path.ID parsePossiblePathID(Expr src, EnclosingScope scope) {
 		if(src instanceof Expr.LocalVariable) {
 			// this is a local variable, indicating that the we did not have
 			// a module identifier.
@@ -2335,7 +2332,7 @@ public class WhileyFileParser {
 			return Trie.ROOT.append(ca.name);
 		} else if(src instanceof Expr.FieldAccess) {
 			Expr.FieldAccess ada = (Expr.FieldAccess) src;
-			Path.ID id = parsePossiblePathID(ada.src,environment);
+			Path.ID id = parsePossiblePathID(ada.src, scope);
 			if(id != null) {
 				return id.append(ada.name);
 			} else {
@@ -2352,10 +2349,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -2371,7 +2368,7 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseTermExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		checkNotEof();
 
 		int start = index;
@@ -2379,15 +2376,15 @@ public class WhileyFileParser {
 
 		switch (token.kind) {
 		case LeftBrace:
-			return parseBracketedExpression(wf, environment, terminated);
+			return parseBracketedExpression(wf, scope, terminated);
 		case New:
-			return parseNewExpression(wf, environment, terminated);
+			return parseNewExpression(wf, scope, terminated);
 		case Identifier:
 			match(Identifier);
 			if (tryAndMatch(terminated, LeftBrace) != null) {
-				return parseInvokeExpression(wf, environment, start, token,
+				return parseInvokeExpression(wf, scope, start, token,
 						terminated);
-			} else if (environment.contains(token.text)) {
+			} else if (scope.contains(token.text)) {
 				// Signals a local variable access
 				return new Expr.LocalVariable(token.text, sourceAttr(start,
 						index - 1));
@@ -2429,21 +2426,21 @@ public class WhileyFileParser {
 					sourceAttr(start, index++));
 		}
 		case Minus:
-			return parseNegationExpression(wf, environment, terminated);
+			return parseNegationExpression(wf, scope, terminated);
 		case VerticalBar:
-			return parseLengthOfExpression(wf, environment, terminated);
+			return parseLengthOfExpression(wf, scope, terminated);
 		case LeftSquare:
-			return parseArrayInitialiserOrGeneratorExpression(wf, environment, terminated);
+			return parseArrayInitialiserOrGeneratorExpression(wf, scope, terminated);
 		case LeftCurly:
-			return parseRecordExpression(wf, environment, terminated);
+			return parseRecordExpression(wf, scope, terminated);
 		case Shreak:
-			return parseLogicalNotExpression(wf, environment, terminated);
+			return parseLogicalNotExpression(wf, scope, terminated);
 		case Star:
-			return parseDereferenceExpression(wf, environment, terminated);
+			return parseDereferenceExpression(wf, scope, terminated);
 		case Tilde:
-			return parseBitwiseComplementExpression(wf, environment, terminated);
+			return parseBitwiseComplementExpression(wf, scope, terminated);
 		case Ampersand:
-			return parseLambdaOrAddressExpression(wf, environment, terminated);
+			return parseLambdaOrAddressExpression(wf, scope, terminated);
 		}
 
 		syntaxError("unrecognised term", token);
@@ -2506,10 +2503,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -2525,7 +2522,7 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseBracketedExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(LeftBrace);
 
@@ -2547,7 +2544,7 @@ public class WhileyFileParser {
 			// bracketed type.
 			if (tryAndMatch(true, RightBrace) != null) {
 				// Ok, finally, we are sure that it is definitely a cast.
-				Expr e = parseExpression(wf, environment, terminated);
+				Expr e = parseExpression(wf, scope, terminated);
 				return new Expr.Cast(t, e, sourceAttr(start, index - 1));
 			}
 		}
@@ -2555,7 +2552,7 @@ public class WhileyFileParser {
 		// cannot tell which yet.
 		index = start;
 		match(LeftBrace);
-		Expr e = parseExpression(wf, environment, true);
+		Expr e = parseExpression(wf, scope, true);
 		match(RightBrace);
 
 		// Now check whether this must be an expression, or could still be a
@@ -2599,7 +2596,7 @@ public class WhileyFileParser {
 					index = start; // backtrack
 					SyntacticType type = parseType();
 					// Now, parse cast expression
-					e = parseExpression(wf, environment, terminated);
+					e = parseExpression(wf, scope, terminated);
 					return new Expr.Cast(type, e, sourceAttr(start, index - 1));
 				}
 				default:
@@ -2624,10 +2621,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -2643,19 +2640,19 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseArrayInitialiserOrGeneratorExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(LeftSquare);
-		Expr expr = parseExpression(wf, environment, true);
+		Expr expr = parseExpression(wf, scope, true);
 		// Finally, disambiguate
 		if(tryAndMatch(true,SemiColon) != null) {
 			// this is an array generator
 			index = start;
-			return parseArrayGeneratorExpression(wf,environment,terminated);
+			return parseArrayGeneratorExpression(wf, scope,terminated);
 		} else {		
 			// this is an array initialiser
 			index = start;
-			return parseArrayInitialiserExpression(wf,environment,terminated);
+			return parseArrayInitialiserExpression(wf, scope,terminated);
 		}
 	}
 	
@@ -2670,10 +2667,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -2689,7 +2686,7 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseArrayInitialiserExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(LeftSquare);
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
@@ -2706,7 +2703,7 @@ public class WhileyFileParser {
 			// list constructor expression is used ',' to distinguish elements.
 			// Also, expression is guaranteed to be terminated, either by ']' or
 			// ','.
-			exprs.add(parseExpression(wf, environment, true));
+			exprs.add(parseExpression(wf, scope, true));
 		} while (eventuallyMatch(RightSquare) == null);
 
 		return new Expr.ArrayInitialiser(exprs, sourceAttr(start, index - 1));
@@ -2723,10 +2720,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -2742,12 +2739,12 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseArrayGeneratorExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(LeftSquare);
-		Expr element = parseExpression(wf, environment, true);
+		Expr element = parseExpression(wf, scope, true);
 		match(SemiColon);
-		Expr count = parseExpression(wf, environment, true);
+		Expr count = parseExpression(wf, scope, true);
 		match(RightSquare);
 		return new Expr.ArrayGenerator(element,count,sourceAttr(start, index - 1));
 	}
@@ -2766,10 +2763,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -2785,7 +2782,7 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseRecordExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(LeftCurly);
 		HashSet<String> keys = new HashSet<String>();
@@ -2811,7 +2808,7 @@ public class WhileyFileParser {
 			// record constructor expression is used ',' to distinguish fields.
 			// Also, expression is guaranteed to be terminated, either by '}' or
 			// ','.
-			Expr e = parseExpression(wf, environment, true);
+			Expr e = parseExpression(wf, scope, true);
 			exprs.put(n.text, e);
 			keys.add(n.text);
 		}
@@ -2831,10 +2828,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -2849,11 +2846,11 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr parseNewExpression(WhileyFile wf, HashSet<String> environment,
+	private Expr parseNewExpression(WhileyFile wf, EnclosingScope scope,
 			boolean terminated) {
 		int start = index;
 		match(New);
-		Expr e = parseExpression(wf, environment, terminated);
+		Expr e = parseExpression(wf, scope, terminated);
 		return new Expr.New(e, sourceAttr(start, index - 1));
 	}
 
@@ -2869,10 +2866,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -2888,7 +2885,7 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseLengthOfExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(VerticalBar);
 		// We have to parse an Append Expression here, which is the most general
@@ -2897,7 +2894,7 @@ public class WhileyFileParser {
 		// collections. Furthermore, the bitwise or expression could lead to
 		// ambiguity and, hence, we bypass that an consider append expressions
 		// only. However, the expression is guaranteed to be terminated by '|'.
-		Expr e = parseShiftExpression(wf, environment, true);
+		Expr e = parseShiftExpression(wf, scope, true);
 		match(VerticalBar);
 		return new Expr.UnOp(Expr.UOp.ARRAYLENGTH, e, sourceAttr(start, index - 1));
 	}
@@ -2914,10 +2911,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -2933,10 +2930,10 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseNegationExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(Minus);
-		Expr e = parseAccessExpression(wf, environment, terminated);
+		Expr e = parseAccessExpression(wf, scope, terminated);
 		return new Expr.UnOp(Expr.UOp.NEG, e, sourceAttr(start, index - 1));
 	}
 
@@ -2954,10 +2951,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -2972,16 +2969,15 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr parseInvokeExpression(WhileyFile wf,
-			HashSet<String> environment, int start, Token name,
+	private Expr parseInvokeExpression(WhileyFile wf, EnclosingScope scope, int start, Token name,
 			boolean terminated) {
 		// First, parse the arguments to this invocation.
-		ArrayList<Expr> args = parseInvocationArguments(wf, environment);
+		ArrayList<Expr> args = parseInvocationArguments(wf, scope);
 
 		// Second, determine what kind of invocation we have. If the name of the
 		// method is a local variable, then it must be an indirect invocation on
 		// this variable.
-		if (environment.contains(name.text)) {
+		if (scope.contains(name.text)) {
 			// indirect invocation on local variable
 			Expr.LocalVariable lv = new Expr.LocalVariable(name.text,
 					sourceAttr(start, start));
@@ -3009,10 +3005,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -3028,7 +3024,7 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private ArrayList<Expr> parseInvocationArguments(WhileyFile wf,
-			HashSet<String> environment) {
+			EnclosingScope scope) {
 		boolean firstTime = true;
 		ArrayList<Expr> args = new ArrayList<Expr>();
 		while (eventuallyMatch(RightBrace) == null) {
@@ -3043,7 +3039,7 @@ public class WhileyFileParser {
 			// invocation expression is used ',' to distinguish arguments.
 			// However, expression is guaranteed to be terminated either by ')'
 			// or by ','.
-			Expr e = parseExpression(wf, environment, true);
+			Expr e = parseExpression(wf, scope, true);
 
 			args.add(e);
 		}
@@ -3062,10 +3058,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -3081,13 +3077,13 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseLogicalNotExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(Shreak);
 		// Note: cannot parse unit expression here, because that messes up the
 		// precedence. For example, !result ==> other should be parsed as
 		// (!result) ==> other, not !(result ==> other).
-		Expr expression = parseConditionExpression(wf, environment, terminated);
+		Expr expression = parseConditionExpression(wf, scope, terminated);
 		return new Expr.UnOp(Expr.UOp.NOT, expression, sourceAttr(start,
 				index - 1));
 	}
@@ -3104,18 +3100,18 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 *
 	 * @return
 	 */
 	private Expr parseDereferenceExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(Star);
-		Expr expression = parseExpression(wf, environment, terminated);
+		Expr expression = parseExpression(wf, scope, terminated);
 		return new Expr.Dereference(expression, sourceAttr(start, index - 1));
 	}
 
@@ -3135,10 +3131,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -3154,15 +3150,15 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseLambdaOrAddressExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(Ampersand);
 		if (tryAndMatch(terminated, LeftBrace) != null) {
 			index = start; // backtrack
-			return parseLambdaExpression(wf, environment, terminated);
+			return parseLambdaExpression(wf, scope, terminated);
 		} else {
 			index = start; // backtrack
-			return parseAddressExpression(wf, environment, terminated);
+			return parseAddressExpression(wf, scope, terminated);
 		}
 	}
 
@@ -3178,10 +3174,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -3197,14 +3193,14 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseLambdaExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(Ampersand);
 		match(LeftBrace);
 		ArrayList<WhileyFile.Parameter> parameters = new ArrayList<WhileyFile.Parameter>();
 		// Clone the environment so we can update it with those declared
 		// parameters.
-		environment = new HashSet<String>(environment);
+		scope = scope.newEnclosingScope();
 		boolean firstTime = true;
 		while (eventuallyMatch(MinusGreater) == null) {
 			int p_start = index;
@@ -3214,16 +3210,16 @@ public class WhileyFileParser {
 			firstTime = false;
 			SyntacticType type = parseType();
 			Token id = match(Identifier);
-			if (environment.contains(id.text)) {
+			if (scope.contains(id.text)) {
 				syntaxError("duplicate variable or parameter name", id);
 			}
-			environment.add(id.text);
+			scope.add(id.text);
 			parameters.add(wf.new Parameter(type, id.text, sourceAttr(p_start,
 					index - 1)));
 		}
 
 		// NOTE: expression guanrateed to be terminated by ')'
-		Expr body = parseExpression(wf, environment, true);
+		Expr body = parseExpression(wf, scope, true);
 		match(RightBrace);
 
 		return new Expr.Lambda(parameters, body, sourceAttr(start, index - 1));
@@ -3241,10 +3237,10 @@ public class WhileyFileParser {
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
 	 *            lambdas)
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -3260,7 +3256,7 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseAddressExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 
 		int start = index;
 		match(Ampersand);
@@ -3297,10 +3293,10 @@ public class WhileyFileParser {
 	 *                 | '~' Expr// bitwise complement
 	 * </pre>
 	 *
-	 * @param environment
-	 *            The set of declared variables visible in the enclosing scope.
-	 *            This is necessary to identify local variables within this
-	 *            expression.
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
 	 * @param terminated
 	 *            This indicates that the expression is known to be terminated
 	 *            (or not). An expression that's known to be terminated is one
@@ -3317,10 +3313,10 @@ public class WhileyFileParser {
 	 */
 
 	private Expr parseBitwiseComplementExpression(WhileyFile wf,
-			HashSet<String> environment, boolean terminated) {
+			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(Tilde);
-		Expr expression = parseExpression(wf, environment, terminated);
+		Expr expression = parseExpression(wf, scope, terminated);
 		return new Expr.UnOp(Expr.UOp.INVERT, expression, sourceAttr(start,
 				index - 1));
 	}
@@ -4402,4 +4398,112 @@ public class WhileyFileParser {
 	 * code for parsing indentation.
 	 */
 	private static final Indent ROOT_INDENT = new Indent("", 0);
+	
+	/**
+	 * The enclosing scope provides contextual information about the enclosing
+	 * scope for the given statement or expression being parsed.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	private static class EnclosingScope {
+		/**
+		 * The indent level of the enclosing scope.
+		 */		
+		private final Indent indent;
+		
+		/**
+		 * The set of declared variables in the enclosing scope.
+		 */
+		private final HashSet<String> environment;
+		
+		/**
+		 * A simple flag that tells us whether or not we are currently within a
+		 * loop. This is necessary to stop break or continue statements which
+		 * are written outside of a loop.
+		 */
+		private final boolean inLoop;
+		
+		public EnclosingScope() {
+			this.indent = ROOT_INDENT;
+			this.environment = new HashSet<String>();			
+			this.inLoop = false;
+		}
+		
+		private EnclosingScope(Indent indent, Set<String> environment, boolean inLoop) {			
+			this.indent = indent;
+			this.environment = new HashSet<String>(environment);
+			this.inLoop = inLoop;
+		}
+		
+		public Indent getIndent() {
+			return indent;
+		}
+		
+		public boolean isInLoop() {
+			return inLoop;
+		}
+		
+		/**
+		 * Check whether a given name corresponds to a declared variable in this
+		 * scope.
+		 * 
+		 * @param name
+		 * @return
+		 */
+		public boolean contains(String name) {
+			return environment.contains(name);
+		}
+		
+		/**
+		 * Declare a new variable in this scope.
+		 * 
+		 * @param name
+		 */
+		public void add(String name) {
+			environment.add(name);
+		}
+		
+		/**
+		 * Create a new enclosing scope in which variables can be declared which
+		 * are remain invisible to this enclosing scope. All variables declared
+		 * in this enclosing scope remain declared in the new enclosing scope.
+		 * 
+		 * @param indent
+		 *            the indent level for the new scope
+		 * 
+		 * @return
+		 */
+		public EnclosingScope newEnclosingScope() {
+			return new EnclosingScope(indent,environment,inLoop);			
+		}
+		
+		/**
+		 * Create a new enclosing scope in which variables can be declared which
+		 * are remain invisible to this enclosing scope. All variables declared
+		 * in this enclosing scope remain declared in the new enclosing scope.
+		 * 
+		 * @param indent
+		 *            the indent level for the new scope
+		 * 
+		 * @return
+		 */
+		public EnclosingScope newEnclosingScope(Indent indent) {
+			return new EnclosingScope(indent,environment,inLoop);			
+		}
+		
+		/**
+		 * Create a new enclosing scope in which variables can be declared which
+		 * are remain invisible to this enclosing scope. All variables declared
+		 * in this enclosing scope remain declared in the new enclosing scope.
+		 * 
+		 * @param indent
+		 *            the indent level for the new scope
+		 * 
+		 * @return
+		 */
+		public EnclosingScope newEnclosingScope(Indent indent, boolean inLoop) {
+			return new EnclosingScope(indent,environment,inLoop);			
+		}
+	}	
 }
