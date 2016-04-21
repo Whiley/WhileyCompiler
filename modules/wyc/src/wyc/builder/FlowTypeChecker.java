@@ -387,7 +387,7 @@ public class FlowTypeChecker {
 			} else if (stmt instanceof Stmt.Fail) {
 				return propagate((Stmt.Fail) stmt, environment, context);
 			} else if (stmt instanceof Stmt.Debug) {
-				return propagate((Stmt.Debug) stmt, environment);
+				return propagate((Stmt.Debug) stmt, environment, context);
 			} else if (stmt instanceof Stmt.Skip) {
 				return propagate((Stmt.Skip) stmt, environment);
 			} else {
@@ -3121,20 +3121,6 @@ public class FlowTypeChecker {
 			return 0; // dead-code
 		}
 		states.add(new Automaton.State(kind, null, true, Automaton.NOCHILDREN));
-		return myIndex;
-	}
-
-	private static int append(Type type, ArrayList<Automaton.State> states) {
-		int myIndex = states.size();
-		Automaton automaton = Type.destruct(type);
-		Automaton.State[] tStates = automaton.states;
-		int[] rmap = new int[tStates.length];
-		for (int i = 0, j = myIndex; i != rmap.length; ++i, ++j) {
-			rmap[i] = j;
-		}
-		for (Automaton.State state : tStates) {
-			states.add(Automata.remap(state, rmap));
-		}
 		return myIndex;
 	}
 

@@ -186,7 +186,7 @@ public class VcExprGenerator {
 	protected void transform(Bytecode.Convert code, BytecodeForest forest, VcBranch branch) {
 		Collection<Attribute> attributes = VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes());
 		Expr result = branch.read(code.operand(0));
-		SyntacticType type = utils.convert(code.result(), forest.get(branch.pc()).attributes());
+		SyntacticType type = utils.convert(code.type(), forest.get(branch.pc()).attributes());
 		branch.write(code.target(0), new Expr.Cast(type, result, attributes));
 	}
 
@@ -290,7 +290,7 @@ public class VcExprGenerator {
 	}
 
 	protected void transform(Bytecode.Update code, BytecodeForest forest, VcBranch branch) {
-		Expr result = branch.read(code.result());
+		Expr result = branch.read(code.type());
 		Expr oldSource = branch.read(code.target(0));
 		Expr newSource = branch.havoc(code.target(0));
 		updateHelper(code.iterator(), oldSource, newSource, result, branch, forest);

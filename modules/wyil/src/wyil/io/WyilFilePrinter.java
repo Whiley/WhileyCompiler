@@ -199,33 +199,40 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 	}
 
 	private void write(int indent, Bytecode c, BytecodeForest forest, PrintWriter out) {
-		String line = "null";
 		tabIndent(indent+1,out);
-
 		// First, write out code		
-		line = c.toString();
+		if(c instanceof Bytecode.Assert) {
+			Bytecode.Assert b = (Bytecode.Assert) c;
+			out.println("assert:");
+			write(indent+1,b.body(),forest,out);
+		} else if(c instanceof Bytecode.Assume) {
+			Bytecode.Assume b = (Bytecode.Assume) c;
+			out.println("assume:");
+			write(indent+1,b.body(),forest,out);
+		} else if(c instanceof Bytecode.If) {
+			Bytecode.If b = (Bytecode.If) c;
+			out.println("if %" + b.operand(0) + ":");
+			write(indent+1,b.trueBranch(),forest,out);
+			if(b.hasFalseBlock()) {
+				tabIndent(indent+1,out);
+				out.println("else:");
+				write(indent+1,b.falseBranch(),forest,out);
+			}
+		} else if(c instanceof Bytecode.Invariant) {
+			Bytecode.Invariant b = (Bytecode.Invariant) c;
+			out.println("invariant:");
+			write(indent+1,b.body(),forest,out);
+		} else if(c instanceof Bytecode.Quantify) {
+			Bytecode.Quantify b = (Bytecode.Quantify) c;
+			out.println("quantify(" + b.indexOperand() + " in " + b.startOperand() + ".." + b.endOperand() + "):");
+			write(indent+1,b.body(),forest,out);
+		} else if(c instanceof Bytecode.Loop) {
+			Bytecode.Loop b = (Bytecode.Loop) c;
+			out.println("loop:");
+			write(indent+1,b.body(),forest,out);
+		} else  {
+			out.println(c.toString());
 
-		// Second, write attributes
-		while(line.length() < 40) {
-			line += " ";
-		}
-		out.print(line);
-//		if (writeAttributes && attributes.length > 0) {
-//			out.print(" # ");
-//			boolean firstTime = true;
-//			for (Attribute a : attributes) {
-//				if (!firstTime) {
-//					out.print(", ");
-//				}
-//				firstTime = false;
-//				out.print(a);
-//			}
-//		}
-		out.println();
-		
-		if(c instanceof Bytecode.Compound) {
-			Bytecode.Compound cc = (Bytecode.Compound) c;
-			write(indent+1,cc.block(),forest,out);
 		}
 	}
 

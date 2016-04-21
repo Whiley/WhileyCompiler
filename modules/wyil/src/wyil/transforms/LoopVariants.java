@@ -118,18 +118,19 @@ public class LoopVariants implements Transform<WyilFile> {
 			}
 			if (code instanceof Bytecode.Compound) {
 				Bytecode.Compound body = (Bytecode.Compound) code;
-				BitSet loopModified = infer(body.block(), forest);
+				// FIXME: this is clearly broken.
+				BitSet loopModified = infer(body.block(0), forest);
 				if (code instanceof Bytecode.Quantify) {
 					// Unset the modified status of the index operand, it is
 					// already implied that this is modified.
 					Bytecode.Quantify qc = (Bytecode.Quantify) code;
 					loopModified.clear(qc.indexOperand());
-					code = new Bytecode.Quantify(qc.startOperand(), qc.endOperand(), qc.indexOperand(), toArray(loopModified),
-							qc.block());
+					code = new Bytecode.Quantify(qc.startOperand(), qc.endOperand(), qc.indexOperand(),
+							toArray(loopModified), qc.block(0));
 					block.set(i, code, e.attributes());
 				} else if (code instanceof Bytecode.Loop) {
 					Bytecode.Loop loop = (Bytecode.Loop) code;
-					code = new Bytecode.Loop(toArray(loopModified), loop.block());
+					code = new Bytecode.Loop(toArray(loopModified), loop.block(0));
 					block.set(i, code, e.attributes());
 				}
 

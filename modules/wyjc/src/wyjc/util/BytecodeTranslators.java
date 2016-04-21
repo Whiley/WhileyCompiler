@@ -25,13 +25,8 @@ public class BytecodeTranslators {
 	 */
 	public static final BytecodeTranslator[] standardFunctions = new BytecodeTranslator[255];
 	
-	static {
-		standardFunctions[OPCODE_assign] = new Assign();
+	static {		
 		standardFunctions[OPCODE_neg] = new Negate();
-		standardFunctions[OPCODE_not] = new Not();
-		standardFunctions[OPCODE_arrayinvert] = new Invert();	
-		standardFunctions[OPCODE_dereference] = new Dereference();
-		standardFunctions[OPCODE_arraylength] = new ArrayLength();	
 		standardFunctions[OPCODE_add ] = new Add();
 		standardFunctions[OPCODE_sub ] = new Subtract();
 		standardFunctions[OPCODE_mul ] = new Multiply();
@@ -42,17 +37,29 @@ public class BytecodeTranslators {
 		standardFunctions[OPCODE_lt ] = new LessThan();
 		standardFunctions[OPCODE_le ] = new LessThanEqual();
 		standardFunctions[OPCODE_gt ] = new GreaterThan();
-		standardFunctions[OPCODE_ge ] = new GreaterThanEqual();		
+		standardFunctions[OPCODE_ge ] = new GreaterThanEqual();
+		
+		standardFunctions[OPCODE_logicalnot] = new LogicalNot();		
+		standardFunctions[OPCODE_logicalor] = new LogicalOr();
+		standardFunctions[OPCODE_logicaland] = new LogicalAnd();
+		
+		standardFunctions[OPCODE_bitwiseinvert] = new Invert();			
 		standardFunctions[OPCODE_bitwiseor] = new BitwiseOr();
 		standardFunctions[OPCODE_bitwisexor] = new BitwiseXor();
 		standardFunctions[OPCODE_bitwiseand] = new BitwiseAnd();
-		standardFunctions[OPCODE_lshr] = new LeftShift();
-		standardFunctions[OPCODE_rshr] = new RightShift();
+		standardFunctions[OPCODE_shl] = new LeftShift();
+		standardFunctions[OPCODE_shr] = new RightShift();
+		
+		standardFunctions[OPCODE_arraylength] = new ArrayLength();			
 		standardFunctions[OPCODE_arrayindex] = new ArrayIndex();	
-		standardFunctions[OPCODE_arrygen] = new ArrayGenerator();
+		standardFunctions[OPCODE_arraygen] = new ArrayGenerator();
 		standardFunctions[OPCODE_array] = new ArrayConstructor();
+		
 		standardFunctions[OPCODE_record] = new RecordConstructor();
+		standardFunctions[OPCODE_dereference] = new Dereference();		
 		standardFunctions[OPCODE_newobject] = new New();
+		standardFunctions[OPCODE_is] = new Is();
+		standardFunctions[OPCODE_assign] = new Assign();		
 	};
 	
 
@@ -107,16 +114,38 @@ public class BytecodeTranslators {
 		}		
 	}
 	// ====================================================================================
-	// Boolean
+	// Logical
 	// ====================================================================================
 
-	private static final class Not implements BytecodeTranslator {
+	private static final class LogicalNot implements BytecodeTranslator {
 		@Override
 		public void translate(Operator bytecode, Context context) {
 			JvmType.Clazz type = (JvmType.Clazz) context.toJvmType(bytecode.type(0));
 			JvmType.Function ftype = new JvmType.Function(type);
 			context.add(new Bytecode.Load(bytecode.operand(0), type));
 			context.add(new Bytecode.Invoke(type, "not", ftype, Bytecode.InvokeMode.VIRTUAL));
+			context.add(new Bytecode.Store(bytecode.target(0), type));
+		}		
+	}
+	private static final class LogicalOr implements BytecodeTranslator {
+		@Override
+		public void translate(Operator bytecode, Context context) {
+			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
+			JvmType.Function ftype = new JvmType.Function(type, type);
+			context.add(new Bytecode.Load(bytecode.operand(0), type));
+			context.add(new Bytecode.Load(bytecode.operand(1), type));
+			context.add(new Bytecode.Invoke(WHILEYBOOL, "or", ftype, Bytecode.InvokeMode.VIRTUAL));
+			context.add(new Bytecode.Store(bytecode.target(0), type));
+		}		
+	}
+	private static final class LogicalAnd implements BytecodeTranslator {
+		@Override
+		public void translate(Operator bytecode, Context context) {
+			JvmType.Clazz type = (JvmType.Clazz)  context.toJvmType(bytecode.type(0));
+			JvmType.Function ftype = new JvmType.Function(type, type);
+			context.add(new Bytecode.Load(bytecode.operand(0), type));
+			context.add(new Bytecode.Load(bytecode.operand(1), type));
+			context.add(new Bytecode.Invoke(WHILEYBOOL, "and", ftype, Bytecode.InvokeMode.VIRTUAL));
 			context.add(new Bytecode.Store(bytecode.target(0), type));
 		}		
 	}
@@ -410,4 +439,35 @@ public class BytecodeTranslators {
 			context.add(new Bytecode.Store(code.target(0), WHILEYRECORD));
 		}
 	}
+	
+	// ====================================================================================
+	// Other
+	// ====================================================================================
+
+	private static final class Is implements BytecodeTranslator {
+		@Override
+		public void translate(Operator bytecode, Context context) {
+			JvmType.Function ftype = new JvmType.Function(WHILEYBOOL, JAVA_LANG_OBJECT);
+			context.add(new Bytecode.Load(bytecode.operand(0), JAVA_LANG_OBJECT));
+			context.add(new Bytecode.Load(bytecode.operand(1), WHILEYTYPE));
+			context.add(new Bytecode.Swap());
+			context.add(new Bytecode.Invoke(WHILEYTYPE, "is", ftype, Bytecode.InvokeMode.VIRTUAL));
+			context.add(new Bytecode.Store(bytecode.target(0), WHILEYBOOL));
+			// Translate invariant test (if applicable)
+//			// FIXME: this should be optional and applied only if there is an
+//			// invariant to check.
+//			String falseLabel = freshLabel();
+//			String exitLabel = freshLabel();
+//			context.add(new Bytecode.If(Bytecode.IfMode.EQ, falseLabel));
+//			// FIXME: need to coerce the type properly
+//			context.add(new Bytecode.Load(bytecode.operand(0), JAVA_LANG_OBJECT));
+//			translateInvariantTest(falseLabel,underlyingType,bytecode.operand(0),context);
+//			context.add(new Bytecode.LoadConst(true));
+//			context.add(new Bytecode.Goto(exitLabel));
+//			context.add(new Bytecode.Label(falseLabel));
+//			context.add(new Bytecode.LoadConst(false));
+//			context.add(new Bytecode.Label(exitLabel));			
+		}		
+	}
+	
 }

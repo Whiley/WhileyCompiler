@@ -281,6 +281,7 @@ public final class TypeAlgorithms {
 		case Type.K_STRING:
 		case Type.K_FUNCTION:
 		case Type.K_NOMINAL:
+		case Type.K_META:
 			return Inhabitation.SOME;
 		// Other states have their inhabitation labels stored as a flag.
 		case Type.K_NEGATION:
@@ -511,6 +512,7 @@ public final class TypeAlgorithms {
 		case Type.K_STRING:
 		case Type.K_NOMINAL:
 		case Type.K_FUNCTION:
+		case Type.K_META:
 			return false;
 		case Type.K_NEGATION:
 			return simplifyNegation(index, state, automaton, inhabitationFlags);

@@ -145,7 +145,10 @@ public class ModuleCheck implements Transform<WyilFile> {
 						e.attribute(SourceLocation.class));
 			} else if (code instanceof Bytecode.Compound) {
 				Bytecode.Compound a = (Bytecode.Compound) code;
-				checkFunctionPure(a.block(), forest);
+				int[] blocks = a.blocks();
+				for(int j=0;j!=blocks.length;++j) {
+					checkFunctionPure(blocks[j], forest);
+				}
 			}
 		}
 	}

@@ -1,17 +1,24 @@
 package wyil.util.interpreter;
 
 import wyil.lang.Bytecode;
+import wyil.lang.BytecodeForest;
 import wyil.lang.Constant;
 import wyil.lang.Type;
+import wyil.lang.WyilFile;
 import wyil.util.interpreter.Interpreter.ConstantObject;
 import wyil.util.interpreter.Interpreter.Context;
 import wyil.util.interpreter.Interpreter.InternalFunction;
 import static wyil.util.interpreter.Interpreter.*;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Set;
+
+import wycc.lang.NameID;
+import wyfs.lang.Path;
 
 public class StandardFunctions {
 	/**
@@ -20,12 +27,7 @@ public class StandardFunctions {
 	public static final InternalFunction[] standardFunctions = new InternalFunction[255];
 	
 	static {
-		standardFunctions[Bytecode.OPCODE_assign] = new Assign();
-		standardFunctions[Bytecode.OPCODE_neg] = new Negate();
-		standardFunctions[Bytecode.OPCODE_not] = new Not();
-		standardFunctions[Bytecode.OPCODE_arrayinvert] = new BitwiseInvert();	
-		standardFunctions[Bytecode.OPCODE_dereference] = new Dereference();
-		standardFunctions[Bytecode.OPCODE_arraylength] = new ArrayLength();	
+		standardFunctions[Bytecode.OPCODE_neg] = new Negate();	
 		standardFunctions[Bytecode.OPCODE_add ] = new Add();
 		standardFunctions[Bytecode.OPCODE_sub ] = new Subtract();
 		standardFunctions[Bytecode.OPCODE_mul ] = new Multiply();
@@ -39,16 +41,27 @@ public class StandardFunctions {
 		standardFunctions[Bytecode.OPCODE_gt ] = new GreaterThan();
 		standardFunctions[Bytecode.OPCODE_ge ] = new GreaterThanEqual();
 		
+		standardFunctions[Bytecode.OPCODE_logicalnot] = new LogicalNot();
+		standardFunctions[Bytecode.OPCODE_logicalor] = new LogicalOr();
+		standardFunctions[Bytecode.OPCODE_logicaland] = new LogicalAnd();
+		
+		standardFunctions[Bytecode.OPCODE_bitwiseinvert] = new BitwiseInvert();
 		standardFunctions[Bytecode.OPCODE_bitwiseor] = new BitwiseOr();
 		standardFunctions[Bytecode.OPCODE_bitwisexor] = new BitwiseXor();
 		standardFunctions[Bytecode.OPCODE_bitwiseand] = new BitwiseAnd();
-		standardFunctions[Bytecode.OPCODE_lshr] = new LeftShift();
-		standardFunctions[Bytecode.OPCODE_rshr] = new RightShift();
+		standardFunctions[Bytecode.OPCODE_shl] = new LeftShift();
+		standardFunctions[Bytecode.OPCODE_shr] = new RightShift();
+		
 		standardFunctions[Bytecode.OPCODE_arrayindex] = new ArrayIndex();	
-		standardFunctions[Bytecode.OPCODE_arrygen] = new ArrayGenerator();
+		standardFunctions[Bytecode.OPCODE_arraygen] = new ArrayGenerator();
+		standardFunctions[Bytecode.OPCODE_arraylength] = new ArrayLength();
 		standardFunctions[Bytecode.OPCODE_array] = new ArrayConstructor();
+		
 		standardFunctions[Bytecode.OPCODE_record] = new RecordConstructor();
 		standardFunctions[Bytecode.OPCODE_newobject] = new ObjectConstructor();
+		standardFunctions[Bytecode.OPCODE_dereference] = new Dereference();		
+		standardFunctions[Bytecode.OPCODE_is] = new Is();
+		standardFunctions[Bytecode.OPCODE_assign] = new Assign();
 	};
 
 	// ====================================================================================
@@ -57,7 +70,7 @@ public class StandardFunctions {
 
 	private static final class Assign implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {			
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {			
 			return operands[0];
 		}		
 	}
@@ -68,7 +81,7 @@ public class StandardFunctions {
 
 	private static final class Dereference implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			ConstantObject ref = checkType(operands[0], context, ConstantObject.class);
 			return ref.read();
 		}
@@ -76,21 +89,41 @@ public class StandardFunctions {
 	
 	private static final class ObjectConstructor implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			return new ConstantObject(operands[0]);
 		}
 		
 	}
 	
 	// ====================================================================================
-	// Boolean
+	// Logical
 	// ====================================================================================
 		
-	private static final class Not implements InternalFunction {
+	private static final class LogicalNot implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Constant.Bool i = checkType(operands[0], context, Constant.Bool.class);
 			return Constant.Bool(!i.value());
+		}		
+	}
+	
+	private static final class LogicalOr implements InternalFunction {
+		@Override
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
+			Constant.Bool lhs = checkType(operands[0], context, Constant.Bool.class);
+			Constant.Bool rhs = checkType(operands[1], context, Constant.Bool.class);			
+			boolean result = lhs.value() || rhs.value();
+			return Constant.Bool(result);			
+		}		
+	}
+	
+	private static final class LogicalAnd implements InternalFunction {
+		@Override
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
+			Constant.Bool lhs = checkType(operands[0], context, Constant.Bool.class);
+			Constant.Bool rhs = checkType(operands[1], context, Constant.Bool.class);
+			boolean result = lhs.value() && rhs.value();
+			return Constant.Bool(result);
 		}		
 	}
 	
@@ -100,7 +133,7 @@ public class StandardFunctions {
 		
 	private static final class Negate implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Constant.Integer i = checkType(operands[0], context, Constant.Integer.class);
 			return new Constant.Integer(i.value().negate());
 		}		
@@ -108,7 +141,7 @@ public class StandardFunctions {
 		
 	private static final class Add implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Constant.Integer lhs = checkType(operands[0], context, Constant.Integer.class);
 			Constant.Integer rhs = checkType(operands[1], context, Constant.Integer.class);
 			return new Constant.Integer(lhs.value().add(rhs.value()));
@@ -117,7 +150,7 @@ public class StandardFunctions {
 	}
 	private static final class Subtract implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Constant.Integer lhs = checkType(operands[0], context, Constant.Integer.class);
 			Constant.Integer rhs = checkType(operands[1], context, Constant.Integer.class);
 			return new Constant.Integer(lhs.value().subtract(rhs.value()));
@@ -126,7 +159,7 @@ public class StandardFunctions {
 	}
 	private static final class Multiply implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Constant.Integer lhs = checkType(operands[0], context, Constant.Integer.class);
 			Constant.Integer rhs = checkType(operands[1], context, Constant.Integer.class);
 			return new Constant.Integer(lhs.value().multiply(rhs.value()));
@@ -134,7 +167,7 @@ public class StandardFunctions {
 	}
 	private static final class Divide implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Constant.Integer lhs = checkType(operands[0], context, Constant.Integer.class);
 			Constant.Integer rhs = checkType(operands[1], context, Constant.Integer.class);
 			return new Constant.Integer(lhs.value().divide(rhs.value()));
@@ -143,7 +176,7 @@ public class StandardFunctions {
 	}
 	private static final class Remainder implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Constant.Integer lhs = checkType(operands[0], context, Constant.Integer.class);
 			Constant.Integer rhs = checkType(operands[1], context, Constant.Integer.class);
 			return new Constant.Integer(lhs.value().remainder(rhs.value()));
@@ -153,37 +186,37 @@ public class StandardFunctions {
 	
 	private static final class Equal implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			return Constant.Bool(operands[0].equals(operands[1]));
 		}
 	}
 	private static final class NotEqual implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			return Constant.Bool(!operands[0].equals(operands[1]));
 		}
 	}
 	private static final class LessThan implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			return lessThan(operands[0],operands[1],true,context);
 		}
 	}
 	private static final class LessThanEqual implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			return lessThan(operands[0],operands[1],false,context);
 		}
 	}
 	private static final class GreaterThan implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			return lessThan(operands[1],operands[0],true,context);
 		}
 	}
 	private static final class GreaterThanEqual implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			return lessThan(operands[1],operands[0],false,context);
 		}
 	}
@@ -194,7 +227,7 @@ public class StandardFunctions {
 
 	private static final class BitwiseInvert implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Constant.Byte b = checkType(operands[0], context, Constant.Byte.class);
 			return new Constant.Byte((byte) ~b.value());
 		}		
@@ -202,7 +235,7 @@ public class StandardFunctions {
 	
 	private static final class BitwiseOr implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Constant.Byte lhs = checkType(operands[0], context, Constant.Byte.class);
 			Constant.Byte rhs = checkType(operands[1], context, Constant.Byte.class);
 			int result = lhs.value() | rhs.value();
@@ -211,7 +244,7 @@ public class StandardFunctions {
 	}
 	private static final class BitwiseXor implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Constant.Byte lhs = checkType(operands[0], context, Constant.Byte.class);
 			Constant.Byte rhs = checkType(operands[1], context, Constant.Byte.class);
 			int result = lhs.value() ^ rhs.value();
@@ -220,7 +253,7 @@ public class StandardFunctions {
 	}
 	private static final class BitwiseAnd implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Constant.Byte lhs = checkType(operands[0], context, Constant.Byte.class);
 			Constant.Byte rhs = checkType(operands[1], context, Constant.Byte.class);
 			int result = lhs.value() & rhs.value();
@@ -229,7 +262,7 @@ public class StandardFunctions {
 	}
 	private static final class LeftShift implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Constant.Byte lhs = checkType(operands[0], context, Constant.Byte.class);
 			Constant.Integer rhs = checkType(operands[1], context, Constant.Integer.class);
 			int result = lhs.value() << rhs.value().intValue();
@@ -238,7 +271,7 @@ public class StandardFunctions {
 	}
 	private static final class RightShift implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Constant.Byte lhs = checkType(operands[0], context, Constant.Byte.class);
 			Constant.Integer rhs = checkType(operands[1], context, Constant.Integer.class);
 			int result = lhs.value() >> rhs.value().intValue();
@@ -251,7 +284,7 @@ public class StandardFunctions {
 	// ====================================================================================
 	private static final class ArrayLength implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Constant.Array array = checkType(operands[0], context, Constant.Array.class);
 			BigInteger length = BigInteger.valueOf(array.values().size());
 			return new Constant.Integer(length);
@@ -259,7 +292,7 @@ public class StandardFunctions {
 	}	
 	private static final class ArrayIndex implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Constant.Array src = checkType(operands[0], context, Constant.Array.class);
 			Constant.Integer index = checkType(operands[1], context, Constant.Integer.class);
 			int i = index.value().intValue();
@@ -272,7 +305,7 @@ public class StandardFunctions {
 	}
 	private static final class ArrayGenerator implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Constant element = operands[0];
 			Constant.Integer count = checkType(operands[1], context, Constant.Integer.class);
 			// Check that we have a integer count
@@ -286,7 +319,7 @@ public class StandardFunctions {
 	}
 	private static final class ArrayConstructor implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			ArrayList<Constant> values = new ArrayList<Constant>();
 			for (Constant operand : operands) {
 				values.add(operand);
@@ -300,7 +333,7 @@ public class StandardFunctions {
 	// ====================================================================================
 	private static final class RecordConstructor implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Context context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
 			Bytecode.Operator bytecode = (Bytecode.Operator) context.getBytecode();
 			Type.EffectiveRecord rType = (Type.EffectiveRecord) bytecode.type(0); 
 			HashMap<String, Constant> values = new HashMap<String, Constant>();
@@ -313,6 +346,18 @@ public class StandardFunctions {
 		}		
 	}	
 	
+	// ====================================================================================
+	// Other
+	// ====================================================================================
+		
+	private static final class Is implements InternalFunction {
+		@Override
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context context) {
+			Constant.Type ct = checkType(operands[1], context, Constant.Type.class);
+			boolean r = enclosing.isMemberOfType(operands[0], ct.value(), context);
+			return Constant.Bool(r);
+		}
+	}
 
 	// ====================================================================================
 	// Helpers
@@ -332,7 +377,7 @@ public class StandardFunctions {
 		} else {
 			return Constant.Bool(result <= 0);
 		}
-		
 	}
+	
 
 }

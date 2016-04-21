@@ -370,7 +370,7 @@ public class VcUtils {
 				return divideByZeroCheck((Bytecode.Operator) code, branch);
 			case Bytecode.OPCODE_arrayindex:
 				return indexOutOfBoundsChecks((Bytecode.Operator) code, branch);
-			case Bytecode.OPCODE_arrygen:
+			case Bytecode.OPCODE_arraygen:
 				return arrayGeneratorChecks((Bytecode.Operator) code, branch);
 			case Bytecode.OPCODE_update:
 				return updateChecks((Bytecode.Update) code, branch);
@@ -655,11 +655,11 @@ public class VcUtils {
 	 * @return
 	 */
 	public static Pair<String[], Type[]> parseRegisterDeclarations(BytecodeForest forest) {
-		List<BytecodeForest.Register> regs = forest.registers();
+		List<BytecodeForest.Location> regs = forest.registers();
 		String[] prefixes = new String[regs.size()];
 		Type[] types = new Type[regs.size()];
 		for (int i = 0; i != prefixes.length; ++i) {
-			BytecodeForest.Register d = regs.get(i);			
+			BytecodeForest.Location d = regs.get(i);			
 			prefixes[i] = d.name();
 			types[i] = d.type();
 		}

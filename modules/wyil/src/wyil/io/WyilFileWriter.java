@@ -318,6 +318,10 @@ public final class WyilFileWriter {
 				output.write_uv(t instanceof Type.Function ? CONSTANT_Function : CONSTANT_Method);
 				output.write_uv(typeCache.get(t));
 				output.write_uv(nameCache.get(fm.name()));
+			} else if (val instanceof Constant.Type) {
+				Constant.Type ct = (Constant.Type) val;
+				output.write_uv(CONSTANT_Type);
+				output.write_uv(typeCache.get(ct.value()));				
 			} else {
 				throw new RuntimeException("Unknown value encountered - " + val);
 			}
@@ -543,9 +547,9 @@ public final class WyilFileWriter {
 		output.write_uv(forest.numRoots());
 		output.write_uv(0); // currently no attributes
 
-		List<BytecodeForest.Register> registers = forest.registers();
-		for (int i = 0; i != registers.size(); ++i) {
-			writeCodeRegister(registers.get(i), output);
+		List<BytecodeForest.Location> locations = forest.registers();
+		for (int i = 0; i != locations.size(); ++i) {
+			writeCodeLocation(locations.get(i), output);
 		}
 
 		// FIXME: in principle we can get rid of the following by reorgansing
@@ -625,14 +629,21 @@ public final class WyilFileWriter {
 	 * @param output
 	 * @throws  
 	 */
-	private void writeCodeRegister(BytecodeForest.Register register, BinaryOutputStream output) throws IOException {
+	private void writeCodeLocation(BytecodeForest.Location location, BinaryOutputStream output) throws IOException {
+		output.write_bit(location instanceof BytecodeForest.Variable);
 		// TODO: write out register attributes (including name)
 		output.write_uv(0);
 		// Write out the type index
-		output.write_uv(typeCache.get(register.type()));
+		output.write_uv(typeCache.get(location.type()));
+		if(location instanceof BytecodeForest.Variable) {
+			BytecodeForest.Variable v = (BytecodeForest.Variable) location;
+			output.write_uv(stringCache.get(v.name()));
+		} else {
+			BytecodeForest.Intermediate i = (BytecodeForest.Intermediate) location;
+			output.write_uv(i.value());
+		}
 	}
-	
-	
+		
 	/**
 	 * <p>
 	 * Write out a block of bytecodes using a given set of pre-calculated label
@@ -737,7 +748,7 @@ public final class WyilFileWriter {
 
 	/**
 	 * Write the "common" part of a bytecode instruction. This includes the
-	 * opcode, target register, operand registers, types and attributes.
+	 * opcode, target location, operand locations, types and attributes.
 	 *
 	 * @param code
 	 *            --- The bytecode to be written.
@@ -754,11 +765,11 @@ public final class WyilFileWriter {
 		output.write_uv(operands.length);
 		output.write_uv(types.length);
 		output.write_uv(0); // attributes
-		// Write target registers
+		// Write target locations
 		for (int i = 0; i != targets.length; ++i) {
 			output.write_uv(targets[i]);
 		}
-		// Write operand registers
+		// Write operand locations
 		for (int i = 0; i != operands.length; ++i) {
 			output.write_uv(operands[i]);
 		}
@@ -803,8 +814,12 @@ public final class WyilFileWriter {
 		// First, deal with special cases
 		if(code instanceof Bytecode.Compound) {
 			// Assert / Assume / Loop / Quantify
-			Bytecode.Compound cb = (Bytecode.Compound) code; 
-			output.write_uv(cb.block());
+			Bytecode.Compound cb = (Bytecode.Compound) code;
+			int[] blocks = cb.blocks();
+			output.write_uv(blocks.length);
+			for(int block : blocks) {
+				output.write_uv(block);
+			}
 		} else if(code instanceof Bytecode.Branching) {
 			Bytecode.Branching bb = (Bytecode.Branching) code;
 			int destination = labels.get(bb.destination());
@@ -932,15 +947,19 @@ public final class WyilFileWriter {
 
 	private void buildPools(BytecodeForest forest) {		
 		for(int i=0;i!=forest.numRegisters();++i) {
-			buildPools(forest.getRegister(i));
+			buildPools(forest.getLocation(i));
 		}
 		for(int i=0;i!=forest.numBlocks();++i) {
 			buildPools(forest.get(i));
 		}
 	}
 
-	private void buildPools(BytecodeForest.Register reg) {
-		addTypeItem(reg.type());
+	private void buildPools(BytecodeForest.Location loc) {
+		addTypeItem(loc.type());
+		if(loc instanceof BytecodeForest.Variable) {
+			BytecodeForest.Variable v = (BytecodeForest.Variable) loc;
+			addStringItem(v.name());
+		}
 	}
 	
 	private void buildPools(BytecodeForest.Block block) {
@@ -1075,6 +1094,9 @@ public final class WyilFileWriter {
 			Constant.Lambda fm = (Constant.Lambda) v;
 			addTypeItem(fm.type());
 			addNameItem(fm.name());
+		} else if (v instanceof Constant.Type) {
+			Constant.Type ct = (Constant.Type) v;
+			addTypeItem(ct.value());
 		}
 	}
 
@@ -1177,7 +1199,7 @@ public final class WyilFileWriter {
 	public final static int CONSTANT_Array = 9;
 	public final static int CONSTANT_Record = 10;
 	// public final static int CONSTANT_Tuple = 11;
-	// public final static int CONSTANT_Map = 12;
+	public final static int CONSTANT_Type = 12;
 	public final static int CONSTANT_Function = 13;
 	public final static int CONSTANT_Method = 14;
 

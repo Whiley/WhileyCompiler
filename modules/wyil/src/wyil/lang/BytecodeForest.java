@@ -23,7 +23,7 @@ import wycc.util.Pair;
  *
  */
 public class BytecodeForest {
-	private final ArrayList<Register> registers;
+	private final ArrayList<Location> locations;
 	private final ArrayList<Integer> roots;
 	private final ArrayList<Block> blocks;
 
@@ -32,7 +32,7 @@ public class BytecodeForest {
 	}
 	
 	public BytecodeForest(BytecodeForest forest) {
-		this.registers = new ArrayList<Register>(forest.registers);
+		this.locations = new ArrayList<Location>(forest.locations);
 		this.roots = new ArrayList<Integer>(forest.roots);
 		this.blocks = new ArrayList<Block>();
 		for(int i=0;i!=forest.blocks.size();++i) {
@@ -40,8 +40,8 @@ public class BytecodeForest {
 		}		
 	}
 	
-	public BytecodeForest(List<Register> registers) {
-		this.registers = new ArrayList<Register>(registers);
+	public BytecodeForest(List<Location> locations) {
+		this.locations = new ArrayList<Location>(locations);
 		this.roots = new ArrayList<Integer>();
 		this.blocks = new ArrayList<Block>();
 	}
@@ -69,7 +69,7 @@ public class BytecodeForest {
 	}
 	
 	public int numRegisters() {
-		return registers.size();
+		return locations.size();
 	}
 	
 	/**
@@ -78,8 +78,8 @@ public class BytecodeForest {
 	 * 
 	 * @return
 	 */
-	public List<Register> registers() {
-		return registers;
+	public List<Location> registers() {
+		return locations;
 	}
 	
 	/**
@@ -105,13 +105,13 @@ public class BytecodeForest {
 	}
 	
 	/**
-	 * Get a specific register declared in this forest.
+	 * Get a specific location declared in this forest.
 	 * 
 	 * @param index
 	 * @return
 	 */
-	public Register getRegister(int index) {
-		return registers.get(index);
+	public Location getLocation(int index) {
+		return locations.get(index);
 	}
 		
 	/**
@@ -275,22 +275,56 @@ public class BytecodeForest {
 	}
 	
 	/**
-	 * Represents the declaration information associated with a given register.
-	 *
+	 * Represents a location use to hold a value of some kind. This location
+	 * could correspond to a local variable, or an intermediate value.
+	 * 
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Register {
+	public static abstract class Location {
 		private final Type type;
-		private final String name;
-
-		public Register(Type type, String name) {
+		
+		public Location(Type type) {
 			this.type = type;
-			this.name = name;
 		}
 
 		public Type type() {
 			return type;
+		}
+	}
+	
+	/**
+	 * Represents the result of an intermediate computation which is assigned to
+	 * an anonymous location.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Intermediate extends Location {
+		private final Bytecode value;
+		
+		public Intermediate(Type type, Bytecode value) {
+			super(type);
+			this.value = value;
+		}
+		
+		public Bytecode value() {
+			return value;
+		}
+	}
+	
+	/**
+	 * Represents the declaration information associated with a given named location (i.e. variable).
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Variable extends Location {
+		private final String name;
+
+		public Variable(Type type, String name) {
+			super(type);
+			this.name = name;
 		}
 
 		public String name() {
@@ -298,7 +332,7 @@ public class BytecodeForest {
 		}
 		
 		public String toString() {
-			return type + " " + name;
+			return type() + " " + name;
 		}
 	}
 }

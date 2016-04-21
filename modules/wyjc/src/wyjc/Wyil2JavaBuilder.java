@@ -166,7 +166,7 @@ public class Wyil2JavaBuilder implements Builder {
 			// new DeadCodeElimination().apply(file);
 
 			// Verify the generated file being written
-			// new ClassFileVerifier().apply(contents);
+			//new ClassFileVerifier().apply(contents);
 
 			// Write class file into its destination
 			df.write(contents);
@@ -367,12 +367,12 @@ public class Wyil2JavaBuilder implements Builder {
 		String falseBranch = freshLabel();
 		// FIXME: this is inefficient in cases where there are no invariants in
 		// component types (e.g. there are no component types).
-		translateInvariantTest(falseBranch, td.type(), 0, 1, constants, bytecodes);
+		translateInvariantTest(falseBranch, td.type(), 0, td.invariant().numRegisters(), constants, bytecodes);
 		// Second, generate code for invariant (if applicable).
 		// FIXME: use of patchInvariantBlock is not ideal
 		BytecodeForest invariant = patchInvariantBlock(falseBranch, td.invariant());
-		for(int i=0;i!=invariant.numRoots();++i) {				
-			translate(invariant.getRoot(i), 1, invariant, bytecodes);
+		for(int i=0;i!=invariant.numRoots();++i) {
+			translate(invariant.getRoot(i), invariant.numRegisters(), invariant, bytecodes);
 		}
 		bytecodes.add(new Bytecode.LoadConst(true));
 		bytecodes.add(new Bytecode.Return(new JvmType.Bool()));
@@ -612,9 +612,7 @@ public class Wyil2JavaBuilder implements Builder {
 			} else if (code instanceof Goto) {
 				translate(pc, (Goto) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof If) {
-				translateIfGoto(pc, (If) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof IfIs) {
-				translate(pc, (IfIs) code, freeSlot, forest, bytecodes);
+				translate(pc, (If) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof IndirectInvoke) {
 				translate(pc, (IndirectInvoke) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Invoke) {
@@ -648,7 +646,7 @@ public class Wyil2JavaBuilder implements Builder {
 
 	private void translate(BytecodeForest.Index index, AssertOrAssume c,
 			int freeSlot, BytecodeForest forest, ArrayList<Bytecode> bytecodes) {
-		BytecodeForest.Index pc = new BytecodeForest.Index(c.block(), 0);
+		BytecodeForest.Index pc = new BytecodeForest.Index(c.body(), 0);
 		if(c instanceof Invariant) {
 			// essentially a no-op for now			
 		} else {
@@ -677,8 +675,8 @@ public class Wyil2JavaBuilder implements Builder {
 	private void translate(BytecodeForest.Index index, Convert c, int freeSlot, BytecodeForest forest,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0))));
-		addCoercion(c.type(0), c.result(), freeSlot, constants, bytecodes);
-		bytecodes.add(new Bytecode.Store(c.target(0), convertUnderlyingType(c.result())));
+		addCoercion(c.type(0), c.type(), freeSlot, constants, bytecodes);
+		bytecodes.add(new Bytecode.Store(c.target(0), convertUnderlyingType(c.type())));
 	}
 
 	private void translate(BytecodeForest.Index index, Update code, int freeSlot, BytecodeForest forest,
@@ -768,7 +766,7 @@ public class Wyil2JavaBuilder implements Builder {
 			// read of the current value and, instead, just return the rhs value
 			// directly.
 			bytecodes.add(new Bytecode.Load(lval.indexOperand, WHILEYINT));
-			bytecodes.add(new Bytecode.Load(code.result(), convertUnderlyingType(lval.rawType().element())));
+			bytecodes.add(new Bytecode.Load(code.type(), convertUnderlyingType(lval.rawType().element())));
 			addWriteConversion(code.rhs(), bytecodes);
 		}
 		JvmType.Function setFunType = new JvmType.Function(WHILEYARRAY, WHILEYARRAY, WHILEYINT, JAVA_LANG_OBJECT);
@@ -796,7 +794,7 @@ public class Wyil2JavaBuilder implements Builder {
 			// read of the current value and, instead, just return the rhs value
 			// directly.
 			bytecodes.add(new Bytecode.LoadConst(lval.field));
-			bytecodes.add(new Bytecode.Load(code.result(), convertUnderlyingType(type.field(lval.field))));
+			bytecodes.add(new Bytecode.Load(code.type(), convertUnderlyingType(type.field(lval.field))));
 			addWriteConversion(type.field(lval.field), bytecodes);
 		}
 		JvmType.Function putFunType = new JvmType.Function(WHILEYRECORD, WHILEYRECORD, JAVA_LANG_STRING, JAVA_LANG_OBJECT);
@@ -819,7 +817,7 @@ public class Wyil2JavaBuilder implements Builder {
 			// read of the current value and, instead, just return the rhs value
 			// directly.
 			JvmType rhsJvmType = convertUnderlyingType(code.rhs());
-			bytecodes.add(new Bytecode.Load(code.result(),rhsJvmType));
+			bytecodes.add(new Bytecode.Load(code.type(),rhsJvmType));
 		}
 		JvmType.Function setFunType = new JvmType.Function(WHILEYOBJECT, JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "setState", setFunType, Bytecode.InvokeMode.VIRTUAL));
@@ -885,89 +883,26 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 
-	private void translateIfGoto(BytecodeForest.Index index, If code, int freeSlot, BytecodeForest forest,
+	private void translate(BytecodeForest.Index index, If code, int freeSlot, BytecodeForest forest,
 			ArrayList<Bytecode> bytecodes) {
-		JvmType jt = convertUnderlyingType(code.type(0));
-		bytecodes.add(new Bytecode.Load(code.operand(0), jt));
+		String falseLabel = freshLabel();
 		JvmType.Function ftype = new JvmType.Function(T_BOOL);
+		bytecodes.add(new Bytecode.Load(code.operand(0), WHILEYBOOL));
 		bytecodes.add(new Bytecode.Invoke(WHILEYBOOL, "value", ftype, Bytecode.InvokeMode.VIRTUAL));
-		bytecodes.add(new Bytecode.If(Bytecode.IfMode.NE, code.destination()));
+		bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, falseLabel));
+		translate(new BytecodeForest.Index(code.trueBranch(), 0), freeSlot, forest, bytecodes);
+		if(code.hasFalseBlock()) {
+			String exitLabel = freshLabel();
+			bytecodes.add(new Bytecode.Goto(exitLabel));
+			bytecodes.add(new Bytecode.Label(falseLabel));
+			translate(new BytecodeForest.Index(code.falseBranch(), 0), freeSlot, forest, bytecodes);
+			bytecodes.add(new Bytecode.Label(exitLabel));
+		} else {
+			bytecodes.add(new Bytecode.Label(falseLabel));
+		}
 	}
 
 	
-	private void translate(BytecodeForest.Index index, IfIs c, int freeSlot,
-			BytecodeForest forest, ArrayList<Bytecode> bytecodes) {
-
-		// In this case, we're updating the type of a local variable. To
-		// make this work, we must update the JVM type of that slot as well
-		// using a checkcast on both branches. The key challenge here lies with
-		// the resulting types on the true and false branches of the
-		// conditional. These are critical to determining the correct type to
-		// cast the variable's contents to. The presence of constrained types
-		// complicates this. For example, consider:
-		//
-		// <pre>
-		// type nat is (int n) where n >= 0
-		//
-		// function f(int|bool|null x) -> bool:
-		// if x is nat|bool:
-		// ...
-		// else:
-		// ...
-		// </pre>
-		//
-		// Here, the type of x on the true branch is int|bool, whilst on the
-		// false
-		// branch it is int|null. To correctly handle this, we need to determine
-		// maximal type which is fully consumed by another. In this case, the
-		// maximal type fully consumed by nat|bool is bool and, hence, the type
-		// on the false branch is int|bool|null - bool == int|null.
-		//
-		// First, calculate the underlying and maximal consumed types, which
-		// we'll need later.
-		Type targetType = c.rightOperand();
-		Type maximalConsumedType;
-		Type underlyingType;
-		try {
-			maximalConsumedType = expander.getMaximallyConsumedType(targetType);
-			underlyingType = expander.getUnderlyingType(targetType);
-		} catch (Exception e) {
-			internalFailure("error computing maximally consumed type: " + targetType, filename, e);
-			return;
-		}
-		// The false label will determine the destination where the variable
-		// will be retyped on the false branch begins.
-		String falseLabel = freshLabel();
-
-		// Second, translate the raw type test. This will direct all values
-		// matching the underlying type towards the step label. At that point,
-		// we need to check whether the necessary constrained (if applicable)
-		// are met.
-		bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0))));
-		translateTypeTest(falseLabel, underlyingType, constants, bytecodes);
-		
-		// Third, update the type of the variable on the true branch. This is
-		// the intersection of its original type with that of the test to
-		// produce the most precise type possible.
-		Type typeOnTrueBranch = Type.intersect(c.type(0), underlyingType);
-		bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0))));
-		addReadConversion(typeOnTrueBranch, bytecodes);
-		bytecodes.add(new Bytecode.Store(c.operand(0), convertUnderlyingType(typeOnTrueBranch)));
-
-		// Fourth handle constrained types by invoking a function which will
-		// execute any and all constraints associated with the type. For
-		// recursive types, this may result in recursive calls.
-		translateInvariantTest(falseLabel, targetType, c.operand(0), freeSlot, constants, bytecodes);
-		bytecodes.add(new Bytecode.Goto(c.destination()));
-		// Finally, construct false branch and retype the variable on the false
-		// branch to ensure it has the most precise type we know at this point.
-		bytecodes.add(new Bytecode.Label(falseLabel));
-		Type typeOnFalseBranch = Type.intersect(c.type(0), Type.Negation(maximalConsumedType));
-		bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0))));
-		addReadConversion(typeOnFalseBranch, bytecodes);
-		bytecodes.add(new Bytecode.Store(c.operand(0), convertUnderlyingType(typeOnFalseBranch)));
-	}
-
 	// The purpose of this method is to translate a type test. We're testing to
 	// see whether what's on the top of the stack (the value) is a subtype of
 	// the type being tested. Note, constants must be provided as a parameter
@@ -992,13 +927,10 @@ public class Wyil2JavaBuilder implements Builder {
 			Constant constant = new Constant.Type(test);
 			int id = JvmValue.get(constant, constants);
 			String name = "constant$" + id;
-			bytecodes.add(new Bytecode.GetField(owner, name, WHILEYTYPE,
-					Bytecode.FieldMode.STATIC));
-
-			JvmType.Function ftype = new JvmType.Function(T_BOOL,
-					JAVA_LANG_OBJECT, WHILEYTYPE);
-			bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "instanceOf", ftype,
-					Bytecode.InvokeMode.STATIC));
+			bytecodes.add(new Bytecode.GetField(owner, name, WHILEYTYPE, Bytecode.FieldMode.STATIC));
+			bytecodes.add(new Bytecode.Swap());
+			JvmType.Function ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT);
+			bytecodes.add(new Bytecode.Invoke(WHILEYTYPE, "instanceOf", ftype, Bytecode.InvokeMode.STATIC));
 			bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, falseTarget));
 		}
 	}
@@ -1096,7 +1028,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Label(loopHeader));
 		// Translate body of loop. The cast is required to ensure correct method
 		// is called.
-		translate(new BytecodeForest.Index(c.block(), 0), freeSlot, forest, bytecodes);
+		translate(new BytecodeForest.Index(c.body(), 0), freeSlot, forest, bytecodes);
 		// Terminate loop by branching back to head of loop
 		bytecodes.add(new Bytecode.Goto(loopHeader));
 	}
@@ -1124,7 +1056,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(c.indexOperand(), convertUnderlyingType(Type.T_INT)));
 		// Translate body of loop. The cast is required to ensure correct method
 		// is called.
-		translate(new BytecodeForest.Index(c.block(), 0), freeSlot + 1, forest, bytecodes);
+		translate(new BytecodeForest.Index(c.body(), 0), freeSlot + 1, forest, bytecodes);
 		// Terminate loop by branching back to head of loop
 		bytecodes.add(new Bytecode.Goto(loopHeader));
 		bytecodes.add(new Bytecode.Label(loopExit));
@@ -1306,6 +1238,8 @@ public class Wyil2JavaBuilder implements Builder {
 			translate((Constant.Record) v, freeSlot, lambdas, bytecodes);
 		} else if (v instanceof Constant.Lambda) {
 			translate((Constant.Lambda) v, freeSlot, lambdas, bytecodes);
+		} else if (v instanceof Constant.Type) {
+			translate((Constant.Type) v, freeSlot, bytecodes);
 		} else {
 			throw new IllegalArgumentException("unknown value encountered:" + v);
 		}

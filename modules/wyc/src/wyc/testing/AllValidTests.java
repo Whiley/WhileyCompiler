@@ -118,7 +118,7 @@ public class AllValidTests {
 		IGNORED.put("While_Valid_48", "unknown");
 
 		// Fails and was not annotated with @Test before parameterizing
-		IGNORED.put("While_Valid_7", "unknown");
+		IGNORED.put("While_Valid_7", "unknown");		
 	}
 
 	/**
