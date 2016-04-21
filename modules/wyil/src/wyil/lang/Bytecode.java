@@ -880,15 +880,6 @@ public abstract class Bytecode {
 			return OPCODE_goto;
 		}
 
-		public Goto relabel(Map<String, String> labels) {
-			String nlabel = labels.get(destination());
-			if (nlabel == null) {
-				return this;
-			} else {
-				return new Goto(nlabel);
-			}
-		}
-
 		public boolean equals(Object o) {
 			return o instanceof Goto && super.equals(o);
 		}
@@ -952,15 +943,6 @@ public abstract class Bytecode {
 	public static final class If extends Branching {
 		public If(Type type, int operand, String target) {
 			super(target, new Type[] { type }, new int[0], operand);
-		}
-
-		public If relabel(Map<String, String> labels) {
-			String nlabel = labels.get(destination());
-			if (nlabel == null) {
-				return this;
-			} else {
-				return new If(types[0], operands[0], nlabel);
-			}
 		}
 
 		public int opcode() {
@@ -1029,15 +1011,6 @@ public abstract class Bytecode {
 
 		public Type rightOperand() {
 			return type(1);
-		}
-
-		public IfIs relabel(Map<String, String> labels) {
-			String nlabel = labels.get(destination());
-			if (nlabel == null) {
-				return this;
-			} else {
-				return new IfIs(types[0], operands[0], types[1], nlabel);
-			}
 		}
 
 		public boolean equals(Object o) {
@@ -1305,15 +1278,6 @@ public abstract class Bytecode {
 			return label;
 		}
 		
-		public Label relabel(Map<String, String> labels) {
-			String nlabel = labels.get(label);
-			if (nlabel == null) {
-				return this;
-			} else {
-				return new Label(nlabel);
-			}
-		}
-
 		public int hashCode() {
 			return label().hashCode();
 		}
@@ -1819,25 +1783,6 @@ public abstract class Bytecode {
 		@Override
 		public int opcode() {
 			return OPCODE_switch;
-		}
-
-		public Switch relabel(Map<String, String> labels) {
-			ArrayList<Pair<Constant, String>> nbranches = new ArrayList();
-			for (Pair<Constant, String> p : branches()) {
-				String nlabel = labels.get(p.second());
-				if (nlabel == null) {
-					nbranches.add(p);
-				} else {
-					nbranches.add(new Pair(p.first(), nlabel));
-				}
-			}
-
-			String nlabel = labels.get(defaultTarget());
-			if (nlabel == null) {
-				return new Switch(types[0], operands[0], defaultTarget(), nbranches);
-			} else {
-				return new Switch(types[0], operands[0], nlabel, nbranches);
-			}
 		}
 
 		public boolean equals(Object o) {
