@@ -107,4 +107,4 @@ private native method read(NativeFile f, int max) -> byte[]
 private native method read(NativeFile f) -> byte[]
 
 // write entire contents of native file
-private native method write(NativeFile f, byte[] data)
+private native method write(NativeFile f, byte[] data) -> uint
