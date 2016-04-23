@@ -3375,15 +3375,8 @@ public class WhileyFileParser {
 			// valid expression.
 			return true;
 		} else if (type instanceof SyntacticType.FunctionOrMethod) {
-			SyntacticType.FunctionOrMethod tt = (SyntacticType.FunctionOrMethod) type;
-			boolean result = false;
-			for (SyntacticType element : tt.paramTypes) {
-				result |= mustParseAsType(element);
-			}
-			for (SyntacticType element : tt.returnTypes) {
-				result |= mustParseAsType(element);
-			}			
-			return result;
+			// "function" and "method" are keywords, cannot parse as expression.
+			return true;
 		} else if (type instanceof SyntacticType.Intersection) {
 			SyntacticType.Intersection tt = (SyntacticType.Intersection) type;
 			boolean result = false;
