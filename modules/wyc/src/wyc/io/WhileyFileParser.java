@@ -36,8 +36,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.sun.org.apache.bcel.internal.Constants;
-
 import wyc.lang.*;
 import wyc.lang.Expr.ConstantAccess;
 import wyc.io.WhileyFileLexer.Token;
@@ -154,7 +152,7 @@ public class WhileyFileParser {
 		// First, parse "from" usage (if applicable)
 		Token token = tryAndMatch(true, Identifier, Star);
 		if (token == null) {
-			syntaxError("expected identifier or '*' here", token);
+			syntaxError("expected identifier or '*' here", tokens.get(index));
 		}
 		String name = token.text;
 		// NOTE: we don't specify "from" as a keyword because this prevents it
@@ -278,16 +276,22 @@ public class WhileyFileParser {
 			List<Modifier> modifiers, boolean isFunction) {
 		int start = index;
 
+		EnclosingScope scope = new EnclosingScope();
+		List<String> lifetimeParameters;
+
 		if (isFunction) {
 			match(Function);
+			lifetimeParameters = Collections.emptyList();
 		} else {
 			match(Method);
+
+			// Lifetime parameters
+			lifetimeParameters = parseOptionalLifetimeParameters(scope);
 		}
 
 		Token name = match(Identifier);
 
 		// Parse function or method parameters
-		EnclosingScope scope = new EnclosingScope();		
 		List<Parameter> parameters = parseParameters(wf,scope);
 		
 		// Parse (optional) return type
@@ -334,6 +338,7 @@ public class WhileyFileParser {
 			match(Colon);
 			end = index;
 			matchEndLine();
+			scope.declareThisLifetime();
 			stmts = parseBlock(wf, scope, false);
 		}
 
@@ -342,8 +347,8 @@ public class WhileyFileParser {
 			declaration = wf.new Function(modifiers, name.text, returns, parameters, requires, ensures, stmts,
 					sourceAttr(start, end - 1));
 		} else {
-			declaration = wf.new Method(modifiers, name.text, returns, parameters, requires, ensures, stmts,
-					sourceAttr(start, end - 1));
+			declaration = wf.new Method(modifiers, name.text, returns, parameters,
+					lifetimeParameters, requires, ensures, stmts, sourceAttr(start, end - 1));
 		}
 		wf.add(declaration);
 	}
@@ -358,13 +363,9 @@ public class WhileyFileParser {
 			}
 			firstTime = false;
 			int pStart = index;
-			Pair<SyntacticType, Token> p = parseMixedType();
+			Pair<SyntacticType, Token> p = parseMixedType(scope);
 			Token id = p.second();
-			if (scope.contains(id.text)) {
-				syntaxError("parameter already declared", id);
-			} else {
-				scope.add(id.text);
-			}
+			scope.declareVariable(id);
 			parameters.add(wf.new Parameter(p.first(), id.text, sourceAttr(
 					pStart, index - 1)));			
 		}
@@ -390,17 +391,13 @@ public class WhileyFileParser {
 		SyntacticType type;
 		String name;
 		if(tryAndMatch(true,LeftBrace) != null) {		
-			Pair<SyntacticType, Token> p = parseMixedType();
+			Pair<SyntacticType, Token> p = parseMixedType(scope);
 			type = p.first();
-			name = p.second().text;			
-			if (scope.contains(name)) {
-				syntaxError("parameter already declared",p.second());
-			} else {
-				scope.add(name);
-			}
+			name = p.second().text;
+			scope.declareVariable(p.second());
 			match(RightBrace);
 		} else {
-			type = parseType();
+			type = parseType(scope);
 			name = null;
 		}
 		return wf.new Parameter(type, name, sourceAttr(start, index - 1));
@@ -646,7 +643,9 @@ public class WhileyFileParser {
 		}
 
 		// At this point, we have three possibilities remaining: variable
-		// declaration, invocation or assignment. To disambiguate these, we
+		// declaration, invocation, assignment, or a named block.
+		// The latter one can be detected easily as it is just an identifier
+		// followed by a colon. To disambiguate the remaining cases, we
 		// first determine whether or not what follows *must* be parsed as a
 		// type (i.e. parsing it as an expression would fail). If so, then it
 		// must be a variable declaration that follows. Otherwise, it can still
@@ -658,8 +657,8 @@ public class WhileyFileParser {
 
 	/**
 	 * A headless statement is one which has no identifying keyword. The set of
-	 * headless statements include assignments, invocations and variable
-	 * declarations.
+	 * headless statements include assignments, invocations, variable
+	 * declarations and named blocks.
 	 * 
 	 * @param wf
 	 * @param scope
@@ -670,7 +669,25 @@ public class WhileyFileParser {
 	 */
 	private Stmt parseHeadlessStatement(WhileyFile wf, EnclosingScope scope) {
 		int start = index;
-		SyntacticType type = parseDefiniteType();
+
+		// See if it is a named block
+		Token blockName = tryAndMatch(true, Identifier);
+		if (blockName != null) {
+			if (tryAndMatch(true, Colon) != null && isAtEOL()) {
+				int end = index;
+				matchEndLine();
+				scope = scope.newEnclosingScope();
+				scope.declareLifetime(blockName);
+
+				List<Stmt> body = parseBlock(wf, scope, false);
+				return new Stmt.NamedBlock(blockName.text, body, sourceAttr(start, end - 1));
+			} else {
+				index = start; // backtrack
+			}
+		}
+
+		// Remaining cases: assignments, invocations and variable declarations
+		SyntacticType type = parseDefiniteType(scope);
 
 		if (type == null) {
 			// Can still be a variable declaration, assignment or invocation.
@@ -698,7 +715,7 @@ public class WhileyFileParser {
 				// Therefore, we backtrack and parse the expression again as a
 				// type.
 				index = start; // backtrack
-				type = parseType();
+				type = parseType(scope);
 			}
 		}
 		// Must be a variable declaration here.
@@ -738,11 +755,7 @@ public class WhileyFileParser {
 
 		// Ensure at least one variable is defined by this pattern.		
 		// Check that declared variables are not already defined.		
-		if (scope.contains(parameter.name)) {
-			syntaxError("variable already declared", parameter);
-		} else {
-
-		}		
+		scope.checkNameAvailable(parameter);
 
 		// A variable declaration may optionally be assigned an initialiser
 		// expression.
@@ -756,7 +769,7 @@ public class WhileyFileParser {
 		// Finally, register the new variable in the enclosing scope. This
 		// should be done after parsing the initialiser expression to prevent it
 		// from referring to this variable.
-		scope.add(parameter.name);
+		scope.declareVariable(parameter);
 		// Done.
 		return new Stmt.VariableDeclaration(parameter, initialiser, sourceAttr(
 				start, end - 1));
@@ -1887,7 +1900,7 @@ public class WhileyFileParser {
 				bop = Expr.BOp.NEQ;
 				break;
 			case Is:
-				SyntacticType type = parseType();
+				SyntacticType type = parseType(scope);
 				Expr.TypeVal rhs = new Expr.TypeVal(type, sourceAttr(start,
 						index - 1));
 				return new Expr.BinOp(Expr.BOp.IS, lhs, rhs, sourceAttr(start,
@@ -1968,16 +1981,13 @@ public class WhileyFileParser {
 			}
 			firstTime = false;
 			Token id = match(Identifier);
-			if (scope.contains(id.text)) {
-				// It is already defined which is a syntax error
-				syntaxError("variable already declared", id);
-			}
+			scope.checkNameAvailable(id);
 			match(In);
 			Expr lhs = parseAdditiveExpression(wf, scope, terminated);
 			match(DotDot);
 			Expr rhs = parseAdditiveExpression(wf, scope, terminated);			
 			srcs.add(new Triple<String, Expr, Expr>(id.text, lhs, rhs));
-			scope.add(id.text);
+			scope.declareVariable(id);
 		} while (eventuallyMatch(VerticalBar) == null);
 
 		// Parse condition over source variables
@@ -2278,7 +2288,32 @@ public class WhileyFileParser {
 				// is not a declared variable name.
 				Path.ID id = parsePossiblePathID(lhs, scope);
 
+				// First we have to see if it is a method invocation. We can
+				// have optional lifetime arguments in angle brackets.
+				boolean isInvocation = false;
+				List<String> lifetimeArguments = null;
 				if (tryAndMatch(terminated, LeftBrace) != null) {
+					isInvocation = true;
+				} else if (lookaheadSequence(terminated, LeftAngle)) {
+					// This one is a little tricky, as we need some lookahead
+					// effort. We want to see whether it is a method invocation with
+					// lifetime arguments. But "Identifier < ..." can also be a
+					// boolean expression!
+					int oldindex = index;
+					match(LeftAngle);
+					Token lifetime = tryAndMatch(terminated, RightAngle, Identifier, This, Star);
+					if (lifetime != null && (
+							lifetime.kind != Identifier // then it's definitely a lifetime
+							|| scope.isLifetime(lifetime.text))) {
+						isInvocation = true;
+						index--; // don't forget the first argument!
+						lifetimeArguments = parseLifetimeArguments(wf, scope);
+						match(LeftBrace);
+					} else {
+						index = oldindex; // backtrack
+					}
+				}
+				if (isInvocation) {
 					// This indicates a direct or indirect invocation. First,
 					// parse arguments to invocation
 					ArrayList<Expr> arguments = parseInvocationArguments(wf,scope);
@@ -2288,11 +2323,11 @@ public class WhileyFileParser {
 						lhs = new Expr.FieldAccess(lhs, name, sourceAttr(
 								start, index - 1));
 						lhs = new Expr.AbstractIndirectInvoke(lhs, arguments,
-								sourceAttr(start, index - 1));
+								lifetimeArguments, sourceAttr(start, index - 1));
 					} else {
 						// This indicates we have an direct invocation
 						lhs = new Expr.AbstractInvoke(name, id, arguments,
-								sourceAttr(start, index - 1));
+								lifetimeArguments, sourceAttr(start, index - 1));
 					}
 
 				} else if(id != null) {
@@ -2378,13 +2413,38 @@ public class WhileyFileParser {
 		case LeftBrace:
 			return parseBracketedExpression(wf, scope, terminated);
 		case New:
+		case This:
 			return parseNewExpression(wf, scope, terminated);
 		case Identifier:
 			match(Identifier);
 			if (tryAndMatch(terminated, LeftBrace) != null) {
 				return parseInvokeExpression(wf, scope, start, token,
-						terminated);
-			} else if (scope.contains(token.text)) {
+						terminated, null);
+			} else if (lookaheadSequence(terminated, Colon, New)) {
+				// Identifier is lifetime name in "new" expression
+				index = start;
+				return parseNewExpression(wf, scope, terminated);
+			} else if (lookaheadSequence(terminated, LeftAngle)) {
+				// This one is a little tricky, as we need some lookahead
+				// effort. We want to see whether it is a method invocation with
+				// lifetime arguments. But "Identifier < ..." can also be a
+				// boolean expression!
+				int oldindex = index;
+				match(LeftAngle);
+				Token lifetime = tryAndMatch(terminated, RightAngle, Identifier, This, Star);
+				if (lifetime != null && (
+						lifetime.kind != Identifier // then it's definitely a lifetime
+						|| scope.isLifetime(lifetime.text))) {
+					index--; // don't forget the first argument!
+					List<String> lifetimeArguments = parseLifetimeArguments(wf, scope);
+					match(LeftBrace);
+					return parseInvokeExpression(
+							wf, scope, start, token, terminated, lifetimeArguments);
+				} else {
+					index = oldindex; // backtrack
+				}
+			} // no else if, in case the former one didn't return
+			if (scope.isVariable(token.text)) {
 				// Signals a local variable access
 				return new Expr.LocalVariable(token.text, sourceAttr(start,
 						index - 1));
@@ -2436,6 +2496,10 @@ public class WhileyFileParser {
 		case Shreak:
 			return parseLogicalNotExpression(wf, scope, terminated);
 		case Star:
+			if (lookaheadSequence(terminated, Star, Colon, New)) {
+				// Star is default lifetime
+				return parseNewExpression(wf, scope, terminated);
+			}
 			return parseDereferenceExpression(wf, scope, terminated);
 		case Tilde:
 			return parseBitwiseComplementExpression(wf, scope, terminated);
@@ -2534,7 +2598,7 @@ public class WhileyFileParser {
 		// "(nat,nat)" could either be a tuple type (if "nat" is a type) or a
 		// tuple expression (if "nat" is a variable or constant).
 
-		SyntacticType t = parseDefiniteType();
+		SyntacticType t = parseDefiniteType(scope);
 
 		if (t != null) {
 			// At this point, it's looking likely that we have a cast. However,
@@ -2594,7 +2658,7 @@ public class WhileyFileParser {
 					// Ok, this must be cast so back tract and reparse
 					// expression as a type.
 					index = start; // backtrack
-					SyntacticType type = parseType();
+					SyntacticType type = parseType(scope);
 					// Now, parse cast expression
 					e = parseExpression(wf, scope, terminated);
 					return new Expr.Cast(type, e, sourceAttr(start, index - 1));
@@ -2822,6 +2886,7 @@ public class WhileyFileParser {
 	 * <pre>
 	 * TermExpr::= ...
 	 *                 |  "new" Expr
+	 *                 |  Lifetime ":" "new" Identifier Expr
 	 * </pre>
 	 *
 	 * @param wf
@@ -2849,9 +2914,21 @@ public class WhileyFileParser {
 	private Expr parseNewExpression(WhileyFile wf, EnclosingScope scope,
 			boolean terminated) {
 		int start = index;
+
+		// try to match a lifetime
+		String lifetime;
+		Token lifetimeIdentifier = tryAndMatch(terminated, Identifier, This, Star);
+		if (lifetimeIdentifier != null) {
+			scope.mustBeLifetime(lifetimeIdentifier);
+			lifetime = lifetimeIdentifier.text;
+			match(Colon);
+		} else {
+			lifetime = "*";
+		}
+
 		match(New);
 		Expr e = parseExpression(wf, scope, terminated);
-		return new Expr.New(e, sourceAttr(start, index - 1));
+		return new Expr.New(e, lifetime, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -2970,23 +3047,23 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Expr parseInvokeExpression(WhileyFile wf, EnclosingScope scope, int start, Token name,
-			boolean terminated) {
+			boolean terminated, List<String> lifetimeArguments) {
 		// First, parse the arguments to this invocation.
 		ArrayList<Expr> args = parseInvocationArguments(wf, scope);
 
 		// Second, determine what kind of invocation we have. If the name of the
 		// method is a local variable, then it must be an indirect invocation on
 		// this variable.
-		if (scope.contains(name.text)) {
+		if (scope.isVariable(name.text)) {
 			// indirect invocation on local variable
 			Expr.LocalVariable lv = new Expr.LocalVariable(name.text,
 					sourceAttr(start, start));
-			return new Expr.AbstractIndirectInvoke(lv, args, sourceAttr(start,
-					index - 1));
+			return new Expr.AbstractIndirectInvoke(lv, args, lifetimeArguments,
+					sourceAttr(start, index - 1));
 		} else {
 			// unqualified direct invocation
-			return new Expr.AbstractInvoke(name.text, null, args, sourceAttr(
-					start, index - 1));
+			return new Expr.AbstractInvoke(name.text, null, args, lifetimeArguments,
+					sourceAttr(start, index - 1));
 		}
 	}
 
@@ -3044,6 +3121,39 @@ public class WhileyFileParser {
 			args.add(e);
 		}
 		return args;
+	}
+
+	/**
+	 * Parse a sequence of lifetime arguments separated by commas that ends in a
+	 * right-angle:
+	 *
+	 * <pre>
+	 * LifetimeArguments ::= [ Lifetime (',' Lifetime)* ] '>'
+	 * </pre>
+	 *
+	 * Note, when this function is called we're assuming the left angle was
+	 * already parsed.
+	 *
+	 * @param wf
+	 * @param scope
+	 * @return
+	 */
+	private ArrayList<String> parseLifetimeArguments(WhileyFile wf, EnclosingScope scope) {
+		boolean firstTime = true;
+		ArrayList<String> lifetimeArgs = new ArrayList<String>();
+		while (eventuallyMatch(RightAngle) == null) {
+			if (!firstTime) {
+				match(Comma);
+			} else {
+				firstTime = false;
+			}
+
+			// termindated by '>'
+			String lifetime = parseLifetime(scope, true);
+
+			lifetimeArgs.add(lifetime);
+		}
+		return lifetimeArgs;
 	}
 
 	/**
@@ -3120,8 +3230,10 @@ public class WhileyFileParser {
 	 *
 	 * <pre>
 	 * TermExpr::= ...
-	 *                 | '&' '(' [Type Identifier (',' Type Identifier)*] '->' Expr ')'
-	 *                 | '&' Identifier [ '(' Type Identifier (',' Type Identifier)* ')']
+	 *                 | '&' [ '[' [ Lifetime   (',' Lifetime  )* ] ']' ]
+	 *                       [ '<' [ Identifier (',' Identifier)* ] '>' ]
+	 *                   '(' [Type Identifier (',' Type Identifier)*] '->' Expr ')'
+	 *                 | '&' Identifier [ '(' Type (',' Type)* ')']
 	 * </pre>
 	 *
 	 * Disambiguating these two forms is relatively straightforward, and we just
@@ -3153,7 +3265,7 @@ public class WhileyFileParser {
 			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(Ampersand);
-		if (tryAndMatch(terminated, LeftBrace) != null) {
+		if (tryAndMatch(terminated, LeftBrace, LeftSquare, LeftAngle) != null) {
 			index = start; // backtrack
 			return parseLambdaExpression(wf, scope, terminated);
 		} else {
@@ -3167,7 +3279,9 @@ public class WhileyFileParser {
 	 *
 	 * <pre>
 	 * TermExpr::= ...
-	 *                 |  '&' '(' [Type Identifier (',' Type Identifier)*] '->' Expr ')'
+	 *                 | '&' [ '[' [ Lifetime   (',' Lifetime  )* ] ']' ]
+	 *                       [ '<' [ Identifier (',' Identifier)* ] '>' ]
+	 *                   '(' [Type Identifier (',' Type Identifier)*] '->' Expr ')'
 	 * </pre>
 	 *
 	 * @param wf
@@ -3196,11 +3310,21 @@ public class WhileyFileParser {
 			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(Ampersand);
+
+		// First parse the context lifetimes with the original scope
+		Set<String> contextLifetimes = parseOptionalContextLifetimes(scope);
+
+		// Now we create a new scope for this lambda expression.
+		// It keeps all variables but only the given context lifetimes.
+		// But it keeps all unavailable names, i.e. unaccessible lifetimes
+		// from the outer scope cannot be redeclared.
+		scope = scope.newEnclosingScope(contextLifetimes);
+
+		// Parse the optional lifetime parameters
+		List<String> lifetimeParameters = parseOptionalLifetimeParameters(scope);
+
 		match(LeftBrace);
 		ArrayList<WhileyFile.Parameter> parameters = new ArrayList<WhileyFile.Parameter>();
-		// Clone the environment so we can update it with those declared
-		// parameters.
-		scope = scope.newEnclosingScope();
 		boolean firstTime = true;
 		while (eventuallyMatch(MinusGreater) == null) {
 			int p_start = index;
@@ -3208,12 +3332,9 @@ public class WhileyFileParser {
 				match(Comma);
 			}
 			firstTime = false;
-			SyntacticType type = parseType();
+			SyntacticType type = parseType(scope);
 			Token id = match(Identifier);
-			if (scope.contains(id.text)) {
-				syntaxError("duplicate variable or parameter name", id);
-			}
-			scope.add(id.text);
+			scope.declareVariable(id);
 			parameters.add(wf.new Parameter(type, id.text, sourceAttr(p_start,
 					index - 1)));
 		}
@@ -3222,7 +3343,7 @@ public class WhileyFileParser {
 		Expr body = parseExpression(wf, scope, true);
 		match(RightBrace);
 
-		return new Expr.Lambda(parameters, body, sourceAttr(start, index - 1));
+		return new Expr.Lambda(parameters, contextLifetimes, lifetimeParameters, body, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -3230,7 +3351,7 @@ public class WhileyFileParser {
 	 *
 	 * <pre>
 	 * TermExpr::= ...
-	 *                 | '&' Identifier [ '(' Type Identifier (',' Type Identifier)* ')']
+	 *                 | '&' Identifier [ '(' Type (',' Type)* ')']
 	 * </pre>
 	 *
 	 * @param wf
@@ -3273,15 +3394,15 @@ public class WhileyFileParser {
 					match(Comma);
 				}
 				firstTime = false;
-				SyntacticType type = parseType();
+				SyntacticType type = parseType(scope);
 				parameters.add(type);
 			}
 			return new Expr.AbstractFunctionOrMethod(id.text, parameters,
-					sourceAttr(start, index - 1));
+					null, sourceAttr(start, index - 1));
 		} else {
 			// No, parameters are not supplied.
-			return new Expr.AbstractFunctionOrMethod(id.text, null, sourceAttr(
-					start, index - 1));
+			return new Expr.AbstractFunctionOrMethod(id.text, null, null,
+					sourceAttr(start, index - 1));
 		}
 	}
 
@@ -3330,10 +3451,10 @@ public class WhileyFileParser {
 	 *
 	 * @return An instance of SyntacticType or null.
 	 */
-	public SyntacticType parseDefiniteType() {
+	public SyntacticType parseDefiniteType(EnclosingScope scope) {
 		int start = index; // backtrack point
 		try {
-			SyntacticType type = parseType();
+			SyntacticType type = parseType(scope);
 			if (mustParseAsType(type)) {
 				return type;
 			}
@@ -3393,6 +3514,12 @@ public class WhileyFileParser {
 			return false; // always can be an expression
 		} else if (type instanceof SyntacticType.Reference) {
 			SyntacticType.Reference tt = (SyntacticType.Reference) type;
+			if (tt.lifetime.equals("this") ||
+					tt.lifetime.equals("*") && tt.lifetimeWasExplicit) {
+				// &this and &* is not a valid expression because "this" is keyword
+				// &ident could also be an address expression
+				return true;
+			}
 			return mustParseAsType(tt.element);
 		} else if (type instanceof SyntacticType.Union) {
 			SyntacticType.Union tt = (SyntacticType.Union) type;
@@ -3487,7 +3614,7 @@ public class WhileyFileParser {
 			return false; // dead-code
 		}
 	}
-	
+
 	/**
 	 * Parse a top-level type, which is of the form:
 	 *
@@ -3498,8 +3625,8 @@ public class WhileyFileParser {
 	 * @see wyc.lang.SyntacticType.Tuple
 	 * @return
 	 */
-	private SyntacticType parseType() {	
-		return parseUnionType();
+	private SyntacticType parseType(EnclosingScope scope) {
+		return parseUnionType(scope);
 	}
 
 	/**
@@ -3511,9 +3638,9 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseUnionType() {
+	private SyntacticType parseUnionType(EnclosingScope scope) {
 		int start = index;
-		SyntacticType t = parseIntersectionType();
+		SyntacticType t = parseIntersectionType(scope);
 
 		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(true, VerticalBar) != null) {
@@ -3521,7 +3648,7 @@ public class WhileyFileParser {
 			ArrayList types = new ArrayList<SyntacticType>();
 			types.add(t);
 			do {
-				types.add(parseIntersectionType());
+				types.add(parseIntersectionType(scope));
 			} while (tryAndMatch(true, VerticalBar) != null);
 			return new SyntacticType.Union(types, sourceAttr(start, index - 1));
 		} else {
@@ -3538,9 +3665,9 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseIntersectionType() {
+	private SyntacticType parseIntersectionType(EnclosingScope scope) {
 		int start = index;
-		SyntacticType t = parseArrayType();
+		SyntacticType t = parseArrayType(scope);
 
 		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(true, Ampersand) != null) {
@@ -3548,7 +3675,7 @@ public class WhileyFileParser {
 			ArrayList types = new ArrayList<SyntacticType>();
 			types.add(t);
 			do {
-				types.add(parseArrayType());
+				types.add(parseArrayType(scope));
 			} while (tryAndMatch(true, Ampersand) != null);
 			return new SyntacticType.Intersection(types, sourceAttr(start,
 					index - 1));
@@ -3566,9 +3693,9 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseArrayType() {
+	private SyntacticType parseArrayType(EnclosingScope scope) {
 		int start = index;
-		SyntacticType element = parseBaseType();
+		SyntacticType element = parseBaseType(scope);
 		
 		while (tryAndMatch(true, LeftSquare) != null) {
 			match(RightSquare);
@@ -3578,7 +3705,7 @@ public class WhileyFileParser {
 		return element;
 	}
 	
-	private SyntacticType parseBaseType() {
+	private SyntacticType parseBaseType(EnclosingScope scope) {
 		checkNotEof();
 		int start = index;
 		Token token = tokens.get(index);
@@ -3598,19 +3725,19 @@ public class WhileyFileParser {
 		case Int:
 			return new SyntacticType.Int(sourceAttr(start, index++));
 		case LeftBrace:
-			return parseBracketedType();
+			return parseBracketedType(scope);
 		case LeftCurly:
-			return parseRecordType();
+			return parseRecordType(scope);
 		case Shreak:
-			return parseNegationType();
+			return parseNegationType(scope);
 		case Ampersand:
-			return parseReferenceType();
+			return parseReferenceType(scope);
 		case Identifier:
 			return parseNominalType();
 		case Function:
-			return parseFunctionOrMethodType(true);
+			return parseFunctionOrMethodType(true, scope);
 		case Method:
-			return parseFunctionOrMethodType(false);
+			return parseFunctionOrMethodType(false, scope);
 		default:
 			syntaxError("unknown type encountered", token);
 			return null;
@@ -3626,10 +3753,10 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseNegationType() {
+	private SyntacticType parseNegationType(EnclosingScope scope) {
 		int start = index;
 		match(Shreak);
-		SyntacticType element = parseArrayType();
+		SyntacticType element = parseArrayType(scope);
 		return new SyntacticType.Negation(element, sourceAttr(start, index - 1));
 	}
 
@@ -3638,18 +3765,57 @@ public class WhileyFileParser {
 	 *
 	 * <pre>
 	 * ReferenceType ::= '&' Type
+	 *                 | '&' Lifetime ':' Type
+	 *      Lifetime ::= Identifier | 'this' | '*'
 	 * </pre>
 	 *
 	 * @return
 	 */
-	private SyntacticType parseReferenceType() {
+	private SyntacticType parseReferenceType(EnclosingScope scope) {
 		int start = index;
 		match(Ampersand);
-		SyntacticType element = parseArrayType();
-		return new SyntacticType.Reference(element,
-				sourceAttr(start, index - 1));
+
+		// Try to parse an annotated lifetime
+		int backtrack = index;
+		Token lifetimeIdentifier = tryAndMatch(true, Identifier, This, Star);
+		if (lifetimeIdentifier != null) {
+			// We cannot allow a newline after the colon, as it would
+			// unintentionally match a return type that happens to be reference
+			// type without lifetime annotation (return type in method signature
+			// is always followed by colon and newline).
+			if (tryAndMatch(true, Colon) != null && !isAtEOL()) {
+				// Now we know that there is an annotated lifetime
+				scope.mustBeLifetime(lifetimeIdentifier);
+				SyntacticType element = parseArrayType(scope);
+				return new SyntacticType.Reference(element, lifetimeIdentifier.text, true,
+						sourceAttr(start, index - 1));
+			}
+		}
+		index = backtrack;
+
+		SyntacticType element = parseArrayType(scope);
+		return new SyntacticType.Reference(element, "*", false, sourceAttr(start, index - 1));
 	}
 
+	/**
+	 * Parse a currently declared lifetime.
+	 * 
+	 * @return the matched lifetime name
+	 */
+	private String parseLifetime(EnclosingScope scope, boolean terminated) {
+		int next = terminated ? skipWhiteSpace(index) : skipLineSpace(index);
+		if (next < tokens.size()) {
+			Token t = tokens.get(next);
+			if (t.kind == Identifier || t.kind == This || t.kind == Star) {
+				index = next + 1;
+				scope.mustBeLifetime(t);
+				return t.text;
+			}
+			syntaxError("expectiong a lifetime identifier here", t);
+		}
+		syntaxError("unexpected end-of-file", tokens.get(next - 1));
+		throw new RuntimeException("deadcode"); // dead-code
+	}
 
 	/**
 	 * Parse a bracketed type, which is of the form:
@@ -3660,10 +3826,10 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseBracketedType() {
+	private SyntacticType parseBracketedType(EnclosingScope scope) {
 		int start = index;
 		match(LeftBrace);
-		SyntacticType type = parseType();
+		SyntacticType type = parseType(scope);
 		match(RightBrace);
 		return type;
 	}
@@ -3685,12 +3851,12 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseRecordType() {
+	private SyntacticType parseRecordType(EnclosingScope scope) {
 		int start = index;
 		match(LeftCurly);
 
 		HashMap<String, SyntacticType> types = new HashMap<String, SyntacticType>();
-		Pair<SyntacticType, Token> p = parseMixedType();
+		Pair<SyntacticType, Token> p = parseMixedType(scope);
 		types.put(p.second().text, p.first());
 
 		// Now, we continue to parse any remaining fields.
@@ -3704,7 +3870,7 @@ public class WhileyFileParser {
 				isOpen = true;
 				break;
 			} else {
-				p = parseMixedType();
+				p = parseMixedType(scope);
 				Token id = p.second();
 				if (types.containsKey(id.text)) {
 					syntaxError("duplicate record key", id);
@@ -3755,18 +3921,25 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseFunctionOrMethodType(boolean isFunction) {
+	private SyntacticType parseFunctionOrMethodType(boolean isFunction, EnclosingScope scope) {
 		int start = index;
 
+		List<String> lifetimeParameters;
+		Set<String> contextLifetimes;
 		if (isFunction) {
 			match(Function);
+			contextLifetimes = Collections.emptySet();
+			lifetimeParameters = Collections.emptyList();
 		} else {
 			match(Method);
+			contextLifetimes = parseOptionalContextLifetimes(scope);
+			scope = scope.newEnclosingScope();
+			lifetimeParameters = parseOptionalLifetimeParameters(scope);
 		}
 
 		// First, parse the parameter type(s).
-		List<SyntacticType> paramTypes = parseParameterTypes();
-		List<SyntacticType> returnTypes = Collections.EMPTY_LIST;
+		List<SyntacticType> paramTypes = parseParameterTypes(scope);
+		List<SyntacticType> returnTypes = Collections.emptyList();
 
 		// Second, parse the right arrow.
 		if (isFunction) {
@@ -3774,18 +3947,19 @@ public class WhileyFileParser {
 			// nops)
 			match(MinusGreater);
 			// Third, parse the return types.
-			returnTypes = parseOptionalParameterTypes();
+			returnTypes = parseOptionalParameterTypes(scope);
 		} else if (tryAndMatch(true, MinusGreater) != null) {
 			// Methods have an optional return type
 			// Third, parse the return type
-			returnTypes = parseOptionalParameterTypes();
+			returnTypes = parseOptionalParameterTypes(scope);
 		} 
 
 		// Done
 		if (isFunction) {
 			return new SyntacticType.Function(returnTypes, paramTypes, sourceAttr(start, index - 1));
 		} else {
-			return new SyntacticType.Method(returnTypes, paramTypes, sourceAttr(start, index - 1));
+			return new SyntacticType.Method(returnTypes, paramTypes, contextLifetimes,
+					lifetimeParameters, sourceAttr(start, index - 1));
 		}
 	}	
 
@@ -3800,7 +3974,7 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Pair<SyntacticType, Token> parseMixedType() {
+	private Pair<SyntacticType, Token> parseMixedType(EnclosingScope scope) {
 		Token lookahead;
 		int start = index;
 
@@ -3808,21 +3982,32 @@ public class WhileyFileParser {
 			// At this point, we *might* have a mixed function / method type
 			// definition. To disambiguate, we need to see whether an identifier
 			// follows or not.
+			// Similar to normal method declarations, the lifetime parameters
+			// go before the method name. We do not allow to have context lifetimes
+			// for mixed method types.
+			List<String> lifetimeParameters = Collections.emptyList();
+			if (lookahead.kind == Method && tryAndMatch(true, LeftAngle) != null) {
+				// mixed method type with lifetime parameters
+				scope = scope.newEnclosingScope();
+				lifetimeParameters = parseLifetimeParameters(scope);
+			}
+
+			// Now try to parse the identifier
 			Token id = tryAndMatch(true, Identifier);
 
 			if (id != null) {
 				// Yes, we have found a mixed function / method type definition.
 				// Therefore, we continue to pass the remaining type parameters.
 
-				List<SyntacticType> paramTypes = parseParameterTypes();
-				List<SyntacticType> returnTypes = Collections.EMPTY_LIST; 
+				List<SyntacticType> paramTypes = parseParameterTypes(scope);
+				List<SyntacticType> returnTypes = Collections.emptyList();
 				
 				if (lookahead.kind == Function) {
 					// Functions require a return type (since otherwise they are
 					// just nops)
 					match(MinusGreater);
 					// Third, parse the return type
-					returnTypes = parseOptionalParameterTypes();
+					returnTypes = parseOptionalParameterTypes(scope);
 				} else if (tryAndMatch(true, MinusGreater) != null) {
 					// Third, parse the (optional) return type. Observe that
 					// this is forced to be a
@@ -3831,7 +4016,7 @@ public class WhileyFileParser {
 					// may be part of an enclosing record type and we must
 					// disambiguate
 					// this.
-					returnTypes = parseOptionalParameterTypes();
+					returnTypes = parseOptionalParameterTypes(scope);
 				} 
 
 				// Done
@@ -3839,7 +4024,8 @@ public class WhileyFileParser {
 				if (lookahead.kind == Token.Kind.Function) {
 					type = new SyntacticType.Function(returnTypes, paramTypes, sourceAttr(start, index - 1));
 				} else {
-					type = new SyntacticType.Method(returnTypes, paramTypes, sourceAttr(start, index - 1));
+					type = new SyntacticType.Method(returnTypes, paramTypes, Collections.<String>emptySet(),
+							lifetimeParameters, sourceAttr(start, index - 1));
 				}
 				return new Pair<SyntacticType, Token>(type, id);
 			} else {
@@ -3852,24 +4038,24 @@ public class WhileyFileParser {
 
 		// This is the normal case, where we expect an identifier to follow the
 		// type.
-		SyntacticType type = parseType();
+		SyntacticType type = parseType(scope);
 		Token id = match(Identifier);
 		return new Pair<SyntacticType, Token>(type, id);
 	}
 
-	public List<SyntacticType> parseOptionalParameterTypes() {
+	public List<SyntacticType> parseOptionalParameterTypes(EnclosingScope scope) {
 		int next = skipWhiteSpace(index);
 		if(next < tokens.size() && tokens.get(next).kind == LeftBrace) {
-			return parseParameterTypes();
+			return parseParameterTypes(scope);
 		} else {
-			SyntacticType t = parseType();
+			SyntacticType t = parseType(scope);
 			ArrayList<SyntacticType> rs = new ArrayList<SyntacticType>();
 			rs.add(t);
 			return rs;
 		}		
 	}
 	
-	public List<SyntacticType> parseParameterTypes() {
+	public List<SyntacticType> parseParameterTypes(EnclosingScope scope) {
 		ArrayList<SyntacticType> paramTypes = new ArrayList<SyntacticType>();
 		match(LeftBrace);
 
@@ -3879,12 +4065,60 @@ public class WhileyFileParser {
 				match(Comma);
 			}
 			firstTime = false;
-			paramTypes.add(parseType());
+			paramTypes.add(parseType(scope));
 		}
 		
 		return paramTypes;
 	}
-			
+
+	/**
+	 * Attention: Enters the lifetime names to the passed scope!
+	 * @param scope
+	 * @return
+	 */
+	public List<String> parseOptionalLifetimeParameters(EnclosingScope scope) {
+		if (tryAndMatch(true, LeftAngle) != null && tryAndMatch(true, RightAngle) == null) {
+			// The if above skips an empty list of identifiers "<>"!
+			return parseLifetimeParameters(scope);
+		}
+		return Collections.emptyList();
+	}
+
+	/**
+	 * Attention: Enters the lifetime names to the passed scope!
+	 * Assumes that '<' has already been matched.
+	 * @param scope
+	 * @return
+	 */
+	private List<String> parseLifetimeParameters(EnclosingScope scope) {
+		List<String> lifetimeParameters = new ArrayList<String>();
+		do {
+			Token lifetimeIdentifier = match(Identifier);
+			scope.declareLifetime(lifetimeIdentifier);
+			lifetimeParameters.add(lifetimeIdentifier.text);
+		} while (tryAndMatch(true, Comma) != null);
+		match(RightAngle);
+		return lifetimeParameters;
+	}
+
+
+	/**
+	 * @param scope
+	 * @return
+	 */
+	public Set<String> parseOptionalContextLifetimes(EnclosingScope scope) {
+		if (tryAndMatch(true, LeftSquare) != null && tryAndMatch(true, RightSquare) == null) {
+			// The if above skips an empty list of identifiers "[]"!
+			Set<String> contextLifetimes = new HashSet<String>();
+			do {
+				contextLifetimes.add(parseLifetime(scope, true));
+			} while (tryAndMatch(true, Comma) != null);
+			match(RightSquare);
+			return contextLifetimes;
+		}
+		return Collections.emptySet();
+	}
+
 	public boolean mustParseAsMixedType() {
 		int start = index;
 		if (tryAndMatch(true, Function, Method) != null
@@ -4028,6 +4262,44 @@ public class WhileyFileParser {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Attempt to match a given sequence of tokens in the given order, whilst
+	 * ignoring any whitespace in between. Note that, in any case, the index
+	 * will be unchanged!
+	 *
+	 * @param terminated
+	 *            Indicates whether or not this function should be concerned
+	 *            with new lines. The terminated flag indicates whether or not
+	 *            the current construct being parsed is known to be terminated.
+	 *            If so, then we don't need to worry about newlines and can
+	 *            greedily consume them (i.e. since we'll eventually run into
+	 *            the terminating symbol).
+	 * @param kinds
+	 *
+	 * @return whether the sequence matches
+	 */
+	private boolean lookaheadSequence(boolean terminated, Token.Kind... kinds) {
+		int next = index;
+		for (Token.Kind k : kinds) {
+			next = terminated ? skipWhiteSpace(next) : skipLineSpace(next);
+			if (next >= tokens.size() || tokens.get(next++).kind != k) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Check whether the current index is, after skipping all line spaces, at
+	 * the end of a line. This method does not change the state!
+	 * 
+	 * @return whether index is at end of line
+	 */
+	private boolean isAtEOL() {
+		int next = skipLineSpace(index);
+		return next >= tokens.size() || tokens.get(next).kind == NewLine;
 	}
 
 	/**
@@ -4399,7 +4671,7 @@ public class WhileyFileParser {
 	 * @author David J. Pearce
 	 *
 	 */
-	private static class EnclosingScope {
+	private class EnclosingScope {
 		/**
 		 * The indent level of the enclosing scope.
 		 */		
@@ -4408,7 +4680,20 @@ public class WhileyFileParser {
 		/**
 		 * The set of declared variables in the enclosing scope.
 		 */
-		private final HashSet<String> environment;
+		private final HashSet<String> variables;
+
+		/**
+		 * The set of declared lifetimes in the enclosing scope.
+		 */
+		private final HashSet<String> lifetimes;
+
+		/**
+		 * The set of all names that cannot be used for variables or lifetimes.
+		 * They are either in the variables or lifetimes set, or a special lifetime,
+		 * or they are unavailable because it is an unaccessible lifetime from
+		 * an outer scope.
+		 */
+		private final HashSet<String> unavailableNames;
 		
 		/**
 		 * A simple flag that tells us whether or not we are currently within a
@@ -4419,13 +4704,22 @@ public class WhileyFileParser {
 		
 		public EnclosingScope() {
 			this.indent = ROOT_INDENT;
-			this.environment = new HashSet<String>();			
+			this.variables = new HashSet<String>();
+			this.lifetimes = new HashSet<String>();
+			this.unavailableNames = new HashSet<String>();
 			this.inLoop = false;
+
+			// prevent declaring these lifetimes
+			this.unavailableNames.add("*");
+			this.unavailableNames.add("this");
 		}
 		
-		private EnclosingScope(Indent indent, Set<String> environment, boolean inLoop) {			
+		private EnclosingScope(Indent indent, Set<String> variables, Set<String> lifetimes,
+				Set<String> unavailableNames, boolean inLoop) {
 			this.indent = indent;
-			this.environment = new HashSet<String>(environment);
+			this.variables = new HashSet<String>(variables);
+			this.lifetimes = new HashSet<String>(lifetimes);
+			this.unavailableNames = new HashSet<String>(unavailableNames);
 			this.inLoop = inLoop;
 		}
 		
@@ -4436,7 +4730,7 @@ public class WhileyFileParser {
 		public boolean isInLoop() {
 			return inLoop;
 		}
-		
+
 		/**
 		 * Check whether a given name corresponds to a declared variable in this
 		 * scope.
@@ -4444,19 +4738,119 @@ public class WhileyFileParser {
 		 * @param name
 		 * @return
 		 */
-		public boolean contains(String name) {
-			return environment.contains(name);
+		public boolean isVariable(String name) {
+			return this.variables.contains(name);
 		}
-		
+
+		/**
+		 * Check whether a given name corresponds to a declared lifetime in this
+		 * scope.
+		 * 
+		 * @param name
+		 * @return
+		 */
+		public boolean isLifetime(String name) {
+			return name.equals("*") || this.lifetimes.contains(name);
+		}
+
+		/**
+		 * Checks that the given identifier is a declared lifetime.
+		 * 
+		 * @param id
+		 * @throws SyntaxError
+		 *             if the given identifier is not a lifetime
+		 */
+		public void mustBeLifetime(Token id) {
+			if (!this.isLifetime(id.text)) {
+				syntaxError("use of undeclared lifetime", id);
+			}
+		}
+
+		/**
+		 * Check whether a given name is available, i.e. can be declared.
+		 * 
+		 * @param id
+		 *            identifier that holds the name to check
+		 * @throws SyntaxError
+		 *             if the name is unavailable (already declared)
+		 */
+		public void checkNameAvailable(Token id) {
+			if (this.unavailableNames.contains(id.text)) {
+				// name is not available!
+				syntaxError("name already declared", id);
+			}
+		}
+
+		/**
+		 * Check whether a given name is available, i.e. can be declared.
+		 * 
+		 * @param p
+		 *            parameter that holds the name to check
+		 * @throws SyntaxError
+		 *             if the name is unavailable (already declared)
+		 */
+		public void checkNameAvailable(Parameter p) {
+			if (this.unavailableNames.contains(p.name)) {
+				// name is not available!
+				syntaxError("name already declared", p);
+			}
+		}
+
 		/**
 		 * Declare a new variable in this scope.
 		 * 
-		 * @param name
+		 * @param id
+		 *            identifier that holds the name to declare
+		 * @throws SyntaxError
+		 *             if the name is already declared
 		 */
-		public void add(String name) {
-			environment.add(name);
+		public void declareVariable(Token id) {
+			if (!this.unavailableNames.add(id.text)) {
+				// name is not available!
+				syntaxError("name already declared", id);
+			}
+			this.variables.add(id.text);
 		}
-		
+
+		/**
+		 * Declare a new variable in this scope.
+		 * 
+		 * @param p
+		 *            parameter that holds the name to declare
+		 * @throws SyntaxError
+		 *             if the name is already declared
+		 */
+		public void declareVariable(Parameter p) {
+			if (!this.unavailableNames.add(p.name)) {
+				// name is not available!
+				syntaxError("name already declared", p);
+			}
+			this.variables.add(p.name);
+		}
+
+		/**
+		 * Declare a new lifetime in this scope.
+		 * 
+		 * @param id
+		 *            identifier that holds the name to declare
+		 * @throws SyntaxError
+		 *             if the name is already declared
+		 */
+		public void declareLifetime(Token id) {
+			if (!this.unavailableNames.add(id.text)) {
+				// name is not available!
+				syntaxError("name already declared", id);
+			}
+			this.lifetimes.add(id.text);
+		}
+
+		/**
+		 * Make lifetime "this" available.
+		 */
+		public void declareThisLifetime() {
+			this.lifetimes.add("this");
+		}
+
 		/**
 		 * Create a new enclosing scope in which variables can be declared which
 		 * are remain invisible to this enclosing scope. All variables declared
@@ -4468,7 +4862,7 @@ public class WhileyFileParser {
 		 * @return
 		 */
 		public EnclosingScope newEnclosingScope() {
-			return new EnclosingScope(indent,environment,inLoop);			
+			return new EnclosingScope(indent,variables,lifetimes,unavailableNames,inLoop);
 		}
 		
 		/**
@@ -4482,7 +4876,7 @@ public class WhileyFileParser {
 		 * @return
 		 */
 		public EnclosingScope newEnclosingScope(Indent indent) {
-			return new EnclosingScope(indent,environment,inLoop);			
+			return new EnclosingScope(indent,variables,lifetimes,unavailableNames,inLoop);
 		}
 		
 		/**
@@ -4496,7 +4890,21 @@ public class WhileyFileParser {
 		 * @return
 		 */
 		public EnclosingScope newEnclosingScope(Indent indent, boolean inLoop) {
-			return new EnclosingScope(indent,environment,inLoop);			
+			return new EnclosingScope(indent,variables,lifetimes,unavailableNames,inLoop);
+		}
+
+		/**
+		 * Create a new enclosing scope in which variables can be declared which
+		 * are remain invisible to this enclosing scope. All variables declared
+		 * in this enclosing scope remain declared in the new enclosing scope.
+		 * 
+		 * @param indent
+		 *            the indent level for the new scope
+		 * 
+		 * @return
+		 */
+		public EnclosingScope newEnclosingScope(Set<String> contextLifetimes) {
+			return new EnclosingScope(indent,variables,contextLifetimes,unavailableNames,false);
 		}
 	}	
 }

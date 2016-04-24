@@ -299,8 +299,12 @@ public class Interpreter {
 			// In this case, we don't need to do anything because the value is
 			// already of the correct type.
 			return value;
-		}
-		if (to instanceof Type.Record) {
+		} else if (type instanceof Type.Reference && to instanceof Type.Reference) {
+			if (Type.isSubtype(((Type.Reference) to).element(), ((Type.Reference) type).element())) {
+				// OK, it's just the lifetime that differs.
+				return value;
+			}
+		} else if (to instanceof Type.Record) {
 			return convert(value, (Type.Record) to, context);
 		} else if (to instanceof Type.Array) {
 			return convert(value, (Type.Array) to, context);
@@ -941,7 +945,8 @@ public class Interpreter {
 
 		@Override
 		public wyil.lang.Type type() {
-			return wyil.lang.Type.Reference(value.type());
+			// TODO: extend wyil.lang.Codes.NewObject with a lifetime and use it
+			return wyil.lang.Type.Reference(value.type(), "*");
 		}
 
 	}

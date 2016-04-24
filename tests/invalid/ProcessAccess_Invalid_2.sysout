@@ -1,3 +1,3 @@
 ../../tests/invalid/ProcessAccess_Invalid_2.whiley:6: expected type ProcessAccess_Invalid_2:pState, found &{int x,int z}
-    this = new {z: 4, x: 3}
-    ^^^^
+    _this = new {z: 4, x: 3}
+    ^^^^^

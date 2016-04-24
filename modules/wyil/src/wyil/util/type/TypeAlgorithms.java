@@ -108,9 +108,9 @@ public final class TypeAlgorithms {
 				Boolean nid2 = (Boolean) s2.data;
 				return nid1.toString().compareTo(nid2.toString());
 			} else if(s1.kind == Type.K_FUNCTION || s1.kind == Type.K_METHOD) {
-				int s1NumParams = (Integer) s1.data;
-				int s2NumParams = (Integer) s2.data;				
-				return Integer.compare(s1NumParams, s2NumParams);
+				Type.FunctionOrMethod.Data s1Data = (Type.FunctionOrMethod.Data) s1.data;
+				Type.FunctionOrMethod.Data s2Data = (Type.FunctionOrMethod.Data) s2.data;
+				return s1Data.compareTo(s2Data);
 			} else {
 				String str1 = (String) s1.data;
 				String str2 = (String) s2.data;
@@ -772,7 +772,7 @@ public final class TypeAlgorithms {
 
 	private static boolean isSubtype(int fromIndex, int toIndex,
 			Automaton automaton) {
-		SubtypeOperator op = new SubtypeOperator(automaton,automaton);
+		SubtypeOperator op = new SubtypeOperator(automaton,automaton,LifetimeRelation.EMPTY);
 		return op.isSubtype(fromIndex, toIndex);
 	}
 
@@ -1057,6 +1057,7 @@ public final class TypeAlgorithms {
 			case Type.K_SET:
 				return intersectSetsOrLists(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case Type.K_REFERENCE:
+				return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,fromState.data,allocations,states);
 			case Type.K_MAP:
 				return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,null,allocations,states);
 			case Type.K_NEGATION:

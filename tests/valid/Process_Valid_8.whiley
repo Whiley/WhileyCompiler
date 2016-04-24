@@ -2,11 +2,11 @@
 
 type MyProc2 is {any data}
 
-method set(&MyProc2 this, int d) :
-    this->data = (any)d
+method set(&MyProc2 _this, int d) :
+    _this->data = (any)d
 
-method get(&MyProc2 this) -> any:
-    return this->data
+method get(&MyProc2 _this) -> any:
+    return _this->data
 
 method create(any data) -> &MyProc2:
     return new {data: data}

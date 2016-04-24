@@ -312,6 +312,8 @@ public final class CodeGenerator {
 				generate((Break) stmt, scope);
 			} else if (stmt instanceof Continue) {
 				generate((Continue) stmt, scope);
+			} else if (stmt instanceof NamedBlock) {
+				generate((NamedBlock) stmt, scope);
 			} else if (stmt instanceof While) {
 				generate((While) stmt, scope);
 			} else if (stmt instanceof DoWhile) {
@@ -974,6 +976,15 @@ public final class CodeGenerator {
 	}
 	
 	
+	/**
+	 * Translate a named block into WyIL bytecodes.
+	 */
+	private void generate(Stmt.NamedBlock s, EnclosingScope scope) {
+		for (Stmt st : s.body) {
+			generate(st, scope);
+		}
+	}
+
 	/**
 	 * Translate a while loop into WyIL bytecodes. Consider the following use of
 	 * a while statement:
@@ -1675,7 +1686,8 @@ public final class CodeGenerator {
 		if(lambdaType instanceof Nominal.Function) {
 			return Type.Function(rawLambdaType.returns(),rawParamTypes);
 		} else {
-			return Type.Method(rawLambdaType.returns(),rawParamTypes);
+			return Type.Method(rawLambdaType.returns(),rawLambdaType.contextLifetimes(),
+					rawLambdaType.lifetimeParams(),rawParamTypes);
 		}
 	}
 	

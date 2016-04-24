@@ -1,11 +1,11 @@
 type MyProc1 is &{int data}
 type MyProc2 is &{any data}
 
-method set(MyProc2 this, any d) :
-    this.data = d
+method set(MyProc2 _this, any d) :
+    _this.data = d
 
-method get(MyProc1 this) -> int:
-    return this.data
+method get(MyProc1 _this) -> int:
+    return _this.data
 
 method create(int data) -> MyProc1:
     return new {data: data}

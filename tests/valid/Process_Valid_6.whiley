@@ -1,7 +1,7 @@
 type Actor is {int data}
 
-method get(&Actor this) -> int:
-    return this->data
+method get(&Actor _this) -> int:
+    return _this->data
 
 method createActor(int n) -> &Actor:
     return new {data: n}

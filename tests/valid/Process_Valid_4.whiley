@@ -2,8 +2,8 @@
 
 type MyProc is &{int x}
 
-method inc(MyProc this, int i) :
-    this->x = this->x + i
+method inc(MyProc _this, int i) :
+    _this->x = _this->x + i
 
 public export method test() :
     MyProc mproc = new {x: 1}

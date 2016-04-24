@@ -4,8 +4,8 @@ type state is {int y, int x}
 
 type pState is &state
 
-method send2(pState this, int x) -> int:
-    return this->x + this->y
+method send2(pState _this, int x) -> int:
+    return _this->x + _this->y
 
 public export method test() :
     int x = send2(new {y: 2, x: 1},1)
