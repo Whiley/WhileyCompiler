@@ -76,7 +76,6 @@ public class RuntimeValidTests {
 	public final static Map<String, String> IGNORED = new HashMap<String, String>();
 
 	static {
-		IGNORED.put("Coercion_Valid_8", "#406");
 		IGNORED.put("Complex_Valid_3", "Issue ???");
 		IGNORED.put("ConstrainedIntersection_Valid_1", "unknown");
 		IGNORED.put("ConstrainedNegation_Valid_1", "#342");

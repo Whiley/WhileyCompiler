@@ -101,7 +101,7 @@ public abstract class Type {
 			return (Type.Reference) r;
 		} else {
 			throw new IllegalArgumentException(
-					"invalid arguments for Type.Reference()");
+					"invalid arguments for Type.Reference(): " + r);
 		}
 	}
 
