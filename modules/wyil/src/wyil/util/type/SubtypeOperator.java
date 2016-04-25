@@ -239,36 +239,50 @@ public class SubtypeOperator {
 					// nary nodes
 					int[] fromChildren = fromState.children;
 					int[] toChildren = toState.children;
-					if(fromChildren.length != toChildren.length){
-						return !fromSign || !toSign;
-					}
 					int fromNumParams = (Integer) fromState.data;
 					int toNumParams = (Integer) toState.data;
-					if(fromNumParams != toNumParams){
-						return !fromSign || !toSign;
-					}		
-					boolean andChildren = true;
-					boolean orChildren = false;
-					 
-					for(int i=0;i<fromChildren.length;++i) {
-						boolean v;
-						if(i >= fromNumParams) {
-							// return type(s) are co-variant
-							v = isIntersection(fromChildren[i], fromSign,
-									toChildren[i], toSign);
-						} else {
-							// parameter type(s) are contra-variant
-							v = isIntersection(fromChildren[i], !fromSign,
-								toChildren[i], !toSign);
+
+					if (fromSign && toSign) {
+						// Two intersecting method types must have the same number
+						// of parameters and returns.
+						if (fromChildren.length != toChildren.length || fromNumParams != toNumParams) {
+							return false;
 						}
-						andChildren &= v;
-						orChildren |= v;
+
+						// Two intersecting method types must have intersecting return types.
+						// Parameter types can always be chosen as "any".
+						for (int i = fromNumParams; i < fromChildren.length; ++i) {
+							if (!isIntersection(fromChildren[i], true, toChildren[i], true)) {
+								return false;
+							}
+						}
+						return true;
 					}
-					if(!fromSign || !toSign) {
-						return orChildren;
-					} else {
-						return andChildren;
+
+					// Now we have one of the following:
+					// fromSign == true: negation of "is fromType a subtype of toType?"
+					// toSign  ==  true: negation of "is toType a subtype of fromType?"
+
+					// Two method types can only be subtypes of each other if they have
+					// the same number of parameters and returns.
+					if (fromChildren.length != toChildren.length || fromNumParams != toNumParams) {
+						return true; // true means "not subtype"
 					}
+
+					// Parameter types are contra-variant
+					for (int i = 0; i < fromNumParams; ++i) {
+						if (isIntersection(fromChildren[i], !fromSign, toChildren[i], !toSign)) {
+							return true;
+						}
+					}
+
+					// Return types are co-variant
+					for (int i = fromNumParams; i < fromChildren.length; ++i) {
+						if (isIntersection(fromChildren[i], fromSign, toChildren[i], toSign)) {
+							return true;
+						}
+					}
+					return false;
 				}
 				return true;
 			default:
