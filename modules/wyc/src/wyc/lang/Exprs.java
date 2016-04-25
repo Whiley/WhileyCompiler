@@ -138,7 +138,6 @@ public class Exprs {
 			if (expr instanceof Expr.Constant) {
 				return true;
 			} else if (expr instanceof Expr.LocalVariable) {
-				Expr.LocalVariable lv = (Expr.LocalVariable) expr;
 				return true;
 			} else if (expr instanceof Expr.ConstantAccess) {
 				return true;
@@ -156,8 +155,7 @@ public class Exprs {
 				return isPure(e.lhs, context) && isPure(e.rhs, context);
 
 			} else if (expr instanceof Expr.Dereference) {
-				Expr.Dereference e = (Expr.Dereference) expr;
-				return isPure(e.src, context);
+				return false;
 
 			} else if (expr instanceof Expr.Cast) {
 				Expr.Cast e = (Expr.Cast) expr;
@@ -185,7 +183,9 @@ public class Exprs {
 
 			} else if (expr instanceof Expr.IndirectFunctionCall) {
 				Expr.IndirectFunctionCall e = (Expr.IndirectFunctionCall) expr;
-
+				if (!isPure(e.src, context)) {
+					return false;
+				}
 				for(Expr p : e.arguments) {
 					if(!isPure(p, context)) {
 						return false;
