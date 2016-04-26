@@ -422,6 +422,7 @@ public final class WhileyFile implements CompilationUnit {
 	 */
 	public abstract class FunctionOrMethod extends NamedDeclaration {
 		public final ArrayList<Parameter> parameters;
+		public final ArrayList<String> lifetimeParameters;
 		public final ArrayList<Parameter> returns;
 		public final ArrayList<Stmt> statements;
 		public List<Expr> requires;
@@ -446,12 +447,14 @@ public final class WhileyFile implements CompilationUnit {
 		 */
 		public FunctionOrMethod(List<Modifier> modifiers, String name,
 				List<Parameter> returns, List<Parameter> parameters,
+				List<String> lifetimeParameters,
 				List<Expr> requires, List<Expr> ensures,
 				List<Stmt> statements,
 				Attribute... attributes) {
 			super(name, modifiers,attributes);
 			this.returns  = new ArrayList<Parameter>(returns);
 			this.parameters = new ArrayList<Parameter>(parameters);
+			this.lifetimeParameters = lifetimeParameters == null ? new ArrayList<String>() : new ArrayList<String>(lifetimeParameters);
 			this.requires = new ArrayList<Expr>(requires);
 			this.ensures = new ArrayList<Expr>(ensures);
 			this.statements = new ArrayList<Stmt>(statements);
@@ -503,8 +506,7 @@ public final class WhileyFile implements CompilationUnit {
 				List<Parameter> parameters, List<Expr> requires,
 				List<Expr> ensures,
 				List<Stmt> statements, Attribute... attributes) {
-			super(modifiers, name, returns, parameters, requires, ensures,
-					statements, attributes);
+			super(modifiers, name, returns, parameters, null, requires, ensures, statements, attributes);
 		}
 
 		public SyntacticType.Function unresolvedType() {
@@ -560,8 +562,9 @@ public final class WhileyFile implements CompilationUnit {
 		public Nominal.Method resolvedType;
 
 		public Method(List<Modifier> modifiers, String name, List<Parameter> returns, List<Parameter> parameters,
-				List<Expr> requires, List<Expr> ensures, List<Stmt> statements, Attribute... attributes) {
-			super(modifiers, name, returns, parameters, requires, ensures, statements, attributes);
+				List<String> lifetimeParameters, List<Expr> requires, List<Expr> ensures,
+				List<Stmt> statements, Attribute... attributes) {
+			super(modifiers, name, returns, parameters, lifetimeParameters, requires, ensures, statements, attributes);
 		}
 
 		public SyntacticType.Method unresolvedType() {
@@ -573,7 +576,8 @@ public final class WhileyFile implements CompilationUnit {
 			for (Parameter r : returns) {
 				returnTypes.add(r.type);
 			}
-			return new SyntacticType.Method(returnTypes, parameterTypes, attributes());
+			return new SyntacticType.Method(returnTypes, parameterTypes,
+					Collections.<String>emptySet(), lifetimeParameters, attributes());
 		}
 
 		public Nominal.Method resolvedType() {

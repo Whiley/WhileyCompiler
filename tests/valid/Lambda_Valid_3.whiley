@@ -54,8 +54,8 @@ requires amount >= 0:
 
 // Construct buffer from list of bytes
 public method BufferInputStream(byte[] buffer) -> InputStream:
-    BufferState this = new {bytes: buffer, pos: 0}
-    return {read: &(int x -> read(this, x))}
+    BufferState _this = new {bytes: buffer, pos: 0}
+    return {read: &(int x -> read(_this, x))}
 
 public export method test() :
     InputStream bis = BufferInputStream(toBytes("hello"))

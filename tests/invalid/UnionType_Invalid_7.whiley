@@ -7,7 +7,7 @@ constant MUL is 3
 
 constant DIV is 4
 
-type bop is ({int op, int rhs, int lhs} this) where ADD <= this.op && this.op <= DIV
+type bop is ({int op, int rhs, int lhs} _this) where ADD <= _this.op && _this.op <= DIV
 
 function f(bop b) -> bop:
     return b

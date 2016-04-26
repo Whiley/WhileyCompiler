@@ -1,0 +1,3 @@
+../../tests/invalid/Lifetime_Lambda_Invalid_6.whiley:7: expected type Lifetime_Lambda_Invalid_6:mymethod, found method[this]()->(int)
+    return &[this](-> (*x) + (*(new 1)))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

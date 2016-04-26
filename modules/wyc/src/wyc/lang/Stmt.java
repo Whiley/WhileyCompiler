@@ -261,6 +261,59 @@ public interface Stmt extends SyntacticElement {
 	}
 
 	/**
+	 * Represents a named block, which has the form:
+	 *
+	 * <pre>
+	 * NamedBlcok ::= LifetimeIdentifier ':' NewLine Block
+	 * </pre>
+	 *
+	 * As an example:
+	 *
+	 * <pre>
+	 * function sum():
+	 *   &this:int x = new:this x
+	 *   myblock:
+	 *     &myblock:int y = new:myblock y
+	 * </pre>
+	 */
+	public static final class NamedBlock extends SyntacticElement.Impl implements Stmt {
+		public final String name;
+		public final ArrayList<Stmt> body;
+
+		/**
+		 * Construct a named block from a given name and body of statements.
+		 *
+		 * @param name
+		 *            name of this named block.
+		 * @param body
+		 *            non-null collection which contains zero or more
+		 *            statements.
+		 * @param attributes
+		 */
+		public NamedBlock(String name, Collection<Stmt> body, Attribute... attributes) {
+			super(attributes);
+			this.name = name;
+			this.body = new ArrayList<Stmt>(body);
+		}
+
+		/**
+		 * Construct a named block from a given name and body of statements.
+		 *
+		 * @param name
+		 *            name of this named block.
+		 * @param body
+		 *            non-null collection which contains zero or more
+		 *            statements.
+		 * @param attributes
+		 */
+		public NamedBlock(String name, Collection<Stmt> body, Collection<Attribute> attributes) {
+			super(attributes);
+			this.name = name;
+			this.body = new ArrayList<Stmt>(body);
+		}
+	}
+
+	/**
 	 * Represents a while statement, which has the form:
 	 *
 	 * <pre>

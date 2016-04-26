@@ -1,0 +1,3 @@
+../../tests/invalid/Lifetime_Invalid_2.whiley:4: expected type &this:int, found &myblock:int
+        x = myblock:new 1
+        ^

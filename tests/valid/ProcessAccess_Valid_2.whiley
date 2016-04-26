@@ -2,9 +2,9 @@ type state is {int y, int x}
 
 type pState is &state
 
-method send(pState this, int z) :
-    assume this->x == 1
-    assume this->y == 2
+method send(pState _this, int z) :
+    assume _this->x == 1
+    assume _this->y == 2
     assume z == 1
 
 public export method test() :

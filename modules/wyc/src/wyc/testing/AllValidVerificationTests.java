@@ -121,6 +121,7 @@ public class AllValidVerificationTests {
 		IGNORED.put("Lambda_Valid_3", "#344");
 		IGNORED.put("Lambda_Valid_4", "#344");
 		IGNORED.put("Lambda_Valid_7", "#344");
+		IGNORED.put("Lifetime_Lambda_Valid_4", "#298");
 		IGNORED.put("ListAccess_Valid_6", "Known Issue");
 		IGNORED.put("ListAssign_Valid_1", "#233");
 		IGNORED.put("ListAssign_Valid_6", "#233");

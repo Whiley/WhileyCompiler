@@ -2,8 +2,8 @@
 
 type SortedList is null | SortedListNode
 
-type SortedListNode is ({SortedList next, int data} this)
-where (this.next == null) || (this.data < this.next.data)
+type SortedListNode is ({SortedList next, int data} _this)
+where (_this.next == null) || (_this.data < _this.next.data)
 
 function SortedList(int head, SortedList tail) -> SortedList
 requires (tail == null) || (head < tail.data):

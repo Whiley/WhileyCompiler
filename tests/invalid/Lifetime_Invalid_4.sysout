@@ -1,0 +1,3 @@
+../../tests/invalid/Lifetime_Invalid_4.whiley:2: expected type &int, found &this:int
+    return this:new 1
+           ^^^^^^^^^^

@@ -563,6 +563,8 @@ public class WhileyFileLexer {
 			put("export", Token.Kind.Export);
 			put("method", Token.Kind.Method);
 			put("package", Token.Kind.Package);
+			// lifetimes
+			put("this", Token.Kind.This);
 		}
 	};
 
@@ -627,6 +629,8 @@ public class WhileyFileLexer {
 			Export("export"),
 			Function("function"),
 			Method("method"),
+			// Lifetimes
+			This("this"),
 			// Expressions
 			All("all"),
 			No("no"),

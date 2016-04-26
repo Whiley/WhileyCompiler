@@ -1,0 +1,3 @@
+../../tests/invalid/Lifetime_Lambda_Invalid_5.whiley:7: lifetime 'this' cannot be dereferenced here
+    return &(->*x)
+               ^^

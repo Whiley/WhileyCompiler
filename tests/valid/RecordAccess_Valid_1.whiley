@@ -4,9 +4,9 @@ type etype is {int mode, ...}
 
 type Ptype is &etype
 
-method get(Ptype this) -> int:
-    this->mode = 1
-    return this->mode
+method get(Ptype _this) -> int:
+    _this->mode = 1
+    return _this->mode
 
 public export method test() :
     assume get(new (etype) {mode:2}) == 1

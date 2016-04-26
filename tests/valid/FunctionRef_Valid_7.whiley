@@ -2,8 +2,8 @@
 
 type Proc is &{int data}
 
-method read(Proc this, int x) -> int:
-    return x + this->data
+method read(Proc _this, int x) -> int:
+    return x + _this->data
 
 public export method test(Proc p, int arg) -> int:
     return read(p,arg)

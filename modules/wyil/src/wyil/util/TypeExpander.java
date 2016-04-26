@@ -237,7 +237,7 @@ public class TypeExpander {
 			for(int i=0;i!=tt_returns_size;++i) {
 				myChildren[i+tt_params_size] = getTypeHelper(tt_returns.get(i),maximallyConsumed,states,roots);
 			}
-			myData = tt_params_size;
+			myData = new Type.FunctionOrMethod.Data(tt_params_size, tt.contextLifetimes(), tt.lifetimeParams());
 			myKind = tt instanceof Type.Function ? Type.K_FUNCTION
 					: Type.K_METHOD;			
 		}else {

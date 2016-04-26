@@ -198,7 +198,7 @@ public class AllInvalidTests {
 			fail("Test compiled when it shouldn't have!");
 		} else if (r == WycMain.INTERNAL_FAILURE) {
 			// This indicates some other kind of internal failure.
-			fail("Test caused internal failure!");
+			fail("Test caused internal failure!\n" + output);
 		} else {
 			// Now, let's check the expected output against the file which
 			// contains the sample output for this test

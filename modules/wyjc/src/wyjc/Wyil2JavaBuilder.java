@@ -334,7 +334,8 @@ public class Wyil2JavaBuilder implements Builder {
 		codes.add(new Bytecode.Load(0, strArr));
 		codes.add(new Bytecode.Invoke(WHILEYUTIL, "systemConsole", ft1,
 				Bytecode.InvokeMode.STATIC));
-		Type.Method wyft = Type.Method(new Type[0], WHILEY_SYSTEM_T);
+		Type.Method wyft = Type.Method(new Type[0], Collections.<String>emptySet(),
+				Collections.<String>emptyList(), WHILEY_SYSTEM_T);
 		JvmType.Function ft3 = convertFunType(wyft);
 		codes.add(new Bytecode.Invoke(owner, nameMangle("main", wyft), ft3,
 				Bytecode.InvokeMode.STATIC));

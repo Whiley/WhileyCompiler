@@ -2,16 +2,16 @@
 
 type Queue is {int[] items, int length}
 
-method get(&Queue this) -> int:
-    this->length = this->length - 1
-    return this->items[this->length]
+method get(&Queue _this) -> int:
+    _this->length = _this->length - 1
+    return _this->items[_this->length]
 
-method put(&Queue this, int item) :
-    this->items[this->length] = item
-    this->length = this->length + 1
+method put(&Queue _this, int item) :
+    _this->items[_this->length] = item
+    _this->length = _this->length + 1
 
-method isEmpty(&Queue this) -> bool:
-    return this->length == 0
+method isEmpty(&Queue _this) -> bool:
+    return _this->length == 0
 
 public export method test() :
     int[] items = [1, 2, 3, 4, 5]

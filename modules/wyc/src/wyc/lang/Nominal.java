@@ -56,9 +56,9 @@ public abstract class Nominal {
 		return Nominal.construct(nominal, raw);
 	}
 
-	public static Reference Reference(Nominal element) {
-		Type.Reference nominal = Type.Reference(element.nominal());
-		Type.Reference raw = Type.Reference(element.raw());
+	public static Reference Reference(Nominal element, String lifetime) {
+		Type.Reference nominal = Type.Reference(element.nominal(), lifetime);
+		Type.Reference raw = Type.Reference(element.raw(), lifetime);
 		return new Reference(nominal,raw);
 	}
 

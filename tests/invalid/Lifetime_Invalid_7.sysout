@@ -1,0 +1,5 @@
+../../tests/invalid/Lifetime_Invalid_7.whiley:16: unable to resolve name (m(&int,&this:int,bool) is ambiguous
+	found: Lifetime_Invalid_7:m : method<a,b>(&a:int|&b:bool,&a:int,bool)->(&b:int) instantiated with <this, *>
+	found: Lifetime_Invalid_7:m : method<a>(&int,&a:int,int|bool)->(&a:int) instantiated with <this>)
+    m(new 1, this:new 2, true)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^

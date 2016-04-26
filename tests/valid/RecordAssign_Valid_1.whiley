@@ -1,6 +1,6 @@
 
 
-type tac1tup is ({int f1, int f2} this) where this.f1 < this.f2
+type tac1tup is ({int f1, int f2} _this) where _this.f1 < _this.f2
 
 function f() -> tac1tup:
     return {f1: 2, f2: 3}
