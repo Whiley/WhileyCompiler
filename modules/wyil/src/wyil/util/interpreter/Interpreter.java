@@ -100,7 +100,7 @@ public class Interpreter {
 			}
 			// Fourth, construct the stack frame for execution
 			ArrayList<Type> sig_params = sig.params();
-			Constant[] frame = new Constant[code.numRegisters()];
+			Constant[] frame = new Constant[code.numLocations()];
 			for (int i = 0; i != sig_params.size(); ++i) {
 				frame[i] = args[i];
 			}
@@ -188,16 +188,16 @@ public class Interpreter {
 			return context.pc.next();
 		} else if (bytecode instanceof Bytecode.Lambda) {
 			return execute((Bytecode.Lambda) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.Quantify) {
-			return execute((Bytecode.Quantify) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.Quantifier) {
+			return execute((Bytecode.Quantifier) bytecode, frame, context);
 		} else if (bytecode instanceof Bytecode.Loop) {
 			return execute((Bytecode.Loop) bytecode, frame, context);
 		} else if (bytecode instanceof Bytecode.Return) {
 			return execute((Bytecode.Return) bytecode, frame, context);
 		} else if (bytecode instanceof Bytecode.Switch) {
 			return execute((Bytecode.Switch) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.Update) {
-			return execute((Bytecode.Update) bytecode, frame, context);
+		} else if (bytecode instanceof Bytecode.Assign) {
+			return execute((Bytecode.Assign) bytecode, frame, context);
 		} else {
 			throw new IllegalArgumentException("Unknown bytecode encountered: " + bytecode);
 		}
@@ -450,7 +450,7 @@ public class Interpreter {
 		return context.pc.next();
 	}
 
-	private Object execute(Bytecode.Quantify bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.Quantifier bytecode, Constant[] frame, Context context) {
 		Constant startOperand = frame[bytecode.startOperand()];
 		Constant endOperand = frame[bytecode.endOperand()];
 		checkType(startOperand, context, Constant.Integer.class);
@@ -486,7 +486,7 @@ public class Interpreter {
 			// branch taken, so execute true branch
 			BytecodeForest.Index pc = new BytecodeForest.Index(bytecode.trueBranch(), 0);
 			r = executeAllWithin(frame, new Context(pc, context.forest));
-		} else if (bytecode.hasFalseBlock()) {
+		} else if (bytecode.hasFalseBranch()) {
 			// branch not taken, so execute false branch
 			BytecodeForest.Index pc = new BytecodeForest.Index(bytecode.falseBranch(), 0);
 			r = executeAllWithin(frame, new Context(pc, context.forest));
@@ -644,7 +644,7 @@ public class Interpreter {
 		return context.getLabel(bytecode.defaultTarget());
 	}
 
-	private Object execute(Bytecode.Update bytecode, Constant[] frame, Context context) {
+	private Object execute(Bytecode.Assign bytecode, Constant[] frame, Context context) {
 		Constant rhs = frame[bytecode.type()];
 		Constant lhs = frame[bytecode.target(0)];
 		frame[bytecode.target(0)] = update(lhs, bytecode.iterator(), rhs, frame, context);
@@ -811,7 +811,7 @@ public class Interpreter {
 				// Check any invariant associated with this type
 				BytecodeForest invariant = td.invariant();
 				if (invariant.numBlocks() > 0) {
-					Constant[] frame = new Constant[invariant.numRegisters()];
+					Constant[] frame = new Constant[invariant.numLocations()];
 					frame[0] = value;
 					BytecodeForest.Index pc = new BytecodeForest.Index(invariant.getRoot(0), 0);
 					executeAllWithin(frame, new Context(pc, invariant));

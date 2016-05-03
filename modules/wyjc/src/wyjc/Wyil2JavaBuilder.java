@@ -367,12 +367,12 @@ public class Wyil2JavaBuilder implements Builder {
 		String falseBranch = freshLabel();
 		// FIXME: this is inefficient in cases where there are no invariants in
 		// component types (e.g. there are no component types).
-		translateInvariantTest(falseBranch, td.type(), 0, td.invariant().numRegisters(), constants, bytecodes);
+		translateInvariantTest(falseBranch, td.type(), 0, td.invariant().numLocations(), constants, bytecodes);
 		// Second, generate code for invariant (if applicable).
 		// FIXME: use of patchInvariantBlock is not ideal
 		BytecodeForest invariant = patchInvariantBlock(falseBranch, td.invariant());
 		for(int i=0;i!=invariant.numRoots();++i) {
-			translate(invariant.getRoot(i), invariant.numRegisters(), invariant, bytecodes);
+			translate(invariant.getRoot(i), invariant.numLocations(), invariant, bytecodes);
 		}
 		bytecodes.add(new Bytecode.LoadConst(true));
 		bytecodes.add(new Bytecode.Return(new JvmType.Bool()));
@@ -518,7 +518,7 @@ public class Wyil2JavaBuilder implements Builder {
 		lineNumbers = new ArrayList<LineNumberTable.Entry>();
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		BytecodeForest forest = method.code();
-		translate(method.body(), forest.numRegisters(), forest, bytecodes);
+		translate(method.body(), forest.numLocations(), forest, bytecodes);
 		jasm.attributes.Code code = new jasm.attributes.Code(bytecodes,
 				Collections.EMPTY_LIST, cm);
 		if (!lineNumbers.isEmpty()) {
@@ -606,8 +606,8 @@ public class Wyil2JavaBuilder implements Builder {
 				translate(pc, (Fail) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof FieldLoad) {
 				translate(pc, (FieldLoad) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof Quantify) {
-				freeSlot = translate(pc, (Quantify) code, freeSlot,
+			} else if (code instanceof Quantifier) {
+				freeSlot = translate(pc, (Quantifier) code, freeSlot,
 						 forest, bytecodes);
 			} else if (code instanceof Goto) {
 				translate(pc, (Goto) code, freeSlot, forest, bytecodes);
@@ -623,8 +623,8 @@ public class Wyil2JavaBuilder implements Builder {
 				translate(pc, (Lambda) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Loop) {
 				translate(pc, (Loop) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof Update) {
-				translate(pc, (Update) code, freeSlot, forest, bytecodes);
+			} else if (code instanceof Assign) {
+				translate(pc, (Assign) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Return) {
 				translate(pc, (Return) code, freeSlot, forest, bytecodes);
 			} else if (code instanceof Switch) {
@@ -679,7 +679,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Store(c.target(0), convertUnderlyingType(c.type())));
 	}
 
-	private void translate(BytecodeForest.Index index, Update code, int freeSlot, BytecodeForest forest,
+	private void translate(BytecodeForest.Index index, Assign code, int freeSlot, BytecodeForest forest,
 			ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Load(code.target(0), convertUnderlyingType(code.type(0))));
 		translateUpdate(code.iterator(), code, bytecodes);
@@ -711,7 +711,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            --- List of bytecodes to append to.
 	 */
 	private void translateUpdate(Iterator<LVal> iterator,
-			Update code, ArrayList<Bytecode> bytecodes) {
+			Assign code, ArrayList<Bytecode> bytecodes) {
 		// At this point, we have not yet reached the "innermost" position.
 		// Therefore, we keep recursing down the chain of LVals.
 		LVal lv = iterator.next();
@@ -746,7 +746,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param code
 	 * @param bytecodes
 	 */
-	private void translateUpdate(ArrayLVal lval, Iterator<LVal> iterator, Update code,
+	private void translateUpdate(ArrayLVal lval, Iterator<LVal> iterator, Assign code,
 			ArrayList<Bytecode> bytecodes) {
 		
 		if(iterator.hasNext()) {
@@ -767,13 +767,13 @@ public class Wyil2JavaBuilder implements Builder {
 			// directly.
 			bytecodes.add(new Bytecode.Load(lval.indexOperand, WHILEYINT));
 			bytecodes.add(new Bytecode.Load(code.type(), convertUnderlyingType(lval.rawType().element())));
-			addWriteConversion(code.rhs(), bytecodes);
+			addWriteConversion(code.rightHandSide(), bytecodes);
 		}
 		JvmType.Function setFunType = new JvmType.Function(WHILEYARRAY, WHILEYARRAY, WHILEYINT, JAVA_LANG_OBJECT);
 		bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "set", setFunType, Bytecode.InvokeMode.STATIC));
 	}
 	
-	private void translateUpdate(RecordLVal lval, Iterator<LVal> iterator, Update code,
+	private void translateUpdate(RecordLVal lval, Iterator<LVal> iterator, Assign code,
 			ArrayList<Bytecode> bytecodes) {
 		Type.EffectiveRecord type = lval.rawType();
 
@@ -801,7 +801,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "put", putFunType, Bytecode.InvokeMode.STATIC));
 	}
 
-	private void translateUpdate(ReferenceLVal lval, Iterator<LVal> iterator, Update code,
+	private void translateUpdate(ReferenceLVal lval, Iterator<LVal> iterator, Assign code,
 			ArrayList<Bytecode> bytecodes) {
 		if(iterator.hasNext()) {
 			// This is not the innermost case, hence we read out the current
@@ -816,7 +816,7 @@ public class Wyil2JavaBuilder implements Builder {
 			// This is the innermost case, hence we can avoid the unnecessary
 			// read of the current value and, instead, just return the rhs value
 			// directly.
-			JvmType rhsJvmType = convertUnderlyingType(code.rhs());
+			JvmType rhsJvmType = convertUnderlyingType(code.rightHandSide());
 			bytecodes.add(new Bytecode.Load(code.type(),rhsJvmType));
 		}
 		JvmType.Function setFunType = new JvmType.Function(WHILEYOBJECT, JAVA_LANG_OBJECT);
@@ -891,7 +891,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYBOOL, "value", ftype, Bytecode.InvokeMode.VIRTUAL));
 		bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, falseLabel));
 		translate(new BytecodeForest.Index(code.trueBranch(), 0), freeSlot, forest, bytecodes);
-		if(code.hasFalseBlock()) {
+		if(code.hasFalseBranch()) {
 			String exitLabel = freshLabel();
 			bytecodes.add(new Bytecode.Goto(exitLabel));
 			bytecodes.add(new Bytecode.Label(falseLabel));
@@ -1033,7 +1033,7 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Goto(loopHeader));
 	}
 
-	private int translate(BytecodeForest.Index index, Quantify c, int freeSlot,
+	private int translate(BytecodeForest.Index index, Quantifier c, int freeSlot,
 			BytecodeForest forest, ArrayList<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.Load(c.startOperand(), WHILEYINT));
 		bytecodes.add(new Bytecode.Load(c.endOperand(), WHILEYINT));

@@ -30,6 +30,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
+import wycc.lang.Attribute;
 import wycc.lang.NameID;
 import wycc.util.Pair;
 import wycc.util.Triple;
@@ -40,7 +41,6 @@ import wyil.lang.*;
 import wyil.lang.Bytecode.Schema;
 import wyil.lang.Bytecode.Extras;
 import wyil.lang.Bytecode.Operands;
-import wyil.lang.Bytecode.Targets;
 import wyil.lang.Bytecode.Types;
 
 /**
@@ -582,17 +582,8 @@ public final class WyilFileReader {
 	 * +--------------------+
 	 * </pre>
 	 * 
-	 * <p>
-	 * Each bytecode has a given offset which is calculated from the start of
-	 * all blocks. For example, assume block 1 has ten actual bytecodes (i.e.
-	 * which are not labels); then, a bytecode at index 2 in block 2 has offset
-	 * 12.
-	 * </p>
-	 * 
 	 * @param forest
 	 *            The forest being written to the stream
-	 * @param labels
-	 *            The set of pre-calculated label offsets
 	 * @param output
 	 * @throws IOException
 	 */
@@ -609,9 +600,9 @@ public final class WyilFileReader {
 		
 		BytecodeForest forest = new BytecodeForest();
 		
-		for(int i=0;i!=nRegs;++i) {
+		for(int i=0;i!=nRegs;++i) {			
 			BytecodeForest.Location location = readCodeLocation();
-			forest.registers().add(location);
+			forest.locations().add(location);
 		}
 		
 		for(int i=0;i!=nRoots;++i) {
@@ -619,16 +610,9 @@ public final class WyilFileReader {
 			forest.addRoot(root);
 		}
 		
-		HashMap<Integer, Bytecode.Label> labels = new HashMap<Integer, Bytecode.Label>();
-		
-		int offset = 0;
 		for(int i=0;i!=nBlocks;++i) {
-			BytecodeForest.Block block = readCodeBlock(offset,labels);
-			forest.add(block);
-			offset += block.size();
+			forest.add(readCodeBlock());
 		}
-		
-		insertLabels(forest, labels);
 		
 		return forest;
 	}
@@ -657,47 +641,14 @@ public final class WyilFileReader {
 		int nAttrs = input.read_uv();
 		int typeIdx = input.read_uv();		
 		// TODO: read any attributes given
+		List<Attribute> attributes = Collections.EMPTY_LIST;
 		if(kind) {
-			Bytecode value;
-			return new BytecodeForest.Intermediate(typePool[typeIdx], bytecode);
-		} else {
 			int stringIdx = input.read_uv();
-			return new BytecodeForest.Variable(typePool[typeIdx], stringPool[stringIdx]);
+			return new BytecodeForest.Variable(typePool[typeIdx], stringPool[stringIdx], attributes);			
+		} else {
+			Bytecode.Expr value = (Bytecode.Expr) readBytecode();
+			return new BytecodeForest.Operand(typePool[typeIdx], value, attributes);
 		}
-	}
-	
-	/**
-	 * This function is responsible for inserting labels into the correct
-	 * positions within all blocks contained in a forest. Every label is given
-	 * an offset within the flat bytecode array, as stored on disk. The
-	 * challenge here is that, having loaded it from disk, the bytecode array is
-	 * nested rather than flat. This is because certain bytecodes contain blocks
-	 * of nested bytecodes (e.g. loop bytecode). Therefore, we need to track the
-	 * offset within the flat bytecode array against that of the now nested
-	 * bytecode structure.
-	 *
-	 * @param offset
-	 *            The current offset within the flat bytecode array.
-	 * @param bytecodes
-	 *            The list of bytecodes we are inserting into.
-	 * @param labels
-	 *            The map of offsets to labels being inserted.
-	 * @return
-	 */
-	private int insertLabels(BytecodeForest forest, HashMap<Integer, Bytecode.Label> labels) {
-		int offset = 0;
-		for (int i = 0; i != forest.numBlocks(); ++i) {
-			BytecodeForest.Block block = forest.get(i);
-			for (int j = 0; j != block.size(); ++j) {
-				// First, check whether there is a label to insert
-				Bytecode.Label label = labels.get(offset++);
-				if (label != null) {
-					block.add(++j, label);
-				}
-			}
-		}
-		// Done
-		return offset;
 	}
 	
 	/**
@@ -729,37 +680,33 @@ public final class WyilFileReader {
 	 * @return
 	 * @throws IOException
 	 */
-	public BytecodeForest.Block readCodeBlock(int offset, HashMap<Integer, Bytecode.Label> labels)
+	public BytecodeForest.Block readCodeBlock()
 			throws IOException {
 		int nCodes = input.read_uv();
 		int nAttrs = input.read_uv();
 
 		ArrayList<BytecodeForest.Entry> bytecodes = new ArrayList<BytecodeForest.Entry>();
 		for (int i = 0; i < nCodes; ++i) {
-			Bytecode code = readBytecode(i + offset, labels);
+			Bytecode.Stmt code = (Bytecode.Stmt) readBytecode();
 			bytecodes.add(new BytecodeForest.Entry(code));
 		}
 		// TODO: read any attributes given
 		return new BytecodeForest.Block(bytecodes);
 	}
 
-	private Bytecode readBytecode(int offset, HashMap<Integer, Bytecode.Label> labels) throws IOException {
+	private Bytecode readBytecode() throws IOException {
 		int opcode = input.read_u8();
 		Bytecode.Schema schema = schemas[opcode];
 		
-		// First, read and validate all targets, operands and types
-		int nTargets = input.read_uv();
+		// First, read and validate all operands and types
 		int nOperands = input.read_uv();
-		int nTypes = input.read_uv();
 		int nAttts = input.read_uv();
-		int[] targets = readRegisters(nTargets);
 		int[] operands = readRegisters(nOperands);
-		Type[] types = readTypes(nTypes);
 		// Second, read all extras		
-		Object[] extras = readExtras(schema,labels);
+		Object[] extras = readExtras(schema);
 		
 		// Finally, create the bytecode
-		return schema.construct(opcode,targets,operands,types,extras);		
+		return schema.construct(opcode,operands,extras);		
 	}
 	
 	/**
@@ -771,7 +718,7 @@ public final class WyilFileReader {
 	 * @return
 	 * @throws IOException
 	 */
-	private Object[] readExtras(Bytecode.Schema schema, HashMap<Integer, Bytecode.Label> labels)
+	private Object[] readExtras(Bytecode.Schema schema)
 			throws IOException {
 		Extras[] extras = schema.extras();
 		Object[] results = new Object[extras.length];
@@ -791,13 +738,7 @@ public final class WyilFileReader {
 				int nameIdx = input.read_uv();
 				results[i] = namePool[nameIdx];
 				break;
-			}			
-			case TARGET: {
-				int target = input.read_uv();
-				Bytecode.Label l = findLabel(target, labels);
-				results[i] = l.label();
-				break;
-			}
+			}						
 			case BLOCK_ARRAY: {
 				int nBlocks = input.read_uv();
 				int[] blocks = new int[nBlocks];
@@ -817,18 +758,18 @@ public final class WyilFileReader {
 				results[i] = strings;
 				break;
 			}
-			case SWITCH_ARRAY: {
-				int nPairs = input.read_uv();
-				Pair<Constant,String>[] pairs = new Pair[nPairs];
-				for(int j=0;j!=nPairs;++j) {
-					int constIdx = input.read_uv();
-					int target = input.read_uv();
-					String label = findLabel(target,labels).label();
-					pairs[j] = new Pair<Constant,String>(constantPool[constIdx],label);
-				}
-				results[i] = pairs;
-				break;
-			}
+//			case SWITCH_ARRAY: {
+//				int nPairs = input.read_uv();
+//				Pair<Constant,String>[] pairs = new Pair[nPairs];
+//				for(int j=0;j!=nPairs;++j) {
+//					int constIdx = input.read_uv();
+//					int target = input.read_uv();
+//					String label = findLabel(target,labels).label();
+//					pairs[j] = new Pair<Constant,String>(constantPool[constIdx],label);
+//				}
+//				results[i] = pairs;
+//				break;
+//			}
 			default:
 				throw new RuntimeException("unknown bytecode extra encountered: " + extras[i]);
 			}
@@ -853,17 +794,6 @@ public final class WyilFileReader {
 		return types;
 	}
 	
-	private static int labelCount = 0;
-
-	private static Bytecode.Label findLabel(int target, HashMap<Integer, Bytecode.Label> labels) {
-		Bytecode.Label label = labels.get(target);
-		if (label == null) {
-			label = new Bytecode.Label("label" + labelCount++);
-			labels.put(target, label);
-		}
-		return label;
-	}
-	
 	/**
 	 * ==================================================================
 	 * Individual Bytecode Schemas
@@ -874,120 +804,120 @@ public final class WyilFileReader {
 
 	static {
 		//		
-		schemas[Bytecode.OPCODE_goto] = new Schema(Targets.ZERO, Operands.ZERO, Types.ZERO, Extras.TARGET){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Goto((String) extras[0]);
+		schemas[Bytecode.OPCODE_break] = new Schema(Operands.ZERO, Extras.BLOCK_ARRAY){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				int[] blocks = (int[]) extras[0];
+				return new Bytecode.Break(blocks[0]);
 			}
 		};
-		schemas[Bytecode.OPCODE_fail] = new Schema(Targets.ZERO, Operands.ZERO, Types.ZERO){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+		schemas[Bytecode.OPCODE_continue] = new Schema(Operands.ZERO, Extras.BLOCK_ARRAY){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				int[] blocks = (int[]) extras[0];
+				return new Bytecode.Continue(blocks[0]);
+			}
+		};
+		schemas[Bytecode.OPCODE_fail] = new Schema(Operands.ZERO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
 				return new Bytecode.Fail();
 			}
 		};
-		schemas[Bytecode.OPCODE_assert] = new Schema(Targets.ZERO, Operands.ZERO, Types.ZERO, Extras.BLOCK_ARRAY){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				int[] blocks = (int[]) extras[0];
-				return new Bytecode.Assert(blocks[0]);
+		schemas[Bytecode.OPCODE_assert] = new Schema(Operands.ONE){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Assert(operands[0]);
 			}
 		};
-		schemas[Bytecode.OPCODE_assume] = new Schema(Targets.ZERO, Operands.ZERO, Types.ZERO, Extras.BLOCK_ARRAY){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				int[] blocks = (int[]) extras[0];
-				return new Bytecode.Assume(blocks[0]);
+		schemas[Bytecode.OPCODE_assume] = new Schema(Operands.ONE){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Assume(operands[0]);
 			}
-		};
-		schemas[Bytecode.OPCODE_invariant] = new Schema(Targets.ZERO, Operands.ZERO, Types.ZERO, Extras.BLOCK_ARRAY){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				int[] blocks = (int[]) extras[0];
-				return new Bytecode.Invariant(blocks[0]);
-			}
-		};
+		};		
 
 		// =========================================================================
 		// Unary Operators.
 		// =========================================================================
-		schemas[Bytecode.OPCODE_debug] = new Schema(Targets.ZERO, Operands.ONE, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+		schemas[Bytecode.OPCODE_debug] = new Schema(Operands.ONE){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
 				return new Bytecode.Debug(operands[0]);
 			}
 		};
-		schemas[Bytecode.OPCODE_return] = new Schema(Targets.ZERO, Operands.MANY, Types.MANY){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Return(types,operands);
+		schemas[Bytecode.OPCODE_return] = new Schema(Operands.MANY){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Return(operands);
 			}
 		};
-		schemas[Bytecode.OPCODE_switch] = new Schema(Targets.ZERO, Operands.ONE, Types.ONE, Extras.TARGET, Extras.SWITCH_ARRAY){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				String defaultTarget = (String) extras[0];
-				Pair<Constant,String>[] cases = (Pair<Constant,String>[]) extras[1];
-				return new Bytecode.Switch(types[0], operands[0], defaultTarget, Arrays.asList(cases));
-			}
-		};
+//		schemas[Bytecode.OPCODE_switch] = new Schema(Operands.ONE, Extras.TARGET, Extras.SWITCH_ARRAY){
+//			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+//				String defaultTarget = (String) extras[0];
+//				Pair<Constant,String>[] cases = (Pair<Constant,String>[]) extras[1];
+//				return new Bytecode.Switch(operands[0], defaultTarget, Arrays.asList(cases));
+//			}
+//		};
 		
 		// =========================================================================
 		// Unary Assignables
 		// =========================================================================
-		schemas[Bytecode.OPCODE_assign] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.ASSIGN);
+		schemas[Bytecode.OPCODE_assign] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				// FIXME: there can be multiple operands, in fact.
+				return new Bytecode.Assign(operands[0],operands[1]);
 			}
 		};		
-		schemas[Bytecode.OPCODE_newobject] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0],targets,operands,Bytecode.OperatorKind.NEW);
+		schemas[Bytecode.OPCODE_newobject] = new Schema(Operands.ONE){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands,Bytecode.OperatorKind.NEW);
 			}
 		};
-		schemas[Bytecode.OPCODE_dereference] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.DEREFERENCE);
+		schemas[Bytecode.OPCODE_dereference] = new Schema(Operands.ONE){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.DEREFERENCE);
 			}
 		};
-		schemas[Bytecode.OPCODE_bitwiseinvert] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.BITWISEINVERT);
+		schemas[Bytecode.OPCODE_bitwiseinvert] = new Schema(Operands.ONE){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.BITWISEINVERT);
 			}
 		};
-		schemas[Bytecode.OPCODE_arraylength] = new Schema(Targets.ONE, Operands.ONE, Types.ONE) {
-			public Bytecode construct(int opcode, int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.ARRAYLENGTH);
+		schemas[Bytecode.OPCODE_arraylength] = new Schema(Operands.ONE) {
+			public Bytecode construct(int opcode, int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.ARRAYLENGTH);
 			}
 		};
-		schemas[Bytecode.OPCODE_neg] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.NEG);
+		schemas[Bytecode.OPCODE_neg] = new Schema(Operands.ONE){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.NEG);
 			}
 		};
-		schemas[Bytecode.OPCODE_logicalnot] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.NOT);
+		schemas[Bytecode.OPCODE_logicalnot] = new Schema(Operands.ONE){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.NOT);
 			}
 		};
-		schemas[Bytecode.OPCODE_fieldload] = new Schema(Targets.ONE, Operands.ONE, Types.ONE, Extras.STRING){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.FieldLoad((Type.EffectiveRecord) types[0], targets[0], operands[0], (String) extras[0]);
+		schemas[Bytecode.OPCODE_fieldload] = new Schema(Operands.ONE, Extras.STRING){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.FieldLoad(operands[0], (String) extras[0]);
 			}
 		};
-		schemas[Bytecode.OPCODE_convert] = new Schema(Targets.ONE, Operands.ONE, Types.TWO){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Convert(types[0], targets[0], operands[0], types[1]);
+		schemas[Bytecode.OPCODE_convert] = new Schema(Operands.ONE, Extras.TYPE){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {				
+				return new Bytecode.Convert(operands[0], (Type) extras[0]);
 			}
 		};
-		schemas[Bytecode.OPCODE_const] = new Schema(Targets.ONE, Operands.ZERO, Types.ZERO, Extras.CONSTANT){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Const(targets[0], (Constant) extras[0]);
+		schemas[Bytecode.OPCODE_const] = new Schema(Operands.ZERO, Extras.CONSTANT){
+			public Bytecode construct(int opcode, int[] operands, Object[] extras) {
+				return new Bytecode.Const((Constant) extras[0]);
 			}
 		};
 
 		// =========================================================================
 		// Binary Operators
 		// =========================================================================
-		schemas[Bytecode.OPCODE_if] = new Schema(Targets.ZERO, Operands.ONE, Types.ONE, Extras.BLOCK_ARRAY){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+		schemas[Bytecode.OPCODE_if] = new Schema(Operands.ONE, Extras.BLOCK_ARRAY){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
 				int[] blocks = (int[]) extras[0];
 				if(blocks.length == 1) {
-					return new Bytecode.If(types[0], operands[0], blocks[0]);	
+					return new Bytecode.If(operands[0], blocks[0]);	
 				} else {
-					return new Bytecode.If(types[0], operands[0], blocks[0], blocks[1]);
+					return new Bytecode.If(operands[0], blocks[0], blocks[1]);
 				}
 			}
 		};
@@ -995,164 +925,175 @@ public final class WyilFileReader {
 		// =========================================================================
 		// Binary Assignables
 		// =========================================================================
-		schemas[Bytecode.OPCODE_add] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.ADD);
+		schemas[Bytecode.OPCODE_add] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.ADD);
 			}
 		};
-		schemas[Bytecode.OPCODE_sub] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.SUB);
+		schemas[Bytecode.OPCODE_sub] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.SUB);
 			}
 		};
-		schemas[Bytecode.OPCODE_mul] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.MUL);
+		schemas[Bytecode.OPCODE_mul] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.MUL);
 			}
 		};
-		schemas[Bytecode.OPCODE_div] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.DIV);
+		schemas[Bytecode.OPCODE_div] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.DIV);
 			}
 		};
-		schemas[Bytecode.OPCODE_rem] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.REM);
+		schemas[Bytecode.OPCODE_rem] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.REM);
 			}
 		};
-		schemas[Bytecode.OPCODE_eq] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.EQ);
+		schemas[Bytecode.OPCODE_eq] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.EQ);
 			}
 		};
-		schemas[Bytecode.OPCODE_ne] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.NEQ);
+		schemas[Bytecode.OPCODE_ne] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.NEQ);
 			}
 		};
-		schemas[Bytecode.OPCODE_lt] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.LT);
+		schemas[Bytecode.OPCODE_lt] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.LT);
 			}
 		};
-		schemas[Bytecode.OPCODE_le] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.LTEQ);
+		schemas[Bytecode.OPCODE_le] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.LTEQ);
 			}
 		};
-		schemas[Bytecode.OPCODE_gt] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.GT);
+		schemas[Bytecode.OPCODE_gt] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.GT);
 			}
 		};
-		schemas[Bytecode.OPCODE_ge] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.GTEQ);
+		schemas[Bytecode.OPCODE_ge] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.GTEQ);
 			}
 		};
-		schemas[Bytecode.OPCODE_logicalor] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.OR);
+		schemas[Bytecode.OPCODE_logicalor] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.OR);
 			}
 		};
-		schemas[Bytecode.OPCODE_logicaland] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.AND);
+		schemas[Bytecode.OPCODE_logicaland] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.AND);
 			}
 		};
-		schemas[Bytecode.OPCODE_bitwiseor] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.BITWISEOR);
+		schemas[Bytecode.OPCODE_bitwiseor] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.BITWISEOR);
 			}
 		};
-		schemas[Bytecode.OPCODE_bitwisexor] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.BITWISEXOR);
+		schemas[Bytecode.OPCODE_bitwisexor] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.BITWISEXOR);
 			}
 		};
-		schemas[Bytecode.OPCODE_bitwiseand] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.BITWISEAND);
+		schemas[Bytecode.OPCODE_bitwiseand] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.BITWISEAND);
 			}
 		};
-		schemas[Bytecode.OPCODE_shl] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.LEFTSHIFT);
+		schemas[Bytecode.OPCODE_shl] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.LEFTSHIFT);
 			}
 		};
-		schemas[Bytecode.OPCODE_shr] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.RIGHTSHIFT);
+		schemas[Bytecode.OPCODE_shr] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.RIGHTSHIFT);
 			}
 		};
-		schemas[Bytecode.OPCODE_arrayindex] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0],targets,operands,Bytecode.OperatorKind.ARRAYINDEX);
+		schemas[Bytecode.OPCODE_arrayindex] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands,Bytecode.OperatorKind.ARRAYINDEX);
 			}
 		};
-		schemas[Bytecode.OPCODE_arraygen] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands,Bytecode.OperatorKind.ARRAYGENERATOR);
+		schemas[Bytecode.OPCODE_arraygen] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands,Bytecode.OperatorKind.ARRAYGENERATOR);
 			}
 		};
-		schemas[Bytecode.OPCODE_is] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.IS);
+		schemas[Bytecode.OPCODE_is] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.IS);
 			}
 		};
 
-		schemas[Bytecode.OPCODE_array] = new Schema(Targets.ONE, Operands.MANY, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.ARRAYCONSTRUCTOR);
+		schemas[Bytecode.OPCODE_array] = new Schema(Operands.MANY){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.ARRAYCONSTRUCTOR);
 			}
 		};
 
 		// =========================================================================
 		// Nary Assignables
 		// =========================================================================
-		schemas[Bytecode.OPCODE_record] = new Schema(Targets.ONE, Operands.MANY, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.RECORDCONSTRUCTOR);
+		schemas[Bytecode.OPCODE_record] = new Schema(Operands.MANY){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.RECORDCONSTRUCTOR);
 			}
 		};
-		schemas[Bytecode.OPCODE_invoke] = new Schema(Targets.MANY, Operands.MANY, Types.ONE, Extras.NAME){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Invoke((Type.FunctionOrMethod) types[0], targets, operands, (NameID) extras[0]);
+		schemas[Bytecode.OPCODE_invoke] = new Schema(Operands.MANY, Extras.TYPE, Extras.NAME) {
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				return new Bytecode.Invoke((Type.FunctionOrMethod) extras[0], operands, (NameID) extras[1]);
 			}
 		};
-		schemas[Bytecode.OPCODE_indirectinvoke] = new Schema(Targets.MANY, Operands.MANY, Types.ONE){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+		schemas[Bytecode.OPCODE_indirectinvoke] = new Schema(Operands.MANY, Extras.TYPE){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
 				int src = operands[0];
 				operands = Arrays.copyOfRange(operands,1,operands.length);
-				return new Bytecode.IndirectInvoke((Type.FunctionOrMethod) types[0], targets, src, operands);
+				return new Bytecode.IndirectInvoke((Type.FunctionOrMethod) extras[0], src, operands);
 			}
 		};
-		schemas[Bytecode.OPCODE_lambda] = new Schema(Targets.MANY, Operands.MANY, Types.ONE, Extras.NAME){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				return new Bytecode.Lambda((Type.FunctionOrMethod) types[0], targets[0], operands, (NameID) extras[0]);
+		schemas[Bytecode.OPCODE_lambda] = new Schema(Operands.MANY) {
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				Type.FunctionOrMethod type = (Type.FunctionOrMethod) extras[0];
+				int body = operands[0];
+				int[] parameters = Arrays.copyOfRange(operands, 1, 1+type.params().size());
+				int[] environment = Arrays.copyOfRange(operands, 1+type.params().size(), operands.length);
+				return new Bytecode.Lambda(type,body,parameters,environment);
 			}
 		};
-		schemas[Bytecode.OPCODE_loop] = new Schema(Targets.MANY, Operands.MANY, Types.ONE, Extras.BLOCK_ARRAY){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+		schemas[Bytecode.OPCODE_while] = new Schema(Operands.MANY, Extras.BLOCK_ARRAY){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
 				int[] blocks = (int[]) extras[0];
-				return new Bytecode.Loop(targets, blocks[0]);
+				int body = blocks[0];
+				int condition = operands[0];
+				int[] invariants = Arrays.copyOfRange(operands, 1, operands.length);
+				return new Bytecode.While(body,condition,invariants);
 			}
 		};
-		schemas[Bytecode.OPCODE_quantify] = new Schema(Targets.MANY, Operands.MANY, Types.ONE, Extras.BLOCK_ARRAY){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+		schemas[Bytecode.OPCODE_dowhile] = new Schema(Operands.MANY, Extras.BLOCK_ARRAY){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
 				int[] blocks = (int[]) extras[0];
-				return new Bytecode.Quantify(operands[0],operands[1],operands[2], targets, blocks[0]);
+				int body = blocks[0];
+				int condition = operands[0];
+				int[] invariants = Arrays.copyOfRange(operands, 1, operands.length);
+				return new Bytecode.While(body,condition,invariants);
 			}
 		};
-		schemas[Bytecode.OPCODE_update] = new Schema(Targets.MANY, Operands.MANY, Types.ONE, Extras.STRING_ARRAY){
-			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
-				ArrayList<String> fields = new ArrayList<String>();
-				String[] strings = (String[]) extras[0];
-				for(int i=0;i!=strings.length;++i) { fields.add(strings[i]); }
-				int operand = operands[operands.length-1];
-				operands = Arrays.copyOf(operands, operands.length-1);
-				return new Bytecode.Update(types[0], targets[0], operands, operand, types[1], fields);
+		schemas[Bytecode.OPCODE_quantify] = new Schema(Operands.MANY){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				int body = operands[0];
+				Bytecode.Range[] ranges = new Bytecode.Range[(operands.length-1)/3];
+				int j = 1;
+				for(int i=0;i!=ranges.length;i=i+1) {
+					ranges[i] = new Bytecode.Range(j++, j++, j++);
+				}				
+				return new Bytecode.Quantifier(body,ranges);
 			}
-		};
+		};		
 	}
 }

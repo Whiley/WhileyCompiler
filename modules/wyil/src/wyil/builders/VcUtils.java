@@ -372,8 +372,8 @@ public class VcUtils {
 				return indexOutOfBoundsChecks((Bytecode.Operator) code, branch);
 			case Bytecode.OPCODE_arraygen:
 				return arrayGeneratorChecks((Bytecode.Operator) code, branch);
-			case Bytecode.OPCODE_update:
-				return updateChecks((Bytecode.Update) code, branch);
+			case Bytecode.OPCODE_assign:
+				return updateChecks((Bytecode.Assign) code, branch);
 			case Bytecode.OPCODE_invoke:
 				return preconditionCheck((Bytecode.Invoke) code, branch, environment, forest);
 			}
@@ -525,7 +525,7 @@ public class VcUtils {
 	 *            --- The branch containing the update bytecode.
 	 * @return
 	 */
-	public Pair<String,Expr>[] updateChecks(Bytecode.Update code, VcBranch branch) {
+	public Pair<String,Expr>[] updateChecks(Bytecode.Assign code, VcBranch branch) {
 		ArrayList<Pair<String,Expr>> preconditions = new ArrayList<Pair<String,Expr>>();
 
 		Expr src = branch.read(code.target(0));
@@ -655,7 +655,7 @@ public class VcUtils {
 	 * @return
 	 */
 	public static Pair<String[], Type[]> parseRegisterDeclarations(BytecodeForest forest) {
-		List<BytecodeForest.Location> regs = forest.registers();
+		List<BytecodeForest.Location> regs = forest.locations();
 		String[] prefixes = new String[regs.size()];
 		Type[] types = new Type[regs.size()];
 		for (int i = 0; i != prefixes.length; ++i) {

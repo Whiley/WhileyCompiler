@@ -9,6 +9,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import wycc.lang.Attribute;
+import wycc.lang.SyntacticElement;
 import wycc.util.Pair;
 
 /**
@@ -68,7 +70,7 @@ public class BytecodeForest {
 		return roots.size();
 	}
 	
-	public int numRegisters() {
+	public int numLocations() {
 		return locations.size();
 	}
 	
@@ -78,7 +80,7 @@ public class BytecodeForest {
 	 * 
 	 * @return
 	 */
-	public List<Location> registers() {
+	public List<Location> locations() {
 		return locations;
 	}
 	
@@ -222,22 +224,22 @@ public class BytecodeForest {
 		public Block(Collection<Entry> entries) {
 			super(entries);
 		}		
-		public void add(Bytecode code, Attribute...attributes) {
+		public void add(Bytecode.Stmt code, Attribute...attributes) {
 			super.add(new Entry(code,attributes));
 		}
-		public void add(Bytecode code, List<Attribute> attributes) {
+		public void add(Bytecode.Stmt code, List<Attribute> attributes) {
 			super.add(new Entry(code,attributes));
 		}
-		public void add(int start, Bytecode code, Attribute...attributes) {
+		public void add(int start, Bytecode.Stmt code, Attribute...attributes) {
 			super.add(start, new Entry(code,attributes));
 		}
-		public void add(int start, Bytecode code, List<Attribute> attributes) {
+		public void add(int start, Bytecode.Stmt code, List<Attribute> attributes) {
 			super.add(start, new Entry(code,attributes));
 		}
-		public void set(int i, Bytecode code, Attribute...attributes) {
+		public void set(int i, Bytecode.Stmt code, Attribute...attributes) {
 			super.set(i,new Entry(code,attributes));
 		}
-		public void set(int i, Bytecode code, List<Attribute> attributes) {
+		public void set(int i, Bytecode.Stmt code, List<Attribute> attributes) {
 			super.set(i,new Entry(code,attributes));
 		}
 	}
@@ -249,14 +251,14 @@ public class BytecodeForest {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Entry extends Pair<Bytecode,List<Attribute>> {
-		public Entry(Bytecode code, List<Attribute> attributes) {
+	public static class Entry extends Pair<Bytecode.Stmt,List<Attribute>> {
+		public Entry(Bytecode.Stmt code, List<Attribute> attributes) {
 			super(code,attributes);
 		}
-		public Entry(Bytecode code, Attribute... attributes) {
+		public Entry(Bytecode.Stmt code, Attribute... attributes) {
 			super(code,Arrays.asList(attributes));
 		}
-		public Bytecode code() {
+		public Bytecode.Stmt code() {
 			return first();
 		}
 		public <T extends Attribute> T attribute(Class<T> clazz) {
@@ -281,16 +283,8 @@ public class BytecodeForest {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static abstract class Location {
-		private final Type type;
-		
-		public Location(Type type) {
-			this.type = type;
-		}
-
-		public Type type() {
-			return type;
-		}
+	public interface Location {
+		public Type type();
 	}
 	
 	/**
@@ -300,16 +294,26 @@ public class BytecodeForest {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Intermediate extends Location {
-		private final Bytecode value;
-		
-		public Intermediate(Type type, Bytecode value) {
-			super(type);
+	public static class Operand extends SyntacticElement.Impl implements Location {
+		private final Type type;
+		private final Bytecode.Expr value;		
+				
+		public Operand(Type type, Bytecode.Expr value, List<Attribute> attributes) {
+			super(attributes);
+			this.type = type;
 			this.value = value;
 		}
 		
-		public Bytecode value() {
+		public Bytecode.Expr value() {
 			return value;
+		}
+		
+		public Type type() {
+			return type;
+		}
+		
+		public String toString() {
+			return type + " " + value;
 		}
 	}
 	
@@ -319,16 +323,22 @@ public class BytecodeForest {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Variable extends Location {
+	public static class Variable extends SyntacticElement.Impl implements Location {
+		private final Type type;
 		private final String name;
 
-		public Variable(Type type, String name) {
-			super(type);
+		public Variable(Type type, String name, List<Attribute> attributes) {
+			super(attributes);
+			this.type = type;
 			this.name = name;
 		}
 
 		public String name() {
 			return name;
+		}
+		
+		public Type type() {
+			return type;
 		}
 		
 		public String toString() {

@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
 
+import wycc.lang.Attribute;
 import wycc.lang.CompilationUnit;
 import wycc.util.Pair;
 import wyfs.lang.Content;
@@ -506,13 +507,12 @@ public final class WyilFile implements CompilationUnit {
 		}
 	}
 
-	public static final class FunctionOrMethod extends
-			Declaration {
+	public static final class FunctionOrMethod extends Declaration {
 		private wyil.lang.Type.FunctionOrMethod type;
 		private int numPreconditions;
 		private int numPostconditions;
 		private final BytecodeForest forest;
-		
+
 		public FunctionOrMethod(Collection<Modifier> modifiers, String name, wyil.lang.Type.FunctionOrMethod type,
 				BytecodeForest forest, int numPreconditions, int numPostconditions, Attribute... attributes) {
 			super(name, modifiers, attributes);
@@ -548,7 +548,7 @@ public final class WyilFile implements CompilationUnit {
 		}
 		
 		/**
-		 * Get the list of blocks within the code forest that represent the
+		 * Get the list of operands within the code forest that represent the
 		 * preconditions of this function/method.
 		 * 
 		 * @return
@@ -562,7 +562,7 @@ public final class WyilFile implements CompilationUnit {
 		}
 
 		/**
-		 * Get the list of blocks within the code forest that represent the
+		 * Get the list of operands within the code forest that represent the
 		 * postconditions of this function/method.
 		 * 
 		 * @return

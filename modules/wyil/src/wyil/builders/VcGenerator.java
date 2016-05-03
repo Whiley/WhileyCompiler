@@ -124,7 +124,7 @@ public class VcGenerator {
 		Expr.Variable var = new Expr.Variable("r0");
 		if (forest.numBlocks() > 0) {
 			BytecodeForest.Index root = new BytecodeForest.Index(forest.getRoot(0), 0);
-			VcBranch master = new VcBranch(Math.max(1, forest.numRegisters()), root, null);
+			VcBranch master = new VcBranch(Math.max(1, forest.numLocations()), root, null);
 			master.write(0, var);
 			// Pass the given branch through the type invariant, producing
 			// exactly one exit branch from which we can generate the invariant
@@ -192,7 +192,7 @@ public class VcGenerator {
 		// at least as many slots as there are parameters, though may require
 		// more if the body uses them.
 		BytecodeForest.Index pc = new BytecodeForest.Index(method.body(), 0);
-		VcBranch master = new VcBranch(Math.max(forest.numRegisters(), fmm.params().size()), pc, prefixes);
+		VcBranch master = new VcBranch(Math.max(forest.numLocations(), fmm.params().size()), pc, prefixes);
 
 		Expr[] arguments = new Expr[fmm.params().size()];
 		for (int i = 0; i != fmm.params().size(); ++i) {
@@ -453,8 +453,8 @@ public class VcGenerator {
 					} else if (code instanceof Bytecode.Switch) {
 						bs = transform((Bytecode.Switch) code, branch, labels,
 								forest);
-					} else if (code instanceof Bytecode.Quantify) {
-						bs = transform((Bytecode.Quantify) code, branch,
+					} else if (code instanceof Bytecode.Quantifier) {
+						bs = transform((Bytecode.Quantifier) code, branch,
 								isInvariant, environment, labels, forest);
 					} else {
 						bs = transform((Bytecode.Loop) code, branch, environment,
@@ -649,7 +649,7 @@ public class VcGenerator {
 	 * @param block
 	 *            The block being transformed over.
 	 */
-	protected List<VcBranch> transform(Bytecode.Quantify code, VcBranch branch,
+	protected List<VcBranch> transform(Bytecode.Quantifier code, VcBranch branch,
 			boolean isInvariant, Type[] environment,
 			Map<String, BytecodeForest.Index> labels, BytecodeForest forest) {
 		// Write an arbitrary value to the index operand. This is necessary to
@@ -678,7 +678,7 @@ public class VcGenerator {
 	 * @param exitBranches
 	 * @return
 	 */
-	protected List<VcBranch> extractQuantifiers(Bytecode.Quantify code,
+	protected List<VcBranch> extractQuantifiers(Bytecode.Quantifier code,
 			VcBranch root, VcBranch fallThru, List<VcBranch> exitBranches) {
 		// First, setup some helper variables for use in the remainder.
 		SyntacticType elementType = utils.convert(Type.T_INT,
@@ -1066,7 +1066,7 @@ public class VcGenerator {
 		exitBranches.add(trueBranches.first());
 		exitBranches.addAll(trueBranches.second());
 
-		if (code.hasFalseBlock()) {
+		if (code.hasFalseBranch()) {
 			Pair<VcBranch, List<VcBranch>> falseBranches = transform(code.falseBranch(), 0, pc, branch, false, true,
 					environment, labels, forest);
 			exitBranches.add(falseBranches.first());
@@ -1332,7 +1332,7 @@ public class VcGenerator {
 		int start = wyalFile.declarations().size();
 		
 		// first, generate a branch for traversing the external block.
-		VcBranch master = new VcBranch(Math.max(forest.numRegisters(), types.size()), root, null);
+		VcBranch master = new VcBranch(Math.max(forest.numLocations(), types.size()), root, null);
 
 		Type[] environment = new Type[types.size()];
 		ArrayList<TypePattern.Leaf> declarations = new ArrayList<TypePattern.Leaf>();

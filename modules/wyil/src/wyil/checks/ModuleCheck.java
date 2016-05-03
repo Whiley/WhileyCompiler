@@ -31,7 +31,6 @@ import wybs.lang.Builder;
 import wycc.lang.SyntaxError;
 import wycc.lang.Transform;
 import wycc.util.Pair;
-import wyil.attributes.SourceLocation;
 import wyil.lang.*;
 import wyil.lang.BytecodeForest.Index;
 import wyil.lang.Bytecode.*;
@@ -132,22 +131,21 @@ public class ModuleCheck implements Transform<WyilFile> {
 		BytecodeForest.Block block = forest.get(blockID);
 		for (int i = 0; i != block.size(); ++i) {
 			BytecodeForest.Entry e = block.get(i);
-			Bytecode code = e.first();			
-			if(code instanceof Bytecode.Invoke && ((Bytecode.Invoke)code).type(0) instanceof Type.Method) {
+			Bytecode code = e.first();
+			if (code instanceof Bytecode.Invoke && ((Bytecode.Invoke) code).type() instanceof Type.Method) {
 				// internal message send
-				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, e.attribute(SourceLocation.class));
-			} else if (code instanceof Bytecode.IndirectInvoke && ((Bytecode.IndirectInvoke)code).type(0) instanceof Type.Method) {
-				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, e.attribute(SourceLocation.class));
+				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, e.attributes());
+			} else if (code instanceof Bytecode.IndirectInvoke
+					&& ((Bytecode.IndirectInvoke) code).type() instanceof Type.Method) {
+				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, e.attributes());
 			} else if (code.opcode() == Bytecode.OPCODE_newobject) {
-				syntaxError(errorMessage(ALLOCATION_NOT_PERMITTED_IN_FUNCTION), filename, e.attribute(SourceLocation.class));
+				syntaxError(errorMessage(ALLOCATION_NOT_PERMITTED_IN_FUNCTION), filename, e.attributes());
 			} else if (code.opcode() == Bytecode.OPCODE_dereference) {
-				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename,
-						e.attribute(SourceLocation.class));
+				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, e.attributes());
 			} else if (code instanceof Bytecode.Compound) {
 				Bytecode.Compound a = (Bytecode.Compound) code;
-				int[] blocks = a.blocks();
-				for(int j=0;j!=blocks.length;++j) {
-					checkFunctionPure(blocks[j], forest);
+				for (int j = 0; j != a.numBlocks(); ++j) {
+					checkFunctionPure(a.block(j), forest);
 				}
 			}
 		}

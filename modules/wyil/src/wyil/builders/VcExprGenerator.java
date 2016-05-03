@@ -65,8 +65,8 @@ public class VcExprGenerator {
 				transform((Bytecode.Invoke) code, forest, branch);
 			} else if (code instanceof Bytecode.Label) {
 				// skip
-			} else if (code instanceof Bytecode.Update) {
-				transform((Bytecode.Update) code, forest, branch);
+			} else if (code instanceof Bytecode.Assign) {
+				transform((Bytecode.Assign) code, forest, branch);
 			} else if (code instanceof Bytecode.Lambda) {
 				transform((Bytecode.Lambda) code, forest, branch);
 			} else {
@@ -289,7 +289,7 @@ public class VcExprGenerator {
 		branch.havoc(code.target(0));
 	}
 
-	protected void transform(Bytecode.Update code, BytecodeForest forest, VcBranch branch) {
+	protected void transform(Bytecode.Assign code, BytecodeForest forest, VcBranch branch) {
 		Expr result = branch.read(code.type());
 		Expr oldSource = branch.read(code.target(0));
 		Expr newSource = branch.havoc(code.target(0));
