@@ -162,10 +162,13 @@ public final class CodeGenerator {
 	private WyilFile.Type generate(WhileyFile.Type td) throws Exception {
 		EnclosingScope scope = new EnclosingScope(td);
 		// Allocate declared parameter
-		scope.declare(td.resolvedType, td.parameter.name(), td.attributes());
-		// Generate code for each invariant condition
-		for (Expr invariant : td.invariant) {
-			scope.addRoot(generate(invariant,scope));
+		if(td.parameter.name() != null) {
+			// If no parameter declared, then there will no invariant either
+			scope.declare(td.resolvedType, td.parameter.name(), td.attributes());
+			// Generate code for each invariant condition
+			for (Expr invariant : td.invariant) {
+				scope.addRoot(generate(invariant,scope));
+			}
 		}
 		// done
 		return new WyilFile.Type(td.modifiers(), td.name(), td.resolvedType.nominal(), scope.getForest());
@@ -213,10 +216,16 @@ public final class CodeGenerator {
 	 */
 	private void addDeclaredParameters(List<WhileyFile.Parameter> parameters, List<Nominal> types,
 			EnclosingScope scope) {
-		for (int i = 0; i != parameters.size(); ++i) {
+		for (int i = 0; i != parameters.size(); ++i) {			
 			WhileyFile.Parameter parameter = parameters.get(i);
+			String name = parameter.name;
+			if(name == null) {
+				// This can happen for an unnamed return value. If named return
+				// values become mandatory, this check will be redundant.
+				name = "$"; 
+			} 
 			// allocate parameter to register in the current block
-			scope.declare(types.get(i), parameter.name, parameter.attributes());
+			scope.declare(types.get(i), name, parameter.attributes());	
 		}
 	}
 
@@ -265,9 +274,9 @@ public final class CodeGenerator {
 			} else if (stmt instanceof DoWhile) {
 				generate((DoWhile) stmt, scope);
 			} else if (stmt instanceof Expr.FunctionOrMethodCall) {
-				generate((Expr.Multi) stmt, scope);
+				generateAsStmt((Expr)stmt, scope);
 			} else if (stmt instanceof Expr.IndirectFunctionOrMethodCall) {
-				generate((Expr.Multi) stmt, scope);
+				generateAsStmt((Expr) stmt, scope);
 			} else if (stmt instanceof Expr.New) {
 				generate((Expr.New) stmt, scope);
 			} else if (stmt instanceof Skip) {
@@ -276,10 +285,10 @@ public final class CodeGenerator {
 				// should be dead-code
 				WhileyFile.internalFailure("unknown statement: " + stmt.getClass().getName(), scope.getSourceContext(), stmt);
 			}
-		} catch (ResolveError rex) {
-			internalFailure(rex.getMessage(), scope.getSourceContext(), stmt, rex);
-		} catch (SyntaxError sex) {
-			throw sex;
+		} catch (ResolveError ex) {
+			internalFailure(ex.getMessage(), scope.getSourceContext(), stmt, ex);
+		} catch (SyntaxError ex) {
+			throw ex;
 		} catch (Exception ex) {
 			internalFailure(ex.getMessage(), scope.getSourceContext(), stmt, ex);
 		}
@@ -316,9 +325,8 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generate(Assign s, EnclosingScope scope) {
-		// FIXME: need to handle multi-assignments
-		int lhs = generate(s.lvals.get(0),scope);
-		int rhs = generate(s.rvals.get(0),scope);
+		int[] lhs = generate((List) s.lvals,scope);
+		int[] rhs = generate(s.rvals,scope);
 		scope.add(new Bytecode.Assign(lhs, rhs),s.attributes());
 	}
 
@@ -474,7 +482,7 @@ public final class CodeGenerator {
 		
 		for (int i = 0; i != cases.length; ++i) {
 			Stmt.Case c = s.cases.get(i);
-			EnclosingScope bodyScope = scope.clone();
+			EnclosingScope bodyScope = scope.newBlockScope();
 			for (Stmt st : c.stmts) {
 				generate(st, bodyScope);
 			}
@@ -583,10 +591,6 @@ public final class CodeGenerator {
 	// Multi-Expressions
 	// =========================================================================
 
-	public int[] generate(Expr.Multi expression, EnclosingScope scope) {
-		throw new RuntimeException("not implemented yet!");
-	}
-
 	/**
 	 * Generate an expression as a statement. There are only limited cases where
 	 * this can arise. In particular, when a function or method is invoked and
@@ -683,23 +687,21 @@ public final class CodeGenerator {
 	public int generate(Expr.FunctionOrMethodCall expr, EnclosingScope scope) throws ResolveError {
 		int[] operands = generate(expr.arguments, scope);
 		Nominal.FunctionOrMethod type = expr.type();
-		// FIXME: what to do with multiple returns?
-		return scope.allocate(type.ret(0),new Bytecode.Invoke(type.nominal(),operands, expr.nid()), expr.attributes());
+		return scope.allocate(type.returns(),new Bytecode.Invoke(type.nominal(),operands, expr.nid()), expr.attributes());
 	}
 
 	public int generate(Expr.IndirectFunctionOrMethodCall expr, EnclosingScope scope) throws ResolveError {
 		int operand = generate(expr.src, scope);
 		int[] operands = generate(expr.arguments, scope);
 		Nominal.FunctionOrMethod type = expr.type();
-		// FIXME: what to do with multiple returns?
-		return scope.allocate(type.ret(0), new Bytecode.IndirectInvoke(type.nominal(), operand, operands),
+		return scope.allocate(type.returns(), new Bytecode.IndirectInvoke(type.nominal(), operand, operands),
 				expr.attributes());
 	}
 
 	private int generate(Expr.Constant expr, EnclosingScope scope) {
 		Constant val = expr.value;
 		Bytecode.Expr operand = new Bytecode.Const(val); 
-		return scope.allocate(Nominal.construct(val.type(),val.type()),operand,expr.attributes());		
+		return scope.allocate(Nominal.construct(val.type(),val.type()),operand,expr.attributes());
 	}
 
 	private int generate(Expr.TypeVal expr, EnclosingScope scope) {		
@@ -834,8 +836,9 @@ public final class CodeGenerator {
 		// Second, translate the quantifier body in the context of the new
 		// scope.
 		int body = generate(e.condition,quantifierScope);
-		//
-		return scope.allocate(Nominal.T_BOOL, new Bytecode.Quantifier(body, ranges), e.attributes());
+		//	
+		Bytecode.QuantifierKind kind = Bytecode.QuantifierKind.valueOf(e.cop.name());
+		return scope.allocate(Nominal.T_BOOL, new Bytecode.Quantifier(kind, body, ranges), e.attributes());
 	}
 	
 	private int generate(Expr.Record expr, EnclosingScope scope) {
@@ -1054,6 +1057,24 @@ public final class CodeGenerator {
 			List<BytecodeForest.Location> registers = forest.locations();
 			int index = registers.size();
 			forest.locations().add(new BytecodeForest.Operand(type.nominal(), operand, attributes));
+			return index;
+		}
+		
+		/**
+		 * Allocate a multi-operand on the stack.
+		 * 
+		 * @param Type
+		 * @param operand
+		 * @return
+		 */
+		public int allocate(List<Nominal> types, Bytecode.Expr operand, List<Attribute> attributes) {
+			Type[] nominals = new Type[types.size()];
+			for(int i=0;i!=nominals.length;++i) {
+				nominals[i] = types.get(i).nominal();
+			}
+			List<BytecodeForest.Location> registers = forest.locations();
+			int index = registers.size();
+			forest.locations().add(new BytecodeForest.Operand(nominals, operand, attributes));
 			return index;
 		}
 		

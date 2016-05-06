@@ -94,11 +94,13 @@ public class Main {
 			NameID name = new NameID(wf.id(),"test");
 			Build.Project project = initialiseProject(".");
 			Constant[] returns = new Interpreter(project,System.out).execute(name,sig);
-			for(int i=0;i!=returns.length;++i) {
-				if(i != 0) {
-					System.out.println(", ");
+			if(returns != null) {
+				for(int i=0;i!=returns.length;++i) {
+					if(i != 0) {
+						System.out.println(", ");
+					}
+					System.out.println(returns[i]);
 				}
-				System.out.println(returns[i]);
 			}
 			//
 		} catch (InternalFailure e) {

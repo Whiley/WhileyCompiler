@@ -546,7 +546,7 @@ public final class WyilFile implements CompilationUnit {
 		public BytecodeForest code() {
 			return forest;
 		}
-		
+				
 		/**
 		 * Get the list of operands within the code forest that represent the
 		 * preconditions of this function/method.

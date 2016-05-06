@@ -1196,7 +1196,7 @@ public class Wyil2JavaBuilder implements Builder {
 		Type.FunctionOrMethod ft = c.type(0);
 		JvmType.Clazz owner = (JvmType.Clazz) convertUnderlyingType(ft);
 		bytecodes.add(new Bytecode.Load(c.reference(), convertUnderlyingType(ft)));
-		encodeOperandArray(ft.params(), c.parameters(), bytecodes);
+		encodeOperandArray(ft.params(), c.arguments(), bytecodes);
 
 		JvmType.Function type = new JvmType.Function(JAVA_LANG_OBJECT, JAVA_LANG_OBJECT_ARRAY);
 

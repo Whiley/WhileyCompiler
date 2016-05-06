@@ -5,6 +5,7 @@ import static wyil.util.interpreter.Interpreter.error;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.security.Policy.Parameters;
 import java.util.*;
 
 import wyautl.util.BigRational;
@@ -16,7 +17,6 @@ import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.util.TypeExpander;
 import wyil.util.interpreter.Interpreter.ConstantObject;
-import wyil.util.interpreter.Interpreter.Context;
 
 /**
  * <p>
@@ -63,6 +63,13 @@ public class Interpreter {
 		this.operators = StandardFunctions.standardFunctions;
 	}
 
+	private enum Status {
+		RETURN,
+		BREAK,
+		CONTINUE,
+		NEXT
+	}
+	
 	/**
 	 * Execute a function or method identified by a name and type signature with
 	 * the given arguments, producing a return value or null (if none). If the
@@ -93,25 +100,53 @@ public class Interpreter {
 				throw new IllegalArgumentException("incorrect number of arguments: " + nid + ", " + sig);
 			}
 			// Third, get and check the function or method body
-			BytecodeForest code = fm.code();
+			BytecodeForest forest = fm.code();
 			if (fm.body() == null) {
 				// FIXME: add support for native functions or methods
 				throw new IllegalArgumentException("no function or method body found: " + nid + ", " + sig);
 			}
 			// Fourth, construct the stack frame for execution
-			ArrayList<Type> sig_params = sig.params();
-			Constant[] frame = new Constant[code.numLocations()];
-			for (int i = 0; i != sig_params.size(); ++i) {
-				frame[i] = args[i];
-			}
-			// Finally, let's do it!
-			BytecodeForest.Index pc = new BytecodeForest.Index(fm.body(), 0);
-			return (Constant[]) executeAllWithin(frame, new Context(pc, code));
+			// FIXME: numLocations currently includes operands
+			Constant[] frame = new Constant[forest.numLocations()];
+			System.arraycopy(args, 0, frame, 0, sig.params().size());			
+			// Setup the executing context
+			Context context = new Context(fm,forest,fm.body(),0);
+			// Check the precondition
+			checkInvariants(frame,context,fm.preconditions());
+			// Execute the method or function body
+			executeAllWithin(frame, context);
+			// Extra the return values
+			Constant[] returns = extractReturns(frame,fm.type());
+			//
+			// Check the postcondition holds
+			System.arraycopy(args,0,frame,0,args.length);
+			checkInvariants(frame, context, fm.postconditions());
+			// 				
+			return returns;			
 		} catch (IOException e) {
 			throw new RuntimeException(e.getMessage(), e);
 		}
 	}
 
+	/**
+	 * Given an execution frame, extract the return values from a given function
+	 * or method. The parameters of the function or method are located first in
+	 * the frame, followed by the return values.
+	 * 
+	 * @param frame
+	 * @param type
+	 * @return
+	 */
+	private Constant[] extractReturns(Constant[] frame, Type.FunctionOrMethod type) {
+		int paramsSize = type.params().size();
+		int returnsSize = type.returns().size();
+		Constant[] returns = new Constant[returnsSize];
+		for (int i = 0, j = paramsSize; i != returnsSize; ++i, ++j) {
+			returns[i] = frame[j];
+		}
+		return returns;
+	}
+	
 	/**
 	 * Execute a given block of bytecodes starting from the beginning
 	 *
@@ -121,31 +156,21 @@ public class Interpreter {
 	 *            --- Context in which bytecode instructions are executed
 	 * @return
 	 */
-	private Object executeAllWithin(Constant[] frame, Context context) {
-		BytecodeForest forest = context.forest;
-		BytecodeForest.Index pc = context.pc;
-		int block = pc.block();
-		BytecodeForest.Block codes = forest.get(pc.block());
-
-		while (pc.block() == block && pc.offset() < codes.size()) {
-			Object r = execute(frame, new Context(pc, context.forest));
+	private Status executeAllWithin(Constant[] frame, Context context) {
+		while (context.hasNext()) {			
+			Status r = execute(context.getStatement(), frame, context);
 			// Now, see whether we are continuing or not
-			if (r instanceof BytecodeForest.Index) {
-				pc = (BytecodeForest.Index) r;
-			} else {
+			if (r != Status.NEXT) {
 				return r;
 			}
+			// Move context to the next bytecode
+			context.nextStatement();
 		}
-		if (pc.block() != block) {
-			// non-local exit
-			return pc;
-		} else {
-			return null;
-		}
+		return Status.NEXT;
 	}
 
 	/**
-	 * Execute an Assign bytecode instruction at a given point in the function
+	 * Execute a bytecode statement at a given point in the function
 	 * or method body
 	 *
 	 * @param pc
@@ -156,51 +181,50 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Constant[] frame, Context context) {
-		Bytecode bytecode = context.forest.get(context.pc).code();
-		// FIXME: turn this into a switch statement?
-		if (bytecode instanceof Bytecode.Invariant) {
-			return execute((Bytecode.Invariant) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.AssertOrAssume) {
+	private Status execute(Bytecode.Stmt bytecode, Constant[] frame, Context context) {
+		switch (bytecode.opcode()) {
+		case Bytecode.OPCODE_assert:
+		case Bytecode.OPCODE_assume:
 			return execute((Bytecode.AssertOrAssume) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.Operator) {
-			return execute((Bytecode.Operator) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.Const) {
-			return execute((Bytecode.Const) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.Convert) {
-			return execute((Bytecode.Convert) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.Debug) {
-			return execute((Bytecode.Debug) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.Fail) {
-			return execute((Bytecode.Fail) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.FieldLoad) {
-			return execute((Bytecode.FieldLoad) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.Goto) {
-			return execute((Bytecode.Goto) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.If) {
-			return execute((Bytecode.If) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.IndirectInvoke) {
-			return execute((Bytecode.IndirectInvoke) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.Invoke) {
-			return execute((Bytecode.Invoke) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.Label) {
-			// essentially do nout
-			return context.pc.next();
-		} else if (bytecode instanceof Bytecode.Lambda) {
-			return execute((Bytecode.Lambda) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.Quantifier) {
-			return execute((Bytecode.Quantifier) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.Loop) {
-			return execute((Bytecode.Loop) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.Return) {
-			return execute((Bytecode.Return) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.Switch) {
-			return execute((Bytecode.Switch) bytecode, frame, context);
-		} else if (bytecode instanceof Bytecode.Assign) {
+		case Bytecode.OPCODE_assign:
 			return execute((Bytecode.Assign) bytecode, frame, context);
-		} else {
-			throw new IllegalArgumentException("Unknown bytecode encountered: " + bytecode);
+		case Bytecode.OPCODE_break:
+			return execute((Bytecode.Break) bytecode, frame, context);
+		case Bytecode.OPCODE_continue:
+			return execute((Bytecode.Continue) bytecode, frame, context);
+		case Bytecode.OPCODE_debug:
+			return execute((Bytecode.Debug) bytecode, frame, context);
+		case Bytecode.OPCODE_dowhile:
+			return execute((Bytecode.DoWhile) bytecode, frame, context);
+		case Bytecode.OPCODE_fail:
+			return execute((Bytecode.Fail) bytecode, frame, context);
+		case Bytecode.OPCODE_if:
+			return execute((Bytecode.If) bytecode, frame, context);
+		case Bytecode.OPCODE_while:
+			return execute((Bytecode.While) bytecode, frame, context);
+		case Bytecode.OPCODE_return:
+			return execute((Bytecode.Return) bytecode, frame, context);
+		case Bytecode.OPCODE_switch:
+			return execute((Bytecode.Switch) bytecode, frame, context);
 		}
+
+		deadCode(context);
+		return null; // deadcode
+	}
+
+
+	private Status execute(Bytecode.Assign bytecode, Constant[] frame, Context context) {		
+		// FIXME: handle multi-assignments properly
+		int[] lhs = bytecode.leftHandSide();		
+		Constant[] rhs = executeMulti(bytecode.rightHandSide(),frame,context);
+		for(int i=0;i!=lhs.length;++i) {			
+			// TODO: this is not a very efficient way of implement assignment.
+			// To improve performance, it would help if values were mutable,
+			// rather than immutable constants.
+			LVal lval = constructLVal(lhs[i],frame,context);
+			lval.write(frame, rhs[i]);			
+		}
+		return Status.NEXT;
 	}
 
 	/**
@@ -214,16 +238,220 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Bytecode.AssertOrAssume bytecode, Constant[] frame, Context context) {
+	private Status execute(Bytecode.AssertOrAssume bytecode, Constant[] frame, Context context) {
 		//
-		BytecodeForest.Index pc = new BytecodeForest.Index(bytecode.body(), 0);
-		Object r = executeAllWithin(frame, new Context(pc, context.forest));
+		checkInvariants(frame,context,bytecode.operand());
+		return Status.NEXT;
+	}
+
+	private Status execute(Bytecode.Break bytecode, Constant[] frame, Context context) {
+		// TODO: the break bytecode supports a non-nearest exit and eventually
+		// this should be supported.
+		return Status.BREAK;
+	}
+	
+	private Status execute(Bytecode.Continue bytecode, Constant[] frame, Context context) {
+		// TODO: the continue bytecode supports a non-nearest exit and eventually
+		// this should be supported.
+		return Status.CONTINUE;
+	}
+	
+	/**
+	 * Execute a Debug bytecode instruction at a given point in the function or
+	 * method body. This will write the provided string out to the debug stream.
+	 *
+	 * @param bytecode
+	 *            --- The bytecode to execute
+	 * @param frame
+	 *            --- The current stack frame
+	 * @param context
+	 *            --- Context in which bytecodes are executed
+	 * @return
+	 */
+	private Status execute(Bytecode.Debug bytecode, Constant[] frame, Context context) {
 		//
-		if (r == null) {
-			// Body of assert fell through to next
-			return context.pc.next();
+		Constant value = executeSingle(bytecode.operand(0), frame, context);
+		Constant.Array list = checkType(value,context,Constant.Array.class);
+		for (Constant item : list.values()) {
+			BigInteger b = ((Constant.Integer) item).value();
+			char c = (char) b.intValue();
+			debug.print(c);
+		}
+		//
+		return Status.NEXT;
+	}
+
+	private Status execute(Bytecode.DoWhile bytecode, Constant[] frame, Context context) {
+		Status r = Status.NEXT;
+		while(r == Status.NEXT || r == Status.CONTINUE) {
+			r = executeAllWithin(frame, context.subBlockContext(bytecode.body()));
+			if(r == Status.NEXT) {
+				Constant value = executeSingle(bytecode.operand(0), frame, context);
+				Constant.Bool operand = checkType(value,context,Constant.Bool.class);
+				if(!operand.value()) { return Status.NEXT; }
+			}
+		};
+		// If we get here, then we have exited the loop body without falling
+		// through to the next bytecode.
+		if(r == Status.BREAK) {
+			return Status.NEXT;
 		} else {
 			return r;
+		}
+	}
+	
+	/**
+	 * Execute a fail bytecode instruction at a given point in the function or
+	 * method body. This will generate a runtime fault.
+	 *
+	 * @param bytecode
+	 *            --- The bytecode to execute
+	 * @param frame
+	 *            --- The current stack frame
+	 * @param context
+	 *            --- Context in which bytecodes are executed
+	 * @return
+	 */
+	private Status execute(Bytecode.Fail bytecode, Constant[] frame, Context context) {
+		throw new AssertionError("Runtime fault occurred");
+	}
+
+	private Status execute(Bytecode.If bytecode, Constant[] frame, Context context) {		
+		Constant value = executeSingle(bytecode.operand(0), frame, context);
+		Constant.Bool operand = checkType(value,context,Constant.Bool.class);
+		if (operand.value()) {
+			// branch taken, so execute true branch			
+			return executeAllWithin(frame, context.subBlockContext(bytecode.trueBranch()));
+		} else if (bytecode.hasFalseBranch()) {
+			// branch not taken, so execute false branch			
+			return executeAllWithin(frame, context.subBlockContext(bytecode.falseBranch()));
+		} else {
+			return Status.NEXT;
+		}
+	}
+
+	private Status execute(Bytecode.While bytecode, Constant[] frame, Context context) {
+		Status r;
+		do {
+			Constant value = executeSingle(bytecode.operand(0), frame, context);
+			Constant.Bool operand = checkType(value,context,Constant.Bool.class);
+			if(!operand.value()) { return Status.NEXT; }
+			// Keep executing the loop body until we exit it somehow.
+			r = executeAllWithin(frame, context.subBlockContext(bytecode.body()));
+		} while (r == Status.NEXT || r == Status.CONTINUE);
+		// If we get here, then we have exited the loop body without falling
+		// through to the next bytecode.
+		if(r == Status.BREAK) {
+			return Status.NEXT;
+		} else {
+			return r;
+		}
+	}
+
+	/**
+	 * Execute a Return bytecode instruction at a given point in the function or
+	 * method body
+	 *
+	 * @param bytecode
+	 *            --- The bytecode to execute
+	 * @param frame
+	 *            --- The current stack frame
+	 * @param context
+	 *            --- Context in which bytecodes are executed
+	 * @return
+	 */
+	private Status execute(Bytecode.Return bytecode, Constant[] frame, Context context) {
+		int[] operands = bytecode.operands();
+		WyilFile.FunctionOrMethod fm = (WyilFile.FunctionOrMethod) context.getEnclosingDeclaration();
+		Type.FunctionOrMethod type = fm.type();
+		int paramsSize = type.params().size();		
+		Constant[] values = executeMulti(operands,frame,context);
+		for(int i=0,j=paramsSize;i!=values.length;++i,++j) {
+			frame[j] = values[i];
+		}
+		return Status.RETURN;
+	}
+
+	private Status execute(Bytecode.Switch bytecode, Constant[] frame, Context context) {
+		//
+		Constant value = executeSingle(bytecode.operand(0), frame, context);
+		for (Bytecode.Case c : bytecode.cases()) {
+			if(c.isDefault()) {
+				return executeAllWithin(frame,context.subBlockContext(c.block()));
+			} else {
+				for (Constant v : c.values()) {
+					if (v.equals(value)) {
+						return executeAllWithin(frame,context.subBlockContext(c.block()));
+					}
+				}
+			}
+		}	
+		return Status.NEXT;
+	}
+
+	// =============================================================
+	// Single expressions
+	// =============================================================		
+	
+	private Constant executeSingle(int operand, Constant[] frame, Context context) {
+		BytecodeForest.Location loc = (BytecodeForest.Location) context.getLocation(operand);
+		if (loc instanceof BytecodeForest.Variable) {
+			return frame[operand];
+		} else {
+			Context.Operand opContext = context.subOperandContext(operand);
+			BytecodeForest.Operand o = (BytecodeForest.Operand) loc;
+			Bytecode.Expr bytecode = o.value();
+			switch (bytecode.opcode()) {
+			case Bytecode.OPCODE_const:
+				return executeSingle((Bytecode.Const) bytecode, frame, opContext);
+			case Bytecode.OPCODE_convert:
+				return executeSingle((Bytecode.Convert) bytecode, frame, opContext);
+			case Bytecode.OPCODE_fieldload:
+				return executeSingle((Bytecode.FieldLoad) bytecode, frame, opContext);
+			case Bytecode.OPCODE_indirectinvoke:
+				return executeMulti((Bytecode.IndirectInvoke) bytecode, frame, opContext)[0];
+			case Bytecode.OPCODE_invoke:
+				return executeMulti((Bytecode.Invoke) bytecode, frame, opContext)[0];
+			case Bytecode.OPCODE_lambda:
+				return executeSingle((Bytecode.Lambda) bytecode, frame, opContext);
+			case Bytecode.OPCODE_none:
+			case Bytecode.OPCODE_some:
+			case Bytecode.OPCODE_all:
+				return executeSingle((Bytecode.Quantifier) bytecode, frame, opContext);
+			default:
+				return executeSingle((Bytecode.Operator) bytecode, frame, opContext);
+			}
+		}		
+	}
+	
+
+	/**
+	 * Execute a Const bytecode instruction at a given point in the function or
+	 * method body
+	 *
+	 * @param bytecode
+	 *            --- The bytecode to execute
+	 * @param frame
+	 *            --- The current stack frame
+	 * @param context
+	 *            --- Context in which bytecodes are executed
+	 * @return
+	 */
+	private Constant executeSingle(Bytecode.Const bytecode, Constant[] frame, Context.Operand context) {
+		return bytecode.constant();
+	}
+
+	private Constant executeSingle(Bytecode.Convert bytecode, Constant[] frame, Context.Operand context) {
+		try {
+			Constant operand = executeSingle(bytecode.operand(),frame,context);
+			Type target = expander.getUnderlyingType(bytecode.type());
+			return convert(operand, target, context);
+		} catch (IOException e) {
+			error(e.getMessage(), context);
+			return null;
+		} catch (ResolveError e) {
+			error(e.getMessage(), context);
+			return null;
 		}
 	}
 
@@ -239,24 +467,165 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Bytecode.Operator bytecode, Constant[] frame, Context context) {
-		int[] operands = bytecode.operands();
-		Constant[] values = new Constant[operands.length];
-		// Read all operands
-		for(int i=0;i!=operands.length;++i) {
-			values[i] = frame[operands[i]];
+	private Constant executeSingle(Bytecode.Operator bytecode, Constant[] frame, Context.Operand context) {		
+		switch(bytecode.opcode()) {
+		case Bytecode.OPCODE_logicaland: {
+			// This is a short-circuiting operator
+			Constant l = executeSingle(bytecode.operand(0),frame,context);
+			Constant.Bool lhs = checkType(l, context, Constant.Bool.class);
+			if(!lhs.value()) {
+				// Short-circuit
+				return Constant.False;
+			}
+			Constant r = executeSingle(bytecode.operand(1),frame,context);
+			return checkType(r, context, Constant.Bool.class);
+		}
+		case Bytecode.OPCODE_logicalor: {
+			// This is a short-circuiting operator
+			Constant l = executeSingle(bytecode.operand(0),frame,context);
+			Constant.Bool lhs = checkType(l, context, Constant.Bool.class);
+			if(lhs.value()) {
+				// Short-circuit
+				return Constant.True;
+			}
+			Constant r = executeSingle(bytecode.operand(1),frame,context);
+			return checkType(r, context, Constant.Bool.class);
+		}
+		default: {
+			// This is the default case where can treat the operator as an
+			// external function and just call it with the evaluated operands. 
+			int[] operands = bytecode.operands();
+			Constant[] values = new Constant[operands.length];
+			// Read all operands
+			for(int i=0;i!=operands.length;++i) {
+				values[i] = executeSingle(operands[i],frame,context);
+			}
+			// Compute result
+			return operators[bytecode.opcode()].apply(values, this, context);
+		}
 		}		
-		// Compute result
-		Constant result = operators[bytecode.opcode()].apply(values, this, context);
-		// Write result to target
-		frame[bytecode.target(0)] = result;
-		// Continue on to next instruction
-		return context.pc.next();
 	}
 
+	
+	private Constant executeSingle(Bytecode.FieldLoad bytecode, Constant[] frame, Context.Operand context) {
+		Constant.Record rec = (Constant.Record) executeSingle(bytecode.operand(),frame,context);
+		return rec.values().get(bytecode.fieldName());
+	}
+
+	private Constant executeSingle(Bytecode.Quantifier bytecode, Constant[] frame, Context.Operand context) {
+		boolean r = executeQuantifier(0,bytecode,frame,context);
+		// r ==> continued all the way through
+		// ! ==> terminated early
+		if (bytecode.opcode() == Bytecode.OPCODE_some) {
+			return r ? Constant.False : Constant.True;
+		} else {
+			return r ? Constant.True : Constant.False;
+		}
+		
+	}
+	
 	/**
-	 * Execute a Const bytecode instruction at a given point in the function or
-	 * method body
+	 * Execute one range of the quantifier, or the body if no ranges remain.
+	 * 
+	 * @param index
+	 * @param bytecode
+	 * @param frame
+	 * @param context
+	 * @return
+	 */
+	private boolean executeQuantifier(int index, Bytecode.Quantifier bytecode, Constant[] frame, Context.Operand context) {
+		Bytecode.Range[] ranges = bytecode.ranges();
+		if(index == ranges.length) {
+			// This is the base case where we evaluate the condition itself.
+			Constant.Bool r = checkType(executeSingle(bytecode.body(),frame,context),context,Constant.Bool.class);
+			int opcode = bytecode.opcode();
+			if(r.value()) {
+				switch(opcode) {
+				case Bytecode.OPCODE_none:					
+				case Bytecode.OPCODE_some:
+					return false;
+				}
+			} else if(opcode == Bytecode.OPCODE_all){
+				return false;
+			}
+			// This means that, for the given quantifier kind, we have to
+			// continue as is. 
+			return true;
+		} else {
+			Bytecode.Range range = ranges[index];
+			Constant.Integer start = checkType(executeSingle(range.startOperand(),frame,context),context,Constant.Integer.class);
+			Constant.Integer end = checkType(executeSingle(range.endOperand(),frame,context),context,Constant.Integer.class);
+			int var = range.variable();
+			long s = start.value().longValue();
+			long e = end.value().longValue();
+			for(long i=s;i<e;++i) {
+				frame[var] = new Constant.Integer(BigInteger.valueOf(i));
+				boolean r = executeQuantifier(index+1,bytecode,frame,context);
+				if(!r) {
+					// early termination
+					return r;
+				}
+			}
+			return true;
+		}
+	}
+	
+	private Constant executeSingle(Bytecode.Lambda bytecode, Constant[] frame, Context.Operand context) {
+		frame = Arrays.copyOf(frame, frame.length);
+		return new ConstantLambda(bytecode, context.forest, frame);
+	}
+
+	// =============================================================
+	// Multi expressions
+	// =============================================================
+	
+	private Constant[] executeMulti(int[] operands, Constant[] frame, Context context) {
+		int numResults = 0;
+		for(int i=0;i!=operands.length;++i) {
+			numResults += context.getLocation(operands[i]).size();
+		}
+		Constant[] results = new Constant[numResults];		
+		for(int i=0,pos=0;i!=operands.length;++i) {
+			Constant[] returns = executeMulti(operands[i],frame,context);
+			System.arraycopy(returns, 0, results, pos, returns.length);
+			pos += returns.length;
+		}
+		return results;
+	}
+	
+	private Constant[] executeMulti(int operand, Constant[] frame, Context context) {
+		BytecodeForest.Location loc = (BytecodeForest.Location) context.getLocation(operand);
+		if (loc instanceof BytecodeForest.Variable) {
+			return new Constant[] { frame[operand] };
+		} else {
+			Context.Operand opContext = context.subOperandContext(operand);
+			BytecodeForest.Operand o = (BytecodeForest.Operand) loc;
+			Bytecode.Expr bytecode = o.value();
+			switch (bytecode.opcode()) {			
+			case Bytecode.OPCODE_indirectinvoke:
+				return executeMulti((Bytecode.IndirectInvoke) bytecode, frame, opContext);
+			case Bytecode.OPCODE_invoke:
+				return executeMulti((Bytecode.Invoke) bytecode, frame, opContext);
+			case Bytecode.OPCODE_const:				
+			case Bytecode.OPCODE_convert:				
+			case Bytecode.OPCODE_fieldload:
+			case Bytecode.OPCODE_lambda:				
+			case Bytecode.OPCODE_none:
+			case Bytecode.OPCODE_some:
+			case Bytecode.OPCODE_all:								
+			default:
+				Constant val = executeSingle(operand, frame, opContext);
+				return new Constant[] { val };
+			}
+		}
+	}
+			
+	/**
+	 * Execute an IndirectInvoke bytecode instruction at a given point in the
+	 * function or method body. This first checks the operand is a function
+	 * reference, and then generates a recursive call to execute the given
+	 * function. If the function does not exist, or is provided with the wrong
+	 * number of arguments, then a runtime fault will occur.
 	 *
 	 * @param bytecode
 	 *            --- The bytecode to execute
@@ -266,22 +635,54 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Bytecode.Const bytecode, Constant[] frame, Context context) {
-		frame[bytecode.target()] = bytecode.constant();
-		return context.pc.next();
+	private Constant[] executeMulti(Bytecode.IndirectInvoke bytecode, Constant[] frame, Context.Operand context) {
+		
+		// FIXME: This is implementation is *ugly* --- can we do better than
+		// this? One approach is to register an anonymous function so that we
+		// can reuse executeAllWithin in both bases. This is hard to setup
+		// though.
+		
+		Constant operand = executeSingle(bytecode.operand(0),frame,context);
+		// Check that we have a function reference
+		if(operand instanceof Constant.Lambda) {
+			Constant.Lambda cl = checkType(operand, context, Constant.Lambda.class);			
+			Constant[] arguments = executeMulti(bytecode.arguments(),frame,context);			
+			return execute(cl.name(),cl.type(),arguments);
+		} else {
+			ConstantLambda cl = checkType(operand, context, ConstantLambda.class);
+			// Yes we do; now construct the arguments. This requires merging the
+			// constant arguments provided in the lambda itself along with those
+			// operands provided for the "holes".
+			Context lambdaContext = new Context(context.getEnclosingDeclaration(),cl.forest);
+			Constant[] lambdaFrame = Arrays.copyOf(cl.frame, cl.frame.length); 
+			int[] parameters = cl.lambda.parameters();			
+			Constant[] arguments = executeMulti(bytecode.arguments(),frame,context);
+			for(int i=0;i!=parameters.length;++i) {			
+				lambdaFrame[parameters[i]] = arguments[i];
+			}
+			// Make the actual call
+			return executeMulti(cl.lambda.body(),lambdaFrame,lambdaContext);
+		}
 	}
 
-	private Object execute(Bytecode.Convert bytecode, Constant[] frame, Context context) {
-		try {
-			Constant operand = frame[bytecode.operand(0)];
-			Type target = expander.getUnderlyingType(bytecode.type());
-			frame[bytecode.target(0)] = convert(operand, target, context);
-			return context.pc.next();
-		} catch (IOException e) {
-			return error(e.getMessage(), context);
-		} catch (ResolveError e) {
-			return error(e.getMessage(), context);
-		}
+	/**
+	 * Execute an Invoke bytecode instruction at a given point in the function
+	 * or method body. This generates a recursive call to execute the given
+	 * function. If the function does not exist, or is provided with the wrong
+	 * number of arguments, then a runtime fault will occur.
+	 *
+	 * @param bytecode
+	 *            --- The bytecode to execute
+	 * @param frame
+	 *            --- The current stack frame
+	 * @param context
+	 *            --- Context in which bytecodes are executed
+	 * @return
+	 */
+	private Constant[] executeMulti(Bytecode.Invoke bytecode, Constant[] frame, Context.Operand context) {
+		int[] operands = bytecode.operands();
+		Constant[] arguments = executeMulti(operands,frame,context); 		
+		return execute(bytecode.name(), bytecode.type(), arguments);		
 	}
 
 	/**
@@ -403,318 +804,140 @@ public class Interpreter {
 	private Constant convert(Constant value, Type.FunctionOrMethod to, Context context) {
 		return value;
 	}
-
+	
 	/**
-	 * Execute a Debug bytecode instruction at a given point in the function or
-	 * method body. This will write the provided string out to the debug stream.
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
+	 * This method constructs a "mutable" representation of the lval. This is a
+	 * bit strange, but is necessary because values in the frame are currently
+	 * immutable.
+	 * 
+	 * @param operand
 	 * @param frame
-	 *            --- The current stack frame
 	 * @param context
-	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Object execute(Bytecode.Debug bytecode, Constant[] frame, Context context) {
-		//
-		Constant.Array list = (Constant.Array) frame[bytecode.operand(0)];
-		for (Constant item : list.values()) {
-			BigInteger b = ((Constant.Integer) item).value();
-			char c = (char) b.intValue();
-			debug.print(c);
-		}
-		//
-		return context.pc.next();
-	}
-
-	/**
-	 * Execute a fail bytecode instruction at a given point in the function or
-	 * method body. This will generate a runtime fault.
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Bytecode.Fail bytecode, Constant[] frame, Context context) {
-		throw new Error("Runtime fault occurred");
-	}
-
-	private Object execute(Bytecode.FieldLoad bytecode, Constant[] frame, Context context) {
-		Constant.Record rec = (Constant.Record) frame[bytecode.operand(0)];
-		frame[bytecode.target(0)] = rec.values().get(bytecode.fieldName());
-		return context.pc.next();
-	}
-
-	private Object execute(Bytecode.Quantifier bytecode, Constant[] frame, Context context) {
-		Constant startOperand = frame[bytecode.startOperand()];
-		Constant endOperand = frame[bytecode.endOperand()];
-		checkType(startOperand, context, Constant.Integer.class);
-		checkType(endOperand, context, Constant.Integer.class);
-		Constant.Integer so = (Constant.Integer) startOperand;
-		Constant.Integer eo = (Constant.Integer) endOperand;
-		int start = so.value().intValue();
-		int end = eo.value().intValue();
-		for (int i = start; i < end; ++i) {
-			// Assign the index variable
-			frame[bytecode.indexOperand()] = new Constant.Integer(BigInteger.valueOf(i));
-			// Execute loop body for one iteration
-			BytecodeForest.Index pc = new BytecodeForest.Index(bytecode.body(), 0);
-			Object r = executeAllWithin(frame, new Context(pc, context.forest));
-			// Now, check whether we fell through to the end or not. If not,
-			// then we must have exited somehow so return to signal that.
-			if (r != null) {
-				return r;
-			}
-		}
-
-		return context.pc.next();
-	}
-
-	private Object execute(Bytecode.Goto bytecode, Constant[] frame, Context context) {
-		return context.getLabel(bytecode.destination());
-	}
-
-	private Object execute(Bytecode.If bytecode, Constant[] frame, Context context) {
-		Constant.Bool operand = checkType(frame[bytecode.operand(0)],context,Constant.Bool.class);
-		Object r;
-		if (operand.value()) {
-			// branch taken, so execute true branch
-			BytecodeForest.Index pc = new BytecodeForest.Index(bytecode.trueBranch(), 0);
-			r = executeAllWithin(frame, new Context(pc, context.forest));
-		} else if (bytecode.hasFalseBranch()) {
-			// branch not taken, so execute false branch
-			BytecodeForest.Index pc = new BytecodeForest.Index(bytecode.falseBranch(), 0);
-			r = executeAllWithin(frame, new Context(pc, context.forest));
+	private LVal constructLVal(int operand, Constant[] frame, Context context) {
+		BytecodeForest.Location loc = context.getLocation(operand);
+		if(loc instanceof BytecodeForest.Variable) {
+			return new VariableLVal(operand);
 		} else {
-			r = null;
+			Bytecode.Expr lval = ((BytecodeForest.Operand) loc).value();
+			if (lval instanceof Bytecode.Operator) {
+				Bytecode.Operator op = (Bytecode.Operator) lval;
+				switch (op.kind()) {
+				case ARRAYINDEX: {
+					LVal src = constructLVal(op.operand(0),frame,context);
+					Constant index = executeSingle(op.operand(1),frame,context);
+					checkType(index, context, Constant.Integer.class);				
+					int i = ((Constant.Integer) index).value().intValue();
+					return new ArrayLVal(src,i);
+				}
+				case DEREFERENCE: {
+					LVal src = constructLVal(op.operand(0),frame,context);
+					return new DereferenceLVal(src);
+				}
+				}
+			} else if(lval instanceof Bytecode.FieldLoad) {
+				Bytecode.FieldLoad fl = (Bytecode.FieldLoad) lval;
+				LVal src = constructLVal(fl.operand(),frame,context);
+				return new RecordLVal(src,fl.fieldName());				
+			}
 		}
 		
-		if(r != null) {
-			return r;
-		} else {
-			// branch not taken, so fall through to next bytecode.
-			return context.pc.next();
+		deadCode(context);
+		return null; // deadcode
+	}
+		
+	private abstract class LVal {
+		abstract public Constant read(Constant[] frame);
+		abstract public void write(Constant[] frame,Constant rhs);
+	}
+	
+	private class VariableLVal extends LVal {
+		private final int index;
+		
+		public VariableLVal(int index) {
+			this.index = index;
+		}
+		
+		@Override
+		public Constant read(Constant[] frame) {
+			return frame[index];
+		}
+
+		@Override
+		public void write(Constant[] frame, Constant rhs) {
+			frame[index] = rhs;
+		}
+		
+	}
+	
+	private class ArrayLVal extends LVal {
+		private final LVal src;
+		private final int index;
+		
+		public ArrayLVal(LVal src, int index) {
+			this.src = src;
+			this.index = index;
+		}
+
+		@Override
+		public Constant read(Constant[] frame) {
+			Constant.Array src = checkType(this.src.read(frame),null,Constant.Array.class);
+			return src.values().get(index);		
+		}
+
+		@Override
+		public void write(Constant[] frame,Constant rhs) {
+			Constant.Array arr = checkType(this.src.read(frame),null,Constant.Array.class);			
+			ArrayList<Constant> values = new ArrayList<Constant>(arr.values());				
+			values.set(index, rhs);
+			src.write(frame,new Constant.Array(values));
 		}
 	}
-
-	/**
-	 * Execute an IndirectInvoke bytecode instruction at a given point in the
-	 * function or method body. This first checks the operand is a function
-	 * reference, and then generates a recursive call to execute the given
-	 * function. If the function does not exist, or is provided with the wrong
-	 * number of arguments, then a runtime fault will occur.
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Bytecode.IndirectInvoke bytecode, Constant[] frame, Context context) {
-		Constant operand = frame[bytecode.operand(0)];
-		// Check that we have a function reference
-		checkType(operand, context, Constant.Lambda.class);
-		// Yes we do; now construct the arguments. This requires merging the
-		// constant arguments provided in the lambda itself along with those
-		// operands provided for the "holes".
-		Constant.Lambda func = (Constant.Lambda) operand;
-		List<Constant> func_arguments = func.arguments();
-		int[] operands = bytecode.operands();
-		Constant[] arguments = new Constant[func_arguments.size() + (operands.length - 1)];
-		{
-			int i = 0;
-			for (int j = 1; j != operands.length; ++j) {
-				arguments[i++] = frame[operands[j]];
-			}
-			for (int j = 0; j != func_arguments.size(); ++j) {
-				arguments[i++] = func.arguments().get(j);
-			}
+	
+	private class RecordLVal extends LVal {
+		private final LVal src;
+		private final String field;
+		
+		public RecordLVal(LVal src, String field) {
+			this.src = src;
+			this.field = field;
 		}
-		// Make the actual call
-		Constant[] results = execute(func.name(), func.type(), arguments);
-		// Check whether a return value was expected or not
-		int[] targets = bytecode.targets();
-		List<Type> returns = bytecode.type(0).returns();
-		for (int i = 0; i != targets.length; ++i) {
-			// Coerce the result (may not be actually necessary))
-			frame[targets[i]] = convert(results[i], returns.get(i), context);
+		
+		@Override
+		public Constant read(Constant[] frame) {
+			Constant.Record src = checkType(this.src.read(frame),null,Constant.Record.class);
+			return src.values().get(field);
 		}
-		// Done
-		return context.pc.next();
-	}
-
-	private Object execute(Bytecode.Invariant bytecode, Constant[] frame, Context context) {
-		// FIXME: currently implemented as a NOP because of #480
-		return context.pc.next();
-	}
-
-	/**
-	 * Execute an Invoke bytecode instruction at a given point in the function
-	 * or method body. This generates a recursive call to execute the given
-	 * function. If the function does not exist, or is provided with the wrong
-	 * number of arguments, then a runtime fault will occur.
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Bytecode.Invoke bytecode, Constant[] frame, Context context) {
-		int[] operands = bytecode.operands();
-		Constant[] arguments = new Constant[operands.length];
-		for (int i = 0; i != arguments.length; ++i) {
-			arguments[i] = frame[operands[i]];
-		}
-		Constant[] results = execute(bytecode.name(), bytecode.type(0), arguments);
-		int[] targets = bytecode.targets();
-		for (int i = 0; i != targets.length; ++i) {
-			frame[targets[i]] = results[i];
-		}
-		return context.pc.next();
-	}
-
-	private Object execute(Bytecode.Lambda bytecode, Constant[] frame, Context context) {
-
-		int[] operands = bytecode.operands();
-		Constant[] arguments = new Constant[operands.length];
-
-		for (int i = 0; i != arguments.length; ++i) {
-			int reg = operands[i];
-			arguments[i] = frame[reg];
-		}
-		// FIXME: need to do something with the operands here.
-		frame[bytecode.target(0)] = new Constant.Lambda(bytecode.name(), bytecode.type(0), arguments);
-		//
-		return context.pc.next();
-	}
-
-	private Object execute(Bytecode.Loop bytecode, Constant[] frame, Context context) {
-		Object r;
-		do {
-			// Keep executing the loop body until we exit it somehow.
-			BytecodeForest.Index pc = new BytecodeForest.Index(bytecode.body(), 0);
-			r = executeAllWithin(frame, new Context(pc, context.forest));
-		} while (r == null);
-
-		// If we get here, then we have exited the loop body without falling
-		// through to the next bytecode.
-		return r;
-	}
-
-	/**
-	 * Execute a Return bytecode instruction at a given point in the function or
-	 * method body
-	 *
-	 * @param bytecode
-	 *            --- The bytecode to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @param context
-	 *            --- Context in which bytecodes are executed
-	 * @return
-	 */
-	private Object execute(Bytecode.Return bytecode, Constant[] frame, Context context) {
-		int[] operands = bytecode.operands();
-		Constant[] returns = new Constant[operands.length];
-		for (int i = 0; i != operands.length; ++i) {
-			returns[i] = frame[operands[i]];
-		}
-		return returns;
-	}
-
-	private Object execute(Bytecode.Switch bytecode, Constant[] frame, Context context) {
-		//
-		Constant operand = frame[bytecode.operand(0)];
-		for (Pair<Constant, String> branch : bytecode.branches()) {
-			Constant caseOperand = branch.first();
-			if (caseOperand.equals(operand)) {
-				return context.getLabel(branch.second());
-			}
-		}
-		return context.getLabel(bytecode.defaultTarget());
-	}
-
-	private Object execute(Bytecode.Assign bytecode, Constant[] frame, Context context) {
-		Constant rhs = frame[bytecode.type()];
-		Constant lhs = frame[bytecode.target(0)];
-		frame[bytecode.target(0)] = update(lhs, bytecode.iterator(), rhs, frame, context);
-		return context.pc.next();
-	}
-
-	/**
-	 * Manages the process of updating an LVal. Here, the left-hand side (lhs)
-	 * value is passed in along with a descriptor describing the shape of the
-	 * lhs. The right-hand side value is that being assigned by the bytecode to
-	 * a component of the left-hand side.
-	 *
-	 * @param lhs
-	 *            The left-hand side component being updated
-	 * @param descriptor
-	 *            A descriptor describing the shape of the left-hand side
-	 *            component.
-	 * @param rhs
-	 *            The right-hand side value being assigned to the inner-most
-	 *            component of the left-hand side.
-	 * @param frame
-	 *            The current stack frame
-	 * @param context
-	 *            Context in which bytecodes are executed
-	 *
-	 * @return The left-hand side updated with the new value assigned
-	 */
-	private Constant update(Constant lhs, Iterator<Bytecode.LVal> descriptor, Constant rhs, Constant[] frame,
-			Context context) {
-		if (descriptor.hasNext()) {
-			Bytecode.LVal lval = descriptor.next();
-			// Check what shape the left-hand side is
-			if (lval instanceof Bytecode.ArrayLVal) {
-				// List
-				Bytecode.ArrayLVal lv = (Bytecode.ArrayLVal) lval;
-				Constant operand = frame[lv.indexOperand];
-				checkType(operand, context, Constant.Integer.class);
-				checkType(lhs, context, Constant.Array.class);
-				Constant.Array list = (Constant.Array) lhs;
-				int index = ((Constant.Integer) operand).value().intValue();
-				ArrayList<Constant> values = new ArrayList<Constant>(list.values());
-				rhs = update(values.get(index), descriptor, rhs, frame, context);
-				values.set(index, rhs);
-				return new Constant.Array(values);
-			} else if (lval instanceof Bytecode.RecordLVal) {
-				// Record
-				Bytecode.RecordLVal lv = (Bytecode.RecordLVal) lval;
-				checkType(lhs, context, Constant.Record.class);
-				Constant.Record record = (Constant.Record) lhs;
-				HashMap<String, Constant> values = new HashMap<String, Constant>(record.values());
-				rhs = update(values.get(lv.field), descriptor, rhs, frame, context);
-				values.put(lv.field, rhs);
-				return new Constant.Record(values);
-			} else {
-				// Reference
-				Bytecode.ReferenceLVal lv = (Bytecode.ReferenceLVal) lval;
-				checkType(lhs, context, ConstantObject.class);
-				ConstantObject object = (ConstantObject) lhs;
-				rhs = update(object.read(), descriptor, rhs, frame, context);
-				object.write(rhs);
-				return object;
-			}
-		} else {
-			// Base case --- we've reached the inner most component. Therefore,
-			// we effectively replace the lhs with the rhs.
-			return rhs;
+		@Override
+		public void write(Constant[] frame, Constant rhs) {
+			Constant.Record rec = checkType(this.src.read(frame),null,Constant.Record.class);
+			HashMap<String, Constant> values = new HashMap<String, Constant>(rec.values());			
+			values.put(field, rhs);
+			src.write(frame,new Constant.Record(values));			
 		}
 	}
+	
+	private class DereferenceLVal extends LVal {
+		private final LVal src;
 
-
+		public DereferenceLVal(LVal src) {
+			this.src = src;
+		}
+		
+		@Override
+		public Constant read(Constant[] frame) {
+			ConstantObject objecy = checkType(src.read(frame),null,ConstantObject.class);
+			return objecy.read();
+		}
+ 		
+		@Override
+		public void write(Constant[] frame, Constant rhs) {
+			ConstantObject object = checkType(src.read(frame),null,ConstantObject.class);
+			object.write(rhs);
+		}
+	}
+	
 	/**
 	 * Determine whether a given value is a member of a given type. In the case
 	 * of a nominal type, then we must also check that any invariant(s) for that
@@ -809,12 +1032,14 @@ public class Interpreter {
 					return false;
 				}
 				// Check any invariant associated with this type
-				BytecodeForest invariant = td.invariant();
-				if (invariant.numBlocks() > 0) {
+				BytecodeForest invariant = td.invariant();				
+				if(invariant.getRoots().length > 0) {
+					Context typeContext = new Context(td,invariant);
+					// FIXME: This is not the most efficient as the number of
+					// locations is greater than the number of variables.					
 					Constant[] frame = new Constant[invariant.numLocations()];
 					frame[0] = value;
-					BytecodeForest.Index pc = new BytecodeForest.Index(invariant.getRoot(0), 0);
-					executeAllWithin(frame, new Context(pc, invariant));
+					checkInvariants(frame,typeContext,invariant.getRoots());
 				}
 				// Done
 				return true;
@@ -829,6 +1054,17 @@ public class Interpreter {
 
 		deadCode(context);
 		return false; // deadcode
+	}
+	
+	public void checkInvariants(Constant[] frame, Context context, int... invariants) {
+		for(int i=0;i!=invariants.length;++i) {
+			Constant value = executeSingle(invariants[i], frame, context);
+			Constant.Bool b = checkType(value,context,Constant.Bool.class);
+			if(!b.value()) {
+				// FIXME: need to do more here
+				throw new AssertionError();
+			}
+		}
 	}
 
 	/**
@@ -853,7 +1089,7 @@ public class Interpreter {
 		error("invalid operand", context);
 		return null;
 	}
-
+	
 	/**
 	 * This method is provided as a generic mechanism for reporting runtime
 	 * errors within the interpreter.
@@ -881,36 +1117,6 @@ public class Interpreter {
 	}
 
 	/**
-	 * A class for grouping two related items together. In essence, the context
-	 * represents a position within a given bytecode block. This is useful for
-	 * better error reporting.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Context {
-		public final BytecodeForest.Index pc;
-		public final BytecodeForest forest;
-		private Map<String, BytecodeForest.Index> labels;
-
-		public Context(BytecodeForest.Index pc, BytecodeForest block) {
-			this.pc = pc;
-			this.forest = block;
-		}
-
-		public BytecodeForest.Index getLabel(String label) {
-			if (labels == null) {
-				labels = Bytecode.buildLabelMap(forest);
-			}
-			return labels.get(label);
-		}
-		
-		public Bytecode getBytecode() {
-			return forest.get(pc).first();
-		}
-	}
-
-	/**
 	 * Represents an object allocated on the heap.
 	 *
 	 * @author David J. Pearce
@@ -923,11 +1129,11 @@ public class Interpreter {
 			this.value = value;
 		}
 
-		public Constant read() {
+		public Constant read() {			
 			return value;
 		}
 
-		public void write(Constant newValue) {
+		public void write(Constant newValue) {			
 			value = newValue;
 		}
 
@@ -951,9 +1157,147 @@ public class Interpreter {
 			// TODO: extend wyil.lang.Codes.NewObject with a lifetime and use it
 			return wyil.lang.Type.Reference(value.type(), "*");
 		}
-
 	}
 
+	/**
+	 * Represents an object allocated on the heap.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class ConstantLambda extends Constant {
+		private final Bytecode.Lambda lambda;
+		private final BytecodeForest forest;
+		private final Constant[] frame;		
+
+		public ConstantLambda(Bytecode.Lambda lambda, BytecodeForest forest, Constant... frame) {
+			this.lambda = lambda;
+			this.forest = forest;
+			this.frame = frame;
+		}
+
+		public boolean equals(Object o) {
+			return o == this;
+		}
+
+		public int hashCode() {
+			return Arrays.hashCode(frame);
+		}
+
+		@Override
+		public int compareTo(Constant o) {
+			// This method cannot be implmened because it does not make sense to
+			// compare a reference with another reference.
+			throw new UnsupportedOperationException("ConstantObject.compare() cannot be implemented");
+		}
+
+		@Override
+		public wyil.lang.Type type() {
+			return lambda.type();
+		}
+	}
+	
+	public static class Context {
+		/**
+		 * The enclosing declaration for this translation context 
+		 */
+		protected final WyilFile.Declaration enclosingDeclaration;
+		/**
+		 * The encosing bytecode forest
+		 */
+		protected final BytecodeForest forest;
+		/**
+		 * The enclosing block being executed
+		 */
+		private final BytecodeForest.Block block;
+		/**
+		 * Index of block we are executing with the forest
+		 */
+		private int blockID;
+		/**
+		 * Index of bytecode statement within block we are executing
+		 */
+		private int pc;
+		
+		public Context(WyilFile.Declaration enclosing, BytecodeForest forest) {
+			this.enclosingDeclaration = enclosing;
+			this.forest = forest;
+			this.block = null;
+			this.blockID = -1;
+			this.pc = -1;
+		}
+		
+		public Context(WyilFile.Declaration enclosing, BytecodeForest forest, int blockID, int pc) {
+			this.enclosingDeclaration = enclosing;
+			this.forest = forest;
+			this.block = forest.get(blockID);
+			this.blockID = blockID;
+			this.pc = pc;
+		}
+
+		private Context(Context context) {
+			this.enclosingDeclaration = context.enclosingDeclaration;
+			this.forest = context.forest;
+			this.block = context.block;
+			this.blockID = context.blockID;
+			this.pc = context.pc;
+		}
+		
+		public WyilFile.Declaration getEnclosingDeclaration() {
+			return enclosingDeclaration;
+		}
+
+		/**
+		 * Create a new subcontext for executing a nested block at the given
+		 * position.
+		 * 
+		 * @param blockID
+		 * @return
+		 */
+		public Context subBlockContext(int blockID) {
+			return new Context(enclosingDeclaration,forest,blockID,0);
+		}
+		public Context.Operand subOperandContext(int operand) {
+			return new Context.Operand(operand,this);
+		}
+		
+		public BytecodeForest.Index getIndex() {
+			return new BytecodeForest.Index(blockID, pc);
+		}
+		
+		public BytecodeForest.Location getLocation(int location) {
+			return forest.getLocation(location);
+		}
+		
+		public Bytecode.Stmt getStatement() {
+			return block.get(pc).code();
+		}
+		
+		public boolean hasNext() {
+			return pc < block.size();
+		}
+		
+		public void nextStatement() {
+			pc = pc + 1; 
+		}
+		
+		public static class Operand extends Context {
+			/**
+			 * Index of operand within the bytecode statement we are executing
+			 */
+			private final int operand;
+
+			public Operand(int operand, Context context) {
+				super(context);
+				this.operand = operand;
+			}
+			
+			public BytecodeForest.Operand getOperand() {
+				return (BytecodeForest.Operand) forest.getLocation(operand);
+			}					
+		}
+	}
+	
 	/**
 	 * An internal function is simply a named internal function. This reads a
 	 * bunch of operands and returns a set of results.
@@ -962,6 +1306,6 @@ public class Interpreter {
 	 *
 	 */
 	public static interface InternalFunction {
-		public Constant apply(Constant[] operands, Interpreter enclosing, Context context);
+		public Constant apply(Constant[] operands, Interpreter enclosing, Context.Operand context);
 	}
 }

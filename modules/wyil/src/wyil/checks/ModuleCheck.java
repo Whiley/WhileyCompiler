@@ -124,10 +124,11 @@ public class ModuleCheck implements Transform<WyilFile> {
 	 * @param c
 	 */
 	protected void checkFunctionPure(WyilFile.FunctionOrMethod c) {
-		checkFunctionPure(c.body(),c.code());
+		checkFunctionPure(c.body(),new HashSet<Integer>(),c.code());
 	}
 
-	protected void checkFunctionPure(int blockID, BytecodeForest forest) {
+	protected void checkFunctionPure(int blockID, HashSet<Integer> visited, BytecodeForest forest) {
+		visited.add(blockID);
 		BytecodeForest.Block block = forest.get(blockID);
 		for (int i = 0; i != block.size(); ++i) {
 			BytecodeForest.Entry e = block.get(i);
@@ -145,7 +146,14 @@ public class ModuleCheck implements Transform<WyilFile> {
 			} else if (code instanceof Bytecode.Compound) {
 				Bytecode.Compound a = (Bytecode.Compound) code;
 				for (int j = 0; j != a.numBlocks(); ++j) {
-					checkFunctionPure(a.block(j), forest);
+					int subblock = a.block(j);
+					// The visited check is necessary to handle break and
+					// continue bytecodes. These contain the block identifier of
+					// their enclosing loop and, hence, following this would
+					// lead to an infinite loop.
+					if(!visited.contains(subblock)) {
+						checkFunctionPure(subblock, visited, forest);
+					}
 				}
 			}
 		}

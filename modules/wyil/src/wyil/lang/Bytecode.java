@@ -308,7 +308,7 @@ public abstract class Bytecode {
 		 * @param i
 		 * @return
 		 */
-		public int parameter(int i) {
+		public int argument(int i) {
 			return operand(i + 1);
 		}
 
@@ -317,7 +317,7 @@ public abstract class Bytecode {
 		 *
 		 * @return
 		 */
-		public int[] parameters() {
+		public int[] arguments() {
 			return Arrays.copyOfRange(operands(), 1, operands().length);
 		}
 
@@ -334,7 +334,7 @@ public abstract class Bytecode {
 		}
 
 		public String toString() {
-			return "indirectinvoke %" + reference() + " " + arrayToString(parameters());
+			return "indirectinvoke %" + reference() + " " + arrayToString(arguments());
 		}
 	}
 
@@ -421,6 +421,22 @@ public abstract class Bytecode {
 			return type;
 		}
 
+		public int body() {
+			return operands[0]; 
+		};
+		
+		public int[] parameters() {
+			int[] rs = new int[type.params().size()];
+			System.arraycopy(operands, 1, rs, 0, rs.length);
+			return rs;
+		}
+		
+		public int[] environment() {
+			int[] rs = new int[type.returns().size()];
+			System.arraycopy(operands, 1+type.params().size(), rs, 0, rs.length);
+			return rs;
+		}
+		
 		public boolean equals(Object o) {
 			if (o instanceof Lambda) {
 				Lambda i = (Lambda) o;
@@ -588,10 +604,10 @@ public abstract class Bytecode {
 				return "new";
 			}
 		};
-		public int offset;
+		public int opcode;
 
 		private OperatorKind(int offset) {
-			this.offset = offset;
+			this.opcode = offset;
 		}
 	};
 
@@ -614,7 +630,7 @@ public abstract class Bytecode {
 
 		@Override
 		public int opcode() {
-			return kind().offset;
+			return kind().opcode;
 		}
 
 		public int hashCode() {
@@ -638,18 +654,27 @@ public abstract class Bytecode {
 		}
 	}
 
+	public enum QuantifierKind {
+		NONE(OPCODE_none),
+		SOME(OPCODE_some),
+		ALL(OPCODE_all);
+		public int opcode;
 
+		private QuantifierKind(int offset) {
+			this.opcode = offset;
+		}
+	}
+	
 	public static final class Quantifier extends Expr {
-
-		private final Range[] ranges;
+		private final QuantifierKind kind;
 		
-		public Quantifier(int operand, Range... ranges) {
-			super(operand);
-			this.ranges = ranges;
+		public Quantifier(QuantifierKind kind, int operand, Range... ranges) {
+			super(append(operand,extract(ranges)));
+			this.kind = kind;
 		}
 
 		public int opcode() {
-			return OPCODE_quantify;
+			return kind.opcode;
 		}
 
 		public int body() {
@@ -657,24 +682,38 @@ public abstract class Bytecode {
 		}
 
 		public Range[] ranges() {
+			Bytecode.Range[] ranges = new Bytecode.Range[(operands.length - 1) / 3];
+			int j = 1;
+			for (int i = 0; i != ranges.length; i = i + 1) {
+				ranges[i] = new Bytecode.Range(operand(j++), operand(j++), operand(j++));
+			}
 			return ranges;
 		}
 		
 		public boolean equals(Object o) {
 			if (o instanceof Quantifier) {
-				Quantifier f = (Quantifier) o;
-				return Arrays.equals(ranges, f.ranges) && super.equals(f);
+				return super.equals(o);				
 			}
 			return false;
-		}
-
-		public int hashCode() {
-			return super.hashCode() ^ Arrays.hashCode(ranges);
 		}
 		
 		public String toString() {
 			return "quantifier";
-		}		
+		}
+		
+		private static int[] extract(Range[] ranges) {
+			// FIXME: this is not very pretty. It might be better for the
+			// operands to be an interface, rather than an array in the super
+			// class.
+			int[] operands = new int[ranges.length*3];
+			for(int i=0;i!=ranges.length;++i) {
+				Range r = ranges[i];
+				operands[i*3] = r.variable;
+				operands[(i*3)+1] = r.startOperand;
+				operands[(i*3)+2] = r.endOperand;
+			}
+			return operands;
+		}
 	}
 
 
@@ -814,7 +853,6 @@ public abstract class Bytecode {
 	 *
 	 */
 	public static final class Assign extends Stmt {
-		private final int numLhsOperands;
 		/**
 		 * Construct an assignment from a right-hand operand to a left-hand
 		 * operand.
@@ -825,8 +863,7 @@ public abstract class Bytecode {
 		 *            Operand on right-hand side whose value is assigned
 		 */
 		public Assign(int lhs, int rhs) {
-			super(lhs,rhs);		
-			numLhsOperands = 1;
+			super(new int[]{lhs,rhs,1});		
 		}
 
 		/**
@@ -839,15 +876,14 @@ public abstract class Bytecode {
 		 *            Operand on right-hand side whose value is assigned
 		 */
 		public Assign(int[] lhs, int[] rhs) {
-			super(append(lhs,rhs));		
-			numLhsOperands = lhs.length;
+			super(append(append(lhs,rhs),lhs.length));		
 		}
 
 		
 		public int opcode() {
 			return OPCODE_assign;
 		}
-
+		
 		/**
 		 * Returns operand(s) from which assigned value is written to. This is also
 		 * known as the "left-hand side".
@@ -855,6 +891,7 @@ public abstract class Bytecode {
 		 * @return
 		 */
 		public int[] leftHandSide() {
+			int numLhsOperands = operands[operands.length-1];
 			return Arrays.copyOfRange(operands, 0, numLhsOperands);
 		}
 		
@@ -865,13 +902,14 @@ public abstract class Bytecode {
 		 * @return
 		 */
 		public int[] rightHandSide() {
-			return Arrays.copyOfRange(operands, numLhsOperands, operands.length);
+			int numLhsOperands = operands[operands.length-1];
+			return Arrays.copyOfRange(operands, numLhsOperands, operands.length - 1);
 		}
 
 		public boolean equals(Object o) {
 			if (o instanceof Assign) {
 				Assign a = (Assign) o;
-				return super.equals(o) && numLhsOperands == a.numLhsOperands;
+				return super.equals(o);
 			}
 			return false;
 		}
@@ -930,7 +968,7 @@ public abstract class Bytecode {
 		
 		@Override
 		public int block(int i) {
-			if(i != 1) {
+			if(i != 0) {
 				throw new IllegalArgumentException("block index out-of-bounds");
 			}
 			return enclosingLoopBody;
@@ -972,7 +1010,7 @@ public abstract class Bytecode {
 		
 		@Override
 		public int block(int i) {
-			if(i != 1) {
+			if(i != 0) {
 				throw new IllegalArgumentException("block index out-of-bounds");
 			}
 			return enclosingLoopBody;
@@ -1136,7 +1174,11 @@ public abstract class Bytecode {
 		}
 
 		public String toString() {
-			return "if" + " %" + operands[0] + " " + trueBranch() + " else " + falseBranch();
+			String r = "if" + " %" + operands[0] + " " + trueBranch();
+			if(branches.length > 1) {
+				r += " else " + falseBranch();
+			}
+			return r;
 		}
 	}
 
@@ -1280,10 +1322,14 @@ public abstract class Bytecode {
 			super(operand);
 			this.cases = cases;
 		}
-
+		
 		@Override
 		public int opcode() {
 			return OPCODE_switch;
+		}
+
+		public int operand() {
+			return operand(0);
 		}
 		
 		@Override
@@ -1330,6 +1376,10 @@ public abstract class Bytecode {
 			this.values = values.toArray(new Constant[values.size()]);
 		}
 		
+		public boolean isDefault() {
+			return values.length == 0;
+		}
+		
 		public int block() {
 			return block;
 		}
@@ -1369,7 +1419,7 @@ public abstract class Bytecode {
 		return noperands;
 	}
 
-	private static int[] append(int[] lhs, int[] rhs) {
+	private static int[] append(int[] lhs, int... rhs) {
 		int[] noperands = new int[lhs.length + rhs.length];
 		System.arraycopy(lhs, 0, noperands, 0, lhs.length);
 		System.arraycopy(rhs, 0, noperands, lhs.length, rhs.length);
@@ -1452,8 +1502,10 @@ public abstract class Bytecode {
 	public static final int OPCODE_lambda           = NARY_ASSIGNABLE+4;
 	public static final int OPCODE_while            = NARY_ASSIGNABLE+5;
 	public static final int OPCODE_dowhile          = NARY_ASSIGNABLE+6;
-	public static final int OPCODE_quantify         = NARY_ASSIGNABLE+7;
-	public static final int OPCODE_assign           = NARY_ASSIGNABLE+8;	
+	public static final int OPCODE_none             = NARY_ASSIGNABLE+7;
+	public static final int OPCODE_some             = NARY_ASSIGNABLE+8;
+	public static final int OPCODE_all              = NARY_ASSIGNABLE+9;
+	public static final int OPCODE_assign           = NARY_ASSIGNABLE+10;	
 		
 	// =========================================================================
 	// Bytecode Schemas

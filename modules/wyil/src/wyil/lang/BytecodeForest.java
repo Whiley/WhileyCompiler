@@ -95,6 +95,14 @@ public class BytecodeForest {
 		return roots.get(i);
 	}
 	
+	public int[] getRoots() {
+		int[] rs = new int[roots.size()];
+		for(int i=0;i!=rs.length;++i) {
+			rs[i] = roots.get(i);
+		}
+		return rs;
+	}
+	
 	/**
 	 * Get a specific block within this forest. The returned list is mutable and
 	 * can be modified at will.
@@ -284,7 +292,8 @@ public class BytecodeForest {
 	 *
 	 */
 	public interface Location {
-		public Type type();
+		public int size();
+		public Type type(int i);
 	}
 	
 	/**
@@ -295,12 +304,18 @@ public class BytecodeForest {
 	 *
 	 */
 	public static class Operand extends SyntacticElement.Impl implements Location {
-		private final Type type;
+		private final Type[] types;
 		private final Bytecode.Expr value;		
 				
 		public Operand(Type type, Bytecode.Expr value, List<Attribute> attributes) {
 			super(attributes);
-			this.type = type;
+			this.types = new Type[]{type};
+			this.value = value;
+		}
+		
+		public Operand(Type[] types, Bytecode.Expr value, List<Attribute> attributes) {
+			super(attributes);
+			this.types = types;
 			this.value = value;
 		}
 		
@@ -308,12 +323,16 @@ public class BytecodeForest {
 			return value;
 		}
 		
-		public Type type() {
-			return type;
+		public int size() {
+			return types.length;
+		}
+		
+		public Type type(int i) {
+			return types[i];
 		}
 		
 		public String toString() {
-			return type + " " + value;
+			return Arrays.toString(types) + " " + value;
 		}
 	}
 	
@@ -337,12 +356,19 @@ public class BytecodeForest {
 			return name;
 		}
 		
-		public Type type() {
+		public int size() {
+			return 1;
+		}
+		
+		public Type type(int i) {
+			if(i != 0) {
+				throw new IllegalArgumentException("invalid type index");
+			}
 			return type;
 		}
 		
 		public String toString() {
-			return type() + " " + name;
+			return type + " " + name;
 		}
 	}
 }

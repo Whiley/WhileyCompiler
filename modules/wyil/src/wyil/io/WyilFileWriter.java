@@ -573,10 +573,18 @@ public final class WyilFileWriter {
 	 */
 	private void writeCodeLocation(BytecodeForest.Location location, BinaryOutputStream output) throws IOException {
 		output.write_bit(location instanceof BytecodeForest.Variable);
+		output.write_bit(location.size() == 1);
 		// TODO: write out register attributes (including name)
 		output.write_uv(0);
-		// Write out the type index
-		output.write_uv(typeCache.get(location.type()));
+		// Write out the type indices		
+		if(location.size() == 1) {
+			output.write_uv(typeCache.get(location.type(0)));
+		} else {
+			output.write_uv(location.size());
+			for(int i=0;i!=location.size();++i) {
+				output.write_uv(typeCache.get(location.type(i)));
+			}
+		}
 		if(location instanceof BytecodeForest.Variable) {
 			BytecodeForest.Variable v = (BytecodeForest.Variable) location;
 			output.write_uv(stringCache.get(v.name()));
@@ -717,15 +725,7 @@ public final class WyilFileWriter {
 	 */
 	private void writeRest(Bytecode code, BinaryOutputStream output) throws IOException {
 
-		// now deal with non-uniform instructions
-		// First, deal with special cases
-		if(code instanceof Bytecode.Compound) {
-			Bytecode.Compound cb = (Bytecode.Compound) code;
-			output.write_uv(cb.numBlocks());
-			for(int i=0;i!=cb.numBlocks();++i) {
-				output.write_uv(cb.block(i));
-			}
-		} else if (code instanceof Bytecode.Const) {
+		if (code instanceof Bytecode.Const) {
 			Bytecode.Const c = (Bytecode.Const) code;
 			output.write_uv(constantCache.get(c.constant()));
 		} else if (code instanceof Bytecode.Convert) {
@@ -748,14 +748,22 @@ public final class WyilFileWriter {
 			Bytecode.Switch c = (Bytecode.Switch) code;
 			Bytecode.Case[] cases = c.cases();
 			output.write_uv(cases.length);
-			for (int i=0;i!=cases.length;++i) {
-				Constant[] values = cases[i].values();
+			for (int i = 0; i != cases.length; ++i) {
+				Bytecode.Case cAse = cases[i];
+				Constant[] values = cAse.values();
+				output.write_uv(cAse.block());
 				output.write_uv(values.length);
-				for(int j=0;j!=values.length;++j) {
+				for (int j = 0; j != values.length; ++j) {
 					output.write_uv(constantCache.get(values[j]));
 				}
 			}
-		}
+		} else if(code instanceof Bytecode.Compound) {
+			Bytecode.Compound cb = (Bytecode.Compound) code;
+			output.write_uv(cb.numBlocks());
+			for(int i=0;i!=cb.numBlocks();++i) {
+				output.write_uv(cb.block(i));
+			}
+		} 
 	}
 
 	private int generateModifiers(Collection<Modifier> modifiers) {
@@ -836,7 +844,9 @@ public final class WyilFileWriter {
 	}
 
 	private void buildPools(BytecodeForest.Location loc) {
-		addTypeItem(loc.type());
+		for(int i=0;i!=loc.size();++i) {
+			addTypeItem(loc.type(i));
+		}
 		if(loc instanceof BytecodeForest.Variable) {
 			BytecodeForest.Variable v = (BytecodeForest.Variable) loc;
 			addStringItem(v.name());			

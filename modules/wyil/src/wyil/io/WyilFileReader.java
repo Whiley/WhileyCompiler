@@ -638,16 +638,28 @@ public final class WyilFileReader {
 	 */
 	private BytecodeForest.Location readCodeLocation() throws IOException {
 		boolean kind = input.read_bit();
+		boolean single = input.read_bit();
 		int nAttrs = input.read_uv();
-		int typeIdx = input.read_uv();		
+		Type[] types;
+		if(single) {
+			int typeIdx = input.read_uv();
+			types = new Type[]{typePool[typeIdx]};
+		} else {
+			int size = input.read_uv();
+			types = new Type[size];
+			for(int i=0;i!=size;++i) {
+				types[i] = typePool[input.read_uv()];
+			}
+		}
+				
 		// TODO: read any attributes given
 		List<Attribute> attributes = Collections.EMPTY_LIST;
 		if(kind) {
 			int stringIdx = input.read_uv();
-			return new BytecodeForest.Variable(typePool[typeIdx], stringPool[stringIdx], attributes);			
+			return new BytecodeForest.Variable(types[0], stringPool[stringIdx], attributes);			
 		} else {
 			Bytecode.Expr value = (Bytecode.Expr) readBytecode();
-			return new BytecodeForest.Operand(typePool[typeIdx], value, attributes);
+			return new BytecodeForest.Operand(types, value, attributes);
 		}
 	}
 	
@@ -700,7 +712,7 @@ public final class WyilFileReader {
 		
 		// First, read and validate all operands and types
 		int nOperands = input.read_uv();
-		int nAttts = input.read_uv();
+		int nAttrs = input.read_uv();
 		int[] operands = readRegisters(nOperands);
 		// Second, read all extras		
 		Object[] extras = readExtras(schema);
@@ -738,7 +750,12 @@ public final class WyilFileReader {
 				int nameIdx = input.read_uv();
 				results[i] = namePool[nameIdx];
 				break;
-			}						
+			}		
+			case TYPE: {
+				int typeIdx = input.read_uv();
+				results[i] = typePool[typeIdx];
+				break;
+			}
 			case BLOCK_ARRAY: {
 				int nBlocks = input.read_uv();
 				int[] blocks = new int[nBlocks];
@@ -757,19 +774,25 @@ public final class WyilFileReader {
 				}
 				results[i] = strings;
 				break;
+			}			
+			case SWITCH_ARRAY: {
+				// This is basically a special case just for the switch
+				// statement.
+				int nPairs = input.read_uv();
+				Bytecode.Case[] pairs = new Bytecode.Case[nPairs];
+				for(int j=0;j!=nPairs;++j) {
+					int block = input.read_uv();
+					int nConstants = input.read_uv();
+					Constant[] constants = new Constant[nConstants];
+					for(int k=0;k!=nConstants;++k) {
+						int constIdx = input.read_uv();
+						constants[k] = constantPool[constIdx];
+					}					
+					pairs[j] = new Bytecode.Case(block,constants);
+				}
+				results[i] = pairs;
+				break;
 			}
-//			case SWITCH_ARRAY: {
-//				int nPairs = input.read_uv();
-//				Pair<Constant,String>[] pairs = new Pair[nPairs];
-//				for(int j=0;j!=nPairs;++j) {
-//					int constIdx = input.read_uv();
-//					int target = input.read_uv();
-//					String label = findLabel(target,labels).label();
-//					pairs[j] = new Pair<Constant,String>(constantPool[constIdx],label);
-//				}
-//				results[i] = pairs;
-//				break;
-//			}
 			default:
 				throw new RuntimeException("unknown bytecode extra encountered: " + extras[i]);
 			}
@@ -845,21 +868,22 @@ public final class WyilFileReader {
 				return new Bytecode.Return(operands);
 			}
 		};
-//		schemas[Bytecode.OPCODE_switch] = new Schema(Operands.ONE, Extras.TARGET, Extras.SWITCH_ARRAY){
-//			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
-//				String defaultTarget = (String) extras[0];
-//				Pair<Constant,String>[] cases = (Pair<Constant,String>[]) extras[1];
-//				return new Bytecode.Switch(operands[0], defaultTarget, Arrays.asList(cases));
-//			}
-//		};
+		schemas[Bytecode.OPCODE_switch] = new Schema(Operands.ONE, Extras.SWITCH_ARRAY){
+			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+				Bytecode.Case[] cases = (Bytecode.Case[]) extras[0];
+				return new Bytecode.Switch(operands[0], cases);
+			}
+		};
 		
 		// =========================================================================
 		// Unary Assignables
 		// =========================================================================
 		schemas[Bytecode.OPCODE_assign] = new Schema(Operands.TWO){
 			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
-				// FIXME: there can be multiple operands, in fact.
-				return new Bytecode.Assign(operands[0],operands[1]);
+				int numLhsOperands = operands[operands.length-1];
+				int[] lhsOperands = Arrays.copyOfRange(operands, 0, numLhsOperands);
+				int[] rhsOperands = Arrays.copyOfRange(operands, numLhsOperands, operands.length-1);
+				return new Bytecode.Assign(lhsOperands,rhsOperands);
 			}
 		};		
 		schemas[Bytecode.OPCODE_newobject] = new Schema(Operands.ONE){
@@ -1057,7 +1081,7 @@ public final class WyilFileReader {
 				return new Bytecode.IndirectInvoke((Type.FunctionOrMethod) extras[0], src, operands);
 			}
 		};
-		schemas[Bytecode.OPCODE_lambda] = new Schema(Operands.MANY) {
+		schemas[Bytecode.OPCODE_lambda] = new Schema(Operands.MANY, Extras.TYPE) {
 			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
 				Type.FunctionOrMethod type = (Type.FunctionOrMethod) extras[0];
 				int body = operands[0];
@@ -1081,19 +1105,35 @@ public final class WyilFileReader {
 				int body = blocks[0];
 				int condition = operands[0];
 				int[] invariants = Arrays.copyOfRange(operands, 1, operands.length);
-				return new Bytecode.While(body,condition,invariants);
+				return new Bytecode.DoWhile(body,condition,invariants);
 			}
 		};
-		schemas[Bytecode.OPCODE_quantify] = new Schema(Operands.MANY){
-			public Bytecode construct(int opcode,int[] operands, Object[] extras) {
+		schemas[Bytecode.OPCODE_none] = schemas[Bytecode.OPCODE_some] = schemas[Bytecode.OPCODE_all] = new Schema(
+				Operands.MANY) {
+			public Bytecode construct(int opcode, int[] operands, Object[] extras) {
 				int body = operands[0];
-				Bytecode.Range[] ranges = new Bytecode.Range[(operands.length-1)/3];
+				Bytecode.Range[] ranges = new Bytecode.Range[(operands.length - 1) / 3];
 				int j = 1;
-				for(int i=0;i!=ranges.length;i=i+1) {
-					ranges[i] = new Bytecode.Range(j++, j++, j++);
-				}				
-				return new Bytecode.Quantifier(body,ranges);
+				for (int i = 0; i != ranges.length; i = i + 1) {
+					ranges[i] = new Bytecode.Range(operands[j++], operands[j++], operands[j++]);
+				}
+				Bytecode.QuantifierKind kind;
+				switch(opcode) {
+				case Bytecode.OPCODE_none:
+					kind = Bytecode.QuantifierKind.NONE;
+					break;
+				case Bytecode.OPCODE_some:
+					kind = Bytecode.QuantifierKind.SOME;
+					break;
+				case Bytecode.OPCODE_all:
+					kind = Bytecode.QuantifierKind.ALL;
+					break;
+				default:
+					// deadcpde
+					throw new IllegalArgumentException();
+				}
+				return new Bytecode.Quantifier(kind, body, ranges);
 			}
-		};		
+		};
 	}
 }
