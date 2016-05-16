@@ -270,9 +270,8 @@ public class Interpreter {
 	 */
 	private Status execute(Bytecode.Debug bytecode, Constant[] frame, Context context) {
 		//
-		Constant value = executeSingle(bytecode.operand(0), frame, context);
-		Constant.Array list = checkType(value,context,Constant.Array.class);
-		for (Constant item : list.values()) {
+		Constant.Array arr = executeSingle(ARRAY_T, bytecode.operand(0), frame, context);
+		for (Constant item : arr.values()) {
 			BigInteger b = ((Constant.Integer) item).value();
 			char c = (char) b.intValue();
 			debug.print(c);
@@ -286,8 +285,7 @@ public class Interpreter {
 		while(r == Status.NEXT || r == Status.CONTINUE) {
 			r = executeAllWithin(frame, context.subBlockContext(bytecode.body()));
 			if(r == Status.NEXT) {
-				Constant value = executeSingle(bytecode.operand(0), frame, context);
-				Constant.Bool operand = checkType(value,context,Constant.Bool.class);
+				Constant.Bool operand = executeSingle(BOOL_T, bytecode.operand(0), frame, context);
 				if(!operand.value()) { return Status.NEXT; }
 			}
 		};
@@ -317,8 +315,7 @@ public class Interpreter {
 	}
 
 	private Status execute(Bytecode.If bytecode, Constant[] frame, Context context) {		
-		Constant value = executeSingle(bytecode.operand(0), frame, context);
-		Constant.Bool operand = checkType(value,context,Constant.Bool.class);
+		Constant.Bool operand = executeSingle(BOOL_T, bytecode.operand(0), frame, context);
 		if (operand.value()) {
 			// branch taken, so execute true branch			
 			return executeAllWithin(frame, context.subBlockContext(bytecode.trueBranch()));
@@ -333,8 +330,7 @@ public class Interpreter {
 	private Status execute(Bytecode.While bytecode, Constant[] frame, Context context) {
 		Status r;
 		do {
-			Constant value = executeSingle(bytecode.operand(0), frame, context);
-			Constant.Bool operand = checkType(value,context,Constant.Bool.class);
+			Constant.Bool operand = executeSingle(BOOL_T, bytecode.operand(0), frame, context);
 			if(!operand.value()) { return Status.NEXT; }
 			// Keep executing the loop body until we exit it somehow.
 			r = executeAllWithin(frame, context.subBlockContext(bytecode.body()));
@@ -374,7 +370,7 @@ public class Interpreter {
 
 	private Status execute(Bytecode.Switch bytecode, Constant[] frame, Context context) {
 		//
-		Constant value = executeSingle(bytecode.operand(0), frame, context);
+		Constant value = executeSingle(ANY_T, bytecode.operand(0), frame, context);
 		for (Bytecode.Case c : bytecode.cases()) {
 			if(c.isDefault()) {
 				return executeAllWithin(frame,context.subBlockContext(c.block()));
@@ -393,35 +389,44 @@ public class Interpreter {
 	// Single expressions
 	// =============================================================		
 	
-	private Constant executeSingle(int operand, Constant[] frame, Context context) {
+	private <T extends Constant> T executeSingle(Class<T> expected, int operand, Constant[] frame, Context context) {
 		BytecodeForest.Location loc = (BytecodeForest.Location) context.getLocation(operand);
+		Constant val; 
 		if (loc instanceof BytecodeForest.Variable) {
-			return frame[operand];
+			val = frame[operand];
 		} else {
 			Context.Operand opContext = context.subOperandContext(operand);
 			BytecodeForest.Operand o = (BytecodeForest.Operand) loc;
 			Bytecode.Expr bytecode = o.value();
 			switch (bytecode.opcode()) {
 			case Bytecode.OPCODE_const:
-				return executeSingle((Bytecode.Const) bytecode, frame, opContext);
+				val = executeSingle((Bytecode.Const) bytecode, frame, opContext);
+				break;
 			case Bytecode.OPCODE_convert:
-				return executeSingle((Bytecode.Convert) bytecode, frame, opContext);
+				val = executeSingle((Bytecode.Convert) bytecode, frame, opContext);
+				break;
 			case Bytecode.OPCODE_fieldload:
-				return executeSingle((Bytecode.FieldLoad) bytecode, frame, opContext);
+				val = executeSingle((Bytecode.FieldLoad) bytecode, frame, opContext);
+				break;
 			case Bytecode.OPCODE_indirectinvoke:
-				return executeMulti((Bytecode.IndirectInvoke) bytecode, frame, opContext)[0];
+				val = executeMulti((Bytecode.IndirectInvoke) bytecode, frame, opContext)[0];
+				break;
 			case Bytecode.OPCODE_invoke:
-				return executeMulti((Bytecode.Invoke) bytecode, frame, opContext)[0];
+				val = executeMulti((Bytecode.Invoke) bytecode, frame, opContext)[0];
+				break;
 			case Bytecode.OPCODE_lambda:
-				return executeSingle((Bytecode.Lambda) bytecode, frame, opContext);
+				val = executeSingle((Bytecode.Lambda) bytecode, frame, opContext);
+				break;
 			case Bytecode.OPCODE_none:
 			case Bytecode.OPCODE_some:
 			case Bytecode.OPCODE_all:
-				return executeSingle((Bytecode.Quantifier) bytecode, frame, opContext);
+				val = executeSingle((Bytecode.Quantifier) bytecode, frame, opContext);
+				break;
 			default:
-				return executeSingle((Bytecode.Operator) bytecode, frame, opContext);
+				val = executeSingle((Bytecode.Operator) bytecode, frame, opContext);
 			}
-		}		
+		}	
+		return checkType(val,context,expected);
 	}
 	
 
@@ -443,7 +448,7 @@ public class Interpreter {
 
 	private Constant executeSingle(Bytecode.Convert bytecode, Constant[] frame, Context.Operand context) {
 		try {
-			Constant operand = executeSingle(bytecode.operand(),frame,context);
+			Constant operand = executeSingle(ANY_T, bytecode.operand(),frame,context);
 			Type target = expander.getUnderlyingType(bytecode.type());
 			return convert(operand, target, context);
 		} catch (IOException e) {
@@ -471,25 +476,21 @@ public class Interpreter {
 		switch(bytecode.opcode()) {
 		case Bytecode.OPCODE_logicaland: {
 			// This is a short-circuiting operator
-			Constant l = executeSingle(bytecode.operand(0),frame,context);
-			Constant.Bool lhs = checkType(l, context, Constant.Bool.class);
+			Constant.Bool lhs = executeSingle(BOOL_T,bytecode.operand(0),frame,context);
 			if(!lhs.value()) {
 				// Short-circuit
 				return Constant.False;
 			}
-			Constant r = executeSingle(bytecode.operand(1),frame,context);
-			return checkType(r, context, Constant.Bool.class);
+			return executeSingle(BOOL_T, bytecode.operand(1),frame,context);
 		}
 		case Bytecode.OPCODE_logicalor: {
 			// This is a short-circuiting operator
-			Constant l = executeSingle(bytecode.operand(0),frame,context);
-			Constant.Bool lhs = checkType(l, context, Constant.Bool.class);
+			Constant.Bool lhs = executeSingle(BOOL_T,bytecode.operand(0),frame,context);
 			if(lhs.value()) {
 				// Short-circuit
 				return Constant.True;
 			}
-			Constant r = executeSingle(bytecode.operand(1),frame,context);
-			return checkType(r, context, Constant.Bool.class);
+			return executeSingle(BOOL_T, bytecode.operand(1),frame,context);
 		}
 		default: {
 			// This is the default case where can treat the operator as an
@@ -498,7 +499,7 @@ public class Interpreter {
 			Constant[] values = new Constant[operands.length];
 			// Read all operands
 			for(int i=0;i!=operands.length;++i) {
-				values[i] = executeSingle(operands[i],frame,context);
+				values[i] = executeSingle(ANY_T,operands[i],frame,context);
 			}
 			// Compute result
 			return operators[bytecode.opcode()].apply(values, this, context);
@@ -508,7 +509,7 @@ public class Interpreter {
 
 	
 	private Constant executeSingle(Bytecode.FieldLoad bytecode, Constant[] frame, Context.Operand context) {
-		Constant.Record rec = (Constant.Record) executeSingle(bytecode.operand(),frame,context);
+		Constant.Record rec = executeSingle(RECORD_T,bytecode.operand(),frame,context);
 		return rec.values().get(bytecode.fieldName());
 	}
 
@@ -537,7 +538,7 @@ public class Interpreter {
 		Bytecode.Range[] ranges = bytecode.ranges();
 		if(index == ranges.length) {
 			// This is the base case where we evaluate the condition itself.
-			Constant.Bool r = checkType(executeSingle(bytecode.body(),frame,context),context,Constant.Bool.class);
+			Constant.Bool r = executeSingle(BOOL_T,bytecode.body(),frame,context);
 			int opcode = bytecode.opcode();
 			if(r.value()) {
 				switch(opcode) {
@@ -553,8 +554,8 @@ public class Interpreter {
 			return true;
 		} else {
 			Bytecode.Range range = ranges[index];
-			Constant.Integer start = checkType(executeSingle(range.startOperand(),frame,context),context,Constant.Integer.class);
-			Constant.Integer end = checkType(executeSingle(range.endOperand(),frame,context),context,Constant.Integer.class);
+			Constant.Integer start = executeSingle(INT_T,range.startOperand(),frame,context);
+			Constant.Integer end = executeSingle(INT_T,range.endOperand(),frame,context);
 			int var = range.variable();
 			long s = start.value().longValue();
 			long e = end.value().longValue();
@@ -614,7 +615,7 @@ public class Interpreter {
 			case Bytecode.OPCODE_some:
 			case Bytecode.OPCODE_all:								
 			default:
-				Constant val = executeSingle(operand, frame, opContext);
+				Constant val = executeSingle(ANY_T, operand, frame, opContext);
 				return new Constant[] { val };
 			}
 		}
@@ -642,7 +643,7 @@ public class Interpreter {
 		// can reuse executeAllWithin in both bases. This is hard to setup
 		// though.
 		
-		Constant operand = executeSingle(bytecode.operand(0),frame,context);
+		Constant operand = executeSingle(ANY_T, bytecode.operand(0),frame,context);
 		// Check that we have a function reference
 		if(operand instanceof Constant.Lambda) {
 			Constant.Lambda cl = checkType(operand, context, Constant.Lambda.class);			
@@ -826,9 +827,8 @@ public class Interpreter {
 				switch (op.kind()) {
 				case ARRAYINDEX: {
 					LVal src = constructLVal(op.operand(0),frame,context);
-					Constant index = executeSingle(op.operand(1),frame,context);
-					checkType(index, context, Constant.Integer.class);				
-					int i = ((Constant.Integer) index).value().intValue();
+					Constant.Integer index = executeSingle(INT_T,op.operand(1),frame,context);				
+					int i = index.value().intValue();
 					return new ArrayLVal(src,i);
 				}
 				case DEREFERENCE: {
@@ -1058,8 +1058,7 @@ public class Interpreter {
 	
 	public void checkInvariants(Constant[] frame, Context context, int... invariants) {
 		for(int i=0;i!=invariants.length;++i) {
-			Constant value = executeSingle(invariants[i], frame, context);
-			Constant.Bool b = checkType(value,context,Constant.Bool.class);
+			Constant.Bool b = executeSingle(BOOL_T, invariants[i], frame, context);
 			if(!b.value()) {
 				// FIXME: need to do more here
 				throw new AssertionError();
@@ -1077,6 +1076,7 @@ public class Interpreter {
 	 * @param types
 	 *            --- Types to be checked against
 	 */
+	@SafeVarargs
 	public static <T extends Constant> T checkType(Constant operand, Context context, Class<T>... types) {
 		// Got through each type in turn checking for a match
 		for (int i = 0; i != types.length; ++i) {
@@ -1116,6 +1116,12 @@ public class Interpreter {
 		throw new RuntimeException("internal failure --- dead code reached");
 	}
 
+	private static final Class<Constant> ANY_T = Constant.class;
+	private static final Class<Constant.Bool> BOOL_T = Constant.Bool.class;
+	private static final Class<Constant.Integer> INT_T = Constant.Integer.class;
+	private static final Class<Constant.Array> ARRAY_T = Constant.Array.class;
+	private static final Class<Constant.Record> RECORD_T = Constant.Record.class;
+	
 	/**
 	 * Represents an object allocated on the heap.
 	 *
