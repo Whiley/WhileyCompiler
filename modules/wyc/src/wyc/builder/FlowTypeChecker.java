@@ -3314,7 +3314,7 @@ public class FlowTypeChecker {
 			} else if (expr instanceof Expr.FunctionOrMethod) {
 				// TODO: add support for proper lambdas
 				Expr.FunctionOrMethod f = (Expr.FunctionOrMethod) expr;
-				return new Pair<Constant, Nominal>(new Constant.Lambda(f.nid, f.type.nominal()), f.type);
+				return new Pair<Constant, Nominal>(new Constant.FunctionOrMethod(f.nid, f.type.nominal()), f.type);
 			}
 		} catch (SyntaxError.InternalFailure e) {
 			throw e;

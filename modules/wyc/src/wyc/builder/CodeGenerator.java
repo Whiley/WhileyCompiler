@@ -713,7 +713,7 @@ public final class CodeGenerator {
 		// FIXME: should really remove Expr.FunctionOrMethod from the AST. This
 		// should be just an Expr.Constant
 		Type.FunctionOrMethod type = expr.type.nominal();
-		Constant.Lambda val = new Constant.Lambda(expr.nid, type);
+		Constant.FunctionOrMethod val = new Constant.FunctionOrMethod(expr.nid, type);
 		Bytecode.Expr operand = new Bytecode.Const(val);
 		return scope.allocate(Nominal.construct(val.type(), val.type()), operand, expr.attributes());
 	}

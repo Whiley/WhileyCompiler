@@ -54,9 +54,7 @@ public class BytecodeTranslators {
 		standardFunctions[OPCODE_arraylength] = new ArrayLength();			
 		standardFunctions[OPCODE_arrayindex] = new ArrayIndex();	
 		standardFunctions[OPCODE_arraygen] = new ArrayGenerator();
-		standardFunctions[OPCODE_array] = new ArrayConstructor();
 		
-		standardFunctions[OPCODE_record] = new RecordConstructor();
 		standardFunctions[OPCODE_dereference] = new Dereference();		
 		standardFunctions[OPCODE_newobject] = new New();
 		standardFunctions[OPCODE_is] = new Is();	
@@ -88,7 +86,6 @@ public class BytecodeTranslators {
 			context.add(new Bytecode.New(WHILEYOBJECT));
 			context.add(new Bytecode.DupX1());
 			context.add(new Bytecode.Swap());
-			context.add(new Bytecode.Load(bytecode.operand(0), elementType));
 			context.addWriteConversion(refType.element());
 			context.add(new Bytecode.Invoke(WHILEYOBJECT, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
 		}		
@@ -312,57 +309,7 @@ public class BytecodeTranslators {
 			context.addWriteConversion(elementType);
 			context.add(new Bytecode.Invoke(WHILEYARRAY, "generate", ftype, Bytecode.InvokeMode.STATIC));
 		}		
-	}
-	private static final class ArrayConstructor implements BytecodeTranslator {
-		@Override
-		public void translate(Operator bytecode, Context.Operand context) {
-			BytecodeForest.Operand operand = context.getOperand();
-			Type.Array arrType = (Type.Array) operand.type(0);
-			JvmType elementType = context.toJvmType(arrType.element());
-			JvmType.Function initJvmType = new JvmType.Function(T_VOID, T_INT);
-			JvmType.Function ftype = new JvmType.Function(WHILEYARRAY, WHILEYARRAY, JAVA_LANG_OBJECT);
-			
-			context.add(new Bytecode.New(WHILEYARRAY));
-			context.add(new Bytecode.Dup(WHILEYARRAY));
-			context.add(new Bytecode.LoadConst(bytecode.operands().length));			
-			context.add(new Bytecode.Invoke(WHILEYARRAY, "<init>", initJvmType, Bytecode.InvokeMode.SPECIAL));
-			
-			// FIXME: this is broken
-			
-			for (int i = 0; i != bytecode.operands().length; ++i) {
-				context.add(new Bytecode.Load(bytecode.operands()[i], elementType));
-				context.addWriteConversion(arrType.element());
-				context.add(new Bytecode.Invoke(WHILEYARRAY, "internal_add", ftype, Bytecode.InvokeMode.STATIC));
-			}
-		}		
-	}
-	
-	private static final class RecordConstructor implements BytecodeTranslator {
-		@Override
-		public void translate(Operator bytecode, Context.Operand context) {
-			BytecodeForest.Operand operand = context.getOperand();
-			Type.EffectiveRecord recType = (Type.EffectiveRecord) operand.type(0); 
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
-			
-			context.construct(WHILEYRECORD);
-			
-			// FIXME: this is broken
-			
-			ArrayList<String> keys = new ArrayList<String>(recType.fields().keySet());
-			Collections.sort(keys);
-			for (int i = 0; i != bytecode.operands().length; i++) {
-				int register = bytecode.operands()[i];
-				String key = keys.get(i);
-				Type fieldType = recType.field(key);
-				context.add(new Bytecode.Dup(WHILEYRECORD));
-				context.add(new Bytecode.LoadConst(key));
-				context.add(new Bytecode.Load(register, context.toJvmType(fieldType)));
-				context.addWriteConversion(fieldType);
-				context.add(new Bytecode.Invoke(WHILEYRECORD, "put", ftype, Bytecode.InvokeMode.VIRTUAL));
-				context.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
-			}
-		}
-	}
+	}	
 	
 	// ====================================================================================
 	// Other

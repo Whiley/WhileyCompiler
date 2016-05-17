@@ -379,12 +379,19 @@ public abstract class Constant implements Comparable<Constant> {
 		}
 	}
 
-	public static final class Lambda extends Constant {
+	/**
+	 * Represents a named function or method. This is used when taking the
+	 * address of a function or method.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class FunctionOrMethod extends Constant {
 		private final NameID name;
 		private final wyil.lang.Type.FunctionOrMethod type;
 		private final ArrayList<Constant> arguments;
 		
-		public Lambda(NameID name, wyil.lang.Type.FunctionOrMethod type, Constant... arguments) {
+		public FunctionOrMethod(NameID name, wyil.lang.Type.FunctionOrMethod type, Constant... arguments) {
 			this.name = name;
 			this.type = type;
 			this.arguments = new ArrayList<Constant>();
@@ -393,7 +400,7 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 		}
 
-		public Lambda(NameID name, wyil.lang.Type.FunctionOrMethod type, Collection<Constant> arguments) {
+		public FunctionOrMethod(NameID name, wyil.lang.Type.FunctionOrMethod type, Collection<Constant> arguments) {
 			this.name = name;
 			this.type = type;
 			this.arguments = new ArrayList<Constant>(arguments);
@@ -414,8 +421,8 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 		}
 		public boolean equals(Object o) {
-			if(o instanceof Lambda) {
-				Lambda i = (Lambda) o;
+			if(o instanceof FunctionOrMethod) {
+				FunctionOrMethod i = (FunctionOrMethod) o;
 				return name.equals(i.name)
 						&& (type == i.type || (type != null && type
 								.equals(i.type))) && arguments.equals(i.arguments);
@@ -423,8 +430,8 @@ public abstract class Constant implements Comparable<Constant> {
 			return false;
 		}
 		public int compareTo(Constant v) {
-			if(v instanceof Lambda) {
-				Lambda t = (Lambda) v;
+			if(v instanceof FunctionOrMethod) {
+				FunctionOrMethod t = (FunctionOrMethod) v;
 				// FIXME: following is an ugly hack!
 				return type.toString().compareTo(t.toString());
 			} else {

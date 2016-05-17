@@ -33,31 +33,32 @@ import wybs.lang.Build;
 import wybs.lang.Builder;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;
+import wycc.lang.SyntaxError.InternalFailure;
 import wycc.util.Logger;
 import wycc.util.Pair;
-import wycc.util.ResolveError;
-import wyautl.util.BigRational;
 import wyfs.io.BinaryOutputStream;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.*;
 import wyil.lang.Constant;
+import wyil.lang.Bytecode.Operator;
+
 import static wyil.lang.Bytecode.*;
 import wyil.util.TypeExpander;
-import wyil.util.interpreter.Interpreter.Context;
 
 import static wyil.util.ErrorMessages.internalFailure;
+import static wyjc.Wyil2JavaBuilder.WHILEYBOOL;
 import static wyjc.Wyil2JavaBuilder.WHILEYUTIL;
 
 import wyjc.util.BytecodeTranslators;
+import wyjc.util.LambdaTemplate;
 import wyjc.util.WyjcBuildTask;
-import jasm.attributes.Code.Handler;
 import jasm.attributes.LineNumberTable;
 import jasm.attributes.SourceFile;
 import jasm.lang.*;
 import jasm.lang.Bytecode;
 import jasm.lang.Modifier;
-import jasm.util.Triple;
+import static jasm.lang.Modifier.*;
 import jasm.verifier.ClassFileVerifier;
 import wyrl.io.JavaIdentifierOutputStream;
 import static jasm.lang.JvmTypes.*;
@@ -105,7 +106,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * The set of generators for individual WyIL bytecodes
 	 */
 	private BytecodeTranslator[] generators;
-	
+
 	/**
 	 * Map of Constant values to their pool index
 	 */
@@ -114,8 +115,13 @@ public class Wyil2JavaBuilder implements Builder {
 	/**
 	 * List of temporary classes created to implement lambda expressions
 	 */
-	private ArrayList<ClassFile> lambdas;
+	private ArrayList<ClassFile> lambdaClasses;
 
+	/**
+	 * List of temporary methods created to implement lambda expressions
+	 */
+	private ArrayList<ClassFile.Method> lambdaMethods;
+	
 	/**
 	 * List of line number entries for current function / method being compiled.
 	 */
@@ -135,9 +141,7 @@ public class Wyil2JavaBuilder implements Builder {
 		return project;
 	}
 
-	public Set<Path.Entry<?>> build(
-			Collection<Pair<Path.Entry<?>, Path.Root>> delta)
-			throws IOException {
+	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta) throws IOException {
 
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
@@ -151,41 +155,39 @@ public class Wyil2JavaBuilder implements Builder {
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			Path.Root dst = p.second();
 			Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
-			Path.Entry<ClassFile> df = dst.create(sf.id(),
-					WyjcBuildTask.ContentType);
+			Path.Entry<ClassFile> df = dst.create(sf.id(), WyjcBuildTask.ContentType);
 			generatedFiles.add(df);
 
 			// Translate WyilFile into JVM ClassFile
-			lambdas = new ArrayList<ClassFile>();
+			
+			// FIXME: put these in the context?
+			
+			lambdaClasses = new ArrayList<ClassFile>();
+			lambdaMethods = new ArrayList<ClassFile.Method>();
 			ClassFile contents = build(sf.read());
-
-			// FIXME: deadCode elimination is currently unsafe because the
-			// LineNumberTable and Exceptions attributes do not deal with
-			// rewrites
-			// properly.
-
-			// eliminate any dead code that was introduced.
-			// new DeadCodeElimination().apply(file);
+			contents.methods().addAll(lambdaMethods);
 
 			// Verify the generated file being written
-			//new ClassFileVerifier().apply(contents);
+			new ClassFileVerifier().apply(contents);
 
 			// Write class file into its destination
 			df.write(contents);
 
-			// Finally, write out any lambda classes created to support the
-			// main class. This is necessary because every occurrence of a
-			// lambda expression in the WyilFile generates an inner class
-			// responsible for calling the given function.
+			// Finally, write out any lambda classes + methods created to
+			// support the main class. This is necessary because every
+			// occurrence of a lambda expression in the WyilFile generates an
+			// inner class responsible for calling the given function.
 			Path.ID parent = df.id();
 			Path.ID pkg = parent.subpath(0, parent.size() - 1);
-			for (int i = 0; i != lambdas.size(); ++i) {
+			for (int i = 0; i != lambdaClasses.size(); ++i) {
 				Path.ID id = pkg.append(parent.last() + "$" + i);
-				Path.Entry<ClassFile> lf = dst.create(id,
-						WyjcBuildTask.ContentType);
-				lf.write(lambdas.get(i));
+				Path.Entry<ClassFile> lf = dst.create(id, WyjcBuildTask.ContentType);
+				ClassFile lc = lambdaClasses.get(i);
+				// Verify generated class file
+				new ClassFileVerifier().apply(lc);
+				lf.write(lc);
 				generatedFiles.add(lf);
-			}
+			}			
 		}
 
 		// ========================================================================
@@ -193,20 +195,16 @@ public class Wyil2JavaBuilder implements Builder {
 		// ========================================================================
 
 		long endTime = System.currentTimeMillis();
-		logger.logTimedMessage("Wyil => Java: compiled " + delta.size()
-				+ " file(s)", endTime - start, memory - runtime.freeMemory());
+		logger.logTimedMessage("Wyil => Java: compiled " + delta.size() + " file(s)", endTime - start,
+				memory - runtime.freeMemory());
 
 		return generatedFiles;
 	}
 
 	private ClassFile build(WyilFile module) {
-		owner = new JvmType.Clazz(module.id().parent().toString()
-				.replace('.', '/'), module.id().last());
-		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
-		modifiers.add(Modifier.ACC_PUBLIC);
-		modifiers.add(Modifier.ACC_FINAL);
-		ClassFile cf = new ClassFile(CLASS_VERSION, owner, JAVA_LANG_OBJECT,
-				new ArrayList<JvmType.Clazz>(), modifiers);
+		owner = new JvmType.Clazz(module.id().parent().toString().replace('.', '/'), module.id().last());
+		List<Modifier> modifiers = modifiers(ACC_PUBLIC, ACC_FINAL);
+		ClassFile cf = new ClassFile(CLASS_VERSION, owner, JAVA_LANG_OBJECT, new ArrayList<JvmType.Clazz>(), modifiers);
 
 		this.filename = module.filename();
 
@@ -229,7 +227,7 @@ public class Wyil2JavaBuilder implements Builder {
 			}
 		}
 
-		buildConstants(constants, lambdas, cf);
+		buildConstants(constants, lambdaClasses, cf);
 
 		if (addMainLauncher) {
 			cf.methods().add(buildMainLauncher(owner));
@@ -238,41 +236,11 @@ public class Wyil2JavaBuilder implements Builder {
 		return cf;
 	}
 
-	private void buildConstants(HashMap<JvmConstant, Integer> constants,
-			ArrayList<ClassFile> lambdas, ClassFile cf) {
-		buildCoercions(constants, cf);
+	private void buildConstants(HashMap<JvmConstant, Integer> constants, ArrayList<ClassFile> lambdas, ClassFile cf) {
 		buildValues(constants, lambdas, cf);
 	}
 
-	private void buildCoercions(HashMap<JvmConstant, Integer> constants,
-			ClassFile cf) {
-		HashSet<JvmConstant> done = new HashSet<JvmConstant>();
-		HashMap<JvmConstant, Integer> original = constants;
-
-		// this could be a little more efficient I think!!
-		while (done.size() != constants.size()) {
-			// We have to clone the constants map, since it may be expanded as a
-			// result of buildCoercion(). This will occur if the coercion
-			// constructed requires a helper coercion that was not in the
-			// original constants map.
-			HashMap<JvmConstant, Integer> nconstants = new HashMap<JvmConstant, Integer>(
-					constants);
-			for (Map.Entry<JvmConstant, Integer> entry : constants.entrySet()) {
-				JvmConstant e = entry.getKey();
-				if (!done.contains(e) && e instanceof JvmCoercion) {
-					JvmCoercion c = (JvmCoercion) e;
-					buildCoercion(c.from, c.to, entry.getValue(), nconstants,
-							cf);
-				}
-				done.add(e);
-			}
-			constants = nconstants;
-		}
-		original.putAll(constants);
-	}
-
-	private void buildValues(HashMap<JvmConstant, Integer> constants,
-			ArrayList<ClassFile> lambdas, ClassFile cf) {
+	private void buildValues(HashMap<JvmConstant, Integer> constants, ArrayList<ClassFile> lambdas, ClassFile cf) {
 		int nvalues = 0;
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 
@@ -282,69 +250,49 @@ public class Wyil2JavaBuilder implements Builder {
 				nvalues++;
 				Constant constant = ((JvmValue) c).value;
 				int index = entry.getValue();
-
 				// First, create the static final field that will hold this
 				// constant
 				String name = "constant$" + index;
-				ArrayList<Modifier> fmods = new ArrayList<Modifier>();
-				fmods.add(Modifier.ACC_PRIVATE);
-				fmods.add(Modifier.ACC_STATIC);
-				fmods.add(Modifier.ACC_FINAL);
+				List<Modifier> fmods = modifiers(ACC_PRIVATE, ACC_STATIC, ACC_FINAL);
 				JvmType type = convertUnderlyingType(constant.type());
 				ClassFile.Field field = new ClassFile.Field(name, type, fmods);
 				cf.fields().add(field);
-
 				// Now, create code to intialise this field
-				translate(constant, 0, bytecodes);
-				bytecodes.add(new Bytecode.PutField(owner, name, type,
-						Bytecode.FieldMode.STATIC));
+				translateConstant(constant, bytecodes);
+				bytecodes.add(new Bytecode.PutField(owner, name, type, Bytecode.FieldMode.STATIC));
 			}
 		}
 
 		if (nvalues > 0) {
 			// create static initialiser method, but only if we really need to.
 			bytecodes.add(new Bytecode.Return(null));
-
-			ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
-			modifiers.add(Modifier.ACC_PUBLIC);
-			modifiers.add(Modifier.ACC_STATIC);
-			modifiers.add(Modifier.ACC_SYNTHETIC);
+			List<Modifier> modifiers = modifiers(ACC_PUBLIC, ACC_STATIC, ACC_SYNTHETIC);
 			JvmType.Function ftype = new JvmType.Function(new JvmType.Void());
-			ClassFile.Method clinit = new ClassFile.Method("<clinit>", ftype,
-					modifiers);
+			ClassFile.Method clinit = new ClassFile.Method("<clinit>", ftype, modifiers);
 			cf.methods().add(clinit);
 
 			// finally add code for staticinitialiser method
-			jasm.attributes.Code code = new jasm.attributes.Code(bytecodes,
-					new ArrayList(), clinit);
+			jasm.attributes.Code code = new jasm.attributes.Code(bytecodes, new ArrayList(), clinit);
 			clinit.attributes().add(code);
 		}
 	}
 
 	private ClassFile.Method buildMainLauncher(JvmType.Clazz owner) {
-		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
-		modifiers.add(Modifier.ACC_PUBLIC);
-		modifiers.add(Modifier.ACC_STATIC);
-		modifiers.add(Modifier.ACC_SYNTHETIC);
-		JvmType.Function ft1 = new JvmType.Function(T_VOID, new JvmType.Array(
-				JAVA_LANG_STRING));
+		List<Modifier> modifiers = modifiers(ACC_PUBLIC, ACC_SYNTHETIC);
+		JvmType.Function ft1 = new JvmType.Function(T_VOID, new JvmType.Array(JAVA_LANG_STRING));
 		ClassFile.Method cm = new ClassFile.Method("main", ft1, modifiers);
 		JvmType.Array strArr = new JvmType.Array(JAVA_LANG_STRING);
 		ArrayList<Bytecode> codes = new ArrayList<Bytecode>();
-		ft1 = new JvmType.Function(WHILEYRECORD, new JvmType.Array(
-				JAVA_LANG_STRING));
+		ft1 = new JvmType.Function(WHILEYRECORD, new JvmType.Array(JAVA_LANG_STRING));
 		codes.add(new Bytecode.Load(0, strArr));
-		codes.add(new Bytecode.Invoke(WHILEYUTIL, "systemConsole", ft1,
-				Bytecode.InvokeMode.STATIC));
-		Type.Method wyft = Type.Method(new Type[0], Collections.<String>emptySet(),
-				Collections.<String>emptyList(), WHILEY_SYSTEM_T);
+		codes.add(new Bytecode.Invoke(WHILEYUTIL, "systemConsole", ft1, Bytecode.InvokeMode.STATIC));
+		Type.Method wyft = Type.Method(new Type[0], Collections.<String> emptySet(), Collections.<String> emptyList(),
+				WHILEY_SYSTEM_T);
 		JvmType.Function ft3 = convertFunType(wyft);
-		codes.add(new Bytecode.Invoke(owner, nameMangle("main", wyft), ft3,
-				Bytecode.InvokeMode.STATIC));
+		codes.add(new Bytecode.Invoke(owner, nameMangle("main", wyft), ft3, Bytecode.InvokeMode.STATIC));
 		codes.add(new Bytecode.Return(null));
 
-		jasm.attributes.Code code = new jasm.attributes.Code(codes,
-				new ArrayList(), cm);
+		jasm.attributes.Code code = new jasm.attributes.Code(codes, new ArrayList(), cm);
 		cm.attributes().add(code);
 
 		return cm;
@@ -357,74 +305,57 @@ public class Wyil2JavaBuilder implements Builder {
 	 */
 	private ClassFile.Method build(WyilFile.Type td) {
 		JvmType underlyingType = convertUnderlyingType(td.type());
-		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
-		modifiers.add(Modifier.ACC_PUBLIC);
-		modifiers.add(Modifier.ACC_STATIC);
-		modifiers.add(Modifier.ACC_SYNTHETIC);
+		List<Modifier> modifiers = modifiers(ACC_PUBLIC, ACC_STATIC, ACC_SYNTHETIC);
 		JvmType.Function funType = new JvmType.Function(T_BOOL, underlyingType);
-		ClassFile.Method cm = new ClassFile.Method(td.name() + "$typeof",
-				funType, modifiers);
-		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
-		// First, generate code for testing elements of type (if any)
-		String falseBranch = freshLabel();
-		// FIXME: this is inefficient in cases where there are no invariants in
-		// component types (e.g. there are no component types).
-		translateInvariantTest(falseBranch, td.type(), 0, td.invariant().numLocations(), constants, bytecodes);
-		// Second, generate code for invariant (if applicable).
-		// FIXME: use of patchInvariantBlock is not ideal
-		BytecodeForest invariant = patchInvariantBlock(falseBranch, td.invariant());
-		for(int i=0;i!=invariant.numRoots();++i) {
-			translate(invariant.getRoot(i), invariant.numLocations(), invariant, bytecodes);
+		ClassFile.Method cm = new ClassFile.Method(td.name() + "$typeof", funType, modifiers);
+		// Generate code for testing elements of type (if any)
+		BytecodeForest invariant = td.invariant();
+		Context context = new Context(-1, invariant);
+		if (invariant.numRoots() > 0) {
+			// In this case, there is one or more invariants to check. To do
+			// this, we chain them together into a sequence of checks.
+			String falseLabel = freshLabel();
+			for (int i = 0; i != invariant.numRoots(); ++i) {
+				translateOperand(invariant.getRoot(i), context);
+				JvmType.Function ft = new JvmType.Function(JvmTypes.T_BOOL);
+				context.add(new Bytecode.Invoke(WHILEYBOOL, "value", ft, Bytecode.InvokeMode.VIRTUAL));
+				if ((i + 1) == invariant.numRoots()) {
+					// This indicates the end of the chain, so we can just
+					// return what we have here.
+					context.add(new Bytecode.Return(new JvmType.Bool()));
+				} else {
+					// This indicates an internal point in the chain, in which
+					// case we can terminate early if we already know the
+					// invariant doesn't hold.
+					context.add(new Bytecode.If(Bytecode.IfMode.EQ, falseLabel));
+				}
+			}
+			if (invariant.numRoots() > 1) {
+				// The following handles cases where one of the checks has
+				// failed. We only need it if more than one invariant was
+				// chained together.
+				context.add(new Bytecode.Label(falseLabel));
+				context.add(new Bytecode.LoadConst(false));
+				context.add(new Bytecode.Return(new JvmType.Bool()));
+			}
+		} else {
+			// No, there are no invariants for this type. Hence, we just return
+			// true to indicate success.
+			context.add(new Bytecode.LoadConst(true));
+			context.add(new Bytecode.Return(new JvmType.Bool()));
 		}
-		bytecodes.add(new Bytecode.LoadConst(true));
-		bytecodes.add(new Bytecode.Return(new JvmType.Bool()));
-		bytecodes.add(new Bytecode.Label(falseBranch));
-		bytecodes.add(new Bytecode.LoadConst(false));
-		bytecodes.add(new Bytecode.Return(new JvmType.Bool()));
 		// Done
-		jasm.attributes.Code code = new jasm.attributes.Code(bytecodes,
-				new ArrayList(), cm);
+		jasm.attributes.Code code = new jasm.attributes.Code(context.getBytecodes(), new ArrayList(), cm);
 		cm.attributes().add(code);
 		return cm;
 	}
 
-	/**
-	 * Update the invariant block to replace fail and return statements with
-	 * goto's and nops (respectively).
-	 * 
-	 * @param falseBranch
-	 * @param forest
-	 */
-	private BytecodeForest patchInvariantBlock(String falseBranch, BytecodeForest forest) {
-		BytecodeForest nForest = new BytecodeForest(forest);
-		for(int i=0;i!=forest.numBlocks();++i) {
-			patchInvariantBlockHelper(falseBranch, nForest.get(i));
-		}
-		return nForest;
-	}
-
-	private void patchInvariantBlockHelper(String falseBranch, BytecodeForest.Block block) {
-		for (int i = 0; i != block.size(); ++i) {
-			// This is still a valid index
-			BytecodeForest.Entry e = block.get(i);
-			wyil.lang.Bytecode c = e.code();
-
-			if (c instanceof Return) {
-				// first patch point
-				block.set(i, new Operator(Type.T_VOID, new int[0], new int[0], OperatorKind.ASSIGN));
-			} else if (c instanceof Fail) {
-				// second patch point
-				block.set(i, new Goto(falseBranch));
-			} 
-		}
-	}
-
 	private List<ClassFile.Method> build(WyilFile.FunctionOrMethod method) {
 		ArrayList<ClassFile.Method> methods = new ArrayList<ClassFile.Method>();
-		
+
 		// Firstly, check to see whether or not this is a native method. Native
 		// methods are treated specially and redirect to the same-named methods,
-		// but with "$native" appended. 
+		// but with "$native" appended.
 		if (method.hasModifier(wyil.lang.Modifier.NATIVE)) {
 			methods.add(buildNativeOrExport(method, constants));
 		} else {
@@ -439,102 +370,134 @@ public class Wyil2JavaBuilder implements Builder {
 			// Finally, translate the method and its body.
 			methods.add(translate(method));
 		}
-		
+
 		return methods;
 	}
 
+	/**
+	 * Construct a trampoline for handling native or export methods. In the
+	 * context of native methods, this generates a method which redirects to a
+	 * method which has the same name, but with "$native" appended on the end.
+	 * This method is implemented elsewhere and must be provided by the author
+	 * of this module. For export methods, this means providing a method without
+	 * name mangling which redirects to the method with name mangling.
+	 * 
+	 * @param method
+	 * @param constants
+	 * @return
+	 */
 	private ClassFile.Method buildNativeOrExport(WyilFile.FunctionOrMethod method,
 			HashMap<JvmConstant, Integer> constants) {
-		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
-		if (method.hasModifier(wyil.lang.Modifier.PUBLIC)
-				|| method.hasModifier(wyil.lang.Modifier.PUBLIC)) {
-			modifiers.add(Modifier.ACC_PUBLIC);
-		}
-		modifiers.add(Modifier.ACC_STATIC);
+		// Preliminaries
+		List<Modifier> modifiers = modifiers(ACC_STATIC,
+				method.hasModifier(wyil.lang.Modifier.PUBLIC) ? ACC_PUBLIC : null);
 		JvmType.Function ft = convertFunType(method.type());
-
+		// Apply name mangling (if applicable)
 		String name = method.name();
 		if (method.hasModifier(wyil.lang.Modifier.NATIVE)) {
 			name = nameMangle(method.name(), method.type());
 		}
-
+		// Construct method body
 		ClassFile.Method cm = new ClassFile.Method(name, ft, modifiers);
-
-		ArrayList<Bytecode> codes;
-		codes = translateNativeOrExport(method);
-		jasm.attributes.Code code = new jasm.attributes.Code(codes,
-				Collections.EMPTY_LIST, cm);
-
+		ArrayList<Bytecode> codes = translateNativeOrExport(method);
+		jasm.attributes.Code code = new jasm.attributes.Code(codes, Collections.EMPTY_LIST, cm);
 		cm.attributes().add(code);
-
+		// Done
 		return cm;
 	}
 
-	private ArrayList<Bytecode> translateNativeOrExport(
-			WyilFile.FunctionOrMethod method) {
-
+	/**
+	 * Construct the body a "trampoline" method for handling native and export
+	 * methods.
+	 * 
+	 * @param method
+	 * @return
+	 */
+	private ArrayList<Bytecode> translateNativeOrExport(WyilFile.FunctionOrMethod method) {
 		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
 		Type.FunctionOrMethod ft = method.type();
 		int slot = 0;
-
+		// Load all parameters provided to this method ontot he stack
 		for (Type param : ft.params()) {
-			bytecodes.add(new Bytecode.Load(slot++,
-					convertUnderlyingType(param)));
+			bytecodes.add(new Bytecode.Load(slot++, convertUnderlyingType(param)));
 		}
-
+		// Determine the target class and method for the invocation
+		JvmType.Clazz targetClass;
+		String targetMethod;
 		if (method.hasModifier(wyil.lang.Modifier.NATIVE)) {
-			JvmType.Clazz redirect = new JvmType.Clazz(owner.pkg(), owner
-					.components().get(0).first(), "native");
-			bytecodes.add(new Bytecode.Invoke(redirect, method.name(),
-					convertFunType(ft), Bytecode.InvokeMode.STATIC));
+			targetClass = new JvmType.Clazz(owner.pkg(), owner.components().get(0).first(), "native");
+			targetMethod = method.name();
 		} else {
-			JvmType.Clazz redirect = new JvmType.Clazz(owner.pkg(), owner
-					.components().get(0).first());
-			bytecodes.add(new Bytecode.Invoke(redirect, nameMangle(
-					method.name(), method.type()), convertFunType(ft),
-					Bytecode.InvokeMode.STATIC));
+			targetClass = new JvmType.Clazz(owner.pkg(), owner.components().get(0).first());
+			targetMethod = nameMangle(method.name(), method.type());
 		}
-
-		if (ft.returns().isEmpty()) {
-			bytecodes.add(new Bytecode.Return(null));
-		} else {
-			bytecodes.add(new Bytecode.Return(convertUnderlyingType(ft.returns().get(0))));
+		// Perform the invocation itself which constitutes the "trampoline"
+		bytecodes.add(new Bytecode.Invoke(targetClass, targetMethod, convertFunType(ft), Bytecode.InvokeMode.STATIC));
+		// Finally, return any values obtained from the invocation as necessary
+		JvmType returnType = null;
+		if (!ft.returns().isEmpty()) {
+			returnType = convertUnderlyingType(ft.returns().get(0));
 		}
-
+		bytecodes.add(new Bytecode.Return(returnType));
+		// Done
 		return bytecodes;
 	}
 
+	/**
+	 * Translate a given method or function. This generates a corresponding
+	 * function or method on the JVM which has the same name, plus a type
+	 * mangle.
+	 * 
+	 * @param method
+	 * @return
+	 */
 	private ClassFile.Method translate(WyilFile.FunctionOrMethod method) {
-
-		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
-		if (method.hasModifier(wyil.lang.Modifier.PUBLIC)) {
-			modifiers.add(Modifier.ACC_PUBLIC);
-		}
-		modifiers.add(Modifier.ACC_STATIC);
+		// Preliminaries
+		List<Modifier> modifiers = modifiers(ACC_STATIC,
+				method.hasModifier(wyil.lang.Modifier.PUBLIC) ? ACC_PUBLIC : null);
 		JvmType.Function ft = convertFunType(method.type());
-
+		// Construct the method itself
 		String name = nameMangle(method.name(), method.type());
-		
 		ClassFile.Method cm = new ClassFile.Method(name, ft, modifiers);
-
+		// Translate the method body
 		lineNumbers = new ArrayList<LineNumberTable.Entry>();
-		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
-		BytecodeForest forest = method.code();
-		translate(method.body(), forest.numLocations(), forest, bytecodes);
-		jasm.attributes.Code code = new jasm.attributes.Code(bytecodes,
-				Collections.EMPTY_LIST, cm);
+		Context context = new Context(method.body(), method.code());
+		translateAllWithin(context);
+		// Add return bytecode (if necessary)
+		addReturnBytecode(context);
+		//
+		jasm.attributes.Code code = new jasm.attributes.Code(context.getBytecodes(), Collections.EMPTY_LIST, cm);
 		if (!lineNumbers.isEmpty()) {
 			code.attributes().add(new LineNumberTable(lineNumbers));
 		}
 		cm.attributes().add(code);
-
+		// Done
 		return cm;
+	}
+
+	/**
+	 * Every JVM method must be terminated by a return bytecode. This method
+	 * simply adds one if none was already generated.
+	 * 
+	 * @param context
+	 */
+	private void addReturnBytecode(Context context) {
+		List<Bytecode> bytecodes = context.getBytecodes();
+		if (bytecodes.size() > 0) {
+			Bytecode last = bytecodes.get(bytecodes.size() - 1);
+			if (last instanceof Bytecode.Return) {
+				// No return bytecode is needed
+				return;
+			}
+		}
+		// A return bytecode is needed
+		bytecodes.add(new Bytecode.Return(null));
 	}
 
 	// ===============================================================================
 	// Statements & Blocks
 	// ===============================================================================
-	
+
 	/**
 	 * Translates all bytecodes in a given code block. This may be an outermost
 	 * block, or a nested block as part of e.g. a loop.
@@ -549,18 +512,10 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param bytecodes
 	 *            List of bytecodes being accumulated
 	 */
-	private void translate(int blockID, int freeSlot, BytecodeForest forest, ArrayList<Bytecode> bytecodes) {
-		BytecodeForest.Index pc = new BytecodeForest.Index(blockID, 0);
-		BytecodeForest.Block block = forest.get(pc.block());
-		for (int i = 0; i != block.size(); ++i) {
-			BytecodeForest.Index index = new BytecodeForest.Index(pc.block(), i);
-			Attribute.Source loc = forest.get(index).attribute(Attribute.Source.class);
-			if (loc != null) {
-				// FIXME: figure our how to get line number!
-				// lineNumbers.add(new
-				// LineNumberTable.Entry(bytecodes.size(),loc.line));
-			}
-			freeSlot = translate(index, block.get(i).code(), freeSlot, forest, bytecodes);
+	private void translateAllWithin(Context context) {
+		while (context.hasNext()) {
+			translate(context.getStatement(), context);
+			context.nextStatement();
 		}
 	}
 
@@ -569,69 +524,131 @@ public class Wyil2JavaBuilder implements Builder {
 	 * bytecodes. The bytecode index is given to help with debugging (i.e. to
 	 * extract attributes associated with the given bytecode).
 	 * 
-	 * @param pc
-	 *            The index of the WyIL bytecode being translated in the
-	 *            forest.
-	 * @param code
-	 *            The WyIL bytecode being translated.
-	 * @param freeSlot
-	 *            The first available free JVM register slot
-	 * @param bytecodes
-	 *            The list of bytecodes being accumulated
-	 * @return
 	 */
-	private int translate(BytecodeForest.Index pc, wyil.lang.Bytecode.Stmt code, int freeSlot, BytecodeForest forest,
-			ArrayList<Bytecode> bytecodes) {
-
+	private void translate(wyil.lang.Bytecode.Stmt code, Context context) {
 		try {
-			if (code instanceof AssertOrAssume) {
-				translate(pc, (AssertOrAssume) code, freeSlot, forest,
-						bytecodes);
-			} else if (code instanceof Assign) {
-				translate(pc, (Assign) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof Debug) {
-				translate(pc, (Debug) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof Fail) {
-				translate(pc, (Fail) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof If) {
-				translate(pc, (If) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof While) {
-				translate(pc, (While) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof Return) {
-				translate(pc, (Return) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof Switch) {
-				translate(pc, (Switch) code, freeSlot, forest, bytecodes);
-			} else {
-				internalFailure("unknown wyil code encountered (" + code + ")",
-						filename,
-						forest.get(pc).attribute(Attribute.Source.class));
+			switch (code.opcode()) {
+			case OPCODE_assert:
+			case OPCODE_assume:
+				translate((AssertOrAssume) code, context);
+				break;
+			case OPCODE_assign:
+				translate((Assign) code, context);
+				break;
+			case OPCODE_break:
+				translate((Break) code, context);
+				break;
+			case OPCODE_continue:
+				translate((Continue) code, context);
+				break;
+			case OPCODE_debug:
+				translate((Debug) code, context);
+				break;
+			case OPCODE_dowhile:
+				translate((DoWhile) code, context);
+				break;
+			case OPCODE_fail:
+				translate((Fail) code, context);
+				break;
+			case OPCODE_if:
+				translate((If) code, context);
+				break;
+			case OPCODE_while:
+				translate((While) code, context);
+				break;
+			case OPCODE_return:
+				translate((Return) code, context);
+				break;
+			case OPCODE_switch:
+				translate((Switch) code, context);
+				break;
+			default:
+				internalFailure("unknown wyil code encountered (" + code + ")", filename,
+						context.attribute(Attribute.Source.class));
 			}
-
+		} catch (InternalFailure ex) {
+			throw ex;
 		} catch (Exception ex) {
-			internalFailure(ex.getMessage(), filename, ex,
-					forest.get(pc).attribute(Attribute.Source.class));
+			internalFailure(ex.getMessage(), filename, ex, context.attribute(Attribute.Source.class));
 		}
-
-		return freeSlot;
 	}
-	
 
-	private void translate(BytecodeForest.Index index, AssertOrAssume c,
-			int freeSlot, BytecodeForest forest, ArrayList<Bytecode> bytecodes) {
-		BytecodeForest.Index pc = new BytecodeForest.Index(c.body(), 0);
-		if(c instanceof Invariant) {
-			// essentially a no-op for now			
+	private void translate(AssertOrAssume c, Context context) {
+		String trueLabel = freshLabel();
+		translateCondition(c.operand(), trueLabel, null, context);
+		construct(JAVA_LANG_RUNTIMEEXCEPTION, context.getBytecodes());
+		context.add(new Bytecode.Throw());
+		context.add(new Bytecode.Label(trueLabel));
+	}
+
+	/**
+	 * Translate an assignment statement.
+	 * 
+	 * @param code
+	 * @param context
+	 */
+	private void translate(Assign code, Context context) {
+		int[] lhs = code.leftHandSide();
+		int[] rhs = code.rightHandSide();
+		// Translate and construct the lvals for this assignment. This
+		// will store all lval operands (e.g. array indices) into their
+		// corresponding operand register. To preserve the semantics of Whiley,
+		// we must translate the lhs before the rhs.
+		LVal[] lvals = translateLVals(lhs, context);
+		// Translate the operands in reverse order onto the stack, produce a
+		// type for each operand produced. The number of types may be larger
+		// than the number of rhs opeands in the case of an operand with
+		// multiple return values.
+		List<JvmType> types = translateOperands(rhs, context);
+
+		if (types.size() > rhs.length) {
+			// Should ensure multiple returns span multiple operands, rather
+			// than just one as currently so.
+			throw new IllegalArgumentException("Implement support for multiple returns");
+		}		
+		
+		// FIXME: need proper support for multiple operands
+		
+		// Now, store each operand into the slot location so that we can more
+		// easily access it later.
+		for (int i = types.size() - 1; i >= 0; i = i - 1) {
+			context.add(new Bytecode.Store(rhs[i], types.get(i)));
+		}
+		// Assign each operand to the target lval.
+		int i = 0;
+		for (; i != lhs.length; ++i) {
+			translateSimpleAssign(lvals[i], rhs[i], context);
+		}
+		// Finally, pop any remaining operands off the stack. This can happen if
+		// values are being discarded.
+		for (; i < types.size(); ++i) {
+			context.add(new Bytecode.Pop(types.get(i)));
+		}
+	}
+
+	/**
+	 * Translate a simple assignment statement. This is one which is assigning a
+	 * single value into an lval, which could be either a variable, a field
+	 * assignment, an array element assignment or a dereference assignment. The
+	 * assigned value is assumed to have already been loaded on the stack.
+	 * 
+	 * @param lhs
+	 * @param rhsType
+	 */
+	private void translateSimpleAssign(LVal lhs, int rhs, Context context) {
+		JvmType type = convertUnderlyingType(context.getLocation(lhs.variable).type(0));
+		if (lhs.path.size() > 0) {
+			// This is the complex case of an assignment to an element of a
+			// compound.
+			context.add(new Bytecode.Load(lhs.variable, type));
+			translateUpdate(lhs.path.iterator(), rhs, context);
+			context.add(new Bytecode.Store(lhs.variable, type));
 		} else {
-			translate(pc, freeSlot, forest, bytecodes);
+			// This is the simple case of a direct assignment to a single
+			// variable.
+			context.add(new Bytecode.Load(rhs, type));
+			context.add(new Bytecode.Store(lhs.variable, type));
 		}
-	}
-	
-
-	private void translate(BytecodeForest.Index index, Assign code, int freeSlot, BytecodeForest forest,
-			ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Load(code.target(0), convertUnderlyingType(code.type(0))));
-		translateUpdate(code.iterator(), code, bytecodes);
-		bytecodes.add(new Bytecode.Store(code.target(0), convertUnderlyingType(code.afterType())));
 	}
 
 	/**
@@ -653,23 +670,19 @@ public class Wyil2JavaBuilder implements Builder {
 	 * 
 	 * @param iterator
 	 *            --- Update iterator.
-	 * @param code
-	 *            --- The enclosing bytecode.
-	 * @param bytecodes
-	 *            --- List of bytecodes to append to.
+	 * @param context
 	 */
-	private void translateUpdate(Iterator<LVal> iterator,
-			Assign code, ArrayList<Bytecode> bytecodes) {
+	private void translateUpdate(Iterator<LVal.Element<?>> iterator, int rhs, Context context) {
 		// At this point, we have not yet reached the "innermost" position.
 		// Therefore, we keep recursing down the chain of LVals.
-		LVal lv = iterator.next();
-		if (lv instanceof ArrayLVal) {
-			translateUpdate((ArrayLVal) lv,iterator,code,bytecodes);
-		} else if (lv instanceof RecordLVal) {
-			translateUpdate((RecordLVal) lv,iterator,code,bytecodes);
+		LVal.Element<?> lv = iterator.next();
+		if (lv instanceof LVal.Array) {
+			translateUpdate((LVal.Array) lv, iterator, rhs, context);
+		} else if (lv instanceof LVal.Record) {
+			translateUpdate((LVal.Record) lv, iterator, rhs, context);
 		} else {
-			translateUpdate((ReferenceLVal) lv,iterator,code,bytecodes);
-		}		
+			translateUpdate((LVal.Reference) lv, iterator, rhs, context);
+		}
 	}
 
 	/**
@@ -694,590 +707,1082 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param code
 	 * @param bytecodes
 	 */
-	private void translateUpdate(ArrayLVal lval, Iterator<LVal> iterator, Assign code,
-			ArrayList<Bytecode> bytecodes) {
-		
-		if(iterator.hasNext()) {
+	private void translateUpdate(LVal.Array lval, Iterator<LVal.Element<?>> iterator, int rhs, Context context) {
+		if (iterator.hasNext()) {
 			// This is not the innermost case, hence we read out the current
 			// value of the location being assigned and pass that forward to the
 			// next stage.
-			bytecodes.add(new Bytecode.Dup(WHILEYARRAY));
-			bytecodes.add(new Bytecode.Load(lval.indexOperand, WHILEYINT));
+			context.add(new Bytecode.Dup(WHILEYARRAY));
+			context.add(new Bytecode.Load(lval.index, WHILEYINT));
 			JvmType.Function getFunType = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYARRAY, WHILEYINT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "internal_get", getFunType, Bytecode.InvokeMode.STATIC));
-			addReadConversion(lval.rawType().element(), bytecodes);
-			translateUpdate(iterator, code, bytecodes);
-			bytecodes.add(new Bytecode.Load(lval.indexOperand, WHILEYINT));
-			bytecodes.add(new Bytecode.Swap());
+			context.add(new Bytecode.Invoke(WHILEYARRAY, "internal_get", getFunType, Bytecode.InvokeMode.STATIC));
+			addReadConversion(lval.type.element(), context.getBytecodes());
+			translateUpdate(iterator, rhs, context);
+			context.add(new Bytecode.Load(lval.index, WHILEYINT));
+			context.add(new Bytecode.Swap());
 		} else {
 			// This is the innermost case, hence we can avoid the unnecessary
 			// read of the current value and, instead, just return the rhs value
 			// directly.
-			bytecodes.add(new Bytecode.Load(lval.indexOperand, WHILEYINT));
-			bytecodes.add(new Bytecode.Load(code.type(), convertUnderlyingType(lval.rawType().element())));
-			addWriteConversion(code.rightHandSide(), bytecodes);
+			Type type = lval.type.element();
+			context.add(new Bytecode.Load(lval.index, WHILEYINT));
+			context.add(new Bytecode.Load(rhs, convertUnderlyingType(type)));
+			addWriteConversion(type, context.getBytecodes());
 		}
 		JvmType.Function setFunType = new JvmType.Function(WHILEYARRAY, WHILEYARRAY, WHILEYINT, JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "set", setFunType, Bytecode.InvokeMode.STATIC));
+		context.add(new Bytecode.Invoke(WHILEYARRAY, "set", setFunType, Bytecode.InvokeMode.STATIC));
 	}
-	
-	private void translateUpdate(RecordLVal lval, Iterator<LVal> iterator, Assign code,
-			ArrayList<Bytecode> bytecodes) {
-		Type.EffectiveRecord type = lval.rawType();
 
-		if(iterator.hasNext()) {
+	private void translateUpdate(LVal.Record lval, Iterator<LVal.Element<?>> iterator, int rhs, Context context) {
+		Type.EffectiveRecord type = lval.type;
+		if (iterator.hasNext()) {
 			// This is not the innermost case, hence we read out the current
 			// value of the location being assigned and pass that forward to the
 			// next stage.
-			bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
-			bytecodes.add(new Bytecode.LoadConst(lval.field));
+			context.add(new Bytecode.Dup(WHILEYRECORD));
+			context.add(new Bytecode.LoadConst(lval.field));
 			JvmType.Function getFunType = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYRECORD, JAVA_LANG_STRING);
-			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "internal_get", getFunType, Bytecode.InvokeMode.STATIC));
-			addReadConversion(type.field(lval.field), bytecodes);
-			translateUpdate(iterator, code, bytecodes);
-			bytecodes.add(new Bytecode.LoadConst(lval.field));
-			bytecodes.add(new Bytecode.Swap());		
+			context.add(new Bytecode.Invoke(WHILEYRECORD, "internal_get", getFunType, Bytecode.InvokeMode.STATIC));
+			addReadConversion(type.field(lval.field), context.getBytecodes());
+			translateUpdate(iterator, rhs, context);
+			context.add(new Bytecode.LoadConst(lval.field));
+			context.add(new Bytecode.Swap());
 		} else {
 			// This is the innermost case, hence we can avoid the unnecessary
 			// read of the current value and, instead, just return the rhs value
 			// directly.
-			bytecodes.add(new Bytecode.LoadConst(lval.field));
-			bytecodes.add(new Bytecode.Load(code.type(), convertUnderlyingType(type.field(lval.field))));
-			addWriteConversion(type.field(lval.field), bytecodes);
+			context.add(new Bytecode.LoadConst(lval.field));
+			context.add(new Bytecode.Load(rhs, convertUnderlyingType(type.field(lval.field))));
+			addWriteConversion(type.field(lval.field), context.getBytecodes());
 		}
-		JvmType.Function putFunType = new JvmType.Function(WHILEYRECORD, WHILEYRECORD, JAVA_LANG_STRING, JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "put", putFunType, Bytecode.InvokeMode.STATIC));
+		JvmType.Function putFunType = new JvmType.Function(WHILEYRECORD, WHILEYRECORD, JAVA_LANG_STRING,
+				JAVA_LANG_OBJECT);
+		context.add(new Bytecode.Invoke(WHILEYRECORD, "put", putFunType, Bytecode.InvokeMode.STATIC));
 	}
 
-	private void translateUpdate(ReferenceLVal lval, Iterator<LVal> iterator, Assign code,
-			ArrayList<Bytecode> bytecodes) {
-		if(iterator.hasNext()) {
+	private void translateUpdate(LVal.Reference lval, Iterator<LVal.Element<?>> iterator, int rhs, Context context) {
+		if (iterator.hasNext()) {
 			// This is not the innermost case, hence we read out the current
 			// value of the location being assigned and pass that forward to the
 			// next stage.
-			bytecodes.add(new Bytecode.Dup(WHILEYOBJECT));
+			context.add(new Bytecode.Dup(WHILEYOBJECT));
 			JvmType.Function getFunType = new JvmType.Function(JAVA_LANG_OBJECT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "state", getFunType, Bytecode.InvokeMode.VIRTUAL));
-			addReadConversion(lval.rawType().element(), bytecodes);
-			translateUpdate(iterator, code, bytecodes);
+			context.add(new Bytecode.Invoke(WHILEYOBJECT, "state", getFunType, Bytecode.InvokeMode.VIRTUAL));
+			addReadConversion(lval.type.element(), context.getBytecodes());
+			translateUpdate(iterator, rhs, context);
 		} else {
 			// This is the innermost case, hence we can avoid the unnecessary
 			// read of the current value and, instead, just return the rhs value
 			// directly.
-			JvmType rhsJvmType = convertUnderlyingType(code.rightHandSide());
-			bytecodes.add(new Bytecode.Load(code.type(),rhsJvmType));
+			JvmType rhsJvmType = convertUnderlyingType(lval.type.element());
+			context.add(new Bytecode.Load(rhs, rhsJvmType));
 		}
 		JvmType.Function setFunType = new JvmType.Function(WHILEYOBJECT, JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "setState", setFunType, Bytecode.InvokeMode.VIRTUAL));
+		context.add(new Bytecode.Invoke(WHILEYOBJECT, "setState", setFunType, Bytecode.InvokeMode.VIRTUAL));
 	}
 
-	private void translate(BytecodeForest.Index index, Debug c, int freeSlot,
-			BytecodeForest forest, ArrayList<Bytecode> bytecodes) {
+	private void translate(Break c, Context context) {
+		context.add(new Bytecode.Goto(context.getBreakLabel()));
+	}
+	
+	private void translate(Continue c, Context context) {
+		context.add(new Bytecode.Goto(context.getContinueLabel()));
+	}
+	
+	private void translate(Debug c, Context context) {
 		JvmType.Function ftype = new JvmType.Function(T_VOID, WHILEYARRAY);
-		bytecodes.add(new Bytecode.Load(c.operand(0), WHILEYARRAY));
-		bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "print", ftype, Bytecode.InvokeMode.STATIC));
+		translateOperand(c.operand(0), context);
+		context.add(new Bytecode.Invoke(WHILEYUTIL, "print", ftype, Bytecode.InvokeMode.STATIC));
 	}
 
-	private void translate(BytecodeForest.Index index, Fail c, int freeSlot, BytecodeForest forest, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.New(JAVA_LANG_RUNTIMEEXCEPTION));
-		bytecodes.add(new Bytecode.Dup(JAVA_LANG_RUNTIMEEXCEPTION));
-		bytecodes.add(new Bytecode.LoadConst("runtime fault encountered"));
-		JvmType.Function ftype = new JvmType.Function(T_VOID, JAVA_LANG_STRING);
-		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_RUNTIMEEXCEPTION, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
-		bytecodes.add(new Bytecode.Throw());
-	}
-	
-	private void translate(BytecodeForest.Index index, If code, int freeSlot, BytecodeForest forest,
-			ArrayList<Bytecode> bytecodes) {
-		String falseLabel = freshLabel();
-		JvmType.Function ftype = new JvmType.Function(T_BOOL);
-		bytecodes.add(new Bytecode.Load(code.operand(0), WHILEYBOOL));
-		bytecodes.add(new Bytecode.Invoke(WHILEYBOOL, "value", ftype, Bytecode.InvokeMode.VIRTUAL));
-		bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, falseLabel));
-		translate(new BytecodeForest.Index(code.trueBranch(), 0), freeSlot, forest, bytecodes);
-		if(code.hasFalseBranch()) {
-			String exitLabel = freshLabel();
-			bytecodes.add(new Bytecode.Goto(exitLabel));
-			bytecodes.add(new Bytecode.Label(falseLabel));
-			translate(new BytecodeForest.Index(code.falseBranch(), 0), freeSlot, forest, bytecodes);
-			bytecodes.add(new Bytecode.Label(exitLabel));
-		} else {
-			bytecodes.add(new Bytecode.Label(falseLabel));
-		}
-	}
-	
-	private void translate(BytecodeForest.Index index, Return c, int freeSlot,
-			BytecodeForest forest, ArrayList<Bytecode> bytecodes) {
-		JvmType jt = null;
-		int[] operands = c.operands();
-		 if(operands.length == 1) {
-			jt = convertUnderlyingType(c.type(0));
-			bytecodes.add(new Bytecode.Load(operands[0], jt));
-			bytecodes.add(new Bytecode.Return(jt));
-		} else if(operands.length > 1){
-			jt = JAVA_LANG_OBJECT_ARRAY;
-			encodeOperandArray(c.types(),c.operands(),bytecodes);			
-		}
-		bytecodes.add(new Bytecode.Return(jt));
-	}
-	
-
-	private void translate(BytecodeForest.Index index, Switch c, int freeSlot,
-			BytecodeForest forest, ArrayList<Bytecode> bytecodes) {
-
-		ArrayList<jasm.util.Pair<Integer, String>> cases = new ArrayList();
-		boolean canUseSwitchBytecode = true;
-		for (Pair<Constant, String> p : c.branches()) {
-			// first, check whether the switch value is indeed an integer.
-			Constant v = (Constant) p.first();
-			if (!(v instanceof Constant.Integer)) {
-				canUseSwitchBytecode = false;
-				break;
-			}
-			// second, check whether integer value can fit into a Java int
-			Constant.Integer vi = (Constant.Integer) v;
-			int iv = vi.value().intValue();
-			if (!BigInteger.valueOf(iv).equals(vi.value())) {
-				canUseSwitchBytecode = false;
-				break;
-			}
-			// ok, we're all good so far
-			cases.add(new jasm.util.Pair(iv, p.second()));
-		}
-
-		if (canUseSwitchBytecode) {
-			JvmType.Function ftype = new JvmType.Function(T_INT);
-			bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0))));
-			bytecodes.add(new Bytecode.Invoke(WHILEYINT, "intValue", ftype, Bytecode.InvokeMode.VIRTUAL));
-			bytecodes.add(new Bytecode.Switch(c.defaultTarget(), cases));
-		} else {
-			// ok, in this case we have to fall back to series of the if
-			// conditions. Not ideal.
-			for (Pair<Constant, String> p : c.branches()) {
-				Constant value = p.first();
-				String target = p.second();
-				translate(value, freeSlot, bytecodes);
-				bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0))));
-				JvmType.Function ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
-				bytecodes.add(new Bytecode.Invoke(WHILEYUTIL, "equals", ftype, Bytecode.InvokeMode.STATIC));
-				bytecodes.add(new Bytecode.If(Bytecode.IfMode.NE, target));
-
-			}
-			bytecodes.add(new Bytecode.Goto(c.defaultTarget()));
-		}
-	}
-	
-
-	private void translate(BytecodeForest.Index index, wyil.lang.Bytecode.While c, int freeSlot, BytecodeForest forest,
-			ArrayList<Bytecode> bytecodes) {
+	private void translate(DoWhile c, Context context) {
 		// Allocate header label for loop
-		String loopHeader = freshLabel();
-		bytecodes.add(new Bytecode.Label(loopHeader));
-		// Translate body of loop. The cast is required to ensure correct method
-		// is called.
-		translate(c.body(), freeSlot, forest, bytecodes);
-		// Terminate loop by branching back to head of loop
-		bytecodes.add(new Bytecode.Goto(loopHeader));
+		String headerLabel = freshLabel();
+		String breakLabel = freshLabel();
+		context.add(new Bytecode.Label(headerLabel));
+		// Translate body of loop.
+		Context bodyContext = context.newLoopBlock(c.body(),breakLabel,headerLabel);
+		translateAllWithin(bodyContext);
+		// Translate the loop condition.
+		translateCondition(c.condition(), headerLabel, null, context);
+		context.add(new Bytecode.Label(breakLabel));
 	}
 
+	private void translate(Fail c, Context context) {
+		context.add(new Bytecode.New(JAVA_LANG_RUNTIMEEXCEPTION));
+		context.add(new Bytecode.Dup(JAVA_LANG_RUNTIMEEXCEPTION));
+		context.add(new Bytecode.LoadConst("runtime fault encountered"));
+		JvmType.Function ftype = new JvmType.Function(T_VOID, JAVA_LANG_STRING);
+		context.add(new Bytecode.Invoke(JAVA_LANG_RUNTIMEEXCEPTION, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
+		context.add(new Bytecode.Throw());
+	}
+
+	private void translate(If code, Context context) {
+		String exitLabel = freshLabel();
+		String falseLabel = code.hasFalseBranch() ? freshLabel() : exitLabel;
+		// First, translate the condition
+		translateCondition(code.condition(), null, falseLabel, context);
+		// Second, translate the true branch
+		translateAllWithin(context.newBlock(code.trueBranch()));
+		if (code.hasFalseBranch()) {
+			// Third, translate false branch (if applicable)
+			context.add(new Bytecode.Goto(exitLabel));
+			context.add(new Bytecode.Label(falseLabel));
+			translateAllWithin(context.newBlock(code.falseBranch()));
+			context.add(new Bytecode.Label(exitLabel));
+		} else {
+			context.add(new Bytecode.Label(falseLabel));
+		}
+	}
+
+	private void translate(Return c, Context context) {
+		int[] operands = c.operands();
+		JvmType rt;
+		//
+		switch (operands.length) {
+		case 0:
+			// No return value.
+			rt = null;
+			break;
+		case 1:
+			// Exactly one return value, so we can return it directly.
+			translateOperand(operands[0], context);
+			// Determine return type
+			BytecodeForest.Location operand = context.getLocation(operands[0]);
+			rt = convertUnderlyingType(operand.type(0));
+			break;
+		default:
+			// More than one return value. In this case, we need to encode the
+			// return values into an object array. This is annoying, but it's
+			// because Java doesn't support multiple return values.
+			rt = JAVA_LANG_OBJECT_ARRAY;
+			// FIXME: implement this
+			throw new RuntimeException("Multiple returns not implemented!");
+		}
+		// Done
+		context.add(new Bytecode.Return(rt));
+	}
+
+	private void translate(Switch code, Context context) {
+		String exitLabel = freshLabel();
+		BytecodeForest.Location loc = context.getLocation(code.operand());
+		JvmType type = convertUnderlyingType(loc.type(0));
+		// Translate condition into a value and store into a temporary register.
+		// This is necessary because, according to the semantics of Whiley, we
+		// can only execute the condition expression once.
+		translateOperand(code.operand(), context);
+		context.add(new Bytecode.Store(code.operand(), type));
+		ArrayList<Pair<String, Case>> cases = new ArrayList<Pair<String, Case>>();
+		// Generate the dispatch table which checks the condition value against
+		// each of the case constants. If a match is found, we branch to a given
+		// label demarking the start of the case body (which will be translated
+		// later). In principle, using a tableswitch bytecode would be better
+		// here.
+		boolean hasDefault = false;
+		for (Case c : code.cases()) {
+			Constant[] values = c.values();
+			String caseLabel = freshLabel();
+			if (values.length == 0) {
+				// In this case, we have a default target which corresponds to
+				// an unconditional branch
+				context.add(new Bytecode.Goto(caseLabel));
+				hasDefault = true;
+			} else {
+				for (Constant value : values) {
+					translateConstant(value, context.getBytecodes());
+					context.add(new Bytecode.Load(code.operand(), type));
+					JvmType.Function ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
+					context.add(new Bytecode.Invoke(WHILEYUTIL, "equals", ftype, Bytecode.InvokeMode.STATIC));
+					context.add(new Bytecode.If(Bytecode.IfMode.NE, caseLabel));
+				}
+			}
+			cases.add(new Pair<String, Case>(caseLabel, c));
+		}
+		// If there was no default case, then add an unconditional branch over
+		// the case bodies to the end of the switch.
+		if (!hasDefault) {
+			context.add(new Bytecode.Goto(exitLabel));
+		}
+		// Translate each of the case bodies in turn.
+		for (Pair<String, Case> p : cases) {
+			context.add(new Bytecode.Label(p.first()));
+			translateAllWithin(context.newBlock(p.second().block()));
+			context.add(new Bytecode.Goto(exitLabel));
+		}
+		// Finally, mark out the exit point of the switch
+		context.add(new Bytecode.Label(exitLabel));
+	}
+
+	private void translate(While c, Context context) {
+		// Allocate header label for loop
+		String headerLabel = freshLabel();
+		String exitLabel = freshLabel();
+		context.add(new Bytecode.Label(headerLabel));
+		// Translate the loop condition.
+		translateCondition(c.condition(), null, exitLabel, context);
+		// Translate body of loop.
+		Context bodyContext = context.newLoopBlock(c.body(),exitLabel,headerLabel);
+		translateAllWithin(bodyContext);
+		// Terminate loop by branching back to head of loop
+		context.add(new Bytecode.Goto(headerLabel));
+		// This is where we exit the loop
+		context.add(new Bytecode.Label(exitLabel));
+	}
+
+	// ===============================================================================
+	// LVals
+	// ===============================================================================
+
+	/**
+	 * Construct an array of LVals, one for each operand on the left-hand side
+	 * of an assignment. Each LVal provides a simple "path" representation of
+	 * the left-hand side with which we can more easily generate code for
+	 * implement the update.
+	 * 
+	 * @param lval
+	 *            LVal operand to translate
+	 * @param context
+	 * @return
+	 */
+	public LVal[] translateLVals(int[] lvals, Context context) {
+		LVal[] vals = new LVal[lvals.length];
+		for (int i = 0; i != vals.length; ++i) {
+			LVal lval = generateLVal(lvals[i], context);
+			translateLVal(lval, context);
+			vals[i] = lval;
+		}
+		return vals;
+	}
+
+	/**
+	 * <p>
+	 * Translate any operands for an LVal expression in left-to-right order.
+	 * This only applies to array lvals, as these have operands which need to be
+	 * evaluated.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> For simplicity, we just load any lval operands into their
+	 * corresponding bytecode registers.
+	 * </p>
+	 * 
+	 * @param lval
+	 * @param context
+	 */
+	public void translateLVal(LVal lval, Context context) {
+		for (LVal.Element<?> e : lval.path) {
+			if (e instanceof LVal.Array) {
+				LVal.Array ae = (LVal.Array) e;
+				translateOperand(ae.index, context);
+				context.add(new Bytecode.Store(ae.index, WHILEYINT));
+			}
+		}
+	}
+
+	/**
+	 * Generate an LVal expression from the left-hand side of an assignment. An
+	 * LVal expression is basically just a path representation of the lhs
+	 * expression.
+	 * 
+	 * @param lval
+	 *            LVal operand to translate
+	 * @param context
+	 * @return
+	 */
+	public LVal generateLVal(int lval, Context context) {
+		BytecodeForest.Location loc = context.getLocation(lval);
+		ArrayList<LVal.Element<?>> path = new ArrayList<LVal.Element<?>>();
+		while (loc instanceof BytecodeForest.Operand) {
+			BytecodeForest.Operand lv = (BytecodeForest.Operand) loc;
+			wyil.lang.Bytecode.Expr code = lv.value();
+			switch (code.opcode()) {
+			case OPCODE_fieldload:
+				Type.EffectiveRecord recType = (Type.EffectiveRecord) lv.type(0);
+				wyil.lang.Bytecode.FieldLoad fl = (wyil.lang.Bytecode.FieldLoad) code;
+				path.add(new LVal.Record(recType, fl.fieldName()));
+				lval = fl.operand();
+				break;
+			case OPCODE_arrayindex:
+				Type.EffectiveArray arrayType = (Type.EffectiveArray) lv.type(0);
+				wyil.lang.Bytecode.Operator al = (wyil.lang.Bytecode.Operator) code;
+				path.add(new LVal.Array(arrayType, al.operand(1)));
+				lval = al.operand(0);
+				break;
+			case OPCODE_dereference:
+				Type.Reference refType = (Type.Reference) lv.type(0);
+				wyil.lang.Bytecode.Operator rl = (wyil.lang.Bytecode.Operator) code;
+				path.add(new LVal.Reference(refType));
+				lval = rl.operand(0);
+				break;
+			default:
+				internalFailure("unknown wyil code encountered (" + code + ")", filename,
+						context.attribute(Attribute.Source.class));
+			}
+			loc = context.getLocation(lval);
+		}
+		// At this point, we have to reverse the lvals because they were put
+		// into the array in the wrong order.
+		Collections.reverse(path);
+		// Done
+		return new LVal(lval, path);
+	}
+
+	/**
+	 * Represents a type which may appear on the left of an assignment
+	 * expression. Arrays, Records and References are the only valid types for
+	 * an lval.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class LVal {
+		public final int variable;
+		public final List<Element<?>> path;
+
+		public LVal(int variable, List<Element<?>> path) {
+			this.variable = variable;
+			this.path = new ArrayList<Element<?>>(path);
+		}
+
+		public static class Element<T> {
+			public final T type;
+
+			public Element(T type) {
+				this.type = type;
+			}
+		}
+
+		public static class Record extends Element<Type.EffectiveRecord> {
+			public final String field;
+
+			public Record(Type.EffectiveRecord type, String field) {
+				super(type);
+				this.field = field;
+			}
+		}
+
+		public static class Array extends Element<Type.EffectiveArray> {
+			public final int index;
+
+			public Array(Type.EffectiveArray type, int index) {
+				super(type);
+				this.index = index;
+			}
+		}
+
+		public static class Reference extends Element<Type.Reference> {
+			public Reference(Type.Reference type) {
+				super(type);
+			}
+		}
+	}
+
+	// ===============================================================================
+	// Conditions
+	// ===============================================================================
+
+	/**
+	 * <p>
+	 * Translate a given condition to determine whether it holds or not, then
+	 * branch to an appropriate label. If so, branch to the given true label, or
+	 * continue to next logical instruction if null. If not, branch to the given
+	 * false label, or continue to next logical instruction if null.
+	 * </p>
+	 * 
+	 * <p>
+	 * <b>NOTE:</b> Exactly one of trueLabel or falseLabel must be null to
+	 * represent the fall-thru case.
+	 * </p>
+	 * 
+	 * @param condition
+	 *            Operand to evaluate to see whether it is true or false
+	 * @param trueLabel
+	 *            Destination for when the condition is true. If null, execution
+	 *            continues to next logical instruction when condition holds.
+	 * @param falseLabel
+	 *            Destination for when the condition is false. If null,
+	 *            execution continues to next logical instruction when condition
+	 *            doesn't hold.
+	 * @param enclosing
+	 *            Enclosing context
+	 */
+	private void translateCondition(int condition, String trueLabel, String falseLabel, Context enclosing) {
+		BytecodeForest.Location loc = enclosing.getLocation(condition);
+		if (loc instanceof BytecodeForest.Operand) {
+			BytecodeForest.Operand operand = (BytecodeForest.Operand) loc;
+			wyil.lang.Bytecode.Expr code = operand.value();
+			// First, attempt to use a conditional branch to implement this
+			// operation. This will produce more attractive bytecode.
+			if (code instanceof Operator) {
+				// This is an operator and, in some cases, we can optimise the
+				// translation using one or more conditional branches.
+				wyil.lang.Bytecode.Operator op = (wyil.lang.Bytecode.Operator) code;
+				switch (op.opcode()) {
+				case OPCODE_logicalnot:
+					translateNotCondition(op, trueLabel, falseLabel, enclosing);
+					return;
+				case OPCODE_logicaland:
+					translateShortcircuitAndCondition(op, trueLabel, falseLabel, enclosing);
+					return;
+				case OPCODE_logicalor:
+					translateShortcircuitOrCondition(op, trueLabel, falseLabel, enclosing);
+					return;
+				}
+			} else if(code instanceof Quantifier) {
+				translateQuantifierCondition((Quantifier) code, trueLabel, falseLabel, enclosing);
+				return;
+			}
+		}
+		// We can't use a condition branch, so fall back to the default. In this
+		// case, we just evaluate the condition as normal which will result in a
+		// 1 or 0 being loaded on the stack. We can then perform a condition
+		// branch from that.
+		translateOperand(condition, enclosing);
+		// Now, dig a true boolean about of the WyBool object
+		JvmType.Function ft = new JvmType.Function(JvmTypes.T_BOOL);
+		enclosing.add(new Bytecode.Invoke(WHILEYBOOL, "value", ft, Bytecode.InvokeMode.VIRTUAL));
+		// Finally, branch as necessary
+		if (trueLabel == null) {
+			enclosing.add(new Bytecode.If(Bytecode.IfMode.EQ, falseLabel));
+		} else {
+			enclosing.add(new Bytecode.If(Bytecode.IfMode.NE, trueLabel));
+		}
+	}
+
+	/**
+	 * Translate a logical not condition.
+	 * 
+	 * @param condition
+	 *            Operand to evaluate to see whether it is true or false
+	 * @param trueLabel
+	 *            Destination for when the condition is true. If null, execution
+	 *            continues to next logical instruction when condition holds.
+	 * @param falseLabel
+	 *            Destination for when the condition is false. If null,
+	 *            execution continues to next logical instruction when condition
+	 *            doesn't hold.
+	 * @param enclosing
+	 *            Enclosing context
+	 */
+	private void translateNotCondition(Operator code, String trueLabel, String falseLabel, Context enclosing) {
+		// This case is very easy, as we can just swap the true and false
+		// labels.
+		translateCondition(code.operand(0), falseLabel, trueLabel, enclosing);
+	}
+
+	/**
+	 * Translate a logical and condition with short circuiting semantics.
+	 * 
+	 * @param condition
+	 *            Operand to evaluate to see whether it is true or false
+	 * @param trueLabel
+	 *            Destination for when the condition is true. If null, execution
+	 *            continues to next logical instruction when condition holds.
+	 * @param falseLabel
+	 *            Destination for when the condition is false. If null,
+	 *            execution continues to next logical instruction when condition
+	 *            doesn't hold.
+	 * @param enclosing
+	 *            Enclosing context
+	 */
+	private void translateShortcircuitAndCondition(Operator code, String trueLabel, String falseLabel,
+			Context enclosing) {
+		if (trueLabel == null) {
+			translateCondition(code.operand(0), null, falseLabel, enclosing);
+			translateCondition(code.operand(1), null, falseLabel, enclosing);
+		} else {
+			// implies falseLabel should be null
+			String exitLabel = freshLabel();
+			translateCondition(code.operand(0), null, exitLabel, enclosing);
+			translateCondition(code.operand(1), trueLabel, null, enclosing);
+			enclosing.add(new Bytecode.Label(exitLabel));
+		}
+	}
+
+	/**
+	 * Translate a logical or condition with short circuiting semantics.
+	 * 
+	 * @param condition
+	 *            Operand to evaluate to see whether it is true or false
+	 * @param trueLabel
+	 *            Destination for when the condition is true. If null, execution
+	 *            continues to next logical instruction when condition holds.
+	 * @param falseLabel
+	 *            Destination for when the condition is false. If null,
+	 *            execution continues to next logical instruction when condition
+	 *            doesn't hold.
+	 * @param enclosing
+	 *            Enclosing context
+	 */
+	private void translateShortcircuitOrCondition(Operator code, String trueLabel, String falseLabel,
+			Context enclosing) {
+		if (trueLabel == null) {
+			// implies false label is non-null
+			String exitLabel = freshLabel();
+			translateCondition(code.operand(0), exitLabel, null, enclosing);
+			translateCondition(code.operand(1), null, falseLabel, enclosing);
+			enclosing.add(new Bytecode.Label(exitLabel));
+		} else {
+			// implies false label is null
+			translateCondition(code.operand(0), trueLabel, null, enclosing);
+			translateCondition(code.operand(1), trueLabel, null, enclosing);
+		}
+	}
+
+
+	/**
+	 * Translate a quantifier condition into a set of nested loops with the
+	 * condition itself located in the innermost position.
+	 * 
+	 * @param condition
+	 *            Operand to evaluate to see whether it is true or false
+	 * @param trueLabel
+	 *            Destination for when the condition is true. If null, execution
+	 *            continues to next logical instruction when condition holds.
+	 * @param falseLabel
+	 *            Destination for when the condition is false. If null,
+	 *            execution continues to next logical instruction when condition
+	 *            doesn't hold.
+	 * @param enclosing
+	 *            Enclosing context
+	 */
+	private void translateQuantifierCondition(Quantifier condition, String trueLabel, String falseLabel,
+			Context context) {
+		String exitLabel = freshLabel();
+		if(trueLabel == null) {
+			trueLabel = exitLabel;
+		} else {
+			falseLabel = exitLabel;
+		}
+		translateQuantifierCondition(0, condition, trueLabel, falseLabel, context);
+		// Add complete branch (if necessary)
+		switch(condition.opcode()) {
+		case OPCODE_all:
+			if(trueLabel != exitLabel) {
+				context.add(new Bytecode.Goto(trueLabel));
+			}
+			break;
+		case OPCODE_some:
+			if(falseLabel != exitLabel) {
+				context.add(new Bytecode.Goto(falseLabel));
+			}
+			break;
+		case OPCODE_none:
+		default:				
+			if(trueLabel != exitLabel) {
+				context.add(new Bytecode.Goto(trueLabel));
+			}
+			break;
+		}
+		context.add(new Bytecode.Label(exitLabel));
+	}
+
+	/**
+	 * Helper function for translating quantifiers. The range index indicates
+	 * which range we are currently translating. We essentially recursve for
+	 * each range translating them one at a time into an enclosing loop. When
+	 * the innermost loop body is reached, we can then evaluate the condition
+	 * for the given range positions.
+	 * 
+	 * @param index
+	 *            Index into quantifier ranges. If matches number of ranges,
+	 *            then innermost position is reached.
+	 * @param condition
+	 *            Operand to evaluate to see whether it is true or false
+	 * @param trueLabel
+	 *            Destination for when the condition is true. If null, execution
+	 *            continues to next logical instruction when condition holds.
+	 * @param falseLabel
+	 *            Destination for when the condition is false. If null,
+	 *            execution continues to next logical instruction when condition
+	 *            doesn't hold.
+	 * @param enclosing
+	 *            Enclosing context
+	 */
+	private void translateQuantifierCondition(int index, Quantifier condition, String trueLabel, String falseLabel,
+			Context context) {
+		wyil.lang.Bytecode.Range[] ranges = condition.ranges();
+		if (index == ranges.length) {
+			// This is the innermost case. At this point, we are in the body of
+			// the innermost loop.  First, determine what is true and false :) 
+			String myTrueLabel = null;
+			String myFalseLabel = null;
+			switch(condition.opcode()) {
+			case OPCODE_all:
+				// if condition false, terminate early and return false.
+				myFalseLabel = falseLabel;
+				break;
+			case OPCODE_some:
+				// if condition true, terminate early and return true.
+				myTrueLabel = trueLabel;
+				break;
+			case OPCODE_none:
+			default:				
+				// if condition true, terminate early and return false.
+				myTrueLabel = falseLabel;
+				break;
+			}
+			// Translate the quantifier condition and, depending on the kind of
+			// quantifier, branch to either the true or false label.
+			translateCondition(condition.body(),myTrueLabel,myFalseLabel,context);
+		} else {
+			// This is the recursive case. Here, we need to construct an
+			// appropriate loop to iterate through the range.
+			wyil.lang.Bytecode.Range range = ranges[index];
+			translateOperand(range.startOperand(),context);
+			translateOperand(range.endOperand(),context);
+			context.add(new Bytecode.Store(range.endOperand(),WHILEYINT));
+			context.add(new Bytecode.Store(range.variable(),WHILEYINT));
+			// Create loop
+			String headerLabel = freshLabel();
+			String exitLabel = freshLabel();
+			// Generate loop condition
+			context.add(new Bytecode.Label(headerLabel));
+			context.add(new Bytecode.Load(range.variable(),WHILEYINT));
+			context.add(new Bytecode.Load(range.endOperand(),WHILEYINT));
+			JvmType.Function ftype = new JvmType.Function(WHILEYBOOL, JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
+			context.add(new Bytecode.Invoke(WHILEYUTIL, "equal", ftype, Bytecode.InvokeMode.STATIC));
+			ftype = new JvmType.Function(JvmTypes.T_BOOL);
+			context.add(new Bytecode.Invoke(WHILEYBOOL, "value", ftype, Bytecode.InvokeMode.VIRTUAL));
+			context.add(new Bytecode.If(Bytecode.IfMode.NE, exitLabel));
+			// Recursively translate remainder of quantifier
+			translateQuantifierCondition(index+1,condition,trueLabel,falseLabel,context);
+			// Increment index variable
+			context.add(new Bytecode.Load(range.variable(),WHILEYINT));
+			context.add(new Bytecode.GetField(WHILEYINT, "ONE", WHILEYINT, Bytecode.FieldMode.STATIC));
+			ftype = new JvmType.Function(WHILEYINT, WHILEYINT);
+			context.add(new Bytecode.Invoke(WHILEYINT,"add",ftype,Bytecode.InvokeMode.VIRTUAL));
+			context.add(new Bytecode.Store(range.variable(),WHILEYINT));
+			// Branch back to top of loop
+			context.add(new Bytecode.Goto(headerLabel));
+			context.add(new Bytecode.Label(exitLabel));
+		}
+	}
+	
+	
 	// ===============================================================================
 	// Expressions
 	// ===============================================================================
-	
+
 	/**
-	 * Translate a WyIL bytecode at a given index into one or more JVM
-	 * bytecodes. The bytecode index is given to help with debugging (i.e. to
-	 * extract attributes associated with the given bytecode).
+	 * Translate one or more operands into JVM Bytecodes. Execution follows the
+	 * order of operands given, with the first operand being evaluated before
+	 * the others. Likewise, the results are pushed on the stack in the order of
+	 * operands given. So, the result of the first operand is pushed onto the
+	 * stack first, etc.
 	 * 
-	 * @param pc
-	 *            The index of the WyIL bytecode being translated in the
-	 *            forest.
 	 * @param code
-	 *            The WyIL bytecode being translated.
-	 * @param freeSlot
-	 *            The first available free JVM register slot
-	 * @param bytecodes
-	 *            The list of bytecodes being accumulated
+	 *            The WyIL operand being translated.
+	 * @param enclosing
+	 *            The enclosing context for this operand.
+	 * @return The set of JVM types representing the actual operands pushed on
+	 *         the stack. This maybe be larger than the number of operands
+	 *         provided in the case that one or more of those operands had
+	 *         multiple return values.
+	 */
+	public List<JvmType> translateOperands(int[] operands, Context enclosing) {
+		ArrayList<JvmType> types = new ArrayList<JvmType>();
+		for (int i = 0; i != operands.length; ++i) {
+			int operand = operands[i];
+			// Translate operand
+			translateOperand(operand, enclosing);
+			// Determine type(s) for operand
+			BytecodeForest.Location l = enclosing.getLocation(operand);
+			for (int j = 0; j != l.size(); ++j) {
+				types.add(convertUnderlyingType(l.type(j)));
+			}
+		}
+		return types;
+	}
+
+	/**
+	 * Translate one or more operands into JVM Bytecodes and store them in an
+	 * object array. Execution follows the order of operands given, with the
+	 * first operand being evaluated before the others. Likewise, the results
+	 * are pushed on the stack in the order of operands given. So, the result of
+	 * the first operand is pushed onto the stack first, etc.
+	 * 
+	 * @param code
+	 *            The WyIL operand being translated.
+	 * @param enclosing
+	 *            The enclosing context for this operand.
+	 * @return The set of JVM types representing the actual operands pushed on
+	 *         the stack. This maybe be larger than the number of operands
+	 *         provided in the case that one or more of those operands had
+	 *         multiple return values.
+	 */
+	private void translateOperandsToArray(int[] operands, Context context) {
+		context.add(new Bytecode.LoadConst(operands.length));
+		context.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
+		for (int i = 0; i < operands.length; ++i) {
+			int operand = operands[i];
+			BytecodeForest.Location l = context.getLocation(operand);
+			context.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
+			context.add(new Bytecode.LoadConst(i));
+			translateOperand(operand, context);
+			// FIXME: handle multiple returns
+			addWriteConversion(l.type(0), context.getBytecodes());
+			context.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
+		}
+	}
+
+	/**
+	 * Translate an operand into one or more JVM Bytecodes. The result of this
+	 * operand will be pushed onto the stack at the end.
+	 * 
+	 * @param code
+	 *            The WyIL operand being translated.
+	 * @param enclosing
+	 *            The enclosing context for this operand.
 	 * @return
 	 */
-	private int translate(BytecodeForest.Index pc, wyil.lang.Bytecode.Expr code, int freeSlot, BytecodeForest forest,
-			ArrayList<Bytecode> bytecodes) {
-
-		try {
-			if (code instanceof Operator) {
-				translate(pc, (Operator) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof Convert) {
-				translate(pc, (Convert) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof Const) {
-				translate(pc, (Const) code, freeSlot, forest,bytecodes);
-			} else if (code instanceof FieldLoad) {
-				translate(pc, (FieldLoad) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof Quantifier) {
-				freeSlot = translate(pc, (Quantifier) code, freeSlot,
-						 forest, bytecodes);
-			} else if (code instanceof IndirectInvoke) {
-				translate(pc, (IndirectInvoke) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof Invoke) {
-				translate(pc, (Invoke) code, freeSlot, forest, bytecodes);
-			} else if (code instanceof Lambda) {
-				translate(pc, (Lambda) code, freeSlot, forest, bytecodes);
-			} else {
-				internalFailure("unknown wyil code encountered (" + code + ")",
-						filename,
-						forest.get(pc).attribute(Attribute.Source.class));
+	private void translateOperand(int operand, Context enclosing) {
+		BytecodeForest.Location location = enclosing.getLocation(operand);
+		if (location instanceof BytecodeForest.Variable) {
+			BytecodeForest.Variable var = (BytecodeForest.Variable) location;
+			JvmType jvmType = convertUnderlyingType(var.type(0));
+			enclosing.add(new Bytecode.Load(operand, jvmType));
+		} else {
+			Context.Operand context = enclosing.newOperand(operand);
+			wyil.lang.Bytecode.Expr code = context.getOperand().value();
+			try {
+				switch (code.opcode()) {
+				case OPCODE_convert:
+					translateOperand((Convert) code, context);
+					break;
+				case OPCODE_const:
+					translateOperand((Const) code, context);
+					break;
+				case OPCODE_fieldload:
+					translateOperand((FieldLoad) code, context);
+					break;
+				case OPCODE_all:
+				case OPCODE_some:
+				case OPCODE_none:
+					translateOperand((Quantifier) code, context);
+					break;
+				case OPCODE_indirectinvoke:
+					translateOperands((IndirectInvoke) code, context);
+					break;
+				case OPCODE_invoke:
+					translateOperand((Invoke) code, context);
+					break;
+				case OPCODE_lambda:
+					translateOperand((Lambda) code, context);
+					break;
+				default:
+					if (code instanceof Operator) {
+						translateOperand((Operator) code, context);
+					} else {
+						internalFailure("unknown wyil code encountered (" + code + ")", filename,
+								context.attribute(Attribute.Source.class));
+					}
+				}
+			} catch(InternalFailure ex) {
+				throw ex;
+			} catch (Exception ex) {
+				internalFailure(ex.getMessage(), filename, ex, context.attribute(Attribute.Source.class));
 			}
-
-		} catch (Exception ex) {
-			internalFailure(ex.getMessage(), filename, ex,
-					forest.get(pc).attribute(Attribute.Source.class));
 		}
-
-		return freeSlot;
 	}
-	
 
-	private void translate(BytecodeForest.Index index, Const c, int freeSlot,
-			BytecodeForest forest, ArrayList<Bytecode> bytecodes) {
+	/**
+	 * Translate a constant into JVM bytecodes and load it onto the stack. In
+	 * some cases, this can be done directly. For example, <code>null</code> can
+	 * be loaded onto the stack using the <code>aconst_null</code> bytecode. In
+	 * other cases (e.g. for array constants), we have to construct one or more
+	 * objects to represent the constant. To avoid doing this everytime such a
+	 * constant is encountered, we create the constants in the static
+	 * initialiser of this class, and store them in static fields for later
+	 * recall.
+	 * 
+	 * @param code
+	 *            The WyIL operand being translated.
+	 * @param enclosing
+	 *            The enclosing context for this operand.
+	 * @return
+	 */
+	private void translateOperand(Const c, Context.Operand context) {
 		Constant constant = c.constant();
 		JvmType jt = convertUnderlyingType(constant.type());
-
-		if (constant instanceof Constant.Bool
-				|| constant instanceof Constant.Null
+		// Check whether this constant can be translated as a primitive, and
+		// encoded directly within a bytecode.
+		if (constant instanceof Constant.Bool || constant instanceof Constant.Null
 				|| constant instanceof Constant.Byte) {
-			translate(constant, freeSlot, bytecodes);
+			// Yes, it can.
+			translateConstant(constant, context.getBytecodes());
 		} else {
+			// No, this needs to be constructed elsewhere as a static field.
+			// Then, we can load it onto the stack here.
 			int id = JvmValue.get(constant, constants);
 			String name = "constant$" + id;
-			bytecodes.add(new Bytecode.GetField(owner, name, jt,
-					Bytecode.FieldMode.STATIC));
-		}
-		bytecodes.add(new Bytecode.Store(c.target(), jt));
-	}
-
-	private void translate(BytecodeForest.Index index, Convert c, int freeSlot, BytecodeForest forest,
-			ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Load(c.operand(0), convertUnderlyingType(c.type(0))));
-		addCoercion(c.type(0), c.type(), freeSlot, constants, bytecodes);
-		bytecodes.add(new Bytecode.Store(c.target(0), convertUnderlyingType(c.type())));
-	}
-
-
-	// The purpose of this method is to translate a type test. We're testing to
-	// see whether what's on the top of the stack (the value) is a subtype of
-	// the type being tested. Note, constants must be provided as a parameter
-	// since this function may be called from buildCoercion()
-	protected void translateTypeTest(String falseTarget, Type test,
-			HashMap<JvmConstant, Integer> constants,
-			ArrayList<Bytecode> bytecodes) {
-
-		// First, try for the easy cases
-		if (test instanceof Type.Null) {
-			// Easy case
-			bytecodes
-					.add(new Bytecode.If(Bytecode.IfMode.NONNULL, falseTarget));
-		} else if (test instanceof Type.Bool) {
-			bytecodes.add(new Bytecode.InstanceOf(WHILEYBOOL));
-			bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, falseTarget));
-		} else if (test instanceof Type.Int) {
-			bytecodes.add(new Bytecode.InstanceOf(WHILEYINT));
-			bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, falseTarget));
-		} else {
-			// Fall-back to an external (recursive) check
-			Constant constant = new Constant.Type(test);
-			int id = JvmValue.get(constant, constants);
-			String name = "constant$" + id;
-			bytecodes.add(new Bytecode.GetField(owner, name, WHILEYTYPE, Bytecode.FieldMode.STATIC));
-			bytecodes.add(new Bytecode.Swap());
-			JvmType.Function ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYTYPE, "instanceOf", ftype, Bytecode.InvokeMode.STATIC));
-			bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, falseTarget));
+			context.add(new Bytecode.GetField(owner, name, jt, Bytecode.FieldMode.STATIC));
 		}
 	}
 
-	private void translateInvariantTest(String falseTarget, Type type, int rootSlot, int freeSlot,
-			HashMap<JvmConstant, Integer> constants, ArrayList<Bytecode> bytecodes) {
-		//
-		JvmType underlyingType = convertUnderlyingType(type);
-		//
-		if (type instanceof Type.Nominal) {
-			Type.Nominal c = (Type.Nominal) type;
-			Path.ID mid = c.name().module();
-			JvmType.Clazz owner = new JvmType.Clazz(mid.parent().toString().replace('/', '.'), mid.last());
-			JvmType.Function fnType = new JvmType.Function(new JvmType.Bool(), convertUnderlyingType(c));
-			bytecodes.add(new Bytecode.Load(rootSlot, convertUnderlyingType(type)));
-			bytecodes.add(new Bytecode.Invoke(owner, c.name().name() + "$typeof", fnType, Bytecode.InvokeMode.STATIC));
-			bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, falseTarget));
-		} else if (type instanceof Type.Leaf) {
-			// Do nout
-		} else if (type instanceof Type.Reference) {
-			Type.Reference rt = (Type.Reference) type;
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);
-			bytecodes.add(new Bytecode.Load(rootSlot, underlyingType));
-			bytecodes.add(new Bytecode.Invoke(WHILEYOBJECT, "state", ftype, Bytecode.InvokeMode.VIRTUAL));
-			addReadConversion(rt.element(), bytecodes);
-			bytecodes.add(new Bytecode.Store(freeSlot, convertUnderlyingType(rt.element())));
-			translateInvariantTest(falseTarget, rt.element(), freeSlot, freeSlot + 1, constants, bytecodes);
-		} else if (type instanceof Type.EffectiveArray) {
-			Type.EffectiveArray ts = (Type.EffectiveArray) type;
-			Triple<String, String, String> loopLabels = translateLoopBegin(bytecodes, rootSlot, freeSlot);
-			addReadConversion(ts.element(), bytecodes);
-			bytecodes.add(new Bytecode.Store(freeSlot + 1, convertUnderlyingType(ts.element())));
-			translateInvariantTest(falseTarget, ts.element(), freeSlot + 1, freeSlot + 2, constants, bytecodes);
-			translateLoopEnd(bytecodes, loopLabels);
-		} else if (type instanceof Type.Record) {
-			Type.Record tt = (Type.Record) type;
-			HashMap<String, Type> fields = tt.fields();
-			ArrayList<String> fieldNames = new ArrayList<>(fields.keySet());
-			Collections.sort(fieldNames);
-			for (int i = 0; i != fieldNames.size(); ++i) {
-				String field = fieldNames.get(i);
-				Type fieldType = fields.get(field);
-				JvmType underlyingFieldType = convertUnderlyingType(fieldType);
-				bytecodes.add(new Bytecode.Load(rootSlot, underlyingType));
-				bytecodes.add(new Bytecode.LoadConst(field));
-				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, JAVA_LANG_STRING);
-				bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "get", ftype, Bytecode.InvokeMode.VIRTUAL));
-				addReadConversion(fieldType, bytecodes);
-				bytecodes.add(new Bytecode.Store(freeSlot, underlyingFieldType));
-				translateInvariantTest(falseTarget, fieldType, freeSlot, freeSlot + 1, constants, bytecodes);
-			}
-		} else if (type instanceof Type.FunctionOrMethod) {
-			// FIXME: this is clearly a bug. However, it's not completely
-			// straightforward to fix, since there is currently no way to get
-			// runtime type information about a function or method reference. In
-			// principle, this could be encoded in the WyLambda in some way.
-		} else if (type instanceof Type.Negation) {
-			Type.Reference rt = (Type.Reference) type;
-			String trueTarget = freshLabel();
-			translateInvariantTest(trueTarget, rt.element(), rootSlot, freeSlot, constants, bytecodes);
-			bytecodes.add(new Bytecode.Goto(falseTarget));
-			bytecodes.add(new Bytecode.Label(trueTarget));
-		} else if (type instanceof Type.Union) {
-			Type.Union ut = (Type.Union) type;
-			String trueLabel = freshLabel();
-			for (Type bound : ut.bounds()) {
-				try {
-					Type underlyingBound = expander.getUnderlyingType(bound);
-					String nextLabel = freshLabel();
-					bytecodes.add(new Bytecode.Load(rootSlot, convertUnderlyingType(type)));
-					translateTypeTest(nextLabel, underlyingBound, constants, bytecodes);
-					bytecodes.add(new Bytecode.Load(rootSlot, convertUnderlyingType(type)));
-					addReadConversion(bound, bytecodes);
-					bytecodes.add(new Bytecode.Store(freeSlot, convertUnderlyingType(bound)));
-					translateInvariantTest(nextLabel, bound, freeSlot, freeSlot + 1, constants, bytecodes);
-					bytecodes.add(new Bytecode.Goto(trueLabel));
-					bytecodes.add(new Bytecode.Label(nextLabel));
-				} catch (ResolveError e) {
-					internalFailure(e.getMessage(), filename, e);
-				} catch (IOException e) {
-					internalFailure(e.getMessage(), filename, e);
-				}
-			}
-			bytecodes.add(new Bytecode.Goto(falseTarget));
-			bytecodes.add(new Bytecode.Label(trueLabel));
-		} else {
-			internalFailure("unknown type encountered: " + type, filename);
-		}
+	/**
+	 * Coerce one data value into another. In what situations do we actually
+	 * have to do work?
+	 * 
+	 * @param code
+	 *            The WyIL operand being translated.
+	 * @param enclosing
+	 *            The enclosing context for this operand.
+	 * @return
+	 */
+	private void translateOperand(Convert c, Context.Operand context) {
+		// Translate the operand
+		translateOperand(c.operand(), context);
+		// Do nothing :)
 	}
 
-	private int translate(BytecodeForest.Index index, Quantifier c, int freeSlot,
-			BytecodeForest forest, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.Load(c.startOperand(), WHILEYINT));
-		bytecodes.add(new Bytecode.Load(c.endOperand(), WHILEYINT));
-		JvmType.Function ftype = new JvmType.Function(WHILEYARRAY, WHILEYINT, WHILEYINT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "range", ftype, Bytecode.InvokeMode.STATIC));
-		ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
-		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "iterator", ftype, Bytecode.InvokeMode.INTERFACE));
-		bytecodes.add(new Bytecode.Store(freeSlot, JAVA_UTIL_ITERATOR));
-		String loopHeader = freshLabel();
-		String loopExit = freshLabel();
-		bytecodes.add(new Bytecode.Label(loopHeader));
-		ftype = new JvmType.Function(T_BOOL);
-		bytecodes.add(new Bytecode.Load(freeSlot, JAVA_UTIL_ITERATOR));
-		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "hasNext", ftype, Bytecode.InvokeMode.INTERFACE));
-		bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, loopExit));
-		bytecodes.add(new Bytecode.Load(freeSlot, JAVA_UTIL_ITERATOR));
-		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next", ftype, Bytecode.InvokeMode.INTERFACE));
-		addReadConversion(Type.T_INT, bytecodes);
-		bytecodes.add(new Bytecode.Store(c.indexOperand(), convertUnderlyingType(Type.T_INT)));
-		// Translate body of loop. The cast is required to ensure correct method
-		// is called.
-		translate(new BytecodeForest.Index(c.body(), 0), freeSlot + 1, forest, bytecodes);
-		// Terminate loop by branching back to head of loop
-		bytecodes.add(new Bytecode.Goto(loopHeader));
-		bytecodes.add(new Bytecode.Label(loopExit));
-
-		return freeSlot;
-	}
-
-	private void translate(FieldLoad c, Context.Operand context) {
+	/**
+	 * Load the value of a given field from a record.
+	 * 
+	 * @param code
+	 *            The WyIL operand being translated.
+	 * @param enclosing
+	 *            The enclosing context for this operand.
+	 * @return
+	 */
+	private void translateOperand(FieldLoad c, Context.Operand context) {
 		BytecodeForest.Operand operand = context.getOperand();
 		Type.Record type = (Type.Record) operand.type(0);
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYRECORD, JAVA_LANG_STRING);
+		// Translate the source operand
+		translateOperand(c.operand(), context);
+		context.add(new Bytecode.LoadConst(c.fieldName()));
+		// Load the field out of the resulting record
 		context.add(new Bytecode.Invoke(WHILEYRECORD, "get", ftype, Bytecode.InvokeMode.STATIC));
-		addReadConversion(type.field(c.fieldName()), context);
+		// Add a read conversion (if necessary) to unbox the value
+		context.addReadConversion(type.field(c.fieldName()));
 	}
 
-	private void translate(Operator c, Context.Operand context) {
-		generators[c.opcode()].translate(c, context);
+	/**
+	 * Apply a unary, binary or ternary operator to a given set of operands.
+	 * 
+	 * @param code
+	 *            The WyIL operand being translated.
+	 * @param enclosing
+	 *            The enclosing context for this operand.
+	 * @return
+	 */
+	private void translateOperand(Operator c, Context.Operand context) {
+		// First, translate each operand and load its value onto the stack
+		switch (c.opcode()) {
+		case OPCODE_record:
+			translateRecordConstructor(c, context);
+			break;
+		case OPCODE_array:
+			translateArrayConstructor(c, context);
+			break;
+		default:
+			translateOperands(c.operands(), context);
+			// Second, dispatch to a specific translator for this opcode kind.
+			generators[c.opcode()].translate(c, context);
+		}
+
 	}
 
-	private void translate(Lambda c, Context.Operand context) {
+	/**
+	 * Translate a RecordConstructor operand.
+	 * 
+	 * @param bytecode
+	 * @param context
+	 */
+	public void translateRecordConstructor(Operator bytecode, Context.Operand context) {
+		BytecodeForest.Operand operand = context.getOperand();
+		Type.EffectiveRecord recType = (Type.EffectiveRecord) operand.type(0);
+		JvmType.Function ftype = new JvmType.Function(WHILEYRECORD, WHILEYRECORD, JAVA_LANG_STRING, JAVA_LANG_OBJECT);
 
-		// First, build and register lambda class which calls the given function
-		// or method. This class will extend class wyjc.runtime.WyLambda.
-		Type.FunctionOrMethod lamType = (Type.FunctionOrMethod) c.type(0); 
-		int lambda_id = lambdas.size();
-		lambdas.add(buildLambda(c.name(), lamType, lambda_id));
+		context.construct(WHILEYRECORD);
 
-		// Second, create and duplicate new lambda object. This will then stay
-		// on the stack (whilst the parameters are constructed) until the
-		// object's constructor is called.
-		JvmType.Clazz lambdaClassType = new JvmType.Clazz(owner.pkg(), owner
-				.lastComponent().first(), Integer.toString(lambda_id));
+		ArrayList<String> keys = new ArrayList<String>(recType.fields().keySet());
+		Collections.sort(keys);
+		for (int i = 0; i != bytecode.operands().length; i++) {
+			String key = keys.get(i);
+			Type fieldType = recType.field(key);
+			context.add(new Bytecode.LoadConst(key));
+			translateOperand(bytecode.operand(i), context);
+			context.addWriteConversion(fieldType);
+			context.add(new Bytecode.Invoke(WHILEYRECORD, "put", ftype, Bytecode.InvokeMode.STATIC));
+		}
+	}
 
-		bytecodes.add(new Bytecode.New(lambdaClassType));
-		bytecodes.add(new Bytecode.Dup(lambdaClassType));
+	/**
+	 * Translate an ArrayConstructor operand
+	 * 
+	 * @param code
+	 *            The WyIL operand being translated.
+	 * @param enclosing
+	 *            The enclosing context for this operand.
+	 * @return
+	 */
+	private void translateArrayConstructor(Operator code, Context.Operand context) {
+		BytecodeForest.Operand operand = context.getOperand();
+		Type.Array arrType = (Type.Array) operand.type(0);
+		JvmType.Function initJvmType = new JvmType.Function(T_VOID, T_INT);
+		JvmType.Function ftype = new JvmType.Function(WHILEYARRAY, WHILEYARRAY, JAVA_LANG_OBJECT);
 
-		// Third, construct the parameter for lambda class constructor. In the
-		// case that a binding is given for this lambda, then we need to supply
-		// this as an argument to the lambda class constructor; otherwise, we
-		// just pass null. To do this, we first check whether or not a binding
-		// is required.
-		int[] c_operands = c.operands();
+		context.add(new Bytecode.New(WHILEYARRAY));
+		context.add(new Bytecode.Dup(WHILEYARRAY));
+		context.add(new Bytecode.LoadConst(code.operands().length));
+		context.add(new Bytecode.Invoke(WHILEYARRAY, "<init>", initJvmType, Bytecode.InvokeMode.SPECIAL));
+
+		for (int i = 0; i != code.operands().length; ++i) {
+			translateOperand(code.operand(i), context);
+			context.addWriteConversion(arrType.element());
+			context.add(new Bytecode.Invoke(WHILEYARRAY, "internal_add", ftype, Bytecode.InvokeMode.STATIC));
+		}
+	}
+
+	/**
+	 * Translate a lambda expression into a sequence of JVM bytecodes. This is
+	 * done by constructing a separate class extending WyLambda. This class
+	 * contains as fields any local variables from the current method/function
+	 * which are accessed within the body of the lambda (the so-called
+	 * "binding").
+	 * 
+	 * @param c
+	 * @param context
+	 */
+	private void translateOperand(Lambda c, Context.Operand context) {
+		int[] environment = c.environment();
+		int lambda_id = lambdaClasses.size();
+		String lambdaMethod = "$lambda" + lambda_id;
+		JvmType[] jvmEnvironment = buildLambdaEnvironment(c.environment(),context);
+		// First, we construct and instantiate the lambda
+		ClassFile lambda = buildLambda(owner, lambdaMethod, c.type(), jvmEnvironment);
+		lambdaClasses.add(lambda);
+		//
+		context.add(new Bytecode.New(lambda.type()));
+		context.add(new Bytecode.Dup(lambda.type()));
+		for(int i=0;i!=environment.length;++i) {
+			context.add(new Bytecode.Load(environment[i], jvmEnvironment[i]));
+		}
+		JvmType.Function ftype = new JvmType.Function(T_VOID, jvmEnvironment);
+		context.add(new Bytecode.Invoke(lambda.type(), "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
 		
-		if (c_operands.length > 0) {
-			// Yes, binding is required.				
-			int numParams = lamType.params().size();
-			int numBlanks = numParams - c_operands.length;
-			bytecodes.add(new Bytecode.LoadConst(numParams));
-			bytecodes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
-
-			for(int i=0;i<numParams;++i) {
-				bytecodes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));				
-				bytecodes.add(new Bytecode.LoadConst(i));
-				if(i < numBlanks) {
-					bytecodes.add(new Bytecode.LoadConst(null));
-				} else {
-					int operand = c.operands()[i-numBlanks];
-					Type pt = c.type(0).params().get(i);
-					bytecodes.add(new Bytecode.Load(operand, convertUnderlyingType(pt)));
-					addWriteConversion(pt, bytecodes);
-				}
-				bytecodes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
-			}								
-		} else {
-			// No, binding not required.
-			bytecodes.add(new Bytecode.LoadConst(null));
-		}
-
-		// Fifth, invoke lambda class constructor
-		JvmType.Function ftype = new JvmType.Function(T_VOID, JAVA_LANG_OBJECT_ARRAY);
-		bytecodes.add(new Bytecode.Invoke(lambdaClassType, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
-
-		// Sixth, assign newly created lambda object to target register
-		JvmType.Clazz clazz = (JvmType.Clazz) convertUnderlyingType(c.type(0));
-		bytecodes.add(new Bytecode.Store(c.target(0), clazz));
+		// Second, we translate the body of the lambda and construct a new
+		// method to represent it. This method will then be called from the
+		// lambda class created above.		
+		ClassFile.Method method = buildLambdaMethod(c, lambdaMethod, context);
+		//
+		lambdaMethods.add(method);
 	}
 
-	private void translate(Invoke c, Context.Operand context) {
-
-		for (int i = 0; i != c.operands().length; ++i) {
-			int register = c.operands()[i];
-			JvmType parameterType = convertUnderlyingType(c.type(0).params().get(i));
-			bytecodes.add(new Bytecode.Load(register, parameterType));
-		}
-
-		Path.ID mid = c.name().module();
-		String mangled = nameMangle(c.name().name(), c.type(0));
-		JvmType.Clazz owner = new JvmType.Clazz(mid.parent().toString().replace('/', '.'), mid.last());
-		JvmType.Function type = convertFunType(c.type(0));
-		bytecodes.add(new Bytecode.Invoke(owner, mangled, type, Bytecode.InvokeMode.STATIC));
-
-		int[] targets = c.targets();
-		List<Type> returns = c.type(0).returns();
-		if (targets.length == 0 && !returns.isEmpty()) {
-			bytecodes.add(new Bytecode.Pop(convertUnderlyingType(c.type(0).returns().get(0))));
-		} else if (targets.length == 1) {
-			bytecodes.add(new Bytecode.Store(targets[0], convertUnderlyingType(returns.get(0))));
-		} else if (targets.length > 1) {
-			// Multiple return values are provided, and these will have been
-			// encoded into an object array.
-			decodeOperandArray(c.type(0).returns(), targets, bytecodes);
-		}		
+	/**
+	 * Perform a direct method or function invocation.
+	 * 
+	 * @param code
+	 *            The WyIL operand being translated.
+	 * @param enclosing
+	 *            The enclosing context for this operand.
+	 * @return
+	 */
+	private void translateOperand(Invoke c, Context.Operand context) {
+		// Translate each operand and load its value onto the stack
+		translateOperands(c.operands(), context);
+		// Construct the invocation bytecode
+		context.add(createMethodInvocation(c.name(), c.type()));
 	}
 
-	private void translate(BytecodeForest.Index index, IndirectInvoke c, int freeSlot, BytecodeForest forest, ArrayList<Bytecode> bytecodes) {
-		Type.FunctionOrMethod ft = c.type(0);
+	/**
+	 * Perform an indirect method or function invocation.
+	 * 
+	 * @param code
+	 *            The WyIL operand being translated.
+	 * @param enclosing
+	 *            The enclosing context for this operand.
+	 * @return
+	 */
+	private void translateOperands(IndirectInvoke c, Context.Operand context) {
+		Type.FunctionOrMethod ft = c.type();
+		// FIXME: need to implement multiple returns
+		JvmType returnType = convertUnderlyingType(ft.returns().get(0));
 		JvmType.Clazz owner = (JvmType.Clazz) convertUnderlyingType(ft);
-		bytecodes.add(new Bytecode.Load(c.reference(), convertUnderlyingType(ft)));
-		encodeOperandArray(ft.params(), c.arguments(), bytecodes);
-
+		// First, translate reference operand which returns the function/method
+		// object we will dispatch upon. This extends the WyLambda class.
+		translateOperand(c.reference(), context);
+		// Second, translate each argument and store it into an object array
+		translateOperandsToArray(c.arguments(), context);
+		// Third, make the indirect method or function call. This is done by
+		// invoking the "call" method on the function / method object returned
+		// from the reference operand.
 		JvmType.Function type = new JvmType.Function(JAVA_LANG_OBJECT, JAVA_LANG_OBJECT_ARRAY);
-
-		bytecodes.add(new Bytecode.Invoke(owner, "call", type, Bytecode.InvokeMode.VIRTUAL));
-
-		int[] targets = c.targets();
-		List<Type> returns = ft.returns();
-		if (targets.length == 0) {
-			// handles the case of an invoke which returns a value that should
-			// be discarded.
-			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
-		} else if (targets.length == 1) {
-			// Only a single return value, which means it is passed directly as
-			// a return value rather then being encoded into an object array.
-			addReadConversion(returns.get(0), bytecodes);
-			bytecodes.add(new Bytecode.Store(targets[0], convertUnderlyingType(returns.get(0))));
-		} else {
-			// Multiple return values, which must be encoded into an object
-			// array.
-			internalFailure("multiple returns not supported", filename,
-					forest.get(index).attribute(Attribute.Source.class));
-		}
+		context.add(new Bytecode.Invoke(owner, "call", type, Bytecode.InvokeMode.VIRTUAL));
+		// Cast return value to expected type
+		addCheckCast(returnType,context.getBytecodes());
 	}
 
-	private void translate(Constant v, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	/**
+	 * Translate a quantifier into a set of nested loops with the condition
+	 * itself located in the innermost position.
+	 * 
+	 * @param condition
+	 *            Operand to evaluate to see whether it is true or false 
+	 * @param enclosing
+	 *            Enclosing context
+	 */
+	private void translateOperand(Quantifier condition, Context context) {
+		String trueLabel = freshLabel();
+		String exitLabel = freshLabel();
+		translateQuantifierCondition(condition, trueLabel, null, context);
+		context.add(new Bytecode.GetField(WHILEYBOOL, "FALSE", WHILEYBOOL, Bytecode.FieldMode.STATIC));
+		context.add(new Bytecode.Goto(exitLabel));
+		context.add(new Bytecode.Label(trueLabel));
+		context.add(new Bytecode.GetField(WHILEYBOOL, "TRUE", WHILEYBOOL, Bytecode.FieldMode.STATIC));
+		context.add(new Bytecode.Label(exitLabel));
+	}
+	
+	// ===============================================================================
+	// Constants
+	// ===============================================================================
+
+	/**
+	 * Translate a give constant value and load it onto the stack. Some of the
+	 * translations are more expensive that others. Primitive types (e.g. null,
+	 * bool, integer) can be loaded directly. Others require constructing
+	 * objects and should, ideally, be done only once.
+	 * 
+	 * @param v
+	 * @param context
+	 */
+	private void translateConstant(Constant v, List<Bytecode> bytecodes) {
 		if (v instanceof Constant.Null) {
-			translate((Constant.Null) v, freeSlot, bytecodes);
+			translateConstant((Constant.Null) v, bytecodes);
 		} else if (v instanceof Constant.Bool) {
-			translate((Constant.Bool) v, freeSlot, bytecodes);
+			translateConstant((Constant.Bool) v, bytecodes);
 		} else if (v instanceof Constant.Byte) {
-			translate((Constant.Byte) v, freeSlot, bytecodes);
+			translateConstant((Constant.Byte) v, bytecodes);
 		} else if (v instanceof Constant.Integer) {
-			translate((Constant.Integer) v, freeSlot, bytecodes);
+			translateConstant((Constant.Integer) v, bytecodes);
 		} else if (v instanceof Constant.Type) {
-			translate((Constant.Type) v, freeSlot, bytecodes);
+			translateConstant((Constant.Type) v, bytecodes);
 		} else if (v instanceof Constant.Array) {
-			translate((Constant.Array) v, freeSlot, lambdas, bytecodes);
+			translateConstant((Constant.Array) v, bytecodes);
 		} else if (v instanceof Constant.Record) {
-			translate((Constant.Record) v, freeSlot, lambdas, bytecodes);
-		} else if (v instanceof Constant.Lambda) {
-			translate((Constant.Lambda) v, freeSlot, lambdas, bytecodes);
+			translateConstant((Constant.Record) v, bytecodes);
+		} else if (v instanceof Constant.FunctionOrMethod) {
+			translateConstant((Constant.FunctionOrMethod) v, bytecodes);
 		} else if (v instanceof Constant.Type) {
-			translate((Constant.Type) v, freeSlot, bytecodes);
+			translateConstant((Constant.Type) v, bytecodes);
 		} else {
 			throw new IllegalArgumentException("unknown value encountered:" + v);
 		}
 	}
 
-	protected void translate(Constant.Null e, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	protected void translateConstant(Constant.Null e, List<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.LoadConst(null));
 	}
 
-	protected void translate(Constant.Bool e, int freeSlot, ArrayList<Bytecode> bytecodes) {
-		if (e.value()) {
-			bytecodes.add(new Bytecode.LoadConst(1));
-		} else {
-			bytecodes.add(new Bytecode.LoadConst(0));
-		}
+	protected void translateConstant(Constant.Bool e, List<Bytecode> bytecodes) {
+		bytecodes.add(new Bytecode.LoadConst(e.value()));
 		JvmType.Function ftype = new JvmType.Function(WHILEYBOOL, T_BOOL);
-		bytecodes.add(new Bytecode.Invoke(WHILEYBOOL, "valueOf", ftype,
-				Bytecode.InvokeMode.STATIC));
+		bytecodes.add(new Bytecode.Invoke(WHILEYBOOL, "valueOf", ftype, Bytecode.InvokeMode.STATIC));
 	}
 
-	protected void translate(Constant.Type e, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
+	protected void translateConstant(Constant.Type e, List<Bytecode> bytecodes) {
 		JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
 		BinaryOutputStream bout = new BinaryOutputStream(jout);
 		Type.BinaryWriter writer = new Type.BinaryWriter(bout);
@@ -1293,13 +1798,13 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Invoke(WHILEYTYPE, "valueOf", ftype, Bytecode.InvokeMode.STATIC));
 	}
 
-	protected void translate(Constant.Byte e, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	protected void translateConstant(Constant.Byte e, List<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.LoadConst(e.value()));
 		JvmType.Function ftype = new JvmType.Function(WHILEYBYTE, T_BYTE);
 		bytecodes.add(new Bytecode.Invoke(WHILEYBYTE, "valueOf", ftype, Bytecode.InvokeMode.STATIC));
 	}
 
-	protected void translate(Constant.Integer e, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	protected void translateConstant(Constant.Integer e, List<Bytecode> bytecodes) {
 		BigInteger num = e.value();
 
 		if (num.bitLength() < 32) {
@@ -1334,506 +1839,230 @@ public class Wyil2JavaBuilder implements Builder {
 
 	}
 
-	protected void translate(Constant.Array lv, int freeSlot, ArrayList<ClassFile> lambdas,
-			ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.New(WHILEYARRAY));
-		bytecodes.add(new Bytecode.Dup(WHILEYARRAY));
-		bytecodes.add(new Bytecode.LoadConst(lv.values().size()));
+	protected void translateConstant(Constant.Array lv, List<Bytecode> context) {
+		context.add(new Bytecode.New(WHILEYARRAY));
+		context.add(new Bytecode.Dup(WHILEYARRAY));
+		context.add(new Bytecode.LoadConst(lv.values().size()));
 		JvmType.Function ftype = new JvmType.Function(T_VOID, T_INT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
+		context.add(new Bytecode.Invoke(WHILEYARRAY, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
 
 		ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT);
 		for (Constant e : lv.values()) {
-			bytecodes.add(new Bytecode.Dup(WHILEYARRAY));
-			translate(e, freeSlot, bytecodes);
-			addWriteConversion(e.type(), bytecodes);
-			bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "add", ftype, Bytecode.InvokeMode.VIRTUAL));
-			bytecodes.add(new Bytecode.Pop(T_BOOL));
+			context.add(new Bytecode.Dup(WHILEYARRAY));
+			translateConstant(e, context);
+			addWriteConversion(e.type(), context);
+			context.add(new Bytecode.Invoke(WHILEYARRAY, "add", ftype, Bytecode.InvokeMode.VIRTUAL));
+			context.add(new Bytecode.Pop(T_BOOL));
 		}
 	}
 
-	protected void translate(Constant.Record expr, int freeSlot, ArrayList<ClassFile> lambdas,
-			ArrayList<Bytecode> bytecodes) {
+	protected void translateConstant(Constant.Record expr, List<Bytecode> bytecodes) {
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, JAVA_LANG_OBJECT, JAVA_LANG_OBJECT);
-		construct(WHILEYRECORD, freeSlot, bytecodes);
+		construct(WHILEYRECORD, bytecodes);
 		for (Map.Entry<String, Constant> e : expr.values().entrySet()) {
 			Type et = e.getValue().type();
 			bytecodes.add(new Bytecode.Dup(WHILEYRECORD));
 			bytecodes.add(new Bytecode.LoadConst(e.getKey()));
-			translate(e.getValue(), freeSlot, bytecodes);
+			translateConstant(e.getValue(), bytecodes);
 			addWriteConversion(et, bytecodes);
 			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "put", ftype, Bytecode.InvokeMode.VIRTUAL));
 			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
 		}
 	}
 
-	protected void translate(Constant.Lambda c, int freeSlot, ArrayList<ClassFile> lambdas,
-			ArrayList<Bytecode> bytecodes) {
-
-		// First, build and register lambda class which calls the given function
-		// or method. This class will extend class wyjc.runtime.WyLambda.
-		int lambda_id = lambdas.size();
-		lambdas.add(buildLambda(c.name(), c.type(), lambda_id));
-
-		// Second, create and duplicate new lambda object. This will then stay
-		// on the stack (whilst the parameters are constructed) until the
-		// object's constructor is called.
-		JvmType.Clazz lambdaClassType = new JvmType.Clazz(owner.pkg(), owner.lastComponent().first(),
-				Integer.toString(lambda_id));
-
-		bytecodes.add(new Bytecode.New(lambdaClassType));
-		bytecodes.add(new Bytecode.Dup(lambdaClassType));
-
-		// Third, invoke lambda class constructor
-		JvmType.Function ftype = new JvmType.Function(T_VOID, JAVA_LANG_OBJECT_ARRAY);
-		bytecodes.add(new Bytecode.LoadConst(null));
-		bytecodes.add(new Bytecode.Invoke(lambdaClassType, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
+	/**
+	 * Translate a constant representing a given function or method into an
+	 * instance of a special lambda class. The lambda class extends WyLambda and
+	 * looks just like any other lambda function. However, when invoked, it will
+	 * call the function or method determined by the class directly.
+	 */
+	protected void translateConstant(Constant.FunctionOrMethod c, List<Bytecode> bytecodes) {
+		// First, build the lambda
+		NameID target = c.name();
+		ClassFile lambda = buildLambda(getModuleClass(target.module()), target.name(), c.type());
+		lambdaClasses.add(lambda);
+		// Finally, construct an instance of the class itself
+		construct(lambda.type(), bytecodes);
 	}
 
+	// ===============================================================================
+	// Lambdas
+	// ===============================================================================
+
+
 	/**
-	 * Construct a class which implements a lambda expression. This must be a
-	 * subtype of wyjc.runtime.WyLambda and must call the given function, whilst
-	 * decoding and passing through the appropriate parameters.
-	 *
-	 * @param name
-	 *            Name of function or method which this lambda should invoke.
+	 * Create a method representing the body of a lambda. This will then be
+	 * called by the lambda class created from the LambdaTemplate. Creating a
+	 * method like this is not necessarily optimal, but it allows me to simplify
+	 * the translation process (e.g. as locations still correspond to register
+	 * numbers, etc).
+	 * 
 	 * @param type
-	 *            Type of function or method which this lambda should invoke.
+	 * @param lambdaMethod
+	 * @param context
 	 * @return
 	 */
-	protected ClassFile buildLambda(NameID name, Type.FunctionOrMethod type, int id) {
-		// === (1) Determine the fully qualified type of the lambda class ===
-
-		// start with fully qualified type of this class.
-		JvmType.Clazz lambdaClassType = new JvmType.Clazz(owner.pkg(), owner.lastComponent().first(),
-				Integer.toString(id));
-
-		// === (2) Construct an empty class ===
-		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
-		modifiers.add(Modifier.ACC_PUBLIC);
-		modifiers.add(Modifier.ACC_FINAL);
-		ClassFile cf = new ClassFile(CLASS_VERSION, lambdaClassType, WHILEYLAMBDA, new ArrayList<JvmType.Clazz>(),
-				modifiers);
-
-		// === (3) Add constructor ===
-		modifiers = new ArrayList<Modifier>();
-		modifiers.add(Modifier.ACC_PUBLIC);
-		JvmType.Function constructorType = new JvmType.Function(JvmTypes.T_VOID, JAVA_LANG_OBJECT_ARRAY);
-		// Create constructor method
-		ClassFile.Method constructor = new ClassFile.Method("<init>", constructorType, modifiers);
-		cf.methods().add(constructor);
-		// Create body of constructor
-		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
-		bytecodes.add(new Bytecode.Load(0, lambdaClassType));
-		bytecodes.add(new Bytecode.Load(1, JAVA_LANG_OBJECT_ARRAY));
-		bytecodes.add(new Bytecode.Invoke(WHILEYLAMBDA, "<init>", constructorType, Bytecode.InvokeMode.SPECIAL));
-		bytecodes.add(new Bytecode.Return(null));
-		// Add code attribute to constructor
-		jasm.attributes.Code code = new jasm.attributes.Code(bytecodes, new ArrayList<Handler>(), constructor);
-		constructor.attributes().add(code);
-
-		// === (4) Add implementation of WyLambda.call(Object[]) ===
-		modifiers = new ArrayList<Modifier>();
-		modifiers.add(Modifier.ACC_PUBLIC);
-		modifiers.add(Modifier.ACC_FINAL);
-		JvmType.Function callFnType = new JvmType.Function(JvmTypes.JAVA_LANG_OBJECT, JAVA_LANG_OBJECT_ARRAY);
-		// Create constructor method
-		ClassFile.Method callFn = new ClassFile.Method("call", callFnType, modifiers);
-		cf.methods().add(callFn);
-		// Create body of call method
-		bytecodes = new ArrayList<Bytecode>();
-		// Call WyFunction.bindParameters()
-		bytecodes.add(new Bytecode.Load(0, lambdaClassType));
-		bytecodes.add(new Bytecode.Load(1, JAVA_LANG_OBJECT_ARRAY));
-		bytecodes.add(new Bytecode.Invoke(WHILEYLAMBDA, "bindParameters",
-				new JvmType.Function(JAVA_LANG_OBJECT_ARRAY, JAVA_LANG_OBJECT_ARRAY), Bytecode.InvokeMode.VIRTUAL));
-		bytecodes.add(new Bytecode.Store(1, JAVA_LANG_OBJECT_ARRAY));
-		// Load parameters onto stack
-		List<Type> type_params = type.params();
-		for (int i = 0; i != type_params.size(); ++i) {
-			bytecodes.add(new Bytecode.Load(1, JAVA_LANG_OBJECT_ARRAY));
-			bytecodes.add(new Bytecode.LoadConst(i));
-			bytecodes.add(new Bytecode.ArrayLoad(JAVA_LANG_OBJECT_ARRAY));
-			addReadConversion(type_params.get(i), bytecodes);
-		}
-
-		Path.ID mid = name.module();
-		String mangled = nameMangle(name.name(), type);
-		JvmType.Clazz owner = new JvmType.Clazz(mid.parent().toString().replace('/', '.'), mid.last());
-		JvmType.Function fnType = convertFunType(type);
-		bytecodes.add(new Bytecode.Invoke(owner, mangled, fnType, Bytecode.InvokeMode.STATIC));
-		if (type.returns().isEmpty()) {
-			// Called function doesn't return anything, but we have to.
-			// Therefore, push on dummy null value.
-			bytecodes.add(new Bytecode.LoadConst(null));
+	public ClassFile.Method buildLambdaMethod(Lambda l, String lambdaMethod, Context context) {
+		JvmType.Function type = buildLambdaMethodType(l.type(),l.environment(),context);
+		Context bodyContext = new Context(-1,context.getBytecodeForest());		
+		// Move environment into correct register slots. First, push them all
+		// onto the stack 
+		shiftLambdaMethodParameters(l.parameters(), l.environment(), bodyContext);		
+		// Translate the body of the lambda expression
+		translateOperand(l.body(),bodyContext);		
+		// Add the return value (if applicable)
+		if (type.returnType() instanceof JvmType.Void) {
+			bodyContext.add(new Bytecode.Return(null));
 		} else {
-			addWriteConversion(type.returns().get(0), bytecodes);
+			bodyContext.add(new Bytecode.Return(type.returnType()));
 		}
-
-		bytecodes.add(new Bytecode.Return(JAVA_LANG_OBJECT));
-
-		// Add code attribute to call method
-		code = new jasm.attributes.Code(bytecodes, new ArrayList<Handler>(), callFn);
-		callFn.attributes().add(code);
-
-		// Done
-		return cf;
-	}
-
-	protected void addCoercion(Type from, Type to, int freeSlot, HashMap<JvmConstant, Integer> constants,
-			ArrayList<Bytecode> bytecodes) {
-
-		// First, deal with coercions which require a change of representation
-		// when going into a union. For example, bool must => Boolean.
-		if (!(to instanceof Type.Bool) && from instanceof Type.Bool) {
-			// this is either going into a union type, or the any type
-			buildCoercion((Type.Bool) from, to, freeSlot, bytecodes);
-		} else if (from == Type.T_BYTE) {
-			buildCoercion((Type.Byte) from, to, freeSlot, bytecodes);
-		} else if (Type.intersect(from, to).equals(from)) {
-			// do nothing!
-			// (note, need to check this after primitive types to avoid risk of
-			// missing coercion to any)
-		} else if (from == Type.T_INT) {
-			// do nothing!
-		} else {
-			// ok, it's a harder case so we use an explicit coercion function
-			int id = JvmCoercion.get(from, to, constants);
-			String name = "coercion$" + id;
-			JvmType.Function ft = new JvmType.Function(convertUnderlyingType(to), convertUnderlyingType(from));
-			bytecodes.add(new Bytecode.Invoke(owner, name, ft, Bytecode.InvokeMode.STATIC));
-		}
-	}
-
-	private void buildCoercion(Type.Bool fromType, Type toType, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		// done deal!
-	}
-
-	private void buildCoercion(Type.Byte fromType, Type toType, int freeSlot,
-			ArrayList<Bytecode> bytecodes) {
-		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_BYTE, T_BYTE);
-		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_BYTE, "valueOf", ftype,
-				Bytecode.InvokeMode.STATIC));
-		// done deal!
-	}
-
-	/**
-	 * The build coercion method constructs a static final private method which
-	 * accepts a value of type "from", and coerces it into a value of type "to".
-	 *
-	 * @param to
-	 * @param from
-	 *
-	 */
-	protected void buildCoercion(Type from, Type to, int id,
-			HashMap<JvmConstant, Integer> constants, ClassFile cf) {
-		ArrayList<Bytecode> bytecodes = new ArrayList<Bytecode>();
-
-		int freeSlot = 1;
-		bytecodes.add(new Bytecode.Load(0, convertUnderlyingType(from)));
-		buildCoercion(from, to, freeSlot, constants, bytecodes);
-		bytecodes.add(new Bytecode.Return(convertUnderlyingType(to)));
-
-		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
-		modifiers.add(Modifier.ACC_PRIVATE);
-		modifiers.add(Modifier.ACC_STATIC);
-		modifiers.add(Modifier.ACC_SYNTHETIC);
-		JvmType.Function ftype = new JvmType.Function(
-				convertUnderlyingType(to), convertUnderlyingType(from));
-		String name = "coercion$" + id;
-		ClassFile.Method method = new ClassFile.Method(name, ftype, modifiers);
-		cf.methods().add(method);
-		jasm.attributes.Code code = new jasm.attributes.Code(bytecodes,
-				new ArrayList(), method);
+		// Create the method itself
+		String lambdaMethodMangled = nameMangle(lambdaMethod,l.type());
+		List<Modifier> modifiers = modifiers(ACC_PUBLIC, ACC_STATIC, ACC_FINAL);
+		ClassFile.Method method = new ClassFile.Method(lambdaMethodMangled, type, modifiers);
+		// Add the code attribute
+		jasm.attributes.Code code = new jasm.attributes.Code(bodyContext.getBytecodes(), Collections.EMPTY_LIST, method);
 		method.attributes().add(code);
-	}
-
-	protected void buildCoercion(Type from, Type to, int freeSlot,
-			HashMap<JvmConstant, Integer> constants,
-			ArrayList<Bytecode> bytecodes) {
-
-		// Second, case analysis on the various kinds of coercion
-		if (from instanceof Type.Reference
-				&& to instanceof Type.Reference) {
-			// TODO
-		} else if (from instanceof Type.Array && to instanceof Type.Array) {
-			buildCoercion((Type.Array) from, (Type.Array) to, freeSlot,
-					constants, bytecodes);
-		} else if (to instanceof Type.Record && from instanceof Type.Record) {
-			buildCoercion((Type.Record) from, (Type.Record) to, freeSlot,
-					constants, bytecodes);
-		} else if (to instanceof Type.Function && from instanceof Type.Function) {
-			// TODO
-		} else if (from instanceof Type.Negation || to instanceof Type.Negation) {
-			// no need to do anything, since convertType on a negation returns
-			// java/lang/Object
-		} else if (from instanceof Type.Union) {
-			buildCoercion((Type.Union) from, to, freeSlot, constants, bytecodes);
-		} else if (to instanceof Type.Union) {
-			buildCoercion(from, (Type.Union) to, freeSlot, constants, bytecodes);
-		} else {
-			throw new RuntimeException("invalid coercion encountered: " + from
-					+ " => " + to);
-		}
-	}
-
-	protected void buildCoercion(Type.Array fromType, Type.Array toType,
-			int freeSlot, HashMap<JvmConstant, Integer> constants,
-			ArrayList<Bytecode> bytecodes) {
-
-		if (fromType.element() == Type.T_VOID) {
-			// nothing to do, in this particular case
-			return;
-		}
-
-		// The following piece of code implements a java for-each loop which
-		// iterates every element of the input collection, and recursively
-		// converts it before loading it back onto a new WhileyList.
-
-		String loopLabel = freshLabel();
-		String exitLabel = freshLabel();
-		int iter = freeSlot++;
-		int tmp = freeSlot++;
-		JvmType.Function ftype = new JvmType.Function(JAVA_UTIL_ITERATOR);
-		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_COLLECTION, "iterator",
-				ftype, Bytecode.InvokeMode.INTERFACE));
-		bytecodes.add(new Bytecode.Store(iter, JAVA_UTIL_ITERATOR));
-		construct(WHILEYARRAY, freeSlot, bytecodes);
-		bytecodes.add(new Bytecode.Store(tmp, WHILEYARRAY));
-		bytecodes.add(new Bytecode.Label(loopLabel));
-		ftype = new JvmType.Function(T_BOOL);
-		bytecodes.add(new Bytecode.Load(iter, JAVA_UTIL_ITERATOR));
-		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "hasNext", ftype,
-				Bytecode.InvokeMode.INTERFACE));
-		bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, exitLabel));
-		bytecodes.add(new Bytecode.Load(tmp, WHILEYARRAY));
-		bytecodes.add(new Bytecode.Load(iter, JAVA_UTIL_ITERATOR));
-		ftype = new JvmType.Function(JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next", ftype,
-				Bytecode.InvokeMode.INTERFACE));
-		addReadConversion(fromType.element(), bytecodes);
-		addCoercion(fromType.element(), toType.element(), freeSlot, constants,
-				bytecodes);
-		ftype = new JvmType.Function(T_BOOL, JAVA_LANG_OBJECT);
-		bytecodes.add(new Bytecode.Invoke(WHILEYARRAY, "add", ftype,
-				Bytecode.InvokeMode.VIRTUAL));
-		bytecodes.add(new Bytecode.Pop(T_BOOL));
-		bytecodes.add(new Bytecode.Goto(loopLabel));
-		bytecodes.add(new Bytecode.Label(exitLabel));
-		bytecodes.add(new Bytecode.Load(tmp, WHILEYARRAY));
-	}
-
-	private void buildCoercion(Type.Record fromType, Type.Record toType,
-			int freeSlot, HashMap<JvmConstant, Integer> constants,
-			ArrayList<Bytecode> bytecodes) {
-		int oldSlot = freeSlot++;
-		int newSlot = freeSlot++;
-		bytecodes.add(new Bytecode.Store(oldSlot, WHILEYRECORD));
-		construct(WHILEYRECORD, freeSlot, bytecodes);
-		bytecodes.add(new Bytecode.Store(newSlot, WHILEYRECORD));
-		Map<String, Type> toFields = toType.fields();
-		Map<String, Type> fromFields = fromType.fields();
-		for (String key : toFields.keySet()) {
-			Type to = toFields.get(key);
-			Type from = fromFields.get(key);
-			bytecodes.add(new Bytecode.Load(newSlot, WHILEYRECORD));
-			bytecodes.add(new Bytecode.LoadConst(key));
-			bytecodes.add(new Bytecode.Load(oldSlot, WHILEYRECORD));
-			bytecodes.add(new Bytecode.LoadConst(key));
-			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT,
-					JAVA_LANG_OBJECT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "get", ftype,
-					Bytecode.InvokeMode.VIRTUAL));
-			// TODO: in cases when the read conversion is a no-op, we can do
-			// better here.
-			addReadConversion(from, bytecodes);
-			addCoercion(from, to, freeSlot, constants, bytecodes);
-			addWriteConversion(from, bytecodes);
-			ftype = new JvmType.Function(JAVA_LANG_OBJECT, JAVA_LANG_OBJECT,
-					JAVA_LANG_OBJECT);
-			bytecodes.add(new Bytecode.Invoke(WHILEYRECORD, "put", ftype,
-					Bytecode.InvokeMode.VIRTUAL));
-			bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT));
-		}
-		bytecodes.add(new Bytecode.Load(newSlot, WHILEYRECORD));
-	}
-
-	private void buildCoercion(Type.Union from, Type to, int freeSlot,
-			HashMap<JvmConstant, Integer> constants,
-			ArrayList<Bytecode> bytecodes) {
-
-		String exitLabel = freshLabel();
-		List<Type> fromBounds = new ArrayList<Type>(from.bounds());
-
-		// For each bound in the union, go through and check whether the given
-		// value (which is currently on the stack) is an instance of that bound.
-		// When we find the right one, then we recursively build a coercion from
-		// that type to the target type. In general, this could certainly be
-		// more efficient.
-		for (int i = 0; i != fromBounds.size(); ++i) {
-			Type bound = fromBounds.get(i);
-			if ((i + 1) == fromBounds.size()) {
-				// In the last case, we just assume that the value matches
-				// (since otherwise something very strange has happened).
-				addReadConversion(bound, bytecodes);
-				addCoercion(bound, to, freeSlot, constants, bytecodes);
-				bytecodes.add(new Bytecode.Goto(exitLabel));
-			} else {
-				// There is at least one more bound after this. In such case, we
-				// check whether the given value matches this bound. If so, we
-				// recursively build a coercion for that to the target type. If
-				// not, we branch to the next bound
-				String nextLabel = freshLabel();
-				bytecodes.add(new Bytecode.Dup(convertUnderlyingType(from)));
-				translateTypeTest(nextLabel, bound, constants, bytecodes);
-				addReadConversion(bound, bytecodes);
-				addCoercion(bound, to, freeSlot, constants, bytecodes);
-				bytecodes.add(new Bytecode.Goto(exitLabel));
-				bytecodes.add(new Bytecode.Label(nextLabel));
-			}
-		}
-
-		bytecodes.add(new Bytecode.Label(exitLabel));
-	}
-
-	private void buildCoercion(Type from, Type.Union to, int freeSlot,
-			HashMap<JvmConstant, Integer> constants,
-			ArrayList<Bytecode> bytecodes) {
-		Type.Union t2 = (Type.Union) to;
-
-		// First, check for identical type (i.e. no coercion necessary)
-		for (Type b : t2.bounds()) {
-			if (from.equals(b)) {
-				// nothing to do
-				return;
-			}
-		}
-
-		// Second, check for single non-coercive match
-		for (Type b : t2.bounds()) {
-			if (Type.isSubtype(b, from)) {
-				buildCoercion(from, b, freeSlot, constants, bytecodes);
-				return;
-			}
-		}
-
-		// Third, test for single coercive match
-		for (Type b : t2.bounds()) {
-			if (Type.isExplicitCoerciveSubtype(b, from)) {
-				buildCoercion(from, b, freeSlot, constants, bytecodes);
-				return;
-			}
-		}
-
-		// I don't think we should be able to get here!
+		//
+		return method;
 	}
 
 	/**
-	 * Construct generic code for iterating over a collection (e.g. a Whiley
-	 * List or Set). This code will not leave anything on the stack and will
-	 * store the iterator variable in a given slot. This means that things can
-	 * be passed on the stack from before the loop into the loop body.
+	 * Shift the parameters passed into this lambda method into the desired
+	 * target registers.
 	 * 
-	 * @param bytecodes
-	 *            The list of bytecodes onto which the loop code should be added
-	 * @param freeSlot
-	 *            The variable slot into which the iterator variable should be
-	 *            stored.
-	 * @param exitLabel
-	 *            The label which will represents after the end of the loop.
+	 * @param parameters
+	 *            Actual parameter of the lambda itself
+	 * @param environment
+	 *            Environment variables used from the enclosing scope within the
+	 *            lambda body
+	 * @param bodyContext
 	 */
-	private Triple<String, String, String> translateLoopBegin(
-			ArrayList<Bytecode> bytecodes, int sourceSlot, int freeSlot) {
-		String loopHeader = freshLabel();
-		String loopFooter = freshLabel();
-		String loopExit = freshLabel();
-
-		// First, call Collection.iterator() on the source collection and write
-		// it into the free slot.
-		bytecodes.add(new Bytecode.Load(sourceSlot, JAVA_LANG_ITERABLE));
-		bytecodes.add(new Bytecode.Invoke(JAVA_LANG_ITERABLE, "iterator",
-				new JvmType.Function(JAVA_UTIL_ITERATOR),Bytecode.InvokeMode.INTERFACE));
-		bytecodes.add(new Bytecode.Store(freeSlot, JAVA_UTIL_ITERATOR));
-
-		// Second, construct the loop header, which consists of the test to
-		// check whether or not there are any elements left in the collection to
-		// visit.
-		bytecodes.add(new Bytecode.Label(loopHeader));
-		bytecodes.add(new Bytecode.Load(freeSlot, JAVA_UTIL_ITERATOR));
-		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "hasNext",
-				new JvmType.Function(T_BOOL), Bytecode.InvokeMode.INTERFACE));
-		bytecodes.add(new Bytecode.If(Bytecode.IfMode.EQ, loopExit));
-
-		// Finally, get the current element out of the iterator by invoking
-		// Iterator.next();
-		bytecodes.add(new Bytecode.Load(freeSlot, JAVA_UTIL_ITERATOR));
-		bytecodes.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
-				new JvmType.Function(JAVA_LANG_OBJECT),
-				Bytecode.InvokeMode.INTERFACE));
-
-		// Done
-		return new Triple<>(loopHeader, loopFooter, loopExit);
-	}
-
-	private void translateLoopEnd(ArrayList<Bytecode> bytecodes,
-			Triple<String, String, String> labels) {
-		bytecodes.add(new Bytecode.Label(labels.second()));
-		bytecodes.add(new Bytecode.Goto(labels.first()));
-		bytecodes.add(new Bytecode.Label(labels.third()));
-	}
-
-	private void encodeOperandArray(List<Type> types, int[] operands, ArrayList<Bytecode> bytecodes) {
-		encodeOperandArray(types.toArray(new Type[types.size()]),operands,bytecodes);
-	}
-	
-	/**
-	 * Create an Object[] array from a list of operands. This involves
-	 * appropriately coercing primitives as necessary.
-	 * 
-	 * @param types
-	 * @param operands
-	 * @param bytecodes
-	 */
-	private void encodeOperandArray(Type[] types, int[] operands, ArrayList<Bytecode> bytecodes) {
-		bytecodes.add(new Bytecode.LoadConst(operands.length));
-		bytecodes.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
-		for (int i = 0; i != operands.length; ++i) {
-			int register = operands[i];
-			Type type = types[i];
-			JvmType jvmType = convertUnderlyingType(type);
-			bytecodes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
-			bytecodes.add(new Bytecode.LoadConst(i));
-			bytecodes.add(new Bytecode.Load(register, jvmType));
-			addWriteConversion(type, bytecodes);
-			bytecodes.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
+	private void shiftLambdaMethodParameters(int[] parameters, int[] environment, Context bodyContext) {
+		parameters = append(parameters,environment);
+		for(int i=0;i!=parameters.length;++i) {
+			int slot = parameters[i];
+			if(slot != i) {
+				BytecodeForest.Location loc = bodyContext.getLocation(parameters[i]);
+				bodyContext.add(new Bytecode.Load(i, convertUnderlyingType(loc.type(0))));
+			}
+		}
+		// Second, pop them all into the right register
+		for(int i=parameters.length-1;i>=0;--i) {
+			int slot = parameters[i];
+			if(slot != i) {
+				BytecodeForest.Location loc = bodyContext.getLocation(parameters[i]);
+				bodyContext.add(new Bytecode.Store(parameters[i], convertUnderlyingType(loc.type(0))));
+			}
 		}
 	}
 	
-	private void decodeOperandArray(List<Type> types, int[] targets, ArrayList<Bytecode> bytecodes) {
+	/**
+	 * Construct the true method type for a lambda body. This is the type of the
+	 * lambda itself, along with the types for any environment variables which
+	 * are required.
+	 * 
+	 * @param type
+	 * @param environment
+	 * @param context
+	 * @return
+	 */
+	public JvmType.Function buildLambdaMethodType(Type.FunctionOrMethod type, int[] environment, Context context) {
+		JvmType.Function jvmType = convertFunType(type);
+		ArrayList<JvmType> actualParameterTypes = new ArrayList<JvmType>(jvmType.parameterTypes());
+		for (int i = 0; i != environment.length; ++i) {
+			BytecodeForest.Location loc = context.getLocation(environment[i]);
+			actualParameterTypes.add(convertUnderlyingType(loc.type(0)));
+		}
+		//
+		return new JvmType.Function(jvmType.returnType(), actualParameterTypes);
+	}
+	
+	/**
+	 * Determine the types for the environment variables of a lambda expression.
+	 * 
+	 * @param environment
+	 * @param context
+	 * @return
+	 */
+	public JvmType[] buildLambdaEnvironment(int[] environment, Context context) {
+		JvmType[] envTypes = new JvmType[environment.length];
+		for (int i = 0; i != environment.length; ++i) {
+			BytecodeForest.Location loc = context.getLocation(environment[i]);
+			envTypes[i] = convertUnderlyingType(loc.type(0));
+		}
+		return envTypes;
+	}
+	
+	public ClassFile buildLambda(JvmType.Clazz targetClass, String targetMethod, Type.FunctionOrMethod type,
+			JvmType... environment) {
+		int lambda_id = lambdaClasses.size();
+		// Determine name of the lambda class. This class will extend class
+		// wyjc.runtime.WyLambda.
+		JvmType.Clazz lambdaClass = new JvmType.Clazz(owner.pkg(), owner.lastComponent().first(),
+				Integer.toString(lambda_id));
+		// Determine mangled name of function or method
+		String targetMethodMangled = nameMangle(targetMethod, type);
+		// Determine JvmType of function or method
+		JvmType.Function jvmType = convertFunType(type);
+		// Determine the Jvm types for the environment		
+		// Create the lambda template
+		LambdaTemplate template = new LambdaTemplate(CLASS_VERSION, lambdaClass, targetClass, targetMethodMangled,
+				jvmType, environment);
+		// Instantiate the template to generate the lambda class
+		return template.generateClass();
+	}
+
+	// ===============================================================================
+	// Helpers
+	// ===============================================================================
+
+
+	/**
+	 * Create an invocation bytecode for a given WyIL function or method. This
+	 * is just a convenience method which takes care of name mangling, etc.
+	 * 
+	 * @param name
+	 *            Name and module of function or method to be invoked
+	 * @param type
+	 *            Type of function or method to be invoked
+	 * @return
+	 */
+	public Bytecode.Invoke createMethodInvocation(NameID name, Type.FunctionOrMethod type) {
+		// Determine name of class corresponding to the given module
+		JvmType.Clazz owner = getModuleClass(name.module());
+		// Determine mangled name for function/method being invoked
+		String mangled = nameMangle(name.name(), type);
+		// Convert the type of the function/method being invoked
+		JvmType.Function fnType = convertFunType(type);
+		// Create the invocation!
+		return new Bytecode.Invoke(owner, mangled, fnType, Bytecode.InvokeMode.STATIC);
+	}
+
+	private void decodeOperandArray(List<Type> types, int[] targets, Context context) {
 		for (int i = 0; i != targets.length; ++i) {
 			int register = targets[i];
 			Type type = types.get(i);
-			bytecodes.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
-			bytecodes.add(new Bytecode.LoadConst(i));
-			bytecodes.add(new Bytecode.ArrayLoad(JAVA_LANG_OBJECT_ARRAY));			
-			addReadConversion(type, bytecodes);
+			context.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
+			context.add(new Bytecode.LoadConst(i));
+			context.add(new Bytecode.ArrayLoad(JAVA_LANG_OBJECT_ARRAY));
+			addReadConversion(type, context.getBytecodes());
 			JvmType jvmType = convertUnderlyingType(type);
-			bytecodes.add(new Bytecode.Store(register, jvmType));
+			context.add(new Bytecode.Store(register, jvmType));
 		}
-		bytecodes.add(new Bytecode.Pop(JAVA_LANG_OBJECT_ARRAY));
+		context.add(new Bytecode.Pop(JAVA_LANG_OBJECT_ARRAY));
 	}
-		
+
 	/**
 	 * The read conversion is necessary in situations where we're reading a
 	 * value from a collection (e.g. WhileyList, WhileySet, etc) and then
 	 * putting it on the stack. In such case, we need to convert boolean values
 	 * from Boolean objects to bool primitives.
 	 */
-	private void addReadConversion(Type et, Context context) {
-		// This doesn't do anything extrac since there are currently no data
+	private void addReadConversion(Type et, List<Bytecode> bytecodes) {
+		// This doesn't do anything extra since there are currently no data
 		// types implemented as primitives.
-		addCheckCast(convertUnderlyingType(et), context);
+		addCheckCast(convertUnderlyingType(et), bytecodes);
 	}
 
 	/**
@@ -1842,12 +2071,12 @@ public class Wyil2JavaBuilder implements Builder {
 	 * such case, we need to convert boolean values from bool primitives to
 	 * Boolean objects.
 	 */
-	private void addWriteConversion(Type et, Context context) {
+	private void addWriteConversion(Type et, List<Bytecode> bytecodes) {
 		// This currently does nothing since there are currently no data types
 		// implemented as primitives.
 	}
 
-	private void addCheckCast(JvmType type, Context context) {
+	private void addCheckCast(JvmType type, List<Bytecode> bytecodes) {
 		// The following can happen in situations where a variable has type
 		// void. In principle, we could remove this as obvious dead-code, but
 		// for now I just avoid it.
@@ -1855,7 +2084,7 @@ public class Wyil2JavaBuilder implements Builder {
 			return;
 		} else if (!type.equals(JAVA_LANG_OBJECT)) {
 			// pointless to add a cast for object
-			context.add(new Bytecode.CheckCast(type));
+			bytecodes.add(new Bytecode.CheckCast(type));
 		}
 	}
 
@@ -1867,7 +2096,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param bytecodes
 	 * @param params
 	 */
-	private void construct(JvmType.Clazz owner, int freeSlot, ArrayList<Bytecode> bytecodes) {
+	private void construct(JvmType.Clazz owner, List<Bytecode> bytecodes) {
 		bytecodes.add(new Bytecode.New(owner));
 		bytecodes.add(new Bytecode.Dup(owner));
 		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
@@ -1875,50 +2104,31 @@ public class Wyil2JavaBuilder implements Builder {
 		bytecodes.add(new Bytecode.Invoke(owner, "<init>", ftype, Bytecode.InvokeMode.SPECIAL));
 	}
 
-	public final static Type WHILEY_SYSTEM_T = Type.Nominal(new NameID(Trie
-			.fromString("whiley/lang/System"), "Console"));
+	public final static Type WHILEY_SYSTEM_T = Type
+			.Nominal(new NameID(Trie.fromString("whiley/lang/System"), "Console"));
 
-	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz(
-			"wyjc.runtime", "Util");
-	public final static JvmType.Clazz WHILEYARRAY = new JvmType.Clazz(
-			"wyjc.runtime", "WyArray");
-	public final static JvmType.Clazz WHILEYTYPE = new JvmType.Clazz(
-			"wyjc.runtime", "WyType");
-	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz(
-			"wyjc.runtime", "WyRecord");
-	public final static JvmType.Clazz WHILEYOBJECT = new JvmType.Clazz(
-			"wyjc.runtime", "WyObject");
-	public final static JvmType.Clazz WHILEYBOOL = new JvmType.Clazz(
-			"wyjc.runtime", "WyBool");
-	public final static JvmType.Clazz WHILEYBYTE = new JvmType.Clazz(
-			"wyjc.runtime", "WyByte");
-	public final static JvmType.Clazz WHILEYINT = new JvmType.Clazz(
-			"java.math", "BigInteger");
-	public final static JvmType.Clazz WHILEYLAMBDA = new JvmType.Clazz(
-			"wyjc.runtime", "WyLambda");
+	public final static JvmType.Clazz WHILEYUTIL = new JvmType.Clazz("wyjc.runtime", "Util");
+	public final static JvmType.Clazz WHILEYARRAY = new JvmType.Clazz("wyjc.runtime", "WyArray");
+	public final static JvmType.Clazz WHILEYTYPE = new JvmType.Clazz("wyjc.runtime", "WyType");
+	public final static JvmType.Clazz WHILEYRECORD = new JvmType.Clazz("wyjc.runtime", "WyRecord");
+	public final static JvmType.Clazz WHILEYOBJECT = new JvmType.Clazz("wyjc.runtime", "WyObject");
+	public final static JvmType.Clazz WHILEYBOOL = new JvmType.Clazz("wyjc.runtime", "WyBool");
+	public final static JvmType.Clazz WHILEYBYTE = new JvmType.Clazz("wyjc.runtime", "WyByte");
+	public final static JvmType.Clazz WHILEYINT = new JvmType.Clazz("java.math", "BigInteger");
+	public final static JvmType.Clazz WHILEYLAMBDA = new JvmType.Clazz("wyjc.runtime", "WyLambda");
 
-	private static final JvmType.Clazz JAVA_LANG_CHARACTER = new JvmType.Clazz(
-			"java.lang", "Character");
-	private static final JvmType.Clazz JAVA_LANG_SYSTEM = new JvmType.Clazz(
-			"java.lang", "System");
-	private static final JvmType.Clazz JAVA_LANG_ITERABLE = new JvmType.Clazz(
-			"java.lang", "Iterable");
-	private static final JvmType.Array JAVA_LANG_OBJECT_ARRAY = new JvmType.Array(
-			JAVA_LANG_OBJECT);
-	private static final JvmType.Clazz JAVA_UTIL_LIST = new JvmType.Clazz(
-			"java.util", "List");
-	private static final JvmType.Clazz JAVA_UTIL_SET = new JvmType.Clazz(
-			"java.util", "Set");
+	private static final JvmType.Clazz JAVA_LANG_CHARACTER = new JvmType.Clazz("java.lang", "Character");
+	private static final JvmType.Clazz JAVA_LANG_SYSTEM = new JvmType.Clazz("java.lang", "System");
+	private static final JvmType.Clazz JAVA_LANG_ITERABLE = new JvmType.Clazz("java.lang", "Iterable");
+	public static final JvmType.Array JAVA_LANG_OBJECT_ARRAY = new JvmType.Array(JAVA_LANG_OBJECT);
+	private static final JvmType.Clazz JAVA_UTIL_LIST = new JvmType.Clazz("java.util", "List");
+	private static final JvmType.Clazz JAVA_UTIL_SET = new JvmType.Clazz("java.util", "Set");
 	// private static final JvmType.Clazz JAVA_LANG_REFLECT_METHOD = new
 	// JvmType.Clazz("java.lang.reflect","Method");
-	private static final JvmType.Clazz JAVA_IO_PRINTSTREAM = new JvmType.Clazz(
-			"java.io", "PrintStream");
-	private static final JvmType.Clazz JAVA_LANG_RUNTIMEEXCEPTION = new JvmType.Clazz(
-			"java.lang", "RuntimeException");
-	private static final JvmType.Clazz JAVA_LANG_ASSERTIONERROR = new JvmType.Clazz(
-			"java.lang", "AssertionError");
-	private static final JvmType.Clazz JAVA_UTIL_COLLECTION = new JvmType.Clazz(
-			"java.util", "Collection");
+	private static final JvmType.Clazz JAVA_IO_PRINTSTREAM = new JvmType.Clazz("java.io", "PrintStream");
+	private static final JvmType.Clazz JAVA_LANG_RUNTIMEEXCEPTION = new JvmType.Clazz("java.lang", "RuntimeException");
+	private static final JvmType.Clazz JAVA_LANG_ASSERTIONERROR = new JvmType.Clazz("java.lang", "AssertionError");
+	private static final JvmType.Clazz JAVA_UTIL_COLLECTION = new JvmType.Clazz("java.util", "Collection");
 
 	private JvmType.Function convertFunType(Type.FunctionOrMethod ft) {
 		ArrayList<JvmType> paramTypes = new ArrayList<JvmType>();
@@ -1926,7 +2136,7 @@ public class Wyil2JavaBuilder implements Builder {
 			paramTypes.add(convertUnderlyingType(pt));
 		}
 		JvmType rt;
-		switch(ft.returns().size()) {
+		switch (ft.returns().size()) {
 		case 0:
 			rt = T_VOID;
 			break;
@@ -1938,7 +2148,7 @@ public class Wyil2JavaBuilder implements Builder {
 			// Multiple return value
 			rt = JAVA_LANG_OBJECT_ARRAY;
 		}
-		
+
 		return new JvmType.Function(rt, paramTypes);
 	}
 
@@ -1981,10 +2191,10 @@ public class Wyil2JavaBuilder implements Builder {
 			// general case we just return object.
 			Type.Union ut = (Type.Union) t;
 			JvmType result = null;
-			for(Type bound : ut.bounds()) {
+			for (Type bound : ut.bounds()) {
 				JvmType r = convertUnderlyingType(bound);
-				if(result == null) {
-					result = r; 
+				if (result == null) {
+					result = r;
 				} else if (!r.equals(result)) {
 					result = JAVA_LANG_OBJECT;
 				}
@@ -1998,6 +2208,8 @@ public class Wyil2JavaBuilder implements Builder {
 			try {
 				Type expanded = expander.getUnderlyingType(t);
 				return convertUnderlyingType(expanded);
+			} catch (InternalFailure ex) {
+				throw ex;
 			} catch (Exception e) {
 				internalFailure("error expanding type: " + t, filename, e);
 				return null; // deadcode
@@ -2005,6 +2217,48 @@ public class Wyil2JavaBuilder implements Builder {
 		} else {
 			throw new RuntimeException("unknown type encountered: " + t);
 		}
+	}
+
+	/**
+	 * Get the JvmType.Clazz associated with a given WyIL module.
+	 * 
+	 * @param mid
+	 * @return
+	 */
+	private JvmType.Clazz getModuleClass(Path.ID mid) {
+		return new JvmType.Clazz(mid.parent().toString().replace('/', '.'), mid.last());
+	}
+
+	/**
+	 * Reverse an array of integer items
+	 * 
+	 * @param items
+	 * @return
+	 */
+	private static int[] reverse(int[] items) {
+		int[] rs = new int[items.length];
+		int last = items.length - 1;
+		for (int i = 0; i != rs.length; ++i) {
+			rs[i] = items[last - i];
+		}
+		return rs;
+	}
+
+	/**
+	 * Construct a list of modifiers from an array of (potentially null)
+	 * modifiers.
+	 * 
+	 * @param mods
+	 * @return
+	 */
+	private static List<Modifier> modifiers(Modifier... mods) {
+		ArrayList<Modifier> modifiers = new ArrayList<Modifier>();
+		for (Modifier m : mods) {
+			if (m != null) {
+				modifiers.add(m);
+			}
+		}
+		return modifiers;
 	}
 
 	protected int label = 0;
@@ -2021,8 +2275,7 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 
-	private static String typeMangle(Type.FunctionOrMethod ft)
-			throws IOException {
+	private static String typeMangle(Type.FunctionOrMethod ft) throws IOException {
 		JavaIdentifierOutputStream jout = new JavaIdentifierOutputStream();
 		BinaryOutputStream binout = new BinaryOutputStream(jout);
 		Type.BinaryWriter tm = new Type.BinaryWriter(binout);
@@ -2031,6 +2284,13 @@ public class Wyil2JavaBuilder implements Builder {
 		return jout.toString();
 	}
 
+	private static int[] append(int[] lhs, int... rhs) {
+		int[] noperands = new int[lhs.length + rhs.length];
+		System.arraycopy(lhs, 0, noperands, 0, lhs.length);
+		System.arraycopy(rhs, 0, noperands, lhs.length, rhs.length);
+		return noperands;
+	}
+	
 	/**
 	 * A constant is some kind of auxillary functionality used in generated
 	 * code, which can be reused at multiple sites. This includes value
@@ -2061,8 +2321,7 @@ public class Wyil2JavaBuilder implements Builder {
 			return value.hashCode();
 		}
 
-		public static int get(Constant value,
-				HashMap<JvmConstant, Integer> constants) {
+		public static int get(Constant value, HashMap<JvmConstant, Integer> constants) {
 			JvmValue vc = new JvmValue(value);
 			Integer r = constants.get(vc);
 			if (r != null) {
@@ -2096,8 +2355,7 @@ public class Wyil2JavaBuilder implements Builder {
 			return from.hashCode() + to.hashCode();
 		}
 
-		public static int get(Type from, Type to,
-				HashMap<JvmConstant, Integer> constants) {
+		public static int get(Type from, Type to, HashMap<JvmConstant, Integer> constants) {
 			JvmCoercion vc = new JvmCoercion(from, to);
 			Integer r = constants.get(vc);
 			if (r != null) {
@@ -2116,8 +2374,7 @@ public class Wyil2JavaBuilder implements Builder {
 		public String target;
 		public JvmType.Clazz exception;
 
-		public UnresolvedHandler(String start, String end, String target,
-				JvmType.Clazz exception) {
+		public UnresolvedHandler(String start, String end, String target, JvmType.Clazz exception) {
 			this.start = start;
 			this.end = end;
 			this.target = target;
@@ -2130,27 +2387,44 @@ public class Wyil2JavaBuilder implements Builder {
 		 * The code forest in which we are currently operating
 		 */
 		private final BytecodeForest forest;
-		
-		/**
-		 * The index of the bytecode being translated
-		 */
-		private final BytecodeForest.Index pc;
-		
+
 		/**
 		 * The list of bytecodes that have been generated so far
 		 */
 		private final ArrayList<Bytecode> bytecodes;
-		
+
 		/**
 		 * The next available free register slot
 		 */
 		private final int freeSlot;
 		
-		public Context(BytecodeForest forest, BytecodeForest.Index pc, int freeSlot, ArrayList<Bytecode> bytecodes) {
+		/**
+		 * Determine the branch target for a break statement
+		 */
+		private final String breakLabel;
+		
+		/**
+		 * Determine the branch target for a continue statement
+		 */
+		private final String continueLabel;
+
+		/**
+		 * The index of the bytecode being translated
+		 */
+		private BytecodeForest.Index pc;
+
+		public Context(int block, BytecodeForest forest) {
+			this(forest,new BytecodeForest.Index(block, 0),forest.numLocations(),new ArrayList<Bytecode>(),null,null);
+		}
+
+		public Context(BytecodeForest forest, BytecodeForest.Index pc, int freeSlot, ArrayList<Bytecode> bytecodes,
+				String breakLabel, String continueLabel) {
 			this.forest = forest;
 			this.bytecodes = bytecodes;
 			this.pc = pc;
 			this.freeSlot = freeSlot;
+			this.breakLabel = breakLabel;
+			this.continueLabel = continueLabel;
 		}
 		
 		private Context(Context context) {
@@ -2158,28 +2432,81 @@ public class Wyil2JavaBuilder implements Builder {
 			this.bytecodes = context.bytecodes;
 			this.pc = context.pc;
 			this.freeSlot = context.freeSlot;
+			this.breakLabel = context.breakLabel;
+			this.continueLabel = context.continueLabel;
+		}
+
+		public Attribute attribute(Class<? extends Attribute> kind) {
+			return forest.get(pc).attribute(kind);
+		}
+
+		public wyil.lang.Bytecode.Stmt getStatement() {
+			return forest.get(pc).first();
+		}
+
+		public BytecodeForest.Location getLocation(int operand) {
+			return forest.getLocation(operand);
+		}
+
+		public List<Bytecode> getBytecodes() {
+			return bytecodes;
+		}
+
+		public BytecodeForest getBytecodeForest() {
+			return forest;
 		}
 		
+		public String getBreakLabel() {
+			return breakLabel;
+		}
+
+		public String getContinueLabel() {
+			return continueLabel;
+		}
+		
+		public boolean hasNext() {
+			BytecodeForest.Block b = forest.get(pc.block());
+			return pc.offset() < b.size();
+		}
+
+		public void nextStatement() {
+			pc = pc.next();
+		}
+
+		public Context newBlock(int block) {
+			BytecodeForest.Index npc = new BytecodeForest.Index(block, 0);
+			return new Context(forest, npc, freeSlot, bytecodes, breakLabel, continueLabel);
+		}
+
+		public Context newLoopBlock(int block, String breakLabel, String continueLabel) {
+			BytecodeForest.Index npc = new BytecodeForest.Index(block, 0);
+			return new Context(forest, npc, freeSlot, bytecodes, breakLabel, continueLabel);
+		}
+		
+		public Context.Operand newOperand(int operand) {
+			return new Context.Operand(operand, this);
+		}
+
 		public void add(Bytecode bytecode) {
 			bytecodes.add(bytecode);
 		}
-		
+
 		public void addReadConversion(Type type) {
-			Wyil2JavaBuilder.this.addReadConversion(type,bytecodes);
+			Wyil2JavaBuilder.this.addReadConversion(type, bytecodes);
 		}
-		
+
 		public void addWriteConversion(Type type) {
-			Wyil2JavaBuilder.this.addWriteConversion(type,bytecodes);
+			Wyil2JavaBuilder.this.addWriteConversion(type, bytecodes);
 		}
-		
+
 		public void construct(JvmType.Clazz type) {
-			Wyil2JavaBuilder.this.construct(type,freeSlot,bytecodes);
+			Wyil2JavaBuilder.this.construct(type, bytecodes);
 		}
-		
+
 		public JvmType toJvmType(Type type) {
 			return convertUnderlyingType(type);
 		}
-		
+
 		public class Operand extends Context {
 			/**
 			 * Index of operand within the bytecode statement we are executing
@@ -2190,13 +2517,13 @@ public class Wyil2JavaBuilder implements Builder {
 				super(context);
 				this.operand = operand;
 			}
-			
+
 			public BytecodeForest.Operand getOperand() {
 				return (BytecodeForest.Operand) forest.getLocation(operand);
-			}					
+			}
 		}
 	}
-	
+
 	/**
 	 * Provides a simple interface for translating individual bytecodes.
 	 * 

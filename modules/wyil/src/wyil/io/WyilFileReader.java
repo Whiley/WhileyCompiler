@@ -291,7 +291,7 @@ public final class WyilFileReader {
 				int nameIndex = input.read_uv();
 				Type.FunctionOrMethod t = (Type.FunctionOrMethod) typePool[typeIndex];
 				NameID name = namePool[nameIndex];
-				constant = new Constant.Lambda(name, t);
+				constant = new Constant.FunctionOrMethod(name, t);
 				break;
 			}
 			case WyilFileWriter.CONSTANT_Type: {

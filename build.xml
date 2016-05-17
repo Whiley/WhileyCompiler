@@ -11,7 +11,7 @@
     <file name="wycs/build.xml"/>
     <file name="wyil/build.xml"/>
     <file name="wyc/build.xml"/>
-    <file name="wyrt/build.xml"/>
+    <!-- <file name="wyrt/build.xml"/> -->
     <file name="wyjc/build.xml"/>
   </filelist>
 

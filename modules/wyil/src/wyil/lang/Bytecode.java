@@ -432,8 +432,9 @@ public abstract class Bytecode {
 		}
 		
 		public int[] environment() {
-			int[] rs = new int[type.returns().size()];
-			System.arraycopy(operands, 1+type.params().size(), rs, 0, rs.length);
+			int environmentLength = operands.length - (type.params().size()+1);
+			int[] rs = new int[environmentLength];
+			System.arraycopy(operands, 1+type.params().size(), rs, 0, environmentLength);
 			return rs;
 		}
 		

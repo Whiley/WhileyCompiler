@@ -645,8 +645,8 @@ public class Interpreter {
 		
 		Constant operand = executeSingle(ANY_T, bytecode.operand(0),frame,context);
 		// Check that we have a function reference
-		if(operand instanceof Constant.Lambda) {
-			Constant.Lambda cl = checkType(operand, context, Constant.Lambda.class);			
+		if(operand instanceof Constant.FunctionOrMethod) {
+			Constant.FunctionOrMethod cl = checkType(operand, context, Constant.FunctionOrMethod.class);			
 			Constant[] arguments = executeMulti(bytecode.arguments(),frame,context);			
 			return execute(cl.name(),cl.type(),arguments);
 		} else {
@@ -1008,8 +1008,8 @@ public class Interpreter {
 			Type.Negation t = (Type.Negation) type;
 			return !isMemberOfType(value, t.element(), context);
 		} else if (type instanceof Type.FunctionOrMethod) {
-			if (value instanceof Constant.Lambda) {
-				Constant.Lambda l = (Constant.Lambda) value;
+			if (value instanceof Constant.FunctionOrMethod) {
+				Constant.FunctionOrMethod l = (Constant.FunctionOrMethod) value;
 				if (Type.isSubtype(type, l.type())) {
 					return true;
 				}

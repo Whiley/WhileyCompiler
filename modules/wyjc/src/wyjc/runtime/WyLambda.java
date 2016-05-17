@@ -28,25 +28,7 @@ package wyjc.runtime;
 import java.util.Arrays;
 
 public abstract class WyLambda {
-	private final Object[] bindings;
-
-	public WyLambda(Object... bindings) {
-		this.bindings = bindings;
-	}
-
+	
 	public abstract Object call(Object[] parameters);
-
-	protected final Object[] bindParameters(Object[] parameters) {
-		if (bindings != null) {
-			Object[] copyOfBindings = bindings.clone();
-			for (int i = 0, j = 0; i != bindings.length; ++i) {
-				if (bindings[i] == null) {
-					copyOfBindings[i] = parameters[j++];
-				}
-			}
-			return copyOfBindings;
-		} else {
-			return parameters;
-		}
-	}
+	
 }

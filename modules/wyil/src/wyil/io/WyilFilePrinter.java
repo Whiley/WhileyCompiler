@@ -50,8 +50,6 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 	private PrintWriter out;
 	private boolean verbose = getVerbose();
 	
-
-
 	public WyilFilePrinter(wybs.lang.Builder builder) {
 
 	}
@@ -112,7 +110,9 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			out.println("type " + td.name() + " : " + t_str);						
 			BytecodeForest forest = td.invariant();
 			for(int i=0;i!=forest.numRoots();++i) {
-				out.println("where " + forest.getRoot(i));
+				out.print("where ");
+				write(forest.getRoot(i), forest, out);
+				out.println();
 			}
 			out.println();
 		}
