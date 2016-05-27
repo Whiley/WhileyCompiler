@@ -32,6 +32,7 @@ import java.util.*;
 
 import wycc.lang.Attribute;
 import wycc.lang.CompilationUnit;
+import wycc.lang.SyntacticElement;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -377,7 +378,7 @@ public final class WyilFile implements CompilationUnit {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static abstract class Block {
+	public static abstract class Block implements SyntacticElement {
 		private final List<Attribute> attributes;
 
 		public Block(Collection<Attribute> attributes) {

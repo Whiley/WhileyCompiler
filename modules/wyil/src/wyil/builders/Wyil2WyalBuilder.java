@@ -79,7 +79,7 @@ public class Wyil2WyalBuilder implements Builder {
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
 
-		VcGenerator vcg = new VcGenerator(this);
+		VerificationConditionGenerator vcg = new VerificationConditionGenerator(this);
 		
 		// ========================================================================
 		// Translate files
@@ -90,7 +90,7 @@ public class Wyil2WyalBuilder implements Builder {
 			Path.Root dst = p.second();
 			Path.Entry<WyalFile> df = (Path.Entry<WyalFile>) dst.create(sf.id(), WyalFile.ContentType);
 			generatedFiles.add(df);
-			WyalFile contents = vcg.transform(sf.read());
+			WyalFile contents = vcg.translate(sf.read());
 			// Write the file into its destination
 			df.write(contents);
 			// Then, flush contents to disk in case we generate an assertion
