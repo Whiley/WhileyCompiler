@@ -37,7 +37,11 @@ import wyfs.io.BinaryInputStream;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.*;
-import wyil.util.AttributedCodeBlock;
+import wyil.lang.Bytecode.Schema;
+import wyil.lang.Bytecode.Extras;
+import wyil.lang.Bytecode.Operands;
+import wyil.lang.Bytecode.Targets;
+import wyil.lang.Bytecode.Types;
 
 /**
  * Read a binary WYIL file from a byte stream and convert into the corresponding
@@ -47,8 +51,7 @@ import wyil.util.AttributedCodeBlock;
  *
  */
 public final class WyilFileReader {
-	private static final char[] magic = { 'W', 'Y', 'I', 'L', 'F', 'I', 'L',
-			'E' };
+	private static final char[] magic = { 'W', 'Y', 'I', 'L', 'F', 'I', 'L', 'E' };
 
 	private final BinaryInputStream input;
 	private String[] stringPool;
@@ -109,6 +112,23 @@ public final class WyilFileReader {
 		return readModule();
 	}
 
+	/**
+	 * Read the list of strings which constitute the string pool. Each entry is
+	 * formated like so:
+	 * 
+	 * <pre>
+	 * +-----------------+
+	 * | uv : len        |
+	 * +-----------------+
+	 * | u8[len] : bytes |
+	 * +-----------------+
+	 * </pre>
+	 * 
+	 * The encoding for each string item is UTF-8.
+	 * 
+	 * @param count
+	 * @throws IOException
+	 */
 	private void readStringPool(int count) throws IOException {
 		final String[] myStringPool = new String[count];
 
@@ -126,6 +146,25 @@ public final class WyilFileReader {
 		stringPool = myStringPool;
 	}
 
+	/**
+	 * Read the list of paths which constitute the path pool. Each entry is
+	 * formated like so:
+	 * 
+	 * <pre>
+	 * +-----------------+
+	 * | uv : parent     |
+	 * +-----------------+
+	 * | uv : stringIdx  |
+	 * +-----------------+
+	 * </pre>
+	 * 
+	 * Each entry is a child of some parent entry, with index zero being
+	 * automatically designated the "root". The <code>stringIdx</code>
+	 * corresponds to an index in the string pool.
+	 * 
+	 * @param count
+	 * @throws IOException
+	 */
 	private void readPathPool(int count) throws IOException {
 		final Path.ID[] myPathPool = new Path.ID[count];
 		myPathPool[0] = Trie.ROOT;
@@ -141,6 +180,24 @@ public final class WyilFileReader {
 		pathPool = myPathPool;
 	}
 
+	/**
+	 * Read the list of names which constitute the name pool. Each entry is
+	 * formated like so:
+	 * 
+	 * <pre>
+	 * +-----------------+
+	 * | uv : pathIdx    |
+	 * +-----------------+
+	 * | uv : stringIdx  |
+	 * +-----------------+
+	 * </pre>
+	 * 
+	 * Each entry consists of a path component and a name component, both of
+	 * which index the path and string pools (respectively).
+	 * 
+	 * @param count
+	 * @throws IOException
+	 */
 	private void readNamePool(int count) throws IOException {
 		final NameID[] myNamePool = new NameID[count];
 
@@ -156,6 +213,26 @@ public final class WyilFileReader {
 		namePool = myNamePool;
 	}
 
+	/**
+	 * Read the list of constants which constitute the constant pool. Each entry
+	 * is formated like so:
+	 * 
+	 * <pre>
+	 * +-----------------+
+	 * | uv : code       |
+	 * +-----------------+
+	 * | ... payload ... |
+	 * +-----------------+
+	 * </pre>
+	 * 
+	 * Here, the size of the payload is determined by the constant code. In some
+	 * cases, there is no payload (e.g. for the constant NULL). In other case,
+	 * there can be numerous bytes contained in the payload (e.g. for an Integer
+	 * constant).
+	 * 
+	 * @param count
+	 * @throws IOException
+	 */
 	private void readConstantPool(int count) throws IOException {
 		final Constant[] myConstantPool = new Constant[count];
 
@@ -165,17 +242,17 @@ public final class WyilFileReader {
 
 			switch (code) {
 			case WyilFileWriter.CONSTANT_Null:
-				constant = Constant.V_NULL;
+				constant = Constant.Null;
 				break;
 			case WyilFileWriter.CONSTANT_False:
-				constant = Constant.V_BOOL(false);
+				constant = Constant.False;
 				break;
 			case WyilFileWriter.CONSTANT_True:
-				constant = Constant.V_BOOL(true);
+				constant = Constant.True;
 				break;
 			case WyilFileWriter.CONSTANT_Byte: {
 				byte val = (byte) input.read_u8();
-				constant = Constant.V_BYTE(val);
+				constant = new Constant.Byte(val);
 				break;
 			}
 			case WyilFileWriter.CONSTANT_Int: {
@@ -183,17 +260,17 @@ public final class WyilFileReader {
 				byte[] bytes = new byte[len];
 				input.read(bytes);
 				BigInteger bi = new BigInteger(bytes);
-				constant = Constant.V_INTEGER(bi);
+				constant = new Constant.Integer(bi);
 				break;
 			}
-			case WyilFileWriter.CONSTANT_List: {
+			case WyilFileWriter.CONSTANT_Array: {
 				int len = input.read_uv();
 				ArrayList<Constant> values = new ArrayList<Constant>();
 				for (int j = 0; j != len; ++j) {
 					int index = input.read_uv();
 					values.add(myConstantPool[index]);
 				}
-				constant = Constant.V_ARRAY(values);
+				constant = new Constant.Array(values);
 				break;
 			}
 			case WyilFileWriter.CONSTANT_Record: {
@@ -205,7 +282,7 @@ public final class WyilFileReader {
 					String str = stringPool[fieldIndex];
 					tvs.put(str, myConstantPool[constantIndex]);
 				}
-				constant = Constant.V_RECORD(tvs);
+				constant = new Constant.Record(tvs);
 				break;
 			}
 			case WyilFileWriter.CONSTANT_Function:
@@ -214,12 +291,11 @@ public final class WyilFileReader {
 				int nameIndex = input.read_uv();
 				Type.FunctionOrMethod t = (Type.FunctionOrMethod) typePool[typeIndex];
 				NameID name = namePool[nameIndex];
-				constant = Constant.V_LAMBDA(name, t);
+				constant = new Constant.Lambda(name, t);
 				break;
 			}
 			default:
-				throw new RuntimeException(
-						"Unknown constant encountered in WhileyDefine: " + code);
+				throw new RuntimeException("Unknown constant encountered in WhileyDefine: " + code);
 			}
 			myConstantPool[i] = constant;
 		}
@@ -227,6 +303,18 @@ public final class WyilFileReader {
 		constantPool = myConstantPool;
 	}
 
+	/**
+	 * <p>
+	 * Read the list of types which constitute the type pool. Each entry is
+	 * currently formated using the binary representation of automata.
+	 * </p>
+	 * 
+	 * <b>NOTE:</b> Eventually, automata need to be properly integrated with the
+	 * WyIL file format to avoid duplication.
+	 * 
+	 * @param count
+	 * @throws IOException
+	 */
 	private void readTypePool(int count) throws IOException {
 		final Type[] myTypePool = new Type[count];
 		Type.BinaryReader bin = new Type.BinaryReader(input);
@@ -238,13 +326,41 @@ public final class WyilFileReader {
 		typePool = myTypePool;
 	}
 
+	/**
+	 * Read a module contained within a given WyIL file. The format is:
+	 * 
+	 * <pre>
+	 * +-----------------+
+	 * | uv : kind       |
+	 * +-----------------+
+	 * | uv : size       |
+	 * +-----------------+
+	 * ~~~~~~~~ u8 ~~~~~~~
+	 * +-----------------+
+	 * | uv : pathIDX    |
+	 * +-----------------+
+	 * | uv : nModifiers |
+	 * +-----------------+
+	 * | uv : nBlocks    |
+	 * +-----------------+
+	 * ~~~~~~~~ u8 ~~~~~~~
+	 * +-----------------+
+	 * | Block[nBlocks]  |
+	 * +-----------------+
+	 * </pre>
+	 * 
+	 * Here, the <code>pathIDX</code> gives the path identifiers for the module
+	 * in question.
+	 * 
+	 * @throws IOException
+	 */
 	private WyilFile readModule() throws IOException {
 		int kind = input.read_uv(); // block identifier
 		int size = input.read_uv();
 		input.pad_u8();
 
 		int pathIdx = input.read_uv();
-		int modifiers = input.read_uv(); // unused
+		int numModifiers = input.read_uv(); // unused
 		int numBlocks = input.read_uv();
 
 		input.pad_u8();
@@ -257,99 +373,157 @@ public final class WyilFileReader {
 		return new WyilFile(pathPool[pathIdx], "unknown.whiley", declarations);
 	}
 
+	
 	private WyilFile.Block readModuleBlock() throws IOException {
+		WyilFile.Block block;
 		int kind = input.read_uv();
 		int size = input.read_uv();
 		input.pad_u8();
 
 		switch (kind) {
 		case WyilFileWriter.BLOCK_Constant:
-			return readConstantBlock();
+			block = readConstantBlock();
+			break;
 		case WyilFileWriter.BLOCK_Type:
-			return readTypeBlock();
+			block = readTypeBlock();
+			 break;
 		case WyilFileWriter.BLOCK_Function:
-			return readFunctionBlock();
 		case WyilFileWriter.BLOCK_Method:
-			return readMethodBlock();
+			block = readFunctionOrMethodBlock();
+			break;
 		default:
-			throw new RuntimeException("unknown module block encountered ("
-					+ kind + ")");
+			throw new RuntimeException("unknown module block encountered (" + kind + ")");
 		}
+
+		input.pad_u8();
+
+		return block;
 	}
 
+	/**
+	 * Read a BLOCK_Constant, that is a WyIL module block representing a
+	 * constant declaration. The format is:
+	 * 
+	 * <pre>
+	 * +-----------------+
+	 * | uv : nameIdx    |
+	 * +-----------------+
+	 * | uv : Modifiers  |
+	 * +-----------------+
+	 * | uv : constIdx   |
+	 * +-----------------+
+	 * ~~~~~~~ u8 ~~~~~~~~
+	 * </pre>
+	 * 
+	 * The <code>nameIdx</code> is an index into the <code>stringPool</code>
+	 * representing the declaration's name, whilst <code>constIdx</code> is an
+	 * index into the <code>constantPool</code> representing the constant value
+	 * itself.
+	 * 
+	 * @throws IOException
+	 */
 	private WyilFile.Constant readConstantBlock() throws IOException {
 		int nameIdx = input.read_uv();
-		// System.out.println("=== CONSTANT " + stringPool.get(nameIdx));
 		int modifiers = input.read_uv();
 		int constantIdx = input.read_uv();
-		int nBlocks = input.read_uv(); // unused
 
-		input.pad_u8();
-		return new WyilFile.Constant(generateModifiers(modifiers),
-				stringPool[nameIdx], constantPool[constantIdx]);
+		return new WyilFile.Constant(generateModifiers(modifiers), stringPool[nameIdx], constantPool[constantIdx]);
 	}
 
+	/**
+	 * Read a BLOCK_Type, that is a WyIL module block representing a type
+	 * declaration. The format is:
+	 * 
+	 * <pre>
+	 * +------------------------+
+	 * | uv : nameIdx           |
+	 * +------------------------+
+	 * | uv : Modifiers         |
+	 * +------------------------+
+	 * | uv : typeIdx           |
+	 * +------------------------+
+	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
+	 * +------------------------+
+	 * | CodeForest : invariant |
+	 * +------------------------+
+	 * </pre>
+	 * 
+	 * The <code>nameIdx</code> is an index into the <code>stringPool</code>
+	 * representing the declaration's name, whilst <code>typeIdx</code> is an
+	 * index into the <code>typePool</code> representing the type itself.
+	 * Finally, <code>invariant</code> gives the type's invariant as zero or
+	 * more bytecode blocks.
+	 * 
+	 * @throws IOException
+	 */
 	private WyilFile.Type readTypeBlock() throws IOException {
 		int nameIdx = input.read_uv();
-		// System.out.println("=== TYPE " + stringPool.get(nameIdx));
 		int modifiers = input.read_uv();
 		int typeIdx = input.read_uv();
-		int nBlocks = input.read_uv();
 
-		input.pad_u8();
-
-		AttributedCodeBlock invariant = null;
-		for (int i = 0; i != nBlocks; ++i) {
-			int kind = input.read_uv();
-			int size = input.read_uv();
-			input.pad_u8();
-			switch (kind) {
-			case WyilFileWriter.BLOCK_Constraint:
-				invariant = readAttributedCodeBlock(1);
-				break;
-			default:
-				throw new RuntimeException("Unknown type block encountered");
-			}
-		}
-
-		return new WyilFile.Type(generateModifiers(modifiers),
-				stringPool[nameIdx], typePool[typeIdx], invariant);
+		BytecodeForest forest = readCodeForestBlock();
+		
+		return new WyilFile.Type(generateModifiers(modifiers), stringPool[nameIdx], typePool[typeIdx], forest);
 	}
 
-	private WyilFile.FunctionOrMethod readFunctionBlock()
-			throws IOException {
+	/**
+	 * Read a BLOCK_Function or BLOCK_Method, that is a WyIL module block
+	 * representing a function or method declaration. The format is:
+	 * 
+	 * <pre>
+	 * +------------------------+
+	 * | uv : nameIdx           |
+	 * +------------------------+
+	 * | uv : Modifiers         |
+	 * +------------------------+
+	 * | uv : typeIdx           |
+	 * +------------------------+
+	 * | uv : nRequires         |
+	 * +------------------------+
+	 * | uv : nEnsures          |
+	 * +------------------------+
+	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
+	 * +------------------------+
+	 * | CodeForest : code      |
+	 * +------------------------+
+	 * </pre>
+	 * 
+	 * The <code>nameIdx</code> is an index into the <code>stringPool</code>
+	 * representing the declaration's name, whilst <code>typeIdx</code> is an
+	 * index into the <code>typePool</code> representing the function or method
+	 * type itself. Finally, <code>code</code> provides all code associated with
+	 * the function or method which includes any preconditions, postconditions
+	 * and the body itself. Here, <code>nRequires</code> identifiers the number
+	 * of roots which correspond to the precondition, whilst
+	 * <code>nEnsures</code> the number of roots corresponding to the
+	 * postcondition. Any root after this comprise the body.
+	 * 
+	 * @throws IOException
+	 */
+	private WyilFile.FunctionOrMethod readFunctionOrMethodBlock() throws IOException {
 		int nameIdx = input.read_uv();
 		int modifiers = input.read_uv();
 		int typeIdx = input.read_uv();
+		int nRequires = input.read_uv();
+		int nEnsures = input.read_uv();
 
 		input.pad_u8();
 
-		Type.Function type = (Type.Function) typePool[typeIdx];
+		Type.FunctionOrMethod type = (Type.FunctionOrMethod) typePool[typeIdx];
 
-		Triple<List<AttributedCodeBlock>, List<AttributedCodeBlock>, AttributedCodeBlock> bodies = readFunctionOrMethodBlocks(type);
+		BytecodeForest forest = readCodeForestBlock();
 
-		return new WyilFile.FunctionOrMethod(generateModifiers(modifiers),
-				stringPool[nameIdx], type, bodies.third(), bodies.first(),
-				bodies.second());
+		return new WyilFile.FunctionOrMethod(generateModifiers(modifiers), stringPool[nameIdx], type, forest,
+				nRequires, nEnsures);
 	}
-
-	private WyilFile.FunctionOrMethod readMethodBlock() throws IOException {
-		int nameIdx = input.read_uv();
-		// System.out.println("=== METHOD " + stringPool[nameIdx]);
-		int modifiers = input.read_uv();
-		int typeIdx = input.read_uv();
-
-		input.pad_u8();
-
-		Type.Method type = (Type.Method) typePool[typeIdx];
-
-		Triple<List<AttributedCodeBlock>, List<AttributedCodeBlock>, AttributedCodeBlock> bodies = readFunctionOrMethodBlocks(type);
-
-		return new WyilFile.FunctionOrMethod(generateModifiers(modifiers),
-				stringPool[nameIdx], type, bodies.third(), bodies.first(),
-				bodies.second());
-	}
-
+	
+	/**
+	 * Convert an bit pattern representing various modifiers into instances of
+	 * <code>Modifier</code>.
+	 * 
+	 * @param modifiers
+	 * @return
+	 */
 	private Collection<Modifier> generateModifiers(int modifiers) {
 		ArrayList<Modifier> mods = new ArrayList<Modifier>();
 
@@ -377,59 +551,116 @@ public final class WyilFileReader {
 
 		return mods;
 	}
-
-	private Triple<List<AttributedCodeBlock>, List<AttributedCodeBlock>, AttributedCodeBlock> readFunctionOrMethodBlocks(
-			Type.FunctionOrMethod type) throws IOException {
-		ArrayList<AttributedCodeBlock> requires = new ArrayList<>();
-		ArrayList<AttributedCodeBlock> ensures = new ArrayList<>();
-		AttributedCodeBlock body = null;
-		int numInputs = type.params().size();
-		int nBlocks = input.read_uv();
-
+	
+	/**
+	 * <p>
+	 * Read a code forest from the input stream. The format is:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------------------+
+	 * | uv: nRegs          |
+	 * +--------------------+
+	 * | uv: nBlocks        |
+	 * +--------------------+
+	 * | uv: nRoots         |
+	 * +--------------------+
+	 * | uv: nAttrs         |
+	 * +--------------------+
+	 * | Register[nRegs]    |
+	 * +--------------------+
+	 * | uv[nRoots]         |
+	 * +--------------------+
+	 * | CodeBlock[nBlocks] |
+	 * +--------------------+
+	 * | Attribute[nAttrs]  |
+	 * +--------------------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Each bytecode has a given offset which is calculated from the start of
+	 * all blocks. For example, assume block 1 has ten actual bytecodes (i.e.
+	 * which are not labels); then, a bytecode at index 2 in block 2 has offset
+	 * 12.
+	 * </p>
+	 * 
+	 * @param forest
+	 *            The forest being written to the stream
+	 * @param labels
+	 *            The set of pre-calculated label offsets
+	 * @param output
+	 * @throws IOException
+	 */
+	private BytecodeForest readCodeForestBlock() throws IOException {
 		input.pad_u8();
-
-		for (int i = 0; i != nBlocks; ++i) {
-			int kind = input.read_uv();
-			int size = input.read_uv();
-			input.pad_u8();
-
-			switch (kind) {
-			case WyilFileWriter.BLOCK_Precondition:
-				requires.add(readAttributedCodeBlock(numInputs));
-				break;
-			case WyilFileWriter.BLOCK_Postcondition:
-				ensures.add(readAttributedCodeBlock(numInputs + 1));
-				break;
-			case WyilFileWriter.BLOCK_Body:
-				body = readAttributedCodeBlock(numInputs);
-				break;
-			default:
-				throw new RuntimeException("Unknown case block encountered");
-			}
+		int kind = input.read_uv(); // unused
+		int size = input.read_uv(); // unused
+		input.pad_u8();
+		
+		int nRegs = input.read_uv();
+		int nBlocks = input.read_uv();
+		int nRoots = input.read_uv();
+		int nAttrs = input.read_uv();
+		
+		BytecodeForest forest = new BytecodeForest();
+		
+		for(int i=0;i!=nRegs;++i) {
+			BytecodeForest.Register register = readCodeRegister();
+			forest.registers().add(register);
 		}
-
-		return new Triple(requires, ensures, body);
+		
+		for(int i=0;i!=nRoots;++i) {
+			int root = input.read_uv();
+			forest.addRoot(root);
+		}
+		
+		HashMap<Integer, Bytecode.Label> labels = new HashMap<Integer, Bytecode.Label>();
+		
+		int offset = 0;
+		for(int i=0;i!=nBlocks;++i) {
+			BytecodeForest.Block block = readCodeBlock(offset,labels);
+			forest.add(block);
+			offset += block.size();
+		}
+		
+		insertLabels(forest, labels);
+		
+		return forest;
 	}
-
-	private AttributedCodeBlock readAttributedCodeBlock(int numInputs)
-			throws IOException {
-		int nCodes = input.read_uv();
-		HashMap<Integer, Codes.Label> labels = new HashMap<Integer, Codes.Label>();
-		ArrayList<Code> bytecodes = readCodeBlock(0, nCodes, labels);
-		insertLabels(0,bytecodes,labels);
-
-		input.pad_u8(); // necessary
-
-		return new AttributedCodeBlock(bytecodes);
+	
+	/**
+	 * Read a given code register from the input stream. The format
+	 * of reach register entry is:
+	 * 
+	 * <pre>
+	 * +-------------------+
+	 * | uv : nAttrs       |
+	 * +-------------------+
+	 * | uv : typeIdx      |
+	 * +-------------------+
+	 * | Attribute[nAttrs] |
+	 * +-------------------+
+	 * </pre>
+	 * 
+	 * @param register
+	 *            Register to be written out
+	 * @param output
+	 * @throws IOException
+	 */
+	private BytecodeForest.Register readCodeRegister() throws IOException {
+		int nAttrs = input.read_uv();
+		int typeIdx = input.read_uv();
+		// TODO: read any attributes given
+		return new BytecodeForest.Register(typePool[typeIdx], "unknown");
 	}
-
+	
 	/**
 	 * This function is responsible for inserting labels into the correct
-	 * positions within arbitrarily nested code blocks. Every label is given an
-	 * offset within the flat bytecode array, as stored on disk. The challenge
-	 * here is that, having loaded it from disk, the bytecode array is nested
-	 * rather than flat. This is because certain bytecodes contain blocks of
-	 * nested bytecodes (e.g. loop bytecode). Therefore, we need to track the
+	 * positions within all blocks contained in a forest. Every label is given
+	 * an offset within the flat bytecode array, as stored on disk. The
+	 * challenge here is that, having loaded it from disk, the bytecode array is
+	 * nested rather than flat. This is because certain bytecodes contain blocks
+	 * of nested bytecodes (e.g. loop bytecode). Therefore, we need to track the
 	 * offset within the flat bytecode array against that of the now nested
 	 * bytecode structure.
 	 *
@@ -441,477 +672,451 @@ public final class WyilFileReader {
 	 *            The map of offsets to labels being inserted.
 	 * @return
 	 */
-	private int insertLabels(int offset, ArrayList<Code> bytecodes,
-			HashMap<Integer, Codes.Label> labels) {
-		for (int i = 0; i != bytecodes.size(); ++i) {
-			Code bytecode = bytecodes.get(i);
-
-			// First, check whether there is a label to insert
-			Codes.Label label = labels.get(offset++);
-			if (label != null) { bytecodes.add(i++, label); }
-
-			// Second, check whether we have a nested block which needs to be
-			// explored.
-			if (bytecode instanceof Code.Compound) {
-				Code.Compound block = (Code.Compound) bytecode;
-				// At this point, we must clone the given bytecode
-				ArrayList<Code> blkBytecodes = new ArrayList<Code>(block.bytecodes());
-				offset = 1 + insertLabels(offset, blkBytecodes, labels);
-				bytecodes.set(i,updateBytecodes(block,blkBytecodes));
+	private int insertLabels(BytecodeForest forest, HashMap<Integer, Bytecode.Label> labels) {
+		int offset = 0;
+		for (int i = 0; i != forest.numBlocks(); ++i) {
+			BytecodeForest.Block block = forest.get(i);
+			for (int j = 0; j != block.size(); ++j) {
+				// First, check whether there is a label to insert
+				Bytecode.Label label = labels.get(offset++);
+				if (label != null) {
+					block.add(++j, label);
+				}
 			}
 		}
-
-		// Finally, check whether or not there is a label at the end of this
-		// block.
-		Codes.Label label = labels.get(offset);
-		if (label != null) { bytecodes.add(bytecodes.size(), label); }
-
 		// Done
 		return offset;
 	}
-
+	
 	/**
-	 * This method reconstructs a given compound bytecode with a new list of
-	 * bytecodes representing its body.
-	 *
-	 * @param compound
-	 *            The compound bytecode being updated.
-	 * @param bytecodes
-	 *            The list of new bytecodes representing its body. This list may
-	 *            be identical to its current body.
-	 * @return
-	 */
-	private Code.Compound updateBytecodes(Code.Compound compound, ArrayList<Code> bytecodes) {
-		if (compound instanceof Codes.Quantify) {
-			Codes.Quantify l = (Codes.Quantify) compound;
-			return Codes.Quantify(l.startOperand, l.endOperand, l.indexOperand,
-					l.modifiedOperands, bytecodes);
-		} else if(compound instanceof Codes.Loop) {
-			Codes.Loop l = (Codes.Loop) compound;
-			return Codes.Loop(l.modifiedOperands, bytecodes);
-		} else if(compound instanceof Codes.Invariant) {
-			return Codes.Invariant(bytecodes);
-		} else if(compound instanceof Codes.Assert) {
-			return Codes.Assert(bytecodes);
-		} else if(compound instanceof Codes.Assume) {
-			return Codes.Assume(bytecodes);
-		} else {
-			throw new IllegalArgumentException("Unknown compound bytecode encountered: " + compound.getClass().getName());
-		}
-	}
-
-	/**
-	 * Read all bytecodes between two given offsets.
-	 *
+	 * <p>
+	 * Read a block of bytecodes whilst adding newly discovered labels to a
+	 * given set of label offsets. The format is:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +-------------------+
+	 * | uv : nCodes       |
+	 * +-------------------+
+	 * | uv : nAttrs       |
+	 * +-------------------+
+	 * | Bytecode[nCodes]  |
+	 * +-------------------+
+	 * | Attribute[nAttrs] |
+	 * +-------------------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * The block is associated with a given offset value, which indicates the
+	 * offset of the first bytecode in the block to be used when calculating
+	 * branch offsets.
+	 * </p>
+	 * 
 	 * @param offset
-	 *            Starting offset to read from
-	 * @param count
-	 *            Count of bytecodes to read
 	 * @param labels
 	 * @return
+	 * @throws IOException
 	 */
-	public ArrayList<Code> readCodeBlock(int offset, int count,
-			HashMap<Integer, Codes.Label> labels) throws IOException {
-		ArrayList<Code> bytecodes = new ArrayList<Code>();
-		for (int i = 0; i < count; ++i) {
-			Code code = readCode(offset, labels);
-			bytecodes.add(code);
-			offset = offset + sizeof(code);
-		}
-		return bytecodes;
-	}
-
-	/**
-	 * Return the "size" of this bytecode. That is, number of bytecodes in the
-	 * binary format it represents. In most cases, each bytecode in the binary
-	 * format corresponds to exactly one in the object representation. However,
-	 * in the case of compound bytecodes (e.g. loop, forall, etc) then it
-	 * represents one plus the number contained within the block itself.
-	 *
-	 * @param code
-	 * @return
-	 */
-	public static int sizeof(Code code) {
-		if(code instanceof Codes.Label) {
-			// Observe, this case is not possible in WyilFileReader, but is
-			// possible in WyilFileWriter (where this function is also called
-			// from).
-			return 0;
-		} else if (code instanceof Code.Unit) {
-			return 1;
-		} else {
-			Code.Compound compound = (Code.Compound) code;
-			// The size of a compound includes 1 for the header bytecode, and 1
-			// for the virtual bytecode appearing at the block end.
-			int size = 2;
-			for (int i = 0; i != compound.size(); ++i) {
-				size += sizeof(compound.get(i));
-			}
-			return size;
-		}
-	}
-
-	private Code readCode(int offset, HashMap<Integer, Codes.Label> labels)
+	public BytecodeForest.Block readCodeBlock(int offset, HashMap<Integer, Bytecode.Label> labels)
 			throws IOException {
+		int nCodes = input.read_uv();
+		int nAttrs = input.read_uv();
+
+		ArrayList<BytecodeForest.Entry> bytecodes = new ArrayList<BytecodeForest.Entry>();
+		for (int i = 0; i < nCodes; ++i) {
+			Bytecode code = readBytecode(i + offset, labels);
+			bytecodes.add(new BytecodeForest.Entry(code));
+		}
+		// TODO: read any attributes given
+		return new BytecodeForest.Block(bytecodes);
+	}
+
+	private Bytecode readBytecode(int offset, HashMap<Integer, Bytecode.Label> labels) throws IOException {
 		int opcode = input.read_u8();
-		boolean wideBase = false;
-		boolean wideRest = false;
-
-		// deal with wide bytecodes first
-		switch (opcode) {
-		case Code.OPCODE_wide:
-			opcode = input.read_u8();
-			wideBase = true;
-			break;
-		case Code.OPCODE_widerest:
-			opcode = input.read_u8();
-			wideRest = true;
-			break;
-		case Code.OPCODE_widewide:
-			opcode = input.read_u8();
-			wideBase = true;
-			wideRest = true;
-			break;
-		}
-
-		int fmt = (opcode & Code.FMT_MASK);
-
-		switch (fmt) {
-		case Code.FMT_NARYOP:
-			return readNaryOp(opcode, wideBase, wideRest, offset, labels);
-		case Code.FMT_EMPTY:
-		case Code.FMT_UNARYOP:
-		case Code.FMT_BINARYOP:
-		case Code.FMT_UNARYASSIGN:
-		case Code.FMT_BINARYASSIGN:
-		case Code.FMT_NARYASSIGN:
-			return readNaryAssign(opcode, wideBase, wideRest, offset, labels);				
-		case Code.FMT_OTHER:
-			return readOther(opcode, wideBase, wideRest, offset, labels);
-		default:
-			throw new RuntimeException("unknown opcode encountered (" + opcode
-					+ ")");
-		}
+		Bytecode.Schema schema = schemas[opcode];
+		
+		// First, read and validate all targets, operands and types
+		int nTargets = input.read_uv();
+		int nOperands = input.read_uv();
+		int nTypes = input.read_uv();
+		int nAttts = input.read_uv();
+		int[] targets = readRegisters(nTargets);
+		int[] operands = readRegisters(nOperands);
+		Type[] types = readTypes(nTypes);
+		// Second, read all extras		
+		Object[] extras = readExtras(schema,labels);
+		
+		// Finally, create the bytecode
+		return schema.construct(opcode,targets,operands,types,extras);		
 	}
-
-	private Code readNaryOp(int opcode, boolean wideBase, boolean wideRest,
-			int offset, HashMap<Integer, Codes.Label> labels)
+	
+	/**
+	 * Read the list of extra components defined by a given bytecode schema.
+	 * Each extra is interpreted in a slightly different fashion.
+	 * 
+	 * @param schema
+	 * @param labels
+	 * @return
+	 * @throws IOException
+	 */
+	private Object[] readExtras(Bytecode.Schema schema, HashMap<Integer, Bytecode.Label> labels)
 			throws IOException {
-		int nOperands = readBase(wideBase);
-		int[] operands = new int[nOperands];
-		for (int i = 0; i != nOperands; ++i) {
-			operands[i] = readBase(wideBase);
+		Extras[] extras = schema.extras();
+		Object[] results = new Object[extras.length];
+		for(int i=0;i!=extras.length;++i) {
+			switch(extras[i]) {
+			case CONSTANT: {
+				int constIdx = input.read_uv();
+				results[i] = constantPool[constIdx];
+				break;
+			}				
+			case STRING: {
+				int stringIdx = input.read_uv();
+				results[i] = stringPool[stringIdx];
+				break;
+			}			
+			case NAME: {
+				int nameIdx = input.read_uv();
+				results[i] = namePool[nameIdx];
+				break;
+			}			
+			case BLOCK: {
+				int blockID = input.read_uv();
+				results[i] = blockID;
+				break;
+			}
+			case TARGET: {
+				int target = input.read_uv();
+				Bytecode.Label l = findLabel(target, labels);
+				results[i] = l.label();
+				break;
+			}
+			case STRING_ARRAY: {
+				int nStrings = input.read_uv();
+				String[] strings = new String[nStrings];
+				for(int j=0;j!=nStrings;++j) {
+					int stringIdx = input.read_uv();
+					strings[j] = stringPool[stringIdx];
+				}
+				results[i] = strings;
+				break;
+			}
+			case SWITCH_ARRAY: {
+				int nPairs = input.read_uv();
+				Pair<Constant,String>[] pairs = new Pair[nPairs];
+				for(int j=0;j!=nPairs;++j) {
+					int constIdx = input.read_uv();
+					int target = input.read_uv();
+					String label = findLabel(target,labels).label();
+					pairs[j] = new Pair<Constant,String>(constantPool[constIdx],label);
+				}
+				results[i] = pairs;
+				break;
+			}
+			default:
+				throw new RuntimeException("unknown bytecode extra encountered: " + extras[i]);
+			}
 		}
-
-		// Special case which doesn't have a type.
-		if (opcode == Code.OPCODE_loop) {			
-			int count = readRest(wideRest);
-			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);
-			return Codes.Loop(operands, bytecodes);
-		} else if(opcode == Code.OPCODE_quantify) {
-			int count = readRest(wideRest);
-			int indexOperand = operands[0];
-			int startOperand = operands[1];
-			int endOperand = operands[2];
-			operands = Arrays.copyOfRange(operands, 3, operands.length);
-			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);			
-			return Codes.Quantify(startOperand, endOperand, indexOperand,
-					operands, bytecodes);
-		}
-
-		throw new RuntimeException("unknown opcode encountered (" + opcode
-				+ ")");
+		return results;
 	}
-
-	private Code readNaryAssign(int opcode, boolean wideBase, boolean wideRest, int offset,
-			HashMap<Integer, Codes.Label> labels) throws IOException {
-		int nTargets = readBase(wideBase);
-		int nOperands = readBase(wideBase);
-		int nTypes = readBase(wideBase);		
-		int[] targets = new int[nTargets];
-		int[] operands = new int[nOperands];
-		Type[] types = new Type[nTypes];		
-		for (int i = 0; i != nTargets; ++i) {
-			targets[i] = readBase(wideBase);
-		}		
-		for (int i = 0; i != nOperands; ++i) {
-			operands[i] = readBase(wideBase);
-		}				
+	
+	private int[] readRegisters(int nRegisters) throws IOException {
+		int[] bs = new int[nRegisters];
+		for (int i = 0; i != nRegisters; ++i) {
+			bs[i] = input.read_uv();
+		}
+		return bs;
+	}
+	
+	private Type[] readTypes(int nTypes) throws IOException {
+		Type[] types = new Type[nTypes];
 		for (int i = 0; i != nTypes; ++i) {
-			int typeIndex = readBase(wideBase); 
+			int typeIndex = input.read_uv();
 			types[i] = typePool[typeIndex];
 		}
-		switch (opcode) {
-		case Code.OPCODE_return:
-			return Codes.Return(types, operands);
-		case Code.OPCODE_indirectinvokefn:
-		case Code.OPCODE_indirectinvokemd: {			
-			if (!(types[0] instanceof Type.FunctionOrMethod)) {
-				throw new RuntimeException("expected function or method type");
-			}
-			int operand = operands[0];
-			operands = Arrays.copyOfRange(operands, 1, operands.length);
-			return Codes.IndirectInvoke((Type.FunctionOrMethod) types[0], targets,
-					operand, operands);
-		}
-		case Code.OPCODE_invokefn:
-		case Code.OPCODE_invokemd: { 
-			if (!(types[0] instanceof Type.FunctionOrMethod)) {
-				throw new RuntimeException("expected function or method type");
-			}
-			int nameIdx = readRest(wideRest);
-			NameID nid = namePool[nameIdx];
-			return Codes.Invoke((Type.FunctionOrMethod) types[0], targets, operands,
-					nid);
-		}
-		case Code.OPCODE_lambdafn:
-		case Code.OPCODE_lambdamd: {
-			if (!(types[0] instanceof Type.FunctionOrMethod)) {
-				throw new RuntimeException("expected function or method type");
-			} else if(targets.length != 1) {
-				throw new RuntimeException("expected exactly one target");
-			}			
-			int nameIdx = readRest(wideRest);
-			NameID nid = namePool[nameIdx];
-			for(int i=0;i!=operands.length;++i) {
-				operands[i] -= 1;
-			}
-			return Codes.Lambda((Type.FunctionOrMethod) types[0], targets[0], operands,
-					nid);
-		}
-		case Code.OPCODE_newrecord: {
-			if (!(types[0] instanceof Type.Record)) {
-				throw new RuntimeException("expected record type");
-			} else if(targets.length != 1) {
-				throw new RuntimeException("expected exactly one target");
-			}
-			return Codes.NewRecord((Type.Record) types[0], targets[0], operands);
-		}
-		case Code.OPCODE_newlist: {
-			if (!(types[0] instanceof Type.Array)) {
-				throw new RuntimeException("expected array type");
-			} else if(targets.length != 1) {
-				throw new RuntimeException("expected exactly one target");
-			}
-			return Codes.NewArray((Type.Array) types[0], targets[0], operands);
-		}
-		// Unary assignables
-		case Code.OPCODE_convert: {
-			int i = readRest(wideRest);
-			Type t = typePool[i];
-			return Codes.Convert(types[0], targets[0], operands[0], t);
-		}
-		case Code.OPCODE_assign:
-			return Codes.Assign(types[0], targets[0], operands[0]);
-		case Code.OPCODE_dereference: {
-			if (!(types[0] instanceof Type.Reference)) {
-				throw new RuntimeException("expected reference type");
-			}
-			return Codes.Dereference((Type.Reference) types[0], targets[0], operands[0]);
-		}
-		case Code.OPCODE_fieldload: {
-			if (!(types[0] instanceof Type.EffectiveRecord)) {
-				throw new RuntimeException("expected record type");
-			}
-			int i = readRest(wideRest);
-			String field = stringPool[i];
-			return Codes.FieldLoad((Type.EffectiveRecord) types[0], targets[0],
-					operands[0], field);
-		}
-		case Code.OPCODE_invert:
-			return Codes.Invert(types[0], targets[0], operands[0]);
-		case Code.OPCODE_newobject: {
-			if (!(types[0] instanceof Type.Reference)) {
-				throw new RuntimeException("expected reference type");
-			}
-			return Codes.NewObject((Type.Reference) types[0], targets[0], operands[0]);
-		}
-		case Code.OPCODE_lengthof: {
-			if (!(types[0] instanceof Type.EffectiveArray)) {
-				throw new RuntimeException("expected collection type");
-			}
-			return Codes.LengthOf((Type.EffectiveArray) types[0], targets[0], operands[0]);
-		}
-		case Code.OPCODE_move:
-			return Codes.Move(types[0], targets[0], operands[0]);
-		case Code.OPCODE_neg:
-			return Codes.UnaryOperator(types[0], targets[0], operands[0], Codes.UnaryOperatorKind.NEG);
-		case Code.OPCODE_not: {
-			if (!(types[0] instanceof Type.Bool)) {
-				throw new RuntimeException("expected bool type");
-			}
-			return Codes.Not(targets[0], operands[0]);
-		}
-		// Binary Assignables
-		case Code.OPCODE_indexof: {
-			if (!(types[0] instanceof Type.EffectiveArray)) {
-				throw new RuntimeException("expecting indexible type");
-			}
-			return Codes.IndexOf((Type.EffectiveArray) types[0], targets[0], operands[0], operands[1]);
-		}
-		case Code.OPCODE_listgen: {
-			if (!(types[0] instanceof Type.Array)) {
-				throw new RuntimeException("expecting list type");
-			}
-			return Codes.ArrayGenerator((Type.Array) types[0], targets[0], operands[0], operands[1]);
-		}
-		case Code.OPCODE_add:
-		case Code.OPCODE_sub:
-		case Code.OPCODE_mul:
-		case Code.OPCODE_div:
-		case Code.OPCODE_rem:
-		case Code.OPCODE_bitwiseor:
-		case Code.OPCODE_bitwisexor:
-		case Code.OPCODE_bitwiseand:
-		case Code.OPCODE_lshr:
-		case Code.OPCODE_rshr: {
-			Codes.BinaryOperatorKind kind = Codes.BinaryOperatorKind.values()[opcode - Code.OPCODE_add];
-			return Codes.BinaryOperator(types[0], targets[0], operands[0], operands[1], kind);
-		}
-		case Code.OPCODE_const: {			
-			int idx = readRest(wideRest);
-			Constant c = constantPool[idx];
-			return Codes.Const(targets[0], c);
-		}
-		// Unary operations
-		case Code.OPCODE_debug:
-			return Codes.Debug(operands[0]);
-		case Code.OPCODE_ifis: {
-			int resultIdx = readRest(wideRest);
-			Type result = typePool[resultIdx];
-			int target = readTarget(wideRest, offset);
-			Codes.Label l = findLabel(target, labels);
-			return Codes.IfIs(types[0], operands[0], result, l.label);
-		}
-		case Code.OPCODE_switch: {
-			ArrayList<Pair<Constant, String>> cases = new ArrayList<Pair<Constant, String>>();
-			int target = readTarget(wideRest, offset);
-			Codes.Label defaultLabel = findLabel(target, labels);
-			int nCases = readRest(wideRest);
-			for (int i = 0; i != nCases; ++i) {
-				int constIdx = readRest(wideRest);
-				Constant constant = constantPool[constIdx];
-				target = readTarget(wideRest, offset);
-				Codes.Label l = findLabel(target, labels);
-				cases.add(new Pair<Constant, String>(constant, l.label));
-			}
-			return Codes.Switch(types[0], operands[0], defaultLabel.label, cases);
-		}
-		// Binary operators
-		case Code.OPCODE_ifeq:
-		case Code.OPCODE_ifne:
-		case Code.OPCODE_iflt:
-		case Code.OPCODE_ifle:
-		case Code.OPCODE_ifgt:
-		case Code.OPCODE_ifge:
-		case Code.OPCODE_ifel:
-		case Code.OPCODE_ifss:
-		case Code.OPCODE_ifse: {
-			int target = readTarget(wideRest, offset);
-			Codes.Label l = findLabel(target, labels);
-			Codes.Comparator cop = Codes.Comparator.values()[opcode - Code.OPCODE_ifeq];
-			return Codes.If(types[0], operands[0], operands[1], cop, l.label);
-		}
-		// Empty bytecodes
-		case Code.OPCODE_fail: {
-			return Codes.Fail();
-		}
-		case Code.OPCODE_goto: {
-			int target = readTarget(wideRest, offset);
-			Codes.Label lab = findLabel(target, labels);
-			return Codes.Goto(lab.label);
-		}
-		case Code.OPCODE_nop:
-			return Codes.Nop;
-		}		
-		throw new RuntimeException("unknown opcode encountered (" + opcode
-				+ ")");
+		return types;
 	}
-
-	private Code readOther(int opcode, boolean wideBase, boolean wideRest,
-			int offset, HashMap<Integer, Codes.Label> labels)
-			throws IOException {
-		switch (opcode) {
-		case Code.OPCODE_update: {			
-			int nTargets = readBase(wideBase);
-			int nOperands = readBase(wideBase);
-			int nTypes = readBase(wideBase);			
-			int[] targets = new int[nTargets];
-			int[] operands = new int[nOperands-1];
-			Type[] types = new Type[nTypes];			
-			for (int i = 0; i != targets.length; ++i) {
-				targets[i] = readBase(wideBase);
-			}
-			for (int i = 0; i != operands.length; ++i) {
-				operands[i] = readBase(wideBase);
-			}
-			int operand = readBase(wideBase);
-			for (int i = 0; i != types.length; ++i) {
-				types[i] = typePool[readBase(wideBase)];
-			}			
-			Type afterType = typePool[readRest(wideRest)];
-			int nFields = readRest(wideRest);
-			ArrayList<String> fields = new ArrayList<String>();
-			for (int i = 0; i != nFields; ++i) {
-				String field = stringPool[readRest(wideRest)];
-				fields.add(field);
-			}
-			return Codes.Update(types[0], targets[0], operands, operand,
-					afterType, fields);
-		}
-		case Code.OPCODE_assertblock: {
-			int count = readRest(wideRest);
-			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);
-			return Codes.Assert(bytecodes);
-		}
-		case Code.OPCODE_assumeblock: {
-			int count = readRest(wideRest);
-			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);
-			return Codes.Assume(bytecodes);
-		}
-		case Code.OPCODE_invariantblock: {
-			int count = readRest(wideRest);
-			ArrayList<Code> bytecodes = readCodeBlock(offset + 1, count, labels);
-			return Codes.Invariant(bytecodes);
-		}
-		}
-		throw new RuntimeException("unknown opcode encountered (" + opcode
-				+ ")");
-	}
-
-	private int readBase(boolean wide) throws IOException {
-		if (wide) {
-			return input.read_uv();
-		} else {
-			return input.read_un(4);
-		}
-	}
-
-	private int readRest(boolean wide) throws IOException {
-		if (wide) {
-			return input.read_uv();
-		} else {
-			return input.read_u8();
-		}
-	}
-
-	private int readTarget(boolean wide, int offset) throws IOException {
-		if (wide) {
-			return input.read_uv();
-		} else {
-			return (input.read_u8() + offset) - 128;
-		}
-	}
-
+	
 	private static int labelCount = 0;
 
-	private static Codes.Label findLabel(int target,
-			HashMap<Integer, Codes.Label> labels) {
-		Codes.Label label = labels.get(target);
+	private static Bytecode.Label findLabel(int target, HashMap<Integer, Bytecode.Label> labels) {
+		Bytecode.Label label = labels.get(target);
 		if (label == null) {
-			label = Codes.Label("label" + labelCount++);
+			label = new Bytecode.Label("label" + labelCount++);
 			labels.put(target, label);
 		}
 		return label;
+	}
+	
+	/**
+	 * ==================================================================
+	 * Individual Bytecode Schemas
+	 * ==================================================================
+	 */
+
+	private static final Schema[] schemas = new Schema[255];
+
+	static {
+		//		
+		schemas[Bytecode.OPCODE_goto] = new Schema(Targets.ZERO, Operands.ZERO, Types.ZERO, Extras.TARGET){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Goto((String) extras[0]);
+			}
+		};
+		schemas[Bytecode.OPCODE_fail] = new Schema(Targets.ZERO, Operands.ZERO, Types.ZERO){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Fail();
+			}
+		};
+		schemas[Bytecode.OPCODE_assert] = new Schema(Targets.ZERO, Operands.ZERO, Types.ZERO, Extras.BLOCK){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Assert((Integer) extras[0]);
+			}
+		};
+		schemas[Bytecode.OPCODE_assume] = new Schema(Targets.ZERO, Operands.ZERO, Types.ZERO, Extras.BLOCK){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Assume((Integer) extras[0]);
+			}
+		};
+		schemas[Bytecode.OPCODE_invariant] = new Schema(Targets.ZERO, Operands.ZERO, Types.ZERO, Extras.BLOCK){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Invariant((Integer) extras[0]);
+			}
+		};
+
+		// =========================================================================
+		// Unary Operators.
+		// =========================================================================
+		schemas[Bytecode.OPCODE_debug] = new Schema(Targets.ZERO, Operands.ONE, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Debug(operands[0]);
+			}
+		};
+		schemas[Bytecode.OPCODE_return] = new Schema(Targets.ZERO, Operands.MANY, Types.MANY){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Return(types,operands);
+			}
+		};
+		schemas[Bytecode.OPCODE_switch] = new Schema(Targets.ZERO, Operands.ONE, Types.ONE, Extras.TARGET, Extras.SWITCH_ARRAY){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				String defaultTarget = (String) extras[0];
+				Pair<Constant,String>[] cases = (Pair<Constant,String>[]) extras[1];
+				return new Bytecode.Switch(types[0], operands[0], defaultTarget, Arrays.asList(cases));
+			}
+		};
+		schemas[Bytecode.OPCODE_ifis] = new Schema(Targets.ZERO, Operands.ONE, Types.TWO, Extras.TARGET){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.IfIs(types[0], operands[0], types[1], (String)extras[0]);
+			}
+		};
+
+		// =========================================================================
+		// Unary Assignables
+		// =========================================================================
+		schemas[Bytecode.OPCODE_assign] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.ASSIGN);
+			}
+		};		
+		schemas[Bytecode.OPCODE_newobject] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0],targets,operands,Bytecode.OperatorKind.NEW);
+			}
+		};
+		schemas[Bytecode.OPCODE_dereference] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.DEREFERENCE);
+			}
+		};
+		schemas[Bytecode.OPCODE_arrayinvert] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.BITWISEINVERT);
+			}
+		};
+		schemas[Bytecode.OPCODE_arraylength] = new Schema(Targets.ONE, Operands.ONE, Types.ONE) {
+			public Bytecode construct(int opcode, int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.ARRAYLENGTH);
+			}
+		};
+		schemas[Bytecode.OPCODE_neg] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.NEG);
+			}
+		};
+		schemas[Bytecode.OPCODE_not] = new Schema(Targets.ONE, Operands.ONE, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.NOT);
+			}
+		};
+		schemas[Bytecode.OPCODE_fieldload] = new Schema(Targets.ONE, Operands.ONE, Types.ONE, Extras.STRING){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.FieldLoad((Type.EffectiveRecord) types[0], targets[0], operands[0], (String) extras[0]);
+			}
+		};
+		schemas[Bytecode.OPCODE_convert] = new Schema(Targets.ONE, Operands.ONE, Types.TWO){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Convert(types[0], targets[0], operands[0], types[1]);
+			}
+		};
+		schemas[Bytecode.OPCODE_const] = new Schema(Targets.ONE, Operands.ZERO, Types.ZERO, Extras.CONSTANT){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Const(targets[0], (Constant) extras[0]);
+			}
+		};
+
+		// =========================================================================
+		// Binary Operators
+		// =========================================================================
+		schemas[Bytecode.OPCODE_if] = new Schema(Targets.ZERO, Operands.ONE, Types.ONE, Extras.TARGET){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.If(types[0], operands[0], (String) extras[0]);
+			}
+		};
+		
+		// =========================================================================
+		// Binary Assignables
+		// =========================================================================
+		schemas[Bytecode.OPCODE_add] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.ADD);
+			}
+		};
+		schemas[Bytecode.OPCODE_sub] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.SUB);
+			}
+		};
+		schemas[Bytecode.OPCODE_mul] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.MUL);
+			}
+		};
+		schemas[Bytecode.OPCODE_div] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.DIV);
+			}
+		};
+		schemas[Bytecode.OPCODE_rem] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.REM);
+			}
+		};
+		schemas[Bytecode.OPCODE_eq] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.EQ);
+			}
+		};
+		schemas[Bytecode.OPCODE_ne] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.NEQ);
+			}
+		};
+		schemas[Bytecode.OPCODE_lt] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.LT);
+			}
+		};
+		schemas[Bytecode.OPCODE_le] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.LTEQ);
+			}
+		};
+		schemas[Bytecode.OPCODE_gt] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.GT);
+			}
+		};
+		schemas[Bytecode.OPCODE_ge] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.GTEQ);
+			}
+		};
+		schemas[Bytecode.OPCODE_bitwiseor] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.BITWISEOR);
+			}
+		};
+		schemas[Bytecode.OPCODE_bitwisexor] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.BITWISEXOR);
+			}
+		};
+		schemas[Bytecode.OPCODE_bitwiseand] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.BITWISEAND);
+			}
+		};
+		schemas[Bytecode.OPCODE_lshr] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.LEFTSHIFT);
+			}
+		};
+		schemas[Bytecode.OPCODE_rshr] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.RIGHTSHIFT);
+			}
+		};
+		schemas[Bytecode.OPCODE_arrayindex] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0],targets,operands,Bytecode.OperatorKind.ARRAYINDEX);
+			}
+		};
+		schemas[Bytecode.OPCODE_arrygen] = new Schema(Targets.ONE, Operands.TWO, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands,Bytecode.OperatorKind.ARRAYGENERATOR);
+			}
+		};
+
+		schemas[Bytecode.OPCODE_array] = new Schema(Targets.ONE, Operands.MANY, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.ARRAYCONSTRUCTOR);
+			}
+		};
+
+		// =========================================================================
+		// Nary Assignables
+		// =========================================================================
+		schemas[Bytecode.OPCODE_record] = new Schema(Targets.ONE, Operands.MANY, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Operator(types[0], targets, operands, Bytecode.OperatorKind.RECORDCONSTRUCTOR);
+			}
+		};
+		schemas[Bytecode.OPCODE_invoke] = new Schema(Targets.MANY, Operands.MANY, Types.ONE, Extras.NAME){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Invoke((Type.FunctionOrMethod) types[0], targets, operands, (NameID) extras[0]);
+			}
+		};
+		schemas[Bytecode.OPCODE_indirectinvoke] = new Schema(Targets.MANY, Operands.MANY, Types.ONE){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				int src = operands[0];
+				operands = Arrays.copyOfRange(operands,1,operands.length);
+				return new Bytecode.IndirectInvoke((Type.FunctionOrMethod) types[0], targets, src, operands);
+			}
+		};
+		schemas[Bytecode.OPCODE_lambda] = new Schema(Targets.MANY, Operands.MANY, Types.ONE, Extras.NAME){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Lambda((Type.FunctionOrMethod) types[0], targets[0], operands, (NameID) extras[0]);
+			}
+		};
+		schemas[Bytecode.OPCODE_loop] = new Schema(Targets.MANY, Operands.MANY, Types.ONE, Extras.BLOCK){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Loop(targets, (Integer) extras[0]);
+			}
+		};
+		schemas[Bytecode.OPCODE_quantify] = new Schema(Targets.MANY, Operands.MANY, Types.ONE, Extras.BLOCK){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				return new Bytecode.Quantify(operands[0],operands[1],operands[2], targets, (Integer) extras[0]);
+			}
+		};
+		schemas[Bytecode.OPCODE_update] = new Schema(Targets.MANY, Operands.MANY, Types.ONE, Extras.STRING_ARRAY){
+			public Bytecode construct(int opcode,int[] targets, int[] operands, Type[] types, Object[] extras) {
+				ArrayList<String> fields = new ArrayList<String>();
+				String[] strings = (String[]) extras[0];
+				for(int i=0;i!=strings.length;++i) { fields.add(strings[i]); }
+				int operand = operands[operands.length-1];
+				operands = Arrays.copyOf(operands, operands.length-1);
+				return new Bytecode.Update(types[0], targets[0], operands, operand, types[1], fields);
+			}
+		};
 	}
 }

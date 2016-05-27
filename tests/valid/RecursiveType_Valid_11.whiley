@@ -5,8 +5,8 @@ constant SUB is 2
 constant MUL is 3
 constant DIV is 4
 
-type binop is ({int op, expr left, expr right} this)
-where this.op == ADD || this.op ==  SUB || this.op ==  MUL || this.op ==  DIV
+type binop is ({int op, expr left, expr right} _this)
+where _this.op == ADD || _this.op ==  SUB || _this.op ==  MUL || _this.op ==  DIV
 
 type expr is int | binop
 

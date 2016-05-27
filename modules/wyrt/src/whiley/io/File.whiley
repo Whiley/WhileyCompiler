@@ -55,13 +55,13 @@ public type Reader is  {
 }
 
 public method Reader(string fileName) -> Reader:
-    NativeFile this = NativeFileReader(fileName)
+    NativeFile reader = NativeFileReader(fileName)
     return {
-        readAll: &( -> read(this)),
-        read: &(uint n -> read(this,n)),
-        hasMore: &( -> hasMore(this)),
-        close: &( -> close(this)),
-        available: &( -> available(this))
+        readAll: &( -> read(reader)),
+        read: &(uint n -> read(reader,n)),
+        hasMore: &( -> hasMore(reader)),
+        close: &( -> close(reader)),
+        available: &( -> available(reader))
     }
 
 // ====================================================
@@ -70,11 +70,11 @@ public method Reader(string fileName) -> Reader:
 type Writer is whiley.io.Writer.Writer
 
 public method Writer(string fileName) -> Writer:
-    NativeFile this = NativeFileWriter(fileName)
+    NativeFile reader = NativeFileWriter(fileName)
     return {
-        write: &(byte[] data -> write(this,data)),
-        close: &( -> close(this)),
-        flush: &( -> flush(this))
+        write: &(byte[] data -> write(reader,data)),
+        close: &( -> close(reader)),
+        flush: &( -> flush(reader))
     }
 
 // ====================================================
@@ -107,4 +107,4 @@ private native method read(NativeFile f, int max) -> byte[]
 private native method read(NativeFile f) -> byte[]
 
 // write entire contents of native file
-private native method write(NativeFile f, byte[] data)
+private native method write(NativeFile f, byte[] data) -> uint

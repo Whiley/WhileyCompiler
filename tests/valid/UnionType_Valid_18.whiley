@@ -4,7 +4,7 @@ type utr12nat is (int x) where x >= 0
 
 type intList is utr12nat | int[]
 
-type tupper is ({int op, intList il} this) where (this.op >= 0) && (this.op <= 5)
+type tupper is ({int op, intList il} _this) where (_this.op >= 0) && (_this.op <= 5)
 
 function f(tupper y) -> (int result)
 ensures result >= 0:

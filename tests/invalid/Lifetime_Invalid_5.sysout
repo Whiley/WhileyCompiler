@@ -1,0 +1,6 @@
+../../tests/invalid/Lifetime_Invalid_5.whiley:16: unable to resolve name (m(&int,&int) is ambiguous
+	found: Lifetime_Invalid_5:m : method<a>(&a:int,&a:int)->(int) instantiated with <*>
+	found: Lifetime_Invalid_5:m : method<a>(&a:int,&int)->(int) instantiated with <*>
+	found: Lifetime_Invalid_5:m : method<a>(&int,&a:int)->(int) instantiated with <*>)
+    m(new 1, new 2)
+    ^^^^^^^^^^^^^^^

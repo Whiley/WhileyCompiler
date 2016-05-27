@@ -29,11 +29,8 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.junit.*;
@@ -124,6 +121,7 @@ public class AllValidVerificationTests {
 		IGNORED.put("Lambda_Valid_3", "#344");
 		IGNORED.put("Lambda_Valid_4", "#344");
 		IGNORED.put("Lambda_Valid_7", "#344");
+		IGNORED.put("Lifetime_Lambda_Valid_4", "#298");
 		IGNORED.put("ListAccess_Valid_6", "Known Issue");
 		IGNORED.put("ListAssign_Valid_1", "#233");
 		IGNORED.put("ListAssign_Valid_6", "#233");
@@ -296,6 +294,9 @@ public class AllValidVerificationTests {
 
 	@Test
 	public void validVerification() throws IOException {
+		if (new File("../../running_on_travis").exists()) {
+			System.out.println(".");
+		}
 		runTest(this.testName);
 	}
 }

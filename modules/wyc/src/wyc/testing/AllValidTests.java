@@ -77,7 +77,6 @@ public class AllValidTests {
 	public final static Map<String, String> IGNORED = new HashMap<String, String>();
 
 	static {
-		IGNORED.put("Coercion_Valid_8", "#406");
 		IGNORED.put("Complex_Valid_3", "Issue ???");
 		IGNORED.put("ConstrainedIntersection_Valid_1", "unknown");
 		IGNORED.put("ConstrainedNegation_Valid_1", "#342");
@@ -90,6 +89,7 @@ public class AllValidTests {
 		IGNORED.put("Import_Valid_5", "#492");
 		IGNORED.put("Intersection_Valid_1", "Issue ???");
 		IGNORED.put("Intersection_Valid_2", "Issue ???");
+		IGNORED.put("Lifetime_Lambda_Valid_4", "#641");
 		IGNORED.put("ListAccess_Valid_6", "Issue ???");
 		IGNORED.put("ListAccess_Valid_7", "Issue ???");
 		IGNORED.put("NegationType_Valid_3", "Issue ???");
@@ -211,6 +211,9 @@ public class AllValidTests {
 
 	@Test
 	public void valid() throws IOException {
+		if (new File("../../running_on_travis").exists()) {
+			System.out.println(".");
+		}
 		runTest(this.testName);
 	}
 }

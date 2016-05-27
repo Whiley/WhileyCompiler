@@ -1,0 +1,3 @@
+../../tests/invalid/Parsing_Invalid_11.whiley:2: continue outside loop
+     continue
+     ^^^^^^^^

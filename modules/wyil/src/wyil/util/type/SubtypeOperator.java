@@ -78,15 +78,35 @@ import wyil.lang.Type;
 public class SubtypeOperator {
 	protected final Automaton from;
 	protected final Automaton to;
+	private final Map<String, String> fromLifetimeSubstitution;
+	private final Map<String, String> toLifetimeSubstitution;
+	private final LifetimeRelation lifetimeRelation;
 	private final BitSet assumptions;
 
-	public SubtypeOperator(Automaton from, Automaton to) {
+	public SubtypeOperator(Automaton from, Automaton to, LifetimeRelation lr) {
 		this.from = from;
 		this.to = to;
+		this.lifetimeRelation = lr;
+		this.fromLifetimeSubstitution = Collections.emptyMap();
+		this.toLifetimeSubstitution = Collections.emptyMap();
 		// matrix is twice the size to accommodate positive and negative signs
 		this.assumptions = new BitSet((2*from.size()) * (to.size()*2));
 		//System.out.println("FROM: " + from);
 		//System.out.println("TO:   " + to);
+	}
+
+	private SubtypeOperator(SubtypeOperator sto, Map<String, String> fromLifetimeSubstitution,
+			Map<String, String> toLifetimeSubstitution) {
+		this.from = sto.from;
+		this.to = sto.to;
+		this.fromLifetimeSubstitution = new HashMap<String, String>(sto.fromLifetimeSubstitution);
+		prependLifetimes(this.fromLifetimeSubstitution);
+		this.fromLifetimeSubstitution.putAll(fromLifetimeSubstitution);
+		this.toLifetimeSubstitution = new HashMap<String, String>(sto.toLifetimeSubstitution);
+		prependLifetimes(this.toLifetimeSubstitution);
+		this.toLifetimeSubstitution.putAll(toLifetimeSubstitution);
+		this.lifetimeRelation = sto.lifetimeRelation;
+		this.assumptions = sto.assumptions;
 	}
 
 	/**
@@ -194,9 +214,50 @@ public class SubtypeOperator {
 				if(fromSign || toSign) {
 					int fromChild = fromState.children[0];
 					int toChild = toState.children[0];
-					return isIntersection(fromChild, fromSign, toChild, toSign)
-						|| isIntersection(fromChild, !fromSign, toChild, !toSign);
+
+					if (fromSign && toSign) {
+						// "Is there any value in both &a:A and &b:B ?"
+						//
+						// This is equivalent to the question "Is there any value in both &A and &B?"
+						// If there is a value in both &a:A and &b:B, then we can take that value
+						// and change its lifetime to *. It will then be in both &A and &B.
+						// If there is a value in both &A and &B, then it is also in both &a:A and &b:B
+						// because the lifetime * outlives a and b.
+						//
+						// Finally, there is a value in both &A and &B iff the types A and B intersect.
+						return isIntersection(fromChild, true, toChild, true);
+					} else {
+						String fromLifetime = applyFromLifetimeSubstitution((String) fromState.data);
+						String toLifetime = applyToLifetimeSubstitution((String) toState.data);
+
+						if (fromSign) {
+							// Equivalent to the negation of "is &a:A (fromType) a subtype of &b:B (toType)?"
+							return !(
+								// &a:A is a subtype of &b:B iff all these are true:
+								// a outlives b
+								lifetimeRelation.outlives(fromLifetime, toLifetime)
+								// A is a subtype of B
+								&& !isIntersection(fromChild, true, toChild, false)
+								// B is a subtype of A
+								&& !isIntersection(fromChild, false, toChild, true)
+							);
+						} else {
+							// Equivalent to the negation of "is &b:B (toType) a subtype of &a:A (fromType)?"
+							return !(
+								// &b:B is a subtype of &a:A iff all these are true:
+								// b outlives a
+								lifetimeRelation.outlives(toLifetime, fromLifetime)
+								// B is a subtype of A
+								&& !isIntersection(fromChild, false, toChild, true)
+								// A is a subtype of B
+								&& !isIntersection(fromChild, true, toChild, false)
+							);
+						}
+					}
 				}
+
+				// An inverted reference type always contains the value "null".
+				// Both are inverted, so they intersect with "null".
 				return true;
 			case K_MAP:
 			case K_TUPLE:  {
@@ -239,36 +300,86 @@ public class SubtypeOperator {
 					// nary nodes
 					int[] fromChildren = fromState.children;
 					int[] toChildren = toState.children;
-					if(fromChildren.length != toChildren.length){
-						return false;
-					}
-					int fromNumParams = (Integer) fromState.data;
-					int toNumParams = (Integer) toState.data;
-					if(fromNumParams != toNumParams){
-						return false;
-					}		
-					boolean andChildren = true;
-					boolean orChildren = false;
-					 
-					for(int i=0;i<fromChildren.length;++i) {
-						boolean v;
-						if(i >= fromNumParams) {
-							// return type(s) are co-variant
-							v = isIntersection(fromChildren[i], fromSign,
-									toChildren[i], toSign);
-						} else {
-							// parameter type(s) are contra-variant
-							v = isIntersection(fromChildren[i], !fromSign,
-								toChildren[i], !toSign);
+					Type.FunctionOrMethod.Data fromData = (Type.FunctionOrMethod.Data) fromState.data;
+					Type.FunctionOrMethod.Data toData = (Type.FunctionOrMethod.Data) toState.data;
+					int fromNumParams = fromData.numParams;
+					int toNumParams = toData.numParams;
+					List<String> fromLifetimeParameters = fromData.lifetimeParameters;
+					List<String> toLifetimeParameters = toData.lifetimeParameters;
+
+					if (fromSign && toSign) {
+						// Two intersecting method types must have the same number
+						// of parameters, returns and lifetime parameters.
+						if (fromChildren.length != toChildren.length
+								|| fromNumParams != toNumParams
+								|| fromLifetimeParameters.size() != toLifetimeParameters.size()){
+							return false;
 						}
-						andChildren &= v;
-						orChildren |= v;
-					}
-					if(!fromSign || !toSign) {
-						return orChildren;
+						// Context lifetimes do not matter, because we can always choose
+						// a method without context lifetimes to find an intersecting method.
 					} else {
-						return andChildren;
+						// Now we have one of the following:
+						// fromSign == true: negation of "is fromType a subtype of toType?"
+						// toSign  ==  true: negation of "is toType a subtype of fromType?"
+
+						// Two method types can only be subtypes of each other if they have
+						// the same number of parameters, returns and lifetime parameters.
+						if (fromChildren.length != toChildren.length
+								|| fromNumParams != toNumParams
+								|| fromLifetimeParameters.size() != toLifetimeParameters.size()){
+							return true; // true means "not subtype"
+						}
+
+						// The supertype must contain all context lifetimes of the subtype
+						List<String> fromContextLifetimes = applyFromLifetimeSubstitution(fromData.contextLifetimes);
+						List<String> toContextLifetimes = applyToLifetimeSubstitution(toData.contextLifetimes);
+						if (fromSign) {
+							if (!toContextLifetimes.containsAll(fromContextLifetimes)) {
+								return true;
+							}
+						} else {
+							if (!fromContextLifetimes.containsAll(toContextLifetimes)) {
+								return true;
+							}
+						}
 					}
+
+					// Calculate the substitutions for lifetime parameters
+					Map<String, String> fromLifetimeSubstitution = buildLifetimeSubstitution(fromLifetimeParameters);
+					Map<String, String> toLifetimeSubstitution = buildLifetimeSubstitution(toLifetimeParameters);
+					SubtypeOperator sto = this;
+					if (!fromLifetimeSubstitution.isEmpty() || !toLifetimeSubstitution.isEmpty()) {
+						sto = new SubtypeOperator(this, fromLifetimeSubstitution, toLifetimeSubstitution);
+					}
+
+					if (fromSign && toSign) {
+						// Two intersecting method types must have intersecting return types.
+						// Parameter types can always be chosen as "any".
+						for (int i = fromNumParams; i < fromChildren.length; ++i) {
+							if (!sto.isIntersection(fromChildren[i], true, toChildren[i], true)) {
+								return false;
+							}
+						}
+						return true;
+					}
+
+					// here we have the subtype test again...
+
+					// Parameter types are contra-variant
+					for (int i = 0; i < fromNumParams; ++i) {
+						if (sto.isIntersection(fromChildren[i], !fromSign, toChildren[i], !toSign)) {
+							return true;
+						}
+					}
+
+					// Return types are co-variant
+					for (int i = fromNumParams; i < fromChildren.length; ++i) {
+						if (sto.isIntersection(fromChildren[i], fromSign, toChildren[i], toSign)) {
+							return true;
+						}
+					}
+
+					return false;
 				}
 				return true;
 			default:
@@ -327,6 +438,62 @@ public class SubtypeOperator {
 		}
 
 		return !fromSign || !toSign;
+	}
+
+	private static Map<String, String> buildLifetimeSubstitution(List<String> lifetimeParameters) {
+		if (lifetimeParameters.isEmpty()) {
+			return Collections.emptyMap();
+		}
+		Map<String, String> substitution = new HashMap<String, String>();
+		int i = 0;
+		for (String lifetime : lifetimeParameters) {
+			substitution.put(lifetime, "$" + (i++));
+		}
+		return substitution;
+	}
+
+	private static void prependLifetimes(Map<String, String> substitution) {
+		for (Map.Entry<String, String> entry : substitution.entrySet()) {
+			entry.setValue("$" + entry.getValue());
+		}
+	}
+
+	private String applyFromLifetimeSubstitution(String lifetime) {
+		String replacement = fromLifetimeSubstitution.get(lifetime);
+		if (replacement != null) {
+			return replacement;
+		}
+		return lifetime;
+	}
+
+	private String applyToLifetimeSubstitution(String lifetime) {
+		String replacement = toLifetimeSubstitution.get(lifetime);
+		if (replacement != null) {
+			return replacement;
+		}
+		return lifetime;
+	}
+
+	private List<String> applyFromLifetimeSubstitution(List<String> lifetimes) {
+		if (lifetimes.isEmpty() || fromLifetimeSubstitution.isEmpty()) {
+			return lifetimes;
+		}
+		List<String> replacement = new ArrayList<String>(lifetimes.size());
+		for (String lifetime : lifetimes) {
+			replacement.add(applyFromLifetimeSubstitution(lifetime));
+		}
+		return replacement;
+	}
+
+	private List<String> applyToLifetimeSubstitution(List<String> lifetimes) {
+		if (lifetimes.isEmpty() || toLifetimeSubstitution.isEmpty()) {
+			return lifetimes;
+		}
+		List<String> replacement = new ArrayList<String>(lifetimes.size());
+		for (String lifetime : lifetimes) {
+			replacement.add(applyToLifetimeSubstitution(lifetime));
+		}
+		return replacement;
 	}
 
 	/**

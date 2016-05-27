@@ -7,9 +7,8 @@ import java.util.List;
 
 import wybs.lang.Builder;
 import wycc.lang.Transform;
-import wyil.lang.CodeBlock;
-import wyil.lang.Code;
-import wyil.lang.Codes;
+import wyil.lang.BytecodeForest;
+import wyil.lang.Bytecode;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
 
@@ -85,16 +84,16 @@ public class LoopVariants implements Transform<WyilFile> {
 	}
 
 	public void infer(WyilFile.Type type) {
-		CodeBlock invariant = type.invariant();
-		if (invariant != null) {
-			infer(invariant);
+		BytecodeForest forest = type.invariant();
+		for(int i=0;i!=forest.numRoots();++i) {
+			infer(forest.getRoot(i),forest);
 		}
 	}
 
 	public void infer(WyilFile.FunctionOrMethod method) {		
-		CodeBlock body = method.body();
-		if(body != null) {
-			infer(body);
+		BytecodeForest forest = method.code();
+		for(int i=0;i!=forest.numRoots();++i) {
+			infer(forest.getRoot(i),forest);
 		}		
 	}
 
@@ -107,34 +106,31 @@ public class LoopVariants implements Transform<WyilFile> {
 	 * @param method
 	 * @return
 	 */
-	protected BitSet infer(CodeBlock block) {
-		BitSet modified = new BitSet(block.numSlots());
+	protected BitSet infer(int blockID, BytecodeForest forest) {
+		BytecodeForest.Block block = forest.get(blockID);
+		BitSet modified = new BitSet(forest.registers().size());
 		int size = block.size();
-		for(int i=0;i<size;++i) {
-			Code code = block.get(i);
-
-			if (code instanceof Code.AbstractBytecode) {
-				Code.AbstractBytecode aa = (Code.AbstractBytecode) code;
-				for(int target : aa.targets()) {
-					modified.set(target);
-				}
+		for (int i = 0; i < size; ++i) {
+			BytecodeForest.Entry e = block.get(i);
+			Bytecode code = e.code();
+			for (int target : code.targets()) {
+				modified.set(target);
 			}
-			if (code instanceof Code.Compound) {
-				Code.Compound body = (Code.Compound) code;
-				BitSet loopModified = infer(body);
-				if (code instanceof Codes.Quantify) {
+			if (code instanceof Bytecode.Compound) {
+				Bytecode.Compound body = (Bytecode.Compound) code;
+				BitSet loopModified = infer(body.block(), forest);
+				if (code instanceof Bytecode.Quantify) {
 					// Unset the modified status of the index operand, it is
 					// already implied that this is modified.
-					Codes.Quantify qc = (Codes.Quantify) code;
-					loopModified.clear(qc.indexOperand);
-					code = Codes.Quantify(qc.startOperand, qc.endOperand,
-							qc.indexOperand, toArray(loopModified),
-							qc.bytecodes());
-					block.set(i, code);
-				} else if (code instanceof Codes.Loop) {
-					Codes.Loop loop = (Codes.Loop) code;
-					code = Codes.Loop(toArray(loopModified), loop.bytecodes());
-					block.set(i, code);
+					Bytecode.Quantify qc = (Bytecode.Quantify) code;
+					loopModified.clear(qc.indexOperand());
+					code = new Bytecode.Quantify(qc.startOperand(), qc.endOperand(), qc.indexOperand(), toArray(loopModified),
+							qc.block());
+					block.set(i, code, e.attributes());
+				} else if (code instanceof Bytecode.Loop) {
+					Bytecode.Loop loop = (Bytecode.Loop) code;
+					code = new Bytecode.Loop(toArray(loopModified), loop.block());
+					block.set(i, code, e.attributes());
 				}
 
 				modified.or(loopModified);

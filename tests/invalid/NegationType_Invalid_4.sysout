@@ -1,0 +1,3 @@
+../../tests/invalid/NegationType_Invalid_4.whiley:3: expected type !NegationType_Invalid_4:t, found method(any)->()
+    !t m = &test
+           ^^^^^

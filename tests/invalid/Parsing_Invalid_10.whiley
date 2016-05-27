@@ -1,0 +1,2 @@
+method f():
+     break

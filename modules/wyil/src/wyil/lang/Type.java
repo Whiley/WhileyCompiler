@@ -83,7 +83,7 @@ public abstract class Type {
 	// the following are strictly unnecessary, but since they occur very
 	// commonly it is helpful to provide them as constants.
 
-	public static final Reference T_REF_ANY = Reference(T_ANY);
+	// public static final Reference T_REF_ANY = Reference(T_ANY);
 
 	/**
 	 * The type representing all possible list types.
@@ -95,13 +95,13 @@ public abstract class Type {
 	 *
 	 * @param element
 	 */
-	public static final Type.Reference Reference(Type element) {
-		Type r = construct(K_REFERENCE, null, element);
+	public static final Type.Reference Reference(Type element, String lifetime) {
+		Type r = construct(K_REFERENCE, lifetime, element);
 		if (r instanceof Type.Reference) {
 			return (Type.Reference) r;
 		} else {
 			throw new IllegalArgumentException(
-					"invalid arguments for Type.Reference()");
+					"invalid arguments for Type.Reference(): " + r);
 		}
 	}
 
@@ -163,8 +163,10 @@ public abstract class Type {
 		}
 		for(int i=0;i!=returns.size();++i) {
 			rparams[i+params_size] = returns.get(i);
-		}		
-		Type r = construct(K_FUNCTION, params_size, rparams);
+		}
+		Type.FunctionOrMethod.Data data = new Type.FunctionOrMethod.Data(params_size,
+				Collections.<String>emptySet(), Collections.<String>emptyList());
+		Type r = construct(K_FUNCTION, data, rparams);
 		if (r instanceof Type.Function) {
 			return (Type.Function) r;
 		} else {
@@ -183,7 +185,9 @@ public abstract class Type {
 		Type[] rparams = new Type[params.length+returns.length];
 		System.arraycopy(params, 0, rparams, 0, params.length);
 		System.arraycopy(returns, 0, rparams, params.length, returns.length);
-		Type r = construct(K_FUNCTION, params.length, rparams);
+		Type.FunctionOrMethod.Data data = new Type.FunctionOrMethod.Data(params.length,
+				Collections.<String>emptySet(), Collections.<String>emptyList());
+		Type r = construct(K_FUNCTION, data, rparams);
 		if (r instanceof Type.Function) {
 			return (Type.Function) r;
 		} else {
@@ -197,7 +201,8 @@ public abstract class Type {
 	 *
 	 * @param element
 	 */
-	public static final Type.Method Method(List<Type> returns, List<Type> params) {
+	public static final Type.Method Method(List<Type> returns, Set<String> contextLifetimes,
+			List<String> lifetimeParameters, List<Type> params) {
 		Type[] rparams = new Type[params.size()+returns.size()];
 		int params_size = params.size();
 		for(int i=0;i!=params_size;++i) {
@@ -205,8 +210,10 @@ public abstract class Type {
 		}
 		for(int i=0;i!=returns.size();++i) {
 			rparams[i+params_size] = returns.get(i);
-		}			
-		Type r = construct(K_METHOD, params_size, rparams);
+		}
+		Type.FunctionOrMethod.Data data = new Type.FunctionOrMethod.Data(params_size,
+				contextLifetimes, lifetimeParameters);
+		Type r = construct(K_METHOD, data, rparams);
 		if (r instanceof Type.Method) {
 			return (Type.Method) r;
 		} else {
@@ -220,11 +227,14 @@ public abstract class Type {
 	 *
 	 * @param element
 	 */
-	public static final Type.Method Method(Type[] returns, Type... params) {
+	public static final Type.Method Method(Type[] returns, Set<String> contextLifetimes,
+			List<String> lifetimeParameters, Type... params) {
 		Type[] rparams = new Type[params.length+returns.length];
 		System.arraycopy(params, 0, rparams, 0, params.length);
 		System.arraycopy(returns, 0, rparams, params.length, returns.length);
-		Type r = construct(K_METHOD, params.length, rparams);
+		Type.FunctionOrMethod.Data data = new Type.FunctionOrMethod.Data(params.length,
+				contextLifetimes, lifetimeParameters);
+		Type r = construct(K_METHOD, data, rparams);
 		if (r instanceof Type.Method) {
 			return (Type.Method) r;
 		} else {
@@ -400,22 +410,36 @@ public abstract class Type {
 					fields.add(readString());
 				}
 				state.data = fields;
-			}  else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) {
+			} else if(state.kind == Type.K_REFERENCE) {
+				state.data = readString(); // lifetime
+			} else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) {
 				boolean nonEmpty = reader.read_bit();
 				state.data = nonEmpty;
 			} else if(state.kind == Type.K_FUNCTION || state.kind == Type.K_METHOD) {
+				ArrayList<String> contextLifetimes = readStringList();
+				ArrayList<String> lifetimeParameters = readStringList();
 				int numParameters = reader.read_uv();
-				state.data = numParameters;
+				state.data = new Type.FunctionOrMethod.Data(numParameters,
+						new HashSet<String>(contextLifetimes), lifetimeParameters);
 			}
 			return state;
 		}
 
 		private String readString() throws IOException {
-			String r = "";
+			StringBuilder r = new StringBuilder();
 			int nchars = reader.read_uv();
 			for(int i=0;i!=nchars;++i) {
 				char c = (char) reader.read_u16();
-				r = r + c;
+				r.append(c);
+			}
+			return r.toString();
+		}
+
+		private ArrayList<String> readStringList() throws IOException {
+			int len = reader.read_uv();
+			ArrayList<String> r = new ArrayList<String>(len);
+			for(int i=0;i!=len;++i) {
+				r.add(readString());
 			}
 			return r;
 		}
@@ -456,10 +480,15 @@ public abstract class Type {
 				for(String field : fields) {
 					writeString(field);
 				}
+			} else if(state.kind == Type.K_REFERENCE) {
+				writeString((String) state.data); // lifetime
 			} else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) {
 				writer.write_bit((Boolean) state.data);
 			}  else if(state.kind == Type.K_FUNCTION || state.kind == Type.K_METHOD) {
-				writer.write_uv((Integer) state.data);				
+				Type.FunctionOrMethod.Data data = (Type.FunctionOrMethod.Data) state.data;
+				writeStringList(data.contextLifetimes);
+				writeStringList(data.lifetimeParameters);
+				writer.write_uv(data.numParams);
 			}
 		}
 
@@ -467,6 +496,13 @@ public abstract class Type {
 			writer.write_uv(str.length());
 			for (int i = 0; i != str.length(); ++i) {
 				writer.write_u16(str.charAt(i));
+			}
+		}
+
+		private void writeStringList(List<String> strl) throws IOException {
+			writer.write_uv(strl.size());
+			for (String str : strl) {
+				writeString(str);
 			}
 		}
 	}
@@ -479,10 +515,31 @@ public abstract class Type {
 	 * Determine whether type <code>t2</code> is an <i>explicit coercive
 	 * subtype</i> of type <code>t1</code>.
 	 */
-	public static boolean isExplicitCoerciveSubtype(Type t1, Type t2) {
+	public static boolean isExplicitCoerciveSubtype(Type t1, Type t2, LifetimeRelation lr) {
 		Automaton a1 = destruct(t1);
 		Automaton a2 = destruct(t2);
-		ExplicitCoercionOperator relation = new ExplicitCoercionOperator(a1,a2);
+		ExplicitCoercionOperator relation = new ExplicitCoercionOperator(a1,a2,lr);
+		return relation.isSubtype(0, 0);
+	}
+
+	/**
+	 * Determine whether type <code>t2</code> is an <i>explicit coercive
+	 * subtype</i> of type <code>t1</code>.
+	 */
+	public static boolean isExplicitCoerciveSubtype(Type t1, Type t2) {
+		return isExplicitCoerciveSubtype(t1, t2, LifetimeRelation.EMPTY);
+	}
+
+	/**
+	 * Determine whether type <code>t2</code> is a <i>subtype</i> of type
+	 * <code>t1</code> (written t1 :> t2). In other words, whether the set of
+	 * all possible values described by the type <code>t2</code> is a subset of
+	 * that described by <code>t1</code>.
+	 */
+	public static boolean isSubtype(Type t1, Type t2, LifetimeRelation lr) {
+		Automaton a1 = destruct(t1);
+		Automaton a2 = destruct(t2);
+		SubtypeOperator relation = new SubtypeOperator(a1,a2,lr);
 		return relation.isSubtype(0, 0);
 	}
 
@@ -493,10 +550,7 @@ public abstract class Type {
 	 * that described by <code>t1</code>.
 	 */
 	public static boolean isSubtype(Type t1, Type t2) {
-		Automaton a1 = destruct(t1);
-		Automaton a2 = destruct(t2);
-		SubtypeOperator relation = new SubtypeOperator(a1,a2);
-		return relation.isSubtype(0, 0);
+		return isSubtype(t1, t2, LifetimeRelation.EMPTY);
 	}
 
 	/**
@@ -874,6 +928,9 @@ public abstract class Type {
 			int elemIdx = automaton.states[0].children[0];
 			return construct(Automata.extract(automaton,elemIdx));
 		}
+		public String lifetime() {
+			return (String) automaton.states[0].data;
+		}
 	}
 
 	/**
@@ -1154,16 +1211,79 @@ public abstract class Type {
 		FunctionOrMethod(Automaton automaton) {
 			super(automaton);
 		}
-		
+
+		public static final class Data implements Comparable<Data> {
+			public final int numParams;
+			public final List<String> contextLifetimes;
+			public final List<String> lifetimeParameters;
+
+			public Data(int numParams, Set<String> contextLifetimes, List<String> lifetimeParameters) {
+				this.numParams = numParams;
+				this.contextLifetimes = new ArrayList<String>(contextLifetimes);
+				this.contextLifetimes.remove("*");
+				Collections.sort(this.contextLifetimes);
+				this.lifetimeParameters = new ArrayList<String>(lifetimeParameters);
+			}
+
+			@Override
+			public int hashCode() {
+				return 31 * (31 * numParams + contextLifetimes.hashCode()) + lifetimeParameters.hashCode();
+			}
+
+			@Override
+			public boolean equals(Object obj) {
+				if (this == obj) return true;
+				if (obj == null) return false;
+				if (this.getClass() != obj.getClass()) return false;
+				Data other = (Data) obj;
+				if (this.numParams != other.numParams) return false;
+				if (!this.contextLifetimes.equals(other.contextLifetimes)) {
+					return false;
+				}
+				if (!this.lifetimeParameters.equals(other.lifetimeParameters)) {
+					return false;
+				}
+				return true;
+			}
+
+			@Override
+			public int compareTo(Data other) {
+				int r = Integer.compare(this.numParams, other.numParams);
+				if (r != 0) return r;
+				r = compareLists(this.contextLifetimes, other.contextLifetimes);
+				if (r != 0) return r;
+				return compareLists(this.lifetimeParameters, other.lifetimeParameters);
+			}
+
+			private static int compareLists(List<String> my, List<String> other) {
+				Iterator<String> it1 = my.iterator();
+				Iterator<String> it2 = other.iterator();
+				while (true) {
+					if (it1.hasNext()) {
+						if (it2.hasNext()) {
+							int r = it1.next().compareTo(it2.next());
+							if (r != 0) return r;
+						} else {
+							return 1;
+						}
+					} else if (it2.hasNext()) {
+						return -1;
+					} else {
+						return 0;
+					}
+				}
+			}
+		}
+
 		/**
-		 * Get the parameter types of this function or method type.
+		 * Get the return types of this function or method type.
 		 *
 		 * @return
 		 */
 		public ArrayList<Type> returns() {
 			Automaton.State state = automaton.states[0];
 			int[] fields = state.children;
-			int numParams = (Integer) state.data;
+			int numParams = ((Data) state.data).numParams;
 			ArrayList<Type> r = new ArrayList<Type>();
 			for(int i=numParams;i<fields.length;++i) {
 				r.add(construct(Automata.extract(automaton, fields[i])));
@@ -1179,12 +1299,34 @@ public abstract class Type {
 		public ArrayList<Type> params() {
 			Automaton.State state = automaton.states[0];
 			int[] fields = state.children;
-			int numParams = (Integer) state.data;
+			int numParams = ((Data) state.data).numParams;
 			ArrayList<Type> r = new ArrayList<Type>();
 			for(int i=0;i<numParams;++i) {
 				r.add(construct(Automata.extract(automaton, fields[i])));
 			}
 			return r;
+		}
+
+		/**
+		 * Get the context lifetimes of this function or method type.
+		 *
+		 * @return
+		 */
+		public Set<String> contextLifetimes() {
+			Automaton.State state = automaton.states[0];
+			Data data = (Data) state.data;
+			return new LinkedHashSet<String>(data.contextLifetimes);
+		}
+
+		/**
+		 * Get the lifetime parameters of this function or method type.
+		 *
+		 * @return
+		 */
+		public ArrayList<String> lifetimeParams() {
+			Automaton.State state = automaton.states[0];
+			Data data = (Data) state.data;
+			return new ArrayList<String>(data.lifetimeParameters);
 		}
 	}
 
@@ -1303,7 +1445,12 @@ public abstract class Type {
 			middle = state.data.toString();
 			break;
 		case K_REFERENCE:
-			middle = "&" + toString(state.children[0], visited, headers, automaton);
+			middle = "&";
+			String lifetime = (String) state.data;
+			if (!"*".equals(lifetime)) {
+				middle += lifetime + ":";
+			}
+			middle += toString(state.children[0], visited, headers, automaton);
 			break;
 		case K_NEGATION: {
 			middle = "!" + toBracesString(state.children[0], visited, headers, automaton);
@@ -1364,8 +1511,9 @@ public abstract class Type {
 		case K_METHOD:
 		case K_FUNCTION: {
 			String parameters = "";
-			int[] children = state.children;			;
-			int numParameters = (Integer) state.data;
+			int[] children = state.children;
+			Type.FunctionOrMethod.Data data = (Type.FunctionOrMethod.Data) state.data;
+			int numParameters = data.numParams;
 			for (int i = 0; i != numParameters; ++i) {
 				if (i!=0) {
 					parameters += ",";
@@ -1379,11 +1527,40 @@ public abstract class Type {
 				}
 				returns += toString(children[i], visited, headers, automaton);
 			}
-			if(state.kind == K_FUNCTION) {
-				middle = "function(" + parameters + ")->(" + returns + ")";
-			} else {
-				middle = "method(" + parameters + ")->(" + returns + ")";
-			}			
+			StringBuilder sb = new StringBuilder();
+			sb.append(state.kind == K_FUNCTION ? "function" : "method");
+			if (!data.contextLifetimes.isEmpty()) {
+				sb.append('[');
+				boolean first = true;
+				for (String l : data.contextLifetimes) {
+					if (!first) {
+						sb.append(',');
+					} else {
+						first = false;
+					}
+					sb.append(l);
+				}
+				sb.append(']');
+			}
+			if (!data.lifetimeParameters.isEmpty()) {
+				sb.append('<');
+				boolean first = true;
+				for (String l : data.lifetimeParameters) {
+					if (!first) {
+						sb.append(',');
+					} else {
+						first = false;
+					}
+					sb.append(l);
+				}
+				sb.append('>');
+			}
+			sb.append('(');
+			sb.append(parameters);
+			sb.append(")->(");
+			sb.append(returns);
+			sb.append(')');
+			middle = sb.toString();
 			break;
 		}
 		default:
@@ -1764,33 +1941,33 @@ public abstract class Type {
 		}
 	}
 
-	public static void main(String[] args) {
-		//Type from = fromString("(null,null)");
-		//Type to = fromString("X<[X]>");
-		Type from = fromString("!(!{int x,int z} | !{int x,int y})");
-		Type to = fromString("{string name,...}");
-		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
-		System.out.println(from + " & " + to + " = " + intersect(from,to));
-		//System.out.println(from + " - " + to + " = " + intersect(from,Type.Negation(to)));
-		//System.out.println(to + " - " + from + " = " + intersect(to,Type.Negation(from)));
-		//System.out.println("!" + from + " & !" + to + " = "
-		//		+ intersect(Type.Negation(from), Type.Negation(to)));
-	}
-
-	public static Type linkedList(int n) {
-		NameID label = new NameID(Trie.fromString(""),"X");
-		return Recursive(label,innerLinkedList(n));
-	}
-
-	public static Type innerLinkedList(int n) {
-		if(n == 0) {
-			return Nominal(new NameID(Trie.fromString(""),"X"));
-		} else {
-			Type leaf = Reference(innerLinkedList(n-1));
-			HashMap<String,Type> fields = new HashMap<String,Type>();
-			fields.put("next", Union(T_NULL,leaf));
-			fields.put("data", T_BOOL);
-			return Record(false,fields);
-		}
-	}
+//	public static void main(String[] args) {
+//		//Type from = fromString("(null,null)");
+//		//Type to = fromString("X<[X]>");
+//		Type from = fromString("!(!{int x,int z} | !{int x,int y})");
+//		Type to = fromString("{string name,...}");
+//		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
+//		System.out.println(from + " & " + to + " = " + intersect(from,to));
+//		//System.out.println(from + " - " + to + " = " + intersect(from,Type.Negation(to)));
+//		//System.out.println(to + " - " + from + " = " + intersect(to,Type.Negation(from)));
+//		//System.out.println("!" + from + " & !" + to + " = "
+//		//		+ intersect(Type.Negation(from), Type.Negation(to)));
+//	}
+//
+//	public static Type linkedList(int n) {
+//		NameID label = new NameID(Trie.fromString(""),"X");
+//		return Recursive(label,innerLinkedList(n));
+//	}
+//
+//	public static Type innerLinkedList(int n) {
+//		if(n == 0) {
+//			return Nominal(new NameID(Trie.fromString(""),"X"));
+//		} else {
+//			Type leaf = Reference(innerLinkedList(n-1));
+//			HashMap<String,Type> fields = new HashMap<String,Type>();
+//			fields.put("next", Union(T_NULL,leaf));
+//			fields.put("data", T_BOOL);
+//			return Record(false,fields);
+//		}
+//	}
 }

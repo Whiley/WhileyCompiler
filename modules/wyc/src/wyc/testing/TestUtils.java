@@ -23,7 +23,7 @@ import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
-import wyil.util.Interpreter;
+import wyil.util.interpreter.Interpreter;
 
 /**
  * Provides some simple helper functions used by all test harnesses.
@@ -102,7 +102,8 @@ public class TestUtils {
 	 * @throws IOException
 	 */
 	public static void execWyil(String wyilDir, Path.ID id) throws IOException {
-		Type.Method sig = Type.Method(Collections.EMPTY_LIST, Collections.EMPTY_LIST);
+		Type.Method sig = Type.Method(Collections.<Type>emptyList(), Collections.<String>emptySet(),
+				Collections.<String>emptyList(), Collections.<Type>emptyList());
 		NameID name = new NameID(id,"test");
 		Build.Project project = initialiseProject(wyilDir);
 		new Interpreter(project,null).execute(name,sig);

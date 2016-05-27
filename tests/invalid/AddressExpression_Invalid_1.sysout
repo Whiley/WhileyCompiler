@@ -1,0 +1,5 @@
+../../tests/invalid/AddressExpression_Invalid_1.whiley:10: unable to resolve name (overloaded(...) is ambiguous
+	found: AddressExpression_Invalid_1:overloaded : function(bool)->(bool)
+	found: AddressExpression_Invalid_1:overloaded : function(int)->(int))
+    fun x = &overloaded
+            ^^^^^^^^^^^

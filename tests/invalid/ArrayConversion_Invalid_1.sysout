@@ -1,0 +1,4 @@
+../../tests/invalid/ArrayConversion_Invalid_1.whiley:5: unable to resolve name (no match for f(int[])
+	found: ArrayConversion_Invalid_1:f : function(byte[])->(int))
+    f([1, 2, 3])
+    ^^^^^^^^^^^^

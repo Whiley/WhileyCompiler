@@ -154,7 +154,7 @@ public class TypeExpander {
 				// At this point, need to find the corresponding declatation.
 				WyilFile mi = project.get(nid.module(),WyilFile.ContentType).read();
 				WyilFile.Type td = mi.type(nid.name());
-				if(maximallyConsumed && td.invariant() != null) {
+				if(maximallyConsumed && td.invariant().numBlocks() > 0) {
 					// In this specially case, we have a constrained type
 					// and we are attempting to compute the maximally
 					// consumed type. This type is not fully consumed as it
@@ -237,7 +237,7 @@ public class TypeExpander {
 			for(int i=0;i!=tt_returns_size;++i) {
 				myChildren[i+tt_params_size] = getTypeHelper(tt_returns.get(i),maximallyConsumed,states,roots);
 			}
-			myData = tt_params_size;
+			myData = new Type.FunctionOrMethod.Data(tt_params_size, tt.contextLifetimes(), tt.lifetimeParams());
 			myKind = tt instanceof Type.Function ? Type.K_FUNCTION
 					: Type.K_METHOD;			
 		}else {

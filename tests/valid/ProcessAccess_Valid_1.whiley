@@ -1,10 +1,10 @@
 type etype is {int rest, int mode}
 type Ptype is &etype
 
-method get(Ptype this) -> int:
-    this->mode = 1
-    this->rest = 123
-    return this->mode
+method get(Ptype _this) -> int:
+    _this->mode = 1
+    _this->rest = 123
+    return _this->mode
 
 public export method test() :
     Ptype p = new {rest: 2, mode: 2}

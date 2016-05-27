@@ -127,7 +127,7 @@ public class VcBranch {
 	/**
 	 * The bytecode index into the above block that this branch is currently at.
 	 */
-	private CodeBlock.Index pc;
+	private BytecodeForest.Index pc;
 
 	/**
 	 * Indicates the state of this branch. In particular, whether its active,
@@ -148,13 +148,13 @@ public class VcBranch {
 	 *            --- Variable names to use as prefixes when generating register
 	 *            names. If null, the default names are used instead.
 	 */
-	public VcBranch(int numInputs, String[] prefixes) {
+	public VcBranch(int numInputs, BytecodeForest.Index pc, String[] prefixes) {
 		int numSlots = numInputs;
 		this.parents = new VcBranch[0];
 		this.environment = new Expr[numSlots];
 		this.versions = new int[numSlots];
 		this.constraints = null;
-		this.pc = new CodeBlock.Index(CodeBlock.Index.ROOT);
+		this.pc = pc;
 		this.state = State.ACTIVE;
 
 		if (prefixes == null) {
@@ -216,7 +216,7 @@ public class VcBranch {
 	 *
 	 * @return
 	 */
-	public CodeBlock.Index pc() {
+	public BytecodeForest.Index pc() {
 		return pc;
 	}
 
@@ -285,7 +285,7 @@ public class VcBranch {
 	 * 
 	 * @param pc
 	 */
-	public void goTo(CodeBlock.Index pc) {
+	public void goTo(BytecodeForest.Index pc) {
 		if (state != State.ACTIVE) {
 			// Sanity check
 			throw new IllegalArgumentException(

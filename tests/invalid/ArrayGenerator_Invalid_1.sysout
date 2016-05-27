@@ -1,0 +1,3 @@
+../../tests/invalid/ArrayGenerator_Invalid_1.whiley:2: negative length possible
+    return [0; -1]
+           ^^^^^^^

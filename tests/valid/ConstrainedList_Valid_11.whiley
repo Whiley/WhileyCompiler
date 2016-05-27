@@ -1,8 +1,8 @@
 type state is ({
     int[] input,
     int pos
-} this)
-where (this.pos >= 0) && (this.pos <= |this.input|)
+} _this)
+where (_this.pos >= 0) && (_this.pos <= |_this.input|)
 
 public function isLetter(int c) -> bool:
     return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')

@@ -1,0 +1,3 @@
+../../tests/invalid/Lifetime_Lambda_Invalid_3.whiley:4: expected type method<a,b>()->(&int), found method<a>()->(&int)
+    method<a, b>()->(&int) m = &<a>(-> new 1)
+                               ^^^^^^^^^^^^^^

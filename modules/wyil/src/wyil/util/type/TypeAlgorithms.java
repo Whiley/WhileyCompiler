@@ -108,9 +108,9 @@ public final class TypeAlgorithms {
 				Boolean nid2 = (Boolean) s2.data;
 				return nid1.toString().compareTo(nid2.toString());
 			} else if(s1.kind == Type.K_FUNCTION || s1.kind == Type.K_METHOD) {
-				int s1NumParams = (Integer) s1.data;
-				int s2NumParams = (Integer) s2.data;				
-				return Integer.compare(s1NumParams, s2NumParams);
+				Type.FunctionOrMethod.Data s1Data = (Type.FunctionOrMethod.Data) s1.data;
+				Type.FunctionOrMethod.Data s2Data = (Type.FunctionOrMethod.Data) s2.data;
+				return s1Data.compareTo(s2Data);
 			} else {
 				String str1 = (String) s1.data;
 				String str2 = (String) s2.data;
@@ -225,18 +225,251 @@ public final class TypeAlgorithms {
 	 * </p>
 	 *
 	 */
-	public static void simplify(Automaton automaton) {
-		boolean changed = true;
-		while(changed) {
-			changed = false;
-			// NOTE: the following is commented out because it's broken.
-			// changed |= simplifyContractives(automaton);
-			for(int i=0;i!=automaton.size();++i) {
-				changed |= simplify(i,automaton);
+	/**
+	 * Type inhabitation labels used by the simplification algorithm.
+	 */
+	private static enum Inhabitation {
+		/**
+		 * Indicates that the simplification algorithm has not yet labeled a state
+		 * with a value.
+		 */
+		UNLABELED,
+		/**
+		 * Type is uninhabited. Equivalent to void.
+		 */
+		NONE,
+		/**
+		 * May have some values inhabiting the type. Since we don't precisely
+		 * track inhabitation, a type that has this label does not necessarily
+		 * have any values, but we may be unable to prove it is uninhabited so we
+		 * may choose to assume that it is inhabited to be safe.
+		 */
+		SOME,
+		/**
+		 * Type is inhabited by all values. Equivalent to any.
+		 */
+		ALL
+	}
+
+	/**
+	 * Get the inhabitation of a state during simplification. Some states have a
+	 * fixed, known inhabitation. Others are either UNLABELED or SOME, depending
+	 * on the value of the corresponding bit in the set of flags.
+	 *
+	 * @param index
+	 *            --- index of state being worked on.
+	 * @param automaton
+	 *            --- automaton containing state being worked on.
+	 * @param inhabitationFlags
+	 *            --- flags tracking inhabitation for some of the states
+	 * @return The inhabitation of the state.
+	 */
+	private static Inhabitation getStateInhabitation(int index, Automaton automaton, BitSet inhabitationFlags) {
+		Automaton.State state = automaton.states[index];
+		switch (state.kind) {
+		// Some states have known, fixed inhabitation.
+		case Type.K_VOID:
+			return Inhabitation.NONE;
+		case Type.K_ANY:
+			return Inhabitation.ALL;
+		case Type.K_NULL:
+		case Type.K_BOOL:
+		case Type.K_BYTE:
+		case Type.K_CHAR:
+		case Type.K_INT:
+		case Type.K_RATIONAL:
+		case Type.K_STRING:
+		case Type.K_FUNCTION:
+		case Type.K_NOMINAL:
+			return Inhabitation.SOME;
+		// Other states have their inhabitation labels stored as a flag.
+		case Type.K_NEGATION:
+		case Type.K_UNION :
+		case Type.K_LIST:
+		case Type.K_REFERENCE:
+		case Type.K_SET:
+		case Type.K_RECORD:
+		case Type.K_TUPLE:
+		case Type.K_METHOD:
+			if (inhabitationFlags.get(index)) {
+				return Inhabitation.SOME;
+			} else {
+				return Inhabitation.UNLABELED;
 			}
+		default:
+			throw new IllegalArgumentException("Unknown kind: " + state.kind);
 		}
 	}
 
+	/**
+	 * Set the inhabitation of a state during simplification. This method might
+	 * do several things:
+	 *
+	 * 1. If the inhabitation is set to its existing value, then nothing happens
+	 *    and false is returned.
+	 * 2. If the inhabitation is set to NONE or ALL then the state's kind will be
+	 *    changed to K_VOID or K_ANY and true is returned.
+	 * 3. If the inhabitation is set to SOME or UNLABELED, and the state's kind
+	 *    supports it, then a flag will be set or clared in the inhabitationFlags
+	 *    parameter. True will be returned.
+	 * 4. If none of these actions are possible then a state is being set to
+	 *    an unsupported inhabitation label (e.g. K_INT set to K_UNLABELED) and
+	 *    an IllegalArgumentExceptionw will be thrown.
+	 *
+	 * @param index
+	 *            --- index of state being worked on.
+	 * @param automaton
+	 *            --- automaton containing state being worked on.
+	 * @param inhabitationFlags
+	 *            --- flags tracking inhabitation for some of the states
+	 * @param newValue
+	 *            --- the new inhabitation value to set the state to
+	 * @return Whether or not the value was changed.
+	 */
+	private static boolean setStateInhabitation(int index, Automaton automaton, BitSet inhabitationFlags, Inhabitation newValue) {
+		Inhabitation existingValue = getStateInhabitation(index, automaton, inhabitationFlags);
+		if (newValue == existingValue) {
+			return false;
+		}
+		if (newValue == Inhabitation.NONE) {
+			automaton.states[index] = new Automaton.State(Type.K_VOID);
+		} else if (newValue == Inhabitation.ALL) {
+			automaton.states[index] = new Automaton.State(Type.K_ANY);
+		} else if (newValue == Inhabitation.SOME || newValue == Inhabitation.UNLABELED) {
+			int existingKind = automaton.states[index].kind;
+			switch (existingKind) {
+			case Type.K_NEGATION:
+			case Type.K_UNION :
+			case Type.K_LIST:
+			case Type.K_REFERENCE:
+			case Type.K_SET:
+			case Type.K_RECORD:
+			case Type.K_TUPLE:
+			case Type.K_FUNCTION:
+			case Type.K_METHOD:
+				inhabitationFlags.set(index, newValue == Inhabitation.SOME);
+				break;
+			default:
+				throw new IllegalArgumentException("Cannot label state with kind " + existingKind + " with inhabitation label " + newValue);
+			}
+		} else {
+			throw new IllegalArgumentException("Unknown inhabitation label " + newValue);
+		}
+		return true;
+	}
+
+	/**
+	 * Analyse an automaton and try to produce a version that is simpler but
+	 * still equivalent.
+	 *
+	 * @param automaton
+	 *            --- automaton to simplify.
+	 */
+	public static void simplify(Automaton automaton) {
+		// Use a BitSet to track the inhabitation label of some of the states in
+		// the automaton. A bit is available for each state but it is ignored for
+		// states whose kind has an implicit inhabitation label, e.g. K_VOID has
+		// a label of NONE, K_ANY has a label of ALL, K_INT has a label of SOME,
+		// etc, but K_RECORD needs a bit to track whether it is UNLABELED or has
+		// a label of SOME.
+		//
+		// A clear bit indicates a state is UNLABELED, a set bit indicates it
+		// has SOME inhabitants. This bit has no meaning for states that already
+		// have implicit inhabitation information.
+		BitSet lastInhabitationFlags = null;
+		BitSet inhabitationFlags = null;
+
+		while (true) {
+			// Swap inhabitation flags.
+			{
+				BitSet temp = inhabitationFlags;
+				lastInhabitationFlags = inhabitationFlags;
+				lastInhabitationFlags = temp;
+				if (inhabitationFlags == null) {
+					inhabitationFlags = new BitSet(automaton.size());
+				} else {
+					inhabitationFlags.clear();
+				}
+			}
+
+			// Don't assume any prior knowledge about inhabitation. Previous simplifications
+			// may have assumed states had SOME inhabitants but these could be NONE after
+			// further simplification, i.e. because !!SOME => SOME using our rules, but this
+			// is only because we're imprecise in propagating inhabitation through negation.
+			inhabitationFlags.clear();
+
+			// Perform an initial simplification on the automaton.
+			boolean simplified = simplifyInner(automaton, inhabitationFlags);
+			// Break if not simplified or inhabitaitonFlags non-null and equal
+			if (!simplified && lastInhabitationFlags != null && lastInhabitationFlags.equals(inhabitationFlags)) {
+				// No simplification and inhabitation flags unchanged: breaking out of simplification loop
+				break;
+			}
+			// Found simplification and/or inhabitation flags changes: continuing with simplification loop
+
+			// Now that simplification has occurred once, all possibly inhabited states should
+			// have a label. Anything unlabeled can be considered uninhabited.
+			boolean labelingChanged = markUnlabeledAsUninhabited(automaton, inhabitationFlags);
+			if (!labelingChanged && lastInhabitationFlags != null) {
+				// No uninhabited labeling changes: breaking out of simplification loop
+				break;
+			}
+			// Found labeling changes: continuing with simplification loop
+		}
+	}
+
+	/**
+	 * Simplifies each state in an automaton until a fixpoint is reached.
+	 *
+	 * @param automaton
+	 *            --- automaton being simplified.
+	 * @param inhabitationFlags
+	 *            --- flags tracking inhabitation for some of the states
+	 */
+	private static boolean simplifyInner(Automaton automaton, BitSet inhabitationFlags) {
+		// Flag indicating whether any simplifications have been performed by this
+		// method.
+		boolean anySimplificationPerformed = false;
+		// Flag indicating whether or not to loop again. This will be false when
+		// no simplifications are made to any state.
+		boolean loopAgain = true;
+		while (loopAgain) {
+			loopAgain = false;
+			// Try to simplify each state and track whether or not any simplifications
+			// have occurred.
+			for(int i=0;i!=automaton.size();++i) {
+				boolean stateSimplified = simplifyState(i,automaton, inhabitationFlags);
+				loopAgain |= stateSimplified;
+				anySimplificationPerformed |= stateSimplified;
+			}
+		}
+		return anySimplificationPerformed;
+	}
+
+	/**
+	 * This method is called after an initial simplification pass. Any states
+	 * that have an UNLABELED inhabitation must not be inhabited, so can be set
+	 * to NONE.
+	 *
+	 * @param automaton
+	 *            --- automaton being simplified.
+	 * @param inhabitationFlags
+	 *            --- flags tracking inhabitation for some of the states
+	 * @return True if the labels were changed by this method, false otherwise.
+	 */
+	private static boolean markUnlabeledAsUninhabited(Automaton automaton, BitSet inhabitationFlags) {
+		boolean labelingChanged = false;
+		for(int i=0;i!=automaton.size();++i) {
+			if (getStateInhabitation(i, automaton, inhabitationFlags) == Inhabitation.UNLABELED) {
+				// Mark unlabeled state as uninhabited
+				setStateInhabitation(i, automaton, inhabitationFlags, Inhabitation.NONE);
+				labelingChanged = true;
+			}
+		}
+		return labelingChanged;
+	}
+
+	// FIXME: This method is not called from anywhere.
 	private static boolean simplifyContractives(Automaton automaton) {
 		BitSet contractives = new BitSet(automaton.size());
 		// initially all nodes are considered contractive.
@@ -252,16 +485,39 @@ public final class TypeAlgorithms {
 		return changed;
 	}
 
-	private static boolean simplify(int index, Automaton automaton) {
+	/**
+	 * Attempts to simplify a single state in automaton.
+	 *
+	 * @param index
+	 *            --- the index of the state being worked on.
+	 * @param automaton
+	 *            --- automaton being simplified.
+	 * @param inhabitationFlags
+	 *            --- flags tracking inhabitation for some of the states
+	 * @return True if this method modified the state, false if the state is
+	 *         still the same.
+	 */
+	private static boolean simplifyState(int index, Automaton automaton, BitSet inhabitationFlags) {
 		Automaton.State state = automaton.states[index];
-		boolean changed=false;
 		switch (state.kind) {
+		case Type.K_VOID:
+		case Type.K_ANY:
+		case Type.K_NULL:
+		case Type.K_BOOL:
+		case Type.K_BYTE:
+		case Type.K_CHAR:
+		case Type.K_INT:
+		case Type.K_RATIONAL:
+		case Type.K_STRING:
+		case Type.K_NOMINAL:
+		case Type.K_FUNCTION:
+			return false;
 		case Type.K_NEGATION:
-			changed = simplifyNegation(index, state, automaton);
-			break;
+			return simplifyNegation(index, state, automaton, inhabitationFlags);
 		case Type.K_UNION :
-			changed = simplifyUnion(index, state, automaton);
-			break;
+			return simplifyUnion(index, state, automaton, inhabitationFlags);
+		case Type.K_REFERENCE:
+			return simplifyReference(index, state, automaton, inhabitationFlags);
 		case Type.K_LIST:
 		case Type.K_SET:
 			// for list and set types, we want to simplify the following cases:
@@ -269,46 +525,92 @@ public final class TypeAlgorithms {
 			// {void+} => void
 			boolean nonEmpty = (Boolean) state.data;
 			if(!nonEmpty) {
-				// type of form [T], so ignore
-				break;
+				// type of form [T], so no further simplication needed
+				// All non-empty lists and sets contain the empty list or set
+				return setStateInhabitation(index, automaton, inhabitationFlags, Inhabitation.SOME);
 			}
-			// type of form [T+] so simplify like other compounds.
+			// list/set type of form [T+] so fall through to simplify like other compounds.
 		case Type.K_RECORD:
 		case Type.K_TUPLE:
-		case Type.K_FUNCTION:
 		case Type.K_METHOD:
-			changed = simplifyCompound(index, state, automaton);
-			break;
+			return simplifyCompound(index, state, automaton, inhabitationFlags);
+		default:
+			throw new IllegalArgumentException("Can't simplify state with kind: " + state.kind);
 		}
-		return changed;
 	}
 
-	private static boolean simplifyNegation(int index, Automaton.State state, Automaton automaton) {
+	private static boolean simplifyNegation(int index, Automaton.State state, Automaton automaton, BitSet inhabitationFlags) {
+		// Rewrite !!X => X
 		Automaton.State child = automaton.states[state.children[0]];
 		if(child.kind == Type.K_NEGATION) {
 			// bypass node
-			Automaton.State childchild = automaton.states[child.children[0]];
+			int childchildIndex = child.children[0];
+			Inhabitation childchildInhabitation = getStateInhabitation(childchildIndex, automaton, inhabitationFlags);
+			Automaton.State childchild = automaton.states[childchildIndex];
+			// Replace double negation of X with just X
 			automaton.states[index] = new Automaton.State(childchild);
+			setStateInhabitation(index, automaton, inhabitationFlags, childchildInhabitation);
 			return true;
 		}
-		return false;
+
+		// Set inhabitation label based on child's label
+		Inhabitation childInhabitation = getStateInhabitation(state.children[0], automaton, inhabitationFlags);
+		Inhabitation inhabitation;
+		if (childInhabitation == Inhabitation.ALL) {
+			inhabitation = Inhabitation.NONE; // Negation of ALL is NONE
+		} else if (childInhabitation == Inhabitation.NONE) {
+			inhabitation = Inhabitation.ALL; // Negation of ALL is SOME
+		} else {
+			// Approximate negation of SOME is SOME, leave UNLABELED if child is UNLABELED
+			inhabitation = childInhabitation;
+		}
+		return setStateInhabitation(index, automaton, inhabitationFlags, inhabitation);
 	}
 
-	private static boolean simplifyCompound(int index, Automaton.State state, Automaton automaton) {
+	private static boolean simplifyReference(int index, Automaton.State state, Automaton automaton, BitSet inhabitationFlags) {
+		// Look at child inhabitation to work out reference inhabitation
+		Inhabitation childInhabitation = getStateInhabitation(state.children[0], automaton, inhabitationFlags);
+		if (childInhabitation == Inhabitation.ALL || childInhabitation == Inhabitation.SOME) {
+			// Use SOME for the reference even if the child is ALL. This is necessary to prevent
+			// the constant Reference.T_REF_ANY from be normalised directly into any, losing its
+			// reference-ness. We could possibly use ALL if we added a way to construct a reference
+			// without normalising it completely.
+			return setStateInhabitation(index, automaton, inhabitationFlags, Inhabitation.SOME);
+		} else if (childInhabitation == Inhabitation.NONE) {
+			return setStateInhabitation(index, automaton, inhabitationFlags, Inhabitation.NONE);
+		} else {
+			return false;
+		}
+	}
+
+	private static boolean simplifyCompound(int index, Automaton.State state, Automaton automaton, BitSet inhabitationFlags) {
 		int kind = state.kind;
 		int[] children = state.children;
-		boolean isOpenRecord = false;
-		if(kind == Type.K_RECORD) {
-			Type.Record.State data = (Type.Record.State) state.data;
-			isOpenRecord = data.isOpen;
+
+		// Skip some children if the compound is a function
+		int numChildrenToCheck = children.length;
+		if (state.kind == Type.K_FUNCTION) {
+		  // Only check function parameters for now
+		  // TODO: Work out how to handle function return types properly
+			numChildrenToCheck = (Integer) state.data;
 		}
 
-		for(int i=0;i<children.length;++i) {			
+		// Scan compound's children
+		boolean allChildrenInhabited = true;
+		for(int i=0;i<numChildrenToCheck;++i) {			
 			Automaton.State child = automaton.states[children[i]];
-			if(child.kind == Type.K_VOID) {
-				automaton.states[index] = new Automaton.State(Type.K_VOID);
-				return true;
-			}
+			Inhabitation childInhabitation = getStateInhabitation(children[i], automaton, inhabitationFlags);
+			if (childInhabitation == Inhabitation.NONE) {
+				return setStateInhabitation(index, automaton, inhabitationFlags, Inhabitation.NONE);
+			} else if (childInhabitation == Inhabitation.UNLABELED) {
+				// If a child is labeled then we do not know if all the children are inhabited
+				allChildrenInhabited = false;
+			} // else ALL or SOME: leave allChildrenInhabited as it is
+		}
+
+		// Consider compound inhabited if all children are inhabited
+		if (allChildrenInhabited) {
+			return setStateInhabitation(index, automaton, inhabitationFlags, Inhabitation.SOME);
 		}
 
 		return false;
@@ -333,8 +635,8 @@ public final class TypeAlgorithms {
 	 * @return
 	 */
 	private static boolean simplifyUnion(int index, Automaton.State state,
-			Automaton automaton) {
-		return simplifyUnion_1(index, state, automaton)
+			Automaton automaton, BitSet inhabitationFlags) {
+		return simplifyUnion_1(index, state, automaton, inhabitationFlags)
 				|| simplifyUnion_2(index, state, automaton);
 	}
 
@@ -356,42 +658,63 @@ public final class TypeAlgorithms {
 	 * @return
 	 */
 	private static boolean simplifyUnion_1(int index, Automaton.State state,
-			Automaton automaton) {
+			Automaton automaton, BitSet inhabitationFlags) {
 		int[] children = state.children;
+
 		boolean changed = false;
+
+		// Scan over all children, flattening nested unions, removing uninhabited
+		// children, checking if all children are inhabited, etc.
+		boolean anyChildrenInhabited = false;
 		for (int i = 0; i < children.length; ++i) {
 			int iChild = children[i];
 			if (iChild == index) {
-				// contractive case
+				// Contractive case: union contains itself. We can remove this child.
 				state.children = removeIndex(i, children);
 				changed = true;
 			} else {
 				Automaton.State child = automaton.states[iChild];
-				switch (child.kind) {
-					case Type.K_ANY :
-						automaton.states[index] = new Automaton.State(Type.K_ANY);
-						return true;
-					case Type.K_VOID : {
+				// If a child of a union is a union, flatten them together.
+				if (child.kind == Type.K_UNION) {
+					// TODO: Optimise by inserting in-place and continuing loop?
+					flattenChildren(index, state, automaton);
+					return true;
+				}
+				// Now check inhabitation of children
+				switch (getStateInhabitation(iChild, automaton, inhabitationFlags)) {
+					case ALL:
+						// If a child is ALL then we can replace the union with ALL
+						return setStateInhabitation(index, automaton, inhabitationFlags, Inhabitation.ALL);
+					case NONE:
+						// If a child is NONE then it can be removed from the union
 						children = removeIndex(i, children);
 						state.children = children;
 						changed = true;
-						break;
-					}
-					case Type.K_UNION :
-						return flattenChildren(index, state, automaton);
+						continue;
+					case SOME:
+						// If a child is SOME then that means the union can be SOME
+						anyChildrenInhabited = true;
+					// Unlabeled children are ignored
 				}
 			}
 		}
+
+		// Perform more simplifications now that all children have been examined
 		if (children.length == 0) {
-			// this can happen in the case of a union which has only itself as a
-			// child.
+			// Union with no children is void. This can happen in the case of a
+			// union which has only itself as a child.
 			automaton.states[index] = new Automaton.State(Type.K_VOID);
 			changed = true;
 		} else if (children.length == 1) {
-			// bypass this node altogether
+			// Union with only 1 child is equivalent to that child: bypass the union
+			// altogether.
 			int child = children[0];
 			automaton.states[index] = new Automaton.State(automaton.states[child]);
+			setStateInhabitation(index, automaton, inhabitationFlags, getStateInhabitation(child, automaton, inhabitationFlags));
 			changed = true;
+		} else if (anyChildrenInhabited) {
+			// Union with at least one SOME child is SOME itself.
+			changed |= setStateInhabitation(index, automaton, inhabitationFlags, Inhabitation.SOME);
 		}
 
 		return changed;
@@ -424,10 +747,13 @@ public final class TypeAlgorithms {
 				int jChild = children[j];
 				if (i != j && isSubtype(jChild, iChild, automaton)
 						&& (!isSubtype(iChild, jChild, automaton) || i > j)) {
+					// Found a child that's a subtype of another child; it can be
+					// subsumed into that other child.
 					subsumed = true;
 				}
 			}
 			if (subsumed) {
+				// Remove the subsumed child.
 				children = removeIndex(i--, children);
 				state.children = children;
 				changed = true;
@@ -446,7 +772,7 @@ public final class TypeAlgorithms {
 
 	private static boolean isSubtype(int fromIndex, int toIndex,
 			Automaton automaton) {
-		SubtypeOperator op = new SubtypeOperator(automaton,automaton);
+		SubtypeOperator op = new SubtypeOperator(automaton,automaton,LifetimeRelation.EMPTY);
 		return op.isSubtype(fromIndex, toIndex);
 	}
 
@@ -470,6 +796,11 @@ public final class TypeAlgorithms {
 						&& toIndex == ip.toIndex && toSign == ip.toSign;
 			}
 			return false;
+		}
+
+		@Override
+		public String toString() {
+			return "(" + (fromSign ? '+' : '-') + fromIndex + "&" + (toSign ? '+' : '-') + fromIndex + ")";
 		}
 
 		public int hashCode() {
@@ -726,6 +1057,7 @@ public final class TypeAlgorithms {
 			case Type.K_SET:
 				return intersectSetsOrLists(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case Type.K_REFERENCE:
+				return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,fromState.data,allocations,states);
 			case Type.K_MAP:
 				return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,null,allocations,states);
 			case Type.K_NEGATION:

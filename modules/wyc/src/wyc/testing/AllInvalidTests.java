@@ -79,8 +79,8 @@ public class AllInvalidTests {
 		IGNORED.put("ConstrainedInt_Invalid_7", "timeout");
 		IGNORED.put("ConstrainedInt_Invalid_8", "timeout");
 		IGNORED.put("ConstrainedInt_Invalid_9", "Timeout");
-		IGNORED.put("ConstrainedList_Invalid_2", "unclassified");
-		IGNORED.put("ConstrainedList_Invalid_3", "unclassified");
+		IGNORED.put("ConstrainedArray_Invalid_2", "unclassified");
+		IGNORED.put("ConstrainedArray_Invalid_3", "unclassified");
 		IGNORED.put("Contractive_Invalid_1", "#425");
 		IGNORED.put("Contractive_Invalid_2", "unclassified");
 		IGNORED.put("EndOfFile_Invalid_1", "unclassified");
@@ -91,11 +91,11 @@ public class AllInvalidTests {
 		IGNORED.put("Intersection_Invalid_1", "unclassified");
 		IGNORED.put("Intersection_Invalid_2", "unclassified");
 		IGNORED.put("Lambda_Invalid_3", "unclassified");
-		IGNORED.put("ListAssign_Invalid_2", "Infinite Loop?");
-		IGNORED.put("ListAssign_Invalid_3", "Infinite Loop?");
-		IGNORED.put("ListEquals_Invalid_1", "unclassified");
-		IGNORED.put("ListLength_Invalid_2", "Timeout");
-		IGNORED.put("ListUpdate_Invalid_1", "unclassified");
+		IGNORED.put("ArrayAssign_Invalid_2", "Infinite Loop?");
+		IGNORED.put("ArrayAssign_Invalid_3", "Infinite Loop?");
+		IGNORED.put("ArrayEquals_Invalid_1", "unclassified");
+		IGNORED.put("ArrayLength_Invalid_2", "Timeout");
+		IGNORED.put("ArrayUpdate_Invalid_1", "unclassified");
 		IGNORED.put("MethodRef_Invalid_1", "unclassified");
 		IGNORED.put("MethodRef_Invalid_2", "unclassified");
 		IGNORED.put("MethodRef_Invalid_3", "unclassified");
@@ -133,6 +133,12 @@ public class AllInvalidTests {
 		IGNORED.put("Void_Invalid_2", "unclassified");
 		IGNORED.put("Void_Invalid_3", "unclassified");
 		IGNORED.put("While_Invalid_12", "unclassified");
+		IGNORED.put("Parsing_Invalid_1", "608");
+		IGNORED.put("Parsing_Invalid_2", "608");
+		IGNORED.put("Parsing_Invalid_15", "609");
+		IGNORED.put("Parsing_Invalid_27", "609");
+		IGNORED.put("Parsing_Invalid_28", "609");
+		IGNORED.put("Parsing_Invalid_31", "610");
 	}	
 
 	/**
@@ -192,7 +198,7 @@ public class AllInvalidTests {
 			fail("Test compiled when it shouldn't have!");
 		} else if (r == WycMain.INTERNAL_FAILURE) {
 			// This indicates some other kind of internal failure.
-			fail("Test caused internal failure!");
+			fail("Test caused internal failure!\n" + output);
 		} else {
 			// Now, let's check the expected output against the file which
 			// contains the sample output for this test
@@ -237,6 +243,9 @@ public class AllInvalidTests {
 
 	@Test
 	public void invalid() throws IOException {
+		if (new File("../../running_on_travis").exists()) {
+			System.out.println(".");
+		}
 		runTest(this.testName);
 	}
 }

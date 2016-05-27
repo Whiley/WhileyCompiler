@@ -27,6 +27,7 @@ package wyc.lang;
 
 import java.util.*;
 
+import wyc.builder.FlowTypeChecker;
 import wyc.io.WhileyFileLexer;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;
@@ -207,9 +208,11 @@ public interface Expr extends SyntacticElement {
 	public static class AbstractFunctionOrMethod extends SyntacticElement.Impl implements Expr {
 		public final String name;
 		public final ArrayList<SyntacticType> paramTypes;
+		public final ArrayList<String> lifetimeParameters;
 		public Nominal.FunctionOrMethod type;
 
-		public AbstractFunctionOrMethod(String name, Collection<SyntacticType> paramTypes, Attribute... attributes) {
+		public AbstractFunctionOrMethod(String name, Collection<SyntacticType> paramTypes,
+				Collection<String> lifetimeParameters, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			if(paramTypes != null) {
@@ -217,10 +220,16 @@ public interface Expr extends SyntacticElement {
 			} else {
 				this.paramTypes = null;
 			}
+			if(lifetimeParameters != null) {
+				this.lifetimeParameters = new ArrayList<String>(lifetimeParameters);
+			} else {
+				this.lifetimeParameters = null;
+			}
 		}
 
 		public AbstractFunctionOrMethod(String name,
 				Collection<SyntacticType> paramTypes,
+				Collection<String> lifetimeParameters,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.name = name;
@@ -228,6 +237,11 @@ public interface Expr extends SyntacticElement {
 				this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
 			} else {
 				this.paramTypes = null;
+			}
+			if(lifetimeParameters != null) {
+				this.lifetimeParameters = new ArrayList<String>(lifetimeParameters);
+			} else {
+				this.lifetimeParameters = null;
 			}
 		}
 
@@ -240,34 +254,40 @@ public interface Expr extends SyntacticElement {
 		public final NameID nid;
 
 		public FunctionOrMethod(NameID nid, Collection<SyntacticType> paramTypes,
-				Attribute... attributes) {
-			super(nid.name(), paramTypes, attributes);
+				Collection<String> lifetimeParameters, Attribute... attributes) {
+			super(nid.name(), paramTypes, lifetimeParameters, attributes);
 			this.nid = nid;
 		}
 
 		public FunctionOrMethod(NameID nid, Collection<SyntacticType> paramTypes,
-				Collection<Attribute> attributes) {
-			super(nid.name(), paramTypes, attributes);
+				Collection<String> lifetimeParameters, Collection<Attribute> attributes) {
+			super(nid.name(), paramTypes, lifetimeParameters, attributes);
 			this.nid = nid;
 		}
 	}
 
 	public static class Lambda extends SyntacticElement.Impl implements Expr {
 		public final ArrayList<WhileyFile.Parameter> parameters;
+		public final HashSet<String> contextLifetimes;
+		public final ArrayList<String> lifetimeParameters;
 		public Expr body;
 		public Nominal.FunctionOrMethod type;
 
-		public Lambda(Collection<WhileyFile.Parameter> parameters, Expr body,
-				Attribute... attributes) {
+		public Lambda(Collection<WhileyFile.Parameter> parameters, Collection<String> contextLifetimes,
+				Collection<String> lifetimeParameters, Expr body, Attribute... attributes) {
 			super(attributes);
 			this.parameters = new ArrayList<WhileyFile.Parameter>(parameters);
+			this.contextLifetimes = new HashSet<String>(contextLifetimes);
+			this.lifetimeParameters = new ArrayList<String>(lifetimeParameters);
 			this.body = body;
 		}
 
-		public Lambda(Collection<WhileyFile.Parameter> parameters, Expr body,
-				Collection<Attribute> attributes) {
+		public Lambda(Collection<WhileyFile.Parameter> parameters, Collection<String> contextLifetimes,
+				Collection<String> lifetimeParameters, Expr body, Collection<Attribute> attributes) {
 			super(attributes);
 			this.parameters = new ArrayList<WhileyFile.Parameter>(parameters);
+			this.contextLifetimes = new HashSet<String>(contextLifetimes);
+			this.lifetimeParameters = new ArrayList<String>(lifetimeParameters);
 			this.body = body;
 		}
 
@@ -351,7 +371,8 @@ public interface Expr extends SyntacticElement {
 	public enum UOp {
 		NOT,
 		NEG,
-		INVERT
+		INVERT,
+		ARRAYLENGTH
 	}
 
 	public static class UnOp extends SyntacticElement.Impl implements Expr {
@@ -366,7 +387,11 @@ public interface Expr extends SyntacticElement {
 		}
 
 		public Nominal result() {
-			return type;
+			if(op == UOp.ARRAYLENGTH) {
+				return Nominal.T_INT;
+			} else {
+				return type;
+			}
 		}
 
 		public String toString() {
@@ -559,22 +584,34 @@ public interface Expr extends SyntacticElement {
 		public final String name;
 		public Path.ID qualification;
 		public final ArrayList<Expr> arguments;
+		public final ArrayList<String> lifetimeArguments;
 
 		public AbstractInvoke(String name, Path.ID receiver,
-				Collection<Expr> arguments, Attribute... attributes) {
+				Collection<Expr> arguments, Collection<String> lifetimeArguments,
+				Attribute... attributes) {
 			super(attributes);
 			this.name = name;
 			this.qualification = receiver;
 			this.arguments = new ArrayList<Expr>(arguments);
+			if (lifetimeArguments != null) {
+				this.lifetimeArguments = new ArrayList<String>(lifetimeArguments);
+			} else {
+				this.lifetimeArguments = null;
+			}
 		}
 
 		public AbstractInvoke(String name, Path.ID receiver,
-				Collection<Expr> arguments,
+				Collection<Expr> arguments, Collection<String> lifetimeArguments,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.name = name;
 			this.qualification = receiver;
 			this.arguments = new ArrayList<Expr>(arguments);
+			if (lifetimeArguments != null) {
+				this.lifetimeArguments = new ArrayList<String>(lifetimeArguments);
+			} else {
+				this.lifetimeArguments = null;
+			}
 		}
 
 		public Nominal result() {
@@ -586,14 +623,14 @@ public interface Expr extends SyntacticElement {
 		public final NameID nid;
 		
 		public FunctionOrMethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
-				Attribute... attributes) {
-			super(nid.name(),qualification,arguments,attributes);
+				Collection<String> lifetimeArguments, Attribute... attributes) {
+			super(nid.name(),qualification,arguments,lifetimeArguments,attributes);
 			this.nid = nid;
 		}
 
 		public FunctionOrMethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
-				Collection<Attribute> attributes) {
-			super(nid.name(),qualification,arguments,attributes);
+				Collection<String> lifetimeArguments, Collection<Attribute> attributes) {
+			super(nid.name(),qualification,arguments,lifetimeArguments,attributes);
 			this.nid = nid;
 		}
 		
@@ -612,13 +649,13 @@ public interface Expr extends SyntacticElement {
 		public Nominal.Method methodType;
 
 		public MethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
-				Attribute... attributes) {
-			super(nid,qualification,arguments,attributes);
+				Collection<String> lifetimeArguments, Attribute... attributes) {
+			super(nid,qualification,arguments,lifetimeArguments,attributes);
 		}
 
 		public MethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
-				Collection<Attribute> attributes) {
-			super(nid,qualification,arguments,attributes);
+				Collection<String> lifetimeArguments, Collection<Attribute> attributes) {
+			super(nid,qualification,arguments,lifetimeArguments,attributes);
 		}
 
 		public Nominal.Method type() {
@@ -627,7 +664,11 @@ public interface Expr extends SyntacticElement {
 		
 		public Nominal result() {
 			if (methodType.returns().size() == 1) {
-				return methodType.returns().get(0);
+				Nominal returnType = methodType.returns().get(0);
+				if (this.lifetimeArguments == null || this.lifetimeArguments.isEmpty()) {
+					return returnType;
+				}
+				return FlowTypeChecker.applySubstitution(methodType.raw().lifetimeParams(), this.lifetimeArguments, returnType);
 			} else {
 				throw new IllegalArgumentException("incorrect number of returns for function call");
 			}
@@ -649,12 +690,12 @@ public interface Expr extends SyntacticElement {
 
 		public FunctionCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Attribute... attributes) {
-			super(nid,qualification,arguments,attributes);
+			super(nid,qualification,arguments,Collections.<String>emptyList(),attributes);
 		}
 
 		public FunctionCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
-			super(nid,qualification,arguments,attributes);
+			super(nid,qualification,arguments,Collections.<String>emptyList(),attributes);
 		}
 
 		public Nominal.Function type() {
@@ -674,21 +715,26 @@ public interface Expr extends SyntacticElement {
 	Stmt {
 		public Expr src;
 		public final ArrayList<Expr> arguments;
+		public final ArrayList<String> lifetimeArguments;
 
 		public AbstractIndirectInvoke(Expr src,
 				Collection<Expr> arguments,
+				Collection<String> lifetimeArguments,
 				Attribute... attributes) {
 			super(attributes);
 			this.src = src;
 			this.arguments = new ArrayList<Expr>(arguments);
+			this.lifetimeArguments = lifetimeArguments == null ? null : new ArrayList<String>(lifetimeArguments);
 		}
 
 		public AbstractIndirectInvoke(Expr src,
 				Collection<Expr> arguments,
+				Collection<String> lifetimeArguments,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.src = src;
 			this.arguments = new ArrayList<Expr>(arguments);
+			this.lifetimeArguments = lifetimeArguments == null ? null : new ArrayList<String>(lifetimeArguments);
 		}
 
 		public Nominal result() {
@@ -698,13 +744,13 @@ public interface Expr extends SyntacticElement {
 
 	public static abstract class IndirectFunctionOrMethodCall extends AbstractIndirectInvoke implements Multi {
 		public IndirectFunctionOrMethodCall(Expr src, Collection<Expr> arguments,
-				Attribute... attributes) {
-			super(src,arguments,attributes);
+				Collection<String> lifetimeArguments, Attribute... attributes) {
+			super(src,arguments,lifetimeArguments,attributes);
 		}
 
 		public IndirectFunctionOrMethodCall(Expr src, Collection<Expr> arguments,
-				Collection<Attribute> attributes) {
-			super(src,arguments,attributes);
+				Collection<String> lifetimeArguments, Collection<Attribute> attributes) {
+			super(src,arguments,lifetimeArguments,attributes);
 		}
 
 		public abstract Nominal.FunctionOrMethod type();
@@ -718,18 +764,22 @@ public interface Expr extends SyntacticElement {
 		public Nominal.Method methodType;
 
 		public IndirectMethodCall(Expr src, Collection<Expr> arguments,
-				Attribute... attributes) {
-			super(src,arguments,attributes);
+				Collection<String> lifetimeArguments, Attribute... attributes) {
+			super(src,arguments,lifetimeArguments,attributes);
 		}
 
 		public IndirectMethodCall(Expr src, Collection<Expr> arguments,
-				Collection<Attribute> attributes) {
-			super(src,arguments,attributes);
+				Collection<String> lifetimeArguments, Collection<Attribute> attributes) {
+			super(src,arguments,lifetimeArguments,attributes);
 		}
 
 		public Nominal result() {
 			if(methodType.returns().size() == 1) {
-				return methodType.returns().get(0);
+				Nominal returnType = methodType.returns().get(0);
+				if (this.lifetimeArguments == null || this.lifetimeArguments.isEmpty()) {
+					return returnType;
+				}
+				return FlowTypeChecker.applySubstitution(methodType.raw().lifetimeParams(), this.lifetimeArguments, returnType);
 			} else {
 				throw new IllegalArgumentException("incorrect number of returns for indirect method call");
 			}			
@@ -745,12 +795,12 @@ public interface Expr extends SyntacticElement {
 
 		public IndirectFunctionCall(Expr src, Collection<Expr> arguments,
 				Attribute... attributes) {
-			super(src,arguments,attributes);
+			super(src,arguments,Collections.<String>emptyList(),attributes);
 		}
 
 		public IndirectFunctionCall(Expr src, Collection<Expr> arguments,
 				Collection<Attribute> attributes) {
-			super(src,arguments,attributes);
+			super(src,arguments,Collections.<String>emptyList(),attributes);
 		}
 
 		public Nominal result() {
@@ -766,34 +816,14 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
-	public static class LengthOf extends SyntacticElement.Impl implements Expr {
-		public Expr src;
-		public Nominal.Array srcType;
-
-		public LengthOf(Expr mhs, Attribute... attributes) {
-			super(attributes);
-			this.src = mhs;
-		}
-
-		public LengthOf(Expr mhs, Collection<Attribute> attributes) {
-			super(attributes);
-			this.src = mhs;
-		}
-
-		public Nominal result() {
-			return Nominal.T_INT;
-		}
-
-		public String toString() {
-			return "|" + src.toString() + "|";
-		}
-	}
-
 	public static class New extends SyntacticElement.Impl implements Expr,Stmt {
 		public Expr expr;
 		public Nominal.Reference type;
+		public String lifetime;
 
-		public New(Expr expr, Attribute... attributes) {
+		public New(Expr expr, String lifetime, Attribute... attributes) {
+			super(attributes);
+			this.lifetime = lifetime;
 			this.expr = expr;
 		}
 

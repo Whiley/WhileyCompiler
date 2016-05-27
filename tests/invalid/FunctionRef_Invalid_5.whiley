@@ -1,6 +1,6 @@
 type Proc is &{int data}
 
-method read(Proc this, int x) -> int:
+method read(Proc _this, int x) -> int:
     return x + 1
 
 type Func is {

@@ -1,0 +1,3 @@
+../../tests/invalid/Parsing_Invalid_5.whiley:2: name already declared
+    int x = x
+    ^^^^^

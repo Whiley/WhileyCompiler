@@ -36,31 +36,31 @@ public function create(int max) -> Stack:
         length: 0
     }
 
-public function size(Stack this) -> int:
-    return this.length
+public function size(Stack stack) -> int:
+    return stack.length
 
 /**
  * Return the top element of the "stack".
  */
-public function top(Stack this) -> int:
+public function top(Stack stack) -> int:
     //
-    return this.items[this.length-1]
+    return stack.items[stack.length-1]
 
 
 /**
  * Push an element onto the "stack".
  */
-public function push(Stack this, int element) -> (Stack r):
+public function push(Stack stack, int element) -> (Stack r):
     //
-    this.items[this.length] = element
-    this.length = this.length + 1
-    return this
+    stack.items[stack.length] = element
+    stack.length = stack.length + 1
+    return stack
 
 /**
  * Pop an element off the "stack".
  */
-public function pop(Stack this) -> (Stack r):
+public function pop(Stack stack) -> (Stack r):
     //
-    this.length = this.length - 1
+    stack.length = stack.length - 1
     //
-    return this
+    return stack

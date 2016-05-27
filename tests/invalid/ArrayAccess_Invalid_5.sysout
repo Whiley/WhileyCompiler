@@ -1,0 +1,3 @@
+../../tests/invalid/ArrayAccess_Invalid_5.whiley:6: index out of bounds (not less than length)
+    int y = x[i]
+            ^^^^

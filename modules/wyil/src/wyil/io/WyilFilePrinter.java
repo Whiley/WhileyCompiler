@@ -34,7 +34,6 @@ import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Type;
 import wyil.lang.WyilFile.*;
-import wyil.util.AttributedCodeBlock;
 
 /**
  * Writes WYIL bytecodes in a textual from to a given file.
@@ -125,20 +124,26 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			String t_str;
 			t_str = t.toString();
 			writeModifiers(td.modifiers(),out);
-			out.println("type " + td.name() + " : " + t_str);
-			out.println("invariant:");
-			write(0,td.invariant(),out);
+			out.println("type " + td.name() + " : " + t_str);						
+			BytecodeForest forest = td.invariant();
+			for(int i=0;i!=forest.numRoots();++i) {
+				out.println("where:");
+				write(0, forest.getRoot(i), forest, out);
+				out.println();
+			}
 			out.println();
 		}
 
 		for(FunctionOrMethod md : module.functionOrMethods()) {
 			write(md,out);
-			out.println();
+			out.println();			
 		}
 		out.flush();
 	}
 
 	private void write(FunctionOrMethod method, PrintWriter out) {
+		BytecodeForest forest = method.code();
+		//
 		writeModifiers(method.modifiers(), out);
 		Type.FunctionOrMethod ft = method.type();
 		if (ft instanceof Type.Function) {
@@ -153,20 +158,20 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			writeParameters(ft.returns(),out);
 		}		
 		out.println(":");
-		
-		for (AttributedCodeBlock precondition : method.precondition()) {
+		//
+		for (int precondition : method.preconditions()) {
 			out.println("requires:");
-			write(0, precondition, out);
+			write(0, precondition, forest, out);
 		}
 
-		for (AttributedCodeBlock postcondition : method.postcondition()) {
+		for (int postcondition : method.postconditions()) {
 			out.println("ensures:");
-			write(0, postcondition, out);
+			write(0, postcondition, forest, out);
 		}
-
+		
 		if (method.body() != null) {
 			out.println("body: ");
-			write(0, method.body(), out);
+			write(0, method.body(), forest, out);
 		}
 	}
 
@@ -181,19 +186,19 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		out.print(")");
 	}
 	
-	private void write(int indent, CodeBlock blk, PrintWriter out) {
-		if(blk == null) { return; }
-		for(int i=0;i!=blk.size();++i) {
-			Code code = blk.get(i);
-			if(code instanceof Codes.Label) {
-				write(indent-1,code,out);
+	private void write(int indent, int blockID, BytecodeForest forest, PrintWriter out) {
+		BytecodeForest.Block block = forest.get(blockID);
+		for(int i=0;i!=block.size();++i) {
+			Bytecode code = block.get(i).code();
+			if(code instanceof Bytecode.Label) {
+				write(indent-1,code,forest,out);
 			} else {
-				write(indent,code,out);
+				write(indent,code,forest,out);
 			}			
 		}
 	}
 
-	private void write(int indent, Code c, PrintWriter out) {
+	private void write(int indent, Bytecode c, BytecodeForest forest, PrintWriter out) {
 		String line = "null";
 		tabIndent(indent+1,out);
 
@@ -218,8 +223,9 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 //		}
 		out.println();
 		
-		if(c instanceof CodeBlock) {
-			write(indent+1,(CodeBlock)c,out);
+		if(c instanceof Bytecode.Compound) {
+			Bytecode.Compound cc = (Bytecode.Compound) c;
+			write(indent+1,cc.block(),forest,out);
 		}
 	}
 

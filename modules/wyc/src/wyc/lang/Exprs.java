@@ -18,19 +18,19 @@ public class Exprs {
 	 * @param context
 	 * @return
 	 */
-	public static HashSet<Pair<Type,String>> uses(Expr expr, Context context) {
-		HashSet<Pair<Type,String>> r = new HashSet<Pair<Type,String>>();
+	public static HashSet<Pair<Nominal,String>> uses(Expr expr, Context context) {
+		HashSet<Pair<Nominal,String>> r = new HashSet<Pair<Nominal,String>>();
 		uses(expr,context,r);
 		return r;
 	}
 
-	private static void uses(Expr expr, Context context, HashSet<Pair<Type,String>> uses) {
+	private static void uses(Expr expr, Context context, HashSet<Pair<Nominal,String>> uses) {
 		try {
 			if (expr instanceof Expr.Constant) {
 				// do nout
 			} else if (expr instanceof Expr.LocalVariable) {
 				Expr.LocalVariable lv = (Expr.LocalVariable) expr;
-				uses.add(new Pair<Type,String>(lv.type.raw(),lv.var));
+				uses.add(new Pair<Nominal,String>(lv.type,lv.var));
 
 			} else if (expr instanceof Expr.ConstantAccess) {
 				// do nout
@@ -44,10 +44,6 @@ public class Exprs {
 				Expr.BinOp e = (Expr.BinOp) expr;
 				uses(e.lhs, context, uses);
 				uses(e.rhs, context, uses);
-
-			} else if (expr instanceof Expr.LengthOf) {
-				Expr.LengthOf e = (Expr.LengthOf) expr;
-				uses(e.src, context, uses);
 
 			} else if (expr instanceof Expr.Dereference) {
 				Expr.Dereference e = (Expr.Dereference) expr;
@@ -142,7 +138,6 @@ public class Exprs {
 			if (expr instanceof Expr.Constant) {
 				return true;
 			} else if (expr instanceof Expr.LocalVariable) {
-				Expr.LocalVariable lv = (Expr.LocalVariable) expr;
 				return true;
 			} else if (expr instanceof Expr.ConstantAccess) {
 				return true;
@@ -159,13 +154,8 @@ public class Exprs {
 				Expr.BinOp e = (Expr.BinOp) expr;
 				return isPure(e.lhs, context) && isPure(e.rhs, context);
 
-			} else if (expr instanceof Expr.LengthOf) {
-				Expr.LengthOf e = (Expr.LengthOf) expr;
-				return isPure(e.src, context);
-
 			} else if (expr instanceof Expr.Dereference) {
-				Expr.Dereference e = (Expr.Dereference) expr;
-				return isPure(e.src, context);
+				return false;
 
 			} else if (expr instanceof Expr.Cast) {
 				Expr.Cast e = (Expr.Cast) expr;
@@ -193,7 +183,9 @@ public class Exprs {
 
 			} else if (expr instanceof Expr.IndirectFunctionCall) {
 				Expr.IndirectFunctionCall e = (Expr.IndirectFunctionCall) expr;
-
+				if (!isPure(e.src, context)) {
+					return false;
+				}
 				for(Expr p : e.arguments) {
 					if(!isPure(p, context)) {
 						return false;

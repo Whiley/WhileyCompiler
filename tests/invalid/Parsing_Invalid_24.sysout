@@ -1,0 +1,3 @@
+../../tests/invalid/Parsing_Invalid_24.whiley:7: unknown variable
+    return y
+           ^

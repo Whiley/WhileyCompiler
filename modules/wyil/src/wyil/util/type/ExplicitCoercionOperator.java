@@ -59,8 +59,8 @@ import wyil.lang.Type;
  */
 public class ExplicitCoercionOperator extends SubtypeOperator {
 
-	public ExplicitCoercionOperator(Automaton fromAutomata, Automaton toAutomata) {
-		super(fromAutomata,toAutomata);
+	public ExplicitCoercionOperator(Automaton fromAutomata, Automaton toAutomata, LifetimeRelation lr) {
+		super(fromAutomata,toAutomata,lr);
 	}
 
 	@Override

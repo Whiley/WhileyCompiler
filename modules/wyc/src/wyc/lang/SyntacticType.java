@@ -291,8 +291,12 @@ public interface SyntacticType extends SyntacticElement {
 	 */
 	public static final class Reference extends SyntacticElement.Impl implements NonUnion {
 		public final SyntacticType element;
-		public Reference(SyntacticType element, Attribute... attributes) {
+		public final String lifetime;
+		public final boolean lifetimeWasExplicit;
+		public Reference(SyntacticType element, String lifetime, boolean lifetimeWasExplicit, Attribute... attributes) {
 			this.element = element;
+			this.lifetime = lifetime;
+			this.lifetimeWasExplicit = lifetimeWasExplicit;
 		}
 	}
 
@@ -338,12 +342,16 @@ public interface SyntacticType extends SyntacticElement {
 			SyntacticElement.Impl implements NonUnion {
 		public final ArrayList<SyntacticType> returnTypes;
 		public final ArrayList<SyntacticType> paramTypes;
+		public final ArrayList<String> contextLifetimes;
+		public final ArrayList<String> lifetimeParameters;
 
 		public FunctionOrMethod(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
-				Attribute... attributes) {
+				Collection<String> contextLifetimes, Collection<String> lifetimeParameters, Attribute... attributes) {
 			super(attributes);
 			this.returnTypes = new ArrayList<SyntacticType>(returnTypes);
 			this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
+			this.contextLifetimes = new ArrayList<String>(contextLifetimes);
+			this.lifetimeParameters = new ArrayList<String>(lifetimeParameters);
 			for(SyntacticType t : paramTypes) {
 				if(t == null) {
 					throw new IllegalArgumentException("parameter cannot be null"); 
@@ -352,15 +360,22 @@ public interface SyntacticType extends SyntacticElement {
 			for(SyntacticType t : returnTypes) {
 				if(t == null) {
 					throw new IllegalArgumentException("return cannot be null"); 
+				}
+			}
+			for(String s : lifetimeParameters) {
+				if(s == null) {
+					throw new IllegalArgumentException("lifetime cannot be null");
 				}
 			}
 		}
 
 		public FunctionOrMethod(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
-				Collection<Attribute> attributes) {
+				Collection<String> contextLifetimes, Collection<String> lifetimeParameters, Collection<Attribute> attributes) {
 			super(attributes);
 			this.returnTypes = new ArrayList<SyntacticType>(returnTypes);
 			this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
+			this.contextLifetimes = new ArrayList<String>(contextLifetimes);
+			this.lifetimeParameters = new ArrayList<String>(lifetimeParameters);
 			for(SyntacticType t : paramTypes) {
 				if(t == null) {
 					throw new IllegalArgumentException("parameter cannot be null"); 
@@ -369,6 +384,11 @@ public interface SyntacticType extends SyntacticElement {
 			for(SyntacticType t : returnTypes) {
 				if(t == null) {
 					throw new IllegalArgumentException("return cannot be null"); 
+				}
+			}
+			for(String s : lifetimeParameters) {
+				if(s == null) {
+					throw new IllegalArgumentException("lifetime cannot be null");
 				}
 			}
 		}
@@ -379,23 +399,23 @@ public interface SyntacticType extends SyntacticElement {
 		public Function(Collection<SyntacticType> returnTypes, 
 				Collection<SyntacticType> paramTypes,
 				Attribute... attributes) {
-			super(returnTypes,paramTypes,attributes);
+			super(returnTypes,paramTypes,Collections.<String>emptySet(),Collections.<String>emptyList(),attributes);
 		}
 		public Function(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
-			super(returnTypes,paramTypes,attributes);
+			super(returnTypes,paramTypes,Collections.<String>emptySet(),Collections.<String>emptyList(),attributes);
 		}
 	}
 
 	public static class Method extends FunctionOrMethod
 	implements NonUnion {
-				public Method(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
-				Attribute... attributes) {
-			super(returnTypes,paramTypes,attributes);
+		public Method(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
+				Collection<String> contextLifetimes, Collection<String> lifetimeParameters, Attribute... attributes) {
+			super(returnTypes,paramTypes,contextLifetimes,lifetimeParameters,attributes);
 		}
 		public Method(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
-				Collection<Attribute> attributes) {
-			super(returnTypes,paramTypes,attributes);
+				Collection<String> contextLifetimes, Collection<String> lifetimeParameters, Collection<Attribute> attributes) {
+			super(returnTypes,paramTypes,contextLifetimes,lifetimeParameters,attributes);
 		}
 	}
 }

@@ -2,7 +2,7 @@
   <!-- Get the root directory of the project by looking at the directory enclosing this file. -->
   <dirname property="rootdir" file="${ant.file.BuildConfig}"/>
   <!-- Set the current Whiley version -->
-  <property name="version" value="0.3.39"/>
+  <property name="version" value="0.3.40"/>
   <!-- Load the Maven Ant tasks so that we can work with Maven repositories. -->
   <typedef uri="urn:maven-ant"
            classpath="${rootdir}/lib/maven-ant-tasks-2.1.3.jar"

@@ -8,7 +8,7 @@ function f(null|SizeGetter x) -> int:
     else:
         return 0
 
-function getSize(Sized this) -> int:
+function getSize(Sized _this) -> int:
     return 1
 
 public export method test():    

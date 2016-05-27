@@ -9,10 +9,10 @@ function f((SizeSetter|SizeGetter) x) -> int:
     else:
         return 0
 
-function getSize(Sized this) -> int:
-    return this.value
+function getSize(Sized _this) -> int:
+    return _this.value
 
-function setSize(Sized this, int value) -> Sized:
+function setSize(Sized _this, int value) -> Sized:
     return { value: value }
 
 public export method test():    

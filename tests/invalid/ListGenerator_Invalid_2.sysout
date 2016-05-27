@@ -1,3 +1,0 @@
-../../tests/invalid/ListGenerator_Invalid_2.whiley:2: negative length possible
-    return [0; n]
-           ^^^^^^

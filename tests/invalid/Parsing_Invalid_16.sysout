@@ -1,0 +1,3 @@
+../../tests/invalid/Parsing_Invalid_16.whiley:2: duplicate record key
+     return {x: 1, x: 2, y: 3}
+                   ^

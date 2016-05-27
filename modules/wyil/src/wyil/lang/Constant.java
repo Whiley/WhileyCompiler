@@ -25,50 +25,40 @@
 
 package wyil.lang;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
 import wycc.lang.NameID;
-import wycc.util.Pair;
-import wyautl.util.BigRational;
 
 public abstract class Constant implements Comparable<Constant> {
 
-	public static final Null V_NULL = new Null();
+	/**
+	 * The Null constant value
+	 */
+	public static final Null Null = new Null();
 
+	/**
+	 * The Bool true constant
+	 */
+	public static final Bool True = new Constant.Bool(true);
+	
+	/**
+	 * The Bool false constant
+	 */
+	public static final Bool False = new Constant.Bool(false);
+	
+	/**
+	 * Get the appropriate Bool constant corresponding to a Java boolean.
+	 * 
+	 * @param f
+	 * @return
+	 */
+	public static final Bool Bool(boolean f) {
+		return f ? True : False;
+	}
+	
 	public abstract wyil.lang.Type type();
 
-	public static Bool V_BOOL(boolean value) {
-		return get(new Bool(value));
-	}
-
-	public static Byte V_BYTE(byte value) {
-		return get(new Byte(value));
-	}
-
-	public static Integer V_INTEGER(BigInteger value) {
-		return get(new Integer(value));
-	}
-
-	public static Array V_ARRAY(Collection<Constant> values) {
-		return get(new Array(values));
-	}
-
-	public static Record V_RECORD(java.util.Map<String,Constant> values) {
-		return get(new Record(values));
-	}
-
-	public static Type V_TYPE(wyil.lang.Type type) {
-		return get(new Type(type));
-	}
-
-	public static Lambda V_LAMBDA(NameID name,
-			wyil.lang.Type.FunctionOrMethod type, Constant... arguments) {
-		return get(new Lambda(name, type, arguments));
-	}
-
-	
 	public static final class Null extends Constant {
 		public wyil.lang.Type type() {
 			return wyil.lang.Type.T_NULL;
@@ -92,7 +82,7 @@ public abstract class Constant implements Comparable<Constant> {
 	}
 
 	public static final class Bool extends Constant {
-		public final boolean value;
+		private final boolean value;
 		private Bool(boolean value) {
 			this.value = value;
 		}
@@ -128,11 +118,14 @@ public abstract class Constant implements Comparable<Constant> {
 				return "false";
 			}
 		}
+		public boolean value() {
+			return value;
+		}
 	}
 
 	public static final class Byte extends Constant {
-		public final byte value;
-		private Byte(byte value) {
+		private final byte value;
+		public Byte(byte value) {
 			this.value = value;
 		}
 		public wyil.lang.Type type() {
@@ -176,11 +169,14 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 			return r;
 		}
+		public byte value() {
+			return value;
+		}
 	}
 
 	public static final class Integer extends Constant {
-		public final BigInteger value;
-		private Integer(BigInteger value) {
+		private final BigInteger value;
+		public Integer(BigInteger value) {
 			this.value = value;
 		}
 		public wyil.lang.Type type() {
@@ -208,30 +204,14 @@ public abstract class Constant implements Comparable<Constant> {
 		public String toString() {
 			return value.toString();
 		}
-
-		public Constant.Integer add(Constant.Integer val) {
-			return Constant.V_INTEGER(value.add(val.value));
-		}
-		public Constant.Integer subtract(Constant.Integer val) {
-			return Constant.V_INTEGER(value.subtract(val.value));
-		}
-		public Constant.Integer multiply(Constant.Integer val) {
-			return Constant.V_INTEGER(value.multiply(val.value));
-		}
-		public Constant.Integer divide(Constant.Integer val) {
-			return Constant.V_INTEGER(value.divide(val.value));
-		}
-		public Constant.Integer remainder(Constant.Integer val) {
-			return Constant.V_INTEGER(value.remainder(val.value));
-		}
-		public Constant.Integer negate() {
-			return Constant.V_INTEGER(value.negate());
+		public BigInteger value() {
+			return value;
 		}
 	}
 
 	public static final class Array extends Constant {
-		public final ArrayList<Constant> values;
-		private Array(Collection<Constant> value) {
+		private final ArrayList<Constant> values;
+		public Array(Collection<Constant> value) {
 			this.values = new ArrayList<Constant>(value);
 		}
 		public wyil.lang.Type.Array type() {
@@ -285,11 +265,14 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 			return r + "]";
 		}
+		public ArrayList<Constant> values() {
+			return values;
+		}
 	}
 
 	public static final class Record extends Constant {
-		public final HashMap<String,Constant> values;
-		private Record(java.util.Map<String,Constant> value) {
+		private final HashMap<String,Constant> values;
+		public Record(java.util.Map<String,Constant> value) {
 			this.values = new HashMap<String,Constant>(value);
 		}
 
@@ -355,23 +338,27 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 			return r + "}";
 		}
+
+		public HashMap<String,Constant> values() {
+			return values;
+		}
 	}
 
 	public static final class Type extends Constant {
-		public final wyil.lang.Type type;
-		private Type(wyil.lang.Type type) {
-			this.type = type;
+		private final wyil.lang.Type value;
+		public Type(wyil.lang.Type type) {
+			this.value = type;
 		}
 		public wyil.lang.Type.Meta type() {
 			return wyil.lang.Type.T_META;
 		}
 		public int hashCode() {
-			return type.hashCode();
+			return value.hashCode();
 		}
 		public boolean equals(Object o) {
 			if(o instanceof Type) {
 				Type i = (Type) o;
-				return type == i.type;
+				return value == i.value;
 			}
 			return false;
 		}
@@ -379,22 +366,25 @@ public abstract class Constant implements Comparable<Constant> {
 			if(v instanceof Type) {
 				Type t = (Type) v;
 				// FIXME: following is an ugly hack!
-				return type.toString().compareTo(t.toString());
+				return value.toString().compareTo(t.toString());
 			} else {
 				return 1; // everything is above a type constant
 			}
 		}
 		public String toString() {
-			return type.toString();
+			return value.toString();
+		}
+		public wyil.lang.Type value() {
+			return value;
 		}
 	}
 
 	public static final class Lambda extends Constant {
-		public final NameID name;
-		public final wyil.lang.Type.FunctionOrMethod type;
-		public final ArrayList<Constant> arguments;
+		private final NameID name;
+		private final wyil.lang.Type.FunctionOrMethod type;
+		private final ArrayList<Constant> arguments;
 		
-		private Lambda(NameID name, wyil.lang.Type.FunctionOrMethod type, Constant... arguments) {
+		public Lambda(NameID name, wyil.lang.Type.FunctionOrMethod type, Constant... arguments) {
 			this.name = name;
 			this.type = type;
 			this.arguments = new ArrayList<Constant>();
@@ -403,7 +393,7 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 		}
 
-		private Lambda(NameID name, wyil.lang.Type.FunctionOrMethod type, Collection<Constant> arguments) {
+		public Lambda(NameID name, wyil.lang.Type.FunctionOrMethod type, Collection<Constant> arguments) {
 			this.name = name;
 			this.type = type;
 			this.arguments = new ArrayList<Constant>(arguments);
@@ -458,19 +448,13 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 			return "&" + name.toString() + "(" + args + "):" + type.toString();
 		}
-	}
 
-	private static final ArrayList<Constant> values = new ArrayList<Constant>();
-	private static final HashMap<Constant,java.lang.Integer> cache = new HashMap<Constant,java.lang.Integer>();
+		public NameID name() {
+			return name;
+		}
 
-	private static <T extends Constant> T get(T type) {
-		java.lang.Integer idx = cache.get(type);
-		if(idx != null) {
-			return (T) values.get(idx);
-		} else {
-			cache.put(type, values.size());
-			values.add(type);
-			return type;
+		public ArrayList<Constant> arguments() {
+			return arguments;
 		}
 	}
 }

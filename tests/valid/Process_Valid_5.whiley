@@ -2,8 +2,8 @@
 
 type MyProc is &{bool flag}
 
-method run(MyProc this) -> bool:
-    if this->flag:
+method run(MyProc _this) -> bool:
+    if _this->flag:
         return true
     else:
         return false
