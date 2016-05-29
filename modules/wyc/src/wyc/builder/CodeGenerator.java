@@ -104,22 +104,22 @@ public final class CodeGenerator {
 	 * declarations, statements and expressions into WyIL declarations and
 	 * bytecode blocks.
 	 *
-	 * @param wf
+	 * @param whileyFile
 	 *            The WhileyFile to be translated.
 	 * @return
 	 */
-	public WyilFile generate(WhileyFile wf) {
-		ArrayList<WyilFile.Block> declarations = new ArrayList<WyilFile.Block>();
+	public WyilFile generate(WhileyFile whileyFile) {
+		WyilFile wyilFile = new WyilFile(whileyFile.module, whileyFile.filename);
 
 		// Go through each declaration and translate in the order of appearance.
-		for (WhileyFile.Declaration d : wf.declarations) {
+		for (WhileyFile.Declaration d : whileyFile.declarations) {
 			try {
 				if (d instanceof WhileyFile.Type) {
-					declarations.add(generate((WhileyFile.Type) d));
+					generate(wyilFile, (WhileyFile.Type) d);
 				} else if (d instanceof WhileyFile.Constant) {
-					declarations.add(generate((WhileyFile.Constant) d));
+					generate(wyilFile, (WhileyFile.Constant) d);
 				} else if (d instanceof WhileyFile.FunctionOrMethod) {
-					declarations.add(generate((WhileyFile.FunctionOrMethod) d));
+					generate(wyilFile, (WhileyFile.FunctionOrMethod) d);
 				}
 			} catch (SyntaxError se) {
 				throw se;
@@ -129,7 +129,7 @@ public final class CodeGenerator {
 		}
 
 		// Done
-		return new WyilFile(wf.module, wf.filename, declarations);
+		return wyilFile;
 	}
 
 	// =========================================================================
@@ -142,8 +142,10 @@ public final class CodeGenerator {
 	 * constant value. If this cannot be done, then a syntax error is raised to
 	 * indicate an invalid constant declaration was encountered.
 	 */
-	private WyilFile.Constant generate(WhileyFile.Constant cd) {
-		return new WyilFile.Constant(cd.modifiers(), cd.name(), cd.resolvedValue);
+	private void generate(WyilFile enclosing, WhileyFile.Constant declaration) {
+		WyilFile.Constant block = new WyilFile.Constant(enclosing, declaration.modifiers(), declaration.name(),
+				declaration.resolvedValue);
+		enclosing.blocks().add(block);
 	}
 
 	// =========================================================================
@@ -159,49 +161,52 @@ public final class CodeGenerator {
 	 * @return
 	 * @throws Exception
 	 */
-	private WyilFile.Type generate(WhileyFile.Type td) throws Exception {
-		EnclosingScope scope = new EnclosingScope(td);
+	private void generate(WyilFile enclosing, WhileyFile.Type td) throws Exception {
+		// Construct new WyIL type declaration
+		WyilFile.Type declaration = new WyilFile.Type(enclosing, td.modifiers(), td.name(), td.resolvedType.nominal());
+		//
+		EnclosingScope scope = new EnclosingScope(declaration, td);
 		// Allocate declared parameter
-		if(td.parameter.name() != null) {
+		if (td.parameter.name() != null) {
 			// If no parameter declared, then there will no invariant either
 			scope.declare(td.resolvedType, td.parameter.name(), td.attributes());
 			// Generate code for each invariant condition
 			for (Expr invariant : td.invariant) {
-				scope.addRoot(generate(invariant,scope));
+				declaration.invariants().add(generate(invariant, scope));
 			}
 		}
 		// done
-		return new WyilFile.Type(td.modifiers(), td.name(), td.resolvedType.nominal(), scope.getForest());
+		enclosing.blocks().add(declaration);
 	}
 
 	// =========================================================================
 	// Function / Method Declarations
 	// =========================================================================
 
-	private WyilFile.FunctionOrMethod generate(WhileyFile.FunctionOrMethod fmd) throws Exception {
+	private void generate(WyilFile enclosing, WhileyFile.FunctionOrMethod fmd) throws Exception {
+		// Construct new WyIL function or method
+		WyilFile.FunctionOrMethod declaration = new WyilFile.FunctionOrMethod(enclosing, fmd.modifiers(), fmd.name(),
+				fmd.resolvedType().nominal());
 		// Construct environments
-		EnclosingScope scope = new EnclosingScope(fmd);
+		EnclosingScope scope = new EnclosingScope(declaration,fmd);
 		addDeclaredParameters(fmd.parameters, fmd.resolvedType().params(), scope);
 		addDeclaredParameters(fmd.returns, fmd.resolvedType().returns(), scope);
 
-		// Generate pre-condition
+		// Generate precondition(s)		
 		for (Expr precondition : fmd.requires) {
-			scope.addRoot(generate(precondition, scope));
+			declaration.preconditions().add(generate(precondition, scope));
 		}
-
-		// Generate post-condition
+		// Generate postcondition(s)		
 		for (Expr postcondition : fmd.ensures) {
-			scope.addRoot(generate(postcondition, scope));
+			declaration.postconditions().add(generate(postcondition, scope));
 		}
-
 		// Generate function or method body
 		scope = scope.newRootScope();
 		for (Stmt s : fmd.statements) {
 			generate(s, scope);
-		}
-
-		return new WyilFile.FunctionOrMethod(fmd.modifiers(), fmd.name(), fmd.resolvedType().nominal(),
-				scope.getForest(), fmd.requires.size(), fmd.ensures.size());
+		}		
+		// Add declaration itself to enclosing file
+		enclosing.blocks().add(declaration);
 	}
 
 	/**
@@ -216,16 +221,16 @@ public final class CodeGenerator {
 	 */
 	private void addDeclaredParameters(List<WhileyFile.Parameter> parameters, List<Nominal> types,
 			EnclosingScope scope) {
-		for (int i = 0; i != parameters.size(); ++i) {			
+		for (int i = 0; i != parameters.size(); ++i) {
 			WhileyFile.Parameter parameter = parameters.get(i);
 			String name = parameter.name;
-			if(name == null) {
+			if (name == null) {
 				// This can happen for an unnamed return value. If named return
 				// values become mandatory, this check will be redundant.
-				name = "$"; 
-			} 
+				name = "$";
+			}
 			// allocate parameter to register in the current block
-			scope.declare(types.get(i), name, parameter.attributes());	
+			scope.declare(types.get(i), name, parameter.attributes());
 		}
 	}
 
@@ -274,7 +279,7 @@ public final class CodeGenerator {
 			} else if (stmt instanceof DoWhile) {
 				generate((DoWhile) stmt, scope);
 			} else if (stmt instanceof Expr.FunctionOrMethodCall) {
-				generateAsStmt((Expr)stmt, scope);
+				generateAsStmt((Expr) stmt, scope);
 			} else if (stmt instanceof Expr.IndirectFunctionOrMethodCall) {
 				generateAsStmt((Expr) stmt, scope);
 			} else if (stmt instanceof Expr.New) {
@@ -283,7 +288,8 @@ public final class CodeGenerator {
 				generate((Skip) stmt, scope);
 			} else {
 				// should be dead-code
-				WhileyFile.internalFailure("unknown statement: " + stmt.getClass().getName(), scope.getSourceContext(), stmt);
+				WhileyFile.internalFailure("unknown statement: " + stmt.getClass().getName(), scope.getSourceContext(),
+						stmt);
 			}
 		} catch (ResolveError ex) {
 			internalFailure(ex.getMessage(), scope.getSourceContext(), stmt, ex);
@@ -325,9 +331,9 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private void generate(Assign s, EnclosingScope scope) {
-		int[] lhs = generate((List) s.lvals,scope);
-		int[] rhs = generate(s.rvals,scope);
-		scope.add(new Bytecode.Assign(lhs, rhs),s.attributes());
+		int[] lhs = generate((List) s.lvals, scope);
+		int[] rhs = generate(s.rvals, scope);
+		scope.add(new Bytecode.Assign(lhs, rhs), s.attributes());
 	}
 
 	/**
@@ -401,7 +407,7 @@ public final class CodeGenerator {
 		// this however because it will fail in the interpreter.
 	}
 
-	/**	 
+	/**
 	 * @param stmt
 	 *            --- Statement to be translated.
 	 * @param scope
@@ -445,41 +451,41 @@ public final class CodeGenerator {
 		for (Stmt st : s.trueBranch) {
 			generate(st, trueScope);
 		}
-		
+
 		if (!s.falseBranch.isEmpty()) {
 			// There is a false branch, so translate that as well
 			EnclosingScope falseScope = scope.newBlockScope();
 			for (Stmt st : s.falseBranch) {
 				generate(st, falseScope);
 			}
-			scope.add(new Bytecode.If(operand, trueScope.blockIndex(), falseScope.blockIndex()),s.attributes());
+			scope.add(new Bytecode.If(operand, trueScope.blockIndex(), falseScope.blockIndex()), s.attributes());
 		} else {
 			// No false branch to translate
-			scope.add(new Bytecode.If(operand, trueScope.blockIndex()),s.attributes());
-		}	
+			scope.add(new Bytecode.If(operand, trueScope.blockIndex()), s.attributes());
+		}
 	}
 
 	private void generate(Stmt.Break s, EnclosingScope scope) {
 		int loopBody = scope.getEnclosingLoopBody();
-		scope.add(new Bytecode.Break(loopBody),s.attributes());
+		scope.add(new Bytecode.Break(loopBody), s.attributes());
 	}
 
 	private void generate(Stmt.Continue s, EnclosingScope scope) {
 		int loopBody = scope.getEnclosingLoopBody();
-		scope.add(new Bytecode.Continue(loopBody),s.attributes());
+		scope.add(new Bytecode.Continue(loopBody), s.attributes());
 	}
-	
+
 	private void generate(Stmt.Switch s, EnclosingScope scope) throws Exception {
 
 		int operand = generate(s.expr, scope);
-		Bytecode.Case[] cases = new Bytecode.Case[s.cases.size()]; 
-		
+		Bytecode.Case[] cases = new Bytecode.Case[s.cases.size()];
+
 		// FIXME: the following check should really occur earlier in the
 		// pipeline. However, it is difficult to do it earlier because it's only
 		// after FlowTypeChecker that we have determined the concrete values.
 		// See #628
-		checkNoDuplicateLabels(s.cases,scope);
-		
+		checkNoDuplicateLabels(s.cases, scope);
+
 		for (int i = 0; i != cases.length; ++i) {
 			Stmt.Case c = s.cases.get(i);
 			EnclosingScope bodyScope = scope.newBlockScope();
@@ -493,7 +499,7 @@ public final class CodeGenerator {
 	}
 
 	/**
-	 * Check that not two case statements have the same constant label.  
+	 * Check that not two case statements have the same constant label.
 	 * 
 	 * @param cases
 	 * @param indent
@@ -504,10 +510,10 @@ public final class CodeGenerator {
 		// then we have a syntax error.
 		HashSet<Constant> labels = new HashSet<Constant>();
 		//
-		for(int i=0;i!=cases.size();++i) {
+		for (int i = 0; i != cases.size(); ++i) {
 			Stmt.Case caseBlock = cases.get(i);
 			List<Constant> caseLabels = caseBlock.constants;
-			if(caseLabels != null) {
+			if (caseLabels != null) {
 				for (int j = 0; j != caseLabels.size(); ++j) {
 					Constant c = caseLabels.get(j);
 					if (labels.contains(c)) {
@@ -519,8 +525,7 @@ public final class CodeGenerator {
 			}
 		}
 	}
-	
-	
+
 	/**
 	 * Translate a named block into WyIL bytecodes.
 	 */
@@ -543,13 +548,13 @@ public final class CodeGenerator {
 
 		// FIXME: determine set of modified variables. This should be done by
 		// traversing the loop body to see which variables are assigned.
-		
+
 		// Translate loop invariant(s)
-		int[] invariants = generate(s.invariants,scope); 
-		
+		int[] invariants = generate(s.invariants, scope);
+
 		// Translate loop condition
 		int condition = generate(s.condition, scope);
-		
+
 		// Translate loop body
 		for (Stmt st : s.body) {
 			generate(st, subscope);
@@ -571,22 +576,22 @@ public final class CodeGenerator {
 
 		// FIXME: determine set of modified variables. This should be done by
 		// traversing the loop body to see which variables are assigned.
-				
+
 		// Translate loop body
 		for (Stmt st : s.body) {
 			generate(st, subscope);
 		}
-		
+
 		// Translate loop invariant(s)
-		int[] invariants = generate(s.invariants,scope); 
+		int[] invariants = generate(s.invariants, scope);
 
 		// Translate loop condition
 		int condition = generate(s.condition, scope);
-				
+
 		//
-		scope.add(new Bytecode.DoWhile(subscope.blockIndex(),condition,invariants), s.attributes());
+		scope.add(new Bytecode.DoWhile(subscope.blockIndex(), condition, invariants), s.attributes());
 	}
-		
+
 	// =========================================================================
 	// Multi-Expressions
 	// =========================================================================
@@ -606,9 +611,9 @@ public final class CodeGenerator {
 		//
 		// FIXME: handle multiple returns
 		int[] leftHandSide = new int[0]; // empty left-hand side
-		int[] rightHandSide = new int[] {generate(expr, scope)};
+		int[] rightHandSide = new int[] { generate(expr, scope) };
 		//
-		scope.add(new Bytecode.Assign(leftHandSide,rightHandSide), expr.attributes());
+		scope.add(new Bytecode.Assign(leftHandSide, rightHandSide), expr.attributes());
 	}
 
 	// =========================================================================
@@ -667,11 +672,12 @@ public final class CodeGenerator {
 				return generate((Expr.Lambda) expression, scope);
 			} else if (expression instanceof Expr.New) {
 				return generate((Expr.New) expression, scope);
-			}  else if (expression instanceof Expr.TypeVal) {
+			} else if (expression instanceof Expr.TypeVal) {
 				return generate((Expr.TypeVal) expression, scope);
 			} else {
 				// should be dead-code
-				internalFailure("unknown expression: " + expression.getClass().getName(), scope.getSourceContext(), expression);
+				internalFailure("unknown expression: " + expression.getClass().getName(), scope.getSourceContext(),
+						expression);
 			}
 		} catch (ResolveError rex) {
 			internalFailure(rex.getMessage(), scope.getSourceContext(), expression, rex);
@@ -687,7 +693,8 @@ public final class CodeGenerator {
 	public int generate(Expr.FunctionOrMethodCall expr, EnclosingScope scope) throws ResolveError {
 		int[] operands = generate(expr.arguments, scope);
 		Nominal.FunctionOrMethod type = expr.type();
-		return scope.allocate(type.returns(),new Bytecode.Invoke(type.nominal(),operands, expr.nid()), expr.attributes());
+		return scope.allocate(type.returns(), new Bytecode.Invoke(type.nominal(), operands, expr.nid()),
+				expr.attributes());
 	}
 
 	public int generate(Expr.IndirectFunctionOrMethodCall expr, EnclosingScope scope) throws ResolveError {
@@ -700,15 +707,15 @@ public final class CodeGenerator {
 
 	private int generate(Expr.Constant expr, EnclosingScope scope) {
 		Constant val = expr.value;
-		Bytecode.Expr operand = new Bytecode.Const(val); 
-		return scope.allocate(Nominal.construct(val.type(),val.type()),operand,expr.attributes());
+		Bytecode.Expr operand = new Bytecode.Const(val);
+		return scope.allocate(Nominal.construct(val.type(), val.type()), operand, expr.attributes());
 	}
 
-	private int generate(Expr.TypeVal expr, EnclosingScope scope) {		
+	private int generate(Expr.TypeVal expr, EnclosingScope scope) {
 		Constant val = new Constant.Type(expr.type.nominal());
-		return scope.allocate(Nominal.construct(val.type(), val.type()), new Bytecode.Const(val), expr.attributes());		
+		return scope.allocate(Nominal.construct(val.type(), val.type()), new Bytecode.Const(val), expr.attributes());
 	}
-	
+
 	private int generate(Expr.FunctionOrMethod expr, EnclosingScope scope) {
 		// FIXME: should really remove Expr.FunctionOrMethod from the AST. This
 		// should be just an Expr.Constant
@@ -742,10 +749,11 @@ public final class CodeGenerator {
 			}
 		}
 		// Translate the lambda body
-		int body = generate(expr.body,lambdaScope);
-		//	
+		int body = generate(expr.body, lambdaScope);
+		//
 		return scope.allocate(lambdaType,
-				new Bytecode.Lambda(lambdaType.nominal(), body, parameters, toIntArray(environment)), expr.attributes());
+				new Bytecode.Lambda(lambdaType.nominal(), body, parameters, toIntArray(environment)),
+				expr.attributes());
 	}
 
 	private int generate(Expr.ConstantAccess expr, EnclosingScope scope) throws ResolveError {
@@ -835,12 +843,12 @@ public final class CodeGenerator {
 		}
 		// Second, translate the quantifier body in the context of the new
 		// scope.
-		int body = generate(e.condition,quantifierScope);
-		//	
+		int body = generate(e.condition, quantifierScope);
+		//
 		Bytecode.QuantifierKind kind = Bytecode.QuantifierKind.valueOf(e.cop.name());
 		return scope.allocate(Nominal.T_BOOL, new Bytecode.Quantifier(kind, body, ranges), e.attributes());
 	}
-	
+
 	private int generate(Expr.Record expr, EnclosingScope scope) {
 		ArrayList<String> keys = new ArrayList<String>(expr.fields.keySet());
 		Collections.sort(keys);
@@ -934,13 +942,14 @@ public final class CodeGenerator {
 
 	private int[] toIntArray(List<Integer> items) {
 		int[] arr = new int[items.size()];
-		for(int i=0;i!=arr.length;++i) {
+		for (int i = 0; i != arr.length; ++i) {
 			arr[i] = items.get(i);
 		}
 		return arr;
 	}
-	
-	private static int _idx=0;
+
+	private static int _idx = 0;
+
 	public static String freshLabel() {
 		return "blklab" + _idx++;
 	}
@@ -958,77 +967,77 @@ public final class CodeGenerator {
 		/**
 		 * Maps variables to their WyIL register number and type.
 		 */
-		private final HashMap<String,Integer> environment;
-		/**
-		 * The outermost forest (needed for creating new subblocks).
-		 */
-		private final BytecodeForest forest;
+		private final HashMap<String, Integer> environment;		
 		/**
 		 * The enclosing source file scope (needed for error reporting)
 		 */
 		private final WhileyFile.Context context;
 		/**
+		 * The enclosing declaration in which we are writing new bytecode blocks
+		 */
+		private final WyilFile.Declaration enclosing;
+		/**
 		 * The enclosing bytecode block into which bytecodes are being written.
 		 */
-		private final BytecodeForest.Block block;		
+		private final Bytecode.Block block;
 		/**
-		 * Get the index of the bytecode block into which bytecodes are being written
+		 * Get the index of the bytecode block into which bytecodes are being
+		 * written
 		 */
-		private final int blockIndex;			
+		private final int blockIndex;
 		/**
 		 * Get the block index of the enclosing loop body (if applicable), or -1
 		 * (otherwise).
 		 */
-		private final int enclosingLoopBody;				
-		
-		public EnclosingScope(WhileyFile.Context context) {
-			this(new HashMap<String,Integer>(), new BytecodeForest(), context, -1);
+		private final int enclosingLoopBody;
+
+		public EnclosingScope(WyilFile.Declaration enclosing, WhileyFile.Context context) {
+			this(new HashMap<String, Integer>(), enclosing, context, -1);
 		}
-		
-		private EnclosingScope(Map<String, Integer> environment, BytecodeForest forest, WhileyFile.Context context,
-				int blockIndex) {
-			this(environment, forest, context, blockIndex, -1);
+
+		private EnclosingScope(Map<String, Integer> environment, WyilFile.Declaration enclosing, WhileyFile.Context context, int blockIndex) {
+			this(environment, enclosing, context, blockIndex, -1);
 		}
-		
-		private EnclosingScope(Map<String, Integer> environment, BytecodeForest forest, WhileyFile.Context context,
+
+		private EnclosingScope(Map<String, Integer> environment, WyilFile.Declaration enclosing, WhileyFile.Context context,
 				int blockIndex, int enclosingLoopBody) {
 			this.environment = new HashMap<String, Integer>(environment);
-			this.forest = forest;
+			this.enclosing = enclosing;
 			this.context = context;
 			this.blockIndex = blockIndex;
-			this.block = blockIndex == -1 ? null : forest.get(blockIndex);
-			this.enclosingLoopBody = enclosingLoopBody; 
+			this.block = blockIndex == -1 ? null : enclosing.getBlock(blockIndex);
+			this.enclosingLoopBody = enclosingLoopBody;
 		}
-		
+
 		public int blockIndex() {
 			return blockIndex;
 		}
-		
-		public BytecodeForest getForest() {
-			return forest;
+
+		public WyilFile.Declaration getEnclosingDeclaration() {
+			return enclosing;
 		}
-		
-		public BytecodeForest.Block getBlock() {
+
+		public Bytecode.Block getBlock() {
 			return block;
 		}
-		
+
 		public WhileyFile.Context getSourceContext() {
 			return context;
 		}
-		
+
 		public int getEnclosingLoopBody() {
 			return enclosingLoopBody;
 		}
-		
+
 		public Nominal.FunctionOrMethod getEnclosingFunctionType() {
 			WhileyFile.FunctionOrMethod m = (WhileyFile.FunctionOrMethod) context;
 			return m.resolvedType();
 		}
-		
+
 		public Integer get(String name) {
 			return environment.get(name);
-		}	
-				
+		}
+
 		/**
 		 * Declare a new variable in the enclosing bytecode forest.
 		 * 
@@ -1039,13 +1048,13 @@ public final class CodeGenerator {
 		 * @return
 		 */
 		public int declare(Nominal type, String name, List<Attribute> attributes) {
-			List<BytecodeForest.Location> registers = forest.locations();
-			int index = registers.size();
-			registers.add(new BytecodeForest.Variable(type.nominal(), name, attributes));
+			List<Location> locations = enclosing.locations();
+			int index = locations.size();
+			locations.add(new Location.Variable(type.nominal(), name, enclosing, attributes));
 			environment.put(name, index);
 			return index;
 		}
-		
+
 		/**
 		 * Allocate an operand on the stack.
 		 * 
@@ -1054,12 +1063,12 @@ public final class CodeGenerator {
 		 * @return
 		 */
 		public int allocate(Nominal type, Bytecode.Expr operand, List<Attribute> attributes) {
-			List<BytecodeForest.Location> registers = forest.locations();
-			int index = registers.size();
-			forest.locations().add(new BytecodeForest.Operand(type.nominal(), operand, attributes));
+			List<Location> locations = enclosing.locations();
+			int index = locations.size();
+			locations.add(new Location.Operand(type.nominal(), operand, enclosing, attributes));
 			return index;
 		}
-		
+
 		/**
 		 * Allocate a multi-operand on the stack.
 		 * 
@@ -1069,23 +1078,19 @@ public final class CodeGenerator {
 		 */
 		public int allocate(List<Nominal> types, Bytecode.Expr operand, List<Attribute> attributes) {
 			Type[] nominals = new Type[types.size()];
-			for(int i=0;i!=nominals.length;++i) {
+			for (int i = 0; i != nominals.length; ++i) {
 				nominals[i] = types.get(i).nominal();
 			}
-			List<BytecodeForest.Location> registers = forest.locations();
-			int index = registers.size();
-			forest.locations().add(new BytecodeForest.Operand(nominals, operand, attributes));
+			List<Location> locations = enclosing.locations();
+			int index = locations.size();
+			locations.add(new Location.Operand(nominals, operand, enclosing, attributes));
 			return index;
 		}
-		
+
 		public void add(Bytecode.Stmt b, List<Attribute> attributes) {
-			block.add(b,attributes);
-		}		
-				
-		public void addRoot(int root) {
-			forest.addRoot(root);
+			block.add(new Bytecode.Entry(b, attributes));
 		}
-	
+
 		/**
 		 * Create a new "block" scope. This is a subscope where new variables
 		 * can be declared and, furthermore, it corresponds to a new block in
@@ -1094,11 +1099,12 @@ public final class CodeGenerator {
 		 * @return
 		 */
 		public EnclosingScope newBlockScope() {
-			BytecodeForest.Block block = new BytecodeForest.Block();
-			int index = forest.add(block);
-			return new EnclosingScope(environment,forest,context,index,enclosingLoopBody);
+			Bytecode.Block block = new Bytecode.Block();
+			int index = enclosing.blocks().size();
+			enclosing.blocks().add(block);
+			return new EnclosingScope(environment, enclosing, context, index, enclosingLoopBody);
 		}
-		
+
 		/**
 		 * Create a new "loop" scope. This is a block scope which additionally
 		 * becomes the nearest enclosing loop body (i.e. for nested continue or
@@ -1107,11 +1113,12 @@ public final class CodeGenerator {
 		 * @return
 		 */
 		public EnclosingScope newLoopScope() {
-			BytecodeForest.Block block = new BytecodeForest.Block();
-			int index = forest.add(block);
-			return new EnclosingScope(environment,forest,context,index,index);
+			Bytecode.Block block = new Bytecode.Block();
+			int index = enclosing.blocks().size();
+			enclosing.blocks().add(block);
+			return new EnclosingScope(environment, enclosing, context, index, index);
 		}
-		
+
 		/**
 		 * Create a new "root" scope. This is a block scope which is
 		 * additionally a "root" in the enclosing forest.
@@ -1119,13 +1126,14 @@ public final class CodeGenerator {
 		 * @return
 		 */
 		public EnclosingScope newRootScope() {
-			BytecodeForest.Block block = new BytecodeForest.Block();
-			int index = forest.addAsRoot(block);
-			return new EnclosingScope(environment,forest,context,index);
+			Bytecode.Block block = new Bytecode.Block();
+			int index = enclosing.blocks().size();
+			enclosing.blocks().add(block);
+			return new EnclosingScope(environment, enclosing, context, index);
 		}
-		
+
 		public EnclosingScope clone() {
-			return new EnclosingScope(environment,forest,context,blockIndex,enclosingLoopBody);
+			return new EnclosingScope(environment, enclosing, context, blockIndex, enclosingLoopBody);
 		}
 	}
 }

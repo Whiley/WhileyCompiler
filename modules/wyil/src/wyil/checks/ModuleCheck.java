@@ -32,7 +32,6 @@ import wycc.lang.SyntaxError;
 import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyil.lang.*;
-import wyil.lang.BytecodeForest.Index;
 import wyil.lang.Bytecode.*;
 import static wyil.util.ErrorMessages.*;
 
@@ -64,57 +63,19 @@ public class ModuleCheck implements Transform<WyilFile> {
 
 	public void apply(WyilFile module) {
 		filename = module.filename();
-
+		
+		// FIXME: check type invariants
+		
 		for (WyilFile.FunctionOrMethod method : module.functionOrMethods()) {
 			check(method);
 		}
 	}
 
-	public void check(WyilFile.FunctionOrMethod method) {		
+	public void check(WyilFile.FunctionOrMethod method) {
+		// FIXME: check pre/postconditions
 		if(method.isFunction()) {
 			checkFunctionPure(method);
 		}		
-	}
-
-	private static class Handler {
-		public final ArrayList<Type> handlers;
-		public final HashSet<Type> active;
-		public final Handler parent;
-
-		public Handler(java.util.List<Pair<Type, String>> handlers, Handler parent) {
-			this.handlers = new ArrayList<Type>();
-			for(Pair<Type,String> handler : handlers) {
-				this.handlers.add(handler.first());
-			}
-			this.parent = parent;
-			this.active = new HashSet<Type>();
-		}
-
-		public Handler(Type throwsClause) {
-			this.handlers = new ArrayList<Type>();
-			this.handlers.add(throwsClause);
-			this.parent = null;
-			this.active = new HashSet<Type>();
-		}
-
-		public boolean catchException(Type type) {
-			for (Type t : handlers) {
-				if (Type.isSubtype(t, type)) {
-					active.add(t);
-					return true;
-				} else if (Type.isSubtype(type, t)) {
-					active.add(t);
-					// this exception may escape
-					type = Type.intersect(type, Type.Negation(t));
-				}
-			}
-
-			if (parent != null) {
-				return parent.catchException(type);
-			} else {
-				return false;
-			}
-		}
 	}
 
 	/**
@@ -124,15 +85,15 @@ public class ModuleCheck implements Transform<WyilFile> {
 	 * @param c
 	 */
 	protected void checkFunctionPure(WyilFile.FunctionOrMethod c) {
-		checkFunctionPure(c.body(),new HashSet<Integer>(),c.code());
+		checkFunctionPure(0,new HashSet<Integer>(),c);
 	}
 
-	protected void checkFunctionPure(int blockID, HashSet<Integer> visited, BytecodeForest forest) {
+	protected void checkFunctionPure(int blockID, HashSet<Integer> visited, WyilFile.Declaration enclosing) {
 		visited.add(blockID);
-		BytecodeForest.Block block = forest.get(blockID);
+		Bytecode.Block block = enclosing.getBlock(blockID);
 		for (int i = 0; i != block.size(); ++i) {
-			BytecodeForest.Entry e = block.get(i);
-			Bytecode code = e.first();
+			Bytecode.Entry e = block.get(i);
+			Bytecode code = e.code();
 			if (code instanceof Bytecode.Invoke && ((Bytecode.Invoke) code).type() instanceof Type.Method) {
 				// internal message send
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, e.attributes());
@@ -152,7 +113,7 @@ public class ModuleCheck implements Transform<WyilFile> {
 					// their enclosing loop and, hence, following this would
 					// lead to an infinite loop.
 					if(!visited.contains(subblock)) {
-						checkFunctionPure(subblock, visited, forest);
+						checkFunctionPure(subblock, visited, enclosing);
 					}
 				}
 			}

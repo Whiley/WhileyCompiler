@@ -1,23 +1,16 @@
 package wyil.util.interpreter;
 
 import wyil.lang.Bytecode;
-import wyil.lang.BytecodeForest;
 import wyil.lang.Constant;
 import wyil.lang.Type;
-import wyil.lang.WyilFile;
 import wyil.util.interpreter.Interpreter.ConstantObject;
 import wyil.util.interpreter.Interpreter.InternalFunction;
 import static wyil.util.interpreter.Interpreter.*;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Set;
-
-import wycc.lang.NameID;
-import wyfs.lang.Path;
 
 public class StandardFunctions {
 	/**

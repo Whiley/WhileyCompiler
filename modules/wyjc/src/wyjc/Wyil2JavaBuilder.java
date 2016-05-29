@@ -848,7 +848,7 @@ public class Wyil2JavaBuilder implements Builder {
 			// Exactly one return value, so we can return it directly.
 			translateOperand(operands[0], context);
 			// Determine return type
-			BytecodeForest.Location operand = context.getLocation(operands[0]);
+			Location operand = context.getLocation(operands[0]);
 			rt = convertUnderlyingType(operand.type(0));
 			break;
 		default:
@@ -865,7 +865,7 @@ public class Wyil2JavaBuilder implements Builder {
 
 	private void translate(Switch code, Context context) {
 		String exitLabel = freshLabel();
-		BytecodeForest.Location loc = context.getLocation(code.operand());
+		Location loc = context.getLocation(code.operand());
 		JvmType type = convertUnderlyingType(loc.type(0));
 		// Translate condition into a value and store into a temporary register.
 		// This is necessary because, according to the semantics of Whiley, we
@@ -990,10 +990,10 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @return
 	 */
 	public LVal generateLVal(int lval, Context context) {
-		BytecodeForest.Location loc = context.getLocation(lval);
+		Location loc = context.getLocation(lval);
 		ArrayList<LVal.Element<?>> path = new ArrayList<LVal.Element<?>>();
-		while (loc instanceof BytecodeForest.Operand) {
-			BytecodeForest.Operand lv = (BytecodeForest.Operand) loc;
+		while (loc instanceof Location.Operand) {
+			Location.Operand lv = (Location.Operand) loc;
 			wyil.lang.Bytecode.Expr code = lv.value();
 			switch (code.opcode()) {
 			case OPCODE_fieldload:
@@ -1107,9 +1107,9 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            Enclosing context
 	 */
 	private void translateCondition(int condition, String trueLabel, String falseLabel, Context enclosing) {
-		BytecodeForest.Location loc = enclosing.getLocation(condition);
-		if (loc instanceof BytecodeForest.Operand) {
-			BytecodeForest.Operand operand = (BytecodeForest.Operand) loc;
+		Location loc = enclosing.getLocation(condition);
+		if (loc instanceof Location.Operand) {
+			Location.Operand operand = (Location.Operand) loc;
 			wyil.lang.Bytecode.Expr code = operand.value();
 			// First, attempt to use a conditional branch to implement this
 			// operation. This will produce more attractive bytecode.
@@ -1387,7 +1387,7 @@ public class Wyil2JavaBuilder implements Builder {
 			// Translate operand
 			translateOperand(operand, enclosing);
 			// Determine type(s) for operand
-			BytecodeForest.Location l = enclosing.getLocation(operand);
+			Location l = enclosing.getLocation(operand);
 			for (int j = 0; j != l.size(); ++j) {
 				types.add(convertUnderlyingType(l.type(j)));
 			}
@@ -1416,7 +1416,7 @@ public class Wyil2JavaBuilder implements Builder {
 		context.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
 		for (int i = 0; i < operands.length; ++i) {
 			int operand = operands[i];
-			BytecodeForest.Location l = context.getLocation(operand);
+			Location l = context.getLocation(operand);
 			context.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
 			context.add(new Bytecode.LoadConst(i));
 			translateOperand(operand, context);
@@ -1437,9 +1437,9 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @return
 	 */
 	private void translateOperand(int operand, Context enclosing) {
-		BytecodeForest.Location location = enclosing.getLocation(operand);
-		if (location instanceof BytecodeForest.Variable) {
-			BytecodeForest.Variable var = (BytecodeForest.Variable) location;
+		Location location = enclosing.getLocation(operand);
+		if (location instanceof Location.Variable) {
+			Location.Variable var = (Location.Variable) location;
 			JvmType jvmType = convertUnderlyingType(var.type(0));
 			enclosing.add(new Bytecode.Load(operand, jvmType));
 		} else {
@@ -1546,7 +1546,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @return
 	 */
 	private void translateOperand(FieldLoad c, Context.Operand context) {
-		BytecodeForest.Operand operand = context.getOperand();
+		Location.Operand operand = context.getOperand();
 		Type.Record type = (Type.Record) operand.type(0);
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYRECORD, JAVA_LANG_STRING);
 		// Translate the source operand
@@ -1591,7 +1591,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param context
 	 */
 	public void translateRecordConstructor(Operator bytecode, Context.Operand context) {
-		BytecodeForest.Operand operand = context.getOperand();
+		Location.Operand operand = context.getOperand();
 		Type.EffectiveRecord recType = (Type.EffectiveRecord) operand.type(0);
 		JvmType.Function ftype = new JvmType.Function(WHILEYRECORD, WHILEYRECORD, JAVA_LANG_STRING, JAVA_LANG_OBJECT);
 
@@ -1619,7 +1619,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @return
 	 */
 	private void translateArrayConstructor(Operator code, Context.Operand context) {
-		BytecodeForest.Operand operand = context.getOperand();
+		Location.Operand operand = context.getOperand();
 		Type.Array arrType = (Type.Array) operand.type(0);
 		JvmType.Function initJvmType = new JvmType.Function(T_VOID, T_INT);
 		JvmType.Function ftype = new JvmType.Function(WHILEYARRAY, WHILEYARRAY, JAVA_LANG_OBJECT);
@@ -1943,7 +1943,7 @@ public class Wyil2JavaBuilder implements Builder {
 		for(int i=0;i!=parameters.length;++i) {
 			int slot = parameters[i];
 			if(slot != i) {
-				BytecodeForest.Location loc = bodyContext.getLocation(parameters[i]);
+				Location loc = bodyContext.getLocation(parameters[i]);
 				bodyContext.add(new Bytecode.Load(i, convertUnderlyingType(loc.type(0))));
 			}
 		}
@@ -1951,7 +1951,7 @@ public class Wyil2JavaBuilder implements Builder {
 		for(int i=parameters.length-1;i>=0;--i) {
 			int slot = parameters[i];
 			if(slot != i) {
-				BytecodeForest.Location loc = bodyContext.getLocation(parameters[i]);
+				Location loc = bodyContext.getLocation(parameters[i]);
 				bodyContext.add(new Bytecode.Store(parameters[i], convertUnderlyingType(loc.type(0))));
 			}
 		}
@@ -1971,7 +1971,7 @@ public class Wyil2JavaBuilder implements Builder {
 		JvmType.Function jvmType = convertFunType(type);
 		ArrayList<JvmType> actualParameterTypes = new ArrayList<JvmType>(jvmType.parameterTypes());
 		for (int i = 0; i != environment.length; ++i) {
-			BytecodeForest.Location loc = context.getLocation(environment[i]);
+			Location loc = context.getLocation(environment[i]);
 			actualParameterTypes.add(convertUnderlyingType(loc.type(0)));
 		}
 		//
@@ -1988,7 +1988,7 @@ public class Wyil2JavaBuilder implements Builder {
 	public JvmType[] buildLambdaEnvironment(int[] environment, Context context) {
 		JvmType[] envTypes = new JvmType[environment.length];
 		for (int i = 0; i != environment.length; ++i) {
-			BytecodeForest.Location loc = context.getLocation(environment[i]);
+			Location loc = context.getLocation(environment[i]);
 			envTypes[i] = convertUnderlyingType(loc.type(0));
 		}
 		return envTypes;
@@ -2411,13 +2411,13 @@ public class Wyil2JavaBuilder implements Builder {
 		/**
 		 * The index of the bytecode being translated
 		 */
-		private BytecodeForest.Index pc;
+		private wyil.lang.Bytecode.Index pc;
 
 		public Context(int block, BytecodeForest forest) {
-			this(forest,new BytecodeForest.Index(block, 0),forest.numLocations(),new ArrayList<Bytecode>(),null,null);
+			this(forest,new wyil.lang.Bytecode.Index(block, 0),forest.numLocations(),new ArrayList<Bytecode>(),null,null);
 		}
 
-		public Context(BytecodeForest forest, BytecodeForest.Index pc, int freeSlot, ArrayList<Bytecode> bytecodes,
+		public Context(BytecodeForest forest, wyil.lang.Bytecode.Index pc, int freeSlot, ArrayList<Bytecode> bytecodes,
 				String breakLabel, String continueLabel) {
 			this.forest = forest;
 			this.bytecodes = bytecodes;
@@ -2444,7 +2444,7 @@ public class Wyil2JavaBuilder implements Builder {
 			return forest.get(pc).first();
 		}
 
-		public BytecodeForest.Location getLocation(int operand) {
+		public Location getLocation(int operand) {
 			return forest.getLocation(operand);
 		}
 
@@ -2474,12 +2474,12 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 
 		public Context newBlock(int block) {
-			BytecodeForest.Index npc = new BytecodeForest.Index(block, 0);
+			wyil.lang.Bytecode.Index npc = new wyil.lang.Bytecode.Index(block, 0);
 			return new Context(forest, npc, freeSlot, bytecodes, breakLabel, continueLabel);
 		}
 
 		public Context newLoopBlock(int block, String breakLabel, String continueLabel) {
-			BytecodeForest.Index npc = new BytecodeForest.Index(block, 0);
+			wyil.lang.Bytecode.Index npc = new wyil.lang.Bytecode.Index(block, 0);
 			return new Context(forest, npc, freeSlot, bytecodes, breakLabel, continueLabel);
 		}
 		
@@ -2518,8 +2518,8 @@ public class Wyil2JavaBuilder implements Builder {
 				this.operand = operand;
 			}
 
-			public BytecodeForest.Operand getOperand() {
-				return (BytecodeForest.Operand) forest.getLocation(operand);
+			public Location.Operand getOperand() {
+				return (Location.Operand) forest.getLocation(operand);
 			}
 		}
 	}

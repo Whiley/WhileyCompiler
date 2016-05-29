@@ -369,40 +369,36 @@ public final class WyilFileReader {
 		int numBlocks = input.read_uv();
 
 		input.pad_u8();
-
-		List<WyilFile.Block> declarations = new ArrayList<WyilFile.Block>();
+		WyilFile wyilFile = new WyilFile(pathPool[pathIdx], "unknown.whiley");
 		for (int i = 0; i != numBlocks; ++i) {
-			declarations.add(readModuleBlock());
+			readModuleBlock(wyilFile);
 		}
 
-		return new WyilFile(pathPool[pathIdx], "unknown.whiley", declarations);
+		return wyilFile;
 	}
 
 	
-	private WyilFile.Block readModuleBlock() throws IOException {
-		WyilFile.Block block;
+	private void readModuleBlock(WyilFile parent) throws IOException {
 		int kind = input.read_uv();
 		int size = input.read_uv();
 		input.pad_u8();
 
 		switch (kind) {
 		case WyilFileWriter.BLOCK_Constant:
-			block = readConstantBlock();
+			readConstantBlock(parent);
 			break;
 		case WyilFileWriter.BLOCK_Type:
-			block = readTypeBlock();
+			readTypeBlock(parent);
 			 break;
 		case WyilFileWriter.BLOCK_Function:
 		case WyilFileWriter.BLOCK_Method:
-			block = readFunctionOrMethodBlock();
+			readFunctionOrMethodBlock(parent);
 			break;
 		default:
 			throw new RuntimeException("unknown module block encountered (" + kind + ")");
 		}
 
 		input.pad_u8();
-
-		return block;
 	}
 
 	/**
@@ -427,12 +423,14 @@ public final class WyilFileReader {
 	 * 
 	 * @throws IOException
 	 */
-	private WyilFile.Constant readConstantBlock() throws IOException {
+	private void readConstantBlock(WyilFile parent) throws IOException {
 		int nameIdx = input.read_uv();
 		int modifiers = input.read_uv();
 		int constantIdx = input.read_uv();
 
-		return new WyilFile.Constant(generateModifiers(modifiers), stringPool[nameIdx], constantPool[constantIdx]);
+		WyilFile.Block block = new WyilFile.Constant(parent, generateModifiers(modifiers), stringPool[nameIdx],
+				constantPool[constantIdx]);
+		parent.blocks().add(block);
 	}
 
 	/**
@@ -447,28 +445,42 @@ public final class WyilFileReader {
 	 * +------------------------+
 	 * | uv : typeIdx           |
 	 * +------------------------+
+	 * | uv : nInvariants       |
+	 * +------------------------+ 
+	 * | uv : nLocations        |
+	 * +------------------------+
+	 * | uv[nInvariants]        |
+	 * +------------------------+
+	 * | Location[nLocations]   |
+	 * +------------------------+
 	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
-	 * +------------------------+
-	 * | CodeForest : invariant |
-	 * +------------------------+
 	 * </pre>
 	 * 
 	 * The <code>nameIdx</code> is an index into the <code>stringPool</code>
 	 * representing the declaration's name, whilst <code>typeIdx</code> is an
 	 * index into the <code>typePool</code> representing the type itself.
-	 * Finally, <code>invariant</code> gives the type's invariant as zero or
-	 * more bytecode blocks.
 	 * 
 	 * @throws IOException
 	 */
-	private WyilFile.Type readTypeBlock() throws IOException {
+	private void readTypeBlock(WyilFile parent) throws IOException {
 		int nameIdx = input.read_uv();
 		int modifiers = input.read_uv();
 		int typeIdx = input.read_uv();
-
-		BytecodeForest forest = readCodeForestBlock();
-		
-		return new WyilFile.Type(generateModifiers(modifiers), stringPool[nameIdx], typePool[typeIdx], forest);
+		int nInvariants = input.read_uv();
+		int nLocations = input.read_uv();
+		//
+		Collection<Modifier> mods = generateModifiers(modifiers);
+		String name = stringPool[nameIdx];
+		Type type = typePool[typeIdx];
+		//
+		WyilFile.Type decl = new WyilFile.Type(parent, mods, name, type);
+		for (int i = 0; i != nInvariants; ++i) {
+			decl.invariants().add(input.read_uv());
+		}
+		for (int i = 0; i != nLocations; ++i) {
+			decl.locations().add(readLocation(decl));
+		}
+		parent.blocks().add(decl);
 	}
 
 	/**
@@ -483,43 +495,59 @@ public final class WyilFileReader {
 	 * +------------------------+
 	 * | uv : typeIdx           |
 	 * +------------------------+
-	 * | uv : nRequires         |
+	 * | uv : nPreconditions    |
 	 * +------------------------+
-	 * | uv : nEnsures          |
+	 * | uv : nPostconditions   |
+	 * +------------------------+
+	 * | uv : nLocations        |
+	 * +------------------------+
+	 * | uv : nBlocks           |
+	 * +------------------------+
+	 * | uv[nPreconditions]     |
+	 * +------------------------+
+	 * | uv[nPostconditions]    |
+	 * +------------------------+
+	 * | Location[nLocations]   |
+	 * +------------------------+
+	 * | Block[nBlock]          |
 	 * +------------------------+
 	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
-	 * +------------------------+
-	 * | CodeForest : code      |
-	 * +------------------------+
 	 * </pre>
 	 * 
 	 * The <code>nameIdx</code> is an index into the <code>stringPool</code>
 	 * representing the declaration's name, whilst <code>typeIdx</code> is an
 	 * index into the <code>typePool</code> representing the function or method
-	 * type itself. Finally, <code>code</code> provides all code associated with
-	 * the function or method which includes any preconditions, postconditions
-	 * and the body itself. Here, <code>nRequires</code> identifiers the number
-	 * of roots which correspond to the precondition, whilst
-	 * <code>nEnsures</code> the number of roots corresponding to the
-	 * postcondition. Any root after this comprise the body.
+	 * type itself. 
 	 * 
 	 * @throws IOException
 	 */
-	private WyilFile.FunctionOrMethod readFunctionOrMethodBlock() throws IOException {
+	private void readFunctionOrMethodBlock(WyilFile parent) throws IOException {
 		int nameIdx = input.read_uv();
 		int modifiers = input.read_uv();
 		int typeIdx = input.read_uv();
-		int nRequires = input.read_uv();
-		int nEnsures = input.read_uv();
-
-		input.pad_u8();
-
+		int nPreconditions = input.read_uv();
+		int nPostconditions = input.read_uv();
+		int nLocations = input.read_uv();
+		int nBlocks = input.read_uv();
+		//
+		Collection<Modifier> mods = generateModifiers(modifiers);
+		String name = stringPool[nameIdx];
 		Type.FunctionOrMethod type = (Type.FunctionOrMethod) typePool[typeIdx];
-
-		BytecodeForest forest = readCodeForestBlock();
-
-		return new WyilFile.FunctionOrMethod(generateModifiers(modifiers), stringPool[nameIdx], type, forest,
-				nRequires, nEnsures);
+		//
+		WyilFile.FunctionOrMethod decl = new WyilFile.FunctionOrMethod(parent, mods, name, type);
+		for (int i = 0; i != nPreconditions; ++i) {
+			decl.preconditions().add(input.read_uv());
+		}
+		for (int i = 0; i != nPostconditions; ++i) {
+			decl.postconditions().add(input.read_uv());
+		}
+		for (int i = 0; i != nLocations; ++i) {
+			decl.locations().add(readLocation(decl));
+		}
+		for (int i = 0; i != nBlocks; ++i) {
+			decl.blocks().add(readCodeBlock());
+		}
+		parent.blocks().add(decl);
 	}
 	
 	/**
@@ -557,65 +585,6 @@ public final class WyilFileReader {
 		return mods;
 	}
 	
-	/**
-	 * <p>
-	 * Read a code forest from the input stream. The format is:
-	 * </p>
-	 * 
-	 * <pre>
-	 * +--------------------+
-	 * | uv: nRegs          |
-	 * +--------------------+
-	 * | uv: nBlocks        |
-	 * +--------------------+
-	 * | uv: nRoots         |
-	 * +--------------------+
-	 * | uv: nAttrs         |
-	 * +--------------------+
-	 * | Register[nRegs]    |
-	 * +--------------------+
-	 * | uv[nRoots]         |
-	 * +--------------------+
-	 * | CodeBlock[nBlocks] |
-	 * +--------------------+
-	 * | Attribute[nAttrs]  |
-	 * +--------------------+
-	 * </pre>
-	 * 
-	 * @param forest
-	 *            The forest being written to the stream
-	 * @param output
-	 * @throws IOException
-	 */
-	private BytecodeForest readCodeForestBlock() throws IOException {
-		input.pad_u8();
-		int kind = input.read_uv(); // unused
-		int size = input.read_uv(); // unused
-		input.pad_u8();
-		
-		int nRegs = input.read_uv();
-		int nBlocks = input.read_uv();
-		int nRoots = input.read_uv();
-		int nAttrs = input.read_uv();
-		
-		BytecodeForest forest = new BytecodeForest();
-		
-		for(int i=0;i!=nRegs;++i) {			
-			BytecodeForest.Location location = readCodeLocation();
-			forest.locations().add(location);
-		}
-		
-		for(int i=0;i!=nRoots;++i) {
-			int root = input.read_uv();
-			forest.addRoot(root);
-		}
-		
-		for(int i=0;i!=nBlocks;++i) {
-			forest.add(readCodeBlock());
-		}
-		
-		return forest;
-	}
 	
 	/**
 	 * Read a given code location from the input stream. The format
@@ -636,30 +605,30 @@ public final class WyilFileReader {
 	 * @param output
 	 * @throws IOException
 	 */
-	private BytecodeForest.Location readCodeLocation() throws IOException {
+	private Location readLocation(WyilFile.Declaration parent) throws IOException {
 		boolean kind = input.read_bit();
 		boolean single = input.read_bit();
 		int nAttrs = input.read_uv();
 		Type[] types;
-		if(single) {
+		if (single) {
 			int typeIdx = input.read_uv();
-			types = new Type[]{typePool[typeIdx]};
+			types = new Type[] { typePool[typeIdx] };
 		} else {
 			int size = input.read_uv();
 			types = new Type[size];
-			for(int i=0;i!=size;++i) {
+			for (int i = 0; i != size; ++i) {
 				types[i] = typePool[input.read_uv()];
 			}
 		}
-				
+
 		// TODO: read any attributes given
 		List<Attribute> attributes = Collections.EMPTY_LIST;
-		if(kind) {
+		if (kind) {
 			int stringIdx = input.read_uv();
-			return new BytecodeForest.Variable(types[0], stringPool[stringIdx], attributes);			
+			return new Location.Variable(types[0], stringPool[stringIdx], parent, attributes);
 		} else {
 			Bytecode.Expr value = (Bytecode.Expr) readBytecode();
-			return new BytecodeForest.Operand(types, value, attributes);
+			return new Location.Operand(types, value, parent, attributes);
 		}
 	}
 	
@@ -692,18 +661,18 @@ public final class WyilFileReader {
 	 * @return
 	 * @throws IOException
 	 */
-	public BytecodeForest.Block readCodeBlock()
+	public Bytecode.Block readCodeBlock()
 			throws IOException {
 		int nCodes = input.read_uv();
 		int nAttrs = input.read_uv();
 
-		ArrayList<BytecodeForest.Entry> bytecodes = new ArrayList<BytecodeForest.Entry>();
+		Bytecode.Block block = new Bytecode.Block();
 		for (int i = 0; i < nCodes; ++i) {
 			Bytecode.Stmt code = (Bytecode.Stmt) readBytecode();
-			bytecodes.add(new BytecodeForest.Entry(code));
+			// TODO: read any attributes given
+			block.add(new Bytecode.Entry(code));
 		}
-		// TODO: read any attributes given
-		return new BytecodeForest.Block(bytecodes);
+		return block;
 	}
 
 	private Bytecode readBytecode() throws IOException {

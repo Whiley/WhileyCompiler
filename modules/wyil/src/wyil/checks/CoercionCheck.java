@@ -82,28 +82,29 @@ public class CoercionCheck implements Transform<WyilFile> {
 		filename = module.filename();
 
 		for(WyilFile.Type type : module.types()) {
-			check(type.invariant());
+			check(type);
 		}
 		for(WyilFile.FunctionOrMethod method : module.functionOrMethods()) {
-			check(method.code());
+			check(method);
 		}
 	}
 
-	protected void check(BytecodeForest forest) {
+	protected void check(WyilFile.Declaration enclosing) {
 		// Examine all entries in this block looking for a conversion bytecode
-		List<BytecodeForest.Location> locations = forest.locations();
-		for(int i=0;i!=locations.size();++i) {
-			BytecodeForest.Location l = locations.get(i);
-			if(l instanceof BytecodeForest.Operand) {
-				BytecodeForest.Operand o = (BytecodeForest.Operand) l;
+		List<Location> locations = enclosing.locations();
+		for (int i = 0; i != locations.size(); ++i) {
+			Location l = locations.get(i);
+			if (l instanceof Location.Operand) {
+				Location.Operand o = (Location.Operand) l;
 				Bytecode.Expr e = o.value();
-				if(e instanceof Bytecode.Convert) {
+				if (e instanceof Bytecode.Convert) {
 					Bytecode.Convert c = (Bytecode.Convert) e;
 					// FIXME: need to fix this :)
-					//check(conv.type(0), c.type(), new HashSet<Pair<Type, Type>>(), e.attribute(SourceLocation.class));
+					// check(conv.type(0), c.type(), new HashSet<Pair<Type,
+					// Type>>(), e.attribute(SourceLocation.class));
 				}
 			}
-		}		
+		}
 	}
 
 	/**

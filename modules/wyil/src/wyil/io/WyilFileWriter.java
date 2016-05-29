@@ -131,9 +131,6 @@ public final class WyilFileWriter {
 		case BLOCK_Method:
 			bytes = generateFunctionOrMethodBlock((WyilFile.FunctionOrMethod) data);
 			break;
-		case BLOCK_CodeForest:
-			bytes = generateCodeForest((BytecodeForest) data);
-			break;
 		}
 
 		output.pad_u8(); // pad out to next byte boundary
@@ -414,28 +411,44 @@ public final class WyilFileWriter {
 	 * +------------------------+
 	 * | uv : typeIdx           |
 	 * +------------------------+
+	 * | uv : nInvariants       |
+	 * +------------------------+ 
+	 * | uv : nLocations        |
+	 * +------------------------+
+	 * | uv[nInvariants]        |
+	 * +------------------------+
+	 * | Location[nLocations]   |
+	 * +------------------------+
 	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
-	 * +------------------------+
-	 * | CodeForest : invariant |
-	 * +------------------------+
 	 * </pre>
 	 * 
 	 * The <code>nameIdx</code> is an index into the <code>stringPool</code>
 	 * representing the declaration's name, whilst <code>typeIdx</code> is an
 	 * index into the <code>typePool</code> representing the type itself.
-	 * Finally, <code>invariant</code> gives the type's invariant as zero or
-	 * more bytecode blocks.
 	 * 
 	 * @throws IOException
 	 */
 	private byte[] generateTypeBlock(WyilFile.Type td) throws IOException {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
-
-		output.write_uv(stringCache.get(td.name()));
-		output.write_uv(generateModifiers(td.modifiers()));
-		output.write_uv(typeCache.get(td.type()));
-		writeBlock(BLOCK_CodeForest, td.invariant(), output);
+		//
+		int nameIdx = stringCache.get(td.name());
+		int modifiers = generateModifiers(td.modifiers());
+		int typeIdx = typeCache.get(td.type());
+		List<Integer> invariants = td.invariants();
+		List<Location> locations = td.locations();
+		//
+		output.write_uv(nameIdx);
+		output.write_uv(modifiers);
+		output.write_uv(typeIdx);
+		output.write_uv(invariants.size());
+		output.write_uv(locations.size());
+		for(Integer invariant : invariants) {
+			output.write_uv(invariant);
+		}
+		for(Location location : locations) {
+			writeCodeLocation(location,output);
+		}
 		output.close();
 		return bytes.toByteArray();
 	}
@@ -452,102 +465,60 @@ public final class WyilFileWriter {
 	 * +------------------------+
 	 * | uv : typeIdx           |
 	 * +------------------------+
-	 * | uv : nRequires         |
+	 * | uv : nPreconditions    |
 	 * +------------------------+
-	 * | uv : nEnsures          |
+	 * | uv : nPostconditions   |
+	 * +------------------------+
+	 * | uv : nLocations        |
+	 * +------------------------+
+	 * | uv : nBlocks           |
+	 * +------------------------+
+	 * | uv[nPreconditions]     |
+	 * +------------------------+
+	 * | uv[nPostconditions]    |
+	 * +------------------------+
+	 * | Location[nLocations]   |
+	 * +------------------------+
+	 * | Block[nBlock]          |
 	 * +------------------------+
 	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
-	 * +------------------------+
-	 * | CodeForest : code      |
-	 * +------------------------+
 	 * </pre>
 	 * 
 	 * The <code>nameIdx</code> is an index into the <code>stringPool</code>
 	 * representing the declaration's name, whilst <code>typeIdx</code> is an
 	 * index into the <code>typePool</code> representing the function or method
-	 * type itself. Finally, <code>code</code> provides all code associated with
-	 * the function or method which includes any preconditions, postconditions
-	 * and the body itself. Here, <code>nRequires</code> identifiers the number
-	 * of roots which correspond to the precondition, whilst
-	 * <code>nEnsures</code> the number of roots corresponding to the
-	 * postcondition. Any root after this comprise the body.
+	 * type itself. 
 	 * 
 	 * @throws IOException
 	 */
 	private byte[] generateFunctionOrMethodBlock(WyilFile.FunctionOrMethod md) throws IOException {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
+		//
+		int nameIdx = stringCache.get(md.name());
+		int modifiers = generateModifiers(md.modifiers());
+		int typeIdx = typeCache.get(md.type());
+		List<Integer> preconditions = md.preconditions();
+		List<Integer> postconditions = md.postconditions();
+		List<Location> locations = md.locations();
+		List<Bytecode.Block> blocks = md.blocks();
+		//
+		output.write_uv(nameIdx);
+		output.write_uv(modifiers);
+		output.write_uv(typeIdx);
 
-		output.write_uv(stringCache.get(md.name()));
-		output.write_uv(generateModifiers(md.modifiers()));
-		output.write_uv(typeCache.get(md.type()));
-
-		output.write_uv(md.preconditions().length);
-		output.write_uv(md.postconditions().length);
-
-		output.pad_u8(); // pad out to next byte boundary
-
-		writeBlock(BLOCK_CodeForest, md.code(), output);
-
-		output.close();
-		return bytes.toByteArray();
-	}
-
-	/**
-	 * <p>
-	 * Construct a code forest using a given set of pre-calculated label
-	 * offsets. The format is:
-	 * </p>
-	 * 
-	 * <pre>
-	 * +--------------------+
-	 * | uv: nRegs          |
-	 * +--------------------+
-	 * | uv: nBlocks        |
-	 * +--------------------+
-	 * | uv: nRoots         |
-	 * +--------------------+
-	 * | uv: nAttrs         |
-	 * +--------------------+
-	 * | Register[nRegs]    |
-	 * +--------------------+
-	 * | uv[nRoots]         |
-	 * +--------------------+
-	 * | CodeBlock[nBlocks] |
-	 * +--------------------+
-	 * | Attribute[nAttrs]  |
-	 * +--------------------+
-	 * </pre>
-	 * 
-	 * 
-	 * @param forest
-	 *            The forest being written to the stream
-	 * @throws IOException
-	 */
-	private byte[] generateCodeForest(BytecodeForest forest) throws IOException {
-		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-		BinaryOutputStream output = new BinaryOutputStream(bytes);
-		output.write_uv(forest.numLocations());
-		output.write_uv(forest.numBlocks());
-		output.write_uv(forest.numRoots());
-		output.write_uv(0); // currently no attributes
-
-		List<BytecodeForest.Location> locations = forest.locations();
-		for (int i = 0; i != locations.size(); ++i) {
-			writeCodeLocation(locations.get(i), output);
+		for(Integer precondition : preconditions) {
+			output.write_uv(precondition);
 		}
-
-		// FIXME: in principle we can get rid of the following by reorgansing
-		// the forest so that root blocks come first.
-		for (int i = 0; i != forest.numRoots(); ++i) {
-			output.write_uv(forest.getRoot(i));
+		for(Integer postcondition : postconditions) {
+			output.write_uv(postcondition);
 		}
-
-		for (int i = 0; i != forest.numBlocks(); ++i) {
-			BytecodeForest.Block block = forest.get(i);
+		for(Location location : locations) {
+			writeCodeLocation(location,output);
+		}
+		for(Bytecode.Block block : blocks) {
 			writeCodeBlock(block, output);
 		}
-
 		output.close();
 		return bytes.toByteArray();
 	}
@@ -571,8 +542,8 @@ public final class WyilFileWriter {
 	 * @param output
 	 * @throws  
 	 */
-	private void writeCodeLocation(BytecodeForest.Location location, BinaryOutputStream output) throws IOException {
-		output.write_bit(location instanceof BytecodeForest.Variable);
+	private void writeCodeLocation(Location location, BinaryOutputStream output) throws IOException {
+		output.write_bit(location instanceof Location.Variable);
 		output.write_bit(location.size() == 1);
 		// TODO: write out register attributes (including name)
 		output.write_uv(0);
@@ -585,11 +556,11 @@ public final class WyilFileWriter {
 				output.write_uv(typeCache.get(location.type(i)));
 			}
 		}
-		if(location instanceof BytecodeForest.Variable) {
-			BytecodeForest.Variable v = (BytecodeForest.Variable) location;
+		if(location instanceof Location.Variable) {
+			Location.Variable v = (Location.Variable) location;
 			output.write_uv(stringCache.get(v.name()));
 		} else {
-			BytecodeForest.Operand i = (BytecodeForest.Operand) location;
+			Location.Operand i = (Location.Operand) location;
 			writeBytecode(i.value(),output);
 		}
 	}
@@ -618,7 +589,7 @@ public final class WyilFileWriter {
 	 * @return
 	 * @throws IOException
 	 */
-	private void writeCodeBlock(BytecodeForest.Block block, BinaryOutputStream output) throws IOException {
+	private void writeCodeBlock(Bytecode.Block block, BinaryOutputStream output) throws IOException {
 		// Write the count of bytecodes
 		output.write_uv(block.size());
 		// Third, write the count of attributes
@@ -644,19 +615,11 @@ public final class WyilFileWriter {
 	 * +-------------------+
 	 * | u8 : opcode       |
 	 * +-------------------+
-	 * | uv : nTargets     |
-	 * +-------------------+
 	 * | uv : nOperands    |
-	 * +-------------------+
-	 * | uv : nTypes       | 
-	 * +-------------------+
+	 * +-------------------+ 
 	 * | uv : nAttrs       | 
 	 * +-------------------+
-	 * | uv[nTargets]      |
-	 * +-------------------+
 	 * | uv[nOperands]     |
-	 * +-------------------+ 
-	 * | uv[nTypes]        |
 	 * +-------------------+
 	 * | Attribute[nAttrs] | 
 	 * +-------------------+
@@ -817,48 +780,46 @@ public final class WyilFileWriter {
 		}
 	}
 
-	private void buildPools(WyilFile.Type declaration) {
-		addStringItem(declaration.name());
-		addTypeItem(declaration.type());
-		buildPools(declaration.invariant());
-	}
-
 	private void buildPools(WyilFile.Constant declaration) {
 		addStringItem(declaration.name());
 		addConstantItem(declaration.constant());
 	}
 
+	private void buildPools(WyilFile.Type declaration) {
+		addStringItem(declaration.name());
+		addTypeItem(declaration.type());
+		for(Location loc : declaration.locations()) {
+			buildPools(loc);
+		}
+	}
+
 	private void buildPools(WyilFile.FunctionOrMethod declaration) {
 		addStringItem(declaration.name());
 		addTypeItem(declaration.type());
-		buildPools(declaration.code());		
-	}
-
-	private void buildPools(BytecodeForest forest) {		
-		for(int i=0;i!=forest.numLocations();++i) {
-			buildPools(forest.getLocation(i));
+		for(Location loc : declaration.locations()) {
+			buildPools(loc);
 		}
-		for(int i=0;i!=forest.numBlocks();++i) {
-			buildPools(forest.get(i));
+		for(Bytecode.Block block : declaration.blocks()) {
+			buildPools(block);
 		}
 	}
 
-	private void buildPools(BytecodeForest.Location loc) {
+	private void buildPools(Location loc) {
 		for(int i=0;i!=loc.size();++i) {
 			addTypeItem(loc.type(i));
 		}
-		if(loc instanceof BytecodeForest.Variable) {
-			BytecodeForest.Variable v = (BytecodeForest.Variable) loc;
+		if(loc instanceof Location.Variable) {
+			Location.Variable v = (Location.Variable) loc;
 			addStringItem(v.name());			
 		} else {
-			BytecodeForest.Operand o = (BytecodeForest.Operand) loc;
+			Location.Operand o = (Location.Operand) loc;
 			buildPools(o.value());
 		}
 	}
 	
-	private void buildPools(BytecodeForest.Block block) {
+	private void buildPools(Bytecode.Block block) {
 		for (int i = 0; i != block.size(); ++i) {
-			BytecodeForest.Entry entry = block.get(i);
+			Bytecode.Entry entry = block.get(i);
 			buildPools(entry.code());			
 			// TODO: handle entry attributes
 		}
@@ -1068,8 +1029,6 @@ public final class WyilFileWriter {
 	public final static int BLOCK_Constant = 11;
 	public final static int BLOCK_Function = 12;
 	public final static int BLOCK_Method = 13;
-	// ... (anticipating some others here)
-	public final static int BLOCK_CodeForest = 20;
 	// ... (anticipating some others here)
 
 	// =========================================================================

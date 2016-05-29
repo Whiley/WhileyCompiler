@@ -2,29 +2,101 @@ package wyil.builders;
 
 import static wyil.util.ErrorMessages.internalFailure;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import wybs.lang.Builder;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;
 import wycc.lang.SyntacticElement;
+import wycs.core.Value;
 import wycs.syntax.Expr;
 import wycs.syntax.SyntacticType;
 import wycs.syntax.TypePattern;
 import wycs.syntax.WyalFile;
 import wyil.lang.Bytecode;
 import wyil.lang.BytecodeForest;
-import wyil.lang.BytecodeForest.Location;
+import wyil.lang.Location;
 import wyil.lang.Constant;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
 import wyil.util.TypeExpander;
 import wyil.util.interpreter.Interpreter.Context;
 
+/**
+ * <p>
+ * Responsible for generating verification conditions from a given WyIL file. A
+ * verification condition is a logical condition which must be shown to hold in
+ * order for the underlying WyIL program to considered "correct". The
+ * Verification Condition Generator (VCG) examines in turn each function or
+ * method in a given WyIL file. The VCG traverses each control-flow graph
+ * emitting verification conditions as it discovers them. The following
+ * illustrates:
+ * </p>
+ * 
+ * <pre>
+ * function abs(int x) -> (int r)
+ * ensures r >= 0:
+ *     //
+ *     if x >= 0:
+ *        return x
+ *     else:
+ *        return -x
+ * </pre>
+ *
+ * <p>
+ * The above function can be viewed in a slightly more precise fashion as
+ * follows, where the block structure is indicated:
+ * </p>
+ *
+ * <pre>
+ * +-----------------------------+ (1)
+ * |function abs(int x) -> (int r)
+ * |ensures r >= 0:
+ * |  +--------------------------+ (2)
+ * |  |  //
+ * |  |  if x >= 0:
+ * |  |   +----------------------+ (3)
+ * |  |   | return x
+ * |  |   +----------------------+
+ * |  |  else:
+ * |  |   +----------------------+ (4)
+ * |  |   | return -x
+ * |  |   +----------------------+
+ * |  +--------------------------+
+ * +-----------------------------+
+ * </pre>
+ * 
+ * <p>
+ * The VCG will generate exactly two verification conditions from this function
+ * corresponding to the paths "1,2,3" and "1,2,4". These verification conditions
+ * are required to ensure that, given the information know at the point of each
+ * return, we can establish the post-condition holds. The two verification
+ * conditions are:
+ * </p>
+ * 
+ * <ul>
+ * <li><b>1,2,3:</b> <code>x >= 0 ==> x >= 0</code>. This verification corresponds to
+ * the case where the if condition is known to be true.</li>
+ * <li><b>1,2,4:</b> <code>x < 0 ==> -x >= 0</code>. This verification corresponds to
+ * the case where the if condition is known to be false.</li>
+ * </ul>
+ * 
+ * <p>
+ * The VCG attempts to generate verification conditions which are easier to read
+ * by making use of macros as much as possible. For example, each clause of a
+ * function/method's precondition or postcondition is turned into a distinct
+ * (named) macro.
+ * </p>
+ * 
+ * @author David J. Pearce
+ *
+ */
 public class VerificationConditionGenerator {
 	private final Builder builder;
 	private final TypeExpander expander;
@@ -45,7 +117,7 @@ public class VerificationConditionGenerator {
 			if (b instanceof WyilFile.Constant) {
 				translate((WyilFile.Constant) b, wyilFile);
 			} else if (b instanceof WyilFile.Type) {
-				translate((WyilFile.Type) b, wyilFile, wyalFile);
+				translate((WyilFile.Type) b, wyalFile);
 			} else if (b instanceof WyilFile.FunctionOrMethod) {
 				WyilFile.FunctionOrMethod method = (WyilFile.FunctionOrMethod) b;
 				translate(method, wyilFile);
@@ -68,23 +140,26 @@ public class VerificationConditionGenerator {
 	 * that the invariant does not contradict itself. Furthermore, we need to
 	 * translate the type invariant into a macro block.
 	 * 
-	 * @param typeDecl
-	 * @param wyilFile
+	 * @param declaration
+	 *            The type declaration being translated.
+	 * @param wyalFile
+	 *            The WyAL file being constructed
 	 */
-	private void translate(WyilFile.Type typeDecl, WyilFile wyilFile, WyalFile wyalFile) {
-		BytecodeForest forest = typeDecl.invariant();
-		Context context = new Context(wyilFile.filename(), forest);
+	private void translate(WyilFile.Type declaration, WyalFile wyalFile) {
+		BytecodeForest forest = declaration.invariant();
 
 		// First, translate the invariant (if applicable)
 		Expr.Variable var = null;
 		Expr invariant = null;
 
 		if (forest.numRoots() > 0) {
-			BytecodeForest.Variable v = (BytecodeForest.Variable) forest.getLocation(0);
+			Location.Variable v = (Location.Variable) forest.getLocation(0);
 			var = new Expr.Variable(v.name(), v.attributes());
 			for (int i = 0; i != forest.numRoots(); ++i) {
-				Expr clause = translate(forest.getRoot(i), context);
-				// FIXME: this is ugly
+				int index = forest.getRoot(i);
+				Expr clause = translate(forest.getLocation(index));
+				// FIXME: this is ugly. Instead, WyAL files could support
+				// multiple invariant clauses?
 				if (invariant == null) {
 					invariant = clause;
 				} else {
@@ -94,10 +169,11 @@ public class VerificationConditionGenerator {
 		}
 
 		// Convert the type into a type pattern
-		TypePattern.Leaf pattern = new TypePattern.Leaf(convert(typeDecl.type(), typeDecl, context), var);
+		SyntacticType type = convert(declaration.type(), declaration);
+		TypePattern.Leaf pattern = new TypePattern.Leaf(type, var);
 		// Done
-		WyalFile.Type td = wyalFile.new Type(typeDecl.name(), Collections.EMPTY_LIST, pattern, invariant,
-				typeDecl.attributes());
+		WyalFile.Type td = wyalFile.new Type(declaration.name(), Collections.EMPTY_LIST, pattern, invariant,
+				declaration.attributes());
 		wyalFile.add(td);
 	}
 
@@ -121,89 +197,140 @@ public class VerificationConditionGenerator {
 	// =========================================================================
 
 	/**
-	 * Transform a given bytecode operand into its equivalent WyAL expression.
+	 * Transform a given bytecode location into its equivalent WyAL expression.
 	 * 
-	 * @param operand
-	 *            The operand index to be translateed
-	 * @param context
-	 *            Contextual information at the point of translateation
+	 * @param location
+	 *            The bytecode location to be translated
 	 * @return
 	 */
-	private Expr translate(int operand, Context context) {
-		BytecodeForest.Location loc = (BytecodeForest.Location) context.getLocation(operand);
-		Constant val; 
-		if (loc instanceof BytecodeForest.Variable) {
-			BytecodeForest.Variable var = (BytecodeForest.Variable) loc;
+	private Expr translate(Location loc) {
+		if (loc instanceof Location.Variable) {
+			Location.Variable var = (Location.Variable) loc;
 			return new Expr.Variable(var.name(), var.attributes());
 		} else {
-			BytecodeForest.Operand o = (BytecodeForest.Operand) loc;
-			Bytecode.Expr bytecode = o.value();
+			Location.Operand operand = (Location.Operand) loc;
+			Bytecode.Expr bytecode = operand.value();
 			switch (bytecode.opcode()) {
 			case Bytecode.OPCODE_const:
-				return translate((Bytecode.Const) bytecode, context);				
+				return translate((Bytecode.Const) bytecode, operand);
 			case Bytecode.OPCODE_convert:
-				return translate((Bytecode.Convert) bytecode, context);
+				return translate((Bytecode.Convert) bytecode, operand);
 			case Bytecode.OPCODE_fieldload:
-				return translate((Bytecode.FieldLoad) bytecode, context);
+				return translate((Bytecode.FieldLoad) bytecode, operand);
 			case Bytecode.OPCODE_indirectinvoke:
-				return translate((Bytecode.IndirectInvoke) bytecode, context);
+				return translate((Bytecode.IndirectInvoke) bytecode, operand);
 			case Bytecode.OPCODE_invoke:
-				return translate((Bytecode.Invoke) bytecode, context);
+				return translate((Bytecode.Invoke) bytecode, operand);
 			case Bytecode.OPCODE_lambda:
-				return translate((Bytecode.Lambda) bytecode, context);
+				return translate((Bytecode.Lambda) bytecode, operand);
 			case Bytecode.OPCODE_none:
 			case Bytecode.OPCODE_some:
 			case Bytecode.OPCODE_all:
-				return translate((Bytecode.Quantifier) bytecode, context);
+				return translate((Bytecode.Quantifier) bytecode, operand);
 			default:
-				return translate((Bytecode.Operator) bytecode, context);
+				return translate((Bytecode.Operator) bytecode, operand);
 			}
-		}	
-	}
-	
-	private Expr translate(Bytecode.Const code, Context context) {
-		// FIXME: need to implemet this
-		return null;
-	}
-	
-	private Expr translate(Bytecode.Convert code, Context context) {
-		// FIXME: need to implemet this
-		return null;
-	}
-	
-	private Expr translate(Bytecode.FieldLoad code, Context context) {
-		// FIXME: need to implemet this
-		return null;
-	}
-	
-	private Expr translate(Bytecode.IndirectInvoke code, Context context) {
-		// FIXME: need to implemet this
-		return null;
-	}
-		
-	private Expr translate(Bytecode.Invoke code, Context context) {
-		// FIXME: need to implemet this
-		return null;
-	}
-	
-	private Expr translate(Bytecode.Lambda code, Context context) {
-		// FIXME: need to implemet this
-		return null;
+		}
 	}
 
-	private Expr translate(Bytecode.Operator code, Context context) {
-		// FIXME: need to implemet this
-		return null;
+	private Expr translate(Bytecode.Const code, Location.Operand context) {
+		Value value = convert(code.constant(),context);
 	}
-	
-	private Expr translate(Bytecode.Quantifier code, Context context) {
+
+	private Expr translate(Bytecode.Convert code, Location.Operand context) {
 		// FIXME: need to implemet this
-		return null;
+		throw new RuntimeException("Implement me!");
 	}
-		
+
+	private Expr translate(Bytecode.FieldLoad code, Location.Operand context) {
+		// FIXME: need to implemet this
+		throw new RuntimeException("Implement me!");
+	}
+
+	private Expr translate(Bytecode.IndirectInvoke code, Location.Operand context) {
+		// FIXME: need to implemet this
+		throw new RuntimeException("Implement me!");
+	}
+
+	private Expr translate(Bytecode.Invoke code, Location.Operand context) {
+		// FIXME: need to implemet this
+		throw new RuntimeException("Implement me!");
+	}
+
+	private Expr translate(Bytecode.Lambda code, Location.Operand context) {
+		// FIXME: need to implemet this
+		throw new RuntimeException("Implement me!");
+	}
+
+	private Expr translate(Bytecode.Operator code, Location.Operand context) {
+		// FIXME: need to implemet this
+		throw new RuntimeException("Implement me!");
+	}
+
+	private Expr translate(Bytecode.Quantifier code, Location.Operand context) {
+		// FIXME: need to implemet this
+		throw new RuntimeException("Implement me!");
+	}
+
 	// =========================================================================
-	// Helper
+	// Helpers
 	// =========================================================================
+
+	/**
+	 * Convert a WyIL constant into its equivalent WyCS constant. In some cases,
+	 * this is a direct translation. In other cases, WyIL constants are encoded
+	 * using more primitive WyCS values.
+	 * 
+	 * @param c
+	 *            --- The WyIL constant to be converted.
+	 * @param context
+	 *            Additional contextual information associated with the point of
+	 *            this conversion. These are used for debugging purposes to
+	 *            associate any errors generated with a source line.
+	 * @return
+	 */
+	public Value convert(Constant c, WyilFile.Block context) {
+		if (c instanceof Constant.Null) {
+			return wycs.core.Value.Null;
+		} else if (c instanceof Constant.Bool) {
+			Constant.Bool cb = (Constant.Bool) c;
+			return wycs.core.Value.Bool(cb.value());
+		} else if (c instanceof Constant.Byte) {
+			Constant.Byte cb = (Constant.Byte) c;
+			return wycs.core.Value.Integer(BigInteger.valueOf(cb.value()));
+		} else if (c instanceof Constant.Integer) {
+			Constant.Integer cb = (Constant.Integer) c;
+			return wycs.core.Value.Integer(cb.value());
+		} else if (c instanceof Constant.Array) {
+			Constant.Array cb = (Constant.Array) c;
+			List<Constant> cb_values = cb.values();
+			ArrayList<Value> items = new ArrayList<Value>();
+			for (int i = 0; i != cb_values.size(); ++i) {
+				items.add(convert(cb_values.get(i), context));
+			}
+			return Value.Array(items);
+		} else if (c instanceof Constant.Record) {
+			Constant.Record rb = (Constant.Record) c;
+
+			// NOTE: records are currently translated into WyCS as tuples,
+			// where each field is allocated a slot based on an alphabetical sorting
+			// of field names. It's unclear at this stage whether or not that is
+			// a general solution. In particular, it would seem to be broken for
+			// type testing.
+
+			ArrayList<String> fields = new ArrayList<String>(rb.values().keySet());
+			Collections.sort(fields);
+			ArrayList<Value> values = new ArrayList<Value>();
+			for (String field : fields) {
+				values.add(convert(rb.values().get(field), context));
+			}
+			return wycs.core.Value.Tuple(values);
+		} else {
+			internalFailure("unknown constant encountered (" + c + ")", context.parent().filename(),
+					context.attributes());
+			return null;
+		}
+	}
 	
 	/**
 	 * Convert a WyIL type into its equivalent WyCS type. In some cases, this is
@@ -212,34 +339,32 @@ public class VerificationConditionGenerator {
 	 * 
 	 * @param type
 	 *            The WyIL type to be converted.
-	 * @param elem
-	 *            The syntactic element associated with the point of this
-	 *            conversion. These are used for debugging purposes to associate
-	 *            any errors generated with a source line.
 	 * @param context
-	 *            Additional contextual information useful for error reporting.
+	 *            Additional contextual information associated with the point of
+	 *            this conversion. These are used for debugging purposes to
+	 *            associate any errors generated with a source line.
 	 * @return
 	 */
-	private static SyntacticType convert(Type type, SyntacticElement elem, Context context) {
+	private static SyntacticType convert(Type type, WyilFile.Block context) {
 		// FIXME: this is fundamentally broken in the case of recursive types.
 		// See Issue #298.
 		if (type instanceof Type.Any) {
-			return new SyntacticType.Any(elem.attributes());
+			return new SyntacticType.Any(context.attributes());
 		} else if (type instanceof Type.Void) {
-			return new SyntacticType.Void(elem.attributes());
+			return new SyntacticType.Void(context.attributes());
 		} else if (type instanceof Type.Null) {
-			return new SyntacticType.Null(elem.attributes());
+			return new SyntacticType.Null(context.attributes());
 		} else if (type instanceof Type.Bool) {
-			return new SyntacticType.Bool(elem.attributes());
+			return new SyntacticType.Bool(context.attributes());
 		} else if (type instanceof Type.Byte) {
 			// FIXME: implement SyntacticType.Byte
 			// return new SyntacticType.Byte(attributes(branch);
-			return new SyntacticType.Int(elem.attributes());
+			return new SyntacticType.Int(context.attributes());
 		} else if (type instanceof Type.Int) {
-			return new SyntacticType.Int(elem.attributes());
+			return new SyntacticType.Int(context.attributes());
 		} else if (type instanceof Type.Array) {
 			Type.Array lt = (Type.Array) type;
-			SyntacticType element = convert(lt.element(), elem, context);
+			SyntacticType element = convert(lt.element(),context);
 			// ugly.
 			return new SyntacticType.List(element);
 		} else if (type instanceof Type.Record) {
@@ -250,7 +375,7 @@ public class VerificationConditionGenerator {
 			Collections.sort(names);
 			for (int i = 0; i != names.size(); ++i) {
 				String field = names.get(i);
-				elements.add(convert(fields.get(field), elem, context));
+				elements.add(convert(fields.get(field), context));
 			}
 			return new SyntacticType.Tuple(elements);
 		} else if (type instanceof Type.Reference) {
@@ -261,12 +386,12 @@ public class VerificationConditionGenerator {
 			HashSet<Type> tu_elements = tu.bounds();
 			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();
 			for (Type te : tu_elements) {
-				elements.add(convert(te, elem, context));
+				elements.add(convert(te, context));
 			}
 			return new SyntacticType.Union(elements);
 		} else if (type instanceof Type.Negation) {
 			Type.Negation nt = (Type.Negation) type;
-			SyntacticType element = convert(nt.element(), elem, context);
+			SyntacticType element = convert(nt.element(), context);
 			return new SyntacticType.Negation(element);
 		} else if (type instanceof Type.FunctionOrMethod) {
 			Type.FunctionOrMethod ft = (Type.FunctionOrMethod) type;
@@ -280,29 +405,11 @@ public class VerificationConditionGenerator {
 				names.add(pc);
 			}
 			names.add(nid.name());
-			return new SyntacticType.Nominal(names, elem.attributes());
+			return new SyntacticType.Nominal(names, context.attributes());
 		} else {
-			internalFailure("unknown type encountered (" + type.getClass().getName() + ")", context.getFilename(),
-					elem.attributes());
+			internalFailure("unknown type encountered (" + type.getClass().getName() + ")", context.parent().filename(),
+					context.attributes());
 			return null;
-		}
-	}
-	
-	private class Context {
-		private final String filename;
-		private final BytecodeForest forest;
-		
-		public Context(String filename, BytecodeForest forest) {
-			this.filename = filename;
-			this.forest = forest;
-		}
-		
-		public String getFilename() {
-			return filename;
-		}
-		
-		public Location getLocation(int operand) {
-			return forest.getLocation(operand);
 		}
 	}
 }

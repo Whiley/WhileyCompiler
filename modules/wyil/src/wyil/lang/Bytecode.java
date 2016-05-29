@@ -27,21 +27,21 @@ package wyil.lang;
 
 import java.util.*;
 
+import wycc.lang.Attribute;
+import wycc.lang.SyntacticElement;
 import wycc.lang.NameID;
-import wycc.util.Pair;
 
 /**
  * <p>
  * Each bytecode has a binary format which identifies the <i>opcode</i>,
- * <i>operand registers</i> <i>types</i> and <i>other
- * items</i> used (e.g. names, constants, etc). The generic organisation of a
- * bytecode is as follows:
+ * <i>operand registers</i> <i>types</i> and <i>other items</i> used (e.g.
+ * names, constants, etc). The generic organisation of a bytecode is as follows:
  * </p>
  *
  * <pre>
- * +--------+----------+-------+-------------+
- * | opcode | operands | types | other items |
- * +--------+----------+-------+-------------+
+ * +--------+----------+-------------+
+ * | opcode | operands | other items |
+ * +--------+----------+-------------+
  * </pre>
  * <p>
  * The opcode is currently always 1 byte, whilst the remainder varies between
@@ -56,7 +56,8 @@ import wycc.util.Pair;
  * </pre>
  * <p>
  * Here, <i>operation</i> identifies the bytecode operation (e.g. add, invoke,
- * etc), whilst <i>fmt</i> identifies the bytecode format. 
+ * etc), whilst <i>fmt</i> identifies the bytecode format.
+ * </p>
  * 
  * @author David J. Pearce
  */
@@ -105,6 +106,7 @@ public abstract class Bytecode {
 	 * @return
 	 */
 	public abstract int opcode();
+	
 	
 	// ===============================================================
 	// Bytecode Expressions
@@ -162,10 +164,21 @@ public abstract class Bytecode {
 			return OPCODE_convert;
 		}
 
+		@Override
 		public boolean equals(Object o) {
-			return o instanceof Convert && super.equals(o);
+			if(o instanceof Convert) {
+				Convert c = (Convert) o;
+				return type.equals(c.type) && super.equals(o);
+			}
+			return false;
 		}
-
+		
+		@Override
+		public int hashCode() {
+			return type.hashCode();
+		}
+		
+		@Override
 		public String toString() {
 			return "convert %" + operand(0) + " " + type();
 		}
@@ -191,11 +204,13 @@ public abstract class Bytecode {
 		public Constant constant() {
 			return constant;
 		}
-
+		
+		@Override
 		public int hashCode() {
 			return constant.hashCode();
 		}
-
+		
+		@Override
 		public boolean equals(Object o) {
 			if (o instanceof Const) {
 				Const c = (Const) o;
@@ -204,6 +219,7 @@ public abstract class Bytecode {
 			return false;
 		}
 
+		@Override
 		public String toString() {
 			return constant.toString();
 		}
@@ -234,14 +250,11 @@ public abstract class Bytecode {
 			return operand(0);
 		}
 		
-		public int hashCode() {
-			return super.hashCode() + field.hashCode();
-		}
-
 		public String fieldName() {
 			return field;
 		}
 		
+		@Override
 		public boolean equals(Object o) {
 			if (o instanceof FieldLoad) {
 				FieldLoad i = (FieldLoad) o;
@@ -250,6 +263,12 @@ public abstract class Bytecode {
 			return false;
 		}
 
+		@Override
+		public int hashCode() {
+			return super.hashCode() + field.hashCode();
+		}
+
+		@Override
 		public String toString() {
 			return "fieldload %" + operand(0) + " " + field;
 		}
@@ -329,10 +348,21 @@ public abstract class Bytecode {
 			return type;
 		}
 
+		@Override
 		public boolean equals(Object o) {
-			return o instanceof IndirectInvoke && super.equals(o);
+			if(o instanceof IndirectInvoke) {
+				IndirectInvoke i = (IndirectInvoke) o;
+				return type.equals(i.type) && super.equals(o);
+			}
+			return false;
 		}
 
+		@Override
+		public int hashCode() {
+			return super.hashCode() + type.hashCode();
+		}
+
+		@Override
 		public String toString() {
 			return "indirectinvoke %" + reference() + " " + arrayToString(arguments());
 		}
@@ -362,15 +392,12 @@ public abstract class Bytecode {
 		public NameID name() {
 			return name;
 		}
-		
-		public int hashCode() {
-			return name.hashCode() + super.hashCode();
-		}
 
 		public Type.FunctionOrMethod type() {
 			return type;
 		}
 
+		@Override
 		public boolean equals(Object o) {
 			if (o instanceof Invoke) {
 				Invoke i = (Invoke) o;
@@ -378,7 +405,13 @@ public abstract class Bytecode {
 			}
 			return false;
 		}
+		
+		@Override
+		public int hashCode() {
+			return name.hashCode() + super.hashCode();
+		}
 
+		@Override
 		public String toString() {
 			return "invoke " + arrayToString(operands()) + " " + name;
 		}
@@ -413,10 +446,6 @@ public abstract class Bytecode {
 			return OPCODE_lambda;
 		}
 
-		public int hashCode() {
-			return type.hashCode() + super.hashCode();
-		}
-
 		public Type.FunctionOrMethod type() {
 			return type;
 		}
@@ -438,6 +467,7 @@ public abstract class Bytecode {
 			return rs;
 		}
 		
+		@Override
 		public boolean equals(Object o) {
 			if (o instanceof Lambda) {
 				Lambda i = (Lambda) o;
@@ -446,6 +476,12 @@ public abstract class Bytecode {
 			return false;
 		}
 
+		@Override
+		public int hashCode() {
+			return type.hashCode() + super.hashCode();
+		}
+
+		@Override
 		public String toString() {
 			return "lambda " + arrayToString(operands()) + " " + type;
 		}
@@ -633,11 +669,17 @@ public abstract class Bytecode {
 		public int opcode() {
 			return kind().opcode;
 		}
+		
+		public OperatorKind kind() {
+			return kind;
+		}
 
+		@Override
 		public int hashCode() {
 			return kind.hashCode() + super.hashCode();
 		}
 
+		@Override
 		public boolean equals(Object o) {
 			if (o instanceof Operator) {
 				Operator bo = (Operator) o;
@@ -648,10 +690,6 @@ public abstract class Bytecode {
 
 		public String toString() {
 			return kind() + arrayToString(operands());
-		}
-
-		public OperatorKind kind() {
-			return kind;
 		}
 	}
 
@@ -690,18 +728,7 @@ public abstract class Bytecode {
 			}
 			return ranges;
 		}
-		
-		public boolean equals(Object o) {
-			if (o instanceof Quantifier) {
-				return super.equals(o);				
-			}
-			return false;
-		}
-		
-		public String toString() {
-			return "quantifier";
-		}
-		
+
 		private static int[] extract(Range[] ranges) {
 			// FIXME: this is not very pretty. It might be better for the
 			// operands to be an interface, rather than an array in the super
@@ -715,6 +742,19 @@ public abstract class Bytecode {
 			}
 			return operands;
 		}
+		
+		@Override
+		public boolean equals(Object o) {
+			if (o instanceof Quantifier) {
+				return super.equals(o);				
+			}
+			return false;
+		}
+		
+		@Override
+		public String toString() {
+			return "quantifier";
+		}		
 	}
 
 
@@ -838,12 +878,14 @@ public abstract class Bytecode {
 			return OPCODE_assert;
 		}
 
-		public String toString() {
-			return "assert %" + operand(0);
-		}
-
+		@Override
 		public boolean equals(Object o) {
 			return o instanceof Assert && super.equals(o);
+		}
+
+		@Override
+		public String toString() {
+			return "assert %" + operand(0);
 		}
 	}
 
@@ -907,6 +949,8 @@ public abstract class Bytecode {
 			return Arrays.copyOfRange(operands, numLhsOperands, operands.length - 1);
 		}
 
+
+		@Override
 		public boolean equals(Object o) {
 			if (o instanceof Assign) {
 				Assign a = (Assign) o;
@@ -915,6 +959,7 @@ public abstract class Bytecode {
 			return false;
 		}
 
+		@Override
 		public String toString() {
 			return arrayToString(leftHandSide()) + " = " + arrayToString(rightHandSide());
 		}
@@ -936,12 +981,14 @@ public abstract class Bytecode {
 			return OPCODE_assume;
 		}
 
-		public String toString() {
-			return "assume %" + operand();
-		}
-
+		@Override
 		public boolean equals(Object o) {
 			return o instanceof Assume && super.equals(o);
+		}
+		
+		@Override
+		public String toString() {
+			return "assume %" + operand();
 		}
 	}
 
@@ -975,6 +1022,8 @@ public abstract class Bytecode {
 			return enclosingLoopBody;
 		}
 
+		
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof Break)  {
 				return enclosingLoopBody == ((Break)o).enclosingLoopBody;
@@ -982,6 +1031,7 @@ public abstract class Bytecode {
 			return false;
 		}
 
+		@Override
 		public String toString() {
 			return "break " + enclosingLoopBody;
 		}
@@ -1016,6 +1066,8 @@ public abstract class Bytecode {
 			}
 			return enclosingLoopBody;
 		}
+		
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof Break)  {
 				return enclosingLoopBody == ((Continue)o).enclosingLoopBody;
@@ -1023,6 +1075,7 @@ public abstract class Bytecode {
 			return false;
 		}
 
+		@Override
 		public String toString() {
 			return "continue " + enclosingLoopBody;
 		}
@@ -1049,10 +1102,12 @@ public abstract class Bytecode {
 			return OPCODE_debug;
 		}
 
+		@Override
 		public boolean equals(Object o) {
 			return o instanceof Debug && super.equals(o);
 		}
 
+		@Override
 		public String toString() {
 			return "debug %" + operands[0];
 		}
@@ -1067,10 +1122,12 @@ public abstract class Bytecode {
 			return OPCODE_dowhile;
 		}
 		
+		@Override
 		public boolean equals(Object o) {
 			return o instanceof DoWhile && super.equals(o);
 		}
 		
+		@Override
 		public String toString() {
 			return "dowhile";
 		}
@@ -1089,6 +1146,7 @@ public abstract class Bytecode {
 			return OPCODE_fail;
 		}
 
+		@Override
 		public String toString() {
 			return "fail";
 		}
@@ -1162,6 +1220,7 @@ public abstract class Bytecode {
 			return branches[i];
 		}
 		
+		@Override
 		public boolean equals(Object o) {
 			if (o instanceof If) {
 				If i = (If) o;
@@ -1170,10 +1229,12 @@ public abstract class Bytecode {
 			return false;
 		}
 		
+		@Override
 		public int hashCode() {
 			return Arrays.hashCode(branches) ^ super.hashCode();
 		}
 
+		@Override
 		public String toString() {
 			String r = "if" + " %" + operands[0] + " " + trueBranch();
 			if(branches.length > 1) {
@@ -1245,6 +1306,7 @@ public abstract class Bytecode {
 			return body;
 		}
 		
+		@Override
 		public boolean equals(Object o) {
 			if (o instanceof Loop) {
 				Loop l = (Loop) o;
@@ -1253,6 +1315,7 @@ public abstract class Bytecode {
 			return false;
 		}
 		
+		@Override
 		public int hashCode() {
 			return body ^ Arrays.hashCode(modifiedVariables) ^ super.hashCode();
 		}		
@@ -1263,14 +1326,17 @@ public abstract class Bytecode {
 			super(body,condition,invariants);
 		}
 		
+		@Override
 		public int opcode() {
 			return OPCODE_while;
 		}
 		
+		@Override
 		public boolean equals(Object o) {
 			return o instanceof While && super.equals(o);
 		}
 		
+		@Override
 		public String toString() {
 			return "while";
 		}
@@ -1297,6 +1363,7 @@ public abstract class Bytecode {
 			return OPCODE_return;
 		}
 
+		@Override
 		public boolean equals(Object o) {
 			if (o instanceof Return) {
 				return super.equals(o);
@@ -1304,6 +1371,7 @@ public abstract class Bytecode {
 			return false;
 		}
 
+		@Override
 		public String toString() {
 			String r = "return";
 			for (int i = 0; i != operands.length; ++i) {
@@ -1346,6 +1414,7 @@ public abstract class Bytecode {
 			return cases;
 		}
 
+		@Override
 		public boolean equals(Object o) {
 			if (o instanceof Switch) {
 				Switch s = (Switch) o;
@@ -1354,10 +1423,12 @@ public abstract class Bytecode {
 			return false;
 		}
 
+		@Override
 		public int hashCode() {
 			return Arrays.hashCode(cases) ^ super.hashCode();
 		}
 		
+		@Override
 		public String toString() {
 			return "switch";
 		}
@@ -1389,6 +1460,7 @@ public abstract class Bytecode {
 			return values;
 		}
 		
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof Case) {
 				Case c = (Case) o;
@@ -1397,11 +1469,100 @@ public abstract class Bytecode {
 			return false;
 		}
 		
+		@Override
 		public int hashCode() {
 			return block ^ Arrays.hashCode(values);
 		}
 	}
 	
+	// ===============================================================
+	// Bytecode Block & Index
+	// ===============================================================
+
+	/**
+	 * Represents a bytecode location within a code forest. This is simply a
+	 * pair of the block identifier and the position within that block.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class Index {
+		private int block;
+		private int offset;
+
+		public Index(int block, int offset) {
+			this.block = block;
+			this.offset = offset;
+		}
+
+		public int block() { return block; }
+		public int offset() { return offset; }
+
+		public boolean equals(Object o) {
+			if(o instanceof Index) {
+				Index i = (Index) o;
+				return block == i.block && offset == i.offset;
+			}
+			return false;
+		}
+
+		public int hashCode() {
+			return block ^ offset;
+		}
+
+		public Index next() {
+			return new Index(block,offset+1);
+		}
+
+		public Index next(int i) {
+			return new Index(block,offset+i);
+		}
+
+		public String toString() {
+			return block + ":" + offset;
+		}
+	}
+
+	/**
+	 * Represents a sequence of bytecode statements which form a block of some
+	 * kind
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Block extends ArrayList<Entry> {
+		// Don't really need anything in here
+	}
+	
+	/**
+	 * Represents an entry within a code block. This is a pairing of a bytecode
+	 * and a list of bytecodes.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Entry extends SyntacticElement.Impl {
+		private final Bytecode.Stmt bytecode;
+
+		public Entry(Bytecode.Stmt code, List<Attribute> attributes) {
+			super(attributes);
+			this.bytecode = code;
+		}
+
+		public Entry(Bytecode.Stmt code, Attribute... attributes) {
+			super(attributes);
+			this.bytecode = code;
+		}
+
+		public Bytecode.Stmt code() {
+			return bytecode;
+		}
+	}
+
+	// ===============================================================
+	// Helpers
+	// ===============================================================
+
 	private static String arrayToString(int... operands) {
 		String r = "(";
 		for (int i = 0; i != operands.length; ++i) {

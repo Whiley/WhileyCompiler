@@ -124,43 +124,10 @@ public final class WyilFile implements CompilationUnit {
 	 * @param filename
 	 * @param declarations
 	 */
-	public WyilFile(Path.ID mid,
-			String filename,
-			List<Block> declarations) {
+	public WyilFile(Path.ID mid, String filename) {
 		this.mid = mid;
 		this.filename = filename;
-		this.blocks = new ArrayList<Block>(declarations);
-
-		// second, validate methods and/or functions
-		HashSet<Pair<String,wyil.lang.Type.FunctionOrMethod>> methods = new HashSet<Pair<String,wyil.lang.Type.FunctionOrMethod>>();
-		HashSet<String> types = new HashSet<String>();
-		HashSet<String> constants = new HashSet<String>();
-
-		for (Block d : declarations) {
-			if(d instanceof FunctionOrMethod) {
-				FunctionOrMethod m = (FunctionOrMethod) d;
-				Pair<String,wyil.lang.Type.FunctionOrMethod> p = new Pair<String,wyil.lang.Type.FunctionOrMethod>(m.name(),m.type());
-				if (methods.contains(p)) {
-					throw new IllegalArgumentException(
-							"Multiple function or method definitions (" + p.first() + ") with the same name and type not permitted");
-				}
-				methods.add(p);
-			} else if(d instanceof Type) {
-				Type t = (Type) d;
-				if (types.contains(t.name())) {
-					throw new IllegalArgumentException(
-							"Multiple type definitions with the same name not permitted");
-				}
-				types.add(t.name());
-			} else if (d instanceof Constant) {
-				Constant c = (Constant) d;
-				if (constants.contains(c.name())) {
-					throw new IllegalArgumentException(
-							"Multiple constant definitions with the same name not permitted");
-				}
-				constants.add(c.name());
-			}
-		}
+		this.blocks = new ArrayList<Block>();
 	}
 
 	// =========================================================================
@@ -379,14 +346,26 @@ public final class WyilFile implements CompilationUnit {
 	 *
 	 */
 	public static abstract class Block implements SyntacticElement {
+		private final WyilFile parent;
 		private final List<Attribute> attributes;
 
-		public Block(Collection<Attribute> attributes) {
+		public Block(WyilFile parent, Collection<Attribute> attributes) {
+			this.parent = parent;
 			this.attributes = new ArrayList<Attribute>(attributes);
 		}
 
-		public Block(Attribute[] attributes) {
+		public Block(WyilFile parent, Attribute[] attributes) {
+			this.parent = parent;
 			this.attributes = new ArrayList<Attribute>(Arrays.asList(attributes));
+		}
+		
+		/**
+		 * Get the WyIL file enclosing this block
+		 * 
+		 * @return
+		 */
+		public WyilFile parent() {
+			return parent;
 		}
 
 		public List<Attribute> attributes() {
@@ -413,19 +392,24 @@ public final class WyilFile implements CompilationUnit {
 	public static abstract class Declaration extends Block {
 		private String name;
 		private List<Modifier> modifiers;
-
-		public Declaration(String name, Collection<Modifier> modifiers,
-				Attribute... attributes) {
-			super(attributes);
+		private List<Location> locations;
+		private List<Bytecode.Block> blocks;
+		
+		public Declaration(WyilFile parent, String name, Collection<Modifier> modifiers, Attribute... attributes) {
+			super(parent, attributes);
 			this.name = name;
 			this.modifiers = new ArrayList<Modifier>(modifiers);
+			this.locations = new ArrayList<Location>();
+			this.blocks = new ArrayList<Bytecode.Block>();
 		}
 
-		public Declaration(String name, Collection<Modifier> modifiers,
+		public Declaration(WyilFile parent, String name, Collection<Modifier> modifiers,
 				Collection<Attribute> attributes) {
-			super(attributes);
+			super(parent, attributes);
 			this.name = name;
 			this.modifiers = new ArrayList<Modifier>(modifiers);
+			this.locations = new ArrayList<Location>();
+			this.blocks = new ArrayList<Bytecode.Block>();
 		}
 
 		public String name() {
@@ -439,8 +423,24 @@ public final class WyilFile implements CompilationUnit {
 		public boolean hasModifier(Modifier modifier) {
 			return modifiers.contains(modifier);
 		}
+		
+		public Location getLocation(int location) {
+			return locations.get(location);
+		}
+		
+		public Bytecode.Block getBlock(int block) {
+			return blocks.get(block);
+		}
+		
+		public List<Location> locations() {
+			return locations;
+		}
+		
+		public List<Bytecode.Block> blocks() {
+			return blocks;
+		}
 	}
-
+	
 	/**
 	 * A type declaration is a top-level block within a WyilFile that associates
 	 * a name with a given type. These names can be used within types,
@@ -452,29 +452,29 @@ public final class WyilFile implements CompilationUnit {
 	 *
 	 */
 	public static final class Type extends Declaration {
-		private wyil.lang.Type type;
-		private BytecodeForest invariant;
+		private final wyil.lang.Type type;
+		private final List<Integer> invariants;
 
-		public Type(Collection<Modifier> modifiers, String name, wyil.lang.Type type, BytecodeForest invariant,
+		public Type(WyilFile parent, Collection<Modifier> modifiers, String name, wyil.lang.Type type,
 				Attribute... attributes) {
-			super(name, modifiers, attributes);
+			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.invariant = invariant;
+			this.invariants = new ArrayList<Integer>();
 		}
 
-		public Type(Collection<Modifier> modifiers, String name, wyil.lang.Type type, BytecodeForest invariant,
+		public Type(WyilFile parent, Collection<Modifier> modifiers, String name, wyil.lang.Type type,
 				Collection<Attribute> attributes) {
-			super(name, modifiers, attributes);
+			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.invariant = invariant;
+			this.invariants = new ArrayList<Integer>();
 		}
 
 		public wyil.lang.Type type() {
 			return type;
 		}
-
-		public BytecodeForest invariant() {
-			return invariant;
+		
+		public List<Integer> invariants() {
+			return invariants;
 		}
 	}
 
@@ -489,17 +489,17 @@ public final class WyilFile implements CompilationUnit {
 	 *
 	 */
 	public static final class Constant extends Declaration {
-		private wyil.lang.Constant constant;
+		private final wyil.lang.Constant constant;
 
-		public Constant(Collection<Modifier> modifiers, String name,
+		public Constant(WyilFile parent, Collection<Modifier> modifiers, String name,
 				wyil.lang.Constant constant, Attribute... attributes) {
-			super(name, modifiers, attributes);
+			super(parent, name, modifiers, attributes);
 			this.constant = constant;
 		}
 
-		public Constant(Collection<Modifier> modifiers, String name,
+		public Constant(WyilFile parent, Collection<Modifier> modifiers, String name,
 				wyil.lang.Constant constant, Collection<Attribute> attributes) {
-			super(name, modifiers, attributes);
+			super(parent, name, modifiers, attributes);
 			this.constant = constant;
 		}
 
@@ -509,27 +509,30 @@ public final class WyilFile implements CompilationUnit {
 	}
 
 	public static final class FunctionOrMethod extends Declaration {
-		private wyil.lang.Type.FunctionOrMethod type;
-		private int numPreconditions;
-		private int numPostconditions;
-		private final BytecodeForest forest;
+		private final wyil.lang.Type.FunctionOrMethod type;
+		/**
+		 * Location indices for any preconditions 
+		 */
+		private final List<Integer> preconditions;
+		/**
+		 * Location indices for any postconditions 
+		 */
+		private final List<Integer> postconditions;
 
-		public FunctionOrMethod(Collection<Modifier> modifiers, String name, wyil.lang.Type.FunctionOrMethod type,
-				BytecodeForest forest, int numPreconditions, int numPostconditions, Attribute... attributes) {
-			super(name, modifiers, attributes);
+		public FunctionOrMethod(WyilFile parent, Collection<Modifier> modifiers, String name,
+				wyil.lang.Type.FunctionOrMethod type, Attribute... attributes) {
+			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.forest = forest;
-			this.numPreconditions = numPreconditions;
-			this.numPostconditions = numPostconditions;			
+			this.preconditions = new ArrayList<Integer>();
+			this.postconditions = new ArrayList<Integer>();
 		}
 
-		public FunctionOrMethod(Collection<Modifier> modifiers, String name, wyil.lang.Type.FunctionOrMethod type,
-				BytecodeForest forest, int numPreconditions, int numPostconditions, Collection<Attribute> attributes) {
-			super(name, modifiers, attributes);
+		public FunctionOrMethod(WyilFile parent, Collection<Modifier> modifiers, String name,
+				wyil.lang.Type.FunctionOrMethod type, Collection<Attribute> attributes) {
+			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.forest = forest;
-			this.numPreconditions = numPreconditions;
-			this.numPostconditions = numPostconditions;	
+			this.preconditions = new ArrayList<Integer>();
+			this.postconditions = new ArrayList<Integer>();
 		}
 
 		public wyil.lang.Type.FunctionOrMethod type() {
@@ -543,52 +546,25 @@ public final class WyilFile implements CompilationUnit {
 		public boolean isMethod() {
 			return type instanceof wyil.lang.Type.Method;
 		}
-		
-		public BytecodeForest code() {
-			return forest;
-		}
-				
+
 		/**
-		 * Get the list of operands within the code forest that represent the
-		 * preconditions of this function/method.
+		 * Get the list of location indices that represent the preconditions of
+		 * this function/method.
 		 * 
 		 * @return
 		 */
-		public int[] preconditions() {
-			int[] ids = new int[numPreconditions];
-			for(int i=0;i!=numPreconditions;++i) {
-				ids[i] = forest.getRoot(i);
-			}
-			return ids;
+		public List<Integer> preconditions() {
+			return preconditions;
 		}
 
 		/**
-		 * Get the list of operands within the code forest that represent the
-		 * postconditions of this function/method.
+		 * Get the list of location indices that represent the postconditions of
+		 * this function/method.
 		 * 
 		 * @return
 		 */
-		public int[] postconditions() {
-			int[] ids = new int[numPostconditions];
-			for(int i=0;i!=numPostconditions;++i) {
-				ids[i] = forest.getRoot(i+numPreconditions);
-			}
-			return ids;
-		}
-		
-		/**
-		 * Get the block corresponding to the body of this function, or null if
-		 * no such body exists.
-		 * 
-		 * @return
-		 */
-		public Integer body() {
-			int r = numPreconditions + numPostconditions;
-			if(r == forest.numRoots()) {
-				return null;
-			} else {
-				return forest.getRoot(r);
-			}
+		public List<Integer> postconditions() {
+			return postconditions;
 		}
 	}
 }

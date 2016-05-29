@@ -100,17 +100,18 @@ public class Interpreter {
 				throw new IllegalArgumentException("incorrect number of arguments: " + nid + ", " + sig);
 			}
 			// Third, get and check the function or method body
-			BytecodeForest forest = fm.code();
-			if (fm.body() == null) {
-				// FIXME: add support for native functions or methods
+			if (fm.blocks().isEmpty()) {
+				// FIXME: Add support for native functions or methods. That is,
+				// allow native functions to be implemented and called from the
+				// interpreter.
 				throw new IllegalArgumentException("no function or method body found: " + nid + ", " + sig);
 			}
 			// Fourth, construct the stack frame for execution
 			// FIXME: numLocations currently includes operands
-			Constant[] frame = new Constant[forest.numLocations()];
+			Constant[] frame = new Constant[fm.locations().size()];
 			System.arraycopy(args, 0, frame, 0, sig.params().size());			
 			// Setup the executing context
-			Context context = new Context(fm,forest,fm.body(),0);
+			Context context = new Context(fm,0,0);
 			// Check the precondition
 			checkInvariants(frame,context,fm.preconditions());
 			// Execute the method or function body
@@ -390,13 +391,13 @@ public class Interpreter {
 	// =============================================================		
 	
 	private <T extends Constant> T executeSingle(Class<T> expected, int operand, Constant[] frame, Context context) {
-		BytecodeForest.Location loc = (BytecodeForest.Location) context.getLocation(operand);
+		Location loc = (Location) context.getLocation(operand);
 		Constant val; 
-		if (loc instanceof BytecodeForest.Variable) {
+		if (loc instanceof Location.Variable) {
 			val = frame[operand];
 		} else {
 			Context.Operand opContext = context.subOperandContext(operand);
-			BytecodeForest.Operand o = (BytecodeForest.Operand) loc;
+			Location.Operand o = (Location.Operand) loc;
 			Bytecode.Expr bytecode = o.value();
 			switch (bytecode.opcode()) {
 			case Bytecode.OPCODE_const:
@@ -572,8 +573,10 @@ public class Interpreter {
 	}
 	
 	private Constant executeSingle(Bytecode.Lambda bytecode, Constant[] frame, Context.Operand context) {
+		// Clone the frame at this point, in order that changes seen after this
+		// bytecode is executed are not propagated into the lambda itself.
 		frame = Arrays.copyOf(frame, frame.length);
-		return new ConstantLambda(bytecode, context.forest, frame);
+		return new ConstantLambda(context.getEnclosingDeclaration(), bytecode, frame);
 	}
 
 	// =============================================================
@@ -595,12 +598,12 @@ public class Interpreter {
 	}
 	
 	private Constant[] executeMulti(int operand, Constant[] frame, Context context) {
-		BytecodeForest.Location loc = (BytecodeForest.Location) context.getLocation(operand);
-		if (loc instanceof BytecodeForest.Variable) {
+		Location loc = (Location) context.getLocation(operand);
+		if (loc instanceof Location.Variable) {
 			return new Constant[] { frame[operand] };
 		} else {
 			Context.Operand opContext = context.subOperandContext(operand);
-			BytecodeForest.Operand o = (BytecodeForest.Operand) loc;
+			Location.Operand o = (Location.Operand) loc;
 			Bytecode.Expr bytecode = o.value();
 			switch (bytecode.opcode()) {			
 			case Bytecode.OPCODE_indirectinvoke:
@@ -654,7 +657,7 @@ public class Interpreter {
 			// Yes we do; now construct the arguments. This requires merging the
 			// constant arguments provided in the lambda itself along with those
 			// operands provided for the "holes".
-			Context lambdaContext = new Context(context.getEnclosingDeclaration(),cl.forest);
+			Context lambdaContext = new Context(cl.getEnclosingDeclaration());
 			Constant[] lambdaFrame = Arrays.copyOf(cl.frame, cl.frame.length); 
 			int[] parameters = cl.lambda.parameters();			
 			Constant[] arguments = executeMulti(bytecode.arguments(),frame,context);
@@ -817,11 +820,11 @@ public class Interpreter {
 	 * @return
 	 */
 	private LVal constructLVal(int operand, Constant[] frame, Context context) {
-		BytecodeForest.Location loc = context.getLocation(operand);
-		if(loc instanceof BytecodeForest.Variable) {
+		Location loc = context.getLocation(operand);
+		if(loc instanceof Location.Variable) {
 			return new VariableLVal(operand);
 		} else {
-			Bytecode.Expr lval = ((BytecodeForest.Operand) loc).value();
+			Bytecode.Expr lval = ((Location.Operand) loc).value();
 			if (lval instanceof Bytecode.Operator) {
 				Bytecode.Operator op = (Bytecode.Operator) lval;
 				switch (op.kind()) {
@@ -1032,14 +1035,14 @@ public class Interpreter {
 					return false;
 				}
 				// Check any invariant associated with this type
-				BytecodeForest invariant = td.invariant();				
-				if(invariant.getRoots().length > 0) {
-					Context typeContext = new Context(td,invariant);
+				List<Integer> invariants = td.invariants();				
+				if(invariants.size() > 0) {
+					Context typeContext = new Context(td);
 					// FIXME: This is not the most efficient as the number of
 					// locations is greater than the number of variables.					
-					Constant[] frame = new Constant[invariant.numLocations()];
+					Constant[] frame = new Constant[td.locations().size()];
 					frame[0] = value;
-					checkInvariants(frame,typeContext,invariant.getRoots());
+					checkInvariants(frame,typeContext,invariants);
 				}
 				// Done
 				return true;
@@ -1056,6 +1059,32 @@ public class Interpreter {
 		return false; // deadcode
 	}
 	
+	/**
+	 * Evaluate zero or more conditional expressions, and check whether any is
+	 * false. If so, raise an exception indicating a runtime fault.
+	 * 
+	 * @param frame
+	 * @param context
+	 * @param invariants
+	 */
+	public void checkInvariants(Constant[] frame, Context context, List<Integer> invariants) {
+		for(int i=0;i!=invariants.size();++i) {
+			Constant.Bool b = executeSingle(BOOL_T, invariants.get(i), frame, context);
+			if(!b.value()) {
+				// FIXME: need to do more here
+				throw new AssertionError();
+			}
+		}
+	}
+
+	/**
+	 * Evaluate zero or more conditional expressions, and check whether any is
+	 * false. If so, raise an exception indicating a runtime fault.
+	 * 
+	 * @param frame
+	 * @param context
+	 * @param invariants
+	 */
 	public void checkInvariants(Constant[] frame, Context context, int... invariants) {
 		for(int i=0;i!=invariants.length;++i) {
 			Constant.Bool b = executeSingle(BOOL_T, invariants[i], frame, context);
@@ -1065,7 +1094,7 @@ public class Interpreter {
 			}
 		}
 	}
-
+	
 	/**
 	 * Check that a given operand value matches an expected type.
 	 *
@@ -1172,16 +1201,20 @@ public class Interpreter {
 	 *
 	 */
 	public static class ConstantLambda extends Constant {
-		private final Bytecode.Lambda lambda;
-		private final BytecodeForest forest;
+		private final WyilFile.Declaration enclosing;
+		private final Bytecode.Lambda lambda;		
 		private final Constant[] frame;		
 
-		public ConstantLambda(Bytecode.Lambda lambda, BytecodeForest forest, Constant... frame) {
+		public ConstantLambda(WyilFile.Declaration enclosing, Bytecode.Lambda lambda, Constant... frame) {
+			this.enclosing = enclosing;
 			this.lambda = lambda;
-			this.forest = forest;
 			this.frame = frame;
 		}
 
+		public WyilFile.Declaration getEnclosingDeclaration() {
+			return enclosing;
+		}
+		
 		public boolean equals(Object o) {
 			return o == this;
 		}
@@ -1207,15 +1240,7 @@ public class Interpreter {
 		/**
 		 * The enclosing declaration for this translation context 
 		 */
-		protected final WyilFile.Declaration enclosingDeclaration;
-		/**
-		 * The encosing bytecode forest
-		 */
-		protected final BytecodeForest forest;
-		/**
-		 * The enclosing block being executed
-		 */
-		private final BytecodeForest.Block block;
+		protected final WyilFile.Declaration enclosingDeclaration;		
 		/**
 		 * Index of block we are executing with the forest
 		 */
@@ -1225,26 +1250,20 @@ public class Interpreter {
 		 */
 		private int pc;
 		
-		public Context(WyilFile.Declaration enclosing, BytecodeForest forest) {
+		public Context(WyilFile.Declaration enclosing) {
 			this.enclosingDeclaration = enclosing;
-			this.forest = forest;
-			this.block = null;
 			this.blockID = -1;
 			this.pc = -1;
 		}
 		
-		public Context(WyilFile.Declaration enclosing, BytecodeForest forest, int blockID, int pc) {
+		public Context(WyilFile.Declaration enclosing, int blockID, int pc) {
 			this.enclosingDeclaration = enclosing;
-			this.forest = forest;
-			this.block = forest.get(blockID);
 			this.blockID = blockID;
 			this.pc = pc;
 		}
 
 		private Context(Context context) {
 			this.enclosingDeclaration = context.enclosingDeclaration;
-			this.forest = context.forest;
-			this.block = context.block;
 			this.blockID = context.blockID;
 			this.pc = context.pc;
 		}
@@ -1261,25 +1280,27 @@ public class Interpreter {
 		 * @return
 		 */
 		public Context subBlockContext(int blockID) {
-			return new Context(enclosingDeclaration,forest,blockID,0);
+			return new Context(enclosingDeclaration,blockID,0);
 		}
 		public Context.Operand subOperandContext(int operand) {
 			return new Context.Operand(operand,this);
 		}
 		
-		public BytecodeForest.Index getIndex() {
-			return new BytecodeForest.Index(blockID, pc);
+		public Bytecode.Index getIndex() {
+			return new Bytecode.Index(blockID, pc);
 		}
 		
-		public BytecodeForest.Location getLocation(int location) {
-			return forest.getLocation(location);
+		public Location getLocation(int location) {
+			return enclosingDeclaration.getLocation(location);
 		}
 		
 		public Bytecode.Stmt getStatement() {
+			Bytecode.Block block = enclosingDeclaration.getBlock(blockID);
 			return block.get(pc).code();
 		}
 		
 		public boolean hasNext() {
+			Bytecode.Block block = enclosingDeclaration.getBlock(blockID);
 			return pc < block.size();
 		}
 		
@@ -1298,8 +1319,8 @@ public class Interpreter {
 				this.operand = operand;
 			}
 			
-			public BytecodeForest.Operand getOperand() {
-				return (BytecodeForest.Operand) forest.getLocation(operand);
+			public Location.Operand getOperand() {
+				return (Location.Operand) getLocation(operand);
 			}					
 		}
 	}
