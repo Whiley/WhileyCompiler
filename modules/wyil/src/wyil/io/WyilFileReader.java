@@ -667,7 +667,7 @@ public final class WyilFileReader {
 		int nAttrs = input.read_uv();
 
 		Bytecode.Block block = new Bytecode.Block();
-		for (int i = 0; i < nCodes; ++i) {
+		for (int i = 0; i < nCodes; ++i) {			
 			Bytecode.Stmt code = (Bytecode.Stmt) readBytecode();
 			// TODO: read any attributes given
 			block.add(new Bytecode.Entry(code));

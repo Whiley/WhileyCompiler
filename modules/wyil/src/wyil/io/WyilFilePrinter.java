@@ -151,7 +151,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 		if (method.blocks().size() > 0) {
 			out.println(": ");
-			write(method, out);
+			writeOuterBlock(method, out);
 		}
 	}
 
@@ -166,7 +166,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		out.print(")");
 	}
 	
-	private void write(WyilFile.Declaration enclosing, PrintWriter out) {
+	private void writeOuterBlock(WyilFile.Declaration enclosing, PrintWriter out) {
 		if(verbose) {
 			List<Location> locations = enclosing.locations();
 			for(int i=0;i!=locations.size();++i) {
@@ -175,10 +175,10 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 				out.println("// %" + i + " = " + l);
 			}
 		}
-		write(0,0,enclosing,out);
+		writeBlock(0,0,enclosing,out);
 	}
 	
-	private void write(int indent, int blockID, WyilFile.Declaration enclosing, PrintWriter out) {
+	private void writeBlock(int indent, int blockID, WyilFile.Declaration enclosing, PrintWriter out) {
 		Bytecode.Block block = enclosing.getBlock(blockID);
 		for (int i = 0; i != block.size(); ++i) {
 			Bytecode.Stmt code = block.get(i).code();
@@ -260,7 +260,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 	
 	private void write(int indent, Bytecode.DoWhile b, WyilFile.Declaration enclosing, PrintWriter out) {
 		out.println("do:");
-		write(indent+1,b.body(),enclosing,out);
+		writeBlock(indent+1,b.body(),enclosing,out);
 		tabIndent(indent+1,out);
 		out.print("while ");
 		write(b.condition(),enclosing,out);
@@ -276,11 +276,11 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		out.print("if ");
 		write(b.condition(),enclosing,out);
 		out.println(":");
-		write(indent+1,b.trueBranch(),enclosing,out);
+		writeBlock(indent+1,b.trueBranch(),enclosing,out);
 		if(b.hasFalseBranch()) {
 			tabIndent(indent+1,out);
 			out.println("else:");
-			write(indent+1,b.falseBranch(),enclosing,out);
+			writeBlock(indent+1,b.falseBranch(),enclosing,out);
 		}
 	}
 	
@@ -289,7 +289,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		write(b.condition(),enclosing,out);
 		out.println(":");
 		// FIXME: add invariants
-		write(indent+1,b.body(),enclosing,out);		
+		writeBlock(indent+1,b.body(),enclosing,out);		
 	}
 	
 	private void write(int indent, Bytecode.Return b, WyilFile.Declaration enclosing, PrintWriter out) {
@@ -328,7 +328,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 				}
 				out.println(":");
 			}
-			write(indent+2,cAse.block(),enclosing,out);			
+			writeBlock(indent+2,cAse.block(),enclosing,out);			
 		}
 	}
 	

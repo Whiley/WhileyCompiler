@@ -506,7 +506,11 @@ public final class WyilFileWriter {
 		output.write_uv(nameIdx);
 		output.write_uv(modifiers);
 		output.write_uv(typeIdx);
-
+		output.write_uv(preconditions.size());
+		output.write_uv(postconditions.size());
+		output.write_uv(locations.size());
+		output.write_uv(blocks.size());
+		
 		for(Integer precondition : preconditions) {
 			output.write_uv(precondition);
 		}
@@ -520,6 +524,7 @@ public final class WyilFileWriter {
 			writeCodeBlock(block, output);
 		}
 		output.close();
+		
 		return bytes.toByteArray();
 	}
 
