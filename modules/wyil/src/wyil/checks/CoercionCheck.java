@@ -91,12 +91,12 @@ public class CoercionCheck implements Transform<WyilFile> {
 
 	protected void check(WyilFile.Declaration enclosing) {
 		// Examine all entries in this block looking for a conversion bytecode
-		List<Location> locations = enclosing.locations();
-		for (int i = 0; i != locations.size(); ++i) {
-			Location l = locations.get(i);
-			if (l instanceof Location.Operand) {
-				Location.Operand o = (Location.Operand) l;
-				Bytecode.Expr e = o.value();
+		List<SyntaxTree.Expr> expressions = enclosing.getExpressions();
+		for (int i = 0; i != expressions.size(); ++i) {
+			SyntaxTree l = expressions.get(i);
+			if (l instanceof SyntaxTree.Operator) {
+				SyntaxTree.Operator<?> o = (SyntaxTree.Operator<?>) l;
+				Bytecode.Expr e = o.getBytecode();
 				if (e instanceof Bytecode.Convert) {
 					Bytecode.Convert c = (Bytecode.Convert) e;
 					// FIXME: need to fix this :)

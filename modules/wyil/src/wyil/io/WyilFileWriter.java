@@ -34,6 +34,7 @@ import wycc.util.Pair;
 import wyfs.io.BinaryOutputStream;
 import wyfs.lang.Path;
 import wyil.lang.*;
+import wyil.util.AbstractBytecode;
 import wyautl.util.BigRational;
 
 /**
@@ -413,11 +414,11 @@ public final class WyilFileWriter {
 	 * +------------------------+
 	 * | uv : nInvariants       |
 	 * +------------------------+ 
-	 * | uv : nLocations        |
+	 * | uv : nExpressions      |
 	 * +------------------------+
 	 * | uv[nInvariants]        |
 	 * +------------------------+
-	 * | Location[nLocations]   |
+	 * | Expr[nExpressions]     |
 	 * +------------------------+
 	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
 	 * </pre>
@@ -435,20 +436,18 @@ public final class WyilFileWriter {
 		int nameIdx = stringCache.get(td.name());
 		int modifiers = generateModifiers(td.modifiers());
 		int typeIdx = typeCache.get(td.type());
-		List<Integer> invariants = td.invariants();
-		List<Location> locations = td.locations();
+		List<Integer> invariants = td.getInvariantIndices();
+		List<SyntaxTree.Expr> expressions = td.getExpressions();
 		//
 		output.write_uv(nameIdx);
 		output.write_uv(modifiers);
 		output.write_uv(typeIdx);
 		output.write_uv(invariants.size());
-		output.write_uv(locations.size());
+		output.write_uv(expressions.size());
 		for(Integer invariant : invariants) {
 			output.write_uv(invariant);
 		}
-		for(Location location : locations) {
-			writeCodeLocation(location,output);
-		}
+		writeExpressions(expressions,output);
 		output.close();
 		return bytes.toByteArray();
 	}
@@ -469,7 +468,7 @@ public final class WyilFileWriter {
 	 * +------------------------+
 	 * | uv : nPostconditions   |
 	 * +------------------------+
-	 * | uv : nLocations        |
+	 * | uv : nExpressions      |
 	 * +------------------------+
 	 * | uv : nBlocks           |
 	 * +------------------------+
@@ -477,7 +476,7 @@ public final class WyilFileWriter {
 	 * +------------------------+
 	 * | uv[nPostconditions]    |
 	 * +------------------------+
-	 * | Location[nLocations]   |
+	 * | Expr[nExpressions]     |
 	 * +------------------------+
 	 * | Block[nBlock]          |
 	 * +------------------------+
@@ -498,17 +497,17 @@ public final class WyilFileWriter {
 		int nameIdx = stringCache.get(md.name());
 		int modifiers = generateModifiers(md.modifiers());
 		int typeIdx = typeCache.get(md.type());
-		List<Integer> preconditions = md.preconditions();
-		List<Integer> postconditions = md.postconditions();
-		List<Location> locations = md.locations();
-		List<Bytecode.Block> blocks = md.blocks();
+		List<Integer> preconditions = md.getPreconditionIndices();
+		List<Integer> postconditions = md.getPostconditionIndices();
+		List<SyntaxTree.Expr> expressions = md.getExpressions();
+		List<SyntaxTree.Block> blocks = md.getBlocks();
 		//
 		output.write_uv(nameIdx);
 		output.write_uv(modifiers);
 		output.write_uv(typeIdx);
 		output.write_uv(preconditions.size());
 		output.write_uv(postconditions.size());
-		output.write_uv(locations.size());
+		output.write_uv(expressions.size());
 		output.write_uv(blocks.size());
 		
 		for(Integer precondition : preconditions) {
@@ -517,10 +516,8 @@ public final class WyilFileWriter {
 		for(Integer postcondition : postconditions) {
 			output.write_uv(postcondition);
 		}
-		for(Location location : locations) {
-			writeCodeLocation(location,output);
-		}
-		for(Bytecode.Block block : blocks) {
+		writeExpressions(expressions,output);		
+		for(SyntaxTree.Block block : blocks) {
 			writeCodeBlock(block, output);
 		}
 		output.close();
@@ -529,47 +526,173 @@ public final class WyilFileWriter {
 	}
 
 	/**
-	 * Write details of a given code register to the output stream. The format
-	 * of reach register entry is:
+	 * Write details of a given expression to the output stream. The format
+	 * of each expression is one of the following:
+	 * 
+	 * For variables:
 	 * 
 	 * <pre>
 	 * +-------------------+
+	 * | u1 : true         |
+	 * +-------------------+
 	 * | uv : nAttrs       |
+	 * +-------------------+ 
+	 * | Attribute[nAttrs] |
 	 * +-------------------+
 	 * | uv : typeIdx      |
 	 * +-------------------+
-	 * | Attribute[nAttrs] |
+	 * | uv : stringIdx    |
 	 * +-------------------+
 	 * </pre>
+	 * 
+	 * 
+	 * 
+	 * For positional operators:
+	 * 
+
 	 * 
 	 * @param register
 	 *            Register to be written out
 	 * @param output
 	 * @throws  
 	 */
-	private void writeCodeLocation(Location location, BinaryOutputStream output) throws IOException {
-		output.write_bit(location instanceof Location.Variable);
-		output.write_bit(location.size() == 1);
-		// TODO: write out register attributes (including name)
-		output.write_uv(0);
-		// Write out the type indices		
-		if(location.size() == 1) {
-			output.write_uv(typeCache.get(location.type(0)));
-		} else {
-			output.write_uv(location.size());
-			for(int i=0;i!=location.size();++i) {
-				output.write_uv(typeCache.get(location.type(i)));
-			}
-		}
-		if(location instanceof Location.Variable) {
-			Location.Variable v = (Location.Variable) location;
-			output.write_uv(stringCache.get(v.name()));
-		} else {
-			Location.Operand i = (Location.Operand) location;
-			writeBytecode(i.value(),output);
+	private void writeExpressions(List<SyntaxTree.Expr> expressions, BinaryOutputStream output) throws IOException {
+		for(int i=0;i!=expressions.size();) {
+			SyntaxTree.Expr expr = expressions.get(i);
+			if(expr instanceof SyntaxTree.Variable) {
+				writeVariableExpression((SyntaxTree.Variable)expr,output);
+				i = i + 1;
+			} else if(expr instanceof SyntaxTree.PositionalOperator) {
+				SyntaxTree.PositionalOperator<?> p = (SyntaxTree.PositionalOperator<?>) expr;
+				List<SyntaxTree.PositionalOperator<?>> ps = extractPositionalOperators(p,i,expressions);
+				writePositionalOperators(ps,output);
+				i = i + ps.size();
+			} else {
+				writeNonPositionalOperator((SyntaxTree.Operator<?>)expr, output);
+				i = i + 1;
+			}			
 		}
 	}
-		
+	
+	/**
+	 * Extract consecutive positional operators for the same bytecode.
+	 * 
+	 * @param p
+	 * @param i
+	 * @param expressions
+	 * @return
+	 */
+	private List<SyntaxTree.PositionalOperator<?>> extractPositionalOperators(SyntaxTree.PositionalOperator<?> p, int i,
+			List<SyntaxTree.Expr> expressions) {
+		ArrayList<SyntaxTree.PositionalOperator<?>> rs = new ArrayList<>();
+		for (; i < expressions.size(); ++i) {
+			SyntaxTree.Expr e = expressions.get(i);
+			if (e instanceof SyntaxTree.PositionalOperator<?>) {
+				SyntaxTree.PositionalOperator<?> ep = (SyntaxTree.PositionalOperator<?>) e;
+				if (ep.getBytecode() == p.getBytecode()) {
+					// Same bytecode, so extract
+					rs.add(ep);
+				} else {
+					// Different bytecode, so we're done
+					break;
+				}
+			} else {
+				// Not even a positional operator, so we're done
+				break;
+			}
+		}
+		return rs;
+	}
+	
+	/**
+	 * Write details of a given variable expression to the output stream. The format
+	 * of this expression kind is:
+	 * 
+	 * <pre>
+	 * +-------------------+
+	 * | u1 : true         |
+	 * +-------------------+
+	 * | uv : nAttrs       |
+	 * +-------------------+ 
+	 * | Attribute[nAttrs] |
+	 * +-------------------+
+	 * | uv : typeIdx      |
+	 * +-------------------+
+	 * | uv : stringIdx    |
+	 * +-------------------+
+	 * </pre>
+	 * 
+	 */
+	private void writeVariableExpression(SyntaxTree.Variable var, BinaryOutputStream output) throws IOException {
+		output.write_bit(true); // is variable
+		// TODO: write out register attributes (including name)
+		output.write_uv(0);
+		output.write_uv(typeCache.get(var.getType()));
+		output.write_uv(stringCache.get(var.name()));
+	}
+	
+	/**
+	 * Write details of a non-position operator to the output stream. The format
+	 * of this expression kind is:
+	 * 
+	 * <pre>
+	 * +-------------------+
+	 * | u1 : false        |
+	 * +-------------------+
+	 * | uv : nAttrs       |
+	 * +-------------------+ 
+	 * | Attribute[nAttrs] |
+	 * +-------------------+
+	 * | u1 : false        |
+	 * +-------------------+
+	 * | uv : typeIdx      |
+	 * +-------------------+
+	 * </pre>
+	 * 
+	 */
+	private void writeNonPositionalOperator(SyntaxTree.Operator<?> operator, BinaryOutputStream output) throws IOException {
+		output.write_bit(false); // not variable
+		// TODO: write out register attributes (including name)
+		output.write_uv(0);
+		output.write_bit(false); // not positional
+		output.write_uv(typeCache.get(operator.getType()));
+		writeBytecode(operator.getBytecode(), output);
+	}
+	
+	/**
+	 * Write a group of positional operators to the output stream. The format
+	 * of this expression kind is:
+	 * 
+	 * <pre>
+	 * +--------------------+
+	 * | u1 : false         |
+	 * +--------------------+
+	 * | uv : nAttrs        |
+	 * +--------------------+ 
+	 * | Attribute[nAttrs]  |
+	 * +--------------------+
+	 * | u1 : true          |
+	 * +--------------------+
+	 * | uv : nTypes        |
+	 * +------------- ------+
+	 * | uv[nTypes] : types |
+	 * +--------------------+
+	 * </pre>
+	 * 
+	 */
+	private void writePositionalOperators(List<SyntaxTree.PositionalOperator<?>> operators, BinaryOutputStream output)
+			throws IOException {
+		output.write_bit(false); // not variable
+		// TODO: write out register attributes (including name)
+		output.write_uv(0);
+		output.write_bit(true); // is positional
+		output.write_uv(operators.size());
+		for (int i = 0; i != operators.size(); ++i) {
+			output.write_uv(typeCache.get(operators.get(i).getType()));
+		}
+		writeBytecode(operators.get(0).getBytecode(), output);
+	}
+	
 	/**
 	 * <p>
 	 * Write out a block of bytecodes using a given set of pre-calculated label
@@ -594,7 +717,7 @@ public final class WyilFileWriter {
 	 * @return
 	 * @throws IOException
 	 */
-	private void writeCodeBlock(Bytecode.Block block, BinaryOutputStream output) throws IOException {
+	private void writeCodeBlock(SyntaxTree.Block block, BinaryOutputStream output) throws IOException {
 		// Write the count of bytecodes
 		output.write_uv(block.size());
 		// Third, write the count of attributes
@@ -603,7 +726,7 @@ public final class WyilFileWriter {
 
 		// Finally, write the actual bytecodes!
 		for (int i = 0; i != block.size(); ++i) {
-			Bytecode code = block.get(i).code();
+			Bytecode code = block.get(i).getBytecode();
 			writeBytecode(code, output);
 		}
 
@@ -620,16 +743,12 @@ public final class WyilFileWriter {
 	 * +-------------------+
 	 * | u8 : opcode       |
 	 * +-------------------+
-	 * | uv : nOperands    |
-	 * +-------------------+ 
-	 * | uv : nAttrs       | 
-	 * +-------------------+
-	 * | uv[nOperands]     |
+	 * | uv : nAttrs       |	 
 	 * +-------------------+
 	 * | Attribute[nAttrs] | 
 	 * +-------------------+
-	 * | uv[] rest         |
-	 * +-------------------+
+	 *        ...
+	 * 
 	 * </pre>
 	 * 
 	 * <p>
@@ -641,32 +760,80 @@ public final class WyilFileWriter {
 	 */
 	private void writeBytecode(Bytecode code, BinaryOutputStream output)
 			throws IOException {
-		writeCommon(code, output);
-		writeRest(code, output);
-	}
-
-	/**
-	 * Write the "common" part of a bytecode instruction. This includes the
-	 * opcode, target location, operand locations, types and attributes.
-	 *
-	 * @param code
-	 *            --- The bytecode to be written.
-	 * @param output
-	 *            --- The binary stream to write this bytecode to.
-	 * @throws IOException
-	 */
-	private void writeCommon(Bytecode code, BinaryOutputStream output) throws IOException {
-		output.write_u8(code.opcode());
-		int[] operands = code.operands();
-		output.write_uv(operands.length);
-		output.write_uv(0); // attributes		
-		// Write operand locations
-		for (int i = 0; i != operands.length; ++i) {
-			output.write_uv(operands[i]);
+		output.write_u8(code.getOpcode());
+		output.write_uv(0); // attributes
+		writeOperands(code,output);
+		writeOperandGroups(code,output);
+		if (code instanceof Bytecode.Stmt) {
+			writeBlocks((Bytecode.Stmt) code, output);
 		}
-		// TODO: write attributes
+		writeExtras(code, output);
 	}
 
+	private void writeOperands(Bytecode code, BinaryOutputStream output) throws IOException {
+		Bytecode.Schema schema = AbstractBytecode.schemas[code.getOpcode()];
+		switch(schema.getOperands()) {
+		case ZERO:
+			// do nout
+			break;
+		case ONE:
+			output.write_uv(code.getOperand(0));
+			break;
+		case TWO:
+			output.write_uv(code.getOperand(0));
+			output.write_uv(code.getOperand(1));
+			break;
+		case MANY:
+			writeUnboundArray(code.getOperands(),output);
+		}		
+	}
+	
+	private void writeOperandGroups(Bytecode code, BinaryOutputStream output) throws IOException {		
+		Bytecode.Schema schema = AbstractBytecode.schemas[code.getOpcode()];
+		switch(schema.getOperandGroups()) {
+		case ZERO:
+			// do nout
+			break;
+		case ONE:
+			writeUnboundArray(code.getOperandGroup(0),output);
+			break;
+		case TWO:			
+			writeUnboundArray(code.getOperandGroup(0),output);
+			writeUnboundArray(code.getOperandGroup(1),output);
+			break;
+		case MANY:
+			output.write_uv(code.numberOfOperandGroups());
+			for(int i=0;i!=code.numberOfOperandGroups();++i) {
+				writeUnboundArray(code.getOperandGroup(i),output);
+			}			
+		}		
+	}
+	
+	private void writeBlocks(Bytecode.Stmt code, BinaryOutputStream output) throws IOException {
+		Bytecode.Schema schema = AbstractBytecode.schemas[code.getOpcode()];
+		switch(schema.getBlocks()) {
+		case ZERO:
+			// do nout
+			break;
+		case ONE:
+			output.write_uv(code.getBlock(0));
+			break;
+		case TWO:
+			output.write_uv(code.getBlock(0));
+			output.write_uv(code.getBlock(1));
+			break;
+		case MANY:
+			writeUnboundArray(code.getBlocks(),output);
+		}		
+	}
+	private void writeUnboundArray(int[] values, BinaryOutputStream output) throws IOException {
+		output.write_uv(values.length);	
+		// Write operand locations
+		for (int i = 0; i != values.length; ++i) {
+			output.write_uv(values[i]);
+		}	
+	}
+	
 	/**
 	 * Write the "rest" of a bytecode instruction. This includes additional
 	 * information as specified for the given opcode. For compound bytecodes,
@@ -691,28 +858,36 @@ public final class WyilFileWriter {
 	 *            written.
 	 * @throws IOException
 	 */
-	private void writeRest(Bytecode code, BinaryOutputStream output) throws IOException {
-
-		if (code instanceof Bytecode.Const) {
+	private void writeExtras(Bytecode code, BinaryOutputStream output) throws IOException {
+		//
+		switch (code.getOpcode()) {
+		case Bytecode.OPCODE_const: {
 			Bytecode.Const c = (Bytecode.Const) code;
 			output.write_uv(constantCache.get(c.constant()));
-		} else if (code instanceof Bytecode.Convert) {
-			Bytecode.Convert c = (Bytecode.Convert) code;
-			output.write_uv(typeCache.get(c.type()));
-		} else if (code instanceof Bytecode.FieldLoad) {
+			break;
+		}
+		case Bytecode.OPCODE_fieldload: {
 			Bytecode.FieldLoad c = (Bytecode.FieldLoad) code;
 			output.write_uv(stringCache.get(c.fieldName()));
-		} else if (code instanceof Bytecode.IndirectInvoke) {
+			break;
+		}
+		case Bytecode.OPCODE_indirectinvoke: {
 			Bytecode.IndirectInvoke c = (Bytecode.IndirectInvoke) code;
 			output.write_uv(typeCache.get(c.type()));
-		} else if (code instanceof Bytecode.Invoke) {
+			break;
+		}
+		case Bytecode.OPCODE_invoke: {
 			Bytecode.Invoke c = (Bytecode.Invoke) code;
 			output.write_uv(typeCache.get(c.type()));
 			output.write_uv(nameCache.get(c.name()));
-		} else if (code instanceof Bytecode.Lambda) {
+			break;
+		}
+		case Bytecode.OPCODE_lambda: {
 			Bytecode.Lambda c = (Bytecode.Lambda) code;
 			output.write_uv(typeCache.get(c.type()));
-		} else if (code instanceof Bytecode.Switch) {
+			break;
+		}		
+		case Bytecode.OPCODE_switch: {
 			Bytecode.Switch c = (Bytecode.Switch) code;
 			Bytecode.Case[] cases = c.cases();
 			output.write_uv(cases.length);
@@ -725,13 +900,9 @@ public final class WyilFileWriter {
 					output.write_uv(constantCache.get(values[j]));
 				}
 			}
-		} else if(code instanceof Bytecode.Compound) {
-			Bytecode.Compound cb = (Bytecode.Compound) code;
-			output.write_uv(cb.numBlocks());
-			for(int i=0;i!=cb.numBlocks();++i) {
-				output.write_uv(cb.block(i));
-			}
-		} 
+			break;
+		}
+		}
 	}
 
 	private int generateModifiers(Collection<Modifier> modifiers) {
@@ -793,39 +964,37 @@ public final class WyilFileWriter {
 	private void buildPools(WyilFile.Type declaration) {
 		addStringItem(declaration.name());
 		addTypeItem(declaration.type());
-		for(Location loc : declaration.locations()) {
-			buildPools(loc);
+		for(SyntaxTree.Expr e : declaration.getExpressions()) {
+			buildPools(e);
 		}
 	}
 
 	private void buildPools(WyilFile.FunctionOrMethod declaration) {
 		addStringItem(declaration.name());
 		addTypeItem(declaration.type());
-		for(Location loc : declaration.locations()) {
-			buildPools(loc);
+		for(SyntaxTree.Expr e : declaration.getExpressions()) {
+			buildPools(e);
 		}
-		for(Bytecode.Block block : declaration.blocks()) {
+		for(SyntaxTree.Block block : declaration.getBlocks()) {
 			buildPools(block);
 		}
 	}
 
-	private void buildPools(Location loc) {
-		for(int i=0;i!=loc.size();++i) {
-			addTypeItem(loc.type(i));
-		}
-		if(loc instanceof Location.Variable) {
-			Location.Variable v = (Location.Variable) loc;
-			addStringItem(v.name());			
+	private void buildPools(SyntaxTree.Expr expr) {
+		addTypeItem(expr.getType());		
+		if (expr instanceof SyntaxTree.Variable) {
+			SyntaxTree.Variable v = (SyntaxTree.Variable) expr;
+			addStringItem(v.name());
 		} else {
-			Location.Operand o = (Location.Operand) loc;
-			buildPools(o.value());
+			SyntaxTree.Operator<?> o = (SyntaxTree.Operator<?>) expr;
+			buildPools(o.getBytecode());
 		}
 	}
 	
-	private void buildPools(Bytecode.Block block) {
+	private void buildPools(SyntaxTree.Block block) {
 		for (int i = 0; i != block.size(); ++i) {
-			Bytecode.Entry entry = block.get(i);
-			buildPools(entry.code());			
+			SyntaxTree.Stmt<?> entry = block.get(i);
+			buildPools(entry.getBytecode());			
 			// TODO: handle entry attributes
 		}
 	}
@@ -837,23 +1006,21 @@ public final class WyilFileWriter {
 		} else if (code instanceof Bytecode.FieldLoad) {
 			Bytecode.FieldLoad c = (Bytecode.FieldLoad) code;
 			addStringItem(c.fieldName());
-		}else if (code instanceof Bytecode.Invoke) {
+		} else if (code instanceof Bytecode.Invoke) {
 			Bytecode.Invoke c = (Bytecode.Invoke) code;
 			addNameItem(c.name());
+			addTypeItem(c.type());
 		} else if (code instanceof Bytecode.Switch) {
 			Bytecode.Switch s = (Bytecode.Switch) code;
 			for (Bytecode.Case cs : s.cases()) {
-				for(Constant c : cs.values()) {
+				for (Constant c : cs.values()) {
 					addConstantItem(c);
 				}
 			}
-		} else if(code instanceof Bytecode.Convert) {
-			Bytecode.Convert b = (Bytecode.Convert) code;
-			addTypeItem(b.type());
-		} else if(code instanceof Bytecode.IndirectInvoke) {
+		} else if (code instanceof Bytecode.IndirectInvoke) {
 			Bytecode.IndirectInvoke b = (Bytecode.IndirectInvoke) code;
 			addTypeItem(b.type());
-		} else if(code instanceof Bytecode.Invoke) {
+		} else if (code instanceof Bytecode.Invoke) {
 			Bytecode.Invoke b = (Bytecode.Invoke) code;
 			addTypeItem(b.type());
 		}

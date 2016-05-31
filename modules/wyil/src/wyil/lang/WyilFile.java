@@ -392,15 +392,15 @@ public final class WyilFile implements CompilationUnit {
 	public static abstract class Declaration extends Block {
 		private String name;
 		private List<Modifier> modifiers;
-		private List<Location> locations;
-		private List<Bytecode.Block> blocks;
+		private List<SyntaxTree.Expr> expressions;
+		private List<SyntaxTree.Block> blocks;
 		
 		public Declaration(WyilFile parent, String name, Collection<Modifier> modifiers, Attribute... attributes) {
 			super(parent, attributes);
 			this.name = name;
 			this.modifiers = new ArrayList<Modifier>(modifiers);
-			this.locations = new ArrayList<Location>();
-			this.blocks = new ArrayList<Bytecode.Block>();
+			this.expressions = new ArrayList<SyntaxTree.Expr>();
+			this.blocks = new ArrayList<SyntaxTree.Block>();
 		}
 
 		public Declaration(WyilFile parent, String name, Collection<Modifier> modifiers,
@@ -408,8 +408,8 @@ public final class WyilFile implements CompilationUnit {
 			super(parent, attributes);
 			this.name = name;
 			this.modifiers = new ArrayList<Modifier>(modifiers);
-			this.locations = new ArrayList<Location>();
-			this.blocks = new ArrayList<Bytecode.Block>();
+			this.expressions = new ArrayList<SyntaxTree.Expr>();
+			this.blocks = new ArrayList<SyntaxTree.Block>();
 		}
 
 		public String name() {
@@ -424,19 +424,77 @@ public final class WyilFile implements CompilationUnit {
 			return modifiers.contains(modifier);
 		}
 		
-		public Location getLocation(int location) {
-			return locations.get(location);
+		/**
+		 * Convert an expression index into an actual expression
+		 * 
+		 * @param indices
+		 * @return
+		 */
+		public SyntaxTree.Expr getExpression(int index) {
+			return expressions.get(index);
 		}
 		
-		public Bytecode.Block getBlock(int block) {
+		/**
+		 * Convert a list of expression indices into actual expressions
+		 * 
+		 * @param indices
+		 * @return
+		 */
+		public SyntaxTree.Expr[] getExpressions(List<Integer> indices) {
+			SyntaxTree.Expr[] rs = new SyntaxTree.Expr[indices.size()];
+			for (int i = 0; i != rs.length; ++i) {
+				rs[i] = getExpression(indices.get(i));
+			}
+			return rs;
+		}
+		
+		/**
+		 * Convert a list of expression indices into actual expressions
+		 * 
+		 * @param indices
+		 * @return
+		 */
+		public SyntaxTree.Expr[] getExpressions(int... indices) {
+			SyntaxTree.Expr[] rs = new SyntaxTree.Expr[indices.length];
+			for (int i = 0; i != rs.length; ++i) {
+				rs[i] = getExpression(indices[i]);
+			}
+			return rs;
+		}
+		
+		/**
+		 * Get the complete set of expressions declared in this declaration
+		 * 
+		 * @return
+		 */
+		public List<SyntaxTree.Expr> getExpressions() {
+			return expressions;
+		}		
+
+		/**
+		 * Determine the index of a given expression in this declaration. If no
+		 * such expression exists, then an exception is thrown. This method will
+		 * only look for exact matches, rather than equivalent matches (i.e.
+		 * expressions which are equals() but not "==").
+		 * 
+		 * @param expr
+		 * @return
+		 */
+		public int getExpressionIndex(SyntaxTree.Expr expr) {
+			for (int i = 0; i != expressions.size(); ++i) {
+				if (expressions.get(i) == expr) {
+					// match
+					return i;
+				}
+			}
+			throw new IllegalArgumentException("invalid expression");
+		}
+	
+		public SyntaxTree.Block getBlock(int block) {
 			return blocks.get(block);
 		}
 		
-		public List<Location> locations() {
-			return locations;
-		}
-		
-		public List<Bytecode.Block> blocks() {
+		public List<SyntaxTree.Block> getBlocks() {
 			return blocks;
 		}
 	}
@@ -453,28 +511,44 @@ public final class WyilFile implements CompilationUnit {
 	 */
 	public static final class Type extends Declaration {
 		private final wyil.lang.Type type;
-		private final List<Integer> invariants;
+		private final List<Integer> invariantIndices;
 
 		public Type(WyilFile parent, Collection<Modifier> modifiers, String name, wyil.lang.Type type,
 				Attribute... attributes) {
 			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.invariants = new ArrayList<Integer>();
+			this.invariantIndices = new ArrayList<Integer>();
 		}
 
 		public Type(WyilFile parent, Collection<Modifier> modifiers, String name, wyil.lang.Type type,
 				Collection<Attribute> attributes) {
 			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.invariants = new ArrayList<Integer>();
+			this.invariantIndices = new ArrayList<Integer>();
 		}
 
 		public wyil.lang.Type type() {
 			return type;
 		}
 		
-		public List<Integer> invariants() {
-			return invariants;
+		/**
+		 * Get the list of expressions that make up the invariant of this
+		 * type.  This list maybe empty, but it cannot be null.
+		 * 
+		 * @return
+		 */
+		public SyntaxTree.Expr[] getInvariants() {
+			return getExpressions(invariantIndices);
+		}
+		
+		/**
+		 * Get the list of indices for the expressions that make up the
+		 * invariant of this type. This list maybe empty, but it cannot be null.
+		 * 
+		 * @return
+		 */
+		public List<Integer> getInvariantIndices() {
+			return invariantIndices;
 		}
 	}
 
@@ -511,60 +585,92 @@ public final class WyilFile implements CompilationUnit {
 	public static final class FunctionOrMethod extends Declaration {
 		private final wyil.lang.Type.FunctionOrMethod type;
 		/**
-		 * Location indices for any preconditions 
+		 * Expression indices for any preconditions 
 		 */
-		private final List<Integer> preconditions;
+		private final List<Integer> preconditionIndices;
 		/**
-		 * Location indices for any postconditions 
+		 * Expression indices for any postconditions 
 		 */
-		private final List<Integer> postconditions;
+		private final List<Integer> postconditionIndices;
 
 		public FunctionOrMethod(WyilFile parent, Collection<Modifier> modifiers, String name,
 				wyil.lang.Type.FunctionOrMethod type, Attribute... attributes) {
 			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.preconditions = new ArrayList<Integer>();
-			this.postconditions = new ArrayList<Integer>();
+			this.preconditionIndices = new ArrayList<Integer>();
+			this.postconditionIndices = new ArrayList<Integer>();
 		}
 
 		public FunctionOrMethod(WyilFile parent, Collection<Modifier> modifiers, String name,
 				wyil.lang.Type.FunctionOrMethod type, Collection<Attribute> attributes) {
 			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.preconditions = new ArrayList<Integer>();
-			this.postconditions = new ArrayList<Integer>();
+			this.preconditionIndices = new ArrayList<Integer>();
+			this.postconditionIndices = new ArrayList<Integer>();
 		}
 
 		public wyil.lang.Type.FunctionOrMethod type() {
 			return type;
 		}
 
+		/**
+		 * Check whether this represents a function declaration or not.
+		 * 
+		 * @return
+		 */
 		public boolean isFunction() {
 			return type instanceof wyil.lang.Type.Function;
 		}
 
+		/**
+		 * Check whether this represents a method declaration or not.
+		 * 
+		 * @return
+		 */
 		public boolean isMethod() {
 			return type instanceof wyil.lang.Type.Method;
 		}
 
 		/**
-		 * Get the list of location indices that represent the preconditions of
-		 * this function/method.
+		 * Get the list of expressions that make up the precondition of this
+		 * function/method.  This list maybe empty, but it cannot be null.
 		 * 
 		 * @return
 		 */
-		public List<Integer> preconditions() {
-			return preconditions;
+		public SyntaxTree.Expr[] getPrecondition() {
+			return getExpressions(preconditionIndices);
 		}
 
 		/**
-		 * Get the list of location indices that represent the postconditions of
-		 * this function/method.
+		 * Get the list of expressions that make up the postcondition of this
+		 * function/method.  This list maybe empty, but it cannot be null.
 		 * 
 		 * @return
 		 */
-		public List<Integer> postconditions() {
-			return postconditions;
+		public SyntaxTree.Expr[] getPostcondition() {
+			return getExpressions(postconditionIndices);
+		}
+		
+		/**
+		 * Get the list of indices for the expressions that make up the
+		 * precondition of this function/method. This list maybe empty, but it
+		 * cannot be null.
+		 * 
+		 * @return
+		 */
+		public List<Integer> getPreconditionIndices() {
+			return preconditionIndices;
+		}
+
+		/**
+		 * Get the list of indices for the expressions that make up the
+		 * postcondition of this function/method. This list maybe empty, but it
+		 * cannot be null.
+		 * 
+		 * @return
+		 */
+		public List<Integer> getPostconditionIndices() {
+			return postconditionIndices;
 		}
 	}
 }

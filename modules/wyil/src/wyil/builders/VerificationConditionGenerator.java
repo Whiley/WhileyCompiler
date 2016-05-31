@@ -21,7 +21,7 @@ import wycs.syntax.TypePattern;
 import wycs.syntax.WyalFile;
 import wyil.lang.Bytecode;
 import wyil.lang.BytecodeForest;
-import wyil.lang.Location;
+import wyil.lang.SyntaxTree;
 import wyil.lang.Constant;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
@@ -153,11 +153,11 @@ public class VerificationConditionGenerator {
 		Expr invariant = null;
 
 		if (forest.numRoots() > 0) {
-			Location.Variable v = (Location.Variable) forest.getLocation(0);
+			SyntaxTree.Variable v = (SyntaxTree.Variable) forest.getExpression(0);
 			var = new Expr.Variable(v.name(), v.attributes());
 			for (int i = 0; i != forest.numRoots(); ++i) {
 				int index = forest.getRoot(i);
-				Expr clause = translate(forest.getLocation(index));
+				Expr clause = translate(forest.getExpression(index));
 				// FIXME: this is ugly. Instead, WyAL files could support
 				// multiple invariant clauses?
 				if (invariant == null) {
@@ -203,14 +203,14 @@ public class VerificationConditionGenerator {
 	 *            The bytecode location to be translated
 	 * @return
 	 */
-	private Expr translate(Location loc) {
-		if (loc instanceof Location.Variable) {
-			Location.Variable var = (Location.Variable) loc;
+	private Expr translate(SyntaxTree loc) {
+		if (loc instanceof SyntaxTree.Variable) {
+			SyntaxTree.Variable var = (SyntaxTree.Variable) loc;
 			return new Expr.Variable(var.name(), var.attributes());
 		} else {
-			Location.Operand operand = (Location.Operand) loc;
-			Bytecode.Expr bytecode = operand.value();
-			switch (bytecode.opcode()) {
+			SyntaxTree.Operator operand = (SyntaxTree.Operator) loc;
+			Bytecode.Expr bytecode = operand.getBytecode();
+			switch (bytecode.getOpcode()) {
 			case Bytecode.OPCODE_const:
 				return translate((Bytecode.Const) bytecode, operand);
 			case Bytecode.OPCODE_convert:
@@ -233,41 +233,41 @@ public class VerificationConditionGenerator {
 		}
 	}
 
-	private Expr translate(Bytecode.Const code, Location.Operand context) {
+	private Expr translate(Bytecode.Const code, SyntaxTree.Operator context) {
 		Value value = convert(code.constant(),context);
 	}
 
-	private Expr translate(Bytecode.Convert code, Location.Operand context) {
+	private Expr translate(Bytecode.Convert code, SyntaxTree.Operator context) {
 		// FIXME: need to implemet this
 		throw new RuntimeException("Implement me!");
 	}
 
-	private Expr translate(Bytecode.FieldLoad code, Location.Operand context) {
+	private Expr translate(Bytecode.FieldLoad code, SyntaxTree.Operator context) {
 		// FIXME: need to implemet this
 		throw new RuntimeException("Implement me!");
 	}
 
-	private Expr translate(Bytecode.IndirectInvoke code, Location.Operand context) {
+	private Expr translate(Bytecode.IndirectInvoke code, SyntaxTree.Operator context) {
 		// FIXME: need to implemet this
 		throw new RuntimeException("Implement me!");
 	}
 
-	private Expr translate(Bytecode.Invoke code, Location.Operand context) {
+	private Expr translate(Bytecode.Invoke code, SyntaxTree.Operator context) {
 		// FIXME: need to implemet this
 		throw new RuntimeException("Implement me!");
 	}
 
-	private Expr translate(Bytecode.Lambda code, Location.Operand context) {
+	private Expr translate(Bytecode.Lambda code, SyntaxTree.Operator context) {
 		// FIXME: need to implemet this
 		throw new RuntimeException("Implement me!");
 	}
 
-	private Expr translate(Bytecode.Operator code, Location.Operand context) {
+	private Expr translate(Bytecode.Operator code, SyntaxTree.Operator context) {
 		// FIXME: need to implemet this
 		throw new RuntimeException("Implement me!");
 	}
 
-	private Expr translate(Bytecode.Quantifier code, Location.Operand context) {
+	private Expr translate(Bytecode.Quantifier code, SyntaxTree.Operator context) {
 		// FIXME: need to implemet this
 		throw new RuntimeException("Implement me!");
 	}

@@ -90,29 +90,29 @@ public class ModuleCheck implements Transform<WyilFile> {
 
 	protected void checkFunctionPure(int blockID, HashSet<Integer> visited, WyilFile.Declaration enclosing) {
 		visited.add(blockID);
-		Bytecode.Block block = enclosing.getBlock(blockID);
+		SyntaxTree.Block block = enclosing.getBlock(blockID);
 		for (int i = 0; i != block.size(); ++i) {
-			Bytecode.Entry e = block.get(i);
-			Bytecode code = e.code();
+			SyntaxTree.Stmt<?> e = block.get(i);
+			Bytecode code = e.getBytecode();
 			if (code instanceof Bytecode.Invoke && ((Bytecode.Invoke) code).type() instanceof Type.Method) {
 				// internal message send
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, e.attributes());
 			} else if (code instanceof Bytecode.IndirectInvoke
 					&& ((Bytecode.IndirectInvoke) code).type() instanceof Type.Method) {
 				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, e.attributes());
-			} else if (code.opcode() == Bytecode.OPCODE_newobject) {
+			} else if (code.getOpcode() == Bytecode.OPCODE_newobject) {
 				syntaxError(errorMessage(ALLOCATION_NOT_PERMITTED_IN_FUNCTION), filename, e.attributes());
-			} else if (code.opcode() == Bytecode.OPCODE_dereference) {
+			} else if (code.getOpcode() == Bytecode.OPCODE_dereference) {
 				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, e.attributes());
-			} else if (code instanceof Bytecode.Compound) {
-				Bytecode.Compound a = (Bytecode.Compound) code;
-				for (int j = 0; j != a.numBlocks(); ++j) {
-					int subblock = a.block(j);
+			} else if (code instanceof Bytecode.Stmt) {
+				Bytecode.Stmt a = (Bytecode.Stmt) code;
+				for (int j = 0; j != a.numberOfBlocks(); ++j) {
+					int subblock = a.getBlock(j);
 					// The visited check is necessary to handle break and
 					// continue bytecodes. These contain the block identifier of
 					// their enclosing loop and, hence, following this would
 					// lead to an infinite loop.
-					if(!visited.contains(subblock)) {
+					if (!visited.contains(subblock)) {
 						checkFunctionPure(subblock, visited, enclosing);
 					}
 				}

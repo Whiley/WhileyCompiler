@@ -364,7 +364,7 @@ public class VcUtils {
 			Type[] environment, BytecodeForest forest) {
 		//
 		try {
-			switch (code.opcode()) {
+			switch (code.getOpcode()) {
 			case Bytecode.OPCODE_div:
 			case Bytecode.OPCODE_rem:
 				return divideByZeroCheck((Bytecode.Operator) code, branch);
@@ -395,7 +395,7 @@ public class VcUtils {
 	 * @return
 	 */
 	public Pair<String, Expr>[] divideByZeroCheck(Bytecode.Operator binOp, VcBranch branch) {
-		Expr rhs = branch.read(binOp.operand(1));
+		Expr rhs = branch.read(binOp.getOperand(1));
 		Value zero;
 		if (binOp.type(0) instanceof Type.Int) {
 			zero = Value.Integer(BigInteger.ZERO);
@@ -420,8 +420,8 @@ public class VcUtils {
 	 */
 	public Pair<String,Expr>[] indexOutOfBoundsChecks(Bytecode.Operator code, VcBranch branch) {
 		if (code.type(0) instanceof Type.EffectiveArray) {
-			Expr src = branch.read(code.operand(0));
-			Expr idx = branch.read(code.operand(1));
+			Expr src = branch.read(code.getOperand(0));
+			Expr idx = branch.read(code.getOperand(1));
 			Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
 					idx.attributes());
 			Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF, src,
@@ -450,7 +450,7 @@ public class VcUtils {
 	 * @return
 	 */
 	public Pair<String,Expr>[] arrayGeneratorChecks(Bytecode.Operator code, VcBranch branch) {
-		Expr idx = branch.read(code.operand(1));
+		Expr idx = branch.read(code.getOperand(1));
 		Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO),
 				idx.attributes());
 		return new Pair[] {
@@ -480,7 +480,7 @@ public class VcUtils {
 		//
 		List<wyil.lang.Attribute> attributes = forest.get(branch.pc()).attributes();
 		List<Type> code_type_params = code.type(0).params();		
-		int[] code_operands = code.operands();
+		int[] code_operands = code.getOperands();
 		for (int i = 0; i != code_operands.length; ++i) {
 			Type t = code_type_params.get(i);
 			if (containsNominal(t, attributes)) {
@@ -589,7 +589,7 @@ public class VcUtils {
 		WyilFile m = e.read();
 		WyilFile.FunctionOrMethod method = m.functionOrMethod(name.name(), fun);
 
-		return method.preconditions().length;
+		return method.getPrecondition().length;
 	}
 
 	/**
@@ -655,11 +655,11 @@ public class VcUtils {
 	 * @return
 	 */
 	public static Pair<String[], Type[]> parseRegisterDeclarations(BytecodeForest forest) {
-		List<BytecodeForest.Location> regs = forest.locations();
+		List<Expr.Location> regs = forest.getExpressions();
 		String[] prefixes = new String[regs.size()];
 		Type[] types = new Type[regs.size()];
 		for (int i = 0; i != prefixes.length; ++i) {
-			BytecodeForest.Location d = regs.get(i);			
+			Expr.Location d = regs.get(i);			
 			prefixes[i] = d.name();
 			types[i] = d.type();
 		}

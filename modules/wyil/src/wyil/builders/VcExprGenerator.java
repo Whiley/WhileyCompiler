@@ -123,8 +123,8 @@ public class VcExprGenerator {
 	protected void transform(Bytecode.Operator code, BytecodeForest forest, VcBranch branch) {
 		switch(code.kind()) {
 		case ASSIGN:
-			for (int i = 0; i != code.operands().length; ++i) {
-				branch.write(code.target(i), branch.read(code.operand(i)));
+			for (int i = 0; i != code.getOperands().length; ++i) {
+				branch.write(code.target(i), branch.read(code.getOperand(i)));
 			}
 			break;
 		case NOT:
@@ -162,8 +162,8 @@ public class VcExprGenerator {
 			break;
 		}
 		case ARRAYINDEX: {
-			Expr src = branch.read(code.operand(0));
-			Expr idx = branch.read(code.operand(1));
+			Expr src = branch.read(code.getOperand(0));
+			Expr idx = branch.read(code.getOperand(1));
 			branch.write(code.target(0),
 					new Expr.IndexOf(src, idx, VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes())));
 			break;
@@ -185,7 +185,7 @@ public class VcExprGenerator {
 	
 	protected void transform(Bytecode.Convert code, BytecodeForest forest, VcBranch branch) {
 		Collection<Attribute> attributes = VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes());
-		Expr result = branch.read(code.operand(0));
+		Expr result = branch.read(code.getOperand(0));
 		SyntacticType type = utils.convert(code.type(), forest.get(branch.pc()).attributes());
 		branch.write(code.target(0), new Expr.Cast(type, result, attributes));
 	}
@@ -204,7 +204,7 @@ public class VcExprGenerator {
 		Type.EffectiveRecord er = (Type.EffectiveRecord) code.type(0); 
 		ArrayList<String> fields = new ArrayList<String>(er.fields().keySet());
 		Collections.sort(fields);
-		Expr src = branch.read(code.operand(0));
+		Expr src = branch.read(code.getOperand(0));
 		Expr index = new Expr.Constant(Value.Integer(BigInteger.valueOf(fields.indexOf(code.fieldName()))));
 		Expr result = new Expr.IndexOf(src, index, VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes()));
 		branch.write(code.target(0), result);
@@ -221,7 +221,7 @@ public class VcExprGenerator {
 			VcBranch branch) throws Exception {
 		Collection<wyil.lang.Attribute> attributes =  forest.get(branch.pc()).attributes();
 		Collection<Attribute> wyccAttributes = VcUtils.toWycsAttributes(attributes);
-		int[] code_operands = code.operands();
+		int[] code_operands = code.getOperands();
 		int[] targets = code.targets();
 		
 		if (targets.length > 0) {
@@ -273,8 +273,8 @@ public class VcExprGenerator {
 		Type elementType = ((Type.Array) code.type(0)).element();
 		Collection<wyil.lang.Attribute> wyilAttributes = forest.get(branch.pc()).attributes();
 		Collection<Attribute> attributes = VcUtils.toWycsAttributes(wyilAttributes);
-		Expr element = branch.read(code.operand(0));
-		Expr count = branch.read(code.operand(1));
+		Expr element = branch.read(code.getOperand(0));
+		Expr count = branch.read(code.getOperand(1));
 		branch.havoc(code.target(0));
 		Expr arg = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { branch.read(code.target(0)), element, count },
 				attributes);
@@ -348,7 +348,7 @@ public class VcExprGenerator {
 	 */
 	protected void transformUnary(Expr.Unary.Op operator, Bytecode code, VcBranch branch,
 			BytecodeForest forest) {
-		Expr lhs = branch.read(code.operand(0));
+		Expr lhs = branch.read(code.getOperand(0));
 		branch.write(code.target(0),
 				new Expr.Unary(operator, lhs, VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes())));
 	}
@@ -368,8 +368,8 @@ public class VcExprGenerator {
 	 */
 	protected void transformBinary(Expr.Binary.Op operator, Bytecode code, VcBranch branch,
 			BytecodeForest forest) {
-		Expr lhs = branch.read(code.operand(0));
-		Expr rhs = branch.read(code.operand(1));
+		Expr lhs = branch.read(code.getOperand(0));
+		Expr rhs = branch.read(code.getOperand(1));
 
 		if (operator != null) {
 			branch.write(code.target(0),
@@ -397,7 +397,7 @@ public class VcExprGenerator {
 	 */
 	protected void transformNary(Expr.Nary.Op operator, Bytecode code, VcBranch branch,
 			BytecodeForest forest) {
-		int[] code_operands = code.operands();
+		int[] code_operands = code.getOperands();
 		Expr[] vals = new Expr[code_operands.length];
 		for (int i = 0; i != vals.length; ++i) {
 			vals[i] = branch.read(code_operands[i]);
@@ -430,6 +430,6 @@ public class VcExprGenerator {
 		}
 		WyilFile m = e.read();
 		WyilFile.FunctionOrMethod method = m.functionOrMethod(name.name(), fun);
-		return method.postconditions().length;
+		return method.getPostcondition().length;
 	}
 }

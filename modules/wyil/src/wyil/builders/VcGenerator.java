@@ -155,9 +155,9 @@ public class VcGenerator {
 		this.method = method;
 
 		Type.FunctionOrMethod fmm = method.type();
-		BytecodeForest forest = method.code();
-		int[] preconditions = method.preconditions();
-		int[] postconditions = method.postconditions();				
+		BytecodeForest forest = method.getBytecode();
+		int[] preconditions = method.getPrecondition();
+		int[] postconditions = method.getPostcondition();				
 		// First, translate pre- and post-conditions into macro blocks. These
 		// can then be used in various places to assume or enforce pre /
 		// post-conditions. For example, when ensure a pre-condition is met at
@@ -246,12 +246,12 @@ public class VcGenerator {
 					List<wyil.lang.Attribute> attributes = forest.get(branch.pc()).attributes();
 					Collection<wycc.lang.Attribute> wycsAttributes = VcUtils.toWycsAttributes(attributes);
 					// Find the return statement in question
-					Bytecode.Return ret = (Bytecode.Return) forest.get(branch.pc()).code();
+					Bytecode.Return ret = (Bytecode.Return) forest.get(branch.pc()).getBytecode();
 					// Construct verification check to ensure that return
 					// type invariant holds
 					// FIXME: need proper support for multiple returns
-					Expr returnedOperand = branch.read(ret.operand(0));					
-					Type rawType = expand(bodyEnvironment[ret.operand(0)],attributes);
+					Expr returnedOperand = branch.read(ret.getOperand(0));					
+					Type rawType = expand(bodyEnvironment[ret.getOperand(0)],attributes);
 					Expr rawTest = new Expr.Is(returnedOperand,
 							utils.convert(rawType, attributes));
 					// FIXME: needs to handle all returns
@@ -421,7 +421,7 @@ public class VcGenerator {
 			} else {
 				// Continue executing this branch as it is still within the
 				// scope of this block.
-				Bytecode code = forest.get(pc).code();
+				Bytecode code = forest.get(pc).getBytecode();
 				// Now, dispatch statements. Control statements are treated
 				// specially from unit statements.
 				if (code instanceof Bytecode.AssertOrAssume) {
@@ -1055,7 +1055,7 @@ public class VcGenerator {
 		VcBranch trueBranch = branch.fork();
 		VcBranch falseBranch = branch.fork();
 		// Second assume the condition on each branch
-		Expr.Binary trueTest = buildCondition(branch.read(code.operand(0)),forest,branch);
+		Expr.Binary trueTest = buildCondition(branch.read(code.getOperand(0)),forest,branch);
 		trueBranch.assume(trueTest);
 		falseBranch.assume(utils.invert(trueTest));
 		// Third, dispatch branches to their targets
@@ -1109,9 +1109,9 @@ public class VcGenerator {
 		SyntacticType trueType = utils.convert(code.rightOperand(), attributes);
 		SyntacticType falseType = new SyntacticType.Negation(utils.convert(code.rightOperand(),
 				attributes), wycsAttributes);
-		trueBranch.assume(new Expr.Is(branch.read(code.operand(0)), trueType,
+		trueBranch.assume(new Expr.Is(branch.read(code.getExpression(0)), trueType,
 				wycsAttributes));
-		falseBranch.assume(new Expr.Is(branch.read(code.operand(0)), falseType,
+		falseBranch.assume(new Expr.Is(branch.read(code.getExpression(0)), falseType,
 				wycsAttributes));
 		// Finally dispatch the branches
 		falseBranch.goTo(branch.pc().next());
@@ -1153,7 +1153,7 @@ public class VcGenerator {
 			Constant caseValue = code.branches().get(i).first();
 			// Second, on the new branch we need assume that the variable being
 			// switched on matches the given value.
-			Expr src = branch.read(code.operand(0));
+			Expr src = branch.read(code.getOperand(0));
 			Expr constant = new Expr.Constant(utils.convert(caseValue, forest, branch),
 					VcUtils.toWycsAttributes(forest.get(branch.pc()).attributes()));
 			caseBranch.assume(new Expr.Binary(Expr.Binary.Op.EQ, src, constant,
