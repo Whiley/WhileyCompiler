@@ -107,10 +107,8 @@ public class AllValidTests {
 		IGNORED.put("TypeEquals_Valid_41", "Issue ???");		
 
 		// Fails and was not listed as test case before parameterizing
-		IGNORED.put("DoWhile_Valid_7", "#609");
 		IGNORED.put("Function_Valid_11", "unknown");
-		IGNORED.put("Function_Valid_15", "unknown");
-		IGNORED.put("While_Valid_48", "#609");		
+		IGNORED.put("Function_Valid_15", "unknown");		
 	}
 
 	/**

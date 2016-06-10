@@ -1,0 +1,3 @@
+./test.whiley:9: loop invariant not preserved
+    while i < n where i >= 0 && i <= n
+                      ^^^^^^^^^^^^^^^^

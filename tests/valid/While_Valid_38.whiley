@@ -10,7 +10,7 @@ ensures r ==> all { j in 1 .. |items| | items[j-1] <= items[j] }:
 
     while i < |items|
     where i >= 1 && i <= |items|
-    where all { j in 1 .. i | items[j-1] < items[j] }:
+    where all { j in 1 .. i | items[j-1] <= items[j] }:
         //
         if items[i-1] > items[i]:
             return false

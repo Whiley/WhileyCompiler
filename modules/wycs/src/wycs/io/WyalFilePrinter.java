@@ -249,14 +249,21 @@ public class WyalFilePrinter {
 			writeWithoutBraces(wf,e.rightOperand,indent);
 			break;
 		case OR:
-			out.println("case:");
+			out.println("either:");
 			indent(indent+1);
 			writeWithoutBraces(wf,e.leftOperand,indent+1);
 			out.println();
 			indent(indent);
-			out.println("case:");
+			out.println("or:");
 			indent(indent+1);
 			writeWithoutBraces(wf,e.rightOperand,indent+1);
+			break;
+		case ARRAYGEN:
+			out.print("[");
+			writeWithOptionalBraces(wf,e.leftOperand,indent);
+			out.print(";");
+			writeWithOptionalBraces(wf,e.rightOperand,indent);
+			out.print("]");
 			break;
 		default:
 			writeWithOptionalBraces(wf,e.leftOperand,indent);
@@ -386,8 +393,16 @@ public class WyalFilePrinter {
 	}
 
 	private static boolean needsBraces(Expr e) {
-		 if(e instanceof Expr.Binary || e instanceof Expr.Cast) {			 
+		 if(e instanceof Expr.Cast) {			 
 			 return true;
+		 } else if(e instanceof Expr.Binary) {
+			 Expr.Binary b = (Expr.Binary) e;
+			 switch(b.op) {
+			 case ARRAYGEN:
+				 break;
+			 default:
+				 return true;
+			 }
 		 }
 		 return false;
 	}

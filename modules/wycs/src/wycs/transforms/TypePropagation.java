@@ -344,7 +344,7 @@ public class TypePropagation implements Transform<WyalFile> {
 		SemanticType rhs_type = propagate(e.rightOperand, rightEnvironment,
 				generics, context);
 		
-		if (SemanticType.And(lhs_type, rhs_type) instanceof SemanticType.Void) {
+		if (e.op != Expr.Binary.Op.ARRAYGEN && SemanticType.And(lhs_type, rhs_type) instanceof SemanticType.Void) {
 			// This is useful to sanity check that the operands make sense. For
 			// example, the expression "1.0 == 1" does not yield an automaton
 			// that reduces to "True" (i.e. because the Equality state has type
@@ -380,7 +380,10 @@ public class TypePropagation implements Transform<WyalFile> {
 		case GTEQ:
 			checkIsSubtype(SemanticType.IntOrReal, lhs_type, e.leftOperand, context);
 			checkIsSubtype(SemanticType.IntOrReal, rhs_type, e.rightOperand, context);
-			return SemanticType.Or(lhs_type, rhs_type);				
+			return SemanticType.Or(lhs_type, rhs_type);	
+		case ARRAYGEN:
+			checkIsSubtype(SemanticType.Int, rhs_type, e.rightOperand, context);
+			return SemanticType.Array(lhs_type);
 		}
 
 		internalFailure("unknown binary expression encountered (" + e + ")",
@@ -606,6 +609,8 @@ public class TypePropagation implements Transform<WyalFile> {
 			case GT:
 			case GTEQ:
 				return SemanticType.Bool;
+			case ARRAYGEN:
+				return type;
 			}
 		} else if (e instanceof Expr.Nary) {
 			Expr.Nary ue = (Expr.Nary) e;

@@ -221,7 +221,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 
 		long endTime = System.currentTimeMillis();
-		builder.logTimedMessage("[" + filename + "] Verified assertion #" + number + " (steps: " + result.numberOfSteps + ")",
+		builder.logTimedMessage("[" + filename + "] Verified assertion #" + number + " (steps " + result.numberOfSteps + ")",
 				endTime - startTime, startMemory - runtime.freeMemory());
 	}
 
@@ -310,6 +310,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			return SolverUtil.LessThan(automaton, type, lhs, rhs);
 		case LTEQ:
 			return SolverUtil.LessThanEq(automaton, type, lhs, rhs);
+		case ARRAYGEN:
+			return ArrayGen(automaton,lhs,rhs);
 		}
 		internalFailure("unknown binary bytecode encountered (" + code + ")", filename, code);
 		return -1;
@@ -881,7 +883,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 			if(step.before() != step.after()) {
 				Automaton automaton = states.get(step.before()).automaton();
 				System.out.println("-- Step " + count + " (" + a.rule().annotation("name") + ", " + automaton.nStates() + " states) --");				
-				//wyrl.util.Runtime.debug(automaton, Solver.SCHEMA, "And", "Or");
+				wyrl.util.Runtime.debug(automaton, Solver.SCHEMA, "And", "Or");
 				count = count + 1;
 				good.inc((String) a.rule().annotation("name"));
 			} else {

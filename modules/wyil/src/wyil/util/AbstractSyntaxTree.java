@@ -9,6 +9,10 @@ import wyil.lang.SyntaxTree;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
 import wyil.lang.SyntaxTree.Expr;
+import wyil.lang.SyntaxTree.Operator;
+import wyil.lang.SyntaxTree.PositionalOperator;
+import wyil.lang.SyntaxTree.Stmt;
+import wyil.lang.SyntaxTree.Variable;
 
 public abstract class AbstractSyntaxTree extends SyntacticElement.Impl {
 
@@ -27,6 +31,55 @@ public abstract class AbstractSyntaxTree extends SyntacticElement.Impl {
 	 */
 	public abstract WyilFile.Declaration getEnclosingDeclaration();
 
+	// ============================================================
+	// Constructors
+	// ============================================================
+
+	public static Variable Variable(Type type, String name, WyilFile.Declaration parent, Attribute... attributes) {
+		return new AbstractSyntaxTree.Variable(type, name, parent, attributes);
+	}
+	
+	public static Variable Variable(Type type, String name, WyilFile.Declaration parent, List<Attribute> attributes) {
+		return new AbstractSyntaxTree.Variable(type, name, parent, attributes);
+	}
+	
+	public static Operator<Bytecode.Expr> Operator(Type type, Bytecode.Expr bytecode, WyilFile.Declaration parent,
+			Attribute... attributes) {
+		return new AbstractSyntaxTree.Operator<Bytecode.Expr>(type, bytecode, parent, attributes);
+	}
+
+	public static Operator<Bytecode.Expr> Operator(Type type, Bytecode.Expr bytecode, WyilFile.Declaration parent,
+			List<Attribute> attributes) {
+		return new AbstractSyntaxTree.Operator<Bytecode.Expr>(type, bytecode, parent, attributes);
+	}
+
+	public static PositionalOperator<Bytecode.Expr> PositionalOperator(Type type, Bytecode.Expr bytecode, int position, WyilFile.Declaration parent,
+			Attribute... attributes) {
+		return new AbstractSyntaxTree.PositionalOperator<Bytecode.Expr>(type, bytecode, position, parent, attributes);
+	}
+	
+	public static PositionalOperator<Bytecode.Expr> PositionalOperator(Type type, Bytecode.Expr bytecode, int position, WyilFile.Declaration parent,
+			List<Attribute> attributes) {
+		return new AbstractSyntaxTree.PositionalOperator<Bytecode.Expr>(type, bytecode, position, parent, attributes);
+	}
+	
+	public static Stmt<? extends Bytecode.Stmt> Stmt(Bytecode.Stmt bytecode, SyntaxTree.Block parent, Attribute... attributes) {
+		if(bytecode instanceof Bytecode.Expr) {
+			return new AbstractSyntaxTree.StmtExpr<Bytecode.StmtExpr>((Bytecode.StmtExpr) bytecode, parent, attributes);
+		} else {
+			return new AbstractSyntaxTree.Stmt<Bytecode.Stmt>(bytecode, parent, attributes);
+		}
+	}
+	
+	public static Stmt<? extends Bytecode.Stmt> Stmt(Bytecode.Stmt bytecode, SyntaxTree.Block parent,
+			List<Attribute> attributes) {
+		if(bytecode instanceof Bytecode.Expr) {
+			return new AbstractSyntaxTree.StmtExpr<Bytecode.StmtExpr>((Bytecode.StmtExpr) bytecode, parent, attributes);
+		} else {
+			return new AbstractSyntaxTree.Stmt<Bytecode.Stmt>(bytecode, parent, attributes);
+		}
+	}
+	
 	/**
 	 * In an abstract sense, a location represents a single unit of storage
 	 * required for the execution of a given syntax tree. Every location has a
@@ -40,13 +93,13 @@ public abstract class AbstractSyntaxTree extends SyntacticElement.Impl {
 		protected final WyilFile.Declaration parent;
 		protected final Type type;
 
-		public Expr(Type type, WyilFile.Declaration parent, List<Attribute> attributes) {
+		private Expr(Type type, WyilFile.Declaration parent, List<Attribute> attributes) {
 			super(attributes);
 			this.type = type;
 			this.parent = parent;
 		}
 
-		public Expr(Type type, WyilFile.Declaration parent, Attribute... attributes) {
+		private Expr(Type type, WyilFile.Declaration parent, Attribute... attributes) {
 			super(attributes);
 			this.type = type;
 			this.parent = parent;
@@ -81,12 +134,12 @@ public abstract class AbstractSyntaxTree extends SyntacticElement.Impl {
 			implements SyntaxTree.Operator<T> {
 		private final T bytecode;
 
-		public Operator(Type type, T bytecode, WyilFile.Declaration parent, List<Attribute> attributes) {
+		private Operator(Type type, T bytecode, WyilFile.Declaration parent, List<Attribute> attributes) {
 			super(type, parent, attributes);
 			this.bytecode = bytecode;
 		}
 
-		public Operator(Type type, T bytecode, WyilFile.Declaration parent, Attribute... attributes) {
+		private Operator(Type type, T bytecode, WyilFile.Declaration parent, Attribute... attributes) {
 			super(type, parent, attributes);
 			this.bytecode = bytecode;
 		}
@@ -158,13 +211,13 @@ public abstract class AbstractSyntaxTree extends SyntacticElement.Impl {
 	public static class PositionalOperator<T extends Bytecode.Expr> extends Operator<T> implements SyntaxTree.PositionalOperator<T> {
 		private int position;
 
-		public PositionalOperator(Type type, T bytecode, int position, WyilFile.Declaration parent,
+		private PositionalOperator(Type type, T bytecode, int position, WyilFile.Declaration parent,
 				List<Attribute> attributes) {
 			super(type, bytecode, parent, attributes);
 			this.position = position;
 		}
 
-		public PositionalOperator(Type type, T bytecode, int position, WyilFile.Declaration parent,
+		private PositionalOperator(Type type, T bytecode, int position, WyilFile.Declaration parent,
 				Attribute... attributes) {
 			super(type, bytecode, parent, attributes);
 			this.position = position;
@@ -184,12 +237,12 @@ public abstract class AbstractSyntaxTree extends SyntacticElement.Impl {
 	public static class Variable extends Expr implements SyntaxTree.Variable {
 		private final String name;
 
-		public Variable(Type type, String name, WyilFile.Declaration parent, List<Attribute> attributes) {
+		private Variable(Type type, String name, WyilFile.Declaration parent, List<Attribute> attributes) {
 			super(type, parent, attributes);
 			this.name = name;
 		}
 
-		public Variable(Type type, String name, WyilFile.Declaration parent, Attribute... attributes) {
+		private Variable(Type type, String name, WyilFile.Declaration parent, Attribute... attributes) {
 			super(type, parent, attributes);
 			this.name = name;
 		}

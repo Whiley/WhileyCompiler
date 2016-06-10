@@ -36,6 +36,7 @@ import wycc.lang.NameID;
 import wycc.lang.SyntaxError.InternalFailure;
 import wycc.util.Logger;
 import wycc.util.Pair;
+import wycc.util.ResolveError;
 import wyfs.io.BinaryOutputStream;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -44,7 +45,7 @@ import wyil.lang.Constant;
 import wyil.lang.Bytecode.Operator;
 
 import static wyil.lang.Bytecode.*;
-import wyil.util.TypeExpander;
+import wyil.util.TypeSystem;
 
 import static wyil.util.ErrorMessages.internalFailure;
 import static wyjc.Wyil2JavaBuilder.WHILEYBOOL;
@@ -82,10 +83,10 @@ public class Wyil2JavaBuilder implements Builder {
 	protected final Build.Project project;
 
 	/**
-	 * The type expander is useful for managing nominal types and converting
-	 * them into their underlying types.
+	 * The type system is useful for managing nominal types and converting them
+	 * into their underlying types.
 	 */
-	protected final TypeExpander expander;
+	protected final TypeSystem typeSystem;
 
 	/**
 	 * For logging information.
@@ -129,7 +130,7 @@ public class Wyil2JavaBuilder implements Builder {
 
 	public Wyil2JavaBuilder(Build.Project project) {
 		this.project = project;
-		this.expander = new TypeExpander(project);
+		this.typeSystem = new TypeSystem(project);
 		this.generators = BytecodeTranslators.standardFunctions;
 	}
 
@@ -270,8 +271,8 @@ public class Wyil2JavaBuilder implements Builder {
 			JvmType.Function ftype = new JvmType.Function(new JvmType.Void());
 			ClassFile.Method clinit = new ClassFile.Method("<clinit>", ftype, modifiers);
 			cf.methods().add(clinit);
-			// finally add code for staticinitialiser method
-			jasm.attributes.Code code = new jasm.attributes.Code(context.getBytecodes(), new ArrayList<>(), clinit);
+			// finally add code for staticinitialiser method			
+			jasm.attributes.Code code = new jasm.attributes.Code(context.getBytecodes(), Collections.EMPTY_LIST, clinit);
 			clinit.attributes().add(code);
 		}
 	}
@@ -1014,27 +1015,31 @@ public class Wyil2JavaBuilder implements Builder {
 		ArrayList<LVal.Element<?>> path = new ArrayList<LVal.Element<?>>();
 		while (lval instanceof SyntaxTree.Operator) {
 			SyntaxTree.Operator<?> lv = (SyntaxTree.Operator<?>) lval;
-			wyil.lang.Bytecode.Expr code = lv.getBytecode();
-			switch (code.getOpcode()) {
-			case OPCODE_fieldload:
-				Type.EffectiveRecord recType = (Type.EffectiveRecord) lv.getType();
-				wyil.lang.Bytecode.FieldLoad fl = (wyil.lang.Bytecode.FieldLoad) code;
-				path.add(new LVal.Record(recType, fl.fieldName()));
-				lval = lv.getOperand(0);
-				break;
-			case OPCODE_arrayindex:
-				Type.EffectiveArray arrayType = (Type.EffectiveArray) lv.getType();				
-				path.add(new LVal.Array(arrayType, lv.getOperand(1)));
-				lval = lv.getOperand(0);
-				break;
-			case OPCODE_dereference:
-				Type.Reference refType = (Type.Reference) lv.getType();				
-				path.add(new LVal.Reference(refType));
-				lval = lv.getOperand(0);
-				break;
-			default:
-				internalFailure("unknown bytecode encountered (" + code + ")", filename,
-						lval.attribute(Attribute.Source.class));
+			try {
+				wyil.lang.Bytecode.Expr code = lv.getBytecode();
+				switch (code.getOpcode()) {
+				case OPCODE_fieldload:
+					lval = lv.getOperand(0);
+					Type.EffectiveRecord recType = typeSystem.expandAsEffectiveRecord(lval.getType());
+					wyil.lang.Bytecode.FieldLoad fl = (wyil.lang.Bytecode.FieldLoad) code;
+					path.add(new LVal.Record(recType, fl.fieldName()));
+					break;
+				case OPCODE_arrayindex:
+					lval = lv.getOperand(0);
+					Type.EffectiveArray arrayType = typeSystem.expandAsEffectiveArray(lval.getType());
+					path.add(new LVal.Array(arrayType, lv.getOperand(1)));
+					break;
+				case OPCODE_dereference:
+					lval = lv.getOperand(0);
+					Type.Reference refType = typeSystem.expandAsReference(lval.getType());
+					path.add(new LVal.Reference(refType));
+					break;
+				default:
+					internalFailure("unknown bytecode encountered (" + code + ")", filename,
+							lval.attribute(Attribute.Source.class));
+				}
+			} catch (ResolveError e) {
+				internalFailure(e.getMessage(), filename, e, lval.attribute(Attribute.Source.class));
 			}
 		}
 		// At this point, we have to reverse the lvals because they were put
@@ -1581,11 +1586,12 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            The enclosing context for this operand.
 	 * @return
 	 */
-	private void translateFieldLoad(SyntaxTree.Operator<FieldLoad> c, Context context) {		
-		Type.Record type = (Type.Record) c.getType();
+	private void translateFieldLoad(SyntaxTree.Operator<FieldLoad> c, Context context) throws ResolveError {
+		SyntaxTree.Expr srcOperand = c.getOperand(0);
+		Type.EffectiveRecord type = typeSystem.expandAsEffectiveRecord(srcOperand.getType());
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYRECORD, JAVA_LANG_STRING);
 		// Translate the source operand
-		translateOperand(c.getOperand(0), context);
+		translateOperand(srcOperand, context);
 		context.add(new Bytecode.LoadConst(c.getBytecode().fieldName()));
 		// Load the field out of the resulting record
 		context.add(new Bytecode.Invoke(WHILEYRECORD, "get", ftype, Bytecode.InvokeMode.STATIC));
@@ -1602,7 +1608,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            The enclosing context for this operand.
 	 * @return
 	 */
-	private void translateOperator(SyntaxTree.Operator<Operator> c, Context context) {
+	private void translateOperator(SyntaxTree.Operator<Operator> c, Context context) throws ResolveError {
 		// First, translate each operand and load its value onto the stack
 		switch (c.getOpcode()) {
 		case OPCODE_record:
@@ -1616,7 +1622,6 @@ public class Wyil2JavaBuilder implements Builder {
 			// Second, dispatch to a specific translator for this opcode kind.
 			generators[c.getOpcode()].translate(c, context);
 		}
-
 	}
 
 	/**
@@ -1625,8 +1630,8 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param bytecode
 	 * @param context
 	 */
-	public void translateRecordConstructor(SyntaxTree.Operator<Operator> bytecode, Context context) {
-		Type.EffectiveRecord recType = (Type.EffectiveRecord) bytecode.getType();
+	public void translateRecordConstructor(SyntaxTree.Operator<Operator> bytecode, Context context) throws ResolveError {
+		Type.EffectiveRecord recType = typeSystem.expandAsEffectiveRecord(bytecode.getType());
 		JvmType.Function ftype = new JvmType.Function(WHILEYRECORD, WHILEYRECORD, JAVA_LANG_STRING, JAVA_LANG_OBJECT);
 
 		context.construct(WHILEYRECORD);
@@ -1652,8 +1657,8 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            The enclosing context for this operand.
 	 * @return
 	 */
-	private void translateArrayConstructor(SyntaxTree.Operator<Operator> code, Context context) {
-		Type.Array arrType = (Type.Array) code.getType();
+	private void translateArrayConstructor(SyntaxTree.Operator<Operator> code, Context context) throws ResolveError {
+		Type.EffectiveArray arrType = typeSystem.expandAsEffectiveArray(code.getType());
 		JvmType.Function initJvmType = new JvmType.Function(T_VOID, T_INT);
 		JvmType.Function ftype = new JvmType.Function(WHILEYARRAY, WHILEYARRAY, JAVA_LANG_OBJECT);
 
@@ -2231,7 +2236,7 @@ public class Wyil2JavaBuilder implements Builder {
 			return WHILEYLAMBDA;
 		} else if (t instanceof Type.Nominal) {
 			try {
-				Type expanded = expander.getUnderlyingType(t);
+				Type expanded = typeSystem.getUnderlyingType(t);
 				return toJvmType(expanded);
 			} catch (InternalFailure ex) {
 				throw ex;
@@ -2440,6 +2445,18 @@ public class Wyil2JavaBuilder implements Builder {
 			return Wyil2JavaBuilder.this.toJvmType(type);
 		}
 		
+		public Type.EffectiveArray expandAsEffectiveArray(Type type) throws ResolveError {
+			return typeSystem.expandAsEffectiveArray(type);
+		}
+
+		public Type.EffectiveRecord expandAsEffectiveRecord(Type type) throws ResolveError {
+			return typeSystem.expandAsEffectiveRecord(type);
+		}
+
+		public Type.Reference expandAsReference(Type type) throws ResolveError {
+			return typeSystem.expandAsReference(type);
+		}
+		
 		public void add(Bytecode bytecode) {
 			bytecodes.add(bytecode);
 		}	
@@ -2452,6 +2469,6 @@ public class Wyil2JavaBuilder implements Builder {
 	 *
 	 */
 	public interface BytecodeTranslator {
-		void translate(SyntaxTree.Operator<Operator> bytecode, Context context);
+		void translate(SyntaxTree.Operator<Operator> bytecode, Context context) throws ResolveError;
 	}
 }

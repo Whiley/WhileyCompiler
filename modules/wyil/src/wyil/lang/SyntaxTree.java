@@ -20,55 +20,6 @@ import wyil.util.AbstractSyntaxTree;
  *
  */
 public interface SyntaxTree extends SyntacticElement {
-
-	// ============================================================
-	// Constructors
-	// ============================================================
-
-	public static Variable Variable(Type type, String name, WyilFile.Declaration parent, Attribute... attributes) {
-		return new AbstractSyntaxTree.Variable(type, name, parent, attributes);
-	}
-	
-	public static Variable Variable(Type type, String name, WyilFile.Declaration parent, List<Attribute> attributes) {
-		return new AbstractSyntaxTree.Variable(type, name, parent, attributes);
-	}
-	
-	public static Operator<Bytecode.Expr> Operator(Type type, Bytecode.Expr bytecode, WyilFile.Declaration parent,
-			Attribute... attributes) {
-		return new AbstractSyntaxTree.Operator<Bytecode.Expr>(type, bytecode, parent, attributes);
-	}
-
-	public static Operator<Bytecode.Expr> Operator(Type type, Bytecode.Expr bytecode, WyilFile.Declaration parent,
-			List<Attribute> attributes) {
-		return new AbstractSyntaxTree.Operator<Bytecode.Expr>(type, bytecode, parent, attributes);
-	}
-
-	public static PositionalOperator<Bytecode.Expr> PositionalOperator(Type type, Bytecode.Expr bytecode, int position, WyilFile.Declaration parent,
-			Attribute... attributes) {
-		return new AbstractSyntaxTree.PositionalOperator<Bytecode.Expr>(type, bytecode, position, parent, attributes);
-	}
-	
-	public static PositionalOperator<Bytecode.Expr> PositionalOperator(Type type, Bytecode.Expr bytecode, int position, WyilFile.Declaration parent,
-			List<Attribute> attributes) {
-		return new AbstractSyntaxTree.PositionalOperator<Bytecode.Expr>(type, bytecode, position, parent, attributes);
-	}
-	
-	public static Stmt<? extends Bytecode.Stmt> Stmt(Bytecode.Stmt bytecode, SyntaxTree.Block parent, Attribute... attributes) {
-		if(bytecode instanceof Bytecode.Expr) {
-			return new AbstractSyntaxTree.StmtExpr<Bytecode.StmtExpr>((Bytecode.StmtExpr) bytecode, parent, attributes);
-		} else {
-			return new AbstractSyntaxTree.Stmt<Bytecode.Stmt>(bytecode, parent, attributes);
-		}
-	}
-	
-	public static Stmt<? extends Bytecode.Stmt> Stmt(Bytecode.Stmt bytecode, SyntaxTree.Block parent,
-			List<Attribute> attributes) {
-		if(bytecode instanceof Bytecode.Expr) {
-			return new AbstractSyntaxTree.StmtExpr<Bytecode.StmtExpr>((Bytecode.StmtExpr) bytecode, parent, attributes);
-		} else {
-			return new AbstractSyntaxTree.Stmt<Bytecode.Stmt>(bytecode, parent, attributes);
-		}
-	}
 	
 	// ============================================================
 	// Types

@@ -1,0 +1,3 @@
+./test.whiley:8: loop invariant not established by first iteration
+    while i < n where i >= 0 && i <= n
+                      ^^^^^^^^^^^^^^^^

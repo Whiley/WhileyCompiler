@@ -1,6 +1,7 @@
 
 
-method f(int[] x) :
+method f(int[] x)
+requires |x| > 0:
     int z = |x|
     assume x[z - 1] == 3
 

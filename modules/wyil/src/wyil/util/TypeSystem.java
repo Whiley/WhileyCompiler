@@ -13,12 +13,13 @@ import wyautl_old.lang.Automaton.State;
 import wybs.lang.Build;
 import wycc.lang.NameID;
 import wycc.util.ResolveError;
+import wyfs.lang.Path;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
 
 /**
  * <p>
- * The type expander is responsible for managing the relationship between
+ * The type system is responsible for managing the relationship between
  * nominal types and their underlying types. Every visible type has an
  * underlying type associated with it which, in some cases, will be the same.
  * For example, the underlying type associated with type <code>int</code> is
@@ -43,10 +44,10 @@ import wyil.lang.WyilFile;
  * @author David J. Pearce
  * 
  */
-public class TypeExpander {
+public class TypeSystem {
 	private final Build.Project project;
 	
-	public TypeExpander(Build.Project project) {
+	public TypeSystem(Build.Project project) {
 		this.project = project;
 	}
 	
@@ -69,12 +70,13 @@ public class TypeExpander {
 	 * @param type
 	 * @return
 	 */
-	public Type getUnderlyingType(Type type) throws IOException, ResolveError {
+	public Type getUnderlyingType(Type type) throws ResolveError {
 		ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
 		HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
 		getTypeHelper(type, false, states, roots);
 		return Type.construct(new Automaton(states));		
 	}
+	
 	
 	/**
 	 * Return the maximally consumed type of a given type. That is the maximal
@@ -105,6 +107,64 @@ public class TypeExpander {
 		return Type.construct(new Automaton(states));
 	}
 
+	public Type.EffectiveRecord expandAsEffectiveRecord(Type type) throws ResolveError {
+		if (type instanceof Type.EffectiveRecord) {
+			return (Type.EffectiveRecord) type;
+		} else {
+			return (Type.EffectiveRecord) expandOneLevel(type);
+		}
+	}
+	
+	public Type.EffectiveArray expandAsEffectiveArray(Type type) throws ResolveError {
+		if (type instanceof Type.EffectiveArray) {
+			return (Type.EffectiveArray) type;
+		} else {
+			return (Type.EffectiveArray) expandOneLevel(type);
+		}
+	}
+	
+	public Type.Reference expandAsReference(Type type) throws ResolveError {
+		if (type instanceof Type.Reference) {
+			return (Type.Reference) type;
+		} else {
+			return (Type.Reference) expandOneLevel(type);
+		}
+	}
+	
+	/**
+	 * Expand a given syntactic type by exactly one level.
+	 * 
+	 * @param type
+	 * @return
+	 * @throws IOException
+	 * @throws ResolveError
+	 */
+	private Type expandOneLevel(Type type) throws ResolveError {
+		try {
+			if (type instanceof Type.Nominal) {
+				Type.Nominal nt = (Type.Nominal) type;
+				NameID nid = nt.name();
+				Path.ID mid = nid.module();
+				WyilFile m = project.get(nid.module(), WyilFile.ContentType).read();
+				WyilFile.Type td = m.type(nid.name());
+				return expandOneLevel(td.type());
+			} else if (type instanceof Type.Leaf || type instanceof Type.Reference || type instanceof Type.Array
+					|| type instanceof Type.Record || type instanceof Type.FunctionOrMethod
+					|| type instanceof Type.Negation) {
+				return type;
+			} else {
+				Type.Union ut = (Type.Union) type;
+				ArrayList<Type> bounds = new ArrayList<Type>();
+				for (Type b : ut.bounds()) {
+					bounds.add(expandOneLevel(b));
+				}
+				return Type.Union(bounds);
+			}
+		} catch (IOException e) {
+			throw new ResolveError(e.getMessage(), e);
+		}
+	}
+	
 	/**
 	 * <p>
 	 * Expand the given type by loading it's contents into the list of states.
@@ -136,9 +196,8 @@ public class TypeExpander {
 	 * @return
 	 * @throws IOException
 	 */
-	public int getTypeHelper(Type type, boolean maximallyConsumed,
-			ArrayList<Automaton.State> states, HashMap<NameID, Integer> roots)
-			throws IOException, ResolveError {
+	public int getTypeHelper(Type type, boolean maximallyConsumed, ArrayList<Automaton.State> states,
+			HashMap<NameID, Integer> roots) throws ResolveError {
 		// First, handle nominals (which are challenging) and primitive types
 		// (which are simple).		
 		if(type instanceof Type.Nominal) {
@@ -151,24 +210,28 @@ public class TypeExpander {
 				// return the cached index to form the recursive cycle.
 				return roots.get(nid);
 			} else {
-				// At this point, need to find the corresponding declatation.
-				WyilFile mi = project.get(nid.module(),WyilFile.ContentType).read();
-				WyilFile.Type td = mi.type(nid.name());
-				if (maximallyConsumed && td.getInvariants().length > 0) {
-					// In this specially case, we have a constrained type
-					// and we are attempting to compute the maximally
-					// consumed type. This type is not fully consumed as it
-					// is constrained and, hence, void is its maximally
-					// constrained type. 						
-					states.add(new State(Type.K_VOID, null, true,
-							Automaton.NOCHILDREN));
-					return states.size()-1;
-				} else {
-					// Now, store the root of this expansion so that it can be used
-					// subsequently to form a recursive cycle.											
-					roots.put(nid, states.size());
-					return getTypeHelper(td.type(),maximallyConsumed,states,roots);
-				}				
+				// At this point, need to find the corresponding declaration.
+				try {
+					WyilFile mi = project.get(nid.module(),WyilFile.ContentType).read();
+					WyilFile.Type td = mi.type(nid.name());
+					if (maximallyConsumed && td.getInvariants().length > 0) {
+						// In this specially case, we have a constrained type
+						// and we are attempting to compute the maximally
+						// consumed type. This type is not fully consumed as it
+						// is constrained and, hence, void is its maximally
+						// constrained type.
+						states.add(new State(Type.K_VOID, null, true, Automaton.NOCHILDREN));
+						return states.size() - 1;
+					} else {
+						// Now, store the root of this expansion so that it can
+						// be used
+						// subsequently to form a recursive cycle.
+						roots.put(nid, states.size());
+						return getTypeHelper(td.type(), maximallyConsumed, states, roots);
+					}			
+				} catch (IOException e) {
+					throw new ResolveError(e.getMessage(), e);
+				}
 			}
 		} else if(type instanceof Type.Leaf) {
 			// In ther case of a leaf node we simply copy over its states into

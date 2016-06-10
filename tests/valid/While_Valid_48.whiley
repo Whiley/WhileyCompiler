@@ -1,4 +1,4 @@
-public export method test() -> void:
+public export method test():
     int i = 0
     int j = 0
     while i < 5:

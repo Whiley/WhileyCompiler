@@ -1,5 +1,3 @@
-
-
 type posintlist is (int[] list) where no { i in 0 .. |list| | list[i] < 0 }
 
 function sum(posintlist ls, int i) -> (int r)

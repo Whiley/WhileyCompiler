@@ -361,7 +361,7 @@ public interface Bytecode {
 
 		@Override
 		public String toString() {
-			return "lambda " + arrayToString(getOperands()) + " " + type;
+			return "lambda " + Util.arrayToString(getOperands()) + " " + type;
 		}
 	}
 
@@ -563,7 +563,7 @@ public interface Bytecode {
 		}
 
 		public String toString() {
-			return kind() + arrayToString(getOperands());
+			return kind() + Util.arrayToString(getOperands());
 		}
 	}
 
@@ -602,6 +602,10 @@ public interface Bytecode {
 			this.kind = kind;
 		}
 
+		public QuantifierKind kind() {
+			return kind;
+		}
+		
 		public int getOpcode() {
 			return kind.opcode;
 		}
@@ -854,7 +858,7 @@ public interface Bytecode {
 
 		@Override
 		public String toString() {
-			return arrayToString(leftHandSide()) + " = " + arrayToString(rightHandSide());
+			return Util.arrayToString(leftHandSide()) + " = " + Util.arrayToString(rightHandSide());
 		}
 	}
 
@@ -1567,7 +1571,7 @@ public interface Bytecode {
 
 		@Override
 		public String toString() {
-			return "indirectinvoke %" + reference() + " " + arrayToString(arguments());
+			return "indirectinvoke %" + reference() + " " + Util.arrayToString(arguments());
 		}
 	}
 
@@ -1628,7 +1632,7 @@ public interface Bytecode {
 
 		@Override
 		public String toString() {
-			return "invoke " + arrayToString(getOperands()) + " " + name;
+			return "invoke " + Util.arrayToString(getOperands()) + " " + name;
 		}
 	}
 
@@ -1637,17 +1641,19 @@ public interface Bytecode {
 	// Helpers
 	// ===============================================================
 
-	public static String arrayToString(int... operands) {
-		String r = "(";
-		for (int i = 0; i != operands.length; ++i) {
-			if (i != 0) {
-				r = r + ", ";
-			}
-			r = r + "%" + operands[i];
-		}
-		return r + ")";
-	}
+	public static final class Util {
 
+		public static String arrayToString(int... operands) {
+			String r = "(";
+			for (int i = 0; i != operands.length; ++i) {
+				if (i != 0) {
+					r = r + ", ";
+				}
+				r = r + "%" + operands[i];
+			}
+			return r + ")";
+		}
+	}
 	// =========================================================================
 	// Opcodes
 	// =========================================================================

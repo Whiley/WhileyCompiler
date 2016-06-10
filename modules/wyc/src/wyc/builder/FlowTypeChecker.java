@@ -53,7 +53,7 @@ import wyil.lang.Constant;
 import wyil.lang.Modifier;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
-import wyil.util.TypeExpander;
+import wyil.util.TypeSystem;
 import wyil.util.type.LifetimeRelation;
 import wyil.util.type.LifetimeSubstitution;
 
@@ -142,7 +142,7 @@ import wyil.util.type.LifetimeSubstitution;
 public class FlowTypeChecker {
 
 	private final WhileyBuilder builder;
-	private final TypeExpander expander;
+	private final TypeSystem expander;
 	private String filename;
 	//private WhileyFile.FunctionOrMethod current;
 
@@ -154,7 +154,7 @@ public class FlowTypeChecker {
 
 	public FlowTypeChecker(WhileyBuilder builder) {
 		this.builder = builder;
-		this.expander = new TypeExpander(builder.project());
+		this.expander = new TypeSystem(builder.project());
 	}
 
 	// =========================================================================

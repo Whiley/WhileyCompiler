@@ -226,6 +226,13 @@ public class WycsFilePrinter {
 		case LTEQ:
 			op = " <= ";
 			break;		
+		case ARRAYGEN:
+			out.print("[");
+			writeStructured(wf,code.operands[0],indent);
+			out.print(";");
+			writeStructured(wf,code.operands[1],indent);
+			out.print("]");
+			return;
 		default:
 			internalFailure("unknown bytecode encountered", wf.filename(), code);
 			return;

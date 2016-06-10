@@ -317,6 +317,10 @@ public class CodeGeneration {
 			rhs = tmp;
 			break;
 		}		
+		case ARRAYGEN: {
+			opcode = Code.Op.ARRAYGEN;
+			break;
+		}
 		default:
 			internalFailure("unknown binary opcode encountered (" + e + ")",
 					filename, e);

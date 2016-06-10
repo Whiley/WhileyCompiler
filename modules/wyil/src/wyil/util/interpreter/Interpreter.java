@@ -19,7 +19,7 @@ import wyil.lang.*;
 import static wyil.lang.SyntaxTree.*;
 import wyil.lang.SyntaxTree.Stmt;
 import wyil.lang.SyntaxTree.Operator;
-import wyil.util.TypeExpander;
+import wyil.util.TypeSystem;
 import wyil.util.interpreter.Interpreter.ConstantObject;
 
 /**
@@ -47,7 +47,7 @@ public class Interpreter {
 	 * Responsible for expanding types to determine their underlying type and
 	 * constraints.
 	 */
-	private final TypeExpander expander;
+	private final TypeSystem expander;
 	
 	/**
 	 * Implementations for the internal operators
@@ -63,7 +63,7 @@ public class Interpreter {
 	public Interpreter(Build.Project project, PrintStream debug) {
 		this.project = project;
 		this.debug = debug;
-		this.expander = new TypeExpander(project);
+		this.expander = new TypeSystem(project);
 		this.operators = StandardFunctions.standardFunctions;
 	}
 
@@ -542,9 +542,6 @@ public class Interpreter {
 			Constant operand = executeExpression(ANY_T, expr.getOperand(0), frame);
 			Type target = expander.getUnderlyingType(expr.getType());
 			return convert(operand, target, expr);
-		} catch (IOException e) {
-			error(e.getMessage(), expr);
-			return null;
 		} catch (ResolveError e) {
 			error(e.getMessage(), expr);
 			return null;

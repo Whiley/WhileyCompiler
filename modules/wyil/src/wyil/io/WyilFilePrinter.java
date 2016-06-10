@@ -277,11 +277,22 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 	}
 	
 	private void writeDoWhile(int indent, Stmt<Bytecode.DoWhile> b, PrintWriter out) {
+		SyntaxTree.Expr[] loopInvariant = b.getOperandGroup(0);
+		SyntaxTree.Expr[] modifiedOperands = b.getOperandGroup(1);		
 		out.println("do:");
+		//				
 		writeBlock(indent+1,b.getBlock(0),out);
 		tabIndent(indent+1,out);
 		out.print("while ");
 		writeExpression(b.getOperand(0),out);
+		out.print(" modifies ");
+		writeExpressions(modifiedOperands,out);
+		for(SyntaxTree.Expr invariant : loopInvariant) {
+			out.println();
+			tabIndent(indent+1,out);
+			out.print("where ");
+			writeExpression(invariant,out);
+		}
 		// FIXME: add invariants
 		out.println();
 	}
@@ -329,6 +340,17 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 	private void writeWhile(int indent, Stmt<Bytecode.While> b, PrintWriter out) {
 		out.print("while ");
 		writeExpression(b.getOperand(0),out);
+		SyntaxTree.Expr[] loopInvariant = b.getOperandGroup(0);
+		SyntaxTree.Expr[] modifiedOperands = b.getOperandGroup(1);
+		out.print(" modifies ");
+		writeExpressions(modifiedOperands,out);
+		//
+		for(SyntaxTree.Expr invariant : loopInvariant) {
+			out.println();
+			tabIndent(indent+1,out);
+			out.print("where ");
+			writeExpression(invariant,out);
+		}
 		out.println(":");
 		// FIXME: add invariants
 		writeBlock(indent+1,b.getBlock(0),out);		
@@ -539,7 +561,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		out.print(expr.getBytecode().constant());
 	}
 	private void writeFieldLoad(Operator<Bytecode.FieldLoad> expr, PrintWriter out) {
-		writeExpression(expr.getOperand(0),out);
+		writeBracketedExpression(expr.getOperand(0),out);
 		out.print("." + expr.getBytecode().fieldName());		
 	}
 	private void writeIndirectInvoke(Operator<Bytecode.IndirectInvoke> expr, PrintWriter out) {
@@ -693,6 +715,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		case Bytecode.OPCODE_shr:		
 		case Bytecode.OPCODE_is:		
 		case Bytecode.OPCODE_newobject:
+		case Bytecode.OPCODE_dereference:
 			return true;
 		}
 		return false;

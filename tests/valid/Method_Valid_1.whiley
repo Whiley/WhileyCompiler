@@ -12,7 +12,7 @@ function EmptyBoard() -> Board:
 public function numPieces(Board board, Piece piece) -> int:
     int count = 0
     int i = 0
-    while i < |board|:
+    while i < |board| where i >= 0:
         Piece p = board[i]
         if p == piece:
             count = count + 1

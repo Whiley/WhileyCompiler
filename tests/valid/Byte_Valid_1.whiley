@@ -17,7 +17,7 @@ function inc(byte b) -> byte:
 public export method test() :
     byte r = 0b
     int i = 0
-    while i < |constants|:
+    while i < |constants| where i >= 0:
         assume r == constants[i]
         r = inc(r)
         i = i + 1

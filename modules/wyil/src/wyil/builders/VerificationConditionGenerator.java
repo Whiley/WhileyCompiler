@@ -1,32 +1,46 @@
 package wyil.builders;
 
+import static wyil.util.ErrorMessages.errorMessage;
 import static wyil.util.ErrorMessages.internalFailure;
+import static wyil.util.ErrorMessages.syntaxError;
 
+import java.io.IOException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import wybs.lang.Builder;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;
 import wycc.lang.SyntacticElement;
+import wycc.lang.SyntaxError.InternalFailure;
+import wycc.util.Pair;
+import wycc.util.ResolveError;
 import wycs.core.Value;
 import wycs.syntax.Expr;
 import wycs.syntax.SyntacticType;
 import wycs.syntax.TypePattern;
 import wycs.syntax.WyalFile;
+import wycs.syntax.WyalFile.Function;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 import wyil.lang.Bytecode;
-import wyil.lang.BytecodeForest;
+import wyil.lang.Bytecode.*;
 import wyil.lang.SyntaxTree;
 import wyil.lang.Constant;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
-import wyil.util.TypeExpander;
-import wyil.util.interpreter.Interpreter.Context;
+import wyil.util.AbstractSyntaxTree;
+import wyil.util.ErrorMessages;
+import wyil.util.TypeSystem;
 
 /**
  * <p>
@@ -81,10 +95,10 @@ import wyil.util.interpreter.Interpreter.Context;
  * </p>
  * 
  * <ul>
- * <li><b>1,2,3:</b> <code>x >= 0 ==> x >= 0</code>. This verification corresponds to
- * the case where the if condition is known to be true.</li>
- * <li><b>1,2,4:</b> <code>x < 0 ==> -x >= 0</code>. This verification corresponds to
- * the case where the if condition is known to be false.</li>
+ * <li><b>1,2,3:</b> <code>x >= 0 ==> x >= 0</code>. This verification
+ * corresponds to the case where the if condition is known to be true.</li>
+ * <li><b>1,2,4:</b> <code>x < 0 ==> -x >= 0</code>. This verification
+ * corresponds to the case where the if condition is known to be false.</li>
  * </ul>
  * 
  * <p>
@@ -98,29 +112,39 @@ import wyil.util.interpreter.Interpreter.Context;
  *
  */
 public class VerificationConditionGenerator {
-	private final Builder builder;
-	private final TypeExpander expander;
+	private final Wyil2WyalBuilder builder;
+	private final TypeSystem typeSystem;
 
-	public VerificationConditionGenerator(Builder builder) {
+	public VerificationConditionGenerator(Wyil2WyalBuilder builder) {
 		this.builder = builder;
-		this.expander = new TypeExpander(builder.project());
+		this.typeSystem = new TypeSystem(builder.project());
 	}
 
 	// ===============================================================================
 	// Top-Level Controller
 	// ===============================================================================
 
+	/**
+	 * Translate a WyilFile into a WyalFile which contains the verification
+	 * conditions necessary to establish that all functions and methods in the
+	 * WyilFile meet their specifications, and that no array-out-of-bounds or
+	 * division-by-zero exceptions are possible (amongst other things).
+	 * 
+	 * @param wyilFile
+	 *            The input file to be translated
+	 * @return
+	 */
 	public WyalFile translate(WyilFile wyilFile) {
 		WyalFile wyalFile = new WyalFile(wyilFile.id(), wyilFile.filename());
 
 		for (WyilFile.Block b : wyilFile.blocks()) {
 			if (b instanceof WyilFile.Constant) {
-				translate((WyilFile.Constant) b, wyilFile);
+				translateConstantDeclaration((WyilFile.Constant) b, wyalFile);
 			} else if (b instanceof WyilFile.Type) {
-				translate((WyilFile.Type) b, wyalFile);
+				translateTypeDeclaration((WyilFile.Type) b, wyalFile);
 			} else if (b instanceof WyilFile.FunctionOrMethod) {
 				WyilFile.FunctionOrMethod method = (WyilFile.FunctionOrMethod) b;
-				translate(method, wyilFile);
+				translateFunctionOrMethodDeclaration(method, wyalFile);
 			}
 		}
 
@@ -130,8 +154,14 @@ public class VerificationConditionGenerator {
 	/**
 	 * Translate a constant declaration into WyAL. At the moment, this does
 	 * nothing because constant declarations are not supported in WyAL files.
+	 * 
+	 * @param declaration
+	 *            The type declaration being translated.
+	 * @param wyalFile
+	 *            The WyAL file being constructed
 	 */
-	private void translate(WyilFile.Constant decl, WyilFile wyilFile) {
+	private void translateConstantDeclaration(WyilFile.Constant decl, WyalFile wyalFile) {
+		// FIXME: WyAL file format should support constants
 	}
 
 	/**
@@ -145,29 +175,18 @@ public class VerificationConditionGenerator {
 	 * @param wyalFile
 	 *            The WyAL file being constructed
 	 */
-	private void translate(WyilFile.Type declaration, WyalFile wyalFile) {
-		BytecodeForest forest = declaration.invariant();
-
+	private void translateTypeDeclaration(WyilFile.Type declaration, WyalFile wyalFile) {
+		SyntaxTree.Expr[] invariants = declaration.getInvariants();
 		// First, translate the invariant (if applicable)
 		Expr.Variable var = null;
 		Expr invariant = null;
 
-		if (forest.numRoots() > 0) {
-			SyntaxTree.Variable v = (SyntaxTree.Variable) forest.getExpression(0);
+		if (invariants.length > 0) {
+			SyntaxTree.Variable v = (SyntaxTree.Variable) declaration.getExpression(0);
 			var = new Expr.Variable(v.name(), v.attributes());
-			for (int i = 0; i != forest.numRoots(); ++i) {
-				int index = forest.getRoot(i);
-				Expr clause = translate(forest.getExpression(index));
-				// FIXME: this is ugly. Instead, WyAL files could support
-				// multiple invariant clauses?
-				if (invariant == null) {
-					invariant = clause;
-				} else {
-					invariant = new Expr.Binary(Expr.Binary.Op.AND, invariant, clause);
-				}
-			}
+			invariant = generateTypeInvariants(declaration, invariants, var);
 		}
-
+		// FIXME: add inhabitability check
 		// Convert the type into a type pattern
 		SyntacticType type = convert(declaration.type(), declaration);
 		TypePattern.Leaf pattern = new TypePattern.Leaf(type, var);
@@ -178,23 +197,996 @@ public class VerificationConditionGenerator {
 	}
 
 	/**
-	 * Transform a function or method into its WyAL equivalent. This involves
-	 * creating zero or more verification conditions to check the various
-	 * conditions within the method itself.
+	 * Translate each of the clauses representing the invariant of a type.
 	 * 
-	 * @param method
-	 * @param wyilFile
+	 * @param invariants
+	 * @param var
+	 * @return
 	 */
-	private void translate(WyilFile.FunctionOrMethod method, WyilFile wyilFile) {
+	private Expr generateTypeInvariants(WyilFile.Type declaration, SyntaxTree.Expr[] invariants, Expr.Variable var) {
+		GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
+		LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
+		Expr invariant = null;
+		for (int i = 0; i != invariants.length; ++i) {
+			Expr clause = translateExpression(invariants[i], localEnvironment);
+			// FIXME: this is ugly. Instead, WyAL files could support
+			// multiple invariant clauses?
+			invariant = and(invariant, clause);
+		}
+		return invariant;
+	}
+
+	/**
+	 * Transform a function or method declaration into verification conditions
+	 * as necessary. This is done by traversing the control-flow graph of the
+	 * function or method in question. Verifications are emitted when conditions
+	 * are encountered which must be checked. For example, that the
+	 * preconditions are met at a function invocation.
+	 * 
+	 * @param declaration
+	 *            The function or method declaration being translated.
+	 * @param wyalFile
+	 *            The WyAL file being constructed
+	 */
+	private void translateFunctionOrMethodDeclaration(WyilFile.FunctionOrMethod declaration, WyalFile wyalFile) {
+		// Create the prototype for this function or method. This is the
+		// function or method declaration which can be used within verification
+		// conditions to refer to this function or method. This does not include
+		// a body, since function or methods are treated as being
+		// "uninterpreted" for the purposes of verification.
+		createFunctionOrMethodPrototype(declaration, wyalFile);
+
+		// The environments are needed to prevent clashes between variable
+		// versions across verification conditions, and also to type variables
+		// used in verification conditions.
+		GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
+		LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
+
+		// Create macros representing the individual clauses of the function or
+		// method's precondition and postcondition. These macros can then be
+		// called either to assume the precondition/postcondition or to check
+		// them. Using individual clauses helps to provide better error
+		// messages.
+		translatePreconditionMacros(declaration, localEnvironment, wyalFile);
+		translatePostconditionMacros(declaration, localEnvironment, wyalFile);
+
+		// Generate the initial assumption set for a given function or method,
+		// which roughly corresponds to its precondition.
+		AssumptionSet assumptions = generateFunctionOrMethodAssumptionSet(declaration, localEnvironment);
+		// Generate verification conditions by propagating forwards through the
+		// control-flow graph of the function or method in question. For each
+		// statement encountered, generate the preconditions which must hold
+		// true at that point. Furthermore, generate the effect of this
+		// statement on the current state.
+		List<VerificationCondition> vcs = new ArrayList<VerificationCondition>();
+		Context context = new Context(wyalFile, assumptions, localEnvironment, null, vcs);
+		translateStatementBlock(declaration.getBlock(0), context);
+		//
+		// Translate each generated verification condition into an assertion in
+		// the underlying WyalFile.
+		createAssertions(declaration, vcs, globalEnvironment, wyalFile);
+	}
+
+	/**
+	 * Translate the sequence of invariant expressions which constitute the
+	 * precondition of a function or method into corresponding macro
+	 * declarations.
+	 * 
+	 * @param declaration
+	 * @param environment
+	 * @param wyalFile
+	 */
+	private void translatePreconditionMacros(WyilFile.FunctionOrMethod declaration, LocalEnvironment environment,
+			WyalFile wyalFile) {
+		SyntaxTree.Expr[] invariants = declaration.getPrecondition();
+		String prefix = declaration.name() + "_requires_";
+		TypePattern type = generatePreconditionTypePattern(declaration, environment);
+		//
+		for (int i = 0; i != invariants.length; ++i) {
+			String name = prefix + i;
+			Expr clause = translateExpression(invariants[i], environment);
+			wyalFile.add(wyalFile.new Macro(name, Collections.EMPTY_LIST, type, clause, invariants[i].attributes()));
+		}
+	}
+
+	/**
+	 * Translate the sequence of invariant expressions which constitute the
+	 * postcondition of a function or method into corresponding macro
+	 * declarations.
+	 * 
+	 * @param declaration
+	 * @param environment
+	 * @param wyalFile
+	 */
+	private void translatePostconditionMacros(WyilFile.FunctionOrMethod declaration, LocalEnvironment environment,
+			WyalFile wyalFile) {
+		SyntaxTree.Expr[] invariants = declaration.getPostcondition();
+		String prefix = declaration.name() + "_ensures_";
+		TypePattern type = generatePostconditionTypePattern(declaration, environment);
+		//
+		for (int i = 0; i != invariants.length; ++i) {
+			String name = prefix + i;
+			Expr clause = translateExpression(invariants[i], environment);
+			wyalFile.add(wyalFile.new Macro(name, Collections.EMPTY_LIST, type, clause, invariants[i].attributes()));
+		}
+	}
+
+	/**
+	 * Generate the initial assumption set for a function or method. This is
+	 * essentially made up of the precondition(s) for that function or method.
+	 * 
+	 * @param declaration
+	 * @return
+	 */
+	private AssumptionSet generateFunctionOrMethodAssumptionSet(WyilFile.FunctionOrMethod declaration,
+			LocalEnvironment environment) {
+		String prefix = declaration.name() + "_requires_";
+		Expr[] preconditions = new Expr[declaration.getPrecondition().length];
+		Expr[] arguments = new Expr[declaration.type().params().size()];
+		// Translate parameters as arguments to invocation
+		for (int i = 0; i != arguments.length; ++i) {
+			SyntaxTree.Variable var = (SyntaxTree.Variable) declaration.getExpression(i);
+			String versionedName = environment.read(var.getIndex());
+			arguments[i] = new Expr.Variable(versionedName, var.attributes());
+		}
+		//
+		Expr argument = arguments.length == 1 ? arguments[0] : new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
+		//
+		for (int i = 0; i != preconditions.length; ++i) {
+			preconditions[i] = new Expr.Invoke(prefix + i, declaration.parent().id(), Collections.EMPTY_LIST, argument);
+		}
+		// Add all the preconditions as assupmtions
+		return AssumptionSet.ROOT.add(preconditions);
 	}
 
 	// =========================================================================
 	// Statements
 	// =========================================================================
 
+	private Context translateStatementBlock(SyntaxTree.Block block, Context context) {
+		for (int i = 0; i != block.size(); ++i) {
+			SyntaxTree.Stmt<?> stmt = block.get(i);
+			context = translateStatement(stmt, context);
+			if (stmt.getBytecode() instanceof Bytecode.Return) {
+				return null;
+			}
+		}
+		return context;
+	}
+
+	@SuppressWarnings("unchecked")
+	private Context translateStatement(SyntaxTree.Stmt<?> stmt, Context context) {
+		try {
+			switch (stmt.getOpcode()) {
+			case Bytecode.OPCODE_assert:
+				return translateAssert((SyntaxTree.Stmt<Assert>) stmt, context);
+			case Bytecode.OPCODE_assign:
+				return translateAssign((SyntaxTree.Stmt<Assign>) stmt, context);
+			case Bytecode.OPCODE_assume:
+				return translateAssume((SyntaxTree.Stmt<Assume>) stmt, context);
+			case Bytecode.OPCODE_break:
+				return translateBreak((SyntaxTree.Stmt<Break>) stmt, context);
+			case Bytecode.OPCODE_continue:
+				return translateContinue((SyntaxTree.Stmt<Continue>) stmt, context);				
+			case Bytecode.OPCODE_debug:
+				return context;
+			case Bytecode.OPCODE_dowhile:
+				return translateDoWhile((SyntaxTree.Stmt<DoWhile>) stmt, context);
+			case Bytecode.OPCODE_fail:
+				return translateFail((SyntaxTree.Stmt<DoWhile>) stmt, context);
+			case Bytecode.OPCODE_if:
+			case Bytecode.OPCODE_ifelse:
+				return translateIf((SyntaxTree.Stmt<If>) stmt, context);
+			case Bytecode.OPCODE_indirectinvoke:
+				translateIndirectInvoke((SyntaxTree.Operator<IndirectInvoke>) stmt, context.getEnvironment());
+				return context;
+			case Bytecode.OPCODE_invoke:
+				translateInvoke((SyntaxTree.Operator<Invoke>) stmt, context.getEnvironment());
+				return context;
+			case Bytecode.OPCODE_return:
+				return translateReturn((SyntaxTree.Stmt<Return>) stmt, context);
+			case Bytecode.OPCODE_switch:
+				return translateSwitch((SyntaxTree.Stmt<Switch>) stmt, context);
+			case Bytecode.OPCODE_while:
+				return translateWhile((SyntaxTree.Stmt<While>) stmt, context);
+			default:
+				internalFailure("unknown statement encountered (" + stmt + ")",
+						stmt.getEnclosingDeclaration().parent().filename(), stmt.attributes());
+				return null; // deadcode
+			}
+		} catch (InternalFailure e) {
+			throw e;
+		} catch (Throwable e) {
+			internalFailure(e.getMessage(), stmt.getEnclosingDeclaration().parent().filename(), e, stmt.attributes());
+			throw e; // deadcode
+		}
+	}
+
+	/**
+	 * Translate an assert statement. This emits a verification condition which
+	 * ensures the assert condition holds, given the current context.
+	 * 
+	 * @param stmt
+	 * @param wyalFile
+	 */
+	private Context translateAssert(SyntaxTree.Stmt<Assert> stmt, Context context) {
+		Pair<Expr,Context> p = translateExpressionWithChecks(stmt.getOperand(0), context);
+		Expr condition = p.first();
+		context = p.second();		
+		//
+		VerificationCondition verificationCondition = new VerificationCondition("assertion failure",
+				context.assumptions, condition, stmt.attributes());
+		context.emit(verificationCondition);		
+		//
+		return context.assume(condition);
+	}
+
+	/**
+	 * Translate an assign statement. This updates the version number of the
+	 * underlying assigned variable.
+	 * 
+	 * @param stmt
+	 * @param wyalFile
+	 */
+	private Context translateAssign(SyntaxTree.Stmt<Assign> stmt, Context context) {		
+		SyntaxTree.Expr[] lhs = stmt.getOperandGroup(0);
+		Pair<Expr[],Context> p = translateExpressionsWithChecks(stmt.getOperandGroup(1), context);
+		Expr[] rhs = p.first();
+		context = p.second();
+
+		// TODO: handle multiple returns
+		
+		// TODO: generate checks for type invariants
+
+		for (int i = 0; i != lhs.length; ++i) {
+			SyntaxTree.Expr l = lhs[i];
+			Expr r = rhs[i];
+			if (l instanceof SyntaxTree.Variable) {
+				context = context.write(l.getIndex(), r);				
+			} else {
+				SyntaxTree.Operator<?> o = (SyntaxTree.Operator<?>) l;
+				switch (o.getOpcode()) {
+				case Bytecode.OPCODE_arrayindex:
+					context = translateArrayAssign((SyntaxTree.Operator<Operator>) o, r, context);
+					break;
+				case Bytecode.OPCODE_fieldload:
+					context = translateRecordAssign((SyntaxTree.Operator<FieldLoad>) o, r, context);
+					break;
+				case Bytecode.OPCODE_dereference:
+					// There's nothing useful we can do here.
+					break;
+				default:
+					internalFailure("unknown lval encountered (" + o + ")", context.getEnclosingFile().filename(),
+							l.attributes());
+				}
+			}
+		}		
+		// Done
+		return context;
+	}
+
+	/**
+	 * Translate an assignment to a field.
+	 * 
+	 * @param lval
+	 *            The field access expression
+	 * @param result
+	 *            The value being assigned to the given array element
+	 * @param context
+	 *            The enclosing context
+	 * @return
+	 */
+	private Context translateRecordAssign(SyntaxTree.Operator<FieldLoad> lval, Expr result, Context context) {
+		try {
+			Bytecode.FieldLoad bytecode = lval.getBytecode();
+			Type.EffectiveRecord type = typeSystem.expandAsEffectiveRecord(lval.getOperand(0).getType());
+			// Translate source expression
+			Pair<Expr, Context> p = translateExpressionWithChecks(lval.getOperand(0), context);
+			Expr originalSource = p.first();
+			context = p.second();
+			// Generate new source expression based of havoced variable
+			SyntaxTree.Variable var = extractAssignedVariable(lval);
+			if (var != null) {
+				context = context.havoc(var.getIndex());
+			}
+			Expr newSource = translateExpression(lval.getOperand(0), context.getEnvironment());
+			//
+			ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
+			Collections.sort(fields);
+			int index = fields.indexOf(bytecode.fieldName());
+			for (int i = 0; i != fields.size(); ++i) {
+				Expr j = new Expr.Constant(Value.Integer(BigInteger.valueOf(i)));
+				Expr oldField = new Expr.IndexOf(originalSource, j, lval.attributes());
+				Expr newField = new Expr.IndexOf(newSource, j, lval.attributes());
+				if (i != index) {
+					context = context.assume(new Expr.Binary(Expr.Binary.Op.EQ, oldField, newField, lval.attributes()));
+				} else {
+					context = context.assume(new Expr.Binary(Expr.Binary.Op.EQ, newField, result, lval.attributes()));
+				}
+			}
+			return context;
+		} catch (ResolveError e) {
+			internalFailure(e.getMessage(), lval.getEnclosingDeclaration().parent().filename(), e, lval.attributes());
+			return null;
+		}
+	}
+
+	/**
+	 * Translate an assignment to an array element.
+	 * 
+	 * @param lval
+	 *            The array assignment expression
+	 * @param result
+	 *            The value being assigned to the given array element
+	 * @param context
+	 *            The enclosing context
+	 * @return
+	 */
+	private Context translateArrayAssign(SyntaxTree.Operator<Operator> lval, Expr result, Context context) {
+		try {
+			Type elementType = typeSystem.expandAsEffectiveArray(lval.getOperand(0).getType()).element();
+			// Translate src and index expressions
+			Pair<Expr,Context> p1 = translateExpressionWithChecks(lval.getOperand(0), context);
+			Expr originalSource = p1.first();
+			context = p1.second();
+			Pair<Expr,Context> p2 = translateExpressionWithChecks(lval.getOperand(1), context);
+			Expr index = p2.first();
+			context = p2.second();
+			// Emit verification conditions to check access in bounds
+			generateIndexOutOfBoundsCheck(lval, context);
+			// Generate new source expression based of havoced variable
+			SyntaxTree.Variable var = extractAssignedVariable(lval);
+			if (var != null) {
+				context = context.havoc(var.getIndex());
+			}
+			Expr newSource = translateExpression(lval.getOperand(0), context.getEnvironment());
+			// Construct connection between new source expression and original
+			// source expression
+			Expr arg = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { originalSource, newSource, index },
+					lval.attributes());
+			ArrayList<SyntacticType> generics = new ArrayList<SyntacticType>();
+			generics.add(convert(elementType, lval.getEnclosingDeclaration()));
+			Expr.Invoke macro = new Expr.Invoke("update", Trie.fromString("wycs/core/Array"), generics, arg);
+			// Construct connection between new source expression element and result
+			Expr newLval = new Expr.IndexOf(newSource, index, lval.attributes());
+			Expr eq = new Expr.Binary(Expr.Binary.Op.EQ, newLval, result, lval.attributes());
+			//
+			return context.assume(macro, eq);
+		} catch (ResolveError e) {
+			internalFailure(e.getMessage(), lval.getEnclosingDeclaration().parent().filename(), e, lval.attributes());
+			return null;
+		}
+	}
+
+	/**
+	 * Determine the variable at the root of a given sequence of assignments, or
+	 * return null if there is no statically determinable variable.
+	 * 
+	 * @param lval
+	 * @return
+	 */
+	private SyntaxTree.Variable extractAssignedVariable(SyntaxTree.Expr lval) {
+		if (lval instanceof SyntaxTree.Variable) {
+			return (SyntaxTree.Variable) lval;
+		} else {
+			SyntaxTree.Operator<?> o = (SyntaxTree.Operator<?>) lval;
+			switch (o.getOpcode()) {
+			case Bytecode.OPCODE_arrayindex:
+				return extractAssignedVariable(o.getOperand(0));
+			case Bytecode.OPCODE_fieldload:
+				return extractAssignedVariable(o.getOperand(0));
+			case Bytecode.OPCODE_dereference:
+				return null;
+			default:
+				internalFailure("unknown lval encountered (" + o + ")",
+						lval.getEnclosingDeclaration().parent().filename(), lval.attributes());
+				return null;
+			}
+		}
+	}
+
+	/**
+	 * Translate an assume statement. This simply updates the current context to
+	 * assume that the given condition holds true (i.e. regardless of whether it
+	 * does or not). The purpose of assume statements is to allow some level of
+	 * interaction between the programmer and the verifier. That is, the
+	 * programmer can assume things which he/she knows to be true which the
+	 * verifier cannot prove (for whatever reason).
+	 * 
+	 * @param stmt
+	 * @param wyalFile
+	 */
+	private Context translateAssume(SyntaxTree.Stmt<Assume> stmt, Context context) {
+		Pair<Expr,Context> p = translateExpressionWithChecks(stmt.getOperand(0), context);
+		Expr condition = p.first();
+		context = p.second();
+		return context.assume(condition);
+	}
+
+	/**
+	 * Translate a break statement. This takes the current context and pushes it
+	 * into the enclosing loop scope. It will then be extracted later and used.
+	 * 
+	 * @param stmt
+	 * @param wyalFile
+	 */
+	private Context translateBreak(SyntaxTree.Stmt<Break> stmt, Context context) {
+		LoopScope enclosingLoop = context.getEnclosingLoopScope();
+		enclosingLoop.addBreakContext(context);
+		return null;
+	}
+	
+	/**
+	 * Translate a continue statement. This takes the current context and pushes it
+	 * into the enclosing loop scope. It will then be extracted later and used.
+	 * 
+	 * @param stmt
+	 * @param wyalFile
+	 */
+	private Context translateContinue(SyntaxTree.Stmt<Continue> stmt, Context context) {
+		LoopScope enclosingLoop = context.getEnclosingLoopScope();
+		enclosingLoop.addContinueContext(context);
+		return null;
+	}
+	
+	/**
+	 * Translate a DoWhile statement.
+	 * 
+	 * @param stmt
+	 * @param context
+	 * @return
+	 */
+	private Context translateDoWhile(SyntaxTree.Stmt<DoWhile> stmt, Context context) {
+		Bytecode.DoWhile bytecode = stmt.getBytecode();
+		SyntaxTree.Expr[] loopInvariant = stmt.getOperandGroup(0);
+		// Translate the loop invariant and generate appropriate macro
+		translateLoopInvariantMacros(loopInvariant, context.getEnvironment(), context.wyalFile);
+		// Rule 1. Check loop invariant after first iteration
+		LoopScope firstScope = new LoopScope();
+		Context beforeFirstBodyContext = context.newLoopScope(firstScope);
+		Context afterFirstBodyContext = translateStatementBlock(stmt.getBlock(0), beforeFirstBodyContext);
+		// Join continue contexts together since they must also preserve the
+		// loop invariant
+		afterFirstBodyContext = joinDescendants(beforeFirstBodyContext, afterFirstBodyContext,
+				firstScope.continueContexts);
+		//
+		checkLoopInvariant("loop invariant not established by first iteration", loopInvariant,
+				afterFirstBodyContext);
+		// Rule 2. Check loop invariant preserved on subsequence iterations. On
+		// entry to the loop body we must havoc all modified variables. This is
+		// necessary as such variables should retain their values from before
+		// the loop.
+		LoopScope arbitraryScope = new LoopScope();
+		Context beforeArbitraryBodyContext = context.newLoopScope(arbitraryScope).havoc(bytecode.modifiedVariables());
+		beforeArbitraryBodyContext = assumeLoopInvariant(loopInvariant, beforeArbitraryBodyContext);
+		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), beforeArbitraryBodyContext);
+		Expr trueCondition = p.first();
+		beforeArbitraryBodyContext = p.second().assume(trueCondition);
+		Context afterArbitraryBodyContext = translateStatementBlock(stmt.getBlock(0), beforeArbitraryBodyContext);
+		// Join continue contexts together since they must also preserve the
+		// loop invariant
+		afterArbitraryBodyContext = joinDescendants(beforeArbitraryBodyContext, afterArbitraryBodyContext,
+				arbitraryScope.continueContexts);
+		//
+		checkLoopInvariant("loop invariant not preserved", loopInvariant, afterArbitraryBodyContext);
+		// Rule 3. Assume loop invariant holds.
+		Context exitContext = context.havoc(bytecode.modifiedVariables());
+		exitContext = assumeLoopInvariant(loopInvariant, exitContext);
+		Expr falseCondition = invert(translateExpression(stmt.getOperand(0), exitContext.getEnvironment()),
+				stmt.getOperand(0));
+		exitContext = exitContext.assume(falseCondition);
+		//
+		// Finally, need to join any break contexts from either first iteration
+		// or arbitrary iteration
+		exitContext = joinDescendants(context, exitContext, firstScope.breakContexts, arbitraryScope.breakContexts);
+		//
+		return exitContext;
+	}
+
+	/**
+	 * Translate a fail statement. Execution should never reach such a
+	 * statement. Hence, we need to emit a verification condition to ensure this
+	 * is the case.
+	 * 
+	 * @param stmt
+	 * @param context
+	 * @return
+	 */
+	private Context translateFail(SyntaxTree.Stmt<DoWhile> stmt, Context context) {
+		Expr condition = new Expr.Constant(Value.Bool(false), stmt.attributes());
+		//
+		VerificationCondition verificationCondition = new VerificationCondition("panic is reachable",
+				context.assumptions, condition, stmt.attributes());
+		context.emit(verificationCondition);
+		//
+		return null;
+	}
+
+	/**
+	 * Translate an if statement. This translates the true and false branches
+	 * and then recombines them together to form an updated environment. This is
+	 * challenging when the environments are updated independently in both
+	 * branches.
+	 * 
+	 * @param stmt
+	 * @param wyalFile
+	 */
+	private Context translateIf(SyntaxTree.Stmt<If> stmt, Context context) {
+		//
+		Pair<Expr,Context> p = translateExpressionWithChecks(stmt.getOperand(0), context);
+		Expr trueCondition = p.first();
+		context = p.second();
+		//
+		Expr falseCondition = invert(trueCondition, stmt.getOperand(0));
+		//
+		Context trueContext = context.assume(trueCondition);
+		Context falseContext = context.assume(falseCondition);
+		//
+		trueContext = translateStatementBlock(stmt.getBlock(0), trueContext);
+		if (stmt.numberOfBlocks() > 1) {
+			falseContext = translateStatementBlock(stmt.getBlock(1), falseContext);
+		}
+		// Finally, we must join the two context's back together. This ensures
+		// that information from either side is properly preserved
+		return joinDescendants(context, new Context[] { trueContext, falseContext });
+	}
+
+	/**
+	 * Translate a return statement. If a return value is given, then this must
+	 * ensure that the post-condition of the enclosing function or method is met
+	 * 
+	 * @param stmt
+	 * @param wyalFile
+	 */
+	private Context translateReturn(SyntaxTree.Stmt<Return> stmt, Context context) {
+		//
+		WyilFile.FunctionOrMethod declaration = (WyilFile.FunctionOrMethod) stmt.getEnclosingDeclaration();
+		Type.FunctionOrMethod type = declaration.type();
+		SyntaxTree.Expr[] returns = stmt.getOperands();
+		SyntaxTree.Expr[] postcondition = declaration.getPostcondition();
+		//
+		if (returns.length > 0) {
+			// There is at least one return value. Therefore, we need to check
+			// any preconditions for those return expressions and, potentially,
+			// ensure any postconditions of the cnlosing function/method are
+			// met.
+			Pair<Expr[],Context> p = translateExpressionsWithChecks(returns, context);
+			Expr[] exprs = p.first();
+			context = p.second();
+			//
+			if (postcondition.length > 0) {
+				// There is at least one return value and at least one
+				// postcondition clause. Therefore, we need to check the return
+				// values against the post condition(s). One of the difficulties
+				// here is that the postcondition will refer to parameters as
+				// they were on entry to the function/method, not as they are
+				// now.
+				Expr[] arguments = new Expr[type.params().size() + type.returns().size()];
+				// Translate parameters as arguments to post-condition
+				// invocation
+				for (int i = 0; i != type.params().size(); ++i) {
+					SyntaxTree.Variable var = (SyntaxTree.Variable) declaration.getExpression(i);
+					arguments[i] = new Expr.Variable(var.name(), var.attributes());
+				}
+				// Copy over return expressions as arguments for invocation(s)
+				System.arraycopy(exprs, 0, arguments, type.params().size(), exprs.length);
+				//
+				Expr argument = arguments.length == 1 ? arguments[0] : new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
+				String prefix = declaration.name() + "_ensures_";
+				// Finally, generate an appropriate verification condition to
+				// check
+				// each postcondition clause
+				for (int i = 0; i != postcondition.length; ++i) {
+					Expr clause = new Expr.Invoke(prefix + i, declaration.parent().id(), Collections.EMPTY_LIST,
+							argument);
+					context.emit(new VerificationCondition("postcondition not satisfied", context.assumptions, clause,
+							stmt.attributes()));
+				}
+			}
+		}
+		// Return null to signal that execution does not continue after this
+		// return statement.
+		return null;
+	}
+
+	/**
+	 * Translate a switch statement.
+	 * 
+	 * @param stmt
+	 * @param wyalFile
+	 */
+	private Context translateSwitch(SyntaxTree.Stmt<Switch> stmt, Context context) {
+		Bytecode.Switch bytecode = stmt.getBytecode();
+		Bytecode.Case[] cases = bytecode.cases();
+		//
+		Pair<Expr,Context> p = translateExpressionWithChecks(stmt.getOperand(0), context);
+		Expr value = p.first();
+		context = p.second();
+		//
+		Expr defaultValue = null;
+		Context[] descendants = new Context[cases.length + 1];
+		Context defaultContext = null;
+		//
+		for (int i = 0; i != cases.length; ++i) {
+			Bytecode.Case caSe = cases[i];
+			Context caseContext;
+			// Setup knowledge from case values
+			if (!caSe.isDefault()) {
+				Expr e = null;
+				for (Constant constant : caSe.values()) {
+					Expr.Constant v = new Expr.Constant(convert(constant, stmt));
+					e = or(e, new Expr.Binary(Expr.Binary.Op.EQ, value, v, stmt.attributes()));
+					defaultValue = and(defaultValue, new Expr.Binary(Expr.Binary.Op.NEQ, value, v, stmt.attributes()));
+				}
+				caseContext = context.assume(e);
+				descendants[i] = translateStatementBlock(stmt.getBlock(i), caseContext);
+			} else {
+				defaultContext = context.assume(defaultValue);
+				defaultContext = translateStatementBlock(stmt.getBlock(i), defaultContext);
+			}
+		}
+		// Sort out default context
+		if (defaultContext == null) {
+			// indicates no default block was present, so we just assume what we
+			// know and treat it as a fall through.
+			defaultContext = context.assume(defaultValue);
+		}
+		descendants[descendants.length - 1] = defaultContext;
+		//
+		return joinDescendants(context, descendants);
+	}
+
+	/**
+	 * Translate a While statement.
+	 * 
+	 * @param stmt
+	 * @param context
+	 * @return
+	 */
+	private Context translateWhile(SyntaxTree.Stmt<While> stmt, Context context) {
+		Bytecode.While bytecode = stmt.getBytecode();
+		SyntaxTree.Expr[] loopInvariant = stmt.getOperandGroup(0);
+		// Translate the loop invariant and generate appropriate macro
+		translateLoopInvariantMacros(loopInvariant, context.getEnvironment(), context.wyalFile);
+		// Rule 1. Check loop invariant on entry
+		checkLoopInvariant("loop invariant not established on entry", loopInvariant, context);
+		// Rule 2. Check loop invariant preserved. On entry to the loop body we
+		// must havoc all modified variables. This is necessary as such
+		// variables should retain their values from before the loop.
+		LoopScope scope = new LoopScope();
+		Context beforeBodyContext = context.newLoopScope(scope).havoc(bytecode.modifiedVariables());
+		beforeBodyContext = assumeLoopInvariant(loopInvariant, beforeBodyContext);
+		Pair<Expr,Context> p = translateExpressionWithChecks(stmt.getOperand(0), beforeBodyContext);
+		Expr trueCondition = p.first();		
+		beforeBodyContext = p.second().assume(trueCondition);
+		Context afterBodyContext = translateStatementBlock(stmt.getBlock(0), beforeBodyContext);
+		// Join continue contexts together since they must also preserve the
+		// loop invariant
+		afterBodyContext = joinDescendants(beforeBodyContext,afterBodyContext,scope.continueContexts);
+		checkLoopInvariant("loop invariant not preserved", loopInvariant, afterBodyContext);
+		// Rule 3. Assume loop invariant holds.
+		Context exitContext = context.havoc(bytecode.modifiedVariables());
+		exitContext = assumeLoopInvariant(loopInvariant, exitContext);		
+		Expr falseCondition = invert(translateExpression(stmt.getOperand(0), exitContext.getEnvironment()),
+				stmt.getOperand(0));
+		exitContext = exitContext.assume(falseCondition);
+		//
+		// Finally, need to join any break contexts
+		exitContext = joinDescendants(context,exitContext,scope.breakContexts);
+		//
+		return exitContext;
+	}
+
+	/**
+	 * Translate the sequence of invariant expressions which constitute the loop
+	 * invariant of a loop into one or more macros
+	 * 
+	 * @param loopInvariant
+	 *            The clauses making up the loop invariant
+	 * @param environment
+	 * @param wyalFile
+	 */
+	private void translateLoopInvariantMacros(SyntaxTree.Expr[] loopInvariant, LocalEnvironment environment,
+			WyalFile wyalFile) {
+		WyilFile.FunctionOrMethod declaration = (WyilFile.FunctionOrMethod) environment
+				.getParent().enclosingDeclaration;
+		// FIXME: this is completely broken in the case of multiple loops. The
+		// problem is that we need to distinguish the macro names based on some
+		// kind of block identifier.
+		String prefix = declaration.name() + "_loopinvariant_";
+		// FIXME: following is broken as well because it doesn't know the exact
+		// scope that we want to generate the loop invariant within. This is
+		// important because the scope determines the set of unique variable
+		// names and their types.
+		TypePattern type = generateLoopInvariantTypePattern(declaration, environment);
+		//
+		for (int i = 0; i != loopInvariant.length; ++i) {
+			String name = prefix + i;
+			Expr clause = translateExpression(loopInvariant[i], environment);
+			wyalFile.add(wyalFile.new Macro(name, Collections.EMPTY_LIST, type, clause, loopInvariant[i].attributes()));
+		}
+	}
+
+	/**
+	 * Emit verification condition(s) to ensure that the clauses of loop
+	 * invariant hold at a given point
+	 * 
+	 * @param loopInvariant
+	 *            The clauses making up the loop invariant
+	 * @param context
+	 */
+	private void checkLoopInvariant(String msg, SyntaxTree.Expr[] loopInvariant, Context context) {
+		//
+		LocalEnvironment environment = context.getEnvironment();
+		WyilFile.FunctionOrMethod declaration = (WyilFile.FunctionOrMethod) environment
+				.getParent().enclosingDeclaration;
+		// FIXME: this is completely broken in the case of multiple loops. The
+		// problem is that we need to distinguish the macro names based on some
+		// kind of block identifier.
+		String prefix = declaration.name() + "_loopinvariant_";
+		// Construct argument to invocation
+		int[] localVariables = determineLocalVariables(declaration);
+		Expr[] arguments = new Expr[localVariables.length];
+		for (int i = 0; i != arguments.length; ++i) {
+			SyntaxTree.Variable var = (SyntaxTree.Variable) declaration.getExpression(localVariables[i]);
+			arguments[i] = new Expr.Variable(environment.read(var.getIndex()), var.attributes());
+		}
+		Expr argument = arguments.length == 1 ? arguments[0] : new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
+		//
+		for (int i = 0; i != loopInvariant.length; ++i) {
+			SyntaxTree.Expr clause = loopInvariant[i];
+			Expr macroCall = new Expr.Invoke(prefix + i, declaration.parent().id(), Collections.EMPTY_LIST, argument,
+					clause.attributes());
+			context.emit(new VerificationCondition(msg, context.assumptions, macroCall, clause.attributes()));
+		}
+	}
+
+	private Context assumeLoopInvariant(SyntaxTree.Expr[] loopInvariant, Context context) {
+		//
+		LocalEnvironment environment = context.getEnvironment();
+		WyilFile.FunctionOrMethod declaration = (WyilFile.FunctionOrMethod) environment
+				.getParent().enclosingDeclaration;
+		// FIXME: this is completely broken in the case of multiple loops. The
+		// problem is that we need to distinguish the macro names based on some
+		// kind of block identifier.
+		String prefix = declaration.name() + "_loopinvariant_";
+		// Construct argument to invocation
+		int[] localVariables = determineLocalVariables(declaration);
+		Expr[] arguments = new Expr[localVariables.length];
+		for (int i = 0; i != arguments.length; ++i) {
+			SyntaxTree.Variable var = (SyntaxTree.Variable) declaration.getExpression(localVariables[i]);
+			arguments[i] = new Expr.Variable(environment.read(var.getIndex()), var.attributes());
+		}
+		Expr argument = arguments.length == 1 ? arguments[0] : new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
+		//
+		for (int i = 0; i != loopInvariant.length; ++i) {
+			SyntaxTree.Expr clause = loopInvariant[i];
+			Expr macroCall = new Expr.Invoke(prefix + i, declaration.parent().id(), Collections.EMPTY_LIST, argument,
+					clause.attributes());
+			context = context.assume(macroCall);
+		}
+		//
+		return context;
+	}
+
 	// =========================================================================
-	// Operands
+	// Checked Expressions
 	// =========================================================================
+
+	/**
+	 * Translate zero or more expressions into their equivalent WyAL
+	 * expressions. At the same time, emit verification conditions to check that
+	 * the expression's preconditions. For example, in the expression
+	 * <code>x[i] + 1</code> we need to check that <code>i</code> is within
+	 * bounds.
+	 *
+	 * @param expr
+	 *            --- Expression to be translated
+	 * @param context
+	 *            --- Context in which translation is occurring
+	 * @return
+	 */
+	private Pair<Expr[],Context> translateExpressionsWithChecks(SyntaxTree.Expr[] exprs, Context context) {
+		// Generate expression preconditions as verification conditions
+		for (SyntaxTree.Expr expr : exprs) {
+			context = generateExpressionPrePostconditions(expr, context);
+		}
+		// Translate expression in the normal fashion
+		return new Pair<>(translateExpressions(exprs, context.getEnvironment()),context);
+	}
+
+	/**
+	 * Translate a given expression into its equivalent WyAL expression. At the
+	 * same time, emit verification conditions to check that the expression's
+	 * preconditions. For example, in the expression <code>x[i] + 1</code> we
+	 * need to check that <code>i</code> is within bounds.
+	 *
+	 * @param expr
+	 *            --- Expression to be translated
+	 * @param context
+	 *            --- Context in which translation is occurring
+	 * @return
+	 */
+	private Pair<Expr,Context> translateExpressionWithChecks(SyntaxTree.Expr expr, Context context) {
+		// Generate expression preconditions as verification conditions
+		context = generateExpressionPrePostconditions(expr, context);
+		// Translate expression in the normal fashion
+		return new Pair<>(translateExpression(expr, context.getEnvironment()),context);
+	}
+
+	private Context generateExpressionPrePostconditions(SyntaxTree.Expr expr, Context context) {
+		try {
+			if (expr instanceof SyntaxTree.Operator) {
+				SyntaxTree.Operator<?> operand = (SyntaxTree.Operator<?>) expr;
+				switch (operand.getOpcode()) {
+				case Bytecode.OPCODE_convert:					
+				case Bytecode.OPCODE_fieldload:
+				case Bytecode.OPCODE_lambda:
+				case Bytecode.OPCODE_indirectinvoke:
+				case Bytecode.OPCODE_none:
+				case Bytecode.OPCODE_some:
+				case Bytecode.OPCODE_all:
+					context = generateExpressionPrePostconditions(operand.getOperand(0), context);
+					for (int i = 0; i != operand.numberOfOperandGroups(); ++i) {
+						SyntaxTree.Expr[] group = operand.getOperandGroup(i);
+						for (SyntaxTree.Expr e : group) {
+							context = generateExpressionPrePostconditions(e, context);
+						}
+					}										
+					break;				
+				case Bytecode.OPCODE_invoke:
+					context = generateInvokePrePostconditions((SyntaxTree.Operator<Invoke>) operand, context);
+					break;									
+				default:
+					context = generateOperatorPrePostconditions((SyntaxTree.Operator<Operator>) operand, context);
+				}
+			}
+			return context;
+		} catch (InternalFailure e) {
+			throw e;
+		} catch (Throwable e) {
+			internalFailure(e.getMessage(), expr.getEnclosingDeclaration().parent().filename(), e, expr.attributes());
+			return null;
+		}
+	}
+
+	private Context generateInvokePrePostconditions(SyntaxTree.Operator<Invoke> expr, Context context) throws Exception {
+		//
+		for (SyntaxTree.Expr operand : expr.getOperands()) {
+			context = generateExpressionPrePostconditions(operand, context);
+		}
+		// 
+		checkInvokePreconditions(expr,context);
+		return assumeInvokePostconditions(expr,context);
+	}
+	
+	private void checkInvokePreconditions(SyntaxTree.Operator<Invoke> expr, Context context) throws Exception {
+		WyilFile.Declaration declaration = expr.getEnclosingDeclaration();		
+		Bytecode.Invoke bytecode = expr.getBytecode();
+		//
+		WyilFile.FunctionOrMethod fm = lookupFunctionOrMethod(bytecode.name(), bytecode.type(), expr);  
+		int numPreconditions = fm.getPrecondition().length;
+		//
+		if (numPreconditions > 0) {
+			// There is at least one precondition for the function/method being
+			// called. Therefore, we need to generate a verification condition
+			// which will check that the precondition holds.
+			//
+			Expr[] arguments = translateExpressions(expr.getOperands(), context.getEnvironment());
+			Expr argument = arguments.length == 1 ? arguments[0] : new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
+			String prefix = bytecode.name().name() + "_requires_";
+			// Finally, generate an appropriate verification condition to check
+			// each precondition clause
+			for (int i = 0; i != numPreconditions; ++i) {
+				Expr clause = new Expr.Invoke(prefix + i, declaration.parent().id(), Collections.EMPTY_LIST, argument);
+				context.emit(new VerificationCondition("precondition not satisfied", context.assumptions, clause,
+						expr.attributes()));
+			}
+		}
+	}
+	
+	private Context assumeInvokePostconditions(SyntaxTree.Operator<Invoke> expr, Context context) throws Exception {
+		WyilFile.Declaration declaration = expr.getEnclosingDeclaration();		
+		Bytecode.Invoke bytecode = expr.getBytecode();
+		//
+		WyilFile.FunctionOrMethod fm = lookupFunctionOrMethod(bytecode.name(), bytecode.type(), expr);  
+		int numPostconditions = fm.getPostcondition().length;
+		//
+		if (numPostconditions > 0) {
+			// There is at least one precondition for the function/method being
+			// called. Therefore, we need to generate a verification condition
+			// which will check that the precondition holds.
+			//
+			Expr[] parameters = translateExpressions(expr.getOperands(), context.getEnvironment());
+			Expr[] arguments = Arrays.copyOf(parameters, parameters.length + fm.type().returns().size());
+			// FIXME: following broken for multiple returns
+			arguments[arguments.length-1] = translateExpression(expr,context.getEnvironment());
+			//
+			Expr argument = arguments.length == 1 ? arguments[0] : new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
+			String prefix = bytecode.name().name() + "_ensures_";
+			// Finally, generate an appropriate verification condition to check
+			// each precondition clause
+			for (int i = 0; i != numPostconditions; ++i) {
+				Expr clause = new Expr.Invoke(prefix + i, declaration.parent().id(), Collections.EMPTY_LIST, argument);
+				context = context.assume(clause);
+			}
+		}
+		//
+		return context;
+	}
+
+	private Context generateOperatorPrePostconditions(SyntaxTree.Operator<Operator> expr, Context context) {
+		for (SyntaxTree.Expr operand : expr.getOperands()) {
+			context = generateExpressionPrePostconditions(operand, context);
+			// In the case of a logical and condition we need to propagate the
+			// left-hand side as an assumption into the right-hand side. This is
+			// an artifact of short-circuiting whereby terms on the right-hand
+			// side only execute when the left-hand side is known to hold.
+			if (expr.getOpcode() == Bytecode.OPCODE_logicaland) {
+				Expr clause = translateExpression(operand, context.getEnvironment());
+				context = context.assume(clause);
+			}
+		}
+		//
+		switch (expr.getOpcode()) {
+		case Bytecode.OPCODE_div:
+		case Bytecode.OPCODE_rem:
+			generateDivideByZeroCheck(expr, context);
+			break;
+		case Bytecode.OPCODE_arrayindex:
+			generateIndexOutOfBoundsCheck(expr, context);
+			break;
+		case Bytecode.OPCODE_arraygen:
+			generateArrayGeneratorLengthCheck(expr, context);
+			break;
+		}
+		return context;
+	}
+
+	private void generateDivideByZeroCheck(SyntaxTree.Operator<Operator> expr, Context context) {
+		Expr rhs = translateExpression(expr.getOperand(1), context.getEnvironment());
+		Value zero = Value.Integer(BigInteger.ZERO);
+		Expr.Constant constant = new Expr.Constant(zero, rhs.attributes());
+		Expr neqZero = new Expr.Binary(Expr.Binary.Op.NEQ, rhs, constant, rhs.attributes());
+		//
+		context.emit(new VerificationCondition("divide by zero", context.assumptions, neqZero, expr.attributes()));
+	}
+
+	private void generateIndexOutOfBoundsCheck(SyntaxTree.Operator<Operator> expr, Context context) {
+		Expr src = translateExpression(expr.getOperand(0), context.getEnvironment());
+		Expr idx = translateExpression(expr.getOperand(1), context.getEnvironment());
+		Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO));
+		Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF, src);
+		//
+		Expr negTest = new Expr.Binary(Expr.Binary.Op.GTEQ, idx, zero, idx.attributes());
+		Expr lenTest = new Expr.Binary(Expr.Binary.Op.LT, idx, length, idx.attributes());
+		//
+		context.emit(new VerificationCondition("index out of bounds (negative)", context.assumptions, negTest,
+				expr.attributes()));
+		context.emit(new VerificationCondition("index out of bounds (not less than length)", context.assumptions,
+				lenTest, expr.attributes()));
+	}
+
+	private void generateArrayGeneratorLengthCheck(SyntaxTree.Operator<Operator> expr, Context context) {
+		Expr rhs = translateExpression(expr.getOperand(1), context.getEnvironment());
+		Value zero = Value.Integer(BigInteger.ZERO);
+		Expr.Constant constant = new Expr.Constant(zero, rhs.attributes());
+		Expr neqZero = new Expr.Binary(Expr.Binary.Op.GTEQ, rhs, constant, rhs.attributes());
+		//
+		context.emit(new VerificationCondition("negative length", context.assumptions, neqZero, expr.attributes()));
+	}
+	
+	// =========================================================================
+	// Expression
+	// =========================================================================
+
+	private Expr[] translateExpressions(SyntaxTree.Expr[] loc, LocalEnvironment environment) {
+		Expr[] results = new Expr[loc.length];
+		for (int i = 0; i != results.length; ++i) {
+			results[i] = translateExpression(loc[i], environment);
+		}
+		return results;
+	}
 
 	/**
 	 * Transform a given bytecode location into its equivalent WyAL expression.
@@ -203,78 +1195,802 @@ public class VerificationConditionGenerator {
 	 *            The bytecode location to be translated
 	 * @return
 	 */
-	private Expr translate(SyntaxTree loc) {
-		if (loc instanceof SyntaxTree.Variable) {
-			SyntaxTree.Variable var = (SyntaxTree.Variable) loc;
-			return new Expr.Variable(var.name(), var.attributes());
-		} else {
-			SyntaxTree.Operator operand = (SyntaxTree.Operator) loc;
-			Bytecode.Expr bytecode = operand.getBytecode();
-			switch (bytecode.getOpcode()) {
-			case Bytecode.OPCODE_const:
-				return translate((Bytecode.Const) bytecode, operand);
-			case Bytecode.OPCODE_convert:
-				return translate((Bytecode.Convert) bytecode, operand);
-			case Bytecode.OPCODE_fieldload:
-				return translate((Bytecode.FieldLoad) bytecode, operand);
-			case Bytecode.OPCODE_indirectinvoke:
-				return translate((Bytecode.IndirectInvoke) bytecode, operand);
-			case Bytecode.OPCODE_invoke:
-				return translate((Bytecode.Invoke) bytecode, operand);
-			case Bytecode.OPCODE_lambda:
-				return translate((Bytecode.Lambda) bytecode, operand);
-			case Bytecode.OPCODE_none:
-			case Bytecode.OPCODE_some:
-			case Bytecode.OPCODE_all:
-				return translate((Bytecode.Quantifier) bytecode, operand);
-			default:
-				return translate((Bytecode.Operator) bytecode, operand);
+	@SuppressWarnings("unchecked")
+	private Expr translateExpression(SyntaxTree.Expr loc, LocalEnvironment environment) {
+		try {
+			if (loc instanceof SyntaxTree.Variable) {
+				SyntaxTree.Variable var = (SyntaxTree.Variable) loc;
+				return new Expr.Variable(environment.read(loc.getIndex()), var.attributes());
+			} else {
+				SyntaxTree.Operator<?> operand = (SyntaxTree.Operator<?>) loc;
+				switch (operand.getOpcode()) {
+				case Bytecode.OPCODE_const:
+					return translateConstant((SyntaxTree.Operator<Const>) operand, environment);
+				case Bytecode.OPCODE_convert:
+					return translateConvert((SyntaxTree.Operator<Convert>) operand, environment);
+				case Bytecode.OPCODE_fieldload:
+					return translateFieldLoad((SyntaxTree.Operator<FieldLoad>) operand, environment);
+				case Bytecode.OPCODE_indirectinvoke:
+					return translateIndirectInvoke((SyntaxTree.Operator<IndirectInvoke>) operand, environment);
+				case Bytecode.OPCODE_invoke:
+					return translateInvoke((SyntaxTree.Operator<Invoke>) operand, environment);
+				case Bytecode.OPCODE_lambda:
+					return translateLambda((SyntaxTree.Operator<Lambda>) operand, environment);
+				case Bytecode.OPCODE_none:
+				case Bytecode.OPCODE_some:
+				case Bytecode.OPCODE_all:
+					return translateQuantifier((SyntaxTree.Operator<Quantifier>) operand, environment);
+				default:
+					return translateOperator((SyntaxTree.Operator<Operator>) operand, environment);
+				}
 			}
+		} catch (InternalFailure e) {
+			throw e;
+		} catch (Throwable e) {
+			internalFailure(e.getMessage(), loc.getEnclosingDeclaration().parent().filename(), e, loc.attributes());
+			throw e; // deadcode
 		}
 	}
 
-	private Expr translate(Bytecode.Const code, SyntaxTree.Operator context) {
-		Value value = convert(code.constant(),context);
+	private Expr translateConstant(SyntaxTree.Operator<Const> expr, LocalEnvironment environment) {
+		Bytecode.Const bytecode = expr.getBytecode();
+		// FIXME: the following is something of a hack to avoid having to
+		// translate function pointers. However, it's not a general fix, and i'm
+		// not sure what the right solution is. Perhaps having an "unknown
+		// value" as the WyCS level might work (and be useful to replace
+		// translateAsUnknown).
+		if (bytecode.constant() instanceof Constant.FunctionOrMethod) {
+			return translateAsUnknown(expr, environment);
+		}
+		Value value = convert(bytecode.constant(), expr);
+		return new Expr.Constant(value, expr.attributes());
 	}
 
-	private Expr translate(Bytecode.Convert code, SyntaxTree.Operator context) {
-		// FIXME: need to implemet this
-		throw new RuntimeException("Implement me!");
+	private Expr translateConvert(SyntaxTree.Operator<Convert> expr, LocalEnvironment environment) {
+		// TODO: check whether need to do any more here
+		return translateExpression(expr.getOperand(0), environment);
 	}
 
-	private Expr translate(Bytecode.FieldLoad code, SyntaxTree.Operator context) {
-		// FIXME: need to implemet this
-		throw new RuntimeException("Implement me!");
+	private Expr translateFieldLoad(SyntaxTree.Operator<FieldLoad> expr, LocalEnvironment environment) {
+		try {
+			Bytecode.FieldLoad bytecode = expr.getBytecode();
+			SyntaxTree.Expr srcOperand = expr.getOperand(0);
+			Type.EffectiveRecord er = typeSystem.expandAsEffectiveRecord(srcOperand.getType());
+			// FIXME: need to include Records in WyCS
+			// We need to determine and sort the fields here because records are
+			// implemented as WyCS Tuples.
+			ArrayList<String> fields = new ArrayList<String>(er.fields().keySet());
+			Collections.sort(fields);
+			// Now, translate source expression
+			Expr src = translateExpression(srcOperand, environment);
+			// Generate index expression, which is a tuple index
+			Expr index = new Expr.Constant(Value.Integer(BigInteger.valueOf(fields.indexOf(bytecode.fieldName()))));
+			// Done
+			return new Expr.IndexOf(src, index, expr.attributes());
+		} catch (ResolveError e) {
+			internalFailure(e.getMessage(), expr.getEnclosingDeclaration().parent().filename(), e, expr.attributes());
+			return null;
+		}
 	}
 
-	private Expr translate(Bytecode.IndirectInvoke code, SyntaxTree.Operator context) {
-		// FIXME: need to implemet this
-		throw new RuntimeException("Implement me!");
+	private Expr translateIndirectInvoke(SyntaxTree.Operator<IndirectInvoke> expr, LocalEnvironment environment) {
+		// FIXME: need to implement this
+		return translateAsUnknown(expr, environment);
 	}
 
-	private Expr translate(Bytecode.Invoke code, SyntaxTree.Operator context) {
-		// FIXME: need to implemet this
-		throw new RuntimeException("Implement me!");
+	private Expr translateInvoke(SyntaxTree.Operator<Invoke> expr, LocalEnvironment environment) {
+		Bytecode.Invoke bytecode = expr.getBytecode();
+		Expr[] operands = translateExpressions(expr.getOperands(), environment);
+		Expr argument = operands.length == 1 ? operands[0]
+				: new Expr.Nary(Expr.Nary.Op.TUPLE, operands, expr.attributes());
+		//
+		// FIXME: assume postconditions
+		//
+		return new Expr.Invoke(bytecode.name().name(), bytecode.name().module(), Collections.EMPTY_LIST, argument,
+				expr.attributes());
 	}
 
-	private Expr translate(Bytecode.Lambda code, SyntaxTree.Operator context) {
-		// FIXME: need to implemet this
-		throw new RuntimeException("Implement me!");
+	private Expr translateLambda(SyntaxTree.Operator<Lambda> expr, LocalEnvironment environment) {
+		// FIXME: need to implement this
+		return translateAsUnknown(expr, environment);
 	}
 
-	private Expr translate(Bytecode.Operator code, SyntaxTree.Operator context) {
-		// FIXME: need to implemet this
-		throw new RuntimeException("Implement me!");
+	private Expr translateOperator(SyntaxTree.Operator<Operator> expr, LocalEnvironment environment) {
+		Bytecode.Operator bytecode = expr.getBytecode();
+		Bytecode.OperatorKind kind = bytecode.kind();
+		switch (kind) {
+		case NOT:
+			return translateNotOperator(expr, environment);
+		case NEG:
+		case ARRAYLENGTH:
+			return translateUnaryOperator(unaryOperatorMap.get(kind), expr, environment);
+		case ADD:
+		case SUB:
+		case MUL:
+		case DIV:
+		case REM:
+		case EQ:
+		case NEQ:
+		case LT:
+		case LTEQ:
+		case GT:
+		case GTEQ:
+		case AND:
+		case OR:
+			return translateBinaryOperator(binaryOperatorMap.get(kind), expr, environment);
+		case IS:
+			return translateIs(expr, environment);
+		case ARRAYINDEX:
+			return translateArrayIndex(expr, environment);
+		case ARRAYCONSTRUCTOR:
+			return translateArrayInitialiser(expr, environment);
+		case ARRAYGENERATOR:
+			return translateArrayGenerator(expr, environment);
+		case RECORDCONSTRUCTOR:
+			return translateRecordInitialiser(expr, environment);
+		case RIGHTSHIFT:
+		case LEFTSHIFT:
+		case BITWISEAND:
+		case BITWISEOR:
+		case BITWISEXOR:
+		case BITWISEINVERT:
+		case DEREFERENCE:
+		case NEW:
+			return translateAsUnknown(expr, environment);
+		default:
+			// FIXME: need to implement this
+			throw new RuntimeException("Implement me! " + kind);
+		}
 	}
 
-	private Expr translate(Bytecode.Quantifier code, SyntaxTree.Operator context) {
-		// FIXME: need to implemet this
-		throw new RuntimeException("Implement me!");
+	private Expr translateNotOperator(SyntaxTree.Operator<Operator> expr, LocalEnvironment environment) {
+		Expr e = translateExpression(expr.getOperand(0), environment);
+		return invert(e, expr.getOperand(0));
+	}
+
+	private Expr translateUnaryOperator(Expr.Unary.Op op, SyntaxTree.Operator<Operator> expr,
+			LocalEnvironment environment) {
+		Expr e = translateExpression(expr.getOperand(0), environment);
+		return new Expr.Unary(op, e, expr.attributes());
+	}
+
+	private Expr translateBinaryOperator(Expr.Binary.Op op, SyntaxTree.Operator<Operator> expr,
+			LocalEnvironment environment) {
+		Expr lhs = translateExpression(expr.getOperand(0), environment);
+		Expr rhs = translateExpression(expr.getOperand(1), environment);
+		return new Expr.Binary(op, lhs, rhs, expr.attributes());
+	}
+
+	private Expr translateIs(SyntaxTree.Operator<Operator> expr, LocalEnvironment environment) {
+		Expr lhs = translateExpression(expr.getOperand(0), environment);
+		SyntaxTree.Operator<Const> rhs = (SyntaxTree.Operator<Const>) expr.getOperand(1);
+		Bytecode.Const bytecode = rhs.getBytecode();
+		Constant.Type constant = (Constant.Type) bytecode.constant();
+		SyntacticType typeTest = convert(constant.value(), environment.getParent().enclosingDeclaration);
+		return new Expr.Is(lhs, typeTest, expr.attributes());
+	}
+
+	private Expr translateArrayIndex(SyntaxTree.Operator<Operator> expr, LocalEnvironment environment) {
+		Expr lhs = translateExpression(expr.getOperand(0), environment);
+		Expr rhs = translateExpression(expr.getOperand(1), environment);
+		return new Expr.IndexOf(lhs, rhs, expr.attributes());
+	}
+
+	private Expr translateArrayGenerator(SyntaxTree.Operator<Operator> expr, LocalEnvironment environment) {
+		Expr element = translateExpression(expr.getOperand(0), environment);
+		Expr count = translateExpression(expr.getOperand(1), environment);
+		environment = environment.write(expr.getIndex());
+		return new Expr.Binary(Expr.Binary.Op.ARRAYGEN, element, count, expr.attributes());
+	}
+
+	private Expr translateArrayInitialiser(SyntaxTree.Operator<Operator> expr, LocalEnvironment environment) {
+		Expr[] vals = translateExpressions(expr.getOperands(), environment);
+		return new Expr.Nary(Expr.Nary.Op.ARRAY, vals, expr.attributes());
+	}
+
+	private Expr translateQuantifier(SyntaxTree.Operator<Quantifier> expr, LocalEnvironment environment) {
+		Bytecode.Quantifier bytecode = expr.getBytecode();
+		// Determine the type and names of each quantified variable.
+		TypePattern pattern = generateQuantifierTypePattern(expr);
+		// Apply quantifier ranges
+		Expr ranges = generateQuantifierRanges(expr, environment);
+		// Generate quantifier body
+		Expr body = translateExpression(expr.getOperand(0), environment);
+		body = implies(ranges, body);
+		// Generate quantifier expression
+		switch (bytecode.kind()) {
+		case ALL:
+			return new Expr.ForAll(pattern, body, expr.attributes());
+		case SOME:
+			return new Expr.Exists(pattern, body, expr.attributes());
+		case NONE:
+		default:
+			body = new Expr.Unary(Expr.Unary.Op.NOT, body);
+			return new Expr.ForAll(pattern, body, expr.attributes());
+		}
+	}
+
+	private Expr translateRecordInitialiser(SyntaxTree.Operator<Operator> expr, LocalEnvironment environment) {
+		Expr[] vals = translateExpressions(expr.getOperands(), environment);
+		return new Expr.Nary(Expr.Nary.Op.TUPLE, vals, expr.attributes());
+	}
+
+	/**
+	 * Translating as unknown basically means we're not representing the
+	 * operation in question at the verification level. This could be something
+	 * that we'll implement in the future, or maybe not.
+	 * 
+	 * @param expr
+	 * @param environment
+	 * @return
+	 */
+	private Expr translateAsUnknown(SyntaxTree.Expr expr, LocalEnvironment environment) {
+		// What we're doing here is creating a completely fresh variable to
+		// represent the return value. This is basically saying the return value
+		// could be anything, and we don't care what.
+		environment = environment.write(expr.getIndex());
+		String r = environment.read(expr.getIndex());
+		return new Expr.Variable(r, expr.attributes());
+	}
+
+	/**
+	 * Generate a type pattern representing the type and name of all quantifier
+	 * variables described by this quantifier.
+	 * 
+	 * @param expr
+	 * @return
+	 */
+	private TypePattern generateQuantifierTypePattern(SyntaxTree.Operator<Quantifier> expr) {
+		List<TypePattern> params = new ArrayList<TypePattern>();
+		for (int i = 0; i != expr.numberOfOperandGroups(); ++i) {
+			SyntaxTree.Expr[] group = expr.getOperandGroup(i);
+			SyntaxTree.Variable var = (SyntaxTree.Variable) group[0];
+			SyntacticType varType = convert(var.getType(), expr.getEnclosingDeclaration());
+			Expr.Variable varExpr = new Expr.Variable(var.name(), var.attributes());
+			params.add(new TypePattern.Leaf(varType, varExpr));
+		}
+		return new TypePattern.Tuple(params);
+	}
+
+	/**
+	 * Generate a logical conjunction which represents the given ranges of all
+	 * quantified variables. That is a conjunction of the form
+	 * <code>start <= var && var < end</code>.
+	 * 
+	 * @return
+	 */
+	private Expr generateQuantifierRanges(SyntaxTree.Operator<Quantifier> expr, LocalEnvironment environment) {
+		Expr ranges = null;
+		for (int i = 0; i != expr.numberOfOperandGroups(); ++i) {
+			SyntaxTree.Expr[] group = expr.getOperandGroup(i);
+			SyntaxTree.Variable var = (SyntaxTree.Variable) group[0];
+			Expr.Variable varExpr = new Expr.Variable(var.name(), var.attributes());
+			Expr startExpr = translateExpression(group[1], environment);
+			Expr endExpr = translateExpression(group[2], environment);
+			Expr lhs = new Expr.Binary(Expr.Binary.Op.LTEQ, startExpr, varExpr);
+			Expr rhs = new Expr.Binary(Expr.Binary.Op.LT, varExpr, endExpr);
+			ranges = and(ranges, and(lhs, rhs));
+		}
+		return ranges;
 	}
 
 	// =========================================================================
 	// Helpers
 	// =========================================================================
+
+	/**
+	 * Construct an implication from one expression to another
+	 * 
+	 * @param antecedent
+	 * @param consequent
+	 * @return
+	 */
+	private Expr implies(Expr antecedent, Expr consequent) {
+		if (antecedent == null) {
+			return consequent;
+		} else {
+			return new Expr.Binary(Expr.Binary.Op.IMPLIES, antecedent, consequent);
+		}
+	}
+
+	/**
+	 * Construct a conjunction of two expressions
+	 * 
+	 * @param lhs
+	 * @param rhs
+	 * @return
+	 */
+	private Expr and(Expr lhs, Expr rhs) {
+		if (lhs == null) {
+			return rhs;
+		} else if (rhs == null) {
+			return rhs;
+		} else {
+			return new Expr.Binary(Expr.Binary.Op.AND, lhs, rhs);
+		}
+	}
+
+	/**
+	 * Construct a disjunct of two expressions
+	 * 
+	 * @param lhs
+	 * @param rhs
+	 * @return
+	 */
+	private Expr or(Expr lhs, Expr rhs) {
+		if (lhs == null) {
+			return rhs;
+		} else if (rhs == null) {
+			return rhs;
+		} else {
+			return new Expr.Binary(Expr.Binary.Op.OR, lhs, rhs);
+		}
+	}
+
+	/**
+	 * Join one or more descendant context's together. To understand this,
+	 * consider the following snippet, annotated with context information:
+	 * 
+	 * <pre>
+	 * // Context: y >= 0
+	 * if x >= 0:
+	 *    x = x + 1
+	 *    // Context: y >= 0 && x >= 0 && x$1 == x + 1
+	 * else:
+	 *    x = -x
+	 *    // Context: y >= 0 && x < 0 && x$2 == x + 1
+	 * //
+	 * Context: ?
+	 * </pre>
+	 * 
+	 * At this point, we have two goals in combining the contextual information
+	 * back together. Firstly, we want to factor out the parts common to both
+	 * (e.g. <code>y >= 0</code> above). Secondly, we need to determine the
+	 * appropriate version for variables modified on one or both branches (e.g.
+	 * <code>x</code> above). Thus, the joined context for the above would be:
+	 * 
+	 * <pre>
+	 * y >= 0 && ((x >= 0 && x$1 == x + 1 && x$3 == x$1) || (x < 0 && x$2 == -x && x$3 == x$2))
+	 * </pre>
+	 * 
+	 * In the resulting environment, the current version of <code>x</code> would
+	 * then be <code>x$3</code>. To determine affected variables we simplify
+	 * identify any variable with a different version between at least two
+	 * context's.
+	 * 
+	 * @param ancestor
+	 *            Distinguished context for join, which is an ancestor of those
+	 *            context's being joined.
+	 * @param descendants
+	 *            Descendant context's being joined. Again, these maybe null for
+	 *            branches which terminate (e.g. via return).
+	 * @return
+	 */
+	private Context joinDescendants(Context ancestor, Context[] descendants) {
+		// Santity check parameters, as they maybe null. This happens in case of
+		// branches which terminate (e.g. via return or break).
+		descendants = removeNull(descendants);
+		if (descendants.length == 0) {
+			// In this case, the are actually no active descendants. Hence, the
+			// resulting context is null to indicate no branches escape this
+			// meet point.
+			return null;
+		} else if(descendants.length == 1) {
+			// If there's only one, then we don't need to join it.
+			return descendants[0];
+		}
+		//
+		LocalEnvironment joinedEnvironment = joinEnvironments(descendants);
+		//
+		AssumptionSet[] descendentAssumptions = new AssumptionSet[descendants.length];
+		for (int i = 0; i != descendants.length; ++i) {
+			Context ithContext = descendants[i];
+			LocalEnvironment ithEnvironment = ithContext.environment;
+			AssumptionSet ithAssumptions = ithContext.assumptions;
+			descendentAssumptions[i] = updateVariableVersions(ithAssumptions, ithEnvironment, joinedEnvironment);
+		}
+		//
+		AssumptionSet joinedAssumptions = ancestor.assumptions.joinDescendants(descendentAssumptions);
+		//
+		return new Context(ancestor.wyalFile, joinedAssumptions, joinedEnvironment, ancestor.enclosingLoop,
+				ancestor.verificationConditions);
+	}
+
+	private Context joinDescendants(Context ancestor, Context firstDescendant, List<Context> descendants1, List<Context> descendants2) {
+		ArrayList<Context> descendants = new ArrayList<Context>(descendants1);
+		descendants.addAll(descendants2);
+		return joinDescendants(ancestor,firstDescendant,descendants);
+	}
+	
+	private Context joinDescendants(Context ancestor, Context firstDescendant, List<Context> descendants) {
+		Context[] ds = descendants.toArray(new Context[descendants.size()+1]);
+		ds[descendants.size()] = firstDescendant;
+		return joinDescendants(ancestor, ds);
+	}
+	
+	/**
+	 * Bring a given assumption set which is consistent with an original
+	 * environment up-to-date with a new environment.
+	 * 
+	 * @param assumptions
+	 *            The assumption set associated with a given context being
+	 *            joined together.
+	 * @param original
+	 *            The original environment associated with the given context.
+	 *            This maps from location indices to version numbers and is
+	 *            consistent with the given assumption set.
+	 * @param updated
+	 *            The updated mapping from location indices to version numbers.
+	 *            In many cases, these will be the same as in the original
+	 *            environment. However, some versions will have been updated
+	 *            because they were modified in one or more context's being
+	 *            joined. In such case, the given assumption set must be brought
+	 *            up to date with the new version numbers.
+	 * @return
+	 */
+	private AssumptionSet updateVariableVersions(AssumptionSet assumptions, LocalEnvironment original,
+			LocalEnvironment updated) {
+		for (Map.Entry<Integer, String> e : updated.locals.entrySet()) {
+			Integer varIndex = e.getKey();
+			String newVarVersionedName = e.getValue();
+			String oldVarVersionedName = original.read(varIndex);
+			if (!oldVarVersionedName.equals(newVarVersionedName)) {
+				// indicates a version change of the given variable.
+				Expr.Variable oldVar = new Expr.Variable(oldVarVersionedName);
+				Expr.Variable newVar = new Expr.Variable(newVarVersionedName);
+				assumptions = assumptions.add(new Expr.Binary(Expr.Binary.Op.EQ, newVar, oldVar));
+			}
+		}
+		return assumptions;
+	}
+
+	/**
+	 * Join the local environments of one or more context's together. This means
+	 * retaining variable versions which are the same for all context's,
+	 * allocating new versions for those which are different in at least one
+	 * case, and removing those which aren't present it at least one.
+	 * 
+	 * @param contexts
+	 *            Array of at least one non-null Context
+	 * @return
+	 */
+	private LocalEnvironment joinEnvironments(Context... contexts) {
+		//
+		Context head = contexts[0];
+		GlobalEnvironment global = head.getEnvironment().getParent();
+		HashSet<Integer> modified = new HashSet<Integer>();
+		HashSet<Integer> deleted = new HashSet<Integer>();
+		Map<Integer, String> headLocals = head.environment.locals;
+
+		// Compute the modified and deleted sets
+		for (int i = 1; i < contexts.length; ++i) {
+			Context ithContext = contexts[i];
+			Map<Integer, String> ithLocals = ithContext.environment.locals;
+			// First check env against head
+			for (Map.Entry<Integer, String> e : ithLocals.entrySet()) {
+				Integer key = e.getKey();
+				String s1 = e.getValue();
+				String s2 = headLocals.get(key);
+				if (s1 == null) {
+					deleted.add(key);
+				} else if (!s1.equals(s2)) {
+					modified.add(key);
+				}
+			}
+			// Second, check head against env
+			for (Map.Entry<Integer, String> e : headLocals.entrySet()) {
+				Integer key = e.getKey();
+				String s1 = e.getValue();
+				String s2 = ithLocals.get(key);
+				if (s1 == null) {
+					deleted.add(key);
+				} else if (!s1.equals(s2)) {
+					modified.add(key);
+				}
+			}
+		}
+		// Finally, construct the combined local map
+		HashMap<Integer, String> combinedLocals = new HashMap<Integer, String>();
+		for (Map.Entry<Integer, String> e : headLocals.entrySet()) {
+			Integer key = e.getKey();
+			String value = e.getValue();
+			if (deleted.contains(key)) {
+				// Ignore this entry. This must be checked before we look at
+				// modified (since variable can be marked both).
+				continue;
+			} else if (modified.contains(key)) {
+				// Update version number
+				value = global.allocateVersion(key);
+			}
+			combinedLocals.put(key, value);
+		}
+		// Now, use the modified and deleted sets to build the new environment
+		return new LocalEnvironment(global, combinedLocals);
+	}
+
+	/**
+	 * Construct a function or method prototype with a given name and type. The
+	 * function or method can then be called elsewhere as an uninterpreted
+	 * function. The function or method doesn't have a body but is used as a
+	 * name to be referred to from assertions.
+	 * 
+	 * @param declaration
+	 *            --- the function or method declaration in question
+	 * @param wyalFile
+	 *            --- the file onto which this function is created.
+	 * @return
+	 */
+	private void createFunctionOrMethodPrototype(WyilFile.FunctionOrMethod declaration, WyalFile wyalFile) {
+		List<Type> params = declaration.type().params();
+		List<Type> returns = declaration.type().returns();
+		//
+		TypePattern.Leaf[] parameterPatterns = new TypePattern.Leaf[params.size()];
+		// second, set initial environment
+		int loc = 0;
+		for (int i = 0; i != params.size(); ++i, ++loc) {
+			SyntaxTree.Variable var = (SyntaxTree.Variable) declaration.getExpression(loc);
+			Expr.Variable v = new Expr.Variable(var.name());
+			SyntacticType parameterType = convert(params.get(i), declaration);
+			parameterPatterns[i] = new TypePattern.Leaf(parameterType, v);
+		}
+		TypePattern.Leaf[] returnPatterns = new TypePattern.Leaf[returns.size()];
+		// second, set initial environment
+		for (int i = 0; i != returns.size(); ++i, ++loc) {
+			SyntaxTree.Variable var = (SyntaxTree.Variable) declaration.getExpression(loc);
+			Expr.Variable v = new Expr.Variable(var.name());
+			SyntacticType returnType = convert(returns.get(i), declaration);
+			returnPatterns[i] = new TypePattern.Leaf(returnType, v);
+		}
+		// Construct the type declaration for the new block macro
+		TypePattern from = new TypePattern.Tuple(parameterPatterns);
+		TypePattern to = new TypePattern.Tuple(returnPatterns);
+		//
+		wyalFile.add(wyalFile.new Function(declaration.name(), Collections.EMPTY_LIST, from, to, null));
+	}
+
+	/**
+	 * Turn each verification condition into an assertion in the underlying
+	 * WyalFile being generated. The main challenge here is to ensure that all
+	 * variables used in the assertion are properly typed.
+	 * 
+	 * @param declaration
+	 *            The enclosing function or method declaration
+	 * @param vcs
+	 *            The list of verification conditions which have been generated
+	 * @param environment
+	 *            The global environment which maps all versioned variables to
+	 *            their underlying locations. This is necessary to determine the
+	 *            type of all free variables.
+	 * @param wyalFile
+	 *            The WyAL file being generated
+	 */
+	private void createAssertions(WyilFile.FunctionOrMethod declaration, List<VerificationCondition> vcs,
+			GlobalEnvironment environment, WyalFile wyalFile) {
+		// FIXME: should be logged somehow?
+		for (int i = 0; i != vcs.size(); ++i) {
+			VerificationCondition vc = vcs.get(i);
+			// Build the actual verification condition
+			Expr antecedent = flatten(vc.antecedent);
+			Expr verificationCondition = implies(antecedent, vc.consequent);
+			// Generate type information for free variables
+			TypePattern types = generateExpressionTypePattern(declaration, environment, verificationCondition);
+			if (types != null) {
+				// This indicates there are one or more free variables in the
+				// verification condition. Hence, these must be universally
+				// quantified to ensure the vc is well=typed.
+				verificationCondition = new Expr.ForAll(types, verificationCondition);
+			}
+			// Add generated verification condition as assertion
+			wyalFile.add(wyalFile.new Assert(vc.description, verificationCondition, vc.attributes()));
+		}
+	}
+
+	/**
+	 * Flatten a given assumption set into a single logical condition. The key
+	 * challenge here is to try and do this as efficiency as possible.
+	 * 
+	 * @param assumptions
+	 * @return
+	 */
+	private Expr flatten(AssumptionSet assumptions) {
+		Expr result = flattenUpto(assumptions, null);
+		if (result == null) {
+			return new Expr.Constant(Value.Bool(true));
+		} else {
+			return result;
+		}
+	}
+
+	/**
+	 * Flatten an assumption set upto a given ancestor. That is, do not include
+	 * the ancestor or any of its ancestors in the results. This is a little
+	 * like taking the difference of the given assumptions and the given
+	 * ancestor's assumptions.
+	 * 
+	 * @param assumptions
+	 *            The assumption set to be flattened
+	 * @param ancestor
+	 *            An ancestor of the given assumption set, or null to indicate
+	 *            all ancestors should be included
+	 * @return
+	 */
+	private Expr flattenUpto(AssumptionSet assumptions, AssumptionSet ancestor) {
+
+		if (assumptions == ancestor) {
+			// We have reached the ancestor
+			return null;
+		} else {
+			// Flattern parent assumptions
+			AssumptionSet[] parents = assumptions.parents;
+			Expr e = null;
+			switch (parents.length) {
+			case 0:
+				// do nothing
+				break;
+			case 1:
+				// easy
+				e = flattenUpto(parents[0], ancestor);
+				break;
+			default:
+				// harder
+				AssumptionSet lca = assumptions.commonAncestor;
+				Expr factor = flattenUpto(lca, ancestor);
+				for (int i = 0; i != parents.length; ++i) {
+					e = or(e, flattenUpto(parents[i], lca));
+				}
+				e = and(factor, e);
+			}
+
+			// Combine with local assumptions (if applicable)
+			Expr[] local = assumptions.assumptions;
+			for (int i = 0; i != local.length; ++i) {
+				e = and(e, local[i]);
+			}
+			//
+			return e;
+		}
+	}
+
+	/**
+	 * Determine the set of free variables in the given expression and their
+	 * types. These are then packaged up into a type pattern (for now).
+	 * 
+	 * @param declaration
+	 *            The enclosing function or method declaration
+	 * @param environment
+	 *            The global environment which maps all versioned variables to
+	 *            their underlying locations. This is necessary to determine the
+	 *            type of all free variables.
+	 * @param expression
+	 *            The expression whose free variables we are typing
+	 * @return
+	 */
+	private TypePattern generateExpressionTypePattern(WyilFile.FunctionOrMethod declaration,
+			GlobalEnvironment environment, Expr expression) {
+		HashSet<String> freeVariables = new HashSet<String>();
+		expression.freeVariables(freeVariables);
+		TypePattern[] patterns = new TypePattern[freeVariables.size()];
+		int index = 0;
+		for (String var : freeVariables) {
+			Expr.Variable v = new Expr.Variable(var);
+			SyntaxTree.Expr l = declaration.getExpression(environment.resolve(var));
+			SyntacticType wycsType = convert(l.getType(), declaration);
+			patterns[index++] = new TypePattern.Leaf(wycsType, v);
+		}
+		if (patterns.length == 1) {
+			return patterns[0];
+		} else {
+			return new TypePattern.Tuple(patterns);
+		}
+	}
+
+	/**
+	 * Convert the parameter types for a given function or method declaration
+	 * into a corresponding list of type patterns. This is primarily useful for
+	 * generating declarations from functions or method.
+	 * 
+	 * @param params
+	 * @param declaration
+	 * @return
+	 */
+	private TypePattern generatePreconditionTypePattern(WyilFile.FunctionOrMethod declaration,
+			LocalEnvironment environment) {
+		List<Type> params = declaration.type().params();
+		int[] parameterLocations = range(0, params.size());
+		return generateTypePatterns(declaration, environment, parameterLocations);
+	}
+
+	/**
+	 * Convert the return types for a given function or method declaration into
+	 * a corresponding list of type patterns. This is primarily useful for
+	 * generating declarations from functions or method.
+	 * 
+	 * @param params
+	 * @param declaration
+	 * @return
+	 */
+	private TypePattern generatePostconditionTypePattern(WyilFile.FunctionOrMethod declaration,
+			LocalEnvironment environment) {
+		List<Type> params = declaration.type().params();
+		List<Type> returns = declaration.type().returns();
+		int[] parameterLocations = range(0, params.size());
+		int[] returnLocations = range(parameterLocations.length, parameterLocations.length + returns.size());
+		return generateTypePatterns(declaration, environment, parameterLocations, returnLocations);
+	}
+
+	/**
+	 * Convert the types of local variables in scope at a given position within
+	 * a function or method into a type pattern. This is primarily useful for
+	 * determining the types for a loop invariant macro.
+	 * 
+	 * @param params
+	 * @param declaration
+	 * @return
+	 */
+	private TypePattern generateLoopInvariantTypePattern(WyilFile.FunctionOrMethod declaration,
+			LocalEnvironment environment) {
+		int[] localVariableLocations = determineLocalVariables(declaration);
+		return generateTypePatterns(declaration, environment, localVariableLocations);
+	}
+
+	/**
+	 * Determine the set of local variables which are in scope at a particular
+	 * block.
+	 * 
+	 * @param declaration
+	 * @return
+	 */
+	private int[] determineLocalVariables(WyilFile.Declaration declaration) {
+		// FIXME: this is completely broken because it's not looking at a
+		// particular scope.
+		List<SyntaxTree.Expr> locations = declaration.getExpressions();
+		// Determine how many variables there are
+		int count = 0;
+		for (int i = 0; i != locations.size(); ++i) {
+			if (locations.get(i) instanceof SyntaxTree.Variable) {
+				count++;
+			}
+		}
+		// Compute the result
+		int[] result = new int[count];
+		for (int i = 0, j = 0; i != locations.size(); ++i) {
+			if (locations.get(i) instanceof SyntaxTree.Variable) {
+				result[j++] = i;
+			}
+		}
+		//
+		return result;
+	}
+
+	/**
+	 * Convert a list of types from a given declaration into a corresponding
+	 * list of type patterns. This is primarily useful for generating
+	 * declarations from functions or method.
+	 * 
+	 * @param types
+	 * @param declaration
+	 * @return
+	 */
+	private TypePattern generateTypePatterns(WyilFile.Declaration declaration, LocalEnvironment environment,
+			int[]... groups) {
+		//
+		int[] locations = flattern(groups);
+		TypePattern.Leaf[] patterns = new TypePattern.Leaf[locations.length];
+		// second, set initial environment
+		for (int i = 0; i != locations.length; ++i) {
+			SyntaxTree.Variable var = (SyntaxTree.Variable) declaration.getExpression(locations[i]);
+			String versionedName = environment.read(var.getIndex());
+			Expr.Variable v = new Expr.Variable(versionedName);
+			SyntacticType parameterType = convert(var.getType(), declaration);
+			patterns[i] = new TypePattern.Leaf(parameterType, v);
+		}
+		//
+		if (patterns.length == 1) {
+			return patterns[0];
+		} else {
+			return new TypePattern.Tuple(patterns);
+		}
+	}
 
 	/**
 	 * Convert a WyIL constant into its equivalent WyCS constant. In some cases,
@@ -289,7 +2005,7 @@ public class VerificationConditionGenerator {
 	 *            associate any errors generated with a source line.
 	 * @return
 	 */
-	public Value convert(Constant c, WyilFile.Block context) {
+	private Value convert(Constant c, SyntaxTree context) {
 		if (c instanceof Constant.Null) {
 			return wycs.core.Value.Null;
 		} else if (c instanceof Constant.Bool) {
@@ -313,7 +2029,8 @@ public class VerificationConditionGenerator {
 			Constant.Record rb = (Constant.Record) c;
 
 			// NOTE: records are currently translated into WyCS as tuples,
-			// where each field is allocated a slot based on an alphabetical sorting
+			// where each field is allocated a slot based on an alphabetical
+			// sorting
 			// of field names. It's unclear at this stage whether or not that is
 			// a general solution. In particular, it would seem to be broken for
 			// type testing.
@@ -326,12 +2043,12 @@ public class VerificationConditionGenerator {
 			}
 			return wycs.core.Value.Tuple(values);
 		} else {
-			internalFailure("unknown constant encountered (" + c + ")", context.parent().filename(),
-					context.attributes());
+			internalFailure("unknown constant encountered (" + c + ")",
+					context.getEnclosingDeclaration().parent().filename(), context.attributes());
 			return null;
 		}
 	}
-	
+
 	/**
 	 * Convert a WyIL type into its equivalent WyCS type. In some cases, this is
 	 * a direct translation. In other cases, WyIL types are encoded using more
@@ -364,7 +2081,7 @@ public class VerificationConditionGenerator {
 			return new SyntacticType.Int(context.attributes());
 		} else if (type instanceof Type.Array) {
 			Type.Array lt = (Type.Array) type;
-			SyntacticType element = convert(lt.element(),context);
+			SyntacticType element = convert(lt.element(), context);
 			// ugly.
 			return new SyntacticType.List(element);
 		} else if (type instanceof Type.Record) {
@@ -411,5 +2128,626 @@ public class VerificationConditionGenerator {
 					context.attributes());
 			return null;
 		}
+	}
+
+	/**
+	 * Lookup a given function or method. This maybe contained in the same file,
+	 * or in a different file. This may require loading that file in memory to
+	 * access this information.
+	 * 
+	 * @param name
+	 *            --- Fully qualified name of function
+	 * @param fun
+	 *            --- Type of fucntion.
+	 * @param block
+	 *            --- Enclosing block (for debugging purposes).
+	 * @param branch
+	 *            --- Enclosing branch (for debugging purposes).
+	 * @return
+	 * @throws Exception
+	 */
+	public WyilFile.FunctionOrMethod lookupFunctionOrMethod(NameID name, Type.FunctionOrMethod fun, SyntaxTree stmt) throws Exception {
+		Path.Entry<WyilFile> e = builder.project().get(name.module(), WyilFile.ContentType);
+		if (e == null) {
+			internalFailure(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module().toString()),
+					stmt.getEnclosingDeclaration().parent().filename(), stmt.attributes());
+		}
+		WyilFile m = e.read();
+		WyilFile.FunctionOrMethod method = m.functionOrMethod(name.name(), fun);
+
+		return method;
+	}
+
+	/**
+	 * Generate the logically inverted expression corresponding to a given
+	 * comparator. For example, inverting "<=" gives ">", inverting "==" gives
+	 * "!=", etc.
+	 *
+	 * @param test
+	 *            --- the binary comparator being inverted.
+	 * @return
+	 */
+	public Expr invert(Expr expr, SyntaxTree elem) {
+		if (expr instanceof Expr.Binary) {
+			Expr.Binary binTest = (Expr.Binary) expr;
+			Expr.Binary.Op op = null;
+			switch (binTest.op) {
+			case EQ:
+				op = Expr.Binary.Op.NEQ;
+				break;
+			case NEQ:
+				op = Expr.Binary.Op.EQ;
+				break;
+			case GTEQ:
+				op = Expr.Binary.Op.LT;
+				break;
+			case GT:
+				op = Expr.Binary.Op.LTEQ;
+				break;
+			case LTEQ:
+				op = Expr.Binary.Op.GT;
+				break;
+			case LT:
+				op = Expr.Binary.Op.GTEQ;
+				break;
+			case AND: {
+				Expr lhs = invert(binTest.leftOperand, elem);
+				Expr rhs = invert(binTest.rightOperand, elem);
+				return new Expr.Binary(Expr.Binary.Op.OR, lhs, rhs, expr.attributes());
+			}
+			case OR: {
+				Expr lhs = invert(binTest.leftOperand, elem);
+				Expr rhs = invert(binTest.rightOperand, elem);
+				return new Expr.Binary(Expr.Binary.Op.AND, lhs, rhs, expr.attributes());
+			}
+			}
+			if (op != null) {
+				return new Expr.Binary(op, binTest.leftOperand, binTest.rightOperand, expr.attributes());
+			}
+		} else if (expr instanceof Expr.Is) {
+			Expr.Is ei = (Expr.Is) expr;
+			SyntacticType type = ei.rightOperand;
+			return new Expr.Is(ei.leftOperand, new SyntacticType.Negation(type, type.attributes()), ei.attributes());
+		}
+		// Otherwise, compare against false
+		// FIXME: this is just wierd and needs to be fixed.
+		return new Expr.Binary(Expr.Binary.Op.EQ, expr, new Expr.Constant(Value.Bool(false)));
+	}
+
+	private static <T> T[] append(T[] lhs, T[] rhs) {
+		T[] rs = Arrays.copyOf(lhs, lhs.length + rhs.length);
+		System.arraycopy(rhs, 0, rs, lhs.length, rhs.length);
+		return rs;
+	}
+
+	/**
+	 * Create exact copy of a given array, but with evey null element removed.
+	 * 
+	 * @param items
+	 * @return
+	 */
+	private static <T> T[] removeNull(T[] items) {
+		int count = 0;
+		for (int i = 0; i != items.length; ++i) {
+			if (items[i] == null) {
+				count = count + 1;
+			}
+		}
+		if (count == 0) {
+			return items;
+		} else {
+			T[] rs = Arrays.copyOf(items, items.length - count);
+			for (int i = 0, j = 0; i != items.length; ++i) {
+				T item = items[i];
+				if (item != null) {
+					rs[j++] = item;
+				}
+			}
+
+			return rs;
+		}
+	}
+
+	public static int[] range(int start, int end) {
+		int[] rs = new int[Math.abs(end - start)];
+		for (int i = start; i < end; ++i) {
+			rs[i - start] = i;
+		}
+		return rs;
+	}
+
+	public static int[] flattern(int[][] groups) {
+		int length = 0;
+		for (int i = 0; i != groups.length; ++i) {
+			length += groups[i].length;
+		}
+		//
+		int[] result = new int[length];
+		for (int i = 0, j = 0; i != groups.length; ++i) {
+			int[] group = groups[i];
+			System.arraycopy(group, 0, result, j, group.length);
+			j = j + group.length;
+		}
+		//
+		return result;
+	}
+
+	// =============================================================
+	// Assumptions
+	// =============================================================
+
+	/**
+	 * Provides an immutable assumption set which (in principle) can be factored
+	 * more precisely than a flat collection.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	private static class AssumptionSet {
+		/**
+		 * The least common ancestor for all parents sets. A parent may be the
+		 * common ancestor. Making this explicit is not strictly necessary, but
+		 * helps with the flattening process.
+		 */
+		private final AssumptionSet commonAncestor;
+
+		/**
+		 * The set of parent sets from which this assumption set is derived.
+		 */
+		private final AssumptionSet[] parents;
+
+		/**
+		 * The set of assumptions explicitly provided by this assumption set.
+		 * The complete set of assumptions includes those of the parents as
+		 * well.
+		 */
+		private final Expr[] assumptions;
+
+		private AssumptionSet(AssumptionSet commonAncestor, AssumptionSet[] parents, Expr... assumptions) {
+			this.commonAncestor = commonAncestor;
+			this.parents = parents;
+			this.assumptions = assumptions;
+		}
+
+		public AssumptionSet add(Expr... assumptions) {
+			return new AssumptionSet(this, new AssumptionSet[] { this }, assumptions);
+		}
+
+		public AssumptionSet joinDescendants(AssumptionSet... descendants) {
+			if(descendants.length == 1) {
+				return descendants[0];
+			} else {
+				return new AssumptionSet(this, descendants);
+			}
+		}
+
+		public static final AssumptionSet ROOT = new AssumptionSet(null, new AssumptionSet[0]);
+	}
+
+	// =============================================================
+	// Verification Conditions
+	// =============================================================
+
+	/**
+	 * Provides a simple structure representing a verification condition. This
+	 * will be turned into an assertion of some form. A verification is always
+	 * of the form "X ==> Y", where X is the "antecedent" and Y the
+	 * "consequent". More specifically, X represents the knowledge known at the
+	 * given point and Y is the condition we are attempting to assert.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	private static class VerificationCondition extends SyntacticElement.Impl {
+		private final String description;
+		private final AssumptionSet antecedent;
+		private final Expr consequent;
+
+		private VerificationCondition(String description, AssumptionSet antecedent, Expr consequent,
+				List<Attribute> attributes) {
+			super(attributes);
+			this.description = description;
+			this.antecedent = antecedent;
+			this.consequent = consequent;
+		}
+	}
+
+	// =============================================================
+	// Environments
+	// =============================================================
+
+	/**
+	 * The global environment provides a global allocation of "versioned"
+	 * variables. This ensures that across any related set of environments, no
+	 * version clashes are possible between variables of the same name. This
+	 * also means that we can determine the underlying location that each
+	 * variable corresponds to.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	private class GlobalEnvironment {
+		/**
+		 * Provides a link back to the enclosing declaration. This is necessary
+		 * to enable us to convert location indices into variable names and
+		 * types.
+		 */
+		private final WyilFile.Declaration enclosingDeclaration;
+
+		/**
+		 * Maps versioned variable strings to their underlying location index. A
+		 * version variable string is of the form "x$1" where "x" is the
+		 * variable name and "1" the version number.
+		 */
+		private final Map<String, Integer> allocation;
+
+		/**
+		 * Provides a global mapping of all local variable names to the next
+		 * unused version numbers. This is done with variable names rather than
+		 * location indices because it is possible two have different variables
+		 * with the same name,
+		 */
+		private final Map<String, Integer> versions;
+
+		public GlobalEnvironment(WyilFile.Declaration enclosingDeclaration) {
+			this.enclosingDeclaration = enclosingDeclaration;
+			this.allocation = new HashMap<String, Integer>();
+			this.versions = new HashMap<String, Integer>();
+		}
+
+		/**
+		 * Get the location index from a versioned variable name of the form
+		 * "x$1"
+		 * 
+		 * @param versionedVariable
+		 * @return
+		 */
+		public int resolve(String versionedVariable) {
+			return allocation.get(versionedVariable);
+		}
+
+		/**
+		 * Allocation a new versioned variable name of the form "x$1" for a
+		 * given location index
+		 * 
+		 * @param index
+		 * @return
+		 */
+		public String allocateVersion(int index) {
+			SyntaxTree.Expr e = enclosingDeclaration.getExpression(index);
+			String name;
+			if (e instanceof SyntaxTree.Variable) {
+				SyntaxTree.Variable v = (SyntaxTree.Variable) e;
+				name = v.name();
+			} else {
+				// This indicates an unnamed location
+				name = "$" + index;
+			}
+			// Allocate a new version number for this variable
+			Integer version = versions.get(name);
+			String versionedVar;
+			if (version == null) {
+				version = 0;
+				// Variables with version 0 just take the original name. This is
+				// not necessary, but it makes for slightly nicer verification
+				// conditions.
+				versionedVar = name;
+			} else {
+				version = version + 1;
+				versionedVar = name + "$" + version;
+			}
+			versions.put(name, version);
+			// Create the versioned variable name and remember which location it
+			// corresponds to.
+			allocation.put(versionedVar, index);
+			//
+			return versionedVar;
+		}
+	}
+
+	/**
+	 * The local environment provides a mapping from local variables in the
+	 * current scope to their current version number. Local environments are
+	 * transitively immutable objects, except for the global environment they
+	 * refer to.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	private class LocalEnvironment {
+		/**
+		 * Provides access to the global environment
+		 */
+		private final GlobalEnvironment global;
+
+		/**
+		 * Maps all local variables in scope to their current versioned variable
+		 * names
+		 */
+		private final Map<Integer, String> locals;
+
+		public LocalEnvironment(GlobalEnvironment global) {
+			this.global = global;
+			this.locals = new HashMap<Integer, String>();
+		}
+
+		public LocalEnvironment(GlobalEnvironment global, Map<Integer, String> locals) {
+			this.global = global;
+			this.locals = new HashMap<Integer, String>(locals);
+		}
+
+		/**
+		 * Get the envlosing global environment for this local environment
+		 * 
+		 * @return
+		 */
+		public GlobalEnvironment getParent() {
+			return global;
+		}
+
+		/**
+		 * Read the current versioned variable name for a given location index.
+		 * 
+		 * @param index
+		 * @return
+		 */
+		public String read(int index) {
+			String vv = locals.get(index);
+			if (vv == null) {
+				vv = global.allocateVersion(index);
+				locals.put(index, vv);
+			}
+			return vv;
+		}
+
+		/**
+		 * Create a new version for each variable in a sequence of variables.
+		 * This create a completely new local environment.
+		 * 
+		 * @param index
+		 */
+		public LocalEnvironment write(int... indices) {
+			LocalEnvironment nenv = new LocalEnvironment(global, locals);
+			for (int i = 0; i != indices.length; ++i) {
+				nenv.locals.put(indices[i], global.allocateVersion(indices[i]));
+			}
+			return nenv;
+		}
+	}
+
+	// =============================================================
+	// LoopScope
+	// =============================================================
+	/**
+	 * Represents the enclosing "loop scope". This is needed for dealing with
+	 * break and continue statements. Basically, as a way of taking the context
+	 * at the point of the statement in question and moving it out to the
+	 * enclosing loop.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	private static class LoopScope {
+		private List<Context> breakContexts;
+		private List<Context> continueContexts;
+		
+		public LoopScope() {
+			this.breakContexts = new ArrayList<Context>();
+			this.continueContexts = new ArrayList<Context>();
+		}
+		
+		public List<Context> breakContexts() {
+			return breakContexts;
+		}
+		
+		public List<Context> continueContexts() {
+			return continueContexts;
+		}
+		
+		public void addBreakContext(Context context) {
+			breakContexts.add(context);
+		}
+		
+		public void addContinueContext(Context context) {
+			continueContexts.add(context);
+		}
+	}
+	
+	
+	// =============================================================
+	// Context
+	// =============================================================
+
+	/**
+	 * Represents a given translation context.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	private static class Context {
+		/**
+		 * Represents the wyalfile being generated. This is useful if we want to
+		 * add macro definitions, etc.
+		 */
+		private final WyalFile wyalFile;
+
+		/**
+		 * The list of generated verification conditions.
+		 */
+		private final List<VerificationCondition> verificationConditions;
+
+		/**
+		 * The set of assumptions which are known to hold at a given point
+		 * during generation.
+		 */
+		private final AssumptionSet assumptions;
+
+		/**
+		 * The local environment mapping variables to their current version
+		 * numbers
+		 */
+		private final LocalEnvironment environment;
+
+		/**
+		 * A reference to the enclosing loop scope, or null if no such scope.
+		 */
+		private final LoopScope enclosingLoop;
+		
+		public Context(WyalFile wyalFile, AssumptionSet assumptions, LocalEnvironment environment,
+				LoopScope enclosingLoop, List<VerificationCondition> vcs) {
+			this.wyalFile = wyalFile;
+			this.assumptions = assumptions;
+			this.environment = environment;
+			this.verificationConditions = vcs;
+			this.enclosingLoop = enclosingLoop;
+		}
+
+		public WyilFile getEnclosingFile() {
+			return environment.getParent().enclosingDeclaration.parent();
+		}
+
+		/**
+		 * Get the local environment associated witht his context
+		 * 
+		 * @return
+		 */
+		public LocalEnvironment getEnvironment() {
+			return environment;
+		}
+
+		/**
+		 * Get the enclosing loop scope.
+		 * 
+		 * @return
+		 */
+		public LoopScope getEnclosingLoopScope() {
+			return enclosingLoop;
+		}
+		
+		/**
+		 * Generate a new context from this one where a give condition is
+		 * assumed to hold.
+		 * 
+		 * @param condition
+		 * @return
+		 */
+		public Context assume(Expr... conditions) {
+			AssumptionSet nAssumptions = assumptions.add(conditions);
+			return new Context(wyalFile, nAssumptions, environment, enclosingLoop, verificationConditions);
+		}
+
+		/**
+		 * Emit a verification condition which ensures a given assertion holds
+		 * true in this translation context.
+		 * 
+		 * @param vc
+		 *            The verification condition to be emitted
+		 * @return
+		 */
+		public void emit(VerificationCondition vc) {
+			verificationConditions.add(vc);
+		}
+
+		/**
+		 * Assign an expression to a given variable. This results in the version
+		 * number for that variable being increased. Thus, any historical
+		 * references to that variable in the set of assumptions remain valid.
+		 * 
+		 * @param lhs
+		 *            The index of the location being assigned
+		 * @param rhs
+		 * @return
+		 */
+		public Context write(int lhs, Expr rhs) {
+			// Update version number of the assigned variable
+			LocalEnvironment nEnvironment = environment.write(lhs);
+			String nVersionedVar = nEnvironment.read(lhs);
+			// Update assumption sets to reflect the "assigment"
+			Expr.Variable var = new Expr.Variable(nVersionedVar);
+			Expr condition = new Expr.Binary(Expr.Binary.Op.EQ, var, rhs);
+			AssumptionSet nAssumptions = assumptions.add(condition);
+			//
+			return new Context(wyalFile, nAssumptions, nEnvironment, enclosingLoop, verificationConditions);
+		}
+
+		/**
+		 * Havoc a number of variables. This results in the version numbers for
+		 * those variables being increased. Thus, any historical references to
+		 * those variables in the set of assumptions remain valid.
+		 * 
+		 * @param lhs
+		 *            The index of the location being assigned
+		 * @param rhs
+		 * @return
+		 */
+		public Context havoc(int... vars) {
+			// Update version number of the assigned variables
+			LocalEnvironment nEnvironment = environment.write(vars);
+			// done
+			return new Context(wyalFile, assumptions, nEnvironment, enclosingLoop, verificationConditions);
+		}
+		
+		/**
+		 * Construct a context within a given loop scope.
+		 * 
+		 * @param scope
+		 * @return
+		 */
+		public Context newLoopScope(LoopScope scope) {
+			return new Context(wyalFile, assumptions, environment, scope, verificationConditions);
+		}
+	}
+
+	// =============================================================
+	// Operator Maps
+	// =============================================================
+
+	/**
+	 * Maps unary bytecodes into unary expression opcodes.
+	 */
+	private static Map<Bytecode.OperatorKind, Expr.Unary.Op> unaryOperatorMap;
+
+	/**
+	 * Maps binary bytecodes into binary expression opcodes.
+	 */
+	private static Map<Bytecode.OperatorKind, Expr.Binary.Op> binaryOperatorMap;
+
+	static {
+		// Configure operator maps. This is done using maps to ensure that
+		// changes in one operator kind does not have knock-on effects. This
+		// used to be a problem when an array was used to implement the mapping.
+
+		// =====================================================================
+		// Unary operator map
+		// =====================================================================
+		unaryOperatorMap = new HashMap<Bytecode.OperatorKind, Expr.Unary.Op>();
+		// Arithmetic
+		unaryOperatorMap.put(Bytecode.OperatorKind.NEG, Expr.Unary.Op.NEG);
+		// Logical
+		unaryOperatorMap.put(Bytecode.OperatorKind.NOT, Expr.Unary.Op.NOT);
+		// Array
+		unaryOperatorMap.put(Bytecode.OperatorKind.ARRAYLENGTH, Expr.Unary.Op.LENGTHOF);
+
+		// =====================================================================
+		// Binary operator map
+		// =====================================================================
+		binaryOperatorMap = new HashMap<Bytecode.OperatorKind, Expr.Binary.Op>();
+		// Arithmetic
+		binaryOperatorMap.put(Bytecode.OperatorKind.ADD, Expr.Binary.Op.ADD);
+		binaryOperatorMap.put(Bytecode.OperatorKind.SUB, Expr.Binary.Op.SUB);
+		binaryOperatorMap.put(Bytecode.OperatorKind.MUL, Expr.Binary.Op.MUL);
+		binaryOperatorMap.put(Bytecode.OperatorKind.DIV, Expr.Binary.Op.DIV);
+		binaryOperatorMap.put(Bytecode.OperatorKind.REM, Expr.Binary.Op.REM);
+		// Equality
+		binaryOperatorMap.put(Bytecode.OperatorKind.EQ, Expr.Binary.Op.EQ);
+		binaryOperatorMap.put(Bytecode.OperatorKind.NEQ, Expr.Binary.Op.NEQ);
+		// Relational
+		binaryOperatorMap.put(Bytecode.OperatorKind.LT, Expr.Binary.Op.LT);
+		binaryOperatorMap.put(Bytecode.OperatorKind.GT, Expr.Binary.Op.GT);
+		binaryOperatorMap.put(Bytecode.OperatorKind.LTEQ, Expr.Binary.Op.LTEQ);
+		binaryOperatorMap.put(Bytecode.OperatorKind.GTEQ, Expr.Binary.Op.GTEQ);
+		// Logical
+		binaryOperatorMap.put(Bytecode.OperatorKind.AND, Expr.Binary.Op.AND);
+		binaryOperatorMap.put(Bytecode.OperatorKind.OR, Expr.Binary.Op.OR);
 	}
 }

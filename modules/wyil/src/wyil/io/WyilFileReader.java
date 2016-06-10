@@ -36,6 +36,7 @@ import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.*;
 import wyil.util.AbstractBytecode;
+import wyil.util.AbstractSyntaxTree;
 
 /**
  * Read a binary WYIL file from a byte stream and convert into the corresponding
@@ -656,7 +657,7 @@ public final class WyilFileReader {
 		if (variable) {
 			int typeIdx = input.read_uv();
 			int stringIdx = input.read_uv();
-			SyntaxTree.Variable var = SyntaxTree.Variable(typePool[typeIdx], stringPool[stringIdx], parent,
+			SyntaxTree.Variable var = AbstractSyntaxTree.Variable(typePool[typeIdx], stringPool[stringIdx], parent,
 					attributes);
 			return new SyntaxTree.Expr[] { var };
 		} else {
@@ -670,13 +671,13 @@ public final class WyilFileReader {
 				Bytecode.Expr bytecode = (Bytecode.Expr) readBytecode();
 				SyntaxTree.Expr[] rs = new SyntaxTree.Expr[size];
 				for (int i = 0; i != size; ++i) {
-					rs[i] = SyntaxTree.PositionalOperator(types[i], bytecode, i, parent, attributes);
+					rs[i] = AbstractSyntaxTree.PositionalOperator(types[i], bytecode, i, parent, attributes);
 				}
 				return rs;
 			} else {
 				int typeIdx = input.read_uv();
 				Bytecode.Expr bytecode = (Bytecode.Expr) readBytecode();
-				SyntaxTree.Expr e = SyntaxTree.Operator(typePool[typeIdx], bytecode, parent,
+				SyntaxTree.Expr e = AbstractSyntaxTree.Operator(typePool[typeIdx], bytecode, parent,
 						attributes);
 				return new SyntaxTree.Expr[] { e };
 			}
@@ -721,7 +722,7 @@ public final class WyilFileReader {
 		for (int i = 0; i < nCodes; ++i) {
 			Bytecode.Stmt code = (Bytecode.Stmt) readBytecode(); 
 			// TODO: read any attributes given
-			block.add(SyntaxTree.Stmt(code,block));
+			block.add(AbstractSyntaxTree.Stmt(code,block));
 		}
 		return block;
 	}
