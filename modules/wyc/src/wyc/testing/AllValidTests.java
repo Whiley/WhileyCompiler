@@ -87,8 +87,8 @@ public class AllValidTests {
 		IGNORED.put("FunctionRef_Valid_13", "#555");
 		IGNORED.put("Import_Valid_4", "#492");
 		IGNORED.put("Import_Valid_5", "#492");
-		IGNORED.put("Intersection_Valid_1", "Issue ???");
-		IGNORED.put("Intersection_Valid_2", "Issue ???");
+		//IGNORED.put("Intersection_Valid_1", "Issue ???");
+		//IGNORED.put("Intersection_Valid_2", "Issue ???");
 		IGNORED.put("Lifetime_Lambda_Valid_4", "#641");
 		IGNORED.put("ListAccess_Valid_6", "Issue ???");
 		IGNORED.put("ListAccess_Valid_7", "Issue ???");

@@ -2990,8 +2990,19 @@ public class FlowTypeChecker {
 			}
 			myDeterministic = false;
 		} else if (type instanceof SyntacticType.Intersection) {
-			internalFailure("intersection types not supported yet", context, type);
-			return 0; // dead-code
+			SyntacticType.Intersection it = (SyntacticType.Intersection) type;
+			ArrayList<SyntacticType> itTypes = it.bounds;
+			// FIXME: this is something of a hack. But, we're going to represent
+			// intersection types and negated unions of negations.
+			states.remove(myIndex);
+			//
+			ArrayList negatedChildren = new ArrayList<SyntacticType>();
+			for (int i = 0; i != itTypes.size(); ++i) {
+				negatedChildren.add(new SyntacticType.Negation(itTypes.get(i)));
+			}
+			SyntacticType unionOfNegatedChildren = new SyntacticType.Union(negatedChildren);
+			SyntacticType negatedUnion = new SyntacticType.Negation(unionOfNegatedChildren);
+			return resolveAsType(negatedUnion, context, states, roots, nominal, unconstrained);
 		} else if (type instanceof SyntacticType.Reference) {
 			SyntacticType.Reference ut = (SyntacticType.Reference) type;
 			myKind = Type.K_REFERENCE;
