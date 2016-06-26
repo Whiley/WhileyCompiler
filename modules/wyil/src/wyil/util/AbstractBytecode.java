@@ -103,6 +103,18 @@ public abstract class AbstractBytecode {
 	}
 
 	/**
+	 * Return the number of top-level operands in this bytecode
+	 * @return
+	 */
+	public int numberOfOperands() {
+		if(operands == null) {
+			return 0;
+		} else {
+			return operands.length;
+		}
+	}
+	
+	/**
 	 * Return the ith top-level operand in this bytecode.
 	 * 
 	 * @param i
@@ -182,73 +194,24 @@ public abstract class AbstractBytecode {
 
 	static {
 		//		
-		schemas[Bytecode.OPCODE_break] = new Schema(Operands.ZERO){
+		schemas[Bytecode.OPCODE_add] = new Schema(Operands.TWO){
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Break();
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.ADD);
 			}
 		};
-		schemas[Bytecode.OPCODE_continue] = new Schema(Operands.ZERO){
+		schemas[Bytecode.OPCODE_array] = new Schema(Operands.MANY){
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Continue();
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.ARRAYCONSTRUCTOR);
 			}
 		};
-		schemas[Bytecode.OPCODE_fail] = new Schema(Operands.ZERO){
+		schemas[Bytecode.OPCODE_arrayindex] = new Schema(Operands.TWO){
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Fail();
+				return new Bytecode.Operator(operands,Bytecode.OperatorKind.ARRAYINDEX);
 			}
 		};
-		schemas[Bytecode.OPCODE_assert] = new Schema(Operands.ONE){
+		schemas[Bytecode.OPCODE_arraygen] = new Schema(Operands.TWO){
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Assert(operands[0]);
-			}
-		};
-		schemas[Bytecode.OPCODE_assume] = new Schema(Operands.ONE){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Assume(operands[0]);
-			}
-		};		
-
-		// =========================================================================
-		// Unary Operators.
-		// =========================================================================
-		schemas[Bytecode.OPCODE_debug] = new Schema(Operands.ONE){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Debug(operands[0]);
-			}
-		};
-		schemas[Bytecode.OPCODE_return] = new Schema(Operands.MANY){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Return(operands);
-			}
-		};
-		schemas[Bytecode.OPCODE_switch] = new Schema(Operands.ONE, OperandGroups.ZERO, Extras.SWITCH_ARRAY) {
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				Bytecode.Case[] cases = (Bytecode.Case[]) extras[0];
-				return new Bytecode.Switch(operands[0], cases);
-			}
-		};
-		
-		// =========================================================================
-		// Unary Assignables
-		// =========================================================================
-		schemas[Bytecode.OPCODE_assign] = new Schema(Operands.ZERO, OperandGroups.TWO){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {				
-				return new Bytecode.Assign(groups[0],groups[1]);
-			}
-		};		
-		schemas[Bytecode.OPCODE_newobject] = new Schema(Operands.ONE){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands,Bytecode.OperatorKind.NEW);
-			}
-		};
-		schemas[Bytecode.OPCODE_dereference] = new Schema(Operands.ONE){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.DEREFERENCE);
-			}
-		};
-		schemas[Bytecode.OPCODE_bitwiseinvert] = new Schema(Operands.ONE){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.BITWISEINVERT);
+				return new Bytecode.Operator(operands,Bytecode.OperatorKind.ARRAYGENERATOR);
 			}
 		};
 		schemas[Bytecode.OPCODE_arraylength] = new Schema(Operands.ONE) {
@@ -256,114 +219,24 @@ public abstract class AbstractBytecode {
 				return new Bytecode.Operator(operands, Bytecode.OperatorKind.ARRAYLENGTH);
 			}
 		};
-		schemas[Bytecode.OPCODE_neg] = new Schema(Operands.ONE){
+		schemas[Bytecode.OPCODE_assert] = new Schema(Operands.ONE){
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.NEG);
+				return new Bytecode.Assert(operands[0]);
 			}
 		};
-		schemas[Bytecode.OPCODE_logicalnot] = new Schema(Operands.ONE){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.NOT);
-			}
-		};
-		schemas[Bytecode.OPCODE_fieldload] = new Schema(Operands.ONE, Extras.STRING){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.FieldLoad(operands[0], (String) extras[0]);
-			}
-		};
-		schemas[Bytecode.OPCODE_convert] = new Schema(Operands.ONE){
+		schemas[Bytecode.OPCODE_assign] = new Schema(Operands.ZERO, OperandGroups.TWO){
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {				
-				return new Bytecode.Convert(operands[0]);
+				return new Bytecode.Assign(groups[0],groups[1]);
 			}
 		};
-		schemas[Bytecode.OPCODE_const] = new Schema(Operands.ZERO, Extras.CONSTANT){
-			public Bytecode construct(int opcode, int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Const((Constant) extras[0]);
-			}
-		};
-
-		// =========================================================================
-		// Binary Operators
-		// =========================================================================
-		schemas[Bytecode.OPCODE_if] = new Schema(Operands.ONE, OperandGroups.ZERO, Blocks.ONE){
+		schemas[Bytecode.OPCODE_assume] = new Schema(Operands.ONE){
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				int trueBranch = blocks[0];
-				return new Bytecode.If(operands[0], trueBranch);					
+				return new Bytecode.Assume(operands[0]);
 			}
-		};
-		schemas[Bytecode.OPCODE_ifelse] = new Schema(Operands.ONE, OperandGroups.ZERO, Blocks.TWO){
+		};	
+		schemas[Bytecode.OPCODE_bitwiseinvert] = new Schema(Operands.ONE){
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				int trueBranch = blocks[0];
-				int falseBranch = blocks[1];
-				return new Bytecode.If(operands[0], trueBranch, falseBranch);
-			}
-		};
-		// =========================================================================
-		// Binary Assignables
-		// =========================================================================
-		schemas[Bytecode.OPCODE_add] = new Schema(Operands.TWO){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.ADD);
-			}
-		};
-		schemas[Bytecode.OPCODE_sub] = new Schema(Operands.TWO){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.SUB);
-			}
-		};
-		schemas[Bytecode.OPCODE_mul] = new Schema(Operands.TWO){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.MUL);
-			}
-		};
-		schemas[Bytecode.OPCODE_div] = new Schema(Operands.TWO){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.DIV);
-			}
-		};
-		schemas[Bytecode.OPCODE_rem] = new Schema(Operands.TWO){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.REM);
-			}
-		};
-		schemas[Bytecode.OPCODE_eq] = new Schema(Operands.TWO){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.EQ);
-			}
-		};
-		schemas[Bytecode.OPCODE_ne] = new Schema(Operands.TWO){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.NEQ);
-			}
-		};
-		schemas[Bytecode.OPCODE_lt] = new Schema(Operands.TWO){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.LT);
-			}
-		};
-		schemas[Bytecode.OPCODE_le] = new Schema(Operands.TWO){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.LTEQ);
-			}
-		};
-		schemas[Bytecode.OPCODE_gt] = new Schema(Operands.TWO){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.GT);
-			}
-		};
-		schemas[Bytecode.OPCODE_ge] = new Schema(Operands.TWO){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.GTEQ);
-			}
-		};
-		schemas[Bytecode.OPCODE_logicalor] = new Schema(Operands.TWO){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.OR);
-			}
-		};
-		schemas[Bytecode.OPCODE_logicaland] = new Schema(Operands.TWO){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.AND);
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.BITWISEINVERT);
 			}
 		};
 		schemas[Bytecode.OPCODE_bitwiseor] = new Schema(Operands.TWO){
@@ -381,44 +254,91 @@ public abstract class AbstractBytecode {
 				return new Bytecode.Operator(operands, Bytecode.OperatorKind.BITWISEAND);
 			}
 		};
-		schemas[Bytecode.OPCODE_shl] = new Schema(Operands.TWO){
+		schemas[Bytecode.OPCODE_block] = new Schema(Operands.MANY){
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.LEFTSHIFT);
+				return new Bytecode.Block(operands);
 			}
 		};
-		schemas[Bytecode.OPCODE_shr] = new Schema(Operands.TWO){
+		schemas[Bytecode.OPCODE_break] = new Schema(Operands.ZERO){
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.RIGHTSHIFT);
+				return new Bytecode.Break();
 			}
 		};
-		schemas[Bytecode.OPCODE_arrayindex] = new Schema(Operands.TWO){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands,Bytecode.OperatorKind.ARRAYINDEX);
+		schemas[Bytecode.OPCODE_const] = new Schema(Operands.ZERO, Extras.CONSTANT){
+			public Bytecode construct(int opcode, int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Const((Constant) extras[0]);
 			}
 		};
-		schemas[Bytecode.OPCODE_arraygen] = new Schema(Operands.TWO){
+		schemas[Bytecode.OPCODE_continue] = new Schema(Operands.ZERO){
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands,Bytecode.OperatorKind.ARRAYGENERATOR);
+				return new Bytecode.Continue();
 			}
 		};
-		schemas[Bytecode.OPCODE_is] = new Schema(Operands.TWO){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.IS);
+		schemas[Bytecode.OPCODE_convert] = new Schema(Operands.ONE){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {				
+				return new Bytecode.Convert(operands[0]);
 			}
 		};
-
-		schemas[Bytecode.OPCODE_array] = new Schema(Operands.MANY){
+		schemas[Bytecode.OPCODE_debug] = new Schema(Operands.ONE){
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.ARRAYCONSTRUCTOR);
+				return new Bytecode.Debug(operands[0]);
 			}
 		};
-
-		// =========================================================================
-		// Nary Assignables
-		// =========================================================================
-		schemas[Bytecode.OPCODE_record] = new Schema(Operands.MANY){
+		schemas[Bytecode.OPCODE_dereference] = new Schema(Operands.ONE){
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.Operator(operands, Bytecode.OperatorKind.RECORDCONSTRUCTOR);
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.DEREFERENCE);
+			}
+		};
+		schemas[Bytecode.OPCODE_div] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.DIV);
+			}
+		};
+		schemas[Bytecode.OPCODE_dowhile] = new Schema(Operands.ONE, OperandGroups.TWO, Blocks.ONE){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				int body = blocks[0];
+				int condition = operands[0];
+				int[] invariants = groups[0];
+				int[] modified = groups[1];
+				return new Bytecode.DoWhile(body,condition,invariants,modified);
+			}
+		};
+		schemas[Bytecode.OPCODE_eq] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.EQ);
+			}
+		};
+		schemas[Bytecode.OPCODE_if] = new Schema(Operands.ONE, OperandGroups.ZERO, Blocks.ONE){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				int trueBranch = blocks[0];
+				return new Bytecode.If(operands[0], trueBranch);					
+			}
+		};
+		schemas[Bytecode.OPCODE_ifelse] = new Schema(Operands.ONE, OperandGroups.ZERO, Blocks.TWO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				int trueBranch = blocks[0];
+				int falseBranch = blocks[1];
+				return new Bytecode.If(operands[0], trueBranch, falseBranch);
+			}
+		};
+		schemas[Bytecode.OPCODE_fail] = new Schema(Operands.ZERO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Fail();
+			}
+		};
+		schemas[Bytecode.OPCODE_fieldload] = new Schema(Operands.ONE, Extras.STRING){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.FieldLoad(operands[0], (String) extras[0]);
+			}
+		};
+		schemas[Bytecode.OPCODE_gt] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.GT);
+			}
+		};
+		schemas[Bytecode.OPCODE_ge] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.GTEQ);
 			}
 		};
 		schemas[Bytecode.OPCODE_invoke] = new Schema(Operands.MANY, Extras.TYPE, Extras.NAME) {
@@ -431,6 +351,11 @@ public abstract class AbstractBytecode {
 				return new Bytecode.IndirectInvoke((Type.FunctionOrMethod) extras[0], operands[0], groups[0]);
 			}
 		};
+		schemas[Bytecode.OPCODE_is] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.IS);
+			}
+		};
 		schemas[Bytecode.OPCODE_lambda] = new Schema(Operands.ONE, OperandGroups.TWO, Extras.TYPE) {
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
 				Type.FunctionOrMethod type = (Type.FunctionOrMethod) extras[0];
@@ -438,6 +363,115 @@ public abstract class AbstractBytecode {
 				int[] parameters = groups[0];
 				int[] environment = groups[1];
 				return new Bytecode.Lambda(type,body,parameters,environment);
+			}
+		};
+		schemas[Bytecode.OPCODE_lt] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.LT);
+			}
+		};
+		schemas[Bytecode.OPCODE_le] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.LTEQ);
+			}
+		};
+		schemas[Bytecode.OPCODE_logicalor] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.OR);
+			}
+		};
+		schemas[Bytecode.OPCODE_logicaland] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.AND);
+			}
+		};
+		schemas[Bytecode.OPCODE_logicalnot] = new Schema(Operands.ONE){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.NOT);
+			}
+		};
+		schemas[Bytecode.OPCODE_mul] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.MUL);
+			}
+		};
+		schemas[Bytecode.OPCODE_namedblock] = new Schema(Operands.ZERO, OperandGroups.ZERO, Blocks.ONE, Extras.STRING) {
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				String name = (String) extras[0];
+				return new Bytecode.NamedBlock(blocks[0],name);
+			}
+		};
+		schemas[Bytecode.OPCODE_ne] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.NEQ);
+			}
+		};
+		schemas[Bytecode.OPCODE_neg] = new Schema(Operands.ONE){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.NEG);
+			}
+		};
+		schemas[Bytecode.OPCODE_newobject] = new Schema(Operands.ONE){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands,Bytecode.OperatorKind.NEW);
+			}
+		};
+		schemas[Bytecode.OPCODE_record] = new Schema(Operands.MANY){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.RECORDCONSTRUCTOR);
+			}
+		};
+		schemas[Bytecode.OPCODE_rem] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.REM);
+			}
+		};
+		schemas[Bytecode.OPCODE_return] = new Schema(Operands.MANY){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Return(operands);
+			}
+		};
+		schemas[Bytecode.OPCODE_shl] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.LEFTSHIFT);
+			}
+		};
+		schemas[Bytecode.OPCODE_shr] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.RIGHTSHIFT);
+			}
+		};
+		schemas[Bytecode.OPCODE_skip] = new Schema(Operands.ZERO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Skip();
+			}
+		};
+		schemas[Bytecode.OPCODE_sub] = new Schema(Operands.TWO){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.Operator(operands, Bytecode.OperatorKind.SUB);
+			}
+		};
+		schemas[Bytecode.OPCODE_switch] = new Schema(Operands.ONE, OperandGroups.ZERO, Extras.SWITCH_ARRAY) {
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				Bytecode.Case[] cases = (Bytecode.Case[]) extras[0];
+				return new Bytecode.Switch(operands[0], cases);
+			}
+		};
+		schemas[Bytecode.OPCODE_vardecl] = new Schema(Operands.ZERO,Extras.STRING){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				String name = (String) extras[0];
+				return new Bytecode.VariableDeclaration(name);
+			}
+		};
+		schemas[Bytecode.OPCODE_vardeclinit] = new Schema(Operands.ONE,Extras.STRING){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				String name = (String) extras[0];
+				return new Bytecode.VariableDeclaration(name,operands[0]);
+			}
+		};
+		schemas[Bytecode.OPCODE_varaccess] = new Schema(Operands.ONE){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.VariableAccess(operands[0]);
 			}
 		};
 		schemas[Bytecode.OPCODE_while] = new Schema(Operands.ONE, OperandGroups.TWO, Blocks.ONE){
@@ -449,15 +483,7 @@ public abstract class AbstractBytecode {
 				return new Bytecode.While(body,condition,invariants,modified);
 			}
 		};
-		schemas[Bytecode.OPCODE_dowhile] = new Schema(Operands.ONE, OperandGroups.TWO, Blocks.ONE){
-			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				int body = blocks[0];
-				int condition = operands[0];
-				int[] invariants = groups[0];
-				int[] modified = groups[1];
-				return new Bytecode.DoWhile(body,condition,invariants,modified);
-			}
-		};
+		// Quantifiers
 		schemas[Bytecode.OPCODE_none] = schemas[Bytecode.OPCODE_some] = schemas[Bytecode.OPCODE_all] = new Schema(
 				Operands.ONE, OperandGroups.MANY) {
 			public Bytecode construct(int opcode, int[] operands, int[][] groups, int[] blocks, Object[] extras) {
@@ -484,6 +510,6 @@ public abstract class AbstractBytecode {
 				}
 				return new Bytecode.Quantifier(kind, body, ranges);
 			}
-		};
+		};		
 	}
 }

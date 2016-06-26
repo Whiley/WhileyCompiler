@@ -34,6 +34,7 @@ import wycc.util.Pair;
 import wyfs.io.BinaryOutputStream;
 import wyfs.lang.Path;
 import wyil.lang.*;
+import wyil.lang.SyntaxTree.Location;
 import wyil.util.AbstractBytecode;
 import wyautl.util.BigRational;
 
@@ -414,11 +415,9 @@ public final class WyilFileWriter {
 	 * +------------------------+
 	 * | uv : nInvariants       |
 	 * +------------------------+ 
-	 * | uv : nExpressions      |
-	 * +------------------------+
 	 * | uv[nInvariants]        |
 	 * +------------------------+
-	 * | Expr[nExpressions]     |
+	 * | SyntaxTree             |
 	 * +------------------------+
 	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
 	 * </pre>
@@ -436,18 +435,16 @@ public final class WyilFileWriter {
 		int nameIdx = stringCache.get(td.name());
 		int modifiers = generateModifiers(td.modifiers());
 		int typeIdx = typeCache.get(td.type());
-		List<Integer> invariants = td.getInvariantIndices();
-		List<SyntaxTree.Expr> expressions = td.getExpressions();
+		List<Location<Bytecode.Expr>> invariant = td.getInvariant();
 		//
 		output.write_uv(nameIdx);
 		output.write_uv(modifiers);
 		output.write_uv(typeIdx);
-		output.write_uv(invariants.size());
-		output.write_uv(expressions.size());
-		for(Integer invariant : invariants) {
-			output.write_uv(invariant);
+		output.write_uv(invariant.size());
+		for(Location<?> clause : invariant) {
+			output.write_uv(clause.getIndex());
 		}
-		writeExpressions(expressions,output);
+		writeSyntaxTree(td.getTree(),output);
 		output.close();
 		return bytes.toByteArray();
 	}
@@ -468,17 +465,13 @@ public final class WyilFileWriter {
 	 * +------------------------+
 	 * | uv : nPostconditions   |
 	 * +------------------------+
-	 * | uv : nExpressions      |
-	 * +------------------------+
-	 * | uv : nBlocks           |
-	 * +------------------------+
 	 * | uv[nPreconditions]     |
 	 * +------------------------+
 	 * | uv[nPostconditions]    |
 	 * +------------------------+
-	 * | Expr[nExpressions]     |
+	 * | uv : body              |
 	 * +------------------------+
-	 * | Block[nBlock]          |
+	 * | SyntaTree              |
 	 * +------------------------+
 	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
 	 * </pre>
@@ -497,246 +490,83 @@ public final class WyilFileWriter {
 		int nameIdx = stringCache.get(md.name());
 		int modifiers = generateModifiers(md.modifiers());
 		int typeIdx = typeCache.get(md.type());
-		List<Integer> preconditions = md.getPreconditionIndices();
-		List<Integer> postconditions = md.getPostconditionIndices();
-		List<SyntaxTree.Expr> expressions = md.getExpressions();
-		List<SyntaxTree.Block> blocks = md.getBlocks();
+		List<Location<Bytecode.Expr>> precondition = md.getPrecondition();
+		List<Location<Bytecode.Expr>> postcondition = md.getPostcondition();		
 		//
 		output.write_uv(nameIdx);
 		output.write_uv(modifiers);
 		output.write_uv(typeIdx);
-		output.write_uv(preconditions.size());
-		output.write_uv(postconditions.size());
-		output.write_uv(expressions.size());
-		output.write_uv(blocks.size());
-		
-		for(Integer precondition : preconditions) {
-			output.write_uv(precondition);
+		output.write_uv(precondition.size());
+		output.write_uv(postcondition.size());
+		//
+		for(Location<Bytecode.Expr> clause : precondition) {
+			output.write_uv(clause.getIndex());
 		}
-		for(Integer postcondition : postconditions) {
-			output.write_uv(postcondition);
+		for(Location<Bytecode.Expr> clause : postcondition) {
+			output.write_uv(clause.getIndex());
 		}
-		writeExpressions(expressions,output);		
-		for(SyntaxTree.Block block : blocks) {
-			writeCodeBlock(block, output);
-		}
+		output.write_uv(md.getBody().getIndex());
+		writeSyntaxTree(md.getTree(),output);		
+
 		output.close();
 		
 		return bytes.toByteArray();
 	}
 
 	/**
-	 * Write details of a given expression to the output stream. The format
-	 * of each expression is one of the following:
-	 * 
-	 * For variables:
-	 * 
+	 * Write a syntax tree to the output stream. The format
+	 * of a syntax tree is one of the following:
+	 *
 	 * <pre>
 	 * +-------------------+
-	 * | u1 : true         |
-	 * +-------------------+
-	 * | uv : nAttrs       |
+	 * | uv : nLocs        |
 	 * +-------------------+ 
-	 * | Attribute[nAttrs] |
-	 * +-------------------+
-	 * | uv : typeIdx      |
-	 * +-------------------+
-	 * | uv : stringIdx    |
+	 * | Locations[nLocs]  |
 	 * +-------------------+
 	 * </pre>
 	 * 
 	 * 
-	 * 
-	 * For positional operators:
-	 * 
-
 	 * 
 	 * @param register
 	 *            Register to be written out
 	 * @param output
 	 * @throws  
 	 */
-	private void writeExpressions(List<SyntaxTree.Expr> expressions, BinaryOutputStream output) throws IOException {
-		for(int i=0;i!=expressions.size();) {
-			SyntaxTree.Expr expr = expressions.get(i);
-			if(expr instanceof SyntaxTree.Variable) {
-				writeVariableExpression((SyntaxTree.Variable)expr,output);
-				i = i + 1;
-			} else if(expr instanceof SyntaxTree.PositionalOperator) {
-				SyntaxTree.PositionalOperator<?> p = (SyntaxTree.PositionalOperator<?>) expr;
-				List<SyntaxTree.PositionalOperator<?>> ps = extractPositionalOperators(p,i,expressions);
-				writePositionalOperators(ps,output);
-				i = i + ps.size();
-			} else {
-				writeNonPositionalOperator((SyntaxTree.Operator<?>)expr, output);
-				i = i + 1;
-			}			
-		}
+	private void writeSyntaxTree(SyntaxTree tree, BinaryOutputStream output) throws IOException {
+		List<Location<?>> locations = tree.getLocations();
+		output.write_uv(locations.size());
+		for(int i=0;i!=locations.size();++i) {
+			Location<?> location = locations.get(i);
+			writeLocation(location,output);
+		}		
 	}
 	
 	/**
-	 * Extract consecutive positional operators for the same bytecode.
-	 * 
-	 * @param p
-	 * @param i
-	 * @param expressions
-	 * @return
-	 */
-	private List<SyntaxTree.PositionalOperator<?>> extractPositionalOperators(SyntaxTree.PositionalOperator<?> p, int i,
-			List<SyntaxTree.Expr> expressions) {
-		ArrayList<SyntaxTree.PositionalOperator<?>> rs = new ArrayList<>();
-		for (; i < expressions.size(); ++i) {
-			SyntaxTree.Expr e = expressions.get(i);
-			if (e instanceof SyntaxTree.PositionalOperator<?>) {
-				SyntaxTree.PositionalOperator<?> ep = (SyntaxTree.PositionalOperator<?>) e;
-				if (ep.getBytecode() == p.getBytecode()) {
-					// Same bytecode, so extract
-					rs.add(ep);
-				} else {
-					// Different bytecode, so we're done
-					break;
-				}
-			} else {
-				// Not even a positional operator, so we're done
-				break;
-			}
-		}
-		return rs;
-	}
-	
-	/**
-	 * Write details of a given variable expression to the output stream. The format
-	 * of this expression kind is:
+	 * Write details of a Location to the output stream. The format
+	 * of a location is:
 	 * 
 	 * <pre>
-	 * +-------------------+
-	 * | u1 : true         |
-	 * +-------------------+
-	 * | uv : nAttrs       |
-	 * +-------------------+ 
-	 * | Attribute[nAttrs] |
 	 * +-------------------+
 	 * | uv : typeIdx      |
 	 * +-------------------+
-	 * | uv : stringIdx    |
-	 * +-------------------+
-	 * </pre>
-	 * 
-	 */
-	private void writeVariableExpression(SyntaxTree.Variable var, BinaryOutputStream output) throws IOException {
-		output.write_bit(true); // is variable
-		// TODO: write out register attributes (including name)
-		output.write_uv(0);
-		output.write_uv(typeCache.get(var.getType()));
-		output.write_uv(stringCache.get(var.name()));
-	}
-	
-	/**
-	 * Write details of a non-position operator to the output stream. The format
-	 * of this expression kind is:
-	 * 
-	 * <pre>
-	 * +-------------------+
-	 * | u1 : false        |
-	 * +-------------------+
 	 * | uv : nAttrs       |
+	 * +-------------------+
+	 * | Bytecode          |
 	 * +-------------------+ 
 	 * | Attribute[nAttrs] |
 	 * +-------------------+
-	 * | u1 : false        |
-	 * +-------------------+
-	 * | uv : typeIdx      |
-	 * +-------------------+
 	 * </pre>
 	 * 
 	 */
-	private void writeNonPositionalOperator(SyntaxTree.Operator<?> operator, BinaryOutputStream output) throws IOException {
-		output.write_bit(false); // not variable
-		// TODO: write out register attributes (including name)
-		output.write_uv(0);
-		output.write_bit(false); // not positional
-		output.write_uv(typeCache.get(operator.getType()));
-		writeBytecode(operator.getBytecode(), output);
-	}
-	
-	/**
-	 * Write a group of positional operators to the output stream. The format
-	 * of this expression kind is:
-	 * 
-	 * <pre>
-	 * +--------------------+
-	 * | u1 : false         |
-	 * +--------------------+
-	 * | uv : nAttrs        |
-	 * +--------------------+ 
-	 * | Attribute[nAttrs]  |
-	 * +--------------------+
-	 * | u1 : true          |
-	 * +--------------------+
-	 * | uv : nTypes        |
-	 * +------------- ------+
-	 * | uv[nTypes] : types |
-	 * +--------------------+
-	 * </pre>
-	 * 
-	 */
-	private void writePositionalOperators(List<SyntaxTree.PositionalOperator<?>> operators, BinaryOutputStream output)
-			throws IOException {
-		output.write_bit(false); // not variable
-		// TODO: write out register attributes (including name)
-		output.write_uv(0);
-		output.write_bit(true); // is positional
-		output.write_uv(operators.size());
-		for (int i = 0; i != operators.size(); ++i) {
-			output.write_uv(typeCache.get(operators.get(i).getType()));
-		}
-		writeBytecode(operators.get(0).getBytecode(), output);
-	}
-	
-	/**
-	 * <p>
-	 * Write out a block of bytecodes using a given set of pre-calculated label
-	 * offsets. The format is:
-	 * </p>
-	 * 
-	 * <pre>
-	 * +-------------------+
-	 * | uv : nCodes       |
-	 * +-------------------+
-	 * | uv : nAttrs       |
-	 * +-------------------+
-	 * | Bytecode[nCodes]  |
-	 * +-------------------+
-	 * | Attribute[nAttrs] |
-	 * +-------------------+
-	 * </pre>
-	 * 	
-	 * 
-	 * @param block
-	 * @param output
-	 * @return
-	 * @throws IOException
-	 */
-	private void writeCodeBlock(SyntaxTree.Block block, BinaryOutputStream output) throws IOException {
-		// Write the count of bytecodes
-		output.write_uv(block.size());
-		// Third, write the count of attributes
-		// TODO: write out attributes
-		output.write_uv(0);
-
-		// Finally, write the actual bytecodes!
-		for (int i = 0; i != block.size(); ++i) {
-			Bytecode code = block.get(i).getBytecode();
-			writeBytecode(code, output);
-		}
-
-		// TODO: write attributes
+	private void writeLocation(SyntaxTree.Location<?> location, BinaryOutputStream output) throws IOException {
+		output.write_uv(typeCache.get(location.getType()));
+		output.write_uv(0); // no attributes for now
+		writeBytecode(location.getBytecode(), output);
 	}
 
 	/**
 	 * <p>
-	 * Write out a given bytecode a given set of pre-calculated label offsets,
-	 * whose format is currently given as follows:
+	 * Write out a given bytecode whose format is currently given as follows:
 	 * </p>
 	 * 
 	 * <pre>
@@ -876,6 +706,11 @@ public final class WyilFileWriter {
 			output.write_uv(typeCache.get(c.type()));
 			break;
 		}
+		case Bytecode.OPCODE_namedblock: {
+			Bytecode.NamedBlock c = (Bytecode.NamedBlock) code;
+			output.write_uv(stringCache.get(c.getName()));
+			break;
+		}
 		case Bytecode.OPCODE_invoke: {
 			Bytecode.Invoke c = (Bytecode.Invoke) code;
 			output.write_uv(typeCache.get(c.type()));
@@ -901,6 +736,11 @@ public final class WyilFileWriter {
 				}
 			}
 			break;
+		}
+		case Bytecode.OPCODE_vardecl:
+		case Bytecode.OPCODE_vardeclinit: {
+			Bytecode.VariableDeclaration d = (Bytecode.VariableDeclaration) code;
+			output.write_uv(stringCache.get(d.getName()));
 		}
 		}
 	}
@@ -964,41 +804,26 @@ public final class WyilFileWriter {
 	private void buildPools(WyilFile.Type declaration) {
 		addStringItem(declaration.name());
 		addTypeItem(declaration.type());
-		for(SyntaxTree.Expr e : declaration.getExpressions()) {
-			buildPools(e);
-		}
+		buildPools(declaration.getTree());
 	}
 
 	private void buildPools(WyilFile.FunctionOrMethod declaration) {
 		addStringItem(declaration.name());
 		addTypeItem(declaration.type());
-		for(SyntaxTree.Expr e : declaration.getExpressions()) {
-			buildPools(e);
-		}
-		for(SyntaxTree.Block block : declaration.getBlocks()) {
-			buildPools(block);
-		}
+		buildPools(declaration.getTree());
 	}
 
-	private void buildPools(SyntaxTree.Expr expr) {
-		addTypeItem(expr.getType());		
-		if (expr instanceof SyntaxTree.Variable) {
-			SyntaxTree.Variable v = (SyntaxTree.Variable) expr;
-			addStringItem(v.name());
-		} else {
-			SyntaxTree.Operator<?> o = (SyntaxTree.Operator<?>) expr;
-			buildPools(o.getBytecode());
+	private void buildPools(SyntaxTree tree) {
+		for(Location<?> e : tree.getLocations()) {
+			buildPools(e);
 		}
 	}
 	
-	private void buildPools(SyntaxTree.Block block) {
-		for (int i = 0; i != block.size(); ++i) {
-			SyntaxTree.Stmt<?> entry = block.get(i);
-			buildPools(entry.getBytecode());			
-			// TODO: handle entry attributes
-		}
+	private void buildPools(SyntaxTree.Location<?> expr) {
+		addTypeItem(expr.getType());
+		buildPools(expr.getBytecode());
 	}
-
+	
 	private void buildPools(Bytecode code) {
 		if (code instanceof Bytecode.Const) {
 			Bytecode.Const c = (Bytecode.Const) code;
@@ -1010,6 +835,9 @@ public final class WyilFileWriter {
 			Bytecode.Invoke c = (Bytecode.Invoke) code;
 			addNameItem(c.name());
 			addTypeItem(c.type());
+		} else if(code instanceof Bytecode.NamedBlock) {
+			Bytecode.NamedBlock nb = (Bytecode.NamedBlock) code;
+			addStringItem(nb.getName());
 		} else if (code instanceof Bytecode.Switch) {
 			Bytecode.Switch s = (Bytecode.Switch) code;
 			for (Bytecode.Case cs : s.cases()) {
@@ -1023,7 +851,10 @@ public final class WyilFileWriter {
 		} else if (code instanceof Bytecode.Invoke) {
 			Bytecode.Invoke b = (Bytecode.Invoke) code;
 			addTypeItem(b.type());
-		}
+		} else if (code instanceof Bytecode.VariableDeclaration) {
+			Bytecode.VariableDeclaration vd = (Bytecode.VariableDeclaration) code;
+			addStringItem(vd.getName());
+		} 
 	}
 
 	private int addNameItem(NameID name) {

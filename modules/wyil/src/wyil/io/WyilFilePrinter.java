@@ -28,14 +28,15 @@ package wyil.io;
 import java.io.*;
 import java.util.*;
 
-import wybs.lang.Builder;
+import com.sun.glass.ui.Pixels.Format;
+
 import wycc.lang.Transform;
-import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Constant;
-import wyil.lang.SyntaxTree.Expr;
-import wyil.lang.SyntaxTree.Operator;
-import wyil.lang.SyntaxTree.Stmt;
+import wyil.lang.Bytecode.Expr;
+import wyil.lang.Bytecode.VariableAccess;
+import wyil.lang.Bytecode.VariableDeclaration;
+import wyil.lang.SyntaxTree.Location;
 import wyil.lang.Type;
 import wyil.lang.WyilFile.*;
 
@@ -74,7 +75,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 	}
 
 	public static boolean getVerbose() {
-		return false; // default value
+		return true; // default value
 	}
 
 	public void setVerbose(boolean flag) {
@@ -111,7 +112,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			t_str = t.toString();
 			writeModifiers(td.modifiers(), out);
 			out.println("type " + td.name() + " : " + t_str);
-			for (SyntaxTree.Expr invariant : td.getInvariants()) {
+			for (Location<?> invariant : td.getInvariant()) {
 				out.print("where ");
 				writeExpression(invariant, out);
 				out.println();
@@ -128,6 +129,10 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 
 	private void write(FunctionOrMethod method, PrintWriter out) {
 		//
+		if(verbose) {
+			writeLocationsAsComments(method.getTree(),out);
+		}
+		//
 		writeModifiers(method.modifiers(), out);
 		Type.FunctionOrMethod ft = method.type();
 		if (ft instanceof Type.Function) {
@@ -142,22 +147,32 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			writeParameters(ft.returns(),out);
 		}				
 		//
-		for (SyntaxTree.Expr precondition : method.getPrecondition()) {
+		for (Location<Expr> precondition : method.getPrecondition()) {
 			out.println();
 			out.print("requires ");
 			writeExpression(precondition, out);
 		}
-		for (SyntaxTree.Expr postcondition : method.getPostcondition()) {
+		for (Location<Expr> postcondition : method.getPostcondition()) {
 			out.println();
 			out.print("ensures ");
 			writeExpression(postcondition, out);
 		}
-		if (method.getBlocks().size() > 0) {
-			out.println(": ");
-			writeOuterBlock(method, out);
+		if (method.getBody() != null) {
+			out.println(": ");			
+			writeBlock(0, method.getBody(), out);
 		}
 	}
 
+	private void writeLocationsAsComments(SyntaxTree tree, PrintWriter out) {		
+		List<Location<?>> locations = tree.getLocations();
+		for(int i=0;i!=locations.size();++i) {
+			Location<?> loc = locations.get(i);			
+			String id = String.format("%1$" + 3 + "s", "#" + i);
+			String type = String.format("%1$-" + 8 + "s", "[" + loc.getType() + "]");
+			out.println("// " + id + " " + type + " " + loc.getBytecode());
+		}
+	}
+	
 	private void writeParameters(List<Type> parameters, PrintWriter out) {
 		out.print("(");
 		for (int i = 0; i != parameters.size(); ++i) {
@@ -169,90 +184,89 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		out.print(")");
 	}
 	
-	private void writeOuterBlock(WyilFile.Declaration enclosing, PrintWriter out) {
-		if (verbose) {
-			List<Expr> locations = enclosing.getExpressions();
-			for (int i = 0; i != locations.size(); ++i) {
-				Expr l = (Expr) locations.get(i);
-				tabIndent(1, out);
-				out.println("// %" + i + " = " + l);
-			}
-		}
-		writeBlock(0, enclosing.getBlock(0), out);
-	}
-	
-	private void writeBlock(int indent, SyntaxTree.Block block, PrintWriter out) {
-		for (int i = 0; i != block.size(); ++i) {
-			writeStatement(indent, block.get(i), out);
+	private void writeBlock(int indent, Location<Bytecode.Block> block, PrintWriter out) {
+		for (int i = 0; i != block.numberOfOperands(); ++i) {
+			writeStatement(indent, block.getOperand(i), out);
 		}
 	}
 
-	private void writeStatement(int indent, Stmt<?> c, PrintWriter out) {
+	@SuppressWarnings("unchecked")
+	private void writeStatement(int indent, Location<?> c, PrintWriter out) {
 		tabIndent(indent+1,out); 
 		switch(c.getOpcode()) {
 		case Bytecode.OPCODE_assert:
-			writeAssert(indent, (Stmt<Bytecode.Assert>) c, out);
+			writeAssert(indent, (Location<Bytecode.Assert>) c, out);
 			break;
 		case Bytecode.OPCODE_assume:
-			writeAssume(indent, (Stmt<Bytecode.Assume>) c, out);
+			writeAssume(indent, (Location<Bytecode.Assume>) c, out);
 			break;
 		case Bytecode.OPCODE_assign:
-			writeAssign(indent, (Stmt<Bytecode.Assign>) c, out);
+			writeAssign(indent, (Location<Bytecode.Assign>) c, out);
 			break;
 		case Bytecode.OPCODE_break:
-			writeBreak(indent, (Stmt<Bytecode.Break>) c, out);
+			writeBreak(indent, (Location<Bytecode.Break>) c, out);
 			break;
 		case Bytecode.OPCODE_continue:
-			writeContinue(indent, (Stmt<Bytecode.Continue>) c, out);
+			writeContinue(indent, (Location<Bytecode.Continue>) c, out);
 			break;
 		case Bytecode.OPCODE_debug:
-			writeDebug(indent, (Stmt<Bytecode.Debug>) c, out);
+			writeDebug(indent, (Location<Bytecode.Debug>) c, out);
 			break;
 		case Bytecode.OPCODE_dowhile:
-			writeDoWhile(indent, (Stmt<Bytecode.DoWhile>) c, out);
+			writeDoWhile(indent, (Location<Bytecode.DoWhile>) c, out);
 			break;
 		case Bytecode.OPCODE_fail:
-			writeFail(indent, (Stmt<Bytecode.Fail>) c, out);
+			writeFail(indent, (Location<Bytecode.Fail>) c, out);
 			break;
 		case Bytecode.OPCODE_if:
 		case Bytecode.OPCODE_ifelse:
-			writeIf(indent, (Stmt<Bytecode.If>) c, out);
+			writeIf(indent, (Location<Bytecode.If>) c, out);
 			break;
 		case Bytecode.OPCODE_indirectinvoke:
-			writeIndirectInvoke(indent, (Stmt<Bytecode.IndirectInvoke>) c, out);
+			writeIndirectInvoke(indent, (Location<Bytecode.IndirectInvoke>) c, out);
 			break;
 		case Bytecode.OPCODE_invoke:
-			writeInvoke(indent, (Stmt<Bytecode.Invoke>) c, out);
+			writeInvoke(indent, (Location<Bytecode.Invoke>) c, out);
+			break;
+		case Bytecode.OPCODE_namedblock:
+			writeNamedBlock(indent, (Location<Bytecode.NamedBlock>) c, out);
 			break;
 		case Bytecode.OPCODE_while:
-			writeWhile(indent, (Stmt<Bytecode.While>) c, out);
+			writeWhile(indent, (Location<Bytecode.While>) c, out);
 			break;
 		case Bytecode.OPCODE_return:
-			writeReturn(indent, (Stmt<Bytecode.Return>) c, out);
+			writeReturn(indent, (Location<Bytecode.Return>) c, out);
+			break;
+		case Bytecode.OPCODE_skip:
+			writeSkip(indent, (Location<Bytecode.Skip>) c, out);
 			break;
 		case Bytecode.OPCODE_switch:
-			writeSwitch(indent, (Stmt<Bytecode.Switch>) c, out);
+			writeSwitch(indent, (Location<Bytecode.Switch>) c, out);
+			break;
+		case Bytecode.OPCODE_vardecl:
+		case Bytecode.OPCODE_vardeclinit:
+			writeVariableDeclaration(indent, (Location<Bytecode.VariableDeclaration>) c, out);
 			break;
 		default:
 			throw new IllegalArgumentException("unknown bytecode encountered");
 		}
 	}
 	
-	private void writeAssert(int indent, Stmt<Bytecode.Assert> c, PrintWriter out) {
+	private void writeAssert(int indent, Location<Bytecode.Assert> c, PrintWriter out) {
 		out.print("assert ");
 		writeExpression(c.getOperand(0),out);
 		out.println();
 	}
 
-	private void writeAssume(int indent, Stmt<Bytecode.Assume> c, PrintWriter out) {
+	private void writeAssume(int indent, Location<Bytecode.Assume> c, PrintWriter out) {
 		out.print("assume ");
 		writeExpression(c.getOperand(0),out);
 		out.println();
 	}
 	
-	private void writeAssign(int indent, Stmt<Bytecode.Assign> stmt, PrintWriter out) {
-		Expr[] lhs = stmt.getOperandGroup(SyntaxTree.LEFTHANDSIDE);
-		Expr[] rhs = stmt.getOperandGroup(SyntaxTree.RIGHTHANDSIDE);
+	private void writeAssign(int indent, Location<Bytecode.Assign> stmt, PrintWriter out) {
+		Location<?>[] lhs = stmt.getOperandGroup(SyntaxTree.LEFTHANDSIDE);
+		Location<?>[] rhs = stmt.getOperandGroup(SyntaxTree.RIGHTHANDSIDE);
 		if(lhs.length > 0) {
 			for(int i=0;i!=lhs.length;++i) {
 				if(i!=0) { out.print(", "); }
@@ -264,21 +278,21 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		out.println();
 	}
 	
-	private void writeBreak(int indent, Stmt<Bytecode.Break> b, PrintWriter out) {
+	private void writeBreak(int indent, Location<Bytecode.Break> b, PrintWriter out) {
 		out.println("break");
 	}
 	
-	private void writeContinue(int indent, Stmt<Bytecode.Continue> b, PrintWriter out) {
+	private void writeContinue(int indent, Location<Bytecode.Continue> b, PrintWriter out) {
 		out.println("continue");
 	}
 	
-	private void writeDebug(int indent, Stmt<Bytecode.Debug> b, PrintWriter out) {
+	private void writeDebug(int indent, Location<Bytecode.Debug> b, PrintWriter out) {
 		out.println("debug");
 	}
 	
-	private void writeDoWhile(int indent, Stmt<Bytecode.DoWhile> b, PrintWriter out) {
-		SyntaxTree.Expr[] loopInvariant = b.getOperandGroup(0);
-		SyntaxTree.Expr[] modifiedOperands = b.getOperandGroup(1);		
+	private void writeDoWhile(int indent, Location<Bytecode.DoWhile> b, PrintWriter out) {
+		Location<?>[] loopInvariant = b.getOperandGroup(0);
+		Location<?>[] modifiedOperands = b.getOperandGroup(1);		
 		out.println("do:");
 		//				
 		writeBlock(indent+1,b.getBlock(0),out);
@@ -287,7 +301,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		writeExpression(b.getOperand(0),out);
 		out.print(" modifies ");
 		writeExpressions(modifiedOperands,out);
-		for(SyntaxTree.Expr invariant : loopInvariant) {
+		for(Location<?> invariant : loopInvariant) {
 			out.println();
 			tabIndent(indent+1,out);
 			out.print("where ");
@@ -297,11 +311,11 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		out.println();
 	}
 
-	private void writeFail(int indent, Stmt<Bytecode.Fail> c, PrintWriter out) {
+	private void writeFail(int indent, Location<Bytecode.Fail> c, PrintWriter out) {
 		out.println("fail");
 	}
 	
-	private void writeIf(int indent, Stmt<Bytecode.If> b, PrintWriter out) {
+	private void writeIf(int indent, Location<Bytecode.If> b, PrintWriter out) {
 		out.print("if ");
 		writeExpression(b.getOperand(0),out);
 		out.println(":");
@@ -313,8 +327,8 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 	}
 	
-	private void writeIndirectInvoke(int indent, Stmt<Bytecode.IndirectInvoke> stmt, PrintWriter out) {
-		Expr[] operands = stmt.getOperands();
+	private void writeIndirectInvoke(int indent, Location<Bytecode.IndirectInvoke> stmt, PrintWriter out) {
+		Location<?>[] operands = stmt.getOperands();
 		writeExpression(operands[0],out);
 		out.print("(");		
 		for(int i=1;i!=operands.length;++i) {
@@ -325,9 +339,9 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 		out.println(")");
 	}
-	private void writeInvoke(int indent, Stmt<Bytecode.Invoke> stmt, PrintWriter out) {
+	private void writeInvoke(int indent, Location<Bytecode.Invoke> stmt, PrintWriter out) {
 		out.print(stmt.getBytecode().name() + "(");
-		Expr[] operands = stmt.getOperands();
+		Location<?>[] operands = stmt.getOperands();
 		for(int i=0;i!=operands.length;++i) {
 			if(i!=0) {
 				out.print(", ");
@@ -337,27 +351,32 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		out.println(")");
 	}
 	
-	private void writeWhile(int indent, Stmt<Bytecode.While> b, PrintWriter out) {
+	private void writeNamedBlock(int indent, Location<Bytecode.NamedBlock> b, PrintWriter out) {
+		out.print(b.getBytecode().getName());
+		out.println(":");
+		writeBlock(indent+1,b.getBlock(0),out);
+	}
+	
+	private void writeWhile(int indent, Location<Bytecode.While> b, PrintWriter out) {
 		out.print("while ");
 		writeExpression(b.getOperand(0),out);
-		SyntaxTree.Expr[] loopInvariant = b.getOperandGroup(0);
-		SyntaxTree.Expr[] modifiedOperands = b.getOperandGroup(1);
+		Location<?>[] loopInvariant = b.getOperandGroup(0);
+		Location<?>[] modifiedOperands = b.getOperandGroup(1);
 		out.print(" modifies ");
 		writeExpressions(modifiedOperands,out);
 		//
-		for(SyntaxTree.Expr invariant : loopInvariant) {
+		for(Location<?> invariant : loopInvariant) {
 			out.println();
 			tabIndent(indent+1,out);
 			out.print("where ");
 			writeExpression(invariant,out);
 		}
 		out.println(":");
-		// FIXME: add invariants
 		writeBlock(indent+1,b.getBlock(0),out);		
 	}
 	
-	private void writeReturn(int indent, Stmt<Bytecode.Return> b, PrintWriter out) {
-		SyntaxTree.Expr[] operands = b.getOperands();
+	private void writeReturn(int indent, Location<Bytecode.Return> b, PrintWriter out) {
+		Location<?>[] operands = b.getOperands();
 		out.print("return");
 		if(operands.length > 0) {
 			out.print(" ");
@@ -366,7 +385,11 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		out.println();
 	}
 	
-	private void writeSwitch(int indent, Stmt<Bytecode.Switch> b, PrintWriter out) {
+	private void writeSkip(int indent, Location<Bytecode.Skip> b, PrintWriter out) {
+		out.println("skip");
+	}
+	
+	private void writeSwitch(int indent, Location<Bytecode.Switch> b, PrintWriter out) {
 		out.print("switch ");
 		writeExpression(b.getOperand(0), out);
 		out.println(":");
@@ -391,6 +414,23 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 	}
 	
+	private void writeVariableAccess(Location<VariableAccess> loc, PrintWriter out) {
+		Location<VariableDeclaration> vd = (Location<VariableDeclaration>) loc.getOperand(0);
+		out.print(vd.getBytecode().getName());
+	}
+	
+	private void writeVariableDeclaration(int indent, Location<VariableDeclaration> loc, PrintWriter out) {
+		Location<?>[] operands = loc.getOperands();
+		out.print(loc.getType());
+		out.print(" ");
+		out.print(loc.getBytecode().getName());
+		if (operands.length > 0) {
+			out.print(" = ");
+			writeExpression(operands[0], out);
+		}
+		out.println();
+	}
+	
 	/**
 	 * Write a bracketed operand if necessary. Any operand whose human-readable
 	 * representation can contain whitespace must have brackets around it.
@@ -399,100 +439,88 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 	 * @param enclosing
 	 * @param out
 	 */
-	private void writeBracketedExpression(SyntaxTree.Expr expr, PrintWriter out) {
-		if (expr instanceof SyntaxTree.Variable) {
-			SyntaxTree.Variable v = (SyntaxTree.Variable) expr;
-			out.print(v.name());
-		} else {
-			SyntaxTree.Operator<?> op = (SyntaxTree.Operator<?>) expr;
-			boolean needsBrackets = needsBrackets(op.getBytecode());
-			if (needsBrackets) {
-				out.print("(");
-			}
-			write(op, out);
-			if (needsBrackets) {
-				out.print(")");
-			}
+	private void writeBracketedExpression(Location<?> expr, PrintWriter out) {
+		boolean needsBrackets = needsBrackets(expr.getBytecode());
+		if (needsBrackets) {
+			out.print("(");
+		}
+		writeExpression(expr, out);
+		if (needsBrackets) {
+			out.print(")");
 		}
 	}
 
-	private void writeExpressions(SyntaxTree.Expr[] exprs, PrintWriter out) {
+	private void writeExpressions(Location<?>[] exprs, PrintWriter out) {
 		Bytecode last = null;
 		for (int i = 0; i != exprs.length; ++i) {
 			if (i != 0) {
 				out.print(", ");
 			}
-			SyntaxTree.Expr e = exprs[i];
+			Location<?> e = exprs[i];
 
-			if (e instanceof SyntaxTree.PositionalOperator<?>) {
-				SyntaxTree.PositionalOperator<?> p = (SyntaxTree.PositionalOperator<?>) e;
-				if (p.getBytecode() == last) {
-					continue;
-				} else {
-					last = p.getBytecode();
-				}
-			}
+			// FIXME: support position operators
+			
+//			if (e instanceof SyntaxTree.PositionalLocation<?>) {
+//				SyntaxTree.PositionalLocation<?> p = (SyntaxTree.PositionalLocation<?>) e;
+//				if (p.getBytecode() == last) {
+//					continue;
+//				} else {
+//					last = p.getBytecode();
+//				}
+//			}
 			writeExpression(exprs[i], out);
 		}
 	}
 	
-	private void writeExpression(SyntaxTree.Expr expr, PrintWriter out) {
-		if (expr instanceof SyntaxTree.Variable) {
-			SyntaxTree.Variable v = (SyntaxTree.Variable) expr;
-			out.print(v.name());
-		} else {
-			write((SyntaxTree.Operator<?>) expr, out);
-		}
-	}
-	
-	private void write(SyntaxTree.Operator<?> expr, PrintWriter out) {
+	@SuppressWarnings("unchecked")
+	private void writeExpression(Location<?> expr, PrintWriter out) {
 		switch (expr.getOpcode()) {
 		case Bytecode.OPCODE_arraylength:
-			writeArrayLength((Operator<Bytecode.Operator>) expr,out);
+			writeArrayLength((Location<Bytecode.Operator>) expr,out);
 			break;
 		case Bytecode.OPCODE_arrayindex:
-			writeArrayIndex((Operator<Bytecode.Operator>) expr,out);
+			writeArrayIndex((Location<Bytecode.Operator>) expr,out);
 			break;
 		case Bytecode.OPCODE_array:
-			writeArrayInitialiser((Operator<Bytecode.Operator>) expr,out);
+			writeArrayInitialiser((Location<Bytecode.Operator>) expr,out);
 			break;
 		case Bytecode.OPCODE_arraygen:
-			writeArrayGenerator((Operator<Bytecode.Operator>) expr,out);
+			writeArrayGenerator((Location<Bytecode.Operator>) expr,out);
 			break;
 		case Bytecode.OPCODE_convert:
-			writeConvert((Operator<Bytecode.Convert>) expr, out);
+			writeConvert((Location<Bytecode.Convert>) expr, out);
 			break;
 		case Bytecode.OPCODE_const:
-			writeConst((Operator<Bytecode.Const>) expr, out);
+			writeConst((Location<Bytecode.Const>) expr, out);
 			break;
 		case Bytecode.OPCODE_fieldload:
-			writeFieldLoad((Operator<Bytecode.FieldLoad>) expr, out);
+			writeFieldLoad((Location<Bytecode.FieldLoad>) expr, out);
 			break;
 		case Bytecode.OPCODE_indirectinvoke:
-			writeIndirectInvoke((Operator<Bytecode.IndirectInvoke>) expr, out);
+			writeIndirectInvoke((Location<Bytecode.IndirectInvoke>) expr, out);
 			break;
 		case Bytecode.OPCODE_invoke:
-			writeInvoke((Operator<Bytecode.Invoke>) expr, out);
+			writeInvoke((Location<Bytecode.Invoke>) expr, out);
 			break;
 		case Bytecode.OPCODE_lambda:
-			writeLambda((Operator<Bytecode.Lambda>) expr, out);
+			writeLambda((Location<Bytecode.Lambda>) expr, out);
 			break;
 		case Bytecode.OPCODE_record:
-			writeRecordConstructor((Operator<Bytecode.Operator>) expr, out);
+			writeRecordConstructor((Location<Bytecode.Operator>) expr, out);
 			break;
 		case Bytecode.OPCODE_newobject:
-			writeNewObject((Operator<Bytecode.Operator>) expr,out);
+			writeNewObject((Location<Bytecode.Operator>) expr,out);
 			break;
 		case Bytecode.OPCODE_dereference:
 		case Bytecode.OPCODE_logicalnot:
 		case Bytecode.OPCODE_neg:
 		case Bytecode.OPCODE_bitwiseinvert:
-			writePrefixOperators((Operator<Bytecode.Operator>) expr,out);
+			writePrefixLocations((Location<Bytecode.Operator>) expr,out);
 			break;
 		case Bytecode.OPCODE_all:
 		case Bytecode.OPCODE_some:
 		case Bytecode.OPCODE_none:
-			writeQuantifier((Operator<Bytecode.Quantifier>) expr, out);
+			writeQuantifier((Location<Bytecode.Quantifier>) expr, out);
 			break;
 		case Bytecode.OPCODE_add:
 		case Bytecode.OPCODE_sub:
@@ -513,29 +541,32 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		case Bytecode.OPCODE_shl:
 		case Bytecode.OPCODE_shr:
 		case Bytecode.OPCODE_is:
-			writeInfixOperators((Operator<Bytecode.Operator>) expr, out);
+			writeInfixLocations((Location<Bytecode.Operator>) expr, out);
 			break;
+		case Bytecode.OPCODE_varaccess:
+			writeVariableAccess((Location<VariableAccess>) expr, out);
+			break;			
 		default:
-			throw new IllegalArgumentException("unknown bytecode encountered");
+			throw new IllegalArgumentException("unknown bytecode encountered: " + expr.getBytecode());
 		}
 	}
 	
 
-	private void writeArrayLength(Operator<Bytecode.Operator> expr, PrintWriter out) {
+	private void writeArrayLength(Location<Bytecode.Operator> expr, PrintWriter out) {
 		out.print("|");
 		writeExpression(expr.getOperand(0), out);
 		out.print("|");		
 	}
 	
-	private void writeArrayIndex(Operator<Bytecode.Operator> expr, PrintWriter out) {
+	private void writeArrayIndex(Location<Bytecode.Operator> expr, PrintWriter out) {
 		writeExpression(expr.getOperand(0), out);
 		out.print("[");
 		writeExpression(expr.getOperand(1), out);
 		out.print("]");
 	}
 	
-	private void writeArrayInitialiser(Operator<Bytecode.Operator> expr, PrintWriter out) {
-		Expr[] operands = expr.getOperands();
+	private void writeArrayInitialiser(Location<Bytecode.Operator> expr, PrintWriter out) {
+		Location<?>[] operands = expr.getOperands();
 		out.print("[");
 		for(int i=0;i!=operands.length;++i) {
 			if(i != 0) {
@@ -546,26 +577,26 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		out.print("]");
 	}
 
-	private void writeArrayGenerator(Operator<Bytecode.Operator> expr, PrintWriter out) {
+	private void writeArrayGenerator(Location<Bytecode.Operator> expr, PrintWriter out) {
 		out.print("[");
 		writeExpression(expr.getOperand(0), out);
 		out.print(" ; ");
 		writeExpression(expr.getOperand(1), out);
 		out.print("]");
 	}
-	private void writeConvert(Operator<Bytecode.Convert> expr, PrintWriter out) {
+	private void writeConvert(Location<Bytecode.Convert> expr, PrintWriter out) {
 		out.print("(" + expr.getType() + ") ");
 		writeExpression(expr.getOperand(0),out);
 	}
-	private void writeConst(Operator<Bytecode.Const> expr, PrintWriter out) {
+	private void writeConst(Location<Bytecode.Const> expr, PrintWriter out) {
 		out.print(expr.getBytecode().constant());
 	}
-	private void writeFieldLoad(Operator<Bytecode.FieldLoad> expr, PrintWriter out) {
+	private void writeFieldLoad(Location<Bytecode.FieldLoad> expr, PrintWriter out) {
 		writeBracketedExpression(expr.getOperand(0),out);
 		out.print("." + expr.getBytecode().fieldName());		
 	}
-	private void writeIndirectInvoke(Operator<Bytecode.IndirectInvoke> expr, PrintWriter out) {
-		Expr[] operands = expr.getOperands();
+	private void writeIndirectInvoke(Location<Bytecode.IndirectInvoke> expr, PrintWriter out) {
+		Location<?>[] operands = expr.getOperands();
 		writeExpression(operands[0],out);
 		out.print("(");		
 		for(int i=1;i!=operands.length;++i) {
@@ -576,9 +607,9 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 		out.print(")");
 	}
-	private void writeInvoke(Operator<Bytecode.Invoke> expr, PrintWriter out) {
+	private void writeInvoke(Location<Bytecode.Invoke> expr, PrintWriter out) {
 		out.print(expr.getBytecode().name() + "(");
-		Expr[] operands = expr.getOperands();
+		Location<?>[] operands = expr.getOperands();
 		for(int i=0;i!=operands.length;++i) {
 			if(i!=0) {
 				out.print(", ");
@@ -588,39 +619,40 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		out.print(")");
 	}
 
-	private void writeLambda(Operator<Bytecode.Lambda> expr, PrintWriter out) {
+	@SuppressWarnings("unchecked")
+	private void writeLambda(Location<Bytecode.Lambda> expr, PrintWriter out) {
 		out.print("&[");
-		Expr[] environment = expr.getOperandGroup(SyntaxTree.ENVIRONMENT);
+		Location<?>[] environment = expr.getOperandGroup(SyntaxTree.ENVIRONMENT);
 		for (int i = 0; i != environment.length; ++i) {
-			SyntaxTree.Variable var = (SyntaxTree.Variable) environment[i];
+			Location<VariableDeclaration> var = (Location<VariableDeclaration>) environment[i];
 			if (i != 0) {
 				out.print(", ");
 			}
 			out.print(var.getType());
 			out.print(" ");
-			out.print(var.name());
+			out.print(var.getBytecode().getName());
 		}
 		out.print("](");
-		Expr[] parameters = expr.getOperandGroup(SyntaxTree.PARAMETERS);
+		Location<?>[] parameters = expr.getOperandGroup(SyntaxTree.PARAMETERS);
 		for (int i = 0; i != parameters.length; ++i) {
-			SyntaxTree.Variable var = (SyntaxTree.Variable) parameters[i];
+			Location<VariableDeclaration> var = (Location<VariableDeclaration>) parameters[i];
 			if (i != 0) {
 				out.print(", ");
 			}
 			out.print(var.getType());
 			out.print(" ");
-			out.print(var.name());
+			out.print(var.getBytecode().getName());
 		}
 		out.print(" -> ");
 		writeExpression(expr.getOperand(0), out);
 		out.print(")");
 	}
 	
-	private void writeRecordConstructor(Operator<Bytecode.Operator> expr, PrintWriter out) {
+	private void writeRecordConstructor(Location<Bytecode.Operator> expr, PrintWriter out) {
 		Type.EffectiveRecord t = (Type.EffectiveRecord) expr.getType();
 		ArrayList<String> fields = new ArrayList<String>(t.fields().keySet());
 		Collections.sort(fields);
-		Expr[] operands = expr.getOperands();
+		Location<?>[] operands = expr.getOperands();
 		out.print("{");
 		for(int i=0;i!=operands.length;++i) {
 			if(i != 0) {
@@ -633,18 +665,18 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		out.print("}");
 	}
 
-	private void writeNewObject(Operator<Bytecode.Operator> expr, PrintWriter out) {
+	private void writeNewObject(Location<Bytecode.Operator> expr, PrintWriter out) {
 		out.print("new ");
 		writeExpression(expr.getOperand(0), out);
 	}
 	
-	private void writePrefixOperators(Operator<Bytecode.Operator> expr, PrintWriter out) {
+	private void writePrefixLocations(Location<Bytecode.Operator> expr, PrintWriter out) {
 		// Prefix operators
 		out.print(opcode(expr.getBytecode().kind()));
 		writeBracketedExpression(expr.getOperand(0),out);
 	}
 	
-	private void writeInfixOperators(Operator<Bytecode.Operator> c, PrintWriter out) {
+	private void writeInfixLocations(Location<Bytecode.Operator> c, PrintWriter out) {
 		writeBracketedExpression(c.getOperand(0),out);
 		out.print(" ");
 		out.print(opcode(c.getBytecode().kind()));
@@ -653,16 +685,17 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		
 	}
 
-	private void writeQuantifier(Operator<Bytecode.Quantifier> c, PrintWriter out) {
+	@SuppressWarnings("unchecked")
+	private void writeQuantifier(Location<Bytecode.Quantifier> c, PrintWriter out) {
 		out.print(quantifierKind(c));
 		out.print(" { ");
 		for (int i = 0; i != c.numberOfOperandGroups(); ++i) {
-			Expr[] range = c.getOperandGroup(i);
+			Location<?>[] range = c.getOperandGroup(i);
 			if (i != 0) {
 				out.print(", ");
 			}
-			SyntaxTree.Variable v = (SyntaxTree.Variable) range[SyntaxTree.VARIABLE];
-			out.print(v.name());
+			Location<VariableDeclaration>  v = (Location<VariableDeclaration>) range[SyntaxTree.VARIABLE];
+			out.print(v.getBytecode().getName());
 			out.print(" in ");
 			writeExpression(range[SyntaxTree.START], out);
 			out.print("..");
@@ -673,7 +706,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		out.print(" } ");
 	}
 	
-	private String quantifierKind(Operator<Bytecode.Quantifier> c) {
+	private String quantifierKind(Location<Bytecode.Quantifier> c) {
 		switch(c.getOpcode()) {
 		case Bytecode.OPCODE_none:
 			return "no";
@@ -692,7 +725,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 	}
 	
-	private boolean needsBrackets(Bytecode.Expr e) {
+	private boolean needsBrackets(Bytecode e) {
 		switch(e.getOpcode()) {
 		case Bytecode.OPCODE_convert:
 		case Bytecode.OPCODE_add:

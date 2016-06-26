@@ -76,6 +76,13 @@ public interface Bytecode {
 	public int[] getOperands();
 
 	/**
+	 * Get the number of operands in this bytecode
+	 * 
+	 * @return
+	 */
+	public int numberOfOperands();
+	
+	/**
 	 * Return the ith top-level operand in this bytecode.
 	 * 
 	 * @param i
@@ -166,7 +173,7 @@ public interface Bytecode {
 
 		@Override
 		public String toString() {
-			return "convert %" + getOperand(0);
+			return "castt " + Util.arrayToString(getOperands());
 		}
 	}
 
@@ -218,7 +225,7 @@ public interface Bytecode {
 
 		@Override
 		public String toString() {
-			return constant.toString();
+			return "const " + constant.toString();
 		}
 	}
 
@@ -280,7 +287,7 @@ public interface Bytecode {
 
 		@Override
 		public String toString() {
-			return "fieldload %" + getOperand(0) + " " + field;
+			return "recfield %" + getOperand(0) + " " + field;
 		}
 	}
 
@@ -372,7 +379,7 @@ public interface Bytecode {
 	 *
 	 */
 	public enum OperatorKind {
-		// Unary
+		// Unary		
 		NEG(OPCODE_neg) {
 			public String toString() {
 				return "neg";
@@ -395,7 +402,7 @@ public interface Bytecode {
 		},
 		ARRAYLENGTH(OPCODE_arraylength) {
 			public String toString() {
-				return "length";
+				return "arrlen";
 			}
 		},
 		// Binary
@@ -431,7 +438,7 @@ public interface Bytecode {
 		},
 		NEQ(OPCODE_ne) {
 			public String toString() {
-				return "ne";
+				return "neq";
 			}
 		},
 		LT(OPCODE_lt) {
@@ -441,7 +448,7 @@ public interface Bytecode {
 		},
 		LTEQ(OPCODE_le) {
 			public String toString() {
-				return "le";
+				return "lteq";
 			}
 		},
 		GT(OPCODE_gt) {
@@ -451,7 +458,7 @@ public interface Bytecode {
 		},
 		GTEQ(OPCODE_ge) {
 			public String toString() {
-				return "ge";
+				return "gteq";
 			}
 		},
 		AND(OPCODE_logicaland) {
@@ -481,37 +488,37 @@ public interface Bytecode {
 		},
 		LEFTSHIFT(OPCODE_shl) {
 			public String toString() {
-				return "shl";
+				return "bshl";
 			}
 		},
 		RIGHTSHIFT(OPCODE_shr) {
 			public String toString() {
-				return "shr";
+				return "bshr";
 			}
 		},
 		ARRAYINDEX(OPCODE_arrayindex) {
 			public String toString() {
-				return "indexof";
+				return "arridx";
 			}
 		},
 		ARRAYGENERATOR(OPCODE_arraygen) {
 			public String toString() {
-				return "arraygen";
+				return "arrgen";
 			}
 		},
 		ARRAYCONSTRUCTOR(OPCODE_array) {
 			public String toString() {
-				return "array";
+				return "arrinit";
 			}
 		},
 		RECORDCONSTRUCTOR(OPCODE_record) {
 			public String toString() {
-				return "record";
+				return "recinit";
 			}
 		},
 		IS(OPCODE_is) {
 			public String toString() {
-				return "is";
+				return "istype";
 			}
 		},
 		NEW(OPCODE_newobject) {
@@ -563,7 +570,7 @@ public interface Bytecode {
 		}
 
 		public String toString() {
-			return kind() + Util.arrayToString(getOperands());
+			return kind() + " " + Util.arrayToString(getOperands());
 		}
 	}
 
@@ -688,6 +695,39 @@ public interface Bytecode {
 
 		public int hashCode() {
 			return variable ^ startOperand ^ endOperand;
+		}
+	}
+
+
+	/**
+	 * <p>
+	 * A variable access bytecode represents a specific read of a given variable.
+	 * </p>
+	 *
+	 * <pre>
+	 * +--------+---------+
+	 * | opcode | operand |
+	 * +--------+---------+
+	 * </pre>
+	 *
+	 * <p>
+	 * Here, the operand refers to the variable declaration corresponding to
+	 * this variable Access.
+	 * </p>
+	 */
+	public static final class VariableAccess extends AbstractBytecode implements Expr {
+
+		public VariableAccess(int operand) {
+			super(operand);
+		}
+
+		@Override
+		public int getOpcode() {
+			return OPCODE_varaccess;
+		}
+
+		public String toString() {
+			return "read " + Util.arrayToString(getOperands());
 		}
 	}
 
@@ -858,7 +898,7 @@ public interface Bytecode {
 
 		@Override
 		public String toString() {
-			return Util.arrayToString(leftHandSide()) + " = " + Util.arrayToString(rightHandSide());
+			return "assign " + Util.arrayToString(leftHandSide()) + " = " + Util.arrayToString(rightHandSide());
 		}
 	}
 
@@ -928,7 +968,7 @@ public interface Bytecode {
 		
 		@Override
 		public String toString() {
-			return "break " + getBlock(0);
+			return "break ";
 		}
 	}
 
@@ -963,7 +1003,7 @@ public interface Bytecode {
 
 		@Override
 		public String toString() {
-			return "continue " + getBlock(0);
+			return "cont";
 		}
 	}
 
@@ -1264,18 +1304,44 @@ public interface Bytecode {
 		}
 
 		@Override
-		public String toString() {
-			String r = "return";
-			for (int i = 0; i != getOperands().length; ++i) {
-				if (i != 0) {
-					r += ",";
-				}
-				r += " %" + getOperand(i);
-			}
-			return r;
+		public String toString() {			
+			return "return " + Util.arrayToString(getOperands());			
 		}
 	}
 
+	/**
+	 * <p>
+	 * A skip bytecode has the following layout:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+
+	 * | opcode |
+	 * +--------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Upon execution of this bytecode, the machine simply moves on to the next
+	 * instruction.
+	 * </p>
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class Skip extends AbstractBytecode implements Stmt {
+
+		// FIXME: should be renamed to panic as this is a more descriptive name
+
+		@Override
+		public int getOpcode() {
+			return OPCODE_skip;
+		}
+
+		@Override
+		public String toString() {
+			return "skip";
+		}
+	}
 	/**
 	 * <p>
 	 * A switch bytecode has the following layout:
@@ -1398,10 +1464,140 @@ public interface Bytecode {
 		}
 	}
 
+	/**
+	 * <p>
+	 * A variable declaration bytecode has one of the following two layouts:
+	 * </p>
+	 *
+	 * <pre>
+	 * +--------+------+
+	 * | opcode | name |
+	 * +--------+------+
+	 * </pre>
+	 * 
+	 * Or, with an initialiser operand:
+	 * 
+	 * <pre>
+	 * +--------+---------+------+
+	 * | opcode | operand | name |
+	 * +--------+---------+------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the condition identifies the expression being switched on. There
+	 * are zero or more case blocks, and the same number of constant arrays. An
+	 * empty constant array indicates the default block.
+	 * </p>
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class VariableDeclaration extends AbstractBytecode implements Stmt {
+		/**
+		 * Variable name
+		 */
+		private final String name;
+
+		public VariableDeclaration(String name) {
+			super();
+			this.name = name;
+		}
+
+		public VariableDeclaration(String name, int initialiser) {
+			super(initialiser);
+			this.name = name;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		@Override
+		public int getOpcode() {
+			if (numberOfOperands() == 0) {
+				return OPCODE_vardecl;
+			} else {
+				return OPCODE_vardeclinit;
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof VariableDeclaration) {
+				VariableDeclaration vd = (VariableDeclaration) o;
+				return name.equals(vd.name) && super.equals(o);
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return name.hashCode() ^ super.hashCode();
+		}
+		
+		public String toString() {
+			if(numberOfOperands() == 0) {
+				return "decl " + name;
+			} else {
+				return "decl " + name + " = " + getOperand(0);
+			}
+		}
+	}
+		
 	// ===============================================================
 	// Bytecode Block & Index
 	// ===============================================================
 
+	public static class Block extends AbstractBytecode implements Bytecode {
+
+		public Block(int... operands) {
+			super(operands);
+		}
+		
+		@Override
+		public int getOpcode() {
+			return OPCODE_block;
+		}	
+		
+		public String toString() {
+			return "block " + Util.arrayToString(getOperands());
+		}
+	}
+	
+	public static final class NamedBlock extends AbstractBytecode implements Bytecode.Stmt {
+		private final String name;		
+		
+		public NamedBlock(int block, String name) {
+			super(new int[0], new int[0][], new int[] { block });
+			this.name = name;
+		}
+		
+		public String getName() {
+			return name;
+		}
+		
+		@Override
+		public int getOpcode() {
+			return OPCODE_namedblock;
+		}	
+		
+		@Override
+		public boolean equals(Object o) {
+			if(o instanceof NamedBlock) {
+				NamedBlock n = (NamedBlock) o;
+				return name.equals(n.name) && super.equals(o);
+			}
+			return false;
+		}
+		
+		@Override
+		public int hashCode() {
+			return super.hashCode() ^ name.hashCode();
+		}
+		
+		public String toString() {
+			return "block(" + name +") " + Util.arrayToString(getBlocks());
+		}
+	}
+	
 	/**
 	 * Represents a bytecode location within a code forest. This is simply a
 	 * pair of the block identifier and the position within that block.
@@ -1458,7 +1654,7 @@ public interface Bytecode {
 	/**
 	 * A "statement expression" is a rather unusual beast. It is both a
 	 * statement and an expression! There are very few bytecodes which can be
-	 * classfified in this way.
+	 * classified in this way.
 	 * 
 	 * @author David J. Pearce
 	 *
@@ -1571,7 +1767,7 @@ public interface Bytecode {
 
 		@Override
 		public String toString() {
-			return "indirectinvoke %" + reference() + " " + Util.arrayToString(arguments());
+			return "icall %" + reference() + " " + Util.arrayToString(arguments());
 		}
 	}
 
@@ -1632,7 +1828,7 @@ public interface Bytecode {
 
 		@Override
 		public String toString() {
-			return "invoke " + Util.arrayToString(getOperands()) + " " + name;
+			return "call " + name + Util.arrayToString(getOperands());
 		}
 	}
 
@@ -1658,12 +1854,14 @@ public interface Bytecode {
 	// Opcodes
 	// =========================================================================
 
+	public static final int OPCODE_vardecl = 0;
 	public static final int OPCODE_fail = 1;
 	public static final int OPCODE_assert = 2;
 	public static final int OPCODE_assume = 3;
 	public static final int OPCODE_break = 4;
 	public static final int OPCODE_continue = 5;
-
+	public static final int OPCODE_vardeclinit = 6;
+	
 	// Unary Operators
 	public static final int UNARY_OPERATOR = 7;
 
@@ -1671,7 +1869,7 @@ public interface Bytecode {
 	public static final int OPCODE_return = UNARY_OPERATOR + 1;
 	public static final int OPCODE_ifis = UNARY_OPERATOR + 2;
 	public static final int OPCODE_switch = UNARY_OPERATOR + 3;
-
+	public static final int OPCODE_skip = UNARY_OPERATOR + 4;
 	// Unary Assignables
 	public static final int UNARY_ASSIGNABLE = UNARY_OPERATOR + 5;
 
@@ -1721,7 +1919,8 @@ public interface Bytecode {
 
 	public static final int OPCODE_dereference = BINARY_ASSIGNABLE + 27;
 	public static final int OPCODE_newobject = BINARY_ASSIGNABLE + 28;
-
+	public static final int OPCODE_varaccess = BINARY_ASSIGNABLE + 29;
+	
 	// Nary Assignables
 	public static final int NARY_ASSIGNABLE = BINARY_ASSIGNABLE + 30;
 
@@ -1734,6 +1933,8 @@ public interface Bytecode {
 	public static final int OPCODE_some = NARY_ASSIGNABLE + 8;
 	public static final int OPCODE_all = NARY_ASSIGNABLE + 9;
 	public static final int OPCODE_assign = NARY_ASSIGNABLE + 10;
+	public static final int OPCODE_block = NARY_ASSIGNABLE + 11;
+	public static final int OPCODE_namedblock = NARY_ASSIGNABLE + 12;
 
 	// =========================================================================
 	// Bytecode Schemas

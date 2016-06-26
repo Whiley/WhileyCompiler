@@ -82,21 +82,20 @@ public class CoercionCheck implements Transform<WyilFile> {
 		filename = module.filename();
 
 		for(WyilFile.Type type : module.types()) {
-			check(type);
+			check(type.getTree());
 		}
 		for(WyilFile.FunctionOrMethod method : module.functionOrMethods()) {
-			check(method);
+			check(method.getTree());
 		}
 	}
 
-	protected void check(WyilFile.Declaration enclosing) {
+	protected void check(SyntaxTree tree) {
 		// Examine all entries in this block looking for a conversion bytecode
-		List<SyntaxTree.Expr> expressions = enclosing.getExpressions();
+		List<SyntaxTree.Location<?>> expressions = tree.getLocations();
 		for (int i = 0; i != expressions.size(); ++i) {
-			SyntaxTree l = expressions.get(i);
-			if (l instanceof SyntaxTree.Operator) {
-				SyntaxTree.Operator<?> o = (SyntaxTree.Operator<?>) l;
-				Bytecode.Expr e = o.getBytecode();
+			SyntaxTree.Location<?> l = expressions.get(i);
+			if (l.getBytecode() instanceof Bytecode.Expr) {
+				Bytecode.Expr e = (Bytecode.Expr) l.getBytecode();
 				if (e instanceof Bytecode.Convert) {
 					Bytecode.Convert c = (Bytecode.Convert) e;
 					// FIXME: need to fix this :)

@@ -35,8 +35,9 @@ import wyfs.io.BinaryInputStream;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.*;
+import wyil.lang.Bytecode.Expr;
+import wyil.lang.SyntaxTree.Location;
 import wyil.util.AbstractBytecode;
-import wyil.util.AbstractSyntaxTree;
 
 /**
  * Read a binary WYIL file from a byte stream and convert into the corresponding
@@ -442,11 +443,9 @@ public final class WyilFileReader {
 	 * +------------------------+
 	 * | uv : nInvariants       |
 	 * +------------------------+ 
-	 * | uv : nExpressions      |
-	 * +------------------------+
 	 * | uv[nInvariants]        |
 	 * +------------------------+
-	 * | Expr[nExpressions]     |
+	 * | SyntaxTree             |
 	 * +------------------------+
 	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
 	 * </pre>
@@ -462,22 +461,21 @@ public final class WyilFileReader {
 		int modifiers = input.read_uv();
 		int typeIdx = input.read_uv();
 		int nInvariants = input.read_uv();
-		int nExpressions = input.read_uv();
 		//
 		Collection<Modifier> mods = generateModifiers(modifiers);
 		String name = stringPool[nameIdx];
 		Type type = typePool[typeIdx];
 		//
-		WyilFile.Type decl = new WyilFile.Type(parent, mods, name, type);
+		int[] invariant = new int[nInvariants];		
 		for (int i = 0; i != nInvariants; ++i) {
-			decl.getInvariantIndices().add(input.read_uv());
+			invariant[i] = input.read_uv();
 		}
-		for (int i = 0; i != nExpressions;) {
-			SyntaxTree.Expr[] exprs = readExpression(decl);
-			for(SyntaxTree.Expr expr : exprs) {
-				decl.getExpressions().add(expr);
-			}
-			i += exprs.length;
+		WyilFile.Type decl = new WyilFile.Type(parent, mods, name, type);
+		SyntaxTree tree = readSyntaxTree(decl);
+		//
+		for (int i = 0; i != nInvariants;++i) {
+			Location<Bytecode.Expr> expr = (Location<Expr>) tree.getLocation(invariant[i]);
+			decl.getInvariant().add(expr);
 		}
 		parent.blocks().add(decl);
 	}
@@ -498,17 +496,13 @@ public final class WyilFileReader {
 	 * +------------------------+
 	 * | uv : nPostconditions   |
 	 * +------------------------+
-	 * | uv : nExpressions      |
-	 * +------------------------+
-	 * | uv : nBlocks           |
-	 * +------------------------+
 	 * | uv[nPreconditions]     |
 	 * +------------------------+
 	 * | uv[nPostconditions]    |
 	 * +------------------------+
-	 * | Expr[nExpressions]     |
+	 * | uv : body              |
 	 * +------------------------+
-	 * | Block[nBlock]          |
+	 * | SyntaTree              |
 	 * +------------------------+
 	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
 	 * </pre>
@@ -526,30 +520,39 @@ public final class WyilFileReader {
 		int typeIdx = input.read_uv();
 		int nPreconditions = input.read_uv();
 		int nPostconditions = input.read_uv();
-		int nExpressions = input.read_uv();
-		int nBlocks = input.read_uv();
 		//
 		Collection<Modifier> mods = generateModifiers(modifiers);
 		String name = stringPool[nameIdx];
 		Type.FunctionOrMethod type = (Type.FunctionOrMethod) typePool[typeIdx];
 		//
 		WyilFile.FunctionOrMethod decl = new WyilFile.FunctionOrMethod(parent, mods, name, type);
+		int[] precondition = new int[nPreconditions];
 		for (int i = 0; i != nPreconditions; ++i) {
-			decl.getPreconditionIndices().add(input.read_uv());
+			precondition[i] = input.read_uv();
 		}
+		int[] postcondition = new int[nPostconditions];
 		for (int i = 0; i != nPostconditions; ++i) {
-			decl.getPostconditionIndices().add(input.read_uv());
+			postcondition[i] = input.read_uv();
 		}
-		for (int i = 0; i != nExpressions;) {
-			SyntaxTree.Expr[] exprs = readExpression(decl);
-			for(SyntaxTree.Expr expr : exprs) {
-				decl.getExpressions().add(expr);
-			}
-			i += exprs.length;
+		//
+		int body = input.read_uv();
+		//
+		readSyntaxTree(decl);
+		SyntaxTree tree = decl.getTree();
+		//
+		for (int i = 0; i != nPreconditions; ++i) {
+			Location<Bytecode.Expr> expr = (Location<Expr>) tree.getLocation(precondition[i]);
+			decl.getPrecondition().add(expr);
 		}
-		for (int i = 0; i != nBlocks; ++i) {
-			decl.getBlocks().add(readCodeBlock(decl));
+		//
+		for (int i = 0; i != nPostconditions; ++i) {
+			Location<Bytecode.Expr> expr = (Location<Expr>) tree.getLocation(postcondition[i]);
+			decl.getPostcondition().add(expr);
 		}
+		//
+		Location<Bytecode.Block> loc = (Location<Bytecode.Block>) tree.getLocation(body);
+		decl.setBody(loc);
+		//
 		parent.blocks().add(decl);
 	}
 	
@@ -588,151 +591,90 @@ public final class WyilFileReader {
 		return mods;
 	}
 	
+	/**
+	 * Read a syntax tree from the output stream. The format
+	 * of a syntax tree is one of the following:
+	 *
+	 * <pre>
+	 * +-------------------+
+	 * | uv : nLocs        |
+	 * +-------------------+ 
+	 * | Locations[nLocs]  |
+	 * +-------------------+
+	 * </pre>
+	 * 
+	 * 
+	 * @param parent
+	 * @return
+	 * @throws IOException
+	 */
+	private SyntaxTree readSyntaxTree(WyilFile.Declaration parent) throws IOException {
+		SyntaxTree tree = parent.getTree();
+		int nLocs = input.read_uv();
+		for(int i=0;i!=nLocs;++i) {
+			tree.getLocations().add(readLocation(tree));
+		}
+		return tree;
+	}
 	
 	/**
-	 * <p>
-	 * Read a given code location from the input stream. The format of an
-	 * expression is one of the following:
-	 * </p>
-	 * 
-	 * For variables:
+	 * Read details of a Location from the input stream. The format of a
+	 * location is:
 	 * 
 	 * <pre>
-	 * +-------------------+
-	 * | u1 : true         |
-	 * +-------------------+
-	 * | uv : nAttrs       |
-	 * +-------------------+ 
-	 * | Attribute[nAttrs] |
 	 * +-------------------+
 	 * | uv : typeIdx      |
 	 * +-------------------+
-	 * | uv : stringIdx    |
-	 * +-------------------+
-	 * </pre>
-	 * 
-	 * For non-positional operators:
-	 * 
-	 * <pre>
-	 * +-------------------+
-	 * | u1 : false        |
-	 * +-------------------+
 	 * | uv : nAttrs       |
+	 * +-------------------+
+	 * | Bytecode          |
 	 * +-------------------+ 
 	 * | Attribute[nAttrs] |
 	 * +-------------------+
-	 * | u1 : false        |
-	 * +-------------------+
-	 * | uv : typeIdx      |
-	 * +-------------------+
-	 * </pre>
-	 * 
-	 * For positional operators:
-	 * 
-	 * <pre>
-	 * +--------------------+
-	 * | u1 : false         |
-	 * +--------------------+
-	 * | uv : nAttrs        |
-	 * +--------------------+ 
-	 * | Attribute[nAttrs]  |
-	 * +--------------------+
-	 * | u1 : true          |
-	 * +--------------------+
-	 * | uv : nTypes        |
-	 * +------------- ------+
-	 * | uv[nTypes] : types |
-	 * +--------------------+
 	 * </pre>
 	 * 
 	 * @param output
 	 * @throws IOException
 	 */
-	private SyntaxTree.Expr[] readExpression(WyilFile.Declaration parent) throws IOException {
-		boolean variable = input.read_bit();
+	private SyntaxTree.Location<?> readLocation(SyntaxTree tree) throws IOException {
+		int typeIdx = input.read_uv();
 		int nAttrs = input.read_uv();
-		// TODO: read any attributes given
-		List<Attribute> attributes = Collections.EMPTY_LIST;
-
-		if (variable) {
-			int typeIdx = input.read_uv();
-			int stringIdx = input.read_uv();
-			SyntaxTree.Variable var = AbstractSyntaxTree.Variable(typePool[typeIdx], stringPool[stringIdx], parent,
-					attributes);
-			return new SyntaxTree.Expr[] { var };
-		} else {
-			boolean positional = input.read_bit();
-			if (positional) {
-				int size = input.read_uv();
-				Type[] types = new Type[size];
-				for (int i = 0; i != size; ++i) {
-					types[i] = typePool[input.read_uv()];
-				}
-				Bytecode.Expr bytecode = (Bytecode.Expr) readBytecode();
-				SyntaxTree.Expr[] rs = new SyntaxTree.Expr[size];
-				for (int i = 0; i != size; ++i) {
-					rs[i] = AbstractSyntaxTree.PositionalOperator(types[i], bytecode, i, parent, attributes);
-				}
-				return rs;
-			} else {
-				int typeIdx = input.read_uv();
-				Bytecode.Expr bytecode = (Bytecode.Expr) readBytecode();
-				SyntaxTree.Expr e = AbstractSyntaxTree.Operator(typePool[typeIdx], bytecode, parent,
-						attributes);
-				return new SyntaxTree.Expr[] { e };
-			}
-		}
+		Bytecode bytecode = readBytecode();
+		//
+		Type type = typePool[typeIdx];
+		List<Attribute> attributes = new ArrayList<Attribute>();
+		//
+		return new SyntaxTree.Location<Bytecode>(tree, type, bytecode, attributes);
 	}
 	
 	/**
 	 * <p>
-	 * Read a block of bytecodes whilst adding newly discovered labels to a
-	 * given set of label offsets. The format is:
+	 * REad a given bytecode whose format is currently given as follows:
 	 * </p>
 	 * 
 	 * <pre>
 	 * +-------------------+
-	 * | uv : nCodes       |
+	 * | u8 : opcode       |
 	 * +-------------------+
-	 * | uv : nAttrs       |
+	 * | uv : nAttrs       |	 
 	 * +-------------------+
-	 * | Bytecode[nCodes]  |
+	 * | Attribute[nAttrs] | 
 	 * +-------------------+
-	 * | Attribute[nAttrs] |
-	 * +-------------------+
+	 *        ...
 	 * </pre>
 	 * 
 	 * <p>
-	 * The block is associated with a given offset value, which indicates the
-	 * offset of the first bytecode in the block to be used when calculating
-	 * branch offsets.
+	 * <b>NOTE:</b> The intention is to support a range of different bytecode
+	 * formats in order to optimise the common cases. For example, when there
+	 * are no targets, no operands, no types, etc. Furthermore, when the size of
+	 * items can be reduced from uv to u4, etc.
 	 * </p>
-	 * 
-	 * @param offset
-	 * @param labels
-	 * @return
-	 * @throws IOException
 	 */
-	public SyntaxTree.Block readCodeBlock(WyilFile.Declaration parent)
-			throws IOException {
-		int nCodes = input.read_uv();
-		int nAttrs = input.read_uv();
-
-		SyntaxTree.Block block = new SyntaxTree.Block(parent);
-		for (int i = 0; i < nCodes; ++i) {
-			Bytecode.Stmt code = (Bytecode.Stmt) readBytecode(); 
-			// TODO: read any attributes given
-			block.add(AbstractSyntaxTree.Stmt(code,block));
-		}
-		return block;
-	}
-
 	private Bytecode readBytecode() throws IOException {
 		int opcode = input.read_u8();
 		int nAttrs = input.read_uv();
 		// FIXME: read attributes!
 		Bytecode.Schema schema = AbstractBytecode.schemas[opcode];
-		
 		// First, read and validate all operands, groups and blocks
 		int[] operands = readOperands(schema);
 		int[][] groups = readOperandGroups(schema);
@@ -743,7 +685,7 @@ public final class WyilFileReader {
 		return schema.construct(opcode,operands,groups,blocks,extras);		
 	}
 	
-	private int[] readOperands(Bytecode.Schema schema) throws IOException {
+	private int[] readOperands(Bytecode.Schema schema) throws IOException {		
 		switch(schema.getOperands()) {
 		case ZERO:
 			// do nout

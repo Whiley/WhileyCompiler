@@ -33,6 +33,8 @@ import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyil.lang.*;
 import wyil.lang.Bytecode.*;
+import wyil.lang.SyntaxTree.Location;
+
 import static wyil.util.ErrorMessages.*;
 
 /**
@@ -85,14 +87,14 @@ public class ModuleCheck implements Transform<WyilFile> {
 	 * @param c
 	 */
 	protected void checkFunctionPure(WyilFile.FunctionOrMethod c) {
-		checkFunctionPure(0,new HashSet<Integer>(),c);
+		checkFunctionPure(0,new HashSet<Integer>(),c.getTree());
 	}
 
-	protected void checkFunctionPure(int blockID, HashSet<Integer> visited, WyilFile.Declaration enclosing) {
+	protected void checkFunctionPure(int blockID, HashSet<Integer> visited, SyntaxTree enclosing) {
 		visited.add(blockID);
-		SyntaxTree.Block block = enclosing.getBlock(blockID);
-		for (int i = 0; i != block.size(); ++i) {
-			SyntaxTree.Stmt<?> e = block.get(i);
+		Location<Bytecode.Block> block = (Location<Bytecode.Block>) enclosing.getLocation(blockID);
+		for (int i = 0; i != block.numberOfOperands(); ++i) {
+			Location<?> e = block.getOperand(i);
 			Bytecode code = e.getBytecode();
 			if (code instanceof Bytecode.Invoke && ((Bytecode.Invoke) code).type() instanceof Type.Method) {
 				// internal message send

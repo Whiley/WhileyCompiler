@@ -37,6 +37,8 @@ import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyil.io.*;
+import wyil.lang.Bytecode.Expr;
+import wyil.lang.SyntaxTree.Location;
 
 /**
  * <p>
@@ -392,15 +394,13 @@ public final class WyilFile implements CompilationUnit {
 	public static abstract class Declaration extends Block {
 		private String name;
 		private List<Modifier> modifiers;
-		private List<SyntaxTree.Expr> expressions;
-		private List<SyntaxTree.Block> blocks;
+		private SyntaxTree tree;
 		
 		public Declaration(WyilFile parent, String name, Collection<Modifier> modifiers, Attribute... attributes) {
 			super(parent, attributes);
 			this.name = name;
 			this.modifiers = new ArrayList<Modifier>(modifiers);
-			this.expressions = new ArrayList<SyntaxTree.Expr>();
-			this.blocks = new ArrayList<SyntaxTree.Block>();
+			this.tree = new SyntaxTree(this);
 		}
 
 		public Declaration(WyilFile parent, String name, Collection<Modifier> modifiers,
@@ -408,8 +408,7 @@ public final class WyilFile implements CompilationUnit {
 			super(parent, attributes);
 			this.name = name;
 			this.modifiers = new ArrayList<Modifier>(modifiers);
-			this.expressions = new ArrayList<SyntaxTree.Expr>();
-			this.blocks = new ArrayList<SyntaxTree.Block>();
+			this.tree = new SyntaxTree(this);
 		}
 
 		public String name() {
@@ -422,80 +421,10 @@ public final class WyilFile implements CompilationUnit {
 
 		public boolean hasModifier(Modifier modifier) {
 			return modifiers.contains(modifier);
-		}
-		
-		/**
-		 * Convert an expression index into an actual expression
-		 * 
-		 * @param indices
-		 * @return
-		 */
-		public SyntaxTree.Expr getExpression(int index) {
-			return expressions.get(index);
-		}
-		
-		/**
-		 * Convert a list of expression indices into actual expressions
-		 * 
-		 * @param indices
-		 * @return
-		 */
-		public SyntaxTree.Expr[] getExpressions(List<Integer> indices) {
-			SyntaxTree.Expr[] rs = new SyntaxTree.Expr[indices.size()];
-			for (int i = 0; i != rs.length; ++i) {
-				rs[i] = getExpression(indices.get(i));
-			}
-			return rs;
-		}
-		
-		/**
-		 * Convert a list of expression indices into actual expressions
-		 * 
-		 * @param indices
-		 * @return
-		 */
-		public SyntaxTree.Expr[] getExpressions(int... indices) {
-			SyntaxTree.Expr[] rs = new SyntaxTree.Expr[indices.length];
-			for (int i = 0; i != rs.length; ++i) {
-				rs[i] = getExpression(indices[i]);
-			}
-			return rs;
-		}
-		
-		/**
-		 * Get the complete set of expressions declared in this declaration
-		 * 
-		 * @return
-		 */
-		public List<SyntaxTree.Expr> getExpressions() {
-			return expressions;
 		}		
-
-		/**
-		 * Determine the index of a given expression in this declaration. If no
-		 * such expression exists, then an exception is thrown. This method will
-		 * only look for exact matches, rather than equivalent matches (i.e.
-		 * expressions which are equals() but not "==").
-		 * 
-		 * @param expr
-		 * @return
-		 */
-		public int getExpressionIndex(SyntaxTree.Expr expr) {
-			for (int i = 0; i != expressions.size(); ++i) {
-				if (expressions.get(i) == expr) {
-					// match
-					return i;
-				}
-			}
-			throw new IllegalArgumentException("invalid expression");
-		}
-	
-		public SyntaxTree.Block getBlock(int block) {
-			return blocks.get(block);
-		}
 		
-		public List<SyntaxTree.Block> getBlocks() {
-			return blocks;
+		public SyntaxTree getTree() {
+			return tree;			
 		}
 	}
 	
@@ -511,20 +440,20 @@ public final class WyilFile implements CompilationUnit {
 	 */
 	public static final class Type extends Declaration {
 		private final wyil.lang.Type type;
-		private final List<Integer> invariantIndices;
+		private final List<Location<Expr>> invariant;
 
 		public Type(WyilFile parent, Collection<Modifier> modifiers, String name, wyil.lang.Type type,
 				Attribute... attributes) {
 			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.invariantIndices = new ArrayList<Integer>();
+			this.invariant = new ArrayList<Location<Expr>>();
 		}
 
 		public Type(WyilFile parent, Collection<Modifier> modifiers, String name, wyil.lang.Type type,
 				Collection<Attribute> attributes) {
 			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.invariantIndices = new ArrayList<Integer>();
+			this.invariant = new ArrayList<Location<Expr>>();
 		}
 
 		public wyil.lang.Type type() {
@@ -537,19 +466,9 @@ public final class WyilFile implements CompilationUnit {
 		 * 
 		 * @return
 		 */
-		public SyntaxTree.Expr[] getInvariants() {
-			return getExpressions(invariantIndices);
-		}
-		
-		/**
-		 * Get the list of indices for the expressions that make up the
-		 * invariant of this type. This list maybe empty, but it cannot be null.
-		 * 
-		 * @return
-		 */
-		public List<Integer> getInvariantIndices() {
-			return invariantIndices;
-		}
+		public List<Location<Expr>> getInvariant() {
+			return invariant;
+		}		
 	}
 
 	/**
@@ -585,28 +504,32 @@ public final class WyilFile implements CompilationUnit {
 	public static final class FunctionOrMethod extends Declaration {
 		private final wyil.lang.Type.FunctionOrMethod type;
 		/**
-		 * Expression indices for any preconditions 
+		 * Expressions making up clauses of precondition 
 		 */
-		private final List<Integer> preconditionIndices;
+		private final List<SyntaxTree.Location<Bytecode.Expr>> precondition;
 		/**
-		 * Expression indices for any postconditions 
+		 * Expressions making up clauses of postcondition 
 		 */
-		private final List<Integer> postconditionIndices;
-
+		private final List<SyntaxTree.Location<Bytecode.Expr>> postcondition;
+		/**
+		 * The function or method body (which can be null)
+		 */
+		private SyntaxTree.Location<Bytecode.Block> body;
+		
 		public FunctionOrMethod(WyilFile parent, Collection<Modifier> modifiers, String name,
 				wyil.lang.Type.FunctionOrMethod type, Attribute... attributes) {
 			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.preconditionIndices = new ArrayList<Integer>();
-			this.postconditionIndices = new ArrayList<Integer>();
+			this.precondition = new ArrayList<SyntaxTree.Location<Bytecode.Expr>>();
+			this.postcondition = new ArrayList<SyntaxTree.Location<Bytecode.Expr>>();
 		}
 
 		public FunctionOrMethod(WyilFile parent, Collection<Modifier> modifiers, String name,
 				wyil.lang.Type.FunctionOrMethod type, Collection<Attribute> attributes) {
 			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.preconditionIndices = new ArrayList<Integer>();
-			this.postconditionIndices = new ArrayList<Integer>();
+			this.precondition = new ArrayList<SyntaxTree.Location<Bytecode.Expr>>();
+			this.postcondition = new ArrayList<SyntaxTree.Location<Bytecode.Expr>>();
 		}
 
 		public wyil.lang.Type.FunctionOrMethod type() {
@@ -637,8 +560,8 @@ public final class WyilFile implements CompilationUnit {
 		 * 
 		 * @return
 		 */
-		public SyntaxTree.Expr[] getPrecondition() {
-			return getExpressions(preconditionIndices);
+		public List<SyntaxTree.Location<Bytecode.Expr>> getPrecondition() {
+			return precondition;
 		}
 
 		/**
@@ -647,30 +570,21 @@ public final class WyilFile implements CompilationUnit {
 		 * 
 		 * @return
 		 */
-		public SyntaxTree.Expr[] getPostcondition() {
-			return getExpressions(postconditionIndices);
-		}
+		public List<SyntaxTree.Location<Bytecode.Expr>> getPostcondition() {
+			return postcondition;
+		}		
 		
 		/**
-		 * Get the list of indices for the expressions that make up the
-		 * precondition of this function/method. This list maybe empty, but it
-		 * cannot be null.
+		 * Get the body of this function or method
 		 * 
 		 * @return
 		 */
-		public List<Integer> getPreconditionIndices() {
-			return preconditionIndices;
+		public SyntaxTree.Location<Bytecode.Block> getBody() {
+			return body;
 		}
-
-		/**
-		 * Get the list of indices for the expressions that make up the
-		 * postcondition of this function/method. This list maybe empty, but it
-		 * cannot be null.
-		 * 
-		 * @return
-		 */
-		public List<Integer> getPostconditionIndices() {
-			return postconditionIndices;
+		
+		public void setBody(SyntaxTree.Location<Bytecode.Block> body) {
+			this.body = body;			
 		}
 	}
 }

@@ -42,6 +42,7 @@ import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.*;
 import wyil.lang.Constant;
+import wyil.lang.SyntaxTree.Location;
 import wyil.lang.Bytecode.Operator;
 
 import static wyil.lang.Bytecode.*;
@@ -169,7 +170,7 @@ public class Wyil2JavaBuilder implements Builder {
 			contents.methods().addAll(lambdaMethods);
 
 			// Verify the generated file being written
-			new ClassFileVerifier().apply(contents);
+			//new ClassFileVerifier().apply(contents);
 
 			// Write class file into its destination
 			df.write(contents);
@@ -278,7 +279,7 @@ public class Wyil2JavaBuilder implements Builder {
 	}
 
 	private ClassFile.Method buildMainLauncher(JvmType.Clazz owner) {
-		List<Modifier> modifiers = modifiers(ACC_PUBLIC, ACC_SYNTHETIC);
+		List<Modifier> modifiers = modifiers(ACC_PUBLIC, ACC_SYNTHETIC, ACC_STATIC);
 		JvmType.Function ft1 = new JvmType.Function(T_VOID, new JvmType.Array(JAVA_LANG_STRING));
 		ClassFile.Method cm = new ClassFile.Method("main", ft1, modifiers);
 		JvmType.Array strArr = new JvmType.Array(JAVA_LANG_STRING);
@@ -304,7 +305,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param td
 	 */
 	private ClassFile.Method build(WyilFile.Type td) {
-		SyntaxTree.Expr[] td_invariants = td.getInvariants();
+		List<Location<Expr>> td_invariants = td.getInvariant();
 		//
 		JvmType underlyingType = toJvmType(td.type());
 		List<Modifier> modifiers = modifiers(ACC_PUBLIC, ACC_STATIC, ACC_SYNTHETIC);
@@ -312,15 +313,15 @@ public class Wyil2JavaBuilder implements Builder {
 		ClassFile.Method cm = new ClassFile.Method(td.name() + "$typeof", funType, modifiers);
 		// Generate code for testing elements of type (if any)
 		Context context = new Context();
-		if (td_invariants.length > 0) {
+		if (td_invariants.size() > 0) {
 			// In this case, there is one or more invariants to check. To do
 			// this, we chain them together into a sequence of checks.
 			String falseLabel = freshLabel();
-			for (int i = 0; i != td_invariants.length; ++i) {
-				translateOperand(td_invariants[i], context);
+			for (int i = 0; i != td_invariants.size(); ++i) {
+				translateExpression(td_invariants.get(i), context);
 				JvmType.Function ft = new JvmType.Function(JvmTypes.T_BOOL);
 				context.add(new Bytecode.Invoke(WHILEYBOOL, "value", ft, Bytecode.InvokeMode.VIRTUAL));
-				if ((i + 1) == td_invariants.length) {
+				if ((i + 1) == td_invariants.size()) {
 					// This indicates the end of the chain, so we can just
 					// return what we have here.
 					context.add(new Bytecode.Return(new JvmType.Bool()));
@@ -331,7 +332,7 @@ public class Wyil2JavaBuilder implements Builder {
 					context.add(new Bytecode.If(Bytecode.IfMode.EQ, falseLabel));
 				}
 			}
-			if (td_invariants.length > 1) {
+			if (td_invariants.size() > 1) {
 				// The following handles cases where one of the checks has
 				// failed. We only need it if more than one invariant was
 				// chained together.
@@ -462,8 +463,8 @@ public class Wyil2JavaBuilder implements Builder {
 		ClassFile.Method cm = new ClassFile.Method(name, ft, modifiers);
 		// Translate the method body
 		lineNumbers = new ArrayList<LineNumberTable.Entry>();
-		Context context = new Context();
-		translateBlock(method.getBlock(0),context);
+		Context context = new Context();		
+		translateBlock(method.getBody(),context);
 		// Add return bytecode (if necessary)
 		addReturnBytecode(context);
 		//
@@ -513,9 +514,9 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param bytecodes
 	 *            List of bytecodes being accumulated
 	 */
-	private void translateBlock(SyntaxTree.Block block, Context context) {
-		for(int i=0;i!=block.size();++i) {
-			translate(block.get(i), context);
+	private void translateBlock(SyntaxTree.Location<Block> block, Context context) {
+		for(int i=0;i!=block.numberOfOperands();++i) {
+			translateStatement(block.getOperand(i), context);
 		}
 	}
 
@@ -525,48 +526,58 @@ public class Wyil2JavaBuilder implements Builder {
 	 * extract attributes associated with the given bytecode).
 	 * 
 	 */
-	private void translate(SyntaxTree.Stmt<?> stmt, Context context) {
+	private void translateStatement(Location<?> stmt, Context context) {
 		try {
 			switch (stmt.getOpcode()) {
 			case OPCODE_assert:
 			case OPCODE_assume:
-				translateAssertOrAssume((SyntaxTree.Stmt<AssertOrAssume>) stmt, context);
+				translateAssertOrAssume((Location<AssertOrAssume>) stmt, context);
 				break;
 			case OPCODE_assign:
-				translateAssign((SyntaxTree.Stmt<Assign>) stmt, context);
+				translateAssign((Location<Assign>) stmt, context);
 				break;
 			case OPCODE_break:
-				translateBreak((SyntaxTree.Stmt<Break>) stmt, context);
+				translateBreak((Location<Break>) stmt, context);
 				break;
 			case OPCODE_continue:
-				translateContinue((SyntaxTree.Stmt<Continue>) stmt, context);
+				translateContinue((Location<Continue>) stmt, context);
 				break;
 			case OPCODE_debug:
-				translateDebug((SyntaxTree.Stmt<Debug>) stmt, context);
+				translateDebug((Location<Debug>) stmt, context);
 				break;
 			case OPCODE_dowhile:
-				translateDoWhile((SyntaxTree.Stmt<DoWhile>) stmt, context);
+				translateDoWhile((Location<DoWhile>) stmt, context);
 				break;
 			case OPCODE_fail:
-				translateFail((SyntaxTree.Stmt<Fail>) stmt, context);
+				translateFail((Location<Fail>) stmt, context);
 				break;
 			case OPCODE_if:
 			case OPCODE_ifelse:
-				translateIf((SyntaxTree.Stmt<If>) stmt, context);
+				translateIf((Location<If>) stmt, context);
 				break;
 			case OPCODE_invoke:
 			case OPCODE_indirectinvoke:
 				translateInvokeAsStmt(stmt,context);
 				break;
+			case OPCODE_namedblock:
+				translateNamedBlock((Location<NamedBlock>) stmt, context);
+				break;
 			case OPCODE_while:
-				translateWhile((SyntaxTree.Stmt<While>) stmt, context);
+				translateWhile((Location<While>) stmt, context);
 				break;
 			case OPCODE_return:
-				translateReturn((SyntaxTree.Stmt<Return>) stmt, context);
+				translateReturn((Location<Return>) stmt, context);
+				break;
+			case OPCODE_skip:
+				translateSkip((Location<Skip>) stmt, context);
 				break;
 			case OPCODE_switch:
-				translateSwitch((SyntaxTree.Stmt<Switch>) stmt, context);
+				translateSwitch((Location<Switch>) stmt, context);
 				break;
+			case OPCODE_vardecl:
+			case OPCODE_vardeclinit:
+				translateVariableDeclaration((Location<VariableDeclaration>) stmt, context);
+				break;	
 			default:
 				internalFailure("unknown bytecode encountered (" + stmt + ")", filename,
 						stmt.attribute(Attribute.Source.class));
@@ -578,7 +589,7 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 
-	private void translateAssertOrAssume(SyntaxTree.Stmt<AssertOrAssume> c, Context context) {
+	private void translateAssertOrAssume(Location<AssertOrAssume> c, Context context) {
 		String trueLabel = freshLabel();
 		translateCondition(c.getOperand(0), trueLabel, null, context);
 		context.construct(JAVA_LANG_RUNTIMEEXCEPTION);
@@ -592,9 +603,9 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param code
 	 * @param context
 	 */
-	private void translateAssign(SyntaxTree.Stmt<Assign> code, Context context) {
-		SyntaxTree.Expr[] lhs = code.getOperandGroup(0);
-		SyntaxTree.Expr[] rhs = code.getOperandGroup(1);
+	private void translateAssign(Location<Assign> code, Context context) {
+		Location<?>[] lhs = code.getOperandGroup(0);
+		Location<?>[] rhs = code.getOperandGroup(1);
 		// Translate and construct the lvals for this assignment. This
 		// will store all lval operands (e.g. array indices) into their
 		// corresponding operand register. To preserve the semantics of Whiley,
@@ -604,7 +615,7 @@ public class Wyil2JavaBuilder implements Builder {
 		// type for each operand produced. The number of types may be larger
 		// than the number of rhs opeands in the case of an operand with
 		// multiple return values.
-		List<JvmType> types = translateOperands(rhs, context);
+		List<JvmType> types = translateExpressions(rhs, context);
 
 		if (types.size() > rhs.length) {
 			// Should ensure multiple returns span multiple operands, rather
@@ -640,7 +651,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param lhs
 	 * @param rhsType
 	 */
-	private void translateSimpleAssign(LVal lhs, SyntaxTree.Expr rhs, Context context) {
+	private void translateSimpleAssign(LVal lhs, Location<?> rhs, Context context) {
 		JvmType type = toJvmType(rhs.getType());
 		if (lhs.path.size() > 0) {
 			// This is the complex case of an assignment to an element of a
@@ -677,7 +688,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            --- Update iterator.
 	 * @param context
 	 */
-	private void translateUpdate(Iterator<LVal.Element<?>> iterator, SyntaxTree.Expr rhs, Context context) {
+	private void translateUpdate(Iterator<LVal.Element<?>> iterator, Location<?> rhs, Context context) {
 		// At this point, we have not yet reached the "innermost" position.
 		// Therefore, we keep recursing down the chain of LVals.
 		LVal.Element<?> lv = iterator.next();
@@ -712,7 +723,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param code
 	 * @param bytecodes
 	 */
-	private void translateUpdate(LVal.Array lval, Iterator<LVal.Element<?>> iterator, SyntaxTree.Expr rhs, Context context) {
+	private void translateUpdate(LVal.Array lval, Iterator<LVal.Element<?>> iterator, Location<?> rhs, Context context) {
 		if (iterator.hasNext()) {
 			// This is not the innermost case, hence we read out the current
 			// value of the location being assigned and pass that forward to the
@@ -738,7 +749,7 @@ public class Wyil2JavaBuilder implements Builder {
 		context.add(new Bytecode.Invoke(WHILEYARRAY, "set", setFunType, Bytecode.InvokeMode.STATIC));
 	}
 
-	private void translateUpdate(LVal.Record lval, Iterator<LVal.Element<?>> iterator, SyntaxTree.Expr rhs, Context context) {
+	private void translateUpdate(LVal.Record lval, Iterator<LVal.Element<?>> iterator, Location<?> rhs, Context context) {
 		Type.EffectiveRecord type = lval.type;
 		if (iterator.hasNext()) {
 			// This is not the innermost case, hence we read out the current
@@ -765,7 +776,7 @@ public class Wyil2JavaBuilder implements Builder {
 		context.add(new Bytecode.Invoke(WHILEYRECORD, "put", putFunType, Bytecode.InvokeMode.STATIC));
 	}
 
-	private void translateUpdate(LVal.Reference lval, Iterator<LVal.Element<?>> iterator, SyntaxTree.Expr rhs, Context context) {
+	private void translateUpdate(LVal.Reference lval, Iterator<LVal.Element<?>> iterator, Location<?> rhs, Context context) {
 		if (iterator.hasNext()) {
 			// This is not the innermost case, hence we read out the current
 			// value of the location being assigned and pass that forward to the
@@ -786,21 +797,21 @@ public class Wyil2JavaBuilder implements Builder {
 		context.add(new Bytecode.Invoke(WHILEYOBJECT, "setState", setFunType, Bytecode.InvokeMode.VIRTUAL));
 	}
 
-	private void translateBreak(SyntaxTree.Stmt<Break> c, Context context) {
+	private void translateBreak(Location<Break> c, Context context) {
 		context.add(new Bytecode.Goto(context.getBreakLabel()));
 	}
 	
-	private void translateContinue(SyntaxTree.Stmt<Continue> c, Context context) {
+	private void translateContinue(Location<Continue> c, Context context) {
 		context.add(new Bytecode.Goto(context.getContinueLabel()));
 	}
 	
-	private void translateDebug(SyntaxTree.Stmt<Debug> c, Context context) {
+	private void translateDebug(Location<Debug> c, Context context) {
 		JvmType.Function ftype = new JvmType.Function(T_VOID, WHILEYARRAY);
-		translateOperand(c.getOperand(0), context);
+		translateExpression(c.getOperand(0), context);
 		context.add(new Bytecode.Invoke(WHILEYUTIL, "print", ftype, Bytecode.InvokeMode.STATIC));
 	}
 
-	private void translateDoWhile(SyntaxTree.Stmt<DoWhile> c, Context context) {
+	private void translateDoWhile(Location<DoWhile> c, Context context) {
 		// Allocate header label for loop
 		String headerLabel = freshLabel();
 		String breakLabel = freshLabel();
@@ -812,7 +823,7 @@ public class Wyil2JavaBuilder implements Builder {
 		context.add(new Bytecode.Label(breakLabel));
 	}
 
-	private void translateFail(SyntaxTree.Stmt<Fail> c, Context context) {
+	private void translateFail(Location<Fail> c, Context context) {
 		context.add(new Bytecode.New(JAVA_LANG_RUNTIMEEXCEPTION));
 		context.add(new Bytecode.Dup(JAVA_LANG_RUNTIMEEXCEPTION));
 		context.add(new Bytecode.LoadConst("runtime fault encountered"));
@@ -821,7 +832,7 @@ public class Wyil2JavaBuilder implements Builder {
 		context.add(new Bytecode.Throw());
 	}
 
-	private void translateIf(SyntaxTree.Stmt<If> code, Context context) {
+	private void translateIf(Location<If> code, Context context) {
 		If bytecode = code.getBytecode();
 		String exitLabel = freshLabel();
 		String falseLabel = bytecode.hasFalseBranch() ? freshLabel() : exitLabel;
@@ -840,8 +851,8 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 
-	private void translateReturn(SyntaxTree.Stmt<Return> c, Context context) {
-		SyntaxTree.Expr[] operands = c.getOperands();
+	private void translateReturn(Location<Return> c, Context context) {
+		Location<?>[] operands = c.getOperands();
 		JvmType rt;
 		//
 		switch (operands.length) {
@@ -851,7 +862,7 @@ public class Wyil2JavaBuilder implements Builder {
 			break;
 		case 1:
 			// Exactly one return value, so we can return it directly.
-			translateOperand(operands[0], context);
+			translateExpression(operands[0], context);
 			// Determine return type
 			rt = toJvmType(operands[0].getType());
 			break;
@@ -859,21 +870,25 @@ public class Wyil2JavaBuilder implements Builder {
 			// More than one return value. In this case, we need to encode the
 			// return values into an object array. This is annoying, but it's
 			// because Java doesn't support multiple return values.
-			translateOperandsToArray(operands, context);
+			translateExpressionsToArray(operands, context);
 			rt = JAVA_LANG_OBJECT_ARRAY;			
 		}
 		// Done
 		context.add(new Bytecode.Return(rt));
 	}
 
-	private void translateSwitch(SyntaxTree.Stmt<Switch> code, Context context) {
+	private void translateSkip(Location<Skip> code, Context context) {
+		context.add(new Bytecode.Nop()); // easy
+	}
+	
+	private void translateSwitch(Location<Switch> code, Context context) {
 		String exitLabel = freshLabel();
-		SyntaxTree.Expr condition = code.getOperand(0);
+		Location<?> condition = code.getOperand(0);
 		JvmType type = toJvmType(condition.getType());
 		// Translate condition into a value and store into a temporary register.
 		// This is necessary because, according to the semantics of Whiley, we
 		// can only execute the condition expression once.
-		translateOperand(condition, context);
+		translateExpression(condition, context);
 		context.add(new Bytecode.Store(condition.getIndex(), type));
 		ArrayList<String> labels = new ArrayList<String>();
 		// Generate the dispatch table which checks the condition value against
@@ -917,7 +932,11 @@ public class Wyil2JavaBuilder implements Builder {
 		context.add(new Bytecode.Label(exitLabel));
 	}
 
-	private void translateWhile(SyntaxTree.Stmt<While> c, Context context) {
+	private void translateNamedBlock(Location<NamedBlock> c, Context context) {
+		translateBlock(c.getBlock(0),context);
+	}
+	
+	private void translateWhile(Location<While> c, Context context) {
 		// Allocate header label for loop
 		String headerLabel = freshLabel();
 		String exitLabel = freshLabel();
@@ -932,23 +951,31 @@ public class Wyil2JavaBuilder implements Builder {
 		context.add(new Bytecode.Label(exitLabel));
 	}
 
-	private void translateInvokeAsStmt(SyntaxTree.Stmt<?> stmt, Context context) {
+	private void translateInvokeAsStmt(Location<?> stmt, Context context) {
 		// First, translate the invocation
-		List<Type> returns;
+		List<Type> returns;		
 		if(stmt.getOpcode() == OPCODE_invoke) {
-			SyntaxTree.Operator<Invoke> expr = (SyntaxTree.Operator<Invoke>) stmt;
-			translateInvoke(expr, context);
-			returns = expr.getBytecode().type().returns();
-		} else {
-			SyntaxTree.Operator<IndirectInvoke> expr = (SyntaxTree.Operator<IndirectInvoke>) stmt;
-			translateIndirectInvoke(expr, context);
-			returns = expr.getBytecode().type().returns();
+			Location<Invoke> e = (Location<Invoke>) stmt; 			
+			translateInvoke(e, context);
+			returns = e.getBytecode().type().returns();
+		} else {			
+			Location<IndirectInvoke> e = (Location<IndirectInvoke>) stmt;
+			translateIndirectInvoke(e, context);
+			returns = e.getBytecode().type().returns();
 		}		
 		// Second, if there are results, pop them off the stack		
 		for(int i=0;i!=returns.size();++i) {
 			JvmType returnType = context.toJvmType(returns.get(i));
 			context.add(new Bytecode.Pop(returnType));
 		} 
+	}
+	
+	private void translateVariableDeclaration(Location<VariableDeclaration> code, Context context) {
+		if(code.numberOfOperands() > 0) {
+			JvmType type = context.toJvmType(code.getType());
+			translateExpression(code.getOperand(0),context);
+			context.add(new Bytecode.Store(code.getIndex(),type));
+		}
 	}
 	
 	// ===============================================================================
@@ -966,7 +993,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param context
 	 * @return
 	 */
-	public LVal[] translateLVals(SyntaxTree.Expr[] lvals, Context context) {
+	public LVal[] translateLVals(Location<?>[] lvals, Context context) {
 		LVal[] vals = new LVal[lvals.length];
 		for (int i = 0; i != vals.length; ++i) {
 			LVal lval = generateLVal(lvals[i], context);
@@ -995,7 +1022,7 @@ public class Wyil2JavaBuilder implements Builder {
 		for (LVal.Element<?> e : lval.path) {
 			if (e instanceof LVal.Array) {
 				LVal.Array ae = (LVal.Array) e;
-				translateOperand(ae.index, context);
+				translateExpression(ae.index, context);
 				context.add(new Bytecode.Store(ae.index.getIndex(), WHILEYINT));
 			}
 		}
@@ -1011,26 +1038,26 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param context
 	 * @return
 	 */
-	public LVal generateLVal(SyntaxTree.Expr lval, Context context) {
+	public LVal generateLVal(Location<?> lval, Context context) {
 		ArrayList<LVal.Element<?>> path = new ArrayList<LVal.Element<?>>();
-		while (lval instanceof SyntaxTree.Operator) {
-			SyntaxTree.Operator<?> lv = (SyntaxTree.Operator<?>) lval;
+		while (lval.getOpcode() != OPCODE_varaccess) {
 			try {
-				wyil.lang.Bytecode.Expr code = lv.getBytecode();
+				wyil.lang.Bytecode.Expr code = (wyil.lang.Bytecode.Expr) lval.getBytecode();
 				switch (code.getOpcode()) {
 				case OPCODE_fieldload:
-					lval = lv.getOperand(0);
+					lval = lval.getOperand(0);
 					Type.EffectiveRecord recType = typeSystem.expandAsEffectiveRecord(lval.getType());
 					wyil.lang.Bytecode.FieldLoad fl = (wyil.lang.Bytecode.FieldLoad) code;
 					path.add(new LVal.Record(recType, fl.fieldName()));
 					break;
 				case OPCODE_arrayindex:
-					lval = lv.getOperand(0);
+					Location<?> index = lval.getOperand(1);
+					lval = lval.getOperand(0);
 					Type.EffectiveArray arrayType = typeSystem.expandAsEffectiveArray(lval.getType());
-					path.add(new LVal.Array(arrayType, lv.getOperand(1)));
+					path.add(new LVal.Array(arrayType, index));
 					break;
 				case OPCODE_dereference:
-					lval = lv.getOperand(0);
+					lval = lval.getOperand(0);
 					Type.Reference refType = typeSystem.expandAsReference(lval.getType());
 					path.add(new LVal.Reference(refType));
 					break;
@@ -1046,7 +1073,8 @@ public class Wyil2JavaBuilder implements Builder {
 		// into the array in the wrong order.
 		Collections.reverse(path);
 		// Done
-		return new LVal(lval.getIndex(), path);
+		Location<VariableDeclaration> decl = (Location<VariableDeclaration>) lval.getOperand(0);
+		return new LVal(decl.getIndex(), path);
 	}
 
 	/**
@@ -1084,9 +1112,9 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 
 		public static class Array extends Element<Type.EffectiveArray> {
-			public final SyntaxTree.Expr index;
+			public final Location<?> index;
 
-			public Array(Type.EffectiveArray type, SyntaxTree.Expr index) {
+			public Array(Type.EffectiveArray type, Location<?> index) {
 				super(type);
 				this.index = index;
 			}
@@ -1128,37 +1156,29 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param enclosing
 	 *            Enclosing context
 	 */
-	private void translateCondition(SyntaxTree.Expr condition, String trueLabel, String falseLabel, Context enclosing) {
-		if (condition instanceof SyntaxTree.Operator) {
-			SyntaxTree.Operator<?> operand = (SyntaxTree.Operator) condition;
-			wyil.lang.Bytecode.Expr code = operand.getBytecode();
-			// First, attempt to use a conditional branch to implement this
-			// operation. This will produce more attractive bytecode.
-			if (code instanceof Operator) {
-				// This is an operator and, in some cases, we can optimise the
-				// translation using one or more conditional branches.
-				wyil.lang.Bytecode.Operator op = (wyil.lang.Bytecode.Operator) code;
-				switch (operand.getOpcode()) {
-				case OPCODE_logicalnot:
-					translateNotCondition((SyntaxTree.Operator<Operator>) operand, trueLabel, falseLabel, enclosing);
-					return;
-				case OPCODE_logicaland:
-					translateShortcircuitAndCondition((SyntaxTree.Operator<Operator>) operand, trueLabel, falseLabel, enclosing);
-					return;
-				case OPCODE_logicalor:
-					translateShortcircuitOrCondition((SyntaxTree.Operator<Operator>) operand, trueLabel, falseLabel, enclosing);
-					return;
-				}
-			} else if(code instanceof Quantifier) {
-				translateQuantifierCondition((SyntaxTree.Operator<Quantifier>) operand, trueLabel, falseLabel, enclosing);
-				return;
-			}
+	private void translateCondition(Location<?> condition, String trueLabel, String falseLabel, Context enclosing) {
+		// First, handle the special cases as necessar.
+		switch (condition.getOpcode()) {
+		case OPCODE_logicalnot:
+			translateNotCondition((Location<Operator>) condition, trueLabel, falseLabel, enclosing);
+			return;
+		case OPCODE_logicaland:
+			translateShortcircuitAndCondition((Location<Operator>) condition, trueLabel, falseLabel, enclosing);
+			return;
+		case OPCODE_logicalor:
+			translateShortcircuitOrCondition((Location<Operator>) condition, trueLabel, falseLabel, enclosing);
+			return;
+		case OPCODE_all:
+		case OPCODE_some:
+		case OPCODE_none:
+			translateQuantifierCondition((Location<Quantifier>) condition, trueLabel, falseLabel, enclosing);
+			return;
 		}
 		// We can't use a condition branch, so fall back to the default. In this
 		// case, we just evaluate the condition as normal which will result in a
 		// 1 or 0 being loaded on the stack. We can then perform a condition
 		// branch from that.
-		translateOperand(condition, enclosing);
+		translateExpression(condition, enclosing);
 		// Now, dig a true boolean about of the WyBool object
 		JvmType.Function ft = new JvmType.Function(JvmTypes.T_BOOL);
 		enclosing.add(new Bytecode.Invoke(WHILEYBOOL, "value", ft, Bytecode.InvokeMode.VIRTUAL));
@@ -1185,7 +1205,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param enclosing
 	 *            Enclosing context
 	 */
-	private void translateNotCondition(SyntaxTree.Operator<Operator> code, String trueLabel, String falseLabel,
+	private void translateNotCondition(Location<?> code, String trueLabel, String falseLabel,
 			Context enclosing) {
 		// This case is very easy, as we can just swap the true and false
 		// labels.
@@ -1207,7 +1227,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param enclosing
 	 *            Enclosing context
 	 */
-	private void translateShortcircuitAndCondition(SyntaxTree.Operator<?> code, String trueLabel, String falseLabel,
+	private void translateShortcircuitAndCondition(Location<?> code, String trueLabel, String falseLabel,
 			Context enclosing) {
 		if (trueLabel == null) {
 			translateCondition(code.getOperand(0), null, falseLabel, enclosing);
@@ -1236,7 +1256,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param enclosing
 	 *            Enclosing context
 	 */
-	private void translateShortcircuitOrCondition(SyntaxTree.Operator<?> code, String trueLabel, String falseLabel,
+	private void translateShortcircuitOrCondition(Location<?> code, String trueLabel, String falseLabel,
 			Context enclosing) {
 		if (trueLabel == null) {
 			// implies false label is non-null
@@ -1268,7 +1288,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param enclosing
 	 *            Enclosing context
 	 */
-	private void translateQuantifierCondition(SyntaxTree.Operator<Quantifier> condition, String trueLabel, String falseLabel,
+	private void translateQuantifierCondition(Location<?> condition, String trueLabel, String falseLabel,
 			Context context) {
 		String exitLabel = freshLabel();
 		if(trueLabel == null) {
@@ -1321,7 +1341,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param enclosing
 	 *            Enclosing context
 	 */
-	private void translateQuantifierCondition(int index, SyntaxTree.Operator<Quantifier> condition, String trueLabel,
+	private void translateQuantifierCondition(int index, Location<?> condition, String trueLabel,
 			String falseLabel, Context context) {
 		if (index == condition.numberOfOperandGroups()) {
 			// This is the innermost case. At this point, we are in the body of
@@ -1349,12 +1369,12 @@ public class Wyil2JavaBuilder implements Builder {
 		} else {
 			// This is the recursive case. Here, we need to construct an
 			// appropriate loop to iterate through the range.
-			SyntaxTree.Expr[] range = condition.getOperandGroup(index);
-			SyntaxTree.Expr var = range[SyntaxTree.VARIABLE];
-			SyntaxTree.Expr start = range[SyntaxTree.START];
-			SyntaxTree.Expr end = range[SyntaxTree.END];
-			translateOperand(start,context);
-			translateOperand(end,context);
+			Location<?>[] range = condition.getOperandGroup(index);
+			Location<?> var = range[SyntaxTree.VARIABLE];
+			Location<?> start = range[SyntaxTree.START];
+			Location<?> end = range[SyntaxTree.END];
+			translateExpression(start,context);
+			translateExpression(end,context);
 			context.add(new Bytecode.Store(end.getIndex(),WHILEYINT));
 			context.add(new Bytecode.Store(var.getIndex(),WHILEYINT));
 			// Create loop
@@ -1404,14 +1424,14 @@ public class Wyil2JavaBuilder implements Builder {
 	 *         provided in the case that one or more of those operands had
 	 *         multiple return values.
 	 */
-	public List<JvmType> translateOperands(SyntaxTree.Expr[] operands, Context enclosing) {
+	public List<JvmType> translateExpressions(Location<?>[] operands, Context enclosing) {
 		ArrayList<JvmType> types = new ArrayList<JvmType>();
 		for (int i = 0; i != operands.length; ++i) {
-			SyntaxTree.Expr operand = operands[i];
+			Location<?> operand = operands[i];
 			// Check whether we're a subsequent positional
 			if(firstPositionalOperand(operand)) {
 				// Translate operand
-				translateOperand(operand, enclosing);
+				translateExpression(operand, enclosing);
 			}
 			// Determine type(s) for operand
 			types.add(toJvmType(operand.getType()));
@@ -1435,13 +1455,13 @@ public class Wyil2JavaBuilder implements Builder {
 	 *         provided in the case that one or more of those operands had
 	 *         multiple return values.
 	 */
-	private void translateOperandsToArray(SyntaxTree.Expr[] operands, Context context) {
+	private void translateExpressionsToArray(Location<?>[] operands, Context context) {
 		context.add(new Bytecode.LoadConst(operands.length));
 		context.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
 		for (int i = 0; i < operands.length;) {
-			SyntaxTree.Expr operand = operands[i];
-			translateOperand(operand, context);
-			SyntaxTree.Expr[] items = determinePositionalGroup(operands, i);
+			Location<?> operand = operands[i];
+			translateExpression(operand, context);
+			Location<?>[] items = determinePositionalGroup(operands, i);
 			for (int j = items.length - 1; j >= 0; --j) {
 				JvmType itemType = toJvmType(items[j].getType());
 				context.add(new Bytecode.Store(items[j].getIndex(), itemType));
@@ -1449,7 +1469,7 @@ public class Wyil2JavaBuilder implements Builder {
 			i = i + items.length;
 		}
 		for (int i = 0; i < operands.length; ++i) {
-			SyntaxTree.Expr operand = operands[i];
+			Location<?> operand = operands[i];
 			JvmType type = toJvmType(operand.getType());
 			context.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
 			context.add(new Bytecode.LoadConst(i));
@@ -1459,7 +1479,7 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 
-	public SyntaxTree.Expr[] determinePositionalGroup(SyntaxTree.Expr[] operands, int i) {
+	public Location<?>[] determinePositionalGroup(Location<?>[] operands, int i) {
 		int start = i;
 		i = i + 1;
 		while (i < operands.length && !firstPositionalOperand(operands[i])) {
@@ -1478,52 +1498,42 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            The enclosing context for this operand.
 	 * @return
 	 */
-	private void translateOperand(SyntaxTree.Expr expr, Context context) {
-		if (expr instanceof SyntaxTree.Variable) {
-			SyntaxTree.Variable var = (SyntaxTree.Variable) expr;
-			JvmType jvmType = toJvmType(var.getType());
-			context.add(new Bytecode.Load(var.getIndex(), jvmType));
-		} else {
-			SyntaxTree.Operator<?> operator = (SyntaxTree.Operator) expr;
-			try {
-				wyil.lang.Bytecode bytecode = operator.getBytecode();
-				switch (operator.getOpcode()) {
-				case OPCODE_convert:
-					translateConvert((SyntaxTree.Operator<Convert>) operator, context);
-					break;
-				case OPCODE_const:
-					translateConst((SyntaxTree.Operator<Const>) operator, context);
-					break;
-				case OPCODE_fieldload:
-					translateFieldLoad((SyntaxTree.Operator<FieldLoad>) operator, context);
-					break;
-				case OPCODE_all:
-				case OPCODE_some:
-				case OPCODE_none:
-					translateQuantifier((SyntaxTree.Operator<Quantifier>) operator, context);
-					break;
-				case OPCODE_indirectinvoke:
-					translateIndirectInvoke((SyntaxTree.Operator<IndirectInvoke>) operator, context);
-					break;
-				case OPCODE_invoke:
-					translateInvoke((SyntaxTree.Operator<Invoke>) operator, context);
-					break;
-				case OPCODE_lambda:
-					translateLambda((SyntaxTree.Operator<Lambda>) operator, context);
-					break;
-				default:
-					if (bytecode instanceof Operator) {
-						translateOperator((SyntaxTree.Operator<Operator>) operator, context);
-					} else {
-						internalFailure("unknown bytecode encountered (" + bytecode + ")", filename,
-								operator.attributes());
-					}
-				}
-			} catch(InternalFailure ex) {
-				throw ex;
-			} catch (Exception ex) {
-				internalFailure(ex.getMessage(), filename, ex, expr.attributes());
+	private void translateExpression(Location<?> expr, Context context) {
+		try {
+			switch (expr.getOpcode()) {
+			case OPCODE_convert:
+				translateConvert((Location<Convert>) expr, context);
+				break;
+			case OPCODE_const:
+				translateConst((Location<Const>) expr, context);
+				break;
+			case OPCODE_fieldload:
+				translateFieldLoad((Location<FieldLoad>) expr, context);
+				break;
+			case OPCODE_all:
+			case OPCODE_some:
+			case OPCODE_none:
+				translateQuantifier((Location<Quantifier>) expr, context);
+				break;
+			case OPCODE_indirectinvoke:
+				translateIndirectInvoke((Location<IndirectInvoke>) expr, context);
+				break;
+			case OPCODE_invoke:
+				translateInvoke((Location<Invoke>) expr, context);
+				break;
+			case OPCODE_lambda:
+				translateLambda((Location<Lambda>) expr, context);
+				break;
+			case OPCODE_varaccess:
+				translateVariableAccess((Location<VariableAccess>) expr, context);
+				break;
+			default:				
+				translateOperator((Location<Operator>) expr, context);				
 			}
+		} catch(InternalFailure ex) {
+			throw ex;
+		} catch (Exception ex) {
+			internalFailure(ex.getMessage(), filename, ex, expr.attributes());
 		}
 	}
 
@@ -1543,7 +1553,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            The enclosing context for this operand.
 	 * @return
 	 */
-	private void translateConst(SyntaxTree.Operator<Const> c, Context context) {
+	private void translateConst(Location<Const> c, Context context) {
 		Constant constant = c.getBytecode().constant();
 		JvmType jt = toJvmType(constant.type());
 		// Check whether this constant can be translated as a primitive, and
@@ -1571,9 +1581,9 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            The enclosing context for this operand.
 	 * @return
 	 */
-	private void translateConvert(SyntaxTree.Operator<Convert> c, Context context) {
+	private void translateConvert(Location<Convert> c, Context context) {
 		// Translate the operand
-		translateOperand(c.getOperand(0), context);
+		translateExpression(c.getOperand(0), context);
 		// Do nothing :)
 	}
 
@@ -1586,12 +1596,12 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            The enclosing context for this operand.
 	 * @return
 	 */
-	private void translateFieldLoad(SyntaxTree.Operator<FieldLoad> c, Context context) throws ResolveError {
-		SyntaxTree.Expr srcOperand = c.getOperand(0);
+	private void translateFieldLoad(Location<FieldLoad> c, Context context) throws ResolveError {
+		Location<?> srcOperand = c.getOperand(0);
 		Type.EffectiveRecord type = typeSystem.expandAsEffectiveRecord(srcOperand.getType());
 		JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, WHILEYRECORD, JAVA_LANG_STRING);
 		// Translate the source operand
-		translateOperand(srcOperand, context);
+		translateExpression(srcOperand, context);
 		context.add(new Bytecode.LoadConst(c.getBytecode().fieldName()));
 		// Load the field out of the resulting record
 		context.add(new Bytecode.Invoke(WHILEYRECORD, "get", ftype, Bytecode.InvokeMode.STATIC));
@@ -1608,7 +1618,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            The enclosing context for this operand.
 	 * @return
 	 */
-	private void translateOperator(SyntaxTree.Operator<Operator> c, Context context) throws ResolveError {
+	private void translateOperator(Location<Operator> c, Context context) throws ResolveError {
 		// First, translate each operand and load its value onto the stack
 		switch (c.getOpcode()) {
 		case OPCODE_record:
@@ -1617,8 +1627,8 @@ public class Wyil2JavaBuilder implements Builder {
 		case OPCODE_array:
 			translateArrayConstructor(c, context);
 			break;
-		default:
-			translateOperands(c.getOperands(), context);
+		default:			
+			translateExpressions(c.getOperands(), context);
 			// Second, dispatch to a specific translator for this opcode kind.
 			generators[c.getOpcode()].translate(c, context);
 		}
@@ -1630,7 +1640,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param bytecode
 	 * @param context
 	 */
-	public void translateRecordConstructor(SyntaxTree.Operator<Operator> bytecode, Context context) throws ResolveError {
+	public void translateRecordConstructor(Location<Operator> bytecode, Context context) throws ResolveError {
 		Type.EffectiveRecord recType = typeSystem.expandAsEffectiveRecord(bytecode.getType());
 		JvmType.Function ftype = new JvmType.Function(WHILEYRECORD, WHILEYRECORD, JAVA_LANG_STRING, JAVA_LANG_OBJECT);
 
@@ -1642,7 +1652,7 @@ public class Wyil2JavaBuilder implements Builder {
 			String key = keys.get(i);
 			Type fieldType = recType.field(key);
 			context.add(new Bytecode.LoadConst(key));
-			translateOperand(bytecode.getOperand(i), context);
+			translateExpression(bytecode.getOperand(i), context);
 			context.addWriteConversion(fieldType);
 			context.add(new Bytecode.Invoke(WHILEYRECORD, "put", ftype, Bytecode.InvokeMode.STATIC));
 		}
@@ -1657,7 +1667,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            The enclosing context for this operand.
 	 * @return
 	 */
-	private void translateArrayConstructor(SyntaxTree.Operator<Operator> code, Context context) throws ResolveError {
+	private void translateArrayConstructor(Location<Operator> code, Context context) throws ResolveError {
 		Type.EffectiveArray arrType = typeSystem.expandAsEffectiveArray(code.getType());
 		JvmType.Function initJvmType = new JvmType.Function(T_VOID, T_INT);
 		JvmType.Function ftype = new JvmType.Function(WHILEYARRAY, WHILEYARRAY, JAVA_LANG_OBJECT);
@@ -1668,7 +1678,7 @@ public class Wyil2JavaBuilder implements Builder {
 		context.add(new Bytecode.Invoke(WHILEYARRAY, "<init>", initJvmType, Bytecode.InvokeMode.SPECIAL));
 
 		for (int i = 0; i != code.getOperands().length; ++i) {
-			translateOperand(code.getOperand(i), context);
+			translateExpression(code.getOperand(i), context);
 			context.addWriteConversion(arrType.element());
 			context.add(new Bytecode.Invoke(WHILEYARRAY, "internal_add", ftype, Bytecode.InvokeMode.STATIC));
 		}
@@ -1684,9 +1694,9 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param c
 	 * @param context
 	 */
-	private void translateLambda(SyntaxTree.Operator<Lambda> c, Context context) {
+	private void translateLambda(Location<Lambda> c, Context context) {
 		Lambda bytecode = c.getBytecode();
-		SyntaxTree.Expr[] environment = c.getOperandGroup(1);
+		Location<?>[] environment = c.getOperandGroup(1);
 		int lambda_id = lambdaClasses.size();
 		String lambdaMethod = "$lambda" + lambda_id;
 		JvmType[] jvmEnvironment = buildLambdaEnvironment(environment);
@@ -1697,7 +1707,7 @@ public class Wyil2JavaBuilder implements Builder {
 		context.add(new Bytecode.New(lambda.type()));
 		context.add(new Bytecode.Dup(lambda.type()));
 		for (int i = 0; i != environment.length; ++i) {
-			SyntaxTree.Expr e = environment[i];
+			Location<?> e = environment[i];
 			context.add(new Bytecode.Load(e.getIndex(), jvmEnvironment[i]));
 		}
 		JvmType.Function ftype = new JvmType.Function(T_VOID, jvmEnvironment);
@@ -1720,10 +1730,10 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            The enclosing context for this operand.
 	 * @return
 	 */
-	private void translateInvoke(SyntaxTree.Operator<Invoke> c, Context context) {
+	private void translateInvoke(Location<Invoke> c, Context context) {
 		Invoke bytecode = c.getBytecode();
 		// Translate each operand and load its value onto the stack
-		translateOperands(c.getOperands(), context);
+		translateExpressions(c.getOperands(), context);
 		// Construct the invocation bytecode
 		context.add(createMethodInvocation(bytecode.name(), bytecode.type()));
 		// 
@@ -1742,15 +1752,15 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            The enclosing context for this operand.
 	 * @return
 	 */
-	private void translateIndirectInvoke(SyntaxTree.Operator<IndirectInvoke> c, Context context) {
+	private void translateIndirectInvoke(Location<IndirectInvoke> c, Context context) {
 		IndirectInvoke bytecode = c.getBytecode();
 		Type.FunctionOrMethod ft = bytecode.type();
 		JvmType.Clazz owner = (JvmType.Clazz) toJvmType(ft);
 		// First, translate reference operand which returns the function/method
 		// object we will dispatch upon. This extends the WyLambda class.
-		translateOperand(c.getOperand(0), context);
+		translateExpression(c.getOperand(0), context);
 		// Second, translate each argument and store it into an object array
-		translateOperandsToArray(c.getOperandGroup(0), context);
+		translateExpressionsToArray(c.getOperandGroup(0), context);
 		// Third, make the indirect method or function call. This is done by
 		// invoking the "call" method on the function / method object returned
 		// from the reference operand.
@@ -1775,7 +1785,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param enclosing
 	 *            Enclosing context
 	 */
-	private void translateQuantifier(SyntaxTree.Operator<Quantifier> condition, Context context) {
+	private void translateQuantifier(Location<Quantifier> condition, Context context) {
 		String trueLabel = freshLabel();
 		String exitLabel = freshLabel();
 		translateQuantifierCondition(condition, trueLabel, null, context);
@@ -1786,6 +1796,20 @@ public class Wyil2JavaBuilder implements Builder {
 		context.add(new Bytecode.Label(exitLabel));
 	}
 	
+	/**
+	 * Translate a variable access into a simple variable load instruction
+	 * 
+	 * @param condition
+	 *            Operand to evaluate to see whether it is true or false
+	 * @param enclosing
+	 *            Enclosing context
+	 */
+	private void translateVariableAccess(Location<VariableAccess> expr, Context context) {		
+		JvmType type = context.toJvmType(expr.getType());
+		Location<?> decl = expr.getOperand(0);
+		context.add(new Bytecode.Load(decl.getIndex(), type));
+	}
+		
 	// ===============================================================================
 	// Constants
 	// ===============================================================================
@@ -1953,7 +1977,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param context
 	 * @return
 	 */
-	public ClassFile.Method buildLambdaMethod(SyntaxTree.Operator<Lambda> e, String lambdaMethod, Context context) {
+	public ClassFile.Method buildLambdaMethod(Location<Lambda> e, String lambdaMethod, Context context) {
 		Lambda l = e.getBytecode();
 		JvmType.Function type = buildLambdaMethodType(l.type(), e.getOperandGroup(1));
 		Context bodyContext = new Context();
@@ -1961,7 +1985,7 @@ public class Wyil2JavaBuilder implements Builder {
 		// onto the stack
 		shiftLambdaMethodParameters(e.getOperandGroup(0), e.getOperandGroup(1), bodyContext);
 		// Translate the body of the lambda expression
-		translateOperand(e.getOperand(0), bodyContext);
+		translateExpression(e.getOperand(0), bodyContext);
 		// Add the return value (if applicable)
 		if (type.returnType() instanceof JvmType.Void) {
 			bodyContext.add(new Bytecode.Return(null));
@@ -1991,10 +2015,10 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            lambda body
 	 * @param bodyContext
 	 */
-	private void shiftLambdaMethodParameters(SyntaxTree.Expr[] parameters, SyntaxTree.Expr[] environment, Context bodyContext) {
+	private void shiftLambdaMethodParameters(Location<?>[] parameters, Location<?>[] environment, Context bodyContext) {
 		parameters = append(parameters,environment);
 		for(int i=0;i!=parameters.length;++i) {
-			SyntaxTree.Expr p = parameters[i];
+			Location<?> p = parameters[i];
 			int slot = p.getIndex();
 			if(slot != i) {
 				bodyContext.add(new Bytecode.Load(i, toJvmType(p.getType())));
@@ -2002,7 +2026,7 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 		// Second, pop them all into the right register
 		for(int i=parameters.length-1;i>=0;--i) {
-			SyntaxTree.Expr p = parameters[i];
+			Location<?> p = parameters[i];
 			int slot = p.getIndex();
 			if(slot != i) {
 				bodyContext.add(new Bytecode.Store(slot, toJvmType(p.getType())));
@@ -2020,11 +2044,11 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param context
 	 * @return
 	 */
-	public JvmType.Function buildLambdaMethodType(Type.FunctionOrMethod type, SyntaxTree.Expr[] environment) {
+	public JvmType.Function buildLambdaMethodType(Type.FunctionOrMethod type, Location<?>[] environment) {
 		JvmType.Function jvmType = convertFunType(type);
 		ArrayList<JvmType> actualParameterTypes = new ArrayList<JvmType>(jvmType.parameterTypes());
 		for (int i = 0; i != environment.length; ++i) {
-			SyntaxTree.Expr loc = environment[i];
+			Location<?> loc = environment[i];
 			actualParameterTypes.add(toJvmType(loc.getType()));
 		}
 		//
@@ -2038,10 +2062,10 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param context
 	 * @return
 	 */
-	public JvmType[] buildLambdaEnvironment(SyntaxTree.Expr[] environment) {
+	public JvmType[] buildLambdaEnvironment(Location<?>[] environment) {
 		JvmType[] envTypes = new JvmType[environment.length];
 		for (int i = 0; i != environment.length; ++i) {
-			SyntaxTree.Expr loc = environment[i];
+			Location<?> loc = environment[i];
 			envTypes[i] = toJvmType(loc.getType());
 		}
 		return envTypes;
@@ -2100,11 +2124,10 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param e
 	 * @return
 	 */
-	private boolean firstPositionalOperand(SyntaxTree.Expr e) {
-		if (e instanceof SyntaxTree.PositionalOperator<?>) {
-			SyntaxTree.PositionalOperator<?> p = (SyntaxTree.PositionalOperator<?>) e;
-			return p.getPosition() == 0;
-		}
+	private boolean firstPositionalOperand(Location<?> e) {
+		// FIXME: this relied on the concept of positional operators which is
+		// now redundant?
+		
 		// In this case, we don't have a positional operand. Therefore, we say
 		// this is the first since it is the only one in its group.
 		return true;
@@ -2469,6 +2492,6 @@ public class Wyil2JavaBuilder implements Builder {
 	 *
 	 */
 	public interface BytecodeTranslator {
-		void translate(SyntaxTree.Operator<Operator> bytecode, Context context) throws ResolveError;
+		void translate(Location<Operator> bytecode, Context context) throws ResolveError;
 	}
 }

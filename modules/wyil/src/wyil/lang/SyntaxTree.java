@@ -5,7 +5,6 @@ import java.util.List;
 
 import wycc.lang.Attribute;
 import wycc.lang.SyntacticElement;
-import wyil.util.AbstractSyntaxTree;
 
 /**
  * A SyntaxTree representation of the Whiley Intermediate Language (WyIL).
@@ -19,92 +18,161 @@ import wyil.util.AbstractSyntaxTree;
  * @author David J. Pearce
  *
  */
-public interface SyntaxTree extends SyntacticElement {
-	
-	// ============================================================
-	// Types
-	// ============================================================
+public class SyntaxTree {
+	/**
+	 * The enclosing declaration for this tree
+	 */
+	private final WyilFile.Declaration parent;
 	
 	/**
-	 * Get the enclosing declaration of this syntax tree element.
+	 * The set of locations making up this tree. Each location is some kind of
+	 * component of the tree. For example, an expression or statement.
+	 */
+	private final List<Location<?>> locations; 
+
+	public SyntaxTree(WyilFile.Declaration enclosingDeclaration) {
+		this.parent = enclosingDeclaration;
+		this.locations = new ArrayList<Location<?>>();
+	}
+	
+	/**
+	 * Returns the number of locations in this syntax tree.
 	 * 
 	 * @return
 	 */
-	public abstract WyilFile.Declaration getEnclosingDeclaration();
-
-	/**
-	 * In an abstract sense, a location represents a single unit of storage
-	 * required for the execution of a given syntax tree. Every location has a
-	 * single type which determines the necessary storage required for its
-	 * value.
-	 * 
-	 * @author David J. Pearce
-	 *
-	 */
-	public static interface Expr extends SyntaxTree {
-		
-		/**
-		 * Get the index of this expression in the enclosing declaration. Every
-		 * distinct expression has a unique index.
-		 * 
-		 * @return
-		 */
-		public int getIndex();
-
-		/**
-		 * Get the declared type of this location.
-		 * 
-		 * @return
-		 */
-		public Type getType();
+	public int size() {
+		return locations.size();
 	}
 
 	/**
-	 * Represents the result of an intermediate computation which is assigned to
-	 * an anonymous location.
+	 * Get the location at a given index in this syntax tree.
 	 * 
-	 * @author David J. Pearce
-	 *
+	 * @param index
+	 *            --- index of location to return
+	 * @return
 	 */
-	public interface Operator<T extends Bytecode.Expr> extends Expr {
-		
+	public Location<?> getLocation(int index) {
+		return locations.get(index);
+	}
 
+	/**
+	 * Get the location at a given index in this syntax tree.
+	 * 
+	 * @param index
+	 *            --- index of location to return
+	 * @return
+	 */
+	public Location<?>[] getLocations(int... indices) {
+		Location<?>[] locs = new Location<?>[indices.length];
+		for(int i=0;i!=indices.length;++i) {
+			locs[i] = getLocation(indices[i]);
+		}
+		return locs;
+	}
+	
+	public List<Location<?>> getLocations() {
+		return locations;
+	}
+	
+	/**
+	 * Get the index of a given location in this tree.
+	 * 
+	 * @param location
+	 * @return
+	 */
+	public int getIndexOf(Location<?> location) {
+		return locations.indexOf(location);
+	}
+	
+	/**
+	 * Get the enclosing declaration of this syntax tree.
+	 * 
+	 * @return
+	 */
+	public WyilFile.Declaration getEnclosingDeclaration() {
+		return parent;
+	}
+
+	// ============================================================
+	// Location
+	// ============================================================
+
+	public static class Location<T extends Bytecode> extends SyntacticElement.Impl {
+		private final SyntaxTree parent;
+		
+		private final Type type;
+		
+		private final T bytecode;
+		
+		public Location(SyntaxTree parent, Type type, T bytecode, Attribute...attributes) {
+			super(attributes);
+			this.parent = parent;
+			this.type = type;
+			this.bytecode = bytecode;
+		}
+		
+		public Location(SyntaxTree parent, Type type, T bytecode, List<Attribute> attributes) {
+			super(attributes);
+			this.parent = parent;
+			this.type = type;
+			this.bytecode = bytecode;
+		}
+		
+		/**
+		 * Get the index of this location in the enclosing syntax tree. Every
+		 * location has a unique index.
+		 * 
+		 * @return
+		 */
+		public int getIndex() {
+			return parent.getIndexOf(this);
+		}
+
+		/**
+		 * Get the enclosing syntax tree of this location.
+		 * 
+		 * @return
+		 */
+		public SyntaxTree getEnclosingTree() {
+			return parent;
+		}
+		
+		/**
+		 * Get the declared type of this location. In some cases, the declared
+		 * type maybe void to signal this location doesn't generate a value.
+		 * 
+		 * @return
+		 */
+		public Type getType() {
+			return type;
+		}
+		
 		/**
 		 * Get the bytecode associated with this expression
 		 * 
 		 * @return
 		 */
-		public T getBytecode();
+		public T getBytecode() {
+			return bytecode;
+		}
 
 		/**
 		 * Get the underlying opcode for this expression
 		 * 
 		 * @return
 		 */
-		public int getOpcode();
-
-		/**
-		 * Return the ith operand associated with this expression.
-		 * 
-		 * @param i
-		 * @return
-		 */
-		public SyntaxTree.Expr getOperand(int i);
+		public int getOpcode() {
+			return bytecode.getOpcode();
+		}
 
 		/**
 		 * Get the number of operand groups in this expression.
 		 * 
 		 * @return
 		 */
-		public int numberOfOperandGroups();
-		
-		/**
-		 * Get the ith operand group in this expression.
-		 * 
-		 * @param i
-		 * @return
-		 */
-		public SyntaxTree.Expr[] getOperandGroup(int i);
+		public int numberOfOperands() {
+			return bytecode.numberOfOperands();
+		}
 		
 		/**
 		 * Return the ith operand associated with this expression.
@@ -112,88 +180,40 @@ public interface SyntaxTree extends SyntacticElement {
 		 * @param i
 		 * @return
 		 */
-		public SyntaxTree.Expr[] getOperands();
-	}
-	
-	/**
-	 * A positional operator represents a partial result from evaluating a given
-	 * operator. Specifically, positional operators are used for operators which
-	 * returns multiple values. Currently, the only operators which do this are
-	 * for method/function invocations.
-	 * 
-	 * @author David J. Pearce
-	 *
-	 */
-	public interface PositionalOperator<T extends Bytecode.Expr> extends Operator<T> {
-		/**
-		 * Get the position of this positional operator.
-		 * @return
-		 */
-		public int getPosition();
-	}
-	
-	/**
-	 * Represents a declared variable in the syntax tree.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public interface Variable extends Expr {		
-		/**
-		 * Get the declared name of this variable
-		 * @return
-		 */
-		public String name();
-	}
-
-	/**
-	 * Represents a sequence of bytecode statements which form a block of some
-	 * kind. Retains a reference to the enclosing declaration.
-	 * 
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Block extends ArrayList<SyntaxTree.Stmt<?>> {
-		private final WyilFile.Declaration parent;
-
-		public Block(WyilFile.Declaration parent) {
-			this.parent = parent;
+		public Location<?> getOperand(int i) {
+			return parent.getLocation(bytecode.getOperand(i));
 		}
 
 		/**
-		 * Get the enclosing declaration for this block.
+		 * Return the ith operand associated with this expression.
 		 * 
+		 * @param i
 		 * @return
 		 */
-		public WyilFile.Declaration getEnclosingDeclaration() {
-			return parent;
+		public Location<?>[] getOperands() {
+			return parent.getLocations(bytecode.getOperands());
 		}
-	}
-
-	/**
-	 * Represents an entry within a code block. This is a pairing of a bytecode
-	 * and a list of attributes. Entries are useful because they allow us to
-	 * separate a bytecode from the source-level information we carry about it.
-	 * 
-	 * @author David J. Pearce
-	 *
-	 */
-	public interface Stmt<T extends Bytecode.Stmt> extends SyntaxTree {
 		
 		/**
-		 * Get the actual bytecode associated with this statement.
+		 * Get the number of operand groups in this expression.
 		 * 
 		 * @return
 		 */
-		public T getBytecode();
-		
+		public int numberOfOperandGroups() {
+			return bytecode.numberOfOperandGroups();
+		}
+
 		/**
-		 * Get the underlying opcode for this statement
+		 * Get the ith operand group in this expression.
 		 * 
+		 * @param i
 		 * @return
 		 */
-		public int getOpcode();
-
+		public Location<?>[] getOperandGroup(int i) {
+			int[] group = bytecode.getOperandGroup(i);
+			return parent.getLocations(group);
+		}
+		
 		/**
 		 * Get the number of blocks contained in this statement. This includes
 		 * only those which are immediate children of this statement, but not
@@ -201,55 +221,32 @@ public interface SyntaxTree extends SyntacticElement {
 		 * 
 		 * @return
 		 */
-		public int numberOfBlocks();
-		
+		public int numberOfBlocks() {
+			if(bytecode instanceof Bytecode.Stmt) {
+				Bytecode.Stmt stmt = (Bytecode.Stmt) bytecode;
+				return stmt.numberOfBlocks();
+			} else {
+				return 0;
+			}
+		}
+
 		/**
 		 * Get the ith block contained in this statement.
 		 * 
 		 * @param i
 		 * @return
 		 */
-		public SyntaxTree.Block getBlock(int i);
-
-		/**
-		 * Return the ith operand associated with this statement.
-		 * 
-		 * @param i
-		 * @return
-		 */
-		public SyntaxTree.Expr getOperand(int i);
-
-		/**
-		 * Return the ith operand associated with this statement.
-		 * 
-		 * @param i
-		 * @return
-		 */
-		public SyntaxTree.Expr[] getOperands();
-
-		/**
-		 * Determine the number of operand groups in this bytecode.
-		 * 
-		 * @return
-		 */
-		public int numberOfOperandGroups();
+		public Location<Bytecode.Block> getBlock(int i) {
+			Bytecode.Stmt stmt = (Bytecode.Stmt) bytecode;
+			return (Location<Bytecode.Block>) parent.getLocation(stmt.getBlock(i));			
+		}
 		
-		/**
-		 * Get the ith operand group in this bytecode.
-		 * 
-		 * @param i
-		 * @return
-		 */
-		public SyntaxTree.Expr[] getOperandGroup(int i);
-		
-		/**
-		 * Get the enclosing block of this bytecode entry.
-		 * 
-		 * @return
-		 */
-		public SyntaxTree.Block getEnclosingBlock();
+		public String toString() {
+			int index = getIndex();
+			return index + ":" + type + ":" + bytecode;
+		}
 	}
-	
+
 	/**
 	 * Some helpful context to make reading the code using syntax trees simpler.
 	 */
@@ -267,5 +264,5 @@ public interface SyntaxTree extends SyntacticElement {
 	public static final int ENVIRONMENT = 0;
 	//
 	public static final int END = 2;
-	
+
 }
