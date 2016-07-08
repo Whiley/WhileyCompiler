@@ -366,7 +366,7 @@ public class VerificationConditionGenerator {
 			case Bytecode.OPCODE_dowhile:
 				return translateDoWhile((Location<DoWhile>) stmt, context);
 			case Bytecode.OPCODE_fail:
-				return translateFail((Location<DoWhile>) stmt, context);
+				return translateFail((Location<Fail>) stmt, context);
 			case Bytecode.OPCODE_if:
 			case Bytecode.OPCODE_ifelse:
 				return translateIf((Location<If>) stmt, context);
@@ -412,7 +412,7 @@ public class VerificationConditionGenerator {
 		Expr condition = p.first();
 		context = p.second();		
 		//
-		VerificationCondition verificationCondition = new VerificationCondition("assertion failure",
+		VerificationCondition verificationCondition = new VerificationCondition("assertion failed",
 				context.assumptions, condition, stmt.attributes());
 		context.emit(verificationCondition);		
 		//
@@ -683,7 +683,7 @@ public class VerificationConditionGenerator {
 		afterArbitraryBodyContext = joinDescendants(beforeArbitraryBodyContext, afterArbitraryBodyContext,
 				arbitraryScope.continueContexts);
 		//
-		checkLoopInvariant("loop invariant not preserved", loopInvariant, afterArbitraryBodyContext);
+		checkLoopInvariant("loop invariant not restored", loopInvariant, afterArbitraryBodyContext);
 		// Rule 3. Assume loop invariant holds.
 		Context exitContext = context.havoc(bytecode.modifiedVariables());
 		exitContext = assumeLoopInvariant(loopInvariant, exitContext);
@@ -707,10 +707,10 @@ public class VerificationConditionGenerator {
 	 * @param context
 	 * @return
 	 */
-	private Context translateFail(Location<DoWhile> stmt, Context context) {
+	private Context translateFail(Location<Fail> stmt, Context context) {
 		Expr condition = new Expr.Constant(Value.Bool(false), stmt.attributes());
 		//
-		VerificationCondition verificationCondition = new VerificationCondition("panic is reachable",
+		VerificationCondition verificationCondition = new VerificationCondition("possible panic",
 				context.assumptions, condition, stmt.attributes());
 		context.emit(verificationCondition);
 		//
@@ -875,7 +875,7 @@ public class VerificationConditionGenerator {
 		// Translate the loop invariant and generate appropriate macro
 		translateLoopInvariantMacros(loopInvariant, context.getEnvironment(), context.wyalFile);
 		// Rule 1. Check loop invariant on entry
-		checkLoopInvariant("loop invariant not established on entry", loopInvariant, context);
+		checkLoopInvariant("loop invariant does not hold on entry", loopInvariant, context);
 		// Rule 2. Check loop invariant preserved. On entry to the loop body we
 		// must havoc all modified variables. This is necessary as such
 		// variables should retain their values from before the loop.
@@ -889,7 +889,7 @@ public class VerificationConditionGenerator {
 		// Join continue contexts together since they must also preserve the
 		// loop invariant
 		afterBodyContext = joinDescendants(beforeBodyContext,afterBodyContext,scope.continueContexts);
-		checkLoopInvariant("loop invariant not preserved", loopInvariant, afterBodyContext);
+		checkLoopInvariant("loop invariant not restored", loopInvariant, afterBodyContext);
 		// Rule 3. Assume loop invariant holds.
 		Context exitContext = context.havoc(bytecode.modifiedVariables());
 		exitContext = assumeLoopInvariant(loopInvariant, exitContext);		
@@ -1191,7 +1191,7 @@ public class VerificationConditionGenerator {
 		Expr.Constant constant = new Expr.Constant(zero, rhs.attributes());
 		Expr neqZero = new Expr.Binary(Expr.Binary.Op.NEQ, rhs, constant, rhs.attributes());
 		//
-		context.emit(new VerificationCondition("divide by zero", context.assumptions, neqZero, expr.attributes()));
+		context.emit(new VerificationCondition("division by zero", context.assumptions, neqZero, expr.attributes()));
 	}
 
 	private void generateIndexOutOfBoundsCheck(Location<Operator> expr, Context context) {
@@ -1215,7 +1215,7 @@ public class VerificationConditionGenerator {
 		Expr.Constant constant = new Expr.Constant(zero, rhs.attributes());
 		Expr neqZero = new Expr.Binary(Expr.Binary.Op.GTEQ, rhs, constant, rhs.attributes());
 		//
-		context.emit(new VerificationCondition("negative length", context.assumptions, neqZero, expr.attributes()));
+		context.emit(new VerificationCondition("negative length possible", context.assumptions, neqZero, expr.attributes()));
 	}
 	
 	// =========================================================================

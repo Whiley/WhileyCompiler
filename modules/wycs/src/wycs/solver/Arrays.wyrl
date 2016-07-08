@@ -45,7 +45,7 @@ reduce And{Equals[Type t, {|VExpr x, Array y|}] eq, BExpr... bs}:
 // An array is a mapping from an index value to another value.
 term ArrayGen[Expr,Expr]
 
-@rank(0)
+@rank(2)
 @name("ArrayGen[Expr,Num]")
 reduce ArrayGen[Expr x, Num(real r)]:
     => let n = num r,
@@ -68,7 +68,7 @@ reduce LengthOf(Array[Expr... xs]):
     => Num((real) |xs|)
 
 
-@rank(0)
+@rank(2)
 @name("LengthOf(ArrayGen)")
 reduce LengthOf(ArrayGen[Expr v, Expr n]):
     => n
