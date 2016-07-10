@@ -485,7 +485,7 @@ public class VerificationConditionGenerator {
 			// Generate new source expression based of havoced variable
 			Location<VariableAccess> var = extractAssignedVariable(lval);
 			if (var != null) {
-				context = context.havoc(var.getIndex());
+				context = context.havoc(var);
 			}
 			Expr newSource = translateExpression(lval.getOperand(0), context.getEnvironment());
 			//
@@ -533,11 +533,11 @@ public class VerificationConditionGenerator {
 			Expr index = p2.first();
 			context = p2.second();
 			// Emit verification conditions to check access in bounds
-			generateIndexOutOfBoundsCheck(lval, context);
+			checkIndexOutOfBounds(lval, context);
 			// Generate new source expression based of havoced variable
 			Location<VariableAccess> var = extractAssignedVariable(lval);
 			if (var != null) {
-				context = context.havoc(var.getIndex());
+				context = context.havoc(var);
 			}
 			Expr newSource = translateExpression(lval.getOperand(0), context.getEnvironment());
 			// Construct connection between new source expression and original
@@ -652,7 +652,6 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private Context translateDoWhile(Location<DoWhile> stmt, Context context) {
-		Bytecode.DoWhile bytecode = stmt.getBytecode();
 		Location<?>[] loopInvariant = stmt.getOperandGroup(0);
 		// Translate the loop invariant and generate appropriate macro
 		translateLoopInvariantMacros(loopInvariant, context.getEnvironment(), context.wyalFile);
@@ -672,7 +671,7 @@ public class VerificationConditionGenerator {
 		// necessary as such variables should retain their values from before
 		// the loop.
 		LoopScope arbitraryScope = new LoopScope();
-		Context beforeArbitraryBodyContext = context.newLoopScope(arbitraryScope).havoc(bytecode.modifiedVariables());
+		Context beforeArbitraryBodyContext = context.newLoopScope(arbitraryScope).havoc(stmt.getOperandGroup(1));
 		beforeArbitraryBodyContext = assumeLoopInvariant(loopInvariant, beforeArbitraryBodyContext);
 		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), beforeArbitraryBodyContext);
 		Expr trueCondition = p.first();
@@ -685,7 +684,7 @@ public class VerificationConditionGenerator {
 		//
 		checkLoopInvariant("loop invariant not restored", loopInvariant, afterArbitraryBodyContext);
 		// Rule 3. Assume loop invariant holds.
-		Context exitContext = context.havoc(bytecode.modifiedVariables());
+		Context exitContext = context.havoc(stmt.getOperandGroup(1));
 		exitContext = assumeLoopInvariant(loopInvariant, exitContext);
 		Expr falseCondition = invert(translateExpression(stmt.getOperand(0), exitContext.getEnvironment()),
 				stmt.getOperand(0));
@@ -870,7 +869,6 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private Context translateWhile(Location<While> stmt, Context context) {
-		Bytecode.While bytecode = stmt.getBytecode();
 		Location<?>[] loopInvariant = stmt.getOperandGroup(0);
 		// Translate the loop invariant and generate appropriate macro
 		translateLoopInvariantMacros(loopInvariant, context.getEnvironment(), context.wyalFile);
@@ -880,7 +878,7 @@ public class VerificationConditionGenerator {
 		// must havoc all modified variables. This is necessary as such
 		// variables should retain their values from before the loop.
 		LoopScope scope = new LoopScope();
-		Context beforeBodyContext = context.newLoopScope(scope).havoc(bytecode.modifiedVariables());
+		Context beforeBodyContext = context.newLoopScope(scope).havoc(stmt.getOperandGroup(1));
 		beforeBodyContext = assumeLoopInvariant(loopInvariant, beforeBodyContext);
 		Pair<Expr,Context> p = translateExpressionWithChecks(stmt.getOperand(0), beforeBodyContext);
 		Expr trueCondition = p.first();		
@@ -891,7 +889,7 @@ public class VerificationConditionGenerator {
 		afterBodyContext = joinDescendants(beforeBodyContext,afterBodyContext,scope.continueContexts);
 		checkLoopInvariant("loop invariant not restored", loopInvariant, afterBodyContext);
 		// Rule 3. Assume loop invariant holds.
-		Context exitContext = context.havoc(bytecode.modifiedVariables());
+		Context exitContext = context.havoc(stmt.getOperandGroup(1));
 		exitContext = assumeLoopInvariant(loopInvariant, exitContext);		
 		Expr falseCondition = invert(translateExpression(stmt.getOperand(0), exitContext.getEnvironment()),
 				stmt.getOperand(0));
@@ -1033,7 +1031,11 @@ public class VerificationConditionGenerator {
 	private Pair<Expr[],Context> translateExpressionsWithChecks(Location<?>[] exprs, Context context) {
 		// Generate expression preconditions as verification conditions
 		for (Location<?> expr : exprs) {
-			context = generateExpressionPrePostconditions(expr, context);
+			checkExpressionPreconditions(expr, context);
+		}
+		// Gather up any postconditions from function invocations
+		for (Location<?> expr : exprs) {
+			context = assumeExpressionPostconditions(expr, context);
 		}
 		// Translate expression in the normal fashion
 		return new Pair<>(translateExpressions(exprs, context.getEnvironment()),context);
@@ -1053,53 +1055,65 @@ public class VerificationConditionGenerator {
 	 */
 	private Pair<Expr,Context> translateExpressionWithChecks(Location<?> expr, Context context) {
 		// Generate expression preconditions as verification conditions
-		context = generateExpressionPrePostconditions(expr, context);
+		checkExpressionPreconditions(expr, context);
+		// Gather up any postconditions from function invocations
+		context = assumeExpressionPostconditions(expr, context);
 		// Translate expression in the normal fashion
 		return new Pair<>(translateExpression(expr, context.getEnvironment()),context);
 	}
 
-	private Context generateExpressionPrePostconditions(Location<?> expr, Context context) {
+	@SuppressWarnings("unchecked")
+	private void checkExpressionPreconditions(Location<?> expr, Context context) {
 		WyilFile.Declaration decl = expr.getEnclosingTree().getEnclosingDeclaration();
 		try {
-			switch (expr.getOpcode()) {
-			case Bytecode.OPCODE_convert:
-			case Bytecode.OPCODE_fieldload:
-			case Bytecode.OPCODE_lambda:
-			case Bytecode.OPCODE_indirectinvoke:
-			case Bytecode.OPCODE_none:
-			case Bytecode.OPCODE_some:
-			case Bytecode.OPCODE_all:
-				context = generateExpressionPrePostconditions(expr.getOperand(0), context);
+			// First, recurse all subexpressions
+			int opcode = expr.getOpcode();			
+			if(opcode == Bytecode.OPCODE_logicaland) {
+				// In the case of a logical and condition we need to propagate the
+				// left-hand side as an assumption into the right-hand side. This is
+				// an artifact of short-circuiting whereby terms on the right-hand
+				// side only execute when the left-hand side is known to hold.
+				for (int i = 0; i != expr.numberOfOperands(); ++i) {					
+					checkExpressionPreconditions(expr.getOperand(i), context);
+					Expr e = translateExpression(expr.getOperand(i), context.getEnvironment());
+					context = context.assume(e);
+				}
+			} else if(opcode != Bytecode.OPCODE_varaccess) {
+				// In the case of a general expression, we just recurse any
+				// subexpressions without propagating information forward. We
+				// must ignore variable accesses here, because they refer back
+				// to the relevant variable declaration.
+				for(int i=0;i!=expr.numberOfOperands();++i) {
+					checkExpressionPreconditions(expr.getOperand(i), context);	
+				}
 				for (int i = 0; i != expr.numberOfOperandGroups(); ++i) {
 					Location<?>[] group = expr.getOperandGroup(i);
 					for (Location<?> e : group) {
-						context = generateExpressionPrePostconditions(e, context);
+						checkExpressionPreconditions(e, context);
 					}
 				}
-				break;
-			case Bytecode.OPCODE_invoke:
-				context = generateInvokePrePostconditions((Location<Invoke>) expr, context);
-				break;
-			default:
-				context = generateOperatorPrePostconditions((Location<Operator>) expr, context);
 			}
-			return context;
+			// Second, perform actual precondition checks
+			switch (expr.getOpcode()) {			
+			case Bytecode.OPCODE_invoke:
+				checkInvokePreconditions((Location<Invoke>) expr, context);
+				break;
+			case Bytecode.OPCODE_div:
+			case Bytecode.OPCODE_rem:
+				checkDivideByZero((Location<Operator>) expr, context);
+				break;
+			case Bytecode.OPCODE_arrayindex:
+				checkIndexOutOfBounds((Location<Operator>) expr, context);
+				break;
+			case Bytecode.OPCODE_arraygen:
+				checkArrayGeneratorLength((Location<Operator>) expr, context);
+				break;
+			}
 		} catch (InternalFailure e) {
 			throw e;
 		} catch (Throwable e) {
 			internalFailure(e.getMessage(), decl.parent().filename(), e, expr.attributes());
-			return null;
 		}
-	}
-
-	private Context generateInvokePrePostconditions(Location<Invoke> expr, Context context) throws Exception {
-		//
-		for (Location<?> operand : expr.getOperands()) {
-			context = generateExpressionPrePostconditions(operand, context);
-		}
-		// 
-		checkInvokePreconditions(expr,context);
-		return assumeInvokePostconditions(expr,context);
 	}
 	
 	private void checkInvokePreconditions(Location<Invoke> expr, Context context) throws Exception {
@@ -1127,6 +1141,66 @@ public class VerificationConditionGenerator {
 		}
 	}
 	
+	private void checkDivideByZero(Location<Operator> expr, Context context) {
+		Expr rhs = translateExpression(expr.getOperand(1), context.getEnvironment());
+		Value zero = Value.Integer(BigInteger.ZERO);
+		Expr.Constant constant = new Expr.Constant(zero, rhs.attributes());
+		Expr neqZero = new Expr.Binary(Expr.Binary.Op.NEQ, rhs, constant, rhs.attributes());
+		//
+		context.emit(new VerificationCondition("division by zero", context.assumptions, neqZero, expr.attributes()));
+	}
+
+	private void checkIndexOutOfBounds(Location<Operator> expr, Context context) {
+		Expr src = translateExpression(expr.getOperand(0), context.getEnvironment());
+		Expr idx = translateExpression(expr.getOperand(1), context.getEnvironment());
+		Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO));
+		Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF, src);
+		//
+		Expr negTest = new Expr.Binary(Expr.Binary.Op.GTEQ, idx, zero, idx.attributes());
+		Expr lenTest = new Expr.Binary(Expr.Binary.Op.LT, idx, length, idx.attributes());
+		//
+		context.emit(new VerificationCondition("index out of bounds (negative)", context.assumptions, negTest,
+				expr.attributes()));
+		context.emit(new VerificationCondition("index out of bounds (not less than length)", context.assumptions,
+				lenTest, expr.attributes()));
+	}
+
+	private void checkArrayGeneratorLength(Location<Operator> expr, Context context) {
+		Expr rhs = translateExpression(expr.getOperand(1), context.getEnvironment());
+		Value zero = Value.Integer(BigInteger.ZERO);
+		Expr.Constant constant = new Expr.Constant(zero, rhs.attributes());
+		Expr neqZero = new Expr.Binary(Expr.Binary.Op.GTEQ, rhs, constant, rhs.attributes());
+		//
+		context.emit(new VerificationCondition("negative length possible", context.assumptions, neqZero, expr.attributes()));
+	}
+	
+	private Context assumeExpressionPostconditions(Location<?> expr, Context context) {
+		WyilFile.Declaration decl = expr.getEnclosingTree().getEnclosingDeclaration();
+		try {
+			// First, propagate through all subexpressions
+			for(int i=0;i!=expr.numberOfOperands();++i) {
+				context = assumeExpressionPostconditions(expr.getOperand(i), context);	
+			}
+			for (int i = 0; i != expr.numberOfOperandGroups(); ++i) {
+				Location<?>[] group = expr.getOperandGroup(i);
+				for (Location<?> e : group) {
+					context = assumeExpressionPostconditions(e, context);
+				}
+			}
+			switch (expr.getOpcode()) {			
+			case Bytecode.OPCODE_invoke:
+				context = assumeInvokePostconditions((Location<Invoke>) expr, context);
+				break;			
+			}
+			return context;
+		} catch (InternalFailure e) {
+			throw e;
+		} catch (Throwable e) {
+			internalFailure(e.getMessage(), decl.parent().filename(), e, expr.attributes());
+			return null;
+		}
+	}
+	
 	private Context assumeInvokePostconditions(Location<Invoke> expr, Context context) throws Exception {
 		WyilFile.Declaration declaration = expr.getEnclosingTree().getEnclosingDeclaration();		
 		Bytecode.Invoke bytecode = expr.getBytecode();
@@ -1135,7 +1209,7 @@ public class VerificationConditionGenerator {
 		int numPostconditions = fm.getPostcondition().size();
 		//
 		if (numPostconditions > 0) {
-			// There is at least one precondition for the function/method being
+			// There is at least one postcondition for the function/method being
 			// called. Therefore, we need to generate a verification condition
 			// which will check that the precondition holds.
 			//
@@ -1157,67 +1231,6 @@ public class VerificationConditionGenerator {
 		return context;
 	}
 
-	private Context generateOperatorPrePostconditions(Location<Operator> expr, Context context) {
-		for (Location<?> operand : expr.getOperands()) {
-			context = generateExpressionPrePostconditions(operand, context);
-			// In the case of a logical and condition we need to propagate the
-			// left-hand side as an assumption into the right-hand side. This is
-			// an artifact of short-circuiting whereby terms on the right-hand
-			// side only execute when the left-hand side is known to hold.
-			if (expr.getOpcode() == Bytecode.OPCODE_logicaland) {
-				Expr clause = translateExpression(operand, context.getEnvironment());
-				context = context.assume(clause);
-			}
-		}
-		//
-		switch (expr.getOpcode()) {
-		case Bytecode.OPCODE_div:
-		case Bytecode.OPCODE_rem:
-			generateDivideByZeroCheck(expr, context);
-			break;
-		case Bytecode.OPCODE_arrayindex:
-			generateIndexOutOfBoundsCheck(expr, context);
-			break;
-		case Bytecode.OPCODE_arraygen:
-			generateArrayGeneratorLengthCheck(expr, context);
-			break;
-		}
-		return context;
-	}
-
-	private void generateDivideByZeroCheck(Location<Operator> expr, Context context) {
-		Expr rhs = translateExpression(expr.getOperand(1), context.getEnvironment());
-		Value zero = Value.Integer(BigInteger.ZERO);
-		Expr.Constant constant = new Expr.Constant(zero, rhs.attributes());
-		Expr neqZero = new Expr.Binary(Expr.Binary.Op.NEQ, rhs, constant, rhs.attributes());
-		//
-		context.emit(new VerificationCondition("division by zero", context.assumptions, neqZero, expr.attributes()));
-	}
-
-	private void generateIndexOutOfBoundsCheck(Location<Operator> expr, Context context) {
-		Expr src = translateExpression(expr.getOperand(0), context.getEnvironment());
-		Expr idx = translateExpression(expr.getOperand(1), context.getEnvironment());
-		Expr zero = new Expr.Constant(Value.Integer(BigInteger.ZERO));
-		Expr length = new Expr.Unary(Expr.Unary.Op.LENGTHOF, src);
-		//
-		Expr negTest = new Expr.Binary(Expr.Binary.Op.GTEQ, idx, zero, idx.attributes());
-		Expr lenTest = new Expr.Binary(Expr.Binary.Op.LT, idx, length, idx.attributes());
-		//
-		context.emit(new VerificationCondition("index out of bounds (negative)", context.assumptions, negTest,
-				expr.attributes()));
-		context.emit(new VerificationCondition("index out of bounds (not less than length)", context.assumptions,
-				lenTest, expr.attributes()));
-	}
-
-	private void generateArrayGeneratorLengthCheck(Location<Operator> expr, Context context) {
-		Expr rhs = translateExpression(expr.getOperand(1), context.getEnvironment());
-		Value zero = Value.Integer(BigInteger.ZERO);
-		Expr.Constant constant = new Expr.Constant(zero, rhs.attributes());
-		Expr neqZero = new Expr.Binary(Expr.Binary.Op.GTEQ, rhs, constant, rhs.attributes());
-		//
-		context.emit(new VerificationCondition("negative length possible", context.assumptions, neqZero, expr.attributes()));
-	}
-	
 	// =========================================================================
 	// Expression
 	// =========================================================================
@@ -2731,17 +2744,24 @@ public class VerificationConditionGenerator {
 		}
 
 		/**
-		 * Havoc a number of variables. This results in the version numbers for
-		 * those variables being increased. Thus, any historical references to
-		 * those variables in the set of assumptions remain valid.
+		 * Havoc a number of variable accesses. This results in the version
+		 * numbers for those variables being increased. Thus, any historical
+		 * references to those variables in the set of assumptions remain valid.
 		 * 
 		 * @param lhs
-		 *            The index of the location being assigned
-		 * @param rhs
+		 *            The variable accesses being havoced
 		 * @return
 		 */
-		public Context havoc(int... vars) {
+		public Context havoc(Location<?>... exprs) {
 			// Update version number of the assigned variables
+			int[] vars = new int[exprs.length];
+			for (int i = 0; i != exprs.length; ++i) {
+				// At this point, we're assuming only variable accesses can be
+				// havoced. However, potentially, it might make sense to open
+				// this up a little.
+				Location<VariableAccess> va = (Location<VariableAccess>) exprs[i];
+				vars[i] = va.getOperand(0).getIndex();
+			}
 			LocalEnvironment nEnvironment = environment.write(vars);
 			// done
 			return new Context(wyalFile, assumptions, nEnvironment, enclosingLoop, verificationConditions);
