@@ -729,8 +729,8 @@ public class VerificationConditionGenerator {
 		//
 		Pair<Expr,Context> p = translateExpressionWithChecks(stmt.getOperand(0), context);
 		Expr trueCondition = p.first();
+		// FIXME: this is broken as includes assumptions propagated through logical &&'s
 		context = p.second();
-		//
 		Expr falseCondition = invert(trueCondition, stmt.getOperand(0));
 		//
 		Context trueContext = context.assume(trueCondition);

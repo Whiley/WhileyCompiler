@@ -199,6 +199,11 @@ public abstract class AbstractBytecode {
 				return new Bytecode.Operator(operands, Bytecode.OperatorKind.ADD);
 			}
 		};
+		schemas[Bytecode.OPCODE_aliasdecl] = new Schema(Operands.ONE){
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.AliasDeclaration(operands[0]);
+			}
+		};
 		schemas[Bytecode.OPCODE_array] = new Schema(Operands.MANY){
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
 				return new Bytecode.Operator(operands, Bytecode.OperatorKind.ARRAYCONSTRUCTOR);

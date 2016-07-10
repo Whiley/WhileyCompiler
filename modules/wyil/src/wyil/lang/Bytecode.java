@@ -771,6 +771,42 @@ public interface Bytecode {
 	}
 
 	/**
+	 * <p>
+	 * An alias declaration bytecode has the following form:
+	 * </p>
+	 *
+	 * <pre>
+	 * +--------+---------+
+	 * | opcode | operand |
+	 * +--------+---------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the operand identifies the variable declaration being aliased
+	 * (which may be an alias declaration itself).
+	 * </p>
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class AliasDeclaration extends AbstractBytecode implements Stmt {
+
+		public AliasDeclaration(int initialiser) {
+			super(initialiser);
+		}
+
+
+		@Override
+		public int getOpcode() {			
+			return OPCODE_aliasdecl;
+		}
+		
+		public String toString() {
+			return "alias (%" + getOperand(0) + ")";
+		}
+	}
+	
+	/**
 	 * An abstract class representing either an <code>assert</code> or
 	 * <code>assume</code> bytecode.
 	 *
@@ -1175,11 +1211,14 @@ public interface Bytecode {
 
 		@Override
 		public String toString() {
-			String r = "if" + " %" + getOperand(0) + " " + trueBranch();
+			int c = getOperand(0);
+			int tb = trueBranch();
 			if (hasFalseBranch()) {
-				r += " else " + falseBranch();
+				int fb = falseBranch();
+				return "if" + " (%" + c + ", %" + tb + ", %" + fb + ")";
+			} else {
+				return "if" + " (%" + c + ", %" + tb + ")";
 			}
-			return r;
 		}
 	}
 
@@ -1861,24 +1900,26 @@ public interface Bytecode {
 	public static final int OPCODE_break = 4;
 	public static final int OPCODE_continue = 5;
 	public static final int OPCODE_vardeclinit = 6;
+	public static final int OPCODE_aliasdecl = 7;
 	
 	// Unary Operators
-	public static final int UNARY_OPERATOR = 7;
+	public static final int UNARY_OPERATOR = 8;
 
-	public static final int OPCODE_debug = UNARY_OPERATOR + 0;
-	public static final int OPCODE_return = UNARY_OPERATOR + 1;
-	public static final int OPCODE_ifis = UNARY_OPERATOR + 2;
-	public static final int OPCODE_switch = UNARY_OPERATOR + 3;
-	public static final int OPCODE_skip = UNARY_OPERATOR + 4;
+
+	public static final int OPCODE_return = UNARY_OPERATOR + 0;
+	public static final int OPCODE_ifis = UNARY_OPERATOR + 1;
+	public static final int OPCODE_switch = UNARY_OPERATOR + 2;
+	public static final int OPCODE_skip = UNARY_OPERATOR + 3;
+	public static final int OPCODE_debug = UNARY_OPERATOR + 4;
 	// Unary Assignables
 	public static final int UNARY_ASSIGNABLE = UNARY_OPERATOR + 5;
 
-	public static final int OPCODE_fieldload = UNARY_ASSIGNABLE + 8;
-	public static final int OPCODE_convert = UNARY_ASSIGNABLE + 9;
-	public static final int OPCODE_const = UNARY_ASSIGNABLE + 10;
+	public static final int OPCODE_fieldload = UNARY_ASSIGNABLE + 7;
+	public static final int OPCODE_convert = UNARY_ASSIGNABLE + 8;
+	public static final int OPCODE_const = UNARY_ASSIGNABLE + 9;
 
 	// Binary Operators
-	public static final int BINARY_OPERATOR = UNARY_ASSIGNABLE + 11;
+	public static final int BINARY_OPERATOR = UNARY_ASSIGNABLE + 10;
 
 	public static final int OPCODE_if = BINARY_OPERATOR + 0;
 	public static final int OPCODE_ifelse = BINARY_OPERATOR + 1;

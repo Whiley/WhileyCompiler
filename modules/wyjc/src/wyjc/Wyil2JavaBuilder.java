@@ -44,6 +44,7 @@ import wyil.lang.*;
 import wyil.lang.Constant;
 import wyil.lang.SyntaxTree.Location;
 import wyil.lang.Bytecode.Operator;
+import wyil.lang.Bytecode.VariableDeclaration;
 
 import static wyil.lang.Bytecode.*;
 import wyil.util.TypeSystem;
@@ -1073,7 +1074,7 @@ public class Wyil2JavaBuilder implements Builder {
 		// into the array in the wrong order.
 		Collections.reverse(path);
 		// Done
-		Location<VariableDeclaration> decl = (Location<VariableDeclaration>) lval.getOperand(0);
+		Location<VariableDeclaration> decl = getVariableDeclaration(lval);
 		return new LVal(decl.getIndex(), path);
 	}
 
@@ -1806,7 +1807,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 */
 	private void translateVariableAccess(Location<VariableAccess> expr, Context context) {		
 		JvmType type = context.toJvmType(expr.getType());
-		Location<?> decl = expr.getOperand(0);
+		Location<VariableDeclaration> decl = getVariableDeclaration(expr);
 		context.add(new Bytecode.Load(decl.getIndex(), type));
 	}
 		
@@ -2095,6 +2096,19 @@ public class Wyil2JavaBuilder implements Builder {
 	// ===============================================================================
 
 
+	public Location<VariableDeclaration> getVariableDeclaration(Location<?> decl) {
+		switch (decl.getOpcode()) {
+		case OPCODE_aliasdecl:
+		case OPCODE_varaccess:
+			return getVariableDeclaration(decl.getOperand(0));
+		case OPCODE_vardecl:
+		case OPCODE_vardeclinit:
+			return (Location<VariableDeclaration>) decl;
+		default:
+			throw new RuntimeException("internal failure --- dead code reached");
+		}
+	}
+	
 	/**
 	 * Create an invocation bytecode for a given WyIL function or method. This
 	 * is just a convenience method which takes care of name mangling, etc.

@@ -41,6 +41,7 @@ import wycc.util.ResolveError;
 import wycc.util.Triple;
 import wyfs.lang.Path;
 import wyil.lang.*;
+import wyil.lang.Bytecode.AliasDeclaration;
 import wyil.lang.SyntaxTree.Location;
 
 /**
@@ -210,7 +211,7 @@ public final class CodeGenerator {
 			declaration.getPostcondition().add(loc);
 		}
 		// Generate function or method body
-		scope = scope.newBlockScope();
+		scope = scope.clone();
 		int bodyIndex = generateBlock(fmd.statements,scope);
 		SyntaxTree.Location<Bytecode.Block> body = (SyntaxTree.Location<Bytecode.Block>) tree.getLocation(bodyIndex);  
 		declaration.setBody(body);
@@ -256,7 +257,7 @@ public final class CodeGenerator {
 	 */
 	private int generateBlock(List<Stmt> stmts, EnclosingScope scope) {
 		int[] block = new int[stmts.size()];
-		for(int i=0;i!=block.length;++i) {
+		for (int i = 0; i != stmts.size(); ++i) {
 			Stmt st = stmts.get(i);
 			block[i] = generate(st, scope);
 		}
@@ -462,25 +463,22 @@ public final class CodeGenerator {
 	 *            --- Enclosing scope of this statement.
 	 * @return
 	 */
-	private int generate(Stmt.IfElse s, EnclosingScope scope) {
+	private int generate(Stmt.IfElse s, EnclosingScope scope) throws ResolveError {
 		// translate condition itself
-		int operand = generate(s.condition, scope);
-		// We need to clone the scope's here to isolate variables declared in
+		FlowResult fr = generateCondition(s.condition, scope);
 		// the true/false branches from the enclosing scope. In particular,
 		// the case where two variables of the same name are declared with
 		// different types.
-		EnclosingScope trueScope = scope.newBlockScope();
-		int trueBlockIndex = generateBlock(s.trueBranch, trueScope);
+		int trueBlockIndex = generateBlock(s.trueBranch, fr.trueScope);
 		//
 		if (!s.falseBranch.isEmpty()) {
 			// There is a false branch, so translate that as well
-			EnclosingScope falseScope = scope.newBlockScope();
-			int falseBlockIndex = generateBlock(s.falseBranch, falseScope);
+			int falseBlockIndex = generateBlock(s.falseBranch, fr.falseScope);
 			//
-			return scope.add(new Bytecode.If(operand, trueBlockIndex, falseBlockIndex), s.attributes());
+			return scope.add(new Bytecode.If(fr.operand, trueBlockIndex, falseBlockIndex), s.attributes());
 		} else {
 			// No false branch to translate
-			return scope.add(new Bytecode.If(operand, trueBlockIndex), s.attributes());
+			return scope.add(new Bytecode.If(fr.operand, trueBlockIndex), s.attributes());
 		}
 	}
 
@@ -505,7 +503,7 @@ public final class CodeGenerator {
 
 		for (int i = 0; i != cases.length; ++i) {
 			Stmt.Case c = s.cases.get(i);
-			EnclosingScope bodyScope = scope.newBlockScope();
+			EnclosingScope bodyScope = scope.clone();
 			int body = generateBlock(c.stmts, bodyScope);
 			cases[i] = new Bytecode.Case(body, c.constants);
 		}
@@ -545,7 +543,7 @@ public final class CodeGenerator {
 	 * Translate a named block into WyIL bytecodes.
 	 */
 	private int generate(Stmt.NamedBlock s, EnclosingScope scope) {
-		EnclosingScope bodyScope = scope.newBlockScope();
+		EnclosingScope bodyScope = scope.clone();
 		int block = generateBlock(s.body, bodyScope);
 		return scope.add(new Bytecode.NamedBlock(block,s.name),s.attributes());
 	}
@@ -569,7 +567,7 @@ public final class CodeGenerator {
 		int condition = generate(s.condition, scope);
 
 		// Translate loop body
-		EnclosingScope bodyScope = scope.newBlockScope();
+		EnclosingScope bodyScope = scope.clone();
 		int body = generateBlock(s.body, bodyScope);
 		//
 		return scope.add(new Bytecode.While(body, condition, invariants, modified), s.attributes());
@@ -588,7 +586,7 @@ public final class CodeGenerator {
 		// traversing the loop body to see which variables are assigned.
 		int[] modified = determineModifiedVariables(s.body, scope);
 		// Translate loop body
-		EnclosingScope bodyScope = scope.newBlockScope();
+		EnclosingScope bodyScope = scope.clone();
 		int body = generateBlock(s.body, bodyScope);
 		// Translate loop invariant(s)
 		int[] invariants = generate(s.invariants, scope);
@@ -598,6 +596,29 @@ public final class CodeGenerator {
 		return scope.add(new Bytecode.DoWhile(body, condition, invariants, modified), s.attributes());
 	}
 
+	/**
+	 * Determine variables which are retyped and update the enclosing scope
+	 * accordingly
+	 * 
+	 * @param expr
+	 * @param scope
+	 * @return
+	 */
+	private int[] determineVariableAliases(Expr expr, EnclosingScope scope) {
+		// FIXME: this is very primitive, and needs to be more involved
+		if(expr instanceof Expr.BinOp) {
+			Expr.BinOp bop = (Expr.BinOp) expr;
+			if(bop.op == Expr.BOp.IS && bop.lhs instanceof Expr.LocalVariable) {
+				// a type test
+				Expr.LocalVariable lhs = (Expr.LocalVariable) bop.lhs;
+				Expr.TypeVal rhs = (Expr.TypeVal) bop.rhs;
+				int alias = scope.createAlias(rhs.type,lhs.var,expr.attributes());
+				return new int[]{alias};
+			}
+		}
+		return new int[0];
+	}
+	
 	// =========================================================================
 	// Multi-Expressions
 	// =========================================================================
@@ -638,13 +659,164 @@ public final class CodeGenerator {
 		Nominal.FunctionOrMethod type = expr.type();
 		return scope.add(new Bytecode.IndirectInvoke(type.nominal(), operand, operands), expr.attributes());
 	}
+
+	// =========================================================================
+	// Conditions
+	// =========================================================================
+
+	/**
+	 * Translate a source-level conditional expression into WyIL bytecodes,
+	 * using a given scope mapping named variables to locations. This produces a
+	 * location index, and updates two environments which represent two sides of
+	 * the same coin.
+	 * 
+	 * @param condition
+	 * @param scope
+	 * @return A flow result where both true and false scopes are unaliased.
+	 * @throws ResolveError
+	 */
+	public FlowResult generateCondition(Expr condition, EnclosingScope scope) throws ResolveError {
+		if (condition instanceof Expr.BinOp) {
+			Expr.BinOp bop = (Expr.BinOp) condition;
+			switch (bop.op) {
+			case AND:
+				return generateAndCondition(bop, scope);
+			case OR:
+				return generateOrCondition(bop, scope);
+			case IS:
+				return generateIsCondition(bop, scope);
+			}
+
+		} else if (condition instanceof Expr.UnOp) {
+			Expr.UnOp uop = (Expr.UnOp) condition;
+			if (uop.op == Expr.UOp.NOT) {
+				return generateNotCondition(uop, scope);
+			}
+		}
+		// default: fall back to standard generation
+		int index = generate(condition, scope);
+		// We have to clone the two scopes here to prevent them from being
+		// aliases.
+		return new FlowResult(index, scope.clone(), scope.clone());
+	}
+	
+	public FlowResult generateAndCondition(Expr.BinOp condition, EnclosingScope scope) throws ResolveError {
+		FlowResult lhs = generateCondition(condition.lhs, scope);
+		FlowResult rhs = generateCondition(condition.rhs, lhs.trueScope);
+		int[] operands = new int[] { lhs.operand, rhs.operand };
+		int result = scope.add(new Bytecode.Operator(operands, Bytecode.OperatorKind.AND), condition.attributes());
+		// Must join lhs.falseScope and rhs.falseScope; this can result in the
+		// creation of new alias declarations.
+		EnclosingScope falseScope = join(scope,lhs.falseScope,rhs.falseScope);
+		return new FlowResult(result, rhs.trueScope, falseScope);
+	}
+
+	public FlowResult generateOrCondition(Expr.BinOp condition, EnclosingScope scope) throws ResolveError {
+		FlowResult lhs = generateCondition(condition.lhs, scope);
+		FlowResult rhs = generateCondition(condition.rhs, lhs.falseScope);
+		int[] operands = new int[] { lhs.operand, rhs.operand };
+		int result = scope.add(new Bytecode.Operator(operands, Bytecode.OperatorKind.AND), condition.attributes());
+		// Must join lhs.trueScope and rhs.trueScope; this can result in the
+		// creation of new alias declarations.
+		EnclosingScope trueScope = join(scope,lhs.trueScope,rhs.trueScope);
+		return new FlowResult(result, trueScope, rhs.falseScope);
+	}
+	
+	public FlowResult generateIsCondition(Expr.BinOp condition, EnclosingScope scope) throws ResolveError {
+		int lhs = generate(condition.lhs,scope);
+		int rhs = generate(condition.rhs,scope);
+		EnclosingScope trueScope = scope.clone();
+		EnclosingScope falseScope = scope.clone();
+		if (condition.lhs instanceof Expr.LocalVariable) {
+			Expr.LocalVariable var = (Expr.LocalVariable) condition.lhs;
+			Expr.TypeVal type = (Expr.TypeVal) condition.rhs;
+			Location<?> decl = scope.getLocation(var.var);
+			Nominal declType = Nominal.construct(decl.getType(), decl.getType());
+			trueScope.createAlias(Nominal.intersect(declType, type.type), var.var, condition.attributes());
+			falseScope.createAlias(Nominal.intersect(declType, Nominal.Negation(type.type)), var.var,
+					condition.attributes());
+		}
+		// do something
+		int[] operands = new int[] { lhs, rhs };
+		int result = scope.add(new Bytecode.Operator(operands, Bytecode.OperatorKind.IS), condition.attributes());
+		return new FlowResult(result, trueScope, falseScope);
+	}
+	
+	public FlowResult generateNotCondition(Expr.UnOp condition, EnclosingScope scope) throws ResolveError {
+		FlowResult mhs = generateCondition(condition.mhs, scope);
+		return new FlowResult(mhs.operand,mhs.falseScope,mhs.trueScope);
+	}
+	
+	/**
+	 * Join to scopes together, creating new alias declarations as necessary
+	 * 
+	 * @param leftChild
+	 * @param rightChild
+	 * @return
+	 */
+	private EnclosingScope join(EnclosingScope ancestor, EnclosingScope leftChild, EnclosingScope rightChild) {
+		EnclosingScope result = leftChild.clone();
+		for (String var : ancestor.environment.keySet()) {
+			int leftLocation = leftChild.get(var);
+			int rightLocation = rightChild.get(var);
+			if (leftLocation != rightLocation) {
+				// Here, we need to do something.
+				Location<?> origDecl = ancestor.getLocation(var);
+				Location<?> lhsDecl = leftChild.getLocation(var);
+				Location<?> rhsDecl = rightChild.getLocation(var);
+				Type type = Type.Union(lhsDecl.getType(),rhsDecl.getType()); 
+				if(type.equals(origDecl.getType())) {
+					// Easy case, as no new alias required
+					result.environment.put(var, origDecl.getIndex());
+				} else {
+					// Harder case, as alias required
+					throw new RuntimeException("*** NEW ALIAS REQUIRED");
+				}				
+			}
+		}
+		return result;
+	}
+	
+	/**
+	 * The flow result is essentially a triple being returned from the
+	 * generateCondition() family of functions. It's purpose is just to make
+	 * their signatures a little neater.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	private static class FlowResult {
+		/**
+		 * Location index for generated expression
+		 */
+		public final int operand;
+		
+		/**
+		 * Scope which holds on the true branch
+		 */
+		public final EnclosingScope trueScope;
+		
+		/**
+		 * Scope which holds on the false branch
+		 */
+		public final EnclosingScope falseScope;
+		
+		public FlowResult(int operand, EnclosingScope trueScope,  EnclosingScope falseScope) {
+			if(trueScope == falseScope) {
+				throw new IllegalArgumentException("true/false scopes cannot be aliases");
+			}
+			this.operand = operand;
+			this.trueScope = trueScope;
+			this.falseScope = falseScope;
+		}
+	}
 	
 	// =========================================================================
 	// Expressions
 	// =========================================================================
 
 	/**
-	 * Translate a source-level expression into a WYIL bytecode block, using a
+	 * Translate a source-level expression into a WyIL bytecode block, using a
 	 * given environment mapping named variables to registers. This expression
 	 * may generate zero or more results.
 	 * 
@@ -814,6 +986,7 @@ public final class CodeGenerator {
 
 	private int generate(Expr.LocalVariable expr, EnclosingScope scope) throws ResolveError {
 		int decl = scope.get(expr.var);
+		Location<?> vd = scope.enclosing.getLocation(decl);
 		return scope.add(expr.result(),new Bytecode.VariableAccess(decl), expr.attributes());
 	}
 
@@ -1097,7 +1270,7 @@ public final class CodeGenerator {
 	 */
 	private static final class EnclosingScope {
 		/**
-		 * Maps variables to their WyIL register number and type.
+		 * Maps variables to their WyIL location.
 		 */
 		private final HashMap<String, Integer> environment;		
 
@@ -1138,6 +1311,10 @@ public final class CodeGenerator {
 			return environment.get(name);
 		}
 
+		public Location<?> getLocation(String name) {
+			return enclosing.getLocation(environment.get(name));
+		}
+		
 		/**
 		 * Declare a new variable in the enclosing bytecode forest.
 		 * 
@@ -1156,6 +1333,25 @@ public final class CodeGenerator {
 			return index;
 		}
 
+		/**
+		 * Declare a variable alias in the enclosing bytecode forest.
+		 * 
+		 * @param type
+		 *            The declared type of the variable
+		 * @param name
+		 *            The declare name of the variable
+		 * @return
+		 */
+		public int createAlias(Nominal type, String name, List<Attribute> attributes) {
+			List<SyntaxTree.Location<?>> locations = enclosing.getLocations();
+			int original = environment.get(name);
+			int index = locations.size();
+			environment.put(name, index);
+			Bytecode.AliasDeclaration alias = new Bytecode.AliasDeclaration(original);
+			locations.add(new SyntaxTree.Location<Bytecode>(enclosing, type.nominal(), alias, attributes));
+			return index;
+		}
+		
 		/**
 		 * Allocate an operand on the stack.
 		 * 
@@ -1205,16 +1401,12 @@ public final class CodeGenerator {
 		}
 
 		/**
-		 * Create a new "block" scope. This is a subscope where new variables
+		 * Create a new clone scope. This is a subscope where new variables
 		 * can be declared and, furthermore, it corresponds to a new block in
 		 * the underlying forest.
 		 * 
 		 * @return
 		 */
-		public EnclosingScope newBlockScope() {
-			return new EnclosingScope(environment, enclosing, context);
-		}
-
 		public EnclosingScope clone() {
 			return new EnclosingScope(environment, enclosing, context);
 		}

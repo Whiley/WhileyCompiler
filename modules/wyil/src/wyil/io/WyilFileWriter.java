@@ -690,7 +690,7 @@ public final class WyilFileWriter {
 	 */
 	private void writeExtras(Bytecode code, BinaryOutputStream output) throws IOException {
 		//
-		switch (code.getOpcode()) {
+		switch (code.getOpcode()) {		
 		case Bytecode.OPCODE_const: {
 			Bytecode.Const c = (Bytecode.Const) code;
 			output.write_uv(constantCache.get(c.constant()));
@@ -741,6 +741,7 @@ public final class WyilFileWriter {
 		case Bytecode.OPCODE_vardeclinit: {
 			Bytecode.VariableDeclaration d = (Bytecode.VariableDeclaration) code;
 			output.write_uv(stringCache.get(d.getName()));
+			break;
 		}
 		}
 	}

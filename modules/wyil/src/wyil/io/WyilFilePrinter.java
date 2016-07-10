@@ -33,6 +33,7 @@ import com.sun.glass.ui.Pixels.Format;
 import wycc.lang.Transform;
 import wyil.lang.*;
 import wyil.lang.Constant;
+import wyil.lang.Bytecode.AliasDeclaration;
 import wyil.lang.Bytecode.Expr;
 import wyil.lang.Bytecode.VariableAccess;
 import wyil.lang.Bytecode.VariableDeclaration;
@@ -194,6 +195,9 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 	private void writeStatement(int indent, Location<?> c, PrintWriter out) {
 		tabIndent(indent+1,out); 
 		switch(c.getOpcode()) {
+		case Bytecode.OPCODE_aliasdecl:
+			writeAliasDeclaration(indent, (Location<Bytecode.AliasDeclaration>) c, out);
+			break;
 		case Bytecode.OPCODE_assert:
 			writeAssert(indent, (Location<Bytecode.Assert>) c, out);
 			break;
@@ -252,6 +256,15 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		}
 	}
 	
+	private void writeAliasDeclaration(int indent, Location<AliasDeclaration> loc, PrintWriter out) {
+		Location<?>[] operands = loc.getOperands();
+		out.print("alias ");
+		out.print(loc.getType());
+		out.print(" ");
+		Location<VariableDeclaration> aliased = getVariableDeclaration(loc);
+		out.print(aliased.getBytecode().getName());
+		out.println();
+	}
 	private void writeAssert(int indent, Location<Bytecode.Assert> c, PrintWriter out) {
 		out.print("assert ");
 		writeExpression(c.getOperand(0),out);
@@ -415,7 +428,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 	}
 	
 	private void writeVariableAccess(Location<VariableAccess> loc, PrintWriter out) {
-		Location<VariableDeclaration> vd = (Location<VariableDeclaration>) loc.getOperand(0);
+		Location<VariableDeclaration> vd = getVariableDeclaration(loc.getOperand(0));		
 		out.print(vd.getBytecode().getName());
 	}
 	
@@ -815,5 +828,16 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		for(int i=0;i<indent;++i) {
 			out.print(" ");
 		}
+	}
+	
+	private Location<VariableDeclaration> getVariableDeclaration(Location<?> loc) {
+		switch (loc.getOpcode()) {
+		case Bytecode.OPCODE_vardecl:
+		case Bytecode.OPCODE_vardeclinit:
+			return (Location<VariableDeclaration>) loc;
+		case Bytecode.OPCODE_aliasdecl:
+			return getVariableDeclaration(loc.getOperand(0));
+		}
+		throw new IllegalArgumentException("invalid location provided: " + loc);
 	}
 }

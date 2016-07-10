@@ -733,7 +733,8 @@ public class Interpreter {
 	 * @return
 	 */
 	private Constant executeVariableAccess(Location<VariableAccess> expr, Constant[] frame) {
-		return frame[expr.getOperand(0).getIndex()];
+		Location<VariableDeclaration> decl = getVariableDeclaration(expr);
+		return frame[decl.getIndex()];
 	}
 
 	// =============================================================
@@ -1007,7 +1008,8 @@ public class Interpreter {
 			return new RecordLVal(src, fl.fieldName());
 		}
 		case Bytecode.OPCODE_varaccess: {
-			return new VariableLVal(expr.getOperand(0).getIndex());
+			Location<VariableDeclaration> decl = getVariableDeclaration(expr); 
+			return new VariableLVal(decl.getIndex());
 		}
 		}
 		deadCode(expr);
@@ -1315,6 +1317,19 @@ public class Interpreter {
 		throw new RuntimeException("internal failure --- dead code reached");
 	}
 
+	public Location<VariableDeclaration> getVariableDeclaration(Location<?> decl) {
+		switch (decl.getOpcode()) {
+		case Bytecode.OPCODE_aliasdecl:
+		case Bytecode.OPCODE_varaccess:
+			return getVariableDeclaration(decl.getOperand(0));
+		case Bytecode.OPCODE_vardecl:
+		case Bytecode.OPCODE_vardeclinit:
+			return (Location<VariableDeclaration>) decl;
+		default:
+			throw new RuntimeException("internal failure --- dead code reached");
+		}
+	}
+	
 	private static final Class<Constant> ANY_T = Constant.class;
 	private static final Class<Constant.Bool> BOOL_T = Constant.Bool.class;
 	private static final Class<Constant.Integer> INT_T = Constant.Integer.class;
