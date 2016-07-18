@@ -715,7 +715,7 @@ public final class CodeGenerator {
 		FlowResult lhs = generateCondition(condition.lhs, scope);
 		FlowResult rhs = generateCondition(condition.rhs, lhs.falseScope);
 		int[] operands = new int[] { lhs.operand, rhs.operand };
-		int result = scope.add(new Bytecode.Operator(operands, Bytecode.OperatorKind.AND), condition.attributes());
+		int result = scope.add(new Bytecode.Operator(operands, Bytecode.OperatorKind.OR), condition.attributes());
 		// Must join lhs.trueScope and rhs.trueScope; this can result in the
 		// creation of new alias declarations.
 		EnclosingScope trueScope = join(scope,lhs.trueScope,rhs.trueScope);
@@ -744,18 +744,26 @@ public final class CodeGenerator {
 	
 	public FlowResult generateNotCondition(Expr.UnOp condition, EnclosingScope scope) throws ResolveError {
 		FlowResult mhs = generateCondition(condition.mhs, scope);
-		return new FlowResult(mhs.operand,mhs.falseScope,mhs.trueScope);
+		int[] operands = new int[] { mhs.operand };
+		int result = scope.add(new Bytecode.Operator(operands,Bytecode.OperatorKind.NOT), condition.attributes());
+		return new FlowResult(result,mhs.falseScope,mhs.trueScope);
 	}
 	
 	/**
-	 * Join to scopes together, creating new alias declarations as necessary
+	 * Join two scopes together, creating new alias declarations as necessary.
+	 * Each scope maps variables to their location index. An ancestor scope is
+	 * included, which must be an ancestor of both. When the index of a given
+	 * variable differs between the two scopes, this indicates at least one of
+	 * them has diverged from the ancestor by introducing an alias. Note that
+	 * the only situation in which they have identify the same location for a
+	 * given variable is when that matches the ancestor as well.
 	 * 
 	 * @param leftChild
 	 * @param rightChild
 	 * @return
 	 */
 	private EnclosingScope join(EnclosingScope ancestor, EnclosingScope leftChild, EnclosingScope rightChild) {
-		EnclosingScope result = leftChild.clone();
+		EnclosingScope result = ancestor.clone();
 		for (String var : ancestor.environment.keySet()) {
 			int leftLocation = leftChild.get(var);
 			int rightLocation = rightChild.get(var);
@@ -764,15 +772,20 @@ public final class CodeGenerator {
 				Location<?> origDecl = ancestor.getLocation(var);
 				Location<?> lhsDecl = leftChild.getLocation(var);
 				Location<?> rhsDecl = rightChild.getLocation(var);
-				Type type = Type.Union(lhsDecl.getType(),rhsDecl.getType()); 
-				if(type.equals(origDecl.getType())) {
-					// Easy case, as no new alias required
+				Type type = Type.Union(lhsDecl.getType(), rhsDecl.getType());
+				if (type.equals(origDecl.getType())) {
+					// Easy case, as no new alias required. Therefore, we can
+					// simply reuse the original declaration.
 					result.environment.put(var, origDecl.getIndex());
 				} else {
-					// Harder case, as alias required
-					throw new RuntimeException("*** NEW ALIAS REQUIRED");
-				}				
-			}
+					// Harder case. Since the combine type differs from the
+					// original declaration, a new alias declaration is
+					// required.
+					Nominal nominal = Nominal.construct(type, type);
+					int newDecl = result.createAlias(nominal, var, Collections.EMPTY_LIST);
+					result.environment.put(var, newDecl);
+				}
+			} 
 		}
 		return result;
 	}
