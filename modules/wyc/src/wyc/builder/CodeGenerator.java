@@ -261,7 +261,7 @@ public final class CodeGenerator {
 			Stmt st = stmts.get(i);
 			block[i] = generate(st, scope);
 		}
-		return scope.add(new Bytecode.Block(block));
+		return scope.add(Nominal.T_VOID,new Bytecode.Block(block));
 	}
 	
 	// =========================================================================
@@ -364,7 +364,7 @@ public final class CodeGenerator {
 	private int generate(Stmt.Assign s, EnclosingScope scope) throws ResolveError {
 		int[] lhs = generate((List) s.lvals, scope);
 		int[] rhs = generateMultipleReturns(s.rvals, scope);
-		return scope.add(new Bytecode.Assign(lhs, rhs), s.attributes());
+		return scope.add(Nominal.T_VOID,new Bytecode.Assign(lhs, rhs), s.attributes());
 	}
 
 	/**
@@ -380,7 +380,7 @@ public final class CodeGenerator {
 		// First, translate assertion
 		int operand = generate(s.expr, scope);
 		// Second, create assert bytecode
-		return scope.add(new Bytecode.Assert(operand), s.attributes());
+		return scope.add(Nominal.T_VOID,new Bytecode.Assert(operand), s.attributes());
 	}
 
 	/**
@@ -396,7 +396,7 @@ public final class CodeGenerator {
 		// First, translate assumption
 		int operand = generate(s.expr, scope);
 		// Second, create assert bytecode
-		return scope.add(new Bytecode.Assume(operand), s.attributes());
+		return scope.add(Nominal.T_VOID,new Bytecode.Assume(operand), s.attributes());
 	}
 
 	/**
@@ -415,7 +415,7 @@ public final class CodeGenerator {
 		// has the effect of forcing an implicit coercion between the
 		// actual value being returned and its required type.		
 		int[] operands = generateMultipleReturns(returns,scope);
-		return scope.add(new Bytecode.Return(operands), s.attributes());
+		return scope.add(Nominal.T_VOID,new Bytecode.Return(operands), s.attributes());
 	}
 
 	/**
@@ -428,7 +428,7 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private int generate(Stmt.Skip s, EnclosingScope scope) {
-		return scope.add(new Bytecode.Skip(),s.attributes());
+		return scope.add(Nominal.T_VOID,new Bytecode.Skip(),s.attributes());
 	}
 
 	/**
@@ -440,7 +440,7 @@ public final class CodeGenerator {
 	 */
 	private int generate(Stmt.Debug s, EnclosingScope scope) {
 		int operand = generate(s.expr, scope);
-		return scope.add(new Bytecode.Debug(operand), s.attributes());
+		return scope.add(Nominal.T_VOID,new Bytecode.Debug(operand), s.attributes());
 	}
 
 	/**
@@ -453,7 +453,7 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private int generate(Stmt.Fail s, EnclosingScope scope) {
-		return scope.add(new Bytecode.Fail(), s.attributes());
+		return scope.add(Nominal.T_VOID,new Bytecode.Fail(), s.attributes());
 	}
 
 	/**
@@ -475,19 +475,19 @@ public final class CodeGenerator {
 			// There is a false branch, so translate that as well
 			int falseBlockIndex = generateBlock(s.falseBranch, fr.falseScope);
 			//
-			return scope.add(new Bytecode.If(fr.operand, trueBlockIndex, falseBlockIndex), s.attributes());
+			return scope.add(Nominal.T_VOID,new Bytecode.If(fr.operand, trueBlockIndex, falseBlockIndex), s.attributes());
 		} else {
 			// No false branch to translate
-			return scope.add(new Bytecode.If(fr.operand, trueBlockIndex), s.attributes());
+			return scope.add(Nominal.T_VOID,new Bytecode.If(fr.operand, trueBlockIndex), s.attributes());
 		}
 	}
 
 	private int generate(Stmt.Break s, EnclosingScope scope) {
-		return scope.add(new Bytecode.Break(), s.attributes());
+		return scope.add(Nominal.T_VOID,new Bytecode.Break(), s.attributes());
 	}
 
 	private int generate(Stmt.Continue s, EnclosingScope scope) {
-		return scope.add(new Bytecode.Continue(), s.attributes());
+		return scope.add(Nominal.T_VOID,new Bytecode.Continue(), s.attributes());
 	}
 
 	private int generate(Stmt.Switch s, EnclosingScope scope) throws Exception {
@@ -508,7 +508,7 @@ public final class CodeGenerator {
 			cases[i] = new Bytecode.Case(body, c.constants);
 		}
 
-		return scope.add(new Bytecode.Switch(operand, cases), s.attributes());
+		return scope.add(Nominal.T_VOID,new Bytecode.Switch(operand, cases), s.attributes());
 	}
 
 	/**
@@ -545,7 +545,7 @@ public final class CodeGenerator {
 	private int generate(Stmt.NamedBlock s, EnclosingScope scope) {
 		EnclosingScope bodyScope = scope.clone();
 		int block = generateBlock(s.body, bodyScope);
-		return scope.add(new Bytecode.NamedBlock(block,s.name),s.attributes());
+		return scope.add(Nominal.T_VOID,new Bytecode.NamedBlock(block,s.name),s.attributes());
 	}
 
 	/**
@@ -570,7 +570,7 @@ public final class CodeGenerator {
 		EnclosingScope bodyScope = scope.clone();
 		int body = generateBlock(s.body, bodyScope);
 		//
-		return scope.add(new Bytecode.While(body, condition, invariants, modified), s.attributes());
+		return scope.add(Nominal.T_VOID,new Bytecode.While(body, condition, invariants, modified), s.attributes());
 	}
 
 	/**
@@ -593,32 +593,9 @@ public final class CodeGenerator {
 		// Translate loop condition
 		int condition = generate(s.condition, scope);
 		//
-		return scope.add(new Bytecode.DoWhile(body, condition, invariants, modified), s.attributes());
+		return scope.add(Nominal.T_VOID,new Bytecode.DoWhile(body, condition, invariants, modified), s.attributes());
 	}
 
-	/**
-	 * Determine variables which are retyped and update the enclosing scope
-	 * accordingly
-	 * 
-	 * @param expr
-	 * @param scope
-	 * @return
-	 */
-	private int[] determineVariableAliases(Expr expr, EnclosingScope scope) {
-		// FIXME: this is very primitive, and needs to be more involved
-		if(expr instanceof Expr.BinOp) {
-			Expr.BinOp bop = (Expr.BinOp) expr;
-			if(bop.op == Expr.BOp.IS && bop.lhs instanceof Expr.LocalVariable) {
-				// a type test
-				Expr.LocalVariable lhs = (Expr.LocalVariable) bop.lhs;
-				Expr.TypeVal rhs = (Expr.TypeVal) bop.rhs;
-				int alias = scope.createAlias(rhs.type,lhs.var,expr.attributes());
-				return new int[]{alias};
-			}
-		}
-		return new int[0];
-	}
-	
 	// =========================================================================
 	// Multi-Expressions
 	// =========================================================================
@@ -638,7 +615,7 @@ public final class CodeGenerator {
 		//
 		int[] operands = generate(expr.arguments, scope);
 		Nominal.FunctionOrMethod type = expr.type();
-		return scope.add(new Bytecode.Invoke(type.nominal(), operands, expr.nid()), expr.attributes());
+		return scope.add(Nominal.T_VOID,new Bytecode.Invoke(type.nominal(), operands, expr.nid()), expr.attributes());
 	}
 
 	/**
@@ -657,7 +634,7 @@ public final class CodeGenerator {
 		int operand = generate(expr.src, scope);
 		int[] operands = generate(expr.arguments, scope);
 		Nominal.FunctionOrMethod type = expr.type();
-		return scope.add(new Bytecode.IndirectInvoke(type.nominal(), operand, operands), expr.attributes());
+		return scope.add(Nominal.T_VOID,new Bytecode.IndirectInvoke(type.nominal(), operand, operands), expr.attributes());
 	}
 
 	// =========================================================================
@@ -700,22 +677,69 @@ public final class CodeGenerator {
 		return new FlowResult(index, scope.clone(), scope.clone());
 	}
 	
+	/**
+	 * Translate a source-level conjunction into a sequence of WyIL bytecodes.
+	 * The key challenge here is to correctly propagate the scope information
+	 * into the lhs and rhs. Since the rhs is only executed when the lhs holds,
+	 * we use the "true scope" from the lhs when translating the rhs. For
+	 * example:
+	 * 
+	 * <pre>
+	 * x is int && x >= 0
+	 * </pre>
+	 * 
+	 * Here, the true scope coming out of the lhs will identify
+	 * <code>x<code> with type <code>int</code>. This is necessary for the rhs
+	 * to make sense. Observe that this is exploiting the fact that operators
+	 * have short circuiting behaviour in Whiley.
+	 * 
+	 * @param condition
+	 *            Condition being translated
+	 * @param scope
+	 *            Enclosing scope going into this condition.
+	 * @return
+	 * @throws ResolveError
+	 */
 	public FlowResult generateAndCondition(Expr.BinOp condition, EnclosingScope scope) throws ResolveError {
 		FlowResult lhs = generateCondition(condition.lhs, scope);
 		FlowResult rhs = generateCondition(condition.rhs, lhs.trueScope);
 		int[] operands = new int[] { lhs.operand, rhs.operand };
-		int result = scope.add(new Bytecode.Operator(operands, Bytecode.OperatorKind.AND), condition.attributes());
+		int result = scope.add(condition.result(),new Bytecode.Operator(operands, Bytecode.OperatorKind.AND), condition.attributes());
 		// Must join lhs.falseScope and rhs.falseScope; this can result in the
 		// creation of new alias declarations.
 		EnclosingScope falseScope = join(scope,lhs.falseScope,rhs.falseScope);
 		return new FlowResult(result, rhs.trueScope, falseScope);
 	}
 
+	/**
+	 * Translate a source-level disjunction into a sequence of WyIL bytecodes.
+	 * The key challenge here is to correctly propagate the scope information
+	 * into the lhs and rhs. Since the rhs is only executed when the lhs doesn't
+	 * hold, we use the "false scope" from the lhs when translating the rhs. For
+	 * example:
+	 * 
+	 * <pre>
+	 * x is null || x >= 0
+	 * </pre>
+	 * 
+	 * Here, assume x is declared with type <code>int|null</code>. Then, the
+	 * false scope coming out of the lhs will identify
+	 * <code>x<code> with type <code>int</code>. This is necessary for the rhs
+	 * to make sense. Observe that this is exploiting the fact that operators
+	 * have short circuiting behaviour in Whiley.
+	 * 
+	 * @param condition
+	 *            Condition being translated
+	 * @param scope
+	 *            Enclosing scope going into this condition.
+	 * @return
+	 * @throws ResolveError
+	 */
 	public FlowResult generateOrCondition(Expr.BinOp condition, EnclosingScope scope) throws ResolveError {
 		FlowResult lhs = generateCondition(condition.lhs, scope);
 		FlowResult rhs = generateCondition(condition.rhs, lhs.falseScope);
 		int[] operands = new int[] { lhs.operand, rhs.operand };
-		int result = scope.add(new Bytecode.Operator(operands, Bytecode.OperatorKind.OR), condition.attributes());
+		int result = scope.add(condition.result(),new Bytecode.Operator(operands, Bytecode.OperatorKind.OR), condition.attributes());
 		// Must join lhs.trueScope and rhs.trueScope; this can result in the
 		// creation of new alias declarations.
 		EnclosingScope trueScope = join(scope,lhs.trueScope,rhs.trueScope);
@@ -738,14 +762,14 @@ public final class CodeGenerator {
 		}
 		// do something
 		int[] operands = new int[] { lhs, rhs };
-		int result = scope.add(new Bytecode.Operator(operands, Bytecode.OperatorKind.IS), condition.attributes());
+		int result = scope.add(condition.result(),new Bytecode.Operator(operands, Bytecode.OperatorKind.IS), condition.attributes());
 		return new FlowResult(result, trueScope, falseScope);
 	}
 	
 	public FlowResult generateNotCondition(Expr.UnOp condition, EnclosingScope scope) throws ResolveError {
 		FlowResult mhs = generateCondition(condition.mhs, scope);
 		int[] operands = new int[] { mhs.operand };
-		int result = scope.add(new Bytecode.Operator(operands,Bytecode.OperatorKind.NOT), condition.attributes());
+		int result = scope.add(condition.result(),new Bytecode.Operator(operands,Bytecode.OperatorKind.NOT), condition.attributes());
 		return new FlowResult(result,mhs.falseScope,mhs.trueScope);
 	}
 	
@@ -1128,13 +1152,16 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private int[] determineModifiedVariables(List<Stmt> block, EnclosingScope scope) {
+		SyntaxTree tree = scope.getSyntaxTree();
 		HashSet<Integer> modified = new HashSet<Integer>();
 		determineModifiedVariables(block,scope,modified);
 		int[] result = new int[modified.size()];
 		int index = 0;
 		for(Integer i : modified) {
 			Bytecode.VariableAccess va = new Bytecode.VariableAccess(i);
-			result[index++] = scope.add(va);
+			Location<?> location = tree.getLocation(i);
+			Nominal type = Nominal.construct(location.getType(),location.getType());
+			result[index++] = scope.add(type,va);
 		}
 		return result;
 	}
@@ -1405,12 +1432,8 @@ public final class CodeGenerator {
 			return indices;
 		}
 
-		public int add(Bytecode stmt, List<Attribute> attributes) {
-			return add(Nominal.T_VOID,stmt,attributes);
-		}
-		
-		public int add(Bytecode stmt, Attribute... attributes) {
-			return add(stmt,Arrays.asList(attributes));
+		public int add(Nominal type, Bytecode stmt, Attribute... attributes) {
+			return add(type,stmt,Arrays.asList(attributes));
 		}
 
 		/**
