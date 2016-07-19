@@ -77,7 +77,6 @@ public class TypeSystem {
 		return Type.construct(new Automaton(states));		
 	}
 	
-	
 	/**
 	 * Return the maximally consumed type of a given type. That is the maximal
 	 * type for which all values of that type are in the given type. For

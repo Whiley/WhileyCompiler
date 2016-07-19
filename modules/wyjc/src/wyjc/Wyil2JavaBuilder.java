@@ -37,6 +37,7 @@ import wycc.lang.SyntaxError.InternalFailure;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wycc.util.ResolveError;
+import wycc.util.Triple;
 import wyfs.io.BinaryOutputStream;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -51,6 +52,7 @@ import wyil.util.TypeSystem;
 
 import static wyil.util.ErrorMessages.internalFailure;
 import static wyjc.Wyil2JavaBuilder.WHILEYBOOL;
+import static wyjc.Wyil2JavaBuilder.WHILEYTYPE;
 import static wyjc.Wyil2JavaBuilder.WHILEYUTIL;
 
 import wyjc.util.BytecodeTranslators;
@@ -312,41 +314,26 @@ public class Wyil2JavaBuilder implements Builder {
 		List<Modifier> modifiers = modifiers(ACC_PUBLIC, ACC_STATIC, ACC_SYNTHETIC);
 		JvmType.Function funType = new JvmType.Function(T_BOOL, underlyingType);
 		ClassFile.Method cm = new ClassFile.Method(td.name() + "$typeof", funType, modifiers);
-		// Generate code for testing elements of type (if any)
+		// Generate code for testing implicit invariants of type (if any). That
+		// is, invariants implied by (nominal) component types.
 		Context context = new Context();
-		if (td_invariants.size() > 0) {
-			// In this case, there is one or more invariants to check. To do
-			// this, we chain them together into a sequence of checks.
-			String falseLabel = freshLabel();
-			for (int i = 0; i != td_invariants.size(); ++i) {
-				translateExpression(td_invariants.get(i), context);
-				JvmType.Function ft = new JvmType.Function(JvmTypes.T_BOOL);
-				context.add(new Bytecode.Invoke(WHILEYBOOL, "value", ft, Bytecode.InvokeMode.VIRTUAL));
-				if ((i + 1) == td_invariants.size()) {
-					// This indicates the end of the chain, so we can just
-					// return what we have here.
-					context.add(new Bytecode.Return(new JvmType.Bool()));
-				} else {
-					// This indicates an internal point in the chain, in which
-					// case we can terminate early if we already know the
-					// invariant doesn't hold.
-					context.add(new Bytecode.If(Bytecode.IfMode.EQ, falseLabel));
-				}
-			}
-			if (td_invariants.size() > 1) {
-				// The following handles cases where one of the checks has
-				// failed. We only need it if more than one invariant was
-				// chained together.
-				context.add(new Bytecode.Label(falseLabel));
-				context.add(new Bytecode.LoadConst(false));
-				context.add(new Bytecode.Return(new JvmType.Bool()));
-			}
-		} else {
-			// No, there are no invariants for this type. Hence, we just return
-			// true to indicate success.
-			context.add(new Bytecode.LoadConst(true));
-			context.add(new Bytecode.Return(new JvmType.Bool()));
-		}
+		String falseLabel = freshLabel();
+		translateInvariantTest(falseLabel, td.type(), 0, 1, context);
+		// Generate code for testing explicit invariants of type (if any). To do
+		// this, we chain them together into a sequence of checks.
+		for (int i = 0; i != td_invariants.size(); ++i) {
+			translateExpression(td_invariants.get(i), context);
+			JvmType.Function ft = new JvmType.Function(JvmTypes.T_BOOL);
+			context.add(new Bytecode.Invoke(WHILEYBOOL, "value", ft, Bytecode.InvokeMode.VIRTUAL));
+			context.add(new Bytecode.If(Bytecode.IfMode.EQ, falseLabel));
+		}			
+		// If we reach this point, then invariants must hold.
+		context.add(new Bytecode.LoadConst(true));
+		context.add(new Bytecode.Return(new JvmType.Bool()));
+		// Add the false label (in case it was used)
+		context.add(new Bytecode.Label(falseLabel));
+		context.add(new Bytecode.LoadConst(false));
+		context.add(new Bytecode.Return(new JvmType.Bool()));
 		// Done
 		jasm.attributes.Code code = new jasm.attributes.Code(context.getBytecodes(), new ArrayList(), cm);
 		cm.attributes().add(code);
@@ -1174,6 +1161,9 @@ public class Wyil2JavaBuilder implements Builder {
 		case OPCODE_none:
 			translateQuantifierCondition((Location<Quantifier>) condition, trueLabel, falseLabel, enclosing);
 			return;
+		case OPCODE_is:
+			translateIsCondition((Location<Operator>) condition, trueLabel, falseLabel, enclosing);
+			return;
 		}
 		// We can't use a condition branch, so fall back to the default. In this
 		// case, we just evaluate the condition as normal which will result in a
@@ -1404,7 +1394,357 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 	
+	/**
+	 * Translate a type test condition. This is done here to ensure that we cast
+	 * the type appropriately before moving on to the true/false branches. For
+	 * example:
+	 * 
+	 * <pre>
+	 * function f(int|null x) -> (int r):
+	 *     if x is int:
+	 *         return x
+	 *     else:
+	 *         return 0
+	 * </pre>
+	 * 
+	 * In this case, the type of <code>x</code> will be <code>Object</code>, and
+	 * it must be cast to <code>int</code> on the true branch of the type test.
+	 * 
+	 * @param condition
+	 *            Type test to evaluate to see whether it is true or false
+	 * @param trueLabel
+	 *            Destination for when the condition is true. If null, execution
+	 *            continues to next logical instruction when condition holds.
+	 * @param falseLabel
+	 *            Destination for when the condition is false. If null,
+	 *            execution continues to next logical instruction when condition
+	 *            doesn't hold.
+	 * @param context
+	 *            Enclosing context
+	 */
+	private void translateIsCondition(Location<Operator> test, String trueLabel, String falseLabel,
+			Context context) {
+		Location<Const> rhs = (Location<Const>) test.getOperand(1);
+		Type rhsType = ((Constant.Type) rhs.getBytecode().constant()).value();
+		//
+		// Translate the type test itself
+		translateExpressions(test.getOperands(), context);
+		JvmType.Function ftype = new JvmType.Function(WHILEYBOOL, JAVA_LANG_OBJECT);
+		context.add(new Bytecode.Swap());
+		context.add(new Bytecode.Invoke(WHILEYTYPE, "is", ftype, Bytecode.InvokeMode.VIRTUAL));
+		// Add the necessary branching instruction
+		JvmType.Function ft = new JvmType.Function(JvmTypes.T_BOOL);
+		context.add(new Bytecode.Invoke(WHILEYBOOL, "value", ft, Bytecode.InvokeMode.VIRTUAL));
+		// Determine the appropriate types for the true and false branches
+		Pair<Type,Type> flowTypes = determineFlowTypes(test,context);
+		// Add the necessary branch
+		if(flowTypes == null) {
+			// FIXME: bug here in case where constrained type is being tested
+			
+			// In this case, no retyping is possible. Therefore, we branch
+			// directly to the relevant destination.
+			if(trueLabel == null) {
+				context.add(new Bytecode.If(Bytecode.IfMode.EQ, falseLabel));
+			} else {		
+				context.add(new Bytecode.If(Bytecode.IfMode.NE, trueLabel));
+			}
+		} else {
+			// In this case, a variable is being tested directly and, hence,
+			// needs to be retyped on both branches.
+			Location<VariableAccess> lhs = (Location<VariableAccess>) test.getOperand(0);
+			Location<VariableDeclaration> decl = getVariableDeclaration(lhs);
+			String tmpFalseLabel = freshLabel();
+			String tmpTrueLabel = freshLabel();
+			if(trueLabel == null) {		
+				context.add(new Bytecode.If(Bytecode.IfMode.NE, tmpTrueLabel));
+				context.add(new Bytecode.Label(tmpFalseLabel));
+				// This is the false branch. Apply the necessary cast.
+				retypeLocation(lhs,flowTypes.second(),context);
+				context.add(new Bytecode.Goto(falseLabel));
+				context.add(new Bytecode.Label(tmpTrueLabel));
+				// This is the true branch. Apply the necessary cast.
+				retypeLocation(lhs,flowTypes.first(),context);
+				// Now, check any invariants hold (or not)
+				translateInvariantTest(tmpFalseLabel, rhsType, decl.getIndex(),
+						decl.getEnclosingTree().getLocations().size(), context);
+			} else {
+				context.add(new Bytecode.If(Bytecode.IfMode.EQ, tmpFalseLabel));
+				// This is the true branch. Apply the necessary cast.
+				retypeLocation(lhs,flowTypes.first(),context);
+				// Now, check any invariants hold (or not)
+				translateInvariantTest(tmpFalseLabel, rhsType, decl.getIndex(),
+						decl.getEnclosingTree().getLocations().size(), context);
+				context.add(new Bytecode.Goto(trueLabel));
+				// This is the false branch. Apply the necessary cast.
+				context.add(new Bytecode.Label(tmpFalseLabel));
+				retypeLocation(lhs,flowTypes.second(),context);
+			}
+		}
+	}
+
+	/**
+	 * Determine the appropriate types for the true and false branches of a type
+	 * test.These are critical to determining the correct type to cast the
+	 * variable's contents to. The presence of constrained types complicates
+	 * this. For example, consider:
+	 *
+	 * <pre>
+	 *	 type nat is (int n) where n >= 0
+	 *	
+	 *	 function f(int|bool|null x) -> bool:
+	 *	 if x is nat|bool:
+	 *	 ...
+	 *	 else:
+	 *	 ...
+	 * </pre>
+	 * 
+	 * 
+	 * Here, the type of x on the true branch is int|bool, whilst on the false
+	 * branch it is int|null. To correctly handle this, we need to determine
+	 * maximal type which is fully consumed by another. In this case, the
+	 * maximal type fully consumed by nat|bool is bool and, hence, the type on
+	 * the false branch is int|bool|null - bool == int|null.
+	 * 
+	 * @param test
+	 * @param enclosing
+	 * @return
+	 */
+	private Pair<Type, Type> determineFlowTypes(Location<Operator> test, Context enclosing) {
+		Location<?> lhs = test.getOperand(0);
+		Location<Const> rhs = (Location<Const>) test.getOperand(1);		
+		
+		if(lhs.getBytecode() instanceof VariableAccess) {					
+			Type maximalConsumedType;
+			Type expandedLhsType;
+			Type expandedRhsType;
+			Type lhsType = lhs.getType();
+			Type rhsType = ((Constant.Type) rhs.getBytecode().constant()).value();
+			// Determine the maximally consumed type, and the underlying type.
+			try {
+				maximalConsumedType = typeSystem.getMaximallyConsumedType(rhsType);
+				expandedLhsType = typeSystem.getUnderlyingType(lhsType);
+				expandedRhsType = typeSystem.getUnderlyingType(rhsType);
+			} catch (Exception e) {
+				internalFailure("error computing maximally consumed type: " + rhsType, filename, e);
+				return null;
+			}
+			// Create the relevant types
+			Type typeOnTrueBranch = Type.intersect(expandedLhsType, expandedRhsType);
+			Type typeOnFalseBranch = Type.intersect(expandedLhsType, Type.Negation(maximalConsumedType));
+
+			return new Pair<Type,Type>(typeOnTrueBranch,typeOnFalseBranch);
+		} else {
+			return null;
+		}
+	}
 	
+	/**
+	 * Retype a given variable. This is done by casting the variable into the
+	 * appropriate type and assigning this over the original value.
+	 * 
+	 * @param location
+	 *            Variable to be retyped.
+	 * @param type
+	 *            Type variable should become
+	 * @param enclosing
+	 *            Enclosing context.
+	 */
+	private void retypeLocation(Location<VariableAccess> location, Type type, Context enclosing) {
+		Location<VariableDeclaration> decl = getVariableDeclaration(location);
+		enclosing.add(new Bytecode.Load(decl.getIndex(), toJvmType(type)));
+		enclosing.addReadConversion(type);
+		enclosing.add(new Bytecode.Store(decl.getIndex(), toJvmType(type)));
+	}
+	
+	/**
+	 * Translate any invariants contained in a given type. In the case the
+	 * invariant doesn't hold, we dispatch to a given false destination.
+	 * Otherwise, we fall through to the following instruction.
+	 * 
+	 * @param falseTarget
+	 *            Destination to branch if invariant is false
+	 * @param type
+	 *            Type whose invariants are being tested
+	 * @param variableRegister
+	 *            JVM register slot of variable which is being tested
+	 * @param freeRegister
+	 *            First free JVM register slot which can be used by this method
+	 * @param context
+	 */
+	private void translateInvariantTest(String falseTarget, Type type, int variableRegister, int freeRegister,
+			Context context) {
+		//
+		JvmType underlyingType = toJvmType(type);
+		//
+		if (type instanceof Type.Nominal) {
+			Type.Nominal c = (Type.Nominal) type;
+			Path.ID mid = c.name().module();
+			JvmType.Clazz owner = new JvmType.Clazz(mid.parent().toString().replace('/', '.'), mid.last());
+			JvmType.Function fnType = new JvmType.Function(new JvmType.Bool(), toJvmType(c));
+			context.add(new Bytecode.Load(variableRegister, toJvmType(type)));
+			context.add(new Bytecode.Invoke(owner, c.name().name() + "$typeof", fnType, Bytecode.InvokeMode.STATIC));
+			context.add(new Bytecode.If(Bytecode.IfMode.EQ, falseTarget));
+		} else if (type instanceof Type.Leaf) {
+			// Do nout
+		} else if (type instanceof Type.Reference) {
+			Type.Reference rt = (Type.Reference) type;
+			JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT);
+			context.add(new Bytecode.Load(variableRegister, underlyingType));
+			context.add(new Bytecode.Invoke(WHILEYOBJECT, "state", ftype, Bytecode.InvokeMode.VIRTUAL));
+			context.addReadConversion(rt.element());
+			context.add(new Bytecode.Store(freeRegister, toJvmType(rt.element())));
+			translateInvariantTest(falseTarget, rt.element(), freeRegister, freeRegister + 1, context);
+		} else if (type instanceof Type.EffectiveArray) {
+			Type.EffectiveArray ts = (Type.EffectiveArray) type;
+			Triple<String, String, String> loopLabels = translateLoopBegin(variableRegister, freeRegister, context);
+			context.addReadConversion(ts.element());
+			context.add(new Bytecode.Store(freeRegister + 1, toJvmType(ts.element())));
+			translateInvariantTest(falseTarget, ts.element(), freeRegister + 1, freeRegister + 2, context);
+			translateLoopEnd(loopLabels, context);
+		} else if (type instanceof Type.Record) {
+			Type.Record tt = (Type.Record) type;
+			HashMap<String, Type> fields = tt.fields();
+			ArrayList<String> fieldNames = new ArrayList<>(fields.keySet());
+			Collections.sort(fieldNames);
+			for (int i = 0; i != fieldNames.size(); ++i) {
+				String field = fieldNames.get(i);
+				Type fieldType = fields.get(field);
+				JvmType underlyingFieldType = toJvmType(fieldType);
+				context.add(new Bytecode.Load(variableRegister, underlyingType));
+				context.add(new Bytecode.LoadConst(field));
+				JvmType.Function ftype = new JvmType.Function(JAVA_LANG_OBJECT, JAVA_LANG_STRING);
+				context.add(new Bytecode.Invoke(WHILEYRECORD, "get", ftype, Bytecode.InvokeMode.VIRTUAL));
+				context.addReadConversion(fieldType);
+				context.add(new Bytecode.Store(freeRegister, underlyingFieldType));
+				translateInvariantTest(falseTarget, fieldType, freeRegister, freeRegister + 1, context);
+			}
+		} else if (type instanceof Type.FunctionOrMethod) {
+			// FIXME: this is clearly a bug. However, it's not completely
+			// straightforward to fix, since there is currently no way to get
+			// runtime type information about a function or method reference. In
+			// principle, this could be encoded in the WyLambda in some way.
+		} else if (type instanceof Type.Negation) {
+			Type.Reference rt = (Type.Reference) type;
+			String trueTarget = freshLabel();
+			translateInvariantTest(trueTarget, rt.element(), variableRegister, freeRegister, context);
+			context.add(new Bytecode.Goto(falseTarget));
+			context.add(new Bytecode.Label(trueTarget));
+		} else if (type instanceof Type.Union) {
+			Type.Union ut = (Type.Union) type;
+			String trueLabel = freshLabel();
+			for (Type bound : ut.bounds()) {
+				try {
+					Type underlyingBound = typeSystem.getUnderlyingType(bound);
+					String nextLabel = freshLabel();
+					context.add(new Bytecode.Load(variableRegister, toJvmType(type)));
+					translateTypeTest(nextLabel, underlyingBound, context);
+					context.add(new Bytecode.Load(variableRegister, toJvmType(type)));
+					context.addReadConversion(bound);
+					context.add(new Bytecode.Store(freeRegister, toJvmType(bound)));
+					translateInvariantTest(nextLabel, bound, freeRegister, freeRegister + 1, context);
+					context.add(new Bytecode.Goto(trueLabel));
+					context.add(new Bytecode.Label(nextLabel));
+				} catch (ResolveError e) {
+					internalFailure(e.getMessage(), filename, e);
+				}
+			}
+			context.add(new Bytecode.Goto(falseTarget));
+			context.add(new Bytecode.Label(trueLabel));
+		} else {
+			internalFailure("unknown type encountered: " + type, filename);
+		}
+	}
+	
+	/**
+	 * Construct generic code for iterating over a collection (e.g. a Whiley
+	 * List or Set). This code will not leave anything on the stack and will
+	 * store the iterator variable in a given slot. This means that things can
+	 * be passed on the stack from before the loop into the loop body.
+	 * 
+	 * @param freeSlot
+	 *            The variable slot into which the iterator variable should be
+	 *            stored.
+	 * @param exitLabel
+	 *            The label which will represents after the end of the loop.
+	 * @param context
+	 *            The enclosing context
+	 */
+	private Triple<String, String, String> translateLoopBegin(
+			int sourceSlot, int freeSlot, Context context) {
+		String loopHeader = freshLabel();
+		String loopFooter = freshLabel();
+		String loopExit = freshLabel();
+
+		// First, call Collection.iterator() on the source collection and write
+		// it into the free slot.
+		context.add(new Bytecode.Load(sourceSlot, JAVA_LANG_ITERABLE));
+		context.add(new Bytecode.Invoke(JAVA_LANG_ITERABLE, "iterator",
+				new JvmType.Function(JAVA_UTIL_ITERATOR),Bytecode.InvokeMode.INTERFACE));
+		context.add(new Bytecode.Store(freeSlot, JAVA_UTIL_ITERATOR));
+
+		// Second, construct the loop header, which consists of the test to
+		// check whether or not there are any elements left in the collection to
+		// visit.
+		context.add(new Bytecode.Label(loopHeader));
+		context.add(new Bytecode.Load(freeSlot, JAVA_UTIL_ITERATOR));
+		context.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "hasNext",
+				new JvmType.Function(T_BOOL), Bytecode.InvokeMode.INTERFACE));
+		context.add(new Bytecode.If(Bytecode.IfMode.EQ, loopExit));
+
+		// Finally, get the current element out of the iterator by invoking
+		// Iterator.next();
+		context.add(new Bytecode.Load(freeSlot, JAVA_UTIL_ITERATOR));
+		context.add(new Bytecode.Invoke(JAVA_UTIL_ITERATOR, "next",
+				new JvmType.Function(JAVA_LANG_OBJECT),
+				Bytecode.InvokeMode.INTERFACE));
+
+		// Done
+		return new Triple<>(loopHeader, loopFooter, loopExit);
+	}
+
+	private void translateLoopEnd(Triple<String, String, String> labels, Context context) {
+		context.add(new Bytecode.Label(labels.second()));
+		context.add(new Bytecode.Goto(labels.first()));
+		context.add(new Bytecode.Label(labels.third()));
+	}
+	
+	/**
+	 * The purpose of this method is to translate a type test. We're testing to
+	 * see whether what's on the top of the stack (the value) is a subtype of
+	 * the type being tested. Note, constants must be provided as a parameter
+	 * 
+	 * @param falseLabel
+	 *            Destination to branch if not true
+	 * @param type
+	 *            Type being tested
+	 * @param context
+	 *            Enclosing context
+	 */
+	protected void translateTypeTest(String falseLabel, Type test, Context context) {
+		// First, try for the easy cases
+		if (test instanceof Type.Null) {
+			// Easy case
+			context.add(new Bytecode.If(Bytecode.IfMode.NONNULL, falseLabel));
+		} else if (test instanceof Type.Bool) {
+			context.add(new Bytecode.InstanceOf(WHILEYBOOL));
+			context.add(new Bytecode.If(Bytecode.IfMode.EQ, falseLabel));
+		} else if (test instanceof Type.Int) {
+			context.add(new Bytecode.InstanceOf(WHILEYINT));
+			context.add(new Bytecode.If(Bytecode.IfMode.EQ, falseLabel));
+		} else {
+			// Fall-back to an external (recursive) check
+			Constant constant = new Constant.Type(test);
+			int id = JvmValue.get(constant, constants);
+			String name = "constant$" + id;
+			context.add(new Bytecode.GetField(owner, name, WHILEYTYPE, Bytecode.FieldMode.STATIC));
+			JvmType.Function ftype = new JvmType.Function(WHILEYBOOL, JAVA_LANG_OBJECT);
+			context.add(new Bytecode.Swap());
+			context.add(new Bytecode.Invoke(WHILEYTYPE, "is", ftype, Bytecode.InvokeMode.VIRTUAL));
+			JvmType.Function ft = new JvmType.Function(JvmTypes.T_BOOL);
+			context.add(new Bytecode.Invoke(WHILEYBOOL, "value", ft, Bytecode.InvokeMode.VIRTUAL));
+			context.add(new Bytecode.If(Bytecode.IfMode.EQ, falseLabel));
+		}
+	}
 	// ===============================================================================
 	// Expressions
 	// ===============================================================================
@@ -1554,8 +1894,12 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            The enclosing context for this operand.
 	 * @return
 	 */
-	private void translateConst(Location<Const> c, Context context) {
+	private void translateConst(Location<Const> c, Context context) throws ResolveError {
 		Constant constant = c.getBytecode().constant();
+		// At this point, we need to normalise the constant. This is because the
+		// constant may involve one or more nominal types. These types don't
+		// make sense at runtime, and we want to get rid of them where possible.
+		constant = normalise(constant);		
 		JvmType jt = toJvmType(constant.type());
 		// Check whether this constant can be translated as a primitive, and
 		// encoded directly within a bytecode.
@@ -1572,6 +1916,26 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 
+	/**
+	 * Make sure any type constants are fully expanded. This is to ensure that
+	 * nominal types are not present at runtime (unless they are specifically
+	 * protected in some way).
+	 * 
+	 * @param constant
+	 * @return
+	 */
+	private Constant normalise(Constant constant) throws ResolveError {		
+		if(constant instanceof Constant.Type) {
+			Constant.Type ct = (Constant.Type) constant;
+			Type type = ct.value();
+			Type underlyingType;			
+			underlyingType = typeSystem.getUnderlyingType(type);			
+			return new Constant.Type(underlyingType);
+		} else {
+			return constant;
+		}		
+	}
+	
 	/**
 	 * Coerce one data value into another. In what situations do we actually
 	 * have to do work?
@@ -1622,6 +1986,12 @@ public class Wyil2JavaBuilder implements Builder {
 	private void translateOperator(Location<Operator> c, Context context) throws ResolveError {
 		// First, translate each operand and load its value onto the stack
 		switch (c.getOpcode()) {
+		case OPCODE_logicaland:
+		case OPCODE_logicalor:
+			// These two operators need to be handled specially because they
+			// require short-circuiting semantics.
+			translateExpressionAsCondition(c,context);
+			break;
 		case OPCODE_record:
 			translateRecordConstructor(c, context);
 			break;
@@ -1635,6 +2005,17 @@ public class Wyil2JavaBuilder implements Builder {
 		}
 	}
 
+	public void translateExpressionAsCondition(Location<Operator> bytecode, Context context) throws ResolveError {
+		String trueLabel = freshLabel();
+		String exitLabel = freshLabel();
+		translateCondition(bytecode,trueLabel,null,context);
+		context.add(new Bytecode.GetField(WHILEYBOOL, "FALSE", WHILEYBOOL, Bytecode.FieldMode.STATIC));
+		context.add(new Bytecode.Goto(exitLabel));
+		context.add(new Bytecode.Label(trueLabel));
+		context.add(new Bytecode.GetField(WHILEYBOOL, "TRUE", WHILEYBOOL, Bytecode.FieldMode.STATIC));
+		context.add(new Bytecode.Label(exitLabel));
+	}
+	
 	/**
 	 * Translate a RecordConstructor operand.
 	 * 
