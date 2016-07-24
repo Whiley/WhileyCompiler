@@ -175,7 +175,7 @@ public final class CodeGenerator {
 			scope.declare(td.resolvedType, td.parameter.name(), td.attributes());
 			// Generate code for each invariant condition
 			for (Expr invariant : td.invariant) {
-				int index = generateExpression(invariant, scope);
+				int index = generateCondition(invariant, scope).operand;
 				Location<Bytecode.Expr> loc = (Location<Bytecode.Expr>) tree.getLocation(index); 
 				declaration.getInvariant().add(loc);
 			}
@@ -200,13 +200,13 @@ public final class CodeGenerator {
 
 		// Generate precondition(s)		
 		for (Expr precondition : fmd.requires) {
-			int index = generateExpression(precondition, scope);
+			int index = generateCondition(precondition, scope).operand;
 			Location<Bytecode.Expr> loc = (Location<Bytecode.Expr>) tree.getLocation(index);
 			declaration.getPrecondition().add(loc);
 		}
 		// Generate postcondition(s)		
 		for (Expr postcondition : fmd.ensures) {
-			int index = generateExpression(postcondition, scope);
+			int index = generateCondition(postcondition, scope).operand;
 			Location<Bytecode.Expr> loc = (Location<Bytecode.Expr>) tree.getLocation(index);
 			declaration.getPostcondition().add(loc);
 		}
@@ -776,11 +776,10 @@ public final class CodeGenerator {
 		// need to construct the true/false scopes accordingly.
 		if (condition.lhs instanceof Expr.LocalVariable) {
 			Expr.LocalVariable var = (Expr.LocalVariable) condition.lhs;
-			Expr.TypeVal type = (Expr.TypeVal) condition.rhs;
-			Location<?> decl = scope.getLocation(var.var);			
-			Nominal declType = Nominal.construct(decl.getType(), decl.getType());
-			Nominal trueBranchType = Nominal.intersect(declType, type.type);
-			Nominal falseBranchType = Nominal.intersect(declType, Nominal.Negation(type.type));
+			Nominal varType = var.result();
+			Expr.TypeVal typeTest = (Expr.TypeVal) condition.rhs;
+			Nominal trueBranchType = Nominal.intersect(varType, typeTest.type);
+			Nominal falseBranchType = Nominal.intersect(varType, Nominal.Negation(typeTest.type));
 			trueScope.createAlias(trueBranchType, var.var, condition.attributes());
 			falseScope.createAlias(falseBranchType, var.var, condition.attributes());
 		}

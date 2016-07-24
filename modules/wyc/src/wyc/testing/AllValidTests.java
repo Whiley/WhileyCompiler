@@ -80,8 +80,7 @@ public class AllValidTests {
 		IGNORED.put("Complex_Valid_3", "Issue ???");
 		IGNORED.put("ConstrainedIntersection_Valid_1", "unknown");
 		IGNORED.put("ConstrainedNegation_Valid_1", "#342");
-		IGNORED.put("ConstrainedNegation_Valid_2", "#342");			
-		IGNORED.put("FunctionRef_Valid_2", "Issue ???");
+		IGNORED.put("ConstrainedNegation_Valid_2", "#342");					
 		IGNORED.put("FunctionRef_Valid_13", "#555");
 		IGNORED.put("Import_Valid_4", "#492");
 		IGNORED.put("Import_Valid_5", "#492");
@@ -91,14 +90,11 @@ public class AllValidTests {
 		IGNORED.put("ListAccess_Valid_6", "Issue ???");
 		IGNORED.put("NegationType_Valid_3", "Issue ???");
 		IGNORED.put("OpenRecord_Valid_11", "#585");
-		IGNORED.put("RecordCoercion_Valid_1", "#564");
 		IGNORED.put("RecordSubtype_Valid_1", "Issue ???");
 		IGNORED.put("RecordSubtype_Valid_2", "Issue ???");
 		IGNORED.put("RecursiveType_Valid_12", "#339");
 		IGNORED.put("RecursiveType_Valid_22", "#339");
 		IGNORED.put("RecursiveType_Valid_28", "#364");
-		IGNORED.put("RecursiveType_Valid_3", "#406");
-		IGNORED.put("RecursiveType_Valid_4", "#406");
 		IGNORED.put("RecursiveType_Valid_5", "#18");
 		IGNORED.put("TypeEquals_Valid_23", "Issue ???");
 		IGNORED.put("TypeEquals_Valid_36", "Issue ???");

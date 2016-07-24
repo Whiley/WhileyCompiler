@@ -1271,7 +1271,6 @@ public class FlowTypeChecker {
 				 */
 				Nominal glbForFalseBranch = Nominal.intersect(lhs.result(), Nominal.Negation(unconstrainedTestType));
 				Nominal glbForTrueBranch = Nominal.intersect(lhs.result(), tv.type);
-
 				if (glbForFalseBranch.raw() == Type.T_VOID) {
 					// DEFINITE TRUE CASE
 					syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), context, bop);

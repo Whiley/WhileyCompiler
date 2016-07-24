@@ -305,7 +305,7 @@ public class WycsFilePrinter {
 	
 	public void writeStructured(WycsFile wf, Code.Is code, int indent) {
 		writeStructured(wf,code.operands[0],indent);
-		out.print(" is " + code.type);
+		out.print(" is " + code.test);
 	}
 	
 	public void writeStructured(WycsFile wf, Code.Cast code, int indent) {

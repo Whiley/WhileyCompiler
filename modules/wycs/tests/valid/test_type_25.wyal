@@ -1,0 +1,7 @@
+assert:
+    forall (null | int x):
+        if:
+            x is null
+        then:
+            x is null
+
