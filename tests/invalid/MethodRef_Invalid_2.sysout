@@ -1,0 +1,3 @@
+../../tests/invalid/MethodRef_Invalid_2.whiley:7: expected type int, found bool
+    return m(false)
+             ^^^^^

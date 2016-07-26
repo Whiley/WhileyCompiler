@@ -69,22 +69,22 @@ public class AllInvalidTests {
 	 */
 	public final static Map<String, String> IGNORED = new HashMap<String, String>();
 
-	static {
+	static {		
+		IGNORED.put("Array_Invalid_7", "#665");
 		IGNORED.put("Constant_Invalid_1", "unclassified");
+		IGNORED.put("ConstrainedArray_Invalid_1", "#666");
+		IGNORED.put("ConstrainedArray_Invalid_3", "#666");
+		IGNORED.put("ConstrainedInt_Invalid_11", "unclassified");
+		IGNORED.put("ConstrainedInt_Invalid_12", "#666");
 		IGNORED.put("ConstrainedInt_Invalid_1", "#666");
 		IGNORED.put("ConstrainedInt_Invalid_2", "#666");
 		IGNORED.put("ConstrainedInt_Invalid_3", "#666");
 		IGNORED.put("ConstrainedInt_Invalid_5", "#666");
 		IGNORED.put("ConstrainedInt_Invalid_6", "#666");
-		IGNORED.put("ConstrainedInt_Invalid_11", "unclassified");
-		IGNORED.put("ConstrainedInt_Invalid_12", "#666");
 		IGNORED.put("ConstrainedInt_Invalid_7", "#666");
 		IGNORED.put("ConstrainedInt_Invalid_8", "#666");
 		IGNORED.put("ConstrainedInt_Invalid_9", "#666");
 		IGNORED.put("ConstrainedRecord_Invalid_1", "#666");
-		IGNORED.put("ConstrainedArray_Invalid_1", "#666");
-		IGNORED.put("ConstrainedArray_Invalid_3", "#666");
-		// got here through sweep
 		IGNORED.put("DefiniteAssign_Invalid_2", "#665");
 		IGNORED.put("DefiniteAssign_Invalid_4", "#665");
 		IGNORED.put("Export_Invalid_1", "unclassified");
@@ -96,62 +96,49 @@ public class AllInvalidTests {
 		IGNORED.put("MethodCall_Invalid_5", "#667");
 		IGNORED.put("MethodCall_Invalid_6", "#667");
 		IGNORED.put("MethodCall_Invalid_7", "#667");
-		IGNORED.put("MethodCall_Invalid_8", "#667");
-		IGNORED.put("Intersection_Invalid_1", "unclassified");
-		IGNORED.put("Intersection_Invalid_2", "unclassified");
-		IGNORED.put("Lambda_Invalid_3", "unclassified");
-		IGNORED.put("ArrayAssign_Invalid_2", "Infinite Loop?");
-		IGNORED.put("ArrayAssign_Invalid_3", "Infinite Loop?");
-		IGNORED.put("ArrayEquals_Invalid_1", "unclassified");
-		IGNORED.put("ArrayUpdate_Invalid_1", "unclassified");
-		IGNORED.put("Array_Invalid_7", "#665");
-		IGNORED.put("MethodRef_Invalid_1", "unclassified");
-		IGNORED.put("MethodRef_Invalid_2", "unclassified");
-		IGNORED.put("MethodRef_Invalid_3", "unclassified");
+		IGNORED.put("MethodCall_Invalid_8", "#667");				
+		IGNORED.put("MethodRef_Invalid_1", "#667");		
+		IGNORED.put("MethodRef_Invalid_3", "#667");		
 		IGNORED.put("Native_Invalid_1", "unclassified");
-		IGNORED.put("NegationType_Invalid_2", "unclassified");
 		IGNORED.put("OpenRecord_Invalid_2", "unclassified");
+		IGNORED.put("Parsing_Invalid_15", "609");
+		IGNORED.put("Parsing_Invalid_1", "608");
+		IGNORED.put("Parsing_Invalid_2", "608");
+		IGNORED.put("Parsing_Invalid_27", "609");
+		IGNORED.put("Parsing_Invalid_28", "609");
+		IGNORED.put("Parsing_Invalid_31", "610");
 		IGNORED.put("Record_Invalid_3", "#665");
+		IGNORED.put("RecursiveType_Invalid_10", "#666");
 		IGNORED.put("RecursiveType_Invalid_1", "unclassified");
-		IGNORED.put("RecursiveType_Invalid_10", "unclassified");
-		IGNORED.put("RecursiveType_Invalid_2", "unclassified");
+		IGNORED.put("RecursiveType_Invalid_2", "#666");
 		IGNORED.put("RecursiveType_Invalid_4", "unclassified");
 		IGNORED.put("RecursiveType_Invalid_7", "unclassified");
 		IGNORED.put("RecursiveType_Invalid_8", "unclassified");
-		IGNORED.put("RecursiveType_Invalid_9", "unclassified");
+		IGNORED.put("RecursiveType_Invalid_9", "#666");
 		IGNORED.put("ReferenceOpenRecord_Invalid_1", "#585");
 		IGNORED.put("Subtype_Invalid_1", "#666");
 		IGNORED.put("Subtype_Invalid_2", "#666");
 		IGNORED.put("Subtype_Invalid_3", "#666");
 		IGNORED.put("Subtype_Invalid_4", "#666");
 		IGNORED.put("Subtype_Invalid_5", "#666");
-		IGNORED.put("Subtype_Invalid_6", "unclassified");
+		IGNORED.put("Subtype_Invalid_6", "#666");
 		IGNORED.put("Subtype_Invalid_7", "#666");
-		IGNORED.put("Subtype_Invalid_8", "unclassified");
-		IGNORED.put("Subtype_Invalid_9", "unclassified");
-		IGNORED.put("Switch_Invalid_6", "unclassified");
-		IGNORED.put("TupleAssign_Invalid_2", "unclassified");
-		IGNORED.put("TupleDefine_Invalid_2", "unclassified");
-		IGNORED.put("Tuple_Invalid_3", "unclassified");
-		IGNORED.put("Tuple_Invalid_4", "unclassified");
-		IGNORED.put("Tuple_Invalid_5", "unclassified");
-		IGNORED.put("Tuple_Invalid_6", "unclassified");
-		IGNORED.put("Tuple_Invalid_7", "unclassified");
-		IGNORED.put("TypeEquals_Invalid_5", "unclassified");
+		IGNORED.put("Subtype_Invalid_8", "#666");
+		IGNORED.put("Subtype_Invalid_9", "#666");
+		IGNORED.put("TupleAssign_Invalid_2", "#666");
+		IGNORED.put("TupleDefine_Invalid_2", "#666");
+		IGNORED.put("Tuple_Invalid_3", "#666");
+		IGNORED.put("Tuple_Invalid_4", "#666");
+		IGNORED.put("Tuple_Invalid_5", "#666");		
+		IGNORED.put("TypeEquals_Invalid_5", "#666");
 		IGNORED.put("TypeEquals_Invalid_6", "#666");
 		IGNORED.put("UnionType_Invalid_10", "#469");
-		IGNORED.put("UnionType_Invalid_7", "unclassified");
-		IGNORED.put("UnionType_Invalid_8", "unclassified");
-		IGNORED.put("UnionType_Invalid_9", "#348");
+		IGNORED.put("UnionType_Invalid_7", "#666");
+		IGNORED.put("UnionType_Invalid_8", "#666");
+		IGNORED.put("UnionType_Invalid_9", "#666");
 		IGNORED.put("While_Invalid_1", "#665");
 		IGNORED.put("While_Invalid_3", "#665");
-		IGNORED.put("Parsing_Invalid_1", "608");
-		IGNORED.put("Parsing_Invalid_2", "608");
-		IGNORED.put("Parsing_Invalid_15", "609");
-		IGNORED.put("Parsing_Invalid_27", "609");
-		IGNORED.put("Parsing_Invalid_28", "609");
-		IGNORED.put("Parsing_Invalid_31", "610");
-	}	
+	}
 
 	/**
 	 * The directory where compiler libraries are stored. This is necessary

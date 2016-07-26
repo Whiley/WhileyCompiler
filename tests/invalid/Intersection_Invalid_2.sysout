@@ -1,0 +1,4 @@
+../../tests/invalid/Intersection_Invalid_2.whiley:13: unable to resolve name (no match for f({int data,{int data,null next} next})
+	found: Intersection_Invalid_2:f : function(Intersection_Invalid_2:InterList)->(int))
+    return f(list)
+           ^^^^^^^

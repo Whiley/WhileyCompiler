@@ -158,14 +158,14 @@ public class AllValidVerificationTests {
 		IGNORED.put("TypeEquals_Valid_38", "Known Issue");
 		IGNORED.put("TypeEquals_Valid_41", "Known Issue");
 		IGNORED.put("TypeEquals_Valid_55", "WyTP#17");		
-		IGNORED.put("While_Valid_11", "#379");
-		IGNORED.put("While_Valid_16", "#229");
+		IGNORED.put("While_Valid_11", "timeout");
+		IGNORED.put("While_Valid_16", "timeout");
 		IGNORED.put("While_Valid_2", "#229");
 		IGNORED.put("While_Valid_20", "#664");		
 		IGNORED.put("While_Valid_22", "Issue ???");
 		IGNORED.put("While_Valid_23", "#229");
 		IGNORED.put("While_Valid_24", "WyTP#17");
-		IGNORED.put("While_Valid_26", "#384");
+		IGNORED.put("While_Valid_26", "timeout");
 		IGNORED.put("While_Valid_27", "Issue 378");
 		IGNORED.put("While_Valid_3", "466");
 		IGNORED.put("While_Valid_33", "WyTP#20");

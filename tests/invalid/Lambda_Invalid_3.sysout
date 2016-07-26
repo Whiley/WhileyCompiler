@@ -1,0 +1,3 @@
+../../tests/invalid/Lambda_Invalid_3.whiley:9: precondition not satisfied
+    func_t func = &(int x -> f(x + 1))
+                             ^^^^^^^^

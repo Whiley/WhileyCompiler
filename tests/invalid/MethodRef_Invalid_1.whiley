@@ -1,4 +1,4 @@
-type FileReader is {int position, [byte] data}
+type FileReader is {int position, byte[] data}
 
 type Reader is {
     method(FileReader, int)->int read
