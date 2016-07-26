@@ -78,17 +78,12 @@ public class AllValidTests {
 
 	static {
 		IGNORED.put("Complex_Valid_3", "Issue ???");
-		IGNORED.put("ConstrainedIntersection_Valid_1", "unknown");
 		IGNORED.put("ConstrainedNegation_Valid_1", "#342");
 		IGNORED.put("ConstrainedNegation_Valid_2", "#342");					
-		IGNORED.put("FunctionRef_Valid_13", "#555");
 		IGNORED.put("Import_Valid_4", "#492");
 		IGNORED.put("Import_Valid_5", "#492");
-		//IGNORED.put("Intersection_Valid_1", "Issue ???");
-		//IGNORED.put("Intersection_Valid_2", "Issue ???");
 		IGNORED.put("Lifetime_Lambda_Valid_4", "#641");
 		IGNORED.put("ListAccess_Valid_6", "Issue ???");
-		IGNORED.put("NegationType_Valid_3", "Issue ???");
 		IGNORED.put("OpenRecord_Valid_11", "#585");
 		IGNORED.put("RecordSubtype_Valid_1", "Issue ???");
 		IGNORED.put("RecordSubtype_Valid_2", "Issue ???");
