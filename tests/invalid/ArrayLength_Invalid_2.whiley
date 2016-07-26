@@ -1,8 +1,8 @@
 
-method main() :
+method main(int x) :
     int[] arr
     //
-    if |sys.args| > 0:
+    if x > 0:
         arr = [1, 2, 4]
     else:
         arr = [1, 2, 3]

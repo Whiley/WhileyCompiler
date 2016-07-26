@@ -411,9 +411,11 @@ public class VerificationConditionGenerator {
 			case Bytecode.OPCODE_ifelse:
 				return translateIf((Location<If>) stmt, context);
 			case Bytecode.OPCODE_indirectinvoke:
+				checkExpressionPreconditions(stmt,context);
 				translateIndirectInvoke((Location<IndirectInvoke>) stmt, context.getEnvironment());
 				return context;
 			case Bytecode.OPCODE_invoke:
+				checkExpressionPreconditions(stmt,context);
 				translateInvoke((Location<Invoke>) stmt, context.getEnvironment());
 				return context;
 			case Bytecode.OPCODE_namedblock:
@@ -450,12 +452,13 @@ public class VerificationConditionGenerator {
 	 * @param wyalFile
 	 */
 	private Context translateAssert(Location<Assert> stmt, Context context) {
-		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), context);
+		Location<?> operand = stmt.getOperand(0);
+		Pair<Expr, Context> p = translateExpressionWithChecks(operand, context);
 		Expr condition = p.first();
 		context = p.second();
 		//
 		VerificationCondition verificationCondition = new VerificationCondition("assertion failed", context.assumptions,
-				condition, stmt.attributes());
+				condition, operand.attributes());
 		context.emit(verificationCondition);
 		//
 		return context.assume(condition);
@@ -1393,8 +1396,6 @@ public class VerificationConditionGenerator {
 		Expr[] operands = translateExpressions(expr.getOperands(), environment);
 		Expr argument = operands.length == 1 ? operands[0]
 				: new Expr.Nary(Expr.Nary.Op.TUPLE, operands, expr.attributes());
-		//
-		// FIXME: assume postconditions
 		//
 		return new Expr.Invoke(bytecode.name().name(), bytecode.name().module(), Collections.EMPTY_LIST, argument,
 				expr.attributes());
