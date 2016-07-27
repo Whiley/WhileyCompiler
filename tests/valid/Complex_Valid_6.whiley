@@ -12,7 +12,8 @@ ensures (a <= r) && (b <= r):
         return a
 
 function diff(int a, int b) -> (nat r)
-ensures r == max(a - b, b - a):
+ensures (r == a - b) || (r == b - a)
+ensures ((a - b) <= r) && ((b - a) <= r):
     int diff
     //
     if a > b:

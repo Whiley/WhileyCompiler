@@ -61,13 +61,15 @@ ensures x >= y ==> r == -1:
 function clearRowExcept(Pos from, Pos to, Board board) -> bool:
     if (from.row != to.row) || (from.col == to.col):
         return false
-    int inc = sign(from.col, to.col)
     int row = from.row
-    int col = from.col + inc
+    int col = from.col
+    int end = to.col
+    if col > end:
+        col,end = end,col
     //
-    while col != to.col where col >= 0:
+    while col < end where col >= 0:
         if board.rows[row][col] is null:
-            col = col + inc
+            col = col + 1
         else:
             return false
     //
