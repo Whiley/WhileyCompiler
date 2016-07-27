@@ -238,7 +238,6 @@ public class VerificationConditionGenerator {
 		translatePreconditionMacros(declaration, wyalFile);
 		translatePostconditionMacros(declaration, wyalFile);
 
-
 		// The environments are needed to prevent clashes between variable
 		// versions across verification conditions, and also to type variables
 		// used in verification conditions.
@@ -272,16 +271,19 @@ public class VerificationConditionGenerator {
 	 * @param wyalFile
 	 */
 	private void translatePreconditionMacros(WyilFile.FunctionOrMethod declaration, WyalFile wyalFile) {
-		GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
-		LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);				
 		List<Location<Bytecode.Expr>> invariants = declaration.getPrecondition();
 		//
 		String prefix = declaration.name() + "_requires_";
-		TypePattern type = generatePreconditionTypePattern(declaration, localEnvironment);
 		//
 		for (int i = 0; i != invariants.size(); ++i) {
 			String name = prefix + i;
-			Expr clause = translateExpression(invariants.get(i), localEnvironment.clone());
+			// Construct fresh environment for this macro. This is necessary to
+			// avoid name clashes with subsequent macros.
+			GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
+			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);				
+			TypePattern type = generatePreconditionTypePattern(declaration, localEnvironment);
+			// Translate expression itself
+			Expr clause = translateExpression(invariants.get(i), localEnvironment);
 			// Capture any free variables. This is necessary to deal with any
 			// variable aliases introduced by type test operators.
 			clause = captureFreeVariables(declaration,globalEnvironment,clause);		
@@ -300,16 +302,18 @@ public class VerificationConditionGenerator {
 	 * @param environment
 	 * @param wyalFile
 	 */
-	private void translatePostconditionMacros(WyilFile.FunctionOrMethod declaration, WyalFile wyalFile) {
-		GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
-		LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);						
+	private void translatePostconditionMacros(WyilFile.FunctionOrMethod declaration, WyalFile wyalFile) {						
 		List<Location<Bytecode.Expr>> invariants = declaration.getPostcondition();
 		//
 		String prefix = declaration.name() + "_ensures_";
-		TypePattern type = generatePostconditionTypePattern(declaration, localEnvironment);
 		//
 		for (int i = 0; i != invariants.size(); ++i) {
 			String name = prefix + i;
+			// Construct fresh environment for this macro. This is necessary to
+			// avoid name clashes with subsequent macros.
+			GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
+			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);				
+			TypePattern type = generatePostconditionTypePattern(declaration, localEnvironment);
 			Expr clause = translateExpression(invariants.get(i), localEnvironment.clone());
 			// Capture any free variables. This is necessary to deal with any
 			// variable aliases introduced by type test operators.
@@ -976,22 +980,16 @@ public class VerificationConditionGenerator {
 	private void translateLoopInvariantMacros(Location<?>[] loopInvariant, WyilFile.Declaration declaration,
 			WyalFile wyalFile) {
 		//
-		GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
-		LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
-		
-		// FIXME: this is completely broken in the case of multiple loops. The
-		// problem is that we need to distinguish the macro names based on some
-		// kind of block identifier.
 		String prefix = declaration.name() + "_loopinvariant_";
-		// FIXME: following is broken as well because it doesn't know the exact
-		// scope that we want to generate the loop invariant within. This is
-		// important because the scope determines the set of unique variable
-		// names and their types.
-		TypePattern type = generateLoopInvariantTypePattern(declaration, loopInvariant, localEnvironment);
 		//
 		for (int i = 0; i != loopInvariant.length; ++i) {
 			Location<?> clause = loopInvariant[i];
 			String name = prefix + clause.getIndex();
+			// Construct fresh environment for this macro. This is necessary to
+			// avoid name clashes with subsequent macros.
+			GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
+			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
+			TypePattern type = generateLoopInvariantTypePattern(declaration, loopInvariant, localEnvironment);
 			Expr e = translateExpression(clause, localEnvironment.clone());
 			wyalFile.add(wyalFile.new Macro(name, Collections.EMPTY_LIST, type, e, e.attributes()));
 		}

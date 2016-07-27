@@ -15,6 +15,7 @@ ensures all { i in 0..|xs| | xs[i] <= result }:
     int r = xs[0]
     int i = 0
     while i < |xs|
+        where i >= 0
         where some { j in 0..|xs| | xs[j] == r }
         where all { j in 0 .. i | xs[j] <= r }:
         r = max(r, xs[i])
