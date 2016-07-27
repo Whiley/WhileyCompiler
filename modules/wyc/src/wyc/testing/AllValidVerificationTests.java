@@ -66,6 +66,8 @@ public class AllValidVerificationTests {
 	public final static Map<String, String> IGNORED = new HashMap<String, String>();
 
 	static {
+		IGNORED.put("BoolAssign_Valid_2", "WyTP#19");
+		IGNORED.put("BoolAssign_Valid_3", "WyTP#18");
 		IGNORED.put("BoolList_Valid_3", "#229");
 		IGNORED.put("BoolRecord_Valid_1", "#522");
 		IGNORED.put("Cast_Valid_5", "#468");
@@ -82,7 +84,9 @@ public class AllValidVerificationTests {
 		IGNORED.put("ConstrainedList_Valid_21", "#308");
 		IGNORED.put("ConstrainedList_Valid_22", "Issue ???");
 		IGNORED.put("ConstrainedList_Valid_23", "#229");
+		IGNORED.put("ConstrainedList_Valid_25", "WyTP#20");		
 		IGNORED.put("ConstrainedList_Valid_26", "#290");
+		IGNORED.put("ConstrainedList_Valid_27", "#663");		
 		IGNORED.put("ConstrainedList_Valid_28", "TOO LONG");
 		IGNORED.put("ConstrainedList_Valid_6", "Issue ???");
 		IGNORED.put("ConstrainedList_Valid_7", "#290");
@@ -92,18 +96,14 @@ public class AllValidVerificationTests {
 		IGNORED.put("ConstrainedRecord_Valid_8", "Issue ???");
 		IGNORED.put("ConstrainedRecord_Valid_9", "Issue ???");
 		IGNORED.put("ConstrainedReference_Valid_1", "#468");
-		IGNORED.put("Contractive_Valid_1", "Unknown Problem");
-		IGNORED.put("DoWhile_Valid_4", "#298");
 		IGNORED.put("Ensures_Valid_3", "Issue ???");
 		IGNORED.put("Ensures_Valid_6", "timeout");
 		IGNORED.put("FunctionRef_Valid_4", "Issue ???");
 		IGNORED.put("FunctionRef_Valid_10", "#298");
 		IGNORED.put("FunctionRef_Valid_11", "#298");
-		IGNORED.put("FunctionRef_Valid_13", "#555");
 		IGNORED.put("IfElse_Valid_4", "#298");
 		IGNORED.put("Import_Valid_4", "#492");
 		IGNORED.put("Import_Valid_5", "#492");
-		IGNORED.put("Intersection_Valid_1", "Known Issue");
 		IGNORED.put("Intersection_Valid_2", "Known Issue");
 		IGNORED.put("Lambda_Valid_3", "#344");
 		IGNORED.put("Lambda_Valid_4", "#344");
@@ -112,11 +112,15 @@ public class AllValidVerificationTests {
 		IGNORED.put("ListAccess_Valid_6", "Known Issue");
 		IGNORED.put("ListAssign_Valid_1", "#233");
 		IGNORED.put("ListAssign_Valid_6", "#233");
-		IGNORED.put("NegationType_Valid_3", "Known Issue");
+		IGNORED.put("ListAssign_Valid_5", "#661");
+		IGNORED.put("ListAssign_Valid_12", "#661");		
+		IGNORED.put("OpenRecord_Valid_5", "unknown");
+		IGNORED.put("OpenRecord_Valid_6", "#664");
 		IGNORED.put("OpenRecord_Valid_11", "#585");
 		IGNORED.put("Process_Valid_1", "#291");
 		IGNORED.put("Process_Valid_10", "#291");
 		IGNORED.put("Process_Valid_9", "#231");
+		IGNORED.put("Quantifiers_Valid_1", "WyTP#20");		
 		IGNORED.put("RecordCoercion_Valid_1", "#564");
 		IGNORED.put("RecordSubtype_Valid_1", "Known Issue");
 		IGNORED.put("RecordSubtype_Valid_2", "Known Issue");
@@ -145,6 +149,7 @@ public class AllValidVerificationTests {
 		IGNORED.put("Subtype_Valid_13", "#522");
 		IGNORED.put("Subtype_Valid_14", "#522");
 		IGNORED.put("Subtype_Valid_7", "#522");
+		IGNORED.put("TypeEquals_Valid_19", "#663");		
 		IGNORED.put("TypeEquals_Valid_23", "Issue ???");
 		IGNORED.put("TypeEquals_Valid_25", "#298");
 		IGNORED.put("TypeEquals_Valid_3", "Issue ???");
@@ -152,34 +157,23 @@ public class AllValidVerificationTests {
 		IGNORED.put("TypeEquals_Valid_37", "Known Issue");
 		IGNORED.put("TypeEquals_Valid_38", "Known Issue");
 		IGNORED.put("TypeEquals_Valid_41", "Known Issue");
+		IGNORED.put("TypeEquals_Valid_55", "WyTP#17");		
 		IGNORED.put("While_Valid_11", "#379");
 		IGNORED.put("While_Valid_16", "#229");
 		IGNORED.put("While_Valid_2", "#229");
+		IGNORED.put("While_Valid_20", "#664");		
 		IGNORED.put("While_Valid_22", "Issue ???");
 		IGNORED.put("While_Valid_23", "#229");
+		IGNORED.put("While_Valid_24", "WyTP#17");
 		IGNORED.put("While_Valid_26", "#384");
 		IGNORED.put("While_Valid_27", "Issue 378");
-		IGNORED.put("While_Valid_34", "#348");
-		IGNORED.put("While_Valid_42", "#379");
 		IGNORED.put("While_Valid_3", "466");
-		IGNORED.put("While_Valid_5", "#231");
-		IGNORED.put("ListAssign_Valid_5", "#661");
-		IGNORED.put("ListAssign_Valid_12", "#661");
-		IGNORED.put("ConstrainedList_Valid_27", "#663");
-		IGNORED.put("TypeEquals_Valid_19", "#663");
-		IGNORED.put("OpenRecord_Valid_5", "unknown");
-		IGNORED.put("OpenRecord_Valid_6", "#664");
-		IGNORED.put("While_Valid_20", "#664");
-		IGNORED.put("TypeEquals_Valid_55", "WyTP#17");
-		IGNORED.put("While_Valid_24", "WyTP#17");
-		IGNORED.put("While_Valid_35", "WyTP#17");
-		IGNORED.put("While_Valid_38", "#662");
-		IGNORED.put("BoolAssign_Valid_2", "WyTP#19");
-		IGNORED.put("BoolAssign_Valid_3", "WyTP#18");
-		IGNORED.put("ConstrainedList_Valid_25", "WyTP#20");
-		IGNORED.put("Quantifiers_Valid_1", "WyTP#20");
 		IGNORED.put("While_Valid_33", "WyTP#20");
+		IGNORED.put("While_Valid_34", "#348");
+		IGNORED.put("While_Valid_35", "WyTP#17");		
+		IGNORED.put("While_Valid_42", "#379");
 		IGNORED.put("While_Valid_47", "WyTP#20");
+		IGNORED.put("While_Valid_5", "#231");
 		
 		// Fails and was not listed as test case before parameterizing
 		IGNORED.put("RecursiveType_Valid_28", "unknown");

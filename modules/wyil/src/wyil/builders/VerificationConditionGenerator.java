@@ -31,6 +31,7 @@ import wyil.lang.Constant;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
 import wyil.util.ErrorMessages;
+import wyil.util.SyntaxTrees;
 import wyil.util.TypeSystem;
 
 /**
@@ -229,20 +230,21 @@ public class VerificationConditionGenerator {
 		// "uninterpreted" for the purposes of verification.
 		createFunctionOrMethodPrototype(declaration, wyalFile);
 
-		// The environments are needed to prevent clashes between variable
-		// versions across verification conditions, and also to type variables
-		// used in verification conditions.
-		GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
-		LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
-
 		// Create macros representing the individual clauses of the function or
 		// method's precondition and postcondition. These macros can then be
 		// called either to assume the precondition/postcondition or to check
 		// them. Using individual clauses helps to provide better error
 		// messages.
-		translatePreconditionMacros(declaration, localEnvironment, wyalFile);
-		translatePostconditionMacros(declaration, localEnvironment, wyalFile);
+		translatePreconditionMacros(declaration, wyalFile);
+		translatePostconditionMacros(declaration, wyalFile);
 
+
+		// The environments are needed to prevent clashes between variable
+		// versions across verification conditions, and also to type variables
+		// used in verification conditions.
+		GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
+		LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);		
+		
 		// Generate the initial assumption set for a given function or method,
 		// which roughly corresponds to its precondition.
 		AssumptionSet assumptions = generateFunctionOrMethodAssumptionSet(declaration, localEnvironment);
@@ -269,18 +271,20 @@ public class VerificationConditionGenerator {
 	 * @param environment
 	 * @param wyalFile
 	 */
-	private void translatePreconditionMacros(WyilFile.FunctionOrMethod declaration, LocalEnvironment environment,
-			WyalFile wyalFile) {
+	private void translatePreconditionMacros(WyilFile.FunctionOrMethod declaration, WyalFile wyalFile) {
+		GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
+		LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);				
 		List<Location<Bytecode.Expr>> invariants = declaration.getPrecondition();
+		//
 		String prefix = declaration.name() + "_requires_";
-		TypePattern type = generatePreconditionTypePattern(declaration, environment);
+		TypePattern type = generatePreconditionTypePattern(declaration, localEnvironment);
 		//
 		for (int i = 0; i != invariants.size(); ++i) {
 			String name = prefix + i;
-			Expr clause = translateExpression(invariants.get(i), environment);
+			Expr clause = translateExpression(invariants.get(i), localEnvironment.clone());
 			// Capture any free variables. This is necessary to deal with any
 			// variable aliases introduced by type test operators.
-			clause = captureFreeVariables(declaration,environment,clause);		
+			clause = captureFreeVariables(declaration,globalEnvironment,clause);		
 			//
 			wyalFile.add(
 					wyalFile.new Macro(name, Collections.EMPTY_LIST, type, clause, invariants.get(i).attributes()));
@@ -296,18 +300,20 @@ public class VerificationConditionGenerator {
 	 * @param environment
 	 * @param wyalFile
 	 */
-	private void translatePostconditionMacros(WyilFile.FunctionOrMethod declaration, LocalEnvironment environment,
-			WyalFile wyalFile) {
+	private void translatePostconditionMacros(WyilFile.FunctionOrMethod declaration, WyalFile wyalFile) {
+		GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
+		LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);						
 		List<Location<Bytecode.Expr>> invariants = declaration.getPostcondition();
+		//
 		String prefix = declaration.name() + "_ensures_";
-		TypePattern type = generatePostconditionTypePattern(declaration, environment);
+		TypePattern type = generatePostconditionTypePattern(declaration, localEnvironment);
 		//
 		for (int i = 0; i != invariants.size(); ++i) {
 			String name = prefix + i;
-			Expr clause = translateExpression(invariants.get(i), environment);
+			Expr clause = translateExpression(invariants.get(i), localEnvironment.clone());
 			// Capture any free variables. This is necessary to deal with any
 			// variable aliases introduced by type test operators.
-			clause = captureFreeVariables(declaration,environment,clause);
+			clause = captureFreeVariables(declaration,globalEnvironment,clause);
 			//
 			wyalFile.add(
 					wyalFile.new Macro(name, Collections.EMPTY_LIST, type, clause, invariants.get(i).attributes()));
@@ -315,8 +321,7 @@ public class VerificationConditionGenerator {
 	}
 
 	private Expr captureFreeVariables(WyilFile.Declaration declaration,
-			LocalEnvironment localEnvironment, Expr clause) {
-		GlobalEnvironment globalEnvironment = localEnvironment.getParent();
+			GlobalEnvironment globalEnvironment, Expr clause) {		
 		HashSet<String> freeVariables = new HashSet<String>();
 		HashSet<String> freeAliases = new HashSet<String>();
 		clause.freeVariables(freeVariables);
@@ -699,9 +704,10 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private Context translateDoWhile(Location<DoWhile> stmt, Context context) {
+		WyilFile.Declaration declaration = context.getEnvironment().getParent().enclosingDeclaration;
 		Location<?>[] loopInvariant = stmt.getOperandGroup(0);
 		// Translate the loop invariant and generate appropriate macro
-		translateLoopInvariantMacros(loopInvariant, context.getEnvironment(), context.wyalFile);
+		translateLoopInvariantMacros(loopInvariant, declaration, context.wyalFile);
 		// Rule 1. Check loop invariant after first iteration
 		LoopScope firstScope = new LoopScope();
 		Context beforeFirstBodyContext = context.newLoopScope(firstScope);
@@ -925,9 +931,10 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private Context translateWhile(Location<While> stmt, Context context) {
+		WyilFile.Declaration declaration = context.getEnvironment().getParent().enclosingDeclaration;
 		Location<?>[] loopInvariant = stmt.getOperandGroup(0);
 		// Translate the loop invariant and generate appropriate macro
-		translateLoopInvariantMacros(loopInvariant, context.getEnvironment(), context.wyalFile);
+		translateLoopInvariantMacros(loopInvariant, declaration, context.wyalFile);
 		// Rule 1. Check loop invariant on entry
 		checkLoopInvariant("loop invariant does not hold on entry", loopInvariant, context);
 		// Rule 2. Check loop invariant preserved. On entry to the loop body we
@@ -966,10 +973,12 @@ public class VerificationConditionGenerator {
 	 * @param environment
 	 * @param wyalFile
 	 */
-	private void translateLoopInvariantMacros(Location<?>[] loopInvariant, LocalEnvironment environment,
+	private void translateLoopInvariantMacros(Location<?>[] loopInvariant, WyilFile.Declaration declaration,
 			WyalFile wyalFile) {
-		WyilFile.FunctionOrMethod declaration = (WyilFile.FunctionOrMethod) environment
-				.getParent().enclosingDeclaration;
+		//
+		GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
+		LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
+		
 		// FIXME: this is completely broken in the case of multiple loops. The
 		// problem is that we need to distinguish the macro names based on some
 		// kind of block identifier.
@@ -978,12 +987,12 @@ public class VerificationConditionGenerator {
 		// scope that we want to generate the loop invariant within. This is
 		// important because the scope determines the set of unique variable
 		// names and their types.
-		TypePattern type = generateLoopInvariantTypePattern(declaration, environment);
+		TypePattern type = generateLoopInvariantTypePattern(declaration, loopInvariant, localEnvironment);
 		//
 		for (int i = 0; i != loopInvariant.length; ++i) {
 			Location<?> clause = loopInvariant[i];
 			String name = prefix + clause.getIndex();
-			Expr e = translateExpression(clause, environment);
+			Expr e = translateExpression(clause, localEnvironment.clone());
 			wyalFile.add(wyalFile.new Macro(name, Collections.EMPTY_LIST, type, e, e.attributes()));
 		}
 	}
@@ -1007,7 +1016,7 @@ public class VerificationConditionGenerator {
 		// kind of block identifier.
 		String prefix = declaration.name() + "_loopinvariant_";
 		// Construct argument to invocation
-		int[] localVariables = determineLocalVariables(declaration);
+		int[] localVariables = SyntaxTrees.determineUsedVariables(loopInvariant);
 		Expr[] arguments = new Expr[localVariables.length];
 		for (int i = 0; i != arguments.length; ++i) {
 			Location<VariableAccess> var = (Location<VariableAccess>) tree.getLocation(localVariables[i]);
@@ -1034,7 +1043,7 @@ public class VerificationConditionGenerator {
 		// kind of block identifier.
 		String prefix = declaration.name() + "_loopinvariant_";
 		// Construct argument to invocation
-		int[] localVariables = determineLocalVariables(declaration);
+		int[] localVariables = SyntaxTrees.determineUsedVariables(loopInvariant);
 		Expr[] arguments = new Expr[localVariables.length];
 		for (int i = 0; i != arguments.length; ++i) {
 			Location<VariableAccess> var = (Location<VariableAccess>) tree.getLocation(localVariables[i]);
@@ -2107,41 +2116,10 @@ public class VerificationConditionGenerator {
 	 * @param declaration
 	 * @return
 	 */
-	private TypePattern generateLoopInvariantTypePattern(WyilFile.FunctionOrMethod declaration,
-			LocalEnvironment environment) {
-		int[] localVariableLocations = determineLocalVariables(declaration);
+	private TypePattern generateLoopInvariantTypePattern(WyilFile.Declaration declaration,
+			Location<?>[] loopInvariant, LocalEnvironment environment) {
+		int[] localVariableLocations = SyntaxTrees.determineUsedVariables(loopInvariant);
 		return generateTypePatterns(declaration, environment, localVariableLocations);
-	}
-
-	/**
-	 * Determine the set of local variables which are in scope at a particular
-	 * block.
-	 * 
-	 * @param declaration
-	 * @return
-	 */
-	private int[] determineLocalVariables(WyilFile.Declaration declaration) {
-		// FIXME: this is completely broken because it's not looking at a
-		// particular scope.
-		List<Location<?>> locations = declaration.getTree().getLocations();
-		// Determine how many variables there are
-		int count = 0;
-		for (int i = 0; i != locations.size(); ++i) {
-			Bytecode bytecode = locations.get(i).getBytecode();
-			if (bytecode instanceof VariableDeclaration) {
-				count++;
-			}
-		}
-		// Compute the result
-		int[] result = new int[count];
-		for (int i = 0, j = 0; i != locations.size(); ++i) {
-			Bytecode bytecode = locations.get(i).getBytecode();
-			if (bytecode instanceof VariableDeclaration) {
-				result[j++] = i;
-			}
-		}
-		//
-		return result;
 	}
 
 	/**
@@ -2750,6 +2728,10 @@ public class VerificationConditionGenerator {
 				nenv.locals.put(indices[i], global.allocateVersion(indices[i]));
 			}
 			return nenv;
+		}
+		
+		public LocalEnvironment clone() {
+			return new LocalEnvironment(global,locals);
 		}
 	}
 
