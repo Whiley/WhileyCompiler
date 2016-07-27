@@ -7,10 +7,10 @@ type Matrix is ({
     int width,
     int[][] data
 } m) where |m.data| == m.height && m.height >= 0 && m.width >= 0 &&
-        no { i in 0..|m.data| | |m.data[i]| != m.width }
+        all { i in 0..|m.data| | |m.data[i]| == m.width }
 
 function Matrix(nat width, nat height, int[][] data) -> (Matrix result)
-requires (|data| == height) && no { i in 0..|data| | |data[i]| != width }
+requires (|data| == height) && all { i in 0..|data| | |data[i]| == width }
 ensures result.width == width && result.height == height && result.data == data:
     //
     return {height: height, width: width, data: data}

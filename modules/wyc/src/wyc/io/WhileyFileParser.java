@@ -1955,9 +1955,6 @@ public class WhileyFileParser {
 		// Determine the quantifier operation
 		Expr.QOp cop;
 		switch (lookahead.kind) {
-		case No:
-			cop = Expr.QOp.NONE;
-			break;
 		case Some:
 			cop = Expr.QOp.SOME;
 			break;

@@ -1336,7 +1336,6 @@ public class VerificationConditionGenerator {
 				return translateInvoke((Location<Invoke>) loc, environment);
 			case Bytecode.OPCODE_lambda:
 				return translateLambda((Location<Lambda>) loc, environment);
-			case Bytecode.OPCODE_none:
 			case Bytecode.OPCODE_some:
 			case Bytecode.OPCODE_all:
 				return translateQuantifier((Location<Quantifier>) loc, environment);
@@ -1520,11 +1519,8 @@ public class VerificationConditionGenerator {
 		case ALL:
 			return new Expr.ForAll(pattern, body, expr.attributes());
 		case SOME:
-			return new Expr.Exists(pattern, body, expr.attributes());
-		case NONE:
 		default:
-			body = new Expr.Unary(Expr.Unary.Op.NOT, body);
-			return new Expr.ForAll(pattern, body, expr.attributes());
+			return new Expr.Exists(pattern, body, expr.attributes());
 		}
 	}
 

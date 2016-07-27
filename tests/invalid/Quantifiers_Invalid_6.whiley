@@ -1,6 +1,6 @@
 
 function f(int[] ls) -> bool
-requires no { i in 0..|ls| | ls[i] <= 0 }:
+requires all { i in 0..|ls| | ls[i] > 0 }:
     return true
 
 function g(int[] ls) :

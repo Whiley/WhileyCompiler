@@ -575,7 +575,7 @@ public interface Bytecode {
 	}
 
 	public enum QuantifierKind {
-		NONE(OPCODE_none), SOME(OPCODE_some), ALL(OPCODE_all);
+		SOME(OPCODE_some), ALL(OPCODE_all);
 		public int opcode;
 
 		private QuantifierKind(int offset) {
@@ -1970,7 +1970,6 @@ public interface Bytecode {
 	public static final int OPCODE_lambda = NARY_ASSIGNABLE + 4;
 	public static final int OPCODE_while = NARY_ASSIGNABLE + 5;
 	public static final int OPCODE_dowhile = NARY_ASSIGNABLE + 6;
-	public static final int OPCODE_none = NARY_ASSIGNABLE + 7;
 	public static final int OPCODE_some = NARY_ASSIGNABLE + 8;
 	public static final int OPCODE_all = NARY_ASSIGNABLE + 9;
 	public static final int OPCODE_assign = NARY_ASSIGNABLE + 10;

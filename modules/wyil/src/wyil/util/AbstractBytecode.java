@@ -489,7 +489,7 @@ public abstract class AbstractBytecode {
 			}
 		};
 		// Quantifiers
-		schemas[Bytecode.OPCODE_none] = schemas[Bytecode.OPCODE_some] = schemas[Bytecode.OPCODE_all] = new Schema(
+		schemas[Bytecode.OPCODE_some] = schemas[Bytecode.OPCODE_all] = new Schema(
 				Operands.ONE, OperandGroups.MANY) {
 			public Bytecode construct(int opcode, int[] operands, int[][] groups, int[] blocks, Object[] extras) {
 				int body = operands[0];
@@ -500,9 +500,6 @@ public abstract class AbstractBytecode {
 				}
 				Bytecode.QuantifierKind kind;
 				switch(opcode) {
-				case Bytecode.OPCODE_none:
-					kind = Bytecode.QuantifierKind.NONE;
-					break;
 				case Bytecode.OPCODE_some:
 					kind = Bytecode.QuantifierKind.SOME;
 					break;

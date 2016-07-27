@@ -162,7 +162,7 @@ public class AllValidVerificationTests {
 		IGNORED.put("While_Valid_16", "timeout");
 		IGNORED.put("While_Valid_2", "#229");
 		IGNORED.put("While_Valid_20", "#664");		
-		IGNORED.put("While_Valid_22", "Issue ???");
+		IGNORED.put("While_Valid_22", "#662");
 		IGNORED.put("While_Valid_23", "#229");
 		IGNORED.put("While_Valid_24", "WyTP#17");
 		IGNORED.put("While_Valid_26", "timeout");

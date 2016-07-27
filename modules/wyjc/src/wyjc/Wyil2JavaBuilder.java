@@ -1158,7 +1158,6 @@ public class Wyil2JavaBuilder implements Builder {
 			return;
 		case OPCODE_all:
 		case OPCODE_some:
-		case OPCODE_none:
 			translateQuantifierCondition((Location<Quantifier>) condition, trueLabel, falseLabel, enclosing);
 			return;
 		case OPCODE_is:
@@ -1296,14 +1295,9 @@ public class Wyil2JavaBuilder implements Builder {
 			}
 			break;
 		case OPCODE_some:
+		default:
 			if(falseLabel != exitLabel) {
 				context.add(new Bytecode.Goto(falseLabel));
-			}
-			break;
-		case OPCODE_none:
-		default:				
-			if(trueLabel != exitLabel) {
-				context.add(new Bytecode.Goto(trueLabel));
 			}
 			break;
 		}
@@ -1345,13 +1339,9 @@ public class Wyil2JavaBuilder implements Builder {
 				myFalseLabel = falseLabel;
 				break;
 			case OPCODE_some:
+			default:
 				// if condition true, terminate early and return true.
 				myTrueLabel = trueLabel;
-				break;
-			case OPCODE_none:
-			default:				
-				// if condition true, terminate early and return false.
-				myTrueLabel = falseLabel;
 				break;
 			}
 			// Translate the quantifier condition and, depending on the kind of
@@ -1853,7 +1843,6 @@ public class Wyil2JavaBuilder implements Builder {
 				break;
 			case OPCODE_all:
 			case OPCODE_some:
-			case OPCODE_none:
 				translateQuantifier((Location<Quantifier>) expr, context);
 				break;
 			case OPCODE_indirectinvoke:

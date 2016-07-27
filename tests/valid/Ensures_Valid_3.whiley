@@ -1,6 +1,6 @@
 function selectOver(int[] xs) -> (int[] ys)
 ensures |ys| <= |xs|
-ensures no { i in 0..|ys| | ys[i] < 0 }:
+ensures all { i in 0..|ys| | ys[i] >= 0 }:
     //
     int i = 0
     int size = |xs|

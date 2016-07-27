@@ -555,7 +555,6 @@ public class Interpreter {
 		case Bytecode.OPCODE_lambda:
 			val = executeLambda((Location<Lambda>) expr, frame);
 			break;
-		case Bytecode.OPCODE_none:
 		case Bytecode.OPCODE_some:
 		case Bytecode.OPCODE_all:
 			val = executeQuantifier((Location<Quantifier>) expr, frame);
@@ -683,13 +682,9 @@ public class Interpreter {
 			// This is the base case where we evaluate the condition itself.
 			Constant.Bool r = executeExpression(BOOL_T, expr.getOperand(CONDITION), frame);
 			int opcode = bytecode.getOpcode();
-			if (r.value()) {
-				switch (opcode) {
-				case Bytecode.OPCODE_none:
-				case Bytecode.OPCODE_some:
-					return false;
-				}
-			} else if (opcode == Bytecode.OPCODE_all) {
+			if (r.value() && opcode == Bytecode.OPCODE_some) {
+				return false;
+			} else if (!r.value() && opcode == Bytecode.OPCODE_all) {
 				return false;
 			}
 			// This means that, for the given quantifier kind, we have to
@@ -782,7 +777,6 @@ public class Interpreter {
 		case Bytecode.OPCODE_convert:
 		case Bytecode.OPCODE_fieldload:
 		case Bytecode.OPCODE_lambda:
-		case Bytecode.OPCODE_none:
 		case Bytecode.OPCODE_some:
 		case Bytecode.OPCODE_all:
 		default:

@@ -532,7 +532,6 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 			break;
 		case Bytecode.OPCODE_all:
 		case Bytecode.OPCODE_some:
-		case Bytecode.OPCODE_none:
 			writeQuantifier((Location<Bytecode.Quantifier>) expr, out);
 			break;
 		case Bytecode.OPCODE_add:
@@ -721,8 +720,6 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 	
 	private String quantifierKind(Location<Bytecode.Quantifier> c) {
 		switch(c.getOpcode()) {
-		case Bytecode.OPCODE_none:
-			return "no";
 		case Bytecode.OPCODE_some:
 			return "some";
 		case Bytecode.OPCODE_all:

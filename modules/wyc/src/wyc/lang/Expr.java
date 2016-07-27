@@ -476,7 +476,7 @@ public interface Expr extends SyntacticElement {
 	}
 
 	public enum QOp {
-		NONE, SOME, ALL,
+		SOME, ALL,
 	}
 
 	public static class FieldAccess extends SyntacticElement.Impl implements LVal {
