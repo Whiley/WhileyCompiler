@@ -10,15 +10,15 @@ requires all { i in 0 .. |items|-1 | items[i] < items[i+1] }
 // If return true, then matching item must exist in items
 ensures result ==> some { i in 0..|items| | items[i] == item }
 // If return false, then no matching item exists in items
-ensures !result ==> no { i in 0..|items| | items[i] == item }:
+ensures !result ==> all { i in 0..|items| | items[i] != item }:
     //
     int lo = 0
     int hi = |items|
 
     while lo < hi
         where 0 <= lo && hi <= |items| && lo <= hi
-        where no { i in 0 .. lo | items[i] == item }
-        where no { i in hi .. |items| | items[i] == item }:
+        where all { i in 0 .. lo | items[i] != item }
+        where all { i in hi .. |items| | items[i] != item }:
         //
         // Note, the following is safe in Whiley because we have
         // unbounded integers.  If that wasn't the case, then this could

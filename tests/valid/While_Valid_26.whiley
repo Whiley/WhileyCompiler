@@ -6,9 +6,9 @@ function search(int[] items, int item) -> (null|nat result)
 // The input list must be in sorted order
 requires all { i in 0 .. |items|-1 | items[i] < items[i+1] }
 // If the answer is an integer, then it must be a value index
-ensures (result != null) ==> items[result] == item
+ensures (result is int) ==> items[result] == item
 // If the answer is null, then the item must not be contained
-ensures (result == null) ==> no { i in 0..|items| | items[i] == item }:
+ensures (result == null) ==> all { i in 0..|items| | items[i] != item }:
     //
     int i = 0
     while i < |items|

@@ -1,8 +1,8 @@
 
 
 type Matrix is (int[][] rows)
-    where no {
-        i in 0 .. |rows|, j in 0 .. |rows| | |rows[i]| != |rows[j]|
+    where all {
+        i in 0 .. |rows|, j in 0 .. |rows| | |rows[i]| == |rows[j]|
     }
 
 function run(Matrix A, Matrix B) -> Matrix

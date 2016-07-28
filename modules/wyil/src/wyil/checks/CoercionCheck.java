@@ -29,9 +29,9 @@ import java.util.*;
 
 import static wyil.util.ErrorMessages.*;
 import wybs.lang.Builder;
+import wycc.lang.Attribute;
 import wycc.lang.Transform;
 import wycc.util.Pair;
-import wyil.attributes.SourceLocation;
 import wyil.lang.*;
 
 /**
@@ -81,28 +81,28 @@ public class CoercionCheck implements Transform<WyilFile> {
 	public void apply(WyilFile module) {
 		filename = module.filename();
 
+		for(WyilFile.Type type : module.types()) {
+			check(type.getTree());
+		}
 		for(WyilFile.FunctionOrMethod method : module.functionOrMethods()) {
-			check(method);
+			check(method.getTree());
 		}
 	}
 
-	public void check(WyilFile.FunctionOrMethod method) {
-		BytecodeForest forest = method.code();
-		for(int i=0;i!=forest.numBlocks();++i) {
-			check(i, forest, method);
-		}
-	}
-
-	protected void check(int blockID, BytecodeForest forest, WyilFile.FunctionOrMethod method) {
+	protected void check(SyntaxTree tree) {
 		// Examine all entries in this block looking for a conversion bytecode
-		BytecodeForest.Block block = forest.get(blockID);
-		for (int i = 0; i != block.size(); ++i) {
-			BytecodeForest.Entry e = block.get(i);
-			Bytecode code = e.code();
-			if (code instanceof Bytecode.Convert) {
-				Bytecode.Convert conv = (Bytecode.Convert) code;
-				check(conv.type(0), conv.result(), new HashSet<Pair<Type, Type>>(), e.attribute(SourceLocation.class));
-			} 
+		List<SyntaxTree.Location<?>> expressions = tree.getLocations();
+		for (int i = 0; i != expressions.size(); ++i) {
+			SyntaxTree.Location<?> l = expressions.get(i);
+			if (l.getBytecode() instanceof Bytecode.Expr) {
+				Bytecode.Expr e = (Bytecode.Expr) l.getBytecode();
+				if (e instanceof Bytecode.Convert) {
+					Bytecode.Convert c = (Bytecode.Convert) e;
+					// FIXME: need to fix this :)
+					// check(conv.type(0), c.type(), new HashSet<Pair<Type,
+					// Type>>(), e.attribute(SourceLocation.class));
+				}
+			}
 		}
 	}
 
@@ -116,7 +116,7 @@ public class CoercionCheck implements Transform<WyilFile> {
 	 * @param visited - the set of pairs already checked.
 	 * @param location - source location attribute (if applicable).
 	 */
-	protected void check(Type from, Type to, HashSet<Pair<Type, Type>> visited, SourceLocation location) {
+	protected void check(Type from, Type to, HashSet<Pair<Type, Type>> visited, Attribute.Source location) {
 		Pair<Type,Type> p = new Pair<Type,Type>(from,to);
 		if(visited.contains(p)) {
 			return; // already checked this pair
@@ -206,7 +206,7 @@ public class CoercionCheck implements Transform<WyilFile> {
 	}
 	
 	private void check(List<Type> params1, List<Type> params2, HashSet<Pair<Type, Type>> visited,
-			SourceLocation location) {
+			Attribute.Source location) {
 		for (int i = 0; i != params1.size(); ++i) {
 			Type e1 = params1.get(i);
 			Type e2 = params2.get(i);

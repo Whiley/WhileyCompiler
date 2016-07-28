@@ -28,8 +28,7 @@ package wyil.util;
 import java.util.Collection;
 
 import wycc.lang.SyntaxError.InternalFailure;
-import wyil.attributes.SourceLocation;
-import wyil.lang.Attribute;
+import wycc.lang.Attribute;
 import wyil.lang.Type;
 
 /**
@@ -179,9 +178,9 @@ public class ErrorMessages {
 	public static void syntaxError(String msg, String filename,
 			Attribute... attributes) {
 		for(Attribute attr : attributes) {
-			if(attr instanceof SourceLocation) {
-				SourceLocation l = (SourceLocation) attr;
-				throw new wycc.lang.SyntaxError(msg,filename,l.start(),l.end());
+			if(attr instanceof Attribute.Source) {
+				Attribute.Source l = (Attribute.Source) attr;
+				throw new wycc.lang.SyntaxError(msg,filename,l.start,l.end);
 			}
 		}
 		// No source information available.
@@ -203,9 +202,9 @@ public class ErrorMessages {
 	public static void syntaxError(String msg, String filename,
 			Collection<Attribute> attributes) {
 		for(Attribute attr : attributes) {
-			if(attr instanceof SourceLocation) {
-				SourceLocation l = (SourceLocation) attr;
-				throw new wycc.lang.SyntaxError(msg,filename,l.start(),l.end());
+			if(attr instanceof Attribute.Source) {
+				Attribute.Source l = (Attribute.Source) attr;
+				throw new wycc.lang.SyntaxError(msg,filename,l.start,l.end);
 			}
 		}
 		// No source information available.
@@ -229,9 +228,9 @@ public class ErrorMessages {
 	public static void syntaxError(String msg, String filename,
 			Throwable ex, Attribute... attributes) {
 		for(Attribute attr : attributes) {
-			if(attr instanceof SourceLocation) {
-				SourceLocation l = (SourceLocation) attr;
-				throw new wycc.lang.SyntaxError(msg,filename,l.start(),l.end(),ex);
+			if(attr instanceof Attribute.Source) {
+				Attribute.Source l = (Attribute.Source) attr;
+				throw new wycc.lang.SyntaxError(msg,filename,l.start,l.end,ex);
 			}
 		}
 		// No source information available.
@@ -253,9 +252,9 @@ public class ErrorMessages {
 	public static void internalFailure(String msg, String filename,
 			Attribute... attributes) {
 		for(Attribute attr : attributes) {
-			if(attr instanceof SourceLocation) {
-				SourceLocation l = (SourceLocation) attr;
-				throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,l.start(),l.end());
+			if(attr instanceof Attribute.Source) {
+				Attribute.Source l = (Attribute.Source) attr;
+				throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,l.start,l.end);
 			}
 		}
 		// No source information available.
@@ -277,9 +276,9 @@ public class ErrorMessages {
 	public static void internalFailure(String msg, String filename,
 			Collection<Attribute> attributes) {
 		for(Attribute attr : attributes) {
-			if(attr instanceof SourceLocation) {
-				SourceLocation l = (SourceLocation) attr;
-				throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,l.start(),l.end());
+			if(attr instanceof Attribute.Source) {
+				Attribute.Source l = (Attribute.Source) attr;
+				throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,l.start,l.end);
 			}
 		}
 		// No source information available.
@@ -303,9 +302,9 @@ public class ErrorMessages {
 	public static void internalFailure(String msg, String filename,
 			Throwable ex, Attribute... attributes) {
 		for(Attribute attr : attributes) {
-			if(attr instanceof SourceLocation) {
-				SourceLocation l = (SourceLocation) attr;
-				throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,l.start(),l.end(),ex);
+			if(attr instanceof Attribute.Source) {
+				Attribute.Source l = (Attribute.Source) attr;
+				throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,l.start,l.end,ex);
 			}
 		}
 		// No source information available.
@@ -329,9 +328,9 @@ public class ErrorMessages {
 	public static void internalFailure(String msg, String filename,
 			Throwable ex, Collection<Attribute> attributes) {
 		for(Attribute attr : attributes) {
-			if(attr instanceof SourceLocation) {
-				SourceLocation l = (SourceLocation) attr;
-				throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,l.start(),l.end(),ex);
+			if(attr instanceof Attribute.Source) {
+				Attribute.Source l = (Attribute.Source) attr;
+				throw new wycc.lang.SyntaxError.InternalFailure(msg,filename,l.start,l.end,ex);
 			}
 		}
 		// No source information available.

@@ -32,10 +32,46 @@ include "Core.wyrl"
 // An array is a mapping from an index value to another value.
 term Array[Expr...]
 
+@rank(2)
+@name("And{Equals[VExpr,Array],BExpr...}")
+reduce And{Equals[Type t, {|VExpr x, Array y|}] eq, BExpr... bs}:
+    => let cs = { b[x\y] | b in bs }
+       in And (eq ++ cs)
+
+// ====================================================================
+// Array Generators
+// ====================================================================
+
+// An array is a mapping from an index value to another value.
+term ArrayGen[Expr,Expr]
+
+@rank(2)
+@name("ArrayGen[Expr,Num]")
+reduce ArrayGen[Expr x, Num(real r)]:
+    => let n = num r,
+           xs = [ x | i in 0..n ]
+       in Array(xs)
+
+@rank(2)
+@name("And{Equals[VExpr,ArrayGen],BExpr...}")
+reduce And{Equals[Type t, {|VExpr x, ArrayGen y|}] eq, BExpr... bs}:
+    => let cs = { b[x\y] | b in bs }
+       in And (eq ++ cs)
+
+// ====================================================================
+// Length Expressions
+// ====================================================================
+
 @rank(0)
 @name("LengthOf(Array)")
 reduce LengthOf(Array[Expr... xs]):
     => Num((real) |xs|)
+
+
+@rank(2)
+@name("LengthOf(ArrayGen)")
+reduce LengthOf(ArrayGen[Expr v, Expr n]):
+    => n
 
 // ====================================================================
 // IndexOf Expressions
@@ -51,13 +87,18 @@ reduce IndexOf[Array[Expr... xs], Num(real i)]:
     => let j = num i
        in xs[j], if j >= 0 && j < |xs|
 
+@rank(0)
+@name("IndexOf[ArrayGen]")
+reduce IndexOf[ArrayGen[Expr v,Expr n], Expr]:
+    => v
+
 // ====================================================================
 // Expressions & Values
 // ====================================================================
 
-define Value as Array[Value...] | ...
+define Value as Array[Value...] | ArrayGen[Value,Value] | ...
 
-define SExpr as VExpr | Array | ...
+define SExpr as VExpr | Array | ArrayGen | ...
 
 define VExpr as IndexOf | ...
 

@@ -517,7 +517,8 @@ public class WyalFileLexer {
 			put("false", Token.Kind.False);
 			// statements
 			put("assert", Token.Kind.Assert);
-			put("case", Token.Kind.Case);
+			put("either", Token.Kind.Either);
+			put("or", Token.Kind.Or);
 			put("if", Token.Kind.If);
 			put("then", Token.Kind.Then);
 			// expressions
@@ -613,9 +614,14 @@ public class WyalFileLexer {
 					return "assert";
 				}
 			},
-			Case {
+			Either {
 				public String toString() {
-					return "case";
+					return "either";
+				}
+			},
+			Or {
+				public String toString() {
+					return "or";
 				}
 			},
 			If {

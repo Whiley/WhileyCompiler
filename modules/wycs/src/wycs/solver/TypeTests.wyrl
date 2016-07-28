@@ -1,30 +1,4 @@
 // ====================================================================
-// Inhabited
-// ====================================================================
-
-// The inhabited constructor is essentially a function which returns
-// true or false as to whether ot not a given type reduces to Void.  In
-// essence, this is about controlling the reduction process more precisely.
-
-term Inhabited(Type)
-
-@name("Inhabited_1")
-reduce Inhabited(Atom t):
-    => False, if (t == VoidT) || (t == NotT(AnyT))
-    => True
-
-// A conjunct in this normal form can be reduced to true in the
-// general case
-@name("Inhabited_2")
-reduce Inhabited(AndT{NotT(Proton)... ts})
-requires no { t in ts | t == AnyT }:
-    => True
-
-@name("Inhabited_3")
-reduce Inhabited(ArrayT(Type t)):
-    => Inhabited(t)
-
-// ====================================================================
 // Is
 // ====================================================================
 

@@ -6,5 +6,5 @@ function f(Contractive x) -> Contractive:
     return x
 
 public export method test() :
-    x = f(null)
+    Contractive x = f(null)
     assume x == null

@@ -540,9 +540,6 @@ public class WhileyFilePrinter {
 
 	public void print(Expr.Quantifier e) {
 		switch(e.cop) {
-		case NONE:
-			out.print("no ");
-			break;
 		case SOME:
 			out.print("some ");
 			break;

@@ -136,7 +136,7 @@ public final class WyArray extends java.util.ArrayList {
 		return l;
 	}
 	
-	public static WyArray generate(final Object element, final BigInteger count) {
+	public static WyArray generate(final BigInteger count, final Object element) {
 		int n = count.intValue();
 		WyArray list = new WyArray();
 		for(int i=0;i<n;++i) {

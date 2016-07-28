@@ -78,47 +78,28 @@ public class AllValidTests {
 
 	static {
 		IGNORED.put("Complex_Valid_3", "Issue ???");
-		IGNORED.put("ConstrainedIntersection_Valid_1", "unknown");
 		IGNORED.put("ConstrainedNegation_Valid_1", "#342");
-		IGNORED.put("ConstrainedNegation_Valid_2", "#342");
-		IGNORED.put("Contractive_Valid_1", "Issue ???");
-		IGNORED.put("DoWhile_Valid_4", "unknown");
-		IGNORED.put("FunctionRef_Valid_2", "Issue ???");
-		IGNORED.put("FunctionRef_Valid_13", "#555");
+		IGNORED.put("ConstrainedNegation_Valid_2", "#342");					
 		IGNORED.put("Import_Valid_4", "#492");
 		IGNORED.put("Import_Valid_5", "#492");
-		//IGNORED.put("Intersection_Valid_1", "Issue ???");
-		//IGNORED.put("Intersection_Valid_2", "Issue ???");
 		IGNORED.put("Lifetime_Lambda_Valid_4", "#641");
 		IGNORED.put("ListAccess_Valid_6", "Issue ???");
-		IGNORED.put("ListAccess_Valid_7", "Issue ???");
-		IGNORED.put("NegationType_Valid_3", "Issue ???");
 		IGNORED.put("OpenRecord_Valid_11", "#585");
-		IGNORED.put("RecordCoercion_Valid_1", "#564");
 		IGNORED.put("RecordSubtype_Valid_1", "Issue ???");
 		IGNORED.put("RecordSubtype_Valid_2", "Issue ???");
 		IGNORED.put("RecursiveType_Valid_12", "#339");
 		IGNORED.put("RecursiveType_Valid_22", "#339");
 		IGNORED.put("RecursiveType_Valid_28", "#364");
-		IGNORED.put("RecursiveType_Valid_3", "#406");
-		IGNORED.put("RecursiveType_Valid_4", "#406");
 		IGNORED.put("RecursiveType_Valid_5", "#18");
-		IGNORED.put("Reference_Valid_6", "#553");
 		IGNORED.put("TypeEquals_Valid_23", "Issue ???");
 		IGNORED.put("TypeEquals_Valid_36", "Issue ???");
 		IGNORED.put("TypeEquals_Valid_37", "Issue ???");
 		IGNORED.put("TypeEquals_Valid_38", "Issue ???");
-		IGNORED.put("TypeEquals_Valid_41", "Issue ???");
-		IGNORED.put("While_Valid_15", "unknown");
+		IGNORED.put("TypeEquals_Valid_41", "Issue ???");		
 
 		// Fails and was not listed as test case before parameterizing
-		IGNORED.put("DoWhile_Valid_7", "unknown");
 		IGNORED.put("Function_Valid_11", "unknown");
-		IGNORED.put("Function_Valid_15", "unknown");
-		IGNORED.put("While_Valid_48", "unknown");
-
-		// Fails and was not annotated with @Test before parameterizing
-		IGNORED.put("While_Valid_7", "unknown");
+		IGNORED.put("Function_Valid_15", "unknown");		
 	}
 
 	/**

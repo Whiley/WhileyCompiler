@@ -13,4 +13,4 @@ ensures |rs| > 0:
 
 public export method test() :
     int[] rs = extract([-2, -3, 1, 2, -23, 3, 2345, 4, 5])
-    assume rs == [-2, -3, 1, 2, -23, 3, 2345, 4, 5]
+    assume rs == [-2, -3, 1, 2, -23, 3, 2345, 4, 5, 1]

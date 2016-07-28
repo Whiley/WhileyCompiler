@@ -400,6 +400,11 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 					//return Character.toString(Token.UC_GREATEREQUALS);
 					return ">=";
 				}
+			},
+			ARRAYGEN(16) {
+				public String toString() {
+					return "[]";
+				}
 			};
 
 			public int offset;

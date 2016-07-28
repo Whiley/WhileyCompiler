@@ -15,6 +15,14 @@ public class WyBool {
 		return new WyBool(!value);
 	}
 	
+	public WyBool and(WyBool b) {
+		return new WyBool(value & b.value);
+	}
+	
+	public WyBool or(WyBool b) {
+		return new WyBool(value | b.value);
+	}
+	
 	public boolean equals(Object o) {
 		if (o instanceof WyBool) {
 			WyBool b = (WyBool) o;

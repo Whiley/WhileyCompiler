@@ -207,6 +207,17 @@ public class WyalFile implements CompilationUnit {
 			this.body = body;
 		}
 
+		public Macro(String name, List<String> generics, TypePattern parameter, Expr body, List<Attribute> attributes) {
+			super(attributes);
+			if (!Expr.isValidIdentifier(name)) {
+				throw new IllegalArgumentException("illegal identifier: " + name);
+			}
+			this.name = name;
+			this.generics = new ArrayList<String>(generics);
+			this.from = parameter;
+			this.body = body;
+		}
+		
 		@Override
 		public String name() {
 			return name;

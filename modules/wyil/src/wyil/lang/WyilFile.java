@@ -30,11 +30,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
 
+import wycc.lang.Attribute;
 import wycc.lang.CompilationUnit;
+import wycc.lang.SyntacticElement;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyil.io.*;
+import wyil.lang.Bytecode.Expr;
+import wyil.lang.SyntaxTree.Location;
 
 /**
  * <p>
@@ -122,43 +126,10 @@ public final class WyilFile implements CompilationUnit {
 	 * @param filename
 	 * @param declarations
 	 */
-	public WyilFile(Path.ID mid,
-			String filename,
-			List<Block> declarations) {
+	public WyilFile(Path.ID mid, String filename) {
 		this.mid = mid;
 		this.filename = filename;
-		this.blocks = new ArrayList<Block>(declarations);
-
-		// second, validate methods and/or functions
-		HashSet<Pair<String,wyil.lang.Type.FunctionOrMethod>> methods = new HashSet<Pair<String,wyil.lang.Type.FunctionOrMethod>>();
-		HashSet<String> types = new HashSet<String>();
-		HashSet<String> constants = new HashSet<String>();
-
-		for (Block d : declarations) {
-			if(d instanceof FunctionOrMethod) {
-				FunctionOrMethod m = (FunctionOrMethod) d;
-				Pair<String,wyil.lang.Type.FunctionOrMethod> p = new Pair<String,wyil.lang.Type.FunctionOrMethod>(m.name(),m.type());
-				if (methods.contains(p)) {
-					throw new IllegalArgumentException(
-							"Multiple function or method definitions (" + p.first() + ") with the same name and type not permitted");
-				}
-				methods.add(p);
-			} else if(d instanceof Type) {
-				Type t = (Type) d;
-				if (types.contains(t.name())) {
-					throw new IllegalArgumentException(
-							"Multiple type definitions with the same name not permitted");
-				}
-				types.add(t.name());
-			} else if (d instanceof Constant) {
-				Constant c = (Constant) d;
-				if (constants.contains(c.name())) {
-					throw new IllegalArgumentException(
-							"Multiple constant definitions with the same name not permitted");
-				}
-				constants.add(c.name());
-			}
-		}
+		this.blocks = new ArrayList<Block>();
 	}
 
 	// =========================================================================
@@ -376,15 +347,27 @@ public final class WyilFile implements CompilationUnit {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static abstract class Block {
+	public static abstract class Block implements SyntacticElement {
+		private final WyilFile parent;
 		private final List<Attribute> attributes;
 
-		public Block(Collection<Attribute> attributes) {
+		public Block(WyilFile parent, Collection<Attribute> attributes) {
+			this.parent = parent;
 			this.attributes = new ArrayList<Attribute>(attributes);
 		}
 
-		public Block(Attribute[] attributes) {
+		public Block(WyilFile parent, Attribute[] attributes) {
+			this.parent = parent;
 			this.attributes = new ArrayList<Attribute>(Arrays.asList(attributes));
+		}
+		
+		/**
+		 * Get the WyIL file enclosing this block
+		 * 
+		 * @return
+		 */
+		public WyilFile parent() {
+			return parent;
 		}
 
 		public List<Attribute> attributes() {
@@ -411,19 +394,21 @@ public final class WyilFile implements CompilationUnit {
 	public static abstract class Declaration extends Block {
 		private String name;
 		private List<Modifier> modifiers;
-
-		public Declaration(String name, Collection<Modifier> modifiers,
-				Attribute... attributes) {
-			super(attributes);
+		private SyntaxTree tree;
+		
+		public Declaration(WyilFile parent, String name, Collection<Modifier> modifiers, Attribute... attributes) {
+			super(parent, attributes);
 			this.name = name;
 			this.modifiers = new ArrayList<Modifier>(modifiers);
+			this.tree = new SyntaxTree(this);
 		}
 
-		public Declaration(String name, Collection<Modifier> modifiers,
+		public Declaration(WyilFile parent, String name, Collection<Modifier> modifiers,
 				Collection<Attribute> attributes) {
-			super(attributes);
+			super(parent, attributes);
 			this.name = name;
 			this.modifiers = new ArrayList<Modifier>(modifiers);
+			this.tree = new SyntaxTree(this);
 		}
 
 		public String name() {
@@ -436,9 +421,13 @@ public final class WyilFile implements CompilationUnit {
 
 		public boolean hasModifier(Modifier modifier) {
 			return modifiers.contains(modifier);
+		}		
+		
+		public SyntaxTree getTree() {
+			return tree;			
 		}
 	}
-
+	
 	/**
 	 * A type declaration is a top-level block within a WyilFile that associates
 	 * a name with a given type. These names can be used within types,
@@ -450,30 +439,36 @@ public final class WyilFile implements CompilationUnit {
 	 *
 	 */
 	public static final class Type extends Declaration {
-		private wyil.lang.Type type;
-		private BytecodeForest invariant;
+		private final wyil.lang.Type type;
+		private final List<Location<Expr>> invariant;
 
-		public Type(Collection<Modifier> modifiers, String name, wyil.lang.Type type, BytecodeForest invariant,
+		public Type(WyilFile parent, Collection<Modifier> modifiers, String name, wyil.lang.Type type,
 				Attribute... attributes) {
-			super(name, modifiers, attributes);
+			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.invariant = invariant;
+			this.invariant = new ArrayList<Location<Expr>>();
 		}
 
-		public Type(Collection<Modifier> modifiers, String name, wyil.lang.Type type, BytecodeForest invariant,
+		public Type(WyilFile parent, Collection<Modifier> modifiers, String name, wyil.lang.Type type,
 				Collection<Attribute> attributes) {
-			super(name, modifiers, attributes);
+			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.invariant = invariant;
+			this.invariant = new ArrayList<Location<Expr>>();
 		}
 
 		public wyil.lang.Type type() {
 			return type;
 		}
-
-		public BytecodeForest invariant() {
+		
+		/**
+		 * Get the list of expressions that make up the invariant of this
+		 * type.  This list maybe empty, but it cannot be null.
+		 * 
+		 * @return
+		 */
+		public List<Location<Expr>> getInvariant() {
 			return invariant;
-		}
+		}		
 	}
 
 	/**
@@ -487,17 +482,17 @@ public final class WyilFile implements CompilationUnit {
 	 *
 	 */
 	public static final class Constant extends Declaration {
-		private wyil.lang.Constant constant;
+		private final wyil.lang.Constant constant;
 
-		public Constant(Collection<Modifier> modifiers, String name,
+		public Constant(WyilFile parent, Collection<Modifier> modifiers, String name,
 				wyil.lang.Constant constant, Attribute... attributes) {
-			super(name, modifiers, attributes);
+			super(parent, name, modifiers, attributes);
 			this.constant = constant;
 		}
 
-		public Constant(Collection<Modifier> modifiers, String name,
+		public Constant(WyilFile parent, Collection<Modifier> modifiers, String name,
 				wyil.lang.Constant constant, Collection<Attribute> attributes) {
-			super(name, modifiers, attributes);
+			super(parent, name, modifiers, attributes);
 			this.constant = constant;
 		}
 
@@ -506,88 +501,90 @@ public final class WyilFile implements CompilationUnit {
 		}
 	}
 
-	public static final class FunctionOrMethod extends
-			Declaration {
-		private wyil.lang.Type.FunctionOrMethod type;
-		private int numPreconditions;
-		private int numPostconditions;
-		private final BytecodeForest forest;
+	public static final class FunctionOrMethod extends Declaration {
+		private final wyil.lang.Type.FunctionOrMethod type;
+		/**
+		 * Expressions making up clauses of precondition 
+		 */
+		private final List<SyntaxTree.Location<Bytecode.Expr>> precondition;
+		/**
+		 * Expressions making up clauses of postcondition 
+		 */
+		private final List<SyntaxTree.Location<Bytecode.Expr>> postcondition;
+		/**
+		 * The function or method body (which can be null)
+		 */
+		private SyntaxTree.Location<Bytecode.Block> body;
 		
-		public FunctionOrMethod(Collection<Modifier> modifiers, String name, wyil.lang.Type.FunctionOrMethod type,
-				BytecodeForest forest, int numPreconditions, int numPostconditions, Attribute... attributes) {
-			super(name, modifiers, attributes);
+		public FunctionOrMethod(WyilFile parent, Collection<Modifier> modifiers, String name,
+				wyil.lang.Type.FunctionOrMethod type, Attribute... attributes) {
+			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.forest = forest;
-			this.numPreconditions = numPreconditions;
-			this.numPostconditions = numPostconditions;			
+			this.precondition = new ArrayList<SyntaxTree.Location<Bytecode.Expr>>();
+			this.postcondition = new ArrayList<SyntaxTree.Location<Bytecode.Expr>>();
 		}
 
-		public FunctionOrMethod(Collection<Modifier> modifiers, String name, wyil.lang.Type.FunctionOrMethod type,
-				BytecodeForest forest, int numPreconditions, int numPostconditions, Collection<Attribute> attributes) {
-			super(name, modifiers, attributes);
+		public FunctionOrMethod(WyilFile parent, Collection<Modifier> modifiers, String name,
+				wyil.lang.Type.FunctionOrMethod type, Collection<Attribute> attributes) {
+			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.forest = forest;
-			this.numPreconditions = numPreconditions;
-			this.numPostconditions = numPostconditions;	
+			this.precondition = new ArrayList<SyntaxTree.Location<Bytecode.Expr>>();
+			this.postcondition = new ArrayList<SyntaxTree.Location<Bytecode.Expr>>();
 		}
 
 		public wyil.lang.Type.FunctionOrMethod type() {
 			return type;
 		}
 
+		/**
+		 * Check whether this represents a function declaration or not.
+		 * 
+		 * @return
+		 */
 		public boolean isFunction() {
 			return type instanceof wyil.lang.Type.Function;
 		}
 
+		/**
+		 * Check whether this represents a method declaration or not.
+		 * 
+		 * @return
+		 */
 		public boolean isMethod() {
 			return type instanceof wyil.lang.Type.Method;
 		}
-		
-		public BytecodeForest code() {
-			return forest;
-		}
-		
+
 		/**
-		 * Get the list of blocks within the code forest that represent the
-		 * preconditions of this function/method.
+		 * Get the list of expressions that make up the precondition of this
+		 * function/method.  This list maybe empty, but it cannot be null.
 		 * 
 		 * @return
 		 */
-		public int[] preconditions() {
-			int[] ids = new int[numPreconditions];
-			for(int i=0;i!=numPreconditions;++i) {
-				ids[i] = forest.getRoot(i);
-			}
-			return ids;
+		public List<SyntaxTree.Location<Bytecode.Expr>> getPrecondition() {
+			return precondition;
 		}
 
 		/**
-		 * Get the list of blocks within the code forest that represent the
-		 * postconditions of this function/method.
+		 * Get the list of expressions that make up the postcondition of this
+		 * function/method.  This list maybe empty, but it cannot be null.
 		 * 
 		 * @return
 		 */
-		public int[] postconditions() {
-			int[] ids = new int[numPostconditions];
-			for(int i=0;i!=numPostconditions;++i) {
-				ids[i] = forest.getRoot(i+numPreconditions);
-			}
-			return ids;
-		}
+		public List<SyntaxTree.Location<Bytecode.Expr>> getPostcondition() {
+			return postcondition;
+		}		
 		
 		/**
-		 * Get the block corresponding to the body of this function, or null if
-		 * no such body exists.
+		 * Get the body of this function or method
 		 * 
 		 * @return
 		 */
-		public Integer body() {
-			int r = numPreconditions + numPostconditions;
-			if(r == forest.numRoots()) {
-				return null;
-			} else {
-				return forest.getRoot(r);
-			}
+		public SyntaxTree.Location<Bytecode.Block> getBody() {
+			return body;
+		}
+		
+		public void setBody(SyntaxTree.Location<Bytecode.Block> body) {
+			this.body = body;			
 		}
 	}
 }

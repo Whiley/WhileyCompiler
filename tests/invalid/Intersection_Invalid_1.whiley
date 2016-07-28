@@ -1,4 +1,4 @@
-type EmptyList is int[] & real[]
+type EmptyList is int[] & bool[]
 
 function size(EmptyList l) -> int:
     return |l|

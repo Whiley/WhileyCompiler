@@ -8,6 +8,8 @@ requires index >= 0 && index < |list|:
 public export method test() :
     int[] items = [5, 4, 6, 3, 7, 2, 8, 1]
     int i = 0
-    while i < |items|:
+    while i < |items|
+        where i >= 0
+        where all { k in 0..|items| | items[k] >= 0 }:
         assume indexOf(items,i) == items[i]
         i = i + 1

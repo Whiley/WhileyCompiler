@@ -27,57 +27,26 @@ package wyil.lang;
 
 import java.util.*;
 
+import wycc.lang.Attribute;
+import wycc.lang.SyntacticElement;
+import wyil.lang.Bytecode.Extras;
+import wyil.lang.Bytecode.Operands;
+import wyil.lang.Bytecode.Schema;
+import wyil.util.AbstractBytecode;
 import wycc.lang.NameID;
-import wycc.util.Pair;
 
 /**
- * Represents a WyIL bytecode. The Whiley Intermediate Language (WyIL) employs
- * register-based bytecodes (as opposed to e.g. the Java Virtual Machine, which
- * uses stack-based bytecodes). During execution, one can think of the "machine"
- * as maintaining a call stack made up of "frames". For each function or method
- * on the call stack, the corresponding frame consists of zero or more
- * <i>registers</i>. Bytecodes may read/write values from registers. Like the
- * Java Virtual Machine, WyIL uses unstructured control-flow. However, unlike
- * the JVM, it also allows variables to be automatically retyped by runtime type
- * tests. The following illustrates:
- *
- * <pre>
- * function sum(int[] data) -> int:
- *    int r = 0
- *    for item in data:
- *       r = r + item
- *    return r
- * </pre>
- *
- * This function is compiled into the following WyIL bytecode:
- *
- * <pre>
- * function sum(int[] data) -> int:
- * body:
- *   const %1 = 0          : int
- *   assign %2 = %0        : [int]
- *   forall %3 in %2 ()    : [int]
- *       assign %4 = %1    : int
- *       add %1 = %4, %3   : int
- *   return %1             : int
- * </pre>
- *
- * <p>
- * Here, we can see that every bytecode is associated with one (or more) types.
- * These types are inferred by the compiler during type propagation.
- * </p>
- *
  * <p>
  * Each bytecode has a binary format which identifies the <i>opcode</i>,
- * <i>target registers</i>, <i>operand registers</i> <i>types</i> and <i>other
- * items</i> used (e.g. names, constants, etc). The generic organisation of a
- * bytecode is as follows:
+ * <i>operand registers</i>, <i>operand groups</i>, <i>blocks</code> and
+ * <i>other items</i> used (e.g. names, constants, etc). The generic
+ * organisation of a bytecode is as follows:
  * </p>
  *
  * <pre>
- * +--------+---------+----------+-------+-------------+
- * | opcode | targets | operands | types | other items |
- * +--------+---------+----------+-------+-------------+
+ * +--------+----------+----------------+--------+-------------+
+ * | opcode | operands | operand groups | blocks | other items |
+ * +--------+----------+----------------+--------+-------------+
  * </pre>
  * <p>
  * The opcode is currently always 1 byte, whilst the remainder varies between
@@ -92,731 +61,217 @@ import wycc.util.Pair;
  * </pre>
  * <p>
  * Here, <i>operation</i> identifies the bytecode operation (e.g. add, invoke,
- * etc), whilst <i>fmt</i> identifies the bytecode format. Different formats are
- * used to specify common bytecode layouts:
+ * etc), whilst <i>fmt</i> identifies the bytecode format.
  * </p>
- * <pre>
- * fmt | constaints
- * ----+-----------
- *  00 | none
- *  01 | zero targets
- *  10 | one target
- *  11 | unused
- * </pre>
  * 
  * @author David J. Pearce
  */
-public abstract class Bytecode {
-	protected final Type[] types;
-	private final int[] targets;
-	protected final int[] operands;		
+public interface Bytecode {
 	
-	public Bytecode(Type type, int target, int... operands) {			
-		this.types = new Type[]{type};
-		this.targets = new int[] {target};
-		this.operands = operands;
-	}
-	
-	public Bytecode(Type[] types, int[] targets, int... operands) {			
-		this.types = types;
-		this.targets = targets;
-		this.operands = operands;
-	}
-
-	@Override
-	public int hashCode() {
-		return Arrays.hashCode(types) + Arrays.hashCode(targets()) + Arrays.hashCode(operands());
-	}
-
-	@Override
-	public boolean equals(Object o) {
-		if (o instanceof Bytecode) {
-			Bytecode bo = (Bytecode) o;
-			return Arrays.equals(targets(), bo.targets()) && Arrays.equals(operands(), bo.operands())
-					&& Arrays.equals(types, bo.types);
-		}
-		return false;
-	}
-
-	public Type[] types() {
-		return types;
-	}
-	
-	public Type type(int i) {
-		return (Type) types[i];
-	}
-
 	/**
-	 * Return a specific target register assigned by this bytecode.
+	 * Return the top-level operands in this bytecode.
 	 *
 	 * @return
 	 */
-	public int target(int i) {
-		return targets[i];
-	}
-	
-	/**
-	 * Return the target registers assigned by this bytecode.
-	 *
-	 * @return
-	 */
-	public int[] targets() {
-		return targets;
-	}		
-	
-	/**
-	 * Return the operand registers assigned by this bytecode.
-	 *
-	 * @return
-	 */
-	public int[] operands() {
-		return operands;
-	}
+	public int[] getOperands();
 
 	/**
-	 * Return the ith operand read by this bytecode.
+	 * Get the number of operands in this bytecode
+	 * 
+	 * @return
+	 */
+	public int numberOfOperands();
+	
+	/**
+	 * Return the ith top-level operand in this bytecode.
+	 * 
 	 * @param i
 	 * @return
 	 */
-	public int operand(int i) {
-		return operands[i];
-	}	
+	public int getOperand(int i);
+
+	/**
+	 * Get the number of operand groups in this bytecode
+	 * 
+	 * @return
+	 */
+	public int numberOfOperandGroups();
+
+	/**
+	 * Get the ith operand group in this bytecode
+	 * 
+	 * @param i
+	 * @return
+	 */
+	public int[] getOperandGroup(int i);
 
 	/**
 	 * Return the opcode value of this bytecode.
+	 * 
 	 * @return
 	 */
-	public abstract int opcode();
+	public int getOpcode();
 	
-	/**
-	 * A compound bytecode represents a bytecode that contains sequence of zero
-	 * or more bytecodes. For example, the loop bytecode contains its loop body.
-	 * The nested block of bytecodes is represented as a block identifier in the
-	 * enclosing forest.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static abstract class Compound extends Bytecode {
-		protected final int block;
-
-		public Compound(int block, Type[] types, int[] targets, int... operands) {
-			super(types, targets, operands);
-			this.block = block;
-		}
-
-		public int block() {
-			return block;
-		}
-		
-		public int hashCode() {
-			return super.hashCode() ^ block;
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof Compound) {
-				Compound abc = (Compound) o;
-				return block == abc.block && super.equals(o);
-			}
-			return false;
-		}
-	}
-	
-	/**
-	 * A compound bytecode represents a bytecode that contains sequence of zero
-	 * or more bytecodes. For example, the loop bytecode contains its loop body.
-	 * The nested block of bytecodes is represented as a block identifier in the
-	 * enclosing forest.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static abstract class Branching extends Bytecode {
-		protected final String destination;
-
-		public Branching(String destination, Type[] types, int[] targets, int... operands) {
-			super(types, targets, operands);
-			this.destination = destination;
-		}
-
-		public String destination() {
-			return destination;
-		}
-		
-		public int hashCode() {
-			return super.hashCode() ^ destination.hashCode();
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof Branching) {
-				Branching abc = (Branching) o;
-				return destination.equals(abc.destination) && super.equals(o);
-			}
-			return false;
-		}
-	}
-
-
 	// ===============================================================
-	// Bytecode Implementations
+	// Bytecode Expressions
 	// ===============================================================
 
 	/**
-	 * Represents a binary operator (e.g. '+','-',etc) that is provided to a
-	 * <code>BinOp</code> bytecode.
-	 *
+	 * Represents the class of bytecodes which correspond to expressions in the
+	 * source language.
+	 * 
 	 * @author David J. Pearce
 	 *
 	 */
-	public enum OperatorKind {
-		// Unary
-		NEG(0) {
-			public String toString() {
-				return "neg";
-			}
-		},
-		NOT(1) {
-			public String toString() {
-				return "not";
-			}
-		},
-		BITWISEINVERT(2) {
-			public String toString() {
-				return "invert";
-			}
-		},
-		DEREFERENCE(3) {
-			public String toString() {
-				return "deref";
-			}
-		},
-		ARRAYLENGTH(4) {
-			public String toString() {
-				return "length";
-			}
-		},
-		// Binary
-		ADD(5) {
-			public String toString() {
-				return "add";
-			}
-		},
-		SUB(6) {
-			public String toString() {
-				return "sub";
-			}
-		},
-		MUL(7) {
-			public String toString() {
-				return "mul";
-			}
-		},
-		DIV(8) {
-			public String toString() {
-				return "div";
-			}
-		},
-		REM(9) {
-			public String toString() {
-				return "rem";
-			}
-		},
-		EQ(10) {
-			public String toString() {
-				return "eq";
-			}
-		},
-		NEQ(11) {
-			public String toString() {
-				return "ne";
-			}
-		},
-		LT(12) {
-			public String toString() {
-				return "lt";
-			}
-		},
-		LTEQ(13) {
-			public String toString() {
-				return "le";
-			}
-		},
-		GT(14) {
-			public String toString() {
-				return "gt";
-			}
-		},
-		GTEQ(15) {
-			public String toString() {
-				return "ge";
-			}
-		},
-		BITWISEOR(16) {
-			public String toString() {
-				return "or";
-			}
-		},
-		BITWISEXOR(17) {
-			public String toString() {
-				return "xor";
-			}
-		},
-		BITWISEAND(18) {
-			public String toString() {
-				return "and";
-			}
-		},
-		LEFTSHIFT(19) {
-			public String toString() {
-				return "shl";
-			}
-		},
-		RIGHTSHIFT(20) {
-			public String toString() {
-				return "shr";
-			}
-		},
-		ARRAYINDEX(21) {
-			public String toString() {
-				return "indexof";
-			}
-		},
-		ARRAYGENERATOR(22) {
-			public String toString() {
-				return "arraygen";
-			}
-		},
-		ARRAYCONSTRUCTOR(23) {
-			public String toString() {
-				return "array";
-			}
-		},
-		RECORDCONSTRUCTOR(24) {
-			public String toString() {
-				return "record";
-			}
-		},
-		NEW(25) {
-			public String toString() {
-				return "new";
-			}
-		},
-		ASSIGN(26) {
-			public String toString() {
-				return "assign";
-			}
-		};
-		public int offset;
-
-		private OperatorKind(int offset) {
-			this.offset = offset;
-		}
-	};
-
-	/**
-	 * <p>
-	 * A binary operation which reads two numeric values from the operand
-	 * registers, performs an operation on them and writes the result to the
-	 * target register. The binary operators are:
-	 * </p>
-	 * <ul>
-	 * <li><i>add, subtract, multiply, divide, remainder</i>. Both operands must
-	 * be either integers or reals (but not one or the other). A value of the
-	 * same type is produced.</li>
-	 * <li><i>bitwiseor, bitwisexor, bitwiseand</i></li>
-	 * <li><i>leftshift,rightshift</i></li>
-	 * </ul>
-	 * For example, the following Whiley code:
-	 *
-	 * <pre>
-	 * function f(int x, int y) -> int:
-	 *     return ((x * y) + 1) / 2
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f(int x, int y) -> int:
-	 * body:
-	 *     mul %2 = %0, %1   : int
-	 *     const %3 = 1      : int
-	 *     add %2 = %2, %3   : int
-	 *     const %3 = 2      : int
-	 *     const %4 = 0      : int
-	 *     assertne %3, %4 "division by zero" : int
-	 *     div %2 = %2, %3   : int
-	 *     return %2         : int
-	 * </pre>
-	 *
-	 * Here, the <code>assertne</code> bytecode has been included to check
-	 * against division-by-zero. In this particular case the assertion is known
-	 * true at compile time and, in practice, would be compiled away.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Operator extends Bytecode {
-		private final OperatorKind kind;
-
-		public Operator(Type type, int[] targets, int[] operands, OperatorKind bop) {
-			super(new Type[] { type }, targets, operands);
-			if (bop == null) {
-				throw new IllegalArgumentException("Operator kind cannot be null");
-			}
-			this.kind = bop;
-		}
-
-		@Override
-		public int opcode() {
-			return OPCODE_neg + kind().offset;
-		}
-
-		public int hashCode() {
-			return kind.hashCode() + super.hashCode();
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Operator) {
-				Operator bo = (Operator) o;
-				return kind.equals(bo.kind) && super.equals(bo);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return kind() + " %" + target(0) + " = " + arrayToString(operands()) + " : " + type(0);
-		}
-
-		public OperatorKind kind() {
-			return kind;
-		}
+	public interface Expr extends Bytecode {
+		
 	}
 
 	/**
-	 * Reads a value from the operand register, converts it to a given type and
-	 * writes the result to the target register. This bytecode is the only way
-	 * to change the type of a value. It's purpose is to simplify
-	 * implementations which have different representations of data types. A
-	 * convert bytecode must be inserted whenever the type of a register
-	 * changes. This includes at control-flow meet points, when the value is
-	 * passed as a parameter, assigned to a field, etc. For example, the
-	 * following Whiley code:
-	 *
-	 * <pre>
-	 * function f(int x) -> real:
-	 *     return x + 1
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f(int x) -> real:
-	 * body:
-	 *     const %2 = 1           : int
-	 *     add %1 = %0, %2        : int
-	 *     convert %1 = %1 real   : int
-	 *     return %1              : real
-	 * </pre>
 	 * <p>
-	 * Here, we see that the <code>int</code> value in register <code>%1</code>
-	 * must be explicitly converted into a <code>real</code> value before it can
-	 * be returned from this function.
+	 * A convert bytecode has the following layout:
 	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+---------+
+	 * | opcode | operand |
+	 * +--------+---------+
+	 * </pre>
+	 *
+	 * <p>
+	 * This corresponds to an explicit or implicit cast in the source language.
+	 * This bytecode is the only way to change the type of a value. It's purpose
+	 * is to simplify implementations which have different representations of
+	 * data types. A convert bytecode must be inserted whenever the type of a
+	 * value changes. For example, when a variable is retyped using the
+	 * <code>is</code> operator, we must convert its value into a value of the
+	 * new type.
+	 * </p>
+	 * 
 	 * <p>
 	 * <b>NOTE:</b> In many cases, this bytecode may correspond to a nop on the
-	 * hardware. Consider converting from <code>[any]</code> to <code>any</code>
+	 * hardware. Consider converting from <code>any[]</code> to <code>any</code>
 	 * . On the JVM, <code>any</code> translates to <code>Object</code>, whilst
-	 * <code>[any]</code> translates to <code>List</code> (which is an instance
+	 * <code>any[]</code> translates to <code>List</code> (which is an instance
 	 * of <code>Object</code>). Thus, no conversion is necessary since
 	 * <code>List</code> can safely flow into <code>Object</code>.
 	 * </p>
 	 *
 	 */
-	public static final class Convert extends Bytecode {
-
-		public Convert(Type from, int target, int operand, Type result) {
-			super(new Type[] { from, result }, new int[] { target }, operand);
+	public static final class Convert extends AbstractBytecode implements Expr {
+		public Convert(int operand) {
+			super(operand);
 		}
 
-		public Type result() {
-			return type(1);
+		public int operand() {
+			return getOperand(0);
 		}
 
-		public int opcode() {
+		public int getOpcode() {
 			return OPCODE_convert;
 		}
 
-		public boolean equals(Object o) {
-			return o instanceof Convert && super.equals(o);
-		}
-
+		@Override
 		public String toString() {
-			return "convert %" + target(0) + " = %" + operand(0) + " " + result() + " : " + type(0);
+			return "castt " + Util.arrayToString(getOperands());
 		}
 	}
 
 	/**
-	 * Writes a constant value to a target register. This includes
-	 * <i>integers</i>, <i>rationals</i>, <i>lists</i>, <i>sets</i>, <i>maps</i>
-	 * , etc. For example, the following Whiley code:
-	 *
+	 * <p>
+	 * A constant bytecode has the following layout:
+	 * </p>
+	 * 
 	 * <pre>
-	 * function f(int x) -> int:
-	 *     xs = {1,2.12}
-	 *     return |xs| + 1
+	 * +--------+----------+
+	 * | opcode | constant |
+	 * +--------+----------+
 	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f(int x) -> int:
-	 * body:
-	 *     var xs
-	 *     const %2 = 1               : int
-	 *     convert %2 = % 2 int|real  : int
-	 *     const %3 = 2.12            : real
-	 *     convert %3 = % 3 int|real  : real
-	 *     newset %1 = (%2, %3)       : {int|real}
-	 *     assign %3 = %1             : {int|real}
-	 *     lengthof %3 = % 3          : {int|real}
-	 *     const %4 = 1               : int
-	 *     add %2 = % 3, %4           : int
-	 *     return %2                  : int
-	 * </pre>
-	 *
-	 * Here, we see two kinds of constants values being used: integers (i.e.
-	 * <code>const %2 = 1</code>) and rationals (i.e.
-	 * <code>const %3 = 2.12</code>).
+	 * 
+	 * Here, constant represents a value, such as an <i>integer</i>,
+	 * <i>array</i>, etc.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Const extends Bytecode {
+	public static final class Const extends AbstractBytecode implements Expr {
 		private final Constant constant;
 
-		public Const(int target, Constant constant) {
-			super(new Type[0], new int[] { target }, new int[0]);
+		public Const(Constant constant) {
 			this.constant = constant;
 		}
 
-		public int opcode() {
+		public int getOpcode() {
 			return OPCODE_const;
 		}
 
-		public int target() {
-			return targets()[0];
-		}
-		
 		public Constant constant() {
 			return constant;
 		}
 
+		@Override
 		public int hashCode() {
-			return constant.hashCode() + targets()[0];
+			return constant.hashCode();
 		}
 
+		@Override
 		public boolean equals(Object o) {
 			if (o instanceof Const) {
 				Const c = (Const) o;
-				return constant.equals(c.constant) && Arrays.equals(targets(), c.targets());
+				return constant.equals(c.constant);
 			}
 			return false;
 		}
 
-		public String toString() {
-			return "const %" + targets()[0] + " = " + constant + " : " + constant.type();
-		}
-	}
-
-	/**
-	 * Read a string from the operand register and prints it to the debug
-	 * console. For example, the following Whiley code:
-	 *
-	 * <pre>
-	 * method f(int x):
-	 *     debug "X = " + x
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * method f(int x):
-	 * body:
-	 *     const %2 = "X = "       : string
-	 *     convert %0 = %0 any     : int
-	 *     invoke %0 (%0) whiley/lang/Any:toString : string(any)
-	 *     strappend %1 = %2, %0   : string
-	 *     debug %1                : string
-	 *     return
-	 * </pre>
-	 *
-	 * <b>NOTE</b> This bytecode is not intended to form part of the program's
-	 * operation. Rather, it is to facilitate debugging within functions (since
-	 * they cannot have side-effects). Furthermore, if debugging is disabled,
-	 * this bytecode is a nop.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Debug extends Bytecode {
-
-		public Debug(int operand) {
-			super(new Type[] { Type.Array(Type.T_INT, false) }, new int[0], operand);
-		}
-
-		public int opcode() {
-			return OPCODE_debug;
-		}
-
-		public boolean equals(Object o) {
-			return o instanceof Debug && super.equals(o);
-		}
-
-		public String toString() {
-			return "debug %" + operands[0] + " " + " : " + types[0];
-		}
-	}
-
-	/**
-	 * An abstract class representing either an <code>assert</code> or
-	 * <code>assume</code> bytecode block.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static abstract class AssertOrAssume extends Compound {
-		private AssertOrAssume(int block) {
-			super(block, new Type[0], new int[0], new int[0]);
-		}
-	}
-
-	/**
-	 * Represents a block of bytecode instructions representing an assertion.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Assert extends AssertOrAssume {
-
-		public Assert(int block) {
-			super(block);
-		}
-
-		public int opcode() {
-			return OPCODE_assert;
-		}
-
-		public String toString() {
-			return "assert #" + block;
-		}
-
-		public boolean equals(Object o) {
-			return o instanceof Assume && super.equals(o);
-		}
-	}
-
-	/**
-	 * Represents a block of bytecode instructions representing an assumption.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Assume extends AssertOrAssume {
-
-		public Assume(int block) {
-			super(block);
-		}
-
-		public int opcode() {
-			return OPCODE_assume;
-		}
-
-		public String toString() {
-			return "assume #" + block;
-		}
-
-		public boolean equals(Object o) {
-			return o instanceof Assume && super.equals(o);
-		}
-	}
-
-	/**
-	 * A bytecode that halts execution by raising a runtime fault. This bytecode
-	 * signals that some has gone wrong, and is typically used to signal an
-	 * assertion failure.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Fail extends Bytecode {
-		public Fail() {
-			super(new Type[0], new int[0]);
-		}
-
 		@Override
-		public int opcode() {
-			return OPCODE_fail;
-		}
-
 		public String toString() {
-			return "fail";
+			return "const " + constant.toString();
 		}
 	}
 
 	/**
-	 * Reads a record value from an operand register, extracts the value of a
-	 * given field and writes this to the target register. For example, the
-	 * following Whiley code:
-	 *
+	 * <p>
+	 * A field load bytecode has the following layout:
+	 * </p>
+	 * 
 	 * <pre>
-	 * type Point is {int x, int y}
-	 *
-	 * function f(Point p) -> int:
-	 *     return p.x + p.y
+	 * +--------+---------+-----------+
+	 * | opcode | operand | fieldName |
+	 * +--------+---------+-----------+
 	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f({int x,int y} p) -> int:
-	 * body:
-	 *     fieldload %2 = %0 x    : {int x,int y}
-	 *     fieldload %3 = %0 y    : {int x,int y}
-	 *     add %1 = %2, %3        : int
-	 *     return %1              : int
-	 * </pre>
-	 *
+	 * 
+	 * <p>
+	 * The bytecode reads the field of the given name out of the record value
+	 * returned by the operand
+	 * </p>
+	 * 
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class FieldLoad extends Bytecode {
+	public static final class FieldLoad extends AbstractBytecode implements Expr {
 		private final String field;
 
-		public FieldLoad(Type.EffectiveRecord type, int target, int operand, String field) {
-			super((Type) type, target, operand);
+		public FieldLoad(int operand, String field) {
+			super(operand);
 			if (field == null) {
 				throw new IllegalArgumentException("FieldLoad field argument cannot be null");
 			}
 			this.field = field;
 		}
 
-		public int opcode() {
+		public int getOpcode() {
 			return OPCODE_fieldload;
 		}
 
-		public int hashCode() {
-			return super.hashCode() + field.hashCode();
-		}
-
-		public Type fieldType() {
-			Type.EffectiveRecord er = (Type.EffectiveRecord) type(0);
-			return er.fields().get(field);
+		public int operand() {
+			return getOperand(0);
 		}
 
 		public String fieldName() {
 			return field;
 		}
-		
+
+		@Override
 		public boolean equals(Object o) {
 			if (o instanceof FieldLoad) {
 				FieldLoad i = (FieldLoad) o;
@@ -825,236 +280,1450 @@ public abstract class Bytecode {
 			return false;
 		}
 
+		@Override
+		public int hashCode() {
+			return super.hashCode() + field.hashCode();
+		}
+
+		@Override
 		public String toString() {
-			return "fieldload %" + target(0) + " = %" + operand(0) + " " + field + " : " + type(0);
-		}
-	}
-
-	/**
-	 * Branches unconditionally to the given label. This is typically used for
-	 * if/else statements. For example, the following Whiley code:
-	 *
-	 * <pre>
-	 * function f(int x) -> int:
-	 *     if x >= 0:
-	 *         x = 1
-	 *     else:
-	 *         x = -1
-	 *     return x
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f(int x) -> int:
-	 * body:
-	 *     const %1 = 0             : int
-	 *     iflt %0, %1 goto blklab0 : int
-	 *     const %0 = 1             : int
-	 *     goto blklab1
-	 * .blklab0
-	 *     const %0 = 1             : int
-	 *     neg %0 = % 0             : int
-	 * .blklab1
-	 *     return %0                : int
-	 * </pre>
-	 *
-	 * Here, we see the <code>goto</code> bytecode being used to jump from the
-	 * end of the true branch over the false branch.
-	 *
-	 * <p>
-	 * <b>Note:</b> in WyIL bytecode, <i>such branches may only go forward</i>.
-	 * Thus, a <code>goto</code> bytecode cannot be used to implement the
-	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
-	 * </p>
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Goto extends Branching {
-		public Goto(String target) {
-			super(target, new Type[0], new int[0]);
-		}
-
-		public int opcode() {
-			return OPCODE_goto;
-		}
-
-		public Goto relabel(Map<String, String> labels) {
-			String nlabel = labels.get(destination());
-			if (nlabel == null) {
-				return this;
-			} else {
-				return new Goto(nlabel);
-			}
-		}
-
-		public boolean equals(Object o) {
-			return o instanceof Goto && super.equals(o);
-		}
-
-		public String toString() {
-			return "goto " + destination();
+			return "recfield %" + getOperand(0) + " " + field;
 		}
 	}
 
 	/**
 	 * <p>
-	 * Branches conditionally to the given label by reading the values from two
-	 * operand registers and comparing them. The possible comparators are:
+	 * A lambda bytecode has the following layout:
 	 * </p>
-	 * <ul>
-	 * <li><i>equals (eq) and not-equals (ne)</i>. Both operands must have the
-	 * given type.</li>
-	 * <li><i>less-than (lt), less-than-or-equals (le), greater-than (gt) and
-	 * great-than-or-equals (ge).</i> Both operands must have the given type,
-	 * which additionally must by either <code>char</code>, <code>int</code> or
-	 * <code>real</code>.</li>
-	 * <li><i>element of (in).</i> The second operand must be a set whose
-	 * element type is that of the first.</li>
-	 * </ul>
-	 * For example, the following Whiley code:
-	 *
+	 * 
 	 * <pre>
-	 * function f(int x, int y) -> int:
-	 *     if x < y:
-	 *         return -1
-	 *     else if x > y:
-	 *         return 1
-	 *     else:
-	 *         return 0
+	 * +--------+------+-------------+---------------+
+	 * | opcode | body | parameter[] | environment[] |
+	 * +--------+------+-------------+---------------+
 	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f(int x, int y) -> int:
-	 * body:
-	 *     ifge %0, %1 goto blklab0 : int
-	 *     const %2 = -1 : int
-	 *     return %2 : int
-	 * .blklab0
-	 *     ifle %0, %1 goto blklab2 : int
-	 *     const %2 = 1 : int
-	 *     return %2 : int
-	 * .blklab2
-	 *     const %2 = 0 : int
-	 *     return %2 : int
-	 * </pre>
-	 *
-	 * <b>Note:</b> in WyIL bytecode, <i>such branches may only go forward</i>.
-	 * Thus, an <code>ifgoto</code> bytecode cannot be used to implement the
-	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
-	 *
-	 * @author David J. Pearce
-	 *
+	 * 
+	 * <p>
+	 * Here, the body operand identifies an expression which constitutes the
+	 * body of this lambda. The parameters are those variables which are
+	 * declared by the lambda itself for use within the lambda body. The
+	 * environment identifies those variables from the surrounding environment.
+	 * </p>
 	 */
-	public static final class If extends Branching {
-		public If(Type type, int operand, String target) {
-			super(target, new Type[] { type }, new int[0], operand);
+	public static final class Lambda extends AbstractBytecode implements Expr {
+		private final Type.FunctionOrMethod type;
+
+		/**
+		 * Create a new lambda bytecode
+		 * 
+		 * @param type
+		 *            The type of the resulting lambda.
+		 * @param body
+		 *            The expression corresponding to the body of the lambda
+		 *            expression.
+		 * @param parameters
+		 *            The set of declared variables using within the lambda
+		 *            expression.
+		 * @param environment
+		 *            The set of variables from the enclosing scope which are
+		 *            used within the lambda body.
+		 */
+		public Lambda(Type.FunctionOrMethod type, int body, int[] parameters, int[] environment) {
+			super(body, new int[][]{parameters, environment});
+			this.type = type;
 		}
 
-		public If relabel(Map<String, String> labels) {
-			String nlabel = labels.get(destination());
-			if (nlabel == null) {
-				return this;
-			} else {
-				return new If(types[0], operands[0], nlabel);
-			}
+		public int getOpcode() {
+			return OPCODE_lambda;
 		}
 
-		public int opcode() {
-			return OPCODE_if;
+		public Type.FunctionOrMethod type() {
+			return type;
 		}
 
+		public int body() {
+			return getOperand(0);
+		};
+
+		public int[] parameters() {
+			return getOperandGroup(0);
+		}
+
+		public int[] environment() {
+			return getOperandGroup(1);
+		}
+
+		@Override
 		public boolean equals(Object o) {
-			return o instanceof If && super.equals(o);			
+			if (o instanceof Lambda) {
+				Lambda i = (Lambda) o;
+				return type.equals(i.type) && super.equals(i);
+			}
+			return false;
 		}
 
+		@Override
+		public int hashCode() {
+			return type.hashCode() + super.hashCode();
+		}
+
+		@Override
 		public String toString() {
-			return "if" + " %" + operands[0] + " goto " + destination() + " : " + types[0];
+			return "lambda " + Util.arrayToString(getOperands()) + " " + type;
 		}
 	}
 
 	/**
-	 * Branches conditionally to the given label based on the result of a
-	 * runtime type test against a value from the operand register. More
-	 * specifically, it checks whether the value is a subtype of the type test.
-	 * The operand register is automatically <i>retyped</i> as a result of the
-	 * type test. On the true branch, its type is intersected with type test. On
-	 * the false branch, its type is intersected with the <i>negation</i> of the
-	 * type test. For example, the following Whiley code:
+	 * Represents the set of valid operators (e.g. '+','-',etc).
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public enum OperatorKind {
+		// Unary		
+		NEG(OPCODE_neg) {
+			public String toString() {
+				return "neg";
+			}
+		},
+		NOT(OPCODE_logicalnot) {
+			public String toString() {
+				return "not";
+			}
+		},
+		BITWISEINVERT(OPCODE_bitwiseinvert) {
+			public String toString() {
+				return "invert";
+			}
+		},
+		DEREFERENCE(OPCODE_dereference) {
+			public String toString() {
+				return "deref";
+			}
+		},
+		ARRAYLENGTH(OPCODE_arraylength) {
+			public String toString() {
+				return "arrlen";
+			}
+		},
+		// Binary
+		ADD(OPCODE_add) {
+			public String toString() {
+				return "add";
+			}
+		},
+		SUB(OPCODE_sub) {
+			public String toString() {
+				return "sub";
+			}
+		},
+		MUL(OPCODE_mul) {
+			public String toString() {
+				return "mul";
+			}
+		},
+		DIV(OPCODE_div) {
+			public String toString() {
+				return "div";
+			}
+		},
+		REM(OPCODE_rem) {
+			public String toString() {
+				return "rem";
+			}
+		},
+		EQ(OPCODE_eq) {
+			public String toString() {
+				return "eq";
+			}
+		},
+		NEQ(OPCODE_ne) {
+			public String toString() {
+				return "neq";
+			}
+		},
+		LT(OPCODE_lt) {
+			public String toString() {
+				return "lt";
+			}
+		},
+		LTEQ(OPCODE_le) {
+			public String toString() {
+				return "lteq";
+			}
+		},
+		GT(OPCODE_gt) {
+			public String toString() {
+				return "gt";
+			}
+		},
+		GTEQ(OPCODE_ge) {
+			public String toString() {
+				return "gteq";
+			}
+		},
+		AND(OPCODE_logicaland) {
+			public String toString() {
+				return "land";
+			}
+		},
+		OR(OPCODE_logicalor) {
+			public String toString() {
+				return "lor";
+			}
+		},
+		BITWISEOR(OPCODE_bitwiseor) {
+			public String toString() {
+				return "bor";
+			}
+		},
+		BITWISEXOR(OPCODE_bitwisexor) {
+			public String toString() {
+				return "bxor";
+			}
+		},
+		BITWISEAND(OPCODE_bitwiseand) {
+			public String toString() {
+				return "band";
+			}
+		},
+		LEFTSHIFT(OPCODE_shl) {
+			public String toString() {
+				return "bshl";
+			}
+		},
+		RIGHTSHIFT(OPCODE_shr) {
+			public String toString() {
+				return "bshr";
+			}
+		},
+		ARRAYINDEX(OPCODE_arrayindex) {
+			public String toString() {
+				return "arridx";
+			}
+		},
+		ARRAYGENERATOR(OPCODE_arraygen) {
+			public String toString() {
+				return "arrgen";
+			}
+		},
+		ARRAYCONSTRUCTOR(OPCODE_array) {
+			public String toString() {
+				return "arrinit";
+			}
+		},
+		RECORDCONSTRUCTOR(OPCODE_record) {
+			public String toString() {
+				return "recinit";
+			}
+		},
+		IS(OPCODE_is) {
+			public String toString() {
+				return "istype";
+			}
+		},
+		NEW(OPCODE_newobject) {
+			public String toString() {
+				return "new";
+			}
+		};
+		public int opcode;
+
+		private OperatorKind(int offset) {
+			this.opcode = offset;
+		}
+	};
+
+	/**
+	 * <p>
+	 * An operator bytecode has the following layout:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+-----------+
+	 * | opcode | operand[] |
+	 * +--------+-----------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the operand array identifies one or more operands in which this
+	 * operator operators.  The operator produces exactly one value.
+	 * </p>
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class Operator extends AbstractBytecode implements Expr {
+		private final OperatorKind kind;
+
+		public Operator(int[] operands, OperatorKind bop) {
+			super(operands);
+			this.kind = bop;
+		}
+
+		@Override
+		public int getOpcode() {
+			return kind().opcode;
+		}
+
+		public OperatorKind kind() {
+			return kind;
+		}
+
+		public String toString() {
+			return kind() + " " + Util.arrayToString(getOperands());
+		}
+	}
+
+	public enum QuantifierKind {
+		SOME(OPCODE_some), ALL(OPCODE_all);
+		public int opcode;
+
+		private QuantifierKind(int offset) {
+			this.opcode = offset;
+		}
+	}
+
+	/**
+	 * <p>
+	 * A quantifier bytecode has the following layout:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+-----------+---------+-----+---------+
+	 * | opcode | condition | range[] | ... | range[] |
+	 * +--------+-----------+---------+-----+---------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the condition operand identifies an expression which the quantifier
+	 * is asserting over the given ranges. The ranges themselves identifier one
+	 * or more operand groups, each of which holds three entries: the declared
+	 * variable, the start operand, the end operand.
+	 * </p>
+	 */
+	public static final class Quantifier extends AbstractBytecode implements Expr {
+		private final QuantifierKind kind;
+
+		public Quantifier(QuantifierKind kind, int operand, Range... ranges) {
+			super(operand, extract(ranges));
+			this.kind = kind;
+		}
+
+		public QuantifierKind kind() {
+			return kind;
+		}
+		
+		public int getOpcode() {
+			return kind.opcode;
+		}
+
+		public int body() {
+			return getOperand(0);
+		}
+
+		public Range[] ranges() {
+			Bytecode.Range[] ranges = new Bytecode.Range[numberOfOperandGroups()];
+			for (int i = 0; i != ranges.length; i = i + 1) {
+				int[] group = getOperandGroup(i);
+				ranges[i] = new Bytecode.Range(group[0], group[1], group[2]);
+			}
+			return ranges;
+		}
+
+		private static int[][] extract(Range[] ranges) {
+			int[][] groups = new int[ranges.length][3];
+			for (int i = 0; i != ranges.length; ++i) {
+				Range r = ranges[i];
+				groups[i][0] = r.variable;
+				groups[i][1] = r.startOperand;
+				groups[i][2] = r.endOperand;
+			}
+			return groups;
+		}
+
+		@Override
+		public String toString() {
+			return "quantifier";
+		}
+	}
+
+	public static final class Range {
+		private final int variable;
+		private final int startOperand;
+		private final int endOperand;
+
+		public Range(int variable, int startOperand, int endOperand) {
+			this.variable = variable;
+			this.startOperand = startOperand;
+			this.endOperand = endOperand;
+		}
+
+		/**
+		 * Return the location index for the variable this range is declaring.
+		 * 
+		 * @return
+		 */
+		public int variable() {
+			return variable;
+		}
+
+		/**
+		 * Return the start operand of this range.
+		 * 
+		 * @return
+		 */
+		public int startOperand() {
+			return startOperand;
+		}
+
+		/**
+		 * Return the end operand of this range.
+		 * 
+		 * @return
+		 */
+		public int endOperand() {
+			return endOperand;
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof Range) {
+				Range r = (Range) o;
+				return variable == r.variable && startOperand == r.startOperand && r.endOperand == endOperand;
+			}
+			return false;
+		}
+
+		public int hashCode() {
+			return variable ^ startOperand ^ endOperand;
+		}
+	}
+
+
+	/**
+	 * <p>
+	 * A variable access bytecode represents a specific read of a given variable.
+	 * </p>
 	 *
 	 * <pre>
-	 * function f(int|int[] x) -> int:
-	 *     if x is int[]:
-	 *         return |x|
-	 *     else:
-	 *         return x
+	 * +--------+---------+
+	 * | opcode | operand |
+	 * +--------+---------+
 	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f(int|int[] x) -> int:
-	 * body:
-	 *     ifis %0, int[] goto lab    : int|int[]
-	 *     return %0                  : int
-	 * .lab
-	 *     lengthof %0 = %0           : int[]
-	 *     return %0                  : int
-	 * </pre>
-	 *
-	 * Here, we see that, on the false branch, register <code>%0</code> is
-	 * automatically given type <code>int</code>, whilst on the true branch it
-	 * is automatically given type <code>int[]</code>.
 	 *
 	 * <p>
-	 * <b>Note:</b> in WyIL bytecode, <i>such branches may only go forward</i>.
-	 * Thus, an <code>ifis</code> bytecode cannot be used to implement the
-	 * back-edge of a loop. Rather, a loop block must be used for this purpose.
+	 * Here, the operand refers to the variable declaration corresponding to
+	 * this variable Access.
+	 * </p>
+	 */
+	public static final class VariableAccess extends AbstractBytecode implements Expr {
+
+		public VariableAccess(int operand) {
+			super(operand);
+		}
+
+		@Override
+		public int getOpcode() {
+			return OPCODE_varaccess;
+		}
+
+		public String toString() {
+			return "read " + Util.arrayToString(getOperands());
+		}
+	}
+
+	// ===============================================================
+	// Bytecode Statements
+	// ===============================================================
+
+	/**
+	 * A statement bytecode represents a bytecode that contains a sequence of
+	 * zero or more bytecodes. For example, a loop bytecode contains its loop
+	 * body. The nested blocks of bytecodes are represented as a block
+	 * identifier in the enclosing forest.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Stmt extends Bytecode {
+
+		/**
+		 * Determine the number of blocks contained in this bytecode.
+		 * 
+		 * @return
+		 */
+		public int numberOfBlocks();
+
+		/**
+		 * Get the ith block contained in this statement
+		 * 
+		 * @param i
+		 * @return
+		 */
+		public int getBlock(int i);
+
+		/**
+		 * Get the blocks contained in this statement
+		 * 
+		 * @param i
+		 * @return
+		 */
+		public int[] getBlocks();
+	}
+
+	/**
+	 * <p>
+	 * An alias declaration bytecode has the following form:
+	 * </p>
+	 *
+	 * <pre>
+	 * +--------+---------+
+	 * | opcode | operand |
+	 * +--------+---------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the operand identifies the variable declaration being aliased
+	 * (which may be an alias declaration itself).
+	 * </p>
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class AliasDeclaration extends AbstractBytecode implements Stmt {
+
+		public AliasDeclaration(int initialiser) {
+			super(initialiser);
+		}
+
+
+		@Override
+		public int getOpcode() {			
+			return OPCODE_aliasdecl;
+		}
+		
+		public String toString() {
+			return "alias (%" + getOperand(0) + ")";
+		}
+	}
+	
+	/**
+	 * An abstract class representing either an <code>assert</code> or
+	 * <code>assume</code> bytecode.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static abstract class AssertOrAssume extends AbstractBytecode implements Stmt {
+		private AssertOrAssume(int operand) {
+			super(operand);
+		}
+
+		public int operand() {
+			return getOperand(0);
+		}
+	}
+
+	/**
+	 * <p>
+	 * An assert bytecode has the following layout:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+-----------+
+	 * | opcode | condition |
+	 * +--------+-----------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the condition identifies an operand which should always evaluate to
+	 * true. This condition should be enforced at compile time.
+	 * </p>
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class Assert extends AssertOrAssume {
+
+		public Assert(int operand) {
+			super(operand);
+		}
+
+		public int getOpcode() {
+			return OPCODE_assert;
+		}
+
+		@Override
+		public String toString() {
+			return "assert %" + getOperand(0);
+		}
+
+	}
+
+	/**
+	 * <p>
+	 * An assignment bytecode has the following layout:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+----------------+-----------------+
+	 * | opcode | leftHandSide[] | rightHandSide[] |
+	 * +--------+----------------+-----------------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the left-hand side identifies zero or more operands which are being
+	 * assigned to, whilst the right-hand side identifies one or more operands
+	 * which whose results are being assigned. The left-hand side may have fewer
+	 * operands than the right-hand side. This happens, for example, in the case
+	 * of an invocation where the result is ignored.
+	 * </p>
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class Assign extends AbstractBytecode implements Stmt {
+		/**
+		 * Construct an assignment from a right-hand operand to a left-hand
+		 * operand.
+		 *
+		 * @param lhs
+		 *            LVal on left-hand side which is assigned to
+		 * @param rhs
+		 *            Operand on right-hand side whose value is assigned
+		 */
+		public Assign(int lhs, int rhs) {
+			this(new int[] { lhs }, new int[] { rhs });
+		}
+
+		/**
+		 * Construct an assignment from a right-hand operand to a left-hand
+		 * operand.
+		 *
+		 * @param lhs
+		 *            LVal on left-hand side which is assigned to
+		 * @param rhs
+		 *            Operand on right-hand side whose value is assigned
+		 */
+		public Assign(int[] lhs, int[] rhs) {
+			super(new int[][] { lhs, rhs });
+		}
+
+		public int getOpcode() {
+			return OPCODE_assign;
+		}
+
+		/**
+		 * Returns operand(s) from which assigned value is written to. This is
+		 * also known as the "left-hand side".
+		 *
+		 * @return
+		 */
+		public int[] leftHandSide() {
+			return getOperandGroup(0);
+		}
+
+		/**
+		 * Returns operand(s) from which assigned value is read. This is also
+		 * known as the "right-hand side".
+		 *
+		 * @return
+		 */
+		public int[] rightHandSide() {
+			return getOperandGroup(1);
+		}
+
+		@Override
+		public String toString() {
+			return "assign " + Util.arrayToString(leftHandSide()) + " = " + Util.arrayToString(rightHandSide());
+		}
+	}
+
+	/**
+	 * <p>
+	 * An assume bytecode has the following layout:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+-----------+
+	 * | opcode | condition |
+	 * +--------+-----------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the condition identifies an operand which is assumed to always
+	 * evaluate to true.  This assumption should be tested at runtime.
 	 * </p>
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class IfIs extends Branching {
-		public IfIs(Type type, int leftOperand, Type rightOperand, String target) {
-			super(target, new Type[] { type, rightOperand }, new int[0], leftOperand);
+	public static final class Assume extends AssertOrAssume {
+
+		public Assume(int operand) {
+			super(operand);
 		}
 
-		public int opcode() {
-			return OPCODE_ifis;
+		public int getOpcode() {
+			return OPCODE_assume;
 		}
 
-		public Type rightOperand() {
-			return type(1);
-		}
-
-		public IfIs relabel(Map<String, String> labels) {
-			String nlabel = labels.get(destination());
-			if (nlabel == null) {
-				return this;
-			} else {
-				return new IfIs(types[0], operands[0], types[1], nlabel);
-			}
-		}
-
-		public boolean equals(Object o) {
-			return o instanceof IfIs && super.equals(o);
-		}
-
+		@Override
 		public String toString() {
-			return "ifis" + " %" + operands[0] + ", " + types[1] + " goto " + destination() + " : " + types[0];
+			return "assume %" + operand();
 		}
 	}
 
 	/**
-	 * Represents an indirect function call. For example, consider the
-	 * following:
+	 * <p>
+	 * A break bytecode has the following layout:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+
+	 * | opcode |
+	 * +--------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, control will immediately exit the enclosing loop upon executing
+	 * this bytecode.
+	 * </p>
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class Break extends AbstractBytecode implements Stmt {
+		
+		public Break() {
+			super(new int[0]);
+		}
+
+		public int getOpcode() {
+			return OPCODE_break;
+		}		
+		
+		@Override
+		public String toString() {
+			return "break ";
+		}
+	}
+
+	/**
+	 * <p>
+	 * A continue bytecode has the following layout:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+
+	 * | opcode |
+	 * +--------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, control will immediately complete the enclosing loop body upon
+	 * executing this bytecode.
+	 * </p>
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class Continue extends AbstractBytecode implements Stmt {
+
+		public Continue() {
+			super(new int[]{});
+		}
+
+		public int getOpcode() {
+			return OPCODE_continue;
+		}
+
+		@Override
+		public String toString() {
+			return "cont";
+		}
+	}
+
+	/**
+	 * <p>
+	 * A debug bytecode has the following layout:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+--------+
+	 * | opcode | string |
+	 * +--------+--------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the string identifies an operand returning a string result which
+	 * will be printed to the debug console.
+	 * </p>
+	 * 
+	 * <b>NOTE</b> This bytecode is not intended to form part of the program's
+	 * operation. Rather, it is to facilitate debugging within functions (since
+	 * they cannot have side-effects). Furthermore, if debugging is disabled,
+	 * this bytecode is a nop.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class Debug extends AbstractBytecode implements Stmt {
+
+		public Debug(int operand) {
+			super(operand);
+		}
+
+		public int getOpcode() {
+			return OPCODE_debug;
+		}
+		
+		@Override
+		public String toString() {
+			return "debug %" + getOperand(0);
+		}
+	}
+
+	/**
+	 * A Do While bytecode has the same format as the underlying loop bytecode.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class DoWhile extends Loop {
+		public DoWhile(int body, int condition, int[] invariants, int[] modified) {
+			super(body, condition, invariants, modified);
+		}
+
+		public int getOpcode() {
+			return OPCODE_dowhile;
+		}
+
+		@Override
+		public String toString() {
+			return "dowhile";
+		}
+	}
+
+	/**
+	 * <p>
+	 * A panic bytecode has the following layout:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+
+	 * | opcode |
+	 * +--------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Upon execution of this bytecode, the machine will halt immediately and
+	 * indicate an unrecoverable error. At this time, there is no way to recover
+	 * from a panic, though this may be supported in the future.
+	 * </p>
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class Fail extends AbstractBytecode implements Stmt {
+
+		// FIXME: should be renamed to panic as this is a more descriptive name
+
+		@Override
+		public int getOpcode() {
+			return OPCODE_fail;
+		}
+
+		@Override
+		public String toString() {
+			return "fail";
+		}
+	}
+
+	/**
+	 * <p>
+	 * An if bytecode has one of the the following layouts:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+-----------+------------+
+	 * | opcode | condition | trueBranch |
+	 * +--------+-----------+------------+
+	 * </pre>
+	 * 
+	 * <pre>
+	 * +--------+-----------+------------+-------------+
+	 * | opcode | condition | trueBranch | falseBranch |
+	 * +--------+-----------+------------+-------------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the condition identifies the condition which determines whether the
+	 * true branch is taken or not. If not, and there is a false branch, then
+	 * that is executed. Otherwise, control proceeds to the next logical
+	 * statement in the enclosing block.
+	 * </p>
+	 */
+	 public static final class If extends AbstractBytecode implements Stmt {
+		public If(int operand, int trueBranch) {
+			super(operand, null, new int[] {trueBranch});			
+		}
+
+		public If(int operand, int trueBranch, int falseBranch) {
+			super(operand, null, new int[]{trueBranch, falseBranch});
+		}
+
+		public int getOpcode() {
+			return numberOfBlocks() == 1 ? OPCODE_if : OPCODE_ifelse;
+		}
+
+		public int condition() {
+			return getOperand(0);
+		}
+
+		/**
+		 * Check whether this bytecode has a false branch of not.
+		 * 
+		 * @return
+		 */
+		public boolean hasFalseBranch() {
+			return numberOfBlocks() > 1;
+		}
+
+		/**
+		 * Return the block identifier for the true branch associated with this
+		 * bytecode.
+		 * 
+		 * @return
+		 */
+		public int trueBranch() {
+			return getBlock(0);
+		}
+
+		/**
+		 * Return the block identifier for the false branch associated with this
+		 * bytecode.
+		 * 
+		 * @return
+		 */
+		public int falseBranch() {
+			return getBlock(1);
+		}
+
+		@Override
+		public String toString() {
+			int c = getOperand(0);
+			int tb = trueBranch();
+			if (hasFalseBranch()) {
+				int fb = falseBranch();
+				return "if" + " (%" + c + ", %" + tb + ", %" + fb + ")";
+			} else {
+				return "if" + " (%" + c + ", %" + tb + ")";
+			}
+		}
+	}
+
+	/**
+	 * <p>
+	 * A loop bytecode has the following layout:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+-----------+--------------+------------+------+
+	 * | opcode | condition | invariants[] | modified[] | body |
+	 * +--------+-----------+--------------+------------+------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the condition identifies the loop condition which, when false, will
+	 * cause the loop to terminate. The invariants identifies zero or more
+	 * operands which must be true on every iteration of the loop. The modified
+	 * variables are those variables which are, in some sense, modified in the
+	 * body of the loop. The body identifies a block which forms the body of the
+	 * loop.
+	 * </p>
+	 */
+	public static abstract class Loop extends AbstractBytecode implements Stmt {
+		public Loop(int body, int condition, int[] invariants, int[] modified) {
+			super(condition, new int[][]{invariants,modified}, new int[]{body});			
+		}
+
+		/**
+		 * Return the block identifier of the loop body.
+		 * 
+		 * @return
+		 */
+		public int body() {
+			return getBlock(0);
+		}
+
+		/**
+		 * Return the loop condition operand. This must be true for iteration to
+		 * continue around the loop.
+		 * 
+		 * @return
+		 */
+		public int condition() {
+			return getOperand(0);
+		}
+
+		/**
+		 * Return the array of operands making up the loop invariant. Each of
+		 * these corresponds to a "where" clause in the original program.
+		 * 
+		 * @return
+		 */
+		public int[] invariants() {
+			return getOperandGroup(0);
+		}
+
+		/**
+		 * Return the array of modified variables which are those assigned (in
+		 * some way) in the body of the loop. These cannot be operands, they
+		 * must be variables. These are needed for verification.
+		 */
+		public int[] modifiedVariables() {
+			return getOperandGroup(1);
+		}		
+	}
+
+	/**
+	 * A While bytecode has the same format as the underlying loop bytecode. The
+	 * loop invariant must hold on entry to the loop, and will hold on normal
+	 * exit (though not necessarily for a break exit).
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static class While extends Loop {
+		public While(int body, int condition, int[] invariants, int[] modified) {
+			super(body, condition, invariants, modified);
+		}
+
+		@Override
+		public int getOpcode() {
+			return OPCODE_while;
+		}
+
+		@Override
+		public String toString() {
+			return "while " + condition() + " do " + getBlock(0);
+		}
+	}
+
+	/**
+	 * <p>
+	 * A return bytecode has the following layout:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+------------+
+	 * | opcode | operands[] |
+	 * +--------+------------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, there are zero or more operands which can be returned.
+	 * </p>
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class Return extends AbstractBytecode implements Stmt {
+
+		public Return() {
+		}
+
+		public Return(int... operands) {
+			super(operands);
+		}
+
+		@Override
+		public int getOpcode() {
+			return OPCODE_return;
+		}
+
+		@Override
+		public String toString() {			
+			return "return " + Util.arrayToString(getOperands());			
+		}
+	}
+
+	/**
+	 * <p>
+	 * A skip bytecode has the following layout:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+
+	 * | opcode |
+	 * +--------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Upon execution of this bytecode, the machine simply moves on to the next
+	 * instruction.
+	 * </p>
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class Skip extends AbstractBytecode implements Stmt {
+
+		// FIXME: should be renamed to panic as this is a more descriptive name
+
+		@Override
+		public int getOpcode() {
+			return OPCODE_skip;
+		}
+
+		@Override
+		public String toString() {
+			return "skip";
+		}
+	}
+	/**
+	 * <p>
+	 * A switch bytecode has the following layout:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+-----------+-------+-----+-------+------------+-----+------------+
+	 * | opcode | condition | block | ... | block | Constant[] | ... | Constant[] |
+	 * +--------+-----------+-------+-----+-------+------------+-----+------------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the condition identifies the expression being switched on. There
+	 * are zero or more case blocks, and the same number of constant arrays. An
+	 * empty constant array indicates the default block.
+	 * </p>
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class Switch extends AbstractBytecode implements Stmt {
+		private final Constant[][] constants;
+
+		public Switch(int operand, Case[] cases) {
+			super(operand, null, extractBlocks(cases));
+			this.constants = extractConstants(cases);
+		}
+
+		@Override
+		public int getOpcode() {
+			return OPCODE_switch;
+		}
+
+		public int operand() {
+			return getOperand(0);
+		}
+
+		public Case[] cases() {
+			Case[] cases = new Case[numberOfBlocks()];
+			for (int i = 0; i != cases.length; ++i) {
+				cases[i] = new Case(getBlock(i), constants[i]);
+			}
+			return cases;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (o instanceof Switch) {
+				Switch s = (Switch) o;
+				return Arrays.deepEquals(constants, s.constants) && super.equals(s);
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return Arrays.hashCode(constants) ^ super.hashCode();
+		}
+
+		@Override
+		public String toString() {
+			return "switch";
+		}
+		
+		private static int[] extractBlocks(Case[] cases) {
+			int[] blocks = new int[cases.length];
+			for(int i=0;i!=cases.length;++i) {
+				blocks[i] = cases[i].block;
+			}
+			return blocks;
+		}
+		
+		private static Constant[][] extractConstants(Case[] cases) {
+			Constant[][] blocks = new Constant[cases.length][];
+			for (int i = 0; i != cases.length; ++i) {
+				blocks[i] = cases[i].values;
+			}
+			return blocks;
+		}
+	}
+
+	public static final class Case {
+		private final Constant[] values;
+		private final int block;
+
+		public Case(int block, Constant... values) {
+			this.block = block;
+			this.values = values;
+		}
+
+		public Case(int block, List<Constant> values) {
+			this.block = block;
+			this.values = values.toArray(new Constant[values.size()]);
+		}
+
+		public boolean isDefault() {
+			return values.length == 0;
+		}
+
+		public int block() {
+			return block;
+		}
+
+		public Constant[] values() {
+			return values;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (o instanceof Case) {
+				Case c = (Case) o;
+				return block == c.block && Arrays.equals(values, c.values);
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			return block ^ Arrays.hashCode(values);
+		}
+	}
+
+	/**
+	 * <p>
+	 * A variable declaration bytecode has one of the following two layouts:
+	 * </p>
 	 *
 	 * <pre>
-	 * function fun(function (int)->int f, int x) -> int:
+	 * +--------+------+
+	 * | opcode | name |
+	 * +--------+------+
+	 * </pre>
+	 * 
+	 * Or, with an initialiser operand:
+	 * 
+	 * <pre>
+	 * +--------+---------+------+
+	 * | opcode | operand | name |
+	 * +--------+---------+------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the condition identifies the expression being switched on. There
+	 * are zero or more case blocks, and the same number of constant arrays. An
+	 * empty constant array indicates the default block.
+	 * </p>
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class VariableDeclaration extends AbstractBytecode implements Stmt {
+		/**
+		 * Variable name
+		 */
+		private final String name;
+
+		public VariableDeclaration(String name) {
+			super();
+			this.name = name;
+		}
+
+		public VariableDeclaration(String name, int initialiser) {
+			super(initialiser);
+			this.name = name;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		@Override
+		public int getOpcode() {
+			if (numberOfOperands() == 0) {
+				return OPCODE_vardecl;
+			} else {
+				return OPCODE_vardeclinit;
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof VariableDeclaration) {
+				VariableDeclaration vd = (VariableDeclaration) o;
+				return name.equals(vd.name) && super.equals(o);
+			}
+			return false;
+		}
+		
+		public int hashCode() {
+			return name.hashCode() ^ super.hashCode();
+		}
+		
+		public String toString() {
+			if(numberOfOperands() == 0) {
+				return "decl " + name;
+			} else {
+				return "decl " + name + " = " + getOperand(0);
+			}
+		}
+	}
+		
+	// ===============================================================
+	// Bytecode Block & Index
+	// ===============================================================
+
+	public static class Block extends AbstractBytecode implements Bytecode {
+
+		public Block(int... operands) {
+			super(operands);
+		}
+		
+		@Override
+		public int getOpcode() {
+			return OPCODE_block;
+		}	
+		
+		public String toString() {
+			return "block " + Util.arrayToString(getOperands());
+		}
+	}
+	
+	public static final class NamedBlock extends AbstractBytecode implements Bytecode.Stmt {
+		private final String name;		
+		
+		public NamedBlock(int block, String name) {
+			super(new int[0], new int[0][], new int[] { block });
+			this.name = name;
+		}
+		
+		public String getName() {
+			return name;
+		}
+		
+		@Override
+		public int getOpcode() {
+			return OPCODE_namedblock;
+		}	
+		
+		@Override
+		public boolean equals(Object o) {
+			if(o instanceof NamedBlock) {
+				NamedBlock n = (NamedBlock) o;
+				return name.equals(n.name) && super.equals(o);
+			}
+			return false;
+		}
+		
+		@Override
+		public int hashCode() {
+			return super.hashCode() ^ name.hashCode();
+		}
+		
+		public String toString() {
+			return "block(" + name +") " + Util.arrayToString(getBlocks());
+		}
+	}
+	
+	/**
+	 * Represents a bytecode location within a code forest. This is simply a
+	 * pair of the block identifier and the position within that block.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final class Index {
+		private int block;
+		private int offset;
+
+		public Index(int block, int offset) {
+			this.block = block;
+			this.offset = offset;
+		}
+
+		public int block() {
+			return block;
+		}
+
+		public int offset() {
+			return offset;
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof Index) {
+				Index i = (Index) o;
+				return block == i.block && offset == i.offset;
+			}
+			return false;
+		}
+
+		public int hashCode() {
+			return block ^ offset;
+		}
+
+		public Index next() {
+			return new Index(block, offset + 1);
+		}
+
+		public Index next(int i) {
+			return new Index(block, offset + i);
+		}
+
+		public String toString() {
+			return block + ":" + offset;
+		}
+	}
+
+	// ===============================================================
+	// Bytecode "Statement Expressions"
+	// ===============================================================
+
+	/**
+	 * A "statement expression" is a rather unusual beast. It is both a
+	 * statement and an expression! There are very few bytecodes which can be
+	 * classified in this way.
+	 * 
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface StmtExpr extends Expr,Stmt {
+	}
+	
+
+	/**
+	 * <p>
+	 * An indirect invocation bytecode has the following layout:
+	 * </p>
+	 * 
+	 * <pre>
+	 * +--------+---------+-------------+------+
+	 * | opcode | operand | parameter[] | type |
+	 * +--------+---------+-------------+------+
+	 * </pre>
+	 * 
+	 * <p>
+	 * Here, the operand returns the function pointer which this bytecode
+	 * indirects upon. The parameter array identifies zero or more operands
+	 * which are pass as arguments, whilst the type gives the signature of the
+	 * target function/method. For example, consider the following:
+	 * </p>
+	 *
+	 * <pre>
+	 * type func_t is function(int)->int
+	 * 
+	 * function fun(func_t f, int x) -> int:
 	 *    return f(x)
 	 * </pre>
 	 *
@@ -1064,173 +1733,125 @@ public abstract class Bytecode {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class IndirectInvoke extends Bytecode {
+	public static final class IndirectInvoke extends AbstractBytecode implements StmtExpr {
+		private final Type.FunctionOrMethod type;
 
 		/**
 		 * Construct an indirect invocation bytecode which assigns to an
 		 * optional target register the result from indirectly invoking a
 		 * function in a given operand with a given set of parameter operands.
 		 *
-		 * @param type
-		 * @param target
-		 *            Register (optional) to which result of invocation is
-		 *            assigned.
+		 * @param type.
+		 *            Function or method type.
 		 * @param operand
-		 *            Register holding function point through which indirect
+		 *            Operand holding function pointer through which indirect
 		 *            invocation is made.
 		 * @param operands
-		 *            Registers holding parameters for the invoked function
+		 *            Operands holding parameters for the invoked function
 		 */
-		public IndirectInvoke(Type.FunctionOrMethod type, int[] targets, int operand, int[] operands) {
-			super(new Type.FunctionOrMethod[] { type }, targets, append(operand, operands));
+		public IndirectInvoke(Type.FunctionOrMethod type, int operand, int[] operands) {
+			super(operand, new int[][]{operands});
+			this.type = type;
 		}
 
 		/**
-		 * Return register holding the indirect function/method reference.
+		 * Return operand holding the indirect function/method reference.
 		 *
 		 * @return
 		 */
 		public int reference() {
-			return operands()[0];
+			return getOperand(0);
 		}
 
 		/**
-		 * Return register holding the ith parameter for the invoked function.
+		 * Return operand holding the ith parameter for the invoked function.
 		 *
 		 * @param i
 		 * @return
 		 */
-		public int parameter(int i) {
-			return operands()[i + 1];
+		public int argument(int i) {
+			return getOperandGroup(0)[i];
 		}
 
 		/**
-		 * Return registers holding parameters for the invoked function.
+		 * Return operands holding parameters for the invoked function.
 		 *
-		 * @param i
 		 * @return
 		 */
-		public int[] parameters() {
-			return Arrays.copyOfRange(operands(), 1, operands().length);
+		public int[] arguments() {
+			return getOperandGroup(0);
 		}
 
-		public int opcode() {
+		public int getOpcode() {
 			return OPCODE_indirectinvoke;
 		}
 
+		public Type.FunctionOrMethod type() {
+			return type;
+		}
+
 		@Override
-		public Type.FunctionOrMethod type(int i) {
-			return (Type.FunctionOrMethod) super.type(i);
-		}
-
 		public boolean equals(Object o) {
-			return o instanceof IndirectInvoke && super.equals(o);
-		}
-
-		public String toString() {
-			return "indirectinvoke " + arrayToString(targets()) + " = %" + reference() + " "
-					+ arrayToString(parameters()) + " : " + type(0);
-		}
-	}
-
-	/**
-	 * Represents a block of bytecode instructions representing an assertion.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Invariant extends Assert {
-
-		public Invariant(int block) {
-			super(block);
-		}
-
-		public int opcode() {
-			return OPCODE_invariant;
-		}
-
-		public String toString() {
-			return "invariant";
-		}
-
-		public int hashCode() {
-			return block;
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Invariant) {
-				Invariant f = (Invariant) o;
-				return block == f.block;
+			if (o instanceof IndirectInvoke) {
+				IndirectInvoke i = (IndirectInvoke) o;
+				return type.equals(i.type) && super.equals(o);
 			}
 			return false;
 		}
+
+		@Override
+		public int hashCode() {
+			return super.hashCode() + type.hashCode();
+		}
+
+		@Override
+		public String toString() {
+			return "icall %" + reference() + " " + Util.arrayToString(arguments());
+		}
 	}
 
 	/**
-	 * Corresponds to a function or method call whose parameters are read from
-	 * zero or more operand registers. If a return value is required, this is
-	 * written to a target register afterwards. For example, the following
-	 * Whiley code:
-	 *
+	 * <p>
+	 * An indirect invocation bytecode has the following layout:
+	 * </p>
+	 * 
 	 * <pre>
-	 * function g(int x, int y, int z) -> int:
-	 *     return x * y * z
-	 *
-	 * function f(int x, int y) -> int:
-	 *     r = g(x,y,3)
-	 *     return r + 1
+	 * +--------+-------------+------+------+
+	 * | opcode | parameter[] | type | name |
+	 * +--------+-------------+------+------+
 	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function g(int x, int y, int z) -> int:
-	 * body:
-	 *     mul %3 = %0, %1   : int
-	 *     mul %3 = %3, %2   : int
-	 *     return %3         : int
-	 *
-	 * function f(int x, int y) -> int:
-	 * body:
-	 *     const %2 = 3                    : int
-	 *     invoke %2 = (%0, %1, %2) test:g   : int(int,int,int)
-	 *     const %3 = 1                    : int
-	 *     add %2 = (%2, %3)                : int
-	 *     return %2                       : int
-	 * </pre>
-	 *
-	 * Here, we see that arguments to the <code>invoke</code> bytecode are
-	 * supplied in the order they are given in the function or method's
-	 * declaration.
+	 * 
+	 * <p>
+	 * Here, the parameter array identifies zero or more operands which are pass
+	 * as arguments, whilst the type gives the signature of the target
+	 * function/method and name identifies it's fully qualitified name.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Invoke extends Bytecode {
+	public static final class Invoke extends AbstractBytecode implements StmtExpr {
 		private final NameID name;
+		private final Type.FunctionOrMethod type;
 
-		public Invoke(Type.FunctionOrMethod type, int[] targets, int[] operands, NameID name) {
-			super(new Type.FunctionOrMethod[] { type }, targets, operands);
+		public Invoke(Type.FunctionOrMethod type, int[] operands, NameID name) {
+			super(operands);
 			this.name = name;
+			this.type = type;
 		}
 
-		public int opcode() {
+		public int getOpcode() {
 			return OPCODE_invoke;
 		}
 
 		public NameID name() {
 			return name;
 		}
-		
-		public int hashCode() {
-			return name.hashCode() + super.hashCode();
+
+		public Type.FunctionOrMethod type() {
+			return type;
 		}
 
 		@Override
-		public Type.FunctionOrMethod type(int i) {
-			return (Type.FunctionOrMethod) super.type(i);
-		}
-
 		public boolean equals(Object o) {
 			if (o instanceof Invoke) {
 				Invoke i = (Invoke) o;
@@ -1239,810 +1860,194 @@ public abstract class Bytecode {
 			return false;
 		}
 
-		public String toString() {
-			return "invoke " + arrayToString(targets()) + " = " + arrayToString(operands()) + " " + name + " : "
-					+ type(0);
-		}
-	}
-
-	public static final class Lambda extends Bytecode {
-		private final NameID name;
-
-		public Lambda(Type.FunctionOrMethod type, int target, int[] operands, NameID name) {
-			super(type, target, operands);
-			this.name = name;
-		}
-
-		public int opcode() {
-			return OPCODE_lambda;
-		}
-
-		public NameID name() {
-			return name;
-		}
-		
+		@Override
 		public int hashCode() {
 			return name.hashCode() + super.hashCode();
 		}
 
 		@Override
-		public Type.FunctionOrMethod type(int i) {
-			return (Type.FunctionOrMethod) super.type(i);
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Lambda) {
-				Lambda i = (Lambda) o;
-				return name().equals(i.name()) && super.equals(i);
-			}
-			return false;
-		}
-
 		public String toString() {
-			return "lambda %" + target(0) + " = " + arrayToString(operands()) + " " + name + " : " + type(0);
+			return "call " + name + Util.arrayToString(getOperands());
 		}
 	}
 
-	/**
-	 * Represents the labelled destination of a branch or loop statement.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Label extends Bytecode {
-		private final String label;
+	
+	// ===============================================================
+	// Helpers
+	// ===============================================================
 
-		public Label(String label) {
-			super(new Type[0], new int[0], new int[0]);
-			this.label = label;
-		}
+	public static final class Util {
 
-		public int opcode() {
-			return -1;
-		}
-
-		public String label() {
-			return label;
-		}
-		
-		public Label relabel(Map<String, String> labels) {
-			String nlabel = labels.get(label);
-			if (nlabel == null) {
-				return this;
-			} else {
-				return new Label(nlabel);
-			}
-		}
-
-		public int hashCode() {
-			return label().hashCode();
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Label) {
-				return label.equals(((Label) o).label);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "." + label;
-		}
-	}
-
-	/**
-	 * Represents a block of code which loops continuously until e.g. a
-	 * conditional branch is taken out of the block. For example:
-	 *
-	 * <pre>
-	 * function f() -> int:
-	 *     r = 0
-	 *     while r < 10:
-	 *         r = r + 1
-	 *     return r
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f() -> int:
-	 * body:
-	 *     const %0 = 0             : int
-	 *     loop (%0)
-	 *         const %1 = 10        : int
-	 *         ifge %0, %1 goto blklab0 : int
-	 *         const %1 = 1         : int
-	 *         add %0 = %0, %1      : int
-	 * .blklab0
-	 *     return %0                : int
-	 * </pre>
-	 *
-	 * <p>
-	 * Here, we see a loop which increments an accumulator register
-	 * <code>%0</code> until it reaches <code>10</code>, and then exits the loop
-	 * block.
-	 * </p>
-	 * <p>
-	 * The <i>modified operands</i> of a loop bytecode (shown in brackets
-	 * alongside the bytecode) indicate those operands which are modified at
-	 * some point within the loop.
-	 * </p>
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Loop extends Compound {
-
-		public Loop(int[] targets, int block, int... operands) {
-			super(block, new Type[0], targets, operands);
-		}
-
-		public int opcode() {
-			return OPCODE_loop;
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Loop) {
-				Loop f = (Loop) o;
-				return block == f.block && super.equals(f);
-			}
-			return false;
-		}
-
-		public int[] modifiedOperands() {
-			return targets();
-		}
-
-		public String toString() {
-			return "loop " + arrayToString(targets()) + " = " + block;
-		}
-	}
-
-	public static final class Quantify extends Loop {
-
-		public Quantify(int startOperand, int endOperand, int indexOperand, int[] targets, int block) {
-			super(targets, block, startOperand, endOperand, indexOperand);
-		}
-
-		public int opcode() {
-			return OPCODE_quantify;
-		}
-
-		public int startOperand() {
-			return operands[0];
-		}
-
-		public int endOperand() {
-			return operands[1];
-		}
-
-		public int indexOperand() {
-			return operands[2];
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Quantify) {
-				Quantify f = (Quantify) o;
-				return super.equals(f);
-			}
-			return false;
-		}
-
-		public String toString() {
-			return "quantify " + arrayToString(targets()) + " = #" + block() + arrayToString(operands());
-		}
-	}
-
-	/**
-	 * Represents a type which may appear on the left of an assignment
-	 * expression. Arrays, Records and References are the only valid types for
-	 * an lval.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static abstract class LVal<T> {
-		protected T type;
-
-		public LVal(T t) {
-			this.type = t;
-		}
-
-		public T rawType() {
-			return type;
-		}
-	}
-
-	/**
-	 * An LVal with array type.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class ArrayLVal extends LVal<Type.EffectiveArray> {
-		public final int indexOperand;
-
-		public ArrayLVal(Type.EffectiveArray t, int indexOperand) {
-			super(t);
-			this.indexOperand = indexOperand;
-		}
-	}
-
-	/**
-	 * An LVal with list type.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class ReferenceLVal extends LVal<Type.Reference> {
-		public ReferenceLVal(Type.Reference t) {
-			super(t);
-		}
-	}
-
-	/**
-	 * An LVal with record type.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class RecordLVal extends LVal<Type.EffectiveRecord> {
-		public final String field;
-
-		public RecordLVal(Type.EffectiveRecord t, String field) {
-			super(t);
-			this.field = field;
-			if (!t.fields().containsKey(field)) {
-				throw new IllegalArgumentException("invalid Record Type");
-			}
-		}
-	}
-
-	private static final class UpdateIterator implements Iterator<LVal> {
-		private final ArrayList<String> fields;
-		private final int[] operands;
-		private Type iter;
-		private int fieldIndex;
-		private int operandIndex;
-		private int index;
-
-		public UpdateIterator(Type type, int level, int[] operands, ArrayList<String> fields) {
-			this.fields = fields;
-			this.iter = type;
-			this.index = level;
-			this.operands = operands;
-		}
-
-		public LVal next() {
-			Type raw = iter;
-			index--;
-			if (iter instanceof Type.Reference) {
-				Type.Reference ref = (Type.Reference) iter;
-				iter = ref.element();
-				return new ReferenceLVal(ref);
-			} else if (iter instanceof Type.EffectiveArray) {
-				Type.EffectiveArray list = (Type.EffectiveArray) iter;
-				iter = list.element();
-				return new ArrayLVal(list, operands[operandIndex++]);
-			} else if (iter instanceof Type.EffectiveRecord) {
-				Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;
-				String field = fields.get(fieldIndex++);
-				iter = rec.fields().get(field);
-				return new RecordLVal(rec, field);
-			} else {
-				throw new IllegalArgumentException("Invalid type for Update: " + iter);
-			}
-		}
-
-		public boolean hasNext() {
-			return index > 0;
-		}
-
-		public void remove() {
-			throw new UnsupportedOperationException("UpdateIterator is unmodifiable");
-		}
-	}
-
-	/**
-	 * <p>
-	 * Pops a compound structure, zero or more indices and a value from the
-	 * stack and updates the compound structure with the given value. Valid
-	 * compound structures are lists, dictionaries, strings, records and
-	 * references.
-	 * </p>
-	 * <p>
-	 * Ideally, this operation is done in-place, meaning the operation is
-	 * constant time. However, to support Whiley's value semantics this bytecode
-	 * may require (in some cases) a clone of the underlying data-structure.
-	 * Thus, the worst-case runtime of this operation is linear in the size of
-	 * the compound structure.
-	 * </p>
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Update extends Bytecode implements Iterable<LVal> {
-		public final ArrayList<String> fields;
-
-		/**
-		 * Construct an Update bytecode which assigns to a given operand to a
-		 * set of target registers. For indirect map/list updates, an additional
-		 * set of operands is used to generate the appropriate keys. For field
-		 * assignments, a set of fields is provided.
-		 *
-		 * @param beforeType
-		 * @param target
-		 *            Register being assigned
-		 * @param operands
-		 *            Registers used for keys on left-hand side in map/list
-		 *            updates
-		 * @param operand
-		 *            Register on right-hand side whose value is assigned
-		 * @param afterType
-		 * @param fields
-		 *            Fields for record updates
-		 */
-		public Update(Type beforeType, int target, int[] operands, int operand, Type afterType,
-				Collection<String> fields) {
-			super(new Type[] { beforeType, afterType }, new int[] { target }, append(operands, operand));
-			if (fields == null) {
-				throw new IllegalArgumentException("FieldStore fields argument cannot be null");
-			}
-			this.fields = new ArrayList<String>(fields);
-		}
-
-		// Helper used for clone()
-		private Update(Type[] types, int[] targets, int[] operands, Collection<String> fields) {
-			super(types, targets, operands);
-			if (fields == null) {
-				throw new IllegalArgumentException("FieldStore fields argument cannot be null");
-			}
-			this.fields = new ArrayList<String>(fields);
-		}
-
-		public int opcode() {
-			return OPCODE_update;
-		}
-
-		/**
-		 * Returns register from which assigned value is read. This is also
-		 * known as the "right-hand side".
-		 *
-		 * @return
-		 */
-		public int result() {
-			return operands()[operands().length - 1];
-		}
-
-		/**
-		 * Get the given key register (in order of appearance from the left)
-		 * used in a map or list update.
-		 *
-		 * @param index
-		 * @return
-		 */
-		public int key(int index) {
-			return operands()[index];
-		}
-
-		/**
-		 * Return the registers used to hold key values for map or list updates.
-		 *
-		 * @return
-		 */
-		public int[] keys() {
-			return Arrays.copyOf(operands(), operands().length - 1);
-		}
-
-		public int level() {
-			int base = -1; // because last operand is rhs
-			if (type(0) instanceof Type.Reference) {
-				base++;
-			}
-			return base + fields.size() + operands().length;
-		}
-
-		public Iterator<LVal> iterator() {
-			return new UpdateIterator(afterType(), level(), keys(), fields);
-		}
-
-		public Type afterType() {
-			return types[1];
-		}
-
-		/**
-		 * Extract the type for the right-hand side of this assignment.
-		 *
-		 * @return
-		 */
-		public Type rhs() {
-			Type iter = afterType();
-
-			int fieldIndex = 0;
-			for (int i = 0; i != level(); ++i) {
-				if (iter instanceof Type.Reference) {
-					Type.Reference proc = Type.effectiveReference(iter);
-					iter = proc.element();
-				} else if (iter instanceof Type.EffectiveArray) {
-					Type.EffectiveArray list = (Type.EffectiveArray) iter;
-					iter = list.element();
-				} else if (iter instanceof Type.EffectiveRecord) {
-					Type.EffectiveRecord rec = (Type.EffectiveRecord) iter;
-					String field = fields.get(fieldIndex++);
-					iter = rec.fields().get(field);
-				} else {
-					throw new IllegalArgumentException("Invalid type for Update: " + iter);
-				}
-			}
-			return iter;
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Update) {
-				Update i = (Update) o;
-				return super.equals(o) && fields.equals(i.fields);
-			}
-			return false;
-		}
-
-		public String toString() {
-			String r = "%" + target(0);
-			for (LVal lv : this) {
-				if (lv instanceof ArrayLVal) {
-					ArrayLVal l = (ArrayLVal) lv;
-					r = r + "[%" + l.indexOperand + "]";
-				} else if (lv instanceof RecordLVal) {
-					RecordLVal l = (RecordLVal) lv;
-					r = r + "." + l.field;
-				} else {
-					ReferenceLVal l = (ReferenceLVal) lv;
-					r = "(*" + r + ")";
-				}
-			}
-			return "update " + r + " = %" + result() + " : " + type(0) + " -> " + afterType();
-		}
-	}
-
-	/**
-	 * Returns from the enclosing function or method, possibly returning a
-	 * value. For example, the following Whiley code:
-	 *
-	 * <pre>
-	 * function f(int x, int y) -> int:
-	 *     return x + y
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL:
-	 *
-	 * <pre>
-	 * function f(int x, int y) -> int:
-	 * body:
-	 *     assign %3 = %0    : int
-	 *     assign %4 = %1    : int
-	 *     add %2 = % 3, %4  : int
-	 *     return %2         : int
-	 * </pre>
-	 *
-	 * Here, the <code>return<code> bytecode returns the value of its operand
-	 * register.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Return extends Bytecode {
-
-		public Return() {
-			super(new Type[0], new int[0], new int[0]);
-		}
-		
-		public Return(Type[] types, int... operands) {
-			super(types, new int[0], operands);
-		}
-
-		@Override
-		public int opcode() {
-			return OPCODE_return;
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Return) {
-				return super.equals(o);
-			}
-			return false;
-		}
-
-		public String toString() {
-			String r = "return";
+		public static String arrayToString(int... operands) {
+			String r = "(";
 			for (int i = 0; i != operands.length; ++i) {
 				if (i != 0) {
-					r += ",";
+					r = r + ", ";
 				}
-				r += " %" + operands[i];
+				r = r + "%" + operands[i];
 			}
-			return r;
+			return r + ")";
 		}
 	}
-
-	/**
-	 * Performs a multi-way branch based on the value contained in the operand
-	 * register. A <i>dispatch table</i> is provided which maps individual
-	 * matched values to their destination labels. For example, the following
-	 * Whiley code:
-	 *
-	 * <pre>
-	 * function f(int x) -> string:
-	 *     switch x:
-	 *         case 1:
-	 *             return "ONE"
-	 *         case 2:
-	 *             return "TWO"
-	 *         default:
-	 *             return "OTHER"
-	 * </pre>
-	 *
-	 * can be translated into the following WyIL code:
-	 *
-	 * <pre>
-	 * function f(int x) -> string:
-	 * body:
-	 *     switch %0 1->blklab1, 2->blklab2, *->blklab3
-	 * .blklab1
-	 *     const %1 = "ONE" : string
-	 *     return %1 : string
-	 * .blklab2
-	 *     const %1 = "TWO" : string
-	 *     return %1 : string
-	 * .blklab3
-	 *     const %1 = "OTHER" : string
-	 *     return %1 : string
-	 * </pre>
-	 *
-	 * Here, we see how e.g. value <code>1</code> is mapped to the label
-	 * <code>blklab1</code>. Thus, if the operand register <code>%0</code>
-	 * contains value <code>1</code>, then control will be transferred to that
-	 * label. The final mapping <code>*->blklab3</code> covers the default case
-	 * where the value in the operand is not otherwise matched.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Switch extends Bytecode {
-		private final ArrayList<Pair<Constant, String>> branches;
-		private final String defaultTarget;
-
-		public Switch(Type type, int operand, String defaultTarget, Collection<Pair<Constant, String>> branches) {
-			super(new Type[] { type }, new int[0], operand);
-			this.branches = new ArrayList<Pair<Constant, String>>(branches);
-			this.defaultTarget = defaultTarget;
-		}
-
-		@Override
-		public int opcode() {
-			return OPCODE_switch;
-		}
-
-		public Switch relabel(Map<String, String> labels) {
-			ArrayList<Pair<Constant, String>> nbranches = new ArrayList();
-			for (Pair<Constant, String> p : branches()) {
-				String nlabel = labels.get(p.second());
-				if (nlabel == null) {
-					nbranches.add(p);
-				} else {
-					nbranches.add(new Pair(p.first(), nlabel));
-				}
-			}
-
-			String nlabel = labels.get(defaultTarget());
-			if (nlabel == null) {
-				return new Switch(types[0], operands[0], defaultTarget(), nbranches);
-			} else {
-				return new Switch(types[0], operands[0], nlabel, nbranches);
-			}
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Switch) {
-				Switch ig = (Switch) o;
-				return operands[0] == ig.operands[0] && defaultTarget().equals(ig.defaultTarget())
-						&& branches().equals(ig.branches()) && types[0].equals(ig.types[0]);
-			}
-			return false;
-		}
-
-		public String toString() {
-			String table = "";
-			boolean firstTime = true;
-			for (Pair<Constant, String> p : branches()) {
-				if (!firstTime) {
-					table += ", ";
-				}
-				firstTime = false;
-				table += p.first() + "->" + p.second();
-			}
-			table += ", *->" + defaultTarget();
-			return "switch %" + operands[0] + " " + table;
-		}
-
-		
-		public String defaultTarget() {
-			return defaultTarget;
-		}
-
-		public ArrayList<Pair<Constant, String>> branches() {
-			return branches;
-		}
-	}
-
-	// =============================================================
-	// Helpers
-	// =============================================================
-
-	/**
-	 * Construct a mapping from labels to their block indices within a root
-	 * block. This is useful so they can easily be resolved during the
-	 * subsequent traversal of the block.
-	 * 
-	 * @param block
-	 * @return
-	 */
-	public static Map<String, BytecodeForest.Index> buildLabelMap(BytecodeForest forest) {
-		HashMap<String, BytecodeForest.Index> labels = new HashMap<String, BytecodeForest.Index>();
-		for (int i = 0; i != forest.numBlocks(); ++i) {
-			BytecodeForest.Block block = forest.get(i);
-			for (int j = 0; j != block.size(); ++j) {
-				Bytecode code = block.get(j).code();
-				if (code instanceof Bytecode.Label) {
-					// Found a label, so register it in the labels map
-					Bytecode.Label label = (Bytecode.Label) code;
-					labels.put(label.label(), new BytecodeForest.Index(i, j));
-				}
-			}
-		}
-		return labels;
-	}
-	
-	private static String arrayToString(int... operands) {
-		String r = "(";
-		for (int i = 0; i != operands.length; ++i) {
-			if (i != 0) {
-				r = r + ", ";
-			}
-			r = r + "%" + operands[i];			
-		}
-		return r + ")";
-	}
-
-	private static int[] append(int[] operands, int operand) {
-		int[] noperands = Arrays.copyOf(operands, operands.length + 1);
-		noperands[operands.length] = operand;
-		return noperands;
-	}
-
-	private static int[] append(int operand, int[] operands) {
-		int[] noperands = new int[operands.length + 1];
-		System.arraycopy(operands, 0, noperands, 1, operands.length);
-		noperands[0] = operand;
-		return noperands;
-	}
-
 	// =========================================================================
 	// Opcodes
 	// =========================================================================
-	
-	public static final int OPCODE_goto      = 1;
-	public static final int OPCODE_fail      = 2;
-	public static final int OPCODE_assert    = 4;
-	public static final int OPCODE_assume    = 5;
-	public static final int OPCODE_invariant = 6;
 
+	public static final int OPCODE_vardecl = 0;
+	public static final int OPCODE_fail = 1;
+	public static final int OPCODE_assert = 2;
+	public static final int OPCODE_assume = 3;
+	public static final int OPCODE_break = 4;
+	public static final int OPCODE_continue = 5;
+	public static final int OPCODE_vardeclinit = 6;
+	public static final int OPCODE_aliasdecl = 7;
+	
 	// Unary Operators
-	public static final int UNARY_OPERATOR = 7;
-	
-	public static final int OPCODE_debug    = UNARY_OPERATOR+0;
-	public static final int OPCODE_return   = UNARY_OPERATOR+1;
-	public static final int OPCODE_ifis     = UNARY_OPERATOR+2;
-	public static final int OPCODE_switch   = UNARY_OPERATOR+3;
+	public static final int UNARY_OPERATOR = 8;
 
+
+	public static final int OPCODE_return = UNARY_OPERATOR + 0;
+	public static final int OPCODE_ifis = UNARY_OPERATOR + 1;
+	public static final int OPCODE_switch = UNARY_OPERATOR + 2;
+	public static final int OPCODE_skip = UNARY_OPERATOR + 3;
+	public static final int OPCODE_debug = UNARY_OPERATOR + 4;
 	// Unary Assignables
-	public static final int UNARY_ASSIGNABLE = UNARY_OPERATOR+5;
-		
-	public static final int OPCODE_fieldload   = UNARY_ASSIGNABLE+8;
-	public static final int OPCODE_convert     = UNARY_ASSIGNABLE+9;
-	public static final int OPCODE_const       = UNARY_ASSIGNABLE+10;
-	
+	public static final int UNARY_ASSIGNABLE = UNARY_OPERATOR + 5;
+
+	public static final int OPCODE_fieldload = UNARY_ASSIGNABLE + 7;
+	public static final int OPCODE_convert = UNARY_ASSIGNABLE + 8;
+	public static final int OPCODE_const = UNARY_ASSIGNABLE + 9;
+
 	// Binary Operators
-	public static final int BINARY_OPERATOR = UNARY_ASSIGNABLE+11;
-	
-	public static final int OPCODE_if         = BINARY_OPERATOR+0;
-	
+	public static final int BINARY_OPERATOR = UNARY_ASSIGNABLE + 10;
+
+	public static final int OPCODE_if = BINARY_OPERATOR + 0;
+	public static final int OPCODE_ifelse = BINARY_OPERATOR + 1;
+
 	// Binary Assignables
-	public static final int BINARY_ASSIGNABLE = BINARY_OPERATOR+6;
-	
-	public static final int OPCODE_neg         = BINARY_ASSIGNABLE+0;
-	public static final int OPCODE_not         = BINARY_ASSIGNABLE+1;
-	public static final int OPCODE_arrayinvert = BINARY_ASSIGNABLE+2;	
-	public static final int OPCODE_dereference = BINARY_ASSIGNABLE+3;
-	public static final int OPCODE_arraylength = BINARY_ASSIGNABLE+4;	
-	public static final int OPCODE_add         = BINARY_ASSIGNABLE+5;
-	public static final int OPCODE_sub         = BINARY_ASSIGNABLE+6;
-	public static final int OPCODE_mul         = BINARY_ASSIGNABLE+7;
-	public static final int OPCODE_div         = BINARY_ASSIGNABLE+8;
-	public static final int OPCODE_rem         = BINARY_ASSIGNABLE+9;
-	public static final int OPCODE_eq          = BINARY_ASSIGNABLE+10;
-	public static final int OPCODE_ne          = BINARY_ASSIGNABLE+11;
-	public static final int OPCODE_lt          = BINARY_ASSIGNABLE+12;
-	public static final int OPCODE_le          = BINARY_ASSIGNABLE+13;
-	public static final int OPCODE_gt          = BINARY_ASSIGNABLE+14;
-	public static final int OPCODE_ge          = BINARY_ASSIGNABLE+15;
-	public static final int OPCODE_bitwiseor   = BINARY_ASSIGNABLE+16;
-	public static final int OPCODE_bitwisexor  = BINARY_ASSIGNABLE+17;
-	public static final int OPCODE_bitwiseand  = BINARY_ASSIGNABLE+18;
-	public static final int OPCODE_lshr        = BINARY_ASSIGNABLE+19;
-	public static final int OPCODE_rshr        = BINARY_ASSIGNABLE+20;
-	public static final int OPCODE_arrayindex  = BINARY_ASSIGNABLE+21;	
-	public static final int OPCODE_arrygen     = BINARY_ASSIGNABLE+22;
-	public static final int OPCODE_array       = BINARY_ASSIGNABLE+23;
-	public static final int OPCODE_record      = BINARY_ASSIGNABLE+24;
-	public static final int OPCODE_newobject   = BINARY_ASSIGNABLE+25;
-	public static final int OPCODE_assign      = BINARY_ASSIGNABLE+26;
+	public static final int BINARY_ASSIGNABLE = BINARY_OPERATOR + 6;
+
+	public static final int OPCODE_neg = BINARY_ASSIGNABLE + 0;
+	public static final int OPCODE_add = BINARY_ASSIGNABLE + 1;
+	public static final int OPCODE_sub = BINARY_ASSIGNABLE + 2;
+	public static final int OPCODE_mul = BINARY_ASSIGNABLE + 3;
+	public static final int OPCODE_div = BINARY_ASSIGNABLE + 4;
+	public static final int OPCODE_rem = BINARY_ASSIGNABLE + 5;
+	public static final int OPCODE_eq = BINARY_ASSIGNABLE + 6;
+	public static final int OPCODE_ne = BINARY_ASSIGNABLE + 7;
+	public static final int OPCODE_lt = BINARY_ASSIGNABLE + 8;
+	public static final int OPCODE_le = BINARY_ASSIGNABLE + 9;
+	public static final int OPCODE_gt = BINARY_ASSIGNABLE + 10;
+	public static final int OPCODE_ge = BINARY_ASSIGNABLE + 11;
+
+	public static final int OPCODE_logicalnot = BINARY_ASSIGNABLE + 12;
+	public static final int OPCODE_logicaland = BINARY_ASSIGNABLE + 13;
+	public static final int OPCODE_logicalor = BINARY_ASSIGNABLE + 14;
+
+	public static final int OPCODE_bitwiseinvert = BINARY_ASSIGNABLE + 15;
+	public static final int OPCODE_bitwiseor = BINARY_ASSIGNABLE + 16;
+	public static final int OPCODE_bitwisexor = BINARY_ASSIGNABLE + 17;
+	public static final int OPCODE_bitwiseand = BINARY_ASSIGNABLE + 18;
+	public static final int OPCODE_shl = BINARY_ASSIGNABLE + 19;
+	public static final int OPCODE_shr = BINARY_ASSIGNABLE + 20;
+
+	public static final int OPCODE_arraylength = BINARY_ASSIGNABLE + 21;
+	public static final int OPCODE_arrayindex = BINARY_ASSIGNABLE + 22;
+	public static final int OPCODE_arraygen = BINARY_ASSIGNABLE + 23;
+	public static final int OPCODE_array = BINARY_ASSIGNABLE + 24;
+	public static final int OPCODE_record = BINARY_ASSIGNABLE + 25;
+	public static final int OPCODE_is = BINARY_ASSIGNABLE + 26;
+
+	public static final int OPCODE_dereference = BINARY_ASSIGNABLE + 27;
+	public static final int OPCODE_newobject = BINARY_ASSIGNABLE + 28;
+	public static final int OPCODE_varaccess = BINARY_ASSIGNABLE + 29;
 	
 	// Nary Assignables
-	public static final int NARY_ASSIGNABLE = BINARY_ASSIGNABLE+26;
-		
-	public static final int OPCODE_invoke           = NARY_ASSIGNABLE+2;
-	public static final int OPCODE_indirectinvoke   = NARY_ASSIGNABLE+3;
-	public static final int OPCODE_lambda           = NARY_ASSIGNABLE+4;
-	public static final int OPCODE_loop             = NARY_ASSIGNABLE+5;	
-	public static final int OPCODE_quantify         = NARY_ASSIGNABLE+6;
-	public static final int OPCODE_update           = NARY_ASSIGNABLE+7;	
-		
+	public static final int NARY_ASSIGNABLE = BINARY_ASSIGNABLE + 30;
+
+	public static final int OPCODE_invoke = NARY_ASSIGNABLE + 2;
+	public static final int OPCODE_indirectinvoke = NARY_ASSIGNABLE + 3;
+	public static final int OPCODE_lambda = NARY_ASSIGNABLE + 4;
+	public static final int OPCODE_while = NARY_ASSIGNABLE + 5;
+	public static final int OPCODE_dowhile = NARY_ASSIGNABLE + 6;
+	public static final int OPCODE_some = NARY_ASSIGNABLE + 8;
+	public static final int OPCODE_all = NARY_ASSIGNABLE + 9;
+	public static final int OPCODE_assign = NARY_ASSIGNABLE + 10;
+	public static final int OPCODE_block = NARY_ASSIGNABLE + 11;
+	public static final int OPCODE_namedblock = NARY_ASSIGNABLE + 12;
+
 	// =========================================================================
 	// Bytecode Schemas
 	// =========================================================================
 
-	public enum Targets {
-		ZERO, ONE, TWO, MANY
-	}
-
 	public enum Operands {
 		ZERO, ONE, TWO, MANY
 	}
-
-	public enum Types {
+	
+	public enum OperandGroups {
+		ZERO, ONE, TWO, MANY
+	}
+	
+	public enum Blocks {
 		ZERO, ONE, TWO, MANY
 	}
 
 	public enum Extras {
 		STRING, // index into string pool
 		CONSTANT, // index into constant pool
+		TYPE, // index into type pool
 		NAME, // index into name pool
-		TARGET, // branch target
-		BLOCK, // block index
 		STRING_ARRAY, // determined on the fly
 		SWITCH_ARRAY, // determined on the fly
 	}
 
 	public static abstract class Schema {
-		private final Targets targets;
 		private final Operands operands;
-		private final Types types;
+		private final OperandGroups groups;
+		private final Blocks blocks;
 		private final Extras[] extras;
 
-		public Schema(Targets targets, Operands operands, Types types, Extras... extras) {
-			this.targets = targets;
+		public Schema(Operands operands, Extras... extras) {
 			this.operands = operands;
-			this.types = types;
+			this.groups = OperandGroups.ZERO;
+			this.blocks = Blocks.ZERO;
 			this.extras = extras;
 		}
-	
+
+		public Schema(Operands operands, OperandGroups groups, Extras... extras) {
+			this.operands = operands;
+			this.groups = groups;
+			this.blocks = Blocks.ZERO;
+			this.extras = extras;
+		}
+		
+		public Schema(Operands operands, OperandGroups groups, Blocks blocks, Extras... extras) {
+			this.operands = operands;
+			this.groups = groups;
+			this.blocks = blocks;
+			this.extras = extras;
+		}
+		
 		public Extras[] extras() {
 			return extras;
 		}
+
+		public Operands getOperands() {
+			return operands;
+		}
 		
-		public abstract Bytecode construct(int opcode, int[] targets, int[] operands, Type[] types, Object[] extras);
+		public OperandGroups getOperandGroups() {
+			return groups;
+		}
+		
+		public Blocks getBlocks() {
+			return blocks;
+		}
+		
+		public abstract Bytecode construct(int opcode, int[] operands, int[][] groups, int[] blocks, Object[] extras);
 
 		public String toString() {
-			return "<" + targets.toString() + " targets, " + operands + " operands, " + types + " types, " + Arrays.toString(extras) + ">";
+			return "<" + operands + " operands, " + Arrays.toString(extras) + ">";
 		}
 	}
 }

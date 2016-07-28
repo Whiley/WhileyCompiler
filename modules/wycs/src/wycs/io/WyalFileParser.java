@@ -577,12 +577,12 @@ public class WyalFileParser {
 		int start = index;
 		checkNotEof();
 
-		Token lookahead = tryAndMatch(false, If, Case, Exists, Forall);
+		Token lookahead = tryAndMatch(false, If, Either, Exists, Forall);
 
 		if (lookahead != null && lookahead.kind == If) {
 			return parseIfThenStatement(wf, generics, environment, indent);
-		} else if (lookahead != null && lookahead.kind == Case) {
-			return parseCaseStatement(wf, generics, environment, indent);
+		} else if (lookahead != null && lookahead.kind == Either) {
+			return parseEitherOrStatement(wf, generics, environment, indent);
 		} else if (lookahead != null && lookahead.kind == Forall) {
 			return parseExistsForallStatement(lookahead, wf, generics,
 					environment, indent);
@@ -625,7 +625,7 @@ public class WyalFileParser {
 	}
 
 
-	private Expr parseCaseStatement(WyalFile wf, HashSet<String> generics,
+	private Expr parseEitherOrStatement(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, Indent indent) {
 		int start = index;
 
@@ -644,11 +644,11 @@ public class WyalFileParser {
 			}
 			nextIndent = getIndent();
 			if(nextIndent != null && nextIndent.equivalent(indent)) {
-				lookahead = tryAndMatch(false, Case);
+				lookahead = tryAndMatch(false, Or);
 			} else {
 				lookahead = null;
 			}
-		} while (lookahead != null && lookahead.kind == Case);
+		} while (lookahead != null && lookahead.kind == Or);
 
 		return condition;
 	}
@@ -1460,7 +1460,7 @@ public class WyalFileParser {
 			return parseLengthOfExpression(wf, generics, environment,
 					terminated);
 		case LeftSquare:
-			return parseListExpression(wf, generics, environment, terminated);
+			return parseArrayExpression(wf, generics, environment, terminated);
 		case LeftCurly:
 			return parseRecordExpression(wf, generics, environment,
 					terminated);
@@ -1665,16 +1665,25 @@ public class WyalFileParser {
 	 *
 	 * @return
 	 */
-	private Expr parseListExpression(WyalFile wf, HashSet<String> generics,
+	private Expr parseArrayExpression(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(LeftSquare);
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 
 		boolean firstTime = true;
+		boolean isArray = true;
 		while (eventuallyMatch(RightSquare) == null) {
 			if (!firstTime) {
-				match(Comma);
+				if(!isArray) {
+					// Force failure
+					match(RightSquare);
+				} else  if(tryAndMatch(true,SemiColon) == null) {
+					match(Comma);
+				} else {
+					// This indicates an array
+					isArray = false;
+				}
 			}
 			firstTime = false;
 			// NOTE: we require the following expression be a "non-tuple"
@@ -1686,8 +1695,11 @@ public class WyalFileParser {
 			exprs.add(parseUnitExpression(wf, generics, environment, true));
 		}
 
-		return new Expr.Nary(Expr.Nary.Op.ARRAY, exprs, sourceAttr(start,
-				index - 1));
+		if (isArray) {
+			return new Expr.Nary(Expr.Nary.Op.ARRAY, exprs, sourceAttr(start, index - 1));
+		} else {
+			return new Expr.Binary(Expr.Binary.Op.ARRAYGEN, exprs.get(0), exprs.get(1), sourceAttr(start, index - 1));
+		}
 	}
 
 	/**

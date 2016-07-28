@@ -339,7 +339,8 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		NEQ(14),
 		LT(15),
 		LTEQ(16),
-		INDEXOF(17),		
+		ARRAYGEN(17),
+		INDEXOF(18),		
 		AND(20),
 		OR(21),
 		TUPLE(22),
@@ -347,7 +348,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 		LOAD(24),
 		EXISTS(25),
 		FORALL(26),
-		FUNCALL(27);
+		FUNCALL(27);	
 
 		public int offset;
 
@@ -527,7 +528,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			super(type, opcode, new Code[] { leftOperand, rightOperand },
 					attributes);
 			if (opcode.offset < Op.ADD.offset
-					|| opcode.offset > Op.LTEQ.offset) {
+					|| opcode.offset > Op.ARRAYGEN.offset) {
 				throw new IllegalArgumentException(
 						"invalid opcode for Binary constructor");
 			}
@@ -538,7 +539,7 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			super(type, opcode, new Code[] { leftOperand, rightOperand },
 					attributes);
 			if (opcode.offset < Op.ADD.offset
-					|| opcode.offset > Op.LTEQ.offset) {
+					|| opcode.offset > Op.ARRAYGEN.offset) {
 				throw new IllegalArgumentException(
 						"invalid opcode for Binary constructor");
 			}
@@ -558,6 +559,8 @@ public abstract class Code<T extends SemanticType> extends SyntacticElement.Impl
 			case LT:
 			case LTEQ:
 				return SemanticType.Bool;
+			case ARRAYGEN:
+				return type;
 			}
 			throw new IllegalArgumentException("invalid opcode for binary bytecode");
 		}

@@ -53,7 +53,7 @@ import wyil.lang.Constant;
 import wyil.lang.Modifier;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
-import wyil.util.TypeExpander;
+import wyil.util.TypeSystem;
 import wyil.util.type.LifetimeRelation;
 import wyil.util.type.LifetimeSubstitution;
 
@@ -142,7 +142,7 @@ import wyil.util.type.LifetimeSubstitution;
 public class FlowTypeChecker {
 
 	private final WhileyBuilder builder;
-	private final TypeExpander expander;
+	private final TypeSystem expander;
 	private String filename;
 	//private WhileyFile.FunctionOrMethod current;
 
@@ -154,7 +154,7 @@ public class FlowTypeChecker {
 
 	public FlowTypeChecker(WhileyBuilder builder) {
 		this.builder = builder;
-		this.expander = new TypeExpander(builder.project());
+		this.expander = new TypeSystem(builder.project());
 	}
 
 	// =========================================================================
@@ -387,7 +387,7 @@ public class FlowTypeChecker {
 			} else if (stmt instanceof Stmt.Fail) {
 				return propagate((Stmt.Fail) stmt, environment, context);
 			} else if (stmt instanceof Stmt.Debug) {
-				return propagate((Stmt.Debug) stmt, environment);
+				return propagate((Stmt.Debug) stmt, environment, context);
 			} else if (stmt instanceof Stmt.Skip) {
 				return propagate((Stmt.Skip) stmt, environment);
 			} else {
@@ -1271,7 +1271,6 @@ public class FlowTypeChecker {
 				 */
 				Nominal glbForFalseBranch = Nominal.intersect(lhs.result(), Nominal.Negation(unconstrainedTestType));
 				Nominal glbForTrueBranch = Nominal.intersect(lhs.result(), tv.type);
-
 				if (glbForFalseBranch.raw() == Type.T_VOID) {
 					// DEFINITE TRUE CASE
 					syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), context, bop);
@@ -3124,20 +3123,6 @@ public class FlowTypeChecker {
 		return myIndex;
 	}
 
-	private static int append(Type type, ArrayList<Automaton.State> states) {
-		int myIndex = states.size();
-		Automaton automaton = Type.destruct(type);
-		Automaton.State[] tStates = automaton.states;
-		int[] rmap = new int[tStates.length];
-		for (int i = 0, j = myIndex; i != rmap.length; ++i, ++j) {
-			rmap[i] = j;
-		}
-		for (Automaton.State state : tStates) {
-			states.add(Automata.remap(state, rmap));
-		}
-		return myIndex;
-	}
-
 	// =========================================================================
 	// ResolveAsConstant
 	// =========================================================================
@@ -3328,7 +3313,7 @@ public class FlowTypeChecker {
 			} else if (expr instanceof Expr.FunctionOrMethod) {
 				// TODO: add support for proper lambdas
 				Expr.FunctionOrMethod f = (Expr.FunctionOrMethod) expr;
-				return new Pair<Constant, Nominal>(new Constant.Lambda(f.nid, f.type.nominal()), f.type);
+				return new Pair<Constant, Nominal>(new Constant.FunctionOrMethod(f.nid, f.type.nominal()), f.type);
 			}
 		} catch (SyntaxError.InternalFailure e) {
 			throw e;
