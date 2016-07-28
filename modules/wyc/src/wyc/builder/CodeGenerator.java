@@ -261,7 +261,7 @@ public final class CodeGenerator {
 			Stmt st = stmts.get(i);
 			block[i] = generate(st, scope);
 		}
-		return scope.add(Nominal.T_VOID,new Bytecode.Block(block));
+		return scope.add(new Bytecode.Block(block));
 	}
 	
 	// =========================================================================
@@ -364,7 +364,7 @@ public final class CodeGenerator {
 	private int generateAssign(Stmt.Assign s, EnclosingScope scope) throws ResolveError {
 		int[] lhs = generate((List) s.lvals, scope);
 		int[] rhs = generateMultipleReturns(s.rvals, scope);
-		return scope.add(Nominal.T_VOID,new Bytecode.Assign(lhs, rhs), s.attributes());
+		return scope.add(new Bytecode.Assign(lhs, rhs), s.attributes());
 	}
 
 	/**
@@ -380,7 +380,7 @@ public final class CodeGenerator {
 		// First, translate assertion
 		int operand = generateExpression(s.expr, scope);
 		// Second, create assert bytecode
-		return scope.add(Nominal.T_VOID,new Bytecode.Assert(operand), s.attributes());
+		return scope.add(new Bytecode.Assert(operand), s.attributes());
 	}
 
 	/**
@@ -396,7 +396,7 @@ public final class CodeGenerator {
 		// First, translate assumption
 		int operand = generateExpression(s.expr, scope);
 		// Second, create assert bytecode
-		return scope.add(Nominal.T_VOID,new Bytecode.Assume(operand), s.attributes());
+		return scope.add(new Bytecode.Assume(operand), s.attributes());
 	}
 
 	/**
@@ -415,7 +415,7 @@ public final class CodeGenerator {
 		// has the effect of forcing an implicit coercion between the
 		// actual value being returned and its required type.		
 		int[] operands = generateMultipleReturns(returns,scope);
-		return scope.add(Nominal.T_VOID,new Bytecode.Return(operands), s.attributes());
+		return scope.add(new Bytecode.Return(operands), s.attributes());
 	}
 
 	/**
@@ -428,7 +428,7 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private int generateSkip(Stmt.Skip s, EnclosingScope scope) {
-		return scope.add(Nominal.T_VOID,new Bytecode.Skip(),s.attributes());
+		return scope.add(new Bytecode.Skip(),s.attributes());
 	}
 
 	/**
@@ -440,7 +440,7 @@ public final class CodeGenerator {
 	 */
 	private int generateDebug(Stmt.Debug s, EnclosingScope scope) {
 		int operand = generateExpression(s.expr, scope);
-		return scope.add(Nominal.T_VOID,new Bytecode.Debug(operand), s.attributes());
+		return scope.add(new Bytecode.Debug(operand), s.attributes());
 	}
 
 	/**
@@ -453,7 +453,7 @@ public final class CodeGenerator {
 	 * @return
 	 */
 	private int generateFail(Stmt.Fail s, EnclosingScope scope) {
-		return scope.add(Nominal.T_VOID,new Bytecode.Fail(), s.attributes());
+		return scope.add(new Bytecode.Fail(), s.attributes());
 	}
 
 	/**
@@ -475,19 +475,19 @@ public final class CodeGenerator {
 			// There is a false branch, so translate that as well
 			int falseBlockIndex = generateBlock(s.falseBranch, fr.falseScope);
 			//
-			return scope.add(Nominal.T_VOID,new Bytecode.If(fr.operand, trueBlockIndex, falseBlockIndex), s.attributes());
+			return scope.add(new Bytecode.If(fr.operand, trueBlockIndex, falseBlockIndex), s.attributes());
 		} else {
 			// No false branch to translate
-			return scope.add(Nominal.T_VOID,new Bytecode.If(fr.operand, trueBlockIndex), s.attributes());
+			return scope.add(new Bytecode.If(fr.operand, trueBlockIndex), s.attributes());
 		}
 	}
 
 	private int generateBreak(Stmt.Break s, EnclosingScope scope) {
-		return scope.add(Nominal.T_VOID,new Bytecode.Break(), s.attributes());
+		return scope.add(new Bytecode.Break(), s.attributes());
 	}
 
 	private int generateContinue(Stmt.Continue s, EnclosingScope scope) {
-		return scope.add(Nominal.T_VOID,new Bytecode.Continue(), s.attributes());
+		return scope.add(new Bytecode.Continue(), s.attributes());
 	}
 
 	private int generateSwitch(Stmt.Switch s, EnclosingScope scope) throws Exception {
@@ -508,7 +508,7 @@ public final class CodeGenerator {
 			cases[i] = new Bytecode.Case(body, c.constants);
 		}
 
-		return scope.add(Nominal.T_VOID,new Bytecode.Switch(operand, cases), s.attributes());
+		return scope.add(new Bytecode.Switch(operand, cases), s.attributes());
 	}
 
 	/**
@@ -545,7 +545,7 @@ public final class CodeGenerator {
 	private int generateNamedBlock(Stmt.NamedBlock s, EnclosingScope scope) {
 		EnclosingScope bodyScope = scope.clone();
 		int block = generateBlock(s.body, bodyScope);
-		return scope.add(Nominal.T_VOID,new Bytecode.NamedBlock(block,s.name),s.attributes());
+		return scope.add(new Bytecode.NamedBlock(block,s.name),s.attributes());
 	}
 
 	/**
@@ -570,7 +570,7 @@ public final class CodeGenerator {
 		EnclosingScope bodyScope = scope.clone();
 		int body = generateBlock(s.body, bodyScope);
 		//
-		return scope.add(Nominal.T_VOID,new Bytecode.While(body, condition, invariants, modified), s.attributes());
+		return scope.add(new Bytecode.While(body, condition, invariants, modified), s.attributes());
 	}
 
 	/**
@@ -935,13 +935,9 @@ public final class CodeGenerator {
 			} else if (expression instanceof Expr.UnOp) {
 				return generateUnaryOperator((Expr.UnOp) expression, scope);
 			} else if (expression instanceof Expr.FunctionOrMethodCall) {
-				int[] returns = generateFunctionOrMethodCall((Expr.FunctionOrMethodCall) expression, scope);
-				// Flow Type Checker should ensure only one here
-				return returns[0];
+				return generateFunctionOrMethodCall((Expr.FunctionOrMethodCall) expression, scope);
 			} else if (expression instanceof Expr.IndirectFunctionOrMethodCall) {
-				int[] returns = generateIndirectFunctionOrMethodCall((Expr.IndirectFunctionOrMethodCall) expression, scope);
-				// Flow Type Checker should ensure only one here
-				return returns[0];
+				return generateIndirectFunctionOrMethodCall((Expr.IndirectFunctionOrMethodCall) expression, scope);
 			} else if (expression instanceof Expr.Quantifier) {
 				return generateQuantifier((Expr.Quantifier) expression, scope);
 			} else if (expression instanceof Expr.FieldAccess) {
@@ -972,14 +968,14 @@ public final class CodeGenerator {
 		return -1; // deadcode
 	}
 
-	public int[] generateFunctionOrMethodCall(Expr.FunctionOrMethodCall expr, EnclosingScope scope) throws ResolveError {
+	public int generateFunctionOrMethodCall(Expr.FunctionOrMethodCall expr, EnclosingScope scope) throws ResolveError {
 		int[] operands = generate(expr.arguments, scope);
 		Nominal.FunctionOrMethod type = expr.type();
 		return scope.add(type.returns(), new Bytecode.Invoke(type.nominal(), operands, expr.nid()),
 				expr.attributes());
 	}
 
-	public int[] generateIndirectFunctionOrMethodCall(Expr.IndirectFunctionOrMethodCall expr, EnclosingScope scope) throws ResolveError {
+	public int generateIndirectFunctionOrMethodCall(Expr.IndirectFunctionOrMethodCall expr, EnclosingScope scope) throws ResolveError {
 		int operand = generateExpression(expr.src, scope);
 		int[] operands = generate(expr.arguments, scope);
 		Nominal.FunctionOrMethod type = expr.type();
@@ -1417,7 +1413,23 @@ public final class CodeGenerator {
 			locations.add(new SyntaxTree.Location<Bytecode>(enclosing, locationType, alias, attributes));
 			return index;
 		}
+
+		public int add(Bytecode stmt, Attribute... attributes) {
+			return add(stmt,Arrays.asList(attributes));
+		}
+
+		public int add(Nominal type, Bytecode stmt, Attribute... attributes) {
+			return add(type,stmt,Arrays.asList(attributes));
+		}
+
+		public int add(Bytecode operand, List<Attribute> attributes) {
+			return add(new Nominal[0],operand,attributes);
+		}
 		
+		public int add(Nominal type, Bytecode operand, List<Attribute> attributes) {
+			return add(new Nominal[]{type},operand,attributes);
+		}
+
 		/**
 		 * Allocate an operand on the stack.
 		 * 
@@ -1425,17 +1437,13 @@ public final class CodeGenerator {
 		 * @param operand
 		 * @return
 		 */
-		public int add(Nominal type, Bytecode operand, List<Attribute> attributes) {
+		public int add(Nominal[] nominals, Bytecode operand, List<Attribute> attributes) {
 			List<SyntaxTree.Location<?>> locations =  enclosing.getLocations();
-			int index = locations.size();
-			Type locationType = normalise(type);
-			locations.add(new SyntaxTree.Location<Bytecode>(enclosing, locationType, operand,  attributes));
-			// Check whether this is declaring a new variable or not.
-			if(operand instanceof Bytecode.VariableDeclaration) {
-				Bytecode.VariableDeclaration vd = (Bytecode.VariableDeclaration) operand;
-				environment.put(vd.getName(), index);
+			Type[] types = new Type[nominals.length];
+			for (int i = 0; i != types.length; ++i) {
+				types[i] = normalise(nominals[i]);
 			}
-			return index;
+			return add(types,operand,attributes);
 		}
 
 		/**
@@ -1445,22 +1453,24 @@ public final class CodeGenerator {
 		 * @param operand
 		 * @return
 		 */
-		public int[] add(List<Nominal> types, Bytecode operand, List<Attribute> attributes) {
+		public int add(List<Nominal> types, Bytecode operand, List<Attribute> attributes) {
 			Type[] nominals = new Type[types.size()];
 			for (int i = 0; i != nominals.length; ++i) {
 				nominals[i] = normalise(types.get(i));
 			}
-			List<SyntaxTree.Location<?>> locations = enclosing.getLocations();
-			int[] indices = new int[types.size()];
-			for (int i = 0; i != types.size(); ++i) {
-				indices[i] = locations.size();				
-				locations.add(new SyntaxTree.Location<Bytecode>(enclosing, nominals[i], operand, attributes));
-			}
-			return indices;
+			return add(nominals,operand,attributes);
 		}
 
-		public int add(Nominal type, Bytecode stmt, Attribute... attributes) {
-			return add(type,stmt,Arrays.asList(attributes));
+		private int add(Type[] types, Bytecode operand, List<Attribute> attributes) {
+			List<SyntaxTree.Location<?>> locations = enclosing.getLocations();
+			int index = locations.size();
+			locations.add(new SyntaxTree.Location<Bytecode>(enclosing, types, operand, attributes));
+			// Check whether this is declaring a new variable or not.
+			if (operand instanceof Bytecode.VariableDeclaration) {
+				Bytecode.VariableDeclaration vd = (Bytecode.VariableDeclaration) operand;
+				environment.put(vd.getName(), index);
+			}
+			return index;
 		}
 
 		/**

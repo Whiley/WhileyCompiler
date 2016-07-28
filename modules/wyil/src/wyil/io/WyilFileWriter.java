@@ -547,7 +547,9 @@ public final class WyilFileWriter {
 	 * 
 	 * <pre>
 	 * +-------------------+
-	 * | uv : typeIdx      |
+	 * | uv : nTypes       |
+	 * +-------------------+
+	 * | uv[] : typeIdxs   |
 	 * +-------------------+
 	 * | uv : nAttrs       |
 	 * +-------------------+
@@ -559,7 +561,10 @@ public final class WyilFileWriter {
 	 * 
 	 */
 	private void writeLocation(SyntaxTree.Location<?> location, BinaryOutputStream output) throws IOException {
-		output.write_uv(typeCache.get(location.getType()));
+		output.write_uv(location.numberOfTypes());
+		for(int i=0;i!=location.numberOfTypes();++i) {
+			output.write_uv(typeCache.get(location.getType(i)));
+		}
 		output.write_uv(0); // no attributes for now
 		writeBytecode(location.getBytecode(), output);
 	}
@@ -820,9 +825,11 @@ public final class WyilFileWriter {
 		}
 	}
 	
-	private void buildPools(SyntaxTree.Location<?> expr) {
-		addTypeItem(expr.getType());
-		buildPools(expr.getBytecode());
+	private void buildPools(SyntaxTree.Location<?> loc) {
+		for(int i=0;i!=loc.numberOfTypes();++i) {
+			addTypeItem(loc.getType(i));
+		}
+		buildPools(loc.getBytecode());
 	}
 	
 	private void buildPools(Bytecode code) {

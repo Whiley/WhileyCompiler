@@ -1867,7 +1867,7 @@ public class WhileyFileParser {
 		Token lookahead;
 
 		// First, attempt to parse quantifiers (e.g. some, all, no, etc)
-		if ((lookahead = tryAndMatch(terminated, Some, No, All)) != null) {
+		if ((lookahead = tryAndMatch(terminated, Some, All)) != null) {
 			return parseQuantifierExpression(lookahead, wf, scope,
 					terminated);
 		}

@@ -10,6 +10,7 @@ import static wyil.util.ErrorMessages.internalFailure;
 import java.math.BigInteger;
 import java.util.*;
 
+import sun.text.normalizer.RangeValueIterator;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;
 import wycc.lang.SyntacticElement;
@@ -242,8 +243,8 @@ public class VerificationConditionGenerator {
 		// versions across verification conditions, and also to type variables
 		// used in verification conditions.
 		GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
-		LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);		
-		
+		LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
+
 		// Generate the initial assumption set for a given function or method,
 		// which roughly corresponds to its precondition.
 		AssumptionSet assumptions = generateFunctionOrMethodAssumptionSet(declaration, localEnvironment);
@@ -280,13 +281,13 @@ public class VerificationConditionGenerator {
 			// Construct fresh environment for this macro. This is necessary to
 			// avoid name clashes with subsequent macros.
 			GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
-			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);				
+			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
 			TypePattern type = generatePreconditionTypePattern(declaration, localEnvironment);
 			// Translate expression itself
 			Expr clause = translateExpression(invariants.get(i), localEnvironment);
 			// Capture any free variables. This is necessary to deal with any
 			// variable aliases introduced by type test operators.
-			clause = captureFreeVariables(declaration,globalEnvironment,clause);		
+			clause = captureFreeVariables(declaration, globalEnvironment, clause);
 			//
 			wyalFile.add(
 					wyalFile.new Macro(name, Collections.EMPTY_LIST, type, clause, invariants.get(i).attributes()));
@@ -302,7 +303,7 @@ public class VerificationConditionGenerator {
 	 * @param environment
 	 * @param wyalFile
 	 */
-	private void translatePostconditionMacros(WyilFile.FunctionOrMethod declaration, WyalFile wyalFile) {						
+	private void translatePostconditionMacros(WyilFile.FunctionOrMethod declaration, WyalFile wyalFile) {
 		List<Location<Bytecode.Expr>> invariants = declaration.getPostcondition();
 		//
 		String prefix = declaration.name() + "_ensures_";
@@ -312,31 +313,31 @@ public class VerificationConditionGenerator {
 			// Construct fresh environment for this macro. This is necessary to
 			// avoid name clashes with subsequent macros.
 			GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
-			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);				
+			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
 			TypePattern type = generatePostconditionTypePattern(declaration, localEnvironment);
 			Expr clause = translateExpression(invariants.get(i), localEnvironment.clone());
 			// Capture any free variables. This is necessary to deal with any
 			// variable aliases introduced by type test operators.
-			clause = captureFreeVariables(declaration,globalEnvironment,clause);
+			clause = captureFreeVariables(declaration, globalEnvironment, clause);
 			//
 			wyalFile.add(
 					wyalFile.new Macro(name, Collections.EMPTY_LIST, type, clause, invariants.get(i).attributes()));
 		}
 	}
 
-	private Expr captureFreeVariables(WyilFile.Declaration declaration,
-			GlobalEnvironment globalEnvironment, Expr clause) {		
+	private Expr captureFreeVariables(WyilFile.Declaration declaration, GlobalEnvironment globalEnvironment,
+			Expr clause) {
 		HashSet<String> freeVariables = new HashSet<String>();
 		HashSet<String> freeAliases = new HashSet<String>();
 		clause.freeVariables(freeVariables);
-		for(String var : freeVariables) {
-			if(globalEnvironment.getParent(var) != null) {
+		for (String var : freeVariables) {
+			if (globalEnvironment.getParent(var) != null) {
 				// This indicates that the given variable is an alias, rather
-				// than a top-level declaration.  
+				// than a top-level declaration.
 				freeAliases.add(var);
 			}
 		}
-		// Determine any variable aliases as necessary.		
+		// Determine any variable aliases as necessary.
 		if (freeAliases.size() > 0) {
 			// This indicates there are one or more free variables in the
 			// clause. Hence, these must be universally quantified to ensure the
@@ -344,11 +345,11 @@ public class VerificationConditionGenerator {
 			TypePattern types = generateExpressionTypePattern(declaration, globalEnvironment, freeAliases);
 			Expr aliases = determineVariableAliases(globalEnvironment, freeAliases);
 			//
-			clause = new Expr.ForAll(types, implies(aliases,clause));
+			clause = new Expr.ForAll(types, implies(aliases, clause));
 		}
 		return clause;
 	}
-	
+
 	/**
 	 * Generate the initial assumption set for a function or method. This is
 	 * essentially made up of the precondition(s) for that function or method.
@@ -420,11 +421,11 @@ public class VerificationConditionGenerator {
 			case Bytecode.OPCODE_ifelse:
 				return translateIf((Location<If>) stmt, context);
 			case Bytecode.OPCODE_indirectinvoke:
-				checkExpressionPreconditions(stmt,context);
+				checkExpressionPreconditions(stmt, context);
 				translateIndirectInvoke((Location<IndirectInvoke>) stmt, context.getEnvironment());
 				return context;
 			case Bytecode.OPCODE_invoke:
-				checkExpressionPreconditions(stmt,context);
+				checkExpressionPreconditions(stmt, context);
 				translateInvoke((Location<Invoke>) stmt, context.getEnvironment());
 				return context;
 			case Bytecode.OPCODE_namedblock:
@@ -482,37 +483,80 @@ public class VerificationConditionGenerator {
 	 */
 	private Context translateAssign(Location<Assign> stmt, Context context) {
 		Location<?>[] lhs = stmt.getOperandGroup(0);
-		Pair<Expr[], Context> p = translateExpressionsWithChecks(stmt.getOperandGroup(1), context);
-		Expr[] rhs = p.first();
-		context = p.second();
+		Location<?>[] rhs = stmt.getOperandGroup(1);
 
-		// TODO: handle multiple returns
+		// TODO: generate checks for type invariants #666
 
-		// TODO: generate checks for type invariants
-
-		for (int i = 0; i != lhs.length; ++i) {
-			Location<?> loc = lhs[i];
-			Expr r = rhs[i];
-			switch (loc.getOpcode()) {
-			case Bytecode.OPCODE_arrayindex:
-				context = translateArrayAssign((Location<Operator>) loc, r, context);
-				break;
-			case Bytecode.OPCODE_dereference:
-				// There's nothing useful we can do here.
-				break;
-			case Bytecode.OPCODE_fieldload:
-				context = translateRecordAssign((Location<FieldLoad>) loc, r, context);
-				break;
-			case Bytecode.OPCODE_varaccess:
-				context = translateVariableAssign((Location<VariableAccess>) loc, r, context);
-				break;
-			default:
-				internalFailure("unknown lval encountered (" + loc + ")", context.getEnclosingFile().filename(),
-						loc.attributes());
-			}
+		for (int i = 0, j = 0; i != rhs.length; ++i) {
+			Location<?> rval = rhs[i];
+			Location<?>[] lval = Arrays.copyOfRange(lhs, j, rval.numberOfTypes());
+			context = translateAssign(lval, rval, context);
+			j = j + rval.numberOfTypes();
 		}
 		// Done
 		return context;
+	}
+
+	/**
+	 * Translate an individual assignment from one rval to one or more lvals. If
+	 * there are multiple lvals, then a tuple is created to represent the
+	 * left-hand side.
+	 * 
+	 * @param lval
+	 *            One or more expressions representing the left-hand side
+	 * @param rval
+	 *            A single expression representing the right-hand side
+	 * @param context
+	 * @return
+	 */
+	private Context translateAssign(Location<?>[] lval, Location<?> rval, Context context) {
+		Pair<Expr, Context> rp = translateExpressionWithChecks(rval, context);
+		context = rp.second();
+		Expr[] ls = new Expr[lval.length];
+		for(int i=0;i!=ls.length;++i) {
+			Pair<Expr,Context> lp = translateSingleAssignment(lval[i], context);
+			ls[i] = lp.first();
+			context = lp.second();
+		}
+		Expr lhs = ls.length == 1 ? ls[0] : new Expr.Nary(Expr.Nary.Op.TUPLE, ls);
+		//
+		Expr condition = new Expr.Binary(Expr.Binary.Op.EQ, lhs, rp.first());
+		//
+		return context.assume(condition);
+	}
+
+	/**
+	 * Translate an individual assignment from one rval to exactly one lval.
+	 * 
+	 * @param lval
+	 *            A single location representing the left-hand side
+	 * @param rval
+	 *            A single expression representing the right-hand side
+	 * @param context
+	 * @return
+	 */
+	private Pair<Expr,Context> translateSingleAssignment(Location<?> lval, Context context) {
+
+		// FIXME: this method is a bit of a kludge. It would be nicer,
+		// eventually, to have all right-hand side expression represented in
+		// WyTP directly. This could potentially be done by including an update
+		// operation in WyTP ... ?
+
+		switch (lval.getOpcode()) {
+		case Bytecode.OPCODE_arrayindex:
+			return translateArrayAssign((Location<Operator>) lval, context);
+		case Bytecode.OPCODE_dereference:
+			// There's nothing useful we can do here.
+			return translateDereference((Location<Operator>) lval, context);
+		case Bytecode.OPCODE_fieldload:
+			return translateRecordAssign((Location<FieldLoad>) lval, context);
+		case Bytecode.OPCODE_varaccess:
+			return translateVariableAssign((Location<VariableAccess>) lval, context);
+		default:
+			internalFailure("unknown lval encountered (" + lval + ")", context.getEnclosingFile().filename(),
+					lval.attributes());
+			return null;
+		}
 	}
 
 	/**
@@ -526,7 +570,7 @@ public class VerificationConditionGenerator {
 	 *            The enclosing context
 	 * @return
 	 */
-	private Context translateRecordAssign(Location<FieldLoad> lval, Expr result, Context context) {
+	private Pair<Expr,Context> translateRecordAssign(Location<FieldLoad> lval, Context context) {
 		SyntaxTree tree = lval.getEnclosingTree();
 		WyilFile.Declaration decl = tree.getEnclosingDeclaration();
 		try {
@@ -547,16 +591,16 @@ public class VerificationConditionGenerator {
 			Collections.sort(fields);
 			int index = fields.indexOf(bytecode.fieldName());
 			for (int i = 0; i != fields.size(); ++i) {
-				Expr j = new Expr.Constant(Value.Integer(BigInteger.valueOf(i)));
-				Expr oldField = new Expr.IndexOf(originalSource, j, lval.attributes());
-				Expr newField = new Expr.IndexOf(newSource, j, lval.attributes());
 				if (i != index) {
+					Expr j = new Expr.Constant(Value.Integer(BigInteger.valueOf(i)));
+					Expr oldField = new Expr.IndexOf(originalSource, j, lval.attributes());
+					Expr newField = new Expr.IndexOf(newSource, j, lval.attributes());
 					context = context.assume(new Expr.Binary(Expr.Binary.Op.EQ, oldField, newField, lval.attributes()));
-				} else {
-					context = context.assume(new Expr.Binary(Expr.Binary.Op.EQ, newField, result, lval.attributes()));
 				}
 			}
-			return context;
+			Expr j = new Expr.Constant(Value.Integer(BigInteger.valueOf(index)));
+			Expr newField = new Expr.IndexOf(newSource, j, lval.attributes());
+			return new Pair<>(newField,context);
 		} catch (ResolveError e) {
 			internalFailure(e.getMessage(), decl.parent().filename(), e, lval.attributes());
 			return null;
@@ -574,7 +618,7 @@ public class VerificationConditionGenerator {
 	 *            The enclosing context
 	 * @return
 	 */
-	private Context translateArrayAssign(Location<Operator> lval, Expr result, Context context) {
+	private Pair<Expr,Context> translateArrayAssign(Location<Operator> lval, Context context) {
 		SyntaxTree tree = lval.getEnclosingTree();
 		WyilFile.Declaration decl = tree.getEnclosingDeclaration();
 		try {
@@ -603,10 +647,9 @@ public class VerificationConditionGenerator {
 			Expr.Invoke macro = new Expr.Invoke("update", Trie.fromString("wycs/core/Array"), generics, arg);
 			// Construct connection between new source expression element and
 			// result
-			Expr newLval = new Expr.IndexOf(newSource, index, lval.attributes());
-			Expr eq = new Expr.Binary(Expr.Binary.Op.EQ, newLval, result, lval.attributes());
+			Expr newLVal = new Expr.IndexOf(newSource, index, lval.attributes());
 			//
-			return context.assume(macro, eq);
+			return new Pair<>(newLVal,context.assume(macro));
 		} catch (ResolveError e) {
 			internalFailure(e.getMessage(), decl.parent().filename(), e, lval.attributes());
 			return null;
@@ -624,9 +667,28 @@ public class VerificationConditionGenerator {
 	 *            The enclosing context
 	 * @return
 	 */
-	private Context translateVariableAssign(Location<VariableAccess> lval, Expr result, Context context) {
+	private Pair<Expr,Context> translateDereference(Location<?> lval, Context context) {
+		Expr e = translateAsUnknown(lval,context.getEnvironment());
+		return new Pair<>(e,context);
+	}
+
+	/**
+	 * Translate an assignment to a variable
+	 * 
+	 * @param lval
+	 *            The array assignment expression
+	 * @param result
+	 *            The value being assigned to the given array element
+	 * @param context
+	 *            The enclosing context
+	 * @return
+	 */
+	private Pair<Expr,Context> translateVariableAssign(Location<VariableAccess> lval, Context context) {
 		Location<VariableDeclaration> decl = (Location<VariableDeclaration>) lval.getOperand(0);
-		return context.write(decl.getIndex(), result);
+		context = context.havoc(decl.getIndex());
+		String nVersionedVar = context.read(decl);
+		Expr.Variable var = new Expr.Variable(nVersionedVar);
+		return new Pair<>(var,context);
 	}
 
 	/**
@@ -785,7 +847,8 @@ public class VerificationConditionGenerator {
 		//
 		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), context);
 		Expr trueCondition = p.first();
-		// FIXME: this is broken as includes assumptions propagated through logical &&'s
+		// FIXME: this is broken as includes assumptions propagated through
+		// logical &&'s
 		context = p.second();
 		Expr falseCondition = invertCondition(trueCondition, stmt.getOperand(0));
 		//
@@ -2022,9 +2085,10 @@ public class VerificationConditionGenerator {
 	private Expr determineVariableAliases(GlobalEnvironment environment, Set<String> freeVariables) {
 		Expr aliases = null;
 		for (String var : freeVariables) {
-			String parent = environment.getParent(var);			
+			String parent = environment.getParent(var);
 			if (parent != null) {
-				// This indicates a variable alias, so construct the necessary equality.
+				// This indicates a variable alias, so construct the necessary
+				// equality.
 				Expr.Variable lhs = new Expr.Variable(var);
 				Expr.Variable rhs = new Expr.Variable(parent);
 				Expr aliasEquality = new Expr.Binary(Expr.Binary.Op.EQ, lhs, rhs);
@@ -2110,8 +2174,8 @@ public class VerificationConditionGenerator {
 	 * @param declaration
 	 * @return
 	 */
-	private TypePattern generateLoopInvariantTypePattern(WyilFile.Declaration declaration,
-			Location<?>[] loopInvariant, LocalEnvironment environment) {
+	private TypePattern generateLoopInvariantTypePattern(WyilFile.Declaration declaration, Location<?>[] loopInvariant,
+			LocalEnvironment environment) {
 		int[] localVariableLocations = SyntaxTrees.determineUsedVariables(loopInvariant);
 		return generateTypePatterns(declaration, environment, localVariableLocations);
 	}
@@ -2545,7 +2609,7 @@ public class VerificationConditionGenerator {
 		 * which is being aliased.
 		 */
 		private final Map<String, String> parents;
-		
+
 		/**
 		 * Provides a global mapping of all local variable names to the next
 		 * unused version numbers. This is done with variable names rather than
@@ -2557,7 +2621,7 @@ public class VerificationConditionGenerator {
 		public GlobalEnvironment(WyilFile.Declaration enclosingDeclaration) {
 			this.enclosingDeclaration = enclosingDeclaration;
 			this.allocation = new HashMap<String, Integer>();
-			this.parents = new HashMap<String,String>();
+			this.parents = new HashMap<String, String>();
 			this.versions = new HashMap<String, Integer>();
 		}
 
@@ -2571,7 +2635,7 @@ public class VerificationConditionGenerator {
 		public String getParent(String alias) {
 			return parents.get(alias);
 		}
-		
+
 		/**
 		 * Get the location index from a versioned variable name of the form
 		 * "x$1"
@@ -2634,7 +2698,7 @@ public class VerificationConditionGenerator {
 		 * @param rightVar
 		 */
 		public void addVariableAlias(String alias, String parent) {
-			parents.put(alias,parent);
+			parents.put(alias, parent);
 		}
 	}
 
@@ -2723,9 +2787,9 @@ public class VerificationConditionGenerator {
 			}
 			return nenv;
 		}
-		
+
 		public LocalEnvironment clone() {
-			return new LocalEnvironment(global,locals);
+			return new LocalEnvironment(global, locals);
 		}
 	}
 
@@ -2894,6 +2958,16 @@ public class VerificationConditionGenerator {
 			AssumptionSet nAssumptions = assumptions.add(condition);
 			//
 			return new Context(wyalFile, nAssumptions, nEnvironment, enclosingLoop, verificationConditions);
+		}
+
+		public String read(Location<?> expr) {
+			return environment.read(expr.getIndex());
+		}
+
+		public Context havoc(int lhs) {
+			LocalEnvironment nEnvironment = environment.write(lhs);
+			//
+			return new Context(wyalFile, assumptions, nEnvironment, enclosingLoop, verificationConditions);
 		}
 
 		/**

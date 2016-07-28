@@ -623,7 +623,9 @@ public final class WyilFileReader {
 	 * 
 	 * <pre>
 	 * +-------------------+
-	 * | uv : typeIdx      |
+	 * | uv : nTypes       |
+	 * +-------------------+
+	 * | uv[] : typeIdxs   |
 	 * +-------------------+
 	 * | uv : nAttrs       |
 	 * +-------------------+
@@ -637,14 +639,18 @@ public final class WyilFileReader {
 	 * @throws IOException
 	 */
 	private SyntaxTree.Location<?> readLocation(SyntaxTree tree) throws IOException {
-		int typeIdx = input.read_uv();
+		int nTypes = input.read_uv();
+		Type[] types = new Type[nTypes];
+		for (int i = 0; i != types.length; ++i) {
+			int typeIdx = input.read_uv();
+			types[i] = typePool[typeIdx];
+		}
 		int nAttrs = input.read_uv();
 		Bytecode bytecode = readBytecode();
 		//
-		Type type = typePool[typeIdx];
 		List<Attribute> attributes = new ArrayList<Attribute>();
 		//
-		return new SyntaxTree.Location<Bytecode>(tree, type, bytecode, attributes);
+		return new SyntaxTree.Location<Bytecode>(tree, types, bytecode, attributes);
 	}
 	
 	/**

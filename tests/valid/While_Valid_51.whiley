@@ -16,4 +16,4 @@ ensures r ==> all { j in 0..|xs| | xs[j] != 0}:
 public export method test():
     assume f([1,2,3,4])
     assume !f([0,2,4,3])
-    assume !f([1])
+    assume f([1])

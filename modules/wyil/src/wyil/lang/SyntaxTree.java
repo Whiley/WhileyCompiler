@@ -100,21 +100,49 @@ public class SyntaxTree {
 	public static class Location<T extends Bytecode> extends SyntacticElement.Impl {
 		private final SyntaxTree parent;
 		
-		private final Type type;
+		private final Type[] types;
 		
 		private final T bytecode;
 		
+		public Location(SyntaxTree parent, T bytecode, Attribute...attributes) {
+			super(attributes);
+			this.parent = parent;
+			this.types = new Type[0];
+			this.bytecode = bytecode;
+		}
+
+		public Location(SyntaxTree parent, T bytecode, List<Attribute> attributes) {
+			super(attributes);
+			this.parent = parent;
+			this.types = new Type[0];
+			this.bytecode = bytecode;
+		}
+
 		public Location(SyntaxTree parent, Type type, T bytecode, Attribute...attributes) {
 			super(attributes);
 			this.parent = parent;
-			this.type = type;
+			this.types = new Type[] {type};
 			this.bytecode = bytecode;
 		}
 		
 		public Location(SyntaxTree parent, Type type, T bytecode, List<Attribute> attributes) {
 			super(attributes);
 			this.parent = parent;
-			this.type = type;
+			this.types = new Type[] {type};
+			this.bytecode = bytecode;
+		}
+		
+		public Location(SyntaxTree parent, Type[] types, T bytecode, Attribute...attributes) {
+			super(attributes);
+			this.parent = parent;
+			this.types = types;
+			this.bytecode = bytecode;
+		}
+		
+		public Location(SyntaxTree parent, Type[] types, T bytecode, List<Attribute> attributes) {
+			super(attributes);
+			this.parent = parent;
+			this.types = types;
 			this.bytecode = bytecode;
 		}
 		
@@ -138,17 +166,51 @@ public class SyntaxTree {
 		}
 		
 		/**
-		 * Get the declared type of this location. In some cases, the declared
-		 * type maybe void to signal this location doesn't generate a value.
+		 * Get the declared type of this location. This is a convenience method
+		 * since, in most cases, we are working on locations that have exactly
+		 * one type.
 		 * 
 		 * @return
 		 */
 		public Type getType() {
-			return type;
+			if(types.length > 1) {
+				throw new IllegalArgumentException("ambiguous request for type");
+			} else if(types.length == 0) {
+				throw new IllegalArgumentException("no types available for access");
+			} else {
+				return types[0];
+			}
 		}
 		
 		/**
-		 * Get the bytecode associated with this expression
+		 * Get a specific type of this location. 
+		 * 
+		 * @return
+		 */
+		public Type getType(int i) {
+			return types[i];
+		}
+
+		/**
+		 * Get the types for this location. 
+		 * 
+		 * @return
+		 */
+		public Type[] getTypes() {
+			return types;
+		}
+
+		/**
+		 * Get the number of types declared by this location.
+		 * 
+		 * @return
+		 */
+		public int numberOfTypes() {
+			return types.length;
+		}
+
+		/**
+		 * Get the bytecode associated with this location
 		 * 
 		 * @return
 		 */
@@ -157,7 +219,7 @@ public class SyntaxTree {
 		}
 
 		/**
-		 * Get the underlying opcode for this expression
+		 * Get the underlying opcode for this location
 		 * 
 		 * @return
 		 */
@@ -166,7 +228,7 @@ public class SyntaxTree {
 		}
 
 		/**
-		 * Get the number of operand groups in this expression.
+		 * Get the number of operand groups in this location.
 		 * 
 		 * @return
 		 */
@@ -175,7 +237,7 @@ public class SyntaxTree {
 		}
 		
 		/**
-		 * Return the ith operand associated with this expression.
+		 * Return the ith operand associated with this location.
 		 * 
 		 * @param i
 		 * @return
@@ -185,7 +247,7 @@ public class SyntaxTree {
 		}
 
 		/**
-		 * Return the ith operand associated with this expression.
+		 * Return the ith operand associated with this location.
 		 * 
 		 * @param i
 		 * @return
@@ -195,7 +257,7 @@ public class SyntaxTree {
 		}
 		
 		/**
-		 * Get the number of operand groups in this expression.
+		 * Get the number of operand groups in this location.
 		 * 
 		 * @return
 		 */
@@ -204,7 +266,7 @@ public class SyntaxTree {
 		}
 
 		/**
-		 * Get the ith operand group in this expression.
+		 * Get the ith operand group in this location.
 		 * 
 		 * @param i
 		 * @return
@@ -243,7 +305,14 @@ public class SyntaxTree {
 		
 		public String toString() {
 			int index = getIndex();
-			return index + ":" + type + ":" + bytecode;
+			String ts = "";
+			for(int i=0;i!=types.length;++i) {
+				if(i!=0) {
+					ts += ",";
+				}
+				ts += types[i];
+			}
+			return index + ":" + ts + ":" + bytecode;
 		}
 	}
 

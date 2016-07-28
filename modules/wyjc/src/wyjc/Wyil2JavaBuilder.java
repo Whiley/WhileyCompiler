@@ -497,8 +497,6 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            outermost)
 	 * @param block
 	 *            WyIL bytecodes to be translated.
-	 * @param freeSlot
-	 *            First available free slot
 	 * @param bytecodes
 	 *            List of bytecodes being accumulated
 	 */
@@ -605,23 +603,18 @@ public class Wyil2JavaBuilder implements Builder {
 		// multiple return values.
 		List<JvmType> types = translateExpressions(rhs, context);
 
-		if (types.size() > rhs.length) {
-			// Should ensure multiple returns span multiple operands, rather
-			// than just one as currently so.
-			throw new IllegalArgumentException("Implement support for multiple returns");
-		}		
-		
-		// FIXME: need proper support for multiple operands
-		
 		// Now, store each operand into the slot location so that we can more
-		// easily access it later.
+		// easily access it later. This basically relies on an assumption that
+		// translateSimpleAssign() does not use any free registers during its
+		// translation.
+		int freeRegister = getFirstFreeRegister(code.getEnclosingTree());
 		for (int i = types.size() - 1; i >= 0; i = i - 1) {
-			context.add(new Bytecode.Store(rhs[i].getIndex(), types.get(i)));
+			context.add(new Bytecode.Store(freeRegister+i, types.get(i)));
 		}
 		// Assign each operand to the target lval.
 		int i = 0;
 		for (; i != lhs.length; ++i) {
-			translateSimpleAssign(lvals[i], rhs[i], context);
+			translateSimpleAssign(lvals[i], freeRegister+i, types.get(i), context);
 		}
 		// Finally, pop any remaining operands off the stack. This can happen if
 		// values are being discarded.
@@ -639,8 +632,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param lhs
 	 * @param rhsType
 	 */
-	private void translateSimpleAssign(LVal lhs, Location<?> rhs, Context context) {
-		JvmType type = toJvmType(rhs.getType());
+	private void translateSimpleAssign(LVal lhs, int rhs, JvmType type, Context context) {
 		if (lhs.path.size() > 0) {
 			// This is the complex case of an assignment to an element of a
 			// compound.
@@ -650,7 +642,7 @@ public class Wyil2JavaBuilder implements Builder {
 		} else {
 			// This is the simple case of a direct assignment to a single
 			// variable.
-			context.add(new Bytecode.Load(rhs.getIndex(), type));
+			context.add(new Bytecode.Load(rhs, type));
 			context.add(new Bytecode.Store(lhs.variable, type));
 		}
 	}
@@ -676,7 +668,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 *            --- Update iterator.
 	 * @param context
 	 */
-	private void translateUpdate(Iterator<LVal.Element<?>> iterator, Location<?> rhs, Context context) {
+	private void translateUpdate(Iterator<LVal.Element<?>> iterator, int rhs, Context context) {
 		// At this point, we have not yet reached the "innermost" position.
 		// Therefore, we keep recursing down the chain of LVals.
 		LVal.Element<?> lv = iterator.next();
@@ -711,7 +703,7 @@ public class Wyil2JavaBuilder implements Builder {
 	 * @param code
 	 * @param bytecodes
 	 */
-	private void translateUpdate(LVal.Array lval, Iterator<LVal.Element<?>> iterator, Location<?> rhs, Context context) {
+	private void translateUpdate(LVal.Array lval, Iterator<LVal.Element<?>> iterator, int rhs, Context context) {
 		if (iterator.hasNext()) {
 			// This is not the innermost case, hence we read out the current
 			// value of the location being assigned and pass that forward to the
@@ -730,14 +722,14 @@ public class Wyil2JavaBuilder implements Builder {
 			// directly.
 			Type type = lval.type.element();
 			context.add(new Bytecode.Load(lval.index.getIndex(), WHILEYINT));
-			context.add(new Bytecode.Load(rhs.getIndex(), toJvmType(type)));
+			context.add(new Bytecode.Load(rhs, toJvmType(type)));
 			context.addWriteConversion(type);
 		}
 		JvmType.Function setFunType = new JvmType.Function(WHILEYARRAY, WHILEYARRAY, WHILEYINT, JAVA_LANG_OBJECT);
 		context.add(new Bytecode.Invoke(WHILEYARRAY, "set", setFunType, Bytecode.InvokeMode.STATIC));
 	}
 
-	private void translateUpdate(LVal.Record lval, Iterator<LVal.Element<?>> iterator, Location<?> rhs, Context context) {
+	private void translateUpdate(LVal.Record lval, Iterator<LVal.Element<?>> iterator, int rhs, Context context) {
 		Type.EffectiveRecord type = lval.type;
 		if (iterator.hasNext()) {
 			// This is not the innermost case, hence we read out the current
@@ -756,7 +748,7 @@ public class Wyil2JavaBuilder implements Builder {
 			// read of the current value and, instead, just return the rhs value
 			// directly.
 			context.add(new Bytecode.LoadConst(lval.field));
-			context.add(new Bytecode.Load(rhs.getIndex(), toJvmType(type.field(lval.field))));
+			context.add(new Bytecode.Load(rhs, toJvmType(type.field(lval.field))));
 			context.addWriteConversion(type.field(lval.field));
 		}
 		JvmType.Function putFunType = new JvmType.Function(WHILEYRECORD, WHILEYRECORD, JAVA_LANG_STRING,
@@ -764,7 +756,7 @@ public class Wyil2JavaBuilder implements Builder {
 		context.add(new Bytecode.Invoke(WHILEYRECORD, "put", putFunType, Bytecode.InvokeMode.STATIC));
 	}
 
-	private void translateUpdate(LVal.Reference lval, Iterator<LVal.Element<?>> iterator, Location<?> rhs, Context context) {
+	private void translateUpdate(LVal.Reference lval, Iterator<LVal.Element<?>> iterator, int rhs, Context context) {
 		if (iterator.hasNext()) {
 			// This is not the innermost case, hence we read out the current
 			// value of the location being assigned and pass that forward to the
@@ -779,7 +771,7 @@ public class Wyil2JavaBuilder implements Builder {
 			// read of the current value and, instead, just return the rhs value
 			// directly.
 			JvmType rhsJvmType = toJvmType(lval.type.element());
-			context.add(new Bytecode.Load(rhs.getIndex(), rhsJvmType));
+			context.add(new Bytecode.Load(rhs, rhsJvmType));
 		}
 		JvmType.Function setFunType = new JvmType.Function(WHILEYOBJECT, JAVA_LANG_OBJECT);
 		context.add(new Bytecode.Invoke(WHILEYOBJECT, "setState", setFunType, Bytecode.InvokeMode.VIRTUAL));
@@ -849,16 +841,22 @@ public class Wyil2JavaBuilder implements Builder {
 			rt = null;
 			break;
 		case 1:
-			// Exactly one return value, so we can return it directly.
-			translateExpression(operands[0], context);
-			// Determine return type
-			rt = toJvmType(operands[0].getType());
-			break;
+			// Exactly one return value, so we can (potentially) return it
+			// directly.
+			Location<?> operand = operands[0];
+			if(operand.numberOfTypes() == 1) {
+				// Yes, we can return directly.
+				translateExpression(operand, context);
+				// Determine return type
+				rt = toJvmType(operand.getType());
+				break;
+			}
 		default:
 			// More than one return value. In this case, we need to encode the
 			// return values into an object array. This is annoying, but it's
 			// because Java doesn't support multiple return values.
-			translateExpressionsToArray(operands, context);
+			int freeRegister = getFirstFreeRegister(c.getEnclosingTree());
+			translateExpressionsToArray(operands, freeRegister, context);
 			rt = JAVA_LANG_OBJECT_ARRAY;			
 		}
 		// Done
@@ -1455,15 +1453,15 @@ public class Wyil2JavaBuilder implements Builder {
 				// This is the true branch. Apply the necessary cast.
 				retypeLocation(lhs,flowTypes.first(),context);
 				// Now, check any invariants hold (or not)
-				translateInvariantTest(tmpFalseLabel, rhsType, decl.getIndex(),
-						decl.getEnclosingTree().getLocations().size(), context);
+				int freeRegister = getFirstFreeRegister(test.getEnclosingTree());
+				translateInvariantTest(tmpFalseLabel, rhsType, decl.getIndex(), freeRegister, context);
 			} else {
 				context.add(new Bytecode.If(Bytecode.IfMode.EQ, tmpFalseLabel));
 				// This is the true branch. Apply the necessary cast.
 				retypeLocation(lhs,flowTypes.first(),context);
 				// Now, check any invariants hold (or not)
-				translateInvariantTest(tmpFalseLabel, rhsType, decl.getIndex(),
-						decl.getEnclosingTree().getLocations().size(), context);
+				int freeRegister = getFirstFreeRegister(test.getEnclosingTree());
+				translateInvariantTest(tmpFalseLabel, rhsType, decl.getIndex(), freeRegister, context);
 				context.add(new Bytecode.Goto(trueLabel));
 				// This is the false branch. Apply the necessary cast.
 				context.add(new Bytecode.Label(tmpFalseLabel));
@@ -1759,13 +1757,12 @@ public class Wyil2JavaBuilder implements Builder {
 		ArrayList<JvmType> types = new ArrayList<JvmType>();
 		for (int i = 0; i != operands.length; ++i) {
 			Location<?> operand = operands[i];
-			// Check whether we're a subsequent positional
-			if(firstPositionalOperand(operand)) {
-				// Translate operand
-				translateExpression(operand, enclosing);
-			}
+			// Translate operand
+			translateExpression(operand, enclosing);
 			// Determine type(s) for operand
-			types.add(toJvmType(operand.getType()));
+			for (int j = 0; j != operand.numberOfTypes(); ++j) {
+				types.add(toJvmType(operand.getType(j)));
+			}
 		}
 		return types;
 	}
@@ -1779,44 +1776,48 @@ public class Wyil2JavaBuilder implements Builder {
 	 * 
 	 * @param code
 	 *            The WyIL operand being translated.
-	 * @param enclosing
+	 * @param freeRegister
+	 *            First free JVM register slot which can be used by this method
+	 * @param context
 	 *            The enclosing context for this operand.
-	 * @return The set of JVM types representing the actual operands pushed on
-	 *         the stack. This maybe be larger than the number of operands
-	 *         provided in the case that one or more of those operands had
-	 *         multiple return values.
 	 */
-	private void translateExpressionsToArray(Location<?>[] operands, Context context) {
-		context.add(new Bytecode.LoadConst(operands.length));
-		context.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
-		for (int i = 0; i < operands.length;) {
+	private void translateExpressionsToArray(Location<?>[] operands, int freeRegister, Context context) {
+		int size = countLocationTypes(operands);
+		ArrayList<Type> types = new ArrayList<Type>();
+		// Translate every operand giving size elements on stack
+		for (int i = 0; i < operands.length; i = i + 1) {
 			Location<?> operand = operands[i];
+			// Translate expression itself
 			translateExpression(operand, context);
-			Location<?>[] items = determinePositionalGroup(operands, i);
-			for (int j = items.length - 1; j >= 0; --j) {
-				JvmType itemType = toJvmType(items[j].getType());
-				context.add(new Bytecode.Store(items[j].getIndex(), itemType));
+			// record the types now loaded on the stack
+			for (int j = 0; j != operand.numberOfTypes(); ++j) {
+				types.add(operand.getType(j));
 			}
-			i = i + items.length;
 		}
-		for (int i = 0; i < operands.length; ++i) {
-			Location<?> operand = operands[i];
-			JvmType type = toJvmType(operand.getType());
-			context.add(new Bytecode.Dup(JAVA_LANG_OBJECT_ARRAY));
+		// Construct the target array
+		context.add(new Bytecode.LoadConst(size));
+		context.add(new Bytecode.New(JAVA_LANG_OBJECT_ARRAY));
+		context.add(new Bytecode.Store(freeRegister, JAVA_LANG_OBJECT_ARRAY));
+		// Process each stack element in turn. This has to be done in reverse
+		// order since that's how they're laid out on the stack
+		for (int i = size - 1; i >= 0; i = i - 1) {
+			context.add(new Bytecode.Load(freeRegister, JAVA_LANG_OBJECT_ARRAY));
+			context.add(new Bytecode.Swap());
 			context.add(new Bytecode.LoadConst(i));
-			context.add(new Bytecode.Load(operand.getIndex(), type));
-			context.addWriteConversion(operand.getType());
+			context.add(new Bytecode.Swap());
+			context.addWriteConversion(types.get(i));
 			context.add(new Bytecode.ArrayStore(JAVA_LANG_OBJECT_ARRAY));
 		}
+		// Done
+		context.add(new Bytecode.Load(freeRegister, JAVA_LANG_OBJECT_ARRAY));
 	}
 
-	public Location<?>[] determinePositionalGroup(Location<?>[] operands, int i) {
-		int start = i;
-		i = i + 1;
-		while (i < operands.length && !firstPositionalOperand(operands[i])) {
-			i = i + 1;
+	private int countLocationTypes(Location<?>...locations) {
+		int count = 0 ;
+		for(int i=0;i!=locations.length;++i) {
+			count += locations[i].numberOfTypes();
 		}
-		return Arrays.copyOfRange(operands, start, i);
+		return count;
 	}
 	
 	/**
@@ -2131,7 +2132,8 @@ public class Wyil2JavaBuilder implements Builder {
 		// object we will dispatch upon. This extends the WyLambda class.
 		translateExpression(c.getOperand(0), context);
 		// Second, translate each argument and store it into an object array
-		translateExpressionsToArray(c.getOperandGroup(0), context);
+		int freeRegister = getFirstFreeRegister(c.getEnclosingTree());
+		translateExpressionsToArray(c.getOperandGroup(0), freeRegister, context);
 		// Third, make the indirect method or function call. This is done by
 		// invoking the "call" method on the function / method object returned
 		// from the reference operand.
@@ -2500,23 +2502,6 @@ public class Wyil2JavaBuilder implements Builder {
 		return new Bytecode.Invoke(owner, mangled, fnType, Bytecode.InvokeMode.STATIC);
 	}
 
-
-	/**
-	 * Check whether or not a operand is the "first" positional operand. This is
-	 * useful to prevent recomputation of the target of a positional operand.
-	 * 
-	 * @param e
-	 * @return
-	 */
-	private boolean firstPositionalOperand(Location<?> e) {
-		// FIXME: this relied on the concept of positional operators which is
-		// now redundant?
-		
-		// In this case, we don't have a positional operand. Therefore, we say
-		// this is the first since it is the only one in its group.
-		return true;
-	}
-	
 	/**
 	 * Given an object array on the stack, take everything out of it an leave it
 	 * on the stack. This is needed to help handle multiple returns which are
@@ -2712,6 +2697,10 @@ public class Wyil2JavaBuilder implements Builder {
 		return noperands;
 	}
 	
+	private static int getFirstFreeRegister(SyntaxTree tree) {
+		return tree.getLocations().size();
+	}
+
 	/**
 	 * A constant is some kind of auxillary functionality used in generated
 	 * code, which can be reused at multiple sites. This includes value
@@ -2836,7 +2825,6 @@ public class Wyil2JavaBuilder implements Builder {
 		 * The construct method provides a generic way to construct a Java object.
 		 *
 		 * @param owner
-		 * @param freeSlot
 		 * @param context
 		 * @param params
 		 */
@@ -2863,10 +2851,10 @@ public class Wyil2JavaBuilder implements Builder {
 		public Type.Reference expandAsReference(Type type) throws ResolveError {
 			return typeSystem.expandAsReference(type);
 		}
-		
+
 		public void add(Bytecode bytecode) {
 			bytecodes.add(bytecode);
-		}	
+		}
 	}
 
 	/**

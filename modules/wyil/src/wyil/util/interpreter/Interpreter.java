@@ -747,14 +747,20 @@ public class Interpreter {
 	 * @return
 	 */
 	private Constant[] executeExpressions(Location<?>[] operands, Constant[] frame) {
-		Constant[] results = new Constant[operands.length];		
-		for(int i=0;i!=operands.length;) {
-			Constant[] returns = executeMultiReturnExpression(operands[i],frame);
-			System.arraycopy(returns, 0, results,i, returns.length);
-			// Skip remaining positional operands for this expression
-			i += returns.length;
+		Constant[][] results = new Constant[operands.length][];
+		int count = 0;
+		for(int i=0;i!=operands.length;++i) {
+			results[i] = executeMultiReturnExpression(operands[i],frame);
+			count += results[i].length;
 		}
-		return results;
+		Constant[] rs = new Constant[count];
+		int j = 0;
+		for(int i=0;i!=operands.length;++i) {
+			Constant[] r = results[i];
+			System.arraycopy(r, 0, rs, j, r.length);
+			j += r.length;
+		}
+		return rs;
 	}
 	
 	/**

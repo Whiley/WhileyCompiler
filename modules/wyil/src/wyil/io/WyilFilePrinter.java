@@ -169,7 +169,7 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 		for(int i=0;i!=locations.size();++i) {
 			Location<?> loc = locations.get(i);			
 			String id = String.format("%1$" + 3 + "s", "#" + i);
-			String type = String.format("%1$-" + 8 + "s", "[" + loc.getType() + "]");
+			String type = String.format("%1$-" + 8 + "s", Arrays.toString(loc.getTypes()));
 			out.println("// " + id + " " + type + " " + loc.getBytecode());
 		}
 	}
