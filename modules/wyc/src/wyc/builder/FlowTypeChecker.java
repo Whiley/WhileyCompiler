@@ -2309,7 +2309,7 @@ public class FlowTypeChecker {
 		if (parameters == null) {
 			if (candidates.size() == 1) {
 				Pair<NameID, Nominal.FunctionOrMethod> p = candidates.iterator().next();
-				return new Triple<>(p.first(), p.second(), null);
+				return new Triple<NameID, Nominal.FunctionOrMethod,List<String>>(p.first(), p.second(), null);
 			}
 
 			// More than one candidate and all will match. Clearly ambiguous!
@@ -3032,7 +3032,7 @@ public class FlowTypeChecker {
 				SyntacticType pt = utReturnTypes.get(i);
 				myChildren[i + numParamTypes] = resolveAsType(pt, context, states, roots, nominal, unconstrained);
 			}
-			myData = new Type.FunctionOrMethod.Data(utParamTypes.size(), new HashSet<>(utContextLifetimes), utLifetimeParameters);
+			myData = new Type.FunctionOrMethod.Data(utParamTypes.size(), new HashSet<String>(utContextLifetimes), utLifetimeParameters);
 		}
 
 		states.set(myIndex, new Automaton.State(myKind, myData, myDeterministic, myChildren));

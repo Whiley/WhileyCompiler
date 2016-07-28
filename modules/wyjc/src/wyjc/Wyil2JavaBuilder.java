@@ -1592,7 +1592,7 @@ public class Wyil2JavaBuilder implements Builder {
 		} else if (type instanceof Type.Record) {
 			Type.Record tt = (Type.Record) type;
 			HashMap<String, Type> fields = tt.fields();
-			ArrayList<String> fieldNames = new ArrayList<>(fields.keySet());
+			ArrayList<String> fieldNames = new ArrayList<String>(fields.keySet());
 			Collections.sort(fieldNames);
 			for (int i = 0; i != fieldNames.size(); ++i) {
 				String field = fieldNames.get(i);
@@ -1687,7 +1687,7 @@ public class Wyil2JavaBuilder implements Builder {
 				Bytecode.InvokeMode.INTERFACE));
 
 		// Done
-		return new Triple<>(loopHeader, loopFooter, loopExit);
+		return new Triple<String,String,String>(loopHeader, loopFooter, loopExit);
 	}
 
 	private void translateLoopEnd(Triple<String, String, String> labels, Context context) {

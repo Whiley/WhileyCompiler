@@ -677,10 +677,10 @@ public abstract class Expr extends SyntacticElement.Impl implements SyntacticEle
 		
 		@Override
 		public Expr.Record copy() {
-			ArrayList<Pair<String,Expr>> nOperands = new ArrayList<>();
+			ArrayList<Pair<String,Expr>> nOperands = new ArrayList<Pair<String,Expr>>();
 			for (int i = 0; i != operands.size(); ++i) {
 				Pair<String, Expr> operand = operands.get(i);
-				nOperands.add(new Pair<>(operand.first(), operand.second()
+				nOperands.add(new Pair<String,Expr>(operand.first(), operand.second()
 						.copy()));
 			}
 			return new Expr.Record(nOperands, attributes());

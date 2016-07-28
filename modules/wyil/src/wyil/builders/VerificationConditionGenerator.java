@@ -10,7 +10,6 @@ import static wyil.util.ErrorMessages.internalFailure;
 import java.math.BigInteger;
 import java.util.*;
 
-import sun.text.normalizer.RangeValueIterator;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;
 import wycc.lang.SyntacticElement;
@@ -600,7 +599,7 @@ public class VerificationConditionGenerator {
 			}
 			Expr j = new Expr.Constant(Value.Integer(BigInteger.valueOf(index)));
 			Expr newField = new Expr.IndexOf(newSource, j, lval.attributes());
-			return new Pair<>(newField,context);
+			return new Pair<Expr,Context>(newField,context);
 		} catch (ResolveError e) {
 			internalFailure(e.getMessage(), decl.parent().filename(), e, lval.attributes());
 			return null;
@@ -649,7 +648,7 @@ public class VerificationConditionGenerator {
 			// result
 			Expr newLVal = new Expr.IndexOf(newSource, index, lval.attributes());
 			//
-			return new Pair<>(newLVal,context.assume(macro));
+			return new Pair<Expr,Context>(newLVal,context.assume(macro));
 		} catch (ResolveError e) {
 			internalFailure(e.getMessage(), decl.parent().filename(), e, lval.attributes());
 			return null;
@@ -669,7 +668,7 @@ public class VerificationConditionGenerator {
 	 */
 	private Pair<Expr,Context> translateDereference(Location<?> lval, Context context) {
 		Expr e = translateAsUnknown(lval,context.getEnvironment());
-		return new Pair<>(e,context);
+		return new Pair<Expr,Context>(e,context);
 	}
 
 	/**
@@ -688,7 +687,7 @@ public class VerificationConditionGenerator {
 		context = context.havoc(decl.getIndex());
 		String nVersionedVar = context.read(decl);
 		Expr.Variable var = new Expr.Variable(nVersionedVar);
-		return new Pair<>(var,context);
+		return new Pair<Expr,Context>(var,context);
 	}
 
 	/**
@@ -1164,7 +1163,7 @@ public class VerificationConditionGenerator {
 			context = assumeExpressionPostconditions(expr, context);
 		}
 		// Translate expression in the normal fashion
-		return new Pair<>(translateExpressions(exprs, context.getEnvironment()), context);
+		return new Pair<Expr[],Context>(translateExpressions(exprs, context.getEnvironment()), context);
 	}
 
 	/**
@@ -1185,7 +1184,7 @@ public class VerificationConditionGenerator {
 		// Gather up any postconditions from function invocations
 		context = assumeExpressionPostconditions(expr, context);
 		// Translate expression in the normal fashion
-		return new Pair<>(translateExpression(expr, context.getEnvironment()), context);
+		return new Pair<Expr,Context>(translateExpression(expr, context.getEnvironment()), context);
 	}
 
 	@SuppressWarnings("unchecked")

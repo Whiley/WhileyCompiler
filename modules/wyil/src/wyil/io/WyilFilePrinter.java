@@ -28,8 +28,6 @@ package wyil.io;
 import java.io.*;
 import java.util.*;
 
-import com.sun.glass.ui.Pixels.Format;
-
 import wycc.lang.Transform;
 import wyil.lang.*;
 import wyil.lang.Constant;
