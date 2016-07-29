@@ -203,6 +203,7 @@ public final class WhileyBuilder implements Builder {
 						WyilFile.ContentType);
 				generatedFiles.add(target);
 				WhileyFile wf = source.read();
+				new DefiniteAssignmentAnalysis(wf).check();
 				WyilFile wyil = generator.generate(wf);
 				target.write(wyil);
 			}
