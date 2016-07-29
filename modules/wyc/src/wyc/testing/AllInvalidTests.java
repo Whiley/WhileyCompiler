@@ -70,11 +70,9 @@ public class AllInvalidTests {
 	public final static Map<String, String> IGNORED = new HashMap<String, String>();
 
 	static {		
-		IGNORED.put("Array_Invalid_7", "#665");
 		IGNORED.put("Constant_Invalid_1", "unclassified");
 		IGNORED.put("ConstrainedArray_Invalid_1", "#666");
 		IGNORED.put("ConstrainedArray_Invalid_3", "#666");
-		IGNORED.put("ConstrainedInt_Invalid_11", "unclassified");
 		IGNORED.put("ConstrainedInt_Invalid_12", "#666");
 		IGNORED.put("ConstrainedInt_Invalid_1", "#666");
 		IGNORED.put("ConstrainedInt_Invalid_2", "#666");
@@ -85,10 +83,7 @@ public class AllInvalidTests {
 		IGNORED.put("ConstrainedInt_Invalid_8", "#666");
 		IGNORED.put("ConstrainedInt_Invalid_9", "#666");
 		IGNORED.put("ConstrainedRecord_Invalid_1", "#666");
-		IGNORED.put("DefiniteAssign_Invalid_2", "#665");
-		IGNORED.put("DefiniteAssign_Invalid_4", "#665");
 		IGNORED.put("Export_Invalid_1", "unclassified");
-		IGNORED.put("Function_Invalid_10", "unclassified");
 		IGNORED.put("Function_Invalid_2", "unclassified");
 		IGNORED.put("Function_Invalid_4", "#667");
 		IGNORED.put("Function_Invalid_9", "unclassified");
@@ -107,7 +102,6 @@ public class AllInvalidTests {
 		IGNORED.put("Parsing_Invalid_27", "609");
 		IGNORED.put("Parsing_Invalid_28", "609");
 		IGNORED.put("Parsing_Invalid_31", "610");
-		IGNORED.put("Record_Invalid_3", "#665");
 		IGNORED.put("RecursiveType_Invalid_10", "#666");
 		IGNORED.put("RecursiveType_Invalid_1", "unclassified");
 		IGNORED.put("RecursiveType_Invalid_2", "#666");
@@ -136,8 +130,6 @@ public class AllInvalidTests {
 		IGNORED.put("UnionType_Invalid_7", "#666");
 		IGNORED.put("UnionType_Invalid_8", "#666");
 		IGNORED.put("UnionType_Invalid_9", "#666");
-		IGNORED.put("While_Invalid_1", "#665");
-		IGNORED.put("While_Invalid_3", "#665");
 	}
 
 	/**
