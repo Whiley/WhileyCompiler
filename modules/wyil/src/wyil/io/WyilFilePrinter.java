@@ -86,17 +86,6 @@ public final class WyilFilePrinter implements Transform<WyilFile> {
 	// ======================================================================
 	
 	public void apply(WyilFile module) throws IOException {
-
-		if(out == null) {
-
-			// TODO: where does this go?
-
-			String filename = module.filename().replace(".whiley", ".wyasm");
-			out = new PrintWriter(new FileOutputStream(filename));
-		}
-
-		//out.println("module: " + module.id());
-		out.println("source-file: " + module.filename());
 		out.println();
 		for(WyilFile.Constant cd : module.constants()) {
 			writeModifiers(cd.modifiers(),out);

@@ -139,7 +139,7 @@ public class WycsFileWriter {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 
-		output.write_uv(pathCache.get(module.id())); // FIXME: BROKEN!
+		output.write_uv(pathCache.get(module.getEntry().id())); // FIXME: BROKEN!
 		output.write_uv(module.declarations().size());
 
 		for (WycsFile.Declaration d : module.declarations()) {
@@ -480,7 +480,7 @@ public class WycsFileWriter {
 		typePool.clear();
 		typeCache.clear();
 
-		addPathItem(module.id());
+		addPathItem(module.getEntry().id());
 		for(WycsFile.Declaration d : module.declarations()) {
 			buildPools(d);
 		}

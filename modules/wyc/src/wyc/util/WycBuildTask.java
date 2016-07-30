@@ -24,7 +24,6 @@ import wycc.util.Pair;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;
-import wycs.transforms.SmtVerificationCheck;
 import wycs.transforms.VerificationCheck;
 import wycs.util.WycsBuildTask;
 import wyil.io.WyilFilePrinter;
@@ -611,7 +610,6 @@ public class WycBuildTask {
 				Pipeline<WycsFile> wycsPipeline = new Pipeline(WycsBuildTask.defaultPipeline);
 
 				wycsPipeline.setOption(VerificationCheck.class,"enable",verification);
-				wycsPipeline.setOption(SmtVerificationCheck.class,"enable",smtVerification);
 				Wyal2WycsBuilder wycsBuilder = new Wyal2WycsBuilder(project,wycsPipeline);
 
 				if(verbose) {

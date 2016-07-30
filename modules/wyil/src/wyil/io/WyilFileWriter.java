@@ -338,7 +338,7 @@ public final class WyilFileWriter {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 
-		output.write_uv(pathCache.get(module.id()));
+		output.write_uv(pathCache.get(module.getEntry().id()));
 		output.write_uv(MODIFIER_Public); // for now
 		output.write_uv(module.blocks().size());
 
@@ -786,7 +786,7 @@ public final class WyilFileWriter {
 		typePool.clear();
 		typeCache.clear();
 
-		addPathItem(module.id());
+		addPathItem(module.getEntry().id());
 		for (WyilFile.Block d : module.blocks()) {
 			buildPools(d);
 		}

@@ -33,6 +33,7 @@ import java.util.*;
 import wycc.lang.Attribute;
 import wycc.lang.CompilationUnit;
 import wycc.lang.SyntacticElement;
+import wycc.util.AbstractCompilationUnit;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -60,7 +61,7 @@ import wyil.lang.SyntaxTree.Location;
  * @author David J. Pearce
  *
  */
-public final class WyilFile implements CompilationUnit {
+public final class WyilFile extends AbstractCompilationUnit {
 
 	// =========================================================================
 	// Content Type
@@ -79,7 +80,7 @@ public final class WyilFile implements CompilationUnit {
 		}
 
 		public WyilFile read(Path.Entry<WyilFile> e, InputStream input) throws IOException {
-			WyilFileReader reader = new WyilFileReader(input);
+			WyilFileReader reader = new WyilFileReader(e);
 			WyilFile mi = reader.read();
 			return mi;
 		}
@@ -99,17 +100,6 @@ public final class WyilFile implements CompilationUnit {
 	// =========================================================================
 
 	/**
-	 * The fully qualified name of this WyilFile, including both package and
-	 * module name.
-	 */
-	private final Path.ID mid;
-
-	/**
-	 * The originating source filename of this WyilFile.
-	 */
-	private final String filename;
-
-	/**
 	 * The list of blocks in this WyiFile.
 	 */
 	private final ArrayList<Block> blocks;
@@ -126,34 +116,14 @@ public final class WyilFile implements CompilationUnit {
 	 * @param filename
 	 * @param declarations
 	 */
-	public WyilFile(Path.ID mid, String filename) {
-		this.mid = mid;
-		this.filename = filename;
+	public WyilFile(Path.Entry<? extends CompilationUnit> entry) {
+		super(entry);
 		this.blocks = new ArrayList<Block>();
 	}
 
 	// =========================================================================
 	// Accessors
 	// =========================================================================
-
-	/**
-	 * Returns the fully qualified name of this WyilFile, including both the
-	 * package and module name.
-	 *
-	 * @return
-	 */
-	public Path.ID id() {
-		return mid;
-	}
-
-	/**
-	 * Returns the originating source file for this WyilFile.
-	 *
-	 * @return
-	 */
-	public String filename() {
-		return filename;
-	}
 
 	/**
 	 * Determines whether a declaration exists with the given name.

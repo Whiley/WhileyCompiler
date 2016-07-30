@@ -64,12 +64,12 @@ import wyil.lang.Constant;
  *
  */
 public class WhileyFileParser {
-	private String filename;
+	private final Path.Entry<WhileyFile> entry;
 	private ArrayList<Token> tokens;
 	private int index;
 
-	public WhileyFileParser(String filename, List<Token> tokens) {
-		this.filename = filename;
+	public WhileyFileParser(Path.Entry<WhileyFile> entry, List<Token> tokens) {
+		this.entry = entry;
 		this.tokens = new ArrayList<Token>(tokens);
 	}
 
@@ -82,13 +82,8 @@ public class WhileyFileParser {
 	 */
 	public WhileyFile read() {
 		Path.ID pkg = parsePackage();
-
-		// Now, figure out module name from filename
-		// FIXME: this is a hack!
-		String name = filename.substring(
-				filename.lastIndexOf(File.separatorChar) + 1,
-				filename.length() - 7);
-		WhileyFile wf = new WhileyFile(pkg.append(name), filename);
+		WhileyFile wf = new WhileyFile(entry);
+		// FIXME: check package is consistent?
 
 		skipWhiteSpace();
 		while (index < tokens.size()) {
@@ -3527,9 +3522,7 @@ public class WhileyFileParser {
 			return result;
 		} else {
 			// Error!
-			internalFailure("unknown syntactic type encountered", filename,
-					type);
-			return false; // deadcode
+			throw new InternalFailure("unknown syntactic type encountered", entry, type);
 		}
 	}
 
@@ -3607,8 +3600,7 @@ public class WhileyFileParser {
 		} else if(e instanceof Expr.Record) {
 			return true;
 		} else {
-			internalFailure("unknown expression encountered",filename,e);
-			return false; // dead-code
+			throw new InternalFailure("unknown expression encountered",entry,e);
 		}
 	}
 
@@ -4350,10 +4342,9 @@ public class WhileyFileParser {
 			if(index > 0) {
 				syntaxError("unexpected end-of-file",tokens.get(index-1));
 			} else {
-				// I believe this is actually dead-code, since heckNotEof()
+				// I believe this is actually dead-code, since checkNotEof()
 				// won't be called before at least one token is matched.
-				throw new SyntaxError("unexpected end-of-file", filename,
-						0,0);
+				throw new SyntaxError("unexpected end-of-file", entry, null);
 			}
 		}
 	}
@@ -4581,12 +4572,16 @@ public class WhileyFileParser {
 
 	private void syntaxError(String msg, SyntacticElement e) {
 		Attribute.Source loc = e.attribute(Attribute.Source.class);
-		throw new SyntaxError(msg, filename, loc.start, loc.end);
+		throw new SyntaxError(msg, entry, e);
 	}
 
 	private void syntaxError(String msg, Token t) {
-		throw new SyntaxError(msg, filename, t.start, t.start + t.text.length()
-				- 1);
+		// FIXME: this is clearly not a sensible approach
+		SyntacticElement unknown = new SyntacticElement.Impl() {
+		};
+		unknown.attributes().add(new Attribute.Source(t.start, t.start + t.text.length() - 1, -1));
+		throw new SyntaxError(msg, entry, unknown);
+
 	}
 
 	/**

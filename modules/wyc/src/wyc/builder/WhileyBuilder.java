@@ -151,7 +151,7 @@ public final class WhileyBuilder implements Builder {
 				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) src;
 				WhileyFile wf = sf.read();
 				count++;
-				srcFiles.put(wf.module, sf);
+				srcFiles.put(sf.id(), sf);
 			}
 		}
 
@@ -199,12 +199,11 @@ public final class WhileyBuilder implements Builder {
 			Path.Root dst = p.second();
 			if (src.contentType() == WhileyFile.ContentType) {
 				Path.Entry<WhileyFile> source = (Path.Entry<WhileyFile>) src;
-				Path.Entry<WyilFile> target = dst.create(src.id(),
-						WyilFile.ContentType);
+				Path.Entry<WyilFile> target = dst.create(src.id(), WyilFile.ContentType);
 				generatedFiles.add(target);
 				WhileyFile wf = source.read();
 				new DefiniteAssignmentAnalysis(wf).check();
-				WyilFile wyil = generator.generate(wf);
+				WyilFile wyil = generator.generate(wf, target);
 				target.write(wyil);
 			}
 		}
@@ -359,17 +358,15 @@ public final class WhileyBuilder implements Builder {
 
 		try {
 			stage.apply(module);
-			logger.logTimedMessage("[" + module.filename() + "] applied "
-					+ name, System.currentTimeMillis() - start, memory - runtime.freeMemory());
+			logger.logTimedMessage("[" + module.getEntry().location() + "] applied " + name,
+					System.currentTimeMillis() - start, memory - runtime.freeMemory());
 			System.gc();
 		} catch (RuntimeException ex) {
-			logger.logTimedMessage("[" + module.filename() + "] failed on "
-					+ name + " (" + ex.getMessage() + ")",
+			logger.logTimedMessage("[" + module.getEntry().location() + "] failed on " + name + " (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());
 			throw ex;
 		} catch (IOException ex) {
-			logger.logTimedMessage("[" + module.filename() + "] failed on "
-					+ name + " (" + ex.getMessage() + ")",
+			logger.logTimedMessage("[" + module.getEntry().location() + "] failed on " + name + " (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());
 			throw ex;
 		}

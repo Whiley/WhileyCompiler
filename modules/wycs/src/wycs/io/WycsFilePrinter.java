@@ -1,7 +1,5 @@
 package wycs.io;
 
-import static wycc.lang.SyntaxError.internalFailure;
-
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -10,6 +8,7 @@ import java.io.Writer;
 
 import wycc.io.Token;
 import wycc.lang.SyntacticElement;
+import wycc.lang.SyntaxError.*;
 import wycc.util.Pair;
 import wycc.util.Triple;
 import wycs.core.Code;
@@ -32,7 +31,7 @@ public class WycsFilePrinter {
 
 	public void write(WycsFile wf) {
 		// First, write package information
-		Path.ID pkg = wf.id().parent();
+		Path.ID pkg = wf.getEntry().id().parent();
 		if(pkg != Trie.ROOT) {
 			out.println("package " + pkg.toString());
 			out.println();
@@ -55,8 +54,8 @@ public class WycsFilePrinter {
 		} else if(s instanceof WycsFile.Assert) {
 			write(wf,(WycsFile.Assert)s);
 		} else {
-			internalFailure("unknown statement encountered " + s,
-					wf.filename(), (SyntacticElement) s);
+			throw new InternalFailure("unknown statement encountered " + s,
+					wf.getEntry(), (SyntacticElement) s);
 		}
 		out.println();
 	}
@@ -163,7 +162,7 @@ public class WycsFilePrinter {
 		} else if(code instanceof Code.Quantifier) {
 			writeStructured(wf, (Code.Quantifier) code, indent);
 		} else {
-			internalFailure("unknown bytecode encountered", wf.filename(), code);
+			throw new InternalFailure("unknown bytecode encountered", wf.getEntry(), code);
 		}
 	}
 
@@ -192,7 +191,7 @@ public class WycsFilePrinter {
 			out.print("|");
 			break;
 		default:
-			internalFailure("unknown bytecode encountered", wf.filename(), code);
+			throw new InternalFailure("unknown bytecode encountered", wf.getEntry(), code);
 		}
 	}
 
@@ -234,8 +233,7 @@ public class WycsFilePrinter {
 			out.print("]");
 			return;
 		default:
-			internalFailure("unknown bytecode encountered", wf.filename(), code);
-			return;
+			throw new InternalFailure("unknown bytecode encountered", wf.getEntry(), code);
 		}
 
 		writeStructured(wf,code.operands[0],indent);
@@ -286,8 +284,7 @@ public class WycsFilePrinter {
 			out.print("]");
 			break;
 		default:
-			internalFailure("unknown bytecode encountered", wf.filename(), code);
-			return;
+			throw new InternalFailure("unknown bytecode encountered", wf.getEntry(), code);
 		}
 	}
 

@@ -50,7 +50,6 @@ import wyil.lang.Bytecode.VariableDeclaration;
 import static wyil.lang.Bytecode.*;
 import wyil.util.TypeSystem;
 
-import static wyil.util.ErrorMessages.internalFailure;
 import static wyjc.Wyil2JavaBuilder.WHILEYBOOL;
 import static wyjc.Wyil2JavaBuilder.WHILEYTYPE;
 import static wyjc.Wyil2JavaBuilder.WHILEYUTIL;
@@ -98,9 +97,9 @@ public class Wyil2JavaBuilder implements Builder {
 	private Logger logger = Logger.NULL;
 
 	/**
-	 * Filename of module being translated
+	 * Module being translated
 	 */
-	private String filename;
+	private WyilFile file;
 
 	/**
 	 * Type of enclosing class being generated
@@ -206,21 +205,20 @@ public class Wyil2JavaBuilder implements Builder {
 		return generatedFiles;
 	}
 
-	private ClassFile build(WyilFile module) {
-		owner = new JvmType.Clazz(module.id().parent().toString().replace('.', '/'), module.id().last());
+	private ClassFile build(WyilFile wyilFile) {
+		this.file = wyilFile;
+		//
+		Path.Entry<WyilFile> entry = wyilFile.getEntry();
+		owner = new JvmType.Clazz(entry.id().parent().toString().replace('.', '/'), entry.id().last());
 		List<Modifier> modifiers = modifiers(ACC_PUBLIC, ACC_FINAL);
 		ClassFile cf = new ClassFile(CLASS_VERSION, owner, JAVA_LANG_OBJECT, new ArrayList<JvmType.Clazz>(), modifiers);
 
-		this.filename = module.filename();
-
-		if (filename != null) {
-			cf.attributes().add(new SourceFile(filename));
-		}
+		cf.attributes().add(new SourceFile(wyilFile.getEntry().location()));
 
 		boolean addMainLauncher = false;
 
 		constants = new HashMap<JvmConstant, Integer>();
-		for (WyilFile.Block blk : module.blocks()) {
+		for (WyilFile.Block blk : wyilFile.blocks()) {
 			if (blk instanceof WyilFile.FunctionOrMethod) {
 				WyilFile.FunctionOrMethod method = (WyilFile.FunctionOrMethod) blk;
 				if (method.name().equals("main")) {
@@ -565,13 +563,12 @@ public class Wyil2JavaBuilder implements Builder {
 				translateVariableDeclaration((Location<VariableDeclaration>) stmt, context);
 				break;	
 			default:
-				internalFailure("unknown bytecode encountered (" + stmt + ")", filename,
-						stmt.attribute(Attribute.Source.class));
+				throw new InternalFailure("unknown bytecode encountered (" + stmt + ")", file.getEntry(), stmt);
 			}
 		} catch (InternalFailure ex) {
 			throw ex;
 		} catch (Exception ex) {
-			internalFailure(ex.getMessage(), filename, ex, stmt.attribute(Attribute.Source.class));
+			throw new InternalFailure(ex.getMessage(), file.getEntry(), stmt, ex);
 		}
 	}
 
@@ -1048,11 +1045,10 @@ public class Wyil2JavaBuilder implements Builder {
 					path.add(new LVal.Reference(refType));
 					break;
 				default:
-					internalFailure("unknown bytecode encountered (" + code + ")", filename,
-							lval.attribute(Attribute.Source.class));
+					throw new InternalFailure("unknown bytecode encountered (" + code + ")", file.getEntry(), lval);
 				}
 			} catch (ResolveError e) {
-				internalFailure(e.getMessage(), filename, e, lval.attribute(Attribute.Source.class));
+				throw new InternalFailure(e.getMessage(), file.getEntry(), lval, e);
 			}
 		}
 		// At this point, we have to reverse the lvals because they were put
@@ -1513,8 +1509,7 @@ public class Wyil2JavaBuilder implements Builder {
 				expandedLhsType = typeSystem.getUnderlyingType(lhsType);
 				expandedRhsType = typeSystem.getUnderlyingType(rhsType);
 			} catch (Exception e) {
-				internalFailure("error computing maximally consumed type: " + rhsType, filename, e);
-				return null;
+				throw new InternalFailure("error computing maximally consumed type: " + rhsType, file.getEntry(), test,  e);
 			}
 			// Create the relevant types
 			Type typeOnTrueBranch = Type.intersect(expandedLhsType, expandedRhsType);
@@ -1633,16 +1628,16 @@ public class Wyil2JavaBuilder implements Builder {
 					context.add(new Bytecode.Goto(trueLabel));
 					context.add(new Bytecode.Label(nextLabel));
 				} catch (ResolveError e) {
-					internalFailure(e.getMessage(), filename, e);
+					throw new InternalFailure(e.getMessage(), file.getEntry(), null, e);
 				}
 			}
 			context.add(new Bytecode.Goto(falseTarget));
 			context.add(new Bytecode.Label(trueLabel));
 		} else {
-			internalFailure("unknown type encountered: " + type, filename);
+			throw new InternalFailure("unknown type encountered: " + type, file.getEntry(), null);
 		}
 	}
-	
+
 	/**
 	 * Construct generic code for iterating over a collection (e.g. a Whiley
 	 * List or Set). This code will not leave anything on the stack and will
@@ -1864,7 +1859,7 @@ public class Wyil2JavaBuilder implements Builder {
 		} catch(InternalFailure ex) {
 			throw ex;
 		} catch (Exception ex) {
-			internalFailure(ex.getMessage(), filename, ex, expr.attributes());
+			throw new InternalFailure(ex.getMessage(), file.getEntry(), expr, ex);
 		}
 	}
 
@@ -2633,8 +2628,7 @@ public class Wyil2JavaBuilder implements Builder {
 			} catch (InternalFailure ex) {
 				throw ex;
 			} catch (Exception e) {
-				internalFailure("error expanding type: " + t, filename, e);
-				return null; // deadcode
+				throw new InternalFailure("error expanding type: " + t, file.getEntry(), null);
 			}
 		} else {
 			throw new RuntimeException("unknown type encountered: " + t);

@@ -35,7 +35,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import wycc.lang.Attribute;
+import wycc.lang.SyntacticElement;
 import wycc.lang.SyntaxError;
+import wycs.syntax.WyalFile;
+import wyfs.lang.Path;
 
 /**
  * Split a source file into a list of tokens. These tokens can then be fed into
@@ -46,19 +50,14 @@ import wycc.lang.SyntaxError;
  */
 public class WyalFileLexer {
 
-	private String filename;
-	private StringBuilder input;
+	private final Path.Entry<WyalFile> entry;
+	private final StringBuilder input;
 	private int pos;
 
-	public WyalFileLexer(String filename) throws IOException {
-		this(filename, new InputStreamReader(new FileInputStream(filename), "UTF8"));
-	}
-
-	public WyalFileLexer(String filename, InputStream instream) throws IOException {
-		this(filename, new InputStreamReader(instream, "UTF8"));
-	}
-
-	public WyalFileLexer(String filename, Reader reader) throws IOException {
+	public WyalFileLexer(Path.Entry<WyalFile> entry) throws IOException {
+		this.entry = entry;
+		//
+		Reader reader = new InputStreamReader(entry.inputStream(),"UTF8");
 		BufferedReader in = new BufferedReader(reader);
 
         StringBuilder text = new StringBuilder();
@@ -68,7 +67,6 @@ public class WyalFileLexer {
 			text.append(buf, 0, len);
 		}
         input = text;
-        this.filename = filename;
 	}
 
 	/**
@@ -497,7 +495,10 @@ public class WyalFileLexer {
 	 *            --- index position to associate the error with.
 	 */
 	private void syntaxError(String msg, int index) {
-		throw new SyntaxError(msg, filename, index, index);
+		// FIXME: this is clearly not a sensible approach
+		SyntacticElement unknown = new SyntacticElement.Impl() {};
+		unknown.attributes().add(new Attribute.Source(index, index, -1));
+		throw new SyntaxError(msg, entry, unknown);
 	}
 
 	/**

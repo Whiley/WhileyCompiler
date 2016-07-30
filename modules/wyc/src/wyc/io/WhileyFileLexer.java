@@ -35,7 +35,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import wyc.lang.WhileyFile;
+import wycc.lang.Attribute;
+import wycc.lang.SyntacticElement;
 import wycc.lang.SyntaxError;
+import wyfs.lang.Path;
 
 /**
  * Split a source file into a list of tokens. These tokens can then be fed into
@@ -45,20 +49,13 @@ import wycc.lang.SyntaxError;
  *
  */
 public class WhileyFileLexer {
-
-	private String filename;
+	private final Path.Entry<WhileyFile> entry;
 	private StringBuilder input;
 	private int pos;
 
-	public WhileyFileLexer(String filename) throws IOException {
-		this(filename, new InputStreamReader(new FileInputStream(filename), "UTF8"));
-	}
-
-	public WhileyFileLexer(String filename, InputStream instream) throws IOException {
-		this(filename, new InputStreamReader(instream, "UTF8"));
-	}
-
-	public WhileyFileLexer(String filename, Reader reader) throws IOException {
+	public WhileyFileLexer(Path.Entry<WhileyFile> entry) throws IOException {
+		this.entry = entry;
+		Reader reader = new InputStreamReader(entry.inputStream());
 		BufferedReader in = new BufferedReader(reader);
 
         StringBuilder text = new StringBuilder();
@@ -68,7 +65,6 @@ public class WhileyFileLexer {
 			text.append(buf, 0, len);
 		}
         input = text;
-        this.filename = filename;
 	}
 
 	/**
@@ -504,7 +500,11 @@ public class WhileyFileLexer {
 	 *            --- index position to associate the error with.
 	 */
 	private void syntaxError(String msg, int index) {
-		throw new SyntaxError(msg, filename, index, index);
+		// FIXME: this is clearly not a sensible approach
+		SyntacticElement unknown = new SyntacticElement.Impl() {};
+		unknown.attributes().add(new Attribute.Source(index, index, -1));
+		throw new SyntaxError(msg, entry, unknown);
+
 	}
 
 	/**

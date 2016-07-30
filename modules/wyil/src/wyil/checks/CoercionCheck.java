@@ -30,6 +30,8 @@ import java.util.*;
 import static wyil.util.ErrorMessages.*;
 import wybs.lang.Builder;
 import wycc.lang.Attribute;
+import wycc.lang.SyntacticElement;
+import wycc.lang.SyntaxError;
 import wycc.lang.Transform;
 import wycc.util.Pair;
 import wyil.lang.*;
@@ -72,14 +74,14 @@ import wyil.lang.*;
  * @author David J. Pearce
  */
 public class CoercionCheck implements Transform<WyilFile> {
-	private String filename;
+	private WyilFile file;
 
 	public CoercionCheck(Builder builder) {
 
 	}
 
 	public void apply(WyilFile module) {
-		filename = module.filename();
+		this.file = module;
 
 		for(WyilFile.Type type : module.types()) {
 			check(type.getTree());
@@ -116,7 +118,7 @@ public class CoercionCheck implements Transform<WyilFile> {
 	 * @param visited - the set of pairs already checked.
 	 * @param location - source location attribute (if applicable).
 	 */
-	protected void check(Type from, Type to, HashSet<Pair<Type, Type>> visited, Attribute.Source location) {
+	protected void check(Type from, Type to, HashSet<Pair<Type, Type>> visited, SyntacticElement element) {
 		Pair<Type,Type> p = new Pair<Type,Type>(from,to);
 		if(visited.contains(p)) {
 			return; // already checked this pair
@@ -130,11 +132,11 @@ public class CoercionCheck implements Transform<WyilFile> {
 		} else if(from instanceof Type.Reference && to instanceof Type.Reference) {
 			Type.Reference t1 = (Type.Reference) from;
 			Type.Reference t2 = (Type.Reference) to;
-			check(t1.element(),t2.element(),visited,location);
+			check(t1.element(),t2.element(),visited,element);
 		} else if(from instanceof Type.Array && to instanceof Type.Array) {
 			Type.Array t1 = (Type.Array) from;
 			Type.Array t2 = (Type.Array) to;
-			check(t1.element(),t2.element(),visited,location);
+			check(t1.element(),t2.element(),visited,element);
 		} else if(from instanceof Type.Record && to instanceof Type.Record) {
 			Type.Record t1 = (Type.Record) from;
 			Type.Record t2 = (Type.Record) to;
@@ -144,17 +146,17 @@ public class CoercionCheck implements Transform<WyilFile> {
 			for(String s : fields) {
 				Type e1 = t1_elements.get(s);
 				Type e2 = t2_elements.get(s);
-				check(e1,e2,visited,location);
+				check(e1,e2,visited,element);
 			}
 		} else if(from instanceof Type.Function && to instanceof Type.Function) {
 			Type.Function t1 = (Type.Function) from;
 			Type.Function t2 = (Type.Function) to;
-			check(t1.params(),t2.params(),visited,location);
-			check(t1.returns(),t2.returns(),visited,location);
+			check(t1.params(),t2.params(),visited,element);
+			check(t1.returns(),t2.returns(),visited,element);
 		} else if(from instanceof Type.Union) {
 			Type.Union t1 = (Type.Union) from;
 			for(Type b : t1.bounds()) {
-				check(b,to,visited,location);
+				check(b,to,visited,element);
 			}
 		} else if(to instanceof Type.Union) {
 			Type.Union t2 = (Type.Union) to;
@@ -175,9 +177,9 @@ public class CoercionCheck implements Transform<WyilFile> {
 				if(Type.isSubtype(b,from)) {
 					if(match != null) {
 						// found ambiguity
-						syntaxError(errorMessage(AMBIGUOUS_COERCION,from,to), filename, location);
+						throw new SyntaxError(errorMessage(AMBIGUOUS_COERCION,from,to), file.getEntry(), element);
 					} else {
-						check(from,b,visited,location);
+						check(from,b,visited,element);
 						match = b;
 					}
 				}
@@ -194,10 +196,9 @@ public class CoercionCheck implements Transform<WyilFile> {
 				if(Type.isExplicitCoerciveSubtype(b,from)) {
 					if(match != null) {
 						// found ambiguity
-						syntaxError("ambiguous coercion (" + from + " => "
-								+ to, filename, location);
+						throw new SyntaxError("ambiguous coercion (" + from + " => " + to, file.getEntry(), element);
 					} else {
-						check(from,b,visited,location);
+						check(from,b,visited,element);
 						match = b;
 					}
 				}
@@ -206,11 +207,11 @@ public class CoercionCheck implements Transform<WyilFile> {
 	}
 	
 	private void check(List<Type> params1, List<Type> params2, HashSet<Pair<Type, Type>> visited,
-			Attribute.Source location) {
+			SyntacticElement element) {
 		for (int i = 0; i != params1.size(); ++i) {
 			Type e1 = params1.get(i);
 			Type e2 = params2.get(i);
-			check(e1, e2, visited, location);
+			check(e1, e2, visited, element);
 		}
 	}
 }

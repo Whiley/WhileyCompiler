@@ -90,7 +90,7 @@ public class Wyil2WyalBuilder implements Builder {
 			Path.Root dst = p.second();
 			Path.Entry<WyalFile> df = (Path.Entry<WyalFile>) dst.create(sf.id(), WyalFile.ContentType);
 			generatedFiles.add(df);
-			WyalFile contents = vcg.translate(sf.read());
+			WyalFile contents = vcg.translate(sf.read(), df);
 			// Write the file into its destination
 			df.write(contents);
 			// Then, flush contents to disk in case we generate an assertion

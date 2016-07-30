@@ -3,8 +3,6 @@ package wycs.io;
 import java.io.*;
 
 import static wycc.lang.SyntaxError.*;
-import wycc.lang.Attribute;
-import wycc.lang.SyntacticElement;
 import wycs.syntax.*;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -50,8 +48,7 @@ public class WyalFilePrinter {
 		} else if(s instanceof WyalFile.Import) {
 			write(wf,(WyalFile.Import)s);
 		} else {
-			internalFailure("unknown statement encountered " + s,
-					wf.filename(), s);
+			throw new InternalFailure("unknown statement encountered " + s, wf.getEntry(), s);
 		}
 		out.println();
 	}
@@ -203,8 +200,7 @@ public class WyalFilePrinter {
 		} else if(e instanceof Expr.IndexOf) {
 			write(wf, (Expr.IndexOf)e,indent);
 		} else {
-			internalFailure("unknown expression encountered " + e,
-					wf.filename(), e);
+			throw new InternalFailure("unknown expression encountered " + e, wf.getEntry(), e);
 		}
 	}
 
@@ -302,7 +298,8 @@ public class WyalFilePrinter {
 			return;
 		}
 		}
-		internalFailure("unknown expression encountered \"" + e + "\" (" + e.getClass().getName() + ")", wf.filename(), e);
+		throw new InternalFailure("unknown expression encountered \"" + e + "\" (" + e.getClass().getName() + ")",
+				wf.getEntry(), e);
 	}
 
 

@@ -96,8 +96,6 @@ public class WycsBuildTask {
 							Collections.EMPTY_MAP));
 					add(new Pipeline.Template(VerificationCheck.class,
 							Collections.EMPTY_MAP));
-					add(new Pipeline.Template(SmtVerificationCheck.class,
-							Collections.EMPTY_MAP));
 				}
 			});
 
@@ -110,7 +108,6 @@ public class WycsBuildTask {
 		Pipeline.register(TypePropagation.class);
 		Pipeline.register(MacroExpansion.class);
 		Pipeline.register(VerificationCheck.class);
-        Pipeline.register(SmtVerificationCheck.class);
 	}
 
 	/**

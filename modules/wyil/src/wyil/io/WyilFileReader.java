@@ -49,6 +49,7 @@ import wyil.util.AbstractBytecode;
 public final class WyilFileReader {
 	private static final char[] magic = { 'W', 'Y', 'I', 'L', 'F', 'I', 'L', 'E' };
 
+	private final Path.Entry<WyilFile> entry;
 	private final BinaryInputStream input;
 	private String[] stringPool;
 	private Path.ID[] pathPool;
@@ -56,11 +57,19 @@ public final class WyilFileReader {
 	private Constant[] constantPool;
 	private Type[] typePool;
 
-	public WyilFileReader(String filename) throws IOException {
-		this.input = new BinaryInputStream(new FileInputStream(filename));
+	public WyilFileReader(Path.Entry<WyilFile> entry) throws IOException {
+		this.entry = entry;
+		this.input = new BinaryInputStream(entry.inputStream());
 	}
 
+	/**
+	 * Construct a WyilFileReader to read a WyilFile in headless mode. That is,
+	 * where the file is not associated with a Path.Entry.
+	 * 
+	 * @param input
+	 */
 	public WyilFileReader(InputStream input) throws IOException {
+		this.entry = null;
 		this.input = new BinaryInputStream(input);
 	}
 
@@ -365,7 +374,7 @@ public final class WyilFileReader {
 		int numBlocks = input.read_uv();
 
 		input.pad_u8();
-		WyilFile wyilFile = new WyilFile(pathPool[pathIdx], "unknown.whiley");
+		WyilFile wyilFile = new WyilFile(entry);
 		for (int i = 0; i != numBlocks; ++i) {
 			readModuleBlock(wyilFile);
 		}
