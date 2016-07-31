@@ -6,6 +6,7 @@ import java.util.*;
 import wycc.lang.Attribute;
 import wycc.lang.NameID;
 import wycc.lang.SyntacticElement;
+import wycc.lang.SyntaxError;
 import wycc.util.Pair;
 import wycc.util.ResolveError;
 import wycc.util.Triple;
@@ -30,22 +31,22 @@ import static wycs.transforms.TypePropagation.returnType;
  */
 public class CodeGeneration {
 	private final Wyal2WycsBuilder builder;
-	private String filename;
+	private WyalFile file;
 
 	public CodeGeneration(Wyal2WycsBuilder builder) {
 		this.builder = builder;
 	}
 
-	public WycsFile generate(WyalFile file) {
-		this.filename = file.filename();
+	public WycsFile generate(WyalFile file, Path.Entry<WycsFile> entry) {
+		this.file = file;
 		ArrayList<WycsFile.Declaration> declarations = new ArrayList();
-		for(WyalFile.Declaration d : file.declarations()) {
+		for (WyalFile.Declaration d : file.declarations()) {
 			WycsFile.Declaration e = generate(d);
-			if(e != null) {
+			if (e != null) {
 				declarations.add(e);
 			}
 		}
-		return new WycsFile(file.id(),file.filename(),declarations);
+		return new WycsFile(entry, declarations);
 	}
 
 	protected WycsFile.Declaration generate(WyalFile.Declaration declaration) {
@@ -61,8 +62,7 @@ public class CodeGeneration {
 		} else if(declaration instanceof WyalFile.Assert) {
 			return generate((WyalFile.Assert)declaration);
 		} else {
-			internalFailure("unknown declaration encounterd",filename,declaration);
-			return null;
+			throw new InternalFailure("unknown declaration encounterd", file.getEntry(), declaration);
 		}
 	}
 
@@ -87,9 +87,7 @@ public class CodeGeneration {
 					attributes(d));
 		} catch (ResolveError re) {
 			// should be unreachable if type propagation is already succeeded.
-			syntaxError("cannot resolve as function or definition call",
-					filename, d, re);
-			return null;
+			throw new SyntaxError("cannot resolve as function or definition call", file.getEntry(), d, re);
 		}
 	}
 
@@ -120,9 +118,7 @@ public class CodeGeneration {
 					attributes(d));
 		} catch (ResolveError re) {
 			// should be unreachable if type propagation is already succeeded.
-			syntaxError("cannot resolve as function or definition call",
-					filename, d, re);
-			return null;
+			throw new SyntaxError("cannot resolve as function or definition call", file.getEntry(), d, re);
 		}
 	}
 
@@ -146,9 +142,7 @@ public class CodeGeneration {
 			return new WycsFile.Type(d.name, from, invariant, attributes(d));
 		} catch (ResolveError re) {
 			// should be unreachable if type propagation is already succeeded.
-			syntaxError("cannot resolve as function or definition call",
-					filename, d, re);
-			return null;
+			throw new SyntaxError("cannot resolve as function or definition call", file.getEntry(), d, re);
 		}
 	}
 	
@@ -207,9 +201,7 @@ public class CodeGeneration {
 		} else if (e instanceof Expr.Is) {
 			return generate((Expr.Is) e, environment, context);
 		} else {
-			internalFailure("unknown expression encountered (" + e + ")",
-					filename, e);
-			return null;
+			throw new InternalFailure("unknown expression encountered (" + e + ")", file.getEntry(), e);
 		}
 	}
 
@@ -245,9 +237,7 @@ public class CodeGeneration {
 			opcode = Code.Op.LENGTH;
 			break;
 		default:
-			internalFailure("unknown unary opcode encountered (" + e + ")",
-					filename, e);
-			return null;
+			throw new InternalFailure("unknown unary opcode encountered (" + e + ")", file.getEntry(), e);
 		}
 		return Code.Unary(type, opcode, operand,
 				attributes(e));
@@ -322,9 +312,7 @@ public class CodeGeneration {
 			break;
 		}
 		default:
-			internalFailure("unknown binary opcode encountered (" + e + ")",
-					filename, e);
-			return null;
+			throw new InternalFailure("unknown binary opcode encountered (" + e + ")", file.getEntry(), e);
 		}
 
 		return Code.Binary(type, opcode, lhs, rhs,
@@ -346,9 +334,7 @@ public class CodeGeneration {
 			opcode = Code.Op.ARRAY;
 			break;		
 		default:
-			internalFailure("unknown unary opcode encountered (" + e + ")",
-					filename, e);
-			return null;
+			throw new InternalFailure("unknown unary opcode encountered (" + e + ")", file.getEntry(), e);
 		}
 		return Code.Nary(type, opcode, operands,
 				attributes(e));
@@ -448,8 +434,7 @@ public class CodeGeneration {
 					attributes(e));
 		} catch (ResolveError re) {
 			// should be unreachable if type propagation is already succeeded.
-			syntaxError(re.getMessage(), filename, e, re);
-			return null;
+			throw new SyntaxError(re.getMessage(), file.getEntry(), e, re);
 		}
 	}
 
@@ -508,13 +493,11 @@ public class CodeGeneration {
 				generics = fn.type.generics();
 				funType = fn.type;
 			} else {
-				internalFailure("cannot resolve as function or macro call",
-						filename, elem);
-				return null; // dead-code
+				throw new InternalFailure("cannot resolve as function or macro call", file.getEntry(), elem);
 			}
 			HashMap<String,SemanticType> binding = new HashMap<String,SemanticType>();
 			if (!SemanticType.bind(funType.from(), argumentType, binding)) {
-				internalFailure("cannot bind function or macro call", filename,
+				throw new InternalFailure("cannot bind function or macro call", file.getEntry(),
 						elem);
 			}
 			SemanticType[] result = new SemanticType[generics.length];
@@ -522,16 +505,15 @@ public class CodeGeneration {
 				SemanticType.Var v = (SemanticType.Var) generics[i];
 				SemanticType type = binding.get(v.name());
 				if(type == null) {
-					internalFailure("cannot bind function or macro call",
-							filename, elem);
+					throw new InternalFailure("cannot bind function or macro call",
+							file.getEntry(), elem);
 				}
 				result[i] = type;
 			}
 			
 			return new Pair<SemanticType.Function,SemanticType[]>(funType,result);
 		} catch (Exception ex) {
-			internalFailure(ex.getMessage(), filename, elem, ex);
-			return null; // dead-code
+			throw new InternalFailure(ex.getMessage(), file.getEntry(), elem, ex);
 		}
 	}
 	

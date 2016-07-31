@@ -6,6 +6,7 @@ import static wycc.lang.SyntaxError.*;
 import wybs.lang.Builder;
 import wycc.lang.NameID;
 import wycc.lang.SyntacticElement;
+import wycc.lang.SyntaxError;
 import wycc.lang.Transform;
 import wycc.util.Pair;
 import wycc.util.ResolveError;
@@ -25,7 +26,7 @@ public class TypePropagation implements Transform<WyalFile> {
 
 	private final Wyal2WycsBuilder builder;
 
-	private String filename;
+	private WyalFile file;
 
 	// ======================================================================
 	// Constructor(s)
@@ -57,7 +58,7 @@ public class TypePropagation implements Transform<WyalFile> {
 
 	public void apply(WyalFile wf) {
 		if (enabled) {
-			this.filename = wf.filename();
+			this.file = wf;
 
 			for (WyalFile.Declaration s : wf.declarations()) {
 				propagate(s);
@@ -77,8 +78,8 @@ public class TypePropagation implements Transform<WyalFile> {
 		} else if (s instanceof WyalFile.Import) {
 
 		} else {
-			internalFailure("unknown statement encountered (" + s + ")",
-					filename, s);
+			throw new InternalFailure("unknown statement encountered (" + s + ")",
+					file.getEntry(), s);
 		}
 	}
 
@@ -170,10 +171,8 @@ public class TypePropagation implements Transform<WyalFile> {
 					type = builder.expand(type, false, context);
 					environment.put(lp.var.name, type);
 				} catch (ResolveError re) {
-					syntaxError(
-							"cannot resolve as function or definition call",
-							filename, pattern, re);
-					return null;
+					throw new SyntaxError("cannot resolve as function or definition call", file.getEntry(), pattern,
+							re);
 				}
 			}
 		}
@@ -224,9 +223,7 @@ public class TypePropagation implements Transform<WyalFile> {
 		} else if (e instanceof Expr.IndexOf) {
 			t = propagate((Expr.IndexOf) e, environment, generics, context);
 		} else {
-			internalFailure("unknown expression encountered (" + e + ")",
-					filename, e);
-			return null;
+			throw new InternalFailure("unknown expression encountered (" + e + ")", file.getEntry(), e);
 		}
 		e.attributes().add(new TypeAttribute(t));
 		return returnType(e);
@@ -237,8 +234,8 @@ public class TypePropagation implements Transform<WyalFile> {
 			HashSet<String> generics, WyalFile.Context context) {
 		SemanticType t = environment.get(e.name);
 		if (t == null) {
-			internalFailure("undeclared variable encountered (" + e + ")",
-					filename, e);
+			throw new InternalFailure("undeclared variable encountered (" + e + ")",
+					file.getEntry(), e);
 		}
 		return t;
 	}
@@ -262,8 +259,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			// TODO: check cast is permitted.
 			return targetType;
 		} catch (ResolveError re) {
-			syntaxError(re.getMessage(), filename, e, re);
-			return null;
+			throw new SyntaxError(re.getMessage(), file.getEntry(), e, re);
 		}
 	}
 
@@ -302,7 +298,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			SemanticType.EffectiveTuple tt = (SemanticType.EffectiveTuple) src_type;
 			checkIsSubtype(SemanticType.Int, index_type, e.operand, context);
 			if (!(e.index instanceof Expr.Constant)) {
-				syntaxError("constant index required for tuple load", filename,
+				throw new SyntaxError("constant index required for tuple load", file.getEntry(),
 						e.index);
 			}
 		} else {
@@ -351,8 +347,8 @@ public class TypePropagation implements Transform<WyalFile> {
 			// Or{Int,Real}). Therefore, to prevent subtle bugs which may arise
 			// from this, we explicitly ensure that there is some value in
 			// common with the left and right-hand sides.
-			syntaxError("operand types are not compatible (" + lhs_type
-					+ " vs " + rhs_type + ")", context.file().filename(), e);
+			throw new SyntaxError("operand types are not compatible (" + lhs_type + " vs " + rhs_type + ")",
+					context.file().getEntry(), e);
 		}
 
 		switch (e.op) {
@@ -386,9 +382,8 @@ public class TypePropagation implements Transform<WyalFile> {
 			return SemanticType.Array(lhs_type);
 		}
 
-		internalFailure("unknown binary expression encountered (" + e + ")",
-				filename, e);
-		return null; // deadcode
+		throw new InternalFailure("unknown binary expression encountered (" + e + ")",
+				file.getEntry(), e);
 	}
 
 	private SemanticType propagate(Expr.Nary e,
@@ -417,9 +412,7 @@ public class TypePropagation implements Transform<WyalFile> {
 			}
 		}
 
-		internalFailure("unknown nary expression encountered (" + e + ")",
-				filename, e);
-		return null; // deadcode
+		throw new InternalFailure("unknown nary expression encountered (" + e + ")", file.getEntry(), e);
 	}
 
 	private SemanticType propagate(Expr.Is e,
@@ -442,16 +435,15 @@ public class TypePropagation implements Transform<WyalFile> {
 //			if (intersection instanceof SemanticType.Void) {
 //				// These types have no intersection, hence this expression does
 //				// not make sense.
-//				syntaxError("incomparable operands", filename, e);
+//				throw new SyntaxError("incomparable operands", file.getEntry(), e);
 //			} else {
 //				// Otherwise, we're all good.
 //				return SemanticType.Bool;
 //			}
 			return SemanticType.Bool;
 		} catch (ResolveError ex) {
-			syntaxError("cannot resolve as type call", filename, e, ex);
+			throw new SyntaxError("cannot resolve as type call", file.getEntry(), e, ex);
 		}
-		return null; // dead-code
 	}
 
 	private SemanticType propagate(Expr.Quantifier e,
@@ -491,8 +483,8 @@ public class TypePropagation implements Transform<WyalFile> {
 
 			pattern.attributes().add(new TypeAttribute(nominalType));
 		} catch (ResolveError re) {
-			syntaxError("cannot resolve as function or definition call",
-					filename, pattern, re);
+			throw new SyntaxError("cannot resolve as function or definition call",
+					file.getEntry(), pattern, re);
 		}
 	}
 
@@ -512,7 +504,7 @@ public class TypePropagation implements Transform<WyalFile> {
 				ivkGenerics.add(t);
 				gt.attributes().add(new TypeAttribute(t));
 			} catch (ResolveError re) {
-				syntaxError(re.getMessage(), filename, gt, re);
+				throw new SyntaxError(re.getMessage(), file.getEntry(), gt, re);
 			}
 		}
 		// Now, attempt to resolve the function
@@ -550,19 +542,17 @@ public class TypePropagation implements Transform<WyalFile> {
 
 			if (fn_generics.length != e.generics.size()) {
 				// could resolve this with inference in the future.
-				syntaxError(
+				throw new SyntaxError(
 						"incorrect number of generic arguments provided (got "
 								+ e.generics.size() + ", required "
 								+ fn_generics.length + ")", context.file()
-								.filename(), e);
+								.getEntry(), e);
 			}
 
 			fnType = (SemanticType.Function) fnType.substitute(binding);
 			return builder.expand(fnType, false, context);
 		} catch (ResolveError re) {
-			syntaxError("cannot resolve as function or definition call",
-					context.file().filename(), e, re);
-			return null;
+			throw new SyntaxError("cannot resolve as function or definition call", context.file().getEntry(), e, re);
 		}
 	}
 
@@ -694,7 +684,7 @@ public class TypePropagation implements Transform<WyalFile> {
 		t2 = builder.expand(t2, false, context);
 		// Second, perform the subtype test.
 		if (!SemanticType.isSubtype(t1, t2)) {
-			syntaxError("expected type " + t1 + ", got type " + t2, filename,
+			throw new SyntaxError("expected type " + t1 + ", got type " + t2, file.getEntry(),
 					element);
 		}
 	}

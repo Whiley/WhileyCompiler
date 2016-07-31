@@ -86,12 +86,13 @@ public class Main {
 	public static void main(String[] args) {
 		boolean verbose = true;
 		try {
-			WyilFile wf = new WyilFileReader(args[0]).read();
+			FileInputStream fin = new FileInputStream(args[0]);
+			WyilFile wf = new WyilFileReader(fin).read();
 			new WyilFilePrinter(System.out).apply(wf);
 			// FIXME: this is all a hack for now
 			Type.Method sig = Type.Method(Collections.<Type>emptyList(), Collections.<String>emptySet(),
 					Collections.<String>emptyList(), Collections.<Type>emptyList());
-			NameID name = new NameID(wf.id(),"test");
+			NameID name = new NameID(wf.getEntry().id(),"test");
 			Build.Project project = initialiseProject(".");
 			Constant[] returns = new Interpreter(project,System.out).execute(name,sig);
 			if(returns != null) {

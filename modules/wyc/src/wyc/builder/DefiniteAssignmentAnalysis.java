@@ -72,7 +72,7 @@ public class DefiniteAssignmentAnalysis {
 		} else if(declaration instanceof WhileyFile.FunctionOrMethod) {
 			check((WhileyFile.FunctionOrMethod) declaration);
 		} else {
-			internalFailure("unknown declaration encountered",file.filename,declaration);
+			throw new InternalFailure("unknown declaration encountered",file.getEntry(),declaration);
 		}
 	}
 	
@@ -165,14 +165,12 @@ public class DefiniteAssignmentAnalysis {
 			} else if(statement instanceof Stmt.While) {
 				return checkWhile((Stmt.While) statement, environment);
 			} else {
-				internalFailure("unknown statement encountered",file.filename,statement);
-				return null;
+				throw new InternalFailure("unknown statement encountered",file.getEntry(),statement);
 			}
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable t) {
-			internalFailure(t.getMessage(),file.filename,statement,t);
-			return null;
+			throw new InternalFailure(t.getMessage(),file.getEntry(),statement,t);
 		}
 	}
 	
@@ -366,12 +364,12 @@ public class DefiniteAssignmentAnalysis {
 			} else if(expression instanceof Expr.UnOp) {
 				checkUnOp((Expr.UnOp) expression, environment);
 			} else {
-				internalFailure("unknown expression encountered",file.filename,expression);				
+				throw new InternalFailure("unknown expression encountered",file.getEntry(),expression);
 			}
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable t) {
-			internalFailure("internal failure",file.filename,expression,t);			
+			throw new InternalFailure("internal failure",file.getEntry(),expression,t);
 		}
 	}
 	
@@ -446,7 +444,7 @@ public class DefiniteAssignmentAnalysis {
 	
 	private void checkLocalVariable(Expr.LocalVariable expression, DefintelyAssignedSet environment) {
 		if (!environment.contains(expression.var)) {
-			syntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), file.filename, expression);
+			throw new SyntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), file.getEntry(), expression);
 		}
 	}
 	

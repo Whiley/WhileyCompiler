@@ -27,8 +27,7 @@ package wyc.builder;
 
 import static wyc.lang.WhileyFile.internalFailure;
 import static wyc.lang.WhileyFile.syntaxError;
-import static wycc.lang.SyntaxError.internalFailure;
-import static wycc.lang.SyntaxError.syntaxError;
+import static wycc.lang.SyntaxError.InternalFailure;
 import static wyil.util.ErrorMessages.*;
 
 import java.io.IOException;
@@ -143,7 +142,7 @@ public class FlowTypeChecker {
 
 	private final WhileyBuilder builder;
 	private final TypeSystem expander;
-	private String filename;
+	private WhileyFile file;
 	//private WhileyFile.FunctionOrMethod current;
 
 	/**
@@ -168,7 +167,7 @@ public class FlowTypeChecker {
 	}
 
 	public void propagate(WhileyFile wf) {
-		this.filename = wf.filename;
+		this.file = wf;
 
 		for (WhileyFile.Declaration decl : wf.declarations) {
 			try {
@@ -180,11 +179,11 @@ public class FlowTypeChecker {
 					propagate((WhileyFile.Constant) decl);
 				}
 			} catch (ResolveError e) {
-				syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()), filename, decl, e);
+				throw new SyntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()), file.getEntry(), decl, e);
 			} catch (SyntaxError e) {
 				throw e;
 			} catch (Throwable t) {
-				internalFailure(t.getMessage(), filename, decl, t);
+				throw new InternalFailure(t.getMessage(), file.getEntry(), decl, t);
 			}
 		}
 	}
@@ -213,7 +212,7 @@ public class FlowTypeChecker {
 			// values. For example, the following is a contractive type:
 			//
 			// type NonContractive is { NonContractive x }
-			syntaxError("empty type encountered", filename, td);
+			throw new SyntaxError("empty type encountered", file.getEntry(), td);
 		} else if (td.invariant.size() > 0) {
 			// Second, an invariant expression is given, so propagate through
 			// that.
@@ -234,7 +233,7 @@ public class FlowTypeChecker {
 	 * @throws IOException
 	 */
 	public void propagate(WhileyFile.Constant cd) throws IOException, ResolveError {
-		NameID nid = new NameID(cd.file().module, cd.name());
+		NameID nid = new NameID(cd.file().getEntry().id(), cd.name());
 		cd.resolvedValue = resolveAsConstant(nid).first();
 	}
 
@@ -291,7 +290,7 @@ public class FlowTypeChecker {
 			// furthermore, that this requires a return value. To get here means
 			// that there was no explicit return statement given on at least one
 			// execution path.
-			syntaxError("missing return statement", filename, d);
+			throw new SyntaxError("missing return statement", file.getEntry(), d);
 		}
 	}
 
@@ -356,8 +355,7 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt stmt, Environment environment, Context context) {
 		if (environment == BOTTOM) {
-			syntaxError(errorMessage(UNREACHABLE_CODE), filename, stmt);
-			return null; // dead code
+			throw new SyntaxError(errorMessage(UNREACHABLE_CODE), file.getEntry(), stmt);
 		}
 		try {
 			if (stmt instanceof Stmt.VariableDeclaration) {
@@ -391,17 +389,14 @@ public class FlowTypeChecker {
 			} else if (stmt instanceof Stmt.Skip) {
 				return propagate((Stmt.Skip) stmt, environment);
 			} else {
-				internalFailure("unknown statement: " + stmt.getClass().getName(), filename, stmt);
-				return null; // deadcode
+				throw new InternalFailure("unknown statement: " + stmt.getClass().getName(), file.getEntry(), stmt);
 			}
 		} catch (ResolveError e) {
-			syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()), filename, stmt, e);
-			return null; // dead code
+			throw new SyntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()), file.getEntry(), stmt, e);
 		} catch (SyntaxError e) {
 			throw e;
 		} catch (Throwable e) {
-			internalFailure(e.getMessage(), filename, stmt, e);
-			return null; // dead code
+			throw new InternalFailure(e.getMessage(), file.getEntry(), stmt, e);
 		}
 	}
 
@@ -526,9 +521,9 @@ public class FlowTypeChecker {
 		// Check the number of expected values matches the number of values
 		// produced by the right-hand side.
 		if(stmt.lvals.size() < valuesProduced.size()) {
-			syntaxError("too many values provided on right-hand side", filename, stmt);
+			throw new SyntaxError("too many values provided on right-hand side", file.getEntry(), stmt);
 		} else if(stmt.lvals.size() > valuesProduced.size()) {
-			syntaxError("not enough values provided on right-hand side", filename, stmt);
+			throw new SyntaxError("not enough values provided on right-hand side", file.getEntry(), stmt);
 		}
 		// For each value produced, check that the variable being assigned
 		// matches the value produced.
@@ -567,8 +562,7 @@ public class FlowTypeChecker {
 			afterType = (Nominal) srcType.update(la.name, afterType);
 			return inferAfterType((Expr.LVal) la.src, afterType, environment);
 		} else {
-			internalFailure("unknown lval: " + lv.getClass().getName(), filename, lv);
-			return null; // deadcode
+			throw new InternalFailure("unknown lval: " + lv.getClass().getName(), file.getEntry(), lv);
 		}
 	}
 
@@ -751,12 +745,12 @@ public class FlowTypeChecker {
 			// In this case, a return statement was provided with too few return
 			// values compared with the number declared for the enclosing
 			// method.
-			syntaxError("not enough return values provided", filename, stmt);
+			throw new SyntaxError("not enough return values provided", file.getEntry(), stmt);
 		} else if (stmt_types.size() > current_returns.size()) {
 			// In this case, a return statement was provided with too many return
 			// values compared with the number declared for the enclosing
 			// method.
-			syntaxError("too many return values provided", filename, stmt);
+			throw new SyntaxError("too many return values provided", file.getEntry(), stmt);
 		} 
 		
 		// Number of return values match number declared for enclosing
@@ -941,7 +935,7 @@ public class FlowTypeChecker {
 				Expr.AbstractVariable av = (Expr.AbstractVariable) lval;
 				Nominal p = environment.getCurrentType(av.var);
 				if (p == null) {
-					syntaxError(errorMessage(UNKNOWN_VARIABLE), filename, lval);
+					throw new SyntaxError(errorMessage(UNKNOWN_VARIABLE), file.getEntry(), lval);
 				}
 				Expr.AssignedVariable lv = new Expr.AssignedVariable(av.var, av.attributes());
 				lv.type = p;
@@ -968,9 +962,9 @@ public class FlowTypeChecker {
 				Expr.FieldAccess ra = new Expr.FieldAccess(src, ad.name, ad.attributes());
 				Nominal.Record srcType = expandAsEffectiveRecord(src.result());
 				if (srcType == null) {
-					syntaxError(errorMessage(INVALID_LVAL_EXPRESSION), filename, lval);
+					throw new SyntaxError(errorMessage(INVALID_LVAL_EXPRESSION), file.getEntry(), lval);
 				} else if (srcType.field(ra.name) == null) {
-					syntaxError(errorMessage(RECORD_MISSING_FIELD, ra.name), filename, lval);
+					throw new SyntaxError(errorMessage(RECORD_MISSING_FIELD, ra.name), file.getEntry(), lval);
 				}
 				ra.srcType = srcType;
 				return ra;
@@ -978,11 +972,9 @@ public class FlowTypeChecker {
 		} catch (SyntaxError e) {
 			throw e;
 		} catch (Throwable e) {
-			internalFailure(e.getMessage(), filename, lval, e);
-			return null; // dead code
+			throw new InternalFailure(e.getMessage(), file.getEntry(), lval, e);
 		}
-		internalFailure("unknown lval: " + lval.getClass().getName(), filename, lval);
-		return null; // dead code
+		throw new InternalFailure("unknown lval: " + lval.getClass().getName(), file.getEntry(), lval);
 	}
 
 	// =========================================================================
@@ -1309,8 +1301,7 @@ public class FlowTypeChecker {
 			checkSuptypes(rhs, context, environment, Nominal.T_INT);
 			//
 			if (!lhsRawType.equals(rhsRawType)) {
-				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType, rhsRawType), filename, bop);
-				return null;
+				throw new SyntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType, rhsRawType), file.getEntry(), bop);
 			} else {
 				bop.srcType = lhs.result();
 			}
@@ -1493,8 +1484,7 @@ public class FlowTypeChecker {
 			checkSuptypes(rhs, context, environment, Nominal.T_INT);
 			//
 			if (!lhsRawType.equals(rhsRawType)) {
-				syntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType, rhsRawType), filename, expr);
-				return null;
+				throw new SyntaxError(errorMessage(INCOMPARABLE_OPERANDS, lhsRawType, rhsRawType), file.getEntry(), expr);
 			} else {
 				srcType = lhsRawType;
 			}
@@ -2035,7 +2025,7 @@ public class FlowTypeChecker {
 			old.free(); // hacky, but safe
 			// Finally, check loop count to force termination
 			if (count++ == 10) {
-				internalFailure("Unable to type loop", filename, element);
+				throw new InternalFailure("Unable to type loop", file.getEntry(), element);
 			}
 		} while (!environment.equals(old));
 
@@ -2816,13 +2806,13 @@ public class FlowTypeChecker {
 		for (SyntacticType param : t.paramTypes) {
 			Nominal nominal = resolveAsType(param, context);
 			if (Type.isSubtype(Type.T_VOID, nominal.raw())) {
-				syntaxError("empty type encountered", filename, param);
+				throw new SyntaxError("empty type encountered", file.getEntry(), param);
 			}
 		}
 		for (SyntacticType ret : t.returnTypes) {
 			Nominal nominal = resolveAsType(ret, context);
 			if (Type.isSubtype(Type.T_VOID, nominal.raw())) {
-				syntaxError("empty type encountered", filename, ret);
+				throw new SyntaxError("empty type encountered", file.getEntry(), ret);
 			}
 		}
 		return (Nominal.FunctionOrMethod) resolveAsType((SyntacticType) t, context);
@@ -3341,7 +3331,7 @@ public class FlowTypeChecker {
 	 */
 	public boolean isNameVisible(NameID nid, Context context) throws IOException {
 		// Any element in the same file is automatically visible
-		if (nid.module().equals(context.file().module)) {
+		if (nid.module().equals(context.file().getEntry().id())) {
 			return true;
 		} else {
 			return hasModifier(nid, context, Modifier.PUBLIC);
@@ -3364,7 +3354,7 @@ public class FlowTypeChecker {
 	 */
 	public boolean isTypeVisible(NameID nid, Context context) throws IOException {
 		// Any element in the same file is automatically visible
-		if (nid.module().equals(context.file().module)) {
+		if (nid.module().equals(context.file().getEntry().id())) {
 			return true;
 		} else {
 			return hasModifier(nid, context, Modifier.PUBLIC);
@@ -3648,7 +3638,7 @@ public class FlowTypeChecker {
 	// Check t1 :> t2
 	private void checkIsSubtype(Nominal t1, Nominal t2, SyntacticElement elem, Environment environment) {
 		if (!Type.isSubtype(t1.raw(), t2.raw(), environment.getLifetimeRelation())) {
-			syntaxError(errorMessage(SUBTYPE_ERROR, t1.nominal(), t2.nominal()), filename, elem);
+			throw new SyntaxError(errorMessage(SUBTYPE_ERROR, t1.nominal(), t2.nominal()), file.getEntry(), elem);
 		}
 	}
 
@@ -3656,7 +3646,7 @@ public class FlowTypeChecker {
 		if (!Type.isSubtype(t1.raw(), t2.result().raw(), environment.getLifetimeRelation())) {
 			// We use the nominal type for error reporting, since this includes
 			// more helpful names.
-			syntaxError(errorMessage(SUBTYPE_ERROR, t1.nominal(), t2.result().nominal()), filename, t2);
+			throw new SyntaxError(errorMessage(SUBTYPE_ERROR, t1.nominal(), t2.result().nominal()), file.getEntry(), t2);
 		}
 	}
 
@@ -3664,7 +3654,7 @@ public class FlowTypeChecker {
 		if (!Type.isSubtype(t1, t2.result().raw(), environment.getLifetimeRelation())) {
 			// We use the nominal type for error reporting, since this includes
 			// more helpful names.
-			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2.result().nominal()), filename, t2);
+			throw new SyntaxError(errorMessage(SUBTYPE_ERROR, t1, t2.result().nominal()), file.getEntry(), t2);
 		}
 	}
 

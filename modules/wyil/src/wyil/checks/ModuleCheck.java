@@ -57,14 +57,14 @@ import static wyil.util.ErrorMessages.*;
  *
  */
 public class ModuleCheck implements Transform<WyilFile> {
-	private String filename;
+	private WyilFile file;
 
 	public ModuleCheck(Builder builder) {
 
 	}
 
 	public void apply(WyilFile module) {
-		filename = module.filename();
+		this.file = module;
 		
 		// FIXME: check type invariants
 		
@@ -98,14 +98,14 @@ public class ModuleCheck implements Transform<WyilFile> {
 			Bytecode code = e.getBytecode();
 			if (code instanceof Bytecode.Invoke && ((Bytecode.Invoke) code).type() instanceof Type.Method) {
 				// internal message send
-				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, e.attributes());
+				throw new SyntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), file.getEntry(), e);
 			} else if (code instanceof Bytecode.IndirectInvoke
 					&& ((Bytecode.IndirectInvoke) code).type() instanceof Type.Method) {
-				syntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), filename, e.attributes());
+				throw new SyntaxError(errorMessage(METHODCALL_NOT_PERMITTED_IN_FUNCTION), file.getEntry(), e);
 			} else if (code.getOpcode() == Bytecode.OPCODE_newobject) {
-				syntaxError(errorMessage(ALLOCATION_NOT_PERMITTED_IN_FUNCTION), filename, e.attributes());
+				throw new SyntaxError(errorMessage(ALLOCATION_NOT_PERMITTED_IN_FUNCTION), file.getEntry(), e);
 			} else if (code.getOpcode() == Bytecode.OPCODE_dereference) {
-				syntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), filename, e.attributes());
+				throw new SyntaxError(errorMessage(REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION), file.getEntry(), e);
 			} else if (code instanceof Bytecode.Stmt) {
 				Bytecode.Stmt a = (Bytecode.Stmt) code;
 				for (int j = 0; j != a.numberOfBlocks(); ++j) {

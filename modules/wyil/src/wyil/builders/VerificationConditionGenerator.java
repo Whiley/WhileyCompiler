@@ -5,7 +5,6 @@ import static wyil.lang.Bytecode.OPCODE_varaccess;
 import static wyil.lang.Bytecode.OPCODE_vardecl;
 import static wyil.lang.Bytecode.OPCODE_vardeclinit;
 import static wyil.util.ErrorMessages.errorMessage;
-import static wyil.util.ErrorMessages.internalFailure;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -126,8 +125,8 @@ public class VerificationConditionGenerator {
 	 *            The input file to be translated
 	 * @return
 	 */
-	public WyalFile translate(WyilFile wyilFile) {
-		WyalFile wyalFile = new WyalFile(wyilFile.id(), wyilFile.filename());
+	public WyalFile translate(WyilFile wyilFile, Path.Entry<WyalFile> target) {
+		WyalFile wyalFile = new WyalFile(target);
 
 		for (WyilFile.Block b : wyilFile.blocks()) {
 			if (b instanceof WyilFile.Constant) {
@@ -372,7 +371,7 @@ public class VerificationConditionGenerator {
 		Expr argument = arguments.length == 1 ? arguments[0] : new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
 		//
 		for (int i = 0; i != preconditions.length; ++i) {
-			preconditions[i] = new Expr.Invoke(prefix + i, declaration.parent().id(), Collections.EMPTY_LIST, argument);
+			preconditions[i] = new Expr.Invoke(prefix + i, declaration.parent().getEntry().id(), Collections.EMPTY_LIST, argument);
 		}
 		// Add all the preconditions as assupmtions
 		return AssumptionSet.ROOT.add(preconditions);
@@ -441,15 +440,13 @@ public class VerificationConditionGenerator {
 			case Bytecode.OPCODE_vardeclinit:
 				return translateVariableDeclaration((Location<VariableDeclaration>) stmt, context);
 			default:
-				internalFailure("unknown statement encountered (" + stmt + ")", decl.parent().filename(),
-						stmt.attributes());
-				return null; // deadcode
+				throw new InternalFailure("unknown statement encountered (" + stmt + ")", decl.parent().getEntry(),
+						stmt);
 			}
 		} catch (InternalFailure e) {
 			throw e;
 		} catch (Throwable e) {
-			internalFailure(e.getMessage(), decl.parent().filename(), e, stmt.attributes());
-			throw e; // deadcode
+			throw new InternalFailure(e.getMessage(), decl.parent().getEntry(), stmt, e);
 		}
 	}
 
@@ -552,9 +549,8 @@ public class VerificationConditionGenerator {
 		case Bytecode.OPCODE_varaccess:
 			return translateVariableAssign((Location<VariableAccess>) lval, context);
 		default:
-			internalFailure("unknown lval encountered (" + lval + ")", context.getEnclosingFile().filename(),
-					lval.attributes());
-			return null;
+			throw new InternalFailure("unknown lval encountered (" + lval + ")", context.getEnclosingFile().getEntry(),
+					lval);
 		}
 	}
 
@@ -601,8 +597,7 @@ public class VerificationConditionGenerator {
 			Expr newField = new Expr.IndexOf(newSource, j, lval.attributes());
 			return new Pair<Expr,Context>(newField,context);
 		} catch (ResolveError e) {
-			internalFailure(e.getMessage(), decl.parent().filename(), e, lval.attributes());
-			return null;
+			throw new InternalFailure(e.getMessage(), decl.parent().getEntry(), lval, e);
 		}
 	}
 
@@ -650,8 +645,7 @@ public class VerificationConditionGenerator {
 			//
 			return new Pair<Expr,Context>(newLVal,context.assume(macro));
 		} catch (ResolveError e) {
-			internalFailure(e.getMessage(), decl.parent().filename(), e, lval.attributes());
-			return null;
+			throw new InternalFailure(e.getMessage(), decl.parent().getEntry(), lval, e);
 		}
 	}
 
@@ -711,8 +705,7 @@ public class VerificationConditionGenerator {
 		case Bytecode.OPCODE_varaccess:
 			return (Location<VariableAccess>) lval;
 		default:
-			internalFailure("unknown lval encountered (" + lval + ")", decl.parent().filename(), lval.attributes());
-			return null;
+			throw new InternalFailure("unknown lval encountered (" + lval + ")", decl.parent().getEntry(), lval);
 		}
 	}
 
@@ -920,7 +913,7 @@ public class VerificationConditionGenerator {
 				// check
 				// each postcondition clause
 				for (int i = 0; i != postcondition.size(); ++i) {
-					Expr clause = new Expr.Invoke(prefix + i, declaration.parent().id(), Collections.EMPTY_LIST,
+					Expr clause = new Expr.Invoke(prefix + i, declaration.parent().getEntry().id(), Collections.EMPTY_LIST,
 							argument);
 					context.emit(new VerificationCondition("postcondition not satisfied", context.assumptions, clause,
 							stmt.attributes()));
@@ -1086,7 +1079,7 @@ public class VerificationConditionGenerator {
 		//
 		for (int i = 0; i != loopInvariant.length; ++i) {
 			Location<?> clause = loopInvariant[i];
-			Expr macroCall = new Expr.Invoke(prefix + clause.getIndex(), declaration.parent().id(),
+			Expr macroCall = new Expr.Invoke(prefix + clause.getIndex(), declaration.parent().getEntry().id(),
 					Collections.EMPTY_LIST, argument, clause.attributes());
 			context.emit(new VerificationCondition(msg, context.assumptions, macroCall, clause.attributes()));
 		}
@@ -1113,7 +1106,7 @@ public class VerificationConditionGenerator {
 		//
 		for (int i = 0; i != loopInvariant.length; ++i) {
 			Location<?> clause = loopInvariant[i];
-			Expr macroCall = new Expr.Invoke(prefix + clause.getIndex(), declaration.parent().id(),
+			Expr macroCall = new Expr.Invoke(prefix + clause.getIndex(), declaration.parent().getEntry().id(),
 					Collections.EMPTY_LIST, argument, clause.attributes());
 			context = context.assume(macroCall);
 		}
@@ -1240,7 +1233,7 @@ public class VerificationConditionGenerator {
 		} catch (InternalFailure e) {
 			throw e;
 		} catch (Throwable e) {
-			internalFailure(e.getMessage(), decl.parent().filename(), e, expr.attributes());
+			throw new InternalFailure(e.getMessage(), decl.parent().getEntry(), expr, e);
 		}
 	}
 
@@ -1262,7 +1255,7 @@ public class VerificationConditionGenerator {
 			// Finally, generate an appropriate verification condition to check
 			// each precondition clause
 			for (int i = 0; i != numPreconditions; ++i) {
-				Expr clause = new Expr.Invoke(prefix + i, declaration.parent().id(), Collections.EMPTY_LIST, argument);
+				Expr clause = new Expr.Invoke(prefix + i, declaration.parent().getEntry().id(), Collections.EMPTY_LIST, argument);
 				context.emit(new VerificationCondition("precondition not satisfied", context.assumptions, clause,
 						expr.attributes()));
 			}
@@ -1325,8 +1318,7 @@ public class VerificationConditionGenerator {
 		} catch (InternalFailure e) {
 			throw e;
 		} catch (Throwable e) {
-			internalFailure(e.getMessage(), decl.parent().filename(), e, expr.attributes());
-			return null;
+			throw new InternalFailure(e.getMessage(), decl.parent().getEntry(), expr, e);
 		}
 	}
 
@@ -1352,7 +1344,8 @@ public class VerificationConditionGenerator {
 			// Finally, generate an appropriate verification condition to check
 			// each precondition clause
 			for (int i = 0; i != numPostconditions; ++i) {
-				Expr clause = new Expr.Invoke(prefix + i, declaration.parent().id(), Collections.EMPTY_LIST, argument);
+				Expr clause = new Expr.Invoke(prefix + i, declaration.parent().getEntry().id(), Collections.EMPTY_LIST,
+						argument);
 				context = context.assume(clause);
 			}
 		}
@@ -1407,8 +1400,7 @@ public class VerificationConditionGenerator {
 		} catch (InternalFailure e) {
 			throw e;
 		} catch (Throwable e) {
-			internalFailure(e.getMessage(), decl.parent().filename(), e, loc.attributes());
-			throw e; // deadcode
+			throw new InternalFailure(e.getMessage(), decl.parent().getEntry(), loc, e);
 		}
 	}
 
@@ -1449,8 +1441,7 @@ public class VerificationConditionGenerator {
 			return new Expr.IndexOf(src, index, expr.attributes());
 		} catch (ResolveError e) {
 			SyntaxTree tree = expr.getEnclosingTree();
-			internalFailure(e.getMessage(), tree.getEnclosingDeclaration().parent().filename(), e, expr.attributes());
-			return null;
+			throw new InternalFailure(e.getMessage(), tree.getEnclosingDeclaration().parent().getEntry(), expr, e);
 		}
 	}
 
@@ -2262,8 +2253,7 @@ public class VerificationConditionGenerator {
 			return wycs.core.Value.Tuple(values);
 		} else {
 			WyilFile.Declaration decl = context.getEnclosingTree().getEnclosingDeclaration();
-			internalFailure("unknown constant encountered (" + c + ")", decl.parent().filename(), context.attributes());
-			return null;
+			throw new InternalFailure("unknown constant encountered (" + c + ")", decl.parent().getEntry(), context);
 		}
 	}
 
@@ -2342,9 +2332,8 @@ public class VerificationConditionGenerator {
 			names.add(nid.name());
 			return new SyntacticType.Nominal(names, context.attributes());
 		} else {
-			internalFailure("unknown type encountered (" + type.getClass().getName() + ")", context.parent().filename(),
-					context.attributes());
-			return null;
+			throw new InternalFailure("unknown type encountered (" + type.getClass().getName() + ")",
+					context.parent().getEntry(), context);
 		}
 	}
 
@@ -2371,8 +2360,8 @@ public class VerificationConditionGenerator {
 		//
 		Path.Entry<WyilFile> e = builder.project().get(name.module(), WyilFile.ContentType);
 		if (e == null) {
-			internalFailure(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module().toString()),
-					decl.parent().filename(), stmt.attributes());
+			throw new InternalFailure(errorMessage(ErrorMessages.RESOLUTION_ERROR, name.module().toString()),
+					decl.parent().getEntry(), stmt);
 		}
 		WyilFile m = e.read();
 		WyilFile.FunctionOrMethod method = m.functionOrMethod(name.name(), fun);

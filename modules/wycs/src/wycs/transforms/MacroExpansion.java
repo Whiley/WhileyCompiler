@@ -54,7 +54,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 
 	private final Wyal2WycsBuilder builder;
 
-	private String filename;
+	private WycsFile file;
 
 	// ======================================================================
 	// Constructor(s)
@@ -86,7 +86,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 
 	public void apply(WycsFile wf) {
 		if (enabled) {
-			this.filename = wf.filename();
+			this.file = wf;
 			for (WycsFile.Declaration s : wf.declarations()) {
 				transform(s);
 			}
@@ -105,8 +105,8 @@ public class MacroExpansion implements Transform<WycsFile> {
 		} else if (s instanceof WycsFile.Assert) {
 			transform((WycsFile.Assert) s);
 		} else {
-			internalFailure("unknown declaration encountered (" + s + ")",
-					filename, s);
+			throw new InternalFailure("unknown declaration encountered (" + s + ")",
+					file.getEntry(), s);
 		}
 	}
 
@@ -161,9 +161,8 @@ public class MacroExpansion implements Transform<WycsFile> {
 		} else if (e instanceof Code.Quantifier) {
 			return transform((Code.Quantifier) e, environment);
 		} else {
-			internalFailure("invalid expression encountered (" + e + ", "
-					+ e.getClass().getName() + ")", filename, e);
-			return null; // dead code
+			throw new InternalFailure("invalid expression encountered (" + e + ", " + e.getClass().getName() + ")",
+					file.getEntry(), e);
 		}
 	}
 
@@ -229,8 +228,8 @@ public class MacroExpansion implements Transform<WycsFile> {
 			// library is not on the path as e.g. x[i] is translated into
 			// a call to wycs.core.Map.IndexOf().
 			if (module == null) {
-				internalFailure("cannot resolve as module: " + e.nid.module(),
-						filename, e);
+				throw new InternalFailure("cannot resolve as module: " + e.nid.module(),
+						file.getEntry(), e);
 			}
 			Object d = module.declaration(e.nid.name(),e.type);			
 			if (d instanceof WycsFile.Function) {
@@ -245,13 +244,13 @@ public class MacroExpansion implements Transform<WycsFile> {
 				binding.put(0, e.operands[0]);				
 				r = m_body.substitute(binding).instantiate(generics);
 			} else {
-				internalFailure("cannot resolve as function or macro call",
-						filename, e);
+				throw new InternalFailure("cannot resolve as function or macro call",
+						file.getEntry(), e);
 			}
 		} catch (InternalFailure ex) {
 			throw ex;
 		} catch (Exception ex) {
-			internalFailure(ex.getMessage(), filename, e, ex);
+			throw new InternalFailure(ex.getMessage(), file.getEntry(), e, ex);
 		}
 
 		transform(e.operands[0], environment);
@@ -371,8 +370,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 		} else if(type instanceof SemanticType.Or) {
 			return expand(root, (SemanticType.Or) type, freeVar);
 		} else {
-			internalFailure("deadcode reached (" + type.getClass().getName() + ")", filename, root);
-			return null; // dead-code
+			throw new InternalFailure("deadcode reached (" + type.getClass().getName() + ")", file.getEntry(), root);
 		}
 	}
 
@@ -488,8 +486,7 @@ public class MacroExpansion implements Transform<WycsFile> {
 			}
 			return new Pair<SemanticType,Code<?>>(p.first(),invariant);
 		} catch (Exception e) {
-			internalFailure(e.getMessage(), filename, root, e);
-			return null; // deadcode
+			throw new InternalFailure(e.getMessage(), file.getEntry(), root, e);
 		}
 	}
 	

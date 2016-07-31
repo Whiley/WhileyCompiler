@@ -110,8 +110,8 @@ public final class CodeGenerator {
 	 *            The WhileyFile to be translated.
 	 * @return
 	 */
-	public WyilFile generate(WhileyFile whileyFile) {
-		WyilFile wyilFile = new WyilFile(whileyFile.module, whileyFile.filename);
+	public WyilFile generate(WhileyFile whileyFile, Path.Entry<WyilFile> target) {
+		WyilFile wyilFile = new WyilFile(target);
 
 		// Go through each declaration and translate in the order of appearance.
 		for (WhileyFile.Declaration d : whileyFile.declarations) {

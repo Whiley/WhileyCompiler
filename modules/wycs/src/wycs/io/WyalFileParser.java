@@ -10,13 +10,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static wycc.lang.SyntaxError.internalFailure;
 import static wycs.io.WyalFileLexer.Token.Kind.*;
 import wycs.core.Value;
 import wycs.io.WyalFileLexer.Token;
 import wycs.syntax.*;
 import wycs.syntax.Expr.Is;
 import wycc.lang.SyntaxError;
+import wycc.lang.SyntaxError.*;
 import wycc.lang.SyntacticElement;
 import wycc.lang.Attribute;
 import wycc.util.Pair;
@@ -24,12 +24,12 @@ import wyfs.lang.Path;
 import wyfs.util.Trie;
 
 public class WyalFileParser {
-	private String filename;
+	private final Path.Entry<WyalFile> entry;
 	private ArrayList<Token> tokens;
 	private int index;
 
-	public WyalFileParser(String filename, List<Token> tokens) {
-		this.filename = filename;
+	public WyalFileParser(Path.Entry<WyalFile> entry, List<Token> tokens) {
+		this.entry = entry;
 		this.tokens = new ArrayList<Token>(tokens);
 	}
 
@@ -43,12 +43,8 @@ public class WyalFileParser {
 	public WyalFile read() {
 		Path.ID pkg = parsePackage();
 
-		// Now, figure out module name from filename
-		// FIXME: this is a hack!
-		String name = filename.substring(
-				filename.lastIndexOf(File.separatorChar) + 1,
-				filename.length() - 5);
-		WyalFile wf = new WyalFile(pkg.append(name), filename);
+		// Construct object representing this WyalFile.
+		WyalFile wf = new WyalFile(entry);
 
 		skipWhiteSpace();
 		while (index < tokens.size()) {
@@ -2238,9 +2234,7 @@ public class WyalFileParser {
 			return result;
 		} else {
 			// Error!
-			internalFailure("unknown syntactic type encountered", filename,
-					type);
-			return false; // deadcode
+			throw new InternalFailure("unknown syntactic type encountered", entry, type);
 		}
 	}
 
@@ -2556,15 +2550,13 @@ public class WyalFileParser {
 					environment, terminated);
 			boolean lhs = numerator.toSyntacticType() instanceof SyntacticType.Int;
 			if (!lhs) {
-				syntaxError("invalid numerator for rational pattern", numerator);
+				throw new SyntaxError("invalid numerator for rational pattern", entry, numerator);
 			}
 			boolean rhs = denominator.toSyntacticType() instanceof SyntacticType.Int;
 			if (!rhs) {
-				syntaxError("invalid denominator for rational pattern",
-						numerator);
+				throw new SyntaxError("invalid denominator for rational pattern", entry, numerator);
 			}
-			return new TypePattern.Rational(numerator, denominator, null,
-					sourceAttr(start, index - 1));
+			return new TypePattern.Rational(numerator, denominator, null, sourceAttr(start, index - 1));
 		} else {
 			return numerator;
 		}
@@ -2886,7 +2878,7 @@ public class WyalFileParser {
 				p = parseMixedType(generics);
 				Expr.Variable id = p.second();
 				if (names.contains(id.name)) {
-					syntaxError("duplicate record key", id);
+					throw new SyntaxError("duplicate record key", entry, id);
 				}
 				types.add(p);
 				names.add(id.name);
@@ -3195,8 +3187,11 @@ public class WyalFileParser {
 	private void checkNotEof() {
 		skipWhiteSpace();
 		if (index >= tokens.size()) {
-			throw new SyntaxError("unexpected end-of-file", filename,
-					index - 1, index - 1);
+			// FIXME: this is clearly not a sensible approach
+			SyntacticElement unknown = new SyntacticElement.Impl() {
+			};
+			unknown.attributes().add(new Attribute.Source(index - 1, index - 1, -1));
+			throw new SyntaxError("unexpected end-of-file", entry, unknown);
 		}
 	}
 
@@ -3414,14 +3409,12 @@ public class WyalFileParser {
 		return new Attribute.Source(t1.start, t2.end(), 0);
 	}
 
-	private void syntaxError(String msg, SyntacticElement e) {
-		Attribute.Source loc = e.attribute(Attribute.Source.class);
-		throw new SyntaxError(msg, filename, loc.start, loc.end);
-	}
-
 	private void syntaxError(String msg, Token t) {
-		throw new SyntaxError(msg, filename, t.start, t.start + t.text.length()
-				- 1);
+		// FIXME: this is clearly not a sensible approach
+		SyntacticElement unknown = new SyntacticElement.Impl() {
+		};
+		unknown.attributes().add(new Attribute.Source(t.start, t.start + t.text.length() - 1, -1));
+		throw new SyntaxError(msg, entry, unknown);
 	}
 
 	/**

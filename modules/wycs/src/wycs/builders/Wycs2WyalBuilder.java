@@ -104,6 +104,6 @@ public class Wycs2WyalBuilder implements Builder {
 	}
 
 	protected WyalFile decompile(WycsFile wycsFile) {
-		return new WyalFile(wycsFile.id(), wycsFile.filename());
+		return new WyalFile(wycsFile.getEntry());
 	}
 }

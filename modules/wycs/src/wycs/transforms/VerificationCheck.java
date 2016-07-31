@@ -71,7 +71,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 
 	private final Wyal2WycsBuilder builder;
 
-	private String filename;
+	private WycsFile file;
 
 	// ======================================================================
 	// Constructor(s)
@@ -151,7 +151,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 	 */
 	public void apply(WycsFile wf) {
 		if (enabled) {
-			this.filename = wf.filename();
+			this.file = wf;
 
 			// Traverse each statement and verify any assertions we
 			// encounter.
@@ -168,7 +168,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 					// sense (i.e. that it's specification is satisfiable for at
 					// least one input).
 				} else {
-					internalFailure("unknown statement encountered " + stmt, filename, stmt);
+					throw new InternalFailure("unknown statement encountered " + stmt, file.getEntry(), stmt);
 				}
 			}
 		}
@@ -190,12 +190,12 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// protectes against accidental variable capture by renaming all
 		// variables.
 		nnf = NormalForms.renameVariables(nnf);
-		// debug(nnf,filename);
+		// debug(nnf,file.getEntry());
 		int maxVar = findLargestVariable(nnf);
 
 		Code vc = instantiateAxioms(nnf, maxVar + 1);
 
-		// debug(vc,filename);
+		// debug(vc,file.getEntry());
 
 		int assertion = translate(vc, automaton, new HashMap<String, Integer>());
 		automaton.setRoot(0, assertion);
@@ -206,8 +206,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 		// automaton.compact();
 
 		if (debug) {
-			debug(neg, filename);
-			debug(nnf, filename);
+			debug(neg, file);
+			debug(nnf, file);
 		}
 
 		RESULT result = unsat(automaton,rwMode,maxInferences,debug);
@@ -221,7 +221,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 
 		long endTime = System.currentTimeMillis();
-		builder.logTimedMessage("[" + filename + "] Verified assertion #" + number + " (steps " + result.numberOfSteps + ")",
+		builder.logTimedMessage("[" + file.getEntry() + "] Verified assertion #" + number + " (steps " + result.numberOfSteps + ")",
 				endTime - startTime, startMemory - runtime.freeMemory());
 	}
 
@@ -250,8 +250,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		} else if (expr instanceof Code.FunCall) {
 			r = translate((Code.FunCall) expr, automaton, environment);
 		} else {
-			internalFailure("unknown: " + expr.getClass().getName(), filename, expr);
-			return -1; // dead code
+			throw new InternalFailure("unknown: " + expr.getClass().getName(), file.getEntry(), expr);
 		}
 
 		// debug(automaton,r);
@@ -313,8 +312,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		case ARRAYGEN:
 			return ArrayGen(automaton,lhs,rhs);
 		}
-		internalFailure("unknown binary bytecode encountered (" + code + ")", filename, code);
-		return -1;
+		throw new InternalFailure("unknown binary bytecode encountered (" + code + ")", file.getEntry(), code);
 	}
 
 	private int translate(Code.Unary code, Automaton automaton, HashMap<String, Integer> environment) {
@@ -327,8 +325,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		case LENGTH:
 			return LengthOf(automaton, e);
 		}
-		internalFailure("unknown unary bytecode encountered (" + code + ")", filename, code);
-		return -1;
+		throw new InternalFailure("unknown unary bytecode encountered (" + code + ")", file.getEntry(), code);
 	}
 
 	private int translate(Code.Nary code, Automaton automaton, HashMap<String, Integer> environment) {
@@ -347,8 +344,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		case TUPLE:
 			return Tuple(automaton, es);
 		}
-		internalFailure("unknown nary expression encountered (" + code + ")", filename, code);
-		return -1;
+		throw new InternalFailure("unknown nary expression encountered (" + code + ")", file.getEntry(), code);
 	}
 
 	private int translate(Code.Load code, Automaton automaton, HashMap<String, Integer> environment) {
@@ -451,9 +447,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			}
 			return Tuple(automaton, vals);
 		} else {
-			internalFailure("unknown value encountered (" + value + ", " + value.getClass().getName() + ")", filename,
+			throw new InternalFailure("unknown value encountered (" + value + ", " + value.getClass().getName() + ")", file.getEntry(),
 					element);
-			return -1;
 		}
 	}
 
@@ -486,10 +481,10 @@ public class VerificationCheck implements Transform<WycsFile> {
 		}
 	}
 
-	public static void debug(Code code, String filename) {
+	public static void debug(Code code, WycsFile file) {
 		ArrayList<WycsFile.Declaration> tmpDecls = new ArrayList();
 		tmpDecls.add(new WycsFile.Assert("", code));
-		WycsFile tmp = new WycsFile(Trie.ROOT.append(filename), filename, tmpDecls);
+		WycsFile tmp = new WycsFile(file.getEntry(), tmpDecls);
 		try {
 			new WycsFilePrinter(System.err).write(tmp);
 		} catch (IOException e) {
@@ -565,8 +560,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 		} else if(condition instanceof Code.IndexOf) {
 			return instantiateAxioms((Code.IndexOf) condition, freeVariable);
 		} else {
-			internalFailure("invalid boolean expression encountered (" + condition + ")", filename, condition);
-			return null;
+			throw new InternalFailure("invalid boolean expression encountered (" + condition + ")", file.getEntry(), condition);
 		}
 	}
 
@@ -576,8 +570,8 @@ public class VerificationCheck implements Transform<WycsFile> {
 			return Code.Unary(condition.type, condition.opcode, instantiateAxioms(condition.operands[0], freeVariable),
 					condition.attributes());
 		default:
-			internalFailure("invalid boolean expression encountered (" + condition + ")", filename, condition);
-			return null;
+			throw new InternalFailure("invalid boolean expression encountered (" + condition + ")", file.getEntry(),
+					condition);
 		}
 	}
 
@@ -592,8 +586,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 			return and(axioms, condition);
 		}
 		default:
-			internalFailure("invalid boolean expression encountered (" + condition + ")", filename, condition);
-			return null;
+			throw new InternalFailure("invalid boolean expression encountered (" + condition + ")", file.getEntry(), condition);
 		}
 	}
 
@@ -611,8 +604,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 			return condition;
 		}
 		default:
-			internalFailure("invalid boolean expression encountered (" + condition + ")", filename, condition);
-			return null;
+			throw new InternalFailure("invalid boolean expression encountered (" + condition + ")", file.getEntry(), condition);
 		}
 	}
 
@@ -651,10 +643,10 @@ public class VerificationCheck implements Transform<WycsFile> {
 				// we can ignore macros, because they are inlined separately by
 				// MacroExpansion.
 			} else {
-				internalFailure("cannot resolve as function or macro call", filename, condition);
+				throw new InternalFailure("cannot resolve as function or macro call", file.getEntry(), condition);
 			}
 		} catch (Exception ex) {
-			internalFailure(ex.getMessage(), filename, condition, ex);
+			throw new InternalFailure(ex.getMessage(), file.getEntry(), condition, ex);
 		}
 
 		instantiateFromExpression(condition.operands[0], axioms, freeVariable);
@@ -700,9 +692,9 @@ public class VerificationCheck implements Transform<WycsFile> {
 		} else if (expression instanceof Code.FunCall) {
 			instantiateFromExpression((Code.FunCall) expression, axioms, freeVariable);
 		} else {
-			internalFailure(
+			throw new InternalFailure(
 					"invalid expression encountered (" + expression + ", " + expression.getClass().getName() + ")",
-					filename, expression);
+					file.getEntry(), expression);
 		}
 	}
 
@@ -764,7 +756,7 @@ public class VerificationCheck implements Transform<WycsFile> {
 				axioms.add(axiom);
 			}
 		} catch (Exception ex) {
-			internalFailure(ex.getMessage(), filename, expression, ex);
+			throw new InternalFailure(ex.getMessage(), file.getEntry(), expression, ex);
 		}
 	}
 

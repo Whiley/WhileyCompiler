@@ -8,12 +8,13 @@ import java.util.*;
 import wycc.lang.Attribute;
 import wycc.lang.CompilationUnit;
 import wycc.lang.SyntacticElement;
+import wycc.util.AbstractCompilationUnit;
 import wycs.io.*;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 
-public class WyalFile implements CompilationUnit {
+public class WyalFile extends AbstractCompilationUnit {
 
 	// =========================================================================
 	// Content Type
@@ -28,8 +29,11 @@ public class WyalFile implements CompilationUnit {
 		}
 
 		public WyalFile read(Path.Entry<WyalFile> e, InputStream input) throws IOException {
-			WyalFileReader reader = new WyalFileReader(e.location().toString(),input);
-			return reader.read();
+			WyalFileLexer lexer = new WyalFileLexer(e);
+			List<WyalFileLexer.Token> tokens;
+			tokens = lexer.scan();
+			WyalFileParser parser = new WyalFileParser(e,tokens);
+			return parser.read();
 		}
 
 		public void write(OutputStream output, WyalFile module) throws IOException {
@@ -47,17 +51,14 @@ public class WyalFile implements CompilationUnit {
 	// State
 	// =========================================================================
 
-	private final Path.ID id;
-	private final String filename;
 	private final ArrayList<Declaration> declarations;
 
 	// =========================================================================
 	// Constructors
 	// =========================================================================
 
-	public WyalFile(Path.ID module, String filename) {
-		this.id = module;
-		this.filename = filename;
+	public WyalFile(Path.Entry<WyalFile> entry) {
+		super(entry);
 		this.declarations = new ArrayList<Declaration>();
 	}
 
@@ -66,7 +67,7 @@ public class WyalFile implements CompilationUnit {
 	// =========================================================================
 
 	public Path.ID id() {
-		return id;
+		return entry.id();
 	}
 
 	public List<Declaration> declarations() {
@@ -89,10 +90,6 @@ public class WyalFile implements CompilationUnit {
 			}
 		}
 		return null;
-	}
-
-	public String filename() {
-		return filename;
 	}
 
 	// =========================================================================
@@ -143,6 +140,7 @@ public class WyalFile implements CompilationUnit {
 		 * @return
 		 */
 		public List<Import> imports() {
+			Path.ID id = entry.id();
 			// this computation could (should?) be cached.
 			ArrayList<Import> imports = new ArrayList<Import>();
 			imports.add(new WyalFile.Import(Trie.fromString(id.parent(), "*"), null));

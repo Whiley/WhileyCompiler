@@ -225,7 +225,7 @@ public class WycsFileReader {
 		
 		Path.ID id = pathPool[pathIdx];
 		
-		return new WycsFile(id, null, declarations);
+		return new WycsFile(entry, declarations);
 	}
 
 	private <T> T readBlock(Class<T> expected) throws IOException {
