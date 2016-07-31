@@ -82,6 +82,15 @@ public class SyntaxError extends RuntimeException {
 	}
 
 	/**
+	 * Get the syntactic element to which this error is attached.
+	 * 
+	 * @return
+	 */
+	public SyntacticElement getElement() {
+		return element;
+	}
+	
+	/**
 	 * Output the syntax error to a given output stream in full form. In full
 	 * form, contextual information from the originating source file is
 	 * included.
