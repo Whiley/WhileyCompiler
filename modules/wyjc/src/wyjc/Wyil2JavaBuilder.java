@@ -145,7 +145,8 @@ public class Wyil2JavaBuilder implements Builder {
 		return project;
 	}
 
-	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta) throws IOException {
+	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph)
+			throws IOException {
 
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
@@ -158,9 +159,10 @@ public class Wyil2JavaBuilder implements Builder {
 
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			Path.Root dst = p.second();
-			Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
-			Path.Entry<ClassFile> df = dst.create(sf.id(), WyjcBuildTask.ContentType);
-			generatedFiles.add(df);
+			Path.Entry<WyilFile> source = (Path.Entry<WyilFile>) p.first();
+			Path.Entry<ClassFile> target = dst.create(source.id(), WyjcBuildTask.ContentType);
+			graph.registerDerivation(source, target);
+			generatedFiles.add(target);
 
 			// Translate WyilFile into JVM ClassFile
 			
@@ -168,20 +170,20 @@ public class Wyil2JavaBuilder implements Builder {
 			
 			lambdaClasses = new ArrayList<ClassFile>();
 			lambdaMethods = new ArrayList<ClassFile.Method>();
-			ClassFile contents = build(sf.read());
+			ClassFile contents = build(source.read());
 			contents.methods().addAll(lambdaMethods);
 
 			// Verify the generated file being written
 			//new ClassFileVerifier().apply(contents);
 
 			// Write class file into its destination
-			df.write(contents);
+			target.write(contents);
 
 			// Finally, write out any lambda classes + methods created to
 			// support the main class. This is necessary because every
 			// occurrence of a lambda expression in the WyilFile generates an
 			// inner class responsible for calling the given function.
-			Path.ID parent = df.id();
+			Path.ID parent = target.id();
 			Path.ID pkg = parent.subpath(0, parent.size() - 1);
 			for (int i = 0; i != lambdaClasses.size(); ++i) {
 				Path.ID id = pkg.append(parent.last() + "$" + i);

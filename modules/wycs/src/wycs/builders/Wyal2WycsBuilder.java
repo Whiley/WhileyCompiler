@@ -96,7 +96,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	// ======================================================================
 
 	@Override
-	public Set<Path.Entry<?>> build(Collection<Pair<Entry<?>, Path.Root>> delta) throws IOException {
+	public Set<Path.Entry<?>> build(Collection<Pair<Entry<?>, Path.Root>> delta, Build.Graph graph) throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long startTime = System.currentTimeMillis();
 		long startMemory = runtime.freeMemory();
@@ -136,6 +136,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			if (src.contentType() == WyalFile.ContentType) {
 				Path.Entry<WyalFile> source = (Path.Entry<WyalFile>) src;
 				Path.Entry<WycsFile> target = (Path.Entry<WycsFile>) dst.create(src.id(),WycsFile.ContentType);
+				graph.registerDerivation(source, target);
 				generatedFiles.add(target);
 				WyalFile wf = source.read();
 				WycsFile wycs = getModuleStub(wf);
@@ -212,11 +213,13 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 						writer.write(ex.reduction());
 						writer.flush();
 					}
-					throw new SyntaxError(ex.getMessage(), module.getEntry(), ex.assertion(), ex);
+					// Determine the original source file, since we want to
+					// report the error on this file.
+					Path.Entry<?> source = determineSource(p.first(),graph);
+					throw new SyntaxError(ex.getMessage(), source, ex.assertion(), ex);
 				} 
 			}
 		}
-
 
 		// ========================================================================
 		// Done
@@ -884,6 +887,15 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		return new WycsFile(wyalFile.getEntry(), declarations);
 	}
 
+	private static Path.Entry<?> determineSource(Path.Entry<?> child, Build.Graph graph) {
+		Path.Entry<?> parent = graph.parent(child);
+		while(parent != null) {
+			child = parent;
+			parent = graph.parent(child);
+		}
+		return child;		
+	}
+	
 	protected static String name(String camelCase) {
 		boolean firstTime = true;
 		String r = "";

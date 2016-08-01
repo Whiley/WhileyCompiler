@@ -131,7 +131,8 @@ public final class WhileyBuilder implements Builder {
 		this.logger = logger;
 	}
 
-	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta)
+	@Override
+	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph)
 			throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long startTime = System.currentTimeMillis();
@@ -172,7 +173,6 @@ public final class WhileyBuilder implements Builder {
 			if (f.contentType() == WhileyFile.ContentType) {
 				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) f;
 				WhileyFile wf = sf.read();
-				//new FlowTyping(resolver).propagate(wf);
 				files.add(wf);
 			}
 		}
@@ -191,7 +191,6 @@ public final class WhileyBuilder implements Builder {
 		tmpTime = System.currentTimeMillis();
 		tmpMemory = runtime.freeMemory();
 
-		//CodeGenerator generator = new CodeGenerator();
 		CodeGenerator generator = new CodeGenerator(this,flowChecker);
 		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
@@ -200,6 +199,7 @@ public final class WhileyBuilder implements Builder {
 			if (src.contentType() == WhileyFile.ContentType) {
 				Path.Entry<WhileyFile> source = (Path.Entry<WhileyFile>) src;
 				Path.Entry<WyilFile> target = dst.create(src.id(), WyilFile.ContentType);
+				graph.registerDerivation(source, target);
 				generatedFiles.add(target);
 				WhileyFile wf = source.read();
 				new DefiniteAssignmentAnalysis(wf).check();

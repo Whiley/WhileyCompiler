@@ -66,7 +66,6 @@ public class StdProject implements Build.Project {
 	 */
 	protected final ArrayList<Build.Rule> rules;
 
-
 	public StdProject(Collection<Path.Root> roots) {
 		this.roots = new ArrayList<Path.Root>(roots);
 		this.rules = new ArrayList<Build.Rule>();
@@ -246,14 +245,15 @@ public class StdProject implements Build.Project {
 	 * @throws Exception
 	 */
 	public void build(Collection<? extends Path.Entry<?>> sources) throws Exception {
-
+		Build.Graph graph = new StdBuildGraph();
+		
 		// Continue building all source files until there are none left. This is
 		// actually quite a naive implementation, as it ignores the potential
 		// need for staging dependencies.
 		do {
 			HashSet<Path.Entry<?>> generated = new HashSet<Path.Entry<?>>();
 			for (Build.Rule r : rules) {
-				generated.addAll(r.apply(sources));
+				generated.addAll(r.apply(sources,graph));
 			}
 			sources = generated;
 		} while (sources.size() > 0);

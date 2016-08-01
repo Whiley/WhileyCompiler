@@ -31,7 +31,7 @@ public class StdBuildRule implements Build.Rule {
 	/**
 	 * The builder used to build files using this rule.
 	 */
-	private final Builder builder;
+	final Builder builder;
 
 	/**
 	 * The source root containing all files which might be built using this
@@ -89,8 +89,7 @@ public class StdBuildRule implements Build.Rule {
 	}
 
 	@Override
-	public Set<Path.Entry<?>> apply(Collection<? extends Path.Entry<?>> group)
-			throws IOException {
+	public Set<Path.Entry<?>> apply(Collection<? extends Path.Entry<?>> group, Build.Graph graph) throws IOException {
 		ArrayList<Pair<Path.Entry<?>, Path.Root>> matches = new ArrayList<Pair<Path.Entry<?>, Path.Root>>();
 
 		// First, determine the set of matching files
@@ -106,7 +105,7 @@ public class StdBuildRule implements Build.Rule {
 
 		// Second, build all matching files
 		if (matches.size() > 0) {
-			return builder.build(matches);
+			return builder.build(matches, graph);
 		} else {
 			return Collections.EMPTY_SET;
 		}

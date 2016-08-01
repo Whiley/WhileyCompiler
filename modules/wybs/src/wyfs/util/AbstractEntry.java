@@ -97,12 +97,5 @@ public abstract class AbstractEntry<T> implements Path.Entry<T> {
 		}
 		this.contentType = contentType;
 		this.contents = contents;
-	}
-
-	public Set<Path.Entry<?>> dependents() {
-		return Collections.EMPTY_SET;
-	}
-	public Set<Path.Entry<?>> dependencies() {
-		return Collections.EMPTY_SET;
-	}
+	}	
 }
