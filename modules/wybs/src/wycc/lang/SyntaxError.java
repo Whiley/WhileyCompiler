@@ -42,7 +42,7 @@ public class SyntaxError extends RuntimeException {
 	/**
 	 * The file entry to which this error applies
 	 */
-	private Path.Entry<? extends CompilationUnit> entry;
+	private Path.Entry<?> entry;
 	
 	/**
 	 * The SyntacticElement to which this error refers
@@ -59,7 +59,7 @@ public class SyntaxError extends RuntimeException {
 	 * @param element
 	 *            The syntactic element to this error refers 
 	 */
-	public SyntaxError(String msg, Path.Entry<? extends CompilationUnit> entry, SyntacticElement element) {
+	public SyntaxError(String msg, Path.Entry<?> entry, SyntacticElement element) {
 		super(msg);
 		this.entry = entry;
 		this.element = element;
@@ -75,7 +75,7 @@ public class SyntaxError extends RuntimeException {
 	 * @param element
 	 *            The syntactic element to this error refers
 	 */
-	public SyntaxError(String msg, Path.Entry<? extends CompilationUnit> entry, SyntacticElement element, Throwable ex) {
+	public SyntaxError(String msg, Path.Entry<?> entry, SyntacticElement element, Throwable ex) {
 		super(msg,ex);
 		this.entry = entry;
 		this.element = element;
@@ -121,7 +121,7 @@ public class SyntaxError extends RuntimeException {
 	}
 
 	private void printBriefError(PrintStream output, Path.Entry<?> entry, EnclosingLine enclosing, String message) {
-		output.print(entry.id() + ":" + enclosing.lineNumber + ":"
+		output.print(entry.location() + ":" + enclosing.lineNumber + ":"
 				+ enclosing.columnStart() + ":"
 				+ enclosing.columnEnd() + ":\""
 				+ escapeMessage(message) + "\"");
@@ -148,7 +148,7 @@ public class SyntaxError extends RuntimeException {
 
 	private void printFullError(PrintStream output, Path.Entry<?> entry, EnclosingLine enclosing, String message) {
 		
-		output.println(entry.id() + ":" + enclosing.lineNumber + ": " + message);
+		output.println(entry.location() + ":" + enclosing.lineNumber + ": " + message);
 
 		printLineHighlight(output,enclosing);
 

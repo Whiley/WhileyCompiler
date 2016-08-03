@@ -61,8 +61,7 @@ public class Wycs2WyalBuilder implements Builder {
 	// ======================================================================
 
 	@Override
-	public Set<Path.Entry<?>> build(Collection<Pair<Entry<?>, Path.Root>> delta)
-			throws IOException {
+	public Set<Path.Entry<?>> build(Collection<Pair<Entry<?>, Path.Root>> delta, Build.Graph graph) throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long startTime = System.currentTimeMillis();
 		long startMemory = runtime.freeMemory();
@@ -79,15 +78,15 @@ public class Wycs2WyalBuilder implements Builder {
 			Path.Entry<?> src = p.first();
 			Path.Root dst = p.second();
 			if (src.contentType() == WycsFile.ContentType) {
-				Path.Entry<WycsFile> sf = (Path.Entry<WycsFile>) src;
-				Path.Entry<WyalFile> df = (Path.Entry<WyalFile>) dst.create(
-						sf.id(), WyalFile.ContentType);
-				generatedFiles.add(df);
-				WycsFile wf = sf.read();
+				Path.Entry<WycsFile> source = (Path.Entry<WycsFile>) src;
+				Path.Entry<WyalFile> target = (Path.Entry<WyalFile>) dst.create(source.id(), WyalFile.ContentType);
+				graph.registerDerivation(source, source);
+				generatedFiles.add(target);
+				WycsFile wf = source.read();
 				// NOTE: following is really a temporary hack
 				new WycsFilePrinter(System.err).write(wf);
 				WyalFile waf = decompile(wf);
-				df.write(waf);
+				target.write(waf);
 				count++;
 			}
 		}

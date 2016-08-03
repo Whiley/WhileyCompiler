@@ -60,8 +60,10 @@ public interface Builder {
 	 *
 	 * @param delta
 	 *            --- the set of files to be built.
+	 * @param graph
+	 *            --- The build graph being constructed
 	 * @return --- the set of files generated or modified.
 	 */
 	public Set<Path.Entry<?>> build(
-			Collection<Pair<Path.Entry<?>, Path.Root>> delta) throws IOException;
+			Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph) throws IOException;
 }
