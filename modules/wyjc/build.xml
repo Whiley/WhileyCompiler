@@ -1,16 +1,69 @@
 <project name="wyjc" default="build">
+
+  <!-- ================================================================== -->
+  <!-- Configuration -->
+  <!-- ================================================================== -->
   <import file="../../config.xml"/>
 
+  <path id="wyjc.classpath">
+    <pathelement path="${WYBS_DIR}/src"/>
+    <pathelement path="${WYC_DIR}/src"/>
+    <pathelement path="${WYIL_DIR}/src"/>
+    <pathelement path="${WYCS_DIR}/src"/>
+    <pathelement path="${WYRL_JAR}"/>
+    <pathelement path="${JASM_JAR}"/>
+    <path refid="junit.classpath"/>
+  </path>
+
+  <!-- ================================================================== -->
+  <!-- Compile -->
+  <!-- ================================================================== -->
+
   <target name="compile-wyjc">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.7" target="1.7" includeantruntime="true" classpath="../wyil/src:../wyc/src:../wybs/src/:../../${WYRL_JAR}:../../${JASM_JAR}">
+    <javac debug="true" debuglevel="vars,lines,source" source="1.7" target="1.7" includeantruntime="true">
       <src path="src"/>
       <include name="*/**"/>
-      <exclude name="wyjc/testing/**"/>
       <exclude name="*/**/package-info.java"/>
+      <classpath>
+	<path refid="wyjc.classpath"/>
+      </classpath>
     </javac>
-    <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask" classpath="src/:../wyil/src/:../wyc/src:../wycs/src:../wybs/src/:../../${WYRL_JAR}:../../${JASM_JAR}"/>
-    <!--<wyjc verbose="false" wyildir="../wyrt/src" classdir="src" includes="whiley/**/*.wyil"/>-->
+    <taskdef name="wyjc" classname="wyjc.util.WyjcAntTask">
+      <classpath>
+	<path path="src"/>
+	<path refid="wyjc.classpath"/>
+      </classpath>
+    </taskdef>
+    <wyjc verbose="false" wyildir="${WYRT_DIR}/src" classdir="src" includes="whiley/**/*.wyil"/>
   </target>
+
+  <!-- ================================================================== -->
+  <!-- Test -->
+  <!-- ================================================================== -->
+
+  <!-- Set the default value of this property. Since Ant properties are immutable
+       if the value has already been set by the user with -Dtest.name.contains=...
+       this will not override that value. -->
+  <property name="test.name.contains" value=""/>
+
+  <target name="test" depends="compile-wyjc">
+    <junit fork="true" dir="${basedir}" failureProperty="tests.failed" printsummary="yes" showoutput="yes" outputtoformatters="no">
+      <classpath>
+	<pathelement path="src"/>
+        <path refid="wyjc.classpath"/>
+      </classpath>
+      <sysproperty key="test.name.contains" value="${test.name.contains}"/>
+      <batchtest>
+        <fileset dir="src" includes="wyjc/testing/*Tests.java"/>
+      </batchtest>
+      <formatter type="plain" usefile="false"/>
+    </junit>
+    <fail message="Test failure detected, stopping build." if="tests.failed"/>
+  </target>
+
+  <!-- ================================================================== -->
+  <!-- Build -->
+  <!-- ================================================================== -->
 
   <target name="build" depends="compile-wyjc">
     <mkdir dir="tmp"/>
@@ -20,7 +73,7 @@
       <attribute name="Implementation-Version" value="${version}"/>
       <attribute name="Implementation-Title" value="wyjc-v${version}.jar"/>
     </manifest>
-    <jar destfile="../../lib/wyjc-v${version}.jar" manifest="tmp/MANIFEST.MF">
+    <jar destfile="${LIB_DIR}/wyjc-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="src" includes="*/**/*.class"/>
     </jar>
     <delete dir="tmp"/>
@@ -29,7 +82,9 @@
     <echo message="============================================="/>
   </target>
 
-  <target name="test"/>
+  <!-- ================================================================== -->
+  <!-- Dist -->
+  <!-- ================================================================== -->
 
   <target name="dist" depends="build">
     <mkdir dir="tmp"/>
@@ -39,28 +94,26 @@
       <attribute name="Implementation-Version" value="${version}"/>
       <attribute name="Implementation-Title" value="wyjc-v${version}.jar"/>
     </manifest>
-    <unzip src="../../${JASM_JAR}" dest="tmp"/>
-    <unzip src="../../${WYRL_JAR}" dest="tmp"/>
-    <jar destfile="../../dist/wyjc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="../wybs/src">
+    <unzip src="${JASM_JAR}" dest="tmp"/>
+    <unzip src="${WYRL_JAR}" dest="tmp"/>
+    <jar destfile="${DIST_DIR}/wyjc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
+      <fileset dir="${WYBS_DIR}/src">
 	<include name="wyfs/**/*.class"/>
 	<include name="wybs/**/*.class"/>
 	<include name="wycc/**/*.class"/>
       </fileset>
-      <fileset dir="../wycs/src">
-	<include name="wycs/**/*.class"/>	
+      <fileset dir="${WYC_DIR}/src">
+	<include name="wyc/**/*.class"/>
       </fileset>
-      <fileset dir="../wycs/stdlib">
-	<include name="wycs/**/*.wycs"/>	
-      </fileset>      
-      <fileset dir="../wyil/src">
+      <fileset dir="${WYIL_DIR}/src">
 	<include name="wyautl_old/**/*.class"/>
 	<include name="wyil/**/*.class"/>
       </fileset>
-      <fileset dir="../wyc/src">
-	<include name="wyc/**/*.class"/>
+      <fileset dir="${WYCS_DIR}/src">
+	<include name="wycs/**/*.class"/>
+	<include name="wycs/**/*.wycs"/>
       </fileset>
-      <fileset dir="../wyrt/src">
+      <fileset dir="${WYRT_DIR}/src">
 	<include name="whiley/**/*.wyil"/>
       </fileset>
       <fileset dir="src">
@@ -81,13 +134,17 @@
     <echo message="============================================="/>
   </target>
 
- <target name="clean">
-   <delete includeEmptyDirs="true" failonerror="false">
-     <fileset dir="." includes="**/*.class,**/*.wyil,**/*.wyasm"/>
-   </delete>
+  <!-- ================================================================== -->
+  <!-- Clean -->
+  <!-- ================================================================== -->
+
+  <target name="clean">
+    <delete includeEmptyDirs="true" failonerror="false">
+      <fileset dir="." includes="**/*.class,**/*.wyil,**/*.wyasm"/>
+    </delete>
     <echo message="============================================="/>
     <echo message="CLEANED: ${ant.project.name}"/>
     <echo message="============================================="/>
- </target>
+  </target>
 
 </project>

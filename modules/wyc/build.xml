@@ -1,14 +1,60 @@
 <project name="wyc" default="build">
+
+  <!-- ================================================================== -->
+  <!-- Configuration -->
+  <!-- ================================================================== -->
   <import file="../../config.xml"/>
 
+  <path id="wyc.classpath">
+    <pathelement path="${WYBS_DIR}/src"/>
+    <pathelement path="${WYIL_DIR}/src"/>
+    <pathelement path="${WYCS_DIR}/src"/>
+    <pathelement path="${WYRL_JAR}"/>
+    <path refid="junit.classpath"/>
+  </path>
+
+  <!-- ================================================================== -->
+  <!-- Compile -->
+  <!-- ================================================================== -->
+
   <target name="compile-wyc">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.7" target="1.7" includeantruntime="true" classpath="../wyil/src:../wybs/src/:../wycs/src:../../${WYRL_JAR}">
+    <javac debug="true" debuglevel="vars,lines,source" source="1.7" target="1.7" includeantruntime="true">
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/>
-      <exclude name="wyc/testing/**"/>
+      <classpath>
+	<path refid="wyc.classpath"/>
+      </classpath>
     </javac>
   </target>
+
+  <!-- ================================================================== -->
+  <!-- Test -->
+  <!-- ================================================================== -->
+
+  <!-- Set the default value of this property. Since Ant properties are immutable
+       if the value has already been set by the user with -Dtest.name.contains=...
+       this will not override that value. -->
+  <property name="test.name.contains" value=""/>
+
+  <target name="test" depends="compile-wyc">
+    <junit fork="true" dir="${basedir}" failureProperty="tests.failed" printsummary="yes" showoutput="yes" outputtoformatters="no">
+      <classpath>
+	<pathelement path="src"/>
+        <path refid="wyc.classpath"/>
+      </classpath>
+      <sysproperty key="test.name.contains" value="${test.name.contains}"/>
+      <batchtest>
+        <fileset dir="src" includes="wyc/testing/*Tests.java"/>
+      </batchtest>
+      <formatter type="plain" usefile="false"/>
+    </junit>
+    <fail message="Test failure detected, stopping build." if="tests.failed"/>
+  </target>
+
+  <!-- ================================================================== -->
+  <!-- Build -->
+  <!-- ================================================================== -->
 
   <target name="build" depends="compile-wyc">
     <mkdir dir="tmp"/>
@@ -18,7 +64,7 @@
       <attribute name="Implementation-Version" value="${version}"/>
       <attribute name="Implementation-Title" value="wyc-v${version}.jar"/>
     </manifest>
-    <jar destfile="../../lib/wyc-v${version}.jar" manifest="tmp/MANIFEST.MF">
+    <jar destfile="${LIB_DIR}/wyc-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="src">
         <include name="*/**/*.class"/>
         <exclude name="wyc/testing/**"/>
@@ -30,36 +76,9 @@
     <echo message="============================================="/>
   </target>
 
-  <target name="test-compile-wyc" depends="compile-wyc">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.7" target="1.7" includeantruntime="true">
-      <src path="src"/>
-      <include name="wyc/testing/**"/>
-      <classpath>
-        <pathelement path="src:../wyil/src:../wybs/src/:../wycs/src:../../${WYRL_JAR}"/>
-        <path refid="junit.classpath"/>
-      </classpath>
-    </javac>
-  </target>
-
-  <!-- Set the default value of this property. Since Ant properties are immutable
-       if the value has already been set by the user with -Dtest.name.contains=...
-       this will not override that value. -->
-  <property name="test.name.contains" value=""/>
-
-  <target name="test" depends="test-compile-wyc">
-    <junit fork="true" dir="${basedir}" failureProperty="tests.failed" printsummary="yes" showoutput="yes" outputtoformatters="no">
-      <classpath>
-        <pathelement path="src:../wyil/src:../wybs/src/:../wycs/src:../../${WYRL_JAR}"/>
-        <path refid="junit.classpath"/>
-      </classpath>
-      <sysproperty key="test.name.contains" value="${test.name.contains}"/>
-      <batchtest>
-        <fileset dir="src" includes="wyc/testing/*Tests.java"/>
-      </batchtest>
-      <formatter type="plain" usefile="false"/>
-    </junit>
-    <fail message="Test failure detected, stopping build." if="tests.failed"/>
-  </target>
+  <!-- ================================================================== -->
+  <!-- Dist -->
+  <!-- ================================================================== -->
 
   <target name="dist">
     <mkdir dir="tmp"/>
@@ -69,17 +88,17 @@
       <attribute name="Implementation-Version" value="${version}"/>
       <attribute name="Implementation-Title" value="wyc-v${version}.jar"/>
     </manifest>
-    <jar destfile="../../dist/wyc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="../wybs/src">
+    <jar destfile="${DIST_DIR}/wyc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
+      <fileset dir="${WYBS_DIR}/src">
 	<include name="wybs/**/*.class"/>
 	<include name="wycc/**/*.class"/>
 	<include name="wyfs/**/*.class"/>
       </fileset>
-      <fileset dir="../wycs/src">
+      <fileset dir="${WYCS_DIR}/src">
 	<include name="wycs/**/*.class"/>
-  <exclude name="wyc/testing/**"/>
+	<exclude name="wyc/testing/**"/>
       </fileset>
-      <fileset dir="../wyil/src">
+      <fileset dir="${WYIL_DIR}/src">
 	<include name="wyautl_old/**/*.class"/>
 	<include name="wybs/**/*.class"/>
 	<include name="wycs/**/*.class"/>
@@ -97,13 +116,17 @@
     <echo message="============================================="/>
   </target>
 
- <target name="clean">
-   <delete includeEmptyDirs="true" failonerror="false">
-     <fileset dir="." includes="**/*.class,**/*.wyil,**/*.wyasm"/>
-   </delete>
+  <!-- ================================================================== -->
+  <!-- Clean -->
+  <!-- ================================================================== -->
+
+  <target name="clean">
+    <delete includeEmptyDirs="true" failonerror="false">
+      <fileset dir="." includes="**/*.class,**/*.wyil,**/*.wyasm"/>
+    </delete>
     <echo message="============================================="/>
     <echo message="CLEANED: ${ant.project.name}"/>
     <echo message="============================================="/>
- </target>
+  </target>
 
 </project>
