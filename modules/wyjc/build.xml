@@ -9,7 +9,7 @@
     <pathelement path="${WYBS_DIR}/src"/>
     <pathelement path="${WYC_DIR}/src"/>
     <pathelement path="${WYIL_DIR}/src"/>
-    <pathelement path="${WYCS_DIR}/src"/>
+    <pathelement path="${WYTP_JAR}"/>
     <pathelement path="${WYRL_JAR}"/>
     <pathelement path="${JASM_JAR}"/>
     <path refid="junit.classpath"/>
@@ -96,6 +96,7 @@
     </manifest>
     <unzip src="${JASM_JAR}" dest="tmp"/>
     <unzip src="${WYRL_JAR}" dest="tmp"/>
+    <unzip src="${WYTP_JAR}" dest="tmp"/>    
     <jar destfile="${DIST_DIR}/wyjc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="${WYBS_DIR}/src">
 	<include name="wyfs/**/*.class"/>
@@ -109,10 +110,6 @@
 	<include name="wyautl_old/**/*.class"/>
 	<include name="wyil/**/*.class"/>
       </fileset>
-      <fileset dir="${WYCS_DIR}/src">
-	<include name="wycs/**/*.class"/>
-	<include name="wycs/**/*.wycs"/>
-      </fileset>
       <fileset dir="${WYRT_DIR}/src">
 	<include name="whiley/**/*.wyil"/>
       </fileset>
@@ -125,7 +122,9 @@
 	<include name="jasm/**/*.class"/>
 	<include name="wyautl/**/*.class"/>
 	<include name="wyrl/**/*.class"/>
-	<include name="wyrw/**/*.class"/>	
+	<include name="wyrw/**/*.class"/>
+	<include name="wycs/**/*.class"/>
+	<include name="wycs/**/*.wycs"/>	
       </fileset>
     </jar>
     <delete dir="tmp"/>

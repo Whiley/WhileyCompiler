@@ -1,6 +1,0 @@
-assert:
-    true is bool
-
-assert:
-    false is bool
-

@@ -1,4 +1,0 @@
-assert:
-   forall (bool x):
-       x == !!x
-

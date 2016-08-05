@@ -8,7 +8,7 @@
   <path id="wyc.classpath">
     <pathelement path="${WYBS_DIR}/src"/>
     <pathelement path="${WYIL_DIR}/src"/>
-    <pathelement path="${WYCS_DIR}/src"/>
+    <pathelement path="${WYTP_JAR}"/>
     <pathelement path="${WYRL_JAR}"/>
     <path refid="junit.classpath"/>
   </path>
@@ -93,10 +93,6 @@
 	<include name="wybs/**/*.class"/>
 	<include name="wycc/**/*.class"/>
 	<include name="wyfs/**/*.class"/>
-      </fileset>
-      <fileset dir="${WYCS_DIR}/src">
-	<include name="wycs/**/*.class"/>
-	<exclude name="wyc/testing/**"/>
       </fileset>
       <fileset dir="${WYIL_DIR}/src">
 	<include name="wyautl_old/**/*.class"/>

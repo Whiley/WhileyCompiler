@@ -1,7 +1,0 @@
-assert:
-  forall({int} xs, {int} ys):
-    if:
-       xs ⊆ ys
-       ys ⊆ xs
-    then:
-       xs != ys

@@ -1,8 +1,0 @@
-assert:
-  forall([int] xs):
-    if:
-      forall (int i):
-        xs[i] >= 0
-    then:
-      !(exists(int i) ; xs[i] < 0)
-

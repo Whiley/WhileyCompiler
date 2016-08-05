@@ -7,7 +7,7 @@
 
   <path id="wyil.classpath">
     <pathelement path="${WYBS_DIR}/src"/>
-    <pathelement path="${WYCS_DIR}/src"/>
+    <pathelement path="${WYTP_JAR}"/>
     <pathelement path="${WYRL_JAR}"/>
     <path refid="junit.classpath"/>
   </path>

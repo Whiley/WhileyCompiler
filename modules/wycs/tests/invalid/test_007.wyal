@@ -1,4 +1,0 @@
- // requires integer constraint solving
-assert:
-  forall(int x):
-    x < 0 || x >= 1
