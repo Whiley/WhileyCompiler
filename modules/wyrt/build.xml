@@ -9,7 +9,7 @@
     <pathelement path="${WYBS_DIR}/src"/>
     <pathelement path="${WYC_DIR}/src"/>
     <pathelement path="${WYIL_DIR}/src"/>
-    <pathelement path="${WYCS_DIR}/src"/>
+    <pathelement path="${WYTP_JAR}"/>
     <pathelement path="{$WYRL_JAR}"/>
     <path refid="junit.classpath"/>
   </path>
@@ -24,7 +24,7 @@
 	<path refid="wyrt.classpath"/>
       </classpath>
     </taskdef>
-    <wyc verbose="false" verificationConditions="false" bootpath="${WYCS_DIR}/stdlib/" whileydir="src" wycsdir="src" includes="whiley/**/*.whiley"/>
+    <wyc verbose="false" verificationConditions="false" bootpath="${WYTP_JAR}" whileydir="src" wycsdir="src" includes="whiley/**/*.whiley"/>
   </target>
 
   <!-- ================================================================== -->
@@ -40,8 +40,6 @@
   <target name="build" depends="compile-wyrt">
     <jar destfile="${LIB_DIR}/wyrt-v${version}.jar">
       <fileset dir="src" includes="*/**/*.wyil"/>
-      <fileset dir="src" includes="*/**/*.wycs"/>
-      <fileset dir="${WYCS_DIR}/stdlib" includes="*/**/*.wycs"/>
     </jar>
     <echo message="============================================="/>
     <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>

@@ -1,9 +1,0 @@
-assert:
-    1.0 is real
-
-assert:
-    -1.0 is real
-
-assert:
-    123.45 is real
-

@@ -1,3 +1,0 @@
-assert:
-  forall({int} xs, {int} ys):
-    xs ⊆ ys ==> xs == ys

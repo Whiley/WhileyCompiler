@@ -1,7 +1,0 @@
-assert:
-  forall ([int] xs):
-    if:
-      |xs| > 0
-    then:
-      exists (int v):
-        xs[0] == v

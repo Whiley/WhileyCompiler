@@ -8,7 +8,6 @@
   <!-- The set of build files in the order they should be built. -->
   <filelist id="module.build.files" dir="modules">
     <file name="wybs/build.xml"/>
-    <file name="wycs/build.xml"/>
     <file name="wyil/build.xml"/>
     <file name="wyc/build.xml"/>
     <file name="wyrt/build.xml"/>
@@ -44,10 +43,6 @@
 	<include name="wybs/**"/>
 	<include name="wycc/**"/>
       </packageset>
-      <packageset dir="modules/wycs/src">
-	<include name="wycs/**"/>
-	<exclude name="wycs/testing/**"/>
-      </packageset>
       <packageset dir="modules/wyil/src">
 	<include name="wyil/**"/>
 	<include name="wyautl_old/**"/>
@@ -66,7 +61,6 @@
       <group title="Whiley Compiler (WYC)" packages="wyc:wyc.*"/>
       <group title="Whiley Intermediate Language (WYIL)" packages="wyil:wyil.*"/>
       <group title="Whiley-2-Java Compiler (WYJC)" packages="wyjc:wyjc.*:wyjvm.*"/>
-      <group title="Whiley Constraint Solver (WYCS)" packages="wycs:wycs.*"/>
       </javadoc>
   </target>
 
@@ -92,7 +86,6 @@
       <include name="modules/**/*.java"/>
       <include name="modules/**/*.whiley"/>
       <include name="modules/**/*.wyrl"/>
-      <include name="modules/**/*.wycs"/>
       <include name="modules/**/*.xml"/>
       <include name="examples/**/*.whiley"/>
       <include name="tests/**/*.whiley"/>
@@ -102,10 +95,10 @@
       <include name="bin/wyjc"/>
       <include name="bin/wyj"/>
       <include name="bin/wycc"/>
-      <include name="bin/wycs"/>
       <include name="bin/wy_common.bash"/>
       <include name="lib/*-v${version}.jar"/>
       <include name="lib/wyrl-v*.jar"/>
+      <include name="lib/wycs-v*.jar"/>      
       <include name="lib/jasm-v*.jar"/>
       <include name="lib/maven-ant-tasks*.jar"/>      
     </fileset>

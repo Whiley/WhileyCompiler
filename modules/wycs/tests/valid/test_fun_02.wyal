@@ -1,7 +1,0 @@
-function indexOf([int] src, int i) -> (int r)
-ensures:
-    src[i] == r
-
-assert:
-  forall ([int] xs, int i):
-    indexOf(xs,i) > 0 ==> indexOf(xs,i) >= 0
