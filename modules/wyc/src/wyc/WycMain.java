@@ -60,7 +60,6 @@ public class WycMain {
 	public static final int MAJOR_VERSION;
 	public static final int MINOR_VERSION;
 	public static final int MINOR_REVISION;
-	public static final int BUILD_NUMBER;
 
 	public static final int SUCCESS = 0;
 	public static final int SYNTAX_ERROR = 1;
@@ -110,12 +109,6 @@ public class WycMain {
 		if (versionStr != null) {
 			String[] vb = versionStr.split("-");
 			String[] pts = vb[0].split("\\.");
-			if (vb.length == 1) {
-				BUILD_NUMBER = 0;
-			} else {
-				BUILD_NUMBER = Integer.parseInt(vb[1]);
-			}
-
 			MAJOR_VERSION = Integer.parseInt(pts[0]);
 			MINOR_VERSION = Integer.parseInt(pts[1]);
 			MINOR_REVISION = Integer.parseInt(pts[2]);
@@ -124,7 +117,6 @@ public class WycMain {
 			MAJOR_VERSION = 0;
 			MINOR_VERSION = 0;
 			MINOR_REVISION = 0;
-			BUILD_NUMBER = 0;
 		}
 	}
 
@@ -295,7 +287,7 @@ public class WycMain {
 	protected void version() {
 		stdout.println("Whiley Compiler (wyc) version "
 				+ MAJOR_VERSION + "." + MINOR_VERSION + "."
-				+ MINOR_REVISION + " (build " + BUILD_NUMBER + ")");
+				+ MINOR_REVISION);
 	}
 
 	protected void usage() {
