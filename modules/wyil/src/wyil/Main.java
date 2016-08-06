@@ -2,14 +2,13 @@ package wyil;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 
 import wybs.lang.Build;
 import wybs.util.StdProject;
-import wycc.lang.NameID;
-import wycc.lang.SyntaxError;
-import wycc.lang.SyntaxError.InternalFailure;
+import wybs.lang.NameID;
+import wybs.lang.SyntaxError;
+import wybs.lang.SyntaxError.InternalFailure;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;

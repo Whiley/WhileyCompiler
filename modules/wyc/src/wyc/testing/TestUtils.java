@@ -9,11 +9,11 @@ import java.util.Collections;
 import java.util.Comparator;
 
 import wybs.lang.Build;
+import wybs.lang.NameID;
 import wybs.util.StdProject;
 import wyc.WycMain;
 import wyc.util.WycBuildTask;
-import wycc.lang.NameID;
-import wycc.util.Pair;
+import wycommon.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;

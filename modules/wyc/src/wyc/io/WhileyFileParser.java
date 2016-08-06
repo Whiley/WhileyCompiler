@@ -36,19 +36,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import wybs.lang.Attribute;
+import wybs.lang.NameID;
+import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError;
 import wyc.lang.*;
 import wyc.lang.Expr.ConstantAccess;
 import wyc.io.WhileyFileLexer.Token;
 import static wyil.util.ErrorMessages.*;
+import static wybs.lang.SyntaxError.*;
 import static wyc.io.WhileyFileLexer.Token.Kind.*;
-import static wycc.lang.SyntaxError.*;
+
 import wyc.lang.WhileyFile.*;
-import wycc.lang.Attribute;
-import wycc.lang.NameID;
-import wycc.lang.SyntacticElement;
-import wycc.lang.SyntaxError;
-import wycc.util.Pair;
-import wycc.util.Triple;
+import wycommon.util.Pair;
+import wycommon.util.Triple;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.Modifier;

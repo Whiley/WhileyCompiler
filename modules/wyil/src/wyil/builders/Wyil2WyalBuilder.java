@@ -29,12 +29,10 @@ import java.io.IOException;
 import java.util.*;
 
 import wybs.lang.Build;
-import wybs.lang.Builder;
+import wycommon.util.Logger;
+import wycommon.util.Pair;
 import wyfs.lang.Path;
 import wyil.lang.*;
-import wycc.util.Logger;
-import wycc.util.Pair;
-import wycs.syntax.Expr;
 import wycs.syntax.WyalFile;
 
 /**
@@ -44,7 +42,7 @@ import wycs.syntax.WyalFile;
  * @author David J. Pearce
  *
  */
-public class Wyil2WyalBuilder implements Builder {
+public class Wyil2WyalBuilder implements Build.Task {
 
 	/**
 	 * The master namespace for identifying all resources available to the
@@ -58,8 +56,6 @@ public class Wyil2WyalBuilder implements Builder {
 	 */
 	protected Logger logger = Logger.NULL;
 
-	private String filename;
-
 	public Wyil2WyalBuilder(Build.Project project) {
 		this.project = project;
 	}
@@ -72,7 +68,12 @@ public class Wyil2WyalBuilder implements Builder {
 		this.logger = logger;
 	}
 
+	public String id() {
+		return null;
+	}
+
 	@Override
+	@SuppressWarnings("unchecked")
 	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph)
 			throws IOException {
 		Runtime runtime = Runtime.getRuntime();
@@ -80,12 +81,12 @@ public class Wyil2WyalBuilder implements Builder {
 		long memory = runtime.freeMemory();
 
 		VerificationConditionGenerator vcg = new VerificationConditionGenerator(this);
-		
+
 		// ========================================================================
 		// Translate files
 		// ========================================================================
 		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
-		for(Pair<Path.Entry<?>,Path.Root> p : delta) {
+		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			Path.Entry<WyilFile> source = (Path.Entry<WyilFile>) p.first();
 			Path.Root dst = p.second();
 			Path.Entry<WyalFile> target = (Path.Entry<WyalFile>) dst.create(source.id(), WyalFile.ContentType);
@@ -105,11 +106,9 @@ public class Wyil2WyalBuilder implements Builder {
 		// ========================================================================
 
 		long endTime = System.currentTimeMillis();
-		logger.logTimedMessage("Wyil => Wyal: compiled " + delta.size()
-				+ " file(s)", endTime - start, memory - runtime.freeMemory());
+		logger.logTimedMessage("Wyil => Wyal: compiled " + delta.size() + " file(s)", endTime - start,
+				memory - runtime.freeMemory());
 
 		return generatedFiles;
 	}
-
-	
 }

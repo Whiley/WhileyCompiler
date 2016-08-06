@@ -31,18 +31,14 @@ import java.util.*;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
-import wyil.*;
+import wyil.checks.CoercionCheck;
+import wyil.checks.ModuleCheck;
 import wyil.lang.*;
-import wyil.util.*;
 import wybs.lang.*;
 import wybs.util.*;
 import wyc.lang.*;
-import wycc.lang.NameID;
-import wycc.lang.Pipeline;
-import wycc.lang.Transform;
-import wycc.util.Logger;
-import wycc.util.Pair;
-import wycc.util.ResolveError;
+import wycommon.util.Logger;
+import wycommon.util.Pair;
 
 /**
  * Responsible for managing the process of turning source files into binary code
@@ -88,7 +84,7 @@ import wycc.util.ResolveError;
  * @author David J. Pearce
  *
  */
-public final class WhileyBuilder implements Builder {
+public final class WhileyBuilder implements Build.Task {
 
 	/**
 	 * The master project for identifying all resources available to the
@@ -98,10 +94,8 @@ public final class WhileyBuilder implements Builder {
 	private final Build.Project project;
 
 	/**
-	 * The list of stages which must be applied to a Wyil file.
+	 * The logger used for logging system events
 	 */
-	private final List<Transform<WyilFile>> stages;
-
 	private Logger logger;
 
 	/**
@@ -115,12 +109,15 @@ public final class WhileyBuilder implements Builder {
 	 * time. For example, the statement <code>import whiley.lang.*</code>
 	 * corresponds to the triple <code>("whiley.lang",*,null)</code>.
 	 */
-	private final HashMap<Trie,ArrayList<Path.ID>> importCache = new HashMap();
+	private final HashMap<Trie,ArrayList<Path.ID>> importCache = new HashMap<>();
 
-	public WhileyBuilder(Build.Project namespace, Pipeline<WyilFile> pipeline) {
-		this.stages = pipeline.instantiate(this);
+	public WhileyBuilder(Build.Project namespace) {
 		this.logger = Logger.NULL;
 		this.project = namespace;
+	}
+	
+	public String id() {
+		return "wyc.builder";
 	}
 
 	public Build.Project project() {
@@ -131,6 +128,7 @@ public final class WhileyBuilder implements Builder {
 		this.logger = logger;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph)
 			throws IOException {
@@ -150,7 +148,7 @@ public final class WhileyBuilder implements Builder {
 			Path.Entry<?> src = p.first();
 			if (src.contentType() == WhileyFile.ContentType) {
 				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) src;
-				WhileyFile wf = sf.read();
+				sf.read(); // force file to be parsed
 				count++;
 				srcFiles.put(sf.id(), sf);
 			}
@@ -215,14 +213,12 @@ public final class WhileyBuilder implements Builder {
 		// Pipeline Stages
 		// ========================================================================
 
-		for (Transform stage : stages) {
-			for (Pair<Path.Entry<?>, Path.Root> p : delta) {
-				Path.Entry<?> src = p.first();
-				Path.Root dst = p.second();
-				Path.Entry<WyilFile> wf = dst.get(src.id(),
-						WyilFile.ContentType);
-				process(wf.read(), stage);
-			}
+		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+			Path.Entry<?> src = p.first();
+			Path.Root dst = p.second();
+			Path.Entry<WyilFile> wf = dst.get(src.id(), WyilFile.ContentType);
+			new ModuleCheck(this).apply(wf.read());
+			new CoercionCheck(this).apply(wf.read());
 		}
 
 		// ========================================================================
@@ -350,39 +346,39 @@ public final class WhileyBuilder implements Builder {
 	// Private Implementation
 	// ======================================================================
 
-	private void process(WyilFile module, Transform stage) throws IOException {
-		Runtime runtime = Runtime.getRuntime();
-		long start = System.currentTimeMillis();
-		long memory = runtime.freeMemory();
-		String name = name(stage.getClass().getSimpleName());
-
-		try {
-			stage.apply(module);
-			logger.logTimedMessage("[" + module.getEntry().location() + "] applied " + name,
-					System.currentTimeMillis() - start, memory - runtime.freeMemory());
-			System.gc();
-		} catch (RuntimeException ex) {
-			logger.logTimedMessage("[" + module.getEntry().location() + "] failed on " + name + " (" + ex.getMessage() + ")",
-					System.currentTimeMillis() - start, memory - runtime.freeMemory());
-			throw ex;
-		} catch (IOException ex) {
-			logger.logTimedMessage("[" + module.getEntry().location() + "] failed on " + name + " (" + ex.getMessage() + ")",
-					System.currentTimeMillis() - start, memory - runtime.freeMemory());
-			throw ex;
-		}
-	}
-
-	private static String name(String camelCase) {
-		boolean firstTime = true;
-		String r = "";
-		for(int i=0;i!=camelCase.length();++i) {
-			char c = camelCase.charAt(i);
-			if(!firstTime && Character.isUpperCase(c)) {
-				r += " ";
-			}
-			firstTime=false;
-			r += Character.toLowerCase(c);;
-		}
-		return r;
-	}
+//	private void process(WyilFile module) throws IOException {
+//		Runtime runtime = Runtime.getRuntime();
+//		long start = System.currentTimeMillis();
+//		long memory = runtime.freeMemory();
+//		String name = name(stage.getClass().getSimpleName());
+//
+//		try {
+//			stage.apply(module);
+//			logger.logTimedMessage("[" + module.getEntry().location() + "] applied " + name,
+//					System.currentTimeMillis() - start, memory - runtime.freeMemory());
+//			System.gc();
+//		} catch (RuntimeException ex) {
+//			logger.logTimedMessage("[" + module.getEntry().location() + "] failed on " + name + " (" + ex.getMessage() + ")",
+//					System.currentTimeMillis() - start, memory - runtime.freeMemory());
+//			throw ex;
+//		} catch (IOException ex) {
+//			logger.logTimedMessage("[" + module.getEntry().location() + "] failed on " + name + " (" + ex.getMessage() + ")",
+//					System.currentTimeMillis() - start, memory - runtime.freeMemory());
+//			throw ex;
+//		}
+//	}
+//
+//	private static String name(String camelCase) {
+//		boolean firstTime = true;
+//		String r = "";
+//		for(int i=0;i!=camelCase.length();++i) {
+//			char c = camelCase.charAt(i);
+//			if(!firstTime && Character.isUpperCase(c)) {
+//				r += " ";
+//			}
+//			firstTime=false;
+//			r += Character.toLowerCase(c);;
+//		}
+//		return r;
+//	}
 }

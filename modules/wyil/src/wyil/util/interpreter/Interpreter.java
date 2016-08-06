@@ -10,10 +10,10 @@ import java.util.*;
 
 import wyautl.util.BigRational;
 import wybs.lang.Build;
-import wycc.lang.NameID;
-import wycc.lang.SyntacticElement;
-import wycc.util.Pair;
-import wycc.util.ResolveError;
+import wybs.lang.NameID;
+import wybs.lang.SyntacticElement;
+import wybs.util.ResolveError;
+import wycommon.util.Pair;
 import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Bytecode.*;

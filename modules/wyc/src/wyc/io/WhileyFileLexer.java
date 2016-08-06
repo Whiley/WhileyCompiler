@@ -35,10 +35,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import wybs.lang.Attribute;
+import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError;
 import wyc.lang.WhileyFile;
-import wycc.lang.Attribute;
-import wycc.lang.SyntacticElement;
-import wycc.lang.SyntaxError;
 import wyfs.lang.Path;
 
 /**

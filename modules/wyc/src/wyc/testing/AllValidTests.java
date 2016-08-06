@@ -45,7 +45,7 @@ import wybs.lang.Build;
 import wybs.util.StdProject;
 import wyc.WycMain;
 import wyc.util.WycBuildTask;
-import wycc.util.Pair;
+import wycommon.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;

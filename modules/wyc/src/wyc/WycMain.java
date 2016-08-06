@@ -31,21 +31,16 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.*;
 
+import wycommon.util.OptArg;
 import wybs.lang.*;
 import wybs.util.*;
+import wybs.lang.SyntaxError.InternalFailure;
 import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
 import wyc.util.*;
-import wycc.lang.Pipeline;
-import wycc.lang.SyntaxError;
-import wycc.lang.Transform;
-import wycc.lang.Pipeline.Template;
-import wycc.lang.SyntaxError.InternalFailure;
-import wycc.util.OptArg;
 import wyil.*;
 import wyil.lang.WyilFile;
 import wyil.util.*;
-import static wycc.lang.SyntaxError.*;
 
 /**
  * The main class provides all of the necessary plumbing to process command-line
@@ -60,6 +55,7 @@ public class WycMain {
 	public static final int MAJOR_VERSION;
 	public static final int MINOR_VERSION;
 	public static final int MINOR_REVISION;
+	public static final int BUILD_NUMBER;
 
 	public static final int SUCCESS = 0;
 	public static final int SYNTAX_ERROR = 1;
@@ -89,12 +85,8 @@ public class WycMain {
 			new OptArg("wyaldir", OptArg.FILEDIR,
 					"Specify where to place generated wyal files"),
 					new OptArg("wycsdir", OptArg.FILEDIR,
-					"Specify where to place generated wycs files"),
-			new OptArg("X", OptArg.PIPELINECONFIGURE,
-					"configure existing pipeline stage"),
-			new OptArg("A", OptArg.PIPELINEAPPEND, "append new pipeline stage"),
-			new OptArg("R", OptArg.PIPELINEREMOVE,
-					"remove existing pipeline stage") };
+					"Specify where to place generated wycs files")
+	};
 
 	/**
 	 * Initialise the error output stream so as to ensure it will display
@@ -109,6 +101,12 @@ public class WycMain {
 		if (versionStr != null) {
 			String[] vb = versionStr.split("-");
 			String[] pts = vb[0].split("\\.");
+			if (vb.length == 1) {
+				BUILD_NUMBER = 0;
+			} else {
+				BUILD_NUMBER = Integer.parseInt(vb[1]);
+			}
+
 			MAJOR_VERSION = Integer.parseInt(pts[0]);
 			MINOR_VERSION = Integer.parseInt(pts[1]);
 			MINOR_REVISION = Integer.parseInt(pts[2]);
@@ -117,6 +115,7 @@ public class WycMain {
 			MAJOR_VERSION = 0;
 			MINOR_VERSION = 0;
 			MINOR_REVISION = 0;
+			BUILD_NUMBER = 0;
 		}
 	}
 
@@ -250,15 +249,6 @@ public class WycMain {
 		boolean verbose = values.containsKey("verbose");
 
 		builder.setVerbose(verbose);
-		builder.setVerification(values.containsKey("verify"));
-		builder.setSmtVerification(values.containsKey("smt-verify"));
-		builder.setVerificationConditions(values.containsKey("vcs"));
-
-		ArrayList<Pipeline.Modifier> pipelineModifiers = (ArrayList) values
-				.get("pipeline");
-		if (pipelineModifiers != null) {
-			builder.setPipelineModifiers(pipelineModifiers);
-		}
 
 		File whileyDir = (File) values.get("whileydir");
 		builder.setWhileyDir(whileyDir);
@@ -267,15 +257,7 @@ public class WycMain {
 		if (wyilDir != null) {
 			builder.setWyilDir(wyilDir);
 		}
-		File wyalDir = (File) values.get("wyaldir");
-		if (wyalDir != null) {
-			builder.setWyalDir(wyalDir);
-		}
-		File wycsDir = (File) values.get("wycsdir");
-		if (wycsDir != null) {
-			builder.setWycsDir(wycsDir);
-		}
-
+		
 		ArrayList<File> bootpath = (ArrayList<File>) values.get("bootpath");
 		builder.setBootPath(bootpath);
 
@@ -287,62 +269,12 @@ public class WycMain {
 	protected void version() {
 		stdout.println("Whiley Compiler (wyc) version "
 				+ MAJOR_VERSION + "." + MINOR_VERSION + "."
-				+ MINOR_REVISION);
+				+ MINOR_REVISION + " (build " + BUILD_NUMBER + ")");
 	}
 
 	protected void usage() {
 		stdout.println("usage: wyc <options> <source-files>");
 		OptArg.usage(stdout, options);
-		usage(stdout, WycBuildTask.defaultPipeline);
-	}
-
-	/**
-	 * Print out the available list of options for the given pipeline
-	 */
-	protected void usage(PrintStream out, List<Pipeline.Template> stages) {
-		out.println("\nPipeline configuration:");
-		for (Template template : stages) {
-			Class<? extends Transform> t = template.clazz;
-			out.println("  -X " + t.getSimpleName().toLowerCase() + ":\t");
-			for (Method m : t.getDeclaredMethods()) {
-				String name = m.getName();
-				if (name.startsWith("set")) {
-					String shortName = name.substring(3).toLowerCase();
-					out.print("    " + shortName + "(" + argValues(m) + ")");
-					// print default value
-					try {
-						Method getter = t.getDeclaredMethod(name.replace("set",
-								"get"));
-						Object v = getter.invoke(null);
-						out.print("[default=" + v + "]");
-					} catch (NoSuchMethodException e) {
-						// just ignore
-					} catch (IllegalArgumentException e) {
-						// just ignore
-					} catch (IllegalAccessException e) {
-						// just ignore
-					} catch (InvocationTargetException e) {
-						// just ignore
-					}
-					// print description
-					try {
-						Method desc = t.getDeclaredMethod(name.replace("set",
-								"describe"));
-						Object v = desc.invoke(null);
-						out.print("\t" + v);
-					} catch (NoSuchMethodException e) {
-						// just ignore
-					} catch (IllegalArgumentException e) {
-						// just ignore
-					} catch (IllegalAccessException e) {
-						// just ignore
-					} catch (InvocationTargetException e) {
-						// just ignore
-					}
-					out.println();
-				}
-			}
-		}
 	}
 
 	protected static String argValues(Method m) {

@@ -28,13 +28,13 @@ package wyc.lang;
 import java.io.*;
 import java.util.*;
 
+import wybs.lang.Attribute;
+import wybs.lang.CompilationUnit;
+import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError;
+import wybs.util.AbstractCompilationUnit;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
-import wycc.lang.Attribute;
-import wycc.lang.CompilationUnit;
-import wycc.lang.SyntacticElement;
-import wycc.lang.SyntaxError;
-import wycc.util.AbstractCompilationUnit;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -91,6 +91,11 @@ public final class WhileyFile extends AbstractCompilationUnit {
 
 		public String toString() {
 			return "Content-Type: whiley";
+		}
+
+		@Override
+		public String getSuffix() {
+			return "whiley";
 		}
 	};
 

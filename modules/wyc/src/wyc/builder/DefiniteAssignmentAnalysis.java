@@ -3,16 +3,17 @@ package wyc.builder;
 import wyc.lang.Expr;
 import wyc.lang.Stmt;
 import wyc.lang.WhileyFile;
-import wycc.lang.SyntaxError;
-import wycc.util.Triple;
+import wycommon.util.Triple;
 
-import static wycc.lang.SyntaxError.*;
+import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;
 import static wyil.util.ErrorMessages.errorMessage;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+
+import wybs.lang.SyntaxError;
 
 /**
  * <p>

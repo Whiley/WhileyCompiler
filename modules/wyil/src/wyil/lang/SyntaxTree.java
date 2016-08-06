@@ -3,8 +3,8 @@ package wyil.lang;
 import java.util.ArrayList;
 import java.util.List;
 
-import wycc.lang.Attribute;
-import wycc.lang.SyntacticElement;
+import wybs.lang.Attribute;
+import wybs.lang.SyntacticElement;
 
 /**
  * A SyntaxTree representation of the Whiley Intermediate Language (WyIL).

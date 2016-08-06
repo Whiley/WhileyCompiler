@@ -44,7 +44,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 import wyc.WycMain;
 import wyc.util.WycBuildTask;
-import wycc.util.Pair;
+import wycommon.util.Pair;
 
 /**
  * Run through all invalid test cases with verification enabled. Since every

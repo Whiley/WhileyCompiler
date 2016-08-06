@@ -25,10 +25,6 @@
 
 package wyil.util;
 
-import java.util.Collection;
-
-import wycc.lang.SyntaxError.InternalFailure;
-import wycc.lang.Attribute;
 import wyil.lang.Type;
 
 /**

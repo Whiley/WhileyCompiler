@@ -9,12 +9,12 @@ import static wyil.util.ErrorMessages.errorMessage;
 import java.math.BigInteger;
 import java.util.*;
 
-import wycc.lang.Attribute;
-import wycc.lang.NameID;
-import wycc.lang.SyntacticElement;
-import wycc.lang.SyntaxError.InternalFailure;
-import wycc.util.Pair;
-import wycc.util.ResolveError;
+import wybs.lang.Attribute;
+import wybs.lang.NameID;
+import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError.InternalFailure;
+import wybs.util.ResolveError;
+import wycommon.util.Pair;
 import wycs.core.Value;
 import wycs.syntax.Expr;
 import wycs.syntax.SyntacticType;

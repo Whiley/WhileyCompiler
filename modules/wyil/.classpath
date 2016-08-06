@@ -2,9 +2,12 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/whiley.wybs"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/WyRL"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/WhileyTheoremProver"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/WhileyBuildSystem"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/WhileyFileSystem"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/WhileyModuleSystem"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/WhileyCommon"/>
 	<classpathentry kind="output" path="src"/>
 </classpath>

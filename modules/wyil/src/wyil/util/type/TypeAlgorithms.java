@@ -36,7 +36,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 
 import wyautl_old.lang.*;
-import wycc.lang.NameID;
+import wybs.lang.NameID;
 import wyil.lang.Type;
 
 /**

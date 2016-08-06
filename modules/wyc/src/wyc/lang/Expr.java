@@ -27,13 +27,13 @@ package wyc.lang;
 
 import java.util.*;
 
+import wybs.lang.Attribute;
+import wybs.lang.NameID;
+import wybs.lang.SyntacticElement;
 import wyc.builder.FlowTypeChecker;
 import wyc.io.WhileyFileLexer;
-import wycc.lang.Attribute;
-import wycc.lang.NameID;
-import wycc.lang.SyntacticElement;
-import wycc.util.Pair;
-import wycc.util.Triple;
+import wycommon.util.Pair;
+import wycommon.util.Triple;
 import wyfs.lang.Path;
 import wyil.lang.*;
 

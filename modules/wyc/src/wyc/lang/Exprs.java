@@ -4,9 +4,9 @@ import static wyc.lang.WhileyFile.internalFailure;
 
 import java.util.HashSet;
 
+import wybs.lang.SyntaxError;
 import wyc.lang.WhileyFile.Context;
-import wycc.lang.SyntaxError;
-import wycc.util.Pair;
+import wycommon.util.Pair;
 import wyil.lang.Type;
 
 public class Exprs {

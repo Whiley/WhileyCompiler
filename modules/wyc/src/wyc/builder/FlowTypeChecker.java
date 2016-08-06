@@ -25,9 +25,9 @@
 
 package wyc.builder;
 
+import static wybs.lang.SyntaxError.InternalFailure;
 import static wyc.lang.WhileyFile.internalFailure;
 import static wyc.lang.WhileyFile.syntaxError;
-import static wycc.lang.SyntaxError.InternalFailure;
 import static wyil.util.ErrorMessages.*;
 
 import java.io.IOException;
@@ -40,12 +40,8 @@ import wybs.lang.*;
 import wybs.util.*;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.Context;
-import wycc.lang.NameID;
-import wycc.lang.SyntacticElement;
-import wycc.lang.SyntaxError;
-import wycc.util.Pair;
-import wycc.util.ResolveError;
-import wycc.util.Triple;
+import wycommon.util.Pair;
+import wycommon.util.Triple;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.Constant;

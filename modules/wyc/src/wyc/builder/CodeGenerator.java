@@ -27,18 +27,19 @@ package wyc.builder;
 
 import java.util.*;
 
+import wybs.lang.Attribute;
+import wybs.lang.NameID;
+import wybs.lang.SyntacticElement;
+import wybs.lang.SyntaxError;
+import wybs.util.ResolveError;
+
 import static wyc.lang.WhileyFile.internalFailure;
 import static wyil.util.ErrorMessages.*;
 import wyc.lang.*;
 import wyc.lang.Stmt.*;
 import wyc.lang.WhileyFile.Context;
-import wycc.lang.Attribute;
-import wycc.lang.NameID;
-import wycc.lang.SyntacticElement;
-import wycc.lang.SyntaxError;
-import wycc.util.Pair;
-import wycc.util.ResolveError;
-import wycc.util.Triple;
+import wycommon.util.Pair;
+import wycommon.util.Triple;
 import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Bytecode.AliasDeclaration;

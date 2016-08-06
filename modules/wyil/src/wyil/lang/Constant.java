@@ -28,7 +28,7 @@ package wyil.lang;
 import java.math.BigInteger;
 import java.util.*;
 
-import wycc.lang.NameID;
+import wybs.lang.NameID;
 
 public abstract class Constant implements Comparable<Constant> {
 
