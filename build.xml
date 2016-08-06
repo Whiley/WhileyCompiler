@@ -10,7 +10,6 @@
     <file name="wybs/build.xml"/>
     <file name="wyil/build.xml"/>
     <file name="wyc/build.xml"/>
-    <file name="wyrt/build.xml"/>
   </filelist>
 
 
@@ -78,7 +77,6 @@
       <include name="config.xml"/>
       <include name="modules/**/*.java"/>
       <include name="modules/**/*.whiley"/>
-      <include name="modules/**/*.wyrl"/>
       <include name="modules/**/*.xml"/>
       <include name="examples/**/*.whiley"/>
       <include name="tests/**/*.whiley"/>
