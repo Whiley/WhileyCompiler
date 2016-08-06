@@ -6,7 +6,7 @@
   <import file="../../config.xml"/>
 
   <path id="wyil.classpath">
-    <pathelement path="${WYBS_DIR}/src"/>
+    <pathelement path="${WYCC_JAR}"/>
     <pathelement path="${WYTP_JAR}"/>
     <pathelement path="${WYRL_JAR}"/>
     <path refid="junit.classpath"/>
@@ -51,31 +51,6 @@
     <delete dir="tmp"/>
     <echo message="============================================="/>
     <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
-    <echo message="============================================="/>
-  </target>
-
-  <!-- ================================================================== -->
-  <!-- Dist -->
-  <!-- ================================================================== -->
-
-  <target name="dist">
-    <mkdir dir="tmp"/>
-    <manifest file="tmp/MANIFEST.MF">
-      <attribute name="Built-By" value="${user.name}"/>
-      <attribute name="Main-Class" value="wyil.WyilMain"/>
-      <attribute name="Implementation-Version" value="${version}"/>
-      <attribute name="Implementation-Title" value="wyil-v${version}.jar"/>
-    </manifest>
-    <jar destfile="${DIST_DIR}/wyil-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="src">
-	<include name="wyautl_old/**/*.class"/>
-	<include name="wybs/**/*.class"/>
-	<include name="wyil/**/*.class"/>
-      </fileset>
-    </jar>
-    <delete dir="tmp"/>
-    <echo message="============================================="/>
-    <echo message="BUILT: dist/${ant.project.name}-all-v${version}.jar"/>
     <echo message="============================================="/>
   </target>
 

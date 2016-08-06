@@ -6,8 +6,8 @@
   <import file="../../config.xml"/>
 
   <path id="wyc.classpath">
-    <pathelement path="${WYBS_DIR}/src"/>
-    <pathelement path="${WYIL_DIR}/src"/>
+    <pathelement path="${WYIL_DIR}/src"/>    
+    <pathelement path="${WYCC_JAR}"/>
     <pathelement path="${WYTP_JAR}"/>
     <pathelement path="${WYRL_JAR}"/>
     <path refid="junit.classpath"/>
@@ -76,43 +76,7 @@
     <echo message="============================================="/>
   </target>
 
-  <!-- ================================================================== -->
-  <!-- Dist -->
-  <!-- ================================================================== -->
-
-  <target name="dist">
-    <mkdir dir="tmp"/>
-    <manifest file="tmp/MANIFEST.MF">
-      <attribute name="Built-By" value="${user.name}"/>
-      <attribute name="Main-Class" value="wyc.WycMain"/>
-      <attribute name="Implementation-Version" value="${version}"/>
-      <attribute name="Implementation-Title" value="wyc-v${version}.jar"/>
-    </manifest>
-    <jar destfile="${DIST_DIR}/wyc-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="${WYBS_DIR}/src">
-	<include name="wybs/**/*.class"/>
-	<include name="wycc/**/*.class"/>
-	<include name="wyfs/**/*.class"/>
-      </fileset>
-      <fileset dir="${WYIL_DIR}/src">
-	<include name="wyautl_old/**/*.class"/>
-	<include name="wybs/**/*.class"/>
-	<include name="wycs/**/*.class"/>
-	<include name="wyil/**/*.class"/>
-      </fileset>
-      <fileset dir="src">
-	<include name="wyc/**/*.class"/>
-	<include name="wyjc/**/*.class"/>
-	<include name="wyjvm/**/*.class"/>
-      </fileset>
-    </jar>
-    <delete dir="tmp"/>
-    <echo message="============================================="/>
-    <echo message="BUILT: dist/${ant.project.name}-all-v${version}.jar"/>
-    <echo message="============================================="/>
-  </target>
-
-  <!-- ================================================================== -->
+ <!-- ================================================================== -->
   <!-- Clean -->
   <!-- ================================================================== -->
 

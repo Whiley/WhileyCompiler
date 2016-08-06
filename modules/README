@@ -17,12 +17,3 @@ wyil/ --- The Whiley Intermediate Language (wyil).  The Whiley
           code for manipulating structural types in Whiley is included
           here.  In short, this package constitutes the bulk of the
           compiler.
-
-wyjc/ --- The Whiley-to-Java Compiler.  This extends the Whiley
-          Compiler (wyc) with additional transforms for converting
-          wyil code into Java bytecode.
-
-wyrt/ --- The Whiley Standard Library.  This provides the core
-          implementation for the standard library.  All architecture
-          specific code is omitted and, instead, is stored within the
-          respective back-end module (e.g. wyjc).

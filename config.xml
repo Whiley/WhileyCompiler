@@ -12,14 +12,14 @@
   <property name="LIB_DIR" value="${rootdir}/lib/"/>
   <property name="DIST_DIR" value="${rootdir}/dist/"/>
 
-  <property name="WYBS_DIR" value="${rootdir}/modules/wybs/"/>
   <property name="WYC_DIR"  value="${rootdir}/modules/wyc/"/>
   <property name="WYIL_DIR" value="${rootdir}/modules/wyil/"/>
 
   <!-- Paths to common JARs -->
-  <property name="JASM_JAR" value="${LIB_DIR}/jasm-v0.1.7.jar"/>
+  <property name="WYCC_JAR" value="${LIB_DIR}/wycc-v0.4.0-SNAPSHOT.jar"/>  
   <property name="WYRL_JAR" value="${LIB_DIR}/wyrl-v0.4.4.jar"/>
   <property name="WYTP_JAR" value="${LIB_DIR}/wycs-v0.4.0.jar"/>
+  <property name="JASM_JAR" value="${LIB_DIR}/jasm-v0.1.7.jar"/>  
 
   <!-- Set the classpath for Junit and its dependencies -->
   <maven:dependencies pathId="junit.classpath">
