@@ -3,8 +3,6 @@ package wycs.io;
 import java.io.*;
 
 import static wycc.lang.SyntaxError.*;
-import wycc.lang.Attribute;
-import wycc.lang.SyntacticElement;
 import wycs.syntax.*;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -50,8 +48,7 @@ public class WyalFilePrinter {
 		} else if(s instanceof WyalFile.Import) {
 			write(wf,(WyalFile.Import)s);
 		} else {
-			internalFailure("unknown statement encountered " + s,
-					wf.filename(), s);
+			throw new InternalFailure("unknown statement encountered " + s, wf.getEntry(), s);
 		}
 		out.println();
 	}
@@ -203,8 +200,7 @@ public class WyalFilePrinter {
 		} else if(e instanceof Expr.IndexOf) {
 			write(wf, (Expr.IndexOf)e,indent);
 		} else {
-			internalFailure("unknown expression encountered " + e,
-					wf.filename(), e);
+			throw new InternalFailure("unknown expression encountered " + e, wf.getEntry(), e);
 		}
 	}
 
@@ -249,14 +245,21 @@ public class WyalFilePrinter {
 			writeWithoutBraces(wf,e.rightOperand,indent);
 			break;
 		case OR:
-			out.println("case:");
+			out.println("either:");
 			indent(indent+1);
 			writeWithoutBraces(wf,e.leftOperand,indent+1);
 			out.println();
 			indent(indent);
-			out.println("case:");
+			out.println("or:");
 			indent(indent+1);
 			writeWithoutBraces(wf,e.rightOperand,indent+1);
+			break;
+		case ARRAYGEN:
+			out.print("[");
+			writeWithOptionalBraces(wf,e.leftOperand,indent);
+			out.print(";");
+			writeWithOptionalBraces(wf,e.rightOperand,indent);
+			out.print("]");
 			break;
 		default:
 			writeWithOptionalBraces(wf,e.leftOperand,indent);
@@ -295,7 +298,8 @@ public class WyalFilePrinter {
 			return;
 		}
 		}
-		internalFailure("unknown expression encountered \"" + e + "\" (" + e.getClass().getName() + ")", wf.filename(), e);
+		throw new InternalFailure("unknown expression encountered \"" + e + "\" (" + e.getClass().getName() + ")",
+				wf.getEntry(), e);
 	}
 
 
@@ -386,8 +390,16 @@ public class WyalFilePrinter {
 	}
 
 	private static boolean needsBraces(Expr e) {
-		 if(e instanceof Expr.Binary || e instanceof Expr.Cast) {			 
+		 if(e instanceof Expr.Cast) {			 
 			 return true;
+		 } else if(e instanceof Expr.Binary) {
+			 Expr.Binary b = (Expr.Binary) e;
+			 switch(b.op) {
+			 case ARRAYGEN:
+				 break;
+			 default:
+				 return true;
+			 }
 		 }
 		 return false;
 	}

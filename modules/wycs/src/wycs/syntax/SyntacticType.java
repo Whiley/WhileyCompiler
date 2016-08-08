@@ -869,7 +869,7 @@ public interface SyntacticType extends SyntacticElement {
 
 		@Override
 		public SyntacticType.Record copy() {
-			ArrayList<Pair<SyntacticType, Expr.Variable>> nElements = new ArrayList<>();
+			ArrayList<Pair<SyntacticType, Expr.Variable>> nElements = new ArrayList<Pair<SyntacticType,Expr.Variable>>();
 			for (int i = 0; i != elements.size(); ++i) {
 				Pair<SyntacticType, Expr.Variable> e = elements.get(i);
 				nElements.add(new Pair<>(e.first().copy(),e.second().copy()));

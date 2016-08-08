@@ -34,7 +34,7 @@ For detail, see `comment-dwim'."
      (comment-dwim arg)))
 
 (defvar wyal-keywords
-  '("import" "define" "function" "type" "assert" "assume" "ensures" "requires" "forall" "where" "some" "not" "if" "in" "is" "then" "false" "true")
+  '("import" "define" "function" "type" "assert" "assume" "ensures" "requires" "forall" "where" "some" "not" "if" "either" "or" "in" "is" "then" "false" "true")
     "Wyal keywords.")
 
 (defvar wyal-types

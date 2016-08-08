@@ -1,5 +1,5 @@
 method f(any _this) :
-    debug _this
+    skip
 
 method g() :
     f(x)

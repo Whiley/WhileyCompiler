@@ -187,24 +187,7 @@ public class Path {
 		 *            --- contents to associate, or null if none.
 		 */
 		public void associate(Content.Type<T> contentType, T contents);
-
-		/**
-		 * Return those entries (if any) which depend upon this entry. That is, if
-		 * this entry is modified, then those entries should be rebuilt.
-		 *
-		 * @return
-		 */
-		public Set<Path.Entry<?>> dependents();
-
-		/**
-		 * Return those entries (if any) upon which this entry depends. That is,
-		 * if any of those entries are modified, then this entry should be
-		 * rebuilt.
-		 *
-		 * @return
-		 */
-		public Set<Path.Entry<?>> dependencies();
-
+		
 		/**
 		 * Read contents of file. Note, however, that this does not mean the
 		 * contents are re-read from permanent storage. If the contents are

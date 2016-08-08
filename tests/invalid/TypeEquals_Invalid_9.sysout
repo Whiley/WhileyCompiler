@@ -1,0 +1,3 @@
+../../tests/invalid/TypeEquals_Invalid_9.whiley:8: expected type bool, found null|int
+        return x
+               ^

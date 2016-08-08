@@ -72,31 +72,32 @@ public class Wyil2WyalBuilder implements Builder {
 		this.logger = logger;
 	}
 
-	public Set<Path.Entry<?>> build(
-			Collection<Pair<Path.Entry<?>, Path.Root>> delta)
+	@Override
+	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph)
 			throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
 
-		VcGenerator vcg = new VcGenerator(this);
+		VerificationConditionGenerator vcg = new VerificationConditionGenerator(this);
 		
 		// ========================================================================
 		// Translate files
 		// ========================================================================
 		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
 		for(Pair<Path.Entry<?>,Path.Root> p : delta) {
-			Path.Entry<WyilFile> sf = (Path.Entry<WyilFile>) p.first();
+			Path.Entry<WyilFile> source = (Path.Entry<WyilFile>) p.first();
 			Path.Root dst = p.second();
-			Path.Entry<WyalFile> df = (Path.Entry<WyalFile>) dst.create(sf.id(), WyalFile.ContentType);
-			generatedFiles.add(df);
-			WyalFile contents = vcg.transform(sf.read());
+			Path.Entry<WyalFile> target = (Path.Entry<WyalFile>) dst.create(source.id(), WyalFile.ContentType);
+			graph.registerDerivation(source, target);
+			generatedFiles.add(target);
+			WyalFile contents = vcg.translate(source.read(), target);
 			// Write the file into its destination
-			df.write(contents);
+			target.write(contents);
 			// Then, flush contents to disk in case we generate an assertion
 			// error later. In principle, this should be unnecessary when
 			// syntax errors are no longer implemented as exceptions.
-			df.flush();
+			target.flush();
 		}
 
 		// ========================================================================

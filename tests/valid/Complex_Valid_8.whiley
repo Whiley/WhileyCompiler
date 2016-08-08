@@ -23,7 +23,7 @@ constant EmptyTrie is { transitions: [DummyTransition; 0] }
 function append(Transition[] transitions, Transition t) -> Transition[]:
     Transition[] r = [t; |transitions| + 1]
     int i = 0
-    while i < |transitions| where i >= 0:
+    while i < |transitions| where i >= 0 && |r| > |transitions|:
         r[i] = transitions[i]
         i = i + 1
     return r
@@ -35,7 +35,8 @@ function add(Trie trie, string str) -> Trie:
 // Add a string into a Trie from a given state, producing an
 // updated Trie.
 function add(Trie trie, int state, string str, int index) -> Trie
-requires state >= 0:
+requires state >= 0
+requires index >= 0 && index <= |str|:
     //
     if |str| == index:
         return trie
@@ -67,6 +68,7 @@ function contains(Trie trie, string str) -> bool:
 // Check whether a given string is contained in the trie,
 // starting from a given state.
 function contains(Trie trie, int state, string str, int index) -> bool
+requires index >= 0 && index <= |str|
 requires state >= 0:
     //
     if |str| == index:

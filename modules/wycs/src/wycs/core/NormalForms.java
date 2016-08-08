@@ -1,20 +1,11 @@
 package wycs.core;
 
-import static wycc.lang.SyntaxError.internalFailure;
-
-import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
-import wycc.io.Token;
-import wycc.lang.Attribute;
 import wycc.util.Pair;
-import wycc.util.Triple;
 
 /**
  * Provides a number of encodings for many of the standard data types found in a

@@ -1,0 +1,3 @@
+../../tests/invalid/TypeEquals_Invalid_11.whiley:8: incomparable operands: bool and int
+        return x == 0
+               ^^^^^^

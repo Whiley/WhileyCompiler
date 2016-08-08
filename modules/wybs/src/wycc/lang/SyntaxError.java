@@ -25,14 +25,12 @@
 
 package wycc.lang;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Arrays;
+
+import wyfs.lang.Path;
 
 /**
  * This exception is thrown when a syntax error occurs in the parser.
@@ -41,30 +39,30 @@ import java.util.Arrays;
  *
  */
 public class SyntaxError extends RuntimeException {
-	private String msg;
-	private String filename;
-	private int start;
-	private int end;
-	private Attribute.Origin[] context;
+	/**
+	 * The file entry to which this error applies
+	 */
+	private Path.Entry<?> entry;
+	
+	/**
+	 * The SyntacticElement to which this error refers
+	 */
+	private SyntacticElement element;
 
 	/**
 	 * Identify a syntax error at a particular point in a file.
 	 *
 	 * @param msg
 	 *            Message detailing the problem.
-	 * @param filename
-	 *            The source file that this error is referring to.
-	 * @param line
-	 *            Line number within file containing problem.
-	 * @param column
-	 *            Column within line of file containing problem.
+	 * @param entry
+	 *            The path entry for the compilation unit this error refers to
+	 * @param element
+	 *            The syntactic element to this error refers 
 	 */
-	public SyntaxError(String msg, String filename, int start, int end, Attribute.Origin... context) {
-		this.msg = msg;
-		this.filename = filename;
-		this.start = start;
-		this.end = end;
-		this.context = context;
+	public SyntaxError(String msg, Path.Entry<?> entry, SyntacticElement element) {
+		super(msg);
+		this.entry = entry;
+		this.element = element;
 	}
 
 	/**
@@ -72,67 +70,26 @@ public class SyntaxError extends RuntimeException {
 	 *
 	 * @param msg
 	 *            Message detailing the problem.
-	 * @param filename
-	 *            The source file that this error is referring to.
-	 * @param line
-	 *            Line number within file containing problem.
-	 * @param column
-	 *            Column within line of file containing problem.
+	 * @param entry
+	 *            The path entry for the compilation unit this error refers to
+	 * @param element
+	 *            The syntactic element to this error refers
 	 */
-	public SyntaxError(String msg, String filename, int start, int end,
-			Throwable ex, Attribute.Origin... context) {
-		super(ex);
-		this.msg = msg;
-		this.filename = filename;
-		this.start = start;
-		this.end = end;
-		this.context = context;
-	}
-
-	public String getMessage() {
-		if (msg != null) {
-			return msg;
-		} else {
-			return "";
-		}
+	public SyntaxError(String msg, Path.Entry<?> entry, SyntacticElement element, Throwable ex) {
+		super(msg,ex);
+		this.entry = entry;
+		this.element = element;
 	}
 
 	/**
-	 * Error message
-	 *
+	 * Get the syntactic element to which this error is attached.
+	 * 
 	 * @return
 	 */
-	public String msg() {
-		return msg;
+	public SyntacticElement getElement() {
+		return element;
 	}
-
-	/**
-	 * Filename for file where the error arose.
-	 *
-	 * @return
-	 */
-	public String filename() {
-		return filename;
-	}
-
-	/**
-	 * Get index of first character of offending location.
-	 *
-	 * @return
-	 */
-	public int start() {
-		return start;
-	}
-
-	/**
-	 * Get index of last character of offending location.
-	 *
-	 * @return
-	 */
-	public int end() {
-		return end;
-	}
-
+	
 	/**
 	 * Output the syntax error to a given output stream in full form. In full
 	 * form, contextual information from the originating source file is
@@ -149,62 +106,61 @@ public class SyntaxError extends RuntimeException {
 	 * source file is included.
 	 */
 	public void outputSourceError(PrintStream output, boolean brief) {
-		if (filename == null) {
+		if (entry == null) {
 			output.println("syntax error: " + getMessage());
 		} else {
-			EnclosingLine enclosing = readEnclosingLine(filename, start, end);
+			EnclosingLine enclosing = readEnclosingLine(entry, element.attribute(Attribute.Source.class));
 			if(enclosing == null) {
 				output.println("syntax error: " + getMessage());
 			} else if(brief) {
-				printBriefError(output,filename,enclosing,getMessage());
+				printBriefError(output,entry,enclosing,getMessage());
 			} else {
-				printFullError(output,filename,enclosing,getMessage());
+				printFullError(output,entry,enclosing,getMessage());
 			}
 		}
 	}
 
-	private void printBriefError(PrintStream output, String filename, EnclosingLine enclosing, String message) {
-		output.print(filename + ":" + enclosing.lineNumber + ":"
+	private void printBriefError(PrintStream output, Path.Entry<?> entry, EnclosingLine enclosing, String message) {
+		output.print(entry.location() + ":" + enclosing.lineNumber + ":"
 				+ enclosing.columnStart() + ":"
 				+ enclosing.columnEnd() + ":\""
 				+ escapeMessage(message) + "\"");
 
 		// Now print contextual information (if applicable)
-		if(context != null && context.length > 0) {
-			output.print(":");
-			boolean firstTime=true;
-			for(Attribute.Origin o : context) {
-				if(!firstTime) {
-					output.print(",");
-				}
-				firstTime=false;
-				enclosing = readEnclosingLine(o.filename, o.start, o.end);
-				output.print(filename + ":" + enclosing.lineNumber + ":"
-						+ enclosing.columnStart() + ":"
-						+ enclosing.columnEnd());
-			}
-		}
+//		if(context != null && context.length > 0) {
+//			output.print(":");
+//			boolean firstTime=true;
+//			for(Attribute.Origin o : context) {
+//				if(!firstTime) {
+//					output.print(",");
+//				}
+//				firstTime=false;
+//				enclosing = readEnclosingLine(o.filename, o.start, o.end);
+//				output.print(filename + ":" + enclosing.lineNumber + ":"
+//						+ enclosing.columnStart() + ":"
+//						+ enclosing.columnEnd());
+//			}
+//		}
 
 		// Done
 		output.println();
 	}
 
-	private void printFullError(PrintStream output, String filename,
-			EnclosingLine enclosing, String message) {
-
-		output.println(filename + ":" + enclosing.lineNumber + ": " + message);
+	private void printFullError(PrintStream output, Path.Entry<?> entry, EnclosingLine enclosing, String message) {
+		
+		output.println(entry.location() + ":" + enclosing.lineNumber + ": " + message);
 
 		printLineHighlight(output,enclosing);
 
 		// Now print contextual information (if applicable)
-		if(context != null && context.length > 0) {
-			for(Attribute.Origin o : context) {
-				output.println();
-				enclosing = readEnclosingLine(o.filename, o.start, o.end);
-				output.println(o.filename + ":" + enclosing.lineNumber + " (context)");
-				printLineHighlight(output,enclosing);
-			}
-		}
+//		if(context != null && context.length > 0) {
+//			for(Attribute.Origin o : context) {
+//				output.println();
+//				enclosing = readEnclosingLine(o.filename, o.start, o.end);
+//				output.println(o.filename + ":" + enclosing.lineNumber + " (context)");
+//				printLineHighlight(output,enclosing);
+//			}
+//		}
 	}
 
 	private void printLineHighlight(PrintStream output,
@@ -269,14 +225,13 @@ public class SyntaxError extends RuntimeException {
 		}
 	}
 
-	private static EnclosingLine readEnclosingLine(String filename, int start, int end) {
+	private static EnclosingLine readEnclosingLine(Path.Entry<?> entry, Attribute.Source location) {
 		int line = 0;
 		int lineStart = 0;
 		int lineEnd = 0;
 		StringBuilder text = new StringBuilder();
 		try {
-			BufferedReader in = new BufferedReader(new InputStreamReader(
-					new FileInputStream(filename), "UTF-8"));
+			BufferedReader in = new BufferedReader(new InputStreamReader(entry.inputStream(), "UTF-8"));
 
 			// first, read whole file
 			int len = 0;
@@ -285,7 +240,7 @@ public class SyntaxError extends RuntimeException {
 				text.append(buf, 0, len);
 			}
 
-			while (lineEnd < text.length() && lineEnd <= start) {
+			while (lineEnd < text.length() && lineEnd <= location.start) {
 				lineStart = lineEnd;
 				lineEnd = parseLine(text, lineEnd);
 				line = line + 1;
@@ -295,52 +250,11 @@ public class SyntaxError extends RuntimeException {
 		}
 		lineEnd = Math.min(lineEnd, text.length());
 
-		return new EnclosingLine(start, end, line, lineStart, lineEnd,
+		return new EnclosingLine(location.start, location.end, line, lineStart, lineEnd,
 				text.substring(lineStart, lineEnd));
 	}
 
 	public static final long serialVersionUID = 1l;
-
-	public static void syntaxError(String msg, String filename,
-			SyntacticElement elem) {
-		int start = -1;
-		int end = -1;
-
-		Attribute.Source attr = (Attribute.Source) elem
-				.attribute(Attribute.Source.class);
-		if (attr != null) {
-			start = attr.start;
-			end = attr.end;
-		}
-
-		Attribute.Origin context = (Attribute.Origin) elem
-				.attribute(Attribute.Origin.class);
-		if(context != null) {
-			throw new SyntaxError(msg, filename, start, end, context);
-		} else {
-			throw new SyntaxError(msg, filename, start, end);
-		}
-	}
-
-	public static void syntaxError(String msg, String filename,
-			SyntacticElement elem, Throwable ex) {
-		int start = -1;
-		int end = -1;
-
-		Attribute.Source attr = (Attribute.Source) elem
-				.attribute(Attribute.Source.class);
-		if (attr != null) {
-			start = attr.start;
-			end = attr.end;
-		}
-		Attribute.Origin context = (Attribute.Origin) elem
-				.attribute(Attribute.Origin.class);
-		if(context != null) {
-			throw new SyntaxError(msg, filename, start, end, ex, context);
-		} else {
-			throw new SyntaxError(msg, filename, start, end, ex);
-		}
-	}
 
 	/**
 	 * An internal failure is a special form of syntax error which indicates
@@ -352,13 +266,13 @@ public class SyntaxError extends RuntimeException {
 	 *
 	 */
 	public static class InternalFailure extends SyntaxError {
-		public InternalFailure(String msg, String filename, int start, int end) {
-			super(msg, filename, start, end);
+		public InternalFailure(String msg, Path.Entry<? extends CompilationUnit> entry, SyntacticElement element) {
+			super(msg, entry, element);
 		}
 
-		public InternalFailure(String msg, String filename, int start, int end,
+		public InternalFailure(String msg, Path.Entry<? extends CompilationUnit> entry, SyntacticElement element,
 				Throwable ex) {
-			super(msg, filename, start, end, ex);
+			super(msg, entry, element, ex);
 		}
 
 		public String getMessage() {
@@ -369,36 +283,6 @@ public class SyntaxError extends RuntimeException {
 				return "internal failure, " + msg;
 			}
 		}
-	}
-
-	public static void internalFailure(String msg, String filename,
-			SyntacticElement elem) {
-		int start = -1;
-		int end = -1;
-
-		Attribute.Source attr = (Attribute.Source) elem
-				.attribute(Attribute.Source.class);
-		if (attr != null) {
-			start = attr.start;
-			end = attr.end;
-		}
-
-		throw new InternalFailure(msg, filename, start, end);
-	}
-
-	public static void internalFailure(String msg, String filename,
-			SyntacticElement elem, Throwable ex) {
-		int start = -1;
-		int end = -1;
-
-		Attribute.Source attr = (Attribute.Source) elem
-				.attribute(Attribute.Source.class);
-		if (attr != null) {
-			start = attr.start;
-			end = attr.end;
-		}
-
-		throw new InternalFailure(msg, filename, start, end, ex);
 	}
 	
 	private static String escapeMessage(String message) {

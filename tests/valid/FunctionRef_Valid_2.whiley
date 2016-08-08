@@ -1,10 +1,8 @@
+function f(int|null x) -> int:
+    return 0
 
-
-function f(real x) -> real:
-    return x + 1
-
-function g(function(int)->real func) -> real:
+function g(function(int)->int func) -> int:
     return func(1)
 
 public export method test() :
-    assume g(&f) == 2.0
+    assume g(&f) == 0

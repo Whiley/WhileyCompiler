@@ -10,7 +10,7 @@ import java.util.List;
 import wycc.lang.Attribute;
 import wycc.lang.CompilationUnit;
 import wycc.lang.SyntacticElement;
-import wycs.io.WyalFileReader;
+import wycc.util.AbstractCompilationUnit;
 import wycs.io.WyalFilePrinter;
 import wycs.io.WycsFileReader;
 import wycs.io.WycsFileWriter;
@@ -18,7 +18,7 @@ import wycs.syntax.Expr;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
-public class WycsFile implements CompilationUnit {
+public class WycsFile extends AbstractCompilationUnit {
 
 	// =========================================================================
 	// Content Type
@@ -54,37 +54,25 @@ public class WycsFile implements CompilationUnit {
 	// State
 	// =========================================================================
 
-	private final Path.ID module;
-	private final String filename;
 	private final ArrayList<Declaration> declarations;
 
 	// =========================================================================
 	// Constructors
 	// =========================================================================
 
-	public WycsFile(Path.ID module, String filename) {
-		this.module = module;
-		this.filename = filename;
+	public WycsFile(Path.Entry<? extends CompilationUnit> entry) {
+		super(entry);
 		this.declarations = new ArrayList<Declaration>();
 	}
 
-	public WycsFile(Path.ID module, String filename, Collection<Declaration> declarations) {
-		this.module = module;
-		this.filename = filename;
+	public WycsFile(Path.Entry<? extends CompilationUnit> entry, Collection<Declaration> declarations) {
+		super(entry);
 		this.declarations = new ArrayList<Declaration>(declarations);
 	}
 
 	// =========================================================================
 	// Accessors
 	// =========================================================================
-
-	public Path.ID id() {
-		return module;
-	}
-
-	public String filename() {
-		return filename;
-	}
 
 	public List<Declaration> declarations() {
 		return declarations;

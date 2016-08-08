@@ -1,4 +1,4 @@
-type c4nat is int x where x < 10
+type c4nat is (int x) where x < 10
 
 function h() -> (int r)
 ensures r <= 5:

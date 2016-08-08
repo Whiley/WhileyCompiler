@@ -9,7 +9,7 @@ ensures some { i in 0 .. |xs| | result == xs[i] }:
     int r = xs[0]
     int i = 1
     while i < |xs| 
-        where i >= 1 
+        where i >= 1 && i <= |xs|
         where some { j in 0 .. i | r == xs[j] }:
         r = xs[i]
         i = i + 1

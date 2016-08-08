@@ -34,6 +34,8 @@ import wycc.util.Pair;
 import wyfs.io.BinaryOutputStream;
 import wyfs.lang.Path;
 import wyil.lang.*;
+import wyil.lang.SyntaxTree.Location;
+import wyil.util.AbstractBytecode;
 import wyautl.util.BigRational;
 
 /**
@@ -130,9 +132,6 @@ public final class WyilFileWriter {
 		case BLOCK_Function:
 		case BLOCK_Method:
 			bytes = generateFunctionOrMethodBlock((WyilFile.FunctionOrMethod) data);
-			break;
-		case BLOCK_CodeForest:
-			bytes = generateCodeForest((BytecodeForest) data);
 			break;
 		}
 
@@ -312,12 +311,16 @@ public final class WyilFileWriter {
 					int index = constantCache.get(v.getValue());
 					output.write_uv(index);
 				}
-			} else if (val instanceof Constant.Lambda) {
-				Constant.Lambda fm = (Constant.Lambda) val;
+			} else if (val instanceof Constant.FunctionOrMethod) {
+				Constant.FunctionOrMethod fm = (Constant.FunctionOrMethod) val;
 				Type.FunctionOrMethod t = fm.type();
 				output.write_uv(t instanceof Type.Function ? CONSTANT_Function : CONSTANT_Method);
 				output.write_uv(typeCache.get(t));
 				output.write_uv(nameCache.get(fm.name()));
+			} else if (val instanceof Constant.Type) {
+				Constant.Type ct = (Constant.Type) val;
+				output.write_uv(CONSTANT_Type);
+				output.write_uv(typeCache.get(ct.value()));				
 			} else {
 				throw new RuntimeException("Unknown value encountered - " + val);
 			}
@@ -335,7 +338,7 @@ public final class WyilFileWriter {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
 
-		output.write_uv(pathCache.get(module.id()));
+		output.write_uv(pathCache.get(module.getEntry().id()));
 		output.write_uv(MODIFIER_Public); // for now
 		output.write_uv(module.blocks().size());
 
@@ -410,28 +413,38 @@ public final class WyilFileWriter {
 	 * +------------------------+
 	 * | uv : typeIdx           |
 	 * +------------------------+
+	 * | uv : nInvariants       |
+	 * +------------------------+ 
+	 * | uv[nInvariants]        |
+	 * +------------------------+
+	 * | SyntaxTree             |
+	 * +------------------------+
 	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
-	 * +------------------------+
-	 * | CodeForest : invariant |
-	 * +------------------------+
 	 * </pre>
 	 * 
 	 * The <code>nameIdx</code> is an index into the <code>stringPool</code>
 	 * representing the declaration's name, whilst <code>typeIdx</code> is an
 	 * index into the <code>typePool</code> representing the type itself.
-	 * Finally, <code>invariant</code> gives the type's invariant as zero or
-	 * more bytecode blocks.
 	 * 
 	 * @throws IOException
 	 */
 	private byte[] generateTypeBlock(WyilFile.Type td) throws IOException {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
-
-		output.write_uv(stringCache.get(td.name()));
-		output.write_uv(generateModifiers(td.modifiers()));
-		output.write_uv(typeCache.get(td.type()));
-		writeBlock(BLOCK_CodeForest, td.invariant(), output);
+		//
+		int nameIdx = stringCache.get(td.name());
+		int modifiers = generateModifiers(td.modifiers());
+		int typeIdx = typeCache.get(td.type());
+		List<Location<Bytecode.Expr>> invariant = td.getInvariant();
+		//
+		output.write_uv(nameIdx);
+		output.write_uv(modifiers);
+		output.write_uv(typeIdx);
+		output.write_uv(invariant.size());
+		for(Location<?> clause : invariant) {
+			output.write_uv(clause.getIndex());
+		}
+		writeSyntaxTree(td.getTree(),output);
 		output.close();
 		return bytes.toByteArray();
 	}
@@ -448,278 +461,129 @@ public final class WyilFileWriter {
 	 * +------------------------+
 	 * | uv : typeIdx           |
 	 * +------------------------+
-	 * | uv : nRequires         |
+	 * | uv : nPreconditions    |
 	 * +------------------------+
-	 * | uv : nEnsures          |
+	 * | uv : nPostconditions   |
+	 * +------------------------+
+	 * | uv[nPreconditions]     |
+	 * +------------------------+
+	 * | uv[nPostconditions]    |
+	 * +------------------------+
+	 * | uv : body              |
+	 * +------------------------+
+	 * | SyntaTree              |
 	 * +------------------------+
 	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
-	 * +------------------------+
-	 * | CodeForest : code      |
-	 * +------------------------+
 	 * </pre>
 	 * 
 	 * The <code>nameIdx</code> is an index into the <code>stringPool</code>
 	 * representing the declaration's name, whilst <code>typeIdx</code> is an
 	 * index into the <code>typePool</code> representing the function or method
-	 * type itself. Finally, <code>code</code> provides all code associated with
-	 * the function or method which includes any preconditions, postconditions
-	 * and the body itself. Here, <code>nRequires</code> identifiers the number
-	 * of roots which correspond to the precondition, whilst
-	 * <code>nEnsures</code> the number of roots corresponding to the
-	 * postcondition. Any root after this comprise the body.
+	 * type itself. 
 	 * 
 	 * @throws IOException
 	 */
 	private byte[] generateFunctionOrMethodBlock(WyilFile.FunctionOrMethod md) throws IOException {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
-
-		output.write_uv(stringCache.get(md.name()));
-		output.write_uv(generateModifiers(md.modifiers()));
-		output.write_uv(typeCache.get(md.type()));
-
-		output.write_uv(md.preconditions().length);
-		output.write_uv(md.postconditions().length);
-
-		output.pad_u8(); // pad out to next byte boundary
-
-		writeBlock(BLOCK_CodeForest, md.code(), output);
+		//
+		int nameIdx = stringCache.get(md.name());
+		int modifiers = generateModifiers(md.modifiers());
+		int typeIdx = typeCache.get(md.type());
+		List<Location<Bytecode.Expr>> precondition = md.getPrecondition();
+		List<Location<Bytecode.Expr>> postcondition = md.getPostcondition();		
+		//
+		output.write_uv(nameIdx);
+		output.write_uv(modifiers);
+		output.write_uv(typeIdx);
+		output.write_uv(precondition.size());
+		output.write_uv(postcondition.size());
+		//
+		for(Location<Bytecode.Expr> clause : precondition) {
+			output.write_uv(clause.getIndex());
+		}
+		for(Location<Bytecode.Expr> clause : postcondition) {
+			output.write_uv(clause.getIndex());
+		}
+		output.write_uv(md.getBody().getIndex());
+		writeSyntaxTree(md.getTree(),output);		
 
 		output.close();
+		
 		return bytes.toByteArray();
 	}
 
 	/**
-	 * <p>
-	 * Construct a code forest using a given set of pre-calculated label
-	 * offsets. The format is:
-	 * </p>
-	 * 
-	 * <pre>
-	 * +--------------------+
-	 * | uv: nRegs          |
-	 * +--------------------+
-	 * | uv: nBlocks        |
-	 * +--------------------+
-	 * | uv: nRoots         |
-	 * +--------------------+
-	 * | uv: nAttrs         |
-	 * +--------------------+
-	 * | Register[nRegs]    |
-	 * +--------------------+
-	 * | uv[nRoots]         |
-	 * +--------------------+
-	 * | CodeBlock[nBlocks] |
-	 * +--------------------+
-	 * | Attribute[nAttrs]  |
-	 * +--------------------+
-	 * </pre>
-	 * 
-	 * <p>
-	 * Each bytecode has a given offset which is calculated from the start of
-	 * all blocks. For example, assume block 1 has ten actual bytecodes (i.e.
-	 * which are not labels); then, a bytecode at index 2 in block 2 has offset
-	 * 12.
-	 * </p>
-	 * <p>
-	 * The mapping of label names to their bytecode offsets is needed when
-	 * writing branching bytecodes (e.g. goto). Each label object is associated
-	 * with the bytecode following it in the block.
-	 * </p>
-	 * 
-	 * @param forest
-	 *            The forest being written to the stream
-	 * @param labels
-	 *            The set of pre-calculated label offsets
-	 * @throws IOException
-	 */
-	private byte[] generateCodeForest(BytecodeForest forest) throws IOException {
-		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-		BinaryOutputStream output = new BinaryOutputStream(bytes);
-
-		HashMap<String, Integer> labels = buildLabelsMap(forest);
-		output.write_uv(forest.numRegisters());
-		output.write_uv(forest.numBlocks());
-		output.write_uv(forest.numRoots());
-		output.write_uv(0); // currently no attributes
-
-		List<BytecodeForest.Register> registers = forest.registers();
-		for (int i = 0; i != registers.size(); ++i) {
-			writeCodeRegister(registers.get(i), output);
-		}
-
-		// FIXME: in principle we can get rid of the following by reorgansing
-		// the forest so that root blocks come first.
-		for (int i = 0; i != forest.numRoots(); ++i) {
-			output.write_uv(forest.getRoot(i));
-		}
-
-		int offset = 0;
-		for (int i = 0; i != forest.numBlocks(); ++i) {
-			BytecodeForest.Block block = forest.get(i);
-			offset = writeCodeBlock(block, offset, labels, output);
-		}
-
-		output.close();
-		return bytes.toByteArray();
-	}
-
-	/**
-	 * <p>
-	 * Construct a mapping of labels to the bytecode offsets they represent
-	 * within the code forest. Labels do not correspond to "real" bytecodes
-	 * which are written out. Rather they are associated with the offset of
-	 * the bytecode immediately following them in a given block.
-	 * </p>
-	 * <p>
-	 * Each bytecode has a given offset which is calculated from the start of
-	 * all blocks. For example, assume block 1 has ten actual bytecodes (i.e.
-	 * which are not labels); then, a bytecode at index 2 in block 2 has offset
-	 * 12.
-	 * </p>
-	 * <p>
-	 * The purpose of the label mapping is to enable branch offsets to be
-	 * calculated when writing them out.
-	 * </p>
+	 * Write a syntax tree to the output stream. The format
+	 * of a syntax tree is one of the following:
 	 *
-	 * @param forest
-	 *            Code forest to construct label mapping from
-	 * @param labels
-	 *            Lab map being constructed
-	 * @return
-	 */
-	private HashMap<String, Integer> buildLabelsMap(BytecodeForest forest) {
-		HashMap<String, Integer> labels = new HashMap<String, Integer>();
-		int offset = 0;
-		for (int i = 0; i != forest.numBlocks(); ++i) {
-			BytecodeForest.Block block = forest.get(i);
-			for (int j = 0; j != block.size(); ++j) {
-				Bytecode code = block.get(j).code();
-				if (code instanceof Bytecode.Label) {
-					Bytecode.Label l = (Bytecode.Label) code;
-					labels.put(l.label(), offset-1);
-				} else {
-					offset = offset + 1;
-				}
-			}
-		}
-		return labels;
-	}
-
-	/**
-	 * Write details of a given code register to the output stream. The format
-	 * of reach register entry is:
-	 * 
 	 * <pre>
 	 * +-------------------+
-	 * | uv : nAttrs       |
-	 * +-------------------+
-	 * | uv : typeIdx      |
-	 * +-------------------+
-	 * | Attribute[nAttrs] |
+	 * | uv : nLocs        |
+	 * +-------------------+ 
+	 * | Locations[nLocs]  |
 	 * +-------------------+
 	 * </pre>
+	 * 
+	 * 
 	 * 
 	 * @param register
 	 *            Register to be written out
 	 * @param output
 	 * @throws  
 	 */
-	private void writeCodeRegister(BytecodeForest.Register register, BinaryOutputStream output) throws IOException {
-		// TODO: write out register attributes (including name)
-		output.write_uv(0);
-		// Write out the type index
-		output.write_uv(typeCache.get(register.type()));
+	private void writeSyntaxTree(SyntaxTree tree, BinaryOutputStream output) throws IOException {
+		List<Location<?>> locations = tree.getLocations();
+		output.write_uv(locations.size());
+		for(int i=0;i!=locations.size();++i) {
+			Location<?> location = locations.get(i);
+			writeLocation(location,output);
+		}		
 	}
 	
-	
 	/**
-	 * <p>
-	 * Write out a block of bytecodes using a given set of pre-calculated label
-	 * offsets. The format is:
-	 * </p>
+	 * Write details of a Location to the output stream. The format
+	 * of a location is:
 	 * 
 	 * <pre>
 	 * +-------------------+
-	 * | uv : nCodes       |
+	 * | uv : nTypes       |
+	 * +-------------------+
+	 * | uv[] : typeIdxs   |
 	 * +-------------------+
 	 * | uv : nAttrs       |
 	 * +-------------------+
-	 * | Bytecode[nCodes]  |
-	 * +-------------------+
+	 * | Bytecode          |
+	 * +-------------------+ 
 	 * | Attribute[nAttrs] |
 	 * +-------------------+
 	 * </pre>
 	 * 
-	 * <p>
-	 * The block is associated with a given offset value, which indicates the
-	 * offset of the first bytecode in the block to be used when calculating
-	 * branch offsets.
-	 * </p>
-	 * 
-	 * @param block
-	 * @param offset
-	 * @param labels
-	 * @param output
-	 * @return
-	 * @throws IOException
 	 */
-	private int writeCodeBlock(BytecodeForest.Block block, int offset, HashMap<String, Integer> labels,
-			BinaryOutputStream output) throws IOException {
-		// First, determine how many labels there are in this block (since
-		// labels are not real bytecodes)
-		int nlabels = countLabels(block);
-
-		// Second, write the count of bytecodes
-		output.write_uv(block.size() - nlabels);
-		// Third, write the count of attributes
-		// TODO: write out attributes
-		output.write_uv(0);
-
-		// Finally, write the actual bytecodes!
-		for (int i = 0; i != block.size(); ++i) {
-			Bytecode code = block.get(i).code();
-			if (code instanceof Bytecode.Label) {
-				// Skip over labels because these are not written to disk and
-				// have no "offset"
-			} else {
-				writeBytecode(code, offset, labels, output);
-				offset = offset + 1;
-			}
+	private void writeLocation(SyntaxTree.Location<?> location, BinaryOutputStream output) throws IOException {
+		output.write_uv(location.numberOfTypes());
+		for(int i=0;i!=location.numberOfTypes();++i) {
+			output.write_uv(typeCache.get(location.getType(i)));
 		}
-
-		// TODO: write attributes
-		return offset;
+		output.write_uv(0); // no attributes for now
+		writeBytecode(location.getBytecode(), output);
 	}
 
 	/**
 	 * <p>
-	 * Write out a given bytecode a given set of pre-calculated label offsets,
-	 * whose format is currently given as follows:
+	 * Write out a given bytecode whose format is currently given as follows:
 	 * </p>
 	 * 
 	 * <pre>
 	 * +-------------------+
 	 * | u8 : opcode       |
 	 * +-------------------+
-	 * | uv : nTargets     |
-	 * +-------------------+
-	 * | uv : nOperands    |
-	 * +-------------------+
-	 * | uv : nTypes       | 
-	 * +-------------------+
-	 * | uv : nAttrs       | 
-	 * +-------------------+
-	 * | uv[nTargets]      |
-	 * +-------------------+
-	 * | uv[nOperands]     |
-	 * +-------------------+ 
-	 * | uv[nTypes]        |
+	 * | uv : nAttrs       |	 
 	 * +-------------------+
 	 * | Attribute[nAttrs] | 
 	 * +-------------------+
-	 * | uv[] rest         |
-	 * +-------------------+
+	 *        ...
+	 * 
 	 * </pre>
 	 * 
 	 * <p>
@@ -729,46 +593,82 @@ public final class WyilFileWriter {
 	 * items can be reduced from uv to u4, etc.
 	 * </p>
 	 */
-	private void writeBytecode(Bytecode code, int offset, HashMap<String, Integer> labels, BinaryOutputStream output)
+	private void writeBytecode(Bytecode code, BinaryOutputStream output)
 			throws IOException {
-		writeCommon(code, output);
-		writeRest(code, offset, labels, output);
-	}
-
-	/**
-	 * Write the "common" part of a bytecode instruction. This includes the
-	 * opcode, target register, operand registers, types and attributes.
-	 *
-	 * @param code
-	 *            --- The bytecode to be written.
-	 * @param output
-	 *            --- The binary stream to write this bytecode to.
-	 * @throws IOException
-	 */
-	private void writeCommon(Bytecode code, BinaryOutputStream output) throws IOException {
-		output.write_u8(code.opcode());
-		int[] targets = code.targets();
-		int[] operands = code.operands();
-		Type[] types = code.types();
-		output.write_uv(targets.length);
-		output.write_uv(operands.length);
-		output.write_uv(types.length);
+		output.write_u8(code.getOpcode());
 		output.write_uv(0); // attributes
-		// Write target registers
-		for (int i = 0; i != targets.length; ++i) {
-			output.write_uv(targets[i]);
+		writeOperands(code,output);
+		writeOperandGroups(code,output);
+		if (code instanceof Bytecode.Stmt) {
+			writeBlocks((Bytecode.Stmt) code, output);
 		}
-		// Write operand registers
-		for (int i = 0; i != operands.length; ++i) {
-			output.write_uv(operands[i]);
-		}
-		// Write type indices
-		for (int i = 0; i != types.length; ++i) {
-			output.write_uv(typeCache.get(types[i]));
-		}	
-		// TODO: write attributes
+		writeExtras(code, output);
 	}
 
+	private void writeOperands(Bytecode code, BinaryOutputStream output) throws IOException {
+		Bytecode.Schema schema = AbstractBytecode.schemas[code.getOpcode()];
+		switch(schema.getOperands()) {
+		case ZERO:
+			// do nout
+			break;
+		case ONE:
+			output.write_uv(code.getOperand(0));
+			break;
+		case TWO:
+			output.write_uv(code.getOperand(0));
+			output.write_uv(code.getOperand(1));
+			break;
+		case MANY:
+			writeUnboundArray(code.getOperands(),output);
+		}		
+	}
+	
+	private void writeOperandGroups(Bytecode code, BinaryOutputStream output) throws IOException {		
+		Bytecode.Schema schema = AbstractBytecode.schemas[code.getOpcode()];
+		switch(schema.getOperandGroups()) {
+		case ZERO:
+			// do nout
+			break;
+		case ONE:
+			writeUnboundArray(code.getOperandGroup(0),output);
+			break;
+		case TWO:			
+			writeUnboundArray(code.getOperandGroup(0),output);
+			writeUnboundArray(code.getOperandGroup(1),output);
+			break;
+		case MANY:
+			output.write_uv(code.numberOfOperandGroups());
+			for(int i=0;i!=code.numberOfOperandGroups();++i) {
+				writeUnboundArray(code.getOperandGroup(i),output);
+			}			
+		}		
+	}
+	
+	private void writeBlocks(Bytecode.Stmt code, BinaryOutputStream output) throws IOException {
+		Bytecode.Schema schema = AbstractBytecode.schemas[code.getOpcode()];
+		switch(schema.getBlocks()) {
+		case ZERO:
+			// do nout
+			break;
+		case ONE:
+			output.write_uv(code.getBlock(0));
+			break;
+		case TWO:
+			output.write_uv(code.getBlock(0));
+			output.write_uv(code.getBlock(1));
+			break;
+		case MANY:
+			writeUnboundArray(code.getBlocks(),output);
+		}		
+	}
+	private void writeUnboundArray(int[] values, BinaryOutputStream output) throws IOException {
+		output.write_uv(values.length);	
+		// Write operand locations
+		for (int i = 0; i != values.length; ++i) {
+			output.write_uv(values[i]);
+		}	
+	}
+	
 	/**
 	 * Write the "rest" of a bytecode instruction. This includes additional
 	 * information as specified for the given opcode. For compound bytecodes,
@@ -788,57 +688,66 @@ public final class WyilFileWriter {
 	 *            instructions (e.g. goto). Since jump targets (in short form)
 	 *            are encoded as a relative offset, we need to know our current
 	 *            offset to compute the relative target.
-	 * @param labels
-	 *            --- A map from label to offset. This is required to determine
-	 *            the (relative) jump offset for a branching instruction.
 	 * @param output
 	 *            --- The binary output stream to which this bytecode is being
 	 *            written.
 	 * @throws IOException
 	 */
-	private void writeRest(Bytecode code, int offset, HashMap<String, Integer> labels,
-			BinaryOutputStream output) throws IOException {
-
-		// now deal with non-uniform instructions
-		// First, deal with special cases
-		if(code instanceof Bytecode.Compound) {
-			// Assert / Assume / Loop / Quantify
-			Bytecode.Compound cb = (Bytecode.Compound) code; 
-			output.write_uv(cb.block());
-		} else if(code instanceof Bytecode.Branching) {
-			Bytecode.Branching bb = (Bytecode.Branching) code;
-			int destination = labels.get(bb.destination());
-			output.write_uv(destination);
-		} else if (code instanceof Bytecode.Const) {
+	private void writeExtras(Bytecode code, BinaryOutputStream output) throws IOException {
+		//
+		switch (code.getOpcode()) {		
+		case Bytecode.OPCODE_const: {
 			Bytecode.Const c = (Bytecode.Const) code;
 			output.write_uv(constantCache.get(c.constant()));
-		} else if (code instanceof Bytecode.FieldLoad) {
+			break;
+		}
+		case Bytecode.OPCODE_fieldload: {
 			Bytecode.FieldLoad c = (Bytecode.FieldLoad) code;
 			output.write_uv(stringCache.get(c.fieldName()));
-		} else if (code instanceof Bytecode.Invoke) {
+			break;
+		}
+		case Bytecode.OPCODE_indirectinvoke: {
+			Bytecode.IndirectInvoke c = (Bytecode.IndirectInvoke) code;
+			output.write_uv(typeCache.get(c.type()));
+			break;
+		}
+		case Bytecode.OPCODE_namedblock: {
+			Bytecode.NamedBlock c = (Bytecode.NamedBlock) code;
+			output.write_uv(stringCache.get(c.getName()));
+			break;
+		}
+		case Bytecode.OPCODE_invoke: {
 			Bytecode.Invoke c = (Bytecode.Invoke) code;
+			output.write_uv(typeCache.get(c.type()));
 			output.write_uv(nameCache.get(c.name()));
-		} else if (code instanceof Bytecode.Lambda) {
+			break;
+		}
+		case Bytecode.OPCODE_lambda: {
 			Bytecode.Lambda c = (Bytecode.Lambda) code;
-			output.write_uv(nameCache.get(c.name()));
-		} else if (code instanceof Bytecode.Update) {
-			Bytecode.Update c = (Bytecode.Update) code;
-			List<String> fields = c.fields;
-			output.write_uv(fields.size());
-			for (int i = 0; i != fields.size(); ++i) {
-				output.write_uv(stringCache.get(fields.get(i)));
-			}
-		} else if (code instanceof Bytecode.Switch) {
+			output.write_uv(typeCache.get(c.type()));
+			break;
+		}		
+		case Bytecode.OPCODE_switch: {
 			Bytecode.Switch c = (Bytecode.Switch) code;
-			List<Pair<Constant, String>> branches = c.branches();
-			int target = labels.get(c.defaultTarget());
-			output.write_uv(target);
-			output.write_uv(branches.size());
-			for (Pair<Constant, String> b : branches) {
-				output.write_uv(constantCache.get(b.first()));
-				target = labels.get(b.second());
-				output.write_uv(target);
+			Bytecode.Case[] cases = c.cases();
+			output.write_uv(cases.length);
+			for (int i = 0; i != cases.length; ++i) {
+				Bytecode.Case cAse = cases[i];
+				Constant[] values = cAse.values();
+				output.write_uv(cAse.block());
+				output.write_uv(values.length);
+				for (int j = 0; j != values.length; ++j) {
+					output.write_uv(constantCache.get(values[j]));
+				}
 			}
+			break;
+		}
+		case Bytecode.OPCODE_vardecl:
+		case Bytecode.OPCODE_vardeclinit: {
+			Bytecode.VariableDeclaration d = (Bytecode.VariableDeclaration) code;
+			output.write_uv(stringCache.get(d.getName()));
+			break;
+		}
 		}
 	}
 
@@ -857,27 +766,7 @@ public final class WyilFileWriter {
 		}
 		return mods;
 	}
-
-	/**
-	 * Count the number of label bytecodes in a given block. This is needed to
-	 * help calculate the number of "real" bytecodes in that block, since labels
-	 * are not real bytecodes. Rather they are just markers acting as branch
-	 * targets.
-	 * 
-	 * @param block
-	 * @return
-	 */
-	private int countLabels(BytecodeForest.Block block) {
-		int nlabels = 0;
-		for (int i = 0; i != block.size(); ++i) {
-			Bytecode code = block.get(i).code();
-			if (code instanceof Bytecode.Label) {
-				nlabels++;
-			}
-		}
-		return nlabels;
-	}
-		
+	
 	private void buildPools(WyilFile module) {
 		stringPool.clear();
 		stringCache.clear();
@@ -897,7 +786,7 @@ public final class WyilFileWriter {
 		typePool.clear();
 		typeCache.clear();
 
-		addPathItem(module.id());
+		addPathItem(module.getEntry().id());
 		for (WyilFile.Block d : module.blocks()) {
 			buildPools(d);
 		}
@@ -913,78 +802,67 @@ public final class WyilFileWriter {
 		}
 	}
 
-	private void buildPools(WyilFile.Type declaration) {
-		addStringItem(declaration.name());
-		addTypeItem(declaration.type());
-		buildPools(declaration.invariant());
-	}
-
 	private void buildPools(WyilFile.Constant declaration) {
 		addStringItem(declaration.name());
 		addConstantItem(declaration.constant());
 	}
 
+	private void buildPools(WyilFile.Type declaration) {
+		addStringItem(declaration.name());
+		addTypeItem(declaration.type());
+		buildPools(declaration.getTree());
+	}
+
 	private void buildPools(WyilFile.FunctionOrMethod declaration) {
 		addStringItem(declaration.name());
 		addTypeItem(declaration.type());
-		buildPools(declaration.code());		
+		buildPools(declaration.getTree());
 	}
 
-	private void buildPools(BytecodeForest forest) {		
-		for(int i=0;i!=forest.numRegisters();++i) {
-			buildPools(forest.getRegister(i));
+	private void buildPools(SyntaxTree tree) {
+		for(Location<?> e : tree.getLocations()) {
+			buildPools(e);
 		}
-		for(int i=0;i!=forest.numBlocks();++i) {
-			buildPools(forest.get(i));
-		}
-	}
-
-	private void buildPools(BytecodeForest.Register reg) {
-		addTypeItem(reg.type());
 	}
 	
-	private void buildPools(BytecodeForest.Block block) {
-		for (int i = 0; i != block.size(); ++i) {
-			BytecodeForest.Entry entry = block.get(i);
-			buildPools(entry.code());			
-			// TODO: handle entry attributes
+	private void buildPools(SyntaxTree.Location<?> loc) {
+		for(int i=0;i!=loc.numberOfTypes();++i) {
+			addTypeItem(loc.getType(i));
 		}
+		buildPools(loc.getBytecode());
 	}
-
+	
 	private void buildPools(Bytecode code) {
-
-		// First, deal with special cases
 		if (code instanceof Bytecode.Const) {
 			Bytecode.Const c = (Bytecode.Const) code;
 			addConstantItem(c.constant());
 		} else if (code instanceof Bytecode.FieldLoad) {
 			Bytecode.FieldLoad c = (Bytecode.FieldLoad) code;
 			addStringItem(c.fieldName());
-		}else if (code instanceof Bytecode.Invoke) {
+		} else if (code instanceof Bytecode.Invoke) {
 			Bytecode.Invoke c = (Bytecode.Invoke) code;
 			addNameItem(c.name());
-		} else if (code instanceof Bytecode.Lambda) {
-			Bytecode.Lambda c = (Bytecode.Lambda) code;
-			addNameItem(c.name());
-		} else if (code instanceof Bytecode.Update) {
-			Bytecode.Update c = (Bytecode.Update) code;
-			for (Bytecode.LVal l : c) {
-				if (l instanceof Bytecode.RecordLVal) {
-					Bytecode.RecordLVal lv = (Bytecode.RecordLVal) l;
-					addStringItem(lv.field);
-				}
-			}
+			addTypeItem(c.type());
+		} else if(code instanceof Bytecode.NamedBlock) {
+			Bytecode.NamedBlock nb = (Bytecode.NamedBlock) code;
+			addStringItem(nb.getName());
 		} else if (code instanceof Bytecode.Switch) {
 			Bytecode.Switch s = (Bytecode.Switch) code;
-			for (Pair<Constant, String> b : s.branches()) {
-				addConstantItem(b.first());
+			for (Bytecode.Case cs : s.cases()) {
+				for (Constant c : cs.values()) {
+					addConstantItem(c);
+				}
 			}
-		}
-
-		// Second, deal with standard cases
-		for (Type type : code.types()) {
-			addTypeItem(type);
-		}
+		} else if (code instanceof Bytecode.IndirectInvoke) {
+			Bytecode.IndirectInvoke b = (Bytecode.IndirectInvoke) code;
+			addTypeItem(b.type());
+		} else if (code instanceof Bytecode.Invoke) {
+			Bytecode.Invoke b = (Bytecode.Invoke) code;
+			addTypeItem(b.type());
+		} else if (code instanceof Bytecode.VariableDeclaration) {
+			Bytecode.VariableDeclaration vd = (Bytecode.VariableDeclaration) code;
+			addStringItem(vd.getName());
+		} 
 	}
 
 	private int addNameItem(NameID name) {
@@ -1071,10 +949,13 @@ public final class WyilFileWriter {
 				addStringItem(e.getKey());
 				addConstantItem(e.getValue());
 			}
-		} else if (v instanceof Constant.Lambda) {
-			Constant.Lambda fm = (Constant.Lambda) v;
+		} else if (v instanceof Constant.FunctionOrMethod) {
+			Constant.FunctionOrMethod fm = (Constant.FunctionOrMethod) v;
 			addTypeItem(fm.type());
 			addNameItem(fm.name());
+		} else if (v instanceof Constant.Type) {
+			Constant.Type ct = (Constant.Type) v;
+			addTypeItem(ct.value());
 		}
 	}
 
@@ -1160,8 +1041,6 @@ public final class WyilFileWriter {
 	public final static int BLOCK_Function = 12;
 	public final static int BLOCK_Method = 13;
 	// ... (anticipating some others here)
-	public final static int BLOCK_CodeForest = 20;
-	// ... (anticipating some others here)
 
 	// =========================================================================
 	// CONSTANT identifiers
@@ -1177,7 +1056,7 @@ public final class WyilFileWriter {
 	public final static int CONSTANT_Array = 9;
 	public final static int CONSTANT_Record = 10;
 	// public final static int CONSTANT_Tuple = 11;
-	// public final static int CONSTANT_Map = 12;
+	public final static int CONSTANT_Type = 12;
 	public final static int CONSTANT_Function = 13;
 	public final static int CONSTANT_Method = 14;
 

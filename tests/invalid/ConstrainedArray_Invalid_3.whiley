@@ -1,7 +1,7 @@
 type char is (int x) where x >= 0 && x <= 255
-type string is [char]
+type string is char[]
 
-public function update(string str) -> [char]:
+public function update(string str) -> char[]:
     return [-1]
 
 public method main() -> string:

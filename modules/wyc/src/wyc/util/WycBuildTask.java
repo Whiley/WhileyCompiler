@@ -14,7 +14,6 @@ import wyfs.lang.Path.ID;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.JarFileRoot;
 import wyfs.util.VirtualRoot;
-import wyil.transforms.*;
 import wyil.builders.Wyil2WyalBuilder;
 import wyil.checks.*;
 import wyc.builder.WhileyBuilder;
@@ -25,7 +24,6 @@ import wycc.util.Pair;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;
-import wycs.transforms.SmtVerificationCheck;
 import wycs.transforms.VerificationCheck;
 import wycs.util.WycsBuildTask;
 import wyil.io.WyilFilePrinter;
@@ -146,11 +144,7 @@ public class WycBuildTask {
 	public static final List<Pipeline.Template> defaultPipeline = Collections
 			.unmodifiableList(new ArrayList<Pipeline.Template>() {
 				{
-					add(new Pipeline.Template(DefiniteAssignmentCheck.class,
-							Collections.EMPTY_MAP));
 					add(new Pipeline.Template(ModuleCheck.class,
-							Collections.EMPTY_MAP));
-					add(new Pipeline.Template(LoopVariants.class,
 							Collections.EMPTY_MAP));
 					add(new Pipeline.Template(CoercionCheck.class,
 							Collections.EMPTY_MAP));
@@ -162,9 +156,7 @@ public class WycBuildTask {
 	 * from the command-line using abbreviated names, rather than their full
 	 * names.
 	 */
-	static {
-		Pipeline.register(DefiniteAssignmentCheck.class);
-		Pipeline.register(LoopVariants.class);		
+	static {		
 		Pipeline.register(ModuleCheck.class);
 		Pipeline.register(CoercionCheck.class);
 		Pipeline.register(WyilFilePrinter.class);		
@@ -618,7 +610,6 @@ public class WycBuildTask {
 				Pipeline<WycsFile> wycsPipeline = new Pipeline(WycsBuildTask.defaultPipeline);
 
 				wycsPipeline.setOption(VerificationCheck.class,"enable",verification);
-				wycsPipeline.setOption(SmtVerificationCheck.class,"enable",smtVerification);
 				Wyal2WycsBuilder wycsBuilder = new Wyal2WycsBuilder(project,wycsPipeline);
 
 				if(verbose) {

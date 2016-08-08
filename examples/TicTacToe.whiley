@@ -18,10 +18,10 @@ type Square is (int x) where x == BLANK || x == CIRCLE || x == CROSS
 type Board is ({
     nat move,
     Square[] pieces // 3 x 3
-} this)
-where |this.pieces| == 9 && this.move <= 9
-where countOf(this.pieces,BLANK) == (9 - this.move)
-where (countOf(this.pieces,CIRCLE) == countOf(this.pieces,CROSS) || countOf(this.pieces,CIRCLE) == countOf(this.pieces,CROSS)+1)
+} b)
+where |b.pieces| == 9 && b.move <= 9
+where countOf(b.pieces,BLANK) == (9 - b.move)
+where (countOf(b.pieces,CIRCLE) == countOf(b.pieces,CROSS) || countOf(b.pieces,CIRCLE) == countOf(b.pieces,CROSS)+1)
 
 // ==================================================================
 // An empty board is one where all pieces are blank

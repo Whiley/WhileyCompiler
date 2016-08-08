@@ -56,9 +56,9 @@ public function indexOf(int[] items, int item) -> (int|null index)
 // If int returned, element at this position matches item
 ensures index is int ==> items[index] == item
 // If int returned, element at this position is first match
-ensures index is int ==> no { i in 0 .. index | items[i] == item }
+ensures index is int ==> all { i in 0 .. index | items[i] != item }
 // If null returned, no element in items matches item
-ensures index is null ==> no { i in 0 .. |items| | items[i] == item }:
+ensures index is null ==> all { i in 0 .. |items| | items[i] != item }:
     //
     return indexOf(items,item,0)
 
@@ -70,9 +70,9 @@ requires start >= 0
 // If int returned, element at this position matches item
 ensures index is int ==> items[index] == item
 // If int returned, element at this position is first match
-ensures index is int ==> no { i in start .. index | items[i] == item }
+ensures index is int ==> all { i in start .. index | items[i] != item }
 // If null returned, no element in items matches item
-ensures index is null ==> no { i in start .. |items| | items[i] == item }:
+ensures index is null ==> all { i in start .. |items| | items[i] != item }:
     //
     int i = start
     //
@@ -80,7 +80,7 @@ ensures index is null ==> no { i in start .. |items| | items[i] == item }:
     // i is positive
     where i >= 0
     // No element seen so far matches item
-    where no { j in start .. i | items[j] == item }:
+    where all { j in start .. i | items[j] != item }:
         //
         if items[i] == item:
             return i
@@ -94,16 +94,16 @@ public function lastIndexOf(int[] items, int item) -> (int|null index)
 // If int returned, element at this position matches item
 ensures index is int ==> items[index] == item
 // If int returned, element at this position is last match
-ensures index is int ==> no { i in (index+1) .. |items| | items[i] == item }
+ensures index is int ==> all { i in (index+1) .. |items| | items[i] != item }
 // If null returned, no element in items matches item
-ensures index is null ==> no { i in 0 .. |items| | items[i] == item }:
+ensures index is null ==> all { i in 0 .. |items| | items[i] != item }:
     //
     int i = |items|
     //
     while i > 0
     where i <= |items|
     // No element seen so far matches item
-    where no { j in i..|items| | items[j] == item }:
+    where all { j in i..|items| | items[j] != item }:
         //
         i = i - 1
         if items[i] == item:

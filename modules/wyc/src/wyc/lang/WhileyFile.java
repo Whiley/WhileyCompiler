@@ -34,6 +34,7 @@ import wycc.lang.Attribute;
 import wycc.lang.CompilationUnit;
 import wycc.lang.SyntacticElement;
 import wycc.lang.SyntaxError;
+import wycc.util.AbstractCompilationUnit;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -48,7 +49,7 @@ import wyil.lang.*;
  * @author David J. Pearce
  *
  */
-public final class WhileyFile implements CompilationUnit {
+public final class WhileyFile extends AbstractCompilationUnit {
 
 	// =========================================================================
 	// Content Type
@@ -78,10 +79,8 @@ public final class WhileyFile implements CompilationUnit {
 			long start = System.currentTimeMillis();
 			long memory = runtime.freeMemory();
 
-			WhileyFileLexer wlexer = new WhileyFileLexer(e.location()
-					.toString(), inputstream);
-			WhileyFileParser wfr = new WhileyFileParser(e.location()
-					.toString(), wlexer.scan());
+			WhileyFileLexer wlexer = new WhileyFileLexer(e);
+			WhileyFileParser wfr = new WhileyFileParser(e, wlexer.scan());
 			return wfr.read();
 		}
 
@@ -99,17 +98,14 @@ public final class WhileyFile implements CompilationUnit {
 	// State
 	// =========================================================================
 
-	public final Path.ID module;
-	public final String filename;
 	public final ArrayList<Declaration> declarations;
 
 	// =========================================================================
 	// Constructors
 	// =========================================================================
 
-	public WhileyFile(Path.ID module, String filename) {
-		this.module = module;
-		this.filename = filename;
+	public WhileyFile(Path.Entry<WhileyFile> entry) {
+		super(entry);
 		this.declarations = new ArrayList<Declaration>();
 	}
 
@@ -241,7 +237,7 @@ public final class WhileyFile implements CompilationUnit {
 		public List<Import> imports() {
 			// this computation could (should?) be cached.
 			ArrayList<Import> imports = new ArrayList<Import>();
-			imports.add(new WhileyFile.Import(Trie.fromString(module.parent(),
+			imports.add(new WhileyFile.Import(Trie.fromString(entry.id().parent(),
 					"*"), null));
 
 			for (Declaration d : declarations) {
@@ -251,7 +247,7 @@ public final class WhileyFile implements CompilationUnit {
 					imports.add((Import) d);
 				}
 			}
-			imports.add(new WhileyFile.Import(Trie.fromString(module), "*"));
+			imports.add(new WhileyFile.Import(Trie.fromString(entry.id()), "*"));
 
 			Collections.reverse(imports);
 
@@ -619,21 +615,21 @@ public final class WhileyFile implements CompilationUnit {
 
 	public static void syntaxError(String msg, Context context,
 			SyntacticElement elem) {
-		SyntaxError.syntaxError(msg, context.file().filename, elem);
+		throw new SyntaxError(msg, context.file().getEntry(), elem);
 	}
 
 	public static void syntaxError(String msg, Context context,
 			SyntacticElement elem, Throwable ex) {
-		SyntaxError.syntaxError(msg, context.file().filename, elem, ex);
+		throw new SyntaxError(msg, context.file().getEntry(), elem, ex);
 	}
 
 	public static void internalFailure(String msg, Context context,
 			SyntacticElement elem) {
-		SyntaxError.internalFailure(msg, context.file().filename, elem);
+		throw new SyntaxError.InternalFailure(msg, context.file().getEntry(), elem);
 	}
 
 	public static void internalFailure(String msg, Context context,
 			SyntacticElement elem, Throwable ex) {
-		SyntaxError.internalFailure(msg, context.file().filename, elem, ex);
+		throw new SyntaxError.InternalFailure(msg, context.file().getEntry(), elem, ex);
 	}
 }

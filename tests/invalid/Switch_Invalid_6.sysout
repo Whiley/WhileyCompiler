@@ -1,0 +1,3 @@
+../../tests/invalid/Switch_Invalid_6.whiley:1: missing return statement
+function f(int x) -> int:
+^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -131,7 +131,8 @@ public final class WhileyBuilder implements Builder {
 		this.logger = logger;
 	}
 
-	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta)
+	@Override
+	public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph)
 			throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long startTime = System.currentTimeMillis();
@@ -151,7 +152,7 @@ public final class WhileyBuilder implements Builder {
 				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) src;
 				WhileyFile wf = sf.read();
 				count++;
-				srcFiles.put(wf.module, sf);
+				srcFiles.put(sf.id(), sf);
 			}
 		}
 
@@ -172,7 +173,6 @@ public final class WhileyBuilder implements Builder {
 			if (f.contentType() == WhileyFile.ContentType) {
 				Path.Entry<WhileyFile> sf = (Path.Entry<WhileyFile>) f;
 				WhileyFile wf = sf.read();
-				//new FlowTyping(resolver).propagate(wf);
 				files.add(wf);
 			}
 		}
@@ -191,7 +191,6 @@ public final class WhileyBuilder implements Builder {
 		tmpTime = System.currentTimeMillis();
 		tmpMemory = runtime.freeMemory();
 
-		//CodeGenerator generator = new CodeGenerator();
 		CodeGenerator generator = new CodeGenerator(this,flowChecker);
 		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
@@ -199,11 +198,12 @@ public final class WhileyBuilder implements Builder {
 			Path.Root dst = p.second();
 			if (src.contentType() == WhileyFile.ContentType) {
 				Path.Entry<WhileyFile> source = (Path.Entry<WhileyFile>) src;
-				Path.Entry<WyilFile> target = dst.create(src.id(),
-						WyilFile.ContentType);
+				Path.Entry<WyilFile> target = dst.create(src.id(), WyilFile.ContentType);
+				graph.registerDerivation(source, target);
 				generatedFiles.add(target);
 				WhileyFile wf = source.read();
-				WyilFile wyil = generator.generate(wf);
+				new DefiniteAssignmentAnalysis(wf).check();
+				WyilFile wyil = generator.generate(wf, target);
 				target.write(wyil);
 			}
 		}
@@ -358,17 +358,15 @@ public final class WhileyBuilder implements Builder {
 
 		try {
 			stage.apply(module);
-			logger.logTimedMessage("[" + module.filename() + "] applied "
-					+ name, System.currentTimeMillis() - start, memory - runtime.freeMemory());
+			logger.logTimedMessage("[" + module.getEntry().location() + "] applied " + name,
+					System.currentTimeMillis() - start, memory - runtime.freeMemory());
 			System.gc();
 		} catch (RuntimeException ex) {
-			logger.logTimedMessage("[" + module.filename() + "] failed on "
-					+ name + " (" + ex.getMessage() + ")",
+			logger.logTimedMessage("[" + module.getEntry().location() + "] failed on " + name + " (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());
 			throw ex;
 		} catch (IOException ex) {
-			logger.logTimedMessage("[" + module.filename() + "] failed on "
-					+ name + " (" + ex.getMessage() + ")",
+			logger.logTimedMessage("[" + module.getEntry().location() + "] failed on " + name + " (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start, memory - runtime.freeMemory());
 			throw ex;
 		}

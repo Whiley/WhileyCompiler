@@ -27,14 +27,9 @@ import wycs.core.Code;
 import wycs.core.SemanticType;
 import wycs.core.Value;
 import wycs.core.WycsFile;
-import wycs.io.WyalFilePrinter;
-import wycs.io.WycsFilePrinter;
-import wycs.solver.Solver;
 import wycs.syntax.SyntacticType;
-import wycs.syntax.TypeAttribute;
 import wycs.syntax.TypePattern;
 import wycs.syntax.WyalFile;
-import wycs.transforms.SmtVerificationCheck;
 import wycs.transforms.TypePropagation;
 import wycs.transforms.VerificationCheck;
 import wyfs.lang.Content;
@@ -101,7 +96,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 	// ======================================================================
 
 	@Override
-	public Set<Path.Entry<?>> build(Collection<Pair<Entry<?>, Path.Root>> delta) throws IOException {
+	public Set<Path.Entry<?>> build(Collection<Pair<Entry<?>, Path.Root>> delta, Build.Graph graph) throws IOException {
 		Runtime runtime = Runtime.getRuntime();
 		long startTime = System.currentTimeMillis();
 		long startMemory = runtime.freeMemory();
@@ -141,6 +136,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			if (src.contentType() == WyalFile.ContentType) {
 				Path.Entry<WyalFile> source = (Path.Entry<WyalFile>) src;
 				Path.Entry<WycsFile> target = (Path.Entry<WycsFile>) dst.create(src.id(),WycsFile.ContentType);
+				graph.registerDerivation(source, target);
 				generatedFiles.add(target);
 				WyalFile wf = source.read();
 				WycsFile wycs = getModuleStub(wf);
@@ -187,7 +183,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				Path.Entry<WycsFile> target = (Path.Entry<WycsFile>) dst
 						.create(src.id(), WycsFile.ContentType);
 				WyalFile wf = source.read();
-				WycsFile wycs = generator.generate(wf);
+				WycsFile wycs = generator.generate(wf,target);
 				target.write(wycs);
 			}
 		}
@@ -217,15 +213,13 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 						writer.write(ex.reduction());
 						writer.flush();
 					}
-					syntaxError(ex.getMessage(), module.filename(),
-							ex.assertion(), ex);
-				} catch (SmtVerificationCheck.AssertionFailure e) {
-                    syntaxError(e.getMessage(), module.filename(),
-                            e.getAssertion(), e);
-                }
+					// Determine the original source file, since we want to
+					// report the error on this file.
+					Path.Entry<?> source = determineSource(p.first(),graph);
+					throw new SyntaxError(ex.getMessage(), source, ex.assertion(), ex);
+				} 
 			}
 		}
-
 
 		// ========================================================================
 		// Done
@@ -341,8 +335,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				} catch(SyntaxError e) {
 					throw e;
 				} catch (Exception e) {
-					internalFailure(e.getMessage(), context.file().filename(),
-							context, e);
+					throw new InternalFailure(e.getMessage(), context.file().getEntry(), context, e);
 				}
 			}
 		}
@@ -361,7 +354,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				} catch(SyntaxError e) {
 					throw e;
 				} catch (Exception e) {
-					internalFailure(e.getMessage(), context.file().filename(),
+					throw new InternalFailure(e.getMessage(), context.file().getEntry(),
 							context, e);
 				}
 			}
@@ -433,8 +426,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		} catch(ResolveError e) {
 			throw e;
 		} catch(Exception e) {		
-			internalFailure(e.getMessage(),context.file().filename(),context,e);
-			return null;
+			throw new InternalFailure(e.getMessage(),context.file().getEntry(),context,e);
 		}
 	}
 
@@ -593,9 +585,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		} else if (type instanceof SyntacticType.Variable) {
 			SyntacticType.Variable p = (SyntacticType.Variable) type;
 			if(!generics.contains(p.var)) {
-				internalFailure("undeclared generic variable encountered (" + p + ")",
-						context.file().filename(), type);
-				return null; // deadcode
+				throw new InternalFailure("undeclared generic variable encountered (" + p + ")",
+						context.file().getEntry(), type);
 			}
 			return SemanticType.Var(p.var);
 		} else if(type instanceof SyntacticType.Negation) {
@@ -655,9 +646,8 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 			return SemanticType.Nominal(nid);
 		}
 
-		internalFailure("unknown syntactic type encountered",
-				context.file().filename(), type);
-		return null; // deadcode
+		throw new InternalFailure("unknown syntactic type encountered",
+				context.file().getEntry(), type);
 	}
 
 	/**
@@ -775,7 +765,7 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				SemanticType.Nominal nt = (SemanticType.Nominal) type;
 				WycsFile wf = getModule(nt.name().module());
 				if(wf == null) {
-					syntaxError("module not found: " + nt.name().module(), context.file().filename(), context);
+					throw new SyntaxError("module not found: " + nt.name().module(), context.file().getEntry(), context);
 				}
 				WycsFile.Type td = wf.declaration(nt.name().name(),
 						WycsFile.Type.class);				
@@ -789,11 +779,10 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 		} catch(SyntaxError e) {
 			throw e;
 		} catch (Exception e) {
-			internalFailure(e.getMessage(), context.file().filename(), context, e);
+			throw new InternalFailure(e.getMessage(), context.file().getEntry(), context, e);
 		}
-		internalFailure("unknown type encountered", context.file().filename(),
+		throw new InternalFailure("unknown type encountered", context.file().getEntry(),
 				context);
-		return null;
 	}
 
 	// ======================================================================
@@ -809,18 +798,18 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 
 		try {
 			stage.apply(module);
-			logger.logTimedMessage("[" + module.filename() + "] applied "
+			logger.logTimedMessage("[" + module.getEntry() + "] applied "
 					+ name, System.currentTimeMillis() - start, memory
 					- runtime.freeMemory());
 			System.gc();
 		} catch (RuntimeException ex) {
-			logger.logTimedMessage("[" + module.filename() + "] failed on "
+			logger.logTimedMessage("[" + module.getEntry() + "] failed on "
 					+ name + " (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start,
 					memory - runtime.freeMemory());
 			throw ex;
 		} catch (IOException ex) {
-			logger.logTimedMessage("[" + module.filename() + "] failed on "
+			logger.logTimedMessage("[" + module.getEntry() + "] failed on "
 					+ name + " (" + ex.getMessage() + ")",
 					System.currentTimeMillis() - start,
 					memory - runtime.freeMemory());
@@ -891,15 +880,22 @@ public class Wyal2WycsBuilder implements Builder, Logger {
 				}
 			} catch (ResolveError re) {
 				// should be unreachable if type propagation is already succeeded.
-				syntaxError(re.getMessage(),
-						wyalFile.filename(), d, re);
-				return null;
+				throw new SyntaxError(re.getMessage(), wyalFile.getEntry(), d, re);
 			}
 		}
 
-		return new WycsFile(wyalFile.id(), wyalFile.filename(), declarations);
+		return new WycsFile(wyalFile.getEntry(), declarations);
 	}
 
+	private static Path.Entry<?> determineSource(Path.Entry<?> child, Build.Graph graph) {
+		Path.Entry<?> parent = graph.parent(child);
+		while(parent != null) {
+			child = parent;
+			parent = graph.parent(child);
+		}
+		return child;		
+	}
+	
 	protected static String name(String camelCase) {
 		boolean firstTime = true;
 		String r = "";

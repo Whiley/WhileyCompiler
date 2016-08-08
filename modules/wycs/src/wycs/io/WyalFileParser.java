@@ -10,13 +10,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static wycc.lang.SyntaxError.internalFailure;
 import static wycs.io.WyalFileLexer.Token.Kind.*;
 import wycs.core.Value;
 import wycs.io.WyalFileLexer.Token;
 import wycs.syntax.*;
 import wycs.syntax.Expr.Is;
 import wycc.lang.SyntaxError;
+import wycc.lang.SyntaxError.*;
 import wycc.lang.SyntacticElement;
 import wycc.lang.Attribute;
 import wycc.util.Pair;
@@ -24,12 +24,12 @@ import wyfs.lang.Path;
 import wyfs.util.Trie;
 
 public class WyalFileParser {
-	private String filename;
+	private final Path.Entry<WyalFile> entry;
 	private ArrayList<Token> tokens;
 	private int index;
 
-	public WyalFileParser(String filename, List<Token> tokens) {
-		this.filename = filename;
+	public WyalFileParser(Path.Entry<WyalFile> entry, List<Token> tokens) {
+		this.entry = entry;
 		this.tokens = new ArrayList<Token>(tokens);
 	}
 
@@ -43,12 +43,8 @@ public class WyalFileParser {
 	public WyalFile read() {
 		Path.ID pkg = parsePackage();
 
-		// Now, figure out module name from filename
-		// FIXME: this is a hack!
-		String name = filename.substring(
-				filename.lastIndexOf(File.separatorChar) + 1,
-				filename.length() - 5);
-		WyalFile wf = new WyalFile(pkg.append(name), filename);
+		// Construct object representing this WyalFile.
+		WyalFile wf = new WyalFile(entry);
 
 		skipWhiteSpace();
 		while (index < tokens.size()) {
@@ -577,12 +573,12 @@ public class WyalFileParser {
 		int start = index;
 		checkNotEof();
 
-		Token lookahead = tryAndMatch(false, If, Case, Exists, Forall);
+		Token lookahead = tryAndMatch(false, If, Either, Exists, Forall);
 
 		if (lookahead != null && lookahead.kind == If) {
 			return parseIfThenStatement(wf, generics, environment, indent);
-		} else if (lookahead != null && lookahead.kind == Case) {
-			return parseCaseStatement(wf, generics, environment, indent);
+		} else if (lookahead != null && lookahead.kind == Either) {
+			return parseEitherOrStatement(wf, generics, environment, indent);
 		} else if (lookahead != null && lookahead.kind == Forall) {
 			return parseExistsForallStatement(lookahead, wf, generics,
 					environment, indent);
@@ -625,7 +621,7 @@ public class WyalFileParser {
 	}
 
 
-	private Expr parseCaseStatement(WyalFile wf, HashSet<String> generics,
+	private Expr parseEitherOrStatement(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, Indent indent) {
 		int start = index;
 
@@ -644,11 +640,11 @@ public class WyalFileParser {
 			}
 			nextIndent = getIndent();
 			if(nextIndent != null && nextIndent.equivalent(indent)) {
-				lookahead = tryAndMatch(false, Case);
+				lookahead = tryAndMatch(false, Or);
 			} else {
 				lookahead = null;
 			}
-		} while (lookahead != null && lookahead.kind == Case);
+		} while (lookahead != null && lookahead.kind == Or);
 
 		return condition;
 	}
@@ -1460,7 +1456,7 @@ public class WyalFileParser {
 			return parseLengthOfExpression(wf, generics, environment,
 					terminated);
 		case LeftSquare:
-			return parseListExpression(wf, generics, environment, terminated);
+			return parseArrayExpression(wf, generics, environment, terminated);
 		case LeftCurly:
 			return parseRecordExpression(wf, generics, environment,
 					terminated);
@@ -1665,16 +1661,25 @@ public class WyalFileParser {
 	 *
 	 * @return
 	 */
-	private Expr parseListExpression(WyalFile wf, HashSet<String> generics,
+	private Expr parseArrayExpression(WyalFile wf, HashSet<String> generics,
 			HashSet<String> environment, boolean terminated) {
 		int start = index;
 		match(LeftSquare);
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 
 		boolean firstTime = true;
+		boolean isArray = true;
 		while (eventuallyMatch(RightSquare) == null) {
 			if (!firstTime) {
-				match(Comma);
+				if(!isArray) {
+					// Force failure
+					match(RightSquare);
+				} else  if(tryAndMatch(true,SemiColon) == null) {
+					match(Comma);
+				} else {
+					// This indicates an array
+					isArray = false;
+				}
 			}
 			firstTime = false;
 			// NOTE: we require the following expression be a "non-tuple"
@@ -1686,8 +1691,11 @@ public class WyalFileParser {
 			exprs.add(parseUnitExpression(wf, generics, environment, true));
 		}
 
-		return new Expr.Nary(Expr.Nary.Op.ARRAY, exprs, sourceAttr(start,
-				index - 1));
+		if (isArray) {
+			return new Expr.Nary(Expr.Nary.Op.ARRAY, exprs, sourceAttr(start, index - 1));
+		} else {
+			return new Expr.Binary(Expr.Binary.Op.ARRAYGEN, exprs.get(0), exprs.get(1), sourceAttr(start, index - 1));
+		}
 	}
 
 	/**
@@ -2226,9 +2234,7 @@ public class WyalFileParser {
 			return result;
 		} else {
 			// Error!
-			internalFailure("unknown syntactic type encountered", filename,
-					type);
-			return false; // deadcode
+			throw new InternalFailure("unknown syntactic type encountered", entry, type);
 		}
 	}
 
@@ -2544,15 +2550,13 @@ public class WyalFileParser {
 					environment, terminated);
 			boolean lhs = numerator.toSyntacticType() instanceof SyntacticType.Int;
 			if (!lhs) {
-				syntaxError("invalid numerator for rational pattern", numerator);
+				throw new SyntaxError("invalid numerator for rational pattern", entry, numerator);
 			}
 			boolean rhs = denominator.toSyntacticType() instanceof SyntacticType.Int;
 			if (!rhs) {
-				syntaxError("invalid denominator for rational pattern",
-						numerator);
+				throw new SyntaxError("invalid denominator for rational pattern", entry, numerator);
 			}
-			return new TypePattern.Rational(numerator, denominator, null,
-					sourceAttr(start, index - 1));
+			return new TypePattern.Rational(numerator, denominator, null, sourceAttr(start, index - 1));
 		} else {
 			return numerator;
 		}
@@ -2874,7 +2878,7 @@ public class WyalFileParser {
 				p = parseMixedType(generics);
 				Expr.Variable id = p.second();
 				if (names.contains(id.name)) {
-					syntaxError("duplicate record key", id);
+					throw new SyntaxError("duplicate record key", entry, id);
 				}
 				types.add(p);
 				names.add(id.name);
@@ -3183,8 +3187,11 @@ public class WyalFileParser {
 	private void checkNotEof() {
 		skipWhiteSpace();
 		if (index >= tokens.size()) {
-			throw new SyntaxError("unexpected end-of-file", filename,
-					index - 1, index - 1);
+			// FIXME: this is clearly not a sensible approach
+			SyntacticElement unknown = new SyntacticElement.Impl() {
+			};
+			unknown.attributes().add(new Attribute.Source(index - 1, index - 1, -1));
+			throw new SyntaxError("unexpected end-of-file", entry, unknown);
 		}
 	}
 
@@ -3402,14 +3409,12 @@ public class WyalFileParser {
 		return new Attribute.Source(t1.start, t2.end(), 0);
 	}
 
-	private void syntaxError(String msg, SyntacticElement e) {
-		Attribute.Source loc = e.attribute(Attribute.Source.class);
-		throw new SyntaxError(msg, filename, loc.start, loc.end);
-	}
-
 	private void syntaxError(String msg, Token t) {
-		throw new SyntaxError(msg, filename, t.start, t.start + t.text.length()
-				- 1);
+		// FIXME: this is clearly not a sensible approach
+		SyntacticElement unknown = new SyntacticElement.Impl() {
+		};
+		unknown.attributes().add(new Attribute.Source(t.start, t.start + t.text.length() - 1, -1));
+		throw new SyntaxError(msg, entry, unknown);
 	}
 
 	/**

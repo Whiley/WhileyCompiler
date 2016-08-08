@@ -140,7 +140,7 @@ public class LifetimeSubstitution {
 	private SubstitutedState copy(int index, Set<String> ignored) {
 		List<SubstitutedState> mapped = mapping.get(index);
 		if (mapped == null) {
-			mapped = new LinkedList<>();
+			mapped = new LinkedList<SubstitutedState>();
 			mapping.put(index, mapped);
 		} else {
 			outer: for (SubstitutedState entry : mapped) {

@@ -26,6 +26,7 @@
 package wyjc.runtime;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.*;
 
 import wyfs.io.BinaryInputStream;
@@ -36,14 +37,8 @@ import static wyil.lang.Type.K_META;
 import static wyil.lang.Type.K_NULL;
 import static wyil.lang.Type.K_BOOL;
 import static wyil.lang.Type.K_BYTE;
-import static wyil.lang.Type.K_CHAR;
 import static wyil.lang.Type.K_INT;
-import static wyil.lang.Type.K_RATIONAL;
-import static wyil.lang.Type.K_STRING;
-import static wyil.lang.Type.K_TUPLE;
-import static wyil.lang.Type.K_SET;
 import static wyil.lang.Type.K_LIST;
-import static wyil.lang.Type.K_MAP;
 import static wyil.lang.Type.K_REFERENCE;
 import static wyil.lang.Type.K_RECORD;
 import static wyil.lang.Type.K_UNION;
@@ -60,27 +55,95 @@ public abstract class WyType {
 		this.kind = kind;
 	}
 
+	public WyBool is(Object o) {
+		boolean r = instanceOf(o);
+		return r ? WyBool.TRUE : WyBool.FALSE;
+	}
+	
+	public abstract boolean instanceOf(Object o);
+	
 	public static final Void VOID = new Void();
 	public static final Any ANY = new Any();
 	public static final Meta META = new Meta();
 	public static final Null NULL = new Null();
 	public static final Bool BOOL = new Bool();
 	public static final Byte BYTE = new Byte();
-	public static final Char CHAR = new Char();
 	public static final Integer INT = new Integer();
-	public static final Rational REAL = new Rational();
-	public static final Strung STRING = new Strung();
+	
+	private static final class Void extends WyType {
+		Void() {
+			super(K_VOID);
+		}
 
-	private static final class Void extends WyType { Void() {super(K_VOID);}}
-	private static final class Any extends WyType { Any() {super(K_ANY);}}
-	private static final class Meta extends WyType { Meta() {super(K_META);}}
-	private static final class Null extends WyType { Null() {super(K_NULL);}}
-	private static final class Bool extends WyType { Bool() {super(K_BOOL);}}
-	private static final class Byte extends WyType { Byte() {super(K_BYTE);}}
-	private static final class Char extends WyType { Char() {super(K_CHAR);}}
-	private static final class Integer extends WyType { Integer() {super(K_INT);}}
-	private static final class Rational extends WyType { Rational() {super(K_RATIONAL);}}
-	private static final class Strung extends WyType { Strung() {super(K_STRING);}}
+		@Override
+		public boolean instanceOf(Object o) {
+			return false;
+		}
+	}
+
+	private static final class Any extends WyType {
+		Any() {
+			super(K_ANY);
+		}
+
+		@Override
+		public boolean instanceOf(Object o) {
+			return true;
+		}
+	}
+
+	private static final class Meta extends WyType {
+		Meta() {
+			super(K_META);
+		}
+
+		@Override
+		public boolean instanceOf(Object o) {
+			return false;
+		}
+	}
+
+	private static final class Null extends WyType {
+		Null() {
+			super(K_NULL);
+		}
+
+		@Override
+		public boolean instanceOf(Object o) {
+			return o == null;
+		}
+	}
+
+	private static final class Bool extends WyType {
+		Bool() {
+			super(K_BOOL);
+		}
+
+		@Override
+		public boolean instanceOf(Object o) {
+			return o instanceof WyBool;
+		}
+	}
+
+	private static final class Byte extends WyType {
+		Byte() {
+			super(K_BYTE);
+		}
+		@Override
+		public boolean instanceOf(Object o) {
+			return o instanceof WyByte;
+		}
+	}
+
+	private static final class Integer extends WyType {
+		Integer() {
+			super(K_INT);
+		}
+		@Override
+		public boolean instanceOf(Object o) {
+			return o instanceof BigInteger;
+		}
+	}
 
 	public static final class Reference extends WyType {
 		public WyType element;
@@ -89,38 +152,48 @@ public abstract class WyType {
 			super(K_REFERENCE);
 			this.element = element;
 		}
+
+		@Override
+		public boolean instanceOf(Object obj) {
+			if(obj instanceof WyObject) {
+				WyObject ol = (WyObject) obj;
+				return element.instanceOf(ol.state());
+			}
+			return false;
+		}
 	}
 
-	public static final class List extends WyType {
+	public static final class Array extends WyType {
 		public WyType element;
 		public final boolean nonEmpty;
 
-		public List(WyType element, boolean nonEmpty) {
+		public Array(WyType element, boolean nonEmpty) {
 			super(K_LIST);
 			this.element = element;
 			this.nonEmpty = nonEmpty;
 		}
-	}
 
-	public static final class Set extends WyType {
-		public WyType element;
-		public final boolean nonEmpty;
-
-		public Set(WyType element, boolean nonEmpty) {
-			super(K_SET);
-			this.element = element;
-			this.nonEmpty = nonEmpty;
-		}
-	}
-
-	public static final class Dictionary extends WyType {
-		public WyType key;
-		public WyType value;
-
-		public Dictionary(WyType key, WyType value) {
-			super(K_MAP);
-			this.key = key;
-			this.value = value;
+		@Override
+		public boolean instanceOf(Object obj) {
+			if(obj instanceof WyArray) {
+				WyArray ol = (WyArray) obj;
+				if(nonEmpty && ol.isEmpty()) {
+					return false;
+				}
+				if(element.kind == K_ANY) {
+					return true;
+				} else if(element.kind == K_VOID) {
+					return ol.isEmpty();
+				} else {
+					for(Object elem : ol) {
+						if(!element.instanceOf(elem)) {
+							return false;
+						}
+					}
+					return true;
+				}
+			}
+			return false;
 		}
 	}
 
@@ -134,13 +207,28 @@ public abstract class WyType {
 			this.types = types;
 			this.isOpen = open;
 		}
-	}
-
-	public static final class Tuple extends WyType {
-		public final WyType[] types;
-		public Tuple(WyType[] types) {
-			super(K_TUPLE);
-			this.types = types;
+		@Override
+		public boolean instanceOf(Object obj) {
+			if(obj instanceof WyRecord) {
+				WyRecord ol = (WyRecord) obj;
+				if(!isOpen && names.length != ol.size()) {
+					return false;
+				}
+				for(int i=0;i!=names.length;++i) {
+					String name = names[i];
+					if(ol.containsKey(name)) {
+						WyType type = types[i];
+						Object val = ol.get(name);
+						if(!type.instanceOf(val)) {
+							return false;
+						}
+					} else {
+						return false;
+					}
+				}
+				return true;
+			}
+			return false;
 		}
 	}
 
@@ -150,6 +238,15 @@ public abstract class WyType {
 			super(K_UNION);
 			this.bounds = bounds;
 		}
+		@Override
+		public boolean instanceOf(Object obj) {
+			for(WyType bound : bounds) {
+				if(bound.instanceOf(obj)) {
+					return true;
+				}
+			}
+			return false;
+		}
 	}
 
 	private static final class Nominal extends WyType {
@@ -157,6 +254,10 @@ public abstract class WyType {
 		public Nominal(String name) {
 			super(K_NOMINAL);
 			this.name = name;
+		}
+		@Override
+		public boolean instanceOf(Object o) {
+			return false;
 		}
 	}
 
@@ -166,6 +267,11 @@ public abstract class WyType {
 		public Negation(WyType element) {
 			super(K_NEGATION);
 			this.element = element;
+		}
+
+		@Override
+		public boolean instanceOf(Object o) {
+			return !element.instanceOf(o);
 		}
 	}
 
@@ -177,6 +283,12 @@ public abstract class WyType {
 			this.parameters = parameters;
 			this.returns = returns;
 		}
+		@Override
+		public boolean instanceOf(Object o) {
+			// FIXME: this is fundamentally broken, since it does not consider
+			// the parameter types of the underlying function. See #552
+			return o instanceof WyLambda;
+		}
 	}
 	
 	public static final class Method extends WyType {
@@ -187,6 +299,12 @@ public abstract class WyType {
 			this.parameters = parameters;
 			this.returns = returns;
 		}
+		@Override
+		public boolean instanceOf(Object o) {
+			// FIXME: this is fundamentally broken, since it does not consider
+			// the parameter types of the underlying function. See #552
+			return o instanceof WyLambda;
+		}
 	}
 	
 	public static final class Label extends WyType {
@@ -194,6 +312,10 @@ public abstract class WyType {
 		public Label(int label) {
 			super(-1);
 			this.label = label;
+		}
+		@Override
+		public boolean instanceOf(Object o) {
+			return false;
 		}
 	}
 
@@ -231,28 +353,12 @@ public abstract class WyType {
 		case K_BOOL:
 			return BOOL;
 		case K_BYTE:
-			return BYTE;
-		case K_CHAR:
-			return CHAR;
+			return BYTE;		
 		case K_INT:
 			return INT;
-		case K_RATIONAL:
-			return REAL;
-		case K_STRING:
-			return STRING;
-		case K_TUPLE: {
-			return new Tuple(children);
-		}
-		case K_SET: {
-			boolean nonEmpty = reader.read_bit();
-			return new Set(children[0],nonEmpty);
-		}
 		case K_LIST: {
 			boolean nonEmpty = reader.read_bit();
-			return new List(children[0],nonEmpty);
-		}
-		case K_MAP: {
-			return new Dictionary(children[0],children[1]);
+			return new Array(children[0],nonEmpty);
 		}
 		case K_REFERENCE: {
 			return new Reference(children[0]);
@@ -310,31 +416,12 @@ public abstract class WyType {
 		case K_NULL:
 		case K_BOOL:
 		case K_BYTE:
-		case K_CHAR:
 		case K_INT:
-		case K_RATIONAL:
-		case K_STRING:
 		case K_NOMINAL:
 			return;
-		case K_TUPLE: {
-			Tuple t = (Tuple) type;
-			substitute(t.types,nodes);
-			return;
-		}
-		case K_SET: {
-			Set t = (Set) type;
-			t.element = substitute((Label)t.element,nodes);
-			return;
-		}
 		case K_LIST: {
-			List t = (List) type;
+			Array t = (Array) type;
 			t.element = substitute((Label)t.element,nodes);
-			return;
-		}
-		case K_MAP: {
-			Dictionary t = (Dictionary) type;
-			t.key = substitute((Label)t.key,nodes);
-			t.value = substitute((Label)t.value,nodes);
 			return;
 		}
 		case K_REFERENCE: {
@@ -418,8 +505,6 @@ public abstract class WyType {
 			case K_VOID:
 			case K_NULL:
 			case K_INT:
-			case K_RATIONAL:
-			case K_STRING:
 				break;
 			case K_NOMINAL:
 			{
@@ -432,21 +517,8 @@ public abstract class WyType {
 			}
 			case K_LIST:
 			{
-				WyType.List list = (WyType.List) type;
+				WyType.Array list = (WyType.Array) type;
 				list.element = substitute(list.element,label,root,visited);
-				break;
-			}
-			case K_SET:
-			{
-				WyType.Set set = (WyType.Set) type;
-				set.element = substitute(set.element,label,root,visited);
-				break;
-			}
-			case K_MAP:
-			{
-				WyType.Dictionary dict = (WyType.Dictionary) type;
-				dict.key = substitute(dict.key,label,root,visited);
-				dict.value = substitute(dict.value,label,root,visited);
 				break;
 			}
 			case K_RECORD:
@@ -522,16 +594,12 @@ public abstract class WyType {
 			return "null";
 		case K_INT:
 			return "int";
-		case K_RATIONAL:
-			return "real";
-		case K_STRING:
-			return "string";
 		case K_NOMINAL: {
 			WyType.Nominal leaf = (WyType.Nominal) t;
 			return leaf.name;
 		}
 		case K_LIST: {
-			WyType.List list = (WyType.List) t;
+			WyType.Array list = (WyType.Array) t;
 			return toString(list.element,visited) + "[]";
 		}
 		case K_RECORD: {
