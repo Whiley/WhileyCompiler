@@ -72,7 +72,7 @@ import wyil.lang.*;
  *
  * @author David J. Pearce
  */
-public class CoercionCheck {
+public class CoercionCheck implements Build.Stage<WyilFile> {
 	private WyilFile file;
 
 	public CoercionCheck(Build.Task builder) {

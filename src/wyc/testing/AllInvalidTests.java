@@ -62,7 +62,7 @@ public class AllInvalidTests {
 	 * The directory containing the source files for each test case. Every test
 	 * corresponds to a file in this directory.
 	 */
-	public final static String WHILEY_SRC_DIR = "../../tests/invalid".replace('/', File.separatorChar);
+	public final static String WHILEY_SRC_DIR = "tests/invalid".replace('/', File.separatorChar);
 
 	/**
 	 * Ignored tests and a reason why we ignore them.
@@ -138,26 +138,6 @@ public class AllInvalidTests {
 	 */
 	public final static String WYC_LIB_DIR = "../../lib/".replace('/', File.separatorChar);
 
-	/**
-	 * The path to the Whiley RunTime (WyRT) library. This contains the Whiley
-	 * standard library, which includes various helper functions, etc.
-	 */
-	private static String WYRT_PATH;
-
-	static {
-
-		// The purpose of this is to figure out what the proper name for the
-		// wyrt file is. Since there can be multiple versions of this file,
-		// we're not sure which one to pick.
-
-		File file = new File(WYC_LIB_DIR);
-		for(String f : file.list()) {
-			if(f.startsWith("wyrt-v")) {
-				WYRT_PATH = WYC_LIB_DIR + f;
-			}
-		}
-	}
-
 	// ======================================================================
 	// Test Harness
 	// ======================================================================
@@ -177,9 +157,8 @@ public class AllInvalidTests {
 
 		Pair<Integer,String> p = TestUtils.compile(
 				"-wd", WHILEY_SRC_DIR,      // location of source directory
-				"-wp", WYRT_PATH,           // add wyrt to whileypath
 				"-verify",                  // enable verification
-				filename);                      // name of test to compile
+				filename);                  // name of test to compile
 
 		int r = p.first();
 		String output = p.second();

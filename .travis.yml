@@ -8,4 +8,4 @@ jdk:
 #
 script:
     - touch running_on_travis
-    - ant test-all
+    - ant test

@@ -55,7 +55,6 @@ public class WycMain {
 	public static final int MAJOR_VERSION;
 	public static final int MINOR_VERSION;
 	public static final int MINOR_REVISION;
-	public static final int BUILD_NUMBER;
 
 	public static final int SUCCESS = 0;
 	public static final int SYNTAX_ERROR = 1;
@@ -69,8 +68,6 @@ public class WycMain {
 			new OptArg("brief", "Enable brief reporting of error messages"),
 			new OptArg("verify",
 					"Enable detailed verification checking"),					
-			new OptArg("smt-verify",
-					"Enable detailed verification checking using an external SMT solver"),
 			new OptArg("vcs", "Enable generation of verification conditions"),
 			new OptArg("whileypath", "wp", OptArg.FILELIST,
 					"Specify where to find whiley (binary) files",
@@ -101,11 +98,6 @@ public class WycMain {
 		if (versionStr != null) {
 			String[] vb = versionStr.split("-");
 			String[] pts = vb[0].split("\\.");
-			if (vb.length == 1) {
-				BUILD_NUMBER = 0;
-			} else {
-				BUILD_NUMBER = Integer.parseInt(vb[1]);
-			}
 
 			MAJOR_VERSION = Integer.parseInt(pts[0]);
 			MINOR_VERSION = Integer.parseInt(pts[1]);
@@ -115,7 +107,6 @@ public class WycMain {
 			MAJOR_VERSION = 0;
 			MINOR_VERSION = 0;
 			MINOR_REVISION = 0;
-			BUILD_NUMBER = 0;
 		}
 	}
 
@@ -189,7 +180,6 @@ public class WycMain {
 				usage();
 				return SUCCESS;
 			}
-
 			brief = values.containsKey("brief");
 
 			// =====================================================================
@@ -231,6 +221,7 @@ public class WycMain {
 			}
 			return SYNTAX_ERROR;
 		} catch (Throwable e) {
+			e.printStackTrace();
 			stderr.println("internal failure (" + e.getMessage() + ")");
 			if (verbose) {
 				printStackTrace(stderr,e);				
@@ -249,6 +240,8 @@ public class WycMain {
 		boolean verbose = values.containsKey("verbose");
 
 		builder.setVerbose(verbose);
+		builder.setVerification(values.containsKey("verify"));
+		builder.setVerificationConditions(values.containsKey("vcs"));
 
 		File whileyDir = (File) values.get("whileydir");
 		builder.setWhileyDir(whileyDir);
@@ -257,7 +250,14 @@ public class WycMain {
 		if (wyilDir != null) {
 			builder.setWyilDir(wyilDir);
 		}
-		
+		File wyalDir = (File) values.get("wyaldir");
+		if (wyalDir != null) {
+			builder.setWyalDir(wyalDir);
+		}
+		File wycsDir = (File) values.get("wycsdir");
+		if (wycsDir != null) {
+			builder.setWycsDir(wycsDir);
+		}		
 		ArrayList<File> bootpath = (ArrayList<File>) values.get("bootpath");
 		builder.setBootPath(bootpath);
 
@@ -269,7 +269,7 @@ public class WycMain {
 	protected void version() {
 		stdout.println("Whiley Compiler (wyc) version "
 				+ MAJOR_VERSION + "." + MINOR_VERSION + "."
-				+ MINOR_REVISION + " (build " + BUILD_NUMBER + ")");
+				+ MINOR_REVISION);
 	}
 
 	protected void usage() {
@@ -277,7 +277,7 @@ public class WycMain {
 		OptArg.usage(stdout, options);
 	}
 
-	protected static String argValues(Method m) {
+	private static String argValues(Method m) {
 		String r = "";
 		for (Class<?> p : m.getParameterTypes()) {
 			if (p == boolean.class) {
@@ -298,7 +298,7 @@ public class WycMain {
 	 * @param out
 	 * @param err
 	 */
-	protected static void printStackTrace(PrintStream out, Throwable err) {
+	private static void printStackTrace(PrintStream out, Throwable err) {
 		out.println(err.getClass().getName() + ": " + err.getMessage());
 		for(StackTraceElement ste : err.getStackTrace()) {			
 			out.println("\tat " + ste.toString());

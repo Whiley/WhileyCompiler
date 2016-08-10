@@ -55,7 +55,7 @@ import static wyil.util.ErrorMessages.*;
  * @author David J. Pearce
  *
  */
-public class ModuleCheck {
+public class ModuleCheck implements Build.Stage<WyilFile> {
 	private WyilFile file;
 
 	public ModuleCheck(Build.Task builder) {

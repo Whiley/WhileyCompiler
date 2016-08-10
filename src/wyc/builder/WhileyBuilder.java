@@ -217,8 +217,8 @@ public final class WhileyBuilder implements Build.Task {
 			Path.Entry<?> src = p.first();
 			Path.Root dst = p.second();
 			Path.Entry<WyilFile> wf = dst.get(src.id(), WyilFile.ContentType);
-			new ModuleCheck(this).apply(wf.read());
-			new CoercionCheck(this).apply(wf.read());
+			process(wf.read(),new ModuleCheck(this));
+			process(wf.read(),new CoercionCheck(this));
 		}
 
 		// ========================================================================
@@ -346,39 +346,39 @@ public final class WhileyBuilder implements Build.Task {
 	// Private Implementation
 	// ======================================================================
 
-//	private void process(WyilFile module) throws IOException {
-//		Runtime runtime = Runtime.getRuntime();
-//		long start = System.currentTimeMillis();
-//		long memory = runtime.freeMemory();
-//		String name = name(stage.getClass().getSimpleName());
-//
-//		try {
-//			stage.apply(module);
-//			logger.logTimedMessage("[" + module.getEntry().location() + "] applied " + name,
-//					System.currentTimeMillis() - start, memory - runtime.freeMemory());
-//			System.gc();
-//		} catch (RuntimeException ex) {
-//			logger.logTimedMessage("[" + module.getEntry().location() + "] failed on " + name + " (" + ex.getMessage() + ")",
-//					System.currentTimeMillis() - start, memory - runtime.freeMemory());
-//			throw ex;
-//		} catch (IOException ex) {
-//			logger.logTimedMessage("[" + module.getEntry().location() + "] failed on " + name + " (" + ex.getMessage() + ")",
-//					System.currentTimeMillis() - start, memory - runtime.freeMemory());
-//			throw ex;
-//		}
-//	}
-//
-//	private static String name(String camelCase) {
-//		boolean firstTime = true;
-//		String r = "";
-//		for(int i=0;i!=camelCase.length();++i) {
-//			char c = camelCase.charAt(i);
-//			if(!firstTime && Character.isUpperCase(c)) {
-//				r += " ";
-//			}
-//			firstTime=false;
-//			r += Character.toLowerCase(c);;
-//		}
-//		return r;
-//	}
+	private void process(WyilFile module, Build.Stage<WyilFile> stage) throws IOException {
+		Runtime runtime = Runtime.getRuntime();
+		long start = System.currentTimeMillis();
+		long memory = runtime.freeMemory();
+		String name = name(stage.getClass().getSimpleName());
+
+		try {
+			stage.apply(module);
+			logger.logTimedMessage("[" + module.getEntry().location() + "] applied " + name,
+					System.currentTimeMillis() - start, memory - runtime.freeMemory());
+			System.gc();
+		} catch (RuntimeException ex) {
+			logger.logTimedMessage("[" + module.getEntry().location() + "] failed on " + name + " (" + ex.getMessage() + ")",
+					System.currentTimeMillis() - start, memory - runtime.freeMemory());
+			throw ex;
+		} catch (IOException ex) {
+			logger.logTimedMessage("[" + module.getEntry().location() + "] failed on " + name + " (" + ex.getMessage() + ")",
+					System.currentTimeMillis() - start, memory - runtime.freeMemory());
+			throw ex;
+		}
+	}
+
+	private static String name(String camelCase) {
+		boolean firstTime = true;
+		String r = "";
+		for(int i=0;i!=camelCase.length();++i) {
+			char c = camelCase.charAt(i);
+			if(!firstTime && Character.isUpperCase(c)) {
+				r += " ";
+			}
+			firstTime=false;
+			r += Character.toLowerCase(c);;
+		}
+		return r;
+	}
 }

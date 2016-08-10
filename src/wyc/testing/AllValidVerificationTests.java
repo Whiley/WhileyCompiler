@@ -58,7 +58,7 @@ public class AllValidVerificationTests {
 	 * The directory containing the source files for each test case. Every test
 	 * corresponds to a file in this directory.
 	 */
-	public final static String WHILEY_SRC_DIR = "../../tests/valid".replace('/', File.separatorChar);
+	public final static String WHILEY_SRC_DIR = "tests/valid".replace('/', File.separatorChar);
 
 	/**
 	 * Ignored tests and a reason why we ignore them.
@@ -183,27 +183,7 @@ public class AllValidVerificationTests {
 	 * The directory where compiler libraries are stored. This is necessary
 	 * since it will contain the Whiley Runtime.
 	 */
-	public final static String WYC_LIB_DIR = "../../lib/".replace('/', File.separatorChar);
-
-	/**
-	 * The path to the Whiley RunTime (WyRT) library. This contains the Whiley
-	 * standard library, which includes various helper functions, etc.
-	 */
-	private static String WYRT_PATH;
-
-	static {
-
-		// The purpose of this is to figure out what the proper name for the
-		// wyrt file is. Since there can be multiple versions of this file,
-		// we're not sure which one to pick.
-
-		File file = new File(WYC_LIB_DIR);
-		for(String f : file.list()) {
-			if(f.startsWith("wyrt-v")) {
-				WYRT_PATH = WYC_LIB_DIR + f;
-			}
-		}
-	}
+	public final static String WYC_LIB_DIR = "lib/".replace('/', File.separatorChar);
 
 	//
 	// Test Harness
@@ -224,7 +204,6 @@ public class AllValidVerificationTests {
 
 		Pair<Integer,String> p = TestUtils.compile(
 				"-wd", WHILEY_SRC_DIR,      // location of source directory
-				"-wp", WYRT_PATH,           // add wyrt to whileypath
 				"-verify",                  // enable verification
 				name);                      // name of test to compile
 
@@ -236,9 +215,6 @@ public class AllValidVerificationTests {
 		} else if (r == WycMain.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
 		}
-
-		// TODO: we should actually execute the compiled file here using the
-		// WyIL Interpreter (when that exists).
 	}
 
 	// ======================================================================

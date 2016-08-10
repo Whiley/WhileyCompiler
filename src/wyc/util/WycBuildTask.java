@@ -16,8 +16,10 @@ import wyfs.util.JarFileRoot;
 import wyfs.util.VirtualRoot;
 import wyc.builder.WhileyBuilder;
 import wyc.lang.WhileyFile;
+import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;
+import wyil.builders.Wyil2WyalBuilder;
 import wyil.lang.WyilFile;
 
 /**
@@ -34,30 +36,6 @@ import wyil.lang.WyilFile;
  *
  */
 public class WycBuildTask {
-
-	/**
-	 * The purpose of the source file filter is simply to ensure only source
-	 * files are loaded in a given directory root. It is not strictly necessary
-	 * for correct operation, although hopefully it offers some performance
-	 * benefits.
-	 */
-	public static final FileFilter whileyFileFilter = new FileFilter() {
-		public boolean accept(File f) {
-			return f.getName().endsWith(".whiley") || f.isDirectory();
-		}
-	};
-
-	/**
-	 * The purpose of the binary file filter is simply to ensure only binary
-	 * files are loaded in a given directory root. It is not strictly necessary
-	 * for correct operation, although hopefully it offers some performance
-	 * benefits.
-	 */
-	public static final FileFilter wyilFileFilter = new FileFilter() {
-		public boolean accept(File f) {
-			return f.getName().endsWith(".wyil") || f.isDirectory();
-		}
-	};
 
 	/**
 	 * Default implementation of a content registry. This associates whiley and
@@ -123,6 +101,18 @@ public class WycBuildTask {
 	protected Path.Root wyilDir;
 
 	/**
+	 * The wyal directory is the filesystem directory where all generated wyal
+	 * files will be placed.
+	 */
+	protected Path.Root wyalDir;
+
+	/**
+	 * The wycs directory is the filesystem directory where all generated wycs
+	 * files will be placed.
+	 */
+	protected Path.Root wycsDir;
+
+	/**
 	 * Identifies which whiley source files should be considered for
 	 * compilation. By default, all files reachable from srcdir are considered.
 	 */
@@ -169,6 +159,20 @@ public class WycBuildTask {
 	 * compiler.
 	 */
 	protected boolean verbose = false;
+	
+	/**
+	 * Indicates whether or not the compiler should enable detailed verification
+	 * checking of pre- and post-conditions.
+	 */
+	protected boolean verification = false;
+
+	/**
+	 * Indicates whether or not the compiler should generate the intermediate
+	 * verification conditions. If verification is true, then this is done
+	 * automatically. Otherwise, you can force it with this flag without
+	 * actually performing verification.
+	 */
+	protected boolean verificationConditions = false;
 
 	// ==========================================================================
 	// Constructors & Configuration
@@ -177,11 +181,15 @@ public class WycBuildTask {
 	public WycBuildTask() {
 		this.registry = new Registry();
 		this.wyilDir = new VirtualRoot(registry);
+		this.wyalDir = new VirtualRoot(registry);
+		this.wycsDir = new VirtualRoot(registry);
 	}
 
 	public WycBuildTask(Content.Registry registry) {
 		this.registry = registry;
 		this.wyilDir = new VirtualRoot(registry);
+		this.wyalDir = new VirtualRoot(registry);
+		this.wycsDir = new VirtualRoot(registry);
 	}
 
 	public void setLogOut(PrintStream logout) {
@@ -191,21 +199,45 @@ public class WycBuildTask {
 	public void setVerbose(boolean verbose) {
 		this.verbose = verbose;
 	}
+	
+	public void setVerification(boolean verification) {
+		this.verification = verification;
+	}
 
+	public void setVerificationConditions(boolean flag) {
+		this.verificationConditions = flag;
+	}
+	
+	public boolean getVerification() {
+		return verification;
+	}
+
+	public boolean getVerificationConditions() {
+		return verificationConditions;
+	}
+	
 	public void setWhileyDir(File whileydir) throws IOException {
-		this.whileyDir = new DirectoryRoot(whileydir, whileyFileFilter, registry);
+		this.whileyDir = new DirectoryRoot(whileydir, registry);
 		if(wyilDir instanceof VirtualRoot) {
 			// The point here is to ensure that when this build task is used in
 			// a standalone fashion, that wyil files are actually written to
 			// disk.
-			this.wyilDir = new DirectoryRoot(whileydir, wyilFileFilter, registry);
+			this.wyilDir = new DirectoryRoot(whileydir, registry);
 		}
 	}
 
-    public void setWyilDir (File wyildir) throws IOException {
-        this.wyilDir = new DirectoryRoot(wyildir, wyilFileFilter, registry);
+    public void setWyilDir (File dir) throws IOException {
+        this.wyilDir = new DirectoryRoot(dir, registry);
     }
 
+    public void setWyalDir (File dir) throws IOException {
+        this.wyalDir = new DirectoryRoot(dir, registry);
+    }
+    
+    public void setWycsDir (File dir) throws IOException {
+        this.wycsDir = new DirectoryRoot(dir, registry);
+    }
+    
     public void setWhileyPath(List<File> roots) throws IOException {
 		whileypath.clear();
 		for (File root : roots) {
@@ -213,7 +245,7 @@ public class WycBuildTask {
 				if (root.getName().endsWith(".jar")) {
 					whileypath.add(new JarFileRoot(root, registry));
 				} else {
-					whileypath.add(new DirectoryRoot(root, wyilFileFilter, registry));
+					whileypath.add(new DirectoryRoot(root, registry));
 				}
 			} catch (IOException e) {
 				if (verbose) {
@@ -231,7 +263,7 @@ public class WycBuildTask {
 				if (root.getName().endsWith(".jar")) {
 					bootpath.add(new JarFileRoot(root, registry));
 				} else {					
-					bootpath.add(new DirectoryRoot(root, wyilFileFilter, registry));
+					bootpath.add(new DirectoryRoot(root, registry));
 				}
 			} catch (IOException e) {
 				if (verbose) {
@@ -379,6 +411,8 @@ public class WycBuildTask {
 		}
 
 		roots.add(wyilDir);
+		roots.add(wyalDir);
+		roots.add(wycsDir);
 		roots.addAll(whileypath);
 		roots.addAll(bootpath);
 
@@ -420,6 +454,32 @@ public class WycBuildTask {
 
 			project.add(new StdBuildRule(wyilBuilder, whileyDir,
 					whileyIncludes, whileyExcludes, wyilDir));
+			//
+			// ========================================================
+			// Wyil => Wycs Compilation Rule
+			// ========================================================
+
+			if (verification || verificationConditions) {
+
+				// First, handle the conversion of wyil to wyal
+
+				Wyil2WyalBuilder wyalBuilder = new Wyil2WyalBuilder(project);
+
+				if (verbose) {
+					wyalBuilder.setLogger(new Logger.Default(System.err));
+				}
+
+				project.add(new StdBuildRule(wyalBuilder, wyilDir, wyilIncludes, wyilExcludes, wyalDir));
+
+				// Second, handle the conversion of wyal to wycs
+				Wyal2WycsBuilder wycsBuilder = new Wyal2WycsBuilder(project);
+
+				if (verbose) {
+					wycsBuilder.setLogger(new Logger.Default(System.err));
+				}
+
+				project.add(new StdBuildRule(wycsBuilder, wyalDir, wyalIncludes, wyalExcludes, wycsDir));
+			}
 		}
 	}
 

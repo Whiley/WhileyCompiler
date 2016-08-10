@@ -26,41 +26,21 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# Copyright 2010, David James Pearce.
+# Copyright 2012, David James Pearce.
 # modified 2012,	Art Protin <protin2art@gmail.com>
 
-################
+##################
 # CONFIGURATION
-################
+##################
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
-LIBS="wyc wyil wyjc wyrl wybs wycs jasm"
+LIBS="wyc wycc wycs wyrl"
 
-#################################
-# PROCESS COMMAND LINE ARGUMENTS
-#################################
-# needs to be done first because WHILEY_CLASSPATH depends on them.
+. $DIR/scripts/wy_common.bash
 
-while [[ $# -gt 0 ]]
-do
-    case "$1" in
-    -cp | -classpath | --classpath)
-	 shift
-	 CLASSPATH=$1
-	 shift
-	 ;;
-    -*)
-	 echo "invalid option $1"
-	 exit 1
-	 ;;
-    *)
-	 break
-	 ;;
-    esac
-done
+######################
+# RUN APPLICATION
+######################
 
-
-. $DIR/bin/wy_common.bash
-
-java -cp "$WHILEY_CLASSPATH" "$@"
+java -server -Xmx2G -cp "$WHILEY_CLASSPATH" wyc.WycMain -bp "$WHILEY_BOOTPATH" "$@"

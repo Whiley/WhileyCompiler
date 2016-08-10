@@ -1,3 +1,3 @@
-../../tests/invalid/Contractive_Invalid_2.whiley:1: empty type encountered
+tests/invalid/Contractive_Invalid_2.whiley:1: empty type encountered
 type Point is {
 ^^^^^^^^^^^^^^^^^
