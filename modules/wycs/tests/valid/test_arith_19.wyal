@@ -1,7 +1,0 @@
-type pos is (int x) where x > 0
-
-assert:
-    forall (pos r0):
-            r0 >= 0
-
-

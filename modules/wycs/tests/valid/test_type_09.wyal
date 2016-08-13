@@ -1,8 +1,0 @@
-type Recursive is [Recursive|null]
-
-assert:
-    forall(Recursive x, [int] y):
-        if:
-            x == y
-        then:
-            |y| == 0

@@ -1,4 +1,0 @@
-assert:
-    forall [int] r0:
-        |r0| != 0 ==> 0 < |r0|
-

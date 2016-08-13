@@ -1,2 +1,0 @@
-assert:
-    { f: 1 } is {int f}
