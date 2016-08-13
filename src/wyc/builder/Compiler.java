@@ -84,7 +84,7 @@ import wycommon.util.Pair;
  * @author David J. Pearce
  *
  */
-public final class WhileyBuilder implements Build.Task {
+public final class Compiler implements Build.Task {
 
 	/**
 	 * The master project for identifying all resources available to the
@@ -111,7 +111,7 @@ public final class WhileyBuilder implements Build.Task {
 	 */
 	private final HashMap<Trie,ArrayList<Path.ID>> importCache = new HashMap<>();
 
-	public WhileyBuilder(Build.Project namespace) {
+	public Compiler(Build.Project namespace) {
 		this.logger = Logger.NULL;
 		this.project = namespace;
 	}

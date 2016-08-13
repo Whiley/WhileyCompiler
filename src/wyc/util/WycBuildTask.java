@@ -14,7 +14,8 @@ import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.JarFileRoot;
 import wyfs.util.VirtualRoot;
-import wyc.builder.WhileyBuilder;
+import wyc.builder.Compiler;
+import wyc.builder.Decompiler;
 import wyc.lang.WhileyFile;
 import wycs.builders.Wyal2WycsBuilder;
 import wycs.core.WycsFile;
@@ -167,6 +168,11 @@ public class WycBuildTask {
 	protected boolean verification = false;
 
 	/**
+	 * Indicates whether or not to compile or decompile.
+	 */
+	protected boolean compile = true;
+	
+	/**
 	 * Indicates whether or not the compiler should generate the intermediate
 	 * verification conditions. If verification is true, then this is done
 	 * automatically. Otherwise, you can force it with this flag without
@@ -207,7 +213,11 @@ public class WycBuildTask {
 	public void setVerificationConditions(boolean flag) {
 		this.verificationConditions = flag;
 	}
-	
+
+	public void setCompile(boolean compile) {
+		this.compile = compile;
+	}
+
 	public boolean getVerification() {
 		return verification;
 	}
@@ -347,17 +357,16 @@ public class WycBuildTask {
 	 * @param _args
 	 */
 	public void build(List<File> files) throws Exception {
-		List<Path.Entry<WhileyFile>> entries = whileyDir.find(files,
-				WhileyFile.ContentType);
-		int j = 0;
-		for (int i = 0; j < files.size(); ++i, ++j) {
-			if (entries.get(i) == null) {
-				logout.println("WARNING: ignoring unknown file "
-						+ files.get(j).getName());
-				entries.remove(i--);
-			}
+		if (compile) {
+			List<Path.Entry<WhileyFile>> entries = whileyDir.find(files, WhileyFile.ContentType);
+			stripUnknownEntries(files, entries);
+			buildEntries(entries);
+		} else if (wyilDir instanceof DirectoryRoot) {
+			DirectoryRoot wyilRoot = (DirectoryRoot) wyilDir;
+			List<Path.Entry<WyilFile>> entries = wyilRoot.find(files, WyilFile.ContentType);
+			stripUnknownEntries(files, entries);
+			buildEntries(entries);
 		}
-		buildEntries(entries);
 	}
 
     /**
@@ -371,6 +380,16 @@ public class WycBuildTask {
 		return delta.size();
 	}
 
+	private <T> void stripUnknownEntries(List<File> files, List<Path.Entry<T>> entries) throws Exception {
+		int j = 0;
+		for (int i = 0; j < files.size(); ++i, ++j) {
+			if (entries.get(i) == null) {
+				logout.println("WARNING: ignoring unknown file " + files.get(j).getName());
+				entries.remove(i--);
+			}
+		}		
+	}
+	
 	protected <T> void buildEntries(List<Path.Entry<T>> delta) throws Exception {
 
 		// ======================================================================
@@ -383,7 +402,11 @@ public class WycBuildTask {
 		// Initialise Build Rules
 		// ======================================================================
 
-		addBuildRules(project);
+		if(compile) {
+			addCompileRules(project);
+		} else {
+			addDecompileRules(project);
+		}
 
 		// ======================================================================
 		// Build!
@@ -437,7 +460,7 @@ public class WycBuildTask {
 	 *
 	 * @param project
 	 */
-	protected void addBuildRules(StdProject project) {
+	protected void addCompileRules(StdProject project) {
 		if(whileyDir != null) {
 			// whileydir can be null if a subclass of this task doesn't
 			// necessarily require it.
@@ -446,7 +469,7 @@ public class WycBuildTask {
 			// Whiley => Wyil Compilation Rule
 			// ========================================================
 
-			WhileyBuilder wyilBuilder = new WhileyBuilder(project);
+			Compiler wyilBuilder = new Compiler(project);
 
 			if(verbose) {
 				wyilBuilder.setLogger(new Logger.Default(System.err));
@@ -483,6 +506,12 @@ public class WycBuildTask {
 		}
 	}
 
+	protected void addDecompileRules(StdProject project) {
+		Decompiler dcTask = new Decompiler(project);
+
+		project.add(new StdBuildRule(dcTask, wyilDir, wyilIncludes, wyilExcludes, wyilDir));
+	}
+	
 	/**
 	 * Generate the list of source files which need to be recompiled. By
 	 * default, this is done by comparing modification times of each whiley file

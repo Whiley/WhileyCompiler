@@ -136,7 +136,7 @@ import wyil.util.type.LifetimeSubstitution;
  */
 public class FlowTypeChecker {
 
-	private final WhileyBuilder builder;
+	private final Compiler builder;
 	private final TypeSystem expander;
 	private WhileyFile file;
 	//private WhileyFile.FunctionOrMethod current;
@@ -147,7 +147,7 @@ public class FlowTypeChecker {
 	 */
 	private final HashMap<NameID, Pair<Constant, Nominal>> constantCache = new HashMap<NameID, Pair<Constant, Nominal>>();
 
-	public FlowTypeChecker(WhileyBuilder builder) {
+	public FlowTypeChecker(Compiler builder) {
 		this.builder = builder;
 		this.expander = new TypeSystem(builder.project());
 	}

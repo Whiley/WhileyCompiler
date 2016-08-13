@@ -35,7 +35,7 @@ import wycommon.util.OptArg;
 import wybs.lang.*;
 import wybs.util.*;
 import wybs.lang.SyntaxError.InternalFailure;
-import wyc.builder.WhileyBuilder;
+import wyc.builder.Compiler;
 import wyc.lang.WhileyFile;
 import wyc.util.*;
 import wyil.*;
@@ -66,6 +66,8 @@ public class WycMain {
 			new OptArg("verbose",
 					"Print detailed information on what the compiler is doing"),
 			new OptArg("brief", "Enable brief reporting of error messages"),
+			new OptArg("decompile","d",
+					"Decompile and print WyIL file"),
 			new OptArg("verify",
 					"Enable detailed verification checking"),					
 			new OptArg("vcs", "Enable generation of verification conditions"),
@@ -242,7 +244,8 @@ public class WycMain {
 		builder.setVerbose(verbose);
 		builder.setVerification(values.containsKey("verify"));
 		builder.setVerificationConditions(values.containsKey("vcs"));
-
+		builder.setCompile(!values.containsKey("decompile"));
+		
 		File whileyDir = (File) values.get("whileydir");
 		builder.setWhileyDir(whileyDir);
 
