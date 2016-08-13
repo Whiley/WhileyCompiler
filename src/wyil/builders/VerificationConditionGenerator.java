@@ -15,6 +15,7 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.ResolveError;
 import wycommon.util.Pair;
+import wycommon.util.Arrays;
 import wycs.core.Value;
 import wycs.syntax.Expr;
 import wycs.syntax.SyntacticType;
@@ -139,6 +140,9 @@ public class VerificationConditionGenerator {
 			}
 		}
 
+		// FIXME: this should not be here!
+		addLibraryMacros(wyalFile);
+		
 		return wyalFile;
 	}
 
@@ -485,7 +489,7 @@ public class VerificationConditionGenerator {
 
 		for (int i = 0, j = 0; i != rhs.length; ++i) {
 			Location<?> rval = rhs[i];
-			Location<?>[] lval = Arrays.copyOfRange(lhs, j, rval.numberOfTypes());
+			Location<?>[] lval = java.util.Arrays.copyOfRange(lhs, j, rval.numberOfTypes());
 			context = translateAssign(lval, rval, context);
 			j = j + rval.numberOfTypes();
 		}
@@ -638,7 +642,7 @@ public class VerificationConditionGenerator {
 					lval.attributes());
 			ArrayList<SyntacticType> generics = new ArrayList<SyntacticType>();
 			generics.add(convert(elementType, decl));
-			Expr.Invoke macro = new Expr.Invoke("update", Trie.fromString("wycs/core/Array"), generics, arg);
+			Expr.Invoke macro = new Expr.Invoke("array$update", context.getEnclosingFile().getEntry().id(), generics, arg);
 			// Construct connection between new source expression element and
 			// result
 			Expr newLVal = new Expr.IndexOf(newSource, index, lval.attributes());
@@ -1335,7 +1339,7 @@ public class VerificationConditionGenerator {
 			// which will check that the precondition holds.
 			//
 			Expr[] parameters = translateExpressions(expr.getOperands(), context.getEnvironment());
-			Expr[] arguments = Arrays.copyOf(parameters, parameters.length + fm.type().returns().size());
+			Expr[] arguments = java.util.Arrays.copyOf(parameters, parameters.length + fm.type().returns().size());
 			// FIXME: following broken for multiple returns
 			arguments[arguments.length - 1] = translateExpression(expr, context.getEnvironment());
 			//
@@ -2133,7 +2137,7 @@ public class VerificationConditionGenerator {
 	private TypePattern generatePreconditionTypePattern(WyilFile.FunctionOrMethod declaration,
 			LocalEnvironment environment) {
 		List<Type> params = declaration.type().params();
-		int[] parameterLocations = range(0, params.size());
+		int[] parameterLocations = Arrays.range(0, params.size());
 		return generateTypePatterns(declaration, environment, parameterLocations);
 	}
 
@@ -2150,8 +2154,8 @@ public class VerificationConditionGenerator {
 			LocalEnvironment environment) {
 		List<Type> params = declaration.type().params();
 		List<Type> returns = declaration.type().returns();
-		int[] parameterLocations = range(0, params.size());
-		int[] returnLocations = range(parameterLocations.length, parameterLocations.length + returns.size());
+		int[] parameterLocations = Arrays.range(0, params.size());
+		int[] returnLocations = Arrays.range(parameterLocations.length, parameterLocations.length + returns.size());
 		return generateTypePatterns(declaration, environment, parameterLocations, returnLocations);
 	}
 
@@ -2425,12 +2429,6 @@ public class VerificationConditionGenerator {
 		return new Expr.Unary(Expr.Unary.Op.NOT, expr);
 	}
 
-	private static <T> T[] append(T[] lhs, T[] rhs) {
-		T[] rs = Arrays.copyOf(lhs, lhs.length + rhs.length);
-		System.arraycopy(rhs, 0, rs, lhs.length, rhs.length);
-		return rs;
-	}
-
 	/**
 	 * Create exact copy of a given array, but with evey null element removed.
 	 * 
@@ -2447,7 +2445,7 @@ public class VerificationConditionGenerator {
 		if (count == 0) {
 			return items;
 		} else {
-			T[] rs = Arrays.copyOf(items, items.length - count);
+			T[] rs = java.util.Arrays.copyOf(items, items.length - count);
 			for (int i = 0, j = 0; i != items.length; ++i) {
 				T item = items[i];
 				if (item != null) {
@@ -2457,14 +2455,6 @@ public class VerificationConditionGenerator {
 
 			return rs;
 		}
-	}
-
-	public static int[] range(int start, int end) {
-		int[] rs = new int[Math.abs(end - start)];
-		for (int i = start; i < end; ++i) {
-			rs[i - start] = i;
-		}
-		return rs;
 	}
 
 	public static int[] flattern(int[][] groups) {
@@ -2483,6 +2473,53 @@ public class VerificationConditionGenerator {
 		return result;
 	}
 
+	// =============================================================
+	// Libraries
+	// =============================================================
+	private void addLibraryMacros(WyalFile wyalFile) {
+		// FIXME: This is really a hack. For now it helps out because it avoids
+		// the need for a runtime library. When I rework the verifier, I'll
+		// include a specificl syntactic element for array updates and this will
+		// become redundant.
+		SyntacticType.Variable T = new SyntacticType.Variable("T"); 
+		SyntacticType.List arrT = new SyntacticType.List(T);
+		SyntacticType.Int intT = new SyntacticType.Int();
+		Expr.Variable items = new Expr.Variable("items");
+		Expr.Variable nitems = new Expr.Variable("nitems");
+		Expr.Variable i = new Expr.Variable("i");
+		ArrayList<TypePattern> parameters = new ArrayList<>();
+		parameters.add(new TypePattern.Leaf(arrT, items));
+		parameters.add(new TypePattern.Leaf(arrT, nitems));
+		parameters.add(new TypePattern.Leaf(intT, i));
+		ArrayList<String> generics = new ArrayList<String>();
+		generics.add("T");
+		TypePattern pattern = new TypePattern.Tuple(parameters);
+		//
+		// |items| == |nitems|		
+		//		
+		Expr lenItems = new Expr.Unary(Expr.Unary.Op.LENGTHOF, items);
+		Expr lenNitems = new Expr.Unary(Expr.Unary.Op.LENGTHOF, nitems);
+		Expr clause1 = new Expr.Binary(Expr.Binary.Op.EQ, lenItems, lenNitems);		
+		//
+		// j != i
+		//
+		Expr.Variable j = new Expr.Variable("j");
+		Expr clause2 = new Expr.Binary(Expr.Binary.Op.NEQ, i, j);
+		//
+		// items[j] == nitems[j]
+		Expr items_j = new Expr.IndexOf(items, j);
+		Expr nitems_j = new Expr.IndexOf(nitems, j);
+		Expr clause3 = new Expr.Binary(Expr.Binary.Op.EQ, items_j, nitems_j);
+		//
+		// forall(int j)
+		TypePattern decl_j = new TypePattern.Leaf(intT, j);
+		Expr clause4 = new Expr.Binary(Expr.Binary.Op.IMPLIES, clause2, clause3);
+		Expr clause5 = new Expr.ForAll(decl_j, clause4);
+		//
+		Expr clause = and(clause1,clause5);
+		wyalFile.add(wyalFile.new Macro("array$update", generics, pattern, clause));
+	}
+	
 	// =============================================================
 	// Assumptions
 	// =============================================================
