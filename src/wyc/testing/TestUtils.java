@@ -12,7 +12,7 @@ import wybs.lang.Build;
 import wybs.lang.NameID;
 import wybs.util.StdProject;
 import wyc.WycMain;
-import wyc.util.WycBuildTask;
+import wyc.util.BuildTemplate;
 import wycommon.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -84,7 +84,7 @@ public class TestUtils {
 	public static Pair<Integer,String> compile(String... args) {
 		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
 		ByteArrayOutputStream sysout = new ByteArrayOutputStream();
-		int exitCode = new WycMain(new WycBuildTask(), WycMain.DEFAULT_OPTIONS, sysout, syserr)
+		int exitCode = new WycMain(new BuildTemplate(), WycMain.DEFAULT_OPTIONS, sysout, syserr)
 				.run(args);
 		byte[] errBytes = syserr.toByteArray();
 		byte[] outBytes = sysout.toByteArray();

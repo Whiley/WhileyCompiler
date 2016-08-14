@@ -43,7 +43,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import wyc.WycMain;
-import wyc.util.WycBuildTask;
+import wyc.util.BuildTemplate;
 import wycommon.util.Pair;
 
 /**

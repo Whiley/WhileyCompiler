@@ -95,7 +95,7 @@ public final class CodeGenerator {
 	 *            The relevant type checker instance which provides access to
 	 *            the pool of previously determined types.
 	 */
-	public CodeGenerator(Compiler builder, FlowTypeChecker resolver) {
+	public CodeGenerator(CompileTask builder, FlowTypeChecker resolver) {
 	}
 
 	// =========================================================================

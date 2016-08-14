@@ -35,7 +35,7 @@ import wycommon.util.OptArg;
 import wybs.lang.*;
 import wybs.util.*;
 import wybs.lang.SyntaxError.InternalFailure;
-import wyc.builder.Compiler;
+import wyc.builder.CompileTask;
 import wyc.lang.WhileyFile;
 import wyc.util.*;
 import wyil.*;
@@ -60,32 +60,21 @@ public class WycMain {
 	public static final int SYNTAX_ERROR = 1;
 	public static final int INTERNAL_FAILURE = 2;
 
-	public static final OptArg[] DEFAULT_OPTIONS = new OptArg[] {
-			new OptArg("help", "Print this help information"),
+	public static final OptArg[] DEFAULT_OPTIONS = new OptArg[] { new OptArg("help", "Print this help information"),
 			new OptArg("version", "Print version information"),
-			new OptArg("verbose",
-					"Print detailed information on what the compiler is doing"),
+			new OptArg("verbose", "Print detailed information on what the compiler is doing"),
 			new OptArg("brief", "Enable brief reporting of error messages"),
-			new OptArg("decompile","d",
-					"Decompile and print WyIL file"),
-			new OptArg("verify",
-					"Enable detailed verification checking"),					
+			new OptArg("decompile", "d", "Decompile and print WyIL file"),
+			new OptArg("verify", "Enable detailed verification checking"),
 			new OptArg("vcs", "Enable generation of verification conditions"),
-			new OptArg("whileypath", "wp", OptArg.FILELIST,
-					"Specify where to find whiley (binary) files",
+			new OptArg("whileypath", "wp", OptArg.FILELIST, "Specify where to find whiley (binary) files",
 					new ArrayList<String>()),
-			new OptArg("bootpath", "bp", OptArg.FILELIST,
-					"Specify where to find whiley standard library files",
+			new OptArg("bootpath", "bp", OptArg.FILELIST, "Specify where to find whiley standard library files",
 					new ArrayList<String>()),
-			new OptArg("whileydir", "wd", OptArg.FILEDIR,
-					"Specify where to find whiley source files", new File(".")),
-			new OptArg("wyildir", "od", OptArg.FILEDIR,
-					"Specify where to place generated wyil files"),
-			new OptArg("wyaldir", OptArg.FILEDIR,
-					"Specify where to place generated wyal files"),
-					new OptArg("wycsdir", OptArg.FILEDIR,
-					"Specify where to place generated wycs files")
-	};
+			new OptArg("whileydir", "wd", OptArg.FILEDIR, "Specify where to find whiley source files", new File(".")),
+			new OptArg("wyildir", "od", OptArg.FILEDIR, "Specify where to place generated wyil files"),
+			new OptArg("wyaldir", OptArg.FILEDIR, "Specify where to place generated wyal files"),
+			new OptArg("wycsdir", OptArg.FILEDIR, "Specify where to place generated wycs files") };
 
 	/**
 	 * Initialise the error output stream so as to ensure it will display
@@ -124,7 +113,7 @@ public class WycMain {
 	/**
 	 * The build-task responsible for actually compiling and building files.
 	 */
-	protected final WycBuildTask builder;
+	protected final BuildTemplate builder;
 
 	/**
 	 * Stream to which error messages are written
@@ -139,11 +128,11 @@ public class WycMain {
 	// Constructors & Configuration
 	// =========================================================================
 
-	public WycMain(WycBuildTask builder, OptArg[] options) {
+	public WycMain(BuildTemplate builder, OptArg[] options) {
 		this(builder,options,System.out,System.err);
 	}
 
-	public WycMain(WycBuildTask builder, OptArg[] options, OutputStream stdout, OutputStream stderr) {
+	public WycMain(BuildTemplate builder, OptArg[] options, OutputStream stdout, OutputStream stderr) {
 		this.options = options;
 		this.builder = builder;
 		try {
@@ -280,20 +269,6 @@ public class WycMain {
 		OptArg.usage(stdout, options);
 	}
 
-	private static String argValues(Method m) {
-		String r = "";
-		for (Class<?> p : m.getParameterTypes()) {
-			if (p == boolean.class) {
-				r = r + "boolean";
-			} else if (p == int.class) {
-				r = r + "int";
-			} else if (p == String.class) {
-				r = r + "string";
-			}
-		}
-		return r;
-	}
-
 	/**
 	 * Print a complete stack trace. This differs from
 	 * Throwable.printStackTrace() in that it always prints all of the trace.
@@ -317,6 +292,6 @@ public class WycMain {
 	// =========================================================================
 
 	public static void main(String[] args) {
-		System.exit(new WycMain(new WycBuildTask(), DEFAULT_OPTIONS).run(args));
+		System.exit(new WycMain(new BuildTemplate(), DEFAULT_OPTIONS).run(args));
 	}
 }
