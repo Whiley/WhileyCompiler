@@ -3,7 +3,7 @@ package wyc.builder;
 import wyc.lang.Expr;
 import wyc.lang.Stmt;
 import wyc.lang.WhileyFile;
-import wycommon.util.Triple;
+import wycc.util.Triple;
 
 import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;

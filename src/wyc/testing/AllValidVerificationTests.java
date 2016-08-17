@@ -39,7 +39,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import wyc.WycMain;
-import wycommon.util.Pair;
+import wycc.util.Pair;
 
 /**
  * Run through all valid test cases with verification enabled. Since every test

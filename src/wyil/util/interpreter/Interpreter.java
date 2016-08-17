@@ -13,7 +13,7 @@ import wybs.lang.Build;
 import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
 import wybs.util.ResolveError;
-import wycommon.util.Pair;
+import wycc.util.Pair;
 import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Bytecode.*;

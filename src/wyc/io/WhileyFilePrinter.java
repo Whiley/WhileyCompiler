@@ -11,7 +11,7 @@ import wyc.lang.Expr;
 import wyc.lang.Stmt;
 import wyc.lang.SyntacticType;
 import wyc.lang.WhileyFile;
-import wycommon.util.Pair;
+import wycc.util.Pair;
 import wyil.lang.*;
 
 /**

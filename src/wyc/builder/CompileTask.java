@@ -37,8 +37,8 @@ import wyil.lang.*;
 import wybs.lang.*;
 import wybs.util.*;
 import wyc.lang.*;
-import wycommon.util.Logger;
-import wycommon.util.Pair;
+import wycc.util.Logger;
+import wycc.util.Pair;
 
 /**
  * Responsible for managing the process of turning source files into binary code

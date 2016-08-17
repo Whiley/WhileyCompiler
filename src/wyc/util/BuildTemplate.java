@@ -3,8 +3,8 @@ package wyc.util;
 import java.io.*;
 import java.util.*;
 
-import wycommon.util.Logger;
-import wycommon.util.Pair;
+import wycc.util.Logger;
+import wycc.util.Pair;
 import wybs.lang.*;
 import wybs.util.*;
 import wyfs.lang.Content;

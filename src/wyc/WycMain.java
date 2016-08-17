@@ -31,7 +31,7 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.*;
 
-import wycommon.util.OptArg;
+import wycc.util.OptArg;
 import wybs.lang.*;
 import wybs.util.*;
 import wybs.lang.SyntaxError.InternalFailure;

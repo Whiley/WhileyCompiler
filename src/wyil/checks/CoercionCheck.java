@@ -32,7 +32,7 @@ import wybs.lang.Attribute;
 import wybs.lang.Build;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
-import wycommon.util.Pair;
+import wycc.util.Pair;
 import wyil.lang.*;
 
 /**
