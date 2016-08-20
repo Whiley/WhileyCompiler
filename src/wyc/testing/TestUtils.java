@@ -12,7 +12,6 @@ import wybs.lang.Build;
 import wybs.lang.NameID;
 import wybs.util.StdProject;
 import wyc.WycMain;
-import wyc.util.BuildTemplate;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;

@@ -15,7 +15,7 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.ResolveError;
 import wycc.util.Pair;
-import wycc.util.Arrays;
+import wycc.util.ArrayUtils;
 import wycs.core.Value;
 import wycs.syntax.Expr;
 import wycs.syntax.SyntacticType;
@@ -2137,7 +2137,7 @@ public class VerificationConditionGenerator {
 	private TypePattern generatePreconditionTypePattern(WyilFile.FunctionOrMethod declaration,
 			LocalEnvironment environment) {
 		List<Type> params = declaration.type().params();
-		int[] parameterLocations = Arrays.range(0, params.size());
+		int[] parameterLocations = ArrayUtils.range(0, params.size());
 		return generateTypePatterns(declaration, environment, parameterLocations);
 	}
 
@@ -2154,8 +2154,8 @@ public class VerificationConditionGenerator {
 			LocalEnvironment environment) {
 		List<Type> params = declaration.type().params();
 		List<Type> returns = declaration.type().returns();
-		int[] parameterLocations = Arrays.range(0, params.size());
-		int[] returnLocations = Arrays.range(parameterLocations.length, parameterLocations.length + returns.size());
+		int[] parameterLocations = ArrayUtils.range(0, params.size());
+		int[] returnLocations = ArrayUtils.range(parameterLocations.length, parameterLocations.length + returns.size());
 		return generateTypePatterns(declaration, environment, parameterLocations, returnLocations);
 	}
 

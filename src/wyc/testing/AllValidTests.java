@@ -29,11 +29,8 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.junit.*;
@@ -41,16 +38,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import wybs.lang.Build;
-import wybs.util.StdProject;
 import wyc.WycMain;
-import wyc.util.BuildTemplate;
 import wycc.util.Pair;
-import wyfs.lang.Content;
-import wyfs.lang.Path;
-import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
-import wyil.Main.Registry;
 
 /**
  * Run through all valid test cases with verification enabled. Since every test

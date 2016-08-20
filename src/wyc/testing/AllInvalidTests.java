@@ -28,13 +28,9 @@ package wyc.testing;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.junit.*;
@@ -43,7 +39,6 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import wyc.WycMain;
-import wyc.util.BuildTemplate;
 import wycc.util.Pair;
 
 /**
