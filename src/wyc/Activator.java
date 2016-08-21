@@ -2,6 +2,7 @@ package wyc;
 
 import wycc.lang.Command;
 import wycc.lang.Module;
+import wycc.util.Logger;
 import wycs.core.WycsFile;
 import wycs.syntax.WyalFile;
 import wyfs.lang.Content;
@@ -55,7 +56,7 @@ public class Activator implements Module.Activator {
 	public Module start(Module.Context context) {
 		// List of commands to use
 		final Command[] commands = {
-			new Compile(registry),
+			new Compile(registry, new Logger.Default(System.err)), // FIXME: logger is a hack!
 			new Decompile(registry),
 			new Run(registry)
 		};
