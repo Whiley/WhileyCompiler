@@ -1,19 +1,24 @@
 package wyc.commands;
 
-import wycc.util.AbstractCommand;
+import java.io.IOException;
+import java.util.Collections;
+
+import wybs.lang.Build;
+import wybs.lang.NameID;
+import wybs.util.StdProject;
+import wyc.util.AbstractProjectCommand;
+import wycc.util.Logger;
 import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
+import wyil.lang.Constant;
+import wyil.lang.Type;
+import wyil.util.interpreter.Interpreter;
 
-public class Run extends AbstractCommand {
+public class Run extends AbstractProjectCommand {
 
-	/**
-	 * The master project content type registry. This is needed for the build
-	 * system to determine the content type of files it finds on the file
-	 * system.
-	 */
-	public final Content.Registry registry;
-	
-	public Run(Content.Registry registry) {
-		this.registry = registry;
+	public Run(Content.Registry registry, Logger logger) {
+		super(registry, logger);
 	}
 		
 	// =======================================================================
@@ -31,7 +36,48 @@ public class Run extends AbstractCommand {
 
 	@Override
 	public void execute(String... args) {
-		// TODO Auto-generated method stub		
+		if (args.length < 2) {
+			// FIXME: this is broken
+			System.out.println("usage:  run <wyilfile> <method>");
+			return;
+		}
+		try {
+			StdProject project = initialiseProject();
+			Path.ID id = Trie.fromString(args[0]);
+			Type.Method sig = Type.Method(Collections.<Type> emptyList(), Collections.<String> emptySet(),
+					Collections.<String> emptyList(), Collections.<Type> emptyList());
+			NameID name = new NameID(id, args[1]);
+			executeFunctionOrMethod(name, sig, project);
+		} catch (IOException e) {
+			// FIXME: this is broken
+			throw new RuntimeException(e);
+		}
 	}
+	
+	// =======================================================================
+	// Helpers
+	// =======================================================================
 
+	/**
+	 * Execute a given function or method in a wyil file.
+	 * 
+	 * @param id
+	 * @param signature
+	 * @param project
+	 * @throws IOException
+	 */
+	private void executeFunctionOrMethod(NameID id, Type.FunctionOrMethod signature, Build.Project project)
+			throws IOException {
+		// Try to run the given function or method
+		Constant[] returns = new Interpreter(project, System.out).execute(id, signature);
+		// Print out any return values produced
+		if (returns != null) {
+			for (int i = 0; i != returns.length; ++i) {
+				if (i != 0) {
+					System.out.println(", ");
+				}
+				System.out.println(returns[i]);
+			}
+		}
+	}
 }

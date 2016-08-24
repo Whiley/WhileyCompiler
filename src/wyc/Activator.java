@@ -54,19 +54,18 @@ public class Activator implements Module.Activator {
 
 	@Override
 	public Module start(Module.Context context) {
+		// FIXME: logger is a hack!
+		final Logger logger = new Logger.Default(System.err);
 		// List of commands to use
-		final Command[] commands = {
-			new Compile(registry, new Logger.Default(System.err)), // FIXME: logger is a hack!
-			new Decompile(registry),
-			new Run(registry)
-		};
+		final Command[] commands = { new Compile(registry, logger), new Decompile(registry),
+				new Run(registry, logger) };
 		// Register all commands
-		for(Command c : commands) {
+		for (Command c : commands) {
 			context.register(wycc.lang.Command.class, c);
 		}
 		// Done
 		return new Module() {
-			
+			// what goes here?
 		};
 	}
 

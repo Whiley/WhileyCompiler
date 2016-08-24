@@ -51,7 +51,7 @@ import wyil.lang.WyilFile.*;
  */
 public final class WyilFilePrinter {
 	private PrintWriter out;
-	private boolean verbose = getVerbose();
+	private boolean verbose = false;
 	
 	public WyilFilePrinter(Build.Task builder) {
 
@@ -68,14 +68,6 @@ public final class WyilFilePrinter {
 	// ======================================================================
 	// Configuration Methods
 	// ======================================================================
-
-	public static String describeVerbose() {
-		return "Enable/disable verbose output";
-	}
-
-	public static boolean getVerbose() {
-		return true; // default value
-	}
 
 	public void setVerbose(boolean flag) {
 		this.verbose = flag;

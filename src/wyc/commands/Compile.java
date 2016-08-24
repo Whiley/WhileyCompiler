@@ -9,6 +9,7 @@ import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
 import wyc.builder.CompileTask;
 import wyc.lang.WhileyFile;
+import wyc.util.AbstractProjectCommand;
 import wycc.util.AbstractCommand;
 import wycc.util.Logger;
 import wycs.builders.Wyal2WycsBuilder;
@@ -20,14 +21,7 @@ import wyfs.util.VirtualRoot;
 import wyil.builders.Wyil2WyalBuilder;
 import wyil.lang.WyilFile;
 
-public class Compile extends AbstractCommand {
-
-	/**
-	 * The master project content type registry. This is needed for the build
-	 * system to determine the content type of files it finds on the file
-	 * system.
-	 */
-	public final Content.Registry registry;
+public class Compile extends AbstractProjectCommand {
 
 	/**
 	 * Signals that brief error reporting should be used. This is primarily used
@@ -43,35 +37,6 @@ public class Compile extends AbstractCommand {
 	private boolean verify = false;
 
 	/**
-	 * The location in which whiley source files a located, or null if not
-	 * specified.  The default value is the current directory.
-	 */
-	private DirectoryRoot whileydir;
-
-	/**
-	 * The location in which wyil binary files are stored, or null if not
-	 * specified.
-	 */
-	private DirectoryRoot wyildir;
-
-	/**
-	 * The location in which wyal source files are stored, or null if not
-	 * specified.
-	 */
-	private Path.Root wyaldir;
-
-	/**
-	 * The location in which wycs binary files are stored, or null if not
-	 * specified.
-	 */
-	private Path.Root wycsdir;
-
-	/**
-	 * The logger used for logging system events
-	 */
-	private Logger logger;
-
-	/**
 	 * Construct a new instance of this command.
 	 * 
 	 * @param registry
@@ -80,9 +45,7 @@ public class Compile extends AbstractCommand {
 	 * @throws IOException 
 	 */
 	public Compile(Content.Registry registry, Logger logger) {
-		super("verify","brief","whileypath","whileydir","wyildir","wyaldir");
-		this.registry = registry;
-		this.logger = logger;
+		super(registry, logger, "verify","brief");
 	}
 
 	// =======================================================================
@@ -103,26 +66,6 @@ public class Compile extends AbstractCommand {
 
 	public void setBrief() {
 		brief = true;
-	}
-
-	public String describeWhileypath() {
-		return "Specify where to find compiled Whiley (WyIL) files";
-	}
-
-	public void setWhileydir(String dir) throws IOException {
-		whileydir = new DirectoryRoot(dir,registry);
-	}
-
-	public String describeWhileydir() {
-		return "Specify where to find Whiley source files";
-	}
-
-	public String describeWyildir() {
-		return "Specify where to find place compiled Whiley (WyIL) files";
-	}
-
-	public String describeWyaldir() {
-		return "Specify where to find place generated verification (WyAL) files";
 	}
 
 	@Override
@@ -183,35 +126,7 @@ public class Compile extends AbstractCommand {
 	// Helpers
 	// =======================================================================
 	
-	/**
-	 * Finalise the given configuration to ensure it is an consistent state.
-	 * This means, in particular, that roots which have not been defined by the
-	 * user are created as necessary.
-	 */
-	private void finaliseConfiguration() throws IOException {
-		whileydir = getDirectoryRoot(whileydir);
-		wyildir = getDirectoryRoot(wyildir);
-		wyaldir = getAbstractRoot(wyaldir);
-		wycsdir = getAbstractRoot(wycsdir);
-	}
-
-	/**
-	 * Construct a new temporary project. This project is temporary because it
-	 * only exists for the life of an execution of this command.
-	 * 
-	 * @return
-	 * @throws IOException
-	 */
-	private StdProject initialiseProject() throws IOException {
-		// Add roots and construct project
-		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
-		roots.add(whileydir);
-		roots.add(wyildir);
-		roots.add(wyaldir);
-		roots.add(wycsdir);
-
-		return new StdProject(roots);
-	}
+	
 
 	/**
 	 * Add build rules necessary for compiling whiley source files into binary
@@ -249,32 +164,4 @@ public class Compile extends AbstractCommand {
 		project.add(new StdBuildRule(wycsBuilder, wyaldir, wyalIncludes, wyalExcludes, wycsdir));
 	}
 
-	/**
-	 * Construct a root which must correspond to a physical directory.
-	 * 
-	 * @throws IOException
-	 * 
-	 */
-	private DirectoryRoot getDirectoryRoot(DirectoryRoot dir) throws IOException {
-		if(dir != null) {
-			return dir;
-		} else {
-			return new DirectoryRoot(".",registry);
-		}
-	}
-
-	/**
-	 * Construct a root which is either virtual or corresponds to a physical
-	 * directory.
-	 * 
-	 * @throws IOException
-	 * 
-	 */
-	private Path.Root getAbstractRoot(Path.Root dir) throws IOException {
-		if(dir != null) {
-			return dir;
-		} else {
-			return new VirtualRoot(registry);
-		}
-	}
 }
