@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import wybs.lang.SyntaxError;
 import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
 import wyc.builder.CompileTask;
@@ -21,8 +22,18 @@ import wyfs.util.VirtualRoot;
 import wyil.builders.Wyil2WyalBuilder;
 import wyil.lang.WyilFile;
 
-public class Compile extends AbstractProjectCommand {
+public class Compile extends AbstractProjectCommand<Compile.Result> {
 
+	/**
+	 * Result kind for this command 
+	 *
+	 */
+	public enum Result {
+		SUCCESS,
+		ERRORS,
+		INTERNAL_FAILURE
+	}
+	
 	/**
 	 * Signals that brief error reporting should be used. This is primarily used
 	 * to help integration with external tools. More specifically, brief output
@@ -78,7 +89,7 @@ public class Compile extends AbstractProjectCommand {
 	// =======================================================================
 	
 	@Override
-	public void execute(String... args) {
+	public Result execute(String... args) {
 		// Initialise Project
 		try {
 			finaliseConfiguration();
@@ -102,8 +113,8 @@ public class Compile extends AbstractProjectCommand {
 			for(File f : delta) {
 				if(!f.exists()) {
 					// FIXME: sort this out!
-					System.out.println("wyc: file not found: " + f.getName());
-					return;
+					System.out.println("compile: file not found: " + f.getName());
+					return Result.ERRORS;
 				}
 			}
 
@@ -116,9 +127,13 @@ public class Compile extends AbstractProjectCommand {
 			project.build(entries);
 			// Force all wyil files to be written to disk
 			wyildir.flush();
+			//
+			return Result.SUCCESS;
+		} catch(SyntaxError e) {
+			return Result.ERRORS;
 		} catch(Exception e) {
 			// now what?
-			throw new RuntimeException(e);
+			return Result.INTERNAL_FAILURE;
 		}
 	}
 

@@ -15,8 +15,17 @@ import wyil.lang.Constant;
 import wyil.lang.Type;
 import wyil.util.interpreter.Interpreter;
 
-public class Run extends AbstractProjectCommand {
-
+public class Run extends AbstractProjectCommand<Run.Result> {
+	/**
+	 * Result kind for this command 
+	 *
+	 */
+	public enum Result {
+		SUCCESS,
+		ERRORS,
+		INTERNAL_FAILURE
+	}
+	
 	public Run(Content.Registry registry, Logger logger) {
 		super(registry, logger);
 	}
@@ -35,11 +44,11 @@ public class Run extends AbstractProjectCommand {
 	// =======================================================================
 
 	@Override
-	public void execute(String... args) {
+	public Result execute(String... args) {
 		if (args.length < 2) {
 			// FIXME: this is broken
 			System.out.println("usage:  run <wyilfile> <method>");
-			return;
+			return Result.ERRORS;
 		}
 		try {
 			StdProject project = initialiseProject();
@@ -52,6 +61,7 @@ public class Run extends AbstractProjectCommand {
 			// FIXME: this is broken
 			throw new RuntimeException(e);
 		}
+		return Result.SUCCESS;
 	}
 	
 	// =======================================================================

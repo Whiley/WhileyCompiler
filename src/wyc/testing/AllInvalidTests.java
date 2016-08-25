@@ -38,7 +38,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import wyc.WycMain;
+import wyc.commands.Compile;
 import wycc.util.Pair;
 
 /**
@@ -145,23 +145,24 @@ public class AllInvalidTests {
 	 * @param name
 	 *            Name of the test to run. This must correspond to a whiley
 	 *            source file in the <code>WHILEY_SRC_DIR</code> directory.
+	 * @throws IOException 
 	 */
-	protected void runTest(String name) {
+	protected void runTest(String name) throws IOException {
 		// this will need to turn on verification at some point.
 		String filename = WHILEY_SRC_DIR + File.separatorChar + name + ".whiley";
 
-		Pair<Integer,String> p = TestUtils.compile(
-				"-wd", WHILEY_SRC_DIR,      // location of source directory
-				"-verify",                  // enable verification
-				filename);                  // name of test to compile
+		Pair<Compile.Result,String> p = TestUtils.compile(
+				WHILEY_SRC_DIR,      // location of source directory
+				true,                // enable verification
+				filename);           // name of test to compile
 
-		int r = p.first();
+		Compile.Result r = p.first();
 		String output = p.second();
 
-		if (r == WycMain.SUCCESS) {
+		if (r == Compile.Result.SUCCESS) {
 			// Clearly, the test should not compile.
 			fail("Test compiled when it shouldn't have!");
-		} else if (r == WycMain.INTERNAL_FAILURE) {
+		} else if (r == Compile.Result.INTERNAL_FAILURE) {
 			// This indicates some other kind of internal failure.
 			fail("Test caused internal failure!\n" + output);
 		} else {

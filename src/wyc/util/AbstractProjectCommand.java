@@ -20,7 +20,7 @@ import wyfs.util.VirtualRoot;
  * @author David J. Pearce
  *
  */
-public abstract class AbstractProjectCommand extends AbstractCommand {
+public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 
 	/**
 	 * The master project content type registry. This is needed for the build
@@ -114,8 +114,8 @@ public abstract class AbstractProjectCommand extends AbstractCommand {
 	 * user are created as necessary.
 	 */
 	protected void finaliseConfiguration() throws IOException {
-		whileydir = getDirectoryRoot(whileydir);
-		wyildir = getDirectoryRoot(wyildir);
+		whileydir = getDirectoryRoot(whileydir,new DirectoryRoot(".",registry));
+		wyildir = getDirectoryRoot(wyildir,whileydir);
 		wyaldir = getAbstractRoot(wyaldir);
 		wycsdir = getAbstractRoot(wycsdir);
 	}
@@ -145,11 +145,11 @@ public abstract class AbstractProjectCommand extends AbstractCommand {
 	 * @throws IOException
 	 * 
 	 */
-	private DirectoryRoot getDirectoryRoot(DirectoryRoot dir) throws IOException {
+	private DirectoryRoot getDirectoryRoot(DirectoryRoot dir, DirectoryRoot defaulT) throws IOException {
 		if(dir != null) {
 			return dir;
 		} else {
-			return new DirectoryRoot(".",registry);
+			return defaulT;
 		}
 	}
 

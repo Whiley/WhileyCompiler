@@ -11,8 +11,17 @@ import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.lang.WyilFile;
 
-public class Decompile extends AbstractCommand {
-
+public class Decompile extends AbstractCommand<Decompile.Result> {
+	/**
+	 * Result kind for this command 
+	 *
+	 */
+	public enum Result {
+		SUCCESS,
+		ERRORS,
+		INTERNAL_FAILURE
+	}
+	
 	/**
 	 * The master project content type registry. This is needed for the build
 	 * system to determine the content type of files it finds on the file
@@ -53,7 +62,7 @@ public class Decompile extends AbstractCommand {
 	// =======================================================================
 
 	@Override
-	public void execute(String... args) {
+	public Result execute(String... args) {
 		// Create delta and santify check
 		ArrayList<File> delta = new ArrayList<File>();
 		for (String arg : args) {
@@ -66,8 +75,8 @@ public class Decompile extends AbstractCommand {
 		for(File f : delta) {
 			if(!f.exists()) {
 				// FIXME: sort this out!
-				System.out.println("wyc: file not found: " + f.getName());
-				return;
+				System.out.println("decompile: file not found: " + f.getName());
+				return Result.ERRORS;
 			}
 		}
 		// decompile files
@@ -83,6 +92,7 @@ public class Decompile extends AbstractCommand {
 			// FIXME: this is no solution
 			throw new RuntimeException(e);
 		}
+		return Result.SUCCESS;
 	}
 
 	// =======================================================================
