@@ -29,8 +29,8 @@ import java.io.IOException;
 import java.util.*;
 
 import wybs.lang.Build;
-import wycommon.util.Logger;
-import wycommon.util.Pair;
+import wycc.util.Logger;
+import wycc.util.Pair;
 import wyfs.lang.Path;
 import wyil.lang.*;
 import wycs.syntax.WyalFile;

@@ -38,8 +38,8 @@ import static wyil.util.ErrorMessages.*;
 import wyc.lang.*;
 import wyc.lang.Stmt.*;
 import wyc.lang.WhileyFile.Context;
-import wycommon.util.Pair;
-import wycommon.util.Triple;
+import wycc.util.Pair;
+import wycc.util.Triple;
 import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Bytecode.AliasDeclaration;
@@ -95,7 +95,7 @@ public final class CodeGenerator {
 	 *            The relevant type checker instance which provides access to
 	 *            the pool of previously determined types.
 	 */
-	public CodeGenerator(Compiler builder, FlowTypeChecker resolver) {
+	public CodeGenerator(CompileTask builder, FlowTypeChecker resolver) {
 	}
 
 	// =========================================================================

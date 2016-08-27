@@ -30,7 +30,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wybs.lang.NameID;
-import wycommon.util.Pair;
+import wycc.util.Pair;
 import wyfs.io.BinaryOutputStream;
 import wyfs.lang.Path;
 import wyil.lang.*;

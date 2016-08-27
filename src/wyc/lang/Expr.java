@@ -32,8 +32,8 @@ import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
 import wyc.builder.FlowTypeChecker;
 import wyc.io.WhileyFileLexer;
-import wycommon.util.Pair;
-import wycommon.util.Triple;
+import wycc.util.Pair;
+import wycc.util.Triple;
 import wyfs.lang.Path;
 import wyil.lang.*;
 

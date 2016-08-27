@@ -31,7 +31,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import wybs.lang.Build;
-import wycommon.util.Pair;
+import wycc.util.Pair;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
 import wyfs.lang.Path.Root;
@@ -45,7 +45,7 @@ import wyil.lang.WyilFile;
  * @author David J. Pearce
  *
  */
-public final class Decompiler implements Build.Task {
+public final class DecompileTask implements Build.Task {
 
 	/**
 	 * The master project for identifying all resources available to the
@@ -54,7 +54,7 @@ public final class Decompiler implements Build.Task {
 	 */
 	private final Build.Project project;
 
-	public Decompiler(Build.Project project) {
+	public DecompileTask(Build.Project project) {
 		this.project = project;
 	}
 	

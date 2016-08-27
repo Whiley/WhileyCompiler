@@ -11,13 +11,13 @@ import java.util.Comparator;
 import wybs.lang.Build;
 import wybs.lang.NameID;
 import wybs.util.StdProject;
-import wyc.WycMain;
-import wyc.util.WycBuildTask;
-import wycommon.util.Pair;
+import wycc.util.Logger;
+import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
+import wyc.commands.Compile;
 import wyil.Main.Registry;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
@@ -80,16 +80,22 @@ public class TestUtils {
 	 *            --- list of command-line arguments to provide to the Whiley
 	 *            Compiler.
 	 * @return
+	 * @throws IOException 
 	 */
-	public static Pair<Integer,String> compile(String... args) {
+	public static Pair<Compile.Result,String> compile(String whileydir, boolean verify, String... args) throws IOException {
 		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
 		ByteArrayOutputStream sysout = new ByteArrayOutputStream();
-		int exitCode = new WycMain(new WycBuildTask(), WycMain.DEFAULT_OPTIONS, sysout, syserr)
-				.run(args);
+		Content.Registry registry = new wyc.Activator.Registry();
+		Compile cmd = new Compile(registry,Logger.NULL,sysout,syserr);
+		cmd.setWhileydir(whileydir);
+		if(verify) {
+			cmd.setVerify();
+		}
+		Compile.Result result = cmd.execute(args);
 		byte[] errBytes = syserr.toByteArray();
 		byte[] outBytes = sysout.toByteArray();
 		String output = new String(errBytes) + new String(outBytes);
-		return new Pair<Integer,String>(exitCode,output);
+		return new Pair<Compile.Result,String>(result,output);
 	}
 
 	/**

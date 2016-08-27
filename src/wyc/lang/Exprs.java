@@ -6,7 +6,7 @@ import java.util.HashSet;
 
 import wybs.lang.SyntaxError;
 import wyc.lang.WhileyFile.Context;
-import wycommon.util.Pair;
+import wycc.util.Pair;
 import wyil.lang.Type;
 
 public class Exprs {

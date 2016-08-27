@@ -37,8 +37,8 @@ import wyil.lang.*;
 import wybs.lang.*;
 import wybs.util.*;
 import wyc.lang.*;
-import wycommon.util.Logger;
-import wycommon.util.Pair;
+import wycc.util.Logger;
+import wycc.util.Pair;
 
 /**
  * Responsible for managing the process of turning source files into binary code
@@ -84,7 +84,7 @@ import wycommon.util.Pair;
  * @author David J. Pearce
  *
  */
-public final class Compiler implements Build.Task {
+public final class CompileTask implements Build.Task {
 
 	/**
 	 * The master project for identifying all resources available to the
@@ -111,7 +111,7 @@ public final class Compiler implements Build.Task {
 	 */
 	private final HashMap<Trie,ArrayList<Path.ID>> importCache = new HashMap<>();
 
-	public Compiler(Build.Project namespace) {
+	public CompileTask(Build.Project namespace) {
 		this.logger = Logger.NULL;
 		this.project = namespace;
 	}

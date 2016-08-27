@@ -40,8 +40,8 @@ import wybs.lang.*;
 import wybs.util.*;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.Context;
-import wycommon.util.Pair;
-import wycommon.util.Triple;
+import wycc.util.Pair;
+import wycc.util.Triple;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.Constant;
@@ -136,7 +136,7 @@ import wyil.util.type.LifetimeSubstitution;
  */
 public class FlowTypeChecker {
 
-	private final Compiler builder;
+	private final CompileTask builder;
 	private final TypeSystem expander;
 	private WhileyFile file;
 	//private WhileyFile.FunctionOrMethod current;
@@ -147,7 +147,7 @@ public class FlowTypeChecker {
 	 */
 	private final HashMap<NameID, Pair<Constant, Nominal>> constantCache = new HashMap<NameID, Pair<Constant, Nominal>>();
 
-	public FlowTypeChecker(Compiler builder) {
+	public FlowTypeChecker(CompileTask builder) {
 		this.builder = builder;
 		this.expander = new TypeSystem(builder.project());
 	}

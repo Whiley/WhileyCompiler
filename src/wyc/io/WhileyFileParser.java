@@ -48,8 +48,8 @@ import static wybs.lang.SyntaxError.*;
 import static wyc.io.WhileyFileLexer.Token.Kind.*;
 
 import wyc.lang.WhileyFile.*;
-import wycommon.util.Pair;
-import wycommon.util.Triple;
+import wycc.util.Pair;
+import wycc.util.Triple;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.lang.Modifier;

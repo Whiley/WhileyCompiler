@@ -29,11 +29,8 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.junit.*;
@@ -41,16 +38,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import wybs.lang.Build;
-import wybs.util.StdProject;
-import wyc.WycMain;
-import wyc.util.WycBuildTask;
-import wycommon.util.Pair;
-import wyfs.lang.Content;
-import wyfs.lang.Path;
-import wyfs.util.DirectoryRoot;
+import wyc.commands.Compile;
+import wycc.util.Pair;
 import wyfs.util.Trie;
-import wyil.Main.Registry;
 
 /**
  * Run through all valid test cases with verification enabled. Since every test
@@ -140,17 +130,18 @@ public class AllValidTests {
 		String whileyFilename = WHILEY_SRC_DIR + File.separatorChar + testName
 				+ ".whiley";
 
-		Pair<Integer,String> p = TestUtils.compile(
-				"-wd", WHILEY_SRC_DIR,      // location of source directory				
-				whileyFilename);            // name of test to compile
+		Pair<Compile.Result,String> p = TestUtils.compile(
+				WHILEY_SRC_DIR,      // location of source directory
+				false,               // no verification
+				whileyFilename);     // name of test to compile
 
-		int r = p.first();
+		Compile.Result r = p.first();
 
 		System.out.print(p.second());
 
-		if (r != WycMain.SUCCESS) {
+		if (r != Compile.Result.SUCCESS) {
 			fail("Test failed to compile!");
-		} else if (r == WycMain.INTERNAL_FAILURE) {
+		} else if (r == Compile.Result.INTERNAL_FAILURE) {
 			fail("Test caused internal failure!");
 		}
 
