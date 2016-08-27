@@ -86,7 +86,7 @@ public class TestUtils {
 		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
 		ByteArrayOutputStream sysout = new ByteArrayOutputStream();
 		Content.Registry registry = new wyc.Activator.Registry();
-		Compile cmd = new Compile(registry,Logger.NULL);//new WycMain(new BuildTemplate(), WycMain.DEFAULT_OPTIONS, sysout, syserr).run(args);
+		Compile cmd = new Compile(registry,Logger.NULL,sysout,syserr);
 		cmd.setWhileydir(whileydir);
 		if(verify) {
 			cmd.setVerify();

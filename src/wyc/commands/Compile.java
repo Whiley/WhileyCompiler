@@ -2,6 +2,8 @@ package wyc.commands;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +37,32 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	}
 	
 	/**
+	 * List of configuration options recognised by this command
+	 */
+	private static String[] configOptions = {
+			"verbose",
+			"verify",
+			"brief"
+	};
+	
+	/**
+	 * Provides a generic place to which normal output should be directed. This
+	 * should eventually be replaced.
+	 */
+	private final PrintStream sysout;
+	
+	/**
+	 * Provides a generic place to which error output should be directed. This
+	 * should eventually be replaced.
+	 */
+	private final PrintStream syserr;
+	
+	/**
+	 * Signals that verbose output should be produced.
+	 */
+	private boolean verbose = false;
+	
+	/**
 	 * Signals that brief error reporting should be used. This is primarily used
 	 * to help integration with external tools. More specifically, brief output
 	 * is structured so as to be machine readable.
@@ -56,9 +84,25 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	 * @throws IOException 
 	 */
 	public Compile(Content.Registry registry, Logger logger) {
-		super(registry, logger, "verify","brief");
+		super(registry, logger, configOptions);
+		this.sysout = System.out;
+		this.syserr = System.err;
 	}
 
+	/**
+	 * Construct a new instance of this command.
+	 * 
+	 * @param registry
+	 *            The content registry being used to match files to content
+	 *            types.
+	 * @throws IOException 
+	 */
+	public Compile(Content.Registry registry, Logger logger, OutputStream sysout, OutputStream syserr) {
+		super(registry, logger, configOptions);
+		this.sysout = new PrintStream(sysout);
+		this.syserr = new PrintStream(syserr);
+	}
+	
 	// =======================================================================
 	// Configuration
 	// =======================================================================
@@ -71,6 +115,14 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		verify = true;
 	}
 
+	public String describeVerbose() {
+		return "Enable verbose output from Whiley compiler";
+	}
+
+	public void setVerbose() {
+		verbose = true;
+	}
+	
 	public String describeBrief() {
 		return "Enable brief reporting of error messages";
 	}
@@ -113,7 +165,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			for(File f : delta) {
 				if(!f.exists()) {
 					// FIXME: sort this out!
-					System.out.println("compile: file not found: " + f.getName());
+					sysout.println("compile: file not found: " + f.getName());
 					return Result.ERRORS;
 				}
 			}
@@ -130,6 +182,10 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			//
 			return Result.SUCCESS;
 		} catch(SyntaxError e) {
+			e.outputSourceError(syserr,brief);
+			if (verbose) {
+				printStackTrace(syserr,e);				
+			}
 			return Result.ERRORS;
 		} catch(Exception e) {
 			// now what?
@@ -179,4 +235,21 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		project.add(new StdBuildRule(wycsBuilder, wyaldir, wyalIncludes, wyalExcludes, wycsdir));
 	}
 
+	/**
+	 * Print a complete stack trace. This differs from
+	 * Throwable.printStackTrace() in that it always prints all of the trace.
+	 * 
+	 * @param out
+	 * @param err
+	 */
+	private static void printStackTrace(PrintStream out, Throwable err) {
+		out.println(err.getClass().getName() + ": " + err.getMessage());
+		for(StackTraceElement ste : err.getStackTrace()) {			
+			out.println("\tat " + ste.toString());
+		}
+		if(err.getCause() != null) {
+			out.print("Caused by: ");
+			printStackTrace(out,err.getCause());
+		}
+	}
 }
