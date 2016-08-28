@@ -13,8 +13,15 @@ import wyautl_old.lang.Automaton.State;
 import wybs.lang.Build;
 import wybs.lang.NameID;
 import wybs.util.ResolveError;
+import wyfs.lang.Path;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
+import wyil.lang.Type.Compound;
+import wyil.lang.Type.Leaf;
+import wyil.util.type.ExplicitCoercionOperator;
+import wyil.util.type.LifetimeRelation;
+import wyil.util.type.SubtypeOperator;
+import wyil.util.type.TypeAlgorithms;
 
 /**
  * <p>
@@ -48,6 +55,46 @@ public class TypeSystem {
 	
 	public TypeSystem(Build.Project project) {
 		this.project = project;
+	}
+	
+	/**
+	 * Determine whether or not this type corresponds to the empty type or not.
+	 * This can happen in a number of ways.
+	 * 
+	 * @param type
+	 * @return
+	 * @throws ResolveError
+	 */
+	public boolean isEmpty(Type type) throws ResolveError {
+		type = getUnderlyingType(type);
+		// FIXME: should include contractivity check
+		return type instanceof Type.Void;
+	}
+	
+	/**
+	 * <p>
+	 * Contractive types are types which cannot accept value because they have
+	 * an <i>unterminated cycle</i>. An unterminated cycle has no leaf nodes
+	 * terminating it. For example, <code>X<{X field}></code> is contractive,
+	 * where as <code>X<{null|X field}></code> is not.
+	 * </p>
+	 *
+	 * <p>
+	 * This method returns true if the type is contractive, or contains a
+	 * contractive subcomponent. For example, <code>null|X<{X field}></code> is
+	 * considered contracted.
+	 * </p>
+	 *
+	 * @param type --- type to test for contractivity.
+	 * @return
+	 */
+	public boolean isContractive(Type type) {
+		if(type instanceof Leaf) {
+			return false;
+		} else {
+			Automaton automaton = ((Compound) type).automaton;
+			return TypeAlgorithms.isContractive(automaton);
+		}
 	}
 	
 	/**
@@ -105,30 +152,178 @@ public class TypeSystem {
 		return Type.construct(new Automaton(states));
 	}
 
+	/**
+	 * Assuming given type is an effective record of some sort, expand to ensure
+	 * record structure is visible. For example a type <code>myRecord</code>
+	 * would expanded one level to look like <code>{T aField,...}</code> for
+	 * some (potentially nominal) element type T.
+	 * 
+	 * @param type
+	 *            The type to be expanded
+	 * @return null if given type is not an effective record
+	 * @throws ResolveError
+	 */
 	public Type.EffectiveRecord expandAsEffectiveRecord(Type type) throws ResolveError {
 		if (type instanceof Type.EffectiveRecord) {
+			// This type is already an effective record. Therefore, no need to
+			// do anything.
 			return (Type.EffectiveRecord) type;
 		} else {
-			return (Type.EffectiveRecord) expandOneLevel(type);
+			// This type may be an effective record. To find out, we need to
+			// expand one level of nominal type information
+			type = expandOneLevel(type);
+			if(type instanceof Type.EffectiveRecord) {
+				return (Type.EffectiveRecord) type; 
+			} else {
+				return null;
+			}
 		}
 	}
 	
+	/**
+	 * Assuming given type is an effective array of some sort, expand to ensure
+	 * array structure is visible. For example a type <code>myArray</code> would
+	 * expanded one level to look like <code>T[]</code> for some (potentially
+	 * nominal) element type T.
+	 * 
+	 * @param type
+	 *            The type to be expanded
+	 * @return null if type is no an effective array
+	 * @throws ResolveError
+	 */
 	public Type.EffectiveArray expandAsEffectiveArray(Type type) throws ResolveError {
 		if (type instanceof Type.EffectiveArray) {
+			// This type is already an effective array. Therefore, no need to
+			// do anything.
 			return (Type.EffectiveArray) type;
 		} else {
-			return (Type.EffectiveArray) expandOneLevel(type);
+			// This type may be an effective array. To find out, we need to
+			// expand one level of nominal type information
+			type = expandOneLevel(type);
+			if(type instanceof Type.EffectiveArray) {
+				return (Type.EffectiveArray) type; 
+			} else {
+				return null;
+			}
 		}
 	}
 	
+	/**
+	 * Assuming given type is an effective reference of some sort, expand to
+	 * ensure reference structure is visible. For example a type
+	 * <code>myRef</code> would expanded one level to look like <code>&T</code>
+	 * for some (potentially nominal) element type T.
+	 * 
+	 * @param type
+	 *            The type to be expanded
+	 * @return
+	 * @throws ResolveError
+	 */
 	public Type.Reference expandAsReference(Type type) throws ResolveError {
 		if (type instanceof Type.Reference) {
+			// This type is already a reference. Therefore, no need to
+			// do anything.
 			return (Type.Reference) type;
 		} else {
-			return (Type.Reference) expandOneLevel(type);
+			// This type may be a reference. To find out, we need to
+			// expand one level of nominal type information
+			type = expandOneLevel(type);
+			if (type instanceof Type.Reference) {
+				return (Type.Reference) type;
+			} else {
+				return null;
+			}
 		}
 	}
 	
+	// =============================================================
+	// Subtype Operator(s)
+	// =============================================================
+
+	/**
+	 * Determine whether type <code>t2</code> is an <i>explicit coercive
+	 * subtype</i> of type <code>t1</code>.
+	 * 
+	 * @throws ResolveError
+	 *             If a named type within either of the operands cannot be
+	 *             resolved within the enclosing project.
+	 */
+	public boolean isExplicitCoerciveSubtype(Type t1, Type t2, LifetimeRelation lr) throws ResolveError {
+		t1 = getUnderlyingType(t1);
+		t2 = getUnderlyingType(t2);
+		Automaton a1 = Type.destruct(t1);
+		Automaton a2 = Type.destruct(t2);
+		ExplicitCoercionOperator relation = new ExplicitCoercionOperator(a1,a2,lr);
+		return relation.isSubtype(0, 0);
+	}
+
+	/**
+	 * Determine whether type <code>t2</code> is an <i>explicit coercive
+	 * subtype</i> of type <code>t1</code>.
+	 * 
+	 * @throws ResolveError
+	 *             If a named type within either of the operands cannot be
+	 *             resolved within the enclosing project.
+	 */
+	public boolean isExplicitCoerciveSubtype(Type t1, Type t2) throws ResolveError {
+		return isExplicitCoerciveSubtype(t1, t2, LifetimeRelation.EMPTY);
+	}
+
+	/**
+	 * Determine whether type <code>t2</code> is a <i>subtype</i> of type
+	 * <code>t1</code> (written t1 :> t2). In other words, whether the set of
+	 * all possible values described by the type <code>t2</code> is a subset of
+	 * that described by <code>t1</code>.
+	 * 
+	 * @throws ResolveError
+	 *             If a named type within either of the operands cannot be
+	 *             resolved within the enclosing project.
+	 */
+	public boolean isSubtype(Type t1, Type t2, LifetimeRelation lr) throws ResolveError {
+		t1 = getUnderlyingType(t1);
+		t2 = getUnderlyingType(t2);
+		Automaton a1 = Type.destruct(t1);
+		Automaton a2 = Type.destruct(t2);
+		SubtypeOperator relation = new SubtypeOperator(a1,a2,lr);
+		return relation.isSubtype(0, 0);
+	}
+
+	/**
+	 * Determine whether type <code>t2</code> is a <i>subtype</i> of type
+	 * <code>t1</code> (written t1 :> t2). In other words, whether the set of
+	 * all possible values described by the type <code>t2</code> is a subset of
+	 * that described by <code>t1</code>.
+	 * 
+	 * @throws ResolveError
+	 *             If a named type within either of the operands cannot be
+	 *             resolved within the enclosing project.
+	 */
+	public boolean isSubtype(Type t1, Type t2) throws ResolveError {
+		return isSubtype(t1, t2, LifetimeRelation.EMPTY);
+	}
+
+	// =============================================================
+	// Type Operators
+	// =============================================================
+	
+	/**
+	 * Compute the intersection of two types. The resulting type will only
+	 * accept values which are accepted by both types being intersected.. In
+	 * many cases, the only valid intersection will be <code>void</code>.
+	 *
+	 * @param t1
+	 * @param t2
+	 * @return
+	 */
+	public Type intersect(Type t1, Type t2) {
+		return TypeAlgorithms.intersect(t1, t2);
+	}
+
+	
+	// =============================================================
+	// Helpers
+	// =============================================================
+
 	/**
 	 * Expand a given syntactic type by exactly one level.
 	 * 
@@ -142,8 +337,11 @@ public class TypeSystem {
 			if (type instanceof Type.Nominal) {
 				Type.Nominal nt = (Type.Nominal) type;
 				NameID nid = nt.name();
-				WyilFile m = project.get(nid.module(), WyilFile.ContentType).read();
-				WyilFile.Type td = m.type(nid.name());
+				Path.Entry<WyilFile> p = project.get(nid.module(), WyilFile.ContentType);
+				if (p == null) {
+					throw new ResolveError("name not found: " + nid);
+				}
+				WyilFile.Type td = p.read().type(nid.name());
 				return expandOneLevel(td.type());
 			} else if (type instanceof Type.Leaf || type instanceof Type.Reference || type instanceof Type.Array
 					|| type instanceof Type.Record || type instanceof Type.FunctionOrMethod
@@ -221,8 +419,7 @@ public class TypeSystem {
 						return states.size() - 1;
 					} else {
 						// Now, store the root of this expansion so that it can
-						// be used
-						// subsequently to form a recursive cycle.
+						// be used subsequently to form a recursive cycle.
 						roots.put(nid, states.size());
 						return getTypeHelper(td.type(), maximallyConsumed, states, roots);
 					}			
@@ -269,6 +466,7 @@ public class TypeSystem {
 			Type.Reference tt = (Type.Reference) type;
 			myChildren = new int[1];
 			myChildren[0] = getTypeHelper(tt.element(),maximallyConsumed,states,roots);
+			myData = tt.lifetime();
 			myKind = Type.K_REFERENCE;
 		} else if(type instanceof Type.Negation) {
 			Type.Negation tt = (Type.Negation) type;

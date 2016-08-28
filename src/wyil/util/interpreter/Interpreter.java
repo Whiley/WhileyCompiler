@@ -44,10 +44,10 @@ public class Interpreter {
 	private final Build.Project project;
 
 	/**
-	 * Responsible for expanding types to determine their underlying type and
-	 * constraints.
+	 * Provides mechanism for operating on types. For example, expanding them
+	 * and performing subtype tests, etc.
 	 */
-	private final TypeSystem expander;
+	private final TypeSystem typeSystem;
 	
 	/**
 	 * Implementations for the internal operators
@@ -63,7 +63,7 @@ public class Interpreter {
 	public Interpreter(Build.Project project, PrintStream debug) {
 		this.project = project;
 		this.debug = debug;
-		this.expander = new TypeSystem(project);
+		this.typeSystem = new TypeSystem(project);
 		this.operators = StandardFunctions.standardFunctions;
 	}
 
@@ -534,38 +534,43 @@ public class Interpreter {
 	 * @return
 	 */
 	private <T extends Constant> T executeExpression(Class<T> expected, Location<?> expr, Constant[] frame) {
-		Constant val;
-		Bytecode.Expr bytecode = (Bytecode.Expr) expr.getBytecode();
-		switch (bytecode.getOpcode()) {
-		case Bytecode.OPCODE_const:
-			val = executeConst((Location<Const>) expr, frame);
-			break;
-		case Bytecode.OPCODE_convert:
-			val = executeConvert((Location<Bytecode.Convert>) expr, frame);
-			break;
-		case Bytecode.OPCODE_fieldload:
-			val = executeFieldLoad((Location<FieldLoad>) expr, frame);
-			break;
-		case Bytecode.OPCODE_indirectinvoke:
-			val = executeIndirectInvoke((Location<IndirectInvoke>) expr, frame)[0];
-			break;
-		case Bytecode.OPCODE_invoke:
-			val = executeInvoke((Location<Invoke>) expr, frame)[0];
-			break;
-		case Bytecode.OPCODE_lambda:
-			val = executeLambda((Location<Lambda>) expr, frame);
-			break;
-		case Bytecode.OPCODE_some:
-		case Bytecode.OPCODE_all:
-			val = executeQuantifier((Location<Quantifier>) expr, frame);
-			break;
-		case Bytecode.OPCODE_varaccess:
-			val = executeVariableAccess((Location<VariableAccess>) expr, frame);
-			break;
-		default:
-			val = executeOperator((Location<Operator>) expr, frame);
+		try {
+			Constant val;
+			Bytecode.Expr bytecode = (Bytecode.Expr) expr.getBytecode();
+			switch (bytecode.getOpcode()) {
+			case Bytecode.OPCODE_const:
+				val = executeConst((Location<Const>) expr, frame);
+				break;
+			case Bytecode.OPCODE_convert:
+				val = executeConvert((Location<Bytecode.Convert>) expr, frame);
+				break;
+			case Bytecode.OPCODE_fieldload:
+				val = executeFieldLoad((Location<FieldLoad>) expr, frame);
+				break;
+			case Bytecode.OPCODE_indirectinvoke:
+				val = executeIndirectInvoke((Location<IndirectInvoke>) expr, frame)[0];
+				break;
+			case Bytecode.OPCODE_invoke:
+				val = executeInvoke((Location<Invoke>) expr, frame)[0];
+				break;
+			case Bytecode.OPCODE_lambda:
+				val = executeLambda((Location<Lambda>) expr, frame);
+				break;
+			case Bytecode.OPCODE_some:
+			case Bytecode.OPCODE_all:
+				val = executeQuantifier((Location<Quantifier>) expr, frame);
+				break;
+			case Bytecode.OPCODE_varaccess:
+				val = executeVariableAccess((Location<VariableAccess>) expr, frame);
+				break;
+			default:
+				val = executeOperator((Location<Operator>) expr, frame);
+			}
+			return checkType(val, expr, expected);
+		} catch (ResolveError err) {
+			error(err.getMessage(), expr);
+			return null;
 		}
-		return checkType(val, expr, expected);
 	}
 	
 
@@ -595,7 +600,7 @@ public class Interpreter {
 	private Constant executeConvert(Location<Convert> expr, Constant[] frame) {
 		try {
 			Constant operand = executeExpression(ANY_T, expr.getOperand(0), frame);
-			Type target = expander.getUnderlyingType(expr.getType());
+			Type target = typeSystem.getUnderlyingType(expr.getType());
 			return convert(operand, target, expr);
 		} catch (ResolveError e) {
 			error(e.getMessage(), expr);
@@ -612,8 +617,11 @@ public class Interpreter {
 	 * @param frame
 	 *            --- The current stack frame
 	 * @return
+	 * @throws ResolveError
+	 *             If a named type within this expression cannot be resolved
+	 *             within the enclosing project.
 	 */
-	private Constant executeOperator(Location<Operator> expr, Constant[] frame) {
+	private Constant executeOperator(Location<Operator> expr, Constant[] frame) throws ResolveError {
 		Bytecode bytecode = expr.getBytecode();
 		switch (bytecode.getOpcode()) {
 		case Bytecode.OPCODE_logicaland: {
@@ -870,15 +878,18 @@ public class Interpreter {
 	 * @param context
 	 *            --- Context in which bytecodes are executed
 	 * @return
+	 * @throws ResolveError
+	 *             If a named type within this constant cannot be resolved
+	 *             within the enclosing project.
 	 */
-	private Constant convert(Constant value, Type to, SyntacticElement context) {
+	private Constant convert(Constant value, Type to, SyntacticElement context) throws ResolveError {
 		Type type = value.type();
-		if (Type.isSubtype(to, type)) {
+		if (typeSystem.isSubtype(to, type)) {
 			// In this case, we don't need to do anything because the value is
 			// already of the correct type.
 			return value;
 		} else if (type instanceof Type.Reference && to instanceof Type.Reference) {
-			if (Type.isSubtype(((Type.Reference) to).element(), ((Type.Reference) type).element())) {
+			if (typeSystem.isSubtype(((Type.Reference) to).element(), ((Type.Reference) type).element())) {
 				// OK, it's just the lifetime that differs.
 				return value;
 			}
@@ -905,8 +916,11 @@ public class Interpreter {
 	 * @param context
 	 *            --- Context in which bytecodes are executed
 	 * @return
+	 * @throws ResolveError
+	 *             If a named type within this constant cannot be resolved
+	 *             within the enclosing project.
 	 */
-	private Constant convert(Constant value, Type.Record to, SyntacticElement context) {
+	private Constant convert(Constant value, Type.Record to, SyntacticElement context) throws ResolveError {
 		checkType(value, context, Constant.Record.class);
 		Constant.Record rv = (Constant.Record) value;
 		HashSet<String> rv_fields = new HashSet<String>(rv.values().keySet());
@@ -933,8 +947,11 @@ public class Interpreter {
 	 * @param context
 	 *            --- Context in which bytecodes are executed
 	 * @return
+	 * @throws ResolveError
+	 *             If a named type within this constant cannot be resolved
+	 *             within the enclosing project.
 	 */
-	private Constant convert(Constant value, Type.Array to, SyntacticElement context) {
+	private Constant convert(Constant value, Type.Array to, SyntacticElement context) throws ResolveError {
 		checkType(value, context, Constant.Array.class);
 		Constant.Array lv = (Constant.Array) value;
 		ArrayList<Constant> values = new ArrayList<Constant>(lv.values());
@@ -954,11 +971,14 @@ public class Interpreter {
 	 * @param context
 	 *            --- Context in which bytecodes are executed
 	 * @return
+	 * @throws ResolveError
+	 *             If a named type within this constant cannot be resolved
+	 *             within the enclosing project.
 	 */
-	private Constant convert(Constant value, Type.Union to, SyntacticElement context) {
+	private Constant convert(Constant value, Type.Union to, SyntacticElement context) throws ResolveError {
 		Type type = value.type();
 		for (Type bound : to.bounds()) {
-			if (Type.isExplicitCoerciveSubtype(bound, type)) {
+			if (typeSystem.isExplicitCoerciveSubtype(bound, type)) {
 				return convert(value, bound, context);
 			}
 		}
@@ -1117,8 +1137,11 @@ public class Interpreter {
 	 * @param context
 	 *            --- Context in which bytecodes are executed
 	 * @return
+	 * @throws ResolveError
+	 *             If a named type within the given type cannot be resolved
+	 *             within the enclosing project.
 	 */
-	public boolean isMemberOfType(Constant value, Type type, SyntacticElement context) {
+	public boolean isMemberOfType(Constant value, Type type, SyntacticElement context) throws ResolveError {
 		if (type instanceof Type.Any) {
 			return true;
 		} else if (type instanceof Type.Void) {
@@ -1179,7 +1202,7 @@ public class Interpreter {
 		} else if (type instanceof Type.FunctionOrMethod) {
 			if (value instanceof Constant.FunctionOrMethod) {
 				Constant.FunctionOrMethod l = (Constant.FunctionOrMethod) value;
-				if (Type.isSubtype(type, l.type())) {
+				if (typeSystem.isSubtype(type, l.type())) {
 					return true;
 				}
 			}
@@ -1423,6 +1446,6 @@ public class Interpreter {
 	 *
 	 */
 	public static interface InternalFunction {
-		public Constant apply(Constant[] operands, Interpreter enclosing, Location<Operator> context);
+		public Constant apply(Constant[] operands, Interpreter enclosing, Location<Operator> context) throws ResolveError;
 	}
 }

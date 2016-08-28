@@ -222,8 +222,8 @@ public class Exprs {
 
 			} else if (expr instanceof Expr.FunctionOrMethod) {
 				Expr.FunctionOrMethod e = (Expr.FunctionOrMethod) expr;
-				return e.type.raw() instanceof Type.Function;
-
+				// FIXME: need to expand this to be a functionOrMethod #667
+				return e.type.nominal() instanceof Type.Function;
 			} else if (expr instanceof Expr.New) {
 				return false;
 

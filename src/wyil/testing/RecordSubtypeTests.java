@@ -26,8 +26,12 @@
 // This file was automatically generated.
 package wyil.testing;
 import org.junit.*;
+
+import wybs.util.ResolveError;
+
 import static org.junit.Assert.*;
 import wyil.lang.Type;
+import wyil.util.TypeSystem;
 
 public class RecordSubtypeTests {
 	@Test public void test_1() { checkIsSubtype("any","any"); }
@@ -57,10 +61,6 @@ public class RecordSubtypeTests {
 	@Test public void test_25() { checkIsSubtype("any","{int f2,null f3}"); }
 	@Test public void test_26() { checkIsSubtype("any","{int f1,int f2}"); }
 	@Test public void test_27() { checkIsSubtype("any","{int f2,int f3}"); }
-	@Test public void test_28() { checkIsSubtype("any","{{void f1} f1}"); }
-	@Test public void test_29() { checkIsSubtype("any","{{void f2} f1}"); }
-	@Test public void test_30() { checkIsSubtype("any","{{void f1} f2}"); }
-	@Test public void test_31() { checkIsSubtype("any","{{void f2} f2}"); }
 	@Test public void test_32() { checkIsSubtype("any","{{any f1} f1}"); }
 	@Test public void test_33() { checkIsSubtype("any","{{any f2} f1}"); }
 	@Test public void test_34() { checkIsSubtype("any","{{any f1} f2}"); }
@@ -133,10 +133,6 @@ public class RecordSubtypeTests {
 	@Test public void test_101() { checkNotSubtype("null","{int f2,null f3}"); }
 	@Test public void test_102() { checkNotSubtype("null","{int f1,int f2}"); }
 	@Test public void test_103() { checkNotSubtype("null","{int f2,int f3}"); }
-	@Test public void test_104() { checkIsSubtype("null","{{void f1} f1}"); }
-	@Test public void test_105() { checkIsSubtype("null","{{void f2} f1}"); }
-	@Test public void test_106() { checkIsSubtype("null","{{void f1} f2}"); }
-	@Test public void test_107() { checkIsSubtype("null","{{void f2} f2}"); }
 	@Test public void test_108() { checkNotSubtype("null","{{any f1} f1}"); }
 	@Test public void test_109() { checkNotSubtype("null","{{any f2} f1}"); }
 	@Test public void test_110() { checkNotSubtype("null","{{any f1} f2}"); }
@@ -209,10 +205,6 @@ public class RecordSubtypeTests {
 	@Test public void test_177() { checkNotSubtype("int","{int f2,null f3}"); }
 	@Test public void test_178() { checkNotSubtype("int","{int f1,int f2}"); }
 	@Test public void test_179() { checkNotSubtype("int","{int f2,int f3}"); }
-	@Test public void test_180() { checkIsSubtype("int","{{void f1} f1}"); }
-	@Test public void test_181() { checkIsSubtype("int","{{void f2} f1}"); }
-	@Test public void test_182() { checkIsSubtype("int","{{void f1} f2}"); }
-	@Test public void test_183() { checkIsSubtype("int","{{void f2} f2}"); }
 	@Test public void test_184() { checkNotSubtype("int","{{any f1} f1}"); }
 	@Test public void test_185() { checkNotSubtype("int","{{any f2} f1}"); }
 	@Test public void test_186() { checkNotSubtype("int","{{any f1} f2}"); }
@@ -285,10 +277,6 @@ public class RecordSubtypeTests {
 	@Test public void test_253() { checkNotSubtype("{any f1}","{int f2,null f3}"); }
 	@Test public void test_254() { checkNotSubtype("{any f1}","{int f1,int f2}"); }
 	@Test public void test_255() { checkNotSubtype("{any f1}","{int f2,int f3}"); }
-	@Test public void test_256() { checkIsSubtype("{any f1}","{{void f1} f1}"); }
-	@Test public void test_257() { checkIsSubtype("{any f1}","{{void f2} f1}"); }
-	@Test public void test_258() { checkIsSubtype("{any f1}","{{void f1} f2}"); }
-	@Test public void test_259() { checkIsSubtype("{any f1}","{{void f2} f2}"); }
 	@Test public void test_260() { checkIsSubtype("{any f1}","{{any f1} f1}"); }
 	@Test public void test_261() { checkIsSubtype("{any f1}","{{any f2} f1}"); }
 	@Test public void test_262() { checkNotSubtype("{any f1}","{{any f1} f2}"); }
@@ -361,10 +349,6 @@ public class RecordSubtypeTests {
 	@Test public void test_329() { checkNotSubtype("{any f2}","{int f2,null f3}"); }
 	@Test public void test_330() { checkNotSubtype("{any f2}","{int f1,int f2}"); }
 	@Test public void test_331() { checkNotSubtype("{any f2}","{int f2,int f3}"); }
-	@Test public void test_332() { checkIsSubtype("{any f2}","{{void f1} f1}"); }
-	@Test public void test_333() { checkIsSubtype("{any f2}","{{void f2} f1}"); }
-	@Test public void test_334() { checkIsSubtype("{any f2}","{{void f1} f2}"); }
-	@Test public void test_335() { checkIsSubtype("{any f2}","{{void f2} f2}"); }
 	@Test public void test_336() { checkNotSubtype("{any f2}","{{any f1} f1}"); }
 	@Test public void test_337() { checkNotSubtype("{any f2}","{{any f2} f1}"); }
 	@Test public void test_338() { checkIsSubtype("{any f2}","{{any f1} f2}"); }
@@ -437,10 +421,6 @@ public class RecordSubtypeTests {
 	@Test public void test_405() { checkNotSubtype("{null f1}","{int f2,null f3}"); }
 	@Test public void test_406() { checkNotSubtype("{null f1}","{int f1,int f2}"); }
 	@Test public void test_407() { checkNotSubtype("{null f1}","{int f2,int f3}"); }
-	@Test public void test_408() { checkIsSubtype("{null f1}","{{void f1} f1}"); }
-	@Test public void test_409() { checkIsSubtype("{null f1}","{{void f2} f1}"); }
-	@Test public void test_410() { checkIsSubtype("{null f1}","{{void f1} f2}"); }
-	@Test public void test_411() { checkIsSubtype("{null f1}","{{void f2} f2}"); }
 	@Test public void test_412() { checkNotSubtype("{null f1}","{{any f1} f1}"); }
 	@Test public void test_413() { checkNotSubtype("{null f1}","{{any f2} f1}"); }
 	@Test public void test_414() { checkNotSubtype("{null f1}","{{any f1} f2}"); }
@@ -513,10 +493,6 @@ public class RecordSubtypeTests {
 	@Test public void test_481() { checkNotSubtype("{null f2}","{int f2,null f3}"); }
 	@Test public void test_482() { checkNotSubtype("{null f2}","{int f1,int f2}"); }
 	@Test public void test_483() { checkNotSubtype("{null f2}","{int f2,int f3}"); }
-	@Test public void test_484() { checkIsSubtype("{null f2}","{{void f1} f1}"); }
-	@Test public void test_485() { checkIsSubtype("{null f2}","{{void f2} f1}"); }
-	@Test public void test_486() { checkIsSubtype("{null f2}","{{void f1} f2}"); }
-	@Test public void test_487() { checkIsSubtype("{null f2}","{{void f2} f2}"); }
 	@Test public void test_488() { checkNotSubtype("{null f2}","{{any f1} f1}"); }
 	@Test public void test_489() { checkNotSubtype("{null f2}","{{any f2} f1}"); }
 	@Test public void test_490() { checkNotSubtype("{null f2}","{{any f1} f2}"); }
@@ -589,10 +565,6 @@ public class RecordSubtypeTests {
 	@Test public void test_557() { checkNotSubtype("{int f1}","{int f2,null f3}"); }
 	@Test public void test_558() { checkNotSubtype("{int f1}","{int f1,int f2}"); }
 	@Test public void test_559() { checkNotSubtype("{int f1}","{int f2,int f3}"); }
-	@Test public void test_560() { checkIsSubtype("{int f1}","{{void f1} f1}"); }
-	@Test public void test_561() { checkIsSubtype("{int f1}","{{void f2} f1}"); }
-	@Test public void test_562() { checkIsSubtype("{int f1}","{{void f1} f2}"); }
-	@Test public void test_563() { checkIsSubtype("{int f1}","{{void f2} f2}"); }
 	@Test public void test_564() { checkNotSubtype("{int f1}","{{any f1} f1}"); }
 	@Test public void test_565() { checkNotSubtype("{int f1}","{{any f2} f1}"); }
 	@Test public void test_566() { checkNotSubtype("{int f1}","{{any f1} f2}"); }
@@ -665,10 +637,6 @@ public class RecordSubtypeTests {
 	@Test public void test_633() { checkNotSubtype("{int f2}","{int f2,null f3}"); }
 	@Test public void test_634() { checkNotSubtype("{int f2}","{int f1,int f2}"); }
 	@Test public void test_635() { checkNotSubtype("{int f2}","{int f2,int f3}"); }
-	@Test public void test_636() { checkIsSubtype("{int f2}","{{void f1} f1}"); }
-	@Test public void test_637() { checkIsSubtype("{int f2}","{{void f2} f1}"); }
-	@Test public void test_638() { checkIsSubtype("{int f2}","{{void f1} f2}"); }
-	@Test public void test_639() { checkIsSubtype("{int f2}","{{void f2} f2}"); }
 	@Test public void test_640() { checkNotSubtype("{int f2}","{{any f1} f1}"); }
 	@Test public void test_641() { checkNotSubtype("{int f2}","{{any f2} f1}"); }
 	@Test public void test_642() { checkNotSubtype("{int f2}","{{any f1} f2}"); }
@@ -741,10 +709,6 @@ public class RecordSubtypeTests {
 	@Test public void test_709() { checkNotSubtype("{any f1,any f2}","{int f2,null f3}"); }
 	@Test public void test_710() { checkIsSubtype("{any f1,any f2}","{int f1,int f2}"); }
 	@Test public void test_711() { checkNotSubtype("{any f1,any f2}","{int f2,int f3}"); }
-	@Test public void test_712() { checkIsSubtype("{any f1,any f2}","{{void f1} f1}"); }
-	@Test public void test_713() { checkIsSubtype("{any f1,any f2}","{{void f2} f1}"); }
-	@Test public void test_714() { checkIsSubtype("{any f1,any f2}","{{void f1} f2}"); }
-	@Test public void test_715() { checkIsSubtype("{any f1,any f2}","{{void f2} f2}"); }
 	@Test public void test_716() { checkNotSubtype("{any f1,any f2}","{{any f1} f1}"); }
 	@Test public void test_717() { checkNotSubtype("{any f1,any f2}","{{any f2} f1}"); }
 	@Test public void test_718() { checkNotSubtype("{any f1,any f2}","{{any f1} f2}"); }
@@ -817,10 +781,6 @@ public class RecordSubtypeTests {
 	@Test public void test_785() { checkIsSubtype("{any f2,any f3}","{int f2,null f3}"); }
 	@Test public void test_786() { checkNotSubtype("{any f2,any f3}","{int f1,int f2}"); }
 	@Test public void test_787() { checkIsSubtype("{any f2,any f3}","{int f2,int f3}"); }
-	@Test public void test_788() { checkIsSubtype("{any f2,any f3}","{{void f1} f1}"); }
-	@Test public void test_789() { checkIsSubtype("{any f2,any f3}","{{void f2} f1}"); }
-	@Test public void test_790() { checkIsSubtype("{any f2,any f3}","{{void f1} f2}"); }
-	@Test public void test_791() { checkIsSubtype("{any f2,any f3}","{{void f2} f2}"); }
 	@Test public void test_792() { checkNotSubtype("{any f2,any f3}","{{any f1} f1}"); }
 	@Test public void test_793() { checkNotSubtype("{any f2,any f3}","{{any f2} f1}"); }
 	@Test public void test_794() { checkNotSubtype("{any f2,any f3}","{{any f1} f2}"); }
@@ -893,10 +853,6 @@ public class RecordSubtypeTests {
 	@Test public void test_861() { checkNotSubtype("{any f1,null f2}","{int f2,null f3}"); }
 	@Test public void test_862() { checkNotSubtype("{any f1,null f2}","{int f1,int f2}"); }
 	@Test public void test_863() { checkNotSubtype("{any f1,null f2}","{int f2,int f3}"); }
-	@Test public void test_864() { checkIsSubtype("{any f1,null f2}","{{void f1} f1}"); }
-	@Test public void test_865() { checkIsSubtype("{any f1,null f2}","{{void f2} f1}"); }
-	@Test public void test_866() { checkIsSubtype("{any f1,null f2}","{{void f1} f2}"); }
-	@Test public void test_867() { checkIsSubtype("{any f1,null f2}","{{void f2} f2}"); }
 	@Test public void test_868() { checkNotSubtype("{any f1,null f2}","{{any f1} f1}"); }
 	@Test public void test_869() { checkNotSubtype("{any f1,null f2}","{{any f2} f1}"); }
 	@Test public void test_870() { checkNotSubtype("{any f1,null f2}","{{any f1} f2}"); }
@@ -969,10 +925,6 @@ public class RecordSubtypeTests {
 	@Test public void test_937() { checkIsSubtype("{any f2,null f3}","{int f2,null f3}"); }
 	@Test public void test_938() { checkNotSubtype("{any f2,null f3}","{int f1,int f2}"); }
 	@Test public void test_939() { checkNotSubtype("{any f2,null f3}","{int f2,int f3}"); }
-	@Test public void test_940() { checkIsSubtype("{any f2,null f3}","{{void f1} f1}"); }
-	@Test public void test_941() { checkIsSubtype("{any f2,null f3}","{{void f2} f1}"); }
-	@Test public void test_942() { checkIsSubtype("{any f2,null f3}","{{void f1} f2}"); }
-	@Test public void test_943() { checkIsSubtype("{any f2,null f3}","{{void f2} f2}"); }
 	@Test public void test_944() { checkNotSubtype("{any f2,null f3}","{{any f1} f1}"); }
 	@Test public void test_945() { checkNotSubtype("{any f2,null f3}","{{any f2} f1}"); }
 	@Test public void test_946() { checkNotSubtype("{any f2,null f3}","{{any f1} f2}"); }
@@ -1045,10 +997,6 @@ public class RecordSubtypeTests {
 	@Test public void test_1013() { checkNotSubtype("{any f1,int f2}","{int f2,null f3}"); }
 	@Test public void test_1014() { checkIsSubtype("{any f1,int f2}","{int f1,int f2}"); }
 	@Test public void test_1015() { checkNotSubtype("{any f1,int f2}","{int f2,int f3}"); }
-	@Test public void test_1016() { checkIsSubtype("{any f1,int f2}","{{void f1} f1}"); }
-	@Test public void test_1017() { checkIsSubtype("{any f1,int f2}","{{void f2} f1}"); }
-	@Test public void test_1018() { checkIsSubtype("{any f1,int f2}","{{void f1} f2}"); }
-	@Test public void test_1019() { checkIsSubtype("{any f1,int f2}","{{void f2} f2}"); }
 	@Test public void test_1020() { checkNotSubtype("{any f1,int f2}","{{any f1} f1}"); }
 	@Test public void test_1021() { checkNotSubtype("{any f1,int f2}","{{any f2} f1}"); }
 	@Test public void test_1022() { checkNotSubtype("{any f1,int f2}","{{any f1} f2}"); }
@@ -1121,10 +1069,6 @@ public class RecordSubtypeTests {
 	@Test public void test_1089() { checkNotSubtype("{any f2,int f3}","{int f2,null f3}"); }
 	@Test public void test_1090() { checkNotSubtype("{any f2,int f3}","{int f1,int f2}"); }
 	@Test public void test_1091() { checkIsSubtype("{any f2,int f3}","{int f2,int f3}"); }
-	@Test public void test_1092() { checkIsSubtype("{any f2,int f3}","{{void f1} f1}"); }
-	@Test public void test_1093() { checkIsSubtype("{any f2,int f3}","{{void f2} f1}"); }
-	@Test public void test_1094() { checkIsSubtype("{any f2,int f3}","{{void f1} f2}"); }
-	@Test public void test_1095() { checkIsSubtype("{any f2,int f3}","{{void f2} f2}"); }
 	@Test public void test_1096() { checkNotSubtype("{any f2,int f3}","{{any f1} f1}"); }
 	@Test public void test_1097() { checkNotSubtype("{any f2,int f3}","{{any f2} f1}"); }
 	@Test public void test_1098() { checkNotSubtype("{any f2,int f3}","{{any f1} f2}"); }
@@ -1197,10 +1141,6 @@ public class RecordSubtypeTests {
 	@Test public void test_1165() { checkNotSubtype("{null f1,any f2}","{int f2,null f3}"); }
 	@Test public void test_1166() { checkNotSubtype("{null f1,any f2}","{int f1,int f2}"); }
 	@Test public void test_1167() { checkNotSubtype("{null f1,any f2}","{int f2,int f3}"); }
-	@Test public void test_1168() { checkIsSubtype("{null f1,any f2}","{{void f1} f1}"); }
-	@Test public void test_1169() { checkIsSubtype("{null f1,any f2}","{{void f2} f1}"); }
-	@Test public void test_1170() { checkIsSubtype("{null f1,any f2}","{{void f1} f2}"); }
-	@Test public void test_1171() { checkIsSubtype("{null f1,any f2}","{{void f2} f2}"); }
 	@Test public void test_1172() { checkNotSubtype("{null f1,any f2}","{{any f1} f1}"); }
 	@Test public void test_1173() { checkNotSubtype("{null f1,any f2}","{{any f2} f1}"); }
 	@Test public void test_1174() { checkNotSubtype("{null f1,any f2}","{{any f1} f2}"); }
@@ -1273,10 +1213,6 @@ public class RecordSubtypeTests {
 	@Test public void test_1241() { checkNotSubtype("{null f2,any f3}","{int f2,null f3}"); }
 	@Test public void test_1242() { checkNotSubtype("{null f2,any f3}","{int f1,int f2}"); }
 	@Test public void test_1243() { checkNotSubtype("{null f2,any f3}","{int f2,int f3}"); }
-	@Test public void test_1244() { checkIsSubtype("{null f2,any f3}","{{void f1} f1}"); }
-	@Test public void test_1245() { checkIsSubtype("{null f2,any f3}","{{void f2} f1}"); }
-	@Test public void test_1246() { checkIsSubtype("{null f2,any f3}","{{void f1} f2}"); }
-	@Test public void test_1247() { checkIsSubtype("{null f2,any f3}","{{void f2} f2}"); }
 	@Test public void test_1248() { checkNotSubtype("{null f2,any f3}","{{any f1} f1}"); }
 	@Test public void test_1249() { checkNotSubtype("{null f2,any f3}","{{any f2} f1}"); }
 	@Test public void test_1250() { checkNotSubtype("{null f2,any f3}","{{any f1} f2}"); }
@@ -1349,10 +1285,6 @@ public class RecordSubtypeTests {
 	@Test public void test_1317() { checkNotSubtype("{null f1,null f2}","{int f2,null f3}"); }
 	@Test public void test_1318() { checkNotSubtype("{null f1,null f2}","{int f1,int f2}"); }
 	@Test public void test_1319() { checkNotSubtype("{null f1,null f2}","{int f2,int f3}"); }
-	@Test public void test_1320() { checkIsSubtype("{null f1,null f2}","{{void f1} f1}"); }
-	@Test public void test_1321() { checkIsSubtype("{null f1,null f2}","{{void f2} f1}"); }
-	@Test public void test_1322() { checkIsSubtype("{null f1,null f2}","{{void f1} f2}"); }
-	@Test public void test_1323() { checkIsSubtype("{null f1,null f2}","{{void f2} f2}"); }
 	@Test public void test_1324() { checkNotSubtype("{null f1,null f2}","{{any f1} f1}"); }
 	@Test public void test_1325() { checkNotSubtype("{null f1,null f2}","{{any f2} f1}"); }
 	@Test public void test_1326() { checkNotSubtype("{null f1,null f2}","{{any f1} f2}"); }
@@ -1425,10 +1357,6 @@ public class RecordSubtypeTests {
 	@Test public void test_1393() { checkNotSubtype("{null f2,null f3}","{int f2,null f3}"); }
 	@Test public void test_1394() { checkNotSubtype("{null f2,null f3}","{int f1,int f2}"); }
 	@Test public void test_1395() { checkNotSubtype("{null f2,null f3}","{int f2,int f3}"); }
-	@Test public void test_1396() { checkIsSubtype("{null f2,null f3}","{{void f1} f1}"); }
-	@Test public void test_1397() { checkIsSubtype("{null f2,null f3}","{{void f2} f1}"); }
-	@Test public void test_1398() { checkIsSubtype("{null f2,null f3}","{{void f1} f2}"); }
-	@Test public void test_1399() { checkIsSubtype("{null f2,null f3}","{{void f2} f2}"); }
 	@Test public void test_1400() { checkNotSubtype("{null f2,null f3}","{{any f1} f1}"); }
 	@Test public void test_1401() { checkNotSubtype("{null f2,null f3}","{{any f2} f1}"); }
 	@Test public void test_1402() { checkNotSubtype("{null f2,null f3}","{{any f1} f2}"); }
@@ -1501,10 +1429,6 @@ public class RecordSubtypeTests {
 	@Test public void test_1469() { checkNotSubtype("{null f1,int f2}","{int f2,null f3}"); }
 	@Test public void test_1470() { checkNotSubtype("{null f1,int f2}","{int f1,int f2}"); }
 	@Test public void test_1471() { checkNotSubtype("{null f1,int f2}","{int f2,int f3}"); }
-	@Test public void test_1472() { checkIsSubtype("{null f1,int f2}","{{void f1} f1}"); }
-	@Test public void test_1473() { checkIsSubtype("{null f1,int f2}","{{void f2} f1}"); }
-	@Test public void test_1474() { checkIsSubtype("{null f1,int f2}","{{void f1} f2}"); }
-	@Test public void test_1475() { checkIsSubtype("{null f1,int f2}","{{void f2} f2}"); }
 	@Test public void test_1476() { checkNotSubtype("{null f1,int f2}","{{any f1} f1}"); }
 	@Test public void test_1477() { checkNotSubtype("{null f1,int f2}","{{any f2} f1}"); }
 	@Test public void test_1478() { checkNotSubtype("{null f1,int f2}","{{any f1} f2}"); }
@@ -1577,10 +1501,6 @@ public class RecordSubtypeTests {
 	@Test public void test_1545() { checkNotSubtype("{null f2,int f3}","{int f2,null f3}"); }
 	@Test public void test_1546() { checkNotSubtype("{null f2,int f3}","{int f1,int f2}"); }
 	@Test public void test_1547() { checkNotSubtype("{null f2,int f3}","{int f2,int f3}"); }
-	@Test public void test_1548() { checkIsSubtype("{null f2,int f3}","{{void f1} f1}"); }
-	@Test public void test_1549() { checkIsSubtype("{null f2,int f3}","{{void f2} f1}"); }
-	@Test public void test_1550() { checkIsSubtype("{null f2,int f3}","{{void f1} f2}"); }
-	@Test public void test_1551() { checkIsSubtype("{null f2,int f3}","{{void f2} f2}"); }
 	@Test public void test_1552() { checkNotSubtype("{null f2,int f3}","{{any f1} f1}"); }
 	@Test public void test_1553() { checkNotSubtype("{null f2,int f3}","{{any f2} f1}"); }
 	@Test public void test_1554() { checkNotSubtype("{null f2,int f3}","{{any f1} f2}"); }
@@ -1653,10 +1573,6 @@ public class RecordSubtypeTests {
 	@Test public void test_1621() { checkNotSubtype("{int f1,any f2}","{int f2,null f3}"); }
 	@Test public void test_1622() { checkIsSubtype("{int f1,any f2}","{int f1,int f2}"); }
 	@Test public void test_1623() { checkNotSubtype("{int f1,any f2}","{int f2,int f3}"); }
-	@Test public void test_1624() { checkIsSubtype("{int f1,any f2}","{{void f1} f1}"); }
-	@Test public void test_1625() { checkIsSubtype("{int f1,any f2}","{{void f2} f1}"); }
-	@Test public void test_1626() { checkIsSubtype("{int f1,any f2}","{{void f1} f2}"); }
-	@Test public void test_1627() { checkIsSubtype("{int f1,any f2}","{{void f2} f2}"); }
 	@Test public void test_1628() { checkNotSubtype("{int f1,any f2}","{{any f1} f1}"); }
 	@Test public void test_1629() { checkNotSubtype("{int f1,any f2}","{{any f2} f1}"); }
 	@Test public void test_1630() { checkNotSubtype("{int f1,any f2}","{{any f1} f2}"); }
@@ -1729,10 +1645,6 @@ public class RecordSubtypeTests {
 	@Test public void test_1697() { checkIsSubtype("{int f2,any f3}","{int f2,null f3}"); }
 	@Test public void test_1698() { checkNotSubtype("{int f2,any f3}","{int f1,int f2}"); }
 	@Test public void test_1699() { checkIsSubtype("{int f2,any f3}","{int f2,int f3}"); }
-	@Test public void test_1700() { checkIsSubtype("{int f2,any f3}","{{void f1} f1}"); }
-	@Test public void test_1701() { checkIsSubtype("{int f2,any f3}","{{void f2} f1}"); }
-	@Test public void test_1702() { checkIsSubtype("{int f2,any f3}","{{void f1} f2}"); }
-	@Test public void test_1703() { checkIsSubtype("{int f2,any f3}","{{void f2} f2}"); }
 	@Test public void test_1704() { checkNotSubtype("{int f2,any f3}","{{any f1} f1}"); }
 	@Test public void test_1705() { checkNotSubtype("{int f2,any f3}","{{any f2} f1}"); }
 	@Test public void test_1706() { checkNotSubtype("{int f2,any f3}","{{any f1} f2}"); }
@@ -1805,10 +1717,6 @@ public class RecordSubtypeTests {
 	@Test public void test_1773() { checkNotSubtype("{int f1,null f2}","{int f2,null f3}"); }
 	@Test public void test_1774() { checkNotSubtype("{int f1,null f2}","{int f1,int f2}"); }
 	@Test public void test_1775() { checkNotSubtype("{int f1,null f2}","{int f2,int f3}"); }
-	@Test public void test_1776() { checkIsSubtype("{int f1,null f2}","{{void f1} f1}"); }
-	@Test public void test_1777() { checkIsSubtype("{int f1,null f2}","{{void f2} f1}"); }
-	@Test public void test_1778() { checkIsSubtype("{int f1,null f2}","{{void f1} f2}"); }
-	@Test public void test_1779() { checkIsSubtype("{int f1,null f2}","{{void f2} f2}"); }
 	@Test public void test_1780() { checkNotSubtype("{int f1,null f2}","{{any f1} f1}"); }
 	@Test public void test_1781() { checkNotSubtype("{int f1,null f2}","{{any f2} f1}"); }
 	@Test public void test_1782() { checkNotSubtype("{int f1,null f2}","{{any f1} f2}"); }
@@ -1881,10 +1789,6 @@ public class RecordSubtypeTests {
 	@Test public void test_1849() { checkIsSubtype("{int f2,null f3}","{int f2,null f3}"); }
 	@Test public void test_1850() { checkNotSubtype("{int f2,null f3}","{int f1,int f2}"); }
 	@Test public void test_1851() { checkNotSubtype("{int f2,null f3}","{int f2,int f3}"); }
-	@Test public void test_1852() { checkIsSubtype("{int f2,null f3}","{{void f1} f1}"); }
-	@Test public void test_1853() { checkIsSubtype("{int f2,null f3}","{{void f2} f1}"); }
-	@Test public void test_1854() { checkIsSubtype("{int f2,null f3}","{{void f1} f2}"); }
-	@Test public void test_1855() { checkIsSubtype("{int f2,null f3}","{{void f2} f2}"); }
 	@Test public void test_1856() { checkNotSubtype("{int f2,null f3}","{{any f1} f1}"); }
 	@Test public void test_1857() { checkNotSubtype("{int f2,null f3}","{{any f2} f1}"); }
 	@Test public void test_1858() { checkNotSubtype("{int f2,null f3}","{{any f1} f2}"); }
@@ -1957,10 +1861,6 @@ public class RecordSubtypeTests {
 	@Test public void test_1925() { checkNotSubtype("{int f1,int f2}","{int f2,null f3}"); }
 	@Test public void test_1926() { checkIsSubtype("{int f1,int f2}","{int f1,int f2}"); }
 	@Test public void test_1927() { checkNotSubtype("{int f1,int f2}","{int f2,int f3}"); }
-	@Test public void test_1928() { checkIsSubtype("{int f1,int f2}","{{void f1} f1}"); }
-	@Test public void test_1929() { checkIsSubtype("{int f1,int f2}","{{void f2} f1}"); }
-	@Test public void test_1930() { checkIsSubtype("{int f1,int f2}","{{void f1} f2}"); }
-	@Test public void test_1931() { checkIsSubtype("{int f1,int f2}","{{void f2} f2}"); }
 	@Test public void test_1932() { checkNotSubtype("{int f1,int f2}","{{any f1} f1}"); }
 	@Test public void test_1933() { checkNotSubtype("{int f1,int f2}","{{any f2} f1}"); }
 	@Test public void test_1934() { checkNotSubtype("{int f1,int f2}","{{any f1} f2}"); }
@@ -2033,10 +1933,6 @@ public class RecordSubtypeTests {
 	@Test public void test_2001() { checkNotSubtype("{int f2,int f3}","{int f2,null f3}"); }
 	@Test public void test_2002() { checkNotSubtype("{int f2,int f3}","{int f1,int f2}"); }
 	@Test public void test_2003() { checkIsSubtype("{int f2,int f3}","{int f2,int f3}"); }
-	@Test public void test_2004() { checkIsSubtype("{int f2,int f3}","{{void f1} f1}"); }
-	@Test public void test_2005() { checkIsSubtype("{int f2,int f3}","{{void f2} f1}"); }
-	@Test public void test_2006() { checkIsSubtype("{int f2,int f3}","{{void f1} f2}"); }
-	@Test public void test_2007() { checkIsSubtype("{int f2,int f3}","{{void f2} f2}"); }
 	@Test public void test_2008() { checkNotSubtype("{int f2,int f3}","{{any f1} f1}"); }
 	@Test public void test_2009() { checkNotSubtype("{int f2,int f3}","{{any f2} f1}"); }
 	@Test public void test_2010() { checkNotSubtype("{int f2,int f3}","{{any f1} f2}"); }
@@ -2082,310 +1978,6 @@ public class RecordSubtypeTests {
 	@Test public void test_2050() { checkNotSubtype("{int f2,int f3}","{null f2}|null"); }
 	@Test public void test_2051() { checkNotSubtype("{int f2,int f3}","{int f1}|int"); }
 	@Test public void test_2052() { checkNotSubtype("{int f2,int f3}","{int f2}|int"); }
-	@Test public void test_2053() { checkNotSubtype("{{void f1} f1}","any"); }
-	@Test public void test_2054() { checkNotSubtype("{{void f1} f1}","null"); }
-	@Test public void test_2055() { checkNotSubtype("{{void f1} f1}","int"); }
-	@Test public void test_2056() { checkNotSubtype("{{void f1} f1}","{any f1}"); }
-	@Test public void test_2057() { checkNotSubtype("{{void f1} f1}","{any f2}"); }
-	@Test public void test_2058() { checkNotSubtype("{{void f1} f1}","{null f1}"); }
-	@Test public void test_2059() { checkNotSubtype("{{void f1} f1}","{null f2}"); }
-	@Test public void test_2060() { checkNotSubtype("{{void f1} f1}","{int f1}"); }
-	@Test public void test_2061() { checkNotSubtype("{{void f1} f1}","{int f2}"); }
-	@Test public void test_2062() { checkNotSubtype("{{void f1} f1}","{any f1,any f2}"); }
-	@Test public void test_2063() { checkNotSubtype("{{void f1} f1}","{any f2,any f3}"); }
-	@Test public void test_2064() { checkNotSubtype("{{void f1} f1}","{any f1,null f2}"); }
-	@Test public void test_2065() { checkNotSubtype("{{void f1} f1}","{any f2,null f3}"); }
-	@Test public void test_2066() { checkNotSubtype("{{void f1} f1}","{any f1,int f2}"); }
-	@Test public void test_2067() { checkNotSubtype("{{void f1} f1}","{any f2,int f3}"); }
-	@Test public void test_2068() { checkNotSubtype("{{void f1} f1}","{null f1,any f2}"); }
-	@Test public void test_2069() { checkNotSubtype("{{void f1} f1}","{null f2,any f3}"); }
-	@Test public void test_2070() { checkNotSubtype("{{void f1} f1}","{null f1,null f2}"); }
-	@Test public void test_2071() { checkNotSubtype("{{void f1} f1}","{null f2,null f3}"); }
-	@Test public void test_2072() { checkNotSubtype("{{void f1} f1}","{null f1,int f2}"); }
-	@Test public void test_2073() { checkNotSubtype("{{void f1} f1}","{null f2,int f3}"); }
-	@Test public void test_2074() { checkNotSubtype("{{void f1} f1}","{int f1,any f2}"); }
-	@Test public void test_2075() { checkNotSubtype("{{void f1} f1}","{int f2,any f3}"); }
-	@Test public void test_2076() { checkNotSubtype("{{void f1} f1}","{int f1,null f2}"); }
-	@Test public void test_2077() { checkNotSubtype("{{void f1} f1}","{int f2,null f3}"); }
-	@Test public void test_2078() { checkNotSubtype("{{void f1} f1}","{int f1,int f2}"); }
-	@Test public void test_2079() { checkNotSubtype("{{void f1} f1}","{int f2,int f3}"); }
-	@Test public void test_2080() { checkIsSubtype("{{void f1} f1}","{{void f1} f1}"); }
-	@Test public void test_2081() { checkIsSubtype("{{void f1} f1}","{{void f2} f1}"); }
-	@Test public void test_2082() { checkIsSubtype("{{void f1} f1}","{{void f1} f2}"); }
-	@Test public void test_2083() { checkIsSubtype("{{void f1} f1}","{{void f2} f2}"); }
-	@Test public void test_2084() { checkNotSubtype("{{void f1} f1}","{{any f1} f1}"); }
-	@Test public void test_2085() { checkNotSubtype("{{void f1} f1}","{{any f2} f1}"); }
-	@Test public void test_2086() { checkNotSubtype("{{void f1} f1}","{{any f1} f2}"); }
-	@Test public void test_2087() { checkNotSubtype("{{void f1} f1}","{{any f2} f2}"); }
-	@Test public void test_2088() { checkNotSubtype("{{void f1} f1}","{{any f1} f1,any f2}"); }
-	@Test public void test_2089() { checkNotSubtype("{{void f1} f1}","{{any f2} f1,any f2}"); }
-	@Test public void test_2090() { checkNotSubtype("{{void f1} f1}","{{any f1} f2,any f3}"); }
-	@Test public void test_2091() { checkNotSubtype("{{void f1} f1}","{{any f2} f2,any f3}"); }
-	@Test public void test_2092() { checkNotSubtype("{{void f1} f1}","{{null f1} f1}"); }
-	@Test public void test_2093() { checkNotSubtype("{{void f1} f1}","{{null f2} f1}"); }
-	@Test public void test_2094() { checkNotSubtype("{{void f1} f1}","{{null f1} f2}"); }
-	@Test public void test_2095() { checkNotSubtype("{{void f1} f1}","{{null f2} f2}"); }
-	@Test public void test_2096() { checkNotSubtype("{{void f1} f1}","{{null f1} f1,null f2}"); }
-	@Test public void test_2097() { checkNotSubtype("{{void f1} f1}","{{null f2} f1,null f2}"); }
-	@Test public void test_2098() { checkNotSubtype("{{void f1} f1}","{{null f1} f2,null f3}"); }
-	@Test public void test_2099() { checkNotSubtype("{{void f1} f1}","{{null f2} f2,null f3}"); }
-	@Test public void test_2100() { checkNotSubtype("{{void f1} f1}","{{int f1} f1}"); }
-	@Test public void test_2101() { checkNotSubtype("{{void f1} f1}","{{int f2} f1}"); }
-	@Test public void test_2102() { checkNotSubtype("{{void f1} f1}","{{int f1} f2}"); }
-	@Test public void test_2103() { checkNotSubtype("{{void f1} f1}","{{int f2} f2}"); }
-	@Test public void test_2104() { checkNotSubtype("{{void f1} f1}","{{int f1} f1,int f2}"); }
-	@Test public void test_2105() { checkNotSubtype("{{void f1} f1}","{{int f2} f1,int f2}"); }
-	@Test public void test_2106() { checkNotSubtype("{{void f1} f1}","{{int f1} f2,int f3}"); }
-	@Test public void test_2107() { checkNotSubtype("{{void f1} f1}","{{int f2} f2,int f3}"); }
-	@Test public void test_2108() { checkNotSubtype("{{void f1} f1}","any"); }
-	@Test public void test_2109() { checkNotSubtype("{{void f1} f1}","null"); }
-	@Test public void test_2110() { checkNotSubtype("{{void f1} f1}","int"); }
-	@Test public void test_2111() { checkNotSubtype("{{void f1} f1}","any"); }
-	@Test public void test_2112() { checkNotSubtype("{{void f1} f1}","any"); }
-	@Test public void test_2113() { checkNotSubtype("{{void f1} f1}","any"); }
-	@Test public void test_2114() { checkNotSubtype("{{void f1} f1}","any"); }
-	@Test public void test_2115() { checkNotSubtype("{{void f1} f1}","null"); }
-	@Test public void test_2116() { checkNotSubtype("{{void f1} f1}","any"); }
-	@Test public void test_2117() { checkNotSubtype("{{void f1} f1}","null"); }
-	@Test public void test_2118() { checkNotSubtype("{{void f1} f1}","null|int"); }
-	@Test public void test_2119() { checkNotSubtype("{{void f1} f1}","int"); }
-	@Test public void test_2120() { checkNotSubtype("{{void f1} f1}","any"); }
-	@Test public void test_2121() { checkNotSubtype("{{void f1} f1}","int|null"); }
-	@Test public void test_2122() { checkNotSubtype("{{void f1} f1}","int"); }
-	@Test public void test_2123() { checkNotSubtype("{{void f1} f1}","any"); }
-	@Test public void test_2124() { checkNotSubtype("{{void f1} f1}","any"); }
-	@Test public void test_2125() { checkNotSubtype("{{void f1} f1}","{null f1}|null"); }
-	@Test public void test_2126() { checkNotSubtype("{{void f1} f1}","{null f2}|null"); }
-	@Test public void test_2127() { checkNotSubtype("{{void f1} f1}","{int f1}|int"); }
-	@Test public void test_2128() { checkNotSubtype("{{void f1} f1}","{int f2}|int"); }
-	@Test public void test_2129() { checkNotSubtype("{{void f2} f1}","any"); }
-	@Test public void test_2130() { checkNotSubtype("{{void f2} f1}","null"); }
-	@Test public void test_2131() { checkNotSubtype("{{void f2} f1}","int"); }
-	@Test public void test_2132() { checkNotSubtype("{{void f2} f1}","{any f1}"); }
-	@Test public void test_2133() { checkNotSubtype("{{void f2} f1}","{any f2}"); }
-	@Test public void test_2134() { checkNotSubtype("{{void f2} f1}","{null f1}"); }
-	@Test public void test_2135() { checkNotSubtype("{{void f2} f1}","{null f2}"); }
-	@Test public void test_2136() { checkNotSubtype("{{void f2} f1}","{int f1}"); }
-	@Test public void test_2137() { checkNotSubtype("{{void f2} f1}","{int f2}"); }
-	@Test public void test_2138() { checkNotSubtype("{{void f2} f1}","{any f1,any f2}"); }
-	@Test public void test_2139() { checkNotSubtype("{{void f2} f1}","{any f2,any f3}"); }
-	@Test public void test_2140() { checkNotSubtype("{{void f2} f1}","{any f1,null f2}"); }
-	@Test public void test_2141() { checkNotSubtype("{{void f2} f1}","{any f2,null f3}"); }
-	@Test public void test_2142() { checkNotSubtype("{{void f2} f1}","{any f1,int f2}"); }
-	@Test public void test_2143() { checkNotSubtype("{{void f2} f1}","{any f2,int f3}"); }
-	@Test public void test_2144() { checkNotSubtype("{{void f2} f1}","{null f1,any f2}"); }
-	@Test public void test_2145() { checkNotSubtype("{{void f2} f1}","{null f2,any f3}"); }
-	@Test public void test_2146() { checkNotSubtype("{{void f2} f1}","{null f1,null f2}"); }
-	@Test public void test_2147() { checkNotSubtype("{{void f2} f1}","{null f2,null f3}"); }
-	@Test public void test_2148() { checkNotSubtype("{{void f2} f1}","{null f1,int f2}"); }
-	@Test public void test_2149() { checkNotSubtype("{{void f2} f1}","{null f2,int f3}"); }
-	@Test public void test_2150() { checkNotSubtype("{{void f2} f1}","{int f1,any f2}"); }
-	@Test public void test_2151() { checkNotSubtype("{{void f2} f1}","{int f2,any f3}"); }
-	@Test public void test_2152() { checkNotSubtype("{{void f2} f1}","{int f1,null f2}"); }
-	@Test public void test_2153() { checkNotSubtype("{{void f2} f1}","{int f2,null f3}"); }
-	@Test public void test_2154() { checkNotSubtype("{{void f2} f1}","{int f1,int f2}"); }
-	@Test public void test_2155() { checkNotSubtype("{{void f2} f1}","{int f2,int f3}"); }
-	@Test public void test_2156() { checkIsSubtype("{{void f2} f1}","{{void f1} f1}"); }
-	@Test public void test_2157() { checkIsSubtype("{{void f2} f1}","{{void f2} f1}"); }
-	@Test public void test_2158() { checkIsSubtype("{{void f2} f1}","{{void f1} f2}"); }
-	@Test public void test_2159() { checkIsSubtype("{{void f2} f1}","{{void f2} f2}"); }
-	@Test public void test_2160() { checkNotSubtype("{{void f2} f1}","{{any f1} f1}"); }
-	@Test public void test_2161() { checkNotSubtype("{{void f2} f1}","{{any f2} f1}"); }
-	@Test public void test_2162() { checkNotSubtype("{{void f2} f1}","{{any f1} f2}"); }
-	@Test public void test_2163() { checkNotSubtype("{{void f2} f1}","{{any f2} f2}"); }
-	@Test public void test_2164() { checkNotSubtype("{{void f2} f1}","{{any f1} f1,any f2}"); }
-	@Test public void test_2165() { checkNotSubtype("{{void f2} f1}","{{any f2} f1,any f2}"); }
-	@Test public void test_2166() { checkNotSubtype("{{void f2} f1}","{{any f1} f2,any f3}"); }
-	@Test public void test_2167() { checkNotSubtype("{{void f2} f1}","{{any f2} f2,any f3}"); }
-	@Test public void test_2168() { checkNotSubtype("{{void f2} f1}","{{null f1} f1}"); }
-	@Test public void test_2169() { checkNotSubtype("{{void f2} f1}","{{null f2} f1}"); }
-	@Test public void test_2170() { checkNotSubtype("{{void f2} f1}","{{null f1} f2}"); }
-	@Test public void test_2171() { checkNotSubtype("{{void f2} f1}","{{null f2} f2}"); }
-	@Test public void test_2172() { checkNotSubtype("{{void f2} f1}","{{null f1} f1,null f2}"); }
-	@Test public void test_2173() { checkNotSubtype("{{void f2} f1}","{{null f2} f1,null f2}"); }
-	@Test public void test_2174() { checkNotSubtype("{{void f2} f1}","{{null f1} f2,null f3}"); }
-	@Test public void test_2175() { checkNotSubtype("{{void f2} f1}","{{null f2} f2,null f3}"); }
-	@Test public void test_2176() { checkNotSubtype("{{void f2} f1}","{{int f1} f1}"); }
-	@Test public void test_2177() { checkNotSubtype("{{void f2} f1}","{{int f2} f1}"); }
-	@Test public void test_2178() { checkNotSubtype("{{void f2} f1}","{{int f1} f2}"); }
-	@Test public void test_2179() { checkNotSubtype("{{void f2} f1}","{{int f2} f2}"); }
-	@Test public void test_2180() { checkNotSubtype("{{void f2} f1}","{{int f1} f1,int f2}"); }
-	@Test public void test_2181() { checkNotSubtype("{{void f2} f1}","{{int f2} f1,int f2}"); }
-	@Test public void test_2182() { checkNotSubtype("{{void f2} f1}","{{int f1} f2,int f3}"); }
-	@Test public void test_2183() { checkNotSubtype("{{void f2} f1}","{{int f2} f2,int f3}"); }
-	@Test public void test_2184() { checkNotSubtype("{{void f2} f1}","any"); }
-	@Test public void test_2185() { checkNotSubtype("{{void f2} f1}","null"); }
-	@Test public void test_2186() { checkNotSubtype("{{void f2} f1}","int"); }
-	@Test public void test_2187() { checkNotSubtype("{{void f2} f1}","any"); }
-	@Test public void test_2188() { checkNotSubtype("{{void f2} f1}","any"); }
-	@Test public void test_2189() { checkNotSubtype("{{void f2} f1}","any"); }
-	@Test public void test_2190() { checkNotSubtype("{{void f2} f1}","any"); }
-	@Test public void test_2191() { checkNotSubtype("{{void f2} f1}","null"); }
-	@Test public void test_2192() { checkNotSubtype("{{void f2} f1}","any"); }
-	@Test public void test_2193() { checkNotSubtype("{{void f2} f1}","null"); }
-	@Test public void test_2194() { checkNotSubtype("{{void f2} f1}","null|int"); }
-	@Test public void test_2195() { checkNotSubtype("{{void f2} f1}","int"); }
-	@Test public void test_2196() { checkNotSubtype("{{void f2} f1}","any"); }
-	@Test public void test_2197() { checkNotSubtype("{{void f2} f1}","int|null"); }
-	@Test public void test_2198() { checkNotSubtype("{{void f2} f1}","int"); }
-	@Test public void test_2199() { checkNotSubtype("{{void f2} f1}","any"); }
-	@Test public void test_2200() { checkNotSubtype("{{void f2} f1}","any"); }
-	@Test public void test_2201() { checkNotSubtype("{{void f2} f1}","{null f1}|null"); }
-	@Test public void test_2202() { checkNotSubtype("{{void f2} f1}","{null f2}|null"); }
-	@Test public void test_2203() { checkNotSubtype("{{void f2} f1}","{int f1}|int"); }
-	@Test public void test_2204() { checkNotSubtype("{{void f2} f1}","{int f2}|int"); }
-	@Test public void test_2205() { checkNotSubtype("{{void f1} f2}","any"); }
-	@Test public void test_2206() { checkNotSubtype("{{void f1} f2}","null"); }
-	@Test public void test_2207() { checkNotSubtype("{{void f1} f2}","int"); }
-	@Test public void test_2208() { checkNotSubtype("{{void f1} f2}","{any f1}"); }
-	@Test public void test_2209() { checkNotSubtype("{{void f1} f2}","{any f2}"); }
-	@Test public void test_2210() { checkNotSubtype("{{void f1} f2}","{null f1}"); }
-	@Test public void test_2211() { checkNotSubtype("{{void f1} f2}","{null f2}"); }
-	@Test public void test_2212() { checkNotSubtype("{{void f1} f2}","{int f1}"); }
-	@Test public void test_2213() { checkNotSubtype("{{void f1} f2}","{int f2}"); }
-	@Test public void test_2214() { checkNotSubtype("{{void f1} f2}","{any f1,any f2}"); }
-	@Test public void test_2215() { checkNotSubtype("{{void f1} f2}","{any f2,any f3}"); }
-	@Test public void test_2216() { checkNotSubtype("{{void f1} f2}","{any f1,null f2}"); }
-	@Test public void test_2217() { checkNotSubtype("{{void f1} f2}","{any f2,null f3}"); }
-	@Test public void test_2218() { checkNotSubtype("{{void f1} f2}","{any f1,int f2}"); }
-	@Test public void test_2219() { checkNotSubtype("{{void f1} f2}","{any f2,int f3}"); }
-	@Test public void test_2220() { checkNotSubtype("{{void f1} f2}","{null f1,any f2}"); }
-	@Test public void test_2221() { checkNotSubtype("{{void f1} f2}","{null f2,any f3}"); }
-	@Test public void test_2222() { checkNotSubtype("{{void f1} f2}","{null f1,null f2}"); }
-	@Test public void test_2223() { checkNotSubtype("{{void f1} f2}","{null f2,null f3}"); }
-	@Test public void test_2224() { checkNotSubtype("{{void f1} f2}","{null f1,int f2}"); }
-	@Test public void test_2225() { checkNotSubtype("{{void f1} f2}","{null f2,int f3}"); }
-	@Test public void test_2226() { checkNotSubtype("{{void f1} f2}","{int f1,any f2}"); }
-	@Test public void test_2227() { checkNotSubtype("{{void f1} f2}","{int f2,any f3}"); }
-	@Test public void test_2228() { checkNotSubtype("{{void f1} f2}","{int f1,null f2}"); }
-	@Test public void test_2229() { checkNotSubtype("{{void f1} f2}","{int f2,null f3}"); }
-	@Test public void test_2230() { checkNotSubtype("{{void f1} f2}","{int f1,int f2}"); }
-	@Test public void test_2231() { checkNotSubtype("{{void f1} f2}","{int f2,int f3}"); }
-	@Test public void test_2232() { checkIsSubtype("{{void f1} f2}","{{void f1} f1}"); }
-	@Test public void test_2233() { checkIsSubtype("{{void f1} f2}","{{void f2} f1}"); }
-	@Test public void test_2234() { checkIsSubtype("{{void f1} f2}","{{void f1} f2}"); }
-	@Test public void test_2235() { checkIsSubtype("{{void f1} f2}","{{void f2} f2}"); }
-	@Test public void test_2236() { checkNotSubtype("{{void f1} f2}","{{any f1} f1}"); }
-	@Test public void test_2237() { checkNotSubtype("{{void f1} f2}","{{any f2} f1}"); }
-	@Test public void test_2238() { checkNotSubtype("{{void f1} f2}","{{any f1} f2}"); }
-	@Test public void test_2239() { checkNotSubtype("{{void f1} f2}","{{any f2} f2}"); }
-	@Test public void test_2240() { checkNotSubtype("{{void f1} f2}","{{any f1} f1,any f2}"); }
-	@Test public void test_2241() { checkNotSubtype("{{void f1} f2}","{{any f2} f1,any f2}"); }
-	@Test public void test_2242() { checkNotSubtype("{{void f1} f2}","{{any f1} f2,any f3}"); }
-	@Test public void test_2243() { checkNotSubtype("{{void f1} f2}","{{any f2} f2,any f3}"); }
-	@Test public void test_2244() { checkNotSubtype("{{void f1} f2}","{{null f1} f1}"); }
-	@Test public void test_2245() { checkNotSubtype("{{void f1} f2}","{{null f2} f1}"); }
-	@Test public void test_2246() { checkNotSubtype("{{void f1} f2}","{{null f1} f2}"); }
-	@Test public void test_2247() { checkNotSubtype("{{void f1} f2}","{{null f2} f2}"); }
-	@Test public void test_2248() { checkNotSubtype("{{void f1} f2}","{{null f1} f1,null f2}"); }
-	@Test public void test_2249() { checkNotSubtype("{{void f1} f2}","{{null f2} f1,null f2}"); }
-	@Test public void test_2250() { checkNotSubtype("{{void f1} f2}","{{null f1} f2,null f3}"); }
-	@Test public void test_2251() { checkNotSubtype("{{void f1} f2}","{{null f2} f2,null f3}"); }
-	@Test public void test_2252() { checkNotSubtype("{{void f1} f2}","{{int f1} f1}"); }
-	@Test public void test_2253() { checkNotSubtype("{{void f1} f2}","{{int f2} f1}"); }
-	@Test public void test_2254() { checkNotSubtype("{{void f1} f2}","{{int f1} f2}"); }
-	@Test public void test_2255() { checkNotSubtype("{{void f1} f2}","{{int f2} f2}"); }
-	@Test public void test_2256() { checkNotSubtype("{{void f1} f2}","{{int f1} f1,int f2}"); }
-	@Test public void test_2257() { checkNotSubtype("{{void f1} f2}","{{int f2} f1,int f2}"); }
-	@Test public void test_2258() { checkNotSubtype("{{void f1} f2}","{{int f1} f2,int f3}"); }
-	@Test public void test_2259() { checkNotSubtype("{{void f1} f2}","{{int f2} f2,int f3}"); }
-	@Test public void test_2260() { checkNotSubtype("{{void f1} f2}","any"); }
-	@Test public void test_2261() { checkNotSubtype("{{void f1} f2}","null"); }
-	@Test public void test_2262() { checkNotSubtype("{{void f1} f2}","int"); }
-	@Test public void test_2263() { checkNotSubtype("{{void f1} f2}","any"); }
-	@Test public void test_2264() { checkNotSubtype("{{void f1} f2}","any"); }
-	@Test public void test_2265() { checkNotSubtype("{{void f1} f2}","any"); }
-	@Test public void test_2266() { checkNotSubtype("{{void f1} f2}","any"); }
-	@Test public void test_2267() { checkNotSubtype("{{void f1} f2}","null"); }
-	@Test public void test_2268() { checkNotSubtype("{{void f1} f2}","any"); }
-	@Test public void test_2269() { checkNotSubtype("{{void f1} f2}","null"); }
-	@Test public void test_2270() { checkNotSubtype("{{void f1} f2}","null|int"); }
-	@Test public void test_2271() { checkNotSubtype("{{void f1} f2}","int"); }
-	@Test public void test_2272() { checkNotSubtype("{{void f1} f2}","any"); }
-	@Test public void test_2273() { checkNotSubtype("{{void f1} f2}","int|null"); }
-	@Test public void test_2274() { checkNotSubtype("{{void f1} f2}","int"); }
-	@Test public void test_2275() { checkNotSubtype("{{void f1} f2}","any"); }
-	@Test public void test_2276() { checkNotSubtype("{{void f1} f2}","any"); }
-	@Test public void test_2277() { checkNotSubtype("{{void f1} f2}","{null f1}|null"); }
-	@Test public void test_2278() { checkNotSubtype("{{void f1} f2}","{null f2}|null"); }
-	@Test public void test_2279() { checkNotSubtype("{{void f1} f2}","{int f1}|int"); }
-	@Test public void test_2280() { checkNotSubtype("{{void f1} f2}","{int f2}|int"); }
-	@Test public void test_2281() { checkNotSubtype("{{void f2} f2}","any"); }
-	@Test public void test_2282() { checkNotSubtype("{{void f2} f2}","null"); }
-	@Test public void test_2283() { checkNotSubtype("{{void f2} f2}","int"); }
-	@Test public void test_2284() { checkNotSubtype("{{void f2} f2}","{any f1}"); }
-	@Test public void test_2285() { checkNotSubtype("{{void f2} f2}","{any f2}"); }
-	@Test public void test_2286() { checkNotSubtype("{{void f2} f2}","{null f1}"); }
-	@Test public void test_2287() { checkNotSubtype("{{void f2} f2}","{null f2}"); }
-	@Test public void test_2288() { checkNotSubtype("{{void f2} f2}","{int f1}"); }
-	@Test public void test_2289() { checkNotSubtype("{{void f2} f2}","{int f2}"); }
-	@Test public void test_2290() { checkNotSubtype("{{void f2} f2}","{any f1,any f2}"); }
-	@Test public void test_2291() { checkNotSubtype("{{void f2} f2}","{any f2,any f3}"); }
-	@Test public void test_2292() { checkNotSubtype("{{void f2} f2}","{any f1,null f2}"); }
-	@Test public void test_2293() { checkNotSubtype("{{void f2} f2}","{any f2,null f3}"); }
-	@Test public void test_2294() { checkNotSubtype("{{void f2} f2}","{any f1,int f2}"); }
-	@Test public void test_2295() { checkNotSubtype("{{void f2} f2}","{any f2,int f3}"); }
-	@Test public void test_2296() { checkNotSubtype("{{void f2} f2}","{null f1,any f2}"); }
-	@Test public void test_2297() { checkNotSubtype("{{void f2} f2}","{null f2,any f3}"); }
-	@Test public void test_2298() { checkNotSubtype("{{void f2} f2}","{null f1,null f2}"); }
-	@Test public void test_2299() { checkNotSubtype("{{void f2} f2}","{null f2,null f3}"); }
-	@Test public void test_2300() { checkNotSubtype("{{void f2} f2}","{null f1,int f2}"); }
-	@Test public void test_2301() { checkNotSubtype("{{void f2} f2}","{null f2,int f3}"); }
-	@Test public void test_2302() { checkNotSubtype("{{void f2} f2}","{int f1,any f2}"); }
-	@Test public void test_2303() { checkNotSubtype("{{void f2} f2}","{int f2,any f3}"); }
-	@Test public void test_2304() { checkNotSubtype("{{void f2} f2}","{int f1,null f2}"); }
-	@Test public void test_2305() { checkNotSubtype("{{void f2} f2}","{int f2,null f3}"); }
-	@Test public void test_2306() { checkNotSubtype("{{void f2} f2}","{int f1,int f2}"); }
-	@Test public void test_2307() { checkNotSubtype("{{void f2} f2}","{int f2,int f3}"); }
-	@Test public void test_2308() { checkIsSubtype("{{void f2} f2}","{{void f1} f1}"); }
-	@Test public void test_2309() { checkIsSubtype("{{void f2} f2}","{{void f2} f1}"); }
-	@Test public void test_2310() { checkIsSubtype("{{void f2} f2}","{{void f1} f2}"); }
-	@Test public void test_2311() { checkIsSubtype("{{void f2} f2}","{{void f2} f2}"); }
-	@Test public void test_2312() { checkNotSubtype("{{void f2} f2}","{{any f1} f1}"); }
-	@Test public void test_2313() { checkNotSubtype("{{void f2} f2}","{{any f2} f1}"); }
-	@Test public void test_2314() { checkNotSubtype("{{void f2} f2}","{{any f1} f2}"); }
-	@Test public void test_2315() { checkNotSubtype("{{void f2} f2}","{{any f2} f2}"); }
-	@Test public void test_2316() { checkNotSubtype("{{void f2} f2}","{{any f1} f1,any f2}"); }
-	@Test public void test_2317() { checkNotSubtype("{{void f2} f2}","{{any f2} f1,any f2}"); }
-	@Test public void test_2318() { checkNotSubtype("{{void f2} f2}","{{any f1} f2,any f3}"); }
-	@Test public void test_2319() { checkNotSubtype("{{void f2} f2}","{{any f2} f2,any f3}"); }
-	@Test public void test_2320() { checkNotSubtype("{{void f2} f2}","{{null f1} f1}"); }
-	@Test public void test_2321() { checkNotSubtype("{{void f2} f2}","{{null f2} f1}"); }
-	@Test public void test_2322() { checkNotSubtype("{{void f2} f2}","{{null f1} f2}"); }
-	@Test public void test_2323() { checkNotSubtype("{{void f2} f2}","{{null f2} f2}"); }
-	@Test public void test_2324() { checkNotSubtype("{{void f2} f2}","{{null f1} f1,null f2}"); }
-	@Test public void test_2325() { checkNotSubtype("{{void f2} f2}","{{null f2} f1,null f2}"); }
-	@Test public void test_2326() { checkNotSubtype("{{void f2} f2}","{{null f1} f2,null f3}"); }
-	@Test public void test_2327() { checkNotSubtype("{{void f2} f2}","{{null f2} f2,null f3}"); }
-	@Test public void test_2328() { checkNotSubtype("{{void f2} f2}","{{int f1} f1}"); }
-	@Test public void test_2329() { checkNotSubtype("{{void f2} f2}","{{int f2} f1}"); }
-	@Test public void test_2330() { checkNotSubtype("{{void f2} f2}","{{int f1} f2}"); }
-	@Test public void test_2331() { checkNotSubtype("{{void f2} f2}","{{int f2} f2}"); }
-	@Test public void test_2332() { checkNotSubtype("{{void f2} f2}","{{int f1} f1,int f2}"); }
-	@Test public void test_2333() { checkNotSubtype("{{void f2} f2}","{{int f2} f1,int f2}"); }
-	@Test public void test_2334() { checkNotSubtype("{{void f2} f2}","{{int f1} f2,int f3}"); }
-	@Test public void test_2335() { checkNotSubtype("{{void f2} f2}","{{int f2} f2,int f3}"); }
-	@Test public void test_2336() { checkNotSubtype("{{void f2} f2}","any"); }
-	@Test public void test_2337() { checkNotSubtype("{{void f2} f2}","null"); }
-	@Test public void test_2338() { checkNotSubtype("{{void f2} f2}","int"); }
-	@Test public void test_2339() { checkNotSubtype("{{void f2} f2}","any"); }
-	@Test public void test_2340() { checkNotSubtype("{{void f2} f2}","any"); }
-	@Test public void test_2341() { checkNotSubtype("{{void f2} f2}","any"); }
-	@Test public void test_2342() { checkNotSubtype("{{void f2} f2}","any"); }
-	@Test public void test_2343() { checkNotSubtype("{{void f2} f2}","null"); }
-	@Test public void test_2344() { checkNotSubtype("{{void f2} f2}","any"); }
-	@Test public void test_2345() { checkNotSubtype("{{void f2} f2}","null"); }
-	@Test public void test_2346() { checkNotSubtype("{{void f2} f2}","null|int"); }
-	@Test public void test_2347() { checkNotSubtype("{{void f2} f2}","int"); }
-	@Test public void test_2348() { checkNotSubtype("{{void f2} f2}","any"); }
-	@Test public void test_2349() { checkNotSubtype("{{void f2} f2}","int|null"); }
-	@Test public void test_2350() { checkNotSubtype("{{void f2} f2}","int"); }
-	@Test public void test_2351() { checkNotSubtype("{{void f2} f2}","any"); }
-	@Test public void test_2352() { checkNotSubtype("{{void f2} f2}","any"); }
-	@Test public void test_2353() { checkNotSubtype("{{void f2} f2}","{null f1}|null"); }
-	@Test public void test_2354() { checkNotSubtype("{{void f2} f2}","{null f2}|null"); }
-	@Test public void test_2355() { checkNotSubtype("{{void f2} f2}","{int f1}|int"); }
-	@Test public void test_2356() { checkNotSubtype("{{void f2} f2}","{int f2}|int"); }
 	@Test public void test_2357() { checkNotSubtype("{{any f1} f1}","any"); }
 	@Test public void test_2358() { checkNotSubtype("{{any f1} f1}","null"); }
 	@Test public void test_2359() { checkNotSubtype("{{any f1} f1}","int"); }
@@ -2413,10 +2005,6 @@ public class RecordSubtypeTests {
 	@Test public void test_2381() { checkNotSubtype("{{any f1} f1}","{int f2,null f3}"); }
 	@Test public void test_2382() { checkNotSubtype("{{any f1} f1}","{int f1,int f2}"); }
 	@Test public void test_2383() { checkNotSubtype("{{any f1} f1}","{int f2,int f3}"); }
-	@Test public void test_2384() { checkIsSubtype("{{any f1} f1}","{{void f1} f1}"); }
-	@Test public void test_2385() { checkIsSubtype("{{any f1} f1}","{{void f2} f1}"); }
-	@Test public void test_2386() { checkIsSubtype("{{any f1} f1}","{{void f1} f2}"); }
-	@Test public void test_2387() { checkIsSubtype("{{any f1} f1}","{{void f2} f2}"); }
 	@Test public void test_2388() { checkIsSubtype("{{any f1} f1}","{{any f1} f1}"); }
 	@Test public void test_2389() { checkNotSubtype("{{any f1} f1}","{{any f2} f1}"); }
 	@Test public void test_2390() { checkNotSubtype("{{any f1} f1}","{{any f1} f2}"); }
@@ -2489,10 +2077,6 @@ public class RecordSubtypeTests {
 	@Test public void test_2457() { checkNotSubtype("{{any f2} f1}","{int f2,null f3}"); }
 	@Test public void test_2458() { checkNotSubtype("{{any f2} f1}","{int f1,int f2}"); }
 	@Test public void test_2459() { checkNotSubtype("{{any f2} f1}","{int f2,int f3}"); }
-	@Test public void test_2460() { checkIsSubtype("{{any f2} f1}","{{void f1} f1}"); }
-	@Test public void test_2461() { checkIsSubtype("{{any f2} f1}","{{void f2} f1}"); }
-	@Test public void test_2462() { checkIsSubtype("{{any f2} f1}","{{void f1} f2}"); }
-	@Test public void test_2463() { checkIsSubtype("{{any f2} f1}","{{void f2} f2}"); }
 	@Test public void test_2464() { checkNotSubtype("{{any f2} f1}","{{any f1} f1}"); }
 	@Test public void test_2465() { checkIsSubtype("{{any f2} f1}","{{any f2} f1}"); }
 	@Test public void test_2466() { checkNotSubtype("{{any f2} f1}","{{any f1} f2}"); }
@@ -2565,10 +2149,6 @@ public class RecordSubtypeTests {
 	@Test public void test_2533() { checkNotSubtype("{{any f1} f2}","{int f2,null f3}"); }
 	@Test public void test_2534() { checkNotSubtype("{{any f1} f2}","{int f1,int f2}"); }
 	@Test public void test_2535() { checkNotSubtype("{{any f1} f2}","{int f2,int f3}"); }
-	@Test public void test_2536() { checkIsSubtype("{{any f1} f2}","{{void f1} f1}"); }
-	@Test public void test_2537() { checkIsSubtype("{{any f1} f2}","{{void f2} f1}"); }
-	@Test public void test_2538() { checkIsSubtype("{{any f1} f2}","{{void f1} f2}"); }
-	@Test public void test_2539() { checkIsSubtype("{{any f1} f2}","{{void f2} f2}"); }
 	@Test public void test_2540() { checkNotSubtype("{{any f1} f2}","{{any f1} f1}"); }
 	@Test public void test_2541() { checkNotSubtype("{{any f1} f2}","{{any f2} f1}"); }
 	@Test public void test_2542() { checkIsSubtype("{{any f1} f2}","{{any f1} f2}"); }
@@ -2641,10 +2221,6 @@ public class RecordSubtypeTests {
 	@Test public void test_2609() { checkNotSubtype("{{any f2} f2}","{int f2,null f3}"); }
 	@Test public void test_2610() { checkNotSubtype("{{any f2} f2}","{int f1,int f2}"); }
 	@Test public void test_2611() { checkNotSubtype("{{any f2} f2}","{int f2,int f3}"); }
-	@Test public void test_2612() { checkIsSubtype("{{any f2} f2}","{{void f1} f1}"); }
-	@Test public void test_2613() { checkIsSubtype("{{any f2} f2}","{{void f2} f1}"); }
-	@Test public void test_2614() { checkIsSubtype("{{any f2} f2}","{{void f1} f2}"); }
-	@Test public void test_2615() { checkIsSubtype("{{any f2} f2}","{{void f2} f2}"); }
 	@Test public void test_2616() { checkNotSubtype("{{any f2} f2}","{{any f1} f1}"); }
 	@Test public void test_2617() { checkNotSubtype("{{any f2} f2}","{{any f2} f1}"); }
 	@Test public void test_2618() { checkNotSubtype("{{any f2} f2}","{{any f1} f2}"); }
@@ -2717,10 +2293,6 @@ public class RecordSubtypeTests {
 	@Test public void test_2685() { checkNotSubtype("{{any f1} f1,any f2}","{int f2,null f3}"); }
 	@Test public void test_2686() { checkNotSubtype("{{any f1} f1,any f2}","{int f1,int f2}"); }
 	@Test public void test_2687() { checkNotSubtype("{{any f1} f1,any f2}","{int f2,int f3}"); }
-	@Test public void test_2688() { checkIsSubtype("{{any f1} f1,any f2}","{{void f1} f1}"); }
-	@Test public void test_2689() { checkIsSubtype("{{any f1} f1,any f2}","{{void f2} f1}"); }
-	@Test public void test_2690() { checkIsSubtype("{{any f1} f1,any f2}","{{void f1} f2}"); }
-	@Test public void test_2691() { checkIsSubtype("{{any f1} f1,any f2}","{{void f2} f2}"); }
 	@Test public void test_2692() { checkNotSubtype("{{any f1} f1,any f2}","{{any f1} f1}"); }
 	@Test public void test_2693() { checkNotSubtype("{{any f1} f1,any f2}","{{any f2} f1}"); }
 	@Test public void test_2694() { checkNotSubtype("{{any f1} f1,any f2}","{{any f1} f2}"); }
@@ -2793,10 +2365,6 @@ public class RecordSubtypeTests {
 	@Test public void test_2761() { checkNotSubtype("{{any f2} f1,any f2}","{int f2,null f3}"); }
 	@Test public void test_2762() { checkNotSubtype("{{any f2} f1,any f2}","{int f1,int f2}"); }
 	@Test public void test_2763() { checkNotSubtype("{{any f2} f1,any f2}","{int f2,int f3}"); }
-	@Test public void test_2764() { checkIsSubtype("{{any f2} f1,any f2}","{{void f1} f1}"); }
-	@Test public void test_2765() { checkIsSubtype("{{any f2} f1,any f2}","{{void f2} f1}"); }
-	@Test public void test_2766() { checkIsSubtype("{{any f2} f1,any f2}","{{void f1} f2}"); }
-	@Test public void test_2767() { checkIsSubtype("{{any f2} f1,any f2}","{{void f2} f2}"); }
 	@Test public void test_2768() { checkNotSubtype("{{any f2} f1,any f2}","{{any f1} f1}"); }
 	@Test public void test_2769() { checkNotSubtype("{{any f2} f1,any f2}","{{any f2} f1}"); }
 	@Test public void test_2770() { checkNotSubtype("{{any f2} f1,any f2}","{{any f1} f2}"); }
@@ -2869,10 +2437,6 @@ public class RecordSubtypeTests {
 	@Test public void test_2837() { checkNotSubtype("{{any f1} f2,any f3}","{int f2,null f3}"); }
 	@Test public void test_2838() { checkNotSubtype("{{any f1} f2,any f3}","{int f1,int f2}"); }
 	@Test public void test_2839() { checkNotSubtype("{{any f1} f2,any f3}","{int f2,int f3}"); }
-	@Test public void test_2840() { checkIsSubtype("{{any f1} f2,any f3}","{{void f1} f1}"); }
-	@Test public void test_2841() { checkIsSubtype("{{any f1} f2,any f3}","{{void f2} f1}"); }
-	@Test public void test_2842() { checkIsSubtype("{{any f1} f2,any f3}","{{void f1} f2}"); }
-	@Test public void test_2843() { checkIsSubtype("{{any f1} f2,any f3}","{{void f2} f2}"); }
 	@Test public void test_2844() { checkNotSubtype("{{any f1} f2,any f3}","{{any f1} f1}"); }
 	@Test public void test_2845() { checkNotSubtype("{{any f1} f2,any f3}","{{any f2} f1}"); }
 	@Test public void test_2846() { checkNotSubtype("{{any f1} f2,any f3}","{{any f1} f2}"); }
@@ -2945,10 +2509,6 @@ public class RecordSubtypeTests {
 	@Test public void test_2913() { checkNotSubtype("{{any f2} f2,any f3}","{int f2,null f3}"); }
 	@Test public void test_2914() { checkNotSubtype("{{any f2} f2,any f3}","{int f1,int f2}"); }
 	@Test public void test_2915() { checkNotSubtype("{{any f2} f2,any f3}","{int f2,int f3}"); }
-	@Test public void test_2916() { checkIsSubtype("{{any f2} f2,any f3}","{{void f1} f1}"); }
-	@Test public void test_2917() { checkIsSubtype("{{any f2} f2,any f3}","{{void f2} f1}"); }
-	@Test public void test_2918() { checkIsSubtype("{{any f2} f2,any f3}","{{void f1} f2}"); }
-	@Test public void test_2919() { checkIsSubtype("{{any f2} f2,any f3}","{{void f2} f2}"); }
 	@Test public void test_2920() { checkNotSubtype("{{any f2} f2,any f3}","{{any f1} f1}"); }
 	@Test public void test_2921() { checkNotSubtype("{{any f2} f2,any f3}","{{any f2} f1}"); }
 	@Test public void test_2922() { checkNotSubtype("{{any f2} f2,any f3}","{{any f1} f2}"); }
@@ -3021,10 +2581,6 @@ public class RecordSubtypeTests {
 	@Test public void test_2989() { checkNotSubtype("{{null f1} f1}","{int f2,null f3}"); }
 	@Test public void test_2990() { checkNotSubtype("{{null f1} f1}","{int f1,int f2}"); }
 	@Test public void test_2991() { checkNotSubtype("{{null f1} f1}","{int f2,int f3}"); }
-	@Test public void test_2992() { checkIsSubtype("{{null f1} f1}","{{void f1} f1}"); }
-	@Test public void test_2993() { checkIsSubtype("{{null f1} f1}","{{void f2} f1}"); }
-	@Test public void test_2994() { checkIsSubtype("{{null f1} f1}","{{void f1} f2}"); }
-	@Test public void test_2995() { checkIsSubtype("{{null f1} f1}","{{void f2} f2}"); }
 	@Test public void test_2996() { checkNotSubtype("{{null f1} f1}","{{any f1} f1}"); }
 	@Test public void test_2997() { checkNotSubtype("{{null f1} f1}","{{any f2} f1}"); }
 	@Test public void test_2998() { checkNotSubtype("{{null f1} f1}","{{any f1} f2}"); }
@@ -3097,10 +2653,6 @@ public class RecordSubtypeTests {
 	@Test public void test_3065() { checkNotSubtype("{{null f2} f1}","{int f2,null f3}"); }
 	@Test public void test_3066() { checkNotSubtype("{{null f2} f1}","{int f1,int f2}"); }
 	@Test public void test_3067() { checkNotSubtype("{{null f2} f1}","{int f2,int f3}"); }
-	@Test public void test_3068() { checkIsSubtype("{{null f2} f1}","{{void f1} f1}"); }
-	@Test public void test_3069() { checkIsSubtype("{{null f2} f1}","{{void f2} f1}"); }
-	@Test public void test_3070() { checkIsSubtype("{{null f2} f1}","{{void f1} f2}"); }
-	@Test public void test_3071() { checkIsSubtype("{{null f2} f1}","{{void f2} f2}"); }
 	@Test public void test_3072() { checkNotSubtype("{{null f2} f1}","{{any f1} f1}"); }
 	@Test public void test_3073() { checkNotSubtype("{{null f2} f1}","{{any f2} f1}"); }
 	@Test public void test_3074() { checkNotSubtype("{{null f2} f1}","{{any f1} f2}"); }
@@ -3173,10 +2725,6 @@ public class RecordSubtypeTests {
 	@Test public void test_3141() { checkNotSubtype("{{null f1} f2}","{int f2,null f3}"); }
 	@Test public void test_3142() { checkNotSubtype("{{null f1} f2}","{int f1,int f2}"); }
 	@Test public void test_3143() { checkNotSubtype("{{null f1} f2}","{int f2,int f3}"); }
-	@Test public void test_3144() { checkIsSubtype("{{null f1} f2}","{{void f1} f1}"); }
-	@Test public void test_3145() { checkIsSubtype("{{null f1} f2}","{{void f2} f1}"); }
-	@Test public void test_3146() { checkIsSubtype("{{null f1} f2}","{{void f1} f2}"); }
-	@Test public void test_3147() { checkIsSubtype("{{null f1} f2}","{{void f2} f2}"); }
 	@Test public void test_3148() { checkNotSubtype("{{null f1} f2}","{{any f1} f1}"); }
 	@Test public void test_3149() { checkNotSubtype("{{null f1} f2}","{{any f2} f1}"); }
 	@Test public void test_3150() { checkNotSubtype("{{null f1} f2}","{{any f1} f2}"); }
@@ -3249,10 +2797,6 @@ public class RecordSubtypeTests {
 	@Test public void test_3217() { checkNotSubtype("{{null f2} f2}","{int f2,null f3}"); }
 	@Test public void test_3218() { checkNotSubtype("{{null f2} f2}","{int f1,int f2}"); }
 	@Test public void test_3219() { checkNotSubtype("{{null f2} f2}","{int f2,int f3}"); }
-	@Test public void test_3220() { checkIsSubtype("{{null f2} f2}","{{void f1} f1}"); }
-	@Test public void test_3221() { checkIsSubtype("{{null f2} f2}","{{void f2} f1}"); }
-	@Test public void test_3222() { checkIsSubtype("{{null f2} f2}","{{void f1} f2}"); }
-	@Test public void test_3223() { checkIsSubtype("{{null f2} f2}","{{void f2} f2}"); }
 	@Test public void test_3224() { checkNotSubtype("{{null f2} f2}","{{any f1} f1}"); }
 	@Test public void test_3225() { checkNotSubtype("{{null f2} f2}","{{any f2} f1}"); }
 	@Test public void test_3226() { checkNotSubtype("{{null f2} f2}","{{any f1} f2}"); }
@@ -3325,10 +2869,6 @@ public class RecordSubtypeTests {
 	@Test public void test_3293() { checkNotSubtype("{{null f1} f1,null f2}","{int f2,null f3}"); }
 	@Test public void test_3294() { checkNotSubtype("{{null f1} f1,null f2}","{int f1,int f2}"); }
 	@Test public void test_3295() { checkNotSubtype("{{null f1} f1,null f2}","{int f2,int f3}"); }
-	@Test public void test_3296() { checkIsSubtype("{{null f1} f1,null f2}","{{void f1} f1}"); }
-	@Test public void test_3297() { checkIsSubtype("{{null f1} f1,null f2}","{{void f2} f1}"); }
-	@Test public void test_3298() { checkIsSubtype("{{null f1} f1,null f2}","{{void f1} f2}"); }
-	@Test public void test_3299() { checkIsSubtype("{{null f1} f1,null f2}","{{void f2} f2}"); }
 	@Test public void test_3300() { checkNotSubtype("{{null f1} f1,null f2}","{{any f1} f1}"); }
 	@Test public void test_3301() { checkNotSubtype("{{null f1} f1,null f2}","{{any f2} f1}"); }
 	@Test public void test_3302() { checkNotSubtype("{{null f1} f1,null f2}","{{any f1} f2}"); }
@@ -3401,10 +2941,6 @@ public class RecordSubtypeTests {
 	@Test public void test_3369() { checkNotSubtype("{{null f2} f1,null f2}","{int f2,null f3}"); }
 	@Test public void test_3370() { checkNotSubtype("{{null f2} f1,null f2}","{int f1,int f2}"); }
 	@Test public void test_3371() { checkNotSubtype("{{null f2} f1,null f2}","{int f2,int f3}"); }
-	@Test public void test_3372() { checkIsSubtype("{{null f2} f1,null f2}","{{void f1} f1}"); }
-	@Test public void test_3373() { checkIsSubtype("{{null f2} f1,null f2}","{{void f2} f1}"); }
-	@Test public void test_3374() { checkIsSubtype("{{null f2} f1,null f2}","{{void f1} f2}"); }
-	@Test public void test_3375() { checkIsSubtype("{{null f2} f1,null f2}","{{void f2} f2}"); }
 	@Test public void test_3376() { checkNotSubtype("{{null f2} f1,null f2}","{{any f1} f1}"); }
 	@Test public void test_3377() { checkNotSubtype("{{null f2} f1,null f2}","{{any f2} f1}"); }
 	@Test public void test_3378() { checkNotSubtype("{{null f2} f1,null f2}","{{any f1} f2}"); }
@@ -3477,10 +3013,6 @@ public class RecordSubtypeTests {
 	@Test public void test_3445() { checkNotSubtype("{{null f1} f2,null f3}","{int f2,null f3}"); }
 	@Test public void test_3446() { checkNotSubtype("{{null f1} f2,null f3}","{int f1,int f2}"); }
 	@Test public void test_3447() { checkNotSubtype("{{null f1} f2,null f3}","{int f2,int f3}"); }
-	@Test public void test_3448() { checkIsSubtype("{{null f1} f2,null f3}","{{void f1} f1}"); }
-	@Test public void test_3449() { checkIsSubtype("{{null f1} f2,null f3}","{{void f2} f1}"); }
-	@Test public void test_3450() { checkIsSubtype("{{null f1} f2,null f3}","{{void f1} f2}"); }
-	@Test public void test_3451() { checkIsSubtype("{{null f1} f2,null f3}","{{void f2} f2}"); }
 	@Test public void test_3452() { checkNotSubtype("{{null f1} f2,null f3}","{{any f1} f1}"); }
 	@Test public void test_3453() { checkNotSubtype("{{null f1} f2,null f3}","{{any f2} f1}"); }
 	@Test public void test_3454() { checkNotSubtype("{{null f1} f2,null f3}","{{any f1} f2}"); }
@@ -3553,10 +3085,6 @@ public class RecordSubtypeTests {
 	@Test public void test_3521() { checkNotSubtype("{{null f2} f2,null f3}","{int f2,null f3}"); }
 	@Test public void test_3522() { checkNotSubtype("{{null f2} f2,null f3}","{int f1,int f2}"); }
 	@Test public void test_3523() { checkNotSubtype("{{null f2} f2,null f3}","{int f2,int f3}"); }
-	@Test public void test_3524() { checkIsSubtype("{{null f2} f2,null f3}","{{void f1} f1}"); }
-	@Test public void test_3525() { checkIsSubtype("{{null f2} f2,null f3}","{{void f2} f1}"); }
-	@Test public void test_3526() { checkIsSubtype("{{null f2} f2,null f3}","{{void f1} f2}"); }
-	@Test public void test_3527() { checkIsSubtype("{{null f2} f2,null f3}","{{void f2} f2}"); }
 	@Test public void test_3528() { checkNotSubtype("{{null f2} f2,null f3}","{{any f1} f1}"); }
 	@Test public void test_3529() { checkNotSubtype("{{null f2} f2,null f3}","{{any f2} f1}"); }
 	@Test public void test_3530() { checkNotSubtype("{{null f2} f2,null f3}","{{any f1} f2}"); }
@@ -3629,10 +3157,6 @@ public class RecordSubtypeTests {
 	@Test public void test_3597() { checkNotSubtype("{{int f1} f1}","{int f2,null f3}"); }
 	@Test public void test_3598() { checkNotSubtype("{{int f1} f1}","{int f1,int f2}"); }
 	@Test public void test_3599() { checkNotSubtype("{{int f1} f1}","{int f2,int f3}"); }
-	@Test public void test_3600() { checkIsSubtype("{{int f1} f1}","{{void f1} f1}"); }
-	@Test public void test_3601() { checkIsSubtype("{{int f1} f1}","{{void f2} f1}"); }
-	@Test public void test_3602() { checkIsSubtype("{{int f1} f1}","{{void f1} f2}"); }
-	@Test public void test_3603() { checkIsSubtype("{{int f1} f1}","{{void f2} f2}"); }
 	@Test public void test_3604() { checkNotSubtype("{{int f1} f1}","{{any f1} f1}"); }
 	@Test public void test_3605() { checkNotSubtype("{{int f1} f1}","{{any f2} f1}"); }
 	@Test public void test_3606() { checkNotSubtype("{{int f1} f1}","{{any f1} f2}"); }
@@ -3705,10 +3229,6 @@ public class RecordSubtypeTests {
 	@Test public void test_3673() { checkNotSubtype("{{int f2} f1}","{int f2,null f3}"); }
 	@Test public void test_3674() { checkNotSubtype("{{int f2} f1}","{int f1,int f2}"); }
 	@Test public void test_3675() { checkNotSubtype("{{int f2} f1}","{int f2,int f3}"); }
-	@Test public void test_3676() { checkIsSubtype("{{int f2} f1}","{{void f1} f1}"); }
-	@Test public void test_3677() { checkIsSubtype("{{int f2} f1}","{{void f2} f1}"); }
-	@Test public void test_3678() { checkIsSubtype("{{int f2} f1}","{{void f1} f2}"); }
-	@Test public void test_3679() { checkIsSubtype("{{int f2} f1}","{{void f2} f2}"); }
 	@Test public void test_3680() { checkNotSubtype("{{int f2} f1}","{{any f1} f1}"); }
 	@Test public void test_3681() { checkNotSubtype("{{int f2} f1}","{{any f2} f1}"); }
 	@Test public void test_3682() { checkNotSubtype("{{int f2} f1}","{{any f1} f2}"); }
@@ -3781,10 +3301,6 @@ public class RecordSubtypeTests {
 	@Test public void test_3749() { checkNotSubtype("{{int f1} f2}","{int f2,null f3}"); }
 	@Test public void test_3750() { checkNotSubtype("{{int f1} f2}","{int f1,int f2}"); }
 	@Test public void test_3751() { checkNotSubtype("{{int f1} f2}","{int f2,int f3}"); }
-	@Test public void test_3752() { checkIsSubtype("{{int f1} f2}","{{void f1} f1}"); }
-	@Test public void test_3753() { checkIsSubtype("{{int f1} f2}","{{void f2} f1}"); }
-	@Test public void test_3754() { checkIsSubtype("{{int f1} f2}","{{void f1} f2}"); }
-	@Test public void test_3755() { checkIsSubtype("{{int f1} f2}","{{void f2} f2}"); }
 	@Test public void test_3756() { checkNotSubtype("{{int f1} f2}","{{any f1} f1}"); }
 	@Test public void test_3757() { checkNotSubtype("{{int f1} f2}","{{any f2} f1}"); }
 	@Test public void test_3758() { checkNotSubtype("{{int f1} f2}","{{any f1} f2}"); }
@@ -3857,10 +3373,6 @@ public class RecordSubtypeTests {
 	@Test public void test_3825() { checkNotSubtype("{{int f2} f2}","{int f2,null f3}"); }
 	@Test public void test_3826() { checkNotSubtype("{{int f2} f2}","{int f1,int f2}"); }
 	@Test public void test_3827() { checkNotSubtype("{{int f2} f2}","{int f2,int f3}"); }
-	@Test public void test_3828() { checkIsSubtype("{{int f2} f2}","{{void f1} f1}"); }
-	@Test public void test_3829() { checkIsSubtype("{{int f2} f2}","{{void f2} f1}"); }
-	@Test public void test_3830() { checkIsSubtype("{{int f2} f2}","{{void f1} f2}"); }
-	@Test public void test_3831() { checkIsSubtype("{{int f2} f2}","{{void f2} f2}"); }
 	@Test public void test_3832() { checkNotSubtype("{{int f2} f2}","{{any f1} f1}"); }
 	@Test public void test_3833() { checkNotSubtype("{{int f2} f2}","{{any f2} f1}"); }
 	@Test public void test_3834() { checkNotSubtype("{{int f2} f2}","{{any f1} f2}"); }
@@ -3933,10 +3445,6 @@ public class RecordSubtypeTests {
 	@Test public void test_3901() { checkNotSubtype("{{int f1} f1,int f2}","{int f2,null f3}"); }
 	@Test public void test_3902() { checkNotSubtype("{{int f1} f1,int f2}","{int f1,int f2}"); }
 	@Test public void test_3903() { checkNotSubtype("{{int f1} f1,int f2}","{int f2,int f3}"); }
-	@Test public void test_3904() { checkIsSubtype("{{int f1} f1,int f2}","{{void f1} f1}"); }
-	@Test public void test_3905() { checkIsSubtype("{{int f1} f1,int f2}","{{void f2} f1}"); }
-	@Test public void test_3906() { checkIsSubtype("{{int f1} f1,int f2}","{{void f1} f2}"); }
-	@Test public void test_3907() { checkIsSubtype("{{int f1} f1,int f2}","{{void f2} f2}"); }
 	@Test public void test_3908() { checkNotSubtype("{{int f1} f1,int f2}","{{any f1} f1}"); }
 	@Test public void test_3909() { checkNotSubtype("{{int f1} f1,int f2}","{{any f2} f1}"); }
 	@Test public void test_3910() { checkNotSubtype("{{int f1} f1,int f2}","{{any f1} f2}"); }
@@ -4009,10 +3517,6 @@ public class RecordSubtypeTests {
 	@Test public void test_3977() { checkNotSubtype("{{int f2} f1,int f2}","{int f2,null f3}"); }
 	@Test public void test_3978() { checkNotSubtype("{{int f2} f1,int f2}","{int f1,int f2}"); }
 	@Test public void test_3979() { checkNotSubtype("{{int f2} f1,int f2}","{int f2,int f3}"); }
-	@Test public void test_3980() { checkIsSubtype("{{int f2} f1,int f2}","{{void f1} f1}"); }
-	@Test public void test_3981() { checkIsSubtype("{{int f2} f1,int f2}","{{void f2} f1}"); }
-	@Test public void test_3982() { checkIsSubtype("{{int f2} f1,int f2}","{{void f1} f2}"); }
-	@Test public void test_3983() { checkIsSubtype("{{int f2} f1,int f2}","{{void f2} f2}"); }
 	@Test public void test_3984() { checkNotSubtype("{{int f2} f1,int f2}","{{any f1} f1}"); }
 	@Test public void test_3985() { checkNotSubtype("{{int f2} f1,int f2}","{{any f2} f1}"); }
 	@Test public void test_3986() { checkNotSubtype("{{int f2} f1,int f2}","{{any f1} f2}"); }
@@ -4085,10 +3589,6 @@ public class RecordSubtypeTests {
 	@Test public void test_4053() { checkNotSubtype("{{int f1} f2,int f3}","{int f2,null f3}"); }
 	@Test public void test_4054() { checkNotSubtype("{{int f1} f2,int f3}","{int f1,int f2}"); }
 	@Test public void test_4055() { checkNotSubtype("{{int f1} f2,int f3}","{int f2,int f3}"); }
-	@Test public void test_4056() { checkIsSubtype("{{int f1} f2,int f3}","{{void f1} f1}"); }
-	@Test public void test_4057() { checkIsSubtype("{{int f1} f2,int f3}","{{void f2} f1}"); }
-	@Test public void test_4058() { checkIsSubtype("{{int f1} f2,int f3}","{{void f1} f2}"); }
-	@Test public void test_4059() { checkIsSubtype("{{int f1} f2,int f3}","{{void f2} f2}"); }
 	@Test public void test_4060() { checkNotSubtype("{{int f1} f2,int f3}","{{any f1} f1}"); }
 	@Test public void test_4061() { checkNotSubtype("{{int f1} f2,int f3}","{{any f2} f1}"); }
 	@Test public void test_4062() { checkNotSubtype("{{int f1} f2,int f3}","{{any f1} f2}"); }
@@ -4161,10 +3661,6 @@ public class RecordSubtypeTests {
 	@Test public void test_4129() { checkNotSubtype("{{int f2} f2,int f3}","{int f2,null f3}"); }
 	@Test public void test_4130() { checkNotSubtype("{{int f2} f2,int f3}","{int f1,int f2}"); }
 	@Test public void test_4131() { checkNotSubtype("{{int f2} f2,int f3}","{int f2,int f3}"); }
-	@Test public void test_4132() { checkIsSubtype("{{int f2} f2,int f3}","{{void f1} f1}"); }
-	@Test public void test_4133() { checkIsSubtype("{{int f2} f2,int f3}","{{void f2} f1}"); }
-	@Test public void test_4134() { checkIsSubtype("{{int f2} f2,int f3}","{{void f1} f2}"); }
-	@Test public void test_4135() { checkIsSubtype("{{int f2} f2,int f3}","{{void f2} f2}"); }
 	@Test public void test_4136() { checkNotSubtype("{{int f2} f2,int f3}","{{any f1} f1}"); }
 	@Test public void test_4137() { checkNotSubtype("{{int f2} f2,int f3}","{{any f2} f1}"); }
 	@Test public void test_4138() { checkNotSubtype("{{int f2} f2,int f3}","{{any f1} f2}"); }
@@ -4237,10 +3733,6 @@ public class RecordSubtypeTests {
 	@Test public void test_4205() { checkIsSubtype("any","{int f2,null f3}"); }
 	@Test public void test_4206() { checkIsSubtype("any","{int f1,int f2}"); }
 	@Test public void test_4207() { checkIsSubtype("any","{int f2,int f3}"); }
-	@Test public void test_4208() { checkIsSubtype("any","{{void f1} f1}"); }
-	@Test public void test_4209() { checkIsSubtype("any","{{void f2} f1}"); }
-	@Test public void test_4210() { checkIsSubtype("any","{{void f1} f2}"); }
-	@Test public void test_4211() { checkIsSubtype("any","{{void f2} f2}"); }
 	@Test public void test_4212() { checkIsSubtype("any","{{any f1} f1}"); }
 	@Test public void test_4213() { checkIsSubtype("any","{{any f2} f1}"); }
 	@Test public void test_4214() { checkIsSubtype("any","{{any f1} f2}"); }
@@ -4313,10 +3805,6 @@ public class RecordSubtypeTests {
 	@Test public void test_4281() { checkNotSubtype("null","{int f2,null f3}"); }
 	@Test public void test_4282() { checkNotSubtype("null","{int f1,int f2}"); }
 	@Test public void test_4283() { checkNotSubtype("null","{int f2,int f3}"); }
-	@Test public void test_4284() { checkIsSubtype("null","{{void f1} f1}"); }
-	@Test public void test_4285() { checkIsSubtype("null","{{void f2} f1}"); }
-	@Test public void test_4286() { checkIsSubtype("null","{{void f1} f2}"); }
-	@Test public void test_4287() { checkIsSubtype("null","{{void f2} f2}"); }
 	@Test public void test_4288() { checkNotSubtype("null","{{any f1} f1}"); }
 	@Test public void test_4289() { checkNotSubtype("null","{{any f2} f1}"); }
 	@Test public void test_4290() { checkNotSubtype("null","{{any f1} f2}"); }
@@ -4389,10 +3877,6 @@ public class RecordSubtypeTests {
 	@Test public void test_4357() { checkNotSubtype("int","{int f2,null f3}"); }
 	@Test public void test_4358() { checkNotSubtype("int","{int f1,int f2}"); }
 	@Test public void test_4359() { checkNotSubtype("int","{int f2,int f3}"); }
-	@Test public void test_4360() { checkIsSubtype("int","{{void f1} f1}"); }
-	@Test public void test_4361() { checkIsSubtype("int","{{void f2} f1}"); }
-	@Test public void test_4362() { checkIsSubtype("int","{{void f1} f2}"); }
-	@Test public void test_4363() { checkIsSubtype("int","{{void f2} f2}"); }
 	@Test public void test_4364() { checkNotSubtype("int","{{any f1} f1}"); }
 	@Test public void test_4365() { checkNotSubtype("int","{{any f2} f1}"); }
 	@Test public void test_4366() { checkNotSubtype("int","{{any f1} f2}"); }
@@ -4465,10 +3949,6 @@ public class RecordSubtypeTests {
 	@Test public void test_4433() { checkIsSubtype("any","{int f2,null f3}"); }
 	@Test public void test_4434() { checkIsSubtype("any","{int f1,int f2}"); }
 	@Test public void test_4435() { checkIsSubtype("any","{int f2,int f3}"); }
-	@Test public void test_4436() { checkIsSubtype("any","{{void f1} f1}"); }
-	@Test public void test_4437() { checkIsSubtype("any","{{void f2} f1}"); }
-	@Test public void test_4438() { checkIsSubtype("any","{{void f1} f2}"); }
-	@Test public void test_4439() { checkIsSubtype("any","{{void f2} f2}"); }
 	@Test public void test_4440() { checkIsSubtype("any","{{any f1} f1}"); }
 	@Test public void test_4441() { checkIsSubtype("any","{{any f2} f1}"); }
 	@Test public void test_4442() { checkIsSubtype("any","{{any f1} f2}"); }
@@ -4541,10 +4021,6 @@ public class RecordSubtypeTests {
 	@Test public void test_4509() { checkIsSubtype("any","{int f2,null f3}"); }
 	@Test public void test_4510() { checkIsSubtype("any","{int f1,int f2}"); }
 	@Test public void test_4511() { checkIsSubtype("any","{int f2,int f3}"); }
-	@Test public void test_4512() { checkIsSubtype("any","{{void f1} f1}"); }
-	@Test public void test_4513() { checkIsSubtype("any","{{void f2} f1}"); }
-	@Test public void test_4514() { checkIsSubtype("any","{{void f1} f2}"); }
-	@Test public void test_4515() { checkIsSubtype("any","{{void f2} f2}"); }
 	@Test public void test_4516() { checkIsSubtype("any","{{any f1} f1}"); }
 	@Test public void test_4517() { checkIsSubtype("any","{{any f2} f1}"); }
 	@Test public void test_4518() { checkIsSubtype("any","{{any f1} f2}"); }
@@ -4617,10 +4093,6 @@ public class RecordSubtypeTests {
 	@Test public void test_4585() { checkIsSubtype("any","{int f2,null f3}"); }
 	@Test public void test_4586() { checkIsSubtype("any","{int f1,int f2}"); }
 	@Test public void test_4587() { checkIsSubtype("any","{int f2,int f3}"); }
-	@Test public void test_4588() { checkIsSubtype("any","{{void f1} f1}"); }
-	@Test public void test_4589() { checkIsSubtype("any","{{void f2} f1}"); }
-	@Test public void test_4590() { checkIsSubtype("any","{{void f1} f2}"); }
-	@Test public void test_4591() { checkIsSubtype("any","{{void f2} f2}"); }
 	@Test public void test_4592() { checkIsSubtype("any","{{any f1} f1}"); }
 	@Test public void test_4593() { checkIsSubtype("any","{{any f2} f1}"); }
 	@Test public void test_4594() { checkIsSubtype("any","{{any f1} f2}"); }
@@ -4693,10 +4165,6 @@ public class RecordSubtypeTests {
 	@Test public void test_4661() { checkIsSubtype("any","{int f2,null f3}"); }
 	@Test public void test_4662() { checkIsSubtype("any","{int f1,int f2}"); }
 	@Test public void test_4663() { checkIsSubtype("any","{int f2,int f3}"); }
-	@Test public void test_4664() { checkIsSubtype("any","{{void f1} f1}"); }
-	@Test public void test_4665() { checkIsSubtype("any","{{void f2} f1}"); }
-	@Test public void test_4666() { checkIsSubtype("any","{{void f1} f2}"); }
-	@Test public void test_4667() { checkIsSubtype("any","{{void f2} f2}"); }
 	@Test public void test_4668() { checkIsSubtype("any","{{any f1} f1}"); }
 	@Test public void test_4669() { checkIsSubtype("any","{{any f2} f1}"); }
 	@Test public void test_4670() { checkIsSubtype("any","{{any f1} f2}"); }
@@ -4769,10 +4237,6 @@ public class RecordSubtypeTests {
 	@Test public void test_4737() { checkNotSubtype("null","{int f2,null f3}"); }
 	@Test public void test_4738() { checkNotSubtype("null","{int f1,int f2}"); }
 	@Test public void test_4739() { checkNotSubtype("null","{int f2,int f3}"); }
-	@Test public void test_4740() { checkIsSubtype("null","{{void f1} f1}"); }
-	@Test public void test_4741() { checkIsSubtype("null","{{void f2} f1}"); }
-	@Test public void test_4742() { checkIsSubtype("null","{{void f1} f2}"); }
-	@Test public void test_4743() { checkIsSubtype("null","{{void f2} f2}"); }
 	@Test public void test_4744() { checkNotSubtype("null","{{any f1} f1}"); }
 	@Test public void test_4745() { checkNotSubtype("null","{{any f2} f1}"); }
 	@Test public void test_4746() { checkNotSubtype("null","{{any f1} f2}"); }
@@ -4845,10 +4309,6 @@ public class RecordSubtypeTests {
 	@Test public void test_4813() { checkIsSubtype("any","{int f2,null f3}"); }
 	@Test public void test_4814() { checkIsSubtype("any","{int f1,int f2}"); }
 	@Test public void test_4815() { checkIsSubtype("any","{int f2,int f3}"); }
-	@Test public void test_4816() { checkIsSubtype("any","{{void f1} f1}"); }
-	@Test public void test_4817() { checkIsSubtype("any","{{void f2} f1}"); }
-	@Test public void test_4818() { checkIsSubtype("any","{{void f1} f2}"); }
-	@Test public void test_4819() { checkIsSubtype("any","{{void f2} f2}"); }
 	@Test public void test_4820() { checkIsSubtype("any","{{any f1} f1}"); }
 	@Test public void test_4821() { checkIsSubtype("any","{{any f2} f1}"); }
 	@Test public void test_4822() { checkIsSubtype("any","{{any f1} f2}"); }
@@ -4921,10 +4381,6 @@ public class RecordSubtypeTests {
 	@Test public void test_4889() { checkNotSubtype("null","{int f2,null f3}"); }
 	@Test public void test_4890() { checkNotSubtype("null","{int f1,int f2}"); }
 	@Test public void test_4891() { checkNotSubtype("null","{int f2,int f3}"); }
-	@Test public void test_4892() { checkIsSubtype("null","{{void f1} f1}"); }
-	@Test public void test_4893() { checkIsSubtype("null","{{void f2} f1}"); }
-	@Test public void test_4894() { checkIsSubtype("null","{{void f1} f2}"); }
-	@Test public void test_4895() { checkIsSubtype("null","{{void f2} f2}"); }
 	@Test public void test_4896() { checkNotSubtype("null","{{any f1} f1}"); }
 	@Test public void test_4897() { checkNotSubtype("null","{{any f2} f1}"); }
 	@Test public void test_4898() { checkNotSubtype("null","{{any f1} f2}"); }
@@ -4997,10 +4453,6 @@ public class RecordSubtypeTests {
 	@Test public void test_4965() { checkNotSubtype("null|int","{int f2,null f3}"); }
 	@Test public void test_4966() { checkNotSubtype("null|int","{int f1,int f2}"); }
 	@Test public void test_4967() { checkNotSubtype("null|int","{int f2,int f3}"); }
-	@Test public void test_4968() { checkIsSubtype("null|int","{{void f1} f1}"); }
-	@Test public void test_4969() { checkIsSubtype("null|int","{{void f2} f1}"); }
-	@Test public void test_4970() { checkIsSubtype("null|int","{{void f1} f2}"); }
-	@Test public void test_4971() { checkIsSubtype("null|int","{{void f2} f2}"); }
 	@Test public void test_4972() { checkNotSubtype("null|int","{{any f1} f1}"); }
 	@Test public void test_4973() { checkNotSubtype("null|int","{{any f2} f1}"); }
 	@Test public void test_4974() { checkNotSubtype("null|int","{{any f1} f2}"); }
@@ -5073,10 +4525,6 @@ public class RecordSubtypeTests {
 	@Test public void test_5041() { checkNotSubtype("int","{int f2,null f3}"); }
 	@Test public void test_5042() { checkNotSubtype("int","{int f1,int f2}"); }
 	@Test public void test_5043() { checkNotSubtype("int","{int f2,int f3}"); }
-	@Test public void test_5044() { checkIsSubtype("int","{{void f1} f1}"); }
-	@Test public void test_5045() { checkIsSubtype("int","{{void f2} f1}"); }
-	@Test public void test_5046() { checkIsSubtype("int","{{void f1} f2}"); }
-	@Test public void test_5047() { checkIsSubtype("int","{{void f2} f2}"); }
 	@Test public void test_5048() { checkNotSubtype("int","{{any f1} f1}"); }
 	@Test public void test_5049() { checkNotSubtype("int","{{any f2} f1}"); }
 	@Test public void test_5050() { checkNotSubtype("int","{{any f1} f2}"); }
@@ -5149,10 +4597,6 @@ public class RecordSubtypeTests {
 	@Test public void test_5117() { checkIsSubtype("any","{int f2,null f3}"); }
 	@Test public void test_5118() { checkIsSubtype("any","{int f1,int f2}"); }
 	@Test public void test_5119() { checkIsSubtype("any","{int f2,int f3}"); }
-	@Test public void test_5120() { checkIsSubtype("any","{{void f1} f1}"); }
-	@Test public void test_5121() { checkIsSubtype("any","{{void f2} f1}"); }
-	@Test public void test_5122() { checkIsSubtype("any","{{void f1} f2}"); }
-	@Test public void test_5123() { checkIsSubtype("any","{{void f2} f2}"); }
 	@Test public void test_5124() { checkIsSubtype("any","{{any f1} f1}"); }
 	@Test public void test_5125() { checkIsSubtype("any","{{any f2} f1}"); }
 	@Test public void test_5126() { checkIsSubtype("any","{{any f1} f2}"); }
@@ -5225,10 +4669,6 @@ public class RecordSubtypeTests {
 	@Test public void test_5193() { checkNotSubtype("int|null","{int f2,null f3}"); }
 	@Test public void test_5194() { checkNotSubtype("int|null","{int f1,int f2}"); }
 	@Test public void test_5195() { checkNotSubtype("int|null","{int f2,int f3}"); }
-	@Test public void test_5196() { checkIsSubtype("int|null","{{void f1} f1}"); }
-	@Test public void test_5197() { checkIsSubtype("int|null","{{void f2} f1}"); }
-	@Test public void test_5198() { checkIsSubtype("int|null","{{void f1} f2}"); }
-	@Test public void test_5199() { checkIsSubtype("int|null","{{void f2} f2}"); }
 	@Test public void test_5200() { checkNotSubtype("int|null","{{any f1} f1}"); }
 	@Test public void test_5201() { checkNotSubtype("int|null","{{any f2} f1}"); }
 	@Test public void test_5202() { checkNotSubtype("int|null","{{any f1} f2}"); }
@@ -5301,10 +4741,6 @@ public class RecordSubtypeTests {
 	@Test public void test_5269() { checkNotSubtype("int","{int f2,null f3}"); }
 	@Test public void test_5270() { checkNotSubtype("int","{int f1,int f2}"); }
 	@Test public void test_5271() { checkNotSubtype("int","{int f2,int f3}"); }
-	@Test public void test_5272() { checkIsSubtype("int","{{void f1} f1}"); }
-	@Test public void test_5273() { checkIsSubtype("int","{{void f2} f1}"); }
-	@Test public void test_5274() { checkIsSubtype("int","{{void f1} f2}"); }
-	@Test public void test_5275() { checkIsSubtype("int","{{void f2} f2}"); }
 	@Test public void test_5276() { checkNotSubtype("int","{{any f1} f1}"); }
 	@Test public void test_5277() { checkNotSubtype("int","{{any f2} f1}"); }
 	@Test public void test_5278() { checkNotSubtype("int","{{any f1} f2}"); }
@@ -5377,10 +4813,6 @@ public class RecordSubtypeTests {
 	@Test public void test_5345() { checkIsSubtype("any","{int f2,null f3}"); }
 	@Test public void test_5346() { checkIsSubtype("any","{int f1,int f2}"); }
 	@Test public void test_5347() { checkIsSubtype("any","{int f2,int f3}"); }
-	@Test public void test_5348() { checkIsSubtype("any","{{void f1} f1}"); }
-	@Test public void test_5349() { checkIsSubtype("any","{{void f2} f1}"); }
-	@Test public void test_5350() { checkIsSubtype("any","{{void f1} f2}"); }
-	@Test public void test_5351() { checkIsSubtype("any","{{void f2} f2}"); }
 	@Test public void test_5352() { checkIsSubtype("any","{{any f1} f1}"); }
 	@Test public void test_5353() { checkIsSubtype("any","{{any f2} f1}"); }
 	@Test public void test_5354() { checkIsSubtype("any","{{any f1} f2}"); }
@@ -5453,10 +4885,6 @@ public class RecordSubtypeTests {
 	@Test public void test_5421() { checkIsSubtype("any","{int f2,null f3}"); }
 	@Test public void test_5422() { checkIsSubtype("any","{int f1,int f2}"); }
 	@Test public void test_5423() { checkIsSubtype("any","{int f2,int f3}"); }
-	@Test public void test_5424() { checkIsSubtype("any","{{void f1} f1}"); }
-	@Test public void test_5425() { checkIsSubtype("any","{{void f2} f1}"); }
-	@Test public void test_5426() { checkIsSubtype("any","{{void f1} f2}"); }
-	@Test public void test_5427() { checkIsSubtype("any","{{void f2} f2}"); }
 	@Test public void test_5428() { checkIsSubtype("any","{{any f1} f1}"); }
 	@Test public void test_5429() { checkIsSubtype("any","{{any f2} f1}"); }
 	@Test public void test_5430() { checkIsSubtype("any","{{any f1} f2}"); }
@@ -5529,10 +4957,6 @@ public class RecordSubtypeTests {
 	@Test public void test_5497() { checkNotSubtype("{null f1}|null","{int f2,null f3}"); }
 	@Test public void test_5498() { checkNotSubtype("{null f1}|null","{int f1,int f2}"); }
 	@Test public void test_5499() { checkNotSubtype("{null f1}|null","{int f2,int f3}"); }
-	@Test public void test_5500() { checkIsSubtype("{null f1}|null","{{void f1} f1}"); }
-	@Test public void test_5501() { checkIsSubtype("{null f1}|null","{{void f2} f1}"); }
-	@Test public void test_5502() { checkIsSubtype("{null f1}|null","{{void f1} f2}"); }
-	@Test public void test_5503() { checkIsSubtype("{null f1}|null","{{void f2} f2}"); }
 	@Test public void test_5504() { checkNotSubtype("{null f1}|null","{{any f1} f1}"); }
 	@Test public void test_5505() { checkNotSubtype("{null f1}|null","{{any f2} f1}"); }
 	@Test public void test_5506() { checkNotSubtype("{null f1}|null","{{any f1} f2}"); }
@@ -5605,10 +5029,6 @@ public class RecordSubtypeTests {
 	@Test public void test_5573() { checkNotSubtype("{null f2}|null","{int f2,null f3}"); }
 	@Test public void test_5574() { checkNotSubtype("{null f2}|null","{int f1,int f2}"); }
 	@Test public void test_5575() { checkNotSubtype("{null f2}|null","{int f2,int f3}"); }
-	@Test public void test_5576() { checkIsSubtype("{null f2}|null","{{void f1} f1}"); }
-	@Test public void test_5577() { checkIsSubtype("{null f2}|null","{{void f2} f1}"); }
-	@Test public void test_5578() { checkIsSubtype("{null f2}|null","{{void f1} f2}"); }
-	@Test public void test_5579() { checkIsSubtype("{null f2}|null","{{void f2} f2}"); }
 	@Test public void test_5580() { checkNotSubtype("{null f2}|null","{{any f1} f1}"); }
 	@Test public void test_5581() { checkNotSubtype("{null f2}|null","{{any f2} f1}"); }
 	@Test public void test_5582() { checkNotSubtype("{null f2}|null","{{any f1} f2}"); }
@@ -5681,10 +5101,6 @@ public class RecordSubtypeTests {
 	@Test public void test_5649() { checkNotSubtype("{int f1}|int","{int f2,null f3}"); }
 	@Test public void test_5650() { checkNotSubtype("{int f1}|int","{int f1,int f2}"); }
 	@Test public void test_5651() { checkNotSubtype("{int f1}|int","{int f2,int f3}"); }
-	@Test public void test_5652() { checkIsSubtype("{int f1}|int","{{void f1} f1}"); }
-	@Test public void test_5653() { checkIsSubtype("{int f1}|int","{{void f2} f1}"); }
-	@Test public void test_5654() { checkIsSubtype("{int f1}|int","{{void f1} f2}"); }
-	@Test public void test_5655() { checkIsSubtype("{int f1}|int","{{void f2} f2}"); }
 	@Test public void test_5656() { checkNotSubtype("{int f1}|int","{{any f1} f1}"); }
 	@Test public void test_5657() { checkNotSubtype("{int f1}|int","{{any f2} f1}"); }
 	@Test public void test_5658() { checkNotSubtype("{int f1}|int","{{any f1} f2}"); }
@@ -5757,10 +5173,6 @@ public class RecordSubtypeTests {
 	@Test public void test_5725() { checkNotSubtype("{int f2}|int","{int f2,null f3}"); }
 	@Test public void test_5726() { checkNotSubtype("{int f2}|int","{int f1,int f2}"); }
 	@Test public void test_5727() { checkNotSubtype("{int f2}|int","{int f2,int f3}"); }
-	@Test public void test_5728() { checkIsSubtype("{int f2}|int","{{void f1} f1}"); }
-	@Test public void test_5729() { checkIsSubtype("{int f2}|int","{{void f2} f1}"); }
-	@Test public void test_5730() { checkIsSubtype("{int f2}|int","{{void f1} f2}"); }
-	@Test public void test_5731() { checkIsSubtype("{int f2}|int","{{void f2} f2}"); }
 	@Test public void test_5732() { checkNotSubtype("{int f2}|int","{{any f1} f1}"); }
 	@Test public void test_5733() { checkNotSubtype("{int f2}|int","{{any f2} f1}"); }
 	@Test public void test_5734() { checkNotSubtype("{int f2}|int","{{any f1} f2}"); }
@@ -5810,11 +5222,19 @@ public class RecordSubtypeTests {
 	private void checkIsSubtype(String from, String to) {
 		Type ft = Type.fromString(from);
 		Type tt = Type.fromString(to);
-		assertTrue(Type.isSubtype(ft,tt));
+		try {
+			assertTrue(new TypeSystem(null).isSubtype(ft,tt));
+		} catch(ResolveError e) {
+			throw new RuntimeException(e);
+		}
 	}
 	private void checkNotSubtype(String from, String to) {
 		Type ft = Type.fromString(from);
 		Type tt = Type.fromString(to);
-		assertFalse(Type.isSubtype(ft,tt));
+		try {
+			assertFalse(new TypeSystem(null).isSubtype(ft, tt));
+		} catch (ResolveError e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

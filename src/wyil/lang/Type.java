@@ -95,7 +95,7 @@ public abstract class Type {
 	 *
 	 * @param element
 	 */
-	public static final Type.Reference Reference(Type element, String lifetime) {
+	public static final Type.Reference Reference(Type element, String lifetime) {		
 		Type r = construct(K_REFERENCE, lifetime, element);
 		if (r instanceof Type.Reference) {
 			return (Type.Reference) r;
@@ -507,91 +507,6 @@ public abstract class Type {
 		}
 	}
 
-	// =============================================================
-	// Type operations
-	// =============================================================
-
-	/**
-	 * Determine whether type <code>t2</code> is an <i>explicit coercive
-	 * subtype</i> of type <code>t1</code>.
-	 */
-	public static boolean isExplicitCoerciveSubtype(Type t1, Type t2, LifetimeRelation lr) {
-		Automaton a1 = destruct(t1);
-		Automaton a2 = destruct(t2);
-		ExplicitCoercionOperator relation = new ExplicitCoercionOperator(a1,a2,lr);
-		return relation.isSubtype(0, 0);
-	}
-
-	/**
-	 * Determine whether type <code>t2</code> is an <i>explicit coercive
-	 * subtype</i> of type <code>t1</code>.
-	 */
-	public static boolean isExplicitCoerciveSubtype(Type t1, Type t2) {
-		return isExplicitCoerciveSubtype(t1, t2, LifetimeRelation.EMPTY);
-	}
-
-	/**
-	 * Determine whether type <code>t2</code> is a <i>subtype</i> of type
-	 * <code>t1</code> (written t1 :> t2). In other words, whether the set of
-	 * all possible values described by the type <code>t2</code> is a subset of
-	 * that described by <code>t1</code>.
-	 */
-	public static boolean isSubtype(Type t1, Type t2, LifetimeRelation lr) {
-		Automaton a1 = destruct(t1);
-		Automaton a2 = destruct(t2);
-		SubtypeOperator relation = new SubtypeOperator(a1,a2,lr);
-		return relation.isSubtype(0, 0);
-	}
-
-	/**
-	 * Determine whether type <code>t2</code> is a <i>subtype</i> of type
-	 * <code>t1</code> (written t1 :> t2). In other words, whether the set of
-	 * all possible values described by the type <code>t2</code> is a subset of
-	 * that described by <code>t1</code>.
-	 */
-	public static boolean isSubtype(Type t1, Type t2) {
-		return isSubtype(t1, t2, LifetimeRelation.EMPTY);
-	}
-
-	/**
-	 * <p>
-	 * Contractive types are types which cannot accept value because they have
-	 * an <i>unterminated cycle</i>. An unterminated cycle has no leaf nodes
-	 * terminating it. For example, <code>X<{X field}></code> is contractive,
-	 * where as <code>X<{null|X field}></code> is not.
-	 * </p>
-	 *
-	 * <p>
-	 * This method returns true if the type is contractive, or contains a
-	 * contractive subcomponent. For example, <code>null|X<{X field}></code> is
-	 * considered contracted.
-	 * </p>
-	 *
-	 * @param type --- type to test for contractivity.
-	 * @return
-	 */
-	public static boolean isContractive(Type type) {
-		if(type instanceof Leaf) {
-			return false;
-		} else {
-			Automaton automaton = ((Compound) type).automaton;
-			return TypeAlgorithms.isContractive(automaton);
-		}
-	}
-
-	/**
-	 * Compute the intersection of two types. The resulting type will only
-	 * accept values which are accepted by both types being intersected.. In
-	 * many cases, the only valid intersection will be <code>void</code>.
-	 *
-	 * @param t1
-	 * @param t2
-	 * @return
-	 */
-	public static Type intersect(Type t1, Type t2) {
-		return TypeAlgorithms.intersect(t1,t2);
-	}
-
 	public static Reference effectiveReference(Type t) {
 		if(t instanceof Type.Reference) {
 			return (Type.Reference) t;
@@ -831,11 +746,7 @@ public abstract class Type {
 			if (o instanceof Compound) {
 				Compound c = (Compound) o;
 				//equalsCount++;
-				if(canonicalisation) {
-					return automaton.equals(c.automaton);
-				} else {
-					return isSubtype(this, c) && isSubtype(c, this);
-				}
+				return automaton.equals(c.automaton);				
 			}
 			return false;
 		}

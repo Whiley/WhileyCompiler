@@ -32,8 +32,10 @@ import wybs.lang.Attribute;
 import wybs.lang.Build;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
+import wybs.util.ResolveError;
 import wycc.util.Pair;
 import wyil.lang.*;
+import wyil.util.TypeSystem;
 
 /**
  * <p>
@@ -74,9 +76,10 @@ import wyil.lang.*;
  */
 public class CoercionCheck implements Build.Stage<WyilFile> {
 	private WyilFile file;
+	private final TypeSystem typeSystem;
 
 	public CoercionCheck(Build.Task builder) {
-
+		this.typeSystem = new TypeSystem(builder.project());
 	}
 
 	public void apply(WyilFile module) {
@@ -114,10 +117,15 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 	 *
 	 * @param from
 	 * @param to
-	 * @param visited - the set of pairs already checked.
-	 * @param location - source location attribute (if applicable).
+	 * @param visited
+	 *            - the set of pairs already checked.
+	 * @param location
+	 *            - source location attribute (if applicable).
+	 * @throws ResolveError
+	 *             If a named type within this condition cannot be resolved
+	 *             within the enclosing project.
 	 */
-	protected void check(Type from, Type to, HashSet<Pair<Type, Type>> visited, SyntacticElement element) {
+	protected void check(Type from, Type to, HashSet<Pair<Type, Type>> visited, SyntacticElement element) throws ResolveError {
 		Pair<Type,Type> p = new Pair<Type,Type>(from,to);
 		if(visited.contains(p)) {
 			return; // already checked this pair
@@ -173,7 +181,7 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 			Type match = null;
 
 			for(Type b : t2.bounds()) {
-				if(Type.isSubtype(b,from)) {
+				if(typeSystem.isSubtype(b,from)) {
 					if(match != null) {
 						// found ambiguity
 						throw new SyntaxError(errorMessage(AMBIGUOUS_COERCION,from,to), file.getEntry(), element);
@@ -192,7 +200,7 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 			// Third, test for single coercive match
 
 			for(Type b : t2.bounds()) {
-				if(Type.isExplicitCoerciveSubtype(b,from)) {
+				if(typeSystem.isExplicitCoerciveSubtype(b,from)) {
 					if(match != null) {
 						// found ambiguity
 						throw new SyntaxError("ambiguous coercion (" + from + " => " + to, file.getEntry(), element);
@@ -206,7 +214,7 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 	}
 	
 	private void check(List<Type> params1, List<Type> params2, HashSet<Pair<Type, Type>> visited,
-			SyntacticElement element) {
+			SyntacticElement element) throws ResolveError {
 		for (int i = 0; i != params1.size(); ++i) {
 			Type e1 = params1.get(i);
 			Type e2 = params2.get(i);

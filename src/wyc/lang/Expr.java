@@ -152,7 +152,7 @@ public interface Expr extends SyntacticElement {
 		}
 
 		public Nominal result() {
-			return Nominal.construct(value.type(),value.type());
+			return Nominal.construct(value.type());
 		}
 
 		public String toString() {
@@ -666,7 +666,7 @@ public interface Expr extends SyntacticElement {
 				if (this.lifetimeArguments == null || this.lifetimeArguments.isEmpty()) {
 					return returnType;
 				}
-				return FlowTypeChecker.applySubstitution(methodType.raw().lifetimeParams(), this.lifetimeArguments, returnType);
+				return FlowTypeChecker.applySubstitution(methodType.nominal().lifetimeParams(), this.lifetimeArguments, returnType);
 			} else {
 				throw new IllegalArgumentException("incorrect number of returns for function call");
 			}
@@ -772,15 +772,16 @@ public interface Expr extends SyntacticElement {
 		}
 
 		public Nominal result() {
-			if(methodType.returns().size() == 1) {
+			if (methodType.returns().size() == 1) {
 				Nominal returnType = methodType.returns().get(0);
 				if (this.lifetimeArguments == null || this.lifetimeArguments.isEmpty()) {
 					return returnType;
 				}
-				return FlowTypeChecker.applySubstitution(methodType.raw().lifetimeParams(), this.lifetimeArguments, returnType);
+				return FlowTypeChecker.applySubstitution(methodType.nominal().lifetimeParams(), this.lifetimeArguments,
+						returnType);
 			} else {
 				throw new IllegalArgumentException("incorrect number of returns for indirect method call");
-			}			
+			}
 		}
 		
 		public Nominal.FunctionOrMethod type() {

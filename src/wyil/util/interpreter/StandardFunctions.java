@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
+import wybs.util.ResolveError;
+
 public class StandardFunctions {
 	/**
 	 * The standard functions for use with the interpreter.
@@ -313,7 +315,7 @@ public class StandardFunctions {
 		
 	private static final class Is implements InternalFunction {
 		@Override
-		public Constant apply(Constant[] operands, Interpreter enclosing, Location<Operator> context) {
+		public Constant apply(Constant[] operands, Interpreter enclosing, Location<Operator> context) throws ResolveError {
 			Constant.Type ct = checkType(operands[1], context, Constant.Type.class);			
 			boolean r = enclosing.isMemberOfType(operands[0], ct.value(), context);			
 			return Constant.Bool(r);

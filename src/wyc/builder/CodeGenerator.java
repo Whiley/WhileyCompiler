@@ -44,6 +44,7 @@ import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.Bytecode.AliasDeclaration;
 import wyil.lang.SyntaxTree.Location;
+import wyil.util.TypeSystem;
 
 /**
  * <p>
@@ -83,7 +84,8 @@ import wyil.lang.SyntaxTree.Location;
  *
  */
 public final class CodeGenerator {
-
+	private final TypeSystem typeSystem;
+	
 	/**
 	 * Construct a code generator object for translating WhileyFiles into
 	 * WyilFiles.
@@ -91,11 +93,9 @@ public final class CodeGenerator {
 	 * @param builder
 	 *            The enclosing builder instance which provides access to the
 	 *            global namespace.
-	 * @param resolver
-	 *            The relevant type checker instance which provides access to
-	 *            the pool of previously determined types.
 	 */
-	public CodeGenerator(CompileTask builder, FlowTypeChecker resolver) {
+	public CodeGenerator(CompileTask builder) {
+		this.typeSystem = builder.getTypeSystem();
 	}
 
 	// =========================================================================
@@ -779,8 +779,8 @@ public final class CodeGenerator {
 			Expr.LocalVariable var = (Expr.LocalVariable) condition.lhs;
 			Nominal varType = var.result();
 			Expr.TypeVal typeTest = (Expr.TypeVal) condition.rhs;
-			Nominal trueBranchType = Nominal.intersect(varType, typeTest.type);
-			Nominal falseBranchType = Nominal.intersect(varType, Nominal.Negation(typeTest.type));
+			Nominal trueBranchType = Nominal.intersect(varType, typeTest.type, typeSystem);
+			Nominal falseBranchType = Nominal.intersect(varType, Nominal.Negation(typeTest.type), typeSystem);
 			trueScope.createAlias(trueBranchType, var.var, condition.attributes());
 			falseScope.createAlias(falseBranchType, var.var, condition.attributes());
 		}
@@ -830,7 +830,7 @@ public final class CodeGenerator {
 					// Harder case. Since the combine type differs from the
 					// original declaration, a new alias declaration is
 					// required.
-					Nominal nominal = Nominal.construct(type, type);
+					Nominal nominal = Nominal.construct(type);
 					int newDecl = result.createAlias(nominal, var, Collections.EMPTY_LIST);
 					result.environment.put(var, newDecl);
 				}
@@ -1181,7 +1181,7 @@ public final class CodeGenerator {
 		for(Integer i : modified) {
 			Bytecode.VariableAccess va = new Bytecode.VariableAccess(i);
 			Location<?> location = tree.getLocation(i);
-			Nominal type = Nominal.construct(location.getType(),location.getType());
+			Nominal type = Nominal.construct(location.getType());
 			result[index++] = scope.add(type,va);
 		}
 		return result;
@@ -1390,7 +1390,7 @@ public final class CodeGenerator {
 			int index = locations.size();
 			environment.put(name, index);
 			Bytecode.VariableDeclaration decl = new Bytecode.VariableDeclaration(name);
-			Type locationType = normalise(type);
+			Type locationType = type.nominal();
 			locations.add(new SyntaxTree.Location<Bytecode>(enclosing, locationType, decl, attributes));
 			return index;
 		}
@@ -1410,7 +1410,7 @@ public final class CodeGenerator {
 			int index = locations.size();
 			environment.put(name, index);
 			Bytecode.AliasDeclaration alias = new Bytecode.AliasDeclaration(original);
-			Type locationType = normalise(type);			
+			Type locationType = type.nominal();			
 			locations.add(new SyntaxTree.Location<Bytecode>(enclosing, locationType, alias, attributes));
 			return index;
 		}
@@ -1439,10 +1439,9 @@ public final class CodeGenerator {
 		 * @return
 		 */
 		public int add(Nominal[] nominals, Bytecode operand, List<Attribute> attributes) {
-			List<SyntaxTree.Location<?>> locations =  enclosing.getLocations();
 			Type[] types = new Type[nominals.length];
 			for (int i = 0; i != types.length; ++i) {
-				types[i] = normalise(nominals[i]);
+				types[i] = nominals[i].nominal();
 			}
 			return add(types,operand,attributes);
 		}
@@ -1457,7 +1456,7 @@ public final class CodeGenerator {
 		public int add(List<Nominal> types, Bytecode operand, List<Attribute> attributes) {
 			Type[] nominals = new Type[types.size()];
 			for (int i = 0; i != nominals.length; ++i) {
-				nominals[i] = normalise(types.get(i));
+				nominals[i] = types.get(i).nominal();
 			}
 			return add(nominals,operand,attributes);
 		}
@@ -1483,16 +1482,6 @@ public final class CodeGenerator {
 		 */
 		public EnclosingScope clone() {
 			return new EnclosingScope(environment, enclosing, context);
-		}
-		
-		private Type normalise(Nominal type) {
-			Type result = type.nominal();
-			// FIXME: the following check is a hack to handle limitations
-			// in the way Nominal types are currently handled.  #629
-			if(result instanceof Type.Void) {
-				result = type.raw();
-			}
-			return result;
-		}
+		}		
 	}
 }
