@@ -667,7 +667,7 @@ public final class CompileTask implements Build.Task {
 			if (d instanceof WhileyFile.Type) {
 				WhileyFile.Type td = (WhileyFile.Type) d;
 				try {
-					Type wyilType = convertWhileyType(td.parameter.type, td);
+					Type wyilType = toSemanticType(td.parameter.type, td);
 					WyilFile.Type wyilTypeDecl = new WyilFile.Type(wyilFile, td.modifiers(), td.name(), wyilType);
 					wyilFile.blocks().add(wyilTypeDecl);
 				} catch (ResolveError e) {
@@ -694,77 +694,71 @@ public final class CompileTask implements Build.Task {
 	 *             within the enclosing project.
 	 * @throws IOException
 	 */
-	private Type convertWhileyType(SyntacticType type, WhileyFile.Context context) throws ResolveError, IOException {
+	public Type toSemanticType(SyntacticType type, WhileyFile.Context context) throws ResolveError, IOException {
 		if (type instanceof SyntacticType.Any) {
 			return Type.T_ANY;
 		} else if (type instanceof SyntacticType.Void) {
 			return Type.T_VOID;
 		} else if (type instanceof SyntacticType.Bool) {
 			return Type.T_BOOL;
+		} else if (type instanceof SyntacticType.Null) {
+			return Type.T_NULL;
 		} else if (type instanceof SyntacticType.Byte) {
 			return Type.T_BYTE;
 		} else if (type instanceof SyntacticType.Int) {
 			return Type.T_INT;
 		} else if (type instanceof SyntacticType.Array) {
 			SyntacticType.Array arrT = (SyntacticType.Array) type;
-			Type element = convertWhileyType(arrT.element, context);
-			return Type.Array(element, false);
+			Type element = toSemanticType(arrT.element, context);
+			return new Type.Array(element);
 		} else if (type instanceof SyntacticType.Reference) {
 			SyntacticType.Reference refT = (SyntacticType.Reference) type;
-			Type element = convertWhileyType(refT.element, context);
-			return Type.Reference(element, refT.lifetime);
+			Type element = toSemanticType(refT.element, context);
+			return new Type.Reference(element, refT.lifetime);
 		} else if (type instanceof SyntacticType.Record) {
 			SyntacticType.Record recT = (SyntacticType.Record) type;
 			HashMap<String, Type> fields = new HashMap<String, Type>();
 			for (Map.Entry<String, SyntacticType> e : recT.types.entrySet()) {
-				fields.put(e.getKey(), convertWhileyType(e.getValue(), context));
+				fields.put(e.getKey(), toSemanticType(e.getValue(), context));
 			}
-			return Type.Record(recT.isOpen, fields);
+			return new Type.Record(fields,recT.isOpen);
 		} else if (type instanceof SyntacticType.Function) {
 			SyntacticType.Function funT = (SyntacticType.Function) type;
-			ArrayList<Type> parameters = convertWhileyTypes(funT.paramTypes, context);
-			ArrayList<Type> returns = convertWhileyTypes(funT.returnTypes, context);
-			return Type.Function(returns, parameters);
+			ArrayList<Type> parameters = toSemanticTypes(funT.paramTypes, context);
+			ArrayList<Type> returns = toSemanticTypes(funT.returnTypes, context);
+			return new Type.Function(parameters, returns);
 		} else if (type instanceof SyntacticType.Method) {
 			SyntacticType.Method methT = (SyntacticType.Method) type;
-			ArrayList<Type> parameters = convertWhileyTypes(methT.paramTypes, context);
-			ArrayList<Type> returns = convertWhileyTypes(methT.returnTypes, context);
+			ArrayList<Type> parameters = toSemanticTypes(methT.paramTypes, context);
+			ArrayList<Type> returns = toSemanticTypes(methT.returnTypes, context);
 			// FIXME: why is a set required here? I feel like this doesn't make
 			// sense.
-			return Type.Method(returns, new HashSet<String>(methT.contextLifetimes), methT.lifetimeParameters,
-					parameters);
+			return new Type.Method(methT.lifetimeParameters, new HashSet<String>(methT.contextLifetimes), parameters,
+					returns);
 		} else if (type instanceof SyntacticType.Union) {
 			SyntacticType.Union unionT = (SyntacticType.Union) type;
-			return Type.Union(convertWhileyTypes(unionT.bounds, context));
+			return Type.Union(toSemanticTypes(unionT.bounds, context));
 		} else if (type instanceof SyntacticType.Intersection) {
-			SyntacticType.Intersection intersectionT = (SyntacticType.Intersection) type;
-			ArrayList<Type> bounds = new ArrayList<Type>();
-			for (SyntacticType bound : intersectionT.bounds) {
-				bounds.add(Type.Negation(convertWhileyType(bound, context)));
-			}
-			// FIXME: This is something of a hack. Basically, we're representing
-			// intersection types as the negation of a union type. This works,
-			// and is necessary because Wyil Type currently has no
-			// representation for an intersection.
-			return Type.Negation(Type.Union(bounds));
+			SyntacticType.Intersection intersectionT = (SyntacticType.Intersection) type;			
+			return Type.Intersection(toSemanticTypes(intersectionT.bounds, context));
 		} else if (type instanceof SyntacticType.Negation) {
 			SyntacticType.Negation negT = (SyntacticType.Negation) type;
-			Type element = convertWhileyType(negT.element, context);
-			return Type.Negation(element);
+			Type element = toSemanticType(negT.element, context);
+			return new Type.Negation(element);
 		} else if (type instanceof SyntacticType.Nominal) {
 			SyntacticType.Nominal nominalT = (SyntacticType.Nominal) type;
 			NameID name = resolveAsName(nominalT.names, context);
-			return Type.Nominal(name);
+			return new Type.Nominal(name);
 		} else {
 			throw new InternalFailure("invalid type encountered", context.file().getEntry(), type);
 		}
 	}
 
-	private ArrayList<Type> convertWhileyTypes(List<? extends SyntacticType> types, WhileyFile.Context context)
+	private ArrayList<Type> toSemanticTypes(List<? extends SyntacticType> types, WhileyFile.Context context)
 			throws ResolveError, IOException {
 		ArrayList<Type> wyilTypes = new ArrayList<Type>();
 		for (SyntacticType type : types) {
-			wyilTypes.add(convertWhileyType(type, context));
+			wyilTypes.add(toSemanticType(type, context));
 		}
 		return wyilTypes;
 	}

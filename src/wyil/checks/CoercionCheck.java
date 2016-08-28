@@ -147,8 +147,8 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 		} else if(from instanceof Type.Record && to instanceof Type.Record) {
 			Type.Record t1 = (Type.Record) from;
 			Type.Record t2 = (Type.Record) to;
-			HashMap<String,Type> t1_elements = t1.fields();
-			HashMap<String,Type> t2_elements = t2.fields();
+			Map<String,Type> t1_elements = t1.fields();
+			Map<String,Type> t2_elements = t2.fields();
 			ArrayList<String> fields = new ArrayList<String>(t2.keys());
 			for(String s : fields) {
 				Type e1 = t1_elements.get(s);

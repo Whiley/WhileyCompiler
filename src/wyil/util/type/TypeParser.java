@@ -99,7 +99,7 @@ public class TypeParser {
 		char lookahead = str.charAt(index);
 		if(lookahead == '!') {
 			match("!");
-			return Negation(parseNotTerm(typeVariables));
+			return new Negation(parseNotTerm(typeVariables));
 		} else {
 			return parseBraceTerm(typeVariables);
 		}
@@ -148,7 +148,7 @@ public class TypeParser {
 			match("[");
 			Type elem = parse(typeVariables);
 			match("]");
-			return Array(elem, false);
+			return new Array(elem);
 		}
 		case '{':
 		{
@@ -174,24 +174,11 @@ public class TypeParser {
 				skipWhiteSpace();
 			}
 			match("}");
-			return Record(isOpen,fields);			
+			return new Record(fields,isOpen);			
 		}
-		default:
-		{
+		default: {
 			String typeVariable = parseIdentifier();
-			if(typeVariables.contains(typeVariable)) {
-				return Nominal(new NameID(Trie.fromString("$"),
-						typeVariable));
-			} else {
-				typeVariables = new HashSet<String>(typeVariables);
-				typeVariables.add(typeVariable);
-				match("<");
-				Type t = parse(typeVariables);
-				match(">");
-				NameID label = new NameID(Trie.fromString("$"),
-						typeVariable);
-				return Recursive(label, t);
-			}
+			return new Nominal(new NameID(Trie.fromString("$"), typeVariable));
 		}
 
 		}

@@ -305,7 +305,7 @@ public final class WyilFileReader {
 				break;
 			}
 			default:
-				throw new RuntimeException("Unknown constant encountered in WhileyDefine: " + code);
+				throw new RuntimeException("Unknown constant encountered: " + code);
 			}
 			myConstantPool[i] = constant;
 		}
@@ -327,15 +327,125 @@ public final class WyilFileReader {
 	 */
 	private void readTypePool(int count) throws IOException {
 		final Type[] myTypePool = new Type[count];
-		Type.BinaryReader bin = new Type.BinaryReader(input);
 		for (int i = 0; i != count; ++i) {
-			Type t = bin.readType();
-			myTypePool[i] = t;
+			int code = input.read_uv();
+			Type type;
+			switch (code) {
+			case WyilFileWriter.TYPE_Any:
+				type = Type.T_ANY;
+				break;
+			case WyilFileWriter.TYPE_Void:
+				type = Type.T_VOID;
+				break;
+			case WyilFileWriter.TYPE_Null:
+				type = Type.T_NULL;
+				break;
+			case WyilFileWriter.TYPE_Bool:
+				type = Type.T_BOOL;
+				break;
+			case WyilFileWriter.TYPE_Byte:
+				type = Type.T_BYTE;
+				break;
+			case WyilFileWriter.TYPE_Int:
+				type = Type.T_INT;
+				break;
+			case WyilFileWriter.TYPE_Type:
+				type = Type.T_META;
+				break;
+			case WyilFileWriter.TYPE_Nominal: {
+				int nameIndex = input.read_uv();
+				NameID name = namePool[nameIndex];
+				type = new Type.Nominal(name);
+				break;
+			}
+			case WyilFileWriter.TYPE_Reference: {
+				int typeIndex = input.read_uv();
+				int lifetimeIndex = input.read_uv();
+				Type element = myTypePool[typeIndex];
+				String lifetime = stringPool[lifetimeIndex];
+				type = new Type.Reference(element,lifetime);
+				break;
+			}
+			case WyilFileWriter.TYPE_Array: {
+				int typeIndex = input.read_uv();				
+				Type element = myTypePool[typeIndex];
+				type = new Type.Array(element);
+				break;
+			}			
+			case WyilFileWriter.TYPE_Record: {
+				int numFields = input.read_uv();
+				boolean isOpen = input.read_bit();
+				HashMap<String,Type> fields = new HashMap<String,Type>();
+				for(int j=0;j!=numFields;++j) {
+					int stringIndex = input.read_uv();
+					int typeIndex = input.read_uv();
+					String fieldName = stringPool[stringIndex];
+					Type fieldType = myTypePool[typeIndex];
+					fields.put(fieldName, fieldType);
+				}
+				type = new Type.Record(fields, isOpen);
+				break;
+			}
+				
+			case WyilFileWriter.TYPE_Function: {
+				List<Type> parameters = readTypes(myTypePool);
+				List<Type> returns = readTypes(myTypePool);
+				type = new Type.Function(parameters, returns);
+				break;
+			}
+			case WyilFileWriter.TYPE_Method: {				
+				List<String> lifetimeParameters = readStrings();
+				Set<String> contextLifetimes = new HashSet<String>(readStrings());
+				List<Type> parameters = readTypes(myTypePool);
+				List<Type> returns = readTypes(myTypePool);
+				type = new Type.Method(lifetimeParameters, contextLifetimes, parameters, returns);
+				break;
+			}
+			case WyilFileWriter.TYPE_Union: {
+				List<Type> elements = readTypes(myTypePool);
+				type = Type.Union(elements);
+				break;
+			}
+			case WyilFileWriter.TYPE_Intersection: {
+				List<Type> elements = readTypes(myTypePool);
+				type = Type.Intersection(elements);
+				break;
+			}
+			case WyilFileWriter.TYPE_Negation: {
+				int typeIndex = input.read_uv();
+				Type element = myTypePool[typeIndex];
+				type = new Type.Negation(element);
+				break;
+			}
+			default:
+				throw new RuntimeException("Unknown type encountered: " + code);
+			}			
+			myTypePool[i] = type;
 		}
 
 		typePool = myTypePool;
 	}
 
+	private List<Type> readTypes(Type[] myTypePool) throws IOException {
+		ArrayList<Type> types = new ArrayList<Type>();
+		int count = input.read_uv();
+		for(int i=0;i!=count;++i) {
+			int typeIndex = input.read_uv();
+			Type type = myTypePool[typeIndex];
+			types.add(type);
+		}
+		return types;
+	}
+	private List<String> readStrings() throws IOException {
+		ArrayList<String> strings = new ArrayList<String>();
+		int count = input.read_uv();
+		for(int i=0;i!=count;++i) {
+			int stringIndex = input.read_uv();
+			String string = stringPool[stringIndex];
+			strings.add(string);
+		}
+		return strings;
+	}
 	/**
 	 * Read a module contained within a given WyIL file. The format is:
 	 * 

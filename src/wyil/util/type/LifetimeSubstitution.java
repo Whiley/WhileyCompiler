@@ -13,6 +13,7 @@ import java.util.Set;
 import wyautl_old.lang.Automaton;
 import wyautl_old.lang.Automaton.State;
 import wyil.lang.Type;
+import wyil.util.TypeSystem;
 
 /**
  * This class can be used to substitute lifetimes, i.e. instantiate lifetime
@@ -169,7 +170,7 @@ public class LifetimeSubstitution {
 		substitutedStates.add(state);
 
 		switch (state.kind) {
-		case Type.K_REFERENCE:
+		case TypeSystem.K_REFERENCE:
 			// If it is a reference, then we might have to fix the lifetime
 			String lifetime = (String) state.data;
 			if (!ignored.contains(lifetime)) {
@@ -182,10 +183,10 @@ public class LifetimeSubstitution {
 			}
 			break;
 
-		case Type.K_FUNCTION:
-		case Type.K_METHOD:
+		case TypeSystem.K_FUNCTION:
+		case TypeSystem.K_METHOD:
 			// We need to apply the substitution to the context lifetimes
-			Type.FunctionOrMethod.Data data = (Type.FunctionOrMethod.Data) state.data;
+			TypeSystem.FunctionOrMethodState data = (TypeSystem.FunctionOrMethodState) state.data;
 			if (!data.contextLifetimes.isEmpty()) {
 				ListIterator<String> it = data.contextLifetimes.listIterator();
 				boolean updated = false;

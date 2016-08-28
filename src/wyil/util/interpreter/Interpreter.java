@@ -600,8 +600,7 @@ public class Interpreter {
 	private Constant executeConvert(Location<Convert> expr, Constant[] frame) {
 		try {
 			Constant operand = executeExpression(ANY_T, expr.getOperand(0), frame);
-			Type target = typeSystem.getUnderlyingType(expr.getType());
-			return convert(operand, target, expr);
+			return convert(operand, expr.getType(), expr);
 		} catch (ResolveError e) {
 			error(e.getMessage(), expr);
 			return null;
@@ -1398,7 +1397,7 @@ public class Interpreter {
 		@Override
 		public wyil.lang.Type type() {
 			// TODO: extend wyil.lang.Codes.NewObject with a lifetime and use it
-			return wyil.lang.Type.Reference(value.type(), "*");
+			return new wyil.lang.Type.Reference(value.type(), "*");
 		}
 	}
 

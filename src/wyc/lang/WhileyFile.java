@@ -352,7 +352,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 	 */
 	public class Type extends NamedDeclaration {
 		public final Parameter parameter;
-		public Nominal resolvedType;
+		public wyil.lang.Type resolvedType;
 		public ArrayList<Expr> invariant;
 
 		public Type(List<Modifier> modifiers, Parameter type,
@@ -463,7 +463,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 
 		public abstract SyntacticType.FunctionOrMethod unresolvedType();
 
-		public abstract Nominal.FunctionOrMethod resolvedType();
+		public abstract wyil.lang.Type.FunctionOrMethod resolvedType();
 	}
 
 	/**
@@ -501,7 +501,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 	 *
 	 */
 	public final class Function extends FunctionOrMethod {
-		public Nominal.Function resolvedType;
+		public wyil.lang.Type.Function resolvedType;
 
 		public Function(List<Modifier> modifiers, String name, List<Parameter> returns,
 				List<Parameter> parameters, List<Expr> requires,
@@ -522,7 +522,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 			return new SyntacticType.Function(returnTypes, paramTypes, attributes());
 		}
 
-		public Nominal.Function resolvedType() {
+		public wyil.lang.Type.Function resolvedType() {
 			return resolvedType;
 		}
 	}
@@ -560,7 +560,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 	 *
 	 */
 	public final class Method extends FunctionOrMethod {
-		public Nominal.Method resolvedType;
+		public wyil.lang.Type.Method resolvedType;
 
 		public Method(List<Modifier> modifiers, String name, List<Parameter> returns, List<Parameter> parameters,
 				List<String> lifetimeParameters, List<Expr> requires, List<Expr> ensures,
@@ -581,7 +581,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 					Collections.<String>emptySet(), lifetimeParameters, attributes());
 		}
 
-		public Nominal.Method resolvedType() {
+		public wyil.lang.Type.Method resolvedType() {
 			return resolvedType;
 		}
 	}

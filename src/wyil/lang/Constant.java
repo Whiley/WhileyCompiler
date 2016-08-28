@@ -219,7 +219,7 @@ public abstract class Constant implements Comparable<Constant> {
 			for(Constant arg : values) {
 				t = wyil.lang.Type.Union(t,arg.type());
 			}
-			return wyil.lang.Type.Array(t, !values.isEmpty());
+			return new wyil.lang.Type.Array(t);
 		}
 		public int hashCode() {
 			return values.hashCode();
@@ -281,7 +281,7 @@ public abstract class Constant implements Comparable<Constant> {
 			for (java.util.Map.Entry<String, Constant> e : values.entrySet()) {
 				types.put(e.getKey(), e.getValue().type());
 			}
-			return wyil.lang.Type.Record(false,types);
+			return new wyil.lang.Type.Record(types,false);
 		}
 		public int hashCode() {
 			return values.hashCode();
@@ -407,11 +407,7 @@ public abstract class Constant implements Comparable<Constant> {
 		}
 		
 		public wyil.lang.Type.FunctionOrMethod type() {
-			if (type == null) {
-				return wyil.lang.Type.Function(new wyil.lang.Type[] { wyil.lang.Type.T_ANY }, wyil.lang.Type.T_ANY);
-			} else {
-				return type;
-			}
+			return type;			
 		}
 		public int hashCode() {
 			if(type != null) {

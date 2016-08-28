@@ -2,9 +2,13 @@ package wyil.util;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import wyautl_old.lang.Automata;
@@ -16,8 +20,6 @@ import wybs.util.ResolveError;
 import wyfs.lang.Path;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
-import wyil.lang.Type.Compound;
-import wyil.lang.Type.Leaf;
 import wyil.util.type.ExplicitCoercionOperator;
 import wyil.util.type.LifetimeRelation;
 import wyil.util.type.SubtypeOperator;
@@ -66,9 +68,10 @@ public class TypeSystem {
 	 * @throws ResolveError
 	 */
 	public boolean isEmpty(Type type) throws ResolveError {
-		type = getUnderlyingType(type);
-		// FIXME: should include contractivity check
-		return type instanceof Type.Void;
+		Automaton automaton = toAutomaton(type);
+		normalise(automaton);
+		// FIXME: should include contractivity check?
+		return automaton.states[0].kind == K_VOID;
 	}
 	
 	/**
@@ -87,69 +90,15 @@ public class TypeSystem {
 	 *
 	 * @param type --- type to test for contractivity.
 	 * @return
+	 * @throws ResolveError 
 	 */
-	public boolean isContractive(Type type) {
-		if(type instanceof Leaf) {
+	public boolean isContractive(Type type) throws ResolveError {
+		if (type instanceof Type.Leaf) {
 			return false;
 		} else {
-			Automaton automaton = ((Compound) type).automaton;
+			Automaton automaton = toAutomaton(type);
 			return TypeAlgorithms.isContractive(automaton);
 		}
-	}
-	
-	/**
-	 * Expand a given type by inlining all visible nominal information. For
-	 * example:
-	 * 
-	 * <pre>
-	 * type nat is (int x) where x >= 0
-	 * type listnat is [nat]
-	 * </pre>
-	 * 
-	 * Expanding the type <code>[nat]</code> will result in the type
-	 * <code>[int]</code>. The key challenge here lies in handling nominal types
-	 * when they are encountered. We need to determine where the type is
-	 * located, and then incorporate the (expanded) body of that type into this
-	 * type. In some cases, we're not permitted to inline the body because it's
-	 * not visible to this file (e.g. it is marked as private).
-	 * 
-	 * @param type
-	 * @return
-	 */
-	public Type getUnderlyingType(Type type) throws ResolveError {
-		ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
-		HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
-		getTypeHelper(type, false, states, roots);
-		return Type.construct(new Automaton(states));		
-	}
-	
-	/**
-	 * Return the maximally consumed type of a given type. That is the maximal
-	 * type for which all values of that type are in the given type. For
-	 * example, the type <code>int</code> is maximally consumed by
-	 * <code>int</code>. However, for constrained types, it's more involved. For
-	 * example, consider:
-	 * 
-	 * <pre>
-	 * type nat is (int n) where n >= 0
-	 * 		
-	 * function f(int|bool|null x) -> bool:
-	 *     if x is nat|bool:
-	 *         ... 
-	 *     else:
-	 *         ...
-	 * </pre>
-	 * 
-	 * @param type
-	 *            Type for which to determine its maximally consumed type.
-	 * @return
-	 */
-	public Type getMaximallyConsumedType(Type type) throws ResolveError,
-			IOException {
-		ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
-		HashMap<NameID, Integer> roots = new HashMap<NameID, Integer>();
-		getTypeHelper(type, true, states, roots);
-		return Type.construct(new Automaton(states));
 	}
 
 	/**
@@ -163,20 +112,53 @@ public class TypeSystem {
 	 * @return null if given type is not an effective record
 	 * @throws ResolveError
 	 */
-	public Type.EffectiveRecord expandAsEffectiveRecord(Type type) throws ResolveError {
-		if (type instanceof Type.EffectiveRecord) {
+	public Type.Record expandAsEffectiveRecord(Type type) throws ResolveError {
+		if (type instanceof Type.Record) {
 			// This type is already an effective record. Therefore, no need to
 			// do anything.
-			return (Type.EffectiveRecord) type;
+			return (Type.Record) type;
 		} else {
 			// This type may be an effective record. To find out, we need to
 			// expand one level of nominal type information
 			type = expandOneLevel(type);
-			if(type instanceof Type.EffectiveRecord) {
-				return (Type.EffectiveRecord) type; 
+			if (type instanceof Type.Record) {
+				return (Type.Record) type;
+			} else if (type instanceof Type.Union) {
+				return constructEffectiveRecord((Type.Union)type);				
 			} else {
 				return null;
 			}
+		}
+	}
+
+	private static Type.Record constructEffectiveRecord(Type.Union type) {		
+		HashMap<String, Type> fields = null;
+		boolean isOpen = true;
+		for (Type b : type.bounds()) {
+			if (b instanceof Type.Record) {
+				Type.Record br = (Type.Record) b;
+				fields = unionEffectiveFields(fields,br.fields());				
+			} else {
+				return null;
+			}
+		}
+		return new Type.Record(fields, isOpen);
+	}
+
+	private static HashMap<String, Type> unionEffectiveFields(HashMap<String, Type> lhs, Map<String, Type> rhs) {
+		if (lhs == null) {
+			return new HashMap<String, Type>(rhs);
+		} else {
+			for (String field : lhs.keySet()) {
+				Type lhsFieldType = lhs.get(field);
+				Type rhsFieldType = rhs.get(field);
+				if (rhsFieldType == null) {
+					lhs.put(field, null);
+				} else {
+					Type.Union(lhsFieldType, rhsFieldType);
+				}
+			}
+			return lhs;
 		}
 	}
 	
@@ -191,21 +173,40 @@ public class TypeSystem {
 	 * @return null if type is no an effective array
 	 * @throws ResolveError
 	 */
-	public Type.EffectiveArray expandAsEffectiveArray(Type type) throws ResolveError {
-		if (type instanceof Type.EffectiveArray) {
+	public Type.Array expandAsEffectiveArray(Type type) throws ResolveError {
+		if (type instanceof Type.Array) {
 			// This type is already an effective array. Therefore, no need to
 			// do anything.
-			return (Type.EffectiveArray) type;
+			return (Type.Array) type;
 		} else {
 			// This type may be an effective array. To find out, we need to
 			// expand one level of nominal type information
 			type = expandOneLevel(type);
-			if(type instanceof Type.EffectiveArray) {
-				return (Type.EffectiveArray) type; 
+			if(type instanceof Type.Array) {
+				return (Type.Array) type; 
+			} else if(type instanceof Type.Union) {
+				return constructEffectiveArray((Type.Union)type);
+			} else {			
+				return null;
+			}
+		}
+	}
+	
+	private static Type.Array constructEffectiveArray(Type.Union type) {
+		Type elementType = null;
+		for (Type b : type.bounds()) {
+			if (b instanceof Type.Array) {
+				Type.Array br = (Type.Array) b;
+				if (elementType == null) {
+					elementType = br;
+				} else {
+					elementType = Type.Union(elementType, br);
+				}
 			} else {
 				return null;
 			}
 		}
+		return new Type.Array(elementType);
 	}
 	
 	/**
@@ -236,6 +237,32 @@ public class TypeSystem {
 		}
 	}
 	
+	/**
+	 * Assuming given type is an effective function or method type of some sort,
+	 * expand to ensure structure is visible.
+	 * 
+	 * @param type
+	 *            The type to be expanded
+	 * @return
+	 * @throws ResolveError
+	 */
+	public Type.FunctionOrMethod expandAsFunctionOrMethod(Type type) throws ResolveError {
+		if (type instanceof Type.FunctionOrMethod) {
+			// This type is already a function or method. Therefore, no need to
+			// do anything.
+			return (Type.FunctionOrMethod) type;
+		} else {
+			// This type may be a reference. To find out, we need to
+			// expand one level of nominal type information
+			type = expandOneLevel(type);
+			if (type instanceof Type.FunctionOrMethod) {
+				return (Type.FunctionOrMethod) type;
+			} else {
+				return null;
+			}
+		}
+	}
+
 	// =============================================================
 	// Subtype Operator(s)
 	// =============================================================
@@ -249,10 +276,8 @@ public class TypeSystem {
 	 *             resolved within the enclosing project.
 	 */
 	public boolean isExplicitCoerciveSubtype(Type t1, Type t2, LifetimeRelation lr) throws ResolveError {
-		t1 = getUnderlyingType(t1);
-		t2 = getUnderlyingType(t2);
-		Automaton a1 = Type.destruct(t1);
-		Automaton a2 = Type.destruct(t2);
+		Automaton a1 = toAutomaton(t1);
+		Automaton a2 = toAutomaton(t2);		
 		ExplicitCoercionOperator relation = new ExplicitCoercionOperator(a1,a2,lr);
 		return relation.isSubtype(0, 0);
 	}
@@ -280,10 +305,8 @@ public class TypeSystem {
 	 *             resolved within the enclosing project.
 	 */
 	public boolean isSubtype(Type t1, Type t2, LifetimeRelation lr) throws ResolveError {
-		t1 = getUnderlyingType(t1);
-		t2 = getUnderlyingType(t2);
-		Automaton a1 = Type.destruct(t1);
-		Automaton a2 = Type.destruct(t2);
+		Automaton a1 = toAutomaton(t1);
+		Automaton a2 = toAutomaton(t2);
 		SubtypeOperator relation = new SubtypeOperator(a1,a2,lr);
 		return relation.isSubtype(0, 0);
 	}
@@ -302,24 +325,6 @@ public class TypeSystem {
 		return isSubtype(t1, t2, LifetimeRelation.EMPTY);
 	}
 
-	// =============================================================
-	// Type Operators
-	// =============================================================
-	
-	/**
-	 * Compute the intersection of two types. The resulting type will only
-	 * accept values which are accepted by both types being intersected.. In
-	 * many cases, the only valid intersection will be <code>void</code>.
-	 *
-	 * @param t1
-	 * @param t2
-	 * @return
-	 */
-	public Type intersect(Type t1, Type t2) {
-		return TypeAlgorithms.intersect(t1, t2);
-	}
-
-	
 	// =============================================================
 	// Helpers
 	// =============================================================
@@ -343,23 +348,157 @@ public class TypeSystem {
 				}
 				WyilFile.Type td = p.read().type(nid.name());
 				return expandOneLevel(td.type());
-			} else if (type instanceof Type.Leaf || type instanceof Type.Reference || type instanceof Type.Array
-					|| type instanceof Type.Record || type instanceof Type.FunctionOrMethod
+			} else if (type instanceof Type.Leaf 
+					|| type instanceof Type.Reference 
+					|| type instanceof Type.Array
+					|| type instanceof Type.Record
+					|| type instanceof Type.FunctionOrMethod
 					|| type instanceof Type.Negation) {
 				return type;
-			} else {
+			} else if(type instanceof Type.Union){
 				Type.Union ut = (Type.Union) type;
 				ArrayList<Type> bounds = new ArrayList<Type>();
 				for (Type b : ut.bounds()) {
 					bounds.add(expandOneLevel(b));
 				}
 				return Type.Union(bounds);
+			} else {
+				Type.Intersection ut = (Type.Intersection) type;
+				ArrayList<Type> bounds = new ArrayList<Type>();
+				for (Type b : ut.bounds()) {
+					bounds.add(expandOneLevel(b));
+				}
+				return Type.Intersection(bounds);
 			}
 		} catch (IOException e) {
 			throw new ResolveError(e.getMessage(), e);
 		}
 	}
-	
+
+	// =============================================================
+	// Automaton Representation
+	// =============================================================
+
+
+
+	public static final class FunctionOrMethodState implements Comparable<FunctionOrMethodState> {
+		public final int numParams;
+		public final List<String> contextLifetimes;
+		public final List<String> lifetimeParameters;
+
+		public FunctionOrMethodState(int numParams, Set<String> contextLifetimes, List<String> lifetimeParameters) {
+			this.numParams = numParams;
+			this.contextLifetimes = new ArrayList<String>(contextLifetimes);
+			this.contextLifetimes.remove("*");
+			Collections.sort(this.contextLifetimes);
+			this.lifetimeParameters = new ArrayList<String>(lifetimeParameters);
+		}
+
+		@Override
+		public int hashCode() {
+			return 31 * (31 * numParams + contextLifetimes.hashCode()) + lifetimeParameters.hashCode();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (this.getClass() != obj.getClass())
+				return false;
+			FunctionOrMethodState other = (FunctionOrMethodState) obj;
+			if (this.numParams != other.numParams)
+				return false;
+			if (!this.contextLifetimes.equals(other.contextLifetimes)) {
+				return false;
+			}
+			if (!this.lifetimeParameters.equals(other.lifetimeParameters)) {
+				return false;
+			}
+			return true;
+		}
+
+		@Override
+		public int compareTo(FunctionOrMethodState other) {
+			int r = Integer.compare(this.numParams, other.numParams);
+			if (r != 0)
+				return r;
+			r = compareLists(this.contextLifetimes, other.contextLifetimes);
+			if (r != 0)
+				return r;
+			return compareLists(this.lifetimeParameters, other.lifetimeParameters);
+		}
+
+		private static int compareLists(List<String> my, List<String> other) {
+			Iterator<String> it1 = my.iterator();
+			Iterator<String> it2 = other.iterator();
+			while (true) {
+				if (it1.hasNext()) {
+					if (it2.hasNext()) {
+						int r = it1.next().compareTo(it2.next());
+						if (r != 0)
+							return r;
+					} else {
+						return 1;
+					}
+				} else if (it2.hasNext()) {
+					return -1;
+				} else {
+					return 0;
+				}
+			}
+		}
+	}
+
+	public static final class RecordState extends ArrayList<String> {
+		public final boolean isOpen;
+
+		public RecordState(boolean isOpen) {
+			this.isOpen = isOpen;
+		}
+
+		public RecordState(boolean isOpen, Collection<String> values) {
+			super(values);
+			this.isOpen = isOpen;
+		}
+
+		public boolean equals(Object o) {
+			if (o instanceof RecordState) {
+				RecordState s = (RecordState) o;
+				return isOpen == s.isOpen && super.equals(s);
+			}
+			return false;
+		}
+	}
+
+
+	/**
+	 * Expand a given type by inlining all visible nominal information. For
+	 * example:
+	 * 
+	 * <pre>
+	 * type nat is (int x) where x >= 0
+	 * type listnat is [nat]
+	 * </pre>
+	 * 
+	 * Expanding the type <code>[nat]</code> will result in the type
+	 * <code>[int]</code>. The key challenge here lies in handling nominal types
+	 * when they are encountered. We need to determine where the type is
+	 * located, and then incorporate the (expanded) body of that type into this
+	 * type. In some cases, we're not permitted to inline the body because it's
+	 * not visible to this file (e.g. it is marked as private).
+	 * 
+	 * @param type
+	 * @return
+	 */
+	private Automaton toAutomaton(Type type) throws ResolveError {
+		ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
+		HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
+		toAutomatonHelper(type, false, states, roots);		
+		return new Automaton(states);		
+	}
+
 	/**
 	 * <p>
 	 * Expand the given type by loading it's contents into the list of states.
@@ -391,7 +530,7 @@ public class TypeSystem {
 	 * @return
 	 * @throws IOException
 	 */
-	public int getTypeHelper(Type type, boolean maximallyConsumed, ArrayList<Automaton.State> states,
+	private int toAutomatonHelper(Type type, boolean maximallyConsumed, ArrayList<Automaton.State> states,
 			HashMap<NameID, Integer> roots) throws ResolveError {
 		// First, handle nominals (which are challenging) and primitive types
 		// (which are simple).		
@@ -415,13 +554,13 @@ public class TypeSystem {
 						// consumed type. This type is not fully consumed as it
 						// is constrained and, hence, void is its maximally
 						// constrained type.
-						states.add(new State(Type.K_VOID, null, true, Automaton.NOCHILDREN));
+						states.add(new State(K_VOID, null, true, Automaton.NOCHILDREN));
 						return states.size() - 1;
 					} else {
 						// Now, store the root of this expansion so that it can
 						// be used subsequently to form a recursive cycle.
 						roots.put(nid, states.size());
-						return getTypeHelper(td.type(), maximallyConsumed, states, roots);
+						return toAutomatonHelper(td.type(), maximallyConsumed, states, roots);
 					}			
 				} catch (IOException e) {
 					throw new ResolveError(e.getMessage(), e);
@@ -430,7 +569,7 @@ public class TypeSystem {
 		} else if(type instanceof Type.Leaf) {
 			// In ther case of a leaf node we simply copy over its states into
 			// the list of states being accumulated.
-			return append(type,states);
+			return append((Type.Leaf) type,states);
 		}  
 			
 		// Now handle all non-primitive types which need to be expanded in some
@@ -446,42 +585,41 @@ public class TypeSystem {
 		if (type instanceof Type.Array) {			
 			Type.Array tt = (Type.Array) type;
 			myChildren = new int[1];
-			myChildren[0] = getTypeHelper(tt.element(),maximallyConsumed,states,roots);
-			myKind = Type.K_LIST;			
-			myData = tt.nonEmpty();
+			myChildren[0] = toAutomatonHelper(tt.element(),maximallyConsumed,states,roots);
+			myKind = K_LIST;			
 		} else if(type instanceof Type.Record) {
 			Type.Record tt = (Type.Record) type;
-			HashMap<String, Type> ttTypes = tt.fields();
-			Type.Record.State fields = new Type.Record.State(tt.isOpen(),
+			Map<String, Type> ttTypes = tt.fields();
+			RecordState fields = new RecordState(tt.isOpen(),
 					ttTypes.keySet());
 			Collections.sort(fields);
-			myKind = Type.K_RECORD;
+			myKind = K_RECORD;
 			myChildren = new int[fields.size()];
 			for (int i = 0; i != myChildren.length; ++i) {
 				String field = fields.get(i);
-				myChildren[i] = getTypeHelper(ttTypes.get(field), maximallyConsumed,states, roots);
+				myChildren[i] = toAutomatonHelper(ttTypes.get(field), maximallyConsumed,states, roots);
 			}
 			myData = fields;
 		} else if(type instanceof Type.Reference) {
 			Type.Reference tt = (Type.Reference) type;
 			myChildren = new int[1];
-			myChildren[0] = getTypeHelper(tt.element(),maximallyConsumed,states,roots);
+			myChildren[0] = toAutomatonHelper(tt.element(),maximallyConsumed,states,roots);
 			myData = tt.lifetime();
-			myKind = Type.K_REFERENCE;
+			myKind = K_REFERENCE;
 		} else if(type instanceof Type.Negation) {
 			Type.Negation tt = (Type.Negation) type;
 			myChildren = new int[1];
-			myChildren[0] = getTypeHelper(tt.element(),maximallyConsumed,states,roots);
-			myKind = Type.K_NEGATION;
+			myChildren[0] = toAutomatonHelper(tt.element(),maximallyConsumed,states,roots);
+			myKind = K_NEGATION;
 		} else if(type instanceof Type.Union) {
 			Type.Union tt = (Type.Union) type;
-			Set<Type> bounds = tt.bounds();
+			List<Type> bounds = tt.bounds();
 			myChildren = new int[bounds.size()];
 			int i = 0;
 			for(Type b : bounds) {
-				myChildren[i++] = getTypeHelper(b,maximallyConsumed,states,roots);
+				myChildren[i++] = toAutomatonHelper(b,maximallyConsumed,states,roots);
 			}
-			myKind = Type.K_UNION;	
+			myKind = K_UNION;	
 		} else if(type instanceof Type.FunctionOrMethod) {
 			Type.FunctionOrMethod tt = (Type.FunctionOrMethod) type;
 			List<Type> tt_params = tt.params();
@@ -490,14 +628,13 @@ public class TypeSystem {
 			int tt_returns_size = tt_returns.size();
 			myChildren = new int[tt_params_size+tt_returns_size];
 			for(int i=0;i!=tt_params_size;++i) {
-				myChildren[i] = getTypeHelper(tt_params.get(i),maximallyConsumed,states,roots);
+				myChildren[i] = toAutomatonHelper(tt_params.get(i),maximallyConsumed,states,roots);
 			}
 			for(int i=0;i!=tt_returns_size;++i) {
-				myChildren[i+tt_params_size] = getTypeHelper(tt_returns.get(i),maximallyConsumed,states,roots);
+				myChildren[i+tt_params_size] = toAutomatonHelper(tt_returns.get(i),maximallyConsumed,states,roots);
 			}
-			myData = new Type.FunctionOrMethod.Data(tt_params_size, tt.contextLifetimes(), tt.lifetimeParams());
-			myKind = tt instanceof Type.Function ? Type.K_FUNCTION
-					: Type.K_METHOD;			
+			myData = new FunctionOrMethodState(tt_params_size, tt.contextLifetimes(), tt.lifetimeParams());
+			myKind = tt instanceof Type.Function ? K_FUNCTION : K_METHOD;			
 		}else {
 			// FIXME: Probably need to handle function and method types here
 			throw new ResolveError("unknown type encountered: " + type);
@@ -509,17 +646,372 @@ public class TypeSystem {
 		return myIndex;
 	}
 	
-	private static int append(Type type, ArrayList<Automaton.State> states) {
-		int myIndex = states.size();
-		Automaton automaton = Type.destruct(type);
-		Automaton.State[] tStates = automaton.states;
-		int[] rmap = new int[tStates.length];
-		for (int i = 0, j = myIndex; i != rmap.length; ++i, ++j) {
-			rmap[i] = j;
+	private static int append(Type.Leaf type, ArrayList<Automaton.State> states) {
+		int kind;
+		if(type instanceof Type.Any){
+			kind = K_ANY;
+		} else if(type instanceof Type.Void){
+			kind = K_VOID;
+		} else if(type instanceof Type.Null){
+			kind = K_NULL;
+		} else if(type instanceof Type.Bool){
+			kind = K_BOOL;
+		} else if(type instanceof Type.Byte){
+			kind = K_BYTE;
+		} else if (type instanceof Type.Int){			
+			kind = K_INT;
+		} else {
+			Type.Meta it = (Type.Meta) type;
+			kind = K_META;
 		}
-		for (Automaton.State state : tStates) {
-			states.add(Automata.remap(state, rmap));
-		}
-		return myIndex;
+		states.add(new Automaton.State(kind));		
+		return states.size()-1;
 	}
+
+	
+	/**
+	 * <p>
+	 * The following algorithm simplifies a type. For example:
+	 * </p>
+	 *
+	 * <pre>
+	 * define InnerList as null|{int data, OuterList next}
+	 * define OuterList as null|{int data, InnerList next}
+	 * </pre>
+	 * <p>
+	 * This type is simplified into the following (equivalent) form:
+	 * </p>
+	 *
+	 * <pre>
+	 * define LinkedList as null|{int data, LinkedList next}
+	 * </pre>
+	 * <p>
+	 * The simplification algorithm is made up of several different procedures
+	 * which operate on the underlying <i>automaton</i> representing the type:
+	 * </p>
+	 * <ol>
+	 * <li><b>Extraction.</b> Here, sub-components unreachable from the root are
+	 * eliminated.</li>
+	 * <li><b>Simplification.</b> Here, basic simplifications are applied. For
+	 * example, eliminating unions of unions.</li>
+	 * <li><b>Minimisation.</b>Here, equivalent states are merged together.</li>
+	 * <li><b>Canonicalisation.</b> A canonical form of the type is computed</li>
+	 * </ol>
+	 *
+	 * is based on the well-known algorithm for minimising a DFA (see e.g. <a
+	 * href="http://en.wikipedia.org/wiki/DFA_minimization">[1]</a>). </p>
+	 * <p>
+	 * The algorithm operates by performing a subtype test of each node against
+	 * all others. From this, we can identify nodes which are equivalent under
+	 * the subtype operator. Using this information, the type is reconstructed
+	 * such that for each equivalence class only a single node is created.
+	 * </p>
+	 * <p>
+	 * <b>NOTE:</b> this algorithm does not put the type into a canonical form.
+	 * Additional work is necessary to do this.
+	 * </p>
+	 *
+	 * @param afterType
+	 * @return
+	 */
+	private static Automaton normalise(Automaton automaton) {
+		//normalisedCount++;
+		//unminimisedCount += automaton.size();
+		TypeAlgorithms.simplify(automaton);
+		// TODO: extract in place to avoid allocating data unless necessary
+		automaton = Automata.extract(automaton, 0);
+		// TODO: minimise in place to avoid allocating data unless necessary
+		automaton = Automata.minimise(automaton);
+		// TODO: unsure whether we need to do this all the time
+		Automata.canonicalise(automaton, TypeAlgorithms.DATA_COMPARATOR);
+		//minimisedCount += automaton.size();
+		return automaton;
+	}
+
+
+	/**
+	 * The following method constructs a string representation of the underlying
+	 * automaton. This representation may be an expanded version of the underling
+	 * graph, since one cannot easily represent aliasing in the type graph in a
+	 * textual manner.
+	 *
+	 * @param automaton
+	 *            --- the automaton being turned into a string.
+	 * @return --- string representation of automaton.
+	 */
+	private final static String toString(Automaton automaton) {
+		// First, we need to find the headers of the computation. This is
+		// necessary in order to mark the start of a recursive type.
+		BitSet headers = new BitSet(automaton.size());
+		BitSet visited = new BitSet(automaton.size());
+		BitSet onStack = new BitSet(automaton.size());
+		findHeaders(0, visited, onStack, headers, automaton);
+		visited.clear();
+		String[] titles = new String[automaton.size()];
+		int count = 0;
+		for (int i = 0; i != automaton.size(); ++i) {
+			if (headers.get(i)) {
+				titles[i] = headerTitle(count++);
+			}
+		}
+		return toString(0, visited, titles, automaton);
+	}
+
+	/**
+	 * The following method constructs a string representation of the underlying
+	 * automaton. This representation may be an expanded version of the underling
+	 * graph, since one cannot easily represent aliasing in the type graph in a
+	 * textual manner.
+	 *
+	 * @param index
+	 *            --- the index to start from
+	 * @param visited
+	 *            --- the set of vertices already visited.
+	 * @param headers
+	 *            --- an array of strings which identify the name to be given to
+	 *            each header.
+	 * @param automaton
+	 *            --- the automaton being turned into a string.
+	 * @return --- string representation of automaton.
+	 */
+	private final static String toString(int index, BitSet visited,
+			String[] headers, Automaton automaton) {
+		if (visited.get(index)) {
+			// node already visited
+			return headers[index];
+		} else if(headers[index] != null) {
+			visited.set(index);
+		}
+		State state = automaton.states[index];
+		String middle;
+		switch (state.kind) {
+		case K_VOID:
+			return "void";
+		case K_ANY:
+			return "any";
+		case K_NULL:
+			return "null";
+		case K_BOOL:
+			return "bool";
+		case K_BYTE:
+			return "byte";
+		case K_CHAR:
+			return "char";
+		case K_INT:
+			return "int";
+		case K_LIST: {
+			middle = toString(state.children[0], visited, headers, automaton)
+					+ "[]";
+			break;
+		}
+		case K_NOMINAL:
+			middle = state.data.toString();
+			break;
+		case K_REFERENCE:
+			middle = "&";
+			String lifetime = (String) state.data;
+			if (!"*".equals(lifetime)) {
+				middle += lifetime + ":";
+			}
+			middle += toString(state.children[0], visited, headers, automaton);
+			break;
+		case K_NEGATION: {
+			middle = "!" + toBracesString(state.children[0], visited, headers, automaton);
+			break;
+		}
+		case K_UNION: {
+			int[] children = state.children;
+			middle = "";
+			for (int i = 0; i != children.length; ++i) {
+				if(i != 0 || children.length == 1) {
+					middle += "|";
+				}
+				middle += toBracesString(children[i], visited, headers, automaton);
+			}
+			break;
+		}		
+		case K_RECORD: {
+			// labeled nary node
+			middle = "{";
+			int[] children = state.children;
+			RecordState fields = (RecordState) state.data;
+			for (int i = 0; i != fields.size(); ++i) {
+				if (i != 0) {
+					middle += ",";
+				}
+				middle += toString(children[i], visited, headers, automaton) + " " + fields.get(i);
+			}
+			if(fields.isOpen) {
+				if(children.length > 0) {
+					middle = middle + ",...}";
+				} else {
+					middle = middle + "...}";
+				}
+			} else {
+				middle = middle + "}";
+			}
+			break;
+		}
+		case K_METHOD:
+		case K_FUNCTION: {
+			String parameters = "";
+			int[] children = state.children;
+			FunctionOrMethodState data = (FunctionOrMethodState) state.data;
+			int numParameters = data.numParams;
+			for (int i = 0; i != numParameters; ++i) {
+				if (i!=0) {
+					parameters += ",";
+				}
+				parameters += toString(children[i], visited, headers, automaton);
+			}
+			String returns = "";
+			for (int i = numParameters; i != children.length; ++i) {
+				if (i!=numParameters) {
+					returns += ",";
+				}
+				returns += toString(children[i], visited, headers, automaton);
+			}
+			StringBuilder sb = new StringBuilder();
+			sb.append(state.kind == K_FUNCTION ? "function" : "method");
+			if (!data.contextLifetimes.isEmpty()) {
+				sb.append('[');
+				boolean first = true;
+				for (String l : data.contextLifetimes) {
+					if (!first) {
+						sb.append(',');
+					} else {
+						first = false;
+					}
+					sb.append(l);
+				}
+				sb.append(']');
+			}
+			if (!data.lifetimeParameters.isEmpty()) {
+				sb.append('<');
+				boolean first = true;
+				for (String l : data.lifetimeParameters) {
+					if (!first) {
+						sb.append(',');
+					} else {
+						first = false;
+					}
+					sb.append(l);
+				}
+				sb.append('>');
+			}
+			sb.append('(');
+			sb.append(parameters);
+			sb.append(")->(");
+			sb.append(returns);
+			sb.append(')');
+			middle = sb.toString();
+			break;
+		}
+		default:
+			throw new IllegalArgumentException("Invalid type encountered (kind: " + state.kind +")");
+		}
+
+		// Finally, check whether this is a header node, or not. If it is a
+		// header then we need to insert the recursive type.
+		String header = headers[index];
+		if(header != null) {
+			// The following case is interesting. Basically, we'll never revisit
+			// a header. Therefore, if we have multiple edges landing on a
+			// header we must update the header string to represent the full
+			// type reachable from the header.
+			String r = header + "<" + middle + ">";
+			headers[index] = r;
+			return r;
+		} else {
+			return middle;
+		}
+	}
+
+	private final static String toBracesString(int index, BitSet visited,
+			String[] headers, Automaton automaton) {
+		if (visited.get(index)) {
+			// node already visited
+			return headers[index];
+		}
+		String middle = toString(index,visited,headers,automaton);
+		State state = automaton.states[index];
+		switch(state.kind) {
+			case K_UNION:
+			case K_FUNCTION:
+			case K_METHOD:
+				return "(" + middle + ")";
+			default:
+				return middle;
+		}
+	}
+
+	/**
+	 * The following method traverses the graph using a depth-first
+	 * search to identify nodes which are "loop headers". That is, they are the
+	 * target of one or more recursive edges in the graph.
+	 *
+	 * @param index
+	 *            --- the index to search from.
+	 * @param visited
+	 *            --- the set of vertices already visited.
+	 * @param onStack
+	 *            --- the set of nodes currently on the DFS path from the root.
+	 * @param headers
+	 *            --- header nodes discovered during this search are set to true
+	 *            in this bitset.
+	 * @param automaton
+	 *            --- the automaton we're traversing.
+	 */
+	private final static void findHeaders(int index, BitSet visited,
+			BitSet onStack, BitSet headers, Automaton automaton) {
+		if(visited.get(index)) {
+			// node already visited
+			if(onStack.get(index)) {
+				headers.set(index);
+			}
+			return;
+		}
+		onStack.set(index);
+		visited.set(index);
+		State state = automaton.states[index];
+		for(int child : state.children) {
+			findHeaders(child,visited,onStack,headers,automaton);
+		}
+		onStack.set(index,false);
+	}
+
+	private static final char[] headers = { 'X','Y','Z','U','V','W','L','M','N','O','P','Q','R','S','T'};
+	private static String headerTitle(int count) {
+		String r = Character.toString(headers[count%headers.length]);
+		int n = count / headers.length;
+		if(n > 0) {
+			return r + n;
+		} else {
+			return r;
+		}
+	}
+
+
+	public static final byte K_VOID = 0;
+	public static final byte K_ANY = 1;
+	public static final byte K_META = 2;
+	public static final byte K_NULL = 3;
+	public static final byte K_BOOL = 4;
+	public static final byte K_BYTE = 5;
+	public static final byte K_CHAR = 6;
+	public static final byte K_INT = 7;
+	public static final byte K_RATIONAL = 8;
+	public static final byte K_STRING = 9;
+	public static final byte K_TUPLE = 10;
+	public static final byte K_SET = 11;
+	public static final byte K_LIST = 12;
+	public static final byte K_MAP = 13;
+	public static final byte K_REFERENCE = 14;
+	public static final byte K_RECORD = 15;
+	public static final byte K_UNION = 16;
+	public static final int K_INTERSECTION = 17;
+	public static final byte K_NEGATION = 18;
+	public static final byte K_FUNCTION = 19;
+	public static final byte K_METHOD = 20;
+	public static final byte K_NOMINAL = 21;
 }

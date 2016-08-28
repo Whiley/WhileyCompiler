@@ -25,9 +25,10 @@
 
 package wyil.util.type;
 
-import static wyil.lang.Type.*;
+import static wyil.util.TypeSystem.*;
 import wyautl_old.lang.*;
 import wyil.lang.Type;
+import wyil.util.TypeSystem;
 
 /**
  * <p>
@@ -126,8 +127,8 @@ public class ExplicitCoercionOperator extends SubtypeOperator {
 		if(fromSign || toSign) {
 			int[] fromChildren = fromState.children;
 			int[] toChildren = toState.children;
-			Type.Record.State fromFields = (Type.Record.State) fromState.data;
-			Type.Record.State toFields = (Type.Record.State) toState.data;
+			TypeSystem.RecordState fromFields = (TypeSystem.RecordState) fromState.data;
+			TypeSystem.RecordState toFields = (TypeSystem.RecordState) toState.data;
 
 			boolean fromOpen = true; // to force explicit coercions
 			boolean toOpen = true;   // to force explicit coercions

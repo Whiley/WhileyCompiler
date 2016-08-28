@@ -17,8 +17,8 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
+import wyc.Activator;
 import wyc.commands.Compile;
-import wyil.Main.Registry;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.lang.Type;
@@ -108,15 +108,15 @@ public class TestUtils {
 	 * @throws IOException
 	 */
 	public static void execWyil(String wyilDir, Path.ID id) throws IOException {
-		Type.Method sig = Type.Method(Collections.<Type>emptyList(), Collections.<String>emptySet(),
-				Collections.<String>emptyList(), Collections.<Type>emptyList());
+		Type.Method sig = new Type.Method(Collections.<String>emptyList(), Collections.<String>emptySet(),
+				Collections.<Type>emptyList(), Collections.<Type>emptyList());
 		NameID name = new NameID(id,"test");
 		Build.Project project = initialiseProject(wyilDir);
 		new Interpreter(project,null).execute(name,sig);
 	}
 
 	private static Build.Project initialiseProject(String wyilDir) throws IOException {
-		Content.Registry registry = new Registry();
+		Content.Registry registry = new Activator.Registry();
 		DirectoryRoot wyilRoot = new DirectoryRoot(wyilDir,registry);
 		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 		roots.add(wyilRoot);

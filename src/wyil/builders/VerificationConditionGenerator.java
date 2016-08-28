@@ -2298,7 +2298,7 @@ public class VerificationConditionGenerator {
 			return new SyntacticType.List(element);
 		} else if (type instanceof Type.Record) {
 			Type.Record rt = (Type.Record) type;
-			HashMap<String, Type> fields = rt.fields();
+			Map<String, Type> fields = rt.fields();
 			ArrayList<String> names = new ArrayList<String>(fields.keySet());
 			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();
 			Collections.sort(names);
@@ -2312,7 +2312,7 @@ public class VerificationConditionGenerator {
 			return new SyntacticType.Any();
 		} else if (type instanceof Type.Union) {
 			Type.Union tu = (Type.Union) type;
-			HashSet<Type> tu_elements = tu.bounds();
+			List<Type> tu_elements = tu.bounds();
 			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();
 			for (Type te : tu_elements) {
 				elements.add(convert(te, context));

@@ -53,8 +53,8 @@ public class Run extends AbstractProjectCommand<Run.Result> {
 		try {
 			StdProject project = initialiseProject();
 			Path.ID id = Trie.fromString(args[0]);
-			Type.Method sig = Type.Method(Collections.<Type> emptyList(), Collections.<String> emptySet(),
-					Collections.<String> emptyList(), Collections.<Type> emptyList());
+			Type.Method sig = new Type.Method(Collections.<String> emptyList(), Collections.<String> emptySet(),
+					Collections.<Type> emptyList(), Collections.<Type> emptyList());
 			NameID name = new NameID(id, args[1]);
 			executeFunctionOrMethod(name, sig, project);
 		} catch (IOException e) {

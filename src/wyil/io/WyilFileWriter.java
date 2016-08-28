@@ -328,12 +328,90 @@ public final class WyilFileWriter {
 	}
 
 	private void writeTypePool(BinaryOutputStream output) throws IOException {
-		Type.BinaryWriter bout = new Type.BinaryWriter(output);
-		for (Type t : typePool) {
-			bout.write(t);
+		for (Type type : typePool) {
+			if (type instanceof Type.Any) {
+				output.write_uv(TYPE_Any);
+			} else if (type instanceof Type.Void) {
+				output.write_uv(TYPE_Void);
+			} else if (type instanceof Type.Null) {
+				output.write_uv(TYPE_Null);
+			} else if (type instanceof Type.Bool) {
+				output.write_uv(TYPE_Bool);
+			} else if (type instanceof Type.Byte) {
+				output.write_uv(TYPE_Byte);
+			} else if (type instanceof Type.Int) {
+				output.write_uv(TYPE_Int);
+			} else if (type instanceof Type.Meta) {
+				output.write_uv(TYPE_Type);
+			} else if (type instanceof Type.Nominal) {
+				output.write_uv(TYPE_Nominal);
+			} else if (type instanceof Type.Reference) {
+				Type.Reference t = (Type.Reference) type;
+				output.write_uv(TYPE_Reference);
+				output.write_uv(typeCache.get(t.element()));
+				output.write_uv(stringCache.get(t.lifetime()));
+			} else if (type instanceof Type.Nominal) {
+				Type.Nominal t = (Type.Nominal) type;
+				output.write_uv(TYPE_Nominal);
+				output.write_uv(nameCache.get(t.name()));
+			} else if (type instanceof Type.Array) {
+				Type.Array t = (Type.Array) type;
+				output.write_uv(TYPE_Array);
+				output.write_uv(typeCache.get(t.element()));
+			} else if (type instanceof Type.Record) {
+				Type.Record t = (Type.Record) type;
+				Map<String,Type> t_fields = t.fields();
+				output.write_uv(TYPE_Record);
+				output.write_uv(t_fields.size());
+				output.write_bit(t.isOpen());
+				for(Map.Entry<String, Type> e : t_fields.entrySet()) {
+					output.write_uv(stringCache.get(e.getKey()));
+					output.write_uv(typeCache.get(e.getValue()));
+				}
+			} else if (type instanceof Type.Function) {
+				Type.Function t = (Type.Function) type;
+				output.write_uv(TYPE_Function);
+				writeTypes(t.params(),output);
+				writeTypes(t.returns(),output);
+			} else if (type instanceof Type.Method) {
+				Type.Method t = (Type.Method) type;
+				output.write_uv(TYPE_Method);
+				writeStrings(t.lifetimeParams(),output);
+				writeStrings(t.contextLifetimes(),output);
+				writeTypes(t.params(),output);
+				writeTypes(t.returns(),output);
+			} else if (type instanceof Type.Union) {
+				Type.Union t = (Type.Union) type;				
+				output.write_uv(TYPE_Union);
+				writeTypes(t.bounds(),output);
+			} else if (type instanceof Type.Intersection) {
+				Type.Intersection t = (Type.Intersection) type;				
+				output.write_uv(TYPE_Intersection);
+				writeTypes(t.bounds(),output);
+			} else if (type instanceof Type.Negation) {
+				Type.Negation t = (Type.Negation) type;
+				output.write_uv(TYPE_Negation);
+				output.write_uv(typeCache.get(t.element()));
+			} else {
+				throw new RuntimeException("Unknown type encountered - " + type);
+			}
 		}
 	}
 
+	private void writeTypes(Collection<Type> types, BinaryOutputStream output) throws IOException {
+		output.write_uv(types.size());
+		for(Type b: types) {
+			output.write_uv(typeCache.get(b));
+		}
+	}
+	
+	private void writeStrings(Collection<String> strings, BinaryOutputStream output) throws IOException {
+		output.write_uv(strings.size());
+		for(String str : strings) {
+			output.write_uv(stringCache.get(str));
+		}
+	}
+	
 	private byte[] generateModuleBlock(WyilFile module) throws IOException {
 		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 		BinaryOutputStream output = new BinaryOutputStream(bytes);
@@ -876,7 +954,7 @@ public final class WyilFileWriter {
 			return index;
 		}
 	}
-
+	
 	private int addStringItem(String string) {
 		Integer index = stringCache.get(string);
 		if (index == null) {
@@ -888,7 +966,13 @@ public final class WyilFileWriter {
 			return index;
 		}
 	}
-
+	
+	private void addStringItems(Collection<String> strings) {
+		for(String string : strings) {
+			addStringItem(string);
+		}
+	}
+	
 	private int addPathItem(Path.ID pid) {
 		Integer index = pathCache.get(pid);
 		if (index == null) {
@@ -903,13 +987,13 @@ public final class WyilFileWriter {
 	}
 
 	private int addTypeItem(Type t) {
-
-		// TODO: this could be made way more efficient. In particular, we should
-		// combine resources into a proper aliased pool rather than write out
-		// types individually ... because that's sooooo inefficient!
-
 		Integer index = typeCache.get(t);
 		if (index == null) {
+			// All subitems must have lower indices than the containing item.
+			// So, we must add subitems first before attempting to allocate a
+			// place for this value.
+			addTypeSubitems(t);
+			// finally allocate space for this type
 			int i = typePool.size();
 			typeCache.put(t, i);
 			typePool.add(t);
@@ -918,7 +1002,52 @@ public final class WyilFileWriter {
 			return index;
 		}
 	}
-
+	
+	private void addTypeItems(Collection<Type> types) {
+		for(Type type : types) {
+			addTypeItem(type);
+		}
+	}
+	
+	private void addTypeSubitems(Type type) {
+		if(type instanceof Type.Nominal) {
+			Type.Nominal t = (Type.Nominal) type;
+			addNameItem(t.name());
+		} else if(type instanceof Type.Array) {
+			Type.Array t = (Type.Array) type;
+			addTypeItem(t.element());
+		} else if(type instanceof Type.Reference) {
+			Type.Reference t = (Type.Reference) type;
+			addTypeItem(t.element());
+			addStringItem(t.lifetime());
+		} else if(type instanceof Type.Record) {
+			Type.Record t = (Type.Record) type;
+			for(Map.Entry<String, Type> e : t.fields().entrySet()) {
+				addStringItem(e.getKey());
+				addTypeItem(e.getValue());
+			}
+		} else if(type instanceof Type.Function) {
+			Type.FunctionOrMethod t = (Type.Function) type;
+			addTypeItems(t.params());
+			addTypeItems(t.returns());
+		} else if(type instanceof Type.Method) {
+			Type.FunctionOrMethod t = (Type.Method) type;
+			addStringItems(t.contextLifetimes());
+			addStringItems(t.lifetimeParams());
+			addTypeItems(t.params());
+			addTypeItems(t.returns());
+		} else if(type instanceof Type.Union) {
+			Type.Union t = (Type.Union) type;
+			addTypeItems(t.bounds());
+		} else if(type instanceof Type.Intersection) {
+			Type.Intersection t = (Type.Intersection) type;
+			addTypeItems(t.bounds());
+		} else if(type instanceof Type.Negation) {
+			Type.Negation t = (Type.Negation) type;
+			addTypeItem(t.element());
+		}
+	}
+	
 	private int addConstantItem(Constant v) {
 
 		Integer index = constantCache.get(v);
@@ -1051,14 +1180,32 @@ public final class WyilFileWriter {
 	public final static int CONSTANT_False = 2;
 	public final static int CONSTANT_Byte = 3;
 	public final static int CONSTANT_Int = 5;
-	// public final static int CONSTANT_Real = 6;
-	// public final static int CONSTANT_Set = 7;
 	public final static int CONSTANT_Array = 9;
 	public final static int CONSTANT_Record = 10;
-	// public final static int CONSTANT_Tuple = 11;
 	public final static int CONSTANT_Type = 12;
 	public final static int CONSTANT_Function = 13;
 	public final static int CONSTANT_Method = 14;
+
+	// =========================================================================
+	// TYHPE identifiers
+	// =========================================================================
+
+	public final static int TYPE_Any = 0;
+	public final static int TYPE_Void = 1;
+	public final static int TYPE_Null = 2;
+	public final static int TYPE_Bool = 3;
+	public final static int TYPE_Byte = 4;
+	public final static int TYPE_Int = 5;
+	public final static int TYPE_Type = 6;
+	public final static int TYPE_Nominal = 7;
+	public final static int TYPE_Reference = 8;
+	public final static int TYPE_Array = 9;
+	public final static int TYPE_Record = 10;	
+	public final static int TYPE_Function = 11;
+	public final static int TYPE_Method = 12;
+	public final static int TYPE_Union = 13;
+	public final static int TYPE_Intersection = 14;
+	public final static int TYPE_Negation = 15;
 
 	// =========================================================================
 	// MODIFIER identifiers
