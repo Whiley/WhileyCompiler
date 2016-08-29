@@ -519,15 +519,9 @@ public final class TypeAlgorithms {
 			return simplifyReference(index, state, automaton, inhabitationFlags);
 		case TypeSystem.K_LIST:
 		case TypeSystem.K_SET:
-			// for list and set types, we want to simplify the following cases:
-			// [void+] => void
-			// {void+} => void
-			boolean nonEmpty = (Boolean) state.data;
-			if(!nonEmpty) {
-				// type of form [T], so no further simplication needed
-				// All non-empty lists and sets contain the empty list or set
-				return setStateInhabitation(index, automaton, inhabitationFlags, Inhabitation.SOME);
-			}
+			// void[]
+			// All non-empty lists and sets contain the empty list or set
+			return setStateInhabitation(index, automaton, inhabitationFlags, Inhabitation.SOME);
 			// list/set type of form [T+] so fall through to simplify like other compounds.
 		case TypeSystem.K_RECORD:
 		case TypeSystem.K_TUPLE:

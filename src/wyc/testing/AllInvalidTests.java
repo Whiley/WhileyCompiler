@@ -64,7 +64,7 @@ public class AllInvalidTests {
 	 */
 	public final static Map<String, String> IGNORED = new HashMap<String, String>();
 
-	static {		
+	static {
 		IGNORED.put("Constant_Invalid_1", "unclassified");
 		IGNORED.put("ConstrainedArray_Invalid_1", "#666");
 		IGNORED.put("ConstrainedArray_Invalid_3", "#666");
@@ -79,6 +79,7 @@ public class AllInvalidTests {
 		IGNORED.put("ConstrainedInt_Invalid_9", "#666");
 		IGNORED.put("ConstrainedRecord_Invalid_1", "#666");
 		IGNORED.put("Export_Invalid_1", "unclassified");
+		IGNORED.put("Fail_Invalid_3", "unclassified");
 		IGNORED.put("Function_Invalid_2", "unclassified");
 		IGNORED.put("Function_Invalid_4", "#667");
 		IGNORED.put("Function_Invalid_9", "unclassified");
@@ -86,16 +87,14 @@ public class AllInvalidTests {
 		IGNORED.put("MethodCall_Invalid_5", "#667");
 		IGNORED.put("MethodCall_Invalid_6", "#667");
 		IGNORED.put("MethodCall_Invalid_7", "#667");
-		IGNORED.put("MethodCall_Invalid_8", "#667");				
-		IGNORED.put("MethodRef_Invalid_1", "#667");		
-		IGNORED.put("MethodRef_Invalid_3", "#667");		
+		IGNORED.put("MethodCall_Invalid_8", "#667");
+		IGNORED.put("MethodRef_Invalid_1", "#667");
+		IGNORED.put("MethodRef_Invalid_3", "#667");
 		IGNORED.put("Native_Invalid_1", "unclassified");
 		IGNORED.put("OpenRecord_Invalid_2", "unclassified");
 		IGNORED.put("Parsing_Invalid_15", "609");
 		IGNORED.put("Parsing_Invalid_1", "608");
 		IGNORED.put("Parsing_Invalid_2", "608");
-		IGNORED.put("Parsing_Invalid_27", "609");
-		IGNORED.put("Parsing_Invalid_28", "609");
 		IGNORED.put("Parsing_Invalid_31", "610");
 		IGNORED.put("RecursiveType_Invalid_10", "#666");
 		IGNORED.put("RecursiveType_Invalid_1", "unclassified");
@@ -118,7 +117,8 @@ public class AllInvalidTests {
 		IGNORED.put("TupleDefine_Invalid_2", "#666");
 		IGNORED.put("Tuple_Invalid_3", "#666");
 		IGNORED.put("Tuple_Invalid_4", "#666");
-		IGNORED.put("Tuple_Invalid_5", "#666");		
+		IGNORED.put("Tuple_Invalid_5", "#666");
+		IGNORED.put("TypeEquals_Invalid_1", "#681");
 		IGNORED.put("TypeEquals_Invalid_5", "#666");
 		IGNORED.put("TypeEquals_Invalid_6", "#666");
 		IGNORED.put("UnionType_Invalid_10", "#469");
@@ -145,7 +145,7 @@ public class AllInvalidTests {
 	 * @param name
 	 *            Name of the test to run. This must correspond to a whiley
 	 *            source file in the <code>WHILEY_SRC_DIR</code> directory.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	protected void runTest(String name) throws IOException {
 		// this will need to turn on verification at some point.

@@ -136,5 +136,17 @@ public class LifetimeRelation {
 		}
 	}
 
+	@Override
+	public String toString() {
+		String r = "";
+		for(int i=0;i!=blocks.size();++i) {
+			if(i != 0) {
+				r += " :> ";
+			}
+			r = r + blocks.get(i);
+		}
+		return r;
+	}
+
 	public final static LifetimeRelation EMPTY = new LifetimeRelation();
 }

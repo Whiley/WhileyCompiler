@@ -82,6 +82,7 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 		this.typeSystem = new TypeSystem(builder.project());
 	}
 
+	@Override
 	public void apply(WyilFile module) {
 		this.file = module;
 
@@ -147,12 +148,10 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 		} else if(from instanceof Type.Record && to instanceof Type.Record) {
 			Type.Record t1 = (Type.Record) from;
 			Type.Record t2 = (Type.Record) to;
-			Map<String,Type> t1_elements = t1.fields();
-			Map<String,Type> t2_elements = t2.fields();
-			ArrayList<String> fields = new ArrayList<String>(t2.keys());
+			String[] fields = t1.getFieldNames();
 			for(String s : fields) {
-				Type e1 = t1_elements.get(s);
-				Type e2 = t2_elements.get(s);
+				Type e1 = t1.getField(s);
+				Type e2 = t2.getField(s);
 				check(e1,e2,visited,element);
 			}
 		} else if(from instanceof Type.Function && to instanceof Type.Function) {
@@ -212,12 +211,12 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 			}
 		}
 	}
-	
-	private void check(List<Type> params1, List<Type> params2, HashSet<Pair<Type, Type>> visited,
+
+	private void check(Type[] params1, Type[] params2, HashSet<Pair<Type, Type>> visited,
 			SyntacticElement element) throws ResolveError {
-		for (int i = 0; i != params1.size(); ++i) {
-			Type e1 = params1.get(i);
-			Type e2 = params2.get(i);
+		for (int i = 0; i != params1.length; ++i) {
+			Type e1 = params1[i];
+			Type e2 = params2[i];
 			check(e1, e2, visited, element);
 		}
 	}

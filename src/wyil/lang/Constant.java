@@ -29,6 +29,7 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wybs.lang.NameID;
+import wycc.util.Pair;
 
 public abstract class Constant implements Comparable<Constant> {
 
@@ -41,37 +42,42 @@ public abstract class Constant implements Comparable<Constant> {
 	 * The Bool true constant
 	 */
 	public static final Bool True = new Constant.Bool(true);
-	
+
 	/**
 	 * The Bool false constant
 	 */
 	public static final Bool False = new Constant.Bool(false);
-	
+
 	/**
 	 * Get the appropriate Bool constant corresponding to a Java boolean.
-	 * 
+	 *
 	 * @param f
 	 * @return
 	 */
 	public static final Bool Bool(boolean f) {
 		return f ? True : False;
 	}
-	
+
 	public abstract wyil.lang.Type type();
 
 	public static final class Null extends Constant {
+		@Override
 		public wyil.lang.Type type() {
 			return wyil.lang.Type.T_NULL;
 		}
+		@Override
 		public int hashCode() {
 			return 0;
 		}
+		@Override
 		public boolean equals(Object o) {
 			return o instanceof Null;
 		}
+		@Override
 		public String toString() {
 			return "null";
 		}
+		@Override
 		public int compareTo(Constant v) {
 			if(v instanceof Null) {
 				return 0;
@@ -86,12 +92,15 @@ public abstract class Constant implements Comparable<Constant> {
 		private Bool(boolean value) {
 			this.value = value;
 		}
+		@Override
 		public wyil.lang.Type type() {
 			return wyil.lang.Type.T_BOOL;
 		}
+		@Override
 		public int hashCode() {
 			return value ? 1 : 0;
 		}
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof Bool) {
 				Bool i = (Bool) o;
@@ -99,6 +108,7 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 			return false;
 		}
+		@Override
 		public int compareTo(Constant v) {
 			if(v instanceof Bool) {
 				Bool b = (Bool) v;
@@ -112,6 +122,7 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 			return -1;
 		}
+		@Override
 		public String toString() {
 			if(value) { return "true"; }
 			else {
@@ -128,12 +139,15 @@ public abstract class Constant implements Comparable<Constant> {
 		public Byte(byte value) {
 			this.value = value;
 		}
+		@Override
 		public wyil.lang.Type type() {
 			return wyil.lang.Type.T_BYTE;
 		}
+		@Override
 		public int hashCode() {
 			return value;
 		}
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof Byte) {
 				Byte i = (Byte) o;
@@ -141,6 +155,7 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 			return false;
 		}
+		@Override
 		public int compareTo(Constant v) {
 			if(v instanceof Byte) {
 				Byte i = (Byte) v;
@@ -156,6 +171,7 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 			return -1;
 		}
+		@Override
 		public String toString() {
 			String r = "b";
 			byte v = value;
@@ -179,12 +195,15 @@ public abstract class Constant implements Comparable<Constant> {
 		public Integer(BigInteger value) {
 			this.value = value;
 		}
+		@Override
 		public wyil.lang.Type type() {
 			return wyil.lang.Type.T_INT;
 		}
+		@Override
 		public int hashCode() {
 			return value.hashCode();
 		}
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof Integer) {
 				Integer i = (Integer) o;
@@ -192,6 +211,7 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 			return false;
 		}
+		@Override
 		public int compareTo(Constant v) {
 			if(v instanceof Integer) {
 				Integer i = (Integer) v;
@@ -201,6 +221,7 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 			return -1;
 		}
+		@Override
 		public String toString() {
 			return value.toString();
 		}
@@ -214,16 +235,19 @@ public abstract class Constant implements Comparable<Constant> {
 		public Array(Collection<Constant> value) {
 			this.values = new ArrayList<Constant>(value);
 		}
-		public wyil.lang.Type.Array type() {
+		@Override
+		public wyil.lang.Type type() {
 			wyil.lang.Type t = wyil.lang.Type.T_VOID;
 			for(Constant arg : values) {
 				t = wyil.lang.Type.Union(t,arg.type());
 			}
-			return new wyil.lang.Type.Array(t);
+			return wyil.lang.Type.Array(t);
 		}
+		@Override
 		public int hashCode() {
 			return values.hashCode();
 		}
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof Array) {
 				Array i = (Array) o;
@@ -231,6 +255,7 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 			return false;
 		}
+		@Override
 		public int compareTo(Constant v) {
 			if(v instanceof Array) {
 				Array l = (Array) v;
@@ -253,6 +278,7 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 			return -1;
 		}
+		@Override
 		public String toString() {
 			String r = "[";
 			boolean firstTime=true;
@@ -276,16 +302,19 @@ public abstract class Constant implements Comparable<Constant> {
 			this.values = new HashMap<String,Constant>(value);
 		}
 
-		public wyil.lang.Type.Record type() {
-			HashMap<String, wyil.lang.Type> types = new HashMap<String, wyil.lang.Type>();
+		@Override
+		public wyil.lang.Type type() {
+			ArrayList<Pair<wyil.lang.Type,String>> types = new ArrayList<Pair<wyil.lang.Type,String>>();
 			for (java.util.Map.Entry<String, Constant> e : values.entrySet()) {
-				types.put(e.getKey(), e.getValue().type());
+				types.add(new Pair<>(e.getValue().type(),e.getKey()));
 			}
-			return new wyil.lang.Type.Record(types,false);
+			return wyil.lang.Type.Record(false,types);
 		}
+		@Override
 		public int hashCode() {
 			return values.hashCode();
 		}
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof Record) {
 				Record i = (Record) o;
@@ -293,6 +322,7 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 			return false;
 		}
+		@Override
 		public int compareTo(Constant v) {
 			if(v instanceof Record) {
 				Record l = (Record) v;
@@ -324,6 +354,7 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 			return -1;
 		}
+		@Override
 		public String toString() {
 			String r = "{";
 			boolean firstTime=true;
@@ -349,12 +380,15 @@ public abstract class Constant implements Comparable<Constant> {
 		public Type(wyil.lang.Type type) {
 			this.value = type;
 		}
-		public wyil.lang.Type.Meta type() {
+		@Override
+		public wyil.lang.Type type() {
 			return wyil.lang.Type.T_META;
 		}
+		@Override
 		public int hashCode() {
 			return value.hashCode();
 		}
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof Type) {
 				Type i = (Type) o;
@@ -362,6 +396,7 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 			return false;
 		}
+		@Override
 		public int compareTo(Constant v) {
 			if(v instanceof Type) {
 				Type t = (Type) v;
@@ -371,6 +406,7 @@ public abstract class Constant implements Comparable<Constant> {
 				return 1; // everything is above a type constant
 			}
 		}
+		@Override
 		public String toString() {
 			return value.toString();
 		}
@@ -382,7 +418,7 @@ public abstract class Constant implements Comparable<Constant> {
 	/**
 	 * Represents a named function or method. This is used when taking the
 	 * address of a function or method.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -390,7 +426,7 @@ public abstract class Constant implements Comparable<Constant> {
 		private final NameID name;
 		private final wyil.lang.Type.FunctionOrMethod type;
 		private final ArrayList<Constant> arguments;
-		
+
 		public FunctionOrMethod(NameID name, wyil.lang.Type.FunctionOrMethod type, Constant... arguments) {
 			this.name = name;
 			this.type = type;
@@ -405,10 +441,12 @@ public abstract class Constant implements Comparable<Constant> {
 			this.type = type;
 			this.arguments = new ArrayList<Constant>(arguments);
 		}
-		
+
+		@Override
 		public wyil.lang.Type.FunctionOrMethod type() {
-			return type;			
+			return type;
 		}
+		@Override
 		public int hashCode() {
 			if(type != null) {
 				return type.hashCode() + name.hashCode() + arguments.hashCode();
@@ -416,6 +454,7 @@ public abstract class Constant implements Comparable<Constant> {
 				return name.hashCode();
 			}
 		}
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof FunctionOrMethod) {
 				FunctionOrMethod i = (FunctionOrMethod) o;
@@ -425,6 +464,7 @@ public abstract class Constant implements Comparable<Constant> {
 			}
 			return false;
 		}
+		@Override
 		public int compareTo(Constant v) {
 			if(v instanceof FunctionOrMethod) {
 				FunctionOrMethod t = (FunctionOrMethod) v;
@@ -434,7 +474,8 @@ public abstract class Constant implements Comparable<Constant> {
 				return 1; // everything is above a type constant
 			}
 		}
-		public String toString() {			
+		@Override
+		public String toString() {
 			String args = "";
 			boolean firstTime=true;
 			for(Constant arg : arguments) {
@@ -447,7 +488,7 @@ public abstract class Constant implements Comparable<Constant> {
 				} else {
 					args += arg.toString();
 				}
-				
+
 			}
 			return "&" + name.toString() + "(" + args + "):" + type.toString();
 		}

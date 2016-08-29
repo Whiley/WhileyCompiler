@@ -27,7 +27,7 @@ import wyil.lang.WyilFile;
 public class Compile extends AbstractProjectCommand<Compile.Result> {
 
 	/**
-	 * Result kind for this command 
+	 * Result kind for this command
 	 *
 	 */
 	public enum Result {
@@ -35,7 +35,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		ERRORS,
 		INTERNAL_FAILURE
 	}
-	
+
 	/**
 	 * List of configuration options recognised by this command
 	 */
@@ -44,24 +44,24 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			"verify",
 			"brief"
 	};
-	
+
 	/**
 	 * Provides a generic place to which normal output should be directed. This
 	 * should eventually be replaced.
 	 */
 	private final PrintStream sysout;
-	
+
 	/**
 	 * Provides a generic place to which error output should be directed. This
 	 * should eventually be replaced.
 	 */
 	private final PrintStream syserr;
-	
+
 	/**
 	 * Signals that verbose output should be produced.
 	 */
 	private boolean verbose = false;
-	
+
 	/**
 	 * Signals that brief error reporting should be used. This is primarily used
 	 * to help integration with external tools. More specifically, brief output
@@ -77,11 +77,11 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 
 	/**
 	 * Construct a new instance of this command.
-	 * 
+	 *
 	 * @param registry
 	 *            The content registry being used to match files to content
 	 *            types.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public Compile(Content.Registry registry, Logger logger) {
 		super(registry, logger, configOptions);
@@ -91,18 +91,18 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 
 	/**
 	 * Construct a new instance of this command.
-	 * 
+	 *
 	 * @param registry
 	 *            The content registry being used to match files to content
 	 *            types.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public Compile(Content.Registry registry, Logger logger, OutputStream sysout, OutputStream syserr) {
 		super(registry, logger, configOptions);
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
 	}
-	
+
 	// =======================================================================
 	// Configuration
 	// =======================================================================
@@ -122,7 +122,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	public void setVerbose() {
 		verbose = true;
 	}
-	
+
 	public String describeBrief() {
 		return "Enable brief reporting of error messages";
 	}
@@ -139,7 +139,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	// =======================================================================
 	// Execute
 	// =======================================================================
-	
+
 	@Override
 	public Result execute(String... args) {
 		// Initialise Project
@@ -184,7 +184,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		} catch(SyntaxError e) {
 			e.outputSourceError(syserr,brief);
 			if (verbose) {
-				printStackTrace(syserr,e);				
+				printStackTrace(syserr,e);
 			}
 			return Result.ERRORS;
 		} catch(Exception e) {
@@ -196,17 +196,17 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	// =======================================================================
 	// Helpers
 	// =======================================================================
-	
-	
+
+
 
 	/**
 	 * Add build rules necessary for compiling whiley source files into binary
 	 * wyil files.
-	 * 
+	 *
 	 * @param project
 	 */
 	private void addCompilationBuildRules(StdProject project) {
-		// Configure build rules for normal compilation		
+		// Configure build rules for normal compilation
 		Content.Filter<WhileyFile> whileyIncludes = Content.filter("**", WhileyFile.ContentType);
 		Content.Filter<WhileyFile> whileyExcludes = null;
 		// Rule for compiling Whiley to WyIL
@@ -218,7 +218,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	/**
 	 * Add build rules necessary for compiling wyil binary files into wyal files
 	 * for verification.
-	 * 
+	 *
 	 * @param project
 	 */
 	private void addVerificationBuildRules(StdProject project) {
@@ -229,6 +229,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		Content.Filter<WyalFile> wyalExcludes = null;
 		// Rule for compiling WyIL to WyAL
 		Wyil2WyalBuilder wyalBuilder = new Wyil2WyalBuilder(project);
+		wyalBuilder.setLogger(logger);
 		project.add(new StdBuildRule(wyalBuilder, wyildir, wyilIncludes, wyilExcludes, wyaldir));
 		// Rule for compiling WyAL to WyCS
 		Wyal2WycsBuilder wycsBuilder = new Wyal2WycsBuilder(project);
@@ -238,13 +239,13 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	/**
 	 * Print a complete stack trace. This differs from
 	 * Throwable.printStackTrace() in that it always prints all of the trace.
-	 * 
+	 *
 	 * @param out
 	 * @param err
 	 */
 	private static void printStackTrace(PrintStream out, Throwable err) {
 		out.println(err.getClass().getName() + ": " + err.getMessage());
-		for(StackTraceElement ste : err.getStackTrace()) {			
+		for(StackTraceElement ste : err.getStackTrace()) {
 			out.println("\tat " + ste.toString());
 		}
 		if(err.getCause() != null) {

@@ -228,27 +228,28 @@ public class SubtypeOperator {
 					} else {
 						String fromLifetime = applyFromLifetimeSubstitution((String) fromState.data);
 						String toLifetime = applyToLifetimeSubstitution((String) toState.data);
-
+						//
 						if (fromSign) {
-							// Equivalent to the negation of "is &a:A (fromType) a subtype of &b:B (toType)?"
+							// A & !B ==> !!(A & !B)
+							// &from:T1 & !(&to:T2) ==> not (&from:T1) <: (&to:T2).
 							return !(
-								// &a:A is a subtype of &b:B iff all these are true:
-								// a outlives b
+								// &from:T1 is a subtype of &to:T2 iff all these are true:
+								// from outlives to
 								lifetimeRelation.outlives(fromLifetime, toLifetime)
-								// A is a subtype of B
+								// T1 is a subtype of T2
 								&& !isIntersection(fromChild, true, toChild, false)
-								// B is a subtype of A
+								// T2 is a subtype of T1
 								&& !isIntersection(fromChild, false, toChild, true)
 							);
 						} else {
-							// Equivalent to the negation of "is &b:B (toType) a subtype of &a:A (fromType)?"
+							// not (&to:T1) <: (&from:T2).
 							return !(
-								// &b:B is a subtype of &a:A iff all these are true:
-								// b outlives a
+								// &to:T1 is a subtype of &from:T2 iff all these are true:
+								// to outlives from
 								lifetimeRelation.outlives(toLifetime, fromLifetime)
-								// B is a subtype of A
+								// T2 is a subtype of T1
 								&& !isIntersection(fromChild, false, toChild, true)
-								// A is a subtype of B
+								// T1 is a subtype of T2
 								&& !isIntersection(fromChild, true, toChild, false)
 							);
 						}

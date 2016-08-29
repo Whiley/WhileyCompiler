@@ -6,8 +6,8 @@ function f(IntList y) -> IntList:
     return y
 
 public export method test() :
-    {int|bool op, bool[] rest} x = {op: 1, rest: [false]}
+    IntList x = {op: 1, rest: [false]}
     if 0 == 10:
-        x = {op: false, rest: [false]}
+        x = {op: 0, rest: [false]}
     x.op = 123
     assume f(x) == {op: 123, rest: [false]}

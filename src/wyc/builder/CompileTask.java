@@ -43,6 +43,7 @@ import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.*;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.Context;
+import wycc.util.ArrayUtils;
 import wycc.util.Logger;
 import wycc.util.Pair;
 
@@ -134,13 +135,14 @@ public final class CompileTask implements Build.Task {
 		return "wyc.builder";
 	}
 
+	@Override
 	public Build.Project project() {
 		return project;
 	}
 
 	/**
 	 * Access the type system object this compile task is using.
-	 * 
+	 *
 	 * @return
 	 */
 	public TypeSystem getTypeSystem() {
@@ -479,9 +481,9 @@ public final class CompileTask implements Build.Task {
 	 *
 	 * <pre>
 	 * import whiley.lang.*
-	 * 
+	 *
 	 * type nat is Int.uint
-	 * 
+	 *
 	 * import whiley.ui.*
 	 * </pre>
 	 *
@@ -657,7 +659,7 @@ public final class CompileTask implements Build.Task {
 	 * WhileyFile. The skeleton only includes public type declarations. These
 	 * are needed for resolution, which relies on the ability to extract such
 	 * information from WyilFiles.
-	 * 
+	 *
 	 * @param wf
 	 * @return
 	 */
@@ -669,6 +671,14 @@ public final class CompileTask implements Build.Task {
 				try {
 					Type wyilType = toSemanticType(td.parameter.type, td);
 					WyilFile.Type wyilTypeDecl = new WyilFile.Type(wyilFile, td.modifiers(), td.name(), wyilType);
+					// At this point, if the original type contains an invariant
+					// then we must add a dummy one here. This is critical as,
+					// otherwise, the type system cannot tell that certain types
+					// are constrained.
+					if(td.invariant.size() > 0) {
+						// Add null as a dummy invariant.
+						wyilTypeDecl.getInvariant().add(null);
+					}
 					wyilFile.blocks().add(wyilTypeDecl);
 				} catch (ResolveError e) {
 					throw new SyntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()), whileyFile.getEntry(),
@@ -685,7 +695,7 @@ public final class CompileTask implements Build.Task {
 	 * Convert a Whiley "syntactic" type into a wyil type. This is essentially a
 	 * straightforward process. The only complication is that the names for
 	 * nominal types have to be properly resolved.
-	 * 
+	 *
 	 * @param type
 	 *            The type to be converted
 	 * @return A Wyil Type equivalent to the original Whiley type
@@ -710,55 +720,54 @@ public final class CompileTask implements Build.Task {
 		} else if (type instanceof SyntacticType.Array) {
 			SyntacticType.Array arrT = (SyntacticType.Array) type;
 			Type element = toSemanticType(arrT.element, context);
-			return new Type.Array(element);
+			return Type.Array(element);
 		} else if (type instanceof SyntacticType.Reference) {
 			SyntacticType.Reference refT = (SyntacticType.Reference) type;
 			Type element = toSemanticType(refT.element, context);
-			return new Type.Reference(element, refT.lifetime);
+			return Type.Reference(refT.lifetime,element);
 		} else if (type instanceof SyntacticType.Record) {
 			SyntacticType.Record recT = (SyntacticType.Record) type;
-			HashMap<String, Type> fields = new HashMap<String, Type>();
+			ArrayList<Pair<Type, String>> fields = new ArrayList<Pair<Type, String>>();
 			for (Map.Entry<String, SyntacticType> e : recT.types.entrySet()) {
-				fields.put(e.getKey(), toSemanticType(e.getValue(), context));
+				fields.add(new Pair<>(toSemanticType(e.getValue(), context), e.getKey()));
 			}
-			return new Type.Record(fields,recT.isOpen);
+			return Type.Record(recT.isOpen, fields);
 		} else if (type instanceof SyntacticType.Function) {
 			SyntacticType.Function funT = (SyntacticType.Function) type;
-			ArrayList<Type> parameters = toSemanticTypes(funT.paramTypes, context);
-			ArrayList<Type> returns = toSemanticTypes(funT.returnTypes, context);
-			return new Type.Function(parameters, returns);
+			Type[] parameters = toSemanticTypes(funT.paramTypes, context);
+			Type[] returns = toSemanticTypes(funT.returnTypes, context);
+			return Type.Function(parameters, returns);
 		} else if (type instanceof SyntacticType.Method) {
 			SyntacticType.Method methT = (SyntacticType.Method) type;
-			ArrayList<Type> parameters = toSemanticTypes(methT.paramTypes, context);
-			ArrayList<Type> returns = toSemanticTypes(methT.returnTypes, context);
-			// FIXME: why is a set required here? I feel like this doesn't make
-			// sense.
-			return new Type.Method(methT.lifetimeParameters, new HashSet<String>(methT.contextLifetimes), parameters,
-					returns);
+			String[] lifetimeParameters = ArrayUtils.toStringArray(methT.lifetimeParameters);
+			String[] contextLifetimes = ArrayUtils.toStringArray(methT.contextLifetimes);
+			Type[] parameters = toSemanticTypes(methT.paramTypes, context);
+			Type[] returns = toSemanticTypes(methT.returnTypes, context);
+			return Type.Method(lifetimeParameters, contextLifetimes, parameters, returns);
 		} else if (type instanceof SyntacticType.Union) {
 			SyntacticType.Union unionT = (SyntacticType.Union) type;
 			return Type.Union(toSemanticTypes(unionT.bounds, context));
 		} else if (type instanceof SyntacticType.Intersection) {
-			SyntacticType.Intersection intersectionT = (SyntacticType.Intersection) type;			
+			SyntacticType.Intersection intersectionT = (SyntacticType.Intersection) type;
 			return Type.Intersection(toSemanticTypes(intersectionT.bounds, context));
 		} else if (type instanceof SyntacticType.Negation) {
 			SyntacticType.Negation negT = (SyntacticType.Negation) type;
 			Type element = toSemanticType(negT.element, context);
-			return new Type.Negation(element);
+			return Type.Negation(element);
 		} else if (type instanceof SyntacticType.Nominal) {
 			SyntacticType.Nominal nominalT = (SyntacticType.Nominal) type;
 			NameID name = resolveAsName(nominalT.names, context);
-			return new Type.Nominal(name);
+			return Type.Nominal(name);
 		} else {
 			throw new InternalFailure("invalid type encountered", context.file().getEntry(), type);
 		}
 	}
 
-	private ArrayList<Type> toSemanticTypes(List<? extends SyntacticType> types, WhileyFile.Context context)
+	private Type[] toSemanticTypes(List<? extends SyntacticType> types, WhileyFile.Context context)
 			throws ResolveError, IOException {
-		ArrayList<Type> wyilTypes = new ArrayList<Type>();
-		for (SyntacticType type : types) {
-			wyilTypes.add(toSemanticType(type, context));
+		Type[] wyilTypes = new Type[types.size()];
+		for (int i = 0; i != wyilTypes.length; ++i) {
+			wyilTypes[i] = toSemanticType(types.get(i), context);
 		}
 		return wyilTypes;
 	}

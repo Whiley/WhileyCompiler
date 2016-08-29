@@ -76,19 +76,19 @@ public interface Expr extends SyntacticElement {
 	 * A Multi expression is one which returns multiple values. Certain
 	 * expression forms are permitted to return multiple values and these
 	 * implement Multi.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
 	public interface Multi extends SyntacticElement{
 		/**
 		 * Get all the return types this expression can produce.
-		 * 
+		 *
 		 * @return
 		 */
-		public List<Type> returns();		
+		public List<Type> returns();
 	}
-	
+
 	public static class AbstractVariable extends SyntacticElement.Impl implements Expr, LVal {
 		public final String var;
 
@@ -102,10 +102,12 @@ public interface Expr extends SyntacticElement {
 			this.var = var;
 		}
 
+		@Override
 		public Type result() {
 			return null;
 		}
 
+		@Override
 		public String toString() {
 			return var;
 		}
@@ -122,10 +124,12 @@ public interface Expr extends SyntacticElement {
 			super(var, attributes);
 		}
 
+		@Override
 		public Type result() {
 			return type;
 		}
 
+		@Override
 		public String toString() {
 			return var;
 		}
@@ -151,10 +155,12 @@ public interface Expr extends SyntacticElement {
 			this.value = val;
 		}
 
+		@Override
 		public Type result() {
 			return value.type();
 		}
 
+		@Override
 		public String toString() {
 			return value.toString();
 		}
@@ -182,10 +188,12 @@ public interface Expr extends SyntacticElement {
 			this.expr = expr;
 		}
 
+		@Override
 		public Type result() {
 			return type;
 		}
 
+		@Override
 		public String toString() {
 			return "(" + unresolvedType.toString() + ") " + expr;
 		}
@@ -200,6 +208,7 @@ public interface Expr extends SyntacticElement {
 			this.unresolvedType = val;
 		}
 
+		@Override
 		public Type result() {
 			return Type.T_META;
 		}
@@ -245,6 +254,7 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 
+		@Override
 		public Type.FunctionOrMethod result() {
 			return type;
 		}
@@ -291,6 +301,7 @@ public interface Expr extends SyntacticElement {
 			this.body = body;
 		}
 
+		@Override
 		public Type.FunctionOrMethod result() {
 			return type;
 		}
@@ -316,6 +327,7 @@ public interface Expr extends SyntacticElement {
 			this.rhs = rhs;
 		}
 
+		@Override
 		public Type result() {
 			switch(op) {
 			case EQ:
@@ -335,6 +347,7 @@ public interface Expr extends SyntacticElement {
 			return srcType;
 		}
 
+		@Override
 		public String toString() {
 			return "(" + op + " " + lhs + " " + rhs + ")";
 		}
@@ -345,7 +358,7 @@ public interface Expr extends SyntacticElement {
 			Expr, LVal {
 		public Expr src;
 		public Expr index;
-		public Type.Array srcType;
+		public Type.EffectiveArray srcType;
 
 		public IndexOf(Expr src, Expr index, Attribute... attributes) {
 			super(attributes);
@@ -359,10 +372,12 @@ public interface Expr extends SyntacticElement {
 			this.index = index;
 		}
 
+		@Override
 		public Type result() {
-			return srcType.element();
+			return srcType.getReadableElementType();
 		}
 
+		@Override
 		public String toString() {
 			return src + "[" + index + "]";
 		}
@@ -386,6 +401,7 @@ public interface Expr extends SyntacticElement {
 			this.mhs = mhs;
 		}
 
+		@Override
 		public Type result() {
 			if(op == UOp.ARRAYLENGTH) {
 				return Type.T_INT;
@@ -394,6 +410,7 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 
+		@Override
 		public String toString() {
 			return op + mhs.toString();
 		}
@@ -425,11 +442,12 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 
+		@Override
 		public Type.Array result() {
 			return type;
 		}
 	}
-	
+
 	/**
 	 * Represents an array generator expression, which is of the form:
 	 *
@@ -450,18 +468,19 @@ public interface Expr extends SyntacticElement {
 			this.count = count;
 		}
 
+		@Override
 		public Type.Array result() {
 			return type;
 		}
 	}
-	
+
 	public static class Quantifier extends SyntacticElement.Impl implements Expr {
 		public final QOp cop;
 		public final ArrayList<Triple<String,Expr,Expr>> sources;
 		public Expr condition;
 		public Type type;
 
-		public Quantifier(QOp cop, 
+		public Quantifier(QOp cop,
 				Collection<Triple<String, Expr, Expr>> sources, Expr condition,
 				Attribute... attributes) {
 			super(attributes);
@@ -470,6 +489,7 @@ public interface Expr extends SyntacticElement {
 			this.sources = new ArrayList<Triple<String, Expr, Expr>>(sources);
 		}
 
+		@Override
 		public Type result() {
 			return type;
 		}
@@ -482,7 +502,7 @@ public interface Expr extends SyntacticElement {
 	public static class FieldAccess extends SyntacticElement.Impl implements LVal {
 		public Expr src;
 		public final String name;
-		public Type.Record srcType;
+		public Type.EffectiveRecord srcType;
 
 		public FieldAccess(Expr lhs, String name, Attribute... attributes) {
 			super(attributes);
@@ -497,10 +517,12 @@ public interface Expr extends SyntacticElement {
 			this.name = name;
 		}
 
+		@Override
 		public Type result() {
-			return srcType.field(name);
+			return srcType.getReadableFieldType(name);
 		}
 
+		@Override
 		public String toString() {
 			return src + "." + name;
 		}
@@ -526,6 +548,7 @@ public interface Expr extends SyntacticElement {
 			this.qualification = qualification;
 		}
 
+		@Override
 		public Type result() {
 			// Note: must return our type here, rather than value.type(). This
 			// is because value.type() does not distinguish nominal and raw
@@ -533,6 +556,7 @@ public interface Expr extends SyntacticElement {
 			return type;
 		}
 
+		@Override
 		public String toString() {
 			if(qualification == null) {
 				// root
@@ -552,10 +576,12 @@ public interface Expr extends SyntacticElement {
 			this.src = src;
 		}
 
+		@Override
 		public Type result() {
 			return srcType.element();
 		}
 
+		@Override
 		public String toString() {
 			return "*" + src.toString();
 		}
@@ -572,6 +598,7 @@ public interface Expr extends SyntacticElement {
 			this.fields = new HashMap<String, Expr>(fields);
 		}
 
+		@Override
 		public Type.Record result() {
 			return type;
 		}
@@ -612,6 +639,7 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 
+		@Override
 		public Type result() {
 			return null;
 		}
@@ -619,7 +647,7 @@ public interface Expr extends SyntacticElement {
 
 	public static abstract class FunctionOrMethodCall extends AbstractInvoke implements Multi {
 		public final NameID nid;
-		
+
 		public FunctionOrMethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Collection<String> lifetimeArguments, Attribute... attributes) {
 			super(nid.name(),qualification,arguments,lifetimeArguments,attributes);
@@ -631,18 +659,19 @@ public interface Expr extends SyntacticElement {
 			super(nid.name(),qualification,arguments,lifetimeArguments,attributes);
 			this.nid = nid;
 		}
-		
+
 		public NameID nid() {
 			return nid;
 		}
 
 		public abstract Type.FunctionOrMethod type();
-		
+
+		@Override
 		public List<Type> returns() {
-			return type().returns();
-		}		
+			return Arrays.asList(type().returns());
+		}
 	}
-	
+
 	public static class MethodCall extends FunctionOrMethodCall {
 		public Type.Method methodType;
 
@@ -656,17 +685,20 @@ public interface Expr extends SyntacticElement {
 			super(nid,qualification,arguments,lifetimeArguments,attributes);
 		}
 
+		@Override
 		public Type.Method type() {
 			return methodType;
 		}
-		
+
+		@Override
 		public Type result() {
-			if (methodType.returns().size() == 1) {
-				Type returnType = methodType.returns().get(0);
+			if (methodType.returns().length == 1) {
+				Type returnType = methodType.returns()[0];
 				if (this.lifetimeArguments == null || this.lifetimeArguments.isEmpty()) {
 					return returnType;
 				}
-				return FlowTypeChecker.applySubstitution(methodType.lifetimeParams(), this.lifetimeArguments, returnType);
+				List<String> lifetimeParams = Arrays.asList(methodType.lifetimeParams());
+				return FlowTypeChecker.applySubstitution(lifetimeParams, this.lifetimeArguments, returnType);
 			} else {
 				throw new IllegalArgumentException("incorrect number of returns for function call");
 			}
@@ -696,13 +728,15 @@ public interface Expr extends SyntacticElement {
 			super(nid,qualification,arguments,Collections.<String>emptyList(),attributes);
 		}
 
+		@Override
 		public Type.Function type() {
 			return functionType;
 		}
-		
+
+		@Override
 		public Type result() {
-			if(functionType.returns().size() == 1) {
-				return functionType.returns().get(0);
+			if(functionType.returns().length == 1) {
+				return functionType.returns()[0];
 			} else {
 				throw new IllegalArgumentException("incorrect number of returns for function call");
 			}
@@ -735,6 +769,7 @@ public interface Expr extends SyntacticElement {
 			this.lifetimeArguments = lifetimeArguments == null ? null : new ArrayList<String>(lifetimeArguments);
 		}
 
+		@Override
 		public Type result() {
 			return null;
 		}
@@ -752,12 +787,13 @@ public interface Expr extends SyntacticElement {
 		}
 
 		public abstract Type.FunctionOrMethod type();
-		
+
+		@Override
 		public List<Type> returns() {
-			return type().returns();
+			return Arrays.asList(type().returns());
 		}
 	}
-	
+
 	public static class IndirectMethodCall extends IndirectFunctionOrMethodCall {
 		public Type.Method methodType;
 
@@ -771,22 +807,24 @@ public interface Expr extends SyntacticElement {
 			super(src,arguments,lifetimeArguments,attributes);
 		}
 
+		@Override
 		public Type result() {
-			if (methodType.returns().size() == 1) {
-				Type returnType = methodType.returns().get(0);
+			if (methodType.returns().length == 1) {
+				Type returnType = methodType.returns()[0];
 				if (this.lifetimeArguments == null || this.lifetimeArguments.isEmpty()) {
 					return returnType;
 				}
-				return FlowTypeChecker.applySubstitution(methodType.lifetimeParams(), this.lifetimeArguments,
-						returnType);
+				List<String> lifetimeParams = Arrays.asList(methodType.lifetimeParams());
+				return FlowTypeChecker.applySubstitution(lifetimeParams, this.lifetimeArguments, returnType);
 			} else {
 				throw new IllegalArgumentException("incorrect number of returns for indirect method call");
 			}
 		}
-		
+
+		@Override
 		public Type.FunctionOrMethod type() {
 			return methodType;
-		}		
+		}
 	}
 
 	public static class IndirectFunctionCall extends IndirectFunctionOrMethodCall {
@@ -802,14 +840,16 @@ public interface Expr extends SyntacticElement {
 			super(src,arguments,Collections.<String>emptyList(),attributes);
 		}
 
+		@Override
 		public Type result() {
-			if(functionType.returns().size() == 1) {
-				return functionType.returns().get(0);
+			if(functionType.returns().length == 1) {
+				return functionType.returns()[0];
 			} else {
 				throw new IllegalArgumentException("incorrect number of returns for indirect function call");
 			}
 		}
-		
+
+		@Override
 		public Type.FunctionOrMethod type() {
 			return functionType;
 		}
@@ -826,6 +866,7 @@ public interface Expr extends SyntacticElement {
 			this.expr = expr;
 		}
 
+		@Override
 		public Type.Reference result() {
 			return type;
 		}
@@ -833,75 +874,99 @@ public interface Expr extends SyntacticElement {
 
 	public enum BOp {
 		AND {
+			@Override
 			public String toString() { return "&&"; }
 		},
 		OR{
+			@Override
 			public String toString() { return "||"; }
 		},
 		XOR {
+			@Override
 			public String toString() { return "^^"; }
 		},
 		ADD{
+			@Override
 			public String toString() { return "+"; }
 		},
 		SUB{
+			@Override
 			public String toString() { return "-"; }
 		},
 		MUL{
+			@Override
 			public String toString() { return "*"; }
 		},
 		DIV{
+			@Override
 			public String toString() { return "/"; }
 		},
 		REM{
+			@Override
 			public String toString() { return "%"; }
 		},
 		UNION{
+			@Override
 			public String toString() { return "+"; }
 		},
 		INTERSECTION{
+			@Override
 			public String toString() { return "&"; }
 		},
 		DIFFERENCE{
+			@Override
 			public String toString() { return "-"; }
-		},		
+		},
 		EQ{
+			@Override
 			public String toString() { return "=="; }
 		},
 		NEQ{
+			@Override
 			public String toString() { return "!="; }
 		},
 		LT{
+			@Override
 			public String toString() { return "<"; }
 		},
 		LTEQ{
+			@Override
 			public String toString() { return "<="; }
 		},
 		GT{
+			@Override
 			public String toString() { return ">"; }
 		},
 		GTEQ{
+			@Override
 			public String toString() { return ">="; }
-		},		
+		},
 		RANGE{
+			@Override
 			public String toString() { return ".."; }
 		},
 		IS{
+			@Override
 			public String toString() { return "is"; }
 		},
 		BITWISEAND {
+			@Override
 			public String toString() { return "&"; }
 		},
 		BITWISEOR{
+			@Override
 			public String toString() { return "|"; }
 		},
 		BITWISEXOR {
+			@Override
 			public String toString() { return "^"; }
 		},
 		LEFTSHIFT {
+			@Override
 			public String toString() { return "<<"; }
 		},
 		RIGHTSHIFT {
+			@Override
 			public String toString() { return ">>"; }
 		},
 	};

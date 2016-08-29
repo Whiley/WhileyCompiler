@@ -40,6 +40,7 @@ import wybs.lang.*;
 import wybs.util.*;
 import wyc.lang.*;
 import wyc.lang.WhileyFile.Context;
+import wycc.util.ArrayUtils;
 import wycc.util.Pair;
 import wycc.util.Triple;
 import wyfs.lang.Path;
@@ -48,10 +49,8 @@ import wyil.lang.Constant;
 import wyil.lang.Modifier;
 import wyil.lang.Type;
 import wyil.lang.WyilFile;
-import wyil.util.ErrorMessages;
 import wyil.util.TypeSystem;
 import wyil.util.type.LifetimeRelation;
-import wyil.util.type.LifetimeSubstitution;
 
 /**
  * Propagates type information in a <i>flow-sensitive</i> fashion from declared
@@ -140,7 +139,7 @@ public class FlowTypeChecker {
 	private final CompileTask builder;
 	private final TypeSystem typeSystem;
 	private WhileyFile file;
-	//private WhileyFile.FunctionOrMethod current;
+	// private WhileyFile.FunctionOrMethod current;
 
 	/**
 	 * The constant cache contains a cache of expanded constant values. This is
@@ -265,7 +264,7 @@ public class FlowTypeChecker {
 			WhileyFile.Method m = (WhileyFile.Method) d;
 			m.resolvedType = resolveAsType(m.unresolvedType(), d);
 		}
-		
+
 		// Add the "this" lifetime
 		environment = environment.startNamedBlock("this");
 
@@ -281,13 +280,12 @@ public class FlowTypeChecker {
 	 * return value is not required for a method that has no return type.
 	 * Likewise, we don't expect one from a native method since there was no
 	 * body to analyse.
-	 * 
+	 *
 	 * @param d
 	 * @param last
 	 */
 	private void checkReturnValue(WhileyFile.FunctionOrMethod d, Environment last) {
-		if (!d.hasModifier(Modifier.NATIVE) && last != BOTTOM
-				&& !d.resolvedType().returns().isEmpty()) {
+		if (!d.hasModifier(Modifier.NATIVE) && last != BOTTOM && d.resolvedType().returns().length != 0) {
 			// In this case, code reaches the end of the function or method and,
 			// furthermore, that this requires a return value. To get here means
 			// that there was no explicit return statement given on at least one
@@ -299,7 +297,7 @@ public class FlowTypeChecker {
 	/**
 	 * Propagate type information through a list of conditions, updating each
 	 * one in place. The environment is cloned so as to ensure no interference.
-	 * 
+	 *
 	 * @param conditions
 	 * @param environment
 	 * @param context
@@ -491,13 +489,6 @@ public class FlowTypeChecker {
 		// scope because the parser checks this for us.
 		environment = addDeclaredParameter(stmt.parameter, environment, context);
 
-		// Fourth, set the current type of the assigned variable if an
-		// initialiser is used. This is because the current type may differ
-		// from the declared type.
-		if (stmt.expr != null) {
-			environment = environment.update(stmt.parameter.name, stmt.expr.result());
-		}
-
 		// Done.
 		return environment;
 	}
@@ -512,63 +503,61 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment propagate(Stmt.Assign stmt, Environment environment, Context context) throws IOException, ResolveError {
+	private Environment propagate(Stmt.Assign stmt, Environment environment, Context context)
+			throws IOException, ResolveError {
 		// First, type check each lval that occurs on the left-hand side.
-		for(int i=0;i!=stmt.lvals.size();++i) {
+		for (int i = 0; i != stmt.lvals.size(); ++i) {
 			stmt.lvals.set(i, propagate(stmt.lvals.get(i), environment, context));
-		}		
+		}
 		// Second, type check expressions on right-hand side, and calculate the
 		// number of values produced by the right-hand side. This is challenging
 		// because the number of explicit rvals given can legitimately be less
 		// than the number of values produced. This occurs when an invocation
-		// occurs on the right-hand side has multiple return values.			
+		// occurs on the right-hand side has multiple return values.
 		for (int i = 0; i != stmt.rvals.size(); ++i) {
 			stmt.rvals.set(i, propagate(stmt.rvals.get(i), environment, context));
 		}
-		List<Pair<Expr,Type>> valuesProduced = calculateTypesProduced(stmt.rvals);
+		List<Pair<Expr, Type>> valuesProduced = calculateTypesProduced(stmt.rvals);
 		// Check the number of expected values matches the number of values
 		// produced by the right-hand side.
-		if(stmt.lvals.size() < valuesProduced.size()) {
+		if (stmt.lvals.size() < valuesProduced.size()) {
 			throw new SyntaxError("too many values provided on right-hand side", file.getEntry(), stmt);
-		} else if(stmt.lvals.size() > valuesProduced.size()) {
+		} else if (stmt.lvals.size() > valuesProduced.size()) {
 			throw new SyntaxError("not enough values provided on right-hand side", file.getEntry(), stmt);
 		}
 		// For each value produced, check that the variable being assigned
 		// matches the value produced.
-		for (int i = 0; i != valuesProduced.size(); ++i) {			
+		for (int i = 0; i != valuesProduced.size(); ++i) {
 			Expr.LVal lval = stmt.lvals.get(i);
-			Type rval = valuesProduced.get(i).second();
-			Expr.AssignedVariable av = inferAfterType(lval, rval, environment);
-			checkIsSubtype(environment.getDeclaredType(av.var), av.afterType, av, environment);
-			environment = environment.update(av.var, av.afterType);
+			Pair<Expr, Type> rval = valuesProduced.get(i);
+			checkIsSubtype(getWriteableType(lval, environment), rval.second(), rval.first(), environment);
 		}
 
 		return environment;
 	}
-	
-	private Expr.AssignedVariable inferAfterType(Expr.LVal lv, Type afterType, Environment environment) throws ResolveError {
+
+	/**
+	 * Determine the maximal type that can be written to this given lval. For
+	 * example, if the lval is just a variable then the declared type is the
+	 * writeable type.
+	 *
+	 * @param lv
+	 * @param environment
+	 * @return
+	 */
+	private Type getWriteableType(Expr.LVal lv, Environment environment) {
 		if (lv instanceof Expr.AssignedVariable) {
 			Expr.AssignedVariable v = (Expr.AssignedVariable) lv;
-			v.afterType = afterType;
-			return v;
+			return environment.getDeclaredType(v.var);
 		} else if (lv instanceof Expr.Dereference) {
 			Expr.Dereference pa = (Expr.Dereference) lv;
-			// The before and after types are the same since an assignment
-			// through a reference does not change its type.			
-			checkIsSubtype(pa.srcType.element(), afterType, lv, environment);
-			return inferAfterType((Expr.LVal) pa.src, pa.srcType, environment);
+			return pa.srcType.getWriteableElementType();
 		} else if (lv instanceof Expr.IndexOf) {
 			Expr.IndexOf la = (Expr.IndexOf) lv;
-			Type.Array srcType = la.srcType;
-			afterType = (Type) srcType.update(afterType);
-			return inferAfterType((Expr.LVal) la.src, afterType, environment);
+			return la.srcType.getWriteableElementType();
 		} else if (lv instanceof Expr.FieldAccess) {
 			Expr.FieldAccess la = (Expr.FieldAccess) lv;
-			Type.Record srcType = la.srcType;
-			// I know I can modify this hash map, since it's created fresh
-			// in Type.Record.fields().
-			afterType = (Type) srcType.update(la.name, afterType);
-			return inferAfterType((Expr.LVal) la.src, afterType, environment);
+			return la.srcType.getWriteableFieldType(la.name);
 		} else {
 			throw new InternalFailure("unknown lval: " + lv.getClass().getName(), file.getEntry(), lv);
 		}
@@ -618,11 +607,11 @@ public class FlowTypeChecker {
 	 *            Determines the type of all variables immediately going into
 	 *            this block
 	 * @return
-	 * @throws ResolveError 
+	 * @throws ResolveError
 	 */
 	private Environment propagate(Stmt.Debug stmt, Environment environment, Context context) throws ResolveError {
 		stmt.expr = propagate(stmt.expr, environment, context);
-		checkIsSubtype(new Type.Array(Type.T_INT), stmt.expr, environment);
+		checkIsSubtype(Type.Array(Type.T_INT), stmt.expr, environment);
 		return environment;
 	}
 
@@ -641,8 +630,8 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.DoWhile stmt, Environment environment, Context context) throws ResolveError {
 
-		// Iterate to a fixed point
-		environment = computeFixedPoint(environment, stmt.body, stmt.condition, true, stmt, context);
+		// Type loop body
+		environment = propagate(stmt.body, environment, context);
 
 		// Type invariants
 		List<Expr> stmt_invariants = stmt.invariants;
@@ -658,9 +647,7 @@ public class FlowTypeChecker {
 		// know that doesn't hold here.
 		Pair<Expr, Environment> p = propagateCondition(stmt.condition, false, environment, context);
 		stmt.condition = p.first();
-		environment = p.second();
-
-		return environment;
+		return p.second();
 	}
 
 	/**
@@ -703,7 +690,7 @@ public class FlowTypeChecker {
 	 * @return
 	 * @throws ResolveError
 	 *             If a named type within this statement cannot be resolved
-	 *             within the enclosing project. 
+	 *             within the enclosing project.
 	 */
 	private Environment propagate(Stmt.IfElse stmt, Environment environment, Context context) throws ResolveError {
 
@@ -749,34 +736,36 @@ public class FlowTypeChecker {
 	 *             If a named type within this statement cannot be resolved
 	 *             within the enclosing project.
 	 */
-	private Environment propagate(Stmt.Return stmt, Environment environment, Context context) throws IOException, ResolveError {
+	private Environment propagate(Stmt.Return stmt, Environment environment, Context context)
+			throws IOException, ResolveError {
 		List<Expr> stmt_returns = stmt.returns;
-		for(int i=0;i!=stmt_returns.size();++i) {
+		for (int i = 0; i != stmt_returns.size(); ++i) {
 			stmt_returns.set(i, propagate(stmt_returns.get(i), environment, context));
-		}			
-		List<Pair<Expr,Type>> stmt_types = calculateTypesProduced(stmt_returns);
+		}
+		List<Pair<Expr, Type>> stmt_types = calculateTypesProduced(stmt_returns);
 		// FIXME: this is less than ideal
-		List<Type> current_returns = ((WhileyFile.FunctionOrMethod)context).resolvedType().returns();
+		Type[] current_returns = ((WhileyFile.FunctionOrMethod) context).resolvedType().returns();
 
-		if (stmt_types.size() < current_returns.size()) {
+		if (stmt_types.size() < current_returns.length) {
 			// In this case, a return statement was provided with too few return
 			// values compared with the number declared for the enclosing
 			// method.
 			throw new SyntaxError("not enough return values provided", file.getEntry(), stmt);
-		} else if (stmt_types.size() > current_returns.size()) {
-			// In this case, a return statement was provided with too many return
+		} else if (stmt_types.size() > current_returns.length) {
+			// In this case, a return statement was provided with too many
+			// return
 			// values compared with the number declared for the enclosing
 			// method.
 			throw new SyntaxError("too many return values provided", file.getEntry(), stmt);
-		} 
-		
+		}
+
 		// Number of return values match number declared for enclosing
 		// function/method. Now, check they have appropriate types.
-		for(int i=0;i!=current_returns.size();++i) {
-			Pair<Expr,Type> p = stmt_types.get(i);
-			Type t = current_returns.get(i);						
+		for (int i = 0; i != current_returns.length; ++i) {
+			Pair<Expr, Type> p = stmt_types.get(i);
+			Type t = current_returns[i];
 			checkIsSubtype(t, p.second(), p.first(), environment);
-		}	
+		}
 
 		environment.free();
 		return BOTTOM;
@@ -922,9 +911,15 @@ public class FlowTypeChecker {
 	 *             within the enclosing project.
 	 */
 	private Environment propagate(Stmt.While stmt, Environment environment, Context context) throws ResolveError {
+		// Type condition assuming its false to represent the terminated loop.
+		// This is important if the condition contains a type test, as we'll
+		// know that doesn't hold here.
+		Pair<Expr, Environment> p1 = propagateCondition(stmt.condition, true, environment.clone(), context);
+		Pair<Expr, Environment> p2 = propagateCondition(stmt.condition, false, environment.clone(), context);
+		stmt.condition = p1.first();
 
-		// Determine typing at beginning of loop
-		environment = computeFixedPoint(environment, stmt.body, stmt.condition, false, stmt, context);
+		Environment trueEnvironment = p1.second();
+		Environment falseEnvironment = p2.second();
 
 		// Type loop invariant(s)
 		List<Expr> stmt_invariants = stmt.invariants;
@@ -935,14 +930,11 @@ public class FlowTypeChecker {
 			checkIsSubtype(Type.T_BOOL, invariant, environment);
 		}
 
-		// Type condition assuming its false to represent the terminated loop.
-		// This is important if the condition contains a type test, as we'll
-		// know that doesn't hold here.
-		Pair<Expr, Environment> p = propagateCondition(stmt.condition, false, environment, context);
-		stmt.condition = p.first();
-		environment = p.second();
+		// Type loop body
+		propagate(stmt.body, trueEnvironment, context);
 
-		return environment;
+		// Done
+		return falseEnvironment;
 	}
 
 	// =========================================================================
@@ -964,7 +956,7 @@ public class FlowTypeChecker {
 				Expr.Dereference pa = (Expr.Dereference) lval;
 				Expr.LVal src = propagate((Expr.LVal) pa.src, environment, context);
 				pa.src = src;
-				pa.srcType = expandAsReference(src, context);
+				pa.srcType = expandAsEffectiveReference(src, context);
 				return pa;
 			} else if (lval instanceof Expr.IndexOf) {
 				// this indicates either a list, string or dictionary update
@@ -973,15 +965,15 @@ public class FlowTypeChecker {
 				Expr index = propagate(ai.index, environment, context);
 				ai.src = src;
 				ai.index = index;
-				ai.srcType = expandAsEffectiveArray(src,context);
+				ai.srcType = expandAsEffectiveArray(src, context);
 				return ai;
 			} else if (lval instanceof Expr.FieldAccess) {
 				// this indicates a record update
 				Expr.FieldAccess ad = (Expr.FieldAccess) lval;
 				Expr.LVal src = propagate((Expr.LVal) ad.src, environment, context);
 				Expr.FieldAccess ra = new Expr.FieldAccess(src, ad.name, ad.attributes());
-				Type.Record srcType = expandAsEffectiveRecord(src,context);
-				if (srcType.field(ra.name) == null) {
+				Type.EffectiveRecord srcType = expandAsEffectiveRecord(src, context);
+				if (!srcType.hasField(ra.name)) {
 					throw new SyntaxError(errorMessage(RECORD_MISSING_FIELD, ra.name), file.getEntry(), lval);
 				}
 				ra.srcType = srcType;
@@ -1044,8 +1036,8 @@ public class FlowTypeChecker {
 	 *             If a named type within this condition cannot be resolved
 	 *             within the enclosing project.
 	 */
-	public Pair<Expr, Environment> propagateCondition(Expr expr, boolean sign, Environment environment,
-			Context context) throws ResolveError {
+	public Pair<Expr, Environment> propagateCondition(Expr expr, boolean sign, Environment environment, Context context)
+			throws ResolveError {
 
 		// Split up into the compound and non-compound forms.
 
@@ -1087,7 +1079,7 @@ public class FlowTypeChecker {
 	 */
 	private Pair<Expr, Environment> propagateCondition(Expr.UnOp expr, boolean sign, Environment environment,
 			Context context) throws ResolveError {
-		Expr.UnOp uop = (Expr.UnOp) expr;
+		Expr.UnOp uop = expr;
 
 		// Check whether we have logical not
 
@@ -1100,7 +1092,7 @@ public class FlowTypeChecker {
 		} else {
 			// Nothing else other than logical not is valid at this point.
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, expr);
-			return null; // deadcode
+			return deadCode(expr);
 		}
 	}
 
@@ -1270,11 +1262,9 @@ public class FlowTypeChecker {
 
 			if (rhs instanceof Expr.TypeVal) {
 				// yes, right-hand side is a constant
-				Expr.TypeVal tv = (Expr.TypeVal) rhs;				
-				Type glbForFalseBranch = Type.Intersection(lhs.result(), new Type.Negation(tv.type));
+				Expr.TypeVal tv = (Expr.TypeVal) rhs;
+				Type glbForFalseBranch = Type.Intersection(lhs.result(), Type.Negation(tv.type));
 				Type glbForTrueBranch = Type.Intersection(lhs.result(), tv.type);
-				System.out.println("GLB FALSE: " + glbForFalseBranch);
-				System.out.println("GLB TRUE: " + glbForTrueBranch);
 				if (typeSystem.isEmpty(glbForFalseBranch)) {
 					// DEFINITE TRUE CASE
 					syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), context, bop);
@@ -1338,7 +1328,7 @@ public class FlowTypeChecker {
 				} else if (sign) {
 					newType = glb;
 				} else {
-					newType = Type.Intersection(lhs.result(), Type.T_NOTNULL);
+					newType = Type.Intersection(lhs.result(), Type.Negation(Type.T_NULL));
 				}
 				bop.srcType = lhs.result();
 				environment = environment.update(lv.var, newType);
@@ -1483,7 +1473,7 @@ public class FlowTypeChecker {
 		case RANGE:
 			checkIsSubtype(Type.T_INT, lhs, context, environment);
 			checkIsSubtype(Type.T_INT, rhs, context, environment);
-			srcType = new Type.Array(Type.T_INT);
+			srcType = Type.Array(Type.T_INT);
 			break;
 		case REM:
 			checkIsSubtype(Type.T_INT, lhs, context, environment);
@@ -1527,7 +1517,7 @@ public class FlowTypeChecker {
 		case ARRAYLENGTH: {
 			expr.type = expandAsEffectiveArray(expr.mhs, context);
 			return expr;
-		}	
+		}
 		default:
 			internalFailure("unknown operator: " + expr.op.getClass().getName(), context, expr);
 		}
@@ -1592,8 +1582,7 @@ public class FlowTypeChecker {
 				paramTypes.add(builder.toSemanticType(t, context));
 			}
 			// FIXME: clearly a bug here in the case of message reference
-			p = (Triple<NameID, Type.FunctionOrMethod, List<String>>) resolveAsFunctionOrMethod(expr.name, paramTypes,
-					expr.lifetimeParameters, context, environment);
+			p = resolveAsFunctionOrMethod(expr.name, paramTypes, expr.lifetimeParameters, context, environment);
 		} else {
 			p = resolveAsFunctionOrMethod(expr.name, context, environment);
 		}
@@ -1603,14 +1592,16 @@ public class FlowTypeChecker {
 		return expr;
 	}
 
-	private Expr propagate(Expr.Lambda expr, Environment environment, Context context) throws IOException, ResolveError {
+	private Expr propagate(Expr.Lambda expr, Environment environment, Context context)
+			throws IOException, ResolveError {
 		environment = environment.startLambda(expr.contextLifetimes, expr.lifetimeParameters);
-		ArrayList<Type> nomParameterTypes = new ArrayList<Type>();
-		ArrayList<Type> nomReturnTypes = new ArrayList<Type>();
-		
-		for (WhileyFile.Parameter p : expr.parameters) {
+		List<WhileyFile.Parameter> expr_parameters = expr.parameters;
+		Type[] nomParameterTypes = new Type[expr_parameters.size()];
+
+		for (int i = 0; i != expr_parameters.size(); ++i) {
+			WhileyFile.Parameter p = expr_parameters.get(i);
 			Type n = builder.toSemanticType(p.type, context);
-			nomParameterTypes.add(n);
+			nomParameterTypes[i] = n;
 			// Now, update the environment to include those declared variables
 			String var = p.name();
 			if (environment.containsKey(var)) {
@@ -1619,25 +1610,29 @@ public class FlowTypeChecker {
 			environment = environment.declare(var, n, n);
 		}
 
+		Type[] nomReturnTypes;
 		expr.body = propagate(expr.body, environment, context);
-		if(expr.body instanceof Expr.Multi) {
+		if (expr.body instanceof Expr.Multi) {
 			Expr.Multi m = (Expr.Multi) expr.body;
 			List<Type> returns = m.returns();
-			for(int i=0;i!=returns.size();++i) {
-				Type result = returns.get(i);
-				nomReturnTypes.add(result);
+			nomReturnTypes = new Type[returns.size()];
+			for (int i = 0; i != returns.size(); ++i) {
+				nomReturnTypes[i] = returns.get(i);
 			}
 		} else {
-			Type result = expr.body.result();		
-			nomReturnTypes.add(result);
+			Type result = expr.body.result();
+			nomReturnTypes = new Type[] { result };
 		}
 
+		Type type;
 		if (Exprs.isPure(expr.body, context)) {
-			expr.type = new Type.Function(nomParameterTypes, nomReturnTypes);
+			type = Type.Function(nomParameterTypes, nomReturnTypes);
 		} else {
-			expr.type = new Type.Method(expr.lifetimeParameters, expr.contextLifetimes, nomParameterTypes, nomReturnTypes);
+			type = Type.Method(expr.lifetimeParameters, expr.contextLifetimes, nomParameterTypes, nomReturnTypes);
 		}
-		
+
+		expr.type = expandAsEffectiveFunctionOrMethod(type, expr, context);
+
 		return expr;
 	}
 
@@ -1646,15 +1641,15 @@ public class FlowTypeChecker {
 
 		// We can only invoke functions and methods
 		expr.src = propagate(expr.src, environment, context);
-		Type.FunctionOrMethod funType = expandAsFunctionOrMethod(expr.src,context);
+		Type.FunctionOrMethod funType = expandAsEffectiveFunctionOrMethod(expr.src, context);
 		if (funType == null) {
 			syntaxError("function or method type expected", context, expr.src);
 		}
 
 		// Do we have matching argument count?
-		List<Type> paramTypes = funType.params();
+		Type[] paramTypes = funType.params();
 		ArrayList<Expr> exprArgs = expr.arguments;
-		if (paramTypes.size() != exprArgs.size()) {
+		if (paramTypes.length != exprArgs.size()) {
 			syntaxError("insufficient arguments for function or method invocation", context, expr.src);
 		}
 
@@ -1666,83 +1661,89 @@ public class FlowTypeChecker {
 			argTypes.add(arg.result());
 		}
 
-		// Handle lifetime arguments
-		List<String> lifetimeParameters = funType.lifetimeParams();
-		List<String> lifetimeArguments = expr.lifetimeArguments;
-		if (lifetimeArguments == null) {
-			// First consider the case where no lifetime arguments are specified.
-			if (lifetimeParameters.isEmpty()) {
-				// No lifetime arguments needed!
-				lifetimeArguments = Collections.emptyList();
-			} else {
-				// We have to guess proper lifetime arguments.
-				List<Type> rawArgTypes = stripType(argTypes);
-				List<ValidCandidate> validCandidates = new ArrayList<ValidCandidate>();
-				guessLifetimeArguments(
-						extractLifetimesFromArguments(rawArgTypes),
-						lifetimeParameters,
-						funType.params(),
-						rawArgTypes,
-						null, // don't need a name id
-						funType,
-						validCandidates,
-						environment);
-
-				if (validCandidates.isEmpty()) {
-					// We were not able to guess lifetime arguments
-					syntaxError("no lifetime arguments specified and unable to infer them", context, expr.src);
-				}
-				if (validCandidates.size() == 1) {
-					// All right, we found proper lifetime arguments.
-					// Note that at this point we indeed have a method
-					// (not a function), because functions don't have
-					// lifetime parameters.
-					Expr.IndirectMethodCall imc = new Expr.IndirectMethodCall(
-							expr.src, exprArgs,
-							validCandidates.get(0).lifetimeArguments,
-							expr.attributes());
-					imc.methodType = (Type.Method) funType;
-					return imc;
-				}
-
-				// Arriving here means we have more than one possible solution.
-				// That is an ambiguity error, but we're nice and also print all
-				// solutions.
-				StringBuilder msg = new StringBuilder(
-						"no lifetime arguments specified and unable to infer a unique solution");
-				List<String> solutions = new ArrayList<String>(validCandidates.size());
-				for (ValidCandidate vc : validCandidates) {
-					solutions.add(vc.lifetimeArguments.toString());
-				}
-				Collections.sort(solutions); // make error message deterministic!
-				for (String s : solutions) {
-					msg.append("\nfound solution: ");
-					msg.append(s);
-				}
-				syntaxError(msg.toString(), context, expr.src);
-			}
-		}
-		if (lifetimeParameters.size() != lifetimeArguments.size()) {
-			// Lifetime arguments specified, but number doesn't match
-			syntaxError("insufficient lifetime arguments for method invocation", context, expr.src);
-		}
-
-		// Check argument types with respect to specified lifetime arguments
-		Map<String, String> substitution = buildSubstitution(lifetimeParameters, lifetimeArguments);
-		for (int i = 0; i != exprArgs.size(); ++i) {
-			Type pt = paramTypes.get(i);
-			Expr arg = propagate(exprArgs.get(i), environment, context);
-			checkIsSubtype(applySubstitution(substitution, pt), arg, context, environment);
-			exprArgs.set(i, arg);
-		}
-
 		if (funType instanceof Type.Function) {
+			// Check parameter types
+			for (int i = 0; i != exprArgs.size(); ++i) {
+				Type pt = paramTypes[i];
+				checkIsSubtype(pt, exprArgs.get(i), context, environment);
+			}
+			//
 			Expr.IndirectFunctionCall ifc = new Expr.IndirectFunctionCall(expr.src, exprArgs, expr.attributes());
 			ifc.functionType = (Type.Function) funType;
 			return ifc;
 		} else {
-			Expr.IndirectMethodCall imc = new Expr.IndirectMethodCall(expr.src, exprArgs, lifetimeArguments, expr.attributes());
-			imc.methodType = (Type.Method) funType;
+			// Handle lifetime arguments
+			Type.Method methType = (Type.Method) funType;
+			List<String> lifetimeParameters = Arrays.asList(methType.lifetimeParams());
+			List<String> lifetimeArguments = expr.lifetimeArguments;
+			if (lifetimeArguments == null) {
+				// First consider the case where no lifetime arguments are
+				// specified.
+				if (lifetimeParameters.isEmpty()) {
+					// No lifetime arguments needed!
+					lifetimeArguments = Collections.emptyList();
+				} else {
+					// We have to guess proper lifetime arguments.
+					List<Type> rawArgTypes = stripType(argTypes);
+					List<ValidCandidate> validCandidates = new ArrayList<ValidCandidate>();
+					guessLifetimeArguments(extractLifetimesFromArguments(rawArgTypes), lifetimeParameters,
+							Arrays.asList(funType.params()), rawArgTypes, null, // don't
+																				// need
+																				// a
+																				// name
+																				// id
+							funType, validCandidates, environment);
+
+					if (validCandidates.isEmpty()) {
+						// We were not able to guess lifetime arguments
+						syntaxError("no lifetime arguments specified and unable to infer them", context, expr.src);
+					}
+					if (validCandidates.size() == 1) {
+						// All right, we found proper lifetime arguments.
+						// Note that at this point we indeed have a method
+						// (not a function), because functions don't have
+						// lifetime parameters.
+						Expr.IndirectMethodCall imc = new Expr.IndirectMethodCall(expr.src, exprArgs,
+								validCandidates.get(0).lifetimeArguments, expr.attributes());
+						imc.methodType = (Type.Method) funType;
+						return imc;
+					}
+
+					// Arriving here means we have more than one possible
+					// solution. That is an ambiguity error, but we're nice and
+					// also print all solutions.
+					StringBuilder msg = new StringBuilder(
+							"no lifetime arguments specified and unable to infer a unique solution");
+					List<String> solutions = new ArrayList<String>(validCandidates.size());
+					for (ValidCandidate vc : validCandidates) {
+						solutions.add(vc.lifetimeArguments.toString());
+					}
+					Collections.sort(solutions); // make error message
+													// deterministic!
+					for (String s : solutions) {
+						msg.append("\nfound solution: ");
+						msg.append(s);
+					}
+					syntaxError(msg.toString(), context, expr.src);
+				}
+			}
+			if (lifetimeParameters.size() != lifetimeArguments.size()) {
+				// Lifetime arguments specified, but number doesn't match
+				syntaxError("insufficient lifetime arguments for method invocation", context, expr.src);
+			}
+
+			// Check argument types with respect to specified lifetime arguments
+			Map<String, String> substitution = buildSubstitution(lifetimeParameters, lifetimeArguments);
+			for (int i = 0; i != exprArgs.size(); ++i) {
+				Type pt = paramTypes[i];
+				Expr arg = propagate(exprArgs.get(i), environment, context);
+				checkIsSubtype(applySubstitution(substitution, pt), arg, context, environment);
+				exprArgs.set(i, arg);
+			}
+
+			Expr.IndirectMethodCall imc = new Expr.IndirectMethodCall(expr.src, exprArgs, lifetimeArguments,
+					expr.attributes());
+			imc.methodType = methType;
 			return imc;
 		}
 	}
@@ -1775,7 +1776,8 @@ public class FlowTypeChecker {
 
 		// third, lookup the appropriate function or method based on the name
 		// and given parameter types.
-		Triple<NameID, Type.FunctionOrMethod, List<String>> triple = resolveAsFunctionOrMethod(name, paramTypes, lifetimeArgs, context, environment);
+		Triple<NameID, Type.FunctionOrMethod, List<String>> triple = resolveAsFunctionOrMethod(name, paramTypes,
+				lifetimeArgs, context, environment);
 		if (triple.second() instanceof Type.Function) {
 			Expr.FunctionCall r = new Expr.FunctionCall(name, qualification, exprArgs, expr.attributes());
 			r.functionType = (Type.Function) triple.second();
@@ -1791,7 +1793,7 @@ public class FlowTypeChecker {
 			throws IOException, ResolveError {
 		expr.src = propagate(expr.src, environment, context);
 		expr.index = propagate(expr.index, environment, context);
-		Type.Array srcType = expandAsEffectiveArray(expr.src, context);
+		Type.EffectiveArray srcType = expandAsEffectiveArray(expr.src, context);
 
 		if (srcType == null) {
 			syntaxError(errorMessage(INVALID_ARRAY_EXPRESSION), context, expr.src);
@@ -1810,7 +1812,8 @@ public class FlowTypeChecker {
 		return expr;
 	}
 
-	private Expr propagate(Expr.ArrayInitialiser expr, Environment environment, Context context) {
+	private Expr propagate(Expr.ArrayInitialiser expr, Environment environment, Context context)
+			throws IOException, ResolveError {
 		Type element = Type.T_VOID;
 
 		ArrayList<Expr> exprs = expr.arguments;
@@ -1821,33 +1824,35 @@ public class FlowTypeChecker {
 			element = Type.Union(t, element);
 		}
 
-		expr.type = new Type.Array(element);
+		expr.type = (Type.Array) expandAsEffectiveArray(Type.Array(element), expr, context);
 
 		return expr;
 	}
 
-	private Expr propagate(Expr.ArrayGenerator expr, Environment environment, Context context) throws ResolveError {		
+	private Expr propagate(Expr.ArrayGenerator expr, Environment environment, Context context)
+			throws ResolveError, IOException {
 		expr.element = propagate(expr.element, environment, context);
-		expr.count = propagate(expr.count, environment, context);		
-		expr.type = new Type.Array(expr.element.result());
+		expr.count = propagate(expr.count, environment, context);
+		expr.type = (Type.Array) expandAsEffectiveArray(Type.Array(expr.element.result()), expr, context);
 		checkIsSubtype(Type.T_INT, expr.count, environment);
 		return expr;
 	}
 
-	private Expr propagate(Expr.Record expr, Environment environment, Context context) {
+	private Expr propagate(Expr.Record expr, Environment environment, Context context)
+			throws IOException, ResolveError {
 
 		HashMap<String, Expr> exprFields = expr.fields;
-		HashMap<String, Type> fieldTypes = new HashMap<String, Type>();
+		ArrayList<Pair<Type, String>> fieldTypes = new ArrayList<Pair<Type, String>>();
 
 		ArrayList<String> fields = new ArrayList<String>(exprFields.keySet());
 		for (String field : fields) {
 			Expr e = propagate(exprFields.get(field), environment, context);
 			Type t = e.result();
 			exprFields.put(field, e);
-			fieldTypes.put(field, t);
+			fieldTypes.add(new Pair<Type, String>(t, field));
 		}
 
-		expr.type = new Type.Record(fieldTypes,false);
+		expr.type = (Type.Record) expandAsEffectiveRecord(Type.Record(false, fieldTypes), expr, context);
 
 		return expr;
 	}
@@ -1855,13 +1860,14 @@ public class FlowTypeChecker {
 	private Expr propagate(Expr.FieldAccess ra, Environment environment, Context context)
 			throws IOException, ResolveError {
 		ra.src = propagate(ra.src, environment, context);
-		Type.Record recType = expandAsEffectiveRecord(ra.src,context);
-		Type fieldType = recType.field(ra.name);
-		if (fieldType == null) {
+		Type.EffectiveRecord recType = expandAsEffectiveRecord(ra.src, context);
+		if (recType.hasField(ra.name)) {
+			ra.srcType = recType;
+			return ra;
+		} else {
 			syntaxError(errorMessage(RECORD_MISSING_FIELD, ra.name), context, ra);
+			return deadCode(ra);
 		}
-		ra.srcType = recType;
-		return ra;
 	}
 
 	private Expr propagate(Expr.ConstantAccess expr, Environment environment, Context context) throws IOException {
@@ -1891,7 +1897,7 @@ public class FlowTypeChecker {
 			throws IOException, ResolveError {
 		Expr src = propagate(expr.src, environment, context);
 		expr.src = src;
-		Type.Reference srcType = expandAsReference(src, context);
+		Type.Reference srcType = expandAsEffectiveReference(src, context);
 		if (srcType == null) {
 			syntaxError("invalid reference expression", context, src);
 		}
@@ -1903,133 +1909,36 @@ public class FlowTypeChecker {
 		return expr;
 	}
 
-	private Expr propagate(Expr.New expr, Environment environment, Context context) {
+	private Expr propagate(Expr.New expr, Environment environment, Context context) throws IOException, ResolveError {
 		expr.expr = propagate(expr.expr, environment, context);
-		expr.type = new Type.Reference(expr.expr.result(), expr.lifetime);
+		expr.type = expandAsEffectiveReference(Type.Reference(expr.lifetime, expr.expr.result()), expr, context);
 		return expr;
 	}
 
-	private Expr propagate(Expr.TypeVal expr, Environment environment, Context context) throws IOException, ResolveError {
+	private Expr propagate(Expr.TypeVal expr, Environment environment, Context context)
+			throws IOException, ResolveError {
 		expr.type = builder.toSemanticType(expr.unresolvedType, context);
 		return expr;
 	}
 
-
-	private List<Pair<Expr,Type>> calculateTypesProduced(List<Expr> expressions) {
-		ArrayList<Pair<Expr,Type>> types = new ArrayList<Pair<Expr,Type>>();
+	private List<Pair<Expr, Type>> calculateTypesProduced(List<Expr> expressions) {
+		ArrayList<Pair<Expr, Type>> types = new ArrayList<Pair<Expr, Type>>();
 		for (int i = 0; i != expressions.size(); ++i) {
 			Expr e = expressions.get(i);
-			if(e instanceof Expr.Multi) {
+			if (e instanceof Expr.Multi) {
 				// The assigned expression actually has multiple returns,
 				// therefore extract them all.
 				Expr.Multi me = (Expr.Multi) e;
-				for(Type ret : me.returns()) {
-					types.add(new Pair<Expr,Type>(e,ret));
+				for (Type ret : me.returns()) {
+					types.add(new Pair<Expr, Type>(e, ret));
 				}
 			} else {
 				// The assigned rval is a simple expression which returns a
 				// single value
-				types.add(new Pair<Expr,Type>(e,e.result()));
+				types.add(new Pair<Expr, Type>(e, e.result()));
 			}
 		}
 		return types;
-	}
-	// =========================================================================
-	// Compute fixed point
-	// =========================================================================
-
-	/**
-	 * Compute the fixed point of an environment across a body of statements.
-	 * The fixed point is the environment which, starting from the initial
-	 * environment, doesn't change after being put through body. For example:
-	 *
-	 * <pre>
-	 * x = 1
-	 * while i < 10:
-	 *    // x -> int, i -> int
-	 *    x = null
-	 *    i = i + 1
-	 *    // x -> null, i -> int
-	 * </pre>
-	 *
-	 * <p>
-	 * Here, we see the environment before the loop body, along with that after.
-	 * The fixed point for this example, then, is {x -> int|null, i -> int}
-	 * </p>
-	 *
-	 * <p>
-	 * <b>NOTE:</b> The fixed-point computation is technically not guaranteed to
-	 * terminate (i.e. because the lattice has infinite height). As a simplistic
-	 * step, for now, the computatino just bails out after 10 iterations. In
-	 * principle, one can do better and this is discussed in the following
-	 * paper:
-	 *
-	 * <ul>
-	 * <li>A Calculus for Constraint-Based Flow Typing. David J. Pearce. In
-	 * Proceedings of the Workshop on Formal Techniques for Java-like Languages
-	 * (FTFJP), Article 7, 2013.</li>
-	 * </ul>
-	 * (Aaaahhh, the irony that I haven't implemented by own paper :)
-	 * </p>
-	 *
-	 * @param environment
-	 *            The initial environment, which is guaranteed not to be changed
-	 *            by this method.
-	 * @param body
-	 *            The statement body which is to be iterated over.
-	 * @param condition
-	 *            An optional condition which is to be included in the
-	 *            computation. Maybe null.
-	 * @param doWhile
-	 *            Indicates whether this is a do-while loop or not. A do-while
-	 *            loop is different because the condition does not hold on the
-	 *            first iteration.
-	 * @return
-	 * @throws ResolveError
-	 *             If a named type within this condition cannot be resolved
-	 *             within the enclosing project.
-	 */
-	private Environment computeFixedPoint(Environment environment, ArrayList<Stmt> body, Expr condition,
-			boolean doWhile, SyntacticElement element, Context context) throws ResolveError {
-		// The count is used simply to guarantee termination.
-		int count = 0;
-		// The original environment is an exact copy of the initial environment.
-		// This is needed to feed into the iteration.
-		Environment original = environment.clone();
-		// We clone the original environment again to force the refcount > 1
-		original = original.clone();
-		// Precompute the set of variables to be merged
-		Set<String> variables = original.keySet();
-		// The old environment is used to compare the environment after one
-		// iteration with previous "old" environment to see whether anything has
-		// changed.
-		Environment old;
-		// The temporary environment is used simply to hold the environment in
-		// between the condition and the statement body.
-		Environment tmp;
-		do {
-			// First, take a copy of environment so we can later tell whether
-			// anything changed.
-			old = environment.clone();
-			// Second, propagate through condition (if applicable). This may
-			// update the environment if one or more type tests are used.
-			if (condition != null && !doWhile) {
-				tmp = propagateCondition(condition, true, old.clone(), context).second();
-			} else {
-				tmp = old;
-				doWhile = false;
-			}
-			// Merge updated environment with original environment to produce
-			// potentially updated environment.
-			environment = original.merge(variables, propagate(body, tmp, context));
-			old.free(); // hacky, but safe
-			// Finally, check loop count to force termination
-			if (count++ == 10) {
-				throw new InternalFailure("Unable to type loop", file.getEntry(), element);
-			}
-		} while (!environment.equals(old));
-
-		return environment;
 	}
 
 	// =========================================================================
@@ -2044,14 +1953,14 @@ public class FlowTypeChecker {
 	 * @param nid
 	 * @param parameters
 	 * @param lifetimeArgs
-	 *           --- lifetime arguments passed on method invocation,
-	 *                or null if none are passed and the compiler has to figure it out
+	 *            --- lifetime arguments passed on method invocation, or null if
+	 *            none are passed and the compiler has to figure it out
 	 * @return nameid, type, given/inferred lifetime arguments
 	 * @throws IOException
 	 */
 	public Triple<NameID, Type.FunctionOrMethod, List<String>> resolveAsFunctionOrMethod(NameID nid,
 			List<Type> parameters, List<String> lifetimeArgs, Context context, Environment environment)
-			throws IOException, ResolveError {
+					throws IOException, ResolveError {
 
 		// The set of candidate names and types for this function or method.
 		HashSet<Pair<NameID, Type.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Type.FunctionOrMethod>>();
@@ -2078,9 +1987,8 @@ public class FlowTypeChecker {
 	 * @return
 	 * @throws IOException
 	 */
-	public Triple<NameID, Type.FunctionOrMethod, List<String>> resolveAsFunctionOrMethod(String name,
-			Context context, Environment environment)
-			throws IOException, ResolveError {
+	public Triple<NameID, Type.FunctionOrMethod, List<String>> resolveAsFunctionOrMethod(String name, Context context,
+			Environment environment) throws IOException, ResolveError {
 		return resolveAsFunctionOrMethod(name, null, null, context, environment);
 	}
 
@@ -2094,15 +2002,16 @@ public class FlowTypeChecker {
 	 * @param parameters
 	 *            --- required parameter types for the function or method.
 	 * @param lifetimeArgs
-	 *            --- lifetime arguments passed on method invocation,
-	 *                or null if none are passed and the compiler has to figure it out
+	 *            --- lifetime arguments passed on method invocation, or null if
+	 *            none are passed and the compiler has to figure it out
 	 * @param context
 	 *            --- context in which to resolve this name.
 	 * @return nameid, type, given/inferred lifetime arguments
 	 * @throws IOException
 	 */
-	public Triple<NameID, Type.FunctionOrMethod, List<String>> resolveAsFunctionOrMethod(String name, List<Type> parameters,
-			List<String> lifetimeArgs, Context context, Environment environment) throws IOException, ResolveError {
+	public Triple<NameID, Type.FunctionOrMethod, List<String>> resolveAsFunctionOrMethod(String name,
+			List<Type> parameters, List<String> lifetimeArgs, Context context, Environment environment)
+					throws IOException, ResolveError {
 
 		HashSet<Pair<NameID, Type.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Type.FunctionOrMethod>>();
 		// first, try to find the matching message
@@ -2133,22 +2042,21 @@ public class FlowTypeChecker {
 	 * @return whether f2_params are strict subtypes of f1_params
 	 * @throws ResolveError
 	 */
-	private boolean paramStrictSubtypes(List<Type> f1_params, List<Type> f2_params, Environment environment) throws ResolveError {
+	private boolean paramStrictSubtypes(List<Type> f1_params, List<Type> f2_params, Environment environment)
+			throws ResolveError {
 		if (f1_params.size() == f2_params.size()) {
-			boolean allEqual = true;
+			boolean allEquivalent = true;
 			for (int i = 0; i != f1_params.size(); ++i) {
 				Type f1_param = f1_params.get(i);
 				Type f2_param = f2_params.get(i);
 				if (!typeSystem.isSubtype(f1_param, f2_param, environment.getLifetimeRelation())) {
 					return false;
 				}
-				allEqual &= f1_param.equals(f2_param);
+				allEquivalent &= typeSystem.isSubtype(f2_param, f1_param, environment.getLifetimeRelation());
 			}
-
 			// This function returns true if the parameters are a strict
-			// subtype. Therefore, if they are all equal it must return false.
-
-			return !allEqual;
+			// subtype. Therefore, if they are all equivalent it must return false.
+			return !allEquivalent;
 		}
 		return false;
 	}
@@ -2186,12 +2094,12 @@ public class FlowTypeChecker {
 
 	/**
 	 * Extract all lifetime names from the types in the given list.
-	 * 
+	 *
 	 * We just walk through the type automata and collect the lifetime for each
 	 * encountered reference.
-	 * 
+	 *
 	 * The result set will always contain the default lifetime "*".
-	 * 
+	 *
 	 * @param types
 	 *            the types to get the lifetimes from
 	 * @return a set of all extracted lifetime names, without "*"
@@ -2199,48 +2107,54 @@ public class FlowTypeChecker {
 	private List<String> extractLifetimesFromArguments(Iterable<Type> types) {
 		Set<String> result = new HashSet<String>();
 		for (Type t : types) {
-			extractLifetimes(t,result);
+			extractLifetimes(t, result);
 		}
 		result.add("*");
 		return new ArrayList<String>(result);
 	}
 
-	private void extractLifetimes(Type type, Set<String> lifetimes) {		
-		if(type instanceof Type.Leaf) {
+	private void extractLifetimes(Type type, Set<String> lifetimes) {
+		if (type instanceof Type.Leaf) {
 			return;
-		} else if(type instanceof Type.Array) {
+		} else if (type instanceof Type.Array) {
 			Type.Array t = (Type.Array) type;
-			extractLifetimes(t.element(),lifetimes);
-		} else if(type instanceof Type.Record) {
+			extractLifetimes(t.element(), lifetimes);
+		} else if (type instanceof Type.Record) {
 			Type.Record t = (Type.Record) type;
-			extractLifetimes(t.fields().values(),lifetimes);			
-		} else if(type instanceof Type.Reference) {
+			for (String name : t.getFieldNames()) {
+				extractLifetimes(t.getField(name), lifetimes);
+			}
+		} else if (type instanceof Type.Reference) {
 			Type.Reference t = (Type.Reference) type;
-			extractLifetimes(t.element(),lifetimes);
+			extractLifetimes(t.element(), lifetimes);
 			lifetimes.add(t.lifetime());
-		} else if(type instanceof Type.Union) {
+		} else if (type instanceof Type.Union) {
 			Type.Union t = (Type.Union) type;
-			extractLifetimes(t.bounds(),lifetimes);
-		} else if(type instanceof Type.Intersection) {
-			Type.Intersection t = (Type.Intersection) type;			
-			extractLifetimes(t.bounds(),lifetimes);			
-		} else if(type instanceof Type.FunctionOrMethod) {
-			Type.FunctionOrMethod t = (Type.FunctionOrMethod) type;			
-			extractLifetimes(t.params(),lifetimes);			
-			extractLifetimes(t.returns(),lifetimes);
-			lifetimes.addAll(t.contextLifetimes());
+			extractLifetimes(t.bounds(), lifetimes);
+		} else if (type instanceof Type.Intersection) {
+			Type.Intersection t = (Type.Intersection) type;
+			extractLifetimes(t.bounds(), lifetimes);
+		} else if (type instanceof Type.Function) {
+			Type.Function t = (Type.Function) type;
+			extractLifetimes(t.params(), lifetimes);
+			extractLifetimes(t.returns(), lifetimes);
+		} else if (type instanceof Type.Method) {
+			Type.Method t = (Type.Method) type;
+			extractLifetimes(t.params(), lifetimes);
+			extractLifetimes(t.returns(), lifetimes);
+			ArrayUtils.addAll(t.contextLifetimes(), lifetimes);
 		} else {
 			Type.Negation t = (Type.Negation) type;
-			extractLifetimes(t.element(),lifetimes);
+			extractLifetimes(t.element(), lifetimes);
 		}
 	}
-	
-	private void extractLifetimes(Collection<Type> types, Set<String> lifetimes) {
-		for(Type b : types) {
-			extractLifetimes(b,lifetimes);
+
+	private void extractLifetimes(Type[] types, Set<String> lifetimes) {
+		for (int i = 0; i != types.length; ++i) {
+			extractLifetimes(types[i], lifetimes);
 		}
 	}
-	
+
 	/**
 	 * Container for a function/method candidate during method resolution.
 	 */
@@ -2254,7 +2168,8 @@ public class FlowTypeChecker {
 		// Lifetime parameters substituted with (inferred) arguments
 		private final List<Type> parameterTypesSubstituted;
 
-		private ValidCandidate(NameID id, Type.FunctionOrMethod type, List<String> lifetimeArguments, List<Type> parameterTypesSubstituted) {
+		private ValidCandidate(NameID id, Type.FunctionOrMethod type, List<String> lifetimeArguments,
+				List<Type> parameterTypesSubstituted) {
 			this.id = id;
 			this.type = type;
 			this.lifetimeArguments = lifetimeArguments;
@@ -2264,7 +2179,7 @@ public class FlowTypeChecker {
 
 	/**
 	 * Highly optimized method to validate a function/method candidate.
-	 * 
+	 *
 	 * @param candidateId
 	 * @param candidateType
 	 * @param candidateParameterTypes
@@ -2273,11 +2188,11 @@ public class FlowTypeChecker {
 	 * @param lifetimeArguments
 	 * @param environment
 	 * @return
-	 * @throws ResolveError 
+	 * @throws ResolveError
 	 */
 	private ValidCandidate validateCandidate(NameID candidateId, Type.FunctionOrMethod candidateType,
-			List<Type> candidateParameterTypes, List<Type> targetParameterTypes,
-			List<String> lifetimeParameters, List<String> lifetimeArguments, Environment environment) throws ResolveError {
+			List<Type> candidateParameterTypes, List<Type> targetParameterTypes, List<String> lifetimeParameters,
+			List<String> lifetimeArguments, Environment environment) throws ResolveError {
 		if (!lifetimeParameters.isEmpty()) {
 			// Here we *might* need a substitution
 			Map<String, String> substitution = buildSubstitution(lifetimeParameters, lifetimeArguments);
@@ -2309,13 +2224,13 @@ public class FlowTypeChecker {
 				return null;
 			}
 		}
-		return new ValidCandidate(candidateId, candidateType, Collections.<String> emptyList(), candidateParameterTypes);
+		return new ValidCandidate(candidateId, candidateType, Collections.<String> emptyList(),
+				candidateParameterTypes);
 	}
 
 	private Triple<NameID, Type.FunctionOrMethod, List<String>> selectCandidateFunctionOrMethod(String name,
 			List<Type> parameters, List<String> lifetimeArgs,
-			Collection<Pair<NameID, Type.FunctionOrMethod>> candidates,
-			Context context, Environment environment)
+			Collection<Pair<NameID, Type.FunctionOrMethod>> candidates, Context context, Environment environment)
 					throws IOException, ResolveError {
 
 		// We cannot do anything here without candidates
@@ -2329,12 +2244,12 @@ public class FlowTypeChecker {
 		if (parameters == null) {
 			if (candidates.size() == 1) {
 				Pair<NameID, Type.FunctionOrMethod> p = candidates.iterator().next();
-				return new Triple<NameID, Type.FunctionOrMethod,List<String>>(p.first(), p.second(), null);
+				return new Triple<NameID, Type.FunctionOrMethod, List<String>>(p.first(), p.second(), null);
 			}
 
 			// More than one candidate and all will match. Clearly ambiguous!
-			throw new ResolveError(name + parameterString(parameters) + " is ambiguous"
-						+ foundCandidatesString(candidates));
+			throw new ResolveError(
+					name + parameterString(parameters) + " is ambiguous" + foundCandidatesString(candidates));
 		}
 
 		// We chose a method based only on the parameter types, as return
@@ -2351,7 +2266,7 @@ public class FlowTypeChecker {
 		List<ValidCandidate> validCandidates = new LinkedList<ValidCandidate>();
 		for (Pair<NameID, Type.FunctionOrMethod> p : candidates) {
 			Type.FunctionOrMethod candidateType = p.second();
-			List<Type> candidateParameterTypes = candidateType.params();
+			List<Type> candidateParameterTypes = Arrays.asList(candidateType.params());
 
 			// We need a matching parameter count
 			if (candidateParameterTypes.size() != targetParameterTypes.size()) {
@@ -2359,28 +2274,23 @@ public class FlowTypeChecker {
 			}
 
 			// If we got lifetime arguments: Lifetime parameter count must match
-			List<String> candidateLifetimeParams = candidateType.lifetimeParams();
+			List<String> candidateLifetimeParams = getLifetimeParameters(candidateType);
 			if (lifetimeArgs != null && candidateLifetimeParams.size() != lifetimeArgs.size()) {
 				continue;
 			}
 
-			if (candidateLifetimeParams.isEmpty()) {
-				// We don't need lifetime arguments, so just provide an empty list.
-				ValidCandidate vc = validateCandidate(p.first(),
-						candidateType, candidateParameterTypes,
-						targetParameterTypes, candidateLifetimeParams,
-						Collections.<String> emptyList(),
-						environment);
+			if (candidateLifetimeParams.size() == 0) {
+				// We don't need lifetime arguments, so just provide an empty
+				// list.
+				ValidCandidate vc = validateCandidate(p.first(), candidateType, candidateParameterTypes,
+						targetParameterTypes, candidateLifetimeParams, Collections.<String> emptyList(), environment);
 				if (vc != null) {
 					validCandidates.add(vc);
 				}
 			} else if (lifetimeArgs != null) {
 				// We got some lifetime arguments. Just check it with them.
-				ValidCandidate vc = validateCandidate(p.first(),
-						candidateType, candidateParameterTypes,
-						targetParameterTypes, candidateLifetimeParams,
-						lifetimeArgs,
-						environment);
+				ValidCandidate vc = validateCandidate(p.first(), candidateType, candidateParameterTypes,
+						targetParameterTypes, candidateLifetimeParams, lifetimeArgs, environment);
 				if (vc != null) {
 					validCandidates.add(vc);
 				}
@@ -2395,17 +2305,16 @@ public class FlowTypeChecker {
 				}
 
 				// Guess the lifetime arguments.
-				guessLifetimeArguments(lifetimesUsedInArguments, candidateLifetimeParams,
-						candidateParameterTypes, targetParameterTypes,
-						p.first(), candidateType, validCandidates, environment);
+				guessLifetimeArguments(lifetimesUsedInArguments, candidateLifetimeParams, candidateParameterTypes,
+						targetParameterTypes, p.first(), candidateType, validCandidates, environment);
 			}
 		}
 
 		// See if we have valid candidates
 		if (validCandidates.isEmpty()) {
 			// No valid candidates
-			throw new ResolveError("no match for " + name + parameterString(parameters)
-						+ foundCandidatesString(candidates));
+			throw new ResolveError(
+					"no match for " + name + parameterString(parameters) + foundCandidatesString(candidates));
 		}
 
 		// More than one candidate
@@ -2426,7 +2335,8 @@ public class FlowTypeChecker {
 				// checks that there is one more element left, so we can again
 				// use do-while here.
 				for (ValidCandidate c2 : validCandidates) {
-					if (c1 != c2 && paramStrictSubtypes(c1.parameterTypesSubstituted, c2.parameterTypesSubstituted, environment)) {
+					if (c1 != c2 && paramStrictSubtypes(c1.parameterTypesSubstituted, c2.parameterTypesSubstituted,
+							environment)) {
 						it.remove();
 						break;
 					}
@@ -2442,10 +2352,12 @@ public class FlowTypeChecker {
 			WhileyFile wf = builder.getSourceFile(winnerId.module());
 			if (wf != null) {
 				if (wf != context.file()) {
-					for (WhileyFile.FunctionOrMethod d : wf.declarations(WhileyFile.FunctionOrMethod.class, winnerId.name())) {
+					for (WhileyFile.FunctionOrMethod d : wf.declarations(WhileyFile.FunctionOrMethod.class,
+							winnerId.name())) {
 						if (d.parameters.equals(winnerType.params())) {
 							if (!d.hasModifier(Modifier.PUBLIC)) {
-								String msg = winnerId.module() + "." + name + parameterString(parameters) + " is not visible";
+								String msg = winnerId.module() + "." + name + parameterString(parameters)
+										+ " is not visible";
 								throw new ResolveError(msg);
 							}
 						}
@@ -2460,7 +2372,8 @@ public class FlowTypeChecker {
 				}
 			}
 
-			return new Triple<NameID, Type.FunctionOrMethod, List<String>>(winnerId, winnerType, winner.lifetimeArguments);
+			return new Triple<NameID, Type.FunctionOrMethod, List<String>>(winnerId, winnerType,
+					winner.lifetimeArguments);
 		}
 
 		// this is an ambiguous error
@@ -2491,9 +2404,18 @@ public class FlowTypeChecker {
 		throw new ResolveError(msg.toString());
 	}
 
+	private static List<String> getLifetimeParameters(Type.FunctionOrMethod fm) {
+		if (fm instanceof Type.Method) {
+			Type.Method mt = (Type.Method) fm;
+			return Arrays.asList(mt.lifetimeParams());
+		} else {
+			return Collections.EMPTY_LIST;
+		}
+	}
+
 	/**
 	 * Guess lifetime arguments for a method call.
-	 * 
+	 *
 	 * @param lifetimesUsedInArguments
 	 *            possible choices for lifetimes to be used as argument
 	 * @param candidateLifetimeParams
@@ -2507,13 +2429,12 @@ public class FlowTypeChecker {
 	 * @param validCandidates
 	 *            the set where we can put valid substitutions
 	 * @param environment
-	 * @throws ResolveError 
+	 * @throws ResolveError
 	 */
-	private void guessLifetimeArguments(
-			List<String> lifetimesUsedInArguments, List<String> candidateLifetimeParams,
-			List<Type> candidateParameterTypes, List<Type> targetParameterTypes,
-			NameID candidateName, Type.FunctionOrMethod candidateType,
-			List<ValidCandidate> validCandidates, Environment environment) throws ResolveError {
+	private void guessLifetimeArguments(List<String> lifetimesUsedInArguments, List<String> candidateLifetimeParams,
+			List<Type> candidateParameterTypes, List<Type> targetParameterTypes, NameID candidateName,
+			Type.FunctionOrMethod candidateType, List<ValidCandidate> validCandidates, Environment environment)
+					throws ResolveError {
 		// Assume we have "exp" lifetime parameters to be filled and
 		// "base" choices for each one.
 		// That makes base^exp possibilities!
@@ -2582,8 +2503,8 @@ public class FlowTypeChecker {
 			WyilFile m = builder.getModule(mid);
 			for (WyilFile.FunctionOrMethod mm : m.functionOrMethods()) {
 				if ((mm.isFunction() || mm.isMethod()) && mm.name().equals(nid.name())
-						&& (nparams == -1 || mm.type().params().size() == nparams)) {
-					Type.FunctionOrMethod t = (Type.FunctionOrMethod) mm.type();
+						&& (nparams == -1 || mm.type().params().length == nparams)) {
+					Type.FunctionOrMethod t = mm.type();
 					candidates.add(new Pair<NameID, Type.FunctionOrMethod>(nid, t));
 				}
 			}
@@ -2601,31 +2522,134 @@ public class FlowTypeChecker {
 	/**
 	 * Apply a lifetime substitution: Substitute all parameters in original by
 	 * their arguments.
-	 * 
+	 *
 	 * @param lifetimeParameters
 	 * @param lifetimeArguments
 	 * @param original
 	 * @return
 	 */
-	public static Type applySubstitution(List<String> lifetimeParameters, List<String> lifetimeArguments, Type original) {
+	public static Type applySubstitution(List<String> lifetimeParameters, List<String> lifetimeArguments,
+			Type original) {
 		if (lifetimeParameters.size() != lifetimeArguments.size()) {
-			throw new IllegalArgumentException("lifetime parameter/argument size mismatch!" + lifetimeParameters + " vs. " + lifetimeArguments);
+			throw new IllegalArgumentException(
+					"lifetime parameter/argument size mismatch!" + lifetimeParameters + " vs. " + lifetimeArguments);
 		}
 		Map<String, String> substitution = buildSubstitution(lifetimeParameters, lifetimeArguments);
-		if (substitution.isEmpty()) {
-			return original;
-		}
 		return applySubstitution(substitution, original);
 	}
 
-	private static Type applySubstitution(Map<String, String> substitution, Type original) {
+	private static Type applySubstitution(Map<String, String> substitution, Type type) {
 		if (substitution.isEmpty()) {
-			return original;
+			return type;
+		} else {
+			return substitute(substitution, type);
 		}
-		return new LifetimeSubstitution(original, substitution).getType();
 	}
 
-	private static Map<String, String> buildSubstitution(List<String> lifetimeParameters, List<String> lifetimeArguments) {
+	private static Type substitute(Map<String, String> substitution, Type type) {
+		if (type instanceof Type.Primitive) {
+			// A primitive cannot contain any lifetime arguments, hence can be
+			// returned as itself.
+			return type;
+		} else if (type instanceof Type.Nominal) {
+			// At the moment, nominals also cannot contain unbound lifetime
+			// arguments. In the future this will change as nominals will
+			// support explicit lifetime arguments.
+			return type;
+		} else if (type instanceof Type.Array) {
+			Type.Array t = (Type.Array) type;
+			Type element = substitute(substitution, t.element());
+			return Type.Array(element);
+		} else if (type instanceof Type.Reference) {
+			Type.Reference t = (Type.Reference) type;
+			Type element = substitute(substitution, t.element());
+			// Apply the substitution!
+			String lifetime = substitution.get(t.lifetime());
+			if (lifetime == null) {
+				// This lifetime variable is not being substituted for whatever
+				// reason.
+				lifetime = t.lifetime();
+			}
+			return Type.Reference(lifetime, element);
+		} else if (type instanceof Type.Record) {
+			Type.Record t = (Type.Record) type;
+			String[] fieldNames = t.getFieldNames();
+			Pair<Type, String>[] fields = new Pair[fieldNames.length];
+			for (int i = 0; i != fieldNames.length; ++i) {
+				String fieldName = fieldNames[i];
+				// FIXME: would be more efficient to access by field index
+				Type element = substitute(substitution, t.getField(fieldName));
+				fields[i] = new Pair<Type, String>(element, fieldName);
+			}
+			return Type.Record(t.isOpen(), fields);
+		} else if (type instanceof Type.Function) {
+			Type.Function t = (Type.Function) type;
+			Type[] parameters = substitute(substitution, t.params());
+			Type[] returns = substitute(substitution, t.returns());
+			return Type.Function(parameters, returns);
+		} else if (type instanceof Type.Method) {
+			Type.Method t = (Type.Method) type;
+			String[] contextLifetimes = t.contextLifetimes();
+			// Apply substitution to all context lifetimes.
+			for (int i = 0; i != contextLifetimes.length; ++i) {
+				String lifetime = substitution.get(contextLifetimes[i]);
+				if (lifetime != null) {
+					// Substitution resulted in a change
+					if (contextLifetimes == t.contextLifetimes()) {
+						contextLifetimes = Arrays.copyOf(contextLifetimes, contextLifetimes.length);
+					}
+					contextLifetimes[i] = lifetime;
+				}
+			}
+			// Create a clone of the substitution so we can cut out any lifetime
+			// parameters declared by this method. This is necessary to avoid
+			// any potential variable captures.
+			HashMap<String, String> nSubstitution = new HashMap<String, String>(substitution);
+			// Remove lifetime parameters from keys in the substitution map
+			String[] lifetimeParameters = t.lifetimeParams();
+			for (int i = 0; i != lifetimeParameters.length; ++i) {
+				String declaredLifetime = lifetimeParameters[i];
+				nSubstitution.remove(declaredLifetime);
+				if (substitution.containsValue(declaredLifetime)) {
+					// This is a big problem. Basically, because we will
+					// potentially have an unexpected variable capture if we
+					// perform a substitution which yields this value.
+
+					// FIXME: Do something more sensible here. What we need to
+					// do is replace the given declared lifetime with a fresh
+					// name which doesn't clash with anything else.
+					throw new RuntimeException("Need support for lifetime variable capture");
+				}
+			}
+			// Perform the substitution
+			Type[] parameters = substitute(nSubstitution, t.params());
+			Type[] returns = substitute(nSubstitution, t.returns());
+			return Type.Method(lifetimeParameters, contextLifetimes, parameters, returns);
+		} else if (type instanceof Type.Union) {
+			Type.Union t = (Type.Union) type;
+			Type[] bounds = substitute(substitution, t.bounds());
+			return Type.Union(bounds);
+		} else if (type instanceof Type.Intersection) {
+			Type.Intersection t = (Type.Intersection) type;
+			Type[] bounds = substitute(substitution, t.bounds());
+			return Type.Intersection(bounds);
+		} else {
+			Type.Negation t = (Type.Negation) type;
+			Type element = substitute(substitution, t.element());
+			return Type.Negation(element);
+		}
+	}
+
+	private static Type[] substitute(Map<String, String> substitution, Type[] types) {
+		Type[] nTypes = new Type[types.length];
+		for (int i = 0; i != types.length; ++i) {
+			nTypes[i] = substitute(substitution, types[i]);
+		}
+		return nTypes;
+	}
+
+	private static Map<String, String> buildSubstitution(List<String> lifetimeParameters,
+			List<String> lifetimeArguments) {
 		Map<String, String> substitution = new HashMap<String, String>();
 		Iterator<String> itP = lifetimeParameters.iterator();
 		Iterator<String> itA = lifetimeArguments.iterator();
@@ -2670,7 +2694,7 @@ public class FlowTypeChecker {
 					throw new SyntaxError("empty type encountered", file.getEntry(), ret);
 				}
 			}
-			return (Type.FunctionOrMethod) builder.toSemanticType((SyntacticType) t, context);
+			return (Type.FunctionOrMethod) builder.toSemanticType(t, context);
 		} catch (ResolveError e) {
 			throw new SyntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()), file.getEntry(), t, e);
 		}
@@ -2841,26 +2865,26 @@ public class FlowTypeChecker {
 					values.add(e.first());
 					element = Type.Union(element, e.second());
 				}
-				return new Pair<Constant, Type>(new Constant.Array(values), new Type.Array(element));
+				return new Pair<Constant, Type>(new Constant.Array(values), Type.Array(element));
 			} else if (expr instanceof Expr.ArrayGenerator) {
 				Expr.ArrayGenerator lg = (Expr.ArrayGenerator) expr;
 				Pair<Constant, Type> element = resolveAsConstant(lg.element, context, visited);
 				Pair<Constant, Type> count = resolveAsConstant(lg.count, context, visited);
 				Constant.Array l = evaluate(lg, element.first(), count.first(), context);
-				return new Pair<Constant, Type>(l, new Type.Array(element.second()));
+				return new Pair<Constant, Type>(l, Type.Array(element.second()));
 			} else if (expr instanceof Expr.Record) {
 				Expr.Record rg = (Expr.Record) expr;
 				HashMap<String, Constant> values = new HashMap<String, Constant>();
-				HashMap<String, Type> types = new HashMap<String, Type>();
+				ArrayList<Pair<Type, String>> types = new ArrayList<Pair<Type, String>>();
 				for (Map.Entry<String, Expr> e : rg.fields.entrySet()) {
 					Pair<Constant, Type> v = resolveAsConstant(e.getValue(), context, visited);
 					if (v == null) {
 						return null;
 					}
 					values.put(e.getKey(), v.first());
-					types.put(e.getKey(), v.second());
+					types.add(new Pair<Type, String>(v.second(), e.getKey()));
 				}
-				return new Pair<Constant, Type>(new Constant.Record(values), new Type.Record(types,false));
+				return new Pair<Constant, Type>(new Constant.Record(values), Type.Record(false, types));
 			} else if (expr instanceof Expr.FunctionOrMethod) {
 				// TODO: add support for proper lambdas
 				Expr.FunctionOrMethod f = (Expr.FunctionOrMethod) expr;
@@ -2873,7 +2897,7 @@ public class FlowTypeChecker {
 		}
 
 		internalFailure("unknown constant expression: " + expr.getClass().getName(), context, expr);
-		return null; // deadcode
+		return deadCode(expr);
 	}
 
 	// =========================================================================
@@ -2905,7 +2929,7 @@ public class FlowTypeChecker {
 			if (operand instanceof Constant.Integer) {
 				Constant.Integer b = (Constant.Integer) operand;
 				return new Constant.Integer(b.value().negate());
-			} 
+			}
 			syntaxError(errorMessage(INVALID_NUMERIC_EXPRESSION), context, operator);
 			break;
 		case INVERT:
@@ -2978,36 +3002,57 @@ public class FlowTypeChecker {
 	// expandAsType
 	// =========================================================================
 
-	public Type.Array expandAsEffectiveArray(Expr src, Context context) throws IOException, ResolveError {
-		Type.Array type = typeSystem.expandAsEffectiveArray(src.result());
-		if (type == null) {
-			syntaxError(errorMessage(INVALID_ARRAY_EXPRESSION), context, src);
-		}
-		return type;
+	public Type.EffectiveArray expandAsEffectiveArray(Expr src, Context context) throws IOException, ResolveError {
+		return expandAsEffectiveArray(src.result(), src, context);
 	}
 
-	public Type.Record expandAsEffectiveRecord(Expr src, Context context) throws IOException, ResolveError {
-		Type.Record type = typeSystem.expandAsEffectiveRecord(src.result());
-		if (type == null) {
-			syntaxError(errorMessage(RECORD_TYPE_REQUIRED, src.result()), context, src);
+	public Type.EffectiveArray expandAsEffectiveArray(Type type, SyntacticElement element, Context context)
+			throws IOException, ResolveError {
+		Type.EffectiveArray arrType = typeSystem.expandAsEffectiveArray(type);
+		if (arrType == null) {
+			syntaxError(errorMessage(INVALID_ARRAY_EXPRESSION), context, element);
 		}
-		return type;
+		return arrType;
 	}
 
-	public Type.Reference expandAsReference(Expr src, Context context) throws IOException, ResolveError {
-		Type.Reference type = typeSystem.expandAsReference(src.result());
-		if (type == null) {
-			syntaxError(errorMessage(RECORD_TYPE_REQUIRED, src.result()), context, src);
-		}
-		return type;
+	public Type.EffectiveRecord expandAsEffectiveRecord(Expr src, Context context) throws IOException, ResolveError {
+		return expandAsEffectiveRecord(src.result(), src, context);
 	}
 
-	public Type.FunctionOrMethod expandAsFunctionOrMethod(Expr src, Context context) throws IOException, ResolveError {
-		Type.FunctionOrMethod type = typeSystem.expandAsFunctionOrMethod(src.result());
-		if (type == null) {
-			syntaxError(errorMessage(FUNCTION_OR_METHOD_TYPE_REQUIRED, src.result()), context, src);
+	public Type.EffectiveRecord expandAsEffectiveRecord(Type type, SyntacticElement element, Context context)
+			throws IOException, ResolveError {
+		Type.EffectiveRecord recType = typeSystem.expandAsEffectiveRecord(type);
+		if (recType == null) {
+			syntaxError(errorMessage(RECORD_TYPE_REQUIRED, type), context, element);
 		}
-		return type;
+		return recType;
+	}
+
+	public Type.Reference expandAsEffectiveReference(Expr src, Context context) throws IOException, ResolveError {
+		return expandAsEffectiveReference(src.result(), src, context);
+	}
+
+	public Type.Reference expandAsEffectiveReference(Type type, SyntacticElement element, Context context)
+			throws IOException, ResolveError {
+		Type.Reference refType = typeSystem.expandAsReference(type);
+		if (refType == null) {
+			syntaxError(errorMessage(REFERENCE_TYPE_REQUIRED, type), context, element);
+		}
+		return refType;
+	}
+
+	public Type.FunctionOrMethod expandAsEffectiveFunctionOrMethod(Expr src, Context context)
+			throws IOException, ResolveError {
+		return expandAsEffectiveFunctionOrMethod(src.result(), src, context);
+	}
+
+	public Type.FunctionOrMethod expandAsEffectiveFunctionOrMethod(Type type, SyntacticElement element, Context context)
+			throws IOException, ResolveError {
+		Type.FunctionOrMethod funType = typeSystem.expandAsFunctionOrMethod(type);
+		if (funType == null) {
+			syntaxError(errorMessage(FUNCTION_OR_METHOD_TYPE_REQUIRED, type), context, element);
+		}
+		return funType;
 	}
 
 	private Environment addDeclaredParameters(List<WhileyFile.Parameter> parameters, Environment environment,
@@ -3037,9 +3082,19 @@ public class FlowTypeChecker {
 	// Misc
 	// =========================================================================
 
+	/**
+	 * This method is provided to properly handled positions which should be
+	 * dead code.
+	 *
+	 * @param context
+	 *            --- Context in which bytecodes are executed
+	 */
+	private <T> T deadCode(SyntacticElement element) {
+		throw new InternalFailure("dead code reached",file.getEntry(),element);
+	}
+
 	// Check t1 :> t2
-	private void checkIsSubtype(Type t1, Type t2, SyntacticElement elem, Environment environment)
-			throws ResolveError {
+	private void checkIsSubtype(Type t1, Type t2, SyntacticElement elem, Environment environment) throws ResolveError {
 		if (!typeSystem.isSubtype(t1, t2, environment.getLifetimeRelation())) {
 			throw new SyntaxError(errorMessage(SUBTYPE_ERROR, t1, t2), file.getEntry(), elem);
 		}
@@ -3049,15 +3104,7 @@ public class FlowTypeChecker {
 		if (!typeSystem.isSubtype(t1, t2.result(), environment.getLifetimeRelation())) {
 			// We use the nominal type for error reporting, since this includes
 			// more helpful names.
-			throw new SyntaxError(errorMessage(SUBTYPE_ERROR, t1, t2.result()), file.getEntry(),
-					t2);
-		}
-	}
-
-	// Check t1 :> t2
-	private void checkIsSubtype(Type t1, Type t2, SyntacticElement elem, Context context, Environment environment) throws ResolveError {
-		if (!typeSystem.isSubtype(t1, t2, environment.getLifetimeRelation())) {
-			syntaxError(errorMessage(SUBTYPE_ERROR, t1, t2), context, elem);
+			throw new SyntaxError(errorMessage(SUBTYPE_ERROR, t1, t2.result()), file.getEntry(), t2);
 		}
 	}
 
@@ -3141,7 +3188,8 @@ public class FlowTypeChecker {
 
 		/**
 		 * The lifetimes that are allowed to be dereferenced in a lambda body.
-		 * These are lifetime parameters to the lambda expression and declared context lifetimes.
+		 * These are lifetime parameters to the lambda expression and declared
+		 * context lifetimes.
 		 */
 		private final HashSet<String> lambdaLifetimes;
 
@@ -3384,7 +3432,7 @@ public class FlowTypeChecker {
 		/**
 		 * Create a fresh copy of this environment, but set the lambda flag and
 		 * remember the given context lifetimes and lifetime parameters.
-		 * 
+		 *
 		 * @param contextLifetimes
 		 *            the declared context lifetimes
 		 * @param lifetimeParameters
@@ -3404,7 +3452,7 @@ public class FlowTypeChecker {
 		 * Check whether we are allowed to dereference the given lifetime.
 		 * Inside a lambda, only "*", the declared context lifetimes and the
 		 * lifetime parameters can be dereferenced.
-		 * 
+		 *
 		 * @param lifetime
 		 * @return
 		 */
@@ -3468,6 +3516,7 @@ public class FlowTypeChecker {
 		 * simply increments the reference count of this environment and returns
 		 * it.
 		 */
+		@Override
 		public Environment clone() {
 			count++;
 			return this;
@@ -3480,19 +3529,21 @@ public class FlowTypeChecker {
 			--count;
 		}
 
+		@Override
 		public String toString() {
 			return currentTypes.toString();
 		}
 
+		@Override
 		public int hashCode() {
 			return 31 * currentTypes.hashCode() + lambdaLifetimes.hashCode();
 		}
 
+		@Override
 		public boolean equals(Object o) {
 			if (o instanceof Environment) {
 				Environment r = (Environment) o;
-				return currentTypes.equals(r.currentTypes)
-						&& lambdaLifetimes.equals(r.lambdaLifetimes);
+				return currentTypes.equals(r.currentTypes) && lambdaLifetimes.equals(r.lambdaLifetimes);
 			}
 			return false;
 		}
