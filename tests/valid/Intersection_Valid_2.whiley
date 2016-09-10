@@ -10,5 +10,4 @@ function f(InterList l) -> int:
     return l.data
 
 public export method test() :
-    LinkedList list = {next: null, data: 1234}
-    assume f(list) == 1234
+    assume f({next: null, data: 1234}) == 1234

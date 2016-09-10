@@ -25,13 +25,12 @@
 
 package wyil.util.type;
 
-import static wyil.lang.Type.*;
-
 import java.util.*;
 
 import wyautl_old.lang.*;
 import wybs.lang.NameID;
 import wyil.lang.Type;
+import wyil.util.TypeSystem;
 
 /**
  * <p>
@@ -179,12 +178,12 @@ public class SubtypeOperator {
 
 		if(fromKind == toKind) {
 			switch(fromKind) {
-			case K_VOID:
+			case TypeSystem.K_VOID:
 				return !fromSign && !toSign;
-			case K_ANY:
+			case TypeSystem.K_ANY:
 				return fromSign && toSign;
 			// === Leaf States First ===
-			case K_NOMINAL: {
+			case TypeSystem.K_NOMINAL: {
 				NameID nid1 = (NameID) fromState.data;
 				NameID nid2 = (NameID) toState.data;
 				if(fromSign || toSign) {
@@ -197,8 +196,8 @@ public class SubtypeOperator {
 				return true;
 			}
 			// === Homogenous Compound States ===
-			case K_SET:
-			case K_LIST:
+			case TypeSystem.K_SET:
+			case TypeSystem.K_LIST:
 				// != below not ||. This is because lists and sets can intersect
 				// on the empty list/set.
 				if(fromSign != toSign) {
@@ -210,7 +209,7 @@ public class SubtypeOperator {
 					}
 				}
 				return true;
-			case K_REFERENCE:
+			case TypeSystem.K_REFERENCE:
 				if(fromSign || toSign) {
 					int fromChild = fromState.children[0];
 					int toChild = toState.children[0];
@@ -229,27 +228,28 @@ public class SubtypeOperator {
 					} else {
 						String fromLifetime = applyFromLifetimeSubstitution((String) fromState.data);
 						String toLifetime = applyToLifetimeSubstitution((String) toState.data);
-
+						//
 						if (fromSign) {
-							// Equivalent to the negation of "is &a:A (fromType) a subtype of &b:B (toType)?"
+							// A & !B ==> !!(A & !B)
+							// &from:T1 & !(&to:T2) ==> not (&from:T1) <: (&to:T2).
 							return !(
-								// &a:A is a subtype of &b:B iff all these are true:
-								// a outlives b
+								// &from:T1 is a subtype of &to:T2 iff all these are true:
+								// from outlives to
 								lifetimeRelation.outlives(fromLifetime, toLifetime)
-								// A is a subtype of B
+								// T1 is a subtype of T2
 								&& !isIntersection(fromChild, true, toChild, false)
-								// B is a subtype of A
+								// T2 is a subtype of T1
 								&& !isIntersection(fromChild, false, toChild, true)
 							);
 						} else {
-							// Equivalent to the negation of "is &b:B (toType) a subtype of &a:A (fromType)?"
+							// not (&to:T1) <: (&from:T2).
 							return !(
-								// &b:B is a subtype of &a:A iff all these are true:
-								// b outlives a
+								// &to:T1 is a subtype of &from:T2 iff all these are true:
+								// to outlives from
 								lifetimeRelation.outlives(toLifetime, fromLifetime)
-								// B is a subtype of A
+								// T2 is a subtype of T1
 								&& !isIntersection(fromChild, false, toChild, true)
-								// A is a subtype of B
+								// T1 is a subtype of T2
 								&& !isIntersection(fromChild, true, toChild, false)
 							);
 						}
@@ -259,8 +259,8 @@ public class SubtypeOperator {
 				// An inverted reference type always contains the value "null".
 				// Both are inverted, so they intersect with "null".
 				return true;
-			case K_MAP:
-			case K_TUPLE:  {
+			case TypeSystem.K_MAP:
+			case TypeSystem.K_TUPLE:  {
 				if(fromSign || toSign) {
 					// nary nodes
 					int[] fromChildren = fromState.children;
@@ -286,22 +286,22 @@ public class SubtypeOperator {
 				}
 				return true;
 			}
-			case K_RECORD:
+			case TypeSystem.K_RECORD:
 				return intersectRecords(fromIndex,fromSign,toIndex,toSign);
-			case K_NEGATION:
-			case K_UNION :
+			case TypeSystem.K_NEGATION:
+			case TypeSystem.K_UNION :
 					// let these cases fall through to if-statements after
 					// switch.
 				break;
 			// === Heterogenous Compound States ===
-			case K_FUNCTION:
-			case K_METHOD:
+			case TypeSystem.K_FUNCTION:
+			case TypeSystem.K_METHOD:
 				if(fromSign || toSign) {
 					// nary nodes
 					int[] fromChildren = fromState.children;
 					int[] toChildren = toState.children;
-					Type.FunctionOrMethod.Data fromData = (Type.FunctionOrMethod.Data) fromState.data;
-					Type.FunctionOrMethod.Data toData = (Type.FunctionOrMethod.Data) toState.data;
+					TypeSystem.FunctionOrMethodState fromData = (TypeSystem.FunctionOrMethodState) fromState.data;
+					TypeSystem.FunctionOrMethodState toData = (TypeSystem.FunctionOrMethodState) toState.data;
 					int fromNumParams = fromData.numParams;
 					int toNumParams = toData.numParams;
 					List<String> fromLifetimeParameters = fromData.lifetimeParameters;
@@ -387,10 +387,10 @@ public class SubtypeOperator {
 			}
 		}
 
-		if(fromKind == K_NEGATION) {
+		if(fromKind == TypeSystem.K_NEGATION) {
 			int fromChild = fromState.children[0];
 			return isIntersection(fromChild,!fromSign,toIndex,toSign);
-		} else if(toKind == K_NEGATION) {
+		} else if(toKind == TypeSystem.K_NEGATION) {
 			int toChild = toState.children[0];
 			return isIntersection(fromIndex,fromSign,toChild,!toSign);
 		}
@@ -399,9 +399,9 @@ public class SubtypeOperator {
 		fromKind = invert(fromKind,fromSign);
 		toKind = invert(toKind,toSign);
 
-		if(fromKind == K_VOID || toKind == K_VOID){
+		if(fromKind == TypeSystem.K_VOID || toKind == TypeSystem.K_VOID){
 			return false;
-		} else if(fromKind == K_UNION) {
+		} else if(fromKind == TypeSystem.K_UNION) {
 			int[] fromChildren = fromState.children;
 			for(int i : fromChildren) {
 				if(isIntersection(i,fromSign,toIndex,toSign)) {
@@ -409,7 +409,7 @@ public class SubtypeOperator {
 				}
 			}
 			return false;
-		} else if(toKind == K_UNION) {
+		} else if(toKind == TypeSystem.K_UNION) {
 			int[] toChildren = toState.children;
 			for(int j : toChildren) {
 				if(isIntersection(fromIndex,fromSign,j,toSign)) {
@@ -417,7 +417,7 @@ public class SubtypeOperator {
 				}
 			}
 			return false;
-		} else if(fromKind == K_INTERSECTION) {
+		} else if(fromKind == TypeSystem.K_INTERSECTION) {
 			int[] fromChildren = fromState.children;
 			for (int i : fromChildren) {
 				if(!isIntersection(i,fromSign,toIndex,toSign)) {
@@ -425,7 +425,7 @@ public class SubtypeOperator {
 				}
 			}
 			return true;
-		} else if(toKind == K_INTERSECTION) {
+		} else if(toKind == TypeSystem.K_INTERSECTION) {
 			int[] toChildren = toState.children;
 			for (int j : toChildren) {
 				if(!isIntersection(fromIndex,fromSign,j,toSign)) {
@@ -433,7 +433,7 @@ public class SubtypeOperator {
 				}
 			}
 			return true;
-		} else if(fromKind == K_ANY || toKind == K_ANY){
+		} else if(fromKind == TypeSystem.K_ANY || toKind == TypeSystem.K_ANY){
 			return true;
 		}
 
@@ -543,8 +543,8 @@ public class SubtypeOperator {
 		if(fromSign || toSign) {
 			int[] fromChildren = fromState.children;
 			int[] toChildren = toState.children;
-			Type.Record.State fromFields = (Type.Record.State) fromState.data;
-			Type.Record.State toFields = (Type.Record.State) toState.data;
+			TypeSystem.RecordState fromFields = (TypeSystem.RecordState) fromState.data;
+			TypeSystem.RecordState toFields = (TypeSystem.RecordState) toState.data;
 
 			boolean fromOpen = fromFields.isOpen;
 			boolean toOpen = toFields.isOpen;
@@ -631,20 +631,14 @@ public class SubtypeOperator {
 			return kind;
 		}
 		switch(kind) {
-			case K_ANY:
-				return K_VOID;
-			case K_VOID:
-				return K_ANY;
-			case K_UNION:
-				return K_INTERSECTION;
+			case TypeSystem.K_ANY:
+				return TypeSystem.K_VOID;
+			case TypeSystem.K_VOID:
+				return TypeSystem.K_ANY;
+			case TypeSystem.K_UNION:
+				return TypeSystem.K_INTERSECTION;
 			default:
 				return kind;
 		}
 	}
-
-	/**
-	 * The following constant is not actually a valid kind; however, it's
-	 * helpful to think of it as one.
-	 */
-	private static final int K_INTERSECTION = -1;
 }

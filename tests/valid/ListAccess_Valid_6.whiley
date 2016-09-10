@@ -1,6 +1,6 @@
 
 
-function f(int[] str) -> int[]:
+function f(int[] str) -> int[]|null:
     int[]|null r = null
     int i = 0 
     while i < |str|

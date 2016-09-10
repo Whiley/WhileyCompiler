@@ -29,7 +29,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({ ListSubtypeTests.class, RecordSubtypeTests.class,
-		RecursiveSubtypeTests.class, TupleSubtypeTests.class })
+@Suite.SuiteClasses({ ArraySubtypeTests.class, RecordSubtypeTests.class, RecursiveSubtypeTests.class })
 public class AllTests {
 }

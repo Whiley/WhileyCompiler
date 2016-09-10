@@ -30,6 +30,7 @@ import java.util.*;
 import wybs.lang.Attribute;
 import wybs.lang.SyntacticElement;
 import wyc.lang.SyntacticType.NonUnion;
+import wyil.lang.Type;
 
 /**
  * <p>
@@ -59,6 +60,7 @@ public interface SyntacticType extends SyntacticElement {
 	public interface NonUnion extends SyntacticType {
 		// FIXME: this interface should not exist!
 	}
+	
 	public interface Primitive extends SyntacticType {
 
 	}

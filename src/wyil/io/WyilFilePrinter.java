@@ -52,7 +52,7 @@ import wyil.lang.WyilFile.*;
 public final class WyilFilePrinter {
 	private PrintWriter out;
 	private boolean verbose = false;
-	
+
 	public WyilFilePrinter(Build.Task builder) {
 
 	}
@@ -72,11 +72,11 @@ public final class WyilFilePrinter {
 	public void setVerbose(boolean flag) {
 		this.verbose = flag;
 	}
-	
+
 	// ======================================================================
 	// Apply Method
 	// ======================================================================
-	
+
 	public void apply(WyilFile module) throws IOException {
 		out.println();
 		for(WyilFile.Constant cd : module.constants()) {
@@ -102,7 +102,7 @@ public final class WyilFilePrinter {
 
 		for(FunctionOrMethod md : module.functionOrMethods()) {
 			write(md,out);
-			out.println();			
+			out.println();
 		}
 		out.flush();
 	}
@@ -121,11 +121,11 @@ public final class WyilFilePrinter {
 			out.print("method ");
 		}
 		out.print(method.name());
-		writeParameters(ft.params(),out);		
-		if (!ft.returns().isEmpty()) {
+		writeParameters(ft.params(),out);
+		if (ft.returns().length != 0) {
 			out.print(" -> ");
 			writeParameters(ft.returns(),out);
-		}				
+		}
 		//
 		for (Location<Expr> precondition : method.getPrecondition()) {
 			out.println();
@@ -138,32 +138,32 @@ public final class WyilFilePrinter {
 			writeExpression(postcondition, out);
 		}
 		if (method.getBody() != null) {
-			out.println(": ");			
+			out.println(": ");
 			writeBlock(0, method.getBody(), out);
 		}
 	}
 
-	private void writeLocationsAsComments(SyntaxTree tree, PrintWriter out) {		
+	private void writeLocationsAsComments(SyntaxTree tree, PrintWriter out) {
 		List<Location<?>> locations = tree.getLocations();
 		for(int i=0;i!=locations.size();++i) {
-			Location<?> loc = locations.get(i);			
+			Location<?> loc = locations.get(i);
 			String id = String.format("%1$" + 3 + "s", "#" + i);
 			String type = String.format("%1$-" + 8 + "s", Arrays.toString(loc.getTypes()));
 			out.println("// " + id + " " + type + " " + loc.getBytecode());
 		}
 	}
-	
-	private void writeParameters(List<Type> parameters, PrintWriter out) {
+
+	private void writeParameters(Type[] parameters, PrintWriter out) {
 		out.print("(");
-		for (int i = 0; i != parameters.size(); ++i) {
+		for (int i = 0; i != parameters.length; ++i) {
 			if (i != 0) {
 				out.print(", ");
 			}
-			out.print(parameters.get(i));
+			out.print(parameters[i]);
 		}
 		out.print(")");
 	}
-	
+
 	private void writeBlock(int indent, Location<Bytecode.Block> block, PrintWriter out) {
 		for (int i = 0; i != block.numberOfOperands(); ++i) {
 			writeStatement(indent, block.getOperand(i), out);
@@ -172,7 +172,7 @@ public final class WyilFilePrinter {
 
 	@SuppressWarnings("unchecked")
 	private void writeStatement(int indent, Location<?> c, PrintWriter out) {
-		tabIndent(indent+1,out); 
+		tabIndent(indent+1,out);
 		switch(c.getOpcode()) {
 		case Bytecode.OPCODE_aliasdecl:
 			writeAliasDeclaration(indent, (Location<Bytecode.AliasDeclaration>) c, out);
@@ -234,7 +234,7 @@ public final class WyilFilePrinter {
 			throw new IllegalArgumentException("unknown bytecode encountered");
 		}
 	}
-	
+
 	private void writeAliasDeclaration(int indent, Location<AliasDeclaration> loc, PrintWriter out) {
 		out.print("alias ");
 		out.print(loc.getType());
@@ -254,7 +254,7 @@ public final class WyilFilePrinter {
 		writeExpression(c.getOperand(0),out);
 		out.println();
 	}
-	
+
 	private void writeAssign(int indent, Location<Bytecode.Assign> stmt, PrintWriter out) {
 		Location<?>[] lhs = stmt.getOperandGroup(SyntaxTree.LEFTHANDSIDE);
 		Location<?>[] rhs = stmt.getOperandGroup(SyntaxTree.RIGHTHANDSIDE);
@@ -268,24 +268,24 @@ public final class WyilFilePrinter {
 		writeExpressions(rhs,out);
 		out.println();
 	}
-	
+
 	private void writeBreak(int indent, Location<Bytecode.Break> b, PrintWriter out) {
 		out.println("break");
 	}
-	
+
 	private void writeContinue(int indent, Location<Bytecode.Continue> b, PrintWriter out) {
 		out.println("continue");
 	}
-	
+
 	private void writeDebug(int indent, Location<Bytecode.Debug> b, PrintWriter out) {
 		out.println("debug");
 	}
-	
+
 	private void writeDoWhile(int indent, Location<Bytecode.DoWhile> b, PrintWriter out) {
 		Location<?>[] loopInvariant = b.getOperandGroup(0);
-		Location<?>[] modifiedOperands = b.getOperandGroup(1);		
+		Location<?>[] modifiedOperands = b.getOperandGroup(1);
 		out.println("do:");
-		//				
+		//
 		writeBlock(indent+1,b.getBlock(0),out);
 		tabIndent(indent+1,out);
 		out.print("while ");
@@ -305,7 +305,7 @@ public final class WyilFilePrinter {
 	private void writeFail(int indent, Location<Bytecode.Fail> c, PrintWriter out) {
 		out.println("fail");
 	}
-	
+
 	private void writeIf(int indent, Location<Bytecode.If> b, PrintWriter out) {
 		out.print("if ");
 		writeExpression(b.getOperand(0),out);
@@ -317,11 +317,11 @@ public final class WyilFilePrinter {
 			writeBlock(indent+1,b.getBlock(1),out);
 		}
 	}
-	
+
 	private void writeIndirectInvoke(int indent, Location<Bytecode.IndirectInvoke> stmt, PrintWriter out) {
 		Location<?>[] operands = stmt.getOperands();
 		writeExpression(operands[0],out);
-		out.print("(");		
+		out.print("(");
 		for(int i=1;i!=operands.length;++i) {
 			if(i!=1) {
 				out.print(", ");
@@ -341,13 +341,13 @@ public final class WyilFilePrinter {
 		}
 		out.println(")");
 	}
-	
+
 	private void writeNamedBlock(int indent, Location<Bytecode.NamedBlock> b, PrintWriter out) {
 		out.print(b.getBytecode().getName());
 		out.println(":");
 		writeBlock(indent+1,b.getBlock(0),out);
 	}
-	
+
 	private void writeWhile(int indent, Location<Bytecode.While> b, PrintWriter out) {
 		out.print("while ");
 		writeExpression(b.getOperand(0),out);
@@ -363,23 +363,23 @@ public final class WyilFilePrinter {
 			writeExpression(invariant,out);
 		}
 		out.println(":");
-		writeBlock(indent+1,b.getBlock(0),out);		
+		writeBlock(indent+1,b.getBlock(0),out);
 	}
-	
+
 	private void writeReturn(int indent, Location<Bytecode.Return> b, PrintWriter out) {
 		Location<?>[] operands = b.getOperands();
 		out.print("return");
 		if(operands.length > 0) {
 			out.print(" ");
-			writeExpressions(operands,out);			
+			writeExpressions(operands,out);
 		}
 		out.println();
 	}
-	
+
 	private void writeSkip(int indent, Location<Bytecode.Skip> b, PrintWriter out) {
 		out.println("skip");
 	}
-	
+
 	private void writeSwitch(int indent, Location<Bytecode.Switch> b, PrintWriter out) {
 		out.print("switch ");
 		writeExpression(b.getOperand(0), out);
@@ -404,12 +404,12 @@ public final class WyilFilePrinter {
 			writeBlock(indent + 2, b.getBlock(i), out);
 		}
 	}
-	
+
 	private void writeVariableAccess(Location<VariableAccess> loc, PrintWriter out) {
-		Location<VariableDeclaration> vd = getVariableDeclaration(loc.getOperand(0));		
+		Location<VariableDeclaration> vd = getVariableDeclaration(loc.getOperand(0));
 		out.print(vd.getBytecode().getName());
 	}
-	
+
 	private void writeVariableDeclaration(int indent, Location<VariableDeclaration> loc, PrintWriter out) {
 		Location<?>[] operands = loc.getOperands();
 		out.print(loc.getType());
@@ -421,11 +421,11 @@ public final class WyilFilePrinter {
 		}
 		out.println();
 	}
-	
+
 	/**
 	 * Write a bracketed operand if necessary. Any operand whose human-readable
 	 * representation can contain whitespace must have brackets around it.
-	 * 
+	 *
 	 * @param operand
 	 * @param enclosing
 	 * @param out
@@ -449,7 +449,7 @@ public final class WyilFilePrinter {
 			writeExpression(exprs[i], out);
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private void writeExpression(Location<?> expr, PrintWriter out) {
 		switch (expr.getOpcode()) {
@@ -522,26 +522,26 @@ public final class WyilFilePrinter {
 			break;
 		case Bytecode.OPCODE_varaccess:
 			writeVariableAccess((Location<VariableAccess>) expr, out);
-			break;			
+			break;
 		default:
 			throw new IllegalArgumentException("unknown bytecode encountered: " + expr.getBytecode());
 		}
 	}
-	
+
 
 	private void writeArrayLength(Location<Bytecode.Operator> expr, PrintWriter out) {
 		out.print("|");
 		writeExpression(expr.getOperand(0), out);
-		out.print("|");		
+		out.print("|");
 	}
-	
+
 	private void writeArrayIndex(Location<Bytecode.Operator> expr, PrintWriter out) {
 		writeExpression(expr.getOperand(0), out);
 		out.print("[");
 		writeExpression(expr.getOperand(1), out);
 		out.print("]");
 	}
-	
+
 	private void writeArrayInitialiser(Location<Bytecode.Operator> expr, PrintWriter out) {
 		Location<?>[] operands = expr.getOperands();
 		out.print("[");
@@ -570,12 +570,12 @@ public final class WyilFilePrinter {
 	}
 	private void writeFieldLoad(Location<Bytecode.FieldLoad> expr, PrintWriter out) {
 		writeBracketedExpression(expr.getOperand(0),out);
-		out.print("." + expr.getBytecode().fieldName());		
+		out.print("." + expr.getBytecode().fieldName());
 	}
 	private void writeIndirectInvoke(Location<Bytecode.IndirectInvoke> expr, PrintWriter out) {
 		Location<?>[] operands = expr.getOperands();
 		writeExpression(operands[0],out);
-		out.print("(");		
+		out.print("(");
 		for(int i=1;i!=operands.length;++i) {
 			if(i!=1) {
 				out.print(", ");
@@ -624,20 +624,19 @@ public final class WyilFilePrinter {
 		writeExpression(expr.getOperand(0), out);
 		out.print(")");
 	}
-	
+
 	private void writeRecordConstructor(Location<Bytecode.Operator> expr, PrintWriter out) {
 		Type.EffectiveRecord t = (Type.EffectiveRecord) expr.getType();
-		ArrayList<String> fields = new ArrayList<String>(t.fields().keySet());
-		Collections.sort(fields);
+		String[] fields = t.getFieldNames();
 		Location<?>[] operands = expr.getOperands();
 		out.print("{");
-		for(int i=0;i!=operands.length;++i) {
-			if(i != 0) {
+		for (int i = 0; i != operands.length; ++i) {
+			if (i != 0) {
 				out.print(", ");
 			}
-			out.print(fields.get(i));
+			out.print(fields[i]);
 			out.print(" ");
-			writeExpression(operands[i],out);
+			writeExpression(operands[i], out);
 		}
 		out.print("}");
 	}
@@ -646,20 +645,20 @@ public final class WyilFilePrinter {
 		out.print("new ");
 		writeExpression(expr.getOperand(0), out);
 	}
-	
+
 	private void writePrefixLocations(Location<Bytecode.Operator> expr, PrintWriter out) {
 		// Prefix operators
 		out.print(opcode(expr.getBytecode().kind()));
 		writeBracketedExpression(expr.getOperand(0),out);
 	}
-	
+
 	private void writeInfixLocations(Location<Bytecode.Operator> c, PrintWriter out) {
 		writeBracketedExpression(c.getOperand(0),out);
 		out.print(" ");
 		out.print(opcode(c.getBytecode().kind()));
 		out.print(" ");
 		writeBracketedExpression(c.getOperand(1),out);
-		
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -682,7 +681,7 @@ public final class WyilFilePrinter {
 		writeExpression(c.getOperand(SyntaxTree.CONDITION), out);
 		out.print(" } ");
 	}
-	
+
 	private String quantifierKind(Location<Bytecode.Quantifier> c) {
 		switch(c.getOpcode()) {
 		case Bytecode.OPCODE_some:
@@ -692,14 +691,14 @@ public final class WyilFilePrinter {
 		}
 		throw new IllegalArgumentException();
 	}
-	
+
 	private static void writeModifiers(List<Modifier> modifiers, PrintWriter out) {
 		for(Modifier m : modifiers) {
 			out.print(m.toString());
 			out.print(" ");
 		}
 	}
-	
+
 	private boolean needsBrackets(Bytecode e) {
 		switch(e.getOpcode()) {
 		case Bytecode.OPCODE_convert:
@@ -713,22 +712,22 @@ public final class WyilFilePrinter {
 		case Bytecode.OPCODE_lt:
 		case Bytecode.OPCODE_le:
 		case Bytecode.OPCODE_gt:
-		case Bytecode.OPCODE_ge:		
+		case Bytecode.OPCODE_ge:
 		case Bytecode.OPCODE_logicaland:
-		case Bytecode.OPCODE_logicalor:		
+		case Bytecode.OPCODE_logicalor:
 		case Bytecode.OPCODE_bitwiseor:
 		case Bytecode.OPCODE_bitwisexor:
 		case Bytecode.OPCODE_bitwiseand:
 		case Bytecode.OPCODE_shl:
-		case Bytecode.OPCODE_shr:		
-		case Bytecode.OPCODE_is:		
+		case Bytecode.OPCODE_shr:
+		case Bytecode.OPCODE_is:
 		case Bytecode.OPCODE_newobject:
 		case Bytecode.OPCODE_dereference:
 			return true;
 		}
 		return false;
 	}
-	
+
 	private static String opcode(Bytecode.OperatorKind k) {
 		switch(k) {
 		case NEG:
@@ -775,7 +774,7 @@ public final class WyilFilePrinter {
 		case LEFTSHIFT:
 			return "<<";
 		case RIGHTSHIFT:
-			return ">>";		
+			return ">>";
 		case IS:
 			return "is";
 		case NEW:
@@ -791,7 +790,7 @@ public final class WyilFilePrinter {
 			out.print(" ");
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private Location<VariableDeclaration> getVariableDeclaration(Location<?> loc) {
 		switch (loc.getOpcode()) {

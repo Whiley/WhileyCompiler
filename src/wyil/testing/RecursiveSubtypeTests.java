@@ -26,8 +26,12 @@
 // This file was automatically generated.
 package wyil.testing;
 import org.junit.*;
+
+import wybs.util.ResolveError;
+
 import static org.junit.Assert.*;
 import wyil.lang.Type;
+import wyil.util.TypeSystem;
 
 public class RecursiveSubtypeTests {
 	@Test public void test_1() { checkIsSubtype("null","null"); }
@@ -3755,11 +3759,19 @@ public class RecursiveSubtypeTests {
 	private void checkIsSubtype(String from, String to) {
 		Type ft = Type.fromString(from);
 		Type tt = Type.fromString(to);
-		assertTrue(Type.isSubtype(ft,tt));
+		try {
+			assertTrue(new TypeSystem(null).isSubtype(ft,tt));
+		} catch(ResolveError e) {
+			throw new RuntimeException(e);
+		}
 	}
 	private void checkNotSubtype(String from, String to) {
 		Type ft = Type.fromString(from);
 		Type tt = Type.fromString(to);
-		assertFalse(Type.isSubtype(ft,tt));
+		try {
+			assertFalse(new TypeSystem(null).isSubtype(ft, tt));
+		} catch (ResolveError e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

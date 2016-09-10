@@ -18,19 +18,19 @@ public class Exprs {
 	 * @param context
 	 * @return
 	 */
-	public static HashSet<Pair<Nominal,String>> uses(Expr expr, Context context) {
-		HashSet<Pair<Nominal,String>> r = new HashSet<Pair<Nominal,String>>();
+	public static HashSet<Pair<Type,String>> uses(Expr expr, Context context) {
+		HashSet<Pair<Type,String>> r = new HashSet<Pair<Type,String>>();
 		uses(expr,context,r);
 		return r;
 	}
 
-	private static void uses(Expr expr, Context context, HashSet<Pair<Nominal,String>> uses) {
+	private static void uses(Expr expr, Context context, HashSet<Pair<Type,String>> uses) {
 		try {
 			if (expr instanceof Expr.Constant) {
 				// do nout
 			} else if (expr instanceof Expr.LocalVariable) {
 				Expr.LocalVariable lv = (Expr.LocalVariable) expr;
-				uses.add(new Pair<Nominal,String>(lv.type,lv.var));
+				uses.add(new Pair<Type,String>(lv.type,lv.var));
 
 			} else if (expr instanceof Expr.ConstantAccess) {
 				// do nout
@@ -222,8 +222,8 @@ public class Exprs {
 
 			} else if (expr instanceof Expr.FunctionOrMethod) {
 				Expr.FunctionOrMethod e = (Expr.FunctionOrMethod) expr;
-				return e.type.raw() instanceof Type.Function;
-
+				// FIXME: need to expand this to be a functionOrMethod #667
+				return e.type instanceof Type.Function;
 			} else if (expr instanceof Expr.New) {
 				return false;
 

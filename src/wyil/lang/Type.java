@@ -18,18 +18,12 @@
 
 package wyil.lang;
 
-import java.io.IOException;
 import java.util.*;
-
-import wyautl_old.io.BinaryAutomataReader;
-import wyautl_old.io.BinaryAutomataWriter;
-import wyautl_old.lang.*;
-import wyautl_old.lang.Automaton.State;
 import wybs.lang.NameID;
-import wyfs.io.BinaryInputStream;
-import wyfs.io.BinaryOutputStream;
-import wyfs.util.Trie;
-import wyil.util.type.*;
+import wycc.util.ArrayUtils;
+import wycc.util.Pair;
+import wyil.util.TypeSystem;
+import wyil.util.type.TypeParser;
 
 /**
  * A structural type. See
@@ -39,586 +33,386 @@ import wyil.util.type.*;
  * @author David J. Pearce
  *
  */
-public abstract class Type {
-	// =============================================================
-	// Debug Code
-	// =============================================================
-
-//	private static final HashSet<Type> distinctTypes = new HashSet<Type>();
-//
-	private static boolean canonicalisation = true;
-//	private static int equalsCount = 0;
-//	private static int normalisedCount = 0;
-//	private static int unminimisedCount = 0;
-//	private static int minimisedCount = 0;
-
-//	static {
-//		Thread _shutdownHook = new Thread(Type.class.getName()
-//				+ ".shutdownHook") {
-//			public void run() {
-//				shutdown();
-//			}
-//		};
-//		Runtime.getRuntime().addShutdownHook(_shutdownHook);
-//	}
-
-//	public static void shutdown() {
-//		System.err.println("#TYPE EQUALITY TESTS: " + equalsCount);
-//		System.err.println("#TYPE NORMALISATIONS: " + normalisedCount + " (" + unminimisedCount + " -> " + minimisedCount +")");
-//		System.err.println("#DISTINCT TYPES: " + distinctTypes.size());
-//	}
+public interface Type {
 
 	// =============================================================
-	// Type Constructors
-	// =============================================================
-
-	public static final Any T_ANY = new Any();
-	public static final Void T_VOID = new Void();
-	public static final Null T_NULL = new Null();
-	public static final Bool T_BOOL = new Bool();
-	public static final Byte T_BYTE = new Byte();
-	public static final Int T_INT = new Int();
-	public static final Meta T_META = new Meta();
-
-	// the following are strictly unnecessary, but since they occur very
-	// commonly it is helpful to provide them as constants.
-
-	// public static final Reference T_REF_ANY = Reference(T_ANY);
-
-	/**
-	 * The type representing all possible list types.
-	 */
-	public static final Array T_ARRAY_ANY = Array(T_ANY,false);
-	
-	/**
-	 * Construct a reference type using the given element type.
-	 *
-	 * @param element
-	 */
-	public static final Type.Reference Reference(Type element, String lifetime) {
-		Type r = construct(K_REFERENCE, lifetime, element);
-		if (r instanceof Type.Reference) {
-			return (Type.Reference) r;
-		} else {
-			throw new IllegalArgumentException(
-					"invalid arguments for Type.Reference(): " + r);
-		}
-	}
-
-	public static final Nominal Nominal(NameID name) {
-		if (name == null) {
-			throw new IllegalArgumentException(
-					"nominal name cannot be null");
-		}
-		return new Nominal(name);
-	}
-
-	/**
-	 * Construct a list type using the given element type.
-	 *
-	 * @param element
-	 */
-	public static final Type.Array Array(Type element, boolean nonEmpty) {
-		return (Type.Array) construct(K_LIST, nonEmpty, element);
-	}
-
-	/**
-	 * Construct a union type using the given type bounds
-	 *
-	 * @param element
-	 */
-	public static final Type Union(Collection<Type> bounds) {
-		return construct(K_UNION,null,bounds);
-	}
-
-	/**
-	 * Construct a union type using the given type bounds
-	 *
-	 * @param element
-	 */
-	public static final Type Union(Type... bounds) {
-		return construct(K_UNION,null,bounds);
-	}
-
-	/**
-	 * Construct a difference of two types.
-	 *
-	 * @param element
-	 */
-	public static final Type Negation(Type element) {
-		return construct(K_NEGATION,null,element);
-	}
-
-	/**
-	 * Construct a function type using the given return and parameter types.
-	 *
-	 * @param element
-	 */
-	public static final Type.Function Function(List<Type> returns,
-			List<Type> params) {		
-		Type[] rparams = new Type[params.size()+returns.size()];
-		int params_size = params.size();
-		for(int i=0;i!=params_size;++i) {
-			rparams[i] = params.get(i);
-		}
-		for(int i=0;i!=returns.size();++i) {
-			rparams[i+params_size] = returns.get(i);
-		}
-		Type.FunctionOrMethod.Data data = new Type.FunctionOrMethod.Data(params_size,
-				Collections.<String>emptySet(), Collections.<String>emptyList());
-		Type r = construct(K_FUNCTION, data, rparams);
-		if (r instanceof Type.Function) {
-			return (Type.Function) r;
-		} else {
-			throw new IllegalArgumentException(
-					"invalid arguments for Type.Function() - " + params);
-		}
-	}
-
-	/**
-	 * Construct a function type using the given return and parameter types.
-	 *
-	 * @param element
-	 */
-	public static final Type.Function Function(Type[] returns,
-			Type... params) {		
-		Type[] rparams = new Type[params.length+returns.length];
-		System.arraycopy(params, 0, rparams, 0, params.length);
-		System.arraycopy(returns, 0, rparams, params.length, returns.length);
-		Type.FunctionOrMethod.Data data = new Type.FunctionOrMethod.Data(params.length,
-				Collections.<String>emptySet(), Collections.<String>emptyList());
-		Type r = construct(K_FUNCTION, data, rparams);
-		if (r instanceof Type.Function) {
-			return (Type.Function) r;
-		} else {
-			throw new IllegalArgumentException(
-					"invalid arguments for Type.Function()");
-		}
-	}
-
-	/**
-	 * Construct a method type using the given receiver, return and parameter types.
-	 *
-	 * @param element
-	 */
-	public static final Type.Method Method(List<Type> returns, Set<String> contextLifetimes,
-			List<String> lifetimeParameters, List<Type> params) {
-		Type[] rparams = new Type[params.size()+returns.size()];
-		int params_size = params.size();
-		for(int i=0;i!=params_size;++i) {
-			rparams[i] = params.get(i);
-		}
-		for(int i=0;i!=returns.size();++i) {
-			rparams[i+params_size] = returns.get(i);
-		}
-		Type.FunctionOrMethod.Data data = new Type.FunctionOrMethod.Data(params_size,
-				contextLifetimes, lifetimeParameters);
-		Type r = construct(K_METHOD, data, rparams);
-		if (r instanceof Type.Method) {
-			return (Type.Method) r;
-		} else {
-			throw new IllegalArgumentException(
-					"invalid arguments for Type.Method()");
-		}
-	}
-
-	/**
-	 * Construct a function type using the given return and parameter types.
-	 *
-	 * @param element
-	 */
-	public static final Type.Method Method(Type[] returns, Set<String> contextLifetimes,
-			List<String> lifetimeParameters, Type... params) {
-		Type[] rparams = new Type[params.length+returns.length];
-		System.arraycopy(params, 0, rparams, 0, params.length);
-		System.arraycopy(returns, 0, rparams, params.length, returns.length);
-		Type.FunctionOrMethod.Data data = new Type.FunctionOrMethod.Data(params.length,
-				contextLifetimes, lifetimeParameters);
-		Type r = construct(K_METHOD, data, rparams);
-		if (r instanceof Type.Method) {
-			return (Type.Method) r;
-		} else {
-			throw new IllegalArgumentException(
-					"invalid arguments for Type.Method()");
-		}
-	}
-
-	/**
-	 * Construct a record type using the given fields. The given record may be
-	 * either "open" or "closed". A closed record indicates a type which must
-	 * have exactly the given mapping of fields to types. An open record
-	 * indicates a type which may have more fields than that listed. The notion
-	 * of open records corresponds to "width subtyping" in type theory.
-	 *
-	 * @param element
-	 */
-	public static final Type.Record Record(boolean isOpen, java.util.Map<String,Type> fields) {
-		java.util.Set<String> keySet = fields.keySet();
-		Record.State keys = new Record.State(isOpen,keySet);
-		Collections.sort(keys);
-		Type[] types = new Type[keys.size()];
-		for(int i=0;i!=types.length;++i) {
-			types[i] = fields.get(keys.get(i));
-		}
-		Type r = construct(K_RECORD,keys,types);
-		if (r instanceof Type.Record) {
-			return (Type.Record) r;
-		} else {
-			throw new IllegalArgumentException(
-					"invalid arguments for Type.Record()");
-		}
-	}
-
-	/**
-	 * Close a recursive type using a given label (i.e. nominal type).
-	 * Essentially, this traverses the given type and routes each occurrence of
-	 * the label to recursively point to the type's root. For example, we
-	 * construct the recursive type <code>X<null|{X next}></code> as follows:
-	 *
-	 * <pre>
-	 * HashMap<String,Type> fields = new HashMap<String,Type>();
-	 * Type.Nominal label = T_NOMINAL("X");
-	 * fields.put("next",label);
-	 * Type tmp = T_UNION(T_NULL,T_RECORD(fields));
-	 * Type type = T_RECURSIVE(label,tmp);
-	 * </pre>
-	 *
-	 * <b>NOTE:</b> it is invalid to close a type which does not contain at
-	 * least one instance of the given label. Doing this will cause an exception
-	 * to be raised.
-	 *
-	 * @param label
-	 *            --- label to be used for closing.
-	 * @param type
-	 *            --- type to be closed.
-	 * @return
-	 */
-	public static final Type Recursive(NameID label, Type type) {
-		// first stage, identify all matching labels
-		if (type instanceof Leaf) {
-			throw new IllegalArgumentException("cannot close a leaf type");
-		}
-		Compound compound = (Compound) type;
-		Automaton automaton = compound.automaton;
-		State[] nodes = automaton.states;
-		int[] rmap = new int[nodes.length];
-		for (int i = 0; i != nodes.length; ++i) {
-			State c = nodes[i];
-			if (c.kind == K_NOMINAL && c.data.equals(label)) {
-				rmap[i] = 0;
-			} else {
-				rmap[i] = i;
-			}
-		}
-		return construct(Automata.remap(automaton, rmap));
-	}
-
-	/**
-	 * The following code converts a "type string" into an actual type. This is
-	 * useful, amongst other things, for debugging.
-	 *
-	 * @param str
-	 * @return
-	 */
-	public static Type fromString(String str) {
-		return new TypeParser(str).parse();
-	}
-
-	/**
-	 * This is a utility helper for constructing types. In particular, it's
-	 * useful for determine whether or not a type needs to be closed. An open
-	 * type is one which contains a "dangling" reference to some node which
-	 * needs to be connected to back to form a cycle.
-	 *
-	 * @param label
-	 * @param t
-	 * @return
-	 */
-	public static boolean isOpen(NameID label, Type t) {
-		if (t instanceof Leaf) {
-			return false;
-		}
-		Compound graph = (Compound) t;
-		for (State n : graph.automaton.states) {
-			if (n.kind == K_NOMINAL && n.data.equals(label)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * This is a utility helper for constructing types. In particular, it's
-	 * useful for determine whether or not a type needs to be closed. An open
-	 * type is one which contains a "dangling" reference to some node which
-	 * needs to be connected to back to form a cycle.
-	 *
-	 * @param target
-	 * @param t
-	 * @return
-	 */
-	public static boolean isOpen(java.util.Set<NameID> labels, Type t) {
-		if (t instanceof Leaf) {
-			return false;
-		}
-		Compound graph = (Compound) t;
-		for (State n : graph.automaton.states) {
-			if (n.kind == K_NOMINAL && labels.contains(n.data)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	// =============================================================
-	// Readers / Writers
+	// Interface
 	// =============================================================
 
 	/**
-	 * <p>
-	 * A <code>BinaryReader</code> will read types from a binary input stream.
-	 * The types should be written to the stream using <code>BinaryWriter</code>
+	 * Represents a type which constitutes a "leaf" node in the type tree. That
+	 * is, it contains no types as subcomponents.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Leaf extends Type {
+
+	}
+
+	/**
+	 * Represents a primitive type (e.g. int, bool, null, etc).
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Primitive extends Leaf {
+
+	}
+
+	/**
+	 * Represents a named type within the system. That is, this type refers by
+	 * name to a given type declaration somewhere in the overall program.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Nominal extends Leaf {
+		public NameID name();
+	}
+
+	/**
+	 * An effective array is a type which looks like an array, but is not
+	 * exactly an array. For example, a union of arrays is an effective array.
+	 * This is because in some situations we can read elements from the array,
+	 * and also write elements to the array.
+	 *
+	 * @author David J. Peace
+	 *
+	 */
+	public interface EffectiveArray extends Type {
+		/**
+		 * Get the element type which could be read from this array.
+		 *
+		 * @return
+		 */
+		public Type getReadableElementType();
+
+		/**
+		 * Get the element type which could be written to this array.
+		 *
+		 * @return
+		 */
+		public Type getWriteableElementType();
+
+		/**
+		 * Determine a new type for this array after an assignment to a given
+		 * element.
+		 *
+		 * @param element
+		 *            The type of the element being assigned
+		 */
+		public EffectiveArray update(Type element);
+	}
+
+	/**
+	 * An array type describes array values whose elements are subtypes of the
+	 * element type. For example, <code>[1,2,3]</code> is an instance of array
+	 * type <code>int[]</code>; however, <code>[false]</code> is not.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Array extends EffectiveArray {
+		/**
+		 * Get the element type of this array. All values in any instances of
+		 * this type must be instances of the element types.
+		 */
+		public Type element();
+	}
+
+	/**
+	 * An effective record is a type which looks like a record, but is not
+	 * exactly a record. For example, a union of records is an effective record.
+	 * This is because in some situations we can read fields from the record,
+	 * and also write fields to the record.
+	 *
+	 * @author David J. Peace
+	 *
+	 */
+	public interface EffectiveRecord extends Type {
+
+		/**
+		 * Return the number of fields in this type
+		 *
+		 * @return
+		 */
+		public int size();
+
+		/**
+		 * Check whether a given field is present in this effective record or
+		 * not.
+		 *
+		 * @param field
+		 * @return
+		 */
+		public boolean hasField(String field);
+
+		/**
+		 * Determine the index of a given field in this effective record.
+		 *
+		 * @param field
+		 * @return
+		 */
+		public int getFieldIndex(String field);
+
+		/**
+		 * Get the array of fields used in this type.
+		 */
+		public String[] getFieldNames();
+
+		/**
+		 * Get the element type which could be read from this array.
+		 *
+		 * @return
+		 */
+		public Type getReadableFieldType(String field);
+
+		/**
+		 * Get the element type which could be written to this array.
+		 *
+		 * @return
+		 */
+		public Type getWriteableFieldType(String field);
+
+		/**
+		 * Get an updated version of this record type after a given field has
+		 * been assigned a given type.
+		 *
+		 * @param field
+		 *            The field name being assigned. This must be an explicit
+		 *            field declared in this type.
+		 * @param type
+		 *            The type of the value being assigned to the given field.
+		 * @return
+		 */
+		public Type.EffectiveRecord update(String field, Type type);
+	}
+
+	/**
+	 * A record is made up of a number of fields, each of which has a unique
+	 * name. Each field has a corresponding type. One can think of a record as a
+	 * special kind of "fixed" map (i.e. where we know exactly which entries we
+	 * have).
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Record extends EffectiveRecord {
+		/**
+		 * Get the number of fields in this record
+		 */
+		@Override
+		public int size();
+
+		/**
+		 * Check whether this is an open record or not. That is, whether or not
+		 * there are additional "unknown" fields in this record.
+		 *
+		 * @return
+		 */
+		public boolean isOpen();
+
+		/**
+		 * Get the type of a given field in this record
+		 */
+		public Type getField(String name);
+	}
+
+	/**
+	 * An effective reference is a type which looks like an reference, but is
+	 * not exactly an reference. For example, a union of references is an
+	 * effective reference. This is because in some situations we can read from
+	 * the reference, and also write through the reference.
+	 *
+	 * @author David J. Peace
+	 *
+	 */
+	public interface EffectiveReference extends Type {
+		/**
+		 * Get the element type which could be read from this array.
+		 *
+		 * @return
+		 */
+		public Type getReadableElementType();
+
+		/**
+		 * Get the element type which could be written to this array.
+		 *
+		 * @return
+		 */
+		public Type getWriteableElementType();
+	}
+
+	/**
+	 * Represents a reference to an object in Whiley. For example,
+	 * <code>&this:int</code> is the type of a reference to a location allocated
+	 * in the enclosing scope which holds an integer value.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Reference extends EffectiveReference {
+
+		/**
+		 * Return the type of the location that this reference refers to. It is
+		 * an invariant that the type does not change for the life of the
+		 * location.
+		 *
+		 * @return
+		 */
+		public Type element();
+
+		/**
+		 * Return the lifetime of this reference. That is a symbolic name which
+		 * declared in the enclosing scope, or "*" in the case of the global
+		 * lifetime.
+		 *
+		 * @return
+		 */
+		public String lifetime();
+	}
+
+	/**
+	 * Represents the set of types which are not in a given type. For example,
+	 * <code>!int</code> is the set of all values which are not integers. Thus,
+	 * for example, the type <code>bool</code> is a subtype of <code>!int</code>
 	 * .
-	 * </p>
-	 * <p>
-	 * <b>NOTE:</b> Under-the-hood, this class is essentially a wrapper for
-	 * <code>BinaryAutomataReader</code>.
-	 * </p>
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class BinaryReader extends BinaryAutomataReader {
-		public BinaryReader(BinaryInputStream reader) {
-			super(reader);
-		}
-		public Type readType() throws IOException {
-			Type t = construct(read());
-			return t;
-		}
-		public Automaton.State readState() throws IOException {
-			Automaton.State state = super.readState();
-			if (state.kind == Type.K_NOMINAL) {
-				String module = readString();
-				String name = readString();
-				state.data = new NameID(Trie.fromString(module), name);
-			} else if(state.kind == Type.K_RECORD) {
-				boolean isOpen = reader.read_bit();
-				int nfields = reader.read_uv();
-				Record.State fields = new Record.State(isOpen);
-				for(int i=0;i!=nfields;++i) {
-					fields.add(readString());
-				}
-				state.data = fields;
-			} else if(state.kind == Type.K_REFERENCE) {
-				state.data = readString(); // lifetime
-			} else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) {
-				boolean nonEmpty = reader.read_bit();
-				state.data = nonEmpty;
-			} else if(state.kind == Type.K_FUNCTION || state.kind == Type.K_METHOD) {
-				ArrayList<String> contextLifetimes = readStringList();
-				ArrayList<String> lifetimeParameters = readStringList();
-				int numParameters = reader.read_uv();
-				state.data = new Type.FunctionOrMethod.Data(numParameters,
-						new HashSet<String>(contextLifetimes), lifetimeParameters);
-			}
-			return state;
-		}
-
-		private String readString() throws IOException {
-			StringBuilder r = new StringBuilder();
-			int nchars = reader.read_uv();
-			for(int i=0;i!=nchars;++i) {
-				char c = (char) reader.read_u16();
-				r.append(c);
-			}
-			return r.toString();
-		}
-
-		private ArrayList<String> readStringList() throws IOException {
-			int len = reader.read_uv();
-			ArrayList<String> r = new ArrayList<String>(len);
-			for(int i=0;i!=len;++i) {
-				r.add(readString());
-			}
-			return r;
-		}
+	public interface Negation extends Type {
+		/**
+		 * Get the element type of this array. All values in any instances of
+		 * this type must be instances of the element types.
+		 */
+		public Type element();
 	}
 
 	/**
-	 * <p>
-	 * A <code>BinaryWriter</code> will write types to a binary output stream.
-	 * The types should be read back from the stream using
-	 * <code>BinaryReader</code> .
-	 * </p>
-	 * <p>
-	 * <b>NOTE:</b> Under-the-hood, this class is essentially a wrapper for
-	 * <code>BinaryAutomataWriter</code>.
-	 * </p>
+	 * Represents the set of all functions or methods. These are values which
+	 * can be called using an indirect invoke expression. Each function or
+	 * method accepts zero or more parameters and will produce zero or more
+	 * returns.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class BinaryWriter extends BinaryAutomataWriter {
-		public BinaryWriter(BinaryOutputStream writer) {
-			super(writer);
-		}
-		public void write(Type t) throws IOException {
-			write(destruct(t));
-		}
+	public interface FunctionOrMethod extends Type {
+		/**
+		 * Get the list of parameter types which are accepted by this function
+		 * or method.
+		 */
+		Type[] params();
 
-		public void write(Automaton.State state) throws IOException {
-			super.write(state);
-			if (state.kind == Type.K_NOMINAL) {
-				NameID name = (NameID) state.data;
-				writeString(name.module().toString());
-				writeString(name.name());
-			} else if(state.kind == Type.K_RECORD) {
-				Record.State fields = (Record.State) state.data;
-				writer.write_bit(fields.isOpen);
-				writer.write_uv(fields.size());
-				for(String field : fields) {
-					writeString(field);
-				}
-			} else if(state.kind == Type.K_REFERENCE) {
-				writeString((String) state.data); // lifetime
-			} else if(state.kind == Type.K_LIST || state.kind == Type.K_SET) {
-				writer.write_bit((Boolean) state.data);
-			}  else if(state.kind == Type.K_FUNCTION || state.kind == Type.K_METHOD) {
-				Type.FunctionOrMethod.Data data = (Type.FunctionOrMethod.Data) state.data;
-				writeStringList(data.contextLifetimes);
-				writeStringList(data.lifetimeParameters);
-				writer.write_uv(data.numParams);
-			}
-		}
+		/**
+		 * Get the list of types which are returned by this function or method.
+		 *
+		 * @return
+		 */
+		Type[] returns();
 
-		private void writeString(String str) throws IOException {
-			writer.write_uv(str.length());
-			for (int i = 0; i != str.length(); ++i) {
-				writer.write_u16(str.charAt(i));
-			}
-		}
-
-		private void writeStringList(List<String> strl) throws IOException {
-			writer.write_uv(strl.size());
-			for (String str : strl) {
-				writeString(str);
-			}
-		}
-	}
-
-	// =============================================================
-	// Type operations
-	// =============================================================
-
-	/**
-	 * Determine whether type <code>t2</code> is an <i>explicit coercive
-	 * subtype</i> of type <code>t1</code>.
-	 */
-	public static boolean isExplicitCoerciveSubtype(Type t1, Type t2, LifetimeRelation lr) {
-		Automaton a1 = destruct(t1);
-		Automaton a2 = destruct(t2);
-		ExplicitCoercionOperator relation = new ExplicitCoercionOperator(a1,a2,lr);
-		return relation.isSubtype(0, 0);
+		/**
+		 * Get the ith parameter type
+		 *
+		 * @param i
+		 * @return
+		 */
+		Type parameter(int i);
 	}
 
 	/**
-	 * Determine whether type <code>t2</code> is an <i>explicit coercive
-	 * subtype</i> of type <code>t1</code>.
-	 */
-	public static boolean isExplicitCoerciveSubtype(Type t1, Type t2) {
-		return isExplicitCoerciveSubtype(t1, t2, LifetimeRelation.EMPTY);
-	}
-
-	/**
-	 * Determine whether type <code>t2</code> is a <i>subtype</i> of type
-	 * <code>t1</code> (written t1 :> t2). In other words, whether the set of
-	 * all possible values described by the type <code>t2</code> is a subset of
-	 * that described by <code>t1</code>.
-	 */
-	public static boolean isSubtype(Type t1, Type t2, LifetimeRelation lr) {
-		Automaton a1 = destruct(t1);
-		Automaton a2 = destruct(t2);
-		SubtypeOperator relation = new SubtypeOperator(a1,a2,lr);
-		return relation.isSubtype(0, 0);
-	}
-
-	/**
-	 * Determine whether type <code>t2</code> is a <i>subtype</i> of type
-	 * <code>t1</code> (written t1 :> t2). In other words, whether the set of
-	 * all possible values described by the type <code>t2</code> is a subset of
-	 * that described by <code>t1</code>.
-	 */
-	public static boolean isSubtype(Type t1, Type t2) {
-		return isSubtype(t1, t2, LifetimeRelation.EMPTY);
-	}
-
-	/**
-	 * <p>
-	 * Contractive types are types which cannot accept value because they have
-	 * an <i>unterminated cycle</i>. An unterminated cycle has no leaf nodes
-	 * terminating it. For example, <code>X<{X field}></code> is contractive,
-	 * where as <code>X<{null|X field}></code> is not.
-	 * </p>
-	 *
-	 * <p>
-	 * This method returns true if the type is contractive, or contains a
-	 * contractive subcomponent. For example, <code>null|X<{X field}></code> is
-	 * considered contracted.
-	 * </p>
-	 *
-	 * @param type --- type to test for contractivity.
-	 * @return
-	 */
-	public static boolean isContractive(Type type) {
-		if(type instanceof Leaf) {
-			return false;
-		} else {
-			Automaton automaton = ((Compound) type).automaton;
-			return TypeAlgorithms.isContractive(automaton);
-		}
-	}
-
-	/**
-	 * Compute the intersection of two types. The resulting type will only
-	 * accept values which are accepted by both types being intersected.. In
-	 * many cases, the only valid intersection will be <code>void</code>.
-	 *
-	 * @param t1
-	 * @param t2
-	 * @return
-	 */
-	public static Type intersect(Type t1, Type t2) {
-		return TypeAlgorithms.intersect(t1,t2);
-	}
-
-	public static Reference effectiveReference(Type t) {
-		if(t instanceof Type.Reference) {
-			return (Type.Reference) t;
-		}
-		return null;
-	}
-
-	public static FunctionOrMethod effectiveFunctionOrMethod(Type t) {
-		if(t instanceof Type.FunctionOrMethod) {
-			return (Type.FunctionOrMethod) t;
-		}
-		return null;
-	}
-
-	// =============================================================
-	// Primitive Types
-	// =============================================================
-
-	/**
-	 * A leaf type represents a type which has no component types. For example,
-	 * primitive types like <code>int</code> and <code>real</code> are leaf
-	 * types.
+	 * Represents the set of all function values. These are pure functions,
+	 * sometimes also called "mathematical" functions. A function cannot have
+	 * any side-effects and must always return the same values given the same
+	 * inputs. A function cannot have zero returns, since this would make it a
+	 * no-operation.
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Leaf extends Type {}
+	public interface Function extends FunctionOrMethod {
+
+	}
+
+	/**
+	 * Represents the set of all method values. These are impure and may have
+	 * side-effects (e.g. performing I/O, updating non-local state, etc). A
+	 * method may have zero returns and, in such case, the effect of a method
+	 * comes through other side-effects. Methods may also have contextual
+	 * lifetime arguments, and may themselves declare lifetime arguments.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Method extends FunctionOrMethod {
+		/**
+		 * Get the context lifetimes for this method. A contextual lifetime
+		 * identifies a lifetime to which this method is bound, but which is not
+		 * explicit in the parameters or returns of the method. This can arise
+		 * through the construction of lambda methods, but also through the use
+		 * oc currying.
+		 *
+		 * @return
+		 */
+		public String[] contextLifetimes();
+
+		/**
+		 * Get the lifetime parameters declared by this method. These are
+		 * essentially additional parameters to the method, and reference
+		 * parameters or returns may only be expressed in terms of these
+		 * lifetimes (and the global lifetime).
+		 *
+		 * @return
+		 */
+		public String[] lifetimeParams();
+	}
+
+	/**
+	 * Represents the intersection of one or more types together. For example,
+	 * the intersection of <code>T1</code> and <code>T2</code> is
+	 * <code>T1&T2</code>. Furthermore, any variable of this type must be both
+	 * an instanceof <code>T1</code> and an instanceof <code>T2</code>.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Intersection extends Type {
+		public Type[] bounds();
+	}
+
+	/**
+	 * Represents the union of one or more types together. For example, the
+	 * union of <code>int</code> and <code>null</code> is <code>int|null</code>.
+	 * Any variable of this type may hold any integer or the null value.
+	 * Furthermore, the types <code>int</code> and <code>null</code> are
+	 * collectively referred to as the "bounds" of this type.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Union extends Type {
+		public Type[] bounds();
+	}
+
+	// =============================================================
+	// Constructors
+	// =============================================================
+
+	/**
+	 * The type any represents the type whose variables may hold any possible
+	 * value. <b>NOTE:</b> the any type is top in the type lattice.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static final Type T_ANY = new Impl.Primitive(TypeSystem.K_ANY) {
+		@Override
+		public String toString() {
+			return "any";
+		}
+	};
 
 	/**
 	 * A void type represents the type whose variables cannot exist! That is,
@@ -631,38 +425,12 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Void extends Leaf {
-		private Void() {}
-		public boolean equals(Object o) {
-			return this == o;
-		}
-		public int hashCode() {
-			return 1;
-		}
+	public static final Type T_VOID = new Impl.Primitive(TypeSystem.K_VOID) {
+		@Override
 		public String toString() {
 			return "void";
 		}
-	}
-
-	/**
-	 * The type any represents the type whose variables may hold any possible
-	 * value. <b>NOTE:</b> the any type is top in the type lattice.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Any extends Leaf {
-		private Any() {}
-		public boolean equals(Object o) {
-			return o == T_ANY;
-		}
-		public int hashCode() {
-			return 1;
-		}
-		public String toString() {
-			return "any";
-		}
-	}
+	};
 
 	/**
 	 * The null type is a special type which should be used to show the absence
@@ -677,58 +445,24 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Null extends Leaf {
-		private Null() {}
-		public boolean equals(Object o) {
-			return this == o;
-		}
-		public int hashCode() {
-			return 2;
-		}
+	public static final Type T_NULL = new Impl.Primitive(TypeSystem.K_NULL) {
+		@Override
 		public String toString() {
 			return "null";
 		}
-	}
-
-	/**
-	 * The type mets represents the type of types. That is, values of this type
-	 * are themselves types. (think reflection, where we have
-	 * <code>class Class {}</code>).
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Meta extends Leaf {
-		private Meta() {}
-		public boolean equals(Object o) {
-			return o == T_META;
-		}
-		public int hashCode() {
-			return 1;
-		}
-		public String toString() {
-			return "type";
-		}
-	}
-
+	};
 	/**
 	 * Represents the set of boolean values (i.e. true and false)
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Bool extends Leaf {
-		private Bool() {}
-		public boolean equals(Object o) {
-			return o == T_BOOL;
-		}
-		public int hashCode() {
-			return 3;
-		}
+	public static final Type T_BOOL = new Impl.Primitive(TypeSystem.K_BOOL) {
+		@Override
 		public String toString() {
 			return "bool";
 		}
-	}
-
+	};
 	/**
 	 * Represents a sequence of 8 bits. Note that, unlike many languages, there
 	 * is no representation associated with a byte. For example, to extract an
@@ -739,20 +473,12 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Byte extends Leaf {
-		private Byte() {}
-		public boolean equals(Object o) {
-			return o == T_BYTE;
-		}
-		public int hashCode() {
-			return 4;
-		}
+	public static final Type T_BYTE = new Impl.Primitive(TypeSystem.K_BYTE) {
+		@Override
 		public String toString() {
 			return "byte";
 		}
-	}
-
-
+	};
 	/**
 	 * Represents the set of (unbound) integer values. Since integer types in
 	 * Whiley are unbounded, there is no equivalent to Java's
@@ -762,1212 +488,1713 @@ public abstract class Type {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Int extends Leaf {
-		private Int() {}
-		public boolean equals(Object o) {
-			return o == T_INT;
-		}
-		public int hashCode() {
-			return 4;
-		}
+	public static final Type T_INT = new Impl.Primitive(TypeSystem.K_INT) {
+		@Override
 		public String toString() {
 			return "int";
 		}
-	}
-
+	};
 	/**
-	 * The existential type represents the an unknown type, defined at a given
-	 * position.
+	 * The type meta represents the type of types. That is, values of this type
+	 * are themselves types. (think reflection, where we have
+	 * <code>class Class {}</code>).
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Nominal extends Leaf {
-		private NameID nid;
-		private Nominal(NameID name) {
-			nid = name;
-		}
-		public boolean equals(Object o) {
-			if(o instanceof Nominal) {
-				Nominal e = (Nominal) o;
-				return nid.equals(e.nid);
-			}
-			return false;
-		}
-		public NameID name() {
-			return nid;
-		}
-		public int hashCode() {
-			return nid.hashCode();
-		}
+	public static final Type T_META = new Impl.Primitive(TypeSystem.K_META) {
+		@Override
 		public String toString() {
-			return nid.toString();
+			return "meta";
 		}
+	};
+
+	public static Type Nominal(NameID name) {
+		return new Impl.Nominal(name);
 	}
 
-	// =============================================================
-	// Compound Faces
-	// =============================================================
+	public static Type Record(boolean isOpen, List<Pair<Type, String>> fields) {
+		Pair<Type, String>[] arr = new Pair[fields.size()];
+		fields.toArray(arr);
+		return Record(isOpen, arr);
+	}
 
-	/*
-	 * The compound faces are not technically necessary, as they simply provide
-	 * interfaces to the underlying nodes of a compound type. However, they
-	 * certainly make it more pleasant to use this library.
-	 */
-
-	public static class Compound extends Type {
-		//protected Automaton automaton;
-		public Automaton automaton;
-
-		public Compound(Automaton automaton) {
-			this.automaton = automaton;
-		}
-
-		public int hashCode() {
-			return automaton.hashCode();
-		}
-
-		public boolean equals(Object o) {
-			if (o instanceof Compound) {
-				Compound c = (Compound) o;
-				//equalsCount++;
-				if(canonicalisation) {
-					return automaton.equals(c.automaton);
-				} else {
-					return isSubtype(this, c) && isSubtype(c, this);
-				}
+	public static Type Record(boolean isOpen, Pair<Type, String>... fields) {
+		// Sort arrays by their field
+		Arrays.sort(fields, Impl.FIELD_COMPARATOR);
+		// Sanity check no two fields with same name, and no void element types
+		for (int i = 0; i != fields.length; ++i) {
+			Pair<Type, String> field = fields[i];
+			Type type = field.first();
+			String name = field.second();
+			if (type == T_VOID) {
+				// A void element type is not a logical error, but it does mean
+				// this type reduces immediately to void
+				return type;
+			} else if (i > 0 && fields[i - 1].second().equals(name)) {
+				// This indicates we have two fields with the same name. This is
+				// a logical error.
+				throw new IllegalArgumentException("duplicate field encountered:" + name);
 			}
-			return false;
 		}
+		// Create the record
+		return new Impl.Record(isOpen, (Pair[]) fields);
+	}
 
-		public String toString() {
-			// First, we need to find the headers of the computation. This is
-			// necessary in order to mark the start of a recursive type.
-			BitSet headers = new BitSet(automaton.size());
-			BitSet visited = new BitSet(automaton.size());
-			BitSet onStack = new BitSet(automaton.size());
-			findHeaders(0,visited,onStack,headers,automaton);
-			visited.clear();
-			String[] titles = new String[automaton.size()];
-			int count = 0;
-			for(int i=0;i!=automaton.size();++i) {
-				if(headers.get(i)) {
-					titles[i] = headerTitle(count++);
-				}
-			}
-			return Type.toString(0,visited,titles,automaton);
+	public static Type Array(Type element) {
+		if (element == T_VOID) {
+			return T_VOID;
+		} else {
+			return new Impl.Array((Impl) element);
 		}
 	}
 
-	/**
-	 * A type which is either a list, or a union of lists. An effective list
-	 * gives access to an effective element type, which is the union of possible
-	 * element types.
-	 *
-	 * <pre>
-	 * [int] | [real]
-	 * </pre>
-	 *
-	 * Here, the effective element type is int|real.
-	 *
-	 * @return
-	 */
-	public interface EffectiveArray {
-
-		public Type element();
-
-		public EffectiveArray update(Type key, Type Value);
+	public static Type Reference(String lifetime, Type element) {
+		return new Impl.Reference((Impl) element, lifetime);
 	}
 
-	/**
-	 * A list type describes list values whose elements are subtypes of the
-	 * element type. For example, <code>[1,2,3]</code> is an instance of list
-	 * type <code>[int]</code>; however, <code>[1.345]</code> is not.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Array extends Compound implements EffectiveArray {
-		private Array(Automaton automaton) {
-			super(automaton);
-		}
-
-		public Type key() {
-			return Type.T_INT;
-		}
-
-		public Type value() {
-			return element();
-		}
-
-		public Type element() {
-			int elemIdx = automaton.states[0].children[0];
-			return construct(Automata.extract(automaton,elemIdx));
-		}
-
-		public boolean nonEmpty() {
-			return (Boolean) automaton.states[0].data;
-		}
-
-		public EffectiveArray update(Type key, Type value) {
-			return Type.Array(Type.Union(value, element()), nonEmpty());
+	public static Type Function(Type[] parameters, Type[] returns) {
+		Impl[] iParameters = toImplOrVoid(parameters);
+		Impl[] iReturns = toImplOrVoid(returns);
+		if (iParameters == null || iReturns == null) {
+			return T_VOID;
+		} else {
+			return new Impl.Function(iParameters, iReturns);
 		}
 	}
 
-	/**
-	 * Represents a reference to an object in Whiley.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Reference extends Compound  {
-		private Reference(Automaton automaton) {
-			super(automaton);
-		}
-		public Type element() {
-			int elemIdx = automaton.states[0].children[0];
-			return construct(Automata.extract(automaton,elemIdx));
-		}
-		public String lifetime() {
-			return (String) automaton.states[0].data;
+	public static Type Method(Type[] parameters, Type[] returns) {
+		return Method(new String[0], new String[0], parameters, returns);
+	}
+
+	public static Type Method(Collection<String> lifetimeParameters, Collection<String> contextLifetimes,
+			Type[] parameters, Type[] returns) {
+		String[] lifetimes = ArrayUtils.toStringArray(lifetimeParameters);
+		String[] contexts = ArrayUtils.toStringArray(contextLifetimes);
+		// Need to sort contexts and remove duplicates.
+		Arrays.sort(contexts);
+		contexts = ArrayUtils.sortedRemoveDuplicates(contexts);
+		//
+		return Method(lifetimes, contexts, parameters, returns);
+	}
+
+	public static Type Method(String[] lifetimeParameters, String[] contextLifetimes, Type[] parameters,
+			Type[] returns) {
+		Impl[] iParameters = toImplOrVoid(parameters);
+		Impl[] iReturns = toImplOrVoid(returns);
+		if (iParameters == null || iReturns == null) {
+			return T_VOID;
+		} else {
+			// FIXME: should we be sorting the context lifetimes?
+			return new Impl.Method(lifetimeParameters, contextLifetimes, iParameters, iReturns);
 		}
 	}
 
-	/**
-	 * A type which is either a record, or a union of records. An effective
-	 * record gives access to a subset of the visible fields which are
-	 * guaranteed to be in the type. For example, consider this type:
-	 *
-	 * <pre>
-	 * {int op, int x} | {int op, [int] y}
-	 * </pre>
-	 *
-	 * Here, the field op is guaranteed to be present. Therefore, the effective
-	 * record type is just <code>{int op}</code>.
-	 *
-	 * @return
-	 */
-	public interface EffectiveRecord {
-
-		public Type field(String field);
-
-		public HashMap<String,Type> fields();
-
-		public EffectiveRecord update(String field, Type type);
-	}
-
-	/**
-	 * A record is made up of a number of fields, each of which has a unique
-	 * name. Each field has a corresponding type. One can think of a record as a
-	 * special kind of "fixed" map (i.e. where we know exactly which
-	 * entries we have).
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Record extends Compound implements EffectiveRecord {
-		private Record(Automaton automaton) {
-			super(automaton);
-		}
-
-		public boolean isOpen() {
-			State state = (State) automaton.states[0].data;
-			return state.isOpen;
-		}
-
-		/**
-		 * Extract just the key set for this field. This is a cheaper operation
-		 * than extracting the keys and their types (since types must be
-		 * extracted).
-		 *
-		 * @return
-		 */
-		public HashSet<String> keys() {
-			State fields = (State) automaton.states[0].data;
-			HashSet<String> r = new HashSet<String>();
-			for(String f : fields) {
-				r.add(f);
-			}
-			return r;
-		}
-
-		public Type field(String field) {
-			State fields = (State) automaton.states[0].data;
-			int index = Collections.binarySearch(fields, field);
-			if (index < 0) {
-				return null; // not found
+	static Impl[] toImplOrVoid(Type[] types) {
+		Impl[] impls = new Impl[types.length];
+		for (int i = 0; i != types.length; ++i) {
+			Type type = types[i];
+			if (type == T_VOID) {
+				return null;
 			} else {
-				int[] children = automaton.states[0].children;
-				return construct(Automata.extract(automaton, children[index]));
+				impls[i] = (Impl) type;
 			}
+		}
+		return impls;
+	}
+
+	static Impl.Array[] toImplArrays(Impl[] types) {
+		Impl.Array[] impls = new Impl.Array[types.length];
+		for (int i = 0; i != types.length; ++i) {
+			impls[i] = (Impl.Array) types[i];
+		}
+		return impls;
+	}
+
+	static Impl.Record[] toImplRecords(Impl[] types) {
+		Impl.Record[] impls = new Impl.Record[types.length];
+		for (int i = 0; i != types.length; ++i) {
+			impls[i] = (Impl.Record) types[i];
+		}
+		return impls;
+	}
+
+	/**
+	 * Construct the negation of a given type. This operation performs certain
+	 * simplifications to ensure types are in a manageable form. For example,
+	 * the negation of a negation is just the element type. Likewise, the
+	 * negation of a union is an intersection of negations, etc.
+	 *
+	 * @param types
+	 * @return
+	 */
+	public static Type Negation(Type type) {
+		if (type instanceof Type.Union) {
+			// Apply De-Mogan's law. So, !(A | B) => !A & !B
+			Type.Union union = (Type.Union) type;
+			Type[] bounds = union.bounds();
+			Type[] nBounds = new Type[bounds.length];
+			for (int i = 0; i != bounds.length; ++i) {
+				nBounds[i] = Negation(bounds[i]);
+			}
+			return Intersection(nBounds);
+		} else if (type instanceof Type.Intersection) {
+			// Apply De-Mogan's law. So, !(A & B) => !A | !B
+			Type.Intersection intersection = (Type.Intersection) type;
+			Type[] bounds = intersection.bounds();
+			Type[] nBounds = new Type[bounds.length];
+			for (int i = 0; i != bounds.length; ++i) {
+				nBounds[i] = Negation(bounds[i]);
+			}
+			return Intersection(nBounds);
+		} else if (type instanceof Type.Negation) {
+			// Here, !!T => T
+			Type.Negation negation = (Type.Negation) type;
+			return negation.element();
+		} else {
+			return new Impl.Negation((Impl.Atom) type);
+		}
+	}
+
+	/**
+	 * Construct the union of one or more types together. This operation
+	 * performs certain simplifications to ensure types are in a manageable
+	 * form. For example, the union of one type is that type. Likewise, the
+	 * union of two identical types is just one type, etc.
+	 *
+	 * <b>NOTE</b> this operation assumes free access to modify the given array
+	 *
+	 * @param types
+	 * @return
+	 */
+	public static Type Union(Type... types) {
+		// At this point, we can assume that the given types are themselves
+		// simplified. This helps as, for example, it means we cannot
+		// encounter a unions of in the parameters.
+		//
+		Impl.Conjunctable[] cs = Impl.toConjunctables(types);
+		// Apply obvious simplifications
+		if (ArrayUtils.firstIndexOf(cs, T_ANY) >= 0) {
+			// Any union containing any equals any
+			return T_ANY;
+		}
+		cs = ArrayUtils.<Impl.Conjunctable> removeAll(cs, (Impl.Conjunctable) T_VOID);
+		cs = ArrayUtils.removeDuplicates(cs);
+		//
+		if (cs.length == 0) {
+			return Type.T_VOID;
+		} else if (cs.length == 1) {
+			return cs[0];
+		} else {
+			// Ensure elements in sorted order
+			Arrays.sort(cs);
+			// Determine whether have union of a specific type or not.
+			int kind = Impl.determineCommonKind(cs);
+			switch (kind) {
+			case TypeSystem.K_RECORD:
+				return new Impl.UnionOfRecords(toImplRecords(cs));
+			case TypeSystem.K_LIST:
+				return new Impl.UnionOfArrays(toImplArrays(cs));
+			case TypeSystem.K_REFERENCE:
+				// FIXME: return UnionOfReferencess
+			default:
+				return new Impl.UnionOfConjunctables(cs);
+			}
+
+		}
+	}
+
+	/**
+	 * Construct the intersection of one or more types together. This operation
+	 * performs certain simplifications to ensure types are in a manageable
+	 * form. For example, the intersection of one type is that type. Likewise,
+	 * the intersection of two identical types is just one type, etc.
+	 *
+	 * <b>NOTE</b> this operation assumes free access to modify the given array
+	 *
+	 * @param types
+	 * @return
+	 */
+	public static Type Intersection(Type... types) {
+		// At this point, we can assume that the given types are themselves
+		// simplified. This helps as, for example, it means we cannot
+		// encounter a unions of in the parameters.
+		//
+		// Extract and distribute over any nested unions
+		int unionIndex = Impl.findUnion(types);
+		if (unionIndex >= 0) {
+			// Yes, there is at least one union we can distribute over
+			return Impl.distributeUnion(unionIndex, types);
+		} else {
+			// Flatten any nested intersections so they are all at the same
+			// level.
+			Impl.Atom[] atoms = Impl.toAtoms(types);
+			atoms = ArrayUtils.removeDuplicates(atoms);
+			// Intersect all remaining atoms. This may be
+			// result in void being discovered.
+			for (int i = 0; i < atoms.length; ++i) {
+				for (int j = i + 1; j < atoms.length; ++j) {
+					Impl.intersectAtoms(i, j, atoms);
+				}
+			}
+			// Check whether found void or not.
+			if (ArrayUtils.firstIndexOf(atoms, T_VOID) >= 0) {
+				// Any intersection containing void equals void
+				return T_VOID;
+			}
+			// Finally, tidy up the remainder by eliminating any null values
+			// that have been created. Null values can be created when
+			// intersection certain types together. For example, intersection
+			// int with !bool generate int and null.
+			atoms = ArrayUtils.<Impl.Atom> removeAll(atoms, (Impl.Atom) T_ANY);
+			//
+			if (atoms.length == 0) {
+				return Type.T_ANY;
+			} else if (atoms.length == 1) {
+				return atoms[0];
+			} else {
+				// Ensure elements in sorted order
+				Arrays.sort(atoms);
+				// Construct the conjunct
+				return new Impl.Conjunct(atoms);
+			}
+		}
+	}
+
+	public static Type fromString(String str) {
+		return new TypeParser(str).parse();
+	}
+
+	// =============================================================
+	// Implementation
+	// =============================================================
+
+	abstract static class Impl implements Type, Comparable<Impl> {
+
+		public abstract int getKind();
+
+		/**
+		 * Represents either an atom or a conjunct
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public abstract static class Conjunctable extends Impl {
+
 		}
 
 		/**
-		 * Return a mapping from field names to their types.
+		 * An atom represents an indivisible type. More specifically, a type
+		 * which does not contain a union or intersection anywhere, including in
+		 * subcomponents.
 		 *
-		 * @return
+		 * @author David J. Pearce
+		 *
 		 */
-		public HashMap<String, Type> fields() {
-			State fields = (State) automaton.states[0].data;
-			int[] children = automaton.states[0].children;
-			HashMap<String, Type> r = new HashMap<String, Type>();
-			for (int i = 0; i != children.length; ++i) {
-				r.put(fields.get(i),
-						construct(Automata.extract(automaton, children[i])));
-			}
-			return r;
+		public abstract static class Atom extends Conjunctable {
+
 		}
 
-		public Record update(String field, Type type) {
-			HashMap<String,Type> fields = fields();
-			fields.put(field, type);
-			return Type.Record(isOpen(),fields);
+		/**
+		 * A positive atom is any atom except a negation
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public abstract static class PositiveAtom extends Atom {
+
 		}
 
-		public static final class State extends ArrayList<String> {
-			public final boolean isOpen;
+		public abstract static class Primitive extends PositiveAtom implements Type.Primitive {
+			private final int kind;
 
-			public State(boolean isOpen) {
-				this.isOpen = isOpen;
+			private Primitive(int kind) {
+				this.kind = kind;
 			}
 
-			public State(boolean isOpen, Collection<String> values) {
-				super(values);
-				this.isOpen = isOpen;
+			@Override
+			public abstract String toString();
+
+			@Override
+			public int getKind() {
+				return kind;
 			}
 
+			@Override
 			public boolean equals(Object o) {
-				if (o instanceof State) {
-					State s = (State) o;
-					return isOpen == s.isOpen && super.equals(s);
+				if (o instanceof Impl.Primitive) {
+					Impl.Primitive p = (Impl.Primitive) o;
+					return kind == p.kind;
 				}
 				return false;
-			}
-		}
-
-	}
-
-	/**
-	 * A union type represents a type whose variables may hold values from any
-	 * of its "bounds". For example, the union type null|int indicates a
-	 * variable can either hold an integer value, or null. <b>NOTE:</b>There
-	 * must be at least two bounds for a union type to make sense.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Union extends Compound {
-		private Union(Automaton automaton) {
-			super(automaton);
-		}
-
-		/**
-		 * Return the bounds of this union type.
-		 *
-		 * @return
-		 */
-		public HashSet<Type> bounds() {
-			HashSet<Type> r = new HashSet<Type>();
-			int[] fields = (int[]) automaton.states[0].children;
-			for(int i : fields) {
-				Type b = construct(Automata.extract(automaton,i));
-				r.add(b);
-			}
-			return r;
-		}
-	}
-
-	public static final class UnionOfArrays extends Union implements
-			EffectiveArray {
-		private UnionOfArrays(Automaton automaton) {
-			super(automaton);
-		}
-
-		public Type key() {
-			return T_INT;
-		}
-
-		public Type value() {
-			return element();
-		}
-
-		public Type element() {
-			Type r = null;
-			HashSet<Type.Array> bounds = (HashSet) bounds();
-			for(Type.Array bound : bounds) {
-				Type t = bound.element();
-				if(r == null || t == null) {
-					r = t;
-				} else {
-					r = Type.Union(r,t);
-				}
-			}
-			return r;
-		}
-
-		public EffectiveArray update(Type key, Type type) {
-			HashSet<Type> nbounds = new HashSet<Type>();
-			HashSet<Type.Array> bounds = (HashSet) bounds();
-			for(Type.Array bound : bounds) {
-				nbounds.add((Type) bound.update(key,type));
-			}
-
-			// we can only safely return an EffectiveList here since an update
-			// can fold multiple lists into one.  For example:
-			//
-			// [int]|[real]
-			//
-			// assigning type any into this yields [any]
-
-			return (EffectiveArray) Type.Union(nbounds);
-		}
-	}
-
-	public static final class UnionOfRecords extends Union implements
-			EffectiveRecord {
-		private UnionOfRecords(Automaton automaton) {
-			super(automaton);
-		}
-
-		public Type field(String field) {
-			Type r = null;
-			HashSet<Type.Record> bounds = (HashSet) bounds();
-			for(Type.Record bound : bounds) {
-				Type t = bound.field(field);
-				if(r == null || t == null) {
-					r = t;
-				} else {
-					r = Type.Union(r,t);
-				}
-			}
-			return r;
-		}
-
-		public HashMap<String,Type> fields() {
-			// TODO: this method could be optimised to avoid creating so many
-			// HashMaps.
-			HashMap<String,Type> fields = null;
-			HashSet<Type.Record> bounds = (HashSet) bounds();
-			for(Type.Record bound : bounds) {
-				fields = join(fields,bound.fields());
-			}
-			return fields;
-		}
-
-		private static HashMap<String, Type> join(HashMap<String, Type> m1,
-				HashMap<String, Type> m2) {
-			if (m1 == null) {
-				return m2;
-			}
-			HashMap<String, Type> m3 = new HashMap<String, Type>();
-			for (java.util.Map.Entry<String, Type> e : m1.entrySet()) {
-				String field = e.getKey();
-				Type t1 = e.getValue();
-				Type t2 = m2.get(field);
-				if (t2 != null) {
-					m3.put(field, Type.Union(t1, t2));
-				}
-			}
-			return m3;
-		}
-
-		public EffectiveRecord update(String field, Type type) {
-			HashSet<Type> nbounds = new HashSet<Type>();
-			HashSet<Type.Record> bounds = (HashSet) bounds();
-			for(Type.Record bound : bounds) {
-				nbounds.add(bound.update(field, type));
-			}
-
-			// we can only safely return an EffectiveRecord here since an update
-			// can fold multiple records into one.  For example:
-			//
-			// {int x,string y}|{int x,real y}
-			//
-			// updating y to type int gives {int x,int y}
-
-			return (EffectiveRecord) Type.Union(nbounds);
-		}
-	}
-
-	/**
-	 * A difference type represents a type which accepts values in the
-	 * difference between its bounds.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static final class Negation extends Compound {
-		private Negation(Automaton automaton) {
-			super(automaton);
-		}
-
-		public Type element() {
-			int[] fields = automaton.states[0].children;
-			return construct(Automata.extract(automaton,fields[0]));
-		}
-	}
-
-	public abstract static class FunctionOrMethod extends Compound {
-		FunctionOrMethod(Automaton automaton) {
-			super(automaton);
-		}
-
-		public static final class Data implements Comparable<Data> {
-			public final int numParams;
-			public final List<String> contextLifetimes;
-			public final List<String> lifetimeParameters;
-
-			public Data(int numParams, Set<String> contextLifetimes, List<String> lifetimeParameters) {
-				this.numParams = numParams;
-				this.contextLifetimes = new ArrayList<String>(contextLifetimes);
-				this.contextLifetimes.remove("*");
-				Collections.sort(this.contextLifetimes);
-				this.lifetimeParameters = new ArrayList<String>(lifetimeParameters);
 			}
 
 			@Override
 			public int hashCode() {
-				return 31 * (31 * numParams + contextLifetimes.hashCode()) + lifetimeParameters.hashCode();
+				return kind;
 			}
 
 			@Override
-			public boolean equals(Object obj) {
-				if (this == obj) return true;
-				if (obj == null) return false;
-				if (this.getClass() != obj.getClass()) return false;
-				Data other = (Data) obj;
-				if (this.numParams != other.numParams) return false;
-				if (!this.contextLifetimes.equals(other.contextLifetimes)) {
-					return false;
+			public int compareTo(Impl p) {
+				return kind - p.getKind();
+			}
+		}
+
+		private static final class Nominal extends Atom implements Type.Nominal {
+			private NameID nid;
+
+			public Nominal(NameID name) {
+				nid = name;
+			}
+
+			@Override
+			public boolean equals(Object o) {
+				if (o instanceof Impl.Nominal) {
+					Impl.Nominal e = (Impl.Nominal) o;
+					return nid.equals(e.nid);
 				}
-				if (!this.lifetimeParameters.equals(other.lifetimeParameters)) {
-					return false;
+				return false;
+			}
+
+			@Override
+			public NameID name() {
+				return nid;
+			}
+
+			@Override
+			public int hashCode() {
+				return nid.hashCode();
+			}
+
+			@Override
+			public String toString() {
+				return nid.toString();
+			}
+
+			@Override
+			public int getKind() {
+				return TypeSystem.K_NOMINAL;
+			}
+
+			@Override
+			public int compareTo(Impl p) {
+				int r = TypeSystem.K_NOMINAL - p.getKind();
+				if (r == 0) {
+					Impl.Nominal n = (Impl.Nominal) p;
+					return nid.compareTo(n.nid);
+				} else {
+					return r;
+				}
+			}
+		}
+
+		private static final class Reference extends PositiveAtom implements Type.Reference {
+			private final Impl element;
+			private final String lifetime;
+
+			public Reference(Impl element, String lifetime) {
+				this.element = element;
+				this.lifetime = lifetime;
+			}
+
+			@Override
+			public Type element() {
+				return element;
+			}
+
+			@Override
+			public Type getReadableElementType() {
+				return element;
+			}
+
+			@Override
+			public Type getWriteableElementType() {
+				return element;
+			}
+
+			@Override
+			public String lifetime() {
+				return lifetime;
+			}
+
+			@Override
+			public int getKind() {
+				return TypeSystem.K_REFERENCE;
+			}
+
+			@Override
+			public boolean equals(Object o) {
+				if (o instanceof Impl.Reference) {
+					Impl.Reference r = (Impl.Reference) o;
+					return element.equals(r.element) && lifetime.equals(r.lifetime);
+				}
+				return false;
+			}
+
+			@Override
+			public int compareTo(Impl p) {
+				int r = TypeSystem.K_REFERENCE - p.getKind();
+				if (r == 0) {
+					Impl.Reference n = (Impl.Reference) p;
+					r = element.compareTo(n.element);
+					if (r == 0) {
+						return lifetime.compareTo(n.lifetime);
+					}
+				}
+				return r;
+			}
+
+			@Override
+			public int hashCode() {
+				return element.hashCode() + lifetime.hashCode();
+			}
+
+			@Override
+			public String toString() {
+				String body = element.toString();
+				if (element instanceof Union || element instanceof Intersection || element instanceof Negation
+						|| element instanceof Array) {
+					body = "(" + body + ")";
+				}
+				if(lifetime.equals("*")) {
+					return "&" + body;
+				} else {
+					return "&" + lifetime + ":" + body;
+				}
+			}
+		}
+
+		private static final class Array extends PositiveAtom implements Type.Array {
+			private final Impl element;
+
+			public Array(Impl element) {
+				this.element = element;
+			}
+
+			@Override
+			public Type element() {
+				return element;
+			}
+
+			@Override
+			public Type getReadableElementType() {
+				return element;
+			}
+
+			@Override
+			public Type getWriteableElementType() {
+				return element;
+			}
+
+			@Override
+			public int getKind() {
+				return TypeSystem.K_LIST;
+			}
+
+			@Override
+			public Impl.Array update(Type newElement) {
+				return new Impl.Array((Impl) Type.Union(element, newElement));
+			}
+
+			@Override
+			public boolean equals(Object o) {
+				if (o instanceof Impl.Array) {
+					Impl.Array a = (Impl.Array) o;
+					return element.equals(a.element);
+				}
+				return false;
+			}
+
+			@Override
+			public int compareTo(Impl p) {
+				int r = TypeSystem.K_LIST - p.getKind();
+				if (r == 0) {
+					Impl.Array n = (Impl.Array) p;
+					return element.compareTo(n.element);
+				}
+				return r;
+			}
+
+			@Override
+			public int hashCode() {
+				return element.hashCode() * 2;
+			}
+
+			@Override
+			public String toString() {
+				String body = element.toString();
+				if (element instanceof Union || element instanceof Intersection || element instanceof Negation
+						|| element instanceof Reference) {
+					return "(" + element.toString() + ")[]";
+				} else {
+					return body + "[]";
+				}
+			}
+		}
+
+		private static final Comparator<Pair<Type, String>> FIELD_COMPARATOR = new Comparator<Pair<Type, String>>() {
+			@Override
+			public int compare(Pair<Type, String> o1, Pair<Type, String> o2) {
+				return o1.second().compareTo(o2.second());
+			}
+		};
+
+		private static final class Record extends PositiveAtom implements Type.Record {
+			private final Pair<Impl, String>[] fields;
+			private final boolean isOpen;
+
+			public Record(boolean isOpen, Pair<Impl, String>... fields) {
+				this.fields = fields;
+				this.isOpen = isOpen;
+			}
+
+			@Override
+			public boolean isOpen() {
+				return isOpen;
+			}
+
+			@Override
+			public int size() {
+				return fields.length;
+			}
+
+			@Override
+			public int getFieldIndex(String name) {
+				for (int i = 0; i != fields.length; ++i) {
+					String field = fields[i].second();
+					if (field.equals(name)) {
+						return i;
+					}
+				}
+				throw new IllegalArgumentException("field not found: " + name);
+			}
+
+			@Override
+			public boolean hasField(String field) {
+				for (int i = 0; i != fields.length; ++i) {
+					if (fields[i].second().equals(field)) {
+						return true;
+					}
+				}
+				return false;
+			}
+
+			@Override
+			public String[] getFieldNames() {
+				String[] rs = new String[fields.length];
+				for (int i = 0; i != fields.length; ++i) {
+					rs[i] = fields[i].second();
+				}
+				return rs;
+			}
+
+			@Override
+			public Type getReadableFieldType(String field) {
+				return getField(field);
+			}
+
+			@Override
+			public Type getWriteableFieldType(String field) {
+				return getField(field);
+			}
+
+			@Override
+			public Type getField(String field) {
+				for (int i = 0; i != fields.length; ++i) {
+					Pair<Impl, String> p = fields[i];
+					if (p.second().equals(field)) {
+						return p.first();
+					}
+				}
+				throw new IllegalArgumentException("invalid field " + field);
+			}
+
+			@Override
+			public Type.Record update(String field, Type type) {
+				// Find field and update (if it exists)
+				Pair<Impl, String>[] nfields = Arrays.copyOf(fields, fields.length);
+				for (int i = 0; i != nfields.length; ++i) {
+					if (nfields[i].second().equals(field)) {
+						// FIXME: this line is clearly broken
+						nfields[i] = new Pair<Impl, String>((Atom) type, field);
+						return new Impl.Record(isOpen, nfields);
+					}
+				}
+				// If we get here, no match was found. This is an error.
+				throw new IllegalArgumentException("invalid field " + field);
+			}
+
+			@Override
+			public boolean equals(Object o) {
+				if (o instanceof Impl.Record) {
+					Impl.Record r = (Impl.Record) o;
+					return Arrays.equals(fields, r.fields) && isOpen == r.isOpen;
+				}
+				return false;
+			}
+
+			@Override
+			public int compareTo(Impl p) {
+				int r = TypeSystem.K_RECORD - p.getKind();
+				if (r == 0) {
+					Impl.Record n = (Impl.Record) p;
+					if (isOpen != n.isOpen) {
+						return isOpen ? 1 : -1;
+					} else if (fields.length != n.fields.length) {
+						return fields.length - n.fields.length;
+					}
+					for (int i = 0; i != fields.length; ++i) {
+						Pair<Impl, String> p1 = fields[i];
+						Pair<Impl, String> p2 = n.fields[i];
+						r = p1.first().compareTo(p2.first());
+						if (r != 0) {
+							return r;
+						}
+						r = p1.second().compareTo(p2.second());
+						if (r != 0) {
+							return r;
+						}
+					}
+					return 0;
+				}
+				return r;
+			}
+
+			@Override
+			public int hashCode() {
+				int f = isOpen ? 1 : 0;
+				return Arrays.hashCode(fields) + f;
+			}
+
+			@Override
+			public String toString() {
+				String body = "";
+				boolean firstTime = true;
+				for (int i = 0; i != fields.length; ++i) {
+					Pair<Impl, String> f = fields[i];
+					if (!firstTime) {
+						body = body + ",";
+					}
+					firstTime = false;
+					body = body + f.first() + " " + f.second();
+				}
+				if (isOpen) {
+					body += ", ...";
+				}
+				return "{" + body + "}";
+			}
+
+			@Override
+			public int getKind() {
+				return TypeSystem.K_RECORD;
+			}
+		}
+
+		private static final class Negation extends Atom implements Type.Negation {
+			private final Atom element;
+
+			private Negation(Atom element) {
+				this.element = element;
+			}
+
+			@Override
+			public Type element() {
+				return element;
+			}
+
+			@Override
+			public boolean equals(Object o) {
+				if (o instanceof Impl.Negation) {
+					Impl.Negation n = (Impl.Negation) o;
+					return element.equals(n.element);
+				}
+				return false;
+			}
+
+			@Override
+			public int compareTo(Impl o) {
+				int r = TypeSystem.K_NEGATION - o.getKind();
+				if (r == 0) {
+					Impl.Negation n = (Impl.Negation) o;
+					return element.compareTo(n.element);
+				}
+				return r;
+			}
+
+			@Override
+			public int hashCode() {
+				return -element.hashCode();
+			}
+
+			@Override
+			public String toString() {
+				String body = element.toString();
+				if (element instanceof Array || element instanceof Reference) {
+					return "!(" + element.toString() + ")";
+				} else {
+					return "!" + body;
+				}
+			}
+
+			@Override
+			public int getKind() {
+				return TypeSystem.K_NEGATION;
+			}
+		}
+
+		public abstract static class FunctionOrMethod extends Atom implements Type.FunctionOrMethod {
+			protected final Impl[] parameters;
+			protected final Impl[] returns;
+
+			public FunctionOrMethod(Impl[] parameters, Impl[] returns) {
+				this.parameters = parameters;
+				this.returns = returns;
+			}
+
+			/**
+			 * Get the return types of this function or method type.
+			 *
+			 * @return
+			 */
+			@Override
+			public Impl[] returns() {
+				return returns;
+			}
+
+			/**
+			 * Get the parameter types of this function or method type.
+			 *
+			 * @return
+			 */
+			@Override
+			public Impl[] params() {
+				return parameters;
+			}
+
+			@Override
+			public Impl parameter(int i) {
+				return parameters[i];
+			}
+
+			@Override
+			public boolean equals(Object o) {
+				if (o instanceof Impl.FunctionOrMethod) {
+					Impl.FunctionOrMethod f = (Impl.FunctionOrMethod) o;
+					return Arrays.equals(parameters, f.parameters) && Arrays.equals(returns, f.returns);
+				}
+				return false;
+			}
+
+			@Override
+			public int compareTo(Impl o) {
+				int r = getKind() - o.getKind();
+				if (r == 0) {
+					Impl.FunctionOrMethod fm = (Impl.FunctionOrMethod) o;
+					r = ArrayUtils.compareTo(parameters, fm.parameters);
+					if (r == 0) {
+						r = ArrayUtils.compareTo(returns, fm.returns);
+					}
+				}
+				return r;
+			}
+
+			@Override
+			public int hashCode() {
+				int hc = Arrays.hashCode(parameters);
+				hc += Arrays.hashCode(returns);
+				return hc;
+			}
+		}
+
+		/**
+		 * A function type, consisting of a list of zero or more parameters and
+		 * a return type.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Function extends FunctionOrMethod implements Type.Function {
+			public Function(Impl[] parameters, Impl[] returns) {
+				super(parameters, returns);
+			}
+
+			@Override
+			public String toString() {
+				String ps = Impl.toString(parameters);
+				String rs = Impl.toString(returns);
+				return "function(" + ps + ")->(" + rs + ")";
+			}
+
+			@Override
+			public int getKind() {
+				return TypeSystem.K_FUNCTION;
+			}
+		}
+
+		public static final class Method extends FunctionOrMethod implements Type.Method {
+			protected final String[] lifetimeParameters;
+			protected final String[] contextLifetimes;
+
+			public Method(Impl[] parameters, Impl[] returns) {
+				super(parameters, returns);
+				this.lifetimeParameters = new String[0];
+				this.contextLifetimes = new String[0];
+			}
+
+			public Method(String[] lifetimeParameters, String[] contextLifetimes, Impl[] parameters, Impl[] returns) {
+				super(parameters, returns);
+				this.lifetimeParameters = lifetimeParameters;
+				this.contextLifetimes = contextLifetimes;
+			}
+
+			public Method(Collection<String> lifetimeParameters, Collection<String> contextLifetimes, Impl[] parameters,
+					Impl[] returns) {
+				super(parameters, returns);
+				this.lifetimeParameters = ArrayUtils.toStringArray(lifetimeParameters);
+				this.contextLifetimes = ArrayUtils.toStringArray(contextLifetimes);
+			}
+
+			@Override
+			public boolean equals(Object o) {
+				if (o instanceof Impl.Method) {
+					Impl.Method m = (Impl.Method) o;
+					return Arrays.equals(lifetimeParameters, m.lifetimeParameters)
+							&& Arrays.equals(contextLifetimes, m.contextLifetimes) && super.equals(o);
+				}
+				return false;
+			}
+
+			@Override
+			public int hashCode() {
+				int hc = super.hashCode();
+				hc += Arrays.hashCode(lifetimeParameters);
+				hc += Arrays.hashCode(contextLifetimes);
+				return hc;
+			}
+
+			/**
+			 * Get the context lifetimes of this function or method type.
+			 *
+			 * @return
+			 */
+			@Override
+			public String[] contextLifetimes() {
+				return contextLifetimes;
+			}
+
+			/**
+			 * Get the lifetime parameters of this function or method type.
+			 *
+			 * @return
+			 */
+			@Override
+			public String[] lifetimeParams() {
+				return lifetimeParameters;
+			}
+
+			@Override
+			public String toString() {
+				String prefix = "method";
+				if (contextLifetimes.length > 0) {
+					prefix += "[" + toString(contextLifetimes) + "]";
+				}
+				if (lifetimeParameters.length > 0) {
+					prefix += "<" + toString(lifetimeParameters) + ">";
+				}
+				String ps = toString(parameters);
+				String rs = toString(returns);
+				return prefix + "(" + ps + ")->(" + rs + ")";
+			}
+
+			@Override
+			public int getKind() {
+				return TypeSystem.K_METHOD;
+			}
+		}
+
+		private static class Conjunct extends Conjunctable implements Intersection {
+			private final Impl.Atom[] atoms;
+
+			private Conjunct(Impl.Atom... atoms) {
+				this.atoms = atoms;
+			}
+
+			/**
+			 * Return the bounds of this union type.
+			 *
+			 * @return
+			 */
+			@Override
+			public Type[] bounds() {
+				return atoms;
+			}
+
+			@Override
+			public int getKind() {
+				return TypeSystem.K_INTERSECTION;
+			}
+
+			@Override
+			public boolean equals(Object o) {
+				if (o instanceof Impl.Conjunct) {
+					Impl.Conjunct r = (Impl.Conjunct) o;
+					return Arrays.equals(atoms, r.atoms);
+				}
+				return false;
+			}
+
+			@Override
+			public int compareTo(Impl p) {
+				int r = TypeSystem.K_INTERSECTION - p.getKind();
+				if (r == 0) {
+					Impl.Conjunct n = (Impl.Conjunct) p;
+					r = ArrayUtils.compareTo(atoms, n.atoms);
+				}
+				return r;
+			}
+
+			@Override
+			public int hashCode() {
+				return Arrays.hashCode(atoms);
+			}
+
+			@Override
+			public String toString() {
+				String body = "";
+				for (int i = 0; i != atoms.length; ++i) {
+					Type element = atoms[i];
+					if (i != 0) {
+						body = body + "&";
+					}
+					if (element instanceof Union || element instanceof Reference) {
+						body = body + "(" + element + ")";
+					} else {
+						body = body + element;
+					}
+				}
+				return body;
+			}
+		}
+
+		private static abstract class Union<T extends Impl> extends Impl implements Type.Union {
+			// INVARIANT: elements in sorted order
+			// INVARIANT: elements > 1
+			protected final T[] elements;
+
+			private Union(T... elements) {
+				this.elements = elements;
+			}
+
+			/**
+			 * Return the bounds of this union type.
+			 *
+			 * @return
+			 */
+			@Override
+			public T[] bounds() {
+				return elements;
+			}
+
+			@Override
+			public boolean equals(Object o) {
+				if (o instanceof Impl.Union) {
+					Impl.Union r = (Impl.Union) o;
+					return Arrays.equals(elements, r.elements);
+				}
+				return false;
+			}
+
+			@Override
+			public int compareTo(Impl p) {
+				int r = TypeSystem.K_UNION - p.getKind();
+				if (r == 0) {
+					Impl.Union<?> n = (Impl.Union<?>) p;
+					if (elements.length != n.elements.length) {
+						return elements.length - n.elements.length;
+					}
+					for (int i = 0; i != elements.length; ++i) {
+						Impl p1 = elements[i];
+						Impl p2 = n.elements[i];
+						r = p1.compareTo(p2);
+						if (r != 0) {
+							return r;
+						}
+					}
+					return 0;
+				}
+				return r;
+			}
+
+			@Override
+			public int hashCode() {
+				return Arrays.hashCode(elements);
+			}
+
+			@Override
+			public String toString() {
+				String body = "";
+				for (int i = 0; i != elements.length; ++i) {
+					Type element = elements[i];
+					if (i != 0) {
+						body = body + "|";
+					}
+					if (element instanceof Intersection || element instanceof Reference) {
+						body = body + "(" + element + ")";
+					} else {
+						body = body + element;
+					}
+				}
+				return body;
+			}
+
+			@Override
+			public int getKind() {
+				return TypeSystem.K_UNION;
+			}
+		}
+
+		private static class UnionOfConjunctables extends Union<Conjunctable> {
+			public UnionOfConjunctables(Conjunctable... conjunctables) {
+				super(conjunctables);
+			}
+		}
+
+		/**
+		 * A union of records corresponds to an <i>effective record</i> in
+		 * Whiley. This means it can be treated in a similar fashion to a record
+		 * in many situations.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		private static class UnionOfRecords extends Union<Impl.Record> implements EffectiveRecord {
+			public UnionOfRecords(Impl.Record... records) {
+				super(records);
+				if (records.length < 2) {
+					throw new IllegalArgumentException("insufficient records provided");
+				}
+			}
+
+			@Override
+			public int size() {
+				return getFieldNames().length;
+			}
+
+			@Override
+			public int getFieldIndex(String field) {
+				// FIXME: it's not really clear what this method should do in
+				// this circumstance.
+				int i = ArrayUtils.firstIndexOf(getFieldNames(), field);
+				if (i < 0) {
+					throw new IllegalArgumentException("field not found: " + field);
+				} else {
+					return i;
+				}
+			}
+
+			@Override
+			public boolean hasField(String field) {
+				for (int i = 0; i != elements.length; ++i) {
+					if (!elements[i].hasField(field)) {
+						return false;
+					}
 				}
 				return true;
 			}
 
 			@Override
-			public int compareTo(Data other) {
-				int r = Integer.compare(this.numParams, other.numParams);
-				if (r != 0) return r;
-				r = compareLists(this.contextLifetimes, other.contextLifetimes);
-				if (r != 0) return r;
-				return compareLists(this.lifetimeParameters, other.lifetimeParameters);
-			}
+			public String[] getFieldNames() {
+				// To compute the set of fields accessible from a union of
+				// records, we must intersect the the set of available fields in
+				// each nested record.
+				String[] first = elements[0].getFieldNames();
+				String[] result = new String[first.length];
 
-			private static int compareLists(List<String> my, List<String> other) {
-				Iterator<String> it1 = my.iterator();
-				Iterator<String> it2 = other.iterator();
-				while (true) {
-					if (it1.hasNext()) {
-						if (it2.hasNext()) {
-							int r = it1.next().compareTo(it2.next());
-							if (r != 0) return r;
-						} else {
-							return 1;
+				outer: for (int i = 0; i != result.length; ++i) {
+					// FIXME: this is a slight cheat, since it's only computing
+					// the common initial sequence for fields. At this stage,
+					// it's unclear whether or not this is sufficient. In
+					// particular, whether or not the language design should
+					// permit more flexibility here.
+					String field = first[i];
+					for (int j = 0; j != elements.length; ++j) {
+						if (!elements[j].hasField(field)) {
+							break outer;
 						}
-					} else if (it2.hasNext()) {
-						return -1;
-					} else {
-						return 0;
 					}
+					result[i] = field;
 				}
+
+				return result;
+			}
+
+			@Override
+			public Type getReadableFieldType(String field) {
+				Type readable = elements[0].getField(field);
+				for (int i = 1; i != elements.length; ++i) {
+					readable = Union(readable, elements[i].getField(field));
+				}
+				return readable;
+			}
+
+			@Override
+			public Type getWriteableFieldType(String field) {
+				Type readable = elements[0].getField(field);
+				for (int i = 1; i != elements.length; ++i) {
+					readable = Intersection(readable, elements[i].getField(field));
+				}
+				return readable;
+			}
+
+			@Override
+			public EffectiveRecord update(String field, Type type) {
+				Impl.Record[] records = new Impl.Record[elements.length];
+				for (int i = 0; i != elements.length; ++i) {
+					records[i] = (Impl.Record) elements[i].update(field, type);
+				}
+				return (EffectiveRecord) Union(records);
 			}
 		}
 
 		/**
-		 * Get the return types of this function or method type.
+		 * A union of arrays corresponds to an <i>effective array</i> in Whiley.
+		 * This means it can be treated in a similar fashion to a array in many
+		 * situations.
 		 *
-		 * @return
-		 */
-		public ArrayList<Type> returns() {
-			Automaton.State state = automaton.states[0];
-			int[] fields = state.children;
-			int numParams = ((Data) state.data).numParams;
-			ArrayList<Type> r = new ArrayList<Type>();
-			for(int i=numParams;i<fields.length;++i) {
-				r.add(construct(Automata.extract(automaton, fields[i])));
-			}
-			return r;
-		}
-		
-		/**
-		 * Get the parameter types of this function or method type.
+		 * @author David J. Pearce
 		 *
-		 * @return
 		 */
-		public ArrayList<Type> params() {
-			Automaton.State state = automaton.states[0];
-			int[] fields = state.children;
-			int numParams = ((Data) state.data).numParams;
-			ArrayList<Type> r = new ArrayList<Type>();
-			for(int i=0;i<numParams;++i) {
-				r.add(construct(Automata.extract(automaton, fields[i])));
-			}
-			return r;
-		}
-
-		/**
-		 * Get the context lifetimes of this function or method type.
-		 *
-		 * @return
-		 */
-		public Set<String> contextLifetimes() {
-			Automaton.State state = automaton.states[0];
-			Data data = (Data) state.data;
-			return new LinkedHashSet<String>(data.contextLifetimes);
-		}
-
-		/**
-		 * Get the lifetime parameters of this function or method type.
-		 *
-		 * @return
-		 */
-		public ArrayList<String> lifetimeParams() {
-			Automaton.State state = automaton.states[0];
-			Data data = (Data) state.data;
-			return new ArrayList<String>(data.lifetimeParameters);
-		}
-	}
-
-	/**
-	 * A function type, consisting of a list of zero or more parameters and a
-	 * return type.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Function extends FunctionOrMethod  {
-		Function(Automaton automaton) {
-			super(automaton);
-		}
-	}
-
-	public static final class Method extends FunctionOrMethod {
-		Method(Automaton automaton) {
-			super(automaton);
-		}
-	}
-
-	/**
-	 * The following method constructs a string representation of the underlying
-	 * automaton. This representation may be an expanded version of the underling
-	 * graph, since one cannot easily represent aliasing in the type graph in a
-	 * textual manner.
-	 *
-	 * @param automaton
-	 *            --- the automaton being turned into a string.
-	 * @return --- string representation of automaton.
-	 */
-	public final static String toString(Automaton automaton) {
-		// First, we need to find the headers of the computation. This is
-		// necessary in order to mark the start of a recursive type.
-		BitSet headers = new BitSet(automaton.size());
-		BitSet visited = new BitSet(automaton.size());
-		BitSet onStack = new BitSet(automaton.size());
-		findHeaders(0, visited, onStack, headers, automaton);
-		visited.clear();
-		String[] titles = new String[automaton.size()];
-		int count = 0;
-		for (int i = 0; i != automaton.size(); ++i) {
-			if (headers.get(i)) {
-				titles[i] = headerTitle(count++);
-			}
-		}
-		return Type.toString(0, visited, titles, automaton);
-	}
-
-	/**
-	 * The following method constructs a string representation of the underlying
-	 * automaton. This representation may be an expanded version of the underling
-	 * graph, since one cannot easily represent aliasing in the type graph in a
-	 * textual manner.
-	 *
-	 * @param index
-	 *            --- the index to start from
-	 * @param visited
-	 *            --- the set of vertices already visited.
-	 * @param headers
-	 *            --- an array of strings which identify the name to be given to
-	 *            each header.
-	 * @param automaton
-	 *            --- the automaton being turned into a string.
-	 * @return --- string representation of automaton.
-	 */
-	private final static String toString(int index, BitSet visited,
-			String[] headers, Automaton automaton) {
-		if (visited.get(index)) {
-			// node already visited
-			return headers[index];
-		} else if(headers[index] != null) {
-			visited.set(index);
-		}
-		State state = automaton.states[index];
-		String middle;
-		switch (state.kind) {
-		case K_VOID:
-			return "void";
-		case K_ANY:
-			return "any";
-		case K_NULL:
-			return "null";
-		case K_BOOL:
-			return "bool";
-		case K_BYTE:
-			return "byte";
-		case K_CHAR:
-			return "char";
-		case K_INT:
-			return "int";
-		case K_RATIONAL:
-			return "real";
-		case K_STRING:
-			return "string";
-		case K_SET: {
-			boolean nonEmpty = (Boolean) state.data;
-			if (nonEmpty) {
-				middle = "{"
-						+ toString(state.children[0], visited, headers,
-								automaton) + "+}";
-			} else {
-				middle = "{"
-						+ toString(state.children[0], visited, headers,
-								automaton) + "}";
-			}
-			break;
-		}
-		case K_LIST: {
-			middle = toString(state.children[0], visited, headers, automaton)
-					+ "[]";
-			break;
-		}
-		case K_NOMINAL:
-			middle = state.data.toString();
-			break;
-		case K_REFERENCE:
-			middle = "&";
-			String lifetime = (String) state.data;
-			if (!"*".equals(lifetime)) {
-				middle += lifetime + ":";
-			}
-			middle += toString(state.children[0], visited, headers, automaton);
-			break;
-		case K_NEGATION: {
-			middle = "!" + toBracesString(state.children[0], visited, headers, automaton);
-			break;
-		}
-		case K_MAP: {
-			// binary node
-			String k = toString(state.children[0], visited, headers, automaton);
-			String v = toString(state.children[1], visited, headers, automaton);
-			middle = "{" + k + "->" + v + "}";
-			break;
-		}
-		case K_UNION: {
-			int[] children = state.children;
-			middle = "";
-			for (int i = 0; i != children.length; ++i) {
-				if(i != 0 || children.length == 1) {
-					middle += "|";
+		private static class UnionOfArrays extends Union<Impl.Array> implements EffectiveArray {
+			public UnionOfArrays(Impl.Array... arrays) {
+				super(arrays);
+				if (arrays.length < 2) {
+					throw new IllegalArgumentException("insufficient arrays provided");
 				}
-				middle += toBracesString(children[i], visited, headers, automaton);
 			}
-			break;
-		}
-		case K_TUPLE: {
-			middle = "";
-			int[] children = state.children;
-			for (int i = 0; i != children.length; ++i) {
-				if (i != 0) {
-					middle += ",";
+
+			@Override
+			public Type getReadableElementType() {
+				Type readable = elements[0].element();
+				for (int i = 1; i != elements.length; ++i) {
+					readable = Union(readable, elements[i].element());
 				}
-				middle += toString(children[i], visited, headers, automaton);
+				return readable;
 			}
-			middle = "(" + middle + ")";
-			break;
-		}
-		case K_RECORD: {
-			// labeled nary node
-			middle = "{";
-			int[] children = state.children;
-			Record.State fields = (Record.State) state.data;
-			for (int i = 0; i != fields.size(); ++i) {
-				if (i != 0) {
-					middle += ",";
+
+			@Override
+			public Type getWriteableElementType() {
+				Type readable = elements[0].element();
+				for (int i = 1; i != elements.length; ++i) {
+					readable = Intersection(readable, elements[i].element());
 				}
-				middle += toString(children[i], visited, headers, automaton) + " " + fields.get(i);
+				return readable;
 			}
-			if(fields.isOpen) {
-				if(children.length > 0) {
-					middle = middle + ",...}";
+
+			@Override
+			public EffectiveArray update(Type type) {
+				Impl.Array[] arrays = new Impl.Array[elements.length];
+				for (int i = 0; i != elements.length; ++i) {
+					arrays[i] = elements[i].update(type);
+				}
+				return (EffectiveArray) Union(arrays);
+			}
+		}
+
+		private static <T> String toString(T[] things) {
+			String body = "";
+			boolean firstTime = true;
+			for (T thing : things) {
+				if (!firstTime) {
+					body = body + ",";
+				}
+				firstTime = false;
+				body = body + thing;
+			}
+			return body;
+		}
+
+		// =============================================================
+		// Simplifications
+		// =============================================================
+
+		/**
+		 * Identify the common kind (if any) amongst a sequence of two or more
+		 * types.
+		 *
+		 * @param cs
+		 * @return
+		 */
+		static int determineCommonKind(Impl.Conjunctable... cs) {
+			int kind = cs[0].getKind();
+			for (int i = 1; i != cs.length; ++i) {
+				if (cs[i].getKind() != kind) {
+					return -1;
+				}
+			}
+			return kind;
+		}
+
+		/**
+		 * Flatten a sequence of zero or more types into a sequence of zero or
+		 * more conjunctables.union types to form one big array of types. The
+		 * resulting sequence may be larger than the original sequence. For
+		 * example, if the original sequence contains a union of some sort.
+		 *
+		 * @param types
+		 * @return
+		 */
+		private static Conjunctable[] toConjunctables(Type... types) {
+			int length = 0;
+			for (int i = 0; i != types.length; ++i) {
+				Type ith = types[i];
+				if (ith instanceof Union) {
+					Union ut = (Union) ith;
+					length = length + ut.bounds().length;
 				} else {
-					middle = middle + "...}";
+					length = length + 1;
 				}
+			}
+			Conjunctable[] nTypes = new Conjunctable[length];
+			for (int i = 0, j = 0; i != types.length; ++i) {
+				Type ith = types[i];
+				if (ith instanceof Union) {
+					Union ut = (Union) ith;
+					Type[] ut_bounds = ut.bounds();
+					System.arraycopy(ut_bounds, 0, nTypes, j, ut_bounds.length);
+					j += ut_bounds.length;
+				} else {
+					nTypes[j++] = (Conjunctable) ith;
+				}
+			}
+			return nTypes;
+		}
+
+		/**
+		 * Flattern union types to form one big array of types.
+		 *
+		 * @param types
+		 * @return
+		 */
+		private static Atom[] toAtoms(Type... types) {
+			int length = 0;
+			for (int i = 0; i != types.length; ++i) {
+				Type ith = types[i];
+				if (ith instanceof Intersection) {
+					Intersection it = (Intersection) ith;
+					length = length + it.bounds().length;
+				} else {
+					length = length + 1;
+				}
+			}
+			//
+			Atom[] nTypes = new Atom[length];
+			for (int i = 0, j = 0; i != types.length; ++i) {
+				Type ith = types[i];
+				if (ith instanceof Intersection) {
+					// This indicates a nested intersection. This needs to
+					// be flatterned out, since an intersection is not an
+					// atom.
+					Intersection it = (Intersection) ith;
+					Type[] ut_bounds = it.bounds();
+					System.arraycopy(ut_bounds, 0, nTypes, j, ut_bounds.length);
+					j += ut_bounds.length;
+				} else {
+					// At this stage, we can assume ith is not a union.
+					// This is because unions are previously removed early
+					// in Intersection by distributing over them.
+					nTypes[j++] = (Atom) ith;
+				}
+			}
+			return nTypes;
+		}
+
+		/**
+		 * Determine the first index of a union within the sequence of types, or
+		 * -1 if none. This is used to find the distribution point within a
+		 * given set of atoms being intersected.
+		 *
+		 * @param types
+		 * @return
+		 */
+		private static int findUnion(Type... types) {
+			for (int i = 0; i != types.length; ++i) {
+				Type ith = types[i];
+				if (ith instanceof Union) {
+					return i;
+				}
+			}
+			// We didn't find any unions
+			return -1;
+		}
+
+		/**
+		 * Apply the laws of distributivity for a sequence of one or more types
+		 * and a given union within that sequence. Specifically, for any nested
+		 * unions, we must extract an distribute over them. This is a relatively
+		 * expensive operation, and the performance of the algorithm implemented
+		 * here could be vastly improved with some care.
+		 *
+		 * @param types
+		 * @return
+		 */
+		private static Type distributeUnion(int unionIndex, Type... types) {
+			Union<?> ut = (Union<?>) types[unionIndex];
+			Type[] ut_bounds = ut.bounds();
+			// Distribute over the union
+			Type[] clauses = new Type[ut_bounds.length];
+			for (int j = 0; j != ut_bounds.length; ++j) {
+				Type jth = ut_bounds[j];
+				Type[] tmp = Arrays.copyOf(types, types.length);
+				tmp[unionIndex] = jth;
+				clauses[j] = Intersection(tmp);
+			}
+			return Union(clauses);
+		}
+
+		/**
+		 * <p>
+		 * Intersect two types which are atoms (and not null). That is, they are
+		 * neither unions nor intersections. In many cases, either the two types
+		 * are the same or no intersection is possible. In some cases (e.g. for
+		 * records and arrays), we must recursively intersect the element types
+		 * to decide whether an intersection is possible.
+		 * </p>
+		 * <p>
+		 * As part of the intersection process, the algorithm will combine types
+		 * where appropriate. For example, duplicates are combined into tone. In
+		 * such case, the result is stored in the ith position and the jth
+		 * position is set to null.
+		 * </p>
+		 * <p>
+		 * Finally, if the algorithm determines the overall type is void then it
+		 * will stop early and return false to signal a failure.
+		 * </p>
+		 *
+		 * @param i
+		 *            ith index to consider
+		 * @param j
+		 *            jth index to consider
+		 * @param types
+		 *            Array of types being intersected
+		 */
+		private static void intersectAtoms(int i, int j, Atom[] types) {
+			// System.out.println("INTERSECTING: " + i + ", " + j + " in " +
+			// Arrays.toString(types));
+			Atom ith = types[i];
+			Atom jth = types[j];
+
+			int ith_kind = ith.getKind();
+			int jth_kind = jth.getKind();
+
+			if (ith_kind == TypeSystem.K_NEGATION && jth_kind == TypeSystem.K_NEGATION) {
+				// Intersection of negative atoms
+				intersectNegativeNegative(i, j, types);
+			} else if (ith_kind == TypeSystem.K_NEGATION) {
+				// Intersection of negative with positive
+				intersectNegativePositive(i, j, types);
+			} else if (jth_kind == TypeSystem.K_NEGATION) {
+				// Intersection of positive with negative
+				intersectNegativePositive(j, i, types);
 			} else {
-				middle = middle + "}";
+				// Intersection of positive with positive
+				intersectPositivePositive(i, j, types);
 			}
-			break;
-		}
-		case K_METHOD:
-		case K_FUNCTION: {
-			String parameters = "";
-			int[] children = state.children;
-			Type.FunctionOrMethod.Data data = (Type.FunctionOrMethod.Data) state.data;
-			int numParameters = data.numParams;
-			for (int i = 0; i != numParameters; ++i) {
-				if (i!=0) {
-					parameters += ",";
-				}
-				parameters += toString(children[i], visited, headers, automaton);
-			}
-			String returns = "";
-			for (int i = numParameters; i != children.length; ++i) {
-				if (i!=numParameters) {
-					returns += ",";
-				}
-				returns += toString(children[i], visited, headers, automaton);
-			}
-			StringBuilder sb = new StringBuilder();
-			sb.append(state.kind == K_FUNCTION ? "function" : "method");
-			if (!data.contextLifetimes.isEmpty()) {
-				sb.append('[');
-				boolean first = true;
-				for (String l : data.contextLifetimes) {
-					if (!first) {
-						sb.append(',');
-					} else {
-						first = false;
-					}
-					sb.append(l);
-				}
-				sb.append(']');
-			}
-			if (!data.lifetimeParameters.isEmpty()) {
-				sb.append('<');
-				boolean first = true;
-				for (String l : data.lifetimeParameters) {
-					if (!first) {
-						sb.append(',');
-					} else {
-						first = false;
-					}
-					sb.append(l);
-				}
-				sb.append('>');
-			}
-			sb.append('(');
-			sb.append(parameters);
-			sb.append(")->(");
-			sb.append(returns);
-			sb.append(')');
-			middle = sb.toString();
-			break;
-		}
-		default:
-			throw new IllegalArgumentException("Invalid type encountered (kind: " + state.kind +")");
 		}
 
-		// Finally, check whether this is a header node, or not. If it is a
-		// header then we need to insert the recursive type.
-		String header = headers[index];
-		if(header != null) {
-			// The following case is interesting. Basically, we'll never revisit
-			// a header. Therefore, if we have multiple edges landing on a
-			// header we must update the header string to represent the full
-			// type reachable from the header.
-			String r = header + "<" + middle + ">";
-			headers[index] = r;
-			return r;
-		} else {
-			return middle;
+		private static void intersectNegativeNegative(int i, int j, Atom[] types) {
+			// FIXME: Unsure what could do here.
 		}
-	}
 
-	private final static String toBracesString(int index, BitSet visited,
-			String[] headers, Automaton automaton) {
-		if (visited.get(index)) {
-			// node already visited
-			return headers[index];
-		}
-		String middle = toString(index,visited,headers,automaton);
-		State state = automaton.states[index];
-		switch(state.kind) {
-			case K_UNION:
-			case K_FUNCTION:
-			case K_METHOD:
-				return "(" + middle + ")";
-			default:
-				return middle;
-		}
-	}
-
-	/**
-	 * The following method traverses the graph using a depth-first
-	 * search to identify nodes which are "loop headers". That is, they are the
-	 * target of one or more recursive edges in the graph.
-	 *
-	 * @param index
-	 *            --- the index to search from.
-	 * @param visited
-	 *            --- the set of vertices already visited.
-	 * @param onStack
-	 *            --- the set of nodes currently on the DFS path from the root.
-	 * @param headers
-	 *            --- header nodes discovered during this search are set to true
-	 *            in this bitset.
-	 * @param automaton
-	 *            --- the automaton we're traversing.
-	 */
-	private final static void findHeaders(int index, BitSet visited,
-			BitSet onStack, BitSet headers, Automaton automaton) {
-		if(visited.get(index)) {
-			// node already visited
-			if(onStack.get(index)) {
-				headers.set(index);
-			}
-			return;
-		}
-		onStack.set(index);
-		visited.set(index);
-		State state = automaton.states[index];
-		for(int child : state.children) {
-			findHeaders(child,visited,onStack,headers,automaton);
-		}
-		onStack.set(index,false);
-	}
-
-	private static final char[] headers = { 'X','Y','Z','U','V','W','L','M','N','O','P','Q','R','S','T'};
-	private static String headerTitle(int count) {
-		String r = Character.toString(headers[count%headers.length]);
-		int n = count / headers.length;
-		if(n > 0) {
-			return r + n;
-		} else {
-			return r;
-		}
-	}
-
-	/**
-	 * Determine the node kind of a Type.Leafs
-	 * @param leaf
-	 * @return
-	 */
-	public static final byte leafKind(Type.Leaf leaf) {
-		if(leaf instanceof Type.Void) {
-			return K_VOID;
-		} else if(leaf instanceof Type.Any) {
-			return K_ANY;
-		} else if(leaf instanceof Type.Null) {
-			return K_NULL;
-		} else if(leaf instanceof Type.Bool) {
-			return K_BOOL;
-		} else if(leaf instanceof Type.Byte) {
-			return K_BYTE;
-		} else if(leaf instanceof Type.Int) {
-			return K_INT;
-		} else if(leaf instanceof Type.Meta) {
-			return K_META;
-		} else if(leaf instanceof Type.Nominal) {
-			return K_NOMINAL;
-		} else {
-			// should be dead code
-			throw new IllegalArgumentException("Invalid leaf node: " + leaf);
-		}
-	}
-
-	/**
-	 * Determine the node data of a Type.Leaf.
-	 * @param leaf
-	 * @return
-	 */
-	public static final Object leafData(Type.Leaf leaf) {
-		if(leaf instanceof Type.Nominal) {
-			return ((Type.Nominal)leaf).nid;
-		} else {
-			return null;
-		}
-	}
-
-	/**
-	 * The construct methods constructs a Type from an automaton.
-	 *
-	 * @param nodes
-	 * @return
-	 */
-	public final static Type construct(Automaton automaton) {
-		automaton = normalise(automaton);
-		// second, construc the appropriate face
-		State root = automaton.states[0];
-		Type type;
-
-		switch(root.kind) {
-		case K_VOID:
-			type = T_VOID;
-			break;
-		case K_ANY:
-			type = T_ANY;
-			break;
-		case K_META:
-			type = T_META;
-			break;
-		case K_NULL:
-			type = T_NULL;
-			break;
-		case K_BOOL:
-			type = T_BOOL;
-			break;
-		case K_BYTE:
-			type = T_BYTE;
-			break;
-		case K_INT:
-			type = T_INT;
-			break;
-		case K_NOMINAL:
-			type = new Nominal((NameID) root.data);
-			break;
-		case K_LIST:
-			type = new Array(automaton);
-			break;
-		case K_REFERENCE:
-			type = new Reference(automaton);
-			break;
-		case K_RECORD:
-			type = new Record(automaton);
-			break;
-		case K_UNION: {
-			boolean allRecords = true;
-			boolean allArrays = true;
-			Type.Union union = new Union(automaton);
-			for(Type bound : union.bounds()) {
-				boolean isArray = bound instanceof Array;				
-				allRecords &= bound instanceof Record;
-				allArrays &= isArray;
-			}
-			if(allArrays) {
-				type = new UnionOfArrays(automaton);
-			} else if(allRecords) {
-				type = new UnionOfRecords(automaton);
+		private static void intersectNegativePositive(int i, int j, Atom[] types) {
+			Negation ith = (Negation) types[i];
+			Impl.Atom ith_element = ith.element;
+			Atom jth = types[j];
+			if(jth == T_ANY) {
+				// Do nothing as any will be dropped eventually.
+			} else if(ith_element.equals(jth)) {
+				// FIXME: should do more here as there are other cases where we
+				// should reduce to void. For example, if jth element is
+				// supertype of ith.
+				types[i] = (Atom) T_VOID;
+				types[j] = (Atom) T_VOID;
+			} else if(ith_element instanceof Nominal || jth instanceof Nominal) {
+				// There's not much we can do here, since we can't be sure
+				// whether or not the Nominal types having anything in common.
 			} else {
-				type = union;
+				// ith is subsumed
+				types[i] = (Atom) T_ANY;
 			}
-			break;
-		}
-		case K_NEGATION:
-			type = new Negation(automaton);
-			break;
-		case K_METHOD:
-			type = new Method(automaton);
-			break;
-		case K_FUNCTION:
-			type = new Function(automaton);
-			break;
-		default:
-			throw new IllegalArgumentException("invalid node kind: " + root.kind);
 		}
 
-		//distinctTypes.add(type);
-
-		return type;
-	}
-
-	/**
-	 * This method constructs a Node array from an array of types which will
-	 * form children.
-	 *
-	 * @param kind
-	 * @param elements
-	 * @return
-	 */
-	private static Type construct(byte kind, Object data, Type... children) {
-		int[] nchildren = new int[children.length];
-		boolean deterministic = kind != K_UNION;
-		Automaton automaton = new Automaton(new State(kind, data, deterministic, nchildren));
-		int start = 1;
-		int i=0;
-		for(Type element : children) {
-			nchildren[i] = start;
-			Automaton child = destruct(element);
-			automaton = Automata.append(automaton,child);
-			start += child.size();
-			i = i + 1;
-		}
-		return construct(automaton);
-	}
-
-	/**
-	 * This method constructs a State array from a collection of types which will
-	 * form children.
-	 *
-	 * @param kind
-	 * @param children
-	 * @return
-	 */
-	private static Type construct(byte kind, Object data, Collection<Type> children) {
-		int[] nchildren = new int[children.size()];
-		boolean deterministic = kind != K_UNION;
-		Automaton automaton = new Automaton(new State(kind, data, deterministic, nchildren));
-		int start = 1;
-		int i=0;
-		for(Type element : children) {
-			nchildren[i] = start;
-			Automaton child = destruct(element);
-			automaton = Automata.append(automaton,child);
-			start += child.size();
-			i = i + 1;
-		}
-
-		return construct(automaton);
-	}
-
-	/**
-	 * Destruct is the opposite of construct. It converts a type into an
-	 * automaton.
-	 *
-	 * @param t --- type to be converted.
-	 * @return
-	 */
-	public static final Automaton destruct(Type t) {
-		if (t instanceof Leaf) {
-			int kind = leafKind((Leaf) t);
-			Object data = null;
-			if (t instanceof Nominal) {
-				Nominal x = (Nominal) t;
-				data = x.nid;
+		private static void intersectPositivePositive(int i, int j, Atom[] types) {
+			Atom ith = types[i];
+			Atom jth = types[j];
+			//
+			int ith_kind = ith.getKind();
+			int jth_kind = jth.getKind();
+			//
+			if (ith_kind == TypeSystem.K_ANY || jth_kind == TypeSystem.K_ANY) {
+				// In this case, there is nothing really to do. Basically
+				// intersection something with any gives something.
+			} else if (ith_kind == TypeSystem.K_NOMINAL || jth_kind == TypeSystem.K_NOMINAL) {
+				// In this case, there is also nothing to do. That's because
+				// we don't know what a nominal is, and hence we are
+				// essentially treating it as being the same as any.
+			} else if (ith_kind != jth_kind) {
+				// There are no situations where this results in a positive
+				// outcome. Therefore, set both parties to be void. This
+				// guarantees the void will be caught at the earliest possible
+				// moment,
+				types[i] = (Atom) T_VOID;
+				types[j] = (Atom) T_VOID;
+			} else {
+				// Now check individual cases
+				switch (ith_kind) {
+				case TypeSystem.K_VOID:
+				case TypeSystem.K_BOOL:
+				case TypeSystem.K_BYTE:
+				case TypeSystem.K_META:
+				case TypeSystem.K_INT:
+					// For primitives, it's enough to know that they have
+					// the same kind.
+					break;
+				case TypeSystem.K_LIST: {
+					// For arrays, we need to know whether or not their element
+					// types intersect.
+					types[i] = (Atom) intersectArray((Impl.Array) types[i], (Impl.Array) types[j]);
+					types[j] = (Atom) T_ANY;
+					break;
+				}
+				case TypeSystem.K_RECORD: {
+					// For records, we need to know whether their fields match
+					// appropriately and whether or not they intersect.
+					types[i] = (Atom) intersectRecord((Impl.Record) types[i], (Impl.Record) types[j]);
+					types[j] = (Atom) T_ANY;
+					break;
+				}
+				case TypeSystem.K_REFERENCE: {
+					// For arrays, we need to know whether or not their element
+					// types match exactly.
+					types[i] = (Atom) intersectReference((Impl.Reference) types[i], (Impl.Reference) types[j]);
+					types[j] = (Atom) T_ANY;
+					break;
+				}
+				case TypeSystem.K_FUNCTION:
+				case TypeSystem.K_METHOD:
+				default:
+					throw new RuntimeException("DEADCODE REACHED");
+				}
 			}
-			State state = new State(kind, data, true, Automaton.NOCHILDREN);
-			return new Automaton(new State[] { state });
-		} else {
-			// compound type
-			return ((Compound) t).automaton;
+		}
+
+		/**
+		 * <p>
+		 * Intersect one record type with another. The computation is fairly
+		 * straight-forward. For every field in common, we intersect their
+		 * types. For example, <code>{int|null f}&{int|bool f}</code> gives
+		 * <code>{int f}</code> because <code>(int|null)&(int|bool)</code> gives
+		 * <code>int</code>.
+		 * </p>
+		 *
+		 * <p>
+		 * In the case that there are fields in one but not the other, the
+		 * result is void. The only exception is when one or both of the records
+		 * is open. When both records are open, there is always an intersection.
+		 * When only one is open, then it's fields must be a subset of the
+		 * other.
+		 * </p>
+		 *
+		 * @param ith
+		 *            First record type to intersect
+		 * @param jth
+		 *            Second record type to intersect
+		 */
+		private static Type intersectRecord(Impl.Record ith, Impl.Record jth) {
+			if (ith.isOpen && jth.isOpen) {
+				return intersectOpenOpenRecord(ith, jth);
+			} else if (ith.isOpen) {
+				return intersectOpenClosedRecord(ith, jth);
+			} else if (jth.isOpen) {
+				return intersectOpenClosedRecord(jth, ith);
+			} else {
+				return intersectClosedClosedRecord(jth, ith);
+			}
+		}
+
+		/**
+		 * When intersecting two closed records, we require they both have the
+		 * same set of fields. Then we simply intersect each respective field.
+		 *
+		 * @param ith
+		 * @param jth
+		 * @return
+		 */
+		public static Type intersectClosedClosedRecord(Impl.Record ith, Impl.Record jth) {
+			// ith and jth fields should be in sorted order by field name
+			Pair<Impl, String>[] ith_fields = ith.fields;
+			Pair<Impl, String>[] jth_fields = jth.fields;
+			// Sanity check the lengths
+			if (ith_fields.length != jth_fields.length) {
+				// Since the lengths are different, we know these records cannot
+				// be intersected.
+				return T_VOID;
+			} else {
+				// Lengths are equal, so check fields match and intersect them.
+				Pair<Type, String>[] new_fields = new Pair[ith_fields.length];
+				for (int i = 0; i != ith_fields.length; ++i) {
+					Pair<Impl, String> ith_field = ith_fields[i];
+					Pair<Impl, String> jth_field = jth_fields[i];
+					String ith_name = ith_field.second();
+					String jth_name = jth_field.second();
+					if (ith_name.equals(jth_name)) {
+						Type type = Intersection(ith_field.first(), jth_field.first());
+						new_fields[i] = new Pair<Type, String>(type, ith_name);
+					} else {
+						// We've found a field that is not comon to both.
+						return T_VOID;
+					}
+				}
+				return Type.Record(false, new_fields);
+			}
+		}
+
+		/**
+		 * When intersecting an open record with a closed record. In this case,
+		 * the result is void if there is a field in the open record not present
+		 * in the closed record. Otherwise, the result is the intersection of
+		 * those fields common to both with the remainder taken from the closed
+		 * record.
+		 *
+		 * @param open
+		 * @param jth
+		 * @return
+		 */
+		public static Type intersectOpenClosedRecord(Impl.Record open, Impl.Record closed) {
+			// ith and jth fields should be in sorted order by field name
+			Pair<Impl, String>[] open_fields = open.fields;
+			Pair<Impl, String>[] closed_fields = closed.fields;
+			// Sanity check the lengths
+			if (open_fields.length > closed_fields.length) {
+				// In this case, it is impossible for those fields in the open
+				// record to be a subset of those in the closed record.
+				return T_VOID;
+			} else {
+				// The aim now is to
+				// Lengths are equal, so check fields match and intersect them.
+				Pair<Type, String>[] new_fields = new Pair[closed_fields.length];
+				for (int i = 0, j = 0; i != new_fields.length; ++i) {
+					Pair<Impl, String> closed_field = closed_fields[i];
+					String closed_name = closed_field.second();
+					if (j < open_fields.length) {
+						Pair<Impl, String> open_field = open_fields[j];
+						String open_name = open_field.second();
+						int c = open_name.compareTo(closed_name);
+						if (c > 0) {
+							// In this case, there is a field in the closed
+							// record not present in the open record.
+							new_fields[i] = (Pair) closed_field;
+						} else if (c == 0) {
+							// In this case, there is a field common to both the
+							// closed and open records.
+							Type type = Intersection(open_field.first(), closed_field.first());
+							new_fields[i] = new Pair<Type, String>(type, open_name);
+							j = j + 1;
+						} else {
+							// In this case, there is a field in the open record
+							// which is not in the closed record. Hence, no
+							// intersection is possible.
+							return T_VOID;
+						}
+					} else {
+						// In this case, there is a field in the closed record
+						// not present in the open record.
+						new_fields[i] = (Pair) closed_fields[i];
+					}
+				}
+				return Type.Record(false, new_fields);
+			}
+		}
+
+		/**
+		 * When intersecting an open record with another open record, there is
+		 * always a resulting intersection. In this case, fields common to both
+		 * are intersected and the remainder are pulled as is.
+		 *
+		 * @param ith
+		 * @param jth
+		 * @return
+		 */
+		public static Type intersectOpenOpenRecord(Impl.Record ith, Impl.Record jth) {
+			// ith and jth fields should be in sorted order by field name
+			Pair<Impl, String>[] ith_fields = ith.fields;
+			Pair<Impl, String>[] jth_fields = jth.fields;
+			ArrayList<Pair<Type, String>> new_fields = new ArrayList<>();
+			int i = 0;
+			int j = 0;
+			while (i < ith_fields.length && j < jth_fields.length) {
+				Pair<Impl, String> ith_field = ith_fields[i];
+				Pair<Impl, String> jth_field = jth_fields[j];
+				String ith_name = ith_field.second();
+				String jth_name = jth_field.second();
+				int c = ith_name.compareTo(jth_name);
+				if (c < 0) {
+					// In this case, there is a field in the ith
+					// record not present in the jth record.
+					new_fields.add((Pair) ith_fields[i]);
+					i = i + 1;
+				} else if (c == 0) {
+					// In this case, there is a field common to both the
+					// closed and open records.
+					Type type = Intersection(ith_field.first(), jth_field.first());
+					new_fields.add(new Pair<Type, String>(type, ith_name));
+					i = i + 1;
+					j = j + 1;
+				} else {
+					// In this case, there is a field in the jth
+					// record not present in the ith record.
+					new_fields.add((Pair) jth_fields[i]);
+					j = j + 1;
+				}
+			}
+			// Finally, tidy up any lose ends
+			for (; i < ith_fields.length; i = i + 1) {
+				new_fields.add((Pair) ith_fields[i]);
+			}
+			for (; j < jth_fields.length; j = j + 1) {
+				new_fields.add((Pair) jth_fields[j]);
+			}
+			// Done
+			return Type.Record(false, new_fields);
+		}
+
+		/**
+		 * The intersection of two arrays is simply the intersection of their
+		 * element types. Observe that if this is void, then the resulting type
+		 * will be void as well.
+		 *
+		 * @param ith
+		 * @param jth
+		 * @return
+		 */
+		private static Type intersectArray(Type.Array ith, Type.Array jth) {
+			Type element = Intersection(ith.element(), jth.element());
+			return Type.Array(element);
+		}
+
+		/**
+		 * The intersection of two references is only possible if their type
+		 * match exactly.
+		 *
+		 * @param ith
+		 * @param jth
+		 * @return
+		 */
+		private static Type intersectReference(Type.Reference ith, Type.Reference jth) {
+			if(ith.element().equals(jth.element())) {
+				return ith;
+			} else {
+				return Type.T_VOID;
+			}
 		}
 	}
-
-	/**
-	 * <p>
-	 * The following algorithm simplifies a type. For example:
-	 * </p>
-	 *
-	 * <pre>
-	 * define InnerList as null|{int data, OuterList next}
-	 * define OuterList as null|{int data, InnerList next}
-	 * </pre>
-	 * <p>
-	 * This type is simplified into the following (equivalent) form:
-	 * </p>
-	 *
-	 * <pre>
-	 * define LinkedList as null|{int data, LinkedList next}
-	 * </pre>
-	 * <p>
-	 * The simplification algorithm is made up of several different procedures
-	 * which operate on the underlying <i>automaton</i> representing the type:
-	 * </p>
-	 * <ol>
-	 * <li><b>Extraction.</b> Here, sub-components unreachable from the root are
-	 * eliminated.</li>
-	 * <li><b>Simplification.</b> Here, basic simplifications are applied. For
-	 * example, eliminating unions of unions.</li>
-	 * <li><b>Minimisation.</b>Here, equivalent states are merged together.</li>
-	 * <li><b>Canonicalisation.</b> A canonical form of the type is computed</li>
-	 * </ol>
-	 *
-	 * is based on the well-known algorithm for minimising a DFA (see e.g. <a
-	 * href="http://en.wikipedia.org/wiki/DFA_minimization">[1]</a>). </p>
-	 * <p>
-	 * The algorithm operates by performing a subtype test of each node against
-	 * all others. From this, we can identify nodes which are equivalent under
-	 * the subtype operator. Using this information, the type is reconstructed
-	 * such that for each equivalence class only a single node is created.
-	 * </p>
-	 * <p>
-	 * <b>NOTE:</b> this algorithm does not put the type into a canonical form.
-	 * Additional work is necessary to do this.
-	 * </p>
-	 *
-	 * @param afterType
-	 * @return
-	 */
-	private static Automaton normalise(Automaton automaton) {
-		//normalisedCount++;
-		//unminimisedCount += automaton.size();
-		TypeAlgorithms.simplify(automaton);
-		// TODO: extract in place to avoid allocating data unless necessary
-		automaton = Automata.extract(automaton, 0);
-		// TODO: minimise in place to avoid allocating data unless necessary
-		automaton = Automata.minimise(automaton);
-		if(canonicalisation) {
-			Automata.canonicalise(automaton, TypeAlgorithms.DATA_COMPARATOR);
-		}
-		//minimisedCount += automaton.size();
-		return automaton;
-	}
-
-	public static final byte K_VOID = 0;
-	public static final byte K_ANY = 1;
-	public static final byte K_META = 2;
-	public static final byte K_NULL = 3;
-	public static final byte K_BOOL = 4;
-	public static final byte K_BYTE = 5;
-	public static final byte K_CHAR = 6;
-	public static final byte K_INT = 7;
-	public static final byte K_RATIONAL = 8;
-	public static final byte K_STRING = 9;
-	public static final byte K_TUPLE = 10;
-	public static final byte K_SET = 11;
-	public static final byte K_LIST = 12;
-	public static final byte K_MAP = 13;
-	public static final byte K_REFERENCE = 14;
-	public static final byte K_RECORD = 15;
-	public static final byte K_UNION = 16;
-	public static final byte K_NEGATION = 17;
-	public static final byte K_FUNCTION = 18;
-	public static final byte K_METHOD = 20;
-	public static final byte K_NOMINAL = 21;
-
-	private static final ArrayList<Automaton> values = new ArrayList<Automaton>();
-	private static final HashMap<Automaton,Integer> cache = new HashMap<Automaton,Integer>();
-
-	/**
-	 * The following method is for implementing the fly-weight pattern.
-	 */
-	private static <T extends Automaton> T get(T type) {
-		Integer idx = cache.get(type);
-		if(idx != null) {
-			return (T) values.get(idx);
-		} else {
-			cache.put(type, values.size());
-			values.add(type);
-			return type;
-		}
-	}
-
-//	public static void main(String[] args) {
-//		//Type from = fromString("(null,null)");
-//		//Type to = fromString("X<[X]>");
-//		Type from = fromString("!(!{int x,int z} | !{int x,int y})");
-//		Type to = fromString("{string name,...}");
-//		System.out.println(from + " :> " + to + " = " + isSubtype(from, to));
-//		System.out.println(from + " & " + to + " = " + intersect(from,to));
-//		//System.out.println(from + " - " + to + " = " + intersect(from,Type.Negation(to)));
-//		//System.out.println(to + " - " + from + " = " + intersect(to,Type.Negation(from)));
-//		//System.out.println("!" + from + " & !" + to + " = "
-//		//		+ intersect(Type.Negation(from), Type.Negation(to)));
-//	}
-//
-//	public static Type linkedList(int n) {
-//		NameID label = new NameID(Trie.fromString(""),"X");
-//		return Recursive(label,innerLinkedList(n));
-//	}
-//
-//	public static Type innerLinkedList(int n) {
-//		if(n == 0) {
-//			return Nominal(new NameID(Trie.fromString(""),"X"));
-//		} else {
-//			Type leaf = Reference(innerLinkedList(n-1));
-//			HashMap<String,Type> fields = new HashMap<String,Type>();
-//			fields.put("next", Union(T_NULL,leaf));
-//			fields.put("data", T_BOOL);
-//			return Record(false,fields);
-//		}
-//	}
 }

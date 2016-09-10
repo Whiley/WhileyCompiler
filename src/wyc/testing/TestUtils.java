@@ -17,8 +17,8 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
+import wyc.Activator;
 import wyc.commands.Compile;
-import wyil.Main.Registry;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.lang.Type;
@@ -53,14 +53,20 @@ public class TestUtils {
 		ArrayList<Object[]> testcases = new ArrayList<Object[]>();
 		for (File f : new File(srcDir).listFiles()) {
 			// Check it's a file
-			if (!f.isFile()) continue;
+			if (!f.isFile()) {
+				continue;
+			}
 			String name = f.getName();
 			// Check it's a whiley source file
-			if (!name.endsWith(suffix)) continue;
+			if (!name.endsWith(suffix)) {
+				continue;
+			}
 			// Get rid of ".whiley" extension
 			String testName = name.substring(0, name.length() - suffix.length());
 			// If there's a filter, check the name matches
-			if (containsFilter != null && !testName.contains(containsFilter)) continue;
+			if (containsFilter != null && !testName.contains(containsFilter)) {
+				continue;
+			}
 			testcases.add(new Object[] { testName });
 		}
 		// Sort the result by filename
@@ -80,7 +86,7 @@ public class TestUtils {
 	 *            --- list of command-line arguments to provide to the Whiley
 	 *            Compiler.
 	 * @return
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public static Pair<Compile.Result,String> compile(String whileydir, boolean verify, String... args) throws IOException {
 		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
@@ -100,7 +106,7 @@ public class TestUtils {
 
 	/**
 	 * Execute a given WyIL file using the default interpreter.
-	 * 
+	 *
 	 * @param wyilDir
 	 *            The root directory to look for the WyIL file.
 	 * @param id
@@ -108,15 +114,14 @@ public class TestUtils {
 	 * @throws IOException
 	 */
 	public static void execWyil(String wyilDir, Path.ID id) throws IOException {
-		Type.Method sig = Type.Method(Collections.<Type>emptyList(), Collections.<String>emptySet(),
-				Collections.<String>emptyList(), Collections.<Type>emptyList());
+		Type.Method sig = (Type.Method) Type.Method(new Type[0], new Type[0]);
 		NameID name = new NameID(id,"test");
 		Build.Project project = initialiseProject(wyilDir);
 		new Interpreter(project,null).execute(name,sig);
 	}
 
 	private static Build.Project initialiseProject(String wyilDir) throws IOException {
-		Content.Registry registry = new Registry();
+		Content.Registry registry = new Activator.Registry();
 		DirectoryRoot wyilRoot = new DirectoryRoot(wyilDir,registry);
 		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 		roots.add(wyilRoot);
@@ -244,6 +249,7 @@ public class TestUtils {
 			start();
 		}
 
+		@Override
 		public void run() {
 			try {
 				int nextChar;

@@ -182,7 +182,7 @@ public final class WyilFileWriter {
 	/**
 	 * Write the list of strings making up the string pool. Each entry is
 	 * formated like so:
-	 * 
+	 *
 	 * <pre>
 	 * +-----------------+
 	 * | uv : len        |
@@ -190,7 +190,7 @@ public final class WyilFileWriter {
 	 * | u8[len] : bytes |
 	 * +-----------------+
 	 * </pre>
-	 * 
+	 *
 	 * The encoding for each string item is UTF8.
 	 *
 	 * @throws IOException
@@ -210,7 +210,7 @@ public final class WyilFileWriter {
 	/**
 	 * Write the list of paths which constitute the path pool. Each entry is
 	 * formated like so:
-	 * 
+	 *
 	 * <pre>
 	 * +-----------------+
 	 * | uv : parent     |
@@ -218,7 +218,7 @@ public final class WyilFileWriter {
 	 * | uv : stringIdx  |
 	 * +-----------------+
 	 * </pre>
-	 * 
+	 *
 	 * Each entry is a child of some parent entry, with index zero being
 	 * automatically designated the "root". The <code>stringIdx</code>
 	 * corresponds to an index in the string pool.
@@ -234,7 +234,7 @@ public final class WyilFileWriter {
 	/**
 	 * Read the list of names which constitute the name pool. Each entry is
 	 * formated like so:
-	 * 
+	 *
 	 * <pre>
 	 * +-----------------+
 	 * | uv : pathIdx    |
@@ -242,10 +242,10 @@ public final class WyilFileWriter {
 	 * | uv : stringIdx  |
 	 * +-----------------+
 	 * </pre>
-	 * 
+	 *
 	 * Each entry consists of a path component and a name component, both of
 	 * which index the path and string pools (respectively).
-	 * 
+	 *
 	 * @param count
 	 * @throws IOException
 	 */
@@ -259,7 +259,7 @@ public final class WyilFileWriter {
 	/**
 	 * Write the list of constants which constitute the constant pool. Each entry
 	 * is formated like so:
-	 * 
+	 *
 	 * <pre>
 	 * +-----------------+
 	 * | uv : code       |
@@ -267,12 +267,12 @@ public final class WyilFileWriter {
 	 * | ... payload ... |
 	 * +-----------------+
 	 * </pre>
-	 * 
+	 *
 	 * Here, the size of the payload is determined by the constant code. In some
 	 * cases, there is no payload (e.g. for the constant NULL). In other case,
 	 * there can be numerous bytes contained in the payload (e.g. for an Integer
 	 * constant).
-	 * 
+	 *
 	 * @param count
 	 * @throws IOException
 	 */
@@ -320,7 +320,7 @@ public final class WyilFileWriter {
 			} else if (val instanceof Constant.Type) {
 				Constant.Type ct = (Constant.Type) val;
 				output.write_uv(CONSTANT_Type);
-				output.write_uv(typeCache.get(ct.value()));				
+				output.write_uv(typeCache.get(ct.value()));
 			} else {
 				throw new RuntimeException("Unknown value encountered - " + val);
 			}
@@ -328,9 +328,91 @@ public final class WyilFileWriter {
 	}
 
 	private void writeTypePool(BinaryOutputStream output) throws IOException {
-		Type.BinaryWriter bout = new Type.BinaryWriter(output);
-		for (Type t : typePool) {
-			bout.write(t);
+		for (Type type : typePool) {
+			if (type == Type.T_ANY) {
+				output.write_uv(TYPE_Any);
+			} else if (type == Type.T_VOID) {
+				output.write_uv(TYPE_Void);
+			} else if (type == Type.T_NULL) {
+				output.write_uv(TYPE_Null);
+			} else if (type == Type.T_BOOL) {
+				output.write_uv(TYPE_Bool);
+			} else if (type == Type.T_BYTE) {
+				output.write_uv(TYPE_Byte);
+			} else if (type == Type.T_INT) {
+				output.write_uv(TYPE_Int);
+			} else if (type == Type.T_META) {
+				output.write_uv(TYPE_Type);
+			} else if (type instanceof Type.Nominal) {
+				Type.Nominal t = (Type.Nominal) type;
+				output.write_uv(TYPE_Nominal);
+				output.write_uv(nameCache.get(t.name()));
+			} else if (type instanceof Type.Reference) {
+				Type.Reference t = (Type.Reference) type;
+				output.write_uv(TYPE_Reference);
+				output.write_uv(typeCache.get(t.element()));
+				output.write_uv(stringCache.get(t.lifetime()));
+			} else if (type instanceof Type.Nominal) {
+				Type.Nominal t = (Type.Nominal) type;
+				output.write_uv(TYPE_Nominal);
+				output.write_uv(nameCache.get(t.name()));
+			} else if (type instanceof Type.Array) {
+				Type.Array t = (Type.Array) type;
+				output.write_uv(TYPE_Array);
+				output.write_uv(typeCache.get(t.element()));
+			} else if (type instanceof Type.Record) {
+				Type.Record t = (Type.Record) type;
+				String[] t_fields = t.getFieldNames();
+				output.write_uv(TYPE_Record);
+				output.write_uv(t_fields.length);
+				output.write_bit(t.isOpen());
+				for(int i=0;i!=t_fields.length;++i) {
+					String field = t_fields[i];
+					Type fieldType = t.getField(field);
+					output.write_uv(stringCache.get(field));
+					output.write_uv(typeCache.get(fieldType));
+				}
+			} else if (type instanceof Type.Function) {
+				Type.Function t = (Type.Function) type;
+				output.write_uv(TYPE_Function);
+				writeTypes(t.params(),output);
+				writeTypes(t.returns(),output);
+			} else if (type instanceof Type.Method) {
+				Type.Method t = (Type.Method) type;
+				output.write_uv(TYPE_Method);
+				writeStrings(t.lifetimeParams(),output);
+				writeStrings(t.contextLifetimes(),output);
+				writeTypes(t.params(),output);
+				writeTypes(t.returns(),output);
+			} else if (type instanceof Type.Union) {
+				Type.Union t = (Type.Union) type;
+				output.write_uv(TYPE_Union);
+				writeTypes(t.bounds(),output);
+			} else if (type instanceof Type.Intersection) {
+				Type.Intersection t = (Type.Intersection) type;
+				output.write_uv(TYPE_Intersection);
+				writeTypes(t.bounds(),output);
+			} else if (type instanceof Type.Negation) {
+				Type.Negation t = (Type.Negation) type;
+				output.write_uv(TYPE_Negation);
+				output.write_uv(typeCache.get(t.element()));
+			} else {
+				throw new RuntimeException("Unknown type encountered - " + type);
+			}
+		}
+	}
+
+	private void writeTypes(Type[] types, BinaryOutputStream output) throws IOException {
+		output.write_uv(types.length);
+		for(Type b: types) {
+			output.write_uv(typeCache.get(b));
+		}
+	}
+
+	private void writeStrings(String[] strings, BinaryOutputStream output) throws IOException {
+		output.write_uv(strings.length);
+		for(String str : strings) {
+			output.write_uv(stringCache.get(str));
 		}
 	}
 
@@ -369,7 +451,7 @@ public final class WyilFileWriter {
 	/**
 	 * Construct a BLOCK_Constant, that is a WyIL module block representing a
 	 * constant declaration. The format is:
-	 * 
+	 *
 	 * <pre>
 	 * +-----------------+
 	 * | uv : nameIdx    |
@@ -380,12 +462,12 @@ public final class WyilFileWriter {
 	 * +-----------------+
 	 * ~~~~~~~ u8 ~~~~~~~~
 	 * </pre>
-	 * 
+	 *
 	 * The <code>nameIdx</code> is an index into the <code>stringPool</code>
 	 * representing the declaration's name, whilst <code>constIdx</code> is an
 	 * index into the <code>constantPool</code> representing the constant value
 	 * itself.
-	 * 
+	 *
 	 * @throws IOException
 	 */
 	private byte[] generateConstantBlock(WyilFile.Constant cd) throws IOException {
@@ -404,7 +486,7 @@ public final class WyilFileWriter {
 	/**
 	 * Construct a BLOCK_Type, that is a WyIL module block representing a type
 	 * declaration. The format is:
-	 * 
+	 *
 	 * <pre>
 	 * +------------------------+
 	 * | uv : nameIdx           |
@@ -414,18 +496,18 @@ public final class WyilFileWriter {
 	 * | uv : typeIdx           |
 	 * +------------------------+
 	 * | uv : nInvariants       |
-	 * +------------------------+ 
+	 * +------------------------+
 	 * | uv[nInvariants]        |
 	 * +------------------------+
 	 * | SyntaxTree             |
 	 * +------------------------+
 	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
 	 * </pre>
-	 * 
+	 *
 	 * The <code>nameIdx</code> is an index into the <code>stringPool</code>
 	 * representing the declaration's name, whilst <code>typeIdx</code> is an
 	 * index into the <code>typePool</code> representing the type itself.
-	 * 
+	 *
 	 * @throws IOException
 	 */
 	private byte[] generateTypeBlock(WyilFile.Type td) throws IOException {
@@ -452,7 +534,7 @@ public final class WyilFileWriter {
 	/**
 	 * Construct a BLOCK_Function or BLOCK_Method, that is a WyIL module block
 	 * representing a function or method declaration. The format is:
-	 * 
+	 *
 	 * <pre>
 	 * +------------------------+
 	 * | uv : nameIdx           |
@@ -475,12 +557,12 @@ public final class WyilFileWriter {
 	 * +------------------------+
 	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
 	 * </pre>
-	 * 
+	 *
 	 * The <code>nameIdx</code> is an index into the <code>stringPool</code>
 	 * representing the declaration's name, whilst <code>typeIdx</code> is an
 	 * index into the <code>typePool</code> representing the function or method
-	 * type itself. 
-	 * 
+	 * type itself.
+	 *
 	 * @throws IOException
 	 */
 	private byte[] generateFunctionOrMethodBlock(WyilFile.FunctionOrMethod md) throws IOException {
@@ -491,7 +573,7 @@ public final class WyilFileWriter {
 		int modifiers = generateModifiers(md.modifiers());
 		int typeIdx = typeCache.get(md.type());
 		List<Location<Bytecode.Expr>> precondition = md.getPrecondition();
-		List<Location<Bytecode.Expr>> postcondition = md.getPostcondition();		
+		List<Location<Bytecode.Expr>> postcondition = md.getPostcondition();
 		//
 		output.write_uv(nameIdx);
 		output.write_uv(modifiers);
@@ -506,10 +588,10 @@ public final class WyilFileWriter {
 			output.write_uv(clause.getIndex());
 		}
 		output.write_uv(md.getBody().getIndex());
-		writeSyntaxTree(md.getTree(),output);		
+		writeSyntaxTree(md.getTree(),output);
 
 		output.close();
-		
+
 		return bytes.toByteArray();
 	}
 
@@ -520,17 +602,17 @@ public final class WyilFileWriter {
 	 * <pre>
 	 * +-------------------+
 	 * | uv : nLocs        |
-	 * +-------------------+ 
+	 * +-------------------+
 	 * | Locations[nLocs]  |
 	 * +-------------------+
 	 * </pre>
-	 * 
-	 * 
-	 * 
+	 *
+	 *
+	 *
 	 * @param register
 	 *            Register to be written out
 	 * @param output
-	 * @throws  
+	 * @throws
 	 */
 	private void writeSyntaxTree(SyntaxTree tree, BinaryOutputStream output) throws IOException {
 		List<Location<?>> locations = tree.getLocations();
@@ -538,13 +620,13 @@ public final class WyilFileWriter {
 		for(int i=0;i!=locations.size();++i) {
 			Location<?> location = locations.get(i);
 			writeLocation(location,output);
-		}		
+		}
 	}
-	
+
 	/**
 	 * Write details of a Location to the output stream. The format
 	 * of a location is:
-	 * 
+	 *
 	 * <pre>
 	 * +-------------------+
 	 * | uv : nTypes       |
@@ -554,11 +636,11 @@ public final class WyilFileWriter {
 	 * | uv : nAttrs       |
 	 * +-------------------+
 	 * | Bytecode          |
-	 * +-------------------+ 
+	 * +-------------------+
 	 * | Attribute[nAttrs] |
 	 * +-------------------+
 	 * </pre>
-	 * 
+	 *
 	 */
 	private void writeLocation(SyntaxTree.Location<?> location, BinaryOutputStream output) throws IOException {
 		output.write_uv(location.numberOfTypes());
@@ -573,19 +655,19 @@ public final class WyilFileWriter {
 	 * <p>
 	 * Write out a given bytecode whose format is currently given as follows:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +-------------------+
 	 * | u8 : opcode       |
 	 * +-------------------+
-	 * | uv : nAttrs       |	 
+	 * | uv : nAttrs       |
 	 * +-------------------+
-	 * | Attribute[nAttrs] | 
+	 * | Attribute[nAttrs] |
 	 * +-------------------+
 	 *        ...
-	 * 
+	 *
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * <b>NOTE:</b> The intention is to support a range of different bytecode
 	 * formats in order to optimise the common cases. For example, when there
@@ -620,10 +702,10 @@ public final class WyilFileWriter {
 			break;
 		case MANY:
 			writeUnboundArray(code.getOperands(),output);
-		}		
+		}
 	}
-	
-	private void writeOperandGroups(Bytecode code, BinaryOutputStream output) throws IOException {		
+
+	private void writeOperandGroups(Bytecode code, BinaryOutputStream output) throws IOException {
 		Bytecode.Schema schema = AbstractBytecode.schemas[code.getOpcode()];
 		switch(schema.getOperandGroups()) {
 		case ZERO:
@@ -632,7 +714,7 @@ public final class WyilFileWriter {
 		case ONE:
 			writeUnboundArray(code.getOperandGroup(0),output);
 			break;
-		case TWO:			
+		case TWO:
 			writeUnboundArray(code.getOperandGroup(0),output);
 			writeUnboundArray(code.getOperandGroup(1),output);
 			break;
@@ -640,10 +722,10 @@ public final class WyilFileWriter {
 			output.write_uv(code.numberOfOperandGroups());
 			for(int i=0;i!=code.numberOfOperandGroups();++i) {
 				writeUnboundArray(code.getOperandGroup(i),output);
-			}			
-		}		
+			}
+		}
 	}
-	
+
 	private void writeBlocks(Bytecode.Stmt code, BinaryOutputStream output) throws IOException {
 		Bytecode.Schema schema = AbstractBytecode.schemas[code.getOpcode()];
 		switch(schema.getBlocks()) {
@@ -659,16 +741,16 @@ public final class WyilFileWriter {
 			break;
 		case MANY:
 			writeUnboundArray(code.getBlocks(),output);
-		}		
+		}
 	}
 	private void writeUnboundArray(int[] values, BinaryOutputStream output) throws IOException {
-		output.write_uv(values.length);	
+		output.write_uv(values.length);
 		// Write operand locations
 		for (int i = 0; i != values.length; ++i) {
 			output.write_uv(values[i]);
-		}	
+		}
 	}
-	
+
 	/**
 	 * Write the "rest" of a bytecode instruction. This includes additional
 	 * information as specified for the given opcode. For compound bytecodes,
@@ -695,7 +777,7 @@ public final class WyilFileWriter {
 	 */
 	private void writeExtras(Bytecode code, BinaryOutputStream output) throws IOException {
 		//
-		switch (code.getOpcode()) {		
+		switch (code.getOpcode()) {
 		case Bytecode.OPCODE_const: {
 			Bytecode.Const c = (Bytecode.Const) code;
 			output.write_uv(constantCache.get(c.constant()));
@@ -726,7 +808,7 @@ public final class WyilFileWriter {
 			Bytecode.Lambda c = (Bytecode.Lambda) code;
 			output.write_uv(typeCache.get(c.type()));
 			break;
-		}		
+		}
 		case Bytecode.OPCODE_switch: {
 			Bytecode.Switch c = (Bytecode.Switch) code;
 			Bytecode.Case[] cases = c.cases();
@@ -766,7 +848,7 @@ public final class WyilFileWriter {
 		}
 		return mods;
 	}
-	
+
 	private void buildPools(WyilFile module) {
 		stringPool.clear();
 		stringCache.clear();
@@ -824,14 +906,14 @@ public final class WyilFileWriter {
 			buildPools(e);
 		}
 	}
-	
+
 	private void buildPools(SyntaxTree.Location<?> loc) {
 		for(int i=0;i!=loc.numberOfTypes();++i) {
 			addTypeItem(loc.getType(i));
 		}
 		buildPools(loc.getBytecode());
 	}
-	
+
 	private void buildPools(Bytecode code) {
 		if (code instanceof Bytecode.Const) {
 			Bytecode.Const c = (Bytecode.Const) code;
@@ -862,7 +944,7 @@ public final class WyilFileWriter {
 		} else if (code instanceof Bytecode.VariableDeclaration) {
 			Bytecode.VariableDeclaration vd = (Bytecode.VariableDeclaration) code;
 			addStringItem(vd.getName());
-		} 
+		}
 	}
 
 	private int addNameItem(NameID name) {
@@ -889,6 +971,12 @@ public final class WyilFileWriter {
 		}
 	}
 
+	private void addStringItems(String[] strings) {
+		for(String string : strings) {
+			addStringItem(string);
+		}
+	}
+
 	private int addPathItem(Path.ID pid) {
 		Integer index = pathCache.get(pid);
 		if (index == null) {
@@ -903,19 +991,67 @@ public final class WyilFileWriter {
 	}
 
 	private int addTypeItem(Type t) {
-
-		// TODO: this could be made way more efficient. In particular, we should
-		// combine resources into a proper aliased pool rather than write out
-		// types individually ... because that's sooooo inefficient!
-
 		Integer index = typeCache.get(t);
 		if (index == null) {
+			// All subitems must have lower indices than the containing item.
+			// So, we must add subitems first before attempting to allocate a
+			// place for this value.
+			addTypeSubitems(t);
+			// finally allocate space for this type
 			int i = typePool.size();
 			typeCache.put(t, i);
 			typePool.add(t);
 			return i;
 		} else {
 			return index;
+		}
+	}
+
+	private void addTypeItems(Type[] types) {
+		for(Type type : types) {
+			addTypeItem(type);
+		}
+	}
+
+	private void addTypeSubitems(Type type) {
+		if(type instanceof Type.Nominal) {
+			Type.Nominal t = (Type.Nominal) type;
+			addNameItem(t.name());
+		} else if(type instanceof Type.Array) {
+			Type.Array t = (Type.Array) type;
+			addTypeItem(t.element());
+		} else if(type instanceof Type.Reference) {
+			Type.Reference t = (Type.Reference) type;
+			addTypeItem(t.element());
+			addStringItem(t.lifetime());
+		} else if(type instanceof Type.Record) {
+			Type.Record t = (Type.Record) type;
+			String[] fields = t.getFieldNames();
+			for(int i=0;i!=fields.length;++i) {
+				String field = fields[i];
+				Type fieldType = t.getField(field);
+				addStringItem(field);
+				addTypeItem(fieldType);
+			}
+		} else if(type instanceof Type.Function) {
+			Type.FunctionOrMethod t = (Type.Function) type;
+			addTypeItems(t.params());
+			addTypeItems(t.returns());
+		} else if(type instanceof Type.Method) {
+			Type.Method t = (Type.Method) type;
+			addStringItems(t.contextLifetimes());
+			addStringItems(t.lifetimeParams());
+			addTypeItems(t.params());
+			addTypeItems(t.returns());
+		} else if(type instanceof Type.Union) {
+			Type.Union t = (Type.Union) type;
+			addTypeItems(t.bounds());
+		} else if(type instanceof Type.Intersection) {
+			Type.Intersection t = (Type.Intersection) type;
+			addTypeItems(t.bounds());
+		} else if(type instanceof Type.Negation) {
+			Type.Negation t = (Type.Negation) type;
+			addTypeItem(t.element());
 		}
 	}
 
@@ -1051,14 +1187,32 @@ public final class WyilFileWriter {
 	public final static int CONSTANT_False = 2;
 	public final static int CONSTANT_Byte = 3;
 	public final static int CONSTANT_Int = 5;
-	// public final static int CONSTANT_Real = 6;
-	// public final static int CONSTANT_Set = 7;
 	public final static int CONSTANT_Array = 9;
 	public final static int CONSTANT_Record = 10;
-	// public final static int CONSTANT_Tuple = 11;
 	public final static int CONSTANT_Type = 12;
 	public final static int CONSTANT_Function = 13;
 	public final static int CONSTANT_Method = 14;
+
+	// =========================================================================
+	// TYHPE identifiers
+	// =========================================================================
+
+	public final static int TYPE_Any = 0;
+	public final static int TYPE_Void = 1;
+	public final static int TYPE_Null = 2;
+	public final static int TYPE_Bool = 3;
+	public final static int TYPE_Byte = 4;
+	public final static int TYPE_Int = 5;
+	public final static int TYPE_Type = 6;
+	public final static int TYPE_Nominal = 7;
+	public final static int TYPE_Reference = 8;
+	public final static int TYPE_Array = 9;
+	public final static int TYPE_Record = 10;
+	public final static int TYPE_Function = 11;
+	public final static int TYPE_Method = 12;
+	public final static int TYPE_Union = 13;
+	public final static int TYPE_Intersection = 14;
+	public final static int TYPE_Negation = 15;
 
 	// =========================================================================
 	// MODIFIER identifiers

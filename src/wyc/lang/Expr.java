@@ -61,7 +61,7 @@ public interface Expr extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public Nominal result();
+	public Type result();
 
 	/**
 	 * An LVal is a special form of expression which may appear on the left-hand
@@ -76,19 +76,19 @@ public interface Expr extends SyntacticElement {
 	 * A Multi expression is one which returns multiple values. Certain
 	 * expression forms are permitted to return multiple values and these
 	 * implement Multi.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
 	public interface Multi extends SyntacticElement{
 		/**
 		 * Get all the return types this expression can produce.
-		 * 
+		 *
 		 * @return
 		 */
-		public List<Nominal> returns();		
+		public List<Type> returns();
 	}
-	
+
 	public static class AbstractVariable extends SyntacticElement.Impl implements Expr, LVal {
 		public final String var;
 
@@ -102,17 +102,19 @@ public interface Expr extends SyntacticElement {
 			this.var = var;
 		}
 
-		public Nominal result() {
+		@Override
+		public Type result() {
 			return null;
 		}
 
+		@Override
 		public String toString() {
 			return var;
 		}
 	}
 
 	public static class LocalVariable extends AbstractVariable {
-		public Nominal type;
+		public Type type;
 
 		public LocalVariable(String var, Attribute... attributes) {
 			super(var, attributes);
@@ -122,17 +124,19 @@ public interface Expr extends SyntacticElement {
 			super(var, attributes);
 		}
 
-		public Nominal result() {
+		@Override
+		public Type result() {
 			return type;
 		}
 
+		@Override
 		public String toString() {
 			return var;
 		}
 	}
 
 	public static class AssignedVariable extends LocalVariable {
-		public Nominal afterType;
+		public Type afterType;
 
 		public AssignedVariable(String var, Attribute... attributes) {
 			super(var, attributes);
@@ -151,10 +155,12 @@ public interface Expr extends SyntacticElement {
 			this.value = val;
 		}
 
-		public Nominal result() {
-			return Nominal.construct(value.type(),value.type());
+		@Override
+		public Type result() {
+			return value.type();
 		}
 
+		@Override
 		public String toString() {
 			return value.toString();
 		}
@@ -173,7 +179,7 @@ public interface Expr extends SyntacticElement {
 	 */
 	public static class Cast extends SyntacticElement.Impl implements Expr {
 		public final SyntacticType unresolvedType;
-		public Nominal type;
+		public Type type;
 		public Expr expr;
 
 		public Cast(SyntacticType type, Expr expr, Attribute... attributes) {
@@ -182,10 +188,12 @@ public interface Expr extends SyntacticElement {
 			this.expr = expr;
 		}
 
-		public Nominal result() {
+		@Override
+		public Type result() {
 			return type;
 		}
 
+		@Override
 		public String toString() {
 			return "(" + unresolvedType.toString() + ") " + expr;
 		}
@@ -193,15 +201,16 @@ public interface Expr extends SyntacticElement {
 
 	public static class TypeVal extends SyntacticElement.Impl implements Expr {
 		public final SyntacticType unresolvedType;
-		public Nominal type;
+		public Type type;
 
 		public TypeVal(SyntacticType val, Attribute... attributes) {
 			super(attributes);
 			this.unresolvedType = val;
 		}
 
-		public Nominal result() {
-			return Nominal.T_META;
+		@Override
+		public Type result() {
+			return Type.T_META;
 		}
 	}
 
@@ -209,7 +218,7 @@ public interface Expr extends SyntacticElement {
 		public final String name;
 		public final ArrayList<SyntacticType> paramTypes;
 		public final ArrayList<String> lifetimeParameters;
-		public Nominal.FunctionOrMethod type;
+		public Type.FunctionOrMethod type;
 
 		public AbstractFunctionOrMethod(String name, Collection<SyntacticType> paramTypes,
 				Collection<String> lifetimeParameters, Attribute... attributes) {
@@ -245,7 +254,8 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 
-		public Nominal.FunctionOrMethod result() {
+		@Override
+		public Type.FunctionOrMethod result() {
 			return type;
 		}
 	}
@@ -271,7 +281,7 @@ public interface Expr extends SyntacticElement {
 		public final HashSet<String> contextLifetimes;
 		public final ArrayList<String> lifetimeParameters;
 		public Expr body;
-		public Nominal.FunctionOrMethod type;
+		public Type.FunctionOrMethod type;
 
 		public Lambda(Collection<WhileyFile.Parameter> parameters, Collection<String> contextLifetimes,
 				Collection<String> lifetimeParameters, Expr body, Attribute... attributes) {
@@ -291,7 +301,8 @@ public interface Expr extends SyntacticElement {
 			this.body = body;
 		}
 
-		public Nominal.FunctionOrMethod result() {
+		@Override
+		public Type.FunctionOrMethod result() {
 			return type;
 		}
 	}
@@ -300,7 +311,7 @@ public interface Expr extends SyntacticElement {
 		public BOp op;
 		public Expr lhs;
 		public Expr rhs;
-		public Nominal srcType;
+		public Type srcType;
 
 		public BinOp(BOp op, Expr lhs, Expr rhs, Attribute... attributes) {
 			super(attributes);
@@ -316,7 +327,8 @@ public interface Expr extends SyntacticElement {
 			this.rhs = rhs;
 		}
 
-		public Nominal result() {
+		@Override
+		public Type result() {
 			switch(op) {
 			case EQ:
 			case NEQ:
@@ -325,16 +337,17 @@ public interface Expr extends SyntacticElement {
 			case GT:
 			case GTEQ:
 			case IS:
-				return Nominal.T_BOOL;
+				return Type.T_BOOL;
 			default:
 				return srcType;
 			}
 		}
 
-		public Nominal srcType() {
+		public Type srcType() {
 			return srcType;
 		}
 
+		@Override
 		public String toString() {
 			return "(" + op + " " + lhs + " " + rhs + ")";
 		}
@@ -345,7 +358,7 @@ public interface Expr extends SyntacticElement {
 			Expr, LVal {
 		public Expr src;
 		public Expr index;
-		public Nominal.Array srcType;
+		public Type.EffectiveArray srcType;
 
 		public IndexOf(Expr src, Expr index, Attribute... attributes) {
 			super(attributes);
@@ -359,10 +372,12 @@ public interface Expr extends SyntacticElement {
 			this.index = index;
 		}
 
-		public Nominal result() {
-			return srcType.value();
+		@Override
+		public Type result() {
+			return srcType.getReadableElementType();
 		}
 
+		@Override
 		public String toString() {
 			return src + "[" + index + "]";
 		}
@@ -378,7 +393,7 @@ public interface Expr extends SyntacticElement {
 	public static class UnOp extends SyntacticElement.Impl implements Expr {
 		public final UOp op;
 		public Expr mhs;
-		public Nominal type;
+		public Type type;
 
 		public UnOp(UOp op, Expr mhs, Attribute... attributes) {
 			super(attributes);
@@ -386,14 +401,16 @@ public interface Expr extends SyntacticElement {
 			this.mhs = mhs;
 		}
 
-		public Nominal result() {
+		@Override
+		public Type result() {
 			if(op == UOp.ARRAYLENGTH) {
-				return Nominal.T_INT;
+				return Type.T_INT;
 			} else {
 				return type;
 			}
 		}
 
+		@Override
 		public String toString() {
 			return op + mhs.toString();
 		}
@@ -410,7 +427,7 @@ public interface Expr extends SyntacticElement {
 	 */
 	public static class ArrayInitialiser extends SyntacticElement.Impl implements Expr {
 		public final ArrayList<Expr> arguments;
-		public Nominal.Array type;
+		public Type.Array type;
 
 		public ArrayInitialiser(Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
@@ -425,11 +442,12 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 
-		public Nominal.Array result() {
+		@Override
+		public Type.Array result() {
 			return type;
 		}
 	}
-	
+
 	/**
 	 * Represents an array generator expression, which is of the form:
 	 *
@@ -442,7 +460,7 @@ public interface Expr extends SyntacticElement {
 	public static class ArrayGenerator extends SyntacticElement.Impl implements Expr {
 		public Expr element;
 		public Expr count;
-		public Nominal.Array type;
+		public Type.Array type;
 
 		public ArrayGenerator(Expr element, Expr count, Attribute... attributes) {
 			super(attributes);
@@ -450,18 +468,19 @@ public interface Expr extends SyntacticElement {
 			this.count = count;
 		}
 
-		public Nominal.Array result() {
+		@Override
+		public Type.Array result() {
 			return type;
 		}
 	}
-	
+
 	public static class Quantifier extends SyntacticElement.Impl implements Expr {
 		public final QOp cop;
 		public final ArrayList<Triple<String,Expr,Expr>> sources;
 		public Expr condition;
-		public Nominal type;
+		public Type type;
 
-		public Quantifier(QOp cop, 
+		public Quantifier(QOp cop,
 				Collection<Triple<String, Expr, Expr>> sources, Expr condition,
 				Attribute... attributes) {
 			super(attributes);
@@ -470,7 +489,8 @@ public interface Expr extends SyntacticElement {
 			this.sources = new ArrayList<Triple<String, Expr, Expr>>(sources);
 		}
 
-		public Nominal result() {
+		@Override
+		public Type result() {
 			return type;
 		}
 	}
@@ -482,7 +502,7 @@ public interface Expr extends SyntacticElement {
 	public static class FieldAccess extends SyntacticElement.Impl implements LVal {
 		public Expr src;
 		public final String name;
-		public Nominal.Record srcType;
+		public Type.EffectiveRecord srcType;
 
 		public FieldAccess(Expr lhs, String name, Attribute... attributes) {
 			super(attributes);
@@ -497,10 +517,12 @@ public interface Expr extends SyntacticElement {
 			this.name = name;
 		}
 
-		public Nominal result() {
-			return srcType.field(name);
+		@Override
+		public Type result() {
+			return srcType.getReadableFieldType(name);
 		}
 
+		@Override
 		public String toString() {
 			return src + "." + name;
 		}
@@ -510,7 +532,7 @@ public interface Expr extends SyntacticElement {
 		public final String name;
 		public Path.ID qualification;
 		public wyil.lang.Constant value;
-		public Nominal type;
+		public Type type;
 
 		public ConstantAccess(String name, Path.ID qualification,
 				Attribute... attributes) {
@@ -526,13 +548,15 @@ public interface Expr extends SyntacticElement {
 			this.qualification = qualification;
 		}
 
-		public Nominal result() {
+		@Override
+		public Type result() {
 			// Note: must return our type here, rather than value.type(). This
 			// is because value.type() does not distinguish nominal and raw
 			// types.  See #544.
 			return type;
 		}
 
+		@Override
 		public String toString() {
 			if(qualification == null) {
 				// root
@@ -545,17 +569,19 @@ public interface Expr extends SyntacticElement {
 
 	public static class Dereference extends SyntacticElement.Impl implements LVal {
 		public Expr src;
-		public Nominal.Reference srcType;
+		public Type.Reference srcType;
 
 		public Dereference(Expr src, Attribute... attributes) {
 			super(attributes);
 			this.src = src;
 		}
 
-		public Nominal result() {
+		@Override
+		public Type result() {
 			return srcType.element();
 		}
 
+		@Override
 		public String toString() {
 			return "*" + src.toString();
 		}
@@ -564,7 +590,7 @@ public interface Expr extends SyntacticElement {
 	public static class Record extends SyntacticElement.Impl implements
 			Expr {
 		public final HashMap<String, Expr> fields;
-		public Nominal.Record type;
+		public Type.Record type;
 
 		public Record(java.util.Map<String, Expr> fields,
 				Attribute... attributes) {
@@ -572,7 +598,8 @@ public interface Expr extends SyntacticElement {
 			this.fields = new HashMap<String, Expr>(fields);
 		}
 
-		public Nominal.Record result() {
+		@Override
+		public Type.Record result() {
 			return type;
 		}
 	}
@@ -612,14 +639,15 @@ public interface Expr extends SyntacticElement {
 			}
 		}
 
-		public Nominal result() {
+		@Override
+		public Type result() {
 			return null;
 		}
 	}
 
 	public static abstract class FunctionOrMethodCall extends AbstractInvoke implements Multi {
 		public final NameID nid;
-		
+
 		public FunctionOrMethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Collection<String> lifetimeArguments, Attribute... attributes) {
 			super(nid.name(),qualification,arguments,lifetimeArguments,attributes);
@@ -631,20 +659,21 @@ public interface Expr extends SyntacticElement {
 			super(nid.name(),qualification,arguments,lifetimeArguments,attributes);
 			this.nid = nid;
 		}
-		
+
 		public NameID nid() {
 			return nid;
 		}
 
-		public abstract Nominal.FunctionOrMethod type();
-		
-		public List<Nominal> returns() {
-			return type().returns();
-		}		
+		public abstract Type.FunctionOrMethod type();
+
+		@Override
+		public List<Type> returns() {
+			return Arrays.asList(type().returns());
+		}
 	}
-	
+
 	public static class MethodCall extends FunctionOrMethodCall {
-		public Nominal.Method methodType;
+		public Type.Method methodType;
 
 		public MethodCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Collection<String> lifetimeArguments, Attribute... attributes) {
@@ -656,17 +685,20 @@ public interface Expr extends SyntacticElement {
 			super(nid,qualification,arguments,lifetimeArguments,attributes);
 		}
 
-		public Nominal.Method type() {
+		@Override
+		public Type.Method type() {
 			return methodType;
 		}
-		
-		public Nominal result() {
-			if (methodType.returns().size() == 1) {
-				Nominal returnType = methodType.returns().get(0);
+
+		@Override
+		public Type result() {
+			if (methodType.returns().length == 1) {
+				Type returnType = methodType.returns()[0];
 				if (this.lifetimeArguments == null || this.lifetimeArguments.isEmpty()) {
 					return returnType;
 				}
-				return FlowTypeChecker.applySubstitution(methodType.raw().lifetimeParams(), this.lifetimeArguments, returnType);
+				List<String> lifetimeParams = Arrays.asList(methodType.lifetimeParams());
+				return FlowTypeChecker.applySubstitution(lifetimeParams, this.lifetimeArguments, returnType);
 			} else {
 				throw new IllegalArgumentException("incorrect number of returns for function call");
 			}
@@ -684,7 +716,7 @@ public interface Expr extends SyntacticElement {
 	 */
 	public static class FunctionCall extends FunctionOrMethodCall {
 
-		public Nominal.Function functionType;
+		public Type.Function functionType;
 
 		public FunctionCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
 				Attribute... attributes) {
@@ -696,13 +728,15 @@ public interface Expr extends SyntacticElement {
 			super(nid,qualification,arguments,Collections.<String>emptyList(),attributes);
 		}
 
-		public Nominal.Function type() {
+		@Override
+		public Type.Function type() {
 			return functionType;
 		}
-		
-		public Nominal result() {
-			if(functionType.returns().size() == 1) {
-				return functionType.returns().get(0);
+
+		@Override
+		public Type result() {
+			if(functionType.returns().length == 1) {
+				return functionType.returns()[0];
 			} else {
 				throw new IllegalArgumentException("incorrect number of returns for function call");
 			}
@@ -735,7 +769,8 @@ public interface Expr extends SyntacticElement {
 			this.lifetimeArguments = lifetimeArguments == null ? null : new ArrayList<String>(lifetimeArguments);
 		}
 
-		public Nominal result() {
+		@Override
+		public Type result() {
 			return null;
 		}
 	}
@@ -751,15 +786,16 @@ public interface Expr extends SyntacticElement {
 			super(src,arguments,lifetimeArguments,attributes);
 		}
 
-		public abstract Nominal.FunctionOrMethod type();
-		
-		public List<Nominal> returns() {
-			return type().returns();
+		public abstract Type.FunctionOrMethod type();
+
+		@Override
+		public List<Type> returns() {
+			return Arrays.asList(type().returns());
 		}
 	}
-	
+
 	public static class IndirectMethodCall extends IndirectFunctionOrMethodCall {
-		public Nominal.Method methodType;
+		public Type.Method methodType;
 
 		public IndirectMethodCall(Expr src, Collection<Expr> arguments,
 				Collection<String> lifetimeArguments, Attribute... attributes) {
@@ -771,25 +807,28 @@ public interface Expr extends SyntacticElement {
 			super(src,arguments,lifetimeArguments,attributes);
 		}
 
-		public Nominal result() {
-			if(methodType.returns().size() == 1) {
-				Nominal returnType = methodType.returns().get(0);
+		@Override
+		public Type result() {
+			if (methodType.returns().length == 1) {
+				Type returnType = methodType.returns()[0];
 				if (this.lifetimeArguments == null || this.lifetimeArguments.isEmpty()) {
 					return returnType;
 				}
-				return FlowTypeChecker.applySubstitution(methodType.raw().lifetimeParams(), this.lifetimeArguments, returnType);
+				List<String> lifetimeParams = Arrays.asList(methodType.lifetimeParams());
+				return FlowTypeChecker.applySubstitution(lifetimeParams, this.lifetimeArguments, returnType);
 			} else {
 				throw new IllegalArgumentException("incorrect number of returns for indirect method call");
-			}			
+			}
 		}
-		
-		public Nominal.FunctionOrMethod type() {
+
+		@Override
+		public Type.FunctionOrMethod type() {
 			return methodType;
-		}		
+		}
 	}
 
 	public static class IndirectFunctionCall extends IndirectFunctionOrMethodCall {
-		public Nominal.Function functionType;
+		public Type.Function functionType;
 
 		public IndirectFunctionCall(Expr src, Collection<Expr> arguments,
 				Attribute... attributes) {
@@ -801,22 +840,24 @@ public interface Expr extends SyntacticElement {
 			super(src,arguments,Collections.<String>emptyList(),attributes);
 		}
 
-		public Nominal result() {
-			if(functionType.returns().size() == 1) {
-				return functionType.returns().get(0);
+		@Override
+		public Type result() {
+			if(functionType.returns().length == 1) {
+				return functionType.returns()[0];
 			} else {
 				throw new IllegalArgumentException("incorrect number of returns for indirect function call");
 			}
 		}
-		
-		public Nominal.FunctionOrMethod type() {
+
+		@Override
+		public Type.FunctionOrMethod type() {
 			return functionType;
 		}
 	}
 
 	public static class New extends SyntacticElement.Impl implements Expr,Stmt {
 		public Expr expr;
-		public Nominal.Reference type;
+		public Type.Reference type;
 		public String lifetime;
 
 		public New(Expr expr, String lifetime, Attribute... attributes) {
@@ -825,82 +866,107 @@ public interface Expr extends SyntacticElement {
 			this.expr = expr;
 		}
 
-		public Nominal.Reference result() {
+		@Override
+		public Type.Reference result() {
 			return type;
 		}
 	}
 
 	public enum BOp {
 		AND {
+			@Override
 			public String toString() { return "&&"; }
 		},
 		OR{
+			@Override
 			public String toString() { return "||"; }
 		},
 		XOR {
+			@Override
 			public String toString() { return "^^"; }
 		},
 		ADD{
+			@Override
 			public String toString() { return "+"; }
 		},
 		SUB{
+			@Override
 			public String toString() { return "-"; }
 		},
 		MUL{
+			@Override
 			public String toString() { return "*"; }
 		},
 		DIV{
+			@Override
 			public String toString() { return "/"; }
 		},
 		REM{
+			@Override
 			public String toString() { return "%"; }
 		},
 		UNION{
+			@Override
 			public String toString() { return "+"; }
 		},
 		INTERSECTION{
+			@Override
 			public String toString() { return "&"; }
 		},
 		DIFFERENCE{
+			@Override
 			public String toString() { return "-"; }
-		},		
+		},
 		EQ{
+			@Override
 			public String toString() { return "=="; }
 		},
 		NEQ{
+			@Override
 			public String toString() { return "!="; }
 		},
 		LT{
+			@Override
 			public String toString() { return "<"; }
 		},
 		LTEQ{
+			@Override
 			public String toString() { return "<="; }
 		},
 		GT{
+			@Override
 			public String toString() { return ">"; }
 		},
 		GTEQ{
+			@Override
 			public String toString() { return ">="; }
-		},		
+		},
 		RANGE{
+			@Override
 			public String toString() { return ".."; }
 		},
 		IS{
+			@Override
 			public String toString() { return "is"; }
 		},
 		BITWISEAND {
+			@Override
 			public String toString() { return "&"; }
 		},
 		BITWISEOR{
+			@Override
 			public String toString() { return "|"; }
 		},
 		BITWISEXOR {
+			@Override
 			public String toString() { return "^"; }
 		},
 		LEFTSHIFT {
+			@Override
 			public String toString() { return "<<"; }
 		},
 		RIGHTSHIFT {
+			@Override
 			public String toString() { return ">>"; }
 		},
 	};

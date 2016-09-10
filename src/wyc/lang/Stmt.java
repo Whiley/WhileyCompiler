@@ -30,6 +30,7 @@ import java.util.*;
 import wybs.lang.Attribute;
 import wybs.lang.SyntacticElement;
 import wyil.lang.Constant;
+import wyil.lang.Type;
 import wyil.util.*;
 
 /**
@@ -571,7 +572,7 @@ public interface Stmt extends SyntacticElement {
 	public static final class VariableDeclaration extends SyntacticElement.Impl implements
 			Stmt {
 		public final WhileyFile.Parameter parameter;
-		public Nominal type;
+		public Type type;
 		public Expr expr;
 
 		/**

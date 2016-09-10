@@ -25,10 +25,12 @@
 
 package wyil.util.type;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
 import wybs.lang.NameID;
+import wycc.util.Pair;
 import wyfs.util.Trie;
 import wyil.lang.Type;
 import static wyil.lang.Type.*;
@@ -60,19 +62,19 @@ public class TypeParser {
 				&& (str.charAt(index) == '|')) {
 			// union type
 			match("|");
-			term = Union(term,parse(typeVariables));
+			term = Type.Union(term,parse(typeVariables));
 			skipWhiteSpace();
 		}
 		return term;
 	}
 //  FIXME: This is broken and needs to be updated to handle multiple returns.
-//	public Type parseFunctionTerm(HashSet<String> typeVariables) {		
+//	public Type parseFunctionTerm(HashSet<String> typeVariables) {
 //		Type t = parseNotTerm(typeVariables);
 //		if(index >= str.length()) { return t; }
 //		char lookahead = str.charAt(index);
 //		if(lookahead == '(') {
 //			// this is a tuple, not a bracketed type.
-//			List<Type> parameters = parseParameters(typeVariables);			
+//			List<Type> parameters = parseParameters(typeVariables);
 //			skipWhiteSpace();
 //			return Function(t,parameters);
 //		}
@@ -93,13 +95,13 @@ public class TypeParser {
 //		match(")");
 //		return elems;
 //	}
-	
+
 	public Type parseNotTerm(HashSet<String> typeVariables) {
 		skipWhiteSpace();
 		char lookahead = str.charAt(index);
 		if(lookahead == '!') {
 			match("!");
-			return Negation(parseNotTerm(typeVariables));
+			return Type.Negation(parseNotTerm(typeVariables));
 		} else {
 			return parseBraceTerm(typeVariables);
 		}
@@ -139,16 +141,16 @@ public class TypeParser {
 			} else {
 				match("byte");
 				return T_BYTE;
-			}		
+			}
 		case 'i':
 			match("int");
-			return T_INT;		
+			return T_INT;
 		case '[':
 		{
 			match("[");
 			Type elem = parse(typeVariables);
 			match("]");
-			return Array(elem, false);
+			return Type.Array(elem);
 		}
 		case '{':
 		{
@@ -156,9 +158,9 @@ public class TypeParser {
 			Type elem = parse(typeVariables);
 			skipWhiteSpace();
 			// record
-			HashMap<String,Type> fields = new HashMap<String,Type>();
+			ArrayList<Pair<Type,String>> fields = new ArrayList<Pair<Type,String>>();
 			String id = parseIdentifier();
-			fields.put(id, elem);
+			fields.add(new Pair<Type,String>(elem, id));
 			skipWhiteSpace();
 			boolean isOpen = false;
 			while(index < str.length() && str.charAt(index) == ',') {
@@ -170,28 +172,15 @@ public class TypeParser {
 				}
 				elem = parse(typeVariables);
 				id = parseIdentifier();
-				fields.put(id, elem);
+				fields.add(new Pair<Type,String>(elem, id));
 				skipWhiteSpace();
 			}
 			match("}");
-			return Record(isOpen,fields);			
+			return Type.Record(isOpen,fields);
 		}
-		default:
-		{
+		default: {
 			String typeVariable = parseIdentifier();
-			if(typeVariables.contains(typeVariable)) {
-				return Nominal(new NameID(Trie.fromString("$"),
-						typeVariable));
-			} else {
-				typeVariables = new HashSet<String>(typeVariables);
-				typeVariables.add(typeVariable);
-				match("<");
-				Type t = parse(typeVariables);
-				match(">");
-				NameID label = new NameID(Trie.fromString("$"),
-						typeVariable);
-				return Recursive(label, t);
-			}
+			return Type.Nominal(new NameID(Trie.fromString("$"), typeVariable));
 		}
 
 		}

@@ -31,6 +31,7 @@ import java.util.*;
 
 import wybs.lang.Attribute;
 import wybs.lang.NameID;
+import wycc.util.Pair;
 import wyfs.io.BinaryInputStream;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -65,7 +66,7 @@ public final class WyilFileReader {
 	/**
 	 * Construct a WyilFileReader to read a WyilFile in headless mode. That is,
 	 * where the file is not associated with a Path.Entry.
-	 * 
+	 *
 	 * @param input
 	 */
 	public WyilFileReader(InputStream input) throws IOException {
@@ -120,7 +121,7 @@ public final class WyilFileReader {
 	/**
 	 * Read the list of strings which constitute the string pool. Each entry is
 	 * formated like so:
-	 * 
+	 *
 	 * <pre>
 	 * +-----------------+
 	 * | uv : len        |
@@ -128,9 +129,9 @@ public final class WyilFileReader {
 	 * | u8[len] : bytes |
 	 * +-----------------+
 	 * </pre>
-	 * 
+	 *
 	 * The encoding for each string item is UTF-8.
-	 * 
+	 *
 	 * @param count
 	 * @throws IOException
 	 */
@@ -154,7 +155,7 @@ public final class WyilFileReader {
 	/**
 	 * Read the list of paths which constitute the path pool. Each entry is
 	 * formated like so:
-	 * 
+	 *
 	 * <pre>
 	 * +-----------------+
 	 * | uv : parent     |
@@ -162,11 +163,11 @@ public final class WyilFileReader {
 	 * | uv : stringIdx  |
 	 * +-----------------+
 	 * </pre>
-	 * 
+	 *
 	 * Each entry is a child of some parent entry, with index zero being
 	 * automatically designated the "root". The <code>stringIdx</code>
 	 * corresponds to an index in the string pool.
-	 * 
+	 *
 	 * @param count
 	 * @throws IOException
 	 */
@@ -188,7 +189,7 @@ public final class WyilFileReader {
 	/**
 	 * Read the list of names which constitute the name pool. Each entry is
 	 * formated like so:
-	 * 
+	 *
 	 * <pre>
 	 * +-----------------+
 	 * | uv : pathIdx    |
@@ -196,10 +197,10 @@ public final class WyilFileReader {
 	 * | uv : stringIdx  |
 	 * +-----------------+
 	 * </pre>
-	 * 
+	 *
 	 * Each entry consists of a path component and a name component, both of
 	 * which index the path and string pools (respectively).
-	 * 
+	 *
 	 * @param count
 	 * @throws IOException
 	 */
@@ -221,7 +222,7 @@ public final class WyilFileReader {
 	/**
 	 * Read the list of constants which constitute the constant pool. Each entry
 	 * is formated like so:
-	 * 
+	 *
 	 * <pre>
 	 * +-----------------+
 	 * | uv : code       |
@@ -229,12 +230,12 @@ public final class WyilFileReader {
 	 * | ... payload ... |
 	 * +-----------------+
 	 * </pre>
-	 * 
+	 *
 	 * Here, the size of the payload is determined by the constant code. In some
 	 * cases, there is no payload (e.g. for the constant NULL). In other case,
 	 * there can be numerous bytes contained in the payload (e.g. for an Integer
 	 * constant).
-	 * 
+	 *
 	 * @param count
 	 * @throws IOException
 	 */
@@ -305,7 +306,7 @@ public final class WyilFileReader {
 				break;
 			}
 			default:
-				throw new RuntimeException("Unknown constant encountered in WhileyDefine: " + code);
+				throw new RuntimeException("Unknown constant encountered: " + code);
 			}
 			myConstantPool[i] = constant;
 		}
@@ -318,27 +319,137 @@ public final class WyilFileReader {
 	 * Read the list of types which constitute the type pool. Each entry is
 	 * currently formated using the binary representation of automata.
 	 * </p>
-	 * 
+	 *
 	 * <b>NOTE:</b> Eventually, automata need to be properly integrated with the
 	 * WyIL file format to avoid duplication.
-	 * 
+	 *
 	 * @param count
 	 * @throws IOException
 	 */
 	private void readTypePool(int count) throws IOException {
 		final Type[] myTypePool = new Type[count];
-		Type.BinaryReader bin = new Type.BinaryReader(input);
 		for (int i = 0; i != count; ++i) {
-			Type t = bin.readType();
-			myTypePool[i] = t;
+			int code = input.read_uv();
+			Type type;
+			switch (code) {
+			case WyilFileWriter.TYPE_Any:
+				type = Type.T_ANY;
+				break;
+			case WyilFileWriter.TYPE_Void:
+				type = Type.T_VOID;
+				break;
+			case WyilFileWriter.TYPE_Null:
+				type = Type.T_NULL;
+				break;
+			case WyilFileWriter.TYPE_Bool:
+				type = Type.T_BOOL;
+				break;
+			case WyilFileWriter.TYPE_Byte:
+				type = Type.T_BYTE;
+				break;
+			case WyilFileWriter.TYPE_Int:
+				type = Type.T_INT;
+				break;
+			case WyilFileWriter.TYPE_Type:
+				type = Type.T_META;
+				break;
+			case WyilFileWriter.TYPE_Nominal: {
+				int nameIndex = input.read_uv();
+				NameID name = namePool[nameIndex];
+				type = Type.Nominal(name);
+				break;
+			}
+			case WyilFileWriter.TYPE_Reference: {
+				int typeIndex = input.read_uv();
+				int lifetimeIndex = input.read_uv();
+				Type element = myTypePool[typeIndex];
+				String lifetime = stringPool[lifetimeIndex];
+				type = Type.Reference(lifetime,element);
+				break;
+			}
+			case WyilFileWriter.TYPE_Array: {
+				int typeIndex = input.read_uv();
+				Type element = myTypePool[typeIndex];
+				type = Type.Array(element);
+				break;
+			}
+			case WyilFileWriter.TYPE_Record: {
+				int numFields = input.read_uv();
+				boolean isOpen = input.read_bit();
+				Pair<Type,String>[] fields = new Pair[numFields];
+				for(int j=0;j!=numFields;++j) {
+					int stringIndex = input.read_uv();
+					int typeIndex = input.read_uv();
+					String fieldName = stringPool[stringIndex];
+					Type fieldType = myTypePool[typeIndex];
+					fields[j] = new Pair<Type,String>(fieldType,fieldName);
+				}
+				type = Type.Record(isOpen,fields);
+				break;
+			}
+
+			case WyilFileWriter.TYPE_Function: {
+				Type[] parameters = readTypes(myTypePool);
+				Type[] returns = readTypes(myTypePool);
+				type = Type.Function(parameters, returns);
+				break;
+			}
+			case WyilFileWriter.TYPE_Method: {
+				String[] lifetimeParameters = readStrings();
+				String[] contextLifetimes = readStrings();
+				Type[] parameters = readTypes(myTypePool);
+				Type[] returns = readTypes(myTypePool);
+				type = Type.Method(lifetimeParameters, contextLifetimes, parameters, returns);
+				break;
+			}
+			case WyilFileWriter.TYPE_Union: {
+				Type[] elements = readTypes(myTypePool);
+				type = Type.Union(elements);
+				break;
+			}
+			case WyilFileWriter.TYPE_Intersection: {
+				Type[] elements = readTypes(myTypePool);
+				type = Type.Intersection(elements);
+				break;
+			}
+			case WyilFileWriter.TYPE_Negation: {
+				int typeIndex = input.read_uv();
+				Type element = myTypePool[typeIndex];
+				type = Type.Negation(element);
+				break;
+			}
+			default:
+				throw new RuntimeException("Unknown type encountered: " + code);
+			}
+			myTypePool[i] = type;
 		}
 
 		typePool = myTypePool;
 	}
 
+	private Type[] readTypes(Type[] myTypePool) throws IOException {
+		int count = input.read_uv();
+		Type[] types = new Type[count];
+		for(int i=0;i!=count;++i) {
+			int typeIndex = input.read_uv();
+			Type type = myTypePool[typeIndex];
+			types[i] = type;
+		}
+		return types;
+	}
+	private String[] readStrings() throws IOException {
+		int count = input.read_uv();
+		String[] strings = new String[count];
+		for(int i=0;i!=count;++i) {
+			int stringIndex = input.read_uv();
+			String string = stringPool[stringIndex];
+			strings[i] = string;
+		}
+		return strings;
+	}
 	/**
 	 * Read a module contained within a given WyIL file. The format is:
-	 * 
+	 *
 	 * <pre>
 	 * +-----------------+
 	 * | uv : kind       |
@@ -358,10 +469,10 @@ public final class WyilFileReader {
 	 * | Block[nBlocks]  |
 	 * +-----------------+
 	 * </pre>
-	 * 
+	 *
 	 * Here, the <code>pathIDX</code> gives the path identifiers for the module
 	 * in question.
-	 * 
+	 *
 	 * @throws IOException
 	 */
 	private WyilFile readModule() throws IOException {
@@ -382,7 +493,7 @@ public final class WyilFileReader {
 		return wyilFile;
 	}
 
-	
+
 	private void readModuleBlock(WyilFile parent) throws IOException {
 		int kind = input.read_uv();
 		int size = input.read_uv();
@@ -409,7 +520,7 @@ public final class WyilFileReader {
 	/**
 	 * Read a BLOCK_Constant, that is a WyIL module block representing a
 	 * constant declaration. The format is:
-	 * 
+	 *
 	 * <pre>
 	 * +-----------------+
 	 * | uv : nameIdx    |
@@ -420,12 +531,12 @@ public final class WyilFileReader {
 	 * +-----------------+
 	 * ~~~~~~~ u8 ~~~~~~~~
 	 * </pre>
-	 * 
+	 *
 	 * The <code>nameIdx</code> is an index into the <code>stringPool</code>
 	 * representing the declaration's name, whilst <code>constIdx</code> is an
 	 * index into the <code>constantPool</code> representing the constant value
 	 * itself.
-	 * 
+	 *
 	 * @throws IOException
 	 */
 	private void readConstantBlock(WyilFile parent) throws IOException {
@@ -441,7 +552,7 @@ public final class WyilFileReader {
 	/**
 	 * Read a BLOCK_Type, that is a WyIL module block representing a type
 	 * declaration. The format is:
-	 * 
+	 *
 	 * <pre>
 	 * +------------------------+
 	 * | uv : nameIdx           |
@@ -451,18 +562,18 @@ public final class WyilFileReader {
 	 * | uv : typeIdx           |
 	 * +------------------------+
 	 * | uv : nInvariants       |
-	 * +------------------------+ 
+	 * +------------------------+
 	 * | uv[nInvariants]        |
 	 * +------------------------+
 	 * | SyntaxTree             |
 	 * +------------------------+
 	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
 	 * </pre>
-	 * 
+	 *
 	 * The <code>nameIdx</code> is an index into the <code>stringPool</code>
 	 * representing the declaration's name, whilst <code>typeIdx</code> is an
 	 * index into the <code>typePool</code> representing the type itself.
-	 * 
+	 *
 	 * @throws IOException
 	 */
 	private void readTypeBlock(WyilFile parent) throws IOException {
@@ -475,7 +586,7 @@ public final class WyilFileReader {
 		String name = stringPool[nameIdx];
 		Type type = typePool[typeIdx];
 		//
-		int[] invariant = new int[nInvariants];		
+		int[] invariant = new int[nInvariants];
 		for (int i = 0; i != nInvariants; ++i) {
 			invariant[i] = input.read_uv();
 		}
@@ -492,7 +603,7 @@ public final class WyilFileReader {
 	/**
 	 * Read a BLOCK_Function or BLOCK_Method, that is a WyIL module block
 	 * representing a function or method declaration. The format is:
-	 * 
+	 *
 	 * <pre>
 	 * +------------------------+
 	 * | uv : nameIdx           |
@@ -515,12 +626,12 @@ public final class WyilFileReader {
 	 * +------------------------+
 	 * ~~~~~~~~~~ u8 ~~~~~~~~~~~~
 	 * </pre>
-	 * 
+	 *
 	 * The <code>nameIdx</code> is an index into the <code>stringPool</code>
 	 * representing the declaration's name, whilst <code>typeIdx</code> is an
 	 * index into the <code>typePool</code> representing the function or method
-	 * type itself. 
-	 * 
+	 * type itself.
+	 *
 	 * @throws IOException
 	 */
 	private void readFunctionOrMethodBlock(WyilFile parent) throws IOException {
@@ -564,11 +675,11 @@ public final class WyilFileReader {
 		//
 		parent.blocks().add(decl);
 	}
-	
+
 	/**
 	 * Convert an bit pattern representing various modifiers into instances of
 	 * <code>Modifier</code>.
-	 * 
+	 *
 	 * @param modifiers
 	 * @return
 	 */
@@ -599,7 +710,7 @@ public final class WyilFileReader {
 
 		return mods;
 	}
-	
+
 	/**
 	 * Read a syntax tree from the output stream. The format
 	 * of a syntax tree is one of the following:
@@ -607,12 +718,12 @@ public final class WyilFileReader {
 	 * <pre>
 	 * +-------------------+
 	 * | uv : nLocs        |
-	 * +-------------------+ 
+	 * +-------------------+
 	 * | Locations[nLocs]  |
 	 * +-------------------+
 	 * </pre>
-	 * 
-	 * 
+	 *
+	 *
 	 * @param parent
 	 * @return
 	 * @throws IOException
@@ -625,11 +736,11 @@ public final class WyilFileReader {
 		}
 		return tree;
 	}
-	
+
 	/**
 	 * Read details of a Location from the input stream. The format of a
 	 * location is:
-	 * 
+	 *
 	 * <pre>
 	 * +-------------------+
 	 * | uv : nTypes       |
@@ -639,11 +750,11 @@ public final class WyilFileReader {
 	 * | uv : nAttrs       |
 	 * +-------------------+
 	 * | Bytecode          |
-	 * +-------------------+ 
+	 * +-------------------+
 	 * | Attribute[nAttrs] |
 	 * +-------------------+
 	 * </pre>
-	 * 
+	 *
 	 * @param output
 	 * @throws IOException
 	 */
@@ -661,23 +772,23 @@ public final class WyilFileReader {
 		//
 		return new SyntaxTree.Location<Bytecode>(tree, types, bytecode, attributes);
 	}
-	
+
 	/**
 	 * <p>
 	 * REad a given bytecode whose format is currently given as follows:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +-------------------+
 	 * | u8 : opcode       |
 	 * +-------------------+
-	 * | uv : nAttrs       |	 
+	 * | uv : nAttrs       |
 	 * +-------------------+
-	 * | Attribute[nAttrs] | 
+	 * | Attribute[nAttrs] |
 	 * +-------------------+
 	 *        ...
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * <b>NOTE:</b> The intention is to support a range of different bytecode
 	 * formats in order to optimise the common cases. For example, when there
@@ -694,20 +805,20 @@ public final class WyilFileReader {
 		int[] operands = readOperands(schema);
 		int[][] groups = readOperandGroups(schema);
 		int[] blocks = readBlocks(schema);
-		// Second, read all extras		
-		Object[] extras = readExtras(schema);		
+		// Second, read all extras
+		Object[] extras = readExtras(schema);
 		// Finally, create the bytecode
-		return schema.construct(opcode,operands,groups,blocks,extras);		
+		return schema.construct(opcode,operands,groups,blocks,extras);
 	}
-	
-	private int[] readOperands(Bytecode.Schema schema) throws IOException {		
+
+	private int[] readOperands(Bytecode.Schema schema) throws IOException {
 		switch(schema.getOperands()) {
 		case ZERO:
 			// do nout
 			return null;
 		case ONE:
 			int o = input.read_uv();
-			return new int[] { o }; 
+			return new int[] { o };
 		case TWO:
 			int o1 = input.read_uv();
 			int o2 = input.read_uv();
@@ -717,7 +828,7 @@ public final class WyilFileReader {
 			return readUnboundArray();
 		}
 	}
-	
+
 	private int[][] readOperandGroups(Bytecode.Schema schema) throws IOException {
 		switch(schema.getOperandGroups()) {
 		case ZERO:
@@ -725,7 +836,7 @@ public final class WyilFileReader {
 			return null;
 		case ONE:
 			int[] o = readUnboundArray();
-			return new int[][] { o }; 
+			return new int[][] { o };
 		case TWO:
 			int[] o1 = readUnboundArray();
 			int[] o2 = readUnboundArray();
@@ -740,7 +851,7 @@ public final class WyilFileReader {
 			return os;
 		}
 	}
-	
+
 	private int[] readBlocks(Bytecode.Schema schema) throws IOException {
 		switch(schema.getBlocks()) {
 		case ZERO:
@@ -748,7 +859,7 @@ public final class WyilFileReader {
 			return null;
 		case ONE:
 			int o = input.read_uv();
-			return new int[] { o }; 
+			return new int[] { o };
 		case TWO:
 			int o1 = input.read_uv();
 			int o2 = input.read_uv();
@@ -758,11 +869,11 @@ public final class WyilFileReader {
 			return readUnboundArray();
 		}
 	}
-	
+
 	/**
 	 * Read the list of extra components defined by a given bytecode schema.
 	 * Each extra is interpreted in a slightly different fashion.
-	 * 
+	 *
 	 * @param schema
 	 * @param labels
 	 * @return
@@ -778,22 +889,22 @@ public final class WyilFileReader {
 				int constIdx = input.read_uv();
 				results[i] = constantPool[constIdx];
 				break;
-			}				
+			}
 			case STRING: {
 				int stringIdx = input.read_uv();
 				results[i] = stringPool[stringIdx];
 				break;
-			}			
+			}
 			case NAME: {
 				int nameIdx = input.read_uv();
 				results[i] = namePool[nameIdx];
 				break;
-			}		
+			}
 			case TYPE: {
 				int typeIdx = input.read_uv();
 				results[i] = typePool[typeIdx];
 				break;
-			}			
+			}
 			case STRING_ARRAY: {
 				int nStrings = input.read_uv();
 				String[] strings = new String[nStrings];
@@ -803,7 +914,7 @@ public final class WyilFileReader {
 				}
 				results[i] = strings;
 				break;
-			}			
+			}
 			case SWITCH_ARRAY: {
 				// This is basically a special case just for the switch
 				// statement.
@@ -816,7 +927,7 @@ public final class WyilFileReader {
 					for(int k=0;k!=nConstants;++k) {
 						int constIdx = input.read_uv();
 						constants[k] = constantPool[constIdx];
-					}					
+					}
 					pairs[j] = new Bytecode.Case(block,constants);
 				}
 				results[i] = pairs;
@@ -828,7 +939,7 @@ public final class WyilFileReader {
 		}
 		return results;
 	}
-	
+
 	private int[] readUnboundArray() throws IOException {
 		int size = input.read_uv();
 		int[] array = new int[size];
@@ -837,7 +948,7 @@ public final class WyilFileReader {
 		}
 		return array;
 	}
-	
+
 	private int[] readRegisters(int nRegisters) throws IOException {
 		int[] bs = new int[nRegisters];
 		for (int i = 0; i != nRegisters; ++i) {
@@ -845,7 +956,7 @@ public final class WyilFileReader {
 		}
 		return bs;
 	}
-	
+
 	private Type[] readTypes(int nTypes) throws IOException {
 		Type[] types = new Type[nTypes];
 		for (int i = 0; i != nTypes; ++i) {

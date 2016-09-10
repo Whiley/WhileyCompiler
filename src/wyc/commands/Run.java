@@ -17,7 +17,7 @@ import wyil.util.interpreter.Interpreter;
 
 public class Run extends AbstractProjectCommand<Run.Result> {
 	/**
-	 * Result kind for this command 
+	 * Result kind for this command
 	 *
 	 */
 	public enum Result {
@@ -25,11 +25,11 @@ public class Run extends AbstractProjectCommand<Run.Result> {
 		ERRORS,
 		INTERNAL_FAILURE
 	}
-	
+
 	public Run(Content.Registry registry, Logger logger) {
 		super(registry, logger);
 	}
-		
+
 	// =======================================================================
 	// Configuration
 	// =======================================================================
@@ -38,7 +38,7 @@ public class Run extends AbstractProjectCommand<Run.Result> {
 	public String getDescription() {
 		return "Decompile one or more binary WyIL files";
 	}
-	
+
 	// =======================================================================
 	// Execute
 	// =======================================================================
@@ -53,8 +53,7 @@ public class Run extends AbstractProjectCommand<Run.Result> {
 		try {
 			StdProject project = initialiseProject();
 			Path.ID id = Trie.fromString(args[0]);
-			Type.Method sig = Type.Method(Collections.<Type> emptyList(), Collections.<String> emptySet(),
-					Collections.<String> emptyList(), Collections.<Type> emptyList());
+			Type.Method sig = (Type.Method) Type.Method(new Type[0], new Type[0]);
 			NameID name = new NameID(id, args[1]);
 			executeFunctionOrMethod(name, sig, project);
 		} catch (IOException e) {
@@ -63,14 +62,14 @@ public class Run extends AbstractProjectCommand<Run.Result> {
 		}
 		return Result.SUCCESS;
 	}
-	
+
 	// =======================================================================
 	// Helpers
 	// =======================================================================
 
 	/**
 	 * Execute a given function or method in a wyil file.
-	 * 
+	 *
 	 * @param id
 	 * @param signature
 	 * @param project

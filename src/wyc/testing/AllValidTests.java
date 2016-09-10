@@ -67,29 +67,30 @@ public class AllValidTests {
 	public final static Map<String, String> IGNORED = new HashMap<String, String>();
 
 	static {
+		IGNORED.put("Coercion_Valid_8", "#681");
 		IGNORED.put("Complex_Valid_3", "Issue ???");
-		IGNORED.put("ConstrainedNegation_Valid_1", "#342");
-		IGNORED.put("ConstrainedNegation_Valid_2", "#342");					
-		IGNORED.put("Import_Valid_4", "#492");
-		IGNORED.put("Import_Valid_5", "#492");
+		IGNORED.put("Complex_Valid_4", "#681");
+		IGNORED.put("DoWhile_Valid_4", "#681");
+		IGNORED.put("Function_Valid_11", "unknown");
+		IGNORED.put("Function_Valid_15", "unknown");
 		IGNORED.put("Lifetime_Lambda_Valid_4", "#641");
-		IGNORED.put("ListAccess_Valid_6", "Issue ???");
-		IGNORED.put("OpenRecord_Valid_11", "#585");
+		IGNORED.put("RecursiveType_Valid_3", "#681");
 		IGNORED.put("RecordSubtype_Valid_1", "Issue ???");
 		IGNORED.put("RecordSubtype_Valid_2", "Issue ???");
 		IGNORED.put("RecursiveType_Valid_12", "#339");
 		IGNORED.put("RecursiveType_Valid_22", "#339");
 		IGNORED.put("RecursiveType_Valid_28", "#364");
-		IGNORED.put("RecursiveType_Valid_5", "#18");
 		IGNORED.put("TypeEquals_Valid_23", "Issue ???");
+		IGNORED.put("TypeEquals_Valid_24", "#681");
+		IGNORED.put("TypeEquals_Valid_29", "#681");
+		IGNORED.put("TypeEquals_Valid_34", "#681");
 		IGNORED.put("TypeEquals_Valid_36", "Issue ???");
 		IGNORED.put("TypeEquals_Valid_37", "Issue ???");
 		IGNORED.put("TypeEquals_Valid_38", "Issue ???");
-		IGNORED.put("TypeEquals_Valid_41", "Issue ???");		
-
-		// Fails and was not listed as test case before parameterizing
-		IGNORED.put("Function_Valid_11", "unknown");
-		IGNORED.put("Function_Valid_15", "unknown");		
+		IGNORED.put("TypeEquals_Valid_41", "Issue ???");
+		IGNORED.put("TypeEquals_Valid_42", "#681");
+		IGNORED.put("TypeEquals_Valid_47", "#681");
+		IGNORED.put("While_Valid_15", "#681");
 	}
 
 	/**

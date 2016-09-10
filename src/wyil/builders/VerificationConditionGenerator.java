@@ -44,7 +44,7 @@ import wyil.util.TypeSystem;
  * emitting verification conditions as it discovers them. The following
  * illustrates:
  * </p>
- * 
+ *
  * <pre>
  * function abs(int x) -> (int r)
  * ensures r >= 0:
@@ -77,7 +77,7 @@ import wyil.util.TypeSystem;
  * |  +--------------------------+
  * +-----------------------------+
  * </pre>
- * 
+ *
  * <p>
  * The VCG will generate exactly two verification conditions from this function
  * corresponding to the paths "1,2,3" and "1,2,4". These verification conditions
@@ -85,21 +85,21 @@ import wyil.util.TypeSystem;
  * return, we can establish the post-condition holds. The two verification
  * conditions are:
  * </p>
- * 
+ *
  * <ul>
  * <li><b>1,2,3:</b> <code>x >= 0 ==> x >= 0</code>. This verification
  * corresponds to the case where the if condition is known to be true.</li>
  * <li><b>1,2,4:</b> <code>x < 0 ==> -x >= 0</code>. This verification
  * corresponds to the case where the if condition is known to be false.</li>
  * </ul>
- * 
+ *
  * <p>
  * The VCG attempts to generate verification conditions which are easier to read
  * by making use of macros as much as possible. For example, each clause of a
  * function/method's precondition or postcondition is turned into a distinct
  * (named) macro.
  * </p>
- * 
+ *
  * @author David J. Pearce
  *
  */
@@ -121,7 +121,7 @@ public class VerificationConditionGenerator {
 	 * conditions necessary to establish that all functions and methods in the
 	 * WyilFile meet their specifications, and that no array-out-of-bounds or
 	 * division-by-zero exceptions are possible (amongst other things).
-	 * 
+	 *
 	 * @param wyilFile
 	 *            The input file to be translated
 	 * @return
@@ -142,14 +142,14 @@ public class VerificationConditionGenerator {
 
 		// FIXME: this should not be here!
 		addLibraryMacros(wyalFile);
-		
+
 		return wyalFile;
 	}
 
 	/**
 	 * Translate a constant declaration into WyAL. At the moment, this does
 	 * nothing because constant declarations are not supported in WyAL files.
-	 * 
+	 *
 	 * @param declaration
 	 *            The type declaration being translated.
 	 * @param wyalFile
@@ -164,7 +164,7 @@ public class VerificationConditionGenerator {
 	 * In particular, the type should be "inhabitable". This means, for example,
 	 * that the invariant does not contradict itself. Furthermore, we need to
 	 * translate the type invariant into a macro block.
-	 * 
+	 *
 	 * @param declaration
 	 *            The type declaration being translated.
 	 * @param wyalFile
@@ -194,7 +194,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Translate each of the clauses representing the invariant of a type.
-	 * 
+	 *
 	 * @param invariants
 	 * @param var
 	 * @return
@@ -219,7 +219,7 @@ public class VerificationConditionGenerator {
 	 * function or method in question. Verifications are emitted when conditions
 	 * are encountered which must be checked. For example, that the
 	 * preconditions are met at a function invocation.
-	 * 
+	 *
 	 * @param declaration
 	 *            The function or method declaration being translated.
 	 * @param wyalFile
@@ -268,7 +268,7 @@ public class VerificationConditionGenerator {
 	 * Translate the sequence of invariant expressions which constitute the
 	 * precondition of a function or method into corresponding macro
 	 * declarations.
-	 * 
+	 *
 	 * @param declaration
 	 * @param environment
 	 * @param wyalFile
@@ -300,7 +300,7 @@ public class VerificationConditionGenerator {
 	 * Translate the sequence of invariant expressions which constitute the
 	 * postcondition of a function or method into corresponding macro
 	 * declarations.
-	 * 
+	 *
 	 * @param declaration
 	 * @param environment
 	 * @param wyalFile
@@ -355,7 +355,7 @@ public class VerificationConditionGenerator {
 	/**
 	 * Generate the initial assumption set for a function or method. This is
 	 * essentially made up of the precondition(s) for that function or method.
-	 * 
+	 *
 	 * @param declaration
 	 * @return
 	 */
@@ -364,7 +364,7 @@ public class VerificationConditionGenerator {
 		SyntaxTree tree = declaration.getTree();
 		String prefix = declaration.name() + "_requires_";
 		Expr[] preconditions = new Expr[declaration.getPrecondition().size()];
-		Expr[] arguments = new Expr[declaration.type().params().size()];
+		Expr[] arguments = new Expr[declaration.type().params().length];
 		// Translate parameters as arguments to invocation
 		for (int i = 0; i != arguments.length; ++i) {
 			Location<VariableDeclaration> var = (Location<VariableDeclaration>) tree.getLocation(i);
@@ -457,7 +457,7 @@ public class VerificationConditionGenerator {
 	/**
 	 * Translate an assert statement. This emits a verification condition which
 	 * ensures the assert condition holds, given the current context.
-	 * 
+	 *
 	 * @param stmt
 	 * @param wyalFile
 	 */
@@ -477,7 +477,7 @@ public class VerificationConditionGenerator {
 	/**
 	 * Translate an assign statement. This updates the version number of the
 	 * underlying assigned variable.
-	 * 
+	 *
 	 * @param stmt
 	 * @param wyalFile
 	 */
@@ -501,7 +501,7 @@ public class VerificationConditionGenerator {
 	 * Translate an individual assignment from one rval to one or more lvals. If
 	 * there are multiple lvals, then a tuple is created to represent the
 	 * left-hand side.
-	 * 
+	 *
 	 * @param lval
 	 *            One or more expressions representing the left-hand side
 	 * @param rval
@@ -527,7 +527,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Translate an individual assignment from one rval to exactly one lval.
-	 * 
+	 *
 	 * @param lval
 	 *            A single location representing the left-hand side
 	 * @param rval
@@ -547,7 +547,7 @@ public class VerificationConditionGenerator {
 			return translateArrayAssign((Location<Operator>) lval, context);
 		case Bytecode.OPCODE_dereference:
 			// There's nothing useful we can do here.
-			return translateDereference((Location<Operator>) lval, context);
+			return translateDereference(lval, context);
 		case Bytecode.OPCODE_fieldload:
 			return translateRecordAssign((Location<FieldLoad>) lval, context);
 		case Bytecode.OPCODE_varaccess:
@@ -560,7 +560,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Translate an assignment to a field.
-	 * 
+	 *
 	 * @param lval
 	 *            The field access expression
 	 * @param result
@@ -586,10 +586,8 @@ public class VerificationConditionGenerator {
 			}
 			Expr newSource = translateExpression(lval.getOperand(0), context.getEnvironment());
 			//
-			ArrayList<String> fields = new ArrayList<String>(type.fields().keySet());
-			Collections.sort(fields);
-			int index = fields.indexOf(bytecode.fieldName());
-			for (int i = 0; i != fields.size(); ++i) {
+			int index = type.getFieldIndex(bytecode.fieldName());
+			for (int i = 0; i != type.size(); ++i) {
 				if (i != index) {
 					Expr j = new Expr.Constant(Value.Integer(BigInteger.valueOf(i)));
 					Expr oldField = new Expr.IndexOf(originalSource, j, lval.attributes());
@@ -607,7 +605,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Translate an assignment to an array element.
-	 * 
+	 *
 	 * @param lval
 	 *            The array assignment expression
 	 * @param result
@@ -620,7 +618,7 @@ public class VerificationConditionGenerator {
 		SyntaxTree tree = lval.getEnclosingTree();
 		WyilFile.Declaration decl = tree.getEnclosingDeclaration();
 		try {
-			Type elementType = typeSystem.expandAsEffectiveArray(lval.getOperand(0).getType()).element();
+			Type elementType = typeSystem.expandAsEffectiveArray(lval.getOperand(0).getType()).getWriteableElementType();
 			// Translate src and index expressions
 			Pair<Expr, Context> p1 = translateExpressionWithChecks(lval.getOperand(0), context);
 			Expr originalSource = p1.first();
@@ -655,7 +653,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Translate an assignment to a variable
-	 * 
+	 *
 	 * @param lval
 	 *            The array assignment expression
 	 * @param result
@@ -671,7 +669,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Translate an assignment to a variable
-	 * 
+	 *
 	 * @param lval
 	 *            The array assignment expression
 	 * @param result
@@ -691,7 +689,7 @@ public class VerificationConditionGenerator {
 	/**
 	 * Determine the variable at the root of a given sequence of assignments, or
 	 * return null if there is no statically determinable variable.
-	 * 
+	 *
 	 * @param lval
 	 * @return
 	 */
@@ -720,7 +718,7 @@ public class VerificationConditionGenerator {
 	 * interaction between the programmer and the verifier. That is, the
 	 * programmer can assume things which he/she knows to be true which the
 	 * verifier cannot prove (for whatever reason).
-	 * 
+	 *
 	 * @param stmt
 	 * @param wyalFile
 	 */
@@ -734,7 +732,7 @@ public class VerificationConditionGenerator {
 	/**
 	 * Translate a break statement. This takes the current context and pushes it
 	 * into the enclosing loop scope. It will then be extracted later and used.
-	 * 
+	 *
 	 * @param stmt
 	 * @param wyalFile
 	 */
@@ -748,7 +746,7 @@ public class VerificationConditionGenerator {
 	 * Translate a continue statement. This takes the current context and pushes
 	 * it into the enclosing loop scope. It will then be extracted later and
 	 * used.
-	 * 
+	 *
 	 * @param stmt
 	 * @param wyalFile
 	 */
@@ -760,7 +758,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Translate a DoWhile statement.
-	 * 
+	 *
 	 * @param stmt
 	 * @param context
 	 * @return
@@ -815,7 +813,7 @@ public class VerificationConditionGenerator {
 	 * Translate a fail statement. Execution should never reach such a
 	 * statement. Hence, we need to emit a verification condition to ensure this
 	 * is the case.
-	 * 
+	 *
 	 * @param stmt
 	 * @param context
 	 * @return
@@ -835,7 +833,7 @@ public class VerificationConditionGenerator {
 	 * and then recombines them together to form an updated environment. This is
 	 * challenging when the environments are updated independently in both
 	 * branches.
-	 * 
+	 *
 	 * @param stmt
 	 * @param wyalFile
 	 */
@@ -862,7 +860,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Translate a named block
-	 * 
+	 *
 	 * @param stmt
 	 * @param wyalFile
 	 */
@@ -873,7 +871,7 @@ public class VerificationConditionGenerator {
 	/**
 	 * Translate a return statement. If a return value is given, then this must
 	 * ensure that the post-condition of the enclosing function or method is met
-	 * 
+	 *
 	 * @param stmt
 	 * @param wyalFile
 	 */
@@ -901,15 +899,15 @@ public class VerificationConditionGenerator {
 				// here is that the postcondition will refer to parameters as
 				// they were on entry to the function/method, not as they are
 				// now.
-				Expr[] arguments = new Expr[type.params().size() + type.returns().size()];
+				Expr[] arguments = new Expr[type.params().length + type.returns().length];
 				// Translate parameters as arguments to post-condition
 				// invocation
-				for (int i = 0; i != type.params().size(); ++i) {
+				for (int i = 0; i != type.params().length; ++i) {
 					Location<VariableDeclaration> var = (Location<VariableDeclaration>) tree.getLocation(i);
 					arguments[i] = new Expr.Variable(var.getBytecode().getName(), var.attributes());
 				}
 				// Copy over return expressions as arguments for invocation(s)
-				System.arraycopy(exprs, 0, arguments, type.params().size(), exprs.length);
+				System.arraycopy(exprs, 0, arguments, type.params().length, exprs.length);
 				//
 				Expr argument = arguments.length == 1 ? arguments[0] : new Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
 				String prefix = declaration.name() + "_ensures_";
@@ -941,7 +939,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Translate a switch statement.
-	 * 
+	 *
 	 * @param stmt
 	 * @param wyalFile
 	 */
@@ -988,7 +986,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Translate a While statement.
-	 * 
+	 *
 	 * @param stmt
 	 * @param context
 	 * @return
@@ -1030,7 +1028,7 @@ public class VerificationConditionGenerator {
 	/**
 	 * Translate the sequence of invariant expressions which constitute the loop
 	 * invariant of a loop into one or more macros
-	 * 
+	 *
 	 * @param loopInvariant
 	 *            The clauses making up the loop invariant
 	 * @param environment
@@ -1057,7 +1055,7 @@ public class VerificationConditionGenerator {
 	/**
 	 * Emit verification condition(s) to ensure that the clauses of loop
 	 * invariant hold at a given point
-	 * 
+	 *
 	 * @param loopInvariant
 	 *            The clauses making up the loop invariant
 	 * @param context
@@ -1120,7 +1118,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Translate a variable declaration.
-	 * 
+	 *
 	 * @param stmt
 	 * @param context
 	 * @return
@@ -1339,7 +1337,7 @@ public class VerificationConditionGenerator {
 			// which will check that the precondition holds.
 			//
 			Expr[] parameters = translateExpressions(expr.getOperands(), context.getEnvironment());
-			Expr[] arguments = java.util.Arrays.copyOf(parameters, parameters.length + fm.type().returns().size());
+			Expr[] arguments = java.util.Arrays.copyOf(parameters, parameters.length + fm.type().returns().length);
 			// FIXME: following broken for multiple returns
 			arguments[arguments.length - 1] = translateExpression(expr, context.getEnvironment());
 			//
@@ -1371,7 +1369,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Transform a given bytecode location into its equivalent WyAL expression.
-	 * 
+	 *
 	 * @param location
 	 *            The bytecode location to be translated
 	 * @return
@@ -1433,14 +1431,11 @@ public class VerificationConditionGenerator {
 			Location<?> srcOperand = expr.getOperand(0);
 			Type.EffectiveRecord er = typeSystem.expandAsEffectiveRecord(srcOperand.getType());
 			// FIXME: need to include Records in WyCS
-			// We need to determine and sort the fields here because records are
-			// implemented as WyCS Tuples.
-			ArrayList<String> fields = new ArrayList<String>(er.fields().keySet());
-			Collections.sort(fields);
 			// Now, translate source expression
 			Expr src = translateExpression(srcOperand, environment);
 			// Generate index expression, which is a tuple index
-			Expr index = new Expr.Constant(Value.Integer(BigInteger.valueOf(fields.indexOf(bytecode.fieldName()))));
+			int fieldIndex = er.getFieldIndex(bytecode.fieldName());
+			Expr index = new Expr.Constant(Value.Integer(BigInteger.valueOf(fieldIndex)));
 			// Done
 			return new Expr.IndexOf(src, index, expr.attributes());
 		} catch (ResolveError e) {
@@ -1588,7 +1583,7 @@ public class VerificationConditionGenerator {
 	 * Translating as unknown basically means we're not representing the
 	 * operation in question at the verification level. This could be something
 	 * that we'll implement in the future, or maybe not.
-	 * 
+	 *
 	 * @param expr
 	 * @param environment
 	 * @return
@@ -1605,7 +1600,7 @@ public class VerificationConditionGenerator {
 	/**
 	 * Generate a type pattern representing the type and name of all quantifier
 	 * variables described by this quantifier.
-	 * 
+	 *
 	 * @param expr
 	 * @return
 	 */
@@ -1628,7 +1623,7 @@ public class VerificationConditionGenerator {
 	 * Generate a logical conjunction which represents the given ranges of all
 	 * quantified variables. That is a conjunction of the form
 	 * <code>start <= var && var < end</code>.
-	 * 
+	 *
 	 * @return
 	 */
 	private Expr generateQuantifierRanges(Location<Quantifier> expr, LocalEnvironment environment) {
@@ -1647,7 +1642,7 @@ public class VerificationConditionGenerator {
 	}
 
 	private Expr translateVariableAccess(Location<VariableAccess> expr, LocalEnvironment environment) {
-		Location<?> decl = (Location<?>) expr.getOperand(0);
+		Location<?> decl = expr.getOperand(0);
 		Bytecode bytecode = decl.getBytecode();
 		String var;
 		if (bytecode instanceof VariableDeclaration) {
@@ -1670,7 +1665,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Construct an implication from one expression to another
-	 * 
+	 *
 	 * @param antecedent
 	 * @param consequent
 	 * @return
@@ -1685,7 +1680,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Construct a conjunction of two expressions
-	 * 
+	 *
 	 * @param lhs
 	 * @param rhs
 	 * @return
@@ -1702,7 +1697,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Construct a disjunct of two expressions
-	 * 
+	 *
 	 * @param lhs
 	 * @param rhs
 	 * @return
@@ -1720,7 +1715,7 @@ public class VerificationConditionGenerator {
 	/**
 	 * Join one or more descendant context's together. To understand this,
 	 * consider the following snippet, annotated with context information:
-	 * 
+	 *
 	 * <pre>
 	 * // Context: y >= 0
 	 * if x >= 0:
@@ -1732,22 +1727,22 @@ public class VerificationConditionGenerator {
 	 * //
 	 * Context: ?
 	 * </pre>
-	 * 
+	 *
 	 * At this point, we have two goals in combining the contextual information
 	 * back together. Firstly, we want to factor out the parts common to both
 	 * (e.g. <code>y >= 0</code> above). Secondly, we need to determine the
 	 * appropriate version for variables modified on one or both branches (e.g.
 	 * <code>x</code> above). Thus, the joined context for the above would be:
-	 * 
+	 *
 	 * <pre>
 	 * y >= 0 && ((x >= 0 && x$1 == x + 1 && x$3 == x$1) || (x < 0 && x$2 == -x && x$3 == x$2))
 	 * </pre>
-	 * 
+	 *
 	 * In the resulting environment, the current version of <code>x</code> would
 	 * then be <code>x$3</code>. To determine affected variables we simplify
 	 * identify any variable with a different version between at least two
 	 * context's.
-	 * 
+	 *
 	 * @param ancestor
 	 *            Distinguished context for join, which is an ancestor of those
 	 *            context's being joined.
@@ -1802,7 +1797,7 @@ public class VerificationConditionGenerator {
 	/**
 	 * Bring a given assumption set which is consistent with an original
 	 * environment up-to-date with a new environment.
-	 * 
+	 *
 	 * @param assumptions
 	 *            The assumption set associated with a given context being
 	 *            joined together.
@@ -1840,7 +1835,7 @@ public class VerificationConditionGenerator {
 	 * retaining variable versions which are the same for all context's,
 	 * allocating new versions for those which are different in at least one
 	 * case, and removing those which aren't present it at least one.
-	 * 
+	 *
 	 * @param contexts
 	 *            Array of at least one non-null Context
 	 * @return
@@ -1904,7 +1899,7 @@ public class VerificationConditionGenerator {
 	 * function or method can then be called elsewhere as an uninterpreted
 	 * function. The function or method doesn't have a body but is used as a
 	 * name to be referred to from assertions.
-	 * 
+	 *
 	 * @param declaration
 	 *            --- the function or method declaration in question
 	 * @param wyalFile
@@ -1913,24 +1908,24 @@ public class VerificationConditionGenerator {
 	 */
 	private void createFunctionOrMethodPrototype(WyilFile.FunctionOrMethod declaration, WyalFile wyalFile) {
 		SyntaxTree tree = declaration.getTree();
-		List<Type> params = declaration.type().params();
-		List<Type> returns = declaration.type().returns();
+		Type[] params = declaration.type().params();
+		Type[] returns = declaration.type().returns();
 		//
-		TypePattern.Leaf[] parameterPatterns = new TypePattern.Leaf[params.size()];
+		TypePattern.Leaf[] parameterPatterns = new TypePattern.Leaf[params.length];
 		// second, set initial environment
 		int loc = 0;
-		for (int i = 0; i != params.size(); ++i, ++loc) {
+		for (int i = 0; i != params.length; ++i, ++loc) {
 			Location<VariableDeclaration> var = (Location<VariableDeclaration>) tree.getLocation(loc);
 			Expr.Variable v = new Expr.Variable(var.getBytecode().getName());
-			SyntacticType parameterType = convert(params.get(i), declaration);
+			SyntacticType parameterType = convert(params[i], declaration);
 			parameterPatterns[i] = new TypePattern.Leaf(parameterType, v);
 		}
-		TypePattern.Leaf[] returnPatterns = new TypePattern.Leaf[returns.size()];
+		TypePattern.Leaf[] returnPatterns = new TypePattern.Leaf[returns.length];
 		// second, set initial environment
-		for (int i = 0; i != returns.size(); ++i, ++loc) {
+		for (int i = 0; i != returns.length; ++i, ++loc) {
 			Location<VariableDeclaration> var = (Location<VariableDeclaration>) tree.getLocation(loc);
 			Expr.Variable v = new Expr.Variable(var.getBytecode().getName());
-			SyntacticType returnType = convert(returns.get(i), declaration);
+			SyntacticType returnType = convert(returns[i], declaration);
 			returnPatterns[i] = new TypePattern.Leaf(returnType, v);
 		}
 		// Construct the type declaration for the new block macro
@@ -1944,7 +1939,7 @@ public class VerificationConditionGenerator {
 	 * Turn each verification condition into an assertion in the underlying
 	 * WyalFile being generated. The main challenge here is to ensure that all
 	 * variables used in the assertion are properly typed.
-	 * 
+	 *
 	 * @param declaration
 	 *            The enclosing function or method declaration
 	 * @param vcs
@@ -1973,7 +1968,7 @@ public class VerificationConditionGenerator {
 	 * verification condition. Aside from flattening the various components, it
 	 * must also determine appropriate variable types, including those for
 	 * aliased variables.
-	 * 
+	 *
 	 * @param vc
 	 * @param environment
 	 * @return
@@ -2004,7 +1999,7 @@ public class VerificationConditionGenerator {
 	/**
 	 * Flatten a given assumption set into a single logical condition. The key
 	 * challenge here is to try and do this as efficiency as possible.
-	 * 
+	 *
 	 * @param assumptions
 	 * @return
 	 */
@@ -2022,7 +2017,7 @@ public class VerificationConditionGenerator {
 	 * the ancestor or any of its ancestors in the results. This is a little
 	 * like taking the difference of the given assumptions and the given
 	 * ancestor's assumptions.
-	 * 
+	 *
 	 * @param assumptions
 	 *            The assumption set to be flattened
 	 * @param ancestor
@@ -2071,7 +2066,7 @@ public class VerificationConditionGenerator {
 	 * Determine any variable aliases which need to be accounted for. This is
 	 * done by adding an equality between the aliased variables to ensure they
 	 * have the same value.
-	 * 
+	 *
 	 * @param environment
 	 * @param freeVariables
 	 * @return
@@ -2095,7 +2090,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Packaged the set of free variables up into a type pattern (for now).
-	 * 
+	 *
 	 * @param declaration
 	 *            The enclosing function or method declaration
 	 * @param environment
@@ -2129,15 +2124,15 @@ public class VerificationConditionGenerator {
 	 * Convert the parameter types for a given function or method declaration
 	 * into a corresponding list of type patterns. This is primarily useful for
 	 * generating declarations from functions or method.
-	 * 
+	 *
 	 * @param params
 	 * @param declaration
 	 * @return
 	 */
 	private TypePattern generatePreconditionTypePattern(WyilFile.FunctionOrMethod declaration,
 			LocalEnvironment environment) {
-		List<Type> params = declaration.type().params();
-		int[] parameterLocations = ArrayUtils.range(0, params.size());
+		Type[] params = declaration.type().params();
+		int[] parameterLocations = ArrayUtils.range(0, params.length);
 		return generateTypePatterns(declaration, environment, parameterLocations);
 	}
 
@@ -2145,17 +2140,17 @@ public class VerificationConditionGenerator {
 	 * Convert the return types for a given function or method declaration into
 	 * a corresponding list of type patterns. This is primarily useful for
 	 * generating declarations from functions or method.
-	 * 
+	 *
 	 * @param params
 	 * @param declaration
 	 * @return
 	 */
 	private TypePattern generatePostconditionTypePattern(WyilFile.FunctionOrMethod declaration,
 			LocalEnvironment environment) {
-		List<Type> params = declaration.type().params();
-		List<Type> returns = declaration.type().returns();
-		int[] parameterLocations = ArrayUtils.range(0, params.size());
-		int[] returnLocations = ArrayUtils.range(parameterLocations.length, parameterLocations.length + returns.size());
+		Type[] params = declaration.type().params();
+		Type[] returns = declaration.type().returns();
+		int[] parameterLocations = ArrayUtils.range(0, params.length);
+		int[] returnLocations = ArrayUtils.range(parameterLocations.length, parameterLocations.length + returns.length);
 		return generateTypePatterns(declaration, environment, parameterLocations, returnLocations);
 	}
 
@@ -2163,7 +2158,7 @@ public class VerificationConditionGenerator {
 	 * Convert the types of local variables in scope at a given position within
 	 * a function or method into a type pattern. This is primarily useful for
 	 * determining the types for a loop invariant macro.
-	 * 
+	 *
 	 * @param params
 	 * @param declaration
 	 * @return
@@ -2178,7 +2173,7 @@ public class VerificationConditionGenerator {
 	 * Convert a list of types from a given declaration into a corresponding
 	 * list of type patterns. This is primarily useful for generating
 	 * declarations from functions or method.
-	 * 
+	 *
 	 * @param types
 	 * @param declaration
 	 * @return
@@ -2209,7 +2204,7 @@ public class VerificationConditionGenerator {
 	 * Convert a WyIL constant into its equivalent WyCS constant. In some cases,
 	 * this is a direct translation. In other cases, WyIL constants are encoded
 	 * using more primitive WyCS values.
-	 * 
+	 *
 	 * @param c
 	 *            --- The WyIL constant to be converted.
 	 * @param context
@@ -2265,7 +2260,7 @@ public class VerificationConditionGenerator {
 	 * Convert a WyIL type into its equivalent WyCS type. In some cases, this is
 	 * a direct translation. In other cases, WyIL types are encoded using more
 	 * primitive WyCS types.
-	 * 
+	 *
 	 * @param type
 	 *            The WyIL type to be converted.
 	 * @param context
@@ -2277,19 +2272,19 @@ public class VerificationConditionGenerator {
 	private static SyntacticType convert(Type type, WyilFile.Block context) {
 		// FIXME: this is fundamentally broken in the case of recursive types.
 		// See Issue #298.
-		if (type instanceof Type.Any) {
+		if (type == Type.T_ANY) {
 			return new SyntacticType.Any(context.attributes());
-		} else if (type instanceof Type.Void) {
+		} else if (type == Type.T_VOID) {
 			return new SyntacticType.Void(context.attributes());
-		} else if (type instanceof Type.Null) {
+		} else if (type == Type.T_NULL) {
 			return new SyntacticType.Null(context.attributes());
-		} else if (type instanceof Type.Bool) {
+		} else if (type == Type.T_BOOL) {
 			return new SyntacticType.Bool(context.attributes());
-		} else if (type instanceof Type.Byte) {
+		} else if (type == Type.T_BYTE) {
 			// FIXME: implement SyntacticType.Byte
 			// return new SyntacticType.Byte(attributes(branch);
 			return new SyntacticType.Int(context.attributes());
-		} else if (type instanceof Type.Int) {
+		} else if (type == Type.T_INT) {
 			return new SyntacticType.Int(context.attributes());
 		} else if (type instanceof Type.Array) {
 			Type.Array lt = (Type.Array) type;
@@ -2298,13 +2293,11 @@ public class VerificationConditionGenerator {
 			return new SyntacticType.List(element);
 		} else if (type instanceof Type.Record) {
 			Type.Record rt = (Type.Record) type;
-			HashMap<String, Type> fields = rt.fields();
-			ArrayList<String> names = new ArrayList<String>(fields.keySet());
+			String[] names = rt.getFieldNames();
 			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();
-			Collections.sort(names);
-			for (int i = 0; i != names.size(); ++i) {
-				String field = names.get(i);
-				elements.add(convert(fields.get(field), context));
+			for (int i = 0; i != names.length; ++i) {
+				String field = names[i];
+				elements.add(convert(rt.getField(field), context));
 			}
 			return new SyntacticType.Tuple(elements);
 		} else if (type instanceof Type.Reference) {
@@ -2312,12 +2305,20 @@ public class VerificationConditionGenerator {
 			return new SyntacticType.Any();
 		} else if (type instanceof Type.Union) {
 			Type.Union tu = (Type.Union) type;
-			HashSet<Type> tu_elements = tu.bounds();
+			Type[] tu_elements = tu.bounds();
 			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();
 			for (Type te : tu_elements) {
 				elements.add(convert(te, context));
 			}
 			return new SyntacticType.Union(elements);
+		} else if (type instanceof Type.Intersection) {
+			Type.Intersection t = (Type.Intersection) type;
+			Type[] t_elements = t.bounds();
+			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();
+			for (Type te : t_elements) {
+				elements.add(convert(te, context));
+			}
+			return new SyntacticType.Intersection(elements);
 		} else if (type instanceof Type.Negation) {
 			Type.Negation nt = (Type.Negation) type;
 			SyntacticType element = convert(nt.element(), context);
@@ -2345,7 +2346,7 @@ public class VerificationConditionGenerator {
 	 * Lookup a given function or method. This maybe contained in the same file,
 	 * or in a different file. This may require loading that file in memory to
 	 * access this information.
-	 * 
+	 *
 	 * @param name
 	 *            --- Fully qualified name of function
 	 * @param fun
@@ -2431,7 +2432,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Create exact copy of a given array, but with evey null element removed.
-	 * 
+	 *
 	 * @param items
 	 * @return
 	 */
@@ -2481,7 +2482,7 @@ public class VerificationConditionGenerator {
 		// the need for a runtime library. When I rework the verifier, I'll
 		// include a specificl syntactic element for array updates and this will
 		// become redundant.
-		SyntacticType.Variable T = new SyntacticType.Variable("T"); 
+		SyntacticType.Variable T = new SyntacticType.Variable("T");
 		SyntacticType.List arrT = new SyntacticType.List(T);
 		SyntacticType.Int intT = new SyntacticType.Int();
 		Expr.Variable items = new Expr.Variable("items");
@@ -2495,11 +2496,11 @@ public class VerificationConditionGenerator {
 		generics.add("T");
 		TypePattern pattern = new TypePattern.Tuple(parameters);
 		//
-		// |items| == |nitems|		
-		//		
+		// |items| == |nitems|
+		//
 		Expr lenItems = new Expr.Unary(Expr.Unary.Op.LENGTHOF, items);
 		Expr lenNitems = new Expr.Unary(Expr.Unary.Op.LENGTHOF, nitems);
-		Expr clause1 = new Expr.Binary(Expr.Binary.Op.EQ, lenItems, lenNitems);		
+		Expr clause1 = new Expr.Binary(Expr.Binary.Op.EQ, lenItems, lenNitems);
 		//
 		// j != i
 		//
@@ -2519,7 +2520,7 @@ public class VerificationConditionGenerator {
 		Expr clause = and(clause1,clause5);
 		wyalFile.add(wyalFile.new Macro("array$update", generics, pattern, clause));
 	}
-	
+
 	// =============================================================
 	// Assumptions
 	// =============================================================
@@ -2527,7 +2528,7 @@ public class VerificationConditionGenerator {
 	/**
 	 * Provides an immutable assumption set which (in principle) can be factored
 	 * more precisely than a flat collection.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -2582,7 +2583,7 @@ public class VerificationConditionGenerator {
 	 * of the form "X ==> Y", where X is the "antecedent" and Y the
 	 * "consequent". More specifically, X represents the knowledge known at the
 	 * given point and Y is the condition we are attempting to assert.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -2610,7 +2611,7 @@ public class VerificationConditionGenerator {
 	 * version clashes are possible between variables of the same name. This
 	 * also means that we can determine the underlying location that each
 	 * variable corresponds to.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -2653,7 +2654,7 @@ public class VerificationConditionGenerator {
 		/**
 		 * Get the parent for a potential variable alias, or null if there is no
 		 * alias.
-		 * 
+		 *
 		 * @param alias
 		 * @return
 		 */
@@ -2664,7 +2665,7 @@ public class VerificationConditionGenerator {
 		/**
 		 * Get the location index from a versioned variable name of the form
 		 * "x$1"
-		 * 
+		 *
 		 * @param versionedVariable
 		 * @return
 		 */
@@ -2675,7 +2676,7 @@ public class VerificationConditionGenerator {
 		/**
 		 * Allocation a new versioned variable name of the form "x$1" for a
 		 * given location index
-		 * 
+		 *
 		 * @param index
 		 * @return
 		 */
@@ -2718,7 +2719,7 @@ public class VerificationConditionGenerator {
 
 		/**
 		 * Add a new variable alias for a variable to its parent
-		 * 
+		 *
 		 * @param leftVar
 		 * @param rightVar
 		 */
@@ -2732,7 +2733,7 @@ public class VerificationConditionGenerator {
 	 * current scope to their current version number. Local environments are
 	 * transitively immutable objects, except for the global environment they
 	 * refer to.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -2760,7 +2761,7 @@ public class VerificationConditionGenerator {
 
 		/**
 		 * Get the envlosing global environment for this local environment
-		 * 
+		 *
 		 * @return
 		 */
 		public GlobalEnvironment getParent() {
@@ -2769,7 +2770,7 @@ public class VerificationConditionGenerator {
 
 		/**
 		 * Read the current versioned variable name for a given location index.
-		 * 
+		 *
 		 * @param index
 		 * @return
 		 */
@@ -2785,7 +2786,7 @@ public class VerificationConditionGenerator {
 		/**
 		 * Read the current versioned variable name for a given (aliased)
 		 * location index.
-		 * 
+		 *
 		 * @param alias
 		 *            The variable being read (which is an alias)
 		 * @param parent
@@ -2802,7 +2803,7 @@ public class VerificationConditionGenerator {
 		/**
 		 * Create a new version for each variable in a sequence of variables.
 		 * This create a completely new local environment.
-		 * 
+		 *
 		 * @param index
 		 */
 		public LocalEnvironment write(int... indices) {
@@ -2813,6 +2814,7 @@ public class VerificationConditionGenerator {
 			return nenv;
 		}
 
+		@Override
 		public LocalEnvironment clone() {
 			return new LocalEnvironment(global, locals);
 		}
@@ -2839,7 +2841,7 @@ public class VerificationConditionGenerator {
 	 * break and continue statements. Basically, as a way of taking the context
 	 * at the point of the statement in question and moving it out to the
 	 * enclosing loop.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -2875,7 +2877,7 @@ public class VerificationConditionGenerator {
 
 	/**
 	 * Represents a given translation context.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -2923,7 +2925,7 @@ public class VerificationConditionGenerator {
 
 		/**
 		 * Get the local environment associated witht his context
-		 * 
+		 *
 		 * @return
 		 */
 		public LocalEnvironment getEnvironment() {
@@ -2932,7 +2934,7 @@ public class VerificationConditionGenerator {
 
 		/**
 		 * Get the enclosing loop scope.
-		 * 
+		 *
 		 * @return
 		 */
 		public LoopScope getEnclosingLoopScope() {
@@ -2942,7 +2944,7 @@ public class VerificationConditionGenerator {
 		/**
 		 * Generate a new context from this one where a give condition is
 		 * assumed to hold.
-		 * 
+		 *
 		 * @param condition
 		 * @return
 		 */
@@ -2954,7 +2956,7 @@ public class VerificationConditionGenerator {
 		/**
 		 * Emit a verification condition which ensures a given assertion holds
 		 * true in this translation context.
-		 * 
+		 *
 		 * @param vc
 		 *            The verification condition to be emitted
 		 * @return
@@ -2967,7 +2969,7 @@ public class VerificationConditionGenerator {
 		 * Assign an expression to a given variable. This results in the version
 		 * number for that variable being increased. Thus, any historical
 		 * references to that variable in the set of assumptions remain valid.
-		 * 
+		 *
 		 * @param lhs
 		 *            The index of the location being assigned
 		 * @param rhs
@@ -2999,7 +3001,7 @@ public class VerificationConditionGenerator {
 		 * Havoc a number of variable accesses. This results in the version
 		 * numbers for those variables being increased. Thus, any historical
 		 * references to those variables in the set of assumptions remain valid.
-		 * 
+		 *
 		 * @param lhs
 		 *            The variable accesses being havoced
 		 * @return
@@ -3021,7 +3023,7 @@ public class VerificationConditionGenerator {
 
 		/**
 		 * Construct a context within a given loop scope.
-		 * 
+		 *
 		 * @param scope
 		 * @return
 		 */
