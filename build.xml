@@ -16,7 +16,7 @@
 
   <target name="compile">
     <mkdir dir="bin"/>
-    <javac destdir="bin" source="1.7" target="1.7" includeantruntime="false">
+    <javac destdir="bin" source="1.8" target="1.8" includeantruntime="false">
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/>

@@ -1396,13 +1396,13 @@ public interface Type {
 			public String toString() {
 				String prefix = "method";
 				if (contextLifetimes.length > 0) {
-					prefix += "[" + toString(contextLifetimes) + "]";
+					prefix += "[" + Impl.<String>toString(contextLifetimes) + "]";
 				}
 				if (lifetimeParameters.length > 0) {
-					prefix += "<" + toString(lifetimeParameters) + ">";
+					prefix += "<" + Impl.<String>toString(lifetimeParameters) + ">";
 				}
-				String ps = toString(parameters);
-				String rs = toString(returns);
+				String ps = Impl.<Impl>toString(parameters);
+				String rs = Impl.<Impl>toString(returns);
 				return prefix + "(" + ps + ")->(" + rs + ")";
 			}
 
