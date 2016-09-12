@@ -6,8 +6,8 @@
   <!-- ============================================== -->
 
   <path id="wyc.classpath">
-    <pathelement path="${WYCC_JAR}:${WYTP_JAR}:${WYRL_JAR}"/>
-    <path refid="junit.classpath"/>
+    <pathelement path="${WYTP_JAR}:${WYRL_JAR}"/>
+    <path refid="deps.classpath"/>
   </path>
 
   <!-- ================================================================== -->

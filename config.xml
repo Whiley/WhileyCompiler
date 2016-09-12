@@ -2,7 +2,7 @@
   <!-- Get the root directory of the project by looking at the directory enclosing this file. -->
   <dirname property="rootdir" file="${ant.file.BuildConfig}"/>
   <!-- Set the current Whiley version -->
-  <property name="version" value="0.4.0-SNAPSHOT"/>
+  <property name="version" value="0.4.0"/>
   <!-- Load the Maven Ant tasks so that we can work with Maven repositories. -->
   <typedef uri="urn:maven-ant"
            classpath="${rootdir}/lib/maven-ant-tasks-2.1.3.jar"
@@ -13,12 +13,12 @@
   <property name="DIST_DIR" value="${rootdir}/dist/"/>
 
   <!-- Paths to common JARs -->
-  <property name="WYCC_JAR" value="${LIB_DIR}/wycc-v0.4.0-SNAPSHOT.jar"/>
   <property name="WYTP_JAR" value="${LIB_DIR}/wycs-v0.4.0.jar"/>
   <property name="WYRL_JAR" value="${LIB_DIR}/wyrl-v0.4.4.jar"/>
 
   <!-- Set the classpath for Junit and its dependencies -->
-  <maven:dependencies pathId="junit.classpath">
+  <maven:dependencies pathId="deps.classpath">
     <dependency groupId="junit" artifactId="junit" version="4.12"/>
+    <dependency groupId="org.whiley" artifactId="wycc" version="0.4.0"/>    
   </maven:dependencies>
 </project>
