@@ -1,29 +1,75 @@
-<project name="whiley" default="build-all">
+<project name="wyc" default="build">
   <import file="config.xml"/>
 
   <!-- ============================================== -->
   <!-- Configuration -->
   <!-- ============================================== -->
 
-  <!-- The set of build files in the order they should be built. -->
-  <filelist id="module.build.files" dir="modules">
-    <file name="wybs/build.xml"/>
-    <file name="wycs/build.xml"/>
-    <file name="wyil/build.xml"/>
-    <file name="wyc/build.xml"/>
-    <file name="wyrt/build.xml"/>
-    <file name="wyjc/build.xml"/>
-  </filelist>
+  <path id="wyc.classpath">
+    <pathelement path="${WYTP_JAR}:${WYRL_JAR}"/>
+    <path refid="deps.classpath"/>
+  </path>
 
+  <!-- ================================================================== -->
+  <!-- Build -->
+  <!-- ================================================================== -->
 
-  <!-- ============================================== -->
-  <!-- Build Commands -->
-  <!-- ============================================== -->
+  <target name="compile">
+    <mkdir dir="bin"/>
+    <javac destdir="bin" source="1.8" target="1.8" includeantruntime="false">
+      <src path="src"/>
+      <include name="*/**"/>
+      <exclude name="*/**/package-info.java"/>
+      <classpath>
+	<path refid="wyc.classpath"/>
+      </classpath>
+    </javac>
+  </target>
 
-  <target name="build-all">
-    <subant failonerror="true" target="build">
-      <filelist refid="module.build.files"/>
-    </subant>
+  <!-- ================================================================== -->
+  <!-- Build -->
+  <!-- ================================================================== -->
+
+  <target name="build" depends="compile">
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Implementation-Version" value="${version}"/>
+      <attribute name="Implementation-Title" value="wycc-v${version}.jar"/>
+    </manifest>
+    <jar destfile="${LIB_DIR}/wyc-v${version}.jar"
+	 manifest="tmp/MANIFEST.MF">
+      <fileset dir="bin" includes="*/**/*.class"/>
+    </jar>
+    <delete dir="tmp"/>
+    <echo message="============================================="/>
+    <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
+    <echo message="============================================="/>
+  </target>
+
+  <!-- ================================================================== -->
+  <!-- Test -->
+  <!-- ================================================================== -->
+
+  
+  <!-- Set the default value of this property. Since Ant properties are immutable
+       if the value has already been set by the user with -Dtest.name.contains=...
+       this will not override that value. -->
+  <property name="test.name.contains" value=""/>
+
+  <target name="test" depends="compile">
+    <junit fork="true" failureProperty="tests.failed" printsummary="yes" showoutput="yes" outputtoformatters="no">
+      <classpath>
+	<pathelement path="bin"/>
+        <path refid="wyc.classpath"/>
+      </classpath>
+      <sysproperty key="test.name.contains" value="${test.name.contains}"/>
+      <batchtest>
+        <fileset dir="src" includes="wyc/testing/*Tests.java"/>
+      </batchtest>
+      <formatter type="plain" usefile="false"/>
+    </junit>
+    <fail message="Test failure detected, stopping build." if="tests.failed"/>
   </target>
 
   <!-- ============================================== -->
@@ -36,106 +82,20 @@
        author="true"
        version="true"
        use="true"
-       windowtitle="Whiley Compiler API">
-      <doctitle><![CDATA[<h1>The Whiley Compiler (v${version})</h1>]]></doctitle>
+       windowtitle="Whiley Compiler Collection API">
+      <doctitle><![CDATA[<h1>The Whiley Compiler Collection (v${version})</h1>]]></doctitle>
       <bottom><![CDATA[<i>Copyright &#169; 2011 David J. Pearce. All Rights Reserved.</i>]]></bottom>
-      <packageset dir="modules/wybs/src">
-	<include name="wyfs/**"/>
-	<include name="wybs/**"/>
-	<include name="wycc/**"/>
+      <packageset dir="src">
+	<include name="*/**"/>
       </packageset>
-      <packageset dir="modules/wycs/src">
-	<include name="wycs/**"/>
-	<exclude name="wycs/testing/**"/>
-      </packageset>
-      <packageset dir="modules/wyil/src">
-	<include name="wyil/**"/>
-	<include name="wyautl_old/**"/>
-	<exclude name="wyil/testing/**"/>
-      </packageset>
-      <packageset dir="modules/wyc/src">
-	<include name="wyc/**"/>
-	<exclude name="wyc/testing/**"/>
-      </packageset>
-      <packageset dir="modules/wyjc/src">
-	<include name="wyjc/**"/>
-	<include name="wyjvm/**"/>
-	<exclude name="wyjc/testing/**"/>
-      </packageset>
-      <group title="Whiley Build System (WYBS)" packages="wybs:wyfs.*:wybs.*:wycc.*"/>
-      <group title="Whiley Compiler (WYC)" packages="wyc:wyc.*"/>
-      <group title="Whiley Intermediate Language (WYIL)" packages="wyil:wyil.*"/>
-      <group title="Whiley-2-Java Compiler (WYJC)" packages="wyjc:wyjc.*:wyjvm.*"/>
-      <group title="Whiley Constraint Solver (WYCS)" packages="wycs:wycs.*"/>
+      <group title="Whiley Compiler (WyC)" packages="wyc.*"/>
+      <group title="Whiley Intermediate Language (WyIL)" packages="wyil.*"/>
       </javadoc>
-  </target>
-
-  <!-- ============================================== -->
-  <!-- Distribution -->
-  <!-- ============================================== -->
-
-  <target name="distjars" depends="build-all">
-    <subant failonerror="false" target="dist">
-      <filelist refid="module.build.files"/>
-    </subant>
-  </target>
-
-  <target name="distsrc" depends="build-all">
-  <mkdir dir="wdk-v${version}"/>
-  <copy todir="wdk-v${version}">
-    <fileset dir=".">
-      <include name="LICENSE"/>
-      <include name="README"/>
-      <include name="CONTRIBUTORS"/>
-      <include name="build.xml"/>
-      <include name="config.xml"/>
-      <include name="modules/**/*.java"/>
-      <include name="modules/**/*.whiley"/>
-      <include name="modules/**/*.wyrl"/>
-      <include name="modules/**/*.wycs"/>
-      <include name="modules/**/*.xml"/>
-      <include name="examples/**/*.whiley"/>
-      <include name="tests/**/*.whiley"/>
-      <include name="tests/**/*.sysout"/>
-      <include name="bin/wyilc"/>
-      <include name="bin/wyc"/>
-      <include name="bin/wyjc"/>
-      <include name="bin/wyj"/>
-      <include name="bin/wycc"/>
-      <include name="bin/wycs"/>
-      <include name="bin/wy_common.bash"/>
-      <include name="lib/*-v${version}.jar"/>
-      <include name="lib/wyrl-v*.jar"/>
-      <include name="lib/jasm-v*.jar"/>
-      <include name="lib/maven-ant-tasks*.jar"/>      
-    </fileset>
-  </copy>
-  <tar destfile="dist/wdk-src-v${version}.tar" longfile="gnu">
-    <tarfileset dir="." includes="wdk-v${version}/**/*"/>
-    <tarfileset dir="." filemode="755">
-      <include name="wdk-v${version}/bin/*"/>
-    </tarfileset>
-  </tar>
-  <gzip destfile="dist/wdk-src-v${version}.tgz" src="dist/wdk-src-v${version}.tar"/>
-  <delete file="dist/wdk-src-v${version}.tar"/>
-  <delete dir="wdk-v${version}"/>
-    <echo message="============================================="/>
-    <echo message="BUILT: dist/wdk-src-v${version}.tgz"/>
-    <echo message="============================================="/>
-  </target>
-
-  <target name="dist" depends="distsrc,distjars">
   </target>
 
   <!-- ============================================== -->
   <!-- Misc Commands -->
   <!-- ============================================== -->
-
-  <target name="test-all" depends="build-all">
-    <subant failonerror="true" target="test">
-      <filelist refid="module.build.files"/>
-    </subant>
-  </target>
 
   <target name="clean">
     <subant failonerror="false" target="clean">

@@ -1,3 +1,3 @@
-../../tests/invalid/Record_Invalid_2.whiley:4: type not found: Record_Invalid_2:Broken
+tests/invalid/Record_Invalid_2.whiley:4: unable to resolve name (unknown type)
 type Global is {Broken field}
-                ^^^^^^
+               ^^^^^^^^^^^^^^

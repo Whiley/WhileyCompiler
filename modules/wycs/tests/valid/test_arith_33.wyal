@@ -1,6 +1,0 @@
-assert "division by zero":
-    forall int r1:
-        if:
-            r1 > 0
-        then:
-            ((real) r1) != 0.0

@@ -1,8 +1,0 @@
-package wycs.solver
-
-include "Core.wyrl"
-include "Arithmetic.wyrl"
-include "Arrays.wyrl"
-include "Quantifiers.wyrl"
-include "TypeTests.wyrl"
-

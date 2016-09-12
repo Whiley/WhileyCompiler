@@ -1,2 +1,0 @@
-assert "precondition not satisfied":
-        [true][0] == true

@@ -1,8 +1,0 @@
-assert:
-   forall ([int] xs, int i, int x, int y):
-      if:
-        xs[i] == x
-        xs[i] == y
-      then:
-        x == y
-

@@ -3,9 +3,9 @@ language: java
 
 #
 jdk:
-    - openjdk7
+    - oraclejdk8
 
 #
 script:
     - touch running_on_travis
-    - ant test-all
+    - ant test
