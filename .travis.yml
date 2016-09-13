@@ -6,6 +6,9 @@ jdk:
     - oraclejdk8
 
 #
+install: true
+
+#
 script:
     - touch running_on_travis
-    - ant test
+    - mvn test
