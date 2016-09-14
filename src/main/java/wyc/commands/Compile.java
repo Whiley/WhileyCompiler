@@ -142,18 +142,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 
 	@Override
 	public Result execute(String... args) {
-		// Initialise Project
 		try {
-			finaliseConfiguration();
-			StdProject project = initialiseProject();
-			addCompilationBuildRules(project);
-			if(verify) {
-				addVerificationBuildRules(project);
-			}
-			// =====================================================================
-			// Build Delta + Santity Check
-			// =====================================================================
-
 			ArrayList<File> delta = new ArrayList<File>();
 			for (String arg : args) {
 				delta.add(new File(arg));
@@ -162,8 +151,8 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			// FIXME: somehow, needing to use physical files at this point is
 			// rather cumbersome. It would be much better if the enclosing
 			// framework could handle this aspect for us.
-			for(File f : delta) {
-				if(!f.exists()) {
+			for (File f : delta) {
+				if (!f.exists()) {
 					// FIXME: sort this out!
 					sysout.println("compile: file not found: " + f.getName());
 					return Result.ERRORS;
@@ -175,19 +164,39 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			// =====================================================================
 			// Determine source files to build
 			List<Path.Entry<WhileyFile>> entries = whileydir.find(delta, WhileyFile.ContentType);
+			return execute(entries);
+		} catch (Exception e) {
+			// now what?
+			return Result.INTERNAL_FAILURE;
+		}
+	}
+
+	public Result execute(List<Path.Entry<WhileyFile>> entries) {
+		// Initialise Project
+		try {
+			finaliseConfiguration();
+			StdProject project = initialiseProject();
+			addCompilationBuildRules(project);
+			if (verify) {
+				addVerificationBuildRules(project);
+			}
+			// =====================================================================
+			// Build Delta + Santity Check
+			// =====================================================================
+
 			// Build the source files
 			project.build(entries);
 			// Force all wyil files to be written to disk
 			wyildir.flush();
 			//
 			return Result.SUCCESS;
-		} catch(SyntaxError e) {
-			e.outputSourceError(syserr,brief);
+		} catch (SyntaxError e) {
+			e.outputSourceError(syserr, brief);
 			if (verbose) {
-				printStackTrace(syserr,e);
+				printStackTrace(syserr, e);
 			}
 			return Result.ERRORS;
-		} catch(Exception e) {
+		} catch (Exception e) {
 			// now what?
 			return Result.INTERNAL_FAILURE;
 		}

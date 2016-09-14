@@ -7,7 +7,7 @@
 
   <groupId>org.whiley</groupId>
   <artifactId>wyc</artifactId>
-  <version>0.4.1-SNAPSHOT</version>
+  <version>0.4.1</version>
   <packaging>jar</packaging>
 
   <licenses>
@@ -58,6 +58,11 @@
       <groupId>org.whiley</groupId>
       <artifactId>wytp</artifactId>
       <version>LATEST</version>
+    </dependency>
+    <dependency>
+      <groupId>ant</groupId>
+      <artifactId>ant</artifactId>
+      <version>1.7.0</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
