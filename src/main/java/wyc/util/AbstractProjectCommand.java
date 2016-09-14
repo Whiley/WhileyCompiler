@@ -2,8 +2,10 @@ package wyc.util;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import wybs.util.StdProject;
+import wyc.lang.WhileyFile;
 import wycc.util.AbstractCommand;
 import wycc.util.ArrayUtils;
 import wycc.util.Logger;
@@ -11,12 +13,13 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.VirtualRoot;
+import wyil.lang.WyilFile;
 
 /**
  * Provides an abstract command from which other commands for controlling the
  * Whiley compiler can be derived. Specifically, this class handles all the
  * issues related to managing the various project roots, etc.
- * 
+ *
  * @author David J. Pearce
  *
  */
@@ -60,18 +63,18 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 
 	/**
 	 * Construct a new instance of this command.
-	 * 
+	 *
 	 * @param registry
 	 *            The content registry being used to match files to content
 	 *            types.
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public AbstractProjectCommand(Content.Registry registry, Logger logger, String... options) {
 		super(ArrayUtils.append(options,"whileypath","whileydir","wyildir","wyaldir"));
 		this.registry = registry;
 		this.logger = logger;
 	}
-	
+
 	// =======================================================================
 	// Configuration
 	// =======================================================================
@@ -95,15 +98,15 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 	public void setWyildir(String dir) throws IOException {
 		this.wyildir = new DirectoryRoot(dir, registry);
 	}
-	
+
 	public String describeWyaldir() {
 		return "Specify where to find place generated verification (WyAL) files";
 	}
-	
+
 	public void setWyaldir(String dir) throws IOException {
 		this.wyildir = new DirectoryRoot(dir, registry);
 	}
-	
+
 	// =======================================================================
 	// Configuration
 	// =======================================================================
@@ -123,7 +126,7 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 	/**
 	 * Construct a new temporary project. This project is temporary because it
 	 * only exists for the life of an execution of this command.
-	 * 
+	 *
 	 * @return
 	 * @throws IOException
 	 */
@@ -137,13 +140,13 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 
 		return new StdProject(roots);
 	}
-	
+
 
 	/**
 	 * Construct a root which must correspond to a physical directory.
-	 * 
+	 *
 	 * @throws IOException
-	 * 
+	 *
 	 */
 	private DirectoryRoot getDirectoryRoot(DirectoryRoot dir, DirectoryRoot defaulT) throws IOException {
 		if(dir != null) {
@@ -156,9 +159,9 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 	/**
 	 * Construct a root which is either virtual or corresponds to a physical
 	 * directory.
-	 * 
+	 *
 	 * @throws IOException
-	 * 
+	 *
 	 */
 	private Path.Root getAbstractRoot(Path.Root dir) throws IOException {
 		if(dir != null) {
@@ -166,5 +169,44 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 		} else {
 			return new VirtualRoot(registry);
 		}
+	}
+
+	public List getModifiedSourceFiles() throws IOException {
+		if (whileydir == null) {
+			// Note, whileyDir can be null if e.g. compiling wyil -> wyjc
+			return new ArrayList();
+		} else {
+			Content.Filter<WhileyFile> whileyIncludes = Content.filter("**", WhileyFile.ContentType);
+			return getModifiedSourceFiles(whileydir, whileyIncludes, wyildir,
+					WyilFile.ContentType);
+		}
+	}
+
+	/**
+	 * Generate the list of source files which need to be recompiled. By
+	 * default, this is done by comparing modification times of each whiley file
+	 * against its corresponding wyil file. Wyil files which are out-of-date are
+	 * scheduled to be recompiled.
+	 *
+	 * @return
+	 * @throws IOException
+	 */
+	public static <T, S> List<Path.Entry<T>> getModifiedSourceFiles(Path.Root sourceDir,
+			Content.Filter<T> sourceIncludes, Path.Root binaryDir, Content.Type<S> binaryContentType)
+					throws IOException {
+		// Now, touch all source files which have modification date after
+		// their corresponding binary.
+		ArrayList<Path.Entry<T>> sources = new ArrayList<Path.Entry<T>>();
+
+		for (Path.Entry<T> source : sourceDir.get(sourceIncludes)) {
+			// currently, I'm assuming everything is modified!
+			Path.Entry<S> binary = binaryDir.get(source.id(), binaryContentType);
+			// first, check whether wycs file out-of-date with source file
+			if (binary == null || binary.lastModified() < source.lastModified()) {
+				sources.add(source);
+			}
+		}
+
+		return sources;
 	}
 }
