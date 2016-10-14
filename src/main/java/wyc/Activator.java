@@ -12,7 +12,6 @@ import wyc.commands.*;
 import wyc.lang.WhileyFile;
 
 public class Activator implements Module.Activator {
-	
 	/**
 	 * Default implementation of a content registry. This associates whiley and
 	 * wyil files with their respective content types.
@@ -21,6 +20,7 @@ public class Activator implements Module.Activator {
 	 *
 	 */
 	public static class Registry implements Content.Registry {
+		@Override
 		public void associate(Path.Entry e) {
 			String suffix = e.suffix();
 
@@ -35,11 +35,12 @@ public class Activator implements Module.Activator {
 			}
 		}
 
+		@Override
 		public String suffix(Content.Type<?> t) {
 			return t.getSuffix();
 		}
 	}
-	
+
 	/**
 	 * The master project content type registry. This is needed for the build
 	 * system to determine the content type of files it finds on the file
@@ -47,7 +48,7 @@ public class Activator implements Module.Activator {
 	 */
 	public final Content.Registry registry = new Registry();
 
-	
+
 	// =======================================================================
 	// Start
 	// =======================================================================

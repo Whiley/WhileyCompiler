@@ -25,7 +25,6 @@ import wyil.builders.Wyil2WyalBuilder;
 import wyil.lang.WyilFile;
 
 public class Compile extends AbstractProjectCommand<Compile.Result> {
-
 	/**
 	 * Result kind for this command
 	 *
@@ -183,7 +182,6 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			// =====================================================================
 			// Build Delta + Santity Check
 			// =====================================================================
-
 			// Build the source files
 			project.build(entries);
 			// Force all wyil files to be written to disk
