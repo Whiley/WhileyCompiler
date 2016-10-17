@@ -162,10 +162,16 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			// Run Build Task
 			// =====================================================================
 			// Determine source files to build
+
+			// FIXME: there is a bug here because whileydir is not configured at
+			// this point. Furthermore, it's not compiling files requested on
+			// the command line!!
 			List<Path.Entry<WhileyFile>> entries = whileydir.find(delta, WhileyFile.ContentType);
 			return execute(entries);
+		} catch(RuntimeException e) {
+			throw e;
 		} catch (Exception e) {
-			// now what?
+			// FIXME: this is a problem because it is swallowing exceptions!!
 			return Result.INTERNAL_FAILURE;
 		}
 	}
