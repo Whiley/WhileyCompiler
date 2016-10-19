@@ -93,6 +93,10 @@ public class AntTask extends MatchingTask {
 	// Configuration
 	// =======================================================================
 
+	public void setWhileypath(String dirs) throws IOException {
+		command.setWhileypath(dirs);
+	}
+
 	public void setWhileydir(String dir) throws IOException {
 		command.setWhileydir(dir);
 	}

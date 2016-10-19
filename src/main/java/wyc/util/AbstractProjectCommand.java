@@ -1,5 +1,6 @@
 package wyc.util;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +13,7 @@ import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
+import wyfs.util.JarFileRoot;
 import wyfs.util.VirtualRoot;
 import wyil.lang.WyilFile;
 
@@ -31,6 +33,13 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 	 * system.
 	 */
 	public final Content.Registry registry;
+
+	/**
+	 * The whiley path identifies additional items (i.e. libraries or
+	 * directories) which the compiler uses to resolve symbols (e.g. module
+	 * names, functions, etc).
+	 */
+	protected ArrayList<Path.Root> whileypath = new ArrayList<Path.Root>();
 
 	/**
 	 * The location in which whiley source files a located, or null if not
@@ -83,6 +92,23 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 		return "Specify where to find compiled Whiley (WyIL) files";
 	}
 
+	public void setWhileypath(String paths) throws IOException {
+		whileypath.clear();
+		// TODO: this should be pushed into AbstractConfigurable
+		String[] roots = paths.split(File.pathSeparator);
+		for (String root : roots) {
+			try {
+				if (root.endsWith(".jar")) {
+					whileypath.add(new JarFileRoot(root, registry));
+				} else {
+					whileypath.add(new DirectoryRoot(root, registry));
+				}
+			} catch (IOException e) {
+				logger.logTimedMessage("Warning: " + root + " is not a valid package root", 0, 0);
+			}
+		}
+	}
+
 	public void setWhileydir(String dir) throws IOException {
 		whileydir = new DirectoryRoot(dir,registry);
 	}
@@ -133,10 +159,12 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 	protected StdProject initialiseProject() throws IOException {
 		// Add roots and construct project
 		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
+
 		roots.add(whileydir);
 		roots.add(wyildir);
 		roots.add(wyaldir);
 		roots.add(wycsdir);
+		roots.addAll(whileypath);
 
 		return new StdProject(roots);
 	}

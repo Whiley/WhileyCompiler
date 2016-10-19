@@ -25,7 +25,6 @@ import wyil.builders.Wyil2WyalBuilder;
 import wyil.lang.WyilFile;
 
 public class Compile extends AbstractProjectCommand<Compile.Result> {
-
 	/**
 	 * Result kind for this command
 	 *
@@ -159,14 +158,21 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 				}
 			}
 
+			// Finalise the configuration before continuing.
+			finaliseConfiguration();
 			// =====================================================================
-			// Run Build Task
-			// =====================================================================
+
 			// Determine source files to build
+			// FIXME: there is a bug here because whileydir is not configured at
+			// this point. Furthermore, it's not compiling files requested on
+			// the command line!!
 			List<Path.Entry<WhileyFile>> entries = whileydir.find(delta, WhileyFile.ContentType);
+			// Execute the build over the set of files requested
 			return execute(entries);
+		} catch(RuntimeException e) {
+			throw e;
 		} catch (Exception e) {
-			// now what?
+			// FIXME: this is a problem because it is swallowing exceptions!!
 			return Result.INTERNAL_FAILURE;
 		}
 	}
@@ -174,7 +180,6 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	public Result execute(List<Path.Entry<WhileyFile>> entries) {
 		// Initialise Project
 		try {
-			finaliseConfiguration();
 			StdProject project = initialiseProject();
 			addCompilationBuildRules(project);
 			if (verify) {
@@ -183,7 +188,6 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			// =====================================================================
 			// Build Delta + Santity Check
 			// =====================================================================
-
 			// Build the source files
 			project.build(entries);
 			// Force all wyil files to be written to disk
