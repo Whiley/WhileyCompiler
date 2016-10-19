@@ -15,4 +15,8 @@ ensures all { k in 0..|witness| | xs[k] == rs[witness[k]] }:
     return xs,ws
 
 method test():
-    assume permute([1,2,3]) == [1,2,3],[0,1,2]
+    int[] ys
+    int[] ws
+    //
+    ys,ws = permute([1,2,3])
+    assume ys == [1,2,3] && ws == [0,1,2]

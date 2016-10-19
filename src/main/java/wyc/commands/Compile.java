@@ -158,15 +158,16 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 				}
 			}
 
+			// Finalise the configuration before continuing.
+			finaliseConfiguration();
 			// =====================================================================
-			// Run Build Task
-			// =====================================================================
-			// Determine source files to build
 
+			// Determine source files to build
 			// FIXME: there is a bug here because whileydir is not configured at
 			// this point. Furthermore, it's not compiling files requested on
 			// the command line!!
 			List<Path.Entry<WhileyFile>> entries = whileydir.find(delta, WhileyFile.ContentType);
+			// Execute the build over the set of files requested
 			return execute(entries);
 		} catch(RuntimeException e) {
 			throw e;
@@ -179,7 +180,6 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	public Result execute(List<Path.Entry<WhileyFile>> entries) {
 		// Initialise Project
 		try {
-			finaliseConfiguration();
 			StdProject project = initialiseProject();
 			addCompilationBuildRules(project);
 			if (verify) {
