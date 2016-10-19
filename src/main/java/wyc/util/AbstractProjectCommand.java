@@ -165,10 +165,27 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 		roots.add(wyaldir);
 		roots.add(wycsdir);
 		roots.addAll(whileypath);
+		//
+		addBootpath(roots);
 
 		return new StdProject(roots);
 	}
 
+	/**
+	 * Initialise the bootpath for use with the compiler. The bootpath basically
+	 * identifies the location of the standard library for automatic inclusion
+	 * into the whileypath.
+	 *
+	 * @param roots
+	 * @throws IOException
+	 */
+	protected void addBootpath(List<Path.Root>roots) throws IOException {
+		// Configure boot path
+		String bootpath = System.getProperty("wdk.bootpath");
+		if (bootpath != null) {
+			roots.add(new JarFileRoot(bootpath, registry));
+		}
+	}
 
 	/**
 	 * Construct a root which must correspond to a physical directory.

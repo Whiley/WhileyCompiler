@@ -157,15 +157,9 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 					return Result.ERRORS;
 				}
 			}
-
 			// Finalise the configuration before continuing.
 			finaliseConfiguration();
-			// =====================================================================
-
 			// Determine source files to build
-			// FIXME: there is a bug here because whileydir is not configured at
-			// this point. Furthermore, it's not compiling files requested on
-			// the command line!!
 			List<Path.Entry<WhileyFile>> entries = whileydir.find(delta, WhileyFile.ContentType);
 			// Execute the build over the set of files requested
 			return execute(entries);
