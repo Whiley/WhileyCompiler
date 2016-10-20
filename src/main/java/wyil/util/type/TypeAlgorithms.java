@@ -1,27 +1,8 @@
 // Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
 // All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//    * Redistributions of source code must retain the above copyright
-//      notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above copyright
-//      notice, this list of conditions and the following disclaimer in the
-//      documentation and/or other materials provided with the distribution.
-//    * Neither the name of the <organization> nor the
-//      names of its contributors may be used to endorse or promote products
-//      derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// This software may be modified and distributed under the terms
+// of the BSD license.  See the LICENSE file for details.
 
 package wyil.util.type;
 
@@ -72,6 +53,7 @@ public final class TypeAlgorithms {
 	 * representing types. Supplementary data is used for record kinds and
 	 */
 	public static final Comparator<Automaton.State> DATA_COMPARATOR = new Comparator<Automaton.State>() {
+		@Override
 		public int compare(Automaton.State s1, Automaton.State s2) {
 			// PRE-CONDITION s1.kind == s2.kind
 			if(s1.kind == TypeSystem.K_RECORD) {
@@ -590,7 +572,7 @@ public final class TypeAlgorithms {
 
 		// Scan compound's children
 		boolean allChildrenInhabited = true;
-		for(int i=0;i<numChildrenToCheck;++i) {			
+		for(int i=0;i<numChildrenToCheck;++i) {
 			Automaton.State child = automaton.states[children[i]];
 			Inhabitation childInhabitation = getStateInhabitation(children[i], automaton, inhabitationFlags);
 			if (childInhabitation == Inhabitation.NONE) {
@@ -782,6 +764,7 @@ public final class TypeAlgorithms {
 			this.toSign = toSign;
 		}
 
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof IntersectionPoint) {
 				IntersectionPoint ip = (IntersectionPoint) o;
@@ -796,6 +779,7 @@ public final class TypeAlgorithms {
 			return "(" + (fromSign ? '+' : '-') + fromIndex + "&" + (toSign ? '+' : '-') + fromIndex + ")";
 		}
 
+		@Override
 		public int hashCode() {
 			return fromIndex + toIndex;
 		}

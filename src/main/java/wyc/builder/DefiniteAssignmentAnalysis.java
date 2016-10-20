@@ -1,3 +1,8 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// This software may be modified and distributed under the terms
+// of the BSD license.  See the LICENSE file for details.
 package wyc.builder;
 
 import wyc.lang.Expr;
@@ -33,8 +38,8 @@ import wybs.lang.SyntaxError;
  * In the above example, variable z is used in the return statement before it
  * has been defined any value. This is considered a syntax error in whiley.
  * </p>
- * 
- * 
+ *
+ *
  * @author David J. Pearce
  *
  */
@@ -43,20 +48,20 @@ public class DefiniteAssignmentAnalysis {
 	 * The whiley source file being checked for definite assignment.
 	 */
 	private final WhileyFile file;
-	
+
 	public DefiniteAssignmentAnalysis(WhileyFile file) {
 		this.file = file;
 	}
-	
+
 	public void check() {
 		for (WhileyFile.Declaration d : file.declarations) {
 			check(d);
 		}
 	}
-	
+
 	/**
 	 * Perform definite assignment analysis on a single declaration.
-	 * 
+	 *
 	 * @param declaration
 	 */
 	private void check(WhileyFile.Declaration declaration) {
@@ -69,23 +74,23 @@ public class DefiniteAssignmentAnalysis {
 		} else if(declaration instanceof WhileyFile.Type) {
 			// There isn't anything to do here either. This is because variables
 			// used in type invariants are already checked by the
-			// FlowTypeChecker to ensure they are declared. 
+			// FlowTypeChecker to ensure they are declared.
 		} else if(declaration instanceof WhileyFile.FunctionOrMethod) {
 			check((WhileyFile.FunctionOrMethod) declaration);
 		} else {
 			throw new InternalFailure("unknown declaration encountered",file.getEntry(),declaration);
 		}
 	}
-	
+
 	/**
 	 * Check a function or method declaration for definite assignment.
-	 * 
+	 *
 	 * @param declaration
 	 * @return
 	 */
 	private void check(WhileyFile.FunctionOrMethod declaration) {
 		// Initialise set of definitely assigned variables to include all
-		// parameters.	
+		// parameters.
 		DefintelyAssignedSet defs = new DefintelyAssignedSet();
 		for(WhileyFile.Parameter p : declaration.parameters) {
 			defs = defs.add(p.name());
@@ -94,13 +99,13 @@ public class DefiniteAssignmentAnalysis {
 		// updating the set of definitely assigned variables as appropriate.
 		checkStatements(declaration.statements,defs);
 	}
-	
+
 	/**
 	 * Check that all variables used in a given list of statements are
 	 * definitely assigned. Furthermore, update the set of definitely assigned
 	 * variables to include any which are definitely assigned at the end of
 	 * these statements.
-	 * 
+	 *
 	 * @param statements
 	 *            The list of statements to check.
 	 * @param environment
@@ -116,12 +121,12 @@ public class DefiniteAssignmentAnalysis {
 		}
 		return new ControlFlow(nextEnvironment,breakEnvironment);
 	}
-	
+
 	/**
 	 * Check that all variables used in a given statement are definitely
 	 * assigned. Furthermore, update the set of definitely assigned variables to
 	 * include any which are definitely assigned after this statement.
-	 * 
+	 *
 	 * @param statement
 	 *            The statement to check.
 	 * @param environment
@@ -174,12 +179,12 @@ public class DefiniteAssignmentAnalysis {
 			throw new InternalFailure(t.getMessage(),file.getEntry(),statement,t);
 		}
 	}
-	
+
 	private ControlFlow checkAssert(Stmt.Assert stmt, DefintelyAssignedSet environment) {
 		checkExpression(stmt.expr, environment);
-		return new ControlFlow(environment,null);	
+		return new ControlFlow(environment,null);
 	}
-	
+
 	private ControlFlow checkAssign(Stmt.Assign stmt, DefintelyAssignedSet environment) {
 		// left-hand side
 		for (Expr lval : stmt.lvals) {
@@ -203,27 +208,27 @@ public class DefiniteAssignmentAnalysis {
 		//
 		return new ControlFlow(environment, null);
 	}
-	
+
 	private ControlFlow checkAssume(Stmt.Assume stmt, DefintelyAssignedSet environment) {
 		checkExpression(stmt.expr, environment);
 		return new ControlFlow(environment,null);
 	}
-	
+
 	private ControlFlow checkBreak(Stmt.Break stmt, DefintelyAssignedSet environment) {
 		return new ControlFlow(null,environment);
 	}
-	
+
 	private ControlFlow checkContinue(Stmt.Continue stmt, DefintelyAssignedSet environment) {
 		// Here we can just treat a continue in the same way as a return
 		// statement. It makes no real difference.
-		return new ControlFlow(null,null);	
+		return new ControlFlow(null,null);
 	}
-	
+
 	private ControlFlow checkDebug(Stmt.Debug stmt, DefintelyAssignedSet environment) {
 		checkExpression(stmt.expr, environment);
 		return new ControlFlow(environment,null);
 	}
-	
+
 	private ControlFlow checkDoWhile(Stmt.DoWhile stmt, DefintelyAssignedSet environment) {
 		//
 		ControlFlow flow = checkStatements(stmt.body, environment);
@@ -238,7 +243,7 @@ public class DefiniteAssignmentAnalysis {
 		//
 		return new ControlFlow(environment,null);
 	}
-	
+
 	private ControlFlow check(Stmt.Fail stmt, DefintelyAssignedSet environment) {
 		return new ControlFlow(null,null);
 	}
@@ -251,26 +256,26 @@ public class DefiniteAssignmentAnalysis {
 		// Now, merge all generated control-flow paths together
 		return left.merge(right);
 	}
-	
+
 	private ControlFlow checkNamedBlock(Stmt.NamedBlock stmt, DefintelyAssignedSet environment) {
 		return checkStatements(stmt.body,environment);
 	}
-	
+
 	private ControlFlow checkReturn(Stmt.Return stmt, DefintelyAssignedSet environment) {
 		for(Expr e : stmt.returns) {
 			checkExpression(e, environment);
 		}
 		return new ControlFlow(null,null);
 	}
-	
+
 	private ControlFlow checkSkip(Stmt.Skip stmt, DefintelyAssignedSet environment) {
 		return new ControlFlow(environment,null);
 	}
-	
+
 	private ControlFlow checkSwitch(Stmt.Switch stmt, DefintelyAssignedSet environment) {
 		DefintelyAssignedSet caseEnvironment = null;
 		DefintelyAssignedSet breakEnvironment = null;
-		
+
 		checkExpression(stmt.expr, environment);
 		//
 		boolean hasDefault = false;
@@ -294,7 +299,7 @@ public class DefiniteAssignmentAnalysis {
 		//
 		return new ControlFlow(environment,breakEnvironment);
 	}
-	
+
 	private ControlFlow checkVariableDeclaration(Stmt.VariableDeclaration stmt, DefintelyAssignedSet environment) {
 		if (stmt.expr != null) {
 			checkExpression(stmt.expr, environment);
@@ -302,7 +307,7 @@ public class DefiniteAssignmentAnalysis {
 		}
 		return new ControlFlow(environment,null);
 	}
-	
+
 	private ControlFlow checkWhile(Stmt.While stmt, DefintelyAssignedSet environment) {
 		checkExpression(stmt.condition, environment);
 		//
@@ -314,11 +319,11 @@ public class DefiniteAssignmentAnalysis {
 		//
 		return new ControlFlow(environment,null);
 	}
-	
+
 	/**
 	 * Check that all variables used in a given expression are definitely
 	 * assigned.
-	 * 
+	 *
 	 * @param expr
 	 *            The expression to check.
 	 * @param environment
@@ -373,18 +378,18 @@ public class DefiniteAssignmentAnalysis {
 			throw new InternalFailure("internal failure",file.getEntry(),expression,t);
 		}
 	}
-	
+
 	private void checkArrayInitialiser(Expr.ArrayInitialiser expression, DefintelyAssignedSet environment) {
 		for(Expr e : expression.arguments) {
 			checkExpression(e,environment);
 		}
 	}
-	
+
 	private void checkArrayGenerator(Expr.ArrayGenerator expression, DefintelyAssignedSet environment) {
 		checkExpression(expression.element,environment);
 		checkExpression(expression.count,environment);
 	}
-	
+
 	private void checkBinOp(Expr.BinOp expression, DefintelyAssignedSet environment) {
 		checkExpression(expression.lhs,environment);
 		checkExpression(expression.rhs,environment);
@@ -393,39 +398,39 @@ public class DefiniteAssignmentAnalysis {
 	private void checkCast(Expr.Cast expression, DefintelyAssignedSet environment) {
 		checkExpression(expression.expr,environment);
 	}
-	
+
 	private void checkConstant(Expr.Constant expression, DefintelyAssignedSet environment) {
 
 	}
-	
+
 	private void checkConstantAccess(Expr.ConstantAccess expression, DefintelyAssignedSet environment) {
 
 	}
-	
+
 	private void checkDereference(Expr.Dereference expression, DefintelyAssignedSet environment) {
 		checkExpression(expression.src,environment);
 	}
-	
+
 	private void checkFieldAccess(Expr.FieldAccess expression, DefintelyAssignedSet environment) {
 		checkExpression(expression.src,environment);
 	}
-	
+
 	private void checkFunctionOrMethod(Expr.FunctionOrMethod expression, DefintelyAssignedSet environment) {
 
 	}
-	
+
 	private ControlFlow checkFunctionOrMethodCall(Expr.FunctionOrMethodCall expression, DefintelyAssignedSet environment) {
 		for(Expr p : expression.arguments) {
 			checkExpression(p,environment);
 		}
 		return new ControlFlow(environment,null);
 	}
-	
+
 	private void checkIndexOf(Expr.IndexOf expression, DefintelyAssignedSet environment) {
 		checkExpression(expression.src,environment);
 		checkExpression(expression.index,environment);
 	}
-	
+
 	private ControlFlow checkIndirectFunctionOrMethodCall(Expr.IndirectFunctionOrMethodCall expression, DefintelyAssignedSet environment) {
 		checkExpression(expression.src,environment);
 		for(Expr p : expression.arguments) {
@@ -433,7 +438,7 @@ public class DefiniteAssignmentAnalysis {
 		}
 		return new ControlFlow(environment,null);
 	}
-	
+
 	private void checkLambda(Expr.Lambda expression, DefintelyAssignedSet environment) {
 		// Add lambda parameters to the set of definitely assigned variables.
 		for(WhileyFile.Parameter p : expression.parameters) {
@@ -442,17 +447,17 @@ public class DefiniteAssignmentAnalysis {
 		// Check body of the lambda
 		checkExpression(expression.body,environment);
 	}
-	
+
 	private void checkLocalVariable(Expr.LocalVariable expression, DefintelyAssignedSet environment) {
 		if (!environment.contains(expression.var)) {
 			throw new SyntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), file.getEntry(), expression);
 		}
 	}
-	
+
 	private void checkNew(Expr.New expression, DefintelyAssignedSet environment) {
 		checkExpression(expression.expr,environment);
 	}
-	
+
 	private void checkQuantifier(Expr.Quantifier expression, DefintelyAssignedSet environment) {
 		for(Triple<String,Expr,Expr> p : expression.sources) {
 			checkExpression(p.second(),environment);
@@ -461,51 +466,51 @@ public class DefiniteAssignmentAnalysis {
 		}
 		checkExpression(expression.condition,environment);
 	}
-	
+
 	private void checkRecord(Expr.Record expression, DefintelyAssignedSet environment) {
 		for(Map.Entry<String,Expr> e : expression.fields.entrySet()) {
 			checkExpression(e.getValue(),environment);
 		}
 	}
-	
+
 	private void checkTypeVal(Expr.TypeVal expression, DefintelyAssignedSet environment) {
 
 	}
-	
+
 	private void checkUnOp(Expr.UnOp expression, DefintelyAssignedSet environment) {
 		checkExpression(expression.mhs,environment);
 	}
-	
+
 	private class ControlFlow {
 		/**
 		 * The set of definitely assigned variables on this path which fall
 		 * through to the next logical statement.
 		 */
 		public final DefintelyAssignedSet nextEnvironment;
-		
+
 		/**
 		 * The set of definitely assigned variables on this path which are on
 		 * the control-flow path caused by a break statement.
 		 */
 		public final DefintelyAssignedSet breakEnvironment;
-		
+
 		public ControlFlow(DefintelyAssignedSet nextEnvironment, DefintelyAssignedSet breakEnvironment) {
 			this.nextEnvironment = nextEnvironment;
 			this.breakEnvironment = breakEnvironment;
 		}
-		
+
 		public ControlFlow merge(ControlFlow other) {
 			DefintelyAssignedSet n = join(nextEnvironment,other.nextEnvironment);
 			DefintelyAssignedSet b = join(breakEnvironment,other.breakEnvironment);
 			return new ControlFlow(n,b);
-		}			
+		}
 	}
-	
+
 	/**
 	 * join two sets of definitely assigned variables together. This allows for
 	 * the possibility that either or both arguments are null. The join itself
 	 * is corresponds to the intersection of both sets.
-	 * 
+	 *
 	 * @param left
 	 * @param right
 	 * @return
@@ -521,11 +526,11 @@ public class DefiniteAssignmentAnalysis {
 			return left.join(right);
 		}
 	}
-	
+
 	/**
 	 * A simple class representing an immutable set of definitely assigned
 	 * variables.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -547,7 +552,7 @@ public class DefiniteAssignmentAnalysis {
 		/**
 		 * Add a variable to the set of definitely assigned variables, producing
 		 * an updated set.
-		 * 
+		 *
 		 * @param var
 		 * @return
 		 */
@@ -560,7 +565,7 @@ public class DefiniteAssignmentAnalysis {
 		/**
 		 * Remove a variable from the set of definitely assigned variables, producing
 		 * an updated set.
-		 * 
+		 *
 		 * @param var
 		 * @return
 		 */
@@ -569,11 +574,11 @@ public class DefiniteAssignmentAnalysis {
 			r.variables.remove(var);
 			return r;
 		}
-		
+
 		/**
 		 * Join two sets together, where the result contains a variable only if
 		 * it is definitely assigned on both branches.
-		 * 
+		 *
 		 * @param other
 		 * @return
 		 */
@@ -586,10 +591,11 @@ public class DefiniteAssignmentAnalysis {
 			}
 			return r;
 		}
-		
+
 		/**
 		 * Useful for debugging
 		 */
+		@Override
 		public String toString() {
 			return variables.toString();
 		}

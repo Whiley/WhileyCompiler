@@ -1,27 +1,8 @@
 // Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
 // All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//    * Redistributions of source code must retain the above copyright
-//      notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above copyright
-//      notice, this list of conditions and the following disclaimer in the
-//      documentation and/or other materials provided with the distribution.
-//    * Neither the name of the <organization> nor the
-//      names of its contributors may be used to endorse or promote products
-//      derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// This software may be modified and distributed under the terms
+// of the BSD license.  See the LICENSE file for details.
 
 package wyil.lang;
 
@@ -78,17 +59,20 @@ public final class WyilFile extends AbstractCompilationUnit {
 			return null;
 		}
 
+		@Override
 		public WyilFile read(Path.Entry<WyilFile> e, InputStream input) throws IOException {
 			WyilFileReader reader = new WyilFileReader(e);
 			WyilFile mi = reader.read();
 			return mi;
 		}
 
+		@Override
 		public void write(OutputStream output, WyilFile module) throws IOException {
 			WyilFileWriter writer = new WyilFileWriter(output);
 			writer.write(module);
 		}
 
+		@Override
 		public String toString() {
 			return "Content-Type: wyil";
 		}
@@ -334,20 +318,22 @@ public final class WyilFile extends AbstractCompilationUnit {
 			this.parent = parent;
 			this.attributes = new ArrayList<Attribute>(Arrays.asList(attributes));
 		}
-		
+
 		/**
 		 * Get the WyIL file enclosing this block
-		 * 
+		 *
 		 * @return
 		 */
 		public WyilFile parent() {
 			return parent;
 		}
 
+		@Override
 		public List<Attribute> attributes() {
 			return attributes;
 		}
-		
+
+		@Override
 		public <T extends Attribute> T attribute(Class<T> type) {
 			for (Attribute a : attributes) {
 				if (type.isInstance(a)) {
@@ -369,7 +355,7 @@ public final class WyilFile extends AbstractCompilationUnit {
 		private String name;
 		private List<Modifier> modifiers;
 		private SyntaxTree tree;
-		
+
 		public Declaration(WyilFile parent, String name, Collection<Modifier> modifiers, Attribute... attributes) {
 			super(parent, attributes);
 			this.name = name;
@@ -395,13 +381,13 @@ public final class WyilFile extends AbstractCompilationUnit {
 
 		public boolean hasModifier(Modifier modifier) {
 			return modifiers.contains(modifier);
-		}		
-		
+		}
+
 		public SyntaxTree getTree() {
-			return tree;			
+			return tree;
 		}
 	}
-	
+
 	/**
 	 * A type declaration is a top-level block within a WyilFile that associates
 	 * a name with a given type. These names can be used within types,
@@ -433,16 +419,16 @@ public final class WyilFile extends AbstractCompilationUnit {
 		public wyil.lang.Type type() {
 			return type;
 		}
-		
+
 		/**
 		 * Get the list of expressions that make up the invariant of this
 		 * type.  This list maybe empty, but it cannot be null.
-		 * 
+		 *
 		 * @return
 		 */
 		public List<Location<Expr>> getInvariant() {
 			return invariant;
-		}		
+		}
 	}
 
 	/**
@@ -478,18 +464,18 @@ public final class WyilFile extends AbstractCompilationUnit {
 	public static final class FunctionOrMethod extends Declaration {
 		private final wyil.lang.Type.FunctionOrMethod type;
 		/**
-		 * Expressions making up clauses of precondition 
+		 * Expressions making up clauses of precondition
 		 */
 		private final List<SyntaxTree.Location<Bytecode.Expr>> precondition;
 		/**
-		 * Expressions making up clauses of postcondition 
+		 * Expressions making up clauses of postcondition
 		 */
 		private final List<SyntaxTree.Location<Bytecode.Expr>> postcondition;
 		/**
 		 * The function or method body (which can be null)
 		 */
 		private SyntaxTree.Location<Bytecode.Block> body;
-		
+
 		public FunctionOrMethod(WyilFile parent, Collection<Modifier> modifiers, String name,
 				wyil.lang.Type.FunctionOrMethod type, Attribute... attributes) {
 			super(parent, name, modifiers, attributes);
@@ -512,7 +498,7 @@ public final class WyilFile extends AbstractCompilationUnit {
 
 		/**
 		 * Check whether this represents a function declaration or not.
-		 * 
+		 *
 		 * @return
 		 */
 		public boolean isFunction() {
@@ -521,7 +507,7 @@ public final class WyilFile extends AbstractCompilationUnit {
 
 		/**
 		 * Check whether this represents a method declaration or not.
-		 * 
+		 *
 		 * @return
 		 */
 		public boolean isMethod() {
@@ -531,7 +517,7 @@ public final class WyilFile extends AbstractCompilationUnit {
 		/**
 		 * Get the list of expressions that make up the precondition of this
 		 * function/method.  This list maybe empty, but it cannot be null.
-		 * 
+		 *
 		 * @return
 		 */
 		public List<SyntaxTree.Location<Bytecode.Expr>> getPrecondition() {
@@ -541,24 +527,24 @@ public final class WyilFile extends AbstractCompilationUnit {
 		/**
 		 * Get the list of expressions that make up the postcondition of this
 		 * function/method.  This list maybe empty, but it cannot be null.
-		 * 
+		 *
 		 * @return
 		 */
 		public List<SyntaxTree.Location<Bytecode.Expr>> getPostcondition() {
 			return postcondition;
-		}		
-		
+		}
+
 		/**
 		 * Get the body of this function or method
-		 * 
+		 *
 		 * @return
 		 */
 		public SyntaxTree.Location<Bytecode.Block> getBody() {
 			return body;
 		}
-		
+
 		public void setBody(SyntaxTree.Location<Bytecode.Block> body) {
-			this.body = body;			
+			this.body = body;
 		}
 	}
 }

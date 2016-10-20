@@ -1,3 +1,9 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// This software may be modified and distributed under the terms
+// of the BSD license.  See the LICENSE file for details.
+
 package wyc.io;
 
 import java.io.OutputStream;
@@ -67,10 +73,10 @@ public class WhileyFilePrinter {
 		}
 
 		out.print(fm.name());
-		printParameters(fm.parameters);		
+		printParameters(fm.parameters);
 		out.print(" -> ");
 		printParameters(fm.returns);
-		
+
 		for(Expr r : fm.requires) {
 			out.println();
 			out.print("requires ");
@@ -86,7 +92,7 @@ public class WhileyFilePrinter {
 
 		print(fm.statements,1);
 	}
-	
+
 	public void print(WhileyFile.Import decl) {
 		out.print("import ");
 		if(decl.name != null) {
@@ -120,7 +126,7 @@ public class WhileyFilePrinter {
 		out.print(decl.name());
 		out.print(" is ");
 		printParameter(decl.parameter,true);
-		
+
 		for(Expr invariant : decl.invariant) {
 			out.print(" where ");
 			print(invariant);
@@ -212,7 +218,7 @@ public class WhileyFilePrinter {
 			if(i != 0) {
 				out.print(",");
 			}
-			out.print(" ");	
+			out.print(" ");
 			print(s.returns.get(i));
 		}
 		out.println();
@@ -308,7 +314,7 @@ public class WhileyFilePrinter {
 	}
 
 	public void print(Stmt.VariableDeclaration s, int indent) {
-		printParameter(s.parameter,false);		
+		printParameter(s.parameter,false);
 		if(s.expr != null) {
 			out.print(" = ");
 			print(s.expr);
@@ -562,7 +568,7 @@ public class WhileyFilePrinter {
 		}
 		out.print(" | ");
 		print(e.condition);
-		
+
 		out.print(" }");
 	}
 
@@ -670,11 +676,11 @@ public class WhileyFilePrinter {
 				out.print(", ");
 			}
 			firstTime=false;
-			printParameter(p,false);			
+			printParameter(p,false);
 		}
 		out.print(")");
 	}
-	
+
 	private void printParameter(WhileyFile.Parameter parameter, boolean braces) {
 		braces &= parameter.name == null;
 		if(braces) {
@@ -687,7 +693,7 @@ public class WhileyFilePrinter {
 			out.print(")");
 		}
 	}
-	
+
 	public void print(List<Modifier> modifiers) {
 		for(Modifier m : modifiers) {
 			out.print(m);
@@ -757,7 +763,7 @@ public class WhileyFilePrinter {
 			}
 			printParameterTypes(tt.paramTypes);
 			out.print("->");
-			printParameterTypes(tt.returnTypes);			
+			printParameterTypes(tt.returnTypes);
 		} else if(t instanceof SyntacticType.Record) {
 			SyntacticType.Record tt = (SyntacticType.Record) t;
 			out.print("{");
@@ -815,13 +821,13 @@ public class WhileyFilePrinter {
 			if(!firstTime) {
 				out.print(", ");
 			}
-			firstTime=false;						
+			firstTime=false;
 			print(p);
 		}
 		out.print(")");
 	}
-	
-	
+
+
 	public void indent(int level) {
 		for(int i=0;i!=level;++i) {
 			out.print("    ");

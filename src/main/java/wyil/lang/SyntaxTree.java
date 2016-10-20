@@ -1,3 +1,9 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// This software may be modified and distributed under the terms
+// of the BSD license.  See the LICENSE file for details.
+
 package wyil.lang;
 
 import java.util.ArrayList;
@@ -14,7 +20,7 @@ import wybs.lang.SyntacticElement;
  * representation on disk. However, the tree-like nature of a typically abstract
  * syntax tree is convenient in many ways, and this class provides a "wrapper"
  * for bytecodes which makes them appear as a tree-like structure.
- * 
+ *
  * @author David J. Pearce
  *
  */
@@ -23,21 +29,21 @@ public class SyntaxTree {
 	 * The enclosing declaration for this tree
 	 */
 	private final WyilFile.Declaration parent;
-	
+
 	/**
 	 * The set of locations making up this tree. Each location is some kind of
 	 * component of the tree. For example, an expression or statement.
 	 */
-	private final List<Location<?>> locations; 
+	private final List<Location<?>> locations;
 
 	public SyntaxTree(WyilFile.Declaration enclosingDeclaration) {
 		this.parent = enclosingDeclaration;
 		this.locations = new ArrayList<Location<?>>();
 	}
-	
+
 	/**
 	 * Returns the number of locations in this syntax tree.
-	 * 
+	 *
 	 * @return
 	 */
 	public int size() {
@@ -46,7 +52,7 @@ public class SyntaxTree {
 
 	/**
 	 * Get the location at a given index in this syntax tree.
-	 * 
+	 *
 	 * @param index
 	 *            --- index of location to return
 	 * @return
@@ -57,7 +63,7 @@ public class SyntaxTree {
 
 	/**
 	 * Get the location at a given index in this syntax tree.
-	 * 
+	 *
 	 * @param index
 	 *            --- index of location to return
 	 * @return
@@ -69,24 +75,24 @@ public class SyntaxTree {
 		}
 		return locs;
 	}
-	
+
 	public List<Location<?>> getLocations() {
 		return locations;
 	}
-	
+
 	/**
 	 * Get the index of a given location in this tree.
-	 * 
+	 *
 	 * @param location
 	 * @return
 	 */
 	public int getIndexOf(Location<?> location) {
 		return locations.indexOf(location);
 	}
-	
+
 	/**
 	 * Get the enclosing declaration of this syntax tree.
-	 * 
+	 *
 	 * @return
 	 */
 	public WyilFile.Declaration getEnclosingDeclaration() {
@@ -99,11 +105,11 @@ public class SyntaxTree {
 
 	public static class Location<T extends Bytecode> extends SyntacticElement.Impl {
 		private final SyntaxTree parent;
-		
+
 		private final Type[] types;
-		
+
 		private final T bytecode;
-		
+
 		public Location(SyntaxTree parent, T bytecode, Attribute...attributes) {
 			super(attributes);
 			this.parent = parent;
@@ -124,32 +130,32 @@ public class SyntaxTree {
 			this.types = new Type[] {type};
 			this.bytecode = bytecode;
 		}
-		
+
 		public Location(SyntaxTree parent, Type type, T bytecode, List<Attribute> attributes) {
 			super(attributes);
 			this.parent = parent;
 			this.types = new Type[] {type};
 			this.bytecode = bytecode;
 		}
-		
+
 		public Location(SyntaxTree parent, Type[] types, T bytecode, Attribute...attributes) {
 			super(attributes);
 			this.parent = parent;
 			this.types = types;
 			this.bytecode = bytecode;
 		}
-		
+
 		public Location(SyntaxTree parent, Type[] types, T bytecode, List<Attribute> attributes) {
 			super(attributes);
 			this.parent = parent;
 			this.types = types;
 			this.bytecode = bytecode;
 		}
-		
+
 		/**
 		 * Get the index of this location in the enclosing syntax tree. Every
 		 * location has a unique index.
-		 * 
+		 *
 		 * @return
 		 */
 		public int getIndex() {
@@ -158,18 +164,18 @@ public class SyntaxTree {
 
 		/**
 		 * Get the enclosing syntax tree of this location.
-		 * 
+		 *
 		 * @return
 		 */
 		public SyntaxTree getEnclosingTree() {
 			return parent;
 		}
-		
+
 		/**
 		 * Get the declared type of this location. This is a convenience method
 		 * since, in most cases, we are working on locations that have exactly
 		 * one type.
-		 * 
+		 *
 		 * @return
 		 */
 		public Type getType() {
@@ -181,10 +187,10 @@ public class SyntaxTree {
 				return types[0];
 			}
 		}
-		
+
 		/**
-		 * Get a specific type of this location. 
-		 * 
+		 * Get a specific type of this location.
+		 *
 		 * @return
 		 */
 		public Type getType(int i) {
@@ -192,8 +198,8 @@ public class SyntaxTree {
 		}
 
 		/**
-		 * Get the types for this location. 
-		 * 
+		 * Get the types for this location.
+		 *
 		 * @return
 		 */
 		public Type[] getTypes() {
@@ -202,7 +208,7 @@ public class SyntaxTree {
 
 		/**
 		 * Get the number of types declared by this location.
-		 * 
+		 *
 		 * @return
 		 */
 		public int numberOfTypes() {
@@ -211,7 +217,7 @@ public class SyntaxTree {
 
 		/**
 		 * Get the bytecode associated with this location
-		 * 
+		 *
 		 * @return
 		 */
 		public T getBytecode() {
@@ -220,7 +226,7 @@ public class SyntaxTree {
 
 		/**
 		 * Get the underlying opcode for this location
-		 * 
+		 *
 		 * @return
 		 */
 		public int getOpcode() {
@@ -229,16 +235,16 @@ public class SyntaxTree {
 
 		/**
 		 * Get the number of operand groups in this location.
-		 * 
+		 *
 		 * @return
 		 */
 		public int numberOfOperands() {
 			return bytecode.numberOfOperands();
 		}
-		
+
 		/**
 		 * Return the ith operand associated with this location.
-		 * 
+		 *
 		 * @param i
 		 * @return
 		 */
@@ -248,17 +254,17 @@ public class SyntaxTree {
 
 		/**
 		 * Return the ith operand associated with this location.
-		 * 
+		 *
 		 * @param i
 		 * @return
 		 */
 		public Location<?>[] getOperands() {
 			return parent.getLocations(bytecode.getOperands());
 		}
-		
+
 		/**
 		 * Get the number of operand groups in this location.
-		 * 
+		 *
 		 * @return
 		 */
 		public int numberOfOperandGroups() {
@@ -267,7 +273,7 @@ public class SyntaxTree {
 
 		/**
 		 * Get the ith operand group in this location.
-		 * 
+		 *
 		 * @param i
 		 * @return
 		 */
@@ -275,12 +281,12 @@ public class SyntaxTree {
 			int[] group = bytecode.getOperandGroup(i);
 			return parent.getLocations(group);
 		}
-		
+
 		/**
 		 * Get the number of blocks contained in this statement. This includes
 		 * only those which are immediate children of this statement, but not
 		 * those which are transitively contained.
-		 * 
+		 *
 		 * @return
 		 */
 		public int numberOfBlocks() {
@@ -294,15 +300,16 @@ public class SyntaxTree {
 
 		/**
 		 * Get the ith block contained in this statement.
-		 * 
+		 *
 		 * @param i
 		 * @return
 		 */
 		public Location<Bytecode.Block> getBlock(int i) {
 			Bytecode.Stmt stmt = (Bytecode.Stmt) bytecode;
-			return (Location<Bytecode.Block>) parent.getLocation(stmt.getBlock(i));			
+			return (Location<Bytecode.Block>) parent.getLocation(stmt.getBlock(i));
 		}
-		
+
+		@Override
 		public String toString() {
 			int index = getIndex();
 			String ts = "";

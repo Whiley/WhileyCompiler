@@ -1,3 +1,9 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// This software may be modified and distributed under the terms
+// of the BSD license.  See the LICENSE file for details.
+
 package wyc.commands;
 
 import java.io.File;
@@ -13,7 +19,7 @@ import wyil.lang.WyilFile;
 
 public class Decompile extends AbstractCommand<Decompile.Result> {
 	/**
-	 * Result kind for this command 
+	 * Result kind for this command
 	 *
 	 */
 	public enum Result {
@@ -21,25 +27,25 @@ public class Decompile extends AbstractCommand<Decompile.Result> {
 		ERRORS,
 		INTERNAL_FAILURE
 	}
-	
+
 	/**
 	 * The master project content type registry. This is needed for the build
 	 * system to determine the content type of files it finds on the file
 	 * system.
 	 */
 	private final Content.Registry registry;
-	
+
 	/**
 	 * Indicate whether or not to print out verbose information. That is,
 	 * include more details about the underlying bytecode structure.
 	 */
 	private boolean verbose;
-	
+
 	public Decompile(Content.Registry registry) {
 		super("verbose");
 		this.registry = registry;
 	}
-	
+
 	// =======================================================================
 	// Configuration
 	// =======================================================================
@@ -48,11 +54,11 @@ public class Decompile extends AbstractCommand<Decompile.Result> {
 	public String getDescription() {
 		return "Decompile one or more binary WyIL files";
 	}
-	
+
 	public String describeVerbose() {
 		return "Provide details about underlying bytecode structure";
 	}
-	
+
 	public void setVerbose() {
 		this.verbose = true;
 	}
@@ -68,7 +74,7 @@ public class Decompile extends AbstractCommand<Decompile.Result> {
 		for (String arg : args) {
 			delta.add(new File(arg));
 		}
-		
+
 		// FIXME: somehow, needing to use physical files at this point is
 		// rather cumbersome. It would be much better if the enclosing
 		// framework could handle this aspect for us.

@@ -1,27 +1,8 @@
 // Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
 // All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//    * Redistributions of source code must retain the above copyright
-//      notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above copyright
-//      notice, this list of conditions and the following disclaimer in the
-//      documentation and/or other materials provided with the distribution.
-//    * Neither the name of the <organization> nor the
-//      names of its contributors may be used to endorse or promote products
-//      derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// This software may be modified and distributed under the terms
+// of the BSD license.  See the LICENSE file for details.
 
 package wyc.io;
 
@@ -289,7 +270,7 @@ public class WhileyFileParser {
 
 		// Parse function or method parameters
 		List<Parameter> parameters = parseParameters(wf,scope);
-		
+
 		// Parse (optional) return type
 		List<Parameter> returns = Collections.EMPTY_LIST;
 
@@ -298,13 +279,13 @@ public class WhileyFileParser {
 			// environent and create a special one only for use within ensures
 			// clauses, since these are the only expressions which may refer to
 			// variables declared in the return type.
-			returns = parseOptionalParameters(wf,scope);		
-		} 
+			returns = parseOptionalParameters(wf,scope);
+		}
 
 		// Parse optional requires/ensures clauses
 		ArrayList<Expr> requires = new ArrayList<Expr>();
 		ArrayList<Expr> ensures = new ArrayList<Expr>();
-		
+
 		Token lookahead;
 		while ((lookahead = tryAndMatch(true, Requires, Ensures)) != null) {
 			switch (lookahead.kind) {
@@ -363,30 +344,30 @@ public class WhileyFileParser {
 			Token id = p.second();
 			scope.declareVariable(id);
 			parameters.add(wf.new Parameter(p.first(), id.text, sourceAttr(
-					pStart, index - 1)));			
+					pStart, index - 1)));
 		}
 		return parameters;
 	}
-	
+
 
 	public List<Parameter> parseOptionalParameters(WhileyFile wf, EnclosingScope scope) {
 		int next = skipWhiteSpace(index);
 		if(next < tokens.size() && tokens.get(next).kind == LeftBrace) {
 			return parseParameters(wf, scope);
-		} else {			
+		} else {
 			Parameter p = parseOptionalParameter(wf, scope);
 			ArrayList<Parameter> ps = new ArrayList<Parameter>();
 			ps.add(p);
 			return ps;
 		}
 	}
-	
+
 	public Parameter parseOptionalParameter(WhileyFile wf, EnclosingScope scope) {
 		int start = index;
 		boolean braced = false;
 		SyntacticType type;
 		String name;
-		if(tryAndMatch(true,LeftBrace) != null) {		
+		if(tryAndMatch(true,LeftBrace) != null) {
 			Pair<SyntacticType, Token> p = parseMixedType(scope);
 			type = p.first();
 			name = p.second().text;
@@ -397,8 +378,8 @@ public class WhileyFileParser {
 			name = null;
 		}
 		return wf.new Parameter(type, name, sourceAttr(start, index - 1));
-	}	
-	
+	}
+
 	/**
 	 * Parse a type declaration in a Whiley source file, which has the form:
 	 *
@@ -439,7 +420,7 @@ public class WhileyFileParser {
 		match(Is);
 		// Parse the type pattern
 		EnclosingScope scope = new EnclosingScope();
-		Parameter p = parseOptionalParameter(wf, scope);				
+		Parameter p = parseOptionalParameter(wf, scope);
 		ArrayList<Expr> invariant = new ArrayList<Expr>();
 		// Check whether or not there is an optional "where" clause.
 		while (tryAndMatch(true, Where) != null) {
@@ -530,8 +511,8 @@ public class WhileyFileParser {
 
 		// We must clone the environment here, in order to ensure variables
 		// declared within this block are properly scoped.
-		EnclosingScope blockScope = scope.newEnclosingScope(indent, isLoop);		
-		
+		EnclosingScope blockScope = scope.newEnclosingScope(indent, isLoop);
+
 		// Second, check that this is indeed the initial indentation for this
 		// block (i.e. that it is strictly greater than parent indent).
 		if (indent == null || indent.lessThanEq(scope.getIndent())) {
@@ -655,7 +636,7 @@ public class WhileyFileParser {
 	 * A headless statement is one which has no identifying keyword. The set of
 	 * headless statements include assignments, invocations, variable
 	 * declarations and named blocks.
-	 * 
+	 *
 	 * @param wf
 	 * @param scope
 	 *            The enclosing scope for this statement, which determines the
@@ -702,7 +683,7 @@ public class WhileyFileParser {
 				//
 				return parseAssignmentStatement(wf, scope);
 			} else if (tryAndMatch(true, Comma) != null) {
-				// Must be an multi-assignment 
+				// Must be an multi-assignment
 				index = start; // backtrack
 				//
 				return parseAssignmentStatement(wf, scope);
@@ -719,7 +700,7 @@ public class WhileyFileParser {
 		WhileyFile.Parameter decl = wf.new Parameter(type, name.text, sourceAttr(start, index - 1));
 		return parseVariableDeclaration(start, decl, wf, scope);
 	}
-	
+
 	/**
 	 * Parse a variable declaration statement which has the form:
 	 *
@@ -747,10 +728,10 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private Stmt.VariableDeclaration parseVariableDeclaration(int start,
-			Parameter parameter, WhileyFile wf, EnclosingScope scope) {		
+			Parameter parameter, WhileyFile wf, EnclosingScope scope) {
 
-		// Ensure at least one variable is defined by this pattern.		
-		// Check that declared variables are not already defined.		
+		// Ensure at least one variable is defined by this pattern.
+		// Check that declared variables are not already defined.
 		scope.checkNameAvailable(parameter);
 
 		// A variable declaration may optionally be assigned an initialiser
@@ -808,7 +789,7 @@ public class WhileyFileParser {
 		// a potentially cryptic error message will be given.
 		List<Expr> returns = Collections.EMPTY_LIST;
 		if (next < tokens.size() && tokens.get(next).kind != NewLine) {
-			returns = parseExpressions(wf, scope,false); 
+			returns = parseExpressions(wf, scope,false);
 		}
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
@@ -1228,11 +1209,11 @@ public class WhileyFileParser {
 		// First, determine the initial indentation of this block based on the
 		// first statement (or null if there is no statement).
 		Indent indent = getIndent();
-		
+
 		// We must create a new scope to ensure variables declared within this
-		// block are not visible in the enclosing scope.		
+		// block are not visible in the enclosing scope.
 		EnclosingScope caseScope = scope.newEnclosingScope(indent);
-		
+
 		// Second, check that this is indeed the initial indentation for this
 		// block (i.e. that it is strictly greater than parent indent).
 		if (indent == null || indent.lessThanEq(scope.getIndent())) {
@@ -1245,7 +1226,7 @@ public class WhileyFileParser {
 			// with the appropriate level of indent.
 			//
 			ArrayList<Stmt.Case> cases = new ArrayList<Stmt.Case>();
-			
+
 			Indent nextIndent;
 			while ((nextIndent = getIndent()) != null
 					&& indent.lessThanEq(nextIndent)) {
@@ -1270,14 +1251,14 @@ public class WhileyFileParser {
 	/**
 	 * Check whether we have a duplicate default statement, or a case which
 	 * occurs after a default statement (and, hence, is unreachable).
-	 * 
+	 *
 	 * @param cases
 	 */
 	private void checkForDuplicateDefault(List<Stmt.Case> cases) {
 		boolean hasDefault = false;
 		for(Stmt.Case c: cases) {
 			if(c.expr.size() > 0 && hasDefault) {
-				syntaxError(errorMessage(UNREACHABLE_CODE), c);					
+				syntaxError(errorMessage(UNREACHABLE_CODE), c);
 			} else if(c.expr.size() == 0 && hasDefault) {
 				syntaxError(errorMessage(DUPLICATE_DEFAULT_LABEL), c);
 			} else {
@@ -1391,9 +1372,9 @@ public class WhileyFileParser {
 	 */
 	private List<Expr.LVal> parseLVals(WhileyFile wf, EnclosingScope scope) {
 		int start = index;
-		ArrayList<Expr.LVal> elements = new ArrayList<Expr.LVal>();				
+		ArrayList<Expr.LVal> elements = new ArrayList<Expr.LVal>();
 		elements.add(parseLVal(index, wf, scope));
-		
+
 		// Check whether we have a multiple lvals or not
 		while (tryAndMatch(true, Comma) != null) {
 			// Add all expressions separated by a comma
@@ -1403,7 +1384,7 @@ public class WhileyFileParser {
 
 		return elements;
 	}
-	
+
 	private Expr.LVal parseLVal(int start, WhileyFile wf, EnclosingScope scope) {
 		return parseAccessLVal(start, wf, scope);
 	}
@@ -1501,11 +1482,11 @@ public class WhileyFileParser {
 			return null; // dead-code
 		}
 	}
-	
+
 	/**
 	 * Parse a "multi-expression"; that is, a sequence of one or more
 	 * expressions separated by comma's
-	 * 
+	 *
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -1542,7 +1523,7 @@ public class WhileyFileParser {
 		}
 		return returns;
 	}
-	
+
 	/**
 	 * Parse a unit expression, which has the form:
 	 *
@@ -1964,7 +1945,7 @@ public class WhileyFileParser {
 		match(LeftCurly);
 
 		// Parse one or more source variables / expressions
-		scope = scope.newEnclosingScope();		
+		scope = scope.newEnclosingScope();
 		List<Triple<String, Expr, Expr>> srcs = new ArrayList<Triple<String, Expr, Expr>>();
 		boolean firstTime = true;
 
@@ -1978,7 +1959,7 @@ public class WhileyFileParser {
 			match(In);
 			Expr lhs = parseAdditiveExpression(wf, scope, terminated);
 			match(DotDot);
-			Expr rhs = parseAdditiveExpression(wf, scope, terminated);			
+			Expr rhs = parseAdditiveExpression(wf, scope, terminated);
 			srcs.add(new Triple<String, Expr, Expr>(id.text, lhs, rhs));
 			scope.declareVariable(id);
 		} while (eventuallyMatch(VerticalBar) == null);
@@ -2036,7 +2017,7 @@ public class WhileyFileParser {
 
 		return lhs;
 	}
-	
+
 	/**
 	 * Parse a shift expression, which has the form:
 	 *
@@ -2257,13 +2238,13 @@ public class WhileyFileParser {
 		while ((token = tryAndMatchOnLine(LeftSquare)) != null
 				|| (token = tryAndMatch(terminated, Dot, MinusGreater)) != null) {
 			switch (token.kind) {
-			case LeftSquare:				
+			case LeftSquare:
 				// NOTE: expression guaranteed to be terminated by ']'.
 				Expr rhs = parseAdditiveExpression(wf, scope, true);
 				// This is a plain old array access expression
 				match(RightSquare);
 				lhs = new Expr.IndexOf(lhs, rhs, sourceAttr(start,
-							index - 1));				
+							index - 1));
 				break;
 			case MinusGreater:
 				lhs = new Expr.Dereference(lhs, sourceAttr(start, index - 1));
@@ -2671,7 +2652,7 @@ public class WhileyFileParser {
 	 *
 	 * <pre>
 	 * ArrayExpr ::= '[' [ Expr (',' Expr)+ ] ']'
-	 *             | '[' Expr ';' Expr ']' 
+	 *             | '[' Expr ';' Expr ']'
 	 * </pre>
 	 *
 	 * @param wf
@@ -2706,18 +2687,18 @@ public class WhileyFileParser {
 			// this is an array generator
 			index = start;
 			return parseArrayGeneratorExpression(wf, scope,terminated);
-		} else {		
+		} else {
 			// this is an array initialiser
 			index = start;
 			return parseArrayInitialiserExpression(wf, scope,terminated);
 		}
 	}
-	
+
 	/**
 	 * Parse an array initialiser expression, which is of the form:
 	 *
 	 * <pre>
-	 * ArrayInitialiserExpr ::= '[' [ Expr (',' Expr)+ ] ']' 
+	 * ArrayInitialiserExpr ::= '[' [ Expr (',' Expr)+ ] ']'
 	 * </pre>
 	 *
 	 * @param wf
@@ -2749,7 +2730,7 @@ public class WhileyFileParser {
 		ArrayList<Expr> exprs = new ArrayList<Expr>();
 
 		boolean firstTime = true;
-		do {		
+		do {
 			if (!firstTime) {
 				match(Comma);
 			}
@@ -2770,7 +2751,7 @@ public class WhileyFileParser {
 	 * Parse an array generator expression, which is of the form:
 	 *
 	 * <pre>
-	 * ArrayGeneratorExpr ::= '[' Expr ';' Expr ']' 
+	 * ArrayGeneratorExpr ::= '[' Expr ';' Expr ']'
 	 * </pre>
 	 *
 	 * @param wf
@@ -2805,7 +2786,7 @@ public class WhileyFileParser {
 		match(RightSquare);
 		return new Expr.ArrayGenerator(element,count,sourceAttr(start, index - 1));
 	}
-	
+
 	/**
 	 * Parse a record constructor, which is of the form:
 	 *
@@ -3498,7 +3479,7 @@ public class WhileyFileParser {
 				result |= mustParseAsType(element);
 			}
 			return result;
-		} else if (type instanceof SyntacticType.Array) {			
+		} else if (type instanceof SyntacticType.Array) {
 			return true;
 		} else if (type instanceof SyntacticType.Negation) {
 			SyntacticType.Negation tt = (SyntacticType.Negation) type;
@@ -3686,15 +3667,15 @@ public class WhileyFileParser {
 	private SyntacticType parseArrayType(EnclosingScope scope) {
 		int start = index;
 		SyntacticType element = parseBaseType(scope);
-		
+
 		while (tryAndMatch(true, LeftSquare) != null) {
 			match(RightSquare);
 			element = new SyntacticType.Array(element, sourceAttr(start, index - 1));
 		}
-		
+
 		return element;
 	}
-	
+
 	private SyntacticType parseBaseType(EnclosingScope scope) {
 		checkNotEof();
 		int start = index;
@@ -3789,7 +3770,7 @@ public class WhileyFileParser {
 
 	/**
 	 * Parse a currently declared lifetime.
-	 * 
+	 *
 	 * @return the matched lifetime name
 	 */
 	private String parseLifetime(EnclosingScope scope, boolean terminated) {
@@ -3942,7 +3923,7 @@ public class WhileyFileParser {
 			// Methods have an optional return type
 			// Third, parse the return type
 			returnTypes = parseOptionalParameterTypes(scope);
-		} 
+		}
 
 		// Done
 		if (isFunction) {
@@ -3951,7 +3932,7 @@ public class WhileyFileParser {
 			return new SyntacticType.Method(returnTypes, paramTypes, contextLifetimes,
 					lifetimeParameters, sourceAttr(start, index - 1));
 		}
-	}	
+	}
 
 	/**
 	 * Parse a potentially mixed-type, which is of the form:
@@ -3991,7 +3972,7 @@ public class WhileyFileParser {
 
 				List<SyntacticType> paramTypes = parseParameterTypes(scope);
 				List<SyntacticType> returnTypes = Collections.emptyList();
-				
+
 				if (lookahead.kind == Function) {
 					// Functions require a return type (since otherwise they are
 					// just nops)
@@ -4007,7 +3988,7 @@ public class WhileyFileParser {
 					// disambiguate
 					// this.
 					returnTypes = parseOptionalParameterTypes(scope);
-				} 
+				}
 
 				// Done
 				SyntacticType type;
@@ -4042,9 +4023,9 @@ public class WhileyFileParser {
 			ArrayList<SyntacticType> rs = new ArrayList<SyntacticType>();
 			rs.add(t);
 			return rs;
-		}		
+		}
 	}
-	
+
 	public List<SyntacticType> parseParameterTypes(EnclosingScope scope) {
 		ArrayList<SyntacticType> paramTypes = new ArrayList<SyntacticType>();
 		match(LeftBrace);
@@ -4057,7 +4038,7 @@ public class WhileyFileParser {
 			firstTime = false;
 			paramTypes.add(parseType(scope));
 		}
-		
+
 		return paramTypes;
 	}
 
@@ -4284,7 +4265,7 @@ public class WhileyFileParser {
 	/**
 	 * Check whether the current index is, after skipping all line spaces, at
 	 * the end of a line. This method does not change the state!
-	 * 
+	 *
 	 * @return whether index is at end of line
 	 */
 	private boolean isAtEOL() {
@@ -4656,20 +4637,20 @@ public class WhileyFileParser {
 	 * code for parsing indentation.
 	 */
 	private static final Indent ROOT_INDENT = new Indent("", 0);
-	
+
 	/**
 	 * The enclosing scope provides contextual information about the enclosing
 	 * scope for the given statement or expression being parsed.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
 	private class EnclosingScope {
 		/**
 		 * The indent level of the enclosing scope.
-		 */		
+		 */
 		private final Indent indent;
-		
+
 		/**
 		 * The set of declared variables in the enclosing scope.
 		 */
@@ -4687,14 +4668,14 @@ public class WhileyFileParser {
 		 * an outer scope.
 		 */
 		private final HashSet<String> unavailableNames;
-		
+
 		/**
 		 * A simple flag that tells us whether or not we are currently within a
 		 * loop. This is necessary to stop break or continue statements which
 		 * are written outside of a loop.
 		 */
 		private final boolean inLoop;
-		
+
 		public EnclosingScope() {
 			this.indent = ROOT_INDENT;
 			this.variables = new HashSet<String>();
@@ -4706,7 +4687,7 @@ public class WhileyFileParser {
 			this.unavailableNames.add("*");
 			this.unavailableNames.add("this");
 		}
-		
+
 		private EnclosingScope(Indent indent, Set<String> variables, Set<String> lifetimes,
 				Set<String> unavailableNames, boolean inLoop) {
 			this.indent = indent;
@@ -4715,11 +4696,11 @@ public class WhileyFileParser {
 			this.unavailableNames = new HashSet<String>(unavailableNames);
 			this.inLoop = inLoop;
 		}
-		
+
 		public Indent getIndent() {
 			return indent;
 		}
-		
+
 		public boolean isInLoop() {
 			return inLoop;
 		}
@@ -4727,7 +4708,7 @@ public class WhileyFileParser {
 		/**
 		 * Check whether a given name corresponds to a declared variable in this
 		 * scope.
-		 * 
+		 *
 		 * @param name
 		 * @return
 		 */
@@ -4738,7 +4719,7 @@ public class WhileyFileParser {
 		/**
 		 * Check whether a given name corresponds to a declared lifetime in this
 		 * scope.
-		 * 
+		 *
 		 * @param name
 		 * @return
 		 */
@@ -4748,7 +4729,7 @@ public class WhileyFileParser {
 
 		/**
 		 * Checks that the given identifier is a declared lifetime.
-		 * 
+		 *
 		 * @param id
 		 * @throws SyntaxError
 		 *             if the given identifier is not a lifetime
@@ -4761,7 +4742,7 @@ public class WhileyFileParser {
 
 		/**
 		 * Check whether a given name is available, i.e. can be declared.
-		 * 
+		 *
 		 * @param id
 		 *            identifier that holds the name to check
 		 * @throws SyntaxError
@@ -4776,7 +4757,7 @@ public class WhileyFileParser {
 
 		/**
 		 * Check whether a given name is available, i.e. can be declared.
-		 * 
+		 *
 		 * @param p
 		 *            parameter that holds the name to check
 		 * @throws SyntaxError
@@ -4791,7 +4772,7 @@ public class WhileyFileParser {
 
 		/**
 		 * Declare a new variable in this scope.
-		 * 
+		 *
 		 * @param id
 		 *            identifier that holds the name to declare
 		 * @throws SyntaxError
@@ -4807,7 +4788,7 @@ public class WhileyFileParser {
 
 		/**
 		 * Declare a new variable in this scope.
-		 * 
+		 *
 		 * @param p
 		 *            parameter that holds the name to declare
 		 * @throws SyntaxError
@@ -4823,7 +4804,7 @@ public class WhileyFileParser {
 
 		/**
 		 * Declare a new lifetime in this scope.
-		 * 
+		 *
 		 * @param id
 		 *            identifier that holds the name to declare
 		 * @throws SyntaxError
@@ -4848,38 +4829,38 @@ public class WhileyFileParser {
 		 * Create a new enclosing scope in which variables can be declared which
 		 * are remain invisible to this enclosing scope. All variables declared
 		 * in this enclosing scope remain declared in the new enclosing scope.
-		 * 
+		 *
 		 * @param indent
 		 *            the indent level for the new scope
-		 * 
+		 *
 		 * @return
 		 */
 		public EnclosingScope newEnclosingScope() {
 			return new EnclosingScope(indent,variables,lifetimes,unavailableNames,inLoop);
 		}
-		
+
 		/**
 		 * Create a new enclosing scope in which variables can be declared which
 		 * are remain invisible to this enclosing scope. All variables declared
 		 * in this enclosing scope remain declared in the new enclosing scope.
-		 * 
+		 *
 		 * @param indent
 		 *            the indent level for the new scope
-		 * 
+		 *
 		 * @return
 		 */
 		public EnclosingScope newEnclosingScope(Indent indent) {
 			return new EnclosingScope(indent,variables,lifetimes,unavailableNames,inLoop);
 		}
-		
+
 		/**
 		 * Create a new enclosing scope in which variables can be declared which
 		 * are remain invisible to this enclosing scope. All variables declared
 		 * in this enclosing scope remain declared in the new enclosing scope.
-		 * 
+		 *
 		 * @param indent
 		 *            the indent level for the new scope
-		 * 
+		 *
 		 * @return
 		 */
 		public EnclosingScope newEnclosingScope(Indent indent, boolean inLoop) {
@@ -4890,14 +4871,14 @@ public class WhileyFileParser {
 		 * Create a new enclosing scope in which variables can be declared which
 		 * are remain invisible to this enclosing scope. All variables declared
 		 * in this enclosing scope remain declared in the new enclosing scope.
-		 * 
+		 *
 		 * @param indent
 		 *            the indent level for the new scope
-		 * 
+		 *
 		 * @return
 		 */
 		public EnclosingScope newEnclosingScope(Set<String> contextLifetimes) {
 			return new EnclosingScope(indent,variables,contextLifetimes,unavailableNames,false);
 		}
-	}	
+	}
 }
