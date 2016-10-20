@@ -119,7 +119,11 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	}
 
 	public void setVerbose() {
-		verbose = true;
+		setVerbose(true);
+	}
+
+	public void setVerbose(boolean b) {
+		verbose = b;
 	}
 
 	public String describeBrief() {

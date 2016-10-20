@@ -94,18 +94,23 @@ public class AntTask extends MatchingTask {
 	// =======================================================================
 
 	public void setWhileypath(String dirs) throws IOException {
+		// FIXME: could use org.apache.tools.ant.types.Path path here, as ant
+		// autoconverts
 		command.setWhileypath(dirs);
 	}
 
 	public void setWhileydir(String dir) throws IOException {
+		// FIXME: could use File here, as ant autoconverts
 		command.setWhileydir(dir);
 	}
 
 	public void setWyildir(String dir) throws IOException {
+		// FIXME: could use File here, as ant autoconverts
 		command.setWyildir(dir);
 	}
 
 	public void setWyaldir(String dir) throws IOException {
+		// FIXME: could use File here, as ant autoconverts
 		command.setWyaldir(dir);
 	}
 
@@ -113,8 +118,8 @@ public class AntTask extends MatchingTask {
 		command.setVerify();
 	}
 
-	public void setVerbose() {
-		command.setVerbose();
+	public void setVerbose(boolean b) {
+		command.setVerbose(b);
 	}
 
 	// =======================================================================
