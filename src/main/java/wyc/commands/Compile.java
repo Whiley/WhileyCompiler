@@ -166,7 +166,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			// Determine source files to build
 			List<Path.Entry<WhileyFile>> entries = whileydir.find(delta, WhileyFile.ContentType);
 			// Execute the build over the set of files requested
-			return execute(entries);
+			return compile(entries);
 		} catch(RuntimeException e) {
 			throw e;
 		} catch (Exception e) {
@@ -176,6 +176,22 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	}
 
 	public Result execute(List<Path.Entry<WhileyFile>> entries) {
+		try {
+			finaliseConfiguration();
+			return compile(entries);
+		} catch (RuntimeException e) {
+			throw e;
+		} catch (Exception e) {
+			// FIXME: this is a problem because it is swallowing exceptions!!
+			return Result.INTERNAL_FAILURE;
+		}
+	}
+
+	// =======================================================================
+	// Helpers
+	// =======================================================================
+
+	private Result compile(List<Path.Entry<WhileyFile>> entries) {
 		// Initialise Project
 		try {
 			StdProject project = initialiseProject();
@@ -203,12 +219,6 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			return Result.INTERNAL_FAILURE;
 		}
 	}
-
-	// =======================================================================
-	// Helpers
-	// =======================================================================
-
-
 
 	/**
 	 * Add build rules necessary for compiling whiley source files into binary

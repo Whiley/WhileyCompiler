@@ -95,7 +95,7 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 	public void setWhileypath(String paths) throws IOException {
 		whileypath.clear();
 		// TODO: this should be pushed into AbstractConfigurable
-		String[] roots = paths.split(File.pathSeparator);
+		String[] roots = paths.split(":");
 		for (String root : roots) {
 			try {
 				if (root.endsWith(".jar")) {
