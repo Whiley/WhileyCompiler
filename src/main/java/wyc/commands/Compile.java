@@ -119,7 +119,11 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	}
 
 	public void setVerbose() {
-		verbose = true;
+		setVerbose(true);
+	}
+
+	public void setVerbose(boolean b) {
+		verbose = b;
 	}
 
 	public String describeBrief() {
@@ -157,18 +161,12 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 					return Result.ERRORS;
 				}
 			}
-
 			// Finalise the configuration before continuing.
 			finaliseConfiguration();
-			// =====================================================================
-
 			// Determine source files to build
-			// FIXME: there is a bug here because whileydir is not configured at
-			// this point. Furthermore, it's not compiling files requested on
-			// the command line!!
 			List<Path.Entry<WhileyFile>> entries = whileydir.find(delta, WhileyFile.ContentType);
 			// Execute the build over the set of files requested
-			return execute(entries);
+			return compile(entries);
 		} catch(RuntimeException e) {
 			throw e;
 		} catch (Exception e) {
@@ -178,6 +176,22 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	}
 
 	public Result execute(List<Path.Entry<WhileyFile>> entries) {
+		try {
+			finaliseConfiguration();
+			return compile(entries);
+		} catch (RuntimeException e) {
+			throw e;
+		} catch (Exception e) {
+			// FIXME: this is a problem because it is swallowing exceptions!!
+			return Result.INTERNAL_FAILURE;
+		}
+	}
+
+	// =======================================================================
+	// Helpers
+	// =======================================================================
+
+	private Result compile(List<Path.Entry<WhileyFile>> entries) {
 		// Initialise Project
 		try {
 			StdProject project = initialiseProject();
@@ -205,12 +219,6 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			return Result.INTERNAL_FAILURE;
 		}
 	}
-
-	// =======================================================================
-	// Helpers
-	// =======================================================================
-
-
 
 	/**
 	 * Add build rules necessary for compiling whiley source files into binary
