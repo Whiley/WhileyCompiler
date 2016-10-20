@@ -47,7 +47,7 @@ public class Run extends AbstractProjectCommand<Run.Result> {
 	public Result execute(String... args) {
 		if (args.length < 2) {
 			// FIXME: this is broken
-			System.out.println("usage:  run <wyilfile> <method>");
+			System.out.println("usage: run <wyilfile> <method>");
 			return Result.ERRORS;
 		}
 		try {

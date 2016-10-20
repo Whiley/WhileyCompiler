@@ -162,11 +162,11 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 				}
 			}
 			// Finalise the configuration before continuing.
-			finaliseConfiguration();
+			StdProject project = initialiseProject();
 			// Determine source files to build
 			List<Path.Entry<WhileyFile>> entries = whileydir.find(delta, WhileyFile.ContentType);
 			// Execute the build over the set of files requested
-			return compile(entries);
+			return compile(project,entries);
 		} catch(RuntimeException e) {
 			throw e;
 		} catch (Exception e) {
@@ -177,8 +177,8 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 
 	public Result execute(List<Path.Entry<WhileyFile>> entries) {
 		try {
-			finaliseConfiguration();
-			return compile(entries);
+			StdProject project = initialiseProject();
+			return compile(project,entries);
 		} catch (RuntimeException e) {
 			throw e;
 		} catch (Exception e) {
@@ -191,10 +191,9 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	// Helpers
 	// =======================================================================
 
-	private Result compile(List<Path.Entry<WhileyFile>> entries) {
+	private Result compile(StdProject project, List<Path.Entry<WhileyFile>> entries) {
 		// Initialise Project
 		try {
-			StdProject project = initialiseProject();
 			addCompilationBuildRules(project);
 			if (verify) {
 				addVerificationBuildRules(project);
