@@ -3,12 +3,16 @@
 //
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
+package wyc.util;
 
-package wyc.testing;
-
-import static org.junit.Assert.fail;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -17,26 +21,17 @@ import java.util.Comparator;
 import wybs.lang.Build;
 import wybs.lang.NameID;
 import wybs.util.StdProject;
+import wyc.Activator;
+import wyc.commands.Compile;
+import wyc.commands.Run;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
-import wyfs.util.Trie;
-import wyc.Activator;
-import wyc.commands.Compile;
-import wyil.io.WyilFilePrinter;
-import wyil.io.WyilFileReader;
 import wyil.lang.Type;
-import wyil.lang.WyilFile;
 import wyil.util.interpreter.Interpreter;
 
-/**
- * Provides some simple helper functions used by all test harnesses.
- *
- * @author David J. Pearce
- *
- */
 public class TestUtils {
 
 	/**
@@ -120,71 +115,10 @@ public class TestUtils {
 	 * @throws IOException
 	 */
 	public static void execWyil(String wyilDir, Path.ID id) throws IOException {
-		Type.Method sig = (Type.Method) Type.Method(new Type[0], new Type[0]);
-		NameID name = new NameID(id,"test");
-		Build.Project project = initialiseProject(wyilDir);
-		new Interpreter(project,null).execute(name,sig);
-	}
-
-	private static Build.Project initialiseProject(String wyilDir) throws IOException {
-		Content.Registry registry = new Activator.Registry();
-		DirectoryRoot wyilRoot = new DirectoryRoot(wyilDir,registry);
-		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
-		roots.add(wyilRoot);
-		return new StdProject(roots);
-	}
-
-	/**
-	 * Execute a given class file using the "java" command, and return all
-	 * output written to stdout. In the case of some kind of failure, write the
-	 * generated stderr stream to this processes stdout.
-	 *
-	 * @param classPath
-	 *            Class path to use when executing Java code. Note, directories
-	 *            can always be safely separated with '/', and path separated
-	 *            with ':'.
-	 * @param srcDir
-	 *            Path to root of package containing class. Note, directories
-	 *            can always be safely separated with '/'.
-	 * @param className
-	 *            Name of class to execute
-	 * @param args
-	 *            Arguments to supply on the command-line.
-	 * @return All output generated from the class that was written to stdout.
-	 */
-	public static String execClass(String classPath, String srcDir, String className, String... args) {
-		try {
-			classPath = classPath.replace('/', File.separatorChar);
-			classPath = classPath.replace(':', File.pathSeparatorChar);
-			srcDir = srcDir.replace('/', File.separatorChar);
-			String tmp = "java -cp " + classPath + " " + className;
-			for (String arg : args) {
-				tmp += " " + arg;
-			}
-			Process p = Runtime.getRuntime().exec(tmp, null, new File(srcDir));
-
-			StringBuffer syserr = new StringBuffer();
-			StringBuffer sysout = new StringBuffer();
-			new StreamGrabber(p.getErrorStream(), syserr);
-			new StreamGrabber(p.getInputStream(), sysout);
-			int exitCode = p.waitFor();
-			if (exitCode != 0) {
-				System.err
-						.println("============================================================");
-				System.err.println(className);
-				System.err
-						.println("============================================================");
-				System.err.println(syserr);
-				return null;
-			} else {
-				return sysout.toString();
-			}
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			fail("Problem running compiled test");
-		}
-
-		return null;
+		Content.Registry registry = new wyc.Activator.Registry();
+		Run cmd = new Run(registry,Logger.NULL);
+		cmd.setWyildir(wyilDir);
+		cmd.execute(id.toString(),"test");
 	}
 
 	/**
@@ -197,42 +131,37 @@ public class TestUtils {
 	 * @param referenceFile
 	 *            The full path to the reference file. This should use the
 	 *            appropriate separator char for the host operating system.
+	 * @throws IOException
 	 */
-	public static void compare(String output, String referenceFile) {
-		try {
-			BufferedReader outReader = new BufferedReader(new StringReader(
-					output));
-			BufferedReader refReader = new BufferedReader(new FileReader(
-					new File(referenceFile)));
+	public static boolean compare(String output, String referenceFile) throws IOException {
+		BufferedReader outReader = new BufferedReader(new StringReader(output));
+		BufferedReader refReader = new BufferedReader(new FileReader(new File(referenceFile)));
 
-			boolean match = true;
-			while (true) {
-				String l1 = refReader.readLine();
-				String l2 = outReader.readLine();
-				if (l1 != null && l2 != null) {
-					if (!l1.equals(l2)) {
-						System.err.println(" < " + l1);
-						System.err.println(" > " + l2);
-						match = false;
-					}
-				} else if (l1 != null) {
+		boolean match = true;
+		while (true) {
+			String l1 = refReader.readLine();
+			String l2 = outReader.readLine();
+			if (l1 != null && l2 != null) {
+				if (!l1.equals(l2)) {
 					System.err.println(" < " + l1);
-					match = false;
-				} else if (l2 != null) {
 					System.err.println(" > " + l2);
 					match = false;
-				} else {
-					break;
 				}
+			} else if (l1 != null) {
+				System.err.println(" < " + l1);
+				match = false;
+			} else if (l2 != null) {
+				System.err.println(" > " + l2);
+				match = false;
+			} else {
+				break;
 			}
-			if (!match) {
-				System.err.println();
-				fail("Output doesn't match reference");
-			}
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			fail();
 		}
+		if (!match) {
+			System.err.println();
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -249,7 +178,7 @@ public class TestUtils {
 		private InputStream input;
 		private StringBuffer buffer;
 
-		StreamGrabber(InputStream input, StringBuffer buffer) {
+		public StreamGrabber(InputStream input, StringBuffer buffer) {
 			this.input = input;
 			this.buffer = buffer;
 			start();

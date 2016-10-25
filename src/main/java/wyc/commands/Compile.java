@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import wybs.lang.SyntaxError;
+import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
 import wyc.builder.CompileTask;
@@ -213,6 +214,8 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			wyildir.flush();
 			//
 			return Result.SUCCESS;
+		} catch(InternalFailure e) {
+			throw e;
 		} catch (SyntaxError e) {
 			e.outputSourceError(syserr, brief);
 			if (verbose) {
@@ -221,7 +224,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			return Result.ERRORS;
 		} catch (Exception e) {
 			// now what?
-			return Result.INTERNAL_FAILURE;
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -231,7 +234,16 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	 *
 	 * @param project
 	 */
-	private void addCompilationBuildRules(StdProject project) {
+	protected void addCompilationBuildRules(StdProject project) {
+		addWhiley2WyilBuildRule(project);
+	}
+
+	/**
+	 * Add the rule for compiling Whiley source files into WyIL files.
+	 *
+	 * @param project
+	 */
+	protected void addWhiley2WyilBuildRule(StdProject project) {
 		// Configure build rules for normal compilation
 		Content.Filter<WhileyFile> whileyIncludes = Content.filter("**", WhileyFile.ContentType);
 		Content.Filter<WhileyFile> whileyExcludes = null;
@@ -247,7 +259,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	 *
 	 * @param project
 	 */
-	private void addVerificationBuildRules(StdProject project) {
+	protected void addVerificationBuildRules(StdProject project) {
 		// Configure build rules for verification (if applicable)
 		Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
 		Content.Filter<WyilFile> wyilExcludes = null;

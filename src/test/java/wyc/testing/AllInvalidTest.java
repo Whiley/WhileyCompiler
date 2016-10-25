@@ -20,6 +20,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import wyc.commands.Compile;
+import wyc.util.TestUtils;
 import wycc.util.Pair;
 
 /**
@@ -160,7 +161,9 @@ public class AllInvalidTest {
 //			} catch(Exception e) {}
 
 	 		// Third, compare the output!
-	 		TestUtils.compare(output,sampleOutputFile);
+			if(!TestUtils.compare(output,sampleOutputFile)) {
+				fail("Output does not match reference");
+			}
 		}
 	}
 
