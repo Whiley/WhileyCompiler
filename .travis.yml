@@ -11,4 +11,5 @@ install: true
 #
 script:
     - touch running_on_travis
-    - mvn test
+    - ant test
+
