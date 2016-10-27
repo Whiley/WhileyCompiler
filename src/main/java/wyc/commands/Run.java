@@ -1,3 +1,9 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// This software may be modified and distributed under the terms
+// of the BSD license.  See the LICENSE file for details.
+
 package wyc.commands;
 
 import java.io.IOException;
@@ -47,7 +53,7 @@ public class Run extends AbstractProjectCommand<Run.Result> {
 	public Result execute(String... args) {
 		if (args.length < 2) {
 			// FIXME: this is broken
-			System.out.println("usage:  run <wyilfile> <method>");
+			System.out.println("usage: run <wyilfile> <method>");
 			return Result.ERRORS;
 		}
 		try {

@@ -1,27 +1,8 @@
-// Copyright (c) 2011, David J. Pearce (David J. Pearce@ecs.vuw.ac.nz)
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
 // All rights reserved.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//    * Redistributions of source code must retain the above copyright
-//      notice, this list of conditions and the following disclaimer.
-//    * Redistributions in binary form must reproduce the above copyright
-//      notice, this list of conditions and the following disclaimer in the
-//      documentation and/or other materials provided with the distribution.
-//    * Neither the name of the <organization> nor the
-//      names of its contributors may be used to endorse or promote products
-//      derived from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// This software may be modified and distributed under the terms
+// of the BSD license.  See the LICENSE file for details.
 
 package wyil.lang;
 
@@ -47,7 +28,7 @@ import wybs.lang.NameID;
  * The opcode is currently always 1 byte, whilst the remainder varies between
  * instructions. The opcode itself splits into two components:
  * </p>
- * 
+ *
  * <pre>
  *  7   6 5         0
  * +-----+-----------+
@@ -58,11 +39,11 @@ import wybs.lang.NameID;
  * Here, <i>operation</i> identifies the bytecode operation (e.g. add, invoke,
  * etc), whilst <i>fmt</i> identifies the bytecode format.
  * </p>
- * 
+ *
  * @author David J. Pearce
  */
 public interface Bytecode {
-	
+
 	/**
 	 * Return the top-level operands in this bytecode.
 	 *
@@ -72,14 +53,14 @@ public interface Bytecode {
 
 	/**
 	 * Get the number of operands in this bytecode
-	 * 
+	 *
 	 * @return
 	 */
 	public int numberOfOperands();
-	
+
 	/**
 	 * Return the ith top-level operand in this bytecode.
-	 * 
+	 *
 	 * @param i
 	 * @return
 	 */
@@ -87,14 +68,14 @@ public interface Bytecode {
 
 	/**
 	 * Get the number of operand groups in this bytecode
-	 * 
+	 *
 	 * @return
 	 */
 	public int numberOfOperandGroups();
 
 	/**
 	 * Get the ith operand group in this bytecode
-	 * 
+	 *
 	 * @param i
 	 * @return
 	 */
@@ -102,11 +83,11 @@ public interface Bytecode {
 
 	/**
 	 * Return the opcode value of this bytecode.
-	 * 
+	 *
 	 * @return
 	 */
 	public int getOpcode();
-	
+
 	// ===============================================================
 	// Bytecode Expressions
 	// ===============================================================
@@ -114,19 +95,19 @@ public interface Bytecode {
 	/**
 	 * Represents the class of bytecodes which correspond to expressions in the
 	 * source language.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
 	public interface Expr extends Bytecode {
-		
+
 	}
 
 	/**
 	 * <p>
 	 * A convert bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+---------+
 	 * | opcode | operand |
@@ -142,7 +123,7 @@ public interface Bytecode {
 	 * <code>is</code> operator, we must convert its value into a value of the
 	 * new type.
 	 * </p>
-	 * 
+	 *
 	 * <p>
 	 * <b>NOTE:</b> In many cases, this bytecode may correspond to a nop on the
 	 * hardware. Consider converting from <code>any[]</code> to <code>any</code>
@@ -162,6 +143,7 @@ public interface Bytecode {
 			return getOperand(0);
 		}
 
+		@Override
 		public int getOpcode() {
 			return OPCODE_convert;
 		}
@@ -176,13 +158,13 @@ public interface Bytecode {
 	 * <p>
 	 * A constant bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+----------+
 	 * | opcode | constant |
 	 * +--------+----------+
 	 * </pre>
-	 * 
+	 *
 	 * Here, constant represents a value, such as an <i>integer</i>,
 	 * <i>array</i>, etc.
 	 *
@@ -196,6 +178,7 @@ public interface Bytecode {
 			this.constant = constant;
 		}
 
+		@Override
 		public int getOpcode() {
 			return OPCODE_const;
 		}
@@ -228,18 +211,18 @@ public interface Bytecode {
 	 * <p>
 	 * A field load bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+---------+-----------+
 	 * | opcode | operand | fieldName |
 	 * +--------+---------+-----------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * The bytecode reads the field of the given name out of the record value
 	 * returned by the operand
 	 * </p>
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -254,6 +237,7 @@ public interface Bytecode {
 			this.field = field;
 		}
 
+		@Override
 		public int getOpcode() {
 			return OPCODE_fieldload;
 		}
@@ -290,13 +274,13 @@ public interface Bytecode {
 	 * <p>
 	 * A lambda bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+------+-------------+---------------+
 	 * | opcode | body | parameter[] | environment[] |
 	 * +--------+------+-------------+---------------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, the body operand identifies an expression which constitutes the
 	 * body of this lambda. The parameters are those variables which are
@@ -309,7 +293,7 @@ public interface Bytecode {
 
 		/**
 		 * Create a new lambda bytecode
-		 * 
+		 *
 		 * @param type
 		 *            The type of the resulting lambda.
 		 * @param body
@@ -327,6 +311,7 @@ public interface Bytecode {
 			this.type = type;
 		}
 
+		@Override
 		public int getOpcode() {
 			return OPCODE_lambda;
 		}
@@ -374,149 +359,178 @@ public interface Bytecode {
 	 *
 	 */
 	public enum OperatorKind {
-		// Unary		
+		// Unary
 		NEG(OPCODE_neg) {
+			@Override
 			public String toString() {
 				return "neg";
 			}
 		},
 		NOT(OPCODE_logicalnot) {
+			@Override
 			public String toString() {
 				return "not";
 			}
 		},
 		BITWISEINVERT(OPCODE_bitwiseinvert) {
+			@Override
 			public String toString() {
 				return "invert";
 			}
 		},
 		DEREFERENCE(OPCODE_dereference) {
+			@Override
 			public String toString() {
 				return "deref";
 			}
 		},
 		ARRAYLENGTH(OPCODE_arraylength) {
+			@Override
 			public String toString() {
 				return "arrlen";
 			}
 		},
 		// Binary
 		ADD(OPCODE_add) {
+			@Override
 			public String toString() {
 				return "add";
 			}
 		},
 		SUB(OPCODE_sub) {
+			@Override
 			public String toString() {
 				return "sub";
 			}
 		},
 		MUL(OPCODE_mul) {
+			@Override
 			public String toString() {
 				return "mul";
 			}
 		},
 		DIV(OPCODE_div) {
+			@Override
 			public String toString() {
 				return "div";
 			}
 		},
 		REM(OPCODE_rem) {
+			@Override
 			public String toString() {
 				return "rem";
 			}
 		},
 		EQ(OPCODE_eq) {
+			@Override
 			public String toString() {
 				return "eq";
 			}
 		},
 		NEQ(OPCODE_ne) {
+			@Override
 			public String toString() {
 				return "neq";
 			}
 		},
 		LT(OPCODE_lt) {
+			@Override
 			public String toString() {
 				return "lt";
 			}
 		},
 		LTEQ(OPCODE_le) {
+			@Override
 			public String toString() {
 				return "lteq";
 			}
 		},
 		GT(OPCODE_gt) {
+			@Override
 			public String toString() {
 				return "gt";
 			}
 		},
 		GTEQ(OPCODE_ge) {
+			@Override
 			public String toString() {
 				return "gteq";
 			}
 		},
 		AND(OPCODE_logicaland) {
+			@Override
 			public String toString() {
 				return "land";
 			}
 		},
 		OR(OPCODE_logicalor) {
+			@Override
 			public String toString() {
 				return "lor";
 			}
 		},
 		BITWISEOR(OPCODE_bitwiseor) {
+			@Override
 			public String toString() {
 				return "bor";
 			}
 		},
 		BITWISEXOR(OPCODE_bitwisexor) {
+			@Override
 			public String toString() {
 				return "bxor";
 			}
 		},
 		BITWISEAND(OPCODE_bitwiseand) {
+			@Override
 			public String toString() {
 				return "band";
 			}
 		},
 		LEFTSHIFT(OPCODE_shl) {
+			@Override
 			public String toString() {
 				return "bshl";
 			}
 		},
 		RIGHTSHIFT(OPCODE_shr) {
+			@Override
 			public String toString() {
 				return "bshr";
 			}
 		},
 		ARRAYINDEX(OPCODE_arrayindex) {
+			@Override
 			public String toString() {
 				return "arridx";
 			}
 		},
 		ARRAYGENERATOR(OPCODE_arraygen) {
+			@Override
 			public String toString() {
 				return "arrgen";
 			}
 		},
 		ARRAYCONSTRUCTOR(OPCODE_array) {
+			@Override
 			public String toString() {
 				return "arrinit";
 			}
 		},
 		RECORDCONSTRUCTOR(OPCODE_record) {
+			@Override
 			public String toString() {
 				return "recinit";
 			}
 		},
 		IS(OPCODE_is) {
+			@Override
 			public String toString() {
 				return "istype";
 			}
 		},
 		NEW(OPCODE_newobject) {
+			@Override
 			public String toString() {
 				return "new";
 			}
@@ -532,13 +546,13 @@ public interface Bytecode {
 	 * <p>
 	 * An operator bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+-----------+
 	 * | opcode | operand[] |
 	 * +--------+-----------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, the operand array identifies one or more operands in which this
 	 * operator operators.  The operator produces exactly one value.
@@ -564,6 +578,7 @@ public interface Bytecode {
 			return kind;
 		}
 
+		@Override
 		public String toString() {
 			return kind() + " " + Util.arrayToString(getOperands());
 		}
@@ -582,13 +597,13 @@ public interface Bytecode {
 	 * <p>
 	 * A quantifier bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+-----------+---------+-----+---------+
 	 * | opcode | condition | range[] | ... | range[] |
 	 * +--------+-----------+---------+-----+---------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, the condition operand identifies an expression which the quantifier
 	 * is asserting over the given ranges. The ranges themselves identifier one
@@ -607,7 +622,8 @@ public interface Bytecode {
 		public QuantifierKind kind() {
 			return kind;
 		}
-		
+
+		@Override
 		public int getOpcode() {
 			return kind.opcode;
 		}
@@ -655,7 +671,7 @@ public interface Bytecode {
 
 		/**
 		 * Return the location index for the variable this range is declaring.
-		 * 
+		 *
 		 * @return
 		 */
 		public int variable() {
@@ -664,7 +680,7 @@ public interface Bytecode {
 
 		/**
 		 * Return the start operand of this range.
-		 * 
+		 *
 		 * @return
 		 */
 		public int startOperand() {
@@ -673,13 +689,14 @@ public interface Bytecode {
 
 		/**
 		 * Return the end operand of this range.
-		 * 
+		 *
 		 * @return
 		 */
 		public int endOperand() {
 			return endOperand;
 		}
 
+		@Override
 		public boolean equals(Object o) {
 			if (o instanceof Range) {
 				Range r = (Range) o;
@@ -688,6 +705,7 @@ public interface Bytecode {
 			return false;
 		}
 
+		@Override
 		public int hashCode() {
 			return variable ^ startOperand ^ endOperand;
 		}
@@ -721,6 +739,7 @@ public interface Bytecode {
 			return OPCODE_varaccess;
 		}
 
+		@Override
 		public String toString() {
 			return "read " + Util.arrayToString(getOperands());
 		}
@@ -735,7 +754,7 @@ public interface Bytecode {
 	 * zero or more bytecodes. For example, a loop bytecode contains its loop
 	 * body. The nested blocks of bytecodes are represented as a block
 	 * identifier in the enclosing forest.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -743,14 +762,14 @@ public interface Bytecode {
 
 		/**
 		 * Determine the number of blocks contained in this bytecode.
-		 * 
+		 *
 		 * @return
 		 */
 		public int numberOfBlocks();
 
 		/**
 		 * Get the ith block contained in this statement
-		 * 
+		 *
 		 * @param i
 		 * @return
 		 */
@@ -758,7 +777,7 @@ public interface Bytecode {
 
 		/**
 		 * Get the blocks contained in this statement
-		 * 
+		 *
 		 * @param i
 		 * @return
 		 */
@@ -775,12 +794,12 @@ public interface Bytecode {
 	 * | opcode | operand |
 	 * +--------+---------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, the operand identifies the variable declaration being aliased
 	 * (which may be an alias declaration itself).
 	 * </p>
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -792,15 +811,16 @@ public interface Bytecode {
 
 
 		@Override
-		public int getOpcode() {			
+		public int getOpcode() {
 			return OPCODE_aliasdecl;
 		}
-		
+
+		@Override
 		public String toString() {
 			return "alias (%" + getOperand(0) + ")";
 		}
 	}
-	
+
 	/**
 	 * An abstract class representing either an <code>assert</code> or
 	 * <code>assume</code> bytecode.
@@ -822,18 +842,18 @@ public interface Bytecode {
 	 * <p>
 	 * An assert bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+-----------+
 	 * | opcode | condition |
 	 * +--------+-----------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, the condition identifies an operand which should always evaluate to
 	 * true. This condition should be enforced at compile time.
 	 * </p>
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -843,6 +863,7 @@ public interface Bytecode {
 			super(operand);
 		}
 
+		@Override
 		public int getOpcode() {
 			return OPCODE_assert;
 		}
@@ -858,13 +879,13 @@ public interface Bytecode {
 	 * <p>
 	 * An assignment bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+----------------+-----------------+
 	 * | opcode | leftHandSide[] | rightHandSide[] |
 	 * +--------+----------------+-----------------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, the left-hand side identifies zero or more operands which are being
 	 * assigned to, whilst the right-hand side identifies one or more operands
@@ -872,7 +893,7 @@ public interface Bytecode {
 	 * operands than the right-hand side. This happens, for example, in the case
 	 * of an invocation where the result is ignored.
 	 * </p>
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -903,6 +924,7 @@ public interface Bytecode {
 			super(new int[][] { lhs, rhs });
 		}
 
+		@Override
 		public int getOpcode() {
 			return OPCODE_assign;
 		}
@@ -937,13 +959,13 @@ public interface Bytecode {
 	 * <p>
 	 * An assume bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+-----------+
 	 * | opcode | condition |
 	 * +--------+-----------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, the condition identifies an operand which is assumed to always
 	 * evaluate to true.  This assumption should be tested at runtime.
@@ -958,6 +980,7 @@ public interface Bytecode {
 			super(operand);
 		}
 
+		@Override
 		public int getOpcode() {
 			return OPCODE_assume;
 		}
@@ -972,13 +995,13 @@ public interface Bytecode {
 	 * <p>
 	 * A break bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+
 	 * | opcode |
 	 * +--------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, control will immediately exit the enclosing loop upon executing
 	 * this bytecode.
@@ -988,15 +1011,16 @@ public interface Bytecode {
 	 *
 	 */
 	public static final class Break extends AbstractBytecode implements Stmt {
-		
+
 		public Break() {
 			super(new int[0]);
 		}
 
+		@Override
 		public int getOpcode() {
 			return OPCODE_break;
-		}		
-		
+		}
+
 		@Override
 		public String toString() {
 			return "break ";
@@ -1007,18 +1031,18 @@ public interface Bytecode {
 	 * <p>
 	 * A continue bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+
 	 * | opcode |
 	 * +--------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, control will immediately complete the enclosing loop body upon
 	 * executing this bytecode.
 	 * </p>
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -1028,6 +1052,7 @@ public interface Bytecode {
 			super(new int[]{});
 		}
 
+		@Override
 		public int getOpcode() {
 			return OPCODE_continue;
 		}
@@ -1042,18 +1067,18 @@ public interface Bytecode {
 	 * <p>
 	 * A debug bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+--------+
 	 * | opcode | string |
 	 * +--------+--------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, the string identifies an operand returning a string result which
 	 * will be printed to the debug console.
 	 * </p>
-	 * 
+	 *
 	 * <b>NOTE</b> This bytecode is not intended to form part of the program's
 	 * operation. Rather, it is to facilitate debugging within functions (since
 	 * they cannot have side-effects). Furthermore, if debugging is disabled,
@@ -1068,10 +1093,11 @@ public interface Bytecode {
 			super(operand);
 		}
 
+		@Override
 		public int getOpcode() {
 			return OPCODE_debug;
 		}
-		
+
 		@Override
 		public String toString() {
 			return "debug %" + getOperand(0);
@@ -1089,6 +1115,7 @@ public interface Bytecode {
 			super(body, condition, invariants, modified);
 		}
 
+		@Override
 		public int getOpcode() {
 			return OPCODE_dowhile;
 		}
@@ -1103,13 +1130,13 @@ public interface Bytecode {
 	 * <p>
 	 * A panic bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+
 	 * | opcode |
 	 * +--------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Upon execution of this bytecode, the machine will halt immediately and
 	 * indicate an unrecoverable error. At this time, there is no way to recover
@@ -1138,19 +1165,19 @@ public interface Bytecode {
 	 * <p>
 	 * An if bytecode has one of the the following layouts:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+-----------+------------+
 	 * | opcode | condition | trueBranch |
 	 * +--------+-----------+------------+
 	 * </pre>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+-----------+------------+-------------+
 	 * | opcode | condition | trueBranch | falseBranch |
 	 * +--------+-----------+------------+-------------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, the condition identifies the condition which determines whether the
 	 * true branch is taken or not. If not, and there is a false branch, then
@@ -1160,13 +1187,14 @@ public interface Bytecode {
 	 */
 	 public static final class If extends AbstractBytecode implements Stmt {
 		public If(int operand, int trueBranch) {
-			super(operand, null, new int[] {trueBranch});			
+			super(operand, null, new int[] {trueBranch});
 		}
 
 		public If(int operand, int trueBranch, int falseBranch) {
 			super(operand, null, new int[]{trueBranch, falseBranch});
 		}
 
+		@Override
 		public int getOpcode() {
 			return numberOfBlocks() == 1 ? OPCODE_if : OPCODE_ifelse;
 		}
@@ -1177,7 +1205,7 @@ public interface Bytecode {
 
 		/**
 		 * Check whether this bytecode has a false branch of not.
-		 * 
+		 *
 		 * @return
 		 */
 		public boolean hasFalseBranch() {
@@ -1187,7 +1215,7 @@ public interface Bytecode {
 		/**
 		 * Return the block identifier for the true branch associated with this
 		 * bytecode.
-		 * 
+		 *
 		 * @return
 		 */
 		public int trueBranch() {
@@ -1197,7 +1225,7 @@ public interface Bytecode {
 		/**
 		 * Return the block identifier for the false branch associated with this
 		 * bytecode.
-		 * 
+		 *
 		 * @return
 		 */
 		public int falseBranch() {
@@ -1221,13 +1249,13 @@ public interface Bytecode {
 	 * <p>
 	 * A loop bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+-----------+--------------+------------+------+
 	 * | opcode | condition | invariants[] | modified[] | body |
 	 * +--------+-----------+--------------+------------+------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, the condition identifies the loop condition which, when false, will
 	 * cause the loop to terminate. The invariants identifies zero or more
@@ -1239,12 +1267,12 @@ public interface Bytecode {
 	 */
 	public static abstract class Loop extends AbstractBytecode implements Stmt {
 		public Loop(int body, int condition, int[] invariants, int[] modified) {
-			super(condition, new int[][]{invariants,modified}, new int[]{body});			
+			super(condition, new int[][]{invariants,modified}, new int[]{body});
 		}
 
 		/**
 		 * Return the block identifier of the loop body.
-		 * 
+		 *
 		 * @return
 		 */
 		public int body() {
@@ -1254,7 +1282,7 @@ public interface Bytecode {
 		/**
 		 * Return the loop condition operand. This must be true for iteration to
 		 * continue around the loop.
-		 * 
+		 *
 		 * @return
 		 */
 		public int condition() {
@@ -1264,7 +1292,7 @@ public interface Bytecode {
 		/**
 		 * Return the array of operands making up the loop invariant. Each of
 		 * these corresponds to a "where" clause in the original program.
-		 * 
+		 *
 		 * @return
 		 */
 		public int[] invariants() {
@@ -1278,7 +1306,7 @@ public interface Bytecode {
 		 */
 		public int[] modifiedVariables() {
 			return getOperandGroup(1);
-		}		
+		}
 	}
 
 	/**
@@ -1309,17 +1337,17 @@ public interface Bytecode {
 	 * <p>
 	 * A return bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+------------+
 	 * | opcode | operands[] |
 	 * +--------+------------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, there are zero or more operands which can be returned.
 	 * </p>
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -1338,8 +1366,8 @@ public interface Bytecode {
 		}
 
 		@Override
-		public String toString() {			
-			return "return " + Util.arrayToString(getOperands());			
+		public String toString() {
+			return "return " + Util.arrayToString(getOperands());
 		}
 	}
 
@@ -1347,13 +1375,13 @@ public interface Bytecode {
 	 * <p>
 	 * A skip bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+
 	 * | opcode |
 	 * +--------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Upon execution of this bytecode, the machine simply moves on to the next
 	 * instruction.
@@ -1380,19 +1408,19 @@ public interface Bytecode {
 	 * <p>
 	 * A switch bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+-----------+-------+-----+-------+------------+-----+------------+
 	 * | opcode | condition | block | ... | block | Constant[] | ... | Constant[] |
 	 * +--------+-----------+-------+-----+-------+------------+-----+------------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, the condition identifies the expression being switched on. There
 	 * are zero or more case blocks, and the same number of constant arrays. An
 	 * empty constant array indicates the default block.
 	 * </p>
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -1439,7 +1467,7 @@ public interface Bytecode {
 		public String toString() {
 			return "switch";
 		}
-		
+
 		private static int[] extractBlocks(Case[] cases) {
 			int[] blocks = new int[cases.length];
 			for(int i=0;i!=cases.length;++i) {
@@ -1447,7 +1475,7 @@ public interface Bytecode {
 			}
 			return blocks;
 		}
-		
+
 		private static Constant[][] extractConstants(Case[] cases) {
 			Constant[][] blocks = new Constant[cases.length][];
 			for (int i = 0; i != cases.length; ++i) {
@@ -1508,21 +1536,21 @@ public interface Bytecode {
 	 * | opcode | name |
 	 * +--------+------+
 	 * </pre>
-	 * 
+	 *
 	 * Or, with an initialiser operand:
-	 * 
+	 *
 	 * <pre>
 	 * +--------+---------+------+
 	 * | opcode | operand | name |
 	 * +--------+---------+------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, the condition identifies the expression being switched on. There
 	 * are zero or more case blocks, and the same number of constant arrays. An
 	 * empty constant array indicates the default block.
 	 * </p>
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -1554,7 +1582,8 @@ public interface Bytecode {
 				return OPCODE_vardeclinit;
 			}
 		}
-		
+
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof VariableDeclaration) {
 				VariableDeclaration vd = (VariableDeclaration) o;
@@ -1562,11 +1591,13 @@ public interface Bytecode {
 			}
 			return false;
 		}
-		
+
+		@Override
 		public int hashCode() {
 			return name.hashCode() ^ super.hashCode();
 		}
-		
+
+		@Override
 		public String toString() {
 			if(numberOfOperands() == 0) {
 				return "decl " + name;
@@ -1575,7 +1606,7 @@ public interface Bytecode {
 			}
 		}
 	}
-		
+
 	// ===============================================================
 	// Bytecode Block & Index
 	// ===============================================================
@@ -1585,34 +1616,35 @@ public interface Bytecode {
 		public Block(int... operands) {
 			super(operands);
 		}
-		
+
 		@Override
 		public int getOpcode() {
 			return OPCODE_block;
-		}	
-		
+		}
+
+		@Override
 		public String toString() {
 			return "block " + Util.arrayToString(getOperands());
 		}
 	}
-	
+
 	public static final class NamedBlock extends AbstractBytecode implements Bytecode.Stmt {
-		private final String name;		
-		
+		private final String name;
+
 		public NamedBlock(int block, String name) {
 			super(new int[0], new int[0][], new int[] { block });
 			this.name = name;
 		}
-		
+
 		public String getName() {
 			return name;
 		}
-		
+
 		@Override
 		public int getOpcode() {
 			return OPCODE_namedblock;
-		}	
-		
+		}
+
 		@Override
 		public boolean equals(Object o) {
 			if(o instanceof NamedBlock) {
@@ -1621,21 +1653,22 @@ public interface Bytecode {
 			}
 			return false;
 		}
-		
+
 		@Override
 		public int hashCode() {
 			return super.hashCode() ^ name.hashCode();
 		}
-		
+
+		@Override
 		public String toString() {
 			return "block(" + name +") " + Util.arrayToString(getBlocks());
 		}
 	}
-	
+
 	/**
 	 * Represents a bytecode location within a code forest. This is simply a
 	 * pair of the block identifier and the position within that block.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -1656,6 +1689,7 @@ public interface Bytecode {
 			return offset;
 		}
 
+		@Override
 		public boolean equals(Object o) {
 			if (o instanceof Index) {
 				Index i = (Index) o;
@@ -1664,6 +1698,7 @@ public interface Bytecode {
 			return false;
 		}
 
+		@Override
 		public int hashCode() {
 			return block ^ offset;
 		}
@@ -1676,6 +1711,7 @@ public interface Bytecode {
 			return new Index(block, offset + i);
 		}
 
+		@Override
 		public String toString() {
 			return block + ":" + offset;
 		}
@@ -1689,25 +1725,25 @@ public interface Bytecode {
 	 * A "statement expression" is a rather unusual beast. It is both a
 	 * statement and an expression! There are very few bytecodes which can be
 	 * classified in this way.
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
 	public interface StmtExpr extends Expr,Stmt {
 	}
-	
+
 
 	/**
 	 * <p>
 	 * An indirect invocation bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+---------+-------------+------+
 	 * | opcode | operand | parameter[] | type |
 	 * +--------+---------+-------------+------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, the operand returns the function pointer which this bytecode
 	 * indirects upon. The parameter array identifies zero or more operands
@@ -1717,7 +1753,7 @@ public interface Bytecode {
 	 *
 	 * <pre>
 	 * type func_t is function(int)->int
-	 * 
+	 *
 	 * function fun(func_t f, int x) -> int:
 	 *    return f(x)
 	 * </pre>
@@ -1777,6 +1813,7 @@ public interface Bytecode {
 			return getOperandGroup(0);
 		}
 
+		@Override
 		public int getOpcode() {
 			return OPCODE_indirectinvoke;
 		}
@@ -1809,13 +1846,13 @@ public interface Bytecode {
 	 * <p>
 	 * An indirect invocation bytecode has the following layout:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * +--------+-------------+------+------+
 	 * | opcode | parameter[] | type | name |
 	 * +--------+-------------+------+------+
 	 * </pre>
-	 * 
+	 *
 	 * <p>
 	 * Here, the parameter array identifies zero or more operands which are pass
 	 * as arguments, whilst the type gives the signature of the target
@@ -1834,6 +1871,7 @@ public interface Bytecode {
 			this.type = type;
 		}
 
+		@Override
 		public int getOpcode() {
 			return OPCODE_invoke;
 		}
@@ -1866,7 +1904,7 @@ public interface Bytecode {
 		}
 	}
 
-	
+
 	// ===============================================================
 	// Helpers
 	// ===============================================================
@@ -1896,7 +1934,7 @@ public interface Bytecode {
 	public static final int OPCODE_continue = 5;
 	public static final int OPCODE_vardeclinit = 6;
 	public static final int OPCODE_aliasdecl = 7;
-	
+
 	// Unary Operators
 	public static final int UNARY_OPERATOR = 8;
 
@@ -1956,7 +1994,7 @@ public interface Bytecode {
 	public static final int OPCODE_dereference = BINARY_ASSIGNABLE + 27;
 	public static final int OPCODE_newobject = BINARY_ASSIGNABLE + 28;
 	public static final int OPCODE_varaccess = BINARY_ASSIGNABLE + 29;
-	
+
 	// Nary Assignables
 	public static final int NARY_ASSIGNABLE = BINARY_ASSIGNABLE + 30;
 
@@ -1978,11 +2016,11 @@ public interface Bytecode {
 	public enum Operands {
 		ZERO, ONE, TWO, MANY
 	}
-	
+
 	public enum OperandGroups {
 		ZERO, ONE, TWO, MANY
 	}
-	
+
 	public enum Blocks {
 		ZERO, ONE, TWO, MANY
 	}
@@ -2015,14 +2053,14 @@ public interface Bytecode {
 			this.blocks = Blocks.ZERO;
 			this.extras = extras;
 		}
-		
+
 		public Schema(Operands operands, OperandGroups groups, Blocks blocks, Extras... extras) {
 			this.operands = operands;
 			this.groups = groups;
 			this.blocks = blocks;
 			this.extras = extras;
 		}
-		
+
 		public Extras[] extras() {
 			return extras;
 		}
@@ -2030,17 +2068,18 @@ public interface Bytecode {
 		public Operands getOperands() {
 			return operands;
 		}
-		
+
 		public OperandGroups getOperandGroups() {
 			return groups;
 		}
-		
+
 		public Blocks getBlocks() {
 			return blocks;
 		}
-		
+
 		public abstract Bytecode construct(int opcode, int[] operands, int[][] groups, int[] blocks, Object[] extras);
 
+		@Override
 		public String toString() {
 			return "<" + operands + " operands, " + Arrays.toString(extras) + ">";
 		}

@@ -1,3 +1,9 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// This software may be modified and distributed under the terms
+// of the BSD license.  See the LICENSE file for details.
+
 package wyil.util;
 
 import java.io.IOException;
@@ -329,8 +335,6 @@ public class TypeSystem {
 	// Automaton Representation
 	// =============================================================
 
-
-
 	public static final class FunctionOrMethodState implements Comparable<FunctionOrMethodState> {
 		public final int numParams;
 		public final ArrayList<String> contextLifetimes;
@@ -436,7 +440,6 @@ public class TypeSystem {
 		}
 	}
 
-
 	/**
 	 * Expand a given type by inlining all visible nominal information. For
 	 * example:
@@ -456,7 +459,10 @@ public class TypeSystem {
 	 * @param type
 	 * @return
 	 */
-	private Automaton toAutomaton(Type type) throws ResolveError {
+	public Automaton toAutomaton(Type type) throws ResolveError {
+
+		// FIXME: this method should be hidden
+
 		if(type == null) {
 			throw new IllegalArgumentException();
 		}

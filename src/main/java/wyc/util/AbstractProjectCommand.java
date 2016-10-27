@@ -1,3 +1,8 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// This software may be modified and distributed under the terms
+// of the BSD license.  See the LICENSE file for details.
 package wyc.util;
 
 import java.io.File;
@@ -138,18 +143,6 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 	// =======================================================================
 
 	/**
-	 * Finalise the given configuration to ensure it is an consistent state.
-	 * This means, in particular, that roots which have not been defined by the
-	 * user are created as necessary.
-	 */
-	protected void finaliseConfiguration() throws IOException {
-		whileydir = getDirectoryRoot(whileydir,new DirectoryRoot(".",registry));
-		wyildir = getDirectoryRoot(wyildir,whileydir);
-		wyaldir = getAbstractRoot(wyaldir);
-		wycsdir = getAbstractRoot(wycsdir);
-	}
-
-	/**
 	 * Construct a new temporary project. This project is temporary because it
 	 * only exists for the life of an execution of this command.
 	 *
@@ -157,6 +150,8 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 	 * @throws IOException
 	 */
 	protected StdProject initialiseProject() throws IOException {
+		// Finalise configuration
+		finaliseConfiguration();
 		// Add roots and construct project
 		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 
@@ -172,6 +167,18 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 	}
 
 	/**
+	 * Finalise the given configuration to ensure it is an consistent state.
+	 * This means, in particular, that roots which have not been defined by the
+	 * user are created as necessary.
+	 */
+	private void finaliseConfiguration() throws IOException {
+		whileydir = getDirectoryRoot(whileydir,new DirectoryRoot(".",registry));
+		wyildir = getDirectoryRoot(wyildir,whileydir);
+		wyaldir = getAbstractRoot(wyaldir);
+		wycsdir = getAbstractRoot(wycsdir);
+	}
+
+	/**
 	 * Initialise the bootpath for use with the compiler. The bootpath basically
 	 * identifies the location of the standard library for automatic inclusion
 	 * into the whileypath.
@@ -179,7 +186,7 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 	 * @param roots
 	 * @throws IOException
 	 */
-	protected void addBootpath(List<Path.Root>roots) throws IOException {
+	private void addBootpath(List<Path.Root>roots) throws IOException {
 		// Configure boot path
 		String bootpath = System.getProperty("wdk.bootpath");
 		if (bootpath != null) {

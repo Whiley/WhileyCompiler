@@ -1,3 +1,9 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// This software may be modified and distributed under the terms
+// of the BSD license.  See the LICENSE file for details.
+
 package wyc.commands;
 
 import java.io.File;
@@ -8,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import wybs.lang.SyntaxError;
+import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
 import wyc.builder.CompileTask;
@@ -162,11 +169,11 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 				}
 			}
 			// Finalise the configuration before continuing.
-			finaliseConfiguration();
+			StdProject project = initialiseProject();
 			// Determine source files to build
 			List<Path.Entry<WhileyFile>> entries = whileydir.find(delta, WhileyFile.ContentType);
 			// Execute the build over the set of files requested
-			return compile(entries);
+			return compile(project,entries);
 		} catch(RuntimeException e) {
 			throw e;
 		} catch (Exception e) {
@@ -177,8 +184,8 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 
 	public Result execute(List<Path.Entry<WhileyFile>> entries) {
 		try {
-			finaliseConfiguration();
-			return compile(entries);
+			StdProject project = initialiseProject();
+			return compile(project,entries);
 		} catch (RuntimeException e) {
 			throw e;
 		} catch (Exception e) {
@@ -191,10 +198,9 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	// Helpers
 	// =======================================================================
 
-	private Result compile(List<Path.Entry<WhileyFile>> entries) {
+	private Result compile(StdProject project, List<Path.Entry<WhileyFile>> entries) {
 		// Initialise Project
 		try {
-			StdProject project = initialiseProject();
 			addCompilationBuildRules(project);
 			if (verify) {
 				addVerificationBuildRules(project);
@@ -208,6 +214,8 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			wyildir.flush();
 			//
 			return Result.SUCCESS;
+		} catch(InternalFailure e) {
+			throw e;
 		} catch (SyntaxError e) {
 			e.outputSourceError(syserr, brief);
 			if (verbose) {
@@ -216,7 +224,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			return Result.ERRORS;
 		} catch (Exception e) {
 			// now what?
-			return Result.INTERNAL_FAILURE;
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -226,7 +234,16 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	 *
 	 * @param project
 	 */
-	private void addCompilationBuildRules(StdProject project) {
+	protected void addCompilationBuildRules(StdProject project) {
+		addWhiley2WyilBuildRule(project);
+	}
+
+	/**
+	 * Add the rule for compiling Whiley source files into WyIL files.
+	 *
+	 * @param project
+	 */
+	protected void addWhiley2WyilBuildRule(StdProject project) {
 		// Configure build rules for normal compilation
 		Content.Filter<WhileyFile> whileyIncludes = Content.filter("**", WhileyFile.ContentType);
 		Content.Filter<WhileyFile> whileyExcludes = null;
@@ -242,7 +259,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	 *
 	 * @param project
 	 */
-	private void addVerificationBuildRules(StdProject project) {
+	protected void addVerificationBuildRules(StdProject project) {
 		// Configure build rules for verification (if applicable)
 		Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
 		Content.Filter<WyilFile> wyilExcludes = null;

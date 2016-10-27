@@ -1,3 +1,9 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// This software may be modified and distributed under the terms
+// of the BSD license.  See the LICENSE file for details.
+
 package wyil.util;
 
 import java.util.Arrays;
@@ -8,7 +14,7 @@ import wyil.lang.SyntaxTree.Location;
 
 /**
  * Helper functions for working with SyntaxTrees.
- * 
+ *
  * @author David J. Pearce
  *
  */
@@ -16,7 +22,7 @@ public class SyntaxTrees {
 	/**
 	 * Traverse a syntax tree from one or more roots looking for variable
 	 * accesses (uses).
-	 * 
+	 *
 	 * @param roots
 	 * @return
 	 */
@@ -32,18 +38,18 @@ public class SyntaxTrees {
 		}
 		return vars;
 	}
-	
+
 	private static void determineUsedVariables(Location<?> root, BitSet usedVariables) {
 		switch(root.getOpcode()) {
 		case Bytecode.OPCODE_vardecl:
 		case Bytecode.OPCODE_vardeclinit:
 		case Bytecode.OPCODE_aliasdecl:
 			usedVariables.set(root.getIndex());
-			return;		
-		}		
+			return;
+		}
 		for(int i=0;i!=root.numberOfOperands();++i) {
 			determineUsedVariables(root.getOperand(i),usedVariables);
-		}		
+		}
 		for(int i=0;i!=root.numberOfOperandGroups();++i) {
 			Location<?>[] group = root.getOperandGroup(i);
 			for(int j=0;j!=group.length;++j) {
