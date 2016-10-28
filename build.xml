@@ -50,8 +50,10 @@
   <!-- ================================================================== -->
 
   <target name="test" depends="compile-tests">
-    <junit printsummary="true" fork="yes" haltonfailure="yes">
-      <!-- <formatter type="plain" usefile="false"/> -->
+    <junit printsummary="yes"
+	   fork="yes"
+	   haltonfailure="yes">
+      <formatter type="plain" usefile="false"/>
       <batchtest>
         <fileset dir="${TEST_DIR}" includes="**/*Test.java"/>
       </batchtest>
