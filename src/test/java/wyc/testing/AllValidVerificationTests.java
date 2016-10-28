@@ -34,7 +34,7 @@ import wycc.util.Pair;
  *
  */
 @RunWith(Parameterized.class)
-public class AllValidVerificationTest {
+public class AllValidVerificationTests {
 
 	/**
 	 * The directory containing the source files for each test case. Every test
@@ -165,6 +165,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_47", "WyTP#20");
 		IGNORED.put("While_Valid_5", "timeout");
 		IGNORED.put("While_Valid_52", "WyTP#20");
+		IGNORED.put("While_Valid_53", "???");
 
 		// Fails and was not listed as test case before parameterizing
 		IGNORED.put("RecursiveType_Valid_28", "unknown");
@@ -218,7 +219,7 @@ public class AllValidVerificationTest {
 	// Parameter to test case is the name of the current test.
 	// It will be passed to the constructor by JUnit.
 	private final String testName;
-	public AllValidVerificationTest(String testName) {
+	public AllValidVerificationTests(String testName) {
 		this.testName = testName;
 	}
 

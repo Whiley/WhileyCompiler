@@ -55,7 +55,7 @@
 	   haltonfailure="yes">
       <formatter type="plain" usefile="false"/>
       <batchtest>
-        <fileset dir="${TEST_DIR}" includes="**/*Test.java"/>
+        <fileset dir="${TEST_DIR}" includes="**/*Tests.java"/>
       </batchtest>
       <classpath>
 	<pathelement path="${CLASS_DIR}"/>
