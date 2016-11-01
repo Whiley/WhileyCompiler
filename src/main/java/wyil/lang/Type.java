@@ -1217,7 +1217,8 @@ public interface Type {
 			@Override
 			public String toString() {
 				String body = element.toString();
-				if (element instanceof Array || element instanceof Reference) {
+				if (element instanceof Array || element instanceof Reference || element instanceof Intersection
+						|| element instanceof Union) {
 					return "!(" + element.toString() + ")";
 				} else {
 					return "!" + body;

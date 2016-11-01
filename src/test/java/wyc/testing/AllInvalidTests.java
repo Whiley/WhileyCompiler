@@ -33,7 +33,7 @@ import wycc.util.Pair;
  *
  */
 @RunWith(Parameterized.class)
-public class AllInvalidTest {
+public class AllInvalidTests {
 
 	/**
 	 * The directory containing the source files for each test case. Every test
@@ -174,7 +174,7 @@ public class AllInvalidTest {
 	// Parameter to test case is the name of the current test.
 	// It will be passed to the constructor by JUnit.
 	private final String testName;
-	public AllInvalidTest(String testName) {
+	public AllInvalidTests(String testName) {
 		this.testName = testName;
 	}
 

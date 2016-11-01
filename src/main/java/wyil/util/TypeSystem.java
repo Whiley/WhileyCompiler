@@ -289,6 +289,21 @@ public class TypeSystem {
 	 * @throws ResolveError
 	 */
 	public Type expandOneLevel(Type type) throws ResolveError {
+		return expandOneLevel(type,true);
+	}
+
+	/**
+	 * Expand a given syntactic type by exactly one level, according to a given
+	 * goal of either maximising or minimising the resulting type.
+	 *
+	 * @param type
+	 *            type to be expanded
+	 * @param maximise
+	 *            If true, then maximise resulting type
+	 * @return
+	 * @throws ResolveError
+	 */
+	private Type expandOneLevel(Type type, boolean maximise) throws ResolveError {
 		try {
 			if (type instanceof Type.Nominal) {
 				Type.Nominal nt = (Type.Nominal) type;
@@ -298,7 +313,11 @@ public class TypeSystem {
 					throw new ResolveError("name not found: " + nid);
 				}
 				WyilFile.Type td = p.read().type(nid.name());
-				return expandOneLevel(td.type());
+				if(maximise || td.getInvariant().isEmpty()) {
+					return expandOneLevel(td.type(),maximise);
+				} else {
+					return Type.T_VOID;
+				}
 			} else if (type instanceof Type.Leaf
 					|| type instanceof Type.Reference
 					|| type instanceof Type.Array
@@ -307,14 +326,14 @@ public class TypeSystem {
 				return type;
 			} else if(type instanceof Type.Negation) {
 				Type.Negation nt = (Type.Negation) type;
-				Type element = expandOneLevel(nt.element());
+				Type element = expandOneLevel(nt.element(),!maximise);
 				return Type.Negation(element);
 			} else if(type instanceof Type.Union){
 				Type.Union ut = (Type.Union) type;
 				Type[] ut_bounds = ut.bounds();
 				Type[] bounds = new Type[ut_bounds.length];
 				for (int i=0;i!=ut_bounds.length;++i) {
-					bounds[i] = expandOneLevel(ut_bounds[i]);
+					bounds[i] = expandOneLevel(ut_bounds[i],maximise);
 				}
 				return Type.Union(bounds);
 			} else {
@@ -322,7 +341,7 @@ public class TypeSystem {
 				Type[] it_bounds = it.bounds();
 				Type[] bounds = new Type[it_bounds.length];
 				for (int i=0;i!=it_bounds.length;++i) {
-					bounds[i] = expandOneLevel(it_bounds[i]);
+					bounds[i] = expandOneLevel(it_bounds[i],maximise);
 				}
 				return Type.Intersection(bounds);
 			}

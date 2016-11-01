@@ -1,0 +1,31 @@
+<project name="BuildConfig" xmlns:artifact="urn:maven-ant">
+  <!-- Load Maven Ant task -->
+  <typedef uri="urn:maven-ant"
+	   classpath="lib/maven-ant-tasks-2.1.3.jar"
+	   resource="org/apache/maven/artifact/ant/antlib.xml"/>  
+  <!-- set pom file and dependencies -->
+  <artifact:pom id="mypom" file="pom.xml"/>
+  <artifact:dependencies pathId="MAVEN_DEPS" pomRefId="mypom" />  
+  <!-- set project layout -->
+  <property name="SRC_DIR" location="src"/>
+  <property name="JAVA_DIR" location="${SRC_DIR}/main/java"/>
+  <property name="TEST_DIR" location="${SRC_DIR}/test/java"/>
+  <property name="BIN_DIR" location="target"/>
+  <property name="CLASS_DIR" location="${BIN_DIR}/classes"/>
+  <property name="DOC_DIR" location="${BIN_DIR}/javadoc"/>
+  <property name="JAR_DIR" location="${BIN_DIR}/"/>
+  <!-- Define Maven coordinates -->
+  <property name="GROUP_ID" value="${mypom.groupId}"/>
+  <property name="ARTIFACT_ID" value="${mypom.artifactId}"/>
+  <property name="VERSION" value="${mypom.version}"/>
+  <!-- Define target jar files -->
+  <property name="CLASS_JAR" value="${BIN_DIR}/${ARTIFACT_ID}-${VERSION}.jar"/>
+  <property name="JAVA_JAR" value="${BIN_DIR}/${ARTIFACT_ID}-${VERSION}-sources.jar"/>
+  <property name="DOC_JAR" value="${BIN_DIR}/${ARTIFACT_ID}-${VERSION}-javadoc.jar"/>
+  <!-- Define deployment destinations -->
+  <property name="SNAPSHOT_URL" value="https://oss.sonatype.org/content/repositories/snapshots/" />
+  <property name="STAGING_URL" value="https://oss.sonatype.org/service/local/staging/deploy/maven2/" />
+  <property name="SERVER_ID" value="ossrh" />
+  <!-- Misc properties -->
+  <property name="JAVA_VERSION" value="1.8"/>
+</project>
