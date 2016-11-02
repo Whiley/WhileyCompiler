@@ -35,7 +35,7 @@ import wyfs.util.Trie;
  *
  */
 @RunWith(Parameterized.class)
-public class AllValidTests {
+public class AllValidTest {
 
 	/**
 	 * The directory containing the source files for each test case. Every test
@@ -139,7 +139,7 @@ public class AllValidTests {
 	// Parameter to test case is the name of the current test.
 	// It will be passed to the constructor by JUnit.
 	private final String testName;
-	public AllValidTests(String testName) {
+	public AllValidTest(String testName) {
 		this.testName = testName;
 	}
 

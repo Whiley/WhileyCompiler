@@ -34,7 +34,7 @@ import wycc.util.Pair;
  *
  */
 @RunWith(Parameterized.class)
-public class AllValidVerificationTests {
+public class AllValidVerificationTest {
 
 	/**
 	 * The directory containing the source files for each test case. Every test
@@ -219,7 +219,7 @@ public class AllValidVerificationTests {
 	// Parameter to test case is the name of the current test.
 	// It will be passed to the constructor by JUnit.
 	private final String testName;
-	public AllValidVerificationTests(String testName) {
+	public AllValidVerificationTest(String testName) {
 		this.testName = testName;
 	}
 

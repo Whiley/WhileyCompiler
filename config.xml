@@ -23,8 +23,8 @@
   <property name="JAVA_JAR" value="${BIN_DIR}/${ARTIFACT_ID}-${VERSION}-sources.jar"/>
   <property name="DOC_JAR" value="${BIN_DIR}/${ARTIFACT_ID}-${VERSION}-javadoc.jar"/>
   <!-- Define deployment destinations -->
-  <property name="SNAPSHOT_URL" value="https://oss.sonatype.org/content/repositories/snapshots/" />
-  <property name="STAGING_URL" value="https://oss.sonatype.org/service/local/staging/deploy/maven2/" />
+  <property name="SNAPSHOT_URL" value="https://oss.sonatype.org/content/repositories/snapshots" />
+  <property name="STAGING_URL" value="https://oss.sonatype.org/service/local/staging/deploy/maven2" />
   <property name="SERVER_ID" value="ossrh" />
   <!-- Misc properties -->
   <property name="JAVA_VERSION" value="1.8"/>

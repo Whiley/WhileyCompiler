@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
 import wyil.lang.Type;
 import wyil.util.TypeSystem;
 
-public class ArraySubtypeTests {
+public class ArraySubtypeTest {
 	@Test public void test_1() { checkIsSubtype("any","any"); }
 	@Test public void test_2() { checkIsSubtype("any","null"); }
 	@Test public void test_3() { checkIsSubtype("any","int"); }
