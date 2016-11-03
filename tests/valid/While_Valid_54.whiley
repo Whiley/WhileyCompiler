@@ -14,7 +14,7 @@ ensures all { k in 0..|witness| | xs[k] == rs[witness[k]] }:
     //
     return xs,ws
 
-method test():
+public export method test():
     int[] ys
     int[] ws
     //

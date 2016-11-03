@@ -9,7 +9,7 @@ function f(pos|null x) -> null:
     else:
         fail
 
-method test():
+public export method test():
     assume f(1) == null
     assume f(2) == null
     assume f(null) == null
