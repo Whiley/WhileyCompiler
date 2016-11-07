@@ -260,6 +260,11 @@ public class TypeSystem {
 	 *             resolved within the enclosing project.
 	 */
 	public boolean isSubtype(Type t1, Type t2, LifetimeRelation lr) throws ResolveError {
+		// FIXME: These two lines are a hack; they help, but are not a general
+		// solution. See #696.
+		t1 = expandOneLevel(t1);
+		t2 = expandOneLevel(t2);
+		// END
 		Automaton a1 = toAutomaton(t1);
 		Automaton a2 = toAutomaton(t2);
 		SubtypeOperator relation = new SubtypeOperator(a1,a2,lr);
