@@ -6,6 +6,7 @@
 
 package wyc.util;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,18 +81,15 @@ public class AntTask extends MatchingTask {
 		command.setWhileypath(dirs);
 	}
 
-	public void setWhileydir(String dir) throws IOException {
-		// FIXME: could use File here, as ant autoconverts
+	public void setWhileydir(File dir) throws IOException {
 		command.setWhileydir(dir);
 	}
 
-	public void setWyildir(String dir) throws IOException {
-		// FIXME: could use File here, as ant autoconverts
+	public void setWyildir(File dir) throws IOException {
 		command.setWyildir(dir);
 	}
 
-	public void setWyaldir(String dir) throws IOException {
-		// FIXME: could use File here, as ant autoconverts
+	public void setWyaldir(File dir) throws IOException {
 		command.setWyaldir(dir);
 	}
 
