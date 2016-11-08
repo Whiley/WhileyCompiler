@@ -13,5 +13,5 @@ ensures all { k in 0..|witness| | xs[k] == xs[witness[k]] }:
     //
     return ws
 
-method test():
+public export method test():
     assume permute([1,2,3]) == [0,1,2]

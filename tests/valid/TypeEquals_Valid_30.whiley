@@ -26,12 +26,9 @@ function evaluate(Expr e) -> int:
             if e is Expr[]:
                 return 3
             else:
-                if e is ListAccess:
-                    int src = evaluate(e.src)
-                    int index = evaluate(e.index)
-                    return src + index
-                else:
-                    return -1
+                int src = evaluate(e.src)
+                int index = evaluate(e.index)
+                return src + index
 
 public export method test() :
     Expr e = 1

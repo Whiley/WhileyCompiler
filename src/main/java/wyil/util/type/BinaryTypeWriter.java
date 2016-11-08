@@ -41,8 +41,28 @@ public class BinaryTypeWriter extends BinaryAutomataWriter {
 			for(String field : fields) {
 				writeString(field);
 			}
-		} else if(state.kind == TypeSystem.K_FUNCTION || state.kind == TypeSystem.K_METHOD) {
-			writer.write_uv((Integer) state.data);
+		} else if(state.kind == TypeSystem.K_REFERENCE) {
+			if(state.data != null) {
+				writeString((String)state.data);
+			} else {
+				writeString("");
+			}
+		} else if(state.kind == TypeSystem.K_FUNCTION) {
+			TypeSystem.FunctionOrMethodState fms = (TypeSystem.FunctionOrMethodState) state.data;
+			writer.write_uv(fms.numParams);
+		} else if(state.kind == TypeSystem.K_METHOD) {
+			TypeSystem.FunctionOrMethodState fms = (TypeSystem.FunctionOrMethodState) state.data;
+			// FIXME: this is really a hack, but it's fine for now. This whole
+			// method needs to be replaced!!
+			writer.write_uv(fms.numParams);
+			writer.write_uv(fms.contextLifetimes.size());
+			for(String s : fms.contextLifetimes) {
+				writeString(s);
+			}
+			writer.write_uv(fms.lifetimeParameters.size());
+			for(String s : fms.lifetimeParameters) {
+				writeString(s);
+			}
 		}
 	}
 

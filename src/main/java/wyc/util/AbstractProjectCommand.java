@@ -118,6 +118,10 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 		whileydir = new DirectoryRoot(dir,registry);
 	}
 
+	public void setWhileydir(File dir) throws IOException {
+		whileydir = new DirectoryRoot(dir,registry);
+	}
+
 	public String describeWhileydir() {
 		return "Specify where to find Whiley source files";
 	}
@@ -130,11 +134,19 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 		this.wyildir = new DirectoryRoot(dir, registry);
 	}
 
+	public void setWyildir(File dir) throws IOException {
+		this.wyildir = new DirectoryRoot(dir, registry);
+	}
+
 	public String describeWyaldir() {
 		return "Specify where to find place generated verification (WyAL) files";
 	}
 
 	public void setWyaldir(String dir) throws IOException {
+		this.wyildir = new DirectoryRoot(dir, registry);
+	}
+
+	public void setWyaldir(File dir) throws IOException {
 		this.wyildir = new DirectoryRoot(dir, registry);
 	}
 

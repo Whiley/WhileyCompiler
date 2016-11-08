@@ -1,6 +1,6 @@
 
 
-type Contractive is Contractive[] | null
+type Contractive is { Contractive f} | null
 
 function f(Contractive x) -> Contractive:
     return x

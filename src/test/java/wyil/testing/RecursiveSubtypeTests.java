@@ -14,7 +14,7 @@ import static org.junit.Assert.*;
 import wyil.lang.Type;
 import wyil.util.TypeSystem;
 
-public class RecursiveSubtypeTest {
+public class RecursiveSubtypeTests {
 	@Test public void test_1() { checkIsSubtype("null","null"); }
 	@Test public void test_2() { checkNotSubtype("null","{null f1}"); }
 	@Test public void test_3() { checkNotSubtype("null","{null f2}"); }

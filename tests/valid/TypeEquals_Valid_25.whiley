@@ -25,13 +25,10 @@ function evaluate(Expr e) -> Value:
             if e is Expr[]:
                 return [0;0]
             else:
-                if e is ListAccess:
-                    Value src = evaluate(e.src)
-                    Value index = evaluate(e.index)
-                    if (src is Value[]) && ((index is int) && ((index >= 0) && (index < |src|))):
-                        return src[index]
-                    else:
-                        return 0
+                Value src = evaluate(e.src)
+                Value index = evaluate(e.index)
+                if (src is Value[]) && ((index is int) && ((index >= 0) && (index < |src|))):
+                    return src[index]
                 else:
                     return 0
 

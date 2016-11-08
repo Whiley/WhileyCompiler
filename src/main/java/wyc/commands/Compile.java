@@ -66,20 +66,20 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	/**
 	 * Signals that verbose output should be produced.
 	 */
-	private boolean verbose = false;
+	protected boolean verbose = false;
 
 	/**
 	 * Signals that brief error reporting should be used. This is primarily used
 	 * to help integration with external tools. More specifically, brief output
 	 * is structured so as to be machine readable.
 	 */
-	private boolean brief = false;
+	protected boolean brief = false;
 
 	/**
 	 * Signals that compile-time verification of source files should be
 	 * performed.
 	 */
-	private boolean verify = false;
+	protected boolean verify = false;
 
 	/**
 	 * Construct a new instance of this command.
@@ -249,7 +249,9 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		Content.Filter<WhileyFile> whileyExcludes = null;
 		// Rule for compiling Whiley to WyIL
 		CompileTask wyilBuilder = new CompileTask(project);
-		wyilBuilder.setLogger(logger);
+		if(verbose) {
+			wyilBuilder.setLogger(logger);
+		}
 		project.add(new StdBuildRule(wyilBuilder, whileydir, whileyIncludes, whileyExcludes, wyildir));
 	}
 
@@ -267,7 +269,9 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		Content.Filter<WyalFile> wyalExcludes = null;
 		// Rule for compiling WyIL to WyAL
 		Wyil2WyalBuilder wyalBuilder = new Wyil2WyalBuilder(project);
-		wyalBuilder.setLogger(logger);
+		if(verbose) {
+			wyalBuilder.setLogger(logger);
+		}
 		project.add(new StdBuildRule(wyalBuilder, wyildir, wyilIncludes, wyilExcludes, wyaldir));
 		// Rule for compiling WyAL to WyCS
 		Wyal2WycsBuilder wycsBuilder = new Wyal2WycsBuilder(project);
