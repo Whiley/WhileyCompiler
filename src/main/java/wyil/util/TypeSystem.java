@@ -590,7 +590,7 @@ public class TypeSystem {
 			Type.Array tt = (Type.Array) type;
 			myChildren = new int[1];
 			myChildren[0] = toAutomatonHelper(tt.element(),sign,states,roots);
-			myKind = K_LIST;
+			myKind = K_ARRAY;
 		} else if(type instanceof Type.Record) {
 			Type.Record tt = (Type.Record) type;
 			String[] names = tt.getFieldNames();
@@ -752,8 +752,6 @@ public class TypeSystem {
 		automaton = Automata.extract(automaton, 0);
 		// TODO: minimise in place to avoid allocating data unless necessary
 		automaton = Automata.minimise(automaton);
-		// TODO: unsure whether we need to do this all the time
-		Automata.canonicalise(automaton, TypeAlgorithms.DATA_COMPARATOR);
 		//minimisedCount += automaton.size();
 		return automaton;
 	}
@@ -825,11 +823,9 @@ public class TypeSystem {
 			return "bool";
 		case K_BYTE:
 			return "byte";
-		case K_CHAR:
-			return "char";
 		case K_INT:
 			return "int";
-		case K_LIST: {
+		case K_ARRAY: {
 			middle = toString(state.children[0], visited, headers, automaton)
 					+ "[]";
 			break;
@@ -1028,14 +1024,8 @@ public class TypeSystem {
 	public static final byte K_NULL = 3;
 	public static final byte K_BOOL = 4;
 	public static final byte K_BYTE = 5;
-	public static final byte K_CHAR = 6;
 	public static final byte K_INT = 7;
-	public static final byte K_RATIONAL = 8;
-	public static final byte K_STRING = 9;
-	public static final byte K_TUPLE = 10;
-	public static final byte K_SET = 11;
-	public static final byte K_LIST = 12;
-	public static final byte K_MAP = 13;
+	public static final byte K_ARRAY = 12;
 	public static final byte K_REFERENCE = 14;
 	public static final byte K_RECORD = 15;
 	public static final byte K_UNION = 16;

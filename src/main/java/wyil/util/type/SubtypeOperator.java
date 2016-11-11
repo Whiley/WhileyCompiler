@@ -177,8 +177,7 @@ public class SubtypeOperator {
 				return true;
 			}
 			// === Homogenous Compound States ===
-			case TypeSystem.K_SET:
-			case TypeSystem.K_LIST:
+			case TypeSystem.K_ARRAY:
 				// != below not ||. This is because lists and sets can intersect
 				// on the empty list/set.
 				if(fromSign != toSign) {
@@ -240,33 +239,6 @@ public class SubtypeOperator {
 				// An inverted reference type always contains the value "null".
 				// Both are inverted, so they intersect with "null".
 				return true;
-			case TypeSystem.K_MAP:
-			case TypeSystem.K_TUPLE:  {
-				if(fromSign || toSign) {
-					// nary nodes
-					int[] fromChildren = fromState.children;
-					int[] toChildren = toState.children;
-					if (fromChildren.length != toChildren.length) {
-						return !fromSign || !toSign;
-					}
-					boolean andChildren = true;
-					boolean orChildren = false;
-					for (int i = 0; i < fromChildren.length; ++i) {
-						int fromChild = fromChildren[i];
-						int toChild = toChildren[i];
-						boolean v = isIntersection(fromChild, fromSign, toChild,
-								toSign);
-						andChildren &= v;
-						orChildren |= v;
-					}
-					if(!fromSign || !toSign) {
-						return orChildren;
-					} else {
-						return andChildren;
-					}
-				}
-				return true;
-			}
 			case TypeSystem.K_RECORD:
 				return intersectRecords(fromIndex,fromSign,toIndex,toSign);
 			case TypeSystem.K_NEGATION:
