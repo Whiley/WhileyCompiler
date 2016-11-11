@@ -752,8 +752,6 @@ public class TypeSystem {
 		automaton = Automata.extract(automaton, 0);
 		// TODO: minimise in place to avoid allocating data unless necessary
 		automaton = Automata.minimise(automaton);
-		// TODO: unsure whether we need to do this all the time
-		Automata.canonicalise(automaton, TypeAlgorithms.DATA_COMPARATOR);
 		//minimisedCount += automaton.size();
 		return automaton;
 	}
