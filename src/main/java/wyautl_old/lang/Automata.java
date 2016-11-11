@@ -731,114 +731,6 @@ public final class Automata {
 	}
 
 	/**
-	 * <p>
-	 * Determine whether a relationship between two automaton exists. The most
-	 * common relationship of interest is that of <i>subsumption</i>. One
-	 * automaton <code>a1</code> subsumes another automaton <code>a2</code> if
-	 * <code>a1</code> accepts all the values accepted by <code>a2</code> (and
-	 * possibly more).
-	 * </p>
-	 *
-	 * @param relation
-	 *            --- the relation to be computed. automaton.
-	 */
-	public static final void computeFixpoint(Relation relation) {
-		Automaton from = relation.from();
-		Automaton to = relation.to();
-		int fromDomain = from.size();
-		int toDomain = to.size();
-
-		boolean changed = true;
-		while (changed) {
-			changed = false;
-			for (int i = 0; i != fromDomain; i++) {
-				for (int j = 0; j != toDomain; j++) {
-					changed |= relation.update(i, j);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Append a new state onto the end of an automaton. It is assumed that any
-	 * children the new state has already refer to states within the old
-	 * automaton.
-	 *
-	 * @param automaton
-	 *            --- the automaton to append on to
-	 * @param state
-	 *            --- the state to be appended
-	 * @return --- the new automaton
-	 */
-	public static Automaton append(Automaton automaton, State state) {
-		State[] ostates = automaton.states;
-		State[] nstates = new State[ostates.length+1];
-		System.arraycopy(ostates,0,nstates,0,ostates.length);
-		nstates[ostates.length] = state;
-		return new Automaton(nstates);
-	}
-
-	/**
-	 * Append all given states in place onto the given automaton.
-	 *
-	 * @param automaton
-	 * @param states
-	 */
-	public static int inplaceAppend(Automaton automaton, State state) {
-		State[] ostates = automaton.states;
-		State[] nstates = new State[ostates.length+1];
-		System.arraycopy(ostates,0,nstates,0,ostates.length);
-		nstates[ostates.length] = state;
-		automaton.states = nstates;
-		return ostates.length;
-	}
-
-	/**
-	 * Append all given states in place onto the given automaton.
-	 *
-	 * @param automaton
-	 * @param states
-	 */
-	public static void inplaceAppendAll(Automaton automaton, State... states) {
-		State[] ostates = automaton.states;
-		State[] nstates = new State[ostates.length+states.length];
-		System.arraycopy(ostates,0,nstates,0,ostates.length);
-		System.arraycopy(states,0,nstates,ostates.length,states.length);
-		automaton.states = nstates;
-	}
-
-	/**
-	 * Append an automaton (the <code>tail</code>) onto the back of another (the
-	 * <code>head</code>). In this case, all states in the automaton being
-	 * appended are remapped automaton for their new location.
-	 *
-	 * @param head
-	 *            --- head automaton
-	 * @param tail
-	 *            --- tail automaton to be appended onto head.
-	 * @return --- the new automaton.
-	 */
-	public static Automaton append(Automaton head, Automaton tail) {
-		State[] hstates = head.states;
-		State[] tstates = tail.states;
-		int hlength = hstates.length;
-		int tlength = tstates.length;
-		State[] nstates = new State[hlength+tlength];
-		System.arraycopy(hstates,0,nstates,0,hlength);
-		// now build remap
-		int[] rmap = new int[tlength];
-		for(int i=0;i!=tlength;++i) {
-			rmap[i] = i + hlength;
-		}
-		// then copy over states
-		int j = hlength;
-		for(int i=0;i!=tlength;++i,++j) {
-			nstates[j] = remap(tstates[i],rmap);
-		}
-		return new Automaton(nstates);
-	}
-
-	/**
 	 * The reorder method takes an automaton, and a mapping from vertices in the
 	 * old space to the those in the new space. It then reorders every state
 	 * according to this mapping. Thus, states may change position and
@@ -903,25 +795,6 @@ public final class Automata {
 			nstates[rmap[i]] = os;
 		}
 		automaton.states = nstates;
-	}
-
-	/**
-	 * The remap method takes an automaton, and a mapping from vertices in the
-	 * old space to the those in the new space. It then applies this mapping, so
-	 * that all states and transitions are remapped accordingly.
-	 *
-	 * @param automaton
-	 *            --- automaton to be transposed.
-	 * @param rmap
-	 *            --- mapping from integers in old space to those in new space.
-	 */
-	public static void inplaceRemap(Automaton automaton, int[] rmap) {
-		State[] ostates = automaton.states;
-		int length = ostates.length;
-		for(int i=0;i!=length;++i) {
-			State os = ostates[i];
-			inplaceRemap(os,rmap);
-		}
 	}
 
 	/**
@@ -998,16 +871,5 @@ public final class Automata {
 			}
 		}
 		return new State(node.kind,node.data,node.deterministic,nchildren);
-	}
-
-	public static void main(String[] args) {
-		State[] states = new State[3];
-		states[0] = new State(0,false,new int[]{1});
-		states[1] = new State(0,false,new int[]{1,2});
-		states[2] = new State(0,false,new int[]{});
-		Automaton a = new Automaton(states);
-		System.out.println("GOT: " + a);
-		a = minimise(a);
-		System.out.println("NOW: " + a);
 	}
 }
