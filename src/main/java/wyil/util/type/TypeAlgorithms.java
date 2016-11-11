@@ -82,7 +82,7 @@ public final class TypeAlgorithms {
 				NameID nid1 = (NameID) s1.data;
 				NameID nid2 = (NameID) s2.data;
 				return nid1.toString().compareTo(nid2.toString());
-			} else if(s1.kind == TypeSystem.K_LIST || s1.kind == TypeSystem.K_SET){
+			} else if(s1.kind == TypeSystem.K_ARRAY){
 				Boolean nid1 = (Boolean) s1.data;
 				Boolean nid2 = (Boolean) s2.data;
 				return nid1.toString().compareTo(nid2.toString());
@@ -150,9 +150,7 @@ public final class TypeAlgorithms {
 			return false;
 		}
 		switch(state.kind) {
-		case TypeSystem.K_SET:
-		case TypeSystem.K_MAP:
-		case TypeSystem.K_LIST:
+		case TypeSystem.K_ARRAY:
 		case TypeSystem.K_FUNCTION:
 		case TypeSystem.K_METHOD:
 			return false;
@@ -254,10 +252,7 @@ public final class TypeAlgorithms {
 		case TypeSystem.K_NULL:
 		case TypeSystem.K_BOOL:
 		case TypeSystem.K_BYTE:
-		case TypeSystem.K_CHAR:
 		case TypeSystem.K_INT:
-		case TypeSystem.K_RATIONAL:
-		case TypeSystem.K_STRING:
 		case TypeSystem.K_FUNCTION:
 		case TypeSystem.K_NOMINAL:
 		case TypeSystem.K_META:
@@ -265,11 +260,9 @@ public final class TypeAlgorithms {
 		// Other states have their inhabitation labels stored as a flag.
 		case TypeSystem.K_NEGATION:
 		case TypeSystem.K_UNION :
-		case TypeSystem.K_LIST:
+		case TypeSystem.K_ARRAY:
 		case TypeSystem.K_REFERENCE:
-		case TypeSystem.K_SET:
 		case TypeSystem.K_RECORD:
-		case TypeSystem.K_TUPLE:
 		case TypeSystem.K_METHOD:
 			if (inhabitationFlags.get(index)) {
 				return Inhabitation.SOME;
@@ -320,11 +313,9 @@ public final class TypeAlgorithms {
 			switch (existingKind) {
 			case TypeSystem.K_NEGATION:
 			case TypeSystem.K_UNION :
-			case TypeSystem.K_LIST:
+			case TypeSystem.K_ARRAY:
 			case TypeSystem.K_REFERENCE:
-			case TypeSystem.K_SET:
 			case TypeSystem.K_RECORD:
-			case TypeSystem.K_TUPLE:
 			case TypeSystem.K_FUNCTION:
 			case TypeSystem.K_METHOD:
 				inhabitationFlags.set(index, newValue == Inhabitation.SOME);
@@ -485,10 +476,7 @@ public final class TypeAlgorithms {
 		case TypeSystem.K_NULL:
 		case TypeSystem.K_BOOL:
 		case TypeSystem.K_BYTE:
-		case TypeSystem.K_CHAR:
 		case TypeSystem.K_INT:
-		case TypeSystem.K_RATIONAL:
-		case TypeSystem.K_STRING:
 		case TypeSystem.K_NOMINAL:
 		case TypeSystem.K_FUNCTION:
 		case TypeSystem.K_META:
@@ -499,14 +487,12 @@ public final class TypeAlgorithms {
 			return simplifyUnion(index, state, automaton, inhabitationFlags);
 		case TypeSystem.K_REFERENCE:
 			return simplifyReference(index, state, automaton, inhabitationFlags);
-		case TypeSystem.K_LIST:
-		case TypeSystem.K_SET:
+		case TypeSystem.K_ARRAY:
 			// void[]
 			// All non-empty lists and sets contain the empty list or set
 			return setStateInhabitation(index, automaton, inhabitationFlags, Inhabitation.SOME);
 			// list/set type of form [T+] so fall through to simplify like other compounds.
 		case TypeSystem.K_RECORD:
-		case TypeSystem.K_TUPLE:
 		case TypeSystem.K_METHOD:
 			return simplifyCompound(index, state, automaton, inhabitationFlags);
 		default:
@@ -998,15 +984,10 @@ public final class TypeAlgorithms {
 				return intersectRecords(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case TypeSystem.K_NOMINAL:
 				return intersectNominals(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
-			case TypeSystem.K_TUPLE:
-				return intersectTuples(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
-			case TypeSystem.K_LIST:
-			case TypeSystem.K_SET:
-				return intersectSetsOrLists(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
+			case TypeSystem.K_ARRAY:
+				return intersectArrays(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case TypeSystem.K_REFERENCE:
 				return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,fromState.data,allocations,states);
-			case TypeSystem.K_MAP:
-				return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,null,allocations,states);
 			case TypeSystem.K_NEGATION:
 				return intersectNegations(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case TypeSystem.K_UNION:
@@ -1115,33 +1096,6 @@ public final class TypeAlgorithms {
 	}
 
 	// ==================================================================================
-	// Tuples
-	// ==================================================================================
-
-	private static int intersectTuples(int fromIndex, boolean fromSign,
-			Automaton from, int toIndex, boolean toSign, Automaton to,
-			HashMap<IntersectionPoint, Integer> allocations,
-			ArrayList<Automaton.State> states) {
-
-		Automaton.State fromState = from.states[fromIndex];
-		Automaton.State toState = to.states[toIndex];
-
-		if(fromState.children.length != toState.children.length) {
-			if(fromSign && toSign) {
-				int myIndex = states.size();
-				states.add(new Automaton.State(TypeSystem.K_VOID));
-				return myIndex;
-			} else if(fromSign || toSign) {
-				int myIndex = states.size();
-				Automata.extractOnto(fromIndex,from,states);
-				return myIndex;
-			}
-		}
-
-		return intersectCompounds(fromIndex,fromSign,from,toIndex,toSign,to,null,allocations,states);
-	}
-
-	// ==================================================================================
 	// Unions
 	// ==================================================================================
 
@@ -1216,7 +1170,7 @@ public final class TypeAlgorithms {
 	// Sets and Lists
 	// ==================================================================================
 
-	private static int intersectSetsOrLists(int fromIndex, boolean fromSign, Automaton from,
+	private static int intersectArrays(int fromIndex, boolean fromSign, Automaton from,
 			int toIndex, boolean toSign, Automaton to,
 			HashMap<IntersectionPoint, Integer> allocations,
 			ArrayList<Automaton.State> states) {
