@@ -48,7 +48,9 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	private static String[] configOptions = {
 			"verbose",
 			"verify",
-			"brief"
+			"brief",
+			"includes",
+			"excludes"
 	};
 
 	/**
@@ -80,6 +82,19 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	 * performed.
 	 */
 	protected boolean verify = false;
+
+	/**
+	 * Identifies which whiley source files should be considered for
+	 * compilation. By default, all files reachable from srcdir are considered.
+	 */
+	protected Content.Filter<WhileyFile> whileyIncludes = Content.filter("**", WhileyFile.ContentType);
+
+	/**
+	 * Identifies which whiley sources files should not be considered for
+	 * compilation. This overrides any identified by <code>whileyIncludes</code>
+	 * . By default, no files files reachable from srcdir are excluded.
+	 */
+	protected Content.Filter<WhileyFile> whileyExcludes = null;
 
 	/**
 	 * Construct a new instance of this command.
@@ -150,6 +165,21 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		return "Compile one or more Whiley source files";
 	}
 
+	public String describeIncludes() {
+		return "Specify where find Whiley source files";
+	}
+
+	public void setIncludes(Content.Filter<WhileyFile> includes) {
+		this.whileyIncludes = includes;
+	}
+
+	public String describeExcludes() {
+		return "Specify Whiley source files to be excluded from consideration";
+	}
+
+	public void setExcludes(Content.Filter<WhileyFile> excludes) {
+		this.whileyExcludes = excludes;
+	}
 	// =======================================================================
 	// Execute
 	// =======================================================================
@@ -248,9 +278,6 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	 * @param project
 	 */
 	protected void addWhiley2WyilBuildRule(StdProject project) {
-		// Configure build rules for normal compilation
-		Content.Filter<WhileyFile> whileyIncludes = Content.filter("**", WhileyFile.ContentType);
-		Content.Filter<WhileyFile> whileyExcludes = null;
 		// Rule for compiling Whiley to WyIL
 		CompileTask wyilBuilder = new CompileTask(project);
 		if(verbose) {
@@ -280,6 +307,45 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		// Rule for compiling WyAL to WyCS
 		Wyal2WycsBuilder wycsBuilder = new Wyal2WycsBuilder(project);
 		project.add(new StdBuildRule(wycsBuilder, wyaldir, wyalIncludes, wyalExcludes, wycsdir));
+	}
+
+
+	public List getModifiedSourceFiles() throws IOException {
+		if (whileydir == null) {
+			// Note, whileyDir can be null if e.g. compiling wyil -> wyjc
+			return new ArrayList();
+		} else {
+			return getModifiedSourceFiles(whileydir, whileyIncludes, wyildir,
+					WyilFile.ContentType);
+		}
+	}
+
+	/**
+	 * Generate the list of source files which need to be recompiled. By
+	 * default, this is done by comparing modification times of each whiley file
+	 * against its corresponding wyil file. Wyil files which are out-of-date are
+	 * scheduled to be recompiled.
+	 *
+	 * @return
+	 * @throws IOException
+	 */
+	public static <T, S> List<Path.Entry<T>> getModifiedSourceFiles(Path.Root sourceDir,
+			Content.Filter<T> sourceIncludes, Path.Root binaryDir, Content.Type<S> binaryContentType)
+					throws IOException {
+		// Now, touch all source files which have modification date after
+		// their corresponding binary.
+		ArrayList<Path.Entry<T>> sources = new ArrayList<Path.Entry<T>>();
+
+		for (Path.Entry<T> source : sourceDir.get(sourceIncludes)) {
+			// currently, I'm assuming everything is modified!
+			Path.Entry<S> binary = binaryDir.get(source.id(), binaryContentType);
+			// first, check whether wycs file out-of-date with source file
+			if (binary == null || binary.lastModified() < source.lastModified()) {
+				sources.add(source);
+			}
+		}
+
+		return sources;
 	}
 
 	/**
