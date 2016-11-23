@@ -121,6 +121,10 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		verify = true;
 	}
 
+	public void setVerify(boolean b) {
+		verify = b;
+	}
+
 	public String describeVerbose() {
 		return "Enable verbose output from Whiley compiler";
 	}

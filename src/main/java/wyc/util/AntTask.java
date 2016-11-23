@@ -93,8 +93,8 @@ public class AntTask extends MatchingTask {
 		command.setWyaldir(dir);
 	}
 
-	public void setVerify() {
-		command.setVerify();
+	public void setVerify(boolean b) {
+		command.setVerify(b);
 	}
 
 	public void setVerbose(boolean b) {
