@@ -133,6 +133,8 @@ public class AntTask extends MatchingTask {
 			Compile.Result r = command.execute(files);
 			if (r == Compile.Result.SUCCESS) {
 				log("Compiled " + files.size() + " source file(s)");
+			} else {
+				throw new BuildException();
 			}
 		} catch (Exception e) {
 			throw new BuildException(e);
