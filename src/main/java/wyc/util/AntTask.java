@@ -93,12 +93,33 @@ public class AntTask extends MatchingTask {
 		command.setWyaldir(dir);
 	}
 
-	public void setVerify() {
-		command.setVerify();
+	public void setVerify(boolean b) {
+		command.setVerify(b);
 	}
 
 	public void setVerbose(boolean b) {
 		command.setVerbose(b);
+	}
+
+	@Override
+	public void setIncludes(String includes) {
+		String[] split = includes.split(",");
+		Content.Filter<WhileyFile> whileyFilter = null;
+		for (String s : split) {
+			if (s.endsWith(".whiley")) {
+				String name = s.substring(0, s.length() - 7);
+				Content.Filter<WhileyFile> nf1 = Content.filter(name, WhileyFile.ContentType);
+				whileyFilter = whileyFilter == null ? nf1 : Content.or(nf1, whileyFilter);
+			}
+		}
+		if (whileyFilter != null) {
+			command.setIncludes(whileyFilter);
+		}
+	}
+
+	@Override
+	public void setExcludes(String excludes) {
+
 	}
 
 	// =======================================================================
@@ -112,6 +133,8 @@ public class AntTask extends MatchingTask {
 			Compile.Result r = command.execute(files);
 			if (r == Compile.Result.SUCCESS) {
 				log("Compiled " + files.size() + " source file(s)");
+			} else {
+				throw new BuildException();
 			}
 		} catch (Exception e) {
 			throw new BuildException(e);

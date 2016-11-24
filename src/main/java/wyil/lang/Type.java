@@ -681,7 +681,7 @@ public interface Type {
 			switch (kind) {
 			case TypeSystem.K_RECORD:
 				return new Impl.UnionOfRecords(toImplRecords(cs));
-			case TypeSystem.K_LIST:
+			case TypeSystem.K_ARRAY:
 				return new Impl.UnionOfArrays(toImplArrays(cs));
 			case TypeSystem.K_REFERENCE:
 				// FIXME: return UnionOfReferencess
@@ -976,7 +976,7 @@ public interface Type {
 
 			@Override
 			public int getKind() {
-				return TypeSystem.K_LIST;
+				return TypeSystem.K_ARRAY;
 			}
 
 			@Override
@@ -995,7 +995,7 @@ public interface Type {
 
 			@Override
 			public int compareTo(Impl p) {
-				int r = TypeSystem.K_LIST - p.getKind();
+				int r = TypeSystem.K_ARRAY - p.getKind();
 				if (r == 0) {
 					Impl.Array n = (Impl.Array) p;
 					return element.compareTo(n.element);
@@ -1947,7 +1947,7 @@ public interface Type {
 					// For primitives, it's enough to know that they have
 					// the same kind.
 					break;
-				case TypeSystem.K_LIST: {
+				case TypeSystem.K_ARRAY: {
 					// For arrays, we need to know whether or not their element
 					// types intersect.
 					types[i] = (Atom) intersectArray((Impl.Array) types[i], (Impl.Array) types[j]);
