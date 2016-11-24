@@ -165,8 +165,8 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_47", "WyTP#20");
 		IGNORED.put("While_Valid_5", "timeout");
 		IGNORED.put("While_Valid_52", "WyTP#20");
-		IGNORED.put("While_Valid_53", "???");
-		IGNORED.put("While_Valid_54", "???");
+		IGNORED.put("While_Valid_53", "Fails Travis??");
+		IGNORED.put("While_Valid_54", "Fails Travis??");
 
 		// Fails and was not listed as test case before parameterizing
 		IGNORED.put("RecursiveType_Valid_28", "unknown");
