@@ -501,7 +501,7 @@ public final class WyilFilePrinter {
 		case Bytecode.OPCODE_is:
 			writeInfixLocations((Location<Bytecode.Operator>) expr, out);
 			break;
-		case Bytecode.OPCODE_varaccess:
+		case Bytecode.OPCODE_varcopy:
 			writeVariableAccess((Location<VariableAccess>) expr, out);
 			break;
 		default:

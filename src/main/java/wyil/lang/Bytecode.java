@@ -729,14 +729,15 @@ public interface Bytecode {
 	 * </p>
 	 */
 	public static final class VariableAccess extends AbstractBytecode implements Expr {
+		private boolean isCopy;
 
-		public VariableAccess(int operand) {
+		public VariableAccess(boolean isCopy, int operand) {
 			super(operand);
 		}
 
 		@Override
 		public int getOpcode() {
-			return OPCODE_varaccess;
+			return isCopy ? OPCODE_varcopy : OPCODE_varmove;
 		}
 
 		@Override
@@ -1993,21 +1994,22 @@ public interface Bytecode {
 
 	public static final int OPCODE_dereference = BINARY_ASSIGNABLE + 27;
 	public static final int OPCODE_newobject = BINARY_ASSIGNABLE + 28;
-	public static final int OPCODE_varaccess = BINARY_ASSIGNABLE + 29;
+	public static final int OPCODE_varcopy = BINARY_ASSIGNABLE + 29;
+	public static final int OPCODE_varmove = BINARY_ASSIGNABLE + 30;
 
 	// Nary Assignables
-	public static final int NARY_ASSIGNABLE = BINARY_ASSIGNABLE + 30;
+	public static final int NARY_ASSIGNABLE = BINARY_ASSIGNABLE + 31;
 
-	public static final int OPCODE_invoke = NARY_ASSIGNABLE + 2;
-	public static final int OPCODE_indirectinvoke = NARY_ASSIGNABLE + 3;
-	public static final int OPCODE_lambda = NARY_ASSIGNABLE + 4;
-	public static final int OPCODE_while = NARY_ASSIGNABLE + 5;
-	public static final int OPCODE_dowhile = NARY_ASSIGNABLE + 6;
-	public static final int OPCODE_some = NARY_ASSIGNABLE + 8;
-	public static final int OPCODE_all = NARY_ASSIGNABLE + 9;
-	public static final int OPCODE_assign = NARY_ASSIGNABLE + 10;
-	public static final int OPCODE_block = NARY_ASSIGNABLE + 11;
-	public static final int OPCODE_namedblock = NARY_ASSIGNABLE + 12;
+	public static final int OPCODE_invoke = NARY_ASSIGNABLE + 1;
+	public static final int OPCODE_indirectinvoke = NARY_ASSIGNABLE + 2;
+	public static final int OPCODE_lambda = NARY_ASSIGNABLE + 3;
+	public static final int OPCODE_while = NARY_ASSIGNABLE + 4;
+	public static final int OPCODE_dowhile = NARY_ASSIGNABLE + 5;
+	public static final int OPCODE_some = NARY_ASSIGNABLE + 6;
+	public static final int OPCODE_all = NARY_ASSIGNABLE + 7;
+	public static final int OPCODE_assign = NARY_ASSIGNABLE + 8;
+	public static final int OPCODE_block = NARY_ASSIGNABLE + 9;
+	public static final int OPCODE_namedblock = NARY_ASSIGNABLE + 10;
 
 	// =========================================================================
 	// Bytecode Schemas
