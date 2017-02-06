@@ -7,7 +7,7 @@
 package wyil.builders;
 
 import static wyil.lang.Bytecode.OPCODE_aliasdecl;
-import static wyil.lang.Bytecode.OPCODE_varaccess;
+import static wyil.lang.Bytecode.OPCODE_varcopy;
 import static wyil.lang.Bytecode.OPCODE_vardecl;
 import static wyil.lang.Bytecode.OPCODE_vardeclinit;
 import static wyil.util.ErrorMessages.errorMessage;
@@ -556,7 +556,7 @@ public class VerificationConditionGenerator {
 			return translateDereference(lval, context);
 		case Bytecode.OPCODE_fieldload:
 			return translateRecordAssign((Location<FieldLoad>) lval, context);
-		case Bytecode.OPCODE_varaccess:
+		case Bytecode.OPCODE_varcopy:
 			return translateVariableAssign((Location<VariableAccess>) lval, context);
 		default:
 			throw new InternalFailure("unknown lval encountered (" + lval + ")", context.getEnclosingFile().getEntry(),
@@ -710,7 +710,7 @@ public class VerificationConditionGenerator {
 			return null;
 		case Bytecode.OPCODE_fieldload:
 			return extractAssignedVariable(lval.getOperand(0));
-		case Bytecode.OPCODE_varaccess:
+		case Bytecode.OPCODE_varcopy:
 			return (Location<VariableAccess>) lval;
 		default:
 			throw new InternalFailure("unknown lval encountered (" + lval + ")", decl.parent().getEntry(), lval);
@@ -1207,7 +1207,7 @@ public class VerificationConditionGenerator {
 					Expr e = translateExpression(expr.getOperand(i), context.getEnvironment());
 					context = context.assume(e);
 				}
-			} else if (opcode != Bytecode.OPCODE_varaccess) {
+			} else if (opcode != Bytecode.OPCODE_varcopy) {
 				// In the case of a general expression, we just recurse any
 				// subexpressions without propagating information forward. We
 				// must ignore variable accesses here, because they refer back
@@ -1400,7 +1400,7 @@ public class VerificationConditionGenerator {
 			case Bytecode.OPCODE_some:
 			case Bytecode.OPCODE_all:
 				return translateQuantifier((Location<Quantifier>) loc, environment);
-			case Bytecode.OPCODE_varaccess:
+			case Bytecode.OPCODE_varcopy:
 				return translateVariableAccess((Location<VariableAccess>) loc, environment);
 			default:
 				return translateOperator((Location<Operator>) loc, environment);
@@ -2829,7 +2829,7 @@ public class VerificationConditionGenerator {
 	public Location<VariableDeclaration> getVariableDeclaration(Location<?> decl) {
 		switch (decl.getOpcode()) {
 		case OPCODE_aliasdecl:
-		case OPCODE_varaccess:
+		case OPCODE_varcopy:
 			return getVariableDeclaration(decl.getOperand(0));
 		case OPCODE_vardecl:
 		case OPCODE_vardeclinit:

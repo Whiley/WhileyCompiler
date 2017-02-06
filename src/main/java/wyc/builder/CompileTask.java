@@ -18,6 +18,7 @@ import wyfs.util.Trie;
 import wyil.checks.CoercionCheck;
 import wyil.checks.ModuleCheck;
 import wyil.lang.*;
+import wyil.util.MoveAnalysis;
 import wyil.util.TypeSystem;
 import wybs.lang.*;
 import wybs.lang.SyntaxError.InternalFailure;
@@ -96,7 +97,7 @@ public final class CompileTask implements Build.Task {
 	/**
 	 * A map of the source files currently being compiled.
 	 */
-	private final HashMap<Path.ID, Path.Entry<WhileyFile>> srcFiles = new HashMap<Path.ID, Path.Entry<WhileyFile>>();
+	private final HashMap<Path.ID, Path.Entry<WhileyFile>> srcFiles = new HashMap<>();
 
 	/**
 	 * The import cache caches specific import queries to their result sets.
@@ -171,7 +172,7 @@ public final class CompileTask implements Build.Task {
 		tmpTime = System.currentTimeMillis();
 		tmpMemory = runtime.freeMemory();
 
-		ArrayList<WhileyFile> files = new ArrayList<WhileyFile>();
+		ArrayList<WhileyFile> files = new ArrayList<>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			Path.Entry<?> entry = p.first();
 			if (entry.contentType() == WhileyFile.ContentType) {
@@ -208,7 +209,7 @@ public final class CompileTask implements Build.Task {
 		tmpMemory = runtime.freeMemory();
 
 		CodeGenerator generator = new CodeGenerator(this);
-		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
+		HashSet<Path.Entry<?>> generatedFiles = new HashSet<>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			Path.Entry<?> src = p.first();
 			Path.Root dst = p.second();
@@ -219,6 +220,7 @@ public final class CompileTask implements Build.Task {
 				WhileyFile wf = source.read();
 				new DefiniteAssignmentAnalysis(wf).check();
 				WyilFile wyil = generator.generate(wf, target);
+				new MoveAnalysis(this).apply(wyil);
 				target.write(wyil);
 			}
 		}
@@ -388,7 +390,7 @@ public final class CompileTask implements Build.Task {
 				return matches;
 			} else {
 				// cache miss
-				matches = new ArrayList<Path.ID>();
+				matches = new ArrayList<>();
 
 				for (Path.Entry<WhileyFile> sf : srcFiles.values()) {
 					if (key.matches(sf.id())) {
@@ -708,7 +710,7 @@ public final class CompileTask implements Build.Task {
 			return Type.Reference(refT.lifetime,element);
 		} else if (type instanceof SyntacticType.Record) {
 			SyntacticType.Record recT = (SyntacticType.Record) type;
-			ArrayList<Pair<Type, String>> fields = new ArrayList<Pair<Type, String>>();
+			ArrayList<Pair<Type, String>> fields = new ArrayList<>();
 			for (Map.Entry<String, SyntacticType> e : recT.types.entrySet()) {
 				fields.add(new Pair<>(toSemanticType(e.getValue(), context), e.getKey()));
 			}

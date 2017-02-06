@@ -560,7 +560,8 @@ public class Interpreter {
 			case Bytecode.OPCODE_all:
 				val = executeQuantifier((Location<Quantifier>) expr, frame);
 				break;
-			case Bytecode.OPCODE_varaccess:
+			case Bytecode.OPCODE_varmove:
+			case Bytecode.OPCODE_varcopy:
 				val = executeVariableAccess((Location<VariableAccess>) expr, frame);
 				break;
 			default:
@@ -926,14 +927,14 @@ public class Interpreter {
 	private Constant convert(Constant value, Type.Record to, SyntacticElement context) throws ResolveError {
 		checkType(value, context, Constant.Record.class);
 		Constant.Record rv = (Constant.Record) value;
-		HashSet<String> rv_fields = new HashSet<String>(rv.values().keySet());
+		HashSet<String> rv_fields = new HashSet<>(rv.values().keySet());
 		String[] to_fields = to.getFieldNames();
 		// Check fields in value are subset of those in target type
 		if (!rv_fields.containsAll(Arrays.asList(to_fields))) {
 			error("cannot convert between records with differing fields", context);
 			return null; // deadcode
 		} else {
-			HashMap<String, Constant> nValues = new HashMap<String, Constant>();
+			HashMap<String, Constant> nValues = new HashMap<>();
 			for (int i = 0; i != to_fields.length; ++i) {
 				String field = to_fields[i];
 				Type fieldType = to.getField(field);
@@ -960,7 +961,7 @@ public class Interpreter {
 	private Constant convert(Constant value, Type.Array to, SyntacticElement context) throws ResolveError {
 		checkType(value, context, Constant.Array.class);
 		Constant.Array lv = (Constant.Array) value;
-		ArrayList<Constant> values = new ArrayList<Constant>(lv.values());
+		ArrayList<Constant> values = new ArrayList<>(lv.values());
 		for (int i = 0; i != values.size(); ++i) {
 			values.set(i, convert(values.get(i), to.element(), context));
 		}
@@ -1033,7 +1034,8 @@ public class Interpreter {
 			LVal src = constructLVal(expr.getOperand(0), frame);
 			return new RecordLVal(src, fl.fieldName());
 		}
-		case Bytecode.OPCODE_varaccess: {
+		case Bytecode.OPCODE_varmove:
+		case Bytecode.OPCODE_varcopy: {
 			Location<VariableDeclaration> decl = getVariableDeclaration(expr);
 			return new VariableLVal(decl.getIndex());
 		}
@@ -1084,7 +1086,7 @@ public class Interpreter {
 		@Override
 		public void write(Constant[] frame,Constant rhs) {
 			Constant.Array arr = checkType(this.src.read(frame),null,Constant.Array.class);
-			ArrayList<Constant> values = new ArrayList<Constant>(arr.values());
+			ArrayList<Constant> values = new ArrayList<>(arr.values());
 			values.set(index, rhs);
 			src.write(frame,new Constant.Array(values));
 		}
@@ -1107,7 +1109,7 @@ public class Interpreter {
 		@Override
 		public void write(Constant[] frame, Constant rhs) {
 			Constant.Record rec = checkType(this.src.read(frame),null,Constant.Record.class);
-			HashMap<String, Constant> values = new HashMap<String, Constant>(rec.values());
+			HashMap<String, Constant> values = new HashMap<>(rec.values());
 			values.put(field, rhs);
 			src.write(frame,new Constant.Record(values));
 		}
@@ -1358,7 +1360,8 @@ public class Interpreter {
 	public Location<VariableDeclaration> getVariableDeclaration(Location<?> decl) {
 		switch (decl.getOpcode()) {
 		case Bytecode.OPCODE_aliasdecl:
-		case Bytecode.OPCODE_varaccess:
+		case Bytecode.OPCODE_varmove:
+		case Bytecode.OPCODE_varcopy:
 			return getVariableDeclaration(decl.getOperand(0));
 		case Bytecode.OPCODE_vardecl:
 		case Bytecode.OPCODE_vardeclinit:
