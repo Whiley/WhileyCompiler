@@ -82,19 +82,21 @@ public class AntTask extends MatchingTask {
 	}
 
 	public void setWhileydir(File dir) throws IOException {
-		command.setWhileydir(dir);
+		command.setWhileydir(dir.toString());
 	}
 
 	public void setWyildir(File dir) throws IOException {
-		command.setWyildir(dir);
+		command.setWyildir(dir.toString());
 	}
 
 	public void setWyaldir(File dir) throws IOException {
-		command.setWyaldir(dir);
+		command.setWyaldir(dir.toString());
 	}
 
 	public void setVerify(boolean b) {
-		command.setVerify(b);
+		if(b) {
+			command.setVerify();
+		}
 	}
 
 	public void setVerbose(boolean b) {

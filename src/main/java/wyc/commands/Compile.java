@@ -136,10 +136,6 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		verify = true;
 	}
 
-	public void setVerify(boolean b) {
-		verify = b;
-	}
-
 	public String describeVerbose() {
 		return "Enable verbose output from Whiley compiler";
 	}
@@ -187,7 +183,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	@Override
 	public Result execute(String... args) {
 		try {
-			ArrayList<File> delta = new ArrayList<File>();
+			ArrayList<File> delta = new ArrayList<>();
 			for (String arg : args) {
 				delta.add(new File(arg));
 			}
@@ -244,8 +240,9 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			// =====================================================================
 			// Build the source files
 			project.build(entries);
-			// Force all wyil files to be written to disk
+			// Force all binary files to be written to disk (if appropriate)
 			wyildir.flush();
+			wyaldir.flush();
 			//
 			return Result.SUCCESS;
 		} catch(InternalFailure e) {
@@ -334,7 +331,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 					throws IOException {
 		// Now, touch all source files which have modification date after
 		// their corresponding binary.
-		ArrayList<Path.Entry<T>> sources = new ArrayList<Path.Entry<T>>();
+		ArrayList<Path.Entry<T>> sources = new ArrayList<>();
 
 		for (Path.Entry<T> source : sourceDir.get(sourceIncludes)) {
 			// currently, I'm assuming everything is modified!

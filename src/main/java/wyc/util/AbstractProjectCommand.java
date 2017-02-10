@@ -44,7 +44,7 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 	 * directories) which the compiler uses to resolve symbols (e.g. module
 	 * names, functions, etc).
 	 */
-	protected ArrayList<Path.Root> whileypath = new ArrayList<Path.Root>();
+	protected ArrayList<Path.Root> whileypath = new ArrayList<>();
 
 	/**
 	 * The location in which whiley source files a located, or null if not
@@ -118,10 +118,6 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 		whileydir = new DirectoryRoot(dir,registry);
 	}
 
-	public void setWhileydir(File dir) throws IOException {
-		whileydir = new DirectoryRoot(dir,registry);
-	}
-
 	public String describeWhileydir() {
 		return "Specify where to find Whiley source files";
 	}
@@ -134,20 +130,12 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 		this.wyildir = new DirectoryRoot(dir, registry);
 	}
 
-	public void setWyildir(File dir) throws IOException {
-		this.wyildir = new DirectoryRoot(dir, registry);
-	}
-
 	public String describeWyaldir() {
 		return "Specify where to place generated verification (WyAL) files";
 	}
 
 	public void setWyaldir(String dir) throws IOException {
-		this.wyildir = new DirectoryRoot(dir, registry);
-	}
-
-	public void setWyaldir(File dir) throws IOException {
-		this.wyildir = new DirectoryRoot(dir, registry);
+		this.wyaldir = new DirectoryRoot(dir, registry);
 	}
 
 	// =======================================================================
@@ -165,7 +153,7 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 		// Finalise configuration
 		finaliseConfiguration();
 		// Add roots and construct project
-		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
+		ArrayList<Path.Root> roots = new ArrayList<>();
 
 		roots.add(whileydir);
 		roots.add(wyildir);
