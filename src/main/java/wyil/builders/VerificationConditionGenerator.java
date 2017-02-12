@@ -6,10 +6,6 @@
 
 package wyil.builders;
 
-import static wyil.lang.Bytecode.OPCODE_aliasdecl;
-import static wyil.lang.Bytecode.OPCODE_varcopy;
-import static wyil.lang.Bytecode.OPCODE_vardecl;
-import static wyil.lang.Bytecode.OPCODE_vardeclinit;
 import static wyil.util.ErrorMessages.errorMessage;
 
 import java.math.BigInteger;
@@ -556,6 +552,7 @@ public class VerificationConditionGenerator {
 			return translateDereference(lval, context);
 		case Bytecode.OPCODE_fieldload:
 			return translateRecordAssign((Location<FieldLoad>) lval, context);
+		case Bytecode.OPCODE_varmove:
 		case Bytecode.OPCODE_varcopy:
 			return translateVariableAssign((Location<VariableAccess>) lval, context);
 		default:
@@ -710,6 +707,7 @@ public class VerificationConditionGenerator {
 			return null;
 		case Bytecode.OPCODE_fieldload:
 			return extractAssignedVariable(lval.getOperand(0));
+		case Bytecode.OPCODE_varmove:
 		case Bytecode.OPCODE_varcopy:
 			return (Location<VariableAccess>) lval;
 		default:
@@ -1207,7 +1205,7 @@ public class VerificationConditionGenerator {
 					Expr e = translateExpression(expr.getOperand(i), context.getEnvironment());
 					context = context.assume(e);
 				}
-			} else if (opcode != Bytecode.OPCODE_varcopy) {
+			} else if (opcode != Bytecode.OPCODE_varcopy && opcode != Bytecode.OPCODE_varmove) {
 				// In the case of a general expression, we just recurse any
 				// subexpressions without propagating information forward. We
 				// must ignore variable accesses here, because they refer back
@@ -2829,11 +2827,12 @@ public class VerificationConditionGenerator {
 
 	public Location<VariableDeclaration> getVariableDeclaration(Location<?> decl) {
 		switch (decl.getOpcode()) {
-		case OPCODE_aliasdecl:
-		case OPCODE_varcopy:
+		case Bytecode.OPCODE_aliasdecl:
+		case Bytecode.OPCODE_varmove:
+		case Bytecode.OPCODE_varcopy:
 			return getVariableDeclaration(decl.getOperand(0));
-		case OPCODE_vardecl:
-		case OPCODE_vardeclinit:
+		case Bytecode.OPCODE_vardecl:
+		case Bytecode.OPCODE_vardeclinit:
 			return (Location<VariableDeclaration>) decl;
 		default:
 			throw new RuntimeException("internal failure --- dead code reached");
