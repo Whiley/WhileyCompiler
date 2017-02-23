@@ -126,7 +126,7 @@ public class FlowTypeChecker {
 	 * The constant cache contains a cache of expanded constant values. This is
 	 * simply to prevent recomputing them every time.
 	 */
-	private final HashMap<NameID, Pair<Constant, Type>> constantCache = new HashMap<NameID, Pair<Constant, Type>>();
+	private final HashMap<NameID, Pair<Constant, Type>> constantCache = new HashMap<>();
 
 	public FlowTypeChecker(CompileTask builder) {
 		this.builder = builder;
@@ -826,7 +826,7 @@ public class FlowTypeChecker {
 
 			// first, resolve the constants
 
-			ArrayList<Constant> values = new ArrayList<Constant>();
+			ArrayList<Constant> values = new ArrayList<>();
 			for (Expr e : c.expr) {
 				values.add(resolveAsConstant(e, context).first());
 			}
@@ -1031,7 +1031,7 @@ public class FlowTypeChecker {
 			// for general expressions.
 			expr = propagate(expr, environment, context);
 			checkIsSubtype(Type.T_BOOL, expr, context, environment);
-			return new Pair<Expr, Environment>(expr, environment);
+			return new Pair<>(expr, environment);
 		}
 	}
 
@@ -1069,7 +1069,7 @@ public class FlowTypeChecker {
 			uop.mhs = p.first();
 			checkIsSubtype(Type.T_BOOL, uop.mhs, context, environment);
 			uop.type = Type.T_BOOL;
-			return new Pair<Expr, Environment>(uop, p.second());
+			return new Pair<>(uop, p.second());
 		} else {
 			// Nothing else other than logical not is valid at this point.
 			syntaxError(errorMessage(INVALID_BOOLEAN_EXPRESSION), context, expr);
@@ -1196,7 +1196,7 @@ public class FlowTypeChecker {
 		checkIsSubtype(Type.T_BOOL, bop.rhs, context, environment);
 		bop.srcType = Type.T_BOOL;
 
-		return new Pair<Expr, Environment>(bop, environment);
+		return new Pair<>(bop, environment);
 	}
 
 	/**
@@ -1326,7 +1326,7 @@ public class FlowTypeChecker {
 			}
 		}
 
-		return new Pair<Expr, Environment>(bop, environment);
+		return new Pair<>(bop, environment);
 	}
 
 	// =========================================================================
@@ -1517,7 +1517,7 @@ public class FlowTypeChecker {
 			Triple<String, Expr, Expr> p = sources.get(i);
 			Expr start = propagate(p.second(), local, context);
 			Expr end = propagate(p.third(), local, context);
-			sources.set(i, new Triple<String, Expr, Expr>(p.first(), start, end));
+			sources.set(i, new Triple<>(p.first(), start, end));
 			checkIsSubtype(Type.T_INT, start, context, environment);
 			local = local.declare(p.first(), Type.T_INT, Type.T_INT);
 		}
@@ -1558,7 +1558,7 @@ public class FlowTypeChecker {
 		Triple<NameID, Type.FunctionOrMethod, List<String>> p;
 
 		if (expr.paramTypes != null) {
-			ArrayList<Type> paramTypes = new ArrayList<Type>();
+			ArrayList<Type> paramTypes = new ArrayList<>();
 			for (SyntacticType t : expr.paramTypes) {
 				paramTypes.add(builder.toSemanticType(t, context));
 			}
@@ -1635,7 +1635,7 @@ public class FlowTypeChecker {
 		}
 
 		// resolve through arguments
-		ArrayList<Type> argTypes = new ArrayList<Type>();
+		ArrayList<Type> argTypes = new ArrayList<>();
 		for (int i = 0; i != exprArgs.size(); ++i) {
 			Expr arg = propagate(exprArgs.get(i), environment, context);
 			exprArgs.set(i, arg);
@@ -1666,7 +1666,7 @@ public class FlowTypeChecker {
 				} else {
 					// We have to guess proper lifetime arguments.
 					List<Type> rawArgTypes = stripType(argTypes);
-					List<ValidCandidate> validCandidates = new ArrayList<ValidCandidate>();
+					List<ValidCandidate> validCandidates = new ArrayList<>();
 					guessLifetimeArguments(extractLifetimesFromArguments(rawArgTypes), lifetimeParameters,
 							Arrays.asList(funType.params()), rawArgTypes, null, // don't
 																				// need
@@ -1695,7 +1695,7 @@ public class FlowTypeChecker {
 					// also print all solutions.
 					StringBuilder msg = new StringBuilder(
 							"no lifetime arguments specified and unable to infer a unique solution");
-					List<String> solutions = new ArrayList<String>(validCandidates.size());
+					List<String> solutions = new ArrayList<>(validCandidates.size());
 					for (ValidCandidate vc : validCandidates) {
 						solutions.add(vc.lifetimeArguments.toString());
 					}
@@ -1737,7 +1737,7 @@ public class FlowTypeChecker {
 		Path.ID qualification = expr.qualification;
 		ArrayList<Expr> exprArgs = expr.arguments;
 		ArrayList<String> lifetimeArgs = expr.lifetimeArguments;
-		ArrayList<Type> paramTypes = new ArrayList<Type>();
+		ArrayList<Type> paramTypes = new ArrayList<>();
 		for (int i = 0; i != exprArgs.size(); ++i) {
 			Expr arg = propagate(exprArgs.get(i), environment, context);
 			exprArgs.set(i, arg);
@@ -1746,7 +1746,7 @@ public class FlowTypeChecker {
 
 		// second, determine the fully qualified name of this function based on
 		// the given function name and any supplied qualifications.
-		ArrayList<String> qualifications = new ArrayList<String>();
+		ArrayList<String> qualifications = new ArrayList<>();
 		if (expr.qualification != null) {
 			for (String n : expr.qualification) {
 				qualifications.add(n);
@@ -1823,17 +1823,46 @@ public class FlowTypeChecker {
 			throws IOException, ResolveError {
 
 		HashMap<String, Expr> exprFields = expr.fields;
-		ArrayList<Pair<Type, String>> fieldTypes = new ArrayList<Pair<Type, String>>();
+		ArrayList<Pair<Type, String>> fieldTypes = new ArrayList<>();
 
-		ArrayList<String> fields = new ArrayList<String>(exprFields.keySet());
+		ArrayList<String> fields = new ArrayList<>(exprFields.keySet());
 		for (String field : fields) {
 			Expr e = propagate(exprFields.get(field), environment, context);
 			Type t = e.result();
 			exprFields.put(field, e);
-			fieldTypes.add(new Pair<Type, String>(t, field));
+			fieldTypes.add(new Pair<>(t, field));
 		}
 
-		expr.type = (Type.Record) expandAsEffectiveRecord(Type.Record(false, fieldTypes), expr, context);
+		Type.Record anonType = (Type.Record) Type.Record(false, fieldTypes);
+
+		if(expr.name != null) {
+			// This indicates a named record initialiser. So, make sure we can
+			// resolve the name in question.
+			NameID name = builder.resolveAsName(expr.name, context);
+			// Expand name to a record type.
+			Type namedType = Type.Nominal(name);
+			Type.Record expandedType = (Type.Record) expandAsEffectiveRecord(namedType, expr, context);
+			String[] expandedFields = expandedType.getFieldNames();
+			// Begin checking field types
+			if(expandedFields.length != fields.size()) {
+				// FIXME: need to support open records
+				syntaxError(errorMessage(SUBTYPE_ERROR,expandedType,anonType),context,expr);
+			} else {
+				// Check that all fields match the appropriate types
+				for(int i=0;i!=expandedFields.length;++i) {
+					String fieldName = expandedFields[i];
+					Type anonFieldType = anonType.getField(fieldName);
+					Type namedFieldType = expandedType.getField(fieldName);
+					if(anonFieldType == null) {
+						syntaxError(errorMessage(RECORD_MISSING_FIELD, fieldName), context, expr);
+					}
+					checkIsSubtype(namedFieldType, anonFieldType, expr, environment);
+				}
+			}
+			expr.type = namedType;
+		} else {
+			expr.type = (Type.Record) expandAsEffectiveRecord(anonType, expr, context);
+		}
 
 		return expr;
 	}
@@ -1854,7 +1883,7 @@ public class FlowTypeChecker {
 	private Expr propagate(Expr.ConstantAccess expr, Environment environment, Context context) throws IOException {
 		// First, determine the fully qualified name of this function based on
 		// the given function name and any supplied qualifications.
-		ArrayList<String> qualifications = new ArrayList<String>();
+		ArrayList<String> qualifications = new ArrayList<>();
 		if (expr.qualification != null) {
 			for (String n : expr.qualification) {
 				qualifications.add(n);
@@ -1903,7 +1932,7 @@ public class FlowTypeChecker {
 	}
 
 	private List<Pair<Expr, Type>> calculateTypesProduced(List<Expr> expressions) {
-		ArrayList<Pair<Expr, Type>> types = new ArrayList<Pair<Expr, Type>>();
+		ArrayList<Pair<Expr, Type>> types = new ArrayList<>();
 		for (int i = 0; i != expressions.size(); ++i) {
 			Expr e = expressions.get(i);
 			if (e instanceof Expr.Multi) {
@@ -1911,12 +1940,12 @@ public class FlowTypeChecker {
 				// therefore extract them all.
 				Expr.Multi me = (Expr.Multi) e;
 				for (Type ret : me.returns()) {
-					types.add(new Pair<Expr, Type>(e, ret));
+					types.add(new Pair<>(e, ret));
 				}
 			} else {
 				// The assigned rval is a simple expression which returns a
 				// single value
-				types.add(new Pair<Expr, Type>(e, e.result()));
+				types.add(new Pair<>(e, e.result()));
 			}
 		}
 		return types;
@@ -1944,7 +1973,7 @@ public class FlowTypeChecker {
 					throws IOException, ResolveError {
 
 		// The set of candidate names and types for this function or method.
-		HashSet<Pair<NameID, Type.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Type.FunctionOrMethod>>();
+		HashSet<Pair<NameID, Type.FunctionOrMethod>> candidates = new HashSet<>();
 
 		// First, add all valid candidates to the list without considering which
 		// is the most precise.
@@ -1994,7 +2023,7 @@ public class FlowTypeChecker {
 			List<Type> parameters, List<String> lifetimeArgs, Context context, Environment environment)
 					throws IOException, ResolveError {
 
-		HashSet<Pair<NameID, Type.FunctionOrMethod>> candidates = new HashSet<Pair<NameID, Type.FunctionOrMethod>>();
+		HashSet<Pair<NameID, Type.FunctionOrMethod>> candidates = new HashSet<>();
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : context.imports()) {
 			String impName = imp.name;
@@ -2060,7 +2089,7 @@ public class FlowTypeChecker {
 	}
 
 	private String foundCandidatesString(Collection<Pair<NameID, Type.FunctionOrMethod>> candidates) {
-		ArrayList<String> candidateStrings = new ArrayList<String>();
+		ArrayList<String> candidateStrings = new ArrayList<>();
 		for (Pair<NameID, Type.FunctionOrMethod> c : candidates) {
 			candidateStrings.add(c.first() + " : " + c.second());
 		}
@@ -2086,12 +2115,12 @@ public class FlowTypeChecker {
 	 * @return a set of all extracted lifetime names, without "*"
 	 */
 	private List<String> extractLifetimesFromArguments(Iterable<Type> types) {
-		Set<String> result = new HashSet<String>();
+		Set<String> result = new HashSet<>();
 		for (Type t : types) {
 			extractLifetimes(t, result);
 		}
 		result.add("*");
-		return new ArrayList<String>(result);
+		return new ArrayList<>(result);
 	}
 
 	private void extractLifetimes(Type type, Set<String> lifetimes) {
@@ -2181,7 +2210,7 @@ public class FlowTypeChecker {
 				// OK, substitution is necessary.
 				Iterator<Type> itC = candidateParameterTypes.iterator();
 				Iterator<Type> itT = targetParameterTypes.iterator();
-				List<Type> parameterTypesSubstituted = new ArrayList<Type>(candidateParameterTypes.size());
+				List<Type> parameterTypesSubstituted = new ArrayList<>(candidateParameterTypes.size());
 				while (itC.hasNext()) {
 					Type c = itC.next();
 					Type t = itT.next();
@@ -2225,7 +2254,7 @@ public class FlowTypeChecker {
 		if (parameters == null) {
 			if (candidates.size() == 1) {
 				Pair<NameID, Type.FunctionOrMethod> p = candidates.iterator().next();
-				return new Triple<NameID, Type.FunctionOrMethod, List<String>>(p.first(), p.second(), null);
+				return new Triple<>(p.first(), p.second(), null);
 			}
 
 			// More than one candidate and all will match. Clearly ambiguous!
@@ -2244,7 +2273,7 @@ public class FlowTypeChecker {
 		List<String> lifetimesUsedInArguments = null;
 
 		// Check each candidate to see if it is valid.
-		List<ValidCandidate> validCandidates = new LinkedList<ValidCandidate>();
+		List<ValidCandidate> validCandidates = new LinkedList<>();
 		for (Pair<NameID, Type.FunctionOrMethod> p : candidates) {
 			Type.FunctionOrMethod candidateType = p.second();
 			List<Type> candidateParameterTypes = Arrays.asList(candidateType.params());
@@ -2353,13 +2382,13 @@ public class FlowTypeChecker {
 				}
 			}
 
-			return new Triple<NameID, Type.FunctionOrMethod, List<String>>(winnerId, winnerType,
+			return new Triple<>(winnerId, winnerType,
 					winner.lifetimeArguments);
 		}
 
 		// this is an ambiguous error
 		StringBuilder msg = new StringBuilder(name + parameterString(parameters) + " is ambiguous");
-		ArrayList<String> candidateStrings = new ArrayList<String>();
+		ArrayList<String> candidateStrings = new ArrayList<>();
 		for (ValidCandidate c : validCandidates) {
 			String s = c.id + " : " + c.type;
 			if (!c.lifetimeArguments.isEmpty()) {
@@ -2426,7 +2455,7 @@ public class FlowTypeChecker {
 			// Here we generate a guessed list of lifetime arguments.
 			// Basically it is the algorithm to transform guessNumber to
 			// base size(lifetimesUsedInArguments).
-			List<String> guessedLifetimeArgs = new ArrayList<String>(candidateLifetimeParams.size());
+			List<String> guessedLifetimeArgs = new ArrayList<>(candidateLifetimeParams.size());
 			for (int i = 0; i < exp; i++) {
 				int guessed = (int) ((guessNumber / (long) Math.pow(base, i)) % base);
 				guessedLifetimeArgs.add(lifetimesUsedInArguments.get(guessed));
@@ -2477,7 +2506,7 @@ public class FlowTypeChecker {
 			for (WhileyFile.FunctionOrMethod f : wf.declarations(WhileyFile.FunctionOrMethod.class, nid.name())) {
 				if (nparams == -1 || f.parameters.size() == nparams) {
 					Type.FunctionOrMethod ft = (Type.FunctionOrMethod) builder.toSemanticType(f.unresolvedType(), f);
-					candidates.add(new Pair<NameID, Type.FunctionOrMethod>(nid, ft));
+					candidates.add(new Pair<>(nid, ft));
 				}
 			}
 		} else {
@@ -2486,14 +2515,14 @@ public class FlowTypeChecker {
 				if ((mm.isFunction() || mm.isMethod()) && mm.name().equals(nid.name())
 						&& (nparams == -1 || mm.type().params().length == nparams)) {
 					Type.FunctionOrMethod t = mm.type();
-					candidates.add(new Pair<NameID, Type.FunctionOrMethod>(nid, t));
+					candidates.add(new Pair<>(nid, t));
 				}
 			}
 		}
 	}
 
 	private static List<Type> stripType(List<Type> types) {
-		ArrayList<Type> r = new ArrayList<Type>();
+		ArrayList<Type> r = new ArrayList<>();
 		for (Type t : types) {
 			r.add(t);
 		}
@@ -2560,7 +2589,7 @@ public class FlowTypeChecker {
 				String fieldName = fieldNames[i];
 				// FIXME: would be more efficient to access by field index
 				Type element = substitute(substitution, t.getField(fieldName));
-				fields[i] = new Pair<Type, String>(element, fieldName);
+				fields[i] = new Pair<>(element, fieldName);
 			}
 			return Type.Record(t.isOpen(), fields);
 		} else if (type instanceof Type.Function) {
@@ -2585,7 +2614,7 @@ public class FlowTypeChecker {
 			// Create a clone of the substitution so we can cut out any lifetime
 			// parameters declared by this method. This is necessary to avoid
 			// any potential variable captures.
-			HashMap<String, String> nSubstitution = new HashMap<String, String>(substitution);
+			HashMap<String, String> nSubstitution = new HashMap<>(substitution);
 			// Remove lifetime parameters from keys in the substitution map
 			String[] lifetimeParameters = t.lifetimeParams();
 			for (int i = 0; i != lifetimeParameters.length; ++i) {
@@ -2631,7 +2660,7 @@ public class FlowTypeChecker {
 
 	private static Map<String, String> buildSubstitution(List<String> lifetimeParameters,
 			List<String> lifetimeArguments) {
-		Map<String, String> substitution = new HashMap<String, String>();
+		Map<String, String> substitution = new HashMap<>();
 		Iterator<String> itP = lifetimeParameters.iterator();
 		Iterator<String> itA = lifetimeArguments.iterator();
 		while (itP.hasNext()) {
@@ -2772,7 +2801,7 @@ public class FlowTypeChecker {
 					cd.constant = propagate(cd.constant, new Environment(), cd);
 					cd.resolvedValue = resolveAsConstant(cd.constant, cd, visited).first();
 				}
-				result = new Pair<Constant, Type>(cd.resolvedValue, cd.constant.result());
+				result = new Pair<>(cd.resolvedValue, cd.constant.result());
 			} else {
 				throw new ResolveError("unable to find constant " + key);
 			}
@@ -2781,7 +2810,7 @@ public class FlowTypeChecker {
 			WyilFile.Constant cd = module.constant(key.name());
 			if (cd != null) {
 				Constant c = cd.constant();
-				result = new Pair<Constant, Type>(c, c.type());
+				result = new Pair<>(c, c.type());
 			} else {
 				throw new ResolveError("unable to find constant " + key);
 			}
@@ -2811,10 +2840,10 @@ public class FlowTypeChecker {
 		try {
 			if (expr instanceof Expr.Constant) {
 				Expr.Constant c = (Expr.Constant) expr;
-				return new Pair<Constant, Type>(c.value, c.result());
+				return new Pair<>(c.value, c.result());
 			} else if (expr instanceof Expr.ConstantAccess) {
 				Expr.ConstantAccess c = (Expr.ConstantAccess) expr;
-				ArrayList<String> qualifications = new ArrayList<String>();
+				ArrayList<String> qualifications = new ArrayList<>();
 				if (c.qualification != null) {
 					for (String n : c.qualification) {
 						qualifications.add(n);
@@ -2832,44 +2861,44 @@ public class FlowTypeChecker {
 				Expr.BinOp bop = (Expr.BinOp) expr;
 				Pair<Constant, Type> lhs = resolveAsConstant(bop.lhs, context, visited);
 				Pair<Constant, Type> rhs = resolveAsConstant(bop.rhs, context, visited);
-				return new Pair<Constant, Type>(evaluate(bop, lhs.first(), rhs.first(), context), lhs.second());
+				return new Pair<>(evaluate(bop, lhs.first(), rhs.first(), context), lhs.second());
 			} else if (expr instanceof Expr.UnOp) {
 				Expr.UnOp uop = (Expr.UnOp) expr;
 				Pair<Constant, Type> lhs = resolveAsConstant(uop.mhs, context, visited);
-				return new Pair<Constant, Type>(evaluate(uop, lhs.first(), context), lhs.second());
+				return new Pair<>(evaluate(uop, lhs.first(), context), lhs.second());
 			} else if (expr instanceof Expr.ArrayInitialiser) {
 				Expr.ArrayInitialiser nop = (Expr.ArrayInitialiser) expr;
-				ArrayList<Constant> values = new ArrayList<Constant>();
+				ArrayList<Constant> values = new ArrayList<>();
 				Type element = Type.T_VOID;
 				for (Expr arg : nop.arguments) {
 					Pair<Constant, Type> e = resolveAsConstant(arg, context, visited);
 					values.add(e.first());
 					element = Type.Union(element, e.second());
 				}
-				return new Pair<Constant, Type>(new Constant.Array(values), Type.Array(element));
+				return new Pair<>(new Constant.Array(values), Type.Array(element));
 			} else if (expr instanceof Expr.ArrayGenerator) {
 				Expr.ArrayGenerator lg = (Expr.ArrayGenerator) expr;
 				Pair<Constant, Type> element = resolveAsConstant(lg.element, context, visited);
 				Pair<Constant, Type> count = resolveAsConstant(lg.count, context, visited);
 				Constant.Array l = evaluate(lg, element.first(), count.first(), context);
-				return new Pair<Constant, Type>(l, Type.Array(element.second()));
+				return new Pair<>(l, Type.Array(element.second()));
 			} else if (expr instanceof Expr.Record) {
 				Expr.Record rg = (Expr.Record) expr;
-				HashMap<String, Constant> values = new HashMap<String, Constant>();
-				ArrayList<Pair<Type, String>> types = new ArrayList<Pair<Type, String>>();
+				HashMap<String, Constant> values = new HashMap<>();
+				ArrayList<Pair<Type, String>> types = new ArrayList<>();
 				for (Map.Entry<String, Expr> e : rg.fields.entrySet()) {
 					Pair<Constant, Type> v = resolveAsConstant(e.getValue(), context, visited);
 					if (v == null) {
 						return null;
 					}
 					values.put(e.getKey(), v.first());
-					types.add(new Pair<Type, String>(v.second(), e.getKey()));
+					types.add(new Pair<>(v.second(), e.getKey()));
 				}
-				return new Pair<Constant, Type>(new Constant.Record(values), Type.Record(false, types));
+				return new Pair<>(new Constant.Record(values), Type.Record(false, types));
 			} else if (expr instanceof Expr.FunctionOrMethod) {
 				// TODO: add support for proper lambdas
 				Expr.FunctionOrMethod f = (Expr.FunctionOrMethod) expr;
-				return new Pair<Constant, Type>(new Constant.FunctionOrMethod(f.nid, f.type), f.type);
+				return new Pair<>(new Constant.FunctionOrMethod(f.nid, f.type), f.type);
 			}
 		} catch (SyntaxError.InternalFailure e) {
 			throw e;
@@ -2970,7 +2999,7 @@ public class FlowTypeChecker {
 	private Constant.Array evaluate(Expr.ArrayGenerator bop, Constant element, Constant count, Context context) {
 		if (count instanceof Constant.Integer) {
 			Constant.Integer c = (Constant.Integer) count;
-			ArrayList<Constant> items = new ArrayList<Constant>();
+			ArrayList<Constant> items = new ArrayList<>();
 			for (int i = 0; i != c.value().intValue(); ++i) {
 				items.add(element);
 			}
@@ -3185,10 +3214,10 @@ public class FlowTypeChecker {
 		 */
 		public Environment() {
 			count = 1;
-			currentTypes = new HashMap<String, Type>();
-			declaredTypes = new HashMap<String, Type>();
+			currentTypes = new HashMap<>();
+			declaredTypes = new HashMap<>();
 			inLambda = false;
-			lambdaLifetimes = new HashSet<String>();
+			lambdaLifetimes = new HashSet<>();
 			lifetimeRelation = new LifetimeRelation();
 		}
 

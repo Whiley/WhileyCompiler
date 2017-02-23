@@ -9,6 +9,7 @@ package wyc.testing;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -44,7 +45,7 @@ public class AllInvalidTest {
 	/**
 	 * Ignored tests and a reason why we ignore them.
 	 */
-	public final static Map<String, String> IGNORED = new HashMap<String, String>();
+	public final static Map<String, String> IGNORED = new HashMap<>();
 
 	static {
 		IGNORED.put("Constant_Invalid_1", "unclassified");

@@ -1,0 +1,10 @@
+type Point is { int x, int y }
+type Position is { int x, int y }
+
+function fromXY(int x, int y) -> (Position r):
+    return Point{x:x, y:y}
+
+public export method test():
+    Position p = fromXY(1,2)
+    //
+    assert p.x == 1 && p.y == 2
