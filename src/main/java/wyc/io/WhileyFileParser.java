@@ -52,7 +52,7 @@ public class WhileyFileParser {
 
 	public WhileyFileParser(Path.Entry<WhileyFile> entry, List<Token> tokens) {
 		this.entry = entry;
-		this.tokens = new ArrayList<Token>(tokens);
+		this.tokens = new ArrayList<>(tokens);
 	}
 
 	/**
@@ -164,7 +164,7 @@ public class WhileyFileParser {
 	}
 
 	private List<Modifier> parseModifiers() {
-		ArrayList<Modifier> mods = new ArrayList<Modifier>();
+		ArrayList<Modifier> mods = new ArrayList<>();
 		Token lookahead;
 		boolean visible = false;
 		while ((lookahead = tryAndMatch(true, Public, Private,
@@ -283,8 +283,8 @@ public class WhileyFileParser {
 		}
 
 		// Parse optional requires/ensures clauses
-		ArrayList<Expr> requires = new ArrayList<Expr>();
-		ArrayList<Expr> ensures = new ArrayList<Expr>();
+		ArrayList<Expr> requires = new ArrayList<>();
+		ArrayList<Expr> ensures = new ArrayList<>();
 
 		Token lookahead;
 		while ((lookahead = tryAndMatch(true, Requires, Ensures)) != null) {
@@ -332,7 +332,7 @@ public class WhileyFileParser {
 
 	public List<Parameter> parseParameters(WhileyFile wf, EnclosingScope scope) {
 		match(LeftBrace);
-		ArrayList<Parameter> parameters = new ArrayList<Parameter>();
+		ArrayList<Parameter> parameters = new ArrayList<>();
 		boolean firstTime = true;
 		while (eventuallyMatch(RightBrace) == null) {
 			if (!firstTime) {
@@ -356,7 +356,7 @@ public class WhileyFileParser {
 			return parseParameters(wf, scope);
 		} else {
 			Parameter p = parseOptionalParameter(wf, scope);
-			ArrayList<Parameter> ps = new ArrayList<Parameter>();
+			ArrayList<Parameter> ps = new ArrayList<>();
 			ps.add(p);
 			return ps;
 		}
@@ -421,7 +421,7 @@ public class WhileyFileParser {
 		// Parse the type pattern
 		EnclosingScope scope = new EnclosingScope();
 		Parameter p = parseOptionalParameter(wf, scope);
-		ArrayList<Expr> invariant = new ArrayList<Expr>();
+		ArrayList<Expr> invariant = new ArrayList<>();
 		// Check whether or not there is an optional "where" clause.
 		while (tryAndMatch(true, Where) != null) {
 			// Yes, there is a "where" clause so parse the constraint. First,
@@ -524,7 +524,7 @@ public class WhileyFileParser {
 			// Initial indent is valid, so we proceed parsing statements with
 			// the appropriate level of indent.
 			//
-			ArrayList<Stmt> stmts = new ArrayList<Stmt>();
+			ArrayList<Stmt> stmts = new ArrayList<>();
 			Indent nextIndent;
 			while ((nextIndent = getIndent()) != null
 					&& indent.lessThanEq(nextIndent)) {
@@ -991,7 +991,7 @@ public class WhileyFileParser {
 		match(While);
 		Expr condition = parseLogicalExpression(wf, scope, false);
 		// Parse the loop invariants
-		List<Expr> invariants = new ArrayList<Expr>();
+		List<Expr> invariants = new ArrayList<>();
 		while (tryAndMatch(true, Where) != null) {
 			invariants.add(parseLogicalExpression(wf, scope, false));
 		}
@@ -1070,7 +1070,7 @@ public class WhileyFileParser {
 			if (tryAndMatch(true, If) != null) {
 				// This is an if-chain, so backtrack and parse a complete If
 				index = if_start;
-				fblk = new ArrayList<Stmt>();
+				fblk = new ArrayList<>();
 				fblk.add(parseIfStatement(wf, scope));
 			} else {
 				match(Colon);
@@ -1109,7 +1109,7 @@ public class WhileyFileParser {
 		// NOTE: expression terminated by ':'
 		Expr condition = parseLogicalExpression(wf, scope, true);
 		// Parse the loop invariants
-		List<Expr> invariants = new ArrayList<Expr>();
+		List<Expr> invariants = new ArrayList<>();
 		while (tryAndMatch(true, Where) != null) {
 			// NOTE: expression terminated by ':'
 			invariants.add(parseLogicalExpression(wf, scope, true));
@@ -1225,7 +1225,7 @@ public class WhileyFileParser {
 			// Initial indent is valid, so we proceed parsing case statements
 			// with the appropriate level of indent.
 			//
-			ArrayList<Stmt.Case> cases = new ArrayList<Stmt.Case>();
+			ArrayList<Stmt.Case> cases = new ArrayList<>();
 
 			Indent nextIndent;
 			while ((nextIndent = getIndent()) != null
@@ -1291,7 +1291,7 @@ public class WhileyFileParser {
 		} else {
 			match(Case);
 			// Now, parse one or more constant expressions
-			values = new ArrayList<Expr>();
+			values = new ArrayList<>();
 			do {
 				// NOTE: expression terminated by ':'
 				values.add(parseExpression(wf, scope, true));
@@ -1372,7 +1372,7 @@ public class WhileyFileParser {
 	 */
 	private List<Expr.LVal> parseLVals(WhileyFile wf, EnclosingScope scope) {
 		int start = index;
-		ArrayList<Expr.LVal> elements = new ArrayList<Expr.LVal>();
+		ArrayList<Expr.LVal> elements = new ArrayList<>();
 		elements.add(parseLVal(index, wf, scope));
 
 		// Check whether we have a multiple lvals or not
@@ -1509,7 +1509,7 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	public List<Expr> parseExpressions(WhileyFile wf, EnclosingScope scope, boolean terminated) {
-		ArrayList<Expr> returns = new ArrayList<Expr>();
+		ArrayList<Expr> returns = new ArrayList<>();
 		// A return statement may optionally have a return expression.
 		// Therefore, we first skip all whitespace on the given line.
 		int next = skipLineSpace(index);
@@ -1946,7 +1946,7 @@ public class WhileyFileParser {
 
 		// Parse one or more source variables / expressions
 		scope = scope.newEnclosingScope();
-		List<Triple<String, Expr, Expr>> srcs = new ArrayList<Triple<String, Expr, Expr>>();
+		List<Triple<String, Expr, Expr>> srcs = new ArrayList<>();
 		boolean firstTime = true;
 
 		do {
@@ -1960,7 +1960,7 @@ public class WhileyFileParser {
 			Expr lhs = parseAdditiveExpression(wf, scope, terminated);
 			match(DotDot);
 			Expr rhs = parseAdditiveExpression(wf, scope, terminated);
-			srcs.add(new Triple<String, Expr, Expr>(id.text, lhs, rhs));
+			srcs.add(new Triple<>(id.text, lhs, rhs));
 			scope.declareVariable(id);
 		} while (eventuallyMatch(VerticalBar) == null);
 
@@ -2417,7 +2417,11 @@ public class WhileyFileParser {
 				} else {
 					index = oldindex; // backtrack
 				}
-			} // no else if, in case the former one didn't return
+			} else if (lookaheadSequence(terminated, LeftCurly)) {
+				// This indicates a named record initialiser which consists of a
+				// name followed by a record initialiser.
+				return parseRecordInitialiser(token.text, wf,scope,terminated);
+			}// no else if, in case the former one didn't return
 			if (scope.isVariable(token.text)) {
 				// Signals a local variable access
 				return new Expr.LocalVariable(token.text, sourceAttr(start,
@@ -2466,7 +2470,7 @@ public class WhileyFileParser {
 		case LeftSquare:
 			return parseArrayInitialiserOrGeneratorExpression(wf, scope, terminated);
 		case LeftCurly:
-			return parseRecordExpression(wf, scope, terminated);
+			return parseRecordInitialiser(null, wf, scope, terminated);
 		case Shreak:
 			return parseLogicalNotExpression(wf, scope, terminated);
 		case Star:
@@ -2727,7 +2731,7 @@ public class WhileyFileParser {
 			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(LeftSquare);
-		ArrayList<Expr> exprs = new ArrayList<Expr>();
+		ArrayList<Expr> exprs = new ArrayList<>();
 
 		boolean firstTime = true;
 		do {
@@ -2788,7 +2792,7 @@ public class WhileyFileParser {
 	}
 
 	/**
-	 * Parse a record constructor, which is of the form:
+	 * Parse a record initialiser, which is of the form:
 	 *
 	 * <pre>
 	 * RecordExpr ::= '{' Identifier ':' Expr (',' Identifier ':' Expr)* '}'
@@ -2797,6 +2801,10 @@ public class WhileyFileParser {
 	 * During parsing, we additionally check that each identifier is unique;
 	 * otherwise, an error is reported.
 	 *
+	 * @param name
+	 *            An optional name component for the record initialiser. If
+	 *            null, then this is an anonymous record initialiser. Otherwise,
+	 *            it is a named record initialiser.
 	 * @param wf
 	 *            The enclosing WhileyFile being constructed. This is necessary
 	 *            to construct some nested declarations (e.g. parameters for
@@ -2819,12 +2827,12 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Expr parseRecordExpression(WhileyFile wf,
+	private Expr parseRecordInitialiser(String name, WhileyFile wf,
 			EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(LeftCurly);
-		HashSet<String> keys = new HashSet<String>();
-		HashMap<String, Expr> exprs = new HashMap<String, Expr>();
+		HashSet<String> keys = new HashSet<>();
+		HashMap<String, Expr> exprs = new HashMap<>();
 
 		boolean firstTime = true;
 		while (eventuallyMatch(RightCurly) == null) {
@@ -2851,7 +2859,7 @@ public class WhileyFileParser {
 			keys.add(n.text);
 		}
 
-		return new Expr.Record(exprs, sourceAttr(start, index - 1));
+		return new Expr.Record(name, exprs, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -3077,7 +3085,7 @@ public class WhileyFileParser {
 	private ArrayList<Expr> parseInvocationArguments(WhileyFile wf,
 			EnclosingScope scope) {
 		boolean firstTime = true;
-		ArrayList<Expr> args = new ArrayList<Expr>();
+		ArrayList<Expr> args = new ArrayList<>();
 		while (eventuallyMatch(RightBrace) == null) {
 			if (!firstTime) {
 				match(Comma);
@@ -3114,7 +3122,7 @@ public class WhileyFileParser {
 	 */
 	private ArrayList<String> parseLifetimeArguments(WhileyFile wf, EnclosingScope scope) {
 		boolean firstTime = true;
-		ArrayList<String> lifetimeArgs = new ArrayList<String>();
+		ArrayList<String> lifetimeArgs = new ArrayList<>();
 		while (eventuallyMatch(RightAngle) == null) {
 			if (!firstTime) {
 				match(Comma);
@@ -3298,7 +3306,7 @@ public class WhileyFileParser {
 		List<String> lifetimeParameters = parseOptionalLifetimeParameters(scope);
 
 		match(LeftBrace);
-		ArrayList<WhileyFile.Parameter> parameters = new ArrayList<WhileyFile.Parameter>();
+		ArrayList<WhileyFile.Parameter> parameters = new ArrayList<>();
 		boolean firstTime = true;
 		while (eventuallyMatch(MinusGreater) == null) {
 			int p_start = index;
@@ -3360,7 +3368,7 @@ public class WhileyFileParser {
 		// Check whether or not parameters are supplied
 		if (tryAndMatch(terminated, LeftBrace) != null) {
 			// Yes, parameters are supplied!
-			ArrayList<SyntacticType> parameters = new ArrayList<SyntacticType>();
+			ArrayList<SyntacticType> parameters = new ArrayList<>();
 			boolean firstTime = true;
 			while (eventuallyMatch(RightBrace) == null) {
 				int p_start = index;
@@ -3826,7 +3834,7 @@ public class WhileyFileParser {
 		int start = index;
 		match(LeftCurly);
 
-		HashMap<String, SyntacticType> types = new HashMap<String, SyntacticType>();
+		HashMap<String, SyntacticType> types = new HashMap<>();
 		Pair<SyntacticType, Token> p = parseMixedType(scope);
 		types.put(p.second().text, p.first());
 
@@ -3867,7 +3875,7 @@ public class WhileyFileParser {
 	 */
 	private SyntacticType parseNominalType() {
 		int start = index;
-		ArrayList<String> names = new ArrayList<String>();
+		ArrayList<String> names = new ArrayList<>();
 
 		// Match one or more identifiers separated by dots
 		do {
@@ -3998,7 +4006,7 @@ public class WhileyFileParser {
 					type = new SyntacticType.Method(returnTypes, paramTypes, Collections.<String>emptySet(),
 							lifetimeParameters, sourceAttr(start, index - 1));
 				}
-				return new Pair<SyntacticType, Token>(type, id);
+				return new Pair<>(type, id);
 			} else {
 				// In this case, we failed to match a mixed type. Therefore, we
 				// backtrack and parse as two separate items (i.e. type
@@ -4011,7 +4019,7 @@ public class WhileyFileParser {
 		// type.
 		SyntacticType type = parseType(scope);
 		Token id = match(Identifier);
-		return new Pair<SyntacticType, Token>(type, id);
+		return new Pair<>(type, id);
 	}
 
 	public List<SyntacticType> parseOptionalParameterTypes(EnclosingScope scope) {
@@ -4020,14 +4028,14 @@ public class WhileyFileParser {
 			return parseParameterTypes(scope);
 		} else {
 			SyntacticType t = parseType(scope);
-			ArrayList<SyntacticType> rs = new ArrayList<SyntacticType>();
+			ArrayList<SyntacticType> rs = new ArrayList<>();
 			rs.add(t);
 			return rs;
 		}
 	}
 
 	public List<SyntacticType> parseParameterTypes(EnclosingScope scope) {
-		ArrayList<SyntacticType> paramTypes = new ArrayList<SyntacticType>();
+		ArrayList<SyntacticType> paramTypes = new ArrayList<>();
 		match(LeftBrace);
 
 		boolean firstTime = true;
@@ -4062,7 +4070,7 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	private List<String> parseLifetimeParameters(EnclosingScope scope) {
-		List<String> lifetimeParameters = new ArrayList<String>();
+		List<String> lifetimeParameters = new ArrayList<>();
 		do {
 			Token lifetimeIdentifier = match(Identifier);
 			scope.declareLifetime(lifetimeIdentifier);
@@ -4080,7 +4088,7 @@ public class WhileyFileParser {
 	public Set<String> parseOptionalContextLifetimes(EnclosingScope scope) {
 		if (tryAndMatch(true, LeftSquare) != null && tryAndMatch(true, RightSquare) == null) {
 			// The if above skips an empty list of identifiers "[]"!
-			Set<String> contextLifetimes = new HashSet<String>();
+			Set<String> contextLifetimes = new HashSet<>();
 			do {
 				contextLifetimes.add(parseLifetime(scope, true));
 			} while (tryAndMatch(true, Comma) != null);
@@ -4461,7 +4469,7 @@ public class WhileyFileParser {
 		 */
 		v = v.substring(1, v.length() - 1);
 
-		ArrayList<Constant> result = new ArrayList<Constant>();
+		ArrayList<Constant> result = new ArrayList<>();
 		// Second, step through the string and replace escaped characters
 		for (int i = 0; i < v.length(); i++) {
 			if (v.charAt(i) == '\\') {
@@ -4678,9 +4686,9 @@ public class WhileyFileParser {
 
 		public EnclosingScope() {
 			this.indent = ROOT_INDENT;
-			this.variables = new HashSet<String>();
-			this.lifetimes = new HashSet<String>();
-			this.unavailableNames = new HashSet<String>();
+			this.variables = new HashSet<>();
+			this.lifetimes = new HashSet<>();
+			this.unavailableNames = new HashSet<>();
 			this.inLoop = false;
 
 			// prevent declaring these lifetimes
@@ -4691,9 +4699,9 @@ public class WhileyFileParser {
 		private EnclosingScope(Indent indent, Set<String> variables, Set<String> lifetimes,
 				Set<String> unavailableNames, boolean inLoop) {
 			this.indent = indent;
-			this.variables = new HashSet<String>(variables);
-			this.lifetimes = new HashSet<String>(lifetimes);
-			this.unavailableNames = new HashSet<String>(unavailableNames);
+			this.variables = new HashSet<>(variables);
+			this.lifetimes = new HashSet<>(lifetimes);
+			this.unavailableNames = new HashSet<>(unavailableNames);
 			this.inLoop = inLoop;
 		}
 
