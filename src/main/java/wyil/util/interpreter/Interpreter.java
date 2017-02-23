@@ -74,6 +74,10 @@ public class Interpreter {
 		NEXT
 	}
 
+	public TypeSystem getTypeSystem() {
+		return typeSystem;
+	}
+
 	/**
 	 * Execute a function or method identified by a name and type signature with
 	 * the given arguments, producing a return value or null (if none). If the

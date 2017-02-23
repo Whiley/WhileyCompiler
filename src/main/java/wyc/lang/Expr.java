@@ -572,7 +572,7 @@ public interface Expr extends SyntacticElement {
 			Expr {
 		public final String name;
 		public final HashMap<String, Expr> fields;
-		public Type.Record type;
+		public Type type;
 
 		public Record(String name, java.util.Map<String, Expr> fields,
 				Attribute... attributes) {
@@ -582,7 +582,7 @@ public interface Expr extends SyntacticElement {
 		}
 
 		@Override
-		public Type.Record result() {
+		public Type result() {
 			return type;
 		}
 	}
