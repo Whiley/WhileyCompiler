@@ -1,6 +1,8 @@
 type Point is { int x, int y }
 
-function fromXY(int x, int y) -> (Point[] rs):
+function fromXY(int x, int y) -> (Point[] rs)
+ensures |rs| == 2 && rs[0] == rs[1]
+ensures rs[0].x == x && rs[0].y == y:
     return [Point{x:x, y:y}, Point{x:x, y:y}]
 
 public export method test():

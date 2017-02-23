@@ -1,7 +1,8 @@
 type Point is { int x, int y }
 type Position is { int x, int y }
 
-function fromXY(int x, int y) -> (Position r):
+function fromXY(int x, int y) -> (Position r)
+ensures r.x == x && r.y == y:
     return Point{x:x, y:y}
 
 public export method test():

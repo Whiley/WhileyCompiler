@@ -45,7 +45,7 @@ public class AllValidVerificationTest {
 	/**
 	 * Ignored tests and a reason why we ignore them.
 	 */
-	public final static Map<String, String> IGNORED = new HashMap<String, String>();
+	public final static Map<String, String> IGNORED = new HashMap<>();
 
 	static {
 		IGNORED.put("BoolAssign_Valid_2", "WyTP#19");
@@ -104,6 +104,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("Process_Valid_10", "#291");
 		IGNORED.put("Process_Valid_9", "#231");
 		IGNORED.put("Quantifiers_Valid_1", "WyTP#20");
+		IGNORED.put("Record_Valid_3", "???");
 		IGNORED.put("RecordCoercion_Valid_1", "#564");
 		IGNORED.put("RecordSubtype_Valid_1", "Known Issue");
 		IGNORED.put("RecordSubtype_Valid_2", "Known Issue");
