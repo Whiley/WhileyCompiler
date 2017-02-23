@@ -51,7 +51,7 @@ public class TestUtils {
 		final String suffix = ".whiley";
 		String containsFilter = System.getProperty("test.name.contains");
 
-		ArrayList<Object[]> testcases = new ArrayList<Object[]>();
+		ArrayList<Object[]> testcases = new ArrayList<>();
 		for (File f : new File(srcDir).listFiles()) {
 			// Check it's a file
 			if (!f.isFile()) {
@@ -102,7 +102,7 @@ public class TestUtils {
 		byte[] errBytes = syserr.toByteArray();
 		byte[] outBytes = sysout.toByteArray();
 		String output = new String(errBytes) + new String(outBytes);
-		return new Pair<Compile.Result,String>(result,output);
+		return new Pair<>(result,output);
 	}
 
 	/**

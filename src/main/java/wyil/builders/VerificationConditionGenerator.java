@@ -6,10 +6,6 @@
 
 package wyil.builders;
 
-import static wyil.lang.Bytecode.OPCODE_aliasdecl;
-import static wyil.lang.Bytecode.OPCODE_varaccess;
-import static wyil.lang.Bytecode.OPCODE_vardecl;
-import static wyil.lang.Bytecode.OPCODE_vardeclinit;
 import static wyil.util.ErrorMessages.errorMessage;
 
 import java.math.BigInteger;
@@ -261,7 +257,7 @@ public class VerificationConditionGenerator {
 		// statement encountered, generate the preconditions which must hold
 		// true at that point. Furthermore, generate the effect of this
 		// statement on the current state.
-		List<VerificationCondition> vcs = new ArrayList<VerificationCondition>();
+		List<VerificationCondition> vcs = new ArrayList<>();
 		Context context = new Context(wyalFile, assumptions, localEnvironment, null, vcs);
 		translateStatementBlock(declaration.getBody(), context);
 		//
@@ -335,8 +331,8 @@ public class VerificationConditionGenerator {
 
 	private Expr captureFreeVariables(WyilFile.Declaration declaration, GlobalEnvironment globalEnvironment,
 			Expr clause) {
-		HashSet<String> freeVariables = new HashSet<String>();
-		HashSet<String> freeAliases = new HashSet<String>();
+		HashSet<String> freeVariables = new HashSet<>();
+		HashSet<String> freeAliases = new HashSet<>();
 		clause.freeVariables(freeVariables);
 		for (String var : freeVariables) {
 			if (globalEnvironment.getParent(var) != null) {
@@ -556,7 +552,8 @@ public class VerificationConditionGenerator {
 			return translateDereference(lval, context);
 		case Bytecode.OPCODE_fieldload:
 			return translateRecordAssign((Location<FieldLoad>) lval, context);
-		case Bytecode.OPCODE_varaccess:
+		case Bytecode.OPCODE_varmove:
+		case Bytecode.OPCODE_varcopy:
 			return translateVariableAssign((Location<VariableAccess>) lval, context);
 		default:
 			throw new InternalFailure("unknown lval encountered (" + lval + ")", context.getEnclosingFile().getEntry(),
@@ -603,7 +600,7 @@ public class VerificationConditionGenerator {
 			}
 			Expr j = new Expr.Constant(Value.Integer(BigInteger.valueOf(index)));
 			Expr newField = new Expr.IndexOf(newSource, j, lval.attributes());
-			return new Pair<Expr,Context>(newField,context);
+			return new Pair<>(newField,context);
 		} catch (ResolveError e) {
 			throw new InternalFailure(e.getMessage(), decl.parent().getEntry(), lval, e);
 		}
@@ -644,14 +641,14 @@ public class VerificationConditionGenerator {
 			// source expression
 			Expr arg = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] { originalSource, newSource, index },
 					lval.attributes());
-			ArrayList<SyntacticType> generics = new ArrayList<SyntacticType>();
+			ArrayList<SyntacticType> generics = new ArrayList<>();
 			generics.add(convert(elementType, decl));
 			Expr.Invoke macro = new Expr.Invoke("array$update", context.getEnclosingFile().getEntry().id(), generics, arg);
 			// Construct connection between new source expression element and
 			// result
 			Expr newLVal = new Expr.IndexOf(newSource, index, lval.attributes());
 			//
-			return new Pair<Expr,Context>(newLVal,context.assume(macro));
+			return new Pair<>(newLVal,context.assume(macro));
 		} catch (ResolveError e) {
 			throw new InternalFailure(e.getMessage(), decl.parent().getEntry(), lval, e);
 		}
@@ -670,7 +667,7 @@ public class VerificationConditionGenerator {
 	 */
 	private Pair<Expr,Context> translateDereference(Location<?> lval, Context context) {
 		Expr e = translateAsUnknown(lval,context.getEnvironment());
-		return new Pair<Expr,Context>(e,context);
+		return new Pair<>(e,context);
 	}
 
 	/**
@@ -689,7 +686,7 @@ public class VerificationConditionGenerator {
 		context = context.havoc(decl.getIndex());
 		String nVersionedVar = context.read(decl);
 		Expr.Variable var = new Expr.Variable(nVersionedVar);
-		return new Pair<Expr,Context>(var,context);
+		return new Pair<>(var,context);
 	}
 
 	/**
@@ -710,7 +707,8 @@ public class VerificationConditionGenerator {
 			return null;
 		case Bytecode.OPCODE_fieldload:
 			return extractAssignedVariable(lval.getOperand(0));
-		case Bytecode.OPCODE_varaccess:
+		case Bytecode.OPCODE_varmove:
+		case Bytecode.OPCODE_varcopy:
 			return (Location<VariableAccess>) lval;
 		default:
 			throw new InternalFailure("unknown lval encountered (" + lval + ")", decl.parent().getEntry(), lval);
@@ -1164,7 +1162,7 @@ public class VerificationConditionGenerator {
 			context = assumeExpressionPostconditions(expr, context);
 		}
 		// Translate expression in the normal fashion
-		return new Pair<Expr[],Context>(translateExpressions(exprs, context.getEnvironment()), context);
+		return new Pair<>(translateExpressions(exprs, context.getEnvironment()), context);
 	}
 
 	/**
@@ -1185,7 +1183,7 @@ public class VerificationConditionGenerator {
 		// Gather up any postconditions from function invocations
 		context = assumeExpressionPostconditions(expr, context);
 		// Translate expression in the normal fashion
-		return new Pair<Expr,Context>(translateExpression(expr, context.getEnvironment()), context);
+		return new Pair<>(translateExpression(expr, context.getEnvironment()), context);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1207,7 +1205,7 @@ public class VerificationConditionGenerator {
 					Expr e = translateExpression(expr.getOperand(i), context.getEnvironment());
 					context = context.assume(e);
 				}
-			} else if (opcode != Bytecode.OPCODE_varaccess) {
+			} else if (opcode != Bytecode.OPCODE_varcopy && opcode != Bytecode.OPCODE_varmove) {
 				// In the case of a general expression, we just recurse any
 				// subexpressions without propagating information forward. We
 				// must ignore variable accesses here, because they refer back
@@ -1400,7 +1398,8 @@ public class VerificationConditionGenerator {
 			case Bytecode.OPCODE_some:
 			case Bytecode.OPCODE_all:
 				return translateQuantifier((Location<Quantifier>) loc, environment);
-			case Bytecode.OPCODE_varaccess:
+			case Bytecode.OPCODE_varmove:
+			case Bytecode.OPCODE_varcopy:
 				return translateVariableAccess((Location<VariableAccess>) loc, environment);
 			default:
 				return translateOperator((Location<Operator>) loc, environment);
@@ -1614,7 +1613,7 @@ public class VerificationConditionGenerator {
 		SyntaxTree tree = expr.getEnclosingTree();
 		WyilFile.Declaration decl = tree.getEnclosingDeclaration();
 		//
-		List<TypePattern> params = new ArrayList<TypePattern>();
+		List<TypePattern> params = new ArrayList<>();
 		for (int i = 0; i != expr.numberOfOperandGroups(); ++i) {
 			Location<?>[] group = expr.getOperandGroup(i);
 			Location<VariableDeclaration> var = (Location<VariableDeclaration>) group[0];
@@ -1789,7 +1788,7 @@ public class VerificationConditionGenerator {
 
 	private Context joinDescendants(Context ancestor, Context firstDescendant, List<Context> descendants1,
 			List<Context> descendants2) {
-		ArrayList<Context> descendants = new ArrayList<Context>(descendants1);
+		ArrayList<Context> descendants = new ArrayList<>(descendants1);
 		descendants.addAll(descendants2);
 		return joinDescendants(ancestor, firstDescendant, descendants);
 	}
@@ -1850,8 +1849,8 @@ public class VerificationConditionGenerator {
 		//
 		Context head = contexts[0];
 		GlobalEnvironment global = head.getEnvironment().getParent();
-		HashSet<Integer> modified = new HashSet<Integer>();
-		HashSet<Integer> deleted = new HashSet<Integer>();
+		HashSet<Integer> modified = new HashSet<>();
+		HashSet<Integer> deleted = new HashSet<>();
 		Map<Integer, String> headLocals = head.environment.locals;
 
 		// Compute the modified and deleted sets
@@ -1882,7 +1881,7 @@ public class VerificationConditionGenerator {
 			}
 		}
 		// Finally, construct the combined local map
-		HashMap<Integer, String> combinedLocals = new HashMap<Integer, String>();
+		HashMap<Integer, String> combinedLocals = new HashMap<>();
 		for (Map.Entry<Integer, String> e : headLocals.entrySet()) {
 			Integer key = e.getKey();
 			String value = e.getValue();
@@ -1983,7 +1982,7 @@ public class VerificationConditionGenerator {
 			VerificationCondition vc) {
 		Expr antecedent = flatten(vc.antecedent);
 		Expr consequent = vc.consequent;
-		HashSet<String> freeVariables = new HashSet<String>();
+		HashSet<String> freeVariables = new HashSet<>();
 		antecedent.freeVariables(freeVariables);
 		consequent.freeVariables(freeVariables);
 		// Determine any variable aliases as necessary.
@@ -2234,7 +2233,7 @@ public class VerificationConditionGenerator {
 		} else if (c instanceof Constant.Array) {
 			Constant.Array cb = (Constant.Array) c;
 			List<Constant> cb_values = cb.values();
-			ArrayList<Value> items = new ArrayList<Value>();
+			ArrayList<Value> items = new ArrayList<>();
 			for (int i = 0; i != cb_values.size(); ++i) {
 				items.add(convert(cb_values.get(i), context));
 			}
@@ -2249,9 +2248,9 @@ public class VerificationConditionGenerator {
 			// a general solution. In particular, it would seem to be broken for
 			// type testing.
 
-			ArrayList<String> fields = new ArrayList<String>(rb.values().keySet());
+			ArrayList<String> fields = new ArrayList<>(rb.values().keySet());
 			Collections.sort(fields);
-			ArrayList<Value> values = new ArrayList<Value>();
+			ArrayList<Value> values = new ArrayList<>();
 			for (String field : fields) {
 				values.add(convert(rb.values().get(field), context));
 			}
@@ -2300,7 +2299,7 @@ public class VerificationConditionGenerator {
 		} else if (type instanceof Type.Record) {
 			Type.Record rt = (Type.Record) type;
 			String[] names = rt.getFieldNames();
-			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();
+			ArrayList<SyntacticType> elements = new ArrayList<>();
 			for (int i = 0; i != names.length; ++i) {
 				String field = names[i];
 				elements.add(convert(rt.getField(field), context));
@@ -2312,7 +2311,7 @@ public class VerificationConditionGenerator {
 		} else if (type instanceof Type.Union) {
 			Type.Union tu = (Type.Union) type;
 			Type[] tu_elements = tu.bounds();
-			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();
+			ArrayList<SyntacticType> elements = new ArrayList<>();
 			for (Type te : tu_elements) {
 				elements.add(convert(te, context));
 			}
@@ -2320,7 +2319,7 @@ public class VerificationConditionGenerator {
 		} else if (type instanceof Type.Intersection) {
 			Type.Intersection t = (Type.Intersection) type;
 			Type[] t_elements = t.bounds();
-			ArrayList<SyntacticType> elements = new ArrayList<SyntacticType>();
+			ArrayList<SyntacticType> elements = new ArrayList<>();
 			for (Type te : t_elements) {
 				elements.add(convert(te, context));
 			}
@@ -2336,7 +2335,7 @@ public class VerificationConditionGenerator {
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
 			NameID nid = nt.name();
-			ArrayList<String> names = new ArrayList<String>();
+			ArrayList<String> names = new ArrayList<>();
 			for (String pc : nid.module()) {
 				names.add(pc);
 			}
@@ -2498,7 +2497,7 @@ public class VerificationConditionGenerator {
 		parameters.add(new TypePattern.Leaf(arrT, items));
 		parameters.add(new TypePattern.Leaf(arrT, nitems));
 		parameters.add(new TypePattern.Leaf(intT, i));
-		ArrayList<String> generics = new ArrayList<String>();
+		ArrayList<String> generics = new ArrayList<>();
 		generics.add("T");
 		TypePattern pattern = new TypePattern.Tuple(parameters);
 		//
@@ -2652,9 +2651,9 @@ public class VerificationConditionGenerator {
 
 		public GlobalEnvironment(WyilFile.Declaration enclosingDeclaration) {
 			this.enclosingDeclaration = enclosingDeclaration;
-			this.allocation = new HashMap<String, Integer>();
-			this.parents = new HashMap<String, String>();
-			this.versions = new HashMap<String, Integer>();
+			this.allocation = new HashMap<>();
+			this.parents = new HashMap<>();
+			this.versions = new HashMap<>();
 		}
 
 		/**
@@ -2757,12 +2756,12 @@ public class VerificationConditionGenerator {
 
 		public LocalEnvironment(GlobalEnvironment global) {
 			this.global = global;
-			this.locals = new HashMap<Integer, String>();
+			this.locals = new HashMap<>();
 		}
 
 		public LocalEnvironment(GlobalEnvironment global, Map<Integer, String> locals) {
 			this.global = global;
-			this.locals = new HashMap<Integer, String>(locals);
+			this.locals = new HashMap<>(locals);
 		}
 
 		/**
@@ -2828,11 +2827,12 @@ public class VerificationConditionGenerator {
 
 	public Location<VariableDeclaration> getVariableDeclaration(Location<?> decl) {
 		switch (decl.getOpcode()) {
-		case OPCODE_aliasdecl:
-		case OPCODE_varaccess:
+		case Bytecode.OPCODE_aliasdecl:
+		case Bytecode.OPCODE_varmove:
+		case Bytecode.OPCODE_varcopy:
 			return getVariableDeclaration(decl.getOperand(0));
-		case OPCODE_vardecl:
-		case OPCODE_vardeclinit:
+		case Bytecode.OPCODE_vardecl:
+		case Bytecode.OPCODE_vardeclinit:
 			return (Location<VariableDeclaration>) decl;
 		default:
 			throw new RuntimeException("internal failure --- dead code reached");
@@ -2856,8 +2856,8 @@ public class VerificationConditionGenerator {
 		private List<Context> continueContexts;
 
 		public LoopScope() {
-			this.breakContexts = new ArrayList<Context>();
-			this.continueContexts = new ArrayList<Context>();
+			this.breakContexts = new ArrayList<>();
+			this.continueContexts = new ArrayList<>();
 		}
 
 		public List<Context> breakContexts() {
@@ -3060,7 +3060,7 @@ public class VerificationConditionGenerator {
 		// =====================================================================
 		// Unary operator map
 		// =====================================================================
-		unaryOperatorMap = new HashMap<Bytecode.OperatorKind, Expr.Unary.Op>();
+		unaryOperatorMap = new HashMap<>();
 		// Arithmetic
 		unaryOperatorMap.put(Bytecode.OperatorKind.NEG, Expr.Unary.Op.NEG);
 		// Logical
@@ -3071,7 +3071,7 @@ public class VerificationConditionGenerator {
 		// =====================================================================
 		// Binary operator map
 		// =====================================================================
-		binaryOperatorMap = new HashMap<Bytecode.OperatorKind, Expr.Binary.Op>();
+		binaryOperatorMap = new HashMap<>();
 		// Arithmetic
 		binaryOperatorMap.put(Bytecode.OperatorKind.ADD, Expr.Binary.Op.ADD);
 		binaryOperatorMap.put(Bytecode.OperatorKind.SUB, Expr.Binary.Op.SUB);

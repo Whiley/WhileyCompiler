@@ -533,10 +533,16 @@ public abstract class AbstractBytecode {
 				return new Bytecode.VariableDeclaration(name,operands[0]);
 			}
 		};
-		schemas[Bytecode.OPCODE_varaccess] = new Schema(Operands.ONE){
+		schemas[Bytecode.OPCODE_varcopy] = new Schema(Operands.ONE){
 			@Override
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.VariableAccess(operands[0]);
+				return new Bytecode.VariableAccess(true,operands[0]);
+			}
+		};
+		schemas[Bytecode.OPCODE_varmove] = new Schema(Operands.ONE){
+			@Override
+			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
+				return new Bytecode.VariableAccess(false,operands[0]);
 			}
 		};
 		schemas[Bytecode.OPCODE_while] = new Schema(Operands.ONE, OperandGroups.TWO, Blocks.ONE){

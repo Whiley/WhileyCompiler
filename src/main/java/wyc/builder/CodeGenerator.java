@@ -503,7 +503,7 @@ public final class CodeGenerator {
 		// The set of seen case labels captures those which have been seen
 		// already in some previous case block. Thus, if we see one again
 		// then we have a syntax error.
-		HashSet<Constant> labels = new HashSet<Constant>();
+		HashSet<Constant> labels = new HashSet<>();
 		//
 		for (int i = 0; i != cases.size(); ++i) {
 			Stmt.Case caseBlock = cases.get(i);
@@ -990,7 +990,7 @@ public final class CodeGenerator {
 		// parameters which are declared as part of the lambda expression.
 		EnclosingScope lambdaScope = scope.clone();
 		// Now, declare lambda parameters parameters
-		HashSet<String> declaredVariables = new HashSet<String>();
+		HashSet<String> declaredVariables = new HashSet<>();
 		int[] parameters = new int[expr.parameters.size()];
 		for (int i = 0; i != parameters.length; ++i) {
 			WhileyFile.Parameter parameter = expr.parameters.get(i);
@@ -1000,7 +1000,7 @@ public final class CodeGenerator {
 		}
 		// Now, determine the set of used variables from the enclosing scope
 		// which forms the environment of the lambda
-		ArrayList<Integer> environment = new ArrayList<Integer>();
+		ArrayList<Integer> environment = new ArrayList<>();
 		for (Pair<Type, String> v : Exprs.uses(expr.body, scope.getSourceContext())) {
 			if (!declaredVariables.contains(v.second())) {
 				int variable = scope.get(v.second());
@@ -1025,7 +1025,7 @@ public final class CodeGenerator {
 	private int generateLocalVariable(Expr.LocalVariable expr, EnclosingScope scope) throws ResolveError {
 		int decl = scope.get(expr.var);
 		Location<?> vd = scope.enclosing.getLocation(decl);
-		return scope.add(expr.result(),new Bytecode.VariableAccess(decl), expr.attributes());
+		return scope.add(expr.result(),new Bytecode.VariableAccess(true,decl), expr.attributes());
 	}
 
 	private int generateUnaryOperator(Expr.UnOp expr, EnclosingScope scope) {
@@ -1110,7 +1110,7 @@ public final class CodeGenerator {
 	}
 
 	private int generateRecord(Expr.Record expr, EnclosingScope scope) {
-		ArrayList<String> keys = new ArrayList<String>(expr.fields.keySet());
+		ArrayList<String> keys = new ArrayList<>(expr.fields.keySet());
 		Collections.sort(keys);
 		int[] operands = new int[expr.fields.size()];
 		for (int i = 0; i != operands.length; ++i) {
@@ -1154,12 +1154,12 @@ public final class CodeGenerator {
 	 */
 	private int[] determineModifiedVariables(List<Stmt> block, EnclosingScope scope) {
 		SyntaxTree tree = scope.getSyntaxTree();
-		HashSet<Integer> modified = new HashSet<Integer>();
+		HashSet<Integer> modified = new HashSet<>();
 		determineModifiedVariables(block,scope,modified);
 		int[] result = new int[modified.size()];
 		int index = 0;
 		for(Integer i : modified) {
-			Bytecode.VariableAccess va = new Bytecode.VariableAccess(i);
+			Bytecode.VariableAccess va = new Bytecode.VariableAccess(true,i);
 			Location<?> location = tree.getLocation(i);
 			result[index++] = scope.add(location.getType(),va);
 		}
@@ -1278,7 +1278,7 @@ public final class CodeGenerator {
 	}
 
 	public List<Integer> toIntegerList(int... items) {
-		ArrayList<Integer> list = new ArrayList<Integer>();
+		ArrayList<Integer> list = new ArrayList<>();
 		for (int i = 0; i != items.length; ++i) {
 			list.add(items[i]);
 		}
@@ -1329,7 +1329,7 @@ public final class CodeGenerator {
 		}
 
 		private EnclosingScope(Map<String, Integer> environment, SyntaxTree enclosing, WhileyFile.Context context) {
-			this.environment = new HashMap<String, Integer>(environment);
+			this.environment = new HashMap<>(environment);
 			this.enclosing = enclosing;
 			this.context = context;
 		}
@@ -1426,7 +1426,7 @@ public final class CodeGenerator {
 		public int add(Type[] types, Bytecode operand, List<Attribute> attributes) {
 			List<SyntaxTree.Location<?>> locations = enclosing.getLocations();
 			int index = locations.size();
-			locations.add(new SyntaxTree.Location<Bytecode>(enclosing, types, operand, attributes));
+			locations.add(new SyntaxTree.Location<>(enclosing, types, operand, attributes));
 			// Check whether this is declaring a new variable or not.
 			if (operand instanceof Bytecode.VariableDeclaration) {
 				Bytecode.VariableDeclaration vd = (Bytecode.VariableDeclaration) operand;
