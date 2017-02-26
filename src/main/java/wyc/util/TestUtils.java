@@ -95,6 +95,7 @@ public class TestUtils {
 		Content.Registry registry = new wyc.Activator.Registry();
 		Compile cmd = new Compile(registry,Logger.NULL,sysout,syserr);
 		cmd.setWhileydir(whileydir);
+		cmd.setWyaldir(whileydir); //
 		if(verify) {
 			cmd.setVerify();
 		}

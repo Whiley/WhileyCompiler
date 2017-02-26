@@ -300,9 +300,6 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			wyalBuilder.setLogger(logger);
 		}
 		project.add(new StdBuildRule(wyalBuilder, wyildir, wyilIncludes, wyilExcludes, wyaldir));
-		// Rule for compiling WyAL to WyCS
-		Wyal2WycsBuilder wycsBuilder = new Wyal2WycsBuilder(project);
-		project.add(new StdBuildRule(wycsBuilder, wyaldir, wyalIncludes, wyalExcludes, wycsdir));
 	}
 
 

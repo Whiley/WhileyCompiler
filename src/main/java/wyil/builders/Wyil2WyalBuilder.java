@@ -9,12 +9,12 @@ package wyil.builders;
 import java.io.IOException;
 import java.util.*;
 
+import wyal.lang.WyalFile;
 import wybs.lang.Build;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Path;
 import wyil.lang.*;
-import wycs.syntax.WyalFile;
 
 /**
  * Responsible for converting a Wyil file into a Wycs file which can then be
@@ -67,7 +67,7 @@ public class Wyil2WyalBuilder implements Build.Task {
 		// ========================================================================
 		// Translate files
 		// ========================================================================
-		HashSet<Path.Entry<?>> generatedFiles = new HashSet<Path.Entry<?>>();
+		HashSet<Path.Entry<?>> generatedFiles = new HashSet<>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			Path.Entry<WyilFile> source = (Path.Entry<WyilFile>) p.first();
 			Path.Root dst = p.second();
