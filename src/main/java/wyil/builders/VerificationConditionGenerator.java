@@ -269,19 +269,19 @@ public class VerificationConditionGenerator {
 			// avoid name clashes with subsequent macros.
 			GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
 			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
-			// TypePattern type = generatePreconditionTypePattern(declaration,
-			// localEnvironment);
-			// // Translate expression itself
-			// Expr clause = translateExpression(invariants.get(i),
-			// localEnvironment);
-			// // Capture any free variables. This is necessary to deal with any
-			// // variable aliases introduced by type test operators.
-			// clause = captureFreeVariables(declaration, globalEnvironment,
-			// clause);
-			// //
-			// wyalFile.add(
-			// wyalFile.new Macro(name, Collections.EMPTY_LIST, type, clause,
-			// invariants.get(i).attributes()));
+			WyalFile.VariableDeclaration[] type = generatePreconditionParameters(declaration,
+					localEnvironment);
+			// Translate expression itself
+			WyalFile.Stmt.Block clause = translateAsBlock(invariants.get(i),
+					localEnvironment);
+			// Capture any free variables. This is necessary to deal with any
+			// variable aliases introduced by type test operators.
+// FIXME:
+//			clause = captureFreeVariables(declaration, globalEnvironment,
+//					clause);
+			//
+			WyalFile.Declaration d = new WyalFile.Declaration.Named.Macro(new WyalFile.Identifier(name), type, clause);
+			wyalFile.allocate(d);
 		}
 	}
 
@@ -981,7 +981,7 @@ public class VerificationConditionGenerator {
 			if (!caSe.isDefault()) {
 				WyalFile.Stmt e = null;
 				for (Constant constant : caSe.values()) {
-					Expr.Constant v = convert(constant, stmt);
+					Expr v = convert(constant, stmt);
 					e = or(e, new Expr.Operator(WyalFile.Opcode.EXPR_eq, value, v));
 					defaultValue = and(defaultValue, new Expr.Operator(WyalFile.Opcode.EXPR_neq, value, v));
 				}
@@ -1505,7 +1505,7 @@ public class VerificationConditionGenerator {
 		Expr[] operands = translateExpressions(expr.getOperands(), environment);
 		//
 		// FIXME: name needs proper path information
-		WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(bytecode.name().toString()));
+		WyalFile.Name name = convert(bytecode.name());
 		return new Expr.Invoke(null, name, operands);
 	}
 
@@ -2205,14 +2205,12 @@ public class VerificationConditionGenerator {
 	 * @param declaration
 	 * @return
 	 */
-	// private TypePattern
-	// generatePreconditionTypePattern(WyilFile.FunctionOrMethod declaration,
-	// LocalEnvironment environment) {
-	// Type[] params = declaration.type().params();
-	// int[] parameterLocations = ArrayUtils.range(0, params.length);
-	// return generateTypePatterns(declaration, environment,
-	// parameterLocations);
-	// }
+	private WyalFile.VariableDeclaration[] generatePreconditionParameters(WyilFile.FunctionOrMethod declaration,
+			LocalEnvironment environment) {
+		Type[] params = declaration.type().params();
+		int[] parameterLocations = ArrayUtils.range(0, params.length);
+		return generateParameterDeclarations(declaration, environment, parameterLocations);
+	}
 
 	/**
 	 * Convert the return types for a given function or method declaration into
@@ -2247,7 +2245,7 @@ public class VerificationConditionGenerator {
 	private WyalFile.VariableDeclaration[] generateLoopInvariantTypePattern(WyilFile.Declaration declaration,
 			Location<?>[] loopInvariant, LocalEnvironment environment) {
 		int[] localVariableLocations = SyntaxTrees.determineUsedVariables(loopInvariant);
-		return generateTypePatterns(declaration, environment, localVariableLocations);
+		return generateParameterDeclarations(declaration, environment, localVariableLocations);
 	}
 
 	/**
@@ -2259,7 +2257,7 @@ public class VerificationConditionGenerator {
 	 * @param declaration
 	 * @return
 	 */
-	private WyalFile.VariableDeclaration[] generateTypePatterns(WyilFile.Declaration declaration,
+	private WyalFile.VariableDeclaration[] generateParameterDeclarations(WyilFile.Declaration declaration,
 			LocalEnvironment environment, int[]... groups) {
 		//
 		SyntaxTree tree = declaration.getTree();
@@ -2272,6 +2270,22 @@ public class VerificationConditionGenerator {
 		}
 		//
 		return patterns;
+	}
+
+	/**
+	 * Convert a Name identifier from a WyIL into one suitable for a WyAL file.
+	 *
+	 * @param id
+	 * @return
+	 */
+	private static WyalFile.Name convert(NameID id) {
+		Path.ID prefix = id.module();
+		WyalFile.Identifier[] components = new WyalFile.Identifier[prefix.size() + 1];
+		for (int i = 0; i != prefix.size(); ++i) {
+			components[i] = new WyalFile.Identifier(prefix.get(i));
+		}
+		components[prefix.size()] = new WyalFile.Identifier(id.name());
+		return new WyalFile.Name(components);
 	}
 
 	/**
@@ -2392,12 +2406,7 @@ public class VerificationConditionGenerator {
 			Type.Nominal nt = (Type.Nominal) type;
 			NameID nid = nt.name();
 			Path.ID mid = nid.module();
-			WyalFile.Identifier[] names = new WyalFile.Identifier[mid.size() + 1];
-			for (int i = 0; i != mid.size(); ++i) {
-				names[i] = new WyalFile.Identifier(mid.get(i));
-			}
-			names[mid.size()] = new WyalFile.Identifier(nid.name());
-			result = new WyalFile.Type.Nominal(new WyalFile.Name(names));
+			result = new WyalFile.Type.Nominal(convert(nid));
 		} else {
 			throw new InternalFailure("unknown type encountered (" + type.getClass().getName() + ")",
 					context.parent().getEntry(), context);

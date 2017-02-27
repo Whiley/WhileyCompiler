@@ -300,6 +300,15 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			wyalBuilder.setLogger(logger);
 		}
 		project.add(new StdBuildRule(wyalBuilder, wyildir, wyilIncludes, wyilExcludes, wyaldir));
+		//
+		wyal.tasks.CompileTask wyalBuildTask = new wyal.tasks.CompileTask(project);
+		if(verbose) {
+			wyalBuildTask.setLogger(logger);
+		}
+		if(verify) {
+			wyalBuildTask.setVerify(true);
+		}
+		project.add(new StdBuildRule(wyalBuildTask, wyaldir, wyalIncludes, wyalExcludes, wycsdir));
 	}
 
 
