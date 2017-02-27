@@ -508,15 +508,9 @@ public class VerificationConditionGenerator {
 		context = rp.second();
 		Expr[] ls = new Expr[lval.length];
 		for (int i = 0; i != ls.length; ++i) {
-			Pair<Expr, Context> lp = translateSingleAssignment(lval[i], context);
-			ls[i] = lp.first();
-			context = lp.second();
+			context = translateSingleAssignment(lval[i], rp.first(), context);
 		}
-		Expr lhs = ls[0]; // FIXME: multiple assignments
-		//
-		Expr condition = new Expr.Operator(Opcode.EXPR_eq, lhs, rp.first());
-		//
-		return context.assume(condition);
+		return context;
 	}
 
 	/**
@@ -529,7 +523,7 @@ public class VerificationConditionGenerator {
 	 * @param context
 	 * @return
 	 */
-	private Pair<Expr, Context> translateSingleAssignment(Location<?> lval, Context context) {
+	private Context translateSingleAssignment(Location<?> lval, Expr rval, Context context) {
 
 		// FIXME: this method is a bit of a kludge. It would be nicer,
 		// eventually, to have all right-hand side expression represented in
@@ -538,15 +532,15 @@ public class VerificationConditionGenerator {
 
 		switch (lval.getOpcode()) {
 		case Bytecode.OPCODE_arrayindex:
-			return translateArrayAssign((Location<Operator>) lval, context);
+			return translateArrayAssign((Location<Operator>) lval, rval, context);
 		case Bytecode.OPCODE_dereference:
 			// There's nothing useful we can do here.
-			return translateDereference(lval, context);
+			return translateDereference(lval, rval, context);
 		case Bytecode.OPCODE_fieldload:
-			return translateRecordAssign((Location<FieldLoad>) lval, context);
+			return translateRecordAssign((Location<FieldLoad>) lval, rval, context);
 		case Bytecode.OPCODE_varmove:
 		case Bytecode.OPCODE_varcopy:
-			return translateVariableAssign((Location<VariableAccess>) lval, context);
+			return translateVariableAssign((Location<VariableAccess>) lval, rval, context);
 		default:
 			throw new InternalFailure("unknown lval encountered (" + lval + ")", context.getEnclosingFile().getEntry(),
 					lval);
@@ -564,48 +558,41 @@ public class VerificationConditionGenerator {
 	 *            The enclosing context
 	 * @return
 	 */
-	private Pair<Expr, Context> translateRecordAssign(Location<FieldLoad> lval, Context context) {
-		// SyntaxTree tree = lval.getEnclosingTree();
-		// WyilFile.Declaration decl = tree.getEnclosingDeclaration();
-		// try {
-		// Bytecode.FieldLoad bytecode = lval.getBytecode();
-		// Type.EffectiveRecord type =
-		// typeSystem.expandAsEffectiveRecord(lval.getOperand(0).getType());
-		// // Translate source expression
-		// Pair<Expr, Context> p =
-		// translateExpressionWithChecks(lval.getOperand(0), context);
-		// Expr originalSource = p.first();
-		// context = p.second();
-		// // Generate new source expression based of havoced variable
-		// Location<VariableAccess> var = extractAssignedVariable(lval);
-		// if (var != null) {
-		// context = context.havoc(var);
-		// }
-		// Expr newSource = translateExpression(lval.getOperand(0),
-		// context.getEnvironment());
-		// //
-		// int index = type.getFieldIndex(bytecode.fieldName());
-		// for (int i = 0; i != type.size(); ++i) {
-		// if (i != index) {
-		// Expr j = new Expr.Constant(new Value.Int(BigInteger.valueOf(i)));
-		// Expr oldField = new Expr.Operator(WyalFile.Opcode.EXPR_arridx,
-		// originalSource, j);
-		// oldField.attributes().addAll(lval.attributes());
-		// Expr newField = new Expr.Operator(WyalFile.Opcode.EXPR_arridx,
-		// newSource, j);
-		// context = context.assume(new Expr.Binary(Expr.Binary.Op.EQ, oldField,
-		// newField, lval.attributes()));
-		// }
-		// }
-		// Expr j = new Expr.Constant(Value.Integer(BigInteger.valueOf(index)));
-		// Expr newField = new Expr.IndexOf(newSource, j, lval.attributes());
-		// return new Pair<>(newField,context);
-		// } catch (ResolveError e) {
-		// throw new InternalFailure(e.getMessage(), decl.parent().getEntry(),
-		// lval, e);
-		// }
-		// FIXME:
-		return null;
+	private Context translateRecordAssign(Location<FieldLoad> lval, Expr rval,Context context) {
+		SyntaxTree tree = lval.getEnclosingTree();
+		WyilFile.Declaration decl = tree.getEnclosingDeclaration();
+		try {
+			Bytecode.FieldLoad bytecode = lval.getBytecode();
+			Type.EffectiveRecord type =
+					typeSystem.expandAsEffectiveRecord(lval.getOperand(0).getType());
+			// Translate source expression
+			Pair<Expr, Context> p =
+					translateExpressionWithChecks(lval.getOperand(0), context);
+			Expr originalSource = p.first();
+			context = p.second();
+			// Generate new source expression based of havoced variable
+			Location<VariableAccess> var = extractAssignedVariable(lval);
+			if (var != null) {
+				context = context.havoc(var);
+			}
+			Expr newSource = translateExpression(lval.getOperand(0),
+					context.getEnvironment());
+			String[] fields = type.getFieldNames();
+			//
+			for (int i = 0; i != type.size(); ++i) {
+				String field = fields[i];
+				Opcode op = field.equals(bytecode.fieldName()) ? Opcode.EXPR_eq : Opcode.EXPR_neq;
+				WyalFile.Identifier fieldIdentifier = new WyalFile.Identifier(field);
+				Expr oldField = new Expr.RecordAccess(originalSource, fieldIdentifier);
+				oldField.attributes().addAll(lval.attributes());
+				Expr newField = new Expr.RecordAccess(newSource, fieldIdentifier);
+				context = context.assume(new Expr.Operator(op, oldField, newField));
+			}
+			return context;
+		} catch (ResolveError e) {
+			throw new InternalFailure(e.getMessage(), decl.parent().getEntry(),
+					lval, e);
+		}
 	}
 
 	/**
@@ -619,7 +606,7 @@ public class VerificationConditionGenerator {
 	 *            The enclosing context
 	 * @return
 	 */
-	private Pair<Expr, Context> translateArrayAssign(Location<Operator> lval, Context context) {
+	private Context translateArrayAssign(Location<Operator> lval, Expr rval, Context context) {
 		SyntaxTree tree = lval.getEnclosingTree();
 		WyilFile.Declaration decl = tree.getEnclosingDeclaration();
 		try {
@@ -642,20 +629,10 @@ public class VerificationConditionGenerator {
 			Expr newSource = translateExpression(lval.getOperand(0), context.getEnvironment());
 			// Construct connection between new source expression and original
 			// source expression
-			// Expr arg = new Expr.Nary(Expr.Nary.Op.TUPLE, new Expr[] {
-			// originalSource, newSource, index },
-			// lval.attributes());
-			// ArrayList<WyalFile.Type> generics = new ArrayList<>();
-			// generics.add(convert(elementType, decl));
-			// Expr.Invoke macro = new Expr.Invoke("array$update",
-			// context.getEnclosingFile().getEntry().id(), generics, arg);
-			// // Construct connection between new source expression element and
-			// // result
-			// Expr newLVal = new Expr.IndexOf(newSource, index,
-			// lval.attributes());
+			Expr.Operator arrayUpdate = new Expr.Operator(Opcode.EXPR_arrupdt, originalSource, index, rval);
+			Expr assumption = new Expr.Operator(Opcode.EXPR_eq,newSource,arrayUpdate);
 			//
-			// return new Pair<>(newLVal,context.assume(macro));
-			throw new RuntimeException("GOT HERE");
+			return context.assume(assumption);
 		} catch (ResolveError e) {
 			throw new InternalFailure(e.getMessage(), decl.parent().getEntry(), lval, e);
 		}
@@ -672,9 +649,9 @@ public class VerificationConditionGenerator {
 	 *            The enclosing context
 	 * @return
 	 */
-	private Pair<Expr, Context> translateDereference(Location<?> lval, Context context) {
+	private Context translateDereference(Location<?> lval, Expr rval, Context context) {
 		Expr e = translateAsUnknown(lval, context.getEnvironment());
-		return new Pair<>(e, context);
+		return context;
 	}
 
 	/**
@@ -688,12 +665,12 @@ public class VerificationConditionGenerator {
 	 *            The enclosing context
 	 * @return
 	 */
-	private Pair<Expr, Context> translateVariableAssign(Location<VariableAccess> lval, Context context) {
+	private Context translateVariableAssign(Location<VariableAccess> lval, Expr rval,Context context) {
 		Location<VariableDeclaration> decl = (Location<VariableDeclaration>) lval.getOperand(0);
 		context = context.havoc(decl.getIndex());
 		WyalFile.VariableDeclaration nVersionedVar = context.read(decl);
 		Expr.VariableAccess var = new Expr.VariableAccess(nVersionedVar);
-		return new Pair<>(var, context);
+		return context.assume(new Expr.Operator(Opcode.EXPR_eq, var, rval));
 	}
 
 	/**
@@ -1617,15 +1594,15 @@ public class VerificationConditionGenerator {
 	}
 
 	private Expr translateRecordInitialiser(Location<Operator> expr, LocalEnvironment environment) {
-		// Expr[] vals = translateExpressions(expr.getOperands(), environment);
-		// WyalFile.Pair<WyalFile.Identifier,Expr>[] pairs = new
-		// WyalFile.Pair[vals.length];
-		// //
-		// for(int i=0;i!=vals.length;++i) {
-		// pairs[i] = new WyalFile.Pair<>(????,vals[i]);
-		// }
-		// return new Expr.RecordInitialiser(pairs);
-		throw new RuntimeException("GOT HERE");
+		Type.EffectiveRecord t = (Type.EffectiveRecord) expr.getType();
+		String[] fields = t.getFieldNames();
+		Expr[] vals = translateExpressions(expr.getOperands(), environment);
+		WyalFile.Pair<WyalFile.Identifier, Expr>[] pairs = new WyalFile.Pair[vals.length];
+		//
+		for (int i = 0; i != vals.length; ++i) {
+			pairs[i] = new WyalFile.Pair<>(new WyalFile.Identifier(fields[i]), vals[i]);
+		}
+		return new Expr.RecordInitialiser(pairs);
 	}
 
 	/**
