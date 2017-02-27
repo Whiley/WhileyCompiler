@@ -305,18 +305,18 @@ public class VerificationConditionGenerator {
 			// avoid name clashes with subsequent macros.
 			GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
 			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
-			// TypePattern type = generatePostconditionTypePattern(declaration,
-			// localEnvironment);
-			// Expr clause = translateExpression(invariants.get(i),
-			// localEnvironment.clone());
-			// // Capture any free variables. This is necessary to deal with any
-			// // variable aliases introduced by type test operators.
-			// clause = captureFreeVariables(declaration, globalEnvironment,
-			// clause);
-			// //
-			// wyalFile.add(
-			// wyalFile.new Macro(name, Collections.EMPTY_LIST, type, clause,
-			// invariants.get(i).attributes()));
+			WyalFile.VariableDeclaration[] type = generatePostconditionTypePattern(declaration,
+					localEnvironment);
+			WyalFile.Stmt.Block clause = translateAsBlock(invariants.get(i),
+					localEnvironment.clone());
+			// Capture any free variables. This is necessary to deal with any
+			// variable aliases introduced by type test operators.
+// FIXME: put this back in
+//			clause = captureFreeVariables(declaration, globalEnvironment,
+//					clause);
+			//
+			WyalFile.Declaration d = new WyalFile.Declaration.Named.Macro(new WyalFile.Identifier(name), type, clause);
+			wyalFile.allocate(d);
 		}
 	}
 
@@ -1094,24 +1094,20 @@ public class VerificationConditionGenerator {
 		// Construct argument to invocation
 		int[] localVariables = SyntaxTrees.determineUsedVariables(loopInvariant);
 		Expr[] arguments = new Expr[localVariables.length];
-		// for (int i = 0; i != arguments.length; ++i) {
-		// Location<VariableAccess> var = (Location<VariableAccess>)
-		// tree.getLocation(localVariables[i]);
-		// arguments[i] = new
-		// Expr.VariableAccess(environment.read(var.getIndex()),
-		// var.attributes());
-		// }
-		// Expr argument = arguments.length == 1 ? arguments[0] : new
-		// Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
-		// //
-		// for (int i = 0; i != loopInvariant.length; ++i) {
-		// Location<?> clause = loopInvariant[i];
-		// Expr macroCall = new Expr.Invoke(prefix + clause.getIndex(),
-		// declaration.parent().getEntry().id(),
-		// Collections.EMPTY_LIST, argument, clause.attributes());
-		// context.emit(new VerificationCondition(msg, context.assumptions,
-		// macroCall, clause.attributes()));
-		// }
+		for (int i = 0; i != arguments.length; ++i) {
+			Location<VariableAccess> var = (Location<VariableAccess>)
+					tree.getLocation(localVariables[i]);
+			arguments[i] = new
+					Expr.VariableAccess(environment.read(var.getIndex()));
+		}
+		//
+		for (int i = 0; i != loopInvariant.length; ++i) {
+			Location<?> clause = loopInvariant[i];
+			WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + clause.getIndex()));
+			Expr macroCall = new Expr.Invoke(null, name, arguments);
+			context.emit(new VerificationCondition(msg, context.assumptions,
+					macroCall, clause.attributes()));
+		}
 	}
 
 	private Context assumeLoopInvariant(Location<?>[] loopInvariant, Context context) {
@@ -1127,23 +1123,18 @@ public class VerificationConditionGenerator {
 		// Construct argument to invocation
 		int[] localVariables = SyntaxTrees.determineUsedVariables(loopInvariant);
 		Expr[] arguments = new Expr[localVariables.length];
-		// for (int i = 0; i != arguments.length; ++i) {
-		// Location<VariableAccess> var = (Location<VariableAccess>)
-		// tree.getLocation(localVariables[i]);
-		// arguments[i] = new
-		// Expr.VariableAccess(environment.read(var.getIndex()),
-		// var.attributes());
-		// }
-		// Expr argument = arguments.length == 1 ? arguments[0] : new
-		// Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
-		// //
-		// for (int i = 0; i != loopInvariant.length; ++i) {
-		// Location<?> clause = loopInvariant[i];
-		// Expr macroCall = new Expr.Invoke(prefix + clause.getIndex(),
-		// declaration.parent().getEntry().id(),
-		// Collections.EMPTY_LIST, argument, clause.attributes());
-		// context = context.assume(macroCall);
-		// }
+		for (int i = 0; i != arguments.length; ++i) {
+			Location<VariableAccess> var = (Location<VariableAccess>)
+					tree.getLocation(localVariables[i]);
+			arguments[i] = new Expr.VariableAccess(environment.read(var.getIndex()));
+		}
+		//
+		for (int i = 0; i != loopInvariant.length; ++i) {
+			Location<?> clause = loopInvariant[i];
+			WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + clause.getIndex()));
+			Expr macroCall = new Expr.Invoke(null, name, arguments);
+			context = context.assume(macroCall);
+		}
 		//
 		return context;
 	}
@@ -1650,10 +1641,9 @@ public class VerificationConditionGenerator {
 		// What we're doing here is creating a completely fresh variable to
 		// represent the return value. This is basically saying the return value
 		// could be anything, and we don't care what.
-		// environment = environment.write(expr.getIndex());
-		// String r = environment.read(expr.getIndex());
-		// return new Expr.Variable(r, expr.attributes());
-		throw new IllegalArgumentException("GOT HERE");
+		 environment = environment.write(expr.getIndex());
+		 WyalFile.VariableDeclaration r = environment.read(expr.getIndex());
+		 return new Expr.VariableAccess(r);
 	}
 
 	/**
@@ -1884,20 +1874,18 @@ public class VerificationConditionGenerator {
 	 */
 	private AssumptionSet updateVariableVersions(AssumptionSet assumptions, LocalEnvironment original,
 			LocalEnvironment updated) {
-		// for (Map.Entry<Integer, String> e : updated.locals.entrySet()) {
-		// Integer varIndex = e.getKey();
-		// String newVarVersionedName = e.getValue();
-		// String oldVarVersionedName = original.read(varIndex);
-		// if (!oldVarVersionedName.equals(newVarVersionedName)) {
-		// // indicates a version change of the given variable.
-		// Expr.Variable oldVar = new Expr.Variable(oldVarVersionedName);
-		// Expr.Variable newVar = new Expr.Variable(newVarVersionedName);
-		// assumptions = assumptions.add(new Expr.Binary(Expr.Binary.Op.EQ,
-		// newVar, oldVar));
-		// }
-		// }
-		// return assumptions;
-		throw new IllegalArgumentException("GOT HERE");
+		for (Map.Entry<Integer, WyalFile.VariableDeclaration> e : updated.locals.entrySet()) {
+			Integer varIndex = e.getKey();
+			WyalFile.VariableDeclaration newVarVersionedName = e.getValue();
+			WyalFile.VariableDeclaration oldVarVersionedName = original.read(varIndex);
+			if (!oldVarVersionedName.equals(newVarVersionedName)) {
+				// indicates a version change of the given variable.
+				Expr.VariableAccess oldVar = new Expr.VariableAccess(oldVarVersionedName);
+				Expr.VariableAccess newVar = new Expr.VariableAccess(newVarVersionedName);
+				assumptions = assumptions.add(new Expr.Operator(Opcode.EXPR_eq, newVar, oldVar));
+			}
+		}
+		return assumptions;
 	}
 
 	/**
@@ -1912,57 +1900,56 @@ public class VerificationConditionGenerator {
 	 */
 	private LocalEnvironment joinEnvironments(Context... contexts) {
 		//
-		// Context head = contexts[0];
-		// GlobalEnvironment global = head.getEnvironment().getParent();
-		// HashSet<Integer> modified = new HashSet<>();
-		// HashSet<Integer> deleted = new HashSet<>();
-		// Map<Integer, String> headLocals = head.environment.locals;
-		//
-		// // Compute the modified and deleted sets
-		// for (int i = 1; i < contexts.length; ++i) {
-		// Context ithContext = contexts[i];
-		// Map<Integer, String> ithLocals = ithContext.environment.locals;
-		// // First check env against head
-		// for (Map.Entry<Integer, String> e : ithLocals.entrySet()) {
-		// Integer key = e.getKey();
-		// String s1 = e.getValue();
-		// String s2 = headLocals.get(key);
-		// if (s1 == null) {
-		// deleted.add(key);
-		// } else if (!s1.equals(s2)) {
-		// modified.add(key);
-		// }
-		// }
-		// // Second, check head against env
-		// for (Map.Entry<Integer, String> e : headLocals.entrySet()) {
-		// Integer key = e.getKey();
-		// String s1 = e.getValue();
-		// String s2 = ithLocals.get(key);
-		// if (s1 == null) {
-		// deleted.add(key);
-		// } else if (!s1.equals(s2)) {
-		// modified.add(key);
-		// }
-		// }
-		// }
-		// // Finally, construct the combined local map
-		// HashMap<Integer, String> combinedLocals = new HashMap<>();
-		// for (Map.Entry<Integer, String> e : headLocals.entrySet()) {
-		// Integer key = e.getKey();
-		// String value = e.getValue();
-		// if (deleted.contains(key)) {
-		// // Ignore this entry. This must be checked before we look at
-		// // modified (since variable can be marked both).
-		// continue;
-		// } else if (modified.contains(key)) {
-		// // Update version number
-		// value = global.allocateVersion(key);
-		// }
-		// combinedLocals.put(key, value);
-		// }
+		Context head = contexts[0];
+		GlobalEnvironment global = head.getEnvironment().getParent();
+		HashSet<Integer> modified = new HashSet<>();
+		HashSet<Integer> deleted = new HashSet<>();
+		Map<Integer, WyalFile.VariableDeclaration> headLocals = head.environment.locals;
+
+		// Compute the modified and deleted sets
+		for (int i = 1; i < contexts.length; ++i) {
+			Context ithContext = contexts[i];
+			Map<Integer, WyalFile.VariableDeclaration> ithLocals = ithContext.environment.locals;
+			// First check env against head
+			for (Map.Entry<Integer, WyalFile.VariableDeclaration> e : ithLocals.entrySet()) {
+				Integer key = e.getKey();
+				WyalFile.VariableDeclaration s1 = e.getValue();
+				WyalFile.VariableDeclaration s2 = headLocals.get(key);
+				if (s1 == null) {
+					deleted.add(key);
+				} else if (!s1.equals(s2)) {
+					modified.add(key);
+				}
+			}
+			// Second, check head against env
+			for (Map.Entry<Integer, WyalFile.VariableDeclaration> e : headLocals.entrySet()) {
+				Integer key = e.getKey();
+				WyalFile.VariableDeclaration s1 = e.getValue();
+				WyalFile.VariableDeclaration s2 = ithLocals.get(key);
+				if (s1 == null) {
+					deleted.add(key);
+				} else if (!s1.equals(s2)) {
+					modified.add(key);
+				}
+			}
+		}
+		// Finally, construct the combined local map
+		HashMap<Integer, WyalFile.VariableDeclaration> combinedLocals = new HashMap<>();
+		for (Map.Entry<Integer, WyalFile.VariableDeclaration> e : headLocals.entrySet()) {
+			Integer key = e.getKey();
+			WyalFile.VariableDeclaration value = e.getValue();
+			if (deleted.contains(key)) {
+				// Ignore this entry. This must be checked before we look at
+				// modified (since variable can be marked both).
+				continue;
+			} else if (modified.contains(key)) {
+				// Update version number
+				value = global.allocateVersion(key);
+			}
+			combinedLocals.put(key, value);
+		}
 		// Now, use the modified and deleted sets to build the new environment
-		// return new LocalEnvironment(global, combinedLocals);
-		throw new IllegalArgumentException("GOT HERE");
+		return new LocalEnvironment(global, combinedLocals);
 	}
 
 	/**
@@ -2221,17 +2208,15 @@ public class VerificationConditionGenerator {
 	 * @param declaration
 	 * @return
 	 */
-	// private TypePattern
-	// generatePostconditionTypePattern(WyilFile.FunctionOrMethod declaration,
-	// LocalEnvironment environment) {
-	// Type[] params = declaration.type().params();
-	// Type[] returns = declaration.type().returns();
-	// int[] parameterLocations = ArrayUtils.range(0, params.length);
-	// int[] returnLocations = ArrayUtils.range(parameterLocations.length,
-	// parameterLocations.length + returns.length);
-	// return generateTypePatterns(declaration, environment, parameterLocations,
-	// returnLocations);
-	// }
+	private WyalFile.VariableDeclaration[] generatePostconditionTypePattern(WyilFile.FunctionOrMethod declaration,
+			LocalEnvironment environment) {
+		Type[] params = declaration.type().params();
+		Type[] returns = declaration.type().returns();
+		int[] parameterLocations = ArrayUtils.range(0, params.length);
+		int[] returnLocations = ArrayUtils.range(parameterLocations.length,
+				parameterLocations.length + returns.length);
+		return generateParameterDeclarations(declaration, environment, parameterLocations, returnLocations);
+	}
 
 	/**
 	 * Convert the types of local variables in scope at a given position within
