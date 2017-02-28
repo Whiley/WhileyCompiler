@@ -26,6 +26,7 @@ import wyal.lang.WyalFile.Opcode;
 //import wyal.lang.WyalFile.Type;
 import wyal.lang.WyalFile.Value;
 import wyal.lang.WyalFile.Declaration.Named;
+import wyal.util.AutomatedTheoremProver;
 import wyfs.lang.Path;
 import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
@@ -1576,33 +1577,38 @@ public class VerificationConditionGenerator {
 	private Expr translateQuantifier(Location<Quantifier> expr, LocalEnvironment environment) {
 		Bytecode.Quantifier bytecode = expr.getBytecode();
 		// Determine the type and names of each quantified variable.
-		// TypePattern pattern = generateQuantifierTypePattern(expr);
-		// // Apply quantifier ranges
-		// Expr ranges = generateQuantifierRanges(expr, environment);
-		// // Generate quantifier body
-		// Expr body = translateExpression(expr.getOperand(0), environment);
-		// body = implies(ranges, body);
-		// // Generate quantifier expression
-		// switch (bytecode.kind()) {
-		// case ALL:
-		// return new Expr.ForAll(pattern, body, expr.attributes());
-		// case SOME:
-		// default:
-		// return new Expr.Exists(pattern, body, expr.attributes());
-		// }
-		throw new IllegalArgumentException("GOT HERE");
+		WyalFile.VariableDeclaration[] pattern = generateQuantifierTypePattern(expr);
+		// Apply quantifier ranges
+		Expr ranges = generateQuantifierRanges(expr, environment);
+		// Generate quantifier body
+		Expr body = translateExpression(expr.getOperand(0), environment);
+		body = new Expr.Operator(Opcode.EXPR_implies, ranges, body);
+		// Generate quantifier expression
+		switch (bytecode.kind()) {
+		case ALL:
+			return new Expr.Quantifier(Opcode.EXPR_forall,pattern, body);
+		case SOME:
+		default:
+			return new Expr.Quantifier(Opcode.EXPR_exists,pattern, body);
+		}
 	}
 
-	private Expr translateRecordInitialiser(Location<Operator> expr, LocalEnvironment environment) {
-		Type.EffectiveRecord t = (Type.EffectiveRecord) expr.getType();
-		String[] fields = t.getFieldNames();
-		Expr[] vals = translateExpressions(expr.getOperands(), environment);
-		WyalFile.Pair<WyalFile.Identifier, Expr>[] pairs = new WyalFile.Pair[vals.length];
-		//
-		for (int i = 0; i != vals.length; ++i) {
-			pairs[i] = new WyalFile.Pair<>(new WyalFile.Identifier(fields[i]), vals[i]);
+	private Expr translateRecordInitialiser(Location<Operator> expr, LocalEnvironment environment)  {
+		SyntaxTree tree = expr.getEnclosingTree();
+		WyilFile.Declaration decl = tree.getEnclosingDeclaration();
+		try {
+			Type.EffectiveRecord t = typeSystem.expandAsEffectiveRecord(expr.getType());
+			String[] fields = t.getFieldNames();
+			Expr[] vals = translateExpressions(expr.getOperands(), environment);
+			WyalFile.Pair<WyalFile.Identifier, Expr>[] pairs = new WyalFile.Pair[vals.length];
+			//
+			for (int i = 0; i != vals.length; ++i) {
+				pairs[i] = new WyalFile.Pair<>(new WyalFile.Identifier(fields[i]), vals[i]);
+			}
+			return new Expr.RecordInitialiser(pairs);
+		} catch (ResolveError e) {
+			throw new InternalFailure(e.getMessage(), decl.parent().getEntry(), expr, e);
 		}
-		return new Expr.RecordInitialiser(pairs);
 	}
 
 	/**
@@ -1653,23 +1659,22 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private Expr generateQuantifierRanges(Location<Quantifier> expr, LocalEnvironment environment) {
-		// Expr ranges = null;
-		// for (int i = 0; i != expr.numberOfOperandGroups(); ++i) {
-		// Location<?>[] group = expr.getOperandGroup(i);
-		// Location<VariableDeclaration> var = (Location<VariableDeclaration>)
-		// group[0];
-		// Expr.VariableAccess varExpr = new
-		// Expr.Variable(var.getBytecode().getName(), var.attributes());
-		// Expr startExpr = translateExpression(group[1], environment);
-		// Expr endExpr = translateExpression(group[2], environment);
-		// Expr lhs = new Expr.Operator(WyalFile.Opcode.EXPR_lteq, startExpr,
-		// varExpr);
-		// Expr rhs = new Expr.Operator(WyalFile.Opcode.EXPR_lt, varExpr,
-		// endExpr);
-		// ranges = and(ranges, and(lhs, rhs));
-		// }
-		// return ranges;
-		throw new IllegalArgumentException("GOT HERE");
+		Expr ranges = null;
+		for (int i = 0; i != expr.numberOfOperandGroups(); ++i) {
+			Location<?>[] group = expr.getOperandGroup(i);
+			Location<VariableDeclaration> var = (Location<VariableDeclaration>)
+					group[0];
+			WyalFile.VariableDeclaration varDecl = environment.read(var.getIndex());
+			Expr.VariableAccess varExpr = new Expr.VariableAccess(varDecl);
+			Expr startExpr = translateExpression(group[1], environment);
+			Expr endExpr = translateExpression(group[2], environment);
+			Expr lhs = new Expr.Operator(WyalFile.Opcode.EXPR_lteq, startExpr,
+					varExpr);
+			Expr rhs = new Expr.Operator(WyalFile.Opcode.EXPR_lt, varExpr,
+					endExpr);
+			ranges = and(ranges, and(lhs, rhs));
+		}
+		return ranges;
 	}
 
 	private Expr translateVariableAccess(Location<VariableAccess> expr, LocalEnvironment environment) {
@@ -1725,6 +1730,16 @@ public class VerificationConditionGenerator {
 			return rhs;
 		} else {
 			return new WyalFile.Stmt.Block(lhs, rhs);
+		}
+	}
+
+	private Expr and(Expr lhs, Expr rhs) {
+		if (lhs == null) {
+			return rhs;
+		} else if (rhs == null) {
+			return rhs;
+		} else {
+			return new Expr.Operator(Opcode.EXPR_and,lhs, rhs);
 		}
 	}
 
@@ -2015,6 +2030,7 @@ public class VerificationConditionGenerator {
 		HashSet<WyalFile.VariableDeclaration> freeVariables = new HashSet<>();
 		freeVariables(antecedent,freeVariables);
 		freeVariables(consequent,freeVariables);
+		System.out.println("FREE VARIABLES: " + freeVariables);
 		// Determine any variable aliases as necessary.
 		Expr aliases = determineVariableAliases(environment, freeVariables);
 		// Construct the initial condition
@@ -2284,6 +2300,17 @@ public class VerificationConditionGenerator {
 				items[i] = convert(cb_values.get(i), context);
 			}
 			return new Expr.Operator(Opcode.EXPR_arrinit, items);
+		} else if (c instanceof Constant.Record) {
+			Constant.Record cr = (Constant.Record) c;
+			HashMap<String, Constant> fields = cr.values();
+			WyalFile.Pair<WyalFile.Identifier, Expr>[] pairs = new WyalFile.Pair[fields.size()];
+			//
+			int i = 0;
+			for (Map.Entry<String, Constant> e : fields.entrySet()) {
+				WyalFile.Expr val = convert(e.getValue(), context);
+				pairs[i++] = new WyalFile.Pair<>(new WyalFile.Identifier(e.getKey()), val);
+			}
+			return new Expr.RecordInitialiser(pairs);
 		} else {
 			WyilFile.Declaration decl = context.getEnclosingTree().getEnclosingDeclaration();
 			throw new InternalFailure("unknown constant encountered (" + c + ")", decl.parent().getEntry(), context);
@@ -2386,7 +2413,7 @@ public class VerificationConditionGenerator {
 	 * @param e
 	 * @param freeVars
 	 */
-	public void freeVariables(WyalFile.Stmt e, Set<WyalFile.VariableDeclaration> freeVars) {
+	public void freeVariables(SyntacticItem e, Set<WyalFile.VariableDeclaration> freeVars) {
 		if(e instanceof Expr.VariableAccess) {
 			Expr.VariableAccess va = (Expr.VariableAccess)e;
 			freeVars.add(va.getVariableDeclaration());
@@ -2395,8 +2422,8 @@ public class VerificationConditionGenerator {
 				SyntacticItem item = e.getOperand(i);
 				// FIXME: there is a bug here with respect to quantified
 				// variables. These should be removed from the freeVars set.
-				if(item instanceof WyalFile.Stmt) {
-					freeVariables((WyalFile.Stmt)item,freeVars);
+				if(item != null) {
+					freeVariables(item,freeVars);
 				}
 			}
 		}
