@@ -131,11 +131,12 @@ public class AllInvalidTest {
 	 * @throws IOException
 	 */
 	protected void runTest(String name) throws IOException {
+		File whileySrcDir = new File(WHILEY_SRC_DIR);
 		// this will need to turn on verification at some point.
 		String filename = WHILEY_SRC_DIR + File.separatorChar + name + ".whiley";
 
 		Pair<Compile.Result,String> p = TestUtils.compile(
-				WHILEY_SRC_DIR,      // location of source directory
+				whileySrcDir,      // location of source directory
 				true,                // enable verification
 				filename);           // name of test to compile
 

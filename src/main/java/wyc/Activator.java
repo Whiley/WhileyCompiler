@@ -61,7 +61,9 @@ public class Activator implements Module.Activator {
 		// FIXME: logger is a hack!
 		final Logger logger = new Logger.Default(System.err);
 		// List of commands to use
-		final Command[] commands = { new Compile(registry, logger), new Decompile(registry),
+		final Command[] commands = {
+				new Compile(registry, logger),
+				new Decompile(registry, logger),
 				new Run(registry, logger) };
 		// Register all commands
 		for (Command c : commands) {

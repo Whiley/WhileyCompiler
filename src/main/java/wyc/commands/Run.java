@@ -42,7 +42,12 @@ public class Run extends AbstractProjectCommand<Run.Result> {
 
 	@Override
 	public String getDescription() {
-		return "Decompile one or more binary WyIL files";
+		return "Execute a given method from a WyIL";
+	}
+
+	@Override
+	public String getName() {
+		return "run";
 	}
 
 	// =======================================================================

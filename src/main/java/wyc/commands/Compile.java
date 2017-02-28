@@ -20,7 +20,8 @@ import wybs.util.StdProject;
 import wyc.builder.CompileTask;
 import wyc.lang.WhileyFile;
 import wyc.util.AbstractProjectCommand;
-import wycc.util.AbstractCommand;
+import wycc.lang.Feature.ConfigurationError;
+import wycc.util.ArrayUtils;
 import wycc.util.Logger;
 import wyal.lang.WyalFile;
 import wyfs.lang.Content;
@@ -40,17 +41,6 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		ERRORS,
 		INTERNAL_FAILURE
 	}
-
-	/**
-	 * List of configuration options recognised by this command
-	 */
-	private static String[] configOptions = {
-			"verbose",
-			"verify",
-			"brief",
-			"includes",
-			"excludes"
-	};
 
 	/**
 	 * Provides a generic place to which normal output should be directed. This
@@ -104,7 +94,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	 * @throws IOException
 	 */
 	public Compile(Content.Registry registry, Logger logger) {
-		super(registry, logger, configOptions);
+		super(registry, logger);
 		this.sysout = System.out;
 		this.syserr = System.err;
 	}
@@ -118,25 +108,69 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	 * @throws IOException
 	 */
 	public Compile(Content.Registry registry, Logger logger, OutputStream sysout, OutputStream syserr) {
-		super(registry, logger, configOptions);
+		super(registry, logger);
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
+	}
+
+	@Override
+	public String getName() {
+		return "compile";
 	}
 
 	// =======================================================================
 	// Configuration
 	// =======================================================================
 
-	public String describeVerify() {
-		return "Enable verification of Whiley source files";
+	private static final String[] SCHEMA = {
+			"verbose",
+			"verify",
+			"brief"
+	};
+
+	@Override
+	public String[] getOptions() {
+		return ArrayUtils.append(super.getOptions(),SCHEMA);
+	}
+
+	@Override
+	public String describe(String option) {
+		switch(option) {
+		case "verbose":
+			return "Enable verbose output from Whiley compiler";
+		case "brief":
+			return "Enable brief reporting of error messages";
+		case "verify":
+			return "Enable verification of Whiley source files";
+		default:
+			return super.describe(option);
+		}
+	}
+
+	@Override
+	public void set(String option, Object value) throws ConfigurationError {
+		switch(option) {
+		case "verbose":
+			this.verbose = true;
+			break;
+		case "brief":
+			this.brief = true;
+			break;
+		case "verify":
+			this.verify = true;
+			break;
+		default:
+			super.set(option, value);
+		}
+	}
+
+	@Override
+	public String getDescription() {
+		return "Compile one or more Whiley source files";
 	}
 
 	public void setVerify() {
 		verify = true;
-	}
-
-	public String describeVerbose() {
-		return "Enable verbose output from Whiley compiler";
 	}
 
 	public void setVerbose() {
@@ -147,17 +181,8 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		verbose = b;
 	}
 
-	public String describeBrief() {
-		return "Enable brief reporting of error messages";
-	}
-
 	public void setBrief() {
 		brief = true;
-	}
-
-	@Override
-	public String getDescription() {
-		return "Compile one or more Whiley source files";
 	}
 
 	public String describeIncludes() {
