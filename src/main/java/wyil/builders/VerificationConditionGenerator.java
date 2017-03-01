@@ -2007,7 +2007,7 @@ public class VerificationConditionGenerator {
 			// Build the actual verification condition
 			WyalFile.Stmt.Block verificationCondition = buildVerificationCondition(declaration, environment, vc);
 			// Add generated verification condition as assertion
-			WyalFile.Declaration.Assert assrt = new WyalFile.Declaration.Assert(verificationCondition);
+			WyalFile.Declaration.Assert assrt = new WyalFile.Declaration.Assert(verificationCondition, vc.description);
 			assrt.attributes().addAll(vc.attributes());
 			wyalFile.allocate(assrt);
 		}
@@ -2030,7 +2030,6 @@ public class VerificationConditionGenerator {
 		HashSet<WyalFile.VariableDeclaration> freeVariables = new HashSet<>();
 		freeVariables(antecedent,freeVariables);
 		freeVariables(consequent,freeVariables);
-		System.out.println("FREE VARIABLES: " + freeVariables);
 		// Determine any variable aliases as necessary.
 		Expr aliases = determineVariableAliases(environment, freeVariables);
 		// Construct the initial condition
