@@ -888,35 +888,30 @@ public class VerificationConditionGenerator {
 				// here is that the postcondition will refer to parameters as
 				// they were on entry to the function/method, not as they are
 				// now.
-				// Expr[] arguments = new Expr[type.params().length +
-				// type.returns().length];
-				// // Translate parameters as arguments to post-condition
-				// // invocation
-				// for (int i = 0; i != type.params().length; ++i) {
-				// Location<VariableDeclaration> var =
-				// (Location<VariableDeclaration>) tree.getLocation(i);
-				// arguments[i] = new Expr.Variable(var.getBytecode().getName(),
-				// var.attributes());
-				// }
-				// // Copy over return expressions as arguments for
-				// invocation(s)
-				// System.arraycopy(exprs, 0, arguments, type.params().length,
-				// exprs.length);
-				// //
-				// Expr argument = arguments.length == 1 ? arguments[0] : new
-				// Expr.Nary(Expr.Nary.Op.TUPLE, arguments);
-				// String prefix = declaration.name() + "_ensures_";
-				// // Finally, generate an appropriate verification condition to
-				// // check
-				// // each postcondition clause
-				// for (int i = 0; i != postcondition.size(); ++i) {
-				// Expr clause = new Expr.Invoke(prefix + i,
-				// declaration.parent().getEntry().id(), Collections.EMPTY_LIST,
-				// argument);
-				// context.emit(new VerificationCondition("postcondition not
-				// satisfied", context.assumptions, clause,
-				// stmt.attributes()));
-				// }
+				Expr[] arguments = new Expr[type.params().length +
+				                            type.returns().length];
+				// Translate parameters as arguments to post-condition
+				// invocation
+				for (int i = 0; i != type.params().length; ++i) {
+					Location<VariableDeclaration> var =
+							(Location<VariableDeclaration>) tree.getLocation(i);
+					WyalFile.VariableDeclaration vd = context.read(var);
+					arguments[i] = new Expr.VariableAccess(vd);
+				}
+				// Copy over return expressions as arguments for invocation(s)
+				System.arraycopy(exprs, 0, arguments, type.params().length,
+						exprs.length);
+				//
+				String prefix = declaration.name() + "_ensures_";
+				// Finally, generate an appropriate verification condition to
+				// check
+				// each postcondition clause
+				for (int i = 0; i != postcondition.size(); ++i) {
+					WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + i));
+					Expr clause = new Expr.Invoke(null, name, arguments);
+					context.emit(new VerificationCondition("postcondition not satisfied", context.assumptions, clause,
+							stmt.attributes()));
+				}
 			}
 		}
 		// Return null to signal that execution does not continue after this
@@ -1191,12 +1186,10 @@ public class VerificationConditionGenerator {
 			int opcode = expr.getOpcode();
 			if (opcode == Bytecode.OPCODE_logicaland) {
 				// In the case of a logical and condition we need to propagate
-				// the
-				// left-hand side as an assumption into the right-hand side.
-				// This is
-				// an artifact of short-circuiting whereby terms on the
-				// right-hand
-				// side only execute when the left-hand side is known to hold.
+				// the left-hand side as an assumption into the right-hand side.
+				// This is an artifact of short-circuiting whereby terms on the
+				// right-hand side only execute when the left-hand side is known
+				// to hold.
 				for (int i = 0; i != expr.numberOfOperands(); ++i) {
 					checkExpressionPreconditions(expr.getOperand(i), context);
 					Expr e = translateExpression(expr.getOperand(i), context.getEnvironment());
