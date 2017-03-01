@@ -582,12 +582,12 @@ public class VerificationConditionGenerator {
 			//
 			for (int i = 0; i != type.size(); ++i) {
 				String field = fields[i];
-				Opcode op = field.equals(bytecode.fieldName()) ? Opcode.EXPR_eq : Opcode.EXPR_neq;
 				WyalFile.Identifier fieldIdentifier = new WyalFile.Identifier(field);
-				Expr oldField = new Expr.RecordAccess(originalSource, fieldIdentifier);
+				Expr oldField = field.equals(bytecode.fieldName()) ? rval
+						: new Expr.RecordAccess(originalSource, fieldIdentifier);
 				oldField.attributes().addAll(lval.attributes());
 				Expr newField = new Expr.RecordAccess(newSource, fieldIdentifier);
-				context = context.assume(new Expr.Operator(op, oldField, newField));
+				context = context.assume(new Expr.Operator(Opcode.EXPR_eq, oldField, newField));
 			}
 			return context;
 		} catch (ResolveError e) {
