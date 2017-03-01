@@ -1575,13 +1575,14 @@ public class VerificationConditionGenerator {
 		Expr ranges = generateQuantifierRanges(expr, environment);
 		// Generate quantifier body
 		Expr body = translateExpression(expr.getOperand(0), environment);
-		body = new Expr.Operator(Opcode.EXPR_implies, ranges, body);
 		// Generate quantifier expression
 		switch (bytecode.kind()) {
 		case ALL:
+			body = new Expr.Operator(Opcode.EXPR_implies, ranges, body);
 			return new Expr.Quantifier(Opcode.EXPR_forall,pattern, body);
 		case SOME:
 		default:
+			body = new Expr.Operator(Opcode.EXPR_and, ranges, body);
 			return new Expr.Quantifier(Opcode.EXPR_exists,pattern, body);
 		}
 	}
