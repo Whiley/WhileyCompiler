@@ -242,7 +242,7 @@ public class VerificationConditionGenerator {
 		// true at that point. Furthermore, generate the effect of this
 		// statement on the current state.
 		List<VerificationCondition> vcs = new ArrayList<>();
-		Context context = new Context(wyalFile, assumptions, localEnvironment, null, vcs);
+		Context context = new Context(wyalFile, assumptions, localEnvironment, localEnvironment, null, vcs);
 		translateStatementBlock(declaration.getBody(), context);
 		//
 		// Translate each generated verification condition into an assertion in
@@ -895,7 +895,7 @@ public class VerificationConditionGenerator {
 				for (int i = 0; i != type.params().length; ++i) {
 					Location<VariableDeclaration> var =
 							(Location<VariableDeclaration>) tree.getLocation(i);
-					WyalFile.VariableDeclaration vd = context.read(var);
+					WyalFile.VariableDeclaration vd = context.readFirst(var);
 					arguments[i] = new Expr.VariableAccess(vd);
 				}
 				// Copy over return expressions as arguments for invocation(s)
@@ -1821,8 +1821,8 @@ public class VerificationConditionGenerator {
 		//
 		AssumptionSet joinedAssumptions = ancestor.assumptions.joinDescendants(descendentAssumptions);
 		//
-		return new Context(ancestor.wyalFile, joinedAssumptions, joinedEnvironment, ancestor.enclosingLoop,
-				ancestor.verificationConditions);
+		return new Context(ancestor.wyalFile, joinedAssumptions, joinedEnvironment, ancestor.initialEnvironment,
+				ancestor.enclosingLoop, ancestor.verificationConditions);
 	}
 
 	private Context joinDescendants(Context ancestor, Context firstDescendant, List<Context> descendants1,
@@ -2800,7 +2800,7 @@ public class VerificationConditionGenerator {
 		}
 
 		/**
-		 * Get the envlosing global environment for this local environment
+		 * Get the enclosing global environment for this local environment
 		 *
 		 * @return
 		 */
@@ -2947,15 +2947,22 @@ public class VerificationConditionGenerator {
 		private final LocalEnvironment environment;
 
 		/**
+		 * The initial environment mapping variables to their initial version
+		 * numbers.  This is useful for determining the "first" version of a variable.
+		 */
+		private final LocalEnvironment initialEnvironment;
+
+		/**
 		 * A reference to the enclosing loop scope, or null if no such scope.
 		 */
 		private final LoopScope enclosingLoop;
 
-		public Context(WyalFile wyalFile, AssumptionSet assumptions, LocalEnvironment environment,
+		public Context(WyalFile wyalFile, AssumptionSet assumptions, LocalEnvironment environment, LocalEnvironment initial,
 				LoopScope enclosingLoop, List<VerificationCondition> vcs) {
 			this.wyalFile = wyalFile;
 			this.assumptions = assumptions;
 			this.environment = environment;
+			this.initialEnvironment = initial;
 			this.verificationConditions = vcs;
 			this.enclosingLoop = enclosingLoop;
 		}
@@ -2991,7 +2998,7 @@ public class VerificationConditionGenerator {
 		 */
 		public Context assume(WyalFile.Stmt... conditions) {
 			AssumptionSet nAssumptions = assumptions.add(conditions);
-			return new Context(wyalFile, nAssumptions, environment, enclosingLoop, verificationConditions);
+			return new Context(wyalFile, nAssumptions, environment, initialEnvironment, enclosingLoop, verificationConditions);
 		}
 
 		/**
@@ -3025,17 +3032,21 @@ public class VerificationConditionGenerator {
 			Expr condition = new Expr.Operator(Opcode.EXPR_eq, var, rhs);
 			AssumptionSet nAssumptions = assumptions.add(condition);
 			//
-			return new Context(wyalFile, nAssumptions, nEnvironment, enclosingLoop, verificationConditions);
+			return new Context(wyalFile, nAssumptions, nEnvironment, initialEnvironment, enclosingLoop, verificationConditions);
 		}
 
 		public WyalFile.VariableDeclaration read(Location<?> expr) {
 			return environment.read(expr.getIndex());
 		}
 
+		public WyalFile.VariableDeclaration readFirst(Location<?> expr) {
+			return initialEnvironment.read(expr.getIndex());
+		}
+
 		public Context havoc(int lhs) {
 			LocalEnvironment nEnvironment = environment.write(lhs);
 			//
-			return new Context(wyalFile, assumptions, nEnvironment, enclosingLoop, verificationConditions);
+			return new Context(wyalFile, assumptions, nEnvironment, initialEnvironment, enclosingLoop, verificationConditions);
 		}
 
 		/**
@@ -3059,7 +3070,7 @@ public class VerificationConditionGenerator {
 			}
 			LocalEnvironment nEnvironment = environment.write(vars);
 			// done
-			return new Context(wyalFile, assumptions, nEnvironment, enclosingLoop, verificationConditions);
+			return new Context(wyalFile, assumptions, nEnvironment, initialEnvironment, enclosingLoop, verificationConditions);
 		}
 
 		/**
@@ -3069,7 +3080,7 @@ public class VerificationConditionGenerator {
 		 * @return
 		 */
 		public Context newLoopScope(LoopScope scope) {
-			return new Context(wyalFile, assumptions, environment, scope, verificationConditions);
+			return new Context(wyalFile, assumptions, environment, initialEnvironment, scope, verificationConditions);
 		}
 	}
 
