@@ -72,12 +72,15 @@ public class AllValidVerificationTest {
 		IGNORED.put("RecursiveType_Valid_3", "#681");
 		IGNORED.put("RecordSubtype_Valid_1", "Issue ???");
 		IGNORED.put("RecordSubtype_Valid_2", "Issue ???");
+		IGNORED.put("RecursiveType_Valid_10", "???");
 		IGNORED.put("RecursiveType_Valid_11", "???");
 		IGNORED.put("RecursiveType_Valid_12", "#339");
 		IGNORED.put("RecursiveType_Valid_22", "#339");
 		IGNORED.put("RecursiveType_Valid_28", "#364");
 		IGNORED.put("While_Valid_2", "???");
 		IGNORED.put("While_Valid_3", "#666");
+		IGNORED.put("While_Valid_5", "???");
+		IGNORED.put("While_Valid_11", "???");
 		IGNORED.put("While_Valid_16", "???");
 		IGNORED.put("While_Valid_22", "timeout");
 		IGNORED.put("While_Valid_26", "timeout");

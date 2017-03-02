@@ -2350,11 +2350,11 @@ public class VerificationConditionGenerator {
 		} else if (type instanceof Type.Record) {
 			Type.Record rt = (Type.Record) type;
 			String[] names = rt.getFieldNames();
-			WyalFile.VariableDeclaration[] elements = new WyalFile.VariableDeclaration[names.length];
+			WyalFile.FieldDeclaration[] elements = new WyalFile.FieldDeclaration[names.length];
 			for (int i = 0; i != names.length; ++i) {
 				String fieldName = names[i];
 				WyalFile.Type fieldType = convert(rt.getField(fieldName), context);
-				elements[i] = new WyalFile.VariableDeclaration(fieldType, new WyalFile.Identifier(fieldName));
+				elements[i] = new WyalFile.FieldDeclaration(fieldType, new WyalFile.Identifier(fieldName));
 			}
 			result = new WyalFile.Type.Record(elements);
 		} else if (type instanceof Type.Reference) {
@@ -2410,11 +2410,16 @@ public class VerificationConditionGenerator {
 		if(e instanceof Expr.VariableAccess) {
 			Expr.VariableAccess va = (Expr.VariableAccess)e;
 			freeVars.add(va.getVariableDeclaration());
+		} else if(e instanceof Expr.Quantifier) {
+			Expr.Quantifier q = (Expr.Quantifier) e;
+			freeVariables(q.getBody(), freeVars);
+			// Remove any bound variables
+			for (WyalFile.VariableDeclaration vd : q.getParameters().getOperands()) {
+				freeVars.remove(vd);
+			}
 		} else {
 			for(int i=0;i!=e.size();++i) {
 				SyntacticItem item = e.getOperand(i);
-				// FIXME: there is a bug here with respect to quantified
-				// variables. These should be removed from the freeVars set.
 				if(item != null) {
 					freeVariables(item,freeVars);
 				}
