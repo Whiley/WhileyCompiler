@@ -183,9 +183,9 @@ public class VerificationConditionGenerator {
 		if(invariants.size() > 0) {
 			Location<VariableDeclaration> v = (Location<VariableDeclaration>) tree.getLocation(0);
 			// First, translate the invariant (if applicable)
-			var = new WyalFile.VariableDeclaration(type, new WyalFile.Identifier(v.getBytecode().getName()));
 			GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
 			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
+			var = localEnvironment.read(v.getIndex());
 			for (int i = 0; i != invariant.length; ++i) {
 				invariant[i] = translateAsBlock(invariants.get(i), localEnvironment);
 			}
