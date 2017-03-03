@@ -277,9 +277,8 @@ public class VerificationConditionGenerator {
 					localEnvironment);
 			// Capture any free variables. This is necessary to deal with any
 			// variable aliases introduced by type test operators.
-// FIXME:
-//			clause = captureFreeVariables(declaration, globalEnvironment,
-//					clause);
+			clause = captureFreeVariables(declaration, globalEnvironment,
+					clause);
 			//
 			WyalFile.Declaration d = new WyalFile.Declaration.Named.Macro(new WyalFile.Identifier(name), type, clause);
 			wyalFile.allocate(d);
@@ -312,41 +311,41 @@ public class VerificationConditionGenerator {
 					localEnvironment.clone());
 			// Capture any free variables. This is necessary to deal with any
 			// variable aliases introduced by type test operators.
-// FIXME: put this back in
-//			clause = captureFreeVariables(declaration, globalEnvironment,
-//					clause);
+			clause = captureFreeVariables(declaration, globalEnvironment,
+					clause);
 			//
 			WyalFile.Declaration d = new WyalFile.Declaration.Named.Macro(new WyalFile.Identifier(name), type, clause);
 			wyalFile.allocate(d);
 		}
 	}
 
-	// private Expr captureFreeVariables(WyilFile.Declaration declaration,
-	// GlobalEnvironment globalEnvironment,
-	// Expr clause) {
-	// HashSet<String> freeVariables = new HashSet<>();
-	// HashSet<String> freeAliases = new HashSet<>();
-	// clause.freeVariables(freeVariables);
-	// for (String var : freeVariables) {
-	// if (globalEnvironment.getParent(var) != null) {
-	// // This indicates that the given variable is an alias, rather
-	// // than a top-level declaration.
-	// freeAliases.add(var);
-	// }
-	// }
-	// // Determine any variable aliases as necessary.
-	// if (freeAliases.size() > 0) {
-	// // This indicates there are one or more free variables in the
-	// // clause. Hence, these must be universally quantified to ensure the
-	// // clause is well=typed.
-	// TypePattern types = generateExpressionTypePattern(declaration,
-	// globalEnvironment, freeAliases);
-	// Expr aliases = determineVariableAliases(globalEnvironment, freeAliases);
-	// //
-	// clause = new Expr.ForAll(types, implies(aliases, clause));
-	// }
-	// return clause;
-	// }
+	private WyalFile.Stmt.Block captureFreeVariables(WyilFile.Declaration declaration,
+			GlobalEnvironment globalEnvironment,
+			WyalFile.Stmt.Block clause) {
+		HashSet<WyalFile.VariableDeclaration> freeVariables = new HashSet<>();
+		HashSet<WyalFile.VariableDeclaration> freeAliases = new HashSet<>();
+		freeVariables(clause,freeVariables);
+		for (WyalFile.VariableDeclaration var : freeVariables) {
+			if (globalEnvironment.getParent(var) != null) {
+				// This indicates that the given variable is an alias, rather
+				// than a top-level declaration.
+				freeAliases.add(var);
+			}
+		}
+		// Determine any variable aliases as necessary.
+		if (freeAliases.size() > 0) {
+			// This indicates there are one or more free variables in the
+			// clause. Hence, these must be universally quantified to ensure the
+			// clause is well=typed.
+			WyalFile.VariableDeclaration[] types = generateExpressionTypePattern(declaration, globalEnvironment,
+					freeAliases);
+			Expr aliases = determineVariableAliases(globalEnvironment, freeAliases);
+			//
+			WyalFile.Stmt.Block body = new WyalFile.Stmt.Block(implies(aliases, clause));
+			return new WyalFile.Stmt.Block(new WyalFile.Stmt.Quantifier(Opcode.STMT_forall, types, body));
+		}
+		return clause;
+	}
 
 	/**
 	 * Generate the initial assumption set for a function or method. This is
@@ -2118,19 +2117,19 @@ public class VerificationConditionGenerator {
 	private Expr determineVariableAliases(GlobalEnvironment environment,
 			Set<WyalFile.VariableDeclaration> freeVariables) {
 		Expr aliases = null;
-		// for (String var : freeVariables) {
-		// WyalFile.VariableDeclaration parent = environment.getParent(var);
-		// if (parent != null) {
-		// // This indicates a variable alias, so construct the necessary
-		// // equality.
-		// Expr.VariableAccess lhs = new Expr.VariableAccess(var);
-		// Expr.VariableAccess rhs = new Expr.VariableAccess(parent);
-		// Expr aliasEquality = new Expr.Operator(WyalFile.Opcode.EXPR_eq, lhs,
-		// rhs);
-		// //
-		// aliases = and(aliases, aliasEquality);
-		// }
-		// }
+		for (WyalFile.VariableDeclaration var : freeVariables) {
+			WyalFile.VariableDeclaration parent = environment.getParent(var);
+			if (parent != null) {
+				// This indicates a variable alias, so construct the necessary
+				// equality.
+				Expr.VariableAccess lhs = new Expr.VariableAccess(var);
+				Expr.VariableAccess rhs = new Expr.VariableAccess(parent);
+				Expr aliasEquality = new Expr.Operator(WyalFile.Opcode.EXPR_eq, lhs,
+						rhs);
+				//
+				aliases = and(aliases, aliasEquality);
+			}
+		}
 		return aliases;
 	}
 
@@ -2147,25 +2146,16 @@ public class VerificationConditionGenerator {
 	 *            Set of free variables to allocate
 	 * @return
 	 */
-	// private TypePattern generateExpressionTypePattern(WyilFile.Declaration
-	// declaration, GlobalEnvironment environment,
-	// Set<String> freeVariables) {
-	// SyntaxTree tree = declaration.getTree();
-	//
-	// TypePattern[] patterns = new TypePattern[freeVariables.size()];
-	// int index = 0;
-	// for (String var : freeVariables) {
-	// Expr.Variable v = new Expr.Variable(var);
-	// Location<?> l = tree.getLocation(environment.resolve(var));
-	// WyalFile.Type wycsType = convert(l.getType(), declaration);
-	// patterns[index++] = new TypePattern.Leaf(wycsType, v);
-	// }
-	// if (patterns.length == 1) {
-	// return patterns[0];
-	// } else {
-	// return new TypePattern.Tuple(patterns);
-	// }
-	// }
+	private WyalFile.VariableDeclaration[] generateExpressionTypePattern(WyilFile.Declaration
+			declaration, GlobalEnvironment environment,
+			Set<WyalFile.VariableDeclaration> freeVariables) {
+		WyalFile.VariableDeclaration[] patterns = new WyalFile.VariableDeclaration[freeVariables.size()];
+		int index = 0;
+		for (WyalFile.VariableDeclaration var : freeVariables) {
+			patterns[index++] = var;
+		}
+		return patterns;
+	}
 
 	/**
 	 * Convert the parameter types for a given function or method declaration
@@ -2700,7 +2690,7 @@ public class VerificationConditionGenerator {
 		 * @param alias
 		 * @return
 		 */
-		public WyalFile.VariableDeclaration getParent(String alias) {
+		public WyalFile.VariableDeclaration getParent(WyalFile.VariableDeclaration alias) {
 			return parents.get(alias);
 		}
 
