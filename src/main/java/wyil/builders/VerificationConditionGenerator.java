@@ -1570,7 +1570,7 @@ public class VerificationConditionGenerator {
 	private Expr translateQuantifier(Location<Quantifier> expr, LocalEnvironment environment) {
 		Bytecode.Quantifier bytecode = expr.getBytecode();
 		// Determine the type and names of each quantified variable.
-		WyalFile.VariableDeclaration[] pattern = generateQuantifierTypePattern(expr);
+		WyalFile.VariableDeclaration[] pattern = generateQuantifierTypePattern(expr, environment);
 		// Apply quantifier ranges
 		Expr ranges = generateQuantifierRanges(expr, environment);
 		// Generate quantifier body
@@ -1630,7 +1630,7 @@ public class VerificationConditionGenerator {
 	 * @param expr
 	 * @return
 	 */
-	private WyalFile.VariableDeclaration[] generateQuantifierTypePattern(Location<Quantifier> expr) {
+	private WyalFile.VariableDeclaration[] generateQuantifierTypePattern(Location<Quantifier> expr, LocalEnvironment environment) {
 		SyntaxTree tree = expr.getEnclosingTree();
 		WyilFile.Declaration decl = tree.getEnclosingDeclaration();
 		//
@@ -1638,9 +1638,7 @@ public class VerificationConditionGenerator {
 		for (int i = 0; i != expr.numberOfOperandGroups(); ++i) {
 			Location<?>[] group = expr.getOperandGroup(i);
 			Location<VariableDeclaration> var = (Location<VariableDeclaration>) group[0];
-			WyalFile.Type varType = convert(var.getType(), decl);
-			WyalFile.Identifier varName = new WyalFile.Identifier(var.getBytecode().getName());
-			vardecls[i] = new WyalFile.VariableDeclaration(varType, varName);
+			vardecls[i] = environment.read(var.getIndex());
 		}
 		return vardecls;
 	}

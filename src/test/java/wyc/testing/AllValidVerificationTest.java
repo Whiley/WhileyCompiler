@@ -48,6 +48,14 @@ public class AllValidVerificationTest {
 	public final static Map<String, String> IGNORED = new HashMap<>();
 
 	static {
+		IGNORED.put("Byte_Valid_2", "timeout");
+		IGNORED.put("Byte_Valid_3", "timeout");
+		IGNORED.put("Byte_Valid_4", "timeout");
+		IGNORED.put("Byte_Valid_5", "timeout");
+		IGNORED.put("Byte_Valid_6", "timeout");
+		IGNORED.put("Byte_Valid_7", "timeout");
+		IGNORED.put("Byte_Valid_8", "timeout");
+		IGNORED.put("Byte_Valid_9", "timeout");
 		IGNORED.put("BoolList_Valid_3", "timeout");
 		IGNORED.put("Complex_Valid_1", "#666");
 		IGNORED.put("Complex_Valid_3", "Issue ???");
