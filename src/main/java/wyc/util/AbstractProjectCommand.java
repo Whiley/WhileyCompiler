@@ -126,13 +126,13 @@ public abstract class AbstractProjectCommand<T> implements Command<T> {
 				setWhileypath((String) option);
 				break;
 			case "whileydir":
-				whileydir = new DirectoryRoot((String) option,registry);
+				whileydir = new DirectoryRoot((String) value,registry);
 				break;
 			case "wyildir":
-				wyildir = new DirectoryRoot((String) option,registry);
+				wyildir = new DirectoryRoot((String) value,registry);
 				break;
 			case "wyaldir":
-				wyaldir = new DirectoryRoot((String) option,registry);
+				wyaldir = new DirectoryRoot((String) value,registry);
 				break;
 			default:
 				throw new IllegalArgumentException("invalid option \"" + option + "\"");
