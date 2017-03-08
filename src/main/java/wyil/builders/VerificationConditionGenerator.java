@@ -1037,7 +1037,7 @@ public class VerificationConditionGenerator {
 			// avoid name clashes with subsequent macros.
 			GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
 			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
-			WyalFile.VariableDeclaration[] vars = generateLoopInvariantTypePattern(declaration, loopInvariant,
+			WyalFile.VariableDeclaration[] vars = generateLoopInvariantParameterDeclarations(declaration, loopInvariant,
 					localEnvironment);
 			WyalFile.Stmt.Block e = translateAsBlock(clause, localEnvironment.clone());
 			Named.Macro macro = new Named.Macro(name, vars, e);
@@ -2201,7 +2201,7 @@ public class VerificationConditionGenerator {
 	 * @param declaration
 	 * @return
 	 */
-	private WyalFile.VariableDeclaration[] generateLoopInvariantTypePattern(WyilFile.Declaration declaration,
+	private WyalFile.VariableDeclaration[] generateLoopInvariantParameterDeclarations(WyilFile.Declaration declaration,
 			Location<?>[] loopInvariant, LocalEnvironment environment) {
 		int[] localVariableLocations = SyntaxTrees.determineUsedVariables(loopInvariant);
 		return generateParameterDeclarations(declaration, environment, localVariableLocations);

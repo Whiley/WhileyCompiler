@@ -59,5 +59,15 @@ public class SyntaxTrees {
 		for(int i=0;i!=root.numberOfBlocks();++i) {
 			determineUsedVariables(root.getBlock(i),usedVariables);
 		}
+		switch(root.getOpcode()) {
+		case Bytecode.OPCODE_some:
+		case Bytecode.OPCODE_all: {
+			Bytecode.Quantifier qf = (Bytecode.Quantifier) root.getBytecode();
+			for(Bytecode.Range r : qf.ranges()) {
+				// Make sure that no bound variables are captured
+				usedVariables.set(r.variable(),false);
+			}
+		}
+		}
 	}
 }
