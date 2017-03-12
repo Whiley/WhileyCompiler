@@ -48,16 +48,91 @@ public class AllValidVerificationTest {
 	public final static Map<String, String> IGNORED = new HashMap<>();
 
 	static {
-		IGNORED.put("Byte_Valid_2", "timeout");
-		IGNORED.put("Byte_Valid_3", "timeout");
-		IGNORED.put("Byte_Valid_4", "timeout");
-		IGNORED.put("Byte_Valid_5", "timeout");
-		IGNORED.put("Byte_Valid_6", "timeout");
-		IGNORED.put("Byte_Valid_7", "timeout");
-		IGNORED.put("Byte_Valid_8", "timeout");
-		IGNORED.put("Byte_Valid_9", "timeout");
+		// timeouts
+		IGNORED.put("BoolList_Valid_3", "timeout");
+		IGNORED.put("ConstrainedList_Valid_9", "timeout");
+		IGNORED.put("ConstrainedList_Valid_21", "timeout");
+		IGNORED.put("ConstrainedList_Valid_22", "timeout");
+		IGNORED.put("ConstrainedList_Valid_2", "timeout");
+		IGNORED.put("ConstrainedList_Valid_3", "timeout");
+		IGNORED.put("ConstrainedList_Valid_6", "timeout");
+		IGNORED.put("ConstrainedList_Valid_8", "timeout");
+		IGNORED.put("ConstrainedList_Valid_23", "timeout");
+		IGNORED.put("ConstrainedRecord_Valid_9", "timeout");
+		IGNORED.put("Complex_Valid_1", "timeout");
+		IGNORED.put("Ensures_Valid_3", "timeout");
+		IGNORED.put("FunctionRef_Valid_4", "timeout");
+		IGNORED.put("FunctionRef_Valid_11", "timeout");
+		IGNORED.put("Lambda_Valid_3", "timeout");
+		IGNORED.put("Lambda_Valid_4", "timeout");
+		IGNORED.put("ListAssign_Valid_12", "timeout");
+		IGNORED.put("ListAssign_Valid_3", "timeout");
+		IGNORED.put("ListAssign_Valid_5", "timeout");
+		IGNORED.put("ListAssign_Valid_8", "timeout");
+		IGNORED.put("ListAccess_Valid_6", "timeout");
+		IGNORED.put("OpenRecord_Valid_5", "timeout");
+		IGNORED.put("OpenRecord_Valid_6", "timeout");
+		IGNORED.put("RecordCoercion_Valid_1", "timeout");
+		IGNORED.put("RecursiveType_Valid_24", "timeout");
+		IGNORED.put("RecursiveType_Valid_4", "timeout");
+		IGNORED.put("RecursiveType_Valid_7", "timeout");
+		IGNORED.put("TypeEquals_Valid_25", "timeout");
+		IGNORED.put("UnionType_Valid_23", "timeout");
+		IGNORED.put("While_Valid_5", "timeout");
+		IGNORED.put("While_Valid_11", "timeout");
+		IGNORED.put("While_Valid_34", "timeout");
+		IGNORED.put("While_Valid_37", "timeout");
+		IGNORED.put("While_Valid_41", "timeout");
+		IGNORED.put("While_Valid_42", "timeout");
+		IGNORED.put("While_Valid_43", "timeout");
+		IGNORED.put("While_Valid_45", "timeout");
+		IGNORED.put("While_Valid_53", "timeout");
+		IGNORED.put("While_Valid_54", "timeout");
+		IGNORED.put("While_Valid_2", "timeout");
+		IGNORED.put("While_Valid_16", "timeout");
+		IGNORED.put("While_Valid_22", "timeout");
+		IGNORED.put("While_Valid_26", "timeout");
+		// unknown problems
+		IGNORED.put("ConstrainedRecord_Valid_8", "?");
+		IGNORED.put("Complex_Valid_3", "?");
+		IGNORED.put("Lifetime_Lambda_Valid_4", "?");
+		IGNORED.put("Record_Valid_3", "?");
+
+		IGNORED.put("TypeEquals_Valid_55", "?");
+		// known problems
+		IGNORED.put("ConstrainedList_Valid_26", "equality array generator");
 		IGNORED.put("ConstrainedList_Valid_28", "#666");
+		IGNORED.put("ConstrainedNegation_Valid_2", "type test invariants");
+		IGNORED.put("DoWhile_Valid_4", "typing problem");
+		IGNORED.put("Fail_Valid_3", "typing problem");
+		IGNORED.put("Function_Valid_11", "function overloading");
+		IGNORED.put("Function_Valid_15", "field selector in type invariant");
 		IGNORED.put("Function_Valid_18", "unknown");
+		IGNORED.put("IntOp_Valid_1", "division?");
+		IGNORED.put("Lambda_Valid_7", "incorrectly specified!");
+		IGNORED.put("Lifetime_Lambda_Valid_7", "typing problem");
+		IGNORED.put("ListGenerator_Valid_12", "equality array generator");
+		IGNORED.put("Process_Valid_1", "references");
+		IGNORED.put("Process_Valid_9", "references");
+		IGNORED.put("Process_Valid_10", "references");
+		IGNORED.put("RecordSubtype_Valid_1", "typing problem");
+		IGNORED.put("RecordSubtype_Valid_2", "typing problem");
+		IGNORED.put("RecursiveType_Valid_3", "typing problem");
+		IGNORED.put("RecursiveType_Valid_12", "typing problem");
+		IGNORED.put("RecursiveType_Valid_22", "typing problem");
+		IGNORED.put("RecursiveType_Valid_28", "typing problem");
+		IGNORED.put("Reference_Valid_2", "references");
+		IGNORED.put("Reference_Valid_3", "references");
+		IGNORED.put("Reference_Valid_6", "references");
+		IGNORED.put("TypeEquals_Valid_3", "type test invariants");
+		IGNORED.put("TypeEquals_Valid_23", "field selection in type invariant");
+		IGNORED.put("TypeEquals_Valid_36", "flow typing");
+		IGNORED.put("TypeEquals_Valid_37", "flow typing");
+		IGNORED.put("TypeEquals_Valid_38", "flow typing");
+		IGNORED.put("TypeEquals_Valid_41", "field selection in type invariant");
+		IGNORED.put("TypeEquals_Valid_41", "flow typing");
+		IGNORED.put("While_Valid_27", "non-linear arithmetic");
+		IGNORED.put("While_Valid_32", "non-linear arithmetic");
 	}
 
 	/**

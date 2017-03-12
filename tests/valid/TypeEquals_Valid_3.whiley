@@ -4,8 +4,8 @@ type nat is (int n) where n >= 0
 
 function create(nat size, nat value) -> nat[]:
     int[] r = [0; size]
-    int i = 0
-    while i < size where r is nat[]:
+    nat i = 0
+    while i < |r| where r is nat[]:
         r[i] = value
         i = i + 1
     return r
