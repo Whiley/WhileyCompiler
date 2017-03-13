@@ -508,6 +508,9 @@ public class VerificationConditionGenerator {
 		context = rp.second();
 		Expr[] ls = new Expr[lval.length];
 		for (int i = 0; i != ls.length; ++i) {
+			Location<?> lhs = lval[i];
+			Expr rhs = rp.first();
+			generateTypeInvariantCheck(lhs.getType(),rhs,context);
 			context = translateSingleAssignment(lval[i], rp.first(), context);
 		}
 		return context;
@@ -865,11 +868,7 @@ public class VerificationConditionGenerator {
 	 */
 	private Context translateReturn(Location<Return> stmt, Context context) {
 		//
-		SyntaxTree tree = stmt.getEnclosingTree();
-		WyilFile.FunctionOrMethod declaration = (WyilFile.FunctionOrMethod) tree.getEnclosingDeclaration();
-		Type.FunctionOrMethod type = declaration.type();
 		Location<?>[] returns = stmt.getOperands();
-		List<Location<Bytecode.Expr>> postcondition = declaration.getPostcondition();
 		//
 		if (returns.length > 0) {
 			// There is at least one return value. Therefore, we need to check
@@ -880,42 +879,94 @@ public class VerificationConditionGenerator {
 			Expr[] exprs = p.first();
 			context = p.second();
 			//
-			if (postcondition.size() > 0) {
-				// There is at least one return value and at least one
-				// postcondition clause. Therefore, we need to check the return
-				// values against the post condition(s). One of the difficulties
-				// here is that the postcondition will refer to parameters as
-				// they were on entry to the function/method, not as they are
-				// now.
-				Expr[] arguments = new Expr[type.params().length +
-				                            type.returns().length];
-				// Translate parameters as arguments to post-condition
-				// invocation
-				for (int i = 0; i != type.params().length; ++i) {
-					Location<VariableDeclaration> var =
-							(Location<VariableDeclaration>) tree.getLocation(i);
-					WyalFile.VariableDeclaration vd = context.readFirst(var);
-					arguments[i] = new Expr.VariableAccess(vd);
-				}
-				// Copy over return expressions as arguments for invocation(s)
-				System.arraycopy(exprs, 0, arguments, type.params().length,
-						exprs.length);
-				//
-				String prefix = declaration.name() + "_ensures_";
-				// Finally, generate an appropriate verification condition to
-				// check
-				// each postcondition clause
-				for (int i = 0; i != postcondition.size(); ++i) {
-					WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + i));
-					Expr clause = new Expr.Invoke(null, name, arguments);
-					context.emit(new VerificationCondition("postcondition not satisfied", context.assumptions, clause,
-							stmt.attributes()));
-				}
-			}
+			generateReturnTypeInvariantCheck(stmt,exprs,context);
+			generatePostconditionChecks(stmt,exprs,context);
 		}
 		// Return null to signal that execution does not continue after this
 		// return statement.
 		return null;
+	}
+
+	/**
+	 * Generate a return type check in the case that it is necessary. For
+	 * example, if the return type contains a type invariant then it is likely
+	 * to be necessary. However, in the special case that the value being
+	 * returned is already of appropriate type, then it is not.
+	 *
+	 * @param stmt
+	 * @param exprs
+	 * @param context
+	 * @throws ResolveError
+	 */
+	private void generateReturnTypeInvariantCheck(Location<Return> stmt, Expr[] exprs, Context context) {
+		SyntaxTree tree = stmt.getEnclosingTree();
+		WyilFile.FunctionOrMethod declaration = (WyilFile.FunctionOrMethod) tree.getEnclosingDeclaration();
+		Type[] returnTypes = declaration.type().returns();
+		Location<?>[] returns = stmt.getOperands();
+		//
+		for (int i = 0; i != exprs.length; ++i) {
+			Type returnType = returnTypes[i];
+			Type actualType = returns[i].getType();
+			// FIXME: at this point, we want to determine whether or not the
+			// check is actually required. To do this, we need to check whether
+			// the actualType is a true subtype of the returnType.
+			generateTypeInvariantCheck(returnType, exprs[i], context);
+		}
+	}
+
+	private void generateTypeInvariantCheck(Type lhs, Expr rhs, Context context) {
+		WyalFile.Type typeTest = convert(lhs, context.getEnvironment().getParent().enclosingDeclaration);
+		Expr clause = new Expr.Is(rhs, typeTest);
+		context.emit(new VerificationCondition("type invariant not satisfied", context.assumptions, clause,
+				rhs.attributes()));
+	}
+
+	/**
+	 * Generate the post-condition checks necessary at a return statement in a
+	 * function or method.
+	 *
+	 * @param stmt
+	 * @param exprs
+	 * @param context
+	 */
+	private void generatePostconditionChecks(Location<Return> stmt, Expr[] exprs, Context context) {
+		SyntaxTree tree = stmt.getEnclosingTree();
+		WyilFile.FunctionOrMethod declaration = (WyilFile.FunctionOrMethod) tree.getEnclosingDeclaration();
+		List<Location<Bytecode.Expr>> postcondition = declaration.getPostcondition();
+		Type.FunctionOrMethod type = declaration.type();
+		// First, check whether or not there are any postconditions!
+		if (postcondition.size() > 0) {
+			// There is at least one return value and at least one
+			// postcondition clause. Therefore, we need to check the return
+			// values against the post condition(s). One of the difficulties
+			// here is that the postcondition will refer to parameters as
+			// they were on entry to the function/method, not as they are
+			// now.
+			Expr[] arguments = new Expr[type.params().length +
+			                            type.returns().length];
+			// Translate parameters as arguments to post-condition
+			// invocation
+			for (int i = 0; i != type.params().length; ++i) {
+				Location<VariableDeclaration> var =
+						(Location<VariableDeclaration>) tree.getLocation(i);
+				WyalFile.VariableDeclaration vd = context.readFirst(var);
+				arguments[i] = new Expr.VariableAccess(vd);
+			}
+			// Copy over return expressions as arguments for invocation(s)
+			System.arraycopy(exprs, 0, arguments, type.params().length,
+					exprs.length);
+			//
+			String prefix = declaration.name() + "_ensures_";
+			// Finally, generate an appropriate verification condition to
+			// check
+			// each postcondition clause
+			for (int i = 0; i != postcondition.size(); ++i) {
+				WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + i));
+				Expr clause = new Expr.Invoke(null, name, arguments);
+				context.emit(new VerificationCondition("postcondition not satisfied", context.assumptions, clause,
+						stmt.attributes()));
+			}
+		}
 	}
 
 	/**
