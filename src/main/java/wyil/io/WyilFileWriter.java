@@ -11,13 +11,11 @@ import java.math.BigInteger;
 import java.util.*;
 
 import wybs.lang.NameID;
-import wycc.util.Pair;
 import wyfs.io.BinaryOutputStream;
 import wyfs.lang.Path;
 import wyil.lang.*;
 import wyil.lang.SyntaxTree.Location;
 import wyil.util.AbstractBytecode;
-import wyautl.util.BigRational;
 
 /**
  * <p>
@@ -51,16 +49,16 @@ public final class WyilFileWriter {
 
 	private final BinaryOutputStream out;
 
-	private final ArrayList<String> stringPool = new ArrayList<String>();
-	private final HashMap<String, Integer> stringCache = new HashMap<String, Integer>();
-	private final ArrayList<PATH_Item> pathPool = new ArrayList<PATH_Item>();
-	private final HashMap<Path.ID, Integer> pathCache = new HashMap<Path.ID, Integer>();
-	private final ArrayList<NAME_Item> namePool = new ArrayList<NAME_Item>();
-	private final HashMap<NameID, Integer> nameCache = new HashMap<NameID, Integer>();
-	private final ArrayList<Constant> constantPool = new ArrayList<Constant>();
-	private final HashMap<Constant, Integer> constantCache = new HashMap<Constant, Integer>();
-	private final ArrayList<Type> typePool = new ArrayList<Type>();
-	private final HashMap<Type, Integer> typeCache = new HashMap<Type, Integer>();
+	private final ArrayList<String> stringPool = new ArrayList<>();
+	private final HashMap<String, Integer> stringCache = new HashMap<>();
+	private final ArrayList<PATH_Item> pathPool = new ArrayList<>();
+	private final HashMap<Path.ID, Integer> pathCache = new HashMap<>();
+	private final ArrayList<NAME_Item> namePool = new ArrayList<>();
+	private final HashMap<NameID, Integer> nameCache = new HashMap<>();
+	private final ArrayList<Constant> constantPool = new ArrayList<>();
+	private final HashMap<Constant, Integer> constantCache = new HashMap<>();
+	private final ArrayList<Type> typePool = new ArrayList<>();
+	private final HashMap<Type, Integer> typeCache = new HashMap<>();
 
 	public WyilFileWriter(OutputStream output) {
 		this.out = new BinaryOutputStream(output);

@@ -9,11 +9,10 @@ package wyc;
 import wycc.lang.Command;
 import wycc.lang.Module;
 import wycc.util.Logger;
-import wycs.core.WycsFile;
-import wycs.syntax.WyalFile;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyil.lang.WyilFile;
+import wyal.lang.WyalFile;
 import wyc.commands.*;
 import wyc.lang.WhileyFile;
 
@@ -36,8 +35,6 @@ public class Activator implements Module.Activator {
 				e.associate(WyilFile.ContentType, null);
 			} else if (suffix.equals("wyal")) {
 				e.associate(WyalFile.ContentType, null);
-			} else if (suffix.equals("wycs")) {
-				e.associate(WycsFile.ContentType, null);
 			}
 		}
 
@@ -64,7 +61,9 @@ public class Activator implements Module.Activator {
 		// FIXME: logger is a hack!
 		final Logger logger = new Logger.Default(System.err);
 		// List of commands to use
-		final Command[] commands = { new Compile(registry, logger), new Decompile(registry),
+		final Command[] commands = {
+				new Compile(registry, logger),
+				new Decompile(registry, logger),
 				new Run(registry, logger) };
 		// Register all commands
 		for (Command c : commands) {

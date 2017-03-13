@@ -46,12 +46,10 @@ public class AllValidTest {
 	/**
 	 * Ignored tests and a reason why we ignore them.
 	 */
-	public final static Map<String, String> IGNORED = new HashMap<String, String>();
+	public final static Map<String, String> IGNORED = new HashMap<>();
 
 	static {
-		IGNORED.put("Coercion_Valid_8", "#681");
 		IGNORED.put("Complex_Valid_3", "Issue ???");
-		IGNORED.put("Complex_Valid_4", "#681");
 		IGNORED.put("DoWhile_Valid_4", "#681");
 		IGNORED.put("Function_Valid_11", "unknown");
 		IGNORED.put("Function_Valid_15", "unknown");
@@ -63,16 +61,10 @@ public class AllValidTest {
 		IGNORED.put("RecursiveType_Valid_22", "#339");
 		IGNORED.put("RecursiveType_Valid_28", "#364");
 		IGNORED.put("TypeEquals_Valid_23", "Issue ???");
-		IGNORED.put("TypeEquals_Valid_24", "#681");
-		IGNORED.put("TypeEquals_Valid_29", "#681");
-		IGNORED.put("TypeEquals_Valid_34", "#681");
 		IGNORED.put("TypeEquals_Valid_36", "Issue ???");
 		IGNORED.put("TypeEquals_Valid_37", "Issue ???");
 		IGNORED.put("TypeEquals_Valid_38", "Issue ???");
 		IGNORED.put("TypeEquals_Valid_41", "Issue ???");
-		IGNORED.put("TypeEquals_Valid_42", "#681");
-		IGNORED.put("TypeEquals_Valid_47", "#681");
-		IGNORED.put("While_Valid_15", "#681");
 	}
 
 	/**
@@ -109,12 +101,13 @@ public class AllValidTest {
 	 *            source file in the <code>WHILEY_SRC_DIR</code> directory.
 	 */
 	protected void runTest(String testName) throws IOException {
+		File whileySrcDir = new File(WHILEY_SRC_DIR);
 		// this will need to turn on verification at some point.
 		String whileyFilename = WHILEY_SRC_DIR + File.separatorChar + testName
 				+ ".whiley";
 
 		Pair<Compile.Result,String> p = TestUtils.compile(
-				WHILEY_SRC_DIR,      // location of source directory
+				whileySrcDir,      // location of source directory
 				false,               // no verification
 				whileyFilename);     // name of test to compile
 
@@ -129,7 +122,7 @@ public class AllValidTest {
 		}
 
 		// Execute the compile WyIL file
-		TestUtils.execWyil(WHILEY_SRC_DIR, Trie.fromString(testName));
+		TestUtils.execWyil(whileySrcDir, Trie.fromString(testName));
 	}
 
 	// ======================================================================
