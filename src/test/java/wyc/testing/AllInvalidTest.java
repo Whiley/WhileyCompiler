@@ -108,6 +108,8 @@ public class AllInvalidTest {
 		IGNORED.put("UnionType_Invalid_7", "#666");
 		IGNORED.put("UnionType_Invalid_8", "#666");
 		IGNORED.put("UnionType_Invalid_9", "#666");
+		IGNORED.put("While_Invalid_7", "timeout");
+		IGNORED.put("While_Invalid_10", "timeout");
 	}
 
 	/**
