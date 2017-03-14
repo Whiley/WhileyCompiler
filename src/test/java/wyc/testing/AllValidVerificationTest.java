@@ -53,18 +53,14 @@ public class AllValidVerificationTest {
 		IGNORED.put("ConstrainedList_Valid_19", "timeout");
 		IGNORED.put("ConstrainedList_Valid_16", "timeout");
 		IGNORED.put("Function_Valid_6", "timeout");
-		IGNORED.put("RecursiveType_Valid_25", "timeout");
-		IGNORED.put("TypeEquals_Valid_16", "timeout");
 		// timeouts
-		IGNORED.put("BoolList_Valid_3", "timeout");
+//		IGNORED.put("BoolList_Valid_3", "timeout");
 		IGNORED.put("ConstrainedList_Valid_9", "timeout");
 		IGNORED.put("ConstrainedList_Valid_21", "timeout");
 		IGNORED.put("ConstrainedList_Valid_22", "timeout");
 		IGNORED.put("ConstrainedList_Valid_2", "timeout");
-		IGNORED.put("ConstrainedList_Valid_3", "timeout");
 		IGNORED.put("ConstrainedList_Valid_6", "timeout");
 		IGNORED.put("ConstrainedList_Valid_8", "timeout");
-
 		IGNORED.put("ConstrainedList_Valid_23", "timeout");
 		IGNORED.put("ConstrainedRecord_Valid_9", "timeout");
 		IGNORED.put("Complex_Valid_1", "timeout");
@@ -81,9 +77,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("OpenRecord_Valid_5", "timeout");
 		IGNORED.put("OpenRecord_Valid_6", "timeout");
 		IGNORED.put("RecordCoercion_Valid_1", "timeout");
-		IGNORED.put("RecursiveType_Valid_24", "timeout");
 		IGNORED.put("RecursiveType_Valid_4", "timeout");
-		IGNORED.put("RecursiveType_Valid_7", "timeout");
 		IGNORED.put("TypeEquals_Valid_25", "timeout");
 		IGNORED.put("UnionType_Valid_23", "timeout");
 		IGNORED.put("While_Valid_5", "timeout");
@@ -105,8 +99,11 @@ public class AllValidVerificationTest {
 		IGNORED.put("Complex_Valid_3", "?");
 		IGNORED.put("Lifetime_Lambda_Valid_4", "?");
 		IGNORED.put("Record_Valid_3", "?");
+		IGNORED.put("RecursiveType_Valid_24", "null pointer exception");
+		IGNORED.put("RecursiveType_Valid_7", "?");
 		IGNORED.put("TypeEquals_Valid_55", "?");
 		// known problems
+		IGNORED.put("Cast_Valid_5", "division");
 //		IGNORED.put("ConstrainedList_Valid_26", "equality array generator");
 		IGNORED.put("ConstrainedList_Valid_28", "#666");
 		IGNORED.put("ConstrainedNegation_Valid_2", "type test invariants");
@@ -125,8 +122,8 @@ public class AllValidVerificationTest {
 		IGNORED.put("RecordSubtype_Valid_1", "typing problem");
 		IGNORED.put("RecordSubtype_Valid_2", "typing problem");
 		IGNORED.put("RecursiveType_Valid_3", "typing problem");
-		IGNORED.put("RecursiveType_Valid_12", "typing problem");
-		IGNORED.put("RecursiveType_Valid_22", "typing problem");
+		IGNORED.put("RecursiveType_Valid_12", "flow typing");
+		IGNORED.put("RecursiveType_Valid_22", "flow typing");
 		IGNORED.put("RecursiveType_Valid_28", "typing problem");
 		IGNORED.put("Reference_Valid_2", "references");
 		IGNORED.put("Reference_Valid_3", "references");
