@@ -1172,6 +1172,7 @@ public class VerificationConditionGenerator {
 	private Context translateVariableDeclaration(Location<VariableDeclaration> stmt, Context context) {
 		if (stmt.numberOfOperands() > 0) {
 			Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), context);
+			generateTypeInvariantCheck(stmt.getType(),p.first(),p.second());
 			context = context.write(stmt.getIndex(), p.first());
 		}
 		return context;
@@ -1286,26 +1287,29 @@ public class VerificationConditionGenerator {
 	private void checkInvokePreconditions(Location<Invoke> expr, Context context) throws Exception {
 		WyilFile.Declaration declaration = expr.getEnclosingTree().getEnclosingDeclaration();
 		Bytecode.Invoke bytecode = expr.getBytecode();
+		Type[] parameterTypes = bytecode.type().params();
 		//
 		WyilFile.FunctionOrMethod fm = lookupFunctionOrMethod(bytecode.name(), bytecode.type(), expr);
 		int numPreconditions = fm.getPrecondition().size();
 		//
-		if (numPreconditions > 0) {
-			// There is at least one precondition for the function/method being
-			// called. Therefore, we need to generate a verification condition
-			// which will check that the precondition holds.
-			//
-			Expr[] arguments = translateExpressions(expr.getOperands(), context.getEnvironment());
-			String prefix = bytecode.name().name() + "_requires_";
-			// Finally, generate an appropriate verification condition to check
-			// each precondition clause
-			for (int i = 0; i != numPreconditions; ++i) {
-				// FIXME: name needs proper path information
-				WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + i));
-				Expr clause = new Expr.Invoke(null, name, arguments);
-				context.emit(new VerificationCondition("precondition not satisfied", context.assumptions, clause,
-						expr.attributes()));
-			}
+		// There is at least one precondition for the function/method being
+		// called. Therefore, we need to generate a verification condition
+		// which will check that the precondition holds.
+		//
+		Expr[] arguments = translateExpressions(expr.getOperands(), context.getEnvironment());
+		String prefix = bytecode.name().name() + "_requires_";
+		// Finally, generate an appropriate verification condition to check
+		// each precondition clause
+		for (int i = 0; i != numPreconditions; ++i) {
+			// FIXME: name needs proper path information
+			WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + i));
+			Expr clause = new Expr.Invoke(null, name, arguments);
+			context.emit(new VerificationCondition("precondition not satisfied", context.assumptions, clause,
+					expr.attributes()));
+		}
+		// Perform parameter checks
+		for(int i=0;i!=parameterTypes.length;++i) {
+			generateTypeInvariantCheck(parameterTypes[i],arguments[i],context);
 		}
 	}
 
@@ -1515,7 +1519,6 @@ public class VerificationConditionGenerator {
 	private Expr translateInvoke(Location<Invoke> expr, LocalEnvironment environment) {
 		Bytecode.Invoke bytecode = expr.getBytecode();
 		Expr[] operands = translateExpressions(expr.getOperands(), environment);
-		//
 		// FIXME: name needs proper path information
 		WyalFile.Name name = convert(bytecode.name());
 		return new Expr.Invoke(null, name, operands);

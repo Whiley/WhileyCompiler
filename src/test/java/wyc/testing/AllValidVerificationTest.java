@@ -48,6 +48,13 @@ public class AllValidVerificationTest {
 	public final static Map<String, String> IGNORED = new HashMap<>();
 
 	static {
+		// timeouts (because of constrained types)
+		IGNORED.put("ConstrainedList_Valid_1", "timeout");
+		IGNORED.put("ConstrainedList_Valid_19", "timeout");
+		IGNORED.put("ConstrainedList_Valid_16", "timeout");
+		IGNORED.put("Function_Valid_6", "timeout");
+		IGNORED.put("RecursiveType_Valid_25", "timeout");
+		IGNORED.put("TypeEquals_Valid_16", "timeout");
 		// timeouts
 		IGNORED.put("BoolList_Valid_3", "timeout");
 		IGNORED.put("ConstrainedList_Valid_9", "timeout");
@@ -57,6 +64,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("ConstrainedList_Valid_3", "timeout");
 		IGNORED.put("ConstrainedList_Valid_6", "timeout");
 		IGNORED.put("ConstrainedList_Valid_8", "timeout");
+
 		IGNORED.put("ConstrainedList_Valid_23", "timeout");
 		IGNORED.put("ConstrainedRecord_Valid_9", "timeout");
 		IGNORED.put("Complex_Valid_1", "timeout");
@@ -97,10 +105,9 @@ public class AllValidVerificationTest {
 		IGNORED.put("Complex_Valid_3", "?");
 		IGNORED.put("Lifetime_Lambda_Valid_4", "?");
 		IGNORED.put("Record_Valid_3", "?");
-
 		IGNORED.put("TypeEquals_Valid_55", "?");
 		// known problems
-		IGNORED.put("ConstrainedList_Valid_26", "equality array generator");
+//		IGNORED.put("ConstrainedList_Valid_26", "equality array generator");
 		IGNORED.put("ConstrainedList_Valid_28", "#666");
 		IGNORED.put("ConstrainedNegation_Valid_2", "type test invariants");
 		IGNORED.put("DoWhile_Valid_4", "typing problem");
@@ -110,8 +117,8 @@ public class AllValidVerificationTest {
 		IGNORED.put("Function_Valid_18", "unknown");
 		IGNORED.put("IntOp_Valid_1", "division?");
 		IGNORED.put("Lambda_Valid_7", "incorrectly specified!");
-		IGNORED.put("Lifetime_Lambda_Valid_7", "typing problem");
-		IGNORED.put("ListGenerator_Valid_12", "equality array generator");
+//		IGNORED.put("Lifetime_Lambda_Valid_7", "typing problem");
+//		IGNORED.put("ListGenerator_Valid_12", "equality array generator");
 		IGNORED.put("Process_Valid_1", "references");
 		IGNORED.put("Process_Valid_9", "references");
 		IGNORED.put("Process_Valid_10", "references");
@@ -130,7 +137,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("TypeEquals_Valid_37", "flow typing");
 		IGNORED.put("TypeEquals_Valid_38", "flow typing");
 		IGNORED.put("TypeEquals_Valid_41", "field selection in type invariant");
-		IGNORED.put("TypeEquals_Valid_41", "flow typing");
 		IGNORED.put("While_Valid_27", "non-linear arithmetic");
 		IGNORED.put("While_Valid_32", "non-linear arithmetic");
 	}
