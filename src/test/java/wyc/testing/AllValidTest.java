@@ -49,22 +49,27 @@ public class AllValidTest {
 	public final static Map<String, String> IGNORED = new HashMap<>();
 
 	static {
-		IGNORED.put("Complex_Valid_3", "Issue ???");
-		IGNORED.put("DoWhile_Valid_4", "#681");
-		IGNORED.put("Function_Valid_11", "unknown");
-		IGNORED.put("Function_Valid_15", "unknown");
-		IGNORED.put("Lifetime_Lambda_Valid_4", "#641");
-		IGNORED.put("RecursiveType_Valid_3", "#681");
-		IGNORED.put("RecordSubtype_Valid_1", "Issue ???");
-		IGNORED.put("RecordSubtype_Valid_2", "Issue ???");
 		IGNORED.put("RecursiveType_Valid_12", "#339");
 		IGNORED.put("RecursiveType_Valid_22", "#339");
-		IGNORED.put("RecursiveType_Valid_28", "#364");
-		IGNORED.put("TypeEquals_Valid_23", "Issue ???");
-		IGNORED.put("TypeEquals_Valid_36", "Issue ???");
-		IGNORED.put("TypeEquals_Valid_37", "Issue ???");
-		IGNORED.put("TypeEquals_Valid_38", "Issue ???");
-		IGNORED.put("TypeEquals_Valid_41", "Issue ???");
+		//
+		IGNORED.put("Function_Valid_15", "#566");
+		IGNORED.put("TypeEquals_Valid_23", "#566");
+		IGNORED.put("TypeEquals_Valid_41", "#566");
+		//
+		IGNORED.put("Lifetime_Lambda_Valid_4", "#645");
+		//
+		IGNORED.put("RecordSubtype_Valid_1", "#696");
+		IGNORED.put("RecordSubtype_Valid_2", "#696");
+		IGNORED.put("RecursiveType_Valid_3", "#696");
+		IGNORED.put("TypeEquals_Valid_36", "#696");
+		IGNORED.put("TypeEquals_Valid_37", "#696");
+		IGNORED.put("TypeEquals_Valid_38", "#696");
+		//
+		IGNORED.put("Function_Valid_11", "#702");
+		//
+		IGNORED.put("Complex_Valid_3", "#339");
+		IGNORED.put("DoWhile_Valid_4", "#339");
+		IGNORED.put("RecursiveType_Valid_28", "#339");
 	}
 
 	/**

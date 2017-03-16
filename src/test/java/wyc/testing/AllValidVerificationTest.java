@@ -48,6 +48,31 @@ public class AllValidVerificationTest {
 	public final static Map<String, String> IGNORED = new HashMap<>();
 
 	static {
+		// =================================================
+		// Whiley Compiler Problems
+		// =================================================
+		// Bring over all the currently failing tests for the compiler. There's
+		// absolutely no point trying to see whether these work or not, since we
+		// already know they will not.
+		IGNORED.putAll(AllValidTest.IGNORED);
+		//
+		IGNORED.put("ConstrainedList_Valid_28", "#666");
+		//
+		IGNORED.put("IfElse_Valid_4", "#712");
+		IGNORED.put("While_Valid_15", "#712");
+		IGNORED.put("While_Valid_20", "#712");
+		//
+		IGNORED.put("RecursiveType_Valid_17", "#713");
+		IGNORED.put("RecursiveType_Valid_18", "#713");
+		IGNORED.put("Return_Valid_1", "#713");
+		IGNORED.put("UnionType_Valid_2", "#713");
+		//
+		IGNORED.put("Record_Valid_3", "#714");
+
+		// ===============================================================
+		// Whiley Theorem Prover faults
+		// ===============================================================
+
 		// timeouts (because of constrained types)
 		IGNORED.put("ConstrainedList_Valid_1", "timeout");
 		IGNORED.put("ConstrainedList_Valid_19", "timeout");
@@ -104,43 +129,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_16", "timeout");
 		IGNORED.put("While_Valid_22", "timeout");
 		IGNORED.put("While_Valid_26", "timeout");
-
-		// =================================================
-		// Whiley Compiler Problems
-		// =================================================
-		IGNORED.put("Function_Valid_15", "#566");
-		IGNORED.put("TypeEquals_Valid_23", "#566");
-		IGNORED.put("TypeEquals_Valid_41", "#566");
-		//
-		IGNORED.put("Lifetime_Lambda_Valid_4", "#645");
-		//
-		IGNORED.put("ConstrainedList_Valid_28", "#666");
-		//
-		IGNORED.put("RecordSubtype_Valid_1", "#696");
-		IGNORED.put("RecordSubtype_Valid_2", "#696");
-		IGNORED.put("RecursiveType_Valid_3", "#696");
-		IGNORED.put("RecursiveType_Valid_12", "#696");
-		IGNORED.put("RecursiveType_Valid_22", "#696");
-		IGNORED.put("TypeEquals_Valid_36", "#696");
-		IGNORED.put("TypeEquals_Valid_37", "#696");
-		IGNORED.put("TypeEquals_Valid_38", "#696");
-		//
-		IGNORED.put("Complex_Valid_3", "712");
-		IGNORED.put("DoWhile_Valid_4", "#712");
-		IGNORED.put("RecursiveType_Valid_28", "#712");
-		IGNORED.put("IfElse_Valid_4", "#712");
-		IGNORED.put("While_Valid_15", "#712");
-		IGNORED.put("While_Valid_20", "#712");
-		//
-		IGNORED.put("RecursiveType_Valid_17", "#713");
-		IGNORED.put("RecursiveType_Valid_18", "#713");
-		IGNORED.put("Return_Valid_1", "#713");
-		IGNORED.put("UnionType_Valid_2", "#713");
-		//
-		IGNORED.put("Record_Valid_3", "#714");
-		// ===============================================================
-		// Whiley Theorem Prover faults
-		// ===============================================================
 		// Issue 2
 		IGNORED.put("ConstrainedInt_Valid_22", "WyTP#2");
 		// Issue 12
@@ -222,8 +210,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("Reference_Valid_2", "WyTP#37");
 		IGNORED.put("Reference_Valid_3", "WyTP#37");
 		IGNORED.put("Reference_Valid_6", "WyTP#37");
-		//
-		IGNORED.put("Function_Valid_11", "WyTP#38");
 		//
 		IGNORED.put("ConstrainedNegation_Valid_1", "WyTP#39");
 	}
