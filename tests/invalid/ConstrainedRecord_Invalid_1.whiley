@@ -1,7 +1,7 @@
 
 type tup is {int y, int x}
 
-type point is ({int y, int x} _this) where (_this.x > 0) && (_this.y > 0)
+type point is ({int y, int x} r) where (r.x > 0) && (r.y > 0)
 
 function f(point p) -> point:
     return p
