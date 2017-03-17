@@ -4,11 +4,11 @@ property absent(int[] items, int item, int end)
 where all { i in 0..end | items[i] != item }
 
 property absent(int[] items, int item)
-where absert(items,item,|items|)
+where absent(items,item,|items|)
 
 function indexOf(int[] items, int item) -> (int r)
 ensures (r >= 0) ==> (items[r] == item)
-ensures (r < 0) ==> absent(items,item)
+ensures (r < 0) ==> absent(items,item):
     //
     nat i = 0
     //

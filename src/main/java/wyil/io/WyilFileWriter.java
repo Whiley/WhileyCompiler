@@ -356,6 +356,10 @@ public final class WyilFileWriter {
 				output.write_uv(TYPE_Function);
 				writeTypes(t.params(),output);
 				writeTypes(t.returns(),output);
+			} else if (type instanceof Type.Property) {
+				Type.Property t = (Type.Property) type;
+				output.write_uv(TYPE_Property);
+				writeTypes(t.params(),output);
 			} else if (type instanceof Type.Method) {
 				Type.Method t = (Type.Method) type;
 				output.write_uv(TYPE_Method);
@@ -1192,6 +1196,7 @@ public final class WyilFileWriter {
 	public final static int TYPE_Union = 13;
 	public final static int TYPE_Intersection = 14;
 	public final static int TYPE_Negation = 15;
+	public final static int TYPE_Property = 16;
 
 	// =========================================================================
 	// MODIFIER identifiers

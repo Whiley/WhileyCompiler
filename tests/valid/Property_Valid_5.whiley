@@ -5,7 +5,7 @@ where all { i in 0..end | items[i] != item }
 
 function indexOf(int[] items, int item) -> (int r)
 ensures (r >= 0) ==> (items[r] == item)
-ensures (r < 0) ==> absent(items,item,|items|)
+ensures (r < 0) ==> absent(items,item,|items|):
     //
     nat i = 0
     //

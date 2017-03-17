@@ -358,6 +358,18 @@ public interface Type {
 	}
 
 	/**
+	 * Represents the set of all proeprty values. These are pure predicates,
+	 * sometimes also called "mathematical" functions. A property cannot have
+	 * any side-effects and always returns the boolean true.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Property extends FunctionOrMethod {
+
+	}
+
+	/**
 	 * Represents the intersection of one or more types together. For example,
 	 * the intersection of <code>T1</code> and <code>T2</code> is
 	 * <code>T1&T2</code>. Furthermore, any variable of this type must be both
@@ -548,6 +560,15 @@ public interface Type {
 			return T_VOID;
 		} else {
 			return new Impl.Function(iParameters, iReturns);
+		}
+	}
+
+	public static Type Property(Type[] parameters) {
+		Impl[] iParameters = toImplOrVoid(parameters);
+		if (iParameters == null) {
+			return T_VOID;
+		} else {
+			return new Impl.Property(iParameters);
 		}
 	}
 
@@ -1104,7 +1125,7 @@ public interface Type {
 				for (int i = 0; i != nfields.length; ++i) {
 					if (nfields[i].second().equals(field)) {
 						// FIXME: this line is clearly broken
-						nfields[i] = new Pair<Impl, String>((Atom) type, field);
+						nfields[i] = new Pair<>((Atom) type, field);
 						return new Impl.Record(isOpen, nfields);
 					}
 				}
@@ -1398,6 +1419,23 @@ public interface Type {
 			@Override
 			public int getKind() {
 				return TypeSystem.K_METHOD;
+			}
+		}
+
+		public static final class Property extends FunctionOrMethod implements Type.Property {
+			public Property(Impl[] parameters) {
+				super(parameters, new Impl[]{(Impl)T_BOOL});
+			}
+
+			@Override
+			public String toString() {
+				String ps = Impl.toString(parameters);
+				return "property(" + ps + ")";
+			}
+
+			@Override
+			public int getKind() {
+				return TypeSystem.K_PROPERTY;
 			}
 		}
 
@@ -2037,7 +2075,7 @@ public interface Type {
 					String jth_name = jth_field.second();
 					if (ith_name.equals(jth_name)) {
 						Type type = Intersection(ith_field.first(), jth_field.first());
-						new_fields[i] = new Pair<Type, String>(type, ith_name);
+						new_fields[i] = new Pair<>(type, ith_name);
 					} else {
 						// We've found a field that is not comon to both.
 						return T_VOID;
@@ -2086,7 +2124,7 @@ public interface Type {
 							// In this case, there is a field common to both the
 							// closed and open records.
 							Type type = Intersection(open_field.first(), closed_field.first());
-							new_fields[i] = new Pair<Type, String>(type, open_name);
+							new_fields[i] = new Pair<>(type, open_name);
 							j = j + 1;
 						} else {
 							// In this case, there is a field in the open record
@@ -2135,7 +2173,7 @@ public interface Type {
 					// In this case, there is a field common to both the
 					// closed and open records.
 					Type type = Intersection(ith_field.first(), jth_field.first());
-					new_fields.add(new Pair<Type, String>(type, ith_name));
+					new_fields.add(new Pair<>(type, ith_name));
 					i = i + 1;
 					j = j + 1;
 				} else {

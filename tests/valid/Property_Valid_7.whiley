@@ -11,7 +11,7 @@ function max(int[] items) -> (int r)
 // Input array cannot be empty
 requires |items| > 0
 // Return is max over all items
-ensures max(items,r,|items|)
+ensures max(items,r,|items|):
     //
     nat i = 1
     int m = items[0]

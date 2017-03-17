@@ -241,8 +241,11 @@ public class FlowTypeChecker {
 		if (d instanceof WhileyFile.Function) {
 			WhileyFile.Function f = (WhileyFile.Function) d;
 			f.resolvedType = resolveAsType(f.unresolvedType(), d);
-		} else {
+		} else if(d instanceof WhileyFile.Method) {
 			WhileyFile.Method m = (WhileyFile.Method) d;
+			m.resolvedType = resolveAsType(m.unresolvedType(), d);
+		} else {
+			WhileyFile.Property m = (WhileyFile.Property) d;
 			m.resolvedType = resolveAsType(m.unresolvedType(), d);
 		}
 
@@ -266,7 +269,8 @@ public class FlowTypeChecker {
 	 * @param last
 	 */
 	private void checkReturnValue(WhileyFile.FunctionOrMethod d, Environment last) {
-		if (!d.hasModifier(Modifier.NATIVE) && last != BOTTOM && d.resolvedType().returns().length != 0) {
+		if (!d.hasModifier(Modifier.NATIVE) && last != BOTTOM && d.resolvedType().returns().length != 0
+				&& !(d instanceof WhileyFile.Property)) {
 			// In this case, code reaches the end of the function or method and,
 			// furthermore, that this requires a return value. To get here means
 			// that there was no explicit return statement given on at least one
@@ -1763,9 +1767,13 @@ public class FlowTypeChecker {
 			Expr.FunctionCall r = new Expr.FunctionCall(name, qualification, exprArgs, expr.attributes());
 			r.functionType = (Type.Function) triple.second();
 			return r;
-		} else {
+		} else if (triple.second() instanceof Type.Method) {
 			Expr.MethodCall r = new Expr.MethodCall(name, qualification, exprArgs, triple.third(), expr.attributes());
 			r.methodType = (Type.Method) triple.second();
+			return r;
+		} else {
+			Expr.PropertyCall r = new Expr.PropertyCall(name, qualification, exprArgs, expr.attributes());
+			r.propertyType = (Type.Property) triple.second();
 			return r;
 		}
 	}
@@ -2683,6 +2691,10 @@ public class FlowTypeChecker {
 
 	public Type.Method resolveAsType(SyntacticType.Method t, Context context) throws IOException {
 		return (Type.Method) resolveAsType((SyntacticType.FunctionOrMethod) t, context);
+	}
+
+	public Type.Property resolveAsType(SyntacticType.Property t, Context context) throws IOException {
+		return (Type.Property) resolveAsType((SyntacticType.FunctionOrMethod) t, context);
 	}
 
 	public Type.FunctionOrMethod resolveAsType(SyntacticType.FunctionOrMethod t, Context context) throws IOException {

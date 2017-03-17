@@ -726,6 +726,31 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
+	public static class PropertyCall extends FunctionOrMethodCall {
+
+		public Type.Property propertyType;
+
+		public PropertyCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
+				Attribute... attributes) {
+			super(nid,qualification,arguments,Collections.<String>emptyList(),attributes);
+		}
+
+		public PropertyCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
+				Collection<Attribute> attributes) {
+			super(nid,qualification,arguments,Collections.<String>emptyList(),attributes);
+		}
+
+		@Override
+		public Type.Property type() {
+			return propertyType;
+		}
+
+		@Override
+		public Type result() {
+			return Type.T_BOOL;
+		}
+	}
+
 	public static class AbstractIndirectInvoke extends SyntacticElement.Impl implements Expr,
 	Stmt {
 		public Expr src;

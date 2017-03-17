@@ -252,7 +252,7 @@ public final class WyilFileReader {
 			}
 			case WyilFileWriter.CONSTANT_Array: {
 				int len = input.read_uv();
-				ArrayList<Constant> values = new ArrayList<Constant>();
+				ArrayList<Constant> values = new ArrayList<>();
 				for (int j = 0; j != len; ++j) {
 					int index = input.read_uv();
 					values.add(myConstantPool[index]);
@@ -262,7 +262,7 @@ public final class WyilFileReader {
 			}
 			case WyilFileWriter.CONSTANT_Record: {
 				int len = input.read_uv();
-				HashMap<String, Constant> tvs = new HashMap<String, Constant>();
+				HashMap<String, Constant> tvs = new HashMap<>();
 				for (int j = 0; j != len; ++j) {
 					int fieldIndex = input.read_uv();
 					int constantIndex = input.read_uv();
@@ -363,12 +363,16 @@ public final class WyilFileReader {
 					int typeIndex = input.read_uv();
 					String fieldName = stringPool[stringIndex];
 					Type fieldType = myTypePool[typeIndex];
-					fields[j] = new Pair<Type,String>(fieldType,fieldName);
+					fields[j] = new Pair<>(fieldType,fieldName);
 				}
 				type = Type.Record(isOpen,fields);
 				break;
 			}
-
+			case WyilFileWriter.TYPE_Property: {
+				Type[] parameters = readTypes(myTypePool);
+				type = Type.Property(parameters);
+				break;
+			}
 			case WyilFileWriter.TYPE_Function: {
 				Type[] parameters = readTypes(myTypePool);
 				Type[] returns = readTypes(myTypePool);
@@ -665,7 +669,7 @@ public final class WyilFileReader {
 	 * @return
 	 */
 	private Collection<Modifier> generateModifiers(int modifiers) {
-		ArrayList<Modifier> mods = new ArrayList<Modifier>();
+		ArrayList<Modifier> mods = new ArrayList<>();
 
 		// first, protection modifiers
 		switch (modifiers & WyilFileWriter.MODIFIER_PROTECTION_MASK) {
@@ -749,9 +753,9 @@ public final class WyilFileReader {
 		int nAttrs = input.read_uv();
 		Bytecode bytecode = readBytecode();
 		//
-		List<Attribute> attributes = new ArrayList<Attribute>();
+		List<Attribute> attributes = new ArrayList<>();
 		//
-		return new SyntaxTree.Location<Bytecode>(tree, types, bytecode, attributes);
+		return new SyntaxTree.Location<>(tree, types, bytecode, attributes);
 	}
 
 	/**

@@ -7,7 +7,7 @@ ensures (x == y) || (x == -y):
     if x >= 0:
         return x
     else:
-        return y
+        return -x
 
 public export method test():
     assert abs(-1) == 1
