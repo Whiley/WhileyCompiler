@@ -145,13 +145,17 @@ public class Interpreter {
 	 * @return
 	 */
 	private Constant[] extractReturns(Constant[] frame, Type.FunctionOrMethod type) {
-		int paramsSize = type.params().length;
-		int returnsSize = type.returns().length;
-		Constant[] returns = new Constant[returnsSize];
-		for (int i = 0, j = paramsSize; i != returnsSize; ++i, ++j) {
-			returns[i] = frame[j];
+		if(type instanceof Type.Property) {
+			return new Constant[]{Constant.Bool(true)};
+		} else {
+			int paramsSize = type.params().length;
+			int returnsSize = type.returns().length;
+			Constant[] returns = new Constant[returnsSize];
+			for (int i = 0, j = paramsSize; i != returnsSize; ++i, ++j) {
+				returns[i] = frame[j];
+			}
+			return returns;
 		}
-		return returns;
 	}
 
 	/**

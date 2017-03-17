@@ -55,7 +55,7 @@ public class WhileyFileLexer {
 	 * @return
 	 */
 	public List<Token> scan() {
-		ArrayList<Token> tokens = new ArrayList<Token>();
+		ArrayList<Token> tokens = new ArrayList<>();
 		pos = 0;
 
 		while (pos < input.length()) {
@@ -536,13 +536,15 @@ public class WhileyFileLexer {
 			put("in", Token.Kind.In);
 			put("where", Token.Kind.Where);
 			// declarations
-			put("function", Token.Kind.Function);
 			put("import", Token.Kind.Import);
+			put("function", Token.Kind.Function);
+			put("method", Token.Kind.Method);
+			put("property", Token.Kind.Property);
+			// modifiers
 			put("public", Token.Kind.Public);
 			put("private", Token.Kind.Private);
 			put("native", Token.Kind.Native);
 			put("export", Token.Kind.Export);
-			put("method", Token.Kind.Method);
 			put("package", Token.Kind.Package);
 			// lifetimes
 			put("this", Token.Kind.This);
@@ -610,6 +612,7 @@ public class WhileyFileLexer {
 			Export("export"),
 			Function("function"),
 			Method("method"),
+			Property("property"),
 			// Lifetimes
 			This("this"),
 			// Expressions

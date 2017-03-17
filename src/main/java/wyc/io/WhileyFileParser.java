@@ -84,6 +84,8 @@ public class WhileyFileParser {
 					parseFunctionOrMethodDeclaration(wf, modifiers, true);
 				} else if (lookahead.kind == Method) {
 					parseFunctionOrMethodDeclaration(wf, modifiers, false);
+				} else if (lookahead.kind == Property) {
+					parsePropertyDeclaration(wf, modifiers);
 				} else {
 					syntaxError("unrecognised declaration", lookahead);
 				}
@@ -330,6 +332,35 @@ public class WhileyFileParser {
 		wf.add(declaration);
 	}
 
+	/**
+	 * Parse a <i>property declaration</i> which has the form:
+	 *
+	 * <pre>
+	 * ProeprtyDeclaration ::= "property" Parameters "->" Parameters (WhereClause)*
+	 * PropertyClause ::= "where" Expr
+	 * </pre>
+	 *
+	 */
+	private void parsePropertyDeclaration(WhileyFile wf, List<Modifier> modifiers) {
+		int start = index;
+		match(Property);
+		Token name = match(Identifier);
+		//
+		EnclosingScope scope = new EnclosingScope();
+		List<Parameter> parameters = parseParameters(wf,scope);
+		ArrayList<Expr> invariant = new ArrayList<>();
+		// Check whether or not there are optional "where" clauses.
+		while (tryAndMatch(true, Where) != null) {
+			invariant.add(parseLogicalExpression(wf, scope, false));
+		}
+		int end = index;
+		matchEndLine();
+		WhileyFile.Declaration declaration = wf.new Property(modifiers, name.text, parameters, invariant,
+				sourceAttr(start, end - 1));
+		wf.add(declaration);
+		return;
+	}
+
 	public List<Parameter> parseParameters(WhileyFile wf, EnclosingScope scope) {
 		match(LeftBrace);
 		ArrayList<Parameter> parameters = new ArrayList<>();
@@ -384,7 +415,7 @@ public class WhileyFileParser {
 	 * Parse a type declaration in a Whiley source file, which has the form:
 	 *
 	 * <pre>
-	 * "type" Identifier "is" TypePattern ["where" Expr]
+	 * "type" Identifier "is" TypePattern ("where" Expr)*
 	 * </pre>
 	 *
 	 * Here, the type pattern specifies a type which may additionally be adorned

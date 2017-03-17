@@ -141,6 +141,8 @@ public class VerificationConditionGenerator {
 				translateConstantDeclaration((WyilFile.Constant) b, wyalFile);
 			} else if (b instanceof WyilFile.Type) {
 				translateTypeDeclaration((WyilFile.Type) b, wyalFile);
+			} else if (b instanceof WyilFile.Property) {
+				translatePropertyDeclaration((WyilFile.Property) b, wyalFile);
 			} else if (b instanceof WyilFile.FunctionOrMethod) {
 				WyilFile.FunctionOrMethod method = (WyilFile.FunctionOrMethod) b;
 				translateFunctionOrMethodDeclaration(method, wyalFile);
@@ -197,6 +199,25 @@ public class VerificationConditionGenerator {
 		WyalFile.Declaration td = new WyalFile.Declaration.Named.Type(name, var, invariant);
 		td.attributes().addAll(declaration.attributes());
 		wyalFile.allocate(td);
+	}
+
+	private void translatePropertyDeclaration(WyilFile.Property declaration, WyalFile wyalFile) {
+		//
+		GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
+		LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
+		WyalFile.VariableDeclaration[] type = generatePreconditionParameters(declaration, localEnvironment);
+		List<Location<Bytecode.Expr>> invariants = declaration.getPrecondition();
+		//
+		WyalFile.Stmt[] stmts = new WyalFile.Stmt[invariants.size()];
+		//
+		for (int i = 0; i != invariants.size(); ++i) {
+			// Translate expression itself
+			stmts[i] = translateAsBlock(invariants.get(i), localEnvironment);
+		}
+		//
+		WyalFile.Stmt.Block block = new WyalFile.Stmt.Block(stmts);
+		WyalFile.Declaration d = new WyalFile.Declaration.Named.Macro(new WyalFile.Identifier(declaration.name()), type, block);
+		wyalFile.allocate(d);
 	}
 
 	/**
@@ -259,7 +280,7 @@ public class VerificationConditionGenerator {
 	 * @param environment
 	 * @param wyalFile
 	 */
-	private void translatePreconditionMacros(WyilFile.FunctionOrMethod declaration, WyalFile wyalFile) {
+	private void translatePreconditionMacros(WyilFile.FunctionOrMethodOrProperty declaration, WyalFile wyalFile) {
 		List<Location<Bytecode.Expr>> invariants = declaration.getPrecondition();
 		//
 		String prefix = declaration.name() + "_requires_";
@@ -2220,7 +2241,7 @@ public class VerificationConditionGenerator {
 	 * @param declaration
 	 * @return
 	 */
-	private WyalFile.VariableDeclaration[] generatePreconditionParameters(WyilFile.FunctionOrMethod declaration,
+	private WyalFile.VariableDeclaration[] generatePreconditionParameters(WyilFile.FunctionOrMethodOrProperty declaration,
 			LocalEnvironment environment) {
 		Type[] params = declaration.type().params();
 		int[] parameterLocations = ArrayUtils.range(0, params.length);

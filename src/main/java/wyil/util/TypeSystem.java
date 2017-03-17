@@ -366,13 +366,13 @@ public class TypeSystem {
 
 		public FunctionOrMethodState(int numParams, String[] contextLifetimes, String[] lifetimeParameters) {
 			this.numParams = numParams;
-			this.contextLifetimes = new ArrayList<String>();
+			this.contextLifetimes = new ArrayList<>();
 			for (int i = 0; i != contextLifetimes.length; ++i) {
 				this.contextLifetimes.add(contextLifetimes[i]);
 			}
 			this.contextLifetimes.remove("*");
 			Collections.sort(this.contextLifetimes);
-			this.lifetimeParameters = new ArrayList<String>();
+			this.lifetimeParameters = new ArrayList<>();
 			for (int i = 0; i != lifetimeParameters.length; ++i) {
 				this.lifetimeParameters.add(lifetimeParameters[i]);
 			}
@@ -490,8 +490,8 @@ public class TypeSystem {
 		if(type == null) {
 			throw new IllegalArgumentException();
 		}
-		ArrayList<Automaton.State> states = new ArrayList<Automaton.State>();
-		HashMap<NameID,Integer> roots = new HashMap<NameID,Integer>();
+		ArrayList<Automaton.State> states = new ArrayList<>();
+		HashMap<NameID,Integer> roots = new HashMap<>();
 		toAutomatonHelper(type, true, states, roots);
 		Automaton automaton = new Automaton(states);
 		return normalise(automaton);
@@ -649,7 +649,14 @@ public class TypeSystem {
 				myChildren[i+tt_params_size] = toAutomatonHelper(tt_returns[i],sign,states,roots);
 			}
 			myData = new FunctionOrMethodState(tt_params_size, getContextLifetimes(tt), getLifetimeParams(tt));
-			myKind = tt instanceof Type.Function ? K_FUNCTION : K_METHOD;
+			if(tt instanceof Type.Function) {
+				myKind = K_FUNCTION;
+			} else if(tt instanceof Type.Method){
+				myKind = K_METHOD;
+			} else {
+				myKind = K_PROPERTY;
+			}
+
 		}else {
 			// FIXME: Probably need to handle function and method types here
 			throw new ResolveError("unknown type encountered: " + type);
@@ -879,7 +886,8 @@ public class TypeSystem {
 			break;
 		}
 		case K_METHOD:
-		case K_FUNCTION: {
+		case K_FUNCTION:
+		case K_PROPERTY: {
 			String parameters = "";
 			int[] children = state.children;
 			FunctionOrMethodState data = (FunctionOrMethodState) state.data;
@@ -898,7 +906,13 @@ public class TypeSystem {
 				returns += toString(children[i], visited, headers, automaton);
 			}
 			StringBuilder sb = new StringBuilder();
-			sb.append(state.kind == K_FUNCTION ? "function" : "method");
+			if(state.kind == K_FUNCTION) {
+				sb.append("function");
+			} else if(state.kind == K_METHOD) {
+				sb.append("method");
+			} else {
+				sb.append("property");
+			}
 			if (!data.contextLifetimes.isEmpty()) {
 				sb.append('[');
 				boolean first = true;
@@ -963,6 +977,7 @@ public class TypeSystem {
 		State state = automaton.states[index];
 		switch(state.kind) {
 			case K_UNION:
+			case K_PROPERTY:
 			case K_FUNCTION:
 			case K_METHOD:
 				return "(" + middle + ")";
@@ -1034,4 +1049,5 @@ public class TypeSystem {
 	public static final byte K_FUNCTION = 19;
 	public static final byte K_METHOD = 20;
 	public static final byte K_NOMINAL = 21;
+	public static final byte K_PROPERTY = 22;
 }

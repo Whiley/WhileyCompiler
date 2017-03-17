@@ -727,6 +727,10 @@ public final class CompileTask implements Build.Task {
 			Type[] parameters = toSemanticTypes(methT.paramTypes, context);
 			Type[] returns = toSemanticTypes(methT.returnTypes, context);
 			return Type.Method(lifetimeParameters, contextLifetimes, parameters, returns);
+		} else if (type instanceof SyntacticType.Property) {
+			SyntacticType.Property funT = (SyntacticType.Property) type;
+			Type[] parameters = toSemanticTypes(funT.paramTypes, context);
+			return Type.Property(parameters);
 		} else if (type instanceof SyntacticType.Union) {
 			SyntacticType.Union unionT = (SyntacticType.Union) type;
 			return Type.Union(toSemanticTypes(unionT.bounds, context));
