@@ -1,0 +1,3 @@
+tests/invalid/Property_Invalid_5.whiley:10: expecting ":" here
+    nat i = 0
+    ^^^

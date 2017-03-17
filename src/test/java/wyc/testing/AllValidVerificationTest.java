@@ -106,12 +106,14 @@ public class AllValidVerificationTest {
 		IGNORED.put("Method_Valid_1", "timeout");
 		IGNORED.put("OpenRecord_Valid_5", "timeout");
 		IGNORED.put("OpenRecord_Valid_6", "timeout");
+		IGNORED.put("Property_Valid_7", "timeout");
 		IGNORED.put("RecordCoercion_Valid_1", "timeout");
 		IGNORED.put("RecursiveType_Valid_4", "timeout");
 		IGNORED.put("RecursiveType_Valid_11", "timeout");
 		IGNORED.put("RecursiveType_Valid_14", "timeout");
 		IGNORED.put("TypeEquals_Valid_3", "timeout");
 		IGNORED.put("TypeEquals_Valid_25", "timeout");
+		IGNORED.put("TypeEquals_Valid_54", "timeout");
 		IGNORED.put("UnionType_Valid_11", "timeout");
 		IGNORED.put("UnionType_Valid_22", "timeout");
 		IGNORED.put("UnionType_Valid_23", "timeout");
@@ -209,6 +211,8 @@ public class AllValidVerificationTest {
 		IGNORED.put("Reference_Valid_6", "WyTP#37");
 		//
 		IGNORED.put("ConstrainedNegation_Valid_1", "WyTP#39");
+		//
+		IGNORED.put("Property_Valid_4", "WyTP#41");
 	}
 
 	/**

@@ -83,6 +83,7 @@ public class AllInvalidTest {
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================
+		IGNORED.put("Property_Invalid_4", "timeout");
 		IGNORED.put("While_Invalid_7", "timeout");
 		IGNORED.put("While_Invalid_10", "timeout");
 		IGNORED.put("Subtype_Invalid_8", "timeout");
@@ -94,6 +95,8 @@ public class AllInvalidTest {
 		IGNORED.put("Fail_Invalid_1", "WyTP#26");
 		IGNORED.put("Fail_Invalid_3", "WyTP#26");
 		IGNORED.put("RecursiveType_Invalid_1", "WyTP#26");
+		IGNORED.put("RecursiveType_Invalid_2", "WyTP#26");
+		IGNORED.put("RecursiveType_Invalid_9", "WyTP#26");
 		IGNORED.put("TypeEquals_Invalid_5", "WyTP#26");
 		//
 		IGNORED.put("ArrayAssign_Invalid_3", "WyTP#43");

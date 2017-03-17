@@ -57,7 +57,7 @@
     <dependency>
       <groupId>org.whiley</groupId>
       <artifactId>wytp</artifactId>
-      <version>0.5.2</version>
+      <version>0.5.3</version>
     </dependency>
     <dependency>
       <groupId>ant</groupId>
