@@ -48,25 +48,24 @@ public class AllInvalidTest {
 	public final static Map<String, String> IGNORED = new HashMap<>();
 
 	static {
-		IGNORED.put("Assert_Invalid_2", "#667");
 		IGNORED.put("Constant_Invalid_1", "unclassified");
-//		IGNORED.put("ConstrainedArray_Invalid_1", "#666");
-//		IGNORED.put("ConstrainedArray_Invalid_3", "#666");
-//		IGNORED.put("ConstrainedInt_Invalid_12", "#666");
-//		IGNORED.put("ConstrainedInt_Invalid_1", "#666");
-//		IGNORED.put("ConstrainedInt_Invalid_2", "#666");
-//		IGNORED.put("ConstrainedInt_Invalid_3", "#666");
-//		IGNORED.put("ConstrainedInt_Invalid_5", "#666");
-//		IGNORED.put("ConstrainedInt_Invalid_6", "#666");
-//		IGNORED.put("ConstrainedInt_Invalid_7", "#666");
-//		IGNORED.put("ConstrainedInt_Invalid_8", "#666");
-//		IGNORED.put("ConstrainedInt_Invalid_9", "#666");
-//		IGNORED.put("ConstrainedRecord_Invalid_1", "#666");
 		IGNORED.put("Export_Invalid_1", "unclassified");
-		IGNORED.put("Fail_Invalid_3", "unclassified");
 		IGNORED.put("Function_Invalid_2", "unclassified");
-		IGNORED.put("Function_Invalid_4", "#667");
 		IGNORED.put("Function_Invalid_9", "unclassified");
+		IGNORED.put("Native_Invalid_1", "unclassified");
+		IGNORED.put("OpenRecord_Invalid_2", "type testing definite taken");
+		//
+		IGNORED.put("ReferenceOpenRecord_Invalid_1", "#585");
+		//
+		IGNORED.put("Parsing_Invalid_1", "608");
+		IGNORED.put("Parsing_Invalid_2", "608");
+		//
+		IGNORED.put("Parsing_Invalid_15", "609");
+		//
+		IGNORED.put("Parsing_Invalid_31", "610");
+		//
+		IGNORED.put("Assert_Invalid_2", "#667");
+		IGNORED.put("Function_Invalid_4", "#667");
 		IGNORED.put("MethodCall_Invalid_4", "#667");
 		IGNORED.put("MethodCall_Invalid_5", "#667");
 		IGNORED.put("MethodCall_Invalid_6", "#667");
@@ -74,43 +73,30 @@ public class AllInvalidTest {
 		IGNORED.put("MethodCall_Invalid_8", "#667");
 		IGNORED.put("MethodRef_Invalid_1", "#667");
 		IGNORED.put("MethodRef_Invalid_3", "#667");
-		IGNORED.put("Native_Invalid_1", "unclassified");
-		IGNORED.put("OpenRecord_Invalid_2", "unclassified");
-		IGNORED.put("Parsing_Invalid_15", "609");
-		IGNORED.put("Parsing_Invalid_1", "608");
-		IGNORED.put("Parsing_Invalid_2", "608");
-		IGNORED.put("Parsing_Invalid_31", "610");
-		IGNORED.put("RecursiveType_Invalid_10", "#666");
-		IGNORED.put("RecursiveType_Invalid_1", "unclassified");
-		IGNORED.put("RecursiveType_Invalid_2", "#666");
-		IGNORED.put("RecursiveType_Invalid_4", "unclassified");
-		IGNORED.put("RecursiveType_Invalid_7", "unclassified");
-		IGNORED.put("RecursiveType_Invalid_8", "unclassified");
-		IGNORED.put("RecursiveType_Invalid_9", "#666");
-		IGNORED.put("ReferenceOpenRecord_Invalid_1", "#585");
-//		IGNORED.put("Subtype_Invalid_1", "#666");
-//		IGNORED.put("Subtype_Invalid_2", "#666");
-//		IGNORED.put("Subtype_Invalid_3", "#666");
-//		IGNORED.put("Subtype_Invalid_4", "#666");
-//		IGNORED.put("Subtype_Invalid_5", "#666");
-//		IGNORED.put("Subtype_Invalid_6", "#666");
-//		IGNORED.put("Subtype_Invalid_7", "#666");
-		IGNORED.put("Subtype_Invalid_8", "timeout");
-		IGNORED.put("Subtype_Invalid_9", "timeout");
-//		IGNORED.put("TupleAssign_Invalid_2", "#666");
-//		IGNORED.put("TupleDefine_Invalid_2", "#666");
-		IGNORED.put("Tuple_Invalid_3", "multiple returns");
-		IGNORED.put("Tuple_Invalid_4", "multiple returns");
 		IGNORED.put("Tuple_Invalid_5", "#667");
+		//
 		IGNORED.put("TypeEquals_Invalid_1", "#681");
-		IGNORED.put("TypeEquals_Invalid_5", "#666");
-//		IGNORED.put("TypeEquals_Invalid_6", "#666");
-//		IGNORED.put("UnionType_Invalid_10", "#469");
-//		IGNORED.put("UnionType_Invalid_7", "#666");
-//		IGNORED.put("UnionType_Invalid_8", "#666");
-//		IGNORED.put("UnionType_Invalid_9", "#666");
+		//
+		IGNORED.put("Tuple_Invalid_3", "#713");
+		IGNORED.put("Tuple_Invalid_4", "#713");
+
+		// ===============================================================
+		// Whiley Theorem Prover faults
+		// ===============================================================
 		IGNORED.put("While_Invalid_7", "timeout");
 		IGNORED.put("While_Invalid_10", "timeout");
+		IGNORED.put("Subtype_Invalid_8", "timeout");
+		IGNORED.put("Subtype_Invalid_9", "timeout");
+		IGNORED.put("RecursiveType_Invalid_4", "timeout");
+		IGNORED.put("RecursiveType_Invalid_7", "timeout");
+		IGNORED.put("RecursiveType_Invalid_8", "timeout");
+		//
+		IGNORED.put("Fail_Invalid_1", "WyTP#26");
+		IGNORED.put("Fail_Invalid_3", "WyTP#26");
+		IGNORED.put("RecursiveType_Invalid_1", "WyTP#26");
+		IGNORED.put("TypeEquals_Invalid_5", "WyTP#26");
+		//
+		IGNORED.put("ArrayAssign_Invalid_3", "WyTP#43");
 	}
 
 	/**

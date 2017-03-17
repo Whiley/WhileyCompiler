@@ -1,0 +1,3 @@
+tests/invalid/RecursiveType_Invalid_10.whiley:11: type invariant not satisfied
+    return list
+           ^^^^
