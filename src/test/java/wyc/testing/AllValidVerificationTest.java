@@ -174,6 +174,7 @@ public class AllValidVerificationTest {
 		// Issue 29
 		IGNORED.put("ConstrainedList_Valid_18", "WyTP#29");
 		// Issue 30
+		IGNORED.put("UnionType_Valid_21", "WyTP#30");
 		IGNORED.put("Ensures_Valid_7", "WyTP#30");
 		IGNORED.put("TypeEquals_Valid_55", "WyTP#30");
 		// Issue 31
@@ -189,12 +190,8 @@ public class AllValidVerificationTest {
 		IGNORED.put("OpenRecord_Valid_11", "WyTP#33");
 		// Issue 34
 		IGNORED.put("ConstrainedRecord_Valid_8", "WyTP#34");
-		IGNORED.put("ListAssign_Valid_4", "WyTP#34");
 		IGNORED.put("RecursiveType_Valid_19", "WyTP#34");
-		IGNORED.put("Subtype_Valid_3", "WyTP#34");
 		IGNORED.put("Subtype_Valid_5", "WyTP#34");
-		IGNORED.put("TypeEquals_Valid_1", "WyTP#34");
-		IGNORED.put("TypeEquals_Valid_45", "WyTP#34");
 		IGNORED.put("TypeEquals_Valid_47", "WyTP#34");
 		// Issue 35
 		IGNORED.put("UnionType_Valid_7",  "WyTP#35");
