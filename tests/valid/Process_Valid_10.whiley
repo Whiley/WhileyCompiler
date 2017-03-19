@@ -1,5 +1,3 @@
-
-
 type Queue is {int[] items, int length}
 
 method get(&Queue _this) -> int:
@@ -28,13 +26,27 @@ public export method test() :
     put(q, 5)
     assume q->items == [1,2,3,4,5]    
     // Get items outof the queue
-    assume get(q) == 5
-    assume !isEmpty(q)
-    assume get(q) == 4
-    assume !isEmpty(q)
-    assume get(q) == 3
-    assume !isEmpty(q)
-    assume get(q) == 2
-    assume !isEmpty(q)
-    assume get(q) == 1
-    assume isEmpty(q)
+    int result = get(q)
+    assume result == 5
+    bool empty = isEmpty(q)
+    assume !empty
+    //
+    result = get(q)
+    assume result == 4
+    empty = isEmpty(q)
+    assume !empty
+    //
+    result = get(q)
+    assume result == 3
+    empty = isEmpty(q)
+    assume !empty
+    //
+    result = get(q)
+    assume result == 2
+    empty = isEmpty(q)
+    assume !empty
+    //
+    result = get(q)
+    assume result == 1
+    empty = isEmpty(q)
+    assume empty

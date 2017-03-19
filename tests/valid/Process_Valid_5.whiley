@@ -10,6 +10,8 @@ method run(MyProc _this) -> bool:
 
 public export method test() :
     MyProc mproc = new {flag: false}
-    assume run(mproc) == false
+    bool result = run(mproc) 
+    assume result == false
     mproc = new {flag: true}
-    assume run(mproc) == true
+    result = run(mproc) 
+    assume result == true

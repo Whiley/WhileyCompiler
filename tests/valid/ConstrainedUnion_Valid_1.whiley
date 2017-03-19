@@ -11,6 +11,11 @@ ensures r >= 0:
     return 0
 
 public export method test():
-    assume f(1) == 1
-    assume f(true) == 1
-    assume f(-1) == 0
+    int result = f(1)
+    assume result == 1
+    //
+    result = f(true)
+    assume result == 1
+    //
+    result = f(-1)
+    assume result == 0

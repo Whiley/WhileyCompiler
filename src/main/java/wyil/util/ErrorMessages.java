@@ -83,10 +83,10 @@ public class ErrorMessages {
 	public static final MsgWithNoParams DUPLICATE_CASE_LABEL = new MsgWithNoParams("duplicate case label");
 	public static final MsgWithNoParams DEAD_CODE = new MsgWithNoParams("dead-code encountered (i.e. this statement has no effect)");
 	public static final MsgWithNoParams UNREACHABLE_CODE = new MsgWithNoParams("unreachable code encountered (i.e. execution can never reach this statement)");
-	public static final MsgWithNoParams ALLOCATION_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("object allocation not permitted in function");
-	public static final MsgWithNoParams REFERENCE_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("reference not permitted in function");
-	public static final MsgWithNoParams METHODCALL_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("method invocation not permitted in function");
-	public static final MsgWithNoParams REFERENCE_ACCESS_NOT_PERMITTED_IN_FUNCTION = new MsgWithNoParams("dereference not permitted in function");
+	public static final MsgWithNoParams ALLOCATION_NOT_PERMITTED = new MsgWithNoParams("object allocation not permitted");
+	public static final MsgWithNoParams REFERENCE_NOT_PERMITTED = new MsgWithNoParams("reference not permitted");
+	public static final MsgWithNoParams METHODCALL_NOT_PERMITTED = new MsgWithNoParams("method invocation not permitted");
+	public static final MsgWithNoParams REFERENCE_ACCESS_NOT_PERMITTED = new MsgWithNoParams("dereference not permitted");
 	public static final MsgWithTypeParams SUBTYPE_ERROR = new MsgWithTypeParams("expected type $0, found $1");
 	public static final MsgWithTypeParams INCOMPARABLE_OPERANDS = new MsgWithTypeParams("incomparable operands: $0 and $1");
 	public static final MsgWithTypeParam RECORD_TYPE_REQUIRED = new MsgWithTypeParam("record required, got: $0");

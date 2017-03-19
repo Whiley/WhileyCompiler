@@ -1,12 +1,11 @@
-
-
-type wmcr6tup is {int y, int x}
+type Point is {int y, int x}
 
 method get() -> int:
     return 1
 
-method f(int y) -> wmcr6tup:
+method f(int y) -> Point:
     return {y: get(), x: y}
 
-public export method test() :
-    assume f(2) == {y: 1, x: 2}
+public export method test():
+    Point  p = f(2)
+    assume p == {y: 1, x: 2}

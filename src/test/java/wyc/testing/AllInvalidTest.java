@@ -64,21 +64,14 @@ public class AllInvalidTest {
 		//
 		IGNORED.put("Parsing_Invalid_31", "610");
 		//
-		IGNORED.put("Assert_Invalid_2", "#667");
-		IGNORED.put("Function_Invalid_4", "#667");
-		IGNORED.put("MethodCall_Invalid_4", "#667");
-		IGNORED.put("MethodCall_Invalid_5", "#667");
-		IGNORED.put("MethodCall_Invalid_6", "#667");
-		IGNORED.put("MethodCall_Invalid_7", "#667");
-		IGNORED.put("MethodCall_Invalid_8", "#667");
-		IGNORED.put("MethodRef_Invalid_1", "#667");
-		IGNORED.put("MethodRef_Invalid_3", "#667");
-		IGNORED.put("Tuple_Invalid_5", "#667");
+		IGNORED.put("MethodRef_Invalid_1", "#334");
+		IGNORED.put("MethodRef_Invalid_3", "#334");
 		//
 		IGNORED.put("TypeEquals_Invalid_1", "#681");
 		//
 		IGNORED.put("Tuple_Invalid_3", "#713");
 		IGNORED.put("Tuple_Invalid_4", "#713");
+		IGNORED.put("Tuple_Invalid_5", "#713");
 
 		// ===============================================================
 		// Whiley Theorem Prover faults
