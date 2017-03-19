@@ -3,6 +3,7 @@ method f(int x) -> (int|null r):
     *ys = x
     return *ys
 
-public export method test() :    
-    assume f(6) == 6
+public export method test() :
+    int|null result = f(6)
+    assume result == 6
     

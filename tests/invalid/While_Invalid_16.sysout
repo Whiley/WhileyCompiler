@@ -1,0 +1,3 @@
+tests/invalid/While_Invalid_16.whiley:3: method invocation not permitted
+    while i < x where i >= g(x):
+                           ^^^^

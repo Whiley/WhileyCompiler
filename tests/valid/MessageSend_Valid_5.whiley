@@ -1,5 +1,3 @@
-
-
 type Sum is &{int result, int[] items}
 
 method start(Sum _this) :
@@ -21,4 +19,5 @@ public export method test() :
     int[] data = [1, 3, 5, 7, 3, 198, 1, 4, 6]
     Sum sum = create(data)
     start(sum)
-    assume get(sum) == 228
+    int result = get(sum)
+    assume result == 228

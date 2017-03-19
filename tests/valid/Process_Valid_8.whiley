@@ -14,4 +14,5 @@ method create(any data) -> &MyProc2:
 public export method test() :
     &MyProc2 p2 = create(false)
     set(p2,1)
-    assume get(p2) == 1
+    any result = get(p2)
+    assume result == 1

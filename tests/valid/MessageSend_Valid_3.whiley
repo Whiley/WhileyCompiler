@@ -1,5 +1,3 @@
-
-
 type Proc is &{int state}
 
 method get(Proc _this) -> int:
@@ -10,4 +8,5 @@ method f(Proc x) -> int[]:
 
 public export method test() :
     Proc proc = new {state: 1}
-    assume f(proc) == [1,2,3,1]
+    int[] result = f(proc)
+    assume result == [1,2,3,1]

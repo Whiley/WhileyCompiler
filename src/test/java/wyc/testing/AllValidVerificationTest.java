@@ -73,6 +73,8 @@ public class AllValidVerificationTest {
 		// Whiley Theorem Prover faults
 		// ===============================================================
 
+		IGNORED.put("Complex_Valid_1", "unclassified");
+
 		// timeouts (because of constrained types)
 		IGNORED.put("ConstrainedList_Valid_1", "timeout");
 		IGNORED.put("ConstrainedList_Valid_19", "timeout");
@@ -91,7 +93,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("ConstrainedList_Valid_8", "timeout");
 		IGNORED.put("ConstrainedList_Valid_23", "timeout");
 		IGNORED.put("ConstrainedRecord_Valid_9", "timeout");
-		IGNORED.put("Complex_Valid_1", "timeout");
 		IGNORED.put("Ensures_Valid_3", "timeout");
 		IGNORED.put("FunctionRef_Valid_4", "timeout");
 		IGNORED.put("FunctionRef_Valid_11", "timeout");
@@ -190,11 +191,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("OpenRecord_Valid_9", "WyTP#33");
 		IGNORED.put("OpenRecord_Valid_10", "WyTP#33");
 		IGNORED.put("OpenRecord_Valid_11", "WyTP#33");
-		// Issue 34
-		IGNORED.put("ConstrainedRecord_Valid_8", "WyTP#34");
-		IGNORED.put("RecursiveType_Valid_19", "WyTP#34");
-		IGNORED.put("Subtype_Valid_5", "WyTP#34");
-		IGNORED.put("TypeEquals_Valid_47", "WyTP#34");
+
 		// Issue 35
 		IGNORED.put("UnionType_Valid_7",  "WyTP#35");
 		IGNORED.put("UnionType_Valid_8",  "WyTP#35");
@@ -213,6 +210,9 @@ public class AllValidVerificationTest {
 		IGNORED.put("ConstrainedNegation_Valid_1", "WyTP#39");
 		//
 		IGNORED.put("Property_Valid_4", "WyTP#41");
+		IGNORED.put("Subtype_Valid_5", "WyTP#41");
+		IGNORED.put("RecursiveType_Valid_19", "WyTP#41");
+		IGNORED.put("TypeEquals_Valid_47", "WyTP#41");
 	}
 
 	/**

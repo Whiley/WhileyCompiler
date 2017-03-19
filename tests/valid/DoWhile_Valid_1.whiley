@@ -12,7 +12,12 @@ requires |args| >= 2:
     //
     return r
 
-public export method test() :
-    assume f([1, 2, 3]) == 3
-    assume f([1, 2]) == 1
-    assume f([1, 2, 3, 4, 5, 6]) == 15
+public export method test():
+    int result = f([1, 2, 3])
+    assume result == 3
+    //
+    result = f([1, 2])
+    assume result == 1
+    //
+    result = f([1, 2, 3, 4, 5, 6])
+    assume result == 15

@@ -74,6 +74,7 @@ method read(string s) -> byte[]:
     //
     return bytes
         
-public export method test() :
-    assume read("hello") == [01101100b, 01101111b, 0b]
+public export method test():
+    byte[] result = read("hello")
+    assume result == [01101100b, 01101111b, 0b]
     
