@@ -407,7 +407,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 	 * <code>public</code> and <code>private</code>.
 	 * </p>
 	 */
-	public abstract class FunctionOrMethod extends NamedDeclaration {
+	public abstract class FunctionOrMethodOrProperty extends NamedDeclaration {
 		public final ArrayList<Parameter> parameters;
 		public final ArrayList<String> lifetimeParameters;
 		public final ArrayList<Parameter> returns;
@@ -432,7 +432,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 		 * @param statements
 		 *            - The Statements making up the function body.
 		 */
-		public FunctionOrMethod(List<Modifier> modifiers, String name,
+		public FunctionOrMethodOrProperty(List<Modifier> modifiers, String name,
 				List<Parameter> returns, List<Parameter> parameters,
 				List<String> lifetimeParameters,
 				List<Expr> requires, List<Expr> ensures,
@@ -478,15 +478,15 @@ public final class WhileyFile extends AbstractCompilationUnit {
 	 * </p>
 	 *
 	 * <p>
-	 * <b>NOTE</b> see {@link FunctionOrMethod} for more information.
+	 * <b>NOTE</b> see {@link FunctionOrMethodOrProperty} for more information.
 	 * </p>
 	 *
-	 * @see FunctionOrMethod
+	 * @see FunctionOrMethodOrProperty
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public final class Function extends FunctionOrMethod {
+	public final class Function extends FunctionOrMethodOrProperty {
 		public wyil.lang.Type.Function resolvedType;
 
 		public Function(List<Modifier> modifiers, String name, List<Parameter> returns,
@@ -541,13 +541,13 @@ public final class WhileyFile extends AbstractCompilationUnit {
 	 * </p>
 	 *
 	 * <p>
-	 * <b>NOTE</b> see {@link FunctionOrMethod} for more information.
+	 * <b>NOTE</b> see {@link FunctionOrMethodOrProperty} for more information.
 	 * </p>
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public final class Method extends FunctionOrMethod {
+	public final class Method extends FunctionOrMethodOrProperty {
 		public wyil.lang.Type.Method resolvedType;
 
 		public Method(List<Modifier> modifiers, String name, List<Parameter> returns, List<Parameter> parameters,
@@ -602,15 +602,15 @@ public final class WhileyFile extends AbstractCompilationUnit {
 	 * </p>
 	 *
 	 * <p>
-	 * <b>NOTE</b> see {@link FunctionOrMethod} for more information.
+	 * <b>NOTE</b> see {@link FunctionOrMethodOrProperty} for more information.
 	 * </p>
 	 *
-	 * @see FunctionOrMethod
+	 * @see FunctionOrMethodOrProperty
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public final class Property extends FunctionOrMethod {
+	public final class Property extends FunctionOrMethodOrProperty {
 		public wyil.lang.Type.Property resolvedType;
 
 		public Property(List<Modifier> modifiers, String name, List<Parameter> parameters, List<Expr> invariant,

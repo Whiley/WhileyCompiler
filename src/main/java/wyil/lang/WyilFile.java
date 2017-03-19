@@ -222,11 +222,11 @@ public final class WyilFile extends AbstractCompilationUnit {
 	 * @param name
 	 * @return
 	 */
-	public List<FunctionOrMethod> functionOrMethod(String name) {
-		ArrayList<FunctionOrMethod> r = new ArrayList<>();
+	public List<FunctionOrMethodOrProperty> functionOrMethodOrProperty(String name) {
+		ArrayList<FunctionOrMethodOrProperty> r = new ArrayList<>();
 		for (Block d : blocks) {
-			if (d instanceof FunctionOrMethod) {
-				FunctionOrMethod m = (FunctionOrMethod) d;
+			if (d instanceof FunctionOrMethodOrProperty) {
+				FunctionOrMethodOrProperty m = (FunctionOrMethodOrProperty) d;
 				if (m.name().equals(name)) {
 					r.add(m);
 				}
@@ -242,10 +242,10 @@ public final class WyilFile extends AbstractCompilationUnit {
 	 * @param name
 	 * @return
 	 */
-	public FunctionOrMethod functionOrMethod(String name, wyil.lang.Type.FunctionOrMethod ft) {
+	public FunctionOrMethodOrProperty functionOrMethodOrProperty(String name, wyil.lang.Type.FunctionOrMethod ft) {
 		for (Block d : blocks) {
-			if (d instanceof FunctionOrMethod) {
-				FunctionOrMethod md = (FunctionOrMethod) d;
+			if (d instanceof FunctionOrMethodOrProperty) {
+				FunctionOrMethodOrProperty md = (FunctionOrMethodOrProperty) d;
 				if (md.name().equals(name) && md.type().equals(ft)) {
 					return md;
 				}

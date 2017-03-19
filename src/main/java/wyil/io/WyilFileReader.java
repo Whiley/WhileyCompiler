@@ -491,6 +491,9 @@ public final class WyilFileReader {
 		case WyilFileWriter.BLOCK_Type:
 			readTypeBlock(parent);
 			 break;
+		case WyilFileWriter.BLOCK_Property:
+			readPropertyBlock(parent);
+			break;
 		case WyilFileWriter.BLOCK_Function:
 		case WyilFileWriter.BLOCK_Method:
 			readFunctionOrMethodBlock(parent);
@@ -657,6 +660,33 @@ public final class WyilFileReader {
 		//
 		Location<Bytecode.Block> loc = (Location<Bytecode.Block>) tree.getLocation(body);
 		decl.setBody(loc);
+		//
+		parent.blocks().add(decl);
+	}
+
+	private void readPropertyBlock(WyilFile parent) throws IOException {
+		int nameIdx = input.read_uv();
+		int modifiers = input.read_uv();
+		int typeIdx = input.read_uv();
+		int nPreconditions = input.read_uv();
+		//
+		Collection<Modifier> mods = generateModifiers(modifiers);
+		String name = stringPool[nameIdx];
+		Type.Property type = (Type.Property) typePool[typeIdx];
+		//
+		WyilFile.Property decl = new WyilFile.Property(parent, mods, name, type);
+		int[] precondition = new int[nPreconditions];
+		for (int i = 0; i != nPreconditions; ++i) {
+			precondition[i] = input.read_uv();
+		}
+		//
+		readSyntaxTree(decl);
+		SyntaxTree tree = decl.getTree();
+		//
+		for (int i = 0; i != nPreconditions; ++i) {
+			Location<Bytecode.Expr> expr = (Location<Expr>) tree.getLocation(precondition[i]);
+			decl.getPrecondition().add(expr);
+		}
 		//
 		parent.blocks().add(decl);
 	}

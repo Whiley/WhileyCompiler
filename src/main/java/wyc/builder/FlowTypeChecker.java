@@ -148,8 +148,8 @@ public class FlowTypeChecker {
 
 		for (WhileyFile.Declaration decl : wf.declarations) {
 			try {
-				if (decl instanceof WhileyFile.FunctionOrMethod) {
-					propagate((WhileyFile.FunctionOrMethod) decl);
+				if (decl instanceof WhileyFile.FunctionOrMethodOrProperty) {
+					propagate((WhileyFile.FunctionOrMethodOrProperty) decl);
 				} else if (decl instanceof WhileyFile.Type) {
 					propagate((WhileyFile.Type) decl);
 				} else if (decl instanceof WhileyFile.Constant) {
@@ -226,7 +226,7 @@ public class FlowTypeChecker {
 	 *            Function or method declaration to check.
 	 * @throws IOException
 	 */
-	public void propagate(WhileyFile.FunctionOrMethod d) throws IOException {
+	public void propagate(WhileyFile.FunctionOrMethodOrProperty d) throws IOException {
 		// Resolve the types of all parameters and construct an appropriate
 		// environment for use in the flow-sensitive type propagation.
 		Environment environment = new Environment().declareLifetimeParameters(d.lifetimeParameters);
@@ -268,7 +268,7 @@ public class FlowTypeChecker {
 	 * @param d
 	 * @param last
 	 */
-	private void checkReturnValue(WhileyFile.FunctionOrMethod d, Environment last) {
+	private void checkReturnValue(WhileyFile.FunctionOrMethodOrProperty d, Environment last) {
 		if (!d.hasModifier(Modifier.NATIVE) && last != BOTTOM && d.resolvedType().returns().length != 0
 				&& !(d instanceof WhileyFile.Property)) {
 			// In this case, code reaches the end of the function or method and,
@@ -729,7 +729,7 @@ public class FlowTypeChecker {
 		}
 		List<Pair<Expr, Type>> stmt_types = calculateTypesProduced(stmt_returns);
 		// FIXME: this is less than ideal
-		Type[] current_returns = ((WhileyFile.FunctionOrMethod) context).resolvedType().returns();
+		Type[] current_returns = ((WhileyFile.FunctionOrMethodOrProperty) context).resolvedType().returns();
 
 		if (stmt_types.size() < current_returns.length) {
 			// In this case, a return statement was provided with too few return
@@ -2370,7 +2370,7 @@ public class FlowTypeChecker {
 			WhileyFile wf = builder.getSourceFile(winnerId.module());
 			if (wf != null) {
 				if (wf != context.file()) {
-					for (WhileyFile.FunctionOrMethod d : wf.declarations(WhileyFile.FunctionOrMethod.class,
+					for (WhileyFile.FunctionOrMethodOrProperty d : wf.declarations(WhileyFile.FunctionOrMethodOrProperty.class,
 							winnerId.name())) {
 						if (d.parameters.equals(winnerType.params())) {
 							if (!d.hasModifier(Modifier.PUBLIC)) {
@@ -2383,7 +2383,7 @@ public class FlowTypeChecker {
 				}
 			} else {
 				WyilFile m = builder.getModule(winnerId.module());
-				WyilFile.FunctionOrMethod d = m.functionOrMethod(winnerId.name(), winnerType);
+				WyilFile.FunctionOrMethodOrProperty d = m.functionOrMethodOrProperty(winnerId.name(), winnerType);
 				if (!d.hasModifier(Modifier.PUBLIC)) {
 					String msg = winnerId.module() + "." + name + parameterString(parameters) + " is not visible";
 					throw new ResolveError(msg);
@@ -2511,7 +2511,7 @@ public class FlowTypeChecker {
 
 		WhileyFile wf = builder.getSourceFile(mid);
 		if (wf != null) {
-			for (WhileyFile.FunctionOrMethod f : wf.declarations(WhileyFile.FunctionOrMethod.class, nid.name())) {
+			for (WhileyFile.FunctionOrMethodOrProperty f : wf.declarations(WhileyFile.FunctionOrMethodOrProperty.class, nid.name())) {
 				if (nparams == -1 || f.parameters.size() == nparams) {
 					Type.FunctionOrMethod ft = (Type.FunctionOrMethod) builder.toSemanticType(f.unresolvedType(), f);
 					candidates.add(new Pair<>(nid, ft));

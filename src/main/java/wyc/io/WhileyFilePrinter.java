@@ -54,15 +54,15 @@ public class WhileyFilePrinter {
 			print((WhileyFile.Constant)decl);
 		} else if(decl instanceof WhileyFile.Type) {
 			print((WhileyFile.Type)decl);
-		} else if(decl instanceof WhileyFile.FunctionOrMethod) {
-			print((WhileyFile.FunctionOrMethod)decl);
+		} else if(decl instanceof WhileyFile.FunctionOrMethodOrProperty) {
+			print((WhileyFile.FunctionOrMethodOrProperty)decl);
 		} else {
 			throw new RuntimeException("Unknown construct encountered: "
 					+ decl.getClass().getName());
 		}
 	}
 
-	public void print(WhileyFile.FunctionOrMethod fm) {
+	public void print(WhileyFile.FunctionOrMethodOrProperty fm) {
 		out.println();
 		print(fm.modifiers());
 

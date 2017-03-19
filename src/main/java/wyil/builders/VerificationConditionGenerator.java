@@ -1310,7 +1310,7 @@ public class VerificationConditionGenerator {
 		Bytecode.Invoke bytecode = expr.getBytecode();
 		Type[] parameterTypes = bytecode.type().params();
 		//
-		WyilFile.FunctionOrMethod fm = lookupFunctionOrMethod(bytecode.name(), bytecode.type(), expr);
+		WyilFile.FunctionOrMethodOrProperty fm = lookupFunctionOrMethodOrProperty(bytecode.name(), bytecode.type(), expr);
 		int numPreconditions = fm.getPrecondition().size();
 		//
 		// There is at least one precondition for the function/method being
@@ -1398,27 +1398,30 @@ public class VerificationConditionGenerator {
 		WyilFile.Declaration declaration = expr.getEnclosingTree().getEnclosingDeclaration();
 		Bytecode.Invoke bytecode = expr.getBytecode();
 		//
-		WyilFile.FunctionOrMethod fm = lookupFunctionOrMethod(bytecode.name(), bytecode.type(), expr);
-		int numPostconditions = fm.getPostcondition().size();
-		//
-		if (numPostconditions > 0) {
-			// There is at least one postcondition for the function/method being
-			// called. Therefore, we need to generate a verification condition
-			// which will check that the precondition holds.
+		WyilFile.FunctionOrMethodOrProperty fmp = lookupFunctionOrMethodOrProperty(bytecode.name(), bytecode.type(), expr);
+		if(fmp instanceof WyilFile.FunctionOrMethod) {
+			WyilFile.FunctionOrMethod fm = (WyilFile.FunctionOrMethod) fmp;
+			int numPostconditions = fm.getPostcondition().size();
 			//
-			Expr[] parameters = translateExpressions(expr.getOperands(), context.getEnvironment());
-			Expr[] arguments = java.util.Arrays.copyOf(parameters, parameters.length + fm.type().returns().length);
-			// FIXME: following broken for multiple returns
-			arguments[arguments.length - 1] = translateExpression(expr, context.getEnvironment());
-			//
-			String prefix = bytecode.name().name() + "_ensures_";
-			// Finally, generate an appropriate verification condition to check
-			// each precondition clause
-			for (int i = 0; i != numPostconditions; ++i) {
-				// FIXME: name needs proper path information
-				WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + i));
-				Expr clause = new Expr.Invoke(null, name, arguments);
-				context = context.assume(clause);
+			if (numPostconditions > 0) {
+				// There is at least one postcondition for the function/method being
+				// called. Therefore, we need to generate a verification condition
+				// which will check that the precondition holds.
+				//
+				Expr[] parameters = translateExpressions(expr.getOperands(), context.getEnvironment());
+				Expr[] arguments = java.util.Arrays.copyOf(parameters, parameters.length + fm.type().returns().length);
+				// FIXME: following broken for multiple returns
+				arguments[arguments.length - 1] = translateExpression(expr, context.getEnvironment());
+				//
+				String prefix = bytecode.name().name() + "_ensures_";
+				// Finally, generate an appropriate verification condition to check
+				// each precondition clause
+				for (int i = 0; i != numPostconditions; ++i) {
+					// FIXME: name needs proper path information
+					WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + i));
+					Expr clause = new Expr.Invoke(null, name, arguments);
+					context = context.assume(clause);
+				}
 			}
 		}
 		//
@@ -2506,7 +2509,7 @@ public class VerificationConditionGenerator {
 	 * @return
 	 * @throws Exception
 	 */
-	public WyilFile.FunctionOrMethod lookupFunctionOrMethod(NameID name, Type.FunctionOrMethod fun,
+	public WyilFile.FunctionOrMethodOrProperty lookupFunctionOrMethodOrProperty(NameID name, Type.FunctionOrMethod fun,
 			SyntaxTree.Location<?> stmt) throws Exception {
 		SyntaxTree tree = stmt.getEnclosingTree();
 		WyilFile.Declaration decl = tree.getEnclosingDeclaration();
@@ -2517,9 +2520,7 @@ public class VerificationConditionGenerator {
 					decl.parent().getEntry(), stmt);
 		}
 		WyilFile m = e.read();
-		WyilFile.FunctionOrMethod method = m.functionOrMethod(name.name(), fun);
-
-		return method;
+		return m.functionOrMethodOrProperty(name.name(), fun);
 	}
 
 	/**

@@ -112,6 +112,9 @@ public final class WyilFileWriter {
 		case BLOCK_Method:
 			bytes = generateFunctionOrMethodBlock((WyilFile.FunctionOrMethod) data);
 			break;
+		case BLOCK_Property:
+			bytes = generatePropertyBlock((WyilFile.Property) data);
+			break;
 		}
 
 		output.pad_u8(); // pad out to next byte boundary
@@ -421,6 +424,8 @@ public final class WyilFileWriter {
 			writeBlock(BLOCK_Constant, d, output);
 		} else if (d instanceof WyilFile.Type) {
 			writeBlock(BLOCK_Type, d, output);
+		} else if(d instanceof WyilFile.Property) {
+			writeBlock(BLOCK_Property, d, output);
 		} else if (d instanceof WyilFile.FunctionOrMethod) {
 			WyilFile.FunctionOrMethod md = (WyilFile.FunctionOrMethod) d;
 			if (md.type() instanceof Type.Function) {
@@ -577,6 +582,31 @@ public final class WyilFileWriter {
 
 		return bytes.toByteArray();
 	}
+
+	private byte[] generatePropertyBlock(WyilFile.Property md) throws IOException {
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		BinaryOutputStream output = new BinaryOutputStream(bytes);
+		//
+		int nameIdx = stringCache.get(md.name());
+		int modifiers = generateModifiers(md.modifiers());
+		int typeIdx = typeCache.get(md.type());
+		List<Location<Bytecode.Expr>> precondition = md.getPrecondition();
+		//
+		output.write_uv(nameIdx);
+		output.write_uv(modifiers);
+		output.write_uv(typeIdx);
+		output.write_uv(precondition.size());
+		//
+		for(Location<Bytecode.Expr> clause : precondition) {
+			output.write_uv(clause.getIndex());
+		}
+		writeSyntaxTree(md.getTree(),output);
+
+		output.close();
+
+		return bytes.toByteArray();
+	}
+
 
 	/**
 	 * Write a syntax tree to the output stream. The format
@@ -862,8 +892,8 @@ public final class WyilFileWriter {
 			buildPools((WyilFile.Type) declaration);
 		} else if (declaration instanceof WyilFile.Constant) {
 			buildPools((WyilFile.Constant) declaration);
-		} else if (declaration instanceof WyilFile.FunctionOrMethod) {
-			buildPools((WyilFile.FunctionOrMethod) declaration);
+		} else if (declaration instanceof WyilFile.FunctionOrMethodOrProperty) {
+			buildPools((WyilFile.FunctionOrMethodOrProperty) declaration);
 		}
 	}
 
@@ -878,7 +908,7 @@ public final class WyilFileWriter {
 		buildPools(declaration.getTree());
 	}
 
-	private void buildPools(WyilFile.FunctionOrMethod declaration) {
+	private void buildPools(WyilFile.FunctionOrMethodOrProperty declaration) {
 		addStringItem(declaration.name());
 		addTypeItem(declaration.type());
 		buildPools(declaration.getTree());
@@ -1159,6 +1189,7 @@ public final class WyilFileWriter {
 	public final static int BLOCK_Constant = 11;
 	public final static int BLOCK_Function = 12;
 	public final static int BLOCK_Method = 13;
+	public final static int BLOCK_Property = 14;
 	// ... (anticipating some others here)
 
 	// =========================================================================
