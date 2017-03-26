@@ -26,7 +26,6 @@ import wyal.lang.WyalFile.Opcode;
 //import wyal.lang.WyalFile.Type;
 import wyal.lang.WyalFile.Value;
 import wyal.lang.WyalFile.Declaration.Named;
-import wyal.util.AutomatedTheoremProver;
 import wyfs.lang.Path;
 import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
