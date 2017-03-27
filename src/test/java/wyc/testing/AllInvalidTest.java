@@ -78,17 +78,11 @@ public class AllInvalidTest {
 		// ===============================================================
 		IGNORED.put("ArrayLength_Invalid_2", "unclassified");
 		//
-		IGNORED.put("Property_Invalid_4", "timeout");
-		IGNORED.put("Subtype_Invalid_8", "timeout");
-		IGNORED.put("Subtype_Invalid_9", "timeout");
-		IGNORED.put("RecursiveType_Invalid_4", "timeout");
-		IGNORED.put("RecursiveType_Invalid_7", "timeout");
-		IGNORED.put("RecursiveType_Invalid_8", "timeout");
+		IGNORED.put("RecursiveType_Invalid_4", "unclassified");
+		IGNORED.put("RecursiveType_Invalid_7", "unclassified");
+		IGNORED.put("RecursiveType_Invalid_8", "unclassified");
 		//
-		IGNORED.put("Fail_Invalid_3", "WyTP#26");
-		IGNORED.put("RecursiveType_Invalid_1", "WyTP#26");
 		IGNORED.put("RecursiveType_Invalid_2", "WyTP#26");
-		IGNORED.put("TypeEquals_Invalid_5", "WyTP#26");
 	}
 
 	/**

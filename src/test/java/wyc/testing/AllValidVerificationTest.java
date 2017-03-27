@@ -81,11 +81,9 @@ public class AllValidVerificationTest {
 		IGNORED.put("Property_Valid_5", "unclassified");
 		IGNORED.put("Property_Valid_6", "unclassified");
 		IGNORED.put("TypeEquals_Valid_28", "unclassified");
-		IGNORED.put("TypeEquals_Valid_29", "unclassified");
 		IGNORED.put("While_Valid_39", "unclassified");
 		IGNORED.put("While_Valid_40", "unclassified");
 		IGNORED.put("Complex_Valid_1", "unclassified");
-		//
 		IGNORED.put("ListAssign_Valid_4", "unclassified");
 		IGNORED.put("While_Valid_51", "unclassified");
 		// timeouts
@@ -96,7 +94,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("ConstrainedList_Valid_22", "unclassified");
 		IGNORED.put("ConstrainedList_Valid_8", "unclassified");
 		IGNORED.put("ConstrainedList_Valid_23", "unclassified");
-		IGNORED.put("ConstrainedRecord_Valid_9", "unclassified");
+		IGNORED.put("ConstrainedRecord_Valid_9", "timeout");
 		IGNORED.put("Ensures_Valid_3", "unclassified");
 		IGNORED.put("FunctionRef_Valid_4", "unclassified");
 		IGNORED.put("FunctionRef_Valid_11", "unclassified");
@@ -107,8 +105,9 @@ public class AllValidVerificationTest {
 		IGNORED.put("ListAccess_Valid_6", "unclassified");
 		IGNORED.put("Property_Valid_7", "unclassified");
 		IGNORED.put("RecordCoercion_Valid_1", "unclassified");
-		IGNORED.put("RecursiveType_Valid_4", "unclassified");
+		IGNORED.put("TypeEquals_Valid_19", "unclassified");
 		IGNORED.put("TypeEquals_Valid_25", "unclassified");
+		IGNORED.put("TypeEquals_Valid_50", "unclassified");
 		IGNORED.put("TypeEquals_Valid_54", "timeout");
 		IGNORED.put("UnionType_Valid_22", "timeout");
 		IGNORED.put("UnionType_Valid_23", "timeout");
@@ -130,10 +129,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("RecursiveType_Valid_7", "WyTP#26");
 		IGNORED.put("RecursiveType_Valid_29", "WyTP#26");
 		IGNORED.put("TypeEquals_Valid_30", "timeout");
-		IGNORED.put("TypeEquals_Valid_34", "WyTP#26");
-		IGNORED.put("TypeEquals_Valid_35", "WyTP#26");
 		IGNORED.put("TypeEquals_Valid_52", "WyTP#26");
-		IGNORED.put("TypeEquals_Valid_56", "WyTP#26");
 		// Issue 27
 		IGNORED.put("Complex_Valid_2", "WyTP#27");
 		// Issue 28
