@@ -2421,7 +2421,7 @@ public class VerificationConditionGenerator {
 				WyalFile.Type fieldType = convert(rt.getField(fieldName), context);
 				elements[i] = new WyalFile.FieldDeclaration(fieldType, new WyalFile.Identifier(fieldName));
 			}
-			result = new WyalFile.Type.Record(elements);
+			result = new WyalFile.Type.Record(rt.isOpen(),elements);
 		} else if (type instanceof Type.Reference) {
 			// FIXME: how to translate this??
 			result = new WyalFile.Type.Any();

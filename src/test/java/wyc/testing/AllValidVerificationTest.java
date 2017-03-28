@@ -80,7 +80,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("ConstrainedRecord_Valid_8", "unclassified");
 		IGNORED.put("Property_Valid_5", "unclassified");
 		IGNORED.put("Property_Valid_6", "unclassified");
-		IGNORED.put("TypeEquals_Valid_28", "unclassified");
 		IGNORED.put("While_Valid_39", "unclassified");
 		IGNORED.put("While_Valid_40", "unclassified");
 		IGNORED.put("Complex_Valid_1", "unclassified");
@@ -138,13 +137,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("ConstrainedList_Valid_18", "WyTP#29");
 		// Issue 31
 		IGNORED.put("Fail_Valid_1", "WyTP#31");
-		// Issue 33
-		IGNORED.put("OpenRecord_Valid_1", "WyTP#33");
-		IGNORED.put("OpenRecord_Valid_2", "WyTP#33");
-		IGNORED.put("OpenRecord_Valid_4", "WyTP#33");
-		IGNORED.put("OpenRecord_Valid_9", "WyTP#33");
-		IGNORED.put("OpenRecord_Valid_10", "WyTP#33");
-		IGNORED.put("OpenRecord_Valid_11", "WyTP#33");
 		// Issue 35
 		IGNORED.put("UnionType_Valid_7",  "WyTP#35");
 		IGNORED.put("UnionType_Valid_8",  "WyTP#35");
