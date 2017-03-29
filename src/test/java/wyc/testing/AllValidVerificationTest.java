@@ -73,13 +73,10 @@ public class AllValidVerificationTest {
 		// Whiley Theorem Prover faults
 		// ===============================================================
 
-		IGNORED.put("BoolAssign_Valid_5", "unclassified");
-		IGNORED.put("BoolList_Valid_1", "unclassified");
 		IGNORED.put("ConstrainedInt_Valid_8", "unclassified");
 		IGNORED.put("ConstrainedList_Valid_14", "unclassified");
 		IGNORED.put("ConstrainedRecord_Valid_8", "unclassified");
 		IGNORED.put("Property_Valid_5", "unclassified");
-		IGNORED.put("Property_Valid_6", "unclassified");
 		IGNORED.put("While_Valid_39", "unclassified");
 		IGNORED.put("While_Valid_40", "unclassified");
 		IGNORED.put("Complex_Valid_1", "unclassified");
@@ -152,7 +149,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("Reference_Valid_3", "WyTP#37");
 		IGNORED.put("Reference_Valid_6", "WyTP#37");
 		//
-		IGNORED.put("ConstrainedList_Valid_9", "WyTP#38");
 		IGNORED.put("ConstrainedList_Valid_2", "WyTP#38");
 		//
 		IGNORED.put("ConstrainedNegation_Valid_1", "WyTP#39");
