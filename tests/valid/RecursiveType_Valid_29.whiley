@@ -4,7 +4,7 @@ type LinkedList is null | Link
 
 property isLength(LinkedList list, nat len)
 where (list is null) ==> (len == 0)
-where (list is Link) ==> (len == 1)
+where (list is Link) ==> (isLength(list.next,len-1))
 
 function length(LinkedList list) -> (nat r)
 ensures isLength(list,r):
@@ -12,3 +12,14 @@ ensures isLength(list,r):
         return 0
     else:
         return 1 + length(list.next)
+
+public export method test():
+    LinkedList l0 = null
+    LinkedList l1 = {next: l0, data: 0}
+    LinkedList l2 = {next: l1, data: 0}
+    LinkedList l3 = {next: l2, data: 0}
+    //
+    assume length(l0) == 0
+    assume length(l1) == 1
+    assume length(l2) == 2
+    assume length(l3) == 3    
