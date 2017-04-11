@@ -30,6 +30,7 @@ import wyfs.util.DirectoryRoot;
 import wyfs.util.VirtualRoot;
 import wyil.builders.Wyil2WyalBuilder;
 import wyil.lang.WyilFile;
+import wytp.provers.AutomatedTheoremProver;
 
 public class Compile extends AbstractProjectCommand<Compile.Result> {
 	/**
@@ -326,7 +327,9 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		}
 		project.add(new StdBuildRule(wyalBuilder, wyildir, wyilIncludes, wyilExcludes, wyaldir));
 		//
-		wyal.tasks.CompileTask wyalBuildTask = new wyal.tasks.CompileTask(project);
+		wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem();
+		AutomatedTheoremProver prover = new AutomatedTheoremProver(typeSystem);
+		wyal.tasks.CompileTask wyalBuildTask = new wyal.tasks.CompileTask(project,typeSystem,prover);
 		if(verbose) {
 			wyalBuildTask.setLogger(logger);
 		}
