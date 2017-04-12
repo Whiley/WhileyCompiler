@@ -1144,9 +1144,11 @@ public class VerificationConditionGenerator {
 	private Context translateVariableDeclaration(Location<VariableDeclaration> stmt, Context context) {
 		if (stmt.numberOfOperands() > 0) {
 			Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), context);
-			generateTypeInvariantCheck(stmt.getType(),p.first(),p.second());
+			context = p.second();
+			generateTypeInvariantCheck(stmt.getType(),p.first(),context);
 			context = context.write(stmt.getIndex(), p.first());
 		}
+		//
 		return context;
 	}
 
