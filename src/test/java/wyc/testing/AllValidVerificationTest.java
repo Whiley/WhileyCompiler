@@ -58,9 +58,6 @@ public class AllValidVerificationTest {
 		//
 		IGNORED.put("ConstrainedList_Valid_28", "#666");
 		//
-		IGNORED.put("IfElse_Valid_4", "#712");
-		IGNORED.put("While_Valid_15", "#712");
-		IGNORED.put("While_Valid_20", "#712");
 		//
 		IGNORED.put("RecursiveType_Valid_17", "#713");
 		IGNORED.put("RecursiveType_Valid_18", "#713");
@@ -68,24 +65,27 @@ public class AllValidVerificationTest {
 		IGNORED.put("UnionType_Valid_2", "#713");
 		//
 		IGNORED.put("Record_Valid_3", "#714");
-
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================
-
-		IGNORED.put("ConstrainedInt_Valid_8", "unclassified");
+		IGNORED.put("While_Valid_20", "unclassified");
+		IGNORED.put("While_Valid_15", "unclassified");
+		IGNORED.put("IfElse_Valid_4", "unclassified");
+		IGNORED.put("ConstrainedInt_Valid_24", "unclassified");
 		IGNORED.put("ConstrainedList_Valid_14", "unclassified");
 		IGNORED.put("ConstrainedRecord_Valid_8", "unclassified");
-		IGNORED.put("Property_Valid_5", "unclassified");
-		IGNORED.put("While_Valid_39", "unclassified");
-		IGNORED.put("While_Valid_40", "unclassified");
 		IGNORED.put("Complex_Valid_1", "unclassified");
-		IGNORED.put("ListAssign_Valid_4", "unclassified");
+		IGNORED.put("Complex_Valid_6", "unclassified");
 		IGNORED.put("While_Valid_51", "unclassified");
+		IGNORED.put("OpenRecord_Valid_4", "unclassified");
+		IGNORED.put("OpenRecord_Valid_9", "unclassified");
+		IGNORED.put("RecursiveType_Valid_4", "unclassified");
+		IGNORED.put("RecursiveType_Valid_14", "unclassified");
+		IGNORED.put("TypeEquals_Valid_29", "unclassified");
+		IGNORED.put("TypeEquals_Valid_56", "unclassified");
 		// timeouts
 		IGNORED.put("BoolList_Valid_3", "timeout");
 		IGNORED.put("Complex_Valid_8", "timeout");
-		IGNORED.put("ConstrainedList_Valid_17", "unclassified");
 		IGNORED.put("ConstrainedList_Valid_21", "unclassified");
 		IGNORED.put("ConstrainedList_Valid_22", "unclassified");
 		IGNORED.put("ConstrainedList_Valid_8", "unclassified");
@@ -94,21 +94,15 @@ public class AllValidVerificationTest {
 		IGNORED.put("Ensures_Valid_3", "unclassified");
 		IGNORED.put("FunctionRef_Valid_4", "unclassified");
 		IGNORED.put("FunctionRef_Valid_11", "unclassified");
-		IGNORED.put("Function_Valid_18", "unclassified");
+		IGNORED.put("Function_Valid_18", "timeout");
 		IGNORED.put("Lambda_Valid_3", "unclassified");
 		IGNORED.put("Lambda_Valid_4", "unclassified");
-		IGNORED.put("ListAssign_Valid_5", "unclassified");
 		IGNORED.put("ListAccess_Valid_6", "unclassified");
 		IGNORED.put("Property_Valid_7", "unclassified");
 		IGNORED.put("RecordCoercion_Valid_1", "unclassified");
-		IGNORED.put("TypeEquals_Valid_19", "unclassified");
-		IGNORED.put("TypeEquals_Valid_25", "unclassified");
-		IGNORED.put("TypeEquals_Valid_50", "unclassified");
+		IGNORED.put("TypeEquals_Valid_25", "timeout");
 		IGNORED.put("TypeEquals_Valid_54", "timeout");
-		IGNORED.put("UnionType_Valid_22", "timeout");
-		IGNORED.put("UnionType_Valid_23", "timeout");
 		IGNORED.put("While_Valid_34", "unclassified");
-		IGNORED.put("While_Valid_37", "unclassified");
 		IGNORED.put("While_Valid_54", "unclassified");
 		IGNORED.put("While_Valid_2", "timeout");
 		IGNORED.put("While_Valid_16", "unclassified");
@@ -116,7 +110,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_26", "timeout");
 		// Issue 2
 		IGNORED.put("ConstrainedInt_Valid_22", "WyTP#2");
-//		// Issue 12
+		// Issue 12
 		IGNORED.put("While_Valid_27", "WyTP#12");
 		// Issue 26
 		IGNORED.put("Coercion_Valid_9", "WyTP#26");
@@ -132,11 +126,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("Complex_Valid_4", "WyTP#28");
 		// Issue 29
 		IGNORED.put("ConstrainedList_Valid_18", "WyTP#29");
-		// Issue 31
-		IGNORED.put("Fail_Valid_1", "WyTP#31");
-		// Issue 35
-		IGNORED.put("UnionType_Valid_7",  "WyTP#35");
-		IGNORED.put("UnionType_Valid_8",  "WyTP#35");
 		// Issue 36
 		IGNORED.put("Cast_Valid_5", "WyTP#36");
 		IGNORED.put("IntOp_Valid_1", "WyTP#36");
@@ -151,12 +140,9 @@ public class AllValidVerificationTest {
 		//
 		IGNORED.put("ConstrainedList_Valid_2", "WyTP#38");
 		//
-		IGNORED.put("ConstrainedNegation_Valid_1", "WyTP#39");
-		//
 		IGNORED.put("Property_Valid_4", "WyTP#41");
 		IGNORED.put("Subtype_Valid_5", "WyTP#41");
 		IGNORED.put("RecursiveType_Valid_19", "WyTP#41");
-		IGNORED.put("TypeEquals_Valid_47", "WyTP#41");
 	}
 
 	/**
