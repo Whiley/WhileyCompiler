@@ -499,8 +499,6 @@ public class VerificationConditionGenerator {
 		Location<?>[] lhs = stmt.getOperandGroup(0);
 		Location<?>[] rhs = stmt.getOperandGroup(1);
 
-		// TODO: generate checks for type invariants #666
-
 		for (int i = 0, j = 0; i != rhs.length; ++i) {
 			Location<?> rval = rhs[i];
 			Location<?>[] lval = java.util.Arrays.copyOfRange(lhs, j, rval.numberOfTypes());
@@ -582,40 +580,13 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private Context translateRecordAssign(Location<FieldLoad> lval, Expr rval,Context context) {
-		SyntaxTree tree = lval.getEnclosingTree();
-		WyilFile.Declaration decl = tree.getEnclosingDeclaration();
-		try {
-			Bytecode.FieldLoad bytecode = lval.getBytecode();
-			Type.EffectiveRecord type =
-					typeSystem.expandAsEffectiveRecord(lval.getOperand(0).getType());
-			// Translate source expression
-			Pair<Expr, Context> p =
-					translateExpressionWithChecks(lval.getOperand(0), context);
-			Expr originalSource = p.first();
-			context = p.second();
-			// Generate new source expression based of havoced variable
-			Location<VariableAccess> var = extractAssignedVariable(lval);
-			if (var != null) {
-				context = context.havoc(var);
-			}
-			Expr newSource = translateExpression(lval.getOperand(0),
-					context.getEnvironment());
-			String[] fields = type.getFieldNames();
-			//
-			for (int i = 0; i != type.size(); ++i) {
-				String field = fields[i];
-				WyalFile.Identifier fieldIdentifier = new WyalFile.Identifier(field);
-				Expr oldField = field.equals(bytecode.fieldName()) ? rval
-						: new Expr.RecordAccess(originalSource, fieldIdentifier);
-				oldField.attributes().addAll(lval.attributes());
-				Expr newField = new Expr.RecordAccess(newSource, fieldIdentifier);
-				context = context.assume(new Expr.Operator(Opcode.EXPR_eq, oldField, newField));
-			}
-			return context;
-		} catch (ResolveError e) {
-			throw new InternalFailure(e.getMessage(), decl.parent().getEntry(),
-					lval, e);
-		}
+		// Translate src and index expressions
+		Pair<Expr, Context> p1 = translateExpressionWithChecks(lval.getOperand(0), context);
+		Expr source = p1.first();
+		WyalFile.Identifier field = new WyalFile.Identifier(lval.getBytecode().fieldName());
+		// Construct record update for "pass thru"
+		Expr update = new Expr.RecordUpdate(source, field, rval);
+		return translateSingleAssignment(lval.getOperand(0),update,p1.second());
 	}
 
 	/**
@@ -630,35 +601,16 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private Context translateArrayAssign(Location<Operator> lval, Expr rval, Context context) {
-		SyntaxTree tree = lval.getEnclosingTree();
-		WyilFile.Declaration decl = tree.getEnclosingDeclaration();
-		try {
-			Type elementType = typeSystem.expandAsEffectiveArray(lval.getOperand(0).getType())
-					.getWriteableElementType();
-			// Translate src and index expressions
-			Pair<Expr, Context> p1 = translateExpressionWithChecks(lval.getOperand(0), context);
-			Expr originalSource = p1.first();
-			context = p1.second();
-			Pair<Expr, Context> p2 = translateExpressionWithChecks(lval.getOperand(1), context);
-			Expr index = p2.first();
-			context = p2.second();
-			// Emit verification conditions to check access in bounds
-			checkIndexOutOfBounds(lval, context);
-			// Generate new source expression based of havoced variable
-			Location<VariableAccess> var = extractAssignedVariable(lval);
-			if (var != null) {
-				context = context.havoc(var);
-			}
-			Expr newSource = translateExpression(lval.getOperand(0), context.getEnvironment());
-			// Construct connection between new source expression and original
-			// source expression
-			Expr.Operator arrayUpdate = new Expr.Operator(Opcode.EXPR_arrupdt, originalSource, index, rval);
-			Expr assumption = new Expr.Operator(Opcode.EXPR_eq,newSource,arrayUpdate);
-			//
-			return context.assume(assumption);
-		} catch (ResolveError e) {
-			throw new InternalFailure(e.getMessage(), decl.parent().getEntry(), lval, e);
-		}
+		// Translate src and index expressions
+		Pair<Expr, Context> p1 = translateExpressionWithChecks(lval.getOperand(0), context);
+		Pair<Expr, Context> p2 = translateExpressionWithChecks(lval.getOperand(1), p1.second());
+		Expr source = p1.first();
+		Expr index = p2.first();
+		// Emit verification conditions to check access in bounds
+		checkIndexOutOfBounds(lval, p2.second());
+		// Construct array update for "pass thru"
+		Expr.Operator update = new Expr.Operator(Opcode.EXPR_arrupdt, source, index, rval);
+		return translateSingleAssignment(lval.getOperand(0),update,p2.second());
 	}
 
 	/**
