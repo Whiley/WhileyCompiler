@@ -13,8 +13,10 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.*;
+import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -35,6 +37,8 @@ import wycc.util.Pair;
  */
 @RunWith(Parameterized.class)
 public class AllValidVerificationTest {
+	@Rule
+	public Timeout globalTimeout = new Timeout(5, TimeUnit.SECONDS);
 
 	/**
 	 * The directory containing the source files for each test case. Every test
@@ -58,7 +62,6 @@ public class AllValidVerificationTest {
 		//
 		IGNORED.put("ConstrainedList_Valid_28", "#666");
 		//
-		//
 		IGNORED.put("RecursiveType_Valid_17", "#713");
 		IGNORED.put("RecursiveType_Valid_18", "#713");
 		IGNORED.put("Return_Valid_1", "#713");
@@ -68,6 +71,33 @@ public class AllValidVerificationTest {
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================
+		IGNORED.put("Byte_Valid_1", "too long for Travis");
+		IGNORED.put("Byte_Valid_2", "too long for Travis");
+		IGNORED.put("Byte_Valid_3", "too long for Travis");
+		IGNORED.put("Byte_Valid_4", "too long for Travis");
+		IGNORED.put("Byte_Valid_5", "too long for Travis");
+		IGNORED.put("Byte_Valid_6", "too long for Travis");
+		IGNORED.put("Byte_Valid_7", "too long for Travis");
+		IGNORED.put("Byte_Valid_8", "too long for Travis");
+		IGNORED.put("Byte_Valid_9", "too long for Travis");
+		IGNORED.put("Complex_Valid_5", "too long for Travis");
+		IGNORED.put("Complex_Valid_7", "too long for Travis");
+		IGNORED.put("ConstrainedList_Valid_3", "too long for Travis");
+		IGNORED.put("ConstrainedList_Valid_6", "too long for Travis");
+		IGNORED.put("ConstrainedList_Valid_20", "too long for Travis");
+		IGNORED.put("ListAssign_Valid_5", "too long for Travis");
+		IGNORED.put("String_Valid_6", "too long for Travis");
+		IGNORED.put("UnionType_Valid_14", "too long for Travis");
+		IGNORED.put("While_Valid_30", "too long for Travis");
+		IGNORED.put("While_Valid_31", "too long for Travis");
+		IGNORED.put("While_Valid_35", "too long for Travis");
+		IGNORED.put("While_Valid_36", "too long for Travis");
+		IGNORED.put("While_Valid_37", "too long for Travis");
+		IGNORED.put("While_Valid_38", "too long for Travis");
+		IGNORED.put("While_Valid_39", "too long for Travis");
+		IGNORED.put("While_Valid_40", "too long for Travis");
+		//
+
 		IGNORED.put("While_Valid_20", "unclassified");
 		IGNORED.put("While_Valid_15", "unclassified");
 		IGNORED.put("IfElse_Valid_4", "unclassified");
