@@ -11,16 +11,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import wybs.util.StdProject;
-import wyc.lang.WhileyFile;
-import wycc.util.AbstractCommand;
-import wycc.util.ArrayUtils;
+import wycc.lang.Command;
 import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.JarFileRoot;
 import wyfs.util.VirtualRoot;
-import wyil.lang.WyilFile;
 
 /**
  * Provides an abstract command from which other commands for controlling the
@@ -30,7 +27,7 @@ import wyil.lang.WyilFile;
  * @author David J. Pearce
  *
  */
-public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
+public abstract class AbstractProjectCommand<T> implements Command<T> {
 
 	/**
 	 * The master project content type registry. This is needed for the build
@@ -83,18 +80,72 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 	 *            types.
 	 * @throws IOException
 	 */
-	public AbstractProjectCommand(Content.Registry registry, Logger logger, String... options) {
-		super(ArrayUtils.append(options,"whileypath","whileydir","wyildir","wyaldir"));
+	public AbstractProjectCommand(Content.Registry registry, Logger logger) {
 		this.registry = registry;
 		this.logger = logger;
 	}
 
 	// =======================================================================
-	// Configuration
+	// Configuration Options
 	// =======================================================================
 
-	public String describeWhileypath() {
-		return "Specify where to find compiled Whiley (WyIL) files";
+	private static final String[] SCHEMA = {
+		"whileypath",
+		"whileydir",
+		"wyildir",
+		"wyaldir"
+
+	};
+
+	@Override
+	public String[] getOptions() {
+		return SCHEMA;
+	}
+
+	@Override
+	public String describe(String option) {
+		switch(option) {
+		case "whileypath":
+			return "Specify where to find compiled Whiley (WyIL) files";
+		case "whileydir":
+			return "Specify where to find Whiley source files";
+		case "wyildir":
+			return "Specify where to find place compiled Whiley (WyIL) files";
+		case "wyaldir":
+			return "Specify where to place generated verification (WyAL) files";
+		default:
+			throw new IllegalArgumentException("invalid option \"" + option + "\"");
+		}
+	}
+
+	@Override
+	public void set(String option, Object value) throws ConfigurationError {
+		try {
+			switch(option) {
+			case "whileypath":
+				setWhileypath((String) option);
+				break;
+			case "whileydir":
+				whileydir = new DirectoryRoot((String) value,registry);
+				break;
+			case "wyildir":
+				wyildir = new DirectoryRoot((String) value,registry);
+				break;
+			case "wyaldir":
+				wyaldir = new DirectoryRoot((String) value,registry);
+				break;
+			default:
+				throw new IllegalArgumentException("invalid option \"" + option + "\"");
+			}
+		} catch(IOException e) {
+			throw new ConfigurationError(e);
+		}
+	}
+
+	@Override
+	public Object get(String name) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	public void setWhileypath(String paths) throws IOException {
@@ -114,28 +165,16 @@ public abstract class AbstractProjectCommand<T> extends AbstractCommand<T> {
 		}
 	}
 
-	public void setWhileydir(String dir) throws IOException {
-		whileydir = new DirectoryRoot(dir,registry);
+	public void setWhileydir(File dir) throws IOException {
+		this.whileydir = new DirectoryRoot(dir,registry);
 	}
 
-	public String describeWhileydir() {
-		return "Specify where to find Whiley source files";
+	public void setWyildir(File dir) throws IOException {
+		this.wyildir = new DirectoryRoot(dir,registry);
 	}
 
-	public String describeWyildir() {
-		return "Specify where to find place compiled Whiley (WyIL) files";
-	}
-
-	public void setWyildir(String dir) throws IOException {
-		this.wyildir = new DirectoryRoot(dir, registry);
-	}
-
-	public String describeWyaldir() {
-		return "Specify where to place generated verification (WyAL) files";
-	}
-
-	public void setWyaldir(String dir) throws IOException {
-		this.wyaldir = new DirectoryRoot(dir, registry);
+	public void setWyaldir(File dir) throws IOException {
+		this.wyaldir = new DirectoryRoot(dir,registry);
 	}
 
 	// =======================================================================

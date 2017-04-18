@@ -1,6 +1,6 @@
+type nat is (int x) where x >= 0
 
-
-function f(int x) -> int
+function f(nat x) -> int
 requires x > 0:
     return x + 1
 
@@ -8,7 +8,7 @@ type func_t is function(int)->int
 
 function g(int p) -> int
 requires p >= 0:
-    func_t func = &(int x -> f(x + 1))
+    func_t func = &(nat x -> f(x + 1))
     return func(p)
 
 public export method test() :

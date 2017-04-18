@@ -106,7 +106,7 @@ public final class WyilFile extends AbstractCompilationUnit {
 	 */
 	public WyilFile(Path.Entry<? extends CompilationUnit> entry) {
 		super(entry);
-		this.blocks = new ArrayList<Block>();
+		this.blocks = new ArrayList<>();
 	}
 
 	// =========================================================================
@@ -169,7 +169,7 @@ public final class WyilFile extends AbstractCompilationUnit {
 	 * @return
 	 */
 	public Collection<WyilFile.Type> types() {
-		ArrayList<Type> r = new ArrayList<Type>();
+		ArrayList<Type> r = new ArrayList<>();
 		for (Block d : blocks) {
 			if(d instanceof Type) {
 				r.add((Type)d);
@@ -205,7 +205,7 @@ public final class WyilFile extends AbstractCompilationUnit {
 	 * @return
 	 */
 	public Collection<WyilFile.Constant> constants() {
-		ArrayList<Constant> r = new ArrayList<Constant>();
+		ArrayList<Constant> r = new ArrayList<>();
 		for (Block d : blocks) {
 			if(d instanceof Constant) {
 				r.add((Constant)d);
@@ -222,11 +222,11 @@ public final class WyilFile extends AbstractCompilationUnit {
 	 * @param name
 	 * @return
 	 */
-	public List<FunctionOrMethod> functionOrMethod(String name) {
-		ArrayList<FunctionOrMethod> r = new ArrayList<FunctionOrMethod>();
+	public List<FunctionOrMethodOrProperty> functionOrMethodOrProperty(String name) {
+		ArrayList<FunctionOrMethodOrProperty> r = new ArrayList<>();
 		for (Block d : blocks) {
-			if (d instanceof FunctionOrMethod) {
-				FunctionOrMethod m = (FunctionOrMethod) d;
+			if (d instanceof FunctionOrMethodOrProperty) {
+				FunctionOrMethodOrProperty m = (FunctionOrMethodOrProperty) d;
 				if (m.name().equals(name)) {
 					r.add(m);
 				}
@@ -242,10 +242,10 @@ public final class WyilFile extends AbstractCompilationUnit {
 	 * @param name
 	 * @return
 	 */
-	public FunctionOrMethod functionOrMethod(String name, wyil.lang.Type.FunctionOrMethod ft) {
+	public FunctionOrMethodOrProperty functionOrMethodOrProperty(String name, wyil.lang.Type.FunctionOrMethod ft) {
 		for (Block d : blocks) {
-			if (d instanceof FunctionOrMethod) {
-				FunctionOrMethod md = (FunctionOrMethod) d;
+			if (d instanceof FunctionOrMethodOrProperty) {
+				FunctionOrMethodOrProperty md = (FunctionOrMethodOrProperty) d;
 				if (md.name().equals(name) && md.type().equals(ft)) {
 					return md;
 				}
@@ -262,7 +262,7 @@ public final class WyilFile extends AbstractCompilationUnit {
 	 * @return
 	 */
 	public Collection<WyilFile.FunctionOrMethod> functionOrMethods() {
-		ArrayList<FunctionOrMethod> r = new ArrayList<FunctionOrMethod>();
+		ArrayList<FunctionOrMethod> r = new ArrayList<>();
 		for (Block d : blocks) {
 			if(d instanceof FunctionOrMethod) {
 				r.add((FunctionOrMethod)d);
@@ -311,12 +311,12 @@ public final class WyilFile extends AbstractCompilationUnit {
 
 		public Block(WyilFile parent, Collection<Attribute> attributes) {
 			this.parent = parent;
-			this.attributes = new ArrayList<Attribute>(attributes);
+			this.attributes = new ArrayList<>(attributes);
 		}
 
 		public Block(WyilFile parent, Attribute[] attributes) {
 			this.parent = parent;
-			this.attributes = new ArrayList<Attribute>(Arrays.asList(attributes));
+			this.attributes = new ArrayList<>(Arrays.asList(attributes));
 		}
 
 		/**
@@ -359,7 +359,7 @@ public final class WyilFile extends AbstractCompilationUnit {
 		public Declaration(WyilFile parent, String name, Collection<Modifier> modifiers, Attribute... attributes) {
 			super(parent, attributes);
 			this.name = name;
-			this.modifiers = new ArrayList<Modifier>(modifiers);
+			this.modifiers = new ArrayList<>(modifiers);
 			this.tree = new SyntaxTree(this);
 		}
 
@@ -367,7 +367,7 @@ public final class WyilFile extends AbstractCompilationUnit {
 				Collection<Attribute> attributes) {
 			super(parent, attributes);
 			this.name = name;
-			this.modifiers = new ArrayList<Modifier>(modifiers);
+			this.modifiers = new ArrayList<>(modifiers);
 			this.tree = new SyntaxTree(this);
 		}
 
@@ -406,14 +406,14 @@ public final class WyilFile extends AbstractCompilationUnit {
 				Attribute... attributes) {
 			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.invariant = new ArrayList<Location<Expr>>();
+			this.invariant = new ArrayList<>();
 		}
 
 		public Type(WyilFile parent, Collection<Modifier> modifiers, String name, wyil.lang.Type type,
 				Collection<Attribute> attributes) {
 			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.invariant = new ArrayList<Location<Expr>>();
+			this.invariant = new ArrayList<>();
 		}
 
 		public wyil.lang.Type type() {
@@ -461,39 +461,40 @@ public final class WyilFile extends AbstractCompilationUnit {
 		}
 	}
 
-	public static final class FunctionOrMethod extends Declaration {
+	public static class FunctionOrMethodOrProperty extends Declaration {
 		private final wyil.lang.Type.FunctionOrMethod type;
 		/**
 		 * Expressions making up clauses of precondition
 		 */
 		private final List<SyntaxTree.Location<Bytecode.Expr>> precondition;
-		/**
-		 * Expressions making up clauses of postcondition
-		 */
-		private final List<SyntaxTree.Location<Bytecode.Expr>> postcondition;
-		/**
-		 * The function or method body (which can be null)
-		 */
-		private SyntaxTree.Location<Bytecode.Block> body;
 
-		public FunctionOrMethod(WyilFile parent, Collection<Modifier> modifiers, String name,
+		public FunctionOrMethodOrProperty(WyilFile parent, Collection<Modifier> modifiers, String name,
 				wyil.lang.Type.FunctionOrMethod type, Attribute... attributes) {
 			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.precondition = new ArrayList<SyntaxTree.Location<Bytecode.Expr>>();
-			this.postcondition = new ArrayList<SyntaxTree.Location<Bytecode.Expr>>();
+			this.precondition = new ArrayList<>();
 		}
 
-		public FunctionOrMethod(WyilFile parent, Collection<Modifier> modifiers, String name,
+		public FunctionOrMethodOrProperty(WyilFile parent, Collection<Modifier> modifiers, String name,
 				wyil.lang.Type.FunctionOrMethod type, Collection<Attribute> attributes) {
 			super(parent, name, modifiers, attributes);
 			this.type = type;
-			this.precondition = new ArrayList<SyntaxTree.Location<Bytecode.Expr>>();
-			this.postcondition = new ArrayList<SyntaxTree.Location<Bytecode.Expr>>();
+			this.precondition = new ArrayList<>();
 		}
+
 
 		public wyil.lang.Type.FunctionOrMethod type() {
 			return type;
+		}
+
+		/**
+		 * Get the list of expressions that make up the precondition of this
+		 * function/method.  This list maybe empty, but it cannot be null.
+		 *
+		 * @return
+		 */
+		public List<SyntaxTree.Location<Bytecode.Expr>> getPrecondition() {
+			return precondition;
 		}
 
 		/**
@@ -514,14 +515,38 @@ public final class WyilFile extends AbstractCompilationUnit {
 			return type instanceof wyil.lang.Type.Method;
 		}
 
+	}
+
+	public static final class Property extends FunctionOrMethodOrProperty {
+
+		public Property(WyilFile parent, Collection<Modifier> modifiers, String name,
+				wyil.lang.Type.Property type, Attribute... attributes) {
+			super(parent, modifiers, name, type, attributes);
+		}
+	}
+
+
+	public static final class FunctionOrMethod extends FunctionOrMethodOrProperty {
+
 		/**
-		 * Get the list of expressions that make up the precondition of this
-		 * function/method.  This list maybe empty, but it cannot be null.
-		 *
-		 * @return
+		 * Expressions making up clauses of postcondition
 		 */
-		public List<SyntaxTree.Location<Bytecode.Expr>> getPrecondition() {
-			return precondition;
+		private final List<SyntaxTree.Location<Bytecode.Expr>> postcondition;
+		/**
+		 * The function or method body (which can be null)
+		 */
+		private SyntaxTree.Location<Bytecode.Block> body;
+
+		public FunctionOrMethod(WyilFile parent, Collection<Modifier> modifiers, String name,
+				wyil.lang.Type.FunctionOrMethod type, Attribute... attributes) {
+			super(parent, modifiers, name, type, attributes);
+			this.postcondition = new ArrayList<>();
+		}
+
+		public FunctionOrMethod(WyilFile parent, Collection<Modifier> modifiers, String name,
+				wyil.lang.Type.FunctionOrMethod type, Collection<Attribute> attributes) {
+			super(parent, modifiers, name, type, attributes);
+			this.postcondition = new ArrayList<>();
 		}
 
 		/**

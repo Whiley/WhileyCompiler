@@ -154,7 +154,7 @@ public interface SyntacticType extends SyntacticElement {
 		public final ArrayList<String> names;
 		public Nominal(Collection<String> names, Attribute... attributes) {
 			super(attributes);
-			this.names = new ArrayList<String>(names);
+			this.names = new ArrayList<>(names);
 		}
 	}
 
@@ -213,7 +213,7 @@ public interface SyntacticType extends SyntacticElement {
 				new IllegalArgumentException(
 						"Cannot construct a type union with fewer than two bounds");
 			}
-			this.bounds = new ArrayList<NonUnion>(bounds);
+			this.bounds = new ArrayList<>(bounds);
 		}
 
 		public Union(ArrayList<NonUnion> bounds, java.util.Collection<Attribute> attributes) {
@@ -222,7 +222,7 @@ public interface SyntacticType extends SyntacticElement {
 				new IllegalArgumentException(
 						"Cannot construct a type union with fewer than two bounds");
 			}
-			this.bounds = new ArrayList<NonUnion>(bounds);
+			this.bounds = new ArrayList<>(bounds);
 		}
 	}
 
@@ -249,7 +249,7 @@ public interface SyntacticType extends SyntacticElement {
 				new IllegalArgumentException(
 						"Cannot construct a type intersection with fewer than two bounds");
 			}
-			this.bounds = new ArrayList<SyntacticType>(bounds);
+			this.bounds = new ArrayList<>(bounds);
 		}
 
 		public Intersection(ArrayList<SyntacticType> bounds,
@@ -259,7 +259,7 @@ public interface SyntacticType extends SyntacticElement {
 				new IllegalArgumentException(
 						"Cannot construct a type intersection with fewer than two bounds");
 			}
-			this.bounds = new ArrayList<SyntacticType>(bounds);
+			this.bounds = new ArrayList<>(bounds);
 		}
 	}
 
@@ -305,7 +305,7 @@ public interface SyntacticType extends SyntacticElement {
 						"Cannot create type tuple with no fields");
 			}
 			this.isOpen = isOpen;
-			this.types = new HashMap<String,SyntacticType>(types);
+			this.types = new HashMap<>(types);
 		}
 
 		public Record(boolean isOpen,
@@ -317,7 +317,7 @@ public interface SyntacticType extends SyntacticElement {
 						"Cannot create type tuple with no fields");
 			}
 			this.isOpen = isOpen;
-			this.types = new HashMap<String,SyntacticType>(types);
+			this.types = new HashMap<>(types);
 		}
 	}
 
@@ -331,10 +331,10 @@ public interface SyntacticType extends SyntacticElement {
 		public FunctionOrMethod(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
 				Collection<String> contextLifetimes, Collection<String> lifetimeParameters, Attribute... attributes) {
 			super(attributes);
-			this.returnTypes = new ArrayList<SyntacticType>(returnTypes);
-			this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
-			this.contextLifetimes = new ArrayList<String>(contextLifetimes);
-			this.lifetimeParameters = new ArrayList<String>(lifetimeParameters);
+			this.returnTypes = new ArrayList<>(returnTypes);
+			this.paramTypes = new ArrayList<>(paramTypes);
+			this.contextLifetimes = new ArrayList<>(contextLifetimes);
+			this.lifetimeParameters = new ArrayList<>(lifetimeParameters);
 			for(SyntacticType t : paramTypes) {
 				if(t == null) {
 					throw new IllegalArgumentException("parameter cannot be null");
@@ -355,10 +355,10 @@ public interface SyntacticType extends SyntacticElement {
 		public FunctionOrMethod(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
 				Collection<String> contextLifetimes, Collection<String> lifetimeParameters, Collection<Attribute> attributes) {
 			super(attributes);
-			this.returnTypes = new ArrayList<SyntacticType>(returnTypes);
-			this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
-			this.contextLifetimes = new ArrayList<String>(contextLifetimes);
-			this.lifetimeParameters = new ArrayList<String>(lifetimeParameters);
+			this.returnTypes = new ArrayList<>(returnTypes);
+			this.paramTypes = new ArrayList<>(paramTypes);
+			this.contextLifetimes = new ArrayList<>(contextLifetimes);
+			this.lifetimeParameters = new ArrayList<>(lifetimeParameters);
 			for(SyntacticType t : paramTypes) {
 				if(t == null) {
 					throw new IllegalArgumentException("parameter cannot be null");
@@ -387,6 +387,16 @@ public interface SyntacticType extends SyntacticElement {
 		public Function(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
 				Collection<Attribute> attributes) {
 			super(returnTypes,paramTypes,Collections.<String>emptySet(),Collections.<String>emptyList(),attributes);
+		}
+	}
+
+	public static class Property extends FunctionOrMethod implements NonUnion {
+		public Property(Collection<SyntacticType> paramTypes, Attribute... attributes) {
+			super(Collections.EMPTY_LIST, paramTypes, Collections.<String>emptySet(), Collections.<String>emptyList(), attributes);
+		}
+
+		public Property(Collection<SyntacticType> paramTypes, Collection<Attribute> attributes) {
+			super(Collections.EMPTY_LIST, paramTypes, Collections.<String>emptySet(), Collections.<String>emptyList(), attributes);
 		}
 	}
 

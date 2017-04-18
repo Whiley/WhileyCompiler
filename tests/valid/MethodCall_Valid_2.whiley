@@ -1,5 +1,3 @@
-
-
 method get() -> int:
     return 1
 
@@ -8,4 +6,5 @@ method f() -> int[]:
 
 public export method test() :
     &{int state} proc = new {state: 1}
-    assume f() == [1,2,3,1]
+    int[] result = f()
+    assume result == [1,2,3,1]

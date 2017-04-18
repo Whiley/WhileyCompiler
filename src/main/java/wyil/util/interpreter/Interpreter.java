@@ -74,6 +74,10 @@ public class Interpreter {
 		NEXT
 	}
 
+	public TypeSystem getTypeSystem() {
+		return typeSystem;
+	}
+
 	/**
 	 * Execute a function or method identified by a name and type signature with
 	 * the given arguments, producing a return value or null (if none). If the
@@ -97,35 +101,42 @@ public class Interpreter {
 			}
 			// Second, find the given function or method
 			WyilFile wyilFile = entry.read();
-			WyilFile.FunctionOrMethod fm = wyilFile.functionOrMethod(nid.name(), sig);
-			if (fm == null) {
+			WyilFile.FunctionOrMethodOrProperty fmp = wyilFile.functionOrMethodOrProperty(nid.name(), sig);
+			if (fmp == null) {
 				throw new IllegalArgumentException("no function or method found: " + nid + ", " + sig);
 			} else if (sig.params().length != args.length) {
 				throw new IllegalArgumentException("incorrect number of arguments: " + nid + ", " + sig);
 			}
-			// Third, get and check the function or method body
-			if (fm.getBody() == null) {
-				// FIXME: Add support for native functions or methods. That is,
-				// allow native functions to be implemented and called from the
-				// interpreter.
-				throw new IllegalArgumentException("no function or method body found: " + nid + ", " + sig);
-			}
 			// Fourth, construct the stack frame for execution
-			SyntaxTree tree = fm.getTree();
+			SyntaxTree tree = fmp.getTree();
 			Constant[] frame = new Constant[tree.getLocations().size()];
 			System.arraycopy(args, 0, frame, 0, sig.params().length);
 			// Check the precondition
-			checkInvariants(frame,fm.getPrecondition());
-			// Execute the method or function body
-			executeBlock(fm.getBody(), frame);
-			// Extra the return values
-			Constant[] returns = extractReturns(frame,fm.type());
+			checkInvariants(frame,fmp.getPrecondition());
+			if(fmp instanceof WyilFile.FunctionOrMethod) {
+				WyilFile.FunctionOrMethod fm = (WyilFile.FunctionOrMethod) fmp;
+				// check function or method body exists
+				if (fm.getBody() == null) {
+					// FIXME: Add support for native functions or methods. That is,
+					// allow native functions to be implemented and called from the
+					// interpreter.
+					throw new IllegalArgumentException("no function or method body found: " + nid + ", " + sig);
+				}
+				// Execute the method or function body
+				executeBlock(fm.getBody(), frame);
+				// Extra the return values
+				Constant[] returns = extractReturns(frame,fmp.type());
+				//
+				// Check the postcondition holds
+				System.arraycopy(args,0,frame,0,args.length);
+				checkInvariants(frame, fm.getPostcondition());
+				return returns;
+			} else {
+				// Properties always return true (provided their preconditions hold)
+				return new Constant[]{Constant.True};
+			}
 			//
-			// Check the postcondition holds
-			System.arraycopy(args,0,frame,0,args.length);
-			checkInvariants(frame, fm.getPostcondition());
-			//
-			return returns;
+
 		} catch (IOException e) {
 			throw new RuntimeException(e.getMessage(), e);
 		}
@@ -141,13 +152,17 @@ public class Interpreter {
 	 * @return
 	 */
 	private Constant[] extractReturns(Constant[] frame, Type.FunctionOrMethod type) {
-		int paramsSize = type.params().length;
-		int returnsSize = type.returns().length;
-		Constant[] returns = new Constant[returnsSize];
-		for (int i = 0, j = paramsSize; i != returnsSize; ++i, ++j) {
-			returns[i] = frame[j];
+		if(type instanceof Type.Property) {
+			return new Constant[]{Constant.Bool(true)};
+		} else {
+			int paramsSize = type.params().length;
+			int returnsSize = type.returns().length;
+			Constant[] returns = new Constant[returnsSize];
+			for (int i = 0, j = paramsSize; i != returnsSize; ++i, ++j) {
+				returns[i] = frame[j];
+			}
+			return returns;
 		}
-		return returns;
 	}
 
 	/**

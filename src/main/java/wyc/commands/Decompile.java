@@ -11,13 +11,14 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import wycc.util.AbstractCommand;
+import wyc.util.AbstractProjectCommand;
+import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.lang.WyilFile;
 
-public class Decompile extends AbstractCommand<Decompile.Result> {
+public class Decompile extends AbstractProjectCommand<Decompile.Result> {
 	/**
 	 * Result kind for this command
 	 *
@@ -29,21 +30,13 @@ public class Decompile extends AbstractCommand<Decompile.Result> {
 	}
 
 	/**
-	 * The master project content type registry. This is needed for the build
-	 * system to determine the content type of files it finds on the file
-	 * system.
-	 */
-	private final Content.Registry registry;
-
-	/**
 	 * Indicate whether or not to print out verbose information. That is,
 	 * include more details about the underlying bytecode structure.
 	 */
 	private boolean verbose;
 
-	public Decompile(Content.Registry registry) {
-		super("verbose");
-		this.registry = registry;
+	public Decompile(Content.Registry registry, Logger logger) {
+		super(registry, logger);
 	}
 
 	// =======================================================================
@@ -63,6 +56,11 @@ public class Decompile extends AbstractCommand<Decompile.Result> {
 		this.verbose = true;
 	}
 
+	@Override
+	public String getName() {
+		return "decompile";
+	}
+
 	// =======================================================================
 	// Execute
 	// =======================================================================
@@ -70,7 +68,7 @@ public class Decompile extends AbstractCommand<Decompile.Result> {
 	@Override
 	public Result execute(String... args) {
 		// Create delta and santify check
-		ArrayList<File> delta = new ArrayList<File>();
+		ArrayList<File> delta = new ArrayList<>();
 		for (String arg : args) {
 			delta.add(new File(arg));
 		}

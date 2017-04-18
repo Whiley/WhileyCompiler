@@ -31,13 +31,27 @@ public export method test() :
     put(q, 5)
     assume q->items == [1,2,3,4,5]    
     // Get items outof the queue
-    assume get(q) == 5
-    assume !isEmpty(q)
-    assume get(q) == 4
-    assume !isEmpty(q)
-    assume get(q) == 3
-    assume !isEmpty(q)
-    assume get(q) == 2
-    assume !isEmpty(q)
-    assume get(q) == 1
-    assume isEmpty(q)
+    int result = get(q)
+    bool empty = isEmpty(q)
+    assume result == 5
+    assume !empty
+    //
+    result = get(q)
+    empty = isEmpty(q)
+    assume result == 4
+    assume !empty
+    //
+    result = get(q)
+    empty = isEmpty(q)
+    assume result == 3
+    assume !empty
+    //
+    result = get(q)
+    empty = isEmpty(q)
+    assume result == 2
+    assume !empty
+    //
+    result = get(q)
+    empty = isEmpty(q)
+    assume result == 1
+    assume empty

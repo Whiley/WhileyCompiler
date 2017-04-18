@@ -9,5 +9,8 @@ ensures r >= 0:
     return 0
 
 public export method test():
-    assume f(new 1) == 2
-    assume f(new -1) == 0
+    int result = f(new 1)
+    assume result == 2
+    //
+    result = f(new -1)
+    assume result == 0

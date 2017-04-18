@@ -95,7 +95,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 
 	public WhileyFile(Path.Entry<WhileyFile> entry) {
 		super(entry);
-		this.declarations = new ArrayList<Declaration>();
+		this.declarations = new ArrayList<>();
 	}
 
 	// =========================================================================
@@ -119,7 +119,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 	}
 
 	public <T> List<T> declarations(Class<T> c) {
-		ArrayList<T> r = new ArrayList<T>();
+		ArrayList<T> r = new ArrayList<>();
 		for (Declaration d : declarations) {
 			if (c.isInstance(d)) {
 				r.add((T) d);
@@ -129,7 +129,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 	}
 
 	public <T> List<T> declarations(Class<T> c, String name) {
-		ArrayList<T> r = new ArrayList<T>();
+		ArrayList<T> r = new ArrayList<>();
 		for (Declaration d : declarations) {
 			if (d instanceof NamedDeclaration
 					&& ((NamedDeclaration) d).name().equals(name)
@@ -172,7 +172,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 
 		public NamedDeclaration(String name, Collection<Modifier> modifiers,Attribute... attributes) {
 			super(attributes);
-			this.modifiers = new ArrayList<Modifier>(modifiers);
+			this.modifiers = new ArrayList<>(modifiers);
 			this.name = name;
 		}
 
@@ -227,7 +227,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 		@Override
 		public List<Import> imports() {
 			// this computation could (should?) be cached.
-			ArrayList<Import> imports = new ArrayList<Import>();
+			ArrayList<Import> imports = new ArrayList<>();
 			imports.add(new WhileyFile.Import(Trie.fromString(entry.id().parent(),
 					"*"), null));
 
@@ -345,7 +345,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 				String name, List<Expr> constraint, Attribute... attributes) {
 			super(name, modifiers,attributes);
 			this.parameter = type;
-			this.invariant = new ArrayList<Expr>(constraint);
+			this.invariant = new ArrayList<>(constraint);
 		}
 	}
 
@@ -407,7 +407,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 	 * <code>public</code> and <code>private</code>.
 	 * </p>
 	 */
-	public abstract class FunctionOrMethod extends NamedDeclaration {
+	public abstract class FunctionOrMethodOrProperty extends NamedDeclaration {
 		public final ArrayList<Parameter> parameters;
 		public final ArrayList<String> lifetimeParameters;
 		public final ArrayList<Parameter> returns;
@@ -432,19 +432,19 @@ public final class WhileyFile extends AbstractCompilationUnit {
 		 * @param statements
 		 *            - The Statements making up the function body.
 		 */
-		public FunctionOrMethod(List<Modifier> modifiers, String name,
+		public FunctionOrMethodOrProperty(List<Modifier> modifiers, String name,
 				List<Parameter> returns, List<Parameter> parameters,
 				List<String> lifetimeParameters,
 				List<Expr> requires, List<Expr> ensures,
 				List<Stmt> statements,
 				Attribute... attributes) {
 			super(name, modifiers,attributes);
-			this.returns  = new ArrayList<Parameter>(returns);
-			this.parameters = new ArrayList<Parameter>(parameters);
-			this.lifetimeParameters = lifetimeParameters == null ? new ArrayList<String>() : new ArrayList<String>(lifetimeParameters);
-			this.requires = new ArrayList<Expr>(requires);
-			this.ensures = new ArrayList<Expr>(ensures);
-			this.statements = new ArrayList<Stmt>(statements);
+			this.returns  = new ArrayList<>(returns);
+			this.parameters = new ArrayList<>(parameters);
+			this.lifetimeParameters = lifetimeParameters == null ? new ArrayList<>() : new ArrayList<>(lifetimeParameters);
+			this.requires = new ArrayList<>(requires);
+			this.ensures = new ArrayList<>(ensures);
+			this.statements = new ArrayList<>(statements);
 		}
 
 		public abstract SyntacticType.FunctionOrMethod unresolvedType();
@@ -478,15 +478,15 @@ public final class WhileyFile extends AbstractCompilationUnit {
 	 * </p>
 	 *
 	 * <p>
-	 * <b>NOTE</b> see {@link FunctionOrMethod} for more information.
+	 * <b>NOTE</b> see {@link FunctionOrMethodOrProperty} for more information.
 	 * </p>
 	 *
-	 * @see FunctionOrMethod
+	 * @see FunctionOrMethodOrProperty
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public final class Function extends FunctionOrMethod {
+	public final class Function extends FunctionOrMethodOrProperty {
 		public wyil.lang.Type.Function resolvedType;
 
 		public Function(List<Modifier> modifiers, String name, List<Parameter> returns,
@@ -498,11 +498,11 @@ public final class WhileyFile extends AbstractCompilationUnit {
 
 		@Override
 		public SyntacticType.Function unresolvedType() {
-			ArrayList<SyntacticType> paramTypes = new ArrayList<SyntacticType>();
+			ArrayList<SyntacticType> paramTypes = new ArrayList<>();
 			for (Parameter p : parameters) {
 				paramTypes.add(p.type);
 			}
-			ArrayList<SyntacticType> returnTypes = new ArrayList<SyntacticType>();
+			ArrayList<SyntacticType> returnTypes = new ArrayList<>();
 			for (Parameter r : returns) {
 				returnTypes.add(r.type);
 			}
@@ -541,13 +541,13 @@ public final class WhileyFile extends AbstractCompilationUnit {
 	 * </p>
 	 *
 	 * <p>
-	 * <b>NOTE</b> see {@link FunctionOrMethod} for more information.
+	 * <b>NOTE</b> see {@link FunctionOrMethodOrProperty} for more information.
 	 * </p>
 	 *
 	 * @author David J. Pearce
 	 *
 	 */
-	public final class Method extends FunctionOrMethod {
+	public final class Method extends FunctionOrMethodOrProperty {
 		public wyil.lang.Type.Method resolvedType;
 
 		public Method(List<Modifier> modifiers, String name, List<Parameter> returns, List<Parameter> parameters,
@@ -558,11 +558,11 @@ public final class WhileyFile extends AbstractCompilationUnit {
 
 		@Override
 		public SyntacticType.Method unresolvedType() {
-			ArrayList<SyntacticType> parameterTypes = new ArrayList<SyntacticType>();
+			ArrayList<SyntacticType> parameterTypes = new ArrayList<>();
 			for (Parameter p : parameters) {
 				parameterTypes.add(p.type);
 			}
-			ArrayList<SyntacticType> returnTypes = new ArrayList<SyntacticType>();
+			ArrayList<SyntacticType> returnTypes = new ArrayList<>();
 			for (Parameter r : returns) {
 				returnTypes.add(r.type);
 			}
@@ -572,6 +572,64 @@ public final class WhileyFile extends AbstractCompilationUnit {
 
 		@Override
 		public wyil.lang.Type.Method resolvedType() {
+			return resolvedType;
+		}
+	}
+
+	/**
+	 * Represents a function declaration in a Whiley source file. For example:
+	 *
+	 * <pre>
+	 * function f(int x) -> (int y)
+	 * // Parameter must be positive
+	 * requires x > 0
+	 * // Return must be negative
+	 * ensures y < 0:
+	 *    // body
+	 *    return -x
+	 * </pre>
+	 *
+	 * <p>
+	 * Here, a function <code>f</code> is defined which accepts only positive
+	 * integers and returns only negative integers. The special variable
+	 * <code>$</code> is used to refer to the return value. Functions in Whiley
+	 * may not have side-effects (i.e. they are <code>pure functions</code>).
+	 * </p>
+	 *
+	 * <p>
+	 * Function declarations may also have modifiers, such as
+	 * <code>public</code> and <code>private</code>.
+	 * </p>
+	 *
+	 * <p>
+	 * <b>NOTE</b> see {@link FunctionOrMethodOrProperty} for more information.
+	 * </p>
+	 *
+	 * @see FunctionOrMethodOrProperty
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public final class Property extends FunctionOrMethodOrProperty {
+		public wyil.lang.Type.Property resolvedType;
+
+		public Property(List<Modifier> modifiers, String name, List<Parameter> parameters, List<Expr> invariant,
+				Attribute... attributes) {
+			super(modifiers, name, Collections.EMPTY_LIST, parameters, null, invariant, Collections.EMPTY_LIST,
+					Collections.EMPTY_LIST, attributes);
+		}
+
+		@Override
+		public SyntacticType.Property unresolvedType() {
+			ArrayList<SyntacticType> paramTypes = new ArrayList<>();
+			for (Parameter p : parameters) {
+				paramTypes.add(p.type);
+			}
+			return new SyntacticType.Property(paramTypes, attributes());
+		}
+
+		@Override
+		public wyil.lang.Type.Property resolvedType() {
 			return resolvedType;
 		}
 	}

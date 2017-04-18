@@ -7,7 +7,7 @@ ensures y < 0:
     if x is int:
         return x
     else:
-        return 0
+        return -1
 
 public export method test() :
     assume f(-1) == -1

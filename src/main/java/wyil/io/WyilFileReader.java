@@ -252,7 +252,7 @@ public final class WyilFileReader {
 			}
 			case WyilFileWriter.CONSTANT_Array: {
 				int len = input.read_uv();
-				ArrayList<Constant> values = new ArrayList<Constant>();
+				ArrayList<Constant> values = new ArrayList<>();
 				for (int j = 0; j != len; ++j) {
 					int index = input.read_uv();
 					values.add(myConstantPool[index]);
@@ -262,7 +262,7 @@ public final class WyilFileReader {
 			}
 			case WyilFileWriter.CONSTANT_Record: {
 				int len = input.read_uv();
-				HashMap<String, Constant> tvs = new HashMap<String, Constant>();
+				HashMap<String, Constant> tvs = new HashMap<>();
 				for (int j = 0; j != len; ++j) {
 					int fieldIndex = input.read_uv();
 					int constantIndex = input.read_uv();
@@ -363,12 +363,16 @@ public final class WyilFileReader {
 					int typeIndex = input.read_uv();
 					String fieldName = stringPool[stringIndex];
 					Type fieldType = myTypePool[typeIndex];
-					fields[j] = new Pair<Type,String>(fieldType,fieldName);
+					fields[j] = new Pair<>(fieldType,fieldName);
 				}
 				type = Type.Record(isOpen,fields);
 				break;
 			}
-
+			case WyilFileWriter.TYPE_Property: {
+				Type[] parameters = readTypes(myTypePool);
+				type = Type.Property(parameters);
+				break;
+			}
 			case WyilFileWriter.TYPE_Function: {
 				Type[] parameters = readTypes(myTypePool);
 				Type[] returns = readTypes(myTypePool);
@@ -487,6 +491,9 @@ public final class WyilFileReader {
 		case WyilFileWriter.BLOCK_Type:
 			readTypeBlock(parent);
 			 break;
+		case WyilFileWriter.BLOCK_Property:
+			readPropertyBlock(parent);
+			break;
 		case WyilFileWriter.BLOCK_Function:
 		case WyilFileWriter.BLOCK_Method:
 			readFunctionOrMethodBlock(parent);
@@ -657,6 +664,33 @@ public final class WyilFileReader {
 		parent.blocks().add(decl);
 	}
 
+	private void readPropertyBlock(WyilFile parent) throws IOException {
+		int nameIdx = input.read_uv();
+		int modifiers = input.read_uv();
+		int typeIdx = input.read_uv();
+		int nPreconditions = input.read_uv();
+		//
+		Collection<Modifier> mods = generateModifiers(modifiers);
+		String name = stringPool[nameIdx];
+		Type.Property type = (Type.Property) typePool[typeIdx];
+		//
+		WyilFile.Property decl = new WyilFile.Property(parent, mods, name, type);
+		int[] precondition = new int[nPreconditions];
+		for (int i = 0; i != nPreconditions; ++i) {
+			precondition[i] = input.read_uv();
+		}
+		//
+		readSyntaxTree(decl);
+		SyntaxTree tree = decl.getTree();
+		//
+		for (int i = 0; i != nPreconditions; ++i) {
+			Location<Bytecode.Expr> expr = (Location<Expr>) tree.getLocation(precondition[i]);
+			decl.getPrecondition().add(expr);
+		}
+		//
+		parent.blocks().add(decl);
+	}
+
 	/**
 	 * Convert an bit pattern representing various modifiers into instances of
 	 * <code>Modifier</code>.
@@ -665,7 +699,7 @@ public final class WyilFileReader {
 	 * @return
 	 */
 	private Collection<Modifier> generateModifiers(int modifiers) {
-		ArrayList<Modifier> mods = new ArrayList<Modifier>();
+		ArrayList<Modifier> mods = new ArrayList<>();
 
 		// first, protection modifiers
 		switch (modifiers & WyilFileWriter.MODIFIER_PROTECTION_MASK) {
@@ -749,9 +783,9 @@ public final class WyilFileReader {
 		int nAttrs = input.read_uv();
 		Bytecode bytecode = readBytecode();
 		//
-		List<Attribute> attributes = new ArrayList<Attribute>();
+		List<Attribute> attributes = new ArrayList<>();
 		//
-		return new SyntaxTree.Location<Bytecode>(tree, types, bytecode, attributes);
+		return new SyntaxTree.Location<>(tree, types, bytecode, attributes);
 	}
 
 	/**

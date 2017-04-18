@@ -75,8 +75,8 @@ public class DefiniteAssignmentAnalysis {
 			// There isn't anything to do here either. This is because variables
 			// used in type invariants are already checked by the
 			// FlowTypeChecker to ensure they are declared.
-		} else if(declaration instanceof WhileyFile.FunctionOrMethod) {
-			check((WhileyFile.FunctionOrMethod) declaration);
+		} else if(declaration instanceof WhileyFile.FunctionOrMethodOrProperty) {
+			check((WhileyFile.FunctionOrMethodOrProperty) declaration);
 		} else {
 			throw new InternalFailure("unknown declaration encountered",file.getEntry(),declaration);
 		}
@@ -88,7 +88,7 @@ public class DefiniteAssignmentAnalysis {
 	 * @param declaration
 	 * @return
 	 */
-	private void check(WhileyFile.FunctionOrMethod declaration) {
+	private void check(WhileyFile.FunctionOrMethodOrProperty declaration) {
 		// Initialise set of definitely assigned variables to include all
 		// parameters.
 		DefintelyAssignedSet defs = new DefintelyAssignedSet();

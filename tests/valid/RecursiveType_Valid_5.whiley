@@ -1,5 +1,3 @@
-
-
 type Link is null | {int[] items, Link next}
 
 method create(int n) -> Link:
@@ -14,6 +12,12 @@ public export method test():
     Link l1 = null
     Link l2 = {items: [0;0], next: l1}
     Link l3 = {items: [0;0], next: l2}
-    assume create(0) == l1
-    assume create(1) == l2
-    assume create(2) == l3
+    //
+    Link result = create(0)
+    assume result == l1
+    //
+    result = create(1)
+    assume result == l2
+    //
+    result = create(2)
+    assume result == l3

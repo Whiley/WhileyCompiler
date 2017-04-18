@@ -89,12 +89,13 @@ public class TestUtils {
 	 * @return
 	 * @throws IOException
 	 */
-	public static Pair<Compile.Result,String> compile(String whileydir, boolean verify, String... args) throws IOException {
+	public static Pair<Compile.Result,String> compile(File whileydir, boolean verify, String... args) throws IOException {
 		ByteArrayOutputStream syserr = new ByteArrayOutputStream();
 		ByteArrayOutputStream sysout = new ByteArrayOutputStream();
 		Content.Registry registry = new wyc.Activator.Registry();
 		Compile cmd = new Compile(registry,Logger.NULL,sysout,syserr);
 		cmd.setWhileydir(whileydir);
+		cmd.setWyaldir(whileydir); //
 		if(verify) {
 			cmd.setVerify();
 		}
@@ -114,7 +115,7 @@ public class TestUtils {
 	 *            The name of the WyIL file
 	 * @throws IOException
 	 */
-	public static void execWyil(String wyilDir, Path.ID id) throws IOException {
+	public static void execWyil(File wyilDir, Path.ID id) throws IOException {
 		Content.Registry registry = new wyc.Activator.Registry();
 		Run cmd = new Run(registry,Logger.NULL);
 		cmd.setWyildir(wyilDir);

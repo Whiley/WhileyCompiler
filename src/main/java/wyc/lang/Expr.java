@@ -206,12 +206,12 @@ public interface Expr extends SyntacticElement {
 			super(attributes);
 			this.name = name;
 			if(paramTypes != null) {
-				this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
+				this.paramTypes = new ArrayList<>(paramTypes);
 			} else {
 				this.paramTypes = null;
 			}
 			if(lifetimeParameters != null) {
-				this.lifetimeParameters = new ArrayList<String>(lifetimeParameters);
+				this.lifetimeParameters = new ArrayList<>(lifetimeParameters);
 			} else {
 				this.lifetimeParameters = null;
 			}
@@ -224,12 +224,12 @@ public interface Expr extends SyntacticElement {
 			super(attributes);
 			this.name = name;
 			if(paramTypes != null) {
-				this.paramTypes = new ArrayList<SyntacticType>(paramTypes);
+				this.paramTypes = new ArrayList<>(paramTypes);
 			} else {
 				this.paramTypes = null;
 			}
 			if(lifetimeParameters != null) {
-				this.lifetimeParameters = new ArrayList<String>(lifetimeParameters);
+				this.lifetimeParameters = new ArrayList<>(lifetimeParameters);
 			} else {
 				this.lifetimeParameters = null;
 			}
@@ -267,18 +267,18 @@ public interface Expr extends SyntacticElement {
 		public Lambda(Collection<WhileyFile.Parameter> parameters, Collection<String> contextLifetimes,
 				Collection<String> lifetimeParameters, Expr body, Attribute... attributes) {
 			super(attributes);
-			this.parameters = new ArrayList<WhileyFile.Parameter>(parameters);
-			this.contextLifetimes = new HashSet<String>(contextLifetimes);
-			this.lifetimeParameters = new ArrayList<String>(lifetimeParameters);
+			this.parameters = new ArrayList<>(parameters);
+			this.contextLifetimes = new HashSet<>(contextLifetimes);
+			this.lifetimeParameters = new ArrayList<>(lifetimeParameters);
 			this.body = body;
 		}
 
 		public Lambda(Collection<WhileyFile.Parameter> parameters, Collection<String> contextLifetimes,
 				Collection<String> lifetimeParameters, Expr body, Collection<Attribute> attributes) {
 			super(attributes);
-			this.parameters = new ArrayList<WhileyFile.Parameter>(parameters);
-			this.contextLifetimes = new HashSet<String>(contextLifetimes);
-			this.lifetimeParameters = new ArrayList<String>(lifetimeParameters);
+			this.parameters = new ArrayList<>(parameters);
+			this.contextLifetimes = new HashSet<>(contextLifetimes);
+			this.lifetimeParameters = new ArrayList<>(lifetimeParameters);
 			this.body = body;
 		}
 
@@ -412,12 +412,12 @@ public interface Expr extends SyntacticElement {
 
 		public ArrayInitialiser(Collection<Expr> arguments, Attribute... attributes) {
 			super(attributes);
-			this.arguments = new ArrayList<Expr>(arguments);
+			this.arguments = new ArrayList<>(arguments);
 		}
 
 		public ArrayInitialiser(Attribute attribute, Expr... arguments) {
 			super(attribute);
-			this.arguments = new ArrayList<Expr>();
+			this.arguments = new ArrayList<>();
 			for(Expr a : arguments) {
 				this.arguments.add(a);
 			}
@@ -467,7 +467,7 @@ public interface Expr extends SyntacticElement {
 			super(attributes);
 			this.cop = cop;
 			this.condition = condition;
-			this.sources = new ArrayList<Triple<String, Expr, Expr>>(sources);
+			this.sources = new ArrayList<>(sources);
 		}
 
 		@Override
@@ -570,17 +570,19 @@ public interface Expr extends SyntacticElement {
 
 	public static class Record extends SyntacticElement.Impl implements
 			Expr {
+		public final String name;
 		public final HashMap<String, Expr> fields;
-		public Type.Record type;
+		public Type type;
 
-		public Record(java.util.Map<String, Expr> fields,
+		public Record(String name, java.util.Map<String, Expr> fields,
 				Attribute... attributes) {
 			super(attributes);
-			this.fields = new HashMap<String, Expr>(fields);
+			this.name = name;
+			this.fields = new HashMap<>(fields);
 		}
 
 		@Override
-		public Type.Record result() {
+		public Type result() {
 			return type;
 		}
 	}
@@ -598,9 +600,9 @@ public interface Expr extends SyntacticElement {
 			super(attributes);
 			this.name = name;
 			this.qualification = receiver;
-			this.arguments = new ArrayList<Expr>(arguments);
+			this.arguments = new ArrayList<>(arguments);
 			if (lifetimeArguments != null) {
-				this.lifetimeArguments = new ArrayList<String>(lifetimeArguments);
+				this.lifetimeArguments = new ArrayList<>(lifetimeArguments);
 			} else {
 				this.lifetimeArguments = null;
 			}
@@ -612,9 +614,9 @@ public interface Expr extends SyntacticElement {
 			super(attributes);
 			this.name = name;
 			this.qualification = receiver;
-			this.arguments = new ArrayList<Expr>(arguments);
+			this.arguments = new ArrayList<>(arguments);
 			if (lifetimeArguments != null) {
-				this.lifetimeArguments = new ArrayList<String>(lifetimeArguments);
+				this.lifetimeArguments = new ArrayList<>(lifetimeArguments);
 			} else {
 				this.lifetimeArguments = null;
 			}
@@ -724,6 +726,31 @@ public interface Expr extends SyntacticElement {
 		}
 	}
 
+	public static class PropertyCall extends FunctionOrMethodCall {
+
+		public Type.Property propertyType;
+
+		public PropertyCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
+				Attribute... attributes) {
+			super(nid,qualification,arguments,Collections.<String>emptyList(),attributes);
+		}
+
+		public PropertyCall(NameID nid, Path.ID qualification, Collection<Expr> arguments,
+				Collection<Attribute> attributes) {
+			super(nid,qualification,arguments,Collections.<String>emptyList(),attributes);
+		}
+
+		@Override
+		public Type.Property type() {
+			return propertyType;
+		}
+
+		@Override
+		public Type result() {
+			return Type.T_BOOL;
+		}
+	}
+
 	public static class AbstractIndirectInvoke extends SyntacticElement.Impl implements Expr,
 	Stmt {
 		public Expr src;
@@ -736,8 +763,8 @@ public interface Expr extends SyntacticElement {
 				Attribute... attributes) {
 			super(attributes);
 			this.src = src;
-			this.arguments = new ArrayList<Expr>(arguments);
-			this.lifetimeArguments = lifetimeArguments == null ? null : new ArrayList<String>(lifetimeArguments);
+			this.arguments = new ArrayList<>(arguments);
+			this.lifetimeArguments = lifetimeArguments == null ? null : new ArrayList<>(lifetimeArguments);
 		}
 
 		public AbstractIndirectInvoke(Expr src,
@@ -746,8 +773,8 @@ public interface Expr extends SyntacticElement {
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.src = src;
-			this.arguments = new ArrayList<Expr>(arguments);
-			this.lifetimeArguments = lifetimeArguments == null ? null : new ArrayList<String>(lifetimeArguments);
+			this.arguments = new ArrayList<>(arguments);
+			this.lifetimeArguments = lifetimeArguments == null ? null : new ArrayList<>(lifetimeArguments);
 		}
 
 		@Override

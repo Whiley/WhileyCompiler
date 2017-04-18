@@ -102,8 +102,10 @@ public final class CodeGenerator {
 					generate(wyilFile, (WhileyFile.Type) d);
 				} else if (d instanceof WhileyFile.Constant) {
 					generate(wyilFile, (WhileyFile.Constant) d);
-				} else if (d instanceof WhileyFile.FunctionOrMethod) {
-					generate(wyilFile, (WhileyFile.FunctionOrMethod) d);
+				} else if (d instanceof WhileyFile.Property) {
+					generate(wyilFile, (WhileyFile.Property) d);
+				} else if (d instanceof WhileyFile.FunctionOrMethodOrProperty) {
+					generate(wyilFile, (WhileyFile.FunctionOrMethodOrProperty) d);
 				}
 			} catch (SyntaxError se) {
 				throw se;
@@ -170,7 +172,26 @@ public final class CodeGenerator {
 	// Function / Method Declarations
 	// =========================================================================
 
-	private void generate(WyilFile enclosing, WhileyFile.FunctionOrMethod fmd) throws Exception {
+	private void generate(WyilFile enclosing, WhileyFile.Property fmd) throws Exception {
+		// Construct new WyIL function or method
+		WyilFile.Property declaration = new WyilFile.Property(enclosing, fmd.modifiers(), fmd.name(),
+				fmd.resolvedType());
+		SyntaxTree tree = declaration.getTree();
+		// Construct environments
+		EnclosingScope scope = new EnclosingScope(tree,fmd);
+		addDeclaredParameters(fmd.parameters, fmd.resolvedType().params(), scope);
+
+		// Generate precondition(s)
+		for (Expr precondition : fmd.requires) {
+			int index = generateCondition(precondition, scope).operand;
+			Location<Bytecode.Expr> loc = (Location<Bytecode.Expr>) tree.getLocation(index);
+			declaration.getPrecondition().add(loc);
+		}
+		// Add declaration itself to enclosing file
+		enclosing.blocks().add(declaration);
+	}
+
+	private void generate(WyilFile enclosing, WhileyFile.FunctionOrMethodOrProperty fmd) throws Exception {
 		// Construct new WyIL function or method
 		WyilFile.FunctionOrMethod declaration = new WyilFile.FunctionOrMethod(enclosing, fmd.modifiers(), fmd.name(),
 				fmd.resolvedType());
@@ -1343,7 +1364,7 @@ public final class CodeGenerator {
 		}
 
 		public Type.FunctionOrMethod getEnclosingFunctionType() {
-			WhileyFile.FunctionOrMethod m = (WhileyFile.FunctionOrMethod) context;
+			WhileyFile.FunctionOrMethodOrProperty m = (WhileyFile.FunctionOrMethodOrProperty) context;
 			return m.resolvedType();
 		}
 

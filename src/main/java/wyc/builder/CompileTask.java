@@ -16,7 +16,6 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import wyil.checks.CoercionCheck;
-import wyil.checks.ModuleCheck;
 import wyil.lang.*;
 import wyil.util.MoveAnalysis;
 import wyil.util.TypeSystem;
@@ -219,6 +218,7 @@ public final class CompileTask implements Build.Task {
 				generatedFiles.add(target);
 				WhileyFile wf = source.read();
 				new DefiniteAssignmentAnalysis(wf).check();
+				new ModuleCheck(wf).check();
 				WyilFile wyil = generator.generate(wf, target);
 				new MoveAnalysis(this).apply(wyil);
 				target.write(wyil);
@@ -236,7 +236,6 @@ public final class CompileTask implements Build.Task {
 			Path.Entry<?> src = p.first();
 			Path.Root dst = p.second();
 			Path.Entry<WyilFile> wf = dst.get(src.id(), WyilFile.ContentType);
-			process(wf.read(), new ModuleCheck(this));
 			process(wf.read(), new CoercionCheck(this));
 		}
 
@@ -727,6 +726,10 @@ public final class CompileTask implements Build.Task {
 			Type[] parameters = toSemanticTypes(methT.paramTypes, context);
 			Type[] returns = toSemanticTypes(methT.returnTypes, context);
 			return Type.Method(lifetimeParameters, contextLifetimes, parameters, returns);
+		} else if (type instanceof SyntacticType.Property) {
+			SyntacticType.Property funT = (SyntacticType.Property) type;
+			Type[] parameters = toSemanticTypes(funT.paramTypes, context);
+			return Type.Property(parameters);
 		} else if (type instanceof SyntacticType.Union) {
 			SyntacticType.Union unionT = (SyntacticType.Union) type;
 			return Type.Union(toSemanticTypes(unionT.bounds, context));

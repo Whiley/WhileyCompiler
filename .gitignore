@@ -2,6 +2,7 @@
 .project
 *.class
 *.wyil
+*.wyal
 *.wyasm
 *.wycs
 *~
