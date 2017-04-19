@@ -174,6 +174,10 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		verify = true;
 	}
 
+	public boolean getVerify() {
+		return verify;
+	}
+
 	public void setVerbose() {
 		setVerbose(true);
 	}
