@@ -76,8 +76,6 @@ public class AllInvalidTest {
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================
-		IGNORED.put("ArrayLength_Invalid_2", "unclassified");
-		//
 		IGNORED.put("RecursiveType_Invalid_4", "unclassified");
 		IGNORED.put("RecursiveType_Invalid_7", "unclassified");
 		IGNORED.put("RecursiveType_Invalid_8", "unclassified");
