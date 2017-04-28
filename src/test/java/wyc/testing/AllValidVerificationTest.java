@@ -98,20 +98,20 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_40", "too long for Travis");
 		//
 		IGNORED.put("Complex_Valid_1", "unclassified");
-		IGNORED.put("Complex_Valid_6", "unclassified");
+//		IGNORED.put("Complex_Valid_6", "unclassified");
 		IGNORED.put("ConstrainedInt_Valid_24", "unclassified");
 		IGNORED.put("ConstrainedList_Valid_14", "unclassified");
-		IGNORED.put("ConstrainedRecord_Valid_8", "unclassified");
+//		IGNORED.put("ConstrainedRecord_Valid_8", "unclassified");
 		IGNORED.put("IfElse_Valid_4", "unclassified");
 		IGNORED.put("OpenRecord_Valid_4", "unclassified");
 		IGNORED.put("OpenRecord_Valid_9", "unclassified");
 		IGNORED.put("RecursiveType_Valid_4", "unclassified");
-		IGNORED.put("RecursiveType_Valid_14", "unclassified");
+//		IGNORED.put("RecursiveType_Valid_14", "unclassified");
 		IGNORED.put("TypeEquals_Valid_29", "unclassified");
-		IGNORED.put("TypeEquals_Valid_56", "unclassified");
-      IGNORED.put("While_Valid_15", "unclassified");
+//		IGNORED.put("TypeEquals_Valid_56", "unclassified");
+		IGNORED.put("While_Valid_15", "unclassified");
 		IGNORED.put("While_Valid_20", "unclassified");
-		IGNORED.put("While_Valid_51", "unclassified");
+//		IGNORED.put("While_Valid_51", "unclassified");
 		// timeouts
 		IGNORED.put("BoolList_Valid_3", "timeout");
 		IGNORED.put("Complex_Valid_8", "timeout");
