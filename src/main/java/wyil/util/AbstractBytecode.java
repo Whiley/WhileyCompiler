@@ -390,7 +390,8 @@ public abstract class AbstractBytecode {
 		schemas[Bytecode.OPCODE_indirectinvoke] = new Schema(Operands.ONE, OperandGroups.ONE, Extras.TYPE){
 			@Override
 			public Bytecode construct(int opcode,int[] operands, int[][] groups, int[] blocks, Object[] extras) {
-				return new Bytecode.IndirectInvoke((Type.FunctionOrMethod) extras[0], operands[0], groups[0]);
+				int[] arguments = Arrays.copyOfRange(operands, 1, operands.length);
+				return new Bytecode.IndirectInvoke((Type.FunctionOrMethod) extras[0], operands[0], arguments);
 			}
 		};
 		schemas[Bytecode.OPCODE_is] = new Schema(Operands.TWO){
