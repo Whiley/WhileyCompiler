@@ -87,7 +87,7 @@ public class MoveAnalysis implements Build.Stage<WyilFile> {
 			break;
 		}
 		case Bytecode.OPCODE_vardeclinit: {
-			check(false, (Location<Bytecode.Expr>) stmt.getOperand(0));
+			check(true, (Location<Bytecode.Expr>) stmt.getOperand(0));
 			break;
 		}
 		case Bytecode.OPCODE_return: {
