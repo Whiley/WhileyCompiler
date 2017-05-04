@@ -60,14 +60,20 @@ public class MoveAnalysis implements Build.Stage<WyilFile> {
 	public void apply(WyilFile module) {
 
 		for(WyilFile.Type type : module.types()) {
-			check(type.getTree());
+			check(type);
 		}
 		for(WyilFile.FunctionOrMethod method : module.functionOrMethods()) {
-			check(method.getTree());
+			check(method);
 		}
 	}
 
-	private void check(SyntaxTree tree) {
+	private void check(WyilFile.Type t) {
+		for(Location<Bytecode.Expr> e : t.getInvariant()) {
+			check(false,e);
+		}
+	}
+	private void check(WyilFile.FunctionOrMethod fm) {
+		SyntaxTree tree = fm.getTree();
 		// Examine all entries in this block looking for a conversion bytecode
 		List<SyntaxTree.Location<?>> expressions = tree.getLocations();
 		for (int i = 0; i != expressions.size(); ++i) {
