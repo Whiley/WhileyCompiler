@@ -149,10 +149,19 @@ public class MoveAnalysis implements Build.Stage<WyilFile> {
 	private void check(boolean consumed, Location<Bytecode.Expr> expr) {
 		switch(expr.getOpcode()) {
 		case Bytecode.OPCODE_lambda:
-		case Bytecode.OPCODE_all:
-		case Bytecode.OPCODE_some:
-		case Bytecode.OPCODE_is: {
+		case Bytecode.OPCODE_is:
 			check(false,(Location<Bytecode.Expr>) expr.getOperand(0));
+			break;
+		case Bytecode.OPCODE_all:
+		case Bytecode.OPCODE_some: {
+			for(int i=0;i!=expr.numberOfOperands();++i) {
+				check(false,(Location<Bytecode.Expr>) expr.getOperand(i));
+			}
+			for (int i = 0; i != expr.numberOfOperandGroups(); ++i) {
+				Location<?>[] range = expr.getOperandGroup(i);
+				check(false,(Location<Bytecode.Expr>) range[SyntaxTree.START]);
+				check(false,(Location<Bytecode.Expr>) range[SyntaxTree.END]);
+			}
 			break;
 		}
 		case Bytecode.OPCODE_convert: {
