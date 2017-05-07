@@ -60,14 +60,20 @@ public class MoveAnalysis implements Build.Stage<WyilFile> {
 	public void apply(WyilFile module) {
 
 		for(WyilFile.Type type : module.types()) {
-			check(type.getTree());
+			check(type);
 		}
 		for(WyilFile.FunctionOrMethod method : module.functionOrMethods()) {
-			check(method.getTree());
+			check(method);
 		}
 	}
 
-	private void check(SyntaxTree tree) {
+	private void check(WyilFile.Type t) {
+		for(Location<Bytecode.Expr> e : t.getInvariant()) {
+			check(false,e);
+		}
+	}
+	private void check(WyilFile.FunctionOrMethod fm) {
+		SyntaxTree tree = fm.getTree();
 		// Examine all entries in this block looking for a conversion bytecode
 		List<SyntaxTree.Location<?>> expressions = tree.getLocations();
 		for (int i = 0; i != expressions.size(); ++i) {
@@ -87,7 +93,7 @@ public class MoveAnalysis implements Build.Stage<WyilFile> {
 			break;
 		}
 		case Bytecode.OPCODE_vardeclinit: {
-			check(false, (Location<Bytecode.Expr>) stmt.getOperand(0));
+			check(true, (Location<Bytecode.Expr>) stmt.getOperand(0));
 			break;
 		}
 		case Bytecode.OPCODE_return: {
@@ -143,10 +149,19 @@ public class MoveAnalysis implements Build.Stage<WyilFile> {
 	private void check(boolean consumed, Location<Bytecode.Expr> expr) {
 		switch(expr.getOpcode()) {
 		case Bytecode.OPCODE_lambda:
-		case Bytecode.OPCODE_all:
-		case Bytecode.OPCODE_some:
-		case Bytecode.OPCODE_is: {
+		case Bytecode.OPCODE_is:
 			check(false,(Location<Bytecode.Expr>) expr.getOperand(0));
+			break;
+		case Bytecode.OPCODE_all:
+		case Bytecode.OPCODE_some: {
+			for(int i=0;i!=expr.numberOfOperands();++i) {
+				check(false,(Location<Bytecode.Expr>) expr.getOperand(i));
+			}
+			for (int i = 0; i != expr.numberOfOperandGroups(); ++i) {
+				Location<?>[] range = expr.getOperandGroup(i);
+				check(false,(Location<Bytecode.Expr>) range[SyntaxTree.START]);
+				check(false,(Location<Bytecode.Expr>) range[SyntaxTree.END]);
+			}
 			break;
 		}
 		case Bytecode.OPCODE_convert: {

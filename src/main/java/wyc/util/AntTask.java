@@ -134,7 +134,11 @@ public class AntTask extends MatchingTask {
 			List<Path.Entry<WhileyFile>> files = command.getModifiedSourceFiles();
 			Compile.Result r = command.execute(files);
 			if (r == Compile.Result.SUCCESS) {
-				log("Compiled " + files.size() + " source file(s)");
+				if(command.getVerify()) {
+					log("Compiled and Verified " + files.size() + " source file(s)");
+				} else {
+					log("Compiled " + files.size() + " source file(s)");
+				}
 			} else {
 				throw new BuildException();
 			}

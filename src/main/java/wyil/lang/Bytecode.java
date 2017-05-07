@@ -733,6 +733,7 @@ public interface Bytecode {
 
 		public VariableAccess(boolean isCopy, int operand) {
 			super(operand);
+			this.isCopy = isCopy;
 		}
 
 		@Override
