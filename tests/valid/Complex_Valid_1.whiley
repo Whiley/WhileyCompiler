@@ -76,7 +76,7 @@ function clearRowExcept(Pos from, Pos to, Board board) -> bool:
     return true
 
 constant A1 is {col: 1, row: 1}
-constant H1 is {col: 8, row: 1}
+constant H1 is {col: 7, row: 1}
 constant A3 is {col: 1, row: 3}
 constant D3 is {col: 4, row: 3}
 

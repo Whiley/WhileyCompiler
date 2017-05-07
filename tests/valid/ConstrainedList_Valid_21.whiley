@@ -15,7 +15,7 @@ type Cash is (nat[] coins) where |coins| == |Value|
 function Cash(nat[] coins) -> Cash
 requires all { i in 0..|coins| | coins[i] < |Value| }:
     int[] cash = [0, 0, 0, 0, 0, 0, 0, 0]
-    int i = 0
+    nat i = 0
     while i < |coins|
         where |cash| == |Value|
         where all { k in 0..|cash| | cash[k] >= 0 }:

@@ -14,7 +14,7 @@ type Transition is ({
 // A Finite State Machine representation of a Trie
 type Trie is {
     Transition[] transitions
-}
+} where all { k in 0..|transitions| | transitions[k].to <= |transitions| }
 
 // Define the Empty Trie
 constant DummyTransition is { from: 0, to: 0, character: 0 }
@@ -35,7 +35,7 @@ function add(Trie trie, string str) -> Trie:
 // Add a string into a Trie from a given state, producing an
 // updated Trie.
 function add(Trie trie, int state, string str, int index) -> Trie
-requires state >= 0
+requires state >= 0 && state <= |trie.transitions|
 requires index >= 0 && index <= |str|:
     //
     if |str| == index:
