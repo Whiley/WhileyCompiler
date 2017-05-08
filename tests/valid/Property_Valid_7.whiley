@@ -16,7 +16,9 @@ ensures max(items,r,|items|):
     nat i = 1
     int m = items[0]
     //
-    while i < |items| where max(items,m,i):
+    while i < |items|
+    where i <= |items|
+    where max(items,m,i):
         if items[i] > m:
             m = items[i]
         i = i + 1

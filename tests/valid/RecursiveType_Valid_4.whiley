@@ -1,7 +1,6 @@
+type nat is (int x) where x >= 0
 type Expr is int | Expr[] | ListAccess
-
 type ListAccess is {Expr index, Expr src}
-
 type Value is int | Value[]
 
 function evaluate(Expr e) -> null | Value:
@@ -10,8 +9,8 @@ function evaluate(Expr e) -> null | Value:
     else:
         if e is Expr[]:
             Value[] r = [0;|e|]
-            int i = 0
-            while i < |e|:
+            nat i = 0
+            while i < |e| where |e| == |r|:
                 null|Value v = evaluate(e[i])
                 if v is null:
                     return v
