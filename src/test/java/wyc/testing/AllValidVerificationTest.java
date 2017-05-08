@@ -85,6 +85,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("ConstrainedList_Valid_3", "too long for Travis");
 		IGNORED.put("ConstrainedList_Valid_6", "too long for Travis");
 		IGNORED.put("ConstrainedList_Valid_20", "too long for Travis");
+		IGNORED.put("ConstrainedList_Valid_23", "too long for Travis");
 		IGNORED.put("ListAssign_Valid_5", "too long for Travis");
 		IGNORED.put("String_Valid_6", "too long for Travis");
 		IGNORED.put("While_Valid_30", "too long for Travis");
@@ -96,7 +97,6 @@ public class AllValidVerificationTest {
 		// timeouts
 		IGNORED.put("BoolList_Valid_3", "timeout");
 		IGNORED.put("Complex_Valid_2", "timeout");
-		IGNORED.put("ConstrainedList_Valid_23", "unclassified");
 		IGNORED.put("ConstrainedList_Valid_8", "unclassified");
 		IGNORED.put("ConstrainedRecord_Valid_9", "timeout");
 		IGNORED.put("Ensures_Valid_3", "unclassified");
