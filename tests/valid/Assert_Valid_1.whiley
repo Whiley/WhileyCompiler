@@ -1,6 +1,6 @@
 function f(int[] xs) -> (int[] ys)
 requires |xs| > 0
-ensures xs[0] == 0:
+ensures ys[0] == 0:
     //
     xs[0] = 0
     //
@@ -12,4 +12,4 @@ ensures xs[0] == 0:
 method test():
     int[] xs = f([1])
     //
-    assert f(xs)[0] == 0
+    assert xs[0] == 0

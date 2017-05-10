@@ -73,6 +73,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("Ensures_Valid_3", "#730");
 		//
 		IGNORED.put("ConstrainedList_Valid_22", "#731");
+		IGNORED.put("Assert_Valid_1", "#731");
 		//
 		// ===============================================================
 		// Whiley Theorem Prover faults
@@ -101,22 +102,17 @@ public class AllValidVerificationTest {
 		IGNORED.put("ConstrainedRecord_Valid_9", "timeout");
 		IGNORED.put("Function_Valid_18", "timeout");
 		IGNORED.put("RecursiveType_Valid_4", "timeout");
-		//
-		IGNORED.put("TypeEquals_Valid_32", "unclassified?");
-
-		IGNORED.put("While_Valid_16", "unclassified");
 		IGNORED.put("While_Valid_2", "timeout");
-		IGNORED.put("While_Valid_22", "unclassified");
-		IGNORED.put("While_Valid_25", "unclassified?");
+		IGNORED.put("While_Valid_22", "timeout");
 		IGNORED.put("While_Valid_26", "timeout");
-		IGNORED.put("While_Valid_32", "unclassified?");
-		IGNORED.put("While_Valid_54", "unclassified");
 		IGNORED.put("RecursiveType_Valid_29", "timeout");
+		//
 		// Issue 2
 		IGNORED.put("ConstrainedInt_Valid_22", "WyTP#2");
 		// Issue 12
-		IGNORED.put("While_Valid_27", "WyTP#12");
 		IGNORED.put("IntMul_Valid_2", "WyTP#12");
+		IGNORED.put("While_Valid_27", "WyTP#12");
+		IGNORED.put("While_Valid_32", "WyTP#12");
 		// Issue 29
 		IGNORED.put("ConstrainedList_Valid_18", "WyTP#29");
 		IGNORED.put("ConstrainedList_Valid_8", "WyTP#29");
@@ -166,6 +162,14 @@ public class AllValidVerificationTest {
 		IGNORED.put("RecursiveType_Valid_11", "WyTP#84");
 		//
 		IGNORED.put("TypeEquals_Valid_54", "WyTP#85");
+		//
+		IGNORED.put("While_Valid_25", "WyTP#86");
+		//
+		IGNORED.put("While_Valid_54", "WyTP#87");
+		//
+		IGNORED.put("TypeEquals_Valid_32", "WyTP#88");
+		//
+		IGNORED.put("While_Valid_37", "WyTP#89");
 	}
 
 	/**
