@@ -62,10 +62,14 @@ public class AllValidVerificationTest {
 		//
 		IGNORED.put("ConstrainedList_Valid_28", "#666");
 		//
-		IGNORED.put("RecursiveType_Valid_17", "#713");
-		IGNORED.put("RecursiveType_Valid_18", "#713");
-		IGNORED.put("Return_Valid_1", "#713");
-		IGNORED.put("UnionType_Valid_2", "#713");
+		IGNORED.put("IfElse_Valid_4", "#712");
+		IGNORED.put("Complex_Valid_4", "#712");
+		IGNORED.put("ListAccess_Valid_6", "712");
+		//
+//		IGNORED.put("RecursiveType_Valid_17", "#713");
+//		IGNORED.put("RecursiveType_Valid_18", "#713");
+//		IGNORED.put("Return_Valid_1", "#713");
+//		IGNORED.put("UnionType_Valid_2", "#713");
 		//
 		IGNORED.put("Record_Valid_3", "#714");
 		//
@@ -106,6 +110,8 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_22", "timeout");
 		IGNORED.put("While_Valid_26", "timeout");
 		IGNORED.put("RecursiveType_Valid_29", "timeout");
+		IGNORED.put("RecursiveType_Valid_2", "timeout");
+		IGNORED.put("TypeEquals_Valid_25", "timeout");
 		//
 		// Issue 2
 		IGNORED.put("ConstrainedInt_Valid_22", "WyTP#2");
@@ -139,14 +145,9 @@ public class AllValidVerificationTest {
 		IGNORED.put("Coercion_Valid_9", "WyTP#76");
 		IGNORED.put("RecordCoercion_Valid_1", "WyTP#76");
 		//
-		IGNORED.put("RecursiveType_Valid_2", "WyTP#77");
 		IGNORED.put("RecursiveType_Valid_7", "WyTP#77");
-		IGNORED.put("TypeEquals_Valid_30", "WyTP#77");
-		IGNORED.put("Complex_Valid_4", "WyTP#77");
-		IGNORED.put("IfElse_Valid_4", "WyTP#77");
 		IGNORED.put("OpenRecord_Valid_9", "WyTP#77");
-		IGNORED.put("TypeEquals_Valid_29", "WyTP#77");
-		IGNORED.put("TypeEquals_Valid_25", "WyTP#77");
+		IGNORED.put("TypeEquals_Valid_30", "WyTP#77");
 		//
 		IGNORED.put("Complex_Valid_1", "WyTP#78");
 		//
@@ -157,19 +158,17 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_15", "WyTP#82");
 		IGNORED.put("While_Valid_20", "WyTP#82");
 		//
-		IGNORED.put("ListAccess_Valid_6", "WyTP#83");
-		//
 		IGNORED.put("RecursiveType_Valid_11", "WyTP#84");
 		//
 		IGNORED.put("TypeEquals_Valid_54", "WyTP#85");
 		//
 		IGNORED.put("While_Valid_25", "WyTP#86");
 		//
-		IGNORED.put("While_Valid_54", "WyTP#87");
-		//
 		IGNORED.put("TypeEquals_Valid_32", "WyTP#88");
 		//
 		IGNORED.put("While_Valid_37", "WyTP#89");
+		//
+		IGNORED.put("While_Valid_54", "WyTP#94");
 	}
 
 	/**
