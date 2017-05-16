@@ -331,7 +331,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		}
 		project.add(new StdBuildRule(wyalBuilder, wyildir, wyilIncludes, wyilExcludes, wyaldir));
 		//
-		wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem();
+		wytp.types.TypeSystem typeSystem = new wytp.types.TypeSystem(project);
 		AutomatedTheoremProver prover = new AutomatedTheoremProver(typeSystem);
 		wyal.tasks.CompileTask wyalBuildTask = new wyal.tasks.CompileTask(project,typeSystem,prover);
 		if(verbose) {
