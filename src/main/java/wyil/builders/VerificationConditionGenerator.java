@@ -363,7 +363,7 @@ public class VerificationConditionGenerator {
 			Expr aliases = determineVariableAliases(globalEnvironment, freeAliases);
 			//
 			WyalFile.Stmt.Block body = new WyalFile.Stmt.Block(implies(aliases, clause));
-			return new WyalFile.Stmt.Block(new WyalFile.Stmt.Quantifier(Opcode.STMT_forall, types, body));
+			return new WyalFile.Stmt.Block(new WyalFile.Stmt.UniversalQuantifier(types, body));
 		}
 		return clause;
 	}
@@ -622,7 +622,7 @@ public class VerificationConditionGenerator {
 		// Emit verification conditions to check access in bounds
 		checkIndexOutOfBounds(lval, p2.second());
 		// Construct array update for "pass thru"
-		Expr.Operator update = new Expr.Operator(Opcode.EXPR_arrupdt, source, index, rval);
+		Expr.Operator update = new Expr.ArrayUpdate(source, index, rval);
 		return translateSingleAssignment(lval.getOperand(0),update,p2.second());
 	}
 
@@ -658,7 +658,7 @@ public class VerificationConditionGenerator {
 		context = context.havoc(decl.getIndex());
 		WyalFile.VariableDeclaration nVersionedVar = context.read(decl);
 		Expr.VariableAccess var = new Expr.VariableAccess(nVersionedVar);
-		return context.assume(new Expr.Operator(Opcode.EXPR_eq, var, rval));
+		return context.assume(new Expr.Equal(var, rval));
 	}
 
 	/**
@@ -987,8 +987,8 @@ public class VerificationConditionGenerator {
 				WyalFile.Stmt e = null;
 				for (Constant constant : caSe.values()) {
 					Expr v = convert(constant, stmt);
-					e = or(e, new Expr.Operator(WyalFile.Opcode.EXPR_eq, value, v));
-					defaultValue = and(defaultValue, new Expr.Operator(WyalFile.Opcode.EXPR_neq, value, v));
+					e = or(e, new Expr.Equal(value, v));
+					defaultValue = and(defaultValue, new Expr.NotEqual(value, v));
 				}
 				caseContext = context.assume(e);
 				descendants[i] = translateStatementBlock(stmt.getBlock(i), caseContext);
@@ -1301,7 +1301,7 @@ public class VerificationConditionGenerator {
 		Expr rhs = translateExpression(expr.getOperand(1), null, context.getEnvironment());
 		Value zero = new Value.Int(BigInteger.ZERO);
 		Expr.Constant constant = new Expr.Constant(zero);
-		Expr neqZero = new Expr.Operator(WyalFile.Opcode.EXPR_neq, rhs, constant);
+		Expr neqZero = new Expr.NotEqual(rhs, constant);
 		//
 		context.emit(new VerificationCondition("division by zero", context.assumptions, neqZero, expr.attributes()));
 	}
@@ -1310,10 +1310,10 @@ public class VerificationConditionGenerator {
 		Expr src = translateExpression(expr.getOperand(0), null, context.getEnvironment());
 		Expr idx = translateExpression(expr.getOperand(1), null, context.getEnvironment());
 		Expr zero = new Expr.Constant(new Value.Int(BigInteger.ZERO));
-		Expr length = new Expr.Operator(WyalFile.Opcode.EXPR_arrlen, src);
+		Expr length = new Expr.ArrayLength(src);
 		//
-		Expr negTest = new Expr.Operator(WyalFile.Opcode.EXPR_gteq, idx, zero);
-		Expr lenTest = new Expr.Operator(WyalFile.Opcode.EXPR_lt, idx, length);
+		Expr negTest = new Expr.GreaterThanOrEqual(idx, zero);
+		Expr lenTest = new Expr.LessThan(idx, length);
 		//
 		context.emit(new VerificationCondition("index out of bounds (negative)", context.assumptions, negTest,
 				expr.attributes()));
@@ -1325,7 +1325,7 @@ public class VerificationConditionGenerator {
 		Expr rhs = translateExpression(expr.getOperand(1), null, context.getEnvironment());
 		Value zero = new Value.Int(BigInteger.ZERO);
 		Expr.Constant constant = new Expr.Constant(zero);
-		Expr neqZero = new Expr.Operator(WyalFile.Opcode.EXPR_gteq, rhs, constant);
+		Expr neqZero = new Expr.GreaterThanOrEqual(rhs, constant);
 		//
 		context.emit(
 				new VerificationCondition("negative length possible", context.assumptions, neqZero, expr.attributes()));
@@ -1534,8 +1534,7 @@ public class VerificationConditionGenerator {
 		case NOT:
 			return translateNotOperator(expr, environment);
 		case NEG:
-		case ARRAYLENGTH:
-			return translateUnaryOperator(unaryOperatorMap.get(kind), expr, environment);
+			return translateArithmeticNegation(expr, environment);
 		case ADD:
 		case SUB:
 		case MUL:
@@ -1560,6 +1559,8 @@ public class VerificationConditionGenerator {
 			return translateArrayGenerator(expr, environment);
 		case RECORDCONSTRUCTOR:
 			return translateRecordInitialiser(expr, environment);
+		case ARRAYLENGTH:
+			return translateArrayLength(expr, environment);
 		case RIGHTSHIFT:
 		case LEFTSHIFT:
 		case BITWISEAND:
@@ -1580,15 +1581,45 @@ public class VerificationConditionGenerator {
 		return invertCondition(e, expr.getOperand(0));
 	}
 
-	private Expr translateUnaryOperator(WyalFile.Opcode op, Location<Operator> expr, LocalEnvironment environment) {
+	private Expr translateArithmeticNegation(Location<Operator> expr, LocalEnvironment environment) {
 		Expr e = translateExpression(expr.getOperand(0), null, environment);
-		return new Expr.Operator(op, e);
+		return new Expr.Negation(e);
 	}
 
 	private Expr translateBinaryOperator(WyalFile.Opcode op, Location<Operator> expr, LocalEnvironment environment) {
 		Expr lhs = translateExpression(expr.getOperand(0), null, environment);
 		Expr rhs = translateExpression(expr.getOperand(1), null, environment);
-		return new Expr.Operator(op, lhs, rhs);
+		switch(op) {
+		case EXPR_add:
+			return new Expr.Addition(lhs, rhs);
+		case EXPR_sub:
+			return new Expr.Subtraction(lhs, rhs);
+		case EXPR_mul:
+			return new Expr.Multiplication(lhs, rhs);
+		case EXPR_div:
+			return new Expr.Division(lhs, rhs);
+		case EXPR_rem:
+			return new Expr.Remainder(lhs, rhs);
+		case EXPR_eq:
+			return new Expr.Equal(lhs, rhs);
+		case EXPR_neq:
+			return new Expr.NotEqual(lhs, rhs);
+		case EXPR_lt:
+			return new Expr.LessThan(lhs, rhs);
+		case EXPR_lteq:
+			return new Expr.LessThanOrEqual(lhs, rhs);
+		case EXPR_gt:
+			return new Expr.GreaterThan(lhs, rhs);
+		case EXPR_gteq:
+			return new Expr.GreaterThanOrEqual(lhs, rhs);
+		case EXPR_and:
+			return new Expr.LogicalAnd(lhs, rhs);
+		case EXPR_or:
+			return new Expr.LogicalOr(lhs, rhs);
+		default:
+			throw new RuntimeException("Internal failure --- dead code reached");
+		}
+
 	}
 
 	private Expr translateIs(Location<Operator> expr, LocalEnvironment environment) {
@@ -1603,19 +1634,24 @@ public class VerificationConditionGenerator {
 	private Expr translateArrayIndex(Location<Operator> expr, LocalEnvironment environment) {
 		Expr lhs = translateExpression(expr.getOperand(0), null, environment);
 		Expr rhs = translateExpression(expr.getOperand(1), null, environment);
-		return new Expr.Operator(WyalFile.Opcode.EXPR_arridx, lhs, rhs);
+		return new Expr.ArrayAccess(lhs, rhs);
 	}
 
 	private Expr translateArrayGenerator(Location<Operator> expr, LocalEnvironment environment) {
 		Expr element = translateExpression(expr.getOperand(0), null, environment);
 		Expr count = translateExpression(expr.getOperand(1), null, environment);
 		environment = environment.write(expr.getIndex());
-		return new Expr.Operator(WyalFile.Opcode.EXPR_arrgen, element, count);
+		return new Expr.ArrayGenerator(element, count);
 	}
 
 	private Expr translateArrayInitialiser(Location<Operator> expr, LocalEnvironment environment) {
 		Expr[] vals = translateExpressions(expr.getOperands(), environment);
-		return new Expr.Operator(WyalFile.Opcode.EXPR_arrinit, vals);
+		return new Expr.ArrayInitialiser(vals);
+	}
+
+	private Expr translateArrayLength(Location<Operator> expr, LocalEnvironment environment) {
+		Expr e = translateExpression(expr.getOperand(0), null, environment);
+		return new Expr.ArrayLength(e);
 	}
 
 	private Expr translateQuantifier(Location<Quantifier> expr, LocalEnvironment environment) {
@@ -1629,12 +1665,12 @@ public class VerificationConditionGenerator {
 		// Generate quantifier expression
 		switch (bytecode.kind()) {
 		case ALL:
-			body = new Expr.Operator(Opcode.EXPR_implies, ranges, body);
-			return new Expr.Quantifier(Opcode.EXPR_forall,pattern, body);
+			body = new Expr.LogicalImplication(ranges, body);
+			return new Expr.UniversalQuantifier(pattern, body);
 		case SOME:
 		default:
-			body = new Expr.Operator(Opcode.EXPR_and, ranges, body);
-			return new Expr.Quantifier(Opcode.EXPR_exists,pattern, body);
+			body = new Expr.LogicalAnd(ranges, body);
+			return new Expr.ExistentialQuantifier(pattern, body);
 		}
 	}
 
@@ -1711,10 +1747,8 @@ public class VerificationConditionGenerator {
 			Expr.VariableAccess varExpr = new Expr.VariableAccess(varDecl);
 			Expr startExpr = translateExpression(group[1], null, environment);
 			Expr endExpr = translateExpression(group[2], null, environment);
-			Expr lhs = new Expr.Operator(WyalFile.Opcode.EXPR_lteq, startExpr,
-					varExpr);
-			Expr rhs = new Expr.Operator(WyalFile.Opcode.EXPR_lt, varExpr,
-					endExpr);
+			Expr lhs = new Expr.LessThanOrEqual(startExpr, varExpr);
+			Expr rhs = new Expr.LessThan(varExpr, endExpr);
 			ranges = and(ranges, and(lhs, rhs));
 		}
 		return ranges;
@@ -1782,7 +1816,7 @@ public class VerificationConditionGenerator {
 		} else if (rhs == null) {
 			return rhs;
 		} else {
-			return new Expr.Operator(Opcode.EXPR_and,lhs, rhs);
+			return new Expr.LogicalAnd(lhs, rhs);
 		}
 	}
 
@@ -1917,7 +1951,7 @@ public class VerificationConditionGenerator {
 				// indicates a version change of the given variable.
 				Expr.VariableAccess oldVar = new Expr.VariableAccess(oldVarVersionedName);
 				Expr.VariableAccess newVar = new Expr.VariableAccess(newVarVersionedName);
-				assumptions = assumptions.add(new Expr.Operator(Opcode.EXPR_eq, newVar, oldVar));
+				assumptions = assumptions.add(new Expr.Equal(newVar, oldVar));
 			}
 		}
 		return assumptions;
@@ -2085,7 +2119,7 @@ public class VerificationConditionGenerator {
 			WyalFile.VariableDeclaration[] parameters = freeVariables
 					.toArray(new WyalFile.VariableDeclaration[freeVariables.size()]);
 			WyalFile.Stmt.Block qfBody = new WyalFile.Stmt.Block(verificationCondition);
-			verificationCondition = new WyalFile.Stmt.Quantifier(Opcode.STMT_forall, parameters, qfBody);
+			verificationCondition = new WyalFile.Stmt.UniversalQuantifier(parameters, qfBody);
 		}
 		// Done
 		return new WyalFile.Stmt.Block(verificationCondition);
@@ -2176,8 +2210,7 @@ public class VerificationConditionGenerator {
 				// equality.
 				Expr.VariableAccess lhs = new Expr.VariableAccess(var);
 				Expr.VariableAccess rhs = new Expr.VariableAccess(parent);
-				Expr aliasEquality = new Expr.Operator(WyalFile.Opcode.EXPR_eq, lhs,
-						rhs);
+				Expr aliasEquality = new Expr.Equal(lhs, rhs);
 				//
 				aliases = and(aliases, aliasEquality);
 			}
@@ -2332,7 +2365,7 @@ public class VerificationConditionGenerator {
 			for (int i = 0; i != cb_values.size(); ++i) {
 				items[i] = convert(cb_values.get(i), context);
 			}
-			return new Expr.Operator(Opcode.EXPR_arrinit, items);
+			return new Expr.ArrayInitialiser(items);
 		} else if (c instanceof Constant.Record) {
 			Constant.Record cr = (Constant.Record) c;
 			HashMap<String, Constant> fields = cr.values();
@@ -2509,46 +2542,36 @@ public class VerificationConditionGenerator {
 	public Expr invertCondition(Expr expr, Location<?> elem) {
 		if (expr instanceof Expr.Operator) {
 			Expr.Operator binTest = (Expr.Operator) expr;
-			WyalFile.Opcode op = null;
 			switch (binTest.getOpcode()) {
 			case EXPR_eq:
-				op = Opcode.EXPR_neq;
-				break;
+				return new Expr.NotEqual(binTest.getOperands());
 			case EXPR_neq:
-				op = Opcode.EXPR_eq;
-				break;
+				return new Expr.Equal(binTest.getOperands());
 			case EXPR_gteq:
-				op = Opcode.EXPR_lt;
-				break;
+				return new Expr.LessThan(binTest.getOperands());
 			case EXPR_gt:
-				op = Opcode.EXPR_lteq;
-				break;
+				return new Expr.LessThanOrEqual(binTest.getOperands());
 			case EXPR_lteq:
-				op = Opcode.EXPR_gt;
-				break;
+				return new Expr.GreaterThan(binTest.getOperands());
 			case EXPR_lt:
-				op = Opcode.EXPR_gteq;
-				break;
+				return new Expr.GreaterThanOrEqual(binTest.getOperands());
 			case EXPR_and: {
 				Expr[] operands = invertConditions(binTest.getOperands(), elem);
-				return new Expr.Operator(Opcode.EXPR_or, operands);
+				return new Expr.LogicalOr(operands);
 			}
 			case EXPR_or: {
 				Expr[] operands = invertConditions(binTest.getOperands(), elem);
-				return new Expr.Operator(Opcode.EXPR_and, operands);
+				return new Expr.LogicalAnd(operands);
 			}
-			}
-			if (op != null) {
-				return new Expr.Operator(op, binTest.getOperands());
 			}
 		} else if (expr instanceof Expr.Is) {
 			Expr.Is ei = (Expr.Is) expr;
-			WyalFile.Type type = ei.getTypeTest();
-			return new Expr.Is(ei.getExpr(), new WyalFile.Type.Negation(type));
+			WyalFile.Type type = ei.getTestType();
+			return new Expr.Is(ei.getTestExpr(), new WyalFile.Type.Negation(type));
 		}
 		// Otherwise, compare against false
 		// FIXME: this is just wierd and needs to be fixed.
-		return new Expr.Operator(Opcode.EXPR_not, expr);
+		return new Expr.LogicalNot(expr);
 	}
 
 	public Expr[] invertConditions(Expr[] expr, Location<?> elem) {
@@ -3072,10 +3095,11 @@ public class VerificationConditionGenerator {
 			WyalFile.VariableDeclaration nVersionedVar = nEnvironment.read(lhs);
 			// Update assumption sets to reflect the "assigment"
 			Expr.VariableAccess var = new Expr.VariableAccess(nVersionedVar);
-			Expr condition = new Expr.Operator(Opcode.EXPR_eq, var, rhs);
+			Expr condition = new Expr.Equal(var, rhs);
 			AssumptionSet nAssumptions = assumptions.add(condition);
 			//
-			return new Context(wyalFile, nAssumptions, nEnvironment, initialEnvironment, enclosingLoop, verificationConditions);
+			return new Context(wyalFile, nAssumptions, nEnvironment, initialEnvironment, enclosingLoop,
+					verificationConditions);
 		}
 
 		public WyalFile.VariableDeclaration read(Location<?> expr) {

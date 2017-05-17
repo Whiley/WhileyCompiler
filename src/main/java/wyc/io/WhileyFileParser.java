@@ -2301,18 +2301,13 @@ public class WhileyFileParser {
 				} else if (lookaheadSequence(terminated, LeftAngle)) {
 					// This one is a little tricky, as we need some lookahead
 					// effort. We want to see whether it is a method invocation
-					// with
-					// lifetime arguments. But "Identifier < ..." can also be a
+					// with lifetime arguments. But "Identifier < ..." can also be a
 					// boolean expression!
 					int oldindex = index;
 					match(LeftAngle);
 					Token lifetime = tryAndMatch(terminated, RightAngle, Identifier, This, Star);
-					if (lifetime != null && (lifetime.kind != Identifier // then
-																			// it's
-																			// definitely
-																			// a
-																			// lifetime
-							|| scope.isLifetime(lifetime.text))) {
+					if (lifetime != null && (lifetime.kind != Identifier || scope.isLifetime(lifetime.text))) {
+						// then it's definitely a lifetime
 						isInvocation = true;
 						index--; // don't forget the first argument!
 						lifetimeArguments = parseLifetimeArguments(wf, scope);
