@@ -985,7 +985,7 @@ public class VerificationConditionGenerator {
 			if (!caSe.isDefault()) {
 				WyalFile.Stmt e = null;
 				for (Constant constant : caSe.values()) {
-					Expr v = convert(constant, stmt);
+					Expr v = convert(constant, stmt, context.getEnvironment());
 					e = or(e, new Expr.Equal(value, v));
 					defaultValue = and(defaultValue, new Expr.NotEqual(value, v));
 				}
@@ -1483,7 +1483,7 @@ public class VerificationConditionGenerator {
 		if (bytecode.constant() instanceof Constant.FunctionOrMethod) {
 			return translateAsUnknown(expr, environment);
 		}
-		return convert(bytecode.constant(), expr);
+		return convert(bytecode.constant(), expr, environment);
 	}
 
 	private Expr translateConvert(Location<Convert> expr, LocalEnvironment environment) {
@@ -2350,7 +2350,7 @@ public class VerificationConditionGenerator {
 	 *            associate any errors generated with a source line.
 	 * @return
 	 */
-	private Expr convert(Constant c, SyntaxTree.Location<?> context) {
+	private Expr convert(Constant c, SyntaxTree.Location<?> context, LocalEnvironment environment) {
 		Value v;
 		if (c instanceof Constant.Null) {
 			v = new WyalFile.Value.Null();
@@ -2368,7 +2368,7 @@ public class VerificationConditionGenerator {
 			List<Constant> cb_values = cb.values();
 			Expr[] items = new Expr[cb_values.size()];
 			for (int i = 0; i != cb_values.size(); ++i) {
-				items[i] = convert(cb_values.get(i), context);
+				items[i] = convert(cb_values.get(i), context, environment);
 			}
 			return new Expr.ArrayInitialiser(items);
 		} else if (c instanceof Constant.Record) {
@@ -2378,13 +2378,13 @@ public class VerificationConditionGenerator {
 			//
 			int i = 0;
 			for (Map.Entry<String, Constant> e : fields.entrySet()) {
-				WyalFile.Expr val = convert(e.getValue(), context);
+				WyalFile.Expr val = convert(e.getValue(), context, environment);
 				pairs[i++] = new WyalFile.Pair<>(new WyalFile.Identifier(e.getKey()), val);
 			}
 			return new Expr.RecordInitialiser(pairs);
 		} else {
-			WyilFile.Declaration decl = context.getEnclosingTree().getEnclosingDeclaration();
-			throw new InternalFailure("unknown constant encountered (" + c + ")", decl.parent().getEntry(), context);
+			// Constant.Lambda --- basically just treat as unknown variable
+			return translateAsUnknown(context,environment);
 		}
 		//
 		return new Expr.Constant(v);
