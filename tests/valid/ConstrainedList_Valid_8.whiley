@@ -2,8 +2,9 @@
 
 type nat is (int x) where x >= 0
 
-function update(nat[] list, nat index, nat value) -> nat[]
-requires index < |list|:
+function update(nat[] list, nat index, nat value) -> (nat[] rs)
+requires index < |list|
+ensures |rs| == |list|:
     list[index] = value
     return list
 

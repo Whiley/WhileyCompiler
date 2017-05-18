@@ -10,7 +10,8 @@ function f2(int x) -> int:
 
 type func is function(int)->int
 
-function g(int d) -> int:
+function g(int d) -> int
+requires d >= 0 && d < |table|:
     func y = table[d]
     return y(123)
 

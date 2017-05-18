@@ -133,6 +133,7 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	public WyalFile translate(WyilFile wyilFile, Path.Entry<WyalFile> target) {
+		//
 		WyalFile wyalFile = new WyalFile(target);
 
 		for (WyilFile.Block b : wyilFile.blocks()) {
@@ -362,7 +363,7 @@ public class VerificationConditionGenerator {
 			Expr aliases = determineVariableAliases(globalEnvironment, freeAliases);
 			//
 			WyalFile.Stmt.Block body = new WyalFile.Stmt.Block(implies(aliases, clause));
-			return new WyalFile.Stmt.Block(new WyalFile.Stmt.Quantifier(Opcode.STMT_forall, types, body));
+			return new WyalFile.Stmt.Block(new WyalFile.Stmt.UniversalQuantifier(types, body));
 		}
 		return clause;
 	}
@@ -389,7 +390,7 @@ public class VerificationConditionGenerator {
 		//
 		for (int i = 0; i != preconditions.length; ++i) {
 			WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + i));
-			preconditions[i] = new Expr.Invoke(null, name, arguments);
+			preconditions[i] = new Expr.Invoke(null, name, null, arguments);
 		}
 		// Add all the preconditions as assupmtions
 		return AssumptionSet.ROOT.add(preconditions);
@@ -442,7 +443,7 @@ public class VerificationConditionGenerator {
 				return context;
 			case Bytecode.OPCODE_invoke:
 				checkExpressionPreconditions(stmt, context);
-				translateInvoke((Location<Invoke>) stmt, context.getEnvironment());
+				translateInvoke((Location<Invoke>) stmt, null, context.getEnvironment());
 				return context;
 			case Bytecode.OPCODE_namedblock:
 				return translateNamedBlock((Location<NamedBlock>) stmt, context);
@@ -477,7 +478,7 @@ public class VerificationConditionGenerator {
 	 */
 	private Context translateAssert(Location<Assert> stmt, Context context) {
 		Location<?> operand = stmt.getOperand(0);
-		Pair<Expr, Context> p = translateExpressionWithChecks(operand, context);
+		Pair<Expr, Context> p = translateExpressionWithChecks(operand, null, context);
 		Expr condition = p.first();
 		context = p.second();
 		//
@@ -522,14 +523,26 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private Context translateAssign(Location<?>[] lval, Location<?> rval, Context context) {
-		Pair<Expr, Context> rp = translateExpressionWithChecks(rval, context);
-		context = rp.second();
 		Expr[] ls = new Expr[lval.length];
 		for (int i = 0; i != ls.length; ++i) {
+			Expr rhs;
+			if(i == 0) {
+				// First time around, we should generate appropriate
+				// precondition checks. We also need to determine whether the
+				// selector is null or not.
+				Integer selector = ls.length == 1 ? null : i;
+				Pair<Expr, Context> rp = translateExpressionWithChecks(rval, selector, context);
+				context = rp.second();
+				rhs = rp.first();
+			} else {
+				// Second time around, don't need to regenerate the precondition
+				// checks. We also know that the selector should be non-null.
+				rhs = translateExpression(rval, i, context.getEnvironment());
+			}
+
 			Location<?> lhs = lval[i];
-			Expr rhs = rp.first();
 			generateTypeInvariantCheck(lhs.getType(),rhs,context);
-			context = translateSingleAssignment(lval[i], rp.first(), context);
+			context = translateSingleAssignment(lval[i], rhs, context);
 		}
 		return context;
 	}
@@ -555,8 +568,7 @@ public class VerificationConditionGenerator {
 		case Bytecode.OPCODE_arrayindex:
 			return translateArrayAssign((Location<Operator>) lval, rval, context);
 		case Bytecode.OPCODE_dereference:
-			// There's nothing useful we can do here.
-			return translateDereference(lval, rval, context);
+			return translateDereference((Location<Operator>) lval, rval, context);
 		case Bytecode.OPCODE_fieldload:
 			return translateRecordAssign((Location<FieldLoad>) lval, rval, context);
 		case Bytecode.OPCODE_varmove:
@@ -581,7 +593,7 @@ public class VerificationConditionGenerator {
 	 */
 	private Context translateRecordAssign(Location<FieldLoad> lval, Expr rval,Context context) {
 		// Translate src and index expressions
-		Pair<Expr, Context> p1 = translateExpressionWithChecks(lval.getOperand(0), context);
+		Pair<Expr, Context> p1 = translateExpressionWithChecks(lval.getOperand(0), null, context);
 		Expr source = p1.first();
 		WyalFile.Identifier field = new WyalFile.Identifier(lval.getBytecode().fieldName());
 		// Construct record update for "pass thru"
@@ -602,19 +614,19 @@ public class VerificationConditionGenerator {
 	 */
 	private Context translateArrayAssign(Location<Operator> lval, Expr rval, Context context) {
 		// Translate src and index expressions
-		Pair<Expr, Context> p1 = translateExpressionWithChecks(lval.getOperand(0), context);
-		Pair<Expr, Context> p2 = translateExpressionWithChecks(lval.getOperand(1), p1.second());
+		Pair<Expr, Context> p1 = translateExpressionWithChecks(lval.getOperand(0), null, context);
+		Pair<Expr, Context> p2 = translateExpressionWithChecks(lval.getOperand(1), null, p1.second());
 		Expr source = p1.first();
 		Expr index = p2.first();
 		// Emit verification conditions to check access in bounds
 		checkIndexOutOfBounds(lval, p2.second());
 		// Construct array update for "pass thru"
-		Expr.Operator update = new Expr.Operator(Opcode.EXPR_arrupdt, source, index, rval);
+		Expr.Operator update = new Expr.ArrayUpdate(source, index, rval);
 		return translateSingleAssignment(lval.getOperand(0),update,p2.second());
 	}
 
 	/**
-	 * Translate an assignment to a variable
+	 * Translate an indirect assignment through a reference.
 	 *
 	 * @param lval
 	 *            The array assignment expression
@@ -624,9 +636,9 @@ public class VerificationConditionGenerator {
 	 *            The enclosing context
 	 * @return
 	 */
-	private Context translateDereference(Location<?> lval, Expr rval, Context context) {
-		Expr e = translateAsUnknown(lval, context.getEnvironment());
-		return context;
+	private Context translateDereference(Location<Operator> lval, Expr rval, Context context) {
+		Expr e = translateDereference(lval,context.getEnvironment());
+		return context.assume(new Expr.Equal(e, rval));
 	}
 
 	/**
@@ -645,7 +657,7 @@ public class VerificationConditionGenerator {
 		context = context.havoc(decl.getIndex());
 		WyalFile.VariableDeclaration nVersionedVar = context.read(decl);
 		Expr.VariableAccess var = new Expr.VariableAccess(nVersionedVar);
-		return context.assume(new Expr.Operator(Opcode.EXPR_eq, var, rval));
+		return context.assume(new Expr.Equal(var, rval));
 	}
 
 	/**
@@ -686,7 +698,7 @@ public class VerificationConditionGenerator {
 	 * @param wyalFile
 	 */
 	private Context translateAssume(Location<Assume> stmt, Context context) {
-		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), context);
+		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), null, context);
 		Expr condition = p.first();
 		context = p.second();
 		return context.assume(condition);
@@ -748,7 +760,7 @@ public class VerificationConditionGenerator {
 		LoopScope arbitraryScope = new LoopScope();
 		Context beforeArbitraryBodyContext = context.newLoopScope(arbitraryScope).havoc(stmt.getOperandGroup(1));
 		beforeArbitraryBodyContext = assumeLoopInvariant(loopInvariant, beforeArbitraryBodyContext);
-		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), beforeArbitraryBodyContext);
+		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), null, beforeArbitraryBodyContext);
 		Expr trueCondition = p.first();
 		beforeArbitraryBodyContext = p.second().assume(trueCondition);
 		Context afterArbitraryBodyContext = translateStatementBlock(stmt.getBlock(0), beforeArbitraryBodyContext);
@@ -761,7 +773,7 @@ public class VerificationConditionGenerator {
 		// Rule 3. Assume loop invariant holds.
 		Context exitContext = context.havoc(stmt.getOperandGroup(1));
 		exitContext = assumeLoopInvariant(loopInvariant, exitContext);
-		Expr falseCondition = invertCondition(translateExpression(stmt.getOperand(0), exitContext.getEnvironment()),
+		Expr falseCondition = invertCondition(translateExpression(stmt.getOperand(0), null, exitContext.getEnvironment()),
 				stmt.getOperand(0));
 		exitContext = exitContext.assume(falseCondition);
 		//
@@ -802,7 +814,7 @@ public class VerificationConditionGenerator {
 	 */
 	private Context translateIf(Location<If> stmt, Context context) {
 		//
-		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), context);
+		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), null, context);
 		Expr trueCondition = p.first();
 		// FIXME: this is broken as includes assumptions propagated through
 		// logical &&'s
@@ -874,11 +886,9 @@ public class VerificationConditionGenerator {
 		SyntaxTree tree = stmt.getEnclosingTree();
 		WyilFile.FunctionOrMethod declaration = (WyilFile.FunctionOrMethod) tree.getEnclosingDeclaration();
 		Type[] returnTypes = declaration.type().returns();
-		Location<?>[] returns = stmt.getOperands();
 		//
 		for (int i = 0; i != exprs.length; ++i) {
 			Type returnType = returnTypes[i];
-			Type actualType = returns[i].getType();
 			// FIXME: at this point, we want to determine whether or not the
 			// check is actually required. To do this, we need to check whether
 			// the actualType is a true subtype of the returnType.
@@ -930,11 +940,10 @@ public class VerificationConditionGenerator {
 			//
 			String prefix = declaration.name() + "_ensures_";
 			// Finally, generate an appropriate verification condition to
-			// check
-			// each postcondition clause
+			// check each postcondition clause
 			for (int i = 0; i != postcondition.size(); ++i) {
 				WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + i));
-				Expr clause = new Expr.Invoke(null, name, arguments);
+				Expr clause = new Expr.Invoke(null, name, null, arguments);
 				context.emit(new VerificationCondition("postcondition not satisfied", context.assumptions, clause,
 						stmt.attributes()));
 			}
@@ -961,7 +970,7 @@ public class VerificationConditionGenerator {
 		Bytecode.Switch bytecode = stmt.getBytecode();
 		Bytecode.Case[] cases = bytecode.cases();
 		//
-		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), context);
+		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), null, context);
 		Expr value = p.first();
 		context = p.second();
 		//
@@ -976,9 +985,9 @@ public class VerificationConditionGenerator {
 			if (!caSe.isDefault()) {
 				WyalFile.Stmt e = null;
 				for (Constant constant : caSe.values()) {
-					Expr v = convert(constant, stmt);
-					e = or(e, new Expr.Operator(WyalFile.Opcode.EXPR_eq, value, v));
-					defaultValue = and(defaultValue, new Expr.Operator(WyalFile.Opcode.EXPR_neq, value, v));
+					Expr v = convert(constant, stmt, context.getEnvironment());
+					e = or(e, new Expr.Equal(value, v));
+					defaultValue = and(defaultValue, new Expr.NotEqual(value, v));
 				}
 				caseContext = context.assume(e);
 				descendants[i] = translateStatementBlock(stmt.getBlock(i), caseContext);
@@ -1018,7 +1027,7 @@ public class VerificationConditionGenerator {
 		LoopScope scope = new LoopScope();
 		Context beforeBodyContext = context.newLoopScope(scope).havoc(stmt.getOperandGroup(1));
 		beforeBodyContext = assumeLoopInvariant(loopInvariant, beforeBodyContext);
-		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), beforeBodyContext);
+		Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), null, beforeBodyContext);
 		Expr trueCondition = p.first();
 		beforeBodyContext = p.second().assume(trueCondition);
 		Context afterBodyContext = translateStatementBlock(stmt.getBlock(0), beforeBodyContext);
@@ -1029,8 +1038,8 @@ public class VerificationConditionGenerator {
 		// Rule 3. Assume loop invariant holds.
 		Context exitContext = context.havoc(stmt.getOperandGroup(1));
 		exitContext = assumeLoopInvariant(loopInvariant, exitContext);
-		Expr falseCondition = invertCondition(translateExpression(stmt.getOperand(0), exitContext.getEnvironment()),
-				stmt.getOperand(0));
+		Expr falseCondition = invertCondition(
+				translateExpression(stmt.getOperand(0), null, exitContext.getEnvironment()), stmt.getOperand(0));
 		exitContext = exitContext.assume(falseCondition);
 		//
 		// Finally, need to join any break contexts
@@ -1099,7 +1108,7 @@ public class VerificationConditionGenerator {
 		for (int i = 0; i != loopInvariant.length; ++i) {
 			Location<?> clause = loopInvariant[i];
 			WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + clause.getIndex()));
-			Expr macroCall = new Expr.Invoke(null, name, arguments);
+			Expr macroCall = new Expr.Invoke(null, name, null, arguments);
 			context.emit(new VerificationCondition(msg, context.assumptions,
 					macroCall, clause.attributes()));
 		}
@@ -1127,7 +1136,7 @@ public class VerificationConditionGenerator {
 		for (int i = 0; i != loopInvariant.length; ++i) {
 			Location<?> clause = loopInvariant[i];
 			WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + clause.getIndex()));
-			Expr macroCall = new Expr.Invoke(null, name, arguments);
+			Expr macroCall = new Expr.Invoke(null, name, null, arguments);
 			context = context.assume(macroCall);
 		}
 		//
@@ -1143,7 +1152,7 @@ public class VerificationConditionGenerator {
 	 */
 	private Context translateVariableDeclaration(Location<VariableDeclaration> stmt, Context context) {
 		if (stmt.numberOfOperands() > 0) {
-			Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), context);
+			Pair<Expr, Context> p = translateExpressionWithChecks(stmt.getOperand(0), null, context);
 			context = p.second();
 			generateTypeInvariantCheck(stmt.getType(),p.first(),context);
 			context = context.write(stmt.getIndex(), p.first());
@@ -1194,13 +1203,13 @@ public class VerificationConditionGenerator {
 	 *            --- Context in which translation is occurring
 	 * @return
 	 */
-	private Pair<Expr, Context> translateExpressionWithChecks(Location<?> expr, Context context) {
+	private Pair<Expr, Context> translateExpressionWithChecks(Location<?> expr, Integer selector, Context context) {
 		// Generate expression preconditions as verification conditions
 		checkExpressionPreconditions(expr, context);
 		// Gather up any postconditions from function invocations
 		context = assumeExpressionPostconditions(expr, context);
 		// Translate expression in the normal fashion
-		return new Pair<>(translateExpression(expr, context.getEnvironment()), context);
+		return new Pair<>(translateExpression(expr, selector, context.getEnvironment()), context);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1217,7 +1226,7 @@ public class VerificationConditionGenerator {
 				// to hold.
 				for (int i = 0; i != expr.numberOfOperands(); ++i) {
 					checkExpressionPreconditions(expr.getOperand(i), context);
-					Expr e = translateExpression(expr.getOperand(i), context.getEnvironment());
+					Expr e = translateExpression(expr.getOperand(i), null, context.getEnvironment());
 					context = context.assume(e);
 				}
 			} else if (opcode != Bytecode.OPCODE_varcopy && opcode != Bytecode.OPCODE_varmove) {
@@ -1277,7 +1286,7 @@ public class VerificationConditionGenerator {
 		for (int i = 0; i != numPreconditions; ++i) {
 			// FIXME: name needs proper path information
 			WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + i));
-			Expr clause = new Expr.Invoke(null, name, arguments);
+			Expr clause = new Expr.Invoke(null, name, null, arguments);
 			context.emit(new VerificationCondition("precondition not satisfied", context.assumptions, clause,
 					expr.attributes()));
 		}
@@ -1288,22 +1297,22 @@ public class VerificationConditionGenerator {
 	}
 
 	private void checkDivideByZero(Location<Operator> expr, Context context) {
-		Expr rhs = translateExpression(expr.getOperand(1), context.getEnvironment());
+		Expr rhs = translateExpression(expr.getOperand(1), null, context.getEnvironment());
 		Value zero = new Value.Int(BigInteger.ZERO);
 		Expr.Constant constant = new Expr.Constant(zero);
-		Expr neqZero = new Expr.Operator(WyalFile.Opcode.EXPR_neq, rhs, constant);
+		Expr neqZero = new Expr.NotEqual(rhs, constant);
 		//
 		context.emit(new VerificationCondition("division by zero", context.assumptions, neqZero, expr.attributes()));
 	}
 
 	private void checkIndexOutOfBounds(Location<Operator> expr, Context context) {
-		Expr src = translateExpression(expr.getOperand(0), context.getEnvironment());
-		Expr idx = translateExpression(expr.getOperand(1), context.getEnvironment());
+		Expr src = translateExpression(expr.getOperand(0), null, context.getEnvironment());
+		Expr idx = translateExpression(expr.getOperand(1), null, context.getEnvironment());
 		Expr zero = new Expr.Constant(new Value.Int(BigInteger.ZERO));
-		Expr length = new Expr.Operator(WyalFile.Opcode.EXPR_arrlen, src);
+		Expr length = new Expr.ArrayLength(src);
 		//
-		Expr negTest = new Expr.Operator(WyalFile.Opcode.EXPR_gteq, idx, zero);
-		Expr lenTest = new Expr.Operator(WyalFile.Opcode.EXPR_lt, idx, length);
+		Expr negTest = new Expr.GreaterThanOrEqual(idx, zero);
+		Expr lenTest = new Expr.LessThan(idx, length);
 		//
 		context.emit(new VerificationCondition("index out of bounds (negative)", context.assumptions, negTest,
 				expr.attributes()));
@@ -1312,10 +1321,10 @@ public class VerificationConditionGenerator {
 	}
 
 	private void checkArrayGeneratorLength(Location<Operator> expr, Context context) {
-		Expr rhs = translateExpression(expr.getOperand(1), context.getEnvironment());
+		Expr rhs = translateExpression(expr.getOperand(1), null, context.getEnvironment());
 		Value zero = new Value.Int(BigInteger.ZERO);
 		Expr.Constant constant = new Expr.Constant(zero);
-		Expr neqZero = new Expr.Operator(WyalFile.Opcode.EXPR_gteq, rhs, constant);
+		Expr neqZero = new Expr.GreaterThanOrEqual(rhs, constant);
 		//
 		context.emit(
 				new VerificationCondition("negative length possible", context.assumptions, neqZero, expr.attributes()));
@@ -1361,10 +1370,14 @@ public class VerificationConditionGenerator {
 				// called. Therefore, we need to generate a verification condition
 				// which will check that the precondition holds.
 				//
+				Type.FunctionOrMethod fmt = fm.type();
 				Expr[] parameters = translateExpressions(expr.getOperands(), context.getEnvironment());
 				Expr[] arguments = java.util.Arrays.copyOf(parameters, parameters.length + fm.type().returns().length);
-				// FIXME: following broken for multiple returns
-				arguments[arguments.length - 1] = translateExpression(expr, context.getEnvironment());
+				//
+				for (int i = 0; i != fmt.returns().length; ++i) {
+					Integer selector = fmt.returns().length > 1 ? i : null;
+					arguments[parameters.length + i] = translateInvoke(expr, selector, context.getEnvironment());
+				}
 				//
 				String prefix = bytecode.name().name() + "_ensures_";
 				// Finally, generate an appropriate verification condition to check
@@ -1372,7 +1385,7 @@ public class VerificationConditionGenerator {
 				for (int i = 0; i != numPostconditions; ++i) {
 					// FIXME: name needs proper path information
 					WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + i));
-					Expr clause = new Expr.Invoke(null, name, arguments);
+					Expr clause = new Expr.Invoke(null, name, null, arguments);
 					context = context.assume(clause);
 				}
 			}
@@ -1387,7 +1400,7 @@ public class VerificationConditionGenerator {
 	}
 
 	private WyalFile.Stmt translateAsStatement(Location<?> loc, LocalEnvironment environment) {
-		return translateExpression(loc, environment);
+		return translateExpression(loc, null, environment);
 	}
 
 	// =========================================================================
@@ -1395,11 +1408,18 @@ public class VerificationConditionGenerator {
 	// =========================================================================
 
 	private Expr[] translateExpressions(Location<?>[] loc, LocalEnvironment environment) {
-		Expr[] results = new Expr[loc.length];
-		for (int i = 0; i != results.length; ++i) {
-			results[i] = translateExpression(loc[i], environment);
+		ArrayList<Expr> results = new ArrayList<>();
+		for (int i = 0; i != loc.length; ++i) {
+			Type[] types = loc[i].getTypes();
+			if (types.length == 1) {
+				results.add(translateExpression(loc[i], null, environment));
+			} else {
+				for (int j = 0; j != types.length; ++j) {
+					results.add(translateExpression(loc[i], j, environment));
+				}
+			}
 		}
-		return results;
+		return results.toArray(new Expr[results.size()]);
 	}
 
 	/**
@@ -1410,7 +1430,7 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	private Expr translateExpression(Location<?> loc, LocalEnvironment environment) {
+	private Expr translateExpression(Location<?> loc, Integer selector, LocalEnvironment environment) {
 		WyilFile.Declaration decl = loc.getEnclosingTree().getEnclosingDeclaration();
 		Expr result;
 		try {
@@ -1428,7 +1448,7 @@ public class VerificationConditionGenerator {
 				result = translateIndirectInvoke((Location<IndirectInvoke>) loc, environment);
 				break;
 			case Bytecode.OPCODE_invoke:
-				result = translateInvoke((Location<Invoke>) loc, environment);
+				result = translateInvoke((Location<Invoke>) loc, selector, environment);
 				break;
 			case Bytecode.OPCODE_lambda:
 				result = translateLambda((Location<Lambda>) loc, environment);
@@ -1463,12 +1483,12 @@ public class VerificationConditionGenerator {
 		if (bytecode.constant() instanceof Constant.FunctionOrMethod) {
 			return translateAsUnknown(expr, environment);
 		}
-		return convert(bytecode.constant(), expr);
+		return convert(bytecode.constant(), expr, environment);
 	}
 
 	private Expr translateConvert(Location<Convert> expr, LocalEnvironment environment) {
 		// TODO: check whether need to do any more here
-		return translateExpression(expr.getOperand(0), environment);
+		return translateExpression(expr.getOperand(0), null, environment);
 	}
 
 	private Expr translateFieldLoad(Location<FieldLoad> expr, LocalEnvironment environment) {
@@ -1477,7 +1497,7 @@ public class VerificationConditionGenerator {
 			Location<?> srcOperand = expr.getOperand(0);
 			Type.EffectiveRecord er = typeSystem.expandAsEffectiveRecord(srcOperand.getType());
 			// Now, translate source expression
-			Expr src = translateExpression(srcOperand, environment);
+			Expr src = translateExpression(srcOperand, null, environment);
 			// Generate field name identifier
 			WyalFile.Identifier field = new WyalFile.Identifier(bytecode.fieldName());
 			// Done
@@ -1493,12 +1513,12 @@ public class VerificationConditionGenerator {
 		return translateAsUnknown(expr, environment);
 	}
 
-	private Expr translateInvoke(Location<Invoke> expr, LocalEnvironment environment) {
+	private Expr translateInvoke(Location<Invoke> expr, Integer selector, LocalEnvironment environment) {
 		Bytecode.Invoke bytecode = expr.getBytecode();
 		Expr[] operands = translateExpressions(expr.getOperands(), environment);
 		// FIXME: name needs proper path information
 		WyalFile.Name name = convert(bytecode.name());
-		return new Expr.Invoke(null, name, operands);
+		return new Expr.Invoke(null, name, selector, operands);
 	}
 
 	private Expr translateLambda(Location<Lambda> expr, LocalEnvironment environment) {
@@ -1513,8 +1533,7 @@ public class VerificationConditionGenerator {
 		case NOT:
 			return translateNotOperator(expr, environment);
 		case NEG:
-		case ARRAYLENGTH:
-			return translateUnaryOperator(unaryOperatorMap.get(kind), expr, environment);
+			return translateArithmeticNegation(expr, environment);
 		case ADD:
 		case SUB:
 		case MUL:
@@ -1539,13 +1558,16 @@ public class VerificationConditionGenerator {
 			return translateArrayGenerator(expr, environment);
 		case RECORDCONSTRUCTOR:
 			return translateRecordInitialiser(expr, environment);
+		case ARRAYLENGTH:
+			return translateArrayLength(expr, environment);
+		case DEREFERENCE:
+			return translateDereference(expr, environment);
 		case RIGHTSHIFT:
 		case LEFTSHIFT:
 		case BITWISEAND:
 		case BITWISEOR:
 		case BITWISEXOR:
 		case BITWISEINVERT:
-		case DEREFERENCE:
 		case NEW:
 			return translateAsUnknown(expr, environment);
 		default:
@@ -1555,23 +1577,53 @@ public class VerificationConditionGenerator {
 	}
 
 	private Expr translateNotOperator(Location<Operator> expr, LocalEnvironment environment) {
-		Expr e = translateExpression(expr.getOperand(0), environment);
+		Expr e = translateExpression(expr.getOperand(0), null, environment);
 		return invertCondition(e, expr.getOperand(0));
 	}
 
-	private Expr translateUnaryOperator(WyalFile.Opcode op, Location<Operator> expr, LocalEnvironment environment) {
-		Expr e = translateExpression(expr.getOperand(0), environment);
-		return new Expr.Operator(op, e);
+	private Expr translateArithmeticNegation(Location<Operator> expr, LocalEnvironment environment) {
+		Expr e = translateExpression(expr.getOperand(0), null, environment);
+		return new Expr.Negation(e);
 	}
 
 	private Expr translateBinaryOperator(WyalFile.Opcode op, Location<Operator> expr, LocalEnvironment environment) {
-		Expr lhs = translateExpression(expr.getOperand(0), environment);
-		Expr rhs = translateExpression(expr.getOperand(1), environment);
-		return new Expr.Operator(op, lhs, rhs);
+		Expr lhs = translateExpression(expr.getOperand(0), null, environment);
+		Expr rhs = translateExpression(expr.getOperand(1), null, environment);
+		switch(op) {
+		case EXPR_add:
+			return new Expr.Addition(lhs, rhs);
+		case EXPR_sub:
+			return new Expr.Subtraction(lhs, rhs);
+		case EXPR_mul:
+			return new Expr.Multiplication(lhs, rhs);
+		case EXPR_div:
+			return new Expr.Division(lhs, rhs);
+		case EXPR_rem:
+			return new Expr.Remainder(lhs, rhs);
+		case EXPR_eq:
+			return new Expr.Equal(lhs, rhs);
+		case EXPR_neq:
+			return new Expr.NotEqual(lhs, rhs);
+		case EXPR_lt:
+			return new Expr.LessThan(lhs, rhs);
+		case EXPR_lteq:
+			return new Expr.LessThanOrEqual(lhs, rhs);
+		case EXPR_gt:
+			return new Expr.GreaterThan(lhs, rhs);
+		case EXPR_gteq:
+			return new Expr.GreaterThanOrEqual(lhs, rhs);
+		case EXPR_and:
+			return new Expr.LogicalAnd(lhs, rhs);
+		case EXPR_or:
+			return new Expr.LogicalOr(lhs, rhs);
+		default:
+			throw new RuntimeException("Internal failure --- dead code reached");
+		}
+
 	}
 
 	private Expr translateIs(Location<Operator> expr, LocalEnvironment environment) {
-		Expr lhs = translateExpression(expr.getOperand(0), environment);
+		Expr lhs = translateExpression(expr.getOperand(0), null, environment);
 		Location<Const> rhs = (Location<Const>) expr.getOperand(1);
 		Bytecode.Const bytecode = rhs.getBytecode();
 		Constant.Type constant = (Constant.Type) bytecode.constant();
@@ -1580,21 +1632,31 @@ public class VerificationConditionGenerator {
 	}
 
 	private Expr translateArrayIndex(Location<Operator> expr, LocalEnvironment environment) {
-		Expr lhs = translateExpression(expr.getOperand(0), environment);
-		Expr rhs = translateExpression(expr.getOperand(1), environment);
-		return new Expr.Operator(WyalFile.Opcode.EXPR_arridx, lhs, rhs);
+		Expr lhs = translateExpression(expr.getOperand(0), null, environment);
+		Expr rhs = translateExpression(expr.getOperand(1), null, environment);
+		return new Expr.ArrayAccess(lhs, rhs);
 	}
 
 	private Expr translateArrayGenerator(Location<Operator> expr, LocalEnvironment environment) {
-		Expr element = translateExpression(expr.getOperand(0), environment);
-		Expr count = translateExpression(expr.getOperand(1), environment);
+		Expr element = translateExpression(expr.getOperand(0), null, environment);
+		Expr count = translateExpression(expr.getOperand(1), null, environment);
 		environment = environment.write(expr.getIndex());
-		return new Expr.Operator(WyalFile.Opcode.EXPR_arrgen, element, count);
+		return new Expr.ArrayGenerator(element, count);
 	}
 
 	private Expr translateArrayInitialiser(Location<Operator> expr, LocalEnvironment environment) {
 		Expr[] vals = translateExpressions(expr.getOperands(), environment);
-		return new Expr.Operator(WyalFile.Opcode.EXPR_arrinit, vals);
+		return new Expr.ArrayInitialiser(vals);
+	}
+
+	private Expr translateArrayLength(Location<Operator> expr, LocalEnvironment environment) {
+		Expr e = translateExpression(expr.getOperand(0), null, environment);
+		return new Expr.ArrayLength(e);
+	}
+
+	private Expr translateDereference(Location<Operator> expr, LocalEnvironment environment) {
+		Expr e = translateExpression(expr.getOperand(0), null, environment);
+		return new Expr.Dereference(e);
 	}
 
 	private Expr translateQuantifier(Location<Quantifier> expr, LocalEnvironment environment) {
@@ -1604,16 +1666,16 @@ public class VerificationConditionGenerator {
 		// Apply quantifier ranges
 		Expr ranges = generateQuantifierRanges(expr, environment);
 		// Generate quantifier body
-		Expr body = translateExpression(expr.getOperand(0), environment);
+		Expr body = translateExpression(expr.getOperand(0), null, environment);
 		// Generate quantifier expression
 		switch (bytecode.kind()) {
 		case ALL:
-			body = new Expr.Operator(Opcode.EXPR_implies, ranges, body);
-			return new Expr.Quantifier(Opcode.EXPR_forall,pattern, body);
+			body = new Expr.LogicalImplication(ranges, body);
+			return new Expr.UniversalQuantifier(pattern, body);
 		case SOME:
 		default:
-			body = new Expr.Operator(Opcode.EXPR_and, ranges, body);
-			return new Expr.Quantifier(Opcode.EXPR_exists,pattern, body);
+			body = new Expr.LogicalAnd(ranges, body);
+			return new Expr.ExistentialQuantifier(pattern, body);
 		}
 	}
 
@@ -1688,12 +1750,10 @@ public class VerificationConditionGenerator {
 					group[0];
 			WyalFile.VariableDeclaration varDecl = environment.read(var.getIndex());
 			Expr.VariableAccess varExpr = new Expr.VariableAccess(varDecl);
-			Expr startExpr = translateExpression(group[1], environment);
-			Expr endExpr = translateExpression(group[2], environment);
-			Expr lhs = new Expr.Operator(WyalFile.Opcode.EXPR_lteq, startExpr,
-					varExpr);
-			Expr rhs = new Expr.Operator(WyalFile.Opcode.EXPR_lt, varExpr,
-					endExpr);
+			Expr startExpr = translateExpression(group[1], null, environment);
+			Expr endExpr = translateExpression(group[2], null, environment);
+			Expr lhs = new Expr.LessThanOrEqual(startExpr, varExpr);
+			Expr rhs = new Expr.LessThan(varExpr, endExpr);
 			ranges = and(ranges, and(lhs, rhs));
 		}
 		return ranges;
@@ -1761,7 +1821,7 @@ public class VerificationConditionGenerator {
 		} else if (rhs == null) {
 			return rhs;
 		} else {
-			return new Expr.Operator(Opcode.EXPR_and,lhs, rhs);
+			return new Expr.LogicalAnd(lhs, rhs);
 		}
 	}
 
@@ -1896,7 +1956,7 @@ public class VerificationConditionGenerator {
 				// indicates a version change of the given variable.
 				Expr.VariableAccess oldVar = new Expr.VariableAccess(oldVarVersionedName);
 				Expr.VariableAccess newVar = new Expr.VariableAccess(newVarVersionedName);
-				assumptions = assumptions.add(new Expr.Operator(Opcode.EXPR_eq, newVar, oldVar));
+				assumptions = assumptions.add(new Expr.Equal(newVar, oldVar));
 			}
 		}
 		return assumptions;
@@ -2064,7 +2124,7 @@ public class VerificationConditionGenerator {
 			WyalFile.VariableDeclaration[] parameters = freeVariables
 					.toArray(new WyalFile.VariableDeclaration[freeVariables.size()]);
 			WyalFile.Stmt.Block qfBody = new WyalFile.Stmt.Block(verificationCondition);
-			verificationCondition = new WyalFile.Stmt.Quantifier(Opcode.STMT_forall, parameters, qfBody);
+			verificationCondition = new WyalFile.Stmt.UniversalQuantifier(parameters, qfBody);
 		}
 		// Done
 		return new WyalFile.Stmt.Block(verificationCondition);
@@ -2155,8 +2215,7 @@ public class VerificationConditionGenerator {
 				// equality.
 				Expr.VariableAccess lhs = new Expr.VariableAccess(var);
 				Expr.VariableAccess rhs = new Expr.VariableAccess(parent);
-				Expr aliasEquality = new Expr.Operator(WyalFile.Opcode.EXPR_eq, lhs,
-						rhs);
+				Expr aliasEquality = new Expr.Equal(lhs, rhs);
 				//
 				aliases = and(aliases, aliasEquality);
 			}
@@ -2291,7 +2350,7 @@ public class VerificationConditionGenerator {
 	 *            associate any errors generated with a source line.
 	 * @return
 	 */
-	private Expr convert(Constant c, SyntaxTree.Location<?> context) {
+	private Expr convert(Constant c, SyntaxTree.Location<?> context, LocalEnvironment environment) {
 		Value v;
 		if (c instanceof Constant.Null) {
 			v = new WyalFile.Value.Null();
@@ -2309,9 +2368,9 @@ public class VerificationConditionGenerator {
 			List<Constant> cb_values = cb.values();
 			Expr[] items = new Expr[cb_values.size()];
 			for (int i = 0; i != cb_values.size(); ++i) {
-				items[i] = convert(cb_values.get(i), context);
+				items[i] = convert(cb_values.get(i), context, environment);
 			}
-			return new Expr.Operator(Opcode.EXPR_arrinit, items);
+			return new Expr.ArrayInitialiser(items);
 		} else if (c instanceof Constant.Record) {
 			Constant.Record cr = (Constant.Record) c;
 			HashMap<String, Constant> fields = cr.values();
@@ -2319,13 +2378,13 @@ public class VerificationConditionGenerator {
 			//
 			int i = 0;
 			for (Map.Entry<String, Constant> e : fields.entrySet()) {
-				WyalFile.Expr val = convert(e.getValue(), context);
+				WyalFile.Expr val = convert(e.getValue(), context, environment);
 				pairs[i++] = new WyalFile.Pair<>(new WyalFile.Identifier(e.getKey()), val);
 			}
 			return new Expr.RecordInitialiser(pairs);
 		} else {
-			WyilFile.Declaration decl = context.getEnclosingTree().getEnclosingDeclaration();
-			throw new InternalFailure("unknown constant encountered (" + c + ")", decl.parent().getEntry(), context);
+			// Constant.Lambda --- basically just treat as unknown variable
+			return translateAsUnknown(context,environment);
 		}
 		//
 		return new Expr.Constant(v);
@@ -2377,8 +2436,9 @@ public class VerificationConditionGenerator {
 			}
 			result = new WyalFile.Type.Record(rt.isOpen(),elements);
 		} else if (type instanceof Type.Reference) {
-			// FIXME: how to translate this??
-			result = new WyalFile.Type.Any();
+			Type.Reference lt = (Type.Reference) type;
+			WyalFile.Type element = convert(lt.element(), context);
+			result = new WyalFile.Type.Reference(element);
 		} else if (type instanceof Type.Union) {
 			Type.Union tu = (Type.Union) type;
 			Type[] tu_elements = tu.bounds();
@@ -2488,46 +2548,36 @@ public class VerificationConditionGenerator {
 	public Expr invertCondition(Expr expr, Location<?> elem) {
 		if (expr instanceof Expr.Operator) {
 			Expr.Operator binTest = (Expr.Operator) expr;
-			WyalFile.Opcode op = null;
 			switch (binTest.getOpcode()) {
 			case EXPR_eq:
-				op = Opcode.EXPR_neq;
-				break;
+				return new Expr.NotEqual(binTest.getOperands());
 			case EXPR_neq:
-				op = Opcode.EXPR_eq;
-				break;
+				return new Expr.Equal(binTest.getOperands());
 			case EXPR_gteq:
-				op = Opcode.EXPR_lt;
-				break;
+				return new Expr.LessThan(binTest.getOperands());
 			case EXPR_gt:
-				op = Opcode.EXPR_lteq;
-				break;
+				return new Expr.LessThanOrEqual(binTest.getOperands());
 			case EXPR_lteq:
-				op = Opcode.EXPR_gt;
-				break;
+				return new Expr.GreaterThan(binTest.getOperands());
 			case EXPR_lt:
-				op = Opcode.EXPR_gteq;
-				break;
+				return new Expr.GreaterThanOrEqual(binTest.getOperands());
 			case EXPR_and: {
 				Expr[] operands = invertConditions(binTest.getOperands(), elem);
-				return new Expr.Operator(Opcode.EXPR_or, operands);
+				return new Expr.LogicalOr(operands);
 			}
 			case EXPR_or: {
 				Expr[] operands = invertConditions(binTest.getOperands(), elem);
-				return new Expr.Operator(Opcode.EXPR_and, operands);
+				return new Expr.LogicalAnd(operands);
 			}
-			}
-			if (op != null) {
-				return new Expr.Operator(op, binTest.getOperands());
 			}
 		} else if (expr instanceof Expr.Is) {
 			Expr.Is ei = (Expr.Is) expr;
-			WyalFile.Type type = ei.getTypeTest();
-			return new Expr.Is(ei.getExpr(), new WyalFile.Type.Negation(type));
+			WyalFile.Type type = ei.getTestType();
+			return new Expr.Is(ei.getTestExpr(), new WyalFile.Type.Negation(type));
 		}
 		// Otherwise, compare against false
 		// FIXME: this is just wierd and needs to be fixed.
-		return new Expr.Operator(Opcode.EXPR_not, expr);
+		return new Expr.LogicalNot(expr);
 	}
 
 	public Expr[] invertConditions(Expr[] expr, Location<?> elem) {
@@ -3051,10 +3101,11 @@ public class VerificationConditionGenerator {
 			WyalFile.VariableDeclaration nVersionedVar = nEnvironment.read(lhs);
 			// Update assumption sets to reflect the "assigment"
 			Expr.VariableAccess var = new Expr.VariableAccess(nVersionedVar);
-			Expr condition = new Expr.Operator(Opcode.EXPR_eq, var, rhs);
+			Expr condition = new Expr.Equal(var, rhs);
 			AssumptionSet nAssumptions = assumptions.add(condition);
 			//
-			return new Context(wyalFile, nAssumptions, nEnvironment, initialEnvironment, enclosingLoop, verificationConditions);
+			return new Context(wyalFile, nAssumptions, nEnvironment, initialEnvironment, enclosingLoop,
+					verificationConditions);
 		}
 
 		public WyalFile.VariableDeclaration read(Location<?> expr) {

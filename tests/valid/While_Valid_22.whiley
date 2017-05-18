@@ -1,4 +1,6 @@
-function max(int a, int b) -> int:
+function max(int a, int b) -> (int r)
+ensures a <= r && b <= r
+ensures a == r || b == r:
     if a >= b:
         return a
     else:
