@@ -1560,14 +1560,14 @@ public class VerificationConditionGenerator {
 			return translateRecordInitialiser(expr, environment);
 		case ARRAYLENGTH:
 			return translateArrayLength(expr, environment);
+		case DEREFERENCE:
+			return translateDereference(expr, environment);
 		case RIGHTSHIFT:
 		case LEFTSHIFT:
 		case BITWISEAND:
 		case BITWISEOR:
 		case BITWISEXOR:
 		case BITWISEINVERT:
-		case DEREFERENCE:
-			return translateDereference(expr, environment);
 		case NEW:
 			return translateAsUnknown(expr, environment);
 		default:

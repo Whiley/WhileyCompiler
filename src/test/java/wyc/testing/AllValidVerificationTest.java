@@ -66,11 +66,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("Complex_Valid_4", "#712");
 		IGNORED.put("ListAccess_Valid_6", "712");
 		//
-//		IGNORED.put("RecursiveType_Valid_17", "#713");
-//		IGNORED.put("RecursiveType_Valid_18", "#713");
-//		IGNORED.put("Return_Valid_1", "#713");
-//		IGNORED.put("UnionType_Valid_2", "#713");
-		//
 		IGNORED.put("Record_Valid_3", "#714");
 		//
 		IGNORED.put("Complex_Valid_8", "#730");
@@ -78,6 +73,17 @@ public class AllValidVerificationTest {
 		//
 		IGNORED.put("ConstrainedList_Valid_22", "#731");
 		IGNORED.put("Assert_Valid_1", "#731");
+		//
+		IGNORED.put("Process_Valid_1", "#743");
+		IGNORED.put("Process_Valid_9", "#743");
+		IGNORED.put("Process_Valid_10", "#743");
+		IGNORED.put("Process_Valid_11", "#743");
+		IGNORED.put("Reference_Valid_2", "#743");
+		IGNORED.put("Reference_Valid_3", "#743");
+		IGNORED.put("Reference_Valid_6", "#743");
+		//
+		IGNORED.put("FunctionRef_Valid_11", "#745");
+		IGNORED.put("FunctionRef_Valid_4", "#745");
 		//
 		// ===============================================================
 		// Whiley Theorem Prover faults
@@ -128,15 +134,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("IntDiv_Valid_3", "WyTP#36");
 		IGNORED.put("Lambda_Valid_3", "WyTP#36");
 		IGNORED.put("Lambda_Valid_4", "WyTP#36");
-		// Issue 37
-		IGNORED.put("Process_Valid_1", "#743");
-		IGNORED.put("Process_Valid_9", "#743");
-		IGNORED.put("Process_Valid_10", "#743");
-		IGNORED.put("Reference_Valid_2", "#743");
-		IGNORED.put("Reference_Valid_3", "#743");
-		IGNORED.put("Reference_Valid_6", "#743");
-		IGNORED.put("FunctionRef_Valid_11", "#743");
-		IGNORED.put("FunctionRef_Valid_4", "#743");
 		//
 		IGNORED.put("Property_Valid_4", "WyTP#41");
 		IGNORED.put("Subtype_Valid_5", "WyTP#41");
@@ -168,7 +165,7 @@ public class AllValidVerificationTest {
 		//
 		IGNORED.put("While_Valid_37", "WyTP#89");
 		//
-		IGNORED.put("While_Valid_54", "WyTP#94");
+		IGNORED.put("Lifetime_Valid_8", "WyTP#102");
 	}
 
 	/**
