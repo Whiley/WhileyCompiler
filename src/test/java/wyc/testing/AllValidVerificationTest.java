@@ -129,14 +129,14 @@ public class AllValidVerificationTest {
 		IGNORED.put("Lambda_Valid_3", "WyTP#36");
 		IGNORED.put("Lambda_Valid_4", "WyTP#36");
 		// Issue 37
-		IGNORED.put("Process_Valid_1", "WyTP#37");
-		IGNORED.put("Process_Valid_9", "WyTP#37");
-		IGNORED.put("Process_Valid_10", "WyTP#37");
-		IGNORED.put("Reference_Valid_2", "WyTP#37");
-		IGNORED.put("Reference_Valid_3", "WyTP#37");
-		IGNORED.put("Reference_Valid_6", "WyTP#37");
-		IGNORED.put("FunctionRef_Valid_11", "WyTP#37");
-		IGNORED.put("FunctionRef_Valid_4", "WyTP#37");
+		IGNORED.put("Process_Valid_1", "#743");
+		IGNORED.put("Process_Valid_9", "#743");
+		IGNORED.put("Process_Valid_10", "#743");
+		IGNORED.put("Reference_Valid_2", "#743");
+		IGNORED.put("Reference_Valid_3", "#743");
+		IGNORED.put("Reference_Valid_6", "#743");
+		IGNORED.put("FunctionRef_Valid_11", "#743");
+		IGNORED.put("FunctionRef_Valid_4", "#743");
 		//
 		IGNORED.put("Property_Valid_4", "WyTP#41");
 		IGNORED.put("Subtype_Valid_5", "WyTP#41");

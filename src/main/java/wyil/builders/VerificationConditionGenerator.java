@@ -568,8 +568,7 @@ public class VerificationConditionGenerator {
 		case Bytecode.OPCODE_arrayindex:
 			return translateArrayAssign((Location<Operator>) lval, rval, context);
 		case Bytecode.OPCODE_dereference:
-			// There's nothing useful we can do here.
-			return translateDereference(lval, rval, context);
+			return translateDereference((Location<Operator>) lval, rval, context);
 		case Bytecode.OPCODE_fieldload:
 			return translateRecordAssign((Location<FieldLoad>) lval, rval, context);
 		case Bytecode.OPCODE_varmove:
@@ -627,7 +626,7 @@ public class VerificationConditionGenerator {
 	}
 
 	/**
-	 * Translate an assignment to a variable
+	 * Translate an indirect assignment through a reference.
 	 *
 	 * @param lval
 	 *            The array assignment expression
@@ -637,9 +636,9 @@ public class VerificationConditionGenerator {
 	 *            The enclosing context
 	 * @return
 	 */
-	private Context translateDereference(Location<?> lval, Expr rval, Context context) {
-		Expr e = translateAsUnknown(lval, context.getEnvironment());
-		return context;
+	private Context translateDereference(Location<Operator> lval, Expr rval, Context context) {
+		Expr e = translateDereference(lval,context.getEnvironment());
+		return context.assume(new Expr.Equal(e, rval));
 	}
 
 	/**
@@ -1568,6 +1567,7 @@ public class VerificationConditionGenerator {
 		case BITWISEXOR:
 		case BITWISEINVERT:
 		case DEREFERENCE:
+			return translateDereference(expr, environment);
 		case NEW:
 			return translateAsUnknown(expr, environment);
 		default:
@@ -1652,6 +1652,11 @@ public class VerificationConditionGenerator {
 	private Expr translateArrayLength(Location<Operator> expr, LocalEnvironment environment) {
 		Expr e = translateExpression(expr.getOperand(0), null, environment);
 		return new Expr.ArrayLength(e);
+	}
+
+	private Expr translateDereference(Location<Operator> expr, LocalEnvironment environment) {
+		Expr e = translateExpression(expr.getOperand(0), null, environment);
+		return new Expr.Dereference(e);
 	}
 
 	private Expr translateQuantifier(Location<Quantifier> expr, LocalEnvironment environment) {
@@ -2431,8 +2436,9 @@ public class VerificationConditionGenerator {
 			}
 			result = new WyalFile.Type.Record(rt.isOpen(),elements);
 		} else if (type instanceof Type.Reference) {
-			// FIXME: how to translate this??
-			result = new WyalFile.Type.Any();
+			Type.Reference lt = (Type.Reference) type;
+			WyalFile.Type element = convert(lt.element(), context);
+			result = new WyalFile.Type.Reference(element);
 		} else if (type instanceof Type.Union) {
 			Type.Union tu = (Type.Union) type;
 			Type[] tu_elements = tu.bounds();

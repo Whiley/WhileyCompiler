@@ -3210,7 +3210,7 @@ public class WhileyFileParser {
 	private Expr parseDereferenceExpression(WhileyFile wf, EnclosingScope scope, boolean terminated) {
 		int start = index;
 		match(Star);
-		Expr expression = parseExpression(wf, scope, terminated);
+		Expr expression = parseAccessExpression(wf, scope, terminated);
 		return new Expr.Dereference(expression, sourceAttr(start, index - 1));
 	}
 
