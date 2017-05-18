@@ -21,7 +21,7 @@ constant FUNCTIONS is [ &sum ]
 
 public export method test():
     int i = 0
-    while i < |FUNCTIONS|:
+    while i < |FUNCTIONS| where i >= 0:
         //
         assume apply(FUNCTIONS[i],LIST_1) == 0
         //

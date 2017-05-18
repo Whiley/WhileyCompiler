@@ -82,8 +82,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("Reference_Valid_3", "#743");
 		IGNORED.put("Reference_Valid_6", "#743");
 		//
-		IGNORED.put("FunctionRef_Valid_11", "#745");
-		IGNORED.put("FunctionRef_Valid_4", "#745");
 		//
 		// ===============================================================
 		// Whiley Theorem Prover faults
