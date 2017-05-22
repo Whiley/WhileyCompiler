@@ -82,11 +82,9 @@ public class AllValidVerificationTest {
 		IGNORED.put("Reference_Valid_3", "#743");
 		IGNORED.put("Reference_Valid_6", "#743");
 		//
-		//
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================
-		IGNORED.put("Byte_Valid_1", "too long for Travis");
 		IGNORED.put("Byte_Valid_2", "too long for Travis");
 		IGNORED.put("Byte_Valid_3", "too long for Travis");
 		IGNORED.put("Byte_Valid_4", "too long for Travis");
@@ -94,6 +92,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("Complex_Valid_7", "too long for Travis");
 		IGNORED.put("ConstrainedList_Valid_3", "too long for Travis");
 		IGNORED.put("ConstrainedList_Valid_6", "too long for Travis");
+		IGNORED.put("ConstrainedList_Valid_8", "too long for Travis");
 		IGNORED.put("ConstrainedList_Valid_20", "too long for Travis");
 		IGNORED.put("ConstrainedList_Valid_23", "too long for Travis");
 		IGNORED.put("ListAssign_Valid_5", "too long for Travis");
@@ -101,7 +100,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_30", "too long for Travis");
 		IGNORED.put("While_Valid_31", "too long for Travis");
 		IGNORED.put("While_Valid_38", "too long for Travis");
-		IGNORED.put("While_Valid_39", "too long for Travis");
+//		IGNORED.put("While_Valid_39", "too long for Travis");
 		IGNORED.put("While_Valid_40", "too long for Travis");
 		//
 		// timeouts
@@ -109,12 +108,12 @@ public class AllValidVerificationTest {
 		IGNORED.put("Complex_Valid_2", "timeout");
 		IGNORED.put("ConstrainedRecord_Valid_9", "timeout");
 		IGNORED.put("Function_Valid_18", "timeout");
+		IGNORED.put("RecursiveType_Valid_2", "timeout");
+		IGNORED.put("RecursiveType_Valid_29", "timeout");
 		IGNORED.put("RecursiveType_Valid_4", "timeout");
 		IGNORED.put("While_Valid_2", "timeout");
 		IGNORED.put("While_Valid_22", "timeout");
 		IGNORED.put("While_Valid_26", "timeout");
-		IGNORED.put("RecursiveType_Valid_29", "timeout");
-		IGNORED.put("RecursiveType_Valid_2", "timeout");
 		IGNORED.put("TypeEquals_Valid_25", "timeout");
 		//
 		// Issue 2
@@ -124,8 +123,8 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_27", "WyTP#12");
 		IGNORED.put("While_Valid_32", "WyTP#12");
 		// Issue 29
+		IGNORED.put("ConstrainedList_Valid_14", "WyTP#29");
 		IGNORED.put("ConstrainedList_Valid_18", "WyTP#29");
-		IGNORED.put("ConstrainedList_Valid_8", "WyTP#29");
 		// Issue 36
 		IGNORED.put("Cast_Valid_5", "WyTP#36");
 		IGNORED.put("IntOp_Valid_1", "WyTP#36");
@@ -146,14 +145,10 @@ public class AllValidVerificationTest {
 		//
 		IGNORED.put("Complex_Valid_1", "WyTP#78");
 		//
-		IGNORED.put("ConstrainedList_Valid_14", "WyTP#79");
-		//
 		IGNORED.put("OpenRecord_Valid_4", "WyTP#80");
 		//
 		IGNORED.put("While_Valid_15", "WyTP#82");
 		IGNORED.put("While_Valid_20", "WyTP#82");
-		//
-		IGNORED.put("RecursiveType_Valid_11", "WyTP#84");
 		//
 		IGNORED.put("TypeEquals_Valid_54", "WyTP#85");
 		//
@@ -164,6 +159,8 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_37", "WyTP#89");
 		//
 		IGNORED.put("Lifetime_Valid_8", "WyTP#102");
+		//
+		IGNORED.put("RecursiveType_Valid_11", "WyTP#103");
 	}
 
 	/**
