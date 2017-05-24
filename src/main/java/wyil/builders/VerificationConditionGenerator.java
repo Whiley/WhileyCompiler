@@ -2345,9 +2345,6 @@ public class VerificationConditionGenerator {
 		}
 		WyalFile.Identifier id = new WyalFile.Identifier(name);
 		components[module.size()] = id;
-		if(context.attributes().size() == 0) {
-			throw new IllegalArgumentException("invalid attributes");
-		}
 		WyalFile.Name n = new WyalFile.Name(components);
 		n.attributes().addAll(context.attributes());
 		return n;
