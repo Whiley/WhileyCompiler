@@ -180,9 +180,9 @@ public class VerificationConditionGenerator {
 		SyntaxTree tree = declaration.getTree();
 		List<Location<Bytecode.Expr>> invariants = declaration.getInvariant();
 		WyalFile.Stmt.Block[] invariant = new WyalFile.Stmt.Block[invariants.size()];
-		WyalFile.Type type = convert(declaration.type(), declaration);
+		WyalFile.Type type = convert(declaration.type(), declaration, declaration);
 		WyalFile.VariableDeclaration var;
-		if(invariants.size() > 0) {
+		if (invariants.size() > 0) {
 			Location<VariableDeclaration> v = (Location<VariableDeclaration>) tree.getLocation(0);
 			// First, translate the invariant (if applicable)
 			GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
@@ -192,7 +192,7 @@ public class VerificationConditionGenerator {
 				invariant[i] = translateAsBlock(invariants.get(i), localEnvironment);
 			}
 		} else {
-			var = new WyalFile.VariableDeclaration(type,new WyalFile.Identifier("this"));
+			var = new WyalFile.VariableDeclaration(type, new WyalFile.Identifier("this"));
 		}
 		// Done
 		WyalFile.Identifier name = new WyalFile.Identifier(declaration.name());
@@ -216,8 +216,10 @@ public class VerificationConditionGenerator {
 		}
 		//
 		WyalFile.Stmt.Block block = new WyalFile.Stmt.Block(stmts);
-		WyalFile.Declaration d = new WyalFile.Declaration.Named.Macro(new WyalFile.Identifier(declaration.name()), type, block);
-		wyalFile.allocate(d);
+		WyalFile.Identifier name = new WyalFile.Identifier(declaration.name());
+		WyalFile.Declaration pd = new WyalFile.Declaration.Named.Macro(name, type, block);
+		pd.attributes().addAll(declaration.attributes());
+		wyalFile.allocate(pd);
 	}
 
 	/**
@@ -301,8 +303,10 @@ public class VerificationConditionGenerator {
 			clause = captureFreeVariables(declaration, globalEnvironment,
 					clause);
 			//
-			WyalFile.Declaration d = new WyalFile.Declaration.Named.Macro(new WyalFile.Identifier(name), type, clause);
-			wyalFile.allocate(d);
+			WyalFile.Identifier ident = new WyalFile.Identifier(name);
+			WyalFile.Declaration md = new WyalFile.Declaration.Named.Macro(ident, type, clause);
+			md.attributes().addAll(invariants.get(i).attributes());
+			wyalFile.allocate(md);
 		}
 	}
 
@@ -335,8 +339,10 @@ public class VerificationConditionGenerator {
 			clause = captureFreeVariables(declaration, globalEnvironment,
 					clause);
 			//
-			WyalFile.Declaration d = new WyalFile.Declaration.Named.Macro(new WyalFile.Identifier(name), type, clause);
-			wyalFile.allocate(d);
+			WyalFile.Identifier ident = new WyalFile.Identifier(name);
+			WyalFile.Declaration md = new WyalFile.Declaration.Named.Macro(ident, type, clause);
+			md.attributes().addAll(invariants.get(i).attributes());
+			wyalFile.allocate(md);
 		}
 	}
 
@@ -897,7 +903,7 @@ public class VerificationConditionGenerator {
 	}
 
 	private void generateTypeInvariantCheck(Type lhs, Expr rhs, Context context) {
-		WyalFile.Type typeTest = convert(lhs, context.getEnvironment().getParent().enclosingDeclaration);
+		WyalFile.Type typeTest = convert(lhs, rhs, context.getEnvironment().getParent().enclosingDeclaration);
 		Expr clause = new Expr.Is(rhs, typeTest);
 		context.emit(new VerificationCondition("type invariant not satisfied", context.assumptions, clause,
 				rhs.attributes()));
@@ -1285,7 +1291,7 @@ public class VerificationConditionGenerator {
 		// each precondition clause
 		for (int i = 0; i != numPreconditions; ++i) {
 			// FIXME: name needs proper path information
-			WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + i));
+			WyalFile.Name name = convert(bytecode.name().module(),prefix + i,expr);
 			Expr clause = new Expr.Invoke(null, name, null, arguments);
 			context.emit(new VerificationCondition("precondition not satisfied", context.assumptions, clause,
 					expr.attributes()));
@@ -1384,7 +1390,7 @@ public class VerificationConditionGenerator {
 				// each precondition clause
 				for (int i = 0; i != numPostconditions; ++i) {
 					// FIXME: name needs proper path information
-					WyalFile.Name name = new WyalFile.Name(new WyalFile.Identifier(prefix + i));
+					WyalFile.Name name = convert(bytecode.name().module(),prefix + i,expr);
 					Expr clause = new Expr.Invoke(null, name, null, arguments);
 					context = context.assume(clause);
 				}
@@ -1517,7 +1523,7 @@ public class VerificationConditionGenerator {
 		Bytecode.Invoke bytecode = expr.getBytecode();
 		Expr[] operands = translateExpressions(expr.getOperands(), environment);
 		// FIXME: name needs proper path information
-		WyalFile.Name name = convert(bytecode.name());
+		WyalFile.Name name = convert(bytecode.name(),expr);
 		return new Expr.Invoke(null, name, selector, operands);
 	}
 
@@ -1627,7 +1633,7 @@ public class VerificationConditionGenerator {
 		Location<Const> rhs = (Location<Const>) expr.getOperand(1);
 		Bytecode.Const bytecode = rhs.getBytecode();
 		Constant.Type constant = (Constant.Type) bytecode.constant();
-		WyalFile.Type typeTest = convert(constant.value(), environment.getParent().enclosingDeclaration);
+		WyalFile.Type typeTest = convert(constant.value(), rhs, environment.getParent().enclosingDeclaration);
 		return new Expr.Is(lhs, typeTest);
 	}
 
@@ -2048,7 +2054,7 @@ public class VerificationConditionGenerator {
 		int loc = 0;
 		for (int i = 0; i != params.length; ++i, ++loc) {
 			Location<VariableDeclaration> var = (Location<VariableDeclaration>) tree.getLocation(loc);
-			WyalFile.Type parameterType = convert(params[i], declaration);
+			WyalFile.Type parameterType = convert(params[i], var, declaration);
 			WyalFile.Identifier parameterName = new WyalFile.Identifier(var.getBytecode().getName());
 			parameters[i] = new WyalFile.VariableDeclaration(parameterType, parameterName);
 		}
@@ -2056,7 +2062,7 @@ public class VerificationConditionGenerator {
 		// second, set initial environment
 		for (int i = 0; i != returns.length; ++i, ++loc) {
 			Location<VariableDeclaration> var = (Location<VariableDeclaration>) tree.getLocation(loc);
-			WyalFile.Type returnType = convert(returns[i], declaration);
+			WyalFile.Type returnType = convert(returns[i], var, declaration);
 			WyalFile.Identifier returnName = new WyalFile.Identifier(var.getBytecode().getName());
 			wyalReturns[i] = new WyalFile.VariableDeclaration(returnType, returnName);
 		}
@@ -2327,14 +2333,24 @@ public class VerificationConditionGenerator {
 	 * @param id
 	 * @return
 	 */
-	private static WyalFile.Name convert(NameID id) {
-		Path.ID prefix = id.module();
-		WyalFile.Identifier[] components = new WyalFile.Identifier[prefix.size() + 1];
-		for (int i = 0; i != prefix.size(); ++i) {
-			components[i] = new WyalFile.Identifier(prefix.get(i));
+	private static WyalFile.Name convert(NameID id, SyntacticElement context) {
+		return convert(id.module(),id.name(),context);
+	}
+
+	private static WyalFile.Name convert(Path.ID module, String name, SyntacticElement context) {
+		WyalFile.Identifier[] components = new WyalFile.Identifier[module.size()+1];
+		for(int i=0;i!=module.size();++i) {
+			WyalFile.Identifier id = new WyalFile.Identifier(module.get(i));
+			components[i] = id;
 		}
-		components[prefix.size()] = new WyalFile.Identifier(id.name());
-		return new WyalFile.Name(components);
+		WyalFile.Identifier id = new WyalFile.Identifier(name);
+		components[module.size()] = id;
+		if(context.attributes().size() == 0) {
+			throw new IllegalArgumentException("invalid attributes");
+		}
+		WyalFile.Name n = new WyalFile.Name(components);
+		n.attributes().addAll(context.attributes());
+		return n;
 	}
 
 	/**
@@ -2403,7 +2419,7 @@ public class VerificationConditionGenerator {
 	 *            associate any errors generated with a source line.
 	 * @return
 	 */
-	private static WyalFile.Type convert(Type type, WyilFile.Block context) {
+	private static WyalFile.Type convert(Type type, SyntacticElement element, WyilFile.Block context) {
 		// FIXME: this is fundamentally broken in the case of recursive types.
 		// See Issue #298.
 		WyalFile.Type result;
@@ -2423,28 +2439,28 @@ public class VerificationConditionGenerator {
 			result = new WyalFile.Type.Int();
 		} else if (type instanceof Type.Array) {
 			Type.Array lt = (Type.Array) type;
-			WyalFile.Type element = convert(lt.element(), context);
-			result = new WyalFile.Type.Array(element);
+			WyalFile.Type elem = convert(lt.element(), element, context);
+			result = new WyalFile.Type.Array(elem);
 		} else if (type instanceof Type.Record) {
 			Type.Record rt = (Type.Record) type;
 			String[] names = rt.getFieldNames();
 			WyalFile.FieldDeclaration[] elements = new WyalFile.FieldDeclaration[names.length];
 			for (int i = 0; i != names.length; ++i) {
 				String fieldName = names[i];
-				WyalFile.Type fieldType = convert(rt.getField(fieldName), context);
+				WyalFile.Type fieldType = convert(rt.getField(fieldName), element, context);
 				elements[i] = new WyalFile.FieldDeclaration(fieldType, new WyalFile.Identifier(fieldName));
 			}
 			result = new WyalFile.Type.Record(rt.isOpen(),elements);
 		} else if (type instanceof Type.Reference) {
 			Type.Reference lt = (Type.Reference) type;
-			WyalFile.Type element = convert(lt.element(), context);
-			result = new WyalFile.Type.Reference(element);
+			WyalFile.Type elem = convert(lt.element(), element, context);
+			result = new WyalFile.Type.Reference(elem);
 		} else if (type instanceof Type.Union) {
 			Type.Union tu = (Type.Union) type;
 			Type[] tu_elements = tu.bounds();
 			WyalFile.Type[] elements = new WyalFile.Type[tu_elements.length];
 			for (int i = 0; i != tu_elements.length; ++i) {
-				elements[i] = convert(tu_elements[i], context);
+				elements[i] = convert(tu_elements[i], element, context);
 			}
 			result = new WyalFile.Type.Union(elements);
 		} else if (type instanceof Type.Intersection) {
@@ -2452,13 +2468,13 @@ public class VerificationConditionGenerator {
 			Type[] t_elements = t.bounds();
 			WyalFile.Type[] elements = new WyalFile.Type[t_elements.length];
 			for (int i = 0; i != t_elements.length; ++i) {
-				elements[i] = convert(t_elements[i], context);
+				elements[i] = convert(t_elements[i], element, context);
 			}
 			result = new WyalFile.Type.Intersection(elements);
 		} else if (type instanceof Type.Negation) {
 			Type.Negation nt = (Type.Negation) type;
-			WyalFile.Type element = convert(nt.element(), context);
-			result = new WyalFile.Type.Negation(element);
+			WyalFile.Type elem = convert(nt.element(), element, context);
+			result = new WyalFile.Type.Negation(elem);
 		} else if (type instanceof Type.FunctionOrMethod) {
 			Type.FunctionOrMethod ft = (Type.FunctionOrMethod) type;
 			// FIXME: need to do something better here
@@ -2466,8 +2482,7 @@ public class VerificationConditionGenerator {
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
 			NameID nid = nt.name();
-			Path.ID mid = nid.module();
-			result = new WyalFile.Type.Nominal(convert(nid));
+			result = new WyalFile.Type.Nominal(convert(nid,element));
 		} else {
 			throw new InternalFailure("unknown type encountered (" + type.getClass().getName() + ")",
 					context.parent().getEntry(), context);
@@ -2794,7 +2809,7 @@ public class VerificationConditionGenerator {
 		public WyalFile.VariableDeclaration allocateVersion(int index) {
 			SyntaxTree tree = enclosingDeclaration.getTree();
 			Location<?> loc = tree.getLocation(index);
-			WyalFile.Type type = convert(loc.getType(), enclosingDeclaration);
+			WyalFile.Type type = convert(loc.getType(), loc, enclosingDeclaration);
 			Bytecode bytecode = loc.getBytecode();
 			String name;
 			if (bytecode instanceof Bytecode.VariableDeclaration) {
