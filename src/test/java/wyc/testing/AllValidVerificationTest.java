@@ -88,6 +88,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("Byte_Valid_2", "too long for Travis");
 		IGNORED.put("Byte_Valid_3", "too long for Travis");
 		IGNORED.put("Byte_Valid_4", "too long for Travis");
+		IGNORED.put("Complex_Valid_1", "too long for Travis"); // needs 5000 steps
 		IGNORED.put("Complex_Valid_5", "too long for Travis");
 		IGNORED.put("Complex_Valid_7", "too long for Travis");
 		IGNORED.put("ConstrainedList_Valid_3", "too long for Travis");
@@ -113,7 +114,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_22", "timeout");
 		IGNORED.put("While_Valid_26", "timeout");
 		IGNORED.put("TypeEquals_Valid_25", "timeout");
-		IGNORED.put("Complex_Valid_1", "timeout"); // needs 5000 steps
+		IGNORED.put("UnionType_Valid_14", "timeout");
 		//
 		// Issue 2 "Verification of Remainder Operator"
 		IGNORED.put("ConstrainedInt_Valid_22", "WyTP#2");
@@ -144,26 +145,18 @@ public class AllValidVerificationTest {
 		IGNORED.put("TypeEquals_Valid_54", "WyTP#85");
 		// Issue 86 "Handle Coefficients for CongruenceClosure"
 		IGNORED.put("While_Valid_25", "WyTP#86");
-		// Issue 88 "Failing when Called from WhileyCompiler"
-		IGNORED.put("TypeEquals_Valid_32", "WyTP#88");
 		// Issue 89 "Unknown Assertion Failure"
 		IGNORED.put("While_Valid_37", "WyTP#89");
 		// Issue 102 "Support Reference Lifetimes"
 		IGNORED.put("Lifetime_Valid_8", "WyTP#102");
-		// Issue 103 "Problems with Type Tests"
-		IGNORED.put("RecursiveType_Valid_11", "WyTP#103");
 		// Issue 104 "Incompleteness in CoerciveSubtypeOperator"
 		IGNORED.put("RecursiveType_Valid_7", "WyTP#104");
 		IGNORED.put("While_Valid_15", "WyTP#104");
 		IGNORED.put("While_Valid_20", "WyTP#104");
 		// Issue 107 "Limitation with ReadableRecordExtractor"
 		IGNORED.put("TypeEquals_Valid_30", "WyTP#107");
-		// Issue 108 "Another Variable Ordering Effect"
-		IGNORED.put("ListAssign_Valid_7", "WyTP#108");
-		IGNORED.put("TypeEquals_Valid_51", "WyTP#108");
-		IGNORED.put("UnionType_Valid_14", "WyTP#108");
-		IGNORED.put("While_Valid_34", "WyTP#108");
-		IGNORED.put("While_Valid_49", "WyTP#108");
+		//
+		IGNORED.put("While_Valid_34", "??");
 	}
 
 	/**
