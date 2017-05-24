@@ -158,6 +158,12 @@ public class AllValidVerificationTest {
 		IGNORED.put("While_Valid_20", "WyTP#104");
 		// Issue 107 "Limitation with ReadableRecordExtractor"
 		IGNORED.put("TypeEquals_Valid_30", "WyTP#107");
+		// Issue 108 "Another Variable Ordering Effect"
+		IGNORED.put("ListAssign_Valid_7", "WyTP#108");
+		IGNORED.put("TypeEquals_Valid_51", "WyTP#108");
+		IGNORED.put("UnionType_Valid_14", "WyTP#108");
+		IGNORED.put("While_Valid_34", "WyTP#108");
+		IGNORED.put("While_Valid_49", "WyTP#108");
 	}
 
 	/**
