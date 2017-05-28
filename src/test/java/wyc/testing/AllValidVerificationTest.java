@@ -88,9 +88,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("ConstrainedList_Valid_8", "too long for Travis");
 		IGNORED.put("String_Valid_6", "too long for Travis");
 		IGNORED.put("While_Valid_30", "too long for Travis");
-		// timeouts
-		IGNORED.put("Function_Valid_18", "timeout");
-		IGNORED.put("While_Valid_22", "timeout");
 		// Issue 2 "Verification of Remainder Operator"
 		IGNORED.put("ConstrainedInt_Valid_22", "WyTP#2");
 		// Issue 12 "Support for Non-linear Arthmetic"
@@ -132,16 +129,18 @@ public class AllValidVerificationTest {
 		// Issue 107 "Limitation with ReadableRecordExtractor"
 		IGNORED.put("TypeEquals_Valid_30", "WyTP#107");
 		IGNORED.put("TypeEquals_Valid_25", "WyTP#107");
-		// Issue 110 "Performance of Type Checking"
-		IGNORED.put("BoolList_Valid_3", "WyTP#110");
-		IGNORED.put("ConstrainedList_Valid_23", "WyTP#110");
-		IGNORED.put("Complex_Valid_2", "WyTP#110");
-		IGNORED.put("RecursiveType_Valid_2", "WyTP#110");
-		IGNORED.put("RecursiveType_Valid_4", "WyTP#110");
-		IGNORED.put("While_Valid_2", "WyTP#110");
-		IGNORED.put("While_Valid_26", "WyTP#110");
 		// Issue 111 "Infinite Recursive Expansion"
 		IGNORED.put("RecursiveType_Valid_29", "WyTP#111");
+		IGNORED.put("Function_Valid_18", "WyTP#111");
+		IGNORED.put("While_Valid_22", "WyTP#111");
+		// Issue 112 "More Performance Problems with Type Checking"
+		IGNORED.put("Complex_Valid_2", "WyTP#112");
+		IGNORED.put("BoolList_Valid_3", "WyTP#112");
+		IGNORED.put("While_Valid_2", "WyTP#112");
+		IGNORED.put("While_Valid_26", "WyTP#112");
+		// Issue 113 "Type Checking Recursive Types"
+		IGNORED.put("RecursiveType_Valid_2", "WyTP#113");
+		IGNORED.put("RecursiveType_Valid_4", "WyTP#113");
 		//
 		IGNORED.put("While_Valid_34", "??");
 	}
