@@ -85,23 +85,9 @@ public class AllValidVerificationTest {
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================
-		IGNORED.put("Byte_Valid_2", "too long for Travis");
-		IGNORED.put("Byte_Valid_3", "too long for Travis");
-		IGNORED.put("Byte_Valid_4", "too long for Travis");
-		IGNORED.put("Complex_Valid_1", "too long for Travis"); // needs 5000 steps
-		IGNORED.put("Complex_Valid_5", "too long for Travis");
-		IGNORED.put("Complex_Valid_7", "too long for Travis");
-		IGNORED.put("ConstrainedList_Valid_3", "too long for Travis");
-		IGNORED.put("ConstrainedList_Valid_6", "too long for Travis");
 		IGNORED.put("ConstrainedList_Valid_8", "too long for Travis");
-		IGNORED.put("ConstrainedList_Valid_20", "too long for Travis");
-		IGNORED.put("ListAssign_Valid_5", "too long for Travis");
 		IGNORED.put("String_Valid_6", "too long for Travis");
 		IGNORED.put("While_Valid_30", "too long for Travis");
-		IGNORED.put("While_Valid_31", "too long for Travis");
-		IGNORED.put("While_Valid_38", "too long for Travis");
-		IGNORED.put("While_Valid_40", "too long for Travis");
-		IGNORED.put("UnionType_Valid_14", "too long for Travis");
 		// timeouts
 		IGNORED.put("Function_Valid_18", "timeout");
 		IGNORED.put("While_Valid_22", "timeout");
