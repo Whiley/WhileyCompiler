@@ -68,7 +68,6 @@ public class AllValidVerificationTest {
 		//
 		IGNORED.put("Record_Valid_3", "#714");
 		//
-		IGNORED.put("Complex_Valid_8", "#730");
 		IGNORED.put("Ensures_Valid_3", "#730");
 		//
 		IGNORED.put("ConstrainedList_Valid_22", "#731");
@@ -86,6 +85,7 @@ public class AllValidVerificationTest {
 		// Whiley Theorem Prover faults
 		// ===============================================================
 		IGNORED.put("ConstrainedList_Valid_8", "too long for Travis");
+		IGNORED.put("Complex_Valid_8", "too long for Travis");
 		// Issue 2 "Verification of Remainder Operator"
 		IGNORED.put("ConstrainedInt_Valid_22", "WyTP#2");
 		// Issue 12 "Support for Non-linear Arthmetic"
