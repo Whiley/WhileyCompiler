@@ -86,8 +86,6 @@ public class AllValidVerificationTest {
 		// Whiley Theorem Prover faults
 		// ===============================================================
 		IGNORED.put("ConstrainedList_Valid_8", "too long for Travis");
-		IGNORED.put("String_Valid_6", "too long for Travis");
-		IGNORED.put("While_Valid_30", "too long for Travis");
 		// Issue 2 "Verification of Remainder Operator"
 		IGNORED.put("ConstrainedInt_Valid_22", "WyTP#2");
 		// Issue 12 "Support for Non-linear Arthmetic"
@@ -118,6 +116,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("TypeEquals_Valid_54", "WyTP#85");
 		// Issue 86 "Handle Coefficients for CongruenceClosure"
 		IGNORED.put("While_Valid_25", "WyTP#86");
+		IGNORED.put("While_Valid_30", "WyTP#86");
 		// Issue 89 "Unknown Assertion Failure"
 		IGNORED.put("While_Valid_37", "WyTP#89");
 		// Issue 102 "Support Reference Lifetimes"
@@ -143,6 +142,7 @@ public class AllValidVerificationTest {
 		IGNORED.put("RecursiveType_Valid_4", "WyTP#113");
 		//
 		IGNORED.put("While_Valid_34", "??");
+		IGNORED.put("String_Valid_6", "??");
 	}
 
 	/**

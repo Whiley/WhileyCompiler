@@ -903,10 +903,12 @@ public class VerificationConditionGenerator {
 	}
 
 	private void generateTypeInvariantCheck(Type lhs, Expr rhs, Context context) {
-		WyalFile.Type typeTest = convert(lhs, rhs, context.getEnvironment().getParent().enclosingDeclaration);
-		Expr clause = new Expr.Is(rhs, typeTest);
-		context.emit(new VerificationCondition("type invariant not satisfied", context.assumptions, clause,
-				rhs.attributes()));
+		if(typeMayHaveInvariant(lhs,context)) {
+			WyalFile.Type typeTest = convert(lhs, rhs, context.getEnvironment().getParent().enclosingDeclaration);
+			Expr clause = new Expr.Is(rhs, typeTest);
+			context.emit(new VerificationCondition("type invariant not satisfied", context.assumptions, clause,
+					rhs.attributes()));
+		}
 	}
 
 	/**
@@ -2488,6 +2490,73 @@ public class VerificationConditionGenerator {
 		result.attributes().addAll(context.attributes());
 		//
 		return result;
+	}
+
+	/**
+	 * Perform a simple check to see whether or not a given type may have an
+	 * invariant, or not.
+	 *
+	 * @param type
+	 * @return
+	 */
+	private static boolean typeMayHaveInvariant(Type type, Context context) {
+		if (type == Type.T_ANY) {
+			return false;
+		} else if (type == Type.T_VOID) {
+			return false;
+		} else if (type == Type.T_NULL) {
+			return false;
+		} else if (type == Type.T_BOOL) {
+			return false;
+		} else if (type == Type.T_BYTE) {
+			return false;
+		} else if (type == Type.T_INT) {
+			return false;
+		} else if (type instanceof Type.Array) {
+			Type.Array lt = (Type.Array) type;
+			return typeMayHaveInvariant(lt.element(), context);
+		} else if (type instanceof Type.Record) {
+			Type.Record rt = (Type.Record) type;
+			String[] names = rt.getFieldNames();
+			for (int i = 0; i != names.length; ++i) {
+				String fieldName = names[i];
+				if (typeMayHaveInvariant(rt.getField(fieldName), context)) {
+					return true;
+				}
+			}
+			return false;
+		} else if (type instanceof Type.Reference) {
+			Type.Reference lt = (Type.Reference) type;
+			return typeMayHaveInvariant(lt.element(), context);
+		} else if (type instanceof Type.Union) {
+			Type.Union tu = (Type.Union) type;
+			return typeMayHaveInvariant(tu.bounds(), context);
+		} else if (type instanceof Type.Intersection) {
+			Type.Intersection t = (Type.Intersection) type;
+			return typeMayHaveInvariant(t.bounds(), context);
+		} else if (type instanceof Type.Negation) {
+			Type.Negation nt = (Type.Negation) type;
+			return typeMayHaveInvariant(nt.element(), context);
+		} else if (type instanceof Type.FunctionOrMethod) {
+			Type.FunctionOrMethod ft = (Type.FunctionOrMethod) type;
+			return typeMayHaveInvariant(ft.params(), context) || typeMayHaveInvariant(ft.returns(), context);
+		} else if (type instanceof Type.Nominal) {
+			Type.Nominal nt = (Type.Nominal) type;
+			NameID nid = nt.name();
+			// HACK
+			return true;
+		} else {
+			throw new RuntimeException("Unknown type encountered");
+		}
+	}
+
+	private static boolean typeMayHaveInvariant(Type[] types, Context context) {
+		for (int i = 0; i != types.length; ++i) {
+			if(typeMayHaveInvariant(types[i],context)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
