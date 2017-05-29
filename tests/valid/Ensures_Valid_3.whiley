@@ -21,10 +21,10 @@ ensures all { i in 0..|ys| | ys[i] >= 0 }:
     int[] zs = [0; count]
     i = 0
     int j = 0
-    while i < |xs| && j < |zs|
+    while j < |zs|
         where i >= 0 && j >= 0 && j <= |zs| && |zs| == count
         where all { k in 0 .. j | zs[k] >= 0 }:
-        if xs[i] >= 0:
+        if i < |xs| && xs[i] >= 0:
             zs[j] = xs[i]
             j = j + 1
         i = i + 1

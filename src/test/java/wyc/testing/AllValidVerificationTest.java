@@ -68,7 +68,7 @@ public class AllValidVerificationTest {
 		//
 		IGNORED.put("Record_Valid_3", "#714");
 		//
-		IGNORED.put("Ensures_Valid_3", "#730");
+		//IGNORED.put("Ensures_Valid_3", "#730");
 		//
 		IGNORED.put("ConstrainedList_Valid_22", "#731");
 		IGNORED.put("Assert_Valid_1", "#731");
