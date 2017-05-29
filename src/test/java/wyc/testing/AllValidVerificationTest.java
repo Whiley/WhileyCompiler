@@ -86,6 +86,7 @@ public class AllValidVerificationTest {
 		// ===============================================================
 		IGNORED.put("ConstrainedList_Valid_8", "too long for Travis");
 		IGNORED.put("Complex_Valid_8", "too long for Travis");
+		IGNORED.put("RecursiveType_Valid_2", "too long for Travis");
 		// Issue 2 "Verification of Remainder Operator"
 		IGNORED.put("ConstrainedInt_Valid_22", "WyTP#2");
 		// Issue 12 "Support for Non-linear Arthmetic"
@@ -137,9 +138,8 @@ public class AllValidVerificationTest {
 		IGNORED.put("BoolList_Valid_3", "WyTP#112");
 		IGNORED.put("While_Valid_2", "WyTP#112");
 		IGNORED.put("While_Valid_26", "WyTP#112");
-		// Issue 113 "Type Checking Recursive Types"
-		IGNORED.put("RecursiveType_Valid_2", "WyTP#113");
-		IGNORED.put("RecursiveType_Valid_4", "WyTP#113");
+		// Issue 114 "Limitation with TypeTestClosure"
+		IGNORED.put("RecursiveType_Valid_4", "WyTP#114");
 		//
 		IGNORED.put("While_Valid_34", "??");
 		IGNORED.put("String_Valid_6", "??");
