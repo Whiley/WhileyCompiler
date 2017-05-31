@@ -10,6 +10,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import wyal.lang.WyalFile;
 import wybs.lang.Attribute;
 import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
@@ -255,14 +257,13 @@ public class WhileyFileParser {
 		int start = index;
 
 		EnclosingScope scope = new EnclosingScope();
-		List<String> lifetimeParameters;
+		WyalFile.Tuple<WyalFile.Identifier> lifetimeParameters;
 
 		if (isFunction) {
 			match(Function);
-			lifetimeParameters = Collections.emptyList();
+			lifetimeParameters = new WyalFile.Tuple<>();
 		} else {
 			match(Method);
-
 			// Lifetime parameters
 			lifetimeParameters = parseOptionalLifetimeParameters(scope);
 		}
@@ -325,8 +326,9 @@ public class WhileyFileParser {
 			declaration = wf.new Function(modifiers, name.text, returns, parameters, requires, ensures, stmts,
 					sourceAttr(start, end - 1));
 		} else {
-			declaration = wf.new Method(modifiers, name.text, returns, parameters, lifetimeParameters, requires,
-					ensures, stmts, sourceAttr(start, end - 1));
+			List<String> arrayLifetimes = Arrays.asList(toStringArray(lifetimeParameters));
+			declaration = wf.new Method(modifiers, name.text, returns, parameters, arrayLifetimes, requires, ensures,
+					stmts, sourceAttr(start, end - 1));
 		}
 		wf.add(declaration);
 	}
@@ -370,10 +372,10 @@ public class WhileyFileParser {
 			}
 			firstTime = false;
 			int pStart = index;
-			Pair<SyntacticType, Token> p = parseMixedType(scope);
-			Token id = p.second();
+			Pair<WyalFile.Type, WyalFile.Identifier> p = parseMixedType(scope);
+			WyalFile.Identifier id = p.second();
 			scope.declareVariable(id);
-			parameters.add(wf.new Parameter(p.first(), id.text, sourceAttr(pStart, index - 1)));
+			parameters.add(wf.new Parameter(p.first(), id.get(), sourceAttr(pStart, index - 1)));
 		}
 		return parameters;
 	}
@@ -393,22 +395,22 @@ public class WhileyFileParser {
 	public Parameter parseOptionalParameter(WhileyFile wf, EnclosingScope scope) {
 		int start = index;
 		boolean braced = false;
-		SyntacticType type;
-		String name;
+		WyalFile.Type type;
+		WyalFile.Identifier name;
 		if (tryAndMatch(true, LeftBrace) != null) {
-			Pair<SyntacticType, Token> p = parseMixedType(scope);
+			Pair<WyalFile.Type, WyalFile.Identifier> p = parseMixedType(scope);
 			type = p.first();
-			name = p.second().text;
-			scope.declareVariable(p.second());
+			name = p.second();
+			scope.declareVariable(name);
 			match(RightBrace);
 		} else {
 			type = parseType(scope);
 			// The following anonymous variable name is used in order that it
 			// can be accessed via "field aliases", which occur in the case of
 			// record type declarations.
-			name = "$";
+			name = new WyalFile.Identifier("$");
 		}
-		return wf.new Parameter(type, name, sourceAttr(start, index - 1));
+		return wf.new Parameter(type, name.get(), sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -495,13 +497,13 @@ public class WhileyFileParser {
 	 * @param scope
 	 */
 	private void addFieldAliases(Parameter p, EnclosingScope scope) {
-		SyntacticType t = p.type;
-		if(t instanceof SyntacticType.Record) {
+		WyalFile.Type t = p.type;
+		if (t instanceof WyalFile.Type.Record) {
 			// This is currently the only situation in which field aliases can
 			// arise.
-			SyntacticType.Record r = (SyntacticType.Record) t;
-			for(Map.Entry<String, SyntacticType> e : r.types.entrySet()) {
-				scope.declareFieldAlias(e.getKey());
+			WyalFile.Type.Record r = (WyalFile.Type.Record) t;
+			for (WyalFile.FieldDeclaration fd : r.getFields()) {
+				scope.declareFieldAlias(fd.getVariableName());
 			}
 		}
 	}
@@ -714,7 +716,7 @@ public class WhileyFileParser {
 		int start = index;
 
 		// See if it is a named block
-		Token blockName = tryAndMatch(true, Identifier);
+		WyalFile.Identifier blockName = parseOptionalIdentifier(scope);
 		if (blockName != null) {
 			if (tryAndMatch(true, Colon) != null && isAtEOL()) {
 				int end = index;
@@ -723,14 +725,14 @@ public class WhileyFileParser {
 				scope.declareLifetime(blockName);
 
 				List<Stmt> body = parseBlock(wf, scope, false);
-				return new Stmt.NamedBlock(blockName.text, body, sourceAttr(start, end - 1));
+				return new Stmt.NamedBlock(blockName.get(), body, sourceAttr(start, end - 1));
 			} else {
 				index = start; // backtrack
 			}
 		}
 
 		// Remaining cases: assignments, invocations and variable declarations
-		SyntacticType type = parseDefiniteType(scope);
+		WyalFile.Type type = parseDefiniteType(scope);
 
 		if (type == null) {
 			// Can still be a variable declaration, assignment or invocation.
@@ -1921,7 +1923,7 @@ public class WhileyFileParser {
 				bop = Expr.BOp.NEQ;
 				break;
 			case Is:
-				SyntacticType type = parseType(scope);
+				WyalFile.Type type = parseType(scope);
 				Expr.TypeVal rhs = new Expr.TypeVal(type, sourceAttr(start, index - 1));
 				return new Expr.BinOp(Expr.BOp.IS, lhs, rhs, sourceAttr(start, index - 1));
 			default:
@@ -1995,13 +1997,13 @@ public class WhileyFileParser {
 				match(Comma);
 			}
 			firstTime = false;
-			Token id = match(Identifier);
+			WyalFile.Identifier id = parseIdentifier(scope);
 			scope.checkNameAvailable(id);
 			match(In);
 			Expr lhs = parseAdditiveExpression(wf, scope, terminated);
 			match(DotDot);
 			Expr rhs = parseAdditiveExpression(wf, scope, terminated);
-			srcs.add(new Triple<>(id.text, lhs, rhs));
+			srcs.add(new Triple<>(id.get(), lhs, rhs));
 			scope.declareVariable(id);
 		} while (eventuallyMatch(VerticalBar) == null);
 
@@ -2301,7 +2303,8 @@ public class WhileyFileParser {
 				} else if (lookaheadSequence(terminated, LeftAngle)) {
 					// This one is a little tricky, as we need some lookahead
 					// effort. We want to see whether it is a method invocation
-					// with lifetime arguments. But "Identifier < ..." can also be a
+					// with lifetime arguments. But "Identifier < ..." can also
+					// be a
 					// boolean expression!
 					int oldindex = index;
 					match(LeftAngle);
@@ -2596,7 +2599,7 @@ public class WhileyFileParser {
 		// "(nat,nat)" could either be a tuple type (if "nat" is a type) or a
 		// tuple expression (if "nat" is a variable or constant).
 
-		SyntacticType t = parseDefiniteType(scope);
+		WyalFile.Type t = parseDefiniteType(scope);
 
 		if (t != null) {
 			// At this point, it's looking likely that we have a cast. However,
@@ -2657,7 +2660,7 @@ public class WhileyFileParser {
 					// Ok, this must be cast so back tract and reparse
 					// expression as a type.
 					index = start; // backtrack
-					SyntacticType type = parseType(scope);
+					WyalFile.Type type = parseType(scope);
 					// Now, parse cast expression
 					e = parseExpression(wf, scope, terminated);
 					return new Expr.Cast(type, e, sourceAttr(start, index - 1));
@@ -2915,10 +2918,10 @@ public class WhileyFileParser {
 
 		// try to match a lifetime
 		String lifetime;
-		Token lifetimeIdentifier = tryAndMatch(terminated, Identifier, This, Star);
+		WyalFile.Identifier lifetimeIdentifier = parseOptionalLifetimeIdentifier(scope,terminated);
 		if (lifetimeIdentifier != null) {
 			scope.mustBeLifetime(lifetimeIdentifier);
-			lifetime = lifetimeIdentifier.text;
+			lifetime = lifetimeIdentifier.get();
 			match(Colon);
 		} else {
 			lifetime = "*";
@@ -3139,11 +3142,9 @@ public class WhileyFileParser {
 			} else {
 				firstTime = false;
 			}
-
 			// termindated by '>'
-			String lifetime = parseLifetime(scope, true);
-
-			lifetimeArgs.add(lifetime);
+			WyalFile.Identifier lifetime = parseLifetime(scope, true);
+			lifetimeArgs.add(lifetime.get());
 		}
 		return lifetimeArgs;
 	}
@@ -3299,7 +3300,8 @@ public class WhileyFileParser {
 		match(Ampersand);
 
 		// First parse the context lifetimes with the original scope
-		Set<String> contextLifetimes = parseOptionalContextLifetimes(scope);
+		Set<String> contextLifetimes = new HashSet<>(
+				Arrays.asList(toStringArray(parseOptionalContextLifetimes(scope))));
 
 		// Now we create a new scope for this lambda expression.
 		// It keeps all variables but only the given context lifetimes.
@@ -3308,7 +3310,7 @@ public class WhileyFileParser {
 		scope = scope.newEnclosingScope(contextLifetimes);
 
 		// Parse the optional lifetime parameters
-		List<String> lifetimeParameters = parseOptionalLifetimeParameters(scope);
+		List<String> lifetimeParameters = Arrays.asList(toStringArray(parseOptionalLifetimeParameters(scope)));
 
 		match(LeftBrace);
 		ArrayList<WhileyFile.Parameter> parameters = new ArrayList<>();
@@ -3319,10 +3321,10 @@ public class WhileyFileParser {
 				match(Comma);
 			}
 			firstTime = false;
-			SyntacticType type = parseType(scope);
-			Token id = match(Identifier);
+			WyalFile.Type type = parseType(scope);
+			WyalFile.Identifier id = parseIdentifier(scope);
 			scope.declareVariable(id);
-			parameters.add(wf.new Parameter(type, id.text, sourceAttr(p_start, index - 1)));
+			parameters.add(wf.new Parameter(type, id.get(), sourceAttr(p_start, index - 1)));
 		}
 
 		// NOTE: expression guanrateed to be terminated by ')'
@@ -3371,7 +3373,7 @@ public class WhileyFileParser {
 		// Check whether or not parameters are supplied
 		if (tryAndMatch(terminated, LeftBrace) != null) {
 			// Yes, parameters are supplied!
-			ArrayList<SyntacticType> parameters = new ArrayList<>();
+			ArrayList<WyalFile.Type> parameters = new ArrayList<>();
 			boolean firstTime = true;
 			while (eventuallyMatch(RightBrace) == null) {
 				int p_start = index;
@@ -3379,7 +3381,7 @@ public class WhileyFileParser {
 					match(Comma);
 				}
 				firstTime = false;
-				SyntacticType type = parseType(scope);
+				WyalFile.Type type = parseType(scope);
 				parameters.add(type);
 			}
 			return new Expr.AbstractFunctionOrMethod(id.text, parameters, null, sourceAttr(start, index - 1));
@@ -3426,16 +3428,16 @@ public class WhileyFileParser {
 	/**
 	 * Attempt to parse something which maybe a type, or an expression. The
 	 * semantics of this function dictate that it returns an instanceof
-	 * SyntacticType *only* if what it finds *cannot* be parsed as an
+	 * WyalFile.Type *only* if what it finds *cannot* be parsed as an
 	 * expression, but can be parsed as a type. Otherwise, the state is left
 	 * unchanged.
 	 *
-	 * @return An instance of SyntacticType or null.
+	 * @return An instance of WyalFile.Type or null.
 	 */
-	public SyntacticType parseDefiniteType(EnclosingScope scope) {
+	public WyalFile.Type parseDefiniteType(EnclosingScope scope) {
 		int start = index; // backtrack point
 		try {
-			SyntacticType type = parseType(scope);
+			WyalFile.Type type = parseType(scope);
 			if (mustParseAsType(type)) {
 				return type;
 			}
@@ -3467,45 +3469,48 @@ public class WhileyFileParser {
 	 *            Position in the token stream to begin looking from.
 	 * @return
 	 */
-	private boolean mustParseAsType(SyntacticType type) {
-		if (type instanceof SyntacticType.Primitive) {
+	private boolean mustParseAsType(WyalFile.Type type) {
+		if (type instanceof WyalFile.Type.Primitive) {
 			// All primitive types must be parsed as types, since their
 			// identifiers are keywords.
 			return true;
-		} else if (type instanceof SyntacticType.Record) {
+		} else if (type instanceof WyalFile.Type.Record) {
 			// Record types must be parsed as types, since e.g. {int f} is not a
 			// valid expression.
 			return true;
-		} else if (type instanceof SyntacticType.FunctionOrMethod) {
+		} else if (type instanceof WyalFile.Type.FunctionOrMethodOrProperty) {
 			// "function" and "method" are keywords, cannot parse as expression.
 			return true;
-		} else if (type instanceof SyntacticType.Intersection) {
-			SyntacticType.Intersection tt = (SyntacticType.Intersection) type;
+		} else if (type instanceof WyalFile.Type.Intersection) {
+			WyalFile.Type.Intersection tt = (WyalFile.Type.Intersection) type;
 			boolean result = false;
-			for (SyntacticType element : tt.bounds) {
+			for (WyalFile.Type element : tt.getOperands()) {
 				result |= mustParseAsType(element);
 			}
 			return result;
-		} else if (type instanceof SyntacticType.Array) {
+		} else if (type instanceof WyalFile.Type.Array) {
 			return true;
-		} else if (type instanceof SyntacticType.Negation) {
-			SyntacticType.Negation tt = (SyntacticType.Negation) type;
-			return mustParseAsType(tt.element);
-		} else if (type instanceof SyntacticType.Nominal) {
+		} else if (type instanceof WyalFile.Type.Negation) {
+			WyalFile.Type.Negation tt = (WyalFile.Type.Negation) type;
+			return mustParseAsType(tt.getElement());
+		} else if (type instanceof WyalFile.Type.Nominal) {
 			return false; // always can be an expression
-		} else if (type instanceof SyntacticType.Reference) {
-			SyntacticType.Reference tt = (SyntacticType.Reference) type;
-			if (tt.lifetime.equals("this") || tt.lifetime.equals("*") && tt.lifetimeWasExplicit) {
-				// &this and &* is not a valid expression because "this" is
-				// keyword
-				// &ident could also be an address expression
-				return true;
+		} else if (type instanceof WyalFile.Type.Reference) {
+			WyalFile.Type.Reference tt = (WyalFile.Type.Reference) type;
+			WyalFile.Identifier lifetime = tt.getLifetime();
+			if(lifetime != null) {
+				String lifetimeStr = lifetime.get();
+				if (lifetimeStr.equals("this") || lifetimeStr.equals("*")) {
+					// &this and &* is not a valid expression because "this" is
+					// keyword &ident could also be an address expression
+					return true;
+				}
 			}
-			return mustParseAsType(tt.element);
-		} else if (type instanceof SyntacticType.Union) {
-			SyntacticType.Union tt = (SyntacticType.Union) type;
+			return mustParseAsType(tt.getElement());
+		} else if (type instanceof WyalFile.Type.Union) {
+			WyalFile.Type.Union tt = (WyalFile.Type.Union) type;
 			boolean result = false;
-			for (SyntacticType element : tt.bounds) {
+			for (WyalFile.Type element : tt.getOperands()) {
 				result |= mustParseAsType(element);
 			}
 			return result;
@@ -3601,10 +3606,10 @@ public class WhileyFileParser {
 	 * TupleType ::= Type (',' Type)*
 	 * </pre>
 	 *
-	 * @see wyc.lang.SyntacticType.Tuple
+	 * @see wyc.lang.WyalFile.Type.Tuple
 	 * @return
 	 */
-	private SyntacticType parseType(EnclosingScope scope) {
+	private WyalFile.Type parseType(EnclosingScope scope) {
 		return parseUnionType(scope);
 	}
 
@@ -3617,19 +3622,21 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseUnionType(EnclosingScope scope) {
+	private WyalFile.Type parseUnionType(EnclosingScope scope) {
 		int start = index;
-		SyntacticType t = parseIntersectionType(scope);
+		WyalFile.Type t = parseIntersectionType(scope);
 
 		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(true, VerticalBar) != null) {
 			// This is a union type
-			ArrayList types = new ArrayList<SyntacticType>();
+			ArrayList<WyalFile.Type> types = new ArrayList<>();
 			types.add(t);
 			do {
 				types.add(parseIntersectionType(scope));
 			} while (tryAndMatch(true, VerticalBar) != null);
-			return new SyntacticType.Union(types, sourceAttr(start, index - 1));
+			//
+			WyalFile.Type[] bounds = types.toArray(new WyalFile.Type[types.size()]);
+			return new WyalFile.Type.Union(bounds, sourceAttr(start, index - 1));
 		} else {
 			return t;
 		}
@@ -3644,19 +3651,21 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseIntersectionType(EnclosingScope scope) {
+	private WyalFile.Type parseIntersectionType(EnclosingScope scope) {
 		int start = index;
-		SyntacticType t = parseArrayType(scope);
+		WyalFile.Type t = parseArrayType(scope);
 
 		// Now, attempt to look for union and/or intersection types
 		if (tryAndMatch(true, Ampersand) != null) {
 			// This is a union type
-			ArrayList types = new ArrayList<SyntacticType>();
+			ArrayList<WyalFile.Type> types = new ArrayList<>();
 			types.add(t);
 			do {
 				types.add(parseArrayType(scope));
 			} while (tryAndMatch(true, Ampersand) != null);
-			return new SyntacticType.Intersection(types, sourceAttr(start, index - 1));
+			//
+			WyalFile.Type[] bounds = types.toArray(new WyalFile.Type[types.size()]);
+			return new WyalFile.Type.Intersection(bounds, sourceAttr(start, index - 1));
 		} else {
 			return t;
 		}
@@ -3671,37 +3680,37 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseArrayType(EnclosingScope scope) {
+	private WyalFile.Type parseArrayType(EnclosingScope scope) {
 		int start = index;
-		SyntacticType element = parseBaseType(scope);
+		WyalFile.Type element = parseBaseType(scope);
 
 		while (tryAndMatch(true, LeftSquare) != null) {
 			match(RightSquare);
-			element = new SyntacticType.Array(element, sourceAttr(start, index - 1));
+			element = new WyalFile.Type.Array(element, sourceAttr(start, index - 1));
 		}
 
 		return element;
 	}
 
-	private SyntacticType parseBaseType(EnclosingScope scope) {
+	private WyalFile.Type parseBaseType(EnclosingScope scope) {
 		checkNotEof();
 		int start = index;
 		Token token = tokens.get(index);
-		SyntacticType t;
+		WyalFile.Type t;
 
 		switch (token.kind) {
 		case Void:
-			return new SyntacticType.Void(sourceAttr(start, index++));
+			return new WyalFile.Type.Void(sourceAttr(start, index++));
 		case Any:
-			return new SyntacticType.Any(sourceAttr(start, index++));
+			return new WyalFile.Type.Any(sourceAttr(start, index++));
 		case Null:
-			return new SyntacticType.Null(sourceAttr(start, index++));
+			return new WyalFile.Type.Null(sourceAttr(start, index++));
 		case Bool:
-			return new SyntacticType.Bool(sourceAttr(start, index++));
+			return new WyalFile.Type.Bool(sourceAttr(start, index++));
 		case Byte:
-			return new SyntacticType.Byte(sourceAttr(start, index++));
+			return new WyalFile.Type.Byte(sourceAttr(start, index++));
 		case Int:
-			return new SyntacticType.Int(sourceAttr(start, index++));
+			return new WyalFile.Type.Int(sourceAttr(start, index++));
 		case LeftBrace:
 			return parseBracketedType(scope);
 		case LeftCurly:
@@ -3711,7 +3720,7 @@ public class WhileyFileParser {
 		case Ampersand:
 			return parseReferenceType(scope);
 		case Identifier:
-			return parseNominalType();
+			return parseNominalType(scope);
 		case Function:
 			return parseFunctionOrMethodType(true, scope);
 		case Method:
@@ -3731,11 +3740,11 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseNegationType(EnclosingScope scope) {
+	private WyalFile.Type parseNegationType(EnclosingScope scope) {
 		int start = index;
 		match(Shreak);
-		SyntacticType element = parseArrayType(scope);
-		return new SyntacticType.Negation(element, sourceAttr(start, index - 1));
+		WyalFile.Type element = parseArrayType(scope);
+		return new WyalFile.Type.Negation(element, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -3749,13 +3758,13 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseReferenceType(EnclosingScope scope) {
+	private WyalFile.Type parseReferenceType(EnclosingScope scope) {
 		int start = index;
 		match(Ampersand);
 
 		// Try to parse an annotated lifetime
 		int backtrack = index;
-		Token lifetimeIdentifier = tryAndMatch(true, Identifier, This, Star);
+		WyalFile.Identifier lifetimeIdentifier = parseOptionalLifetimeIdentifier(scope, false);
 		if (lifetimeIdentifier != null) {
 			// We cannot allow a newline after the colon, as it would
 			// unintentionally match a return type that happens to be reference
@@ -3764,35 +3773,14 @@ public class WhileyFileParser {
 			if (tryAndMatch(true, Colon) != null && !isAtEOL()) {
 				// Now we know that there is an annotated lifetime
 				scope.mustBeLifetime(lifetimeIdentifier);
-				SyntacticType element = parseArrayType(scope);
-				return new SyntacticType.Reference(element, lifetimeIdentifier.text, true,
-						sourceAttr(start, index - 1));
+				WyalFile.Type element = parseArrayType(scope);
+				return new WyalFile.Type.Reference(element, lifetimeIdentifier, sourceAttr(start, index - 1));
 			}
 		}
 		index = backtrack;
 
-		SyntacticType element = parseArrayType(scope);
-		return new SyntacticType.Reference(element, "*", false, sourceAttr(start, index - 1));
-	}
-
-	/**
-	 * Parse a currently declared lifetime.
-	 *
-	 * @return the matched lifetime name
-	 */
-	private String parseLifetime(EnclosingScope scope, boolean terminated) {
-		int next = terminated ? skipWhiteSpace(index) : skipLineSpace(index);
-		if (next < tokens.size()) {
-			Token t = tokens.get(next);
-			if (t.kind == Identifier || t.kind == This || t.kind == Star) {
-				index = next + 1;
-				scope.mustBeLifetime(t);
-				return t.text;
-			}
-			syntaxError("expectiong a lifetime identifier here", t);
-		}
-		syntaxError("unexpected end-of-file", tokens.get(next - 1));
-		throw new RuntimeException("deadcode"); // dead-code
+		WyalFile.Type element = parseArrayType(scope);
+		return new WyalFile.Type.Reference(element, null, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -3804,10 +3792,10 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseBracketedType(EnclosingScope scope) {
+	private WyalFile.Type parseBracketedType(EnclosingScope scope) {
 		int start = index;
 		match(LeftBrace);
-		SyntacticType type = parseType(scope);
+		WyalFile.Type type = parseType(scope);
 		match(RightBrace);
 		return type;
 	}
@@ -3829,19 +3817,18 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseRecordType(EnclosingScope scope) {
+	private WyalFile.Type parseRecordType(EnclosingScope scope) {
 		int start = index;
 		match(LeftCurly);
-
-		HashMap<String, SyntacticType> types = new HashMap<>();
-		Pair<SyntacticType, Token> p = parseMixedType(scope);
-		types.put(p.second().text, p.first());
-
+		ArrayList<WyalFile.FieldDeclaration> types = new ArrayList<>();
+		Pair<WyalFile.Type, WyalFile.Identifier> p = parseMixedType(scope);
+		types.add(new WyalFile.FieldDeclaration(p.first(), p.second()));
+		HashSet<WyalFile.Identifier> names = new HashSet<>();
+		names.add(p.second());
 		// Now, we continue to parse any remaining fields.
 		boolean isOpen = false;
 		while (eventuallyMatch(RightCurly) == null) {
 			match(Comma);
-
 			if (tryAndMatch(true, DotDotDot) != null) {
 				// this signals an "open" record type
 				match(RightCurly);
@@ -3849,15 +3836,17 @@ public class WhileyFileParser {
 				break;
 			} else {
 				p = parseMixedType(scope);
-				Token id = p.second();
-				if (types.containsKey(id.text)) {
+				WyalFile.Identifier id = p.second();
+				if (names.contains(id)) {
 					syntaxError("duplicate record key", id);
 				}
-				types.put(id.text, p.first());
+				names.add(id);
+				types.add(new WyalFile.FieldDeclaration(p.first(), id));
 			}
 		}
 		// Done
-		return new SyntacticType.Record(isOpen, types, sourceAttr(start, index - 1));
+		WyalFile.FieldDeclaration[] arrFields = types.toArray(new WyalFile.FieldDeclaration[types.size()]);
+		return new WyalFile.Type.Record(isOpen, arrFields, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -3867,19 +3856,13 @@ public class WhileyFileParser {
 	 * NominalType ::= Identifier ('.' Identifier)*
 	 * </pre>
 	 *
-	 * @see wyc.lang.SyntacticType.Nominal
+	 * @see wyc.lang.WyalFile.Type.Nominal
 	 * @return
 	 */
-	private SyntacticType parseNominalType() {
+	private WyalFile.Type parseNominalType(EnclosingScope scope) {
 		int start = index;
-		ArrayList<String> names = new ArrayList<>();
-
-		// Match one or more identifiers separated by dots
-		do {
-			names.add(match(Identifier).text);
-		} while (tryAndMatch(true, Dot) != null);
-
-		return new SyntacticType.Nominal(names, sourceAttr(start, index - 1));
+		WyalFile.Name name = parseName(scope);
+		return new WyalFile.Type.Nominal(name, sourceAttr(start, index - 1));
 	}
 
 	/**
@@ -3897,15 +3880,15 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private SyntacticType parseFunctionOrMethodType(boolean isFunction, EnclosingScope scope) {
+	private WyalFile.Type parseFunctionOrMethodType(boolean isFunction, EnclosingScope scope) {
 		int start = index;
 
-		List<String> lifetimeParameters;
-		Set<String> contextLifetimes;
+		WyalFile.Tuple<WyalFile.Identifier> lifetimeParameters;
+		WyalFile.Tuple<WyalFile.Identifier> contextLifetimes;
 		if (isFunction) {
 			match(Function);
-			contextLifetimes = Collections.emptySet();
-			lifetimeParameters = Collections.emptyList();
+			contextLifetimes = new WyalFile.Tuple<>();
+			lifetimeParameters = new WyalFile.Tuple<>();
 		} else {
 			match(Method);
 			contextLifetimes = parseOptionalContextLifetimes(scope);
@@ -3914,8 +3897,8 @@ public class WhileyFileParser {
 		}
 
 		// First, parse the parameter type(s).
-		List<SyntacticType> paramTypes = parseParameterTypes(scope);
-		List<SyntacticType> returnTypes = Collections.emptyList();
+		WyalFile.Tuple<WyalFile.Type> paramTypes = parseParameterTypes(scope);
+		WyalFile.Tuple<WyalFile.Type> returnTypes = new WyalFile.Tuple<>();
 
 		// Second, parse the right arrow.
 		if (isFunction) {
@@ -3932,9 +3915,9 @@ public class WhileyFileParser {
 
 		// Done
 		if (isFunction) {
-			return new SyntacticType.Function(returnTypes, paramTypes, sourceAttr(start, index - 1));
+			return new WyalFile.Type.Function(paramTypes, returnTypes, sourceAttr(start, index - 1));
 		} else {
-			return new SyntacticType.Method(returnTypes, paramTypes, contextLifetimes, lifetimeParameters,
+			return new WyalFile.Type.Method(paramTypes, returnTypes, contextLifetimes, lifetimeParameters,
 					sourceAttr(start, index - 1));
 		}
 	}
@@ -3950,7 +3933,7 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Pair<SyntacticType, Token> parseMixedType(EnclosingScope scope) {
+	private Pair<WyalFile.Type, WyalFile.Identifier> parseMixedType(EnclosingScope scope) {
 		Token lookahead;
 		int start = index;
 
@@ -3962,7 +3945,7 @@ public class WhileyFileParser {
 			// go before the method name. We do not allow to have context
 			// lifetimes
 			// for mixed method types.
-			List<String> lifetimeParameters = Collections.emptyList();
+			WyalFile.Tuple<WyalFile.Identifier> lifetimeParameters = new WyalFile.Tuple<>();
 			if (lookahead.kind == Method && tryAndMatch(true, LeftAngle) != null) {
 				// mixed method type with lifetime parameters
 				scope = scope.newEnclosingScope();
@@ -3970,14 +3953,14 @@ public class WhileyFileParser {
 			}
 
 			// Now try to parse the identifier
-			Token id = tryAndMatch(true, Identifier);
+			WyalFile.Identifier id = parseOptionalIdentifier(scope);
 
 			if (id != null) {
 				// Yes, we have found a mixed function / method type definition.
 				// Therefore, we continue to pass the remaining type parameters.
 
-				List<SyntacticType> paramTypes = parseParameterTypes(scope);
-				List<SyntacticType> returnTypes = Collections.emptyList();
+				WyalFile.Tuple<WyalFile.Type> paramTypes = parseParameterTypes(scope);
+				WyalFile.Tuple<WyalFile.Type> returnTypes = new WyalFile.Tuple<>();
 
 				if (lookahead.kind == Function) {
 					// Functions require a return type (since otherwise they are
@@ -3997,12 +3980,12 @@ public class WhileyFileParser {
 				}
 
 				// Done
-				SyntacticType type;
+				WyalFile.Type type;
 				if (lookahead.kind == Token.Kind.Function) {
-					type = new SyntacticType.Function(returnTypes, paramTypes, sourceAttr(start, index - 1));
+					type = new WyalFile.Type.Function(paramTypes, returnTypes, sourceAttr(start, index - 1));
 				} else {
-					type = new SyntacticType.Method(returnTypes, paramTypes, Collections.<String>emptySet(),
-							lifetimeParameters, sourceAttr(start, index - 1));
+					type = new WyalFile.Type.Method(paramTypes, returnTypes, new WyalFile.Tuple<>(), lifetimeParameters,
+							sourceAttr(start, index - 1));
 				}
 				return new Pair<>(type, id);
 			} else {
@@ -4015,25 +3998,23 @@ public class WhileyFileParser {
 
 		// This is the normal case, where we expect an identifier to follow the
 		// type.
-		SyntacticType type = parseType(scope);
-		Token id = match(Identifier);
+		WyalFile.Type type = parseType(scope);
+		WyalFile.Identifier id = parseIdentifier(scope);
 		return new Pair<>(type, id);
 	}
 
-	public List<SyntacticType> parseOptionalParameterTypes(EnclosingScope scope) {
+	public WyalFile.Tuple<WyalFile.Type> parseOptionalParameterTypes(EnclosingScope scope) {
 		int next = skipWhiteSpace(index);
 		if (next < tokens.size() && tokens.get(next).kind == LeftBrace) {
 			return parseParameterTypes(scope);
 		} else {
-			SyntacticType t = parseType(scope);
-			ArrayList<SyntacticType> rs = new ArrayList<>();
-			rs.add(t);
-			return rs;
+			WyalFile.Type t = parseType(scope);
+			return new WyalFile.Tuple<>(t);
 		}
 	}
 
-	public List<SyntacticType> parseParameterTypes(EnclosingScope scope) {
-		ArrayList<SyntacticType> paramTypes = new ArrayList<>();
+	public WyalFile.Tuple<WyalFile.Type> parseParameterTypes(EnclosingScope scope) {
+		ArrayList<WyalFile.Type> paramTypes = new ArrayList<>();
 		match(LeftBrace);
 
 		boolean firstTime = true;
@@ -4045,7 +4026,20 @@ public class WhileyFileParser {
 			paramTypes.add(parseType(scope));
 		}
 
-		return paramTypes;
+		return new WyalFile.Tuple<>(paramTypes);
+	}
+
+	private WyalFile.Name parseName(EnclosingScope scope) {
+		int start = index;
+		List<WyalFile.Identifier> components = new ArrayList<>();
+		components.add(parseIdentifier(scope));
+		while (tryAndMatch(false, Dot) != null) {
+			components.add(parseIdentifier(scope));
+		}
+		WyalFile.Identifier[] ids = components.toArray(new WyalFile.Identifier[components.size()]);
+		WyalFile.Name nid = new WyalFile.Name(ids);
+		nid.attributes().add(sourceAttr(start, index - 1));
+		return nid;
 	}
 
 	/**
@@ -4054,12 +4048,12 @@ public class WhileyFileParser {
 	 * @param scope
 	 * @return
 	 */
-	public List<String> parseOptionalLifetimeParameters(EnclosingScope scope) {
+	public WyalFile.Tuple<WyalFile.Identifier> parseOptionalLifetimeParameters(EnclosingScope scope) {
 		if (tryAndMatch(true, LeftAngle) != null && tryAndMatch(true, RightAngle) == null) {
 			// The if above skips an empty list of identifiers "<>"!
 			return parseLifetimeParameters(scope);
 		}
-		return Collections.emptyList();
+		return new WyalFile.Tuple<>();
 	}
 
 	/**
@@ -4069,32 +4063,79 @@ public class WhileyFileParser {
 	 * @param scope
 	 * @return
 	 */
-	private List<String> parseLifetimeParameters(EnclosingScope scope) {
-		List<String> lifetimeParameters = new ArrayList<>();
+	private WyalFile.Tuple<WyalFile.Identifier> parseLifetimeParameters(EnclosingScope scope) {
+		List<WyalFile.Identifier> lifetimeParameters = new ArrayList<>();
 		do {
-			Token lifetimeIdentifier = match(Identifier);
+			WyalFile.Identifier lifetimeIdentifier = parseIdentifier(scope);
 			scope.declareLifetime(lifetimeIdentifier);
-			lifetimeParameters.add(lifetimeIdentifier.text);
+			lifetimeParameters.add(lifetimeIdentifier);
 		} while (tryAndMatch(true, Comma) != null);
 		match(RightAngle);
-		return lifetimeParameters;
+		return new WyalFile.Tuple<>(lifetimeParameters);
 	}
 
 	/**
 	 * @param scope
 	 * @return
 	 */
-	public Set<String> parseOptionalContextLifetimes(EnclosingScope scope) {
+	public WyalFile.Tuple<WyalFile.Identifier> parseOptionalContextLifetimes(EnclosingScope scope) {
 		if (tryAndMatch(true, LeftSquare) != null && tryAndMatch(true, RightSquare) == null) {
 			// The if above skips an empty list of identifiers "[]"!
-			Set<String> contextLifetimes = new HashSet<>();
+			List<WyalFile.Identifier> contextLifetimes = new ArrayList<>();
 			do {
 				contextLifetimes.add(parseLifetime(scope, true));
 			} while (tryAndMatch(true, Comma) != null);
 			match(RightSquare);
-			return contextLifetimes;
+			return new WyalFile.Tuple<>(contextLifetimes);
 		}
-		return Collections.emptySet();
+		return new WyalFile.Tuple<>();
+	}
+
+	private WyalFile.Identifier parseOptionalLifetimeIdentifier(EnclosingScope scope, boolean terminated) {
+		int start = index;
+		Token token = tryAndMatch(terminated, Identifier, This, Star);
+		if (token != null) {
+			WyalFile.Identifier id = new WyalFile.Identifier(token.text);
+			id.attributes().add(sourceAttr(start, index - 1));
+			return id;
+		} else {
+			return null;
+		}
+	}
+
+	/**
+	 * Parse a currently declared lifetime.
+	 *
+	 * @return the matched lifetime name
+	 */
+	private WyalFile.Identifier parseLifetime(EnclosingScope scope, boolean terminated) {
+		WyalFile.Identifier id = parseOptionalLifetimeIdentifier(scope, terminated);
+		if (id != null) {
+			return id;
+		} else {
+			syntaxError("expecting lifetime identifier", tokens.get(index));
+		}
+		throw new RuntimeException("deadcode"); // dead-code
+	}
+
+	private WyalFile.Identifier parseOptionalIdentifier(EnclosingScope scope) {
+		int start = index;
+		Token token = tryAndMatch(false, Identifier);
+		if (token != null) {
+			WyalFile.Identifier id = new WyalFile.Identifier(token.text);
+			id.attributes().add(sourceAttr(start, index - 1));
+			return id;
+		} else {
+			return null;
+		}
+	}
+
+	private WyalFile.Identifier parseIdentifier(EnclosingScope scope) {
+		int start = skipWhiteSpace(index);
+		Token token = match(Identifier);
+		WyalFile.Identifier id = new WyalFile.Identifier(token.text);
+		id.attributes().add(sourceAttr(start, index-1));
+		return id;
 	}
 
 	public boolean mustParseAsMixedType() {
@@ -4548,6 +4589,14 @@ public class WhileyFileParser {
 		return (byte) val;
 	}
 
+	private String[] toStringArray(WyalFile.Tuple<WyalFile.Identifier> identifiers) {
+		String[] strings = new String[identifiers.size()];
+		for (int i = 0; i != strings.length; ++i) {
+			strings[i] = identifiers.getOperand(i).get();
+		}
+		return strings;
+	}
+
 	private Attribute.Source sourceAttr(int start, int end) {
 		Token t1 = tokens.get(start);
 		Token t2 = tokens.get(end);
@@ -4754,8 +4803,8 @@ public class WhileyFileParser {
 		 * @throws SyntaxError
 		 *             if the given identifier is not a lifetime
 		 */
-		public void mustBeLifetime(Token id) {
-			if (!this.isLifetime(id.text)) {
+		public void mustBeLifetime(WyalFile.Identifier id) {
+			if (!this.isLifetime(id.get())) {
 				syntaxError("use of undeclared lifetime", id);
 			}
 		}
@@ -4768,8 +4817,8 @@ public class WhileyFileParser {
 		 * @throws SyntaxError
 		 *             if the name is unavailable (already declared)
 		 */
-		public void checkNameAvailable(Token id) {
-			if (this.unavailableNames.contains(id.text)) {
+		public void checkNameAvailable(WyalFile.Identifier id) {
+			if (this.unavailableNames.contains(id.get())) {
 				// name is not available!
 				syntaxError("name already declared", id);
 			}
@@ -4798,12 +4847,12 @@ public class WhileyFileParser {
 		 * @throws SyntaxError
 		 *             if the name is already declared
 		 */
-		public void declareVariable(Token id) {
-			if (!this.unavailableNames.add(id.text)) {
+		public void declareVariable(WyalFile.Identifier id) {
+			if (!this.unavailableNames.add(id.get())) {
 				// name is not available!
 				syntaxError("name already declared", id);
 			}
-			this.variables.add(id.text);
+			this.variables.add(id.get());
 		}
 
 		/**
@@ -4828,8 +4877,8 @@ public class WhileyFileParser {
 		 * @param alias
 		 *            The field alias to declare
 		 */
-		public void declareFieldAlias(String alias) {
-			fieldAliases.add(alias);
+		public void declareFieldAlias(WyalFile.Identifier alias) {
+			fieldAliases.add(alias.get());
 		}
 
 		/**
@@ -4840,12 +4889,12 @@ public class WhileyFileParser {
 		 * @throws SyntaxError
 		 *             if the name is already declared
 		 */
-		public void declareLifetime(Token id) {
-			if (!this.unavailableNames.add(id.text)) {
+		public void declareLifetime(WyalFile.Identifier id) {
+			if (!this.unavailableNames.add(id.get())) {
 				// name is not available!
 				syntaxError("name already declared", id);
 			}
-			this.lifetimes.add(id.text);
+			this.lifetimes.add(id.get());
 		}
 
 		/**

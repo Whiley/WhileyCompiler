@@ -9,6 +9,7 @@ package wyc.lang;
 import java.io.*;
 import java.util.*;
 
+import wyal.lang.WyalFile;
 import wybs.lang.Attribute;
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticElement;
@@ -447,7 +448,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 			this.statements = new ArrayList<>(statements);
 		}
 
-		public abstract SyntacticType.FunctionOrMethod unresolvedType();
+		public abstract WyalFile.Type.FunctionOrMethodOrProperty unresolvedType();
 
 		public abstract wyil.lang.Type.FunctionOrMethod resolvedType();
 	}
@@ -497,16 +498,16 @@ public final class WhileyFile extends AbstractCompilationUnit {
 		}
 
 		@Override
-		public SyntacticType.Function unresolvedType() {
-			ArrayList<SyntacticType> paramTypes = new ArrayList<>();
+		public WyalFile.Type.Function unresolvedType() {
+			ArrayList<WyalFile.Type> paramTypes = new ArrayList<>();
 			for (Parameter p : parameters) {
 				paramTypes.add(p.type);
 			}
-			ArrayList<SyntacticType> returnTypes = new ArrayList<>();
+			ArrayList<WyalFile.Type> returnTypes = new ArrayList<>();
 			for (Parameter r : returns) {
 				returnTypes.add(r.type);
 			}
-			return new SyntacticType.Function(returnTypes, paramTypes, attributes());
+			return new WyalFile.Type.Function(new WyalFile.Tuple(paramTypes), new WyalFile.Tuple(returnTypes));
 		}
 
 		@Override
@@ -557,17 +558,22 @@ public final class WhileyFile extends AbstractCompilationUnit {
 		}
 
 		@Override
-		public SyntacticType.Method unresolvedType() {
-			ArrayList<SyntacticType> parameterTypes = new ArrayList<>();
+		public WyalFile.Type.Method unresolvedType() {
+			ArrayList<WyalFile.Type> parameterTypes = new ArrayList<>();
 			for (Parameter p : parameters) {
 				parameterTypes.add(p.type);
 			}
-			ArrayList<SyntacticType> returnTypes = new ArrayList<>();
+			ArrayList<WyalFile.Type> returnTypes = new ArrayList<>();
 			for (Parameter r : returns) {
 				returnTypes.add(r.type);
 			}
-			return new SyntacticType.Method(returnTypes, parameterTypes,
-					Collections.<String>emptySet(), lifetimeParameters, attributes());
+			ArrayList<WyalFile.Identifier> contextLifetimes = new ArrayList<>();
+			ArrayList<WyalFile.Identifier> lifetimeParameters = new ArrayList<>();
+			for(String cl : this.lifetimeParameters) {
+				lifetimeParameters.add(new WyalFile.Identifier(cl));
+			}
+			return new WyalFile.Type.Method(new WyalFile.Tuple(parameterTypes), new WyalFile.Tuple(returnTypes),
+					new WyalFile.Tuple<>(contextLifetimes), new WyalFile.Tuple<>(lifetimeParameters));
 		}
 
 		@Override
@@ -620,12 +626,12 @@ public final class WhileyFile extends AbstractCompilationUnit {
 		}
 
 		@Override
-		public SyntacticType.Property unresolvedType() {
-			ArrayList<SyntacticType> paramTypes = new ArrayList<>();
+		public WyalFile.Type.Property unresolvedType() {
+			ArrayList<WyalFile.Type> paramTypes = new ArrayList<>();
 			for (Parameter p : parameters) {
 				paramTypes.add(p.type);
 			}
-			return new SyntacticType.Property(paramTypes, attributes());
+			return new WyalFile.Type.Property(new WyalFile.Tuple<>(paramTypes));
 		}
 
 		@Override
@@ -644,17 +650,17 @@ public final class WhileyFile extends AbstractCompilationUnit {
 	 *
 	 */
 	public final class Parameter extends AbstractContext {
-		public final SyntacticType type;
+		public final WyalFile.Type type;
 		public final String name;
 
-		public Parameter(SyntacticType type, String name,
+		public Parameter(WyalFile.Type type, String name,
 				Attribute... attributes) {
 			super(attributes);
 			this.type = type;
 			this.name = name;
 		}
 
-		public Parameter(SyntacticType type, String name,
+		public Parameter(WyalFile.Type type, String name,
 				Collection<Attribute> attributes) {
 			super(attributes);
 			this.type = type;
