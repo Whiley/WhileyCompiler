@@ -10,7 +10,6 @@ import java.util.*;
 
 import wybs.lang.Attribute;
 import wybs.lang.SyntacticElement;
-import wyc.lang.SyntacticType.NonUnion;
 import wyil.lang.Type;
 
 /**
@@ -31,17 +30,6 @@ import wyil.lang.Type;
  */
 public interface SyntacticType extends SyntacticElement {
 
-	/**
-	 * A non-union type represents a type which is not an instance of
-	 * <code>Union</code>.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public interface NonUnion extends SyntacticType {
-		// FIXME: this interface should not exist!
-	}
-
 	public interface Primitive extends SyntacticType {
 
 	}
@@ -53,7 +41,7 @@ public interface SyntacticType extends SyntacticElement {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Any extends SyntacticElement.Impl implements NonUnion,Primitive {
+	public static final class Any extends SyntacticElement.Impl implements Primitive {
 		public Any(Attribute... attributes) {
 			super(attributes);
 		}
@@ -70,7 +58,7 @@ public interface SyntacticType extends SyntacticElement {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Void extends SyntacticElement.Impl implements NonUnion,Primitive {
+	public static final class Void extends SyntacticElement.Impl implements Primitive {
 		public Void(Attribute... attributes) {
 			super(attributes);
 		}
@@ -89,7 +77,7 @@ public interface SyntacticType extends SyntacticElement {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Null extends SyntacticElement.Impl implements NonUnion,Primitive {
+	public static final class Null extends SyntacticElement.Impl implements Primitive {
 		public Null(Attribute... attributes) {
 			super(attributes);
 		}
@@ -100,7 +88,7 @@ public interface SyntacticType extends SyntacticElement {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Bool extends SyntacticElement.Impl implements NonUnion,Primitive {
+	public static final class Bool extends SyntacticElement.Impl implements Primitive {
 		public Bool(Attribute... attributes) {
 			super(attributes);
 		}
@@ -116,7 +104,7 @@ public interface SyntacticType extends SyntacticElement {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Byte extends SyntacticElement.Impl implements NonUnion,Primitive {
+	public static final class Byte extends SyntacticElement.Impl implements Primitive {
 		public Byte(Attribute... attributes) {
 			super(attributes);
 		}
@@ -131,7 +119,7 @@ public interface SyntacticType extends SyntacticElement {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static final class Int extends SyntacticElement.Impl implements NonUnion,Primitive {
+	public static final class Int extends SyntacticElement.Impl implements Primitive {
 		public Int(Attribute... attributes) {
 			super(attributes);
 		}
@@ -150,7 +138,7 @@ public interface SyntacticType extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public static final class Nominal extends SyntacticElement.Impl implements NonUnion {
+	public static final class Nominal extends SyntacticElement.Impl implements SyntacticType {
 		public final ArrayList<String> names;
 		public Nominal(Collection<String> names, Attribute... attributes) {
 			super(attributes);
@@ -167,7 +155,7 @@ public interface SyntacticType extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public static final class Array extends SyntacticElement.Impl implements NonUnion {
+	public static final class Array extends SyntacticElement.Impl implements SyntacticType {
 		public final SyntacticType element;
 		public Array(SyntacticType element, Attribute... attributes) {
 			super(attributes);
@@ -184,7 +172,7 @@ public interface SyntacticType extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public static final class Negation extends SyntacticElement.Impl implements NonUnion {
+	public static final class Negation extends SyntacticElement.Impl implements SyntacticType {
 		public final SyntacticType element;
 		public Negation(SyntacticType element, Attribute... attributes) {
 			this.element = element;
@@ -205,9 +193,9 @@ public interface SyntacticType extends SyntacticElement {
 	 * @return
 	 */
 	public static final class Union extends SyntacticElement.Impl implements SyntacticType {
-		public final ArrayList<NonUnion> bounds;
+		public final ArrayList<SyntacticType> bounds;
 
-		public Union(Collection<NonUnion> bounds, Attribute... attributes) {
+		public Union(Collection<SyntacticType> bounds, Attribute... attributes) {
 			super(attributes);
 			if (bounds.size() < 2) {
 				new IllegalArgumentException(
@@ -216,7 +204,7 @@ public interface SyntacticType extends SyntacticElement {
 			this.bounds = new ArrayList<>(bounds);
 		}
 
-		public Union(ArrayList<NonUnion> bounds, java.util.Collection<Attribute> attributes) {
+		public Union(ArrayList<SyntacticType> bounds, java.util.Collection<Attribute> attributes) {
 			super(attributes);
 			if (bounds.size() < 2) {
 				new IllegalArgumentException(
@@ -272,7 +260,7 @@ public interface SyntacticType extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public static final class Reference extends SyntacticElement.Impl implements NonUnion {
+	public static final class Reference extends SyntacticElement.Impl implements SyntacticType {
 		public final SyntacticType element;
 		public final String lifetime;
 		public final boolean lifetimeWasExplicit;
@@ -292,7 +280,7 @@ public interface SyntacticType extends SyntacticElement {
 	 *
 	 * @return
 	 */
-	public static final class Record extends SyntacticElement.Impl implements NonUnion {
+	public static final class Record extends SyntacticElement.Impl implements SyntacticType {
 		public final HashMap<String,SyntacticType> types;
 		public final boolean isOpen;
 
@@ -321,8 +309,7 @@ public interface SyntacticType extends SyntacticElement {
 		}
 	}
 
-	public abstract static class FunctionOrMethod extends
-			SyntacticElement.Impl implements NonUnion {
+	public abstract static class FunctionOrMethod extends SyntacticElement.Impl implements SyntacticType {
 		public final ArrayList<SyntacticType> returnTypes;
 		public final ArrayList<SyntacticType> paramTypes;
 		public final ArrayList<String> contextLifetimes;
@@ -378,7 +365,7 @@ public interface SyntacticType extends SyntacticElement {
 	}
 
 	public static class Function extends FunctionOrMethod
-	implements NonUnion {
+	{
 		public Function(Collection<SyntacticType> returnTypes,
 				Collection<SyntacticType> paramTypes,
 				Attribute... attributes) {
@@ -390,7 +377,7 @@ public interface SyntacticType extends SyntacticElement {
 		}
 	}
 
-	public static class Property extends FunctionOrMethod implements NonUnion {
+	public static class Property extends FunctionOrMethod {
 		public Property(Collection<SyntacticType> paramTypes, Attribute... attributes) {
 			super(Collections.EMPTY_LIST, paramTypes, Collections.<String>emptySet(), Collections.<String>emptyList(), attributes);
 		}
@@ -401,7 +388,7 @@ public interface SyntacticType extends SyntacticElement {
 	}
 
 	public static class Method extends FunctionOrMethod
-	implements NonUnion {
+	{
 		public Method(Collection<SyntacticType> returnTypes, Collection<SyntacticType> paramTypes,
 				Collection<String> contextLifetimes, Collection<String> lifetimeParameters, Attribute... attributes) {
 			super(returnTypes,paramTypes,contextLifetimes,lifetimeParameters,attributes);
