@@ -12,6 +12,7 @@ import static wyil.util.ErrorMessages.errorMessage;
 import java.io.*;
 import java.util.*;
 
+import wyal.lang.WyalFile;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -686,7 +687,7 @@ public final class CompileTask implements Build.Task {
 	 *             within the enclosing project.
 	 * @throws IOException
 	 */
-	public Type toSemanticType(SyntacticType type, WhileyFile.Context context) throws ResolveError, IOException {
+	public Type toSemanticType(WyalFile.Type type, WhileyFile.Context context) throws ResolveError, IOException {
 		if (type instanceof SyntacticType.Any) {
 			return Type.T_ANY;
 		} else if (type instanceof SyntacticType.Void) {
@@ -701,61 +702,91 @@ public final class CompileTask implements Build.Task {
 			return Type.T_INT;
 		} else if (type instanceof SyntacticType.Array) {
 			SyntacticType.Array arrT = (SyntacticType.Array) type;
-			Type element = toSemanticType(arrT.element, context);
+			Type element = toSemanticType(arrT.getElement(), context);
 			return Type.Array(element);
 		} else if (type instanceof SyntacticType.Reference) {
 			SyntacticType.Reference refT = (SyntacticType.Reference) type;
-			Type element = toSemanticType(refT.element, context);
-			return Type.Reference(refT.lifetime,element);
+			Type element = toSemanticType(refT.getElement(), context);
+			if(refT.getLifetime() == null) {
+				return Type.Reference("*",element);
+			} else {
+				return Type.Reference(refT.getLifetime().toString(),element);
+			}
 		} else if (type instanceof SyntacticType.Record) {
 			SyntacticType.Record recT = (SyntacticType.Record) type;
 			ArrayList<Pair<Type, String>> fields = new ArrayList<>();
-			for (Map.Entry<String, SyntacticType> e : recT.types.entrySet()) {
-				fields.add(new Pair<>(toSemanticType(e.getValue(), context), e.getKey()));
+			WyalFile.FieldDeclaration[] recFields = recT.getFields();
+			for (int i=0;i!=recFields.length;++i) {
+				WyalFile.FieldDeclaration fd = recFields[i];
+				fields.add(new Pair<>(toSemanticType(fd.getType(), context), fd.getVariableName().toString()));
 			}
-			return Type.Record(recT.isOpen, fields);
+			return Type.Record(recT.isOpen(), fields);
 		} else if (type instanceof SyntacticType.Function) {
 			SyntacticType.Function funT = (SyntacticType.Function) type;
-			Type[] parameters = toSemanticTypes(funT.paramTypes, context);
-			Type[] returns = toSemanticTypes(funT.returnTypes, context);
+			Type[] parameters = toSemanticTypes(funT.getParameters(), context);
+			Type[] returns = toSemanticTypes(funT.getReturns(), context);
 			return Type.Function(parameters, returns);
 		} else if (type instanceof SyntacticType.Method) {
 			SyntacticType.Method methT = (SyntacticType.Method) type;
-			String[] lifetimeParameters = ArrayUtils.toStringArray(methT.lifetimeParameters);
-			String[] contextLifetimes = ArrayUtils.toStringArray(methT.contextLifetimes);
-			Type[] parameters = toSemanticTypes(methT.paramTypes, context);
-			Type[] returns = toSemanticTypes(methT.returnTypes, context);
+			String[] lifetimeParameters = toStringArray(methT.getLifetimeParameters());
+			String[] contextLifetimes = toStringArray(methT.getContextLifetimes());
+			Type[] parameters = toSemanticTypes(methT.getParameters(), context);
+			Type[] returns = toSemanticTypes(methT.getReturns(), context);
 			return Type.Method(lifetimeParameters, contextLifetimes, parameters, returns);
 		} else if (type instanceof SyntacticType.Property) {
 			SyntacticType.Property funT = (SyntacticType.Property) type;
-			Type[] parameters = toSemanticTypes(funT.paramTypes, context);
+			Type[] parameters = toSemanticTypes(funT.getParameters(), context);
 			return Type.Property(parameters);
 		} else if (type instanceof SyntacticType.Union) {
 			SyntacticType.Union unionT = (SyntacticType.Union) type;
-			return Type.Union(toSemanticTypes(unionT.bounds, context));
+			return Type.Union(toSemanticTypes(unionT.getOperands(), context));
 		} else if (type instanceof SyntacticType.Intersection) {
 			SyntacticType.Intersection intersectionT = (SyntacticType.Intersection) type;
-			return Type.Intersection(toSemanticTypes(intersectionT.bounds, context));
+			return Type.Intersection(toSemanticTypes(intersectionT.getOperands(), context));
 		} else if (type instanceof SyntacticType.Negation) {
 			SyntacticType.Negation negT = (SyntacticType.Negation) type;
-			Type element = toSemanticType(negT.element, context);
+			Type element = toSemanticType(negT.getElement(), context);
 			return Type.Negation(element);
 		} else if (type instanceof SyntacticType.Nominal) {
 			SyntacticType.Nominal nominalT = (SyntacticType.Nominal) type;
-			NameID name = resolveAsName(nominalT.names, context);
+			// FIXME: this should not be here!
+			NameID name = resolveAsName(Arrays.asList(toStringArray(nominalT.getName().getComponents())), context);
 			return Type.Nominal(name);
 		} else {
 			throw new InternalFailure("invalid type encountered", context.file().getEntry(), type);
 		}
 	}
 
-	private Type[] toSemanticTypes(List<? extends SyntacticType> types, WhileyFile.Context context)
-			throws ResolveError, IOException {
+	private Type[] toSemanticTypes(WyalFile.Tuple<WyalFile.Type> types, WhileyFile.Context context) throws ResolveError, IOException {
 		Type[] wyilTypes = new Type[types.size()];
 		for (int i = 0; i != wyilTypes.length; ++i) {
-			wyilTypes[i] = toSemanticType(types.get(i), context);
+			wyilTypes[i] = toSemanticType(types.getOperand(i), context);
 		}
 		return wyilTypes;
+	}
+
+	private Type[] toSemanticTypes(WyalFile.Type[] types, WhileyFile.Context context) throws ResolveError, IOException {
+		Type[] wyilTypes = new Type[types.length];
+		for (int i = 0; i != wyilTypes.length; ++i) {
+			wyilTypes[i] = toSemanticType(types[i], context);
+		}
+		return wyilTypes;
+	}
+
+	private String[] toStringArray(WyalFile.Tuple<WyalFile.Identifier> identifiers) {
+		String[] strings = new String[identifiers.size()];
+		for(int i=0;i!=strings.length;++i) {
+			strings[i] = identifiers.getOperand(i).get();
+		}
+		return strings;
+	}
+
+	private String[] toStringArray(WyalFile.Identifier[] identifiers) {
+		String[] strings = new String[identifiers.length];
+		for(int i=0;i!=strings.length;++i) {
+			strings[i] = identifiers[i].get();
+		}
+		return strings;
 	}
 
 	private static String name(String camelCase) {

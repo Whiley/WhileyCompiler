@@ -8,6 +8,7 @@ package wyc.lang;
 
 import java.util.*;
 
+import wyal.lang.WyalFile;
 import wybs.lang.Attribute;
 import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
@@ -159,11 +160,11 @@ public interface Expr extends SyntacticElement {
 	 * @return
 	 */
 	public static class Cast extends SyntacticElement.Impl implements Expr {
-		public final SyntacticType unresolvedType;
+		public final WyalFile.Type unresolvedType;
 		public Type type;
 		public Expr expr;
 
-		public Cast(SyntacticType type, Expr expr, Attribute... attributes) {
+		public Cast(WyalFile.Type type, Expr expr, Attribute... attributes) {
 			super(attributes);
 			this.unresolvedType = type;
 			this.expr = expr;
@@ -181,10 +182,10 @@ public interface Expr extends SyntacticElement {
 	}
 
 	public static class TypeVal extends SyntacticElement.Impl implements Expr {
-		public final SyntacticType unresolvedType;
+		public final WyalFile.Type unresolvedType;
 		public Type type;
 
-		public TypeVal(SyntacticType val, Attribute... attributes) {
+		public TypeVal(WyalFile.Type val, Attribute... attributes) {
 			super(attributes);
 			this.unresolvedType = val;
 		}
@@ -197,11 +198,11 @@ public interface Expr extends SyntacticElement {
 
 	public static class AbstractFunctionOrMethod extends SyntacticElement.Impl implements Expr {
 		public final String name;
-		public final ArrayList<SyntacticType> paramTypes;
+		public final ArrayList<WyalFile.Type> paramTypes;
 		public final ArrayList<String> lifetimeParameters;
 		public Type.FunctionOrMethod type;
 
-		public AbstractFunctionOrMethod(String name, Collection<SyntacticType> paramTypes,
+		public AbstractFunctionOrMethod(String name, Collection<WyalFile.Type> paramTypes,
 				Collection<String> lifetimeParameters, Attribute... attributes) {
 			super(attributes);
 			this.name = name;
@@ -218,7 +219,7 @@ public interface Expr extends SyntacticElement {
 		}
 
 		public AbstractFunctionOrMethod(String name,
-				Collection<SyntacticType> paramTypes,
+				Collection<WyalFile.Type> paramTypes,
 				Collection<String> lifetimeParameters,
 				Collection<Attribute> attributes) {
 			super(attributes);
@@ -244,13 +245,13 @@ public interface Expr extends SyntacticElement {
 	public static class FunctionOrMethod extends AbstractFunctionOrMethod {
 		public final NameID nid;
 
-		public FunctionOrMethod(NameID nid, Collection<SyntacticType> paramTypes,
+		public FunctionOrMethod(NameID nid, Collection<WyalFile.Type> paramTypes,
 				Collection<String> lifetimeParameters, Attribute... attributes) {
 			super(nid.name(), paramTypes, lifetimeParameters, attributes);
 			this.nid = nid;
 		}
 
-		public FunctionOrMethod(NameID nid, Collection<SyntacticType> paramTypes,
+		public FunctionOrMethod(NameID nid, Collection<WyalFile.Type> paramTypes,
 				Collection<String> lifetimeParameters, Collection<Attribute> attributes) {
 			super(nid.name(), paramTypes, lifetimeParameters, attributes);
 			this.nid = nid;

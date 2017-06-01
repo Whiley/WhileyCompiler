@@ -2453,7 +2453,8 @@ public class VerificationConditionGenerator {
 		} else if (type instanceof Type.Reference) {
 			Type.Reference lt = (Type.Reference) type;
 			WyalFile.Type elem = convert(lt.element(), element, context);
-			result = new WyalFile.Type.Reference(elem);
+			// FIXME: shouldn't construct fresh identifier here.
+			result = new WyalFile.Type.Reference(elem, new WyalFile.Identifier(lt.lifetime()));
 		} else if (type instanceof Type.Union) {
 			Type.Union tu = (Type.Union) type;
 			Type[] tu_elements = tu.bounds();
