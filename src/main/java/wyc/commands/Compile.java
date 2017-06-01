@@ -74,6 +74,13 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	protected boolean verify = false;
 
 	/**
+	 * Signals that verification conditions should be generated even if
+	 * verification is not performed.
+	 */
+	protected boolean verificationConditions = false;
+
+
+	/**
 	 * Identifies which whiley source files should be considered for
 	 * compilation. By default, all files reachable from srcdir are considered.
 	 */
@@ -126,6 +133,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	private static final String[] SCHEMA = {
 			"verbose",
 			"verify",
+			"vcg",
 			"brief"
 	};
 
@@ -143,6 +151,8 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			return "Enable brief reporting of error messages";
 		case "verify":
 			return "Enable verification of Whiley source files";
+		case "vcg":
+			return "Emit verification condition for Whiley source files";
 		default:
 			return super.describe(option);
 		}
@@ -160,6 +170,9 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		case "verify":
 			this.verify = true;
 			break;
+		case "vcg":
+			this.verificationConditions = true;
+			break;
 		default:
 			super.set(option, value);
 		}
@@ -170,12 +183,20 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		return "Compile one or more Whiley source files";
 	}
 
-	public void setVerify() {
-		verify = true;
+	public void setVerify(boolean flag) {
+		verify = flag;
 	}
 
 	public boolean getVerify() {
 		return verify;
+	}
+
+	public void setVerificationConditions(boolean flag) {
+		this.verificationConditions = flag;
+	}
+
+	public boolean getVerificationConditions() {
+		return verificationConditions;
 	}
 
 	public void setVerbose() {
@@ -261,7 +282,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		// Initialise Project
 		try {
 			addCompilationBuildRules(project);
-			if (verify) {
+			if (verify || verificationConditions) {
 				addVerificationBuildRules(project);
 			}
 			// =====================================================================
@@ -337,9 +358,8 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		if(verbose) {
 			wyalBuildTask.setLogger(logger);
 		}
-		if(verify) {
-			wyalBuildTask.setVerify(true);
-		}
+		wyalBuildTask.setVerify(verify);
+		//
 		project.add(new StdBuildRule(wyalBuildTask, wyaldir, wyalIncludes, wyalExcludes, wycsdir));
 	}
 
