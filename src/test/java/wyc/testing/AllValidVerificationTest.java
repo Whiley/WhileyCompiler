@@ -131,8 +131,6 @@ public class AllValidVerificationTest {
 		IGNORED.put("TypeEquals_Valid_25", "WyTP#107");
 		// Issue 111 "Infinite Recursive Expansion"
 		IGNORED.put("RecursiveType_Valid_29", "WyTP#111");
-		IGNORED.put("Function_Valid_18", "WyTP#111");
-		IGNORED.put("While_Valid_22", "WyTP#111");
 		// Issue 112 "More Performance Problems with Type Checking"
 		IGNORED.put("Complex_Valid_2", "WyTP#112");
 		IGNORED.put("BoolList_Valid_3", "WyTP#112");
