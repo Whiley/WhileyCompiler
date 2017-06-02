@@ -68,8 +68,7 @@ public class AllValidVerificationTest {
 		//
 		IGNORED.put("Record_Valid_3", "#714");
 		//
-		IGNORED.put("Complex_Valid_8", "#730");
-		IGNORED.put("Ensures_Valid_3", "#730");
+		//IGNORED.put("Ensures_Valid_3", "#730");
 		//
 		IGNORED.put("ConstrainedList_Valid_22", "#731");
 		IGNORED.put("Assert_Valid_1", "#731");
@@ -82,88 +81,66 @@ public class AllValidVerificationTest {
 		IGNORED.put("Reference_Valid_3", "#743");
 		IGNORED.put("Reference_Valid_6", "#743");
 		//
-		//
 		// ===============================================================
 		// Whiley Theorem Prover faults
 		// ===============================================================
-		IGNORED.put("Byte_Valid_1", "too long for Travis");
-		IGNORED.put("Byte_Valid_2", "too long for Travis");
-		IGNORED.put("Byte_Valid_3", "too long for Travis");
-		IGNORED.put("Byte_Valid_4", "too long for Travis");
-		IGNORED.put("Complex_Valid_5", "too long for Travis");
-		IGNORED.put("Complex_Valid_7", "too long for Travis");
-		IGNORED.put("ConstrainedList_Valid_3", "too long for Travis");
-		IGNORED.put("ConstrainedList_Valid_6", "too long for Travis");
-		IGNORED.put("ConstrainedList_Valid_20", "too long for Travis");
-		IGNORED.put("ConstrainedList_Valid_23", "too long for Travis");
-		IGNORED.put("ListAssign_Valid_5", "too long for Travis");
-		IGNORED.put("String_Valid_6", "too long for Travis");
-		IGNORED.put("While_Valid_30", "too long for Travis");
-		IGNORED.put("While_Valid_31", "too long for Travis");
-		IGNORED.put("While_Valid_38", "too long for Travis");
-		IGNORED.put("While_Valid_39", "too long for Travis");
-		IGNORED.put("While_Valid_40", "too long for Travis");
-		//
-		// timeouts
-		IGNORED.put("BoolList_Valid_3", "timeout");
-		IGNORED.put("Complex_Valid_2", "timeout");
-		IGNORED.put("ConstrainedRecord_Valid_9", "timeout");
-		IGNORED.put("Function_Valid_18", "timeout");
-		IGNORED.put("RecursiveType_Valid_4", "timeout");
-		IGNORED.put("While_Valid_2", "timeout");
-		IGNORED.put("While_Valid_22", "timeout");
-		IGNORED.put("While_Valid_26", "timeout");
-		IGNORED.put("RecursiveType_Valid_29", "timeout");
-		IGNORED.put("RecursiveType_Valid_2", "timeout");
-		IGNORED.put("TypeEquals_Valid_25", "timeout");
-		//
-		// Issue 2
+		IGNORED.put("ConstrainedList_Valid_8", "too long for Travis");
+		IGNORED.put("Complex_Valid_8", "too long for Travis");
+		IGNORED.put("RecursiveType_Valid_2", "too long for Travis");
+		// Issue 2 "Verification of Remainder Operator"
 		IGNORED.put("ConstrainedInt_Valid_22", "WyTP#2");
-		// Issue 12
+		// Issue 12 "Support for Non-linear Arthmetic"
 		IGNORED.put("IntMul_Valid_2", "WyTP#12");
 		IGNORED.put("While_Valid_27", "WyTP#12");
 		IGNORED.put("While_Valid_32", "WyTP#12");
-		// Issue 29
+		// Issue 29 "Triggerless Quantifier Instantiation"
+		IGNORED.put("ConstrainedList_Valid_14", "WyTP#29");
 		IGNORED.put("ConstrainedList_Valid_18", "WyTP#29");
-		IGNORED.put("ConstrainedList_Valid_8", "WyTP#29");
-		// Issue 36
+		// Issue 36 "Support for Division Operator Feature"
 		IGNORED.put("Cast_Valid_5", "WyTP#36");
 		IGNORED.put("IntOp_Valid_1", "WyTP#36");
 		IGNORED.put("IntDiv_Valid_3", "WyTP#36");
 		IGNORED.put("Lambda_Valid_3", "WyTP#36");
 		IGNORED.put("Lambda_Valid_4", "WyTP#36");
-		//
+		// Issue 41 "Case Split within Quantifier"
 		IGNORED.put("Property_Valid_4", "WyTP#41");
 		IGNORED.put("Subtype_Valid_5", "WyTP#41");
 		IGNORED.put("RecursiveType_Valid_19", "WyTP#41");
-		//
+		// Issue 76 "Casting Record Types"
 		IGNORED.put("Coercion_Valid_9", "WyTP#76");
 		IGNORED.put("RecordCoercion_Valid_1", "WyTP#76");
-		//
-		IGNORED.put("RecursiveType_Valid_7", "WyTP#77");
-		IGNORED.put("OpenRecord_Valid_9", "WyTP#77");
-		IGNORED.put("TypeEquals_Valid_30", "WyTP#77");
-		//
-		IGNORED.put("Complex_Valid_1", "WyTP#78");
-		//
-		IGNORED.put("ConstrainedList_Valid_14", "WyTP#79");
-		//
+		// Issue 80 "(Non-)Empty Type"
 		IGNORED.put("OpenRecord_Valid_4", "WyTP#80");
-		//
-		IGNORED.put("While_Valid_15", "WyTP#82");
-		IGNORED.put("While_Valid_20", "WyTP#82");
-		//
-		IGNORED.put("RecursiveType_Valid_11", "WyTP#84");
-		//
+		IGNORED.put("OpenRecord_Valid_9", "WyTP#80");
+		// Issue 85 "NegativeArraySizeException in CoerciveSubtypeOperator"
+		IGNORED.put("ConstrainedRecord_Valid_9", "WyTP#85");
 		IGNORED.put("TypeEquals_Valid_54", "WyTP#85");
-		//
+		// Issue 86 "Handle Coefficients for CongruenceClosure"
 		IGNORED.put("While_Valid_25", "WyTP#86");
-		//
-		IGNORED.put("TypeEquals_Valid_32", "WyTP#88");
-		//
+		IGNORED.put("While_Valid_30", "WyTP#86");
+		// Issue 89 "Unknown Assertion Failure"
 		IGNORED.put("While_Valid_37", "WyTP#89");
-		//
+		// Issue 102 "Support Reference Lifetimes"
 		IGNORED.put("Lifetime_Valid_8", "WyTP#102");
+		// Issue 104 "Incompleteness in CoerciveSubtypeOperator"
+		IGNORED.put("RecursiveType_Valid_7", "WyTP#104");
+		IGNORED.put("While_Valid_15", "WyTP#104");
+		IGNORED.put("While_Valid_20", "WyTP#104");
+		// Issue 107 "Limitation with ReadableRecordExtractor"
+		IGNORED.put("TypeEquals_Valid_30", "WyTP#107");
+		IGNORED.put("TypeEquals_Valid_25", "WyTP#107");
+		// Issue 111 "Infinite Recursive Expansion"
+		IGNORED.put("RecursiveType_Valid_29", "WyTP#111");
+		// Issue 112 "More Performance Problems with Type Checking"
+		IGNORED.put("Complex_Valid_2", "WyTP#112");
+		IGNORED.put("BoolList_Valid_3", "WyTP#112");
+		IGNORED.put("While_Valid_2", "WyTP#112");
+		IGNORED.put("While_Valid_26", "WyTP#112");
+		// Issue 114 "Limitation with TypeTestClosure"
+		IGNORED.put("RecursiveType_Valid_4", "WyTP#114");
+		//
+		IGNORED.put("While_Valid_34", "??");
+		IGNORED.put("String_Valid_6", "??");
 	}
 
 	/**

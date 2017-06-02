@@ -123,7 +123,7 @@ public abstract class AbstractProjectCommand<T> implements Command<T> {
 		try {
 			switch(option) {
 			case "whileypath":
-				setWhileypath((String) option);
+				setWhileypath((String) value);
 				break;
 			case "whileydir":
 				whileydir = new DirectoryRoot((String) value,registry);

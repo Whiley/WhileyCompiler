@@ -13,9 +13,9 @@ import java.io.PrintWriter;
 import java.util.List;
 import java.util.Map;
 
+import wyal.lang.WyalFile;
 import wyc.lang.Expr;
 import wyc.lang.Stmt;
-import wyc.lang.SyntacticType;
 import wyc.lang.WhileyFile;
 import wycc.util.Pair;
 import wyil.lang.*;
@@ -605,7 +605,7 @@ public class WhileyFilePrinter {
 		if(e.paramTypes != null && e.paramTypes.size() > 0) {
 			out.print("(");
 			boolean firstTime = true;
-			for(SyntacticType t : e.paramTypes) {
+			for(WyalFile.Type t : e.paramTypes) {
 				if(!firstTime) {
 					out.print(", ");
 				}
@@ -702,105 +702,107 @@ public class WhileyFilePrinter {
 	}
 
 
-	public void print(SyntacticType t) {
-		if(t instanceof SyntacticType.Any) {
+	public void print(WyalFile.Type t) {
+		if(t instanceof WyalFile.Type.Any) {
 			out.print("any");
-		} else if(t instanceof SyntacticType.Bool) {
+		} else if(t instanceof WyalFile.Type.Bool) {
 			out.print("bool");
-		} else if(t instanceof SyntacticType.Byte) {
+		} else if(t instanceof WyalFile.Type.Byte) {
 			out.print("byte");
-		} else if(t instanceof SyntacticType.Int) {
+		} else if(t instanceof WyalFile.Type.Int) {
 			out.print("int");
-		} else if(t instanceof SyntacticType.Null) {
+		} else if(t instanceof WyalFile.Type.Null) {
 			out.print("null");
-		} else if(t instanceof SyntacticType.Void) {
+		} else if(t instanceof WyalFile.Type.Void) {
 			out.print("void");
-		} else if(t instanceof SyntacticType.Nominal) {
-			SyntacticType.Nominal nt = (SyntacticType.Nominal) t;
+		} else if (t instanceof WyalFile.Type.Nominal) {
+			WyalFile.Type.Nominal nt = (WyalFile.Type.Nominal) t;
 			boolean firstTime = true;
-			for(String name : nt.names) {
-				if(!firstTime) {
+			for (WyalFile.Identifier name : nt.getName().getComponents()) {
+				if (!firstTime) {
 					out.print(".");
 				}
-				firstTime=false;
+				firstTime = false;
 				out.print(name);
 			}
-		} else if(t instanceof SyntacticType.Array) {
+		} else if(t instanceof WyalFile.Type.Array) {
 			out.print("[");
-			print(((SyntacticType.Array)t).element);
+			print(((WyalFile.Type.Array)t).getElement());
 			out.print("]");
-		} else if(t instanceof SyntacticType.FunctionOrMethod) {
-			SyntacticType.FunctionOrMethod tt = (SyntacticType.FunctionOrMethod) t;
+		} else if(t instanceof WyalFile.Type.FunctionOrMethodOrProperty) {
+			WyalFile.Type.FunctionOrMethodOrProperty tt = (WyalFile.Type.FunctionOrMethodOrProperty) t;
 
-			if(t instanceof SyntacticType.Method) {
+			if(t instanceof WyalFile.Type.Function) {
+				out.print("function ");
+			} else if(t instanceof WyalFile.Type.Method) {
 				out.print("method ");
 			} else {
-				out.print("function ");
+				out.print("property ");
 			}
-			if (!tt.contextLifetimes.isEmpty()) {
-				out.print("[");
-				boolean firstTime = true;
-				for (String lifetime : tt.contextLifetimes) {
-					if (!firstTime) {
-						out.print(", ");
-					}
-					firstTime = false;
-					out.print(lifetime);
-				}
-				out.print("]");
-			}
-			if (!tt.lifetimeParameters.isEmpty()) {
-				out.print("<");
-				boolean firstTime = true;
-				for (String lifetime : tt.lifetimeParameters) {
-					if (!firstTime) {
-						out.print(", ");
-					}
-					firstTime = false;
-					out.print(lifetime);
-				}
-				out.print(">");
-			}
-			printParameterTypes(tt.paramTypes);
+//			if (!tt.contextLifetimes.isEmpty()) {
+//				out.print("[");
+//				boolean firstTime = true;
+//				for (String lifetime : tt.contextLifetimes) {
+//					if (!firstTime) {
+//						out.print(", ");
+//					}
+//					firstTime = false;
+//					out.print(lifetime);
+//				}
+//				out.print("]");
+//			}
+//			if (!tt.lifetimeParameters.isEmpty()) {
+//				out.print("<");
+//				boolean firstTime = true;
+//				for (String lifetime : tt.lifetimeParameters) {
+//					if (!firstTime) {
+//						out.print(", ");
+//					}
+//					firstTime = false;
+//					out.print(lifetime);
+//				}
+//				out.print(">");
+//			}
+			printParameterTypes(tt.getParameters());
 			out.print("->");
-			printParameterTypes(tt.returnTypes);
-		} else if(t instanceof SyntacticType.Record) {
-			SyntacticType.Record tt = (SyntacticType.Record) t;
+			printParameterTypes(tt.getReturns());
+		} else if(t instanceof WyalFile.Type.Record) {
+			WyalFile.Type.Record tt = (WyalFile.Type.Record) t;
 			out.print("{");
 			boolean firstTime = true;
-			for(Map.Entry<String, SyntacticType> et : tt.types.entrySet()) {
+			for(WyalFile.FieldDeclaration fd : tt.getFields()) {
 				if(!firstTime) {
 					out.print(", ");
 				}
 				firstTime=false;
-				print(et.getValue());
+				print(fd.getType());
 				out.print(" ");
-				out.print(et.getKey());
+				out.print(fd.getVariableName());
 			}
-			if(tt.isOpen) {
+			if(tt.isOpen()) {
 				out.print(", ...");
 			}
 			out.print("}");
-		} else if(t instanceof SyntacticType.Reference) {
+		} else if(t instanceof WyalFile.Type.Reference) {
 			out.print("ref ");
-			print(((SyntacticType.Reference) t).element);
-		} else if(t instanceof SyntacticType.Negation) {
+			print(((WyalFile.Type.Reference) t).getElement());
+		} else if(t instanceof WyalFile.Type.Negation) {
 			out.print("!");
-			print(((SyntacticType.Negation) t).element);
-		} else if(t instanceof SyntacticType.Union) {
-			SyntacticType.Union ut = (SyntacticType.Union) t;
+			print(((WyalFile.Type.Negation) t).getElement());
+		} else if(t instanceof WyalFile.Type.Union) {
+			WyalFile.Type.Union ut = (WyalFile.Type.Union) t;
 			boolean firstTime = true;
-			for(SyntacticType et : ut.bounds) {
+			for(WyalFile.Type et : ut.getOperands()) {
 				if(!firstTime) {
 					out.print(" | ");
 				}
 				firstTime=false;
 				print(et);
 			}
-		} else if(t instanceof SyntacticType.Intersection) {
-			SyntacticType.Intersection ut = (SyntacticType.Intersection) t;
+		} else if(t instanceof WyalFile.Type.Intersection) {
+			WyalFile.Type.Intersection ut = (WyalFile.Type.Intersection) t;
 			boolean firstTime = true;
-			for(SyntacticType et : ut.bounds) {
+			for(WyalFile.Type et : ut.getOperands()) {
 				if(!firstTime) {
 					out.print(" & ");
 				}
@@ -813,11 +815,11 @@ public class WhileyFilePrinter {
 		}
 	}
 
-	private void printParameterTypes(List<SyntacticType> parameters) {
+	private void printParameterTypes(WyalFile.Tuple<WyalFile.Type> parameters) {
 		out.print("(");
 		boolean firstTime = true;
 		for(int i = 0; i < parameters.size();++i) {
-			SyntacticType p = parameters.get(i);
+			WyalFile.Type p = parameters.getOperand(i);
 			if(!firstTime) {
 				out.print(", ");
 			}

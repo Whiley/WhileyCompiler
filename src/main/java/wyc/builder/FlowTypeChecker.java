@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 
+import wyal.lang.WyalFile;
 import wyautl_old.lang.Automata;
 import wyautl_old.lang.Automaton;
 import wybs.lang.*;
@@ -1563,7 +1564,7 @@ public class FlowTypeChecker {
 
 		if (expr.paramTypes != null) {
 			ArrayList<Type> paramTypes = new ArrayList<>();
-			for (SyntacticType t : expr.paramTypes) {
+			for (WyalFile.Type t : expr.paramTypes) {
 				paramTypes.add(builder.toSemanticType(t, context));
 			}
 			// FIXME: clearly a bug here in the case of message reference
@@ -2511,7 +2512,8 @@ public class FlowTypeChecker {
 
 		WhileyFile wf = builder.getSourceFile(mid);
 		if (wf != null) {
-			for (WhileyFile.FunctionOrMethodOrProperty f : wf.declarations(WhileyFile.FunctionOrMethodOrProperty.class, nid.name())) {
+			for (WhileyFile.FunctionOrMethodOrProperty f : wf.declarations(WhileyFile.FunctionOrMethodOrProperty.class,
+					nid.name())) {
 				if (nparams == -1 || f.parameters.size() == nparams) {
 					Type.FunctionOrMethod ft = (Type.FunctionOrMethod) builder.toSemanticType(f.unresolvedType(), f);
 					candidates.add(new Pair<>(nid, ft));
@@ -2686,31 +2688,31 @@ public class FlowTypeChecker {
 	// =========================================================================
 
 	public Type.Function resolveAsType(SyntacticType.Function t, Context context) throws IOException {
-		return (Type.Function) resolveAsType((SyntacticType.FunctionOrMethod) t, context);
+		return (Type.Function) resolveAsType((WyalFile.Type.FunctionOrMethodOrProperty) t, context);
 	}
 
 	public Type.Method resolveAsType(SyntacticType.Method t, Context context) throws IOException {
-		return (Type.Method) resolveAsType((SyntacticType.FunctionOrMethod) t, context);
+		return (Type.Method) resolveAsType((WyalFile.Type.FunctionOrMethodOrProperty) t, context);
 	}
 
 	public Type.Property resolveAsType(SyntacticType.Property t, Context context) throws IOException {
-		return (Type.Property) resolveAsType((SyntacticType.FunctionOrMethod) t, context);
+		return (Type.Property) resolveAsType((WyalFile.Type.FunctionOrMethodOrProperty) t, context);
 	}
 
-	public Type.FunctionOrMethod resolveAsType(SyntacticType.FunctionOrMethod t, Context context) throws IOException {
+	public Type.FunctionOrMethod resolveAsType(WyalFile.Type.FunctionOrMethodOrProperty t, Context context) throws IOException {
 		try {
 			// We need to sanity check the parameter types we have here, since
 			// occasionally we can end up with something other than a function
 			// type.
 			// This may seem surprising, but it can happen when one of the types
 			// involved is contractive (normally by accident).
-			for (SyntacticType param : t.paramTypes) {
+			for (WyalFile.Type param : t.getParameters()) {
 				Type nominal = builder.toSemanticType(param, context);
 				if (typeSystem.isSubtype(Type.T_VOID, nominal)) {
 					throw new SyntaxError("empty type encountered", file.getEntry(), param);
 				}
 			}
-			for (SyntacticType ret : t.returnTypes) {
+			for (WyalFile.Type ret : t.getReturns()) {
 				Type nominal = builder.toSemanticType(ret, context);
 				if (typeSystem.isSubtype(Type.T_VOID, nominal)) {
 					throw new SyntaxError("empty type encountered", file.getEntry(), ret);

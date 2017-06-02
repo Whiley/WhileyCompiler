@@ -94,9 +94,11 @@ public class AntTask extends MatchingTask {
 	}
 
 	public void setVerify(boolean b) {
-		if(b) {
-			command.setVerify();
-		}
+		command.setVerify(b);
+	}
+
+	public void setVcg(boolean b) {
+		command.setVerificationConditions(b);
 	}
 
 	public void setVerbose(boolean b) {

@@ -96,9 +96,7 @@ public class TestUtils {
 		Compile cmd = new Compile(registry,Logger.NULL,sysout,syserr);
 		cmd.setWhileydir(whileydir);
 		cmd.setWyaldir(whileydir); //
-		if(verify) {
-			cmd.setVerify();
-		}
+		cmd.setVerify(verify);
 		Compile.Result result = cmd.execute(args);
 		byte[] errBytes = syserr.toByteArray();
 		byte[] outBytes = sysout.toByteArray();
