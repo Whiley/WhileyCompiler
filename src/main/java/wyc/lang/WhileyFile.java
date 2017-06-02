@@ -507,7 +507,9 @@ public final class WhileyFile extends AbstractCompilationUnit {
 			for (Parameter r : returns) {
 				returnTypes.add(r.type);
 			}
-			return new WyalFile.Type.Function(new WyalFile.Tuple(paramTypes), new WyalFile.Tuple(returnTypes));
+			WyalFile.Tuple<WyalFile.Type> parameters = new WyalFile.Tuple(WyalFile.Type.class, paramTypes);
+			WyalFile.Tuple<WyalFile.Type> returns = new WyalFile.Tuple(WyalFile.Type.class, returnTypes);
+			return new WyalFile.Type.Function(parameters, returns);
 		}
 
 		@Override
@@ -572,8 +574,11 @@ public final class WhileyFile extends AbstractCompilationUnit {
 			for(String cl : this.lifetimeParameters) {
 				lifetimeParameters.add(new WyalFile.Identifier(cl));
 			}
-			return new WyalFile.Type.Method(new WyalFile.Tuple(parameterTypes), new WyalFile.Tuple(returnTypes),
-					new WyalFile.Tuple<>(contextLifetimes), new WyalFile.Tuple<>(lifetimeParameters));
+			WyalFile.Tuple<WyalFile.Type> parameters = new WyalFile.Tuple(WyalFile.Type.class, parameterTypes);
+			WyalFile.Tuple<WyalFile.Type> returns = new WyalFile.Tuple(WyalFile.Type.class, returnTypes);
+			WyalFile.Tuple<WyalFile.Identifier> lifetimes = new WyalFile.Tuple(WyalFile.Type.class, lifetimeParameters);
+			WyalFile.Tuple<WyalFile.Identifier> contexts = new WyalFile.Tuple(WyalFile.Type.class, contextLifetimes);
+			return new WyalFile.Type.Method(parameters, returns, contexts, lifetimes);
 		}
 
 		@Override
@@ -631,7 +636,8 @@ public final class WhileyFile extends AbstractCompilationUnit {
 			for (Parameter p : parameters) {
 				paramTypes.add(p.type);
 			}
-			return new WyalFile.Type.Property(new WyalFile.Tuple<>(paramTypes));
+			WyalFile.Tuple<WyalFile.Type> parameters = new WyalFile.Tuple(WyalFile.Type.class, paramTypes);
+			return new WyalFile.Type.Property(parameters);
 		}
 
 		@Override

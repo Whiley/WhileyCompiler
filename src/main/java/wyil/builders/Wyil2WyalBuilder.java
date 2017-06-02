@@ -62,8 +62,6 @@ public class Wyil2WyalBuilder implements Build.Task {
 		long start = System.currentTimeMillis();
 		long memory = runtime.freeMemory();
 
-		VerificationConditionGenerator vcg = new VerificationConditionGenerator(this);
-
 		// ========================================================================
 		// Translate files
 		// ========================================================================
@@ -74,7 +72,7 @@ public class Wyil2WyalBuilder implements Build.Task {
 			Path.Entry<WyalFile> target = (Path.Entry<WyalFile>) dst.create(source.id(), WyalFile.ContentType);
 			graph.registerDerivation(source, target);
 			generatedFiles.add(target);
-			WyalFile contents = vcg.translate(source.read(), target);
+			WyalFile contents = new VerificationConditionGenerator(new WyalFile(target),this).translate(source.read());
 			// Write the file into its destination
 			target.write(contents);
 			// Then, flush contents to disk in case we generate an assertion
