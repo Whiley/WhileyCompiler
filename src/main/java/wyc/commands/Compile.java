@@ -79,6 +79,10 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	 */
 	protected boolean verificationConditions = false;
 
+	/**
+	 * Signals the proof should be printed during verification.
+	 */
+	protected boolean proof = false;
 
 	/**
 	 * Identifies which whiley source files should be considered for
@@ -134,6 +138,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			"verbose",
 			"verify",
 			"vcg",
+			"proof",
 			"brief"
 	};
 
@@ -172,6 +177,9 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			break;
 		case "vcg":
 			this.verificationConditions = true;
+			break;
+		case "proof":
+			this.proof = true;
 			break;
 		default:
 			super.set(option, value);
@@ -357,6 +365,9 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		wyal.tasks.CompileTask wyalBuildTask = new wyal.tasks.CompileTask(project,typeSystem,prover);
 		if(verbose) {
 			wyalBuildTask.setLogger(logger);
+		}
+		if(proof) {
+			prover.setPrintProof(true);
 		}
 		wyalBuildTask.setVerify(verify);
 		//
