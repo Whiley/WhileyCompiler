@@ -139,6 +139,13 @@ public class AllValidVerificationTest {
 		// Issue 114 "Limitation with TypeTestClosure"
 		IGNORED.put("RecursiveType_Valid_4", "WyTP#114");
 		//
+//		//IGNORED.put("Byte_Valid_3", "WyTP#124");
+		IGNORED.put("Ensures_Valid_3", "WyTP#124");
+//		IGNORED.put("FunctionRef_Valid_4", "WyTP#124");
+		IGNORED.put("While_Valid_1", "WyTP#124");
+		IGNORED.put("While_Valid_44", "WyTP#124");
+		//
+
 		IGNORED.put("While_Valid_34", "??");
 		IGNORED.put("String_Valid_6", "??");
 	}
