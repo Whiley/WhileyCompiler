@@ -267,6 +267,7 @@ public class TypeSystem {
 		// END
 		Automaton a1 = toAutomaton(t1);
 		Automaton a2 = toAutomaton(t2);
+		//System.out.println(toString(a1) + " :> " + toString(a2));
 		SubtypeOperator relation = new SubtypeOperator(a1,a2,lr);
 		return relation.isSubtype(0, 0);
 	}

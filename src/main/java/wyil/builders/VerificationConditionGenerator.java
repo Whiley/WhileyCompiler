@@ -191,7 +191,7 @@ public class VerificationConditionGenerator {
 				invariant[i] = translateAsBlock(invariants.get(i), localEnvironment);
 			}
 		} else {
-			var = new WyalFile.VariableDeclaration(type, new WyalFile.Identifier("this"));
+			var = new WyalFile.VariableDeclaration(type, new WyalFile.Identifier("self"));
 		}
 		// Done
 		WyalFile.Identifier name = new WyalFile.Identifier(declaration.name());
