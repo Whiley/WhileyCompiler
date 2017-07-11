@@ -507,8 +507,8 @@ public final class WhileyFile extends AbstractCompilationUnit {
 			for (Parameter r : returns) {
 				returnTypes.add(r.type);
 			}
-			WyalFile.Tuple<WyalFile.Type> parameters = new WyalFile.Tuple(WyalFile.Type.class, paramTypes);
-			WyalFile.Tuple<WyalFile.Type> returns = new WyalFile.Tuple(WyalFile.Type.class, returnTypes);
+			WyalFile.Tuple<WyalFile.Type> parameters = new WyalFile.Tuple<>(WyalFile.Type.class, paramTypes);
+			WyalFile.Tuple<WyalFile.Type> returns = new WyalFile.Tuple<>(WyalFile.Type.class, returnTypes);
 			return new WyalFile.Type.Function(parameters, returns);
 		}
 
@@ -574,10 +574,10 @@ public final class WhileyFile extends AbstractCompilationUnit {
 			for(String cl : this.lifetimeParameters) {
 				lifetimeParameters.add(new WyalFile.Identifier(cl));
 			}
-			WyalFile.Tuple<WyalFile.Type> parameters = new WyalFile.Tuple(WyalFile.Type.class, parameterTypes);
-			WyalFile.Tuple<WyalFile.Type> returns = new WyalFile.Tuple(WyalFile.Type.class, returnTypes);
-			WyalFile.Tuple<WyalFile.Identifier> lifetimes = new WyalFile.Tuple(WyalFile.Type.class, lifetimeParameters);
-			WyalFile.Tuple<WyalFile.Identifier> contexts = new WyalFile.Tuple(WyalFile.Type.class, contextLifetimes);
+			WyalFile.Tuple<WyalFile.Type> parameters = new WyalFile.Tuple<>(WyalFile.Type.class, parameterTypes);
+			WyalFile.Tuple<WyalFile.Type> returns = new WyalFile.Tuple<>(WyalFile.Type.class, returnTypes);
+			WyalFile.Tuple<WyalFile.Identifier> lifetimes = new WyalFile.Tuple<>(WyalFile.Identifier.class, lifetimeParameters);
+			WyalFile.Tuple<WyalFile.Identifier> contexts = new WyalFile.Tuple<>(WyalFile.Identifier.class, contextLifetimes);
 			return new WyalFile.Type.Method(parameters, returns, contexts, lifetimes);
 		}
 
@@ -636,7 +636,7 @@ public final class WhileyFile extends AbstractCompilationUnit {
 			for (Parameter p : parameters) {
 				paramTypes.add(p.type);
 			}
-			WyalFile.Tuple<WyalFile.Type> parameters = new WyalFile.Tuple(WyalFile.Type.class, paramTypes);
+			WyalFile.Tuple<WyalFile.Type> parameters = new WyalFile.Tuple<>(WyalFile.Type.class, paramTypes);
 			return new WyalFile.Type.Property(parameters);
 		}
 

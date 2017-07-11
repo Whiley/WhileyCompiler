@@ -2329,10 +2329,15 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private WyalFile.Name convert(NameID id, SyntacticElement context) {
-		return convert(id.module(),id.name(),context);
+		return convert(id.module(), id.name(), context);
 	}
 
 	private WyalFile.Name convert(Path.ID module, String name, SyntacticElement context) {
+		if(module.equals(wyalFile.getEntry().id())) {
+			// This is a local name. Therefore, it does not need to be fully
+			// qualified.
+			module = Trie.ROOT;
+		}
 		WyalFile.Identifier[] components = new WyalFile.Identifier[module.size()+1];
 		for(int i=0;i!=module.size();++i) {
 			WyalFile.Identifier id = new WyalFile.Identifier(module.get(i));
