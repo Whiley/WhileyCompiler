@@ -3,8 +3,8 @@ language: java
 
 #
 jdk:
-    - oraclejdk8
-
+    - openjdk8
+dist: trusty
 #
 install: true
 
