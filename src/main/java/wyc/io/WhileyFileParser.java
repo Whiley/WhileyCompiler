@@ -3636,10 +3636,10 @@ public class WhileyFileParser {
 			} while (tryAndMatch(true, VerticalBar) != null);
 			//
 			WyalFile.Type[] bounds = types.toArray(new WyalFile.Type[types.size()]);
-			return new WyalFile.Type.Union(bounds, sourceAttr(start, index - 1));
-		} else {
-			return t;
+			t = new WyalFile.Type.Union(bounds);
+			t.attributes().add(sourceAttr(start, index - 1));
 		}
+		return t;
 	}
 
 	/**
@@ -3665,10 +3665,10 @@ public class WhileyFileParser {
 			} while (tryAndMatch(true, Ampersand) != null);
 			//
 			WyalFile.Type[] bounds = types.toArray(new WyalFile.Type[types.size()]);
-			return new WyalFile.Type.Intersection(bounds, sourceAttr(start, index - 1));
-		} else {
-			return t;
+			t = new WyalFile.Type.Intersection(bounds);
+			t.attributes().add(sourceAttr(start, index - 1));
 		}
+		return t;
 	}
 
 	/**
@@ -3686,7 +3686,8 @@ public class WhileyFileParser {
 
 		while (tryAndMatch(true, LeftSquare) != null) {
 			match(RightSquare);
-			element = new WyalFile.Type.Array(element, sourceAttr(start, index - 1));
+			element = new WyalFile.Type.Array(element);
+			element.attributes().add(sourceAttr(start, index - 1));
 		}
 
 		return element;
@@ -3700,17 +3701,23 @@ public class WhileyFileParser {
 
 		switch (token.kind) {
 		case Void:
-			return new WyalFile.Type.Void(sourceAttr(start, index++));
+			t = new WyalFile.Type.Void();
+			break;
 		case Any:
-			return new WyalFile.Type.Any(sourceAttr(start, index++));
+			t = new WyalFile.Type.Any();
+			break;
 		case Null:
-			return new WyalFile.Type.Null(sourceAttr(start, index++));
+			t = new WyalFile.Type.Null();
+			break;
 		case Bool:
-			return new WyalFile.Type.Bool(sourceAttr(start, index++));
+			t = new WyalFile.Type.Bool();
+			break;
 		case Byte:
-			return new WyalFile.Type.Byte(sourceAttr(start, index++));
+			t = new WyalFile.Type.Byte();
+			break;
 		case Int:
-			return new WyalFile.Type.Int(sourceAttr(start, index++));
+			t = new WyalFile.Type.Int();
+			break;
 		case LeftBrace:
 			return parseBracketedType(scope);
 		case LeftCurly:
@@ -3729,6 +3736,9 @@ public class WhileyFileParser {
 			syntaxError("unknown type encountered", token);
 			return null;
 		}
+		match(token.kind);
+		t.attributes().add(sourceAttr(start, index - 1));
+		return t;
 	}
 
 	/**
@@ -3744,7 +3754,9 @@ public class WhileyFileParser {
 		int start = index;
 		match(Shreak);
 		WyalFile.Type element = parseArrayType(scope);
-		return new WyalFile.Type.Negation(element, sourceAttr(start, index - 1));
+		WyalFile.Type type = new WyalFile.Type.Negation(element);
+		type.attributes().add(sourceAttr(start, index - 1));
+		return type;
 	}
 
 	/**
@@ -3774,13 +3786,17 @@ public class WhileyFileParser {
 				// Now we know that there is an annotated lifetime
 				scope.mustBeLifetime(lifetimeIdentifier);
 				WyalFile.Type element = parseArrayType(scope);
-				return new WyalFile.Type.Reference(element, lifetimeIdentifier, sourceAttr(start, index - 1));
+				WyalFile.Type type = new WyalFile.Type.Reference(element, lifetimeIdentifier);
+				type.attributes().add(sourceAttr(start, index - 1));
+				return type;
 			}
 		}
 		index = backtrack;
 
 		WyalFile.Type element = parseArrayType(scope);
-		return new WyalFile.Type.Reference(element, null, sourceAttr(start, index - 1));
+		WyalFile.Type type = new WyalFile.Type.Reference(element, null);
+		type.attributes().add(sourceAttr(start, index - 1));
+		return type;
 	}
 
 	/**
@@ -3846,7 +3862,9 @@ public class WhileyFileParser {
 		}
 		// Done
 		WyalFile.FieldDeclaration[] arrFields = types.toArray(new WyalFile.FieldDeclaration[types.size()]);
-		return new WyalFile.Type.Record(isOpen, arrFields, sourceAttr(start, index - 1));
+		WyalFile.Type type = new WyalFile.Type.Record(isOpen, arrFields);
+		type.attributes().add(sourceAttr(start, index - 1));
+		return type;
 	}
 
 	/**
@@ -3862,7 +3880,9 @@ public class WhileyFileParser {
 	private WyalFile.Type parseNominalType(EnclosingScope scope) {
 		int start = index;
 		WyalFile.Name name = parseName(scope);
-		return new WyalFile.Type.Nominal(name, sourceAttr(start, index - 1));
+		WyalFile.Type type = new WyalFile.Type.Nominal(name);
+		type.attributes().add(sourceAttr(start, index - 1));
+		return type;
 	}
 
 	/**
@@ -3914,12 +3934,14 @@ public class WhileyFileParser {
 		}
 
 		// Done
+		WyalFile.Type type;
 		if (isFunction) {
-			return new WyalFile.Type.Function(paramTypes, returnTypes, sourceAttr(start, index - 1));
+			type = new WyalFile.Type.Function(paramTypes, returnTypes);
 		} else {
-			return new WyalFile.Type.Method(paramTypes, returnTypes, contextLifetimes, lifetimeParameters,
-					sourceAttr(start, index - 1));
+			type = new WyalFile.Type.Method(paramTypes, returnTypes, contextLifetimes, lifetimeParameters);
 		}
+		type.attributes().add(sourceAttr(start, index - 1));
+		return type;
 	}
 
 	/**
@@ -3982,11 +4004,12 @@ public class WhileyFileParser {
 				// Done
 				WyalFile.Type type;
 				if (lookahead.kind == Token.Kind.Function) {
-					type = new WyalFile.Type.Function(paramTypes, returnTypes, sourceAttr(start, index - 1));
+					type = new WyalFile.Type.Function(paramTypes, returnTypes);
 				} else {
-					type = new WyalFile.Type.Method(paramTypes, returnTypes, new WyalFile.Tuple<>(), lifetimeParameters,
-							sourceAttr(start, index - 1));
+					type = new WyalFile.Type.Method(paramTypes, returnTypes, new WyalFile.Tuple<>(),
+							lifetimeParameters);
 				}
+				type.attributes().add(sourceAttr(start, index - 1));
 				return new Pair<>(type, id);
 			} else {
 				// In this case, we failed to match a mixed type. Therefore, we
@@ -4026,7 +4049,7 @@ public class WhileyFileParser {
 			paramTypes.add(parseType(scope));
 		}
 
-		return new WyalFile.Tuple<>(paramTypes);
+		return new WyalFile.Tuple<>(WyalFile.Type.class,paramTypes);
 	}
 
 	private WyalFile.Name parseName(EnclosingScope scope) {
@@ -4071,7 +4094,7 @@ public class WhileyFileParser {
 			lifetimeParameters.add(lifetimeIdentifier);
 		} while (tryAndMatch(true, Comma) != null);
 		match(RightAngle);
-		return new WyalFile.Tuple<>(lifetimeParameters);
+		return new WyalFile.Tuple<>(WyalFile.Identifier.class, lifetimeParameters);
 	}
 
 	/**
@@ -4086,7 +4109,7 @@ public class WhileyFileParser {
 				contextLifetimes.add(parseLifetime(scope, true));
 			} while (tryAndMatch(true, Comma) != null);
 			match(RightSquare);
-			return new WyalFile.Tuple<>(contextLifetimes);
+			return new WyalFile.Tuple<>(WyalFile.Identifier.class,contextLifetimes);
 		}
 		return new WyalFile.Tuple<>();
 	}

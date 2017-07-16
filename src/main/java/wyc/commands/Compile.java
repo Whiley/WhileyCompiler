@@ -13,6 +13,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.StdBuildRule;
@@ -23,7 +24,11 @@ import wyc.util.AbstractProjectCommand;
 import wycc.lang.Feature.ConfigurationError;
 import wycc.util.ArrayUtils;
 import wycc.util.Logger;
+import wyal.lang.NameResolver;
 import wyal.lang.WyalFile;
+import wyal.util.Interpreter;
+import wyal.util.SmallWorldDomain;
+import wyal.util.WyalFileResolver;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
@@ -31,6 +36,7 @@ import wyfs.util.VirtualRoot;
 import wyil.builders.Wyil2WyalBuilder;
 import wyil.lang.WyilFile;
 import wytp.provers.AutomatedTheoremProver;
+import wytp.types.extractors.TypeInvariantExtractor;
 
 public class Compile extends AbstractProjectCommand<Compile.Result> {
 	/**
@@ -74,11 +80,20 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	protected boolean verify = false;
 
 	/**
+	 * Signals that counterexample generation should be performed.
+	 */
+	protected boolean counterexamples = false;
+
+	/**
 	 * Signals that verification conditions should be generated even if
 	 * verification is not performed.
 	 */
 	protected boolean verificationConditions = false;
 
+	/**
+	 * Signals the proof should be printed during verification.
+	 */
+	protected boolean proof = false;
 
 	/**
 	 * Identifies which whiley source files should be considered for
@@ -133,7 +148,9 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	private static final String[] SCHEMA = {
 			"verbose",
 			"verify",
+			"counterexamples",
 			"vcg",
+			"proof",
 			"brief"
 	};
 
@@ -151,6 +168,8 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			return "Enable brief reporting of error messages";
 		case "verify":
 			return "Enable verification of Whiley source files";
+		case "counterexamples":
+			return "Enable counterexample generation";
 		case "vcg":
 			return "Emit verification condition for Whiley source files";
 		default:
@@ -170,8 +189,14 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		case "verify":
 			this.verify = true;
 			break;
+		case "counterexamples":
+			this.counterexamples = true;
+			break;
 		case "vcg":
 			this.verificationConditions = true;
+			break;
+		case "proof":
+			this.proof = true;
 			break;
 		default:
 			super.set(option, value);
@@ -298,7 +323,11 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		} catch(InternalFailure e) {
 			throw e;
 		} catch (SyntaxError e) {
+			SyntacticElement element = e.getElement();
 			e.outputSourceError(syserr, brief);
+			if(counterexamples && element instanceof WyalFile.Declaration.Assert) {
+				findCounterexamples((WyalFile.Declaration.Assert)element,project);
+			}
 			if (verbose) {
 				printStackTrace(syserr, e);
 			}
@@ -358,11 +387,28 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		if(verbose) {
 			wyalBuildTask.setLogger(logger);
 		}
+		if(proof) {
+			prover.setPrintProof(true);
+		}
 		wyalBuildTask.setVerify(verify);
 		//
 		project.add(new StdBuildRule(wyalBuildTask, wyaldir, wyalIncludes, wyalExcludes, wycsdir));
 	}
 
+	public void findCounterexamples(WyalFile.Declaration.Assert assertion, StdProject project) {
+		// FIXME: it doesn't feel right creating new instances here.
+		NameResolver resolver = new WyalFileResolver(project);
+		TypeInvariantExtractor extractor = new TypeInvariantExtractor(resolver);
+		Interpreter interpreter = new Interpreter(new SmallWorldDomain(resolver), resolver, extractor);
+		try {
+			Interpreter.Result result = interpreter.evaluate(assertion);
+			if(!result.holds()) {
+				syserr.println("counterexample: " + result.getEnvironment());
+			}
+		} catch(Interpreter.UndefinedException e) {
+			// do nothing for now
+		}
+	}
 
 	public List getModifiedSourceFiles() throws IOException {
 		if (whileydir == null) {
