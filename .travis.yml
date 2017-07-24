@@ -4,12 +4,8 @@ language: java
 #
 jdk:
     - oraclejdk8
-
-#    - openjdk8
-#dist: trusty
 #
 install: true
-
 #
 script:
     - touch running_on_travis
