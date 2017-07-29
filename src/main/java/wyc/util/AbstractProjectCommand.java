@@ -210,7 +210,7 @@ public abstract class AbstractProjectCommand<T> implements Command<T> {
 	 * This means, in particular, that roots which have not been defined by the
 	 * user are created as necessary.
 	 */
-	private void finaliseConfiguration() throws IOException {
+	protected void finaliseConfiguration() throws IOException {
 		whileydir = getDirectoryRoot(whileydir,new DirectoryRoot(".",registry));
 		wyildir = getDirectoryRoot(wyildir,whileydir);
 		wyaldir = getAbstractRoot(wyaldir);
@@ -225,7 +225,7 @@ public abstract class AbstractProjectCommand<T> implements Command<T> {
 	 * @param roots
 	 * @throws IOException
 	 */
-	private void addBootpath(List<Path.Root>roots) throws IOException {
+	protected void addBootpath(List<Path.Root>roots) throws IOException {
 		// Configure boot path
 		String bootpath = System.getProperty("wdk.bootpath");
 		if (bootpath != null) {
@@ -239,7 +239,7 @@ public abstract class AbstractProjectCommand<T> implements Command<T> {
 	 * @throws IOException
 	 *
 	 */
-	private DirectoryRoot getDirectoryRoot(DirectoryRoot dir, DirectoryRoot defaulT) throws IOException {
+	protected DirectoryRoot getDirectoryRoot(DirectoryRoot dir, DirectoryRoot defaulT) throws IOException {
 		if(dir != null) {
 			return dir;
 		} else {
@@ -254,7 +254,7 @@ public abstract class AbstractProjectCommand<T> implements Command<T> {
 	 * @throws IOException
 	 *
 	 */
-	private Path.Root getAbstractRoot(Path.Root dir) throws IOException {
+	protected Path.Root getAbstractRoot(Path.Root dir) throws IOException {
 		if(dir != null) {
 			return dir;
 		} else {

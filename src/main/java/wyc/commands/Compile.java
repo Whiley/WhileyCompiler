@@ -303,7 +303,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	// Helpers
 	// =======================================================================
 
-	private Result compile(StdProject project, List<Path.Entry<WhileyFile>> entries) {
+	protected Result compile(StdProject project, List<Path.Entry<WhileyFile>> entries) {
 		// Initialise Project
 		try {
 			addCompilationBuildRules(project);
