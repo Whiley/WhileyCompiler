@@ -55,7 +55,7 @@ import wyfs.util.VirtualRoot;
  */
 public class AntTask extends MatchingTask {
 
-	private Compile command;
+	protected Compile command;
 
 	/**
 	 * Construct a new instance of this command.

@@ -348,7 +348,6 @@ public final class CompileTask implements Build.Task {
 	 */
 	public boolean hasModifier(NameID nid, Context context, Modifier modifier) throws IOException {
 		Path.ID mid = nid.module();
-
 		// Attempt to access source file first.
 		WhileyFile wf = getSourceFile(mid);
 		if (wf != null) {
@@ -368,7 +367,9 @@ public final class CompileTask implements Build.Task {
 				WyilFile.Block d = blocks.get(i);
 				if (d instanceof WyilFile.Declaration) {
 					WyilFile.Declaration nd = (WyilFile.Declaration) d;
-					return nd != null && nd.hasModifier(modifier);
+					if(nd.name().equals(nid.name())) {
+						return nd != null && nd.hasModifier(modifier);
+					}
 				}
 			}
 			return false;
