@@ -109,6 +109,19 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	protected Content.Filter<WhileyFile> whileyExcludes = null;
 
 	/**
+	 * Identifies which wyil source files should be considered for
+	 * compilation. By default, all files reachable from srcdir are considered.
+	 */
+	protected Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
+
+	/**
+	 * Identifies which wyil sources files should not be considered for
+	 * compilation. This overrides any identified by <code>whileyIncludes</code>
+	 * . By default, no files files reachable from srcdir are excluded.
+	 */
+	protected Content.Filter<WyilFile> wyilExcludes = null;
+
+	/**
 	 * Construct a new instance of this command.
 	 *
 	 * @param registry
@@ -287,7 +300,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		}
 	}
 
-	public Result execute(List<Path.Entry<WhileyFile>> entries) {
+	public Result execute(List<? extends Path.Entry<?>> entries) {
 		try {
 			StdProject project = initialiseProject();
 			return compile(project,entries);
@@ -303,7 +316,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	// Helpers
 	// =======================================================================
 
-	protected Result compile(StdProject project, List<Path.Entry<WhileyFile>> entries) {
+	protected Result compile(StdProject project, List<? extends Path.Entry<?>> entries) {
 		// Initialise Project
 		try {
 			addCompilationBuildRules(project);
@@ -431,7 +444,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	 */
 	public static <T, S> List<Path.Entry<T>> getModifiedSourceFiles(Path.Root sourceDir,
 			Content.Filter<T> sourceIncludes, Path.Root binaryDir, Content.Type<S> binaryContentType)
-					throws IOException {
+			throws IOException {
 		// Now, touch all source files which have modification date after
 		// their corresponding binary.
 		ArrayList<Path.Entry<T>> sources = new ArrayList<>();

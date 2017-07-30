@@ -133,10 +133,10 @@ public class AntTask extends MatchingTask {
 	@Override
 	public void execute() throws BuildException {
 		try {
-			List<Path.Entry<WhileyFile>> files = command.getModifiedSourceFiles();
+			List<? extends Path.Entry<?>> files = command.getModifiedSourceFiles();
 			Compile.Result r = command.execute(files);
 			if (r == Compile.Result.SUCCESS) {
-				if(command.getVerify()) {
+				if (command.getVerify()) {
 					log("Compiled and Verified " + files.size() + " source file(s)");
 				} else {
 					log("Compiled " + files.size() + " source file(s)");
