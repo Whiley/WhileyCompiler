@@ -9,7 +9,7 @@ ensures ys[0] == 0:
     return xs
 
 //
-method test():
+public export method test():
     int[] xs = f([1])
     //
     assert xs[0] == 0
