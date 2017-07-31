@@ -28,6 +28,6 @@
   <property name="STAGING_URL" value="https://oss.sonatype.org/service/local/staging/deploy/maven2" />
   <property name="SERVER_ID" value="ossrh" />
   <!-- Misc properties -->
-  <property name="JAVA_VERSION" value="1.7"/>
+  <property name="JAVA_VERSION" value="1.8"/>
   <property name="WHILEYHOME" value="${env.WHILEYHOME}"/>
 </project>

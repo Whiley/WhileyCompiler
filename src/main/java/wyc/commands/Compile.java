@@ -161,7 +161,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	private static final String[] SCHEMA = {
 			"verbose",
 			"verify",
-			"counterexamples",
+			"counterexample",
 			"vcg",
 			"proof",
 			"brief"
@@ -181,10 +181,12 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			return "Enable brief reporting of error messages";
 		case "verify":
 			return "Enable verification of Whiley source files";
-		case "counterexamples":
+		case "counterexample":
 			return "Enable counterexample generation";
 		case "vcg":
 			return "Emit verification condition for Whiley source files";
+		case "proof":
+			return "Emit generated proofs";
 		default:
 			return super.describe(option);
 		}
@@ -202,7 +204,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 		case "verify":
 			this.verify = true;
 			break;
-		case "counterexamples":
+		case "counterexample":
 			this.counterexamples = true;
 			break;
 		case "vcg":
