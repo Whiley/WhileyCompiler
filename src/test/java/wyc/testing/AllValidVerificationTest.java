@@ -85,6 +85,7 @@ public class AllValidVerificationTest {
 		// Whiley Theorem Prover faults
 		// ===============================================================
 		IGNORED.put("ConstrainedList_Valid_8", "too long for Travis");
+		IGNORED.put("ConstrainedList_Valid_23", "too long for Travis");
 		IGNORED.put("Complex_Valid_8", "too long for Travis");
 		IGNORED.put("RecursiveType_Valid_2", "too long for Travis");
 		// Issue 2 "Verification of Remainder Operator"
