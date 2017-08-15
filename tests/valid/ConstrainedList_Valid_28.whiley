@@ -1,5 +1,3 @@
-import whiley.lang.System
-
 // A recursive implementation of the lastIndexOf algorithm
 function lastIndexOf(int[] items, int item, int index) -> (int r)
 // Index is within bounds or one past length

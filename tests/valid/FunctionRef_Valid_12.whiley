@@ -1,4 +1,3 @@
-import whiley.lang.*
 type SizeGetter is function(Sized) -> int
 type Sized is { SizeGetter getSize }
 

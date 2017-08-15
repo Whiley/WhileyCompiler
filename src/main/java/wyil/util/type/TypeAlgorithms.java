@@ -86,7 +86,7 @@ public final class TypeAlgorithms {
 				Boolean nid1 = (Boolean) s1.data;
 				Boolean nid2 = (Boolean) s2.data;
 				return nid1.toString().compareTo(nid2.toString());
-			} else if(s1.kind == TypeSystem.K_FUNCTION || s1.kind == TypeSystem.K_METHOD) {
+			} else if(s1.kind == TypeSystem.K_FUNCTION || s1.kind == TypeSystem.K_METHOD || s1.kind == TypeSystem.K_PROPERTY) {
 				TypeSystem.FunctionOrMethodState s1Data = (TypeSystem.FunctionOrMethodState) s1.data;
 				TypeSystem.FunctionOrMethodState s2Data = (TypeSystem.FunctionOrMethodState) s2.data;
 				return s1Data.compareTo(s2Data);
@@ -153,6 +153,7 @@ public final class TypeAlgorithms {
 		case TypeSystem.K_ARRAY:
 		case TypeSystem.K_FUNCTION:
 		case TypeSystem.K_METHOD:
+		case TypeSystem.K_PROPERTY:
 			return false;
 		}
 
@@ -254,6 +255,7 @@ public final class TypeAlgorithms {
 		case TypeSystem.K_BYTE:
 		case TypeSystem.K_INT:
 		case TypeSystem.K_FUNCTION:
+		case TypeSystem.K_PROPERTY:
 		case TypeSystem.K_NOMINAL:
 		case TypeSystem.K_META:
 			return Inhabitation.SOME;
@@ -317,6 +319,7 @@ public final class TypeAlgorithms {
 			case TypeSystem.K_REFERENCE:
 			case TypeSystem.K_RECORD:
 			case TypeSystem.K_FUNCTION:
+			case TypeSystem.K_PROPERTY:
 			case TypeSystem.K_METHOD:
 				inhabitationFlags.set(index, newValue == Inhabitation.SOME);
 				break;
@@ -479,6 +482,7 @@ public final class TypeAlgorithms {
 		case TypeSystem.K_INT:
 		case TypeSystem.K_NOMINAL:
 		case TypeSystem.K_FUNCTION:
+		case TypeSystem.K_PROPERTY:
 		case TypeSystem.K_META:
 			return false;
 		case TypeSystem.K_NEGATION:
@@ -550,7 +554,7 @@ public final class TypeAlgorithms {
 
 		// Skip some children if the compound is a function
 		int numChildrenToCheck = children.length;
-		if (state.kind == TypeSystem.K_FUNCTION) {
+		if (state.kind == TypeSystem.K_FUNCTION && state.kind == TypeSystem.K_PROPERTY) {
 		  // Only check function parameters for now
 		  // TODO: Work out how to handle function return types properly
 			numChildrenToCheck = (Integer) state.data;
@@ -994,6 +998,7 @@ public final class TypeAlgorithms {
 				return intersectUnions(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			case TypeSystem.K_FUNCTION:
 			case TypeSystem.K_METHOD:
+			case TypeSystem.K_PROPERTY:
 				return intersectFunctionsOrMethods(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
 			default: {
 				return intersectPrimitives(fromIndex,fromSign,from,toIndex,toSign,to,allocations,states);
@@ -2045,7 +2050,7 @@ public final class TypeAlgorithms {
 	 */
 	private static boolean flattenChildren(int index, Automaton.State state,
 			Automaton automaton) {
-		ArrayList<Integer> nchildren = new ArrayList<Integer>();
+		ArrayList<Integer> nchildren = new ArrayList<>();
 		int[] children = state.children;
 		final int kind = state.kind;
 
