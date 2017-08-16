@@ -13,6 +13,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import wybs.lang.NameResolver;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
@@ -24,7 +25,6 @@ import wyc.util.AbstractProjectCommand;
 import wycc.lang.Feature.ConfigurationError;
 import wycc.util.ArrayUtils;
 import wycc.util.Logger;
-import wyal.lang.NameResolver;
 import wyal.lang.WyalFile;
 import wyal.util.Interpreter;
 import wyal.util.SmallWorldDomain;
