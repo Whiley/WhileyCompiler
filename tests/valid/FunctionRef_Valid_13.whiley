@@ -1,4 +1,3 @@
-import whiley.lang.*
 type Sized is { int value }
 type SizeGetter is function(Sized) -> int
 type SizeSetter is function(Sized,int) -> Sized

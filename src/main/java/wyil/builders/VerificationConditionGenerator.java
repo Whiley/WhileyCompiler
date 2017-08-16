@@ -14,17 +14,16 @@ import java.util.*;
 import wybs.lang.Attribute;
 import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
+import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.ResolveError;
 import wycc.util.Pair;
 import wycc.util.ArrayUtils;
-import wyal.lang.SyntacticItem;
 import wyal.lang.WyalFile;
 import wyal.lang.WyalFile.Declaration;
 import wyal.lang.WyalFile.Expr;
-import wyal.lang.WyalFile.Opcode;
 //import wyal.lang.WyalFile.Type;
-import wyal.lang.WyalFile.Value;
+import static wyal.lang.WyalFile.Value;
 import wyal.lang.WyalFile.Declaration.Named;
 import wyfs.lang.Path;
 import wyfs.lang.Path.ID;
@@ -1588,35 +1587,35 @@ public class VerificationConditionGenerator {
 		return new Expr.Negation(e);
 	}
 
-	private Expr translateBinaryOperator(WyalFile.Opcode op, Location<Operator> expr, LocalEnvironment environment) {
+	private Expr translateBinaryOperator(int op, Location<Operator> expr, LocalEnvironment environment) {
 		Expr lhs = translateExpression(expr.getOperand(0), null, environment);
 		Expr rhs = translateExpression(expr.getOperand(1), null, environment);
 		switch(op) {
-		case EXPR_add:
+		case WyalFile.EXPR_add:
 			return new Expr.Addition(lhs, rhs);
-		case EXPR_sub:
+		case WyalFile.EXPR_sub:
 			return new Expr.Subtraction(lhs, rhs);
-		case EXPR_mul:
+		case WyalFile.EXPR_mul:
 			return new Expr.Multiplication(lhs, rhs);
-		case EXPR_div:
+		case WyalFile.EXPR_div:
 			return new Expr.Division(lhs, rhs);
-		case EXPR_rem:
+		case WyalFile.EXPR_rem:
 			return new Expr.Remainder(lhs, rhs);
-		case EXPR_eq:
+		case WyalFile.EXPR_eq:
 			return new Expr.Equal(lhs, rhs);
-		case EXPR_neq:
+		case WyalFile.EXPR_neq:
 			return new Expr.NotEqual(lhs, rhs);
-		case EXPR_lt:
+		case WyalFile.EXPR_lt:
 			return new Expr.LessThan(lhs, rhs);
-		case EXPR_lteq:
+		case WyalFile.EXPR_lteq:
 			return new Expr.LessThanOrEqual(lhs, rhs);
-		case EXPR_gt:
+		case WyalFile.EXPR_gt:
 			return new Expr.GreaterThan(lhs, rhs);
-		case EXPR_gteq:
+		case WyalFile.EXPR_gteq:
 			return new Expr.GreaterThanOrEqual(lhs, rhs);
-		case EXPR_and:
+		case WyalFile.EXPR_and:
 			return new Expr.LogicalAnd(lhs, rhs);
-		case EXPR_or:
+		case WyalFile.EXPR_or:
 			return new Expr.LogicalOr(lhs, rhs);
 		default:
 			throw new RuntimeException("Internal failure --- dead code reached");
@@ -2628,23 +2627,23 @@ public class VerificationConditionGenerator {
 		if (expr instanceof Expr.Operator) {
 			Expr.Operator binTest = (Expr.Operator) expr;
 			switch (binTest.getOpcode()) {
-			case EXPR_eq:
+			case WyalFile.EXPR_eq:
 				return new Expr.NotEqual(binTest.getOperands());
-			case EXPR_neq:
+			case WyalFile.EXPR_neq:
 				return new Expr.Equal(binTest.getOperands());
-			case EXPR_gteq:
+			case WyalFile.EXPR_gteq:
 				return new Expr.LessThan(binTest.getOperands());
-			case EXPR_gt:
+			case WyalFile.EXPR_gt:
 				return new Expr.LessThanOrEqual(binTest.getOperands());
-			case EXPR_lteq:
+			case WyalFile.EXPR_lteq:
 				return new Expr.GreaterThan(binTest.getOperands());
-			case EXPR_lt:
+			case WyalFile.EXPR_lt:
 				return new Expr.GreaterThanOrEqual(binTest.getOperands());
-			case EXPR_and: {
+			case WyalFile.EXPR_and: {
 				Expr[] operands = invertConditions(binTest.getOperands(), elem);
 				return new Expr.LogicalOr(operands);
 			}
-			case EXPR_or: {
+			case WyalFile.EXPR_or: {
 				Expr[] operands = invertConditions(binTest.getOperands(), elem);
 				return new Expr.LogicalAnd(operands);
 			}
@@ -3255,12 +3254,12 @@ public class VerificationConditionGenerator {
 	/**
 	 * Maps unary bytecodes into unary expression opcodes.
 	 */
-	private static Map<Bytecode.OperatorKind, WyalFile.Opcode> unaryOperatorMap;
+	private static Map<Bytecode.OperatorKind,  Integer> unaryOperatorMap;
 
 	/**
 	 * Maps binary bytecodes into binary expression opcodes.
 	 */
-	private static Map<Bytecode.OperatorKind, WyalFile.Opcode> binaryOperatorMap;
+	private static Map<Bytecode.OperatorKind, Integer> binaryOperatorMap;
 
 	static {
 		// Configure operator maps. This is done using maps to ensure that
@@ -3272,32 +3271,32 @@ public class VerificationConditionGenerator {
 		// =====================================================================
 		unaryOperatorMap = new HashMap<>();
 		// Arithmetic
-		unaryOperatorMap.put(Bytecode.OperatorKind.NEG, WyalFile.Opcode.EXPR_neg);
+		unaryOperatorMap.put(Bytecode.OperatorKind.NEG, WyalFile.EXPR_neg);
 		// Logical
-		unaryOperatorMap.put(Bytecode.OperatorKind.NOT, WyalFile.Opcode.EXPR_not);
+		unaryOperatorMap.put(Bytecode.OperatorKind.NOT, WyalFile.EXPR_not);
 		// Array
-		unaryOperatorMap.put(Bytecode.OperatorKind.ARRAYLENGTH, WyalFile.Opcode.EXPR_arrlen);
+		unaryOperatorMap.put(Bytecode.OperatorKind.ARRAYLENGTH, WyalFile.EXPR_arrlen);
 
 		// =====================================================================
 		// Binary operator map
 		// =====================================================================
 		binaryOperatorMap = new HashMap<>();
 		// Arithmetic
-		binaryOperatorMap.put(Bytecode.OperatorKind.ADD, WyalFile.Opcode.EXPR_add);
-		binaryOperatorMap.put(Bytecode.OperatorKind.SUB, WyalFile.Opcode.EXPR_sub);
-		binaryOperatorMap.put(Bytecode.OperatorKind.MUL, WyalFile.Opcode.EXPR_mul);
-		binaryOperatorMap.put(Bytecode.OperatorKind.DIV, WyalFile.Opcode.EXPR_div);
-		binaryOperatorMap.put(Bytecode.OperatorKind.REM, WyalFile.Opcode.EXPR_rem);
+		binaryOperatorMap.put(Bytecode.OperatorKind.ADD, WyalFile.EXPR_add);
+		binaryOperatorMap.put(Bytecode.OperatorKind.SUB, WyalFile.EXPR_sub);
+		binaryOperatorMap.put(Bytecode.OperatorKind.MUL, WyalFile.EXPR_mul);
+		binaryOperatorMap.put(Bytecode.OperatorKind.DIV, WyalFile.EXPR_div);
+		binaryOperatorMap.put(Bytecode.OperatorKind.REM, WyalFile.EXPR_rem);
 		// Equality
-		binaryOperatorMap.put(Bytecode.OperatorKind.EQ, WyalFile.Opcode.EXPR_eq);
-		binaryOperatorMap.put(Bytecode.OperatorKind.NEQ, WyalFile.Opcode.EXPR_neq);
+		binaryOperatorMap.put(Bytecode.OperatorKind.EQ, WyalFile.EXPR_eq);
+		binaryOperatorMap.put(Bytecode.OperatorKind.NEQ, WyalFile.EXPR_neq);
 		// Relational
-		binaryOperatorMap.put(Bytecode.OperatorKind.LT, WyalFile.Opcode.EXPR_lt);
-		binaryOperatorMap.put(Bytecode.OperatorKind.GT, WyalFile.Opcode.EXPR_gt);
-		binaryOperatorMap.put(Bytecode.OperatorKind.LTEQ, WyalFile.Opcode.EXPR_lteq);
-		binaryOperatorMap.put(Bytecode.OperatorKind.GTEQ, WyalFile.Opcode.EXPR_gteq);
+		binaryOperatorMap.put(Bytecode.OperatorKind.LT, WyalFile.EXPR_lt);
+		binaryOperatorMap.put(Bytecode.OperatorKind.GT, WyalFile.EXPR_gt);
+		binaryOperatorMap.put(Bytecode.OperatorKind.LTEQ, WyalFile.EXPR_lteq);
+		binaryOperatorMap.put(Bytecode.OperatorKind.GTEQ, WyalFile.EXPR_gteq);
 		// Logical
-		binaryOperatorMap.put(Bytecode.OperatorKind.AND, WyalFile.Opcode.EXPR_and);
-		binaryOperatorMap.put(Bytecode.OperatorKind.OR, WyalFile.Opcode.EXPR_or);
+		binaryOperatorMap.put(Bytecode.OperatorKind.AND, WyalFile.EXPR_and);
+		binaryOperatorMap.put(Bytecode.OperatorKind.OR, WyalFile.EXPR_or);
 	}
 }

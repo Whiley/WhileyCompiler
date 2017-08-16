@@ -12,7 +12,7 @@ function f(RGB c) -> int:
     switch c:
         case Red:
             return 123
-        case Switch_Valid_4.Blue:
+        case Switch_Valid_4::Blue:
             return 234
         default:
             return 456
