@@ -92,7 +92,7 @@ public class Interpreter {
 	 *            The supplied arguments
 	 * @return
 	 */
-	public Constant[] execute(NameID nid, Type.FunctionOrMethod sig, Constant... args) {
+	public Constant[] execute(NameID nid, Type.FunctionOrMethodOrProperty sig, Constant... args) {
 		// First, find the enclosing WyilFile
 		try {
 			Path.Entry<WyilFile> entry = project.get(nid.module(), WyilFile.ContentType);
@@ -104,13 +104,13 @@ public class Interpreter {
 			WyilFile.FunctionOrMethodOrProperty fmp = wyilFile.functionOrMethodOrProperty(nid.name(), sig);
 			if (fmp == null) {
 				throw new IllegalArgumentException("no function or method found: " + nid + ", " + sig);
-			} else if (sig.params().length != args.length) {
+			} else if (sig.getParameters().size() != args.length) {
 				throw new IllegalArgumentException("incorrect number of arguments: " + nid + ", " + sig);
 			}
 			// Fourth, construct the stack frame for execution
 			SyntaxTree tree = fmp.getTree();
 			Constant[] frame = new Constant[tree.getLocations().size()];
-			System.arraycopy(args, 0, frame, 0, sig.params().length);
+			System.arraycopy(args, 0, frame, 0, sig.getParameters().size());
 			// Check the precondition
 			checkInvariants(frame,fmp.getPrecondition());
 			if(fmp instanceof WyilFile.FunctionOrMethod) {
@@ -151,12 +151,12 @@ public class Interpreter {
 	 * @param type
 	 * @return
 	 */
-	private Constant[] extractReturns(Constant[] frame, Type.FunctionOrMethod type) {
+	private Constant[] extractReturns(Constant[] frame, Type.FunctionOrMethodOrProperty type) {
 		if(type instanceof Type.Property) {
 			return new Constant[]{Constant.Bool(true)};
 		} else {
-			int paramsSize = type.params().length;
-			int returnsSize = type.returns().length;
+			int paramsSize = type.getParameters().size();
+			int returnsSize = type.getParameters().size();
 			Constant[] returns = new Constant[returnsSize];
 			for (int i = 0, j = paramsSize; i != returnsSize; ++i, ++j) {
 				returns[i] = frame[j];
@@ -456,8 +456,8 @@ public class Interpreter {
 		// method.
 		SyntaxTree tree = stmt.getEnclosingTree();
 		WyilFile.FunctionOrMethod fm = (WyilFile.FunctionOrMethod) tree.getEnclosingDeclaration();
-		Type.FunctionOrMethod type = fm.type();
-		int paramsSize = type.params().length;
+		Type.FunctionOrMethodOrProperty type = fm.type();
+		int paramsSize = type.getParameters().size();
 		Constant[] values = executeExpressions(stmt.getOperands(), frame);
 		for (int i = 0, j = paramsSize; i != values.length; ++i, ++j) {
 			frame[j] = values[i];
@@ -908,7 +908,7 @@ public class Interpreter {
 			// already of the correct type.
 			return value;
 		} else if (type instanceof Type.Reference && to instanceof Type.Reference) {
-			if (typeSystem.isSubtype(((Type.Reference) to).element(), ((Type.Reference) type).element())) {
+			if (typeSystem.isSubtype(((Type.Reference) to).getElement(), ((Type.Reference) type).getElement())) {
 				// OK, it's just the lifetime that differs.
 				return value;
 			}
@@ -918,8 +918,8 @@ public class Interpreter {
 			return convert(value, (Type.Array) to, context);
 		} else if (to instanceof Type.Union) {
 			return convert(value, (Type.Union) to, context);
-		} else if (to instanceof Type.FunctionOrMethod) {
-			return convert(value, (Type.FunctionOrMethod) to, context);
+		} else if (to instanceof Type.FunctionOrMethodOrProperty) {
+			return convert(value, (Type.FunctionOrMethodOrProperty) to, context);
 		}
 		deadCode(context);
 		return null;
@@ -999,7 +999,7 @@ public class Interpreter {
 	 */
 	private Constant convert(Constant value, Type.Union to, SyntacticElement context) throws ResolveError {
 		Type type = value.type();
-		for (Type bound : to.bounds()) {
+		for (Type bound : to.getOperands()) {
 			if (typeSystem.isExplicitCoerciveSubtype(bound, type)) {
 				return convert(value, bound, context);
 			}
@@ -1018,7 +1018,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private Constant convert(Constant value, Type.FunctionOrMethod to, SyntacticElement context) {
+	private Constant convert(Constant value, Type.FunctionOrMethodOrProperty to, SyntacticElement context) {
 		return value;
 	}
 
@@ -1165,29 +1165,29 @@ public class Interpreter {
 	 *             within the enclosing project.
 	 */
 	public boolean isMemberOfType(Constant value, Type type, SyntacticElement context) throws ResolveError {
-		if (type == Type.T_ANY) {
+		if (type instanceof Type.Any) {
 			return true;
-		} else if (type == Type.T_VOID) {
+		} else if (type instanceof Type.Void) {
 			return false;
-		} else if (type == Type.T_NULL) {
+		} else if (type instanceof Type.Null) {
 			return value instanceof Constant.Null;
-		} else if (type == Type.T_BOOL) {
+		} else if (type instanceof Type.Bool) {
 			return value instanceof Constant.Bool;
-		} else if (type == Type.T_BYTE) {
+		} else if (type instanceof Type.Byte) {
 			return value instanceof Constant.Byte;
-		} else if (type == Type.T_INT) {
+		} else if (type instanceof Type.Int) {
 			return value instanceof Constant.Integer;
 		} else if (type instanceof Type.Reference) {
 			if (value instanceof ConstantObject) {
 				ConstantObject obj = (ConstantObject) value;
 				Type.Reference rt = (Type.Reference) type;
-				return isMemberOfType(obj.value, rt.element(), context);
+				return isMemberOfType(obj.value, rt.getElement(), context);
 			}
 			return false;
 		} else if (type instanceof Type.Array) {
 			if (value instanceof Constant.Array) {
 				Constant.Array t = (Constant.Array) value;
-				Type element = ((Type.Array) type).element();
+				Type element = ((Type.Array) type).getElement();
 				boolean r = true;
 				for (Constant val : t.values()) {
 					r &= isMemberOfType(val, element, context);
@@ -1214,7 +1214,7 @@ public class Interpreter {
 			return false;
 		} else if (type instanceof Type.Union) {
 			Type.Union t = (Type.Union) type;
-			for (Type element : t.bounds()) {
+			for (Type element : t.getOperands()) {
 				if (isMemberOfType(value, element, context)) {
 					return true;
 				}
@@ -1222,7 +1222,7 @@ public class Interpreter {
 			return false;
 		} else if (type instanceof Type.Intersection) {
 			Type.Intersection t = (Type.Intersection) type;
-			for (Type element : t.bounds()) {
+			for (Type element : t.getOperands()) {
 				if (!isMemberOfType(value, element, context)) {
 					return false;
 				}
@@ -1230,8 +1230,8 @@ public class Interpreter {
 			return true;
 		} else if (type instanceof Type.Negation) {
 			Type.Negation t = (Type.Negation) type;
-			return !isMemberOfType(value, t.element(), context);
-		} else if (type instanceof Type.FunctionOrMethod) {
+			return !isMemberOfType(value, t.getElement(), context);
+		} else if (type instanceof Type.FunctionOrMethodOrProperty) {
 			if (value instanceof Constant.FunctionOrMethod) {
 				Constant.FunctionOrMethod l = (Constant.FunctionOrMethod) value;
 				if (typeSystem.isSubtype(type, l.type())) {
@@ -1241,7 +1241,7 @@ public class Interpreter {
 			return false;
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
-			NameID nid = nt.name();
+			NameID nid = nt.getName().toNameID();
 			try {
 				// First, attempt to locate the enclosing module for this
 				// nominal type.

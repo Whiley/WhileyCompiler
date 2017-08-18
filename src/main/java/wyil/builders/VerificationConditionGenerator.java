@@ -16,6 +16,8 @@ import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError.InternalFailure;
+import wybs.util.AbstractCompilationUnit;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wybs.util.ResolveError;
 import wycc.util.Pair;
 import wycc.util.ArrayUtils;
@@ -380,7 +382,7 @@ public class VerificationConditionGenerator {
 		SyntaxTree tree = declaration.getTree();
 		String prefix = declaration.name() + "_requires_";
 		Expr[] preconditions = new Expr[declaration.getPrecondition().size()];
-		Expr[] arguments = new Expr[declaration.type().params().length];
+		Expr[] arguments = new Expr[declaration.type().getParameters().size()];
 		// Translate parameters as arguments to invocation
 		for (int i = 0; i != arguments.length; ++i) {
 			Location<VariableDeclaration> var = (Location<VariableDeclaration>) tree.getLocation(i);
@@ -917,7 +919,7 @@ public class VerificationConditionGenerator {
 		SyntaxTree tree = stmt.getEnclosingTree();
 		WyilFile.FunctionOrMethod declaration = (WyilFile.FunctionOrMethod) tree.getEnclosingDeclaration();
 		List<Location<Bytecode.Expr>> postcondition = declaration.getPostcondition();
-		Type.FunctionOrMethod type = declaration.type();
+		Type.FunctionOrMethodOrProperty type = declaration.type();
 		// First, check whether or not there are any postconditions!
 		if (postcondition.size() > 0) {
 			// There is at least one return value and at least one
@@ -926,19 +928,17 @@ public class VerificationConditionGenerator {
 			// here is that the postcondition will refer to parameters as
 			// they were on entry to the function/method, not as they are
 			// now.
-			Expr[] arguments = new Expr[type.params().length +
-			                            type.returns().length];
+			Expr[] arguments = new Expr[type.getParameters().size() + type.getReturns().size()];
 			// Translate parameters as arguments to post-condition
 			// invocation
-			for (int i = 0; i != type.params().length; ++i) {
+			for (int i = 0; i != type.getParameters().size(); ++i) {
 				Location<VariableDeclaration> var =
 						(Location<VariableDeclaration>) tree.getLocation(i);
 				WyalFile.VariableDeclaration vd = context.readFirst(var);
 				arguments[i] = new Expr.VariableAccess(vd);
 			}
 			// Copy over return expressions as arguments for invocation(s)
-			System.arraycopy(exprs, 0, arguments, type.params().length,
-					exprs.length);
+			System.arraycopy(exprs, 0, arguments, type.getParameters().size(), exprs.length);
 			//
 			String prefix = declaration.name() + "_ensures_";
 			// Finally, generate an appropriate verification condition to
@@ -1272,7 +1272,7 @@ public class VerificationConditionGenerator {
 	private void checkInvokePreconditions(Location<Invoke> expr, Context context) throws Exception {
 		WyilFile.Declaration declaration = expr.getEnclosingTree().getEnclosingDeclaration();
 		Bytecode.Invoke bytecode = expr.getBytecode();
-		Type[] parameterTypes = bytecode.type().params();
+		AbstractCompilationUnit.Tuple<Type> parameterTypes = bytecode.type().getParameters();
 		//
 		WyilFile.FunctionOrMethodOrProperty fm = lookupFunctionOrMethodOrProperty(bytecode.name(), bytecode.type(), expr);
 		int numPreconditions = fm.getPrecondition().size();
@@ -1293,8 +1293,8 @@ public class VerificationConditionGenerator {
 					expr.attributes()));
 		}
 		// Perform parameter checks
-		for(int i=0;i!=parameterTypes.length;++i) {
-			generateTypeInvariantCheck(parameterTypes[i],arguments[i],context);
+		for(int i=0;i!=parameterTypes.size();++i) {
+			generateTypeInvariantCheck(parameterTypes.getOperand(i),arguments[i],context);
 		}
 	}
 
@@ -1372,12 +1372,12 @@ public class VerificationConditionGenerator {
 				// called. Therefore, we need to generate a verification condition
 				// which will check that the precondition holds.
 				//
-				Type.FunctionOrMethod fmt = fm.type();
+				Type.FunctionOrMethodOrProperty fmt = fm.type();
 				Expr[] parameters = translateExpressions(expr.getOperands(), context.getEnvironment());
-				Expr[] arguments = java.util.Arrays.copyOf(parameters, parameters.length + fm.type().returns().length);
+				Expr[] arguments = java.util.Arrays.copyOf(parameters, parameters.length + fm.type().getReturns().size());
 				//
-				for (int i = 0; i != fmt.returns().length; ++i) {
-					Integer selector = fmt.returns().length > 1 ? i : null;
+				for (int i = 0; i != fmt.getReturns().size(); ++i) {
+					Integer selector = fmt.getReturns().size() > 1 ? i : null;
 					arguments[parameters.length + i] = translateInvoke(expr, selector, context.getEnvironment());
 				}
 				//
@@ -1493,20 +1493,14 @@ public class VerificationConditionGenerator {
 	}
 
 	private Expr translateFieldLoad(Location<FieldLoad> expr, LocalEnvironment environment) {
-		try {
-			Bytecode.FieldLoad bytecode = expr.getBytecode();
-			Location<?> srcOperand = expr.getOperand(0);
-			Type.EffectiveRecord er = typeSystem.expandAsEffectiveRecord(srcOperand.getType());
-			// Now, translate source expression
-			Expr src = translateExpression(srcOperand, null, environment);
-			// Generate field name identifier
-			WyalFile.Identifier field = new WyalFile.Identifier(bytecode.fieldName());
-			// Done
-			return new Expr.RecordAccess(src, field);
-		} catch (ResolveError e) {
-			SyntaxTree tree = expr.getEnclosingTree();
-			throw new InternalFailure(e.getMessage(), tree.getEnclosingDeclaration().parent().getEntry(), expr, e);
-		}
+		Bytecode.FieldLoad bytecode = expr.getBytecode();
+		Location<?> srcOperand = expr.getOperand(0);
+		// Now, translate source expression
+		Expr src = translateExpression(srcOperand, null, environment);
+		// Generate field name identifier
+		WyalFile.Identifier field = new WyalFile.Identifier(bytecode.fieldName());
+		// Done
+		return new Expr.RecordAccess(src, field);
 	}
 
 	private Expr translateIndirectInvoke(Location<IndirectInvoke> expr, LocalEnvironment environment) {
@@ -2041,23 +2035,23 @@ public class VerificationConditionGenerator {
 	 */
 	private void createFunctionOrMethodPrototype(WyilFile.FunctionOrMethod declaration) {
 		SyntaxTree tree = declaration.getTree();
-		Type[] params = declaration.type().params();
-		Type[] returns = declaration.type().returns();
+		Tuple<Type> params = declaration.type().getParameters();
+		Tuple<Type> returns = declaration.type().getParameters();
 		//
-		WyalFile.VariableDeclaration[] parameters = new WyalFile.VariableDeclaration[params.length];
+		WyalFile.VariableDeclaration[] parameters = new WyalFile.VariableDeclaration[params.size()];
 		// second, set initial environment
 		int loc = 0;
-		for (int i = 0; i != params.length; ++i, ++loc) {
+		for (int i = 0; i != params.size(); ++i, ++loc) {
 			Location<VariableDeclaration> var = (Location<VariableDeclaration>) tree.getLocation(loc);
-			WyalFile.Type parameterType = convert(params[i], var, declaration);
+			WyalFile.Type parameterType = convert(params.getOperand(i), var, declaration);
 			WyalFile.Identifier parameterName = new WyalFile.Identifier(var.getBytecode().getName());
 			parameters[i] = new WyalFile.VariableDeclaration(parameterType, parameterName);
 		}
-		WyalFile.VariableDeclaration[] wyalReturns = new WyalFile.VariableDeclaration[returns.length];
+		WyalFile.VariableDeclaration[] wyalReturns = new WyalFile.VariableDeclaration[returns.size()];
 		// second, set initial environment
-		for (int i = 0; i != returns.length; ++i, ++loc) {
+		for (int i = 0; i != returns.size(); ++i, ++loc) {
 			Location<VariableDeclaration> var = (Location<VariableDeclaration>) tree.getLocation(loc);
-			WyalFile.Type returnType = convert(returns[i], var, declaration);
+			WyalFile.Type returnType = convert(returns.getOperand(i), var, declaration);
 			WyalFile.Identifier returnName = new WyalFile.Identifier(var.getBytecode().getName());
 			wyalReturns[i] = new WyalFile.VariableDeclaration(returnType, returnName);
 		}
@@ -2258,8 +2252,8 @@ public class VerificationConditionGenerator {
 	 */
 	private WyalFile.VariableDeclaration[] generatePreconditionParameters(WyilFile.FunctionOrMethodOrProperty declaration,
 			LocalEnvironment environment) {
-		Type[] params = declaration.type().params();
-		int[] parameterLocations = ArrayUtils.range(0, params.length);
+		Tuple<Type> params = declaration.type().getParameters();
+		int[] parameterLocations = ArrayUtils.range(0, params.size());
 		return generateParameterDeclarations(declaration, environment, parameterLocations);
 	}
 
@@ -2274,11 +2268,11 @@ public class VerificationConditionGenerator {
 	 */
 	private WyalFile.VariableDeclaration[] generatePostconditionTypePattern(WyilFile.FunctionOrMethod declaration,
 			LocalEnvironment environment) {
-		Type[] params = declaration.type().params();
-		Type[] returns = declaration.type().returns();
-		int[] parameterLocations = ArrayUtils.range(0, params.length);
+		Tuple<Type> params = declaration.type().getParameters();
+		Tuple<Type> returns = declaration.type().getReturns();
+		int[] parameterLocations = ArrayUtils.range(0, params.size());
 		int[] returnLocations = ArrayUtils.range(parameterLocations.length,
-				parameterLocations.length + returns.length);
+				parameterLocations.length + returns.size());
 		return generateParameterDeclarations(declaration, environment, parameterLocations, returnLocations);
 	}
 
@@ -2418,23 +2412,23 @@ public class VerificationConditionGenerator {
 		// FIXME: this is fundamentally broken in the case of recursive types.
 		// See Issue #298.
 		WyalFile.Type result;
-		if (type == Type.T_ANY) {
+		if (type instanceof Type.Any) {
 			result = new WyalFile.Type.Any();
-		} else if (type == Type.T_VOID) {
+		} else if (type instanceof Type.Void) {
 			result = new WyalFile.Type.Void();
-		} else if (type == Type.T_NULL) {
+		} else if (type instanceof Type.Null) {
 			result = new WyalFile.Type.Null();
-		} else if (type == Type.T_BOOL) {
+		} else if (type instanceof Type.Bool) {
 			result = new WyalFile.Type.Bool();
-		} else if (type == Type.T_BYTE) {
+		} else if (type instanceof Type.Byte) {
 			// FIXME: implement WyalFile.Type.Byte
 			// return new WyalFile.Type.Byte(attributes(branch);
 			result = new WyalFile.Type.Int();
-		} else if (type == Type.T_INT) {
+		} else if (type instanceof Type.Int) {
 			result = new WyalFile.Type.Int();
 		} else if (type instanceof Type.Array) {
 			Type.Array lt = (Type.Array) type;
-			WyalFile.Type elem = convert(lt.element(), element, context);
+			WyalFile.Type elem = convert(lt.getElement(), element, context);
 			result = new WyalFile.Type.Array(elem);
 		} else if (type instanceof Type.Record) {
 			Type.Record rt = (Type.Record) type;
@@ -2448,12 +2442,12 @@ public class VerificationConditionGenerator {
 			result = new WyalFile.Type.Record(rt.isOpen(),elements);
 		} else if (type instanceof Type.Reference) {
 			Type.Reference lt = (Type.Reference) type;
-			WyalFile.Type elem = convert(lt.element(), element, context);
+			WyalFile.Type elem = convert(lt.getElement(), element, context);
 			// FIXME: shouldn't construct fresh identifier here.
 			result = new WyalFile.Type.Reference(elem, new WyalFile.Identifier(lt.lifetime()));
 		} else if (type instanceof Type.Union) {
 			Type.Union tu = (Type.Union) type;
-			Type[] tu_elements = tu.bounds();
+			Type[] tu_elements = tu.getOperands();
 			WyalFile.Type[] elements = new WyalFile.Type[tu_elements.length];
 			for (int i = 0; i != tu_elements.length; ++i) {
 				elements[i] = convert(tu_elements[i], element, context);
@@ -2461,7 +2455,7 @@ public class VerificationConditionGenerator {
 			result = new WyalFile.Type.Union(elements);
 		} else if (type instanceof Type.Intersection) {
 			Type.Intersection t = (Type.Intersection) type;
-			Type[] t_elements = t.bounds();
+			Type[] t_elements = t.getOperands();
 			WyalFile.Type[] elements = new WyalFile.Type[t_elements.length];
 			for (int i = 0; i != t_elements.length; ++i) {
 				elements[i] = convert(t_elements[i], element, context);
@@ -2469,15 +2463,15 @@ public class VerificationConditionGenerator {
 			result = new WyalFile.Type.Intersection(elements);
 		} else if (type instanceof Type.Negation) {
 			Type.Negation nt = (Type.Negation) type;
-			WyalFile.Type elem = convert(nt.element(), element, context);
+			WyalFile.Type elem = convert(nt.getElement(), element, context);
 			result = new WyalFile.Type.Negation(elem);
-		} else if (type instanceof Type.FunctionOrMethod) {
-			Type.FunctionOrMethod ft = (Type.FunctionOrMethod) type;
+		} else if (type instanceof Type.FunctionOrMethodOrProperty) {
+			Type.FunctionOrMethodOrProperty ft = (Type.FunctionOrMethodOrProperty) type;
 			// FIXME: need to do something better here
 			result = new WyalFile.Type.Any();
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
-			NameID nid = nt.name();
+			NameID nid = nt.getName().toNameID();
 			result = new WyalFile.Type.Nominal(convert(nid,element));
 		} else {
 			throw new InternalFailure("unknown type encountered (" + type.getClass().getName() + ")",
@@ -2497,21 +2491,21 @@ public class VerificationConditionGenerator {
 	 * @return
 	 */
 	private static boolean typeMayHaveInvariant(Type type, Context context) {
-		if (type == Type.T_ANY) {
+		if (type instanceof Type.Any) {
 			return false;
-		} else if (type == Type.T_VOID) {
+		} else if (type instanceof Type.Void) {
 			return false;
-		} else if (type == Type.T_NULL) {
+		} else if (type instanceof Type.Null) {
 			return false;
-		} else if (type == Type.T_BOOL) {
+		} else if (type instanceof Type.Bool) {
 			return false;
-		} else if (type == Type.T_BYTE) {
+		} else if (type instanceof Type.Byte) {
 			return false;
-		} else if (type == Type.T_INT) {
+		} else if (type instanceof Type.Int) {
 			return false;
 		} else if (type instanceof Type.Array) {
 			Type.Array lt = (Type.Array) type;
-			return typeMayHaveInvariant(lt.element(), context);
+			return typeMayHaveInvariant(lt.getElement(), context);
 		} else if (type instanceof Type.Record) {
 			Type.Record rt = (Type.Record) type;
 			String[] names = rt.getFieldNames();
@@ -2524,22 +2518,22 @@ public class VerificationConditionGenerator {
 			return false;
 		} else if (type instanceof Type.Reference) {
 			Type.Reference lt = (Type.Reference) type;
-			return typeMayHaveInvariant(lt.element(), context);
+			return typeMayHaveInvariant(lt.getElement(), context);
 		} else if (type instanceof Type.Union) {
 			Type.Union tu = (Type.Union) type;
-			return typeMayHaveInvariant(tu.bounds(), context);
+			return typeMayHaveInvariant(tu.getOperands(), context);
 		} else if (type instanceof Type.Intersection) {
 			Type.Intersection t = (Type.Intersection) type;
-			return typeMayHaveInvariant(t.bounds(), context);
+			return typeMayHaveInvariant(t.getOperands(), context);
 		} else if (type instanceof Type.Negation) {
 			Type.Negation nt = (Type.Negation) type;
-			return typeMayHaveInvariant(nt.element(), context);
-		} else if (type instanceof Type.FunctionOrMethod) {
-			Type.FunctionOrMethod ft = (Type.FunctionOrMethod) type;
-			return typeMayHaveInvariant(ft.params(), context) || typeMayHaveInvariant(ft.returns(), context);
+			return typeMayHaveInvariant(nt.getElement(), context);
+		} else if (type instanceof Type.FunctionOrMethodOrProperty) {
+			Type.FunctionOrMethodOrProperty ft = (Type.FunctionOrMethodOrProperty) type;
+			return typeMayHaveInvariant(ft.getParameters(), context) || typeMayHaveInvariant(ft.getReturns(), context);
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
-			NameID nid = nt.name();
+			NameID nid = nt.getName().toNameID();
 			// HACK
 			return true;
 		} else {
@@ -2600,7 +2594,8 @@ public class VerificationConditionGenerator {
 	 * @return
 	 * @throws Exception
 	 */
-	public WyilFile.FunctionOrMethodOrProperty lookupFunctionOrMethodOrProperty(NameID name, Type.FunctionOrMethod fun,
+	public WyilFile.FunctionOrMethodOrProperty lookupFunctionOrMethodOrProperty(NameID name,
+			Type.FunctionOrMethodOrProperty fun,
 			SyntaxTree.Location<?> stmt) throws Exception {
 		SyntaxTree tree = stmt.getEnclosingTree();
 		WyilFile.Declaration decl = tree.getEnclosingDeclaration();

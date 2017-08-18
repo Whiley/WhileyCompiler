@@ -10,6 +10,7 @@ import java.io.*;
 import java.util.*;
 
 import wybs.lang.Build;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wyil.lang.*;
 import wyil.lang.Constant;
 import wyil.lang.Bytecode.AliasDeclaration;
@@ -95,17 +96,17 @@ public final class WyilFilePrinter {
 		}
 		//
 		writeModifiers(method.modifiers(), out);
-		Type.FunctionOrMethod ft = method.type();
+		Type.FunctionOrMethodOrProperty ft = method.type();
 		if (ft instanceof Type.Function) {
 			out.print("function ");
 		} else {
 			out.print("method ");
 		}
 		out.print(method.name());
-		writeParameters(ft.params(),out);
-		if (ft.returns().length != 0) {
+		writeParameters(ft.getParameters(),out);
+		if (ft.getReturns().size() != 0) {
 			out.print(" -> ");
-			writeParameters(ft.returns(),out);
+			writeParameters(ft.getReturns(),out);
 		}
 		//
 		for (Location<Expr> precondition : method.getPrecondition()) {
@@ -134,13 +135,13 @@ public final class WyilFilePrinter {
 		}
 	}
 
-	private void writeParameters(Type[] parameters, PrintWriter out) {
+	private void writeParameters(Tuple<Type> parameters, PrintWriter out) {
 		out.print("(");
-		for (int i = 0; i != parameters.length; ++i) {
+		for (int i = 0; i != parameters.size(); ++i) {
 			if (i != 0) {
 				out.print(", ");
 			}
-			out.print(parameters[i]);
+			out.print(parameters.getOperand(i));
 		}
 		out.print(")");
 	}
@@ -608,7 +609,7 @@ public final class WyilFilePrinter {
 	}
 
 	private void writeRecordConstructor(Location<Bytecode.Operator> expr, PrintWriter out) {
-		Type.EffectiveRecord t = (Type.EffectiveRecord) expr.getType();
+		Type.Record t = (Type.Record) expr.getType();
 		String[] fields = t.getFieldNames();
 		Location<?>[] operands = expr.getOperands();
 		out.print("{");

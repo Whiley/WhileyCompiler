@@ -249,7 +249,12 @@ public class WhileyFileLexer {
 		case ';':
 			return new Token(Token.Kind.SemiColon, ";", pos++);
 		case ':':
-			return new Token(Token.Kind.Colon, ":", pos++);
+			if (pos + 1 < input.length() && input.charAt(pos + 1) == ':') {
+				pos += 2;
+				return new Token(Token.Kind.ColonColon, "::", pos - 2);
+			} else {
+				return new Token(Token.Kind.Colon, ":", pos++);
+			}
 		case '|':
 			if (pos + 1 < input.length() && input.charAt(pos + 1) == '|') {
 				pos += 2;
@@ -625,6 +630,7 @@ public class WhileyFileLexer {
 			Comma(","),
 			SemiColon(";"),
 			Colon(":"),
+			ColonColon("::"),
 			Ampersand("&"),
 			VerticalBar("|"),
 			LeftBrace("("),

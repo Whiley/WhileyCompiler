@@ -14,6 +14,7 @@ import wybs.lang.Build;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.util.ResolveError;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.Pair;
 import wyil.lang.*;
 import wyil.util.TypeSystem;
@@ -108,24 +109,24 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 	 *             within the enclosing project.
 	 */
 	protected void check(Type from, Type to, HashSet<Pair<Type, Type>> visited, SyntacticElement element) throws ResolveError {
-		Pair<Type,Type> p = new Pair<Type,Type>(from,to);
+		Pair<Type,Type> p = new Pair<>(from,to);
 		if(visited.contains(p)) {
 			return; // already checked this pair
 		} else {
 			visited.add(p);
 		}
-		if(from == Type.T_VOID) {
+		if(from == Type.Void) {
 			// also no problem
 		} else if(from instanceof Type.Leaf && to instanceof Type.Leaf) {
 			// no problem
 		} else if(from instanceof Type.Reference && to instanceof Type.Reference) {
 			Type.Reference t1 = (Type.Reference) from;
 			Type.Reference t2 = (Type.Reference) to;
-			check(t1.element(),t2.element(),visited,element);
+			check(t1.getElement(),t2.getElement(),visited,element);
 		} else if(from instanceof Type.Array && to instanceof Type.Array) {
 			Type.Array t1 = (Type.Array) from;
 			Type.Array t2 = (Type.Array) to;
-			check(t1.element(),t2.element(),visited,element);
+			check(t1.getElement(),t2.getElement(),visited,element);
 		} else if(from instanceof Type.Record && to instanceof Type.Record) {
 			Type.Record t1 = (Type.Record) from;
 			Type.Record t2 = (Type.Record) to;
@@ -138,11 +139,11 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 		} else if(from instanceof Type.Function && to instanceof Type.Function) {
 			Type.Function t1 = (Type.Function) from;
 			Type.Function t2 = (Type.Function) to;
-			check(t1.params(),t2.params(),visited,element);
-			check(t1.returns(),t2.returns(),visited,element);
+			check(t1.getParameters(),t2.getParameters(),visited,element);
+			check(t1.getReturns(),t2.getReturns(),visited,element);
 		} else if(from instanceof Type.Union) {
 			Type.Union t1 = (Type.Union) from;
-			for(Type b : t1.bounds()) {
+			for(Type b : t1.getOperands()) {
 				check(b,to,visited,element);
 			}
 		} else if(to instanceof Type.Union) {
@@ -150,7 +151,7 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 
 			// First, check for identical type (i.e. no coercion necessary)
 
-			for(Type b : t2.bounds()) {
+			for(Type b : t2.getOperands()) {
 				if(from.equals(b)) {
 					// no problem
 					return;
@@ -160,7 +161,7 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 			// Second, check for single non-coercive match
 			Type match = null;
 
-			for(Type b : t2.bounds()) {
+			for(Type b : t2.getOperands()) {
 				if(typeSystem.isSubtype(b,from)) {
 					if(match != null) {
 						// found ambiguity
@@ -179,7 +180,7 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 
 			// Third, test for single coercive match
 
-			for(Type b : t2.bounds()) {
+			for(Type b : t2.getOperands()) {
 				if(typeSystem.isExplicitCoerciveSubtype(b,from)) {
 					if(match != null) {
 						// found ambiguity
@@ -193,11 +194,11 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 		}
 	}
 
-	private void check(Type[] params1, Type[] params2, HashSet<Pair<Type, Type>> visited,
+	private void check(Tuple<Type> params1, Tuple<Type> params2, HashSet<Pair<Type, Type>> visited,
 			SyntacticElement element) throws ResolveError {
-		for (int i = 0; i != params1.length; ++i) {
-			Type e1 = params1[i];
-			Type e2 = params2[i];
+		for (int i = 0; i != params1.size(); ++i) {
+			Type e1 = params1.getOperand(i);
+			Type e2 = params2.getOperand(i);
 			check(e1, e2, visited, element);
 		}
 	}

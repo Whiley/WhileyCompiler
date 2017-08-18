@@ -341,8 +341,8 @@ public class DefiniteAssignmentAnalysis {
 				checkCast((Expr.Cast) expression, environment);
 			} else if(expression instanceof Expr.Constant) {
 				checkConstant((Expr.Constant) expression, environment);
-			} else if(expression instanceof Expr.ConstantAccess) {
-				checkConstantAccess((Expr.ConstantAccess) expression, environment);
+			} else if(expression instanceof StaticVariableAccess.ConstantAccess) {
+				checkConstantAccess((StaticVariableAccess.ConstantAccess) expression, environment);
 			} else if(expression instanceof Expr.Dereference) {
 				checkDereference((Expr.Dereference) expression, environment);
 			} else if(expression instanceof Expr.FieldAccess) {
@@ -403,7 +403,7 @@ public class DefiniteAssignmentAnalysis {
 
 	}
 
-	private void checkConstantAccess(Expr.ConstantAccess expression, DefintelyAssignedSet environment) {
+	private void checkConstantAccess(StaticVariableAccess.ConstantAccess expression, DefintelyAssignedSet environment) {
 
 	}
 

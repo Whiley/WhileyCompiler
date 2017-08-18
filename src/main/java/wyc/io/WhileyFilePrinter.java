@@ -346,8 +346,8 @@ public class WhileyFilePrinter {
 			print ((Expr.Constant) expression);
 		} else if (expression instanceof Expr.AbstractVariable) {
 			print ((Expr.AbstractVariable) expression);
-		} else if (expression instanceof Expr.ConstantAccess) {
-			print ((Expr.ConstantAccess) expression);
+		} else if (expression instanceof StaticVariableAccess.ConstantAccess) {
+			print ((StaticVariableAccess.ConstantAccess) expression);
 		} else if (expression instanceof Expr.ArrayInitialiser) {
 			print ((Expr.ArrayInitialiser) expression);
 		} else if (expression instanceof Expr.BinOp) {
@@ -394,7 +394,7 @@ public class WhileyFilePrinter {
 		out.print(v);
 	}
 
-	public void print(Expr.ConstantAccess v) {
+	public void print(StaticVariableAccess.ConstantAccess v) {
 		if(v.qualification != null) {
 			out.print(v.qualification + "." + v.name);
 		} else {

@@ -185,7 +185,7 @@ public class FlowTypeChecker {
 			// nominal type.
 			td.resolvedType = builder.toSemanticType(td.parameter.type, td);
 
-			if (typeSystem.isSubtype(Type.T_VOID, td.resolvedType)) {
+			if (typeSystem.isSubtype(Type.Void, td.resolvedType)) {
 				// A non-contractive type is one which cannot accept a finite
 				// values. For example, the following is a contractive type:
 				//
@@ -402,7 +402,7 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.Assert stmt, Environment environment, Context context) throws ResolveError {
 		stmt.expr = propagate(stmt.expr, environment, context);
-		checkIsSubtype(Type.T_BOOL, stmt.expr, environment);
+		checkIsSubtype(Type.Bool, stmt.expr, environment);
 		return environment;
 	}
 
@@ -422,7 +422,7 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.Assume stmt, Environment environment, Context context) throws ResolveError {
 		stmt.expr = propagate(stmt.expr, environment, context);
-		checkIsSubtype(Type.T_BOOL, stmt.expr, environment);
+		checkIsSubtype(Type.Bool, stmt.expr, environment);
 		return environment;
 	}
 
@@ -597,7 +597,7 @@ public class FlowTypeChecker {
 	 */
 	private Environment propagate(Stmt.Debug stmt, Environment environment, Context context) throws ResolveError {
 		stmt.expr = propagate(stmt.expr, environment, context);
-		checkIsSubtype(Type.Array(Type.T_INT), stmt.expr, environment);
+		checkIsSubtype(Type.Array(Type.Int), stmt.expr, environment);
 		return environment;
 	}
 
@@ -625,7 +625,7 @@ public class FlowTypeChecker {
 			Expr invariant = stmt_invariants.get(i);
 			invariant = propagate(invariant, environment, context);
 			stmt_invariants.set(i, invariant);
-			checkIsSubtype(Type.T_BOOL, invariant, environment);
+			checkIsSubtype(Type.Bool, invariant, environment);
 		}
 
 		// Type condition assuming its false to represent the terminated loop.
@@ -913,7 +913,7 @@ public class FlowTypeChecker {
 			Expr invariant = stmt_invariants.get(i);
 			invariant = propagate(invariant, environment, context);
 			stmt_invariants.set(i, invariant);
-			checkIsSubtype(Type.T_BOOL, invariant, environment);
+			checkIsSubtype(Type.Bool, invariant, environment);
 		}
 
 		// Type loop body
@@ -1035,7 +1035,7 @@ public class FlowTypeChecker {
 			// For non-compound forms, can just default back to the base rules
 			// for general expressions.
 			expr = propagate(expr, environment, context);
-			checkIsSubtype(Type.T_BOOL, expr, context, environment);
+			checkIsSubtype(Type.Bool, expr, context, environment);
 			return new Pair<>(expr, environment);
 		}
 	}
@@ -1072,8 +1072,8 @@ public class FlowTypeChecker {
 		if (uop.op == Expr.UOp.NOT) {
 			Pair<Expr, Environment> p = propagateCondition(uop.mhs, !sign, environment, context);
 			uop.mhs = p.first();
-			checkIsSubtype(Type.T_BOOL, uop.mhs, context, environment);
-			uop.type = Type.T_BOOL;
+			checkIsSubtype(Type.Bool, uop.mhs, context, environment);
+			uop.type = Type.Bool;
 			return new Pair<>(uop, p.second());
 		} else {
 			// Nothing else other than logical not is valid at this point.
@@ -1197,9 +1197,9 @@ public class FlowTypeChecker {
 			environment = local.merge(local.keySet(), p.second());
 		}
 
-		checkIsSubtype(Type.T_BOOL, bop.lhs, context, environment);
-		checkIsSubtype(Type.T_BOOL, bop.rhs, context, environment);
-		bop.srcType = Type.T_BOOL;
+		checkIsSubtype(Type.Bool, bop.lhs, context, environment);
+		checkIsSubtype(Type.Bool, bop.rhs, context, environment);
+		bop.srcType = Type.Bool;
 
 		return new Pair<>(bop, environment);
 	}
@@ -1249,8 +1249,8 @@ public class FlowTypeChecker {
 			if (rhs instanceof Expr.TypeVal) {
 				// yes, right-hand side is a constant
 				Expr.TypeVal tv = (Expr.TypeVal) rhs;
-				Type glbForFalseBranch = Type.Intersection(lhs.result(), Type.Negation(tv.type));
-				Type glbForTrueBranch = Type.Intersection(lhs.result(), tv.type);
+				Type glbForFalseBranch = new Type.Intersection(lhs.result(), new Type.Negation(tv.type));
+				Type glbForTrueBranch = new Type.Intersection(lhs.result(), tv.type);
 				if (typeSystem.isEmpty(glbForFalseBranch)) {
 					// DEFINITE TRUE CASE
 					syntaxError(errorMessage(BRANCH_ALWAYS_TAKEN), context, bop);
@@ -1285,8 +1285,8 @@ public class FlowTypeChecker {
 		case LTEQ:
 		case GTEQ:
 		case GT:
-			checkSuptypes(lhs, context, environment, Type.T_INT);
-			checkSuptypes(rhs, context, environment, Type.T_INT);
+			checkSuptypes(lhs, context, environment, Type.Int);
+			checkSuptypes(rhs, context, environment, Type.Int);
 			//
 			if (typeSystem.isSubtype(lhsType, rhsType) || typeSystem.isSubtype(rhsType, lhsType)) {
 				bop.srcType = lhs.result();
@@ -1366,8 +1366,8 @@ public class FlowTypeChecker {
 				return propagate((Expr.Constant) expr, environment, context);
 			} else if (expr instanceof Expr.Cast) {
 				return propagate((Expr.Cast) expr, environment, context);
-			} else if (expr instanceof Expr.ConstantAccess) {
-				return propagate((Expr.ConstantAccess) expr, environment, context);
+			} else if (expr instanceof StaticVariableAccess.ConstantAccess) {
+				return propagate((StaticVariableAccess.ConstantAccess) expr, environment, context);
 			} else if (expr instanceof Expr.FieldAccess) {
 				return propagate((Expr.FieldAccess) expr, environment, context);
 			} else if (expr instanceof Expr.AbstractFunctionOrMethod) {
@@ -1446,30 +1446,30 @@ public class FlowTypeChecker {
 		case BITWISEAND:
 		case BITWISEOR:
 		case BITWISEXOR:
-			checkIsSubtype(Type.T_BYTE, lhs, context, environment);
-			checkIsSubtype(Type.T_BYTE, rhs, context, environment);
-			srcType = Type.T_BYTE;
+			checkIsSubtype(Type.Byte, lhs, context, environment);
+			checkIsSubtype(Type.Byte, rhs, context, environment);
+			srcType = Type.Byte;
 			break;
 		case LEFTSHIFT:
 		case RIGHTSHIFT:
-			checkIsSubtype(Type.T_BYTE, lhs, context, environment);
-			checkIsSubtype(Type.T_INT, rhs, context, environment);
-			srcType = Type.T_BYTE;
+			checkIsSubtype(Type.Byte, lhs, context, environment);
+			checkIsSubtype(Type.Int, rhs, context, environment);
+			srcType = Type.Byte;
 			break;
 		case RANGE:
-			checkIsSubtype(Type.T_INT, lhs, context, environment);
-			checkIsSubtype(Type.T_INT, rhs, context, environment);
-			srcType = Type.Array(Type.T_INT);
+			checkIsSubtype(Type.Int, lhs, context, environment);
+			checkIsSubtype(Type.Int, rhs, context, environment);
+			srcType = Type.Array(Type.Int);
 			break;
 		case REM:
-			checkIsSubtype(Type.T_INT, lhs, context, environment);
-			checkIsSubtype(Type.T_INT, rhs, context, environment);
-			srcType = Type.T_INT;
+			checkIsSubtype(Type.Int, lhs, context, environment);
+			checkIsSubtype(Type.Int, rhs, context, environment);
+			srcType = Type.Int;
 			break;
 		default:
 			// all other operations go through here
-			checkSuptypes(lhs, context, environment, Type.T_INT);
-			checkSuptypes(rhs, context, environment, Type.T_INT);
+			checkSuptypes(lhs, context, environment, Type.Int);
+			checkSuptypes(rhs, context, environment, Type.Int);
 			//
 			if (typeSystem.isSubtype(lhsType, rhsType) || typeSystem.isSubtype(rhsType, lhsType)) {
 				srcType = lhsType;
@@ -1495,10 +1495,10 @@ public class FlowTypeChecker {
 
 		switch (expr.op) {
 		case NEG:
-			checkSuptypes(src, context, environment, Type.T_INT);
+			checkSuptypes(src, context, environment, Type.Int);
 			break;
 		case INVERT:
-			checkIsSubtype(Type.T_BYTE, src, context, environment);
+			checkIsSubtype(Type.Byte, src, context, environment);
 			break;
 		case ARRAYLENGTH: {
 			expr.type = expandAsEffectiveArray(expr.mhs, context);
@@ -1523,15 +1523,15 @@ public class FlowTypeChecker {
 			Expr start = propagate(p.second(), local, context);
 			Expr end = propagate(p.third(), local, context);
 			sources.set(i, new Triple<>(p.first(), start, end));
-			checkIsSubtype(Type.T_INT, start, context, environment);
-			local = local.declare(p.first(), Type.T_INT, Type.T_INT);
+			checkIsSubtype(Type.Int, start, context, environment);
+			local = local.declare(p.first(), Type.Int, Type.Int);
 		}
 
 		if (expr.condition != null) {
 			expr.condition = propagate(expr.condition, local, context);
 		}
 
-		expr.type = Type.T_BOOL;
+		expr.type = Type.Bool;
 
 		local.free();
 
@@ -1560,7 +1560,7 @@ public class FlowTypeChecker {
 			return expr;
 		}
 
-		Triple<NameID, Type.FunctionOrMethod, List<String>> p;
+		Triple<NameID, Type.FunctionOrMethodOrProperty, List<String>> p;
 
 		if (expr.paramTypes != null) {
 			ArrayList<Type> paramTypes = new ArrayList<>();
@@ -1627,7 +1627,7 @@ public class FlowTypeChecker {
 
 		// We can only invoke functions and methods
 		expr.src = propagate(expr.src, environment, context);
-		Type.FunctionOrMethod funType = expandAsEffectiveFunctionOrMethod(expr.src, context);
+		Type.FunctionOrMethodOrProperty funType = expandAsEffectiveFunctionOrMethod(expr.src, context);
 		if (funType == null) {
 			syntaxError("function or method type expected", context, expr.src);
 		}
@@ -1762,7 +1762,7 @@ public class FlowTypeChecker {
 
 		// third, lookup the appropriate function or method based on the name
 		// and given parameter types.
-		Triple<NameID, Type.FunctionOrMethod, List<String>> triple = resolveAsFunctionOrMethod(name, paramTypes,
+		Triple<NameID, Type.FunctionOrMethodOrProperty, List<String>> triple = resolveAsFunctionOrMethod(name, paramTypes,
 				lifetimeArgs, context, environment);
 		if (triple.second() instanceof Type.Function) {
 			Expr.FunctionCall r = new Expr.FunctionCall(name, qualification, exprArgs, expr.attributes());
@@ -1791,7 +1791,7 @@ public class FlowTypeChecker {
 			expr.srcType = srcType;
 		}
 
-		checkIsSubtype(Type.T_INT, expr.index, context, environment);
+		checkIsSubtype(Type.Int, expr.index, context, environment);
 
 		return expr;
 	}
@@ -1804,7 +1804,7 @@ public class FlowTypeChecker {
 
 	private Expr propagate(Expr.ArrayInitialiser expr, Environment environment, Context context)
 			throws IOException, ResolveError {
-		Type element = Type.T_VOID;
+		Type element = Type.Void;
 
 		ArrayList<Expr> exprs = expr.arguments;
 		for (int i = 0; i != exprs.size(); ++i) {
@@ -1824,7 +1824,7 @@ public class FlowTypeChecker {
 		expr.element = propagate(expr.element, environment, context);
 		expr.count = propagate(expr.count, environment, context);
 		expr.type = (Type.Array) expandAsEffectiveArray(Type.Array(expr.element.result()), expr, context);
-		checkIsSubtype(Type.T_INT, expr.count, environment);
+		checkIsSubtype(Type.Int, expr.count, environment);
 		return expr;
 	}
 
@@ -1889,7 +1889,7 @@ public class FlowTypeChecker {
 		}
 	}
 
-	private Expr propagate(Expr.ConstantAccess expr, Environment environment, Context context) throws IOException {
+	private Expr propagate(StaticVariableAccess.ConstantAccess expr, Environment environment, Context context) throws IOException {
 		// First, determine the fully qualified name of this function based on
 		// the given function name and any supplied qualifications.
 		ArrayList<String> qualifications = new ArrayList<>();
@@ -1977,12 +1977,12 @@ public class FlowTypeChecker {
 	 * @return nameid, type, given/inferred lifetime arguments
 	 * @throws IOException
 	 */
-	public Triple<NameID, Type.FunctionOrMethod, List<String>> resolveAsFunctionOrMethod(NameID nid,
+	public Triple<NameID, Type.FunctionOrMethodOrProperty, List<String>> resolveAsFunctionOrMethod(NameID nid,
 			List<Type> parameters, List<String> lifetimeArgs, Context context, Environment environment)
 					throws IOException, ResolveError {
 
 		// The set of candidate names and types for this function or method.
-		HashSet<Pair<NameID, Type.FunctionOrMethod>> candidates = new HashSet<>();
+		HashSet<Pair<NameID, Type.FunctionOrMethodOrProperty>> candidates = new HashSet<>();
 
 		// First, add all valid candidates to the list without considering which
 		// is the most precise.
@@ -2006,7 +2006,7 @@ public class FlowTypeChecker {
 	 * @return
 	 * @throws IOException
 	 */
-	public Triple<NameID, Type.FunctionOrMethod, List<String>> resolveAsFunctionOrMethod(String name, Context context,
+	public Triple<NameID, Type.FunctionOrMethodOrProperty, List<String>> resolveAsFunctionOrMethod(String name, Context context,
 			Environment environment) throws IOException, ResolveError {
 		return resolveAsFunctionOrMethod(name, null, null, context, environment);
 	}
@@ -2028,11 +2028,11 @@ public class FlowTypeChecker {
 	 * @return nameid, type, given/inferred lifetime arguments
 	 * @throws IOException
 	 */
-	public Triple<NameID, Type.FunctionOrMethod, List<String>> resolveAsFunctionOrMethod(String name,
+	public Triple<NameID, Type.FunctionOrMethodOrProperty, List<String>> resolveAsFunctionOrMethod(String name,
 			List<Type> parameters, List<String> lifetimeArgs, Context context, Environment environment)
 					throws IOException, ResolveError {
 
-		HashSet<Pair<NameID, Type.FunctionOrMethod>> candidates = new HashSet<>();
+		HashSet<Pair<NameID, Type.FunctionOrMethodOrProperty>> candidates = new HashSet<>();
 		// first, try to find the matching message
 		for (WhileyFile.Import imp : context.imports()) {
 			String impName = imp.name;
@@ -2097,9 +2097,9 @@ public class FlowTypeChecker {
 		return paramStr + ")";
 	}
 
-	private String foundCandidatesString(Collection<Pair<NameID, Type.FunctionOrMethod>> candidates) {
+	private String foundCandidatesString(Collection<Pair<NameID, Type.FunctionOrMethodOrProperty>> candidates) {
 		ArrayList<String> candidateStrings = new ArrayList<>();
-		for (Pair<NameID, Type.FunctionOrMethod> c : candidates) {
+		for (Pair<NameID, Type.FunctionOrMethodOrProperty> c : candidates) {
 			candidateStrings.add(c.first() + " : " + c.second());
 		}
 		Collections.sort(candidateStrings); // make error message deterministic!
@@ -2179,7 +2179,7 @@ public class FlowTypeChecker {
 	 */
 	private static class ValidCandidate {
 		private final NameID id;
-		private final Type.FunctionOrMethod type;
+		private final Type.FunctionOrMethodOrProperty type;
 
 		// Either given (lifetimeArgs) or inferred
 		private final List<String> lifetimeArguments;
@@ -2187,7 +2187,7 @@ public class FlowTypeChecker {
 		// Lifetime parameters substituted with (inferred) arguments
 		private final List<Type> parameterTypesSubstituted;
 
-		private ValidCandidate(NameID id, Type.FunctionOrMethod type, List<String> lifetimeArguments,
+		private ValidCandidate(NameID id, Type.FunctionOrMethodOrProperty type, List<String> lifetimeArguments,
 				List<Type> parameterTypesSubstituted) {
 			this.id = id;
 			this.type = type;
@@ -2209,7 +2209,7 @@ public class FlowTypeChecker {
 	 * @return
 	 * @throws ResolveError
 	 */
-	private ValidCandidate validateCandidate(NameID candidateId, Type.FunctionOrMethod candidateType,
+	private ValidCandidate validateCandidate(NameID candidateId, Type.FunctionOrMethodOrProperty candidateType,
 			List<Type> candidateParameterTypes, List<Type> targetParameterTypes, List<String> lifetimeParameters,
 			List<String> lifetimeArguments, Environment environment) throws ResolveError {
 		if (!lifetimeParameters.isEmpty()) {
@@ -2247,9 +2247,9 @@ public class FlowTypeChecker {
 				candidateParameterTypes);
 	}
 
-	private Triple<NameID, Type.FunctionOrMethod, List<String>> selectCandidateFunctionOrMethod(String name,
+	private Triple<NameID, Type.FunctionOrMethodOrProperty, List<String>> selectCandidateFunctionOrMethod(String name,
 			List<Type> parameters, List<String> lifetimeArgs,
-			Collection<Pair<NameID, Type.FunctionOrMethod>> candidates, Context context, Environment environment)
+			Collection<Pair<NameID, Type.FunctionOrMethodOrProperty>> candidates, Context context, Environment environment)
 					throws IOException, ResolveError {
 
 		// We cannot do anything here without candidates
@@ -2262,7 +2262,7 @@ public class FlowTypeChecker {
 		// logic.
 		if (parameters == null) {
 			if (candidates.size() == 1) {
-				Pair<NameID, Type.FunctionOrMethod> p = candidates.iterator().next();
+				Pair<NameID, Type.FunctionOrMethodOrProperty> p = candidates.iterator().next();
 				return new Triple<>(p.first(), p.second(), null);
 			}
 
@@ -2283,8 +2283,8 @@ public class FlowTypeChecker {
 
 		// Check each candidate to see if it is valid.
 		List<ValidCandidate> validCandidates = new LinkedList<>();
-		for (Pair<NameID, Type.FunctionOrMethod> p : candidates) {
-			Type.FunctionOrMethod candidateType = p.second();
+		for (Pair<NameID, Type.FunctionOrMethodOrProperty> p : candidates) {
+			Type.FunctionOrMethodOrProperty candidateType = p.second();
 			List<Type> candidateParameterTypes = Arrays.asList(candidateType.params());
 
 			// We need a matching parameter count
@@ -2367,7 +2367,7 @@ public class FlowTypeChecker {
 			// now check protection modifier
 			ValidCandidate winner = validCandidates.get(0);
 			NameID winnerId = winner.id;
-			Type.FunctionOrMethod winnerType = winner.type;
+			Type.FunctionOrMethodOrProperty winnerType = winner.type;
 			WhileyFile wf = builder.getSourceFile(winnerId.module());
 			if (wf != null) {
 				if (wf != context.file()) {
@@ -2423,7 +2423,7 @@ public class FlowTypeChecker {
 		throw new ResolveError(msg.toString());
 	}
 
-	private static List<String> getLifetimeParameters(Type.FunctionOrMethod fm) {
+	private static List<String> getLifetimeParameters(Type.FunctionOrMethodOrProperty fm) {
 		if (fm instanceof Type.Method) {
 			Type.Method mt = (Type.Method) fm;
 			return Arrays.asList(mt.lifetimeParams());
@@ -2452,7 +2452,7 @@ public class FlowTypeChecker {
 	 */
 	private void guessLifetimeArguments(List<String> lifetimesUsedInArguments, List<String> candidateLifetimeParams,
 			List<Type> candidateParameterTypes, List<Type> targetParameterTypes, NameID candidateName,
-			Type.FunctionOrMethod candidateType, List<ValidCandidate> validCandidates, Environment environment)
+			Type.FunctionOrMethodOrProperty candidateType, List<ValidCandidate> validCandidates, Environment environment)
 					throws ResolveError {
 		// Assume we have "exp" lifetime parameters to be filled and
 		// "base" choices for each one.
@@ -2504,7 +2504,7 @@ public class FlowTypeChecker {
 	 * @throws IOException
 	 */
 	private void addCandidateFunctionsAndMethods(NameID nid, List<?> parameters,
-			Collection<Pair<NameID, Type.FunctionOrMethod>> candidates, Context context)
+			Collection<Pair<NameID, Type.FunctionOrMethodOrProperty>> candidates, Context context)
 					throws IOException, ResolveError {
 		Path.ID mid = nid.module();
 
@@ -2515,7 +2515,7 @@ public class FlowTypeChecker {
 			for (WhileyFile.FunctionOrMethodOrProperty f : wf.declarations(WhileyFile.FunctionOrMethodOrProperty.class,
 					nid.name())) {
 				if (nparams == -1 || f.parameters.size() == nparams) {
-					Type.FunctionOrMethod ft = (Type.FunctionOrMethod) builder.toSemanticType(f.unresolvedType(), f);
+					Type.FunctionOrMethodOrProperty ft = (Type.FunctionOrMethodOrProperty) builder.toSemanticType(f.unresolvedType(), f);
 					candidates.add(new Pair<>(nid, ft));
 				}
 			}
@@ -2524,7 +2524,7 @@ public class FlowTypeChecker {
 			for (WyilFile.FunctionOrMethod mm : m.functionOrMethods()) {
 				if ((mm.isFunction() || mm.isMethod()) && mm.name().equals(nid.name())
 						&& (nparams == -1 || mm.type().params().length == nparams)) {
-					Type.FunctionOrMethod t = mm.type();
+					Type.FunctionOrMethodOrProperty t = mm.type();
 					candidates.add(new Pair<>(nid, t));
 				}
 			}
@@ -2688,18 +2688,18 @@ public class FlowTypeChecker {
 	// =========================================================================
 
 	public Type.Function resolveAsType(SyntacticType.Function t, Context context) throws IOException {
-		return (Type.Function) resolveAsType((WyalFile.Type.FunctionOrMethodOrProperty) t, context);
+		return (Type.Function) resolveAsType((WyalFile.Type.FunctionOrMethodOrPropertyOrProperty) t, context);
 	}
 
 	public Type.Method resolveAsType(SyntacticType.Method t, Context context) throws IOException {
-		return (Type.Method) resolveAsType((WyalFile.Type.FunctionOrMethodOrProperty) t, context);
+		return (Type.Method) resolveAsType((WyalFile.Type.FunctionOrMethodOrPropertyOrProperty) t, context);
 	}
 
 	public Type.Property resolveAsType(SyntacticType.Property t, Context context) throws IOException {
-		return (Type.Property) resolveAsType((WyalFile.Type.FunctionOrMethodOrProperty) t, context);
+		return (Type.Property) resolveAsType((WyalFile.Type.FunctionOrMethodOrPropertyOrProperty) t, context);
 	}
 
-	public Type.FunctionOrMethod resolveAsType(WyalFile.Type.FunctionOrMethodOrProperty t, Context context) throws IOException {
+	public Type.FunctionOrMethodOrProperty resolveAsType(WyalFile.Type.FunctionOrMethodOrPropertyOrProperty t, Context context) throws IOException {
 		try {
 			// We need to sanity check the parameter types we have here, since
 			// occasionally we can end up with something other than a function
@@ -2708,17 +2708,17 @@ public class FlowTypeChecker {
 			// involved is contractive (normally by accident).
 			for (WyalFile.Type param : t.getParameters()) {
 				Type nominal = builder.toSemanticType(param, context);
-				if (typeSystem.isSubtype(Type.T_VOID, nominal)) {
+				if (typeSystem.isSubtype(Type.Void, nominal)) {
 					throw new SyntaxError("empty type encountered", file.getEntry(), param);
 				}
 			}
 			for (WyalFile.Type ret : t.getReturns()) {
 				Type nominal = builder.toSemanticType(ret, context);
-				if (typeSystem.isSubtype(Type.T_VOID, nominal)) {
+				if (typeSystem.isSubtype(Type.Void, nominal)) {
 					throw new SyntaxError("empty type encountered", file.getEntry(), ret);
 				}
 			}
-			return (Type.FunctionOrMethod) builder.toSemanticType(t, context);
+			return (Type.FunctionOrMethodOrProperty) builder.toSemanticType(t, context);
 		} catch (ResolveError e) {
 			throw new SyntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()), file.getEntry(), t, e);
 		}
@@ -2855,8 +2855,8 @@ public class FlowTypeChecker {
 			if (expr instanceof Expr.Constant) {
 				Expr.Constant c = (Expr.Constant) expr;
 				return new Pair<>(c.value, c.result());
-			} else if (expr instanceof Expr.ConstantAccess) {
-				Expr.ConstantAccess c = (Expr.ConstantAccess) expr;
+			} else if (expr instanceof StaticVariableAccess.ConstantAccess) {
+				StaticVariableAccess.ConstantAccess c = (StaticVariableAccess.ConstantAccess) expr;
 				ArrayList<String> qualifications = new ArrayList<>();
 				if (c.qualification != null) {
 					for (String n : c.qualification) {
@@ -2883,7 +2883,7 @@ public class FlowTypeChecker {
 			} else if (expr instanceof Expr.ArrayInitialiser) {
 				Expr.ArrayInitialiser nop = (Expr.ArrayInitialiser) expr;
 				ArrayList<Constant> values = new ArrayList<>();
-				Type element = Type.T_VOID;
+				Type element = Type.Void;
 				for (Expr arg : nop.arguments) {
 					Pair<Constant, Type> e = resolveAsConstant(arg, context, visited);
 					values.add(e.first());
@@ -2971,9 +2971,9 @@ public class FlowTypeChecker {
 		Type v1_type = v1.type();
 		Type v2_type = v2.type();
 
-		if (typeSystem.isSubtype(Type.T_BOOL, v1_type) && typeSystem.isSubtype(Type.T_BOOL, v2_type)) {
+		if (typeSystem.isSubtype(Type.Bool, v1_type) && typeSystem.isSubtype(Type.Bool, v2_type)) {
 			return evaluateBoolean(bop, (Constant.Bool) v1, (Constant.Bool) v2, context);
-		} else if (typeSystem.isSubtype(Type.T_INT, v1_type) && typeSystem.isSubtype(Type.T_INT, v2_type)) {
+		} else if (typeSystem.isSubtype(Type.Int, v1_type) && typeSystem.isSubtype(Type.Int, v2_type)) {
 			return evaluate(bop, (Constant.Integer) v1, (Constant.Integer) v2, context);
 		}
 		syntaxError(errorMessage(INVALID_BINARY_EXPRESSION), context, bop);
@@ -3065,14 +3065,14 @@ public class FlowTypeChecker {
 		return refType;
 	}
 
-	public Type.FunctionOrMethod expandAsEffectiveFunctionOrMethod(Expr src, Context context)
+	public Type.FunctionOrMethodOrProperty expandAsEffectiveFunctionOrMethod(Expr src, Context context)
 			throws IOException, ResolveError {
 		return expandAsEffectiveFunctionOrMethod(src.result(), src, context);
 	}
 
-	public Type.FunctionOrMethod expandAsEffectiveFunctionOrMethod(Type type, SyntacticElement element, Context context)
+	public Type.FunctionOrMethodOrProperty expandAsEffectiveFunctionOrMethod(Type type, SyntacticElement element, Context context)
 			throws IOException, ResolveError {
-		Type.FunctionOrMethod funType = typeSystem.expandAsFunctionOrMethod(type);
+		Type.FunctionOrMethodOrProperty funType = typeSystem.expandAsFunctionOrMethod(type);
 		if (funType == null) {
 			syntaxError(errorMessage(FUNCTION_OR_METHOD_TYPE_REQUIRED, type), context, element);
 		}

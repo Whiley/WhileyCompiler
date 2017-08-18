@@ -322,8 +322,8 @@ public class ModuleCheck {
 				checkCast((Expr.Cast) expression, context);
 			} else if(expression instanceof Expr.Constant) {
 				checkConstant((Expr.Constant) expression, context);
-			} else if(expression instanceof Expr.ConstantAccess) {
-				checkConstantAccess((Expr.ConstantAccess) expression, context);
+			} else if(expression instanceof StaticVariableAccess.ConstantAccess) {
+				checkConstantAccess((StaticVariableAccess.ConstantAccess) expression, context);
 			} else if(expression instanceof Expr.Dereference) {
 				checkDereference((Expr.Dereference) expression, context);
 			} else if(expression instanceof Expr.FieldAccess) {
@@ -384,7 +384,7 @@ public class ModuleCheck {
 
 	}
 
-	private void checkConstantAccess(Expr.ConstantAccess expression, Context context) {
+	private void checkConstantAccess(StaticVariableAccess.ConstantAccess expression, Context context) {
 
 	}
 
