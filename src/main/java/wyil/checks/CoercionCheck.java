@@ -12,11 +12,13 @@ import static wyil.util.ErrorMessages.*;
 import wybs.lang.Attribute;
 import wybs.lang.Build;
 import wybs.lang.SyntacticElement;
+import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.util.ResolveError;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.Pair;
-import wyil.lang.*;
+import wyil.lang.WyilFile;
+import static wyil.lang.WyilFile.*;
 import wyil.util.TypeSystem;
 
 /**
@@ -68,23 +70,13 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 	public void apply(WyilFile module) {
 		this.file = module;
 
-		for(WyilFile.Type type : module.types()) {
-			check(type.getTree());
-		}
-		for(WyilFile.FunctionOrMethod method : module.functionOrMethods()) {
-			check(method.getTree());
-		}
-	}
-
-	protected void check(SyntaxTree tree) {
 		// Examine all entries in this block looking for a conversion bytecode
-		List<SyntaxTree.Location<?>> expressions = tree.getLocations();
-		for (int i = 0; i != expressions.size(); ++i) {
-			SyntaxTree.Location<?> l = expressions.get(i);
-			if (l.getBytecode() instanceof Bytecode.Expr) {
-				Bytecode.Expr e = (Bytecode.Expr) l.getBytecode();
-				if (e instanceof Bytecode.Convert) {
-					Bytecode.Convert c = (Bytecode.Convert) e;
+		for (int i = 0; i != module.size(); ++i) {
+			SyntacticItem item = module.getSyntacticItem(i);
+			if (item instanceof Expr) {
+				Expr e = (Expr) item;
+				if (e instanceof Expr.Cast) {
+					Expr.Cast c = (Expr.Cast) e;
 					// FIXME: need to fix this :)
 					// check(conv.type(0), c.type(), new HashSet<Pair<Type,
 					// Type>>(), e.attribute(SourceLocation.class));
@@ -117,7 +109,7 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 		}
 		if(from == Type.Void) {
 			// also no problem
-		} else if(from instanceof Type.Leaf && to instanceof Type.Leaf) {
+		} else if(from instanceof Type.Atom && to instanceof Type.Atom) {
 			// no problem
 		} else if(from instanceof Type.Reference && to instanceof Type.Reference) {
 			Type.Reference t1 = (Type.Reference) from;
@@ -130,12 +122,9 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 		} else if(from instanceof Type.Record && to instanceof Type.Record) {
 			Type.Record t1 = (Type.Record) from;
 			Type.Record t2 = (Type.Record) to;
-			String[] fields = t1.getFieldNames();
-			for(String s : fields) {
-				Type e1 = t1.getField(s);
-				Type e2 = t2.getField(s);
-				check(e1,e2,visited,element);
-			}
+			Tuple<Declaration.Variable> t1fields = t1.getFields();
+			Tuple<Declaration.Variable> t2fields = t1.getFields();
+			throw new RuntimeException("FIX ME");
 		} else if(from instanceof Type.Function && to instanceof Type.Function) {
 			Type.Function t1 = (Type.Function) from;
 			Type.Function t2 = (Type.Function) to;
@@ -162,15 +151,15 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 			Type match = null;
 
 			for(Type b : t2.getOperands()) {
-				if(typeSystem.isSubtype(b,from)) {
-					if(match != null) {
-						// found ambiguity
-						throw new SyntaxError(errorMessage(AMBIGUOUS_COERCION,from,to), file.getEntry(), element);
-					} else {
-						check(from,b,visited,element);
-						match = b;
-					}
-				}
+//				if(typeSystem.isSubtype(b,from)) {
+//					if(match != null) {
+//						// found ambiguity
+//						throw new SyntaxError(errorMessage(AMBIGUOUS_COERCION,from,to), file.getEntry(), element);
+//					} else {
+//						check(from,b,visited,element);
+//						match = b;
+//					}
+//				}
 			}
 
 			if(match != null) {
@@ -181,15 +170,15 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 			// Third, test for single coercive match
 
 			for(Type b : t2.getOperands()) {
-				if(typeSystem.isExplicitCoerciveSubtype(b,from)) {
-					if(match != null) {
-						// found ambiguity
-						throw new SyntaxError("ambiguous coercion (" + from + " => " + to, file.getEntry(), element);
-					} else {
-						check(from,b,visited,element);
-						match = b;
-					}
-				}
+//				if(typeSystem.isExplicitCoerciveSubtype(b,from)) {
+//					if(match != null) {
+//						// found ambiguity
+//						throw new SyntaxError("ambiguous coercion (" + from + " => " + to, file.getEntry(), element);
+//					} else {
+//						check(from,b,visited,element);
+//						match = b;
+//					}
+//				}
 			}
 		}
 	}

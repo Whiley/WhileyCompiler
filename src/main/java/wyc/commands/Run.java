@@ -19,6 +19,7 @@ import wyfs.lang.Path;
 import wyfs.util.Trie;
 import static wyc.lang.WhileyFile.*;
 import wyil.util.interpreter.Interpreter;
+import wyil.util.interpreter.RValue;
 
 public class Run extends AbstractProjectCommand<Run.Result> {
 	/**
@@ -85,10 +86,10 @@ public class Run extends AbstractProjectCommand<Run.Result> {
 	 * @param project
 	 * @throws IOException
 	 */
-	private void executeFunctionOrMethod(NameID id, Type.FunctionOrMethodOrProperty signature, Build.Project project)
+	private void executeFunctionOrMethod(NameID id, Type.Callable signature, Build.Project project)
 			throws IOException {
 		// Try to run the given function or method
-		Constant[] returns = new Interpreter(project, System.out).execute(id, signature);
+		RValue[] returns = new Interpreter(project, System.out).execute(id, signature);
 		// Print out any return values produced
 		if (returns != null) {
 			for (int i = 0; i != returns.length; ++i) {

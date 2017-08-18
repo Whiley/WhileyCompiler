@@ -127,7 +127,7 @@ public class AllValidTest {
 		}
 
 		// Execute the compile WyIL file
-		// TestUtils.execWyil(whileySrcDir, Trie.fromString(testName));
+		TestUtils.execWyil(whileySrcDir, Trie.fromString(testName));
 	}
 
 	// ======================================================================

@@ -12,12 +12,8 @@ import wybs.lang.Build;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
-import wyc.lang.Expr;
-import wyc.lang.Stmt;
 import wyc.lang.WhileyFile;
-import wycc.util.Pair;
-import wycc.util.Triple;
-import wyil.lang.Type;
+import static wyc.lang.WhileyFile.*;
 
 import static wyil.util.ErrorMessages.*;
 
@@ -40,28 +36,28 @@ import static wyil.util.ErrorMessages.*;
  * @author David J. Pearce
  *
  */
-public class ModuleCheck {
+public class FunctionalCheck {
 	private WhileyFile file;
 
-	public ModuleCheck(WhileyFile file) {
+	public FunctionalCheck(WhileyFile file) {
 		this.file = file;
 	}
 
 	public void check() {
-		for (WhileyFile.Declaration d : file.declarations) {
+		for (WhileyFile.Declaration d : file.getDeclarations()) {
 			check(d);
 		}
 	}
 
 	public void check(WhileyFile.Declaration declaration) {
-		if(declaration instanceof WhileyFile.Type) {
-			checkTypeDeclaration((WhileyFile.Type) declaration);
-		} else if(declaration instanceof WhileyFile.Property) {
-			checkPropertyDeclaration((WhileyFile.Property) declaration);
-		} else if(declaration instanceof WhileyFile.Function) {
-			checkFunctionDeclaration((WhileyFile.Function) declaration);
-		} else if(declaration instanceof WhileyFile.Method) {
-			checkMethodDeclaration((WhileyFile.Method) declaration);
+		if(declaration instanceof Declaration.Type) {
+			checkTypeDeclaration((Declaration.Type) declaration);
+		} else if(declaration instanceof Declaration.Property) {
+			checkPropertyDeclaration((Declaration.Property) declaration);
+		} else if(declaration instanceof Declaration.Function) {
+			checkFunctionDeclaration((Declaration.Function) declaration);
+		} else if(declaration instanceof Declaration.Method) {
+			checkMethodDeclaration((Declaration.Method) declaration);
 		} else {
 			// Ignore others
 		}
@@ -78,40 +74,40 @@ public class ModuleCheck {
 	}
 
 
-	private void checkTypeDeclaration(WhileyFile.Type declaration) {
-		for(Expr e : declaration.invariant) {
+	private void checkTypeDeclaration(Declaration.Type declaration) {
+		for(Expr e : declaration.getInvariant()) {
 			checkExpression(e, Context.INVARIANT);
 		}
 	}
 
-	private void checkPropertyDeclaration(WhileyFile.Property declaration) {
-		for(Expr e : declaration.requires) {
+	private void checkPropertyDeclaration(Declaration.Property declaration) {
+		for(Expr e : declaration.getInvariant()) {
 			checkExpression(e, Context.INVARIANT);
 		}
 	}
 
-	private void checkFunctionDeclaration(WhileyFile.Function declaration) {
-		for(Expr e : declaration.requires) {
+	private void checkFunctionDeclaration(Declaration.Function declaration) {
+		for(Expr e : declaration.getRequires()) {
 			checkExpression(e, Context.REQUIRES);
 		}
-		for(Expr e : declaration.ensures) {
+		for(Expr e : declaration.getEnsures()) {
 			checkExpression(e, Context.ENSURES);
 		}
-		checkStatements(declaration.statements,Context.FUNCTION);
+		checkBlock(declaration.getBody(),Context.FUNCTION);
 	}
 
-	private void checkMethodDeclaration(WhileyFile.Method declaration) {
-		for(Expr e : declaration.requires) {
+	private void checkMethodDeclaration(Declaration.Method declaration) {
+		for(Expr e : declaration.getRequires()) {
 			checkExpression(e, Context.REQUIRES);
 		}
-		for(Expr e : declaration.ensures) {
+		for(Expr e : declaration.getEnsures()) {
 			checkExpression(e, Context.ENSURES);
 		}
-		checkStatements(declaration.statements,Context.METHOD);
+		checkBlock(declaration.getBody(),Context.METHOD);
 	}
 
-	private void checkStatements(List<Stmt> statements, Context context) {
-		for (Stmt s : statements) {
+	private void checkBlock(Stmt.Block statements, Context context) {
+		for (Stmt s : statements.getOperands()) {
 			checkStatement(s, context);
 		}
 	}
@@ -134,12 +130,12 @@ public class ModuleCheck {
 				checkDoWhile((Stmt.DoWhile) statement, context);
 			} else if(statement instanceof Stmt.Fail) {
 				check((Stmt.Fail) statement, context);
-			} else if(statement instanceof Expr.FunctionOrMethodCall) {
-				checkFunctionOrMethodCall((Expr.FunctionOrMethodCall) statement, context);
+			} else if(statement instanceof Expr.Invoke) {
+				checkInvoke((Expr.Invoke) statement, context);
 			} else if(statement instanceof Stmt.IfElse) {
 				checkIfElse((Stmt.IfElse) statement, context);
-			} else if(statement instanceof Expr.IndirectFunctionOrMethodCall) {
-				checkIndirectFunctionOrMethodCall((Expr.IndirectFunctionOrMethodCall) statement, context);
+			} else if(statement instanceof Expr.IndirectInvoke) {
+				checkIndirectFunctionOrMethodCall((Expr.IndirectInvoke) statement, context);
 			} else if(statement instanceof Stmt.NamedBlock) {
 				checkNamedBlock((Stmt.NamedBlock) statement, context);
 			} else if(statement instanceof Stmt.Return) {
@@ -148,8 +144,8 @@ public class ModuleCheck {
 				checkSkip((Stmt.Skip) statement, context);
 			} else if(statement instanceof Stmt.Switch) {
 				checkSwitch((Stmt.Switch) statement, context);
-			} else if(statement instanceof Stmt.VariableDeclaration) {
-				checkVariableDeclaration((Stmt.VariableDeclaration) statement, context);
+			} else if(statement instanceof Declaration.Variable) {
+				checkVariableDeclaration((Declaration.Variable) statement, context);
 			} else if(statement instanceof Stmt.While) {
 				checkWhile((Stmt.While) statement, context);
 			} else {
@@ -163,28 +159,28 @@ public class ModuleCheck {
 	}
 
 	private void checkAssert(Stmt.Assert stmt, Context context) {
-		checkExpression(stmt.expr, context);
+		checkExpression(stmt.getCondition(), context);
 	}
 
 	private void checkAssign(Stmt.Assign stmt, Context context) {
 		if(context != Context.METHOD) {
 			// left-hand side
-			for (Expr lval : stmt.lvals) {
-				if (lval instanceof Expr.LocalVariable) {
+			for (Expr lval : stmt.getLeftHandSide()) {
+				if (lval instanceof Expr.VariableAccess) {
 					// Skip local variables since they are being assigned
 				} else {
 					checkExpression(lval, context);
 				}
 			}
 			// right-hand side
-			for (Expr rval : stmt.rvals) {
+			for (Expr rval : stmt.getRightHandSide()) {
 				checkExpression(rval, context);
 			}
 		}
 	}
 
 	private void checkAssume(Stmt.Assume stmt, Context context) {
-		checkExpression(stmt.expr, Context.ASSERTION);
+		checkExpression(stmt.getCondition(), Context.ASSERTION);
 	}
 
 	private void checkBreak(Stmt.Break stmt, Context context) {
@@ -196,19 +192,19 @@ public class ModuleCheck {
 
 	private void checkDebug(Stmt.Debug stmt, Context context) {
 		if(context != Context.METHOD) {
-			checkExpression(stmt.expr, context);
+			checkExpression(stmt.getCondition(), context);
 		}
 	}
 
 	private void checkDoWhile(Stmt.DoWhile stmt, Context context) {
 		//
-		checkStatements(stmt.body, context);
+		checkBlock(stmt.getBody(), context);
 		//
 		if(context != Context.METHOD) {
-			checkExpression(stmt.condition, context);
+			checkExpression(stmt.getCondition(), context);
 		}
 		//
-		for(Expr e : stmt.invariants) {
+		for(Expr e : stmt.getInvariant()) {
 			checkExpression(e,Context.INVARIANT);
 		}
 	}
@@ -219,20 +215,20 @@ public class ModuleCheck {
 
 	private void checkIfElse(Stmt.IfElse stmt, Context context) {
 		if(context != Context.METHOD) {
-			checkExpression(stmt.condition, context);
+			checkExpression(stmt.getCondition(), context);
 		}
 		//
-		checkStatements(stmt.trueBranch, context);
-		checkStatements(stmt.falseBranch, context);
+		checkBlock(stmt.getTrueBranch(), context);
+		checkBlock(stmt.getFalseBranch(), context);
 	}
 
 	private void checkNamedBlock(Stmt.NamedBlock stmt, Context context) {
-		checkStatements(stmt.body,context);
+		checkBlock(stmt.getBlock(),context);
 	}
 
 	private void checkReturn(Stmt.Return stmt, Context context) {
 		if(context != Context.METHOD) {
-			for(Expr e : stmt.returns) {
+			for(Expr e : stmt.getOperands()) {
 				checkExpression(e, context);
 			}
 		}
@@ -243,42 +239,41 @@ public class ModuleCheck {
 
 	private void checkSwitch(Stmt.Switch stmt, Context context) {
 		if(context != Context.METHOD) {
-			checkExpression(stmt.expr, context);
+			checkExpression(stmt.getCondition(), context);
 		}
 		//
-		for(Stmt.Case c : stmt.cases) {
-			checkStatements(c.stmts, context);
+		for(Stmt.Case c : stmt.getCases()) {
+			checkExpressions(c.getConditions(), context);
+			checkBlock(c.getBlock(), context);
 		}
 	}
 
-	private void checkVariableDeclaration(Stmt.VariableDeclaration stmt, Context context) {
-		if (stmt.expr != null && context != Context.METHOD) {
-			checkExpression(stmt.expr, context);
+	private void checkVariableDeclaration(Declaration.Variable stmt, Context context) {
+		if (stmt.hasInitialiser() && context != Context.METHOD) {
+			checkExpression(stmt.getInitialiser(), context);
 		}
 	}
 
 	private void checkWhile(Stmt.While stmt, Context context) {
 		if(context != Context.METHOD) {
-			checkExpression(stmt.condition, context);
+			checkExpression(stmt.getCondition(), context);
 		}
 		//
-		for(Expr e : stmt.invariants) {
-			checkExpression(e,Context.INVARIANT);
-		}
+		checkExpressions(stmt.getInvariant(),Context.INVARIANT);
 		//
-		checkStatements(stmt.body, context);
+		checkBlock(stmt.getBody(), context);
 	}
 
-	private void checkLVal(Expr.LVal expression, Context context) {
+	private void checkLVal(LVal expression, Context context) {
 		try {
 			if(expression instanceof Expr.Dereference) {
 				checkDereferenceLVal((Expr.Dereference) expression, context);
-			} else if(expression instanceof Expr.FieldAccess) {
-				checkFieldAccessLVal((Expr.FieldAccess) expression, context);
-			} else if(expression instanceof Expr.IndexOf) {
-				checkIndexOfLVal((Expr.IndexOf) expression, context);
-			} else if(expression instanceof Expr.LocalVariable) {
-				checkLocalVariableLVal((Expr.LocalVariable) expression, context);
+			} else if(expression instanceof Expr.RecordAccess) {
+				checkFieldAccessLVal((Expr.RecordAccess) expression, context);
+			} else if(expression instanceof Expr.ArrayAccess) {
+				checkIndexOfLVal((Expr.ArrayAccess) expression, context);
+			} else if(expression instanceof Expr.VariableAccess) {
+				checkLocalVariableLVal((Expr.VariableAccess) expression, context);
 			} else {
 				throw new InternalFailure("unknown expression encountered",file.getEntry(),expression);
 			}
@@ -294,20 +289,26 @@ public class ModuleCheck {
 		if(context != Context.METHOD) {
 			invalidReferenceAccess(expression,context);
 		}
-		checkLVal((Expr.LVal) expression.src,context);
+		checkLVal((LVal) expression.getOperand(),context);
 	}
 
-	private void checkFieldAccessLVal(Expr.FieldAccess expression, Context context) {
-		checkExpression(expression.src,context);
+	private void checkFieldAccessLVal(Expr.RecordAccess expression, Context context) {
+		checkExpression(expression.getSource(),context);
 	}
 
-	private void checkIndexOfLVal(Expr.IndexOf expression, Context context) {
-		checkLVal((Expr.LVal) expression.src,context);
-		checkExpression(expression.index,context);
+	private void checkIndexOfLVal(Expr.ArrayAccess expression, Context context) {
+		checkLVal((LVal) expression.getSource(),context);
+		checkExpression(expression.getSubscript(),context);
 	}
 
-	private void checkLocalVariableLVal(Expr.LocalVariable expression, Context context) {
+	private void checkLocalVariableLVal(Expr.VariableAccess expression, Context context) {
 
+	}
+
+	private void checkExpressions(Tuple<Expr> expressions, Context context) {
+		for(Expr e : expressions) {
+			checkExpression(e,context);
+		}
 	}
 
 	private void checkExpression(Expr expression, Context context) {
@@ -316,40 +317,34 @@ public class ModuleCheck {
 				checkArrayInitialiser((Expr.ArrayInitialiser) expression, context);
 			} else if(expression instanceof Expr.ArrayGenerator) {
 				checkArrayGenerator((Expr.ArrayGenerator) expression, context);
-			} else if(expression instanceof Expr.BinOp) {
-				checkBinOp((Expr.BinOp) expression, context);
+			} else if(expression instanceof Expr.Operator) {
+				checkBinOp((Expr.Operator) expression, context);
 			} else if(expression instanceof Expr.Cast) {
 				checkCast((Expr.Cast) expression, context);
 			} else if(expression instanceof Expr.Constant) {
 				checkConstant((Expr.Constant) expression, context);
-			} else if(expression instanceof StaticVariableAccess.ConstantAccess) {
-				checkConstantAccess((StaticVariableAccess.ConstantAccess) expression, context);
-			} else if(expression instanceof Expr.Dereference) {
-				checkDereference((Expr.Dereference) expression, context);
-			} else if(expression instanceof Expr.FieldAccess) {
-				checkFieldAccess((Expr.FieldAccess) expression, context);
-			} else if(expression instanceof Expr.FunctionOrMethod) {
-				checkFunctionOrMethod((Expr.FunctionOrMethod) expression, context);
-			} else if(expression instanceof Expr.FunctionOrMethodCall) {
-				checkFunctionOrMethodCall((Expr.FunctionOrMethodCall) expression, context);
-			} else if(expression instanceof Expr.IndexOf) {
-				checkIndexOf((Expr.IndexOf) expression, context);
-			} else if(expression instanceof Expr.IndirectFunctionOrMethodCall) {
-				checkIndirectFunctionOrMethodCall((Expr.IndirectFunctionOrMethodCall) expression, context);
-			} else if(expression instanceof Expr.Lambda) {
-				checkLambda((Expr.Lambda) expression, context);
-			} else if(expression instanceof Expr.LocalVariable) {
-				checkLocalVariable((Expr.LocalVariable) expression, context);
+			} else if(expression instanceof Expr.StaticVariableAccess) {
+				checkConstantAccess((Expr.StaticVariableAccess) expression, context);
+			} else if(expression instanceof Expr.RecordAccess) {
+				checkFieldAccess((Expr.RecordAccess) expression, context);
+			} else if(expression instanceof Expr.Invoke) {
+				checkInvoke((Expr.Invoke) expression, context);
+			} else if(expression instanceof Expr.ArrayAccess) {
+				checkIndexOf((Expr.ArrayAccess) expression, context);
+			} else if(expression instanceof Expr.IndirectInvoke) {
+				checkIndirectFunctionOrMethodCall((Expr.IndirectInvoke) expression, context);
+			} else if(expression instanceof Expr.LambdaConstant) {
+				checkFunctionOrMethod((Expr.LambdaConstant) expression, context);
+			} else if(expression instanceof Expr.LambdaInitialiser) {
+				checkLambda((Expr.LambdaInitialiser) expression, context);
+			} else if(expression instanceof Expr.VariableAccess) {
+				checkLocalVariable((Expr.VariableAccess) expression, context);
 			} else if(expression instanceof Expr.New) {
 				checkNew((Expr.New) expression, context);
 			} else if(expression instanceof Expr.Quantifier) {
 				checkQuantifier((Expr.Quantifier) expression, context);
-			} else if(expression instanceof Expr.Record) {
-				checkRecord((Expr.Record) expression, context);
-			} else if(expression instanceof Expr.TypeVal) {
-				checkTypeVal((Expr.TypeVal) expression, context);
-			} else if(expression instanceof Expr.UnOp) {
-				checkUnOp((Expr.UnOp) expression, context);
+			} else if(expression instanceof Expr.RecordInitialiser) {
+				checkRecord((Expr.RecordInitialiser) expression, context);
 			} else {
 				throw new InternalFailure("unknown expression encountered",file.getEntry(),expression);
 			}
@@ -361,75 +356,69 @@ public class ModuleCheck {
 	}
 
 	private void checkArrayInitialiser(Expr.ArrayInitialiser expression, Context context) {
-		for(Expr e : expression.arguments) {
+		for(Expr e : expression.getOperands()) {
 			checkExpression(e,context);
 		}
 	}
 
 	private void checkArrayGenerator(Expr.ArrayGenerator expression, Context context) {
-		checkExpression(expression.element,context);
-		checkExpression(expression.count,context);
+		checkExpression(expression.getValue(),context);
+		checkExpression(expression.getLength(),context);
 	}
 
-	private void checkBinOp(Expr.BinOp expression, Context context) {
-		checkExpression(expression.lhs,context);
-		checkExpression(expression.rhs,context);
+	private void checkBinOp(Expr.Operator expression, Context context) {
+		for(Expr e : expression.getOperands()) {
+			checkExpression(e,context);
+		}
 	}
 
 	private void checkCast(Expr.Cast expression, Context context) {
-		checkExpression(expression.expr,context);
+		checkExpression(expression.getCastedExpr(),context);
 	}
 
 	private void checkConstant(Expr.Constant expression, Context context) {
 
 	}
 
-	private void checkConstantAccess(StaticVariableAccess.ConstantAccess expression, Context context) {
+	private void checkConstantAccess(Expr.StaticVariableAccess expression, Context context) {
 
 	}
 
-	private void checkDereference(Expr.Dereference expression, Context context) {
-		checkExpression(expression.src,context);
+	private void checkFieldAccess(Expr.RecordAccess expression, Context context) {
+		checkExpression(expression.getSource(),context);
 	}
 
-	private void checkFieldAccess(Expr.FieldAccess expression, Context context) {
-		checkExpression(expression.src,context);
-	}
-
-	private void checkFunctionOrMethod(Expr.FunctionOrMethod expression, Context context) {
+	private void checkFunctionOrMethod(Expr.LambdaConstant expression, Context context) {
 
 	}
 
-	private void checkFunctionOrMethodCall(Expr.FunctionOrMethodCall expression, Context context) {
-		if(context != Context.METHOD && expression.type() instanceof Type.Method) {
-			invalidMethodCall(expression,context);
+	private void checkInvoke(Expr.Invoke expression, Context context) {
+		if (context != Context.METHOD && expression.getSignatureType() instanceof Type.Method) {
+			invalidMethodCall(expression, context);
 		}
-		for(Expr p : expression.arguments) {
+		for (Expr p : expression.getArguments()) {
+			checkExpression(p, context);
+		}
+	}
+
+	private void checkIndexOf(Expr.ArrayAccess expression, Context context) {
+		checkExpression(expression.getSource(),context);
+		checkExpression(expression.getSubscript(),context);
+	}
+
+	private void checkIndirectFunctionOrMethodCall(Expr.IndirectInvoke expression, Context context) {
+		checkExpression(expression.getSource(),context);
+		for(Expr p : expression.getArguments()) {
 			checkExpression(p,context);
 		}
 	}
 
-	private void checkIndexOf(Expr.IndexOf expression, Context context) {
-		checkExpression(expression.src,context);
-		checkExpression(expression.index,context);
-	}
-
-	private void checkIndirectFunctionOrMethodCall(Expr.IndirectFunctionOrMethodCall expression, Context context) {
-		if(context != Context.METHOD && expression.type() instanceof Type.Method) {
-			invalidMethodCall(expression,context);
-		}
-		checkExpression(expression.src,context);
-		for(Expr p : expression.arguments) {
-			checkExpression(p,context);
-		}
-	}
-
-	private void checkLambda(Expr.Lambda expression, Context context) {
+	private void checkLambda(Expr.LambdaInitialiser expression, Context context) {
 		// Check body of the lambda
-		checkExpression(expression.body,context);
+		checkExpression(expression.getBody(),context);
 	}
 
-	private void checkLocalVariable(Expr.LocalVariable expression, Context context) {
+	private void checkLocalVariable(Expr.VariableAccess expression, Context context) {
 
 	}
 
@@ -437,29 +426,20 @@ public class ModuleCheck {
 		if(context != Context.METHOD) {
 			invalidObjectAllocation(expression,context);
 		}
-		checkExpression(expression.expr,context);
+		checkExpression(expression.getOperand(),context);
 	}
 
 	private void checkQuantifier(Expr.Quantifier expression, Context context) {
-		for(Triple<String,Expr,Expr> p : expression.sources) {
-			checkExpression(p.second(),context);
-			checkExpression(p.third(),context);
+		for(Declaration.Variable p : expression.getParameters()) {
+			checkExpression(p.getInitialiser(),context);
 		}
-		checkExpression(expression.condition,context);
+		checkExpression(expression.getBody(),context);
 	}
 
-	private void checkRecord(Expr.Record expression, Context context) {
-		for(Map.Entry<String,Expr> e : expression.fields.entrySet()) {
-			checkExpression(e.getValue(),context);
+	private void checkRecord(Expr.RecordInitialiser expression, Context context) {
+		for(Pair<Identifier,Expr> e : expression.getOperands()) {
+			checkExpression(e.getSecond(),context);
 		}
-	}
-
-	private void checkTypeVal(Expr.TypeVal expression, Context context) {
-
-	}
-
-	private void checkUnOp(Expr.UnOp expression, Context context) {
-		checkExpression(expression.mhs,context);
 	}
 
 	private void invalidObjectAllocation(SyntacticElement expression, Context context) {

@@ -30,15 +30,9 @@ import wyal.lang.WyalFile.Declaration.Named;
 import wyfs.lang.Path;
 import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
-import wyil.lang.Bytecode;
-import wyil.lang.Bytecode.*;
-import wyil.lang.SyntaxTree;
-import wyil.lang.SyntaxTree.Location;
-import wyil.lang.Constant;
-import wyil.lang.Type;
 import wyil.lang.WyilFile;
+import static wyil.lang.WyilFile.*;
 import wyil.util.ErrorMessages;
-import wyil.util.SyntaxTrees;
 import wyil.util.TypeSystem;
 
 /**
@@ -200,7 +194,7 @@ public class VerificationConditionGenerator {
 		allocate(td,declaration.attributes());
 	}
 
-	private void translatePropertyDeclaration(WyilFile.Property declaration) {
+	private void translatePropertyDeclaration(WyilFile.Declaration.Property declaration) {
 		//
 		GlobalEnvironment globalEnvironment = new GlobalEnvironment(declaration);
 		LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
@@ -232,7 +226,7 @@ public class VerificationConditionGenerator {
 	 * @param wyalFile
 	 *            The WyAL file being constructed
 	 */
-	private void translateFunctionOrMethodDeclaration(WyilFile.FunctionOrMethod declaration) {
+	private void translateFunctionOrMethodDeclaration(WyilFile.Declaration.FunctionOrMethod declaration) {
 		// Create the prototype for this function or method. This is the
 		// function or method declaration which can be used within verification
 		// conditions to refer to this function or method. This does not include
@@ -280,7 +274,7 @@ public class VerificationConditionGenerator {
 	 * @param environment
 	 * @param wyalFile
 	 */
-	private void translatePreconditionMacros(WyilFile.FunctionOrMethodOrProperty declaration) {
+	private void translatePreconditionMacros(WyilFile.Declaration.Callable declaration) {
 		List<Location<Bytecode.Expr>> invariants = declaration.getPrecondition();
 		//
 		String prefix = declaration.name() + "_requires_";
@@ -919,7 +913,7 @@ public class VerificationConditionGenerator {
 		SyntaxTree tree = stmt.getEnclosingTree();
 		WyilFile.FunctionOrMethod declaration = (WyilFile.FunctionOrMethod) tree.getEnclosingDeclaration();
 		List<Location<Bytecode.Expr>> postcondition = declaration.getPostcondition();
-		Type.FunctionOrMethodOrProperty type = declaration.type();
+		Callable.FunctionOrMethodOrProperty type = declaration.type();
 		// First, check whether or not there are any postconditions!
 		if (postcondition.size() > 0) {
 			// There is at least one return value and at least one
@@ -1274,7 +1268,7 @@ public class VerificationConditionGenerator {
 		Bytecode.Invoke bytecode = expr.getBytecode();
 		AbstractCompilationUnit.Tuple<Type> parameterTypes = bytecode.type().getParameters();
 		//
-		WyilFile.FunctionOrMethodOrProperty fm = lookupFunctionOrMethodOrProperty(bytecode.name(), bytecode.type(), expr);
+		WyilFile.Callable fm = lookupFunctionOrMethodOrProperty(bytecode.name(), bytecode.type(), expr);
 		int numPreconditions = fm.getPrecondition().size();
 		//
 		// There is at least one precondition for the function/method being
@@ -1362,7 +1356,7 @@ public class VerificationConditionGenerator {
 		WyilFile.Declaration declaration = expr.getEnclosingTree().getEnclosingDeclaration();
 		Bytecode.Invoke bytecode = expr.getBytecode();
 		//
-		WyilFile.FunctionOrMethodOrProperty fmp = lookupFunctionOrMethodOrProperty(bytecode.name(), bytecode.type(), expr);
+		WyilFile.Callable fmp = lookupFunctionOrMethodOrProperty(bytecode.name(), bytecode.type(), expr);
 		if(fmp instanceof WyilFile.FunctionOrMethod) {
 			WyilFile.FunctionOrMethod fm = (WyilFile.FunctionOrMethod) fmp;
 			int numPostconditions = fm.getPostcondition().size();
@@ -1372,7 +1366,7 @@ public class VerificationConditionGenerator {
 				// called. Therefore, we need to generate a verification condition
 				// which will check that the precondition holds.
 				//
-				Type.FunctionOrMethodOrProperty fmt = fm.type();
+				Callable.FunctionOrMethodOrProperty fmt = fm.type();
 				Expr[] parameters = translateExpressions(expr.getOperands(), context.getEnvironment());
 				Expr[] arguments = java.util.Arrays.copyOf(parameters, parameters.length + fm.type().getReturns().size());
 				//
@@ -2250,7 +2244,7 @@ public class VerificationConditionGenerator {
 	 * @param declaration
 	 * @return
 	 */
-	private WyalFile.VariableDeclaration[] generatePreconditionParameters(WyilFile.FunctionOrMethodOrProperty declaration,
+	private WyalFile.VariableDeclaration[] generatePreconditionParameters(WyilFile.Callable declaration,
 			LocalEnvironment environment) {
 		Tuple<Type> params = declaration.type().getParameters();
 		int[] parameterLocations = ArrayUtils.range(0, params.size());
@@ -2465,8 +2459,8 @@ public class VerificationConditionGenerator {
 			Type.Negation nt = (Type.Negation) type;
 			WyalFile.Type elem = convert(nt.getElement(), element, context);
 			result = new WyalFile.Type.Negation(elem);
-		} else if (type instanceof Type.FunctionOrMethodOrProperty) {
-			Type.FunctionOrMethodOrProperty ft = (Type.FunctionOrMethodOrProperty) type;
+		} else if (type instanceof Callable.FunctionOrMethodOrProperty) {
+			Callable.FunctionOrMethodOrProperty ft = (Callable.FunctionOrMethodOrProperty) type;
 			// FIXME: need to do something better here
 			result = new WyalFile.Type.Any();
 		} else if (type instanceof Type.Nominal) {
@@ -2528,8 +2522,8 @@ public class VerificationConditionGenerator {
 		} else if (type instanceof Type.Negation) {
 			Type.Negation nt = (Type.Negation) type;
 			return typeMayHaveInvariant(nt.getElement(), context);
-		} else if (type instanceof Type.FunctionOrMethodOrProperty) {
-			Type.FunctionOrMethodOrProperty ft = (Type.FunctionOrMethodOrProperty) type;
+		} else if (type instanceof Callable.FunctionOrMethodOrProperty) {
+			Callable.FunctionOrMethodOrProperty ft = (Callable.FunctionOrMethodOrProperty) type;
 			return typeMayHaveInvariant(ft.getParameters(), context) || typeMayHaveInvariant(ft.getReturns(), context);
 		} else if (type instanceof Type.Nominal) {
 			Type.Nominal nt = (Type.Nominal) type;
@@ -2594,8 +2588,8 @@ public class VerificationConditionGenerator {
 	 * @return
 	 * @throws Exception
 	 */
-	public WyilFile.FunctionOrMethodOrProperty lookupFunctionOrMethodOrProperty(NameID name,
-			Type.FunctionOrMethodOrProperty fun,
+	public WyilFile.Callable lookupFunctionOrMethodOrProperty(NameID name,
+			Callable.FunctionOrMethodOrProperty fun,
 			SyntaxTree.Location<?> stmt) throws Exception {
 		SyntaxTree tree = stmt.getEnclosingTree();
 		WyilFile.Declaration decl = tree.getEnclosingDeclaration();

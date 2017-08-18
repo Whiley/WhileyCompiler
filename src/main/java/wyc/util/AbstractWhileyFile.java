@@ -6,17 +6,15 @@
 
 package wyc.util;
 
-import java.io.*;
 import java.util.*;
 
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractSyntacticItem;
-import wyc.io.WhileyFileLexer;
-import wyc.io.WhileyFileParser;
+import wybs.util.AbstractCompilationUnit.Tuple;
+import wyc.util.AbstractWhileyFile.Declaration;
 import wycc.util.ArrayUtils;
-import wyfs.lang.Content;
 import wyfs.lang.Path;
 
 /**
@@ -118,7 +116,8 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 	public static final int EXPR_const = EXPR_mask + 2;
 	public static final int EXPR_cast = EXPR_mask + 3;
 	public static final int EXPR_invoke = EXPR_mask + 4;
-	public static final int EXPR_indirectinvoke = EXPR_mask + 5;
+	public static final int EXPR_qualifiedinvoke = EXPR_mask + 5;
+	public static final int EXPR_indirectinvoke = EXPR_mask + 6;
 	// LOGICAL
 	public static final int EXPR_not = EXPR_mask + 8;
 	public static final int EXPR_and = EXPR_mask + 9;
@@ -180,6 +179,25 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 	// =========================================================================
 	// Accessors
 	// =========================================================================
+
+	public Tuple<Declaration> getDeclarations() {
+		throw new IllegalArgumentException("GOT HERE");
+	}
+
+	public <S extends Declaration.Named> S getDeclaration(Identifier name, Type signature, Class<S> kind) {
+		List<S> matches = super.getSyntacticItems(kind);
+		for (int i = 0; i != matches.size(); ++i) {
+			S match = matches.get(i);
+			if (match.getName().equals(name)) {
+				if (signature != null && signature.equals(match.getSignature())) {
+					return match;
+				} else if (signature == match.getSignature()) {
+					return match;
+				}
+			}
+		}
+		throw new IllegalArgumentException("unknown declarataion (" + name + "," + signature +")");
+	}
 
 	// ============================================================
 	// Declarations
@@ -263,6 +281,8 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			public Identifier getName() {
 				return (Identifier) super.getOperand(1);
 			}
+
+			public abstract AbstractWhileyFile.Type getSignature();
 		}
 
 		/**
@@ -296,11 +316,17 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 				return (Expr) super.getOperand(1);
 			}
 
+			@Override
+			public AbstractWhileyFile.Type getSignature() {
+				return null;
+			}
+
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Constant((Tuple<Modifier>) operands[0], (Identifier) operands[1], (Expr) operands[2]);
 			}
+
 		}
 
 		/**
@@ -366,11 +392,11 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 		 * <code>public</code> and <code>private</code>.
 		 * </p>
 		 */
-		public static abstract class FunctionOrMethodOrProperty extends Named {
+		public static abstract class Callable extends Named {
 
-			public FunctionOrMethodOrProperty(int opcode, Tuple<Modifier> modifiers, Identifier name,
+			public Callable(int opcode, Tuple<Modifier> modifiers, Identifier name,
 					Tuple<Variable> parameters, Tuple<Variable> returns, SyntacticItem... rest) {
-				super(opcode, modifiers, name, ArrayUtils.append(new SyntacticItem[] { parameters, returns }, rest));
+				super(opcode, modifiers, name, ArrayUtils.append(new SyntacticItem[] { parameters, returns}, rest));
 			}
 
 			@SuppressWarnings("unchecked")
@@ -383,7 +409,31 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 				return (Tuple<Variable>) getOperand(3);
 			}
 
-			public abstract AbstractWhileyFile.Type.FunctionOrMethodOrProperty getSignatureType();
+			@Override
+			public abstract AbstractWhileyFile.Type.Callable getSignature();
+		}
+
+		public static abstract class FunctionOrMethod extends Callable {
+
+			public FunctionOrMethod(int opcode, Tuple<Modifier> modifiers, Identifier name, Tuple<Variable> parameters,
+					Tuple<Variable> returns, Tuple<Expr> requires, Tuple<Expr> ensures, Stmt.Block body, SyntacticItem... rest) {
+				super(opcode, modifiers, name, parameters, returns,
+						ArrayUtils.append(new SyntacticItem[] { requires, ensures, body }, rest));
+			}
+
+			@SuppressWarnings("unchecked")
+			public Tuple<Expr> getRequires() {
+				return (Tuple<Expr>) getOperand(4);
+			}
+
+			@SuppressWarnings("unchecked")
+			public Tuple<Expr> getEnsures() {
+				return (Tuple<Expr>) getOperand(5);
+			}
+
+			public Stmt.Block getBody() {
+				return (Stmt.Block) getOperand(6);
+			}
 		}
 
 		/**
@@ -414,16 +464,16 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 		 * </p>
 		 *
 		 * <p>
-		 * <b>NOTE</b> see {@link FunctionOrMethodOrProperty} for more
+		 * <b>NOTE</b> see {@link Callable} for more
 		 * information.
 		 * </p>
 		 *
-		 * @see FunctionOrMethodOrProperty
+		 * @see Callable
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Function extends FunctionOrMethodOrProperty {
+		public static class Function extends FunctionOrMethod {
 
 			public Function(Tuple<Modifier> modifiers, Identifier name, Tuple<Variable> parameters,
 					Tuple<Variable> returns, Tuple<Expr> requires, Tuple<Expr> ensures, Stmt.Block body) {
@@ -431,26 +481,12 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 
 			@Override
-			public AbstractWhileyFile.Type.Function getSignatureType() {
+			public AbstractWhileyFile.Type.Function getSignature() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
 				Tuple<AbstractWhileyFile.Type> projectedParameters = getParameters().project(0, AbstractWhileyFile.Type.class);
 				Tuple<AbstractWhileyFile.Type> projectedReturns = getReturns().project(0, AbstractWhileyFile.Type.class);
 				return new AbstractWhileyFile.Type.Function(projectedParameters, projectedReturns);
-			}
-
-			@SuppressWarnings("unchecked")
-			public Tuple<Expr> getRequires() {
-				return (Tuple<Expr>) getOperand(4);
-			}
-
-			@SuppressWarnings("unchecked")
-			public Tuple<Expr> getEnsures() {
-				return (Tuple<Expr>) getOperand(5);
-			}
-
-			public Stmt.Block getBody() {
-				return (Stmt.Block) getOperand(6);
 			}
 
 			@Override
@@ -488,55 +524,53 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 		 * </p>
 		 *
 		 * <p>
-		 * <b>NOTE</b> see {@link FunctionOrMethodOrProperty} for more
+		 * <b>NOTE</b> see {@link Callable} for more
 		 * information.
 		 * </p>
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Method extends FunctionOrMethodOrProperty {
+		public static class Method extends FunctionOrMethod {
 
 			public Method(Tuple<Modifier> modifiers, Identifier name, Tuple<Variable> parameters,
-					Tuple<Variable> returns, Tuple<Identifier> lifetimeParameters, Tuple<Expr> requires,
-					Tuple<Expr> ensures, Stmt.Block body) {
-				super(DECL_method, modifiers, name, parameters, returns, lifetimeParameters, requires, ensures, body);
+					Tuple<Variable> returns, Tuple<Expr> requires,
+					Tuple<Expr> ensures, Stmt.Block body, Tuple<Identifier> lifetimes) {
+				super(DECL_method, modifiers, name, parameters, returns, requires, ensures, body, lifetimes);
+			}
+
+			@SuppressWarnings("unchecked")
+			public Tuple<Identifier> getLifetimes() {
+				return (Tuple<Identifier>) getOperand(7);
 			}
 
 			@Override
-			public AbstractWhileyFile.Type.Method getSignatureType() {
+			public AbstractWhileyFile.Type.Method getSignature() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
-				Tuple<AbstractWhileyFile.Type> projectedParameters = getParameters().project(0, AbstractWhileyFile.Type.class);
-				Tuple<AbstractWhileyFile.Type> projectedReturns = getReturns().project(0, AbstractWhileyFile.Type.class);
-				// FIXME: lifetime arguments
-				return new AbstractWhileyFile.Type.Method(projectedParameters, projectedReturns, null, null);
-			}
-
-			@SuppressWarnings("unchecked")
-			public Tuple<Expr> getRequires() {
-				return (Tuple<Expr>) getOperand(5);
-			}
-
-			@SuppressWarnings("unchecked")
-			public Tuple<Expr> getEnsures() {
-				return (Tuple<Expr>) getOperand(6);
-			}
-
-			public Stmt.Block getBody() {
-				return (Stmt.Block) getOperand(7);
+				Tuple<AbstractWhileyFile.Type> projectedParameters = getParameters().project(0,
+						AbstractWhileyFile.Type.class);
+				Tuple<AbstractWhileyFile.Type> projectedReturns = getReturns().project(0,
+						AbstractWhileyFile.Type.class);
+				return new AbstractWhileyFile.Type.Method(projectedParameters, projectedReturns, new Tuple<>(),
+						getLifetimes());
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public Method clone(SyntacticItem[] operands) {
 				return new Method((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Variable>) operands[2], (Tuple<Variable>) operands[3], (Tuple<Identifier>) operands[4],
-						(Tuple<Expr>) operands[5], (Tuple<Expr>) operands[6], (Stmt.Block) operands[7]);
+						(Tuple<Variable>) operands[2], (Tuple<Variable>) operands[3], (Tuple<Expr>) operands[4],
+						(Tuple<Expr>) operands[5], (Stmt.Block) operands[6], (Tuple<Identifier>) operands[7]);
+			}
+
+			@Override
+			public String toString() {
+				return "method" + getSignature();
 			}
 		}
 
-		public static class Property extends FunctionOrMethodOrProperty {
+		public static class Property extends Callable {
 
 			public Property(Tuple<Modifier> modifiers, Identifier name, Tuple<Variable> parameters,
 					Tuple<Expr> invariant) {
@@ -544,7 +578,7 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 
 			@Override
-			public AbstractWhileyFile.Type.Property getSignatureType() {
+			public AbstractWhileyFile.Type.Property getSignature() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
 				Tuple<AbstractWhileyFile.Type> projectedParameters = getParameters().project(0, AbstractWhileyFile.Type.class);
@@ -606,6 +640,11 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 				return (Tuple<Expr>) getOperand(2);
 			}
 
+			@Override
+			public AbstractWhileyFile.Type getSignature() {
+				return null;
+			}
+
 			@SuppressWarnings("unchecked")
 			@Override
 			public Type clone(SyntacticItem[] operands) {
@@ -618,6 +657,30 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 		// Variable Declaration
 		// ============================================================
 
+		/**
+		 * Represents a variable declaration which has the form:
+		 *
+		 * <pre>
+		 * Type Identifier ['=' Expression] NewLine
+		 * </pre>
+		 *
+		 * The optional <code>Expression</code> assignment is referred to as an
+		 * <i>initialiser</i>. If an initialiser is given, then this will be
+		 * evaluated and assigned to the variable when the declaration is executed.
+		 * Some example declarations:
+		 *
+		 * <pre>
+		 * int x
+		 * int y = 1
+		 * int z = x + y
+		 * </pre>
+		 *
+		 * Observe that, unlike C and Java, declarations that declare multiple
+		 * variables (separated by commas) are not permitted.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class Variable extends Named implements Stmt {
 			public Variable(Tuple<Modifier> modifiers, Identifier name, AbstractWhileyFile.Type type) {
 				super(DECL_variable, modifiers, name, type);
@@ -627,8 +690,22 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 				super(DECL_variableinitialiser, modifiers, name, type);
 			}
 
+			public boolean hasInitialiser() {
+				return getOpcode() == DECL_variableinitialiser;
+			}
+
 			public AbstractWhileyFile.Type getType() {
 				return (AbstractWhileyFile.Type) getOperand(2);
+			}
+
+			@Override
+			public AbstractWhileyFile.Type getSignature() {
+				return null;
+			}
+
+
+			public Expr getInitialiser() {
+				return (Expr) getOperand(3);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -644,6 +721,15 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 	// Stmt
 	// ============================================================
 
+	/**
+	 * Provides classes for representing statements in Whiley's source language.
+	 * Examples include <i>assignments</i>, <i>for-loops</i>, <i>conditions</i>,
+	 * etc. Each class is an instance of <code>SyntacticElement</code> and, hence,
+	 * can be adorned with certain information (such as source location, etc).
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
 	public interface Stmt extends SyntacticItem {
 
 		public static class Block extends AbstractSyntacticItem implements Stmt {
@@ -667,6 +753,22 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 		}
 
+		/**
+		 * Represents a named block, which has the form:
+		 *
+		 * <pre>
+		 * NamedBlcok ::= LifetimeIdentifier ':' NewLine Block
+		 * </pre>
+		 *
+		 * As an example:
+		 *
+		 * <pre>
+		 * function sum():
+		 *   &this:int x = new:this x
+		 *   myblock:
+		 *     &myblock:int y = new:myblock y
+		 * </pre>
+		 */
 		public static class NamedBlock extends AbstractSyntacticItem implements Stmt {
 			public NamedBlock(Identifier name, Stmt.Block block) {
 				super(STMT_namedblock, name, block);
@@ -676,7 +778,7 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 				return (Identifier) super.getOperand(0);
 			}
 
-			public Block getBlock(int i) {
+			public Block getBlock() {
 				return (Block) super.getOperand(1);
 			}
 
@@ -686,6 +788,24 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 		}
 
+		/**
+		 * Represents a assert statement of the form <code>assert e</code>, where
+		 * <code>e</code> is a boolean expression. The following illustrates:
+		 *
+		 * <pre>
+		 * function abs(int x) -> int:
+		 *     if x < 0:
+		 *         x = -x
+		 *     assert x >= 0
+		 *     return x
+		 * </pre>
+		 *
+		 * Assertions are either statically checked by the verifier, or turned into
+		 * runtime checks.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class Assert extends AbstractSyntacticItem implements Stmt {
 			public Assert(Expr condition) {
 				super(STMT_assert, condition);
@@ -701,6 +821,27 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 		}
 
+		/**
+		 * Represents an assignment statement of the form <code>lhs = rhs</code>.
+		 * Here, the <code>rhs</code> is any expression, whilst the <code>lhs</code>
+		 * must be an <code>LVal</code> --- that is, an expression permitted on the
+		 * left-side of an assignment. The following illustrates different possible
+		 * assignment statements:
+		 *
+		 * <pre>
+		 * x = y       // variable assignment
+		 * x.f = y     // field assignment
+		 * x[i] = y    // list assignment
+		 * x[i].f = y  // compound assignment
+		 * </pre>
+		 *
+		 * The last assignment here illustrates that the left-hand side of an
+		 * assignment can be arbitrarily complex, involving nested assignments into
+		 * lists and records.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class Assign extends AbstractSyntacticItem implements Stmt {
 			public Assign(Tuple<LVal> lvals, Tuple<Expr> rvals) {
 				super(STMT_assign, lvals, rvals);
@@ -723,6 +864,24 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 		}
 
+		/**
+		 * Represents an assume statement of the form <code>assume e</code>, where
+		 * <code>e</code> is a boolean expression. The following illustrates:
+		 *
+		 * <pre>
+		 * function abs(int x) -> int:
+		 *     if x < 0:
+		 *         x = -x
+		 *     assume x >= 0
+		 *     return x
+		 * </pre>
+		 *
+		 * Assumptions are assumed by the verifier and, since this may be unsound,
+		 * always turned into runtime checks.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class Assume extends AbstractSyntacticItem implements Stmt {
 			public Assume(Expr condition) {
 				super(STMT_assume, condition);
@@ -786,6 +945,28 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 		}
 
+		/**
+		 * Represents a do-while statement whose body is made up from a block of
+		 * statements separated by indentation. As an example:
+		 *
+		 * <pre>
+		 * function sum([int] xs) -> int
+		 * requires |xs| > 0:
+		 *   int r = 0
+		 *   int i = 0
+		 *   do:
+		 *     r = r + xs[i]
+		 *     i = i + 1
+		 *   while i < |xs| where i >= 0
+		 *   return r
+		 * </pre>
+		 *
+		 * Here, the <code>where</code> is optional, and commonly referred to as the
+		 * <i>loop invariant</i>.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class DoWhile extends AbstractSyntacticItem implements Stmt {
 			public DoWhile(Expr condition, Tuple<Expr> invariant, Stmt.Block body) {
 				super(STMT_dowhile, condition, invariant, body);
@@ -811,6 +992,9 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 		}
 
+		/**
+		 * Represents a fail statement.
+		 */
 		public static class Fail extends AbstractSyntacticItem implements Stmt {
 			public Fail() {
 				super(STMT_fail);
@@ -822,6 +1006,31 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 		}
 
+		/**
+		 * Represents a classical if-else statement, which is has the form:
+		 *
+		 * <pre>
+		 * "if" Expression ':' NewLine Block ["else" ':' NewLine Block]
+		 * </pre>
+		 *
+		 * The first expression is referred to as the <i>condition</i>, while the
+		 * first block is referred to as the <i>true branch</i>. The optional second
+		 * block is referred to as the <i>false branch</i>. The following
+		 * illustrates:
+		 *
+		 * <pre>
+		 * function max(int x, int y) -> int:
+		 *   if(x > y):
+		 *     return x
+		 *   else if(x == y):
+		 *   	return 0
+		 *   else:
+		 *     return y
+		 * </pre>
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class IfElse extends AbstractSyntacticItem implements Stmt {
 			public IfElse(Expr condition, Stmt.Block trueBranch) {
 				super(STMT_if, condition, trueBranch);
@@ -829,6 +1038,11 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			public IfElse(Expr condition, Stmt.Block trueBranch, Stmt.Block falseBranch) {
 				super(STMT_ifelse, condition, trueBranch, falseBranch);
 			}
+
+			public boolean hasFalseBranch() {
+				return getOpcode() == STMT_ifelse;
+			}
+
 			public Expr getCondition() {
 				return (Expr) super.getOperand(0);
 			}
@@ -852,6 +1066,30 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 		}
 
+		/**
+		 * Represents a return statement, which has the form:
+		 *
+		 * <pre>
+		 * ReturnStmt ::= "return" [Expression] NewLine
+		 * </pre>
+		 *
+		 * The optional expression is referred to as the <i>return value</i>. Note
+		 * that, the returned expression (if there is one) must begin on the same
+		 * line as the return statement itself.
+		 *
+		 * The following illustrates:
+		 *
+		 * <pre>
+		 * function f(int x) -> int:
+		 * 	  return x + 1
+		 * </pre>
+		 *
+		 * Here, we see a simple <code>return</code> statement which returns an
+		 * <code>int</code> value.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class Return extends AbstractSyntacticItem implements Stmt {
 			public Return(Expr... returns) {
 				super(STMT_return, returns);
@@ -900,6 +1138,10 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 				super(STMT_caseblock, conditions, block);
 			}
 
+			public boolean isDefault() {
+				return getConditions().size() == 0;
+			}
+
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getConditions() {
 				return (Tuple<Expr>) getOperand(0);
@@ -916,6 +1158,33 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 		}
 
+		/**
+		 * Represents a while statement, which has the form:
+		 *
+		 * <pre>
+		 * WhileStmt ::= "while" Expression (where Expression)* ':' NewLine Block
+		 * </pre>
+		 *
+		 * As an example:
+		 *
+		 * <pre>
+		 * function sum([int] xs) -> int:
+		 *   int r = 0
+		 *   int i = 0
+		 *   while i < |xs| where i >= 0:
+		 *     r = r + xs[i]
+		 *     i = i + 1
+		 *   return r
+		 * </pre>
+		 *
+		 * The optional <code>where</code> clause(s) are commonly referred to as the
+		 * "loop invariant". When multiple clauses are given, these are combined
+		 * using a conjunction. The combined invariant defines a condition which
+		 * must be true on every iteration of the loop.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
 		public static class While extends AbstractSyntacticItem implements Stmt {
 			public While(Expr condition, Tuple<Expr> invariant, Stmt.Block body) {
 				super(STMT_while, condition, invariant, body);
@@ -1075,37 +1344,41 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 		 */
 		public static class Invoke extends AbstractSyntacticItem implements Expr {
 
-			public Invoke(Type.FunctionOrMethodOrProperty type, Name name, Tuple<Identifier> lifetimes, Tuple<Expr> arguments) {
-				super(EXPR_invoke, new SyntacticItem[]{type, name, lifetimes, arguments});
+			public Invoke(Name name, Tuple<Identifier> lifetimes, Tuple<Expr> arguments) {
+				super(EXPR_invoke, name, lifetimes, arguments);
 			}
 
-			public Type.FunctionOrMethodOrProperty getSignatureType() {
-				return (Type.FunctionOrMethodOrProperty) getOperand(0);
-			}
-
-			public void setSignatureType(Type.FunctionOrMethodOrProperty type) {
-				this.setOperand(0, type);
+			public Invoke(Name name, Tuple<Identifier> lifetimes, Tuple<Expr> arguments, Type.Callable type) {
+				super(EXPR_qualifiedinvoke, name, lifetimes, arguments, type);
 			}
 
 			public Name getName() {
-				return (Name) getOperand(1);
+				return (Name) getOperand(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimes() {
-				return (Tuple<Identifier>) getOperand(2);
+				return (Tuple<Identifier>) getOperand(1);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) getOperand(3);
+				return (Tuple<Expr>) getOperand(2);
+			}
+
+			public Type.Callable getSignatureType() {
+				return (Type.Callable) getOperand(3);
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public Invoke clone(SyntacticItem[] operands) {
-				return new Invoke((Type.FunctionOrMethodOrProperty) operands[0], (Name) operands[1],
-						(Tuple<Identifier>) operands[2], (Tuple<Expr>) operands[3]);
+				if(operands.length == 3) {
+					return new Invoke((Name) operands[0], (Tuple<Identifier>) operands[1], (Tuple<Expr>) operands[2]);
+				} else {
+					return new Invoke((Name) operands[0], (Tuple<Identifier>) operands[1], (Tuple<Expr>) operands[2],
+							(Type.Callable) operands[3]);
+				}
 			}
 
 			@Override
@@ -2052,7 +2325,7 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 		public static class LambdaInitialiser extends AbstractSyntacticItem implements Expr {
 
 			public LambdaInitialiser(Tuple<Declaration.Variable> parameters, Tuple<Identifier> captures, Tuple<Identifier> lifetimes, Expr body) {
-				super(EXPR_lambdaconst, new SyntacticItem[]{parameters, captures, lifetimes, body});
+				super(EXPR_lambdaconst, parameters, captures, lifetimes, body);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -2288,6 +2561,12 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			@SafeVarargs
 			public RecordInitialiser(Pair<Identifier, Expr>... fields) {
 				super(EXPR_recinit, fields);
+			}
+
+			@SuppressWarnings("unchecked")
+			@Override
+			public Pair<Identifier, Expr> getOperand(int i) {
+				return (Pair<Identifier,Expr>) super.getOperand(i);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -2621,8 +2900,12 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 		 * @return
 		 */
 		public static class Record extends Atom {
-			public Record(boolean isOpen, Declaration.Variable[] fields) {
-				super(TYPE_rec, ArrayUtils.append(SyntacticItem.class, new Value.Bool(isOpen), fields));
+			public Record(boolean isOpen, Tuple<Declaration.Variable> fields) {
+				this(new Value.Bool(isOpen), fields);
+			}
+
+			public Record(Value.Bool isOpen, Tuple<Declaration.Variable> fields) {
+				super(TYPE_rec, isOpen, fields);
 			}
 
 			private Record(SyntacticItem[] operands) {
@@ -2634,12 +2917,9 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 				return flag.get();
 			}
 
-			public Declaration.Variable[] getFields() {
-				// FIXME: this should be packed as a Tuple and return a Tuple
-				SyntacticItem[] operands = getOperands();
-				Declaration.Variable[] fields = new Declaration.Variable[size() - 1];
-				System.arraycopy(operands, 1, fields, 0, fields.length);
-				return fields;
+			@SuppressWarnings("unchecked")
+			public Tuple<Declaration.Variable> getFields() {
+				return (Tuple<Declaration.Variable>) getOperand(1);
 			}
 
 			@Override
@@ -2650,16 +2930,16 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			@Override
 			public String toString() {
 				String r = "{";
-				Declaration.Variable[] fields = getFields();
-				for (int i = 0; i != fields.length; ++i) {
+				Tuple<Declaration.Variable> fields = getFields();
+				for (int i = 0; i != fields.size(); ++i) {
 					if (i != 0) {
 						r += ",";
 					}
-					Declaration.Variable field = fields[i];
+					Declaration.Variable field = fields.getOperand(i);
 					r += field.getType() + " " + field.getName();
 				}
 				if (isOpen()) {
-					if (fields.length > 0) {
+					if (fields.size() > 0) {
 						r += ", ...";
 					} else {
 						r += "...";
@@ -2847,13 +3127,28 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 		 * @author David J. Pearce
 		 *
 		 */
-		public static abstract class FunctionOrMethodOrProperty extends Atom implements Type {
-			public FunctionOrMethodOrProperty(int opcode, Tuple<Type> parameters, Tuple<Type> returns) {
+		public static abstract class Callable extends Atom implements Type {
+			public Callable(int opcode, Tuple<Type> parameters, Tuple<Type> returns) {
 				super(opcode, parameters, returns);
 			}
 
-			public FunctionOrMethodOrProperty(int opcode, SyntacticItem[] operands) {
+			public Callable(int opcode, SyntacticItem... operands) {
 				super(opcode, operands);
+			}
+
+			@SuppressWarnings("unchecked")
+			public Tuple<Type> getParameters() {
+				return (Tuple<Type>) getOperand(0);
+			}
+
+			@SuppressWarnings("unchecked")
+			public Tuple<Type> getReturns() {
+				return (Tuple<Type>) getOperand(1);
+			}
+
+			@Override
+			public String toString() {
+				return getParameters().toString() + "->" + getReturns();
 			}
 		}
 
@@ -2867,7 +3162,7 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Function extends FunctionOrMethodOrProperty implements Type {
+		public static class Function extends Callable implements Type {
 			public Function(Tuple<Type> parameters, Tuple<Type> returns) {
 				super(TYPE_fun, parameters, returns);
 			}
@@ -2895,11 +3190,11 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Method extends FunctionOrMethodOrProperty implements Type {
+		public static class Method extends Callable implements Type {
 
 			public Method(Tuple<Type> parameters, Tuple<Type> returns, Tuple<Identifier> captures,
-					Tuple<Identifier> lifetimeParameters) {
-				super(TYPE_meth, new SyntacticItem[] { parameters, returns, captures, lifetimeParameters });
+					Tuple<Identifier> lifetimes) {
+				super(TYPE_meth, parameters, returns, captures, lifetimes);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -2933,7 +3228,7 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Property extends FunctionOrMethodOrProperty implements Type {
+		public static class Property extends Callable implements Type {
 			public Property(Tuple<Type> parameters) {
 				super(TYPE_macro, parameters, new Tuple<>(new Type.Bool()));
 			}

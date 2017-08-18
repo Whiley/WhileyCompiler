@@ -10,10 +10,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
+import wybs.util.StdProject;
+import wyc.lang.WhileyFile;
 import wyc.util.AbstractProjectCommand;
 import wycc.util.Logger;
 import wyfs.lang.Content;
+import wyfs.lang.Path;
 import wyil.io.WyilFilePrinter;
 import wyil.io.WyilFileReader;
 import wyil.lang.WyilFile;
@@ -83,11 +87,13 @@ public class Decompile extends AbstractProjectCommand<Decompile.Result> {
 				return Result.ERRORS;
 			}
 		}
-		// decompile files
 		try {
-			for (File f : delta) {
-				FileInputStream fin = new FileInputStream(f);
-				WyilFile wf = new WyilFileReader(fin).read();
+			// Finalise the configuration before continuing.
+			StdProject project = initialiseProject();
+			// Determine source files to build
+			List<Path.Entry<WyilFile>> entries = wyildir.find(delta, WyilFile.ContentType);
+			for (Path.Entry<WyilFile> e : entries) {
+				WyilFile wf = new WyilFileReader(e).read();
 				WyilFilePrinter wyp = new WyilFilePrinter(System.out);
 				wyp.setVerbose(verbose);
 				wyp.apply(wf);

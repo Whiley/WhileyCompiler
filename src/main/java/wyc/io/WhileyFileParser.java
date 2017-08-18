@@ -284,8 +284,8 @@ public class WhileyFileParser {
 		if (isFunction) {
 			declaration = new Declaration.Function(modifiers, name, returns, parameters, requires, ensures, body);
 		} else {
-			declaration = new Declaration.Method(modifiers, name, returns, parameters, lifetimes, requires, ensures,
-					body);
+			declaration = new Declaration.Method(modifiers, name, returns, parameters, requires, ensures, body,
+					lifetimes);
 		}
 		return annotateSourceLocation(declaration,start);
 	}
@@ -2097,7 +2097,7 @@ public class WhileyFileParser {
 			// parse arguments to invocation
 			Tuple<Expr> arguments = parseInvocationArguments(scope);
 			// This indicates we have an direct invocation
-			expr = new Expr.Invoke(null, name, new Tuple<Identifier>(), arguments);
+			expr = new Expr.Invoke(name, new Tuple<Identifier>(), arguments);
 		} else {
 			// Must be a qualified constant access
 			expr = new Expr.StaticVariableAccess(name);
@@ -2748,7 +2748,7 @@ public class WhileyFileParser {
 			return annotateSourceLocation(new Expr.IndirectInvoke(var, lifetimes, args), start);
 		} else {
 			// unqualified direct invocation
-			return annotateSourceLocation(new Expr.Invoke(null, new Name(name), lifetimes, args), start);
+			return annotateSourceLocation(new Expr.Invoke(new Name(name), lifetimes, args), start);
 		}
 	}
 
@@ -3092,7 +3092,7 @@ public class WhileyFileParser {
 			// Record types must be parsed as types, since e.g. {int f} is not a
 			// valid expression.
 			return true;
-		} else if (type instanceof Type.FunctionOrMethodOrProperty) {
+		} else if (type instanceof Type.Callable) {
 			// "function" and "method" are keywords, cannot parse as expression.
 			return true;
 		} else if (type instanceof Type.Intersection) {
@@ -3458,8 +3458,8 @@ public class WhileyFileParser {
 			}
 		}
 		// Done
-		Declaration.Variable[] arrFields = types.toArray(new Declaration.Variable[types.size()]);
-		return annotateSourceLocation(new Type.Record(isOpen, arrFields), start);
+		Tuple<Declaration.Variable> fields = new Tuple<>(Declaration.Variable.class,types);
+		return annotateSourceLocation(new Type.Record(isOpen, fields), start);
 	}
 
 	/**

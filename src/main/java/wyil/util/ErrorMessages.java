@@ -6,7 +6,7 @@
 
 package wyil.util;
 
-import wyil.lang.Type;
+import static wyil.lang.WyilFile.Type;
 
 /**
  * <p>
