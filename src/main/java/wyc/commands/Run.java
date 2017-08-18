@@ -17,8 +17,7 @@ import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
-import wyil.lang.Constant;
-import wyil.lang.Type;
+import static wyc.lang.WhileyFile.*;
 import wyil.util.interpreter.Interpreter;
 
 public class Run extends AbstractProjectCommand<Run.Result> {
@@ -64,7 +63,7 @@ public class Run extends AbstractProjectCommand<Run.Result> {
 		try {
 			StdProject project = initialiseProject();
 			Path.ID id = Trie.fromString(args[0]);
-			Type.Method sig = (Type.Method) Type.Method(new Type[0], new Type[0]);
+			Type.Method sig = new Type.Method(new Tuple<>(new Type[0]), new Tuple<>(), new Tuple<>(), new Tuple<>());
 			NameID name = new NameID(id, args[1]);
 			executeFunctionOrMethod(name, sig, project);
 		} catch (IOException e) {
@@ -86,7 +85,7 @@ public class Run extends AbstractProjectCommand<Run.Result> {
 	 * @param project
 	 * @throws IOException
 	 */
-	private void executeFunctionOrMethod(NameID id, Type.FunctionOrMethod signature, Build.Project project)
+	private void executeFunctionOrMethod(NameID id, Type.FunctionOrMethodOrProperty signature, Build.Project project)
 			throws IOException {
 		// Try to run the given function or method
 		Constant[] returns = new Interpreter(project, System.out).execute(id, signature);

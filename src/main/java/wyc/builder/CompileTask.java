@@ -24,7 +24,6 @@ import wybs.lang.*;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.*;
 import wyc.lang.*;
-import wyc.lang.WhileyFile.Context;
 import wycc.util.ArrayUtils;
 import wycc.util.Logger;
 import wycc.util.Pair;
@@ -186,7 +185,7 @@ public final class CompileTask implements Build.Task {
 				// WyilFile. This is needed for resolution.
 				Path.Root dst = p.second();
 				Path.Entry<WyilFile> target = dst.create(entry.id(), WyilFile.ContentType);
-				target.write(createWyilSkeleton(wf,target));
+				target.write(new WyilFile(target,wf));
 				// Register the derivation in the build graph. This is important
 				// to understand what a particular intermediate file was
 				// derived from.
@@ -194,8 +193,8 @@ public final class CompileTask implements Build.Task {
 			}
 		}
 
-		FlowTypeChecker flowChecker = new FlowTypeChecker(this);
-		flowChecker.propagate(files);
+//		FlowTypeChecker flowChecker = new FlowTypeChecker(this);
+//		flowChecker.propagate(files);
 
 		logger.logTimedMessage("Typed " + count + " source file(s).", System.currentTimeMillis() - tmpTime,
 				tmpMemory - runtime.freeMemory());
@@ -208,23 +207,23 @@ public final class CompileTask implements Build.Task {
 		tmpTime = System.currentTimeMillis();
 		tmpMemory = runtime.freeMemory();
 
-		CodeGenerator generator = new CodeGenerator(this);
 		HashSet<Path.Entry<?>> generatedFiles = new HashSet<>();
-		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
-			Path.Entry<?> src = p.first();
-			Path.Root dst = p.second();
-			if (src.contentType() == WhileyFile.ContentType) {
-				Path.Entry<WhileyFile> source = (Path.Entry<WhileyFile>) src;
-				Path.Entry<WyilFile> target = dst.get(src.id(), WyilFile.ContentType);
-				generatedFiles.add(target);
-				WhileyFile wf = source.read();
-				new DefiniteAssignmentAnalysis(wf).check();
-				new ModuleCheck(wf).check();
-				WyilFile wyil = generator.generate(wf, target);
-				new MoveAnalysis(this).apply(wyil);
-				target.write(wyil);
-			}
-		}
+//		CodeGenerator generator = new CodeGenerator(this);
+//		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+//			Path.Entry<?> src = p.first();
+//			Path.Root dst = p.second();
+//			if (src.contentType() == WhileyFile.ContentType) {
+//				Path.Entry<WhileyFile> source = (Path.Entry<WhileyFile>) src;
+//				Path.Entry<WyilFile> target = dst.get(src.id(), WyilFile.ContentType);
+//				generatedFiles.add(target);
+//				WhileyFile wf = source.read();
+//				new DefiniteAssignmentAnalysis(wf).check();
+//				new ModuleCheck(wf).check();
+//				WyilFile wyil = generator.generate(wf, target);
+//				new MoveAnalysis(this).apply(wyil);
+//				target.write(wyil);
+//			}
+//		}
 
 		logger.logTimedMessage("Generated code for " + count + " source file(s).", System.currentTimeMillis() - tmpTime,
 				tmpMemory - runtime.freeMemory());
@@ -237,7 +236,7 @@ public final class CompileTask implements Build.Task {
 			Path.Entry<?> src = p.first();
 			Path.Root dst = p.second();
 			Path.Entry<WyilFile> wf = dst.get(src.id(), WyilFile.ContentType);
-			process(wf.read(), new CoercionCheck(this));
+			// process(wf.read(), new CoercionCheck(this));
 		}
 
 		// ========================================================================
@@ -639,43 +638,6 @@ public final class CompileTask implements Build.Task {
 	}
 
 	/**
-	 * Create a "skeleton" version of the WyilFile corresponding to a given
-	 * WhileyFile. The skeleton only includes public type declarations. These
-	 * are needed for resolution, which relies on the ability to extract such
-	 * information from WyilFiles.
-	 *
-	 * @param wf
-	 * @return
-	 */
-	private WyilFile createWyilSkeleton(WhileyFile whileyFile, Path.Entry<WyilFile> target) {
-		WyilFile wyilFile = new WyilFile(target);
-		for (WhileyFile.Declaration d : whileyFile.declarations) {
-			if (d instanceof WhileyFile.Type) {
-				WhileyFile.Type td = (WhileyFile.Type) d;
-				try {
-					Type wyilType = toSemanticType(td.parameter.type, td);
-					WyilFile.Type wyilTypeDecl = new WyilFile.Type(wyilFile, td.modifiers(), td.name(), wyilType);
-					// At this point, if the original type contains an invariant
-					// then we must add a dummy one here. This is critical as,
-					// otherwise, the type system cannot tell that certain types
-					// are constrained.
-					if(td.invariant.size() > 0) {
-						// Add null as a dummy invariant.
-						wyilTypeDecl.getInvariant().add(null);
-					}
-					wyilFile.blocks().add(wyilTypeDecl);
-				} catch (ResolveError e) {
-					throw new SyntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()), whileyFile.getEntry(),
-							td.parameter.type, e);
-				} catch (Throwable t) {
-					throw new InternalFailure(t.getMessage(), whileyFile.getEntry(), td.parameter.type, t);
-				}
-			}
-		}
-		return wyilFile;
-	}
-
-	/**
 	 * Convert a Whiley "syntactic" type into a wyil type. This is essentially a
 	 * straightforward process. The only complication is that the names for
 	 * nominal types have to be properly resolved.
@@ -730,7 +692,7 @@ public final class CompileTask implements Build.Task {
 		} else if (type instanceof SyntacticType.Method) {
 			SyntacticType.Method methT = (SyntacticType.Method) type;
 			String[] lifetimeParameters = toStringArray(methT.getLifetimeParameters());
-			String[] contextLifetimes = toStringArray(methT.getContextLifetimes());
+			String[] contextLifetimes = toStringArray(methT.getCapturedLifetimes());
 			Type[] parameters = toSemanticTypes(methT.getParameters(), context);
 			Type[] returns = toSemanticTypes(methT.getReturns(), context);
 			return Type.Method(lifetimeParameters, contextLifetimes, parameters, returns);

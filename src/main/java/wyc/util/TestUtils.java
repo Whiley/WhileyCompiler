@@ -8,7 +8,6 @@ package wyc.util;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,19 +17,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 
-import wybs.lang.Build;
-import wybs.lang.NameID;
-import wybs.util.StdProject;
-import wyc.Activator;
 import wyc.commands.Compile;
 import wyc.commands.Run;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.util.DirectoryRoot;
-import wyil.lang.Type;
-import wyil.util.interpreter.Interpreter;
 
 public class TestUtils {
 
@@ -97,6 +89,7 @@ public class TestUtils {
 		cmd.setWhileydir(whileydir);
 		cmd.setWyaldir(whileydir); //
 		cmd.setVerify(verify);
+		cmd.setVerbose(true);
 		Compile.Result result = cmd.execute(args);
 		byte[] errBytes = syserr.toByteArray();
 		byte[] outBytes = sysout.toByteArray();

@@ -31,8 +31,6 @@ import wyal.util.SmallWorldDomain;
 import wyal.util.WyalFileResolver;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.util.DirectoryRoot;
-import wyfs.util.VirtualRoot;
 import wyil.builders.Wyil2WyalBuilder;
 import wyil.lang.WyilFile;
 import wytp.provers.AutomatedTheoremProver;
@@ -348,6 +346,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			}
 			return Result.ERRORS;
 		} catch (Exception e) {
+			e.printStackTrace();
 			// now what?
 			throw new RuntimeException(e);
 		}

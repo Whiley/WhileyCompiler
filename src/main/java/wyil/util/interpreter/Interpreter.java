@@ -17,9 +17,7 @@ import wybs.lang.SyntacticElement;
 import wybs.util.ResolveError;
 import wyfs.lang.Path;
 import wyil.lang.*;
-import wyil.lang.Bytecode.*;
-
-import static wyil.lang.SyntaxTree.*;
+import static wyil.lang.WyilFile.*;
 import wyil.util.TypeSystem;
 
 /**
@@ -1072,10 +1070,14 @@ public class Interpreter {
 		}
 
 		@Override
+		@Override
+		@Override
 		public Constant read(Constant[] frame) {
 			return frame[index];
 		}
 
+		@Override
+		@Override
 		@Override
 		public void write(Constant[] frame, Constant rhs) {
 			frame[index] = rhs;
@@ -1093,11 +1095,15 @@ public class Interpreter {
 		}
 
 		@Override
+		@Override
+		@Override
 		public Constant read(Constant[] frame) {
 			Constant.Array src = checkType(this.src.read(frame),null,Constant.Array.class);
 			return src.values().get(index);
 		}
 
+		@Override
+		@Override
 		@Override
 		public void write(Constant[] frame,Constant rhs) {
 			Constant.Array arr = checkType(this.src.read(frame),null,Constant.Array.class);
@@ -1117,10 +1123,14 @@ public class Interpreter {
 		}
 
 		@Override
+		@Override
+		@Override
 		public Constant read(Constant[] frame) {
 			Constant.Record src = checkType(this.src.read(frame),null,Constant.Record.class);
 			return src.values().get(field);
 		}
+		@Override
+		@Override
 		@Override
 		public void write(Constant[] frame, Constant rhs) {
 			Constant.Record rec = checkType(this.src.read(frame),null,Constant.Record.class);
@@ -1138,11 +1148,15 @@ public class Interpreter {
 		}
 
 		@Override
+		@Override
+		@Override
 		public Constant read(Constant[] frame) {
 			ConstantObject objecy = checkType(src.read(frame),null,ConstantObject.class);
 			return objecy.read();
 		}
 
+		@Override
+		@Override
 		@Override
 		public void write(Constant[] frame, Constant rhs) {
 			ConstantObject object = checkType(src.read(frame),null,ConstantObject.class);
