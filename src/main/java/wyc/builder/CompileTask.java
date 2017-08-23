@@ -19,11 +19,11 @@ import wyfs.util.Trie;
 import wyil.checks.CoercionCheck;
 import wyil.lang.*;
 import wyil.util.MoveAnalysis;
-import wyil.util.TypeSystem;
 import wybs.lang.*;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.*;
 import wyc.lang.*;
+import wyc.type.TypeSystem;
 import wycc.util.ArrayUtils;
 import wycc.util.Logger;
 import wycc.util.Pair;
@@ -171,7 +171,7 @@ public final class CompileTask implements Build.Task {
 		tmpTime = System.currentTimeMillis();
 		tmpMemory = runtime.freeMemory();
 
-		ArrayList<WhileyFile> files = new ArrayList<>();
+		ArrayList<WyilFile> files = new ArrayList<>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
 			Path.Entry<?> entry = p.first();
 			if (entry.contentType() == WhileyFile.ContentType) {
@@ -179,13 +179,14 @@ public final class CompileTask implements Build.Task {
 				// Parse Whiley source file. This may produce errors at this
 				// stage, which means compilation of this file cannot proceed
 				WhileyFile wf = source.read();
-				files.add(wf);
 				// Write WyIL skeleton. This is a stripped down version of the
 				// source file which is easily translated into a temporary
 				// WyilFile. This is needed for resolution.
 				Path.Root dst = p.second();
 				Path.Entry<WyilFile> target = dst.create(entry.id(), WyilFile.ContentType);
-				target.write(new WyilFile(target,wf));
+				WyilFile wif = new WyilFile(target,wf);
+				files.add(wif);
+				target.write(wif);
 				// Register the derivation in the build graph. This is important
 				// to understand what a particular intermediate file was
 				// derived from.
@@ -193,61 +194,69 @@ public final class CompileTask implements Build.Task {
 			}
 		}
 
-//		FlowTypeChecker flowChecker = new FlowTypeChecker(this);
-//		flowChecker.propagate(files);
+		try {
+			FlowTypeChecker flowChecker = new FlowTypeChecker(this);
+			flowChecker.check(files);
 
-		logger.logTimedMessage("Typed " + count + " source file(s).", System.currentTimeMillis() - tmpTime,
-				tmpMemory - runtime.freeMemory());
+			logger.logTimedMessage("Typed " + count + " source file(s).", System.currentTimeMillis() - tmpTime,
+					tmpMemory - runtime.freeMemory());
 
-		// ========================================================================
-		// Code Generation
-		// ========================================================================
+			// ========================================================================
+			// Code Generation
+			// ========================================================================
 
-		runtime = Runtime.getRuntime();
-		tmpTime = System.currentTimeMillis();
-		tmpMemory = runtime.freeMemory();
+			runtime = Runtime.getRuntime();
+			tmpTime = System.currentTimeMillis();
+			tmpMemory = runtime.freeMemory();
 
-		HashSet<Path.Entry<?>> generatedFiles = new HashSet<>();
-//		CodeGenerator generator = new CodeGenerator(this);
-//		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
-//			Path.Entry<?> src = p.first();
-//			Path.Root dst = p.second();
-//			if (src.contentType() == WhileyFile.ContentType) {
-//				Path.Entry<WhileyFile> source = (Path.Entry<WhileyFile>) src;
-//				Path.Entry<WyilFile> target = dst.get(src.id(), WyilFile.ContentType);
-//				generatedFiles.add(target);
-//				WhileyFile wf = source.read();
-//				new DefiniteAssignmentAnalysis(wf).check();
-//				new ModuleCheck(wf).check();
-//				WyilFile wyil = generator.generate(wf, target);
-//				new MoveAnalysis(this).apply(wyil);
-//				target.write(wyil);
-//			}
-//		}
+			HashSet<Path.Entry<?>> generatedFiles = new HashSet<>();
+			//		CodeGenerator generator = new CodeGenerator(this);
+			//		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+			//			Path.Entry<?> src = p.first();
+			//			Path.Root dst = p.second();
+			//			if (src.contentType() == WhileyFile.ContentType) {
+			//				Path.Entry<WhileyFile> source = (Path.Entry<WhileyFile>) src;
+			//				Path.Entry<WyilFile> target = dst.get(src.id(), WyilFile.ContentType);
+			//				generatedFiles.add(target);
+			//				WhileyFile wf = source.read();
+			//				new DefiniteAssignmentAnalysis(wf).check();
+			//				new ModuleCheck(wf).check();
+			//				WyilFile wyil = generator.generate(wf, target);
+			//				new MoveAnalysis(this).apply(wyil);
+			//				target.write(wyil);
+			//			}
+			//		}
 
-		logger.logTimedMessage("Generated code for " + count + " source file(s).", System.currentTimeMillis() - tmpTime,
-				tmpMemory - runtime.freeMemory());
+			logger.logTimedMessage("Generated code for " + count + " source file(s).", System.currentTimeMillis() - tmpTime,
+					tmpMemory - runtime.freeMemory());
 
-		// ========================================================================
-		// Pipeline Stages
-		// ========================================================================
+			// ========================================================================
+			// Pipeline Stages
+			// ========================================================================
 
-		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
-			Path.Entry<?> src = p.first();
-			Path.Root dst = p.second();
-			Path.Entry<WyilFile> wf = dst.get(src.id(), WyilFile.ContentType);
-			// process(wf.read(), new CoercionCheck(this));
+			for (Pair<Path.Entry<?>, Path.Root> p : delta) {
+				Path.Entry<?> src = p.first();
+				Path.Root dst = p.second();
+				Path.Entry<WyilFile> wf = dst.get(src.id(), WyilFile.ContentType);
+				// process(wf.read(), new CoercionCheck(this));
+			}
+
+			// ========================================================================
+			// Done
+			// ========================================================================
+
+			long endTime = System.currentTimeMillis();
+			logger.logTimedMessage("Whiley => Wyil: compiled " + delta.size() + " file(s)", endTime - startTime,
+					startMemory - runtime.freeMemory());
+
+			return generatedFiles;
+		} catch(SyntaxError e) {
+			// FIXME: this is not super prettey but, for now, it works. The goal
+			// is to translate the entry from the WyIL file to the originating
+			// WhileyFile.
+			Path.Entry<?> source = graph.parent(e.getEntry());
+			throw new SyntaxError(e.getMessage(),source,e.getElement(),e);
 		}
-
-		// ========================================================================
-		// Done
-		// ========================================================================
-
-		long endTime = System.currentTimeMillis();
-		logger.logTimedMessage("Whiley => Wyil: compiled " + delta.size() + " file(s)", endTime - startTime,
-				startMemory - runtime.freeMemory());
-
-		return generatedFiles;
 	}
 
 	// ======================================================================
@@ -363,7 +372,7 @@ public final class CompileTask implements Build.Task {
 			WyilFile w = getModule(mid);
 			List<WyilFile.Block> blocks = w.blocks();
 			for (int i = 0; i != blocks.size(); ++i) {
-				WyilFile.Block d = blocks.get(i);
+				WyilFile.Block d = blocks.getLocal(i);
 				if (d instanceof WyilFile.Declaration) {
 					WyilFile.Declaration nd = (WyilFile.Declaration) d;
 					if(nd.name().equals(nid.name())) {

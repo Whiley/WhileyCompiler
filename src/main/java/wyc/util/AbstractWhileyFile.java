@@ -11,6 +11,7 @@ import java.util.*;
 import wybs.lang.CompilationUnit;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit;
+import static wybs.util.AbstractCompilationUnit.*;
 import wybs.util.AbstractSyntacticItem;
 import wybs.util.AbstractCompilationUnit.Tuple;
 import wyc.util.AbstractWhileyFile.Declaration;
@@ -25,7 +26,7 @@ import wyfs.lang.Path;
  * <pre>
  * function id(int x) -> (int y):
  *     return x
- * </pre>
+ * </pre>f
  *
  * This is represented internally using a heap of syntactic items which might
  * look something like this:
@@ -78,16 +79,17 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 	public static final int TYPE_int = TYPE_mask + 4;
 	public static final int TYPE_nom = TYPE_mask + 5;
 	public static final int TYPE_ref = TYPE_mask + 6;
-	public static final int TYPE_arr = TYPE_mask + 7;
-	public static final int TYPE_rec = TYPE_mask + 8;
-	public static final int TYPE_fun = TYPE_mask + 9;
-	public static final int TYPE_meth = TYPE_mask + 10;
-	public static final int TYPE_macro = TYPE_mask + 11;
-	public static final int TYPE_inv = TYPE_mask + 12;
-	public static final int TYPE_or = TYPE_mask + 13;
-	public static final int TYPE_and = TYPE_mask + 14;
-	public static final int TYPE_not = TYPE_mask + 15;
-	public static final int TYPE_byte = TYPE_mask + 16;
+	public static final int TYPE_refowned = TYPE_mask + 7;
+	public static final int TYPE_arr = TYPE_mask + 8;
+	public static final int TYPE_rec = TYPE_mask + 9;
+	public static final int TYPE_fun = TYPE_mask + 10;
+	public static final int TYPE_meth = TYPE_mask + 11;
+	public static final int TYPE_macro = TYPE_mask + 12;
+	public static final int TYPE_inv = TYPE_mask + 13;
+	public static final int TYPE_or = TYPE_mask + 14;
+	public static final int TYPE_and = TYPE_mask + 15;
+	public static final int TYPE_not = TYPE_mask + 16;
+	public static final int TYPE_byte = TYPE_mask + 17;
 	// STATEMENTS: 01000000 (64) -- 001011111 (95)
 	public static final int STMT_mask = 0b01000000;
 	public static final int STMT_block = STMT_mask + 0;
@@ -163,6 +165,8 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 	public static final int EXPR_arrupdt = EXPR_mask + 58;
 	public static final int EXPR_arrgen = EXPR_mask + 59;
 	public static final int EXPR_arrinit = EXPR_mask + 60;
+	public static final int EXPR_arrrange = EXPR_mask + 61;
+
 
 	// =========================================================================
 	// Constructors
@@ -181,7 +185,8 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 	// =========================================================================
 
 	public Tuple<Declaration> getDeclarations() {
-		throw new IllegalArgumentException("GOT HERE");
+		// The first node is always the declaration root.
+		return (Tuple<Declaration>) getSyntacticItem(size()-1);
 	}
 
 	public <S extends Declaration.Named> S getDeclaration(Identifier name, Type signature, Class<S> kind) {
@@ -227,10 +232,6 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 		public static class Import extends AbstractSyntacticItem implements Declaration {
 			public Import(Identifier... components) {
 				super(DECL_import, components);
-			}
-
-			public Identifier[] getComponents() {
-				return (Identifier[]) getOperands();
 			}
 
 			@Override
@@ -313,7 +314,7 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 
 			public Expr getConstantExpr() {
-				return (Expr) super.getOperand(1);
+				return (Expr) super.getOperand(2);
 			}
 
 			@Override
@@ -484,8 +485,8 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			public AbstractWhileyFile.Type.Function getSignature() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
-				Tuple<AbstractWhileyFile.Type> projectedParameters = getParameters().project(0, AbstractWhileyFile.Type.class);
-				Tuple<AbstractWhileyFile.Type> projectedReturns = getReturns().project(0, AbstractWhileyFile.Type.class);
+				Tuple<AbstractWhileyFile.Type> projectedParameters = getParameters().project(2, AbstractWhileyFile.Type.class);
+				Tuple<AbstractWhileyFile.Type> projectedReturns = getReturns().project(2, AbstractWhileyFile.Type.class);
 				return new AbstractWhileyFile.Type.Function(projectedParameters, projectedReturns);
 			}
 
@@ -548,9 +549,9 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			public AbstractWhileyFile.Type.Method getSignature() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
-				Tuple<AbstractWhileyFile.Type> projectedParameters = getParameters().project(0,
+				Tuple<AbstractWhileyFile.Type> projectedParameters = getParameters().project(2,
 						AbstractWhileyFile.Type.class);
-				Tuple<AbstractWhileyFile.Type> projectedReturns = getReturns().project(0,
+				Tuple<AbstractWhileyFile.Type> projectedReturns = getReturns().project(2,
 						AbstractWhileyFile.Type.class);
 				return new AbstractWhileyFile.Type.Method(projectedParameters, projectedReturns, new Tuple<>(),
 						getLifetimes());
@@ -637,7 +638,7 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getInvariant() {
-				return (Tuple<Expr>) getOperand(2);
+				return (Tuple<Expr>) getOperand(3);
 			}
 
 			@Override
@@ -687,7 +688,7 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 
 			public Variable(Tuple<Modifier> modifiers, Identifier name, AbstractWhileyFile.Type type, Expr initialiser) {
-				super(DECL_variableinitialiser, modifiers, name, type);
+				super(DECL_variableinitialiser, modifiers, name, type, initialiser);
 			}
 
 			public boolean hasInitialiser() {
@@ -703,7 +704,6 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 				return null;
 			}
 
-
 			public Expr getInitialiser() {
 				return (Expr) getOperand(3);
 			}
@@ -711,8 +711,13 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			@SuppressWarnings("unchecked")
 			@Override
 			public Variable clone(SyntacticItem[] operands) {
-				return new Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(AbstractWhileyFile.Type) operands[2]);
+				if (operands.length == 3) {
+					return new Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+							(AbstractWhileyFile.Type) operands[2]);
+				} else {
+					return new Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+							(AbstractWhileyFile.Type) operands[2], (Expr) operands[3]);
+				}
 			}
 		}
 	}
@@ -740,11 +745,6 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			@Override
 			public Stmt getOperand(int i) {
 				return (Stmt) super.getOperand(i);
-			}
-
-			@Override
-			public Stmt[] getOperands() {
-				return (Stmt[]) super.getOperands();
 			}
 
 			@Override
@@ -1091,23 +1091,18 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 		 *
 		 */
 		public static class Return extends AbstractSyntacticItem implements Stmt {
-			public Return(Expr... returns) {
+			public Return(Tuple<Expr> returns) {
 				super(STMT_return, returns);
 			}
 
-			@Override
-			public Expr getOperand(int i) {
-				return (Expr) super.getOperand(i);
-			}
-
-			@Override
-			public Expr[] getOperands() {
-				return (Expr[]) super.getOperands();
+			@SuppressWarnings("unchecked")
+			public Tuple<Expr> getOperand() {
+				return (Tuple<Expr>) super.getOperand(0);
 			}
 
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Return(ArrayUtils.toArray(Expr.class, operands));
+				return new Return((Tuple<Expr>) operands[0]);
 			}
 		}
 
@@ -1366,8 +1361,25 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 				return (Tuple<Expr>) getOperand(2);
 			}
 
+			public boolean hasSignatureType() {
+				return opcode == EXPR_qualifiedinvoke;
+			}
+
 			public Type.Callable getSignatureType() {
 				return (Type.Callable) getOperand(3);
+			}
+
+			public void setSignatureType(Type.Callable type) {
+				if (hasSignatureType()) {
+					throw new IllegalArgumentException("invoke already has signature type");
+				} else {
+					// Change the operands array itself. This is a somewhat less
+					// than ideal option, but it works.
+					operands = Arrays.copyOf(operands, operands.length + 1);
+					operands[3] = type;
+					// Update opcode to reflect new state
+					opcode = EXPR_qualifiedinvoke;
+				}
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1448,11 +1460,6 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			@Override
 			public Expr getOperand(int i) {
 				return (Expr) super.getOperand(i);
-			}
-
-			@Override
-			public Expr[] getOperands() {
-				return (Expr[]) super.getOperands();
 			}
 
 			@Override
@@ -2205,7 +2212,7 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 		 */
 		public static class BitwiseXor extends InfixOperator {
 			public BitwiseXor(Expr... operands) {
-				super(EXPR_bitwiseor, operands);
+				super(EXPR_bitwisexor, operands);
 			}
 
 			@Override
@@ -2448,7 +2455,7 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 
 			@Override
 			public String toString() {
-				return Arrays.toString(getOperands());
+				return Arrays.toString(toArray(Expr.class));
 			}
 		}
 
@@ -2479,6 +2486,34 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			@Override
 			public ArrayGenerator clone(SyntacticItem[] operands) {
 				return new ArrayGenerator((Expr) operands[0], (Expr) operands[1]);
+			}
+		}
+
+		/**
+		 * Represents an <i>array range expression</i> of the form
+		 * "<code>e1 .. e2</code>" where <code>e1</code> is the start of the
+		 * range and <code>e2</code> the end. Thus returns a new array made up
+		 * from those values between start and end (but not including the end).
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class ArrayRange extends Expr.Operator {
+			public ArrayRange(Expr start, Expr end) {
+				super(EXPR_arrrange, start, end);
+			}
+
+			public Expr getStart() {
+				return (Expr) super.getOperand(0);
+			}
+
+			public Expr getEnd() {
+				return (Expr) super.getOperand(1);
+			}
+
+			@Override
+			public ArrayRange clone(SyntacticItem[] operands) {
+				return new ArrayRange((Expr) operands[0], (Expr) operands[1]);
 			}
 		}
 
@@ -2567,12 +2602,6 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			@Override
 			public Pair<Identifier, Expr> getOperand(int i) {
 				return (Pair<Identifier,Expr>) super.getOperand(i);
-			}
-
-			@SuppressWarnings("unchecked")
-			@Override
-			public Pair<Identifier, Expr>[] getOperands() {
-				return ArrayUtils.toArray(Pair.class, super.getOperands());
 			}
 
 			@SuppressWarnings("unchecked")
@@ -2775,8 +2804,8 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 
 			@Override
-			public Null clone(SyntacticItem[] operands) {
-				return new Null();
+			public Byte clone(SyntacticItem[] operands) {
+				return new Byte();
 			}
 
 			@Override
@@ -2857,8 +2886,15 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 		 * @return
 		 */
 		public static class Reference extends Atom {
+			public Reference(Type element) {
+				super(TYPE_ref, element);
+			}
 			public Reference(Type element, Identifier lifetime) {
-				super(TYPE_ref, element, lifetime);
+				super(TYPE_refowned, element, lifetime);
+			}
+
+			public boolean hasLifetime() {
+				return opcode == TYPE_refowned;
 			}
 
 			public Type getElement() {
@@ -2871,16 +2907,20 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 
 			@Override
 			public Reference clone(SyntacticItem[] operands) {
-				return new Reference((Type) operands[0], (Identifier) operands[1]);
+				if(operands.length == 1) {
+					return new Reference((Type) operands[0]);
+				} else {
+					return new Reference((Type) operands[0], (Identifier) operands[1]);
+				}
 			}
 
 			@Override
 			public String toString() {
-				Identifier lifetime = getLifetime();
-				if (lifetime != null) {
-					return "&(" + getElement() + ")";
-				} else {
+				if (hasLifetime()) {
+					Identifier lifetime = getLifetime();
 					return "&" + lifetime + ":(" + getElement() + ")";
+				} else {
+					return "&(" + getElement() + ")";
 				}
 			}
 		}
@@ -3025,11 +3065,6 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			@Override
 			public Type getOperand(int i) {
 				return (Type) super.getOperand(i);
-			}
-
-			@Override
-			public Type[] getOperands() {
-				return ArrayUtils.toArray(Type.class, super.getOperands());
 			}
 		}
 
@@ -3198,13 +3233,6 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 
 			@SuppressWarnings("unchecked")
-			@Override
-			public Method clone(SyntacticItem[] operands) {
-				return new Method((Tuple<Type>) operands[0], (Tuple<Type>) operands[1], (Tuple<Identifier>) operands[2],
-						(Tuple<Identifier>) operands[3]);
-			}
-
-			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getCapturedLifetimes() {
 				return (Tuple<Identifier>) getOperand(2);
 			}
@@ -3217,6 +3245,13 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			@Override
 			public String toString() {
 				return "method" + super.toString();
+			}
+
+			@SuppressWarnings("unchecked")
+			@Override
+			public Method clone(SyntacticItem[] operands) {
+				return new Method((Tuple<Type>) operands[0], (Tuple<Type>) operands[1], (Tuple<Identifier>) operands[2],
+						(Tuple<Identifier>) operands[3]);
 			}
 		}
 
@@ -3249,6 +3284,10 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 		}
 	}
+
+	// ============================================================
+	// Modifiers
+	// ============================================================
 
 	/**
 	 * <p>
@@ -3337,6 +3376,5 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 				return new Export();
 			}
 		}
-
 	}
 }

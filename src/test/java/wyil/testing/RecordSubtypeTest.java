@@ -8,11 +8,12 @@
 package wyil.testing;
 import org.junit.*;
 
-import wybs.util.ResolveError;
+import wybs.lang.NameResolver;
+import wyc.type.TypeSystem;
+import wyc.util.TestUtils;
 
 import static org.junit.Assert.*;
-import wyil.lang.Type;
-import wyil.util.TypeSystem;
+import static wyc.lang.WhileyFile.Type;
 
 public class RecordSubtypeTest {
 	@Test public void test_1() { checkIsSubtype("any","any"); }
@@ -5201,20 +5202,21 @@ public class RecordSubtypeTest {
 	@Test public void test_5776() { checkIsSubtype("{int f2}|int","{int f2}|int"); }
 
 	private void checkIsSubtype(String from, String to) {
-		Type ft = Type.fromString(from);
-		Type tt = Type.fromString(to);
+		Type ft = TestUtils.fromString(from);
+		Type tt = TestUtils.fromString(to);
 		try {
-			assertTrue(new TypeSystem(null).isSubtype(ft,tt));
-		} catch(ResolveError e) {
+			assertTrue(new TypeSystem(null).isRawSubtype(ft,tt));
+		} catch(NameResolver.ResolutionError e) {
 			throw new RuntimeException(e);
 		}
 	}
+
 	private void checkNotSubtype(String from, String to) {
-		Type ft = Type.fromString(from);
-		Type tt = Type.fromString(to);
+		Type ft = TestUtils.fromString(from);
+		Type tt = TestUtils.fromString(to);
 		try {
-			assertFalse(new TypeSystem(null).isSubtype(ft, tt));
-		} catch (ResolveError e) {
+			assertFalse(new TypeSystem(null).isRawSubtype(ft, tt));
+		} catch (NameResolver.ResolutionError e) {
 			throw new RuntimeException(e);
 		}
 	}

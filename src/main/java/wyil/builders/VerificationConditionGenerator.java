@@ -183,7 +183,7 @@ public class VerificationConditionGenerator {
 			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
 			var = localEnvironment.read(v.getIndex());
 			for (int i = 0; i != invariant.length; ++i) {
-				invariant[i] = translateAsBlock(invariants.get(i), localEnvironment);
+				invariant[i] = translateAsBlock(invariants.getLocal(i), localEnvironment);
 			}
 		} else {
 			var = new WyalFile.VariableDeclaration(type, new WyalFile.Identifier("self"));
@@ -205,7 +205,7 @@ public class VerificationConditionGenerator {
 		//
 		for (int i = 0; i != invariants.size(); ++i) {
 			// Translate expression itself
-			stmts[i] = translateAsBlock(invariants.get(i), localEnvironment);
+			stmts[i] = translateAsBlock(invariants.getLocal(i), localEnvironment);
 		}
 		//
 		WyalFile.Stmt.Block block = new WyalFile.Stmt.Block(stmts);
@@ -288,7 +288,7 @@ public class VerificationConditionGenerator {
 			WyalFile.VariableDeclaration[] type = generatePreconditionParameters(declaration,
 					localEnvironment);
 			// Translate expression itself
-			WyalFile.Stmt.Block clause = translateAsBlock(invariants.get(i),
+			WyalFile.Stmt.Block clause = translateAsBlock(invariants.getLocal(i),
 					localEnvironment);
 			// Capture any free variables. This is necessary to deal with any
 			// variable aliases introduced by type test operators.
@@ -297,7 +297,7 @@ public class VerificationConditionGenerator {
 			//
 			WyalFile.Identifier ident = new WyalFile.Identifier(name);
 			WyalFile.Declaration md = new WyalFile.Declaration.Named.Macro(ident, type, clause);
-			allocate(md,invariants.get(i).attributes());
+			allocate(md,invariants.getLocal(i).attributes());
 		}
 	}
 
@@ -323,7 +323,7 @@ public class VerificationConditionGenerator {
 			LocalEnvironment localEnvironment = new LocalEnvironment(globalEnvironment);
 			WyalFile.VariableDeclaration[] type = generatePostconditionTypePattern(declaration,
 					localEnvironment);
-			WyalFile.Stmt.Block clause = translateAsBlock(invariants.get(i),
+			WyalFile.Stmt.Block clause = translateAsBlock(invariants.getLocal(i),
 					localEnvironment.clone());
 			// Capture any free variables. This is necessary to deal with any
 			// variable aliases introduced by type test operators.
@@ -332,7 +332,7 @@ public class VerificationConditionGenerator {
 			//
 			WyalFile.Identifier ident = new WyalFile.Identifier(name);
 			WyalFile.Declaration md = new WyalFile.Declaration.Named.Macro(ident, type, clause);
-			allocate(md,invariants.get(i).attributes());
+			allocate(md,invariants.getLocal(i).attributes());
 		}
 	}
 
@@ -1536,7 +1536,7 @@ public class VerificationConditionGenerator {
 		case GTEQ:
 		case AND:
 		case OR:
-			return translateBinaryOperator(binaryOperatorMap.get(kind), expr, environment);
+			return translateBinaryOperator(binaryOperatorMap.getLocal(kind), expr, environment);
 		case IS:
 			return translateIs(expr, environment);
 		case ARRAYINDEX:
@@ -2367,7 +2367,7 @@ public class VerificationConditionGenerator {
 			List<Constant> cb_values = cb.values();
 			Expr[] items = new Expr[cb_values.size()];
 			for (int i = 0; i != cb_values.size(); ++i) {
-				items[i] = convert(cb_values.get(i), context, environment);
+				items[i] = convert(cb_values.getLocal(i), context, environment);
 			}
 			return new Expr.ArrayInitialiser(items);
 		} else if (c instanceof Constant.Record) {
@@ -3260,32 +3260,32 @@ public class VerificationConditionGenerator {
 		// =====================================================================
 		unaryOperatorMap = new HashMap<>();
 		// Arithmetic
-		unaryOperatorMap.put(Bytecode.OperatorKind.NEG, WyalFile.EXPR_neg);
+		unaryOperatorMap.putLocal(Bytecode.OperatorKind.NEG, WyalFile.EXPR_neg);
 		// Logical
-		unaryOperatorMap.put(Bytecode.OperatorKind.NOT, WyalFile.EXPR_not);
+		unaryOperatorMap.putLocal(Bytecode.OperatorKind.NOT, WyalFile.EXPR_not);
 		// Array
-		unaryOperatorMap.put(Bytecode.OperatorKind.ARRAYLENGTH, WyalFile.EXPR_arrlen);
+		unaryOperatorMap.putLocal(Bytecode.OperatorKind.ARRAYLENGTH, WyalFile.EXPR_arrlen);
 
 		// =====================================================================
 		// Binary operator map
 		// =====================================================================
 		binaryOperatorMap = new HashMap<>();
 		// Arithmetic
-		binaryOperatorMap.put(Bytecode.OperatorKind.ADD, WyalFile.EXPR_add);
-		binaryOperatorMap.put(Bytecode.OperatorKind.SUB, WyalFile.EXPR_sub);
-		binaryOperatorMap.put(Bytecode.OperatorKind.MUL, WyalFile.EXPR_mul);
-		binaryOperatorMap.put(Bytecode.OperatorKind.DIV, WyalFile.EXPR_div);
-		binaryOperatorMap.put(Bytecode.OperatorKind.REM, WyalFile.EXPR_rem);
+		binaryOperatorMap.putLocal(Bytecode.OperatorKind.ADD, WyalFile.EXPR_add);
+		binaryOperatorMap.putLocal(Bytecode.OperatorKind.SUB, WyalFile.EXPR_sub);
+		binaryOperatorMap.putLocal(Bytecode.OperatorKind.MUL, WyalFile.EXPR_mul);
+		binaryOperatorMap.putLocal(Bytecode.OperatorKind.DIV, WyalFile.EXPR_div);
+		binaryOperatorMap.putLocal(Bytecode.OperatorKind.REM, WyalFile.EXPR_rem);
 		// Equality
-		binaryOperatorMap.put(Bytecode.OperatorKind.EQ, WyalFile.EXPR_eq);
-		binaryOperatorMap.put(Bytecode.OperatorKind.NEQ, WyalFile.EXPR_neq);
+		binaryOperatorMap.putLocal(Bytecode.OperatorKind.EQ, WyalFile.EXPR_eq);
+		binaryOperatorMap.putLocal(Bytecode.OperatorKind.NEQ, WyalFile.EXPR_neq);
 		// Relational
-		binaryOperatorMap.put(Bytecode.OperatorKind.LT, WyalFile.EXPR_lt);
-		binaryOperatorMap.put(Bytecode.OperatorKind.GT, WyalFile.EXPR_gt);
-		binaryOperatorMap.put(Bytecode.OperatorKind.LTEQ, WyalFile.EXPR_lteq);
-		binaryOperatorMap.put(Bytecode.OperatorKind.GTEQ, WyalFile.EXPR_gteq);
+		binaryOperatorMap.putLocal(Bytecode.OperatorKind.LT, WyalFile.EXPR_lt);
+		binaryOperatorMap.putLocal(Bytecode.OperatorKind.GT, WyalFile.EXPR_gt);
+		binaryOperatorMap.putLocal(Bytecode.OperatorKind.LTEQ, WyalFile.EXPR_lteq);
+		binaryOperatorMap.putLocal(Bytecode.OperatorKind.GTEQ, WyalFile.EXPR_gteq);
 		// Logical
-		binaryOperatorMap.put(Bytecode.OperatorKind.AND, WyalFile.EXPR_and);
-		binaryOperatorMap.put(Bytecode.OperatorKind.OR, WyalFile.EXPR_or);
+		binaryOperatorMap.putLocal(Bytecode.OperatorKind.AND, WyalFile.EXPR_and);
+		binaryOperatorMap.putLocal(Bytecode.OperatorKind.OR, WyalFile.EXPR_or);
 	}
 }

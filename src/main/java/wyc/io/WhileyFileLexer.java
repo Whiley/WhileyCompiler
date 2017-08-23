@@ -48,6 +48,11 @@ public class WhileyFileLexer {
         input = text;
 	}
 
+	public WhileyFileLexer(String input) {
+		this.entry = null;
+		this.input = new StringBuilder(input);
+	}
+
 	/**
 	 * Scan all characters from the input stream and generate a corresponding
 	 * list of tokens, whilst discarding all whitespace and comments.
@@ -487,9 +492,7 @@ public class WhileyFileLexer {
 	 */
 	private void syntaxError(String msg, int index) {
 		// FIXME: this is clearly not a sensible approach
-		SyntacticElement unknown = new SyntacticElement.Impl() {};
-		unknown.attributes().add(new Attribute.Source(index, index, -1));
-		throw new SyntaxError(msg, entry, unknown);
+		throw new SyntaxError(msg, entry, null);
 
 	}
 

@@ -8,18 +8,15 @@ package wyil.checks;
 
 import java.util.*;
 
-import static wyil.util.ErrorMessages.*;
-import wybs.lang.Attribute;
 import wybs.lang.Build;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError;
 import wybs.util.ResolveError;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wyc.type.TypeSystem;
 import wycc.util.Pair;
 import wyil.lang.WyilFile;
 import static wyil.lang.WyilFile.*;
-import wyil.util.TypeSystem;
 
 /**
  * <p>
@@ -132,16 +129,16 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 			check(t1.getReturns(),t2.getReturns(),visited,element);
 		} else if(from instanceof Type.Union) {
 			Type.Union t1 = (Type.Union) from;
-			for(Type b : t1.getOperands()) {
-				check(b,to,visited,element);
+			for(int i=0;i!=t1.size();++i) {
+				check(t1.getOperand(i),to,visited,element);
 			}
 		} else if(to instanceof Type.Union) {
 			Type.Union t2 = (Type.Union) to;
 
 			// First, check for identical type (i.e. no coercion necessary)
 
-			for(Type b : t2.getOperands()) {
-				if(from.equals(b)) {
+			for(int i=0;i!=t2.size();++i) {
+				if(from.equals(t2.getOperand(i))) {
 					// no problem
 					return;
 				}
@@ -150,7 +147,7 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 			// Second, check for single non-coercive match
 			Type match = null;
 
-			for(Type b : t2.getOperands()) {
+			for(int i=0;i!=t2.size();++i) {
 //				if(typeSystem.isSubtype(b,from)) {
 //					if(match != null) {
 //						// found ambiguity
@@ -169,7 +166,7 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 
 			// Third, test for single coercive match
 
-			for(Type b : t2.getOperands()) {
+			for(int i=0;i!=t2.size();++i) {
 //				if(typeSystem.isExplicitCoerciveSubtype(b,from)) {
 //					if(match != null) {
 //						// found ambiguity

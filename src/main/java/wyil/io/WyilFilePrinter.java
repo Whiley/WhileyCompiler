@@ -238,7 +238,7 @@ public final class WyilFilePrinter {
 			}
 			out.print(" = ");
 		}
-		writeExpressions(rhs.getOperands(),out);
+		writeExpressions(rhs,out);
 		out.println();
 	}
 
@@ -316,11 +316,11 @@ public final class WyilFilePrinter {
 	}
 
 	private void writeReturn(int indent, Stmt.Return stmt, PrintWriter out) {
-		Expr[] operands = stmt.getOperands();
+		Tuple<Expr> returns = stmt.getOperand();
 		out.print("return");
-		if(operands.length > 0) {
+		if(returns.size() > 0) {
 			out.print(" ");
-			writeExpressions(operands,out);
+			writeExpressions(returns,out);
 		}
 		out.println();
 	}
@@ -372,12 +372,12 @@ public final class WyilFilePrinter {
 		}
 	}
 
-	private void writeExpressions(Expr[] exprs, PrintWriter out) {
-		for (int i = 0; i != exprs.length; ++i) {
+	private void writeExpressions(Tuple<Expr> exprs, PrintWriter out) {
+		for (int i = 0; i != exprs.size(); ++i) {
 			if (i != 0) {
 				out.print(", ");
 			}
-			writeExpression(exprs[i], out);
+			writeExpression(exprs.getOperand(i), out);
 		}
 	}
 

@@ -2,10 +2,16 @@ package wyil.util.interpreter;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Comparator;
+
 import static wyil.lang.WyilFile.*;
+
+import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wyc.type.TypeSystem;
 import wyc.util.AbstractWhileyFile.Declaration;
+import wyc.util.AbstractWhileyFile.Type;
 
 public abstract class RValue {
 	public static final RValue.Null Null = new Null();
@@ -36,39 +42,57 @@ public abstract class RValue {
 		return new Array(elements);
 	}
 
+	public static Field Field(Identifier name, RValue value) {
+		return new Field(name,value);
+	}
+
+	public static Record Record(Field... fields) {
+		return new Record(fields);
+	}
+
 	/**
 	 * Check whether a given value is an instanceof of a given type.
 	 *
 	 * @param type
 	 * @return
+	 * @throws ResolutionError
 	 */
-	public Bool is(Type type) {
+	public Bool is(Type type, Interpreter instance) throws ResolutionError {
 		// Handle generic cases here
 		if (type instanceof Type.Any) {
 			return True;
 		} else if (type instanceof Type.Void) {
 			return False;
 		} else if (type instanceof Type.Nominal) {
-			// FIXME: need to implement this!!
-			throw new RuntimeException("Implement me");
+			Type.Nominal nom = (Type.Nominal) type;
+			TypeSystem types = instance.getTypeSystem();
+			Declaration.Type decl = types.resolveExactly(nom.getName(), Declaration.Type.class);
+			Declaration.Variable var = decl.getVariableDeclaration();
+			if(is(var.getType(), instance) == True) {
+				Tuple<Expr> invariant = decl.getInvariant();
+				return checkInvariant(var,invariant,instance);
+			}
+			return False;
 		} else if (type instanceof Type.Union) {
 			Type.Union t = (Type.Union) type;
-			for (Type element : t.getOperands()) {
-				if (this.is(element) == True) {
+			for (int i=0;i!=t.size();++i) {
+				Type element = t.getOperand(i);
+				if (this.is(element, instance) == True) {
 					return True;
 				}
 			}
 		} else if (type instanceof Type.Intersection) {
 			Type.Intersection t = (Type.Intersection) type;
-			for (Type element : t.getOperands()) {
-				if (this.is(element) == False) {
+			for (int i=0;i!=t.size();++i) {
+				Type element = t.getOperand(i);
+				if (this.is(element, instance) == False) {
 					return False;
 				}
 			}
 			return True;
 		} else if (type instanceof Type.Negation) {
 			Type.Negation t = (Type.Negation) type;
-			return this.is(t.getElement()).not();
+			return this.is(t.getElement(), instance).not();
 		}
 		// Default case.
 		return False;
@@ -98,15 +122,43 @@ public abstract class RValue {
 		return Bool(!this.equals(rhs));
 	}
 
+	/**
+	 * Check whether the invariant for a given nominal type holds for this value
+	 * or not. This requires physically evaluating the invariant to see whether
+	 * or not it holds true.
+	 *
+	 * @param var
+	 * @param invariant
+	 * @param instance
+	 * @return
+	 */
+	public Bool checkInvariant(Declaration.Variable var, Tuple<Expr> invariant, Interpreter instance) {
+		if (invariant.size() > 0) {
+			// One or more type invariants to check. Therefore, we need
+			// to execute the invariant and determine whether or not it
+			// returns true.
+			Interpreter.CallStack frame = new Interpreter.CallStack();
+			frame.putLocal(var.getName(), this);
+			for (int i = 0; i != invariant.size(); ++i) {
+				RValue.Bool b = instance.executeExpression(Bool.class, invariant.getOperand(i), frame);
+				if (b == False) {
+					return b;
+				}
+			}
+		}
+		// success
+		return True;
+	}
+
 	public final static class Null extends RValue {
 		private Null() {
 		}
 		@Override
-		public Bool is(Type type) {
+		public Bool is(Type type, Interpreter instance) throws ResolutionError {
 			if(type instanceof Type.Null) {
 				return True;
 			} else {
-				return super.is(type);
+				return super.is(type, instance);
 			}
 		}
 		@Override
@@ -142,11 +194,11 @@ public abstract class RValue {
 			return value;
 		}
 		@Override
-		public Bool is(Type type) {
+		public Bool is(Type type, Interpreter instance) throws ResolutionError {
 			if(type instanceof Type.Bool) {
 				return True;
 			} else {
-				return super.is(type);
+				return super.is(type, instance);
 			}
 		}
 		@Override
@@ -187,11 +239,11 @@ public abstract class RValue {
 			this.value = value;
 		}
 		@Override
-		public Bool is(Type type) {
+		public Bool is(Type type, Interpreter instance) throws ResolutionError {
 			if(type instanceof Type.Byte) {
 				return True;
 			} else {
-				return super.is(type);
+				return super.is(type, instance);
 			}
 		}
 		@Override
@@ -249,11 +301,11 @@ public abstract class RValue {
 			this.value = value;
 		}
 		@Override
-		public Bool is(Type type) {
+		public Bool is(Type type, Interpreter instance) throws ResolutionError {
 			if(type instanceof Type.Int) {
 				return True;
 			} else {
-				return super.is(type);
+				return super.is(type, instance);
 			}
 		}
 		@Override
@@ -323,17 +375,17 @@ public abstract class RValue {
 			this.elements = elements;
 		}
 		@Override
-		public Bool is(Type type) {
+		public Bool is(Type type, Interpreter instance) throws ResolutionError {
 			if(type instanceof Type.Array) {
 				Type.Array t = (Type.Array) type;
 				for (int i = 0; i != elements.length; ++i) {
-					if (elements[i].is(t.getElement()) == False) {
+					if (elements[i].is(t.getElement(), instance) == False) {
 						return False;
 					}
 				}
 				return True;
 			} else {
-				return super.is(type);
+				return super.is(type, instance);
 			}
 		}
 
@@ -386,7 +438,7 @@ public abstract class RValue {
 		}
 	}
 
-	private final static class Field {
+	public final static class Field {
 		public final Identifier name;
 		public final RValue value;
 
@@ -415,6 +467,14 @@ public abstract class RValue {
 
 		private Record(RValue.Field... fields) {
 			this.fields = fields;
+			// Sort fields according by name. This avoids any difficulties when
+			// comparing records initialised with different field orders.
+			Arrays.sort(fields, new Comparator<Field>() {
+				@Override
+				public int compare(Field f1, Field f2) {
+					return f1.name.compareTo(f2.name);
+				}
+			});
 		}
 
 		public int size() {
@@ -432,7 +492,7 @@ public abstract class RValue {
 		}
 
 		@Override
-		public Bool is(Type type) {
+		public Bool is(Type type, Interpreter instance) throws ResolutionError {
 			if (type instanceof Type.Record) {
 				Type.Record t = (Type.Record) type;
 				Tuple<Declaration.Variable> tFields = t.getFields();
@@ -441,7 +501,7 @@ public abstract class RValue {
 					if (hasField(f.getName())) {
 						RValue val = read(f.getName());
 						// Matching field
-						if (val.is(f.getSignature()) == False) {
+						if (val.is(f.getType(), instance) == False) {
 							// Field not member of type
 							return False;
 						}
@@ -452,7 +512,7 @@ public abstract class RValue {
 				}
 				return Bool(t.isOpen() || fields.length == tFields.size());
 			} else {
-				return super.is(type);
+				return super.is(type, instance);
 			}
 		}
 
@@ -502,6 +562,19 @@ public abstract class RValue {
 		@Override
 		public int hashCode() {
 			return Arrays.hashCode(fields);
+		}
+
+		@Override
+		public String toString() {
+			String r = "{";
+			for(int i=0;i!=fields.length;++i) {
+				if(i != 0) {
+					r = r + ",";
+				}
+				Field field = fields[i];
+				r += field.name + ":" + field.value;
+			}
+			return r + "}";
 		}
 	}
 

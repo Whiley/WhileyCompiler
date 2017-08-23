@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Set;
 
 import wyal.io.WyalFileParser.EnclosingScope;
-import wybs.lang.Attribute;
 import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticItem;
@@ -65,34 +64,45 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	public WhileyFile read() {
+		ArrayList<Declaration> declarations = new ArrayList<>();
 		Path.ID pkg = parsePackage();
 
 		skipWhiteSpace();
 		while (index < tokens.size()) {
+			Declaration declaration;
 			Token lookahead = tokens.get(index);
 			if (lookahead.kind == Import) {
-				parseImportDeclaration();
+				declaration = parseImportDeclaration();
 			} else {
 				Tuple<Modifier> modifiers = parseModifiers();
 				checkNotEof();
 				lookahead = tokens.get(index);
 				if (lookahead.text.equals("type")) {
-					parseTypeDeclaration(modifiers);
+					declaration = parseTypeDeclaration(modifiers);
 				} else if (lookahead.text.equals("constant")) {
-					parseConstantDeclaration(modifiers);
+					declaration = parseConstantDeclaration(modifiers);
 				} else if (lookahead.kind == Function) {
-					parseFunctionOrMethodDeclaration(modifiers, true);
+					declaration = parseFunctionOrMethodDeclaration(modifiers, true);
 				} else if (lookahead.kind == Method) {
-					parseFunctionOrMethodDeclaration(modifiers, false);
+					declaration = parseFunctionOrMethodDeclaration(modifiers, false);
 				} else if (lookahead.kind == Property) {
-					parsePropertyDeclaration(modifiers);
+					declaration = parsePropertyDeclaration(modifiers);
 				} else {
 					syntaxError("unrecognised declaration", lookahead);
+					return null;
 				}
+				declarations.add(declaration);
 			}
 			skipWhiteSpace();
 		}
 
+		// Finally, construct the new file.
+		return constructWhileyFile(declarations);
+	}
+
+	private WhileyFile constructWhileyFile(List<Declaration> declarations) {
+		Tuple<Declaration> root = new Tuple<>(Declaration.class,declarations);
+		file.allocate(root);
 		return file;
 	}
 
@@ -282,9 +292,9 @@ public class WhileyFileParser {
 		//
 		WhileyFile.Declaration declaration;
 		if (isFunction) {
-			declaration = new Declaration.Function(modifiers, name, returns, parameters, requires, ensures, body);
+			declaration = new Declaration.Function(modifiers, name, parameters, returns, requires, ensures, body);
 		} else {
-			declaration = new Declaration.Method(modifiers, name, returns, parameters, requires, ensures, body,
+			declaration = new Declaration.Method(modifiers, name, parameters, returns, requires, ensures, body,
 					lifetimes);
 		}
 		return annotateSourceLocation(declaration,start);
@@ -299,7 +309,7 @@ public class WhileyFileParser {
 	 * </pre>
 	 *
 	 */
-	private void parsePropertyDeclaration(Tuple<Modifier> modifiers) {
+	private Declaration.Property parsePropertyDeclaration(Tuple<Modifier> modifiers) {
 		EnclosingScope scope = new EnclosingScope();
 		int start = index;
 		match(Property);
@@ -309,7 +319,7 @@ public class WhileyFileParser {
 		//
 		int end = index;
 		matchEndLine();
-		annotateSourceLocation(new Declaration.Property(modifiers, name, parameters, invariant), start);
+		return annotateSourceLocation(new Declaration.Property(modifiers, name, parameters, invariant), start);
 	}
 
 	public Tuple<Declaration.Variable> parseParameters(EnclosingScope scope, Token.Kind terminator) {
@@ -779,12 +789,11 @@ public class WhileyFileParser {
 		// then we assume what's remaining is the returned expression. This
 		// means expressions must start on the same line as a return. Otherwise,
 		// a potentially cryptic error message will be given.
-		Expr[] returns;
+		Tuple<Expr> returns;
 		if (next < tokens.size() && tokens.get(next).kind != NewLine) {
-			Tuple<Expr> es = parseExpressions(scope, false);
-			returns = es.getOperands();
+			returns = parseExpressions(scope, false);
 		} else {
-			returns = new Expr[0];
+			returns = new Tuple<>();
 		}
 		// Finally, at this point we are expecting a new-line to signal the
 		// end-of-statement.
@@ -1542,8 +1551,9 @@ public class WhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
+			lhs = annotateSourceLocation(lhs,start);
 		}
-		return annotateSourceLocation(lhs,start);
+		return lhs;
 	}
 
 	/**
@@ -1580,19 +1590,19 @@ public class WhileyFileParser {
 			switch (lookahead.kind) {
 			case LogicalAnd: {
 				Expr rhs = parseExpression(scope, terminated);
-				lhs = new Expr.LogicalAnd(lhs, rhs);
+				lhs = annotateSourceLocation(new Expr.LogicalAnd(lhs, rhs),start);
 				break;
 			}
 			case LogicalOr: {
 				Expr rhs = parseExpression(scope, terminated);
-				lhs = new Expr.LogicalOr(lhs, rhs);
+				lhs = annotateSourceLocation(new Expr.LogicalOr(lhs, rhs), start);
 				break;
 			}
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
 		}
-		return annotateSourceLocation(lhs, start);
+		return lhs;
 	}
 
 	/**
@@ -1731,7 +1741,7 @@ public class WhileyFileParser {
 
 		if (lookahead != null && lookahead.kind == Is) {
 			Type type = parseType(scope);
-			lhs = new Expr.Is(lhs, type);
+			lhs = annotateSourceLocation(new Expr.Is(lhs, type), start);
 		} else if (lookahead != null) {
 			Expr rhs = parseShiftExpression(scope, terminated);
 			//
@@ -1757,9 +1767,10 @@ public class WhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
+			lhs = annotateSourceLocation(lhs,start);
 		}
 
-		return annotateSourceLocation(lhs,start);
+		return lhs;
 	}
 
 	/**
@@ -1821,16 +1832,48 @@ public class WhileyFileParser {
 			Identifier id = parseIdentifier(scope);
 			scope.checkNameAvailable(id);
 			match(In);
-			Expr lhs = parseAdditiveExpression(scope, true);
-			match(DotDot);
-			Expr rhs = parseAdditiveExpression(scope, true);
+			Expr range = parseRangeExpression(scope, true);
 			// FIXME: need to add initialiser here
-			Declaration.Variable decl = new Declaration.Variable(new Tuple<>(),id,new Type.Int());
+			Declaration.Variable decl = new Declaration.Variable(new Tuple<>(), id, new Type.Int(), range);
 			parameters.add(decl);
 			scope.declareVariable(decl);
 		} while (eventuallyMatch(VerticalBar) == null);
 
 		return new Tuple<>(Declaration.Variable.class, parameters);
+	}
+
+	/**
+	 * Parse a range expression, which has the form:
+	 *
+	 * <pre>
+	 * RangeExpr ::= Expr ".." Expr
+	 * </pre>
+	 *
+	 * @param scope
+	 *            The enclosing scope for this statement, which determines the
+	 *            set of visible (i.e. declared) variables and also the current
+	 *            indentation level.
+	 * @param terminated
+	 *            This indicates that the expression is known to be terminated
+	 *            (or not). An expression that's known to be terminated is one
+	 *            which is guaranteed to be followed by something. This is
+	 *            important because it means that we can ignore any newline
+	 *            characters encountered in parsing this expression, and that
+	 *            we'll never overrun the end of the expression (i.e. because
+	 *            there's guaranteed to be something which terminates this
+	 *            expression). A classic situation where terminated is true is
+	 *            when parsing an expression surrounded in braces. In such case,
+	 *            we know the right-brace will always terminate this expression.
+	 *
+	 * @return
+	 */
+	private Expr parseRangeExpression(EnclosingScope scope, boolean terminated) {
+		int start = index;
+		Expr lhs = parseAdditiveExpression(scope, true);
+		match(DotDot);
+		Expr rhs = parseAdditiveExpression(scope, true);
+		Expr range = new Expr.ArrayRange(lhs, rhs);
+		return annotateSourceLocation(range, start);
 	}
 
 	/**
@@ -1917,8 +1960,9 @@ public class WhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
+			lhs = annotateSourceLocation(lhs, start);
 		}
-		return annotateSourceLocation(lhs, start);
+		return lhs;
 	}
 
 	/**
@@ -1962,9 +2006,10 @@ public class WhileyFileParser {
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
 			}
+			lhs = annotateSourceLocation(lhs, start);
 		}
 
-		return annotateSourceLocation(lhs, start);
+		return lhs;
 	}
 
 	/**
@@ -2039,27 +2084,7 @@ public class WhileyFileParser {
 				// method/function invocation. Therefore, we start by
 				// parsing the field access and then check whether or not its an
 				// invocation.
-				Identifier name = parseIdentifier(scope);
-				// First we have to see if it is a method invocation. We can
-				// have optional lifetime arguments in angle brackets.
-				boolean isInvocation = false;
-				Tuple<Identifier> lifetimes = null;
-				if (tryAndMatch(terminated, LeftBrace) != null) {
-					isInvocation = true;
-				} else if (lookaheadSequence(terminated, LeftAngle)) {
-					lifetimes = parseOptionalLifetimeArguments(scope, terminated);
-				}
-				if (isInvocation || lifetimes != null) {
-					// This indicates an indirect invocation. First,
-					// parse arguments to invocation
-					Tuple<Expr> arguments = parseInvocationArguments(scope);
-					// Now construct indirect expression
-					lhs = new Expr.RecordAccess(lhs, name);
-					lhs = new Expr.IndirectInvoke(lhs, lifetimes, arguments);
-				} else {
-					// Must be a plain old field access.
-					lhs = new Expr.RecordAccess(lhs, name);
-				}
+				lhs = parseDotAccess(lhs, scope, terminated);
 				break;
 			case ColonColon:
 				// At this point, we have a qualified access.
@@ -2072,6 +2097,32 @@ public class WhileyFileParser {
 		}
 
 		return lhs;
+	}
+
+	private Expr parseDotAccess(Expr lhs, EnclosingScope scope, boolean terminated) {
+		int start = index;
+		Identifier name = parseIdentifier(scope);
+		// First we have to see if it is a method invocation. We can
+		// have optional lifetime arguments in angle brackets.
+		boolean isInvocation = false;
+		Tuple<Identifier> lifetimes = null;
+		if (tryAndMatch(terminated, LeftBrace) != null) {
+			isInvocation = true;
+		} else if (lookaheadSequence(terminated, LeftAngle)) {
+			lifetimes = parseOptionalLifetimeArguments(scope, terminated);
+		}
+		if (isInvocation || lifetimes != null) {
+			// This indicates an indirect invocation. First,
+			// parse arguments to invocation
+			Tuple<Expr> arguments = parseInvocationArguments(scope);
+			// Now construct indirect expression
+			lhs = annotateSourceLocation(new Expr.RecordAccess(lhs, name), start);
+			lhs = new Expr.IndirectInvoke(lhs, lifetimes, arguments);
+		} else {
+			// Must be a plain old field access.
+			lhs = new Expr.RecordAccess(lhs, name);
+		}
+		return annotateSourceLocation(lhs,start);
 	}
 
 	/**
@@ -2141,7 +2192,7 @@ public class WhileyFileParser {
 			Identifier name = parseIdentifier(scope);
 			Expr term;
 			if (tryAndMatch(terminated, LeftBrace) != null) {
-				return parseInvokeExpression(scope, start, name, terminated, null);
+				return parseInvokeExpression(scope, start, name, terminated, new Tuple<>());
 			} else if (lookaheadSequence(terminated, Colon, New)) {
 				// Identifier is lifetime name in "new" expression
 				index = start;
@@ -2176,13 +2227,15 @@ public class WhileyFileParser {
 			} else if (scope.isFieldAlias(name)) {
 				// Signals a field alias
 				Declaration.Variable var = scope.getVariableDeclaration(new Identifier("$"));
-				return new Expr.RecordAccess(new Expr.VariableAccess(var), name);
+				Expr access = new Expr.RecordAccess(new Expr.VariableAccess(var), name);
+				return annotateSourceLocation(access,start);
 			} else {
 				// Otherwise, this must be a static access of some kind.
 				// Observe that, at this point, we cannot determine whether or
 				// not this is a constant-access or a package-access which marks
 				// the beginning of a constant-access.
-				return annotateSourceLocation(new Expr.StaticVariableAccess(new Name(name)), start);
+				Expr var = new Expr.StaticVariableAccess(new Name(name));
+				return annotateSourceLocation(var, start);
 			}
 		}
 		case Null:
@@ -3098,8 +3151,8 @@ public class WhileyFileParser {
 		} else if (type instanceof Type.Intersection) {
 			Type.Intersection tt = (Type.Intersection) type;
 			boolean result = false;
-			for (Type element : tt.getOperands()) {
-				result |= mustParseAsType(element);
+			for(int i=0;i!=tt.size();++i) {
+				result |= mustParseAsType(tt.getOperand(i));
 			}
 			return result;
 		} else if (type instanceof Type.Array) {
@@ -3124,8 +3177,8 @@ public class WhileyFileParser {
 		} else if (type instanceof Type.Union) {
 			Type.Union tt = (Type.Union) type;
 			boolean result = false;
-			for (Type element : tt.getOperands()) {
-				result |= mustParseAsType(element);
+			for(int i=0;i!=tt.size();++i) {
+				result |= mustParseAsType(tt.getOperand(i));
 			}
 			return result;
 		} else {
@@ -3212,7 +3265,7 @@ public class WhileyFileParser {
 	 * @see wyc.lang.Type.Tuple
 	 * @return
 	 */
-	private Type parseType(EnclosingScope scope) {
+	public Type parseType(EnclosingScope scope) {
 		return parseUnionType(scope);
 	}
 
@@ -3390,7 +3443,7 @@ public class WhileyFileParser {
 		index = backtrack;
 
 		Type element = parseArrayType(scope);
-		Type type = new Type.Reference(element, null);
+		Type type = new Type.Reference(element);
 		return annotateSourceLocation(type,start);
 	}
 
@@ -4259,26 +4312,23 @@ public class WhileyFileParser {
 		return strings;
 	}
 
-	private void syntaxError(String msg, SyntacticElement e) {
-		Attribute.Source loc = e.attribute(Attribute.Source.class);
+	private void syntaxError(String msg, SyntacticItem e) {
 		throw new SyntaxError(msg, file.getEntry(), e);
 	}
 
 	private void syntaxError(String msg, Token t) {
-		// FIXME: this is clearly not a sensible approach
-		SyntacticElement unknown = new SyntacticElement.Impl() {
-		};
-		unknown.attributes().add(new Attribute.Source(t.start, t.start + t.text.length() - 1, -1));
-		throw new SyntaxError(msg, file.getEntry(), unknown);
+		//unknown.attributes().add(new Attribute.Source(t.start, t.start + t.text.length() - 1, -1));
+		throw new SyntaxError(msg, file.getEntry(), null);
 	}
 
 	private <T extends SyntacticItem> T annotateSourceLocation(T item, int start) {
+		// Allocate item to enclosing WhileyFile. This is necessary so that the
+		// annotations can then be correctly allocated as well.
 		item = file.allocate(item);
-		//
-		Token t1 = tokens.get(start);
-		Token t2 = tokens.get(index - 1);
-		// FIXME: problem here with the line numbering ?
-		item.attributes().add(new Attribute.Source(t1.start, t2.end(), 0));
+		// Determine the first and last token representing this span.
+		Token first = tokens.get(start);
+		Token last = tokens.get(index - 1);
+		file.allocate(new Attribute.Span(item,first.start,last.end()));
 		return item;
 	}
 
@@ -4358,7 +4408,7 @@ public class WhileyFileParser {
 	 * @author David J. Pearce
 	 *
 	 */
-	private class EnclosingScope {
+	public class EnclosingScope {
 		/**
 		 * The indent level of the enclosing scope.
 		 */
@@ -4588,8 +4638,10 @@ public class WhileyFileParser {
 		 * @return
 		 */
 		public EnclosingScope newEnclosingScope(Tuple<Identifier> lifetimes) {
-			// FIXME: this is a bit ugly :)
-			HashSet<Identifier> tmp = new HashSet<>(Arrays.asList(lifetimes.getOperands()));
+			HashSet<Identifier> tmp = new HashSet<>();
+			for (int i = 0; i != lifetimes.size(); ++i) {
+				tmp.add(lifetimes.getOperand(i));
+			}
 			return new EnclosingScope(indent, environment, fieldAliases, tmp, false);
 		}
 

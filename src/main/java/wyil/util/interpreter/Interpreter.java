@@ -8,16 +8,21 @@ package wyil.util.interpreter;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.math.BigInteger;
 import java.util.*;
 
 import wybs.lang.Build;
 import wybs.lang.NameID;
+import wybs.lang.NameResolver;
+import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticElement;
 import wybs.util.ResolveError;
 import wyfs.lang.Path;
 import wyil.lang.*;
 import static wyil.lang.WyilFile.*;
-import wyil.util.TypeSystem;
+
+import wyc.type.TypeSystem;
+import wyc.util.AbstractWhileyFile.Declaration;
 
 /**
  * <p>
@@ -47,9 +52,10 @@ public class Interpreter {
 	private final TypeSystem typeSystem;
 
 	/**
-	 * Implementations for the internal operators
+	 * Provides mechanism for resolving names.
 	 */
-	private final InternalFunction[] operators;
+	private final NameResolver resolver;
+
 
 	/**
 	 * The debug stream provides an I/O stream through which debug bytecodes can
@@ -61,7 +67,7 @@ public class Interpreter {
 		this.project = project;
 		this.debug = debug;
 		this.typeSystem = new TypeSystem(project);
-		this.operators = StandardFunctions.standardFunctions;
+		this.resolver = typeSystem.getResolver();
 	}
 
 	private enum Status {
@@ -89,7 +95,7 @@ public class Interpreter {
 	 *            The supplied arguments
 	 * @return
 	 */
-	public RValue[] execute(NameID nid, Type.Callable sig, RValue... args) {
+	public RValue[] execute(NameID nid, Type.Callable sig, CallStack frame, RValue... args) {
 		// First, find the enclosing WyilFile
 		try {
 			// FIXME: NameID needs to be deprecated
@@ -108,7 +114,7 @@ public class Interpreter {
 				throw new IllegalArgumentException("incorrect number of arguments: " + nid + ", " + sig);
 			}
 			// Fourth, construct the stack frame for execution
-			Map<Identifier, RValue> frame = new HashMap<>();
+			frame = frame.enter(fmp);
 			extractParameters(frame,args,fmp);
 			// Check the precondition
 			if(fmp instanceof Declaration.FunctionOrMethod) {
@@ -122,9 +128,11 @@ public class Interpreter {
 					throw new IllegalArgumentException("no function or method body found: " + nid + ", " + sig);
 				}
 				// Execute the method or function body
-				executeBlock(fm.getBody(), frame);
+				executeBlock(fm.getBody(), frame, new FunctionOrMethodScope(fm));
 				// Extra the return values
 				RValue[] returns = packReturns(frame,fmp);
+				// Restore original parameter values
+				extractParameters(frame,args,fmp);
 				// Check the postcondition holds
 				checkInvariants(frame, fm.getEnsures());
 				return returns;
@@ -138,11 +146,11 @@ public class Interpreter {
 		}
 	}
 
-	private void extractParameters(Map<Identifier, RValue> frame, RValue[] args, Declaration.Callable decl) {
+	private void extractParameters(CallStack frame, RValue[] args, Declaration.Callable decl) {
 		Tuple<Declaration.Variable> parameters = decl.getParameters();
 		for(int i=0;i!=parameters.size();++i) {
 			Declaration.Variable parameter = parameters.getOperand(i);
-			frame.put(parameter.getName(), args[i]);
+			frame.putLocal(parameter.getName(), args[i]);
 		}
 	}
 
@@ -155,14 +163,14 @@ public class Interpreter {
 	 * @param type
 	 * @return
 	 */
-	private RValue[] packReturns(Map<Identifier, RValue> frame, Declaration.Callable decl) {
+	private RValue[] packReturns(CallStack frame, Declaration.Callable decl) {
 		if (decl.getSignature() instanceof Type.Property) {
 			return new RValue[] { RValue.True };
 		} else {
 			Tuple<Declaration.Variable> returns = decl.getReturns();
 			RValue[] values = new RValue[returns.size()];
 			for (int i = 0; i != values.length; ++i) {
-				values[i] = frame.get(returns.getOperand(i).getName());
+				values[i] = frame.getLocal(returns.getOperand(i).getName());
 			}
 			return values;
 		}
@@ -180,10 +188,10 @@ public class Interpreter {
 	 *
 	 * @return
 	 */
-	private Status executeBlock(Stmt.Block block, Map<Identifier, RValue> frame) {
+	private Status executeBlock(Stmt.Block block, CallStack frame, EnclosingScope scope) {
 		for (int i = 0; i != block.size(); ++i) {
 			Stmt stmt = block.getOperand(i);
-			Status r = executeStatement(stmt, frame);
+			Status r = executeStatement(stmt, frame, scope);
 			// Now, see whether we are continuing or not
 			if (r != Status.NEXT) {
 				return r;
@@ -201,56 +209,62 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private Status executeStatement(Stmt stmt, Map<Identifier, RValue> frame) {
-		switch (stmt.getOpcode()) {
-		case WyilFile.STMT_assert:
-			return executeAssert((Stmt.Assert) stmt, frame);
-		case WyilFile.STMT_assume:
-			return executeAssume((Stmt.Assume) stmt, frame);
-		case WyilFile.STMT_assign:
-			return executeAssign((Stmt.Assign) stmt, frame);
-		case WyilFile.STMT_break:
-			return executeBreak((Stmt.Break) stmt, frame);
-		case WyilFile.STMT_continue:
-			return executeContinue((Stmt.Continue) stmt, frame);
-		case WyilFile.STMT_debug:
-			return executeDebug((Stmt.Debug) stmt, frame);
-		case WyilFile.STMT_dowhile:
-			return executeDoWhile((Stmt.DoWhile) stmt, frame);
-		case WyilFile.STMT_fail:
-			return executeFail((Stmt.Fail) stmt, frame);
-		case WyilFile.STMT_if:
-		case WyilFile.STMT_ifelse:
-			return executeIf((Stmt.IfElse) stmt, frame);
-		case WyilFile.EXPR_indirectinvoke:
-			executeIndirectInvoke((Expr.IndirectInvoke) stmt, frame);
-			return Status.NEXT;
-		case WyilFile.EXPR_invoke:
-			executeInvoke((Expr.Invoke) stmt, frame);
-			return Status.NEXT;
-		case WyilFile.STMT_namedblock:
-			return executeNamedBlock((Stmt.NamedBlock) stmt, frame);
-		case WyilFile.STMT_while:
-			return executeWhile((Stmt.While) stmt, frame);
-		case WyilFile.STMT_return:
-			return executeReturn((Stmt.Return) stmt, frame);
-		case WyilFile.STMT_skip:
-			return executeSkip((Stmt.Skip) stmt, frame);
-		case WyilFile.STMT_switch:
-			return executeSwitch((Stmt.Switch) stmt, frame);
-		case WyilFile.DECL_variableinitialiser:
-		case WyilFile.DECL_variable:
-			return executeVariableDeclaration((Declaration.Variable) stmt, frame);
+	private Status executeStatement(Stmt stmt, CallStack frame, EnclosingScope scope) {
+		try {
+			switch (stmt.getOpcode()) {
+			case WyilFile.STMT_assert:
+				return executeAssert((Stmt.Assert) stmt, frame, scope);
+			case WyilFile.STMT_assume:
+				return executeAssume((Stmt.Assume) stmt, frame, scope);
+			case WyilFile.STMT_assign:
+				return executeAssign((Stmt.Assign) stmt, frame, scope);
+			case WyilFile.STMT_break:
+				return executeBreak((Stmt.Break) stmt, frame, scope);
+			case WyilFile.STMT_continue:
+				return executeContinue((Stmt.Continue) stmt, frame, scope);
+			case WyilFile.STMT_debug:
+				return executeDebug((Stmt.Debug) stmt, frame, scope);
+			case WyilFile.STMT_dowhile:
+				return executeDoWhile((Stmt.DoWhile) stmt, frame, scope);
+			case WyilFile.STMT_fail:
+				return executeFail((Stmt.Fail) stmt, frame, scope);
+			case WyilFile.STMT_if:
+			case WyilFile.STMT_ifelse:
+				return executeIf((Stmt.IfElse) stmt, frame, scope);
+			case WyilFile.EXPR_indirectinvoke:
+				executeIndirectInvoke((Expr.IndirectInvoke) stmt, frame);
+				return Status.NEXT;
+			case WyilFile.EXPR_qualifiedinvoke:
+				executeInvoke((Expr.Invoke) stmt, frame);
+				return Status.NEXT;
+			case WyilFile.STMT_namedblock:
+				return executeNamedBlock((Stmt.NamedBlock) stmt, frame, scope);
+			case WyilFile.STMT_while:
+				return executeWhile((Stmt.While) stmt, frame, scope);
+			case WyilFile.STMT_return:
+				return executeReturn((Stmt.Return) stmt, frame, scope);
+			case WyilFile.STMT_skip:
+				return executeSkip((Stmt.Skip) stmt, frame, scope);
+			case WyilFile.STMT_switch:
+				return executeSwitch((Stmt.Switch) stmt, frame, scope);
+			case WyilFile.DECL_variableinitialiser:
+			case WyilFile.DECL_variable:
+				return executeVariableDeclaration((Declaration.Variable) stmt, frame);
+			}
+		}
+		catch (ResolutionError e) {
+			error(e.getMessage(), stmt);
+			return null;
 		}
 
 		deadCode(stmt);
 		return null; // deadcode
 	}
 
-	private Status executeAssign(Stmt.Assign stmt, Map<Identifier, RValue> frame) {
+	private Status executeAssign(Stmt.Assign stmt, CallStack frame, EnclosingScope scope) {
 		// FIXME: handle multi-assignments properly
 		Tuple<WyilFile.LVal> lhs = stmt.getLeftHandSide();
-		RValue[] rhs = executeExpressions(stmt.getRightHandSide().getOperands(), frame);
+		RValue[] rhs = executeExpressions(stmt.getRightHandSide(), frame);
 		for (int i = 0; i != lhs.size(); ++i) {
 			LValue lval = constructLVal(lhs.getOperand(i), frame);
 			lval.write(frame, rhs[i]);
@@ -268,7 +282,7 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private Status executeAssert(Stmt.Assert stmt, Map<Identifier, RValue> frame) {
+	private Status executeAssert(Stmt.Assert stmt, CallStack frame, EnclosingScope scope) {
 		//
 		checkInvariants(frame,stmt.getCondition());
 		return Status.NEXT;
@@ -284,7 +298,7 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private Status executeAssume(Stmt.Assume stmt, Map<Identifier, RValue> frame) {
+	private Status executeAssume(Stmt.Assume stmt, CallStack frame, EnclosingScope scope) {
 		//
 		checkInvariants(frame,stmt.getCondition());
 		return Status.NEXT;
@@ -300,7 +314,7 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private Status executeBreak(Stmt.Break stmt, Map<Identifier, RValue> frame) {
+	private Status executeBreak(Stmt.Break stmt, CallStack frame, EnclosingScope scope) {
 		// TODO: the break bytecode supports a non-nearest exit and eventually
 		// this should be supported.
 		return Status.BREAK;
@@ -316,9 +330,7 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private Status executeContinue(Stmt.Continue stmt, Map<Identifier, RValue> frame) {
-		// TODO: the continue bytecode supports a non-nearest exit and eventually
-		// this should be supported.
+	private Status executeContinue(Stmt.Continue stmt, CallStack frame, EnclosingScope scope) {
 		return Status.CONTINUE;
 	}
 
@@ -332,7 +344,7 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private Status executeDebug(Stmt.Debug stmt, Map<Identifier, RValue> frame) {
+	private Status executeDebug(Stmt.Debug stmt, CallStack frame, EnclosingScope scope) {
 		//
 		// FIXME: need to do something with this
 //		Value.Array arr = executeExpression(ARRAY_T, stmt.getCondition(), frame);
@@ -355,10 +367,10 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private Status executeDoWhile(Stmt.DoWhile stmt, Map<Identifier, RValue> frame) {
+	private Status executeDoWhile(Stmt.DoWhile stmt, CallStack frame, EnclosingScope scope) {
 		Status r = Status.NEXT;
 		while (r == Status.NEXT || r == Status.CONTINUE) {
-			r = executeBlock(stmt.getBody(), frame);
+			r = executeBlock(stmt.getBody(), frame, scope);
 			if (r == Status.NEXT) {
 				RValue.Bool operand = executeExpression(BOOL_T, stmt.getCondition(), frame);
 				if (operand == RValue.False) {
@@ -386,7 +398,7 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private Status executeFail(Stmt.Fail stmt, Map<Identifier, RValue> frame) {
+	private Status executeFail(Stmt.Fail stmt, CallStack frame, EnclosingScope scope) {
 		throw new AssertionError("Runtime fault occurred");
 	}
 
@@ -400,14 +412,14 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private Status executeIf(Stmt.IfElse stmt, Map<Identifier, RValue> frame) {
+	private Status executeIf(Stmt.IfElse stmt, CallStack frame, EnclosingScope scope) {
 		RValue.Bool operand = executeExpression(BOOL_T, stmt.getCondition(), frame);
 		if (operand == RValue.True) {
 			// branch taken, so execute true branch
-			return executeBlock(stmt.getTrueBranch(), frame);
+			return executeBlock(stmt.getTrueBranch(), frame, scope);
 		} else if (stmt.hasFalseBranch()) {
 			// branch not taken, so execute false branch
-			return executeBlock(stmt.getFalseBranch(), frame);
+			return executeBlock(stmt.getFalseBranch(), frame, scope);
 		} else {
 			return Status.NEXT;
 		}
@@ -422,8 +434,8 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private Status executeNamedBlock(Stmt.NamedBlock stmt, Map<Identifier, RValue> frame) {
-		return executeBlock(stmt.getBlock(),frame);
+	private Status executeNamedBlock(Stmt.NamedBlock stmt, CallStack frame, EnclosingScope scope) {
+		return executeBlock(stmt.getBlock(),frame,scope);
 	}
 
 	/**
@@ -436,7 +448,7 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private Status executeWhile(Stmt.While stmt, Map<Identifier, RValue> frame) {
+	private Status executeWhile(Stmt.While stmt, CallStack frame, EnclosingScope scope) {
 		Status r;
 		do {
 			RValue.Bool operand = executeExpression(BOOL_T, stmt.getCondition(), frame);
@@ -444,7 +456,7 @@ public class Interpreter {
 				return Status.NEXT;
 			}
 			// Keep executing the loop body until we exit it somehow.
-			r = executeBlock(stmt.getBody(), frame);
+			r = executeBlock(stmt.getBody(), frame, scope);
 		} while (r == Status.NEXT || r == Status.CONTINUE);
 		// If we get here, then we have exited the loop body without falling
 		// through to the next bytecode.
@@ -465,16 +477,16 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private Status executeReturn(Stmt.Return stmt, Map<Identifier, RValue> frame) {
+	private Status executeReturn(Stmt.Return stmt, CallStack frame, EnclosingScope scope) {
 		// We know that a return statement can only appear in either a function
 		// or method declaration. It cannot appear, for example, in a type
 		// declaration. Therefore, the enclosing declaration is a function or
 		// method.
-		Declaration.Callable fmp = null; // FIXME
+		Declaration.Callable fmp = scope.getEnclosingScope(FunctionOrMethodScope.class).getDeclaration();
 		Tuple<Declaration.Variable> returns = fmp.getReturns();
-		RValue[] values = executeExpressions(stmt.getOperands(), frame);
+		RValue[] values = executeExpressions(stmt.getOperand(), frame);
 		for (int i = 0; i != returns.size(); ++i) {
-			frame.put(returns.getOperand(i).getName(), values[i]);
+			frame.putLocal(returns.getOperand(i).getName(), values[i]);
 		}
 		return Status.RETURN;
 	}
@@ -489,7 +501,7 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private Status executeSkip(Stmt.Skip stmt, Map<Identifier, RValue> frame) {
+	private Status executeSkip(Stmt.Skip stmt, CallStack frame, EnclosingScope scope) {
 		// skip !
 		return Status.NEXT;
 	}
@@ -504,7 +516,7 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private Status executeSwitch(Stmt.Switch stmt, Map<Identifier, RValue> frame) {
+	private Status executeSwitch(Stmt.Switch stmt, CallStack frame, EnclosingScope scope) {
 		Tuple<Stmt.Case> cases = stmt.getCases();
 		//
 		Object value = executeExpression(ANY_T, stmt.getCondition(), frame);
@@ -512,14 +524,14 @@ public class Interpreter {
 			Stmt.Case c = cases.getOperand(i);
 			Stmt.Block body = c.getBlock();
 			if (c.isDefault()) {
-				return executeBlock(body, frame);
+				return executeBlock(body, frame, scope);
 			} else {
 				// FIXME: this is a temporary hack until a proper notion of
 				// ConstantExpr is introduced.
-				RValue[] values = executeExpressions(c.getConditions().getOperands(), frame);
+				RValue[] values = executeExpressions(c.getConditions(), frame);
 				for (RValue v : values) {
 					if (v.equals(value)) {
-						return executeBlock(body, frame);
+						return executeBlock(body, frame, scope);
 					}
 				}
 			}
@@ -537,13 +549,12 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private Status executeVariableDeclaration(Declaration.Variable stmt, Map<Identifier, RValue> frame) {
+	private Status executeVariableDeclaration(Declaration.Variable stmt, CallStack frame) {
 		// We only need to do something if this has an initialiser
 		if(stmt.hasInitialiser()) {
 			RValue value = executeExpression(ANY_T, stmt.getInitialiser(), frame);
-			frame.put(stmt.getName(),value);
+			frame.putLocal(stmt.getName(),value);
 		}
-
 		return Status.NEXT;
 	}
 
@@ -564,7 +575,7 @@ public class Interpreter {
 	 *            The frame in which the expression is executing
 	 * @return
 	 */
-	private <T extends RValue> T executeExpression(Class<T> expected, Expr expr, Map<Identifier, RValue> frame) {
+	public <T extends RValue> T executeExpression(Class<T> expected, Expr expr, CallStack frame) {
 		try {
 			RValue val;
 			switch (expr.getOpcode()) {
@@ -574,31 +585,97 @@ public class Interpreter {
 			case WyilFile.EXPR_cast:
 				val = executeConvert((Expr.Cast) expr, frame);
 				break;
+			case WyilFile.EXPR_recinit:
+				val = executeRecordInitialiser((Expr.RecordInitialiser) expr, frame);
+				break;
 			case WyilFile.EXPR_recfield:
-				val = executeFieldLoad((Expr.RecordAccess) expr, frame);
+				val = executeRecordAccess((Expr.RecordAccess) expr, frame);
 				break;
 			case WyilFile.EXPR_indirectinvoke:
 				val = executeIndirectInvoke((Expr.IndirectInvoke) expr, frame)[0];
 				break;
-			case WyilFile.EXPR_invoke:
+			case WyilFile.EXPR_qualifiedinvoke:
 				val = executeInvoke((Expr.Invoke) expr, frame)[0];
 				break;
 			case WyilFile.EXPR_lambdainit:
 				val = executeLambda((Expr.LambdaInitialiser) expr, frame);
 				break;
+			case WyilFile.EXPR_var:
+				val = executeVariableAccess((Expr.VariableAccess) expr, frame);
+				break;
+			case WyilFile.EXPR_staticvar:
+				val = executeStaticVariableAccess((Expr.StaticVariableAccess) expr, frame);
+				break;
+			case WyilFile.EXPR_is:
+				val = executeIs((Expr.Is) expr, frame);
+				break;
+			case WyilFile.EXPR_not:
+				val = executeLogicalNot((Expr.LogicalNot) expr, frame);
+				break;
+			case WyilFile.EXPR_and:
+				val = executeLogicalAnd((Expr.LogicalAnd) expr, frame);
+				break;
+			case WyilFile.EXPR_or:
+				val = executeLogicalOr((Expr.LogicalOr) expr, frame);
+				break;
+			case WyilFile.EXPR_implies:
+				val = executeLogicalImplication((Expr.LogicalImplication) expr, frame);
+				break;
+			case WyilFile.EXPR_iff:
+				val = executeLogicalIff((Expr.LogicalIff) expr, frame);
+				break;
 			case WyilFile.EXPR_exists:
 			case WyilFile.EXPR_forall:
 				val = executeQuantifier((Expr.Quantifier) expr, frame);
 				break;
-			case WyilFile.EXPR_var:
-				val = executeVariableAccess((Expr.VariableAccess) expr, frame);
+			case WyilFile.EXPR_eq:
+			case WyilFile.EXPR_neq:
+				val = executeEqualityComparator((Expr.Operator) expr, frame);
+				break;
+			case WyilFile.EXPR_neg:
+				val = executeArithmeticNegation((Expr.Negation) expr, frame);
+				break;
+			case WyilFile.EXPR_add:
+			case WyilFile.EXPR_sub:
+			case WyilFile.EXPR_mul:
+			case WyilFile.EXPR_div:
+			case WyilFile.EXPR_rem:
+			case WyilFile.EXPR_lt:
+			case WyilFile.EXPR_lteq:
+			case WyilFile.EXPR_gt:
+			case WyilFile.EXPR_gteq:
+				val = executeArithmeticOperator((Expr.Operator) expr, frame);
+				break;
+			case WyilFile.EXPR_bitwisenot:
+				val = executeBitwiseNot((Expr.BitwiseComplement) expr, frame);
+				break;
+			case WyilFile.EXPR_bitwiseor:
+			case WyilFile.EXPR_bitwisexor:
+			case WyilFile.EXPR_bitwiseand:
+				val = executeBitwiseOperator((Expr.Operator) expr, frame);
+				break;
+			case WyilFile.EXPR_bitwiseshl:
+			case WyilFile.EXPR_bitwiseshr:
+				val = executeBitwiseShift((Expr.Operator) expr, frame);
+				break;
+			case WyilFile.EXPR_arridx:
+			case WyilFile.EXPR_arrgen:
+			case WyilFile.EXPR_arrlen:
+			case WyilFile.EXPR_arrinit:
+			case WyilFile.EXPR_arrrange:
+				val = executeArrayOperator((Expr.Operator) expr, frame);
+				break;
+			case WyilFile.EXPR_new:
+				val = executeNew((Expr.New) expr, frame);
+			case WyilFile.EXPR_deref:
+				val = executeDereference((Expr.Dereference) expr, frame);
 				break;
 			default:
-				val = executeOperator((Expr.Operator) expr, frame);
+				return deadCode(expr);
 			}
 			return checkType(val, expr, expected);
-		} catch (ResolveError err) {
-			error(err.getMessage(), expr);
+		} catch (ResolutionError e) {
+			error(e.getMessage(), expr);
 			return null;
 		}
 	}
@@ -614,7 +691,7 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private RValue executeConst(Expr.Constant expr, Map<Identifier, RValue> frame) {
+	private RValue executeConst(Expr.Constant expr, CallStack frame) {
 		Value v = expr.getValue();
 		switch (v.getOpcode()) {
 		case ITEM_null:
@@ -627,9 +704,24 @@ public class Interpreter {
 				return RValue.False;
 			}
 		}
+		case ITEM_byte: {
+			Value.Byte b = (Value.Byte) v;
+			return RValue.Byte(b.get());
+		}
 		case ITEM_int: {
 			Value.Int i = (Value.Int) v;
 			return RValue.Int(i.get());
+		}
+		case ITEM_utf8: {
+			Value.UTF8 s = (Value.UTF8) v;
+			byte[] bytes = s.get();
+			RValue[] elements = new RValue[bytes.length];
+			for (int i = 0; i != elements.length; ++i) {
+				// FIXME: something tells me this is wrong for signed byte
+				// values?
+				elements[i] = RValue.Int(BigInteger.valueOf(bytes[i]));
+			}
+			return RValue.Array(elements);
 		}
 		default:
 			throw new RuntimeException("unknown value encountered (" + expr + ")");
@@ -645,65 +737,27 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private RValue executeConvert(Expr.Cast expr, Map<Identifier, RValue> frame) {
+	private RValue executeConvert(Expr.Cast expr, CallStack frame) {
 		RValue operand = executeExpression(ANY_T, expr.getCastedExpr(), frame);
 		return operand.convert(expr.getCastType());
 	}
 
-	/**
-	 * Execute a binary operator at a given point in the function or method
-	 * body. This will check operands match their expected types.
-	 *
-	 * @param expr
-	 *            --- The expression to execute
-	 * @param frame
-	 *            --- The current stack frame
-	 * @return
-	 * @throws ResolveError
-	 *             If a named type within this expression cannot be resolved
-	 *             within the enclosing project.
-	 */
-	private RValue executeOperator(Expr.Operator expr, Map<Identifier, RValue> frame) throws ResolveError {
-		switch (expr.getOpcode()) {
-		case WyilFile.EXPR_and: {
-			// This is a short-circuiting operator
-			RValue.Bool lhs = executeExpression(BOOL_T, expr.getOperand(0), frame);
-			if(lhs == RValue.False) {
-				return lhs;
-			} else {
-				return executeExpression(BOOL_T, expr.getOperand(1), frame);
-			}
-		}
-		case WyilFile.EXPR_or: {
-			// This is a short-circuiting operator
-			RValue.Bool lhs = executeExpression(BOOL_T, expr.getOperand(0), frame);
-			if(lhs == RValue.True) {
-				return lhs;
-			} else {
-				return executeExpression(BOOL_T, expr.getOperand(1), frame);
-			}
-		}
-		default: {
-			// This is the default case where can treat the operator as an
-			// external function and just call it with the evaluated operands.
-			Expr[] operands = expr.getOperands();
-			RValue[] values = new RValue[operands.length];
-			// Read all operands
-			for (int i = 0; i != operands.length; ++i) {
-				values[i] = executeExpression(ANY_T, operands[i], frame);
-			}
-			// Compute result
-			return operators[expr.getOpcode()].apply(values, this, expr);
-		}
-		}
-	}
-
-	private RValue executeFieldLoad(Expr.RecordAccess expr, Map<Identifier, RValue> frame) {
+	private RValue executeRecordAccess(Expr.RecordAccess expr, CallStack frame) {
 		RValue.Record rec = executeExpression(RECORD_T, expr.getSource(), frame);
 		return rec.read(expr.getField());
 	}
 
-	private RValue executeQuantifier(Expr.Quantifier expr, Map<Identifier, RValue> frame) {
+	private RValue executeRecordInitialiser(Expr.RecordInitialiser expr, CallStack frame) {
+		RValue.Field[] values = new RValue.Field[expr.size()];
+		for (int i = 0; i != expr.size(); ++i) {
+			Pair<Identifier, Expr> field = expr.getOperand(i);
+			RValue value = executeExpression(ANY_T, field.getSecond(), frame);
+			values[i] = RValue.Field(field.getFirst(), value);
+		}
+		return RValue.Record(values);
+	}
+
+	private RValue executeQuantifier(Expr.Quantifier expr, CallStack frame) {
 		boolean r = executeQuantifier(0, expr, frame);
 		boolean q = (expr instanceof Expr.UniversalQuantifier);
 		return r == q ? RValue.True : RValue.False;
@@ -718,7 +772,7 @@ public class Interpreter {
 	 * @param context
 	 * @return
 	 */
-	private boolean executeQuantifier(int index, Expr.Quantifier expr, Map<Identifier, RValue> frame) {
+	private boolean executeQuantifier(int index, Expr.Quantifier expr, CallStack frame) {
 		Tuple<Declaration.Variable> vars = expr.getParameters();
 		if (index == vars.size()) {
 			// This is the base case where we evaluate the condition itself.
@@ -732,7 +786,7 @@ public class Interpreter {
 			RValue.Array range = executeExpression(ARRAY_T, var.getInitialiser(), frame);
 			RValue[] elements = range.getElements();
 			for (int i = 0; i != elements.length; ++i) {
-				frame.put(var.getName(), elements[i]);
+				frame.putLocal(var.getName(), elements[i]);
 				boolean r = executeQuantifier(index + 1, expr, frame);
 				if (!r) {
 					// early termination
@@ -743,7 +797,7 @@ public class Interpreter {
 		}
 	}
 
-	private RValue executeLambda(Expr.LambdaInitialiser expr, Map<Identifier, RValue> frame) {
+	private RValue executeLambda(Expr.LambdaInitialiser expr, CallStack frame) {
 		// Clone the frame at this point, in order that changes seen after this
 		// bytecode is executed are not propagated into the lambda itself.
 //		frame = Arrays.copyOf(frame, frame.length);
@@ -762,11 +816,202 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private RValue executeVariableAccess(Expr.VariableAccess expr, Map<Identifier, RValue> frame) {
+	private RValue executeVariableAccess(Expr.VariableAccess expr, CallStack frame) {
 		Declaration.Variable decl = expr.getVariableDeclaration();
-		return frame.get(decl.getName());
+		return frame.getLocal(decl.getName());
 	}
 
+	private RValue executeStaticVariableAccess(Expr.StaticVariableAccess expr, CallStack frame)
+			throws ResolutionError {
+		NameID nid = resolver.resolve(expr.getName());
+		RValue val = frame.getStatic(nid);
+		if(val == null) {
+			// FIXME: this is lazy initialisation of static fields. This does
+			// *not* conform to the Whiley Language Spec. Therefore, we'll need
+			// to fix it at some point.
+			Declaration.Constant decl = typeSystem.resolveExactly(expr.getName(), Declaration.Constant.class);
+			val = executeExpression(ANY_T,decl.getConstantExpr(),frame);
+			frame.putStatic(nid,val);
+		}
+		return val;
+	}
+
+	private RValue executeIs(Expr.Is expr, CallStack frame) throws ResolutionError {
+		RValue lhs = executeExpression(ANY_T, expr.getTestExpr(), frame);
+		return lhs.is(expr.getTestType(), this);
+	}
+
+	public RValue executeArithmeticNegation(Expr.Negation expr, CallStack frame) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getOperand(), frame);
+		return lhs.negate();
+	}
+
+	public RValue executeArithmeticOperator(Expr.Operator expr, CallStack frame) {
+		RValue.Int lhs = executeExpression(INT_T, expr.getOperand(0), frame);
+		RValue.Int rhs = executeExpression(INT_T, expr.getOperand(1), frame);
+		switch (expr.getOpcode()) {
+		case WyilFile.EXPR_add:
+			return lhs.add(rhs);
+		case WyilFile.EXPR_sub:
+			return lhs.subtract(rhs);
+		case WyilFile.EXPR_mul:
+			return lhs.multiply(rhs);
+		case WyilFile.EXPR_div:
+			return lhs.divide(rhs);
+		case WyilFile.EXPR_rem:
+			return lhs.remainder(rhs);
+		case WyilFile.EXPR_lt:
+			return lhs.lessThan(rhs);
+		case WyilFile.EXPR_lteq:
+			return lhs.lessThanOrEqual(rhs);
+		case WyilFile.EXPR_gt:
+			return rhs.lessThan(lhs);
+		case WyilFile.EXPR_gteq:
+			return rhs.lessThanOrEqual(lhs);
+		default:
+			return deadCode(expr);
+		}
+	}
+
+	public RValue executeEqualityComparator(Expr.Operator expr, CallStack frame) {
+		RValue lhs = executeExpression(ANY_T, expr.getOperand(0), frame);
+		RValue rhs = executeExpression(ANY_T, expr.getOperand(1), frame);
+		switch (expr.getOpcode()) {
+		case WyilFile.EXPR_eq:
+			return lhs.equal(rhs);
+		case WyilFile.EXPR_neq:
+			return lhs.notEqual(rhs);
+		default:
+			return deadCode(expr);
+		}
+	}
+
+	public RValue executeLogicalNot(Expr.Operator expr, CallStack frame) {
+		RValue.Bool lhs = executeExpression(BOOL_T, expr.getOperand(0), frame);
+		return lhs.not();
+	}
+
+	public RValue executeLogicalAnd(Expr.LogicalAnd expr, CallStack frame) {
+		// This is a short-circuiting operator
+		RValue.Bool lhs = executeExpression(BOOL_T, expr.getOperand(0), frame);
+		if(lhs == RValue.False) {
+			return lhs;
+		} else {
+			return executeExpression(BOOL_T, expr.getOperand(1), frame);
+		}
+	}
+
+	public RValue executeLogicalOr(Expr.LogicalOr expr, CallStack frame) {
+		// This is a short-circuiting operator
+		RValue.Bool lhs = executeExpression(BOOL_T, expr.getOperand(0), frame);
+		if(lhs == RValue.True) {
+			return lhs;
+		} else {
+			return executeExpression(BOOL_T, expr.getOperand(1), frame);
+		}
+	}
+
+	public RValue executeLogicalImplication(Expr.LogicalImplication expr, CallStack frame) {
+		// This is a short-circuiting operator
+		RValue.Bool lhs = executeExpression(BOOL_T, expr.getOperand(0), frame);
+		if(lhs == RValue.False) {
+			return RValue.True;
+		} else {
+			RValue.Bool rhs = executeExpression(BOOL_T, expr.getOperand(1), frame);
+			return lhs.equal(rhs);
+		}
+	}
+
+	public RValue executeLogicalIff(Expr.LogicalIff expr, CallStack frame) {
+		RValue.Bool lhs = executeExpression(BOOL_T, expr.getOperand(0), frame);
+		RValue.Bool rhs = executeExpression(BOOL_T, expr.getOperand(1), frame);
+		return lhs.equal(rhs);
+	}
+
+	public RValue executeBitwiseNot(Expr.BitwiseComplement expr, CallStack frame) {
+		RValue.Byte lhs = executeExpression(BYTE_T, expr.getOperand(0), frame);
+		return lhs.invert();
+	}
+
+	public RValue executeBitwiseOperator(Expr.Operator expr, CallStack frame) {
+		RValue.Byte lhs = executeExpression(BYTE_T, expr.getOperand(0), frame);
+		RValue.Byte rhs = executeExpression(BYTE_T, expr.getOperand(1), frame);
+		switch (expr.getOpcode()) {
+		case WyilFile.EXPR_bitwiseand:
+			return lhs.and(rhs);
+		case WyilFile.EXPR_bitwiseor:
+			return lhs.or(rhs);
+		case WyilFile.EXPR_bitwisexor:
+			return lhs.xor(rhs);
+		default:
+			return deadCode(expr);
+		}
+	}
+
+	public RValue executeBitwiseShift(Expr.Operator expr, CallStack frame) {
+		RValue.Byte lhs = executeExpression(BYTE_T, expr.getOperand(0), frame);
+		RValue.Int rhs = executeExpression(INT_T, expr.getOperand(1), frame);
+		switch (expr.getOpcode()) {
+		case WyilFile.EXPR_bitwiseshr:
+			return lhs.shr(rhs);
+		case WyilFile.EXPR_bitwiseshl:
+			return lhs.shl(rhs);
+		default:
+			return deadCode(expr);
+		}
+	}
+	public RValue executeArrayOperator(Expr.Operator expr, CallStack frame) {
+		switch (expr.getOpcode()) {
+		case WyilFile.EXPR_arrlen: {
+			RValue.Array array = executeExpression(ARRAY_T, expr.getOperand(0), frame);
+			return array.length();
+		}
+		case WyilFile.EXPR_arridx: {
+			RValue.Array array = executeExpression(ARRAY_T, expr.getOperand(0), frame);
+			RValue.Int index = executeExpression(INT_T, expr.getOperand(1), frame);
+			return array.read(index);
+		}
+		case WyilFile.EXPR_arrgen: {
+			RValue element = executeExpression(ANY_T, expr.getOperand(0), frame);
+			RValue.Int count = executeExpression(INT_T, expr.getOperand(1), frame);
+			int n = count.intValue();
+			RValue[] values = new RValue[n];
+			for (int i = 0; i != n; ++i) {
+				values[i] = element;
+			}
+			return RValue.Array(values);
+		}
+		case WyilFile.EXPR_arrinit: {
+			RValue[] elements = new RValue[expr.size()];
+			for (int i = 0; i != elements.length; ++i) {
+				elements[i] = executeExpression(ANY_T, expr.getOperand(i), frame);
+			}
+			return RValue.Array(elements);
+		}
+		case WyilFile.EXPR_arrrange: {
+			int start = executeExpression(INT_T, expr.getOperand(0), frame).intValue();
+			int end = executeExpression(INT_T, expr.getOperand(1), frame).intValue();
+			RValue[] elements = new RValue[end - start];
+			for (int i = start; i < end; ++i) {
+				elements[i] = RValue.Int(BigInteger.valueOf(i));
+			}
+			return RValue.Array(elements);
+		}
+		default:
+			return deadCode(expr);
+		}
+	}
+
+	public RValue executeNew(Expr.New expr, CallStack frame) {
+		RValue initialiser = executeExpression(ANY_T, expr.getOperand(), frame);
+		RValue.Cell cell = RValue.Cell(initialiser);
+		return RValue.Reference(cell);
+	}
+
+	public RValue executeDereference(Expr.Dereference expr, CallStack frame) {
+		RValue.Reference ref = executeExpression(REF_T, expr.getOperand(), frame);
+		return ref.deref();
+	}
 	// =============================================================
 	// Multiple expressions
 	// =============================================================
@@ -777,20 +1022,20 @@ public class Interpreter {
 	 * "positional operands". That is, severals which arise from executing the
 	 * same expression.
 	 *
-	 * @param operands
+	 * @param expressions
 	 * @param frame
 	 * @return
 	 */
-	private RValue[] executeExpressions(Expr[] operands, Map<Identifier, RValue> frame) {
-		RValue[][] results = new RValue[operands.length][];
+	private RValue[] executeExpressions(Tuple<Expr> expressions, CallStack frame) {
+		RValue[][] results = new RValue[expressions.size()][];
 		int count = 0;
-		for(int i=0;i!=operands.length;++i) {
-			results[i] = executeMultiReturnExpression(operands[i],frame);
+		for(int i=0;i!=expressions.size();++i) {
+			results[i] = executeMultiReturnExpression(expressions.getOperand(i),frame);
 			count += results[i].length;
 		}
 		RValue[] rs = new RValue[count];
 		int j = 0;
-		for(int i=0;i!=operands.length;++i) {
+		for(int i=0;i!=expressions.size();++i) {
 			Object[] r = results[i];
 			System.arraycopy(r, 0, rs, j, r.length);
 			j += r.length;
@@ -807,21 +1052,26 @@ public class Interpreter {
 	 * @param frame
 	 * @return
 	 */
-	private RValue[] executeMultiReturnExpression(Expr expr, Map<Identifier, RValue> frame) {
-		switch (expr.getOpcode()) {
-		case WyilFile.EXPR_indirectinvoke:
-			return executeIndirectInvoke((Expr.IndirectInvoke) expr, frame);
-		case WyilFile.EXPR_invoke:
-			return executeInvoke((Expr.Invoke) expr, frame);
-		case WyilFile.EXPR_const:
-		case WyilFile.EXPR_cast:
-		case WyilFile.EXPR_recfield:
-		case WyilFile.EXPR_lambdainit:
-		case WyilFile.EXPR_exists:
-		case WyilFile.EXPR_forall:
-		default:
-			RValue val = executeExpression(ANY_T, expr, frame);
-			return new RValue[] { val };
+	private RValue[] executeMultiReturnExpression(Expr expr, CallStack frame) {
+		try {
+			switch (expr.getOpcode()) {
+			case WyilFile.EXPR_indirectinvoke:
+				return executeIndirectInvoke((Expr.IndirectInvoke) expr, frame);
+			case WyilFile.EXPR_qualifiedinvoke:
+				return executeInvoke((Expr.Invoke) expr, frame);
+			case WyilFile.EXPR_const:
+			case WyilFile.EXPR_cast:
+			case WyilFile.EXPR_recfield:
+			case WyilFile.EXPR_lambdainit:
+			case WyilFile.EXPR_exists:
+			case WyilFile.EXPR_forall:
+			default:
+				RValue val = executeExpression(ANY_T, expr, frame);
+				return new RValue[] { val };
+			}
+		} catch (ResolutionError e) {
+			error(e.getMessage(), expr);
+			return null;
 		}
 	}
 
@@ -840,7 +1090,7 @@ public class Interpreter {
 	 *            --- Context in which bytecodes are executed
 	 * @return
 	 */
-	private RValue[] executeIndirectInvoke(Expr.IndirectInvoke expr, Map<Identifier, RValue> frame) {
+	private RValue[] executeIndirectInvoke(Expr.IndirectInvoke expr, CallStack frame) {
 
 		// FIXME: This is implementation is *ugly* --- can we do better than
 		// this? One approach is to register an anonymous function so that we
@@ -881,10 +1131,12 @@ public class Interpreter {
 	 * @param frame
 	 *            --- The current stack frame
 	 * @return
+	 * @throws ResolutionError
 	 */
-	private RValue[] executeInvoke(Expr.Invoke expr, Map<Identifier, RValue> frame) {
-		RValue[] arguments = executeExpressions(expr.getArguments().getOperands(), frame);
-		return execute(expr.getName().toNameID(), expr.getSignatureType(), arguments);
+	private RValue[] executeInvoke(Expr.Invoke expr, CallStack frame) throws ResolutionError {
+		NameID name = resolver.resolve(expr.getName());
+		RValue[] arguments = executeExpressions(expr.getArguments(), frame);
+		return execute(name, expr.getSignatureType(), frame, arguments);
 	}
 
 	// =============================================================
@@ -901,7 +1153,7 @@ public class Interpreter {
 	 * @param context
 	 * @return
 	 */
-	private LValue constructLVal(Expr expr, Map<Identifier, RValue> frame) {
+	private LValue constructLVal(Expr expr, CallStack frame) {
 		switch (expr.getOpcode()) {
 		case EXPR_arridx: {
 			Expr.ArrayAccess e = (Expr.ArrayAccess) expr;
@@ -937,7 +1189,7 @@ public class Interpreter {
 	 * @param context
 	 * @param invariants
 	 */
-	public void checkInvariants(Map<Identifier, RValue> frame, Tuple<Expr> invariants) {
+	public void checkInvariants(CallStack frame, Tuple<Expr> invariants) {
 		for (int i = 0; i != invariants.size(); ++i) {
 			RValue.Bool b = executeExpression(BOOL_T, invariants.getOperand(i), frame);
 			if (b == RValue.False) {
@@ -955,7 +1207,7 @@ public class Interpreter {
 	 * @param context
 	 * @param invariants
 	 */
-	public void checkInvariants(Map<Identifier, RValue> frame, Expr... invariants) {
+	public void checkInvariants(CallStack frame, Expr... invariants) {
 		for (int i = 0; i != invariants.length; ++i) {
 			RValue.Bool b = executeExpression(BOOL_T, invariants[i], frame);
 			if (b == RValue.False) {
@@ -1015,16 +1267,111 @@ public class Interpreter {
 	 * @param context
 	 *            --- Context in which bytecodes are executed
 	 */
-	private Object deadCode(SyntacticElement element) {
+	private <T> T deadCode(SyntacticElement element) {
 		// FIXME: do more here
 		throw new RuntimeException("internal failure --- dead code reached");
 	}
 
 	private static final Class<RValue> ANY_T = RValue.class;
 	private static final Class<RValue.Bool> BOOL_T = RValue.Bool.class;
+	private static final Class<RValue.Byte> BYTE_T = RValue.Byte.class;
 	private static final Class<RValue.Int> INT_T = RValue.Int.class;
+	private static final Class<RValue.Reference> REF_T = RValue.Reference.class;
 	private static final Class<RValue.Array> ARRAY_T = RValue.Array.class;
 	private static final Class<RValue.Record> RECORD_T = RValue.Record.class;
+
+	public static class CallStack {
+		private Declaration.Callable context;
+		private Map<Identifier, RValue> locals;
+		private Map<NameID, RValue> globals;
+
+		public CallStack() {
+			this.locals = new HashMap<>();
+			this.globals = new HashMap<>();
+		}
+
+		private CallStack(CallStack parent, Declaration.Callable context) {
+			this.context = context;
+			this.locals = new HashMap<>();
+			this.globals = parent.globals;
+		}
+
+		public RValue getLocal(Identifier name) {
+			return locals.get(name);
+		}
+
+		public void putLocal(Identifier name, RValue value) {
+			locals.put(name, value);
+		}
+
+		public RValue getStatic(NameID name) {
+			return globals.get(name);
+		}
+
+		public void putStatic(NameID name, RValue value) {
+			globals.put(name, value);
+		}
+
+		public CallStack enter(Declaration.Callable context) {
+			return new CallStack(this, context);
+		}
+	}
+
+	/**
+	 * An enclosing scope captures the nested of declarations, blocks and other
+	 * staments (e.g. loops). It is used to store information associated with
+	 * these things such they can be accessed further down the chain. It can
+	 * also be used to propagate information up the chain (for example, the
+	 * environments arising from a break or continue statement).
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	private abstract static class EnclosingScope {
+		private final EnclosingScope parent;
+
+		public EnclosingScope(EnclosingScope parent) {
+			this.parent = parent;
+		}
+
+		/**
+		 * Get the innermost enclosing block of a given kind. For example, when
+		 * processing a return statement we may wish to get the enclosing
+		 * function or method declaration such that we can type check the return
+		 * types.
+		 *
+		 * @param kind
+		 */
+		public <T extends EnclosingScope> T getEnclosingScope(Class<T> kind) {
+			if (kind.isInstance(this)) {
+				return (T) this;
+			} else if (parent != null) {
+				return parent.getEnclosingScope(kind);
+			} else {
+				// FIXME: better error propagation?
+				return null;
+			}
+		}
+	}
+
+	/**
+	 * Represents the enclosing scope for a function or method declaration.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	private static class FunctionOrMethodScope extends EnclosingScope {
+		private final Declaration.FunctionOrMethod declaration;
+
+		public FunctionOrMethodScope(Declaration.FunctionOrMethod declaration) {
+			super(null);
+			this.declaration = declaration;
+		}
+
+		public Declaration.FunctionOrMethod getDeclaration() {
+			return declaration;
+		}
+	}
 
 	/**
 	 * An internal function is simply a named internal function. This reads a

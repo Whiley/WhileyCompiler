@@ -11,13 +11,21 @@ function sum_1(LinkedList ls) -> int:
         return ls.data + sum_1(ls.next)
 
 function sum_2(LinkedList ls) -> int:
+    if ls is Link:
+        return ls.data + sum_1(ls.next)
+    else:
+        return 0
+
+function sum_3(LinkedList ls) -> int:
     if ls == null:
         return 0
     else:
+        assert ls is Link
         return ls.data + sum_2(ls.next)
 
-function sum_3(LinkedList ls) -> int:
+function sum_4(LinkedList ls) -> int:
     if ls != null:
+        assume ls is Link
         return ls.data + sum_3(ls.next)
     else:
         return 0
@@ -29,3 +37,4 @@ public export method test() :
     assume sum_1(ls) == 6
     assume sum_2(ls) == 6
     assume sum_3(ls) == 6
+    assume sum_4(ls) == 6

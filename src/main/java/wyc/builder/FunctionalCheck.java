@@ -10,6 +10,7 @@ import java.util.*;
 
 import wybs.lang.Build;
 import wybs.lang.SyntacticElement;
+import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
 import wyc.lang.WhileyFile;
@@ -106,9 +107,9 @@ public class FunctionalCheck {
 		checkBlock(declaration.getBody(),Context.METHOD);
 	}
 
-	private void checkBlock(Stmt.Block statements, Context context) {
-		for (Stmt s : statements.getOperands()) {
-			checkStatement(s, context);
+	private void checkBlock(Stmt.Block block, Context context) {
+		for (int i=0;i!=block.size();++i) {
+			checkStatement(block.getOperand(i), context);
 		}
 	}
 
@@ -228,9 +229,7 @@ public class FunctionalCheck {
 
 	private void checkReturn(Stmt.Return stmt, Context context) {
 		if(context != Context.METHOD) {
-			for(Expr e : stmt.getOperands()) {
-				checkExpression(e, context);
-			}
+			checkExpressions(stmt.getOperand(), context);
 		}
 	}
 
@@ -356,8 +355,8 @@ public class FunctionalCheck {
 	}
 
 	private void checkArrayInitialiser(Expr.ArrayInitialiser expression, Context context) {
-		for(Expr e : expression.getOperands()) {
-			checkExpression(e,context);
+		for(int i=0;i!=expression.size();++i) {
+			checkExpression(expression.getOperand(i),context);
 		}
 	}
 
@@ -367,8 +366,8 @@ public class FunctionalCheck {
 	}
 
 	private void checkBinOp(Expr.Operator expression, Context context) {
-		for(Expr e : expression.getOperands()) {
-			checkExpression(e,context);
+		for(int i=0;i!=expression.size();++i) {
+			checkExpression(expression.getOperand(i),context);
 		}
 	}
 
@@ -437,22 +436,23 @@ public class FunctionalCheck {
 	}
 
 	private void checkRecord(Expr.RecordInitialiser expression, Context context) {
-		for(Pair<Identifier,Expr> e : expression.getOperands()) {
+		for (int i = 0; i != expression.size(); ++i) {
+			Pair<Identifier,Expr> e = expression.getOperand(i);
 			checkExpression(e.getSecond(),context);
 		}
 	}
 
-	private void invalidObjectAllocation(SyntacticElement expression, Context context) {
+	private void invalidObjectAllocation(SyntacticItem expression, Context context) {
 		String msg = errorMessage(ALLOCATION_NOT_PERMITTED);
 		throw new SyntaxError(msg, file.getEntry(), expression);
 	}
 
-	private void invalidMethodCall(SyntacticElement expression, Context context) {
+	private void invalidMethodCall(SyntacticItem expression, Context context) {
 		String msg = errorMessage(METHODCALL_NOT_PERMITTED);
 		throw new SyntaxError(msg, file.getEntry(), expression);
 	}
 
-	private void invalidReferenceAccess(SyntacticElement expression, Context context) {
+	private void invalidReferenceAccess(SyntacticItem expression, Context context) {
 		String msg= errorMessage(REFERENCE_ACCESS_NOT_PERMITTED);
 		throw new SyntaxError(msg, file.getEntry(), expression);
 	}

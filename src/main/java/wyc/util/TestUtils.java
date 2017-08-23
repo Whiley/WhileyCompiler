@@ -16,15 +16,34 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 
 import wyc.commands.Compile;
 import wyc.commands.Run;
+import wyc.io.WhileyFileLexer;
+import wyc.io.WhileyFileParser;
+import wyc.lang.WhileyFile;
+import wyc.util.AbstractWhileyFile.Type;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
 public class TestUtils {
+
+	/**
+	 * Parse a Whiley type from a string.
+	 *
+	 * @param from
+	 * @return
+	 */
+	public static Type fromString(String from) {
+		List<WhileyFileLexer.Token> tokens = new WhileyFileLexer(from).scan();
+		WhileyFile wf = new WhileyFile(null);
+		WhileyFileParser parser = new WhileyFileParser(wf, tokens);
+		WhileyFileParser.EnclosingScope scope = parser.new EnclosingScope();
+		return parser.parseType(scope);
+	}
 
 	/**
 	 * Scan a directory to get the names of all the whiley source files

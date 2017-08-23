@@ -1,12 +1,11 @@
 package wyil.util.interpreter;
 
-import java.util.Map;
-
 import wybs.util.AbstractCompilationUnit.Identifier;
+import wyil.util.interpreter.Interpreter.CallStack;
 
 public abstract class LValue {
-	abstract public RValue read(Map<Identifier, RValue> frame);
-	abstract public void write(Map<Identifier, RValue> frame, RValue rhs);
+	abstract public RValue read(CallStack frame);
+	abstract public void write(CallStack frame, RValue rhs);
 
 	public static final class Variable extends LValue {
 		private final Identifier name;
@@ -16,13 +15,13 @@ public abstract class LValue {
 		}
 
 		@Override
-		public RValue read(Map<Identifier, RValue> frame) {
-			return frame.get(name);
+		public RValue read(CallStack frame) {
+			return frame.getLocal(name);
 		}
 
 		@Override
-		public void write(Map<Identifier, RValue> frame, RValue rhs) {
-			frame.put(name, rhs);
+		public void write(CallStack frame, RValue rhs) {
+			frame.putLocal(name, rhs);
 		}
 	}
 
@@ -36,13 +35,13 @@ public abstract class LValue {
 		}
 
 		@Override
-		public RValue read(Map<Identifier, RValue> frame) {
+		public RValue read(CallStack frame) {
 			RValue.Array src = Interpreter.checkType(this.src.read(frame), null, RValue.Array.class);
 			return src.read(index);
 		}
 
 		@Override
-		public void write(Map<Identifier, RValue> frame, RValue value) {
+		public void write(CallStack frame, RValue value) {
 			RValue.Array arr = Interpreter.checkType(this.src.read(frame), null, RValue.Array.class);
 			src.write(frame, arr.write(index, value));
 		}
@@ -58,13 +57,13 @@ public abstract class LValue {
 		}
 
 		@Override
-		public RValue read(Map<Identifier, RValue> frame) {
+		public RValue read(CallStack frame) {
 			RValue.Record src = Interpreter.checkType(this.src.read(frame), null, RValue.Record.class);
 			return src.read(field);
 		}
 
 		@Override
-		public void write(Map<Identifier, RValue> frame, RValue value) {
+		public void write(CallStack frame, RValue value) {
 			RValue.Record rec = Interpreter.checkType(this.src.read(frame), null, RValue.Record.class);
 			src.write(frame, rec.write(field, value));
 		}
@@ -78,13 +77,13 @@ public abstract class LValue {
 		}
 
 		@Override
-		public RValue read(Map<Identifier, RValue> frame) {
+		public RValue read(CallStack frame) {
 			RValue.Cell cell = Interpreter.checkType(src.read(frame), null, RValue.Cell.class);
 			return cell.read();
 		}
 
 		@Override
-		public void write(Map<Identifier, RValue> frame, RValue rhs) {
+		public void write(CallStack frame, RValue rhs) {
 			RValue.Cell cell = Interpreter.checkType(src.read(frame), null, RValue.Cell.class);
 			cell.write(rhs);
 		}

@@ -143,7 +143,8 @@ public class DefiniteAssignmentAnalysis {
 	private ControlFlow checkBlock(Stmt.Block block, DefintelyAssignedSet environment) {
 		DefintelyAssignedSet nextEnvironment = environment;
 		DefintelyAssignedSet breakEnvironment = null;
-		for (Stmt s : block.getOperands()) {
+		for(int i=0;i!=block.size();++i) {
+			Stmt s = block.getOperand(i);
 			ControlFlow nf = checkStatement(s, nextEnvironment);
 			nextEnvironment = nf.nextEnvironment;
 			breakEnvironment = join(breakEnvironment,nf.breakEnvironment);
@@ -291,7 +292,7 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	private ControlFlow checkReturn(Stmt.Return stmt, DefintelyAssignedSet environment) {
-		for(Expr e : stmt.getOperands()) {
+		for(Expr e : stmt.getOperand()) {
 			checkExpression(e, environment);
 		}
 		return new ControlFlow(null,null);
@@ -411,8 +412,8 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	private void checkArrayInitialiser(Expr.ArrayInitialiser expression, DefintelyAssignedSet environment) {
-		for(Expr e : expression.getOperands()) {
-			checkExpression(e,environment);
+		for(int i=0;i!=expression.size();++i) {
+			checkExpression(expression.getOperand(i),environment);
 		}
 	}
 
@@ -422,8 +423,8 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	private void checkOperator(Expr.Operator expression, DefintelyAssignedSet environment) {
-		for(Expr e : expression.getOperands()) {
-			checkExpression(e,environment);
+		for(int i=0;i!=expression.size();++i) {
+			checkExpression(expression.getOperand(i),environment);
 		}
 	}
 
@@ -500,7 +501,8 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	private void checkRecord(Expr.RecordInitialiser expression, DefintelyAssignedSet environment) {
-		for(Pair<Identifier,Expr> e : expression.getOperands()) {
+		for(int i = 0;i!=expression.size();++i) {
+			Pair<Identifier,Expr> e = expression.getOperand(i);
 			checkExpression(e.getSecond(),environment);
 		}
 	}

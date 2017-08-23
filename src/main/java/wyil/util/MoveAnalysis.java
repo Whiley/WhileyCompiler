@@ -77,7 +77,7 @@ public class MoveAnalysis implements Build.Stage<WyilFile> {
 		// Examine all entries in this block looking for a conversion bytecode
 		List<SyntaxTree.Location<?>> expressions = tree.getLocations();
 		for (int i = 0; i != expressions.size(); ++i) {
-			SyntaxTree.Location<?> l = expressions.get(i);
+			SyntaxTree.Location<?> l = expressions.getLocal(i);
 			if (l.getBytecode() instanceof Bytecode.Stmt) {
 				check((Location<Bytecode.Stmt>) l);
 			}

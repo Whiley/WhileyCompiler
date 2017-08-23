@@ -56,14 +56,16 @@ public abstract class ConcreteSemantics {
 				throw new RuntimeException("Implement me");
 			} else if (type instanceof Type.Union) {
 				Type.Union t = (Type.Union) type;
-				for (Type element : t.getOperands()) {
+				for (int i=0;i!=t.size();++i) {
+					Type element = t.getOperand(i);
 					if (this.is(element) == True) {
 						return True;
 					}
 				}
 			} else if (type instanceof Type.Intersection) {
 				Type.Intersection t = (Type.Intersection) type;
-				for (Type element : t.getOperands()) {
+				for (int i=0;i!=t.size();++i) {
+					Type element = t.getOperand(i);
 					if (this.is(element) == False) {
 						return False;
 					}

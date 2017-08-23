@@ -29,8 +29,11 @@ import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
 import wyc.util.AbstractWhileyFile;
 import wyc.util.AbstractWhileyFile.Expr;
+import wyc.util.AbstractWhileyFile.Stmt;
 import wyc.util.AbstractWhileyFile.Type;
 import wyc.util.AbstractWhileyFile.Expr.Invoke;
+import wyc.util.AbstractWhileyFile.Stmt.Case;
+import wyc.util.AbstractWhileyFile.Stmt.Switch;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -58,15 +61,13 @@ public class WyilFile extends AbstractWhileyFile<WyilFile> {
 		 */
 		@Override
 		public WyilFile read(Path.Entry<WyilFile> e, InputStream input) throws IOException {
-			System.out.println("READING WYILFILE");
 			WyilFile wf = new WyilFileReader(e).read();
-			new SyntacticHeapPrinter(new PrintWriter(System.out)).print(wf);
+			//new SyntacticHeapPrinter(new PrintWriter(System.out)).print(wf);
 			return wf;
 		}
 
 		@Override
 		public void write(OutputStream output, WyilFile value) throws IOException {
-			System.out.println("WRITING WYILFILE");
 			new WyilFileWriter(output).write(value);
 		}
 
@@ -141,7 +142,7 @@ public class WyilFile extends AbstractWhileyFile<WyilFile> {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Declaration.Function((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Declaration.Variable>) operands[2], (Tuple<Declaration.Variable>) operands[4],
+						(Tuple<Declaration.Variable>) operands[2], (Tuple<Declaration.Variable>) operands[3],
 						(Tuple<Expr>) operands[4], (Tuple<Expr>) operands[5], (Stmt.Block) operands[6]);
 			}
 		};
@@ -149,7 +150,7 @@ public class WyilFile extends AbstractWhileyFile<WyilFile> {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Declaration.Method((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Declaration.Variable>) operands[2], (Tuple<Declaration.Variable>) operands[4],
+						(Tuple<Declaration.Variable>) operands[2], (Tuple<Declaration.Variable>) operands[3],
 						(Tuple<Expr>) operands[4], (Tuple<Expr>) operands[5], (Stmt.Block) operands[6],
 						(Tuple<Identifier>) operands[7]);
 			}
@@ -237,7 +238,13 @@ public class WyilFile extends AbstractWhileyFile<WyilFile> {
 				return new Type.Nominal((Name) operands[0]);
 			}
 		};
-		schema[TYPE_ref] = new Schema(Operands.TWO,Data.ZERO, "TYPE_reference") {
+		schema[TYPE_ref] = new Schema(Operands.ONE,Data.ZERO, "TYPE_reference") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Type.Reference((Type) operands[0]);
+			}
+		};
+		schema[TYPE_refowned] = new Schema(Operands.TWO,Data.ZERO, "TYPE_reference") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Type.Reference((Type) operands[0], (Identifier) operands[1]);
@@ -311,10 +318,10 @@ public class WyilFile extends AbstractWhileyFile<WyilFile> {
 				return new Stmt.NamedBlock((Identifier) operands[0], (Stmt.Block) operands[1]);
 			}
 		};
-		schema[STMT_caseblock] = new Schema(Operands.ZERO,Data.ZERO, "STMT_caseblock") {
+		schema[STMT_caseblock] = new Schema(Operands.TWO,Data.ZERO, "STMT_caseblock") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				throw new RuntimeException("implement me");
+				return new Case((Tuple<Expr>) operands[0], (Stmt.Block) operands[1]);
 			}
 		};
 		schema[STMT_assert] = new Schema(Operands.ONE,Data.ZERO, "STMT_assert") {
@@ -323,10 +330,10 @@ public class WyilFile extends AbstractWhileyFile<WyilFile> {
 				return new Stmt.Assert((Expr) operands[0]);
 			}
 		};
-		schema[STMT_assign] = new Schema(Operands.ZERO,Data.ZERO, "STMT_assign") {
+		schema[STMT_assign] = new Schema(Operands.TWO,Data.ZERO, "STMT_assign") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				throw new RuntimeException("implement me");
+				return new Stmt.Assign((Tuple<LVal>) operands[0], (Tuple<Expr>) operands[1]);
 			}
 		};
 		schema[STMT_assume] = new Schema(Operands.ONE,Data.ZERO, "STMT_assume") {
@@ -386,16 +393,16 @@ public class WyilFile extends AbstractWhileyFile<WyilFile> {
 		schema[STMT_return] = new Schema(Operands.MANY,Data.ZERO, "STMT_return") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Stmt.Return(ArrayUtils.toArray(Expr.class, operands));
+				return new Stmt.Return((Tuple<Expr>) operands[0]);
 			}
 		};
-		schema[STMT_switch] = new Schema(Operands.ZERO,Data.ZERO, "STMT_switch") {
+		schema[STMT_switch] = new Schema(Operands.TWO,Data.ZERO, "STMT_switch") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				throw new RuntimeException("implement me");
+				return new Switch((Expr) operands[0], (Tuple<Case>) operands[1]);
 			}
 		};
-		schema[STMT_while] = new Schema(Operands.ZERO,Data.ZERO, "STMT_while") {
+		schema[STMT_while] = new Schema(Operands.THREE,Data.ZERO, "STMT_while") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Stmt.While((Expr) operands[0], (Tuple<Expr>) operands[1], (Stmt.Block) operands[2]);
@@ -408,10 +415,10 @@ public class WyilFile extends AbstractWhileyFile<WyilFile> {
 				return new Expr.VariableAccess((Declaration.Variable) operands[0]);
 			}
 		};
-		schema[EXPR_staticvar] = new Schema(Operands.ZERO,Data.ZERO, "EXPR_staticvariable") {
+		schema[EXPR_staticvar] = new Schema(Operands.ONE,Data.ZERO, "EXPR_staticvariable") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return null;
+				return new Expr.StaticVariableAccess((Name) operands[0]);
 			}
 		};
 		schema[EXPR_const] = new Schema(Operands.ONE,Data.ZERO, "EXPR_const") {
@@ -682,6 +689,12 @@ public class WyilFile extends AbstractWhileyFile<WyilFile> {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.ArrayInitialiser(ArrayUtils.toArray(Expr.class, operands));
+			}
+		};
+		schema[EXPR_arrrange] = new Schema(Operands.TWO,Data.ZERO, "EXPR_arrrange") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Expr.ArrayRange((Expr) operands[0], (Expr) operands[1]);
 			}
 		};
 		return schema;
