@@ -6,7 +6,7 @@ public function BTree() -> BTree:
     return null
 
 public function add(BTree tree, int item) -> BTree:
-    if tree == null:
+    if tree is null:
         tree = {item: item, left: null, right: null}
     else:
         if item < tree.item:
@@ -16,7 +16,7 @@ public function add(BTree tree, int item) -> BTree:
     return tree
 
 function contains(BTree tree, int item) -> bool:
-    if tree == null:
+    if tree is null:
         return false
     else:
         if tree.item == item:

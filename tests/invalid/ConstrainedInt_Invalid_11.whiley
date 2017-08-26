@@ -7,6 +7,6 @@ function f(frf1nat y) :
 function f(int x) :
     debug "F(INT)"
 
-method main() :
+public export method test() :
     f(-1)
     f(1)

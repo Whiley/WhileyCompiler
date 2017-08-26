@@ -6,6 +6,6 @@ method read(int x) -> int:
 method test(MyMeth m) -> int:
     return m(false)
 
-method main() -> int:
+public export method test() -> int:
     return test(&read)
     

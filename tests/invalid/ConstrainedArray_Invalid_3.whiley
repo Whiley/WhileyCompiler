@@ -4,6 +4,6 @@ type string is char[]
 public function update(string str) -> char[]:
     return [-1]
 
-public method main() -> string:
+public export method test():
     string s1 = "Hello World"
-    return update(s1)
+    assume update(s1) == [-1]

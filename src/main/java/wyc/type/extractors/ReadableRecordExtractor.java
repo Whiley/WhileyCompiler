@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import static wyc.lang.WhileyFile.*;
 
 import wybs.lang.NameResolver;
+import wybs.lang.NameResolver.ResolutionError;
 import wyc.type.TypeSystem;
 import wyc.type.util.AbstractTypeExtractor;
 
@@ -54,8 +55,9 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 
 //	@Override
 //	public Type.Record extract(Type type, Object supplementary) throws ResolutionError {
+//		System.out.println("EXTRACTING RECORD: " + type);
 //		Type.Record r = super.extract(type, supplementary);
-//		System.out.println("EXTRACTING: " + type + " => " + r);
+//		System.out.println("DONE EXTRACTING: " + type + " => " + r);
 //		return r;
 //	}
 

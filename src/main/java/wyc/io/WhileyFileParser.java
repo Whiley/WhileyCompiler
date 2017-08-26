@@ -97,12 +97,9 @@ public class WhileyFileParser {
 		}
 
 		// Finally, construct the new file.
-		return constructWhileyFile(declarations);
-	}
-
-	private WhileyFile constructWhileyFile(List<Declaration> declarations) {
-		Tuple<Declaration> root = new Tuple<>(Declaration.class,declarations);
-		file.allocate(root);
+		Tuple<Declaration> decls = new Tuple<>(Declaration.class,declarations);
+		Declaration.Module module = new Declaration.Module(decls);
+		file.allocate(module);
 		return file;
 	}
 
@@ -2108,6 +2105,7 @@ public class WhileyFileParser {
 		Tuple<Identifier> lifetimes = null;
 		if (tryAndMatch(terminated, LeftBrace) != null) {
 			isInvocation = true;
+			lifetimes = new Tuple<>();
 		} else if (lookaheadSequence(terminated, LeftAngle)) {
 			lifetimes = parseOptionalLifetimeArguments(scope, terminated);
 		}
@@ -3002,8 +3000,8 @@ public class WhileyFileParser {
 		// NOTE: expression guanrateed to be terminated by ')'
 		Expr body = parseExpression(scope, true);
 		match(RightBrace);
-		return annotateSourceLocation(
-				new Expr.LambdaInitialiser(parameters, captures, lifetimeParameters, body), start);
+		return annotateSourceLocation(new Declaration.Lambda(new Tuple<>(), new Identifier(""), parameters,
+				new Tuple<>(), captures, lifetimeParameters, body), start);
 	}
 
 	/**
@@ -3056,7 +3054,7 @@ public class WhileyFileParser {
 			// No, parameters are not supplied.
 			parameters = new Tuple<>();
 		}
-		return annotateSourceLocation(new Expr.LambdaConstant(name, parameters), start);
+		return annotateSourceLocation(new Expr.LambdaAccess(name, parameters), start);
 	}
 
 	/**
@@ -3164,8 +3162,8 @@ public class WhileyFileParser {
 			return false; // always can be an expression
 		} else if (type instanceof Type.Reference) {
 			Type.Reference tt = (Type.Reference) type;
-			Identifier lifetime = tt.getLifetime();
-			if(lifetime != null) {
+			if(tt.hasLifetime()) {
+				Identifier lifetime = tt.getLifetime();
 				String lifetimeStr = lifetime.get();
 				if (lifetimeStr.equals("this") || lifetimeStr.equals("*")) {
 					// &this and &* is not a valid expression because "this" is
@@ -4317,8 +4315,7 @@ public class WhileyFileParser {
 	}
 
 	private void syntaxError(String msg, Token t) {
-		//unknown.attributes().add(new Attribute.Source(t.start, t.start + t.text.length() - 1, -1));
-		throw new SyntaxError(msg, file.getEntry(), null);
+		throw new SyntaxError(msg, file.getEntry(), new Attribute.Span(null,t.start,t.end()));
 	}
 
 	private <T extends SyntacticItem> T annotateSourceLocation(T item, int start) {

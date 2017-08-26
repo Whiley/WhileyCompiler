@@ -1,5 +1,5 @@
 
-method main(int x) :
+method test(int x) :
     int[] arr
     //
     if x > 0:
@@ -9,3 +9,6 @@ method main(int x) :
     assert arr[0] < |arr|
     assert arr[1] < |arr|
     assert arr[2] != |arr|
+
+public export method test():
+    test(1)

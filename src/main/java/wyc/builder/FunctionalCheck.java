@@ -14,6 +14,8 @@ import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
 import wyc.lang.WhileyFile;
+import wyil.lang.WyilFile;
+
 import static wyc.lang.WhileyFile.*;
 
 import static wyil.util.ErrorMessages.*;
@@ -38,9 +40,9 @@ import static wyil.util.ErrorMessages.*;
  *
  */
 public class FunctionalCheck {
-	private WhileyFile file;
+	private WyilFile file;
 
-	public FunctionalCheck(WhileyFile file) {
+	public FunctionalCheck(WyilFile file) {
 		this.file = file;
 	}
 
@@ -220,7 +222,9 @@ public class FunctionalCheck {
 		}
 		//
 		checkBlock(stmt.getTrueBranch(), context);
-		checkBlock(stmt.getFalseBranch(), context);
+		if(stmt.hasFalseBranch()) {
+			checkBlock(stmt.getFalseBranch(), context);
+		}
 	}
 
 	private void checkNamedBlock(Stmt.NamedBlock stmt, Context context) {
@@ -332,10 +336,10 @@ public class FunctionalCheck {
 				checkIndexOf((Expr.ArrayAccess) expression, context);
 			} else if(expression instanceof Expr.IndirectInvoke) {
 				checkIndirectFunctionOrMethodCall((Expr.IndirectInvoke) expression, context);
-			} else if(expression instanceof Expr.LambdaConstant) {
-				checkFunctionOrMethod((Expr.LambdaConstant) expression, context);
-			} else if(expression instanceof Expr.LambdaInitialiser) {
-				checkLambda((Expr.LambdaInitialiser) expression, context);
+			} else if(expression instanceof Expr.LambdaAccess) {
+				checkLambdaAccess((Expr.LambdaAccess) expression, context);
+			} else if(expression instanceof Declaration.Lambda) {
+				checkLambdaDeclaration((Declaration.Lambda) expression, context);
 			} else if(expression instanceof Expr.VariableAccess) {
 				checkLocalVariable((Expr.VariableAccess) expression, context);
 			} else if(expression instanceof Expr.New) {
@@ -387,10 +391,6 @@ public class FunctionalCheck {
 		checkExpression(expression.getSource(),context);
 	}
 
-	private void checkFunctionOrMethod(Expr.LambdaConstant expression, Context context) {
-
-	}
-
 	private void checkInvoke(Expr.Invoke expression, Context context) {
 		if (context != Context.METHOD && expression.getSignatureType() instanceof Type.Method) {
 			invalidMethodCall(expression, context);
@@ -412,7 +412,12 @@ public class FunctionalCheck {
 		}
 	}
 
-	private void checkLambda(Expr.LambdaInitialiser expression, Context context) {
+
+	private void checkLambdaAccess(Expr.LambdaAccess expression, Context context) {
+
+	}
+
+	private void checkLambdaDeclaration(Declaration.Lambda expression, Context context) {
 		// Check body of the lambda
 		checkExpression(expression.getBody(),context);
 	}

@@ -7,5 +7,5 @@ function f(irf2nat x) -> int:
 function g(int x) :
     f(x)
 
-method main() :
+public export method test() :
     g(-1)

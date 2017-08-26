@@ -13,6 +13,6 @@ type asexpr is int | asbinop
 function f(asexpr e) -> asexpr:
     return e
 
-method main() -> expr:
+public export method test() -> expr:
     expr e1 = {op: MUL, left: 1, right: 2}
     return f(e1)

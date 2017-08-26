@@ -68,10 +68,10 @@ import static wyc.lang.WhileyFile.Name;
  * @author David J. Pearce
  *
  */
-public class CoerciveSubtypeOperator implements SubtypeOperator {
+public class NonCoerciveSubtypeOperator implements SubtypeOperator {
 	protected NameResolver resolver;
 
-	public CoerciveSubtypeOperator(NameResolver resolver) {
+	public NonCoerciveSubtypeOperator(NameResolver resolver) {
 		this.resolver = resolver;
 	}
 

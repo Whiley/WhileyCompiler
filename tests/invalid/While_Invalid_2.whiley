@@ -1,4 +1,4 @@
-method main(int[][] args) -> int:
+public export method test(int[][] args) -> int:
     int i = 0
     int r = 0
     //

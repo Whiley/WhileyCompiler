@@ -2,5 +2,5 @@
 public method m(int x, int y) -> bool:
     return x < y
 
-public method main() :
+public export method test() :
     assert m(10, 20)

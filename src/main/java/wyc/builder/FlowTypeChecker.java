@@ -27,6 +27,7 @@ import wyc.lang.*;
 import wyc.type.TypeSystem;
 import wyc.type.TypeInferer.Environment;
 import wyc.type.util.StdTypeEnvironment;
+import wyc.util.AbstractWhileyFile;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -150,8 +151,10 @@ public class FlowTypeChecker {
 			check((Declaration.Constant) decl);
 		} else if (decl instanceof Declaration.Type) {
 			check((Declaration.Type) decl);
-		} else {
+		} else if (decl instanceof Declaration.FunctionOrMethod) {
 			check((Declaration.FunctionOrMethod) decl);
+		} else {
+			check((Declaration.Property) decl);
 		}
 	}
 
@@ -215,7 +218,7 @@ public class FlowTypeChecker {
 	 * @param d
 	 * @param last
 	 */
-	private void checkReturnValue(Declaration.Callable d, Environment last) {
+	private void checkReturnValue(Declaration.FunctionOrMethod d, Environment last) {
 		// FIXME: fix this!!
 		// if (!d.hasModifier(Modifier.NATIVE) && last != BOTTOM &&
 		// d.resolvedType().returns().length != 0
@@ -227,6 +230,17 @@ public class FlowTypeChecker {
 		// throw new SyntaxError("missing return statement", file.getEntry(),
 		// d);
 		// }
+	}
+
+	public void check(Declaration.Property d) {
+		// Construct initial environment
+		Environment environment = new StdTypeEnvironment();
+		// Check parameters are not empty
+		checkNonEmpty(d.getParameters());
+		// Check returns are not empty
+		checkNonEmpty(d.getReturns());
+		// Check invariant (i.e. requires clauses) provided.
+		checkConditions(d.getInvariant(), true, environment);
 	}
 
 	// =========================================================================
@@ -301,6 +315,12 @@ public class FlowTypeChecker {
 				return checkDebug((Stmt.Debug) stmt, environment, scope);
 			} else if (stmt instanceof Stmt.Skip) {
 				return checkSkip((Stmt.Skip) stmt, environment, scope);
+			} else if (stmt instanceof Expr.Invoke) {
+				checkInvoke((Expr.Invoke) stmt, environment);
+				return environment;
+			} else if (stmt instanceof Expr.IndirectInvoke) {
+				checkIndirectInvoke((Expr.IndirectInvoke) stmt, environment);
+				return environment;
 			} else {
 				return internalFailure("unknown statement: " + stmt.getClass().getName(), stmt);
 			}
@@ -331,7 +351,8 @@ public class FlowTypeChecker {
 	 *             If a named type within this statement cannot be resolved
 	 *             within the enclosing project.
 	 */
-	private Environment checkAssert(Stmt.Assert stmt, Environment environment, EnclosingScope scope) throws ResolveError {
+	private Environment checkAssert(Stmt.Assert stmt, Environment environment, EnclosingScope scope)
+			throws ResolveError {
 		return checkCondition(stmt.getCondition(), true, environment);
 	}
 
@@ -353,7 +374,8 @@ public class FlowTypeChecker {
 	 *             If a named type within this statement cannot be resolved
 	 *             within the enclosing project.
 	 */
-	private Environment checkAssume(Stmt.Assume stmt, Environment environment, EnclosingScope scope) throws ResolveError {
+	private Environment checkAssume(Stmt.Assume stmt, Environment environment, EnclosingScope scope)
+			throws ResolveError {
 		return checkCondition(stmt.getCondition(), true, environment);
 	}
 
@@ -384,8 +406,8 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment checkVariableDeclaration(Declaration.Variable stmt, Environment environment, EnclosingScope scope)
-			throws IOException, ResolveError {
+	private Environment checkVariableDeclaration(Declaration.Variable stmt, Environment environment,
+			EnclosingScope scope) throws IOException, ResolveError {
 		// Check type of initialiser.
 		if (stmt.hasInitialiser()) {
 			Type type = checkExpression(stmt.getInitialiser(), environment);
@@ -408,7 +430,7 @@ public class FlowTypeChecker {
 	private Environment checkAssign(Stmt.Assign stmt, Environment environment, EnclosingScope scope)
 			throws IOException, ResolveError {
 		Tuple<LVal> lvals = stmt.getLeftHandSide();
-		List<Pair<Expr,Type>> rvals = checkMultiExpressions(stmt.getRightHandSide(),environment);
+		List<Pair<Expr, Type>> rvals = checkMultiExpressions(stmt.getRightHandSide(), environment);
 		// Check the number of expected values matches the number of values
 		// produced by the right-hand side.
 		if (lvals.size() < rvals.size()) {
@@ -419,7 +441,7 @@ public class FlowTypeChecker {
 		// For each value produced, check that the variable being assigned
 		// matches the value produced.
 		for (int i = 0; i != rvals.size(); ++i) {
-			Type lval = checkExpression(lvals.getOperand(i),environment);
+			Type lval = checkLVal(lvals.getOperand(i), environment);
 			Pair<Expr, Type> rval = rvals.get(i);
 			// FIXME: need to handle writable versus readable types. The problem
 			// is that checkExpression will return the readable type, not the
@@ -494,7 +516,8 @@ public class FlowTypeChecker {
 	 *             If a named type within this statement cannot be resolved
 	 *             within the enclosing project.
 	 */
-	private Environment checkDoWhile(Stmt.DoWhile stmt, Environment environment, EnclosingScope scope) throws ResolveError {
+	private Environment checkDoWhile(Stmt.DoWhile stmt, Environment environment, EnclosingScope scope)
+			throws ResolveError {
 		// Type check loop body
 		environment = checkBlock(stmt.getBody(), environment, scope);
 		// Type check invariants
@@ -547,7 +570,8 @@ public class FlowTypeChecker {
 	 *             If a named type within this statement cannot be resolved
 	 *             within the enclosing project.
 	 */
-	private Environment checkIfElse(Stmt.IfElse stmt, Environment environment, EnclosingScope scope) throws ResolveError {
+	private Environment checkIfElse(Stmt.IfElse stmt, Environment environment, EnclosingScope scope)
+			throws ResolveError {
 		// Check condition and apply variable retypings.
 		Environment trueEnvironment = checkCondition(stmt.getCondition(), true, environment);
 		Environment falseEnvironment = checkCondition(stmt.getCondition(), false, environment);
@@ -599,7 +623,7 @@ public class FlowTypeChecker {
 		} else if (returns.size() > types.size()) {
 			// In this case, a return statement was provided with too many
 			// return values compared with the number declared for the enclosing
-			// method.  Therefore, identify first unnecessary return
+			// method. Therefore, identify first unnecessary return
 			Expr extra = returns.get(types.size()).getFirst();
 			// And, generate syntax error for that
 			syntaxError("too many return values provided", extra);
@@ -680,7 +704,8 @@ public class FlowTypeChecker {
 	 *            this block
 	 * @return
 	 */
-	private Environment checkSwitch(Stmt.Switch stmt, Environment environment, EnclosingScope scope) throws IOException {
+	private Environment checkSwitch(Stmt.Switch stmt, Environment environment, EnclosingScope scope)
+			throws IOException {
 		// Type check the expression being switched upon
 		checkExpression(stmt.getCondition(), environment);
 		// The final environment determines what flow continues after the switch
@@ -1027,8 +1052,9 @@ public class FlowTypeChecker {
 	}
 
 	private Environment checkLogicalIff(Expr.LogicalIff expr, boolean sign, Environment environment) {
-		// FIXME:
-		throw new RuntimeException("implement me");
+		environment = checkCondition(expr.getOperand(0), sign, environment);
+		environment = checkCondition(expr.getOperand(1), sign, environment);
+		return environment;
 	}
 
 	private Environment checkIs(Expr.Is expr, boolean sign, Environment environment) {
@@ -1091,7 +1117,7 @@ public class FlowTypeChecker {
 		checkNonEmpty(stmt.getParameters());
 		// NOTE: We throw away the returned environment from the body. This is
 		// because any type tests within the body are ignored outside.
-		checkCondition(stmt.getBody(),true,env);
+		checkCondition(stmt.getBody(), true, env);
 		return env;
 	}
 
@@ -1160,6 +1186,73 @@ public class FlowTypeChecker {
 		}
 	}
 
+	/**
+	 * Type check a given lval assuming an initial environment. This returns the
+	 * largest type which can be safely assigned to the lval. Observe that this
+	 * type is determined by the declared type of the variable being assigned.
+	 *
+	 * @param expression
+	 * @param environment
+	 * @return
+	 * @throws ResolutionError
+	 */
+	public Type checkLVal(LVal lval, Environment environment) {
+		switch (lval.getOpcode()) {
+		case EXPR_var:
+			return checkVariableLVal((Expr.VariableAccess) lval, environment);
+		case EXPR_arridx:
+			return checkArrayLVal((Expr.ArrayAccess) lval, environment);
+		case EXPR_recfield:
+			return checkRecordLVal((Expr.RecordAccess) lval, environment);
+		case EXPR_deref:
+			return checkDereferenceLVal((Expr.Dereference) lval, environment);
+		default:
+			return internalFailure("unknown lval encountered (" + lval.getClass().getSimpleName() + ")", lval);
+		}
+	}
+
+	public Type checkVariableLVal(Expr.VariableAccess lval, Environment environment) {
+		// At this point, we return the declared type of the variable rather
+		// than the potentially refined type held in the environment. This
+		// is critical as, otherwise, the current refinement would
+		// unnecessarily restrict what we could assign to this variable.
+		return lval.getVariableDeclaration().getType();
+	}
+
+	public Type checkArrayLVal(Expr.ArrayAccess lval, Environment environment) {
+		Expr source = lval.getSource();
+		Expr subscript = lval.getSubscript();
+		//
+		Type sourceT = checkExpression(source, environment);
+		// FIXME: bug here as need writeable array type?
+		Type.Array readableArrayT = checkIsArrayType(sourceT, source);
+		Type subscriptT = checkExpression(subscript, environment);
+		checkIsSubtype(new Type.Int(), subscriptT, subscript);
+		//
+		return readableArrayT.getElement();
+	}
+
+	public Type checkRecordLVal(Expr.RecordAccess lval, Environment environment) {
+		Type src = checkExpression(lval.getSource(), environment);
+		// FIXME: bug here as need writeable recordy type?
+		Type.Record readableRecordT = checkIsRecordType(src, lval.getSource());
+		//
+		Type type = readableRecordT.getField(lval.getField());
+		if (type == null) {
+			return syntaxError("invalid field access", lval.getField());
+		} else {
+			return type;
+		}
+	}
+
+	public Type checkDereferenceLVal(Expr.Dereference lval, Environment environment) {
+		Type operandT = checkExpression(lval.getOperand(), environment);
+		//
+		Type.Reference refT = checkIsReferenceType(operandT, lval.getOperand());
+		//
+		return refT.getElement();
+	}
+
 	// =========================================================================
 	// Expressions
 	// =========================================================================
@@ -1192,6 +1285,8 @@ public class FlowTypeChecker {
 		case EXPR_qualifiedinvoke:
 		case EXPR_invoke:
 			return checkInvoke((Expr.Invoke) expression, environment);
+		case EXPR_indirectinvoke:
+			return checkIndirectInvoke((Expr.IndirectInvoke) expression, environment);
 		default:
 			Type type = checkExpression(expression, environment);
 			return new Tuple<>(type);
@@ -1221,9 +1316,20 @@ public class FlowTypeChecker {
 			Tuple<Type> types = checkInvoke((Expr.Invoke) expression, environment);
 			// Deal with potential for multiple values
 			if (types.size() == 0) {
-				syntaxError("not enough return values provided", expression);
+				syntaxError("no return value", expression);
 			} else if (types.size() > 1) {
-				syntaxError("too many return values provided", expression);
+				syntaxError("too many return values", expression);
+			} else {
+				return types.getOperand(0);
+			}
+		}
+		case EXPR_indirectinvoke: {
+			Tuple<Type> types = checkIndirectInvoke((Expr.IndirectInvoke) expression, environment);
+			// Deal with potential for multiple values
+			if (types.size() == 0) {
+				syntaxError("no return value", expression);
+			} else if (types.size() > 1) {
+				syntaxError("too many return values", expression);
 			} else {
 				return types.getOperand(0);
 			}
@@ -1271,7 +1377,7 @@ public class FlowTypeChecker {
 			return checkRecordAccess((Expr.RecordAccess) expression, environment);
 		case EXPR_recupdt:
 			return checkRecordUpdate((Expr.RecordUpdate) expression, environment);
-			// Array expressions
+		// Array expressions
 		case EXPR_arrlen:
 			return checkArrayLength(environment, (Expr.ArrayLength) expression);
 		case EXPR_arrinit:
@@ -1282,13 +1388,19 @@ public class FlowTypeChecker {
 			return checkArrayAccess((Expr.ArrayAccess) expression, environment);
 		case EXPR_arrupdt:
 			return checkArrayUpdate((Expr.ArrayUpdate) expression, environment);
-			// Reference expressions
+		// Reference expressions
 		case EXPR_deref:
 			return checkDereference((Expr.Dereference) expression, environment);
 		case EXPR_new:
 			return checkNew((Expr.New) expression, environment);
+		case EXPR_lambda:
+		case EXPR_qualifiedlambda:
+			return checkLambdaAccess((Expr.LambdaAccess) expression, environment);
+		case DECL_lambda:
+			return checkLambdaDeclaration((Declaration.Lambda) expression, environment);
 		default:
-			return internalFailure("unknown expression encountered (" + expression.getClass().getSimpleName() + ")", expression);
+			return internalFailure("unknown expression encountered (" + expression.getClass().getSimpleName() + ")",
+					expression);
 		}
 	}
 
@@ -1339,15 +1451,15 @@ public class FlowTypeChecker {
 			decl = typeSystem.resolveExactly(expr.getName(), Declaration.Constant.class);
 			// FIXME: this is broken for cyclic constant declarations; also,
 			// should be updated for RFC0008
-			return checkExpression(decl.getConstantExpr(),env);
+			return checkExpression(decl.getConstantExpr(), env);
 		} catch (ResolutionError e) {
 			return syntaxError(errorMessage(RESOLUTION_ERROR, expr.getName().toString()), expr);
 		}
 	}
 
 	private Type checkCast(Expr.Cast expr, Environment env) {
-		Type rhsT = checkExpression(expr.getCastedExpr(),env);
-		checkIsSubtype(expr.getCastType(),rhsT,expr);
+		Type rhsT = checkExpression(expr.getCastedExpr(), env);
+		checkIsSubtype(expr.getCastType(), rhsT, expr);
 		return expr.getCastType();
 	}
 
@@ -1369,6 +1481,23 @@ public class FlowTypeChecker {
 		// Finally, return the declared returns
 		//
 		return type.getReturns();
+	}
+
+	private Tuple<Type> checkIndirectInvoke(Expr.IndirectInvoke expr, Environment env) {
+		// Determine signature type from source
+		Type type = checkExpression(expr.getSource(), env);
+		Type.Callable sig = checkIsCallableType(type, expr.getSource());
+		// Determine the argument types
+		Tuple<Expr> arguments = expr.getArguments();
+		Tuple<Type> parameters = sig.getParameters();
+		for (int i = 0; i != arguments.size(); ++i) {
+			// Determine argument type
+			Type arg = checkExpression(arguments.getOperand(i), env);
+			// Check argument is subtype of parameter
+			checkIsSubtype(parameters.getOperand(i), arg, arguments.getOperand(i));
+		}
+		//
+		return sig.getReturns();
 	}
 
 	private Type checkComparisonOperator(Expr.Operator expr, Environment environment) {
@@ -1415,8 +1544,8 @@ public class FlowTypeChecker {
 	private Type checkBitwiseShift(Expr.Operator expr, Environment environment) {
 		Type lhsT = checkExpression(expr.getOperand(0), environment);
 		Type rhsT = checkExpression(expr.getOperand(1), environment);
-		checkIsSubtype(Type.Byte,lhsT,expr.getOperand(0));
-		checkIsSubtype(Type.Int,rhsT,expr.getOperand(1));
+		checkIsSubtype(Type.Byte, lhsT, expr.getOperand(0));
+		checkIsSubtype(Type.Int, rhsT, expr.getOperand(1));
 		return Type.Byte;
 	}
 
@@ -1424,17 +1553,12 @@ public class FlowTypeChecker {
 		Type src = checkExpression(expr.getSource(), env);
 		Type.Record effectiveRecord = checkIsRecordType(src, expr.getSource());
 		//
-		Tuple<Declaration.Variable> fields = effectiveRecord.getFields();
-		String actualFieldName = expr.getField().get();
-		for (int i = 0; i != fields.size(); ++i) {
-			Declaration.Variable vd = fields.getOperand(i);
-			String declaredFieldName = vd.getName().get();
-			if (declaredFieldName.equals(actualFieldName)) {
-				return vd.getType();
-			}
+		Type type = effectiveRecord.getField(expr.getField());
+		if (type == null) {
+			return syntaxError("invalid field access", expr.getField());
+		} else {
+			return type;
 		}
-		//
-		return syntaxError("invalid field access", expr.getField());
 	}
 
 	private Type checkRecordUpdate(Expr.RecordUpdate expr, Environment env) {
@@ -1538,6 +1662,80 @@ public class FlowTypeChecker {
 		return new Type.Reference(operandT);
 	}
 
+	private Type checkLambdaAccess(Expr.LambdaAccess expr, Environment env) {
+		//
+		if (!expr.hasSignatureType()) {
+			Tuple<Type> types = expr.getParameterTypes();
+			Declaration.Callable sig;
+			// FIXME: there is a problem here in that we cannot distinguish
+			// between the case where no parameters were supplied and when
+			// exactly zero arguments were supplied.
+			if (types.size() > 0) {
+				// Parameter types have been given, so use them to help resolve
+				// declaration.
+				sig = resolveAsCallable(expr.getName(), expr, types.toArray(Type.class));
+			} else {
+				// No parameters we're given, therefore attempt to resolve
+				// uniquely.
+				sig = resolveAsCallable(expr.getName(), expr);
+			}
+			// Update with inferred signature
+			expr.setSignatureType(expr.getParent().allocate(sig.getSignature()));
+		}
+		//
+		return expr.getSignatureType();
+	}
+
+	private Type checkLambdaDeclaration(Declaration.Lambda expr, Environment env) {
+		Tuple<Declaration.Variable> parameters = expr.getParameters();
+		checkNonEmpty(parameters);
+		Tuple<Type> parameterTypes = parameters.project(2, Type.class);
+		Type result = checkExpression(expr.getBody(), env);
+		// Determine whether or not this is a pure or impure lambda.
+		if (isPure(expr.getBody())) {
+			// This is a pure lambda, hence it has function type.
+			return new Type.Function(parameterTypes, new Tuple<>(result));
+		} else {
+			// This is an impure lambda, hence it has method type.
+			return new Type.Method(parameterTypes, new Tuple<>(result), expr.getCaptures(), expr.getLifetimes());
+		}
+	}
+
+	/**
+	 * Determine whether a given expression calls an impure method, dereferences
+	 * a reference or accesses a static variable. This is done by exploiting the
+	 * uniform nature of syntactic items. Essentially, we just traverse the
+	 * entire tree representing the syntactic item looking for expressions of
+	 * any kind.
+	 *
+	 * @param item
+	 * @return
+	 */
+	private boolean isPure(SyntacticItem item) {
+		// Examine expression to determine whether this expression is impure.
+		if (item instanceof Expr.StaticVariableAccess || item instanceof Expr.Dereference) {
+			return false;
+		} else if (item instanceof Expr.Invoke) {
+			Expr.Invoke e = (Expr.Invoke) item;
+			if (e.getSignatureType() instanceof Type.Method) {
+				// This expression is definitely not pure
+				return false;
+			}
+		} else if (item instanceof Expr.IndirectInvoke) {
+			Expr.IndirectInvoke e = (Expr.IndirectInvoke) item;
+			// FIXME: need to do something here.
+			throw new RuntimeException("implement me");
+		}
+		// Recursively examine any subexpressions. The uniform nature of
+		// syntactic items makes this relatively easy.
+		boolean result = true;
+		//
+		for (int i = 0; i != item.size(); ++i) {
+			result &= isPure(item.getOperand(i));
+		}
+		return result;
+	}
+
 	/**
 	 * Check whether a given type is an array type of some sort.
 	 *
@@ -1559,6 +1757,33 @@ public class FlowTypeChecker {
 
 	/**
 	 * Attempt to determine the declared function or macro to which a given
+	 * invocation refers, without any additional type information. For this to
+	 * succeed, there can be only one candidate for consideration.
+	 *
+	 * @param name
+	 * @param args
+	 * @return
+	 */
+	private Declaration.FunctionOrMethod resolveAsCallable(Name name, SyntacticItem context) {
+		try {
+			// Identify all function or macro declarations which should be
+			// considered
+			List<Declaration.FunctionOrMethod> candidates = typeSystem.resolveAll(name,
+					Declaration.FunctionOrMethod.class);
+			if (candidates.isEmpty()) {
+				return syntaxError(errorMessage(UNKNOWN_FUNCTION_OR_METHOD), context);
+			} else if (candidates.size() > 1) {
+				return syntaxError(errorMessage(UNKNOWN_FUNCTION_OR_METHOD), context);
+			} else {
+				return candidates.get(0);
+			}
+		} catch (ResolutionError e) {
+			return syntaxError(e.getMessage(), context);
+		}
+	}
+
+	/**
+	 * Attempt to determine the declared function or macro to which a given
 	 * invocation refers. To resolve this requires considering the name, along
 	 * with the argument types as well.
 	 *
@@ -1573,7 +1798,7 @@ public class FlowTypeChecker {
 			List<Declaration.Callable> candidates = typeSystem.resolveAll(name, Declaration.Callable.class);
 			// Based on given argument types, select the most precise signature
 			// from the candidates.
-			Declaration.Callable selected = selectCandidateFunctionOrMacroDeclaration(context, candidates, args);
+			Declaration.Callable selected = selectCallableCandidate(name, context, candidates, args);
 			return selected;
 		} catch (ResolutionError e) {
 			return syntaxError(e.getMessage(), context);
@@ -1590,31 +1815,39 @@ public class FlowTypeChecker {
 	 * @param args
 	 * @return
 	 */
-	private Declaration.Callable selectCandidateFunctionOrMacroDeclaration(SyntacticItem context,
-			List<Declaration.Callable> candidates, Type... args) {
+	private Declaration.Callable selectCallableCandidate(Name name, SyntacticItem context, List<Declaration.Callable> candidates,
+			Type... args) {
 		Declaration.Callable best = null;
+		//
 		for (int i = 0; i != candidates.size(); ++i) {
 			Declaration.Callable candidate = candidates.get(i);
 			// Check whether the given candidate is a real candidate or not. A
 			if (isApplicable(candidate, args)) {
 				// Yes, this candidate is applicable.
-				if (best == null) {
+				if(best == null) {
 					// No other candidates are applicable so far. Hence, this
 					// one is automatically promoted to the best seen so far.
 					best = candidate;
-				} else if (isSubtype(candidate, best)) {
-					// This candidate is a subtype of the best seen so far.
-					// Hence, it is now the best seen so far.
-					best = candidate;
-				} else if (isSubtype(best, candidate)) {
-					// This best so far is a subtype of this candidate.
-					// Therefore, we can simply discard this candidate from
-					// consideration.
 				} else {
-					// This is the awkward case. Neither the best so far, nor
-					// the candidate, are subtypes of each other. In this case,
-					// we report an error.
-					return syntaxError("unable to resolve function", context);
+					boolean bsubc = isSubtype(best, candidate);
+					boolean csubb = isSubtype(candidate, best);
+					//
+					// FIXME: this is certainly broken.
+					//
+					if (csubb && !bsubc) {
+						// This candidate is a subtype of the best seen so far.
+						// Hence, it is now the best seen so far.
+						best = candidate;
+					} else if (bsubc && !csubb) {
+						// This best so far is a subtype of this candidate.
+						// Therefore, we can simply discard this candidate from
+						// consideration.
+					} else {
+						// This is the awkward case. Neither the best so far, nor
+						// the candidate, are subtypes of each other. In this case,
+						// we report an error.
+						return syntaxError("unable to resolve function", context);
+					}
 				}
 			}
 		}
@@ -1625,9 +1858,42 @@ public class FlowTypeChecker {
 		} else {
 			// No, there was no winner. In fact, there must have been no
 			// applicable candidates to get here.
-			return syntaxError("unable to resolve function", context);
+			return syntaxError("unable to resolve name (no match for " + name + parameterString(args) + foundCandidatesString(candidates) + ")", context);
 		}
 	}
+
+	private String parameterString(Type... paramTypes) {
+		String paramStr = "(";
+		boolean firstTime = true;
+		if (paramTypes == null) {
+			paramStr += "...";
+		} else {
+			for (Type t : paramTypes) {
+				if (!firstTime) {
+					paramStr += ",";
+				}
+				firstTime = false;
+				paramStr += t;
+			}
+		}
+		return paramStr + ")";
+	}
+
+	private String foundCandidatesString(Collection<Declaration.Callable> candidates) {
+		ArrayList<String> candidateStrings = new ArrayList<>();
+		for (Declaration.Callable c : candidates) {
+			// FIXME: this is very ugly
+			Path.ID mid = ((AbstractWhileyFile)c.getParent()).getEntry().id();
+			candidateStrings.add(mid + ":" + c.getName() + " : " + c.getSignature());
+		}
+		Collections.sort(candidateStrings); // make error message deterministic!
+		StringBuilder msg = new StringBuilder();
+		for (String s : candidateStrings) {
+			msg.append("\n\tfound: ");
+			msg.append(s);
+		}
+		return msg.toString();
+}
 
 	/**
 	 * Determine whether a given function or method declaration is applicable to
@@ -1734,6 +2000,24 @@ public class FlowTypeChecker {
 		}
 	}
 
+	/**
+	 * Check whether a given type is a callable type of some sort.
+	 *
+	 * @param type
+	 * @return
+	 */
+	private Type.Callable checkIsCallableType(Type type, SyntacticItem element) {
+		try {
+			Type.Callable refT = typeSystem.extractReadableLambda(type);
+			if (refT == null) {
+				syntaxError("expected lambda type", element);
+			}
+			return refT;
+		} catch (NameResolver.ResolutionError e) {
+			return syntaxError(e.getMessage(), e.getName(), e);
+		}
+	}
+
 	private void checkOperands(Type type, Expr.Operator expr, Environment environment) {
 		for (int i = 0; i != expr.size(); ++i) {
 			Expr operand = expr.getOperand(i);
@@ -1747,7 +2031,7 @@ public class FlowTypeChecker {
 	private void checkIsSubtype(Type lhs, Type rhs, SyntacticItem element) {
 		try {
 			if (!typeSystem.isRawSubtype(lhs, rhs)) {
-				syntaxError("type " + rhs + " not subtype of " + lhs, element);
+				syntaxError(errorMessage(SUBTYPE_ERROR, lhs, rhs), element);
 			}
 		} catch (NameResolver.ResolutionError e) {
 			syntaxError(e.getMessage(), e.getName(), e);
@@ -1761,7 +2045,7 @@ public class FlowTypeChecker {
 	 * @param decls
 	 */
 	private void checkNonEmpty(Tuple<Declaration.Variable> decls) {
-		for(int i=0;i!=decls.size();++i) {
+		for (int i = 0; i != decls.size(); ++i) {
 			checkNonEmpty(decls.getOperand(i));
 		}
 	}

@@ -18,6 +18,7 @@ import java.util.List;
 import wybs.util.ResolveError;
 import wybs.util.AbstractCompilationUnit.Name;
 import wyc.type.extractors.ReadableArrayExtractor;
+import wyc.type.extractors.ReadableLambdaExtractor;
 import wyc.type.extractors.ReadableRecordExtractor;
 import wyc.type.extractors.ReadableReferenceExtractor;
 import wyc.type.subtyping.CoerciveSubtypeOperator;
@@ -68,6 +69,7 @@ public class TypeSystem {
 	private final TypeExtractor<Type.Record,Object> readableRecordExtractor;
 	private final TypeExtractor<Type.Array,Object> readableArrayExtractor;
 	private final TypeExtractor<Type.Reference,Object> readableReferenceExtractor;
+	private final TypeExtractor<Type.Callable,Object> readableLambdaExtractor;
 //	private final TypeInvariantExtractor typeInvariantExtractor;
 	private final TypeInferer typeInfererence;
 	private final TypeRewriter typeSimplifier;
@@ -78,6 +80,7 @@ public class TypeSystem {
 		this.readableRecordExtractor = new ReadableRecordExtractor(resolver,this);
 		this.readableArrayExtractor = new ReadableArrayExtractor(resolver,this);
 		this.readableReferenceExtractor = new ReadableReferenceExtractor(resolver,this);
+		this.readableLambdaExtractor = new ReadableLambdaExtractor(resolver,this);
 //		this.typeInvariantExtractor = new TypeInvariantExtractor(resolver);
 		this.typeInfererence = null; // new StdTypeInfererence(this);
 		this.typeSimplifier = null; // new StdTypeRewriter();
@@ -198,6 +201,21 @@ public class TypeSystem {
 	 */
 	public Type.Reference extractReadableReference(Type type) throws ResolutionError {
 		return readableReferenceExtractor.extract(type,null);
+	}
+
+	/**
+	 * Responsible for extracting a "readable lambda" from a given type. This is
+	 * relatively straightforward. For example,
+	 * <code>function(int)->(int)</code> is extracted as itself. However,
+	 * <code>function(T1)->(int)|function(T2)->(int)</code> is not currently
+	 * extracted as as <code>function(T1&T2)->(int)</code>.
+	 *
+	 * @param type
+	 * @return
+	 * @throws ResolutionError
+	 */
+	public Type.Callable extractReadableLambda(Type type) throws ResolutionError {
+		return readableLambdaExtractor.extract(type,null);
 	}
 
 	/**

@@ -1,20 +1,21 @@
 
-
-type BTree is (null | {
+type BNode is {
     int item,   // data item
     BTree left, // left subtree
     BTree right // right righttree
-} tree) where
+}
+
+type BTree is (null | BNode tree) where
     // item in left subtree must be below this item
-    (tree != null && tree.left != null ==> tree.left.item < tree.item) &&
+    ((tree is BNode && tree.left is BNode) ==> tree.left.item < tree.item) &&
     // item in right subtree must be above this item
-    (tree != null && tree.right != null ==> tree.right.item > tree.item)
+    ((tree is BNode && !(tree.right is null)) ==> tree.right.item > tree.item)
 
 public function BTree() -> BTree:
     return null
 
 public function add(BTree tree, int item) -> BTree:
-    if tree == null:
+    if tree is null:
         tree = {item: item, left: null, right: null}
     else:
         if item < tree.item:
@@ -24,7 +25,7 @@ public function add(BTree tree, int item) -> BTree:
     return tree
 
 function contains(BTree tree, int item) -> bool:
-    if tree == null:
+    if tree is null:
         return false
     else:
         if tree.item == item:

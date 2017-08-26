@@ -20,6 +20,8 @@ import wybs.util.ResolveError;
 import wyfs.lang.Path;
 import wyil.lang.*;
 import static wyil.lang.WyilFile.*;
+import static wyil.util.interpreter.ConcreteSemantics.RValue;
+import static wyil.util.interpreter.ConcreteSemantics.LValue;
 
 import wyc.type.TypeSystem;
 import wyc.util.AbstractWhileyFile.Declaration;
@@ -56,6 +58,10 @@ public class Interpreter {
 	 */
 	private final NameResolver resolver;
 
+	/**
+	 * Determines the underlying semantics used for this interpreter.
+	 */
+	private final ConcreteSemantics semantics;
 
 	/**
 	 * The debug stream provides an I/O stream through which debug bytecodes can
@@ -68,6 +74,7 @@ public class Interpreter {
 		this.debug = debug;
 		this.typeSystem = new TypeSystem(project);
 		this.resolver = typeSystem.getResolver();
+		this.semantics = new ConcreteSemantics();
 	}
 
 	private enum Status {
@@ -482,8 +489,8 @@ public class Interpreter {
 		// or method declaration. It cannot appear, for example, in a type
 		// declaration. Therefore, the enclosing declaration is a function or
 		// method.
-		Declaration.Callable fmp = scope.getEnclosingScope(FunctionOrMethodScope.class).getDeclaration();
-		Tuple<Declaration.Variable> returns = fmp.getReturns();
+		Declaration.Callable context = scope.getEnclosingScope(FunctionOrMethodScope.class).getContext();
+		Tuple<Declaration.Variable> returns = context.getReturns();
 		RValue[] values = executeExpressions(stmt.getOperand(), frame);
 		for (int i = 0; i != returns.size(); ++i) {
 			frame.putLocal(returns.getOperand(i).getName(), values[i]);
@@ -597,9 +604,6 @@ public class Interpreter {
 			case WyilFile.EXPR_qualifiedinvoke:
 				val = executeInvoke((Expr.Invoke) expr, frame)[0];
 				break;
-			case WyilFile.EXPR_lambdainit:
-				val = executeLambda((Expr.LambdaInitialiser) expr, frame);
-				break;
 			case WyilFile.EXPR_var:
 				val = executeVariableAccess((Expr.VariableAccess) expr, frame);
 				break;
@@ -667,8 +671,16 @@ public class Interpreter {
 				break;
 			case WyilFile.EXPR_new:
 				val = executeNew((Expr.New) expr, frame);
+				break;
 			case WyilFile.EXPR_deref:
 				val = executeDereference((Expr.Dereference) expr, frame);
+				break;
+			case WyilFile.EXPR_qualifiedlambda:
+			case WyilFile.EXPR_lambda:
+				val = executeLambdaConstant((Expr.LambdaAccess) expr, frame);
+				break;
+			case WyilFile.DECL_lambda:
+				val = executeLambdaDeclaration((Declaration.Lambda) expr, frame);
 				break;
 			default:
 				return deadCode(expr);
@@ -706,11 +718,11 @@ public class Interpreter {
 		}
 		case ITEM_byte: {
 			Value.Byte b = (Value.Byte) v;
-			return RValue.Byte(b.get());
+			return semantics.Byte(b.get());
 		}
 		case ITEM_int: {
 			Value.Int i = (Value.Int) v;
-			return RValue.Int(i.get());
+			return semantics.Int(i.get());
 		}
 		case ITEM_utf8: {
 			Value.UTF8 s = (Value.UTF8) v;
@@ -719,9 +731,9 @@ public class Interpreter {
 			for (int i = 0; i != elements.length; ++i) {
 				// FIXME: something tells me this is wrong for signed byte
 				// values?
-				elements[i] = RValue.Int(BigInteger.valueOf(bytes[i]));
+				elements[i] = semantics.Int(BigInteger.valueOf(bytes[i]));
 			}
-			return RValue.Array(elements);
+			return semantics.Array(elements);
 		}
 		default:
 			throw new RuntimeException("unknown value encountered (" + expr + ")");
@@ -752,9 +764,9 @@ public class Interpreter {
 		for (int i = 0; i != expr.size(); ++i) {
 			Pair<Identifier, Expr> field = expr.getOperand(i);
 			RValue value = executeExpression(ANY_T, field.getSecond(), frame);
-			values[i] = RValue.Field(field.getFirst(), value);
+			values[i] = semantics.Field(field.getFirst(), value);
 		}
-		return RValue.Record(values);
+		return semantics.Record(values);
 	}
 
 	private RValue executeQuantifier(Expr.Quantifier expr, CallStack frame) {
@@ -795,14 +807,6 @@ public class Interpreter {
 			}
 			return true;
 		}
-	}
-
-	private RValue executeLambda(Expr.LambdaInitialiser expr, CallStack frame) {
-		// Clone the frame at this point, in order that changes seen after this
-		// bytecode is executed are not propagated into the lambda itself.
-//		frame = Arrays.copyOf(frame, frame.length);
-//		return new ConstantLambda(expr, frame);
-		throw new RuntimeException("Need to implement lambdas!!");
 	}
 
 	/**
@@ -975,27 +979,30 @@ public class Interpreter {
 			RValue element = executeExpression(ANY_T, expr.getOperand(0), frame);
 			RValue.Int count = executeExpression(INT_T, expr.getOperand(1), frame);
 			int n = count.intValue();
+			if(n < 0) {
+				throw new AssertionError("negative array length");
+			}
 			RValue[] values = new RValue[n];
 			for (int i = 0; i != n; ++i) {
 				values[i] = element;
 			}
-			return RValue.Array(values);
+			return semantics.Array(values);
 		}
 		case WyilFile.EXPR_arrinit: {
 			RValue[] elements = new RValue[expr.size()];
 			for (int i = 0; i != elements.length; ++i) {
 				elements[i] = executeExpression(ANY_T, expr.getOperand(i), frame);
 			}
-			return RValue.Array(elements);
+			return semantics.Array(elements);
 		}
 		case WyilFile.EXPR_arrrange: {
 			int start = executeExpression(INT_T, expr.getOperand(0), frame).intValue();
 			int end = executeExpression(INT_T, expr.getOperand(1), frame).intValue();
 			RValue[] elements = new RValue[end - start];
 			for (int i = start; i < end; ++i) {
-				elements[i] = RValue.Int(BigInteger.valueOf(i));
+				elements[i-start] = semantics.Int(BigInteger.valueOf(i));
 			}
-			return RValue.Array(elements);
+			return semantics.Array(elements);
 		}
 		default:
 			return deadCode(expr);
@@ -1004,14 +1011,38 @@ public class Interpreter {
 
 	public RValue executeNew(Expr.New expr, CallStack frame) {
 		RValue initialiser = executeExpression(ANY_T, expr.getOperand(), frame);
-		RValue.Cell cell = RValue.Cell(initialiser);
-		return RValue.Reference(cell);
+		RValue.Cell cell = semantics.Cell(initialiser);
+		return semantics.Reference(cell);
 	}
 
 	public RValue executeDereference(Expr.Dereference expr, CallStack frame) {
 		RValue.Reference ref = executeExpression(REF_T, expr.getOperand(), frame);
-		return ref.deref();
+		return ref.deref().read();
 	}
+
+	public RValue executeLambdaConstant(Expr.LambdaAccess expr, CallStack frame) throws ResolutionError {
+		try {
+			// Locate the function or method declaration.
+			NameID nid = resolver.resolve(expr.getName());
+			Identifier name = new Identifier(nid.name());
+			Path.Entry<WyilFile> entry = project.get(nid.module(), WyilFile.ContentType);
+			WyilFile wyilFile = entry.read();
+			Declaration.FunctionOrMethod fmp = wyilFile.getDeclaration(name, expr.getSignatureType(), Declaration.FunctionOrMethod.class);
+			// FIXME: this needs a clone of the frame? Otherwise, it's just
+			// executing in the later environment.
+			return semantics.Lambda(fmp, frame.clone(), fmp.getBody());
+		} catch (IOException e) {
+			throw new RuntimeException(e.getMessage(), e);
+		}
+	}
+
+
+	private RValue executeLambdaDeclaration(Declaration.Lambda expr, CallStack frame) {
+		// FIXME: this needs a clone of the frame? Otherwise, it's just
+		// executing in the later environment.
+		return semantics.Lambda(expr, frame.clone(), expr.getBody());
+	}
+
 	// =============================================================
 	// Multiple expressions
 	// =============================================================
@@ -1062,7 +1093,7 @@ public class Interpreter {
 			case WyilFile.EXPR_const:
 			case WyilFile.EXPR_cast:
 			case WyilFile.EXPR_recfield:
-			case WyilFile.EXPR_lambdainit:
+			case WyilFile.DECL_lambda:
 			case WyilFile.EXPR_exists:
 			case WyilFile.EXPR_forall:
 			default:
@@ -1091,33 +1122,24 @@ public class Interpreter {
 	 * @return
 	 */
 	private RValue[] executeIndirectInvoke(Expr.IndirectInvoke expr, CallStack frame) {
-
-		// FIXME: This is implementation is *ugly* --- can we do better than
-		// this? One approach is to register an anonymous function so that we
-		// can reuse executeAllWithin in both bases. This is hard to setup
-		// though.
-		Object operand = executeExpression(ANY_T, expr.getSource(),frame);
-		// Check that we have a function reference
-//		if(operand instanceof Constant.FunctionOrMethod) {
-//			Constant.FunctionOrMethod cl = checkType(operand, src, Constant.FunctionOrMethod.class);
-//			Constant[] arguments = executeExpressions(expr.getOperandGroup(ARGUMENTS),frame);
-//			return execute(cl.name(),cl.type(),arguments);
-//		} else {
-//			ConstantLambda cl = checkType(operand, src, ConstantLambda.class);
-//			// Yes we do; now construct the arguments. This requires merging the
-//			// constant arguments provided in the lambda itself along with those
-//			// operands provided for the "holes".
-//			Constant[] lambdaFrame = Arrays.copyOf(cl.frame, cl.frame.length);
-//			int[] parameters = cl.lambda.getBytecode().getOperandGroup(PARAMETERS);
-//			Constant[] arguments = executeExpressions(expr.getOperandGroup(ARGUMENTS),frame);
-//			for(int i=0;i!=parameters.length;++i) {
-//				lambdaFrame[parameters[i]] = arguments[i];
-//			}
-//			// Make the actual call. This may return multiple values since it is
-//			// a function/method invocation.
-//			return executeMultiReturnExpression(cl.lambda.getOperand(BODY), lambdaFrame);
-//		}
-		throw new RuntimeException("Need support for lambdas");
+		RValue.Lambda src = executeExpression(LAMBDA_T, expr.getSource(),frame);
+		RValue[] arguments = executeExpressions(expr.getArguments(), frame);
+		// Here we have to use the enclosing frame when the lambda was created.
+		// The reason for this is that the lambda may try to access enclosing
+		// variables in the scope it was created.
+		frame = src.getFrame();
+		extractParameters(frame,arguments,src.getContext());
+		//
+		// Execute the method or function body
+		Stmt body = src.getBody();
+		if(body instanceof Stmt.Block) {
+			executeBlock((Stmt.Block) body, frame, new FunctionOrMethodScope(src.getContext()));
+			// Extra the return values
+			return packReturns(frame,src.getContext());
+		} else {
+			RValue retval = executeExpression(ANY_T,(Expr) body, frame);
+			return new RValue[]{retval};
+		}
 	}
 
 	/**
@@ -1279,6 +1301,7 @@ public class Interpreter {
 	private static final Class<RValue.Reference> REF_T = RValue.Reference.class;
 	private static final Class<RValue.Array> ARRAY_T = RValue.Array.class;
 	private static final Class<RValue.Record> RECORD_T = RValue.Record.class;
+	private static final Class<RValue.Lambda> LAMBDA_T = RValue.Lambda.class;
 
 	public static class CallStack {
 		private Declaration.Callable context;
@@ -1314,6 +1337,13 @@ public class Interpreter {
 
 		public CallStack enter(Declaration.Callable context) {
 			return new CallStack(this, context);
+		}
+
+		@Override
+		public CallStack clone() {
+			CallStack frame = new CallStack(this, this.context);
+			frame.locals.putAll(locals);
+			return frame;
 		}
 	}
 
@@ -1361,15 +1391,15 @@ public class Interpreter {
 	 *
 	 */
 	private static class FunctionOrMethodScope extends EnclosingScope {
-		private final Declaration.FunctionOrMethod declaration;
+		private final Declaration.Callable context;;
 
-		public FunctionOrMethodScope(Declaration.FunctionOrMethod declaration) {
+		public FunctionOrMethodScope(Declaration.Callable context) {
 			super(null);
-			this.declaration = declaration;
+			this.context = context;
 		}
 
-		public Declaration.FunctionOrMethod getDeclaration() {
-			return declaration;
+		public Declaration.Callable getContext() {
+			return context;
 		}
 	}
 

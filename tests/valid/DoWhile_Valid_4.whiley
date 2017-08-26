@@ -10,15 +10,15 @@ function dist(Link list) -> Leaf:
     LinkedList iter = list
     int distance = 0
     do:
-        iter = iter.next
+        if iter is Link:
+            iter = iter.next
         distance = distance + 1
     while iter is Link
     //
     return iter + distance
 
 public export method test() :
-    LinkedList list = 123
-    list = {next: list}
+    Link list = {next: 123}
     list = {next: list}
     assume dist(list) == 125
     list = {next: list}

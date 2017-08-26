@@ -16,7 +16,7 @@ package wyc.type.extractors;
 import static wyc.lang.WhileyFile.Type;
 import wybs.lang.NameResolver;
 import wyc.type.TypeSystem;
-import wyc.type.util.AbstractTypeExtractor;;
+import wyc.type.util.AbstractTypeExtractor;
 
 /**
  * <p>
@@ -24,7 +24,7 @@ import wyc.type.util.AbstractTypeExtractor;;
  * relatively straightforward. For example, <code>&int</code> is extracted as
  * <code>&int</code>. However, <code>(&int)|(&bool)</code> is not extracted as
  * as <code>&(int|bool)</code>. It remains unclear whether this can be expanded
- * to support for flexible readable array types.
+ * to support for flexible readable reference types.
  * </p>
  * <p>
  * Not all types have a readable reference type and, furthermore, care must be
@@ -63,6 +63,10 @@ public class ReadableReferenceExtractor extends AbstractTypeExtractor<Type.Refer
 
 	@Override
 	protected Type.Reference intersect(Type.Reference lhs, Type.Reference rhs) {
-		return null;
+		if(lhs.equals(rhs)) {
+			return lhs;
+		} else {
+			return null;
+		}
 	}
 }

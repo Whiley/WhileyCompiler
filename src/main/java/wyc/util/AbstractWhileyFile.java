@@ -56,14 +56,16 @@ import wyfs.lang.Path;
 public abstract class AbstractWhileyFile<T extends CompilationUnit> extends AbstractCompilationUnit<T> {
 	// DECLARATIONS: 00010000 (16) -- 00011111 (31)
 	public static final int DECL_mask = 0b00010000;
-	public static final int DECL_import = DECL_mask + 0;
-	public static final int DECL_constant = DECL_mask + 1;
-	public static final int DECL_type = DECL_mask + 2;
-	public static final int DECL_function = DECL_mask + 3;
-	public static final int DECL_method = DECL_mask + 4;
-	public static final int DECL_property = DECL_mask + 5;
-	public static final int DECL_variable = DECL_mask + 6;
-	public static final int DECL_variableinitialiser = DECL_mask + 7;
+	public static final int DECL_module = DECL_mask + 0;
+	public static final int DECL_import = DECL_mask + 1;
+	public static final int DECL_constant = DECL_mask + 2;
+	public static final int DECL_type = DECL_mask + 3;
+	public static final int DECL_function = DECL_mask + 4;
+	public static final int DECL_method = DECL_mask + 5;
+	public static final int DECL_property = DECL_mask + 6;
+	public static final int DECL_lambda = DECL_mask + 7;
+	public static final int DECL_variable = DECL_mask + 8;
+	public static final int DECL_variableinitialiser = DECL_mask + 9;
 
 	public static final int MOD_native = DECL_mask + 11;
 	public static final int MOD_export = DECL_mask + 12;
@@ -79,12 +81,11 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 	public static final int TYPE_int = TYPE_mask + 4;
 	public static final int TYPE_nom = TYPE_mask + 5;
 	public static final int TYPE_ref = TYPE_mask + 6;
-	public static final int TYPE_refowned = TYPE_mask + 7;
 	public static final int TYPE_arr = TYPE_mask + 8;
 	public static final int TYPE_rec = TYPE_mask + 9;
 	public static final int TYPE_fun = TYPE_mask + 10;
 	public static final int TYPE_meth = TYPE_mask + 11;
-	public static final int TYPE_macro = TYPE_mask + 12;
+	public static final int TYPE_property = TYPE_mask + 12;
 	public static final int TYPE_inv = TYPE_mask + 13;
 	public static final int TYPE_or = TYPE_mask + 14;
 	public static final int TYPE_and = TYPE_mask + 15;
@@ -153,8 +154,8 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 	// REFERENCES
 	public static final int EXPR_deref = EXPR_mask + 40;
 	public static final int EXPR_new = EXPR_mask + 41;
-	public static final int EXPR_lambdaconst = EXPR_mask + 42;
-	public static final int EXPR_lambdainit = EXPR_mask + 43;
+	public static final int EXPR_qualifiedlambda = EXPR_mask + 42;
+	public static final int EXPR_lambda = EXPR_mask + 43;
 	// RECORDS
 	public static final int EXPR_recfield = EXPR_mask + 48;
 	public static final int EXPR_recupdt = EXPR_mask + 49;
@@ -186,7 +187,11 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 
 	public Tuple<Declaration> getDeclarations() {
 		// The first node is always the declaration root.
-		return (Tuple<Declaration>) getSyntacticItem(size()-1);
+		List<Declaration.Module> modules = getSyntacticItems(Declaration.Module.class);
+		if (modules.size() != 1) {
+			throw new RuntimeException("expecting one module, found " + modules.size());
+		}
+		return modules.get(0).getDeclarations();
 	}
 
 	public <S extends Declaration.Named> S getDeclaration(Identifier name, Type signature, Class<S> kind) {
@@ -208,6 +213,23 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 	// Declarations
 	// ============================================================
 	public static interface Declaration extends CompilationUnit.Declaration {
+
+		public static class Module extends AbstractSyntacticItem implements Declaration {
+
+			public Module(Tuple<Declaration> declarations) {
+				super(DECL_module, declarations);
+			}
+
+			public Tuple<Declaration> getDeclarations() {
+				return (Tuple<Declaration>) getOperand(0);
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				// TODO Auto-generated method stub
+				return new Module((Tuple<Declaration>) operands[0]);
+			}
+		}
 
 		/**
 		 * Represents an import declaration in a Whiley source file, which has
@@ -578,12 +600,17 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 				super(DECL_property, modifiers, name, parameters, new Tuple<Variable>(), invariant);
 			}
 
+			public Property(Tuple<Modifier> modifiers, Identifier name, Tuple<Variable> parameters,
+					Tuple<Variable> returns, Tuple<Expr> invariant) {
+				super(DECL_property, modifiers, name, parameters, returns, invariant);
+			}
+
 			@Override
 			public AbstractWhileyFile.Type.Property getSignature() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
-				Tuple<AbstractWhileyFile.Type> projectedParameters = getParameters().project(0, AbstractWhileyFile.Type.class);
-				Tuple<AbstractWhileyFile.Type> projectedReturns = getReturns().project(0, AbstractWhileyFile.Type.class);
+				Tuple<AbstractWhileyFile.Type> projectedParameters = getParameters().project(2, AbstractWhileyFile.Type.class);
+				Tuple<AbstractWhileyFile.Type> projectedReturns = new Tuple<>(AbstractWhileyFile.Type.Bool);
 				return new AbstractWhileyFile.Type.Property(projectedParameters, projectedReturns);
 			}
 
@@ -596,7 +623,48 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			@Override
 			public Property clone(SyntacticItem[] operands) {
 				return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Variable>) operands[2], (Tuple<Expr>) operands[4]);
+						(Tuple<Variable>) operands[2], (Tuple<Variable>) operands[3], (Tuple<Expr>) operands[4]);
+			}
+		}
+
+
+		public static class Lambda extends Callable implements Expr {
+
+			public Lambda(Tuple<Modifier> modifiers, Identifier name, Tuple<Variable> parameters,
+					Tuple<Variable> returns, Tuple<Identifier> captures, Tuple<Identifier> lifetimes, Expr body) {
+				super(DECL_lambda, modifiers, name, parameters, returns, captures, lifetimes, body);
+			}
+
+			@SuppressWarnings("unchecked")
+			public Tuple<Identifier> getCaptures() {
+				return (Tuple<Identifier>) getOperand(4);
+			}
+
+			@SuppressWarnings("unchecked")
+			public Tuple<Identifier> getLifetimes() {
+				return (Tuple<Identifier>) getOperand(5);
+			}
+
+			public Expr getBody() {
+				return (Expr) getOperand(6);
+			}
+
+			@Override
+			public wyc.util.AbstractWhileyFile.Type.Callable getSignature() {
+				// FIXME: need to determine whether function or method!
+				Tuple<AbstractWhileyFile.Type> projectedParameters = getParameters().project(2,
+						AbstractWhileyFile.Type.class);
+				Tuple<AbstractWhileyFile.Type> projectedReturns = getReturns().project(2,
+						AbstractWhileyFile.Type.class);
+				return new AbstractWhileyFile.Type.Function(projectedParameters, projectedReturns);
+			}
+
+			@SuppressWarnings("unchecked")
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new Lambda((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+						(Tuple<Declaration.Variable>) operands[2], (Tuple<Declaration.Variable>) operands[3],
+						(Tuple<Identifier>) operands[4], (Tuple<Identifier>) operands[5], (Expr) operands[6]);
 			}
 		}
 
@@ -2307,10 +2375,14 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			}
 		}
 
-		public static class LambdaConstant extends AbstractSyntacticItem implements Expr {
+		public static class LambdaAccess extends AbstractSyntacticItem implements Expr {
 
-			public LambdaConstant(Name name, Tuple<Type> parameters) {
-				super(EXPR_lambdaconst, name, parameters);
+			public LambdaAccess(Name name, Tuple<Type> parameters) {
+				super(EXPR_lambda, name, parameters);
+			}
+
+			public LambdaAccess(Name name, Tuple<Type> parameters, Type.Callable signature) {
+				super(EXPR_qualifiedlambda, name, parameters, signature);
 			}
 
 			public Name getName() {
@@ -2322,45 +2394,38 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 				return (Tuple<Type>) getOperand(1);
 			}
 
-			@SuppressWarnings("unchecked")
-			@Override
-			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new LambdaConstant((Name) operands[0], (Tuple<Type>) operands[1]);
-			}
-		}
-
-		public static class LambdaInitialiser extends AbstractSyntacticItem implements Expr {
-
-			public LambdaInitialiser(Tuple<Declaration.Variable> parameters, Tuple<Identifier> captures, Tuple<Identifier> lifetimes, Expr body) {
-				super(EXPR_lambdaconst, parameters, captures, lifetimes, body);
+			public boolean hasSignatureType() {
+				return getOpcode() == EXPR_qualifiedlambda;
 			}
 
-			@SuppressWarnings("unchecked")
-			public Tuple<Declaration.Variable> getParameterTypes() {
-				return (Tuple<Declaration.Variable>) getOperand(0);
+			public Type.Callable getSignatureType() {
+				return (Type.Callable) getOperand(2);
 			}
 
-			@SuppressWarnings("unchecked")
-			public Tuple<Identifier> getCaptures() {
-				return (Tuple<Identifier>) getOperand(1);
-			}
-
-			@SuppressWarnings("unchecked")
-			public Tuple<Identifier> getLifetimes() {
-				return (Tuple<Identifier>) getOperand(2);
-			}
-
-			public Expr getBody() {
-				return (Expr) getOperand(3);
+			public void setSignatureType(Type.Callable type) {
+				if (hasSignatureType()) {
+					throw new IllegalArgumentException("lambda already has signature type");
+				} else {
+					// Change the operands array itself. This is a somewhat less
+					// than ideal option, but it works.
+					operands = Arrays.copyOf(operands, operands.length + 1);
+					operands[2] = type;
+					// Update opcode to reflect new state
+					opcode = EXPR_qualifiedlambda;
+				}
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new LambdaInitialiser((Tuple<Declaration.Variable>) operands[0], (Tuple<Identifier>) operands[1],
-						(Tuple<Identifier>) operands[2], (Expr) operands[3]);
+				if(operands.length == 2) {
+					return new LambdaAccess((Name) operands[0], (Tuple<Type>) operands[1]);
+				} else {
+					return new LambdaAccess((Name) operands[0], (Tuple<Type>) operands[1], (Type.Callable) operands[2]);
+				}
 			}
 		}
+
 
 		// =========================================================================
 		// Array Expressions
@@ -2868,7 +2933,7 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 
 			@Override
 			public String toString() {
-				return "(" + getElement() + ")[]";
+				return braceAsNecessary(getElement()) +"[]";
 			}
 		}
 
@@ -2890,11 +2955,11 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 				super(TYPE_ref, element);
 			}
 			public Reference(Type element, Identifier lifetime) {
-				super(TYPE_refowned, element, lifetime);
+				super(TYPE_ref, element, lifetime);
 			}
 
 			public boolean hasLifetime() {
-				return opcode == TYPE_refowned;
+				return operands.length > 1;
 			}
 
 			public Type getElement() {
@@ -2960,6 +3025,18 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			@SuppressWarnings("unchecked")
 			public Tuple<Declaration.Variable> getFields() {
 				return (Tuple<Declaration.Variable>) getOperand(1);
+			}
+
+			public Type getField(Identifier fieldName) {
+				Tuple<Declaration.Variable> fields = getFields();
+				for (int i = 0; i != fields.size(); ++i) {
+					Declaration.Variable vd = fields.getOperand(i);
+					Identifier declaredFieldName = vd.getName();
+					if (declaredFieldName.equals(fieldName)) {
+						return vd.getType();
+					}
+				}
+				return null;
 			}
 
 			@Override
@@ -3265,11 +3342,11 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 		 */
 		public static class Property extends Callable implements Type {
 			public Property(Tuple<Type> parameters) {
-				super(TYPE_macro, parameters, new Tuple<>(new Type.Bool()));
+				super(TYPE_property, parameters, new Tuple<>(new Type.Bool()));
 			}
 
-			private Property(Tuple<Type> parameters, Tuple<Type> returns) {
-				super(TYPE_macro, parameters, returns);
+			public Property(Tuple<Type> parameters, Tuple<Type> returns) {
+				super(TYPE_property, parameters, returns);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -3375,6 +3452,27 @@ public abstract class AbstractWhileyFile<T extends CompilationUnit> extends Abst
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Export();
 			}
+		}
+	}
+
+	// ==============================================================================
+	//
+	// ==============================================================================
+
+	private static String braceAsNecessary(Type type) {
+		String str = type.toString();
+		if(needsBraces(type)) {
+			return "(" + str + ")";
+		} else {
+			return str;
+		}
+	}
+
+	private static boolean needsBraces(Type type) {
+		if (type instanceof Type.Atom || type instanceof Type.Nominal) {
+			return false;
+		} else {
+			return true;
 		}
 	}
 }

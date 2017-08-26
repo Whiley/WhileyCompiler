@@ -8,6 +8,7 @@ package wyc.builder;
 import static wyc.lang.WhileyFile.*;
 import wyc.lang.WhileyFile;
 import wycc.util.Triple;
+import wyil.lang.WyilFile;
 
 import static wybs.lang.SyntaxError.*;
 import static wyil.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;
@@ -46,9 +47,9 @@ public class DefiniteAssignmentAnalysis {
 	/**
 	 * The whiley source file being checked for definite assignment.
 	 */
-	private final WhileyFile file;
+	private final WyilFile file;
 
-	public DefiniteAssignmentAnalysis(WhileyFile file) {
+	public DefiniteAssignmentAnalysis(WyilFile file) {
 		this.file = file;
 	}
 
@@ -282,9 +283,13 @@ public class DefiniteAssignmentAnalysis {
 		checkExpression(stmt.getCondition(), environment);
 		//
 		ControlFlow left = checkBlock(stmt.getTrueBranch(), environment);
-		ControlFlow right = checkBlock(stmt.getFalseBranch(), environment);
-		// Now, merge all generated control-flow paths together
-		return left.merge(right);
+		if(stmt.hasFalseBranch()) {
+			ControlFlow right = checkBlock(stmt.getFalseBranch(), environment);
+			// Now, merge all generated control-flow paths together
+			return left.merge(right);
+		} else {
+			return new ControlFlow(environment,null);
+		}
 	}
 
 	private ControlFlow checkNamedBlock(Stmt.NamedBlock stmt, DefintelyAssignedSet environment) {
@@ -367,11 +372,7 @@ public class DefiniteAssignmentAnalysis {
 	 */
 	private void checkExpression(Expr expression, DefintelyAssignedSet environment) {
 		try {
-			if(expression instanceof Expr.ArrayInitialiser) {
-				checkArrayInitialiser((Expr.ArrayInitialiser) expression, environment);
-			} else if(expression instanceof Expr.ArrayGenerator) {
-				checkArrayGenerator((Expr.ArrayGenerator) expression, environment);
-			} else if(expression instanceof Expr.Operator) {
+			if(expression instanceof Expr.Operator) {
 				checkOperator((Expr.Operator) expression, environment);
 			} else if(expression instanceof Expr.Cast) {
 				checkCast((Expr.Cast) expression, environment);
@@ -383,16 +384,14 @@ public class DefiniteAssignmentAnalysis {
 				checkDereference((Expr.Dereference) expression, environment);
 			} else if(expression instanceof Expr.RecordAccess) {
 				checkFieldAccess((Expr.RecordAccess) expression, environment);
-			} else if(expression instanceof Expr.LambdaConstant) {
-				checkFunctionOrMethod((Expr.LambdaConstant) expression, environment);
+			} else if(expression instanceof Expr.LambdaAccess) {
+				checkFunctionOrMethod((Expr.LambdaAccess) expression, environment);
 			} else if(expression instanceof Expr.Invoke) {
 				checkFunctionOrMethodCall((Expr.Invoke) expression, environment);
-			} else if(expression instanceof Expr.ArrayAccess) {
-				checkIndexOf((Expr.ArrayAccess) expression, environment);
 			} else if(expression instanceof Expr.IndirectInvoke) {
 				checkIndirectFunctionOrMethodCall((Expr.IndirectInvoke) expression, environment);
-			} else if(expression instanceof Expr.LambdaInitialiser) {
-				checkLambda((Expr.LambdaInitialiser) expression, environment);
+			} else if(expression instanceof Declaration.Lambda) {
+				checkLambda((Declaration.Lambda) expression, environment);
 			} else if(expression instanceof Expr.VariableAccess) {
 				checkLocalVariable((Expr.VariableAccess) expression, environment);
 			} else if(expression instanceof Expr.New) {
@@ -409,17 +408,6 @@ public class DefiniteAssignmentAnalysis {
 		} catch(Throwable t) {
 			throw new InternalFailure("internal failure",file.getEntry(),expression,t);
 		}
-	}
-
-	private void checkArrayInitialiser(Expr.ArrayInitialiser expression, DefintelyAssignedSet environment) {
-		for(int i=0;i!=expression.size();++i) {
-			checkExpression(expression.getOperand(i),environment);
-		}
-	}
-
-	private void checkArrayGenerator(Expr.ArrayGenerator expression, DefintelyAssignedSet environment) {
-		checkExpression(expression.getValue(),environment);
-		checkExpression(expression.getLength(),environment);
 	}
 
 	private void checkOperator(Expr.Operator expression, DefintelyAssignedSet environment) {
@@ -448,7 +436,7 @@ public class DefiniteAssignmentAnalysis {
 		checkExpression(expression.getSource(),environment);
 	}
 
-	private void checkFunctionOrMethod(Expr.LambdaConstant expression, DefintelyAssignedSet environment) {
+	private void checkFunctionOrMethod(Expr.LambdaAccess expression, DefintelyAssignedSet environment) {
 
 	}
 
@@ -459,11 +447,6 @@ public class DefiniteAssignmentAnalysis {
 		return new ControlFlow(environment,null);
 	}
 
-	private void checkIndexOf(Expr.ArrayAccess expression, DefintelyAssignedSet environment) {
-		checkExpression(expression.getSource(),environment);
-		checkExpression(expression.getSubscript(),environment);
-	}
-
 	private ControlFlow checkIndirectFunctionOrMethodCall(Expr.IndirectInvoke expression, DefintelyAssignedSet environment) {
 		checkExpression(expression.getSource(),environment);
 		for(Expr p : expression.getArguments()) {
@@ -472,9 +455,9 @@ public class DefiniteAssignmentAnalysis {
 		return new ControlFlow(environment,null);
 	}
 
-	private void checkLambda(Expr.LambdaInitialiser expression, DefintelyAssignedSet environment) {
+	private void checkLambda(Declaration.Lambda expression, DefintelyAssignedSet environment) {
 		// Add lambda parameters to the set of definitely assigned variables.
-		for(Declaration.Variable p : expression.getParameterTypes()) {
+		for(Declaration.Variable p : expression.getParameters()) {
 			environment = environment.add(p.getName());
 		}
 		// Check body of the lambda

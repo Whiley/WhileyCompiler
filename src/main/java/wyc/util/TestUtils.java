@@ -108,7 +108,7 @@ public class TestUtils {
 		cmd.setWhileydir(whileydir);
 		cmd.setWyaldir(whileydir); //
 		cmd.setVerify(verify);
-		cmd.setVerbose(true);
+		//cmd.setVerbose(true);
 		Compile.Result result = cmd.execute(args);
 		byte[] errBytes = syserr.toByteArray();
 		byte[] outBytes = sysout.toByteArray();

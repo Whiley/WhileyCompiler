@@ -9,5 +9,5 @@ function f(anat x) -> int:
 function f(bnat x) -> int:
     return x
 
-method main():
+public export method test():
     f(1)
