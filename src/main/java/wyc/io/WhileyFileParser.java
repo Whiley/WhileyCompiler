@@ -97,7 +97,7 @@ public class WhileyFileParser {
 		}
 
 		// Finally, construct the new file.
-		Tuple<Declaration> decls = new Tuple<>(Declaration.class,declarations);
+		Tuple<Declaration> decls = new Tuple<>(declarations);
 		Declaration.Module module = new Declaration.Module(decls);
 		file.allocate(module);
 		return file;
@@ -192,7 +192,7 @@ public class WhileyFileParser {
 				break;
 			}
 		}
-		return new Tuple<>(Modifier.class,mods);
+		return new Tuple<>(mods);
 	}
 
 	/**
@@ -337,7 +337,7 @@ public class WhileyFileParser {
 			scope.declareVariable(decl);
 			parameters.add(annotateSourceLocation(decl, start));
 		}
-		return new Tuple<>(Declaration.Variable.class, parameters);
+		return new Tuple<>(parameters);
 	}
 
 	public Tuple<Expr> parseInvariant(EnclosingScope scope, Token.Kind kind) {
@@ -346,7 +346,7 @@ public class WhileyFileParser {
 		while (tryAndMatch(true, kind) != null) {
 			invariant.add(parseLogicalExpression(scope, false));
 		}
-		return new Tuple<>(Expr.class, invariant);
+		return new Tuple<>(invariant);
 	}
 
 	public Tuple<Declaration.Variable> parseOptionalParameters(EnclosingScope scope) {
@@ -1205,7 +1205,7 @@ public class WhileyFileParser {
 				cases.add(parseCaseStatement(caseScope));
 			}
 			checkForDuplicateDefault(cases);
-			return new Tuple<>(Stmt.Case.class,cases);
+			return new Tuple<>(cases);
 		}
 	}
 
@@ -1259,7 +1259,7 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		Stmt.Block stmts = parseBlock(scope, scope.isInLoop());
-		return annotateSourceLocation(new Stmt.Case(new Tuple<>(Expr.class, values), stmts), start);
+		return annotateSourceLocation(new Stmt.Case(new Tuple<>(values), stmts), start);
 	}
 
 	/**
@@ -1332,7 +1332,7 @@ public class WhileyFileParser {
 			// Done
 		}
 
-		return new Tuple<>(LVal.class,elements);
+		return new Tuple<>(elements);
 	}
 
 	private LVal parseLVal(int start, EnclosingScope scope) {
@@ -1458,7 +1458,7 @@ public class WhileyFileParser {
 		while (tryAndMatch(false, Comma) != null) {
 			returns.add(parseExpression(scope, terminated));
 		}
-		return new Tuple<>(Expr.class, returns);
+		return new Tuple<>(returns);
 	}
 
 	/**
@@ -1836,7 +1836,7 @@ public class WhileyFileParser {
 			scope.declareVariable(decl);
 		} while (eventuallyMatch(VerticalBar) == null);
 
-		return new Tuple<>(Declaration.Variable.class, parameters);
+		return new Tuple<>(parameters);
 	}
 
 	/**
@@ -2851,7 +2851,7 @@ public class WhileyFileParser {
 
 			args.add(e);
 		}
-		return new Tuple<>(Expr.class, args);
+		return new Tuple<>(args);
 	}
 
 	/**
@@ -3049,7 +3049,7 @@ public class WhileyFileParser {
 				Type type = parseType(scope);
 				tmp.add(type);
 			}
-			parameters = new Tuple<>(Type.class, tmp);
+			parameters = new Tuple<>(tmp);
 		} else {
 			// No, parameters are not supplied.
 			parameters = new Tuple<>();
@@ -3509,7 +3509,7 @@ public class WhileyFileParser {
 			}
 		}
 		// Done
-		Tuple<Declaration.Variable> fields = new Tuple<>(Declaration.Variable.class,types);
+		Tuple<Declaration.Variable> fields = new Tuple<>(types);
 		return annotateSourceLocation(new Type.Record(isOpen, fields), start);
 	}
 
@@ -3685,7 +3685,7 @@ public class WhileyFileParser {
 			paramTypes.add(parseType(scope));
 		}
 
-		return new Tuple<>(Type.class,paramTypes);
+		return new Tuple<>(paramTypes);
 	}
 
 	private Name parseName(EnclosingScope scope) {
@@ -3760,7 +3760,7 @@ public class WhileyFileParser {
 			// termindated by '>'
 			lifetimeArgs.add(parseLifetime(scope, true));
 		}
-		return new Tuple<>(Identifier.class,lifetimeArgs);
+		return new Tuple<>(lifetimeArgs);
 	}
 
 
@@ -3779,7 +3779,7 @@ public class WhileyFileParser {
 			lifetimeParameters.add(lifetimeIdentifier);
 		} while (tryAndMatch(true, Comma) != null);
 		match(RightAngle);
-		return new Tuple<>(Identifier.class, lifetimeParameters);
+		return new Tuple<>(lifetimeParameters);
 	}
 
 	/**
@@ -3794,7 +3794,7 @@ public class WhileyFileParser {
 				captures.add(parseLifetime(scope, true));
 			} while (tryAndMatch(true, Comma) != null);
 			match(RightSquare);
-			return new Tuple<>(Identifier.class,captures);
+			return new Tuple<>(captures);
 		}
 		return new Tuple<>();
 	}

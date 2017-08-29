@@ -1,4 +1,4 @@
-package wyil.util.interpreter;
+package wyc.interpreter;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -7,12 +7,9 @@ import java.util.Comparator;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wyc.interpreter.Interpreter.CallStack;
 import wyc.type.TypeSystem;
-import wyc.util.AbstractWhileyFile.Declaration;
-import wyc.util.AbstractWhileyFile.Expr;
-import wyc.util.AbstractWhileyFile.Stmt;
-import wyc.util.AbstractWhileyFile.Type;
-import wyil.util.interpreter.Interpreter.CallStack;
+import static wyc.lang.WhileyFile.*;
 
 public class ConcreteSemantics implements AbstractSemantics {
 

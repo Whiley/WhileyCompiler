@@ -15,7 +15,6 @@ package wyc.type;
 
 import java.util.List;
 
-import wybs.util.ResolveError;
 import wybs.util.AbstractCompilationUnit.Name;
 import wyc.type.extractors.ReadableArrayExtractor;
 import wyc.type.extractors.ReadableLambdaExtractor;
@@ -109,7 +108,7 @@ public class TypeSystem {
 	 * @return
 	 * @throws ResolveError
 	 */
-	public boolean isContractive(Type type) throws ResolveError {
+	public boolean isContractive(Type type) {
 		// FIXME: implement contractivity checking
 		return false;
 	}

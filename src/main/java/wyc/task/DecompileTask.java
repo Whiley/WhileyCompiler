@@ -4,7 +4,7 @@
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
 
-package wyc.builder;
+package wyc.task;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -12,12 +12,12 @@ import java.util.Collections;
 import java.util.Set;
 
 import wybs.lang.Build;
+import wyc.io.WhileyFilePrinter;
+import wyc.lang.WhileyFile;
 import wycc.util.Pair;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
 import wyfs.lang.Path.Root;
-import wyil.io.WyilFilePrinter;
-import wyil.lang.WyilFile;
 
 /**
  * Responsible for decompiling WyIL files into a human readable form.
@@ -48,10 +48,10 @@ public final class DecompileTask implements Build.Task {
 
 		for (Pair<Path.Entry<?>,Path.Root> p : delta) {
 			Path.Entry<?> src = p.first();
-			if (src.contentType() == WyilFile.ContentType) {
-				Path.Entry<WyilFile> e = (Path.Entry<WyilFile>) src;
-				WyilFile wf = e.read(); // force file to be parsed
-				new WyilFilePrinter(System.out).apply(wf);
+			if (src.contentType() == WhileyFile.BinaryContentType) {
+				Path.Entry<WhileyFile> e = (Path.Entry<WhileyFile>) src;
+				WhileyFile wf = e.read(); // force file to be parsed
+				new WhileyFilePrinter(System.out).apply(wf);
 			}
 		}
 

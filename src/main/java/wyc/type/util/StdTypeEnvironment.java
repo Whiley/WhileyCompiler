@@ -5,12 +5,6 @@ import java.util.Map;
 import java.util.Set;
 
 import wyc.type.TypeInferer.Environment;
-import wyc.util.AbstractWhileyFile;
-import wyc.util.AbstractWhileyFile.Declaration;
-import wyc.util.AbstractWhileyFile.Type;
-import wyc.util.AbstractWhileyFile.Declaration.Variable;
-import wyc.util.AbstractWhileyFile.Type.Intersection;
-
 import static wyc.lang.WhileyFile.*;
 
 /**

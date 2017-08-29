@@ -4,19 +4,18 @@
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
 
-package wyil.checks;
+package wyc.stage;
 
 import java.util.*;
 
 import wybs.lang.Build;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticItem;
-import wybs.util.ResolveError;
 import wybs.util.AbstractCompilationUnit.Tuple;
+import wyc.lang.WhileyFile;
 import wyc.type.TypeSystem;
 import wycc.util.Pair;
-import wyil.lang.WyilFile;
-import static wyil.lang.WyilFile.*;
+import static wyc.lang.WhileyFile.*;
 
 /**
  * <p>
@@ -55,8 +54,8 @@ import static wyil.lang.WyilFile.*;
  *
  * @author David J. Pearce
  */
-public class CoercionCheck implements Build.Stage<WyilFile> {
-	private WyilFile file;
+public class CoercionCheck implements Build.Stage<WhileyFile> {
+	private WhileyFile file;
 	private final TypeSystem typeSystem;
 
 	public CoercionCheck(Build.Task builder) {
@@ -64,7 +63,7 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 	}
 
 	@Override
-	public void apply(WyilFile module) {
+	public void apply(WhileyFile module) {
 		this.file = module;
 
 		// Examine all entries in this block looking for a conversion bytecode
@@ -97,7 +96,7 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 	 *             If a named type within this condition cannot be resolved
 	 *             within the enclosing project.
 	 */
-	protected void check(Type from, Type to, HashSet<Pair<Type, Type>> visited, SyntacticElement element) throws ResolveError {
+	protected void check(Type from, Type to, HashSet<Pair<Type, Type>> visited, SyntacticElement element)  {
 		Pair<Type,Type> p = new Pair<>(from,to);
 		if(visited.contains(p)) {
 			return; // already checked this pair
@@ -181,7 +180,7 @@ public class CoercionCheck implements Build.Stage<WyilFile> {
 	}
 
 	private void check(Tuple<Type> params1, Tuple<Type> params2, HashSet<Pair<Type, Type>> visited,
-			SyntacticElement element) throws ResolveError {
+			SyntacticElement element) {
 		for (int i = 0; i != params1.size(); ++i) {
 			Type e1 = params1.getOperand(i);
 			Type e2 = params2.getOperand(i);

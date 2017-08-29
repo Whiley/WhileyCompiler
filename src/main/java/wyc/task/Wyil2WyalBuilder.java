@@ -4,17 +4,17 @@
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
 
-package wyil.builders;
+package wyc.task;
 
 import java.io.IOException;
 import java.util.*;
 
 import wyal.lang.WyalFile;
 import wybs.lang.Build;
+import wyc.lang.WhileyFile;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Path;
-import wyil.lang.*;
 
 /**
  * Responsible for converting a Wyil file into a Wycs file which can then be
@@ -67,14 +67,15 @@ public class Wyil2WyalBuilder implements Build.Task {
 		// ========================================================================
 		HashSet<Path.Entry<?>> generatedFiles = new HashSet<>();
 		for (Pair<Path.Entry<?>, Path.Root> p : delta) {
-			Path.Entry<WyilFile> source = (Path.Entry<WyilFile>) p.first();
+			Path.Entry<WhileyFile> source = (Path.Entry<WhileyFile>) p.first();
 			Path.Root dst = p.second();
 			Path.Entry<WyalFile> target = (Path.Entry<WyalFile>) dst.create(source.id(), WyalFile.ContentType);
 			graph.registerDerivation(source, target);
 			generatedFiles.add(target);
-			WyalFile contents = new VerificationConditionGenerator(new WyalFile(target),this).translate(source.read());
-			// Write the file into its destination
-			target.write(contents);
+			//WyalFile contents = new VerificationConditionGenerator(new WyalFile(target),this).translate(source.read());
+			//// Write the file into its destination
+			//target.write(contents);
+
 			// Then, flush contents to disk in case we generate an assertion
 			// error later. In principle, this should be unnecessary when
 			// syntax errors are no longer implemented as exceptions.

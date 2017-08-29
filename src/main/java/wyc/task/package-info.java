@@ -4,9 +4,9 @@
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
 
-
 /**
- * Provides core classes for representing WYIL modules and bytecodes.
+ * Provides the classes responsible for actually translating WhileyFiles into WyilFiles.
+ *
  * @author David J. Pearce
  */
-package wyil.lang;
+package wyc.task;

@@ -4,7 +4,7 @@
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
 
-package wyc.commands;
+package wyc.command;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,8 +19,10 @@ import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
 import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
-import wyc.builder.CompileTask;
+import wyc.command.Compile;
 import wyc.lang.WhileyFile;
+import wyc.task.CompileTask;
+import wyc.task.Wyil2WyalBuilder;
 import wyc.util.AbstractProjectCommand;
 import wycc.lang.Feature.ConfigurationError;
 import wycc.util.ArrayUtils;
@@ -31,8 +33,6 @@ import wyal.util.SmallWorldDomain;
 import wyal.util.WyalFileResolver;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyil.builders.Wyil2WyalBuilder;
-import wyil.lang.WyilFile;
 import wytp.provers.AutomatedTheoremProver;
 import wytp.types.extractors.TypeInvariantExtractor;
 
@@ -110,14 +110,14 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	 * Identifies which wyil source files should be considered for
 	 * compilation. By default, all files reachable from srcdir are considered.
 	 */
-	protected Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
+	protected Content.Filter<WhileyFile> wyilIncludes = Content.filter("**", WhileyFile.BinaryContentType);
 
 	/**
 	 * Identifies which wyil sources files should not be considered for
 	 * compilation. This overrides any identified by <code>whileyIncludes</code>
 	 * . By default, no files files reachable from srcdir are excluded.
 	 */
-	protected Content.Filter<WyilFile> wyilExcludes = null;
+	protected Content.Filter<WhileyFile> wyilExcludes = null;
 
 	/**
 	 * Construct a new instance of this command.
@@ -384,8 +384,8 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 	 */
 	protected void addVerificationBuildRules(StdProject project) {
 		// Configure build rules for verification (if applicable)
-		Content.Filter<WyilFile> wyilIncludes = Content.filter("**", WyilFile.ContentType);
-		Content.Filter<WyilFile> wyilExcludes = null;
+		Content.Filter<WhileyFile> wyilIncludes = Content.filter("**", WhileyFile.BinaryContentType);
+		Content.Filter<WhileyFile> wyilExcludes = null;
 		Content.Filter<WyalFile> wyalIncludes = Content.filter("**", WyalFile.ContentType);
 		Content.Filter<WyalFile> wyalExcludes = null;
 		// Rule for compiling WyIL to WyAL
@@ -429,8 +429,7 @@ public class Compile extends AbstractProjectCommand<Compile.Result> {
 			// Note, whileyDir can be null if e.g. compiling wyil -> wyjc
 			return new ArrayList();
 		} else {
-			return getModifiedSourceFiles(whileydir, whileyIncludes, wyildir,
-					WyilFile.ContentType);
+			return getModifiedSourceFiles(whileydir, whileyIncludes, wyildir, WhileyFile.BinaryContentType);
 		}
 	}
 

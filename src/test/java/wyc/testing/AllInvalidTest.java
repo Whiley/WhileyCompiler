@@ -20,7 +20,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import wyc.commands.Compile;
+import wyc.command.Compile;
 import wyc.util.TestUtils;
 import wycc.util.Pair;
 import wyfs.util.Trie;

@@ -1,13 +1,12 @@
-package wyil.util.interpreter;
-
-import static wyil.lang.WyilFile.*;
+package wyc.interpreter;
 
 import java.math.BigInteger;
 
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
-import wyc.util.AbstractWhileyFile.Declaration;
-import wyc.util.AbstractWhileyFile.Stmt;
+import wyc.lang.WhileyFile.Declaration;
+import wyc.lang.WhileyFile.Stmt;
+import wyc.lang.WhileyFile.Type;
 
 /**
  * Provides a generic notion of data types for use within the interpreter. Each

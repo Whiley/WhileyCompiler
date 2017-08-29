@@ -13,7 +13,7 @@
 // limitations under the License.
 package wyc.type.extractors;
 
-import static wyil.lang.WyilFile.Type;
+import static wyc.lang.WhileyFile.Type;
 import wybs.lang.NameResolver;
 import wyc.type.TypeSystem;
 import wyc.type.util.AbstractTypeExtractor;

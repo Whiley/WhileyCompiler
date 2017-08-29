@@ -17,8 +17,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import wyil.lang.WyilFile;
-import wyc.util.AbstractWhileyFile.Declaration.Named;
+import wyc.lang.WhileyFile;
+import wyc.lang.WhileyFile.Declaration.Named;
 import wybs.lang.CompilationUnit.Name;
 import wybs.lang.CompilationUnit.Identifier;
 import wybs.lang.CompilationUnit.Declaration;
@@ -33,10 +33,10 @@ import wyfs.lang.Path;
 import wyfs.util.Trie;
 
 /**
- * Responsible for resolving a name which occurs at some position in a WyilFile.
+ * Responsible for resolving a name which occurs at some position in a WhileyFile.
  * This takes into account the context and, if necessary, will traverse
  * important statements to resolve the query. For example, consider a
- * WyilFile entitled "file":
+ * WhileyFile entitled "file":
  *
  * <pre>
  * import wyal.lang.*
@@ -69,7 +69,7 @@ public final class WyilFileResolver implements NameResolver {
 			Identifier ident = name.getOperand(0);
 			// This name is not fully qualified. Therefore, attempt to resolve
 			// it.
-			WyilFile enclosing = (WyilFile) name.getParent();
+			WhileyFile enclosing = (WhileyFile) name.getHeap();
 			if (localNameLookup(ident.get(), enclosing)) {
 				return new NameID(enclosing.getEntry().id(), ident.get());
 			}
@@ -96,13 +96,13 @@ public final class WyilFileResolver implements NameResolver {
 	public <T extends Declaration> List<T> resolveAll(Name name, Class<T> kind) throws ResolutionError {
 		try {
 			NameID nid = resolve(name);
-			WyilFile enclosing = loadModule(nid,name);
+			WhileyFile enclosing = loadModule(nid,name);
 			ArrayList<T> result = new ArrayList<>();
 			// Look through the enclosing file first!
 			for (int i = 0; i != enclosing.size(); ++i) {
 				SyntacticItem item = enclosing.getSyntacticItem(i);
-				if (item instanceof WyilFile.Declaration.Named) {
-					WyilFile.Declaration.Named nd = (WyilFile.Declaration.Named) item;
+				if (item instanceof WhileyFile.Declaration.Named) {
+					WhileyFile.Declaration.Named nd = (WhileyFile.Declaration.Named) item;
 					if (nd.getName().get().equals(nid.name()) && kind.isInstance(nd)) {
 						result.add((T) nd);
 					}
@@ -120,8 +120,8 @@ public final class WyilFileResolver implements NameResolver {
 		}
 	}
 
-	private WyilFile loadModule(NameID nid, Name name) throws IOException, ResolutionError {
-		WyilFile enclosing = getWyilFile(name.getParent());
+	private WhileyFile loadModule(NameID nid, Name name) throws IOException, ResolutionError {
+		WhileyFile enclosing = getWhileyFile(name.getHeap());
 		if (enclosing.getEntry().id().equals(nid.module())) {
 			// This is a local lookup.
 
@@ -132,7 +132,7 @@ public final class WyilFileResolver implements NameResolver {
 			return enclosing;
 		} else {
 			// This is a non-local lookup.
-			Path.Entry<WyilFile> entry = project.get(nid.module(), WyilFile.ContentType);
+			Path.Entry<WhileyFile> entry = project.get(nid.module(), WhileyFile.ContentType);
 			if (entry != null) {
 				return entry.read();
 			} else {
@@ -156,8 +156,8 @@ public final class WyilFileResolver implements NameResolver {
 		// Look through the enclosing file first!
 		for (int i = 0; i != heap.size(); ++i) {
 			SyntacticItem item = heap.getSyntacticItem(i);
-			if (item instanceof WyilFile.Declaration.Named) {
-				WyilFile.Declaration.Named nd = (WyilFile.Declaration.Named) item;
+			if (item instanceof WhileyFile.Declaration.Named) {
+				WhileyFile.Declaration.Named nd = (WhileyFile.Declaration.Named) item;
 				if (nd.getName().get().equals(name)) {
 					count = count + 1;
 				}
@@ -180,10 +180,10 @@ public final class WyilFileResolver implements NameResolver {
 	 */
 	private NameID nonLocalNameLookup(Name name) throws NameResolver.ResolutionError {
 		try {
-			WyilFile enclosing = (WyilFile) getWyilFile(name.getParent());
-			List<WyilFile.Declaration.Import> imports = getImportsInReverseOrder(enclosing);
+			WhileyFile enclosing = (WhileyFile) getWhileyFile(name.getHeap());
+			List<WhileyFile.Declaration.Import> imports = getImportsInReverseOrder(enclosing);
 			// Check name against import statements
-			for (WyilFile.Declaration.Import imp : imports) {
+			for (WhileyFile.Declaration.Import imp : imports) {
 				NameID nid = matchImport(imp, name);
 				if (nid != null) {
 					return nid;
@@ -191,9 +191,9 @@ public final class WyilFileResolver implements NameResolver {
 			}
 			// Check whether name is fully qualified or not
 			NameID nid = name.toNameID();
-			if (project.exists(nid.module(), WyilFile.ContentType)) {
+			if (project.exists(nid.module(), WhileyFile.ContentType)) {
 				// Yes, this is a fully qualified name so load the module
-				WyilFile module = project.get(nid.module(), WyilFile.ContentType).read();
+				WhileyFile module = project.get(nid.module(), WhileyFile.ContentType).read();
 				// Look inside to see whether a matching item is found
 				if (localNameLookup(nid.name(), module)) {
 					return nid;
@@ -218,19 +218,19 @@ public final class WyilFileResolver implements NameResolver {
 	}
 
 	/**
-	 * Extract the list of imports from the given WyilFile. These are returned
+	 * Extract the list of imports from the given WhileyFile. These are returned
 	 * in reverse order, since that is the order in which they will be examined
 	 * for the given named item.
 	 *
 	 * @param heap
 	 * @return
 	 */
-	private List<WyilFile.Declaration.Import> getImportsInReverseOrder(SyntacticHeap heap) {
-		ArrayList<WyilFile.Declaration.Import> imports = new ArrayList<>();
+	private List<WhileyFile.Declaration.Import> getImportsInReverseOrder(SyntacticHeap heap) {
+		ArrayList<WhileyFile.Declaration.Import> imports = new ArrayList<>();
 		for (int i = heap.size() - 1; i >= 0; --i) {
 			SyntacticElement element = heap.getSyntacticItem(i);
-			if (element instanceof WyilFile.Declaration.Import) {
-				imports.add((WyilFile.Declaration.Import) element);
+			if (element instanceof WhileyFile.Declaration.Import) {
+				imports.add((WhileyFile.Declaration.Import) element);
 			}
 		}
 		return imports;
@@ -248,10 +248,10 @@ public final class WyilFileResolver implements NameResolver {
 	 * @return
 	 * @throws IOException
 	 */
-	private NameID matchImport(WyilFile.Declaration.Import imp, Name name) throws IOException {
+	private NameID matchImport(WhileyFile.Declaration.Import imp, Name name) throws IOException {
 		NameID nid = name.toNameID();
 		//
-		for (Path.Entry<WyilFile> module : expandImport(imp)) {
+		for (Path.Entry<WhileyFile> module : expandImport(imp)) {
 			// Determine whether this concrete module path matches the partial
 			// module path or not.
 			if (matchPartialModulePath(nid.module(), module.id())) {
@@ -308,7 +308,7 @@ public final class WyilFileResolver implements NameResolver {
 	 * @return
 	 * @throws IOException
 	 */
-	private List<Path.Entry<WyilFile>> expandImport(WyilFile.Declaration.Import imp) throws IOException {
+	private List<Path.Entry<WhileyFile>> expandImport(WhileyFile.Declaration.Import imp) throws IOException {
 		Trie filter = Trie.ROOT;
 		for (int i = 0; i != imp.size(); ++i) {
 			Identifier component = imp.getOperand(i);
@@ -318,14 +318,14 @@ public final class WyilFileResolver implements NameResolver {
 				filter = filter.append(component.get());
 			}
 		}
-		return project.get(Content.filter(filter, WyilFile.ContentType));
+		return project.get(Content.filter(filter, WhileyFile.ContentType));
 	}
 
-	public WyilFile getWyilFile(SyntacticHeap heap) {
-		if(heap instanceof WyilFile) {
-			return (WyilFile) heap;
+	public WhileyFile getWhileyFile(SyntacticHeap heap) {
+		if(heap instanceof WhileyFile) {
+			return (WhileyFile) heap;
 		} else {
-			return getWyilFile(heap.getParent());
+			return getWhileyFile(heap.getParent());
 		}
 	}
 }

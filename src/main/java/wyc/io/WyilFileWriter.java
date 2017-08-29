@@ -4,15 +4,12 @@
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
 
-package wyil.io;
+package wyc.io;
 
 import java.io.*;
-import java.math.BigInteger;
 
 import wybs.io.SyntacticHeapWriter;
-import wybs.lang.SyntacticItem;
-import wyfs.io.BinaryOutputStream;
-import wyil.lang.WyilFile;
+import wyc.lang.WhileyFile;
 
 
 /**
@@ -30,7 +27,7 @@ public final class WyilFileWriter extends SyntacticHeapWriter {
 	private static final int MINOR_VERSION = 1;
 
 	public WyilFileWriter(OutputStream output) {
-		super(output, WyilFile.getSchema());
+		super(output, WhileyFile.getSchema());
 	}
 
 	@Override

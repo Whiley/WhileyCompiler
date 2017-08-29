@@ -1,59 +1,10 @@
-package wyil.util;
-
-import java.util.List;
+package wyc.stage;
 
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyc.util.AbstractWhileyFile.Expr;
-import wyc.util.AbstractWhileyFile.Type;
-import wyil.lang.WyilFile;
+import wyc.lang.WhileyFile;
 
-import static wyc.util.AbstractWhileyFile.EXPR_add;
-import static wyc.util.AbstractWhileyFile.EXPR_and;
-import static wyc.util.AbstractWhileyFile.EXPR_arrgen;
-import static wyc.util.AbstractWhileyFile.EXPR_arridx;
-import static wyc.util.AbstractWhileyFile.EXPR_arrinit;
-import static wyc.util.AbstractWhileyFile.EXPR_arrlen;
-import static wyc.util.AbstractWhileyFile.EXPR_arrupdt;
-import static wyc.util.AbstractWhileyFile.EXPR_bitwiseand;
-import static wyc.util.AbstractWhileyFile.EXPR_bitwisenot;
-import static wyc.util.AbstractWhileyFile.EXPR_bitwiseor;
-import static wyc.util.AbstractWhileyFile.EXPR_bitwiseshl;
-import static wyc.util.AbstractWhileyFile.EXPR_bitwiseshr;
-import static wyc.util.AbstractWhileyFile.EXPR_bitwisexor;
-import static wyc.util.AbstractWhileyFile.EXPR_cast;
-import static wyc.util.AbstractWhileyFile.EXPR_const;
-import static wyc.util.AbstractWhileyFile.EXPR_deref;
-import static wyc.util.AbstractWhileyFile.EXPR_div;
-import static wyc.util.AbstractWhileyFile.EXPR_eq;
-import static wyc.util.AbstractWhileyFile.EXPR_exists;
-import static wyc.util.AbstractWhileyFile.EXPR_forall;
-import static wyc.util.AbstractWhileyFile.EXPR_gt;
-import static wyc.util.AbstractWhileyFile.EXPR_gteq;
-import static wyc.util.AbstractWhileyFile.EXPR_iff;
-import static wyc.util.AbstractWhileyFile.EXPR_implies;
-import static wyc.util.AbstractWhileyFile.EXPR_indirectinvoke;
-import static wyc.util.AbstractWhileyFile.EXPR_invoke;
-import static wyc.util.AbstractWhileyFile.EXPR_is;
-import static wyc.util.AbstractWhileyFile.EXPR_lambda;
-import static wyc.util.AbstractWhileyFile.EXPR_lt;
-import static wyc.util.AbstractWhileyFile.EXPR_lteq;
-import static wyc.util.AbstractWhileyFile.EXPR_mul;
-import static wyc.util.AbstractWhileyFile.EXPR_neg;
-import static wyc.util.AbstractWhileyFile.EXPR_neq;
-import static wyc.util.AbstractWhileyFile.EXPR_new;
-import static wyc.util.AbstractWhileyFile.EXPR_not;
-import static wyc.util.AbstractWhileyFile.EXPR_or;
-import static wyc.util.AbstractWhileyFile.EXPR_qualifiedinvoke;
-import static wyc.util.AbstractWhileyFile.EXPR_qualifiedlambda;
-import static wyc.util.AbstractWhileyFile.EXPR_recfield;
-import static wyc.util.AbstractWhileyFile.EXPR_recinit;
-import static wyc.util.AbstractWhileyFile.EXPR_recupdt;
-import static wyc.util.AbstractWhileyFile.EXPR_rem;
-import static wyc.util.AbstractWhileyFile.EXPR_staticvar;
-import static wyc.util.AbstractWhileyFile.EXPR_sub;
-import static wyc.util.AbstractWhileyFile.EXPR_var;
-import static wyil.lang.WyilFile.*;
+import static wyc.lang.WhileyFile.*;
 
 /**
  * <p>
@@ -97,14 +48,14 @@ import static wyil.lang.WyilFile.*;
  * @author David J. Pearce
  *
  */
-public class MoveAnalysis implements Build.Stage<WyilFile> {
+public class MoveAnalysis implements Build.Stage<WhileyFile> {
 	public MoveAnalysis(Build.Task builder) {
 
 	}
 
 
 	@Override
-	public void apply(WyilFile module) {
+	public void apply(WhileyFile module) {
 		for(Declaration d : module.getDeclarations()) {
 			check(d);
 		}
@@ -281,7 +232,7 @@ public class MoveAnalysis implements Build.Stage<WyilFile> {
 		case EXPR_const:
 			checkConstant(consumed, (Expr.Constant) expr);
 			break;
-		case EXPR_var:
+		case EXPR_varcopy:
 			checkVariable(consumed, (Expr.VariableAccess) expr);
 			break;
 		case EXPR_staticvar:

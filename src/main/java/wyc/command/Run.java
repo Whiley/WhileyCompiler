@@ -4,7 +4,7 @@
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
 
-package wyc.commands;
+package wyc.command;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -12,14 +12,15 @@ import java.util.Collections;
 import wybs.lang.Build;
 import wybs.lang.NameID;
 import wybs.util.StdProject;
+import wyc.command.Run;
+import wyc.interpreter.Interpreter;
+import wyc.interpreter.ConcreteSemantics.RValue;
 import wyc.util.AbstractProjectCommand;
 import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 import static wyc.lang.WhileyFile.*;
-import wyil.util.interpreter.Interpreter;
-import wyil.util.interpreter.ConcreteSemantics.RValue;
 
 public class Run extends AbstractProjectCommand<Run.Result> {
 	/**

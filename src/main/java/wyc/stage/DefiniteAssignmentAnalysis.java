@@ -3,16 +3,16 @@
 //
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
-package wyc.builder;
+package wyc.stage;
 
 import static wyc.lang.WhileyFile.*;
+import static wyc.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;
+import static wyc.util.ErrorMessages.errorMessage;
+
 import wyc.lang.WhileyFile;
 import wycc.util.Triple;
-import wyil.lang.WyilFile;
 
 import static wybs.lang.SyntaxError.*;
-import static wyil.util.ErrorMessages.VARIABLE_POSSIBLY_UNITIALISED;
-import static wyil.util.ErrorMessages.errorMessage;
 
 import java.util.HashSet;
 import java.util.List;
@@ -47,9 +47,9 @@ public class DefiniteAssignmentAnalysis {
 	/**
 	 * The whiley source file being checked for definite assignment.
 	 */
-	private final WyilFile file;
+	private final WhileyFile file;
 
-	public DefiniteAssignmentAnalysis(WyilFile file) {
+	public DefiniteAssignmentAnalysis(WhileyFile file) {
 		this.file = file;
 	}
 
@@ -390,6 +390,8 @@ public class DefiniteAssignmentAnalysis {
 				checkFunctionOrMethodCall((Expr.Invoke) expression, environment);
 			} else if(expression instanceof Expr.IndirectInvoke) {
 				checkIndirectFunctionOrMethodCall((Expr.IndirectInvoke) expression, environment);
+			} else if(expression instanceof Expr.Is) {
+				checkIs((Expr.Is) expression, environment);
 			} else if(expression instanceof Declaration.Lambda) {
 				checkLambda((Declaration.Lambda) expression, environment);
 			} else if(expression instanceof Expr.VariableAccess) {
@@ -453,6 +455,10 @@ public class DefiniteAssignmentAnalysis {
 			checkExpression(p,environment);
 		}
 		return new ControlFlow(environment,null);
+	}
+
+	private void checkIs(Expr.Is expression, DefintelyAssignedSet environment) {
+		checkExpression(expression.getTestExpr(),environment);
 	}
 
 	private void checkLambda(Declaration.Lambda expression, DefintelyAssignedSet environment) {

@@ -4,13 +4,12 @@
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
 
-package wyc.builder;
+package wyc.stage;
 
 import static wybs.lang.SyntaxError.InternalFailure;
 import static wybs.util.AbstractCompilationUnit.ITEM_bool;
 import static wybs.util.AbstractCompilationUnit.ITEM_int;
 import static wybs.util.AbstractCompilationUnit.ITEM_null;
-import static wyil.util.ErrorMessages.*;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -27,12 +26,14 @@ import wyc.lang.*;
 import wyc.type.TypeSystem;
 import wyc.type.TypeInferer.Environment;
 import wyc.type.util.StdTypeEnvironment;
-import wyc.util.AbstractWhileyFile;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
-import wyil.lang.WyilFile;
-import static wyil.lang.WyilFile.*;
+import wyc.lang.WhileyFile;
+import wyc.task.CompileTask;
+
+import static wyc.lang.WhileyFile.*;
+import static wyc.util.ErrorMessages.*;
 
 /**
  * checks type information in a <i>flow-sensitive</i> fashion from declared
@@ -116,12 +117,12 @@ import static wyil.lang.WyilFile.*;
  * @author David J. Pearce
  *
  */
-public class FlowTypeChecker {
+public class FlowTypeCheck {
 
 	private final CompileTask builder;
 	private final TypeSystem typeSystem;
 
-	public FlowTypeChecker(CompileTask builder) {
+	public FlowTypeCheck(CompileTask builder) {
 		this.builder = builder;
 		this.typeSystem = builder.getTypeSystem();
 	}
@@ -130,13 +131,13 @@ public class FlowTypeChecker {
 	// WhileyFile(s)
 	// =========================================================================
 
-	public void check(List<WyilFile> files) {
-		for (WyilFile wf : files) {
+	public void check(List<WhileyFile> files) {
+		for (WhileyFile wf : files) {
 			check(wf);
 		}
 	}
 
-	public void check(WyilFile wf) {
+	public void check(WhileyFile wf) {
 		for (Declaration decl : wf.getDeclarations()) {
 			check(decl);
 		}
@@ -167,8 +168,11 @@ public class FlowTypeChecker {
 	 * @throws IOException
 	 */
 	public void check(Declaration.Type decl) {
+		Environment environment = new StdTypeEnvironment();
 		// Check variable declaration is not empty
 		checkNonEmpty(decl.getVariableDeclaration());
+		// Check the type invariant
+		checkConditions(decl.getInvariant(), true, environment);
 	}
 
 	/**
@@ -324,8 +328,6 @@ public class FlowTypeChecker {
 			} else {
 				return internalFailure("unknown statement: " + stmt.getClass().getName(), stmt);
 			}
-		} catch (ResolveError e) {
-			return syntaxError(errorMessage(RESOLUTION_ERROR, e.getMessage()), stmt, e);
 		} catch (SyntaxError e) {
 			throw e;
 		} catch (Throwable e) {
@@ -347,12 +349,8 @@ public class FlowTypeChecker {
 	 *            Determines the type of all variables immediately going into
 	 *            this block
 	 * @return
-	 * @throws ResolveError
-	 *             If a named type within this statement cannot be resolved
-	 *             within the enclosing project.
 	 */
-	private Environment checkAssert(Stmt.Assert stmt, Environment environment, EnclosingScope scope)
-			throws ResolveError {
+	private Environment checkAssert(Stmt.Assert stmt, Environment environment, EnclosingScope scope) {
 		return checkCondition(stmt.getCondition(), true, environment);
 	}
 
@@ -370,12 +368,8 @@ public class FlowTypeChecker {
 	 *            Determines the type of all variables immediately going into
 	 *            this block
 	 * @return
-	 * @throws ResolveError
-	 *             If a named type within this statement cannot be resolved
-	 *             within the enclosing project.
 	 */
-	private Environment checkAssume(Stmt.Assume stmt, Environment environment, EnclosingScope scope)
-			throws ResolveError {
+	private Environment checkAssume(Stmt.Assume stmt, Environment environment, EnclosingScope scope) {
 		return checkCondition(stmt.getCondition(), true, environment);
 	}
 
@@ -407,7 +401,7 @@ public class FlowTypeChecker {
 	 * @return
 	 */
 	private Environment checkVariableDeclaration(Declaration.Variable stmt, Environment environment,
-			EnclosingScope scope) throws IOException, ResolveError {
+			EnclosingScope scope) throws IOException {
 		// Check type of initialiser.
 		if (stmt.hasInitialiser()) {
 			Type type = checkExpression(stmt.getInitialiser(), environment);
@@ -428,7 +422,7 @@ public class FlowTypeChecker {
 	 * @return
 	 */
 	private Environment checkAssign(Stmt.Assign stmt, Environment environment, EnclosingScope scope)
-			throws IOException, ResolveError {
+			throws IOException {
 		Tuple<LVal> lvals = stmt.getLeftHandSide();
 		List<Pair<Expr, Type>> rvals = checkMultiExpressions(stmt.getRightHandSide(), environment);
 		// Check the number of expected values matches the number of values
@@ -495,9 +489,8 @@ public class FlowTypeChecker {
 	 *            Determines the type of all variables immediately going into
 	 *            this block
 	 * @return
-	 * @throws ResolveError
 	 */
-	private Environment checkDebug(Stmt.Debug stmt, Environment environment, EnclosingScope scope) throws ResolveError {
+	private Environment checkDebug(Stmt.Debug stmt, Environment environment, EnclosingScope scope) {
 		Type type = checkExpression(stmt.getCondition(), environment);
 		checkIsSubtype(new Type.Array(Type.Int), type, stmt.getCondition());
 		return environment;
@@ -516,8 +509,7 @@ public class FlowTypeChecker {
 	 *             If a named type within this statement cannot be resolved
 	 *             within the enclosing project.
 	 */
-	private Environment checkDoWhile(Stmt.DoWhile stmt, Environment environment, EnclosingScope scope)
-			throws ResolveError {
+	private Environment checkDoWhile(Stmt.DoWhile stmt, Environment environment, EnclosingScope scope) {
 		// Type check loop body
 		environment = checkBlock(stmt.getBody(), environment, scope);
 		// Type check invariants
@@ -570,8 +562,7 @@ public class FlowTypeChecker {
 	 *             If a named type within this statement cannot be resolved
 	 *             within the enclosing project.
 	 */
-	private Environment checkIfElse(Stmt.IfElse stmt, Environment environment, EnclosingScope scope)
-			throws ResolveError {
+	private Environment checkIfElse(Stmt.IfElse stmt, Environment environment, EnclosingScope scope) {
 		// Check condition and apply variable retypings.
 		Environment trueEnvironment = checkCondition(stmt.getCondition(), true, environment);
 		Environment falseEnvironment = checkCondition(stmt.getCondition(), false, environment);
@@ -606,7 +597,7 @@ public class FlowTypeChecker {
 	 *             within the enclosing project.
 	 */
 	private Environment checkReturn(Stmt.Return stmt, Environment environment, EnclosingScope scope)
-			throws IOException, ResolveError {
+			throws IOException {
 		// Type check the operands for the return statement (if any)
 		List<Pair<Expr, Type>> returns = checkMultiExpressions(stmt.getOperand(), environment);
 		// Determine the set of return types for the enclosing function or
@@ -772,7 +763,7 @@ public class FlowTypeChecker {
 	 *             If a named type within this statement cannot be resolved
 	 *             within the enclosing project.
 	 */
-	private Environment checkWhile(Stmt.While stmt, Environment environment, EnclosingScope scope) throws ResolveError {
+	private Environment checkWhile(Stmt.While stmt, Environment environment, EnclosingScope scope) {
 		// Type loop invariant(s).
 		checkConditions(stmt.getInvariant(), true, environment);
 		// Type condition assuming its true to represent inside a loop
@@ -1198,7 +1189,7 @@ public class FlowTypeChecker {
 	 */
 	public Type checkLVal(LVal lval, Environment environment) {
 		switch (lval.getOpcode()) {
-		case EXPR_var:
+		case EXPR_varcopy:
 			return checkVariableLVal((Expr.VariableAccess) lval, environment);
 		case EXPR_arridx:
 			return checkArrayLVal((Expr.ArrayAccess) lval, environment);
@@ -1305,7 +1296,7 @@ public class FlowTypeChecker {
 		switch (expression.getOpcode()) {
 		case EXPR_const:
 			return checkConstant((Expr.Constant) expression, environment);
-		case EXPR_var:
+		case EXPR_varcopy:
 			return checkVariable((Expr.VariableAccess) expression, environment);
 		case EXPR_staticvar:
 			return checkStaticVariable((Expr.StaticVariableAccess) expression, environment);
@@ -1475,7 +1466,7 @@ public class FlowTypeChecker {
 			// the appropriate signature
 			Declaration.Callable sig = resolveAsCallable(expr.getName(), expr, types);
 			// Update with inferred signature
-			expr.setSignatureType(expr.getParent().allocate(sig.getSignature()));
+			expr.setSignatureType(expr.getHeap().allocate(sig.getSignature()));
 		}
 		Type.Callable type = expr.getSignatureType();
 		// Finally, return the declared returns
@@ -1680,7 +1671,7 @@ public class FlowTypeChecker {
 				sig = resolveAsCallable(expr.getName(), expr);
 			}
 			// Update with inferred signature
-			expr.setSignatureType(expr.getParent().allocate(sig.getSignature()));
+			expr.setSignatureType(expr.getHeap().allocate(sig.getSignature()));
 		}
 		//
 		return expr.getSignatureType();
@@ -1883,7 +1874,7 @@ public class FlowTypeChecker {
 		ArrayList<String> candidateStrings = new ArrayList<>();
 		for (Declaration.Callable c : candidates) {
 			// FIXME: this is very ugly
-			Path.ID mid = ((AbstractWhileyFile)c.getParent()).getEntry().id();
+			Path.ID mid = ((WhileyFile)c.getHeap()).getEntry().id();
 			candidateStrings.add(mid + ":" + c.getName() + " : " + c.getSignature());
 		}
 		Collections.sort(candidateStrings); // make error message deterministic!
@@ -2070,25 +2061,25 @@ public class FlowTypeChecker {
 
 	private <T> T syntaxError(String msg, SyntacticItem e) {
 		// FIXME: this is a kludge
-		CompilationUnit cu = (CompilationUnit) e.getParent();
+		CompilationUnit cu = (CompilationUnit) e.getHeap();
 		throw new SyntaxError(msg, cu.getEntry(), e);
 	}
 
 	private <T> T syntaxError(String msg, SyntacticItem e, Throwable ex) {
 		// FIXME: this is a kludge
-		CompilationUnit cu = (CompilationUnit) e.getParent();
+		CompilationUnit cu = (CompilationUnit) e.getHeap();
 		throw new SyntaxError(msg, cu.getEntry(), e, ex);
 	}
 
 	private <T> T internalFailure(String msg, SyntacticItem e) {
 		// FIXME: this is a kludge
-		CompilationUnit cu = (CompilationUnit) e.getParent();
+		CompilationUnit cu = (CompilationUnit) e.getHeap();
 		throw new InternalFailure(msg, cu.getEntry(), e);
 	}
 
 	private <T> T internalFailure(String msg, SyntacticItem e, Throwable ex) {
 		// FIXME: this is a kludge
-		CompilationUnit cu = (CompilationUnit) e.getParent();
+		CompilationUnit cu = (CompilationUnit) e.getHeap();
 		throw new InternalFailure(msg, cu.getEntry(), e, ex);
 	}
 

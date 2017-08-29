@@ -4,7 +4,7 @@
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
 
-package wyil.util.interpreter;
+package wyc.interpreter;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -16,15 +16,15 @@ import wybs.lang.NameID;
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticElement;
-import wybs.util.ResolveError;
 import wyfs.lang.Path;
-import wyil.lang.*;
-import static wyil.lang.WyilFile.*;
-import static wyil.util.interpreter.ConcreteSemantics.RValue;
-import static wyil.util.interpreter.ConcreteSemantics.LValue;
+
+import static wyc.interpreter.ConcreteSemantics.LValue;
+import static wyc.interpreter.ConcreteSemantics.RValue;
+import static wyc.lang.WhileyFile.*;
 
 import wyc.type.TypeSystem;
-import wyc.util.AbstractWhileyFile.Declaration;
+import wyc.lang.WhileyFile;
+import wyc.lang.WhileyFile.Declaration;
 
 /**
  * <p>
@@ -107,12 +107,15 @@ public class Interpreter {
 		try {
 			// FIXME: NameID needs to be deprecated
 			Identifier name = new Identifier(nid.name());
-			Path.Entry<WyilFile> entry = project.get(nid.module(), WyilFile.ContentType);
+			// NOTE: need to read WyilFile here as, otherwose, it forces a
+			// rereading of the Whiley source file and a loss of all generation
+			// information.
+			Path.Entry<WhileyFile> entry = project.get(nid.module(), WhileyFile.BinaryContentType);
 			if (entry == null) {
 				throw new IllegalArgumentException("no WyIL file found: " + nid.module());
 			}
 			// Second, find the given function or method
-			WyilFile wyilFile = entry.read();
+			WhileyFile wyilFile = entry.read();
 			Declaration.Callable fmp = wyilFile.getDeclaration(name, sig,
 					Declaration.Callable.class);
 			if (fmp == null) {
@@ -219,43 +222,43 @@ public class Interpreter {
 	private Status executeStatement(Stmt stmt, CallStack frame, EnclosingScope scope) {
 		try {
 			switch (stmt.getOpcode()) {
-			case WyilFile.STMT_assert:
+			case WhileyFile.STMT_assert:
 				return executeAssert((Stmt.Assert) stmt, frame, scope);
-			case WyilFile.STMT_assume:
+			case WhileyFile.STMT_assume:
 				return executeAssume((Stmt.Assume) stmt, frame, scope);
-			case WyilFile.STMT_assign:
+			case WhileyFile.STMT_assign:
 				return executeAssign((Stmt.Assign) stmt, frame, scope);
-			case WyilFile.STMT_break:
+			case WhileyFile.STMT_break:
 				return executeBreak((Stmt.Break) stmt, frame, scope);
-			case WyilFile.STMT_continue:
+			case WhileyFile.STMT_continue:
 				return executeContinue((Stmt.Continue) stmt, frame, scope);
-			case WyilFile.STMT_debug:
+			case WhileyFile.STMT_debug:
 				return executeDebug((Stmt.Debug) stmt, frame, scope);
-			case WyilFile.STMT_dowhile:
+			case WhileyFile.STMT_dowhile:
 				return executeDoWhile((Stmt.DoWhile) stmt, frame, scope);
-			case WyilFile.STMT_fail:
+			case WhileyFile.STMT_fail:
 				return executeFail((Stmt.Fail) stmt, frame, scope);
-			case WyilFile.STMT_if:
-			case WyilFile.STMT_ifelse:
+			case WhileyFile.STMT_if:
+			case WhileyFile.STMT_ifelse:
 				return executeIf((Stmt.IfElse) stmt, frame, scope);
-			case WyilFile.EXPR_indirectinvoke:
+			case WhileyFile.EXPR_indirectinvoke:
 				executeIndirectInvoke((Expr.IndirectInvoke) stmt, frame);
 				return Status.NEXT;
-			case WyilFile.EXPR_qualifiedinvoke:
+			case WhileyFile.EXPR_qualifiedinvoke:
 				executeInvoke((Expr.Invoke) stmt, frame);
 				return Status.NEXT;
-			case WyilFile.STMT_namedblock:
+			case WhileyFile.STMT_namedblock:
 				return executeNamedBlock((Stmt.NamedBlock) stmt, frame, scope);
-			case WyilFile.STMT_while:
+			case WhileyFile.STMT_while:
 				return executeWhile((Stmt.While) stmt, frame, scope);
-			case WyilFile.STMT_return:
+			case WhileyFile.STMT_return:
 				return executeReturn((Stmt.Return) stmt, frame, scope);
-			case WyilFile.STMT_skip:
+			case WhileyFile.STMT_skip:
 				return executeSkip((Stmt.Skip) stmt, frame, scope);
-			case WyilFile.STMT_switch:
+			case WhileyFile.STMT_switch:
 				return executeSwitch((Stmt.Switch) stmt, frame, scope);
-			case WyilFile.DECL_variableinitialiser:
-			case WyilFile.DECL_variable:
+			case WhileyFile.DECL_variableinitialiser:
+			case WhileyFile.DECL_variable:
 				return executeVariableDeclaration((Declaration.Variable) stmt, frame);
 			}
 		}
@@ -270,7 +273,7 @@ public class Interpreter {
 
 	private Status executeAssign(Stmt.Assign stmt, CallStack frame, EnclosingScope scope) {
 		// FIXME: handle multi-assignments properly
-		Tuple<WyilFile.LVal> lhs = stmt.getLeftHandSide();
+		Tuple<WhileyFile.LVal> lhs = stmt.getLeftHandSide();
 		RValue[] rhs = executeExpressions(stmt.getRightHandSide(), frame);
 		for (int i = 0; i != lhs.size(); ++i) {
 			LValue lval = constructLVal(lhs.getOperand(i), frame);
@@ -586,100 +589,100 @@ public class Interpreter {
 		try {
 			RValue val;
 			switch (expr.getOpcode()) {
-			case WyilFile.EXPR_const:
+			case WhileyFile.EXPR_const:
 				val = executeConst((Expr.Constant) expr, frame);
 				break;
-			case WyilFile.EXPR_cast:
+			case WhileyFile.EXPR_cast:
 				val = executeConvert((Expr.Cast) expr, frame);
 				break;
-			case WyilFile.EXPR_recinit:
+			case WhileyFile.EXPR_recinit:
 				val = executeRecordInitialiser((Expr.RecordInitialiser) expr, frame);
 				break;
-			case WyilFile.EXPR_recfield:
+			case WhileyFile.EXPR_recfield:
 				val = executeRecordAccess((Expr.RecordAccess) expr, frame);
 				break;
-			case WyilFile.EXPR_indirectinvoke:
+			case WhileyFile.EXPR_indirectinvoke:
 				val = executeIndirectInvoke((Expr.IndirectInvoke) expr, frame)[0];
 				break;
-			case WyilFile.EXPR_qualifiedinvoke:
+			case WhileyFile.EXPR_qualifiedinvoke:
 				val = executeInvoke((Expr.Invoke) expr, frame)[0];
 				break;
-			case WyilFile.EXPR_var:
+			case WhileyFile.EXPR_varcopy:
 				val = executeVariableAccess((Expr.VariableAccess) expr, frame);
 				break;
-			case WyilFile.EXPR_staticvar:
+			case WhileyFile.EXPR_staticvar:
 				val = executeStaticVariableAccess((Expr.StaticVariableAccess) expr, frame);
 				break;
-			case WyilFile.EXPR_is:
+			case WhileyFile.EXPR_is:
 				val = executeIs((Expr.Is) expr, frame);
 				break;
-			case WyilFile.EXPR_not:
+			case WhileyFile.EXPR_not:
 				val = executeLogicalNot((Expr.LogicalNot) expr, frame);
 				break;
-			case WyilFile.EXPR_and:
+			case WhileyFile.EXPR_and:
 				val = executeLogicalAnd((Expr.LogicalAnd) expr, frame);
 				break;
-			case WyilFile.EXPR_or:
+			case WhileyFile.EXPR_or:
 				val = executeLogicalOr((Expr.LogicalOr) expr, frame);
 				break;
-			case WyilFile.EXPR_implies:
+			case WhileyFile.EXPR_implies:
 				val = executeLogicalImplication((Expr.LogicalImplication) expr, frame);
 				break;
-			case WyilFile.EXPR_iff:
+			case WhileyFile.EXPR_iff:
 				val = executeLogicalIff((Expr.LogicalIff) expr, frame);
 				break;
-			case WyilFile.EXPR_exists:
-			case WyilFile.EXPR_forall:
+			case WhileyFile.EXPR_exists:
+			case WhileyFile.EXPR_forall:
 				val = executeQuantifier((Expr.Quantifier) expr, frame);
 				break;
-			case WyilFile.EXPR_eq:
-			case WyilFile.EXPR_neq:
+			case WhileyFile.EXPR_eq:
+			case WhileyFile.EXPR_neq:
 				val = executeEqualityComparator((Expr.Operator) expr, frame);
 				break;
-			case WyilFile.EXPR_neg:
+			case WhileyFile.EXPR_neg:
 				val = executeArithmeticNegation((Expr.Negation) expr, frame);
 				break;
-			case WyilFile.EXPR_add:
-			case WyilFile.EXPR_sub:
-			case WyilFile.EXPR_mul:
-			case WyilFile.EXPR_div:
-			case WyilFile.EXPR_rem:
-			case WyilFile.EXPR_lt:
-			case WyilFile.EXPR_lteq:
-			case WyilFile.EXPR_gt:
-			case WyilFile.EXPR_gteq:
+			case WhileyFile.EXPR_add:
+			case WhileyFile.EXPR_sub:
+			case WhileyFile.EXPR_mul:
+			case WhileyFile.EXPR_div:
+			case WhileyFile.EXPR_rem:
+			case WhileyFile.EXPR_lt:
+			case WhileyFile.EXPR_lteq:
+			case WhileyFile.EXPR_gt:
+			case WhileyFile.EXPR_gteq:
 				val = executeArithmeticOperator((Expr.Operator) expr, frame);
 				break;
-			case WyilFile.EXPR_bitwisenot:
+			case WhileyFile.EXPR_bitwisenot:
 				val = executeBitwiseNot((Expr.BitwiseComplement) expr, frame);
 				break;
-			case WyilFile.EXPR_bitwiseor:
-			case WyilFile.EXPR_bitwisexor:
-			case WyilFile.EXPR_bitwiseand:
+			case WhileyFile.EXPR_bitwiseor:
+			case WhileyFile.EXPR_bitwisexor:
+			case WhileyFile.EXPR_bitwiseand:
 				val = executeBitwiseOperator((Expr.Operator) expr, frame);
 				break;
-			case WyilFile.EXPR_bitwiseshl:
-			case WyilFile.EXPR_bitwiseshr:
+			case WhileyFile.EXPR_bitwiseshl:
+			case WhileyFile.EXPR_bitwiseshr:
 				val = executeBitwiseShift((Expr.Operator) expr, frame);
 				break;
-			case WyilFile.EXPR_arridx:
-			case WyilFile.EXPR_arrgen:
-			case WyilFile.EXPR_arrlen:
-			case WyilFile.EXPR_arrinit:
-			case WyilFile.EXPR_arrrange:
+			case WhileyFile.EXPR_arridx:
+			case WhileyFile.EXPR_arrgen:
+			case WhileyFile.EXPR_arrlen:
+			case WhileyFile.EXPR_arrinit:
+			case WhileyFile.EXPR_arrrange:
 				val = executeArrayOperator((Expr.Operator) expr, frame);
 				break;
-			case WyilFile.EXPR_new:
+			case WhileyFile.EXPR_new:
 				val = executeNew((Expr.New) expr, frame);
 				break;
-			case WyilFile.EXPR_deref:
+			case WhileyFile.EXPR_deref:
 				val = executeDereference((Expr.Dereference) expr, frame);
 				break;
-			case WyilFile.EXPR_qualifiedlambda:
-			case WyilFile.EXPR_lambda:
+			case WhileyFile.EXPR_qualifiedlambda:
+			case WhileyFile.EXPR_lambda:
 				val = executeLambdaConstant((Expr.LambdaAccess) expr, frame);
 				break;
-			case WyilFile.DECL_lambda:
+			case WhileyFile.DECL_lambda:
 				val = executeLambdaDeclaration((Declaration.Lambda) expr, frame);
 				break;
 			default:
@@ -854,23 +857,23 @@ public class Interpreter {
 		RValue.Int lhs = executeExpression(INT_T, expr.getOperand(0), frame);
 		RValue.Int rhs = executeExpression(INT_T, expr.getOperand(1), frame);
 		switch (expr.getOpcode()) {
-		case WyilFile.EXPR_add:
+		case WhileyFile.EXPR_add:
 			return lhs.add(rhs);
-		case WyilFile.EXPR_sub:
+		case WhileyFile.EXPR_sub:
 			return lhs.subtract(rhs);
-		case WyilFile.EXPR_mul:
+		case WhileyFile.EXPR_mul:
 			return lhs.multiply(rhs);
-		case WyilFile.EXPR_div:
+		case WhileyFile.EXPR_div:
 			return lhs.divide(rhs);
-		case WyilFile.EXPR_rem:
+		case WhileyFile.EXPR_rem:
 			return lhs.remainder(rhs);
-		case WyilFile.EXPR_lt:
+		case WhileyFile.EXPR_lt:
 			return lhs.lessThan(rhs);
-		case WyilFile.EXPR_lteq:
+		case WhileyFile.EXPR_lteq:
 			return lhs.lessThanOrEqual(rhs);
-		case WyilFile.EXPR_gt:
+		case WhileyFile.EXPR_gt:
 			return rhs.lessThan(lhs);
-		case WyilFile.EXPR_gteq:
+		case WhileyFile.EXPR_gteq:
 			return rhs.lessThanOrEqual(lhs);
 		default:
 			return deadCode(expr);
@@ -881,9 +884,9 @@ public class Interpreter {
 		RValue lhs = executeExpression(ANY_T, expr.getOperand(0), frame);
 		RValue rhs = executeExpression(ANY_T, expr.getOperand(1), frame);
 		switch (expr.getOpcode()) {
-		case WyilFile.EXPR_eq:
+		case WhileyFile.EXPR_eq:
 			return lhs.equal(rhs);
-		case WyilFile.EXPR_neq:
+		case WhileyFile.EXPR_neq:
 			return lhs.notEqual(rhs);
 		default:
 			return deadCode(expr);
@@ -941,11 +944,11 @@ public class Interpreter {
 		RValue.Byte lhs = executeExpression(BYTE_T, expr.getOperand(0), frame);
 		RValue.Byte rhs = executeExpression(BYTE_T, expr.getOperand(1), frame);
 		switch (expr.getOpcode()) {
-		case WyilFile.EXPR_bitwiseand:
+		case WhileyFile.EXPR_bitwiseand:
 			return lhs.and(rhs);
-		case WyilFile.EXPR_bitwiseor:
+		case WhileyFile.EXPR_bitwiseor:
 			return lhs.or(rhs);
-		case WyilFile.EXPR_bitwisexor:
+		case WhileyFile.EXPR_bitwisexor:
 			return lhs.xor(rhs);
 		default:
 			return deadCode(expr);
@@ -956,9 +959,9 @@ public class Interpreter {
 		RValue.Byte lhs = executeExpression(BYTE_T, expr.getOperand(0), frame);
 		RValue.Int rhs = executeExpression(INT_T, expr.getOperand(1), frame);
 		switch (expr.getOpcode()) {
-		case WyilFile.EXPR_bitwiseshr:
+		case WhileyFile.EXPR_bitwiseshr:
 			return lhs.shr(rhs);
-		case WyilFile.EXPR_bitwiseshl:
+		case WhileyFile.EXPR_bitwiseshl:
 			return lhs.shl(rhs);
 		default:
 			return deadCode(expr);
@@ -966,16 +969,16 @@ public class Interpreter {
 	}
 	public RValue executeArrayOperator(Expr.Operator expr, CallStack frame) {
 		switch (expr.getOpcode()) {
-		case WyilFile.EXPR_arrlen: {
+		case WhileyFile.EXPR_arrlen: {
 			RValue.Array array = executeExpression(ARRAY_T, expr.getOperand(0), frame);
 			return array.length();
 		}
-		case WyilFile.EXPR_arridx: {
+		case WhileyFile.EXPR_arridx: {
 			RValue.Array array = executeExpression(ARRAY_T, expr.getOperand(0), frame);
 			RValue.Int index = executeExpression(INT_T, expr.getOperand(1), frame);
 			return array.read(index);
 		}
-		case WyilFile.EXPR_arrgen: {
+		case WhileyFile.EXPR_arrgen: {
 			RValue element = executeExpression(ANY_T, expr.getOperand(0), frame);
 			RValue.Int count = executeExpression(INT_T, expr.getOperand(1), frame);
 			int n = count.intValue();
@@ -988,14 +991,14 @@ public class Interpreter {
 			}
 			return semantics.Array(values);
 		}
-		case WyilFile.EXPR_arrinit: {
+		case WhileyFile.EXPR_arrinit: {
 			RValue[] elements = new RValue[expr.size()];
 			for (int i = 0; i != elements.length; ++i) {
 				elements[i] = executeExpression(ANY_T, expr.getOperand(i), frame);
 			}
 			return semantics.Array(elements);
 		}
-		case WyilFile.EXPR_arrrange: {
+		case WhileyFile.EXPR_arrrange: {
 			int start = executeExpression(INT_T, expr.getOperand(0), frame).intValue();
 			int end = executeExpression(INT_T, expr.getOperand(1), frame).intValue();
 			RValue[] elements = new RValue[end - start];
@@ -1025,8 +1028,8 @@ public class Interpreter {
 			// Locate the function or method declaration.
 			NameID nid = resolver.resolve(expr.getName());
 			Identifier name = new Identifier(nid.name());
-			Path.Entry<WyilFile> entry = project.get(nid.module(), WyilFile.ContentType);
-			WyilFile wyilFile = entry.read();
+			Path.Entry<WhileyFile> entry = project.get(nid.module(), WhileyFile.BinaryContentType);
+			WhileyFile wyilFile = entry.read();
 			Declaration.FunctionOrMethod fmp = wyilFile.getDeclaration(name, expr.getSignatureType(), Declaration.FunctionOrMethod.class);
 			// FIXME: this needs a clone of the frame? Otherwise, it's just
 			// executing in the later environment.
@@ -1086,16 +1089,16 @@ public class Interpreter {
 	private RValue[] executeMultiReturnExpression(Expr expr, CallStack frame) {
 		try {
 			switch (expr.getOpcode()) {
-			case WyilFile.EXPR_indirectinvoke:
+			case WhileyFile.EXPR_indirectinvoke:
 				return executeIndirectInvoke((Expr.IndirectInvoke) expr, frame);
-			case WyilFile.EXPR_qualifiedinvoke:
+			case WhileyFile.EXPR_qualifiedinvoke:
 				return executeInvoke((Expr.Invoke) expr, frame);
-			case WyilFile.EXPR_const:
-			case WyilFile.EXPR_cast:
-			case WyilFile.EXPR_recfield:
-			case WyilFile.DECL_lambda:
-			case WyilFile.EXPR_exists:
-			case WyilFile.EXPR_forall:
+			case WhileyFile.EXPR_const:
+			case WhileyFile.EXPR_cast:
+			case WhileyFile.EXPR_recfield:
+			case WhileyFile.DECL_lambda:
+			case WhileyFile.EXPR_exists:
+			case WhileyFile.EXPR_forall:
 			default:
 				RValue val = executeExpression(ANY_T, expr, frame);
 				return new RValue[] { val };
@@ -1193,7 +1196,7 @@ public class Interpreter {
 			LValue src = constructLVal(e.getSource(), frame);
 			return new LValue.Record(src, e.getField());
 		}
-		case EXPR_var: {
+		case EXPR_varcopy: {
 			Expr.VariableAccess e = (Expr.VariableAccess) expr;
 			Declaration.Variable decl = e.getVariableDeclaration();
 			return new LValue.Variable(decl.getName());
@@ -1401,16 +1404,5 @@ public class Interpreter {
 		public Declaration.Callable getContext() {
 			return context;
 		}
-	}
-
-	/**
-	 * An internal function is simply a named internal function. This reads a
-	 * bunch of operands and returns a set of results.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static interface InternalFunction {
-		public RValue apply(RValue[] operands, Interpreter enclosing, Expr.Operator context) throws ResolveError;
 	}
 }

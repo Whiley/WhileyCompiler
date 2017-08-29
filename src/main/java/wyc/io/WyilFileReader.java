@@ -4,7 +4,7 @@
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
 
-package wyil.io;
+package wyc.io;
 
 import java.io.IOException;
 
@@ -13,11 +13,11 @@ import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 import wyfs.io.BinaryInputStream;
 import wyfs.lang.Path;
-import wyil.lang.WyilFile;
+import wyc.lang.WhileyFile;
 
 /**
  * Read a binary WYIL file from a byte stream and convert into the corresponding
- * WyilFile object.
+ * WhileyFile object.
  *
  * @author David J. Pearce
  *
@@ -25,17 +25,17 @@ import wyil.lang.WyilFile;
 public final class WyilFileReader extends SyntacticHeapReader {
 	private static final char[] magic = { 'W', 'Y', 'I', 'L', 'F', 'I', 'L', 'E' };
 
-	private Path.Entry<WyilFile> entry;
+	private Path.Entry<WhileyFile> entry;
 
-	public WyilFileReader(Path.Entry<WyilFile> entry) throws IOException {
-		super(entry.inputStream(), WyilFile.getSchema());
+	public WyilFileReader(Path.Entry<WhileyFile> entry) throws IOException {
+		super(entry.inputStream(), WhileyFile.getSchema());
 		this.entry = entry;
 	}
 
 	@Override
-	public WyilFile read() throws IOException {
+	public WhileyFile read() throws IOException {
 		SyntacticItem[] items = readItems();
-		return new WyilFile(entry,items);
+		return new WhileyFile(entry,items);
 	}
 
 	@Override

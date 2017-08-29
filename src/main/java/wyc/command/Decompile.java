@@ -4,7 +4,7 @@
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
 
-package wyc.commands;
+package wyc.command;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,14 +13,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import wybs.util.StdProject;
+import wyc.command.Decompile;
+import wyc.io.WhileyFilePrinter;
+import wyc.io.WyilFileReader;
 import wyc.lang.WhileyFile;
 import wyc.util.AbstractProjectCommand;
 import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyil.io.WyilFilePrinter;
-import wyil.io.WyilFileReader;
-import wyil.lang.WyilFile;
 
 public class Decompile extends AbstractProjectCommand<Decompile.Result> {
 	/**
@@ -91,10 +91,10 @@ public class Decompile extends AbstractProjectCommand<Decompile.Result> {
 			// Finalise the configuration before continuing.
 			StdProject project = initialiseProject();
 			// Determine source files to build
-			List<Path.Entry<WyilFile>> entries = wyildir.find(delta, WyilFile.ContentType);
-			for (Path.Entry<WyilFile> e : entries) {
-				WyilFile wf = new WyilFileReader(e).read();
-				WyilFilePrinter wyp = new WyilFilePrinter(System.out);
+			List<Path.Entry<WhileyFile>> entries = wyildir.find(delta, WhileyFile.BinaryContentType);
+			for (Path.Entry<WhileyFile> e : entries) {
+				WhileyFile wf = new WyilFileReader(e).read();
+				WhileyFilePrinter wyp = new WhileyFilePrinter(System.out);
 				wyp.setVerbose(verbose);
 				wyp.apply(wf);
 			}

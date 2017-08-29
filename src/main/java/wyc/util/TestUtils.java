@@ -18,12 +18,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import wyc.commands.Compile;
-import wyc.commands.Run;
+import wyc.command.Compile;
+import wyc.command.Run;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.lang.WhileyFile;
-import wyc.util.AbstractWhileyFile.Type;
+import wyc.lang.WhileyFile.Type;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
@@ -108,7 +108,7 @@ public class TestUtils {
 		cmd.setWhileydir(whileydir);
 		cmd.setWyaldir(whileydir); //
 		cmd.setVerify(verify);
-		//cmd.setVerbose(true);
+		cmd.setVerbose(true);
 		Compile.Result result = cmd.execute(args);
 		byte[] errBytes = syserr.toByteArray();
 		byte[] outBytes = sysout.toByteArray();

@@ -91,7 +91,7 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 		boolean isOpenRecord = lhs.isOpen() || rhs.isOpen();
 		isOpenRecord |= (lhsFields.size() > fields.size() || rhsFields.size() > fields.size());
 		//
-		return new Type.Record(isOpenRecord, new Tuple<>(Declaration.Variable.class,fields));
+		return new Type.Record(isOpenRecord, new Tuple<>(fields));
 	}
 
 	@Override
@@ -118,7 +118,7 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 			// FIXME: need to handle the case of open records here.
 			return lhs;
 		} else {
-			return new Type.Record(lhs.isOpen(), new Tuple<>(Declaration.Variable.class,fields));
+			return new Type.Record(lhs.isOpen(), new Tuple<>(fields));
 		}
 	}
 

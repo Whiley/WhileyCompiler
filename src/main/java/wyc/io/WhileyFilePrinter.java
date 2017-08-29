@@ -4,39 +4,35 @@
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
 
-package wyil.io;
+package wyc.io;
 
 import java.io.*;
 import java.util.*;
 
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Tuple;
-import wyil.lang.*;
-import static wyil.lang.WyilFile.*;
+import wyc.lang.WhileyFile;
+import static wyc.lang.WhileyFile.*;
 
 /**
- * Writes WYIL bytecodes in a textual from to a given file.
- *
- * <b>NOTE:</b> currently, this class is somewhat broken since it does not
- * provide any way to specify the output directory. Rather, it simply puts the
- * WYIL file in the same place as the Whiley file.
+ * Writes the bytecodes of a WhileyFile in a textual from to a given file.
  *
  * @author David J. Pearce
  *
  */
-public final class WyilFilePrinter {
+public final class WhileyFilePrinter {
 	private PrintWriter out;
 	private boolean verbose = false;
 
-	public WyilFilePrinter(Build.Task builder) {
+	public WhileyFilePrinter(Build.Task builder) {
 
 	}
 
-	public WyilFilePrinter(PrintWriter writer) {
+	public WhileyFilePrinter(PrintWriter writer) {
 		this.out = writer;
 	}
 
-	public WyilFilePrinter(OutputStream stream) {
+	public WhileyFilePrinter(OutputStream stream) {
 		this.out = new PrintWriter(new OutputStreamWriter(stream));
 	}
 
@@ -52,7 +48,7 @@ public final class WyilFilePrinter {
 	// Apply Method
 	// ======================================================================
 
-	public void apply(WyilFile module) throws IOException {
+	public void apply(WhileyFile module) throws IOException {
 		out.println();
 		for(Declaration d : module.getDeclarations()) {
 			write(d,out);
@@ -411,8 +407,8 @@ public final class WyilFilePrinter {
 		case EXPR_invoke:
 			writeInvoke((Expr.Invoke) expr, out);
 			break;
-		case EXPR_lambdainit:
-			writeLambda((Expr.LambdaInitialiser) expr, out);
+		case DECL_lambda:
+			writeLambda((Declaration.Lambda) expr, out);
 			break;
 		case EXPR_recinit:
 			writeRecordConstructor((Expr.RecordInitialiser) expr, out);
@@ -451,7 +447,7 @@ public final class WyilFilePrinter {
 		case EXPR_is:
 			writeInfixLocations((Expr.InfixOperator) expr, out);
 			break;
-		case EXPR_var:
+		case EXPR_varcopy:
 			writeVariableAccess((Expr.VariableAccess) expr, out);
 			break;
 		default:
@@ -529,7 +525,7 @@ public final class WyilFilePrinter {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void writeLambda(Expr.LambdaInitialiser expr, PrintWriter out) {
+	private void writeLambda(Declaration.Lambda expr, PrintWriter out) {
 //		out.print("&[");
 //		Location<?>[] environment = expr.getOperandGroup(SyntaxTree.ENVIRONMENT);
 //		for (int i = 0; i != environment.length; ++i) {

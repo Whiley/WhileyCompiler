@@ -768,8 +768,8 @@ public class CoerciveSubtypeOperator implements SubtypeOperator {
 		}
 
 		protected int indexOf(boolean lhsSign, Type lhs, boolean rhsSign, Type rhs) {
-			int lhsSize = lhs.getParent().size();
-			int rhsSize = rhs.getParent().size();
+			int lhsSize = lhs.getHeap().size();
+			int rhsSize = rhs.getHeap().size();
 			int lhsIndex = lhs.getIndex();
 			int rhsIndex = rhs.getIndex();
 			if (lhsSign) {

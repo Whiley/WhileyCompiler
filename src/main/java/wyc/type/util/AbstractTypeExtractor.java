@@ -15,8 +15,8 @@ package wyc.type.util;
 
 import java.util.Arrays;
 
-import static wyil.lang.WyilFile.Type;
-import static wyil.lang.WyilFile.Declaration;
+import static wyc.lang.WhileyFile.Type;
+import static wyc.lang.WhileyFile.Declaration;
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wyc.type.TypeExtractor;

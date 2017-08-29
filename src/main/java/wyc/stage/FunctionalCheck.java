@@ -4,21 +4,17 @@
 // This software may be modified and distributed under the terms
 // of the BSD license.  See the LICENSE file for details.
 
-package wyc.builder;
+package wyc.stage;
 
 import java.util.*;
 
-import wybs.lang.Build;
-import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
 import wyc.lang.WhileyFile;
-import wyil.lang.WyilFile;
 
 import static wyc.lang.WhileyFile.*;
-
-import static wyil.util.ErrorMessages.*;
+import static wyc.util.ErrorMessages.*;
 
 /**
  * <p>
@@ -40,9 +36,9 @@ import static wyil.util.ErrorMessages.*;
  *
  */
 public class FunctionalCheck {
-	private WyilFile file;
+	private WhileyFile file;
 
-	public FunctionalCheck(WyilFile file) {
+	public FunctionalCheck(WhileyFile file) {
 		this.file = file;
 	}
 
@@ -332,6 +328,8 @@ public class FunctionalCheck {
 				checkFieldAccess((Expr.RecordAccess) expression, context);
 			} else if(expression instanceof Expr.Invoke) {
 				checkInvoke((Expr.Invoke) expression, context);
+			} else if(expression instanceof Expr.Is) {
+				checkIs((Expr.Is) expression, context);
 			} else if(expression instanceof Expr.ArrayAccess) {
 				checkIndexOf((Expr.ArrayAccess) expression, context);
 			} else if(expression instanceof Expr.IndirectInvoke) {
@@ -412,6 +410,9 @@ public class FunctionalCheck {
 		}
 	}
 
+	private void checkIs(Expr.Is expression, Context context) {
+		checkExpression(expression.getTestExpr(),context);
+	}
 
 	private void checkLambdaAccess(Expr.LambdaAccess expression, Context context) {
 
