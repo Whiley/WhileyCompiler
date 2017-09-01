@@ -56,7 +56,7 @@ public class Interpreter {
 	/**
 	 * Provides mechanism for resolving names.
 	 */
-	private final NameResolver resolver;
+	//private final NameResolver resolver;
 
 	/**
 	 * Determines the underlying semantics used for this interpreter.
@@ -73,7 +73,6 @@ public class Interpreter {
 		this.project = project;
 		this.debug = debug;
 		this.typeSystem = new TypeSystem(project);
-		this.resolver = typeSystem.getResolver();
 		this.semantics = new ConcreteSemantics();
 	}
 
@@ -174,7 +173,7 @@ public class Interpreter {
 	 * @return
 	 */
 	private RValue[] packReturns(CallStack frame, Declaration.Callable decl) {
-		if (decl.getSignature() instanceof Type.Property) {
+		if (decl instanceof Declaration.Property) {
 			return new RValue[] { RValue.True };
 		} else {
 			Tuple<Declaration.Variable> returns = decl.getReturns();
@@ -244,7 +243,7 @@ public class Interpreter {
 			case WhileyFile.EXPR_indirectinvoke:
 				executeIndirectInvoke((Expr.IndirectInvoke) stmt, frame);
 				return Status.NEXT;
-			case WhileyFile.EXPR_qualifiedinvoke:
+			case WhileyFile.EXPR_invoke:
 				executeInvoke((Expr.Invoke) stmt, frame);
 				return Status.NEXT;
 			case WhileyFile.STMT_namedblock:
@@ -604,7 +603,7 @@ public class Interpreter {
 			case WhileyFile.EXPR_indirectinvoke:
 				val = executeIndirectInvoke((Expr.IndirectInvoke) expr, frame)[0];
 				break;
-			case WhileyFile.EXPR_qualifiedinvoke:
+			case WhileyFile.EXPR_invoke:
 				val = executeInvoke((Expr.Invoke) expr, frame)[0];
 				break;
 			case WhileyFile.EXPR_varcopy:
@@ -678,9 +677,8 @@ public class Interpreter {
 			case WhileyFile.EXPR_deref:
 				val = executeDereference((Expr.Dereference) expr, frame);
 				break;
-			case WhileyFile.EXPR_qualifiedlambda:
 			case WhileyFile.EXPR_lambda:
-				val = executeLambdaConstant((Expr.LambdaAccess) expr, frame);
+				val = executeLambdaAccess((Expr.LambdaAccess) expr, frame);
 				break;
 			case WhileyFile.DECL_lambda:
 				val = executeLambdaDeclaration((Declaration.Lambda) expr, frame);
@@ -828,19 +826,10 @@ public class Interpreter {
 		return frame.getLocal(decl.getName());
 	}
 
-	private RValue executeStaticVariableAccess(Expr.StaticVariableAccess expr, CallStack frame)
-			throws ResolutionError {
-		NameID nid = resolver.resolve(expr.getName());
-		RValue val = frame.getStatic(nid);
-		if(val == null) {
-			// FIXME: this is lazy initialisation of static fields. This does
-			// *not* conform to the Whiley Language Spec. Therefore, we'll need
-			// to fix it at some point.
-			Declaration.Constant decl = typeSystem.resolveExactly(expr.getName(), Declaration.Constant.class);
-			val = executeExpression(ANY_T,decl.getConstantExpr(),frame);
-			frame.putStatic(nid,val);
-		}
-		return val;
+	private RValue executeStaticVariableAccess(Expr.StaticVariableAccess expr, CallStack frame) throws ResolutionError {
+		Declaration.StaticVariable decl = typeSystem.resolveExactly(expr.getName(), Declaration.StaticVariable.class);
+		NameID nid = decl.getQualifiedName().toNameID();
+		return frame.getStatic(nid);
 	}
 
 	private RValue executeIs(Expr.Is expr, CallStack frame) throws ResolutionError {
@@ -1023,27 +1012,19 @@ public class Interpreter {
 		return ref.deref().read();
 	}
 
-	public RValue executeLambdaConstant(Expr.LambdaAccess expr, CallStack frame) throws ResolutionError {
-		try {
-			// Locate the function or method declaration.
-			NameID nid = resolver.resolve(expr.getName());
-			Identifier name = new Identifier(nid.name());
-			Path.Entry<WhileyFile> entry = project.get(nid.module(), WhileyFile.BinaryContentType);
-			WhileyFile wyilFile = entry.read();
-			Declaration.FunctionOrMethod fmp = wyilFile.getDeclaration(name, expr.getSignatureType(), Declaration.FunctionOrMethod.class);
-			// FIXME: this needs a clone of the frame? Otherwise, it's just
-			// executing in the later environment.
-			return semantics.Lambda(fmp, frame.clone(), fmp.getBody());
-		} catch (IOException e) {
-			throw new RuntimeException(e.getMessage(), e);
-		}
+	public RValue executeLambdaAccess(Expr.LambdaAccess expr, CallStack frame) throws ResolutionError {
+		// Locate the function or method body in order to execute it
+		// FIXME: This is horrendous. Should be able to use descriptor here!!
+		Declaration.FunctionOrMethod decl = typeSystem.resolveExactly(expr.getName(), expr.getSignature(),
+				Declaration.FunctionOrMethod.class);
+		// Clone frame to ensure it executes in this exact environment.
+		return semantics.Lambda(decl, frame.clone(), decl.getBody());
 	}
 
-
-	private RValue executeLambdaDeclaration(Declaration.Lambda expr, CallStack frame) {
+	private RValue executeLambdaDeclaration(Declaration.Lambda decl, CallStack frame) {
 		// FIXME: this needs a clone of the frame? Otherwise, it's just
 		// executing in the later environment.
-		return semantics.Lambda(expr, frame.clone(), expr.getBody());
+		return semantics.Lambda(decl, frame.clone(), decl.getBody());
 	}
 
 	// =============================================================
@@ -1091,7 +1072,7 @@ public class Interpreter {
 			switch (expr.getOpcode()) {
 			case WhileyFile.EXPR_indirectinvoke:
 				return executeIndirectInvoke((Expr.IndirectInvoke) expr, frame);
-			case WhileyFile.EXPR_qualifiedinvoke:
+			case WhileyFile.EXPR_invoke:
 				return executeInvoke((Expr.Invoke) expr, frame);
 			case WhileyFile.EXPR_const:
 			case WhileyFile.EXPR_cast:
@@ -1132,7 +1113,6 @@ public class Interpreter {
 		// variables in the scope it was created.
 		frame = src.getFrame();
 		extractParameters(frame,arguments,src.getContext());
-		//
 		// Execute the method or function body
 		Stmt body = src.getBody();
 		if(body instanceof Stmt.Block) {
@@ -1159,9 +1139,13 @@ public class Interpreter {
 	 * @throws ResolutionError
 	 */
 	private RValue[] executeInvoke(Expr.Invoke expr, CallStack frame) throws ResolutionError {
-		NameID name = resolver.resolve(expr.getName());
+		// Resolve function or method being invoked to a concrete declaration
+		Declaration.Callable decl = typeSystem.resolveExactly(expr.getName(), expr.getSignature(),
+				Declaration.Callable.class);
+		// Evaluate argument expressions
 		RValue[] arguments = executeExpressions(expr.getArguments(), frame);
-		return execute(name, expr.getSignatureType(), frame, arguments);
+		// Invoke the function or method in question
+		return execute(decl.getQualifiedName().toNameID(), decl.getType(), frame, arguments);
 	}
 
 	// =============================================================
@@ -1306,20 +1290,24 @@ public class Interpreter {
 	private static final Class<RValue.Record> RECORD_T = RValue.Record.class;
 	private static final Class<RValue.Lambda> LAMBDA_T = RValue.Lambda.class;
 
-	public static class CallStack {
-		private Declaration.Callable context;
-		private Map<Identifier, RValue> locals;
-		private Map<NameID, RValue> globals;
+	public final class CallStack {
+		private final Set<Path.ID> modules;
+		private final Declaration.Callable context;
+		private final Map<Identifier, RValue> locals;
+		private final Map<NameID, RValue> globals;
 
 		public CallStack() {
 			this.locals = new HashMap<>();
 			this.globals = new HashMap<>();
+			this.modules = new HashSet<>();
+			this.context = null;
 		}
 
 		private CallStack(CallStack parent, Declaration.Callable context) {
 			this.context = context;
 			this.locals = new HashMap<>();
 			this.globals = parent.globals;
+			this.modules = parent.modules;
 		}
 
 		public RValue getLocal(Identifier name) {
@@ -1331,14 +1319,21 @@ public class Interpreter {
 		}
 
 		public RValue getStatic(NameID name) {
-			return globals.get(name);
+			RValue v = globals.get(name);
+			if(v == null) {
+				load(name.module());
+				v  = globals.get(name);
+			}
+			return v;
 		}
 
 		public void putStatic(NameID name, RValue value) {
+			load(name.module());
 			globals.put(name, value);
 		}
 
 		public CallStack enter(Declaration.Callable context) {
+			load(context.getQualifiedName().toNameID().module());
 			return new CallStack(this, context);
 		}
 
@@ -1347,6 +1342,35 @@ public class Interpreter {
 			CallStack frame = new CallStack(this, this.context);
 			frame.locals.putAll(locals);
 			return frame;
+		}
+
+		/**
+		 * Load a given module and make sure that all static variables are
+		 * properly initialised.
+		 *
+		 * @param mid
+		 * @param frame
+		 */
+		private void load(Path.ID mid) {
+			if (!modules.contains(mid)) {
+				// NOTE: must add module before attempting to load it.
+				// Otherwise, static initialisers it contains will force itself
+				// to be loaded.
+				modules.add(mid);
+				try {
+					WhileyFile module = project.get(mid, WhileyFile.BinaryContentType).read();
+					for (WhileyFile.Declaration d : module.getDeclarations()) {
+						if (d instanceof Declaration.StaticVariable) {
+							Declaration.StaticVariable decl = (Declaration.StaticVariable) d;
+							RValue value = executeExpression(ANY_T, decl.getInitialiser(), this);
+							globals.put(new NameID(mid, decl.getName().toString()), value);
+						}
+					}
+					//
+				} catch (IOException e) {
+					throw new RuntimeException(e.getMessage(), e);
+				}
+			}
 		}
 	}
 

@@ -1,6 +1,6 @@
 package wyc.type;
 
-import wyal.lang.WyalFile.Type;
+import wyc.lang.WhileyFile.Type;
 
 /**
  * <p>

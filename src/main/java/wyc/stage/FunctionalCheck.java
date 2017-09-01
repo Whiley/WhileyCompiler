@@ -8,10 +8,14 @@ package wyc.stage;
 
 import java.util.*;
 
+import wybs.lang.NameResolver.ResolutionError;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
 import wyc.lang.WhileyFile;
+import wyc.lang.WhileyFile.Declaration;
+import wyc.task.CompileTask;
+import wyc.type.TypeSystem;
 
 import static wyc.lang.WhileyFile.*;
 import static wyc.util.ErrorMessages.*;
@@ -36,13 +40,13 @@ import static wyc.util.ErrorMessages.*;
  *
  */
 public class FunctionalCheck {
-	private WhileyFile file;
+	private TypeSystem types;
 
-	public FunctionalCheck(WhileyFile file) {
-		this.file = file;
+	public FunctionalCheck(CompileTask builder) {
+		this.types = builder.getTypeSystem();
 	}
 
-	public void check() {
+	public void check(WhileyFile file) {
 		for (WhileyFile.Declaration d : file.getDeclarations()) {
 			check(d);
 		}
@@ -148,11 +152,13 @@ public class FunctionalCheck {
 			} else if(statement instanceof Stmt.While) {
 				checkWhile((Stmt.While) statement, context);
 			} else {
+				WhileyFile file = ((WhileyFile) statement.getHeap());
 				throw new InternalFailure("unknown statement encountered",file.getEntry(),statement);
 			}
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable t) {
+			WhileyFile file = ((WhileyFile) statement.getHeap());
 			throw new InternalFailure(t.getMessage(),file.getEntry(),statement,t);
 		}
 	}
@@ -274,11 +280,13 @@ public class FunctionalCheck {
 			} else if(expression instanceof Expr.VariableAccess) {
 				checkLocalVariableLVal((Expr.VariableAccess) expression, context);
 			} else {
+				WhileyFile file = ((WhileyFile) expression.getHeap());
 				throw new InternalFailure("unknown expression encountered",file.getEntry(),expression);
 			}
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable t) {
+			WhileyFile file = ((WhileyFile) expression.getHeap());
 			throw new InternalFailure("internal failure",file.getEntry(),expression,t);
 		}
 	}
@@ -347,11 +355,13 @@ public class FunctionalCheck {
 			} else if(expression instanceof Expr.RecordInitialiser) {
 				checkRecord((Expr.RecordInitialiser) expression, context);
 			} else {
+				WhileyFile file = ((WhileyFile) expression.getHeap());
 				throw new InternalFailure("unknown expression encountered",file.getEntry(),expression);
 			}
 		} catch(SyntaxError e) {
 			throw e;
 		} catch(Throwable t) {
+			WhileyFile file = ((WhileyFile) expression.getHeap());
 			throw new InternalFailure("internal failure",file.getEntry(),expression,t);
 		}
 	}
@@ -389,8 +399,11 @@ public class FunctionalCheck {
 		checkExpression(expression.getSource(),context);
 	}
 
-	private void checkInvoke(Expr.Invoke expression, Context context) {
-		if (context != Context.METHOD && expression.getSignatureType() instanceof Type.Method) {
+	private void checkInvoke(Expr.Invoke expression, Context context) throws ResolutionError {
+		Declaration.Callable decl = types.resolveExactly(expression.getName(), expression.getSignature(),
+				Declaration.Callable.class);
+		//
+		if (context != Context.METHOD && decl instanceof Declaration.Method) {
 			invalidMethodCall(expression, context);
 		}
 		for (Expr p : expression.getArguments()) {
@@ -450,16 +463,19 @@ public class FunctionalCheck {
 
 	private void invalidObjectAllocation(SyntacticItem expression, Context context) {
 		String msg = errorMessage(ALLOCATION_NOT_PERMITTED);
+		WhileyFile file = ((WhileyFile) expression.getHeap());
 		throw new SyntaxError(msg, file.getEntry(), expression);
 	}
 
 	private void invalidMethodCall(SyntacticItem expression, Context context) {
 		String msg = errorMessage(METHODCALL_NOT_PERMITTED);
+		WhileyFile file = ((WhileyFile) expression.getHeap());
 		throw new SyntaxError(msg, file.getEntry(), expression);
 	}
 
 	private void invalidReferenceAccess(SyntacticItem expression, Context context) {
 		String msg= errorMessage(REFERENCE_ACCESS_NOT_PERMITTED);
+		WhileyFile file = ((WhileyFile) expression.getHeap());
 		throw new SyntaxError(msg, file.getEntry(), expression);
 	}
 }

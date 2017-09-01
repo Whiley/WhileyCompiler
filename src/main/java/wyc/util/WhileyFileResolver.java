@@ -55,10 +55,10 @@ import wyfs.util.Trie;
  * @author David J. Pearce
  *
  */
-public final class WyilFileResolver implements NameResolver {
+public final class WhileyFileResolver implements NameResolver {
 	private final Build.Project project;
 
-	public WyilFileResolver(Build.Project project) {
+	public WhileyFileResolver(Build.Project project) {
 		this.project = project;
 	}
 

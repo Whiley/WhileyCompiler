@@ -22,7 +22,8 @@ import wyc.type.extractors.ReadableRecordExtractor;
 import wyc.type.extractors.ReadableReferenceExtractor;
 import wyc.type.subtyping.CoerciveSubtypeOperator;
 import wyc.type.util.StdTypeEnvironment;
-import wyc.util.WyilFileResolver;
+import wyc.type.util.StdTypeInfererence;
+import wyc.util.WhileyFileResolver;
 
 import static wyc.lang.WhileyFile.*;
 import wybs.lang.Build;
@@ -74,14 +75,14 @@ public class TypeSystem {
 	private final TypeRewriter typeSimplifier;
 
 	public TypeSystem(Build.Project project) {
-		this.resolver = new WyilFileResolver(project);
-		this.coerciveSubtypeOperator = new CoerciveSubtypeOperator(resolver);
+		this.resolver = new WhileyFileResolver(project);
+		this.coerciveSubtypeOperator = new CoerciveSubtypeOperator(this);
 		this.readableRecordExtractor = new ReadableRecordExtractor(resolver,this);
 		this.readableArrayExtractor = new ReadableArrayExtractor(resolver,this);
 		this.readableReferenceExtractor = new ReadableReferenceExtractor(resolver,this);
 		this.readableLambdaExtractor = new ReadableLambdaExtractor(resolver,this);
 //		this.typeInvariantExtractor = new TypeInvariantExtractor(resolver);
-		this.typeInfererence = null; // new StdTypeInfererence(this);
+		this.typeInfererence = new StdTypeInfererence(this);
 		this.typeSimplifier = null; // new StdTypeRewriter();
 	}
 
@@ -252,8 +253,8 @@ public class TypeSystem {
 	 * @throws ResolutionError
 	 *             Occurs when a particular named type cannot be resolved.
 	 */
-	public Type inferType(TypeInferer.Environment environment, Expr expression) throws ResolutionError {
-		return typeInfererence.getInferredType(environment, expression);
+	public Type inferType(Expr expression) throws ResolutionError {
+		return typeInfererence.getInferredType(expression);
 	}
 
 	// ========================================================================
@@ -263,6 +264,16 @@ public class TypeSystem {
 	public <T extends Declaration.Named> T resolveExactly(Name name, Class<T> kind)
 			throws ResolutionError {
 		return resolver.resolveExactly(name,kind);
+	}
+
+	public <T extends Declaration.Callable> T resolveExactly(Name name, Type.Callable signature, Class<T> kind)
+			throws ResolutionError {
+		for(T decl : resolveAll(name,kind)) {
+			if(decl.getType().equals(signature)) {
+				return decl;
+			}
+		}
+		return null;
 	}
 
 	public <T extends Declaration.Named> List<T> resolveAll(Name name, Class<T> kind)

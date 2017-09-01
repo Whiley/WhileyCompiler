@@ -26,6 +26,7 @@ import wyc.lang.*;
 import wyc.type.TypeSystem;
 import wyc.type.TypeInferer.Environment;
 import wyc.type.util.StdTypeEnvironment;
+import wyc.util.ErrorMessages;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -132,6 +133,7 @@ public class FlowTypeCheck {
 	// =========================================================================
 
 	public void check(List<WhileyFile> files) {
+		// Perform necessary type checking of Whiley files
 		for (WhileyFile wf : files) {
 			check(wf);
 		}
@@ -148,14 +150,14 @@ public class FlowTypeCheck {
 	// =========================================================================
 
 	public void check(Declaration decl) {
-		if (decl instanceof Declaration.Constant) {
-			check((Declaration.Constant) decl);
+		if (decl instanceof Declaration.StaticVariable) {
+			checkStaticVariableDeclaration((Declaration.StaticVariable) decl);
 		} else if (decl instanceof Declaration.Type) {
-			check((Declaration.Type) decl);
+			checkTypeDeclaration((Declaration.Type) decl);
 		} else if (decl instanceof Declaration.FunctionOrMethod) {
-			check((Declaration.FunctionOrMethod) decl);
+			checkFunctionOrMethodDeclaration((Declaration.FunctionOrMethod) decl);
 		} else {
-			check((Declaration.Property) decl);
+			checkPropertyDeclaration((Declaration.Property) decl);
 		}
 	}
 
@@ -167,7 +169,7 @@ public class FlowTypeCheck {
 	 *            Type declaration to check.
 	 * @throws IOException
 	 */
-	public void check(Declaration.Type decl) {
+	public void checkTypeDeclaration(Declaration.Type decl) {
 		Environment environment = new StdTypeEnvironment();
 		// Check variable declaration is not empty
 		checkNonEmpty(decl.getVariableDeclaration());
@@ -182,8 +184,10 @@ public class FlowTypeCheck {
 	 *            Constant declaration to check.
 	 * @throws IOException
 	 */
-	public void check(Declaration.Constant decl) {
-
+	public void checkStaticVariableDeclaration(Declaration.Variable decl) {
+		Environment environment = new StdTypeEnvironment();
+		// Check the initialiser
+		checkExpression(decl.getInitialiser(), environment);
 	}
 
 	/**
@@ -193,20 +197,20 @@ public class FlowTypeCheck {
 	 *            Function or method declaration to check.
 	 * @throws IOException
 	 */
-	public void check(Declaration.FunctionOrMethod d) {
-		// Create scope representing this declaration
-		EnclosingScope scope = new FunctionOrMethodScope(d);
+	public void checkFunctionOrMethodDeclaration(Declaration.FunctionOrMethod d) {
+		// Check parameters and returns are not empty (i.e. are not equivalent
+		// to void, as this is non-sensical).
+		checkNonEmpty(d.getParameters());
+		checkNonEmpty(d.getReturns());
 		// Construct initial environment
 		Environment environment = new StdTypeEnvironment();
-		// Check parameters are not empty
-		checkNonEmpty(d.getParameters());
-		// Check returns are not empty
-		checkNonEmpty(d.getReturns());
 		// Check any preconditions (i.e. requires clauses) provided.
 		checkConditions(d.getRequires(), true, environment);
 		// Check any postconditions (i.e. ensures clauses) provided.
 		checkConditions(d.getEnsures(), true, environment);
 		// FIXME: Add the "this" lifetime
+		// Create scope representing this declaration
+		EnclosingScope scope = new FunctionOrMethodScope(d);
 		// Check type information throughout all statements in body.
 		Environment last = checkBlock(d.getBody(), environment, scope);
 		// Check return value
@@ -236,13 +240,13 @@ public class FlowTypeCheck {
 		// }
 	}
 
-	public void check(Declaration.Property d) {
+	public void checkPropertyDeclaration(Declaration.Property d) {
+		// Check parameters and returns are not empty (i.e. are not equivalent
+		// to void, as this is non-sensical).
+		checkNonEmpty(d.getParameters());
+		checkNonEmpty(d.getReturns());
 		// Construct initial environment
 		Environment environment = new StdTypeEnvironment();
-		// Check parameters are not empty
-		checkNonEmpty(d.getParameters());
-		// Check returns are not empty
-		checkNonEmpty(d.getReturns());
 		// Check invariant (i.e. requires clauses) provided.
 		checkConditions(d.getInvariant(), true, environment);
 	}
@@ -393,19 +397,19 @@ public class FlowTypeCheck {
 	 * initialiser is given we must check it is well-formed and that it is a
 	 * subtype of the declared type.
 	 *
-	 * @param stmt
+	 * @param decl
 	 *            Statement to type check
 	 * @param environment
 	 *            Determines the type of all variables immediately going into
 	 *            this block
 	 * @return
 	 */
-	private Environment checkVariableDeclaration(Declaration.Variable stmt, Environment environment,
+	private Environment checkVariableDeclaration(Declaration.Variable decl, Environment environment,
 			EnclosingScope scope) throws IOException {
 		// Check type of initialiser.
-		if (stmt.hasInitialiser()) {
-			Type type = checkExpression(stmt.getInitialiser(), environment);
-			checkIsSubtype(stmt.getType(), type, stmt.getInitialiser());
+		if (decl.hasInitialiser()) {
+			Type type = checkExpression(decl.getInitialiser(), environment);
+			checkIsSubtype(decl.getType(), type, decl.getInitialiser());
 		}
 		// Done.
 		return environment;
@@ -1273,7 +1277,6 @@ public class FlowTypeCheck {
 
 	public Tuple<Type> checkMultiExpression(Expr expression, Environment environment) {
 		switch (expression.getOpcode()) {
-		case EXPR_qualifiedinvoke:
 		case EXPR_invoke:
 			return checkInvoke((Expr.Invoke) expression, environment);
 		case EXPR_indirectinvoke:
@@ -1302,7 +1305,6 @@ public class FlowTypeCheck {
 			return checkStaticVariable((Expr.StaticVariableAccess) expression, environment);
 		case EXPR_cast:
 			return checkCast((Expr.Cast) expression, environment);
-		case EXPR_qualifiedinvoke:
 		case EXPR_invoke: {
 			Tuple<Type> types = checkInvoke((Expr.Invoke) expression, environment);
 			// Deal with potential for multiple values
@@ -1384,8 +1386,8 @@ public class FlowTypeCheck {
 			return checkDereference((Expr.Dereference) expression, environment);
 		case EXPR_new:
 			return checkNew((Expr.New) expression, environment);
+		case EXPR_rawlambda:
 		case EXPR_lambda:
-		case EXPR_qualifiedlambda:
 			return checkLambdaAccess((Expr.LambdaAccess) expression, environment);
 		case DECL_lambda:
 			return checkLambdaDeclaration((Declaration.Lambda) expression, environment);
@@ -1438,13 +1440,13 @@ public class FlowTypeCheck {
 
 	private Type checkStaticVariable(Expr.StaticVariableAccess expr, Environment env) {
 		try {
-			Declaration.Constant decl;
-			decl = typeSystem.resolveExactly(expr.getName(), Declaration.Constant.class);
-			// FIXME: this is broken for cyclic constant declarations; also,
-			// should be updated for RFC0008
-			return checkExpression(decl.getConstantExpr(), env);
+			// Resolve variable declaration being accessed
+			Declaration.StaticVariable decl = typeSystem.resolveExactly(expr.getName(),
+					Declaration.StaticVariable.class);
+			//
+			return decl.getType();
 		} catch (ResolutionError e) {
-			return syntaxError(errorMessage(RESOLUTION_ERROR, expr.getName().toString()), expr);
+			return syntaxError(errorMessage(RESOLUTION_ERROR, expr.getName().toString()), expr, e);
 		}
 	}
 
@@ -1461,17 +1463,12 @@ public class FlowTypeCheck {
 		for (int i = 0; i != arguments.size(); ++i) {
 			types[i] = checkExpression(arguments.getOperand(i), env);
 		}
-		if (!expr.hasSignatureType()) {
-			// This is an unqualified invocation, therefore attempt to infer
-			// the appropriate signature
-			Declaration.Callable sig = resolveAsCallable(expr.getName(), expr, types);
-			// Update with inferred signature
-			expr.setSignatureType(expr.getHeap().allocate(sig.getSignature()));
-		}
-		Type.Callable type = expr.getSignatureType();
-		// Finally, return the declared returns
-		//
-		return type.getReturns();
+		// Determine the declaration being invoked
+		Declaration.Callable decl = resolveAsCallable(expr.getName(), expr, types);
+		// Assign descriptor to this expression
+		expr.setSignature(expr.getHeap().allocate(decl.getType()));
+		// Finally, return the declared returns/
+		return decl.getType().getReturns();
 	}
 
 	private Tuple<Type> checkIndirectInvoke(Expr.IndirectInvoke expr, Environment env) {
@@ -1654,27 +1651,24 @@ public class FlowTypeCheck {
 	}
 
 	private Type checkLambdaAccess(Expr.LambdaAccess expr, Environment env) {
-		//
-		if (!expr.hasSignatureType()) {
-			Tuple<Type> types = expr.getParameterTypes();
-			Declaration.Callable sig;
-			// FIXME: there is a problem here in that we cannot distinguish
-			// between the case where no parameters were supplied and when
-			// exactly zero arguments were supplied.
-			if (types.size() > 0) {
-				// Parameter types have been given, so use them to help resolve
-				// declaration.
-				sig = resolveAsCallable(expr.getName(), expr, types.toArray(Type.class));
-			} else {
-				// No parameters we're given, therefore attempt to resolve
-				// uniquely.
-				sig = resolveAsCallable(expr.getName(), expr);
-			}
-			// Update with inferred signature
-			expr.setSignatureType(expr.getHeap().allocate(sig.getSignature()));
+		Declaration.Callable decl;
+		Tuple<Type> types = expr.getParameterTypes();
+		// FIXME: there is a problem here in that we cannot distinguish
+		// between the case where no parameters were supplied and when
+		// exactly zero arguments were supplied.
+		if (types.size() > 0) {
+			// Parameter types have been given, so use them to help resolve
+			// declaration.
+			decl = resolveAsCallable(expr.getName(), expr, types.toArray(Type.class));
+		} else {
+			// No parameters we're given, therefore attempt to resolve
+			// uniquely.
+			decl = resolveAsCallable(expr.getName(), expr);
 		}
+		// Set descriptor for this expression
+		expr.setSignature(expr.getHeap().allocate(decl.getType()));
 		//
-		return expr.getSignatureType();
+		return decl.getType();
 	}
 
 	private Type checkLambdaDeclaration(Declaration.Lambda expr, Environment env) {
@@ -1708,7 +1702,7 @@ public class FlowTypeCheck {
 			return false;
 		} else if (item instanceof Expr.Invoke) {
 			Expr.Invoke e = (Expr.Invoke) item;
-			if (e.getSignatureType() instanceof Type.Method) {
+			if (e.getSignature() instanceof Declaration.Method) {
 				// This expression is definitely not pure
 				return false;
 			}
@@ -1875,7 +1869,7 @@ public class FlowTypeCheck {
 		for (Declaration.Callable c : candidates) {
 			// FIXME: this is very ugly
 			Path.ID mid = ((WhileyFile)c.getHeap()).getEntry().id();
-			candidateStrings.add(mid + ":" + c.getName() + " : " + c.getSignature());
+			candidateStrings.add(mid + ":" + c.getName() + " : " + c.getType());
 		}
 		Collections.sort(candidateStrings); // make error message deterministic!
 		StringBuilder msg = new StringBuilder();
@@ -2091,7 +2085,7 @@ public class FlowTypeCheck {
 
 	/**
 	 * An enclosing scope captures the nested of declarations, blocks and other
-	 * staments (e.g. loops). It is used to store information associated with
+	 * statements (e.g. loops). It is used to store information associated with
 	 * these things such they can be accessed further down the chain. It can
 	 * also be used to propagate information up the chain (for example, the
 	 * environments arising from a break or continue statement).

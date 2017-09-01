@@ -1,28 +1,28 @@
 type string is int[]
 
-constant PAWN is 0
-constant KNIGHT is 1
-constant BISHOP is 2
-constant ROOK is 3
-constant QUEEN is 4
-constant KING is 5
-constant PIECE_CHARS is ['P', 'N', 'B', 'R', 'Q', 'K']
+int PAWN = 0
+int KNIGHT = 1
+int BISHOP = 2
+int ROOK = 3
+int QUEEN = 4
+int KING = 5
+int[] PIECE_CHARS = ['P', 'N', 'B', 'R', 'Q', 'K']
 
 type PieceKind is (int x) where PAWN <= x && x <= KING
 type Piece is {bool colour, PieceKind kind}
 
-constant WHITE_PAWN is {colour: true, kind: PAWN}
-constant WHITE_KNIGHT is {colour: true, kind: KNIGHT}
-constant WHITE_BISHOP is {colour: true, kind: BISHOP}
-constant WHITE_ROOK is {colour: true, kind: ROOK}
-constant WHITE_QUEEN is {colour: true, kind: QUEEN}
-constant WHITE_KING is {colour: true, kind: KING}
-constant BLACK_PAWN is {colour: false, kind: PAWN}
-constant BLACK_KNIGHT is {colour: false, kind: KNIGHT}
-constant BLACK_BISHOP is {colour: false, kind: BISHOP}
-constant BLACK_ROOK is {colour: false, kind: ROOK}
-constant BLACK_QUEEN is {colour: false, kind: QUEEN}
-constant BLACK_KING is {colour: false, kind: KING}
+Piece WHITE_PAWN = {colour: true, kind: PAWN}
+Piece WHITE_KNIGHT = {colour: true, kind: KNIGHT}
+Piece WHITE_BISHOP = {colour: true, kind: BISHOP}
+Piece WHITE_ROOK = {colour: true, kind: ROOK}
+Piece WHITE_QUEEN = {colour: true, kind: QUEEN}
+Piece WHITE_KING = {colour: true, kind: KING}
+Piece BLACK_PAWN = {colour: false, kind: PAWN}
+Piece BLACK_KNIGHT = {colour: false, kind: KNIGHT}
+Piece BLACK_BISHOP = {colour: false, kind: BISHOP}
+Piece BLACK_ROOK = {colour: false, kind: ROOK}
+Piece BLACK_QUEEN = {colour: false, kind: QUEEN}
+Piece BLACK_KING = {colour: false, kind: KING}
 
 type RowCol is int
 type Pos is {RowCol col, RowCol row}
@@ -35,11 +35,11 @@ type CastleMove is {bool isWhite, bool kingSide}
 type CheckMove is {Move check}
 type Move is CheckMove | CastleMove | SimpleMove
 
-constant A1 is {col: 0, row: 0}
-constant A2 is {col: 0, row: 1}
-constant A3 is {col: 0, row: 2}
-constant D3 is {col: 3, row: 2}
-constant H1 is {col: 8, row: 1}
+Pos A1 = {col: 0, row: 0}
+Pos A2 = {col: 0, row: 1}
+Pos A3 = {col: 0, row: 2}
+Pos D3 = {col: 3, row: 2}
+Pos H1 = {col: 8, row: 1}
 
 function append(int[] xs, int[] ys) -> (int[] zs)
 ensures |zs| == |xs| + |ys|:

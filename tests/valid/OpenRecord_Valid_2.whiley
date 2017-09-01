@@ -1,5 +1,5 @@
-constant Short is 3
-constant Int is 4
+int Short = 3
+int Int = 4
 
 type string is int[]
 type char is int

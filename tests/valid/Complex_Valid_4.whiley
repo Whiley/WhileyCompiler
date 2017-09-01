@@ -27,7 +27,7 @@ function contains(BTree tree, int item) -> bool:
             else:
                 return contains(tree.right, item)
 
-constant items is [5, 4, 6, 3, 7, 2, 8, 1, 9]
+int[] items = [5, 4, 6, 3, 7, 2, 8, 1, 9]
 
 public export method test() :
     BTree tree = BTree()

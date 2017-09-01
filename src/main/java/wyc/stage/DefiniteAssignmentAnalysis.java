@@ -68,7 +68,7 @@ public class DefiniteAssignmentAnalysis {
 		if(declaration instanceof Declaration.Import) {
 			// There isn't anything to do here. This is because imports cannot
 			// use variables anyway.
-		} else if(declaration instanceof Declaration.Constant) {
+		} else if(declaration instanceof Declaration.StaticVariable) {
 			// There isn't anything to do here. This is because constants cannot
 			// use variables anyway.
 		} else if(declaration instanceof Declaration.Type) {

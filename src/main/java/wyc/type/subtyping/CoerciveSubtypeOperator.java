@@ -22,6 +22,7 @@ import wycc.util.Pair;
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wyc.type.SubtypeOperator;
+import wyc.type.TypeSystem;
 
 import static wyc.lang.WhileyFile.*;
 import static wyc.lang.WhileyFile.Name;
@@ -69,10 +70,10 @@ import static wyc.lang.WhileyFile.Name;
  *
  */
 public class CoerciveSubtypeOperator implements SubtypeOperator {
-	protected NameResolver resolver;
+	private final TypeSystem typeSystem;
 
-	public CoerciveSubtypeOperator(NameResolver resolver) {
-		this.resolver = resolver;
+	public CoerciveSubtypeOperator(TypeSystem typeSystem) {
+		this.typeSystem = typeSystem;
 	}
 
 	@Override
@@ -184,7 +185,7 @@ public class CoerciveSubtypeOperator implements SubtypeOperator {
 			case TYPE_or:
 				conjunct = !conjunct;
 			case TYPE_and: {
-				Type.UnionOrIntersection ut = (Type.UnionOrIntersection) t;
+				Type.Combinator ut = (Type.Combinator) t;
 				Type[] operands = ut.toArray(Type.class);
 				if (conjunct) {
 					// Conjunction
@@ -211,9 +212,9 @@ public class CoerciveSubtypeOperator implements SubtypeOperator {
 			}
 			case TYPE_nom: {
 				Type.Nominal nom = (Type.Nominal) t;
-				Declaration.Type decl = resolver.resolveExactly(nom.getName(), Declaration.Type.class);
+				Declaration.Type decl = typeSystem.resolveExactly(nom.getName(),Declaration.Type.class);
 				if (item.maximise || decl.getInvariant().size() == 0) {
-					worklist.push(item.sign, decl.getVariableDeclaration().getType(), item.maximise);
+					worklist.push(item.sign, decl.getType(), item.maximise);
 				} else if (item.sign) {
 					// Corresponds to void, so we're done on this path.
 					return true;

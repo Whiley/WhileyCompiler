@@ -162,7 +162,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 				// One or more type invariants to check. Therefore, we need
 				// to execute the invariant and determine whether or not it
 				// returns true.
-				Interpreter.CallStack frame = new Interpreter.CallStack();
+				Interpreter.CallStack frame = instance.new CallStack();
 				frame.putLocal(var.getName(), this);
 				for (int i = 0; i != invariant.size(); ++i) {
 					RValue.Bool b = instance.executeExpression(Bool.class, invariant.getOperand(i), frame);
@@ -664,7 +664,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 
 		public final static class Lambda extends RValue implements AbstractSemantics.RValue.Lambda {
 			/**
-			 * Identify the declaration context for this lambda.
+			 * Identify the declaration for this lambda
 			 */
 			private final Declaration.Callable context;
 			/**
@@ -701,7 +701,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 					// FIXME: this is really a hack, since we need to perform a full
 					// subtype test at this point. There remain some interesting
 					// questions as to what should and should not be support here.
-					if(tc.equals(context.getSignature())) {
+					if(tc.equals(context.getType())) {
 						return True;
 					} else {
 						return False;

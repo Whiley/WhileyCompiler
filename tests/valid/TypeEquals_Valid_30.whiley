@@ -1,12 +1,7 @@
-
-
-constant ADD is 0
-
-constant SUB is 1
-
-constant MUL is 2
-
-constant DIV is 3
+int ADD = 0
+int SUB = 1
+int MUL = 2
+int DIV = 3
 
 type BOp is (int x) where ADD <= x && x <= DIV
 

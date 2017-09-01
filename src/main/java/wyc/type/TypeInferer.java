@@ -43,7 +43,7 @@ public interface TypeInferer {
 	 * @throws ResolutionError
 	 *             Occurs when a particular named type cannot be resolved.
 	 */
-	public Type getInferredType(Environment environment, Expr expression) throws ResolutionError;
+	public Type getInferredType(Expr expression) throws ResolutionError;
 
 	/**
 	 * The typing environment determines the current type for all variables at a

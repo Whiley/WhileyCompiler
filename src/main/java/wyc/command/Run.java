@@ -90,7 +90,8 @@ public class Run extends AbstractProjectCommand<Run.Result> {
 	private void executeFunctionOrMethod(NameID id, Type.Callable signature, Build.Project project)
 			throws IOException {
 		// Try to run the given function or method
-		RValue[] returns = new Interpreter(project, System.out).execute(id, signature, new Interpreter.CallStack());
+		Interpreter interpreter = new Interpreter(project, System.out);
+		RValue[] returns = interpreter.execute(id, signature, interpreter.new CallStack());
 		// Print out any return values produced
 		if (returns != null) {
 			for (int i = 0; i != returns.length; ++i) {

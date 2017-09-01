@@ -57,8 +57,8 @@ public final class WhileyFilePrinter {
 	}
 
 	private void write(Declaration d, PrintWriter out) {
-		if(d instanceof Declaration.Constant) {
-			write((Declaration.Constant) d, out);
+		if(d instanceof Declaration.StaticVariable) {
+			write((Declaration.StaticVariable) d, out);
 		} else if(d instanceof Declaration.Type) {
 			write((Declaration.Type) d, out);
 		} else if(d instanceof Declaration.Property){
@@ -68,9 +68,11 @@ public final class WhileyFilePrinter {
 		}
 	}
 
-	private void write(Declaration.Constant decl, PrintWriter out) {
-		writeModifiers(decl.getModifiers(),out);
-		out.println("constant " + decl.getName() + " = " + decl.getConstantExpr());
+	private void write(Declaration.StaticVariable decl, PrintWriter out) {
+		writeModifiers(decl.getModifiers(), out);
+		out.print(decl.getType());
+		out.print(" ");
+		out.println(decl.getName() + " = " + decl.getInitialiser());
 	}
 
 	private void write(Declaration.Type decl, PrintWriter out) {

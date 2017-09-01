@@ -241,7 +241,6 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 		case EXPR_cast:
 			checkCast(consumed, (Expr.Cast) expr);
 			break;
-		case EXPR_qualifiedinvoke:
 		case EXPR_invoke:
 			checkInvoke(consumed, (Expr.Invoke) expr);
 			break;
@@ -325,7 +324,6 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 			checkNew(consumed, (Expr.New) expr);
 			break;
 		case EXPR_lambda:
-		case EXPR_qualifiedlambda:
 			checkLambdaConstant(consumed, (Expr.LambdaAccess) expr);
 			break;
 		default:

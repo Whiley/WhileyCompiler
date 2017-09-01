@@ -200,7 +200,7 @@ public final class CompileTask implements Build.Task {
 
 		for (WhileyFile wf : binaryFiles) {
 			new DefiniteAssignmentAnalysis(wf).check();
-			new FunctionalCheck(wf).check();
+			new FunctionalCheck(this).check(wf);
 			// new MoveAnalysis(this).apply(wyil);
 			// new CoercionCheck(this);
 		}

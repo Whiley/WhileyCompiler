@@ -1,4 +1,4 @@
-constant odd is [1,3,5]
+int[] odd = [1,3,5]
 
 type odd is (int x) where x == 1 || x == 3 || x == 5
 type even is (int x) where x == 2 || x == 4 || x == 6
