@@ -48,6 +48,8 @@ public class StdTypeInfererence implements TypeInferer {
 			return inferCast((Expr.Cast) expr);
 		case WhileyFile.EXPR_invoke:
 			return inferInvoke((Expr.Invoke) expr);
+		case WhileyFile.EXPR_indirectinvoke:
+			return inferIndirectInvoke((Expr.IndirectInvoke) expr);
 		case WhileyFile.EXPR_varcopy:
 			return inferVariableAccess((Expr.VariableAccess) expr);
 		case WhileyFile.EXPR_staticvar:
@@ -79,6 +81,7 @@ public class StdTypeInfererence implements TypeInferer {
 		case WhileyFile.EXPR_bitwisexor:
 		case WhileyFile.EXPR_bitwiseshl:
 		case WhileyFile.EXPR_bitwiseshr:
+		case WhileyFile.EXPR_bitwisenot:
 			return inferBitwiseOperator((Expr.Operator) expr);
 		case WhileyFile.EXPR_arrlen:
 			return inferArrayLength((Expr.Operator) expr);
@@ -123,9 +126,9 @@ public class StdTypeInfererence implements TypeInferer {
 		return expr.getVariableDeclaration().getType();
 	}
 
-	protected Type inferStaticVariableAccess(Expr.StaticVariableAccess expr) {
-		// FIXME: need to extract resolution attribute here.
-		throw new UnsupportedOperationException();
+	protected Type inferStaticVariableAccess(Expr.StaticVariableAccess expr) throws ResolutionError {
+		Declaration.StaticVariable decl = types.resolveExactly(expr.getName(), Declaration.StaticVariable.class);
+		return decl.getType();
 	}
 
 	protected Type inferConstant(Expr.Constant expr) {
@@ -144,6 +147,19 @@ public class StdTypeInfererence implements TypeInferer {
 			return returns.getOperand(0);
 		}
 	}
+
+	protected Type inferIndirectInvoke(Expr.IndirectInvoke expr) throws ResolutionError {
+		Type src = inferExpression(expr.getSource());
+		Type.Callable ct = types.extractReadableLambda(src);
+		if(ct != null) {
+			Tuple<Type> returns = ct.getReturns();
+			if(returns.size() == 1) {
+				return returns.getOperand(0);
+			}
+		}
+		return null;
+	}
+
 
 	protected Type inferQuantifier(Expr.Quantifier expr) {
 		return Type.Bool;
@@ -255,12 +271,14 @@ public class StdTypeInfererence implements TypeInferer {
 			return Type.Null;
 		case ITEM_bool:
 			return Type.Bool;
+		case ITEM_byte:
+			return Type.Byte;
 		case ITEM_int:
 			return Type.Int;
 		case ITEM_utf8:
 			return new Type.Array(Type.Int);
 		default:
-			throw new RuntimeException("invalid value encountered");
+			throw new RuntimeException("invalid value encountered (" + val + ")");
 		}
 	}
 }

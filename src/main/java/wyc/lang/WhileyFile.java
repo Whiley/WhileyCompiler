@@ -303,6 +303,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			if (match.getName().equals(name)) {
 				if (signature != null && signature.equals(match.getType())) {
 					return match;
+				} else if(signature == null) {
+					return match;
 				}
 			}
 		}
