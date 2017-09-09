@@ -21,6 +21,7 @@ import wyc.type.extractors.ReadableLambdaExtractor;
 import wyc.type.extractors.ReadableRecordExtractor;
 import wyc.type.extractors.ReadableReferenceExtractor;
 import wyc.type.subtyping.CoerciveSubtypeOperator;
+import wyc.type.subtyping.StrictSubtypeOperator;
 import wyc.type.util.StdTypeEnvironment;
 import wyc.type.util.StdTypeInfererence;
 import wyc.util.WhileyFileResolver;
@@ -65,6 +66,7 @@ public class TypeSystem {
 	public  final static TypeInferer.Environment NULL_ENVIRONMENT = new StdTypeEnvironment();
 	//
 	private final NameResolver resolver;
+	private final SubtypeOperator strictSubtypeOperator;
 	private final SubtypeOperator coerciveSubtypeOperator;
 	private final TypeExtractor<Type.Record,Object> readableRecordExtractor;
 	private final TypeExtractor<Type.Array,Object> readableArrayExtractor;
@@ -76,6 +78,7 @@ public class TypeSystem {
 
 	public TypeSystem(Build.Project project) {
 		this.resolver = new WhileyFileResolver(project);
+		this.strictSubtypeOperator = new StrictSubtypeOperator(this);
 		this.coerciveSubtypeOperator = new CoerciveSubtypeOperator(this);
 		this.readableRecordExtractor = new ReadableRecordExtractor(resolver,this);
 		this.readableArrayExtractor = new ReadableArrayExtractor(resolver,this);
@@ -149,8 +152,47 @@ public class TypeSystem {
 	 *             one possible matching declaration, or it cannot be resolved
 	 *             to a corresponding type declaration.
 	 */
-	public boolean isRawSubtype(Type lhs, Type rhs) throws ResolutionError {
+	public boolean isRawCoerciveSubtype(Type lhs, Type rhs) throws ResolutionError {
 		return coerciveSubtypeOperator.isSubtype(lhs,rhs) != SubtypeOperator.Result.False;
+	}
+
+	/**
+	 * <p>
+	 * Determine whether one type is a <i>raw subtype</i> of another.
+	 * Specifically, whether the raw type of <code>rhs</code> is a subtype of
+	 * <code>lhs</code>'s raw type (i.e.
+	 * "<code>&lfloor;lhs&rfloor; :> &lfloor;rhs&rfloor;</code>"). The raw type
+	 * is that which ignores any type invariants involved. Thus, one must be
+	 * careful when interpreting the meaning of this operation. Specifically,
+	 * "<code>&lfloor;lhs&rfloor; :> &lfloor;rhs&rfloor;</code>" <b>does not
+	 * imply</b> that "<code>lhs :> rhs</code>" holds. However, if
+	 * "<code>&lfloor;lhs&rfloor; :> &lfloor;rhs&rfloor;</code>" does not hold,
+	 * then it <b>does follow</b> that "<code>lhs :> rhs</code>" also does not
+	 * hold.
+	 * </p>
+	 *
+	 * <p>
+	 * Depending on the exact language of types involved, this can be a
+	 * surprisingly complex operation. For example, in the presence of
+	 * <i>union</i>, <i>intersection</i> and <i>negation</i> types, the subtype
+	 * algorithm is surprisingly intricate.
+	 * </p>
+	 *
+	 * @param lhs
+	 *            The candidate "supertype". That is, lhs's raw type may be a
+	 *            supertype of <code>rhs</code>'s raw type.
+	 * @param rhs
+	 *            The candidate "subtype". That is, rhs's raw type may be a
+	 *            subtype of <code>lhs</code>'s raw type.
+	 * @return
+	 * @throws ResolutionError
+	 *             Occurs when a nominal type is encountered whose name cannot
+	 *             be resolved properly. For example, it resolves to more than
+	 *             one possible matching declaration, or it cannot be resolved
+	 *             to a corresponding type declaration.
+	 */
+	public boolean isRawSubtype(Type lhs, Type rhs) throws ResolutionError {
+		return strictSubtypeOperator.isSubtype(lhs,rhs) != SubtypeOperator.Result.False;
 	}
 
 	/**

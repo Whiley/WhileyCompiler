@@ -1903,7 +1903,7 @@ public class FlowTypeCheck {
 			// each argument is a subtype of its corresponding parameter.
 			for (int i = 0; i != args.length; ++i) {
 				Type param = parameters.getOperand(i).getType();
-				if (!typeSystem.isRawSubtype(param, args[i])) {
+				if (!typeSystem.isRawCoerciveSubtype(param, args[i])) {
 					return false;
 				}
 			}
@@ -1937,7 +1937,7 @@ public class FlowTypeCheck {
 			for (int i = 0; i != parentParams.size(); ++i) {
 				Type parentParam = parentParams.getOperand(i).getType();
 				Type childParam = childParams.getOperand(i).getType();
-				if (!typeSystem.isRawSubtype(parentParam, childParam)) {
+				if (!typeSystem.isRawCoerciveSubtype(parentParam, childParam)) {
 					return false;
 				}
 			}
@@ -2015,7 +2015,7 @@ public class FlowTypeCheck {
 
 	private void checkIsSubtype(Type lhs, Type rhs, SyntacticItem element) {
 		try {
-			if (!typeSystem.isRawSubtype(lhs, rhs)) {
+			if (!typeSystem.isRawCoerciveSubtype(lhs, rhs)) {
 				syntaxError(errorMessage(SUBTYPE_ERROR, lhs, rhs), element);
 			}
 		} catch (NameResolver.ResolutionError e) {
@@ -2045,7 +2045,7 @@ public class FlowTypeCheck {
 	private void checkNonEmpty(Declaration.Variable d) {
 		try {
 			Type type = d.getType();
-			if (typeSystem.isRawSubtype(Type.Void, type)) {
+			if (typeSystem.isRawCoerciveSubtype(Type.Void, type)) {
 				syntaxError("empty type", type);
 			}
 		} catch (NameResolver.ResolutionError e) {
