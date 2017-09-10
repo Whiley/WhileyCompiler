@@ -21,6 +21,7 @@ import java.util.HashSet;
 import wycc.util.Pair;
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
+import wyc.lang.WhileyFile;
 import wyc.type.SubtypeOperator;
 import wyc.type.TypeSystem;
 
@@ -53,17 +54,32 @@ import static wyc.lang.WhileyFile.Name;
  * </p>
  * <h3>References</h3>
  * <ul>
- * <li><p>David J. Pearce and James Noble. Structural and Flow-Sensitive Types for
- * Whiley. Technical Report, Victoria University of Wellington, 2010.</p></li>
- * <li><p>A. Frisch, G. Castagna, and V. Benzaken. Semantic subtyping. In
- * Proceedings of the <i>Symposium on Logic in Computer Science</i>, pages
- * 137--146. IEEE Computer Society Press, 2002.</p></li>
- * <li><p>Dexter Kozen, Jens Palsberg, and Michael I. Schwartzbach. Efficient
- * recursive subtyping. In <i>Proceedings of the ACM Conference on Principles of
- * Programming Languages</i>, pages 419--428, 1993.</p></li>
- * <li><p>Roberto M. Amadio and Luca Cardelli. Subtyping recursive types. <i>ACM
- * Transactions on Programming Languages and Systems</i>,
- * 15:575--631, 1993.</p></li>
+ * <li>
+ * <p>
+ * David J. Pearce and James Noble. Structural and Flow-Sensitive Types for
+ * Whiley. Technical Report, Victoria University of Wellington, 2010.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * A. Frisch, G. Castagna, and V. Benzaken. Semantic subtyping. In Proceedings
+ * of the <i>Symposium on Logic in Computer Science</i>, pages 137--146. IEEE
+ * Computer Society Press, 2002.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * Dexter Kozen, Jens Palsberg, and Michael I. Schwartzbach. Efficient recursive
+ * subtyping. In <i>Proceedings of the ACM Conference on Principles of
+ * Programming Languages</i>, pages 419--428, 1993.
+ * </p>
+ * </li>
+ * <li>
+ * <p>
+ * Roberto M. Amadio and Luca Cardelli. Subtyping recursive types. <i>ACM
+ * Transactions on Programming Languages and Systems</i>, 15:575--631, 1993.
+ * </p>
+ * </li>
  * </ul>
  *
  * @author David J. Pearce
@@ -86,13 +102,13 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		boolean max = isVoidTerm(lhsMaxTerm, rhsMaxTerm, assumptions);
 		//
 		// FIXME: I don't think this logic is correct yet for some reason.
-		if(!max) {
+		if (!max) {
 			return Result.False;
 		} else {
 			Term<?> lhsMinTerm = new Term<>(false, parent, false);
 			Term<?> rhsMinTerm = new Term<>(true, child, false);
 			boolean min = isVoidTerm(lhsMinTerm, rhsMinTerm, assumptions);
-			if(min) {
+			if (min) {
 				return Result.True;
 			} else {
 				return Result.Unknown;
@@ -123,12 +139,12 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	/**
 	 * Determine whether or not the intersection of a given list of types (the
 	 * worklist) reduces to void or not. This is performed in the context of a
-	 * number of ground "atoms" which are known to hold. In essence, this
-	 * algorithm exhaustively expands all items on the worklist to form atoms.
-	 * The expanded atoms are then checked for consistency.
+	 * number of ground "atoms" which are known to hold. In essence, this algorithm
+	 * exhaustively expands all items on the worklist to form atoms. The expanded
+	 * atoms are then checked for consistency.
 	 *
-	 * is type is equivalent to void. This is a relatively complex operation
-	 * which builds up a list of clauses known to hold.
+	 * is type is equivalent to void. This is a relatively complex operation which
+	 * builds up a list of clauses known to hold.
 	 *
 	 * @param truths
 	 *            The set of truths which have been established.
@@ -139,7 +155,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * @return
 	 * @throws ResolutionError
 	 */
-	protected boolean isVoid(ArrayList<Atom<?>> truths, Worklist worklist, Assumptions assumptions) throws ResolutionError {
+	protected boolean isVoid(ArrayList<Atom<?>> truths, Worklist worklist, Assumptions assumptions)
+			throws ResolutionError {
 		// FIXME: there is a bug in the following case which needs to be
 		// addressed:
 		//
@@ -212,7 +229,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			}
 			case TYPE_nom: {
 				Type.Nominal nom = (Type.Nominal) t;
-				Declaration.Type decl = typeSystem.resolveExactly(nom.getName(),Declaration.Type.class);
+				Declaration.Type decl = typeSystem.resolveExactly(nom.getName(), Declaration.Type.class);
 				if (item.maximise || decl.getInvariant().size() == 0) {
 					worklist.push(item.sign, decl.getType(), item.maximise);
 				} else if (item.sign) {
@@ -239,8 +256,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	}
 
 	/**
-	 * Determine whether the intersection of two arbitrary atoms results in void
-	 * or not. Each atom is either a "positive" or "negative" term. The latter
+	 * Determine whether the intersection of two arbitrary atoms results in void or
+	 * not. Each atom is either a "positive" or "negative" term. The latter
 	 * corresponds to negated terms, such as !int or !{int f}.
 	 *
 	 * @param a
@@ -256,6 +273,9 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		boolean bSign = b.sign;
 		int aOpcode = a.type.getOpcode();
 		int bOpcode = b.type.getOpcode();
+		// Normalise the opcodes for convenience
+		aOpcode = (aOpcode == TYPE_meth) ? TYPE_fun : aOpcode;
+		bOpcode = (bOpcode == TYPE_meth) ? TYPE_fun : bOpcode;
 		//
 		if (aOpcode == bOpcode) {
 			// In this case, we are intersecting two atoms of the same kind, of
@@ -284,7 +304,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			case TYPE_fun:
 			case TYPE_meth:
 			case TYPE_property:
-				return isVoidFunction((Atom<Type.Callable>) a, (Atom<Type.Callable>) b, assumptions);
+				return isVoidCallable((Atom<Type.Callable>) a, (Atom<Type.Callable>) b, assumptions);
 			default:
 				throw new RuntimeException("invalid type encountered: " + aOpcode);
 			}
@@ -316,25 +336,25 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	/**
 	 * <p>
 	 * Determine whether the intersection of two array types is void or not. For
-	 * example, <code>int[]</code> intersecting with <code>bool[]</code> gives
-	 * void. In contrast, intersecting <code>(int|null)[]</code> with
-	 * <code>int[]</code> does not give void. Likewise, <code>int[]</code>
-	 * intersecting with <code>!(int[])</code> gives void, whilst intersecting
-	 * <code>int[]</code> with <code>!(bool[])</code> does not give void.
+	 * example, <code>int[]</code> intersecting with <code>bool[]</code> gives void.
+	 * In contrast, intersecting <code>(int|null)[]</code> with <code>int[]</code>
+	 * does not give void. Likewise, <code>int[]</code> intersecting with
+	 * <code>!(int[])</code> gives void, whilst intersecting <code>int[]</code> with
+	 * <code>!(bool[])</code> does not give void.
 	 * </p>
 	 *
 	 * @param lhsSign
-	 *            The sign of the first type being intersected. If true, we have
-	 *            a positive atom. Otherwise, we have a negative atom.
+	 *            The sign of the first type being intersected. If true, we have a
+	 *            positive atom. Otherwise, we have a negative atom.
 	 * @param lhs.
-	 *            The first type being intersected, referred to as the
-	 *            "left-hand side".
+	 *            The first type being intersected, referred to as the "left-hand
+	 *            side".
 	 * @param rhsSign
-	 *            The sign of the second type being intersected. If true, we
-	 *            have a positive atom. Otherwise, we have a negative atom.
+	 *            The sign of the second type being intersected. If true, we have a
+	 *            positive atom. Otherwise, we have a negative atom.
 	 * @param rhs
-	 *            The second type being intersected, referred to as the
-	 *            "right-hand side".
+	 *            The second type being intersected, referred to as the "right-hand
+	 *            side".
 	 * @param assumptions
 	 *            The set of assumed subtype relationships
 	 * @return
@@ -359,26 +379,26 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 
 	/**
 	 * <p>
-	 * Determine whether the intersection of two record types is void or not.
-	 * For example, <code>{int f}</code> intersecting with <code>{int g}</code>
-	 * gives void. In contrast, intersecting <code>{int|null f}</code> with
+	 * Determine whether the intersection of two record types is void or not. For
+	 * example, <code>{int f}</code> intersecting with <code>{int g}</code> gives
+	 * void. In contrast, intersecting <code>{int|null f}</code> with
 	 * <code>{int f}</code> does not give void. Likewise, <code>{int f}</code>
 	 * intersecting with <code>!{int f}</code> gives void, whilst intersecting
 	 * <code>{int f}</code> with <code>!{int g}</code> does not give void.
 	 * </p>
 	 *
 	 * @param lhsSign
-	 *            The sign of the first type being intersected. If true, we have
-	 *            a positive atom. Otherwise, we have a negative atom.
+	 *            The sign of the first type being intersected. If true, we have a
+	 *            positive atom. Otherwise, we have a negative atom.
 	 * @param lhs.
-	 *            The first type being intersected, referred to as the
-	 *            "left-hand side".
+	 *            The first type being intersected, referred to as the "left-hand
+	 *            side".
 	 * @param rhsSign
-	 *            The sign of the second type being intersected. If true, we
-	 *            have a positive atom. Otherwise, we have a negative atom.
+	 *            The sign of the second type being intersected. If true, we have a
+	 *            positive atom. Otherwise, we have a negative atom.
 	 * @param rhs
-	 *            The second type being intersected, referred to as the
-	 *            "right-hand side".
+	 *            The second type being intersected, referred to as the "right-hand
+	 *            side".
 	 * @param assumptions
 	 *            The set of assumed subtype relationships
 	 * @return
@@ -443,10 +463,10 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 				// case, this means there is no intersection. In the pos-neg
 				// case, this means there is an intersection.
 				return sign;
-			} else if(!lhs.sign && !lhs.type.isOpen() && rhs.type.isOpen()) {
+			} else if (!lhs.sign && !lhs.type.isOpen() && rhs.type.isOpen()) {
 				// Matches e.g. !{int x} & {int x, ...}.
 				return false;
-			} else if(!rhs.sign && !rhs.type.isOpen() && lhs.type.isOpen()) {
+			} else if (!rhs.sign && !rhs.type.isOpen() && lhs.type.isOpen()) {
 				// Matches e.g. {int x, ...} & !{int x}.
 				return false;
 			} else {
@@ -466,24 +486,23 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 * Determine whether the intersection of two reference types is void or not.
 	 * Reference types are "invariant", meaning that element types must match
 	 * exactly for an intersection to arise. For example, <code>&int</code>
-	 * intersecting with <code>&bool</code> gives void. In contrast,
-	 * intersecting <code>&int</code> with <code>&int</code> does not give void.
-	 * Hoever, <code>&int</code> intersecting with <code>&(int|bool)</code>
-	 * gives void.
+	 * intersecting with <code>&bool</code> gives void. In contrast, intersecting
+	 * <code>&int</code> with <code>&int</code> does not give void. Hoever,
+	 * <code>&int</code> intersecting with <code>&(int|bool)</code> gives void.
 	 * </p>
 	 *
 	 * @param lhsSign
-	 *            The sign of the first type being intersected. If true, we have
-	 *            a positive atom. Otherwise, we have a negative atom.
+	 *            The sign of the first type being intersected. If true, we have a
+	 *            positive atom. Otherwise, we have a negative atom.
 	 * @param lhs.
-	 *            The first type being intersected, referred to as the
-	 *            "left-hand side".
+	 *            The first type being intersected, referred to as the "left-hand
+	 *            side".
 	 * @param rhsSign
-	 *            The sign of the second type being intersected. If true, we
-	 *            have a positive atom. Otherwise, we have a negative atom.
+	 *            The sign of the second type being intersected. If true, we have a
+	 *            positive atom. Otherwise, we have a negative atom.
 	 * @param rhs
-	 *            The second type being intersected, referred to as the
-	 *            "right-hand side".
+	 *            The second type being intersected, referred to as the "right-hand
+	 *            side".
 	 * @param assumptions
 	 *            The set of assumed subtype relationships
 	 * @return
@@ -516,51 +535,73 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 
 	/**
 	 * <p>
-	 * Determine whether the intersection of two function types is void or not.
-	 * For example, <code>function(int)->(int)</code> intersecting with
+	 * Determine whether the intersection of two function types is void or not. For
+	 * example, <code>function(int)->(int)</code> intersecting with
 	 * <code>function(bool)->(int)</code> gives void. In contrast, intersecting
-	 * <code>function(int|null)->(int)</code> with
-	 * <code>function(int)->(int)</code> does not give void. Likewise,
-	 * <code>function(int)->(int)</code> intersecting with
-	 * <code>!function(int)->(int)</code> gives void, whilst intersecting
-	 * <code>function(int)->(int)</code> with
-	 * <code>!function(bool)->(int)</code> does not give void.
+	 * <code>function(int|null)->(int)</code> with <code>function(int)->(int)</code>
+	 * does not give void. Likewise, <code>function(int)->(int)</code> intersecting
+	 * with <code>!function(int)->(int)</code> gives void, whilst intersecting
+	 * <code>function(int)->(int)</code> with <code>!function(bool)->(int)</code>
+	 * does not give void.
 	 * </p>
 	 *
 	 *
 	 * @param lhsSign
-	 *            The sign of the first type being intersected. If true, we have
-	 *            a positive atom. Otherwise, we have a negative atom.
+	 *            The sign of the first type being intersected. If true, we have a
+	 *            positive atom. Otherwise, we have a negative atom.
 	 * @param lhs.
-	 *            The first type being intersected, referred to as the
-	 *            "left-hand side".
+	 *            The first type being intersected, referred to as the "left-hand
+	 *            side".
 	 * @param rhsSign
-	 *            The sign of the second type being intersected. If true, we
-	 *            have a positive atom. Otherwise, we have a negative atom.
+	 *            The sign of the second type being intersected. If true, we have a
+	 *            positive atom. Otherwise, we have a negative atom.
 	 * @param rhs
-	 *            The second type being intersected, referred to as the
-	 *            "right-hand side".
+	 *            The second type being intersected, referred to as the "right-hand
+	 *            side".
 	 * @param assumptions
 	 *            The set of assumed subtype relationships private boolean
 	 * @throws ResolutionError
 	 */
-	protected boolean isVoidFunction(Atom<Type.Callable> lhs, Atom<Type.Callable> rhs, Assumptions assumptions)
+	protected boolean isVoidCallable(Atom<Type.Callable> lhs, Atom<Type.Callable> rhs, Assumptions assumptions)
 			throws ResolutionError {
-		if (lhs.sign || rhs.sign) {
+		boolean lhsMeth = (lhs.type instanceof Type.Method);
+		boolean rhsMeth = (rhs.type instanceof Type.Method);
+		//
+		// FIXME: this needs to deal properly with lifetime parameters
+		//
+		if (lhsMeth != rhsMeth && lhsMeth && lhs.sign) {
+			// Intersecting positive method (lhs) with positive or negative function (rhs)
+			// never gives void. This is because the set of methods includes the set of
+			// functions, but not vice-versa.
+			return false;
+		} else if (lhsMeth != rhsMeth && rhsMeth && rhs.sign) {
+			// Intersecting positive method (rhs) with positive or negative function (lhs)
+			// never gives void. This is because the set of methods includes the set of
+			// functions, but not vice-versa.
+			return false;
+		} else if (lhs.sign || rhs.sign) {
 			// The sign indicates whether were in the pos-pos case, or in the
 			// pos-neg case.
 			Tuple<Type> lhsParameters = lhs.type.getParameters();
 			Tuple<Type> rhsParameters = rhs.type.getParameters();
-			Tuple<Type> lhsReturns = lhs.type.getParameters();
-			Tuple<Type> rhsReturns = rhs.type.getParameters();
-			//
+			Tuple<Type> lhsReturns = lhs.type.getReturns();
+			Tuple<Type> rhsReturns = rhs.type.getReturns();
 			// FIXME: should maximise be flipped for parameters as well?
 			//
-			boolean pr = isVoidParameters(!lhs.sign, lhs.maximise, lhsParameters, !rhs.sign, rhs.maximise,
-					rhsParameters, assumptions);
-			boolean rr = isVoidParameters(lhs.sign, lhs.maximise, lhsReturns, rhs.sign, rhs.maximise, rhsReturns,
-					assumptions);
-			return pr || rr;
+			// Parameters are contravariant. We can think of this as turning the hierarchy
+			// upside down. Things which were large before are now small, etc. For example,
+			// fun(int)->(int) & !fun(any)->(int) is not void. This is because, under
+			// contravariance, any is *smaller* than int. However, fun(int|null)->(int) &
+			// !fun(int)->(int) is void.
+			boolean paramsContravariantVoid = isVoidParameters(!lhs.sign, lhs.maximise, lhsParameters, !rhs.sign,
+					rhs.maximise, rhsParameters, assumptions);
+			// Returns are covariant, which is the usual way of thinking about things. For
+			// example, fun(int)->(int) & !fun(int)->any is void, whilst
+			// fun(int)->(int|null) & !fun(int)->(int) is not.
+			boolean returnsCovariantVoid = isVoidParameters(lhs.sign, lhs.maximise, lhsReturns, rhs.sign, rhs.maximise,
+					rhsReturns, assumptions);
+			// If both parameters and returns are void, then the whole thing is void.
+			return paramsContravariantVoid && returnsCovariantVoid;
 		} else {
 			// In this case, we are intersecting two negative function types.
 			// For example, !(function(int)->(int)) and
@@ -569,8 +610,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		}
 	}
 
-	protected boolean isVoidParameters(boolean lhsSign, boolean lhsMax, Tuple<Type> lhs, boolean rhsSign, boolean rhsMax,
-			Tuple<Type> rhs, Assumptions assumptions) throws ResolutionError {
+	protected boolean isVoidParameters(boolean lhsSign, boolean lhsMax, Tuple<Type> lhs, boolean rhsSign,
+			boolean rhsMax, Tuple<Type> rhs, Assumptions assumptions) throws ResolutionError {
 		boolean sign = lhsSign == rhsSign;
 		//
 		if (lhs.size() != rhs.size()) {
@@ -709,7 +750,7 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	}
 
 	private static final class HashSetAssumptions implements Assumptions {
-		private final HashSet<Pair<Term,Term>> assumptions;
+		private final HashSet<Pair<Term, Term>> assumptions;
 
 		public HashSetAssumptions() {
 			this.assumptions = new HashSet<>();
@@ -717,17 +758,17 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 
 		@Override
 		public boolean isAssumedVoid(Term<?> lhs, Term<?> rhs) {
-			return assumptions.contains(new Pair<>(lhs,rhs));
+			return assumptions.contains(new Pair<>(lhs, rhs));
 		}
 
 		@Override
 		public void setAssumedVoid(Term<?> lhs, Term<?> rhs) {
-			assumptions.add(new Pair<>(lhs,rhs));
+			assumptions.add(new Pair<>(lhs, rhs));
 		}
 
 		@Override
 		public void clearAssumedVoid(Term<?> lhs, Term<?> rhs) {
-			assumptions.remove(new Pair<>(lhs,rhs));
+			assumptions.remove(new Pair<>(lhs, rhs));
 		}
 	}
 

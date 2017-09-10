@@ -1,9 +1,5 @@
-
-
 type Expr is int | Var | BinOp
-
 type BinOp is {Expr rhs, Expr lhs}
-
 type Var is {int[] id}
 
 type SyntaxError is {int[] err}

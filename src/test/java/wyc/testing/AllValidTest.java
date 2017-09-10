@@ -53,12 +53,12 @@ public class AllValidTest {
 		IGNORED.put("Function_Valid_15", "#566");
 		IGNORED.put("TypeEquals_Valid_23", "#566");
 		IGNORED.put("TypeEquals_Valid_41", "#566");
-//		//
+		//
 		IGNORED.put("RecordSubtype_Valid_1", "#696");
 		IGNORED.put("RecordSubtype_Valid_2", "#696");
-//		//
-		//IGNORED.put("Function_Valid_11", "#702");
-//		//
+		//
+		IGNORED.put("Function_Valid_11", "#702");
+		//
 	}
 
 	/**
