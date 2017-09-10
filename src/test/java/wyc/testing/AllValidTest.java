@@ -50,7 +50,6 @@ public class AllValidTest {
 
 	static {
 		//
-		IGNORED.put("Function_Valid_15", "#566");
 		IGNORED.put("TypeEquals_Valid_23", "#566");
 		IGNORED.put("TypeEquals_Valid_41", "#566");
 		//
@@ -58,7 +57,15 @@ public class AllValidTest {
 		IGNORED.put("RecordSubtype_Valid_2", "#696");
 		//
 		IGNORED.put("Function_Valid_11", "#702");
+		IGNORED.put("Function_Valid_15", "#702");
 		//
+		IGNORED.put("RecursiveType_Valid_2", "#763");
+		IGNORED.put("TypeEquals_Valid_25", "#763");
+		IGNORED.put("TypeEquals_Valid_30", "#763");
+		//
+		IGNORED.put("Lifetime_Lambda_Valid_7", "#764");
+		IGNORED.put("Lifetime_Valid_7", "#764");
+		IGNORED.put("Lifetime_Valid_8", "#764");
 	}
 
 	/**
