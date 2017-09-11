@@ -1174,6 +1174,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Stmt.Block) super.getOperand(2);
 			}
 
+			public Tuple<Expr.VariableAccess> getModified() {
+				// FIXME: this should hold some information
+				return new Tuple<>();
+			}
+
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
@@ -1385,6 +1390,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			public Stmt.Block getBody() {
 				return (Stmt.Block) super.getOperand(2);
+			}
+
+			public Tuple<Expr.VariableAccess> getModified() {
+				// FIXME: this should hold some information
+				return new Tuple<>();
 			}
 
 			@SuppressWarnings("unchecked")

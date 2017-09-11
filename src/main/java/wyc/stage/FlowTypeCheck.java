@@ -1464,7 +1464,7 @@ public class FlowTypeCheck {
 			types[i] = checkExpression(arguments.getOperand(i), env);
 		}
 		// Determine the declaration being invoked
-		Declaration.Callable decl = resolveAsCallable(expr.getName(), expr, types);
+		Declaration.Callable decl = resolveAsCallable(expr.getName(), types);
 		// Assign descriptor to this expression
 		expr.setSignature(expr.getHeap().allocate(decl.getType()));
 		// Finally, return the declared returns/
@@ -1659,7 +1659,7 @@ public class FlowTypeCheck {
 		if (types.size() > 0) {
 			// Parameter types have been given, so use them to help resolve
 			// declaration.
-			decl = resolveAsCallable(expr.getName(), expr, types.toArray(Type.class));
+			decl = resolveAsCallable(expr.getName(), types.toArray(Type.class));
 		} else {
 			// No parameters we're given, therefore attempt to resolve
 			// uniquely.
@@ -1756,9 +1756,9 @@ public class FlowTypeCheck {
 			List<Declaration.FunctionOrMethod> candidates = typeSystem.resolveAll(name,
 					Declaration.FunctionOrMethod.class);
 			if (candidates.isEmpty()) {
-				return syntaxError(errorMessage(UNKNOWN_FUNCTION_OR_METHOD), context);
+				return syntaxError(errorMessage(RESOLUTION_ERROR,name.toString()), context);
 			} else if (candidates.size() > 1) {
-				return syntaxError(errorMessage(UNKNOWN_FUNCTION_OR_METHOD), context);
+				return syntaxError(errorMessage(AMBIGUOUS_RESOLUTION,foundCandidatesString(candidates)), context);
 			} else {
 				return candidates.get(0);
 			}
@@ -1776,17 +1776,17 @@ public class FlowTypeCheck {
 	 * @param args
 	 * @return
 	 */
-	private Declaration.Callable resolveAsCallable(Name name, SyntacticItem context, Type... args) {
+	private Declaration.Callable resolveAsCallable(Name name, Type... args) {
 		try {
 			// Identify all function or macro declarations which should be
 			// considered
 			List<Declaration.Callable> candidates = typeSystem.resolveAll(name, Declaration.Callable.class);
 			// Based on given argument types, select the most precise signature
 			// from the candidates.
-			Declaration.Callable selected = selectCallableCandidate(name, context, candidates, args);
+			Declaration.Callable selected = selectCallableCandidate(name, candidates,args);
 			return selected;
 		} catch (ResolutionError e) {
-			return syntaxError(e.getMessage(), context);
+			return syntaxError(e.getMessage(), name);
 		}
 	}
 
@@ -1800,7 +1800,7 @@ public class FlowTypeCheck {
 	 * @param args
 	 * @return
 	 */
-	private Declaration.Callable selectCallableCandidate(Name name, SyntacticItem context, List<Declaration.Callable> candidates,
+	private Declaration.Callable selectCallableCandidate(Name name, List<Declaration.Callable> candidates,
 			Type... args) {
 		Declaration.Callable best = null;
 		//
@@ -1831,7 +1831,7 @@ public class FlowTypeCheck {
 						// This is the awkward case. Neither the best so far, nor
 						// the candidate, are subtypes of each other. In this case,
 						// we report an error.
-						return syntaxError("unable to resolve function", context);
+						return syntaxError(errorMessage(AMBIGUOUS_RESOLUTION,foundCandidatesString(candidates)), name);
 					}
 				}
 			}
@@ -1843,7 +1843,8 @@ public class FlowTypeCheck {
 		} else {
 			// No, there was no winner. In fact, there must have been no
 			// applicable candidates to get here.
-			return syntaxError("unable to resolve name (no match for " + name + parameterString(args) + foundCandidatesString(candidates) + ")", context);
+			return syntaxError("unable to resolve name (no match for " + name + parameterString(args) + ")"
+					+ foundCandidatesString(candidates), name);
 		}
 	}
 
@@ -1864,7 +1865,7 @@ public class FlowTypeCheck {
 		return paramStr + ")";
 	}
 
-	private String foundCandidatesString(Collection<Declaration.Callable> candidates) {
+	private String foundCandidatesString(Collection<? extends Declaration.Callable> candidates) {
 		ArrayList<String> candidateStrings = new ArrayList<>();
 		for (Declaration.Callable c : candidates) {
 			// FIXME: this is very ugly

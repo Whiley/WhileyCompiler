@@ -75,6 +75,7 @@ public class ErrorMessages {
 	public static final MsgWithNoParams BREAK_OUTSIDE_SWITCH_OR_LOOP = new MsgWithNoParams("break outside switch or loop");
 	public static final MsgWithNoParams CONTINUE_OUTSIDE_LOOP = new MsgWithNoParams("continue outside loop");
 	public static final MsgWithStringParam RESOLUTION_ERROR = new MsgWithStringParam("unable to resolve name ($0)");
+	public static final MsgWithStringParam AMBIGUOUS_RESOLUTION = new MsgWithStringParam("unable to resolve name (is ambiguous)$0");
 	public static final MsgWithNoParams UNKNOWN_VARIABLE = new MsgWithNoParams("unknown variable");
 	public static final MsgWithNoParams UNKNOWN_FUNCTION_OR_METHOD = new MsgWithNoParams("unknown function or method");
 	public static final MsgWithNoParams VARIABLE_POSSIBLY_UNITIALISED = new MsgWithNoParams("variable may be uninitialised");

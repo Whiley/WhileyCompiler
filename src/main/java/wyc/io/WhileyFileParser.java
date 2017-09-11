@@ -2741,7 +2741,8 @@ public class WhileyFileParser {
 		} else {
 			// unqualified direct invocation
 			Type.Callable type = new Type.Unresolved();
-			return annotateSourceLocation(new Expr.Invoke(new Name(name), lifetimes, args, type), start);
+			Name nm = annotateSourceLocation(new Name(name), start, start);
+			return annotateSourceLocation(new Expr.Invoke(nm, lifetimes, args, type), start);
 		}
 	}
 
@@ -4418,12 +4419,16 @@ public class WhileyFileParser {
 	}
 
 	private <T extends SyntacticItem> T annotateSourceLocation(T item, int start) {
+		return annotateSourceLocation(item, start, index - 1);
+	}
+
+	private <T extends SyntacticItem> T annotateSourceLocation(T item, int start, int end) {
 		// Allocate item to enclosing WhileyFile. This is necessary so that the
 		// annotations can then be correctly allocated as well.
 		item = file.allocate(item);
 		// Determine the first and last token representing this span.
 		Token first = tokens.get(start);
-		Token last = tokens.get(index - 1);
+		Token last = tokens.get(end);
 		file.allocate(new Attribute.Span(item,first.start,last.end()));
 		return item;
 	}
