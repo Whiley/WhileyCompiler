@@ -56,27 +56,27 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 
 	@Override
 	public void apply(WhileyFile module) {
-		for(Declaration d : module.getDeclarations()) {
+		for(Decl d : module.getDeclarations()) {
 			check(d);
 		}
 	}
 
-	private void check(Declaration decl) {
-		if(decl instanceof Declaration.Type) {
-			check((Declaration.Type) decl);
-		} else if(decl instanceof Declaration.FunctionOrMethod) {
-			check((Declaration.FunctionOrMethod) decl);
+	private void check(Decl decl) {
+		if(decl instanceof Decl.Type) {
+			check((Decl.Type) decl);
+		} else if(decl instanceof Decl.FunctionOrMethod) {
+			check((Decl.FunctionOrMethod) decl);
 		} else {
 			// do nothing?
 		}
 	}
 
-	private void check(Declaration.Type t) {
+	private void check(Decl.Type t) {
 		for(Expr e : t.getInvariant()) {
 			checkExpression(false,e);
 		}
 	}
-	private void check(Declaration.FunctionOrMethod fm) {
+	private void check(Decl.FunctionOrMethod fm) {
 		// FIXME: check requires / ensures clauses?
 
 		// Examine body of the function or method
@@ -132,9 +132,9 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 			break;
 		case STMT_switch:
 			checkSwitch((Stmt.Switch) stmt);
-		case DECL_variable:
-		case DECL_variableinitialiser:
-			checkVariableDeclaration((Declaration.Variable) stmt);
+		case DECL_var:
+		case DECL_varinit:
+			checkVariableDeclaration((Decl.Variable) stmt);
 			break;
 		case STMT_while:
 			checkWhile((Stmt.While) stmt);
@@ -171,7 +171,7 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 	}
 
 	private void checkDebug(Stmt.Debug stmt) {
-		checkExpression(false,stmt.getCondition());
+		checkExpression(false,stmt.getOperand());
 	}
 
 	private void checkDoWhile(Stmt.DoWhile stmt) {
@@ -196,7 +196,7 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 	}
 
 	private void checkReturn(Stmt.Return stmt) {
-		checkExpressions(true, stmt.getOperand());
+		checkExpressions(true, stmt.getReturns());
 	}
 
 	private void checkSkip(Stmt.Skip stmt) {
@@ -215,7 +215,7 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 		checkBlock(stmt.getBody());
 	}
 
-	private void checkVariableDeclaration(Declaration.Variable stmt) {
+	private void checkVariableDeclaration(Decl.Variable stmt) {
 		if(stmt.hasInitialiser()) {
 			checkExpression(true,stmt.getInitialiser());
 		}
@@ -229,7 +229,7 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 
 	private void checkExpression(boolean consumed, Expr expr) {
 		switch(expr.getOpcode()) {
-		case EXPR_const:
+		case EXPR_constant:
 			checkConstant(consumed, (Expr.Constant) expr);
 			break;
 		case EXPR_varcopy:
@@ -247,15 +247,15 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 		case EXPR_indirectinvoke:
 			checkIndirectInvoke(consumed, (Expr.IndirectInvoke) expr);
 		// Conditions
-		case EXPR_not:
-		case EXPR_or:
-		case EXPR_and:
-		case EXPR_iff:
-		case EXPR_implies:
+		case EXPR_lnot:
+		case EXPR_lor:
+		case EXPR_land:
+		case EXPR_liff:
+		case EXPR_limplies:
 			checkLogicalOperator(consumed, (Expr.Operator) expr);
 			break;
-		case EXPR_forall:
-		case EXPR_exists:
+		case EXPR_lall:
+		case EXPR_lsome:
 			checkQuantifier(consumed, (Expr.Quantifier) expr);
 			break;
 		case EXPR_is:
@@ -264,66 +264,66 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 		// Comparators
 		case EXPR_eq:
 		case EXPR_neq:
-		case EXPR_lt:
-		case EXPR_lteq:
-		case EXPR_gt:
-		case EXPR_gteq:
+		case EXPR_ilt:
+		case EXPR_ile:
+		case EXPR_igt:
+		case EXPR_igteq:
 			checkComparisonOperator(consumed, (Expr.Operator) expr);
 			break;
 		// Arithmetic Operators
-		case EXPR_neg:
-		case EXPR_add:
-		case EXPR_sub:
-		case EXPR_mul:
-		case EXPR_div:
-		case EXPR_rem:
+		case EXPR_ineg:
+		case EXPR_iadd:
+		case EXPR_isub:
+		case EXPR_imul:
+		case EXPR_idiv:
+		case EXPR_irem:
 			checkArithmeticOperator(consumed, (Expr.Operator) expr);
 			break;
 		// Bitwise expressions
-		case EXPR_bitwisenot:
-		case EXPR_bitwiseand:
-		case EXPR_bitwiseor:
-		case EXPR_bitwisexor:
+		case EXPR_bnot:
+		case EXPR_band:
+		case EXPR_bor:
+		case EXPR_bxor:
 			checkBitwiseOperator(consumed, (Expr.Operator) expr);
 			break;
-		case EXPR_bitwiseshl:
-		case EXPR_bitwiseshr:
+		case EXPR_bshl:
+		case EXPR_bshr:
 			checkBitwiseShift(consumed, (Expr.Operator) expr);
 			break;
 		// Record Expressions
-		case EXPR_recinit:
+		case EXPR_rinit:
 			checkRecordInitialiser(consumed, (Expr.RecordInitialiser) expr);
 			break;
-		case EXPR_recfield:
+		case EXPR_rread:
 			checkRecordAccess(consumed, (Expr.RecordAccess) expr);
 			break;
-		case EXPR_recupdt:
+		case EXPR_rwrite:
 			checkRecordUpdate(consumed, (Expr.RecordUpdate) expr);
 			break;
 			// Array expressions
-		case EXPR_arrlen:
+		case EXPR_alen:
 			checkArrayLength(consumed, (Expr.ArrayLength) expr);
 			break;
-		case EXPR_arrinit:
+		case EXPR_ainit:
 			checkArrayInitialiser(consumed, (Expr.ArrayInitialiser) expr);
 			break;
-		case EXPR_arrgen:
+		case EXPR_agen:
 			checkArrayGenerator(consumed, (Expr.ArrayGenerator) expr);
 			break;
-		case EXPR_arridx:
+		case EXPR_aread:
 			checkArrayAccess(consumed, (Expr.ArrayAccess) expr);
 			break;
-		case EXPR_arrupdt:
+		case EXPR_awrite:
 			checkArrayUpdate(consumed, (Expr.ArrayUpdate) expr);
 			break;
 			// Reference expressions
-		case EXPR_deref:
+		case EXPR_pread:
 			checkDereference(consumed, (Expr.Dereference) expr);
 			break;
-		case EXPR_new:
+		case EXPR_pinit:
 			checkNew(consumed, (Expr.New) expr);
 			break;
-		case EXPR_lambda:
+		case EXPR_lread:
 			checkLambdaConstant(consumed, (Expr.LambdaAccess) expr);
 			break;
 		default:
@@ -444,7 +444,7 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 	}
 
 	public void checkNew(boolean consumed, Expr.New expr) {
-		checkExpression(consumed, expr.getOperand());
+		checkExpression(consumed, expr.getValue());
 	}
 
 	public void checkLambdaConstant(boolean consumed, Expr.LambdaAccess expr) {

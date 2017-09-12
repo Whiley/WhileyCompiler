@@ -54,7 +54,7 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	public void check() {
-		for (WhileyFile.Declaration d : file.getDeclarations()) {
+		for (WhileyFile.Decl d : file.getDeclarations()) {
 			check(d);
 		}
 	}
@@ -64,21 +64,21 @@ public class DefiniteAssignmentAnalysis {
 	 *
 	 * @param declaration
 	 */
-	private void check(WhileyFile.Declaration declaration) {
-		if(declaration instanceof Declaration.Import) {
+	private void check(WhileyFile.Decl declaration) {
+		if(declaration instanceof Decl.Import) {
 			// There isn't anything to do here. This is because imports cannot
 			// use variables anyway.
-		} else if(declaration instanceof Declaration.StaticVariable) {
+		} else if(declaration instanceof Decl.StaticVariable) {
 			// There isn't anything to do here. This is because constants cannot
 			// use variables anyway.
-		} else if(declaration instanceof Declaration.Type) {
+		} else if(declaration instanceof Decl.Type) {
 			// There isn't anything to do here either. This is because variables
 			// used in type invariants are already checked by the
 			// FlowTypeChecker to ensure they are declared.
-		} else if(declaration instanceof Declaration.FunctionOrMethod) {
-			check((Declaration.FunctionOrMethod) declaration);
-		} else if(declaration instanceof Declaration.Property) {
-			check((Declaration.Property) declaration);
+		} else if(declaration instanceof Decl.FunctionOrMethod) {
+			check((Decl.FunctionOrMethod) declaration);
+		} else if(declaration instanceof Decl.Property) {
+			check((Decl.Property) declaration);
 		} else {
 			throw new InternalFailure("unknown declaration encountered",file.getEntry(),declaration);
 		}
@@ -90,11 +90,11 @@ public class DefiniteAssignmentAnalysis {
 	 * @param declaration
 	 * @return
 	 */
-	private void check(Declaration.FunctionOrMethod declaration) {
+	private void check(Decl.FunctionOrMethod declaration) {
 		// Initialise set of definitely assigned variables to include all
 		// parameters.
 		DefintelyAssignedSet environment = new DefintelyAssignedSet();
-		for(Declaration.Variable p : declaration.getParameters()) {
+		for(Decl.Variable p : declaration.getParameters()) {
 			environment = environment.add(p.getName());
 		}
 		// Check the preconditions
@@ -102,7 +102,7 @@ public class DefiniteAssignmentAnalysis {
 		// Check the postconditions
 		{
 			DefintelyAssignedSet postEnvironment = environment;
-			for(Declaration.Variable p : declaration.getReturns()) {
+			for(Decl.Variable p : declaration.getReturns()) {
 				postEnvironment = postEnvironment.add(p.getName());
 			}
 			checkExpressions(declaration.getEnsures(),postEnvironment);
@@ -118,11 +118,11 @@ public class DefiniteAssignmentAnalysis {
 	 * @param declaration
 	 * @return
 	 */
-	private void check(Declaration.Property declaration) {
+	private void check(Decl.Property declaration) {
 		// Initialise set of definitely assigned variables to include all
 		// parameters.
 		DefintelyAssignedSet defs = new DefintelyAssignedSet();
-		for(Declaration.Variable p : declaration.getParameters()) {
+		for(Decl.Variable p : declaration.getParameters()) {
 			defs = defs.add(p.getName());
 		}
 		// Iterate through each statement in the body of the function or method,
@@ -197,8 +197,8 @@ public class DefiniteAssignmentAnalysis {
 				return checkSkip((Stmt.Skip) statement, environment);
 			} else if(statement instanceof Stmt.Switch) {
 				return checkSwitch((Stmt.Switch) statement, environment);
-			} else if(statement instanceof Declaration.Variable) {
-				return checkVariableDeclaration((Declaration.Variable) statement, environment);
+			} else if(statement instanceof Decl.Variable) {
+				return checkVariableDeclaration((Decl.Variable) statement, environment);
 			} else if(statement instanceof Stmt.While) {
 				return checkWhile((Stmt.While) statement, environment);
 			} else {
@@ -256,7 +256,7 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	private ControlFlow checkDebug(Stmt.Debug stmt, DefintelyAssignedSet environment) {
-		checkExpression(stmt.getCondition(), environment);
+		checkExpression(stmt.getOperand(), environment);
 		return new ControlFlow(environment,null);
 	}
 
@@ -297,7 +297,7 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	private ControlFlow checkReturn(Stmt.Return stmt, DefintelyAssignedSet environment) {
-		for(Expr e : stmt.getOperand()) {
+		for(Expr e : stmt.getReturns()) {
 			checkExpression(e, environment);
 		}
 		return new ControlFlow(null,null);
@@ -335,7 +335,7 @@ public class DefiniteAssignmentAnalysis {
 		return new ControlFlow(environment,breakEnvironment);
 	}
 
-	private ControlFlow checkVariableDeclaration(Declaration.Variable stmt, DefintelyAssignedSet environment) {
+	private ControlFlow checkVariableDeclaration(Decl.Variable stmt, DefintelyAssignedSet environment) {
 		if (stmt.hasInitialiser()) {
 			checkExpression(stmt.getInitialiser(), environment);
 			environment = environment.add(stmt.getName());
@@ -392,8 +392,8 @@ public class DefiniteAssignmentAnalysis {
 				checkIndirectFunctionOrMethodCall((Expr.IndirectInvoke) expression, environment);
 			} else if(expression instanceof Expr.Is) {
 				checkIs((Expr.Is) expression, environment);
-			} else if(expression instanceof Declaration.Lambda) {
-				checkLambda((Declaration.Lambda) expression, environment);
+			} else if(expression instanceof Decl.Lambda) {
+				checkLambda((Decl.Lambda) expression, environment);
 			} else if(expression instanceof Expr.VariableAccess) {
 				checkLocalVariable((Expr.VariableAccess) expression, environment);
 			} else if(expression instanceof Expr.New) {
@@ -461,9 +461,9 @@ public class DefiniteAssignmentAnalysis {
 		checkExpression(expression.getTestExpr(),environment);
 	}
 
-	private void checkLambda(Declaration.Lambda expression, DefintelyAssignedSet environment) {
+	private void checkLambda(Decl.Lambda expression, DefintelyAssignedSet environment) {
 		// Add lambda parameters to the set of definitely assigned variables.
-		for(Declaration.Variable p : expression.getParameters()) {
+		for(Decl.Variable p : expression.getParameters()) {
 			environment = environment.add(p.getName());
 		}
 		// Check body of the lambda
@@ -471,18 +471,18 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	private void checkLocalVariable(Expr.VariableAccess expression, DefintelyAssignedSet environment) {
-		Declaration.Variable vd = expression.getVariableDeclaration();
+		Decl.Variable vd = expression.getVariableDeclaration();
 		if (!environment.contains(vd.getName())) {
 			throw new SyntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), file.getEntry(), expression);
 		}
 	}
 
 	private void checkNew(Expr.New expression, DefintelyAssignedSet environment) {
-		checkExpression(expression.getOperand(),environment);
+		checkExpression(expression.getValue(),environment);
 	}
 
 	private void checkQuantifier(Expr.Quantifier expression, DefintelyAssignedSet environment) {
-		for(Declaration.Variable p : expression.getParameters()) {
+		for(Decl.Variable p : expression.getParameters()) {
 			checkExpression(p.getInitialiser(),environment);
 			environment = environment.add(p.getName());
 		}

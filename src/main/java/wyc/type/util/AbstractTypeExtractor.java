@@ -16,7 +16,7 @@ package wyc.type.util;
 import java.util.Arrays;
 
 import static wyc.lang.WhileyFile.Type;
-import static wyc.lang.WhileyFile.Declaration;
+import static wyc.lang.WhileyFile.Decl;
 import wybs.lang.NameResolver;
 import wybs.lang.NameResolver.ResolutionError;
 import wyc.type.TypeExtractor;
@@ -178,7 +178,7 @@ public abstract class AbstractTypeExtractor<T extends Type> implements TypeExtra
 	}
 
 	protected Disjunct toDisjunctiveNormalForm(Type.Nominal nominal) throws ResolutionError {
-		Declaration.Type decl = resolver.resolveExactly(nominal.getName(),Declaration.Type.class);
+		Decl.Type decl = resolver.resolveExactly(nominal.getName(),Decl.Type.class);
 		return toDisjunctiveNormalForm(decl.getVariableDeclaration().getType());
 	}
 

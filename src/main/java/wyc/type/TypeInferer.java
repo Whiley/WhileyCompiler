@@ -65,7 +65,7 @@ public interface TypeInferer {
 		 * @param var
 		 * @return
 		 */
-		Type getType(Declaration.Variable var);
+		Type getType(Decl.Variable var);
 
 		/**
 		 * Refine the type associated with a given variable declaration in this
@@ -79,8 +79,8 @@ public interface TypeInferer {
 		 * @param type
 		 * @return
 		 */
-		Environment refineType(Declaration.Variable var, Type type);
+		Environment refineType(Decl.Variable var, Type type);
 
-		Set<Declaration.Variable> getRefinedVariables();
+		Set<Decl.Variable> getRefinedVariables();
 	}
 }

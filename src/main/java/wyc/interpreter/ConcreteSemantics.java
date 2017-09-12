@@ -60,7 +60,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 	}
 
 	@Override
-	public RValue.Lambda Lambda(Declaration.Callable context, Interpreter.CallStack frame, Stmt body) {
+	public RValue.Lambda Lambda(Decl.Callable context, Interpreter.CallStack frame, Stmt body) {
 		return new RValue.Lambda(context, frame, body);
 	}
 
@@ -86,8 +86,8 @@ public class ConcreteSemantics implements AbstractSemantics {
 			} else if (type instanceof Type.Nominal) {
 				Type.Nominal nom = (Type.Nominal) type;
 				TypeSystem types = instance.getTypeSystem();
-				Declaration.Type decl = types.resolveExactly(nom.getName(), Declaration.Type.class);
-				Declaration.Variable var = decl.getVariableDeclaration();
+				Decl.Type decl = types.resolveExactly(nom.getName(), Decl.Type.class);
+				Decl.Variable var = decl.getVariableDeclaration();
 				if(is(var.getType(), instance) == True) {
 					Tuple<Expr> invariant = decl.getInvariant();
 					return checkInvariant(var,invariant,instance);
@@ -157,7 +157,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 		 * @param instance
 		 * @return
 		 */
-		public Bool checkInvariant(Declaration.Variable var, Tuple<Expr> invariant, Interpreter instance) {
+		public Bool checkInvariant(Decl.Variable var, Tuple<Expr> invariant, Interpreter instance) {
 			if (invariant.size() > 0) {
 				// One or more type invariants to check. Therefore, we need
 				// to execute the invariant and determine whether or not it
@@ -577,9 +577,9 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public RValue.Bool is(Type type, Interpreter instance) throws ResolutionError {
 				if (type instanceof Type.Record) {
 					Type.Record t = (Type.Record) type;
-					Tuple<Declaration.Variable> tFields = t.getFields();
+					Tuple<Decl.Variable> tFields = t.getFields();
 					for (int i = 0; i != tFields.size(); ++i) {
-						Declaration.Variable f = tFields.getOperand(i);
+						Decl.Variable f = tFields.getOperand(i);
 						if (hasField(f.getName())) {
 							RValue val = read(f.getName());
 							// Matching field
@@ -602,10 +602,10 @@ public class ConcreteSemantics implements AbstractSemantics {
 			public RValue convert(Type type) {
 				if (type instanceof Type.Record) {
 					Type.Record t = (Type.Record) type;
-					Tuple<Declaration.Variable> fields = t.getFields();
+					Tuple<Decl.Variable> fields = t.getFields();
 					RValue.Record rec = this;
 					for (int i = 0; i != fields.size(); ++i) {
-						Declaration.Variable f = fields.getOperand(i);
+						Decl.Variable f = fields.getOperand(i);
 						RValue v = this.read(f.getName()).convert(f.getType());
 						rec = rec.write(f.getName(), v);
 					}
@@ -666,7 +666,7 @@ public class ConcreteSemantics implements AbstractSemantics {
 			/**
 			 * Identify the declaration for this lambda
 			 */
-			private final Declaration.Callable context;
+			private final Decl.Callable context;
 			/**
 			 * The frame which holds true at this point.
 			 */
@@ -676,13 +676,13 @@ public class ConcreteSemantics implements AbstractSemantics {
 			 */
 			private final Stmt body;
 
-			private Lambda(Declaration.Callable context, Interpreter.CallStack frame, Stmt body) {
+			private Lambda(Decl.Callable context, Interpreter.CallStack frame, Stmt body) {
 				this.context = context;
 				this.frame = frame;
 				this.body = body;
 			}
 
-			public Declaration.Callable getContext() {
+			public Decl.Callable getContext() {
 				return context;
 			}
 

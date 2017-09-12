@@ -140,7 +140,7 @@ public class FlowTypeCheck {
 	}
 
 	public void check(WhileyFile wf) {
-		for (Declaration decl : wf.getDeclarations()) {
+		for (Decl decl : wf.getDeclarations()) {
 			check(decl);
 		}
 	}
@@ -149,15 +149,15 @@ public class FlowTypeCheck {
 	// Declarations
 	// =========================================================================
 
-	public void check(Declaration decl) {
-		if (decl instanceof Declaration.StaticVariable) {
-			checkStaticVariableDeclaration((Declaration.StaticVariable) decl);
-		} else if (decl instanceof Declaration.Type) {
-			checkTypeDeclaration((Declaration.Type) decl);
-		} else if (decl instanceof Declaration.FunctionOrMethod) {
-			checkFunctionOrMethodDeclaration((Declaration.FunctionOrMethod) decl);
+	public void check(Decl decl) {
+		if (decl instanceof Decl.StaticVariable) {
+			checkStaticVariableDeclaration((Decl.StaticVariable) decl);
+		} else if (decl instanceof Decl.Type) {
+			checkTypeDeclaration((Decl.Type) decl);
+		} else if (decl instanceof Decl.FunctionOrMethod) {
+			checkFunctionOrMethodDeclaration((Decl.FunctionOrMethod) decl);
 		} else {
-			checkPropertyDeclaration((Declaration.Property) decl);
+			checkPropertyDeclaration((Decl.Property) decl);
 		}
 	}
 
@@ -169,7 +169,7 @@ public class FlowTypeCheck {
 	 *            Type declaration to check.
 	 * @throws IOException
 	 */
-	public void checkTypeDeclaration(Declaration.Type decl) {
+	public void checkTypeDeclaration(Decl.Type decl) {
 		Environment environment = new StdTypeEnvironment();
 		// Check variable declaration is not empty
 		checkNonEmpty(decl.getVariableDeclaration());
@@ -184,7 +184,7 @@ public class FlowTypeCheck {
 	 *            Constant declaration to check.
 	 * @throws IOException
 	 */
-	public void checkStaticVariableDeclaration(Declaration.Variable decl) {
+	public void checkStaticVariableDeclaration(Decl.Variable decl) {
 		Environment environment = new StdTypeEnvironment();
 		// Check the initialiser
 		checkExpression(decl.getInitialiser(), environment);
@@ -197,7 +197,7 @@ public class FlowTypeCheck {
 	 *            Function or method declaration to check.
 	 * @throws IOException
 	 */
-	public void checkFunctionOrMethodDeclaration(Declaration.FunctionOrMethod d) {
+	public void checkFunctionOrMethodDeclaration(Decl.FunctionOrMethod d) {
 		// Check parameters and returns are not empty (i.e. are not equivalent
 		// to void, as this is non-sensical).
 		checkNonEmpty(d.getParameters());
@@ -226,7 +226,7 @@ public class FlowTypeCheck {
 	 * @param d
 	 * @param last
 	 */
-	private void checkReturnValue(Declaration.FunctionOrMethod d, Environment last) {
+	private void checkReturnValue(Decl.FunctionOrMethod d, Environment last) {
 		// FIXME: fix this!!
 		// if (!d.hasModifier(Modifier.NATIVE) && last != BOTTOM &&
 		// d.resolvedType().returns().length != 0
@@ -240,7 +240,7 @@ public class FlowTypeCheck {
 		// }
 	}
 
-	public void checkPropertyDeclaration(Declaration.Property d) {
+	public void checkPropertyDeclaration(Decl.Property d) {
 		// Check parameters and returns are not empty (i.e. are not equivalent
 		// to void, as this is non-sensical).
 		checkNonEmpty(d.getParameters());
@@ -293,8 +293,8 @@ public class FlowTypeCheck {
 			if (environment == BOTTOM) {
 				// Sanity check incoming environment
 				return syntaxError(errorMessage(UNREACHABLE_CODE), stmt);
-			} else if (stmt instanceof Declaration.Variable) {
-				return checkVariableDeclaration((Declaration.Variable) stmt, environment, scope);
+			} else if (stmt instanceof Decl.Variable) {
+				return checkVariableDeclaration((Decl.Variable) stmt, environment, scope);
 			} else if (stmt instanceof Stmt.Assign) {
 				return checkAssign((Stmt.Assign) stmt, environment, scope);
 			} else if (stmt instanceof Stmt.Return) {
@@ -404,7 +404,7 @@ public class FlowTypeCheck {
 	 *            this block
 	 * @return
 	 */
-	private Environment checkVariableDeclaration(Declaration.Variable decl, Environment environment,
+	private Environment checkVariableDeclaration(Decl.Variable decl, Environment environment,
 			EnclosingScope scope) throws IOException {
 		// Check type of initialiser.
 		if (decl.hasInitialiser()) {
@@ -495,8 +495,8 @@ public class FlowTypeCheck {
 	 * @return
 	 */
 	private Environment checkDebug(Stmt.Debug stmt, Environment environment, EnclosingScope scope) {
-		Type type = checkExpression(stmt.getCondition(), environment);
-		checkIsSubtype(new Type.Array(Type.Int), type, stmt.getCondition());
+		Type type = checkExpression(stmt.getOperand(), environment);
+		checkIsSubtype(new Type.Array(Type.Int), type, stmt.getOperand());
 		return environment;
 	}
 
@@ -603,11 +603,11 @@ public class FlowTypeCheck {
 	private Environment checkReturn(Stmt.Return stmt, Environment environment, EnclosingScope scope)
 			throws IOException {
 		// Type check the operands for the return statement (if any)
-		List<Pair<Expr, Type>> returns = checkMultiExpressions(stmt.getOperand(), environment);
+		List<Pair<Expr, Type>> returns = checkMultiExpressions(stmt.getReturns(), environment);
 		// Determine the set of return types for the enclosing function or
 		// method. This then allows us to check the given operands are
 		// appropriate subtypes.
-		Declaration.FunctionOrMethod fm = scope.getEnclosingScope(FunctionOrMethodScope.class).getDeclaration();
+		Decl.FunctionOrMethod fm = scope.getEnclosingScope(FunctionOrMethodScope.class).getDeclaration();
 		Tuple<Type> types = fm.getReturns().project(2, Type.class);
 		// Sanity check the number of arguments being returned.
 		if (returns.size() < types.size()) {
@@ -902,20 +902,20 @@ public class FlowTypeCheck {
 	 */
 	public Environment checkCondition(Expr condition, boolean sign, Environment environment) {
 		switch (condition.getOpcode()) {
-		case EXPR_not:
+		case EXPR_lnot:
 			return checkLogicalNegation((Expr.LogicalNot) condition, sign, environment);
-		case EXPR_or:
+		case EXPR_lor:
 			return checkLogicalDisjunction((Expr.LogicalOr) condition, sign, environment);
-		case EXPR_and:
+		case EXPR_land:
 			return checkLogicalConjunction((Expr.LogicalAnd) condition, sign, environment);
-		case EXPR_iff:
+		case EXPR_liff:
 			return checkLogicalIff((Expr.LogicalIff) condition, sign, environment);
-		case EXPR_implies:
+		case EXPR_limplies:
 			return checkLogicalImplication((Expr.LogicalImplication) condition, sign, environment);
 		case EXPR_is:
 			return checkIs((Expr.Is) condition, sign, environment);
-		case EXPR_forall:
-		case EXPR_exists:
+		case EXPR_lall:
+		case EXPR_lsome:
 			return checkQuantifier((Expr.Quantifier) condition, sign, environment);
 		default:
 			Type t = checkExpression(condition, environment);
@@ -1061,9 +1061,9 @@ public class FlowTypeCheck {
 		Type lhsT = checkExpression(expr.getTestExpr(), environment);
 		// TODO: implement a proper intersection test here to ensure lhsT and
 		// rhs types make sense (i.e. have some intersection).
-		Pair<Declaration.Variable, Type> extraction = extractTypeTest(lhs, rhs);
+		Pair<Decl.Variable, Type> extraction = extractTypeTest(lhs, rhs);
 		if (extraction != null) {
-			Declaration.Variable var = extraction.getFirst();
+			Decl.Variable var = extraction.getFirst();
 			// Update the typing environment accordingly.
 			environment = environment.refineType(var, extraction.getSecond());
 		}
@@ -1092,13 +1092,13 @@ public class FlowTypeCheck {
 	 * @param type
 	 * @return A pair on successful extraction, or null if possible extraction.
 	 */
-	private Pair<Declaration.Variable, Type> extractTypeTest(Expr expr, Type type) {
+	private Pair<Decl.Variable, Type> extractTypeTest(Expr expr, Type type) {
 		if (expr instanceof Expr.VariableAccess) {
 			Expr.VariableAccess var = (Expr.VariableAccess) expr;
 			return new Pair<>(var.getVariableDeclaration(), type);
 		} else if (expr instanceof Expr.RecordAccess) {
 			Expr.RecordAccess ra = (Expr.RecordAccess) expr;
-			Declaration.Variable field = new Declaration.Variable(new Tuple<>(), ((Expr.RecordAccess) expr).getField(),
+			Decl.Variable field = new Decl.Variable(new Tuple<>(), ((Expr.RecordAccess) expr).getField(),
 					type);
 			Type.Record recT = new Type.Record(true, new Tuple<>(field));
 			return extractTypeTest(ra.getSource(), recT);
@@ -1131,7 +1131,7 @@ public class FlowTypeCheck {
 		} else {
 			Environment result = new StdTypeEnvironment();
 
-			for (Declaration.Variable var : left.getRefinedVariables()) {
+			for (Decl.Variable var : left.getRefinedVariables()) {
 				Type declT = var.getType();
 				Type rightT = right.getType(var);
 				if (rightT != declT) {
@@ -1195,11 +1195,11 @@ public class FlowTypeCheck {
 		switch (lval.getOpcode()) {
 		case EXPR_varcopy:
 			return checkVariableLVal((Expr.VariableAccess) lval, environment);
-		case EXPR_arridx:
+		case EXPR_aread:
 			return checkArrayLVal((Expr.ArrayAccess) lval, environment);
-		case EXPR_recfield:
+		case EXPR_rread:
 			return checkRecordLVal((Expr.RecordAccess) lval, environment);
-		case EXPR_deref:
+		case EXPR_pread:
 			return checkDereferenceLVal((Expr.Dereference) lval, environment);
 		default:
 			return internalFailure("unknown lval encountered (" + lval.getClass().getSimpleName() + ")", lval);
@@ -1297,7 +1297,7 @@ public class FlowTypeCheck {
 	 */
 	public Type checkExpression(Expr expression, Environment environment) {
 		switch (expression.getOpcode()) {
-		case EXPR_const:
+		case EXPR_constant:
 			return checkConstant((Expr.Constant) expression, environment);
 		case EXPR_varcopy:
 			return checkVariable((Expr.VariableAccess) expression, environment);
@@ -1328,69 +1328,68 @@ public class FlowTypeCheck {
 			}
 		}
 		// Conditions
-		case EXPR_not:
-		case EXPR_or:
-		case EXPR_and:
-		case EXPR_iff:
-		case EXPR_implies:
+		case EXPR_lnot:
+		case EXPR_lor:
+		case EXPR_land:
+		case EXPR_liff:
+		case EXPR_limplies:
 		case EXPR_is:
-		case EXPR_forall:
-		case EXPR_exists:
+		case EXPR_lall:
+		case EXPR_lsome:
 			checkCondition(expression, true, environment);
 			return Type.Bool;
 		// Comparators
 		case EXPR_eq:
 		case EXPR_neq:
-		case EXPR_lt:
-		case EXPR_lteq:
-		case EXPR_gt:
-		case EXPR_gteq:
+		case EXPR_ilt:
+		case EXPR_ile:
+		case EXPR_igt:
+		case EXPR_igteq:
 			return checkComparisonOperator((Expr.Operator) expression, environment);
 		// Arithmetic Operators
-		case EXPR_neg:
-		case EXPR_add:
-		case EXPR_sub:
-		case EXPR_mul:
-		case EXPR_div:
-		case EXPR_rem:
+		case EXPR_ineg:
+		case EXPR_iadd:
+		case EXPR_isub:
+		case EXPR_imul:
+		case EXPR_idiv:
+		case EXPR_irem:
 			return checkArithmeticOperator((Expr.Operator) expression, environment);
 		// Bitwise expressions
-		case EXPR_bitwisenot:
-		case EXPR_bitwiseand:
-		case EXPR_bitwiseor:
-		case EXPR_bitwisexor:
+		case EXPR_bnot:
+		case EXPR_band:
+		case EXPR_bor:
+		case EXPR_bxor:
 			return checkBitwiseOperator((Expr.Operator) expression, environment);
-		case EXPR_bitwiseshl:
-		case EXPR_bitwiseshr:
+		case EXPR_bshl:
+		case EXPR_bshr:
 			return checkBitwiseShift((Expr.Operator) expression, environment);
 		// Record Expressions
-		case EXPR_recinit:
+		case EXPR_rinit:
 			return checkRecordInitialiser((Expr.RecordInitialiser) expression, environment);
-		case EXPR_recfield:
+		case EXPR_rread:
 			return checkRecordAccess((Expr.RecordAccess) expression, environment);
-		case EXPR_recupdt:
+		case EXPR_rwrite:
 			return checkRecordUpdate((Expr.RecordUpdate) expression, environment);
 		// Array expressions
-		case EXPR_arrlen:
+		case EXPR_alen:
 			return checkArrayLength(environment, (Expr.ArrayLength) expression);
-		case EXPR_arrinit:
+		case EXPR_ainit:
 			return checkArrayInitialiser((Expr.ArrayInitialiser) expression, environment);
-		case EXPR_arrgen:
+		case EXPR_agen:
 			return checkArrayGenerator((Expr.ArrayGenerator) expression, environment);
-		case EXPR_arridx:
+		case EXPR_aread:
 			return checkArrayAccess((Expr.ArrayAccess) expression, environment);
-		case EXPR_arrupdt:
+		case EXPR_awrite:
 			return checkArrayUpdate((Expr.ArrayUpdate) expression, environment);
 		// Reference expressions
-		case EXPR_deref:
+		case EXPR_pread:
 			return checkDereference((Expr.Dereference) expression, environment);
-		case EXPR_new:
+		case EXPR_pinit:
 			return checkNew((Expr.New) expression, environment);
-		case EXPR_rawlambda:
-		case EXPR_lambda:
+		case EXPR_lread:
 			return checkLambdaAccess((Expr.LambdaAccess) expression, environment);
 		case DECL_lambda:
-			return checkLambdaDeclaration((Declaration.Lambda) expression, environment);
+			return checkLambdaDeclaration((Decl.Lambda) expression, environment);
 		default:
 			return internalFailure("unknown expression encountered (" + expression.getClass().getSimpleName() + ")",
 					expression);
@@ -1434,15 +1433,15 @@ public class FlowTypeCheck {
 	 * @return
 	 */
 	private Type checkVariable(Expr.VariableAccess expr, Environment env) {
-		Declaration.Variable var = expr.getVariableDeclaration();
+		Decl.Variable var = expr.getVariableDeclaration();
 		return env.getType(var);
 	}
 
 	private Type checkStaticVariable(Expr.StaticVariableAccess expr, Environment env) {
 		try {
 			// Resolve variable declaration being accessed
-			Declaration.StaticVariable decl = typeSystem.resolveExactly(expr.getName(),
-					Declaration.StaticVariable.class);
+			Decl.StaticVariable decl = typeSystem.resolveExactly(expr.getName(),
+					Decl.StaticVariable.class);
 			//
 			return decl.getType();
 		} catch (ResolutionError e) {
@@ -1464,7 +1463,7 @@ public class FlowTypeCheck {
 			types[i] = checkExpression(arguments.getOperand(i), env);
 		}
 		// Determine the declaration being invoked
-		Declaration.Callable decl = resolveAsCallable(expr.getName(), types);
+		Decl.Callable decl = resolveAsCallable(expr.getName(), types);
 		// Assign descriptor to this expression
 		expr.setSignature(expr.getHeap().allocate(decl.getType()));
 		// Finally, return the declared returns/
@@ -1554,10 +1553,10 @@ public class FlowTypeCheck {
 		Type val = checkExpression(expr.getValue(), env);
 		Type.Record effectiveRecord = checkIsRecordType(src, expr.getSource());
 		//
-		Tuple<Declaration.Variable> fields = effectiveRecord.getFields();
+		Tuple<Decl.Variable> fields = effectiveRecord.getFields();
 		String actualFieldName = expr.getField().get();
 		for (int i = 0; i != fields.size(); ++i) {
-			Declaration.Variable vd = fields.getOperand(i);
+			Decl.Variable vd = fields.getOperand(i);
 			String declaredFieldName = vd.getName().get();
 			if (declaredFieldName.equals(actualFieldName)) {
 				// Matched the field type
@@ -1570,12 +1569,12 @@ public class FlowTypeCheck {
 	}
 
 	private Type checkRecordInitialiser(Expr.RecordInitialiser expr, Environment env) {
-		Declaration.Variable[] decls = new Declaration.Variable[expr.size()];
+		Decl.Variable[] decls = new Decl.Variable[expr.size()];
 		for (int i = 0; i != expr.size(); ++i) {
 			Pair<Identifier, Expr> field = expr.getOperand(i);
 			Identifier fieldName = field.getFirst();
 			Type fieldType = checkExpression(field.getSecond(), env);
-			decls[i] = new Declaration.Variable(new Tuple<>(), fieldName, fieldType);
+			decls[i] = new Decl.Variable(new Tuple<>(), fieldName, fieldType);
 		}
 		//
 		return new Type.Record(false, new Tuple<>(decls));
@@ -1645,13 +1644,13 @@ public class FlowTypeCheck {
 	}
 
 	private Type checkNew(Expr.New expr, Environment env) {
-		Type operandT = checkExpression(expr.getOperand(), env);
+		Type operandT = checkExpression(expr.getValue(), env);
 		//
 		return new Type.Reference(operandT);
 	}
 
 	private Type checkLambdaAccess(Expr.LambdaAccess expr, Environment env) {
-		Declaration.Callable decl;
+		Decl.Callable decl;
 		Tuple<Type> types = expr.getParameterTypes();
 		// FIXME: there is a problem here in that we cannot distinguish
 		// between the case where no parameters were supplied and when
@@ -1671,8 +1670,8 @@ public class FlowTypeCheck {
 		return decl.getType();
 	}
 
-	private Type checkLambdaDeclaration(Declaration.Lambda expr, Environment env) {
-		Tuple<Declaration.Variable> parameters = expr.getParameters();
+	private Type checkLambdaDeclaration(Decl.Lambda expr, Environment env) {
+		Tuple<Decl.Variable> parameters = expr.getParameters();
 		checkNonEmpty(parameters);
 		Tuple<Type> parameterTypes = parameters.project(2, Type.class);
 		Type result = checkExpression(expr.getBody(), env);
@@ -1702,7 +1701,7 @@ public class FlowTypeCheck {
 			return false;
 		} else if (item instanceof Expr.Invoke) {
 			Expr.Invoke e = (Expr.Invoke) item;
-			if (e.getSignature() instanceof Declaration.Method) {
+			if (e.getSignature() instanceof Decl.Method) {
 				// This expression is definitely not pure
 				return false;
 			}
@@ -1749,12 +1748,12 @@ public class FlowTypeCheck {
 	 * @param args
 	 * @return
 	 */
-	private Declaration.FunctionOrMethod resolveAsCallable(Name name, SyntacticItem context) {
+	private Decl.FunctionOrMethod resolveAsCallable(Name name, SyntacticItem context) {
 		try {
 			// Identify all function or macro declarations which should be
 			// considered
-			List<Declaration.FunctionOrMethod> candidates = typeSystem.resolveAll(name,
-					Declaration.FunctionOrMethod.class);
+			List<Decl.FunctionOrMethod> candidates = typeSystem.resolveAll(name,
+					Decl.FunctionOrMethod.class);
 			if (candidates.isEmpty()) {
 				return syntaxError(errorMessage(RESOLUTION_ERROR,name.toString()), context);
 			} else if (candidates.size() > 1) {
@@ -1776,14 +1775,14 @@ public class FlowTypeCheck {
 	 * @param args
 	 * @return
 	 */
-	private Declaration.Callable resolveAsCallable(Name name, Type... args) {
+	private Decl.Callable resolveAsCallable(Name name, Type... args) {
 		try {
 			// Identify all function or macro declarations which should be
 			// considered
-			List<Declaration.Callable> candidates = typeSystem.resolveAll(name, Declaration.Callable.class);
+			List<Decl.Callable> candidates = typeSystem.resolveAll(name, Decl.Callable.class);
 			// Based on given argument types, select the most precise signature
 			// from the candidates.
-			Declaration.Callable selected = selectCallableCandidate(name, candidates,args);
+			Decl.Callable selected = selectCallableCandidate(name, candidates,args);
 			return selected;
 		} catch (ResolutionError e) {
 			return syntaxError(e.getMessage(), name);
@@ -1800,12 +1799,12 @@ public class FlowTypeCheck {
 	 * @param args
 	 * @return
 	 */
-	private Declaration.Callable selectCallableCandidate(Name name, List<Declaration.Callable> candidates,
+	private Decl.Callable selectCallableCandidate(Name name, List<Decl.Callable> candidates,
 			Type... args) {
-		Declaration.Callable best = null;
+		Decl.Callable best = null;
 		//
 		for (int i = 0; i != candidates.size(); ++i) {
-			Declaration.Callable candidate = candidates.get(i);
+			Decl.Callable candidate = candidates.get(i);
 			// Check whether the given candidate is a real candidate or not. A
 			if (isApplicable(candidate, args)) {
 				// Yes, this candidate is applicable.
@@ -1865,9 +1864,9 @@ public class FlowTypeCheck {
 		return paramStr + ")";
 	}
 
-	private String foundCandidatesString(Collection<? extends Declaration.Callable> candidates) {
+	private String foundCandidatesString(Collection<? extends Decl.Callable> candidates) {
 		ArrayList<String> candidateStrings = new ArrayList<>();
-		for (Declaration.Callable c : candidates) {
+		for (Decl.Callable c : candidates) {
 			// FIXME: this is very ugly
 			Path.ID mid = ((WhileyFile)c.getHeap()).getEntry().id();
 			candidateStrings.add(mid + ":" + c.getName() + " : " + c.getType());
@@ -1891,8 +1890,8 @@ public class FlowTypeCheck {
 	 * @param args
 	 * @return
 	 */
-	private boolean isApplicable(Declaration.Callable candidate, Type... args) {
-		Tuple<Declaration.Variable> parameters = candidate.getParameters();
+	private boolean isApplicable(Decl.Callable candidate, Type... args) {
+		Tuple<Decl.Variable> parameters = candidate.getParameters();
 		if (parameters.size() != args.length) {
 			// Differing number of parameters / arguments. Since we don't
 			// support variable-length argument lists (yet), there is nothing
@@ -1923,9 +1922,9 @@ public class FlowTypeCheck {
 	 * @param rhs
 	 * @return
 	 */
-	private boolean isSubtype(Declaration.Callable lhs, Declaration.Callable rhs) {
-		Tuple<Declaration.Variable> parentParams = lhs.getParameters();
-		Tuple<Declaration.Variable> childParams = rhs.getParameters();
+	private boolean isSubtype(Decl.Callable lhs, Decl.Callable rhs) {
+		Tuple<Decl.Variable> parentParams = lhs.getParameters();
+		Tuple<Decl.Variable> childParams = rhs.getParameters();
 		if (parentParams.size() != childParams.size()) {
 			// Differing number of parameters / arguments. Since we don't
 			// support variable-length argument lists (yet), there is nothing
@@ -2030,7 +2029,7 @@ public class FlowTypeCheck {
 	 *
 	 * @param decls
 	 */
-	private void checkNonEmpty(Tuple<Declaration.Variable> decls) {
+	private void checkNonEmpty(Tuple<Decl.Variable> decls) {
 		for (int i = 0; i != decls.size(); ++i) {
 			checkNonEmpty(decls.getOperand(i));
 		}
@@ -2043,7 +2042,7 @@ public class FlowTypeCheck {
 	 *
 	 * @param d
 	 */
-	private void checkNonEmpty(Declaration.Variable d) {
+	private void checkNonEmpty(Decl.Variable d) {
 		try {
 			Type type = d.getType();
 			if (typeSystem.isRawCoerciveSubtype(Type.Void, type)) {
@@ -2128,14 +2127,14 @@ public class FlowTypeCheck {
 	 *
 	 */
 	private static class FunctionOrMethodScope extends EnclosingScope {
-		private final Declaration.FunctionOrMethod declaration;
+		private final Decl.FunctionOrMethod declaration;
 
-		public FunctionOrMethodScope(Declaration.FunctionOrMethod declaration) {
+		public FunctionOrMethodScope(Decl.FunctionOrMethod declaration) {
 			super(null);
 			this.declaration = declaration;
 		}
 
-		public Declaration.FunctionOrMethod getDeclaration() {
+		public Decl.FunctionOrMethod getDeclaration() {
 			return declaration;
 		}
 	}

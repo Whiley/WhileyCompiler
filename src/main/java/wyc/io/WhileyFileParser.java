@@ -64,12 +64,12 @@ public class WhileyFileParser {
 	 * @return
 	 */
 	public WhileyFile read() {
-		ArrayList<Declaration> declarations = new ArrayList<>();
+		ArrayList<Decl> declarations = new ArrayList<>();
 		Name name = parseModuleName(file.getEntry());
 
 		skipWhiteSpace();
 		while (index < tokens.size()) {
-			Declaration declaration;
+			Decl declaration;
 			Token lookahead = tokens.get(index);
 			if (lookahead.kind == Import) {
 				declaration = parseImportDeclaration();
@@ -95,8 +95,8 @@ public class WhileyFileParser {
 		}
 
 		// Finally, construct the new file.
-		Tuple<Declaration> decls = new Tuple<>(declarations);
-		Declaration.Module module = new Declaration.Module(name,decls);
+		Tuple<Decl> decls = new Tuple<>(declarations);
+		Decl.Module module = new Decl.Module(name,decls);
 		file.allocate(module);
 		return file;
 	}
@@ -129,14 +129,14 @@ public class WhileyFileParser {
 	 * @param parent
 	 *            WyalFile being constructed
 	 */
-	private Declaration parseImportDeclaration() {
+	private Decl parseImportDeclaration() {
 		int start = index;
 		EnclosingScope scope = new EnclosingScope();
 		match(Import);
 		Identifier[] filterPath = parseFilterPath(scope);
 		int end = index;
 		matchEndLine();
-		Declaration.Import imprt = new Declaration.Import(filterPath);
+		Decl.Import imprt = new Decl.Import(filterPath);
 		return annotateSourceLocation(imprt, start);
 	}
 
@@ -246,7 +246,7 @@ public class WhileyFileParser {
 	 * any exceptions, and does not enforce any preconditions on its parameters.
 	 * </p>
 	 */
-	private Declaration parseFunctionOrMethodDeclaration(Tuple<Modifier> modifiers, boolean isFunction) {
+	private Decl parseFunctionOrMethodDeclaration(Tuple<Modifier> modifiers, boolean isFunction) {
 		int start = index;
 
 		EnclosingScope scope = new EnclosingScope();
@@ -261,9 +261,9 @@ public class WhileyFileParser {
 		}
 		Identifier name = parseIdentifier();
 		// Parse function or method parameters
-		Tuple<Declaration.Variable> parameters = parseParameters(scope,RightBrace);
+		Tuple<Decl.Variable> parameters = parseParameters(scope,RightBrace);
 		// Parse (optional) return type
-		Tuple<Declaration.Variable> returns;
+		Tuple<Decl.Variable> returns;
 		//
 		if (tryAndMatch(true, MinusGreater) != null) {
 			// Explicit return type is given, so parse it! We first clone the
@@ -285,11 +285,11 @@ public class WhileyFileParser {
 		scope.declareThisLifetime();
 		Stmt.Block body = parseBlock(scope, false);
 		//
-		WhileyFile.Declaration declaration;
+		WhileyFile.Decl declaration;
 		if (isFunction) {
-			declaration = new Declaration.Function(modifiers, name, parameters, returns, requires, ensures, body);
+			declaration = new Decl.Function(modifiers, name, parameters, returns, requires, ensures, body);
 		} else {
-			declaration = new Declaration.Method(modifiers, name, parameters, returns, requires, ensures, body,
+			declaration = new Decl.Method(modifiers, name, parameters, returns, requires, ensures, body,
 					lifetimes);
 		}
 		return annotateSourceLocation(declaration,start);
@@ -304,22 +304,22 @@ public class WhileyFileParser {
 	 * </pre>
 	 *
 	 */
-	private Declaration.Property parsePropertyDeclaration(Tuple<Modifier> modifiers) {
+	private Decl.Property parsePropertyDeclaration(Tuple<Modifier> modifiers) {
 		EnclosingScope scope = new EnclosingScope();
 		int start = index;
 		match(Property);
 		Identifier name = parseIdentifier();
-		Tuple<Declaration.Variable> parameters = parseParameters(scope,RightBrace);
+		Tuple<Decl.Variable> parameters = parseParameters(scope,RightBrace);
 		Tuple<Expr> invariant = parseInvariant(scope,Where);
 		//
 		int end = index;
 		matchEndLine();
-		return annotateSourceLocation(new Declaration.Property(modifiers, name, parameters, invariant), start);
+		return annotateSourceLocation(new Decl.Property(modifiers, name, parameters, invariant), start);
 	}
 
-	public Tuple<Declaration.Variable> parseParameters(EnclosingScope scope, Token.Kind terminator) {
+	public Tuple<Decl.Variable> parseParameters(EnclosingScope scope, Token.Kind terminator) {
 		match(LeftBrace);
-		ArrayList<Declaration.Variable> parameters = new ArrayList<>();
+		ArrayList<Decl.Variable> parameters = new ArrayList<>();
 		boolean firstTime = true;
 		while (eventuallyMatch(terminator) == null) {
 			if (!firstTime) {
@@ -331,7 +331,7 @@ public class WhileyFileParser {
 			Identifier id = p.getSecond();
 			// FIXME: actually parse modifiers?
 			Tuple<Modifier> modifiers = new Tuple<>();
-			Declaration.Variable decl = new Declaration.Variable(modifiers, id, p.getFirst());
+			Decl.Variable decl = new Decl.Variable(modifiers, id, p.getFirst());
 			scope.declareVariable(decl);
 			parameters.add(annotateSourceLocation(decl, start));
 		}
@@ -347,7 +347,7 @@ public class WhileyFileParser {
 		return new Tuple<>(invariant);
 	}
 
-	public Tuple<Declaration.Variable> parseOptionalParameters(EnclosingScope scope) {
+	public Tuple<Decl.Variable> parseOptionalParameters(EnclosingScope scope) {
 		int next = skipWhiteSpace(index);
 		if (next < tokens.size() && tokens.get(next).kind == LeftBrace) {
 			return parseParameters(scope,RightBrace);
@@ -356,7 +356,7 @@ public class WhileyFileParser {
 		}
 	}
 
-	public Declaration.Variable parseOptionalParameter(EnclosingScope scope) {
+	public Decl.Variable parseOptionalParameter(EnclosingScope scope) {
 		int start = index;
 		boolean braced = false;
 		Type type;
@@ -375,7 +375,7 @@ public class WhileyFileParser {
 		}
 		// FIXME: actually parse modifiers?
 		Tuple<Modifier> modifiers = new Tuple<>();
-		Declaration.Variable decl = new Declaration.Variable(modifiers, name, type);
+		Decl.Variable decl = new Decl.Variable(modifiers, name, type);
 		scope.declareVariable(decl);
 		return annotateSourceLocation(decl, start);
 	}
@@ -408,7 +408,7 @@ public class WhileyFileParser {
 	 *            --- The list of modifiers for this declaration (which were
 	 *            already parsed before this method was called).
 	 */
-	public Declaration.Type parseTypeDeclaration(Tuple<Modifier> modifiers) {
+	public Decl.Type parseTypeDeclaration(Tuple<Modifier> modifiers) {
 		int start = index;
 		match(Identifier); // type
 		EnclosingScope scope = new EnclosingScope();
@@ -416,12 +416,12 @@ public class WhileyFileParser {
 		Identifier name = parseIdentifier();
 		match(Is);
 		// Parse the type pattern
-		Declaration.Variable var = parseOptionalParameter(scope);
+		Decl.Variable var = parseOptionalParameter(scope);
 		addFieldAliases(var, scope);
 		Tuple<Expr> invariant = parseInvariant(scope, Where);
 		int end = index;
 		matchEndLine();
-		return annotateSourceLocation(new Declaration.Type(modifiers, name, var, invariant), start);
+		return annotateSourceLocation(new Decl.Type(modifiers, name, var, invariant), start);
 	}
 
 	/**
@@ -449,13 +449,13 @@ public class WhileyFileParser {
 	 * @param p
 	 * @param scope
 	 */
-	private void addFieldAliases(Declaration.Variable p, EnclosingScope scope) {
+	private void addFieldAliases(Decl.Variable p, EnclosingScope scope) {
 		Type t = p.getType();
 		if (t instanceof Type.Record) {
 			// This is currently the only situation in which field aliases can
 			// arise.
 			Type.Record r = (Type.Record) t;
-			for (Declaration.Variable fd : r.getFields()) {
+			for (Decl.Variable fd : r.getFields()) {
 				scope.declareFieldAlias(fd.getName());
 			}
 		}
@@ -484,7 +484,7 @@ public class WhileyFileParser {
 	 *            --- The list of modifiers for this declaration (which were
 	 *            already parsed before this method was called).
 	 */
-	private Declaration.StaticVariable parseStaticVariableDeclaration(Tuple<Modifier> modifiers) {
+	private Decl.StaticVariable parseStaticVariableDeclaration(Tuple<Modifier> modifiers) {
 		int start = index;
 		EnclosingScope scope = new EnclosingScope();
 		//
@@ -495,7 +495,7 @@ public class WhileyFileParser {
 		Expr e = parseExpression(scope, false);
 		int end = index;
 		matchEndLine();
-		return annotateSourceLocation(new Declaration.StaticVariable(modifiers, name, type, e), start);
+		return annotateSourceLocation(new Decl.StaticVariable(modifiers, name, type, e), start);
 	}
 
 	/**
@@ -713,7 +713,7 @@ public class WhileyFileParser {
 	 *
 	 * @return
 	 */
-	private Declaration.Variable parseVariableDeclaration(EnclosingScope scope) {
+	private Decl.Variable parseVariableDeclaration(EnclosingScope scope) {
 		int start = index;
 		//
 		Tuple<Modifier> modifiers = new Tuple<>();
@@ -732,11 +732,11 @@ public class WhileyFileParser {
 		int end = index;
 		matchEndLine();
 		//
-		Declaration.Variable decl;
+		Decl.Variable decl;
 		if(initialiser != null) {
-			decl = new Declaration.Variable(modifiers, name, type, initialiser);
+			decl = new Decl.Variable(modifiers, name, type, initialiser);
 		} else {
-			decl = new Declaration.Variable(modifiers, name, type);
+			decl = new Decl.Variable(modifiers, name, type);
 		}
 		// Finally, register the new variable in the enclosing scope. This
 		// should be done after parsing the initialiser expression to prevent it
@@ -1793,7 +1793,7 @@ public class WhileyFileParser {
 		scope = scope.newEnclosingScope();
 		match(LeftCurly);
 		// Parse one or more source variables / expressions
-		Tuple<Declaration.Variable> parameters = parseQuantifierParameters(scope);
+		Tuple<Decl.Variable> parameters = parseQuantifierParameters(scope);
 		// Parse condition over source variables
 		Expr condition = parseLogicalExpression(scope, true);
 		//
@@ -1808,9 +1808,9 @@ public class WhileyFileParser {
 		return annotateSourceLocation(qf, start);
 	}
 
-	private Tuple<Declaration.Variable> parseQuantifierParameters(EnclosingScope scope) {
+	private Tuple<Decl.Variable> parseQuantifierParameters(EnclosingScope scope) {
 		boolean firstTime = true;
-		ArrayList<Declaration.Variable> parameters = new ArrayList<>();
+		ArrayList<Decl.Variable> parameters = new ArrayList<>();
 		do {
 			if (!firstTime) {
 				match(Comma);
@@ -1821,7 +1821,7 @@ public class WhileyFileParser {
 			match(In);
 			Expr range = parseRangeExpression(scope, true);
 			// FIXME: need to add initialiser here
-			Declaration.Variable decl = new Declaration.Variable(new Tuple<>(), id, new Type.Int(), range);
+			Decl.Variable decl = new Decl.Variable(new Tuple<>(), id, new Type.Int(), range);
 			parameters.add(decl);
 			scope.declareVariable(decl);
 		} while (eventuallyMatch(VerticalBar) == null);
@@ -2214,7 +2214,7 @@ public class WhileyFileParser {
 				return annotateSourceLocation(var, start);
 			} else if (scope.isFieldAlias(name)) {
 				// Signals a field alias
-				Declaration.Variable var = scope.getVariableDeclaration(new Identifier("$"));
+				Decl.Variable var = scope.getVariableDeclaration(new Identifier("$"));
 				Expr access = new Expr.RecordAccess(new Expr.VariableAccess(var), name);
 				return annotateSourceLocation(access,start);
 			} else {
@@ -2735,7 +2735,7 @@ public class WhileyFileParser {
 		// this variable.
 		if (scope.isVariable(name)) {
 			// indirect invocation on local variable
-			Declaration.Variable decl = scope.getVariableDeclaration(name);
+			Decl.Variable decl = scope.getVariableDeclaration(name);
 			Expr.VariableAccess var = annotateSourceLocation(new Expr.VariableAccess(decl), start);
 			return annotateSourceLocation(new Expr.IndirectInvoke(var, lifetimes, args), start);
 		} else {
@@ -2939,11 +2939,11 @@ public class WhileyFileParser {
 		scope = scope.newEnclosingScope(captures);
 		// Parse the optional lifetime parameters
 		Tuple<Identifier> lifetimeParameters = parseOptionalLifetimeParameters(scope);
-		Tuple<Declaration.Variable> parameters = parseParameters(scope,MinusGreater);
+		Tuple<Decl.Variable> parameters = parseParameters(scope,MinusGreater);
 		// NOTE: expression guanrateed to be terminated by ')'
 		Expr body = parseExpression(scope, true);
 		match(RightBrace);
-		return annotateSourceLocation(new Declaration.Lambda(new Tuple<>(), new Identifier(""), parameters,
+		return annotateSourceLocation(new Decl.Lambda(new Tuple<>(), new Identifier(""), parameters,
 				new Tuple<>(), captures, lifetimeParameters, body), start);
 	}
 
@@ -3163,16 +3163,16 @@ public class WhileyFileParser {
 		} else if (e instanceof Expr.Operator) {
 			Expr.Operator bop = (Expr.Operator) e;
 			switch (bop.getOpcode()) {
-			case EXPR_not:
+			case EXPR_lnot:
 				return mustParseAsExpr(bop.getOperand(0));
-			case EXPR_arrlen:
-			case EXPR_bitwisenot:
-			case EXPR_deref:
-			case EXPR_arridx:
-			case EXPR_arrinit:
+			case EXPR_alen:
+			case EXPR_bnot:
+			case EXPR_pread:
+			case EXPR_aread:
+			case EXPR_ainit:
 				return true;
-			case EXPR_bitwiseor:
-			case EXPR_bitwiseand:
+			case EXPR_bor:
+			case EXPR_band:
 				// FIXME: broken in the case of multiple arguments
 				return mustParseAsExpr(bop.getOperand(0)) || mustParseAsExpr(bop.getOperand(1));
 			}
@@ -3582,11 +3582,11 @@ public class WhileyFileParser {
 	private Type parseRecordType(EnclosingScope scope) {
 		int start = index;
 		match(LeftCurly);
-		ArrayList<Declaration.Variable> types = new ArrayList<>();
+		ArrayList<Decl.Variable> types = new ArrayList<>();
 		// FIXME: parse modifiers
 		Tuple<Modifier> modifiers = new Tuple<>();
 		Pair<Type, Identifier> p = parseMixedType(scope);
-		types.add(new Declaration.Variable(modifiers, p.getSecond(), p.getFirst()));
+		types.add(new Decl.Variable(modifiers, p.getSecond(), p.getFirst()));
 		HashSet<Identifier> names = new HashSet<>();
 		names.add(p.getSecond());
 		// Now, we continue to parse any remaining fields.
@@ -3605,11 +3605,11 @@ public class WhileyFileParser {
 					syntaxError("duplicate record key", id);
 				}
 				names.add(id);
-				types.add(new Declaration.Variable(modifiers, id, p.getFirst()));
+				types.add(new Decl.Variable(modifiers, id, p.getFirst()));
 			}
 		}
 		// Done
-		Tuple<Declaration.Variable> fields = new Tuple<>(types);
+		Tuple<Decl.Variable> fields = new Tuple<>(types);
 		return annotateSourceLocation(new Type.Record(isOpen, fields), start);
 	}
 
@@ -4518,7 +4518,7 @@ public class WhileyFileParser {
 		/**
 		 * The set of declared variables in the enclosing scope.
 		 */
-		private final HashMap<Identifier,Declaration.Variable> environment;
+		private final HashMap<Identifier,Decl.Variable> environment;
 
 		/**
 		 * The set of field aliases in the enclosing scope. A field alias occurs
@@ -4548,7 +4548,7 @@ public class WhileyFileParser {
 			this.inLoop = false;
 		}
 
-		private EnclosingScope(Indent indent, Map<Identifier, Declaration.Variable> variables,
+		private EnclosingScope(Indent indent, Map<Identifier, Decl.Variable> variables,
 				Set<Identifier> fieldAliases, Set<Identifier> lifetimes,
 				boolean inLoop) {
 			this.indent = indent;
@@ -4632,7 +4632,7 @@ public class WhileyFileParser {
 		 * @param name
 		 * @return
 		 */
-		public Declaration.Variable getVariableDeclaration(Identifier name) {
+		public Decl.Variable getVariableDeclaration(Identifier name) {
 			return environment.get(name);
 		}
 
@@ -4644,7 +4644,7 @@ public class WhileyFileParser {
 		 * @throws SyntaxError
 		 *             if the name is already declared
 		 */
-		public void declareVariable(Declaration.Variable decl) {
+		public void declareVariable(Decl.Variable decl) {
 			Identifier id = decl.getName();
 			if (!isAvailableName(id)) {
 				// name is not available!

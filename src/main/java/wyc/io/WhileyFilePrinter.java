@@ -50,32 +50,32 @@ public final class WhileyFilePrinter {
 
 	public void apply(WhileyFile module) throws IOException {
 		out.println();
-		for(Declaration d : module.getDeclarations()) {
+		for(Decl d : module.getDeclarations()) {
 			write(d,out);
 		}
 		out.flush();
 	}
 
-	private void write(Declaration d, PrintWriter out) {
-		if(d instanceof Declaration.StaticVariable) {
-			write((Declaration.StaticVariable) d, out);
-		} else if(d instanceof Declaration.Type) {
-			write((Declaration.Type) d, out);
-		} else if(d instanceof Declaration.Property){
-			write((Declaration.Property) d, out);
+	private void write(Decl d, PrintWriter out) {
+		if(d instanceof Decl.StaticVariable) {
+			write((Decl.StaticVariable) d, out);
+		} else if(d instanceof Decl.Type) {
+			write((Decl.Type) d, out);
+		} else if(d instanceof Decl.Property){
+			write((Decl.Property) d, out);
 		} else {
-			write((Declaration.FunctionOrMethod) d, out);
+			write((Decl.FunctionOrMethod) d, out);
 		}
 	}
 
-	private void write(Declaration.StaticVariable decl, PrintWriter out) {
+	private void write(Decl.StaticVariable decl, PrintWriter out) {
 		writeModifiers(decl.getModifiers(), out);
 		out.print(decl.getType());
 		out.print(" ");
 		out.println(decl.getName() + " = " + decl.getInitialiser());
 	}
 
-	private void write(Declaration.Type decl, PrintWriter out) {
+	private void write(Decl.Type decl, PrintWriter out) {
 		writeModifiers(decl.getModifiers(), out);
 		out.print("type " + decl.getName() + " is (");
 		writeVariableDeclaration(0, decl.getVariableDeclaration(), out);
@@ -87,16 +87,16 @@ public final class WhileyFilePrinter {
 		}
 		out.println();
 	}
-	private void write(Declaration.Property decl, PrintWriter out) {
+	private void write(Decl.Property decl, PrintWriter out) {
 		out.print("property ");
 		out.print(decl.getName());
 		writeParameters(decl.getParameters(),out);
 	}
 
-	private void write(Declaration.FunctionOrMethod decl, PrintWriter out) {
+	private void write(Decl.FunctionOrMethod decl, PrintWriter out) {
 		//
 		writeModifiers(decl.getModifiers(), out);
-		if (decl instanceof Declaration.Function) {
+		if (decl instanceof Decl.Function) {
 			out.print("function ");
 		} else {
 			out.print("method ");
@@ -124,7 +124,7 @@ public final class WhileyFilePrinter {
 		}
 	}
 
-	private void writeParameters(Tuple<Declaration.Variable> parameters, PrintWriter out) {
+	private void writeParameters(Tuple<Decl.Variable> parameters, PrintWriter out) {
 		out.print("(");
 		for (int i = 0; i != parameters.size(); ++i) {
 			if (i != 0) {
@@ -135,7 +135,7 @@ public final class WhileyFilePrinter {
 		out.print(")");
 	}
 
-	private void writeVariableDeclaration(int indent, Declaration.Variable decl, PrintWriter out) {
+	private void writeVariableDeclaration(int indent, Decl.Variable decl, PrintWriter out) {
 		out.print(decl.getType());
 		out.print(" ");
 		out.print(decl.getName());
@@ -205,9 +205,9 @@ public final class WhileyFilePrinter {
 		case EXPR_invoke:
 			writeInvoke((Expr.Invoke) c, out);
 			break;
-		case DECL_variable:
-		case DECL_variableinitialiser:
-			writeVariableDeclaration(indent, (Declaration.Variable) c, out);
+		case DECL_var:
+		case DECL_varinit:
+			writeVariableDeclaration(indent, (Decl.Variable) c, out);
 			break;
 		default:
 			throw new IllegalArgumentException("unknown bytecode encountered");
@@ -314,7 +314,7 @@ public final class WhileyFilePrinter {
 	}
 
 	private void writeReturn(int indent, Stmt.Return stmt, PrintWriter out) {
-		Tuple<Expr> returns = stmt.getOperand();
+		Tuple<Expr> returns = stmt.getReturns();
 		out.print("return");
 		if(returns.size() > 0) {
 			out.print(" ");
@@ -382,25 +382,25 @@ public final class WhileyFilePrinter {
 	@SuppressWarnings("unchecked")
 	private void writeExpression(Expr expr, PrintWriter out) {
 		switch (expr.getOpcode()) {
-		case EXPR_arrlen:
+		case EXPR_alen:
 			writeArrayLength((Expr.ArrayLength) expr,out);
 			break;
-		case EXPR_arridx:
+		case EXPR_aread:
 			writeArrayIndex((Expr.ArrayAccess) expr,out);
 			break;
-		case EXPR_arrinit:
+		case EXPR_ainit:
 			writeArrayInitialiser((Expr.ArrayInitialiser) expr,out);
 			break;
-		case EXPR_arrgen:
+		case EXPR_agen:
 			writeArrayGenerator((Expr.ArrayGenerator) expr,out);
 			break;
 		case EXPR_cast:
 			writeConvert((Expr.Cast) expr, out);
 			break;
-		case EXPR_const:
+		case EXPR_constant:
 			writeConst((Expr.Constant) expr, out);
 			break;
-		case EXPR_recfield:
+		case EXPR_rread:
 			writeFieldLoad((Expr.RecordAccess) expr, out);
 			break;
 		case EXPR_indirectinvoke:
@@ -410,42 +410,42 @@ public final class WhileyFilePrinter {
 			writeInvoke((Expr.Invoke) expr, out);
 			break;
 		case DECL_lambda:
-			writeLambda((Declaration.Lambda) expr, out);
+			writeLambda((Decl.Lambda) expr, out);
 			break;
-		case EXPR_recinit:
+		case EXPR_rinit:
 			writeRecordConstructor((Expr.RecordInitialiser) expr, out);
 			break;
-		case EXPR_new:
+		case EXPR_pinit:
 			writeNewObject((Expr.New) expr,out);
 			break;
-		case EXPR_deref:
-		case EXPR_not:
-		case EXPR_neg:
-		case EXPR_bitwisenot:
+		case EXPR_pread:
+		case EXPR_lnot:
+		case EXPR_ineg:
+		case EXPR_bnot:
 			writePrefixLocations((Expr.Operator) expr,out);
 			break;
-		case EXPR_forall:
-		case EXPR_exists:
+		case EXPR_lall:
+		case EXPR_lsome:
 			writeQuantifier((Expr.Quantifier) expr, out);
 			break;
-		case EXPR_add:
-		case EXPR_sub:
-		case EXPR_mul:
-		case EXPR_div:
-		case EXPR_rem:
+		case EXPR_iadd:
+		case EXPR_isub:
+		case EXPR_imul:
+		case EXPR_idiv:
+		case EXPR_irem:
 		case EXPR_eq:
 		case EXPR_neq:
-		case EXPR_lt:
-		case EXPR_lteq:
-		case EXPR_gt:
-		case EXPR_gteq:
-		case EXPR_and:
-		case EXPR_or:
-		case EXPR_bitwiseor:
-		case EXPR_bitwisexor:
-		case EXPR_bitwiseand:
-		case EXPR_bitwiseshl:
-		case EXPR_bitwiseshr:
+		case EXPR_ilt:
+		case EXPR_ile:
+		case EXPR_igt:
+		case EXPR_igteq:
+		case EXPR_land:
+		case EXPR_lor:
+		case EXPR_bor:
+		case EXPR_bxor:
+		case EXPR_band:
+		case EXPR_bshl:
+		case EXPR_bshr:
 		case EXPR_is:
 			writeInfixLocations((Expr.InfixOperator) expr, out);
 			break;
@@ -527,7 +527,7 @@ public final class WhileyFilePrinter {
 	}
 
 	@SuppressWarnings("unchecked")
-	private void writeLambda(Declaration.Lambda expr, PrintWriter out) {
+	private void writeLambda(Decl.Lambda expr, PrintWriter out) {
 //		out.print("&[");
 //		Location<?>[] environment = expr.getOperandGroup(SyntaxTree.ENVIRONMENT);
 //		for (int i = 0; i != environment.length; ++i) {
@@ -571,7 +571,7 @@ public final class WhileyFilePrinter {
 
 	private void writeNewObject(Expr.New expr, PrintWriter out) {
 		out.print("new ");
-		writeExpression(expr.getOperand(), out);
+		writeExpression(expr.getValue(), out);
 	}
 
 	private void writePrefixLocations(Expr.Operator expr, PrintWriter out) {
@@ -593,9 +593,9 @@ public final class WhileyFilePrinter {
 	private void writeQuantifier(Expr.Quantifier expr, PrintWriter out) {
 		out.print(quantifierKind(expr));
 		out.print(" { ");
-		Tuple<Declaration.Variable> params = expr.getParameters();
+		Tuple<Decl.Variable> params = expr.getParameters();
 		for (int i = 0; i != params.size(); ++i) {
-			Declaration.Variable v = params.getOperand(i);
+			Decl.Variable v = params.getOperand(i);
 			if (i != 0) {
 				out.print(", ");
 			}
@@ -614,9 +614,9 @@ public final class WhileyFilePrinter {
 
 	private String quantifierKind(Expr.Quantifier c) {
 		switch(c.getOpcode()) {
-		case EXPR_exists:
+		case EXPR_lsome:
 			return "exists";
-		case EXPR_forall:
+		case EXPR_lall:
 			return "all";
 		}
 		throw new IllegalArgumentException();
@@ -632,27 +632,27 @@ public final class WhileyFilePrinter {
 	private boolean needsBrackets(Expr e) {
 		switch(e.getOpcode()) {
 		case EXPR_cast:
-		case EXPR_add:
-		case EXPR_sub:
-		case EXPR_mul:
-		case EXPR_div:
-		case EXPR_rem:
+		case EXPR_iadd:
+		case EXPR_isub:
+		case EXPR_imul:
+		case EXPR_idiv:
+		case EXPR_irem:
 		case EXPR_eq:
 		case EXPR_neq:
-		case EXPR_lt:
-		case EXPR_lteq:
-		case EXPR_gt:
-		case EXPR_gteq:
-		case EXPR_and:
-		case EXPR_or:
-		case EXPR_bitwiseor:
-		case EXPR_bitwisexor:
-		case EXPR_bitwiseand:
-		case EXPR_bitwiseshl:
-		case EXPR_bitwiseshr:
+		case EXPR_ilt:
+		case EXPR_ile:
+		case EXPR_igt:
+		case EXPR_igteq:
+		case EXPR_land:
+		case EXPR_lor:
+		case EXPR_bor:
+		case EXPR_bxor:
+		case EXPR_band:
+		case EXPR_bshl:
+		case EXPR_bshr:
 		case EXPR_is:
-		case EXPR_new:
-		case EXPR_deref:
+		case EXPR_pinit:
+		case EXPR_pread:
 			return true;
 		}
 		return false;
@@ -660,52 +660,52 @@ public final class WhileyFilePrinter {
 
 	private static String opcode(int k) {
 		switch(k) {
-		case EXPR_neg:
+		case EXPR_ineg:
 			return "-";
-		case EXPR_not:
+		case EXPR_lnot:
 			return "!";
-		case EXPR_bitwisenot:
+		case EXPR_bnot:
 			return "~";
-		case EXPR_deref:
+		case EXPR_pread:
 			return "*";
 		// Binary
-		case EXPR_add:
+		case EXPR_iadd:
 			return "+";
-		case EXPR_sub:
+		case EXPR_isub:
 			return "-";
-		case EXPR_mul:
+		case EXPR_imul:
 			return "*";
-		case EXPR_div:
+		case EXPR_idiv:
 			return "/";
-		case EXPR_rem:
+		case EXPR_irem:
 			return "%";
 		case EXPR_eq:
 			return "==";
 		case EXPR_neq:
 			return "!=";
-		case EXPR_lt:
+		case EXPR_ilt:
 			return "<";
-		case EXPR_lteq:
+		case EXPR_ile:
 			return "<=";
-		case EXPR_gt:
+		case EXPR_igt:
 			return ">";
-		case EXPR_gteq:
+		case EXPR_igteq:
 			return ">=";
-		case EXPR_and:
+		case EXPR_land:
 			return "&&";
-		case EXPR_or:
+		case EXPR_lor:
 			return "||";
-		case EXPR_bitwiseor:
+		case EXPR_bor:
 			return "|";
-		case EXPR_bitwisexor:
+		case EXPR_bxor:
 			return "^";
-		case EXPR_bitwiseand:
+		case EXPR_band:
 			return "&";
-		case EXPR_bitwiseshl:
+		case EXPR_bshl:
 			return "<<";
-		case EXPR_bitwiseshr:
+		case EXPR_bshr:
 			return ">>";
-		case EXPR_new:
+		case EXPR_pinit:
 			return "new";
 		default:
 			throw new IllegalArgumentException("unknown operator kind : " + k);

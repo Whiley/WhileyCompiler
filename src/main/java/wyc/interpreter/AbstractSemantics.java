@@ -4,7 +4,7 @@ import java.math.BigInteger;
 
 import wybs.lang.NameResolver.ResolutionError;
 import wybs.util.AbstractCompilationUnit.Identifier;
-import wyc.lang.WhileyFile.Declaration;
+import wyc.lang.WhileyFile.Decl;
 import wyc.lang.WhileyFile.Stmt;
 import wyc.lang.WhileyFile.Type;
 
@@ -92,7 +92,7 @@ public interface AbstractSemantics {
 	 *
 	 * @return
 	 */
-	public RValue.Lambda Lambda(Declaration.Callable context, Interpreter.CallStack frame, Stmt body);
+	public RValue.Lambda Lambda(Decl.Callable context, Interpreter.CallStack frame, Stmt body);
 
 	/**
 	 * Represents a value which may occur in a "read" position within a
