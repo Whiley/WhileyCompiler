@@ -422,7 +422,7 @@ public final class WhileyFilePrinter {
 		case EXPR_lnot:
 		case EXPR_ineg:
 		case EXPR_bnot:
-			writePrefixLocations((Expr.Operator) expr,out);
+			writePrefixLocations((Expr.UnaryOperator) expr,out);
 			break;
 		case EXPR_lall:
 		case EXPR_lsome:
@@ -444,10 +444,12 @@ public final class WhileyFilePrinter {
 		case EXPR_bor:
 		case EXPR_bxor:
 		case EXPR_band:
+		case EXPR_is:
+			writeInfixLocations((Expr.NaryOperator) expr, out);
+			break;
 		case EXPR_bshl:
 		case EXPR_bshr:
-		case EXPR_is:
-			writeInfixLocations((Expr.InfixOperator) expr, out);
+			writeInfixLocations((Expr.BinaryOperator) expr, out);
 			break;
 		case EXPR_varcopy:
 			writeVariableAccess((Expr.VariableAccess) expr, out);
@@ -460,38 +462,39 @@ public final class WhileyFilePrinter {
 
 	private void writeArrayLength(Expr.ArrayLength expr, PrintWriter out) {
 		out.print("|");
-		writeExpression(expr.getOperand(0), out);
+		writeExpression(expr.getOperand(), out);
 		out.print("|");
 	}
 
 	private void writeArrayIndex(Expr.ArrayAccess expr, PrintWriter out) {
-		writeExpression(expr.getOperand(0), out);
+		writeExpression(expr.getSource(), out);
 		out.print("[");
-		writeExpression(expr.getOperand(1), out);
+		writeExpression(expr.getSubscript(), out);
 		out.print("]");
 	}
 
 	private void writeArrayInitialiser(Expr.ArrayInitialiser expr, PrintWriter out) {
+		Tuple<Expr> operands = expr.getArguments();
 		out.print("[");
-		for(int i=0;i!=expr.size();++i) {
+		for(int i=0;i!=operands.size();++i) {
 			if(i != 0) {
 				out.print(", ");
 			}
-			writeExpression(expr.getOperand(i),out);
+			writeExpression(operands.getOperand(i),out);
 		}
 		out.print("]");
 	}
 
 	private void writeArrayGenerator(Expr.ArrayGenerator expr, PrintWriter out) {
 		out.print("[");
-		writeExpression(expr.getOperand(0), out);
+		writeExpression(expr.getValue(), out);
 		out.print(" ; ");
-		writeExpression(expr.getOperand(1), out);
+		writeExpression(expr.getLength(), out);
 		out.print("]");
 	}
 	private void writeConvert(Expr.Cast expr, PrintWriter out) {
-		out.print("(" + expr.getCastType() + ") ");
-		writeExpression(expr.getCastedExpr(),out);
+		out.print("(" + expr.getType() + ") ");
+		writeExpression(expr.getOperand(),out);
 	}
 	private void writeConst(Expr.Constant expr, PrintWriter out) {
 		out.print(expr.getValue());
@@ -557,8 +560,9 @@ public final class WhileyFilePrinter {
 
 	private void writeRecordConstructor(Expr.RecordInitialiser expr, PrintWriter out) {
 		out.print("{");
-		for (int i = 0; i != expr.size(); ++i) {
-			Pair<Identifier,Expr> initialiser = expr.getOperand(i);
+		Tuple<Pair<Identifier,Expr>> initialisers = expr.getFields();
+		for (int i = 0; i != initialisers.size(); ++i) {
+			Pair<Identifier,Expr> initialiser = initialisers.getOperand(i);
 			if (i != 0) {
 				out.print(", ");
 			}
@@ -571,22 +575,33 @@ public final class WhileyFilePrinter {
 
 	private void writeNewObject(Expr.New expr, PrintWriter out) {
 		out.print("new ");
-		writeExpression(expr.getValue(), out);
+		writeExpression(expr.getOperand(), out);
 	}
 
-	private void writePrefixLocations(Expr.Operator expr, PrintWriter out) {
+	private void writePrefixLocations(Expr.UnaryOperator expr, PrintWriter out) {
 		// Prefix operators
 		out.print(opcode(expr.getOpcode()));
-		writeBracketedExpression(expr.getOperand(0),out);
+		writeBracketedExpression(expr.getOperand(),out);
 	}
 
-	private void writeInfixLocations(Expr.InfixOperator expr, PrintWriter out) {
-		writeBracketedExpression(expr.getOperand(0),out);
+	private void writeInfixLocations(Expr.BinaryOperator expr, PrintWriter out) {
+		writeBracketedExpression(expr.getLeftOperand(),out);
 		out.print(" ");
 		out.print(opcode(expr.getOpcode()));
 		out.print(" ");
-		writeBracketedExpression(expr.getOperand(1),out);
+		writeBracketedExpression(expr.getRightOperand(),out);
+	}
 
+	private void writeInfixLocations(Expr.NaryOperator expr, PrintWriter out) {
+		Tuple<Expr> operands = expr.getArguments();
+		for (int i = 0; i != operands.size(); ++i) {
+			if (i != 0) {
+				out.print(" ");
+				out.print(opcode(expr.getOpcode()));
+				out.print(" ");
+			}
+			writeBracketedExpression(operands.getOperand(i), out);
+		}
 	}
 
 	@SuppressWarnings("unchecked")

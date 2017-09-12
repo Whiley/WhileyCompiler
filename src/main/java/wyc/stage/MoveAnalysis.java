@@ -248,11 +248,13 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 			checkIndirectInvoke(consumed, (Expr.IndirectInvoke) expr);
 		// Conditions
 		case EXPR_lnot:
+			checkUnaryOperator(consumed, (Expr.UnaryOperator) expr);
+			break;
 		case EXPR_lor:
 		case EXPR_land:
 		case EXPR_liff:
 		case EXPR_limplies:
-			checkLogicalOperator(consumed, (Expr.Operator) expr);
+			checkNaryOperator(consumed, (Expr.NaryOperator) expr);
 			break;
 		case EXPR_lall:
 		case EXPR_lsome:
@@ -268,27 +270,31 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 		case EXPR_ile:
 		case EXPR_igt:
 		case EXPR_igteq:
-			checkComparisonOperator(consumed, (Expr.Operator) expr);
+			checkNaryOperator(consumed, (Expr.NaryOperator) expr);
 			break;
 		// Arithmetic Operators
 		case EXPR_ineg:
+			checkUnaryOperator(consumed, (Expr.UnaryOperator) expr);
+			break;
 		case EXPR_iadd:
 		case EXPR_isub:
 		case EXPR_imul:
 		case EXPR_idiv:
 		case EXPR_irem:
-			checkArithmeticOperator(consumed, (Expr.Operator) expr);
+			checkNaryOperator(consumed, (Expr.NaryOperator) expr);
 			break;
 		// Bitwise expressions
 		case EXPR_bnot:
+			checkUnaryOperator(consumed, (Expr.UnaryOperator) expr);
+			break;
 		case EXPR_band:
 		case EXPR_bor:
 		case EXPR_bxor:
-			checkBitwiseOperator(consumed, (Expr.Operator) expr);
+			checkNaryOperator(consumed, (Expr.NaryOperator) expr);
 			break;
 		case EXPR_bshl:
 		case EXPR_bshr:
-			checkBitwiseShift(consumed, (Expr.Operator) expr);
+			checkBinaryOperator(consumed, (Expr.BinaryOperator) expr);
 			break;
 		// Record Expressions
 		case EXPR_rinit:
@@ -302,10 +308,9 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 			break;
 			// Array expressions
 		case EXPR_alen:
-			checkArrayLength(consumed, (Expr.ArrayLength) expr);
-			break;
+			checkUnaryOperator(consumed, (Expr.UnaryOperator) expr);
 		case EXPR_ainit:
-			checkArrayInitialiser(consumed, (Expr.ArrayInitialiser) expr);
+			checkNaryOperator(consumed, (Expr.NaryOperator) expr);
 			break;
 		case EXPR_agen:
 			checkArrayGenerator(consumed, (Expr.ArrayGenerator) expr);
@@ -318,10 +323,8 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 			break;
 			// Reference expressions
 		case EXPR_pread:
-			checkDereference(consumed, (Expr.Dereference) expr);
-			break;
 		case EXPR_pinit:
-			checkNew(consumed, (Expr.New) expr);
+			checkUnaryOperator(consumed, (Expr.Dereference) expr);
 			break;
 		case EXPR_lread:
 			checkLambdaConstant(consumed, (Expr.LambdaAccess) expr);
@@ -348,7 +351,7 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 	}
 
 	public void checkCast(boolean consumed, Expr.Cast expr) {
-		checkExpression(consumed, expr.getCastedExpr());
+		checkExpression(consumed, expr.getOperand());
 	}
 
 	public void checkInvoke(boolean consumed, Expr.Invoke expr) {
@@ -364,43 +367,30 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 		checkExpression(false, expr.getTestExpr());
 	}
 
-	public void checkLogicalOperator(boolean consumed, Expr.Operator expr) {
-		for(int i=0;i!=expr.size();++i) {
-			checkExpression(false, expr.getOperand(i));
-		}
-	}
-
 	public void checkQuantifier(boolean consumed, Expr.Quantifier expr) {
 		checkExpression(false, expr.getBody());
 	}
 
-	public void checkComparisonOperator(boolean consumed, Expr.Operator expr) {
-		for(int i=0;i!=expr.size();++i) {
-			checkExpression(false, expr.getOperand(i));
+	public void checkNaryOperator(boolean consumed, Expr.NaryOperator expr) {
+		Tuple<Expr> operands = expr.getArguments();
+		for(int i=0;i!=operands.size();++i) {
+			checkExpression(false, operands.getOperand(i));
 		}
 	}
 
-	public void checkArithmeticOperator(boolean consumed, Expr.Operator expr) {
-		for(int i=0;i!=expr.size();++i) {
-			checkExpression(false, expr.getOperand(i));
-		}
+	public void checkUnaryOperator(boolean consumed, Expr.UnaryOperator expr) {
+		checkExpression(false, expr.getOperand());
 	}
 
-	public void checkBitwiseOperator(boolean consumed, Expr.Operator expr) {
-		for(int i=0;i!=expr.size();++i) {
-			checkExpression(false, expr.getOperand(i));
-		}
-	}
-
-	public void checkBitwiseShift(boolean consumed, Expr.Operator expr) {
-		for(int i=0;i!=expr.size();++i) {
-			checkExpression(false, expr.getOperand(i));
-		}
+	public void checkBinaryOperator(boolean consumed, Expr.BinaryOperator expr) {
+		checkExpression(false, expr.getLeftOperand());
+		checkExpression(false, expr.getRightOperand());
 	}
 
 	public void checkRecordInitialiser(boolean consumed, Expr.RecordInitialiser expr) {
-		for(int i=0;i!=expr.size();++i) {
-			checkExpression(consumed, expr.getOperand(i).getSecond());
+		Tuple<Pair<Identifier,Expr>> operands = expr.getFields();
+		for(int i=0;i!=operands.size();++i) {
+			checkExpression(consumed, operands.getOperand(i).getSecond());
 		}
 	}
 
@@ -411,16 +401,6 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 	public void checkRecordUpdate(boolean consumed, Expr.RecordUpdate expr) {
 		checkExpression(false, expr.getSource());
 		checkExpression(consumed, expr.getValue());
-	}
-
-	public void checkArrayLength(boolean consumed, Expr.ArrayLength expr) {
-		checkExpression(false, expr.getSource());
-	}
-
-	public void checkArrayInitialiser(boolean consumed, Expr.ArrayInitialiser expr) {
-		for(int i=0;i!=expr.size();++i) {
-			checkExpression(consumed, expr.getOperand(i));
-		}
 	}
 
 	public void checkArrayGenerator(boolean consumed, Expr.ArrayGenerator expr) {
@@ -436,14 +416,6 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 	public void checkArrayUpdate(boolean consumed, Expr.ArrayUpdate expr) {
 		checkExpression(false, expr.getSource());
 		checkExpression(false, expr.getSubscript());
-		checkExpression(consumed, expr.getValue());
-	}
-
-	public void checkDereference(boolean consumed, Expr.Dereference expr) {
-		checkExpression(false, expr.getOperand());
-	}
-
-	public void checkNew(boolean consumed, Expr.New expr) {
 		checkExpression(consumed, expr.getValue());
 	}
 

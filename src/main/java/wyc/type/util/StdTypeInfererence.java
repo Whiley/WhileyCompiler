@@ -65,7 +65,7 @@ public class StdTypeInfererence implements TypeInferer {
 		case WhileyFile.EXPR_ile:
 		case WhileyFile.EXPR_igt:
 		case WhileyFile.EXPR_igteq:
-			return inferLogicalOperator((Expr.Operator) expr);
+			return inferLogicalOperator((Expr.NaryOperator) expr);
 		case WhileyFile.EXPR_lall:
 		case WhileyFile.EXPR_lsome:
 			return inferQuantifier((Expr.Quantifier) expr);
@@ -75,24 +75,24 @@ public class StdTypeInfererence implements TypeInferer {
 		case WhileyFile.EXPR_imul:
 		case WhileyFile.EXPR_idiv:
 		case WhileyFile.EXPR_irem:
-			return inferArithmeticOperator((Expr.Operator) expr);
+			return inferArithmeticOperator((Expr.NaryOperator) expr);
 		case WhileyFile.EXPR_band:
 		case WhileyFile.EXPR_bor:
 		case WhileyFile.EXPR_bxor:
 		case WhileyFile.EXPR_bshl:
 		case WhileyFile.EXPR_bshr:
 		case WhileyFile.EXPR_bnot:
-			return inferBitwiseOperator((Expr.Operator) expr);
+			return inferBitwiseOperator((Expr.NaryOperator) expr);
 		case WhileyFile.EXPR_alen:
-			return inferArrayLength((Expr.Operator) expr);
+			return inferArrayLength((Expr.ArrayLength) expr);
 		case WhileyFile.EXPR_ainit:
-			return inferArrayInitialiser((Expr.Operator) expr);
+			return inferArrayInitialiser((Expr.ArrayInitialiser) expr);
 		case WhileyFile.EXPR_agen:
-			return inferArrayGenerator((Expr.Operator) expr);
+			return inferArrayGenerator((Expr.ArrayGenerator) expr);
 		case WhileyFile.EXPR_aread:
-			return inferArrayIndex((Expr.Operator) expr);
+			return inferArrayIndex((Expr.ArrayAccess) expr);
 		case WhileyFile.EXPR_awrite:
-			return inferArrayUpdate((Expr.Operator) expr);
+			return inferArrayUpdate((Expr.ArrayUpdate) expr);
 		case WhileyFile.EXPR_rinit:
 			return inferRecordInitialiser((Expr.RecordInitialiser) expr);
 		case WhileyFile.EXPR_rread:
@@ -107,18 +107,18 @@ public class StdTypeInfererence implements TypeInferer {
 	}
 
 	protected Type inferCast(Expr.Cast expr) {
-		return (Type) expr.getCastType();
+		return (Type) expr.getType();
 	}
 
-	protected Type inferLogicalOperator(Expr.Operator expr) throws ResolutionError {
+	protected Type inferLogicalOperator(Expr.NaryOperator expr) throws ResolutionError {
 		return Type.Bool;
 	}
 
-	protected Type inferArithmeticOperator(Expr.Operator expr) throws ResolutionError {
+	protected Type inferArithmeticOperator(Expr.NaryOperator expr) throws ResolutionError {
 		return Type.Int;
 	}
 
-	protected Type inferBitwiseOperator(Expr.Operator expr) throws ResolutionError {
+	protected Type inferBitwiseOperator(Expr.NaryOperator expr) throws ResolutionError {
 		return Type.Byte;
 	}
 
@@ -169,15 +169,16 @@ public class StdTypeInfererence implements TypeInferer {
 	// Arrays
 	// ======================================================================
 
-	protected Type inferArrayLength(Expr.Operator expr) {
+	protected Type inferArrayLength(Expr.ArrayLength expr) {
 		return Type.Int;
 	}
 
-	protected Type inferArrayInitialiser(Expr.Operator expr) throws ResolutionError {
+	protected Type inferArrayInitialiser(Expr.ArrayInitialiser expr) throws ResolutionError {
 		if (expr.size() > 0) {
-			Type[] ts = new Type[expr.size()];
+			Tuple<Expr> operands = expr.getArguments();
+			Type[] ts = new Type[operands.size()];
 			for (int i = 0; i != ts.length; ++i) {
-				ts[i] = inferExpression(expr.getOperand(i));
+				ts[i] = inferExpression(operands.getOperand(i));
 			}
 			// Perform a little simplification here by collapsing
 			// identical types together.
@@ -189,13 +190,13 @@ public class StdTypeInfererence implements TypeInferer {
 		}
 	}
 
-	protected Type inferArrayGenerator(Expr.Operator expr) throws ResolutionError {
-		Type element = inferExpression(expr.getOperand(0));
+	protected Type inferArrayGenerator(Expr.ArrayGenerator expr) throws ResolutionError {
+		Type element = inferExpression(expr.getValue());
 		return new Type.Array(element);
 	}
 
-	protected Type inferArrayIndex(Expr.Operator expr) throws ResolutionError {
-		Type src = inferExpression(expr.getOperand(0));
+	protected Type inferArrayIndex(Expr.ArrayAccess expr) throws ResolutionError {
+		Type src = inferExpression(expr.getSource());
 		if(src != null) {
 			Type.Array effectiveArray = types.extractReadableArray(src);
 			if(effectiveArray != null) {
@@ -205,8 +206,8 @@ public class StdTypeInfererence implements TypeInferer {
 		return null;
 	}
 
-	protected Type inferArrayUpdate(Expr.Operator expr) throws ResolutionError {
-		return inferExpression(expr.getOperand(0));
+	protected Type inferArrayUpdate(Expr.ArrayUpdate expr) throws ResolutionError {
+		return inferExpression(expr.getSource());
 	}
 
 	protected Type inferRecordAccess(Expr.RecordAccess expr) throws ResolutionError {
@@ -234,10 +235,12 @@ public class StdTypeInfererence implements TypeInferer {
 	}
 
 	protected Type inferRecordInitialiser(Expr.RecordInitialiser expr) throws ResolutionError {
-		Decl.Variable[] decls = new Decl.Variable[expr.size()];
+		Tuple<Pair<Identifier,Expr>> operands = expr.getFields();
+		Decl.Variable[] decls = new Decl.Variable[operands.size()];
 		for (int i = 0; i != decls.length; ++i) {
-			Identifier fieldName = expr.getOperand(i).getFirst();
-			Type fieldType = inferExpression(expr.getOperand(i).getSecond());
+			Pair<Identifier,Expr> operand = operands.getOperand(i);
+			Identifier fieldName = operand.getFirst();
+			Type fieldType = inferExpression(operand.getSecond());
 			decls[i] = new Decl.Variable(new Tuple<>(), fieldName, fieldType);
 		}
 		// NOTE: a record initialiser never produces an open record

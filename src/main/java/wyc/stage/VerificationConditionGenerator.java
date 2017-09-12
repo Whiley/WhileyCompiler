@@ -1509,7 +1509,7 @@ public class VerificationConditionGenerator {
 
 	private Expr translateConvert(WhileyFile.Expr.Cast expr, LocalEnvironment environment) {
 		// TODO: check whether need to do any more here
-		return translateExpression(expr.getCastedExpr(), null, environment);
+		return translateExpression(expr.getOperand(), null, environment);
 	}
 
 	private Expr translateFieldLoad(WhileyFile.Expr.RecordAccess expr, LocalEnvironment environment) {

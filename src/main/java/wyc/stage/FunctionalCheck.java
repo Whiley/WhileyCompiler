@@ -324,8 +324,8 @@ public class FunctionalCheck {
 				checkArrayInitialiser((Expr.ArrayInitialiser) expression, context);
 			} else if(expression instanceof Expr.ArrayGenerator) {
 				checkArrayGenerator((Expr.ArrayGenerator) expression, context);
-			} else if(expression instanceof Expr.Operator) {
-				checkBinOp((Expr.Operator) expression, context);
+			} else if(expression instanceof Expr.BinaryOperator) {
+				checkBinaryOperator((Expr.BinaryOperator) expression, context);
 			} else if(expression instanceof Expr.Cast) {
 				checkCast((Expr.Cast) expression, context);
 			} else if(expression instanceof Expr.Constant) {
@@ -348,15 +348,19 @@ public class FunctionalCheck {
 				checkLambdaDeclaration((Decl.Lambda) expression, context);
 			} else if(expression instanceof Expr.VariableAccess) {
 				checkLocalVariable((Expr.VariableAccess) expression, context);
+			} else if(expression instanceof Expr.NaryOperator) {
+				checkNaryOperator((Expr.NaryOperator) expression, context);
 			} else if(expression instanceof Expr.New) {
 				checkNew((Expr.New) expression, context);
 			} else if(expression instanceof Expr.Quantifier) {
 				checkQuantifier((Expr.Quantifier) expression, context);
 			} else if(expression instanceof Expr.RecordInitialiser) {
 				checkRecord((Expr.RecordInitialiser) expression, context);
+			} else if(expression instanceof Expr.UnaryOperator) {
+				checkUnaryOperator((Expr.UnaryOperator) expression, context);
 			} else {
 				WhileyFile file = ((WhileyFile) expression.getHeap());
-				throw new InternalFailure("unknown expression encountered",file.getEntry(),expression);
+				throw new InternalFailure("unknown expression encountered (" + expression.getClass().getName() + ")",file.getEntry(),expression);
 			}
 		} catch(SyntaxError e) {
 			throw e;
@@ -367,8 +371,9 @@ public class FunctionalCheck {
 	}
 
 	private void checkArrayInitialiser(Expr.ArrayInitialiser expression, Context context) {
-		for(int i=0;i!=expression.size();++i) {
-			checkExpression(expression.getOperand(i),context);
+		Tuple<Expr> operands = expression.getArguments();
+		for(int i=0;i!=operands.size();++i) {
+			checkExpression(operands.getOperand(i),context);
 		}
 	}
 
@@ -377,14 +382,13 @@ public class FunctionalCheck {
 		checkExpression(expression.getLength(),context);
 	}
 
-	private void checkBinOp(Expr.Operator expression, Context context) {
-		for(int i=0;i!=expression.size();++i) {
-			checkExpression(expression.getOperand(i),context);
-		}
+	private void checkBinaryOperator(Expr.BinaryOperator expression, Context context) {
+		checkExpression(expression.getLeftOperand(),context);
+		checkExpression(expression.getRightOperand(),context);
 	}
 
 	private void checkCast(Expr.Cast expression, Context context) {
-		checkExpression(expression.getCastedExpr(),context);
+		checkExpression(expression.getOperand(),context);
 	}
 
 	private void checkConstant(Expr.Constant expression, Context context) {
@@ -439,12 +443,17 @@ public class FunctionalCheck {
 	private void checkLocalVariable(Expr.VariableAccess expression, Context context) {
 
 	}
-
+	private void checkNaryOperator(Expr.NaryOperator expression, Context context) {
+		Tuple<Expr> operands = expression.getArguments();
+		for(int i=0;i!=operands.size();++i) {
+			checkExpression(operands.getOperand(i),context);
+		}
+	}
 	private void checkNew(Expr.New expression, Context context) {
 		if(context != Context.METHOD) {
 			invalidObjectAllocation(expression,context);
 		}
-		checkExpression(expression.getValue(),context);
+		checkExpression(expression.getOperand(),context);
 	}
 
 	private void checkQuantifier(Expr.Quantifier expression, Context context) {
@@ -455,10 +464,15 @@ public class FunctionalCheck {
 	}
 
 	private void checkRecord(Expr.RecordInitialiser expression, Context context) {
-		for (int i = 0; i != expression.size(); ++i) {
-			Pair<Identifier,Expr> e = expression.getOperand(i);
+		Tuple<Pair<Identifier,Expr>> operands = expression.getFields();
+		for (int i = 0; i != operands.size(); ++i) {
+			Pair<Identifier,Expr> e = operands.getOperand(i);
 			checkExpression(e.getSecond(),context);
 		}
+	}
+
+	private void checkUnaryOperator(Expr.UnaryOperator expression, Context context) {
+		checkExpression(expression.getOperand(),context);
 	}
 
 	private void invalidObjectAllocation(SyntacticItem expression, Context context) {

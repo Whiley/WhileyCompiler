@@ -372,8 +372,8 @@ public class DefiniteAssignmentAnalysis {
 	 */
 	private void checkExpression(Expr expression, DefintelyAssignedSet environment) {
 		try {
-			if(expression instanceof Expr.Operator) {
-				checkOperator((Expr.Operator) expression, environment);
+			if(expression instanceof Expr.BinaryOperator) {
+				checkBinaryOperator((Expr.BinaryOperator) expression, environment);
 			} else if(expression instanceof Expr.Cast) {
 				checkCast((Expr.Cast) expression, environment);
 			} else if(expression instanceof Expr.Constant) {
@@ -396,14 +396,18 @@ public class DefiniteAssignmentAnalysis {
 				checkLambda((Decl.Lambda) expression, environment);
 			} else if(expression instanceof Expr.VariableAccess) {
 				checkLocalVariable((Expr.VariableAccess) expression, environment);
+			} else if(expression instanceof Expr.NaryOperator) {
+				checkNaryOperator((Expr.NaryOperator) expression, environment);
 			} else if(expression instanceof Expr.New) {
 				checkNew((Expr.New) expression, environment);
 			} else if(expression instanceof Expr.Quantifier) {
 				checkQuantifier((Expr.Quantifier) expression, environment);
 			} else if(expression instanceof Expr.RecordInitialiser) {
 				checkRecord((Expr.RecordInitialiser) expression, environment);
+			} else if(expression instanceof Expr.UnaryOperator) {
+				checkUnaryOperator((Expr.UnaryOperator) expression, environment);
 			} else {
-				throw new InternalFailure("unknown expression encountered",file.getEntry(),expression);
+				throw new InternalFailure("unknown expression encountered (" + expression.getClass().getSimpleName() + ")",file.getEntry(),expression);
 			}
 		} catch(SyntaxError e) {
 			throw e;
@@ -412,14 +416,13 @@ public class DefiniteAssignmentAnalysis {
 		}
 	}
 
-	private void checkOperator(Expr.Operator expression, DefintelyAssignedSet environment) {
-		for(int i=0;i!=expression.size();++i) {
-			checkExpression(expression.getOperand(i),environment);
-		}
+	private void checkBinaryOperator(Expr.BinaryOperator expression, DefintelyAssignedSet environment) {
+		checkExpression(expression.getLeftOperand(),environment);
+		checkExpression(expression.getRightOperand(),environment);
 	}
 
 	private void checkCast(Expr.Cast expression, DefintelyAssignedSet environment) {
-		checkExpression(expression.getCastedExpr(),environment);
+		checkExpression(expression.getOperand(),environment);
 	}
 
 	private void checkConstant(Expr.Constant expression, DefintelyAssignedSet environment) {
@@ -478,7 +481,14 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	private void checkNew(Expr.New expression, DefintelyAssignedSet environment) {
-		checkExpression(expression.getValue(),environment);
+		checkExpression(expression.getOperand(),environment);
+	}
+
+	private void checkNaryOperator(Expr.NaryOperator expression, DefintelyAssignedSet environment) {
+		Tuple<Expr> operands = expression.getArguments();
+		for(int i=0;i!=operands.size();++i) {
+			checkExpression(operands.getOperand(i),environment);
+		}
 	}
 
 	private void checkQuantifier(Expr.Quantifier expression, DefintelyAssignedSet environment) {
@@ -490,10 +500,15 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	private void checkRecord(Expr.RecordInitialiser expression, DefintelyAssignedSet environment) {
-		for(int i = 0;i!=expression.size();++i) {
-			Pair<Identifier,Expr> e = expression.getOperand(i);
+		Tuple<Pair<Identifier,Expr>> operands = expression.getFields();
+		for(int i = 0;i!=operands.size();++i) {
+			Pair<Identifier,Expr> e = operands.getOperand(i);
 			checkExpression(e.getSecond(),environment);
 		}
+	}
+
+	private void checkUnaryOperator(Expr.UnaryOperator expression, DefintelyAssignedSet environment) {
+		checkExpression(expression.getOperand(),environment);
 	}
 
 	private class ControlFlow {
