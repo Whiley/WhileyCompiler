@@ -13,7 +13,7 @@ import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.lang.SyntaxError.InternalFailure;
 import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Declaration;
+import wyc.lang.WhileyFile.Decl;
 import wyc.task.CompileTask;
 import wyc.type.TypeSystem;
 
@@ -47,20 +47,20 @@ public class FunctionalCheck {
 	}
 
 	public void check(WhileyFile file) {
-		for (WhileyFile.Declaration d : file.getDeclarations()) {
+		for (WhileyFile.Decl d : file.getDeclarations()) {
 			check(d);
 		}
 	}
 
-	public void check(WhileyFile.Declaration declaration) {
-		if(declaration instanceof Declaration.Type) {
-			checkTypeDeclaration((Declaration.Type) declaration);
-		} else if(declaration instanceof Declaration.Property) {
-			checkPropertyDeclaration((Declaration.Property) declaration);
-		} else if(declaration instanceof Declaration.Function) {
-			checkFunctionDeclaration((Declaration.Function) declaration);
-		} else if(declaration instanceof Declaration.Method) {
-			checkMethodDeclaration((Declaration.Method) declaration);
+	public void check(WhileyFile.Decl declaration) {
+		if(declaration instanceof Decl.Type) {
+			checkTypeDeclaration((Decl.Type) declaration);
+		} else if(declaration instanceof Decl.Property) {
+			checkPropertyDeclaration((Decl.Property) declaration);
+		} else if(declaration instanceof Decl.Function) {
+			checkFunctionDeclaration((Decl.Function) declaration);
+		} else if(declaration instanceof Decl.Method) {
+			checkMethodDeclaration((Decl.Method) declaration);
 		} else {
 			// Ignore others
 		}
@@ -77,19 +77,19 @@ public class FunctionalCheck {
 	}
 
 
-	private void checkTypeDeclaration(Declaration.Type declaration) {
+	private void checkTypeDeclaration(Decl.Type declaration) {
 		for(Expr e : declaration.getInvariant()) {
 			checkExpression(e, Context.INVARIANT);
 		}
 	}
 
-	private void checkPropertyDeclaration(Declaration.Property declaration) {
+	private void checkPropertyDeclaration(Decl.Property declaration) {
 		for(Expr e : declaration.getInvariant()) {
 			checkExpression(e, Context.INVARIANT);
 		}
 	}
 
-	private void checkFunctionDeclaration(Declaration.Function declaration) {
+	private void checkFunctionDeclaration(Decl.Function declaration) {
 		for(Expr e : declaration.getRequires()) {
 			checkExpression(e, Context.REQUIRES);
 		}
@@ -99,7 +99,7 @@ public class FunctionalCheck {
 		checkBlock(declaration.getBody(),Context.FUNCTION);
 	}
 
-	private void checkMethodDeclaration(Declaration.Method declaration) {
+	private void checkMethodDeclaration(Decl.Method declaration) {
 		for(Expr e : declaration.getRequires()) {
 			checkExpression(e, Context.REQUIRES);
 		}
@@ -147,8 +147,8 @@ public class FunctionalCheck {
 				checkSkip((Stmt.Skip) statement, context);
 			} else if(statement instanceof Stmt.Switch) {
 				checkSwitch((Stmt.Switch) statement, context);
-			} else if(statement instanceof Declaration.Variable) {
-				checkVariableDeclaration((Declaration.Variable) statement, context);
+			} else if(statement instanceof Decl.Variable) {
+				checkVariableDeclaration((Decl.Variable) statement, context);
 			} else if(statement instanceof Stmt.While) {
 				checkWhile((Stmt.While) statement, context);
 			} else {
@@ -197,7 +197,7 @@ public class FunctionalCheck {
 
 	private void checkDebug(Stmt.Debug stmt, Context context) {
 		if(context != Context.METHOD) {
-			checkExpression(stmt.getCondition(), context);
+			checkExpression(stmt.getOperand(), context);
 		}
 	}
 
@@ -235,7 +235,7 @@ public class FunctionalCheck {
 
 	private void checkReturn(Stmt.Return stmt, Context context) {
 		if(context != Context.METHOD) {
-			checkExpressions(stmt.getOperand(), context);
+			checkExpressions(stmt.getReturns(), context);
 		}
 	}
 
@@ -253,7 +253,7 @@ public class FunctionalCheck {
 		}
 	}
 
-	private void checkVariableDeclaration(Declaration.Variable stmt, Context context) {
+	private void checkVariableDeclaration(Decl.Variable stmt, Context context) {
 		if (stmt.hasInitialiser() && context != Context.METHOD) {
 			checkExpression(stmt.getInitialiser(), context);
 		}
@@ -344,8 +344,8 @@ public class FunctionalCheck {
 				checkIndirectFunctionOrMethodCall((Expr.IndirectInvoke) expression, context);
 			} else if(expression instanceof Expr.LambdaAccess) {
 				checkLambdaAccess((Expr.LambdaAccess) expression, context);
-			} else if(expression instanceof Declaration.Lambda) {
-				checkLambdaDeclaration((Declaration.Lambda) expression, context);
+			} else if(expression instanceof Decl.Lambda) {
+				checkLambdaDeclaration((Decl.Lambda) expression, context);
 			} else if(expression instanceof Expr.VariableAccess) {
 				checkLocalVariable((Expr.VariableAccess) expression, context);
 			} else if(expression instanceof Expr.New) {
@@ -400,10 +400,10 @@ public class FunctionalCheck {
 	}
 
 	private void checkInvoke(Expr.Invoke expression, Context context) throws ResolutionError {
-		Declaration.Callable decl = types.resolveExactly(expression.getName(), expression.getSignature(),
-				Declaration.Callable.class);
+		Decl.Callable decl = types.resolveExactly(expression.getName(), expression.getSignature(),
+				Decl.Callable.class);
 		//
-		if (context != Context.METHOD && decl instanceof Declaration.Method) {
+		if (context != Context.METHOD && decl instanceof Decl.Method) {
 			invalidMethodCall(expression, context);
 		}
 		for (Expr p : expression.getArguments()) {
@@ -431,7 +431,7 @@ public class FunctionalCheck {
 
 	}
 
-	private void checkLambdaDeclaration(Declaration.Lambda expression, Context context) {
+	private void checkLambdaDeclaration(Decl.Lambda expression, Context context) {
 		// Check body of the lambda
 		checkExpression(expression.getBody(),context);
 	}
@@ -444,11 +444,11 @@ public class FunctionalCheck {
 		if(context != Context.METHOD) {
 			invalidObjectAllocation(expression,context);
 		}
-		checkExpression(expression.getOperand(),context);
+		checkExpression(expression.getValue(),context);
 	}
 
 	private void checkQuantifier(Expr.Quantifier expression, Context context) {
-		for(Declaration.Variable p : expression.getParameters()) {
+		for(Decl.Variable p : expression.getParameters()) {
 			checkExpression(p.getInitialiser(),context);
 		}
 		checkExpression(expression.getBody(),context);

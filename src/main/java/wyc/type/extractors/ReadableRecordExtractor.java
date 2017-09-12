@@ -72,18 +72,18 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 
 	@Override
 	protected Type.Record union(Type.Record lhs, Type.Record rhs) {
-		ArrayList<Declaration.Variable> fields = new ArrayList<>();
-		Tuple<Declaration.Variable> lhsFields = lhs.getFields();
-		Tuple<Declaration.Variable> rhsFields = rhs.getFields();
+		ArrayList<Decl.Variable> fields = new ArrayList<>();
+		Tuple<Decl.Variable> lhsFields = lhs.getFields();
+		Tuple<Decl.Variable> rhsFields = rhs.getFields();
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Declaration.Variable lhsField = lhsFields.getOperand(i);
-				Declaration.Variable rhsField = rhsFields.getOperand(j);
+				Decl.Variable lhsField = lhsFields.getOperand(i);
+				Decl.Variable rhsField = rhsFields.getOperand(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
 					Type type = unionHelper(lhsField.getType(), rhsField.getType());
-					fields.add(new Declaration.Variable(new Tuple<>(), lhsFieldName, type));
+					fields.add(new Decl.Variable(new Tuple<>(), lhsFieldName, type));
 				}
 			}
 		}
@@ -96,20 +96,20 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 
 	@Override
 	protected Type.Record subtract(Type.Record lhs, Type.Record rhs) {
-		ArrayList<Declaration.Variable> fields = new ArrayList<>();
-		Tuple<Declaration.Variable> lhsFields = lhs.getFields();
-		Tuple<Declaration.Variable> rhsFields = rhs.getFields();
+		ArrayList<Decl.Variable> fields = new ArrayList<>();
+		Tuple<Decl.Variable> lhsFields = lhs.getFields();
+		Tuple<Decl.Variable> rhsFields = rhs.getFields();
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Declaration.Variable lhsField = lhsFields.getOperand(i);
-				Declaration.Variable rhsField = rhsFields.getOperand(j);
+				Decl.Variable lhsField = lhsFields.getOperand(i);
+				Decl.Variable rhsField = rhsFields.getOperand(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
 					// FIXME: could potentially do better here
 					Type negatedRhsType = new Type.Negation(rhsField.getType());
 					Type type = intersectionHelper(lhsField.getType(), negatedRhsType);
-					fields.add(new Declaration.Variable(new Tuple<>(), lhsFieldName, type));
+					fields.add(new Decl.Variable(new Tuple<>(), lhsFieldName, type));
 					break;
 				}
 			}
@@ -125,8 +125,8 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 	@Override
 	protected Type.Record intersect(Type.Record lhs, Type.Record rhs) {
 		//
-		Tuple<Declaration.Variable> lhsFields = lhs.getFields();
-		Tuple<Declaration.Variable> rhsFields = rhs.getFields();
+		Tuple<Decl.Variable> lhsFields = lhs.getFields();
+		Tuple<Decl.Variable> rhsFields = rhs.getFields();
 		// Determine the number of matching fields. That is, fields with the
 		// same name.
 		int matches = countMatchingFields(lhsFields, rhsFields);
@@ -147,7 +147,7 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 			// job is to determine the final set of field declarations.
 			int lhsRemainder = lhsFields.size() - matches;
 			int rhsRemainder = rhsFields.size() - matches;
-			Declaration.Variable[] fields = new Declaration.Variable[matches + lhsRemainder + rhsRemainder];
+			Decl.Variable[] fields = new Decl.Variable[matches + lhsRemainder + rhsRemainder];
 			// Extract all matching fields first
 			int index = extractMatchingFields(lhsFields, rhsFields, fields);
 			// Extract remaining lhs fields second
@@ -169,12 +169,12 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 	 * @param rhsFields
 	 * @return
 	 */
-	protected int countMatchingFields(Tuple<Declaration.Variable> lhsFields, Tuple<Declaration.Variable> rhsFields) {
+	protected int countMatchingFields(Tuple<Decl.Variable> lhsFields, Tuple<Decl.Variable> rhsFields) {
 		int count = 0;
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Declaration.Variable lhsField = lhsFields.getOperand(i);
-				Declaration.Variable rhsField = rhsFields.getOperand(j);
+				Decl.Variable lhsField = lhsFields.getOperand(i);
+				Decl.Variable rhsField = rhsFields.getOperand(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
@@ -194,19 +194,19 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 	 * @param result
 	 * @return
 	 */
-	protected int extractMatchingFields(Tuple<Declaration.Variable> lhsFields, Tuple<Declaration.Variable> rhsFields,
-			Declaration.Variable[] result) {
+	protected int extractMatchingFields(Tuple<Decl.Variable> lhsFields, Tuple<Decl.Variable> rhsFields,
+			Decl.Variable[] result) {
 		int index = 0;
 		// Extract all matching fields first.
 		for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Declaration.Variable lhsField = lhsFields.getOperand(i);
-				Declaration.Variable rhsField = rhsFields.getOperand(j);
+				Decl.Variable lhsField = lhsFields.getOperand(i);
+				Decl.Variable rhsField = rhsFields.getOperand(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {
 					Type type = intersectionHelper(lhsField.getType(), rhsField.getType());
-					Declaration.Variable combined = new Declaration.Variable(new Tuple<>(), lhsFieldName, type);
+					Decl.Variable combined = new Decl.Variable(new Tuple<>(), lhsFieldName, type);
 					result[index++] = combined;
 				}
 			}
@@ -224,12 +224,12 @@ public class ReadableRecordExtractor extends AbstractTypeExtractor<Type.Record> 
 	 * @param index
 	 * @return
 	 */
-	protected int extractNonMatchingFields(Tuple<Declaration.Variable> lhsFields, Tuple<Declaration.Variable> rhsFields,
-			Declaration.Variable[] result, int index) {
+	protected int extractNonMatchingFields(Tuple<Decl.Variable> lhsFields, Tuple<Decl.Variable> rhsFields,
+			Decl.Variable[] result, int index) {
 		outer: for (int i = 0; i != lhsFields.size(); ++i) {
 			for (int j = 0; j != rhsFields.size(); ++j) {
-				Declaration.Variable lhsField = lhsFields.getOperand(i);
-				Declaration.Variable rhsField = rhsFields.getOperand(j);
+				Decl.Variable lhsField = lhsFields.getOperand(i);
+				Decl.Variable rhsField = rhsFields.getOperand(j);
 				Identifier lhsFieldName = lhsField.getName();
 				Identifier rhsFieldName = rhsField.getName();
 				if (lhsFieldName.equals(rhsFieldName)) {

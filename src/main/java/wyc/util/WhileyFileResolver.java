@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Declaration.Named;
+import wyc.lang.WhileyFile.Decl.Named;
 import wybs.lang.CompilationUnit.Name;
 import wybs.lang.CompilationUnit.Identifier;
 import wybs.lang.CompilationUnit.Declaration;
@@ -101,8 +101,8 @@ public final class WhileyFileResolver implements NameResolver {
 			// Look through the enclosing file first!
 			for (int i = 0; i != enclosing.size(); ++i) {
 				SyntacticItem item = enclosing.getSyntacticItem(i);
-				if (item instanceof WhileyFile.Declaration.Named) {
-					WhileyFile.Declaration.Named nd = (WhileyFile.Declaration.Named) item;
+				if (item instanceof WhileyFile.Decl.Named) {
+					WhileyFile.Decl.Named nd = (WhileyFile.Decl.Named) item;
 					if (nd.getName().get().equals(nid.name()) && kind.isInstance(nd)) {
 						result.add((T) nd);
 					}
@@ -156,8 +156,8 @@ public final class WhileyFileResolver implements NameResolver {
 		// Look through the enclosing file first!
 		for (int i = 0; i != heap.size(); ++i) {
 			SyntacticItem item = heap.getSyntacticItem(i);
-			if (item instanceof WhileyFile.Declaration.Named) {
-				WhileyFile.Declaration.Named nd = (WhileyFile.Declaration.Named) item;
+			if (item instanceof WhileyFile.Decl.Named) {
+				WhileyFile.Decl.Named nd = (WhileyFile.Decl.Named) item;
 				if (nd.getName().get().equals(name)) {
 					count = count + 1;
 				}
@@ -181,9 +181,9 @@ public final class WhileyFileResolver implements NameResolver {
 	private NameID nonLocalNameLookup(Name name) throws NameResolver.ResolutionError {
 		try {
 			WhileyFile enclosing = (WhileyFile) getWhileyFile(name.getHeap());
-			List<WhileyFile.Declaration.Import> imports = getImportsInReverseOrder(enclosing);
+			List<WhileyFile.Decl.Import> imports = getImportsInReverseOrder(enclosing);
 			// Check name against import statements
-			for (WhileyFile.Declaration.Import imp : imports) {
+			for (WhileyFile.Decl.Import imp : imports) {
 				NameID nid = matchImport(imp, name);
 				if (nid != null) {
 					return nid;
@@ -225,12 +225,12 @@ public final class WhileyFileResolver implements NameResolver {
 	 * @param heap
 	 * @return
 	 */
-	private List<WhileyFile.Declaration.Import> getImportsInReverseOrder(SyntacticHeap heap) {
-		ArrayList<WhileyFile.Declaration.Import> imports = new ArrayList<>();
+	private List<WhileyFile.Decl.Import> getImportsInReverseOrder(SyntacticHeap heap) {
+		ArrayList<WhileyFile.Decl.Import> imports = new ArrayList<>();
 		for (int i = heap.size() - 1; i >= 0; --i) {
 			SyntacticElement element = heap.getSyntacticItem(i);
-			if (element instanceof WhileyFile.Declaration.Import) {
-				imports.add((WhileyFile.Declaration.Import) element);
+			if (element instanceof WhileyFile.Decl.Import) {
+				imports.add((WhileyFile.Decl.Import) element);
 			}
 		}
 		return imports;
@@ -248,7 +248,7 @@ public final class WhileyFileResolver implements NameResolver {
 	 * @return
 	 * @throws IOException
 	 */
-	private NameID matchImport(WhileyFile.Declaration.Import imp, Name name) throws IOException {
+	private NameID matchImport(WhileyFile.Decl.Import imp, Name name) throws IOException {
 		NameID nid = name.toNameID();
 		//
 		for (Path.Entry<WhileyFile> module : expandImport(imp)) {
@@ -308,7 +308,7 @@ public final class WhileyFileResolver implements NameResolver {
 	 * @return
 	 * @throws IOException
 	 */
-	private List<Path.Entry<WhileyFile>> expandImport(WhileyFile.Declaration.Import imp) throws IOException {
+	private List<Path.Entry<WhileyFile>> expandImport(WhileyFile.Decl.Import imp) throws IOException {
 		Trie filter = Trie.ROOT;
 		for (int i = 0; i != imp.size(); ++i) {
 			Identifier component = imp.getOperand(i);

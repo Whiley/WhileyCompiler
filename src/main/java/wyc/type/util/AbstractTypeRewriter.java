@@ -75,27 +75,27 @@ public class AbstractTypeRewriter implements TypeRewriter {
 	}
 
 	protected Type rewriteRecord(Type.Record type) {
-		Tuple<Declaration.Variable> fields = type.getFields();
+		Tuple<Decl.Variable> fields = type.getFields();
 		// The purpose of this implementation is try and reduce memory
 		// allocations and, hence, put less pressure on the garbage collector.
-		Declaration.Variable[] nFields = null;
+		Decl.Variable[] nFields = null;
 		for (int i = 0; i != fields.size(); ++i) {
-			Declaration.Variable field = fields.getOperand(i);
+			Decl.Variable field = fields.getOperand(i);
 			Type fieldType = field.getType();
 			Type nFieldType = rewrite(fieldType);
 			if (nFields != null) {
 				// Have previously seen new field, therefore maintain new array.
-				nFields[i] = new Declaration.Variable(new Tuple<>(), field.getName(), nFieldType);
+				nFields[i] = new Decl.Variable(new Tuple<>(), field.getName(), nFieldType);
 			} else if (fieldType != nFieldType) {
 				// Lazily construct array of new items now that we know at least
 				// one is different.
-				nFields = new Declaration.Variable[fields.size()];
+				nFields = new Decl.Variable[fields.size()];
 				// Copy all items seen so far into the new array
 				for (int j = 0; j < i; ++j) {
 					nFields[j] = fields.getOperand(j);
 				}
 				// Copy this item into the new array.
-				nFields[i] = new Declaration.Variable(new Tuple<>(), field.getName(), nFieldType);
+				nFields[i] = new Decl.Variable(new Tuple<>(), field.getName(), nFieldType);
 			}
 		}
 		if (nFields != null) {

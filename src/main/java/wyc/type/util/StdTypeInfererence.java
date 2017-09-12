@@ -14,7 +14,7 @@
 package wyc.type.util;
 
 import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Declaration;
+import wyc.lang.WhileyFile.Decl;
 
 import static wyc.lang.WhileyFile.*;
 import wybs.lang.NameResolver.ResolutionError;
@@ -42,7 +42,7 @@ public class StdTypeInfererence implements TypeInferer {
 
 	protected Type inferExpression(Expr expr) throws ResolutionError {
 		switch (expr.getOpcode()) {
-		case WhileyFile.EXPR_const:
+		case WhileyFile.EXPR_constant:
 			return inferConstant((Expr.Constant) expr);
 		case WhileyFile.EXPR_cast:
 			return inferCast((Expr.Cast) expr);
@@ -54,52 +54,52 @@ public class StdTypeInfererence implements TypeInferer {
 			return inferVariableAccess((Expr.VariableAccess) expr);
 		case WhileyFile.EXPR_staticvar:
 			return inferStaticVariableAccess((Expr.StaticVariableAccess) expr);
-		case WhileyFile.EXPR_not:
-		case WhileyFile.EXPR_and:
-		case WhileyFile.EXPR_or:
-		case WhileyFile.EXPR_implies:
-		case WhileyFile.EXPR_iff:
+		case WhileyFile.EXPR_lnot:
+		case WhileyFile.EXPR_land:
+		case WhileyFile.EXPR_lor:
+		case WhileyFile.EXPR_limplies:
+		case WhileyFile.EXPR_liff:
 		case WhileyFile.EXPR_eq:
 		case WhileyFile.EXPR_neq:
-		case WhileyFile.EXPR_lt:
-		case WhileyFile.EXPR_lteq:
-		case WhileyFile.EXPR_gt:
-		case WhileyFile.EXPR_gteq:
+		case WhileyFile.EXPR_ilt:
+		case WhileyFile.EXPR_ile:
+		case WhileyFile.EXPR_igt:
+		case WhileyFile.EXPR_igteq:
 			return inferLogicalOperator((Expr.Operator) expr);
-		case WhileyFile.EXPR_forall:
-		case WhileyFile.EXPR_exists:
+		case WhileyFile.EXPR_lall:
+		case WhileyFile.EXPR_lsome:
 			return inferQuantifier((Expr.Quantifier) expr);
-		case WhileyFile.EXPR_neg:
-		case WhileyFile.EXPR_add:
-		case WhileyFile.EXPR_sub:
-		case WhileyFile.EXPR_mul:
-		case WhileyFile.EXPR_div:
-		case WhileyFile.EXPR_rem:
+		case WhileyFile.EXPR_ineg:
+		case WhileyFile.EXPR_iadd:
+		case WhileyFile.EXPR_isub:
+		case WhileyFile.EXPR_imul:
+		case WhileyFile.EXPR_idiv:
+		case WhileyFile.EXPR_irem:
 			return inferArithmeticOperator((Expr.Operator) expr);
-		case WhileyFile.EXPR_bitwiseand:
-		case WhileyFile.EXPR_bitwiseor:
-		case WhileyFile.EXPR_bitwisexor:
-		case WhileyFile.EXPR_bitwiseshl:
-		case WhileyFile.EXPR_bitwiseshr:
-		case WhileyFile.EXPR_bitwisenot:
+		case WhileyFile.EXPR_band:
+		case WhileyFile.EXPR_bor:
+		case WhileyFile.EXPR_bxor:
+		case WhileyFile.EXPR_bshl:
+		case WhileyFile.EXPR_bshr:
+		case WhileyFile.EXPR_bnot:
 			return inferBitwiseOperator((Expr.Operator) expr);
-		case WhileyFile.EXPR_arrlen:
+		case WhileyFile.EXPR_alen:
 			return inferArrayLength((Expr.Operator) expr);
-		case WhileyFile.EXPR_arrinit:
+		case WhileyFile.EXPR_ainit:
 			return inferArrayInitialiser((Expr.Operator) expr);
-		case WhileyFile.EXPR_arrgen:
+		case WhileyFile.EXPR_agen:
 			return inferArrayGenerator((Expr.Operator) expr);
-		case WhileyFile.EXPR_arridx:
+		case WhileyFile.EXPR_aread:
 			return inferArrayIndex((Expr.Operator) expr);
-		case WhileyFile.EXPR_arrupdt:
+		case WhileyFile.EXPR_awrite:
 			return inferArrayUpdate((Expr.Operator) expr);
-		case WhileyFile.EXPR_recinit:
+		case WhileyFile.EXPR_rinit:
 			return inferRecordInitialiser((Expr.RecordInitialiser) expr);
-		case WhileyFile.EXPR_recfield:
+		case WhileyFile.EXPR_rread:
 			return inferRecordAccess((Expr.RecordAccess) expr);
-		case WhileyFile.EXPR_recupdt:
+		case WhileyFile.EXPR_rwrite:
 			return inferRecordUpdate((Expr.RecordUpdate) expr);
-		case WhileyFile.EXPR_deref:
+		case WhileyFile.EXPR_pread:
 			return inferDereference((Expr.Dereference) expr);
 		default:
 			throw new IllegalArgumentException("invalid expression encountered: " + expr);
@@ -127,7 +127,7 @@ public class StdTypeInfererence implements TypeInferer {
 	}
 
 	protected Type inferStaticVariableAccess(Expr.StaticVariableAccess expr) throws ResolutionError {
-		Declaration.StaticVariable decl = types.resolveExactly(expr.getName(), Declaration.StaticVariable.class);
+		Decl.StaticVariable decl = types.resolveExactly(expr.getName(), Decl.StaticVariable.class);
 		return decl.getType();
 	}
 
@@ -214,10 +214,10 @@ public class StdTypeInfererence implements TypeInferer {
 		if (src != null) {
 			Type.Record effectiveRecord = types.extractReadableRecord(src);
 			if (effectiveRecord != null) {
-				Tuple<Declaration.Variable> fields = effectiveRecord.getFields();
+				Tuple<Decl.Variable> fields = effectiveRecord.getFields();
 				Identifier actualFieldName = expr.getField();
 				for (int i = 0; i != fields.size(); ++i) {
-					Declaration.Variable vd = fields.getOperand(i);
+					Decl.Variable vd = fields.getOperand(i);
 					Identifier declaredFieldName = vd.getName();
 					if (declaredFieldName.equals(actualFieldName)) {
 						return vd.getType();
@@ -234,11 +234,11 @@ public class StdTypeInfererence implements TypeInferer {
 	}
 
 	protected Type inferRecordInitialiser(Expr.RecordInitialiser expr) throws ResolutionError {
-		Declaration.Variable[] decls = new Declaration.Variable[expr.size()];
+		Decl.Variable[] decls = new Decl.Variable[expr.size()];
 		for (int i = 0; i != decls.length; ++i) {
 			Identifier fieldName = expr.getOperand(i).getFirst();
 			Type fieldType = inferExpression(expr.getOperand(i).getSecond());
-			decls[i] = new Declaration.Variable(new Tuple<>(), fieldName, fieldType);
+			decls[i] = new Decl.Variable(new Tuple<>(), fieldName, fieldType);
 		}
 		// NOTE: a record initialiser never produces an open record
 		// type. By definition, an initialiser always produces a closed

@@ -199,9 +199,9 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			boolean conjunct = item.sign;
 			//
 			switch (t.getOpcode()) {
-			case TYPE_or:
+			case TYPE_union:
 				conjunct = !conjunct;
-			case TYPE_and: {
+			case TYPE_intersection: {
 				Type.Combinator ut = (Type.Combinator) t;
 				Type[] operands = ut.toArray(Type.class);
 				if (conjunct) {
@@ -222,14 +222,14 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 				}
 				break;
 			}
-			case TYPE_not: {
+			case TYPE_negation: {
 				Type.Negation nt = (Type.Negation) t;
 				worklist.push(!item.sign, nt.getElement(), !item.maximise);
 				break;
 			}
-			case TYPE_nom: {
+			case TYPE_nominal: {
 				Type.Nominal nom = (Type.Nominal) t;
-				Declaration.Type decl = typeSystem.resolveExactly(nom.getName(), Declaration.Type.class);
+				Decl.Type decl = typeSystem.resolveExactly(nom.getName(), Decl.Type.class);
 				if (item.maximise || decl.getInvariant().size() == 0) {
 					worklist.push(item.sign, decl.getType(), item.maximise);
 				} else if (item.sign) {
@@ -274,8 +274,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 		int aOpcode = a.type.getOpcode();
 		int bOpcode = b.type.getOpcode();
 		// Normalise the opcodes for convenience
-		aOpcode = (aOpcode == TYPE_meth) ? TYPE_fun : aOpcode;
-		bOpcode = (bOpcode == TYPE_meth) ? TYPE_fun : bOpcode;
+		aOpcode = (aOpcode == TYPE_method) ? TYPE_function : aOpcode;
+		bOpcode = (bOpcode == TYPE_method) ? TYPE_function : bOpcode;
 		//
 		if (aOpcode == bOpcode) {
 			// In this case, we are intersecting two atoms of the same kind, of
@@ -295,14 +295,14 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 				// any & !any => void
 				// int & !int => void
 				return (aSign != bSign) ? true : false;
-			case TYPE_arr:
+			case TYPE_array:
 				return isVoidArray((Atom<Type.Array>) a, (Atom<Type.Array>) b, assumptions);
-			case TYPE_rec:
+			case TYPE_record:
 				return isVoidRecord((Atom<Type.Record>) a, (Atom<Type.Record>) b, assumptions);
-			case TYPE_ref:
+			case TYPE_reference:
 				return isVoidReference((Atom<Type.Reference>) a, (Atom<Type.Reference>) b, assumptions);
-			case TYPE_fun:
-			case TYPE_meth:
+			case TYPE_function:
+			case TYPE_method:
 			case TYPE_property:
 				return isVoidCallable((Atom<Type.Callable>) a, (Atom<Type.Callable>) b, assumptions);
 			default:
@@ -406,8 +406,8 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 	 */
 	protected boolean isVoidRecord(Atom<Type.Record> lhs, Atom<Type.Record> rhs, Assumptions assumptions)
 			throws ResolutionError {
-		Tuple<Declaration.Variable> lhsFields = lhs.type.getFields();
-		Tuple<Declaration.Variable> rhsFields = rhs.type.getFields();
+		Tuple<Decl.Variable> lhsFields = lhs.type.getFields();
+		Tuple<Decl.Variable> rhsFields = rhs.type.getFields();
 		//
 		if (lhs.sign || rhs.sign) {
 			// The sign indicates whether were in the pos-pos case, or in the
@@ -420,10 +420,10 @@ public class StrictSubtypeOperator implements SubtypeOperator {
 			int matches = 0;
 			//
 			for (int i = 0; i != lhsFields.size(); ++i) {
-				Declaration.Variable lhsField = lhsFields.getOperand(i);
+				Decl.Variable lhsField = lhsFields.getOperand(i);
 				Term<?> lhsTerm = new Term<>(lhs.sign, lhsField.getType(), lhs.maximise);
 				for (int j = 0; j != rhsFields.size(); ++j) {
-					Declaration.Variable rhsField = rhsFields.getOperand(j);
+					Decl.Variable rhsField = rhsFields.getOperand(j);
 					if (!lhsField.getName().equals(rhsField.getName())) {
 						continue;
 					} else {

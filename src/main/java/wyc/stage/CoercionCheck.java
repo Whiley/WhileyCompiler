@@ -118,8 +118,8 @@ public class CoercionCheck implements Build.Stage<WhileyFile> {
 		} else if(from instanceof Type.Record && to instanceof Type.Record) {
 			Type.Record t1 = (Type.Record) from;
 			Type.Record t2 = (Type.Record) to;
-			Tuple<Declaration.Variable> t1fields = t1.getFields();
-			Tuple<Declaration.Variable> t2fields = t1.getFields();
+			Tuple<Decl.Variable> t1fields = t1.getFields();
+			Tuple<Decl.Variable> t2fields = t1.getFields();
 			throw new RuntimeException("FIX ME");
 		} else if(from instanceof Type.Function && to instanceof Type.Function) {
 			Type.Function t1 = (Type.Function) from;

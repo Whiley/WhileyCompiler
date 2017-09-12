@@ -162,8 +162,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final int DECL_method = DECL_mask + 6;
 	public static final int DECL_property = DECL_mask + 7;
 	public static final int DECL_lambda = DECL_mask + 8;
-	public static final int DECL_variable = DECL_mask + 9;
-	public static final int DECL_variableinitialiser = DECL_mask + 10;
+	public static final int DECL_var = DECL_mask + 9;
+	public static final int DECL_varinit = DECL_mask + 10;
 
 	public static final int MOD_native = DECL_mask + 11;
 	public static final int MOD_export = DECL_mask + 12;
@@ -177,17 +177,17 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final int TYPE_null = TYPE_mask + 2;
 	public static final int TYPE_bool = TYPE_mask + 3;
 	public static final int TYPE_int = TYPE_mask + 4;
-	public static final int TYPE_nom = TYPE_mask + 6;
-	public static final int TYPE_ref = TYPE_mask + 7;
-	public static final int TYPE_arr = TYPE_mask + 8;
-	public static final int TYPE_rec = TYPE_mask + 9;
-	public static final int TYPE_fun = TYPE_mask + 10;
-	public static final int TYPE_meth = TYPE_mask + 11;
+	public static final int TYPE_nominal = TYPE_mask + 6;
+	public static final int TYPE_reference = TYPE_mask + 7;
+	public static final int TYPE_array = TYPE_mask + 8;
+	public static final int TYPE_record = TYPE_mask + 9;
+	public static final int TYPE_function = TYPE_mask + 10;
+	public static final int TYPE_method = TYPE_mask + 11;
 	public static final int TYPE_property = TYPE_mask + 12;
 	public static final int TYPE_inv = TYPE_mask + 13;
-	public static final int TYPE_or = TYPE_mask + 14;
-	public static final int TYPE_and = TYPE_mask + 15;
-	public static final int TYPE_not = TYPE_mask + 16;
+	public static final int TYPE_union = TYPE_mask + 14;
+	public static final int TYPE_intersection = TYPE_mask + 15;
+	public static final int TYPE_negation = TYPE_mask + 16;
 	public static final int TYPE_byte = TYPE_mask + 17;
 	public static final int TYPE_unresolved = TYPE_mask + 18;
 	// STATEMENTS: 01000000 (64) -- 001011111 (95)
@@ -216,56 +216,55 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final int EXPR_varcopy = EXPR_mask + 0;
 	public static final int EXPR_varmove = EXPR_mask + 1;
 	public static final int EXPR_staticvar = EXPR_mask + 3;
-	public static final int EXPR_const = EXPR_mask + 4;
+	public static final int EXPR_constant = EXPR_mask + 4;
 	public static final int EXPR_cast = EXPR_mask + 5;
 	public static final int EXPR_invoke = EXPR_mask + 7;
 	public static final int EXPR_indirectinvoke = EXPR_mask + 8;
 	// LOGICAL
-	public static final int EXPR_not = EXPR_mask + 9;
-	public static final int EXPR_and = EXPR_mask + 10;
-	public static final int EXPR_or = EXPR_mask + 11;
-	public static final int EXPR_implies = EXPR_mask + 12;
-	public static final int EXPR_iff = EXPR_mask + 13;
-	public static final int EXPR_exists = EXPR_mask + 14;
-	public static final int EXPR_forall = EXPR_mask + 15;
+	public static final int EXPR_lnot = EXPR_mask + 9;
+	public static final int EXPR_land = EXPR_mask + 10;
+	public static final int EXPR_lor = EXPR_mask + 11;
+	public static final int EXPR_limplies = EXPR_mask + 12;
+	public static final int EXPR_liff = EXPR_mask + 13;
+	public static final int EXPR_lsome = EXPR_mask + 14;
+	public static final int EXPR_lall = EXPR_mask + 15;
 	// COMPARATORS
 	public static final int EXPR_eq = EXPR_mask + 16;
 	public static final int EXPR_neq = EXPR_mask + 17;
-	public static final int EXPR_lt = EXPR_mask + 18;
-	public static final int EXPR_lteq = EXPR_mask + 19;
-	public static final int EXPR_gt = EXPR_mask + 20;
-	public static final int EXPR_gteq = EXPR_mask + 21;
+	public static final int EXPR_ilt = EXPR_mask + 18;
+	public static final int EXPR_ile = EXPR_mask + 19;
+	public static final int EXPR_igt = EXPR_mask + 20;
+	public static final int EXPR_igteq = EXPR_mask + 21;
 	public static final int EXPR_is = EXPR_mask + 22;
 	// ARITHMETIC
-	public static final int EXPR_neg = EXPR_mask + 24;
-	public static final int EXPR_add = EXPR_mask + 25;
-	public static final int EXPR_sub = EXPR_mask + 26;
-	public static final int EXPR_mul = EXPR_mask + 27;
-	public static final int EXPR_div = EXPR_mask + 28;
-	public static final int EXPR_rem = EXPR_mask + 29;
+	public static final int EXPR_ineg = EXPR_mask + 24;
+	public static final int EXPR_iadd = EXPR_mask + 25;
+	public static final int EXPR_isub = EXPR_mask + 26;
+	public static final int EXPR_imul = EXPR_mask + 27;
+	public static final int EXPR_idiv = EXPR_mask + 28;
+	public static final int EXPR_irem = EXPR_mask + 29;
 	// BITWISE
-	public static final int EXPR_bitwisenot = EXPR_mask + 32;
-	public static final int EXPR_bitwiseand = EXPR_mask + 33;
-	public static final int EXPR_bitwiseor = EXPR_mask + 34;
-	public static final int EXPR_bitwisexor = EXPR_mask + 35;
-	public static final int EXPR_bitwiseshl = EXPR_mask + 36;
-	public static final int EXPR_bitwiseshr = EXPR_mask + 37;
+	public static final int EXPR_bnot = EXPR_mask + 32;
+	public static final int EXPR_band = EXPR_mask + 33;
+	public static final int EXPR_bor = EXPR_mask + 34;
+	public static final int EXPR_bxor = EXPR_mask + 35;
+	public static final int EXPR_bshl = EXPR_mask + 36;
+	public static final int EXPR_bshr = EXPR_mask + 37;
 	// REFERENCES
-	public static final int EXPR_deref = EXPR_mask + 40;
-	public static final int EXPR_new = EXPR_mask + 41;
-	public static final int EXPR_rawlambda = EXPR_mask + 42;
-	public static final int EXPR_lambda = EXPR_mask + 43;
+	public static final int EXPR_pread = EXPR_mask + 40;
+	public static final int EXPR_pinit = EXPR_mask + 41;
+	public static final int EXPR_lread = EXPR_mask + 43;
 	// RECORDS
-	public static final int EXPR_recfield = EXPR_mask + 48;
-	public static final int EXPR_recupdt = EXPR_mask + 49;
-	public static final int EXPR_recinit = EXPR_mask + 50;
+	public static final int EXPR_rread = EXPR_mask + 48;
+	public static final int EXPR_rwrite = EXPR_mask + 49;
+	public static final int EXPR_rinit = EXPR_mask + 50;
 	// ARRAYS
-	public static final int EXPR_arridx = EXPR_mask + 56;
-	public static final int EXPR_arrlen = EXPR_mask + 57;
-	public static final int EXPR_arrupdt = EXPR_mask + 58;
-	public static final int EXPR_arrgen = EXPR_mask + 59;
-	public static final int EXPR_arrinit = EXPR_mask + 60;
-	public static final int EXPR_arrrange = EXPR_mask + 61;
+	public static final int EXPR_aread = EXPR_mask + 56;
+	public static final int EXPR_awrite = EXPR_mask + 58;
+	public static final int EXPR_alen = EXPR_mask + 57;
+	public static final int EXPR_agen = EXPR_mask + 59;
+	public static final int EXPR_ainit = EXPR_mask + 60;
+	public static final int EXPR_arange = EXPR_mask + 61;
 
 	// =========================================================================
 	// Constructors
@@ -287,16 +286,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	// Accessors
 	// =========================================================================
 
-	public Tuple<Declaration> getDeclarations() {
+	public Tuple<Decl> getDeclarations() {
 		// The first node is always the declaration root.
-		List<Declaration.Module> modules = getSyntacticItems(Declaration.Module.class);
+		List<Decl.Module> modules = getSyntacticItems(Decl.Module.class);
 		if (modules.size() != 1) {
 			throw new RuntimeException("expecting one module, found " + modules.size());
 		}
 		return modules.get(0).getDeclarations();
 	}
 
-	public <S extends Declaration.Named> S getDeclaration(Identifier name, Type signature, Class<S> kind) {
+	public <S extends Decl.Named> S getDeclaration(Identifier name, Type signature, Class<S> kind) {
 		List<S> matches = super.getSyntacticItems(kind);
 		for (int i = 0; i != matches.size(); ++i) {
 			S match = matches.get(i);
@@ -315,11 +314,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	// ============================================================
 	// Declarations
 	// ============================================================
-	public static interface Declaration extends CompilationUnit.Declaration {
+	public static interface Decl extends CompilationUnit.Declaration {
 
-		public static class Module extends AbstractSyntacticItem implements Declaration {
+		public static class Module extends AbstractSyntacticItem implements Decl {
 
-			public Module(Name name, Tuple<Declaration> declarations) {
+			public Module(Name name, Tuple<Decl> declarations) {
 				super(DECL_module, name, declarations);
 			}
 
@@ -328,14 +327,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@SuppressWarnings("unchecked")
-			public Tuple<Declaration> getDeclarations() {
-				return (Tuple<Declaration>) getOperand(1);
+			public Tuple<Decl> getDeclarations() {
+				return (Tuple<Decl>) getOperand(1);
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
-				return new Module((Name) operands[0], (Tuple<Declaration>) operands[1]);
+				return new Module((Name) operands[0], (Tuple<Decl>) operands[1]);
 			}
 		}
 
@@ -359,7 +358,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Import extends AbstractSyntacticItem implements Declaration {
+		public static class Import extends AbstractSyntacticItem implements Decl {
 			public Import(Identifier... components) {
 				super(DECL_import, components);
 			}
@@ -403,7 +402,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static abstract class Named extends AbstractSyntacticItem implements Declaration {
+		public static abstract class Named extends AbstractSyntacticItem implements Decl {
 
 			public Named(int opcode, Tuple<Modifier> modifiers, Identifier name, SyntacticItem... rest) {
 				super(opcode, ArrayUtils.append(new SyntacticItem[] { modifiers, name }, rest));
@@ -419,7 +418,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Name getQualifiedName() {
-				Module module = getAncestor(Declaration.Module.class);
+				Module module = getAncestor(Decl.Module.class);
 				Name name = module.getName();
 				Identifier[] idents = name.getOperands();
 				idents = Arrays.copyOf(idents,idents.length+1);
@@ -497,18 +496,18 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		public static abstract class Callable extends Named {
 
 			public Callable(int opcode, Tuple<Modifier> modifiers, Identifier name,
-					Tuple<Declaration.Variable> parameters, Tuple<Declaration.Variable> returns, SyntacticItem... rest) {
+					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, SyntacticItem... rest) {
 				super(opcode, modifiers, name, ArrayUtils.append(new SyntacticItem[] { parameters, returns}, rest));
 			}
 
 			@SuppressWarnings("unchecked")
-			public Tuple<Declaration.Variable> getParameters() {
-				return (Tuple<Declaration.Variable>) getOperand(2);
+			public Tuple<Decl.Variable> getParameters() {
+				return (Tuple<Decl.Variable>) getOperand(2);
 			}
 
 			@SuppressWarnings("unchecked")
-			public Tuple<Declaration.Variable> getReturns() {
-				return (Tuple<Declaration.Variable>) getOperand(3);
+			public Tuple<Decl.Variable> getReturns() {
+				return (Tuple<Decl.Variable>) getOperand(3);
 			}
 
 			@Override
@@ -517,8 +516,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		public static abstract class FunctionOrMethod extends Callable {
 
-			public FunctionOrMethod(int opcode, Tuple<Modifier> modifiers, Identifier name, Tuple<Declaration.Variable> parameters,
-					Tuple<Declaration.Variable> returns, Tuple<Expr> requires, Tuple<Expr> ensures, Stmt.Block body, SyntacticItem... rest) {
+			public FunctionOrMethod(int opcode, Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
+					Tuple<Decl.Variable> returns, Tuple<Expr> requires, Tuple<Expr> ensures, Stmt.Block body, SyntacticItem... rest) {
 				super(opcode, modifiers, name, parameters, returns,
 						ArrayUtils.append(new SyntacticItem[] { requires, ensures, body }, rest));
 			}
@@ -577,8 +576,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Function extends FunctionOrMethod {
 
-			public Function(Tuple<Modifier> modifiers, Identifier name, Tuple<Declaration.Variable> parameters,
-					Tuple<Declaration.Variable> returns, Tuple<Expr> requires, Tuple<Expr> ensures, Stmt.Block body) {
+			public Function(Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
+					Tuple<Decl.Variable> returns, Tuple<Expr> requires, Tuple<Expr> ensures, Stmt.Block body) {
 				super(DECL_function, modifiers, name, parameters, returns, requires, ensures, body);
 			}
 
@@ -595,7 +594,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@SuppressWarnings("unchecked")
 			public Function clone(SyntacticItem[] operands) {
 				return new Function((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Declaration.Variable>) operands[2], (Tuple<Declaration.Variable>) operands[3],
+						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 						(Tuple<Expr>) operands[4], (Tuple<Expr>) operands[5], (Stmt.Block) operands[6]);
 			}
 		}
@@ -635,8 +634,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Method extends FunctionOrMethod {
 
-			public Method(Tuple<Modifier> modifiers, Identifier name, Tuple<Declaration.Variable> parameters,
-					Tuple<Declaration.Variable> returns, Tuple<Expr> requires, Tuple<Expr> ensures, Stmt.Block body,
+			public Method(Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
+					Tuple<Decl.Variable> returns, Tuple<Expr> requires, Tuple<Expr> ensures, Stmt.Block body,
 					Tuple<Identifier> lifetimes) {
 				super(DECL_method, modifiers, name, parameters, returns, requires, ensures, body, lifetimes);
 			}
@@ -662,7 +661,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public Method clone(SyntacticItem[] operands) {
 				return new Method((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Declaration.Variable>) operands[2], (Tuple<Declaration.Variable>) operands[3],
+						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 						(Tuple<Expr>) operands[4], (Tuple<Expr>) operands[5], (Stmt.Block) operands[6],
 						(Tuple<Identifier>) operands[7]);
 			}
@@ -675,13 +674,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		public static class Property extends Callable {
 
-			public Property(Tuple<Modifier> modifiers, Identifier name, Tuple<Declaration.Variable> parameters,
+			public Property(Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
 					Tuple<Expr> invariant) {
-				super(DECL_property, modifiers, name, parameters, new Tuple<Declaration.Variable>(), invariant);
+				super(DECL_property, modifiers, name, parameters, new Tuple<Decl.Variable>(), invariant);
 			}
 
-			public Property(Tuple<Modifier> modifiers, Identifier name, Tuple<Declaration.Variable> parameters,
-					Tuple<Declaration.Variable> returns, Tuple<Expr> invariant) {
+			public Property(Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
+					Tuple<Decl.Variable> returns, Tuple<Expr> invariant) {
 				super(DECL_property, modifiers, name, parameters, returns, invariant);
 			}
 
@@ -703,15 +702,15 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public Property clone(SyntacticItem[] operands) {
 				return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Declaration.Variable>) operands[2], (Tuple<Declaration.Variable>) operands[3], (Tuple<Expr>) operands[4]);
+						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3], (Tuple<Expr>) operands[4]);
 			}
 		}
 
 
 		public static class Lambda extends Callable implements Expr {
 
-			public Lambda(Tuple<Modifier> modifiers, Identifier name, Tuple<Declaration.Variable> parameters,
-					Tuple<Declaration.Variable> returns, Tuple<Identifier> captures, Tuple<Identifier> lifetimes, Expr body) {
+			public Lambda(Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
+					Tuple<Decl.Variable> returns, Tuple<Identifier> captures, Tuple<Identifier> lifetimes, Expr body) {
 				super(DECL_lambda, modifiers, name, parameters, returns, captures, lifetimes, body);
 			}
 
@@ -744,7 +743,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public SyntacticItem clone(SyntacticItem[] operands) {
 				return new Lambda((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Declaration.Variable>) operands[2], (Tuple<Declaration.Variable>) operands[3],
+						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 						(Tuple<Identifier>) operands[4], (Tuple<Identifier>) operands[5], (Expr) operands[6]);
 			}
 		}
@@ -777,13 +776,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Type extends Named {
 
-			public Type(Tuple<Modifier> modifiers, Identifier name, Declaration.Variable vardecl,
+			public Type(Tuple<Modifier> modifiers, Identifier name, Decl.Variable vardecl,
 					Tuple<Expr> invariant) {
 				super(DECL_type, modifiers, name, vardecl, invariant);
 			}
 
-			public Declaration.Variable getVariableDeclaration() {
-				return (Declaration.Variable) getOperand(2);
+			public Decl.Variable getVariableDeclaration() {
+				return (Decl.Variable) getOperand(2);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -798,9 +797,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public Declaration.Type clone(SyntacticItem[] operands) {
-				return new Declaration.Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Declaration.Variable) operands[2], (Tuple<Expr>) operands[3]);
+			public Decl.Type clone(SyntacticItem[] operands) {
+				return new Decl.Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+						(Decl.Variable) operands[2], (Tuple<Expr>) operands[3]);
 			}
 		}
 
@@ -834,11 +833,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Variable extends Named implements Stmt {
 			public Variable(Tuple<Modifier> modifiers, Identifier name, WhileyFile.Type type) {
-				super(DECL_variable, modifiers, name, type);
+				super(DECL_var, modifiers, name, type);
 			}
 
 			public Variable(Tuple<Modifier> modifiers, Identifier name, WhileyFile.Type type, Expr initialiser) {
-				super(DECL_variableinitialiser, modifiers, name, type, initialiser);
+				super(DECL_varinit, modifiers, name, type, initialiser);
 			}
 
 			protected Variable(int opcode, Tuple<Modifier> modifiers, Identifier name, WhileyFile.Type type, Expr initialiser) {
@@ -846,7 +845,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public boolean hasInitialiser() {
-				return getOpcode() == DECL_variableinitialiser;
+				return getOpcode() == DECL_varinit;
 			}
 
 			@Override
@@ -860,12 +859,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			@Override
-			public Declaration.Variable clone(SyntacticItem[] operands) {
+			public Decl.Variable clone(SyntacticItem[] operands) {
 				if (operands.length == 3) {
-					return new Declaration.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+					return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(WhileyFile.Type) operands[2]);
 				} else {
-					return new Declaration.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+					return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 							(WhileyFile.Type) operands[2], (Expr) operands[3]);
 				}
 			}
@@ -1091,7 +1090,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				super(STMT_debug, condition);
 			}
 
-			public Expr getCondition() {
+			public Expr getOperand() {
 				return (Expr) super.getOperand(0);
 			}
 
@@ -1290,7 +1289,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@SuppressWarnings("unchecked")
-			public Tuple<Expr> getOperand() {
+			public Tuple<Expr> getReturns() {
 				return (Tuple<Expr>) super.getOperand(0);
 			}
 
@@ -1457,7 +1456,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Constant extends AbstractSyntacticItem implements Expr {
 			public Constant(Value value) {
-				super(EXPR_const, value);
+				super(EXPR_constant, value);
 			}
 
 			public Value getValue() {
@@ -1661,17 +1660,17 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *
 		 */
 		public abstract static class Quantifier extends AbstractSyntacticItem implements Expr {
-			public Quantifier(int opcode, Declaration.Variable[] parameters, Expr body) {
+			public Quantifier(int opcode, Decl.Variable[] parameters, Expr body) {
 				super(opcode, new Tuple<>(parameters), body);
 			}
 
-			public Quantifier(int opcode, Tuple<Declaration.Variable> parameters, Expr body) {
+			public Quantifier(int opcode, Tuple<Decl.Variable> parameters, Expr body) {
 				super(opcode, parameters, body);
 			}
 
 			@SuppressWarnings("unchecked")
-			public Tuple<Declaration.Variable> getParameters() {
-				return (Tuple<Declaration.Variable>) getOperand(0);
+			public Tuple<Decl.Variable> getParameters() {
+				return (Tuple<Decl.Variable>) getOperand(0);
 			}
 
 			public Expr getBody() {
@@ -1692,18 +1691,18 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *
 		 */
 		public static class UniversalQuantifier extends Quantifier {
-			public UniversalQuantifier(Declaration.Variable[] parameters, Expr body) {
-				super(EXPR_forall, new Tuple<>(parameters), body);
+			public UniversalQuantifier(Decl.Variable[] parameters, Expr body) {
+				super(EXPR_lall, new Tuple<>(parameters), body);
 			}
 
-			public UniversalQuantifier(Tuple<Declaration.Variable> parameters, Expr body) {
-				super(EXPR_forall, parameters, body);
+			public UniversalQuantifier(Tuple<Decl.Variable> parameters, Expr body) {
+				super(EXPR_lall, parameters, body);
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new UniversalQuantifier((Tuple<Declaration.Variable>) operands[0], (Expr) operands[1]);
+				return new UniversalQuantifier((Tuple<Decl.Variable>) operands[0], (Expr) operands[1]);
 			}
 
 			@Override
@@ -1726,18 +1725,18 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *
 		 */
 		public static class ExistentialQuantifier extends Quantifier {
-			public ExistentialQuantifier(Declaration.Variable[] parameters, Expr body) {
-				super(EXPR_exists, new Tuple<>(parameters), body);
+			public ExistentialQuantifier(Decl.Variable[] parameters, Expr body) {
+				super(EXPR_lsome, new Tuple<>(parameters), body);
 			}
 
-			public ExistentialQuantifier(Tuple<Declaration.Variable> parameters, Expr body) {
-				super(EXPR_exists, parameters, body);
+			public ExistentialQuantifier(Tuple<Decl.Variable> parameters, Expr body) {
+				super(EXPR_lsome, parameters, body);
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new ExistentialQuantifier((Tuple<Declaration.Variable>) operands[0], (Expr) operands[1]);
+				return new ExistentialQuantifier((Tuple<Decl.Variable>) operands[0], (Expr) operands[1]);
 			}
 
 			@Override
@@ -1761,17 +1760,17 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 *
 		 */
 		public static class VariableAccess extends AbstractSyntacticItem implements LVal {
-			public VariableAccess(Declaration.Variable decl) {
+			public VariableAccess(Decl.Variable decl) {
 				super(EXPR_varcopy, decl);
 			}
 
-			public Declaration.Variable getVariableDeclaration() {
-				return (Declaration.Variable) getOperand(0);
+			public Decl.Variable getVariableDeclaration() {
+				return (Decl.Variable) getOperand(0);
 			}
 
 			@Override
 			public VariableAccess clone(SyntacticItem[] operands) {
-				return new VariableAccess((Declaration.Variable) operands[0]);
+				return new VariableAccess((Decl.Variable) operands[0]);
 			}
 
 			@Override
@@ -1814,7 +1813,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class LogicalAnd extends InfixOperator {
 			public LogicalAnd(Expr... operands) {
-				super(EXPR_and, operands);
+				super(EXPR_land, operands);
 			}
 
 			@Override
@@ -1841,7 +1840,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class LogicalOr extends InfixOperator {
 			public LogicalOr(Expr... operands) {
-				super(EXPR_or, operands);
+				super(EXPR_lor, operands);
 			}
 
 			@Override
@@ -1868,7 +1867,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class LogicalImplication extends InfixOperator {
 			public LogicalImplication(Expr... operands) {
-				super(EXPR_implies, operands);
+				super(EXPR_limplies, operands);
 			}
 
 			@Override
@@ -1895,7 +1894,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class LogicalIff extends InfixOperator {
 			public LogicalIff(Expr... operands) {
-				super(EXPR_iff, operands);
+				super(EXPR_liff, operands);
 			}
 
 			@Override
@@ -1921,7 +1920,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class LogicalNot extends Operator {
 			public LogicalNot(Expr operand) {
-				super(EXPR_not, operand);
+				super(EXPR_lnot, operand);
 			}
 
 			public Expr getOperand() {
@@ -2005,7 +2004,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class LessThan extends InfixOperator {
 			public LessThan(Expr... operands) {
-				super(EXPR_lt, operands);
+				super(EXPR_ilt, operands);
 			}
 
 			@Override
@@ -2032,7 +2031,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class LessThanOrEqual extends InfixOperator {
 			public LessThanOrEqual(Expr... operands) {
-				super(EXPR_lteq, operands);
+				super(EXPR_ile, operands);
 			}
 
 			@Override
@@ -2059,7 +2058,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class GreaterThan extends InfixOperator {
 			public GreaterThan(Expr... operands) {
-				super(EXPR_gt, operands);
+				super(EXPR_igt, operands);
 			}
 
 			@Override
@@ -2086,7 +2085,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class GreaterThanOrEqual extends InfixOperator {
 			public GreaterThanOrEqual(Expr... operands) {
-				super(EXPR_gteq, operands);
+				super(EXPR_igteq, operands);
 			}
 
 			@Override
@@ -2117,7 +2116,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Addition extends InfixOperator {
 			public Addition(Expr... operands) {
-				super(EXPR_add, operands);
+				super(EXPR_iadd, operands);
 			}
 
 			@Override
@@ -2144,7 +2143,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Subtraction extends InfixOperator {
 			public Subtraction(Expr... operands) {
-				super(EXPR_sub, operands);
+				super(EXPR_isub, operands);
 			}
 
 			@Override
@@ -2171,7 +2170,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Multiplication extends InfixOperator {
 			public Multiplication(Expr... operands) {
-				super(EXPR_mul, operands);
+				super(EXPR_imul, operands);
 			}
 
 			@Override
@@ -2198,7 +2197,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Division extends InfixOperator {
 			public Division(Expr... operands) {
-				super(EXPR_div, operands);
+				super(EXPR_idiv, operands);
 			}
 
 			@Override
@@ -2225,7 +2224,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Remainder extends InfixOperator {
 			public Remainder(Expr... operands) {
-				super(EXPR_rem, operands);
+				super(EXPR_irem, operands);
 			}
 
 			@Override
@@ -2252,7 +2251,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Negation extends Operator {
 			public Negation(Expr operand) {
-				super(EXPR_neg, operand);
+				super(EXPR_ineg, operand);
 			}
 
 			public Expr getOperand() {
@@ -2287,7 +2286,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class BitwiseShiftLeft extends InfixOperator {
 			public BitwiseShiftLeft(Expr lhs, Expr rhs) {
-						super(EXPR_bitwiseshl, lhs,rhs);
+						super(EXPR_bshl, lhs,rhs);
 					}
 
 			@Override
@@ -2314,7 +2313,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class BitwiseShiftRight extends InfixOperator {
 			public BitwiseShiftRight(Expr lhs, Expr rhs) {
-						super(EXPR_bitwiseshr, lhs,rhs);
+						super(EXPR_bshr, lhs,rhs);
 					}
 
 			@Override
@@ -2342,7 +2341,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class BitwiseAnd extends InfixOperator {
 			public BitwiseAnd(Expr... operands) {
-						super(EXPR_bitwiseand, operands);
+						super(EXPR_band, operands);
 					}
 
 			@Override
@@ -2369,7 +2368,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class BitwiseOr extends InfixOperator {
 			public BitwiseOr(Expr... operands) {
-				super(EXPR_bitwiseor, operands);
+				super(EXPR_bor, operands);
 			}
 
 			@Override
@@ -2396,7 +2395,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class BitwiseXor extends InfixOperator {
 			public BitwiseXor(Expr... operands) {
-				super(EXPR_bitwisexor, operands);
+				super(EXPR_bxor, operands);
 			}
 
 			@Override
@@ -2422,7 +2421,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class BitwiseComplement extends Operator {
 			public BitwiseComplement(Expr operand) {
-				super(EXPR_bitwisenot, operand);
+				super(EXPR_bnot, operand);
 			}
 
 			public Expr getOperand() {
@@ -2443,7 +2442,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		// =========================================================================
 		public static class Dereference extends Operator implements LVal {
 			public Dereference(Expr operand) {
-				super(EXPR_deref, operand);
+				super(EXPR_pread, operand);
 			}
 
 			public Expr getOperand() {
@@ -2466,10 +2465,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		public static class New extends AbstractSyntacticItem implements LVal {
 			public New(Expr operand, Identifier lifetime) {
-				super(EXPR_new, operand, lifetime);
+				super(EXPR_pinit, operand, lifetime);
 			}
 
-			public Expr getOperand() {
+			public Expr getValue() {
 				return (Expr) super.getOperand(0);
 			}
 
@@ -2487,14 +2486,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public String toString() {
-				return "new " + getOperand();
+				return "new " + getValue();
 			}
 		}
 
 		public static class LambdaAccess extends AbstractSyntacticItem implements Expr {
 
 			public LambdaAccess(Name name, Tuple<Type> parameters, Type.Callable descriptor) {
-				super(EXPR_lambda, name, parameters, descriptor);
+				super(EXPR_lread, name, parameters, descriptor);
 			}
 
 			public Name getName() {
@@ -2536,7 +2535,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class ArrayAccess extends Expr.Operator implements LVal {
 			public ArrayAccess(Expr src, Expr index) {
-				super(EXPR_arridx, src, index);
+				super(EXPR_aread, src, index);
 			}
 
 			public Expr getSource() {
@@ -2572,7 +2571,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class ArrayUpdate extends Expr.Operator {
 			public ArrayUpdate(Expr src, Expr index, Expr value) {
-				super(EXPR_arrupdt, src, index, value);
+				super(EXPR_awrite, src, index, value);
 			}
 
 			public Expr getSource() {
@@ -2609,7 +2608,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class ArrayInitialiser extends Expr.Operator {
 			public ArrayInitialiser(Expr... elements) {
-				super(EXPR_arrinit, elements);
+				super(EXPR_ainit, elements);
 			}
 
 			@Override
@@ -2636,7 +2635,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class ArrayGenerator extends Expr.Operator {
 			public ArrayGenerator(Expr value, Expr length) {
-				super(EXPR_arrgen, value, length);
+				super(EXPR_agen, value, length);
 			}
 
 			public Expr getValue() {
@@ -2664,7 +2663,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class ArrayRange extends Expr.Operator {
 			public ArrayRange(Expr start, Expr end) {
-				super(EXPR_arrrange, start, end);
+				super(EXPR_arange, start, end);
 			}
 
 			public Expr getStart() {
@@ -2692,7 +2691,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class ArrayLength extends Expr.Operator {
 			public ArrayLength(Expr src) {
-				super(EXPR_arrlen, src);
+				super(EXPR_alen, src);
 			}
 
 			public Expr getSource() {
@@ -2724,7 +2723,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class RecordAccess extends AbstractSyntacticItem implements LVal {
 			public RecordAccess(Expr lhs, Identifier rhs) {
-				super(EXPR_recfield, lhs, rhs);
+				super(EXPR_rread, lhs, rhs);
 			}
 
 			public Expr getSource() {
@@ -2759,7 +2758,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		public static class RecordInitialiser extends AbstractSyntacticItem implements Expr {
 			@SafeVarargs
 			public RecordInitialiser(Pair<Identifier, Expr>... fields) {
-				super(EXPR_recinit, fields);
+				super(EXPR_rinit, fields);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -2788,7 +2787,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class RecordUpdate extends AbstractSyntacticItem implements Expr {
 			public RecordUpdate(Expr lhs, Identifier mhs, Expr rhs) {
-				super(EXPR_recupdt, lhs, mhs, rhs);
+				super(EXPR_rwrite, lhs, mhs, rhs);
 			}
 
 			public Expr getSource() {
@@ -3019,7 +3018,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Array extends AbstractSyntacticItem implements Atom {
 			public Array(Type element) {
-				super(TYPE_arr, element);
+				super(TYPE_array, element);
 			}
 
 			public Type getElement() {
@@ -3052,10 +3051,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Reference extends AbstractSyntacticItem implements Atom {
 			public Reference(Type element) {
-				super(TYPE_ref, element);
+				super(TYPE_reference, element);
 			}
 			public Reference(Type element, Identifier lifetime) {
-				super(TYPE_ref, element, lifetime);
+				super(TYPE_reference, element, lifetime);
 			}
 
 			public boolean hasLifetime() {
@@ -3105,16 +3104,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @return
 		 */
 		public static class Record extends AbstractSyntacticItem implements Atom {
-			public Record(boolean isOpen, Tuple<Declaration.Variable> fields) {
+			public Record(boolean isOpen, Tuple<Decl.Variable> fields) {
 				this(new Value.Bool(isOpen), fields);
 			}
 
-			public Record(Value.Bool isOpen, Tuple<Declaration.Variable> fields) {
-				super(TYPE_rec, isOpen, fields);
+			public Record(Value.Bool isOpen, Tuple<Decl.Variable> fields) {
+				super(TYPE_record, isOpen, fields);
 			}
 
 			private Record(SyntacticItem[] operands) {
-				super(TYPE_rec, operands);
+				super(TYPE_record, operands);
 			}
 
 			public boolean isOpen() {
@@ -3123,14 +3122,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@SuppressWarnings("unchecked")
-			public Tuple<Declaration.Variable> getFields() {
-				return (Tuple<Declaration.Variable>) getOperand(1);
+			public Tuple<Decl.Variable> getFields() {
+				return (Tuple<Decl.Variable>) getOperand(1);
 			}
 
 			public Type getField(Identifier fieldName) {
-				Tuple<Declaration.Variable> fields = getFields();
+				Tuple<Decl.Variable> fields = getFields();
 				for (int i = 0; i != fields.size(); ++i) {
-					Declaration.Variable vd = fields.getOperand(i);
+					Decl.Variable vd = fields.getOperand(i);
 					Identifier declaredFieldName = vd.getName();
 					if (declaredFieldName.equals(fieldName)) {
 						return vd.getType();
@@ -3147,12 +3146,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public String toString() {
 				String r = "{";
-				Tuple<Declaration.Variable> fields = getFields();
+				Tuple<Decl.Variable> fields = getFields();
 				for (int i = 0; i != fields.size(); ++i) {
 					if (i != 0) {
 						r += ",";
 					}
-					Declaration.Variable field = fields.getOperand(i);
+					Decl.Variable field = fields.getOperand(i);
 					r += field.getType() + " " + field.getName();
 				}
 				if (isOpen()) {
@@ -3183,7 +3182,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		public static class Nominal extends AbstractSyntacticItem implements Type {
 
 			public Nominal(Name name) {
-				super(TYPE_nom, name);
+				super(TYPE_nominal, name);
 			}
 
 			public Name getName() {
@@ -3221,7 +3220,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Negation extends AbstractSyntacticItem implements Type {
 			public Negation(Type element) {
-				super(TYPE_not, element);
+				super(TYPE_negation, element);
 			}
 
 			public Type getElement() {
@@ -3277,7 +3276,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Union extends Combinator {
 			public Union(Type[] types) {
-				super(TYPE_or, types);
+				super(TYPE_union, types);
 			}
 
 			@Override
@@ -3319,7 +3318,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Intersection extends Combinator {
 			public Intersection(Type[] types) {
-				super(TYPE_and, types);
+				super(TYPE_intersection, types);
 			}
 
 			@Override
@@ -3352,7 +3351,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static class Function extends AbstractSyntacticItem implements Type.Callable {
 			public Function(Tuple<Type> parameters, Tuple<Type> returns) {
-				super(TYPE_fun, parameters, returns);
+				super(TYPE_function, parameters, returns);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -3394,7 +3393,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			public Method(Tuple<Type> parameters, Tuple<Type> returns, Tuple<Identifier> captures,
 					Tuple<Identifier> lifetimes) {
-				super(TYPE_meth, new SyntacticItem[] {parameters, returns, captures, lifetimes});
+				super(TYPE_method, new SyntacticItem[] {parameters, returns, captures, lifetimes});
 			}
 
 			@Override
@@ -3635,20 +3634,20 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Declaration.Module((Name) operands[0], (Tuple<Declaration>) operands[1]);
+				return new Decl.Module((Name) operands[0], (Tuple<Decl>) operands[1]);
 			}
 		};
 		schema[DECL_import] = new Schema(Operands.MANY, Data.ZERO, "DECL_import") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Declaration.Import(ArrayUtils.toArray(Identifier.class, operands));
+				return new Decl.Import(ArrayUtils.toArray(Identifier.class, operands));
 			}
 		};
 		schema[DECL_staticvar] = new Schema(Operands.FOUR, Data.ZERO, "DECL_staticvar") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Declaration.StaticVariable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+				return new Decl.StaticVariable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Type) operands[2], (Expr) operands[3]);
 			}
 		};
@@ -3656,16 +3655,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Declaration.Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Declaration.Variable) operands[2], (Tuple<Expr>) operands[3]);
+				return new Decl.Type((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+						(Decl.Variable) operands[2], (Tuple<Expr>) operands[3]);
 			}
 		};
 		schema[DECL_function] = new Schema(Operands.SEVEN, Data.ZERO, "DECL_function") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Declaration.Function((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Declaration.Variable>) operands[2], (Tuple<Declaration.Variable>) operands[3],
+				return new Decl.Function((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 						(Tuple<Expr>) operands[4], (Tuple<Expr>) operands[5], (Stmt.Block) operands[6]);
 			}
 		};
@@ -3673,8 +3672,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Declaration.Method((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Declaration.Variable>) operands[2], (Tuple<Declaration.Variable>) operands[3],
+				return new Decl.Method((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 						(Tuple<Expr>) operands[4], (Tuple<Expr>) operands[5], (Stmt.Block) operands[6],
 						(Tuple<Identifier>) operands[7]);
 			}
@@ -3683,8 +3682,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Declaration.Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Declaration.Variable>) operands[2], (Tuple<Declaration.Variable>) operands[3],
+				return new Decl.Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 						(Tuple<Expr>) operands[4]);
 			}
 		};
@@ -3692,24 +3691,24 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Declaration.Lambda((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Declaration.Variable>) operands[2], (Tuple<Declaration.Variable>) operands[3],
+				return new Decl.Lambda((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
 						(Tuple<Identifier>) operands[4], (Tuple<Identifier>) operands[5], (Expr) operands[6]);
 			}
 		};
-		schema[DECL_variable] = new Schema(Operands.THREE, Data.ZERO, "DECL_variable") {
+		schema[DECL_var] = new Schema(Operands.THREE, Data.ZERO, "DECL_variable") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Declaration.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+				return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Type) operands[2]);
 			}
 		};
-		schema[DECL_variableinitialiser] = new Schema(Operands.FOUR, Data.ZERO, "DECL_variableinitialiser") {
+		schema[DECL_varinit] = new Schema(Operands.FOUR, Data.ZERO, "DECL_variableinitialiser") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Declaration.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
+				return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
 						(Type) operands[2], (Expr) operands[3]);
 			}
 		};
@@ -3768,13 +3767,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Type.Int();
 			}
 		};
-		schema[TYPE_nom] = new Schema(Operands.ONE, Data.ZERO, "TYPE_nom") {
+		schema[TYPE_nominal] = new Schema(Operands.ONE, Data.ZERO, "TYPE_nom") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Type.Nominal((Name) operands[0]);
 			}
 		};
-		schema[TYPE_ref] = new Schema(Operands.MANY, Data.ZERO, "TYPE_reference") {
+		schema[TYPE_reference] = new Schema(Operands.MANY, Data.ZERO, "TYPE_reference") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				// FIXME: many operand modifier is not optimal. Observe that,
@@ -3787,27 +3786,27 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				}
 			}
 		};
-		schema[TYPE_arr] = new Schema(Operands.ONE, Data.ZERO, "TYPE_array") {
+		schema[TYPE_array] = new Schema(Operands.ONE, Data.ZERO, "TYPE_array") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Type.Array((Type) operands[0]);
 			}
 		};
-		schema[TYPE_rec] = new Schema(Operands.TWO, Data.ZERO, "TYPE_record") {
+		schema[TYPE_record] = new Schema(Operands.TWO, Data.ZERO, "TYPE_record") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Type.Record((Value.Bool) operands[0], (Tuple<Declaration.Variable>) operands[1]);
+				return new Type.Record((Value.Bool) operands[0], (Tuple<Decl.Variable>) operands[1]);
 			}
 		};
-		schema[TYPE_fun] = new Schema(Operands.TWO, Data.ZERO, "TYPE_function") {
+		schema[TYPE_function] = new Schema(Operands.TWO, Data.ZERO, "TYPE_function") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Type.Function((Tuple<Type>) operands[0], (Tuple<Type>) operands[1]);
 			}
 		};
-		schema[TYPE_meth] = new Schema(Operands.FOUR, Data.ZERO, "TYPE_method") {
+		schema[TYPE_method] = new Schema(Operands.FOUR, Data.ZERO, "TYPE_method") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
@@ -3822,19 +3821,19 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Type.Property((Tuple<Type>) operands[0], (Tuple<Type>) operands[1]);
 			}
 		};
-		schema[TYPE_or] = new Schema(Operands.MANY, Data.ZERO, "TYPE_or") {
+		schema[TYPE_union] = new Schema(Operands.MANY, Data.ZERO, "TYPE_or") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Type.Union(ArrayUtils.toArray(Type.class, operands));
 			}
 		};
-		schema[TYPE_and] = new Schema(Operands.MANY, Data.ZERO, "TYPE_and") {
+		schema[TYPE_intersection] = new Schema(Operands.MANY, Data.ZERO, "TYPE_and") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Type.Intersection(ArrayUtils.toArray(Type.class, operands));
 			}
 		};
-		schema[TYPE_not] = new Schema(Operands.ONE, Data.ZERO, "TYPE_not") {
+		schema[TYPE_negation] = new Schema(Operands.ONE, Data.ZERO, "TYPE_not") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Type.Negation((Type) operands[0]);
@@ -3965,7 +3964,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		schema[EXPR_varcopy] = new Schema(Operands.ONE, Data.ZERO, "EXPR_variable") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.VariableAccess((Declaration.Variable) operands[0]);
+				return new Expr.VariableAccess((Decl.Variable) operands[0]);
 			}
 		};
 		schema[EXPR_staticvar] = new Schema(Operands.ONE, Data.ZERO, "EXPR_staticvar") {
@@ -3974,7 +3973,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Expr.StaticVariableAccess((Name) operands[0]);
 			}
 		};
-		schema[EXPR_const] = new Schema(Operands.ONE, Data.ZERO, "EXPR_const") {
+		schema[EXPR_constant] = new Schema(Operands.ONE, Data.ZERO, "EXPR_const") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.Constant((Value) operands[0]);
@@ -4003,48 +4002,48 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		};
 		// LOGICAL
-		schema[EXPR_not] = new Schema(Operands.ONE, Data.ZERO, "EXPR_not") {
+		schema[EXPR_lnot] = new Schema(Operands.ONE, Data.ZERO, "EXPR_not") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.LogicalNot((Expr) operands[0]);
 			}
 		};
-		schema[EXPR_and] = new Schema(Operands.MANY, Data.ZERO, "EXPR_and") {
+		schema[EXPR_land] = new Schema(Operands.MANY, Data.ZERO, "EXPR_and") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.LogicalAnd(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
-		schema[EXPR_or] = new Schema(Operands.MANY, Data.ZERO, "EXPR_or") {
+		schema[EXPR_lor] = new Schema(Operands.MANY, Data.ZERO, "EXPR_or") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.LogicalOr(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
-		schema[EXPR_implies] = new Schema(Operands.TWO, Data.ZERO, "EXPR_implies") {
+		schema[EXPR_limplies] = new Schema(Operands.TWO, Data.ZERO, "EXPR_implies") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.LogicalImplication(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
-		schema[EXPR_iff] = new Schema(Operands.TWO, Data.ZERO, "EXPR_iff") {
+		schema[EXPR_liff] = new Schema(Operands.TWO, Data.ZERO, "EXPR_iff") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.LogicalIff(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
-		schema[EXPR_exists] = new Schema(Operands.TWO, Data.ZERO, "EXPR_exists") {
+		schema[EXPR_lsome] = new Schema(Operands.TWO, Data.ZERO, "EXPR_exists") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.ExistentialQuantifier((Tuple<Declaration.Variable>) operands[0], (Expr) operands[1]);
+				return new Expr.ExistentialQuantifier((Tuple<Decl.Variable>) operands[0], (Expr) operands[1]);
 			}
 		};
-		schema[EXPR_forall] = new Schema(Operands.TWO, Data.ZERO, "EXPR_forall") {
+		schema[EXPR_lall] = new Schema(Operands.TWO, Data.ZERO, "EXPR_forall") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.UniversalQuantifier((Tuple<Declaration.Variable>) operands[0], (Expr) operands[1]);
+				return new Expr.UniversalQuantifier((Tuple<Decl.Variable>) operands[0], (Expr) operands[1]);
 			}
 		};
 		// COMPARATORS
@@ -4060,25 +4059,25 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Expr.NotEqual(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
-		schema[EXPR_lt] = new Schema(Operands.MANY, Data.ZERO, "EXPR_lt") {
+		schema[EXPR_ilt] = new Schema(Operands.MANY, Data.ZERO, "EXPR_lt") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.LessThan(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
-		schema[EXPR_lteq] = new Schema(Operands.MANY, Data.ZERO, "EXPR_lteq") {
+		schema[EXPR_ile] = new Schema(Operands.MANY, Data.ZERO, "EXPR_lteq") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.LessThanOrEqual(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
-		schema[EXPR_gt] = new Schema(Operands.MANY, Data.ZERO, "EXPR_gt") {
+		schema[EXPR_igt] = new Schema(Operands.MANY, Data.ZERO, "EXPR_gt") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.GreaterThan(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
-		schema[EXPR_gteq] = new Schema(Operands.MANY, Data.ZERO, "EXPR_gteq") {
+		schema[EXPR_igteq] = new Schema(Operands.MANY, Data.ZERO, "EXPR_gteq") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.GreaterThanOrEqual(ArrayUtils.toArray(Expr.class, operands));
@@ -4091,93 +4090,93 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		};
 		// ARITHMETIC
-		schema[EXPR_neg] = new Schema(Operands.ONE, Data.ZERO, "EXPR_neg") {
+		schema[EXPR_ineg] = new Schema(Operands.ONE, Data.ZERO, "EXPR_neg") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.Negation((Expr) operands[0]);
 			}
 		};
-		schema[EXPR_add] = new Schema(Operands.MANY, Data.ZERO, "EXPR_add") {
+		schema[EXPR_iadd] = new Schema(Operands.MANY, Data.ZERO, "EXPR_add") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.Addition(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
-		schema[EXPR_sub] = new Schema(Operands.MANY, Data.ZERO, "EXPR_sub") {
+		schema[EXPR_isub] = new Schema(Operands.MANY, Data.ZERO, "EXPR_sub") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.Subtraction(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
-		schema[EXPR_mul] = new Schema(Operands.MANY, Data.ZERO, "EXPR_mul") {
+		schema[EXPR_imul] = new Schema(Operands.MANY, Data.ZERO, "EXPR_mul") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.Multiplication(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
-		schema[EXPR_div] = new Schema(Operands.MANY, Data.ZERO, "EXPR_div") {
+		schema[EXPR_idiv] = new Schema(Operands.MANY, Data.ZERO, "EXPR_div") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.Division(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
-		schema[EXPR_rem] = new Schema(Operands.MANY, Data.ZERO, "EXPR_rem") {
+		schema[EXPR_irem] = new Schema(Operands.MANY, Data.ZERO, "EXPR_rem") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.Remainder(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
 		// BITWISE
-		schema[EXPR_bitwisenot] = new Schema(Operands.ONE, Data.ZERO, "EXPR_bitwisenot") {
+		schema[EXPR_bnot] = new Schema(Operands.ONE, Data.ZERO, "EXPR_bitwisenot") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.BitwiseComplement((Expr) operands[0]);
 			}
 		};
-		schema[EXPR_bitwiseand] = new Schema(Operands.MANY, Data.ZERO, "EXPR_bitwiseand") {
+		schema[EXPR_band] = new Schema(Operands.MANY, Data.ZERO, "EXPR_bitwiseand") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.BitwiseAnd(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
-		schema[EXPR_bitwiseor] = new Schema(Operands.MANY, Data.ZERO, "EXPR_bitwiseor") {
+		schema[EXPR_bor] = new Schema(Operands.MANY, Data.ZERO, "EXPR_bitwiseor") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.BitwiseOr(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
-		schema[EXPR_bitwisexor] = new Schema(Operands.MANY, Data.ZERO, "EXPR_bitwisexor") {
+		schema[EXPR_bxor] = new Schema(Operands.MANY, Data.ZERO, "EXPR_bitwisexor") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.BitwiseXor(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
-		schema[EXPR_bitwiseshl] = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwiseshl") {
+		schema[EXPR_bshl] = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwiseshl") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.BitwiseShiftLeft((Expr) operands[0], (Expr) operands[1]);
 			}
 		};
-		schema[EXPR_bitwiseshr] = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwiseshr") {
+		schema[EXPR_bshr] = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwiseshr") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.BitwiseShiftRight((Expr) operands[0], (Expr) operands[1]);
 			}
 		};
 		// REFERENCES
-		schema[EXPR_deref] = new Schema(Operands.ONE, Data.ZERO, "EXPR_deref") {
+		schema[EXPR_pread] = new Schema(Operands.ONE, Data.ZERO, "EXPR_deref") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.Dereference((Expr) operands[0]);
 			}
 		};
-		schema[EXPR_new] = new Schema(Operands.TWO, Data.ZERO, "EXPR_new") {
+		schema[EXPR_pinit] = new Schema(Operands.TWO, Data.ZERO, "EXPR_new") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.New((Expr) operands[0], (Identifier) operands[1]);
 			}
 		};
-		schema[EXPR_lambda] = new Schema(Operands.THREE, Data.ZERO, "EXPR_lambda") {
+		schema[EXPR_lread] = new Schema(Operands.THREE, Data.ZERO, "EXPR_lambda") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
@@ -4186,19 +4185,19 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		};
 		// RECORDS
-		schema[EXPR_recfield] = new Schema(Operands.TWO, Data.ZERO, "EXPR_recfield") {
+		schema[EXPR_rread] = new Schema(Operands.TWO, Data.ZERO, "EXPR_recfield") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.RecordAccess((Expr) operands[0], (Identifier) operands[1]);
 			}
 		};
-		schema[EXPR_recupdt] = new Schema(Operands.THREE, Data.ZERO, "EXPR_recupdt") {
+		schema[EXPR_rwrite] = new Schema(Operands.THREE, Data.ZERO, "EXPR_recupdt") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.RecordUpdate((Expr) operands[0], (Identifier) operands[1], (Expr) operands[2]);
 			}
 		};
-		schema[EXPR_recinit] = new Schema(Operands.MANY, Data.ZERO, "EXPR_recinit") {
+		schema[EXPR_rinit] = new Schema(Operands.MANY, Data.ZERO, "EXPR_recinit") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
@@ -4206,37 +4205,37 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		};
 		// ARRAYS
-		schema[EXPR_arridx] = new Schema(Operands.TWO, Data.ZERO, "EXPR_arridx") {
+		schema[EXPR_aread] = new Schema(Operands.TWO, Data.ZERO, "EXPR_arridx") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.ArrayAccess((Expr) operands[0], (Expr) operands[1]);
 			}
 		};
-		schema[EXPR_arrlen] = new Schema(Operands.ONE, Data.ZERO, "EXPR_arrlen") {
+		schema[EXPR_alen] = new Schema(Operands.ONE, Data.ZERO, "EXPR_arrlen") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.ArrayLength((Expr) operands[0]);
 			}
 		};
-		schema[EXPR_arrupdt] = new Schema(Operands.THREE, Data.ZERO, "EXPR_arrupdt") {
+		schema[EXPR_awrite] = new Schema(Operands.THREE, Data.ZERO, "EXPR_arrupdt") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.ArrayUpdate((Expr) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 		};
-		schema[EXPR_arrgen] = new Schema(Operands.TWO, Data.ZERO, "EXPR_arrgen") {
+		schema[EXPR_agen] = new Schema(Operands.TWO, Data.ZERO, "EXPR_arrgen") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.ArrayGenerator((Expr) operands[0], (Expr) operands[1]);
 			}
 		};
-		schema[EXPR_arrinit] = new Schema(Operands.MANY, Data.ZERO, "EXPR_arrinit") {
+		schema[EXPR_ainit] = new Schema(Operands.MANY, Data.ZERO, "EXPR_arrinit") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.ArrayInitialiser(ArrayUtils.toArray(Expr.class, operands));
 			}
 		};
-		schema[EXPR_arrrange] = new Schema(Operands.TWO, Data.ZERO, "EXPR_arrrange") {
+		schema[EXPR_arange] = new Schema(Operands.TWO, Data.ZERO, "EXPR_arrrange") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Expr.ArrayRange((Expr) operands[0], (Expr) operands[1]);

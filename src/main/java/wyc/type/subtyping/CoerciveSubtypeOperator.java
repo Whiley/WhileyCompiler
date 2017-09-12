@@ -105,8 +105,8 @@ public class CoerciveSubtypeOperator extends StrictSubtypeOperator {
 	@Override
 	protected boolean isVoidRecord(Atom<Type.Record> lhs, Atom<Type.Record> rhs, Assumptions assumptions)
 			throws ResolutionError {
-		Tuple<Declaration.Variable> lhsFields = lhs.type.getFields();
-		Tuple<Declaration.Variable> rhsFields = rhs.type.getFields();
+		Tuple<Decl.Variable> lhsFields = lhs.type.getFields();
+		Tuple<Decl.Variable> rhsFields = rhs.type.getFields();
 		//
 		if (lhs.sign || rhs.sign) {
 			// The sign indicates whether were in the pos-pos case, or in the
@@ -119,10 +119,10 @@ public class CoerciveSubtypeOperator extends StrictSubtypeOperator {
 			int matches = 0;
 			//
 			for (int i = 0; i != lhsFields.size(); ++i) {
-				Declaration.Variable lhsField = lhsFields.getOperand(i);
+				Decl.Variable lhsField = lhsFields.getOperand(i);
 				Term<?> lhsTerm = new Term<>(lhs.sign, lhsField.getType(), lhs.maximise);
 				for (int j = 0; j != rhsFields.size(); ++j) {
-					Declaration.Variable rhsField = rhsFields.getOperand(j);
+					Decl.Variable rhsField = rhsFields.getOperand(j);
 					if (!lhsField.getName().equals(rhsField.getName())) {
 						continue;
 					} else {

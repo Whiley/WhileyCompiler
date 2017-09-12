@@ -303,12 +303,12 @@ public class TypeSystem {
 	// Resolution
 	// ========================================================================
 
-	public <T extends Declaration.Named> T resolveExactly(Name name, Class<T> kind)
+	public <T extends Decl.Named> T resolveExactly(Name name, Class<T> kind)
 			throws ResolutionError {
 		return resolver.resolveExactly(name,kind);
 	}
 
-	public <T extends Declaration.Callable> T resolveExactly(Name name, Type.Callable signature, Class<T> kind)
+	public <T extends Decl.Callable> T resolveExactly(Name name, Type.Callable signature, Class<T> kind)
 			throws ResolutionError {
 		for(T decl : resolveAll(name,kind)) {
 			if(decl.getType().equals(signature)) {
@@ -318,7 +318,7 @@ public class TypeSystem {
 		return null;
 	}
 
-	public <T extends Declaration.Named> List<T> resolveAll(Name name, Class<T> kind)
+	public <T extends Decl.Named> List<T> resolveAll(Name name, Class<T> kind)
 			throws ResolutionError {
 		return resolver.resolveAll(name,kind);
 	}

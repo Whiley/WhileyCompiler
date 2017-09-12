@@ -17,18 +17,18 @@ import static wyc.lang.WhileyFile.*;
  *
  */
 public class StdTypeEnvironment implements Environment {
-	private final Map<Declaration.Variable,Type> refinements;
+	private final Map<Decl.Variable,Type> refinements;
 
 	public StdTypeEnvironment() {
 		this.refinements = new HashMap<>();
 	}
 
-	public StdTypeEnvironment(Map<Declaration.Variable,Type> refinements) {
+	public StdTypeEnvironment(Map<Decl.Variable,Type> refinements) {
 		this.refinements = new HashMap<>(refinements);
 	}
 
 	@Override
-	public Type getType(Declaration.Variable var) {
+	public Type getType(Decl.Variable var) {
 		Type refined = refinements.get(var);
 		if(refined != null) {
 			return refined;
@@ -38,7 +38,7 @@ public class StdTypeEnvironment implements Environment {
 	}
 
 	@Override
-	public Environment refineType(Declaration.Variable var, Type refinement) {
+	public Environment refineType(Decl.Variable var, Type refinement) {
 		Type type = intersect(getType(var),refinement);
 		StdTypeEnvironment r = new StdTypeEnvironment(this.refinements);
 		r.refinements.put(var,type);
@@ -46,7 +46,7 @@ public class StdTypeEnvironment implements Environment {
 	}
 
 	@Override
-	public Set<Declaration.Variable> getRefinedVariables() {
+	public Set<Decl.Variable> getRefinedVariables() {
 		return refinements.keySet();
 	}
 
@@ -54,7 +54,7 @@ public class StdTypeEnvironment implements Environment {
 	public String toString() {
 		String r = "{";
 		boolean firstTime = true;
-		for (Declaration.Variable var : refinements.keySet()) {
+		for (Decl.Variable var : refinements.keySet()) {
 			if (!firstTime) {
 				r += ", ";
 			}

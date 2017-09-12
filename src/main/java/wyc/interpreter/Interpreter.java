@@ -24,7 +24,7 @@ import static wyc.lang.WhileyFile.*;
 
 import wyc.type.TypeSystem;
 import wyc.lang.WhileyFile;
-import wyc.lang.WhileyFile.Declaration;
+import wyc.lang.WhileyFile.Decl;
 
 /**
  * <p>
@@ -115,8 +115,8 @@ public class Interpreter {
 			}
 			// Second, find the given function or method
 			WhileyFile wyilFile = entry.read();
-			Declaration.Callable fmp = wyilFile.getDeclaration(name, sig,
-					Declaration.Callable.class);
+			Decl.Callable fmp = wyilFile.getDeclaration(name, sig,
+					Decl.Callable.class);
 			if (fmp == null) {
 				throw new IllegalArgumentException("no function or method found: " + nid + ", " + sig);
 			} else if (sig.getParameters().size() != args.length) {
@@ -126,8 +126,8 @@ public class Interpreter {
 			frame = frame.enter(fmp);
 			extractParameters(frame,args,fmp);
 			// Check the precondition
-			if(fmp instanceof Declaration.FunctionOrMethod) {
-				Declaration.FunctionOrMethod fm = (Declaration.FunctionOrMethod) fmp;
+			if(fmp instanceof Decl.FunctionOrMethod) {
+				Decl.FunctionOrMethod fm = (Decl.FunctionOrMethod) fmp;
 				checkInvariants(frame,fm.getRequires());
 				// check function or method body exists
 				if (fm.getBody() == null) {
@@ -155,10 +155,10 @@ public class Interpreter {
 		}
 	}
 
-	private void extractParameters(CallStack frame, RValue[] args, Declaration.Callable decl) {
-		Tuple<Declaration.Variable> parameters = decl.getParameters();
+	private void extractParameters(CallStack frame, RValue[] args, Decl.Callable decl) {
+		Tuple<Decl.Variable> parameters = decl.getParameters();
 		for(int i=0;i!=parameters.size();++i) {
-			Declaration.Variable parameter = parameters.getOperand(i);
+			Decl.Variable parameter = parameters.getOperand(i);
 			frame.putLocal(parameter.getName(), args[i]);
 		}
 	}
@@ -172,11 +172,11 @@ public class Interpreter {
 	 * @param type
 	 * @return
 	 */
-	private RValue[] packReturns(CallStack frame, Declaration.Callable decl) {
-		if (decl instanceof Declaration.Property) {
+	private RValue[] packReturns(CallStack frame, Decl.Callable decl) {
+		if (decl instanceof Decl.Property) {
 			return new RValue[] { RValue.True };
 		} else {
-			Tuple<Declaration.Variable> returns = decl.getReturns();
+			Tuple<Decl.Variable> returns = decl.getReturns();
 			RValue[] values = new RValue[returns.size()];
 			for (int i = 0; i != values.length; ++i) {
 				values[i] = frame.getLocal(returns.getOperand(i).getName());
@@ -256,9 +256,9 @@ public class Interpreter {
 				return executeSkip((Stmt.Skip) stmt, frame, scope);
 			case WhileyFile.STMT_switch:
 				return executeSwitch((Stmt.Switch) stmt, frame, scope);
-			case WhileyFile.DECL_variableinitialiser:
-			case WhileyFile.DECL_variable:
-				return executeVariableDeclaration((Declaration.Variable) stmt, frame);
+			case WhileyFile.DECL_varinit:
+			case WhileyFile.DECL_var:
+				return executeVariableDeclaration((Decl.Variable) stmt, frame);
 			}
 		}
 		catch (ResolutionError e) {
@@ -491,9 +491,9 @@ public class Interpreter {
 		// or method declaration. It cannot appear, for example, in a type
 		// declaration. Therefore, the enclosing declaration is a function or
 		// method.
-		Declaration.Callable context = scope.getEnclosingScope(FunctionOrMethodScope.class).getContext();
-		Tuple<Declaration.Variable> returns = context.getReturns();
-		RValue[] values = executeExpressions(stmt.getOperand(), frame);
+		Decl.Callable context = scope.getEnclosingScope(FunctionOrMethodScope.class).getContext();
+		Tuple<Decl.Variable> returns = context.getReturns();
+		RValue[] values = executeExpressions(stmt.getReturns(), frame);
 		for (int i = 0; i != returns.size(); ++i) {
 			frame.putLocal(returns.getOperand(i).getName(), values[i]);
 		}
@@ -558,7 +558,7 @@ public class Interpreter {
 	 *            --- The current stack frame
 	 * @return
 	 */
-	private Status executeVariableDeclaration(Declaration.Variable stmt, CallStack frame) {
+	private Status executeVariableDeclaration(Decl.Variable stmt, CallStack frame) {
 		// We only need to do something if this has an initialiser
 		if(stmt.hasInitialiser()) {
 			RValue value = executeExpression(ANY_T, stmt.getInitialiser(), frame);
@@ -588,16 +588,16 @@ public class Interpreter {
 		try {
 			RValue val;
 			switch (expr.getOpcode()) {
-			case WhileyFile.EXPR_const:
+			case WhileyFile.EXPR_constant:
 				val = executeConst((Expr.Constant) expr, frame);
 				break;
 			case WhileyFile.EXPR_cast:
 				val = executeConvert((Expr.Cast) expr, frame);
 				break;
-			case WhileyFile.EXPR_recinit:
+			case WhileyFile.EXPR_rinit:
 				val = executeRecordInitialiser((Expr.RecordInitialiser) expr, frame);
 				break;
-			case WhileyFile.EXPR_recfield:
+			case WhileyFile.EXPR_rread:
 				val = executeRecordAccess((Expr.RecordAccess) expr, frame);
 				break;
 			case WhileyFile.EXPR_indirectinvoke:
@@ -615,73 +615,73 @@ public class Interpreter {
 			case WhileyFile.EXPR_is:
 				val = executeIs((Expr.Is) expr, frame);
 				break;
-			case WhileyFile.EXPR_not:
+			case WhileyFile.EXPR_lnot:
 				val = executeLogicalNot((Expr.LogicalNot) expr, frame);
 				break;
-			case WhileyFile.EXPR_and:
+			case WhileyFile.EXPR_land:
 				val = executeLogicalAnd((Expr.LogicalAnd) expr, frame);
 				break;
-			case WhileyFile.EXPR_or:
+			case WhileyFile.EXPR_lor:
 				val = executeLogicalOr((Expr.LogicalOr) expr, frame);
 				break;
-			case WhileyFile.EXPR_implies:
+			case WhileyFile.EXPR_limplies:
 				val = executeLogicalImplication((Expr.LogicalImplication) expr, frame);
 				break;
-			case WhileyFile.EXPR_iff:
+			case WhileyFile.EXPR_liff:
 				val = executeLogicalIff((Expr.LogicalIff) expr, frame);
 				break;
-			case WhileyFile.EXPR_exists:
-			case WhileyFile.EXPR_forall:
+			case WhileyFile.EXPR_lsome:
+			case WhileyFile.EXPR_lall:
 				val = executeQuantifier((Expr.Quantifier) expr, frame);
 				break;
 			case WhileyFile.EXPR_eq:
 			case WhileyFile.EXPR_neq:
 				val = executeEqualityComparator((Expr.Operator) expr, frame);
 				break;
-			case WhileyFile.EXPR_neg:
+			case WhileyFile.EXPR_ineg:
 				val = executeArithmeticNegation((Expr.Negation) expr, frame);
 				break;
-			case WhileyFile.EXPR_add:
-			case WhileyFile.EXPR_sub:
-			case WhileyFile.EXPR_mul:
-			case WhileyFile.EXPR_div:
-			case WhileyFile.EXPR_rem:
-			case WhileyFile.EXPR_lt:
-			case WhileyFile.EXPR_lteq:
-			case WhileyFile.EXPR_gt:
-			case WhileyFile.EXPR_gteq:
+			case WhileyFile.EXPR_iadd:
+			case WhileyFile.EXPR_isub:
+			case WhileyFile.EXPR_imul:
+			case WhileyFile.EXPR_idiv:
+			case WhileyFile.EXPR_irem:
+			case WhileyFile.EXPR_ilt:
+			case WhileyFile.EXPR_ile:
+			case WhileyFile.EXPR_igt:
+			case WhileyFile.EXPR_igteq:
 				val = executeArithmeticOperator((Expr.Operator) expr, frame);
 				break;
-			case WhileyFile.EXPR_bitwisenot:
+			case WhileyFile.EXPR_bnot:
 				val = executeBitwiseNot((Expr.BitwiseComplement) expr, frame);
 				break;
-			case WhileyFile.EXPR_bitwiseor:
-			case WhileyFile.EXPR_bitwisexor:
-			case WhileyFile.EXPR_bitwiseand:
+			case WhileyFile.EXPR_bor:
+			case WhileyFile.EXPR_bxor:
+			case WhileyFile.EXPR_band:
 				val = executeBitwiseOperator((Expr.Operator) expr, frame);
 				break;
-			case WhileyFile.EXPR_bitwiseshl:
-			case WhileyFile.EXPR_bitwiseshr:
+			case WhileyFile.EXPR_bshl:
+			case WhileyFile.EXPR_bshr:
 				val = executeBitwiseShift((Expr.Operator) expr, frame);
 				break;
-			case WhileyFile.EXPR_arridx:
-			case WhileyFile.EXPR_arrgen:
-			case WhileyFile.EXPR_arrlen:
-			case WhileyFile.EXPR_arrinit:
-			case WhileyFile.EXPR_arrrange:
+			case WhileyFile.EXPR_aread:
+			case WhileyFile.EXPR_agen:
+			case WhileyFile.EXPR_alen:
+			case WhileyFile.EXPR_ainit:
+			case WhileyFile.EXPR_arange:
 				val = executeArrayOperator((Expr.Operator) expr, frame);
 				break;
-			case WhileyFile.EXPR_new:
+			case WhileyFile.EXPR_pinit:
 				val = executeNew((Expr.New) expr, frame);
 				break;
-			case WhileyFile.EXPR_deref:
+			case WhileyFile.EXPR_pread:
 				val = executeDereference((Expr.Dereference) expr, frame);
 				break;
-			case WhileyFile.EXPR_lambda:
+			case WhileyFile.EXPR_lread:
 				val = executeLambdaAccess((Expr.LambdaAccess) expr, frame);
 				break;
 			case WhileyFile.DECL_lambda:
-				val = executeLambdaDeclaration((Declaration.Lambda) expr, frame);
+				val = executeLambdaDeclaration((Decl.Lambda) expr, frame);
 				break;
 			default:
 				return deadCode(expr);
@@ -786,7 +786,7 @@ public class Interpreter {
 	 * @return
 	 */
 	private boolean executeQuantifier(int index, Expr.Quantifier expr, CallStack frame) {
-		Tuple<Declaration.Variable> vars = expr.getParameters();
+		Tuple<Decl.Variable> vars = expr.getParameters();
 		if (index == vars.size()) {
 			// This is the base case where we evaluate the condition itself.
 			RValue.Bool r = executeExpression(BOOL_T, expr.getBody(), frame);
@@ -795,7 +795,7 @@ public class Interpreter {
 			// quantifier.
 			return r.boolValue() == q;
 		} else {
-			Declaration.Variable var = vars.getOperand(index);
+			Decl.Variable var = vars.getOperand(index);
 			RValue.Array range = executeExpression(ARRAY_T, var.getInitialiser(), frame);
 			RValue[] elements = range.getElements();
 			for (int i = 0; i != elements.length; ++i) {
@@ -822,12 +822,12 @@ public class Interpreter {
 	 * @return
 	 */
 	private RValue executeVariableAccess(Expr.VariableAccess expr, CallStack frame) {
-		Declaration.Variable decl = expr.getVariableDeclaration();
+		Decl.Variable decl = expr.getVariableDeclaration();
 		return frame.getLocal(decl.getName());
 	}
 
 	private RValue executeStaticVariableAccess(Expr.StaticVariableAccess expr, CallStack frame) throws ResolutionError {
-		Declaration.StaticVariable decl = typeSystem.resolveExactly(expr.getName(), Declaration.StaticVariable.class);
+		Decl.StaticVariable decl = typeSystem.resolveExactly(expr.getName(), Decl.StaticVariable.class);
 		NameID nid = decl.getQualifiedName().toNameID();
 		return frame.getStatic(nid);
 	}
@@ -846,23 +846,23 @@ public class Interpreter {
 		RValue.Int lhs = executeExpression(INT_T, expr.getOperand(0), frame);
 		RValue.Int rhs = executeExpression(INT_T, expr.getOperand(1), frame);
 		switch (expr.getOpcode()) {
-		case WhileyFile.EXPR_add:
+		case WhileyFile.EXPR_iadd:
 			return lhs.add(rhs);
-		case WhileyFile.EXPR_sub:
+		case WhileyFile.EXPR_isub:
 			return lhs.subtract(rhs);
-		case WhileyFile.EXPR_mul:
+		case WhileyFile.EXPR_imul:
 			return lhs.multiply(rhs);
-		case WhileyFile.EXPR_div:
+		case WhileyFile.EXPR_idiv:
 			return lhs.divide(rhs);
-		case WhileyFile.EXPR_rem:
+		case WhileyFile.EXPR_irem:
 			return lhs.remainder(rhs);
-		case WhileyFile.EXPR_lt:
+		case WhileyFile.EXPR_ilt:
 			return lhs.lessThan(rhs);
-		case WhileyFile.EXPR_lteq:
+		case WhileyFile.EXPR_ile:
 			return lhs.lessThanOrEqual(rhs);
-		case WhileyFile.EXPR_gt:
+		case WhileyFile.EXPR_igt:
 			return rhs.lessThan(lhs);
-		case WhileyFile.EXPR_gteq:
+		case WhileyFile.EXPR_igteq:
 			return rhs.lessThanOrEqual(lhs);
 		default:
 			return deadCode(expr);
@@ -933,11 +933,11 @@ public class Interpreter {
 		RValue.Byte lhs = executeExpression(BYTE_T, expr.getOperand(0), frame);
 		RValue.Byte rhs = executeExpression(BYTE_T, expr.getOperand(1), frame);
 		switch (expr.getOpcode()) {
-		case WhileyFile.EXPR_bitwiseand:
+		case WhileyFile.EXPR_band:
 			return lhs.and(rhs);
-		case WhileyFile.EXPR_bitwiseor:
+		case WhileyFile.EXPR_bor:
 			return lhs.or(rhs);
-		case WhileyFile.EXPR_bitwisexor:
+		case WhileyFile.EXPR_bxor:
 			return lhs.xor(rhs);
 		default:
 			return deadCode(expr);
@@ -948,9 +948,9 @@ public class Interpreter {
 		RValue.Byte lhs = executeExpression(BYTE_T, expr.getOperand(0), frame);
 		RValue.Int rhs = executeExpression(INT_T, expr.getOperand(1), frame);
 		switch (expr.getOpcode()) {
-		case WhileyFile.EXPR_bitwiseshr:
+		case WhileyFile.EXPR_bshr:
 			return lhs.shr(rhs);
-		case WhileyFile.EXPR_bitwiseshl:
+		case WhileyFile.EXPR_bshl:
 			return lhs.shl(rhs);
 		default:
 			return deadCode(expr);
@@ -958,16 +958,16 @@ public class Interpreter {
 	}
 	public RValue executeArrayOperator(Expr.Operator expr, CallStack frame) {
 		switch (expr.getOpcode()) {
-		case WhileyFile.EXPR_arrlen: {
+		case WhileyFile.EXPR_alen: {
 			RValue.Array array = executeExpression(ARRAY_T, expr.getOperand(0), frame);
 			return array.length();
 		}
-		case WhileyFile.EXPR_arridx: {
+		case WhileyFile.EXPR_aread: {
 			RValue.Array array = executeExpression(ARRAY_T, expr.getOperand(0), frame);
 			RValue.Int index = executeExpression(INT_T, expr.getOperand(1), frame);
 			return array.read(index);
 		}
-		case WhileyFile.EXPR_arrgen: {
+		case WhileyFile.EXPR_agen: {
 			RValue element = executeExpression(ANY_T, expr.getOperand(0), frame);
 			RValue.Int count = executeExpression(INT_T, expr.getOperand(1), frame);
 			int n = count.intValue();
@@ -980,14 +980,14 @@ public class Interpreter {
 			}
 			return semantics.Array(values);
 		}
-		case WhileyFile.EXPR_arrinit: {
+		case WhileyFile.EXPR_ainit: {
 			RValue[] elements = new RValue[expr.size()];
 			for (int i = 0; i != elements.length; ++i) {
 				elements[i] = executeExpression(ANY_T, expr.getOperand(i), frame);
 			}
 			return semantics.Array(elements);
 		}
-		case WhileyFile.EXPR_arrrange: {
+		case WhileyFile.EXPR_arange: {
 			int start = executeExpression(INT_T, expr.getOperand(0), frame).intValue();
 			int end = executeExpression(INT_T, expr.getOperand(1), frame).intValue();
 			RValue[] elements = new RValue[end - start];
@@ -1002,7 +1002,7 @@ public class Interpreter {
 	}
 
 	public RValue executeNew(Expr.New expr, CallStack frame) {
-		RValue initialiser = executeExpression(ANY_T, expr.getOperand(), frame);
+		RValue initialiser = executeExpression(ANY_T, expr.getValue(), frame);
 		RValue.Cell cell = semantics.Cell(initialiser);
 		return semantics.Reference(cell);
 	}
@@ -1015,13 +1015,13 @@ public class Interpreter {
 	public RValue executeLambdaAccess(Expr.LambdaAccess expr, CallStack frame) throws ResolutionError {
 		// Locate the function or method body in order to execute it
 		// FIXME: This is horrendous. Should be able to use descriptor here!!
-		Declaration.FunctionOrMethod decl = typeSystem.resolveExactly(expr.getName(), expr.getSignature(),
-				Declaration.FunctionOrMethod.class);
+		Decl.FunctionOrMethod decl = typeSystem.resolveExactly(expr.getName(), expr.getSignature(),
+				Decl.FunctionOrMethod.class);
 		// Clone frame to ensure it executes in this exact environment.
 		return semantics.Lambda(decl, frame.clone(), decl.getBody());
 	}
 
-	private RValue executeLambdaDeclaration(Declaration.Lambda decl, CallStack frame) {
+	private RValue executeLambdaDeclaration(Decl.Lambda decl, CallStack frame) {
 		// FIXME: this needs a clone of the frame? Otherwise, it's just
 		// executing in the later environment.
 		return semantics.Lambda(decl, frame.clone(), decl.getBody());
@@ -1074,12 +1074,12 @@ public class Interpreter {
 				return executeIndirectInvoke((Expr.IndirectInvoke) expr, frame);
 			case WhileyFile.EXPR_invoke:
 				return executeInvoke((Expr.Invoke) expr, frame);
-			case WhileyFile.EXPR_const:
+			case WhileyFile.EXPR_constant:
 			case WhileyFile.EXPR_cast:
-			case WhileyFile.EXPR_recfield:
+			case WhileyFile.EXPR_rread:
 			case WhileyFile.DECL_lambda:
-			case WhileyFile.EXPR_exists:
-			case WhileyFile.EXPR_forall:
+			case WhileyFile.EXPR_lsome:
+			case WhileyFile.EXPR_lall:
 			default:
 				RValue val = executeExpression(ANY_T, expr, frame);
 				return new RValue[] { val };
@@ -1140,8 +1140,8 @@ public class Interpreter {
 	 */
 	private RValue[] executeInvoke(Expr.Invoke expr, CallStack frame) throws ResolutionError {
 		// Resolve function or method being invoked to a concrete declaration
-		Declaration.Callable decl = typeSystem.resolveExactly(expr.getName(), expr.getSignature(),
-				Declaration.Callable.class);
+		Decl.Callable decl = typeSystem.resolveExactly(expr.getName(), expr.getSignature(),
+				Decl.Callable.class);
 		// Evaluate argument expressions
 		RValue[] arguments = executeExpressions(expr.getArguments(), frame);
 		// Invoke the function or method in question
@@ -1164,25 +1164,25 @@ public class Interpreter {
 	 */
 	private LValue constructLVal(Expr expr, CallStack frame) {
 		switch (expr.getOpcode()) {
-		case EXPR_arridx: {
+		case EXPR_aread: {
 			Expr.ArrayAccess e = (Expr.ArrayAccess) expr;
 			LValue src = constructLVal(e.getSource(), frame);
 			RValue.Int index = executeExpression(INT_T, e.getSubscript(), frame);
 			return new LValue.Array(src, index);
 		}
-		case EXPR_deref: {
+		case EXPR_pread: {
 			Expr.Dereference e = (Expr.Dereference) expr;
 			LValue src = constructLVal(e.getOperand(), frame);
 			return new LValue.Dereference(src);
 		}
-		case EXPR_recfield: {
+		case EXPR_rread: {
 			Expr.RecordAccess e = (Expr.RecordAccess) expr;
 			LValue src = constructLVal(e.getSource(), frame);
 			return new LValue.Record(src, e.getField());
 		}
 		case EXPR_varcopy: {
 			Expr.VariableAccess e = (Expr.VariableAccess) expr;
-			Declaration.Variable decl = e.getVariableDeclaration();
+			Decl.Variable decl = e.getVariableDeclaration();
 			return new LValue.Variable(decl.getName());
 		}
 		}
@@ -1292,7 +1292,7 @@ public class Interpreter {
 
 	public final class CallStack {
 		private final Set<Path.ID> modules;
-		private final Declaration.Callable context;
+		private final Decl.Callable context;
 		private final Map<Identifier, RValue> locals;
 		private final Map<NameID, RValue> globals;
 
@@ -1303,7 +1303,7 @@ public class Interpreter {
 			this.context = null;
 		}
 
-		private CallStack(CallStack parent, Declaration.Callable context) {
+		private CallStack(CallStack parent, Decl.Callable context) {
 			this.context = context;
 			this.locals = new HashMap<>();
 			this.globals = parent.globals;
@@ -1332,7 +1332,7 @@ public class Interpreter {
 			globals.put(name, value);
 		}
 
-		public CallStack enter(Declaration.Callable context) {
+		public CallStack enter(Decl.Callable context) {
 			load(context.getQualifiedName().toNameID().module());
 			return new CallStack(this, context);
 		}
@@ -1359,9 +1359,9 @@ public class Interpreter {
 				modules.add(mid);
 				try {
 					WhileyFile module = project.get(mid, WhileyFile.BinaryContentType).read();
-					for (WhileyFile.Declaration d : module.getDeclarations()) {
-						if (d instanceof Declaration.StaticVariable) {
-							Declaration.StaticVariable decl = (Declaration.StaticVariable) d;
+					for (WhileyFile.Decl d : module.getDeclarations()) {
+						if (d instanceof Decl.StaticVariable) {
+							Decl.StaticVariable decl = (Decl.StaticVariable) d;
 							RValue value = executeExpression(ANY_T, decl.getInitialiser(), this);
 							globals.put(new NameID(mid, decl.getName().toString()), value);
 						}
@@ -1418,14 +1418,14 @@ public class Interpreter {
 	 *
 	 */
 	private static class FunctionOrMethodScope extends EnclosingScope {
-		private final Declaration.Callable context;;
+		private final Decl.Callable context;;
 
-		public FunctionOrMethodScope(Declaration.Callable context) {
+		public FunctionOrMethodScope(Decl.Callable context) {
 			super(null);
 			this.context = context;
 		}
 
-		public Declaration.Callable getContext() {
+		public Decl.Callable getContext() {
 			return context;
 		}
 	}
