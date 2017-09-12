@@ -1,6 +1,6 @@
-constant BLANK is 0
-constant CIRCLE is 1
-constant CROSS is 2
+int BLANK = 0
+int CIRCLE = 1
+int CROSS = 2
 
 type nat is (int x) where x >= 0
 

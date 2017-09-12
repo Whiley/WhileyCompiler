@@ -11,3 +11,6 @@ ensures (r > 0) && (r <= 256):
 
 function f(int x) -> i8[]:
     return [g(x)]
+
+public export method test():
+    assume f(256) == [256]

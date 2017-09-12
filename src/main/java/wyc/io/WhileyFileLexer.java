@@ -48,6 +48,11 @@ public class WhileyFileLexer {
         input = text;
 	}
 
+	public WhileyFileLexer(String input) {
+		this.entry = null;
+		this.input = new StringBuilder(input);
+	}
+
 	/**
 	 * Scan all characters from the input stream and generate a corresponding
 	 * list of tokens, whilst discarding all whitespace and comments.
@@ -249,7 +254,12 @@ public class WhileyFileLexer {
 		case ';':
 			return new Token(Token.Kind.SemiColon, ";", pos++);
 		case ':':
-			return new Token(Token.Kind.Colon, ":", pos++);
+			if (pos + 1 < input.length() && input.charAt(pos + 1) == ':') {
+				pos += 2;
+				return new Token(Token.Kind.ColonColon, "::", pos - 2);
+			} else {
+				return new Token(Token.Kind.Colon, ":", pos++);
+			}
 		case '|':
 			if (pos + 1 < input.length() && input.charAt(pos + 1) == '|') {
 				pos += 2;
@@ -482,9 +492,7 @@ public class WhileyFileLexer {
 	 */
 	private void syntaxError(String msg, int index) {
 		// FIXME: this is clearly not a sensible approach
-		SyntacticElement unknown = new SyntacticElement.Impl() {};
-		unknown.attributes().add(new Attribute.Source(index, index, -1));
-		throw new SyntaxError(msg, entry, unknown);
+		throw new SyntaxError(msg, entry, null);
 
 	}
 
@@ -625,6 +633,7 @@ public class WhileyFileLexer {
 			Comma(","),
 			SemiColon(";"),
 			Colon(":"),
+			ColonColon("::"),
 			Ampersand("&"),
 			VerticalBar("|"),
 			LeftBrace("("),

@@ -19,7 +19,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import wyc.commands.Compile;
+import wyc.command.Compile;
 import wyc.util.TestUtils;
 import wycc.util.Pair;
 import wyfs.util.Trie;
@@ -49,27 +49,23 @@ public class AllValidTest {
 	public final static Map<String, String> IGNORED = new HashMap<>();
 
 	static {
-		IGNORED.put("RecursiveType_Valid_12", "#339");
-		IGNORED.put("RecursiveType_Valid_22", "#339");
 		//
-		IGNORED.put("Function_Valid_15", "#566");
 		IGNORED.put("TypeEquals_Valid_23", "#566");
 		IGNORED.put("TypeEquals_Valid_41", "#566");
 		//
-		IGNORED.put("Lifetime_Lambda_Valid_4", "#645");
-		//
 		IGNORED.put("RecordSubtype_Valid_1", "#696");
 		IGNORED.put("RecordSubtype_Valid_2", "#696");
-		IGNORED.put("RecursiveType_Valid_3", "#696");
-		IGNORED.put("TypeEquals_Valid_36", "#696");
-		IGNORED.put("TypeEquals_Valid_37", "#696");
-		IGNORED.put("TypeEquals_Valid_38", "#696");
 		//
 		IGNORED.put("Function_Valid_11", "#702");
+		IGNORED.put("Function_Valid_15", "#702");
 		//
-		IGNORED.put("Complex_Valid_3", "#339");
-		IGNORED.put("DoWhile_Valid_4", "#339");
-		IGNORED.put("RecursiveType_Valid_28", "#339");
+		IGNORED.put("RecursiveType_Valid_2", "#763");
+		IGNORED.put("TypeEquals_Valid_25", "#763");
+		IGNORED.put("TypeEquals_Valid_30", "#763");
+		//
+		IGNORED.put("Lifetime_Lambda_Valid_7", "#764");
+		IGNORED.put("Lifetime_Valid_7", "#764");
+		IGNORED.put("Lifetime_Valid_8", "#764");
 	}
 
 	/**

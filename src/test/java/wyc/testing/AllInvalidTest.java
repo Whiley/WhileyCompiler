@@ -20,9 +20,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import wyc.commands.Compile;
+import wyc.command.Compile;
 import wyc.util.TestUtils;
 import wycc.util.Pair;
+import wyfs.util.Trie;
 
 /**
  * Run through all invalid test cases with verification enabled. Since every
@@ -122,8 +123,14 @@ public class AllInvalidTest {
 		String output = p.second();
 
 		if (r == Compile.Result.SUCCESS) {
-			// Clearly, the test should not compile.
-			fail("Test compiled when it shouldn't have!");
+			// This indicates the problem is some form of assertion error.
+			// Therefore, execute the code whilst expecting an assertion failure
+			try {
+				TestUtils.execWyil(whileySrcDir, Trie.fromString(testName));
+				fail("Test compiled when it shouldn't have!");
+			} catch(AssertionError e) {
+				// OK
+			}
 		} else if (r == Compile.Result.INTERNAL_FAILURE) {
 			// This indicates some other kind of internal failure.
 			fail("Test caused internal failure!\n" + output);

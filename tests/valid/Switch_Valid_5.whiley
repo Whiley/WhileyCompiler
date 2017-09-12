@@ -1,16 +1,9 @@
-
-
-constant IHDR_TYPE is 1380206665
-
-constant IEND_TYPE is 1145980233
-
-constant IDAT_TYPE is 1413563465
-
-constant PLTE_TYPE is 1163152464
-
-constant PHYS_TYPE is 1935231088
-
-constant TIME_TYPE is 1162692980
+int IHDR_TYPE = 1380206665
+int IEND_TYPE = 1145980233
+int IDAT_TYPE = 1413563465
+int PLTE_TYPE = 1163152464
+int PHYS_TYPE = 1935231088
+int TIME_TYPE = 1162692980
 
 public function f(int type) -> int:
     switch type:

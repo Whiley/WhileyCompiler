@@ -14,5 +14,5 @@ function min(pair p) -> int:
     else:
         return x
 
-method main() -> int:
+public export method test() -> int:
     return min({first: -1, second: 1})

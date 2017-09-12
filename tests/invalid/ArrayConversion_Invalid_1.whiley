@@ -1,5 +1,5 @@
 function f(byte[] ls) -> int:
     return 0
 
-method main():
+public export method test():
     f([1, 2, 3])

@@ -10,7 +10,7 @@ method get(MyProc1 _this) -> int:
 method create(int data) -> MyProc1:
     return new {data: data}
 
-method main() -> int:
+public export method test() -> int:
     MyProc2 p = create(1)
     p.set(false)
     return get(p)

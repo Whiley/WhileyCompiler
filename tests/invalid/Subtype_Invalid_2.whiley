@@ -5,5 +5,5 @@ function f(scf2nat x) :
     x = -1
     f(x)
 
-method main() :
+public export method test() :
     f(1)

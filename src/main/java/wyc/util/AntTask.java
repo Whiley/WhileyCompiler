@@ -16,9 +16,9 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
 
 import wybs.util.StdProject;
 import wyc.Activator;
-import wyc.builder.CompileTask;
-import wyc.commands.Compile;
+import wyc.command.Compile;
 import wyc.lang.WhileyFile;
+import wyc.task.CompileTask;
 import wycc.util.ArrayUtils;
 import wycc.util.Logger;
 import wyfs.lang.Content;

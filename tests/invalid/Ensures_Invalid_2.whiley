@@ -6,5 +6,5 @@ method f(int x) -> int
 requires x > g(x):
     return x
 
-method main() -> int:
+public export method test() -> int:
     return f(1)

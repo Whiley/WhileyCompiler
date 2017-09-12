@@ -3,10 +3,10 @@
 type Tree is null | Node
 
 type Node is ({int data, Tree rhs, Tree lhs} _this)
-where ((_this.lhs == null) || (_this.lhs.data < _this.data)) && ((_this.rhs == null) || (_this.rhs.data > _this.data))
+where ((_this.lhs is null) || (_this.lhs.data < _this.data)) && ((_this.rhs is null) || (_this.rhs.data > _this.data))
 
 function Tree(int data, Tree left, Tree right) -> Tree
-requires ((left == null) || (left.data < data)) && ((right == null) || (right.data > data)):
+requires ((left is null) || (left.data < data)) && ((right is null) || (right.data > data)):
     return {data: data, rhs: right, lhs: left}
 
 public export method test() :

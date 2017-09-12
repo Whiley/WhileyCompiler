@@ -12,6 +12,6 @@ function f(expr e) :
     if e is pos:
         g(e)
 
-method main() :
+public export method test() :
     f(-1)
     f(1)

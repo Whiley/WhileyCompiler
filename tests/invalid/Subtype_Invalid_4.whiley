@@ -4,6 +4,6 @@ type scf4list is (int[] list) where |list| > 0
 function f(scf4list x) -> int:
     return 1
 
-method main() :
+public export method test() :
     int[] x = [0;0]
     f(x)

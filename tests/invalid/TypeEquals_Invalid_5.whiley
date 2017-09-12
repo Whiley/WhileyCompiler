@@ -9,7 +9,7 @@ type rec12 is rec1 | rec2
 function f(rec12 x) -> int:
     return 1
 
-method main() -> int:
+public export method test() -> int:
     rec1 r1 = {f1: "hello", f2: 2}
     rec2 r2 = {f1: 1, f2: 0}
     rec12 r3 = {f1: "hello", f2: 0}

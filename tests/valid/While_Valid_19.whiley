@@ -1,6 +1,4 @@
-
-
-constant SIZE is 5
+int SIZE = 5
 
 public export method test() :
     int[][] components = [[0;0]; SIZE]

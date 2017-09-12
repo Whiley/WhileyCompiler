@@ -1,9 +1,8 @@
-constant BLANK is 0
-constant CROSS is 1
-constant CIRCLE is 2
+int BLANK = 0
+int CROSS = 1
+int CIRCLE = 2
 
 type Piece is (int x) where x == BLANK || x == CROSS || x == CIRCLE
-
 type Board is (Piece[] pieces) where |pieces| == 9
 
 function EmptyBoard() -> Board:

@@ -11,9 +11,10 @@ import wycc.lang.Module;
 import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyil.lang.WyilFile;
 import wyal.lang.WyalFile;
-import wyc.commands.*;
+import wyc.command.Compile;
+import wyc.command.Decompile;
+import wyc.command.Run;
 import wyc.lang.WhileyFile;
 
 public class Activator implements Module.Activator {
@@ -32,7 +33,7 @@ public class Activator implements Module.Activator {
 			if (suffix.equals("whiley")) {
 				e.associate(WhileyFile.ContentType, null);
 			} else if (suffix.equals("wyil")) {
-				e.associate(WyilFile.ContentType, null);
+				e.associate(WhileyFile.BinaryContentType, null);
 			} else if (suffix.equals("wyal")) {
 				e.associate(WyalFile.ContentType, null);
 			}

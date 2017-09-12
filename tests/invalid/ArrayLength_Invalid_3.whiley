@@ -5,5 +5,5 @@ ensures y < 0:
     //
     return -1
 
-method main() :
+public export method test() :
     f(-1)
