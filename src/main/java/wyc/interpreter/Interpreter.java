@@ -158,7 +158,7 @@ public class Interpreter {
 	private void extractParameters(CallStack frame, RValue[] args, Decl.Callable decl) {
 		Tuple<Decl.Variable> parameters = decl.getParameters();
 		for(int i=0;i!=parameters.size();++i) {
-			Decl.Variable parameter = parameters.getOperand(i);
+			Decl.Variable parameter = parameters.get(i);
 			frame.putLocal(parameter.getName(), args[i]);
 		}
 	}
@@ -179,7 +179,7 @@ public class Interpreter {
 			Tuple<Decl.Variable> returns = decl.getReturns();
 			RValue[] values = new RValue[returns.size()];
 			for (int i = 0; i != values.length; ++i) {
-				values[i] = frame.getLocal(returns.getOperand(i).getName());
+				values[i] = frame.getLocal(returns.get(i).getName());
 			}
 			return values;
 		}
@@ -199,7 +199,7 @@ public class Interpreter {
 	 */
 	private Status executeBlock(Stmt.Block block, CallStack frame, EnclosingScope scope) {
 		for (int i = 0; i != block.size(); ++i) {
-			Stmt stmt = block.getOperand(i);
+			Stmt stmt = block.get(i);
 			Status r = executeStatement(stmt, frame, scope);
 			// Now, see whether we are continuing or not
 			if (r != Status.NEXT) {
@@ -275,7 +275,7 @@ public class Interpreter {
 		Tuple<WhileyFile.LVal> lhs = stmt.getLeftHandSide();
 		RValue[] rhs = executeExpressions(stmt.getRightHandSide(), frame);
 		for (int i = 0; i != lhs.size(); ++i) {
-			LValue lval = constructLVal(lhs.getOperand(i), frame);
+			LValue lval = constructLVal(lhs.get(i), frame);
 			lval.write(frame, rhs[i]);
 		}
 		return Status.NEXT;
@@ -495,7 +495,7 @@ public class Interpreter {
 		Tuple<Decl.Variable> returns = context.getReturns();
 		RValue[] values = executeExpressions(stmt.getReturns(), frame);
 		for (int i = 0; i != returns.size(); ++i) {
-			frame.putLocal(returns.getOperand(i).getName(), values[i]);
+			frame.putLocal(returns.get(i).getName(), values[i]);
 		}
 		return Status.RETURN;
 	}
@@ -530,7 +530,7 @@ public class Interpreter {
 		//
 		Object value = executeExpression(ANY_T, stmt.getCondition(), frame);
 		for (int i = 0; i != cases.size(); ++i) {
-			Stmt.Case c = cases.getOperand(i);
+			Stmt.Case c = cases.get(i);
 			Stmt.Block body = c.getBlock();
 			if (c.isDefault()) {
 				return executeBlock(body, frame, scope);
@@ -635,41 +635,73 @@ public class Interpreter {
 				val = executeQuantifier((Expr.Quantifier) expr, frame);
 				break;
 			case WhileyFile.EXPR_eq:
+				val = executeEqual((Expr.Equal) expr, frame);
+				break;
 			case WhileyFile.EXPR_neq:
-				val = executeEqualityComparator((Expr.Operator) expr, frame);
+				val = executeNotEqual((Expr.NotEqual) expr, frame);
 				break;
 			case WhileyFile.EXPR_ineg:
-				val = executeArithmeticNegation((Expr.Negation) expr, frame);
+				val = executeArithmeticNegation((Expr.IntegerNegation) expr, frame);
 				break;
 			case WhileyFile.EXPR_iadd:
+				val = executeArithmeticAddition((Expr.IntegerAddition) expr, frame);
+				break;
 			case WhileyFile.EXPR_isub:
+				val = executeArithmeticSubtraction((Expr.IntegerSubtraction) expr, frame);
+				break;
 			case WhileyFile.EXPR_imul:
+				val = executeArithmeticMultiplication((Expr.IntegerMultiplication) expr, frame);
+				break;
 			case WhileyFile.EXPR_idiv:
+				val = executeArithmeticDivision((Expr.IntegerDivision) expr, frame);
+				break;
 			case WhileyFile.EXPR_irem:
+				val = executeArithmeticRemainder((Expr.IntegerRemainder) expr, frame);
+				break;
 			case WhileyFile.EXPR_ilt:
+				val = executeArithmeticLessThan((Expr.IntegerLessThan) expr, frame);
+				break;
 			case WhileyFile.EXPR_ile:
+				val = executeArithmeticLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, frame);
+				break;
 			case WhileyFile.EXPR_igt:
+				val = executeArithmeticGreaterThan((Expr.IntegerGreaterThan) expr, frame);
+				break;
 			case WhileyFile.EXPR_igteq:
-				val = executeArithmeticOperator((Expr.Operator) expr, frame);
+				val = executeArithmeticGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, frame);
 				break;
 			case WhileyFile.EXPR_bnot:
 				val = executeBitwiseNot((Expr.BitwiseComplement) expr, frame);
 				break;
 			case WhileyFile.EXPR_bor:
+				val = executeBitwiseOr((Expr.BitwiseOr) expr, frame);
+				break;
 			case WhileyFile.EXPR_bxor:
+				val = executeBitwiseXor((Expr.BitwiseXor) expr, frame);
+				break;
 			case WhileyFile.EXPR_band:
-				val = executeBitwiseOperator((Expr.Operator) expr, frame);
+				val = executeBitwiseAnd((Expr.BitwiseAnd) expr, frame);
 				break;
 			case WhileyFile.EXPR_bshl:
+				val = executeBitwiseShiftLeft((Expr.BitwiseShiftLeft) expr, frame);
+				break;
 			case WhileyFile.EXPR_bshr:
-				val = executeBitwiseShift((Expr.Operator) expr, frame);
+				val = executeBitwiseShiftRight((Expr.BitwiseShiftRight) expr, frame);
 				break;
 			case WhileyFile.EXPR_aread:
+				val = executeArrayAccess((Expr.ArrayAccess) expr, frame);
+				break;
 			case WhileyFile.EXPR_agen:
+				val = executeArrayGenerator((Expr.ArrayGenerator) expr, frame);
+				break;
 			case WhileyFile.EXPR_alen:
+				val = executeArrayLength((Expr.ArrayLength) expr, frame);
+				break;
 			case WhileyFile.EXPR_ainit:
+				val = executeArrayInitialiser((Expr.ArrayInitialiser) expr, frame);
+				break;
 			case WhileyFile.EXPR_arange:
-				val = executeArrayOperator((Expr.Operator) expr, frame);
+				val = executeArrayRange((Expr.ArrayRange) expr, frame);
 				break;
 			case WhileyFile.EXPR_pinit:
 				val = executeNew((Expr.New) expr, frame);
@@ -751,21 +783,24 @@ public class Interpreter {
 	 * @return
 	 */
 	private RValue executeConvert(Expr.Cast expr, CallStack frame) {
-		RValue operand = executeExpression(ANY_T, expr.getCastedExpr(), frame);
-		return operand.convert(expr.getCastType());
+		RValue operand = executeExpression(ANY_T, expr.getOperand(), frame);
+		return operand.convert(expr.getType());
 	}
 
 	private RValue executeRecordAccess(Expr.RecordAccess expr, CallStack frame) {
-		RValue.Record rec = executeExpression(RECORD_T, expr.getSource(), frame);
+		RValue.Record rec = executeExpression(RECORD_T, expr.getOperand(), frame);
 		return rec.read(expr.getField());
 	}
 
 	private RValue executeRecordInitialiser(Expr.RecordInitialiser expr, CallStack frame) {
-		RValue.Field[] values = new RValue.Field[expr.size()];
-		for (int i = 0; i != expr.size(); ++i) {
-			Pair<Identifier, Expr> field = expr.getOperand(i);
-			RValue value = executeExpression(ANY_T, field.getSecond(), frame);
-			values[i] = semantics.Field(field.getFirst(), value);
+		Tuple<Identifier> fields = expr.getFields();
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Field[] values = new RValue.Field[operands.size()];
+		for (int i = 0; i != operands.size(); ++i) {
+			Identifier field = fields.get(i);
+			Expr operand = operands.get(i);
+			RValue value = executeExpression(ANY_T, operand, frame);
+			values[i] = semantics.Field(field, value);
 		}
 		return semantics.Record(values);
 	}
@@ -789,13 +824,13 @@ public class Interpreter {
 		Tuple<Decl.Variable> vars = expr.getParameters();
 		if (index == vars.size()) {
 			// This is the base case where we evaluate the condition itself.
-			RValue.Bool r = executeExpression(BOOL_T, expr.getBody(), frame);
+			RValue.Bool r = executeExpression(BOOL_T, expr.getOperand(), frame);
 			boolean q = (expr instanceof Expr.UniversalQuantifier);
 			// If this evaluates to true, then we will continue executing the
 			// quantifier.
 			return r.boolValue() == q;
 		} else {
-			Decl.Variable var = vars.getOperand(index);
+			Decl.Variable var = vars.get(index);
 			RValue.Array range = executeExpression(ARRAY_T, var.getInitialiser(), frame);
 			RValue[] elements = range.getElements();
 			for (int i = 0; i != elements.length; ++i) {
@@ -833,176 +868,295 @@ public class Interpreter {
 	}
 
 	private RValue executeIs(Expr.Is expr, CallStack frame) throws ResolutionError {
-		RValue lhs = executeExpression(ANY_T, expr.getTestExpr(), frame);
+		RValue lhs = executeExpression(ANY_T, expr.getOperand(), frame);
 		return lhs.is(expr.getTestType(), this);
 	}
 
-	public RValue executeArithmeticNegation(Expr.Negation expr, CallStack frame) {
+	public RValue executeArithmeticNegation(Expr.IntegerNegation expr, CallStack frame) {
 		RValue.Int lhs = executeExpression(INT_T, expr.getOperand(), frame);
 		return lhs.negate();
 	}
 
-	public RValue executeArithmeticOperator(Expr.Operator expr, CallStack frame) {
-		RValue.Int lhs = executeExpression(INT_T, expr.getOperand(0), frame);
-		RValue.Int rhs = executeExpression(INT_T, expr.getOperand(1), frame);
-		switch (expr.getOpcode()) {
-		case WhileyFile.EXPR_iadd:
-			return lhs.add(rhs);
-		case WhileyFile.EXPR_isub:
-			return lhs.subtract(rhs);
-		case WhileyFile.EXPR_imul:
-			return lhs.multiply(rhs);
-		case WhileyFile.EXPR_idiv:
-			return lhs.divide(rhs);
-		case WhileyFile.EXPR_irem:
-			return lhs.remainder(rhs);
-		case WhileyFile.EXPR_ilt:
-			return lhs.lessThan(rhs);
-		case WhileyFile.EXPR_ile:
-			return lhs.lessThanOrEqual(rhs);
-		case WhileyFile.EXPR_igt:
-			return rhs.lessThan(lhs);
-		case WhileyFile.EXPR_igteq:
-			return rhs.lessThanOrEqual(lhs);
-		default:
-			return deadCode(expr);
+	public RValue executeArithmeticOperator(Expr.IntegerAddition expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			val = val.add(executeExpression(INT_T, operands.get(i), frame));
 		}
+		return val;
 	}
 
-	public RValue executeEqualityComparator(Expr.Operator expr, CallStack frame) {
-		RValue lhs = executeExpression(ANY_T, expr.getOperand(0), frame);
-		RValue rhs = executeExpression(ANY_T, expr.getOperand(1), frame);
-		switch (expr.getOpcode()) {
-		case WhileyFile.EXPR_eq:
-			return lhs.equal(rhs);
-		case WhileyFile.EXPR_neq:
-			return lhs.notEqual(rhs);
-		default:
-			return deadCode(expr);
+	public RValue executeArithmeticAddition(Expr.IntegerAddition expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			val = val.add(executeExpression(INT_T, operands.get(i), frame));
 		}
+		return val;
 	}
 
-	public RValue executeLogicalNot(Expr.Operator expr, CallStack frame) {
-		RValue.Bool lhs = executeExpression(BOOL_T, expr.getOperand(0), frame);
+	public RValue executeArithmeticSubtraction(Expr.IntegerSubtraction expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			val = val.subtract(executeExpression(INT_T, operands.get(i), frame));
+		}
+		return val;
+	}
+
+	public RValue executeArithmeticMultiplication(Expr.IntegerMultiplication expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			val = val.multiply(executeExpression(INT_T, operands.get(i), frame));
+		}
+		return val;
+	}
+
+	public RValue executeArithmeticDivision(Expr.IntegerDivision expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			val = val.divide(executeExpression(INT_T, operands.get(i), frame));
+		}
+		return val;
+	}
+
+	public RValue executeArithmeticRemainder(Expr.IntegerRemainder expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int val = executeExpression(INT_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			val = val.remainder(executeExpression(INT_T, operands.get(i), frame));
+		}
+		return val;
+	}
+
+	public RValue executeEqual(Expr.Equal expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue last = executeExpression(ANY_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			RValue next = executeExpression(ANY_T, operands.get(i), frame);
+			if(last.equal(next) == RValue.False) {
+				return RValue.False;
+			}
+		}
+		return RValue.True;
+	}
+
+	public RValue executeNotEqual(Expr.NotEqual expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue last = executeExpression(ANY_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			RValue next = executeExpression(ANY_T, operands.get(i), frame);
+			if(last.equal(next) == RValue.True) {
+				return RValue.False;
+			}
+		}
+		return RValue.True;
+	}
+
+	public RValue executeArithmeticLessThan(Expr.IntegerLessThan expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int last = executeExpression(INT_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			RValue.Int next = executeExpression(INT_T, operands.get(i), frame);
+			if(last.lessThan(next) == RValue.False) {
+				return RValue.False;
+			}
+			last = next;
+		}
+		return RValue.True;
+	}
+
+	public RValue executeArithmeticLessThanOrEqual(Expr.IntegerLessThanOrEqual expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int last = executeExpression(INT_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			RValue.Int next = executeExpression(INT_T, operands.get(i), frame);
+			if(last.lessThanOrEqual(next) == RValue.False) {
+				return RValue.False;
+			}
+			last = next;
+		}
+		return RValue.True;
+	}
+
+	public RValue executeArithmeticGreaterThan(Expr.IntegerGreaterThan expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int last = executeExpression(INT_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			RValue.Int next = executeExpression(INT_T, operands.get(i), frame);
+			if(next.lessThan(last) == RValue.False) {
+				return RValue.False;
+			}
+			last = next;
+		}
+		return RValue.True;
+	}
+
+	public RValue executeArithmeticGreaterThanOrEqual(Expr.IntegerGreaterThanOrEqual expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Int last = executeExpression(INT_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			RValue.Int next = executeExpression(INT_T, operands.get(i), frame);
+			if(next.lessThanOrEqual(last) == RValue.False) {
+				return RValue.False;
+			}
+			last = next;
+		}
+		return RValue.True;
+	}
+
+	public RValue executeLogicalNot(Expr.LogicalNot expr, CallStack frame) {
+		RValue.Bool lhs = executeExpression(BOOL_T, expr.getOperand(), frame);
 		return lhs.not();
 	}
 
 	public RValue executeLogicalAnd(Expr.LogicalAnd expr, CallStack frame) {
-		// This is a short-circuiting operator
-		RValue.Bool lhs = executeExpression(BOOL_T, expr.getOperand(0), frame);
-		if(lhs == RValue.False) {
-			return lhs;
-		} else {
-			return executeExpression(BOOL_T, expr.getOperand(1), frame);
+		// This is a short-circuiting operator. Therefore, we fail as soon as one
+		// argument fails.
+		Tuple<Expr> operands = expr.getOperands();
+		for(int i=0;i!=operands.size();++i) {
+			RValue.Bool b = executeExpression(BOOL_T, operands.get(i), frame);
+			if(b == RValue.False) {
+				return b;
+			}
 		}
+		return RValue.True;
 	}
 
 	public RValue executeLogicalOr(Expr.LogicalOr expr, CallStack frame) {
-		// This is a short-circuiting operator
-		RValue.Bool lhs = executeExpression(BOOL_T, expr.getOperand(0), frame);
-		if(lhs == RValue.True) {
-			return lhs;
-		} else {
-			return executeExpression(BOOL_T, expr.getOperand(1), frame);
+		// This is a short-circuiting operator. Therefore, we succeed as soon as one
+		// argument succeeds.
+		Tuple<Expr> operands = expr.getOperands();
+		for(int i=0;i!=operands.size();++i) {
+			RValue.Bool b = executeExpression(BOOL_T, operands.get(i), frame);
+			if(b == RValue.True) {
+				return b;
+			}
 		}
+		return RValue.False;
 	}
 
 	public RValue executeLogicalImplication(Expr.LogicalImplication expr, CallStack frame) {
 		// This is a short-circuiting operator
-		RValue.Bool lhs = executeExpression(BOOL_T, expr.getOperand(0), frame);
-		if(lhs == RValue.False) {
-			return RValue.True;
-		} else {
-			RValue.Bool rhs = executeExpression(BOOL_T, expr.getOperand(1), frame);
-			return lhs.equal(rhs);
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Bool last = executeExpression(BOOL_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			RValue.Bool next = executeExpression(BOOL_T, operands.get(i), frame);
+			if (last == RValue.True && next == RValue.False) {
+				return RValue.False;
+			}
+			last = next;
 		}
+		// All were the same.
+		return RValue.True;
 	}
 
 	public RValue executeLogicalIff(Expr.LogicalIff expr, CallStack frame) {
-		RValue.Bool lhs = executeExpression(BOOL_T, expr.getOperand(0), frame);
-		RValue.Bool rhs = executeExpression(BOOL_T, expr.getOperand(1), frame);
-		return lhs.equal(rhs);
+		// This is a short-circuiting operator. Therefore, we fail as soon as one
+		// argument differs from the last.
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Bool b = executeExpression(BOOL_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			RValue.Bool t = executeExpression(BOOL_T, operands.get(i), frame);
+			if (t != b) {
+				return RValue.False;
+			}
+		}
+		// All were the same.
+		return RValue.True;
 	}
 
 	public RValue executeBitwiseNot(Expr.BitwiseComplement expr, CallStack frame) {
-		RValue.Byte lhs = executeExpression(BYTE_T, expr.getOperand(0), frame);
+		RValue.Byte lhs = executeExpression(BYTE_T, expr.getOperand(), frame);
 		return lhs.invert();
 	}
 
-	public RValue executeBitwiseOperator(Expr.Operator expr, CallStack frame) {
-		RValue.Byte lhs = executeExpression(BYTE_T, expr.getOperand(0), frame);
-		RValue.Byte rhs = executeExpression(BYTE_T, expr.getOperand(1), frame);
-		switch (expr.getOpcode()) {
-		case WhileyFile.EXPR_band:
-			return lhs.and(rhs);
-		case WhileyFile.EXPR_bor:
-			return lhs.or(rhs);
-		case WhileyFile.EXPR_bxor:
-			return lhs.xor(rhs);
-		default:
-			return deadCode(expr);
+	public RValue executeBitwiseAnd(Expr.BitwiseAnd expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Byte val = executeExpression(BYTE_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			val = val.and(executeExpression(BYTE_T, operands.get(i), frame));
 		}
+		return val;
 	}
 
-	public RValue executeBitwiseShift(Expr.Operator expr, CallStack frame) {
-		RValue.Byte lhs = executeExpression(BYTE_T, expr.getOperand(0), frame);
-		RValue.Int rhs = executeExpression(INT_T, expr.getOperand(1), frame);
-		switch (expr.getOpcode()) {
-		case WhileyFile.EXPR_bshr:
-			return lhs.shr(rhs);
-		case WhileyFile.EXPR_bshl:
-			return lhs.shl(rhs);
-		default:
-			return deadCode(expr);
+	public RValue executeBitwiseOr(Expr.BitwiseOr expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Byte val = executeExpression(BYTE_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			val = val.or(executeExpression(BYTE_T, operands.get(i), frame));
 		}
+		return val;
 	}
-	public RValue executeArrayOperator(Expr.Operator expr, CallStack frame) {
-		switch (expr.getOpcode()) {
-		case WhileyFile.EXPR_alen: {
-			RValue.Array array = executeExpression(ARRAY_T, expr.getOperand(0), frame);
-			return array.length();
+
+	public RValue executeBitwiseXor(Expr.BitwiseXor expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue.Byte val = executeExpression(BYTE_T, operands.get(0), frame);
+		for (int i = 1; i != operands.size(); ++i) {
+			val = val.xor(executeExpression(BYTE_T, operands.get(i), frame));
 		}
-		case WhileyFile.EXPR_aread: {
-			RValue.Array array = executeExpression(ARRAY_T, expr.getOperand(0), frame);
-			RValue.Int index = executeExpression(INT_T, expr.getOperand(1), frame);
-			return array.read(index);
+		return val;
+	}
+
+	public RValue executeBitwiseShiftLeft(Expr.BitwiseShiftLeft expr, CallStack frame) {
+		RValue.Byte lhs = executeExpression(BYTE_T, expr.getFirstOperand(), frame);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+		return lhs.shl(rhs);
+	}
+	public RValue executeBitwiseShiftRight(Expr.BitwiseShiftRight expr, CallStack frame) {
+		RValue.Byte lhs = executeExpression(BYTE_T, expr.getFirstOperand(), frame);
+		RValue.Int rhs = executeExpression(INT_T, expr.getSecondOperand(), frame);
+		return lhs.shl(rhs);
+	}
+
+	public RValue executeArrayLength(Expr.ArrayLength expr, CallStack frame) {
+		RValue.Array array = executeExpression(ARRAY_T, expr.getOperand(), frame);
+		return array.length();
+	}
+
+	public RValue executeArrayAccess(Expr.ArrayAccess expr, CallStack frame) {
+		RValue.Array array = executeExpression(ARRAY_T, expr.getFirstOperand(), frame);
+		RValue.Int index = executeExpression(INT_T, expr.getSecondOperand(), frame);
+		return array.read(index);
+	}
+
+	public RValue executeArrayGenerator(Expr.ArrayGenerator expr, CallStack frame) {
+		RValue element = executeExpression(ANY_T, expr.getFirstOperand(), frame);
+		RValue.Int count = executeExpression(INT_T, expr.getSecondOperand(), frame);
+		int n = count.intValue();
+		if (n < 0) {
+			throw new AssertionError("negative array length");
 		}
-		case WhileyFile.EXPR_agen: {
-			RValue element = executeExpression(ANY_T, expr.getOperand(0), frame);
-			RValue.Int count = executeExpression(INT_T, expr.getOperand(1), frame);
-			int n = count.intValue();
-			if(n < 0) {
-				throw new AssertionError("negative array length");
-			}
-			RValue[] values = new RValue[n];
-			for (int i = 0; i != n; ++i) {
-				values[i] = element;
-			}
-			return semantics.Array(values);
+		RValue[] values = new RValue[n];
+		for (int i = 0; i != n; ++i) {
+			values[i] = element;
 		}
-		case WhileyFile.EXPR_ainit: {
-			RValue[] elements = new RValue[expr.size()];
-			for (int i = 0; i != elements.length; ++i) {
-				elements[i] = executeExpression(ANY_T, expr.getOperand(i), frame);
-			}
-			return semantics.Array(elements);
+		return semantics.Array(values);
+	}
+
+	public RValue executeArrayInitialiser(Expr.ArrayInitialiser expr, CallStack frame) {
+		Tuple<Expr> operands = expr.getOperands();
+		RValue[] elements = new RValue[operands.size()];
+		for (int i = 0; i != elements.length; ++i) {
+			elements[i] = executeExpression(ANY_T, operands.get(i), frame);
 		}
-		case WhileyFile.EXPR_arange: {
-			int start = executeExpression(INT_T, expr.getOperand(0), frame).intValue();
-			int end = executeExpression(INT_T, expr.getOperand(1), frame).intValue();
-			RValue[] elements = new RValue[end - start];
-			for (int i = start; i < end; ++i) {
-				elements[i-start] = semantics.Int(BigInteger.valueOf(i));
-			}
-			return semantics.Array(elements);
+		return semantics.Array(elements);
+	}
+
+	public RValue executeArrayRange(Expr.ArrayRange expr, CallStack frame) {
+		int start = executeExpression(INT_T, expr.getFirstOperand(), frame).intValue();
+		int end = executeExpression(INT_T, expr.getSecondOperand(), frame).intValue();
+		RValue[] elements = new RValue[end - start];
+		for (int i = start; i < end; ++i) {
+			elements[i - start] = semantics.Int(BigInteger.valueOf(i));
 		}
-		default:
-			return deadCode(expr);
-		}
+		return semantics.Array(elements);
 	}
 
 	public RValue executeNew(Expr.New expr, CallStack frame) {
-		RValue initialiser = executeExpression(ANY_T, expr.getValue(), frame);
+		RValue initialiser = executeExpression(ANY_T, expr.getOperand(), frame);
 		RValue.Cell cell = semantics.Cell(initialiser);
 		return semantics.Reference(cell);
 	}
@@ -1045,7 +1199,7 @@ public class Interpreter {
 		RValue[][] results = new RValue[expressions.size()][];
 		int count = 0;
 		for(int i=0;i!=expressions.size();++i) {
-			results[i] = executeMultiReturnExpression(expressions.getOperand(i),frame);
+			results[i] = executeMultiReturnExpression(expressions.get(i),frame);
 			count += results[i].length;
 		}
 		RValue[] rs = new RValue[count];
@@ -1143,7 +1297,7 @@ public class Interpreter {
 		Decl.Callable decl = typeSystem.resolveExactly(expr.getName(), expr.getSignature(),
 				Decl.Callable.class);
 		// Evaluate argument expressions
-		RValue[] arguments = executeExpressions(expr.getArguments(), frame);
+		RValue[] arguments = executeExpressions(expr.getOperands(), frame);
 		// Invoke the function or method in question
 		return execute(decl.getQualifiedName().toNameID(), decl.getType(), frame, arguments);
 	}
@@ -1166,8 +1320,8 @@ public class Interpreter {
 		switch (expr.getOpcode()) {
 		case EXPR_aread: {
 			Expr.ArrayAccess e = (Expr.ArrayAccess) expr;
-			LValue src = constructLVal(e.getSource(), frame);
-			RValue.Int index = executeExpression(INT_T, e.getSubscript(), frame);
+			LValue src = constructLVal(e.getFirstOperand(), frame);
+			RValue.Int index = executeExpression(INT_T, e.getSecondOperand(), frame);
 			return new LValue.Array(src, index);
 		}
 		case EXPR_pread: {
@@ -1177,7 +1331,7 @@ public class Interpreter {
 		}
 		case EXPR_rread: {
 			Expr.RecordAccess e = (Expr.RecordAccess) expr;
-			LValue src = constructLVal(e.getSource(), frame);
+			LValue src = constructLVal(e.getOperand(), frame);
 			return new LValue.Record(src, e.getField());
 		}
 		case EXPR_varcopy: {
@@ -1200,7 +1354,7 @@ public class Interpreter {
 	 */
 	public void checkInvariants(CallStack frame, Tuple<Expr> invariants) {
 		for (int i = 0; i != invariants.size(); ++i) {
-			RValue.Bool b = executeExpression(BOOL_T, invariants.getOperand(i), frame);
+			RValue.Bool b = executeExpression(BOOL_T, invariants.get(i), frame);
 			if (b == RValue.False) {
 				// FIXME: need to do more here
 				throw new AssertionError();

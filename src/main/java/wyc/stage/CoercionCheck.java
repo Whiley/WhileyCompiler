@@ -129,7 +129,7 @@ public class CoercionCheck implements Build.Stage<WhileyFile> {
 		} else if(from instanceof Type.Union) {
 			Type.Union t1 = (Type.Union) from;
 			for(int i=0;i!=t1.size();++i) {
-				check(t1.getOperand(i),to,visited,element);
+				check(t1.get(i),to,visited,element);
 			}
 		} else if(to instanceof Type.Union) {
 			Type.Union t2 = (Type.Union) to;
@@ -137,7 +137,7 @@ public class CoercionCheck implements Build.Stage<WhileyFile> {
 			// First, check for identical type (i.e. no coercion necessary)
 
 			for(int i=0;i!=t2.size();++i) {
-				if(from.equals(t2.getOperand(i))) {
+				if(from.equals(t2.get(i))) {
 					// no problem
 					return;
 				}
@@ -182,8 +182,8 @@ public class CoercionCheck implements Build.Stage<WhileyFile> {
 	private void check(Tuple<Type> params1, Tuple<Type> params2, HashSet<Pair<Type, Type>> visited,
 			SyntacticElement element) {
 		for (int i = 0; i != params1.size(); ++i) {
-			Type e1 = params1.getOperand(i);
-			Type e2 = params2.getOperand(i);
+			Type e1 = params1.get(i);
+			Type e2 = params2.get(i);
 			check(e1, e2, visited, element);
 		}
 	}

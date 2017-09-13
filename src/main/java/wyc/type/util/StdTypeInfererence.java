@@ -18,6 +18,7 @@ import wyc.lang.WhileyFile.Decl;
 
 import static wyc.lang.WhileyFile.*;
 import wybs.lang.NameResolver.ResolutionError;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
 import wyc.type.TypeInferer;
 import wyc.type.TypeSystem;
@@ -65,7 +66,7 @@ public class StdTypeInfererence implements TypeInferer {
 		case WhileyFile.EXPR_ile:
 		case WhileyFile.EXPR_igt:
 		case WhileyFile.EXPR_igteq:
-			return inferLogicalOperator((Expr.Operator) expr);
+			return inferLogicalOperator((Expr.NaryOperator) expr);
 		case WhileyFile.EXPR_lall:
 		case WhileyFile.EXPR_lsome:
 			return inferQuantifier((Expr.Quantifier) expr);
@@ -75,24 +76,24 @@ public class StdTypeInfererence implements TypeInferer {
 		case WhileyFile.EXPR_imul:
 		case WhileyFile.EXPR_idiv:
 		case WhileyFile.EXPR_irem:
-			return inferArithmeticOperator((Expr.Operator) expr);
+			return inferArithmeticOperator((Expr.NaryOperator) expr);
 		case WhileyFile.EXPR_band:
 		case WhileyFile.EXPR_bor:
 		case WhileyFile.EXPR_bxor:
 		case WhileyFile.EXPR_bshl:
 		case WhileyFile.EXPR_bshr:
 		case WhileyFile.EXPR_bnot:
-			return inferBitwiseOperator((Expr.Operator) expr);
+			return inferBitwiseOperator((Expr.NaryOperator) expr);
 		case WhileyFile.EXPR_alen:
-			return inferArrayLength((Expr.Operator) expr);
+			return inferArrayLength((Expr.ArrayLength) expr);
 		case WhileyFile.EXPR_ainit:
-			return inferArrayInitialiser((Expr.Operator) expr);
+			return inferArrayInitialiser((Expr.ArrayInitialiser) expr);
 		case WhileyFile.EXPR_agen:
-			return inferArrayGenerator((Expr.Operator) expr);
+			return inferArrayGenerator((Expr.ArrayGenerator) expr);
 		case WhileyFile.EXPR_aread:
-			return inferArrayIndex((Expr.Operator) expr);
+			return inferArrayIndex((Expr.ArrayAccess) expr);
 		case WhileyFile.EXPR_awrite:
-			return inferArrayUpdate((Expr.Operator) expr);
+			return inferArrayUpdate((Expr.ArrayUpdate) expr);
 		case WhileyFile.EXPR_rinit:
 			return inferRecordInitialiser((Expr.RecordInitialiser) expr);
 		case WhileyFile.EXPR_rread:
@@ -107,18 +108,18 @@ public class StdTypeInfererence implements TypeInferer {
 	}
 
 	protected Type inferCast(Expr.Cast expr) {
-		return (Type) expr.getCastType();
+		return (Type) expr.getType();
 	}
 
-	protected Type inferLogicalOperator(Expr.Operator expr) throws ResolutionError {
+	protected Type inferLogicalOperator(Expr.NaryOperator expr) throws ResolutionError {
 		return Type.Bool;
 	}
 
-	protected Type inferArithmeticOperator(Expr.Operator expr) throws ResolutionError {
+	protected Type inferArithmeticOperator(Expr.NaryOperator expr) throws ResolutionError {
 		return Type.Int;
 	}
 
-	protected Type inferBitwiseOperator(Expr.Operator expr) throws ResolutionError {
+	protected Type inferBitwiseOperator(Expr.NaryOperator expr) throws ResolutionError {
 		return Type.Byte;
 	}
 
@@ -144,7 +145,7 @@ public class StdTypeInfererence implements TypeInferer {
 		if (returns.size() != 1) {
 			throw new IllegalArgumentException("need support for multiple returns");
 		} else {
-			return returns.getOperand(0);
+			return returns.get(0);
 		}
 	}
 
@@ -154,7 +155,7 @@ public class StdTypeInfererence implements TypeInferer {
 		if(ct != null) {
 			Tuple<Type> returns = ct.getReturns();
 			if(returns.size() == 1) {
-				return returns.getOperand(0);
+				return returns.get(0);
 			}
 		}
 		return null;
@@ -169,15 +170,16 @@ public class StdTypeInfererence implements TypeInferer {
 	// Arrays
 	// ======================================================================
 
-	protected Type inferArrayLength(Expr.Operator expr) {
+	protected Type inferArrayLength(Expr.ArrayLength expr) {
 		return Type.Int;
 	}
 
-	protected Type inferArrayInitialiser(Expr.Operator expr) throws ResolutionError {
+	protected Type inferArrayInitialiser(Expr.ArrayInitialiser expr) throws ResolutionError {
 		if (expr.size() > 0) {
-			Type[] ts = new Type[expr.size()];
+			Tuple<Expr> operands = expr.getOperands();
+			Type[] ts = new Type[operands.size()];
 			for (int i = 0; i != ts.length; ++i) {
-				ts[i] = inferExpression(expr.getOperand(i));
+				ts[i] = inferExpression(operands.get(i));
 			}
 			// Perform a little simplification here by collapsing
 			// identical types together.
@@ -189,13 +191,13 @@ public class StdTypeInfererence implements TypeInferer {
 		}
 	}
 
-	protected Type inferArrayGenerator(Expr.Operator expr) throws ResolutionError {
-		Type element = inferExpression(expr.getOperand(0));
+	protected Type inferArrayGenerator(Expr.ArrayGenerator expr) throws ResolutionError {
+		Type element = inferExpression(expr.getSecondOperand());
 		return new Type.Array(element);
 	}
 
-	protected Type inferArrayIndex(Expr.Operator expr) throws ResolutionError {
-		Type src = inferExpression(expr.getOperand(0));
+	protected Type inferArrayIndex(Expr.ArrayAccess expr) throws ResolutionError {
+		Type src = inferExpression(expr.getFirstOperand());
 		if(src != null) {
 			Type.Array effectiveArray = types.extractReadableArray(src);
 			if(effectiveArray != null) {
@@ -205,19 +207,19 @@ public class StdTypeInfererence implements TypeInferer {
 		return null;
 	}
 
-	protected Type inferArrayUpdate(Expr.Operator expr) throws ResolutionError {
-		return inferExpression(expr.getOperand(0));
+	protected Type inferArrayUpdate(Expr.ArrayUpdate expr) throws ResolutionError {
+		return inferExpression(expr.getFirstOperand());
 	}
 
 	protected Type inferRecordAccess(Expr.RecordAccess expr) throws ResolutionError {
-		Type src = inferExpression(expr.getSource());
+		Type src = inferExpression(expr.getOperand());
 		if (src != null) {
 			Type.Record effectiveRecord = types.extractReadableRecord(src);
 			if (effectiveRecord != null) {
 				Tuple<Decl.Variable> fields = effectiveRecord.getFields();
 				Identifier actualFieldName = expr.getField();
 				for (int i = 0; i != fields.size(); ++i) {
-					Decl.Variable vd = fields.getOperand(i);
+					Decl.Variable vd = fields.get(i);
 					Identifier declaredFieldName = vd.getName();
 					if (declaredFieldName.equals(actualFieldName)) {
 						return vd.getType();
@@ -230,15 +232,18 @@ public class StdTypeInfererence implements TypeInferer {
 	}
 
 	protected Type inferRecordUpdate(Expr.RecordUpdate expr) throws ResolutionError {
-		return inferExpression(expr.getSource());
+		return inferExpression(expr.getFirstOperand());
 	}
 
 	protected Type inferRecordInitialiser(Expr.RecordInitialiser expr) throws ResolutionError {
-		Decl.Variable[] decls = new Decl.Variable[expr.size()];
+		Tuple<WhileyFile.Identifier> fields = expr.getFields();
+		Tuple<WhileyFile.Expr> operands = expr.getOperands();
+		Decl.Variable[] decls = new Decl.Variable[operands.size()];
 		for (int i = 0; i != decls.length; ++i) {
-			Identifier fieldName = expr.getOperand(i).getFirst();
-			Type fieldType = inferExpression(expr.getOperand(i).getSecond());
-			decls[i] = new Decl.Variable(new Tuple<>(), fieldName, fieldType);
+			Identifier field = fields.get(i);
+			Expr operand = operands.get(i);
+			Type type = inferExpression(operand);
+			decls[i] = new Decl.Variable(new Tuple<>(), field, type);
 		}
 		// NOTE: a record initialiser never produces an open record
 		// type. By definition, an initialiser always produces a closed

@@ -52,12 +52,12 @@
     <dependency>
       <groupId>org.whiley</groupId>
       <artifactId>wycc</artifactId>
-      <version>0.5.9</version>
+      <version>0.6.1</version>
     </dependency>
     <dependency>
       <groupId>org.whiley</groupId>
       <artifactId>wytp</artifactId>
-      <version>0.6.5</version>
+      <version>0.6.7</version>
     </dependency>
     <dependency>
       <groupId>ant</groupId>

@@ -6,13 +6,9 @@
 
 package wyc.io;
 
-import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,9 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import wyal.io.WyalFileParser.EnclosingScope;
-import wybs.lang.NameID;
-import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Identifier;
@@ -32,10 +25,7 @@ import static wyc.io.WhileyFileLexer.Token.Kind.*;
 
 import wyc.lang.WhileyFile;
 import static wyc.lang.WhileyFile.*;
-
-import wycc.util.ArrayUtils;
 import wyfs.lang.Path;
-import wyfs.util.Trie;
 
 /**
  * Convert a list of tokens into an Abstract Syntax Tree (AST) representing the
@@ -125,9 +115,6 @@ public class WhileyFileParser {
 	 * <pre>
 	 * ImportDecl ::= Identifier ["from" ('*' | Identifier)] ( '::' ('*' | Identifier) )*
 	 * </pre>
-	 *
-	 * @param parent
-	 *            WyalFile being constructed
 	 */
 	private Decl parseImportDeclaration() {
 		int start = index;
@@ -1358,14 +1345,14 @@ public class WhileyFileParser {
 				// NOTE: expression is terminated by ']'
 				Expr rhs = parseAdditiveExpression(scope, true);
 				match(RightSquare);
-				lhs = new Expr.ArrayAccess(lhs, rhs);
+				lhs = new Expr.ArrayAccess(Type.Any, lhs, rhs);
 				break;
 			case MinusGreater:
-				lhs = new Expr.Dereference(lhs);
+				lhs = new Expr.Dereference(Type.Any, lhs);
 				// Fall Through
 			case Dot:
 				Identifier name = parseIdentifier();
-				lhs = new Expr.RecordAccess(lhs, name);
+				lhs = new Expr.RecordAccess(Type.Any, lhs, name);
 				break;
 			}
 		}
@@ -1395,7 +1382,7 @@ public class WhileyFileParser {
 		switch (lookahead.kind) {
 		case Identifier:
 			Identifier name = parseIdentifier();
-			LVal var = new Expr.VariableAccess(scope.getVariableDeclaration(name));
+			LVal var = new Expr.VariableAccess(Type.Any, scope.getVariableDeclaration(name));
 			return annotateSourceLocation(var, start);
 		case LeftBrace: {
 			match(LeftBrace);
@@ -1406,7 +1393,7 @@ public class WhileyFileParser {
 		case Star: {
 			match(Star);
 			LVal lval = parseLVal(start, scope);
-			return annotateSourceLocation(new Expr.Dereference(lval), start);
+			return annotateSourceLocation(new Expr.Dereference(Type.Any, lval), start);
 		}
 		default:
 			syntaxError("unrecognised lval", lookahead);
@@ -1532,7 +1519,7 @@ public class WhileyFileParser {
 			}
 			case LogicalIff: {
 				Expr rhs = parseExpression(scope, terminated);
-				lhs = new Expr.LogicalIff(lhs, rhs);
+				lhs = new Expr.LogicalIff(new Tuple<>(lhs, rhs));
 				break;
 			}
 			default:
@@ -1577,12 +1564,12 @@ public class WhileyFileParser {
 			switch (lookahead.kind) {
 			case LogicalAnd: {
 				Expr rhs = parseExpression(scope, terminated);
-				lhs = annotateSourceLocation(new Expr.LogicalAnd(lhs, rhs),start);
+				lhs = annotateSourceLocation(new Expr.LogicalAnd(new Tuple<>(lhs, rhs)),start);
 				break;
 			}
 			case LogicalOr: {
 				Expr rhs = parseExpression(scope, terminated);
-				lhs = annotateSourceLocation(new Expr.LogicalOr(lhs, rhs), start);
+				lhs = annotateSourceLocation(new Expr.LogicalOr(new Tuple<>(lhs, rhs)), start);
 				break;
 			}
 			default:
@@ -1619,7 +1606,7 @@ public class WhileyFileParser {
 
 		if (tryAndMatch(terminated, VerticalBar) != null) {
 			Expr rhs = parseExpression(scope, terminated);
-			return annotateSourceLocation(new Expr.BitwiseOr(lhs, rhs), start);
+			return annotateSourceLocation(new Expr.BitwiseOr(Type.Byte, new Tuple<>(lhs, rhs)), start);
 		}
 
 		return lhs;
@@ -1652,7 +1639,7 @@ public class WhileyFileParser {
 
 		if (tryAndMatch(terminated, Caret) != null) {
 			Expr rhs = parseExpression(scope, terminated);
-			return annotateSourceLocation(new Expr.BitwiseXor(lhs, rhs), start);
+			return annotateSourceLocation(new Expr.BitwiseXor(Type.Byte, new Tuple<>(lhs, rhs)), start);
 		}
 
 		return lhs;
@@ -1685,7 +1672,7 @@ public class WhileyFileParser {
 
 		if (tryAndMatch(terminated, Ampersand) != null) {
 			Expr rhs = parseExpression(scope, terminated);
-			return annotateSourceLocation(new Expr.BitwiseAnd(lhs, rhs), start);
+			return annotateSourceLocation(new Expr.BitwiseAnd(Type.Byte, new Tuple<>(lhs, rhs)), start);
 		}
 
 		return lhs;
@@ -1734,22 +1721,22 @@ public class WhileyFileParser {
 			//
 			switch (lookahead.kind) {
 			case LessEquals:
-				lhs = new Expr.LessThanOrEqual(lhs, rhs);
+				lhs = new Expr.IntegerLessThanOrEqual(new Tuple<>(lhs, rhs));
 				break;
 			case LeftAngle:
-				lhs = new Expr.LessThan(lhs, rhs);
+				lhs = new Expr.IntegerLessThan(new Tuple<>(lhs, rhs));
 				break;
 			case GreaterEquals:
-				lhs = new Expr.GreaterThanOrEqual(lhs, rhs);
+				lhs = new Expr.IntegerGreaterThanOrEqual(new Tuple<>(lhs, rhs));
 				break;
 			case RightAngle:
-				lhs = new Expr.GreaterThan(lhs, rhs);
+				lhs = new Expr.IntegerGreaterThan(new Tuple<>(lhs, rhs));
 				break;
 			case EqualsEquals:
-				lhs = new Expr.Equal(lhs, rhs);
+				lhs = new Expr.Equal(new Tuple<>(lhs, rhs));
 				break;
 			case NotEquals:
-				lhs = new Expr.NotEqual(lhs, rhs);
+				lhs = new Expr.NotEqual(new Tuple<>(lhs, rhs));
 				break;
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
@@ -1859,7 +1846,7 @@ public class WhileyFileParser {
 		Expr lhs = parseAdditiveExpression(scope, true);
 		match(DotDot);
 		Expr rhs = parseAdditiveExpression(scope, true);
-		Expr range = new Expr.ArrayRange(lhs, rhs);
+		Expr range = new Expr.ArrayRange(Type.Any, lhs, rhs);
 		return annotateSourceLocation(range, start);
 	}
 
@@ -1897,10 +1884,10 @@ public class WhileyFileParser {
 			Expr rhs = parseAdditiveExpression(scope, terminated);
 			switch (lookahead.kind) {
 			case LeftAngleLeftAngle:
-				lhs = new Expr.BitwiseShiftLeft(lhs, rhs);
+				lhs = new Expr.BitwiseShiftLeft(Type.Byte, lhs, rhs);
 				break;
 			case RightAngleRightAngle:
-				lhs = new Expr.BitwiseShiftRight(lhs, rhs);
+				lhs = new Expr.BitwiseShiftRight(Type.Byte, lhs, rhs);
 				break;
 			}
 			annotateSourceLocation(lhs, start);
@@ -1939,10 +1926,10 @@ public class WhileyFileParser {
 			Expr rhs = parseMultiplicativeExpression(scope, terminated);
 			switch (lookahead.kind) {
 			case Plus:
-				lhs = new Expr.Addition(lhs, rhs);
+				lhs = new Expr.IntegerAddition(Type.Any, new Tuple<>(lhs, rhs));
 				break;
 			case Minus:
-				lhs = new Expr.Subtraction(lhs, rhs);
+				lhs = new Expr.IntegerSubtraction(Type.Any, new Tuple<>(lhs, rhs));
 				break;
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
@@ -1982,13 +1969,13 @@ public class WhileyFileParser {
 			Expr rhs = parseAccessExpression(scope, terminated);
 			switch (lookahead.kind) {
 			case Star:
-				lhs = new Expr.Multiplication(lhs,rhs);
+				lhs = new Expr.IntegerMultiplication(Type.Any, new Tuple<>(lhs, rhs));
 				break;
 			case RightSlash:
-				lhs = new Expr.Division(lhs,rhs);
+				lhs = new Expr.IntegerDivision(Type.Any, new Tuple<>(lhs, rhs));
 				break;
 			case Percent:
-				lhs = new Expr.Remainder(lhs,rhs);
+				lhs = new Expr.IntegerRemainder(Type.Any, new Tuple<>(lhs, rhs));
 				break;
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
@@ -2061,10 +2048,10 @@ public class WhileyFileParser {
 				Expr rhs = parseAdditiveExpression(scope, true);
 				// This is a plain old array access expression
 				match(RightSquare);
-				lhs = new Expr.ArrayAccess(lhs, rhs);
+				lhs = new Expr.ArrayAccess(Type.Any, lhs, rhs);
 				break;
 			case MinusGreater:
-				lhs = new Expr.Dereference(lhs);
+				lhs = new Expr.Dereference(Type.Any, lhs);
 				// Fall through
 			case Dot:
 				// At this point, we could have a field access, or a
@@ -2104,11 +2091,11 @@ public class WhileyFileParser {
 			// parse arguments to invocation
 			Tuple<Expr> arguments = parseInvocationArguments(scope);
 			// Now construct indirect expression
-			lhs = annotateSourceLocation(new Expr.RecordAccess(lhs, name), start);
-			lhs = new Expr.IndirectInvoke(lhs, lifetimes, arguments);
+			lhs = annotateSourceLocation(new Expr.RecordAccess(Type.Any, lhs, name), start);
+			lhs = new Expr.IndirectInvoke(Type.Any, lhs, lifetimes, arguments);
 		} else {
 			// Must be a plain old field access.
-			lhs = new Expr.RecordAccess(lhs, name);
+			lhs = new Expr.RecordAccess(Type.Any, lhs, name);
 		}
 		return annotateSourceLocation(lhs,start);
 	}
@@ -2139,7 +2126,7 @@ public class WhileyFileParser {
 			expr = new Expr.Invoke(name, new Tuple<Identifier>(), arguments, new Type.Unresolved());
 		} else {
 			// Must be a qualified constant access
-			expr = new Expr.StaticVariableAccess(name);
+			expr = new Expr.StaticVariableAccess(Type.Any, name);
 		}
 		return annotateSourceLocation(expr, start);
 	}
@@ -2210,43 +2197,43 @@ public class WhileyFileParser {
 			} // no else if, in case the former one didn't return
 			if (scope.isVariable(name)) {
 				// Signals a local variable access
-				Expr var = new Expr.VariableAccess(scope.getVariableDeclaration(name));
+				Expr var = new Expr.VariableAccess(Type.Any, scope.getVariableDeclaration(name));
 				return annotateSourceLocation(var, start);
 			} else if (scope.isFieldAlias(name)) {
 				// Signals a field alias
 				Decl.Variable var = scope.getVariableDeclaration(new Identifier("$"));
-				Expr access = new Expr.RecordAccess(new Expr.VariableAccess(var), name);
+				Expr access = new Expr.RecordAccess(Type.Any, new Expr.VariableAccess(Type.Any, var), name);
 				return annotateSourceLocation(access,start);
 			} else {
 				// Otherwise, this must be a static access of some kind.
 				// Observe that, at this point, we cannot determine whether or
 				// not this is a constant-access or a package-access which marks
 				// the beginning of a constant-access.
-				Expr var = new Expr.StaticVariableAccess(new Name(name));
+				Expr var = new Expr.StaticVariableAccess(Type.Any, new Name(name));
 				return annotateSourceLocation(var, start);
 			}
 		}
 		case Null:
-			return annotateSourceLocation(new Expr.Constant(new Value.Null()), index++);
+			return annotateSourceLocation(new Expr.Constant(Type.Any, new Value.Null()), index++);
 		case True:
-			return annotateSourceLocation(new Expr.Constant(new Value.Bool(true)), index++);
+			return annotateSourceLocation(new Expr.Constant(Type.Any, new Value.Bool(true)), index++);
 		case False:
-			return annotateSourceLocation(new Expr.Constant(new Value.Bool(false)), index++);
+			return annotateSourceLocation(new Expr.Constant(Type.Any, new Value.Bool(false)), index++);
 		case ByteValue: {
 			byte val = parseByte(token);
-			return annotateSourceLocation(new Expr.Constant(new Value.Byte(val)), index++);
+			return annotateSourceLocation(new Expr.Constant(Type.Any, new Value.Byte(val)), index++);
 		}
 		case CharValue: {
 			BigInteger val = parseCharacter(token.text);
-			return annotateSourceLocation(new Expr.Constant(new Value.Int(val)), index++);
+			return annotateSourceLocation(new Expr.Constant(Type.Any, new Value.Int(val)), index++);
 		}
 		case IntValue: {
 			BigInteger val = new BigInteger(token.text);
-			return annotateSourceLocation(new Expr.Constant(new Value.Int(val)), index++);
+			return annotateSourceLocation(new Expr.Constant(Type.Any, new Value.Int(val)), index++);
 		}
 		case StringValue: {
 			byte[] val = parseUnicodeString(token);
-			return annotateSourceLocation(new Expr.Constant(new Value.UTF8(val)), index++);
+			return annotateSourceLocation(new Expr.Constant(Type.Any, new Value.UTF8(val)), index++);
 		}
 		case Minus:
 			return parseNegationExpression(scope, terminated);
@@ -2471,7 +2458,7 @@ public class WhileyFileParser {
 		} while (eventuallyMatch(RightSquare) == null);
 		// Convert to array
 		Expr[] exprsArray = exprs.toArray(new Expr[exprs.size()]);
-		return annotateSourceLocation(new Expr.ArrayInitialiser(exprsArray), start);
+		return annotateSourceLocation(new Expr.ArrayInitialiser(Type.Any, new Tuple<>(exprsArray)), start);
 	}
 
 	/**
@@ -2506,7 +2493,7 @@ public class WhileyFileParser {
 		match(SemiColon);
 		Expr count = parseExpression(scope, true);
 		match(RightSquare);
-		return annotateSourceLocation(new Expr.ArrayGenerator(element, count), start);
+		return annotateSourceLocation(new Expr.ArrayGenerator(Type.Any, element, count), start);
 	}
 
 	/**
@@ -2545,7 +2532,8 @@ public class WhileyFileParser {
 		int start = index;
 		match(LeftCurly);
 		HashSet<String> keys = new HashSet<>();
-		ArrayList<Pair<Identifier, Expr>> fields = new ArrayList<>();
+		ArrayList<Identifier> fields = new ArrayList<>();
+		ArrayList<Expr> operands = new ArrayList<>();
 
 		boolean firstTime = true;
 		while (eventuallyMatch(RightCurly) == null) {
@@ -2568,18 +2556,18 @@ public class WhileyFileParser {
 			// Also, expression is guaranteed to be terminated, either by '}' or
 			// ','.
 			Expr initialiser = parseExpression(scope, true);
-			fields.add(new Pair<>(field, initialiser));
+			fields.add(field);
+			operands.add(initialiser);
 			keys.add(field.get());
 		}
-		// Convert to array
-		Pair<Identifier, Expr>[] fieldsArray = fields.toArray(new Pair[fields.size()]);
 		// handle naming
 
 		// FIXME: Need to support named record initialisers. The suggestion here
 		// is to support arbitrary named initialisers. The reason for this being
 		// we could then support named arrays and other types as well? Not sure
 		// what the real difference from a cast is though.
-		return annotateSourceLocation(new Expr.RecordInitialiser(fieldsArray), start);
+		return annotateSourceLocation(new Expr.RecordInitialiser(Type.Any, new Tuple<>(fields), new Tuple<>(operands)),
+				start);
 	}
 
 	/**
@@ -2622,7 +2610,7 @@ public class WhileyFileParser {
 		}
 		match(New);
 		Expr e = parseExpression(scope, terminated);
-		return annotateSourceLocation(new Expr.New(e, lifetime), start);
+		return annotateSourceLocation(new Expr.New(Type.Any, e, lifetime), start);
 	}
 
 	/**
@@ -2662,7 +2650,7 @@ public class WhileyFileParser {
 		// only. However, the expression is guaranteed to be terminated by '|'.
 		Expr e = parseShiftExpression(scope, true);
 		match(VerticalBar);
-		return annotateSourceLocation(new Expr.ArrayLength(e), start);
+		return annotateSourceLocation(new Expr.ArrayLength(Type.Any, e), start);
 	}
 
 	/**
@@ -2695,7 +2683,7 @@ public class WhileyFileParser {
 		int start = index;
 		match(Minus);
 		Expr e = parseAccessExpression(scope, terminated);
-		return annotateSourceLocation(new Expr.Negation(e), start);
+		return annotateSourceLocation(new Expr.IntegerNegation(Type.Any, e), start);
 	}
 
 	/**
@@ -2736,8 +2724,8 @@ public class WhileyFileParser {
 		if (scope.isVariable(name)) {
 			// indirect invocation on local variable
 			Decl.Variable decl = scope.getVariableDeclaration(name);
-			Expr.VariableAccess var = annotateSourceLocation(new Expr.VariableAccess(decl), start);
-			return annotateSourceLocation(new Expr.IndirectInvoke(var, lifetimes, args), start);
+			Expr.VariableAccess var = annotateSourceLocation(new Expr.VariableAccess(Type.Any, decl), start);
+			return annotateSourceLocation(new Expr.IndirectInvoke(Type.Any, var, lifetimes, args), start);
 		} else {
 			// unqualified direct invocation
 			Type.Callable type = new Type.Unresolved();
@@ -2852,7 +2840,7 @@ public class WhileyFileParser {
 		int start = index;
 		match(Star);
 		Expr expression = parseTermExpression(scope, terminated);
-		return annotateSourceLocation(new Expr.Dereference(expression), start);
+		return annotateSourceLocation(new Expr.Dereference(Type.Any, expression), start);
 	}
 
 	/**
@@ -3031,7 +3019,7 @@ public class WhileyFileParser {
 		int start = index;
 		match(Tilde);
 		Expr expression = parseExpression(scope, terminated);
-		return annotateSourceLocation(new Expr.BitwiseComplement(expression), start);
+		return annotateSourceLocation(new Expr.BitwiseComplement(Type.Any, expression), start);
 	}
 
 	/**
@@ -3096,7 +3084,7 @@ public class WhileyFileParser {
 			Type.Intersection tt = (Type.Intersection) type;
 			boolean result = false;
 			for(int i=0;i!=tt.size();++i) {
-				result |= mustParseAsType(tt.getOperand(i));
+				result |= mustParseAsType(tt.get(i));
 			}
 			return result;
 		} else if (type instanceof Type.Array) {
@@ -3122,80 +3110,12 @@ public class WhileyFileParser {
 			Type.Union tt = (Type.Union) type;
 			boolean result = false;
 			for(int i=0;i!=tt.size();++i) {
-				result |= mustParseAsType(tt.getOperand(i));
+				result |= mustParseAsType(tt.get(i));
 			}
 			return result;
 		} else {
 			// Error!
 			throw new InternalFailure("unknown syntactic type encountered", file.getEntry(), type);
-		}
-	}
-
-	/**
-	 * <p>
-	 * Determine whether a given expression can *only* be parsed as an
-	 * expression, not as a type. This is necessary to check whether a given
-	 * unknown expression could be a cast or not. If it must be parsed as an
-	 * expression, then it clearly cannot be parsed as a type and, hence, this
-	 * is not a cast.
-	 * </p>
-	 * <p>
-	 * The reason that something must be parsed as an expression is because it
-	 * contains something which cannot be part of a type. For example,
-	 * <code>(*x)</code> could not form part of a cast because the dereference
-	 * operator is not permitted within a type. In contrast,
-	 * <code>(x.y.f)</code> could be a type if e.g. <code>x.y</code> is a fully
-	 * qualified file and <code>f</code> a named item within that.
-	 * </p>
-	 *
-	 * @param e
-	 *            Expression to be checked.
-	 * @return
-	 */
-	private boolean mustParseAsExpr(Expr e) {
-		if (e instanceof Expr.VariableAccess) {
-			return true;
-		} else if (e instanceof Expr.StaticVariableAccess) {
-			return false;
-		} else if (e instanceof Expr.RecordAccess) {
-			Expr.RecordAccess fa = (Expr.RecordAccess) e;
-			return mustParseAsExpr(fa.getSource());
-		} else if (e instanceof Expr.Operator) {
-			Expr.Operator bop = (Expr.Operator) e;
-			switch (bop.getOpcode()) {
-			case EXPR_lnot:
-				return mustParseAsExpr(bop.getOperand(0));
-			case EXPR_alen:
-			case EXPR_bnot:
-			case EXPR_pread:
-			case EXPR_aread:
-			case EXPR_ainit:
-				return true;
-			case EXPR_bor:
-			case EXPR_band:
-				// FIXME: broken in the case of multiple arguments
-				return mustParseAsExpr(bop.getOperand(0)) || mustParseAsExpr(bop.getOperand(1));
-			}
-			return false;
-		} else if (e instanceof Expr.Is) {
-			return true;
-		} else if (e instanceof Expr.Invoke) {
-			return true;
-		} else if (e instanceof Expr.IndirectInvoke) {
-			return true;
-		} else if (e instanceof Expr.Cast) {
-			return true;
-		} else if (e instanceof Expr.Constant) {
-			return true;
-		} else if (e instanceof Expr.Quantifier) {
-			return true;
-		} else if (e instanceof Expr.New) {
-			return true;
-		} else if (e instanceof Expr.RecordInitialiser) {
-			return true;
-		} else {
-			syntaxError("unknown expression encountered", e);
-			return false; // dead code
 		}
 	}
 
@@ -4405,7 +4325,7 @@ public class WhileyFileParser {
 	private String[] toStringArray(Tuple<Identifier> identifiers) {
 		String[] strings = new String[identifiers.size()];
 		for (int i = 0; i != strings.length; ++i) {
-			strings[i] = identifiers.getOperand(i).get();
+			strings[i] = identifiers.get(i).get();
 		}
 		return strings;
 	}
@@ -4741,7 +4661,7 @@ public class WhileyFileParser {
 		public EnclosingScope newEnclosingScope(Tuple<Identifier> lifetimes) {
 			HashSet<Identifier> tmp = new HashSet<>();
 			for (int i = 0; i != lifetimes.size(); ++i) {
-				tmp.add(lifetimes.getOperand(i));
+				tmp.add(lifetimes.get(i));
 			}
 			return new EnclosingScope(indent, environment, fieldAliases, tmp, false);
 		}

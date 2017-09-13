@@ -80,7 +80,7 @@ public class AbstractTypeRewriter implements TypeRewriter {
 		// allocations and, hence, put less pressure on the garbage collector.
 		Decl.Variable[] nFields = null;
 		for (int i = 0; i != fields.size(); ++i) {
-			Decl.Variable field = fields.getOperand(i);
+			Decl.Variable field = fields.get(i);
 			Type fieldType = field.getType();
 			Type nFieldType = rewrite(fieldType);
 			if (nFields != null) {
@@ -92,7 +92,7 @@ public class AbstractTypeRewriter implements TypeRewriter {
 				nFields = new Decl.Variable[fields.size()];
 				// Copy all items seen so far into the new array
 				for (int j = 0; j < i; ++j) {
-					nFields[j] = fields.getOperand(j);
+					nFields[j] = fields.get(j);
 				}
 				// Copy this item into the new array.
 				nFields[i] = new Decl.Variable(new Tuple<>(), field.getName(), nFieldType);
@@ -138,7 +138,7 @@ public class AbstractTypeRewriter implements TypeRewriter {
 	}
 
 	protected Type rewriteUnion(Type.Union utype) {
-		Type[] types = utype.getOperands();
+		Type[] types = utype.getAll();
 		Type[] nTypes = rewrite(types);
 		//
 		if (types == nTypes) {
@@ -149,7 +149,7 @@ public class AbstractTypeRewriter implements TypeRewriter {
 	}
 
 	protected Type rewriteIntersection(Type.Intersection utype) {
-		Type[] types = utype.getOperands();
+		Type[] types = utype.getAll();
 		Type[] nTypes = rewrite(types);
 		if (types == nTypes) {
 			return utype;
@@ -163,7 +163,7 @@ public class AbstractTypeRewriter implements TypeRewriter {
 		boolean changed = false;
 		//
 		for (int i = 0; i != tuple.size(); ++i) {
-			Type type = tuple.getOperand(i);
+			Type type = tuple.get(i);
 			Type nType = rewrite(type);
 			changed |= (type != nType);
 			nTypes[i] = nType;

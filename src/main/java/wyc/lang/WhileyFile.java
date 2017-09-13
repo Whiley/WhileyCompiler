@@ -16,11 +16,6 @@ import wybs.lang.SyntacticItem.Operands;
 import wybs.lang.SyntacticItem.Schema;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractSyntacticItem;
-import wybs.util.AbstractCompilationUnit.Identifier;
-import wybs.util.AbstractCompilationUnit.Name;
-import wybs.util.AbstractCompilationUnit.Pair;
-import wybs.util.AbstractCompilationUnit.Tuple;
-import wybs.util.AbstractCompilationUnit.Value;
 import wyc.io.WhileyFileLexer;
 import wyc.io.WhileyFileParser;
 import wyc.io.WyilFileReader;
@@ -64,8 +59,8 @@ import wyfs.lang.Path.Entry;
  * </pre>
  *
  * <p>
- * Each of these syntactic items will additionally be associated with one or more
- * attributes (e.g. encoding line number information, etc).
+ * Each of these syntactic items will additionally be associated with one or
+ * more attributes (e.g. encoding line number information, etc).
  * </p>
  *
  * @author David J. Pearce
@@ -80,10 +75,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final Content.Type<WhileyFile> ContentType = new Content.Type<WhileyFile>() {
 
 		/**
-		 * This method simply parses a whiley file into an abstract syntax tree.
-		 * It makes little effort to check whether or not the file is
-		 * syntactically correct. In particular, it does not determine the
-		 * correct type of all declarations, expressions, etc.
+		 * This method simply parses a whiley file into an abstract syntax tree. It
+		 * makes little effort to check whether or not the file is syntactically
+		 * correct. In particular, it does not determine the correct type of all
+		 * declarations, expressions, etc.
 		 *
 		 * @param file
 		 * @return
@@ -120,10 +115,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	public static final Content.Type<WhileyFile> BinaryContentType = new Content.Type<WhileyFile>() {
 
 		/**
-		 * This method simply parses a whiley file into an abstract syntax tree.
-		 * It makes little effort to check whether or not the file is
-		 * syntactically correct. In particular, it does not determine the
-		 * correct type of all declarations, expressions, etc.
+		 * This method simply parses a whiley file into an abstract syntax tree. It
+		 * makes little effort to check whether or not the file is syntactically
+		 * correct. In particular, it does not determine the correct type of all
+		 * declarations, expressions, etc.
 		 *
 		 * @param file
 		 * @return
@@ -302,14 +297,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			if (match.getName().equals(name)) {
 				if (signature != null && signature.equals(match.getType())) {
 					return match;
-				} else if(signature == null) {
+				} else if (signature == null) {
 					return match;
 				}
 			}
 		}
 		throw new IllegalArgumentException("unknown declarataion (" + name + "," + signature + ")");
 	}
-
 
 	// ============================================================
 	// Declarations
@@ -323,12 +317,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Name getName() {
-				return (Name) getOperand(0);
+				return (Name) get(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Decl> getDeclarations() {
-				return (Tuple<Decl>) getOperand(1);
+				return (Tuple<Decl>) get(1);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -339,8 +333,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents an import declaration in a Whiley source file, which has
-		 * the form:
+		 * Represents an import declaration in a Whiley source file, which has the form:
 		 *
 		 * <pre>
 		 * ImportDeclaration ::= "import" [Identifier|Star "from"] Identifier ('.' Identifier|'*')*
@@ -364,13 +357,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Identifier getOperand(int i) {
-				return (Identifier) super.getOperand(i);
+			public Identifier get(int i) {
+				return (Identifier) super.get(i);
 			}
 
 			@Override
-			public Identifier[] getOperands() {
-				return (Identifier[]) super.getOperands();
+			public Identifier[] getAll() {
+				return (Identifier[]) super.getAll();
 			}
 
 			@Override
@@ -385,7 +378,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 					if (i != 0) {
 						r += ".";
 					}
-					Identifier component = getOperand(i);
+					Identifier component = get(i);
 					if (component == null) {
 						r += "*";
 					} else {
@@ -410,18 +403,18 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Modifier> getModifiers() {
-				return (Tuple<Modifier>) super.getOperand(0);
+				return (Tuple<Modifier>) super.get(0);
 			}
 
 			public Identifier getName() {
-				return (Identifier) super.getOperand(1);
+				return (Identifier) super.get(1);
 			}
 
 			public Name getQualifiedName() {
 				Module module = getAncestor(Decl.Module.class);
 				Name name = module.getName();
-				Identifier[] idents = name.getOperands();
-				idents = Arrays.copyOf(idents,idents.length+1);
+				Identifier[] idents = name.getAll();
+				idents = Arrays.copyOf(idents, idents.length + 1);
 				idents[name.size()] = getName();
 				return new Name(idents);
 			}
@@ -429,10 +422,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public abstract WhileyFile.Type getType();
 		}
 
-
 		/**
-		 * Represents a <i>function declaration</i> or <i>method declaration</i>
-		 * in a Whiley source file which have the form:
+		 * Represents a <i>function declaration</i> or <i>method declaration</i> in a
+		 * Whiley source file which have the form:
 		 *
 		 * <pre>
 		 * FunctionDeclaration ::= "function" TypePattern "=>" TypePattern (FunctionMethodClause)* ':' NewLine Block
@@ -443,33 +435,30 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * </pre>
 		 *
 		 * Here, the first type pattern (i.e. before "=>") is referred to as the
-		 * "parameter", whilst the second is referred to as the "return". There
-		 * are three kinds of option clause:
+		 * "parameter", whilst the second is referred to as the "return". There are
+		 * three kinds of option clause:
 		 *
 		 * <ul>
-		 * <li><b>Throws clause</b>. This defines the exceptions which may be
-		 * thrown by this function. Multiple clauses may be given, and these are
-		 * taken together as a union. Furthermore, the convention is to specify
-		 * the throws clause before the others.</li>
-		 * <li><b>Requires clause</b>. This defines a constraint on the
-		 * permissible values of the parameters on entry to the function or
-		 * method, and is often referred to as the "precondition". This
-		 * expression may refer to any variables declared within the parameter
-		 * type pattern. Multiple clauses may be given, and these are taken
-		 * together as a conjunction. Furthermore, the convention is to specify
-		 * the requires clause(s) before any ensure(s) clauses.</li>
-		 * <li><b>Ensures clause</b>. This defines a constraint on the
-		 * permissible values of the the function or method's return value, and
-		 * is often referred to as the "postcondition". This expression may
-		 * refer to any variables declared within either the parameter or return
-		 * type pattern. Multiple clauses may be given, and these are taken
-		 * together as a conjunction. Furthermore, the convention is to specify
-		 * the requires clause(s) after the others.</li>
+		 * <li><b>Throws clause</b>. This defines the exceptions which may be thrown by
+		 * this function. Multiple clauses may be given, and these are taken together as
+		 * a union. Furthermore, the convention is to specify the throws clause before
+		 * the others.</li>
+		 * <li><b>Requires clause</b>. This defines a constraint on the permissible
+		 * values of the parameters on entry to the function or method, and is often
+		 * referred to as the "precondition". This expression may refer to any variables
+		 * declared within the parameter type pattern. Multiple clauses may be given,
+		 * and these are taken together as a conjunction. Furthermore, the convention is
+		 * to specify the requires clause(s) before any ensure(s) clauses.</li>
+		 * <li><b>Ensures clause</b>. This defines a constraint on the permissible
+		 * values of the the function or method's return value, and is often referred to
+		 * as the "postcondition". This expression may refer to any variables declared
+		 * within either the parameter or return type pattern. Multiple clauses may be
+		 * given, and these are taken together as a conjunction. Furthermore, the
+		 * convention is to specify the requires clause(s) after the others.</li>
 		 * </ul>
 		 *
 		 * <p>
-		 * The following function declaration provides a small example to
-		 * illustrate:
+		 * The following function declaration provides a small example to illustrate:
 		 * </p>
 		 *
 		 * <pre>
@@ -482,10 +471,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * </pre>
 		 *
 		 * <p>
-		 * Here, we see the specification for the well-known <code>max()</code>
-		 * function which returns the largest of its parameters. This does not
-		 * throw any exceptions, and does not enforce any preconditions on its
-		 * parameters.
+		 * Here, we see the specification for the well-known <code>max()</code> function
+		 * which returns the largest of its parameters. This does not throw any
+		 * exceptions, and does not enforce any preconditions on its parameters.
 		 * </p>
 		 *
 		 * <p>
@@ -495,19 +483,19 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 */
 		public static abstract class Callable extends Named {
 
-			public Callable(int opcode, Tuple<Modifier> modifiers, Identifier name,
-					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, SyntacticItem... rest) {
-				super(opcode, modifiers, name, ArrayUtils.append(new SyntacticItem[] { parameters, returns}, rest));
+			public Callable(int opcode, Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
+					Tuple<Decl.Variable> returns, SyntacticItem... rest) {
+				super(opcode, modifiers, name, ArrayUtils.append(new SyntacticItem[] { parameters, returns }, rest));
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Decl.Variable> getParameters() {
-				return (Tuple<Decl.Variable>) getOperand(2);
+				return (Tuple<Decl.Variable>) get(2);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Decl.Variable> getReturns() {
-				return (Tuple<Decl.Variable>) getOperand(3);
+				return (Tuple<Decl.Variable>) get(3);
 			}
 
 			@Override
@@ -516,30 +504,30 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		public static abstract class FunctionOrMethod extends Callable {
 
-			public FunctionOrMethod(int opcode, Tuple<Modifier> modifiers, Identifier name, Tuple<Decl.Variable> parameters,
-					Tuple<Decl.Variable> returns, Tuple<Expr> requires, Tuple<Expr> ensures, Stmt.Block body, SyntacticItem... rest) {
+			public FunctionOrMethod(int opcode, Tuple<Modifier> modifiers, Identifier name,
+					Tuple<Decl.Variable> parameters, Tuple<Decl.Variable> returns, Tuple<Expr> requires,
+					Tuple<Expr> ensures, Stmt.Block body, SyntacticItem... rest) {
 				super(opcode, modifiers, name, parameters, returns,
 						ArrayUtils.append(new SyntacticItem[] { requires, ensures, body }, rest));
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getRequires() {
-				return (Tuple<Expr>) getOperand(4);
+				return (Tuple<Expr>) get(4);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getEnsures() {
-				return (Tuple<Expr>) getOperand(5);
+				return (Tuple<Expr>) get(5);
 			}
 
 			public Stmt.Block getBody() {
-				return (Stmt.Block) getOperand(6);
+				return (Stmt.Block) get(6);
 			}
 		}
 
 		/**
-		 * Represents a function declaration in a Whiley source file. For
-		 * example:
+		 * Represents a function declaration in a Whiley source file. For example:
 		 *
 		 * <pre>
 		 * function f(int x) -> (int y)
@@ -552,21 +540,19 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * </pre>
 		 *
 		 * <p>
-		 * Here, a function <code>f</code> is defined which accepts only
-		 * positive integers and returns only negative integers. The special
-		 * variable <code>$</code> is used to refer to the return value.
-		 * Functions in Whiley may not have side-effects (i.e. they are
-		 * <code>pure functions</code>).
+		 * Here, a function <code>f</code> is defined which accepts only positive
+		 * integers and returns only negative integers. The special variable
+		 * <code>$</code> is used to refer to the return value. Functions in Whiley may
+		 * not have side-effects (i.e. they are <code>pure functions</code>).
 		 * </p>
 		 *
 		 * <p>
-		 * Function declarations may also have modifiers, such as
-		 * <code>public</code> and <code>private</code>.
+		 * Function declarations may also have modifiers, such as <code>public</code>
+		 * and <code>private</code>.
 		 * </p>
 		 *
 		 * <p>
-		 * <b>NOTE</b> see {@link Callable} for more
-		 * information.
+		 * <b>NOTE</b> see {@link Callable} for more information.
 		 * </p>
 		 *
 		 * @see Callable
@@ -613,20 +599,19 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * </pre>
 		 *
 		 * <p>
-		 * Here, a method <code>m</code> is defined which accepts only positive
-		 * integers and returns only negative integers. The special variable
-		 * <code>$</code> is used to refer to the return value. Unlike
-		 * functions, methods in Whiley may have side-effects.
+		 * Here, a method <code>m</code> is defined which accepts only positive integers
+		 * and returns only negative integers. The special variable <code>$</code> is
+		 * used to refer to the return value. Unlike functions, methods in Whiley may
+		 * have side-effects.
 		 * </p>
 		 *
 		 * <p>
-		 * Method declarations may also have modifiers, such as
-		 * <code>public</code> and <code>private</code>.
+		 * Method declarations may also have modifiers, such as <code>public</code> and
+		 * <code>private</code>.
 		 * </p>
 		 *
 		 * <p>
-		 * <b>NOTE</b> see {@link Callable} for more
-		 * information.
+		 * <b>NOTE</b> see {@link Callable} for more information.
 		 * </p>
 		 *
 		 * @author David J. Pearce
@@ -642,19 +627,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimes() {
-				return (Tuple<Identifier>) getOperand(7);
+				return (Tuple<Identifier>) get(7);
 			}
 
 			@Override
 			public WhileyFile.Type.Method getType() {
 				// FIXME: a better solution would be to have an actual signature
 				// object
-				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2,
-						WhileyFile.Type.class);
-				Tuple<WhileyFile.Type> projectedReturns = getReturns().project(2,
-						WhileyFile.Type.class);
-				return new WhileyFile.Type.Method(projectedParameters, projectedReturns, new Tuple<>(),
-						getLifetimes());
+				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2, WhileyFile.Type.class);
+				Tuple<WhileyFile.Type> projectedReturns = getReturns().project(2, WhileyFile.Type.class);
+				return new WhileyFile.Type.Method(projectedParameters, projectedReturns, new Tuple<>(), getLifetimes());
 			}
 
 			@SuppressWarnings("unchecked")
@@ -695,17 +677,17 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getInvariant() {
-				return (Tuple<Expr>) getOperand(4);
+				return (Tuple<Expr>) get(4);
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public Property clone(SyntacticItem[] operands) {
 				return new Property((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3], (Tuple<Expr>) operands[4]);
+						(Tuple<Decl.Variable>) operands[2], (Tuple<Decl.Variable>) operands[3],
+						(Tuple<Expr>) operands[4]);
 			}
 		}
-
 
 		public static class Lambda extends Callable implements Expr {
 
@@ -716,26 +698,23 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getCaptures() {
-				return (Tuple<Identifier>) getOperand(4);
+				return (Tuple<Identifier>) get(4);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimes() {
-				return (Tuple<Identifier>) getOperand(5);
+				return (Tuple<Identifier>) get(5);
 			}
 
 			public Expr getBody() {
-				return (Expr) getOperand(6);
+				return (Expr) get(6);
 			}
-
 
 			@Override
 			public WhileyFile.Type.Callable getType() {
 				// FIXME: need to determine whether function or method!
-				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2,
-						WhileyFile.Type.class);
-				Tuple<WhileyFile.Type> projectedReturns = getReturns().project(2,
-						WhileyFile.Type.class);
+				Tuple<WhileyFile.Type> projectedParameters = getParameters().project(2, WhileyFile.Type.class);
+				Tuple<WhileyFile.Type> projectedReturns = getReturns().project(2, WhileyFile.Type.class);
 				return new WhileyFile.Type.Function(projectedParameters, projectedReturns);
 			}
 
@@ -749,45 +728,42 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a type declaration in a Whiley source file, which has the
-		 * form:
+		 * Represents a type declaration in a Whiley source file, which has the form:
 		 *
 		 * <pre>
 		 * "type" Identifier "is" TypePattern ["where" Expression]
 		 * </pre>
 		 *
-		 * Here, the type pattern specifies a type which may additionally be
-		 * adorned with variable names. The "where" clause is optional and is
-		 * often referred to as the type's "constraint". Variables defined
-		 * within the type pattern may be used within this constraint
-		 * expressions. A simple example to illustrate is:
+		 * Here, the type pattern specifies a type which may additionally be adorned
+		 * with variable names. The "where" clause is optional and is often referred to
+		 * as the type's "constraint". Variables defined within the type pattern may be
+		 * used within this constraint expressions. A simple example to illustrate is:
 		 *
 		 * <pre>
 		 * type nat is (int x) where x >= 0
 		 * </pre>
 		 *
-		 * Here, we are defining a <i>constrained type</i> called
-		 * <code>nat</code> which represents the set of natural numbers (i.e the
-		 * non-negative integers). Type declarations may also have modifiers,
-		 * such as <code>public</code> and <code>private</code>.
+		 * Here, we are defining a <i>constrained type</i> called <code>nat</code> which
+		 * represents the set of natural numbers (i.e the non-negative integers). Type
+		 * declarations may also have modifiers, such as <code>public</code> and
+		 * <code>private</code>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
 		public static class Type extends Named {
 
-			public Type(Tuple<Modifier> modifiers, Identifier name, Decl.Variable vardecl,
-					Tuple<Expr> invariant) {
+			public Type(Tuple<Modifier> modifiers, Identifier name, Decl.Variable vardecl, Tuple<Expr> invariant) {
 				super(DECL_type, modifiers, name, vardecl, invariant);
 			}
 
 			public Decl.Variable getVariableDeclaration() {
-				return (Decl.Variable) getOperand(2);
+				return (Decl.Variable) get(2);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getInvariant() {
-				return (Tuple<Expr>) getOperand(3);
+				return (Tuple<Expr>) get(3);
 			}
 
 			@Override
@@ -815,9 +791,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * </pre>
 		 *
 		 * The optional <code>Expression</code> assignment is referred to as an
-		 * <i>initialiser</i>. If an initialiser is given, then this will be
-		 * evaluated and assigned to the variable when the declaration is executed.
-		 * Some example declarations:
+		 * <i>initialiser</i>. If an initialiser is given, then this will be evaluated
+		 * and assigned to the variable when the declaration is executed. Some example
+		 * declarations:
 		 *
 		 * <pre>
 		 * int x
@@ -825,8 +801,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * int z = x + y
 		 * </pre>
 		 *
-		 * Observe that, unlike C and Java, declarations that declare multiple
-		 * variables (separated by commas) are not permitted.
+		 * Observe that, unlike C and Java, declarations that declare multiple variables
+		 * (separated by commas) are not permitted.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -840,7 +816,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				super(DECL_varinit, modifiers, name, type, initialiser);
 			}
 
-			protected Variable(int opcode, Tuple<Modifier> modifiers, Identifier name, WhileyFile.Type type, Expr initialiser) {
+			protected Variable(int opcode, Tuple<Modifier> modifiers, Identifier name, WhileyFile.Type type,
+					Expr initialiser) {
 				super(opcode, modifiers, name, type, initialiser);
 			}
 
@@ -850,11 +827,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public WhileyFile.Type getType() {
-				return (WhileyFile.Type) getOperand(2);
+				return (WhileyFile.Type) get(2);
 			}
 
 			public Expr getInitialiser() {
-				return (Expr) getOperand(3);
+				return (Expr) get(3);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -871,8 +848,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a constant declaration in a Whiley source file, which has
-		 * the form:
+		 * Represents a constant declaration in a Whiley source file, which has the
+		 * form:
 		 *
 		 * <pre>
 		 * ConstantDeclaration ::= "constant" Identifier "is" Expression
@@ -884,10 +861,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * constant PI is 3.141592654
 		 * </pre>
 		 *
-		 * Here, we are defining a constant called <code>PI</code> which
-		 * represents the decimal value "3.141592654". Constant declarations may
-		 * also have modifiers, such as <code>public</code> and
-		 * <code>private</code>.
+		 * Here, we are defining a constant called <code>PI</code> which represents the
+		 * decimal value "3.141592654". Constant declarations may also have modifiers,
+		 * such as <code>public</code> and <code>private</code>.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -931,8 +907,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Stmt getOperand(int i) {
-				return (Stmt) super.getOperand(i);
+			public Stmt get(int i) {
+				return (Stmt) super.get(i);
 			}
 
 			@Override
@@ -963,11 +939,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Identifier getName() {
-				return (Identifier) super.getOperand(0);
+				return (Identifier) super.get(0);
 			}
 
 			public Block getBlock() {
-				return (Block) super.getOperand(1);
+				return (Block) super.get(1);
 			}
 
 			@Override
@@ -1000,7 +976,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Expr getCondition() {
-				return (Expr) super.getOperand(0);
+				return (Expr) super.get(0);
 			}
 
 			@Override
@@ -1010,11 +986,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents an assignment statement of the form <code>lhs = rhs</code>.
-		 * Here, the <code>rhs</code> is any expression, whilst the <code>lhs</code>
-		 * must be an <code>LVal</code> --- that is, an expression permitted on the
-		 * left-side of an assignment. The following illustrates different possible
-		 * assignment statements:
+		 * Represents an assignment statement of the form <code>lhs = rhs</code>. Here,
+		 * the <code>rhs</code> is any expression, whilst the <code>lhs</code> must be
+		 * an <code>LVal</code> --- that is, an expression permitted on the left-side of
+		 * an assignment. The following illustrates different possible assignment
+		 * statements:
 		 *
 		 * <pre>
 		 * x = y       // variable assignment
@@ -1023,9 +999,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * x[i].f = y  // compound assignment
 		 * </pre>
 		 *
-		 * The last assignment here illustrates that the left-hand side of an
-		 * assignment can be arbitrarily complex, involving nested assignments into
-		 * lists and records.
+		 * The last assignment here illustrates that the left-hand side of an assignment
+		 * can be arbitrarily complex, involving nested assignments into lists and
+		 * records.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1037,12 +1013,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<LVal> getLeftHandSide() {
-				return (Tuple<LVal>) super.getOperand(0);
+				return (Tuple<LVal>) super.get(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getRightHandSide() {
-				return (Tuple<Expr>) super.getOperand(1);
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1076,7 +1052,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Expr getCondition() {
-				return (Expr) super.getOperand(0);
+				return (Expr) super.get(0);
 			}
 
 			@Override
@@ -1091,7 +1067,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Expr getOperand() {
-				return (Expr) super.getOperand(0);
+				return (Expr) super.get(0);
 			}
 
 			@Override
@@ -1161,16 +1137,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Expr getCondition() {
-				return (Expr) super.getOperand(0);
+				return (Expr) super.get(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getInvariant() {
-				return (Tuple<Expr>) super.getOperand(1);
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			public Stmt.Block getBody() {
-				return (Stmt.Block) super.getOperand(2);
+				return (Stmt.Block) super.get(2);
 			}
 
 			public Tuple<Expr.VariableAccess> getModified() {
@@ -1206,10 +1182,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * "if" Expression ':' NewLine Block ["else" ':' NewLine Block]
 		 * </pre>
 		 *
-		 * The first expression is referred to as the <i>condition</i>, while the
-		 * first block is referred to as the <i>true branch</i>. The optional second
-		 * block is referred to as the <i>false branch</i>. The following
-		 * illustrates:
+		 * The first expression is referred to as the <i>condition</i>, while the first
+		 * block is referred to as the <i>true branch</i>. The optional second block is
+		 * referred to as the <i>false branch</i>. The following illustrates:
 		 *
 		 * <pre>
 		 * function max(int x, int y) -> int:
@@ -1228,6 +1203,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public IfElse(Expr condition, Stmt.Block trueBranch) {
 				super(STMT_if, condition, trueBranch);
 			}
+
 			public IfElse(Expr condition, Stmt.Block trueBranch, Stmt.Block falseBranch) {
 				super(STMT_ifelse, condition, trueBranch, falseBranch);
 			}
@@ -1237,15 +1213,15 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Expr getCondition() {
-				return (Expr) super.getOperand(0);
+				return (Expr) super.get(0);
 			}
 
 			public Stmt.Block getTrueBranch() {
-				return (Stmt.Block) super.getOperand(1);
+				return (Stmt.Block) super.get(1);
 			}
 
 			public Stmt.Block getFalseBranch() {
-				return (Stmt.Block) super.getOperand(2);
+				return (Stmt.Block) super.get(2);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1266,9 +1242,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * ReturnStmt ::= "return" [Expression] NewLine
 		 * </pre>
 		 *
-		 * The optional expression is referred to as the <i>return value</i>. Note
-		 * that, the returned expression (if there is one) must begin on the same
-		 * line as the return statement itself.
+		 * The optional expression is referred to as the <i>return value</i>. Note that,
+		 * the returned expression (if there is one) must begin on the same line as the
+		 * return statement itself.
 		 *
 		 * The following illustrates:
 		 *
@@ -1290,7 +1266,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getReturns() {
-				return (Tuple<Expr>) super.getOperand(0);
+				return (Tuple<Expr>) super.get(0);
 			}
 
 			@Override
@@ -1301,16 +1277,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		public static class Switch extends AbstractSyntacticItem implements Stmt {
 			public Switch(Expr condition, Tuple<Case> cases) {
-				super(STMT_switch,condition,cases);
+				super(STMT_switch, condition, cases);
 			}
 
 			public Expr getCondition() {
-				return (Expr) getOperand(0);
+				return (Expr) get(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Case> getCases() {
-				return (Tuple<Case>) getOperand(1);
+				return (Tuple<Case>) get(1);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1332,11 +1308,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getConditions() {
-				return (Tuple<Expr>) getOperand(0);
+				return (Tuple<Expr>) get(0);
 			}
 
 			public Stmt.Block getBlock() {
-				return (Stmt.Block) getOperand(1);
+				return (Stmt.Block) get(1);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -1366,9 +1342,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * </pre>
 		 *
 		 * The optional <code>where</code> clause(s) are commonly referred to as the
-		 * "loop invariant". When multiple clauses are given, these are combined
-		 * using a conjunction. The combined invariant defines a condition which
-		 * must be true on every iteration of the loop.
+		 * "loop invariant". When multiple clauses are given, these are combined using a
+		 * conjunction. The combined invariant defines a condition which must be true on
+		 * every iteration of the loop.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1379,16 +1355,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Expr getCondition() {
-				return (Expr) super.getOperand(0);
+				return (Expr) super.get(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getInvariant() {
-				return (Tuple<Expr>) super.getOperand(1);
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			public Stmt.Block getBody() {
-				return (Stmt.Block) super.getOperand(2);
+				return (Stmt.Block) super.get(2);
 			}
 
 			public Tuple<Expr.VariableAccess> getModified() {
@@ -1410,29 +1386,92 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 	public interface Expr extends Stmt {
 
+		/**
+		 * Get the type to which this expression is guaranteed to evaluate. That is, the
+		 * result type of this expression.
+		 *
+		 * @return
+		 */
+		public Type getType();
+
 		// =========================================================================
 		// General Expressions
 		// =========================================================================
 
 		/**
-		 * Represents a cast expression of the form "<code>(T) e</code>" where
-		 * <code>T</code> is the <i>cast type</i> and <code>e</code> the
-		 * <i>casted expression</i>.
+		 * Represents an abstract operator expression over exactly one <i>operand
+		 * expression</i>. For example, <code>!x</code> is a unary operator expression.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Cast extends AbstractSyntacticItem implements Expr {
+		public interface UnaryOperator extends Expr {
+			public Expr getOperand();
+		}
+
+		/**
+		 * Represents an abstract operator expression over exactly two <i>operand
+		 * expressions</i>. For example, <code>x &lt;&lt; 1</code> is a binary operator
+		 * expression.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public interface BinaryOperator extends Expr {
+			public Expr getFirstOperand();
+
+			public Expr getSecondOperand();
+		}
+
+		/**
+		 * Represents an abstract operator expression over exactly three <i>operand
+		 * expressions</i>. For example, <code>xs[i:=1]</code> is a ternary operator
+		 * expression.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public interface TernaryOperator extends Expr {
+			public Expr getFirstOperand();
+
+			public Expr getSecondOperand();
+
+			public Expr getThirdOperand();
+		}
+
+		/**
+		 * Represents an abstract operator expression over one or more <i>operand
+		 * expressions</i>. For example. in <code>arr[i+1]</code> the expression
+		 * <code>i+1</code> would be an nary operator expression.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public interface NaryOperator extends Expr {
+			public Tuple<Expr> getOperands();
+		}
+
+		/**
+		 * Represents a cast expression of the form "<code>(T) e</code>" where
+		 * <code>T</code> is the <i>cast type</i> and <code>e</code> the <i>casted
+		 * expression</i>.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public static class Cast extends AbstractSyntacticItem implements Expr, UnaryOperator {
 			public Cast(Type type, Expr rhs) {
 				super(EXPR_cast, type, rhs);
 			}
 
-			public Type getCastType() {
-				return (Type) super.getOperand(0);
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
 			}
 
-			public Expr getCastedExpr() {
-				return (Expr) super.getOperand(1);
+			@Override
+			public Expr getOperand() {
+				return (Expr) super.get(1);
 			}
 
 			@Override
@@ -1442,30 +1481,34 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public String toString() {
-				return "(" + getCastType() + ") " + getCastedExpr();
+				return "(" + getType() + ") " + getOperand();
 			}
 		}
 
 		/**
-		 * Represents the use of a constant within some expression. For example,
-		 * in <code>x + 1</code> the expression <code>1</code> is a constant
-		 * expression.
+		 * Represents the use of a constant within some expression. For example, in
+		 * <code>x + 1</code> the expression <code>1</code> is a constant expression.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
 		public static class Constant extends AbstractSyntacticItem implements Expr {
-			public Constant(Value value) {
-				super(EXPR_constant, value);
+			public Constant(Type type, Value value) {
+				super(EXPR_constant, type, value);
+			}
+
+			@Override
+			public Type getType() {
+				return (Type) get(0);
 			}
 
 			public Value getValue() {
-				return (Value) getOperand(0);
+				return (Value) get(1);
 			}
 
 			@Override
 			public Constant clone(SyntacticItem[] operands) {
-				return new Constant((Value) operands[0]);
+				return new Constant((Type) operands[0], (Value) operands[1]);
 			}
 
 			@Override
@@ -1475,17 +1518,22 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		public static class StaticVariableAccess extends AbstractSyntacticItem implements Expr {
-			public StaticVariableAccess(Name name) {
-				super(EXPR_staticvar, name);
+			public StaticVariableAccess(Type type, Name name) {
+				super(EXPR_staticvar, type, name);
+			}
+
+			@Override
+			public Type getType() {
+				return (Type) get(0);
 			}
 
 			public Name getName() {
-				return (Name) getOperand(0);
+				return (Name) get(1);
 			}
 
 			@Override
 			public StaticVariableAccess clone(SyntacticItem[] operands) {
-				return new StaticVariableAccess((Name) operands[0]);
+				return new StaticVariableAccess((Type) operands[0], (Name) operands[1]);
 			}
 
 			@Override
@@ -1495,24 +1543,30 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a <i>type test expression</i> of the form
-		 * "<code>e is T</code>" where <code>e</code> is the <i>test
-		 * expression</i> and <code>T</code> is the <i>test type</i>.
+		 * Represents a <i>type test expression</i> of the form "<code>e is T</code>"
+		 * where <code>e</code> is the <i>test expression</i> and <code>T</code> is the
+		 * <i>test type</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Is extends AbstractSyntacticItem implements Expr {
+		public static class Is extends AbstractSyntacticItem implements Expr, UnaryOperator {
 			public Is(Expr lhs, Type rhs) {
 				super(EXPR_is, lhs, rhs);
 			}
 
-			public Expr getTestExpr() {
-				return (Expr) getOperand(0);
+			@Override
+			public Type getType() {
+				return Type.Bool;
+			}
+
+			@Override
+			public Expr getOperand() {
+				return (Expr) get(0);
 			}
 
 			public Type getTestType() {
-				return (Type) getOperand(1);
+				return (Type) get(1);
 			}
 
 			@Override
@@ -1522,47 +1576,54 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public String toString() {
-				return getTestExpr() + " is " + getTestType();
+				return getOperand() + " is " + getTestType();
 			}
 		}
 
 		/**
-		 * Represents an invocation of the form "<code>x.y.f(e1,..en)</code>".
-		 * Here, <code>x.y.f</code> constitute a <i>partially-</i> or
-		 * <i>fully-qualified name</i> and <code>e1</code> ... <code>en</code>
-		 * are the <i>argument expressions</i>.
+		 * Represents an invocation of the form "<code>x.y.f(e1,..en)</code>". Here,
+		 * <code>x.y.f</code> constitute a <i>partially-</i> or <i>fully-qualified
+		 * name</i> and <code>e1</code> ... <code>en</code> are the <i>argument
+		 * expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Invoke extends AbstractSyntacticItem implements Expr {
+		public static class Invoke extends AbstractSyntacticItem implements Expr, NaryOperator {
 
-			public Invoke(Name name, Tuple<Identifier> lifetimes, Tuple<Expr> arguments,
-					Type.Callable signature) {
+			public Invoke(Name name, Tuple<Identifier> lifetimes, Tuple<Expr> arguments, Type.Callable signature) {
 				super(EXPR_invoke, name, lifetimes, arguments, signature);
 			}
 
 			@Override
-			public int getOpcode() {
-				return super.getOpcode();
+			public Type getType() {
+				Tuple<Type> returns = getSignature().getReturns();
+				// NOTE: if this method is called then it is assumed to be in a position which
+				// requires exactly one return type. Anything else is an error which should have
+				// been caught earlier in the pipeline.
+				if (returns.size() != 1) {
+					throw new IllegalArgumentException();
+				}
+				return returns.get(0);
 			}
 
 			public Name getName() {
-				return (Name) getOperand(0);
+				return (Name) get(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimes() {
-				return (Tuple<Identifier>) getOperand(1);
+				return (Tuple<Identifier>) get(1);
 			}
 
+			@Override
 			@SuppressWarnings("unchecked")
-			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) getOperand(2);
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) get(2);
 			}
 
 			public Type.Callable getSignature() {
-				return (Type.Callable) getOperand(3);
+				return (Type.Callable) get(3);
 			}
 
 			public void setSignature(Type.Callable declaration) {
@@ -1579,44 +1640,49 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			public String toString() {
 				String r = getName().toString();
-				r += getArguments();
+				r += getOperands();
 				return r;
 			}
 		}
 
 		/**
-		 * Represents an indirect invocation of the form
-		 * "<code>x.y(e1,..en)</code>". Here, <code>x.y</code> returns a
-		 * function value and <code>e1</code> ... <code>en</code> are the
-		 * <i>argument expressions</i>.
+		 * Represents an indirect invocation of the form "<code>x.y(e1,..en)</code>".
+		 * Here, <code>x.y</code> returns a function value and <code>e1</code> ...
+		 * <code>en</code> are the <i>argument expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
 		public static class IndirectInvoke extends AbstractSyntacticItem implements Expr {
 
-			public IndirectInvoke(Expr source, Tuple<Identifier> lifetimes, Tuple<Expr> arguments) {
-				super(EXPR_indirectinvoke, source, lifetimes, arguments);
+			public IndirectInvoke(Type type, Expr source, Tuple<Identifier> lifetimes, Tuple<Expr> arguments) {
+				super(EXPR_indirectinvoke, type, source, lifetimes, arguments);
+			}
+
+			@Override
+			public Type getType() {
+				return (Type) get(0);
 			}
 
 			public Expr getSource() {
-				return (Expr) getOperand(0);
+				return (Expr) get(1);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimes() {
-				return (Tuple<Identifier>) getOperand(1);
+				return (Tuple<Identifier>) get(2);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Expr> getArguments() {
-				return (Tuple<Expr>) getOperand(2);
+				return (Tuple<Expr>) get(3);
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public IndirectInvoke clone(SyntacticItem[] operands) {
-				return new IndirectInvoke((Expr) operands[0], (Tuple<Identifier>) operands[1], (Tuple<Expr>) operands[2]);
+				return new IndirectInvoke((Type) operands[0], (Expr) operands[1], (Tuple<Identifier>) operands[2],
+						(Tuple<Expr>) operands[3]);
 			}
 
 			@Override
@@ -1628,38 +1694,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents an abstract operator expression over one or more
-		 * <i>operand expressions</i>. For example. in <code>arr[i+1]</code> the
-		 * expression <code>i+1</code> is an operator expression.
-		 *
-		 * @author David J. Pearce
-		 *
-		 */
-		public abstract static class Operator extends AbstractSyntacticItem implements Expr {
-			public Operator(int opcode, Expr... operands) {
-				super(opcode, operands);
-			}
-
-			@Override
-			public Expr getOperand(int i) {
-				return (Expr) super.getOperand(i);
-			}
-
-			@Override
-			public abstract Expr clone(SyntacticItem[] operands);
-		}
-
-		/**
 		 * Represents an abstract quantified expression of the form
 		 * "<code>forall(T v1, ... T vn).e</code>" or
 		 * "<code>exists(T v1, ... T vn).e</code>" where <code>T1 v1</code> ...
-		 * <code>Tn vn</code> are the <i>quantified variable declarations</i>
-		 * and <code>e</code> is the body.
+		 * <code>Tn vn</code> are the <i>quantified variable declarations</i> and
+		 * <code>e</code> is the body.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public abstract static class Quantifier extends AbstractSyntacticItem implements Expr {
+		public abstract static class Quantifier extends AbstractSyntacticItem implements Expr, UnaryOperator {
 			public Quantifier(int opcode, Decl.Variable[] parameters, Expr body) {
 				super(opcode, new Tuple<>(parameters), body);
 			}
@@ -1668,13 +1712,19 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				super(opcode, parameters, body);
 			}
 
-			@SuppressWarnings("unchecked")
-			public Tuple<Decl.Variable> getParameters() {
-				return (Tuple<Decl.Variable>) getOperand(0);
+			@Override
+			public Type getType() {
+				return Type.Bool;
 			}
 
-			public Expr getBody() {
-				return (Expr) getOperand(1);
+			@SuppressWarnings("unchecked")
+			public Tuple<Decl.Variable> getParameters() {
+				return (Tuple<Decl.Variable>) get(0);
+			}
+
+			@Override
+			public Expr getOperand() {
+				return (Expr) get(1);
 			}
 
 			@Override
@@ -1684,8 +1734,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		/**
 		 * Represents an unbounded universally quantified expression of the form
 		 * "<code>forall(T v1, ... T vn).e</code>" where <code>T1 v1</code> ...
-		 * <code>Tn vn</code> are the <i>quantified variable declarations</i>
-		 * and <code>e</code> is the body.
+		 * <code>Tn vn</code> are the <i>quantified variable declarations</i> and
+		 * <code>e</code> is the body.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1710,16 +1760,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				String r = "forall";
 				r += getParameters();
 				r += ".";
-				r += getBody();
+				r += getOperand();
 				return r;
 			}
 		}
 
 		/**
-		 * Represents an unbounded existentially quantified expression of the
-		 * form "<code>some(T v1, ... T vn).e</code>" where <code>T1 v1</code>
-		 * ... <code>Tn vn</code> are the <i>quantified variable
-		 * declarations</i> and <code>e</code> is the body.
+		 * Represents an unbounded existentially quantified expression of the form
+		 * "<code>some(T v1, ... T vn).e</code>" where <code>T1 v1</code> ...
+		 * <code>Tn vn</code> are the <i>quantified variable declarations</i> and
+		 * <code>e</code> is the body.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -1744,33 +1794,37 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				String r = "exists";
 				r += getParameters();
 				r += ".";
-				r += getBody();
+				r += getOperand();
 				return r;
 			}
 		}
 
 		/**
-		 * Represents a use of some variable within an expression. For example,
-		 * in <code>x + 1</code> the expression <code>x</code> is a variable
-		 * access expression. Every variable access is associated with a
-		 * <i>variable declaration</i> that unique identifies which variable is
-		 * being accessed.
+		 * Represents a use of some variable within an expression. For example, in
+		 * <code>x + 1</code> the expression <code>x</code> is a variable access
+		 * expression. Every variable access is associated with a <i>variable
+		 * declaration</i> that unique identifies which variable is being accessed.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
 		public static class VariableAccess extends AbstractSyntacticItem implements LVal {
-			public VariableAccess(Decl.Variable decl) {
-				super(EXPR_varcopy, decl);
+			public VariableAccess(Type type, Decl.Variable decl) {
+				super(EXPR_varcopy, type, decl);
+			}
+
+			@Override
+			public Type getType() {
+				return (Type) get(0);
 			}
 
 			public Decl.Variable getVariableDeclaration() {
-				return (Decl.Variable) getOperand(0);
+				return (Decl.Variable) get(1);
 			}
 
 			@Override
 			public VariableAccess clone(SyntacticItem[] operands) {
-				return new VariableAccess((Decl.Variable) operands[0]);
+				return new VariableAccess((Type) operands[0], (Decl.Variable) operands[1]);
 			}
 
 			@Override
@@ -1779,159 +1833,169 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
-		public abstract static class InfixOperator extends Operator {
-			public InfixOperator(int opcode, Expr... operands) {
-				super(opcode, operands);
-			}
-
-			@Override
-			public String toString() {
-				String str = getOperatorString();
-				String r = "";
-				for (int i = 0; i != size(); ++i) {
-					if (i != 0) {
-						r += str;
-					}
-					r += getOperand(i);
-				}
-				return r;
-			}
-
-			protected abstract String getOperatorString();
-		}
-
 		// =========================================================================
 		// Logical Expressions
 		// =========================================================================
 		/**
 		 * Represents a <i>logical conjunction</i> of the form
-		 * "<code>e1 && .. && en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 && .. && en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class LogicalAnd extends InfixOperator {
-			public LogicalAnd(Expr... operands) {
+		public static class LogicalAnd extends AbstractSyntacticItem implements NaryOperator {
+			public LogicalAnd(Tuple<Expr> operands) {
 				super(EXPR_land, operands);
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new LogicalAnd(ArrayUtils.toArray(Expr.class, operands));
+			public Type getType() {
+				return Type.Bool;
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
+			}
+
+			@Override
+			public Expr clone(SyntacticItem[] operands) {
+				return new LogicalAnd((Tuple<Expr>) operands[0]);
+			}
+
+			@Override
+			public String toString() {
 				return " && ";
 			}
 		}
 
 		/**
 		 * Represents a <i>logical disjunction</i> of the form
-		 * "<code>e1 || .. || en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 || .. || en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class LogicalOr extends InfixOperator {
-			public LogicalOr(Expr... operands) {
+		public static class LogicalOr extends AbstractSyntacticItem implements NaryOperator {
+			public LogicalOr(Tuple<Expr> operands) {
 				super(EXPR_lor, operands);
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new LogicalOr(ArrayUtils.toArray(Expr.class, operands));
+			public Type getType() {
+				return Type.Bool;
 			}
 
 			@Override
-			protected String getOperatorString() {
-				return " && ";
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
+			}
+
+			@Override
+			public Expr clone(SyntacticItem[] operands) {
+				return new LogicalOr((Tuple<Expr>) operands[0]);
+			}
+
+			@Override
+			public String toString() {
+				return " || ";
 			}
 		}
 
 		/**
 		 * Represents a <i>logical implication</i> of the form
-		 * "<code>e1 ==> ... ==> en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 ==> ... ==> en</code>" where <code>e1</code> ... <code>en</code>
+		 * are the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class LogicalImplication extends InfixOperator {
-			public LogicalImplication(Expr... operands) {
-				super(EXPR_limplies, operands);
+		public static class LogicalImplication extends AbstractSyntacticItem implements NaryOperator {
+			public LogicalImplication(Expr lhs, Expr rhs) {
+				super(EXPR_limplies, lhs, rhs);
+			}
+
+			@Override
+			public Type getType() {
+				return Type.Bool;
+			}
+
+			@Override
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
 			}
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new LogicalImplication(ArrayUtils.toArray(Expr.class, operands));
+				return new LogicalImplication((Expr) operands[0], (Expr) operands[1]);
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public String toString() {
 				return " ==> ";
 			}
 		}
 
 		/**
 		 * Represents a <i>logical biconditional</i> of the form
-		 * "<code>e1 <==> ... <==> en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 <==> ... <==> en</code>" where <code>e1</code> ... <code>en</code>
+		 * are the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class LogicalIff extends InfixOperator {
-			public LogicalIff(Expr... operands) {
+		public static class LogicalIff extends AbstractSyntacticItem implements NaryOperator {
+			public LogicalIff(Tuple<Expr> operands) {
 				super(EXPR_liff, operands);
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new LogicalIff(ArrayUtils.toArray(Expr.class, operands));
+			public Type getType() {
+				return Type.Bool;
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
+			}
+
+			@Override
+			public Expr clone(SyntacticItem[] operands) {
+				return new LogicalIff((Tuple<Expr>) operands[0]);
+			}
+
+			@Override
+			public String toString() {
 				return " <==> ";
 			}
 		}
 
 		/**
-		 * Represents a <i>logical negation</i> of the form "<code>!e</code>"
-		 * where <code>e</code> is the <i>operand expression</i>.
+		 * Represents a <i>logical negation</i> of the form "<code>!e</code>" where
+		 * <code>e</code> is the <i>operand expression</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class LogicalNot extends Operator {
+		public static class LogicalNot extends AbstractSyntacticItem implements UnaryOperator {
 			public LogicalNot(Expr operand) {
 				super(EXPR_lnot, operand);
 			}
 
+			@Override
+			public Type getType() {
+				return Type.Bool;
+			}
+
+			@Override
 			public Expr getOperand() {
-				return getOperand(0);
+				return (Expr) get(0);
 			}
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length != 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
 				return new LogicalNot((Expr) operands[0]);
 			}
 		}
@@ -1941,329 +2005,407 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		// =========================================================================
 
 		/**
-		 * Represents an equality expression of the form
-		 * "<code>e1 == ... == en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * Represents an equality expression of the form "<code>e1 == ... == en</code>"
+		 * where <code>e1</code> ... <code>en</code> are the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Equal extends InfixOperator {
-			public Equal(Expr... operands) {
+		public static class Equal extends AbstractSyntacticItem implements NaryOperator {
+			public Equal(Tuple<Expr> operands) {
 				super(EXPR_eq, operands);
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new Equal(ArrayUtils.toArray(Expr.class, operands));
+			public Type getType() {
+				return Type.Bool;
 			}
 
 			@Override
-			public String getOperatorString() {
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
+			}
+
+			@Override
+			public Expr clone(SyntacticItem[] operands) {
+				return new Equal((Tuple<Expr>) operands[0]);
+			}
+
+			@Override
+			public String toString() {
 				return " == ";
 			}
 		}
 
 		/**
 		 * Represents an unequality expression of the form
-		 * "<code>e1 != ... != en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 != ... != en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class NotEqual extends InfixOperator {
-			public NotEqual(Expr... operands) {
+		public static class NotEqual extends AbstractSyntacticItem implements NaryOperator {
+			public NotEqual(Tuple<Expr> operands) {
 				super(EXPR_neq, operands);
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new NotEqual(ArrayUtils.toArray(Expr.class, operands));
+			public Type getType() {
+				return Type.Bool;
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
+			}
+
+			@Override
+			public Expr clone(SyntacticItem[] operands) {
+				return new NotEqual((Tuple<Expr>) operands[0]);
+			}
+
+			@Override
+			public String toString() {
 				return " != ";
 			}
 		}
 
 		/**
 		 * Represents a strict <i>inequality expression</i> of the form
-		 * "<code>e1 < ... < en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 < ... < en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class LessThan extends InfixOperator {
-			public LessThan(Expr... operands) {
+		public static class IntegerLessThan extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerLessThan(Tuple<Expr> operands) {
 				super(EXPR_ilt, operands);
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new LessThan(ArrayUtils.toArray(Expr.class, operands));
+			public Type getType() {
+				return Type.Bool;
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
+			}
+
+			@Override
+			public Expr clone(SyntacticItem[] operands) {
+				return new IntegerLessThan((Tuple<Expr>) operands[0]);
+			}
+
+			@Override
+			public String toString() {
 				return " < ";
 			}
 		}
 
 		/**
 		 * Represents a non-strict <i>inequality expression</i> of the form
-		 * "<code>e1 <= ... <= en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 <= ... <= en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class LessThanOrEqual extends InfixOperator {
-			public LessThanOrEqual(Expr... operands) {
+		public static class IntegerLessThanOrEqual extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerLessThanOrEqual(Tuple<Expr> operands) {
 				super(EXPR_ile, operands);
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new LessThanOrEqual(ArrayUtils.toArray(Expr.class, operands));
+			public Type getType() {
+				return Type.Bool;
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
+			}
+
+			@Override
+			public Expr clone(SyntacticItem[] operands) {
+				return new IntegerLessThanOrEqual((Tuple<Expr>) operands[0]);
+			}
+
+			@Override
+			public String toString() {
 				return " <= ";
 			}
 		}
 
 		/**
 		 * Represents a strict <i>inequality expression</i> of the form
-		 * "<code>e1 > ... > en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 > ... > en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class GreaterThan extends InfixOperator {
-			public GreaterThan(Expr... operands) {
+		public static class IntegerGreaterThan extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerGreaterThan(Tuple<Expr> operands) {
 				super(EXPR_igt, operands);
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new GreaterThan(ArrayUtils.toArray(Expr.class, operands));
+			public Type getType() {
+				return Type.Bool;
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
+			}
+
+			@Override
+			public Expr clone(SyntacticItem[] operands) {
+				return new IntegerGreaterThan((Tuple<Expr>) operands[0]);
+			}
+
+			@Override
+			public String toString() {
 				return " > ";
 			}
 		}
 
 		/**
 		 * Represents a non-strict <i>inequality expression</i> of the form
-		 * "<code>e1 >= ... >= en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 >= ... >= en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class GreaterThanOrEqual extends InfixOperator {
-			public GreaterThanOrEqual(Expr... operands) {
+		public static class IntegerGreaterThanOrEqual extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerGreaterThanOrEqual(Tuple<Expr> operands) {
 				super(EXPR_igteq, operands);
 			}
 
 			@Override
-			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new GreaterThanOrEqual(ArrayUtils.toArray(Expr.class, operands));
+			public Type getType() {
+				return Type.Bool;
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(0);
+			}
+
+			@Override
+			public Expr clone(SyntacticItem[] operands) {
+				return new IntegerGreaterThanOrEqual((Tuple<Expr>) operands[0]);
+			}
+
+			@Override
+			public String toString() {
 				return " >= ";
 			}
 		}
 
 		// =========================================================================
-		// Arithmetic Expressions
+		// Integer Expressions
 		// =========================================================================
 
 		/**
 		 * Represents an arithmetic <i>addition expression</i> of the form
-		 * "<code>e1 + ... + en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 + ... + en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Addition extends InfixOperator {
-			public Addition(Expr... operands) {
-				super(EXPR_iadd, operands);
+		public static class IntegerAddition extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerAddition(Type type, Tuple<Expr> operands) {
+				super(EXPR_iadd, type, operands);
+			}
+
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			@Override
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new Addition(ArrayUtils.toArray(Expr.class, operands));
+				return new IntegerAddition((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public String toString() {
 				return " + ";
 			}
 		}
 
 		/**
 		 * Represents an arithmetic <i>subtraction expression</i> of the form
-		 * "<code>e1 - ... - en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 - ... - en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Subtraction extends InfixOperator {
-			public Subtraction(Expr... operands) {
-				super(EXPR_isub, operands);
+		public static class IntegerSubtraction extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerSubtraction(Type type, Tuple<Expr> operands) {
+				super(EXPR_isub, type, operands);
+			}
+
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			@Override
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new Subtraction(ArrayUtils.toArray(Expr.class, operands));
+				return new IntegerSubtraction((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public String toString() {
 				return " - ";
 			}
 		}
 
 		/**
 		 * Represents an arithmetic <i>multiplication expression</i> of the form
-		 * "<code>e1 * ... * en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 * ... * en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Multiplication extends InfixOperator {
-			public Multiplication(Expr... operands) {
-				super(EXPR_imul, operands);
+		public static class IntegerMultiplication extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerMultiplication(Type type, Tuple<Expr> operands) {
+				super(EXPR_imul, type, operands);
+			}
+
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			@Override
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new Multiplication(ArrayUtils.toArray(Expr.class, operands));
+				return new IntegerMultiplication((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public String toString() {
 				return " * ";
 			}
 		}
 
 		/**
 		 * Represents an arithmetic <i>division expression</i> of the form
-		 * "<code>e1 / ... / en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 / ... / en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Division extends InfixOperator {
-			public Division(Expr... operands) {
-				super(EXPR_idiv, operands);
+		public static class IntegerDivision extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerDivision(Type type, Tuple<Expr> operands) {
+				super(EXPR_idiv, type, operands);
+			}
+
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			@Override
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new Division(ArrayUtils.toArray(Expr.class, operands));
+				return new IntegerDivision((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public String toString() {
 				return " / ";
 			}
 		}
 
 		/**
 		 * Represents an arithmetic <i>remainder expression</i> of the form
-		 * "<code>e1 / ... / en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * "<code>e1 / ... / en</code>" where <code>e1</code> ... <code>en</code> are
+		 * the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Remainder extends InfixOperator {
-			public Remainder(Expr... operands) {
-				super(EXPR_irem, operands);
+		public static class IntegerRemainder extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerRemainder(Type type, Tuple<Expr> operands) {
+				super(EXPR_irem, type, operands);
+			}
+
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			@Override
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new Remainder(ArrayUtils.toArray(Expr.class, operands));
+				return new IntegerRemainder((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public String toString() {
 				return " % ";
 			}
 		}
 
 		/**
 		 * Represents an arithmetic <i>negation expression</i> of the form
-		 * "<code>-e</code>" where <code>e</code> is the <i>operand
-		 * expression</i>.
+		 * "<code>-e</code>" where <code>e</code> is the <i>operand expression</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Negation extends Operator {
-			public Negation(Expr operand) {
-				super(EXPR_ineg, operand);
+		public static class IntegerNegation extends AbstractSyntacticItem implements UnaryOperator {
+			public IntegerNegation(Type type, Expr operand) {
+				super(EXPR_ineg, type, operand);
 			}
 
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			@Override
 			public Expr getOperand() {
-				return getOperand(0);
+				return (Expr) get(1);
 			}
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length != 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new Negation((Expr) operands[0]);
+				return new IntegerNegation((Type) operands[0], (Expr) operands[1]);
 			}
 
 			@Override
@@ -2277,184 +2419,255 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		// =========================================================================
 
 		/**
-		 * Represents a <i>bitwise shift left</i> of the form
-		 * "<code>e << i</code>" where <code>e</code> is the expression being
-		 * shifted and <code>i</code> the amount it is shifted by.
+		 * Represents a <i>bitwise shift left</i> of the form "<code>e << i</code>"
+		 * where <code>e</code> is the expression being shifted and <code>i</code> the
+		 * amount it is shifted by.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class BitwiseShiftLeft extends InfixOperator {
-			public BitwiseShiftLeft(Expr lhs, Expr rhs) {
-						super(EXPR_bshl, lhs,rhs);
-					}
-
-			@Override
-			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length != 2) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new BitwiseShiftLeft((Expr) operands[0], (Expr) operands[1]);
+		public static class BitwiseShiftLeft extends AbstractSyntacticItem implements BinaryOperator {
+			public BitwiseShiftLeft(Type type, Expr lhs, Expr rhs) {
+				super(EXPR_bshl, type, lhs, rhs);
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			/**
+			 * Get the value operand to be shifted. That is <code>x</code> in
+			 * <code>x << i</code>.
+			 */
+			@Override
+			public Expr getFirstOperand() {
+				return (Expr) super.get(1);
+			}
+
+			/**
+			 * Get the operand indicating the amount to shift. That is <code>i</code> in
+			 * <code>x << i</code>.
+			 */
+			@Override
+			public Expr getSecondOperand() {
+				return (Expr) super.get(2);
+			}
+
+			@Override
+			public Expr clone(SyntacticItem[] operands) {
+				return new BitwiseShiftLeft((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+			}
+
+			@Override
+			public String toString() {
 				return " << ";
 			}
 		}
 
 		/**
-		 * Represents a <i>bitwise shift right</i> of the form
-		 * "<code>e >> i</code>" where <code>e</code> is the expression being
-		 * shifted and <code>i</code> the amount it is shifted by.
+		 * Represents a <i>bitwise shift right</i> of the form "<code>e >> i</code>"
+		 * where <code>e</code> is the expression being shifted and <code>i</code> the
+		 * amount it is shifted by.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class BitwiseShiftRight extends InfixOperator {
-			public BitwiseShiftRight(Expr lhs, Expr rhs) {
-						super(EXPR_bshr, lhs,rhs);
-					}
-
-			@Override
-			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length != 2) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new BitwiseShiftRight((Expr) operands[0], (Expr) operands[1]);
+		public static class BitwiseShiftRight extends AbstractSyntacticItem implements BinaryOperator {
+			public BitwiseShiftRight(Type type, Expr lhs, Expr rhs) {
+				super(EXPR_bshr, type, lhs, rhs);
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			/**
+			 * Get the value operand to be shifted. That is <code>x</code> in
+			 * <code>x >> i</code>.
+			 */
+			@Override
+			public Expr getFirstOperand() {
+				return (Expr) super.get(1);
+			}
+
+			/**
+			 * Get the operand indicating the amount to shift. That is <code>i</code> in
+			 * <code>x >> i</code>.
+			 */
+			@Override
+			public Expr getSecondOperand() {
+				return (Expr) super.get(2);
+			}
+
+			@Override
+			public Expr clone(SyntacticItem[] operands) {
+				return new BitwiseShiftRight((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
+			}
+
+			@Override
+			public String toString() {
 				return " >> ";
 			}
 		}
 
-
 		/**
-		 * Represents a <i>bitwise and</i> of the form
-		 * "<code>e1 & .. & en</code>" where <code>e1</code> ... <code>en</code>
-		 * are the <i>operand expressions</i>.
+		 * Represents a <i>bitwise and</i> of the form "<code>e1 & .. & en</code>" where
+		 * <code>e1</code> ... <code>en</code> are the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class BitwiseAnd extends InfixOperator {
-			public BitwiseAnd(Expr... operands) {
-						super(EXPR_band, operands);
-					}
-
-			@Override
-			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new BitwiseAnd(ArrayUtils.toArray(Expr.class, operands));
+		public static class BitwiseAnd extends AbstractSyntacticItem implements NaryOperator {
+			public BitwiseAnd(Type type, Tuple<Expr> operands) {
+				super(EXPR_band, type, operands);
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			@Override
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
+			}
+
+			@Override
+			public Expr clone(SyntacticItem[] operands) {
+				return new BitwiseAnd((Type) operands[0], (Tuple<Expr>) operands[1]);
+			}
+
+			@Override
+			public String toString() {
 				return " & ";
 			}
 		}
 
 		/**
-		 * Represents a <i>bitwise or</i> of the form
-		 * "<code>e1 | .. | en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * Represents a <i>bitwise or</i> of the form "<code>e1 | .. | en</code>" where
+		 * <code>e1</code> ... <code>en</code> are the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class BitwiseOr extends InfixOperator {
-			public BitwiseOr(Expr... operands) {
-				super(EXPR_bor, operands);
+		public static class BitwiseOr extends AbstractSyntacticItem implements NaryOperator {
+			public BitwiseOr(Type type, Tuple<Expr> operands) {
+				super(EXPR_bor, type, operands);
+			}
+
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			@Override
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new BitwiseOr(ArrayUtils.toArray(Expr.class, operands));
+				return new BitwiseOr((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
 			@Override
-			protected String getOperatorString() {
-				return " & ";
+			public String toString() {
+				return " | ";
 			}
 		}
 
 		/**
-		 * Represents a <i>bitwise xor</i> of the form
-		 * "<code>e1 ^ .. ^ en</code>" where <code>e1</code> ...
-		 * <code>en</code> are the <i>operand expressions</i>.
+		 * Represents a <i>bitwise xor</i> of the form "<code>e1 ^ .. ^ en</code>" where
+		 * <code>e1</code> ... <code>en</code> are the <i>operand expressions</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class BitwiseXor extends InfixOperator {
-			public BitwiseXor(Expr... operands) {
-				super(EXPR_bxor, operands);
+		public static class BitwiseXor extends AbstractSyntacticItem implements NaryOperator {
+			public BitwiseXor(Type type, Tuple<Expr> operands) {
+				super(EXPR_bxor, type, operands);
+			}
+
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			@Override
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length <= 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new BitwiseXor(ArrayUtils.toArray(Expr.class, operands));
+				return new BitwiseXor((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
 			@Override
-			protected String getOperatorString() {
+			public String toString() {
 				return " ^ ";
 			}
 		}
 
 		/**
-		 * Represents a <i>bitwise complement</i> of the form "<code>~e</code>"
-		 * where <code>e</code> is the <i>operand expression</i>.
+		 * Represents a <i>bitwise complement</i> of the form "<code>~e</code>" where
+		 * <code>e</code> is the <i>operand expression</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class BitwiseComplement extends Operator {
-			public BitwiseComplement(Expr operand) {
-				super(EXPR_bnot, operand);
+		public static class BitwiseComplement extends AbstractSyntacticItem implements UnaryOperator {
+			public BitwiseComplement(Type type, Expr operand) {
+				super(EXPR_bnot, type, operand);
 			}
 
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			/**
+			 * Get the operand to be complimented. That is,
+			 * <code>e<code> in </code>!e</code>.
+			 */
+			@Override
 			public Expr getOperand() {
-				return getOperand(0);
+				return (Expr) super.get(1);
 			}
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length != 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new BitwiseComplement((Expr) operands[0]);
+				return new BitwiseComplement((Type) operands[0], (Expr) operands[1]);
 			}
 		}
 
 		// =========================================================================
 		// Reference Expressions
 		// =========================================================================
-		public static class Dereference extends Operator implements LVal {
-			public Dereference(Expr operand) {
-				super(EXPR_pread, operand);
+		public static class Dereference extends AbstractSyntacticItem implements LVal, UnaryOperator {
+			public Dereference(Type type, Expr operand) {
+				super(EXPR_pread, type, operand);
 			}
 
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			/**
+			 * Get the operand to be dereferenced. That is,
+			 * <code>e<code> in </code>*e</code>.
+			 */
+			@Override
 			public Expr getOperand() {
-				return getOperand(0);
+				return (Expr) super.get(1);
 			}
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length != 1) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new Dereference((Expr) operands[0]);
+				return new Dereference((Type) operands[0], (Expr) operands[1]);
 			}
 
 			@Override
@@ -2463,50 +2676,69 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		}
 
-		public static class New extends AbstractSyntacticItem implements LVal {
-			public New(Expr operand, Identifier lifetime) {
-				super(EXPR_pinit, operand, lifetime);
+		public static class New extends AbstractSyntacticItem implements LVal, UnaryOperator {
+			public New(Type type, Expr operand, Identifier lifetime) {
+				super(EXPR_pinit, type, operand, lifetime);
 			}
 
-			public Expr getValue() {
-				return (Expr) super.getOperand(0);
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			/**
+			 * Get the operand to be evaluated and stored in the heap. That is,
+			 * <code>e<code> in </code>new e</code>.
+			 */
+			@Override
+			public Expr getOperand() {
+				return (Expr) super.get(1);
 			}
 
 			public Identifier getLifetime() {
-				return (Identifier) super.getOperand(1);
+				return (Identifier) super.get(2);
 			}
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				if (operands.length != 2) {
-					throw new IllegalArgumentException("invalid number of operands");
-				}
-				return new New((Expr) operands[0], (Identifier) operands[1]);
+				return new New((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
 			}
 
 			@Override
 			public String toString() {
-				return "new " + getValue();
+				return "new " + getOperand();
 			}
 		}
 
 		public static class LambdaAccess extends AbstractSyntacticItem implements Expr {
 
-			public LambdaAccess(Name name, Tuple<Type> parameters, Type.Callable descriptor) {
-				super(EXPR_lread, name, parameters, descriptor);
+			public LambdaAccess(Name name, Tuple<Type> parameters, Type.Callable signature) {
+				super(EXPR_lread, name, parameters, signature);
+			}
+
+			@Override
+			public Type getType() {
+				Tuple<Type> returns = getSignature().getReturns();
+				// NOTE: if this method is called then it is assumed to be in a position which
+				// requires exactly one return type. Anything else is an error which should have
+				// been caught earlier in the pipeline.
+				if (returns.size() != 1) {
+					throw new IllegalArgumentException();
+				}
+				return returns.get(0);
 			}
 
 			public Name getName() {
-				return (Name) getOperand(0);
+				return (Name) get(0);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getParameterTypes() {
-				return (Tuple<Type>) getOperand(1);
+				return (Tuple<Type>) get(1);
 			}
 
 			public Type.Callable getSignature() {
-				return (Type.Callable) getOperand(2);
+				return (Type.Callable) get(2);
 			}
 
 			public void setSignature(Type.Callable descriptor) {
@@ -2526,94 +2758,139 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents an <i>array access expression</i> of the form
-		 * "<code>arr[e]</code>" where <code>arr</code> is the <i>source
-		 * array</i> and <code>e</code> the <i>subscript expression</i>. This
-		 * returns the value held in the element determined by <code>e</code>.
+		 * "<code>arr[e]</code>" where <code>arr</code> is the <i>source array</i> and
+		 * <code>e</code> the <i>subscript expression</i>. This returns the value held
+		 * in the element determined by <code>e</code>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class ArrayAccess extends Expr.Operator implements LVal {
-			public ArrayAccess(Expr src, Expr index) {
-				super(EXPR_aread, src, index);
+		public static class ArrayAccess extends AbstractSyntacticItem implements LVal, BinaryOperator {
+			public ArrayAccess(Type type, Expr src, Expr index) {
+				super(EXPR_aread, type, src, index);
 			}
 
-			public Expr getSource() {
-				return (Expr) getOperand(0);
+			@Override
+			public Type getType() {
+				return (Type) get(0);
 			}
 
-			public Expr getSubscript() {
-				return (Expr) getOperand(1);
+			/**
+			 * Get the source array operand for this access. That is <code>xs</code> in
+			 * <code>xs[i]</code>.
+			 */
+			@Override
+			public Expr getFirstOperand() {
+				return (Expr) get(1);
+			}
+
+			/**
+			 * Get the index operand for this access. That is <code>i</code> in
+			 * <code>xs[i]</code>.
+			 */
+			@Override
+			public Expr getSecondOperand() {
+				return (Expr) get(2);
 			}
 
 			@Override
 			public ArrayAccess clone(SyntacticItem[] operands) {
-				return new ArrayAccess((Expr) operands[0], (Expr) operands[1]);
+				return new ArrayAccess((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 
 			@Override
 			public String toString() {
-				return getSource() + "[" + getSubscript() + "]";
+				return getFirstOperand() + "[" + getSecondOperand() + "]";
 			}
+
 		}
 
 		/**
 		 * Represents an <i>array update expression</i> of the form
-		 * "<code>arr[e1:=e2]</code>" where <code>arr</code> is the <i>source
-		 * array</i>, <code>e1</code> the <i>subscript expression</i> and
-		 * <code>e2</code> is the value expression. This returns a new array
-		 * which is equivalent to <code>arr</code> but where the element
-		 * determined by <code>e1</code> has the value resulting from
-		 * <code>e2</code>.
+		 * "<code>arr[e1:=e2]</code>" where <code>arr</code> is the <i>source array</i>,
+		 * <code>e1</code> the <i>subscript expression</i> and <code>e2</code> is the
+		 * value expression. This returns a new array which is equivalent to
+		 * <code>arr</code> but where the element determined by <code>e1</code> has the
+		 * value resulting from <code>e2</code>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class ArrayUpdate extends Expr.Operator {
-			public ArrayUpdate(Expr src, Expr index, Expr value) {
-				super(EXPR_awrite, src, index, value);
+		public static class ArrayUpdate extends AbstractSyntacticItem implements Expr, TernaryOperator {
+			public ArrayUpdate(Type type, Expr src, Expr index, Expr value) {
+				super(EXPR_awrite, type, src, index, value);
 			}
 
-			public Expr getSource() {
-				return (Expr) getOperand(0);
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
 			}
 
-			public Expr getSubscript() {
-				return (Expr) getOperand(1);
+			/**
+			 * Get the source array operand for this update. That is <code>xs</code> in
+			 * <code>xs[i:=v]</code>.
+			 */
+			@Override
+			public Expr getFirstOperand() {
+				return (Expr) get(1);
 			}
 
-			public Expr getValue() {
-				return (Expr) getOperand(2);
+			/**
+			 * Get the index operand for this update.  That is <code>i</code> in
+			 * <code>xs[i:=v]</code>.
+			 */
+			@Override
+			public Expr getSecondOperand() {
+				return (Expr) get(2);
+			}
+
+			/**
+			 * Get the value operand of this update. That is <code>v</code> in
+			 * <code>xs[i:=v]</code>.
+			 */
+			@Override
+			public Expr getThirdOperand() {
+				return (Expr) get(3);
 			}
 
 			@Override
 			public ArrayUpdate clone(SyntacticItem[] operands) {
-				return new ArrayUpdate((Expr) operands[0], (Expr) operands[1], (Expr) operands[2]);
+				return new ArrayUpdate((Type) operands[0], (Expr) operands[1], (Expr) operands[2], (Expr) operands[3]);
 			}
 
 			@Override
 			public String toString() {
-				return getSource() + "[" + getSubscript() + ":=" + getValue() + "]";
+				return getFirstOperand() + "[" + getSecondOperand() + ":=" + getThirdOperand() + "]";
 			}
 		}
 
 		/**
 		 * Represents an <i>array initialiser expression</i> of the form
-		 * "<code>[e1,...,en]</code>" where <code>e1</code> ... <code>en</code>
-		 * are the <i>initialiser expressions</i>. Thus returns a new array made
-		 * up from those values resulting from the initialiser expressions.
+		 * "<code>[e1,...,en]</code>" where <code>e1</code> ... <code>en</code> are the
+		 * <i>initialiser expressions</i>. Thus returns a new array made up from those
+		 * values resulting from the initialiser expressions.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class ArrayInitialiser extends Expr.Operator {
-			public ArrayInitialiser(Expr... elements) {
-				super(EXPR_ainit, elements);
+		public static class ArrayInitialiser extends AbstractSyntacticItem implements NaryOperator {
+			public ArrayInitialiser(Type type, Tuple<Expr> elements) {
+				super(EXPR_ainit, type, elements);
+			}
+
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			@Override
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(1);
 			}
 
 			@Override
 			public ArrayInitialiser clone(SyntacticItem[] operands) {
-				return new ArrayInitialiser(ArrayUtils.toArray(Expr.class, operands));
+				return new ArrayInitialiser((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
 			@Override
@@ -2624,88 +2901,122 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents an <i>array generator expression</i> of the form
-		 * "<code>[e1;e2]</code>" where <code>e1</code> is the <i>element
-		 * expression</i> and <code>e2</code> is the <i>length expression</i>.
-		 * This returns a new array whose length is determined by
-		 * <code>e2</code> and where every element has contains the value
-		 * determined by <code>e1</code>.
+		 * "<code>[e1;e2]</code>" where <code>e1</code> is the <i>element expression</i>
+		 * and <code>e2</code> is the <i>length expression</i>. This returns a new array
+		 * whose length is determined by <code>e2</code> and where every element has
+		 * contains the value determined by <code>e1</code>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class ArrayGenerator extends Expr.Operator {
-			public ArrayGenerator(Expr value, Expr length) {
-				super(EXPR_agen, value, length);
+		public static class ArrayGenerator extends AbstractSyntacticItem implements BinaryOperator {
+			public ArrayGenerator(Type type, Expr value, Expr length) {
+				super(EXPR_agen, type, value, length);
 			}
 
-			public Expr getValue() {
-				return (Expr) getOperand(0);
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
 			}
 
-			public Expr getLength() {
-				return (Expr) getOperand(1);
+			/**
+			 * Get the value operand for this generator. That is <code>e</code> in
+			 * <code>[e; n]</code>.
+			 */
+			@Override
+			public Expr getFirstOperand() {
+				return (Expr) get(1);
+			}
+
+			/**
+			 * Get the length operand for this generator. That is <code>n</code> in
+			 * <code>[e; n]</code>.
+			 */
+			@Override
+			public Expr getSecondOperand() {
+				return (Expr) get(2);
 			}
 
 			@Override
 			public ArrayGenerator clone(SyntacticItem[] operands) {
-				return new ArrayGenerator((Expr) operands[0], (Expr) operands[1]);
+				return new ArrayGenerator((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 		}
 
 		/**
 		 * Represents an <i>array range expression</i> of the form
-		 * "<code>e1 .. e2</code>" where <code>e1</code> is the start of the
-		 * range and <code>e2</code> the end. Thus returns a new array made up
-		 * from those values between start and end (but not including the end).
+		 * "<code>e1 .. e2</code>" where <code>e1</code> is the start of the range and
+		 * <code>e2</code> the end. Thus returns a new array made up from those values
+		 * between start and end (but not including the end).
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class ArrayRange extends Expr.Operator {
-			public ArrayRange(Expr start, Expr end) {
-				super(EXPR_arange, start, end);
+		public static class ArrayRange extends AbstractSyntacticItem implements BinaryOperator {
+			public ArrayRange(Type type, Expr start, Expr end) {
+				super(EXPR_arange, type, start, end);
 			}
 
-			public Expr getStart() {
-				return (Expr) super.getOperand(0);
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
 			}
 
-			public Expr getEnd() {
-				return (Expr) super.getOperand(1);
+			/**
+			 * Get the starting operand for this range. That is <code>s</code> in
+			 * <code>s..e</code>.  This determines the first element of the resulting range.
+			 */
+			@Override
+			public Expr getFirstOperand() {
+				return (Expr) super.get(1);
+			}
+
+			/**
+			 * Get the ending operand for this range. That is <code>e</code> in
+			 * <code>s..e</code>. The range extends up to (but not including) this value.
+			 */
+			@Override
+			public Expr getSecondOperand() {
+				return (Expr) super.get(2);
 			}
 
 			@Override
 			public ArrayRange clone(SyntacticItem[] operands) {
-				return new ArrayRange((Expr) operands[0], (Expr) operands[1]);
+				return new ArrayRange((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 		}
 
 		/**
-		 * Represents an <i>array length expression</i> of the form
-		 * "<code>|arr|</code>" where <code>arr</code> is the <i>source
-		 * array</i>. This simply returns the length of array <code>arr</code>.
-		 * <code>e</code>.
+		 * Represents an <i>array length expression</i> of the form "<code>|arr|</code>"
+		 * where <code>arr</code> is the <i>source array</i>. This simply returns the
+		 * length of array <code>arr</code>. <code>e</code>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class ArrayLength extends Expr.Operator {
-			public ArrayLength(Expr src) {
-				super(EXPR_alen, src);
+		public static class ArrayLength extends AbstractSyntacticItem implements Expr.UnaryOperator {
+			public ArrayLength(Type type, Expr src) {
+				super(EXPR_alen, type, src);
 			}
 
-			public Expr getSource() {
-				return (Expr) getOperand(0);
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			@Override
+			public Expr getOperand() {
+				return (Expr) super.get(1);
 			}
 
 			@Override
 			public ArrayLength clone(SyntacticItem[] operands) {
-				return new ArrayLength((Expr) operands[0]);
+				return new ArrayLength((Type) operands[0], (Expr) operands[1]);
 			}
 
 			@Override
 			public String toString() {
-				return "|" + getSource() + "|";
+				return "|" + getOperand() + "|";
 			}
 		}
 
@@ -2714,102 +3025,144 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		// =========================================================================
 
 		/**
-		 * Represents a <i>record access expression</i> of the form
-		 * "<code>rec.f</code>" where <code>rec</code> is the <i>source
-		 * record</i> and <code>f</code> is the <i>field</i>.
+		 * Represents a <i>record access expression</i> of the form "<code>rec.f</code>"
+		 * where <code>rec</code> is the <i>source record</i> and <code>f</code> is the
+		 * <i>field</i>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class RecordAccess extends AbstractSyntacticItem implements LVal {
-			public RecordAccess(Expr lhs, Identifier rhs) {
-				super(EXPR_rread, lhs, rhs);
+		public static class RecordAccess extends AbstractSyntacticItem implements LVal, UnaryOperator {
+			public RecordAccess(Type type, Expr lhs, Identifier rhs) {
+				super(EXPR_rread, type, lhs, rhs);
 			}
 
-			public Expr getSource() {
-				return (Expr) getOperand(0);
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
 			}
 
+			/**
+			 * Get the source operand for this access. That is <code>e</code> in
+			 * <code>e.f/code>.
+			 */
+			@Override
+			public Expr getOperand() {
+				return (Expr) get(1);
+			}
+
+			/**
+			 * Get the field name for this access. That is <code>f</code> in
+			 * <code>e.f/code>.
+			 */
 			public Identifier getField() {
-				return (Identifier) getOperand(1);
+				return (Identifier) get(2);
 			}
 
 			@Override
 			public RecordAccess clone(SyntacticItem[] operands) {
-				return new RecordAccess((Expr) operands[0], (Identifier) operands[1]);
+				return new RecordAccess((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
 			}
 
 			@Override
 			public String toString() {
-				return getSource() + "." + getField();
+				return getOperand() + "." + getField();
 			}
 		}
 
 		/**
 		 * Represents a <i>record initialiser</i> expression of the form
 		 * <code>{ f1: e1, ..., fn: en }</code> where <code>f1: e1</code> ...
-		 * <code>fn: en</code> are <i>field initialisers</code>. This returns a
-		 * new record where each field holds the value resulting from its
-		 * corresponding expression.
+		 * <code>fn: en</code> are <i>field initialisers</code>. This returns a new
+		 * record where each field holds the value resulting from its corresponding
+		 * expression.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class RecordInitialiser extends AbstractSyntacticItem implements Expr {
-			@SafeVarargs
-			public RecordInitialiser(Pair<Identifier, Expr>... fields) {
-				super(EXPR_rinit, fields);
+		public static class RecordInitialiser extends AbstractSyntacticItem implements Expr, NaryOperator {
+
+			public RecordInitialiser(Type type, Tuple<Identifier> fields, Tuple<Expr> operands) {
+				super(EXPR_rinit, type, fields, operands);
 			}
 
-			@SuppressWarnings("unchecked")
 			@Override
-			public Pair<Identifier, Expr> getOperand(int i) {
-				return (Pair<Identifier,Expr>) super.getOperand(i);
+			public Type getType() {
+				return (Type) super.get(0);
+			}
+
+			public Tuple<Identifier> getFields() {
+				return (Tuple<Identifier>) super.get(1);
+			}
+
+			@Override
+			public Tuple<Expr> getOperands() {
+				return (Tuple<Expr>) super.get(2);
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public RecordInitialiser clone(SyntacticItem[] operands) {
-				return new RecordInitialiser(ArrayUtils.toArray(Pair.class, operands));
+				return new RecordInitialiser((Type) operands[0], (Tuple<Identifier>) operands[1], (Tuple<Expr>) operands[2]);
 			}
 		}
 
 		/**
 		 * Represents a <i>record update expression</i> of the form
-		 * "<code>rec[f:=e]</code>" where <code>rec</code> is the <i>source
-		 * record</i>, <code>f</code> is the <i>field</i> and <code>e</code> is
-		 * the <i>value expression</i>. This returns a new record which is
-		 * equivalent to <code>rec</code> but where the element in field
-		 * <code>f</code> has the value resulting from <code>e</code>.
+		 * "<code>e[f:=v]</code>" where <code>e</code> is the <i>source operand</i>,
+		 * <code>f</code> is the <i>field</i> and <code>v</code> is the <i>value
+		 * operand</i>. This returns a new record which is equivalent to <code>e</code>
+		 * but where the element in field <code>f</code> has the value resulting from
+		 * <code>v</code>.
 		 *
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class RecordUpdate extends AbstractSyntacticItem implements Expr {
-			public RecordUpdate(Expr lhs, Identifier mhs, Expr rhs) {
-				super(EXPR_rwrite, lhs, mhs, rhs);
+		public static class RecordUpdate extends AbstractSyntacticItem implements Expr, BinaryOperator {
+			public RecordUpdate(Type type, Expr lhs, Identifier mhs, Expr rhs) {
+				super(EXPR_rwrite, type, lhs, mhs, rhs);
 			}
 
-			public Expr getSource() {
-				return (Expr) getOperand(0);
+			@Override
+			public Type getType() {
+				return (Type) super.get(0);
 			}
 
+			/**
+			 * Get the source operand for this update. That is <code>e</code> in
+			 * <code>e[f:=v]/code>.
+			 */
+			@Override
+			public Expr getFirstOperand() {
+				return (Expr) get(1);
+			}
+
+			/**
+			 * Get the field name for this update. That is <code>f</code> in
+			 * <code>e[f:=v]/code>.
+			 */
 			public Identifier getField() {
-				return (Identifier) getOperand(1);
+				return (Identifier) get(2);
 			}
 
-			public Expr getValue() {
-				return (Expr) getOperand(2);
+			/**
+			 * Get the value operand for this update. That is <code>v</code> in
+			 * <code>e[f:=v]/code>.
+			 */
+			@Override
+			public Expr getSecondOperand() {
+				return (Expr) get(3);
 			}
 
 			@Override
 			public RecordUpdate clone(SyntacticItem[] operands) {
-				return new RecordUpdate((Expr) operands[0], (Identifier) operands[1], (Expr) operands[2]);
+				return new RecordUpdate((Type) operands[0], (Expr) operands[1], (Identifier) operands[2],
+						(Expr) operands[3]);
 			}
 
 			@Override
 			public String toString() {
-				return getSource() + "{" + getField() + ":=" + getValue() + "}";
+				return getFirstOperand() + "{" + getField() + ":=" + getSecondOperand() + "}";
 			}
 		}
 	}
@@ -2835,10 +3188,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents the set of all functions, methods and properties. These
-		 * are values which can be called using an indirect invoke expression.
-		 * Each function or method accepts zero or more parameters and will
-		 * produce zero or more returns.
+		 * Represents the set of all functions, methods and properties. These are values
+		 * which can be called using an indirect invoke expression. Each function or
+		 * method accepts zero or more parameters and will produce zero or more returns.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2851,9 +3203,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * The type <code>any</code> represents the type whose variables may
-		 * hold any possible value. <b>NOTE:</b> the any type is top in the type
-		 * lattice.
+		 * The type <code>any</code> represents the type whose variables may hold any
+		 * possible value. <b>NOTE:</b> the any type is top in the type lattice.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2875,12 +3226,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * A void type represents the type whose variables cannot exist! That
-		 * is, they cannot hold any possible value. Void is used to represent
-		 * the return type of a function which does not return anything.
-		 * However, it is also used to represent the element type of an empty
-		 * list of set. <b>NOTE:</b> the void type is a subtype of everything;
-		 * that is, it is bottom in the type lattice.
+		 * A void type represents the type whose variables cannot exist! That is, they
+		 * cannot hold any possible value. Void is used to represent the return type of
+		 * a function which does not return anything. However, it is also used to
+		 * represent the element type of an empty list of set. <b>NOTE:</b> the void
+		 * type is a subtype of everything; that is, it is bottom in the type lattice.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2902,14 +3252,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * The null type is a special type which should be used to show the
-		 * absence of something. It is distinct from void, since variables can
-		 * hold the special <code>null</code> value (where as there is no
-		 * special "void" value). With all of the problems surrounding
-		 * <code>null</code> and <code>NullPointerException</code>s in languages
-		 * like Java and C, it may seem that this type should be avoided.
-		 * However, it remains a very useful abstraction to have around and, in
-		 * Whiley, it is treated in a completely safe manner (unlike e.g. Java).
+		 * The null type is a special type which should be used to show the absence of
+		 * something. It is distinct from void, since variables can hold the special
+		 * <code>null</code> value (where as there is no special "void" value). With all
+		 * of the problems surrounding <code>null</code> and
+		 * <code>NullPointerException</code>s in languages like Java and C, it may seem
+		 * that this type should be avoided. However, it remains a very useful
+		 * abstraction to have around and, in Whiley, it is treated in a completely safe
+		 * manner (unlike e.g. Java).
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2953,11 +3303,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents a sequence of 8 bits. Note that, unlike many languages,
-		 * there is no representation associated with a byte. For example, to
-		 * extract an integer value from a byte, it must be explicitly decoded
-		 * according to some representation (e.g. two's compliment) using an
-		 * auxillary function (e.g. <code>Byte.toInt()</code>).
+		 * Represents a sequence of 8 bits. Note that, unlike many languages, there is
+		 * no representation associated with a byte. For example, to extract an integer
+		 * value from a byte, it must be explicitly decoded according to some
+		 * representation (e.g. two's compliment) using an auxillary function (e.g.
+		 * <code>Byte.toInt()</code>).
 		 *
 		 * @author David J. Pearce
 		 *
@@ -2979,10 +3329,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents the set of (unbound) integer values. Since integer types
-		 * in Whiley are unbounded, there is no equivalent to Java's
-		 * <code>MIN_VALUE</code> and <code>MAX_VALUE</code> for
-		 * <code>int</code> types.
+		 * Represents the set of (unbound) integer values. Since integer types in Whiley
+		 * are unbounded, there is no equivalent to Java's <code>MIN_VALUE</code> and
+		 * <code>MAX_VALUE</code> for <code>int</code> types.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -3010,9 +3359,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * ArrayType ::= Type '[' ']'
 		 * </pre>
 		 *
-		 * An array type describes array values whose elements are subtypes of
-		 * the element type. For example, <code>[1,2,3]</code> is an instance of
-		 * array type <code>int[]</code>; however, <code>[false]</code> is not.
+		 * An array type describes array values whose elements are subtypes of the
+		 * element type. For example, <code>[1,2,3]</code> is an instance of array type
+		 * <code>int[]</code>; however, <code>[false]</code> is not.
 		 *
 		 * @return
 		 */
@@ -3022,7 +3371,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Type getElement() {
-				return (Type) getOperand(0);
+				return (Type) get(0);
 			}
 
 			@Override
@@ -3032,7 +3381,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public String toString() {
-				return braceAsNecessary(getElement()) +"[]";
+				return braceAsNecessary(getElement()) + "[]";
 			}
 		}
 
@@ -3044,8 +3393,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * </pre>
 		 *
 		 * Represents a reference to an object in Whiley. For example,
-		 * <code>&this:int</code> is the type of a reference to a location
-		 * allocated in the enclosing scope which holds an integer value.
+		 * <code>&this:int</code> is the type of a reference to a location allocated in
+		 * the enclosing scope which holds an integer value.
 		 *
 		 * @return
 		 */
@@ -3053,6 +3402,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			public Reference(Type element) {
 				super(TYPE_reference, element);
 			}
+
 			public Reference(Type element, Identifier lifetime) {
 				super(TYPE_reference, element, lifetime);
 			}
@@ -3062,16 +3412,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Type getElement() {
-				return (Type) getOperand(0);
+				return (Type) get(0);
 			}
 
 			public Identifier getLifetime() {
-				return (Identifier) getOperand(1);
+				return (Identifier) get(1);
 			}
 
 			@Override
 			public Reference clone(SyntacticItem[] operands) {
-				if(operands.length == 1) {
+				if (operands.length == 1) {
 					return new Reference((Type) operands[0]);
 				} else {
 					return new Reference((Type) operands[0], (Identifier) operands[1]);
@@ -3096,10 +3446,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * RecordType ::= '{' Type Identifier (',' Type Identifier)* [ ',' "..." ] '}'
 		 * </pre>
 		 *
-		 * A record is made up of a number of fields, each of which has a unique
-		 * name. Each field has a corresponding type. One can think of a record
-		 * as a special kind of "fixed" map (i.e. where we know exactly which
-		 * entries we have).
+		 * A record is made up of a number of fields, each of which has a unique name.
+		 * Each field has a corresponding type. One can think of a record as a special
+		 * kind of "fixed" map (i.e. where we know exactly which entries we have).
 		 *
 		 * @return
 		 */
@@ -3117,19 +3466,19 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public boolean isOpen() {
-				Value.Bool flag = (Value.Bool) getOperand(0);
+				Value.Bool flag = (Value.Bool) get(0);
 				return flag.get();
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Decl.Variable> getFields() {
-				return (Tuple<Decl.Variable>) getOperand(1);
+				return (Tuple<Decl.Variable>) get(1);
 			}
 
 			public Type getField(Identifier fieldName) {
 				Tuple<Decl.Variable> fields = getFields();
 				for (int i = 0; i != fields.size(); ++i) {
-					Decl.Variable vd = fields.getOperand(i);
+					Decl.Variable vd = fields.get(i);
 					Identifier declaredFieldName = vd.getName();
 					if (declaredFieldName.equals(fieldName)) {
 						return vd.getType();
@@ -3151,7 +3500,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 					if (i != 0) {
 						r += ",";
 					}
-					Decl.Variable field = fields.getOperand(i);
+					Decl.Variable field = fields.get(i);
 					r += field.getType() + " " + field.getName();
 				}
 				if (isOpen()) {
@@ -3172,10 +3521,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * NominalType ::= Identifier ('.' Identifier)*
 		 * </pre>
 		 *
-		 * A nominal type specifies the name of a type defined elsewhere. In
-		 * some cases, this type can be expanded (or "inlined"). However,
-		 * visibility modifiers can prevent this and, thus, give rise to true
-		 * nominal types.
+		 * A nominal type specifies the name of a type defined elsewhere. In some cases,
+		 * this type can be expanded (or "inlined"). However, visibility modifiers can
+		 * prevent this and, thus, give rise to true nominal types.
 		 *
 		 * @return
 		 */
@@ -3186,7 +3534,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Name getName() {
-				return (Name) getOperand(0);
+				return (Name) get(0);
 			}
 
 			public void setName(Name name) {
@@ -3211,10 +3559,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * ReferenceType ::= '!' Type
 		 * </pre>
 		 *
-		 * Represents the set of types which are not in a given type. For
-		 * example, <code>!int</code> is the set of all values which are not
-		 * integers. Thus, for example, the type <code>bool</code> is a subtype
-		 * of <code>!int</code> .
+		 * Represents the set of types which are not in a given type. For example,
+		 * <code>!int</code> is the set of all values which are not integers. Thus, for
+		 * example, the type <code>bool</code> is a subtype of <code>!int</code> .
 		 *
 		 * @return
 		 */
@@ -3224,7 +3571,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			public Type getElement() {
-				return (Type) getOperand(0);
+				return (Type) get(0);
 			}
 
 			@Override
@@ -3244,13 +3591,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 
 			@Override
-			public Type getOperand(int i) {
-				return (Type) super.getOperand(i);
+			public Type get(int i) {
+				return (Type) super.get(i);
 			}
 
 			@Override
-			public Type[] getOperands() {
-				return (Type[]) super.getOperands();
+			public Type[] getAll() {
+				return (Type[]) super.getAll();
 			}
 		}
 
@@ -3262,15 +3609,14 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * </pre>
 		 *
 		 * Union types are used to compose types together. For example, the type
-		 * <code>int|null</code> represents the type which is either an
-		 * <code>int</code> or <code>null</code>.
+		 * <code>int|null</code> represents the type which is either an <code>int</code>
+		 * or <code>null</code>.
 		 *
-		 * Represents the union of one or more types together. For example, the
-		 * union of <code>int</code> and <code>null</code> is
-		 * <code>int|null</code>. Any variable of this type may hold any integer
-		 * or the null value. Furthermore, the types <code>int</code> and
-		 * <code>null</code> are collectively referred to as the "bounds" of
-		 * this type.
+		 * Represents the union of one or more types together. For example, the union of
+		 * <code>int</code> and <code>null</code> is <code>int|null</code>. Any variable
+		 * of this type may hold any integer or the null value. Furthermore, the types
+		 * <code>int</code> and <code>null</code> are collectively referred to as the
+		 * "bounds" of this type.
 		 *
 		 * @return
 		 */
@@ -3291,7 +3637,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 					if (i != 0) {
 						r += "|";
 					}
-					r += getOperand(i);
+					r += get(i);
 				}
 				return "(" + r + ")";
 			}
@@ -3304,15 +3650,15 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * IntersectionType ::= BaseType ('&' BaseType)*
 		 * </pre>
 		 *
-		 * Intersection types are used to unify types together. For example, the
-		 * type <code>{int x, int y}&MyType</code> represents the type which is
-		 * both an instanceof of <code>{int x, int y}</code> and an instance of
+		 * Intersection types are used to unify types together. For example, the type
+		 * <code>{int x, int y}&MyType</code> represents the type which is both an
+		 * instanceof of <code>{int x, int y}</code> and an instance of
 		 * <code>MyType</code>.
 		 *
-		 * Represents the intersection of one or more types together. For
-		 * example, the intersection of <code>T1</code> and <code>T2</code> is
-		 * <code>T1&T2</code>. Furthermore, any variable of this type must be
-		 * both an instanceof <code>T1</code> and an instanceof <code>T2</code>.
+		 * Represents the intersection of one or more types together. For example, the
+		 * intersection of <code>T1</code> and <code>T2</code> is <code>T1&T2</code>.
+		 * Furthermore, any variable of this type must be both an instanceof
+		 * <code>T1</code> and an instanceof <code>T2</code>.
 		 *
 		 * @return
 		 */
@@ -3333,7 +3679,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 					if (i != 0) {
 						r += "&";
 					}
-					r += getOperand(i);
+					r += get(i);
 				}
 				return "(" + r + ")";
 			}
@@ -3341,10 +3687,9 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents the set of all function values. These are pure functions,
-		 * sometimes also called "mathematical" functions. A function cannot
-		 * have any side-effects and must always return the same values given
-		 * the same inputs. A function cannot have zero returns, since this
-		 * would make it a no-operation.
+		 * sometimes also called "mathematical" functions. A function cannot have any
+		 * side-effects and must always return the same values given the same inputs. A
+		 * function cannot have zero returns, since this would make it a no-operation.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -3363,13 +3708,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getParameters() {
-				return (Tuple<Type>) getOperand(0);
+				return (Tuple<Type>) get(0);
 			}
 
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getReturns() {
-				return (Tuple<Type>) getOperand(1);
+				return (Tuple<Type>) get(1);
 			}
 
 			@Override
@@ -3379,12 +3724,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		/**
-		 * Represents the set of all method values. These are impure and may
-		 * have side-effects (e.g. performing I/O, updating non-local state,
-		 * etc). A method may have zero returns and, in such case, the effect of
-		 * a method comes through other side-effects. Methods may also have
-		 * captured lifetime arguments, and may themselves declare lifetime
-		 * arguments.
+		 * Represents the set of all method values. These are impure and may have
+		 * side-effects (e.g. performing I/O, updating non-local state, etc). A method
+		 * may have zero returns and, in such case, the effect of a method comes through
+		 * other side-effects. Methods may also have captured lifetime arguments, and
+		 * may themselves declare lifetime arguments.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -3393,29 +3737,29 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			public Method(Tuple<Type> parameters, Tuple<Type> returns, Tuple<Identifier> captures,
 					Tuple<Identifier> lifetimes) {
-				super(TYPE_method, new SyntacticItem[] {parameters, returns, captures, lifetimes});
+				super(TYPE_method, new SyntacticItem[] { parameters, returns, captures, lifetimes });
 			}
 
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getParameters() {
-				return (Tuple<Type>) getOperand(0);
+				return (Tuple<Type>) get(0);
 			}
 
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getReturns() {
-				return (Tuple<Type>) getOperand(1);
+				return (Tuple<Type>) get(1);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getCapturedLifetimes() {
-				return (Tuple<Identifier>) getOperand(2);
+				return (Tuple<Identifier>) get(2);
 			}
 
 			@SuppressWarnings("unchecked")
 			public Tuple<Identifier> getLifetimeParameters() {
-				return (Tuple<Identifier>) getOperand(3);
+				return (Tuple<Identifier>) get(3);
 			}
 
 			@Override
@@ -3433,8 +3777,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 		/**
 		 * Represents the set of all proeprty values. These are pure predicates,
-		 * sometimes also called "mathematical" functions. A property cannot
-		 * have any side-effects and always returns the boolean true.
+		 * sometimes also called "mathematical" functions. A property cannot have any
+		 * side-effects and always returns the boolean true.
 		 *
 		 * @author David J. Pearce
 		 *
@@ -3451,13 +3795,13 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getParameters() {
-				return (Tuple<Type>) getOperand(0);
+				return (Tuple<Type>) get(0);
 			}
 
 			@Override
 			@SuppressWarnings("unchecked")
 			public Tuple<Type> getReturns() {
-				return (Tuple<Type>) getOperand(1);
+				return (Tuple<Type>) get(1);
 			}
 
 			@SuppressWarnings("unchecked")
@@ -3511,16 +3855,16 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 	 * <code>public</code> or <code>private</code>.
 	 * </p>
 	 * <p>
-	 * The modifiers <code>native</code> and <code>export</code> are used to
-	 * enable inter-operation with other languages. By declaring a function or
-	 * method as <code>native</code> you are signaling that its implementation
-	 * is provided elsewhere (e.g. it's implemented in Java code directly). By
-	 * marking a function or method with <code>export</code>, you are declaring
-	 * that external code may call it. For example, you have some Java code that
-	 * needs to call it. The modifier is required because, by default, all the
-	 * names of all methods and functions are <i>mangled</i> to include type
-	 * information and enable overloading. Therefore, a method/function marked
-	 * with <code>export</code> will generate a function without name mangling.
+	 * The modifiers <code>native</code> and <code>export</code> are used to enable
+	 * inter-operation with other languages. By declaring a function or method as
+	 * <code>native</code> you are signaling that its implementation is provided
+	 * elsewhere (e.g. it's implemented in Java code directly). By marking a
+	 * function or method with <code>export</code>, you are declaring that external
+	 * code may call it. For example, you have some Java code that needs to call it.
+	 * The modifier is required because, by default, all the names of all methods
+	 * and functions are <i>mangled</i> to include type information and enable
+	 * overloading. Therefore, a method/function marked with <code>export</code>
+	 * will generate a function without name mangling.
 	 * </p>
 	 *
 	 * @author David J. Pearce
@@ -3599,7 +3943,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 	private static String braceAsNecessary(Type type) {
 		String str = type.toString();
-		if(needsBraces(type)) {
+		if (needsBraces(type)) {
 			return "(" + str + ")";
 		} else {
 			return str;
@@ -3700,16 +4044,15 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Type) operands[2]);
+				return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1], (Type) operands[2]);
 			}
 		};
 		schema[DECL_varinit] = new Schema(Operands.FOUR, Data.ZERO, "DECL_variableinitialiser") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1],
-						(Type) operands[2], (Expr) operands[3]);
+				return new Decl.Variable((Tuple<Modifier>) operands[0], (Identifier) operands[1], (Type) operands[2],
+						(Expr) operands[3]);
 			}
 		};
 		schema[MOD_native] = new Schema(Operands.ZERO, Data.ZERO, "MOD_native") {
@@ -3779,7 +4122,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				// FIXME: many operand modifier is not optimal. Observe that,
 				// for simplicity of subtyping, want to preserve reference types
 				// as having the same opcode.
-				if(operands.length == 1) {
+				if (operands.length == 1) {
 					return new Type.Reference((Type) operands[0]);
 				} else {
 					return new Type.Reference((Type) operands[0], (Identifier) operands[1]);
@@ -3961,22 +4304,22 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		};
 		// EXPRESSIONS: 01100000 (96) -- 10011111 (159)
-		schema[EXPR_varcopy] = new Schema(Operands.ONE, Data.ZERO, "EXPR_variable") {
+		schema[EXPR_varcopy] = new Schema(Operands.TWO, Data.ZERO, "EXPR_variable") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.VariableAccess((Decl.Variable) operands[0]);
+				return new Expr.VariableAccess((Type) operands[0], (Decl.Variable) operands[1]);
 			}
 		};
-		schema[EXPR_staticvar] = new Schema(Operands.ONE, Data.ZERO, "EXPR_staticvar") {
+		schema[EXPR_staticvar] = new Schema(Operands.TWO, Data.ZERO, "EXPR_staticvar") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.StaticVariableAccess((Name) operands[0]);
+				return new Expr.StaticVariableAccess((Type) operands[0], (Name) operands[1]);
 			}
 		};
-		schema[EXPR_constant] = new Schema(Operands.ONE, Data.ZERO, "EXPR_const") {
+		schema[EXPR_constant] = new Schema(Operands.TWO, Data.ZERO, "EXPR_const") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Constant((Value) operands[0]);
+				return new Expr.Constant((Type) operands[0], (Value) operands[1]);
 			}
 		};
 		schema[EXPR_cast] = new Schema(Operands.TWO, Data.ZERO, "EXPR_cast") {
@@ -3993,12 +4336,12 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 						(Type.Callable) operands[3]);
 			}
 		};
-		schema[EXPR_indirectinvoke] = new Schema(Operands.THREE, Data.ZERO, "EXPR_indirectinvoke") {
+		schema[EXPR_indirectinvoke] = new Schema(Operands.FOUR, Data.ZERO, "EXPR_indirectinvoke") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.IndirectInvoke((Expr) operands[0], (Tuple<Identifier>) operands[1],
-						(Tuple<Expr>) operands[2]);
+				return new Expr.IndirectInvoke((Type) operands[0], (Expr) operands[1], (Tuple<Identifier>) operands[2],
+						(Tuple<Expr>) operands[3]);
 			}
 		};
 		// LOGICAL
@@ -4008,28 +4351,28 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return new Expr.LogicalNot((Expr) operands[0]);
 			}
 		};
-		schema[EXPR_land] = new Schema(Operands.MANY, Data.ZERO, "EXPR_and") {
+		schema[EXPR_land] = new Schema(Operands.ONE, Data.ZERO, "EXPR_and") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.LogicalAnd(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.LogicalAnd((Tuple<Expr>) operands[0]);
 			}
 		};
-		schema[EXPR_lor] = new Schema(Operands.MANY, Data.ZERO, "EXPR_or") {
+		schema[EXPR_lor] = new Schema(Operands.ONE, Data.ZERO, "EXPR_or") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.LogicalOr(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.LogicalOr((Tuple<Expr>) operands[0]);
 			}
 		};
 		schema[EXPR_limplies] = new Schema(Operands.TWO, Data.ZERO, "EXPR_implies") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.LogicalImplication(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.LogicalImplication((Expr) operands[0], (Expr) operands[1]);
 			}
 		};
-		schema[EXPR_liff] = new Schema(Operands.TWO, Data.ZERO, "EXPR_iff") {
+		schema[EXPR_liff] = new Schema(Operands.ONE, Data.ZERO, "EXPR_iff") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.LogicalIff(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.LogicalIff((Tuple<Expr>) operands[0]);
 			}
 		};
 		schema[EXPR_lsome] = new Schema(Operands.TWO, Data.ZERO, "EXPR_exists") {
@@ -4047,40 +4390,40 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		};
 		// COMPARATORS
-		schema[EXPR_eq] = new Schema(Operands.MANY, Data.ZERO, "EXPR_eq") {
+		schema[EXPR_eq] = new Schema(Operands.ONE, Data.ZERO, "EXPR_eq") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Equal(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.Equal((Tuple<Expr>) operands[0]);
 			}
 		};
-		schema[EXPR_neq] = new Schema(Operands.MANY, Data.ZERO, "EXPR_neq") {
+		schema[EXPR_neq] = new Schema(Operands.ONE, Data.ZERO, "EXPR_neq") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.NotEqual(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.NotEqual((Tuple<Expr>) operands[0]);
 			}
 		};
-		schema[EXPR_ilt] = new Schema(Operands.MANY, Data.ZERO, "EXPR_lt") {
+		schema[EXPR_ilt] = new Schema(Operands.ONE, Data.ZERO, "EXPR_lt") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.LessThan(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.IntegerLessThan((Tuple<Expr>) operands[0]);
 			}
 		};
-		schema[EXPR_ile] = new Schema(Operands.MANY, Data.ZERO, "EXPR_lteq") {
+		schema[EXPR_ile] = new Schema(Operands.ONE, Data.ZERO, "EXPR_lteq") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.LessThanOrEqual(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.IntegerLessThanOrEqual((Tuple<Expr>) operands[0]);
 			}
 		};
-		schema[EXPR_igt] = new Schema(Operands.MANY, Data.ZERO, "EXPR_gt") {
+		schema[EXPR_igt] = new Schema(Operands.ONE, Data.ZERO, "EXPR_gt") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.GreaterThan(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.IntegerGreaterThan((Tuple<Expr>) operands[0]);
 			}
 		};
-		schema[EXPR_igteq] = new Schema(Operands.MANY, Data.ZERO, "EXPR_gteq") {
+		schema[EXPR_igteq] = new Schema(Operands.ONE, Data.ZERO, "EXPR_gteq") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.GreaterThanOrEqual(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.IntegerGreaterThanOrEqual((Tuple<Expr>) operands[0]);
 			}
 		};
 		schema[EXPR_is] = new Schema(Operands.TWO, Data.ZERO, "EXPR_is") {
@@ -4090,90 +4433,90 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		};
 		// ARITHMETIC
-		schema[EXPR_ineg] = new Schema(Operands.ONE, Data.ZERO, "EXPR_neg") {
+		schema[EXPR_ineg] = new Schema(Operands.TWO, Data.ZERO, "EXPR_neg") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Negation((Expr) operands[0]);
+				return new Expr.IntegerNegation((Type) operands[0], (Expr) operands[1]);
 			}
 		};
-		schema[EXPR_iadd] = new Schema(Operands.MANY, Data.ZERO, "EXPR_add") {
+		schema[EXPR_iadd] = new Schema(Operands.TWO, Data.ZERO, "EXPR_add") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Addition(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.IntegerAddition((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 		};
-		schema[EXPR_isub] = new Schema(Operands.MANY, Data.ZERO, "EXPR_sub") {
+		schema[EXPR_isub] = new Schema(Operands.TWO, Data.ZERO, "EXPR_sub") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Subtraction(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.IntegerSubtraction((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 		};
-		schema[EXPR_imul] = new Schema(Operands.MANY, Data.ZERO, "EXPR_mul") {
+		schema[EXPR_imul] = new Schema(Operands.TWO, Data.ZERO, "EXPR_mul") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Multiplication(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.IntegerMultiplication((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 		};
-		schema[EXPR_idiv] = new Schema(Operands.MANY, Data.ZERO, "EXPR_div") {
+		schema[EXPR_idiv] = new Schema(Operands.TWO, Data.ZERO, "EXPR_div") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Division(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.IntegerDivision((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 		};
-		schema[EXPR_irem] = new Schema(Operands.MANY, Data.ZERO, "EXPR_rem") {
+		schema[EXPR_irem] = new Schema(Operands.TWO, Data.ZERO, "EXPR_rem") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Remainder(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.IntegerRemainder((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 		};
 		// BITWISE
-		schema[EXPR_bnot] = new Schema(Operands.ONE, Data.ZERO, "EXPR_bitwisenot") {
+		schema[EXPR_bnot] = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwisenot") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.BitwiseComplement((Expr) operands[0]);
+				return new Expr.BitwiseComplement((Type) operands[0], (Expr) operands[1]);
 			}
 		};
-		schema[EXPR_band] = new Schema(Operands.MANY, Data.ZERO, "EXPR_bitwiseand") {
+		schema[EXPR_band] = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwiseand") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.BitwiseAnd(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.BitwiseAnd((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 		};
-		schema[EXPR_bor] = new Schema(Operands.MANY, Data.ZERO, "EXPR_bitwiseor") {
+		schema[EXPR_bor] = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwiseor") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.BitwiseOr(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.BitwiseOr((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 		};
-		schema[EXPR_bxor] = new Schema(Operands.MANY, Data.ZERO, "EXPR_bitwisexor") {
+		schema[EXPR_bxor] = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwisexor") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.BitwiseXor(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.BitwiseXor((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 		};
-		schema[EXPR_bshl] = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwiseshl") {
+		schema[EXPR_bshl] = new Schema(Operands.THREE, Data.ZERO, "EXPR_bitwiseshl") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.BitwiseShiftLeft((Expr) operands[0], (Expr) operands[1]);
+				return new Expr.BitwiseShiftLeft((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 		};
-		schema[EXPR_bshr] = new Schema(Operands.TWO, Data.ZERO, "EXPR_bitwiseshr") {
+		schema[EXPR_bshr] = new Schema(Operands.THREE, Data.ZERO, "EXPR_bitwiseshr") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.BitwiseShiftRight((Expr) operands[0], (Expr) operands[1]);
+				return new Expr.BitwiseShiftRight((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 		};
 		// REFERENCES
-		schema[EXPR_pread] = new Schema(Operands.ONE, Data.ZERO, "EXPR_deref") {
+		schema[EXPR_pread] = new Schema(Operands.TWO, Data.ZERO, "EXPR_deref") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Dereference((Expr) operands[0]);
+				return new Expr.Dereference((Type) operands[0], (Expr) operands[1]);
 			}
 		};
-		schema[EXPR_pinit] = new Schema(Operands.TWO, Data.ZERO, "EXPR_new") {
+		schema[EXPR_pinit] = new Schema(Operands.THREE, Data.ZERO, "EXPR_new") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.New((Expr) operands[0], (Identifier) operands[1]);
+				return new Expr.New((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
 			}
 		};
 		schema[EXPR_lread] = new Schema(Operands.THREE, Data.ZERO, "EXPR_lambda") {
@@ -4185,60 +4528,62 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 			}
 		};
 		// RECORDS
-		schema[EXPR_rread] = new Schema(Operands.TWO, Data.ZERO, "EXPR_recfield") {
+		schema[EXPR_rread] = new Schema(Operands.THREE, Data.ZERO, "EXPR_recfield") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.RecordAccess((Expr) operands[0], (Identifier) operands[1]);
+				return new Expr.RecordAccess((Type) operands[0], (Expr) operands[1], (Identifier) operands[2]);
 			}
 		};
-		schema[EXPR_rwrite] = new Schema(Operands.THREE, Data.ZERO, "EXPR_recupdt") {
+		schema[EXPR_rwrite] = new Schema(Operands.FOUR, Data.ZERO, "EXPR_recupdt") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.RecordUpdate((Expr) operands[0], (Identifier) operands[1], (Expr) operands[2]);
+				return new Expr.RecordUpdate((Type) operands[0], (Expr) operands[1], (Identifier) operands[2],
+						(Expr) operands[3]);
 			}
 		};
-		schema[EXPR_rinit] = new Schema(Operands.MANY, Data.ZERO, "EXPR_recinit") {
+		schema[EXPR_rinit] = new Schema(Operands.THREE, Data.ZERO, "EXPR_recinit") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.RecordInitialiser(ArrayUtils.toArray(Pair.class, operands));
+				return new Expr.RecordInitialiser((Type) operands[0], (Tuple<Identifier>) operands[1], (Tuple<Expr>) operands[2]);
 			}
 		};
 		// ARRAYS
-		schema[EXPR_aread] = new Schema(Operands.TWO, Data.ZERO, "EXPR_arridx") {
+		schema[EXPR_aread] = new Schema(Operands.THREE, Data.ZERO, "EXPR_arridx") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.ArrayAccess((Expr) operands[0], (Expr) operands[1]);
+				return new Expr.ArrayAccess((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 		};
-		schema[EXPR_alen] = new Schema(Operands.ONE, Data.ZERO, "EXPR_arrlen") {
+		schema[EXPR_alen] = new Schema(Operands.TWO, Data.ZERO, "EXPR_arrlen") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.ArrayLength((Expr) operands[0]);
+				return new Expr.ArrayLength((Type) operands[0], (Expr) operands[1]);
 			}
 		};
-		schema[EXPR_awrite] = new Schema(Operands.THREE, Data.ZERO, "EXPR_arrupdt") {
+		schema[EXPR_awrite] = new Schema(Operands.FOUR, Data.ZERO, "EXPR_arrupdt") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.ArrayUpdate((Expr) operands[0], (Expr) operands[1], (Expr) operands[2]);
+				return new Expr.ArrayUpdate((Type) operands[0], (Expr) operands[1], (Expr) operands[2],
+						(Expr) operands[3]);
 			}
 		};
-		schema[EXPR_agen] = new Schema(Operands.TWO, Data.ZERO, "EXPR_arrgen") {
+		schema[EXPR_agen] = new Schema(Operands.THREE, Data.ZERO, "EXPR_arrgen") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.ArrayGenerator((Expr) operands[0], (Expr) operands[1]);
+				return new Expr.ArrayGenerator((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 		};
-		schema[EXPR_ainit] = new Schema(Operands.MANY, Data.ZERO, "EXPR_arrinit") {
+		schema[EXPR_ainit] = new Schema(Operands.TWO, Data.ZERO, "EXPR_arrinit") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.ArrayInitialiser(ArrayUtils.toArray(Expr.class, operands));
+				return new Expr.ArrayInitialiser((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 		};
-		schema[EXPR_arange] = new Schema(Operands.TWO, Data.ZERO, "EXPR_arrrange") {
+		schema[EXPR_arange] = new Schema(Operands.THREE, Data.ZERO, "EXPR_arrrange") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.ArrayRange((Expr) operands[0], (Expr) operands[1]);
+				return new Expr.ArrayRange((Type) operands[0], (Expr) operands[1], (Expr) operands[2]);
 			}
 		};
 		return schema;
