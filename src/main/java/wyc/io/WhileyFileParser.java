@@ -319,8 +319,9 @@ public class WhileyFileParser {
 			// FIXME: actually parse modifiers?
 			Tuple<Modifier> modifiers = new Tuple<>();
 			Decl.Variable decl = new Decl.Variable(modifiers, id, p.getFirst());
+			decl = annotateSourceLocation(decl, start);
 			scope.declareVariable(decl);
-			parameters.add(annotateSourceLocation(decl, start));
+			parameters.add(decl);
 		}
 		return new Tuple<>(parameters);
 	}
@@ -363,8 +364,9 @@ public class WhileyFileParser {
 		// FIXME: actually parse modifiers?
 		Tuple<Modifier> modifiers = new Tuple<>();
 		Decl.Variable decl = new Decl.Variable(modifiers, name, type);
+		decl = annotateSourceLocation(decl, start);
 		scope.declareVariable(decl);
-		return annotateSourceLocation(decl, start);
+		return decl;
 	}
 
 	/**
@@ -725,12 +727,13 @@ public class WhileyFileParser {
 		} else {
 			decl = new Decl.Variable(modifiers, name, type);
 		}
+		// Done.
+		decl = annotateSourceLocation(decl, start);
 		// Finally, register the new variable in the enclosing scope. This
 		// should be done after parsing the initialiser expression to prevent it
 		// from referring to this variable.
 		scope.declareVariable(decl);
-		// Done.
-		return annotateSourceLocation(decl, start);
+		return decl;
 	}
 
 	/**
@@ -1802,6 +1805,7 @@ public class WhileyFileParser {
 			if (!firstTime) {
 				match(Comma);
 			}
+			int start = index;
 			firstTime = false;
 			Identifier id = parseIdentifier();
 			scope.checkNameAvailable(id);
@@ -1809,6 +1813,7 @@ public class WhileyFileParser {
 			Expr range = parseRangeExpression(scope, true);
 			// FIXME: need to add initialiser here
 			Decl.Variable decl = new Decl.Variable(new Tuple<>(), id, new Type.Int(), range);
+			decl = annotateSourceLocation(decl, start);
 			parameters.add(decl);
 			scope.declareVariable(decl);
 		} while (eventuallyMatch(VerticalBar) == null);
@@ -2197,6 +2202,7 @@ public class WhileyFileParser {
 			} // no else if, in case the former one didn't return
 			if (scope.isVariable(name)) {
 				// Signals a local variable access
+				Decl.Variable decl = scope.getVariableDeclaration(name);
 				Expr var = new Expr.VariableAccess(Type.Any, scope.getVariableDeclaration(name));
 				return annotateSourceLocation(var, start);
 			} else if (scope.isFieldAlias(name)) {
@@ -3034,14 +3040,12 @@ public class WhileyFileParser {
 	public Type parseDefiniteType(EnclosingScope scope) {
 		int start = index; // backtrack point
 		try {
-			System.out.println("BEFORE");
 			Type type = parseType(scope);
-			System.out.println("AFTER: " + type);
 			if (mustParseAsType(type)) {
 				return type;
 			}
 		} catch (SyntaxError e) {
-			System.out.println("AFTER");
+
 		}
 		index = start; // backtrack
 		return null;

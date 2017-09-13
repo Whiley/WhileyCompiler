@@ -11,6 +11,8 @@ import static wyc.util.ErrorMessages.errorMessage;
 
 import wyc.lang.WhileyFile;
 import wyc.util.SingleParameterReturnVisitor;
+
+import java.util.BitSet;
 import java.util.HashSet;
 
 import wybs.lang.SyntaxError;
@@ -322,7 +324,7 @@ public class DefiniteAssignmentAnalysis extends SingleParameterReturnVisitor<Def
 	@Override
 	public ControlFlow visitVariableAccess(Expr.VariableAccess expression, DefinitelyAssignedSet environment) {
 		Decl.Variable vd = expression.getVariableDeclaration();
-		if (!environment.contains(vd.getName())) {
+		if (!environment.contains(vd)) {
 			WhileyFile file = ((WhileyFile) expression.getHeap());
 			throw new SyntaxError(errorMessage(VARIABLE_POSSIBLY_UNITIALISED), file.getEntry(), expression);
 		}
@@ -389,18 +391,22 @@ public class DefiniteAssignmentAnalysis extends SingleParameterReturnVisitor<Def
 	 *
 	 */
 	public class DefinitelyAssignedSet {
-		private HashSet<Identifier> variables;
+		// FIXME: this could be made for efficient for handling files with a large
+		// number of components. Specifically, by including some notion of relative
+		// offset.
+		private BitSet variables;
 
 		public DefinitelyAssignedSet() {
-			this.variables = new HashSet<>();
+			this.variables = new BitSet();
 		}
 
 		public DefinitelyAssignedSet(DefinitelyAssignedSet defs) {
-			this.variables = new HashSet<>(defs.variables);
+			this.variables = new BitSet();
+			this.variables.or(defs.variables);
 		}
 
-		public boolean contains(Identifier var) {
-			return variables.contains(var);
+		public boolean contains(Decl.Variable var) {
+			return variables.get(var.getIndex());
 		}
 
 		/**
@@ -412,7 +418,7 @@ public class DefiniteAssignmentAnalysis extends SingleParameterReturnVisitor<Def
 		 */
 		public DefinitelyAssignedSet add(Decl.Variable var) {
 			DefinitelyAssignedSet r = new DefinitelyAssignedSet(this);
-			r.variables.add(var.getName());
+			r.variables.set(var.getIndex());
 			return r;
 		}
 
@@ -426,7 +432,8 @@ public class DefiniteAssignmentAnalysis extends SingleParameterReturnVisitor<Def
 		public DefinitelyAssignedSet addAll(Tuple<Decl.Variable> vars) {
 			DefinitelyAssignedSet r = new DefinitelyAssignedSet(this);
 			for(int i=0;i!=vars.size();++i) {
-				r.variables.add(vars.get(i).getName());
+				Decl.Variable var = vars.get(i);
+				r.variables.set(var.getIndex());
 			}
 			return r;
 		}
@@ -439,12 +446,8 @@ public class DefiniteAssignmentAnalysis extends SingleParameterReturnVisitor<Def
 		 * @return
 		 */
 		public DefinitelyAssignedSet join(DefinitelyAssignedSet other) {
-			DefinitelyAssignedSet r = new DefinitelyAssignedSet();
-			for (Identifier var : variables) {
-				if (other.contains(var)) {
-					r.variables.add(var);
-				}
-			}
+			DefinitelyAssignedSet r = new DefinitelyAssignedSet(this);
+			r.variables.and(other.variables);
 			return r;
 		}
 
