@@ -500,10 +500,9 @@ public class DefiniteAssignmentAnalysis {
 	}
 
 	private void checkRecord(Expr.RecordInitialiser expression, DefintelyAssignedSet environment) {
-		Tuple<Pair<Identifier,Expr>> operands = expression.getFields();
-		for(int i = 0;i!=operands.size();++i) {
-			Pair<Identifier,Expr> e = operands.getOperand(i);
-			checkExpression(e.getSecond(),environment);
+		Tuple<Expr> operands = expression.getArguments();
+		for(int i=0;i!=operands.size();++i) {
+			checkExpression(operands.getOperand(i),environment);
 		}
 	}
 

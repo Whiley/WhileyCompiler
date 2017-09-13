@@ -388,9 +388,9 @@ public class MoveAnalysis implements Build.Stage<WhileyFile> {
 	}
 
 	public void checkRecordInitialiser(boolean consumed, Expr.RecordInitialiser expr) {
-		Tuple<Pair<Identifier,Expr>> operands = expr.getFields();
+		Tuple<Expr> operands = expr.getArguments();
 		for(int i=0;i!=operands.size();++i) {
-			checkExpression(consumed, operands.getOperand(i).getSecond());
+			checkExpression(false, operands.getOperand(i));
 		}
 	}
 

@@ -793,12 +793,14 @@ public class Interpreter {
 	}
 
 	private RValue executeRecordInitialiser(Expr.RecordInitialiser expr, CallStack frame) {
-		Tuple<Pair<Identifier, Expr>> operands = expr.getFields();
+		Tuple<Identifier> fields = expr.getFields();
+		Tuple<Expr> operands = expr.getArguments();
 		RValue.Field[] values = new RValue.Field[operands.size()];
 		for (int i = 0; i != operands.size(); ++i) {
-			Pair<Identifier, Expr> field = operands.getOperand(i);
-			RValue value = executeExpression(ANY_T, field.getSecond(), frame);
-			values[i] = semantics.Field(field.getFirst(), value);
+			Identifier field = fields.getOperand(i);
+			Expr operand = operands.getOperand(i);
+			RValue value = executeExpression(ANY_T, operand, frame);
+			values[i] = semantics.Field(field, value);
 		}
 		return semantics.Record(values);
 	}

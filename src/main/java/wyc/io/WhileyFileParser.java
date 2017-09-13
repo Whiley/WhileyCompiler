@@ -2532,7 +2532,8 @@ public class WhileyFileParser {
 		int start = index;
 		match(LeftCurly);
 		HashSet<String> keys = new HashSet<>();
-		ArrayList<Pair<Identifier, Expr>> fields = new ArrayList<>();
+		ArrayList<Identifier> fields = new ArrayList<>();
+		ArrayList<Expr> operands = new ArrayList<>();
 
 		boolean firstTime = true;
 		while (eventuallyMatch(RightCurly) == null) {
@@ -2555,18 +2556,18 @@ public class WhileyFileParser {
 			// Also, expression is guaranteed to be terminated, either by '}' or
 			// ','.
 			Expr initialiser = parseExpression(scope, true);
-			fields.add(new Pair<>(field, initialiser));
+			fields.add(field);
+			operands.add(initialiser);
 			keys.add(field.get());
 		}
-		// Convert to array
-		Pair<Identifier, Expr>[] fieldsArray = fields.toArray(new Pair[fields.size()]);
 		// handle naming
 
 		// FIXME: Need to support named record initialisers. The suggestion here
 		// is to support arbitrary named initialisers. The reason for this being
 		// we could then support named arrays and other types as well? Not sure
 		// what the real difference from a cast is though.
-		return annotateSourceLocation(new Expr.RecordInitialiser(Type.Any, new Tuple<>(fieldsArray)), start);
+		return annotateSourceLocation(new Expr.RecordInitialiser(Type.Any, new Tuple<>(fields), new Tuple<>(operands)),
+				start);
 	}
 
 	/**

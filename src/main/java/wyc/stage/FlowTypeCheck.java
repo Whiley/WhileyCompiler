@@ -1593,13 +1593,13 @@ public class FlowTypeCheck {
 	}
 
 	private Type checkRecordInitialiser(Expr.RecordInitialiser expr, Environment env) {
-		Tuple<Pair<Identifier, Expr>> operands=expr.getFields();
+		Tuple<Identifier> fields=expr.getFields();
+		Tuple<Expr> operands=expr.getArguments();
 		Decl.Variable[] decls = new Decl.Variable[operands.size()];
 		for (int i = 0; i != operands.size(); ++i) {
-			Pair<Identifier, Expr> field = operands.getOperand(i);
-			Identifier fieldName = field.getFirst();
-			Type fieldType = checkExpression(field.getSecond(), env);
-			decls[i] = new Decl.Variable(new Tuple<>(), fieldName, fieldType);
+			Identifier field = fields.getOperand(i);
+			Type fieldType = checkExpression(operands.getOperand(i), env);
+			decls[i] = new Decl.Variable(new Tuple<>(), field, fieldType);
 		}
 		//
 		return new Type.Record(false, new Tuple<>(decls));

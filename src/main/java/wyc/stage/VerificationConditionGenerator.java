@@ -1645,13 +1645,13 @@ public class VerificationConditionGenerator {
 	}
 
 	private Expr translateRecordInitialiser(WhileyFile.Expr.RecordInitialiser expr, LocalEnvironment environment)  {
-		Tuple<WhileyFile.Pair<WhileyFile.Identifier, WhileyFile.Expr>> operands = expr.getFields();
+		Tuple<WhileyFile.Identifier> fields = expr.getFields();
+		Tuple<WhileyFile.Expr> operands = expr.getArguments();
 		WyalFile.Pair<WyalFile.Identifier, Expr>[] pairs = new WyalFile.Pair[expr.size()];
 		//
 		for (int i = 0; i != expr.size(); ++i) {
-			WhileyFile.Pair<WhileyFile.Identifier, WhileyFile.Expr> p = operands.getOperand(i);
-			Identifier field = new WyalFile.Identifier(p.getFirst().get());
-			Expr init = translateExpression(p.getSecond(), null, environment);
+			Identifier field = new WyalFile.Identifier(fields.getOperand(i).get());
+			Expr init = translateExpression(operands.getOperand(i), null, environment);
 			pairs[i] = new WyalFile.Pair<>(field, init);
 		}
 		return new Expr.RecordInitialiser(pairs);

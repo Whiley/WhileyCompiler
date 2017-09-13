@@ -3085,10 +3085,10 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class RecordInitialiser extends AbstractSyntacticItem implements Expr {
+		public static class RecordInitialiser extends AbstractSyntacticItem implements Expr, NaryOperator {
 
-			public RecordInitialiser(Type type, Tuple<Pair<Identifier, Expr>> fields) {
-				super(EXPR_rinit, type, fields);
+			public RecordInitialiser(Type type, Tuple<Identifier> fields, Tuple<Expr> operands) {
+				super(EXPR_rinit, type, fields, operands);
 			}
 
 			@Override
@@ -3096,15 +3096,19 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 				return (Type) super.getOperand(0);
 			}
 
-			@SuppressWarnings("unchecked")
-			public Tuple<Pair<Identifier, Expr>> getFields() {
-				return (Tuple<Pair<Identifier, Expr>>) super.getOperand(1);
+			public Tuple<Identifier> getFields() {
+				return (Tuple<Identifier>) super.getOperand(1);
+			}
+
+			@Override
+			public Tuple<Expr> getArguments() {
+				return (Tuple<Expr>) super.getOperand(2);
 			}
 
 			@SuppressWarnings("unchecked")
 			@Override
 			public RecordInitialiser clone(SyntacticItem[] operands) {
-				return new RecordInitialiser((Type) operands[0], (Tuple<Pair<Identifier, Expr>>) operands[1]);
+				return new RecordInitialiser((Type) operands[0], (Tuple<Identifier>) operands[1], (Tuple<Expr>) operands[2]);
 			}
 		}
 
@@ -4542,11 +4546,11 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 						(Expr) operands[3]);
 			}
 		};
-		schema[EXPR_rinit] = new Schema(Operands.TWO, Data.ZERO, "EXPR_recinit") {
+		schema[EXPR_rinit] = new Schema(Operands.THREE, Data.ZERO, "EXPR_recinit") {
 			@SuppressWarnings("unchecked")
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.RecordInitialiser((Type) operands[0], (Tuple<Pair<Identifier, Expr>>) operands[1]);
+				return new Expr.RecordInitialiser((Type) operands[0], (Tuple<Identifier>) operands[1], (Tuple<Expr>) operands[2]);
 			}
 		};
 		// ARRAYS

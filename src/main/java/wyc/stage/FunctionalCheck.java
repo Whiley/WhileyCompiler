@@ -138,6 +138,14 @@ public class FunctionalCheck extends SingleParameterVisitor<FunctionalCheck.Cont
 		super.visitNew(expression, context);
 	}
 
+
+	@Override
+	public void visitType(Type type, Context context) {
+		// NOTE: don't traverse types as this is unnecessary. Even in a pure context,
+		// seemingly impure types (e.g. references and methods) can still be used
+		// safely.
+	}
+
 	public void invalidObjectAllocation(SyntacticItem expression, Context context) {
 		String msg = errorMessage(ALLOCATION_NOT_PERMITTED);
 		WhileyFile file = ((WhileyFile) expression.getHeap());

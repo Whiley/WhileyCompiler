@@ -663,10 +663,7 @@ public class SingleParameterVisitor<T> {
 	}
 
 	public void visitRecordInitialiser(Expr.RecordInitialiser expr, T data) {
-		Tuple<Pair<Identifier, Expr>> operands = expr.getFields();
-		for (int i = 0; i != operands.size(); ++i) {
-			visitExpression(operands.getOperand(i).getSecond(), data);
-		}
+		visitExpressions(expr.getArguments(), data);
 	}
 
 	public void visitRecordUpdate(Expr.RecordUpdate expr, T data) {

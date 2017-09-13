@@ -560,15 +560,17 @@ public final class WhileyFilePrinter {
 
 	private void writeRecordConstructor(Expr.RecordInitialiser expr, PrintWriter out) {
 		out.print("{");
-		Tuple<Pair<Identifier,Expr>> initialisers = expr.getFields();
-		for (int i = 0; i != initialisers.size(); ++i) {
-			Pair<Identifier,Expr> initialiser = initialisers.getOperand(i);
+		Tuple<WhileyFile.Identifier> fields = expr.getFields();
+		Tuple<WhileyFile.Expr> operands = expr.getArguments();
+		for (int i = 0; i != operands.size(); ++i) {
+			Identifier field = fields.getOperand(i);
+			Expr operand = operands.getOperand(i);
 			if (i != 0) {
 				out.print(", ");
 			}
-			out.print(initialiser.getFirst());
+			out.print(field);
 			out.print(": ");
-			writeExpression(initialiser.getSecond(), out);
+			writeExpression(operand, out);
 		}
 		out.print("}");
 	}

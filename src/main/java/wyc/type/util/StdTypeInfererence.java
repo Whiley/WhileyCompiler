@@ -18,6 +18,7 @@ import wyc.lang.WhileyFile.Decl;
 
 import static wyc.lang.WhileyFile.*;
 import wybs.lang.NameResolver.ResolutionError;
+import wybs.util.AbstractCompilationUnit.Tuple;
 import wycc.util.ArrayUtils;
 import wyc.type.TypeInferer;
 import wyc.type.TypeSystem;
@@ -235,13 +236,14 @@ public class StdTypeInfererence implements TypeInferer {
 	}
 
 	protected Type inferRecordInitialiser(Expr.RecordInitialiser expr) throws ResolutionError {
-		Tuple<Pair<Identifier,Expr>> operands = expr.getFields();
+		Tuple<WhileyFile.Identifier> fields = expr.getFields();
+		Tuple<WhileyFile.Expr> operands = expr.getArguments();
 		Decl.Variable[] decls = new Decl.Variable[operands.size()];
 		for (int i = 0; i != decls.length; ++i) {
-			Pair<Identifier,Expr> operand = operands.getOperand(i);
-			Identifier fieldName = operand.getFirst();
-			Type fieldType = inferExpression(operand.getSecond());
-			decls[i] = new Decl.Variable(new Tuple<>(), fieldName, fieldType);
+			Identifier field = fields.getOperand(i);
+			Expr operand = operands.getOperand(i);
+			Type type = inferExpression(operand);
+			decls[i] = new Decl.Variable(new Tuple<>(), field, type);
 		}
 		// NOTE: a record initialiser never produces an open record
 		// type. By definition, an initialiser always produces a closed
