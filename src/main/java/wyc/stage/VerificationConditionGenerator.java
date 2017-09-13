@@ -1455,7 +1455,7 @@ public class VerificationConditionGenerator {
 			case WhileyFile.EXPR_lnot:
 				return translateNotOperator((WhileyFile.Expr.LogicalNot) loc, environment);
 			case WhileyFile.EXPR_ineg:
-				return translateArithmeticNegation((WhileyFile.Expr.Negation) loc, environment);
+				return translateArithmeticNegation((WhileyFile.Expr.IntegerNegation) loc, environment);
 			case WhileyFile.EXPR_iadd:
 			case WhileyFile.EXPR_isub:
 			case WhileyFile.EXPR_imul:
@@ -1543,7 +1543,7 @@ public class VerificationConditionGenerator {
 		return invertCondition(e, expr.getOperand());
 	}
 
-	private Expr translateArithmeticNegation(WhileyFile.Expr.Negation expr, LocalEnvironment environment) {
+	private Expr translateArithmeticNegation(WhileyFile.Expr.IntegerNegation expr, LocalEnvironment environment) {
 		Expr e = translateExpression(expr.getOperand(), null, environment);
 		return new Expr.Negation(e);
 	}

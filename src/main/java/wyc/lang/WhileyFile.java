@@ -2084,8 +2084,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class LessThan extends AbstractSyntacticItem implements NaryOperator {
-			public LessThan(Tuple<Expr> operands) {
+		public static class IntegerLessThan extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerLessThan(Tuple<Expr> operands) {
 				super(EXPR_ilt, operands);
 			}
 
@@ -2101,7 +2101,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new LessThan((Tuple<Expr>) operands[0]);
+				return new IntegerLessThan((Tuple<Expr>) operands[0]);
 			}
 
 			@Override
@@ -2118,8 +2118,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class LessThanOrEqual extends AbstractSyntacticItem implements NaryOperator {
-			public LessThanOrEqual(Tuple<Expr> operands) {
+		public static class IntegerLessThanOrEqual extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerLessThanOrEqual(Tuple<Expr> operands) {
 				super(EXPR_ile, operands);
 			}
 
@@ -2135,7 +2135,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new LessThanOrEqual((Tuple<Expr>) operands[0]);
+				return new IntegerLessThanOrEqual((Tuple<Expr>) operands[0]);
 			}
 
 			@Override
@@ -2152,8 +2152,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class GreaterThan extends AbstractSyntacticItem implements NaryOperator {
-			public GreaterThan(Tuple<Expr> operands) {
+		public static class IntegerGreaterThan extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerGreaterThan(Tuple<Expr> operands) {
 				super(EXPR_igt, operands);
 			}
 
@@ -2169,7 +2169,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new GreaterThan((Tuple<Expr>) operands[0]);
+				return new IntegerGreaterThan((Tuple<Expr>) operands[0]);
 			}
 
 			@Override
@@ -2186,8 +2186,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class GreaterThanOrEqual extends AbstractSyntacticItem implements NaryOperator {
-			public GreaterThanOrEqual(Tuple<Expr> operands) {
+		public static class IntegerGreaterThanOrEqual extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerGreaterThanOrEqual(Tuple<Expr> operands) {
 				super(EXPR_igteq, operands);
 			}
 
@@ -2203,7 +2203,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new GreaterThanOrEqual((Tuple<Expr>) operands[0]);
+				return new IntegerGreaterThanOrEqual((Tuple<Expr>) operands[0]);
 			}
 
 			@Override
@@ -2213,7 +2213,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		}
 
 		// =========================================================================
-		// Arithmetic Expressions
+		// Integer Expressions
 		// =========================================================================
 
 		/**
@@ -2224,8 +2224,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Addition extends AbstractSyntacticItem implements NaryOperator {
-			public Addition(Type type, Tuple<Expr> operands) {
+		public static class IntegerAddition extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerAddition(Type type, Tuple<Expr> operands) {
 				super(EXPR_iadd, type, operands);
 			}
 
@@ -2241,7 +2241,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new Addition((Type) operands[0], (Tuple<Expr>) operands[1]);
+				return new IntegerAddition((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
 			@Override
@@ -2258,8 +2258,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Subtraction extends AbstractSyntacticItem implements NaryOperator {
-			public Subtraction(Type type, Tuple<Expr> operands) {
+		public static class IntegerSubtraction extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerSubtraction(Type type, Tuple<Expr> operands) {
 				super(EXPR_isub, type, operands);
 			}
 
@@ -2275,7 +2275,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new Subtraction((Type) operands[0], (Tuple<Expr>) operands[1]);
+				return new IntegerSubtraction((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
 			@Override
@@ -2292,8 +2292,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Multiplication extends AbstractSyntacticItem implements NaryOperator {
-			public Multiplication(Type type, Tuple<Expr> operands) {
+		public static class IntegerMultiplication extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerMultiplication(Type type, Tuple<Expr> operands) {
 				super(EXPR_imul, type, operands);
 			}
 
@@ -2309,7 +2309,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new Multiplication((Type) operands[0], (Tuple<Expr>) operands[1]);
+				return new IntegerMultiplication((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
 			@Override
@@ -2326,8 +2326,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Division extends AbstractSyntacticItem implements NaryOperator {
-			public Division(Type type, Tuple<Expr> operands) {
+		public static class IntegerDivision extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerDivision(Type type, Tuple<Expr> operands) {
 				super(EXPR_idiv, type, operands);
 			}
 
@@ -2343,7 +2343,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new Division((Type) operands[0], (Tuple<Expr>) operands[1]);
+				return new IntegerDivision((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
 			@Override
@@ -2360,8 +2360,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Remainder extends AbstractSyntacticItem implements NaryOperator {
-			public Remainder(Type type, Tuple<Expr> operands) {
+		public static class IntegerRemainder extends AbstractSyntacticItem implements NaryOperator {
+			public IntegerRemainder(Type type, Tuple<Expr> operands) {
 				super(EXPR_irem, type, operands);
 			}
 
@@ -2377,7 +2377,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new Remainder((Type) operands[0], (Tuple<Expr>) operands[1]);
+				return new IntegerRemainder((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 
 			@Override
@@ -2393,8 +2393,8 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Negation extends AbstractSyntacticItem implements UnaryOperator {
-			public Negation(Type type, Expr operand) {
+		public static class IntegerNegation extends AbstractSyntacticItem implements UnaryOperator {
+			public IntegerNegation(Type type, Expr operand) {
 				super(EXPR_ineg, type, operand);
 			}
 
@@ -2410,7 +2410,7 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 
 			@Override
 			public Expr clone(SyntacticItem[] operands) {
-				return new Negation((Type) operands[0], (Expr) operands[1]);
+				return new IntegerNegation((Type) operands[0], (Expr) operands[1]);
 			}
 
 			@Override
@@ -4410,25 +4410,25 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		schema[EXPR_ilt] = new Schema(Operands.ONE, Data.ZERO, "EXPR_lt") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.LessThan((Tuple<Expr>) operands[0]);
+				return new Expr.IntegerLessThan((Tuple<Expr>) operands[0]);
 			}
 		};
 		schema[EXPR_ile] = new Schema(Operands.ONE, Data.ZERO, "EXPR_lteq") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.LessThanOrEqual((Tuple<Expr>) operands[0]);
+				return new Expr.IntegerLessThanOrEqual((Tuple<Expr>) operands[0]);
 			}
 		};
 		schema[EXPR_igt] = new Schema(Operands.ONE, Data.ZERO, "EXPR_gt") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.GreaterThan((Tuple<Expr>) operands[0]);
+				return new Expr.IntegerGreaterThan((Tuple<Expr>) operands[0]);
 			}
 		};
 		schema[EXPR_igteq] = new Schema(Operands.ONE, Data.ZERO, "EXPR_gteq") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.GreaterThanOrEqual((Tuple<Expr>) operands[0]);
+				return new Expr.IntegerGreaterThanOrEqual((Tuple<Expr>) operands[0]);
 			}
 		};
 		schema[EXPR_is] = new Schema(Operands.TWO, Data.ZERO, "EXPR_is") {
@@ -4441,37 +4441,37 @@ public class WhileyFile extends AbstractCompilationUnit<WhileyFile> {
 		schema[EXPR_ineg] = new Schema(Operands.TWO, Data.ZERO, "EXPR_neg") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Negation((Type) operands[0], (Expr) operands[1]);
+				return new Expr.IntegerNegation((Type) operands[0], (Expr) operands[1]);
 			}
 		};
 		schema[EXPR_iadd] = new Schema(Operands.TWO, Data.ZERO, "EXPR_add") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Addition((Type) operands[0], (Tuple<Expr>) operands[1]);
+				return new Expr.IntegerAddition((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 		};
 		schema[EXPR_isub] = new Schema(Operands.TWO, Data.ZERO, "EXPR_sub") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Subtraction((Type) operands[0], (Tuple<Expr>) operands[1]);
+				return new Expr.IntegerSubtraction((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 		};
 		schema[EXPR_imul] = new Schema(Operands.TWO, Data.ZERO, "EXPR_mul") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Multiplication((Type) operands[0], (Tuple<Expr>) operands[1]);
+				return new Expr.IntegerMultiplication((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 		};
 		schema[EXPR_idiv] = new Schema(Operands.TWO, Data.ZERO, "EXPR_div") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Division((Type) operands[0], (Tuple<Expr>) operands[1]);
+				return new Expr.IntegerDivision((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 		};
 		schema[EXPR_irem] = new Schema(Operands.TWO, Data.ZERO, "EXPR_rem") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Expr.Remainder((Type) operands[0], (Tuple<Expr>) operands[1]);
+				return new Expr.IntegerRemainder((Type) operands[0], (Tuple<Expr>) operands[1]);
 			}
 		};
 		// BITWISE

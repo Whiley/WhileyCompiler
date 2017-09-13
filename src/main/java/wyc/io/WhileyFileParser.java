@@ -1721,16 +1721,16 @@ public class WhileyFileParser {
 			//
 			switch (lookahead.kind) {
 			case LessEquals:
-				lhs = new Expr.LessThanOrEqual(new Tuple<>(lhs, rhs));
+				lhs = new Expr.IntegerLessThanOrEqual(new Tuple<>(lhs, rhs));
 				break;
 			case LeftAngle:
-				lhs = new Expr.LessThan(new Tuple<>(lhs, rhs));
+				lhs = new Expr.IntegerLessThan(new Tuple<>(lhs, rhs));
 				break;
 			case GreaterEquals:
-				lhs = new Expr.GreaterThanOrEqual(new Tuple<>(lhs, rhs));
+				lhs = new Expr.IntegerGreaterThanOrEqual(new Tuple<>(lhs, rhs));
 				break;
 			case RightAngle:
-				lhs = new Expr.GreaterThan(new Tuple<>(lhs, rhs));
+				lhs = new Expr.IntegerGreaterThan(new Tuple<>(lhs, rhs));
 				break;
 			case EqualsEquals:
 				lhs = new Expr.Equal(new Tuple<>(lhs, rhs));
@@ -1926,10 +1926,10 @@ public class WhileyFileParser {
 			Expr rhs = parseMultiplicativeExpression(scope, terminated);
 			switch (lookahead.kind) {
 			case Plus:
-				lhs = new Expr.Addition(Type.Any, new Tuple<>(lhs, rhs));
+				lhs = new Expr.IntegerAddition(Type.Any, new Tuple<>(lhs, rhs));
 				break;
 			case Minus:
-				lhs = new Expr.Subtraction(Type.Any, new Tuple<>(lhs, rhs));
+				lhs = new Expr.IntegerSubtraction(Type.Any, new Tuple<>(lhs, rhs));
 				break;
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
@@ -1969,13 +1969,13 @@ public class WhileyFileParser {
 			Expr rhs = parseAccessExpression(scope, terminated);
 			switch (lookahead.kind) {
 			case Star:
-				lhs = new Expr.Multiplication(Type.Any, new Tuple<>(lhs, rhs));
+				lhs = new Expr.IntegerMultiplication(Type.Any, new Tuple<>(lhs, rhs));
 				break;
 			case RightSlash:
-				lhs = new Expr.Division(Type.Any, new Tuple<>(lhs, rhs));
+				lhs = new Expr.IntegerDivision(Type.Any, new Tuple<>(lhs, rhs));
 				break;
 			case Percent:
-				lhs = new Expr.Remainder(Type.Any, new Tuple<>(lhs, rhs));
+				lhs = new Expr.IntegerRemainder(Type.Any, new Tuple<>(lhs, rhs));
 				break;
 			default:
 				throw new RuntimeException("deadcode"); // dead-code
@@ -2683,7 +2683,7 @@ public class WhileyFileParser {
 		int start = index;
 		match(Minus);
 		Expr e = parseAccessExpression(scope, terminated);
-		return annotateSourceLocation(new Expr.Negation(Type.Any, e), start);
+		return annotateSourceLocation(new Expr.IntegerNegation(Type.Any, e), start);
 	}
 
 	/**

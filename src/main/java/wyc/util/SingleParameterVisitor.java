@@ -356,7 +356,7 @@ public class SingleParameterVisitor<T> {
 			visitCast((Expr.Cast) expr, data);
 			break;
 		case EXPR_ineg:
-			visitIntegerNegation((Expr.Negation) expr, data);
+			visitIntegerNegation((Expr.IntegerNegation) expr, data);
 			break;
 		case EXPR_is:
 			visitIs((Expr.Is) expr, data);
@@ -443,31 +443,31 @@ public class SingleParameterVisitor<T> {
 			visitBitwiseXor((Expr.BitwiseXor) expr, data);
 			break;
 		case EXPR_ilt:
-			visitIntegerLessThan((Expr.LessThan) expr, data);
+			visitIntegerLessThan((Expr.IntegerLessThan) expr, data);
 			break;
 		case EXPR_ile:
-			visitIntegerLessThanOrEqual((Expr.LessThanOrEqual) expr, data);
+			visitIntegerLessThanOrEqual((Expr.IntegerLessThanOrEqual) expr, data);
 			break;
 		case EXPR_igt:
-			visitIntegerGreaterThan((Expr.GreaterThan) expr, data);
+			visitIntegerGreaterThan((Expr.IntegerGreaterThan) expr, data);
 			break;
 		case EXPR_igteq:
-			visitIntegerGreaterThanOrEqual((Expr.GreaterThanOrEqual) expr, data);
+			visitIntegerGreaterThanOrEqual((Expr.IntegerGreaterThanOrEqual) expr, data);
 			break;
 		case EXPR_iadd:
-			visitIntegerAddition((Expr.Addition) expr, data);
+			visitIntegerAddition((Expr.IntegerAddition) expr, data);
 			break;
 		case EXPR_isub:
-			visitIntegerSubtraction((Expr.Subtraction) expr, data);
+			visitIntegerSubtraction((Expr.IntegerSubtraction) expr, data);
 			break;
 		case EXPR_imul:
-			visitIntegerMultiplication((Expr.Multiplication) expr, data);
+			visitIntegerMultiplication((Expr.IntegerMultiplication) expr, data);
 			break;
 		case EXPR_idiv:
-			visitIntegerDivision((Expr.Division) expr, data);
+			visitIntegerDivision((Expr.IntegerDivision) expr, data);
 			break;
 		case EXPR_irem:
-			visitIntegerRemainder((Expr.Remainder) expr, data);
+			visitIntegerRemainder((Expr.IntegerRemainder) expr, data);
 			break;
 		case EXPR_land:
 			visitLogicalAnd((Expr.LogicalAnd) expr, data);
@@ -563,43 +563,43 @@ public class SingleParameterVisitor<T> {
 		visitExpressions(expr.getArguments(), data);
 	}
 
-	public void visitIntegerLessThan(Expr.LessThan expr, T data) {
+	public void visitIntegerLessThan(Expr.IntegerLessThan expr, T data) {
 		visitExpressions(expr.getArguments(), data);
 	}
 
-	public void visitIntegerLessThanOrEqual(Expr.LessThanOrEqual expr, T data) {
+	public void visitIntegerLessThanOrEqual(Expr.IntegerLessThanOrEqual expr, T data) {
 		visitExpressions(expr.getArguments(), data);
 	}
 
-	public void visitIntegerGreaterThan(Expr.GreaterThan expr, T data) {
+	public void visitIntegerGreaterThan(Expr.IntegerGreaterThan expr, T data) {
 		visitExpressions(expr.getArguments(), data);
 	}
 
-	public void visitIntegerGreaterThanOrEqual(Expr.GreaterThanOrEqual expr, T data) {
+	public void visitIntegerGreaterThanOrEqual(Expr.IntegerGreaterThanOrEqual expr, T data) {
 		visitExpressions(expr.getArguments(), data);
 	}
 
-	public void visitIntegerNegation(Expr.Negation expr, T data) {
+	public void visitIntegerNegation(Expr.IntegerNegation expr, T data) {
 		visitExpression(expr.getOperand(), data);
 	}
 
-	public void visitIntegerAddition(Expr.Addition expr, T data) {
+	public void visitIntegerAddition(Expr.IntegerAddition expr, T data) {
 		visitExpressions(expr.getArguments(), data);
 	}
 
-	public void visitIntegerSubtraction(Expr.Subtraction expr, T data) {
+	public void visitIntegerSubtraction(Expr.IntegerSubtraction expr, T data) {
 		visitExpressions(expr.getArguments(), data);
 	}
 
-	public void visitIntegerMultiplication(Expr.Multiplication expr, T data) {
+	public void visitIntegerMultiplication(Expr.IntegerMultiplication expr, T data) {
 		visitExpressions(expr.getArguments(), data);
 	}
 
-	public void visitIntegerDivision(Expr.Division expr, T data) {
+	public void visitIntegerDivision(Expr.IntegerDivision expr, T data) {
 		visitExpressions(expr.getArguments(), data);
 	}
 
-	public void visitIntegerRemainder(Expr.Remainder expr, T data) {
+	public void visitIntegerRemainder(Expr.IntegerRemainder expr, T data) {
 		visitExpressions(expr.getArguments(), data);
 	}
 
